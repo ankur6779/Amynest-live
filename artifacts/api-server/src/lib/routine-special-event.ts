@@ -3,9 +3,11 @@
  */
 import type { RoutineScheduleItem } from "./routine-scheduler.js";
 import {
+  isLockedScheduleItem,
   minsToTime24,
   normalizeTo24h,
   parseTimeToMins,
+  resolveTimelineOverlaps,
 } from "./routine-scheduler.js";
 
 export type SpecialEventType =
@@ -325,4 +327,150 @@ export function validateSpecialEventPlacement(
     eventPlacementStatus: placementStatus,
     validationWarnings: warnings,
   };
+}
+
+function isSleepLike(item: RoutineScheduleItem): boolean {
+  return /lights out|sleep/i.test(item.activity);
+}
+
+const GAP_AFTER_EVENT = 10;
+
+export type TimelineShift = {
+  activity: string;
+  from?: string;
+  to?: string;
+  reason: string;
+};
+
+function isFixedRecurringLock(item: RoutineScheduleItem): boolean {
+  return item.culturalTag === "fixed_recurring" || item.activitySource === "fixed";
+}
+
+/** Lower = higher priority anchor (special event before fixed recurring). */
+function lockedAnchorPriority(item: RoutineScheduleItem): number {
+  if (isLockedSpecialEvent(item)) return 0;
+  if (isFixedRecurringLock(item)) return 1;
+  return 2;
+}
+
+function shiftReasonForLock(lock: RoutineScheduleItem): string {
+  if (isLockedSpecialEvent(lock)) {
+    return `Rescheduled due to ${lock.activity}`;
+  }
+  if (isFixedRecurringLock(lock)) {
+    return `Rescheduled around ${lock.activity}`;
+  }
+  return "Rescheduled around a locked block";
+}
+
+/**
+ * Shift non-locked blocks that overlap locked anchors.
+ * Priority: special event > fixed activity > AI schedule. Locked anchors never move.
+ */
+export function shiftNonLockedAroundLockedEvents(
+  items: RoutineScheduleItem[],
+): { items: RoutineScheduleItem[]; shiftsApplied: TimelineShift[] } {
+  const shiftsApplied: TimelineShift[] = [];
+  const sorted = [...items].sort(
+    (a, b) => parseTimeToMins(normalizeTo24h(a.time)) - parseTimeToMins(normalizeTo24h(b.time)),
+  );
+
+  const locks = sorted
+    .filter(isLockedScheduleItem)
+    .sort(
+      (a, b) =>
+        lockedAnchorPriority(a) - lockedAnchorPriority(b) ||
+        parseTimeToMins(normalizeTo24h(a.time)) - parseTimeToMins(normalizeTo24h(b.time)),
+    );
+
+  for (const lock of locks) {
+    const lockStart = parseTimeToMins(normalizeTo24h(lock.time));
+    const lockEnd = lockStart + (lock.duration ?? 45);
+    const reason = shiftReasonForLock(lock);
+
+    for (const it of sorted) {
+      if (isLockedScheduleItem(it) || isSleepLike(it)) continue;
+      let start = parseTimeToMins(normalizeTo24h(it.time));
+      const end = start + (it.duration ?? 30);
+      if (start >= lockEnd || end <= lockStart) continue;
+
+      if (start < lockStart) {
+        const maxDur = Math.max(15, lockStart - start - GAP_AFTER_EVENT);
+        if ((it.duration ?? 30) > maxDur) {
+          it.duration = maxDur;
+        }
+        continue;
+      }
+
+      const fromTime = it.time;
+      start = lockEnd + GAP_AFTER_EVENT;
+      it.time = minsToTime24(start);
+      if (fromTime !== it.time) {
+        it.scheduleDecision = {
+          reason,
+          source: "structure",
+          originalActivity: it.scheduleDecision?.originalActivity ?? it.activity,
+        };
+        shiftsApplied.push({
+          activity: it.activity,
+          from: fromTime,
+          to: it.time,
+          reason,
+        });
+      }
+    }
+  }
+
+  return {
+    items: sorted.sort(
+      (a, b) => parseTimeToMins(normalizeTo24h(a.time)) - parseTimeToMins(normalizeTo24h(b.time)),
+    ),
+    shiftsApplied,
+  };
+}
+
+/**
+ * Re-insert parsed special event if post-processing dropped it; resolve overlaps around it.
+ */
+export function ensureSpecialEventsPreserved(
+  items: RoutineScheduleItem[],
+  event: ParsedSpecialEvent | null,
+  bounds: { wakeMins: number; sleepMins: number },
+): RoutineScheduleItem[] {
+  let working = [...items];
+  if (event) {
+    working = working.filter((i) => !isProbableDuplicateOfEvent(i, event));
+  }
+
+  const hasLocked = working.some(isLockedSpecialEvent);
+  if (!hasLocked && event) {
+    working = [...working, buildSpecialEventScheduleItem(event)];
+  }
+
+  working = shiftNonLockedAroundLockedEvents(working).items;
+
+  const sleep = working.find(isSleepLike);
+  if (sleep) {
+    const sleepStart = parseTimeToMins(normalizeTo24h(sleep.time));
+    const windDownDur = 25;
+    for (const it of working) {
+      if (isSleepLike(it) || isLockedScheduleItem(it)) continue;
+      let start = parseTimeToMins(normalizeTo24h(it.time));
+      let dur = it.duration ?? 30;
+      let end = start + dur;
+      if (end <= sleepStart) continue;
+      if (start >= sleepStart) continue;
+      const maxDur = sleepStart - start - 5;
+      if (maxDur >= 10) {
+        it.duration = maxDur;
+        continue;
+      }
+      dur = Math.min(dur, windDownDur);
+      start = sleepStart - dur - 5;
+      it.time = minsToTime24(Math.max(bounds.wakeMins + 30, start));
+      it.duration = Math.min(dur, sleepStart - parseTimeToMins(it.time) - 5);
+    }
+  }
+
+  return resolveTimelineOverlaps(working, bounds.wakeMins, bounds.sleepMins);
 }

@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { FixedActivity } from './fixedActivity';
 import type { UpdateChildBodyParentGoalsItem } from './updateChildBodyParentGoalsItem';
 
 export interface UpdateChildBody {
@@ -37,4 +38,5 @@ export interface UpdateChildBody {
   foodPrefCustomized?: boolean | null;
   /** Adaptive Family Intelligence — replace structured optimization goals. */
   parentGoals?: UpdateChildBodyParentGoalsItem[] | null;
+  fixedActivities?: FixedActivity[] | null;
 }

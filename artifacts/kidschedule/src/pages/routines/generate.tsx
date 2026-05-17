@@ -40,6 +40,18 @@ import {
   cacheSafetyForRoutine,
   validateRoutineSafety,
 } from "@/lib/safety-routine-validation";
+import { FixedActivitiesEditor } from "@/components/routines/fixed-activities-editor";
+import { FixedActivitiesReviewPanel } from "@/components/routines/fixed-activities-review-panel";
+import { FixedActivitiesSuggestionBanner } from "@/components/routines/fixed-activities-suggestion-banner";
+import { FixedActivitiesWeeklyView } from "@/components/routines/fixed-activities-weekly-view";
+import { FixedActivitiesWeeklyInsights } from "@/components/routines/fixed-activities-weekly-insights";
+import {
+  FIXED_ACTIVITY_TEMPLATES,
+  normalizeFixedActivities,
+  type FixedActivityDraft,
+} from "@/lib/fixed-activities";
+import { weekdayLabelFromRoutineDate } from "@/lib/fixed-activities-utils";
+import type { FixedActivitiesResult } from "@workspace/api-client-react";
 
 // Mirrors the `weatherOutdoor` enum in the regenerated GenerateRoutineBody
 // schema (see lib/api-zod/src/generated/types/generateRoutineBodyWeatherOutdoor.ts).
@@ -162,11 +174,14 @@ type RoutineItem = {
 type GeneratedRoutine = {
   title: string;
   items: RoutineItem[];
+  adaptations?: string[] | null;
+  fixedActivitiesResult?: FixedActivitiesResult | null;
 };
 type ChildType = {
   id: number;
   name: string;
   age: number;
+  fixedActivities?: FixedActivityDraft[] | null;
   childClass?: string | null;
   foodType?: string;
   dietType?: string | null;
@@ -491,6 +506,25 @@ export default function RoutineGenerate() {
   const schoolMealMode = schoolMealPreferenceToApiMode(schoolMealPreference);
   const schoolMealDefaultAppliedRef = useRef(false);
   const [specialPlans, setSpecialPlans] = useState("");
+  const [fixedActivities, setFixedActivities] = useState<FixedActivityDraft[]>([]);
+  const [lastFixedActivitiesResult, setLastFixedActivitiesResult] =
+    useState<FixedActivitiesResult | null>(null);
+  const [fixedReviewState, setFixedReviewState] = useState<{
+    routine: GeneratedRoutine;
+    shouldOverride: boolean | undefined;
+    wakeTime: string | null;
+  } | null>(null);
+  const [blockingSaveConfirmed, setBlockingSaveConfirmed] = useState(false);
+  const [inlineFixedBlocking, setInlineFixedBlocking] =
+    useState<FixedActivitiesResult | null>(null);
+
+  const serializedFixedActivities = React.useMemo(
+    () =>
+      fixedActivities.filter(
+        (e) => e.activity.trim() && e.days.length > 0 && e.start && e.end,
+      ),
+    [fixedActivities],
+  );
   const [fridgeItems, setFridgeItems] = useState("");
   const initialMood = (() => {
     const m = urlParams.mood;
@@ -780,6 +814,17 @@ export default function RoutineGenerate() {
   const isGenerating = generateMutation.isPending || createMutation.isPending;
   const selectedChildData = children?.find(c => c.id === selectedChild) as ChildType | undefined;
 
+  useEffect(() => {
+    if (!selectedChildData) return;
+    setFixedActivities(
+      normalizeFixedActivities(selectedChildData.fixedActivities),
+    );
+    setLastFixedActivitiesResult(null);
+    setFixedReviewState(null);
+    setInlineFixedBlocking(null);
+    setBlockingSaveConfirmed(false);
+  }, [selectedChild, selectedChildData?.id]);
+
   // ── Core save helper ───────────────────────────────────────────────────────
   const saveGeneratedRoutine = React.useCallback((data: GeneratedRoutine, shouldOverride: boolean | undefined) => {
     createMutation.mutate({
@@ -788,6 +833,7 @@ export default function RoutineGenerate() {
         date,
         title: data.title,
         items: data.items as never,
+        adaptations: data.adaptations ?? undefined,
         override: shouldOverride
       }
     }, {
@@ -837,70 +883,88 @@ export default function RoutineGenerate() {
     });
   }, [createMutation, selectedChild, date, toast, queryClient, setLocation, children, authFetch]);
 
-  // ── Post-generate: adjust for today (past tasks + wake shift) ─────────────
-  const handlePostGenerate = React.useCallback((generatedData: {
-    title: string;
-    items: RoutineItem[];
-  }, shouldOverride: boolean | undefined, wakeTime: string | null) => {
+  const applyWakeAndTodayAdjustments = React.useCallback((
+    generatedData: GeneratedRoutine,
+    wakeTime: string | null,
+  ): {
+    data: GeneratedRoutine;
+    needsTaskCheck: boolean;
+    essentials: { idx: number; item: RoutineItem }[];
+  } => {
     const today = format(new Date(), "yyyy-MM-dd");
     const isToday = date === today;
     const childDefaultWake = selectedChildData?.wakeUpTime ?? "7:00 AM";
     let adjustedItems = [...generatedData.items] as RoutineItem[];
+    const essentials: { idx: number; item: RoutineItem }[] = [];
 
-    // 1. Shift by actual wake time if different from default
     if (isToday && wakeTime && wakeTime !== childDefaultWake) {
       adjustedItems = shiftRoutineItems(adjustedItems, childDefaultWake, wakeTime);
     }
 
-    // 2. For today: identify past tasks; auto-complete non-essentials; queue essentials
     if (isToday) {
       const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
-      const essentials: {
-        idx: number;
-        item: RoutineItem;
-      }[] = [];
       adjustedItems = adjustedItems.map((item, idx) => {
         const itemMins = parseDisplayTime(item.time);
-        if (itemMins < 0 || itemMins >= nowMins) return item; // future item
-        if (item.category === "sleep") return item; // never auto-touch sleep
+        if (itemMins < 0 || itemMins >= nowMins) return item;
+        if (item.category === "sleep") return item;
         if (isEssentialTask(item.activity, item.category)) {
-          essentials.push({
-            idx,
-            item: {
-              ...item
-            }
-          });
-          return item; // will be resolved by task check dialog
+          essentials.push({ idx, item: { ...item } });
+          return item;
         }
-        return {
-          ...item,
-          status: "completed"
-        }; // auto-complete minor past tasks
+        return { ...item, status: "completed" as const };
       });
-      const adjustedData = {
-        title: generatedData.title,
-        items: adjustedItems
-      };
-      if (essentials.length > 0) {
-        setPastEssentialTasks(essentials);
-        setTaskCheckMap(Object.fromEntries(essentials.map(({
-          idx
-        }) => [idx, true])));
-        setPendingRoutineSave({
-          generatedData: adjustedData,
-          shouldOverride
-        });
-        setShowTaskCheck(true);
-        return;
-      }
-      saveGeneratedRoutine(adjustedData, shouldOverride);
-    } else {
-      saveGeneratedRoutine({
-        title: generatedData.title,
-        items: adjustedItems
-      }, shouldOverride);
     }
-  }, [date, selectedChildData, saveGeneratedRoutine]);
+
+    return {
+      data: {
+        ...generatedData,
+        items: adjustedItems,
+      },
+      needsTaskCheck: essentials.length > 0,
+      essentials,
+    };
+  }, [date, selectedChildData]);
+
+  const commitGeneratedRoutine = React.useCallback((
+    generatedData: GeneratedRoutine,
+    shouldOverride: boolean | undefined,
+    wakeTime: string | null,
+  ) => {
+    const { data, needsTaskCheck, essentials } = applyWakeAndTodayAdjustments(
+      generatedData,
+      wakeTime,
+    );
+    if (needsTaskCheck) {
+      setPastEssentialTasks(essentials);
+      setTaskCheckMap(Object.fromEntries(essentials.map(({ idx }) => [idx, true])));
+      setPendingRoutineSave({ generatedData: data, shouldOverride });
+      setShowTaskCheck(true);
+      setFixedReviewState(null);
+      return;
+    }
+    setFixedReviewState(null);
+    saveGeneratedRoutine(data, shouldOverride);
+  }, [applyWakeAndTodayAdjustments, saveGeneratedRoutine]);
+
+  const handlePostGenerate = React.useCallback((
+    generatedData: GeneratedRoutine,
+    shouldOverride: boolean | undefined,
+    wakeTime: string | null,
+  ) => {
+    setInlineFixedBlocking(null);
+    if (generatedData.fixedActivitiesResult) {
+      setLastFixedActivitiesResult(generatedData.fixedActivitiesResult);
+    }
+    const needsFixedReview =
+      serializedFixedActivities.length > 0 ||
+      !!generatedData.fixedActivitiesResult?.fixedActivitiesApplied;
+    if (needsFixedReview) {
+      setFixedReviewState({ routine: generatedData, shouldOverride, wakeTime });
+      setBlockingSaveConfirmed(false);
+      return;
+    }
+    commitGeneratedRoutine(generatedData, shouldOverride, wakeTime);
+  }, [serializedFixedActivities, commitGeneratedRoutine]);
 
   // ── Core generate (rule-based) ─────────────────────────────────────────────
   const proceedGenerate = React.useCallback((forceOverride: boolean, wakeTime: string | null, weatherForCall?: WeatherOutdoorChoice) => {
@@ -913,6 +977,9 @@ export default function RoutineGenerate() {
         hasSchool: hasSchool ?? undefined,
         schoolMealMode: hasSchool ? schoolMealMode : undefined,
         specialPlans: appendHandlerToPlans(specialPlans, handlerType),
+        fixedActivities:
+          serializedFixedActivities.length > 0 ? serializedFixedActivities : undefined,
+        confirmBlockingFixedActivities: blockingSaveConfirmed || undefined,
         fridgeItems: fridgeItems.trim() || undefined,
         mood: mood !== "normal" ? mood : undefined,
         // School-aware generation context (server falls back to child profile when omitted).
@@ -926,29 +993,29 @@ export default function RoutineGenerate() {
       }
     }, {
       onSuccess: generatedData => {
-        const data = generatedData as {
-          title: string;
-          items: RoutineItem[];
-        };
+        const data = generatedData as GeneratedRoutine;
         const items = simplifyForHandler(data.items as any, handlerType) as RoutineItem[];
         handlePostGenerate({
           ...data,
-          items
+          items,
         }, shouldOverride, wakeTime);
       },
       onError: (err: unknown) => {
-        // Global Paywall: HTTP 402 { error: "feature_locked", feature: "routine_generate" }
-        // OR legacy 403 { reason: "routine_limit_exceeded" }. Surface the paywall.
-        const status = (err as {
-          status?: number;
-        })?.status;
+        const status = (err as { status?: number })?.status;
         const data = (err as {
           data?: {
             reason?: string;
             error?: string;
             feature?: string;
+            fixedActivitiesResult?: FixedActivitiesResult;
+            message?: string;
           };
         })?.data;
+        if (status === 422 && data?.error === "fixed_activity_blocking") {
+          setInlineFixedBlocking(data.fixedActivitiesResult ?? null);
+          setLastFixedActivitiesResult(data.fixedActivitiesResult ?? null);
+          return;
+        }
         const isFeatureLocked = status === 402 && (data?.error === "feature_locked" || data?.feature === "routine_generate");
         const isLegacyLimit = status === 403 && data?.reason === "routine_limit_exceeded";
         if (isFeatureLocked || isLegacyLimit) {
@@ -965,7 +1032,7 @@ export default function RoutineGenerate() {
         });
       }
     });
-  }, [generateMutation, overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, specialPlans, fridgeItems, mood, handlerType, weatherOutdoor, parentRegion, handlePostGenerate, toast, t]);
+  }, [generateMutation, overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, specialPlans, serializedFixedActivities, blockingSaveConfirmed, fridgeItems, mood, handlerType, weatherOutdoor, parentRegion, handlePostGenerate, toast, t]);
 
   // ── Core generate (AI) ─────────────────────────────────────────────────────
   const proceedAiGenerate = React.useCallback(async (forceOverride: boolean, wakeTime: string | null, weatherForCall?: WeatherOutdoorChoice) => {
@@ -979,6 +1046,9 @@ export default function RoutineGenerate() {
         hasSchool: hasSchool ?? undefined,
         schoolMealMode: hasSchool ? schoolMealMode : undefined,
         specialPlans: appendHandlerToPlans(specialPlans, handlerType),
+        fixedActivities:
+          serializedFixedActivities.length > 0 ? serializedFixedActivities : undefined,
+        confirmBlockingFixedActivities: blockingSaveConfirmed || undefined,
         fridgeItems: fridgeItems.trim() || undefined,
         mood: mood !== "normal" ? mood : undefined,
         age: selectedChildData?.age,
@@ -996,6 +1066,17 @@ export default function RoutineGenerate() {
         },
         body: JSON.stringify(payload)
       });
+      if (res.status === 422) {
+        const body = (await res.json().catch(() => null)) as {
+          error?: string;
+          fixedActivitiesResult?: FixedActivitiesResult;
+        } | null;
+        if (body?.error === "fixed_activity_blocking") {
+          setInlineFixedBlocking(body.fixedActivitiesResult ?? null);
+          setLastFixedActivitiesResult(body.fixedActivitiesResult ?? null);
+          return;
+        }
+      }
       if (res.status === 402 || res.status === 403) {
         const body = (await res.json().catch(() => null)) as {
           reason?: string;
@@ -1014,14 +1095,11 @@ export default function RoutineGenerate() {
         }
       }
       if (!res.ok) throw new Error("Amy AI generation failed");
-      const generatedData = (await res.json()) as {
-        title: string;
-        items: RoutineItem[];
-      };
+      const generatedData = (await res.json()) as GeneratedRoutine;
       const simplified = simplifyForHandler(generatedData.items as any, handlerType) as RoutineItem[];
       handlePostGenerate({
         ...generatedData,
-        items: simplified
+        items: simplified,
       }, shouldOverride, wakeTime);
     } catch {
       toast({
@@ -1031,7 +1109,7 @@ export default function RoutineGenerate() {
     } finally {
       setIsAiGenerating(false);
     }
-  }, [overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, specialPlans, fridgeItems, mood, handlerType, weatherOutdoor, parentRegion, authFetch, handlePostGenerate, toast, t]);
+  }, [overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, specialPlans, serializedFixedActivities, blockingSaveConfirmed, fridgeItems, mood, handlerType, weatherOutdoor, parentRegion, authFetch, handlePostGenerate, toast, t]);
 
   // ── Wake-up confirmation gate ──────────────────────────────────────────────
   const triggerWithWakeCheck = React.useCallback((type: "standard" | "ai", forceOverride: boolean, weatherForCall?: WeatherOutdoorChoice) => {
@@ -1683,9 +1761,98 @@ export default function RoutineGenerate() {
                 </InputSection>
 
                 <InputSection
+                  title={t("pages.routines.fixed.section_title", {
+                    defaultValue: "Weekly activities",
+                  })}
+                  subtitle={t("pages.routines.fixed.section_hint", {
+                    defaultValue:
+                      "Tuition, sports, and classes are locked every week — Amy schedules everything else around them",
+                  })}
+                >
+                  {serializedFixedActivities.length === 0 && (
+                    <FixedActivitiesSuggestionBanner
+                      onAddTemplate={(key) => {
+                        const tpl = FIXED_ACTIVITY_TEMPLATES.find((x) => x.key === key);
+                        if (!tpl) return;
+                        setFixedActivities((prev) => [
+                          ...prev,
+                          {
+                            activity: tpl.activity,
+                            days: [...tpl.days],
+                            start: tpl.start,
+                            end: tpl.end,
+                          },
+                        ]);
+                      }}
+                    />
+                  )}
+                  {serializedFixedActivities.length > 0 && (
+                    <>
+                      <FixedActivitiesWeeklyInsights
+                        activities={serializedFixedActivities}
+                        childName={selectedChildData?.name}
+                      />
+                      <FixedActivitiesWeeklyView
+                        activities={serializedFixedActivities}
+                        highlightDay={weekdayLabelFromRoutineDate(date)}
+                      />
+                    </>
+                  )}
+                  <FixedActivitiesEditor
+                    value={fixedActivities}
+                    onChange={setFixedActivities}
+                    compact
+                  />
+                </InputSection>
+
+                {inlineFixedBlocking && !fixedReviewState && (
+                  <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 space-y-2" role="alert">
+                    <p className="text-sm font-medium text-destructive">
+                      {inlineFixedBlocking.summaryMessage ??
+                        t("pages.routines.fixed.blocking_inline", {
+                          defaultValue:
+                            "Fix weekly activity times that overlap sleep or wake-up before generating.",
+                        })}
+                    </p>
+                    {(inlineFixedBlocking.conflicts ?? [])
+                      .filter((c) => c.severity === "blocking")
+                      .map((c, i) => (
+                        <p key={i} className="text-xs text-foreground/90">
+                          <span className="font-medium">{c.warning}</span>
+                          {" — "}
+                          <span className="text-primary font-medium">{c.suggestion}</span>
+                        </p>
+                      ))}
+                  </div>
+                )}
+
+                {fixedReviewState && (
+                  <FixedActivitiesReviewPanel
+                    date={date}
+                    childName={selectedChildData?.name}
+                    fixedActivities={fixedActivities}
+                    onFixedActivitiesChange={setFixedActivities}
+                    result={lastFixedActivitiesResult}
+                    blockingConfirmed={blockingSaveConfirmed}
+                    onBlockingConfirmedChange={setBlockingSaveConfirmed}
+                    onRegenerate={() => {
+                      const { shouldOverride, wakeTime } = fixedReviewState;
+                      proceedGenerate(!!shouldOverride, wakeTime);
+                    }}
+                    onSave={() => {
+                      if (!fixedReviewState) return;
+                      const { routine, shouldOverride, wakeTime } = fixedReviewState;
+                      commitGeneratedRoutine(routine, shouldOverride, wakeTime);
+                    }}
+                    isRegenerating={isGenerating || isAiGenerating}
+                    isSaving={createMutation.isPending}
+                  />
+                )}
+
+                <InputSection
                   title={t("pages.routines.generate.section_important", { defaultValue: "Important" })}
                   subtitle={t("pages.routines.generate.section_important_hint", {
-                    defaultValue: "Fixed plans are scheduled first — Amy works around them",
+                    defaultValue: "One-off plans are scheduled first — Amy works around them",
                   })}
                   highlight
                 >
@@ -1725,15 +1892,15 @@ export default function RoutineGenerate() {
                   {prefetchingLocation && <p className="text-center text-xs text-muted-foreground bg-muted/60 border border-border rounded-full py-2 px-4">📍 {t("pages.routines.generate.location_redetecting", { defaultValue: "Detecting your location for accurate meals & outdoor plan…" })}</p>}
                   {existingRoutine?.exists && !overrideMode ? <p className="text-center text-sm text-primary font-medium bg-muted border border-border rounded-2xl py-3 px-4">
                       {t("pages.routines.generate.choose")} <strong>{t("pages.routines.generate.view_existing_routine_2")}</strong> or <strong>{t("pages.routines.generate.override_regenerate_2")}</strong> {t("pages.routines.generate.above_to_continue")}
-                    </p> : <>
+                    </p> : fixedReviewState ? null : <>
                       {/* Standard rule-based routine */}
-                      <Button onClick={() => handleGenerate(false)} disabled={!isFormValid || isGenerating || isAiGenerating} size="lg" className={`w-full rounded-full h-14 text-lg font-bold shadow-sm transition-all ${overrideMode ? "bg-primary hover:bg-primary" : ""}`}>
+                      <Button onClick={() => handleGenerate(false)} disabled={!isFormValid || isGenerating || isAiGenerating || !!inlineFixedBlocking} size="lg" className={`w-full rounded-full h-14 text-lg font-bold shadow-sm transition-all ${overrideMode ? "bg-primary hover:bg-primary" : ""}`}>
                         {isGenerating ? <><Sparkles className="h-5 w-5 mr-2 animate-spin" />{t("pages.routines.generate.generating")}</> : overrideMode ? <><RefreshCw className="h-5 w-5 mr-2" />{t("pages.routines.generate.regenerate_override")}</> : <><Sparkles className="h-5 w-5 mr-2" />{t("pages.routines.generate.generate_smart_routine")}</>}
                       </Button>
 
                       {/* Smart AI Routine button */}
                       <div className="relative">
-                        <Button onClick={() => handleAiGenerate(false)} disabled={!isFormValid || isGenerating || isAiGenerating || createMutation.isPending} size="lg" variant="outline" className="w-full rounded-full h-12 text-base font-bold border-2 border-border text-primary hover:bg-muted hover:border-border transition-all">
+                        <Button onClick={() => handleAiGenerate(false)} disabled={!isFormValid || isGenerating || isAiGenerating || createMutation.isPending || !!inlineFixedBlocking} size="lg" variant="outline" className="w-full rounded-full h-12 text-base font-bold border-2 border-border text-primary hover:bg-muted hover:border-border transition-all">
                           {isAiGenerating ? <><Brain className="h-5 w-5 mr-2 animate-pulse" />{t("pages.routines.generate.amy_is_thinking")}</> : <><Zap className="h-5 w-5 mr-2" />{t("pages.routines.generate.smart_amy_ai_routine")}</>}
                         </Button>
                         <Badge className="absolute -top-2 -right-1 bg-gradient-to-r from-primary to-primary text-white text-[10px] font-bold border-0 px-1.5 py-0.5">

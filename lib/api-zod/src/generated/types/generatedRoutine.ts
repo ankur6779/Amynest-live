@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { FixedActivitiesResult } from './fixedActivitiesResult';
 import type { RoutineItem } from './routineItem';
 
 export interface GeneratedRoutine {
@@ -12,4 +13,6 @@ export interface GeneratedRoutine {
   items: RoutineItem[];
   /** Human-readable explanations of how this routine was adapted to the child's signals, goals, and energy profile. */
   adaptations?: string[] | null;
+  /** Debug and conflict summary when fixed recurring activities were applied. */
+  fixedActivitiesResult?: FixedActivitiesResult | null;
 }

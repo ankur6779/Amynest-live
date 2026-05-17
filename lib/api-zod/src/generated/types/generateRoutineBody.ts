@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { FixedActivity } from './fixedActivity';
 import type { GenerateRoutineBodyCaregiver } from './generateRoutineBodyCaregiver';
 import type { GenerateRoutineBodySchoolMealMode } from './generateRoutineBodySchoolMealMode';
 import type { GenerateRoutineBodyWeatherOutdoor } from './generateRoutineBodyWeatherOutdoor';
@@ -14,6 +15,8 @@ export interface GenerateRoutineBody {
   date: string;
   hasSchool?: boolean;
   specialPlans?: string | null;
+  /** Recurring locked activities for the child; filtered to the routine date weekday. */
+  fixedActivities?: FixedActivity[] | null;
   fridgeItems?: string | null;
   mood?: string | null;
   /** Who is handling the child today. Drives tone, simplification, and bonding density. Reuses the HandlerKey enum from @workspace/family-routine. */
@@ -27,4 +30,6 @@ export interface GenerateRoutineBody {
   schoolEnd?: string | null;
   /** Controls whether and how school meal/tiffin suggestions are generated. "disabled" skips all school meals. Defaults to snack_and_packed_lunch on a school day. */
   schoolMealMode?: GenerateRoutineBodySchoolMealMode;
+  /** When true, allows generation despite blocking fixed-activity config conflicts (sleep/invalid times). */
+  confirmBlockingFixedActivities?: boolean;
 }

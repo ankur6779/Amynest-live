@@ -48,8 +48,24 @@ import {
 } from "./routine-age-feeding.js";
 import { getRoutineOutcomeStore } from "./routine-outcome-log.js";
 import {
+  ensureFixedActivitiesPreserved,
+  detectSpecialFixedConflicts,
+  finalizeFixedActivitiesSummary,
+  fixedActivitiesAdaptationTags,
+  mergeTimelineShifts,
+  shiftMealsAroundFixedBlocks,
+  injectFixedActivityBlocks,
+  parseFixedActivitiesForDate,
+  removeSimilarDynamicBlocks,
+  validateFixedActivitiesPlacement,
+  type FixedActivitiesDebug,
+  type FixedActivityInput,
+} from "./routine-fixed-activities.js";
+import {
+  ensureSpecialEventsPreserved,
   injectSpecialEventBlock,
   parseSpecialPlans,
+  shiftNonLockedAroundLockedEvents,
   validateSpecialEventPlacement,
   type ParsedSpecialEvent,
   type SpecialEventDebug,
@@ -84,6 +100,10 @@ export type IntelligencePipelineInput = {
   feedingType?: "breastfeeding" | "formula" | "mixed";
   /** Raw parent special plans text. */
   specialPlans?: string;
+  /** Recurring fixed activities (tuition, sports, classes). */
+  fixedActivities?: FixedActivityInput[];
+  /** Routine date (YYYY-MM-DD) — filters fixedActivities by weekday. */
+  routineDate?: string;
 };
 
 export type IntelligencePipelineResult = {
@@ -101,6 +121,8 @@ export type IntelligencePipelineResult = {
   confidence: RoutineConfidence;
   specialEvent: SpecialEventDebug;
   parsedSpecialEvent: ParsedSpecialEvent | null;
+  fixedActivities: FixedActivitiesDebug;
+  parsedFixedActivities: ReturnType<typeof parseFixedActivitiesForDate>["activities"];
 };
 
 function pipelineDebug(enabled: boolean | undefined, log: string[], msg: string, data?: unknown): void {
@@ -169,6 +191,12 @@ export function runRoutineIntelligencePipeline(
     sleepMins: sleepMinsEarly,
   });
 
+  const routineDate =
+    input.routineDate ??
+    builtContext.referenceDate?.toISOString().slice(0, 10) ??
+    new Date().toISOString().slice(0, 10);
+  const fixedParse = parseFixedActivitiesForDate(input.fixedActivities, routineDate);
+
   if (isExclusiveInfantPhase(ageInMonthsEarly)) {
     const wake = normalizeTo24h(scheduleOpts.wakeUpTime);
     const sleep = normalizeTo24h(scheduleOpts.sleepTime);
@@ -220,6 +248,8 @@ export function runRoutineIntelligencePipeline(
       confidence: "high",
       specialEvent: specialParse.debug,
       parsedSpecialEvent: specialParse.event,
+      fixedActivities: fixedParse.debug,
+      parsedFixedActivities: fixedParse.activities,
     };
   }
 
@@ -238,6 +268,18 @@ export function runRoutineIntelligencePipeline(
     });
   }
 
+  if (fixedParse.activities.length > 0) {
+    items = injectFixedActivityBlocks(items, fixedParse.activities);
+    pipelineDebug(debug, debugLog, "fixedActivitiesInjected", fixedParse.activities);
+    for (const f of fixedParse.activities) {
+      decisionTrace.push({
+        kind: "priority",
+        message: `Fixed activity locked: ${f.activity} @ ${minsToTime24(f.startMins)}–${minsToTime24(f.endMins)}`,
+        detail: { days: f.days, source: "fixed" },
+      });
+    }
+  }
+
   const preEnhancementSnapshot = cloneItems(items);
   const baselineDurations = snapshotDurations(items);
 
@@ -249,6 +291,18 @@ export function runRoutineIntelligencePipeline(
     decisionTrace,
   });
   pipelineDebug(debug, debugLog, "reshaped for weather + priority slots (pre-schedule)");
+
+  if (fixedParse.activities.length > 0) {
+    const stripped = removeSimilarDynamicBlocks(items, fixedParse.activities);
+    items = stripped.items;
+    if (stripped.removed.length) {
+      fixedParse.debug.adjustmentsMade.push(
+        `Removed similar AI blocks: ${stripped.removed.join(", ")}`,
+      );
+      pipelineDebug(debug, debugLog, "removedSimilarToFixed", stripped.removed);
+    }
+    items = injectFixedActivityBlocks(items, fixedParse.activities);
+  }
 
   items = scheduleRoutineItems(items, {
     ...scheduleOpts,
@@ -326,6 +380,20 @@ export function runRoutineIntelligencePipeline(
     pipelineDebug(debug, debugLog, "mealAwareScheduling (post-resolve)", mealFlow.adjustments);
   }
 
+  const postMealShift = shiftNonLockedAroundLockedEvents(items);
+  items = postMealShift.items;
+  mergeTimelineShifts(fixedParse.debug, postMealShift.shiftsApplied);
+  items = ensureSpecialEventsPreserved(items, specialParse.event, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+  });
+  items = ensureFixedActivitiesPreserved(items, fixedParse.activities, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+  }, fixedParse.debug);
+  pipelineDebug(debug, debugLog, "specialEventPreserved", specialParse.event?.activity ?? null);
+  pipelineDebug(debug, debugLog, "fixedActivitiesPreserved", fixedParse.debug.activitiesForToday);
+
   items = applyWeatherToScheduledItems(items, state, decisionTrace);
   if (state.country === "AE") {
     items = enforceUaeOutdoorHardConstraint(items, decisionTrace);
@@ -376,6 +444,14 @@ export function runRoutineIntelligencePipeline(
     );
     const mealFallback = applyMealAwareScheduling(fallback, state, flowOpts);
     fallback = mealFallback.items;
+    fallback = ensureSpecialEventsPreserved(fallback, specialParse.event, {
+      wakeMins: wakeMinsEarly,
+      sleepMins: sleepMinsEarly,
+    });
+    fallback = ensureFixedActivitiesPreserved(fallback, fixedParse.activities, {
+      wakeMins: wakeMinsEarly,
+      sleepMins: sleepMinsEarly,
+    }, fixedParse.debug);
     fallback = enrichRoutineMeals(fallback, {
       country: state.country,
       fridgeItems: input.fridgeItems,
@@ -410,7 +486,30 @@ export function runRoutineIntelligencePipeline(
     items = validated.items;
   }
 
-  const polished = polishRoutineOutput(items, state, decisionTrace);
+  let polished = polishRoutineOutput(items, state, decisionTrace);
+  polished = ensureSpecialEventsPreserved(polished, specialParse.event, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+  });
+  polished = ensureFixedActivitiesPreserved(polished, fixedParse.activities, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+  }, fixedParse.debug);
+
+  const mealShift = shiftMealsAroundFixedBlocks(polished, fixedParse.activities, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+  });
+  polished = mealShift.items;
+  mergeTimelineShifts(fixedParse.debug, mealShift.shifts);
+  fixedParse.debug.adjustmentsMade.push(...mealShift.adjustments);
+  for (const c of mealShift.unresolved) {
+    fixedParse.debug.conflicts.push(c);
+    fixedParse.debug.conflictsDetected.push(c.warning);
+  }
+  fixedParse.debug.validationWarnings.push(...mealShift.warnings);
+
+  polished = enforceSleepIsLast(polished, decisionTrace);
   const confidence = deriveRoutineConfidence(
     input.builtContext,
     state,
@@ -429,6 +528,30 @@ export function runRoutineIntelligencePipeline(
     },
   );
 
+  const fixedActivities = validateFixedActivitiesPlacement(
+    polished,
+    fixedParse.activities,
+    {
+      wakeMins: wakeMinsEarly,
+      sleepMins: sleepMinsEarly,
+      schoolStartMins: scheduleOpts.schoolStartMins,
+      schoolEndMins: scheduleOpts.schoolEndMins,
+      hasSchool: scheduleOpts.hasSchool,
+    },
+  );
+  fixedActivities.conflicts.push(...fixedParse.debug.conflicts);
+  fixedActivities.conflictsDetected.push(...fixedParse.debug.conflictsDetected);
+  fixedActivities.adjustmentsMade.push(...fixedParse.debug.adjustmentsMade);
+  fixedActivities.shiftsApplied.push(...fixedParse.debug.shiftsApplied);
+  fixedActivities.validationWarnings.push(...fixedParse.debug.validationWarnings);
+
+  for (const c of detectSpecialFixedConflicts(fixedParse.activities, specialParse.event)) {
+    fixedActivities.conflicts.push(c);
+    fixedActivities.conflictsDetected.push(c.warning);
+  }
+
+  finalizeFixedActivitiesSummary(fixedActivities);
+
   return {
     items: polished,
     validated: validated.valid,
@@ -441,10 +564,13 @@ export function runRoutineIntelligencePipeline(
     validationErrors: [
       ...validated.errors,
       ...specialEvent.validationWarnings,
+      ...fixedActivities.validationWarnings,
     ],
     decisionTrace,
     confidence,
     specialEvent,
     parsedSpecialEvent: specialParse.event,
+    fixedActivities,
+    parsedFixedActivities: fixedParse.activities,
   };
 }

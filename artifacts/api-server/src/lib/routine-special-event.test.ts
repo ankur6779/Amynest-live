@@ -2,8 +2,10 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   buildSpecialEventScheduleItem,
+  ensureSpecialEventsPreserved,
   injectSpecialEventBlock,
   parseSpecialPlans,
+  shiftNonLockedAroundLockedEvents,
   stripHandlerSegments,
   validateSpecialEventPlacement,
 } from "./routine-special-event.js";
@@ -143,5 +145,57 @@ describe("validateSpecialEventPlacement", () => {
     });
     assert.equal(debug.eventPlacementStatus, "success");
     assert.equal(parseTimeToMins(debug.eventTime!), event.startMins);
+  });
+});
+
+describe("ensureSpecialEventsPreserved", () => {
+  it("re-inserts birthday when dropped from meal integration output", () => {
+    const { event } = parseSpecialPlans("Birthday party at 17:00", {
+      wakeMins: 7 * 60,
+      sleepMins: 21 * 60,
+    });
+    assert.ok(event);
+    const without = [
+      { time: "07:00", activity: "Wake up", duration: 30, category: "morning_routine", status: "pending" as const },
+      { time: "15:15", activity: "After-school refuel", duration: 35, category: "meal", status: "pending" as const },
+      { time: "17:10", activity: "Soccer practice", duration: 45, category: "exercise", status: "pending" as const },
+      { time: "20:00", activity: "Dinner", duration: 35, category: "meal", status: "pending" as const },
+      { time: "21:00", activity: "Lights out", duration: 30, category: "sleep", status: "pending" as const },
+    ];
+    const restored = ensureSpecialEventsPreserved(without, event, {
+      wakeMins: 7 * 60,
+      sleepMins: 21 * 60,
+    });
+    const party = restored.find((i) => /birthday/i.test(i.activity));
+    assert.ok(party);
+    assert.equal(party!.locked, true);
+    assert.equal(parseTimeToMins(party!.time), 17 * 60);
+    const soccer = restored.find((i) => /soccer/i.test(i.activity));
+    assert.ok(soccer);
+    assert.ok(parseTimeToMins(soccer!.time) >= 17 * 60 + 90 + 5);
+  });
+
+  it("shifts overlapping blocks but keeps locked event time", () => {
+    const { event } = parseSpecialPlans("Birthday party at 17:00", {
+      wakeMins: 7 * 60,
+      sleepMins: 21 * 60,
+    });
+    assert.ok(event);
+    const block = buildSpecialEventScheduleItem(event);
+    const items = [
+      block,
+      {
+        time: "17:00",
+        activity: "Snack",
+        duration: 20,
+        category: "meal",
+        status: "pending" as const,
+      },
+    ];
+    const out = shiftNonLockedAroundLockedEvents(items).items;
+    const party = out.find((i) => i.locked);
+    assert.equal(parseTimeToMins(party!.time), 17 * 60);
+    const snack = out.find((i) => /snack/i.test(i.activity));
+    assert.ok(parseTimeToMins(snack!.time) >= 17 * 60 + 90);
   });
 });
