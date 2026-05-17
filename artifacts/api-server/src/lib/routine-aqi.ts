@@ -51,8 +51,121 @@ export const FALLBACK_ENV_REASON =
 export function maxOutdoorMinutesFromAqi(aqi: number): number | null {
   if (aqi > 300) return 0;
   if (aqi >= 200) return 15;
-  if (aqi >= 150) return 20;
+  if (aqi >= 150) return 30;
   return null;
+}
+
+/** Resolved outdoor duration cap for enforcement (policy ∩ AQI hard cap). */
+export function resolveOutdoorDurationCap(
+  aqi: number | null | undefined,
+  country: LaunchCountry | string = "IN",
+): number | null {
+  if (aqi == null || !Number.isFinite(aqi)) return null;
+  const policy = deriveAqiOutdoorPolicy(aqi, country);
+  return policy.maxOutdoorDurationMins;
+}
+
+function isRainyCondition(condition: string | null | undefined): boolean {
+  if (!condition) return false;
+  return /\b(rain|drizzle|storm|shower)\b/i.test(condition);
+}
+
+export type OutdoorClampOpts = {
+  aqi: number | null | undefined;
+  country?: LaunchCountry | string;
+  condition?: string | null;
+  /** When true, outdoor blocks are capped at 10 min (rainy day). */
+  rainyDayMaxMins?: number;
+};
+
+/**
+ * Trim or split outdoor blocks so they respect AQI duration policy.
+ * Rainy days: cap outdoor at 10 min or convert overflow to indoor continuation.
+ */
+export function enforceOutdoorDurationLimits(
+  items: RoutineScheduleItem[],
+  opts: OutdoorClampOpts,
+): { items: RoutineScheduleItem[]; adjustments: string[] } {
+  const adjustments: string[] = [];
+  if (!items.length) return { items, adjustments };
+
+  const country = opts.country ?? "IN";
+  const rainy = isRainyCondition(opts.condition);
+  const rainyCap = opts.rainyDayMaxMins ?? 10;
+  const aqiCap = resolveOutdoorDurationCap(opts.aqi, country);
+
+  const out: RoutineScheduleItem[] = [];
+
+  for (const raw of items) {
+    const item = { ...raw };
+    const isOutdoor =
+      isOutdoorActivityItem(item) ||
+      /\blight outdoor walk\b/i.test(item.activity);
+    const alreadyIndoorLabeled = /\bindoor\b/i.test(item.activity);
+
+    if (!isOutdoor || alreadyIndoorLabeled) {
+      out.push(item);
+      continue;
+    }
+
+    let cap = aqiCap;
+    if (rainy) {
+      cap = cap == null ? rainyCap : Math.min(cap, rainyCap);
+    }
+
+    if (cap == null || cap <= 0) {
+      if (cap === 0) {
+        adjustments.push(`removed outdoor "${item.activity}" (indoor-only air quality)`);
+        continue;
+      }
+      out.push(item);
+      continue;
+    }
+
+    const dur = item.duration ?? 30;
+    if (dur <= cap) {
+      out.push(item);
+      continue;
+    }
+
+    const start = parseTimeToMins(item.time);
+    const outdoorDur = cap;
+    const remainder = dur - outdoorDur;
+
+    item.duration = outdoorDur;
+    if (rainy && outdoorDur <= rainyCap) {
+      item.activity = item.activity.replace(/\boutdoor\b/gi, "Brief outdoor");
+      item.notes = [item.notes, "Short outdoor window on a rainy day."].filter(Boolean).join(" ");
+    }
+    item.notes = [item.notes, `Outdoor capped at ${outdoorDur} min for air quality.`]
+      .filter(Boolean)
+      .join(" ");
+    out.push(item);
+
+    if (remainder >= 10) {
+      const indoorStart = start + outdoorDur;
+      out.push({
+        time: minsToTime24(indoorStart),
+        activity: "Family time together",
+        duration: remainder,
+        category: "family",
+        status: item.status ?? "pending",
+        notes: rainy
+          ? "Moved indoors after brief outdoor time."
+          : "Continued indoors after outdoor air-quality limit.",
+      });
+      adjustments.push(
+        `split "${raw.activity}" → ${outdoorDur}min outdoor + ${remainder}min indoor`,
+      );
+    } else {
+      adjustments.push(`trimmed outdoor "${raw.activity}" from ${dur}min to ${outdoorDur}min`);
+    }
+  }
+
+  return {
+    items: out.sort((a, b) => parseTimeToMins(a.time) - parseTimeToMins(b.time)),
+    adjustments,
+  };
 }
 
 /** User-facing severity for advisories — AQI ≥ 150 is unhealthy. */

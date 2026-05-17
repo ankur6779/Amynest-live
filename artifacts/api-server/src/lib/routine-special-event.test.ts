@@ -2,12 +2,15 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   buildSpecialEventScheduleItem,
+  cleanupBlocksBeforeEvents,
   ensureSpecialEventsPreserved,
   injectSpecialEventBlock,
+  injectSpecialEventBlocks,
   parseSpecialPlans,
   shiftNonLockedAroundLockedEvents,
   stripHandlerSegments,
   validateSpecialEventPlacement,
+  validateSpecialEventsPlacement,
 } from "./routine-special-event.js";
 import type { RoutineScheduleItem } from "./routine-scheduler.js";
 import { parseTimeToMins } from "./routine-scheduler.js";
@@ -53,6 +56,28 @@ describe("parseSpecialPlans", () => {
     assert.equal(event.type, "doctor");
     assert.equal(event.timeSource, "inferred");
     assert.ok(event.startMins < 12 * 60);
+  });
+
+  it("parses multiple pipe-separated events", () => {
+    const { events, debug } = parseSpecialPlans(
+      "Birthday party at 11:00 | Family dinner outing at 19:00",
+      { wakeMins: 7 * 60, sleepMins: 21 * 60 + 30 },
+    );
+    assert.equal(events.length, 2);
+    assert.equal(debug.eventCount, 2);
+    assert.equal(events[0]!.startMins, 11 * 60);
+    assert.equal(events[1]!.startMins, 19 * 60);
+    assert.match(events[0]!.activity, /birthday|party/i);
+    assert.match(events[1]!.activity, /dinner|outing/i);
+  });
+
+  it("parses array of event strings", () => {
+    const { events } = parseSpecialPlans(
+      ["Birthday party at 11:00", "Family dinner outing at 19:00"],
+      { wakeMins: 7 * 60, sleepMins: 22 * 60 },
+    );
+    assert.equal(events.length, 2);
+    assert.equal(events[1]!.startMins, 19 * 60);
   });
 
   it("strips caregiver handler segments from pipe-delimited plans", () => {
@@ -147,6 +172,46 @@ describe("validateSpecialEventPlacement", () => {
     assert.equal(parseTimeToMins(debug.eventTime!), event.startMins);
   });
 });
+
+describe("injectSpecialEventBlocks and cleanup", () => {
+  it("injects two events and trims family filler before birthday", () => {
+    const { events } = parseSpecialPlans(
+      "Birthday party at 11:00 | Family dinner outing at 19:00",
+      { wakeMins: 7 * 60, sleepMins: 22 * 60 },
+    );
+    const base: RoutineScheduleItem[] = [
+      {
+        time: "10:30",
+        activity: "Family time together",
+        duration: 45,
+        category: "family",
+        status: "pending",
+      },
+      {
+        time: "07:00",
+        activity: "Wake up",
+        duration: 30,
+        category: "morning_routine",
+        status: "pending",
+      },
+      { time: "21:30", activity: "Lights out", duration: 30, category: "sleep", status: "pending" },
+    ];
+    const out = injectSpecialEventBlocks(base, events);
+    const party = out.find((i) => /birthday/i.test(i.activity));
+    const outing = out.find((i) => /dinner|outing/i.test(i.activity) && i.locked);
+    assert.ok(party);
+    assert.ok(outing);
+    assert.equal(parseTimeToMins(party!.time), 11 * 60);
+    const family = out.find((i) => /family time together/i.test(i.activity));
+    if (family) {
+      assert.ok(itemEnd(family) <= 11 * 60 - 20);
+    }
+  });
+});
+
+function itemEnd(item: RoutineScheduleItem): number {
+  return parseTimeToMins(item.time) + (item.duration ?? 30);
+}
 
 describe("ensureSpecialEventsPreserved", () => {
   it("re-inserts birthday when dropped from meal integration output", () => {
