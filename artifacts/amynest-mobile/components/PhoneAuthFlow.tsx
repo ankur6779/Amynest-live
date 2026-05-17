@@ -19,6 +19,9 @@ import {
   isValidNationalPhone,
   clearPhoneRecaptchaVerifier,
   getPhoneRecaptchaVerifier,
+  logPhoneOtpDomainContext,
+  redirectWwwToCanonicalApex,
+  warnIfPhoneAuthDomainMissingFromFirebase,
   type PhoneCountry,
 } from "@workspace/phone-auth";
 import CountryPickerModal from "@/components/CountryPickerModal";
@@ -56,6 +59,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
   useEffect(() => {
     if (Platform.OS !== "web" || step === "idle") return;
+    warnIfPhoneAuthDomainMissingFromFirebase();
     void getPhoneRecaptchaVerifier(firebaseAuth).catch((err) => {
       console.warn("[PhoneAuthFlow] reCAPTCHA pre-render failed", err);
     });
@@ -81,12 +85,15 @@ export default function PhoneAuthFlow({ onError }: Props) {
       onError?.(msg);
       return;
     }
+    if (Platform.OS === "web" && redirectWwwToCanonicalApex()) return;
+
     setPhoneError(null);
     setStep("sending");
     try {
       let result: ConfirmationResult;
 
       if (Platform.OS === "web") {
+        logPhoneOtpDomainContext("before signInWithPhoneNumber");
         if (forceResend) {
           clearPhoneRecaptchaVerifier();
         }

@@ -11,6 +11,8 @@ import {
   PHONE_COUNTRIES,
   clearPhoneRecaptchaVerifier,
   getPhoneRecaptchaVerifier,
+  logPhoneOtpDomainContext,
+  redirectWwwToCanonicalApex,
   warnIfPhoneAuthDomainMissingFromFirebase,
   type PhoneCountry,
 } from "@workspace/phone-auth";
@@ -227,6 +229,9 @@ export default function PhoneAuthFlow({ onError }: Props) {
       onError?.(msg);
       return;
     }
+    if (redirectWwwToCanonicalApex()) return;
+
+    logPhoneOtpDomainContext("before signInWithPhoneNumber");
     setPhoneError(null);
     setStep("sending");
     try {

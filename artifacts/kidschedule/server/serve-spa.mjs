@@ -20,6 +20,10 @@ const STATIC_ROOT = path.resolve(
 );
 const basePath = (process.env.BASE_PATH || "/").replace(/\/+$/, "");
 
+/** Apex host for Firebase Phone OTP / reCAPTCHA (www must not serve the SPA). */
+const CANONICAL_PRODUCTION_HOST = "amynest.in";
+const WWW_PRODUCTION_HOST = `www.${CANONICAL_PRODUCTION_HOST}`;
+
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
@@ -108,6 +112,15 @@ const server = http.createServer((req, res) => {
   }
 
   const url = new URL(req.url || "/", `http://${req.headers.host}`);
+
+  if (url.hostname === WWW_PRODUCTION_HOST) {
+    url.hostname = CANONICAL_PRODUCTION_HOST;
+    url.protocol = "https:";
+    res.writeHead(301, { Location: url.toString() });
+    res.end();
+    return;
+  }
+
   let pathname = decodeURIComponent(url.pathname);
 
   if (basePath && pathname.startsWith(basePath)) {

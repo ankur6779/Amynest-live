@@ -22,3 +22,12 @@ export {
   firebasePhoneAuthDomainHint,
   warnIfPhoneAuthDomainMissingFromFirebase,
 } from "./phone-recaptcha";
+export {
+  CANONICAL_PRODUCTION_HOST,
+  CANONICAL_PRODUCTION_ORIGIN,
+  getCanonicalWebOrigin,
+  isAmyNestProductionHost,
+  logPhoneOtpDomainContext,
+  redirectWwwToCanonicalApex,
+  shouldRedirectWwwToApex,
+} from "./site-domain";

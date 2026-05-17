@@ -1,16 +1,14 @@
 import { RecaptchaVerifier, type ApplicationVerifier, type Auth } from "firebase/auth";
+import {
+  FIREBASE_PHONE_AUTH_DOMAINS,
+  logPhoneOtpDomainContext,
+  redirectWwwToCanonicalApex,
+  shouldRedirectWwwToApex,
+} from "./site-domain";
+
+export { FIREBASE_PHONE_AUTH_DOMAINS } from "./site-domain";
 
 export const RECAPTCHA_CONTAINER_ID = "recaptcha-container";
-
-/** Domains that must appear in Firebase → Authentication → Authorized domains. */
-export const FIREBASE_PHONE_AUTH_DOMAINS = [
-  "amynest.in",
-  "www.amynest.in",
-  "localhost",
-  "127.0.0.1",
-  "amynest-live-1.onrender.com",
-  "amynest-frontend-dev.onrender.com",
-] as const;
 
 let verifierInstance: RecaptchaVerifier | null = null;
 let renderPromise: Promise<ApplicationVerifier> | null = null;
@@ -74,6 +72,11 @@ export async function getPhoneRecaptchaVerifier(auth: Auth): Promise<Application
     throw new Error("reCAPTCHA is only available in the browser.");
   }
 
+  if (redirectWwwToCanonicalApex()) {
+    throw new Error("Redirecting to amynest.in for phone verification…");
+  }
+
+  logPhoneOtpDomainContext("reCAPTCHA init");
   ensureRecaptchaContainer();
 
   if (verifierInstance) {
@@ -111,24 +114,17 @@ export async function getPhoneRecaptchaVerifier(auth: Auth): Promise<Application
     console.error("[phone-recaptcha] render failed", {
       err,
       hostname: host,
-      wwwHint:
-        host === "www.amynest.in"
-          ? "Add www.amynest.in (not just amynest.in) to Firebase Authorized domains"
-          : `Add ${host} to Firebase Authorized domains`,
+      hint: shouldRedirectWwwToApex(host)
+        ? "www should redirect to amynest.in — hard-refresh or clear cache"
+        : `Ensure ${host} is in Firebase → Authentication → Authorized domains (${FIREBASE_PHONE_AUTH_DOMAINS.join(", ")})`,
     });
     throw err;
   }
 }
 
-/** Call on sign-in page mount — surfaces common www vs apex misconfiguration. */
+/** Call on sign-in page mount — redirects www → apex before reCAPTCHA. */
 export function warnIfPhoneAuthDomainMissingFromFirebase(): void {
-  const host = window.location.hostname;
-  if (host === "www.amynest.in") {
-    console.warn(
-      "[phone-recaptcha] You are on www.amynest.in. Firebase Authorized domains must include " +
-        "www.amynest.in (amynest.in alone is not enough when the site redirects to www).",
-    );
-  }
+  redirectWwwToCanonicalApex();
 }
 
 export function firebasePhoneAuthDomainHint(hostname = window.location.hostname): string {

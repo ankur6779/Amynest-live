@@ -6,6 +6,7 @@ import "./i18n";
 import "./lib/notification-deep-link";
 import { initNativeShell } from "./lib/native-shell";
 import { getAppApiBaseOrigin } from "./lib/api";
+import { redirectWwwToCanonicalApex } from "@workspace/phone-auth";
 import {
   clearCacheRecoveryPending,
   runBootCacheRecoveryIfNeeded,
@@ -33,6 +34,8 @@ const mark = (p: string) => {
 
 async function bootstrap(): Promise<void> {
   if (typeof window !== "undefined") {
+    if (redirectWwwToCanonicalApex()) return;
+
     // Purge stale SW/index.html cache before any registration or React mount.
     await runBootCacheRecoveryIfNeeded();
 

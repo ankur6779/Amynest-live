@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { Link, useLocation } from "wouter";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import {
   applyActionCode,
@@ -9,7 +9,10 @@ import {
 import { firebaseAuth } from "@/lib/firebase";
 import { resetVerificationRateLimit } from "@/lib/email-verification-rate";
 import { formatAuthErrorForUi, logFirebaseAuthError } from "@/lib/firebase-auth-error";
-import { parseFirebaseActionParams } from "@/lib/firebase-action-params";
+import {
+  buildCanonicalAuthActionHref,
+  parseFirebaseActionParams,
+} from "@/lib/firebase-action-params";
 import { waitForFirebaseAuthReady } from "@/lib/wait-for-firebase-auth-ready";
 
 type ActionStatus =
@@ -19,8 +22,6 @@ type ActionStatus =
   | "showResetForm"
   | "passwordUpdated"
   | "error";
-
-const REDIRECT_MS = 3000;
 
 const SHELL: React.CSSProperties = {
   minHeight: "100vh",
@@ -72,12 +73,22 @@ const LOGIN_BUTTON: React.CSSProperties = {
   boxShadow: "0 0 24px rgba(236,72,153,0.45)",
 };
 
-function readActionParams(): { mode: string | null; oobCode: string | null } {
-  const fromSearch = new URLSearchParams(window.location.search);
-  const mode = fromSearch.get("mode");
-  const oobCode = fromSearch.get("oobCode") ?? fromSearch.get("oob_code");
-  if (mode && oobCode) return { mode, oobCode };
-  return parseFirebaseActionParams();
+function Spinner() {
+  return (
+    <div
+      role="status"
+      aria-label="Loading"
+      style={{
+        width: 40,
+        height: 40,
+        margin: "0 auto",
+        borderRadius: "50%",
+        border: "3px solid rgba(168,85,247,0.2)",
+        borderTopColor: "hsl(var(--brand-pink-500))",
+        animation: "authActionSpin 0.8s linear infinite",
+      }}
+    />
+  );
 }
 
 /**
@@ -86,21 +97,26 @@ function readActionParams(): { mode: string | null; oobCode: string | null } {
  */
 export default function AuthActionPage() {
   const { t } = useTranslation();
-  const [, setLocation] = useLocation();
   const [status, setStatus] = useState<ActionStatus>("loading");
   const [oobCode, setOobCode] = useState<string | null>(null);
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [showPass, setShowPass] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const processedRef = useRef(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const mode = params.get("mode") ?? readActionParams().mode;
-    const code = params.get("oobCode") ?? params.get("oob_code") ?? readActionParams().oobCode;
+    const canonical = buildCanonicalAuthActionHref();
+    if (canonical && `${window.location.pathname}${window.location.search}` !== canonical) {
+      window.history.replaceState(null, "", canonical);
+    }
+  }, []);
 
+  useEffect(() => {
+    if (processedRef.current) return;
+
+    const { mode, oobCode: code } = parseFirebaseActionParams();
     console.info("[auth-action] Processing", { mode, hasCode: Boolean(code) });
 
     if (!mode || !code) {
@@ -109,6 +125,7 @@ export default function AuthActionPage() {
     }
 
     setOobCode(code);
+    processedRef.current = true;
     let cancelled = false;
 
     void (async () => {
@@ -128,9 +145,6 @@ export default function AuthActionPage() {
           }
 
           setStatus("emailVerified");
-          setTimeout(() => {
-            if (!cancelled) setLocation("/sign-in");
-          }, REDIRECT_MS);
           return;
         }
 
@@ -155,7 +169,7 @@ export default function AuthActionPage() {
     return () => {
       cancelled = true;
     };
-  }, [setLocation]);
+  }, []);
 
   async function handleReset(e: FormEvent) {
     e.preventDefault();
@@ -175,7 +189,6 @@ export default function AuthActionPage() {
     try {
       await confirmPasswordReset(firebaseAuth, oobCode, password);
       setStatus("passwordUpdated");
-      setTimeout(() => setLocation("/sign-in"), REDIRECT_MS);
     } catch (err: unknown) {
       logFirebaseAuthError("auth-action:confirmPasswordReset", err);
       setFormError(formatAuthErrorForUi(err));
@@ -188,110 +201,133 @@ export default function AuthActionPage() {
     password.length >= 6 && confirm.length >= 6 && password === confirm && !busy;
 
   return (
-    <div style={SHELL}>
-      <div style={CARD}>
-        {status === "loading" && (
-          <>
-            <p style={{ margin: 0, fontSize: 15, color: "rgba(200,180,255,0.75)" }}>
-              {t("screens.auth_action.processing")}
-            </p>
-          </>
-        )}
-
-        {status === "emailVerified" && (
-          <>
-            <h2 style={{ margin: "0 0 12px", fontSize: 22, fontWeight: 800, color: "#fff" }}>
-              {t("screens.auth_action.email_verified_title")}
-            </h2>
-            <p style={{ margin: "0 0 24px", fontSize: 15, color: "rgba(134,239,172,0.95)", lineHeight: 1.55 }}>
-              {t("screens.verify_email_action.success_message")}
-            </p>
-            <Link href="/sign-in" style={LOGIN_BUTTON}>
-              {t("screens.verify_email_action.go_to_login")}
-            </Link>
-          </>
-        )}
-
-        {status === "showResetForm" && (
-          <>
-            <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 800, color: "#fff" }}>
-              {t("screens.reset_password.title")}
-            </h2>
-            {accountEmail && (
-              <p style={{ margin: "0 0 16px", fontSize: 14, color: "rgba(236,72,153,0.85)", fontWeight: 600 }}>
-                {accountEmail}
+    <>
+      <AuthActionSpinnerStyles />
+      <div style={SHELL}>
+        <div style={CARD}>
+          {status === "loading" && (
+            <>
+              <Spinner />
+              <p style={{ margin: "16px 0 0", fontSize: 15, color: "rgba(200,180,255,0.75)" }}>
+                {t("screens.auth_action.processing")}
               </p>
-            )}
-            {formError && (
-              <p style={{ margin: "0 0 16px", fontSize: 13, color: "rgba(252,165,165,0.9)" }}>{formError}</p>
-            )}
-            <form onSubmit={(e) => void handleReset(e)} style={{ textAlign: "left" }}>
-              <input
-                type={showPass ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={t("screens.reset_password.new_password")}
-                autoComplete="new-password"
-                minLength={6}
-                required
-                style={{ ...INPUT_STYLE, marginBottom: 12 }}
-              />
-              <input
-                type={showPass ? "text" : "password"}
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                placeholder={t("screens.reset_password.confirm_password")}
-                autoComplete="new-password"
-                minLength={6}
-                required
-                style={{ ...INPUT_STYLE, marginBottom: 16 }}
-              />
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                style={{
-                  width: "100%",
-                  height: 48,
-                  borderRadius: 999,
-                  border: "none",
-                  background: canSubmit
-                    ? "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)"
-                    : "rgba(75,65,110,0.5)",
-                  color: "#fff",
-                  fontSize: 15,
-                  fontWeight: 700,
-                  cursor: canSubmit ? "pointer" : "not-allowed",
-                  fontFamily: "inherit",
-                }}
-              >
-                {busy ? t("screens.reset_password.updating") : t("screens.reset_password.submit")}
-              </button>
-            </form>
-          </>
-        )}
+            </>
+          )}
 
-        {status === "passwordUpdated" && (
-          <>
-            <p style={{ margin: "0 0 24px", fontSize: 15, color: "rgba(134,239,172,0.95)", lineHeight: 1.55, fontWeight: 600 }}>
-              {t("screens.auth_action.password_updated")}
-            </p>
-            <Link href="/sign-in" style={LOGIN_BUTTON}>
-              {t("screens.verify_email_action.go_to_login")}
-            </Link>
-          </>
-        )}
+          {status === "emailVerified" && (
+            <>
+              <h2 style={{ margin: "0 0 12px", fontSize: 22, fontWeight: 800, color: "#fff" }}>
+                {t("screens.auth_action.email_verified_title")}
+              </h2>
+              <p style={{ margin: "0 0 24px", fontSize: 15, color: "rgba(134,239,172,0.95)", lineHeight: 1.55 }}>
+                {t("screens.verify_email_action.success_message")}
+              </p>
+              <Link href="/sign-in" style={LOGIN_BUTTON}>
+                {t("screens.verify_email_action.go_to_login")}
+              </Link>
+            </>
+          )}
 
-        {(status === "error" || status === "invalid") && (
-          <>
-            <p style={{ margin: "0 0 24px", fontSize: 15, color: "rgba(252,165,165,0.95)", lineHeight: 1.55, fontWeight: 600 }}>
-              {formError ?? t("screens.verify_email_action.error_message")}
-            </p>
-            <Link href="/sign-in" style={LOGIN_BUTTON}>
-              {t("screens.verify_email_action.go_to_login")}
-            </Link>
-          </>
-        )}
+          {status === "showResetForm" && (
+            <>
+              <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 800, color: "#fff" }}>
+                {t("screens.reset_password.title")}
+              </h2>
+              {accountEmail && (
+                <p style={{ margin: "0 0 16px", fontSize: 14, color: "rgba(236,72,153,0.85)", fontWeight: 600 }}>
+                  {accountEmail}
+                </p>
+              )}
+              {formError && (
+                <p style={{ margin: "0 0 16px", fontSize: 13, color: "rgba(252,165,165,0.9)" }}>{formError}</p>
+              )}
+              <form onSubmit={(e) => void handleReset(e)} style={{ textAlign: "left" }}>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t("screens.reset_password.new_password")}
+                  autoComplete="new-password"
+                  minLength={6}
+                  required
+                  style={{ ...INPUT_STYLE, marginBottom: 12 }}
+                />
+                <input
+                  type="password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  placeholder={t("screens.reset_password.confirm_password")}
+                  autoComplete="new-password"
+                  minLength={6}
+                  required
+                  style={{ ...INPUT_STYLE, marginBottom: 16 }}
+                />
+                <button
+                  type="submit"
+                  disabled={!canSubmit}
+                  style={{
+                    width: "100%",
+                    height: 48,
+                    borderRadius: 999,
+                    border: "none",
+                    background: canSubmit
+                      ? "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)"
+                      : "rgba(75,65,110,0.5)",
+                    color: "#fff",
+                    fontSize: 15,
+                    fontWeight: 700,
+                    cursor: canSubmit ? "pointer" : "not-allowed",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  {busy ? t("screens.reset_password.updating") : t("screens.reset_password.submit")}
+                </button>
+              </form>
+            </>
+          )}
+
+          {status === "passwordUpdated" && (
+            <>
+              <h2 style={{ margin: "0 0 12px", fontSize: 22, fontWeight: 800, color: "#fff" }}>
+                {t("screens.reset_password.success_title")}
+              </h2>
+              <p style={{ margin: "0 0 24px", fontSize: 15, color: "rgba(134,239,172,0.95)", lineHeight: 1.55 }}>
+                {t("screens.auth_action.password_updated")}
+              </p>
+              <Link href="/sign-in" style={LOGIN_BUTTON}>
+                {t("screens.verify_email_action.go_to_login")}
+              </Link>
+            </>
+          )}
+
+          {(status === "error" || status === "invalid") && (
+            <>
+              <h2 style={{ margin: "0 0 12px", fontSize: 22, fontWeight: 800, color: "#fff" }}>
+                Link unavailable
+              </h2>
+              <p style={{ margin: "0 0 24px", fontSize: 15, color: "rgba(252,165,165,0.95)", lineHeight: 1.55 }}>
+                {formError ??
+                  (status === "invalid"
+                    ? t("screens.verify_email_action.invalid_link")
+                    : t("screens.verify_email_action.error_message"))}
+              </p>
+              <Link href="/sign-in" style={LOGIN_BUTTON}>
+                {t("screens.verify_email_action.go_to_login")}
+              </Link>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
+  );
+}
+
+function AuthActionSpinnerStyles() {
+  return (
+    <style>{`
+      @keyframes authActionSpin {
+        to { transform: rotate(360deg); }
+      }
+    `}</style>
   );
 }
