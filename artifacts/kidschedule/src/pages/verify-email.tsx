@@ -1,8 +1,14 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
-import { sendEmailVerification, signOut as fbSignOut } from "firebase/auth";
+import { signOut as fbSignOut } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
+import { sendEmailOtpApi, verifyEmailOtpApi } from "@/lib/email-otp-api";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 
 const CSS = `
   @keyframes veRingRotate {
@@ -17,13 +23,23 @@ const CSS = `
     0%, 100% { transform: translate(-50%,-50%) scale(1);   opacity: 1; }
     50%      { transform: translate(-50%,-50%) scale(1.1); opacity: 0.72; }
   }
-  @keyframes veShimmerOrbit {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
-  }
   @keyframes veWavePulse {
     0%, 100% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
     50%      { opacity: 0.6; transform: translate(-50%,-50%) scale(1.08); }
+  }
+  .ve-otp-slot {
+    width: 44px !important;
+    height: 52px !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    color: #fff !important;
+    border-color: rgba(168,85,247,0.35) !important;
+    background: rgba(255,255,255,0.06) !important;
+    border-radius: 12px !important;
+  }
+  .ve-otp-slot[data-active=true] {
+    border-color: rgba(236,72,153,0.85) !important;
+    box-shadow: 0 0 0 2px rgba(168,85,247,0.25) !important;
   }
 `;
 
@@ -38,12 +54,12 @@ function NeonRingHero() {
       }}>
         <div style={{
           width: "100%", height: "100%", borderRadius: "50%",
-          background: "linear-gradient(145deg, #0e0825, #1a0a3e)", // audit-ok: auth-shell deep-dark brand gradient — same as sign-in.tsx
+          background: "linear-gradient(145deg, #0e0825, #1a0a3e)",
         }} />
       </div>
       <div style={{
         position: "absolute", inset: 6, borderRadius: "50%",
-        background: "linear-gradient(145deg, #12082e 0%, #1e0d45 50%, #0a0520 100%)", // audit-ok: auth-shell deep-dark brand gradient — same as sign-in.tsx
+        background: "linear-gradient(145deg, #12082e 0%, #1e0d45 50%, #0a0520 100%)",
         animation: "veRingPulse 4s ease-in-out infinite",
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
         boxShadow: "inset 0 0 24px rgba(168,85,247,0.18)",
@@ -63,18 +79,16 @@ function NeonRingHero() {
           AMY
         </span>
       </div>
-      <div style={{
-        position: "absolute", width: 60, height: 60, top: "50%", left: "50%",
-        transform: "translate(-50%,-50%)",
-        background: "radial-gradient(circle, rgba(236,72,153,0.22) 0%, transparent 70%)",
-        borderRadius: "50%", animation: "veGlowBreathe 4s ease-in-out infinite",
-        pointerEvents: "none",
-      }} />
     </div>
   );
 }
 
-const RESEND_COOLDOWN = 30;
+function postVerifyPath(): string {
+  if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+    return "/notify-prompt?next=/";
+  }
+  return "/";
+}
 
 export default function VerifyEmailPage() {
   const { t } = useTranslation();
@@ -82,10 +96,13 @@ export default function VerifyEmailPage() {
   const search = useSearch();
   const email = decodeURIComponent(new URLSearchParams(search).get("email") ?? "");
 
+  const [otp, setOtp] = useState("");
   const [cooldown, setCooldown] = useState(0);
-  const [busy, setBusy] = useState(false);
+  const [sendBusy, setSendBusy] = useState(false);
+  const [verifyBusy, setVerifyBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const initialSend = useRef(false);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -93,25 +110,126 @@ export default function VerifyEmailPage() {
     return () => clearTimeout(id);
   }, [cooldown]);
 
-  async function onResend() {
+  const mapSendError = useCallback(
+    (code: string, fallback?: string) => {
+      switch (code) {
+        case "cooldown":
+        case "rate_limited":
+          return t("screens.verify_email.resend_wait", { seconds: cooldown || 45 });
+        case "unauthorized":
+        case "not_signed_in":
+          return t("screens.verify_email.must_sign_in_to_resend");
+        case "email_send_failed":
+          return t("screens.verify_email.send_error");
+        default:
+          return fallback ?? t("screens.verify_email.send_error");
+      }
+    },
+    [t, cooldown],
+  );
+
+  const mapVerifyError = useCallback(
+    (code: string, fallback?: string, attemptsRemaining?: number) => {
+      switch (code) {
+        case "invalid_otp":
+          return attemptsRemaining != null
+            ? t("screens.verify_email.wrong_otp_attempts", { count: attemptsRemaining })
+            : t("screens.verify_email.wrong_otp");
+        case "expired":
+          return t("screens.verify_email.expired_otp");
+        case "too_many_attempts":
+          return t("screens.verify_email.too_many_attempts");
+        case "unauthorized":
+        case "not_signed_in":
+          return t("screens.verify_email.must_sign_in_to_resend");
+        default:
+          return fallback ?? t("screens.verify_email.verify_error");
+      }
+    },
+    [t],
+  );
+
+  const onSendOtp = useCallback(async () => {
+    if (!email) return;
     setError(null);
     setMessage(null);
-    const fbUser = firebaseAuth.currentUser;
-    if (!fbUser) {
+    if (!firebaseAuth.currentUser) {
       setError(t("screens.verify_email.must_sign_in_to_resend"));
       return;
     }
-    setBusy(true);
+    setSendBusy(true);
     try {
-      await sendEmailVerification(fbUser);
-      setMessage(t("screens.verify_email.resent"));
-      setCooldown(RESEND_COOLDOWN);
-    } catch {
-      setError(t("screens.verify_email.resend_error"));
+      const result = await sendEmailOtpApi(email);
+      if ("ok" in result && result.ok) {
+        setMessage(t("screens.verify_email.code_sent"));
+        setCooldown(result.cooldownSeconds);
+        return;
+      }
+      if ("cooldownSeconds" in result && result.cooldownSeconds) {
+        setCooldown(result.cooldownSeconds);
+      }
+      if ("error" in result) {
+        setError(mapSendError(result.error, result.message));
+      }
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error && err.message === "not_signed_in"
+          ? t("screens.verify_email.must_sign_in_to_resend")
+          : t("screens.verify_email.send_error"),
+      );
     } finally {
-      setBusy(false);
+      setSendBusy(false);
     }
-  }
+  }, [email, mapSendError, t]);
+
+  useEffect(() => {
+    if (!email || initialSend.current) return;
+    if (!firebaseAuth.currentUser) return;
+    initialSend.current = true;
+    void onSendOtp();
+  }, [email, onSendOtp]);
+
+  const onVerify = useCallback(async () => {
+    if (otp.length !== 6 || !email) return;
+    setError(null);
+    setMessage(null);
+    setVerifyBusy(true);
+    try {
+      const result = await verifyEmailOtpApi(email, otp);
+      if ("ok" in result && result.ok) {
+        const user = firebaseAuth.currentUser;
+        if (user) {
+          await user.reload();
+          await user.getIdToken(true);
+        }
+        setLocation(postVerifyPath());
+        return;
+      }
+      if ("error" in result) {
+        setError(mapVerifyError(result.error, result.message, result.attemptsRemaining));
+        if (result.error === "expired") setOtp("");
+      }
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error && err.message === "not_signed_in"
+          ? t("screens.verify_email.must_sign_in_to_resend")
+          : t("screens.verify_email.verify_error"),
+      );
+    } finally {
+      setVerifyBusy(false);
+    }
+  }, [email, mapVerifyError, otp, setLocation, t]);
+
+  const lastAutoOtp = useRef("");
+  useEffect(() => {
+    if (otp.length < 6) {
+      lastAutoOtp.current = "";
+      return;
+    }
+    if (verifyBusy || lastAutoOtp.current === otp) return;
+    lastAutoOtp.current = otp;
+    void onVerify();
+  }, [otp, verifyBusy, onVerify]);
 
   async function onBackToSignIn() {
     try {
@@ -121,6 +239,8 @@ export default function VerifyEmailPage() {
     }
     setLocation("/sign-in");
   }
+
+  const canVerify = otp.length === 6 && !verifyBusy;
 
   return (
     <div style={{
@@ -169,17 +289,6 @@ export default function VerifyEmailPage() {
           backdropFilter: "blur(16px)",
           boxShadow: "0 8px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(168,85,247,0.12)",
         }}>
-          {/* Mail icon */}
-          <div style={{
-            width: 64, height: 64, borderRadius: "50%", margin: "0 auto 20px",
-            background: "linear-gradient(135deg, rgba(168,85,247,0.25), rgba(236,72,153,0.18))",
-            border: "1px solid rgba(168,85,247,0.30)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 28,
-          }}>
-            📧
-          </div>
-
           <h1 style={{
             margin: "0 0 8px", fontSize: "22px", fontWeight: 800,
             color: "#FFFFFF", textAlign: "center", letterSpacing: "-0.3px",
@@ -205,11 +314,26 @@ export default function VerifyEmailPage() {
           )}
 
           <p style={{
-            margin: "0 0 24px", fontSize: "13px",
+            margin: "0 0 20px", fontSize: "13px",
             color: "rgba(200,180,255,0.50)", textAlign: "center",
           }}>
-            {t("screens.verify_email.spam_note")}
+            {t("screens.verify_email.otp_hint")}
           </p>
+
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
+            <InputOTP
+              maxLength={6}
+              value={otp}
+              onChange={setOtp}
+              disabled={verifyBusy}
+            >
+              <InputOTPGroup style={{ gap: 8 }}>
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <InputOTPSlot key={i} index={i} className="ve-otp-slot" />
+                ))}
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
 
           {message && (
             <div style={{
@@ -231,33 +355,47 @@ export default function VerifyEmailPage() {
             </div>
           )}
 
-          {/* Resend button */}
           <button
             type="button"
-            onClick={onResend}
-            disabled={busy || cooldown > 0}
+            onClick={() => void onVerify()}
+            disabled={!canVerify}
             style={{
               width: "100%", height: "48px", borderRadius: "999px",
-              background: busy || cooldown > 0
+              background: !canVerify
                 ? "rgba(75,65,110,0.5)"
                 : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
               border: "none", color: "#FFFFFF", fontSize: "15px", fontWeight: 700,
-              cursor: busy || cooldown > 0 ? "not-allowed" : "pointer",
-              boxShadow: busy || cooldown > 0 ? "none" : "0 0 24px rgba(236,72,153,0.45), 0 4px 14px rgba(0,0,0,0.28)",
+              cursor: !canVerify ? "not-allowed" : "pointer",
+              boxShadow: !canVerify ? "none" : "0 0 24px rgba(236,72,153,0.45), 0 4px 14px rgba(0,0,0,0.28)",
               fontFamily: "inherit", marginBottom: "12px", transition: "all 0.2s",
             }}
           >
-            {busy
+            {verifyBusy ? t("screens.verify_email.verifying") : t("screens.verify_email.verify_button")}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void onSendOtp()}
+            disabled={sendBusy || cooldown > 0}
+            style={{
+              width: "100%", height: "44px", borderRadius: "999px",
+              background: "transparent",
+              border: "1px solid rgba(168,85,247,0.35)",
+              color: "rgba(200,180,255,0.85)", fontSize: "14px", fontWeight: 600,
+              cursor: sendBusy || cooldown > 0 ? "not-allowed" : "pointer",
+              fontFamily: "inherit", marginBottom: "12px", opacity: sendBusy || cooldown > 0 ? 0.6 : 1,
+            }}
+          >
+            {sendBusy
               ? t("screens.verify_email.sending")
               : cooldown > 0
                 ? t("screens.verify_email.resend_wait", { seconds: cooldown })
-                : t("screens.verify_email.resend")}
+                : t("screens.verify_email.resend_code")}
           </button>
 
-          {/* Back to sign in */}
           <button
             type="button"
-            onClick={onBackToSignIn}
+            onClick={() => void onBackToSignIn()}
             style={{
               background: "none", border: "none",
               color: "rgba(200,180,255,0.50)", fontSize: "14px",
