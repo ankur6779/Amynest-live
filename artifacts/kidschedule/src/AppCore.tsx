@@ -347,6 +347,8 @@ function AppRoutes() {
           <Route path="/sign-up" component={SignUpPage} />
           <Route path="/verify-email" component={VerifyEmailPage} />
           <Route path="/auth/callback" component={AuthCallbackPage} />
+          {/* Firebase email template custom action URL uses /auth/action */}
+          <Route path="/auth/action" component={AuthCallbackPage} />
           <Route path="/onboarding" component={OnboardingRouteGuard} />
           <Route path="/dashboard">
             {() => <ProtectedRoute component={Dashboard} />}

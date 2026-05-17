@@ -19,6 +19,8 @@ export function prettyAuthError(err: any): string {
       return "Email/Password sign-in is not enabled. Go to Firebase Console → Authentication → Sign-in method → enable Email/Password.";
     case "auth/unauthorized-domain":
       return `This domain is not authorized in Firebase. Add "${typeof window !== "undefined" ? window.location.hostname : "this domain"}" to Firebase Console → Authentication → Settings → Authorized domains.`;
+    case "auth/unauthorized-continue-uri":
+      return "Verification link domain is not allowed. Ensure amynest.in is listed under Firebase Console → Authentication → Settings → Authorized domains.";
     case "auth/popup-blocked":
       return "Popup was blocked. Please allow popups for this site and try again.";
     case "auth/popup-closed-by-user":
