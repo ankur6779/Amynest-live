@@ -1553,6 +1553,12 @@ components:
           allOf:
             - $ref: "#/components/schemas/EnergyProfile"
           nullable: true
+        fixedActivities:
+          type: array
+          nullable: true
+          description: Recurring locked activities saved on the child profile (tuition, sports, classes).
+          items:
+            $ref: "#/components/schemas/FixedActivity"
         createdAt:
           type: string
       required:
@@ -1643,6 +1649,11 @@ components:
         foodPrefCustomized:
           type: boolean
           nullable: true
+        fixedActivities:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/FixedActivity"
       required:
         - name
         - age
@@ -1731,6 +1742,11 @@ components:
           items:
             type: string
             enum: [improve_sleep, reduce_tantrums, improve_focus, reduce_screen_time, increase_independence]
+        fixedActivities:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/FixedActivity"
 
     RoutineItem:
       type: object
@@ -1893,6 +1909,105 @@ components:
         - title
         - items
 
+    FixedActivity:
+      type: object
+      description: Recurring fixed activity (tuition, sports, class) on selected weekdays.
+      required:
+        - activity
+        - days
+        - start
+        - end
+      properties:
+        activity:
+          type: string
+          description: Display name, e.g. "Math tuition" or "Football practice"
+        days:
+          type: array
+          items:
+            type: string
+          description: Weekdays, e.g. ["Mon", "Wed"] or ["monday"]
+        start:
+          type: string
+          description: Start time (24h HH:MM or 12h with am/pm)
+        end:
+          type: string
+          description: End time (24h HH:MM or 12h with am/pm)
+
+    FixedActivityConflict:
+      type: object
+      required:
+        - warning
+        - suggestion
+      properties:
+        warning:
+          type: string
+        suggestion:
+          type: string
+        kind:
+          type: string
+          enum: [school, sleep, special_event, meal, wake, invalid]
+        severity:
+          type: string
+          enum: [blocking, non_blocking]
+          description: blocking requires user confirmation before saving; non_blocking is informational.
+        activity:
+          type: string
+
+    FixedActivityShift:
+      type: object
+      required:
+        - activity
+        - reason
+      properties:
+        activity:
+          type: string
+        from:
+          type: string
+          nullable: true
+        to:
+          type: string
+          nullable: true
+        reason:
+          type: string
+
+    FixedActivitiesResult:
+      type: object
+      properties:
+        fixedActivitiesApplied:
+          type: boolean
+        hasBlockingConflicts:
+          type: boolean
+          description: True when sleep/wake/invalid-time issues need explicit parent confirmation.
+        summaryMessage:
+          type: string
+          nullable: true
+          description: Plain-language summary for the default UI view.
+        activitiesForToday:
+          type: array
+          items:
+            type: string
+        conflicts:
+          type: array
+          items:
+            $ref: "#/components/schemas/FixedActivityConflict"
+        conflictsDetected:
+          type: array
+          description: Legacy string list; mirrors conflict warnings.
+          items:
+            type: string
+        adjustmentsMade:
+          type: array
+          items:
+            type: string
+        shiftsApplied:
+          type: array
+          items:
+            $ref: "#/components/schemas/FixedActivityShift"
+        validationWarnings:
+          type: array
+          items:
+            type: string
+
     GenerateRoutineBody:
       type: object
       properties:
@@ -1905,6 +2020,12 @@ components:
         specialPlans:
           type: string
           nullable: true
+        fixedActivities:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/FixedActivity"
+          description: Recurring locked activities for the child; filtered to the routine date weekday.
         fridgeItems:
           type: string
           nullable: true
@@ -1941,6 +2062,10 @@ components:
           enum: [disabled, snack_only, packed_lunch_only, snack_and_packed_lunch]
           nullable: true
           description: Controls whether and how school meal/tiffin suggestions are generated. "disabled" skips all school meals. Defaults to snack_and_packed_lunch on a school day.
+        confirmBlockingFixedActivities:
+          type: boolean
+          default: false
+          description: When true, allows generation despite blocking fixed-activity config conflicts (sleep/invalid times).
       required:
         - childId
         - date
@@ -1960,6 +2085,11 @@ components:
           description: Human-readable explanations of how this routine was adapted to the child's signals, goals, and energy profile.
           items:
             type: string
+        fixedActivitiesResult:
+          allOf:
+            - $ref: "#/components/schemas/FixedActivitiesResult"
+          nullable: true
+          description: Debug and conflict summary when fixed recurring activities were applied.
       required:
         - title
         - items

@@ -38,6 +38,15 @@ import {
 } from "../lib/routine-input-validation.js";
 import { runRoutineIntelligencePipeline } from "../lib/routine-intelligence-pipeline.js";
 import type { SpecialEventDebug } from "../lib/routine-special-event.js";
+import {
+  fixedActivitiesAdaptationTags,
+  finalizeFixedActivitiesSummary,
+  parseFixedActivitiesForDate,
+  toFixedActivitiesResult,
+  validateFixedActivityInputs,
+  type FixedActivitiesDebug,
+  type FixedActivityInput,
+} from "../lib/routine-fixed-activities.js";
 import { normalizeTo24h } from "../lib/routine-scheduler.js";
 import { type CaregiverKey, type WeatherOutdoor, applyWeatherAdjustment } from "@workspace/family-routine";
 import {
@@ -483,6 +492,7 @@ export async function generateAiRoutine(params: {
   country?: string;
   mood: string;
   specialPlans?: string;
+  fixedActivities?: FixedActivityInput[];
   fridgeItems?: string;
   schoolMealMode?: string | null;
   goals?: string | null;
@@ -547,6 +557,7 @@ export async function generateAiRoutine(params: {
   items: RoutineItem[];
   adaptations: string[];
   specialEvent?: SpecialEventDebug;
+  fixedActivities?: FixedActivitiesDebug;
 }> {
   const openai = params.openaiClient
     ?? (await import("@workspace/integrations-openai-ai-server")).openai;
@@ -885,6 +896,7 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
     items: curved.items as unknown as AiRoutineItem[],
     resolvedInputs: inputs,
     specialPlans,
+    fixedActivities: params.fixedActivities,
     ageGroup: params.ageGroup,
     totalAgeMonths,
     date: params.date,
@@ -911,6 +923,7 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
     title: parsed.title,
     items: piped.items,
     specialEvent: piped.specialEvent,
+    fixedActivities: piped.fixedActivities,
     adaptations: [
       ...adaptations,
       ...curved.adaptations,
@@ -1008,10 +1021,89 @@ function specialEventAdaptationTags(se: SpecialEventDebug): string[] {
   ];
 }
 
+function coerceFixedActivities(raw: unknown): FixedActivityInput[] | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (!Array.isArray(raw)) return undefined;
+  if (raw.length === 0) return [];
+  const out: FixedActivityInput[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const o = entry as Record<string, unknown>;
+    const activity = typeof o.activity === "string" ? o.activity.trim() : "";
+    const start = typeof o.start === "string" ? o.start.trim() : "";
+    const end = typeof o.end === "string" ? o.end.trim() : "";
+    const days = Array.isArray(o.days)
+      ? o.days.filter((d): d is string => typeof d === "string" && d.trim().length > 0)
+      : [];
+    if (!activity || !start || !end || days.length === 0) continue;
+    out.push({ activity, days, start, end });
+  }
+  return out.length ? out : [];
+}
+
+function mergeFixedActivityPreCheck(
+  fixed: FixedActivityInput[] | undefined,
+  date: string,
+  wakeTime: string,
+  sleepTime: string,
+): FixedActivitiesDebug {
+  const empty: FixedActivitiesDebug = {
+    fixedActivitiesApplied: false,
+    hasBlockingConflicts: false,
+    summaryMessage: null,
+    activitiesForToday: [],
+    conflicts: [],
+    conflictsDetected: [],
+    adjustmentsMade: [],
+    shiftsApplied: [],
+    validationWarnings: [],
+  };
+  if (!fixed?.length) return empty;
+
+  const wakeMins = timeToMins(normalizeTo24h(wakeTime));
+  const sleepMins = timeToMins(normalizeTo24h(sleepTime));
+  const parsed = parseFixedActivitiesForDate(fixed, date);
+  const inputCheck = validateFixedActivityInputs(parsed.activities, { wakeMins, sleepMins });
+
+  inputCheck.conflicts.push(...parsed.debug.conflicts);
+  inputCheck.conflictsDetected.push(...parsed.debug.conflictsDetected);
+  inputCheck.validationWarnings.push(...parsed.debug.validationWarnings);
+  inputCheck.fixedActivitiesApplied =
+    parsed.activities.length > 0 || parsed.debug.conflicts.length > 0;
+  inputCheck.activitiesForToday = parsed.activities.map((a) => a.activity);
+  finalizeFixedActivitiesSummary(inputCheck);
+  return inputCheck;
+}
+
+function blockingFixedActivitiesResponse(
+  debug: FixedActivitiesDebug,
+  res: import("express").Response,
+  childName?: string,
+): void {
+  res.status(422).json({
+    error: "fixed_activity_blocking",
+    message: debug.summaryMessage ?? "Weekly activities conflict with sleep or wake times.",
+    fixedActivitiesResult: toFixedActivitiesResult(debug, childName),
+  });
+}
+
+/** Request body overrides child profile when `fixedActivities` is present on the body. */
+function resolveFixedActivitiesForGenerate(
+  childFixed: unknown,
+  requestFixed: unknown,
+): FixedActivityInput[] | undefined {
+  if (requestFixed !== undefined && requestFixed !== null) {
+    return coerceFixedActivities(requestFixed);
+  }
+  const fromProfile = coerceFixedActivities(childFixed);
+  return fromProfile && fromProfile.length > 0 ? fromProfile : undefined;
+}
+
 function runIntelligencePipelineOnItems(params: {
   items: AiRoutineItem[];
   resolvedInputs: ResolvedRoutineInputs;
   specialPlans?: string;
+  fixedActivities?: FixedActivityInput[];
   ageGroup: AgeGroup;
   totalAgeMonths: number;
   date: string;
@@ -1032,6 +1124,7 @@ function runIntelligencePipelineOnItems(params: {
   items: RoutineItem[];
   pipelineAdaptations: string[];
   specialEvent: SpecialEventDebug;
+  fixedActivities: FixedActivitiesDebug;
   behaviorSignature: ReturnType<typeof runRoutineIntelligencePipeline>["behaviorSignature"];
 } {
   const {
@@ -1072,6 +1165,8 @@ function runIntelligencePipelineOnItems(params: {
   const intelligenceResult = runRoutineIntelligencePipeline({
     items: params.items,
     specialPlans: params.specialPlans ?? params.resolvedInputs.specialPlans,
+    fixedActivities: params.fixedActivities,
+    routineDate: params.date,
     scheduleOpts: {
       wakeUpTime,
       sleepTime,
@@ -1101,6 +1196,7 @@ function runIntelligencePipelineOnItems(params: {
   });
 
   const specialEvent = intelligenceResult.specialEvent;
+  const fixedActivities = intelligenceResult.fixedActivities;
   const pipelineAdaptations = [
     ...intelligenceResult.validationErrors.map((e) => `schedule:${e}`),
     ...(intelligenceResult.reverted ? ["schedule:reverted_pre_validation"] : []),
@@ -1111,12 +1207,14 @@ function runIntelligencePipelineOnItems(params: {
       (d) => `decision:${d.priority}:${d.resolution}`,
     ) ?? []),
     ...specialEventAdaptationTags(specialEvent),
+    ...fixedActivitiesAdaptationTags(fixedActivities),
   ];
 
   return {
     items: intelligenceResult.items as unknown as RoutineItem[],
     pipelineAdaptations,
     specialEvent,
+    fixedActivities,
     behaviorSignature: intelligenceResult.behaviorSignature,
   };
 }
@@ -1193,6 +1291,10 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
   const weatherOutdoor: WeatherOutdoor =
     (parsed.data.weatherOutdoor ?? "yes") as WeatherOutdoor;
   const specialPlans = parsed.data.specialPlans ?? undefined;
+  const fixedActivities = resolveFixedActivitiesForGenerate(
+    (child as { fixedActivities?: unknown }).fixedActivities,
+    parsed.data.fixedActivities,
+  );
   const fridgeItems = parsed.data.fridgeItems ?? undefined;
   const schoolMealMode = (parsed.data.schoolMealMode ?? undefined) as string | undefined;
 
@@ -1259,6 +1361,20 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     fridgeItems,
   });
 
+  const fixedPreCheck = mergeFixedActivityPreCheck(
+    fixedActivities,
+    parsed.data.date,
+    ruleInputs.wakeUpTime,
+    ruleInputs.sleepTime,
+  );
+  if (
+    fixedPreCheck.hasBlockingConflicts &&
+    !(parsed.data as { confirmBlockingFixedActivities?: boolean }).confirmBlockingFixedActivities
+  ) {
+    blockingFixedActivitiesResponse(fixedPreCheck, res, child.name);
+    return;
+  }
+
   const generated = generateRuleBasedRoutine({
     region: region as any,
     childName: child.name,
@@ -1304,6 +1420,7 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     items: ruleEnriched.items as unknown as AiRoutineItem[],
     resolvedInputs: ruleInputs,
     specialPlans: ruleInputs.specialPlans || specialPlans,
+    fixedActivities,
     ageGroup,
     totalAgeMonths,
     date: parsed.data.date,
@@ -1334,6 +1451,9 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
           ? [`inputs:defaults:${ruleInputDebug.defaultsApplied.join(",")}`]
           : []),
       ],
+      fixedActivitiesResult: rulePiped.fixedActivities.fixedActivitiesApplied
+        ? toFixedActivitiesResult(rulePiped.fixedActivities, child.name)
+        : null,
     }),
   );
 });
@@ -1392,6 +1512,10 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
   const weatherOutdoor: WeatherOutdoor =
     (parsed.data.weatherOutdoor ?? "yes") as WeatherOutdoor;
   const specialPlans = parsed.data.specialPlans ?? undefined;
+  const fixedActivities = resolveFixedActivitiesForGenerate(
+    (child as { fixedActivities?: unknown }).fixedActivities,
+    parsed.data.fixedActivities,
+  );
   const fridgeItems = parsed.data.fridgeItems ?? undefined;
   const schoolMealMode = (parsed.data.schoolMealMode ?? undefined) as string | undefined;
 
@@ -1498,6 +1622,20 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
     ? mapToWeatherOutdoor(aiEnvContext, weatherOutdoor)
     : weatherOutdoor;
 
+  const aiFixedPreCheck = mergeFixedActivityPreCheck(
+    fixedActivities,
+    parsed.data.date,
+    effWakeUp,
+    child.sleepTime,
+  );
+  if (
+    aiFixedPreCheck.hasBlockingConflicts &&
+    !(parsed.data as { confirmBlockingFixedActivities?: boolean }).confirmBlockingFixedActivities
+  ) {
+    blockingFixedActivitiesResponse(aiFixedPreCheck, res, child.name);
+    return;
+  }
+
   try {
     const generated = await generateAiRoutine({
       childName: child.name,
@@ -1514,6 +1652,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       country: (pp as Record<string, unknown>)?.country as string | undefined,
       mood: mood ?? "normal",
       specialPlans,
+      fixedActivities,
       fridgeItems,
       goals: child.goals,
       travelMode: child.travelMode,
@@ -1554,6 +1693,9 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
           ? [`hydration:${aiEnriched.hydrationSummary}`]
           : []),
       ],
+      fixedActivitiesResult: generated.fixedActivities?.fixedActivitiesApplied
+        ? toFixedActivitiesResult(generated.fixedActivities, child.name)
+        : null,
     }));
   } catch {
     // Fallback to rule-based if AI fails
@@ -1618,6 +1760,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       items: fallbackEnriched.items as unknown as AiRoutineItem[],
       resolvedInputs: fallbackInputs,
       specialPlans: fallbackInputs.specialPlans || specialPlans,
+      fixedActivities,
       ageGroup,
       totalAgeMonths,
       date: parsed.data.date,
@@ -1647,6 +1790,9 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
           ? [`inputs:defaults:${fallbackInputDebug.defaultsApplied.join(",")}`]
           : []),
       ],
+      fixedActivitiesResult: fallbackPiped.fixedActivities.fixedActivitiesApplied
+        ? toFixedActivitiesResult(fallbackPiped.fixedActivities, child.name)
+        : null,
     }));
   }
 });

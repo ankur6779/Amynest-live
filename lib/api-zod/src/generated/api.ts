@@ -61,6 +61,12 @@ export const ListChildrenResponseItem = zod.object({
   "sampleCount": zod.number().describe('Number of daily signals used to compute this profile.'),
   "lastComputedAt": zod.string().nullish()
 }).describe('Adaptive Family Intelligence — derived energy profile recomputed from\nchild_daily_signals + routine completion history. Times are HH:mm strings.\nnull fields = not enough data yet (sampleCount < 3).\n').nullish(),
+  "fixedActivities": zod.array(zod.object({
+  "activity": zod.string().describe('Display name, e.g. \"Math tuition\" or \"Football practice\"'),
+  "days": zod.array(zod.string()).describe('Weekdays, e.g. [\"Mon\", \"Wed\"] or [\"monday\"]'),
+  "start": zod.string().describe('Start time (24h HH:MM or 12h with am\/pm)'),
+  "end": zod.string().describe('End time (24h HH:MM or 12h with am\/pm)')
+}).describe('Recurring fixed activity (tuition, sports, class) on selected weekdays.')).nullish().describe('Recurring locked activities saved on the child profile (tuition, sports, classes).'),
   "createdAt": zod.string()
 })
 export const ListChildrenResponse = zod.array(ListChildrenResponseItem)
@@ -98,7 +104,13 @@ export const CreateChildBody = zod.object({
   "subCuisine": zod.string().nullish(),
   "allergies": zod.string().nullish(),
   "foodPrefInherited": zod.boolean().nullish(),
-  "foodPrefCustomized": zod.boolean().nullish()
+  "foodPrefCustomized": zod.boolean().nullish(),
+  "fixedActivities": zod.array(zod.object({
+  "activity": zod.string().describe('Display name, e.g. \"Math tuition\" or \"Football practice\"'),
+  "days": zod.array(zod.string()).describe('Weekdays, e.g. [\"Mon\", \"Wed\"] or [\"monday\"]'),
+  "start": zod.string().describe('Start time (24h HH:MM or 12h with am\/pm)'),
+  "end": zod.string().describe('End time (24h HH:MM or 12h with am\/pm)')
+}).describe('Recurring fixed activity (tuition, sports, class) on selected weekdays.')).nullish()
 })
 
 
@@ -151,6 +163,12 @@ export const GetChildResponse = zod.object({
   "sampleCount": zod.number().describe('Number of daily signals used to compute this profile.'),
   "lastComputedAt": zod.string().nullish()
 }).describe('Adaptive Family Intelligence — derived energy profile recomputed from\nchild_daily_signals + routine completion history. Times are HH:mm strings.\nnull fields = not enough data yet (sampleCount < 3).\n').nullish(),
+  "fixedActivities": zod.array(zod.object({
+  "activity": zod.string().describe('Display name, e.g. \"Math tuition\" or \"Football practice\"'),
+  "days": zod.array(zod.string()).describe('Weekdays, e.g. [\"Mon\", \"Wed\"] or [\"monday\"]'),
+  "start": zod.string().describe('Start time (24h HH:MM or 12h with am\/pm)'),
+  "end": zod.string().describe('End time (24h HH:MM or 12h with am\/pm)')
+}).describe('Recurring fixed activity (tuition, sports, class) on selected weekdays.')).nullish().describe('Recurring locked activities saved on the child profile (tuition, sports, classes).'),
   "createdAt": zod.string()
 })
 
@@ -192,7 +210,13 @@ export const UpdateChildBody = zod.object({
   "allergies": zod.string().nullish(),
   "foodPrefInherited": zod.boolean().nullish(),
   "foodPrefCustomized": zod.boolean().nullish(),
-  "parentGoals": zod.array(zod.enum(['improve_sleep', 'reduce_tantrums', 'improve_focus', 'reduce_screen_time', 'increase_independence'])).nullish().describe('Adaptive Family Intelligence — replace structured optimization goals.')
+  "parentGoals": zod.array(zod.enum(['improve_sleep', 'reduce_tantrums', 'improve_focus', 'reduce_screen_time', 'increase_independence'])).nullish().describe('Adaptive Family Intelligence — replace structured optimization goals.'),
+  "fixedActivities": zod.array(zod.object({
+  "activity": zod.string().describe('Display name, e.g. \"Math tuition\" or \"Football practice\"'),
+  "days": zod.array(zod.string()).describe('Weekdays, e.g. [\"Mon\", \"Wed\"] or [\"monday\"]'),
+  "start": zod.string().describe('Start time (24h HH:MM or 12h with am\/pm)'),
+  "end": zod.string().describe('End time (24h HH:MM or 12h with am\/pm)')
+}).describe('Recurring fixed activity (tuition, sports, class) on selected weekdays.')).nullish()
 })
 
 export const updateChildResponseSchoolDaysItemMax = 7;
@@ -237,6 +261,12 @@ export const UpdateChildResponse = zod.object({
   "sampleCount": zod.number().describe('Number of daily signals used to compute this profile.'),
   "lastComputedAt": zod.string().nullish()
 }).describe('Adaptive Family Intelligence — derived energy profile recomputed from\nchild_daily_signals + routine completion history. Times are HH:mm strings.\nnull fields = not enough data yet (sampleCount < 3).\n').nullish(),
+  "fixedActivities": zod.array(zod.object({
+  "activity": zod.string().describe('Display name, e.g. \"Math tuition\" or \"Football practice\"'),
+  "days": zod.array(zod.string()).describe('Weekdays, e.g. [\"Mon\", \"Wed\"] or [\"monday\"]'),
+  "start": zod.string().describe('Start time (24h HH:MM or 12h with am\/pm)'),
+  "end": zod.string().describe('End time (24h HH:MM or 12h with am\/pm)')
+}).describe('Recurring fixed activity (tuition, sports, class) on selected weekdays.')).nullish().describe('Recurring locked activities saved on the child profile (tuition, sports, classes).'),
   "createdAt": zod.string()
 })
 
@@ -405,12 +435,19 @@ export const DeleteRoutineParams = zod.object({
  */
 export const generateRoutineBodyCaregiverDefault = `mom`;
 export const generateRoutineBodyWeatherOutdoorDefault = `yes`;
+export const generateRoutineBodyConfirmBlockingFixedActivitiesDefault = false;
 
 export const GenerateRoutineBody = zod.object({
   "childId": zod.number(),
   "date": zod.string(),
   "hasSchool": zod.boolean().optional(),
   "specialPlans": zod.string().nullish(),
+  "fixedActivities": zod.array(zod.object({
+  "activity": zod.string().describe('Display name, e.g. \"Math tuition\" or \"Football practice\"'),
+  "days": zod.array(zod.string()).describe('Weekdays, e.g. [\"Mon\", \"Wed\"] or [\"monday\"]'),
+  "start": zod.string().describe('Start time (24h HH:MM or 12h with am\/pm)'),
+  "end": zod.string().describe('End time (24h HH:MM or 12h with am\/pm)')
+}).describe('Recurring fixed activity (tuition, sports, class) on selected weekdays.')).nullish().describe('Recurring locked activities for the child; filtered to the routine date weekday.'),
   "fridgeItems": zod.string().nullish(),
   "mood": zod.string().nullish(),
   "caregiver": zod.enum(['mom', 'dad', 'both', 'grandparent', 'babysitter']).default(generateRoutineBodyCaregiverDefault).describe('Who is handling the child today. Drives tone, simplification, and bonding density. Reuses the HandlerKey enum from @workspace\/family-routine.'),
@@ -420,7 +457,8 @@ export const GenerateRoutineBody = zod.object({
   "age": zod.number().nullish(),
   "schoolStart": zod.string().nullish(),
   "schoolEnd": zod.string().nullish(),
-  "schoolMealMode": zod.enum(['disabled', 'snack_only', 'packed_lunch_only', 'snack_and_packed_lunch']).nullish().describe('Controls whether and how school meal\/tiffin suggestions are generated. \"disabled\" skips all school meals. Defaults to snack_and_packed_lunch on a school day.')
+  "schoolMealMode": zod.enum(['disabled', 'snack_only', 'packed_lunch_only', 'snack_and_packed_lunch']).nullish().describe('Controls whether and how school meal\/tiffin suggestions are generated. \"disabled\" skips all school meals. Defaults to snack_and_packed_lunch on a school day.'),
+  "confirmBlockingFixedActivities": zod.boolean().default(generateRoutineBodyConfirmBlockingFixedActivitiesDefault).describe('When true, allows generation despite blocking fixed-activity config conflicts (sleep\/invalid times).')
 })
 
 export const GenerateRoutineResponse = zod.object({
@@ -453,7 +491,29 @@ export const GenerateRoutineResponse = zod.object({
   "ageBand": zod.enum(['2-5', '6-10', '10+']).nullish(),
   "parentHubTopic": zod.string().nullish()
 })),
-  "adaptations": zod.array(zod.string()).nullish().describe('Human-readable explanations of how this routine was adapted to the child\'s signals, goals, and energy profile.')
+  "adaptations": zod.array(zod.string()).nullish().describe('Human-readable explanations of how this routine was adapted to the child\'s signals, goals, and energy profile.'),
+  "fixedActivitiesResult": zod.object({
+  "fixedActivitiesApplied": zod.boolean().optional(),
+  "hasBlockingConflicts": zod.boolean().optional().describe('True when sleep\/wake\/invalid-time issues need explicit parent confirmation.'),
+  "summaryMessage": zod.string().nullish().describe('Plain-language summary for the default UI view.'),
+  "activitiesForToday": zod.array(zod.string()).optional(),
+  "conflicts": zod.array(zod.object({
+  "warning": zod.string(),
+  "suggestion": zod.string(),
+  "kind": zod.enum(['school', 'sleep', 'special_event', 'meal', 'wake', 'invalid']).optional(),
+  "severity": zod.enum(['blocking', 'non_blocking']).optional().describe('blocking requires user confirmation before saving; non_blocking is informational.'),
+  "activity": zod.string().optional()
+})).optional(),
+  "conflictsDetected": zod.array(zod.string()).optional().describe('Legacy string list; mirrors conflict warnings.'),
+  "adjustmentsMade": zod.array(zod.string()).optional(),
+  "shiftsApplied": zod.array(zod.object({
+  "activity": zod.string(),
+  "from": zod.string().nullish(),
+  "to": zod.string().nullish(),
+  "reason": zod.string()
+})).optional(),
+  "validationWarnings": zod.array(zod.string()).optional()
+}).nullish().describe('Debug and conflict summary when fixed recurring activities were applied.')
 })
 
 

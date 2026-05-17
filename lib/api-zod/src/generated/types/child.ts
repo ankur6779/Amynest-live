@@ -7,6 +7,7 @@
  */
 import type { ChildParentGoalsItem } from './childParentGoalsItem';
 import type { EnergyProfile } from './energyProfile';
+import type { FixedActivity } from './fixedActivity';
 
 export interface Child {
   id: number;
@@ -40,5 +41,7 @@ export interface Child {
   /** Adaptive Family Intelligence — structured parent-selected optimization goals. */
   parentGoals?: ChildParentGoalsItem[] | null;
   energyProfile?: EnergyProfile | null;
+  /** Recurring locked activities saved on the child profile (tuition, sports, classes). */
+  fixedActivities?: FixedActivity[] | null;
   createdAt: string;
 }

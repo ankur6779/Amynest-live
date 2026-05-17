@@ -1204,6 +1204,8 @@ export function enforceIntegratedRoutineFlow(
     sleep.duration = clampDurationForCategory("sleep", sleep.duration ?? 30);
   }
 
+  const lockedSpecialEvents = working.filter(isLockedScheduleItem);
+
   const morning = working.filter(
     (it) =>
       !pinned.has(it) &&
@@ -1219,6 +1221,7 @@ export function enforceIntegratedRoutineFlow(
     ...(school ? [school] : []),
     ...(lunch ? [lunch] : []),
     ...placedPre,
+    ...lockedSpecialEvents,
     dinner,
     ...placedPost,
     ...(sleep ? [sleep] : []),

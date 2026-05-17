@@ -60,6 +60,8 @@ export type RoutineScheduleItem = {
   displayEnd?: string;
   /** Parent special plan — must not be moved by meal/weather passes. */
   locked?: boolean;
+  /** `fixed` = recurring parent-set activity; `special` = one-off plan. */
+  activitySource?: "fixed" | "special" | "generated";
 };
 
 export type TimePeriod = "morning" | "afternoon" | "evening" | "night";
@@ -268,6 +270,9 @@ export function isLockedScheduleItem(item: RoutineScheduleItem): boolean {
   return (
     item.locked === true ||
     item.culturalTag === "special_event" ||
+    item.culturalTag === "fixed_recurring" ||
+    item.activitySource === "fixed" ||
+    item.activitySource === "special" ||
     (item as { structureKind?: string }).structureKind === "special_event"
   );
 }
@@ -849,13 +854,25 @@ export function compactRoutineTimeline(
   sleepTime: string,
 ): RoutineScheduleItem[] {
   const bounds = computeDayBounds(wakeUpTime, sleepTime);
-  const core = items.filter((it) => !/free time/i.test(it.activity));
+  const locked = items.filter((it) => isLockedScheduleItem(it) && !/free time/i.test(it.activity));
+  const core = items.filter(
+    (it) => !/free time/i.test(it.activity) && !isLockedScheduleItem(it),
+  );
   const slots: InternalSlot[] = core.map((it) => ({
     startExt: toExtended(parseTimeToMins(it.time), bounds.wakeMins),
     duration: it.duration ?? 30,
     item: it,
     priority: itemPriority(it),
   }));
+  for (const ev of locked) {
+    const clock = parseTimeToMins(normalizeTo24h(ev.time));
+    slots.push({
+      startExt: toExtended(clock, bounds.wakeMins),
+      duration: clampDurationForCategory(ev.category ?? "family", ev.duration ?? 45),
+      item: { ...ev },
+      priority: PRIORITY_SPECIAL_EVENT,
+    });
+  }
   return slotsToItems(mergeAndFillGaps(slots, bounds));
 }
 
@@ -887,7 +904,22 @@ function mergeAndFillGaps(slots: InternalSlot[], bounds: DayBounds): InternalSlo
     }
     const last = out[out.length - 1];
     if (last && !isSleepItem(last.item) && overlaps(last, slot)) {
-      slot.startExt = slotEnd(last) + gapAfter(last.item);
+      if (isLockedScheduleItem(slot.item)) {
+        if (!isLockedScheduleItem(last.item)) {
+          const lockStart = slot.startExt;
+          const maxLastDur = Math.max(
+            MIN_ACTIVITY_MINS,
+            lockStart - last.startExt - gapAfter(last.item),
+          );
+          if (last.duration > maxLastDur) {
+            last.duration = maxLastDur;
+          }
+        }
+      } else if (isLockedScheduleItem(last.item)) {
+        slot.startExt = slotEnd(last) + gapAfter(last.item);
+      } else {
+        slot.startExt = slotEnd(last) + gapAfter(last.item);
+      }
     }
     out.push(slot);
     cursor = Math.max(cursor, slotEnd(slot) + gapAfter(slot.item));

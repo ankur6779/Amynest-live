@@ -302,6 +302,20 @@ export interface EnergyProfile {
   lastComputedAt?: string | null;
 }
 
+/**
+ * Recurring fixed activity (tuition, sports, class) on selected weekdays.
+ */
+export interface FixedActivity {
+  /** Display name, e.g. "Math tuition" or "Football practice" */
+  activity: string;
+  /** Weekdays, e.g. ["Mon", "Wed"] or ["monday"] */
+  days: string[];
+  /** Start time (24h HH:MM or 12h with am/pm) */
+  start: string;
+  /** End time (24h HH:MM or 12h with am/pm) */
+  end: string;
+}
+
 export interface Child {
   id: number;
   name: string;
@@ -334,6 +348,8 @@ export interface Child {
   /** Adaptive Family Intelligence — structured parent-selected optimization goals. */
   parentGoals?: ChildParentGoalsItem[] | null;
   energyProfile?: EnergyProfile | null;
+  /** Recurring locked activities saved on the child profile (tuition, sports, classes). */
+  fixedActivities?: FixedActivity[] | null;
   createdAt: string;
 }
 
@@ -365,6 +381,7 @@ export interface CreateChildBody {
   allergies?: string | null;
   foodPrefInherited?: boolean | null;
   foodPrefCustomized?: boolean | null;
+  fixedActivities?: FixedActivity[] | null;
 }
 
 export type UpdateChildBodyParentGoalsItem = typeof UpdateChildBodyParentGoalsItem[keyof typeof UpdateChildBodyParentGoalsItem];
@@ -408,6 +425,7 @@ export interface UpdateChildBody {
   foodPrefCustomized?: boolean | null;
   /** Adaptive Family Intelligence — replace structured optimization goals. */
   parentGoals?: UpdateChildBodyParentGoalsItem[] | null;
+  fixedActivities?: FixedActivity[] | null;
 }
 
 export type RoutineItemStatus = typeof RoutineItemStatus[keyof typeof RoutineItemStatus];
@@ -517,6 +535,60 @@ export interface CreateRoutineBody {
   adaptations?: string[] | null;
 }
 
+export type FixedActivityConflictKind = typeof FixedActivityConflictKind[keyof typeof FixedActivityConflictKind];
+
+
+export const FixedActivityConflictKind = {
+  school: 'school',
+  sleep: 'sleep',
+  special_event: 'special_event',
+  meal: 'meal',
+  wake: 'wake',
+  invalid: 'invalid',
+} as const;
+
+/**
+ * blocking requires user confirmation before saving; non_blocking is informational.
+ */
+export type FixedActivityConflictSeverity = typeof FixedActivityConflictSeverity[keyof typeof FixedActivityConflictSeverity];
+
+
+export const FixedActivityConflictSeverity = {
+  blocking: 'blocking',
+  non_blocking: 'non_blocking',
+} as const;
+
+export interface FixedActivityConflict {
+  warning: string;
+  suggestion: string;
+  kind?: FixedActivityConflictKind;
+  /** blocking requires user confirmation before saving; non_blocking is informational. */
+  severity?: FixedActivityConflictSeverity;
+  activity?: string;
+}
+
+export interface FixedActivityShift {
+  activity: string;
+  from?: string | null;
+  to?: string | null;
+  reason: string;
+}
+
+export interface FixedActivitiesResult {
+  fixedActivitiesApplied?: boolean;
+  /** True when sleep/wake/invalid-time issues need explicit parent confirmation. */
+  hasBlockingConflicts?: boolean;
+  /** Plain-language summary for the default UI view. */
+  summaryMessage?: string | null;
+  activitiesForToday?: string[];
+  conflicts?: FixedActivityConflict[];
+  /** Legacy string list; mirrors conflict warnings. */
+  conflictsDetected?: string[];
+  adjustmentsMade?: string[];
+  shiftsApplied?: FixedActivityShift[];
+  validationWarnings?: string[];
+}
+
 /**
  * Who is handling the child today. Drives tone, simplification, and bonding density. Reuses the HandlerKey enum from @workspace/family-routine.
  */
@@ -561,6 +633,8 @@ export interface GenerateRoutineBody {
   date: string;
   hasSchool?: boolean;
   specialPlans?: string | null;
+  /** Recurring locked activities for the child; filtered to the routine date weekday. */
+  fixedActivities?: FixedActivity[] | null;
   fridgeItems?: string | null;
   mood?: string | null;
   /** Who is handling the child today. Drives tone, simplification, and bonding density. Reuses the HandlerKey enum from @workspace/family-routine. */
@@ -574,6 +648,8 @@ export interface GenerateRoutineBody {
   schoolEnd?: string | null;
   /** Controls whether and how school meal/tiffin suggestions are generated. "disabled" skips all school meals. Defaults to snack_and_packed_lunch on a school day. */
   schoolMealMode?: GenerateRoutineBodySchoolMealMode;
+  /** When true, allows generation despite blocking fixed-activity config conflicts (sleep/invalid times). */
+  confirmBlockingFixedActivities?: boolean;
 }
 
 export interface GeneratedRoutine {
@@ -581,6 +657,8 @@ export interface GeneratedRoutine {
   items: RoutineItem[];
   /** Human-readable explanations of how this routine was adapted to the child's signals, goals, and energy profile. */
   adaptations?: string[] | null;
+  /** Debug and conflict summary when fixed recurring activities were applied. */
+  fixedActivitiesResult?: FixedActivitiesResult | null;
 }
 
 export interface CheckRoutineResponse {

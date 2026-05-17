@@ -21,6 +21,10 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ChildGoalsCard } from "@/components/intelligence/child-goals-card";
 import { InsightsCard } from "@/components/intelligence/insights-card";
+import { FixedActivitiesEditor } from "@/components/routines/fixed-activities-editor";
+import { FixedActivitiesWeeklyInsights } from "@/components/routines/fixed-activities-weekly-insights";
+import { normalizeFixedActivities } from "@/lib/fixed-activities";
+import type { FixedActivityDraft } from "@/lib/fixed-activities";
 interface Babysitter {
   id: number;
   name: string;
@@ -162,6 +166,7 @@ export default function ChildForm() {
   const [allergyText, setAllergyText] = useState("");
   const [foodPrefInherited, setFoodPrefInherited] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [fixedActivities, setFixedActivities] = useState<FixedActivityDraft[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEditing = !!params.id && params.id !== "new";
   const childId = isEditing ? parseInt(params.id as string) : 0;
@@ -254,6 +259,7 @@ export default function ChildForm() {
       setAllergyText(textPart);
       setFoodPrefInherited(!!(child as any).foodPrefInherited);
       setCustomizeOpen(!!(child as any).foodPrefCustomized);
+      setFixedActivities(normalizeFixedActivities((child as any).fixedActivities));
     }
   }, [child, form, isEditing]);
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -314,7 +320,15 @@ export default function ChildForm() {
       foodPrefCustomized: customizeOpen,
       goals: data.goals?.trim() || "General daily routine",
       babysitterId: data.babysitterId || undefined,
-      photoUrl: photoPreview || undefined
+      photoUrl: photoPreview || undefined,
+      fixedActivities:
+        fixedActivities.filter(
+          (e) => e.activity.trim() && e.days.length > 0 && e.start && e.end,
+        ).length > 0
+          ? fixedActivities.filter(
+              (e) => e.activity.trim() && e.days.length > 0 && e.start && e.end,
+            )
+          : null,
     };
     if (isEditing) {
       updateMutation.mutate({
@@ -862,6 +876,30 @@ export default function ChildForm() {
                     </FormItem>;
               }} />
                 </div>}
+
+              {/* ── RECURRING ACTIVITIES ── */}
+              <div className="space-y-3">
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
+                  {t("pages.routines.fixed.profile_section", {
+                    defaultValue: "Weekly activities (tuition, sports, classes)",
+                  })}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t("pages.routines.fixed.profile_hint", {
+                    defaultValue:
+                      "Saved on this child's profile and applied automatically when you generate routines.",
+                  })}
+                </p>
+                {fixedActivities.filter((e) => e.activity && e.days.length).length > 0 && (
+                  <FixedActivitiesWeeklyInsights
+                    activities={fixedActivities.filter(
+                      (e) => e.activity && e.days.length > 0 && e.start && e.end,
+                    )}
+                    childName={form.watch("name")}
+                  />
+                )}
+                <FixedActivitiesEditor value={fixedActivities} onChange={setFixedActivities} />
+              </div>
 
               {/* ── GOALS ── */}
               <FormField control={form.control} name="goals" render={({

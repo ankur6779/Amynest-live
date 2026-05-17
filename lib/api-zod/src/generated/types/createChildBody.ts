@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { FixedActivity } from './fixedActivity';
 
 export interface CreateChildBody {
   name: string;
@@ -34,4 +35,5 @@ export interface CreateChildBody {
   allergies?: string | null;
   foodPrefInherited?: boolean | null;
   foodPrefCustomized?: boolean | null;
+  fixedActivities?: FixedActivity[] | null;
 }
