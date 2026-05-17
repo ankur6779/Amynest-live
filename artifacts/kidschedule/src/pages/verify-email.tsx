@@ -120,7 +120,9 @@ export default function VerifyEmailPage() {
         case "not_signed_in":
           return t("screens.verify_email.must_sign_in_to_resend");
         case "email_send_failed":
-          return t("screens.verify_email.send_error");
+        case "network_error":
+        case "invalid_response":
+          return fallback ?? t("screens.verify_email.send_error");
         default:
           return fallback ?? t("screens.verify_email.send_error");
       }
@@ -161,7 +163,11 @@ export default function VerifyEmailPage() {
     try {
       const result = await sendEmailOtpApi(email);
       if ("ok" in result && result.ok) {
-        setMessage(t("screens.verify_email.code_sent"));
+        if (result.devOtp) {
+          setMessage(t("screens.verify_email.dev_code_hint", { code: result.devOtp }));
+        } else {
+          setMessage(t("screens.verify_email.code_sent"));
+        }
         setCooldown(result.cooldownSeconds);
         return;
       }
@@ -172,10 +178,13 @@ export default function VerifyEmailPage() {
         setError(mapSendError(result.error, result.message));
       }
     } catch (err: unknown) {
+      console.error("[verify-email] send OTP failed:", err);
       setError(
         err instanceof Error && err.message === "not_signed_in"
           ? t("screens.verify_email.must_sign_in_to_resend")
-          : t("screens.verify_email.send_error"),
+          : err instanceof Error
+            ? err.message
+            : t("screens.verify_email.send_error"),
       );
     } finally {
       setSendBusy(false);

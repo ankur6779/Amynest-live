@@ -83,6 +83,10 @@ services:
         sync: false
       - key: ELEVENLABS_API_KEY
         sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: "AmyNest <hello@amynest.in>"
 
   # ─── Production web (SPA) ───────────────────────────────────────────────────
   # Node serve-spa: HTML routes → index.html (200), missing *.js → real 404 (not HTML).
