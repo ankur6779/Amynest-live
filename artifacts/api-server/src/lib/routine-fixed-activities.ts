@@ -366,23 +366,23 @@ function isMealLikeItem(item: RoutineScheduleItem): boolean {
 /** Priority: special event > fixed activity > AI-generated blocks. */
 export function detectSpecialFixedConflicts(
   fixedList: ParsedFixedActivity[],
-  specialEvent: ParsedSpecialEvent | null,
+  specialEvent: ParsedSpecialEvent | ParsedSpecialEvent[] | null,
 ): FixedActivityConflict[] {
   if (!specialEvent || !fixedList.length) return [];
+  const events = Array.isArray(specialEvent) ? specialEvent : [specialEvent];
   const out: FixedActivityConflict[] = [];
-  const specialEnd = specialEvent.startMins + specialEvent.duration;
-  for (const fixed of fixedList) {
-    if (
-      fixed.startMins < specialEnd &&
-      fixed.endMins > specialEvent.startMins
-    ) {
-      out.push({
-        activity: fixed.activity,
-        kind: "special_event",
-        severity: "non_blocking",
-        warning: `${fixed.activity} overlaps with ${specialEvent.activity}`,
-        suggestion: `Move ${fixed.activity} to ${formatClockSuggestion(specialEvent.startMins + specialEvent.duration + MEAL_SHIFT_GAP)} or reschedule the special plan`,
-      });
+  for (const ev of events) {
+    const specialEnd = ev.startMins + ev.duration;
+    for (const fixed of fixedList) {
+      if (fixed.startMins < specialEnd && fixed.endMins > ev.startMins) {
+        out.push({
+          activity: fixed.activity,
+          kind: "special_event",
+          severity: "non_blocking",
+          warning: `${fixed.activity} overlaps with ${ev.activity}`,
+          suggestion: `Move ${fixed.activity} to ${formatClockSuggestion(ev.startMins + ev.duration + MEAL_SHIFT_GAP)} or reschedule the special plan`,
+        });
+      }
     }
   }
   return out;
@@ -555,12 +555,23 @@ function isProbableDuplicateOfFixed(
   return false;
 }
 
+function categoryForFixedActivity(label: string): string {
+  const act = label.toLowerCase();
+  if (/\b(math|tuition|homework|study|learning|music|piano|violin|coding)\b/i.test(act)) {
+    return "study";
+  }
+  if (/\b(football|soccer|swim|basketball|cricket|sport|training|dance)\b/i.test(act)) {
+    return "play";
+  }
+  return "family";
+}
+
 export function buildFixedScheduleItem(fixed: ParsedFixedActivity): RoutineScheduleItem {
   return {
     time: minsToTime24(fixed.startMins),
     activity: fixed.activity,
     duration: fixed.duration,
-    category: "family",
+    category: categoryForFixedActivity(fixed.activity),
     status: "pending",
     locked: true,
     culturalTag: "fixed_recurring",

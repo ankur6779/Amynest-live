@@ -34,6 +34,9 @@ import { validateAqiOutdoorRules } from "./routine-aqi.js";
 import { deriveRoutineConfidence, type RoutineConfidence } from "./routine-health-copy.js";
 import { polishRoutineOutput } from "./routine-output-polish.js";
 import { enforceSleepIsLast } from "./routine-weather-planning.js";
+import { applyRoutineRealismPolish } from "./routine-realism-polish.js";
+import { enforceEnergyCurve } from "./routine-category-taxonomy.js";
+import { enforceFinalTimelineIntegrity } from "./routine-final-integrity.js";
 import { runTieredValidation } from "./routine-validation-tiers.js";
 import { finalizeMealStructure } from "./routine-meal-day-type.js";
 import { resolveIsSchoolDay } from "./routine-meal-day-type.js";
@@ -64,10 +67,10 @@ import {
 } from "./routine-fixed-activities.js";
 import {
   ensureSpecialEventsPreserved,
-  injectSpecialEventBlock,
+  injectSpecialEventBlocks,
   parseSpecialPlans,
   shiftNonLockedAroundLockedEvents,
-  validateSpecialEventPlacement,
+  validateSpecialEventsPlacement,
   type ParsedSpecialEvent,
   type SpecialEventDebug,
 } from "./routine-special-event.js";
@@ -77,6 +80,7 @@ import {
   minsToTime24,
   normalizeTo24h,
   parseTimeToMins,
+  resolveTimelineOverlaps,
   scheduleRoutineItems,
   validateRoutineSchedule,
   type RoutineScheduleItem,
@@ -99,8 +103,8 @@ export type IntelligencePipelineInput = {
   /** Child age in months (overrides profile when set). */
   ageInMonths?: number;
   feedingType?: "breastfeeding" | "formula" | "mixed";
-  /** Raw parent special plans text. */
-  specialPlans?: string;
+  /** Parent special plans — string, pipe-separated, or array of event lines. */
+  specialPlans?: string | string[];
   /** Recurring fixed activities (tuition, sports, classes). */
   fixedActivities?: FixedActivityInput[];
   /** Routine date (YYYY-MM-DD) — filters fixedActivities by weekday. */
@@ -122,6 +126,7 @@ export type IntelligencePipelineResult = {
   confidence: RoutineConfidence;
   specialEvent: SpecialEventDebug;
   parsedSpecialEvent: ParsedSpecialEvent | null;
+  parsedSpecialEvents: ParsedSpecialEvent[];
   fixedActivities: FixedActivitiesDebug;
   parsedFixedActivities: ReturnType<typeof parseFixedActivitiesForDate>["activities"];
 };
@@ -249,6 +254,7 @@ export function runRoutineIntelligencePipeline(
       confidence: "high",
       specialEvent: specialParse.debug,
       parsedSpecialEvent: specialParse.event,
+      parsedSpecialEvents: specialParse.events,
       fixedActivities: fixedParse.debug,
       parsedFixedActivities: fixedParse.activities,
     };
@@ -259,14 +265,19 @@ export function runRoutineIntelligencePipeline(
     time: normalizeTo24h(it.time),
   }));
 
-  if (specialParse.event) {
-    items = injectSpecialEventBlock(items, specialParse.event);
-    pipelineDebug(debug, debugLog, "specialEventInjected", specialParse.event);
-    decisionTrace.push({
-      kind: "priority",
-      message: `Special event locked: ${specialParse.event.activity} @ ${minsToTime24(specialParse.event.startMins)}`,
-      detail: { type: specialParse.event.type, source: specialParse.event.timeSource },
+  if (specialParse.events.length > 0) {
+    items = injectSpecialEventBlocks(items, specialParse.events, {
+      wakeMins: wakeMinsEarly,
+      sleepMins: sleepMinsEarly,
     });
+    pipelineDebug(debug, debugLog, "specialEventsInjected", specialParse.events);
+    for (const ev of specialParse.events) {
+      decisionTrace.push({
+        kind: "priority",
+        message: `Special event locked: ${ev.activity} @ ${minsToTime24(ev.startMins)}`,
+        detail: { type: ev.type, source: ev.timeSource },
+      });
+    }
   }
 
   if (fixedParse.activities.length > 0) {
@@ -384,7 +395,7 @@ export function runRoutineIntelligencePipeline(
   const postMealShift = shiftNonLockedAroundLockedEvents(items);
   items = postMealShift.items;
   mergeTimelineShifts(fixedParse.debug, postMealShift.shiftsApplied);
-  items = ensureSpecialEventsPreserved(items, specialParse.event, {
+  items = ensureSpecialEventsPreserved(items, specialParse.events, {
     wakeMins: wakeMinsEarly,
     sleepMins: sleepMinsEarly,
   });
@@ -445,7 +456,7 @@ export function runRoutineIntelligencePipeline(
     );
     const mealFallback = applyMealAwareScheduling(fallback, state, flowOpts);
     fallback = mealFallback.items;
-    fallback = ensureSpecialEventsPreserved(fallback, specialParse.event, {
+    fallback = ensureSpecialEventsPreserved(fallback, specialParse.events, {
       wakeMins: wakeMinsEarly,
       sleepMins: sleepMinsEarly,
     });
@@ -488,10 +499,11 @@ export function runRoutineIntelligencePipeline(
   }
 
   let polished = polishRoutineOutput(items, state, decisionTrace);
-  polished = ensureSpecialEventsPreserved(polished, specialParse.event, {
+  polished = ensureSpecialEventsPreserved(polished, specialParse.events, {
     wakeMins: wakeMinsEarly,
     sleepMins: sleepMinsEarly,
   });
+  polished = resolveTimelineOverlaps(polished, wakeMinsEarly, sleepMinsEarly);
   polished = ensureFixedActivitiesPreserved(polished, fixedParse.activities, {
     wakeMins: wakeMinsEarly,
     sleepMins: sleepMinsEarly,
@@ -521,6 +533,54 @@ export function runRoutineIntelligencePipeline(
     pipelineDebug(debug, debugLog, "finalizeMealStructure", mealFinalized.adjustments);
   }
   polished = enforceSleepIsLast(polished, decisionTrace);
+
+  const realism = applyRoutineRealismPolish(polished, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+    isSchoolDay: isSchoolDayForMeals,
+    isWeekendDay: flowOpts.isWeekendDay ?? false,
+    ageGroup: scheduleOpts.ageGroup,
+    seed:
+      (input.childId?.length ?? 0) +
+      (input.mealSeed ?? 0) +
+      sleepMinsEarly,
+  });
+  polished = realism.items;
+  if (realism.adjustments.length) {
+    pipelineDebug(debug, debugLog, "routineRealismPolish", realism.adjustments);
+    fixedParse.debug.adjustmentsMade.push(...realism.adjustments.slice(0, 8));
+  }
+  if (realism.warnings.length) {
+    pipelineDebug(debug, debugLog, "routineRealismWarnings", realism.warnings);
+  }
+  polished = enforceSleepIsLast(polished, decisionTrace);
+
+  const rainMode =
+    /rain|drizzle|storm/i.test(
+      input.builtContext.environment?.condition ??
+        input.builtContext.weatherCondition ??
+        "",
+    ) || input.builtContext.weatherOutdoor === "no";
+
+  const energyCurve = enforceEnergyCurve(polished, { rainMode });
+  polished = energyCurve.items;
+  if (energyCurve.adjustments.length) {
+    pipelineDebug(debug, debugLog, "enforceEnergyCurve", energyCurve.adjustments);
+    fixedParse.debug.adjustmentsMade.push(...energyCurve.adjustments.slice(0, 6));
+  }
+
+  polished = ensureFixedActivitiesPreserved(
+    polished,
+    fixedParse.activities,
+    { wakeMins: wakeMinsEarly, sleepMins: sleepMinsEarly },
+    fixedParse.debug,
+  );
+  polished = ensureSpecialEventsPreserved(polished, specialParse.events, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+  });
+  polished = resolveTimelineOverlaps(polished, wakeMinsEarly, sleepMinsEarly);
+
   for (const c of mealShift.unresolved) {
     fixedParse.debug.conflicts.push(c);
     fixedParse.debug.conflictsDetected.push(c.warning);
@@ -534,17 +594,13 @@ export function runRoutineIntelligencePipeline(
     state.country,
   );
 
-  const specialEvent = validateSpecialEventPlacement(
-    polished,
-    specialParse.event,
-    {
-      wakeMins: wakeMinsEarly,
-      sleepMins: sleepMinsEarly,
-      schoolStartMins: scheduleOpts.schoolStartMins,
-      schoolEndMins: scheduleOpts.schoolEndMins,
-      hasSchool: scheduleOpts.hasSchool,
-    },
-  );
+  const specialEvent = validateSpecialEventsPlacement(polished, specialParse.events, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+    schoolStartMins: scheduleOpts.schoolStartMins,
+    schoolEndMins: scheduleOpts.schoolEndMins,
+    hasSchool: scheduleOpts.hasSchool,
+  });
 
   const fixedActivities = validateFixedActivitiesPlacement(
     polished,
@@ -563,12 +619,41 @@ export function runRoutineIntelligencePipeline(
   fixedActivities.shiftsApplied.push(...fixedParse.debug.shiftsApplied);
   fixedActivities.validationWarnings.push(...fixedParse.debug.validationWarnings);
 
-  for (const c of detectSpecialFixedConflicts(fixedParse.activities, specialParse.event)) {
+  for (const c of detectSpecialFixedConflicts(fixedParse.activities, specialParse.events)) {
     fixedActivities.conflicts.push(c);
     fixedActivities.conflictsDetected.push(c.warning);
   }
 
   finalizeFixedActivitiesSummary(fixedActivities);
+
+  const finalIntegrity = enforceFinalTimelineIntegrity(polished, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+    aqi: state.aqi ?? input.builtContext.environment?.AQI ?? null,
+    condition:
+      input.builtContext.environment?.condition ??
+      input.builtContext.weatherCondition ??
+      null,
+    hasSchool: flowOpts.hasSchool,
+    isWeekendDay: flowOpts.isWeekendDay ?? false,
+    country: state.country,
+    eventStartMins: specialParse.events.map((e) => e.startMins),
+    rainMode,
+  });
+  polished = finalIntegrity.items;
+  if (finalIntegrity.adjustments.length) {
+    pipelineDebug(debug, debugLog, "finalTimelineIntegrity", finalIntegrity.adjustments);
+    fixedActivities.adjustmentsMade.push(
+      ...finalIntegrity.adjustments.slice(0, 12).map((a) => `final: ${a}`),
+    );
+  }
+  if (finalIntegrity.warnings.length) {
+    pipelineDebug(debug, debugLog, "finalTimelineIntegrityWarnings", finalIntegrity.warnings);
+    fixedActivities.validationWarnings.push(...finalIntegrity.warnings);
+  }
+  if (finalIntegrity.repaired) {
+    pipelineDebug(debug, debugLog, "finalTimelineIntegrityRepaired", true);
+  }
 
   return {
     items: polished,
@@ -588,6 +673,7 @@ export function runRoutineIntelligencePipeline(
     confidence,
     specialEvent,
     parsedSpecialEvent: specialParse.event,
+    parsedSpecialEvents: specialParse.events,
     fixedActivities,
     parsedFixedActivities: fixedParse.activities,
   };

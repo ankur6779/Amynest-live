@@ -37,7 +37,25 @@ export type SpecialEventDebug = {
   eventActivity: string | null;
   eventPlacementStatus: SpecialEventPlacementStatus;
   validationWarnings: string[];
+  /** Number of parsed events (0, 1, or many). */
+  eventCount?: number;
+  /** All parsed event times for debugging. */
+  eventTimes?: string[];
 };
+
+export type SpecialPlansParseResult = {
+  events: ParsedSpecialEvent[];
+  /** First event — backward compatible with single-event callers. */
+  event: ParsedSpecialEvent | null;
+  debug: SpecialEventDebug;
+};
+
+/** Minutes of clear space before a locked event (no filler ending in this window). */
+export const PRE_EVENT_CLEARANCE_MINS = 25;
+/** Gap-fill must not end within this margin before an event. */
+export const GAP_FILL_BEFORE_EVENT_MINS = 30;
+/** Transition buffer inserted before event start when space allows. */
+export const EVENT_PREP_BUFFER_MINS = 8;
 
 const HANDLER_SEGMENT_RE =
   /today is being handled by|both parents.*handling|babysitter|grandparent|handled by dad|handled by mom/i;
@@ -139,29 +157,30 @@ function formatActivityLabel(raw: string): string {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
-export function parseSpecialPlans(
-  specialPlans: string | null | undefined,
+function normalizeSpecialPlansSegments(
+  specialPlans: string | string[] | null | undefined,
+): string[] {
+  if (specialPlans == null) return [];
+  if (Array.isArray(specialPlans)) {
+    return specialPlans.map((p) => p.trim()).filter(Boolean);
+  }
+  const trimmed = specialPlans.trim();
+  if (!trimmed) return [];
+  const cleaned = stripHandlerSegments(trimmed);
+  if (!cleaned) return [];
+  return cleaned
+    .split(/\s*\|\s*/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+export function parseSpecialPlanSegment(
+  segment: string,
   bounds?: { wakeMins: number; sleepMins: number },
-): { event: ParsedSpecialEvent | null; debug: SpecialEventDebug } {
-  const emptyDebug: SpecialEventDebug = {
-    eventDetected: false,
-    eventTime: null,
-    eventType: null,
-    eventActivity: null,
-    eventPlacementStatus: "skipped",
-    validationWarnings: [],
-  };
+): ParsedSpecialEvent | null {
+  const primary = segment.trim();
+  if (!primary || HANDLER_SEGMENT_RE.test(primary)) return null;
 
-  if (!specialPlans?.trim()) {
-    return { event: null, debug: emptyDebug };
-  }
-
-  const cleaned = stripHandlerSegments(specialPlans.trim());
-  if (!cleaned) {
-    return { event: null, debug: emptyDebug };
-  }
-
-  const primary = cleaned.split(/\s*\|\s*/)[0]!.trim();
   const type = inferSpecialEventType(primary);
   const { mins, source } = extractTimeFromSpecialPlan(primary);
   let startMins = mins ?? INFERRED_START[type];
@@ -175,21 +194,57 @@ export function parseSpecialPlans(
   const activity = formatActivityLabel(primary);
 
   return {
-    event: {
-      activity,
-      type,
-      startMins,
-      duration,
-      raw: primary,
-      timeSource: source,
-    },
+    activity,
+    type,
+    startMins,
+    duration,
+    raw: primary,
+    timeSource: source,
+  };
+}
+
+export function parseSpecialPlans(
+  specialPlans: string | string[] | null | undefined,
+  bounds?: { wakeMins: number; sleepMins: number },
+): SpecialPlansParseResult {
+  const emptyDebug: SpecialEventDebug = {
+    eventDetected: false,
+    eventTime: null,
+    eventType: null,
+    eventActivity: null,
+    eventPlacementStatus: "skipped",
+    validationWarnings: [],
+    eventCount: 0,
+    eventTimes: [],
+  };
+
+  const segments = normalizeSpecialPlansSegments(specialPlans);
+  if (!segments.length) {
+    return { events: [], event: null, debug: emptyDebug };
+  }
+
+  const events = segments
+    .map((seg) => parseSpecialPlanSegment(seg, bounds))
+    .filter((e): e is ParsedSpecialEvent => e != null)
+    .sort((a, b) => a.startMins - b.startMins);
+
+  if (!events.length) {
+    return { events: [], event: null, debug: emptyDebug };
+  }
+
+  const first = events[0]!;
+  return {
+    events,
+    event: first,
     debug: {
       eventDetected: true,
-      eventTime: minsToTime24(startMins),
-      eventType: type,
-      eventActivity: activity,
+      eventTime: minsToTime24(first.startMins),
+      eventType: first.type,
+      eventActivity: first.activity,
       eventPlacementStatus: "success",
       validationWarnings: [],
+      eventCount: events.length,
+      eventTimes: events.map((e) => minsToTime24(e.startMins)),
     },
   };
 }
@@ -206,16 +261,32 @@ function isProbableDuplicateOfEvent(
   item: RoutineScheduleItem,
   event: ParsedSpecialEvent,
 ): boolean {
+  if (isLockedSpecialEvent(item)) return false;
   const act = item.activity.toLowerCase();
   const raw = event.raw.toLowerCase();
-  if (act === event.activity.toLowerCase()) return true;
+  const label = event.activity.toLowerCase();
+  if (act === label) return true;
   if (raw.length >= 8 && act.includes(raw.slice(0, Math.min(20, raw.length)))) {
+    return true;
+  }
+  if (label.length >= 10 && act.includes(label.slice(0, Math.min(16, label.length)))) {
+    return true;
+  }
+  if (
+    /\bdinner\b/i.test(act) &&
+    /\bdinner\b/i.test(raw) &&
+    !/\b(outing|restaurant|party)\b/i.test(raw)
+  ) {
     return true;
   }
   if (/\bspecial (activity|plan|event)\b/i.test(act) && event.raw.length >= 6) {
     return true;
   }
   return false;
+}
+
+function isSleepLike(item: RoutineScheduleItem): boolean {
+  return /lights out|sleep/i.test(item.activity);
 }
 
 export function buildSpecialEventScheduleItem(
@@ -225,10 +296,11 @@ export function buildSpecialEventScheduleItem(
     time: minsToTime24(event.startMins),
     activity: event.activity,
     duration: event.duration,
-    category: "family",
+    category: "event",
     status: "pending",
     locked: true,
     culturalTag: "special_event",
+    activitySource: "special",
     notes:
       event.timeSource === "inferred"
         ? `Special plan (${event.type}) — time estimated to fit the day.`
@@ -240,12 +312,209 @@ export function buildSpecialEventScheduleItem(
   };
 }
 
+function isStructuredActivity(item: RoutineScheduleItem): boolean {
+  return (
+    isLockedScheduleItem(item) ||
+    item.culturalTag === "fixed_recurring" ||
+    item.activitySource === "fixed" ||
+    (item.category ?? "").toLowerCase() === "school" ||
+    /\bat school\b/i.test(item.activity)
+  );
+}
+
+function isGenericFillerBlock(item: RoutineScheduleItem): boolean {
+  if (isStructuredActivity(item) || isSleepLike(item)) return false;
+  const cat = (item.category ?? "").toLowerCase();
+  if (cat === "meal" || cat === "tiffin") return false;
+  if (/\b(wake up|freshen up|wind.?down|lights out)\b/i.test(item.activity)) return false;
+  return (
+    /\bfamily time together\b/i.test(item.activity) ||
+    /\bfamily outing\b/i.test(item.activity) ||
+    /\bcalm family\b/i.test(item.activity) ||
+    /creative (activity|project|play)/i.test(item.activity) ||
+    /relaxed play/i.test(item.activity) ||
+    /evening play/i.test(item.activity) ||
+    cat === "family" ||
+    cat === "creative" ||
+    cat === "play"
+  );
+}
+
+/**
+ * Remove or trim filler blocks that crowd the window before locked events.
+ */
+export function cleanupBlocksBeforeEvents(
+  items: RoutineScheduleItem[],
+  events: ParsedSpecialEvent[],
+): { items: RoutineScheduleItem[]; adjustments: string[] } {
+  const adjustments: string[] = [];
+  if (!events.length) return { items, adjustments };
+
+  let working = [...items];
+  const sortedEvents = [...events].sort((a, b) => a.startMins - b.startMins);
+
+  for (const event of sortedEvents) {
+    const cutoff = event.startMins - PRE_EVENT_CLEARANCE_MINS;
+    const kept: RoutineScheduleItem[] = [];
+
+    for (const it of working) {
+      if (isLockedSpecialEvent(it) && isProbableDuplicateOfEvent(it, event)) {
+        kept.push(it);
+        continue;
+      }
+      if (isStructuredActivity(it) || isLockedSpecialEvent(it)) {
+        kept.push(it);
+        continue;
+      }
+
+      const start = parseTimeToMins(normalizeTo24h(it.time));
+      const end = start + (it.duration ?? 30);
+
+      if (end <= cutoff || start >= event.startMins) {
+        kept.push(it);
+        continue;
+      }
+
+      if (isGenericFillerBlock(it)) {
+        const maxDur = cutoff - start;
+        if (maxDur >= 15) {
+          kept.push({ ...it, duration: maxDur });
+          adjustments.push(
+            `trimmed "${it.activity}" before ${event.activity} (${PRE_EVENT_CLEARANCE_MINS}min buffer)`,
+          );
+        } else {
+          adjustments.push(`removed "${it.activity}" before ${event.activity}`);
+        }
+        continue;
+      }
+
+      const maxDur = Math.max(15, cutoff - start);
+      if (maxDur < (it.duration ?? 30)) {
+        kept.push({ ...it, duration: maxDur });
+        adjustments.push(`trimmed "${it.activity}" before ${event.activity}`);
+      } else {
+        kept.push(it);
+      }
+    }
+    working = kept;
+  }
+
+  return {
+    items: working.sort(
+      (a, b) => parseTimeToMins(normalizeTo24h(a.time)) - parseTimeToMins(normalizeTo24h(b.time)),
+    ),
+    adjustments,
+  };
+}
+
 export function injectSpecialEventBlock(
   items: RoutineScheduleItem[],
   event: ParsedSpecialEvent,
 ): RoutineScheduleItem[] {
-  const filtered = items.filter((i) => !isProbableDuplicateOfEvent(i, event));
-  return [...filtered, buildSpecialEventScheduleItem(event)];
+  return injectSpecialEventBlocks(items, [event]);
+}
+
+export function injectSpecialEventBlocks(
+  items: RoutineScheduleItem[],
+  events: ParsedSpecialEvent[],
+  bounds?: { wakeMins: number; sleepMins: number },
+): RoutineScheduleItem[] {
+  if (!events.length) return items;
+
+  const wakeMins =
+    bounds?.wakeMins ??
+    Math.min(...items.map((i) => parseTimeToMins(normalizeTo24h(i.time))), 7 * 60);
+
+  let working = [...items];
+  for (const ev of events) {
+    working = working.filter((i) => !isProbableDuplicateOfEvent(i, ev));
+  }
+
+  const cleaned = cleanupBlocksBeforeEvents(working, events);
+  working = cleaned.items;
+
+  for (const ev of events) {
+    const prepStart = ev.startMins - EVENT_PREP_BUFFER_MINS;
+    if (prepStart > wakeMins + 15) {
+      const hasPrep = working.some(
+        (i) =>
+          !isLockedScheduleItem(i) &&
+          parseTimeToMins(normalizeTo24h(i.time)) >= prepStart - 2 &&
+          parseTimeToMins(normalizeTo24h(i.time)) <= ev.startMins,
+      );
+      if (!hasPrep) {
+        working.push({
+          time: minsToTime24(prepStart),
+          activity: "Get ready & transition",
+          duration: EVENT_PREP_BUFFER_MINS,
+          category: "rest",
+          status: "pending",
+          notes: `Short buffer before ${ev.activity}.`,
+        });
+      }
+    }
+    working.push(buildSpecialEventScheduleItem(ev));
+  }
+
+  return shiftNonLockedAroundLockedEvents(working).items;
+}
+
+function validateOneSpecialEventPlacement(
+  items: RoutineScheduleItem[],
+  event: ParsedSpecialEvent,
+  opts: {
+    wakeMins: number;
+    sleepMins: number;
+    schoolStartMins?: number;
+    schoolEndMins?: number;
+    hasSchool?: boolean;
+  },
+): string[] {
+  const warnings: string[] = [];
+  const match = items.find(
+    (i) =>
+      isLockedSpecialEvent(i) &&
+      (i.activity.toLowerCase() === event.activity.toLowerCase() ||
+        isProbableDuplicateOfEvent(i, event)),
+  );
+
+  if (!match) {
+    warnings.push(`special-event: not found in final schedule — ${event.activity}`);
+    return warnings;
+  }
+
+  const start = parseTimeToMins(normalizeTo24h(match.time));
+  const end = start + (match.duration ?? event.duration);
+
+  if (Math.abs(start - event.startMins) > 20) {
+    warnings.push(`special-event: "${event.activity}" time drifted from plan`);
+  }
+  if (start < opts.wakeMins) {
+    warnings.push(`special-event: "${event.activity}" starts before wake window`);
+  }
+  if (start >= opts.sleepMins) {
+    warnings.push(`special-event: "${event.activity}" starts at or after bedtime`);
+  }
+
+  if (
+    opts.hasSchool &&
+    opts.schoolStartMins != null &&
+    opts.schoolEndMins != null &&
+    start < opts.schoolEndMins &&
+    end > opts.schoolStartMins
+  ) {
+    warnings.push(`special-event: "${event.activity}" overlaps school block`);
+  }
+
+  const sleepItem = items.find((i) => /lights out|sleep/i.test(i.activity));
+  if (sleepItem) {
+    const sleepStart = parseTimeToMins(normalizeTo24h(sleepItem.time));
+    if (start >= sleepStart || end > sleepStart) {
+      warnings.push(`special-event: "${event.activity}" overlaps sleep`);
+    }
+  }
+
+  return warnings;
 }
 
 export function validateSpecialEventPlacement(
@@ -259,7 +528,22 @@ export function validateSpecialEventPlacement(
     hasSchool?: boolean;
   },
 ): SpecialEventDebug {
-  if (!event) {
+  const events = event ? [event] : [];
+  return validateSpecialEventsPlacement(items, events, opts);
+}
+
+export function validateSpecialEventsPlacement(
+  items: RoutineScheduleItem[],
+  events: ParsedSpecialEvent[],
+  opts: {
+    wakeMins: number;
+    sleepMins: number;
+    schoolStartMins?: number;
+    schoolEndMins?: number;
+    hasSchool?: boolean;
+  },
+): SpecialEventDebug {
+  if (!events.length) {
     return {
       eventDetected: false,
       eventTime: null,
@@ -267,73 +551,34 @@ export function validateSpecialEventPlacement(
       eventActivity: null,
       eventPlacementStatus: "skipped",
       validationWarnings: [],
+      eventCount: 0,
+      eventTimes: [],
     };
   }
 
   const warnings: string[] = [];
-  const match = items.find(
-    (i) =>
-      isLockedSpecialEvent(i) ||
-      i.activity.toLowerCase() === event.activity.toLowerCase(),
-  );
-
-  if (!match) {
-    return {
-      eventDetected: true,
-      eventTime: minsToTime24(event.startMins),
-      eventType: event.type,
-      eventActivity: event.activity,
-      eventPlacementStatus: "fallback",
-      validationWarnings: ["special-event: not found in final schedule"],
-    };
+  for (const event of events) {
+    warnings.push(...validateOneSpecialEventPlacement(items, event, opts));
   }
 
-  const start = parseTimeToMins(normalizeTo24h(match.time));
-  const end = start + (match.duration ?? event.duration);
-
-  if (start < opts.wakeMins) {
-    warnings.push("special-event: starts before wake window");
-  }
-  if (start >= opts.sleepMins) {
-    warnings.push("special-event: starts at or after bedtime");
-  }
-
-  if (
-    opts.hasSchool &&
-    opts.schoolStartMins != null &&
-    opts.schoolEndMins != null &&
-    start < opts.schoolEndMins &&
-    end > opts.schoolStartMins
-  ) {
-    warnings.push("special-event: overlaps school block");
-  }
-
-  const sleepItem = items.find((i) => /lights out|sleep/i.test(i.activity));
-  if (sleepItem) {
-    const sleepStart = parseTimeToMins(normalizeTo24h(sleepItem.time));
-    if (start >= sleepStart || end > sleepStart) {
-      warnings.push("special-event: overlaps sleep");
-    }
-  }
-
+  const first = events[0]!;
   const placementStatus: SpecialEventPlacementStatus =
     warnings.length === 0 ? "success" : "fallback";
 
   return {
     eventDetected: true,
-    eventTime: minsToTime24(start),
-    eventType: event.type,
-    eventActivity: match.activity,
+    eventTime: minsToTime24(first.startMins),
+    eventType: first.type,
+    eventActivity: events.length === 1 ? first.activity : `${events.length} events`,
     eventPlacementStatus: placementStatus,
     validationWarnings: warnings,
+    eventCount: events.length,
+    eventTimes: events.map((e) => minsToTime24(e.startMins)),
   };
 }
 
-function isSleepLike(item: RoutineScheduleItem): boolean {
-  return /lights out|sleep/i.test(item.activity);
-}
-
 const GAP_AFTER_EVENT = 10;
+const MIN_ACTIVITY_MINS = 10;
 
 export type TimelineShift = {
   activity: string;
@@ -429,22 +674,38 @@ export function shiftNonLockedAroundLockedEvents(
   };
 }
 
+function normalizeEventsArg(
+  events: ParsedSpecialEvent | ParsedSpecialEvent[] | null | undefined,
+): ParsedSpecialEvent[] {
+  if (!events) return [];
+  return Array.isArray(events) ? events : [events];
+}
+
 /**
- * Re-insert parsed special event if post-processing dropped it; resolve overlaps around it.
+ * Re-insert parsed special events if post-processing dropped them; resolve overlaps.
  */
 export function ensureSpecialEventsPreserved(
   items: RoutineScheduleItem[],
-  event: ParsedSpecialEvent | null,
+  events: ParsedSpecialEvent | ParsedSpecialEvent[] | null | undefined,
   bounds: { wakeMins: number; sleepMins: number },
 ): RoutineScheduleItem[] {
+  const list = normalizeEventsArg(events);
   let working = [...items];
-  if (event) {
-    working = working.filter((i) => !isProbableDuplicateOfEvent(i, event));
+
+  for (const ev of list) {
+    working = working.filter((i) => !isProbableDuplicateOfEvent(i, ev));
   }
 
-  const hasLocked = working.some(isLockedSpecialEvent);
-  if (!hasLocked && event) {
-    working = [...working, buildSpecialEventScheduleItem(event)];
+  const cleaned = cleanupBlocksBeforeEvents(working, list);
+  working = cleaned.items;
+
+  for (const ev of list) {
+    const present = working.some(
+      (i) => isLockedSpecialEvent(i) && isProbableDuplicateOfEvent(i, ev),
+    );
+    if (!present) {
+      working.push(buildSpecialEventScheduleItem(ev));
+    }
   }
 
   working = shiftNonLockedAroundLockedEvents(working).items;
@@ -457,11 +718,11 @@ export function ensureSpecialEventsPreserved(
       if (isSleepLike(it) || isLockedScheduleItem(it)) continue;
       let start = parseTimeToMins(normalizeTo24h(it.time));
       let dur = it.duration ?? 30;
-      let end = start + dur;
+      const end = start + dur;
       if (end <= sleepStart) continue;
       if (start >= sleepStart) continue;
       const maxDur = sleepStart - start - 5;
-      if (maxDur >= 10) {
+      if (maxDur >= MIN_ACTIVITY_MINS) {
         it.duration = maxDur;
         continue;
       }
@@ -472,5 +733,6 @@ export function ensureSpecialEventsPreserved(
     }
   }
 
+  working = resolveTimelineOverlaps(working, bounds.wakeMins, bounds.sleepMins);
   return resolveTimelineOverlaps(working, bounds.wakeMins, bounds.sleepMins);
 }

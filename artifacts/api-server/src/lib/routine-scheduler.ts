@@ -887,16 +887,25 @@ function mergeAndFillGaps(slots: InternalSlot[], bounds: DayBounds): InternalSlo
       out.push(slot);
       continue;
     }
-    if (slot.startExt > cursor + 14) {
+    const gapMins = slot.startExt - cursor;
+    if (gapMins > 14) {
+      const fillActivity =
+        cursor < 12 * 60
+          ? "Morning play & exploration"
+          : cursor < 17 * 60
+            ? "Creative play time"
+            : "Family unwind time";
+      const fillCategory =
+        cursor < 12 * 60 ? "outdoor" : cursor < 17 * 60 ? "creative" : "family";
       out.push({
         startExt: cursor,
-        duration: slot.startExt - cursor,
+        duration: gapMins,
         item: {
           time: "",
-          activity: "Free time",
-          duration: slot.startExt - cursor,
-          category: "rest",
-          notes: "Unstructured break — child-led play or rest.",
+          activity: fillActivity,
+          duration: gapMins,
+          category: fillCategory,
+          notes: "Keeps the day flowing between scheduled blocks.",
           status: "pending",
         },
         priority: PRIORITY_FREE,
@@ -935,15 +944,20 @@ function mergeAndFillGaps(slots: InternalSlot[], bounds: DayBounds): InternalSlo
       const gapEnd = sleepSlot.startExt;
       const lastEnd = slotEnd(lastAwake) + gapAfter(lastAwake.item);
       if (gapEnd > lastEnd + 14) {
+        const maxDur = Math.max(15, gapEnd - lastEnd - 5);
+        const gapMins = Math.min(maxDur, 90);
         const idx = out.indexOf(sleepSlot);
         out.splice(idx, 0, {
           startExt: lastEnd,
-          duration: gapEnd - lastEnd,
+          duration: gapMins,
           item: {
             time: "",
-            activity: "Free time",
-            duration: gapEnd - lastEnd,
-            category: "rest",
+            activity:
+              gapMins > 75
+                ? "Calm family time before bed"
+                : "Quiet wind-down time",
+            duration: gapMins,
+            category: gapMins > 75 ? "family" : "rest",
             status: "pending",
           },
           priority: PRIORITY_FREE,
