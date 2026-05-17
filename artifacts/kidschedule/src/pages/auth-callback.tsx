@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { applyActionCode } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
+import { resetVerificationRateLimit } from "@/lib/email-verification-rate";
 
 function postVerifyPath(): string {
   if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
@@ -35,6 +36,7 @@ export default function AuthCallbackPage() {
         if (user) {
           await user.reload();
           await user.getIdToken(true);
+          resetVerificationRateLimit(user.uid);
         }
 
         setLocation(postVerifyPath());

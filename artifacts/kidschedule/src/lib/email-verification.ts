@@ -1,4 +1,11 @@
 import { sendEmailVerification, type ActionCodeSettings, type User } from "firebase/auth";
+import {
+  getVerificationRateStatus,
+  isVerificationSendInflight,
+  recordVerificationSendSuccess,
+  setVerificationSendInflight,
+  VerificationRateLimitError,
+} from "./email-verification-rate";
 
 /** Canonical prod callback — must be in Firebase → Authentication → Authorized domains. */
 const PRODUCTION_CALLBACK = "https://amynest.in/auth/callback";
@@ -38,30 +45,66 @@ export function getEmailVerificationActionCodeSettings(): ActionCodeSettings {
   };
 }
 
-const SENT_AT_STORAGE_PREFIX = "amynest_verify_email_sent:";
-
-/** Avoid duplicate Firebase sends within a short window (sign-up + verify page). */
-export function shouldSkipVerificationEmailSend(uid: string, withinMs = 120_000): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    const raw = sessionStorage.getItem(`${SENT_AT_STORAGE_PREFIX}${uid}`);
-    if (!raw) return false;
-    return Date.now() - Number(raw) < withinMs;
-  } catch {
-    return false;
-  }
+function logVerificationEvent(
+  event: string,
+  user: User,
+  extra?: Record<string, unknown>,
+): void {
+  const email = user.email ?? "(no-email)";
+  console.info("[email-verification]", {
+    event,
+    email,
+    uid: user.uid,
+    at: new Date().toISOString(),
+    ...extra,
+  });
 }
 
-export function markVerificationEmailSent(uid: string): void {
-  if (typeof window === "undefined") return;
-  try {
-    sessionStorage.setItem(`${SENT_AT_STORAGE_PREFIX}${uid}`, String(Date.now()));
-  } catch {
-    /* ignore */
-  }
-}
-
+/**
+ * Send Firebase verification email with client rate limiting and in-flight dedupe.
+ * @throws {VerificationRateLimitError} after local attempt cap
+ */
 export async function sendUserEmailVerification(user: User): Promise<void> {
-  await sendEmailVerification(user, getEmailVerificationActionCodeSettings());
-  markVerificationEmailSent(user.uid);
+  if (isVerificationSendInflight(user.uid)) {
+    logVerificationEvent("send_skipped_inflight", user);
+    return;
+  }
+
+  const before = getVerificationRateStatus(user.uid);
+  if (!before.canSend) {
+    logVerificationEvent("rate_limit_blocked", user, {
+      attempts: before.attempts,
+      blockedUntil: before.blockedUntil,
+    });
+    throw new VerificationRateLimitError(
+      before.blockedUntil ?? Date.now() + 60_000,
+    );
+  }
+
+  setVerificationSendInflight(user.uid, true);
+  logVerificationEvent("send_attempt", user, { attempts: before.attempts });
+
+  try {
+    await sendEmailVerification(user, getEmailVerificationActionCodeSettings());
+    const after = recordVerificationSendSuccess(user.uid);
+    logVerificationEvent("send_success", user, {
+      attempts: after.attempts,
+      blockedUntil: after.blockedUntil,
+    });
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code;
+    logVerificationEvent("send_failed", user, {
+      attempts: before.attempts,
+      firebaseCode: code ?? "unknown",
+    });
+    if (code === "auth/too-many-requests") {
+      console.warn("[email-verification] Firebase auth/too-many-requests", {
+        email: user.email,
+        uid: user.uid,
+      });
+    }
+    throw err;
+  } finally {
+    setVerificationSendInflight(user.uid, false);
+  }
 }

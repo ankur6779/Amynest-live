@@ -1,12 +1,10 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useLocation, useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
 import { signOut as fbSignOut } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
-import {
-  sendUserEmailVerification,
-  shouldSkipVerificationEmailSend,
-} from "@/lib/email-verification";
+import { sendUserEmailVerification } from "@/lib/email-verification";
+import { getVerificationRateStatus, UX_COOLDOWN_MS } from "@/lib/email-verification-rate";
 import { prettyAuthError } from "@/lib/auth-errors";
 
 const CSS = `
@@ -64,7 +62,7 @@ function NeonRingHero() {
   );
 }
 
-const RESEND_COOLDOWN = 30;
+const RESEND_COOLDOWN_SEC = Math.ceil(UX_COOLDOWN_MS / 1000);
 
 function postVerifyPath(): string {
   if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
@@ -79,13 +77,13 @@ export default function VerifyEmailPage() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const email = decodeURIComponent(params.get("email") ?? "");
+  const sentOnArrival = params.get("sent") === "1";
   const sendFailedFromPrev = params.get("sendFailed") === "1";
 
   const [cooldown, setCooldown] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const autoSendStarted = useRef(false);
 
   const goHomeIfVerified = useCallback(async () => {
     const user = firebaseAuth.currentUser;
@@ -114,36 +112,22 @@ export default function VerifyEmailPage() {
     return () => clearInterval(id);
   }, [goHomeIfVerified]);
 
-  // Auto-send when landing from sign-in/sign-up (Firebase session required).
+  // After sign-in/sign-up we already sent once — show success + UX cooldown only (no API call).
   useEffect(() => {
-    if (autoSendStarted.current) return;
-    autoSendStarted.current = true;
-
     const user = firebaseAuth.currentUser;
     if (!user || user.emailVerified) return;
-    if (shouldSkipVerificationEmailSend(user.uid)) {
-      if (sendFailedFromPrev) {
-        setError(t("screens.verify_email.resend_error"));
-      }
+
+    if (sentOnArrival) {
+      setMessage(t("screens.verify_email.resent"));
+      const { uxCooldownSeconds } = getVerificationRateStatus(user.uid);
+      setCooldown(Math.max(uxCooldownSeconds, RESEND_COOLDOWN_SEC));
       return;
     }
 
-    setBusy(true);
-    void (async () => {
-      try {
-        await sendUserEmailVerification(user);
-        setMessage(t("screens.verify_email.resent"));
-        setCooldown(RESEND_COOLDOWN);
-        setError(null);
-      } catch (err: unknown) {
-        console.error("[verify-email] auto-send failed:", err);
-        const msg = prettyAuthError(err);
-        setError(msg || t("screens.verify_email.resend_error"));
-      } finally {
-        setBusy(false);
-      }
-    })();
-  }, [sendFailedFromPrev, t]);
+    if (sendFailedFromPrev) {
+      setError(t("screens.verify_email.resend_error"));
+    }
+  }, [sentOnArrival, sendFailedFromPrev, t]);
 
   async function onResend() {
     setError(null);
@@ -153,13 +137,31 @@ export default function VerifyEmailPage() {
       setError(t("screens.verify_email.must_sign_in_to_resend"));
       return;
     }
+    const rate = getVerificationRateStatus(fbUser.uid);
+    if (!rate.canSend && rate.blockedUntil) {
+      const seconds = Math.max(1, Math.ceil((rate.blockedUntil - Date.now()) / 1000));
+      setCooldown(seconds);
+      setError(prettyAuthError({ code: "auth/too-many-requests" }));
+      return;
+    }
+
     setBusy(true);
     try {
       await sendUserEmailVerification(fbUser);
       setMessage(t("screens.verify_email.resent"));
-      setCooldown(RESEND_COOLDOWN);
+      const after = getVerificationRateStatus(fbUser.uid);
+      setCooldown(Math.max(after.uxCooldownSeconds, RESEND_COOLDOWN_SEC));
     } catch (err: unknown) {
       console.error("[verify-email] resend failed:", err);
+      const code = (err as { code?: string })?.code;
+      if (code === "auth/too-many-requests") {
+        setCooldown(60);
+      } else {
+        const after = getVerificationRateStatus(fbUser.uid);
+        if (after.uxCooldownSeconds > 0) {
+          setCooldown(after.uxCooldownSeconds);
+        }
+      }
       const msg = prettyAuthError(err);
       setError(msg || t("screens.verify_email.resend_error"));
     } finally {

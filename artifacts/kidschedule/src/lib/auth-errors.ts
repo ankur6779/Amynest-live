@@ -1,5 +1,12 @@
-export function prettyAuthError(err: any): string {
-  const code = err?.code as string | undefined;
+import { VerificationRateLimitError } from "./email-verification-rate";
+
+export function prettyAuthError(err: unknown): string {
+  if (err instanceof VerificationRateLimitError) {
+    const seconds = Math.max(1, Math.ceil((err.blockedUntil - Date.now()) / 1000));
+    return `Too many attempts. Try again in ${seconds} seconds.`;
+  }
+
+  const code = (err as { code?: string })?.code;
   switch (code) {
     case "auth/invalid-email":
       return "That email looks invalid.";
@@ -27,7 +34,9 @@ export function prettyAuthError(err: any): string {
       return "";
     case "auth/network-request-failed":
       return "Network error. Check your connection and retry.";
-    default:
-      return err?.message || "Something went wrong. Please try again.";
+    default: {
+      const message = (err as { message?: string })?.message;
+      return message || "Something went wrong. Please try again.";
+    }
   }
 }

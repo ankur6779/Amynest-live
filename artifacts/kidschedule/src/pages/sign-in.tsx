@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { signInWithEmailAndPassword, sendPasswordResetEmail, signOut as fbSignOut } from "firebase/auth";
-import {
-  sendUserEmailVerification,
-  shouldSkipVerificationEmailSend,
-} from "@/lib/email-verification";
+import { sendUserEmailVerification } from "@/lib/email-verification";
 import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError } from "@/lib/auth-errors";
@@ -351,16 +348,15 @@ export default function SignInPage() {
       if (!cred.user.emailVerified && !isBypass) {
         // Send verification email on sign-in (verify page only resends if user taps).
         let verifySendFailed = false;
-        if (!shouldSkipVerificationEmailSend(cred.user.uid)) {
-          try {
-            await sendUserEmailVerification(cred.user);
-          } catch (verifyErr: unknown) {
-            console.error("[sign-in] sendEmailVerification failed:", verifyErr);
-            verifySendFailed = true;
-          }
+        try {
+          await sendUserEmailVerification(cred.user);
+        } catch (verifyErr: unknown) {
+          console.error("[sign-in] sendEmailVerification failed:", verifyErr);
+          verifySendFailed = true;
         }
         const q = new URLSearchParams({ email: email.trim() });
-        if (verifySendFailed) q.set("sendFailed", "1");
+        if (!verifySendFailed) q.set("sent", "1");
+        else q.set("sendFailed", "1");
         setLocation(`/verify-email?${q.toString()}`);
         return;
       }
