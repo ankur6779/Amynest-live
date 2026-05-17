@@ -1,9 +1,11 @@
 import { sendEmailVerification, type ActionCodeSettings, type User } from "firebase/auth";
+import { logFirebaseAuthError } from "./firebase-auth-error";
 import {
   getVerificationRateStatus,
   isVerificationSendInflight,
   recordVerificationSendSuccess,
   setVerificationSendInflight,
+  VerificationInflightError,
   VerificationRateLimitError,
 } from "./email-verification-rate";
 
@@ -21,8 +23,8 @@ const USE_CURRENT_ORIGIN_HOSTS = new Set([
 ]);
 
 /**
- * Where Firebase email-verification links should land.
- * Must match a domain in Firebase Console → Authentication → Settings → Authorized domains.
+ * Email verification uses **Firebase Auth** `sendEmailVerification` (client SDK).
+ * It does NOT call the AmyNest API or Resend — Resend is only for weekly recap emails on the server.
  */
 export function getEmailVerificationCallbackUrl(): string {
   const fromEnv = (import.meta.env.VITE_EMAIL_VERIFICATION_CALLBACK_URL as string | undefined)?.trim();
@@ -39,8 +41,9 @@ export function getEmailVerificationCallbackUrl(): string {
 }
 
 export function getEmailVerificationActionCodeSettings(): ActionCodeSettings {
+  const url = getEmailVerificationCallbackUrl();
   return {
-    url: getEmailVerificationCallbackUrl(),
+    url,
     handleCodeInApp: true,
   };
 }
@@ -50,24 +53,31 @@ function logVerificationEvent(
   user: User,
   extra?: Record<string, unknown>,
 ): void {
-  const email = user.email ?? "(no-email)";
   console.info("[email-verification]", {
     event,
-    email,
+    provider: "firebase-auth",
+    email: user.email ?? "(no-email)",
     uid: user.uid,
+    callbackUrl: getEmailVerificationCallbackUrl(),
     at: new Date().toISOString(),
     ...extra,
   });
 }
 
 /**
- * Send Firebase verification email with client rate limiting and in-flight dedupe.
- * @throws {VerificationRateLimitError} after local attempt cap
+ * Send Firebase verification email. Requires an active `firebaseAuth` session.
+ * @throws Firebase `auth/*` errors, {@link VerificationRateLimitError}, {@link VerificationInflightError}
  */
 export async function sendUserEmailVerification(user: User): Promise<void> {
+  if (!user.email) {
+    const err = { code: "auth/missing-email", message: "User has no email" };
+    logFirebaseAuthError("sendUserEmailVerification:no-email", err);
+    throw err;
+  }
+
   if (isVerificationSendInflight(user.uid)) {
     logVerificationEvent("send_skipped_inflight", user);
-    return;
+    throw new VerificationInflightError();
   }
 
   const before = getVerificationRateStatus(user.uid);
@@ -81,28 +91,26 @@ export async function sendUserEmailVerification(user: User): Promise<void> {
     );
   }
 
+  const settings = getEmailVerificationActionCodeSettings();
   setVerificationSendInflight(user.uid, true);
-  logVerificationEvent("send_attempt", user, { attempts: before.attempts });
+  logVerificationEvent("send_attempt", user, {
+    attempts: before.attempts,
+    continueUrl: settings.url,
+  });
 
   try {
-    await sendEmailVerification(user, getEmailVerificationActionCodeSettings());
+    await sendEmailVerification(user, settings);
     const after = recordVerificationSendSuccess(user.uid);
     logVerificationEvent("send_success", user, {
       attempts: after.attempts,
       blockedUntil: after.blockedUntil,
     });
   } catch (err: unknown) {
-    const code = (err as { code?: string })?.code;
+    logFirebaseAuthError("sendEmailVerification", err);
     logVerificationEvent("send_failed", user, {
       attempts: before.attempts,
-      firebaseCode: code ?? "unknown",
+      continueUrl: settings.url,
     });
-    if (code === "auth/too-many-requests") {
-      console.warn("[email-verification] Firebase auth/too-many-requests", {
-        email: user.email,
-        uid: user.uid,
-      });
-    }
     throw err;
   } finally {
     setVerificationSendInflight(user.uid, false);
