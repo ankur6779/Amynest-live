@@ -9,7 +9,7 @@ import {
   formatPhoneE164,
   isValidNationalPhone,
   PHONE_COUNTRIES,
-  buildPhoneOtpBrowserUrl,
+  openPhoneOtpInExternalBrowser,
   sendPhoneOtpSafely,
   shouldUseBrowserForPhoneOtp,
   warnIfPhoneAuthDomainMissingFromFirebase,
@@ -192,6 +192,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
   const { t } = useTranslation();
 
   const detectedCountry = useMemo(() => detectDefaultCountry(), []);
+  const chromeOtpRequired = useMemo(() => shouldUseBrowserForPhoneOtp(), []);
 
   const [step, setStep] = useState<Step>("idle");
   const [phone, setPhone] = useState("");
@@ -201,7 +202,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [otpSending, setOtpSending] = useState(false);
-  const [browserOtpUrl, setBrowserOtpUrl] = useState<string | null>(null);
   const confirmRef = useRef<ConfirmationResult | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sendInFlightRef = useRef(false);
@@ -246,7 +246,15 @@ export default function PhoneAuthFlow({ onError }: Props) {
       setStep("sending");
     }
 
-    setBrowserOtpUrl(null);
+    if (chromeOtpRequired) {
+      openPhoneOtpInExternalBrowser(phoneFull);
+      sendInFlightRef.current = false;
+      setOtpSending(false);
+      if (!forceResend) {
+        setStep("phone");
+      }
+      return;
+    }
 
     try {
       const res = await sendPhoneOtpSafely(firebaseAuth, phoneFull);
@@ -255,9 +263,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
         logFirebaseAuthError("phone-auth-flow:sendOtp", new Error(res.error));
         setPhoneError(res.error);
         onError?.(res.error);
-        if (res.suggestBrowser && shouldUseBrowserForPhoneOtp()) {
-          setBrowserOtpUrl(buildPhoneOtpBrowserUrl(phoneFull));
-        }
         if (!forceResend) {
           setStep("phone");
         }
@@ -280,7 +285,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
       sendInFlightRef.current = false;
       setOtpSending(false);
     }
-  }, [isValidPhone, onError, phoneFull, t]);
+  }, [chromeOtpRequired, isValidPhone, onError, phoneFull, t]);
 
   async function verifyOtp() {
     if (otp.length !== 6) { onError?.("Please enter the 6-digit OTP."); return; }
@@ -405,24 +410,8 @@ export default function PhoneAuthFlow({ onError }: Props) {
             <p style={{ fontSize: "12px", color: "#f87171", margin: 0 }}>{phoneError}</p>
           )}
 
-          {browserOtpUrl && (
-            <a
-              href={browserOtpUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                fontSize: "13px",
-                color: "hsl(var(--brand-violet-400))",
-                fontWeight: 600,
-                textDecoration: "underline",
-              }}
-            >
-              {t("components.phone_auth_flow.open_in_chrome")}
-            </a>
-          )}
-
-          {shouldUseBrowserForPhoneOtp() && !browserOtpUrl && (
-            <p style={{ fontSize: "11px", color: "rgba(200,180,255,0.45)", margin: 0 }}>
+          {chromeOtpRequired && (
+            <p style={{ fontSize: "12px", color: "rgba(200,180,255,0.55)", margin: 0, lineHeight: 1.45 }}>
               {t("components.phone_auth_flow.android_pwa_hint")}
             </p>
           )}
@@ -445,7 +434,11 @@ export default function PhoneAuthFlow({ onError }: Props) {
               aria-busy={sending}
               style={primaryBtn(!canSend)}
             >
-              {sending ? "Sending…" : "Send OTP"}
+              {sending
+                ? "Sending…"
+                : chromeOtpRequired
+                  ? t("components.phone_auth_flow.open_in_chrome")
+                  : "Send OTP"}
             </button>
           </div>
         </div>

@@ -32,11 +32,6 @@ export {
   prepareMobilePhoneOtpVerifier,
   awaitMobileRecaptchaVerification,
   createStaticRecaptchaVerifier,
-  isAndroidPwa,
-  isMobilePhoneOtpEnvironment,
-  shouldPreRenderPhoneRecaptcha,
-  shouldUseBrowserForPhoneOtp,
-  buildPhoneOtpBrowserUrl,
   hardResetRecaptcha,
   initRecaptcha,
   warmUpRecaptcha,
@@ -44,6 +39,15 @@ export {
   logRecaptchaState,
   setupRecaptcha,
 } from "./phone-recaptcha";
+export {
+  isAndroidPwa,
+  isMobilePhoneOtpEnvironment,
+  canRunInAppPhoneRecaptcha,
+  shouldPreRenderPhoneRecaptcha,
+  shouldUseBrowserForPhoneOtp,
+  buildPhoneOtpBrowserUrl,
+  openPhoneOtpInExternalBrowser,
+} from "./mobile-phone-environment";
 export {
   sendPhoneOtpSafely,
   PHONE_OTP_SEND_TIMEOUT_MS,

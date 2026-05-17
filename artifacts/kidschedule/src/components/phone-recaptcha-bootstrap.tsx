@@ -1,16 +1,23 @@
 import { useEffect } from "react";
 import { firebaseAuth } from "@/lib/firebase";
 import {
+  canRunInAppPhoneRecaptcha,
   ensureRecaptchaContainer,
   warmUpRecaptcha,
   warnIfPhoneAuthDomainMissingFromFirebase,
 } from "@workspace/phone-auth";
 
 /**
- * Create + render invisible reCAPTCHA once at app load (not on Send OTP click).
+ * Warm up invisible reCAPTCHA at app load — skipped on Android PWA (WebView crash).
  */
 export function PhoneRecaptchaBootstrap() {
   useEffect(() => {
+    if (!canRunInAppPhoneRecaptcha()) {
+      console.info(
+        "[phone-recaptcha-bootstrap] skip warmUp — Android PWA uses Chrome for OTP",
+      );
+      return;
+    }
     try {
       ensureRecaptchaContainer();
       warnIfPhoneAuthDomainMissingFromFirebase();

@@ -40,7 +40,7 @@ export function isMobilePhoneOtpEnvironment(): boolean {
   return false;
 }
 
-/** Installed PWA / Add-to-Home-Screen on Android — reCAPTCHA iframe often kills the process. */
+/** Installed PWA / Add-to-Home-Screen on Android — reCAPTCHA iframe kills the process. */
 export function isAndroidPwa(): boolean {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
     return false;
@@ -50,6 +50,7 @@ export function isAndroidPwa(): boolean {
   try {
     if (window.matchMedia("(display-mode: standalone)").matches) return true;
     if (window.matchMedia("(display-mode: minimal-ui)").matches) return true;
+    if (window.matchMedia("(display-mode: fullscreen)").matches) return true;
   } catch {
     /* ignore */
   }
@@ -59,7 +60,15 @@ export function isAndroidPwa(): boolean {
   return false;
 }
 
-/** Prefer opening system Chrome for phone OTP (avoids standalone WebView crashes). */
+/**
+ * Firebase reCAPTCHA must NOT run inside Android installed PWA WebView — process crash.
+ * Use Chrome / system browser for phone OTP instead.
+ */
+export function canRunInAppPhoneRecaptcha(): boolean {
+  return !isAndroidPwa();
+}
+
+/** @deprecated Use canRunInAppPhoneRecaptcha — inverted. */
 export function shouldUseBrowserForPhoneOtp(): boolean {
   return isAndroidPwa();
 }
@@ -72,7 +81,20 @@ export function buildPhoneOtpBrowserUrl(phoneE164: string, returnPath = "/sign-i
   return url.toString();
 }
 
-/** Warm up invisible reCAPTCHA on app load (Replit-style — badge before Send OTP). */
+/**
+ * Leave standalone PWA and open sign-in in the system browser (Chrome).
+ * Required for phone OTP on Android — reCAPTCHA cannot run in the PWA WebView.
+ */
+export function openPhoneOtpInExternalBrowser(
+  phoneE164: string,
+  returnPath = "/sign-in",
+): void {
+  const url = buildPhoneOtpBrowserUrl(phoneE164, returnPath);
+  console.info("[phone-otp] Opening system browser for OTP (Android PWA)", url);
+  window.location.assign(url);
+}
+
+/** Never warm up reCAPTCHA in Android PWA — iframe load crashes the app. */
 export function shouldPreRenderPhoneRecaptcha(): boolean {
-  return true;
+  return canRunInAppPhoneRecaptcha();
 }
