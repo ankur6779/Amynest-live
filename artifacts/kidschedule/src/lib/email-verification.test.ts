@@ -37,8 +37,8 @@ describe("getEmailVerificationCallbackUrl", () => {
     expect(getEmailVerificationCallbackUrl()).toBe(CANONICAL_EMAIL_VERIFICATION_URL);
   });
 
-  it("uses localhost /verify for dev", () => {
+  it("uses localhost /verify-email for dev", () => {
     mockHostname("localhost", "http://localhost:5173");
-    expect(getEmailVerificationCallbackUrl()).toBe("http://localhost:5173/verify");
+    expect(getEmailVerificationCallbackUrl()).toBe("http://localhost:5173/verify-email");
   });
 });

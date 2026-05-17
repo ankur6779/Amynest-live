@@ -17,7 +17,7 @@ import {
  * Must match Firebase Console → Authentication → Templates → action URL host/path
  * and be listed under Authentication → Settings → Authorized domains (amynest.in).
  */
-export const CANONICAL_EMAIL_VERIFICATION_URL = "https://amynest.in/verify";
+export const CANONICAL_EMAIL_VERIFICATION_URL = "https://amynest.in/verify-email";
 
 /** Alternate paths handled by AuthCallbackPage (template may use /auth/action). */
 export const LEGACY_EMAIL_VERIFICATION_PATHS = [
@@ -38,7 +38,7 @@ export function getEmailVerificationCallbackUrl(): string {
   if (typeof window !== "undefined" && window.location?.hostname) {
     const { hostname, origin } = window.location;
     if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return `${origin}/verify`;
+      return `${origin}/verify-email`;
     }
   }
 

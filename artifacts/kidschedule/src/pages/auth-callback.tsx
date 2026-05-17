@@ -1,24 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { applyActionCode } from "firebase/auth";
-import { firebaseAuth } from "@/lib/firebase";
-import { resetVerificationRateLimit } from "@/lib/email-verification-rate";
+import { parseFirebaseActionParams } from "@/lib/firebase-action-params";
 
-function postVerifyPath(): string {
-  if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-    return "/notify-prompt?next=/";
-  }
-  return "/";
-}
-
+/** Legacy Firebase action URLs (/verify, /auth/callback) → dedicated handlers. */
 export default function AuthCallbackPage() {
   const [, setLocation] = useLocation();
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const mode = params.get("mode");
-    const oobCode = params.get("oobCode");
+    const { mode, oobCode } = parseFirebaseActionParams();
 
     if (mode === "resetPassword" && oobCode) {
       const qs = new URLSearchParams({ mode, oobCode });
@@ -26,36 +15,13 @@ export default function AuthCallbackPage() {
       return;
     }
 
-    if (mode !== "verifyEmail" || !oobCode) {
-      setError("Invalid verification link.");
+    if (mode === "verifyEmail" && oobCode) {
+      const qs = new URLSearchParams({ mode, oobCode });
+      setLocation(`/verify-email?${qs.toString()}`);
       return;
     }
 
-    let cancelled = false;
-
-    (async () => {
-      try {
-        await applyActionCode(firebaseAuth, oobCode);
-        if (cancelled) return;
-
-        const user = firebaseAuth.currentUser;
-        if (user) {
-          await user.reload();
-          await user.getIdToken(true);
-          resetVerificationRateLimit(user.uid);
-        }
-
-        setLocation(postVerifyPath());
-      } catch (err: unknown) {
-        if (cancelled) return;
-        console.error("[auth/callback] applyActionCode failed:", err);
-        setError("This verification link is invalid or has expired.");
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    setLocation("/sign-in");
   }, [setLocation]);
 
   return (
@@ -72,17 +38,7 @@ export default function AuthCallbackPage() {
         textAlign: "center",
       }}
     >
-      {error ? (
-        <>
-          <p style={{ marginBottom: 16 }}>{error}</p>
-          <a href="/sign-in" style={{ color: "hsl(var(--brand-purple-400))" }}>
-            Back to sign in
-          </a>
-        </>
-      ) : (
-        <p>Verifying your email…</p>
-      )}
+      <p>Redirecting…</p>
     </div>
   );
 }
-
