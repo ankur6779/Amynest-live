@@ -2,7 +2,7 @@
  * Builds a unified routine context from API inputs + country profile.
  */
 import type { WeatherOutdoor } from "@workspace/family-routine";
-import type { EnvLevel } from "@workspace/environment";
+import type { EnvDataConfidence, EnvLevel } from "@workspace/environment";
 import {
   getCountryRoutineProfile,
   normalizeCountryCode,
@@ -29,6 +29,10 @@ export type BuildRoutineContextInput = {
   /** EQIE bundle — temperature, condition label, US AQI. */
   environment?: RoutineEnvironmentInput;
   aqi?: number | null;
+  /** Open-Meteo pipeline confidence — drives fallback outdoor + copy. */
+  environmentDataConfidence?: EnvDataConfidence;
+  /** Calendar date for school-day detection (defaults to today). */
+  referenceDate?: Date;
 };
 
 export type BuiltRoutineContext = RoutineRawContext & {
@@ -78,5 +82,7 @@ export function buildRoutineContext(input: BuildRoutineContextInput): BuiltRouti
         ? { temperature: temperatureC, AQI: aqi }
         : undefined,
     aqi,
+    environmentDataConfidence: input.environmentDataConfidence,
+    referenceDate: input.referenceDate,
   };
 }

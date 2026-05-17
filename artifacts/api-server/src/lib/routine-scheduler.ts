@@ -58,6 +58,8 @@ export type RoutineScheduleItem = {
   routineExplanation?: { reason: string; source: string };
   displayStart?: string;
   displayEnd?: string;
+  /** Parent special plan — must not be moved by meal/weather passes. */
+  locked?: boolean;
 };
 
 export type TimePeriod = "morning" | "afternoon" | "evening" | "night";
@@ -121,13 +123,14 @@ const MIN_ACTIVITY_MINS = 10;
 const MIN_WINDOW_MINS = 6 * 60;
 const MAX_WINDOW_MINS = 20 * 60;
 
-const PRIORITY_SLEEP = 1;
-const PRIORITY_SCHOOL = 2;
-const PRIORITY_MEAL = 3;
-const PRIORITY_STUDY = 4;
-const PRIORITY_PLAY = 5;
-const PRIORITY_DEFAULT = 6;
-const PRIORITY_FREE = 7;
+const PRIORITY_SPECIAL_EVENT = 1;
+const PRIORITY_SLEEP = 2;
+const PRIORITY_SCHOOL = 3;
+const PRIORITY_MEAL = 4;
+const PRIORITY_STUDY = 5;
+const PRIORITY_PLAY = 6;
+const PRIORITY_DEFAULT = 7;
+const PRIORITY_FREE = 8;
 
 const HIGH_ENERGY_CATS = new Set(["play", "outdoor", "exercise", "activity"]);
 const STUDY_CATS = new Set(["study", "school"]);
@@ -261,8 +264,21 @@ function isPinnedMealItem(item: RoutineScheduleItem): boolean {
   );
 }
 
+export function isLockedScheduleItem(item: RoutineScheduleItem): boolean {
+  return (
+    item.locked === true ||
+    item.culturalTag === "special_event" ||
+    (item as { structureKind?: string }).structureKind === "special_event"
+  );
+}
+
 function isPinnedScheduleItem(item: RoutineScheduleItem): boolean {
-  return isSchoolItem(item) || isPinnedMealItem(item) || isSleepItem(item);
+  return (
+    isLockedScheduleItem(item) ||
+    isSchoolItem(item) ||
+    isPinnedMealItem(item) ||
+    isSleepItem(item)
+  );
 }
 
 function mealKind(activity: string): keyof typeof DEFAULT_MEAL_WINDOWS | null {
@@ -275,6 +291,7 @@ function mealKind(activity: string): keyof typeof DEFAULT_MEAL_WINDOWS | null {
 }
 
 function itemPriority(item: RoutineScheduleItem): number {
+  if (isLockedScheduleItem(item)) return PRIORITY_SPECIAL_EVENT;
   if (isSleepItem(item)) return PRIORITY_SLEEP;
   if (isSchoolItem(item)) return PRIORITY_SCHOOL;
   if (isPinnedMealItem(item)) return PRIORITY_MEAL;
@@ -314,7 +331,7 @@ export function enforceActivityContext(
   item: RoutineScheduleItem,
   windows: typeof DEFAULT_MEAL_WINDOWS = DEFAULT_MEAL_WINDOWS,
 ): number {
-  if (isTiffinItem(item) || isSchoolItem(item)) {
+  if (isLockedScheduleItem(item) || isTiffinItem(item) || isSchoolItem(item)) {
     return clockStart;
   }
 
@@ -559,9 +576,15 @@ export function buildPriorityTimeline(
   let sleepTemplate: RoutineScheduleItem | null = null;
   const buckets: RoutineScheduleItem[] = [];
 
+  const lockedEvents: RoutineScheduleItem[] = [];
+
   for (const item of sourceItems) {
     if (isSleepItem(item)) {
       if (!sleepTemplate) sleepTemplate = { ...item };
+      continue;
+    }
+    if (isLockedScheduleItem(item)) {
+      lockedEvents.push(item);
       continue;
     }
     if (isSchoolItem(item) && schoolStart >= 0) continue;
@@ -617,7 +640,19 @@ export function buildPriorityTimeline(
     true,
   );
 
-  // 2. School (fixed)
+  // 2. Locked special events (parent plans — fixed time)
+  for (const ev of lockedEvents) {
+    const clock = parseTimeToMins(normalizeTo24h(ev.time));
+    addSlot(
+      ev,
+      toExtended(clock, wakeMins),
+      clampDurationForCategory(ev.category ?? "family", ev.duration ?? 45),
+      PRIORITY_SPECIAL_EVENT,
+      true,
+    );
+  }
+
+  // 3. School (fixed)
   if (schoolStart >= 0 && schoolEnd > schoolStart) {
     addSlot(
       {
@@ -633,7 +668,7 @@ export function buildPriorityTimeline(
     );
   }
 
-  // 3. Pinned meals (anchored clock positions)
+  // 4. Pinned meals (anchored clock positions)
   for (const meal of pinnedMeals) {
     const clock = enforceActivityContext(
       parseTimeToMins(normalizeTo24h(meal.time)),

@@ -116,6 +116,40 @@ export function localizeNzOutdoorLabel(
 }
 
 /** Strip misleading session tags when clock does not match. */
+/** Replace ambiguous "Evening play" with explicit indoor/outdoor labels. */
+export function clarifyAmbiguousPlayLabels(
+  items: RoutineScheduleItem[],
+): RoutineScheduleItem[] {
+  const hasOutdoorBlock = items.some((i) => {
+    const cat = (i.category ?? "").toLowerCase();
+    return cat === "outdoor" || /\boutdoor\s+play\b/i.test(i.activity);
+  });
+
+  return items.map((item) => {
+    let activity = item.activity;
+    if (!/\bevening\s+play\b/i.test(activity) && !/\bplay\s+with\s+parent\b/i.test(activity)) {
+      return item;
+    }
+    const cat = (item.category ?? "").toLowerCase();
+    const isOutdoor =
+      cat === "outdoor" ||
+      /\boutdoor\b/i.test(activity) ||
+      (hasOutdoorBlock && /\bplay\b/i.test(activity) && cat !== "play");
+
+    if (/\bevening\s+play\b/i.test(activity)) {
+      activity = activity.replace(
+        /\bevening\s+play\b/i,
+        isOutdoor ? "Outdoor play" : "Indoor play",
+      );
+    } else if (/\bplay\s+with\s+parent\b/i.test(activity) && !/\b(indoor|outdoor)\s+play\b/i.test(activity)) {
+      activity = isOutdoor ? "Outdoor play with parent" : "Indoor play with parent";
+    }
+
+    if (activity === item.activity) return item;
+    return { ...item, activity };
+  });
+}
+
 export function fixMisleadingSessionLabels(items: RoutineScheduleItem[]): RoutineScheduleItem[] {
   return items.map((item) => {
     const clock = parseTimeToMins(item.time);

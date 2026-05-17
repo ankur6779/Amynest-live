@@ -2,7 +2,10 @@
  * Human-friendly health & environment copy for routine blocks.
  */
 import type { InterpretedBehavioralState, RoutineRawContext } from "./routine-context-engine.js";
-import { getAQICategory, resolveAqiFromContext } from "./routine-aqi.js";
+import {
+  aqiSeverityLabelForMessaging,
+  resolveAqiFromContext,
+} from "./routine-aqi.js";
 import type { LaunchCountry } from "./routine-country-profile.js";
 import { deriveEnvironmentSeverity } from "./routine-environment-intelligence.js";
 import type { RoutineScheduleItem } from "./routine-scheduler.js";
@@ -12,16 +15,13 @@ export type RoutineConfidence = "high" | "medium" | "low";
 export const MIN_OUTDOOR_SPORT_MINS = 20;
 
 function aqiBandLabel(aqi: number): string {
-  const cat = getAQICategory(aqi);
-  if (cat === "good") return "Air quality is good — normal outdoor time is fine.";
-  if (cat === "moderate") {
+  const severity = aqiSeverityLabelForMessaging(aqi);
+  if (severity === "good") return "Air quality is good — normal outdoor time is fine.";
+  if (severity === "moderate") {
     return "Air quality is moderate — slightly shorter outdoor time is sensible.";
   }
-  if (cat === "sensitive") {
-    return "Air quality may affect sensitive children — limit outdoor time.";
-  }
-  if (cat === "unhealthy") {
-    return "Air quality is poor today — limit outdoor time and use a mask if you go out.";
+  if (severity === "unhealthy") {
+    return "Air quality is unhealthy — limit outdoor time and use a mask if you go out.";
   }
   return "Air quality is very poor — stay indoors for breathing safety.";
 }

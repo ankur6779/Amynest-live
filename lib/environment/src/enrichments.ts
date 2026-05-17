@@ -2,8 +2,8 @@
 // Environmental enrichments — applied AFTER weather + energy curve so the
 // existing pipeline keeps full authority over scheduling. This layer only:
 //
-//   1) Hydration scheduling — inserts "Water break" reminder items at the
-//      per-age/season/weather cadence from `hydrationProfiles.json`.
+//   1) Hydration — integrated hints on activities + optional outdoor-adjacent
+//      water breaks (max 2/day); no recurring 30-min "Water Break" spam.
 //   2) Seasonal nutrition biasing — appends a seasonal/regional dish hint
 //      to meal items' `notes` from `seasonalNutritionProfiles.json`.
 //   3) UV sun-safety reminders — annotates surviving outdoor blocks with
@@ -16,6 +16,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 import { datasets } from "./datasets.js";
+import { applyHydrationGuidance } from "./hydrationEnrichment.js";
 import type {
   EnvAgeGroup,
   EnvironmentalContext,
@@ -32,7 +33,8 @@ export interface EnrichableItem {
   duration: number;   // minutes
   category: string;
   notes?: string;
-  // We carry these through untouched but accept anything else opaquely.
+  /** Parent-facing hydration cue tied to this block (not a separate activity). */
+  hydration?: string;
   [extra: string]: unknown;
 }
 
@@ -218,74 +220,6 @@ function isActivePlay(item: EnrichableItem): boolean {
 const INDOOR_SWAP_RE = /^(Indoor (Free Play|Movement Break|Active Game|Sensory Play|Activity)|Living-Room Sports|Plant & Nature Craft)$/;
 function isIndoorSwap(item: EnrichableItem): boolean {
   return INDOOR_SWAP_RE.test(item.activity);
-}
-
-// ─── 1. Hydration reminder insertion ─────────────────────────────────────
-function buildHydrationReminders(
-  items: EnrichableItem[],
-  ctx: EnvironmentalContext,
-): EnrichableItem[] {
-  if (items.length === 0) return [];
-  const ageBase = hydration.ageBaselines[ctx.ageGroup];
-  const seasonProf = hydration.seasonalProfiles[ctx.season];
-  const weatherAdj = hydration.weatherAdjustments[ctx.weatherCondition];
-  if (!ageBase || !seasonProf) return [];
-
-  // Reminder cadence: take the tighter of the age default and the
-  // weather override, then bump tighter for high hydration need.
-  let everyMin = ageBase.hydrationReminderFrequency;
-  if (weatherAdj?.reminderEveryMinutes && weatherAdj.reminderEveryMinutes < everyMin) {
-    everyMin = weatherAdj.reminderEveryMinutes;
-  }
-  if (ctx.hydrationNeedLevel === "high") everyMin = Math.max(45, Math.round(everyMin * 0.85));
-  if (ctx.hydrationNeedLevel === "extreme") everyMin = Math.max(30, Math.round(everyMin * 0.7));
-
-  const totalMl = Math.round(
-    ageBase.baselineHydrationMl *
-      seasonProf.hotWeatherMultiplier *
-      (weatherAdj?.extraMultiplier ?? 1.0),
-  );
-
-  // Anchor reminders to the active part of the day: from the first non-sleep
-  // item to the last non-sleep item.
-  const active = items.filter((i) => i.category.toLowerCase() !== "sleep");
-  if (active.length === 0) return [];
-  const startMin = timeToMins(active[0]!.time) + 30;
-  const endMin = timeToMins(active[active.length - 1]!.time) - 60;
-  if (endMin <= startMin) return [];
-
-  // Suggested drink string adapts to season — keeps it parent-friendly.
-  const drinkHint =
-    ctx.season === "summer" || ctx.weatherCondition === "heatwave"
-      ? "water + a sip of nimbu paani / coconut water / ORS"
-      : ctx.season === "winter"
-      ? "warm water or warm milk"
-      : ctx.season === "monsoon"
-      ? "boiled-then-cooled water or warm soup"
-      : "a glass of water";
-
-  const reminders: EnrichableItem[] = [];
-  for (let t = startMin; t <= endMin; t += everyMin) {
-    reminders.push({
-      time: minsToTime(t),
-      activity: "Water Break",
-      duration: 5,
-      category: "hydration",
-      notes: `Quick hydration check — offer ${drinkHint}. Daily target today: ~${totalMl} ml (adjusted for ${ctx.season} + ${ctx.weatherCondition}).`,
-    });
-  }
-  return reminders;
-}
-
-// Merges reminders into the schedule in chronological order.
-function mergeChronological(
-  items: EnrichableItem[],
-  inserts: EnrichableItem[],
-): EnrichableItem[] {
-  if (inserts.length === 0) return items;
-  const all = [...items, ...inserts];
-  all.sort((a, b) => timeToMins(a.time) - timeToMins(b.time));
-  return all;
 }
 
 // ─── 2. Seasonal nutrition biasing ───────────────────────────────────────
@@ -600,11 +534,17 @@ export interface EnrichmentResult {
   extraAdaptations: string[];
 }
 
+export type EnvironmentalEnrichmentResult<T = EnrichableItem> = {
+  items: T[];
+  extraAdaptations: string[];
+  hydrationSummary?: string | null;
+};
+
 export function applyEnvironmentalEnrichments<T extends EnrichableItem>(
   rawItems: T[],
   ctx: EnvironmentalContext | null | undefined,
   opts: { region?: string | null } = {},
-): { items: T[]; extraAdaptations: string[] } {
+): EnvironmentalEnrichmentResult<T> {
   if (!ctx) return { items: rawItems, extraAdaptations: [] };
 
   let items: EnrichableItem[] = rawItems.map((it) => ({ ...it }));
@@ -651,12 +591,20 @@ export function applyEnvironmentalEnrichments<T extends EnrichableItem>(
   const heads = buildPredictiveAdaptation(ctx.predictedWeatherShift);
   if (heads) extras.push(heads);
 
-  // 1. Hydration reminders (inserted last so they don't get UV-annotated etc.)
-  const reminders = buildHydrationReminders(items, ctx);
-  if (reminders.length > 0) {
-    items = mergeChronological(items, reminders);
-    extras.push(`Added ${reminders.length} hydration reminder${reminders.length === 1 ? "" : "s"} for today's conditions.`);
+  // 1. Hydration — hints on activities; max 2 outdoor-adjacent breaks (not on hot-only days)
+  const hydration = applyHydrationGuidance(items, ctx);
+  items = hydration.items;
+  if (hydration.standaloneBlocks > 0) {
+    extras.push(
+      `Hydration: ${hydration.standaloneBlocks} short break${hydration.standaloneBlocks === 1 ? "" : "s"} around outdoor time.`,
+    );
+  } else if (hydration.hydrationSummary) {
+    extras.push("Hydration guidance added to active blocks (no extra water breaks).");
   }
 
-  return { items: items as T[], extraAdaptations: extras };
+  return {
+    items: items as T[],
+    extraAdaptations: extras,
+    hydrationSummary: hydration.hydrationSummary,
+  };
 }

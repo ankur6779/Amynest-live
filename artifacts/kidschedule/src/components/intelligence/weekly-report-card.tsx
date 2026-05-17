@@ -87,13 +87,19 @@ export function WeeklyReportCard({ childId }: { childId?: number } = {}) {
           <p className="text-sm text-muted-foreground">{t("intelligence.weekly.loading")}</p>
         )}
 
-        {data && data.signalDays === 0 && (
+        {data && data.signalDays < 5 && (
           <p className="text-sm text-muted-foreground bg-muted rounded-xl px-3 py-2 border border-border">
-            {t("intelligence.weekly.empty")}
+            {data.signalDays === 0
+              ? t("intelligence.weekly.empty")
+              : t("intelligence.weekly.unlocking_soon", {
+                  defaultValue:
+                    "You've logged {{count}} days — insights unlocking soon",
+                  count: data.signalDays,
+                })}
           </p>
         )}
 
-        {data && data.signalDays > 0 && (
+        {data && data.signalDays >= 5 && (
           <>
             <div className="flex flex-col gap-1.5">
               <MetricRow

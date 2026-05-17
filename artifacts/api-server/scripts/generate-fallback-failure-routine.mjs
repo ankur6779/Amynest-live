@@ -243,6 +243,7 @@ const builtContext = buildRoutineContext({
     condition: "heatwave",
     AQI: aqi,
   },
+  environmentDataConfidence: confidence,
 });
 
 const state = deriveBehavioralState(builtContext, {

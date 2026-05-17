@@ -8,6 +8,8 @@ import {
   applyExposureModeAdaptations,
   baseExposureModeFromAqi,
   buildGlobalAqiAdvisory,
+  maxOutdoorMinutesFromAqi,
+  resolveExposureModeForAqi,
   combineOutdoorAllowance,
   deriveAqiOutdoorPolicy,
   getAQICategory,
@@ -68,14 +70,21 @@ describe("deriveAqiOutdoorPolicy", () => {
     assert.equal(p.baseExposureMode, "controlled");
     assert.equal(p.exposureMode, "limited");
     assert.equal(p.allowOutdoor, true);
-    assert.equal(p.maxOutdoorDurationMins, 30);
+    assert.equal(p.maxOutdoorDurationMins, 15);
   });
 
-  it("AU sensitive keeps outdoor with reduced duration", () => {
+  it("AQI 150–200 caps outdoor at 20 minutes with limited exposure", () => {
+    const p = deriveAqiOutdoorPolicy(180, "IN");
+    assert.equal(p.exposureMode, "limited");
+    assert.equal(p.maxOutdoorDurationMins, 20);
+    assert.equal(maxOutdoorMinutesFromAqi(180), 20);
+  });
+
+  it("AU AQI 150 uses limited mode and 20-minute cap", () => {
     const p = deriveAqiOutdoorPolicy(150, "AU");
     assert.equal(p.exposureMode, "limited");
-    assert.equal(p.maintainOutdoorPreference, true);
-    assert.equal(p.maxOutdoorDurationMins, 35);
+    assert.equal(resolveExposureModeForAqi(150, "AU"), "limited");
+    assert.equal(p.maxOutdoorDurationMins, 20);
   });
 });
 
@@ -83,7 +92,7 @@ describe("buildGlobalAqiAdvisory", () => {
   it("includes level, message, and safety actions when AQI > 100", () => {
     const adv = buildGlobalAqiAdvisory(180, "limited", "IN");
     assert.equal(adv.level, "warning");
-    assert.ok(adv.message.length > 0);
+    assert.match(adv.message, /unhealthy/i);
     assert.ok(adv.actions.some((a) => /mask|heavy|water|air/i.test(a)));
   });
 });

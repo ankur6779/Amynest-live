@@ -1553,14 +1553,9 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
 
   gap(5); // transition buffer
 
-  // 3. Special plans injection
-  if (specialPlans?.trim()) {
-    const spMins = Math.min(60, Math.max(30, 45));
-    add({ activity: specialPlans.trim(), duration: spMins, category: "play", notes: "Special activity for today — enjoy every moment!" });
-    gap(5);
-  }
+  // Special plans are injected as locked blocks in the intelligence pipeline (not here).
 
-  // 4. School block or no-school activities
+  // 3. School block or no-school activities
   if (hasSchool && ageGroup !== "toddler") {
     // Tiffin preparation — 20 min before travel departure
     const tiffinStart = schoolStartMins - travelMins - 20;

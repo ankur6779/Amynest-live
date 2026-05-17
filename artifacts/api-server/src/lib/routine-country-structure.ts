@@ -124,6 +124,7 @@ export function classifyStructureBlock(item: RoutineScheduleItem): StructureBloc
   const tag = (item as { structureKind?: string }).structureKind;
 
   if (tag === "post_dinner_study") return "post_dinner_study";
+  if (tag === "outdoor_evening") return "outdoor_evening";
   if (cat === "morning_routine" || /\bwake\b/i.test(act)) return "morning_routine";
   if (cat === "self_care" || /\b(get ready|independently|selbstständig|on your own)\b/i.test(act)) {
     return "independence";
