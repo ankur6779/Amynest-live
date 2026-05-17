@@ -105,8 +105,16 @@ export function prettyAuthError(err: unknown): string {
       return "Popup was blocked. Please allow popups for this site and try again.";
     case "auth/popup-closed-by-user":
       return "";
-    case "auth/captcha-check-failed":
-      return `Phone verification security check failed. ${typeof window !== "undefined" ? `Add "${window.location.hostname}" to Firebase Console → Authentication → Settings → Authorized domains (also add www.amynest.in, amynest.in, and localhost).` : "Authorize your site domain in Firebase Authentication settings."}`;
+    case "auth/captcha-check-failed": {
+      const host = typeof window !== "undefined" ? window.location.hostname : "";
+      if (host === "www.amynest.in") {
+        return (
+          "Phone OTP blocked: you are on www.amynest.in but Firebase only has amynest.in. " +
+          "In Firebase Console → Authentication → Settings → Authorized domains, click Add domain and add: www.amynest.in"
+        );
+      }
+      return `Phone verification security check failed. Add "${host || "this domain"}" to Firebase Console → Authentication → Settings → Authorized domains (for AmyNest also add www.amynest.in and amynest.in).`;
+    }
     case "auth/invalid-app-credential":
     case "auth/missing-app-credential":
       return "Phone sign-in is not configured for this app. Check Firebase Console → Authentication → Sign-in method → Phone, and ensure your domain is authorized.";
@@ -127,7 +135,14 @@ export function prettyAuthError(err: unknown): string {
         (message.includes("Hostname match not found") ||
           message.includes("captcha-check-failed"))
       ) {
-        return `Phone verification security check failed. Add "${typeof window !== "undefined" ? window.location.hostname : "this domain"}" to Firebase Console → Authentication → Settings → Authorized domains (also add amynest.in, www.amynest.in, localhost).`;
+        const host = typeof window !== "undefined" ? window.location.hostname : "";
+        if (host === "www.amynest.in") {
+          return (
+            "Phone OTP blocked: add www.amynest.in in Firebase → Authentication → Settings → " +
+            "Authorized domains (amynest.in alone is not enough — the site opens on www)."
+          );
+        }
+        return `Phone verification failed. Add "${host}" to Firebase Authorized domains (and www.amynest.in if you use www).`;
       }
       if (message && !message.startsWith("Firebase:")) {
         return message;
