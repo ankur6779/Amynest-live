@@ -28,9 +28,11 @@ describe("getEmailVerificationCallbackUrl", () => {
     });
   });
 
-  it("uses amynest.in on Render production host", () => {
+  it("uses current origin on Render production host when allowlisted", () => {
     mockHostname("amynest-live-1.onrender.com", "https://amynest-live-1.onrender.com");
-    expect(getEmailVerificationCallbackUrl()).toBe("https://amynest.in/auth/callback");
+    expect(getEmailVerificationCallbackUrl()).toBe(
+      "https://amynest-live-1.onrender.com/auth/callback",
+    );
   });
 
   it("uses current origin on amynest.in", () => {
