@@ -7,7 +7,6 @@ import "./lib/notification-deep-link";
 import { renderCriticalFallbackHtml } from "@/components/app-fallback-ui";
 import { initNativeShell } from "./lib/native-shell";
 import { getAppApiBaseOrigin } from "./lib/api";
-import { redirectWwwToCanonicalApex } from "@/lib/canonical-domain";
 import {
   installGlobalErrorHandlers,
   logBootContext,
@@ -41,8 +40,6 @@ const mark = (p: string) => {
 async function bootstrap(): Promise<void> {
   try {
     if (typeof window !== "undefined") {
-      if (redirectWwwToCanonicalApex()) return;
-
       await runBootCacheRecoveryIfNeeded();
       patchBootDiagnostics({ hostname: window.location.hostname });
       void syncPwaCacheAndVersion();

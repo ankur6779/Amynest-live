@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { AuthBootShell } from "@/components/auth-boot-shell";
+import { EagerBootHud } from "@/components/eager-boot-hud";
 import { ReactInstanceRecovery } from "@/components/react-instance-recovery";
 
 // Everything heavy — Firebase Auth, React Query, i18n providers, the
@@ -48,11 +49,14 @@ function App() {
   // gate means the splash always covers the lazy AppCore download, so
   // the user never sees a blank Suspense fallback even on slow networks.
   return (
-    <ReactInstanceRecovery>
-      <Suspense fallback={<AuthBootShell />}>
-        <AppCore />
-      </Suspense>
-    </ReactInstanceRecovery>
+    <>
+      <EagerBootHud />
+      <ReactInstanceRecovery>
+        <Suspense fallback={<AuthBootShell />}>
+          <AppCore />
+        </Suspense>
+      </ReactInstanceRecovery>
+    </>
   );
 }
 

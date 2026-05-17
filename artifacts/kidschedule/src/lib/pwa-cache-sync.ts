@@ -12,13 +12,28 @@ export async function syncPwaCacheAndVersion(): Promise<void> {
   try {
     const previous = sessionStorage.getItem(VERSION_KEY);
     if (previous && deployMeta && previous !== deployMeta) {
-      console.info("[amynest:pwa] Deploy version changed — reloading", {
+      console.info("[amynest:pwa] Deploy version changed — reloading once", {
         from: previous,
         to: deployMeta,
       });
       sessionStorage.setItem(VERSION_KEY, deployMeta);
+      try {
+        sessionStorage.setItem("amynest:deploy-reload-done", deployMeta);
+      } catch {
+        /* ignore */
+      }
       window.location.reload();
       return;
+    }
+    try {
+      if (
+        deployMeta &&
+        sessionStorage.getItem("amynest:deploy-reload-done") === deployMeta
+      ) {
+        sessionStorage.removeItem("amynest:deploy-reload-done");
+      }
+    } catch {
+      /* ignore */
     }
     if (deployMeta) sessionStorage.setItem(VERSION_KEY, deployMeta);
   } catch {

@@ -12,7 +12,7 @@
     <meta name="author" content="AmyNest AI" />
     <meta name="keywords" content="parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting, child development, daily routine, kids schedule, parenting coach, AI coach for parents, child behavior tracker, kids meal planner India, speech coach for kids, spelling practice app" />
     <meta name="application-name" content="AmyNest AI" />
-    <meta name="amynest-deploy" content="2026-05-17-infant-realism-pipeline" />
+    <meta name="amynest-deploy" content="2026-05-18-www-boot-fix" />
     <meta name="rating" content="general" />
     <meta name="revisit-after" content="7 days" />
     <meta name="msapplication-TileColor" content="#A855F7" />
@@ -102,13 +102,8 @@
           });
         } catch (_e) { /* ignore */ }
 
-        // Firebase Phone OTP: reCAPTCHA hostname must match authorized domain (apex only).
-        if (location.hostname === "www.amynest.in") {
-          location.replace(
-            "https://amynest.in" + location.pathname + location.search + location.hash
-          );
-          return;
-        }
+        // www.amynest.in is a valid production host (Cloudflare apex→www). Do NOT redirect
+        // www→apex here — that fought the CDN and prevented React from ever mounting.
 
         // Render "Redirect /* → /index.html" exposes /index.html in the URL bar.
         // Firebase email links must keep /auth/action (not collapse to /?mode=…).
@@ -271,7 +266,40 @@
             r["t_" + phase] = Date.now() - r.ts;
             localStorage.setItem(KEY, JSON.stringify(r));
           } catch (_e) {}
+          try {
+            var hud = document.getElementById("amynest-preboot-hud");
+            if (hud) hud.textContent = "boot: " + phase + " | host: " + location.hostname;
+          } catch (_e2) {}
         };
+
+        window.__amynestShowBootFailed = function (message) {
+          try {
+            var splash = document.getElementById("splash");
+            if (splash) {
+              splash.classList.add("splash-hide");
+              setTimeout(function () { splash.remove(); }, 900);
+            }
+            var root = document.getElementById("root");
+            if (!root) return;
+            root.className = "amynest-boot-failed";
+            var safe = String(message || "AmyNest could not start.").replace(/</g, "&lt;");
+            root.innerHTML =
+              '<div style="max-width:420px"><p style="font-weight:600;margin:0 0 12px;font-size:18px">Something broke</p>' +
+              '<p style="opacity:0.85;margin:0 0 16px;font-size:14px;line-height:1.5">' + safe + '</p>' +
+              '<button type="button" onclick="location.reload()" style="padding:12px 24px;border-radius:999px;border:none;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;font-weight:600;cursor:pointer">Reload AmyNest</button></div>';
+          } catch (_e3) {}
+        };
+
+        setTimeout(function () {
+          try {
+            var r = window.__amynestDiag && window.__amynestDiag();
+            if (!r || !r.phases || r.phases.indexOf("react-rendered") === -1) {
+              window.__amynestShowBootFailed(
+                "The app did not finish loading (no react-rendered). Check your connection and reload.",
+              );
+            }
+          } catch (_e4) {}
+        }, 14000);
         window.__amynestDiag = function () {
           try { return JSON.parse(localStorage.getItem(KEY) || "null"); }
           catch (_e) { return null; }
@@ -357,6 +385,31 @@
         background: #0a061a;
         margin: 0;
         padding: 0;
+      }
+
+      #amynest-preboot-hud {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100001;
+        padding: 6px 10px;
+        font: 10px/1.4 ui-monospace, Menlo, monospace;
+        color: #e8e0ff;
+        background: rgba(8, 4, 20, 0.94);
+        border-bottom: 1px solid rgba(168,85,247, 0.45);
+        pointer-events: none;
+      }
+      #root.amynest-boot-failed {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%);
+        color: #f0e8ff;
+        font-family: system-ui, sans-serif;
+        text-align: center;
       }
 
       /* ── Splash — premium neon ring edition ────────────────────────── */
@@ -986,6 +1039,13 @@
     </script>
   </head>
   <body>
+    <div id="amynest-preboot-hud" aria-live="polite">boot: html | host: …</div>
+    <script>
+      (function () {
+        var hud = document.getElementById("amynest-preboot-hud");
+        if (hud) hud.textContent = "boot: html | host: " + location.hostname;
+      })();
+    </script>
     <!-- ── Splash (shown immediately, dismissed after React mounts) ── -->
     <div id="splash" role="status" aria-label="Loading AmyNest AI…">
       <div class="splash-waves" aria-hidden="true"></div>
@@ -1041,7 +1101,9 @@
     <script type="module" crossorigin id="amynest-entry" src="/src/main.tsx"></script>
     <script>
       (function () {
-        var entry = document.getElementById("amynest-entry");
+        var entry =
+          document.getElementById("amynest-entry") ||
+          document.querySelector('script[type="module"][src*="assets/index"]');
         if (!entry || !window.__amynestNeedsCacheRecovery || !window.__amynestForceClearCaches) {
           return;
         }
