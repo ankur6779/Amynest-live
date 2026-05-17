@@ -35,6 +35,8 @@ import { deriveRoutineConfidence, type RoutineConfidence } from "./routine-healt
 import { polishRoutineOutput } from "./routine-output-polish.js";
 import { enforceSleepIsLast } from "./routine-weather-planning.js";
 import { runTieredValidation } from "./routine-validation-tiers.js";
+import { finalizeMealStructure } from "./routine-meal-day-type.js";
+import { resolveIsSchoolDay } from "./routine-meal-day-type.js";
 import {
   applyMealAwareScheduling,
   enrichRoutineMeals,
@@ -51,7 +53,6 @@ import {
   ensureFixedActivitiesPreserved,
   detectSpecialFixedConflicts,
   finalizeFixedActivitiesSummary,
-  fixedActivitiesAdaptationTags,
   mergeTimelineShifts,
   shiftMealsAroundFixedBlocks,
   injectFixedActivityBlocks,
@@ -503,6 +504,23 @@ export function runRoutineIntelligencePipeline(
   polished = mealShift.items;
   mergeTimelineShifts(fixedParse.debug, mealShift.shifts);
   fixedParse.debug.adjustmentsMade.push(...mealShift.adjustments);
+
+  const isSchoolDayForMeals = resolveIsSchoolDay({
+    hasSchool: flowOpts.hasSchool,
+    isWeekendDay: flowOpts.isWeekendDay,
+    date: flowOpts.referenceDate,
+  });
+  const mealFinalized = finalizeMealStructure(polished, {
+    isSchoolDay: isSchoolDayForMeals,
+    schoolEndMins: scheduleOpts.schoolEndMins,
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+  });
+  polished = mealFinalized.items;
+  if (mealFinalized.adjustments.length) {
+    pipelineDebug(debug, debugLog, "finalizeMealStructure", mealFinalized.adjustments);
+  }
+  polished = enforceSleepIsLast(polished, decisionTrace);
   for (const c of mealShift.unresolved) {
     fixedParse.debug.conflicts.push(c);
     fixedParse.debug.conflictsDetected.push(c.warning);
