@@ -17,9 +17,11 @@ import {
   detectDefaultCountry,
   formatPhoneE164,
   isValidNationalPhone,
-  clearRecaptchaOnFailure,
-  ensureRecaptchaReady,
+  hardResetRecaptcha,
   resetPhoneRecaptchaWidget,
+  sendPhoneOtpSafely,
+  shouldPreRenderPhoneRecaptcha,
+  ensureRecaptchaReady,
   logPhoneOtpDomainContext,
   redirectWwwToCanonicalApex,
   warnIfPhoneAuthDomainMissingFromFirebase,
@@ -60,7 +62,9 @@ export default function PhoneAuthFlow({ onError }: Props) {
   }, []);
 
   useEffect(() => {
-    if (Platform.OS !== "web" || step === "idle") return;
+    if (Platform.OS !== "web" || step === "idle" || !shouldPreRenderPhoneRecaptcha()) {
+      return;
+    }
     warnIfPhoneAuthDomainMissingFromFirebase();
     void ensureRecaptchaReady(firebaseAuth).catch((err) => {
       console.warn("[PhoneAuthFlow] reCAPTCHA pre-render failed", err);
@@ -99,16 +103,14 @@ export default function PhoneAuthFlow({ onError }: Props) {
       let result: ConfirmationResult;
 
       if (Platform.OS === "web") {
-        logPhoneOtpDomainContext("before signInWithPhoneNumber");
         if (forceResend && !resetPhoneRecaptchaWidget()) {
-          clearRecaptchaOnFailure();
+          hardResetRecaptcha();
         }
-        await ensureRecaptchaReady(firebaseAuth);
-        const verifier = window.recaptchaVerifier;
-        if (!verifier) {
-          throw new Error("Recaptcha not initialized");
+        const res = await sendPhoneOtpSafely(firebaseAuth, phoneFull);
+        if (!res.success) {
+          throw new Error(res.error);
         }
-        result = await signInWithPhoneNumber(firebaseAuth, phoneFull, verifier);
+        result = res.confirmation;
       } else {
         result = await (signInWithPhoneNumber as unknown as (
           auth: Auth, phone: string
@@ -121,7 +123,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
       startResendTimer();
     } catch (err: unknown) {
       if (Platform.OS === "web") {
-        clearRecaptchaOnFailure();
+        hardResetRecaptcha();
       }
       const msg = err instanceof Error ? err.message : "Failed to send OTP. Please try again.";
       console.error("[PhoneAuthFlow] OTP Error:", err);

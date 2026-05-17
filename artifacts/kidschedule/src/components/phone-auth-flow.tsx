@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useMemo, useCallback } from "react";
-import { signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth";
+import type { ConfirmationResult } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { useTranslation } from "react-i18next";
 import { formatAuthErrorForUi, logFirebaseAuthError } from "@/lib/firebase-auth-error";
@@ -9,12 +9,14 @@ import {
   formatPhoneE164,
   isValidNationalPhone,
   PHONE_COUNTRIES,
-  clearRecaptchaOnFailure,
+  buildPhoneOtpBrowserUrl,
   ensureRecaptchaContainer,
   ensureRecaptchaReady,
+  hardResetRecaptcha,
   resetPhoneRecaptchaWidget,
-  logPhoneOtpDomainContext,
+  sendPhoneOtpSafely,
   shouldPreRenderPhoneRecaptcha,
+  shouldUseBrowserForPhoneOtp,
   warnIfPhoneAuthDomainMissingFromFirebase,
   type PhoneCountry,
 } from "@workspace/phone-auth";
@@ -204,6 +206,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [otpSending, setOtpSending] = useState(false);
+  const [browserOtpUrl, setBrowserOtpUrl] = useState<string | null>(null);
   const confirmRef = useRef<ConfirmationResult | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sendInFlightRef = useRef(false);
@@ -265,39 +268,37 @@ export default function PhoneAuthFlow({ onError }: Props) {
       setStep("sending");
     }
 
+    setBrowserOtpUrl(null);
+
     try {
       if (forceResend && !resetPhoneRecaptchaWidget()) {
-        clearRecaptchaOnFailure();
+        hardResetRecaptcha();
       }
 
       await waitForPaint();
-      logPhoneOtpDomainContext("before signInWithPhoneNumber");
 
-      await ensureRecaptchaReady(firebaseAuth);
-      const verifier = window.recaptchaVerifier;
-      if (!verifier) {
-        throw new Error("Recaptcha not initialized");
+      const res = await sendPhoneOtpSafely(firebaseAuth, phoneFull);
+
+      if (!res.success) {
+        logFirebaseAuthError("phone-auth-flow:sendOtp", new Error(res.error));
+        setPhoneError(res.error);
+        onError?.(res.error);
+        if (res.suggestBrowser && shouldUseBrowserForPhoneOtp()) {
+          setBrowserOtpUrl(buildPhoneOtpBrowserUrl(phoneFull));
+        }
+        if (!forceResend) {
+          setStep("phone");
+        }
+        return;
       }
 
-      console.log("[phone-auth-flow] Recaptcha:", verifier);
-      console.log("[phone-auth-flow] WidgetId:", window.recaptchaWidgetId);
-
-      const confirmation = await signInWithPhoneNumber(
-        firebaseAuth,
-        phoneFull,
-        verifier,
-      );
-
-      confirmRef.current = confirmation;
-      window.confirmationResult = confirmation;
-      console.log("[phone-auth-flow] OTP sent successfully");
+      confirmRef.current = res.confirmation;
       setOtp("");
       setStep("otp");
       startResendTimer();
     } catch (err: unknown) {
-      console.error("[phone-auth-flow] OTP Error:", err);
-      clearRecaptchaOnFailure();
-      logFirebaseAuthError("phone-auth-flow:sendOtp", err);
+      console.error("[phone-auth-flow] OTP unexpected:", err);
+      hardResetRecaptcha();
       const uiMsg = formatAuthErrorForUi(err);
       setPhoneError(uiMsg);
       onError?.(uiMsg);
@@ -431,6 +432,28 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
           {phoneError && (
             <p style={{ fontSize: "12px", color: "#f87171", margin: 0 }}>{phoneError}</p>
+          )}
+
+          {browserOtpUrl && (
+            <a
+              href={browserOtpUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontSize: "13px",
+                color: "hsl(var(--brand-violet-400))",
+                fontWeight: 600,
+                textDecoration: "underline",
+              }}
+            >
+              {t("components.phone_auth_flow.open_in_chrome")}
+            </a>
+          )}
+
+          {shouldUseBrowserForPhoneOtp() && !browserOtpUrl && (
+            <p style={{ fontSize: "11px", color: "rgba(200,180,255,0.45)", margin: 0 }}>
+              {t("components.phone_auth_flow.android_pwa_hint")}
+            </p>
           )}
 
           <p style={{ fontSize: "11px", color: "rgba(200,180,255,0.40)", margin: 0 }}>

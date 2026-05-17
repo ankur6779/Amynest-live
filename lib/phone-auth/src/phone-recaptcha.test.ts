@@ -2,13 +2,13 @@ import { describe, expect, it, beforeEach } from "vitest";
 import {
   RECAPTCHA_CONTAINER_ID,
   ensureRecaptchaContainer,
-  clearRecaptchaOnFailure,
+  hardResetRecaptcha,
 } from "./phone-recaptcha";
 
 describe("ensureRecaptchaContainer", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
-    clearRecaptchaOnFailure();
+    hardResetRecaptcha();
   });
 
   it("creates a single hidden container", () => {
