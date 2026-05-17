@@ -55,9 +55,15 @@ router.post("/auth/send-otp", async (req, res): Promise<void> => {
     return;
   }
 
+  logger.info({ email: email.trim().toLowerCase() }, "POST /auth/send-otp");
+
   const result = await sendEmailOtp(email, bearerToken(req));
   if (result.ok) {
-    res.json({ ok: true, cooldownSeconds: result.cooldownSeconds });
+    res.json({
+      ok: true,
+      cooldownSeconds: result.cooldownSeconds,
+      ...(result.devOtp ? { devOtp: result.devOtp } : {}),
+    });
     return;
   }
 

@@ -1221,6 +1221,7 @@
       "verifying": "Verifying…",
       "resend_code": "Resend code",
       "code_sent": "Verification code sent! Check your inbox.",
+      "dev_code_hint": "Dev mode (no email provider): your code is {{code}}",
       "sending": "Sending…",
       "resend_wait": "Resend in {{seconds}}s",
       "send_error": "Could not send code. Please try again.",

@@ -27,8 +27,13 @@ export {
 
 const PEPPER = process.env.EMAIL_OTP_PEPPER ?? process.env.FIREBASE_PROJECT_ID ?? "amynest-email-otp";
 
+/** Render sets NODE_ENV=production even for amynest-dev — use AMYNEST_ENV for dev behavior. */
+export function isAmyNestDevelopment(): boolean {
+  return process.env.AMYNEST_ENV === "development";
+}
+
 export type SendOtpResult =
-  | { ok: true; cooldownSeconds: number }
+  | { ok: true; cooldownSeconds: number; devOtp?: string }
   | {
       ok: false;
       code:
@@ -96,6 +101,8 @@ export async function sendEmailOtp(
   email: string,
   idToken: string | undefined,
 ): Promise<SendOtpResult> {
+  logger.info({ email: normalizeEmail(email) }, "sendEmailOtp: request received");
+
   if (!isValidEmail(email)) {
     return { ok: false, code: "invalid_email", message: "Valid email required" };
   }
@@ -177,13 +184,23 @@ export async function sendEmailOtp(
 
   if (!isEmailConfigured()) {
     logger.warn(
-      { email: normalized, otp: process.env.NODE_ENV !== "production" ? otp : "[redacted]" },
-      "RESEND_API_KEY not set — OTP email not sent (dev log only)",
+      { email: normalized, amynestEnv: process.env.AMYNEST_ENV },
+      "RESEND_API_KEY not set — cannot send OTP email",
     );
-    if (process.env.NODE_ENV === "production") {
-      return { ok: false, code: "email_send_failed", message: "Email service unavailable" };
+    if (isAmyNestDevelopment()) {
+      // Dev/staging: allow QA without Resend — OTP returned once in API body (dev hosts only).
+      return {
+        ok: true,
+        cooldownSeconds: Math.ceil(RESEND_COOLDOWN_MS / 1000),
+        devOtp: otp,
+      };
     }
-    return { ok: true, cooldownSeconds: Math.ceil(RESEND_COOLDOWN_MS / 1000) };
+    return {
+      ok: false,
+      code: "email_send_failed",
+      message:
+        "Email service is not configured. Set RESEND_API_KEY on the API server (Render → Environment).",
+    };
   }
 
   const sent = await sendEmail({ to: normalized, subject, html: finalHtml, text });

@@ -2,7 +2,7 @@ import { firebaseAuth } from "@/lib/firebase";
 import { getApiUrl } from "@/lib/api";
 
 export type SendOtpResponse =
-  | { ok: true; cooldownSeconds: number }
+  | { ok: true; cooldownSeconds: number; devOtp?: string }
   | { error: string; message?: string; cooldownSeconds?: number };
 
 export type VerifyOtpResponse =
@@ -20,15 +20,49 @@ async function authHeaders(): Promise<HeadersInit> {
 }
 
 export async function sendEmailOtpApi(email: string): Promise<SendOtpResponse> {
+  if (import.meta.env.DEV) {
+    console.info("[email-otp] Sending OTP to:", email.trim());
+  }
+
   const headers = await authHeaders();
-  const res = await fetch(getApiUrl("/api/auth/send-otp"), {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ email: email.trim() }),
-  });
-  const data = (await res.json()) as Record<string, unknown>;
+  const url = getApiUrl("/api/auth/send-otp");
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ email: email.trim() }),
+    });
+  } catch (err) {
+    console.error("[email-otp] Network error:", err);
+    return {
+      error: "network_error",
+      message: err instanceof Error ? err.message : "Network request failed",
+    };
+  }
+
+  let data: Record<string, unknown>;
+  try {
+    data = (await res.json()) as Record<string, unknown>;
+  } catch {
+    console.error("[email-otp] Non-JSON response", res.status, url);
+    return {
+      error: "invalid_response",
+      message: `Server returned ${res.status} without JSON`,
+    };
+  }
+
+  if (import.meta.env.DEV) {
+    console.info("[email-otp] Response:", res.status, data);
+  }
+
   if (res.ok && data.ok === true) {
-    return { ok: true, cooldownSeconds: Number(data.cooldownSeconds ?? 45) };
+    const devOtp = typeof data.devOtp === "string" ? data.devOtp : undefined;
+    return {
+      ok: true,
+      cooldownSeconds: Number(data.cooldownSeconds ?? 45),
+      devOtp,
+    };
   }
   return {
     error: String(data.error ?? "send_failed"),
