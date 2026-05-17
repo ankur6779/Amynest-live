@@ -17,9 +17,9 @@ import {
   detectDefaultCountry,
   formatPhoneE164,
   isValidNationalPhone,
-  destroyPhoneRecaptchaVerifier,
+  clearRecaptchaOnFailure,
+  ensureRecaptchaReady,
   resetPhoneRecaptchaWidget,
-  setupPhoneRecaptcha,
   logPhoneOtpDomainContext,
   redirectWwwToCanonicalApex,
   warnIfPhoneAuthDomainMissingFromFirebase,
@@ -47,6 +47,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
   const confirmRef = useRef<ConfirmationResult | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sendInFlightRef = useRef(false);
 
   const digits = phone.replace(/\D/g, "");
   const isValidPhone = isValidNationalPhone(digits, country.code);
@@ -61,7 +62,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
   useEffect(() => {
     if (Platform.OS !== "web" || step === "idle") return;
     warnIfPhoneAuthDomainMissingFromFirebase();
-    void setupPhoneRecaptcha(firebaseAuth).catch((err) => {
+    void ensureRecaptchaReady(firebaseAuth).catch((err) => {
       console.warn("[PhoneAuthFlow] reCAPTCHA pre-render failed", err);
     });
   }, [step]);
@@ -80,7 +81,8 @@ export default function PhoneAuthFlow({ onError }: Props) {
   }
 
   async function sendOtp(forceResend = false) {
-    if (!isValidPhone || !phoneFull) {
+    if (sendInFlightRef.current) return;
+    if (!phoneFull || phoneFull.length < 10 || !isValidPhone) {
       const msg = t("components.phone_auth_flow.invalid_phone");
       setPhoneError(msg);
       onError?.(msg);
@@ -88,20 +90,23 @@ export default function PhoneAuthFlow({ onError }: Props) {
     }
     if (Platform.OS === "web" && redirectWwwToCanonicalApex()) return;
 
+    sendInFlightRef.current = true;
     setPhoneError(null);
-    setStep("sending");
+    if (!forceResend) {
+      setStep("sending");
+    }
     try {
       let result: ConfirmationResult;
 
       if (Platform.OS === "web") {
         logPhoneOtpDomainContext("before signInWithPhoneNumber");
-        if (forceResend) {
-          destroyPhoneRecaptchaVerifier();
+        if (forceResend && !resetPhoneRecaptchaWidget()) {
+          clearRecaptchaOnFailure();
         }
-        await setupPhoneRecaptcha(firebaseAuth);
+        await ensureRecaptchaReady(firebaseAuth);
         const verifier = window.recaptchaVerifier;
         if (!verifier) {
-          throw new Error("reCAPTCHA is not ready. Please try again.");
+          throw new Error("Recaptcha not initialized");
         }
         result = await signInWithPhoneNumber(firebaseAuth, phoneFull, verifier);
       } else {
@@ -116,14 +121,16 @@ export default function PhoneAuthFlow({ onError }: Props) {
       startResendTimer();
     } catch (err: unknown) {
       if (Platform.OS === "web") {
-        if (!resetPhoneRecaptchaWidget()) {
-          destroyPhoneRecaptchaVerifier();
-        }
+        clearRecaptchaOnFailure();
       }
       const msg = err instanceof Error ? err.message : "Failed to send OTP. Please try again.";
-      console.error("[PhoneAuthFlow] sendOtp failed", err);
+      console.error("[PhoneAuthFlow] OTP Error:", err);
       onError?.(msg);
-      setStep("phone");
+      if (!forceResend) {
+        setStep("phone");
+      }
+    } finally {
+      sendInFlightRef.current = false;
     }
   }
 

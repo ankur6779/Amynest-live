@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { useTranslation } from "react-i18next";
@@ -9,15 +9,23 @@ import {
   formatPhoneE164,
   isValidNationalPhone,
   PHONE_COUNTRIES,
-  destroyPhoneRecaptchaVerifier,
+  clearRecaptchaOnFailure,
   ensureRecaptchaContainer,
+  ensureRecaptchaReady,
   resetPhoneRecaptchaWidget,
-  setupPhoneRecaptcha,
   logPhoneOtpDomainContext,
   shouldPreRenderPhoneRecaptcha,
   warnIfPhoneAuthDomainMissingFromFirebase,
   type PhoneCountry,
 } from "@workspace/phone-auth";
+
+const SEND_OTP_DEBOUNCE_MS = 1500;
+
+declare global {
+  interface Window {
+    confirmationResult?: ConfirmationResult;
+  }
+}
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
@@ -195,9 +203,11 @@ export default function PhoneAuthFlow({ onError }: Props) {
   const [country, setCountry] = useState<PhoneCountry>(detectedCountry);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [otpSending, setOtpSending] = useState(false);
   const confirmRef = useRef<ConfirmationResult | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sendInFlightRef = useRef(false);
+  const lastSendAtRef = useRef(0);
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
@@ -207,7 +217,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
     ensureRecaptchaContainer();
     if (!shouldPreRenderPhoneRecaptcha()) return;
     warnIfPhoneAuthDomainMissingFromFirebase();
-    void setupPhoneRecaptcha(firebaseAuth).catch((err) => {
+    void ensureRecaptchaReady(firebaseAuth).catch((err) => {
       console.warn("[phone-auth-flow] reCAPTCHA pre-render failed", err);
     });
   }, [step]);
@@ -232,9 +242,15 @@ export default function PhoneAuthFlow({ onError }: Props) {
     });
   }
 
-  async function sendOtp(forceResend = false) {
+  const sendOtp = useCallback(async (forceResend = false) => {
     if (sendInFlightRef.current) return;
-    if (!isValidPhone || !phoneFull) {
+
+    const now = Date.now();
+    if (!forceResend && now - lastSendAtRef.current < SEND_OTP_DEBOUNCE_MS) {
+      return;
+    }
+
+    if (!phoneFull || phoneFull.length < 10 || !isValidPhone) {
       const msg = t("components.phone_auth_flow.invalid_phone");
       setPhoneError(msg);
       onError?.(msg);
@@ -242,47 +258,57 @@ export default function PhoneAuthFlow({ onError }: Props) {
     }
 
     sendInFlightRef.current = true;
+    lastSendAtRef.current = now;
     setPhoneError(null);
-    setStep("sending");
+    setOtpSending(true);
+    if (!forceResend) {
+      setStep("sending");
+    }
 
     try {
-      if (forceResend) {
-        destroyPhoneRecaptchaVerifier();
+      if (forceResend && !resetPhoneRecaptchaWidget()) {
+        clearRecaptchaOnFailure();
       }
 
       await waitForPaint();
-
       logPhoneOtpDomainContext("before signInWithPhoneNumber");
-      await setupPhoneRecaptcha(firebaseAuth);
-      const appVerifier = window.recaptchaVerifier;
-      if (!appVerifier) {
-        throw new Error("reCAPTCHA is not ready. Please try again.");
+
+      await ensureRecaptchaReady(firebaseAuth);
+      const verifier = window.recaptchaVerifier;
+      if (!verifier) {
+        throw new Error("Recaptcha not initialized");
       }
-      console.log("[phone-auth-flow] Recaptcha:", appVerifier);
+
+      console.log("[phone-auth-flow] Recaptcha:", verifier);
       console.log("[phone-auth-flow] WidgetId:", window.recaptchaWidgetId);
 
-      const result = await signInWithPhoneNumber(
+      const confirmation = await signInWithPhoneNumber(
         firebaseAuth,
         phoneFull,
-        appVerifier,
+        verifier,
       );
-      confirmRef.current = result;
+
+      confirmRef.current = confirmation;
+      window.confirmationResult = confirmation;
+      console.log("[phone-auth-flow] OTP sent successfully");
       setOtp("");
       setStep("otp");
       startResendTimer();
     } catch (err: unknown) {
-      if (!resetPhoneRecaptchaWidget()) {
-        destroyPhoneRecaptchaVerifier();
-      }
+      console.error("[phone-auth-flow] OTP Error:", err);
+      clearRecaptchaOnFailure();
       logFirebaseAuthError("phone-auth-flow:sendOtp", err);
       const uiMsg = formatAuthErrorForUi(err);
       setPhoneError(uiMsg);
       onError?.(uiMsg);
-      setStep("phone");
+      if (!forceResend) {
+        setStep("phone");
+      }
     } finally {
       sendInFlightRef.current = false;
+      setOtpSending(false);
     }
-  }
+  }, [isValidPhone, onError, phoneFull, t]);
 
   async function verifyOtp() {
     if (otp.length !== 6) { onError?.("Please enter the 6-digit OTP."); return; }
@@ -334,7 +360,8 @@ export default function PhoneAuthFlow({ onError }: Props) {
   // ── Phone input step ──────────────────────────────────────────────────────
 
   if (step === "phone" || step === "sending") {
-    const canSend = isValidPhone && step !== "sending";
+    const sending = otpSending || step === "sending";
+    const canSend = isValidPhone && !sending;
 
     return (
       <>
@@ -419,11 +446,12 @@ export default function PhoneAuthFlow({ onError }: Props) {
             </button>
             <button
               type="button"
-              onClick={() => sendOtp()}
+              onClick={() => void sendOtp()}
               disabled={!canSend}
+              aria-busy={sending}
               style={primaryBtn(!canSend)}
             >
-              {step === "sending" ? "Sending…" : "Send OTP"}
+              {sending ? "Sending…" : "Send OTP"}
             </button>
           </div>
         </div>
@@ -471,10 +499,21 @@ export default function PhoneAuthFlow({ onError }: Props) {
           ) : (
             <button
               type="button"
-              onClick={() => sendOtp(true)}
-              style={{ background: "none", border: "none", color: "hsl(var(--brand-violet-400))", fontWeight: 600, cursor: "pointer", fontSize: "13px", padding: 0, fontFamily: "inherit" }}
+              onClick={() => void sendOtp(true)}
+              disabled={otpSending}
+              style={{
+                background: "none",
+                border: "none",
+                color: "hsl(var(--brand-violet-400))",
+                fontWeight: 600,
+                cursor: otpSending ? "not-allowed" : "pointer",
+                fontSize: "13px",
+                padding: 0,
+                fontFamily: "inherit",
+                opacity: otpSending ? 0.5 : 1,
+              }}
             >
-              {t("components.phone_auth_flow.resend_otp")}
+              {otpSending ? "Sending…" : t("components.phone_auth_flow.resend_otp")}
             </button>
           )}
           <button
