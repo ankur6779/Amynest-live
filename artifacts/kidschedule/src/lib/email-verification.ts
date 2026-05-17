@@ -3,10 +3,12 @@ import { sendEmailVerification, type ActionCodeSettings, type User } from "fireb
 /** Canonical prod callback — must be in Firebase → Authentication → Authorized domains. */
 const PRODUCTION_CALLBACK = "https://amynest.in/auth/callback";
 
-/** Hosts where `window.location.origin` is already allowlisted in Firebase. */
+/** Hosts where `window.location.origin` is allowlisted in Firebase (same-origin session after verify). */
 const USE_CURRENT_ORIGIN_HOSTS = new Set([
   "amynest.in",
   "www.amynest.in",
+  "amynest-live-1.onrender.com",
+  "amynest-frontend-dev.onrender.com",
   "localhost",
   "127.0.0.1",
 ]);
@@ -26,7 +28,6 @@ export function getEmailVerificationCallbackUrl(): string {
     }
   }
 
-  // Render URLs (e.g. amynest-live-1.onrender.com) are not allowlisted by default — use amynest.in.
   return PRODUCTION_CALLBACK;
 }
 
