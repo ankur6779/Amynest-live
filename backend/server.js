@@ -1,6 +1,6 @@
 "use strict";
 
-/** @build 2026-05-17 routine-intelligence + schedule UX */
+/** @build 2026-05-17 fixed recurring activities + conflict-aware routine UX */
 /**
  * Render Amynest-backend entrypoint (rootDir=backend).
  * Dashboard: build = npm install, start = node server.js
