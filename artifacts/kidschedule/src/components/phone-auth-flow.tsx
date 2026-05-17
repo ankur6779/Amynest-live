@@ -8,6 +8,7 @@ import {
   detectDefaultCountry,
   filterCountries,
   formatPhoneE164,
+  isRecaptchaReady,
   isValidNationalPhone,
   openPhoneOtpInExternalBrowser,
   PHONE_COUNTRIES,
@@ -203,6 +204,9 @@ export default function PhoneAuthFlow({ onError }: Props) {
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [otpSending, setOtpSending] = useState(false);
   const [browserOtpUrl, setBrowserOtpUrl] = useState<string | null>(null);
+  const [recaptchaReady, setRecaptchaReady] = useState(() =>
+    typeof window !== "undefined" ? isRecaptchaReady() : false,
+  );
   const chromeOtpRequired = useMemo(() => shouldUseBrowserForPhoneOtp(), []);
   const confirmRef = useRef<ConfirmationResult | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -215,6 +219,21 @@ export default function PhoneAuthFlow({ onError }: Props) {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (chromeOtpRequired) return;
+    if (isRecaptchaReady()) {
+      setRecaptchaReady(true);
+      return;
+    }
+    const id = setInterval(() => {
+      if (isRecaptchaReady()) {
+        setRecaptchaReady(true);
+        clearInterval(id);
+      }
+    }, 500);
+    return () => clearInterval(id);
+  }, [chromeOtpRequired, step]);
 
   const digits = phone.replace(/\D/g, "");
   const isValidPhone = isValidNationalPhone(digits, country.code);
@@ -247,9 +266,12 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
     if (chromeOtpRequired) {
       setBrowserOtpUrl(buildPhoneOtpBrowserUrl(phoneFull));
-      setPhoneError(
-        t("components.phone_auth_flow.android_pwa_hint"),
-      );
+      setPhoneError(t("components.phone_auth_flow.pwa_otp_browser_only"));
+      return;
+    }
+
+    if (!isRecaptchaReady()) {
+      setPhoneError(t("components.phone_auth_flow.recaptcha_loading"));
       return;
     }
 
@@ -272,6 +294,9 @@ export default function PhoneAuthFlow({ onError }: Props) {
         onError?.(res.error);
         if (res.suggestBrowser && chromeOtpRequired) {
           setBrowserOtpUrl(buildPhoneOtpBrowserUrl(phoneFull));
+        }
+        if (res.needsRefresh) {
+          setRecaptchaReady(false);
         }
         if (!forceResend) {
           setStep("phone");
@@ -312,6 +337,42 @@ export default function PhoneAuthFlow({ onError }: Props) {
   // ── Idle: "Continue with Phone" button ───────────────────────────────────
 
   if (step === "idle") {
+    if (chromeOtpRequired) {
+      return (
+        <div
+          style={{
+            padding: "14px",
+            borderRadius: "14px",
+            border: "1px solid rgba(123,63,242,0.45)",
+            background: "rgba(123,63,242,0.12)",
+            textAlign: "left",
+          }}
+        >
+          <p style={{ margin: "0 0 12px", fontSize: "13px", color: "rgba(230,220,255,0.85)", lineHeight: 1.5 }}>
+            {t("components.phone_auth_flow.pwa_otp_browser_only")}
+          </p>
+          <button
+            type="button"
+            onClick={() => openPhoneOtpInExternalBrowser("")}
+            style={{
+              width: "100%",
+              height: "46px",
+              borderRadius: "12px",
+              border: "none",
+              background: "hsl(var(--brand-violet-600))",
+              color: "#fff",
+              fontWeight: 600,
+              fontSize: "14px",
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            {t("components.phone_auth_flow.open_in_browser")}
+          </button>
+        </div>
+      );
+    }
+
     return (
       <>
         <button
@@ -348,7 +409,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
   if (step === "phone" || step === "sending") {
     const sending = otpSending || step === "sending";
-    const canSend = isValidPhone && !sending;
+    const canSend = isValidPhone && !sending && recaptchaReady;
 
     return (
       <>
@@ -443,13 +504,13 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
           {chromeOtpRequired && !browserOtpUrl && (
             <p style={{ fontSize: "12px", color: "rgba(200,180,255,0.55)", margin: 0, lineHeight: 1.45 }}>
-              {t("components.phone_auth_flow.android_pwa_hint")}
+              {t("components.phone_auth_flow.pwa_otp_browser_only")}
             </p>
           )}
 
-          {!chromeOtpRequired && (
+          {!chromeOtpRequired && !recaptchaReady && (
             <p style={{ fontSize: "11px", color: "rgba(200,180,255,0.45)", margin: 0, lineHeight: 1.4 }}>
-              Complete the security check below, then tap Send OTP again if needed.
+              {t("components.phone_auth_flow.recaptcha_loading")}
             </p>
           )}
 

@@ -7,6 +7,7 @@ import { sendUserEmailVerification } from "@/lib/email-verification";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError, stashVerificationSendError, logFirebaseAuthError } from "@/lib/auth-errors";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
+import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
 
 // ── Animation keyframes (same classes as sign-in — CSS idempotent in SPA) ────
 const SIGN_UP_CSS = `
@@ -390,6 +391,7 @@ export default function SignUpPage() {
 
       {/* Phone OTP */}
       <div className="su-phone-wrapper">
+        <PhoneRecaptchaPreload />
         <PhoneAuthFlow onError={msg => setError(msg)} />
       </div>
 

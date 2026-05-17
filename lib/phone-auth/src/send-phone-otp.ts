@@ -1,17 +1,31 @@
 import { signInWithPhoneNumber, type Auth, type ConfirmationResult } from "firebase/auth";
 import {
   canRunInAppPhoneRecaptcha,
-  isAndroidPwa,
+  isStandalonePwa,
   shouldUseBrowserForPhoneOtp,
 } from "./mobile-phone-environment";
 import { logPhoneOtpDomainContext } from "./site-domain";
-import { logRecaptchaState, prepareRecaptchaForSend, resetRecaptcha } from "./recaptcha";
+import {
+  getRecaptchaVerifierForSend,
+  isRecaptchaReady,
+  logRecaptchaState,
+  resetRecaptcha,
+} from "./recaptcha";
 
 const OTP_TIMEOUT_MS = 30_000;
 
+const HARD_FAIL_MESSAGE =
+  "Verification failed. Please refresh the page and try again.";
+
+const NOT_READY_MESSAGE =
+  "Security check is still loading. Wait a moment, then try again.";
+
+const PWA_MESSAGE =
+  "Please open in browser for OTP verification. The installed app cannot complete phone security checks.";
+
 export type SendPhoneOtpResult =
   | { success: true; confirmation: ConfirmationResult }
-  | { success: false; error: string; suggestBrowser?: boolean };
+  | { success: false; error: string; suggestBrowser?: boolean; needsRefresh?: boolean };
 
 declare global {
   interface Window {
@@ -20,8 +34,7 @@ declare global {
 }
 
 /**
- * Send phone OTP — await reCAPTCHA render before signInWithPhoneNumber.
- * Never throws; resets recaptcha on failure.
+ * Send phone OTP using preloaded invisible reCAPTCHA only — no visible fallback.
  */
 export async function sendPhoneOtpSafely(
   auth: Auth,
@@ -32,12 +45,18 @@ export async function sendPhoneOtpSafely(
     return { success: false, error: "Invalid phone number" };
   }
 
-  if (!canRunInAppPhoneRecaptcha()) {
+  if (!canRunInAppPhoneRecaptcha() || isStandalonePwa()) {
     return {
       success: false,
-      error:
-        "Installed app cannot run the security check here. Tap Open in Chrome below.",
+      error: PWA_MESSAGE,
       suggestBrowser: true,
+    };
+  }
+
+  if (!isRecaptchaReady()) {
+    return {
+      success: false,
+      error: NOT_READY_MESSAGE,
     };
   }
 
@@ -45,7 +64,7 @@ export async function sendPhoneOtpSafely(
     logPhoneOtpDomainContext("sendPhoneOtp");
     logRecaptchaState();
 
-    const appVerifier = await prepareRecaptchaForSend(auth);
+    const appVerifier = getRecaptchaVerifierForSend();
 
     const confirmation = await Promise.race([
       signInWithPhoneNumber(auth, phone, appVerifier),
@@ -62,19 +81,25 @@ export async function sendPhoneOtpSafely(
 
     return { success: true, confirmation };
   } catch (error: unknown) {
-    console.error("OTP FAILED:", error);
+    console.error("OTP blocked:", error);
     resetRecaptcha();
+    if (typeof window !== "undefined") {
+      window.recaptchaPreloadFailed = true;
+    }
 
     const message =
-      error instanceof Error ? error.message : "OTP failed. Please try again.";
+      error instanceof Error && error.message === "Recaptcha not ready"
+        ? NOT_READY_MESSAGE
+        : HARD_FAIL_MESSAGE;
 
     return {
       success: false,
       error: message,
-      suggestBrowser: isAndroidPwa() || shouldUseBrowserForPhoneOtp(),
+      needsRefresh: true,
+      suggestBrowser: shouldUseBrowserForPhoneOtp(),
     };
   }
 }
 
-/** @deprecated Use sendPhoneOtpSafely */
+/** @deprecated */
 export const sendPhoneOtp = sendPhoneOtpSafely;
