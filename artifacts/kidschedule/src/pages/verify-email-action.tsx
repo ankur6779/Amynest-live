@@ -4,10 +4,13 @@ import { useTranslation } from "react-i18next";
 import { applyActionCode } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { resetVerificationRateLimit } from "@/lib/email-verification-rate";
-import { formatAuthErrorForUi, logFirebaseAuthError } from "@/lib/firebase-auth-error";
+import { logFirebaseAuthError } from "@/lib/firebase-auth-error";
 import { parseFirebaseActionParams } from "@/lib/firebase-action-params";
+import { waitForFirebaseAuthReady } from "@/lib/wait-for-firebase-auth-ready";
 
-type VerifyState = "verifying" | "verified" | "error" | "invalid";
+type VerifyStatus = "verifying" | "success" | "error";
+
+const REDIRECT_DELAY_MS = 3000;
 
 const SHELL: React.CSSProperties = {
   minHeight: "100vh",
@@ -33,23 +36,40 @@ const CARD: React.CSSProperties = {
   textAlign: "center",
 };
 
-/** Optional gentle redirect — user can tap sign in sooner */
-const REDIRECT_DELAY_MS = 12_000;
+const LOGIN_BUTTON: React.CSSProperties = {
+  display: "inline-block",
+  padding: "14px 32px",
+  borderRadius: 999,
+  background: "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
+  color: "#fff",
+  fontSize: "16px",
+  fontWeight: 700,
+  textDecoration: "none",
+  boxShadow: "0 0 24px rgba(236,72,153,0.45)",
+};
+
+function readActionParams(): { mode: string | null; oobCode: string | null } {
+  const fromSearch = new URLSearchParams(window.location.search);
+  const mode = fromSearch.get("mode");
+  const oobCode = fromSearch.get("oobCode") ?? fromSearch.get("oob_code");
+  if (mode && oobCode) return { mode, oobCode };
+
+  const parsed = parseFirebaseActionParams();
+  return { mode: parsed.mode, oobCode: parsed.oobCode };
+}
 
 export default function VerifyEmailActionPage() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
-  const [state, setState] = useState<VerifyState>("verifying");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [status, setStatus] = useState<VerifyStatus>("verifying");
 
   useEffect(() => {
-    const { mode, oobCode } = parseFirebaseActionParams();
+    const { mode, oobCode } = readActionParams();
 
     console.info("[verify-email-action] Link opened", { mode, hasCode: Boolean(oobCode) });
 
     if (mode !== "verifyEmail" || !oobCode) {
-      setState("invalid");
-      setErrorMessage(t("screens.verify_email_action.invalid_link"));
+      setStatus("error");
       return;
     }
 
@@ -57,7 +77,12 @@ export default function VerifyEmailActionPage() {
 
     void (async () => {
       try {
+        await waitForFirebaseAuthReady();
+
+        if (cancelled) return;
+
         await applyActionCode(firebaseAuth, oobCode);
+
         if (cancelled) return;
 
         const user = firebaseAuth.currentUser;
@@ -68,87 +93,69 @@ export default function VerifyEmailActionPage() {
         }
 
         console.info("[verify-email-action] Email verified successfully");
-        setState("verified");
+        setStatus("success");
 
         setTimeout(() => {
           if (!cancelled) setLocation("/sign-in");
         }, REDIRECT_DELAY_MS);
       } catch (err: unknown) {
         if (cancelled) return;
+        console.error("Verification failed:", err);
         logFirebaseAuthError("verify-email-action:applyActionCode", err);
-        setState("error");
-        setErrorMessage(formatAuthErrorForUi(err));
+        setStatus("error");
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [setLocation, t]);
+  }, [setLocation]);
 
   return (
     <div style={SHELL}>
       <div style={CARD}>
-        {state === "verifying" && (
+        {status === "verifying" && (
           <>
             <div style={{ fontSize: 40, marginBottom: 16 }}>⏳</div>
             <h1 style={{ margin: "0 0 12px", fontSize: "22px", fontWeight: 800, color: "#fff" }}>
               {t("screens.verify_email_action.verifying")}
             </h1>
-            <p style={{ margin: 0, fontSize: "14px", color: "rgba(200,180,255,0.65)", lineHeight: 1.5 }}>
-              {t("screens.verify_email_action.verifying_hint")}
-            </p>
           </>
         )}
 
-        {state === "verified" && (
+        {status === "success" && (
           <>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-            <h1 style={{ margin: "0 0 12px", fontSize: "22px", fontWeight: 800, color: "#fff" }}>
-              {t("screens.verify_email_action.success_title")}
-            </h1>
-            <p style={{ margin: "0 0 12px", fontSize: "15px", color: "rgba(134,239,172,0.95)", lineHeight: 1.55, fontWeight: 600 }}>
-              {t("screens.verify_email_action.success_body")}
+            <p style={{
+              margin: "0 0 24px",
+              fontSize: "15px",
+              color: "rgba(134,239,172,0.95)",
+              lineHeight: 1.55,
+              fontWeight: 600,
+            }}>
+              {t("screens.verify_email_action.success_message")}
             </p>
-            <p style={{ margin: "0 0 24px", fontSize: "14px", color: "rgba(200,180,255,0.70)", lineHeight: 1.5 }}>
-              {t("screens.verify_email_action.success_app_hint")}
-            </p>
-            <Link
-              href="/sign-in"
-              style={{
-                display: "inline-block",
-                padding: "14px 32px",
-                borderRadius: 999,
-                background: "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
-                color: "#fff",
-                fontSize: "16px",
-                fontWeight: 700,
-                textDecoration: "none",
-                boxShadow: "0 0 24px rgba(236,72,153,0.45)",
-              }}
-            >
-              {t("screens.verify_email_action.sign_in_button")}
+            <Link href="/sign-in" style={LOGIN_BUTTON}>
+              {t("screens.verify_email_action.go_to_login")}
             </Link>
             <p style={{ marginTop: 16, fontSize: "12px", color: "rgba(200,180,255,0.45)" }}>
-              {t("screens.verify_email_action.redirect_hint")}
+              {t("screens.verify_email_action.redirect_hint", { seconds: 3 })}
             </p>
           </>
         )}
 
-        {(state === "error" || state === "invalid") && (
+        {status === "error" && (
           <>
-            <div style={{ fontSize: 40, marginBottom: 16 }}>⚠️</div>
-            <h1 style={{ margin: "0 0 12px", fontSize: "22px", fontWeight: 800, color: "#fff" }}>
-              {t("screens.verify_email_action.error_title")}
-            </h1>
             <p style={{
-              margin: "0 0 24px", fontSize: "14px",
-              color: "rgba(252,165,165,0.9)", lineHeight: 1.5,
+              margin: "0 0 24px",
+              fontSize: "15px",
+              color: "rgba(252,165,165,0.95)",
+              lineHeight: 1.55,
+              fontWeight: 600,
             }}>
-              {errorMessage ?? t("screens.verify_email_action.error_generic")}
+              {t("screens.verify_email_action.error_message")}
             </p>
-            <Link href="/sign-in" style={{ color: "hsl(var(--brand-purple-400))", fontSize: "14px" }}>
-              {t("screens.verify_email_action.sign_in_button")}
+            <Link href="/sign-in" style={LOGIN_BUTTON}>
+              {t("screens.verify_email_action.go_to_login")}
             </Link>
           </>
         )}

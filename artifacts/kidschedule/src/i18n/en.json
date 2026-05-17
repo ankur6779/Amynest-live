@@ -1232,15 +1232,12 @@
       "back_to_sign_in": "← Back to Sign in"
     },
     "verify_email_action": {
-      "verifying": "Verifying your email…",
-      "verifying_hint": "Please wait a moment.",
-      "success_title": "Email verified!",
-      "success_body": "Your email address is now confirmed.",
-      "success_app_hint": "Open the AmyNest app and sign in with your email and password to continue.",
+      "verifying": "Verifying your email...",
+      "success_message": "✅ Your email has been successfully verified. Please go back and sign in.",
+      "error_message": "❌ Verification link expired or invalid. Please request a new email.",
+      "go_to_login": "Go to Login",
+      "redirect_hint": "Redirecting to login in {{seconds}} seconds…",
       "sign_in_button": "Sign in to AmyNest",
-      "redirect_hint": "You can also tap above to sign in on this website.",
-      "error_title": "Verification failed",
-      "error_generic": "This link is invalid or has expired.",
       "invalid_link": "This verification link is missing required information."
     },
     "verify_email": {
@@ -3140,7 +3137,11 @@
       "resend_otp": "Resend OTP",
       "change_number": "Change number",
       "country_picker_search_placeholder": "Search country or dial code…",
-      "country_picker_change_title": "Change country"
+      "country_picker_change_title": "Change country",
+      "no_country_found": "No country found",
+      "invalid_phone": "Please enter a valid phone number for the selected country.",
+      "phone_placeholder": "Phone number",
+      "tap_flag_to_change": "Tap flag to change country"
     },
     "phonics_learning": {
       "phonics_is_for_ages_1_6": "Phonics is for ages 1–6",

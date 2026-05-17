@@ -345,6 +345,9 @@ function AppRoutes() {
           <Route path="/terms" component={TermsOfServicePage} />
           <Route path="/delete-account" component={DeleteAccountPage} />
           <Route path="/billing-dispute" component={BillingDisputePage} />
+          <Route path="/login">
+            <Redirect to="/sign-in" />
+          </Route>
           <Route path="/sign-in" component={SignInPage} />
           <Route path="/sign-up" component={SignUpPage} />
           <Route path="/verify-email" component={VerifyEmailPage} />

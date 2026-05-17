@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
   ActivityIndicator, StyleSheet, Platform,
@@ -14,6 +14,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED, brandAlpha, brand } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
+import {
+  detectDefaultCountry,
+  formatPhoneE164,
+  isValidNationalPhone,
+  type PhoneCountry,
+} from "@workspace/phone-auth";
+import CountryPickerModal from "@/components/CountryPickerModal";
 
 type Step = "idle" | "phone" | "sending" | "otp" | "verifying";
 
@@ -23,14 +30,23 @@ interface Props {
 
 export default function PhoneAuthFlow({ onError }: Props) {
   const { t } = useTranslation();
+  const detectedCountry = useMemo(() => detectDefaultCountry(), []);
+
   const [step, setStep] = useState<Step>("idle");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
+  const [country, setCountry] = useState<PhoneCountry>(detectedCountry);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+
   const confirmRef = useRef<ConfirmationResult | null>(null);
   const recaptchaRef = useRef<ApplicationVerifier | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const phoneFull = `+91${phone.replace(/\D/g, "")}`;
+
+  const digits = phone.replace(/\D/g, "");
+  const isValidPhone = isValidNationalPhone(digits, country.code);
+  const phoneFull = formatPhoneE164(digits, country.code) ?? "";
 
   useEffect(() => {
     return () => {
@@ -53,8 +69,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
   async function getOrCreateWebVerifier(): Promise<ApplicationVerifier> {
     if (recaptchaRef.current) return recaptchaRef.current;
-    // RecaptchaVerifier is web-only — import lazily so the native bundle
-    // never tries to instantiate it (it doesn't exist in the RN entry point).
     const { RecaptchaVerifier } = await import("firebase/auth");
     const v = new RecaptchaVerifier(firebaseAuth, "recaptcha-container", {
       size: "invisible",
@@ -64,17 +78,18 @@ export default function PhoneAuthFlow({ onError }: Props) {
   }
 
   async function sendOtp(forceResend = false) {
-    const digits = phone.replace(/\D/g, "");
-    if (digits.length < 10) {
-      onError?.("Please enter a valid 10-digit phone number.");
+    if (!isValidPhone || !phoneFull) {
+      const msg = t("components.phone_auth_flow.invalid_phone");
+      setPhoneError(msg);
+      onError?.(msg);
       return;
     }
+    setPhoneError(null);
     setStep("sending");
     try {
       let result: ConfirmationResult;
 
       if (Platform.OS === "web") {
-        // Web: RecaptchaVerifier is required to satisfy Firebase's bot check.
         if (forceResend && recaptchaRef.current) {
           try { (recaptchaRef.current as unknown as { clear(): void }).clear(); } catch { /* ignore */ }
           recaptchaRef.current = null;
@@ -82,9 +97,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
         const verifier = await getOrCreateWebVerifier();
         result = await signInWithPhoneNumber(firebaseAuth, phoneFull, verifier);
       } else {
-        // Native (iOS / Android): RecaptchaVerifier does not exist in the RN
-        // bundle of firebase/auth — Firebase handles silent push / native
-        // reCAPTCHA internally.  Passing no verifier is the correct approach.
         result = await (signInWithPhoneNumber as unknown as (
           auth: Auth, phone: string
         ) => Promise<ConfirmationResult>)(firebaseAuth, phoneFull);
@@ -115,7 +127,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
     setStep("verifying");
     try {
       await confirmRef.current.confirm(otp);
-      // Firebase auth state listener handles redirect
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Invalid OTP. Please try again.";
       onError?.(msg);
@@ -141,29 +152,51 @@ export default function PhoneAuthFlow({ onError }: Props) {
   }
 
   if (step === "phone" || step === "sending") {
-    const canSend = phone.replace(/\D/g, "").length === 10 && step !== "sending";
+    const canSend = isValidPhone && step !== "sending";
     return (
       <>
         {Platform.OS === "web" && <div id="recaptcha-container" />}
+        <CountryPickerModal
+          visible={pickerOpen}
+          selected={country}
+          onSelect={(c) => { setCountry(c); setPhoneError(null); }}
+          onClose={() => setPickerOpen(false)}
+        />
         <View style={s.wrap}>
           <Text style={s.stepLabel}>{t("components.phone_auth_flow.enter_your_mobile_number")}</Text>
           <View style={s.phoneRow}>
-            <View style={s.countryCode}>
-              <Text style={s.countryCodeText}>+91</Text>
-            </View>
+            <TouchableOpacity
+              style={[s.countryCode, phoneError && s.countryCodeError]}
+              onPress={() => setPickerOpen(true)}
+              accessibilityLabel={t("components.phone_auth_flow.country_picker_change_title")}
+            >
+              <Text style={s.countryFlag}>{country.flag}</Text>
+              <Text style={s.countryCodeText}>{country.dialCode}</Text>
+              <Ionicons name="chevron-down" size={12} color="rgba(240,232,255,0.5)" />
+            </TouchableOpacity>
             <TextInput
-              style={s.phoneInput}
+              style={[s.phoneInput, phoneError && s.phoneInputError]}
               value={phone}
-              onChangeText={(t) => setPhone(t.replace(/\D/g, "").slice(0, 10))}
+              onChangeText={(v) => {
+                setPhone(v.replace(/\D/g, "").slice(0, 15));
+                setPhoneError(null);
+              }}
               keyboardType="phone-pad"
-              maxLength={10}
-              placeholder="98765 43210"
+              maxLength={15}
+              placeholder={country.code === "IN" ? "98765 43210" : t("components.phone_auth_flow.phone_placeholder")}
               placeholderTextColor="rgba(200,180,255,0.28)"
               autoFocus
             />
           </View>
+          {phoneError ? (
+            <Text style={s.phoneErrorText}>{phoneError}</Text>
+          ) : (
+            <Text style={s.hint}>
+              {country.flag} {country.name} · {t("components.phone_auth_flow.tap_flag_to_change")}
+            </Text>
+          )}
           <View style={s.rowBtns}>
-            <TouchableOpacity style={s.cancelBtn} onPress={() => { setStep("idle"); setPhone(""); }}>
+            <TouchableOpacity style={s.cancelBtn} onPress={() => { setStep("idle"); setPhone(""); setPhoneError(null); }}>
               <Text style={s.cancelText}>{t("components.phone_auth_flow.cancel")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -197,7 +230,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
         <TextInput
           style={s.otpInput}
           value={otp}
-          onChangeText={(t) => setOtp(t.replace(/\D/g, "").slice(0, 6))}
+          onChangeText={(v) => setOtp(v.replace(/\D/g, "").slice(0, 6))}
           keyboardType="number-pad"
           maxLength={6}
           placeholder="• • • • • •"
@@ -253,29 +286,34 @@ const s = StyleSheet.create({
   wrap: { gap: 10 },
   stepLabel: { fontSize: 12, color: "rgba(200,180,255,0.65)", fontFamily: "Inter_400Regular" },
   phoneDisplay: { fontSize: 14, color: brand.violet300, fontFamily: "Inter_600SemiBold" },
+  hint: { fontSize: 11, color: "rgba(200,180,255,0.40)", fontFamily: "Inter_400Regular" },
+  phoneErrorText: { fontSize: 12, color: "#f87171", fontFamily: "Inter_400Regular" },
 
   phoneRow: { flexDirection: "row", gap: 8 },
   countryCode: {
-    height: 52, paddingHorizontal: 14, borderRadius: 14,
+    height: 52, paddingHorizontal: 12, borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1, borderColor: brandAlpha.purple500_22,
-    alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: brandAlpha.purple500_45,
+    flexDirection: "row", alignItems: "center", gap: 6,
   },
-  countryCodeText: { fontSize: 15, color: "#F0E8FF", fontFamily: "Inter_600SemiBold" }, // audit-ok: very-light lavender for phone field text
+  countryCodeError: { borderColor: "rgba(239,68,68,0.55)" },
+  countryFlag: { fontSize: 18 },
+  countryCodeText: { fontSize: 15, color: "#F0E8FF", fontFamily: "Inter_600SemiBold" },
   phoneInput: {
     flex: 1, height: 52, borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1, borderColor: brandAlpha.purple500_60,
     paddingHorizontal: 14,
-    fontSize: 16, color: "#F0E8FF", fontFamily: "Inter_400Regular", // audit-ok: very-light lavender for phone input text
+    fontSize: 16, color: "#F0E8FF", fontFamily: "Inter_400Regular",
     outlineWidth: 0,
   },
+  phoneInputError: { borderColor: "rgba(239,68,68,0.55)" },
 
   otpInput: {
     height: 60, borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1, borderColor: brandAlpha.purple500_60,
-    fontSize: 28, color: "#F0E8FF", fontFamily: "Inter_700Bold", // audit-ok: very-light lavender for OTP input
+    fontSize: 28, color: "#F0E8FF", fontFamily: "Inter_700Bold",
     letterSpacing: 8,
     outlineWidth: 0,
   },

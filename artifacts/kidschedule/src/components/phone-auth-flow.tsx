@@ -2,79 +2,14 @@ import { useRef, useState, useEffect, useMemo } from "react";
 import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult, type ApplicationVerifier } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { useTranslation } from "react-i18next";
-
-// ── Country data ──────────────────────────────────────────────────────────────
-
-type Country = {
-  code: string;
-  name: string;
-  dialCode: string;
-  flag: string;
-  /** IANA timezone strings that map to this country (first match wins). */
-  timezones: string[];
-};
-
-const COUNTRIES: Country[] = [
-  { code: "IN", name: "India",           dialCode: "+91",  flag: "🇮🇳", timezones: ["Asia/Kolkata","Asia/Calcutta"] },
-  { code: "US", name: "United States",   dialCode: "+1",   flag: "🇺🇸", timezones: ["America/New_York","America/Chicago","America/Los_Angeles","America/Denver","America/Phoenix","America/Anchorage","Pacific/Honolulu"] },
-  { code: "GB", name: "United Kingdom",  dialCode: "+44",  flag: "🇬🇧", timezones: ["Europe/London"] },
-  { code: "AE", name: "UAE",             dialCode: "+971", flag: "🇦🇪", timezones: ["Asia/Dubai"] },
-  { code: "CA", name: "Canada",          dialCode: "+1",   flag: "🇨🇦", timezones: ["America/Toronto","America/Vancouver","America/Edmonton","America/Winnipeg","America/Halifax"] },
-  { code: "AU", name: "Australia",       dialCode: "+61",  flag: "🇦🇺", timezones: ["Australia/Sydney","Australia/Melbourne","Australia/Brisbane","Australia/Perth","Australia/Adelaide"] },
-  { code: "SG", name: "Singapore",       dialCode: "+65",  flag: "🇸🇬", timezones: ["Asia/Singapore"] },
-  { code: "MY", name: "Malaysia",        dialCode: "+60",  flag: "🇲🇾", timezones: ["Asia/Kuala_Lumpur"] },
-  { code: "NZ", name: "New Zealand",     dialCode: "+64",  flag: "🇳🇿", timezones: ["Pacific/Auckland"] },
-  { code: "PK", name: "Pakistan",        dialCode: "+92",  flag: "🇵🇰", timezones: ["Asia/Karachi"] },
-  { code: "BD", name: "Bangladesh",      dialCode: "+880", flag: "🇧🇩", timezones: ["Asia/Dhaka"] },
-  { code: "LK", name: "Sri Lanka",       dialCode: "+94",  flag: "🇱🇰", timezones: ["Asia/Colombo"] },
-  { code: "NP", name: "Nepal",           dialCode: "+977", flag: "🇳🇵", timezones: ["Asia/Kathmandu"] },
-  { code: "SA", name: "Saudi Arabia",    dialCode: "+966", flag: "🇸🇦", timezones: ["Asia/Riyadh"] },
-  { code: "QA", name: "Qatar",           dialCode: "+974", flag: "🇶🇦", timezones: ["Asia/Qatar"] },
-  { code: "KW", name: "Kuwait",          dialCode: "+965", flag: "🇰🇼", timezones: ["Asia/Kuwait"] },
-  { code: "BH", name: "Bahrain",         dialCode: "+973", flag: "🇧🇭", timezones: ["Asia/Bahrain"] },
-  { code: "OM", name: "Oman",            dialCode: "+968", flag: "🇴🇲", timezones: ["Asia/Muscat"] },
-  { code: "DE", name: "Germany",         dialCode: "+49",  flag: "🇩🇪", timezones: ["Europe/Berlin"] },
-  { code: "FR", name: "France",          dialCode: "+33",  flag: "🇫🇷", timezones: ["Europe/Paris"] },
-  { code: "IT", name: "Italy",           dialCode: "+39",  flag: "🇮🇹", timezones: ["Europe/Rome"] },
-  { code: "ES", name: "Spain",           dialCode: "+34",  flag: "🇪🇸", timezones: ["Europe/Madrid"] },
-  { code: "NL", name: "Netherlands",     dialCode: "+31",  flag: "🇳🇱", timezones: ["Europe/Amsterdam"] },
-  { code: "CH", name: "Switzerland",     dialCode: "+41",  flag: "🇨🇭", timezones: ["Europe/Zurich"] },
-  { code: "SE", name: "Sweden",          dialCode: "+46",  flag: "🇸🇪", timezones: ["Europe/Stockholm"] },
-  { code: "NO", name: "Norway",          dialCode: "+47",  flag: "🇳🇴", timezones: ["Europe/Oslo"] },
-  { code: "ZA", name: "South Africa",    dialCode: "+27",  flag: "🇿🇦", timezones: ["Africa/Johannesburg"] },
-  { code: "NG", name: "Nigeria",         dialCode: "+234", flag: "🇳🇬", timezones: ["Africa/Lagos"] },
-  { code: "KE", name: "Kenya",           dialCode: "+254", flag: "🇰🇪", timezones: ["Africa/Nairobi"] },
-  { code: "JP", name: "Japan",           dialCode: "+81",  flag: "🇯🇵", timezones: ["Asia/Tokyo"] },
-  { code: "KR", name: "South Korea",     dialCode: "+82",  flag: "🇰🇷", timezones: ["Asia/Seoul"] },
-  { code: "CN", name: "China",           dialCode: "+86",  flag: "🇨🇳", timezones: ["Asia/Shanghai","Asia/Beijing"] },
-  { code: "PH", name: "Philippines",     dialCode: "+63",  flag: "🇵🇭", timezones: ["Asia/Manila"] },
-  { code: "ID", name: "Indonesia",       dialCode: "+62",  flag: "🇮🇩", timezones: ["Asia/Jakarta"] },
-  { code: "TH", name: "Thailand",        dialCode: "+66",  flag: "🇹🇭", timezones: ["Asia/Bangkok"] },
-  { code: "VN", name: "Vietnam",         dialCode: "+84",  flag: "🇻🇳", timezones: ["Asia/Ho_Chi_Minh"] },
-  { code: "BR", name: "Brazil",          dialCode: "+55",  flag: "🇧🇷", timezones: ["America/Sao_Paulo","America/Manaus"] },
-  { code: "MX", name: "Mexico",          dialCode: "+52",  flag: "🇲🇽", timezones: ["America/Mexico_City"] },
-  { code: "IR", name: "Ireland",         dialCode: "+353", flag: "🇮🇪", timezones: ["Europe/Dublin"] },
-];
-
-// Build timezone → country map (first entry wins for shared timezones)
-const TZ_MAP = new Map<string, Country>();
-for (const c of COUNTRIES) {
-  for (const tz of c.timezones) {
-    if (!TZ_MAP.has(tz)) TZ_MAP.set(tz, c);
-  }
-}
-
-const INDIA = COUNTRIES.find((c) => c.code === "IN")!;
-const INDIA_TZS = new Set(["Asia/Kolkata", "Asia/Calcutta"]);
-
-function detectCountry(): Country {
-  try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    return TZ_MAP.get(tz) ?? COUNTRIES[0];
-  } catch {
-    return INDIA;
-  }
-}
+import {
+  detectDefaultCountry,
+  filterCountries,
+  formatPhoneE164,
+  isValidNationalPhone,
+  PHONE_COUNTRIES,
+  type PhoneCountry,
+} from "@workspace/phone-auth";
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
@@ -124,8 +59,8 @@ function CountryPicker({
   onSelect,
   onClose,
 }: {
-  selected: Country;
-  onSelect: (c: Country) => void;
+  selected: PhoneCountry;
+  onSelect: (c: PhoneCountry) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -136,17 +71,10 @@ function CountryPicker({
     inputRef.current?.focus();
   }, []);
 
-  const filtered = useMemo(() => {
-    const q = query.toLowerCase();
-    return q
-      ? COUNTRIES.filter(
-          (c) =>
-            c.name.toLowerCase().includes(q) ||
-            c.dialCode.includes(q) ||
-            c.code.toLowerCase().includes(q),
-        )
-      : COUNTRIES;
-  }, [query]);
+  const filtered = useMemo(
+    () => filterCountries(PHONE_COUNTRIES, query),
+    [query],
+  );
 
   return (
     <div
@@ -186,7 +114,7 @@ function CountryPicker({
           <input
             ref={inputRef}
             type="text"
-            placeholder={t("screens.phone_auth_flow.country_picker_search_placeholder")}
+            placeholder={t("components.phone_auth_flow.country_picker_search_placeholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             style={{
@@ -220,7 +148,7 @@ function CountryPicker({
               }}
             >
               <span style={{ fontSize: "22px", lineHeight: 1 }}>{c.flag}</span>
-              <span style={{ flex: 1, fontSize: "14px", color: "#E8D8FF" /* audit-ok: purple tint text on dark country-picker bottom-sheet, no CSS semantic token for overlay inline styles */, fontWeight: 500 }}>
+              <span style={{ flex: 1, fontSize: "14px", color: "#E8D8FF" /* audit-ok: purple tint text on dark country-picker bottom-sheet, no CSS semantic token for overlay inline styles */, fontWeight: c.code === selected.code ? 700 : 500 }}>
                 {c.name}
               </span>
               <span style={{ fontSize: "14px", color: "rgba(180,150,255,0.70)", fontWeight: 600 }}>
@@ -230,7 +158,7 @@ function CountryPicker({
           ))}
           {filtered.length === 0 && (
             <p style={{ textAlign: "center", color: "rgba(200,180,255,0.40)", padding: "24px", fontSize: "14px" }}>
-              No country found
+              {t("components.phone_auth_flow.no_country_found")}
             </p>
           )}
         </div>
@@ -250,18 +178,15 @@ interface Props {
 export default function PhoneAuthFlow({ onError }: Props) {
   const { t } = useTranslation();
 
-  // Detect country once on mount
-  const detectedCountry = useMemo(() => detectCountry(), []);
-  const isIndia = INDIA_TZS.has(
-    (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return ""; } })()
-  );
+  const detectedCountry = useMemo(() => detectDefaultCountry(), []);
 
   const [step, setStep] = useState<Step>("idle");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
-  const [country, setCountry] = useState<Country>(detectedCountry);
+  const [country, setCountry] = useState<PhoneCountry>(detectedCountry);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const confirmRef = useRef<ConfirmationResult | null>(null);
   const recaptchaRef = useRef<ApplicationVerifier | null>(null);
@@ -269,13 +194,9 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
-  // Validation: India = exactly 10 digits, others = 6–15
   const digits = phone.replace(/\D/g, "");
-  const isValidPhone = isIndia || country.code === "IN"
-    ? digits.length === 10
-    : digits.length >= 6 && digits.length <= 15;
-
-  const phoneFull = `${country.dialCode}${digits}`;
+  const isValidPhone = isValidNationalPhone(digits, country.code);
+  const phoneFull = formatPhoneE164(digits, country.code) ?? "";
 
   function startResendTimer() {
     setResendTimer(30);
@@ -295,14 +216,13 @@ export default function PhoneAuthFlow({ onError }: Props) {
   }
 
   async function sendOtp(forceResend = false) {
-    if (!isValidPhone) {
-      onError?.(
-        country.code === "IN"
-          ? "Please enter a valid 10-digit phone number."
-          : "Please enter a valid phone number.",
-      );
+    if (!isValidPhone || !phoneFull) {
+      const msg = t("components.phone_auth_flow.invalid_phone");
+      setPhoneError(msg);
+      onError?.(msg);
       return;
     }
+    setPhoneError(null);
     setStep("sending");
     try {
       if (forceResend && recaptchaRef.current) {
@@ -382,7 +302,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
         {pickerOpen && (
           <CountryPicker
             selected={country}
-            onSelect={setCountry}
+            onSelect={(c) => { setCountry(c); setPhoneError(null); }}
             onClose={() => setPickerOpen(false)}
           />
         )}
@@ -393,14 +313,18 @@ export default function PhoneAuthFlow({ onError }: Props) {
           </label>
 
           <div style={{ display: "flex", gap: "8px" }}>
-            {/* Country code button — clickable only for non-India */}
-            {isIndia ? (
-              <div style={{
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              title={t("components.phone_auth_flow.country_picker_change_title")}
+              style={{
                 height: "48px",
-                padding: "0 14px",
+                padding: "0 12px",
                 borderRadius: "14px",
                 background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(123,63,242,0.25)",
+                border: phoneError
+                  ? "1px solid rgba(239,68,68,0.55)"
+                  : "1px solid rgba(123,63,242,0.45)",
                 color: "#F0E8FF",
                 fontSize: "15px",
                 fontWeight: 600,
@@ -408,63 +332,44 @@ export default function PhoneAuthFlow({ onError }: Props) {
                 alignItems: "center",
                 gap: "6px",
                 whiteSpace: "nowrap",
-              }}>
-                🇮🇳 +91
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setPickerOpen(true)}
-                title={t("screens.phone_auth_flow.country_picker_change_title")}
-                style={{
-                  height: "48px",
-                  padding: "0 12px",
-                  borderRadius: "14px",
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(123,63,242,0.45)",
-                  color: "#F0E8FF",
-                  fontSize: "15px",
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  whiteSpace: "nowrap",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  flexShrink: 0,
-                }}
-              >
-                <span style={{ fontSize: "18px" }}>{country.flag}</span>
-                <span>{country.dialCode}</span>
-                {/* Caret */}
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.5 }}>
-                  <path d="M2 3.5L5 6.5L8 3.5" stroke="#F0E8FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            )}
+                cursor: "pointer",
+                fontFamily: "inherit",
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ fontSize: "18px" }}>{country.flag}</span>
+              <span>{country.dialCode}</span>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.5 }}>
+                <path d="M2 3.5L5 6.5L8 3.5" stroke="#F0E8FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
 
             <input
               type="tel"
               value={phone}
-              onChange={(e) =>
-                setPhone(
-                  e.target.value
-                    .replace(/\D/g, "")
-                    .slice(0, isIndia || country.code === "IN" ? 10 : 15),
-                )
-              }
-              placeholder={isIndia || country.code === "IN" ? "98765 43210" : "Phone number"}
-              style={{ ...baseInput, flex: 1 }}
+              onChange={(e) => {
+                setPhone(e.target.value.replace(/\D/g, "").slice(0, 15));
+                setPhoneError(null);
+              }}
+              placeholder={country.code === "IN" ? "98765 43210" : t("components.phone_auth_flow.phone_placeholder")}
+              style={{
+                ...baseInput,
+                flex: 1,
+                border: phoneError
+                  ? "1px solid rgba(239,68,68,0.55)"
+                  : baseInput.border,
+              }}
               autoFocus
             />
           </div>
 
-          {/* Helper for non-India countries */}
-          {!isIndia && (
-            <p style={{ fontSize: "11px", color: "rgba(200,180,255,0.40)", margin: 0 }}>
-              Detected: {country.flag} {country.name} · Tap {country.dialCode} to change
-            </p>
+          {phoneError && (
+            <p style={{ fontSize: "12px", color: "#f87171", margin: 0 }}>{phoneError}</p>
           )}
+
+          <p style={{ fontSize: "11px", color: "rgba(200,180,255,0.40)", margin: 0 }}>
+            {country.flag} {country.name} · {t("components.phone_auth_flow.tap_flag_to_change")}
+          </p>
 
           <div style={{ display: "flex", gap: "8px" }}>
             <button
