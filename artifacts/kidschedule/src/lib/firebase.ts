@@ -12,6 +12,9 @@ import {
   isNativeAmyNestShell,
 } from "@/lib/native-shell";
 import { firebaseWebDefaults } from "@/lib/firebase-web-defaults";
+import { patchBootDiagnostics, recordBootError } from "@/lib/boot-store";
+
+const FIREBASE_TAG = "[amynest:firebase]";
 
 const projectId =
   (import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined)?.trim() ||
@@ -49,60 +52,120 @@ export const firebaseConfig = {
     )?.trim() || firebaseWebDefaults.messagingSenderId,
 };
 
-function ensureFirebaseApp(): FirebaseApp {
-  const existing = getApps()[0];
-  if (existing) return existing;
-  return initializeApp(firebaseConfig);
-}
+export type FirebaseInitResult =
+  | { status: "pending" }
+  | { status: "ok" }
+  | { status: "fail"; error: string };
 
-export const firebaseApp: FirebaseApp = ensureFirebaseApp();
-
+let firebaseAppInstance: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
+let initResult: FirebaseInitResult = { status: "pending" };
 
-function createFirebaseAuth(): Auth {
+function createFirebaseAuth(app: FirebaseApp): Auth {
   const wantsIndexedDbPersistence = isNativeAmyNestShell();
 
   if (wantsIndexedDbPersistence) {
     try {
-      return initializeAuth(firebaseApp, {
+      return initializeAuth(app, {
         persistence: indexedDBLocalPersistence,
       });
     } catch {
-      // Hot reload or an earlier getAuth() call may have already initialized
-      // Auth for this app instance. Fall through to the shared accessor.
+      /* Auth may already be initialized */
     }
   }
 
-  const auth = getAuth(firebaseApp);
+  const auth = getAuth(app);
 
   if (typeof window !== "undefined") {
     void setPersistence(
       auth,
       wantsIndexedDbPersistence
         ? indexedDBLocalPersistence
-        : browserLocalPersistence
+        : browserLocalPersistence,
     ).catch(() => {});
   }
 
   return auth;
 }
 
+/** Call once before any getFirebaseAuth() — never throws. */
+export function initializeFirebase(): FirebaseInitResult {
+  if (initResult.status !== "pending") return initResult;
+
+  console.info(`${FIREBASE_TAG} init start`);
+  patchBootDiagnostics({ firebaseStatus: "pending", firebaseError: null });
+
+  try {
+    firebaseAppInstance = getApps()[0] ?? initializeApp(firebaseConfig);
+    if (getApps().length > 1) {
+      console.warn(`${FIREBASE_TAG} multiple Firebase apps`, getApps().length);
+    }
+    authInstance = createFirebaseAuth(firebaseAppInstance);
+    initResult = { status: "ok" };
+    console.info(`${FIREBASE_TAG} init success`, {
+      apps: getApps().length,
+      projectId: firebaseConfig.projectId,
+    });
+    patchBootDiagnostics({ firebaseStatus: "ok", firebaseError: null });
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    initResult = { status: "fail", error };
+    console.error(`${FIREBASE_TAG} init fail`, err);
+    patchBootDiagnostics({ firebaseStatus: "fail", firebaseError: error });
+    recordBootError("firebase-init", err);
+  }
+
+  return initResult;
+}
+
+export function getFirebaseInitResult(): FirebaseInitResult {
+  return initResult;
+}
+
+export function getFirebaseApp(): FirebaseApp {
+  if (initResult.status !== "ok" || !firebaseAppInstance) {
+    initializeFirebase();
+  }
+  if (!firebaseAppInstance) {
+    throw new Error(
+      initResult.status === "fail"
+        ? initResult.error
+        : "Firebase app is not initialized",
+    );
+  }
+  return firebaseAppInstance;
+}
+
 export function getFirebaseAuth(): Auth {
   if (!authInstance) {
-    authInstance = createFirebaseAuth();
+    getFirebaseApp();
+  }
+  if (!authInstance) {
+    throw new Error("Firebase Auth is not initialized");
   }
   return authInstance;
 }
 
-/** @deprecated Prefer getFirebaseAuth() — kept for existing imports. */
-export const firebaseAuth: Auth = getFirebaseAuth();
+/** Lazy proxy — does not initialize Firebase at module load. */
+export const firebaseApp: FirebaseApp = new Proxy({} as FirebaseApp, {
+  get(_target, prop) {
+    const app = getFirebaseApp();
+    const value = Reflect.get(app as object, prop, app);
+    return typeof value === "function" ? (value as Function).bind(app) : value;
+  },
+});
+
+/** Lazy proxy — does not initialize Firebase at module load. */
+export const firebaseAuth: Auth = new Proxy({} as Auth, {
+  get(_target, prop) {
+    const auth = getFirebaseAuth();
+    const value = Reflect.get(auth as object, prop, auth);
+    return typeof value === "function" ? (value as Function).bind(auth) : value;
+  },
+});
 
 export function isFirebaseAuthReady(): boolean {
-  try {
-    return Boolean(getFirebaseAuth());
-  } catch {
-    return false;
-  }
+  return initResult.status === "ok" && Boolean(authInstance);
 }
 
 /**

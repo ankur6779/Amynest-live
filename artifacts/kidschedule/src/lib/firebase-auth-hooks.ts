@@ -15,6 +15,7 @@ function useCtx(): AuthContextValue {
 
 export function useAuth(): {
   isLoaded: boolean;
+  authStatus: AuthContextValue["authStatus"];
   isSignedIn: boolean;
   userId: string | null;
   sessionId: string | null;
@@ -24,6 +25,7 @@ export function useAuth(): {
   const c = useCtx();
   return {
     isLoaded: c.isLoaded,
+    authStatus: c.authStatus,
     isSignedIn: !!c.user,
     userId: c.user?.id ?? null,
     sessionId: c.user?.id ?? null,

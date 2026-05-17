@@ -16,6 +16,8 @@ import {
   clearCacheRecoveryPending,
   runBootCacheRecoveryIfNeeded,
 } from "@/lib/boot-recovery";
+import { syncPwaCacheAndVersion } from "@/lib/pwa-cache-sync";
+import { patchBootDiagnostics } from "@/lib/boot-store";
 
 installGlobalErrorHandlers();
 logBootContext();
@@ -42,6 +44,8 @@ async function bootstrap(): Promise<void> {
       if (redirectWwwToCanonicalApex()) return;
 
       await runBootCacheRecoveryIfNeeded();
+      patchBootDiagnostics({ hostname: window.location.hostname });
+      void syncPwaCacheAndVersion();
       initNativeShell();
 
       const apiOrigin = getAppApiBaseOrigin();
