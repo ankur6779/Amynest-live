@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef, type ReactNode } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
@@ -26,6 +26,7 @@ import VerifyEmailPage from "@/pages/verify-email";
 import AuthCallbackPage from "@/pages/auth-callback";
 import ResetPasswordPage from "@/pages/reset-password";
 import { FirebaseActionGate } from "@/components/firebase-action-gate";
+import { AuthBootShell } from "@/components/auth-boot-shell";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
 // when its route is first matched. The Suspense boundary below renders
@@ -307,6 +308,13 @@ function NotificationDeepLinkBridge() {
   return null;
 }
 
+/** Covers the gap between splash dismiss and Firebase `isLoaded`. */
+function AuthBootGate({ children }: { children: ReactNode }) {
+  const { isLoaded } = useAuth();
+  if (!isLoaded) return <AuthBootShell />;
+  return <>{children}</>;
+}
+
 function ReactMountMarker() {
   // Confirms React's reconciliation actually completed and effects are
   // running — not just that `root.render()` returned synchronously (which
@@ -518,15 +526,17 @@ function OfflineGate() {
 export default function AppCore() {
   return (
     <FirebaseAuthProvider>
-      <WouterRouter base={basePath}>
-        <FirebaseActionGate>
-          <AppCoreMountMarker />
-          <AppRoutes />
+      <AuthBootGate>
+        <WouterRouter base={basePath}>
+          <FirebaseActionGate>
+            <AppCoreMountMarker />
+            <AppRoutes />
           {/* Fixed overlay — rendered outside AppRoutes so it appears above all pages */}
           <OfflineGate />
           <NativeStartupPermissionsGate />
-        </FirebaseActionGate>
-      </WouterRouter>
+          </FirebaseActionGate>
+        </WouterRouter>
+      </AuthBootGate>
     </FirebaseAuthProvider>
   );
 }
