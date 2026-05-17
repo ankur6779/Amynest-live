@@ -7,35 +7,21 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import {
-  onIdTokenChanged,
-  signOut as fbSignOut,
-  type User as FbUser,
-} from "firebase/auth";
+import { onAuthStateChanged, signOut as fbSignOut, type User as FbUser } from "firebase/auth";
 import { getFirebaseAuth } from "./firebase";
-
-const AUTH_TAG = "[amynest:firebase-auth]";
-const AUTH_READY_TIMEOUT_MS = 12_000;
 import {
   AuthContext,
   type AuthContextValue,
+  type AuthResolutionStatus,
   type AuthState,
   type Listener,
   type ShimUser,
 } from "./firebase-auth-context";
+import { patchBootDiagnostics, recordBootError } from "@/lib/boot-store";
+import { RouteLoadingShell } from "@/components/route-loading-shell";
 
-// All firebase modules ("firebase/app", "firebase/auth") are listed in
-// vite.config.ts -> optimizeDeps.include, so they're pre-bundled at startup
-// alongside React. Static imports here ensure:
-//   1. The dependency graph is fully known when the dev server starts, so
-//      Vite never needs to re-bundle deps mid-session (a re-bundle changes
-//      the `?v=` cache-bust hash, which would create two ESM React instances
-//      in the browser — the cause of the recurring "Invalid hook call" /
-//      "more than one copy of React" crash this file used to suffer from).
-//   2. ESM resolves all static imports before this module executes, so there
-//      is no chunk-load race with React's internals.
-// Do NOT convert these back to dynamic imports — that re-introduces the
-// mid-session dep-discovery → re-bundle → hash-mismatch crash loop.
+const AUTH_TAG = "[amynest:firebase-auth]";
+const AUTH_RACE_TIMEOUT_MS = 10_000;
 
 type FirebaseUserLike = {
   uid: string;
@@ -45,24 +31,6 @@ type FirebaseUserLike = {
   phoneNumber: string | null;
   getIdToken: (forceRefresh?: boolean) => Promise<string>;
 };
-
-/**
- * A Clerk-shaped wrapper around Firebase Auth. Lets the existing app keep
- * its `useAuth() / useUser() / useClerk()` call sites unchanged after the
- * migration.
- *
- * Mapping
- *   Clerk user.id                 → Firebase user.uid
- *   user.firstName / lastName     → split from displayName
- *   user.fullName                 → displayName
- *   user.imageUrl                 → photoURL
- *   user.emailAddresses[0].e..    → email (single entry)
- *   user.primaryEmailAddress      → { emailAddress: email }
- *
- * The context object, value type, and shim user types live in
- * `./firebase-auth-context` so this file can stay a clean Fast Refresh
- * boundary that exports ONLY components.
- */
 
 function fbToShim(u: FirebaseUserLike): ShimUser {
   const display = u.displayName ?? "";
@@ -103,86 +71,126 @@ function buildShimFromFirebaseUser(fbUser: FbUser | null): ShimUser | null {
   return fbUser && !isUnverifiedEmailUser ? fbToShim(fbUser as FirebaseUserLike) : null;
 }
 
-export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    isLoaded: false,
-  });
-  const listenersRef = useRef<Set<Listener>>(new Set());
-  const lastUidRef = useRef<string | null | undefined>(undefined);
+function toAuthState(
+  shim: ShimUser | null,
+  authStatus: AuthResolutionStatus,
+): AuthState {
+  const isLoaded = authStatus !== "loading";
+  return {
+    user: shim,
+    isLoaded,
+    authStatus,
+  };
+}
 
-  const applyAuthUser = useCallback((fbUser: FbUser | null, source: string) => {
-    const shim = buildShimFromFirebaseUser(fbUser);
+function waitForAuthStateChanged(auth: ReturnType<typeof getFirebaseAuth>): Promise<FbUser | null> {
+  return new Promise((resolve) => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      try {
+        unsub();
+      } catch {
+        /* ignore */
+      }
+      resolve(user);
+    });
+  });
+}
+
+export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<AuthState>(() =>
+    toAuthState(null, "loading"),
+  );
+  const listenersRef = useRef<Set<Listener>>(new Set());
+  const resolvedRef = useRef(false);
+
+  const publish = useCallback((shim: ShimUser | null, authStatus: AuthResolutionStatus) => {
     const uid = shim?.id ?? null;
     setState((prev) => {
-      if (prev.isLoaded && (prev.user?.id ?? null) === uid) return prev;
-      return { user: shim, isLoaded: true };
+      if (
+        prev.authStatus === authStatus &&
+        (prev.user?.id ?? null) === uid &&
+        prev.isLoaded === authStatus !== "loading"
+      ) {
+        return prev;
+      }
+      return toAuthState(shim, authStatus);
     });
-    if (lastUidRef.current !== uid) {
-      console.info(`${AUTH_TAG} Auth state (${source})`, {
-        signedIn: Boolean(shim),
-        uid,
-        email: fbUser?.email ?? null,
-      });
-      lastUidRef.current = uid;
-    }
+
+    patchBootDiagnostics({
+      authStatus:
+        authStatus === "authenticated"
+          ? "authenticated"
+          : authStatus === "timeout"
+            ? "timeout"
+            : authStatus === "loading"
+              ? "loading"
+              : "unauthenticated",
+      authUserLabel: uid ?? "null",
+    });
+
+    console.info(`${AUTH_TAG} auth resolved`, { authStatus, uid, email: shim?.primaryEmailAddress?.emailAddress });
+
     for (const l of listenersRef.current) {
       try {
         l({ user: shim });
       } catch {
-        /* ignore listener errors */
+        /* ignore */
       }
     }
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    let auth: ReturnType<typeof getFirebaseAuth>;
+    resolvedRef.current = false;
 
+    let auth: ReturnType<typeof getFirebaseAuth>;
     try {
       auth = getFirebaseAuth();
     } catch (err) {
-      console.error(`${AUTH_TAG} getFirebaseAuth failed`, err);
-      setState({ user: null, isLoaded: true });
+      recordBootError("getFirebaseAuth", err);
+      publish(null, "timeout");
       return;
     }
 
-    const readyTimeout = window.setTimeout(() => {
-      if (cancelled) return;
-      console.warn(`${AUTH_TAG} authStateReady timeout — continuing as signed-out`);
-      setState((prev) => (prev.isLoaded ? prev : { user: null, isLoaded: true }));
-    }, AUTH_READY_TIMEOUT_MS);
+    const timeoutId = window.setTimeout(() => {
+      if (cancelled || resolvedRef.current) return;
+      resolvedRef.current = true;
+      console.warn(`${AUTH_TAG} auth race timeout (${AUTH_RACE_TIMEOUT_MS}ms)`);
+      publish(null, "timeout");
+    }, AUTH_RACE_TIMEOUT_MS);
 
-    void auth.authStateReady().then(() => {
-      if (cancelled) return;
-      window.clearTimeout(readyTimeout);
-      console.info(`${AUTH_TAG} authStateReady`, {
-        hasUser: Boolean(auth.currentUser),
+    void waitForAuthStateChanged(auth)
+      .then((fbUser) => {
+        if (cancelled || resolvedRef.current) return;
+        resolvedRef.current = true;
+        window.clearTimeout(timeoutId);
+        const shim = buildShimFromFirebaseUser(fbUser);
+        publish(shim, shim ? "authenticated" : "unauthenticated");
+      })
+      .catch((err) => {
+        if (cancelled || resolvedRef.current) return;
+        resolvedRef.current = true;
+        window.clearTimeout(timeoutId);
+        recordBootError("onAuthStateChanged", err);
+        publish(null, "timeout");
       });
-      applyAuthUser(auth.currentUser, "authStateReady");
-    }).catch((err) => {
-      console.error(`${AUTH_TAG} authStateReady failed`, err);
-      if (!cancelled) {
-        setState({ user: null, isLoaded: true });
-      }
-    });
 
-    const unsub = onIdTokenChanged(auth, (fbUser) => {
-      if (cancelled) return;
-      window.clearTimeout(readyTimeout);
-      applyAuthUser(fbUser, "onIdTokenChanged");
+    const unsub = onAuthStateChanged(auth, (fbUser) => {
+      if (!resolvedRef.current) return;
+      const shim = buildShimFromFirebaseUser(fbUser);
+      publish(shim, shim ? "authenticated" : "unauthenticated");
     });
 
     return () => {
       cancelled = true;
-      window.clearTimeout(readyTimeout);
+      window.clearTimeout(timeoutId);
       try {
         unsub();
       } catch {
         /* ignore */
       }
     };
-  }, [applyAuthUser]);
+  }, [publish]);
 
   const getToken = useCallback(
     async (opts?: { skipCache?: boolean }): Promise<string | null> => {
@@ -223,8 +231,6 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// ─── <Show when="signed-in" | "signed-out"> drop-in ────────────────────────
-
 export function Show({
   when,
   children,
@@ -233,12 +239,15 @@ export function Show({
   children: ReactNode;
 }) {
   const ctx = useContext(AuthContext);
-  const isLoaded = ctx?.isLoaded ?? false;
+  const authStatus = ctx?.authStatus ?? "loading";
   const isSignedIn = !!ctx?.user;
-  if (!isLoaded) {
-    return null;
+
+  if (authStatus === "loading") {
+    return <RouteLoadingShell />;
   }
+
   if (when === "signed-in" && isSignedIn) return <>{children}</>;
   if (when === "signed-out" && !isSignedIn) return <>{children}</>;
-  return null;
+
+  return <span aria-hidden style={{ display: "none" }} />;
 }

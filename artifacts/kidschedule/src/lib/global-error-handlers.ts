@@ -1,3 +1,5 @@
+import { recordBootError } from "@/lib/boot-store";
+
 const TAG = "[amynest:boot]";
 
 type ErrorEntry = {
@@ -14,6 +16,7 @@ function recordError(source: string, message: string, detail?: string): void {
   const entry = { ts: Date.now(), source, message, detail };
   recentErrors.push(entry);
   if (recentErrors.length > MAX_ERRORS) recentErrors.shift();
+  recordBootError(source, new Error(detail ? `${message} | ${detail}` : message));
   try {
     (window as Window & { __amynestRecentErrors?: ErrorEntry[] }).__amynestRecentErrors =
       recentErrors;

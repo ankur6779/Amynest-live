@@ -31,9 +31,17 @@ export interface ShimUser {
   setProfileImage: (args: { file: File }) => Promise<void>;
 }
 
+export type AuthResolutionStatus =
+  | "loading"
+  | "authenticated"
+  | "unauthenticated"
+  | "timeout";
+
 export interface AuthState {
   user: ShimUser | null;
+  /** @deprecated Use authStatus — kept for Clerk-compat hooks */
   isLoaded: boolean;
+  authStatus: AuthResolutionStatus;
 }
 
 export type Listener = (snapshot: { user: ShimUser | null }) => void;

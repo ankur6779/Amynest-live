@@ -2,6 +2,7 @@ import { useAuth } from "@/lib/firebase-auth-hooks";
 import { waitForIdToken } from "@/lib/auth-token";
 import { useCallback } from "react";
 import { loggedFetch } from "@/lib/api-logger";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
 export function useAuthFetch() {
   const { getToken, isSignedIn } = useAuth();
@@ -22,7 +23,7 @@ export function useAuthFetch() {
       }
 
       const initWithHeaders = { ...init, headers };
-      return loggedFetch(input, initWithHeaders, (inp, ini) => fetch(inp, ini));
+      return loggedFetch(input, initWithHeaders, (inp, ini) => fetchWithTimeout(inp, ini));
     },
     [getToken, isSignedIn],
   );

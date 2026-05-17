@@ -25,13 +25,16 @@ import SignUpPage from "@/pages/sign-up";
 import VerifyEmailPage from "@/pages/verify-email";
 import AuthCallbackPage from "@/pages/auth-callback";
 import ResetPasswordPage from "@/pages/reset-password";
+import RouteFailedPage from "@/pages/route-failed";
 import { FirebaseActionGate } from "@/components/firebase-action-gate";
 import { AuthBootShell } from "@/components/auth-boot-shell";
 import { AppFallbackUi } from "@/components/app-fallback-ui";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
-import { firebaseConfig } from "@/lib/firebase";
-import { logFirebaseBootStatus } from "@/lib/firebase-boot-log";
+import { ApiRetryShell } from "@/components/api-retry-shell";
+import { ProductionAppShell } from "@/components/production-app-shell";
+import { BootRouteSync } from "@/components/boot-route-sync";
+import { FetchTimeoutError } from "@/lib/fetch-with-timeout";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
 // when its route is first matched. The Suspense boundary below renders
@@ -187,6 +190,7 @@ function useOnboardingStatus() {
       const msg = error instanceof Error ? error.message : "";
       if (msg === "auth-token-pending") return failureCount < 8;
       if (msg === "auth-unauthorized") return false;
+      if (error instanceof FetchTimeoutError) return failureCount < 1;
       return failureCount < 2;
     },
     retryDelay: (attempt) => Math.min(300 * 2 ** attempt, 4000),
@@ -194,66 +198,83 @@ function useOnboardingStatus() {
 }
 
 function HomeRedirect() {
-  const { data, isLoading, isError, error } = useOnboardingStatus();
+  const { isLoaded, isSignedIn, authStatus } = useAuth();
+  const { data, isLoading, isError, error, refetch, isFetching } = useOnboardingStatus();
+
+  if (!isLoaded || authStatus === "loading") {
+    return <RouteLoadingShell />;
+  }
+
+  if (!isSignedIn) {
+    return <LandingPage />;
+  }
+
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
-  return (
-    <>
-      <Show when="signed-in">
-        {isLoading || authBlocked
-          ? <RouteLoadingShell />
-          : isSetupComplete(data)
-            ? <Redirect to="/dashboard" />
-            : <Redirect to="/onboarding" />
+
+  if (isLoading || isFetching) {
+    return <RouteLoadingShell />;
+  }
+
+  if (isError && !authBlocked) {
+    const timedOut = error instanceof FetchTimeoutError;
+    return (
+      <ApiRetryShell
+        message={
+          timedOut
+            ? "Loading your account timed out. Check your connection and retry."
+            : "We could not load your account status."
         }
-      </Show>
-      <Show when="signed-out">
-        <LandingPage />
-      </Show>
-    </>
-  );
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
+  if (authBlocked) {
+    return <RouteLoadingShell />;
+  }
+
+  return isSetupComplete(data) ? <Redirect to="/dashboard" /> : <Redirect to="/onboarding" />;
 }
 
 /** If setup is already done, leave /onboarding (users often land here from an old redirect). */
 function OnboardingRouteGuard() {
-  const { data, isLoading, isError, error } = useOnboardingStatus();
+  const { isLoaded, isSignedIn, authStatus } = useAuth();
+  const { data, isLoading, isError, error, refetch, isFetching } = useOnboardingStatus();
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
 
-  return (
-    <>
-      <Show when="signed-in">
-        {isLoading || authBlocked
-          ? <RouteLoadingShell />
-          : isSetupComplete(data)
-            ? <Redirect to="/dashboard" />
-            : <OnboardingPage />}
-      </Show>
-      <Show when="signed-out">
-        <Redirect to="/sign-in" />
-      </Show>
-    </>
-  );
+  if (!isLoaded || authStatus === "loading") return <RouteLoadingShell />;
+  if (!isSignedIn) return <Redirect to="/sign-in" />;
+  if (isLoading || isFetching || authBlocked) return <RouteLoadingShell />;
+  if (isError) {
+    return (
+      <ApiRetryShell
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+  if (isSetupComplete(data)) return <Redirect to="/dashboard" />;
+  return <OnboardingPage />;
 }
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType; requiresProfile?: boolean }) {
-  const { data, isLoading, isError, error } = useOnboardingStatus();
+  const { isLoaded, isSignedIn, authStatus } = useAuth();
+  const { data, isLoading, isError, error, refetch, isFetching } = useOnboardingStatus();
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
+
+  if (!isLoaded || authStatus === "loading") return <RouteLoadingShell />;
+  if (!isSignedIn) return <Redirect to="/sign-in" />;
+  if (isLoading || isFetching || authBlocked) return <RouteLoadingShell />;
+  if (isError) {
+    return <ApiRetryShell onRetry={() => void refetch()} />;
+  }
+  if (!isSetupComplete(data)) return <Redirect to="/onboarding" />;
   return (
-    <>
-      <Show when="signed-in">
-        {isLoading || authBlocked
-          ? <RouteLoadingShell />
-          : !isSetupComplete(data)
-            ? <Redirect to="/onboarding" />
-            : <Layout><Component /></Layout>
-        }
-      </Show>
-      <Show when="signed-out">
-        <Redirect to="/sign-in" />
-      </Show>
-    </>
+    <Layout>
+      <Component />
+    </Layout>
   );
 }
 
@@ -313,34 +334,24 @@ function NotificationDeepLinkBridge() {
   return null;
 }
 
-const AUTH_BOOT_TIMEOUT_MS = 12_000;
-
-/** Covers the gap between splash dismiss and Firebase `isLoaded`. */
+/** Covers auth loading / timeout before routes render. */
 function AuthBootGate({ children }: { children: ReactNode }) {
-  const { isLoaded } = useAuth();
-  const [timedOut, setTimedOut] = useState(false);
+  const { authStatus } = useAuth();
 
-  useEffect(() => {
-    if (isLoaded) {
-      setTimedOut(false);
-      return;
-    }
-    const timer = window.setTimeout(() => setTimedOut(true), AUTH_BOOT_TIMEOUT_MS);
-    return () => window.clearTimeout(timer);
-  }, [isLoaded]);
-
-  if (!isLoaded) {
-    if (timedOut) {
-      return (
-        <AppFallbackUi
-          title="Still loading"
-          message="Firebase auth is taking longer than expected. Check your connection and reload."
-          onReload={() => window.location.reload()}
-        />
-      );
-    }
+  if (authStatus === "loading") {
     return <AuthBootShell />;
   }
+
+  if (authStatus === "timeout") {
+    return (
+      <AppFallbackUi
+        title="Sign-in check timed out"
+        message="Firebase auth did not respond in time. Reload to try again."
+        onReload={() => window.location.reload()}
+      />
+    );
+  }
+
   return <>{children}</>;
 }
 
@@ -372,7 +383,7 @@ function AppRoutes() {
             <ReferralAttributionBridge />
             <FcmForegroundHandler />
             <NotificationDeepLinkBridge />
-            <Suspense fallback={null}>
+            <Suspense fallback={<RouteLoadingShell />}>
             <Switch>
           <Route path="/" component={HomeRedirect} />
           <Route path="/index.html">
@@ -506,7 +517,7 @@ function AppRoutes() {
           <Route path="/admin/feedback">
             {() => <ProtectedRoute component={AdminFeedbackPage} requiresProfile={false} />}
           </Route>
-          <Route component={NotFound} />
+          <Route component={RouteFailedPage} />
             </Switch>
             </Suspense>
             <PaywallModal />
@@ -534,7 +545,6 @@ function AppRoutes() {
 // the empty Suspense fallback.
 function AppCoreMountMarker() {
   useEffect(() => {
-    logFirebaseBootStatus(firebaseConfig);
     try { (window as Window & { __amynestAppCoreReady?: boolean }).__amynestAppCoreReady = true; } catch (_e) { /* best-effort */ }
     bootMark("appcore-mounted");
   }, []);
@@ -555,20 +565,23 @@ function OfflineGate() {
 
 export default function AppCore() {
   return (
-    <FirebaseAuthProvider>
-      <AuthBootGate>
-        <WouterRouter base={basePath}>
-          <FirebaseActionGate>
-            <AppCoreMountMarker />
+    <ProductionAppShell>
+      <FirebaseAuthProvider>
+        <AuthBootGate>
+          <WouterRouter base={basePath}>
+            <BootRouteSync />
+            <FirebaseActionGate>
+              <AppCoreMountMarker />
             <AppErrorBoundary label="AppRoutes">
               <AppRoutes />
             </AppErrorBoundary>
           {/* Fixed overlay — rendered outside AppRoutes so it appears above all pages */}
           <OfflineGate />
           <NativeStartupPermissionsGate />
-          </FirebaseActionGate>
-        </WouterRouter>
-      </AuthBootGate>
-    </FirebaseAuthProvider>
+            </FirebaseActionGate>
+          </WouterRouter>
+        </AuthBootGate>
+      </FirebaseAuthProvider>
+    </ProductionAppShell>
   );
 }
