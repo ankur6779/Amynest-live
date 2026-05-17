@@ -25,6 +25,7 @@ import SignUpPage from "@/pages/sign-up";
 import VerifyEmailPage from "@/pages/verify-email";
 import AuthCallbackPage from "@/pages/auth-callback";
 import ResetPasswordPage from "@/pages/reset-password";
+import { FirebaseActionGate } from "@/components/firebase-action-gate";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
 // when its route is first matched. The Suspense boundary below renders
@@ -191,6 +192,7 @@ function HomeRedirect() {
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
   return (
+    <FirebaseActionGate>
     <>
       <Show when="signed-in">
         {isLoading || authBlocked
@@ -204,6 +206,7 @@ function HomeRedirect() {
         <LandingPage />
       </Show>
     </>
+    </FirebaseActionGate>
   );
 }
 

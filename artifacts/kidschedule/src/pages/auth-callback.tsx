@@ -1,29 +1,29 @@
-import { useEffect } from "react";
-import { useLocation } from "wouter";
+import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { parseFirebaseActionParams } from "@/lib/firebase-action-params";
+import VerifyEmailActionPage from "@/pages/verify-email-action";
+import ResetPasswordPage from "@/pages/reset-password";
 
-/** Legacy Firebase action URLs (/verify, /auth/callback) → dedicated handlers. */
+/**
+ * Handles Firebase email action links (mode + oobCode in URL).
+ * Renders the full success/error UI here — no redirect (avoids flash of landing page).
+ */
 export default function AuthCallbackPage() {
-  const [, setLocation] = useLocation();
+  const { mode, oobCode } = parseFirebaseActionParams();
 
-  useEffect(() => {
-    const { mode, oobCode } = parseFirebaseActionParams();
+  if (mode === "verifyEmail" && oobCode) {
+    return <VerifyEmailActionPage />;
+  }
 
-    if (mode === "resetPassword" && oobCode) {
-      const qs = new URLSearchParams({ mode, oobCode });
-      setLocation(`/reset-password?${qs.toString()}`);
-      return;
-    }
+  if (mode === "resetPassword" && oobCode) {
+    return <ResetPasswordPage />;
+  }
 
-    if (mode === "verifyEmail" && oobCode) {
-      const qs = new URLSearchParams({ mode, oobCode });
-      setLocation(`/verify-email?${qs.toString()}`);
-      return;
-    }
+  return <InvalidActionLink />;
+}
 
-    setLocation("/sign-in");
-  }, [setLocation]);
-
+function InvalidActionLink() {
+  const { t } = useTranslation();
   return (
     <div
       style={{
@@ -38,7 +38,12 @@ export default function AuthCallbackPage() {
         textAlign: "center",
       }}
     >
-      <p>Redirecting…</p>
+      <div style={{ maxWidth: 420 }}>
+        <p style={{ marginBottom: 16 }}>{t("screens.verify_email_action.invalid_link")}</p>
+        <Link href="/sign-in" style={{ color: "hsl(var(--brand-purple-400))" }}>
+          {t("screens.verify_email_action.sign_in_button")}
+        </Link>
+      </div>
     </div>
   );
 }
