@@ -1233,8 +1233,8 @@
     },
     "auth_action": {
       "processing": "Processing...",
-      "email_verified_title": "✅ Email Verified",
-      "password_updated": "✅ Password updated successfully. Go to login."
+      "email_verified_title": "Email verified",
+      "password_updated": "Password updated successfully. You can sign in with your new password."
     },
     "verify_email_action": {
       "verifying": "Verifying your email...",

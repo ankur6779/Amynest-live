@@ -15,6 +15,10 @@ export function getFirebaseActionUrlForLocalDev(): string {
     if (hostname === "localhost" || hostname === "127.0.0.1") {
       return `${origin}/auth/action`;
     }
+    // Never use www for ActionCodeSettings — apex only.
+    if (hostname === "amynest.in" || hostname === "www.amynest.in") {
+      return CANONICAL_FIREBASE_ACTION_URL;
+    }
   }
   return CANONICAL_FIREBASE_ACTION_URL;
 }

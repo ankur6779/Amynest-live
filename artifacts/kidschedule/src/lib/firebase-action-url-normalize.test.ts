@@ -38,7 +38,20 @@ describe("normalizeFirebaseActionUrl", () => {
         pathname: "/auth/action",
         search: "?mode=verifyEmail&oobCode=abc",
         hash: "",
+        href: "https://amynest.in/auth/action?mode=verifyEmail&oobCode=abc",
       }),
     ).toBeNull();
+  });
+
+  it("strips continueUrl on /auth/action", () => {
+    expect(
+      normalizeFirebaseActionUrl({
+        pathname: "/auth/action",
+        search:
+          "?mode=verifyEmail&oobCode=abc&continueUrl=https%3A%2F%2Famynest.in%2Fauth%2Faction",
+        hash: "",
+        href: "https://amynest.in/auth/action?mode=verifyEmail&oobCode=abc&continueUrl=https%3A%2F%2Famynest.in%2Fauth%2Faction",
+      }),
+    ).toBe("/auth/action?mode=verifyEmail&oobCode=abc");
   });
 });

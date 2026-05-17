@@ -1,32 +1,36 @@
-/** Canonical client route for Firebase email action links. */
-export const FIREBASE_ACTION_PATH = "/auth/action";
+import {
+  buildCanonicalAuthActionHref,
+  FIREBASE_ACTION_PATH,
+} from "@/lib/firebase-action-params";
+
+export { FIREBASE_ACTION_PATH };
 
 /**
  * After Render/static hosts rewrite `/auth/action` → `/index.html`, recover the
  * intended SPA path so wouter and handlers see `/auth/action?mode=…&oobCode=…`.
+ * Strips continueUrl and other params that can cause redirect loops.
  */
 export function normalizeFirebaseActionUrl(
-  location: Pick<Location, "pathname" | "search" | "hash"> = window.location,
+  location: Pick<Location, "pathname" | "search" | "hash"> &
+    Partial<Pick<Location, "href">> = window.location,
 ): string | null {
   const pathname = location.pathname || "/";
-  const search = location.search || "";
   const hash = location.hash || "";
-
-  const params = new URLSearchParams(search);
-  const mode = params.get("mode");
-  const oobCode = params.get("oobCode") ?? params.get("oob_code");
-  const hasFirebaseAction = Boolean(mode && oobCode);
+  const canonical = buildCanonicalAuthActionHref(location);
 
   if (pathname === "/index.html" || pathname.endsWith("/index.html")) {
-    if (hasFirebaseAction) {
-      return `${FIREBASE_ACTION_PATH}${search}${hash}`;
-    }
+    if (canonical) return canonical + hash;
     const base = pathname.slice(0, -"/index.html".length) || "/";
-    return `${base}${search}${hash}`;
+    return `${base}${location.search || ""}${hash}`;
   }
 
-  if (hasFirebaseAction && pathname === "/") {
-    return `${FIREBASE_ACTION_PATH}${search}${hash}`;
+  if (canonical && pathname === "/") {
+    return canonical + hash;
+  }
+
+  if (canonical && pathname === FIREBASE_ACTION_PATH) {
+    const current = `${pathname}${location.search || ""}`;
+    if (current !== canonical) return canonical + hash;
   }
 
   return null;

@@ -109,11 +109,14 @@ export function prettyAuthError(err: unknown): string {
       const host = typeof window !== "undefined" ? window.location.hostname : "";
       if (host === "www.amynest.in") {
         return (
-          "Phone OTP blocked: you are on www.amynest.in but Firebase only has amynest.in. " +
-          "In Firebase Console → Authentication → Settings → Authorized domains, click Add domain and add: www.amynest.in"
+          "Phone OTP failed: use https://amynest.in (not www). " +
+          "The site should redirect www automatically — try a hard refresh."
         );
       }
-      return `Phone verification security check failed. Add "${host || "this domain"}" to Firebase Console → Authentication → Settings → Authorized domains (for AmyNest also add www.amynest.in and amynest.in).`;
+      return (
+        `Phone verification security check failed on "${host || "this domain"}". ` +
+        "In Firebase Console → Authentication → Settings → Authorized domains, ensure amynest.in and www.amynest.in are listed."
+      );
     }
     case "auth/invalid-app-credential":
     case "auth/missing-app-credential":
@@ -138,11 +141,11 @@ export function prettyAuthError(err: unknown): string {
         const host = typeof window !== "undefined" ? window.location.hostname : "";
         if (host === "www.amynest.in") {
           return (
-            "Phone OTP blocked: add www.amynest.in in Firebase → Authentication → Settings → " +
-            "Authorized domains (amynest.in alone is not enough — the site opens on www)."
+            "Phone OTP failed on www.amynest.in — open https://amynest.in/sign-in instead " +
+            "(www should redirect to the apex domain)."
           );
         }
-        return `Phone verification failed. Add "${host}" to Firebase Authorized domains (and www.amynest.in if you use www).`;
+        return `Phone verification failed. Add "${host}" to Firebase Authorized domains (amynest.in and www.amynest.in).`;
       }
       if (message && !message.startsWith("Firebase:")) {
         return message;
