@@ -13,17 +13,13 @@ import {
   VerificationRateLimitError,
 } from "./email-verification-rate";
 
-/**
- * Must match Firebase Console → Authentication → Templates → action URL host/path
- * and be listed under Authentication → Settings → Authorized domains (amynest.in).
- */
-export const CANONICAL_EMAIL_VERIFICATION_URL = "https://amynest.in/verify-email";
+import {
+  CANONICAL_FIREBASE_ACTION_URL,
+  getFirebaseActionUrlForLocalDev,
+} from "./firebase-action-url";
 
-/** Alternate paths handled by AuthCallbackPage (template may use /auth/action). */
-export const LEGACY_EMAIL_VERIFICATION_PATHS = [
-  "/auth/callback",
-  "/auth/action",
-] as const;
+/** @deprecated Use CANONICAL_FIREBASE_ACTION_URL — Firebase has one shared template URL. */
+export const CANONICAL_EMAIL_VERIFICATION_URL = CANONICAL_FIREBASE_ACTION_URL;
 
 /**
  * Email verification uses **Firebase Auth** `sendEmailVerification` (client SDK).
@@ -35,15 +31,7 @@ export function getEmailVerificationCallbackUrl(): string {
   )?.trim();
   if (fromEnv) return fromEnv;
 
-  if (typeof window !== "undefined" && window.location?.hostname) {
-    const { hostname, origin } = window.location;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return `${origin}/verify-email`;
-    }
-  }
-
-  // Always use authorized production domain — avoids auth/unauthorized-continue-uri on Render hosts.
-  return CANONICAL_EMAIL_VERIFICATION_URL;
+  return getFirebaseActionUrlForLocalDev();
 }
 
 export function getEmailVerificationActionCodeSettings(): ActionCodeSettings {
