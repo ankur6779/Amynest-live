@@ -11,6 +11,7 @@ import {
   PHONE_COUNTRIES,
   clearPhoneRecaptchaVerifier,
   getPhoneRecaptchaVerifier,
+  warnIfPhoneAuthDomainMissingFromFirebase,
   type PhoneCountry,
 } from "@workspace/phone-auth";
 
@@ -199,6 +200,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
   // Pre-render invisible reCAPTCHA once when phone flow opens (single container in index.html).
   useEffect(() => {
     if (step === "idle") return;
+    warnIfPhoneAuthDomainMissingFromFirebase();
     void getPhoneRecaptchaVerifier(firebaseAuth).catch((err) => {
       console.warn("[phone-auth-flow] reCAPTCHA pre-render failed", err);
     });

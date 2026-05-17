@@ -23,12 +23,13 @@ export function ensureRecaptchaContainer(): HTMLElement {
   const el = document.createElement("div");
   el.id = RECAPTCHA_CONTAINER_ID;
   el.setAttribute("aria-hidden", "true");
+  // Invisible reCAPTCHA still needs a real-sized mount (1×1px breaks iframe on some browsers).
   Object.assign(el.style, {
     position: "fixed",
-    bottom: "0",
-    right: "0",
-    width: "1px",
-    height: "1px",
+    top: "-10000px",
+    left: "0",
+    width: "304px",
+    height: "78px",
     overflow: "hidden",
     opacity: "0",
     pointerEvents: "none",
@@ -106,8 +107,27 @@ export async function getPhoneRecaptchaVerifier(auth: Auth): Promise<Application
     return await renderPromise;
   } catch (err) {
     clearPhoneRecaptchaVerifier();
-    console.error("[phone-recaptcha] render failed", err);
+    const host = window.location.hostname;
+    console.error("[phone-recaptcha] render failed", {
+      err,
+      hostname: host,
+      wwwHint:
+        host === "www.amynest.in"
+          ? "Add www.amynest.in (not just amynest.in) to Firebase Authorized domains"
+          : `Add ${host} to Firebase Authorized domains`,
+    });
     throw err;
+  }
+}
+
+/** Call on sign-in page mount — surfaces common www vs apex misconfiguration. */
+export function warnIfPhoneAuthDomainMissingFromFirebase(): void {
+  const host = window.location.hostname;
+  if (host === "www.amynest.in") {
+    console.warn(
+      "[phone-recaptcha] You are on www.amynest.in. Firebase Authorized domains must include " +
+        "www.amynest.in (amynest.in alone is not enough when the site redirects to www).",
+    );
   }
 }
 

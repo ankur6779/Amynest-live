@@ -20,4 +20,5 @@ export {
   clearPhoneRecaptchaVerifier,
   logRecaptchaDebug,
   firebasePhoneAuthDomainHint,
+  warnIfPhoneAuthDomainMissingFromFirebase,
 } from "./phone-recaptcha";
