@@ -8,6 +8,7 @@ import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError, stashVerificationSendError, logFirebaseAuthError } from "@/lib/auth-errors";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
+import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
 import { getApiUrl } from "@/lib/api";
 
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
@@ -540,6 +541,7 @@ export default function SignInPage() {
 
       {/* Phone OTP (wrapped so button picks up si-phone-btn hover class) */}
       <div className="si-phone-wrapper">
+        <PhoneRecaptchaPreload />
         <PhoneAuthFlow onError={msg => setError(msg)} />
       </div>
 

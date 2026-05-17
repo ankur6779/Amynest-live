@@ -3152,7 +3152,10 @@
       "recaptcha_tap_checkbox": "Tap the checkbox at the bottom of the screen, then wait for OTP.",
       "recaptcha_sheet_busy": "Sending OTP…",
       "android_pwa_hint": "On the installed Android app, phone login works best in Chrome (the checkbox can crash inside the app).",
+      "pwa_otp_browser_only": "Please open in browser for OTP verification. The installed app cannot run phone security checks safely.",
+      "open_in_browser": "Open in browser",
       "open_in_chrome": "Open in Chrome — Send OTP",
+      "recaptcha_loading": "Loading invisible security check…",
       "try_in_app_anyway": "Try in app anyway"
     },
     "phonics_learning": {

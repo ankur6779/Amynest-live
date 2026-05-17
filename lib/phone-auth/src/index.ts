@@ -17,6 +17,9 @@ export {
   applyRecaptchaContainerLayout,
   ensureRecaptchaContainer,
   getRecaptcha,
+  getRecaptchaVerifierForSend,
+  isRecaptchaReady,
+  preloadInvisibleRecaptcha,
   prepareRecaptchaForSend,
   resetRecaptcha,
   logRecaptchaState,
@@ -31,6 +34,7 @@ export {
   canRunInAppPhoneRecaptcha,
   isAndroidPwa,
   isMobilePhoneOtpEnvironment,
+  isStandalonePwa,
   openPhoneOtpInExternalBrowser,
   shouldUseBrowserForPhoneOtp,
 } from "./mobile-phone-environment";

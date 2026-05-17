@@ -1,16 +1,23 @@
 import { RecaptchaVerifier, type Auth } from "firebase/auth";
-import { isMobilePhoneOtpEnvironment } from "./mobile-phone-environment";
+import { isStandalonePwa } from "./mobile-phone-environment";
 
 export const RECAPTCHA_CONTAINER_ID = "recaptcha-container";
 
-const RENDER_TIMEOUT_MS = 30_000;
+const RENDER_TIMEOUT_MS = 45_000;
 
-let verifier: RecaptchaVerifier | null = null;
-let renderPromise: Promise<RecaptchaVerifier> | null = null;
+/** Strict invisible-only parameters — never use normal/compact. */
+const INVISIBLE_PARAMS = {
+  size: "invisible" as const,
+  badge: "bottomright" as const,
+};
+
+let preloadPromise: Promise<boolean> | null = null;
 
 declare global {
   interface Window {
+    recaptchaVerifier?: RecaptchaVerifier | null;
     recaptchaWidgetId?: number;
+    recaptchaPreloadFailed?: boolean;
     grecaptcha?: {
       reset: (widgetId?: number) => void;
       getResponse?: (widgetId?: number) => string;
@@ -18,35 +25,11 @@ declare global {
   }
 }
 
-function useVisibleRecaptcha(): boolean {
-  return isMobilePhoneOtpEnvironment();
+function syncVerifierToWindow(verifier: RecaptchaVerifier | null): void {
+  window.recaptchaVerifier = verifier;
 }
 
 export function applyRecaptchaContainerLayout(el: HTMLElement): void {
-  if (useVisibleRecaptcha()) {
-    Object.assign(el.style, {
-      position: "fixed",
-      bottom: "20px",
-      left: "50%",
-      transform: "translateX(-50%)",
-      width: "304px",
-      minHeight: "78px",
-      overflow: "visible",
-      visibility: "visible",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: "2147483646",
-      pointerEvents: "auto",
-      background: "rgba(12,6,30,0.94)",
-      borderRadius: "14px",
-      padding: "10px",
-      border: "1px solid rgba(123,63,242,0.45)",
-      boxSizing: "border-box",
-    });
-    return;
-  }
-
   Object.assign(el.style, {
     position: "fixed",
     bottom: "0",
@@ -71,113 +54,130 @@ export function ensureRecaptchaContainer(): HTMLElement {
   return el;
 }
 
-function setupRecaptcha(auth: Auth): RecaptchaVerifier {
-  const container = ensureRecaptchaContainer();
-  applyRecaptchaContainerLayout(container);
-
-  if (verifier) {
-    return verifier;
-  }
-
-  const size = useVisibleRecaptcha() ? "normal" : "invisible";
-
-  verifier = new RecaptchaVerifier(auth, RECAPTCHA_CONTAINER_ID, {
-    size,
-    callback: () => {
-      console.log("[recaptcha] solved");
-    },
-    "expired-callback": () => {
-      console.log("[recaptcha] expired");
-      resetRecaptcha();
-    },
-  });
-
-  console.log("[recaptcha] created", {
-    domain: window.location.hostname,
-    size,
-    exists: Boolean(verifier),
-  });
-
-  return verifier;
-}
-
-function renderWithTimeout(v: RecaptchaVerifier): Promise<number> {
+function renderWithTimeout(verifier: RecaptchaVerifier): Promise<number> {
   return Promise.race([
-    v.render(),
+    verifier.render(),
     new Promise<number>((_, reject) => {
       setTimeout(
-        () => reject(new Error("Security check timed out. Please try again.")),
+        () => reject(new Error("Invisible security check timed out. Please refresh.")),
         RENDER_TIMEOUT_MS,
       );
     }),
   ]);
 }
 
-async function deferBeforeRecaptchaRender(): Promise<void> {
-  await new Promise<void>((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-  });
-  if (isMobilePhoneOtpEnvironment()) {
-    await new Promise<void>((resolve) => setTimeout(resolve, 120));
-  }
-}
-
 /**
- * Create verifier if needed, then render iframe — must run inside Send OTP tap.
- * Never call at app boot (OOM / crash on mobile).
+ * Preload invisible reCAPTCHA once (page load on sign-in). Never runs in standalone PWA.
  */
-export async function prepareRecaptchaForSend(auth: Auth): Promise<RecaptchaVerifier> {
-  const instance = setupRecaptcha(auth);
-
-  if (window.recaptchaWidgetId !== undefined) {
-    logRecaptchaState();
-    return instance;
+export async function preloadInvisibleRecaptcha(auth: Auth): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  if (isStandalonePwa()) {
+    console.info("[recaptcha] skip preload in standalone PWA");
+    return false;
   }
 
-  if (renderPromise) {
-    return renderPromise;
+  if (window.recaptchaVerifier && window.recaptchaWidgetId !== undefined) {
+    return true;
   }
 
-  renderPromise = (async () => {
+  if (window.recaptchaPreloadFailed) {
+    return false;
+  }
+
+  if (preloadPromise) {
+    return preloadPromise;
+  }
+
+  preloadPromise = (async () => {
     try {
-      await deferBeforeRecaptchaRender();
-      const widgetId = await renderWithTimeout(instance);
+      if (window.recaptchaVerifier) {
+        return window.recaptchaWidgetId !== undefined;
+      }
+
+      const container = ensureRecaptchaContainer();
+      applyRecaptchaContainerLayout(container);
+
+      const verifier = new RecaptchaVerifier(auth, RECAPTCHA_CONTAINER_ID, {
+        ...INVISIBLE_PARAMS,
+        callback: () => {
+          console.log("[recaptcha] invisible solved");
+        },
+        "expired-callback": () => {
+          console.warn("[recaptcha] invisible expired — refresh required");
+          resetRecaptcha();
+          window.recaptchaPreloadFailed = true;
+        },
+      });
+
+      syncVerifierToWindow(verifier);
+
+      const widgetId = await renderWithTimeout(verifier);
       window.recaptchaWidgetId = widgetId;
-      logRecaptchaState();
-      return instance;
+      window.recaptchaPreloadFailed = false;
+
+      console.log("[recaptcha] invisible preloaded", {
+        domain: window.location.hostname,
+        widgetId,
+      });
+
+      return true;
     } catch (err) {
-      console.error("[recaptcha] render failed", err);
+      console.error("Recaptcha preload error:", err);
       resetRecaptcha();
-      throw err;
+      window.recaptchaPreloadFailed = true;
+      return false;
     } finally {
-      renderPromise = null;
+      preloadPromise = null;
     }
   })();
 
-  return renderPromise;
+  return preloadPromise;
 }
 
-/** @deprecated Prefer prepareRecaptchaForSend — does not render. */
-export function getRecaptcha(auth: Auth): RecaptchaVerifier {
-  return setupRecaptcha(auth);
+export function isRecaptchaReady(): boolean {
+  return Boolean(
+    typeof window !== "undefined" &&
+      window.recaptchaVerifier &&
+      window.recaptchaWidgetId !== undefined &&
+      !window.recaptchaPreloadFailed,
+  );
+}
+
+/** Throws if preload did not finish — never creates a visible fallback widget. */
+export function getRecaptchaVerifierForSend(): RecaptchaVerifier {
+  if (!window.recaptchaVerifier) {
+    throw new Error("Recaptcha not ready");
+  }
+  return window.recaptchaVerifier;
 }
 
 export function resetRecaptcha(): void {
   try {
-    if (verifier) {
-      verifier.clear();
-    }
+    window.recaptchaVerifier?.clear();
   } catch (err) {
     console.warn("[recaptcha] reset clear", err);
   }
-  verifier = null;
+  syncVerifierToWindow(null);
   window.recaptchaWidgetId = undefined;
-  renderPromise = null;
+  preloadPromise = null;
 }
 
 export function logRecaptchaState(): void {
-  console.log("Domain:", window.location.hostname);
-  console.log("Recaptcha exists:", Boolean(verifier));
+  console.log("Domain:", typeof window !== "undefined" ? window.location.hostname : "");
+  console.log("Recaptcha exists:", Boolean(window.recaptchaVerifier));
   console.log("Recaptcha rendered:", window.recaptchaWidgetId !== undefined);
-  console.log("Recaptcha mode:", useVisibleRecaptcha() ? "normal-mobile" : "invisible-desktop");
+  console.log("Recaptcha mode: invisible-only");
+  console.log("Recaptcha ready:", isRecaptchaReady());
+}
+
+/** @deprecated Use preloadInvisibleRecaptcha + getRecaptchaVerifierForSend */
+export async function prepareRecaptchaForSend(auth: Auth): Promise<RecaptchaVerifier> {
+  await preloadInvisibleRecaptcha(auth);
+  return getRecaptchaVerifierForSend();
+}
+
+/** @deprecated */
+export function getRecaptcha(auth: Auth): RecaptchaVerifier {
+  void auth;
+  return getRecaptchaVerifierForSend();
 }

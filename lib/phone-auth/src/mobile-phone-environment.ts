@@ -7,10 +7,33 @@ type AmyNestWindow = Window & {
   AmyNestPushNative?: unknown;
 };
 
-/**
- * Mobile WebViews and phone browsers often crash when Firebase loads
- * invisible reCAPTCHA in a 1×1 iframe — use visible "normal" size instead.
- */
+/** Installed PWA (Add to Home Screen) — reCAPTCHA must not run inside standalone WebView. */
+export function isStandalonePwa(): boolean {
+  if (typeof window === "undefined") return false;
+
+  try {
+    if (window.matchMedia("(display-mode: standalone)").matches) return true;
+    if (window.matchMedia("(display-mode: minimal-ui)").matches) return true;
+    if (window.matchMedia("(display-mode: fullscreen)").matches) return true;
+  } catch {
+    /* ignore */
+  }
+
+  if (typeof navigator !== "undefined" && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    const nav = navigator as Navigator & { standalone?: boolean };
+    if (nav.standalone === true) return true;
+  }
+
+  return false;
+}
+
+/** @deprecated Use isStandalonePwa */
+export function isAndroidPwa(): boolean {
+  if (!isStandalonePwa()) return false;
+  if (typeof navigator === "undefined") return false;
+  return /Android/i.test(navigator.userAgent || "");
+}
+
 export function isMobilePhoneOtpEnvironment(): boolean {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
     return false;
@@ -40,32 +63,13 @@ export function isMobilePhoneOtpEnvironment(): boolean {
   return false;
 }
 
-/** Installed PWA on Android — reCAPTCHA iframe often kills the WebView process. */
-export function isAndroidPwa(): boolean {
-  if (typeof window === "undefined" || typeof navigator === "undefined") {
-    return false;
-  }
-  if (!/Android/i.test(navigator.userAgent || "")) return false;
-
-  try {
-    if (window.matchMedia("(display-mode: standalone)").matches) return true;
-    if (window.matchMedia("(display-mode: minimal-ui)").matches) return true;
-  } catch {
-    /* ignore */
-  }
-
-  if (document.referrer.startsWith("android-app://")) return true;
-
-  return false;
-}
-
-/** Phone OTP in-app is OK in mobile Chrome; block only installed Android PWA. */
+/** Never run reCAPTCHA inside installed PWA — use system browser instead. */
 export function canRunInAppPhoneRecaptcha(): boolean {
-  return !isAndroidPwa();
+  return !isStandalonePwa();
 }
 
 export function shouldUseBrowserForPhoneOtp(): boolean {
-  return isAndroidPwa();
+  return isStandalonePwa();
 }
 
 export function buildPhoneOtpBrowserUrl(phoneE164: string, returnPath = "/sign-in"): string {
@@ -81,6 +85,6 @@ export function openPhoneOtpInExternalBrowser(
   returnPath = "/sign-in",
 ): void {
   const url = buildPhoneOtpBrowserUrl(phoneE164, returnPath);
-  console.info("[phone-otp] Opening system browser for OTP (Android PWA)", url);
+  console.info("[phone-otp] Opening system browser for OTP (standalone PWA)", url);
   window.location.assign(url);
 }
