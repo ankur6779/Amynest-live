@@ -48,9 +48,9 @@ export function isAndroidPwa(): boolean {
   if (!/Android/i.test(navigator.userAgent || "")) return false;
 
   try {
+    // Only installed PWA — not regular Chrome tabs (browser display-mode).
     if (window.matchMedia("(display-mode: standalone)").matches) return true;
     if (window.matchMedia("(display-mode: minimal-ui)").matches) return true;
-    if (window.matchMedia("(display-mode: fullscreen)").matches) return true;
   } catch {
     /* ignore */
   }
@@ -60,10 +60,7 @@ export function isAndroidPwa(): boolean {
   return false;
 }
 
-/**
- * Firebase reCAPTCHA must NOT run inside Android installed PWA WebView — process crash.
- * Use Chrome / system browser for phone OTP instead.
- */
+/** Lazy reCAPTCHA on Send OTP is OK in Chrome; only block inside installed PWA shell. */
 export function canRunInAppPhoneRecaptcha(): boolean {
   return !isAndroidPwa();
 }
@@ -94,7 +91,7 @@ export function openPhoneOtpInExternalBrowser(
   window.location.assign(url);
 }
 
-/** Never warm up reCAPTCHA in Android PWA — iframe load crashes the app. */
+/** Never load reCAPTCHA at app boot — crashes Chrome + PWA (load on Send OTP only). */
 export function shouldPreRenderPhoneRecaptcha(): boolean {
-  return canRunInAppPhoneRecaptcha();
+  return false;
 }

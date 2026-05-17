@@ -1,29 +1,19 @@
 import { useEffect } from "react";
-import { firebaseAuth } from "@/lib/firebase";
 import {
-  canRunInAppPhoneRecaptcha,
+  applyRecaptchaContainerLayout,
   ensureRecaptchaContainer,
-  warmUpRecaptcha,
   warnIfPhoneAuthDomainMissingFromFirebase,
 } from "@workspace/phone-auth";
 
 /**
- * Warm up invisible reCAPTCHA at app load — skipped on Android PWA (WebView crash).
+ * Domain diagnostics only — do NOT load reCAPTCHA here (crashes Chrome + PWA on boot).
  */
 export function PhoneRecaptchaBootstrap() {
   useEffect(() => {
-    if (!canRunInAppPhoneRecaptcha()) {
-      console.info(
-        "[phone-recaptcha-bootstrap] skip warmUp — Android PWA uses Chrome for OTP",
-      );
-      return;
-    }
     try {
-      ensureRecaptchaContainer();
+      const el = ensureRecaptchaContainer();
+      applyRecaptchaContainerLayout(el);
       warnIfPhoneAuthDomainMissingFromFirebase();
-      void warmUpRecaptcha(firebaseAuth).catch((err) => {
-        console.warn("[phone-recaptcha-bootstrap] warmUp failed", err);
-      });
     } catch (err) {
       console.error("[phone-recaptcha-bootstrap] container missing", err);
     }

@@ -9,6 +9,7 @@ import {
   formatPhoneE164,
   isValidNationalPhone,
   PHONE_COUNTRIES,
+  buildPhoneOtpBrowserUrl,
   openPhoneOtpInExternalBrowser,
   sendPhoneOtpSafely,
   shouldUseBrowserForPhoneOtp,
@@ -202,6 +203,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [otpSending, setOtpSending] = useState(false);
+  const [browserOtpUrl, setBrowserOtpUrl] = useState<string | null>(null);
   const confirmRef = useRef<ConfirmationResult | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sendInFlightRef = useRef(false);
@@ -246,15 +248,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
       setStep("sending");
     }
 
-    if (chromeOtpRequired) {
-      openPhoneOtpInExternalBrowser(phoneFull);
-      sendInFlightRef.current = false;
-      setOtpSending(false);
-      if (!forceResend) {
-        setStep("phone");
-      }
-      return;
-    }
+    setBrowserOtpUrl(null);
 
     try {
       const res = await sendPhoneOtpSafely(firebaseAuth, phoneFull);
@@ -263,6 +257,9 @@ export default function PhoneAuthFlow({ onError }: Props) {
         logFirebaseAuthError("phone-auth-flow:sendOtp", new Error(res.error));
         setPhoneError(res.error);
         onError?.(res.error);
+        if (res.suggestBrowser && chromeOtpRequired) {
+          setBrowserOtpUrl(buildPhoneOtpBrowserUrl(phoneFull));
+        }
         if (!forceResend) {
           setStep("phone");
         }
@@ -410,7 +407,28 @@ export default function PhoneAuthFlow({ onError }: Props) {
             <p style={{ fontSize: "12px", color: "#f87171", margin: 0 }}>{phoneError}</p>
           )}
 
-          {chromeOtpRequired && (
+          {browserOtpUrl && (
+            <button
+              type="button"
+              onClick={() => openPhoneOtpInExternalBrowser(phoneFull)}
+              style={{
+                width: "100%",
+                padding: "10px 14px",
+                borderRadius: "12px",
+                border: "1px solid rgba(123,63,242,0.55)",
+                background: "rgba(123,63,242,0.20)",
+                color: "hsl(var(--brand-violet-300))",
+                fontSize: "13px",
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              {t("components.phone_auth_flow.open_in_chrome")}
+            </button>
+          )}
+
+          {chromeOtpRequired && !browserOtpUrl && (
             <p style={{ fontSize: "12px", color: "rgba(200,180,255,0.55)", margin: 0, lineHeight: 1.45 }}>
               {t("components.phone_auth_flow.android_pwa_hint")}
             </p>
@@ -434,11 +452,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
               aria-busy={sending}
               style={primaryBtn(!canSend)}
             >
-              {sending
-                ? "Sending…"
-                : chromeOtpRequired
-                  ? t("components.phone_auth_flow.open_in_chrome")
-                  : "Send OTP"}
+              {sending ? "Sending…" : "Send OTP"}
             </button>
           </div>
         </div>

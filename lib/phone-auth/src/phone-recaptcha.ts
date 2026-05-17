@@ -3,7 +3,10 @@ import {
   type ApplicationVerifier,
   type Auth,
 } from "firebase/auth";
-import { canRunInAppPhoneRecaptcha } from "./mobile-phone-environment";
+import {
+  canRunInAppPhoneRecaptcha,
+  isMobilePhoneOtpEnvironment,
+} from "./mobile-phone-environment";
 import {
   FIREBASE_PHONE_AUTH_DOMAINS,
   logPhoneOtpDomainContext,
@@ -33,7 +36,7 @@ declare global {
   }
 }
 
-/** Single global instance — never create on button click. */
+/** Single instance — created on first Send OTP, not at app boot. */
 let recaptcha: RecaptchaVerifier | null = null;
 let renderPromise: Promise<RecaptchaVerifier> | null = null;
 
@@ -48,15 +51,10 @@ export function logRecaptchaState(): void {
   logRecaptchaDebug("state");
 }
 
-/**
- * Static container in index.html after #root — touch layout only, never reparent.
- */
 export function ensureRecaptchaContainer(): HTMLElement {
   const el = document.getElementById(RECAPTCHA_CONTAINER_ID);
   if (!el) {
-    throw new Error(
-      `#${RECAPTCHA_CONTAINER_ID} missing — add <div id="${RECAPTCHA_CONTAINER_ID}"></motion> to index.html after #root`,
-    );
+    throw new Error(`#${RECAPTCHA_CONTAINER_ID} missing in index.html (after #root)`);
   }
   return el;
 }
@@ -77,11 +75,12 @@ export function applyRecaptchaContainerLayout(el: HTMLElement): void {
 }
 
 export function mountPhoneRecaptchaContainer(_parent: HTMLElement | null): void {
-  ensureRecaptchaContainer();
+  const el = ensureRecaptchaContainer();
+  applyRecaptchaContainerLayout(el);
 }
 
 export function setPhoneRecaptchaMobileSheetActive(_active: boolean): void {
-  /* no-op — invisible only */
+  /* invisible only */
 }
 
 export function logRecaptchaDebug(context: string): void {
@@ -89,12 +88,12 @@ export function logRecaptchaDebug(context: string): void {
     domain: typeof window !== "undefined" ? window.location.hostname : "",
     recaptchaExists: Boolean(recaptcha),
     widgetId: window.recaptchaWidgetId,
+    mobile: isMobilePhoneOtpEnvironment(),
     containerInDom: Boolean(document.getElementById(RECAPTCHA_CONTAINER_ID)),
     firebaseAuthorizedDomains: FIREBASE_PHONE_AUTH_DOMAINS,
   });
 }
 
-/** Reset only after OTP failure (Replit-style). */
 export function resetRecaptchaOnFailure(): void {
   try {
     if (recaptcha) {
@@ -151,14 +150,24 @@ function renderWithTimeout(verifier: RecaptchaVerifier): Promise<number> {
   ]);
 }
 
+async function deferBeforeRecaptchaRender(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+  if (isMobilePhoneOtpEnvironment()) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 80));
+  }
+}
+
 /**
- * Create invisible verifier once (sync). Does NOT call render — use warmUpRecaptcha on load.
+ * Create verifier once (sync). Does not render — safe to call without loading iframe.
  */
 export function setupRecaptcha(auth: Auth): RecaptchaVerifier {
-  ensureRecaptchaContainer();
-  logRecaptchaState();
+  const el = ensureRecaptchaContainer();
+  applyRecaptchaContainerLayout(el);
 
   if (recaptcha) {
+    syncToWindow();
     return recaptcha;
   }
 
@@ -175,7 +184,6 @@ export function setupRecaptcha(auth: Auth): RecaptchaVerifier {
 
   syncToWindow();
   console.log("[phone-recaptcha] setupRecaptcha created");
-  logRecaptchaState();
   return recaptcha;
 }
 
@@ -193,17 +201,18 @@ export function getRecaptcha(auth: Auth): RecaptchaVerifier | null {
 }
 
 /**
- * Render widget once (page load). Replit-style: badge ready before Send OTP.
+ * Render iframe only when user sends OTP — never on app boot (prevents Chrome/PWA crash).
  */
-export async function warmUpRecaptcha(auth: Auth): Promise<RecaptchaVerifier> {
+export async function prepareRecaptchaForSend(auth: Auth): Promise<RecaptchaVerifier> {
   if (!canRunInAppPhoneRecaptcha()) {
-    throw new Error("reCAPTCHA is disabled in Android installed app — use Chrome");
+    throw new Error("reCAPTCHA unavailable in installed Android app");
   }
 
-  logPhoneOtpDomainContext("warmUpRecaptcha");
+  logPhoneOtpDomainContext("prepareRecaptchaForSend");
   const verifier = setupRecaptcha(auth);
 
   if (window.recaptchaWidgetId !== undefined) {
+    logRecaptchaState();
     return verifier;
   }
 
@@ -213,9 +222,9 @@ export async function warmUpRecaptcha(auth: Auth): Promise<RecaptchaVerifier> {
 
   renderPromise = (async () => {
     try {
+      await deferBeforeRecaptchaRender();
       const widgetId = await renderWithTimeout(verifier);
       window.recaptchaWidgetId = widgetId;
-      console.log("[phone-recaptcha] render complete, widgetId:", widgetId);
       logRecaptchaState();
       return verifier;
     } catch (err) {
@@ -230,37 +239,41 @@ export async function warmUpRecaptcha(auth: Auth): Promise<RecaptchaVerifier> {
   return renderPromise;
 }
 
-/** @deprecated Use warmUpRecaptcha */
+/** @deprecated Do not warm up on app load — use prepareRecaptchaForSend */
+export async function warmUpRecaptcha(auth: Auth): Promise<RecaptchaVerifier> {
+  return prepareRecaptchaForSend(auth);
+}
+
 export async function ensureRecaptchaReady(auth: Auth): Promise<RecaptchaVerifier | null> {
   try {
-    return await warmUpRecaptcha(auth);
+    return await prepareRecaptchaForSend(auth);
   } catch {
     return null;
   }
 }
 
 export async function setupPhoneRecaptcha(auth: Auth): Promise<RecaptchaVerifier> {
-  return warmUpRecaptcha(auth);
+  return prepareRecaptchaForSend(auth);
 }
 
 export async function getPhoneRecaptchaVerifier(auth: Auth): Promise<ApplicationVerifier> {
-  return warmUpRecaptcha(auth);
+  return prepareRecaptchaForSend(auth);
 }
 
 export async function prepareMobilePhoneOtpVerifier(auth: Auth): Promise<ApplicationVerifier> {
-  return warmUpRecaptcha(auth);
+  return prepareRecaptchaForSend(auth);
 }
 
 export async function awaitMobileRecaptchaVerification(
   auth: Auth,
 ): Promise<ApplicationVerifier> {
-  return warmUpRecaptcha(auth);
+  return prepareRecaptchaForSend(auth);
 }
 
 export function createStaticRecaptchaVerifier(_token: string): ApplicationVerifier {
   return {
     type: "recaptcha",
-    verify: () => Promise.reject(new Error("Use setupRecaptcha() / warmUpRecaptcha() instead.")),
+    verify: () => Promise.reject(new Error("Use prepareRecaptchaForSend() instead.")),
   };
 }
 
@@ -272,8 +285,7 @@ export function warnIfPhoneAuthDomainMissingFromFirebase(): void {
     !FIREBASE_PHONE_AUTH_DOMAINS.includes(host as (typeof FIREBASE_PHONE_AUTH_DOMAINS)[number])
   ) {
     console.warn(
-      `[phone-recaptcha] Add "${host}" in Firebase Console → Authentication → ` +
-        `Settings → Authorized domains (required: ${FIREBASE_PHONE_AUTH_DOMAINS.join(", ")})`,
+      `[phone-recaptcha] Add "${host}" in Firebase → Authentication → Authorized domains`,
     );
   }
 }
@@ -281,6 +293,6 @@ export function warnIfPhoneAuthDomainMissingFromFirebase(): void {
 export function firebasePhoneAuthDomainHint(hostname = window.location.hostname): string {
   return (
     `Add "${hostname}" under Firebase Console → Authentication → Settings → Authorized domains. ` +
-    `Required: amynest.in, www.amynest.in (and localhost for dev).`
+    `Required: amynest.in, www.amynest.in`
   );
 }
