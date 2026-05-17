@@ -1,4 +1,8 @@
-import { sendEmailVerification, type ActionCodeSettings, type User } from "firebase/auth";
+import {
+  sendEmailVerification,
+  type ActionCodeSettings,
+  type User,
+} from "firebase/auth";
 import { logFirebaseAuthError } from "./firebase-auth-error";
 import {
   getVerificationRateStatus,
@@ -9,41 +13,42 @@ import {
   VerificationRateLimitError,
 } from "./email-verification-rate";
 
-/** Canonical prod callback — must be in Firebase → Authentication → Authorized domains. */
-const PRODUCTION_CALLBACK = "https://amynest.in/auth/callback";
+/**
+ * Must match Firebase Console → Authentication → Templates → action URL host/path
+ * and be listed under Authentication → Settings → Authorized domains (amynest.in).
+ */
+export const CANONICAL_EMAIL_VERIFICATION_URL = "https://amynest.in/verify";
 
-/** Hosts where `window.location.origin` is allowlisted in Firebase (same-origin session after verify). */
-const USE_CURRENT_ORIGIN_HOSTS = new Set([
-  "amynest.in",
-  "www.amynest.in",
-  "amynest-live-1.onrender.com",
-  "amynest-frontend-dev.onrender.com",
-  "localhost",
-  "127.0.0.1",
-]);
+/** Alternate paths handled by AuthCallbackPage (template may use /auth/action). */
+export const LEGACY_EMAIL_VERIFICATION_PATHS = [
+  "/auth/callback",
+  "/auth/action",
+] as const;
 
 /**
  * Email verification uses **Firebase Auth** `sendEmailVerification` (client SDK).
- * It does NOT call the AmyNest API or Resend — Resend is only for weekly recap emails on the server.
+ * It does NOT call the AmyNest API or Resend.
  */
 export function getEmailVerificationCallbackUrl(): string {
-  const fromEnv = (import.meta.env.VITE_EMAIL_VERIFICATION_CALLBACK_URL as string | undefined)?.trim();
+  const fromEnv = (
+    import.meta.env.VITE_EMAIL_VERIFICATION_CALLBACK_URL as string | undefined
+  )?.trim();
   if (fromEnv) return fromEnv;
 
   if (typeof window !== "undefined" && window.location?.hostname) {
     const { hostname, origin } = window.location;
-    if (USE_CURRENT_ORIGIN_HOSTS.has(hostname)) {
-      return `${origin}/auth/callback`;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return `${origin}/verify`;
     }
   }
 
-  return PRODUCTION_CALLBACK;
+  // Always use authorized production domain — avoids auth/unauthorized-continue-uri on Render hosts.
+  return CANONICAL_EMAIL_VERIFICATION_URL;
 }
 
 export function getEmailVerificationActionCodeSettings(): ActionCodeSettings {
-  const url = getEmailVerificationCallbackUrl();
   return {
-    url,
+    url: getEmailVerificationCallbackUrl(),
     handleCodeInApp: true,
   };
 }
@@ -64,9 +69,24 @@ function logVerificationEvent(
   });
 }
 
+function isUnauthorizedContinueUri(err: unknown): boolean {
+  return (err as { code?: string })?.code === "auth/unauthorized-continue-uri";
+}
+
+async function sendViaFirebase(
+  user: User,
+  settings: ActionCodeSettings | null,
+): Promise<void> {
+  if (settings) {
+    await sendEmailVerification(user, settings);
+  } else {
+    await sendEmailVerification(user);
+  }
+}
+
 /**
  * Send Firebase verification email. Requires an active `firebaseAuth` session.
- * @throws Firebase `auth/*` errors, {@link VerificationRateLimitError}, {@link VerificationInflightError}
+ * Falls back to default Firebase email (no custom continue URL) if the custom URL is rejected.
  */
 export async function sendUserEmailVerification(user: User): Promise<void> {
   if (!user.email) {
@@ -93,13 +113,35 @@ export async function sendUserEmailVerification(user: User): Promise<void> {
 
   const settings = getEmailVerificationActionCodeSettings();
   setVerificationSendInflight(user.uid, true);
-  logVerificationEvent("send_attempt", user, {
-    attempts: before.attempts,
-    continueUrl: settings.url,
-  });
 
   try {
-    await sendEmailVerification(user, settings);
+    logVerificationEvent("send_attempt", user, {
+      attempts: before.attempts,
+      continueUrl: settings.url,
+      handleCodeInApp: settings.handleCodeInApp,
+    });
+
+    try {
+      await sendViaFirebase(user, settings);
+    } catch (err: unknown) {
+      if (!isUnauthorizedContinueUri(err)) {
+        throw err;
+      }
+
+      logFirebaseAuthError("sendEmailVerification:custom-url-rejected", err);
+      console.warn(
+        "[email-verification] Custom continue URL rejected by Firebase; retrying with default handler (no custom url).",
+        { attemptedUrl: settings.url },
+      );
+
+      logVerificationEvent("send_attempt_fallback", user, {
+        attempts: before.attempts,
+        reason: "auth/unauthorized-continue-uri",
+      });
+
+      await sendViaFirebase(user, null);
+    }
+
     const after = recordVerificationSendSuccess(user.uid);
     logVerificationEvent("send_success", user, {
       attempts: after.attempts,
@@ -110,6 +152,8 @@ export async function sendUserEmailVerification(user: User): Promise<void> {
     logVerificationEvent("send_failed", user, {
       attempts: before.attempts,
       continueUrl: settings.url,
+      firebaseCode: (err as { code?: string })?.code ?? "unknown",
+      firebaseMessage: (err as { message?: string })?.message ?? "",
     });
     throw err;
   } finally {

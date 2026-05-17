@@ -96,7 +96,7 @@ export function prettyAuthError(err: unknown): string {
     case "auth/unauthorized-domain":
       return `This domain is not authorized in Firebase. Add "${typeof window !== "undefined" ? window.location.hostname : "this domain"}" to Firebase Console → Authentication → Settings → Authorized domains.`;
     case "auth/unauthorized-continue-uri":
-      return "Verification link domain is not allowed. Ensure amynest.in (and your app URL) are listed under Firebase → Authentication → Authorized domains.";
+      return "Verification link domain is not allowed. Add amynest.in under Firebase → Authentication → Settings → Authorized domains, and set the email template action URL to https://amynest.in/verify";
     case "auth/missing-email":
       return "No email on this account. Sign out and sign up again with an email address.";
     case "auth/requires-recent-login":
