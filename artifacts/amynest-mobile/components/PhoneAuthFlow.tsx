@@ -17,8 +17,9 @@ import {
   detectDefaultCountry,
   formatPhoneE164,
   isValidNationalPhone,
-  clearPhoneRecaptchaVerifier,
-  getPhoneRecaptchaVerifier,
+  destroyPhoneRecaptchaVerifier,
+  resetPhoneRecaptchaWidget,
+  setupPhoneRecaptcha,
   logPhoneOtpDomainContext,
   redirectWwwToCanonicalApex,
   warnIfPhoneAuthDomainMissingFromFirebase,
@@ -60,7 +61,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
   useEffect(() => {
     if (Platform.OS !== "web" || step === "idle") return;
     warnIfPhoneAuthDomainMissingFromFirebase();
-    void getPhoneRecaptchaVerifier(firebaseAuth).catch((err) => {
+    void setupPhoneRecaptcha(firebaseAuth).catch((err) => {
       console.warn("[PhoneAuthFlow] reCAPTCHA pre-render failed", err);
     });
   }, [step]);
@@ -95,9 +96,13 @@ export default function PhoneAuthFlow({ onError }: Props) {
       if (Platform.OS === "web") {
         logPhoneOtpDomainContext("before signInWithPhoneNumber");
         if (forceResend) {
-          clearPhoneRecaptchaVerifier();
+          destroyPhoneRecaptchaVerifier();
         }
-        const verifier = await getPhoneRecaptchaVerifier(firebaseAuth);
+        await setupPhoneRecaptcha(firebaseAuth);
+        const verifier = window.recaptchaVerifier;
+        if (!verifier) {
+          throw new Error("reCAPTCHA is not ready. Please try again.");
+        }
         result = await signInWithPhoneNumber(firebaseAuth, phoneFull, verifier);
       } else {
         result = await (signInWithPhoneNumber as unknown as (
@@ -110,7 +115,11 @@ export default function PhoneAuthFlow({ onError }: Props) {
       setStep("otp");
       startResendTimer();
     } catch (err: unknown) {
-      if (Platform.OS === "web") clearPhoneRecaptchaVerifier();
+      if (Platform.OS === "web") {
+        if (!resetPhoneRecaptchaWidget()) {
+          destroyPhoneRecaptchaVerifier();
+        }
+      }
       const msg = err instanceof Error ? err.message : "Failed to send OTP. Please try again.";
       console.error("[PhoneAuthFlow] sendOtp failed", err);
       onError?.(msg);

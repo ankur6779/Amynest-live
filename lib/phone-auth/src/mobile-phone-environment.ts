@@ -72,7 +72,7 @@ export function buildPhoneOtpBrowserUrl(phoneE164: string, returnPath = "/sign-i
   return url.toString();
 }
 
-/** Desktop-only pre-render — mobile pre-render has caused WebContent crashes. */
+/** Pre-render invisible reCAPTCHA when phone flow opens (container stays in DOM). */
 export function shouldPreRenderPhoneRecaptcha(): boolean {
-  return !isMobilePhoneOtpEnvironment();
+  return true;
 }

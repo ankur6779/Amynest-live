@@ -9,15 +9,12 @@ import {
   formatPhoneE164,
   isValidNationalPhone,
   PHONE_COUNTRIES,
-  buildPhoneOtpBrowserUrl,
-  clearPhoneRecaptchaVerifier,
-  getPhoneRecaptchaVerifier,
-  isMobilePhoneOtpEnvironment,
+  destroyPhoneRecaptchaVerifier,
+  ensureRecaptchaContainer,
+  resetPhoneRecaptchaWidget,
+  setupPhoneRecaptcha,
   logPhoneOtpDomainContext,
-  prepareMobilePhoneOtpVerifier,
-  setPhoneRecaptchaMobileSheetActive,
   shouldPreRenderPhoneRecaptcha,
-  shouldUseBrowserForPhoneOtp,
   warnIfPhoneAuthDomainMissingFromFirebase,
   type PhoneCountry,
 } from "@workspace/phone-auth";
@@ -178,91 +175,6 @@ function CountryPicker({
   );
 }
 
-// ── Mobile reCAPTCHA sheet (visible widget — invisible mode kills iOS WebViews) ─
-
-function MobileRecaptchaSheet({
-  open,
-  phase,
-  onCancel,
-}: {
-  open: boolean;
-  phase: "verify" | "sending";
-  onCancel: () => void;
-}) {
-  const { t } = useTranslation();
-  if (!open) return null;
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t("components.phone_auth_flow.recaptcha_sheet_title")}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 100002,
-        pointerEvents: "none",
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          padding: "max(12px, env(safe-area-inset-top)) 16px 12px",
-          display: "flex",
-          justifyContent: "flex-end",
-          pointerEvents: "auto",
-        }}
-      >
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={phase === "sending"}
-          style={{
-            padding: "8px 14px",
-            borderRadius: 999,
-            border: "1px solid rgba(255,255,255,0.2)",
-            background: "rgba(12,6,30,0.85)",
-            color: "#F0E8FF",
-            fontSize: "13px",
-            fontWeight: 600,
-            cursor: phase === "sending" ? "wait" : "pointer",
-            fontFamily: "inherit",
-          }}
-        >
-          {t("components.phone_auth_flow.cancel")}
-        </button>
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          top: "18%",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "min(340px, calc(100vw - 32px))",
-          padding: "16px",
-          textAlign: "center",
-          background: "rgba(12,6,30,0.92)",
-          borderRadius: "16px",
-          border: "1px solid rgba(123,63,242,0.35)",
-          pointerEvents: "none",
-        }}
-      >
-        <p style={{ margin: "0 0 8px", fontSize: "15px", fontWeight: 700, color: "#F0E8FF" }}>
-          {t("components.phone_auth_flow.recaptcha_sheet_title")}
-        </p>
-        <p style={{ margin: 0, fontSize: "13px", color: "rgba(200,180,255,0.65)" }}>
-          {phase === "sending"
-            ? t("components.phone_auth_flow.recaptcha_sheet_busy")
-            : t("components.phone_auth_flow.recaptcha_tap_checkbox")}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 // ── Main component ────────────────────────────────────────────────────────────
 
 type Step = "idle" | "phone" | "sending" | "otp" | "verifying";
@@ -283,28 +195,19 @@ export default function PhoneAuthFlow({ onError }: Props) {
   const [country, setCountry] = useState<PhoneCountry>(detectedCountry);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
-  const [recaptchaSheetOpen, setRecaptchaSheetOpen] = useState(false);
-
   const confirmRef = useRef<ConfirmationResult | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sendInFlightRef = useRef(false);
-  const mobileOtp = useMemo(() => isMobilePhoneOtpEnvironment(), []);
-  const androidPwa = useMemo(() => shouldUseBrowserForPhoneOtp(), []);
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
+  // Keep #recaptcha-container in DOM (hidden) — do not clear on route change.
   useEffect(() => {
-    return () => {
-      setPhoneRecaptchaMobileSheetActive(false);
-      clearPhoneRecaptchaVerifier();
-    };
-  }, []);
-
-  // Desktop only: pre-render invisible reCAPTCHA (mobile pre-render crashes WebViews).
-  useEffect(() => {
-    if (step === "idle" || !shouldPreRenderPhoneRecaptcha()) return;
+    if (step === "idle") return;
+    ensureRecaptchaContainer();
+    if (!shouldPreRenderPhoneRecaptcha()) return;
     warnIfPhoneAuthDomainMissingFromFirebase();
-    void getPhoneRecaptchaVerifier(firebaseAuth).catch((err) => {
+    void setupPhoneRecaptcha(firebaseAuth).catch((err) => {
       console.warn("[phone-auth-flow] reCAPTCHA pre-render failed", err);
     });
   }, [step]);
@@ -327,9 +230,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
-    if (mobileOtp) {
-      await new Promise<void>((resolve) => setTimeout(resolve, 120));
-    }
   }
 
   async function sendOtp(forceResend = false) {
@@ -343,43 +243,37 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
     sendInFlightRef.current = true;
     setPhoneError(null);
-
-    if (mobileOtp) {
-      setRecaptchaSheetOpen(true);
-      setPhoneRecaptchaMobileSheetActive(true);
-    }
+    setStep("sending");
 
     try {
       if (forceResend) {
-        clearPhoneRecaptchaVerifier();
+        destroyPhoneRecaptchaVerifier();
       }
 
       await waitForPaint();
 
-      let verifier;
-      if (mobileOtp) {
-        logPhoneOtpDomainContext("mobile reCAPTCHA token (callback)");
-        const appVerifier = await prepareMobilePhoneOtpVerifier(firebaseAuth);
-        setStep("sending");
-        logPhoneOtpDomainContext("before signInWithPhoneNumber");
-        const result = await signInWithPhoneNumber(
-          firebaseAuth,
-          phoneFull,
-          appVerifier,
-        );
-        confirmRef.current = result;
-      } else {
-        setStep("sending");
-        logPhoneOtpDomainContext("before signInWithPhoneNumber");
-        verifier = await getPhoneRecaptchaVerifier(firebaseAuth);
-        const result = await signInWithPhoneNumber(firebaseAuth, phoneFull, verifier);
-        confirmRef.current = result;
+      logPhoneOtpDomainContext("before signInWithPhoneNumber");
+      await setupPhoneRecaptcha(firebaseAuth);
+      const appVerifier = window.recaptchaVerifier;
+      if (!appVerifier) {
+        throw new Error("reCAPTCHA is not ready. Please try again.");
       }
+      console.log("[phone-auth-flow] Recaptcha:", appVerifier);
+      console.log("[phone-auth-flow] WidgetId:", window.recaptchaWidgetId);
+
+      const result = await signInWithPhoneNumber(
+        firebaseAuth,
+        phoneFull,
+        appVerifier,
+      );
+      confirmRef.current = result;
       setOtp("");
       setStep("otp");
       startResendTimer();
     } catch (err: unknown) {
-      clearPhoneRecaptchaVerifier();
+      if (!resetPhoneRecaptchaWidget()) {
+        destroyPhoneRecaptchaVerifier();
+      }
       logFirebaseAuthError("phone-auth-flow:sendOtp", err);
       const uiMsg = formatAuthErrorForUi(err);
       setPhoneError(uiMsg);
@@ -387,8 +281,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
       setStep("phone");
     } finally {
       sendInFlightRef.current = false;
-      setRecaptchaSheetOpen(false);
-      setPhoneRecaptchaMobileSheetActive(false);
     }
   }
 
@@ -446,18 +338,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
     return (
       <>
-        <MobileRecaptchaSheet
-          open={recaptchaSheetOpen}
-          phase={step === "sending" ? "sending" : "verify"}
-          onCancel={() => {
-            if (sendInFlightRef.current) return;
-            clearPhoneRecaptchaVerifier();
-            setRecaptchaSheetOpen(false);
-            setPhoneRecaptchaMobileSheetActive(false);
-            setStep("phone");
-          }}
-        />
-        {pickerOpen && (
+{pickerOpen && (
           <CountryPicker
             selected={country}
             onSelect={(c) => { setCountry(c); setPhoneError(null); }}
@@ -528,52 +409,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
           <p style={{ fontSize: "11px", color: "rgba(200,180,255,0.40)", margin: 0 }}>
             {country.flag} {country.name} · {t("components.phone_auth_flow.tap_flag_to_change")}
           </p>
-
-          {androidPwa && isValidPhone ? (
-            <div
-              style={{
-                padding: "12px",
-                borderRadius: "14px",
-                background: "rgba(123,63,242,0.12)",
-                border: "1px solid rgba(123,63,242,0.35)",
-              }}
-            >
-              <p style={{ margin: "0 0 10px", fontSize: "13px", lineHeight: 1.5, color: "rgba(220,200,255,0.9)" }}>
-                {t("components.phone_auth_flow.android_pwa_hint")}
-              </p>
-              <a
-                href={buildPhoneOtpBrowserUrl(phoneFull)}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  ...primaryBtn(false),
-                  flex: "unset",
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  textDecoration: "none",
-                  boxSizing: "border-box",
-                }}
-              >
-                {t("components.phone_auth_flow.open_in_chrome")}
-              </a>
-              <button
-                type="button"
-                onClick={() => void sendOtp()}
-                disabled={!canSend}
-                style={{
-                  ...ghostBtn,
-                  width: "100%",
-                  marginTop: "8px",
-                  flex: "unset",
-                }}
-              >
-                {t("components.phone_auth_flow.try_in_app_anyway")}
-              </button>
-            </div>
-          ) : null}
-
           <div style={{ display: "flex", gap: "8px" }}>
             <button
               type="button"
@@ -582,16 +417,14 @@ export default function PhoneAuthFlow({ onError }: Props) {
             >
               {t("components.phone_auth_flow.cancel")}
             </button>
-            {!androidPwa ? (
-              <button
-                type="button"
-                onClick={() => sendOtp()}
-                disabled={!canSend}
-                style={primaryBtn(!canSend)}
-              >
-                {step === "sending" ? "Sending…" : "Send OTP"}
-              </button>
-            ) : null}
+            <button
+              type="button"
+              onClick={() => sendOtp()}
+              disabled={!canSend}
+              style={primaryBtn(!canSend)}
+            >
+              {step === "sending" ? "Sending…" : "Send OTP"}
+            </button>
           </div>
         </div>
       </>
