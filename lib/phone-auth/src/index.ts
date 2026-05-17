@@ -14,11 +14,26 @@ export {
 } from "./validate";
 export {
   RECAPTCHA_CONTAINER_ID,
+  applyRecaptchaContainerLayout,
+  ensureRecaptchaContainer,
   getRecaptcha,
+  prepareRecaptchaForSend,
   resetRecaptcha,
   logRecaptchaState,
 } from "./recaptcha";
-export { sendPhoneOtp, sendPhoneOtpSafely, type SendPhoneOtpResult } from "./send-phone-otp";
+export {
+  sendPhoneOtp,
+  sendPhoneOtpSafely,
+  type SendPhoneOtpResult,
+} from "./send-phone-otp";
+export {
+  buildPhoneOtpBrowserUrl,
+  canRunInAppPhoneRecaptcha,
+  isAndroidPwa,
+  isMobilePhoneOtpEnvironment,
+  openPhoneOtpInExternalBrowser,
+  shouldUseBrowserForPhoneOtp,
+} from "./mobile-phone-environment";
 export {
   FIREBASE_PHONE_AUTH_DOMAINS,
   CANONICAL_PRODUCTION_HOST,

@@ -1,12 +1,17 @@
 import { signInWithPhoneNumber, type Auth, type ConfirmationResult } from "firebase/auth";
+import {
+  canRunInAppPhoneRecaptcha,
+  isAndroidPwa,
+  shouldUseBrowserForPhoneOtp,
+} from "./mobile-phone-environment";
 import { logPhoneOtpDomainContext } from "./site-domain";
-import { getRecaptcha, logRecaptchaState, resetRecaptcha } from "./recaptcha";
+import { logRecaptchaState, prepareRecaptchaForSend, resetRecaptcha } from "./recaptcha";
 
 const OTP_TIMEOUT_MS = 30_000;
 
 export type SendPhoneOtpResult =
   | { success: true; confirmation: ConfirmationResult }
-  | { success: false; error: string };
+  | { success: false; error: string; suggestBrowser?: boolean };
 
 declare global {
   interface Window {
@@ -15,22 +20,32 @@ declare global {
 }
 
 /**
- * Send phone OTP — no throw; resets recaptcha only on failure.
+ * Send phone OTP — await reCAPTCHA render before signInWithPhoneNumber.
+ * Never throws; resets recaptcha on failure.
  */
-export async function sendPhoneOtp(
+export async function sendPhoneOtpSafely(
   auth: Auth,
   phoneNumber: string,
 ): Promise<SendPhoneOtpResult> {
-  try {
-    const phone = phoneNumber?.trim();
-    if (!phone) {
-      throw new Error("Invalid phone number");
-    }
+  const phone = phoneNumber?.trim();
+  if (!phone) {
+    return { success: false, error: "Invalid phone number" };
+  }
 
+  if (!canRunInAppPhoneRecaptcha()) {
+    return {
+      success: false,
+      error:
+        "Installed app cannot run the security check here. Tap Open in Chrome below.",
+      suggestBrowser: true,
+    };
+  }
+
+  try {
     logPhoneOtpDomainContext("sendPhoneOtp");
     logRecaptchaState();
 
-    const appVerifier = getRecaptcha(auth);
+    const appVerifier = await prepareRecaptchaForSend(auth);
 
     const confirmation = await Promise.race([
       signInWithPhoneNumber(auth, phone, appVerifier),
@@ -53,9 +68,13 @@ export async function sendPhoneOtp(
     const message =
       error instanceof Error ? error.message : "OTP failed. Please try again.";
 
-    return { success: false, error: message };
+    return {
+      success: false,
+      error: message,
+      suggestBrowser: isAndroidPwa() || shouldUseBrowserForPhoneOtp(),
+    };
   }
 }
 
-/** @deprecated */
-export const sendPhoneOtpSafely = sendPhoneOtp;
+/** @deprecated Use sendPhoneOtpSafely */
+export const sendPhoneOtp = sendPhoneOtpSafely;
