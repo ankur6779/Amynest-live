@@ -16,6 +16,7 @@ import {
   buildCanonicalAuthActionHref,
   parseFirebaseActionParams,
 } from "@/lib/firebase-action-params";
+import { RouteLoadingShell } from "@/components/route-loading-shell";
 
 const CSS = `
   @keyframes veRingRotate {
@@ -93,7 +94,7 @@ export default function VerifyEmailPage() {
   }, [mode, oobCode, setLocation]);
 
   if (mode === "verifyEmail" && oobCode) {
-    return null;
+    return <RouteLoadingShell />;
   }
 
   return <VerifyEmailInboxPage />;

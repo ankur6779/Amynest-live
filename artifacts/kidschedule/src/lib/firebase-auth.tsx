@@ -7,8 +7,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { onIdTokenChanged, signOut as fbSignOut, type User as FbUser } from "firebase/auth";
-import { firebaseAuth } from "./firebase";
+import {
+  onIdTokenChanged,
+  signOut as fbSignOut,
+  type User as FbUser,
+} from "firebase/auth";
+import { getFirebaseAuth } from "./firebase";
+
+const AUTH_TAG = "[amynest:firebase-auth]";
+const AUTH_READY_TIMEOUT_MS = 12_000;
 import {
   AuthContext,
   type AuthContextValue,
@@ -80,61 +87,107 @@ function fbToShim(u: FirebaseUserLike): ShimUser {
   };
 }
 
+function buildShimFromFirebaseUser(fbUser: FbUser | null): ShimUser | null {
+  const VERIFICATION_BYPASS_EMAILS = new Set([
+    "demo@amynest.in",
+    "googleplay.reviewer@amynest.app",
+  ]);
+  const bypassEmail =
+    fbUser?.email != null &&
+    VERIFICATION_BYPASS_EMAILS.has(fbUser.email.toLowerCase().trim());
+  const isUnverifiedEmailUser =
+    fbUser !== null &&
+    !fbUser.emailVerified &&
+    !bypassEmail &&
+    fbUser.providerData.every((p) => p.providerId === "password");
+  return fbUser && !isUnverifiedEmailUser ? fbToShim(fbUser as FirebaseUserLike) : null;
+}
+
 export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
     isLoaded: false,
   });
   const listenersRef = useRef<Set<Listener>>(new Set());
+  const lastUidRef = useRef<string | null | undefined>(undefined);
+
+  const applyAuthUser = useCallback((fbUser: FbUser | null, source: string) => {
+    const shim = buildShimFromFirebaseUser(fbUser);
+    const uid = shim?.id ?? null;
+    setState((prev) => {
+      if (prev.isLoaded && (prev.user?.id ?? null) === uid) return prev;
+      return { user: shim, isLoaded: true };
+    });
+    if (lastUidRef.current !== uid) {
+      console.info(`${AUTH_TAG} Auth state (${source})`, {
+        signedIn: Boolean(shim),
+        uid,
+        email: fbUser?.email ?? null,
+      });
+      lastUidRef.current = uid;
+    }
+    for (const l of listenersRef.current) {
+      try {
+        l({ user: shim });
+      } catch {
+        /* ignore listener errors */
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    // Use onIdTokenChanged (not onAuthStateChanged) so token refreshes
-    // don't get missed — getToken() always returns a fresh token via the
-    // SDK cache.
-    const unsub = onIdTokenChanged(firebaseAuth, (fbUser) => {
-      // Test/reviewer accounts that bypass the email-verification gate so QA
-      // and the Google Play reviewer can log in without confirming the inbox.
-      // Keep this list tiny — it's a hardcoded backdoor.
-      const VERIFICATION_BYPASS_EMAILS = new Set([
-        "demo@amynest.in",
-        "googleplay.reviewer@amynest.app",
-      ]);
-      const bypassEmail =
-        fbUser?.email != null &&
-        VERIFICATION_BYPASS_EMAILS.has(fbUser.email.toLowerCase().trim());
-      // If the user signed up with email+password but hasn't verified their
-      // email yet, treat them as signed-out so all protected routes redirect
-      // to /sign-in. The verify-email page still has access to
-      // firebaseAuth.currentUser for the resend flow.
-      const isUnverifiedEmailUser =
-        fbUser !== null &&
-        !fbUser.emailVerified &&
-        !bypassEmail &&
-        (fbUser as FbUser).providerData.every((p) => p.providerId === "password");
-      const shim = fbUser && !isUnverifiedEmailUser ? fbToShim(fbUser as FirebaseUserLike) : null;
-      setState({ user: shim, isLoaded: true });
-      for (const l of listenersRef.current) {
-        try {
-          l({ user: shim });
-        } catch {
-          /* ignore listener errors */
-        }
+    let cancelled = false;
+    let auth: ReturnType<typeof getFirebaseAuth>;
+
+    try {
+      auth = getFirebaseAuth();
+    } catch (err) {
+      console.error(`${AUTH_TAG} getFirebaseAuth failed`, err);
+      setState({ user: null, isLoaded: true });
+      return;
+    }
+
+    const readyTimeout = window.setTimeout(() => {
+      if (cancelled) return;
+      console.warn(`${AUTH_TAG} authStateReady timeout — continuing as signed-out`);
+      setState((prev) => (prev.isLoaded ? prev : { user: null, isLoaded: true }));
+    }, AUTH_READY_TIMEOUT_MS);
+
+    void auth.authStateReady().then(() => {
+      if (cancelled) return;
+      window.clearTimeout(readyTimeout);
+      console.info(`${AUTH_TAG} authStateReady`, {
+        hasUser: Boolean(auth.currentUser),
+      });
+      applyAuthUser(auth.currentUser, "authStateReady");
+    }).catch((err) => {
+      console.error(`${AUTH_TAG} authStateReady failed`, err);
+      if (!cancelled) {
+        setState({ user: null, isLoaded: true });
       }
     });
 
+    const unsub = onIdTokenChanged(auth, (fbUser) => {
+      if (cancelled) return;
+      window.clearTimeout(readyTimeout);
+      applyAuthUser(fbUser, "onIdTokenChanged");
+    });
+
     return () => {
+      cancelled = true;
+      window.clearTimeout(readyTimeout);
       try {
         unsub();
       } catch {
         /* ignore */
       }
     };
-  }, []);
+  }, [applyAuthUser]);
 
   const getToken = useCallback(
     async (opts?: { skipCache?: boolean }): Promise<string | null> => {
       try {
-        const u = firebaseAuth.currentUser;
+        const u = getFirebaseAuth().currentUser;
         if (!u) return null;
         return await u.getIdToken(opts?.skipCache === true);
       } catch {
@@ -146,7 +199,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async (opts?: { redirectUrl?: string }) => {
     try {
-      await fbSignOut(firebaseAuth);
+      await fbSignOut(getFirebaseAuth());
     } catch (err) {
       console.error("[firebase-auth] signOut failed:", err);
     }
@@ -182,7 +235,9 @@ export function Show({
   const ctx = useContext(AuthContext);
   const isLoaded = ctx?.isLoaded ?? false;
   const isSignedIn = !!ctx?.user;
-  if (!isLoaded) return null;
+  if (!isLoaded) {
+    return null;
+  }
   if (when === "signed-in" && isSignedIn) return <>{children}</>;
   if (when === "signed-out" && !isSignedIn) return <>{children}</>;
   return null;
