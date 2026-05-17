@@ -39,6 +39,10 @@ export {
   buildPhoneOtpBrowserUrl,
   hardResetRecaptcha,
   initRecaptcha,
+  warmUpRecaptcha,
+  resetRecaptchaOnFailure,
+  logRecaptchaState,
+  setupRecaptcha,
 } from "./phone-recaptcha";
 export {
   sendPhoneOtpSafely,

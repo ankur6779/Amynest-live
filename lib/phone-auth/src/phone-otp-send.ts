@@ -1,9 +1,14 @@
 import { signInWithPhoneNumber, type Auth, type ConfirmationResult } from "firebase/auth";
-import { isAndroidPwa, shouldUseBrowserForPhoneOtp } from "./mobile-phone-environment";
+import { shouldUseBrowserForPhoneOtp } from "./mobile-phone-environment";
 import { logPhoneOtpDomainContext } from "./site-domain";
-import { ensureRecaptchaReady, hardResetRecaptcha } from "./phone-recaptcha";
+import {
+  resetRecaptchaOnFailure,
+  setupRecaptcha,
+  warmUpRecaptcha,
+  logRecaptchaState,
+} from "./phone-recaptcha";
 
-export const PHONE_OTP_SEND_TIMEOUT_MS = 10_000;
+export const PHONE_OTP_SEND_TIMEOUT_MS = 30_000;
 
 export type SendPhoneOtpResult =
   | { success: true; confirmation: ConfirmationResult }
@@ -16,26 +21,24 @@ declare global {
 }
 
 /**
- * Crash-proof phone OTP send — never throws; hard-resets reCAPTCHA on failure.
+ * Replit-style OTP: reuse verifier created on page load, reset only on failure.
  */
 export async function sendPhoneOtpSafely(
   auth: Auth,
   phoneNumber: string,
 ): Promise<SendPhoneOtpResult> {
-  try {
-    const phone = phoneNumber?.trim();
-    if (!phone) {
-      return { success: false, error: "No phone number" };
-    }
+  const phone = phoneNumber?.trim();
+  if (!phone) {
+    return { success: false, error: "No phone number" };
+  }
 
-    logPhoneOtpDomainContext("sendPhoneOtpSafely");
-    const verifier = await ensureRecaptchaReady(auth);
-    if (!verifier) {
-      return {
-        success: false,
-        error: "Recaptcha failed. Please try again.",
-        suggestBrowser: shouldUseBrowserForPhoneOtp(),
-      };
+  try {
+    logPhoneOtpDomainContext("sendOTP");
+    logRecaptchaState();
+
+    let verifier = setupRecaptcha(auth);
+    if (window.recaptchaWidgetId === undefined) {
+      verifier = await warmUpRecaptcha(auth);
     }
 
     const confirmation = await Promise.race([
@@ -52,12 +55,12 @@ export async function sendPhoneOtpSafely(
     console.log("[phone-otp] OTP sent successfully");
     return { success: true, confirmation };
   } catch (err: unknown) {
-    console.error("OTP crash:", err);
+    console.error("OTP error:", err);
 
     try {
-      hardResetRecaptcha();
+      resetRecaptchaOnFailure();
     } catch (resetErr) {
-      console.warn("[phone-otp] hard reset after failure", resetErr);
+      console.warn("[phone-otp] reset after failure", resetErr);
     }
 
     const message =
@@ -66,7 +69,7 @@ export async function sendPhoneOtpSafely(
     return {
       success: false,
       error: message,
-      suggestBrowser: isAndroidPwa() || shouldUseBrowserForPhoneOtp(),
+      suggestBrowser: shouldUseBrowserForPhoneOtp(),
     };
   }
 }

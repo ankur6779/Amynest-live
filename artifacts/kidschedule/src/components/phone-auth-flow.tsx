@@ -10,12 +10,7 @@ import {
   isValidNationalPhone,
   PHONE_COUNTRIES,
   buildPhoneOtpBrowserUrl,
-  ensureRecaptchaContainer,
-  ensureRecaptchaReady,
-  hardResetRecaptcha,
-  resetPhoneRecaptchaWidget,
   sendPhoneOtpSafely,
-  shouldPreRenderPhoneRecaptcha,
   shouldUseBrowserForPhoneOtp,
   warnIfPhoneAuthDomainMissingFromFirebase,
   type PhoneCountry,
@@ -214,17 +209,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
-  // Keep #recaptcha-container in DOM (hidden) — do not clear on route change.
-  useEffect(() => {
-    if (step === "idle") return;
-    ensureRecaptchaContainer();
-    if (!shouldPreRenderPhoneRecaptcha()) return;
-    warnIfPhoneAuthDomainMissingFromFirebase();
-    void ensureRecaptchaReady(firebaseAuth).catch((err) => {
-      console.warn("[phone-auth-flow] reCAPTCHA pre-render failed", err);
-    });
-  }, [step]);
-
   const digits = phone.replace(/\D/g, "");
   const isValidPhone = isValidNationalPhone(digits, country.code);
   const phoneFull = formatPhoneE164(digits, country.code) ?? "";
@@ -237,12 +221,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
         return t - 1;
       });
     }, 1000);
-  }
-
-  async function waitForPaint(): Promise<void> {
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-    });
   }
 
   const sendOtp = useCallback(async (forceResend = false) => {
@@ -271,12 +249,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
     setBrowserOtpUrl(null);
 
     try {
-      if (forceResend && !resetPhoneRecaptchaWidget()) {
-        hardResetRecaptcha();
-      }
-
-      await waitForPaint();
-
       const res = await sendPhoneOtpSafely(firebaseAuth, phoneFull);
 
       if (!res.success) {
@@ -298,7 +270,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
       startResendTimer();
     } catch (err: unknown) {
       console.error("[phone-auth-flow] OTP unexpected:", err);
-      hardResetRecaptcha();
       const uiMsg = formatAuthErrorForUi(err);
       setPhoneError(uiMsg);
       onError?.(uiMsg);
