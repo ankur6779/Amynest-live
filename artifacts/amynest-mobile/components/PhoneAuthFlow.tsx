@@ -17,9 +17,7 @@ import {
   detectDefaultCountry,
   formatPhoneE164,
   isValidNationalPhone,
-  openPhoneOtpInExternalBrowser,
-  sendPhoneOtpSafely,
-  shouldUseBrowserForPhoneOtp,
+  sendPhoneOtp,
   redirectWwwToCanonicalApex,
   warnIfPhoneAuthDomainMissingFromFirebase,
   type PhoneCountry,
@@ -90,11 +88,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
       let result: ConfirmationResult;
 
       if (Platform.OS === "web") {
-        if (shouldUseBrowserForPhoneOtp()) {
-          openPhoneOtpInExternalBrowser(phoneFull);
-          return;
-        }
-        const res = await sendPhoneOtpSafely(firebaseAuth, phoneFull);
+        const res = await sendPhoneOtp(firebaseAuth, phoneFull);
         if (!res.success) {
           throw new Error(res.error);
         }

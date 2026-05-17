@@ -33,7 +33,6 @@ import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { ApiRetryShell } from "@/components/api-retry-shell";
 import { ProductionAppShell } from "@/components/production-app-shell";
-import { PhoneRecaptchaBootstrap } from "@/components/phone-recaptcha-bootstrap";
 import { BootRouteSync } from "@/components/boot-route-sync";
 import { FetchTimeoutError } from "@/lib/fetch-with-timeout";
 
@@ -567,7 +566,6 @@ function OfflineGate() {
 export default function AppCore() {
   return (
     <ProductionAppShell>
-      <PhoneRecaptchaBootstrap />
       <FirebaseAuthProvider>
         <AuthBootGate>
           <WouterRouter base={basePath}>

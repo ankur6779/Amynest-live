@@ -9,10 +9,7 @@ import {
   formatPhoneE164,
   isValidNationalPhone,
   PHONE_COUNTRIES,
-  buildPhoneOtpBrowserUrl,
-  openPhoneOtpInExternalBrowser,
-  sendPhoneOtpSafely,
-  shouldUseBrowserForPhoneOtp,
+  sendPhoneOtp,
   warnIfPhoneAuthDomainMissingFromFirebase,
   type PhoneCountry,
 } from "@workspace/phone-auth";
@@ -193,7 +190,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
   const { t } = useTranslation();
 
   const detectedCountry = useMemo(() => detectDefaultCountry(), []);
-  const chromeOtpRequired = useMemo(() => shouldUseBrowserForPhoneOtp(), []);
 
   const [step, setStep] = useState<Step>("idle");
   const [phone, setPhone] = useState("");
@@ -203,13 +199,17 @@ export default function PhoneAuthFlow({ onError }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [otpSending, setOtpSending] = useState(false);
-  const [browserOtpUrl, setBrowserOtpUrl] = useState<string | null>(null);
   const confirmRef = useRef<ConfirmationResult | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sendInFlightRef = useRef(false);
   const lastSendAtRef = useRef(0);
 
-  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+  useEffect(() => {
+    warnIfPhoneAuthDomainMissingFromFirebase();
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
   const digits = phone.replace(/\D/g, "");
   const isValidPhone = isValidNationalPhone(digits, country.code);
@@ -248,18 +248,13 @@ export default function PhoneAuthFlow({ onError }: Props) {
       setStep("sending");
     }
 
-    setBrowserOtpUrl(null);
-
     try {
-      const res = await sendPhoneOtpSafely(firebaseAuth, phoneFull);
+      const res = await sendPhoneOtp(firebaseAuth, phoneFull);
 
       if (!res.success) {
         logFirebaseAuthError("phone-auth-flow:sendOtp", new Error(res.error));
         setPhoneError(res.error);
         onError?.(res.error);
-        if (res.suggestBrowser && chromeOtpRequired) {
-          setBrowserOtpUrl(buildPhoneOtpBrowserUrl(phoneFull));
-        }
         if (!forceResend) {
           setStep("phone");
         }
@@ -282,7 +277,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
       sendInFlightRef.current = false;
       setOtpSending(false);
     }
-  }, [chromeOtpRequired, isValidPhone, onError, phoneFull, t]);
+  }, [isValidPhone, onError, phoneFull, t]);
 
   async function verifyOtp() {
     if (otp.length !== 6) { onError?.("Please enter the 6-digit OTP."); return; }
@@ -405,33 +400,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
           {phoneError && (
             <p style={{ fontSize: "12px", color: "#f87171", margin: 0 }}>{phoneError}</p>
-          )}
-
-          {browserOtpUrl && (
-            <button
-              type="button"
-              onClick={() => openPhoneOtpInExternalBrowser(phoneFull)}
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                borderRadius: "12px",
-                border: "1px solid rgba(123,63,242,0.55)",
-                background: "rgba(123,63,242,0.20)",
-                color: "hsl(var(--brand-violet-300))",
-                fontSize: "13px",
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
-              {t("components.phone_auth_flow.open_in_chrome")}
-            </button>
-          )}
-
-          {chromeOtpRequired && !browserOtpUrl && (
-            <p style={{ fontSize: "12px", color: "rgba(200,180,255,0.55)", margin: 0, lineHeight: 1.45 }}>
-              {t("components.phone_auth_flow.android_pwa_hint")}
-            </p>
           )}
 
           <p style={{ fontSize: "11px", color: "rgba(200,180,255,0.40)", margin: 0 }}>
