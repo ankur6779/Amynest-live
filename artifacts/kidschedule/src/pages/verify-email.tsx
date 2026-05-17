@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { sendEmailVerification, signOut as fbSignOut } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { getEmailVerificationActionCodeSettings } from "@/lib/email-verification";
+import { prettyAuthError } from "@/lib/auth-errors";
 
 const CSS = `
   @keyframes veRingRotate {
@@ -122,9 +123,8 @@ export default function VerifyEmailPage() {
       setCooldown(RESEND_COOLDOWN);
     } catch (err: unknown) {
       console.error("[verify-email] resend failed:", err);
-      setError(
-        err instanceof Error ? err.message : t("screens.verify_email.resend_error"),
-      );
+      const msg = prettyAuthError(err);
+      setError(msg || t("screens.verify_email.resend_error"));
     } finally {
       setBusy(false);
     }
