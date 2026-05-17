@@ -1,4 +1,4 @@
-/* Auto-generated on build — do not edit. Cache: amynest-v3-1778952989848 */
+/* Auto-generated on build — do not edit. Cache: amynest-v3-1778954109656 */
 /**
  * AmyNest root service worker (source — built to /sw.js with a deploy-specific cache id).
  *
@@ -11,7 +11,7 @@
 
 /* global self, caches, clients, importScripts, firebase */
 
-const CACHE_NAME = "amynest-v3-1778952989848";
+const CACHE_NAME = "amynest-v3-1778954109656";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

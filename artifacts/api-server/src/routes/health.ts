@@ -6,6 +6,7 @@ import {
   getElevenLabsApiKey,
   getGcsDiagnostics,
 } from "../lib/env";
+import { amynestEnvLabel, resolveAmynestEnv } from "../lib/loadEnv";
 import { driveFilesList } from "../lib/googleDrive";
 import { getTtsCacheStats } from "../services/ttsCacheStats";
 import { ttsStorageBackend } from "../services/ttsAudioStore";
@@ -25,10 +26,15 @@ router.get("/healthz/env", (_req, res) => {
   const gcs = getGcsDiagnostics();
   const elevenlabsConfigured = !!getElevenLabsApiKey();
 
+  const amynestEnv = resolveAmynestEnv();
   res.json({
     ok: drive.resolved && elevenlabsConfigured,
+    amynestEnv,
+    profile: amynestEnvLabel(amynestEnv),
     nodeEnv: process.env.NODE_ENV ?? "unknown",
     render: !!process.env.RENDER,
+    renderServiceName: process.env.RENDER_SERVICE_NAME ?? null,
+    apiPublicUrl: process.env.API_PUBLIC_URL ?? null,
     services: {
       googleDrive: {
         configured: drive.resolved,
@@ -83,28 +89,14 @@ router.get("/healthz/tts-cache", async (_req, res) => {
 
 /** Amy / ElevenLabs TTS + GCS storage probe. */
 router.get("/healthz/tts", (_req, res) => {
-  const elevenlabsConfigured = !!getElevenLabsApiKey();
-  const gcs = getGcsDiagnostics();
+  const elevenLabsConfigured = !!getElevenLabsApiKey();
+  const legacyGcsConfigured = getGcsDiagnostics().legacyGcsConfigured;
 
   res.json({
-    ok: elevenlabsConfigured,
-    elevenlabsConfigured,
+    elevenLabsConfigured,
+    legacyGcsConfigured,
+    ok: elevenLabsConfigured,
     ttsStorage: ttsStorageBackend(),
-    legacyGcsConfigured: gcs.legacyGcsConfigured,
-    gcs: {
-      bucketConfigured: gcs.bucketId === "set",
-      bucketHint: gcs.bucketName,
-      credentialsOk: gcs.credentials.ok,
-      credentialsSource: gcs.credentials.source,
-      credentialsError: gcs.credentials.error,
-      projectId: gcs.credentials.projectId,
-      clientEmail: gcs.credentials.clientEmail,
-    },
-    hint: !elevenlabsConfigured
-      ? "Set ELEVENLABS_API_KEY on Amynest-backend (not Amynest-live-1 static site)."
-      : !gcs.legacyGcsConfigured
-        ? "GCS optional: add DEFAULT_OBJECT_STORAGE_BUCKET_ID + GCS_SERVICE_ACCOUNT_JSON (single-line JSON or GCS_SERVICE_ACCOUNT_JSON_B64). TTS falls back to Postgres."
-        : undefined,
   });
 });
 

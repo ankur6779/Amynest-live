@@ -37,6 +37,14 @@ function ctx(overrides: Partial<EnvironmentalContext> = {}): EnvironmentalContex
     explanations: [],
     tags: [],
     degraded: false,
+    AQI: 80,
+    temperatureC: 38,
+    confidence: "high",
+    exposureMode: "reduced",
+    outdoorAllowed: true,
+    outdoorMaxDuration: 60,
+    airQualityRisk: "low",
+    hydrationNeeded: true,
     ...overrides,
   };
 }

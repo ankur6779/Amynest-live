@@ -1082,7 +1082,9 @@ function clamp(value: number, lo: number, hi: number): number {
 }
 
 function setItemTime(item: ScheduleItem, mins: number): void {
-  item.time = minsToTime(mins);
+  const h = Math.floor((((mins % 1440) + 1440) % 1440) / 60);
+  const m = ((mins % 1440) + 1440) % 1440 % 60;
+  item.time = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 }
 
 function isMealBlock(it: ScheduleItem): boolean {

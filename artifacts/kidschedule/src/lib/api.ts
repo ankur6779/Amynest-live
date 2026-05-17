@@ -1,9 +1,9 @@
-import { BASE_URL } from "@/config";
+import { getDefaultApiOrigin, resolveAmynestEnvFromVite } from "@/config";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 
 /**
  * Resolved API origin (no trailing slash).
- * Override with `VITE_APP_API_ORIGIN` in `.env` for local or staging backends.
+ * Override with `VITE_APP_API_ORIGIN` in repo-root `.env.development` / `.env.production`.
  */
 export function getAppApiBaseOrigin(): string {
   const fromEnv =
@@ -12,19 +12,28 @@ export function getAppApiBaseOrigin(): string {
     "";
   if (fromEnv) return fromEnv.replace(/\/$/, "");
 
+  const fallback = getDefaultApiOrigin();
+
   if (typeof window === "undefined") {
-    return BASE_URL;
+    return fallback;
   }
 
   if (isNativeAmyNestShell()) {
-    return BASE_URL;
+    return fallback;
   }
 
-  return BASE_URL;
+  return fallback;
 }
 
-/** Same as `getAppApiBaseOrigin()` — use with `fetch(\`${BASE_URL}/api/...\`)`. */
-export { BASE_URL };
+/** Default origin for the active Vite mode (dev/staging/prod). */
+export const BASE_URL = getDefaultApiOrigin();
+
+if (import.meta.env.DEV) {
+  const profile = resolveAmynestEnvFromVite() === "development" ? "DEV" : "PROD";
+  console.info(
+    `[AmyNest] Web ${profile} — API ${getAppApiBaseOrigin()} (override: VITE_APP_API_ORIGIN)`,
+  );
+}
 
 /**
  * Returns a URL for calling the backend API.

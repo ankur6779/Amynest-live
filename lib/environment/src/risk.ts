@@ -7,10 +7,13 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 import { datasets } from "./datasets.js";
+import { enrichEnvironmentalContext } from "./contextEnrichment.js";
+import { confidenceFromSource } from "./snapshotPipeline.js";
 import type {
   AQIBucket,
   AtmosphericSnapshot,
   EnvAgeGroup,
+  EnvDataConfidence,
   EnvironmentalContext,
   EnvLevel,
   OutdoorSuitability,
@@ -148,6 +151,8 @@ export function buildEnvironmentalContext(input: {
   ageGroup: EnvAgeGroup;
   location: { latitude: number; longitude: number; label?: string };
   date?: string;
+  confidence?: EnvDataConfidence;
+  country?: string | null;
 }): EnvironmentalContext {
   const { snapshot, ageGroup, location } = input;
   const components = scoreComponents(snapshot);
@@ -207,24 +212,38 @@ export function buildEnvironmentalContext(input: {
     tags.push(snapshot.predictedShift.label);
   }
 
-  return {
-    ageGroup,
-    location,
-    snapshot,
-    environmentalRiskScore: finalScore,
-    outdoorSuitability,
-    hydrationNeedLevel,
-    cognitiveComfortLevel,
-    sensoryStressLevel,
-    environmentalFatigueRisk,
-    circadianLightProfile,
-    predictedWeatherShift: snapshot.predictedShift,
-    aqiBucket,
-    uvBucket,
-    weatherCondition,
-    season,
-    explanations: [], // filled by buildExplanations()
-    tags,
-    degraded: snapshot.source === "fallback" || snapshot.source === "cache",
-  };
+  const confidence =
+    input.confidence ?? confidenceFromSource(snapshot.source);
+
+  return enrichEnvironmentalContext(
+    {
+      ageGroup,
+      location,
+      snapshot,
+      environmentalRiskScore: finalScore,
+      outdoorSuitability,
+      hydrationNeedLevel,
+      cognitiveComfortLevel,
+      sensoryStressLevel,
+      environmentalFatigueRisk,
+      circadianLightProfile,
+      predictedWeatherShift: snapshot.predictedShift,
+      aqiBucket,
+      uvBucket,
+      weatherCondition,
+      season,
+      explanations: [],
+      tags,
+      degraded: false,
+      AQI: snapshot.aqiUs ?? 100,
+      temperatureC: snapshot.temperatureC ?? snapshot.apparentC ?? 25,
+      confidence,
+      exposureMode: "normal",
+      outdoorAllowed: true,
+      outdoorMaxDuration: 120,
+      airQualityRisk: "low",
+      hydrationNeeded: false,
+    },
+    { confidence, country: input.country },
+  );
 }

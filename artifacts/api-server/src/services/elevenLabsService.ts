@@ -4,11 +4,13 @@ import { eq, sql } from "drizzle-orm";
 import { getElevenLabsApiKey } from "../lib/env";
 import { logger } from "../lib/logger";
 import {
+  resolveTtsPlaybackUrl,
   ttsAudioBackfillPostgres,
   ttsAudioExists,
   ttsAudioPath,
   ttsAudioRead,
-  ttsAudioWrite,
+  ttsGcsUpload,
+  ttsPublicGcsUrl,
   ttsStorageBackend,
 } from "./ttsAudioStore";
 
@@ -59,6 +61,7 @@ export interface SynthesizeOptions {
 export interface SynthesizeResult {
   cacheKey: string;
   audioPath: string;
+  audioUrl: string;
   contentType: string;
   charCount: number;
   cached: boolean;
@@ -105,8 +108,8 @@ const VOICE_SETTINGS: Record<SynthesizeMode, {
  * Synthesize text → MP3 using ElevenLabs.
  *
  * Content-addressed cache: identical (text, voiceId, modelId) inputs only
- * ever call ElevenLabs once — audio is stored in GCS (Replit) or Postgres
- * bytea (Render) and reused by all users.
+ * ever call ElevenLabs once — audio is stored in GCS (Render) or Postgres
+ * bytea (local dev without GCS) and reused by all users.
  */
 export async function synthesize(
   rawText: string,
@@ -129,32 +132,38 @@ export async function synthesize(
     .limit(1);
 
   const row = existing[0];
-  if (row && (await ttsAudioExists(cacheKey, row.audioData))) {
-    const readable = await ttsAudioRead(cacheKey, row.audioData);
-    if (readable) {
-      void ttsAudioBackfillPostgres(cacheKey, readable);
-      void db
-        .update(ttsCacheTable)
-        .set({ hitCount: sql`${ttsCacheTable.hitCount} + 1`, lastAccessedAt: sql`now()` })
-        .where(eq(ttsCacheTable.cacheKey, cacheKey))
-        .catch(() => {});
+  if (row && (await ttsAudioExists(cacheKey, row))) {
+    const audioUrl = resolveTtsPlaybackUrl(cacheKey, row);
 
-      logger.info(
-        { evt: "tts.cache_hit", cacheKey, charCount: text.length, voiceId, storage: ttsStorageBackend() },
-        "TTS: cache hit",
-      );
+    void db
+      .update(ttsCacheTable)
+      .set({
+        hitCount: sql`${ttsCacheTable.hitCount} + 1`,
+        lastAccessedAt: sql`now()`,
+        ...(!row.audioUrl && audioUrl.startsWith("https://") ? { audioUrl } : {}),
+      })
+      .where(eq(ttsCacheTable.cacheKey, cacheKey))
+      .catch(() => {});
 
-      return {
-        cacheKey,
-        audioPath: row.audioPath,
-        contentType: row.contentType,
-        charCount: row.charCount,
-        cached: true,
-      };
-    }
+    logger.info(
+      { evt: "tts.cache_hit", cacheKey, charCount: text.length, voiceId, storage: ttsStorageBackend() },
+      "TTS: cache hit",
+    );
+
+    return {
+      cacheKey,
+      audioPath: row.audioPath,
+      audioUrl,
+      contentType: row.contentType,
+      charCount: row.charCount,
+      cached: true,
+    };
+  }
+
+  if (row) {
     logger.warn(
       { evt: "tts.stale_cache_row", cacheKey, charCount: text.length },
-      "tts cache metadata present but audio bytes missing — regenerating",
+      "tts cache metadata present but audio missing — regenerating",
     );
   }
 
@@ -223,9 +232,16 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
   const buffer = Buffer.from(await response.arrayBuffer());
   if (buffer.byteLength === 0) throw new Error("tts_empty_audio");
 
-  const contentType = response.headers.get("content-type") ?? "audio/mpeg";
+  const contentType = "audio/mpeg";
   const backend = ttsStorageBackend();
   const storeBytesInPostgres = backend === "postgres";
+
+  let audioUrl: string | null = null;
+  if (!storeBytesInPostgres) {
+    audioUrl = await ttsGcsUpload(cacheKey, buffer, contentType);
+  } else {
+    audioUrl = null;
+  }
 
   try {
     await db
@@ -236,6 +252,7 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
         voiceId,
         modelId,
         audioPath,
+        audioUrl,
         contentType,
         charCount: text.length,
         hitCount: 0,
@@ -248,9 +265,10 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
           voiceId,
           modelId,
           audioPath,
+          audioUrl,
           contentType,
           charCount: text.length,
-          ...(storeBytesInPostgres ? { audioData: buffer } : {}),
+          ...(storeBytesInPostgres ? { audioData: buffer } : { audioData: null }),
           lastAccessedAt: sql`now()`,
         },
       });
@@ -266,16 +284,17 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
     throw err;
   }
 
-  let storedInPostgres = storeBytesInPostgres;
-  if (!storeBytesInPostgres) {
-    const writeResult = await ttsAudioWrite(cacheKey, buffer, contentType);
-    storedInPostgres = writeResult.storedInPostgres;
-  } else {
+  logger.info({ evt: "tts.saved_to_db", cacheKey, storage: backend }, "TTS: saved to DB");
+
+  if (storeBytesInPostgres) {
     logger.info(
       { evt: "tts.saved_to_database", cacheKey, bytes: buffer.byteLength },
       "TTS: saved to database",
     );
   }
+
+  const playbackUrl =
+    audioUrl ?? resolveTtsPlaybackUrl(cacheKey, { audioUrl: ttsPublicGcsUrl(cacheKey) ?? undefined });
 
   logger.info(
     {
@@ -286,18 +305,25 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
       voiceId,
       modelId,
       mode,
-      storage: storedInPostgres ? "postgres" : "gcs",
+      storage: storeBytesInPostgres ? "postgres" : "gcs",
     },
-    storedInPostgres ? "TTS: generated and cached in Postgres" : "TTS: generated and cached in GCS",
+    storeBytesInPostgres ? "TTS: generated and cached in Postgres" : "TTS: generated and cached in GCS",
   );
 
-  return { cacheKey, audioPath, contentType, charCount: text.length, cached: false };
+  return {
+    cacheKey,
+    audioPath,
+    audioUrl: playbackUrl,
+    contentType,
+    charCount: text.length,
+    cached: false,
+  };
 }
 
-/** Download a previously cached MP3. */
+/** Download a previously cached MP3 (for API streaming endpoints). */
 export async function readCachedAudio(
   cacheKey: string,
-): Promise<{ buffer: Buffer; contentType: string } | null> {
+): Promise<{ buffer: Buffer; contentType: string; audioUrl?: string } | null> {
   const rows = await db
     .select()
     .from(ttsCacheTable)
@@ -306,6 +332,8 @@ export async function readCachedAudio(
   if (rows.length === 0) return null;
 
   const row = rows[0]!;
+  const playbackUrl = resolveTtsPlaybackUrl(cacheKey, row);
+
   let buffer = await ttsAudioRead(cacheKey, row.audioData);
   if (!buffer && row.text) {
     const mode = inferSynthesizeModeFromCacheKey(cacheKey, row.text, row.voiceId, row.modelId);
@@ -338,5 +366,9 @@ export async function readCachedAudio(
     .where(eq(ttsCacheTable.cacheKey, cacheKey))
     .catch(() => {});
 
-  return { buffer, contentType: rows[0]!.contentType };
+  return {
+    buffer,
+    contentType: row.contentType,
+    audioUrl: playbackUrl.startsWith("https://") ? playbackUrl : undefined,
+  };
 }

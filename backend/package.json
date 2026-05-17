@@ -9,6 +9,7 @@
   },
   "scripts": {
     "postinstall": "node ./scripts/render-build.mjs",
+    "dev": "pnpm --dir .. run dev:api",
     "start": "node server.js"
   },
   "dependencies": {}

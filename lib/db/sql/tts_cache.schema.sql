@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS tts_cache (
   voice_id        VARCHAR(64) NOT NULL,
   model_id        VARCHAR(64) NOT NULL,
   audio_path      TEXT NOT NULL,
+  audio_url       TEXT,
   audio_data      BYTEA,
   content_type    VARCHAR(32) NOT NULL DEFAULT 'audio/mpeg',
   char_count      INTEGER NOT NULL,

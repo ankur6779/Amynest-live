@@ -12,6 +12,8 @@ export type {
   PredictedWeatherShift,
   EnvironmentalContext,
   EnvironmentalProvider,
+  EnvDataConfidence,
+  EnvExposureMode,
 } from "./types.js";
 
 export { datasets } from "./datasets.js";
@@ -21,6 +23,14 @@ export { buildExplanations } from "./explainability.js";
 export { mapToWeatherOutdoor, buildAiPromptBlock, buildEnvironmentalSummary } from "./weatherMapper.js";
 export { resolveDefaultLocation } from "./locationDefaults.js";
 export { getEnvironmentalContext } from "./orchestrator.js";
+export {
+  validateAQI,
+  estimateAQIByCountry,
+  normalizeSnapshot,
+  fallbackAtmosphericSnapshot,
+  finalizeSnapshot,
+  deriveExposureMode,
+} from "./snapshotPipeline.js";
 export { mapAgeGroupToEnvAgeGroup } from "./ageMapper.js";
 export {
   applyEnvironmentalEnrichments,
