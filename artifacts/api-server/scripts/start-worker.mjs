@@ -27,10 +27,23 @@ async function ensureBundle() {
     console.info(`[worker] Building bundle (${mustBuild ? "Render deploy" : "forced"})…`);
   }
 
+  const install = spawnSync(
+    "pnpm",
+    ["install", "--frozen-lockfile", "--filter", "@workspace/api-server..."],
+    {
+      cwd: path.resolve(pkgDir, "../.."),
+      stdio: "inherit",
+      env: { ...process.env, NODE_ENV: "development", PNPM_CONFIG_PRODUCTION: "false" },
+    },
+  );
+  if (install.status !== 0) {
+    process.exit(install.status ?? 1);
+  }
+
   const build = spawnSync(process.execPath, ["./build.mjs"], {
     cwd: pkgDir,
     stdio: "inherit",
-    env: { ...process.env, NODE_ENV: "development" },
+    env: { ...process.env, NODE_ENV: "development", PNPM_CONFIG_PRODUCTION: "false" },
   });
   if (build.status !== 0) {
     process.exit(build.status ?? 1);

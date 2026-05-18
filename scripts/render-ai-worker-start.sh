@@ -9,10 +9,15 @@ BUNDLE="$API/dist/worker/index.mjs"
 cd "$ROOT"
 
 echo "[render-ai-worker] repo=$ROOT"
-echo "[render-ai-worker] building api-server…"
 
-# Dev deps for any tooling; esbuild is in api-server dependencies.
+# Worker runtime often does not retain node_modules from the build phase — install
+# api-server + workspace deps so build.mjs can import esbuild.
 export NODE_ENV=development
+export PNPM_CONFIG_PRODUCTION=false
+echo "[render-ai-worker] installing dependencies…"
+pnpm install --frozen-lockfile --filter "@workspace/api-server..."
+
+echo "[render-ai-worker] building api-server…"
 pnpm --filter @workspace/api-server build
 
 if [[ ! -f "$BUNDLE" ]]; then
