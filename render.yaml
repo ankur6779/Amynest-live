@@ -80,13 +80,8 @@ services:
     plan: starter
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
-    buildCommand: >-
-      corepack enable &&
-      corepack prepare pnpm@9.15.0 --activate &&
-      NODE_ENV=development pnpm install --frozen-lockfile &&
-      pnpm --filter @workspace/api-server build &&
-      test -f artifacts/api-server/dist/worker/index.mjs
-    # Build again at start: dist/ is gitignored and must exist before node runs the bundle.
+    # Root Directory on dashboard must be empty (repo root), not artifacts/api-server.
+    buildCommand: bash scripts/render-ai-worker-build.sh
     startCommand: bash scripts/render-ai-worker-start.sh
     envVars:
       - key: NODE_VERSION
