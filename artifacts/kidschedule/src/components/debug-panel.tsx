@@ -129,9 +129,7 @@ function ApiCallRow({ entry }: { entry: ApiLogEntry }) {
   );
 }
 
-export function DebugPanel() {
-  if (!SHOW_BOOT_HUD) return null;
-
+function DebugPanelDev() {
   const { debugMode, disable } = useDebugMode();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"context" | "logs">("logs");
@@ -348,6 +346,11 @@ export function DebugPanel() {
       )}
     </>
   );
+}
+
+export function DebugPanel() {
+  if (!SHOW_BOOT_HUD) return null;
+  return <DebugPanelDev />;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

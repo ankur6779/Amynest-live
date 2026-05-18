@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 import { FirebaseAuthProvider, Show } from "@/lib/firebase-auth";
 import { OAuthRedirectHandler } from "@/components/oauth-redirect-handler";
-import AppleAuthCallbackPage from "@/pages/apple-auth-callback";
 import { useAuth, useClerk } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Toaster } from "@/components/ui/toaster";
@@ -22,8 +21,9 @@ import { Layout } from "@/components/layout";
 // iOS Jetsam mid-mount on iPhones opened from in-app browsers.
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
-import SignInPage from "@/pages/sign-in";
-import SignUpPage from "@/pages/sign-up";
+const SignInPage = lazy(() => import("@/pages/sign-in"));
+const SignUpPage = lazy(() => import("@/pages/sign-up"));
+const AppleAuthCallbackPage = lazy(() => import("@/pages/apple-auth-callback"));
 import VerifyEmailPage from "@/pages/verify-email";
 import AuthCallbackPage from "@/pages/auth-callback";
 import ResetPasswordPage from "@/pages/reset-password";

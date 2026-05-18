@@ -105,11 +105,12 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
 
   const publish = useCallback((shim: ShimUser | null, authStatus: AuthResolutionStatus) => {
     const uid = shim?.id ?? null;
+    const isLoaded = authStatus !== "loading";
     setState((prev) => {
       if (
         prev.authStatus === authStatus &&
         (prev.user?.id ?? null) === uid &&
-        prev.isLoaded === authStatus !== "loading"
+        prev.isLoaded === isLoaded
       ) {
         return prev;
       }
