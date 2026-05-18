@@ -1,4 +1,3 @@
-import { Capacitor } from "@capacitor/core";
 import {
   GoogleAuthProvider,
   getRedirectResult,
@@ -7,7 +6,8 @@ import {
   type UserCredential,
 } from "firebase/auth";
 import { logFirebaseAuthError } from "@/lib/firebase-auth-error";
-import { getFirebaseAuth } from "@/lib/firebase";
+import { getFirebaseAuth, isFirebaseAuthReady } from "@/lib/firebase";
+import { isCapacitorNative } from "@/lib/capacitor-native";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import {
   googleAuthDefaults,
@@ -36,15 +36,7 @@ export function getGoogleReversedClientId(): string {
   return reversedGoogleWebClientId(getGoogleWebClientId());
 }
 
-/** True when running inside Capacitor iOS/Android (not browser PWA). */
-export function isCapacitorNative(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return Capacitor.isNativePlatform() === true;
-  } catch {
-    return false;
-  }
-}
+export { isCapacitorNative } from "@/lib/capacitor-native";
 
 /** Native Google plugin path — avoids Firebase redirect/popup in WKWebView. */
 export function shouldUseNativeGoogleAuth(): boolean {
@@ -110,6 +102,7 @@ export async function resolveGoogleRedirectResult(): Promise<UserCredential | nu
   if (typeof window === "undefined") return null;
   if (shouldUseNativeGoogleAuth()) return null;
   if (redirectResultConsumed) return null;
+  if (!isFirebaseAuthReady()) return null;
 
   redirectResultConsumed = true;
   try {
@@ -122,7 +115,8 @@ export async function resolveGoogleRedirectResult(): Promise<UserCredential | nu
     }
     return result;
   } catch (err) {
+    redirectResultConsumed = false;
     logFirebaseAuthError("google:redirect", err);
-    throw err;
+    return null;
   }
 }

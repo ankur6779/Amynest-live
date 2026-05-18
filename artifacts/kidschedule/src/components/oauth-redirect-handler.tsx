@@ -1,10 +1,11 @@
 import { useEffect } from "react";
-import { resolveGoogleRedirectResult } from "@/lib/google-auth";
+import { isFirebaseAuthReady } from "@/lib/firebase";
 import { prettyAuthError } from "@/lib/auth-errors";
 import { useToast } from "@/hooks/use-toast";
 
 /**
- * Completes OAuth sign-in after redirect (Google Firebase redirect + Apple JS callback).
+ * Completes Google sign-in after Firebase redirect (web/PWA only).
+ * Loaded via dynamic import so Capacitor / auth helpers stay out of the initial AppCore parse path.
  */
 export function OAuthRedirectHandler() {
   const { toast } = useToast();
@@ -13,8 +14,13 @@ export function OAuthRedirectHandler() {
     let cancelled = false;
 
     const run = async () => {
+      if (!isFirebaseAuthReady()) return;
+
       try {
-        await resolveGoogleRedirectResult();
+        const { resolveGoogleRedirectResult } = await import("@/lib/google-auth");
+        if (cancelled) return;
+        const result = await resolveGoogleRedirectResult();
+        if (cancelled || !result) return;
       } catch (err) {
         if (cancelled) return;
         const message = prettyAuthError(err);
@@ -27,10 +33,13 @@ export function OAuthRedirectHandler() {
       }
     };
 
-    void run();
+    const timer = window.setTimeout(() => {
+      void run();
+    }, 0);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
     };
   }, [toast]);
 

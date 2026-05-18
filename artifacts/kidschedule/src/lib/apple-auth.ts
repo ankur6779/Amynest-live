@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core";
+import { isCapacitorNative } from "@/lib/capacitor-native";
 import {
   OAuthProvider,
   signInWithCredential,
@@ -23,8 +24,6 @@ import {
   prepareAppleWebNonce,
   APPLE_RAW_NONCE_STORAGE_KEY,
 } from "@/lib/apple-web-sdk";
-import { isCapacitorNative } from "@/lib/google-auth";
-
 const APPLE_TAG = "[amynest:apple-auth]";
 
 export {
