@@ -14,6 +14,7 @@ import { getLivePlanPrices } from "../services/rcPricingService";
 import { requireAuth } from "../middlewares/requireAuth";
 import { buildSubscriptionFallbackResponse } from "../lib/api-fallbacks.js";
 import { safeRoute } from "../lib/safe-route-handler.js";
+import { heavyRouteGuard } from "../middlewares/heavy-route-guard.js";
 import {
   createSubscription as rzpCreateSubscription,
   fetchSubscription as rzpFetchSubscription,
@@ -41,6 +42,7 @@ const router: IRouter = Router();
 router.get(
   "/subscription",
   requireAuth,
+  heavyRouteGuard("subscription"),
   safeRoute(
     "GET /subscription",
     async (req, res): Promise<void> => {

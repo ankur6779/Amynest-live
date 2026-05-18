@@ -10,8 +10,11 @@ import {
   DASHBOARD_SUMMARY_FALLBACK,
 } from "../lib/api-fallbacks.js";
 import { safeRoute } from "../lib/safe-route-handler.js";
+import { heavyRouteGuard } from "../middlewares/heavy-route-guard.js";
 
 const router: IRouter = Router();
+
+router.use(heavyRouteGuard("dashboard"));
 
 router.get(
   "/dashboard/summary",

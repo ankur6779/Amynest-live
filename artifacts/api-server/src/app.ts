@@ -31,6 +31,7 @@ app.use(limitJsonResponse);
 app.use(
   pinoHttp({
     logger,
+    autoLogging: process.env.NODE_ENV !== "production",
     serializers: {
       req(req) {
         return {

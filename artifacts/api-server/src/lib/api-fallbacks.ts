@@ -93,3 +93,14 @@ export const PARENT_PROFILE_FALLBACK = {
   freeSlots: [] as unknown[],
   fallback: true as const,
 };
+
+const DASHBOARD_INSIGHTS_FALLBACK = { insights: [], fallback: true as const };
+
+/** Static fallback when rate-limited / memory pressure and no cache. */
+export function getDashboardFallbackForPath(path: string): unknown {
+  if (path.includes("/dashboard/summary")) return DASHBOARD_SUMMARY_FALLBACK;
+  if (path.includes("/dashboard/recent-routines")) return DASHBOARD_RECENT_ROUTINES_FALLBACK;
+  if (path.includes("/dashboard/behavior-stats")) return DASHBOARD_BEHAVIOR_STATS_FALLBACK;
+  if (path.includes("/dashboard/insights")) return DASHBOARD_INSIGHTS_FALLBACK;
+  return DASHBOARD_SUMMARY_FALLBACK;
+}
