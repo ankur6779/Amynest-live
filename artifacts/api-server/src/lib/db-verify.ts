@@ -20,6 +20,7 @@ const CRITICAL_TABLES: readonly string[] = [
   "notification_preferences",
   "notification_log",
   "push_tokens",
+  "razorpay_webhook_events",
 ];
 
 export interface DbVerificationResult {

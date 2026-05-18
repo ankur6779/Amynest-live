@@ -1,5 +1,5 @@
 import { logger } from "../lib/logger.js";
-import { isProductionDeployment } from "../queue/mode.js";
+import { isProductionDeployment, isWorkerEnabled } from "../queue/mode.js";
 import { isBullMqActive } from "../queue/ai-job-queue.js";
 import { scheduleMemoryDrain, getMemoryQueueStats } from "../queue/memory-queue.js";
 
@@ -8,6 +8,14 @@ import { scheduleMemoryDrain, getMemoryQueueStats } from "../queue/memory-queue.
  * Production: set REDIS_URL + run `pnpm worker:start` as a separate Render service.
  */
 export function startEmbeddedAiWorker(): void {
+  if (!isWorkerEnabled()) {
+    logger.info(
+      { evt: "ai_worker.embedded_skipped", reason: "WORKER_ENABLED=false" },
+      "Embedded AI worker not started",
+    );
+    return;
+  }
+
   if (isProductionDeployment()) {
     return;
   }

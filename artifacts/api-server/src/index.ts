@@ -81,10 +81,18 @@ async function startBackgroundTasks(): Promise<void> {
   );
 
   if (isModuleEnabled("redis")) {
-    await runBackgroundPhase("queue_bootstrap", async () => {
-      const { bootstrapApiQueue } = await import("./queue/bootstrap.js");
-      return bootstrapApiQueue();
-    });
+    const { isWorkerEnabled } = await import("./queue/mode.js");
+    if (isWorkerEnabled()) {
+      await runBackgroundPhase("queue_bootstrap", async () => {
+        const { bootstrapApiQueue } = await import("./queue/bootstrap.js");
+        return bootstrapApiQueue();
+      });
+    } else {
+      logger.warn(
+        { evt: "boot.skip", module: "redis", reason: "WORKER_ENABLED=false" },
+        "Redis/BullMQ bootstrap SKIPPED — worker disabled",
+      );
+    }
   } else {
     logger.warn(
       { evt: "boot.skip", module: "redis" },
@@ -102,29 +110,34 @@ async function startBackgroundTasks(): Promise<void> {
         }
       });
     }
-    await runBackgroundPhase("ensure_push_tokens_table", async () => {
-      const { ensurePushTokensTable } = await import("./lib/ensurePushTokensTable.js");
-      return ensurePushTokensTable();
+    await runBackgroundPhase("ensure_startup_tables", async () => {
+      const { ensureStartupTables } = await import("./lib/ensureStartupTables.js");
+      return ensureStartupTables();
+    });
+    await runBackgroundPhase("phonics_word_bank_seed", async () => {
+      const { seedPhonicsWordBank } = await import("./lib/phonicsWordBankSeed.js");
+      return seedPhonicsWordBank();
     });
   } else {
     logger.warn(
       { evt: "boot.skip", module: "db" },
-      "DB verification + ensure_push_tokens_table SKIPPED",
+      "DB verification + ensure_startup_tables SKIPPED",
     );
   }
 
   if (isModuleEnabled("worker")) {
-    let bullMqActive = false;
-    try {
-      const { isBullMqActive } = await import("./queue/ai-job-queue.js");
-      bullMqActive = isBullMqActive();
-    } catch (err) {
-      logger.error(
-        { evt: "boot.bullmq_check_failed", err },
-        "Could not determine BullMQ mode; skipping embedded worker",
+    const { isWorkerEnabled, isBullMqActive } = await import("./queue/mode.js");
+    if (!isWorkerEnabled()) {
+      logger.info(
+        { evt: "boot.skip", module: "worker", reason: "WORKER_ENABLED=false" },
+        "Embedded AI worker SKIPPED",
       );
-    }
-    if (!bullMqActive) {
+    } else if (isBullMqActive()) {
+      logger.info(
+        { evt: "boot.skip", module: "worker", reason: "bullmq_external" },
+        "Embedded AI worker SKIPPED — BullMQ runs on worker service",
+      );
+    } else {
       await runBackgroundPhase("embedded_ai_worker", async () => {
         const { startEmbeddedAiWorker } = await import("./worker/ai-worker.js");
         return startEmbeddedAiWorker();
@@ -140,13 +153,11 @@ async function startBackgroundTasks(): Promise<void> {
       const { startWeeklyRecapCron } = await import("./lib/weeklyRecapCron.js");
       const { startNotificationCron } = await import("./lib/notificationCron.js");
       const { startRenderKeepWarm } = await import("./lib/render-keep-warm.js");
-      const { seedPhonicsWordBank } = await import("./lib/phonicsWordBankSeed.js");
 
       startRazorpayWebhookCleanup();
       startWeeklyRecapCron();
       startNotificationCron();
       startRenderKeepWarm(port);
-      void seedPhonicsWordBank();
       console.log("[bg:ok]", "crons");
       endBootPhase("crons");
     } catch (err) {

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 /**
  * Persistent log of Razorpay webhook event ids we have already processed.
@@ -11,6 +11,7 @@ import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
 export const razorpayWebhookEventsTable = pgTable("razorpay_webhook_events", {
   eventId: text("event_id").primaryKey(),
   eventType: text("event_type"),
+  payload: jsonb("payload"),
   receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

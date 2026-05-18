@@ -157,6 +157,8 @@ export function logBootProfile(): void {
       diagDbVerify: process.env["DIAG_DB_VERIFY"]?.trim() === "1",
       notificationsEnabled:
         process.env["NOTIFICATIONS_ENABLED"]?.trim().toLowerCase() !== "false",
+      workerEnabled: process.env["WORKER_ENABLED"] ?? "(default)",
+      redisUnstable: process.env["REDIS_UNSTABLE"]?.trim() === "1",
       pid: process.pid,
       node: process.version,
     },

@@ -57,6 +57,7 @@ export function getRedisUrl(): string | undefined {
   return url || undefined;
 }
 
+/** REDIS_URL is present on the host (may still be unused when WORKER_ENABLED=false). */
 export function isRedisQueueEnabled(): boolean {
   return !!getRedisUrl();
 }

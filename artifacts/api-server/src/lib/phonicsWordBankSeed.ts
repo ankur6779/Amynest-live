@@ -11,12 +11,36 @@
  * The insert uses `onConflictDoNothing` on the unique index
  * (age_group, level, symbol) so repeated startup calls are safe.
  *
- * Call `seedPhonicsWordBank()` once at server startup — it completes in
- * < 100 ms and is a no-op after the first successful run.
+ * Opt-in via `PHONICS_SEED_ENABLED=true` (off by default in production).
+ * Skips entirely when disabled. When enabled, checks the DB for an existing
+ * seed row before inserting so restarts do not re-run a bulk insert.
  */
 
 import { db, phonicsContentTable } from "@workspace/db";
+import { and, eq } from "drizzle-orm";
 import { logger } from "./logger";
+
+/** Explicit opt-in only — unset or `false` skips seeding (default for production). */
+export function isPhonicsSeedEnabled(): boolean {
+  const raw = process.env["PHONICS_SEED_ENABLED"]?.trim().toLowerCase();
+  return raw === "true" || raw === "1";
+}
+
+/** Sentinel row from CVC_EXTRA — present after the first successful seed. */
+async function isPhonicsWordBankAlreadySeeded(): Promise<boolean> {
+  const rows = await db
+    .select({ id: phonicsContentTable.id })
+    .from(phonicsContentTable)
+    .where(
+      and(
+        eq(phonicsContentTable.ageGroup, "3_4y"),
+        eq(phonicsContentTable.level, 20),
+        eq(phonicsContentTable.symbol, "rat"),
+      ),
+    )
+    .limit(1);
+  return rows.length > 0;
+}
 
 interface SeedRow {
   ageGroup: string;
@@ -117,12 +141,30 @@ const ALL_SEED_ROWS: SeedRow[] = [
   ...BLEND_WORDS_5_6Y,
 ];
 
-let seeded = false;
+/** One invocation per process — avoids repeat DB checks after skip/complete. */
+let seedAttempted = false;
 
 export async function seedPhonicsWordBank(): Promise<void> {
-  if (seeded) return;
-  seeded = true;
+  if (seedAttempted) return;
+  seedAttempted = true;
+
+  if (!isPhonicsSeedEnabled()) {
+    logger.info(
+      { evt: "phonics.seed.skipped", reason: "PHONICS_SEED_ENABLED" },
+      "Phonics word bank seed skipped (set PHONICS_SEED_ENABLED=true to enable)",
+    );
+    return;
+  }
+
   try {
+    if (await isPhonicsWordBankAlreadySeeded()) {
+      logger.info(
+        { evt: "phonics.seed.skipped", reason: "already_seeded" },
+        "Phonics word bank seed skipped — seed rows already in database",
+      );
+      return;
+    }
+
     await db
       .insert(phonicsContentTable)
       .values(
