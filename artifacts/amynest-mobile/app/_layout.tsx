@@ -4,7 +4,7 @@ import { loadTutorialStatus, subscribeTutorialStatus, getTutorialStatus } from "
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -31,6 +31,7 @@ import { useOfflineSyncBootstrap } from "@/hooks/useOfflineSync";
 import { useSubscriptionBootstrap } from "@/hooks/useSubscription";
 import { usePushRegistration } from "@/hooks/usePushRegistration";
 import { useNotificationDeepLink } from "@/hooks/useNotificationDeepLink";
+import { isSetupComplete, useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import "@/i18n";
 import { brand } from "@/constants/colors";
 import { initCrashReporter } from "@/utils/crashReporter";
@@ -76,16 +77,20 @@ const queryClient = new QueryClient({
 
 setBaseUrl(API_BASE_URL);
 
-type OnboardingStatus = "unknown" | "checking" | "complete" | "incomplete" | "error";
 type TutorialStatus = "checking" | "needed" | "done";
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded, getToken } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>("unknown");
   const [tutorialStatus, setTutorialStatus] = useState<TutorialStatus>(() => getTutorialStatus());
-  const checkInFlightRef = useRef(false);
+  const {
+    data: setupData,
+    isLoading: setupLoading,
+    isFetching: setupFetching,
+    isError: setupError,
+    refetch: refetchSetup,
+  } = useOnboardingStatus(isSignedIn && isLoaded);
 
   // First-launch tutorial: subscribe so completion (markTutorialSeen) immediately
   // updates the gate and AuthGate stops forcing /tutorial.
@@ -117,30 +122,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   // Hidden component — captures `?ref=CODE` from deep links and submits to API.
   // Rendering inline keeps it inside the QueryClient + ClerkProvider tree.
 
-  const checkOnboardingStatus = useCallback(async (): Promise<"complete" | "incomplete"> => {
-    if (checkInFlightRef.current || !getToken) return "incomplete";
-    checkInFlightRef.current = true;
-    setOnboardingStatus("checking");
-    try {
-      const token = await getToken();
-      const res = await fetch(`${API_BASE_URL}/api/onboarding`, {
-        headers: { Authorization: `Bearer ${token ?? ""}` },
-      });
-      if (!res.ok) {
-        setOnboardingStatus("incomplete");
-        return "incomplete";
-      }
-      const data = (await res.json()) as { onboardingComplete?: boolean };
-      const result: "complete" | "incomplete" = data?.onboardingComplete === true ? "complete" : "incomplete";
-      setOnboardingStatus(result);
-      return result;
-    } catch {
-      setOnboardingStatus("error");
-      return "incomplete";
-    } finally {
-      checkInFlightRef.current = false;
-    }
-  }, [getToken]);
+  const setupComplete = isSetupComplete(setupData);
+  const setupPending =
+    isSignedIn && setupLoading && setupData === undefined && !setupError;
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -164,45 +148,46 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (onboardingStatus === "unknown" || onboardingStatus === "error") {
-      // Kick off the check — navigation is handled by the state-driven blocks
-      // below once onboardingStatus settles to "complete" / "incomplete".
-      // Do NOT call router.replace inside this .then(): the navigator (Stack)
-      // may not be mounted yet because isAuthTransition hides children while
-      // onboardingStatus is "unknown" / "checking". Navigating before the
-      // navigator is mounted produces the "+not-found / This screen doesn't exist" error.
-      checkOnboardingStatus().catch(() => {});
+    if (setupPending) return;
+
+    if (setupError) {
+      if (!inOnboarding && !inAuth && !inWelcome) {
+        void refetchSetup();
+      }
       return;
     }
 
-    if (onboardingStatus === "checking") return;
-
-    if (onboardingStatus === "incomplete") {
-      if (inTabsGroup) {
-        // Re-verify so a post-onboarding reload doesn't get stuck
-        checkOnboardingStatus().catch(() => {});
-      } else if (!inOnboarding) {
+    if (!setupComplete) {
+      if (inTabsGroup && setupFetching) return;
+      if (!inOnboarding) {
         router.replace("/onboarding");
       }
       return;
     }
 
-    if (onboardingStatus === "complete") {
-      if (inAuth || inOnboarding || inWelcome) {
-        router.replace("/(tabs)");
-      }
+    if (inAuth || inOnboarding || inWelcome) {
+      router.replace("/(tabs)");
     }
-  }, [isLoaded, isSignedIn, segments, onboardingStatus, tutorialStatus]);
+  }, [
+    isLoaded,
+    isSignedIn,
+    segments,
+    setupComplete,
+    setupPending,
+    setupError,
+    setupFetching,
+    tutorialStatus,
+    router,
+    refetchSetup,
+  ]);
 
   useEffect(() => {
     if (!isSignedIn) {
       queryClient.clear();
-      setOnboardingStatus("unknown");
-      checkInFlightRef.current = false;
     }
   }, [isSignedIn]);
 
-  const isCheckingOnboarding = isSignedIn && (onboardingStatus === "unknown" || onboardingStatus === "checking");
+  const isCheckingOnboarding = setupPending;
   const isAuthTransition = !isLoaded || isCheckingOnboarding || tutorialStatus === "checking";
 
   const c = useColors();

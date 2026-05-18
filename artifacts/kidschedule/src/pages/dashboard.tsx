@@ -14,6 +14,7 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
 import { getTotalPoints, getBadges, getRewards, redeemReward, type Reward } from "@/lib/rewards";
+import { routineDateKey, routineItems } from "@/lib/routines";
 const POLL_INTERVAL_MS = 30_000;
 type RoutineItem = {
   time: string;
@@ -49,7 +50,7 @@ function parseTimeToMinutes(t: string): number {
 function computeStreak(routines: Routine[]): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const dateSet = new Set(routines.map(r => r.date.slice(0, 10)));
+  const dateSet = new Set(routines.map(r => routineDateKey(r)).filter(Boolean));
   let streak = 0;
   while (true) {
     const d = new Date(today);
@@ -523,7 +524,7 @@ function NowNextTimeline({
     t
   } = useTranslation();
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todayRoutines = routines.filter(r => r.date.slice(0, 10) === todayStr);
+  const todayRoutines = routines.filter(r => routineDateKey(r) === todayStr);
   if (todayRoutines.length === 0) {
     return <Card className="rounded-2xl border-2 border-dashed border-border bg-card">
         <CardContent className="p-6 text-center space-y-3">
@@ -541,7 +542,7 @@ function NowNextTimeline({
   }
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const allItems = todayRoutines.flatMap(r => r.items.map(item => ({
+  const allItems = todayRoutines.flatMap(r => routineItems(r).map(item => ({
     ...item,
     childName: r.childName,
     routineId: r.id
@@ -698,8 +699,8 @@ function AmySuggestionCard({
     t
   } = useTranslation();
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todayRoutines = routines.filter(r => r.date.slice(0, 10) === todayStr);
-  const allItems = todayRoutines.flatMap(r => r.items);
+  const todayRoutines = routines.filter(r => routineDateKey(r) === todayStr);
+  const allItems = todayRoutines.flatMap(r => routineItems(r));
   const total = allItems.length;
   const completed = allItems.filter(i => i.status === "completed").length;
   const pct = total > 0 ? Math.round(completed / total * 100) : 0;
@@ -775,8 +776,8 @@ function ParentScoreCard({
     t
   } = useTranslation();
   const last7 = routines.slice(0, 7);
-  const totalItems = last7.flatMap(r => r.items).length;
-  const completedItems = last7.flatMap(r => r.items).filter(i => i.status === "completed").length;
+  const totalItems = last7.flatMap(r => routineItems(r)).length;
+  const completedItems = last7.flatMap(r => routineItems(r)).filter(i => (i as RoutineItem).status === "completed").length;
   const completionRate = totalItems > 0 ? Math.round(completedItems / totalItems * 100) : 0;
   const daysActive = last7.length;
   const streakBonus = Math.min(streak * 5, 30);
@@ -1217,7 +1218,7 @@ export default function Dashboard() {
                 <Skeleton className="h-16 w-full rounded-xl" />
               </div> : routines && routines.length > 0 ? <div className="divide-y divide-border/50">
                 {routines.map(routine => {
-              const items = routine.items as RoutineItem[];
+              const items = routineItems(routine) as RoutineItem[];
               const done = items.filter(i => i.status === "completed").length;
               const pct = items.length > 0 ? Math.round(done / items.length * 100) : 0;
               return <Link key={routine.id} href={`/routines/${routine.id}`} className="block hover:bg-muted/30 transition-colors p-4 group">
