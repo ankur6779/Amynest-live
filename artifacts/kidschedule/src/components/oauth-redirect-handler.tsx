@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { isFirebaseAuthReady } from "@/lib/firebase";
 import { prettyAuthError } from "@/lib/auth-errors";
 import { useToast } from "@/hooks/use-toast";
+import { ENABLE_OAUTH_SIGN_IN } from "@/lib/auth-feature-flags";
 
 /**
  * Completes Google sign-in after Firebase redirect (web/PWA only).
@@ -11,6 +12,7 @@ export function OAuthRedirectHandler() {
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!ENABLE_OAUTH_SIGN_IN) return;
     let cancelled = false;
 
     const run = async () => {

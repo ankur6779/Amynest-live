@@ -109,6 +109,7 @@
     "@workspace/load-forecast": "workspace:*",
     "@workspace/morning-flow": "workspace:*",
     "@workspace/olympiad": "workspace:*",
+    "@workspace/phone-auth": "workspace:*",
     "@workspace/parenting-articles": "workspace:*",
     "@workspace/ptm-prep": "workspace:*",
     "@workspace/speech-coach": "workspace:*",
