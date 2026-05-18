@@ -1,24 +1,51 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, afterEach } from "vitest";
 import {
-  CANONICAL_PRODUCTION_HOST,
+  redirectApexToCanonicalWww,
   CANONICAL_PRODUCTION_ORIGIN,
-  getCanonicalWebOrigin,
-  shouldRedirectWwwToApex,
 } from "./site-domain";
 
-describe("site-domain", () => {
-  it("flags www for apex redirect", () => {
-    expect(shouldRedirectWwwToApex("www.amynest.in")).toBe(true);
-    expect(shouldRedirectWwwToApex("amynest.in")).toBe(false);
-    expect(shouldRedirectWwwToApex("localhost")).toBe(false);
+describe("redirectApexToCanonicalWww", () => {
+  const originalLocation = window.location;
+
+  afterEach(() => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: originalLocation,
+    });
   });
 
-  it("returns apex origin for production hosts", () => {
-    expect(getCanonicalWebOrigin()).toBe(CANONICAL_PRODUCTION_ORIGIN);
+  it("redirects bare apex to www with path and query", () => {
+    let replaced: string | undefined;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: {
+        hostname: "amynest.in",
+        pathname: "/sign-in",
+        search: "?x=1",
+        hash: "#top",
+        replace: (url: string) => {
+          replaced = url;
+        },
+      },
+    });
+
+    expect(redirectApexToCanonicalWww()).toBe(true);
+    expect(replaced).toBe(`${CANONICAL_PRODUCTION_ORIGIN}/sign-in?x=1#top`);
   });
 
-  it("uses consistent canonical host constant", () => {
-    expect(CANONICAL_PRODUCTION_HOST).toBe("amynest.in");
-    expect(CANONICAL_PRODUCTION_ORIGIN).toBe("https://amynest.in");
+  it("no-op on www", () => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: {
+        hostname: "www.amynest.in",
+        pathname: "/dashboard",
+        search: "",
+        hash: "",
+        replace: () => {
+          throw new Error("should not redirect");
+        },
+      },
+    });
+    expect(redirectApexToCanonicalWww()).toBe(false);
   });
 });

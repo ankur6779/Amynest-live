@@ -1,11 +1,12 @@
 import {
-  CANONICAL_PRODUCTION_HOST,
   CANONICAL_PRODUCTION_ORIGIN,
   isAmyNestProductionHost,
+  redirectApexToCanonicalWww,
 } from "@/lib/canonical-domain";
 
 const ALLOWED_HOSTS = new Set([
-  CANONICAL_PRODUCTION_HOST,
+  "www.amynest.in",
+  "amynest.in",
   "localhost",
   "127.0.0.1",
   "amynest-live-1.onrender.com",
@@ -18,9 +19,11 @@ export function isAllowedAppHostname(hostname: string): boolean {
   return false;
 }
 
-/** Block render only for unexpected hosts — www and apex are both OK. */
+/** Redirect apex → www; block unexpected hosts. */
 export function enforceProductionDomain(): "ok" | "redirecting" {
   if (typeof window === "undefined") return "ok";
+
+  if (redirectApexToCanonicalWww()) return "redirecting";
 
   const { hostname, pathname, search, hash } = window.location;
 

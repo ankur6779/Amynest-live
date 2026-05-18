@@ -1,11 +1,25 @@
 import express, { type Express } from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { sendSafeError } from "./lib/safe-api-response";
+import { APEX_PRODUCTION_HOST } from "./lib/canonical-host";
+import { slowApiGuard } from "./middlewares/slow-api-guard";
 
 const app: Express = express();
+
+/** Bare apex → canonical www (matches SPA + Cloudflare). */
+app.use((req, res, next) => {
+  if (req.hostname === APEX_PRODUCTION_HOST) {
+    return res.redirect(301, `https://www.amynest.in${req.originalUrl}`);
+  }
+  next();
+});
+
+app.use(cookieParser());
+app.use(slowApiGuard);
 
 app.use((req, _res, next) => {
   console.log(`${req.method} ${req.path}`);

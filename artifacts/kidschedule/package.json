@@ -11,7 +11,8 @@
     "serve:spa": "node server/serve-spa.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --config vitest.config.ts",
-    "test:e2e": "playwright test --config playwright.config.ts"
+    "test:e2e": "playwright test --config playwright.config.ts",
+    "test:stress": "playwright test --config playwright.config.stress.ts"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",

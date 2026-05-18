@@ -7,7 +7,7 @@
  * URL matches what you should set in Firebase so preview + SDK sends stay aligned.
  * The `mode` query param (verifyEmail | resetPassword) routes to the right page.
  */
-export const CANONICAL_FIREBASE_ACTION_URL = "https://amynest.in/auth/action";
+export const CANONICAL_FIREBASE_ACTION_URL = "https://www.amynest.in/auth/action";
 
 export function getFirebaseActionUrlForLocalDev(): string {
   if (typeof window !== "undefined" && window.location?.hostname) {
@@ -15,7 +15,6 @@ export function getFirebaseActionUrlForLocalDev(): string {
     if (hostname === "localhost" || hostname === "127.0.0.1") {
       return `${origin}/auth/action`;
     }
-    // Never use www for ActionCodeSettings — apex only.
     if (hostname === "amynest.in" || hostname === "www.amynest.in") {
       return CANONICAL_FIREBASE_ACTION_URL;
     }

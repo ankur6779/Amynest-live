@@ -32,6 +32,7 @@ import { FirebaseActionGate } from "@/components/firebase-action-gate";
 import { AuthBootShell } from "@/components/auth-boot-shell";
 import { AppFallbackUi } from "@/components/app-fallback-ui";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
+import { SafeRoutePage } from "@/components/safe-route-page";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { ApiRetryShell } from "@/components/api-retry-shell";
 import { ProductionAppShell } from "@/components/production-app-shell";
@@ -275,9 +276,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   return (
     <AppErrorBoundary label="Layout">
       <Layout>
-        <AppErrorBoundary label="Page">
-          <Component />
-        </AppErrorBoundary>
+        <SafeRoutePage component={Component} label="ProtectedPage" />
       </Layout>
     </AppErrorBoundary>
   );
@@ -293,6 +292,25 @@ function FirebaseAuthBootstrap() {
       setAuthTokenGetter(null);
     }
   }, [isSignedIn, getToken]);
+
+  return null;
+}
+
+function ClientTelemetryBootstrap() {
+  const authFetch = useAuthFetch();
+  const { isSignedIn } = useAuth();
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const flush = () => {
+      void import("@/lib/client-logs").then(({ flushClientLogs }) =>
+        flushClientLogs(authFetch),
+      );
+    };
+    flush();
+    const id = setInterval(flush, 30_000);
+    return () => clearInterval(id);
+  }, [authFetch, isSignedIn]);
 
   return null;
 }
@@ -384,6 +402,7 @@ function AppRoutes() {
             <ReactMountMarker />
             <NativeApiBaseUrlBootstrap />
             <FirebaseAuthBootstrap />
+            <ClientTelemetryBootstrap />
             <OAuthRedirectHandler />
             <QueryClientCacheInvalidator />
             <ReferralAttributionBridge />

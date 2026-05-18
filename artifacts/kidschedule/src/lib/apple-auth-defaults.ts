@@ -32,7 +32,7 @@ export function getAppleRedirectUri(): string {
   if (fromEnv) return fromEnv;
 
   if (typeof window === "undefined") {
-    return `https://amynest.in${appleAuthDefaults.redirectPath}`;
+    return `https://www.amynest.in${appleAuthDefaults.redirectPath}`;
   }
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   const path = appleAuthDefaults.redirectPath.replace(/^\//, "");
