@@ -1,12 +1,17 @@
-import { describe, expect, it } from "vitest";
-import {
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+process.env.DATABASE_URL ??=
+  "postgresql://localhost:5432/amynest_test?connect_timeout=1";
+
+const {
   COACH_INITIAL_WINS,
   COACH_TOTAL_WINS,
   mergeCoachPlan,
   validatePartialPlan,
   validatePlan,
   validateWin,
-} from "./coachWinGenerationService.js";
+} = await import("./coachWinGenerationService.js");
 
 const sampleWin = (n: number) => ({
   win: n,
@@ -29,8 +34,8 @@ describe("coachWinGenerationService", () => {
       summary: "summary",
       wins: [sampleWin(1), sampleWin(2)],
     };
-    expect(validatePartialPlan(plan)).toBe(true);
-    expect(validatePlan(plan)).toBe(false);
+    assert.equal(validatePartialPlan(plan), true);
+    assert.equal(validatePlan(plan), false);
   });
 
   it("mergeCoachPlan produces 12 numbered wins", () => {
@@ -41,12 +46,13 @@ describe("coachWinGenerationService", () => {
       initial,
       remaining,
     );
-    expect(merged.wins).toHaveLength(COACH_TOTAL_WINS);
-    expect(merged.wins.every(validateWin)).toBe(true);
-    expect(merged.wins.map((w) => w.win)).toEqual(
+    assert.equal(merged.wins.length, COACH_TOTAL_WINS);
+    assert.equal(merged.wins.every(validateWin), true);
+    assert.deepEqual(
+      merged.wins.map((w) => w.win),
       Array.from({ length: COACH_TOTAL_WINS }, (_, i) => i + 1),
     );
-    expect(merged.wins[0]!.win).toBe(1);
-    expect(merged.wins[COACH_INITIAL_WINS]!.win).toBe(COACH_INITIAL_WINS + 1);
+    assert.equal(merged.wins[0]!.win, 1);
+    assert.equal(merged.wins[COACH_INITIAL_WINS]!.win, COACH_INITIAL_WINS + 1);
   });
 });
