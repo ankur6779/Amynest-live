@@ -48,6 +48,10 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=400 --expose-gc"
+      - key: MEMORY_LIMIT_MB
+        value: "512"
       - key: AMYNEST_ENV
         value: production
       - key: API_PUBLIC_URL
@@ -86,6 +90,10 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=400 --expose-gc"
+      - key: MEMORY_LIMIT_MB
+        value: "512"
       - key: AMYNEST_ENV
         value: production
       - key: DATABASE_URL
@@ -121,6 +129,10 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=400 --expose-gc"
+      - key: MEMORY_LIMIT_MB
+        value: "512"
       - key: AMYNEST_ENV
         value: development
       - key: API_PUBLIC_URL
