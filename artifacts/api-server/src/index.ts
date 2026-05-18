@@ -13,6 +13,7 @@ import {
   failBootPhase,
   getEnabledModules,
   getLastSuccessfulBootPhase,
+  isBackgroundTasksEnabled,
   isMinimalBoot,
   isModuleEnabled,
   logBootProfile,
@@ -72,6 +73,15 @@ async function runBackgroundPhase(
 async function startBackgroundTasks(): Promise<void> {
   if (isMinimalBoot()) {
     logger.info({ evt: "background.skipped" }, "MINIMAL_BOOT=1 — no background tasks");
+    return;
+  }
+
+  if (!isBackgroundTasksEnabled()) {
+    console.log("[bg] skipped (disabled)");
+    logger.info(
+      { evt: "background.skipped", reason: "BACKGROUND_TASKS_ENABLED=false" },
+      "All background tasks skipped — zero post-listen load",
+    );
     return;
   }
 
@@ -199,6 +209,9 @@ async function startServer(): Promise<void> {
     "BOOT_MODULES:",
     isMinimalBoot() ? "(minimal — health only)" : enabled.length ? enabled.join(",") : "(none)",
   );
+  if (!isBackgroundTasksEnabled()) {
+    console.log("BACKGROUND_TASKS: disabled");
+  }
 
   armListenDeadline();
 

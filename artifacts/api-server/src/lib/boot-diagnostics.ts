@@ -1,4 +1,5 @@
 import { logger } from "./logger";
+import { resolveAmynestEnv } from "./loadEnv.js";
 import { getMemorySnapshot } from "../utils/memory-monitor.js";
 
 /**
@@ -12,6 +13,7 @@ import { getMemorySnapshot } from "../utils/memory-monitor.js";
  *   DIAG_LISTEN_DEADLINE_MS=8000 — warn if app.listen has not fired by this deadline
  *   MINIMAL_BOOT=1            — skip cron, worker, route mounting except /health
  *   BOOT_MODULES=db,redis,...  — explicit allowlist for binary-search debugging
+ *   BACKGROUND_TASKS_ENABLED=false — skip all post-listen background work
  *
  * Nothing here imports DB or Redis at module load — safe in any environment.
  */
@@ -137,6 +139,17 @@ export function isMinimalBoot(): boolean {
   return process.env["MINIMAL_BOOT"]?.trim() === "1";
 }
 
+/**
+ * Post-listen background work (DB ensures, crons, queue bootstrap, seeds).
+ * Default: on in development, off in production unless explicitly enabled.
+ */
+export function isBackgroundTasksEnabled(): boolean {
+  const raw = process.env["BACKGROUND_TASKS_ENABLED"]?.trim().toLowerCase();
+  if (raw === "true" || raw === "1" || raw === "on" || raw === "yes") return true;
+  if (raw === "false" || raw === "0" || raw === "off" || raw === "no") return false;
+  return resolveAmynestEnv() !== "production";
+}
+
 export function isModuleEnabled(module: BootModule): boolean {
   return moduleMask.has(module);
 }
@@ -158,6 +171,7 @@ export function logBootProfile(): void {
       notificationsEnabled:
         process.env["NOTIFICATIONS_ENABLED"]?.trim().toLowerCase() !== "false",
       workerEnabled: process.env["WORKER_ENABLED"] ?? "(default)",
+      backgroundTasksEnabled: isBackgroundTasksEnabled(),
       redisUnstable: process.env["REDIS_UNSTABLE"]?.trim() === "1",
       pid: process.pid,
       node: process.version,
