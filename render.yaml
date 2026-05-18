@@ -84,8 +84,10 @@ services:
       corepack enable &&
       corepack prepare pnpm@9.15.0 --activate &&
       NODE_ENV=development pnpm install --frozen-lockfile &&
-      pnpm --filter @workspace/api-server build
-    startCommand: pnpm --filter @workspace/api-server worker:start
+      pnpm --filter @workspace/api-server build &&
+      test -f artifacts/api-server/dist/worker/index.mjs
+    # Build again at start: dist/ is gitignored and must exist before node runs the bundle.
+    startCommand: bash scripts/render-ai-worker-start.sh
     envVars:
       - key: NODE_VERSION
         value: "20"

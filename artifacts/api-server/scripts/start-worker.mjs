@@ -12,17 +12,25 @@ const pkgDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const workerBundle = path.join(pkgDir, "dist/worker/index.mjs");
 
 async function ensureBundle() {
-  try {
-    await access(workerBundle);
-    return;
-  } catch {
-    console.error(`[worker] Bundle missing at ${workerBundle} — running build…`);
+  const mustBuild =
+    process.env.RENDER === "true" ||
+    process.env.AMYNEST_FORCE_WORKER_BUILD === "1";
+
+  if (!mustBuild) {
+    try {
+      await access(workerBundle);
+      return;
+    } catch {
+      console.error(`[worker] Bundle missing at ${workerBundle} — running build…`);
+    }
+  } else {
+    console.info(`[worker] Building bundle (${mustBuild ? "Render deploy" : "forced"})…`);
   }
 
   const build = spawnSync(process.execPath, ["./build.mjs"], {
     cwd: pkgDir,
     stdio: "inherit",
-    env: process.env,
+    env: { ...process.env, NODE_ENV: "development" },
   });
   if (build.status !== 0) {
     process.exit(build.status ?? 1);
