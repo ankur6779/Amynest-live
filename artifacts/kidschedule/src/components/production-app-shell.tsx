@@ -1,5 +1,4 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { BootDebugOverlay } from "@/components/boot-debug-overlay";
 import { RedirectLoopGuard } from "@/components/redirect-loop-guard";
 import { AuthBootShell } from "@/components/auth-boot-shell";
 import { AppFallbackUi } from "@/components/app-fallback-ui";
@@ -51,13 +50,12 @@ function FirebaseInitGate({ children }: Props) {
 }
 
 /**
- * Outermost shell: debug overlay, domain, Firebase init, redirect-loop guard.
+ * Outermost shell: domain gate, Firebase init, redirect-loop guard.
  * Renders BEFORE route/auth providers.
  */
 export function ProductionAppShell({ children }: Props) {
   return (
     <>
-      <BootDebugOverlay />
       <DomainGate>
       <FirebaseInitGate>
         <RedirectLoopGuard>{children}</RedirectLoopGuard>

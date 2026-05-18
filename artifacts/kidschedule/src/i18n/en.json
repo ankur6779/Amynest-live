@@ -181,6 +181,8 @@
     "create_account": "Create account",
     "sign_up_subtitle": "Start your AI parenting journey",
     "continue_with_google": "Continue with Google",
+    "continue_with_apple": "Continue with Apple",
+    "apple_sign_in_failed": "Apple sign-in failed. Please try again.",
     "connecting": "Connecting…",
     "or_email": "or sign in with email",
     "or_email_signup": "or sign up with email",

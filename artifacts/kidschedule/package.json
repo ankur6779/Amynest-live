@@ -89,10 +89,12 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@capacitor-community/apple-sign-in": "^6.0.0",
     "@capacitor/app": "^6.0.0",
     "@capacitor/core": "^6.2.0",
     "@capacitor/geolocation": "^6.1.1",
     "@capacitor/push-notifications": "^6.0.0",
+    "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "@workspace/age-content": "workspace:*",
     "@workspace/audio-lessons": "workspace:*",
     "@workspace/behavior-tracker": "workspace:*",
@@ -108,7 +110,6 @@
     "@workspace/morning-flow": "workspace:*",
     "@workspace/olympiad": "workspace:*",
     "@workspace/parenting-articles": "workspace:*",
-    "@workspace/phone-auth": "workspace:*",
     "@workspace/ptm-prep": "workspace:*",
     "@workspace/speech-coach": "workspace:*",
     "@workspace/study-zone": "workspace:*",

@@ -6,8 +6,8 @@ import { firebaseAuth } from "@/lib/firebase";
 import { sendUserEmailVerification } from "@/lib/email-verification";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError, stashVerificationSendError, logFirebaseAuthError } from "@/lib/auth-errors";
-import PhoneAuthFlow from "@/components/phone-auth-flow";
-import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
+import { AppleSignInButton } from "@/components/apple-sign-in-button";
 
 // ── Animation keyframes (same classes as sign-in — CSS idempotent in SPA) ────
 const SIGN_UP_CSS = `
@@ -389,13 +389,9 @@ export default function SignUpPage() {
         {t("screens.sign_up.subtitle")}
       </p>
 
-      {/* Phone OTP */}
-      <div className="su-phone-wrapper">
-        <PhoneRecaptchaPreload />
-        <PhoneAuthFlow onError={msg => setError(msg)} />
-      </div>
+      <GoogleSignInButton onError={msg => setError(msg)} />
+      <AppleSignInButton onError={msg => setError(msg)} />
 
-      {/* Divider */}
       <div style={{
       display: "flex",
       alignItems: "center",

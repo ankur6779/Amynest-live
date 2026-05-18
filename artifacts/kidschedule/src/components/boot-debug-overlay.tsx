@@ -4,14 +4,14 @@ import {
   subscribeBootDiagnostics,
   syncBootRoute,
 } from "@/lib/boot-store";
+import { SHOW_BOOT_HUD } from "@/lib/is-dev";
 
 function currentPathname(): string {
   if (typeof window === "undefined") return "/";
   return `${window.location.pathname}${window.location.search}`;
 }
 
-/** Visible production debug panel — fixed on top, before route matching. */
-export function BootDebugOverlay() {
+function BootDebugOverlayDev() {
   const [route, setRoute] = useState(currentPathname);
   const [diag, setDiag] = useState(getBootDiagnostics);
 
@@ -101,4 +101,9 @@ export function BootDebugOverlay() {
       ) : null}
     </div>
   );
+}
+
+/** Dev-only boot diagnostics HUD (stripped from production bundles). */
+export function BootDebugOverlay() {
+  return SHOW_BOOT_HUD ? <BootDebugOverlayDev /> : null;
 }

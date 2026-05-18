@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AmyNest</string>
+    <string name="title_activity_main">AmyNest</string>
+    <string name="package_name">com.amynest.app</string>
+    <string name="custom_url_scheme">com.amynest.app</string>
+    <!-- Web OAuth client — required for @codetrix-studio/capacitor-google-auth on Android -->
+    <string name="server_client_id">573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com</string>
+</resources>

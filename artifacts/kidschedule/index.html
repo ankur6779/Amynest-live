@@ -266,10 +266,7 @@
             r["t_" + phase] = Date.now() - r.ts;
             localStorage.setItem(KEY, JSON.stringify(r));
           } catch (_e) {}
-          try {
-            var hud = document.getElementById("amynest-preboot-hud");
-            if (hud) hud.textContent = "boot: " + phase + " | host: " + location.hostname;
-          } catch (_e2) {}
+          /* preboot HUD removed — dev-only React HUD when import.meta.env.DEV */
         };
 
         window.__amynestShowBootFailed = function (message) {
@@ -387,19 +384,6 @@
         padding: 0;
       }
 
-      #amynest-preboot-hud {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 100001;
-        padding: 6px 10px;
-        font: 10px/1.4 ui-monospace, Menlo, monospace;
-        color: #e8e0ff;
-        background: rgba(8, 4, 20, 0.94);
-        border-bottom: 1px solid rgba(168,85,247, 0.45);
-        pointer-events: none;
-      }
       #root.amynest-boot-failed {
         min-height: 100vh;
         display: flex;
@@ -1039,13 +1023,6 @@
     </script>
   </head>
   <body>
-    <div id="amynest-preboot-hud" aria-live="polite">boot: html | host: …</div>
-    <script>
-      (function () {
-        var hud = document.getElementById("amynest-preboot-hud");
-        if (hud) hud.textContent = "boot: html | host: " + location.hostname;
-      })();
-    </script>
     <!-- ── Splash (shown immediately, dismissed after React mounts) ── -->
     <div id="splash" role="status" aria-label="Loading AmyNest AI…">
       <div class="splash-waves" aria-hidden="true"></div>
@@ -1092,7 +1069,6 @@
     </div>
 
     <div id="root"></div>
-    <div id="recaptcha-container"></div>
     <!-- Vite rewrites src to /assets/index-*.js at build time — do not load dynamically. -->
     <script type="module" crossorigin id="amynest-entry" src="/src/main.tsx"></script>
     <script>
