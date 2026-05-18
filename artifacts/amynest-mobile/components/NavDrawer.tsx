@@ -103,9 +103,25 @@ export function NavDrawer() {
   }, [isOpen, slideX, backdropOpacity]);
 
   const handleNav = (route: string) => {
-    if (Platform.OS !== "web") Haptics.selectionAsync();
-    closeDrawer();
-    setTimeout(() => router.push(route as never), 10);
+    try {
+      if (Platform.OS !== "web") Haptics.selectionAsync();
+      closeDrawer();
+      if (!route) return;
+      const nav = () => {
+        try {
+          router.push(route as never);
+        } catch (err) {
+          console.error("[amynest:nav] drawer route failed", route, err);
+        }
+      };
+      if (typeof setTimeout !== "undefined") {
+        setTimeout(nav, 10);
+      } else {
+        nav();
+      }
+    } catch (err) {
+      console.error("[amynest:nav] handleNav failed", err);
+    }
   };
 
   const handleSignOut = async () => {
@@ -115,9 +131,12 @@ export function NavDrawer() {
     await signOut();
   };
 
-  const displayName = user?.firstName || user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] || "Parent";
-  const email = user?.emailAddresses?.[0]?.emailAddress || "";
-  const initials = displayName.slice(0, 2).toUpperCase();
+  const displayName =
+    user?.firstName ||
+    user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] ||
+    "Parent";
+  const email = user?.emailAddresses?.[0]?.emailAddress ?? "";
+  const initials = (displayName || "P").slice(0, 2).toUpperCase();
   const tierLabel = isPremium ? "SMART PARENT" : "FREE PLAN";
 
   const { t } = useTranslation();

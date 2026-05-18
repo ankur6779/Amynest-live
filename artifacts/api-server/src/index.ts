@@ -2,6 +2,9 @@ import { logAmynestEnvironment } from "./lib/loadEnv";
 import app from "./app";
 import { logStartupEnvDiagnostics } from "./lib/env";
 import { logger } from "./lib/logger";
+import { registerProcessErrorHandlers } from "./utils/async-errors.js";
+import { startMemoryMonitor } from "./utils/memory-monitor.js";
+import { startEmbeddedAiWorker } from "./worker/ai-worker.js";
 import { startRazorpayWebhookCleanup } from "./lib/razorpayWebhookCleanup";
 import { startWeeklyRecapCron } from "./lib/weeklyRecapCron";
 import { startNotificationCron } from "./lib/notificationCron";
@@ -21,6 +24,10 @@ const port = Number(rawPort);
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
+
+registerProcessErrorHandlers();
+startMemoryMonitor();
+startEmbeddedAiWorker();
 
 app.listen(port, (err) => {
   if (err) {

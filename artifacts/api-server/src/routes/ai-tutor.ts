@@ -10,8 +10,9 @@ import {
   childrenTable,
   type Child,
 } from "@workspace/db";
-import { openai } from "@workspace/integrations-openai-ai-server";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
+import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
+import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
 import { incrementFeatureUsage } from "../services/subscriptionService.js";
 
 /**
@@ -271,104 +272,104 @@ router.post("/ai-tutor/chat", aiUsageGate, async (req, res): Promise<void> => {
     );
   }
 
-  // ── L2: OpenAI ────────────────────────────────────────────────────────
-  // Track whether we end up returning a degraded fallback so we can refund
-  // the user's daily AI quota — featureGate's auto-refund only fires on
-  // non-2xx responses, but we always send 200 with a "be back soon" reply
-  // (architect flag).
-  let usedFallback = false;
-  let reply: TutorJson;
-  try {
-    const historyMessages = (body.history ?? []).slice(-6).map((h) => ({
-      role: (h.role === "tutor" ? "assistant" : "user") as "assistant" | "user",
-      content: h.text,
-    }));
-    const completion = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        {
-          role: "system",
-          content: buildSystemPrompt({
-            mode: body.mode,
-            ageBand,
-            subject: body.subject,
-            topic,
-            childName,
-          }),
-        },
-        ...historyMessages,
-        { role: "user", content: body.message },
-      ],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 600,
-      temperature: body.mode === "quiz" ? 0.3 : 0.6,
-    });
+  const historyMessages = (body.history ?? []).slice(-6).map((h) => ({
+    role: (h.role === "tutor" ? "assistant" : "user") as "assistant" | "user",
+    content: h.text,
+  }));
 
-    const raw = completion.choices?.[0]?.message?.content ?? "";
-    let parsedJson: unknown;
-    try {
-      parsedJson = JSON.parse(raw);
-    } catch {
-      logger.warn(`ai-tutor: model returned non-JSON, using fallback (raw=${raw.slice(0, 200)})`);
-      parsedJson = null;
-    }
-    const validated = TutorJsonSchema.safeParse(parsedJson);
-    if (!validated.success) {
-      logger.warn(
-        `ai-tutor: validation failed (issues=${JSON.stringify(validated.error.flatten()).slice(0, 200)})`,
-      );
-      reply = fallbackReply({ mode: body.mode, ageBand, topic, message: body.message });
-      usedFallback = true;
-    } else {
-      reply = validated.data;
-      // Force `type` to match requested mode — model occasionally drifts.
-      reply.type = body.mode;
-    }
-  } catch (err) {
-    logger.error(
-      `ai-tutor openai call failed: ${err instanceof Error ? err.message : String(err)}`,
-    );
-    reply = fallbackReply({ mode: body.mode, ageBand, topic, message: body.message });
-    usedFallback = true;
-  }
-
-  // Refund the daily AI slot when serving a degraded fallback. We do this
-  // BEFORE the cache write + response so even if Postgres is slow, the
-  // refund still happens. Best-effort — never block the user's reply on it.
-  if (usedFallback) {
-    void incrementFeatureUsage(userId, "ai_query", -1).catch((err) => {
-      logger.warn(
-        `ai-tutor refund failed: ${err instanceof Error ? err.message : String(err)}`,
-      );
-    });
-  }
-
-  // ── Persist to cache (best-effort) — but only when the model gave us a
-  // real answer. Caching the fallback would poison future identical
-  // requests with the "be back soon" copy.
-  if (!usedFallback) try {
-    await db
-      .insert(aiCacheTable)
-      .values({
-        cacheKey: key,
-        namespace: NAMESPACE,
-        input: {
+  const openAiPayload: OpenAiChatPayload = {
+    namespace: `ai-tutor:${key}`,
+    model: MODEL,
+    messages: [
+      {
+        role: "system",
+        content: buildSystemPrompt({
           mode: body.mode,
           ageBand,
           subject: body.subject,
           topic,
-          message: body.message,
-        },
-        response: reply,
-      })
-      .onConflictDoNothing({ target: aiCacheTable.cacheKey });
-  } catch (err) {
-    logger.warn(
-      `ai-tutor cache write failed: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  }
+          childName,
+        }),
+      },
+      ...historyMessages,
+      { role: "user", content: body.message },
+    ],
+    max_completion_tokens: 600,
+    temperature: body.mode === "quiz" ? 0.3 : 0.6,
+    json: true,
+  };
 
-  res.json({ reply, cached: false, ageBand, mode: body.mode });
+  const buildTutorFromAiResult = (result: unknown) => {
+    let usedFallback = false;
+    let reply: TutorJson;
+    const raw = (result as { content: string | null; timedOut?: boolean }).content ?? "";
+    if (!raw || (result as { timedOut?: boolean }).timedOut) {
+      reply = fallbackReply({ mode: body.mode, ageBand, topic, message: body.message });
+      usedFallback = true;
+    } else {
+      let parsedJson: unknown;
+      try {
+        parsedJson = JSON.parse(raw);
+      } catch {
+        logger.warn(`ai-tutor: model returned non-JSON, using fallback (raw=${raw.slice(0, 200)})`);
+        parsedJson = null;
+      }
+      const validated = TutorJsonSchema.safeParse(parsedJson);
+      if (!validated.success) {
+        reply = fallbackReply({ mode: body.mode, ageBand, topic, message: body.message });
+        usedFallback = true;
+      } else {
+        reply = validated.data;
+        reply.type = body.mode;
+      }
+    }
+
+    if (usedFallback) {
+      void incrementFeatureUsage(userId, "ai_query", -1).catch((err) => {
+        logger.warn(
+          `ai-tutor refund failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      });
+    } else {
+      void db
+        .insert(aiCacheTable)
+        .values({
+          cacheKey: key,
+          namespace: NAMESPACE,
+          input: {
+            mode: body.mode,
+            ageBand,
+            subject: body.subject,
+            topic,
+            message: body.message,
+          },
+          response: reply,
+        })
+        .onConflictDoNothing({ target: aiCacheTable.cacheKey })
+        .catch((err) => {
+          logger.warn(
+            `ai-tutor cache write failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        });
+    }
+
+    return { reply, cached: false, ageBand, mode: body.mode };
+  };
+
+  await submitAiJobAndRespond({
+    res,
+    userId,
+    type: "openai.chat_json",
+    payload: openAiPayload,
+    buildSyncBody: (result) => buildTutorFromAiResult(result),
+    buildAsyncBody: (jobId) => ({
+      jobId,
+      status: "processing",
+      pollUrl: `/api/ai/jobs/${jobId}`,
+      ageBand,
+      mode: body.mode,
+    }),
+  });
 });
 
 export default router;

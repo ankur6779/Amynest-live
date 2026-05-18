@@ -33,7 +33,9 @@ export class AppErrorBoundary extends Component<Props, State> {
       return (
         <AppFallbackUi
           message={this.state.error.message || "An unexpected error occurred."}
-          onReload={() => window.location.reload()}
+          onReload={() => {
+            if (typeof window !== "undefined") window.location.reload();
+          }}
         />
       );
     }

@@ -3,6 +3,7 @@ import { db, ttsCacheTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { getElevenLabsApiKey } from "../lib/env";
 import { logger } from "../lib/logger";
+import { fetchWithTimeout } from "../utils/fetch-with-timeout.js";
 import {
   resolveTtsPlaybackUrl,
   ttsAudioBackfillPostgres,
@@ -111,6 +112,48 @@ const VOICE_SETTINGS: Record<SynthesizeMode, {
  * ever call ElevenLabs once — audio is stored in GCS (Render) or Postgres
  * bytea (local dev without GCS) and reused by all users.
  */
+/** Fast path: return cached audio metadata only (no ElevenLabs). */
+export async function trySynthesizeFromCache(
+  rawText: string,
+  options: SynthesizeOptions = {},
+): Promise<SynthesizeResult | null> {
+  const text = rawText.trim();
+  if (!text) return null;
+
+  const voiceId = options.voiceId?.trim() || AMY_VOICE_ID_DEFAULT;
+  const modelId = options.modelId?.trim() || AMY_MODEL_ID_DEFAULT;
+  const mode: SynthesizeMode = options.mode ?? "default";
+  const cacheKey = computeCacheKey(text, voiceId, modelId, mode);
+
+  const existing = await db
+    .select()
+    .from(ttsCacheTable)
+    .where(eq(ttsCacheTable.cacheKey, cacheKey))
+    .limit(1);
+
+  const row = existing[0];
+  if (!row || !(await ttsAudioExists(cacheKey, row))) return null;
+
+  const audioUrl = resolveTtsPlaybackUrl(cacheKey, row);
+  void db
+    .update(ttsCacheTable)
+    .set({
+      hitCount: sql`${ttsCacheTable.hitCount} + 1`,
+      lastAccessedAt: sql`now()`,
+    })
+    .where(eq(ttsCacheTable.cacheKey, cacheKey))
+    .catch(() => {});
+
+  return {
+    cacheKey,
+    audioPath: row.audioPath,
+    audioUrl,
+    contentType: row.contentType,
+    charCount: row.charCount,
+    cached: true,
+  };
+}
+
 export async function synthesize(
   rawText: string,
   options: SynthesizeOptions = {},
@@ -124,6 +167,9 @@ export async function synthesize(
   const mode: SynthesizeMode = options.mode ?? "default";
   const cacheKey = computeCacheKey(text, voiceId, modelId, mode);
   const audioPath = ttsAudioPath(cacheKey);
+
+  const cachedOnly = await trySynthesizeFromCache(text, options);
+  if (cachedOnly) return cachedOnly;
 
   const existing = await db
     .select()
@@ -229,7 +275,8 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
     "[ElevenLabs] Request start",
   );
 
-  const response = await fetch(elevenUrl, {
+  const aiTimeoutMs = Number(process.env.AI_JOB_TIMEOUT_MS ?? "10_000");
+  const response = await fetchWithTimeout(elevenUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -241,6 +288,7 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
       model_id: modelId,
       voice_settings: VOICE_SETTINGS[mode],
     }),
+    timeoutMs: aiTimeoutMs,
   });
 
   const aiDurationMs = Math.round(performance.now() - aiStarted);

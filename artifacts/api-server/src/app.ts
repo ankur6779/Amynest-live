@@ -7,6 +7,8 @@ import { logger } from "./lib/logger";
 import { sendSafeError } from "./lib/safe-api-response";
 import { APEX_PRODUCTION_HOST } from "./lib/canonical-host";
 import { slowApiGuard } from "./middlewares/slow-api-guard";
+import { getMemorySnapshot } from "./utils/memory-monitor.js";
+import { getAiQueueHealth } from "./lib/ai-queue-http.js";
 
 const app: Express = express();
 
@@ -68,7 +70,19 @@ app.get("/", (_req, res) => {
 });
 
 app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
+  const memory = getMemorySnapshot();
+  const queue = getAiQueueHealth();
+  const status = memory.warn ? "degraded" : "ok";
+  if (memory.warn) {
+    logger.warn({ evt: "health.memory_high", memory }, "Health check: high memory");
+  }
+  res.status(200).json({
+    status,
+    service: "AmyNest API",
+    memory,
+    aiQueue: queue,
+    uptimeSec: Math.round(process.uptime()),
+  });
 });
 
 app.use("/api", router);

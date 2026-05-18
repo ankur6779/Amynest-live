@@ -6,6 +6,8 @@ import { GetRecipeBody, GetRecipeResponse, AskAssistantBody, AskAssistantRespons
 import { recipeFor } from "../lib/meal-recipes.js";
 import { getParentingAdvice } from "../lib/parenting-faq.js";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
+import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
+import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
 
 const router: IRouter = Router();
 
@@ -165,14 +167,11 @@ router.post("/ai/assistant-ai", aiUsageGate, async (req, res): Promise<void> => 
     .slice(-6) // last 6 turns max — keeps tokens (and cost) low
     .map((m: ChatTurn) => ({ role: m.role, content: m.content.slice(0, 800) }));
 
-  try {
-    const { openai } = await import("@workspace/integrations-openai-ai-server");
+  const childLine = childName
+    ? `\nThe parent's child is ${childName}${childAge ? `, age ${childAge}` : ""}. Use the name naturally when it adds warmth — do not force it into every sentence.`
+    : "";
 
-    const childLine = childName
-      ? `\nThe parent's child is ${childName}${childAge ? `, age ${childAge}` : ""}. Use the name naturally when it adds warmth — do not force it into every sentence.`
-      : "";
-
-    const systemPrompt = `You are Amy — a warm, sharp, deeply human parenting coach who talks like a trusted friend who happens to be a child-development expert. You are NOT a chatbot and you must never sound like one.
+  const systemPrompt = `You are Amy — a warm, sharp, deeply human parenting coach who talks like a trusted friend who happens to be a child-development expert. You are NOT a chatbot and you must never sound like one.
 
 CONVERSATION STYLE
 - Sound like a real person texting a friend: natural, specific, sometimes one short sentence, sometimes two paragraphs — never a wall of bullet points unless the parent explicitly asks for steps.
@@ -190,60 +189,42 @@ ANSWER QUALITY
 LENGTH
 - Default: 60–180 words. Match the parent's energy — short question gets a short answer.${childLine}`;
 
-    const userTurn = `${question}`;
+  const payload: OpenAiChatPayload = {
+    namespace: "amy-assistant",
+    messages: [
+      { role: "system", content: systemPrompt },
+      ...history,
+      { role: "user", content: question },
+    ],
+    max_completion_tokens: 600,
+  };
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...history,
-        { role: "user", content: userTurn },
-      ],
-      max_completion_tokens: 600,
-    });
+  const resolveAnswer = (raw: { content: string | null; timedOut?: boolean }) => {
+    const aiAnswer = raw.content?.trim();
+    if (aiAnswer) return aiAnswer;
+    return getParentingAdvice(question, childName ?? undefined, childAge ?? undefined);
+  };
 
-    const aiAnswer = completion.choices[0]?.message?.content?.trim();
-    if (!aiAnswer) {
-      // OpenAI returned empty — log and fall back so we can debug from logs
-      // eslint-disable-next-line no-console
-      console.warn("[amy-ai] empty completion from OpenAI", {
-        finish_reason: completion.choices[0]?.finish_reason,
-        usage: completion.usage,
-      });
-      const answer = getParentingAdvice(question, childName ?? undefined, childAge ?? undefined);
+  await submitAiJobAndRespond({
+    res,
+    userId: userId ?? "anonymous",
+    type: "openai.chat",
+    payload,
+    buildSyncBody: (result) => {
+      const answer = resolveAnswer(result as { content: string | null; timedOut?: boolean });
       if (userId) {
-        await persistMessage(userId, "user", question);
-        await persistMessage(userId, "assistant", answer);
+        void persistMessage(userId, "user", question);
+        void persistMessage(userId, "assistant", answer);
         void trimUserHistory(userId);
       }
-      res.json(AskAssistantResponse.parse({ answer }));
-      return;
-    }
-
-    if (userId) {
-      await persistMessage(userId, "user", question);
-      await persistMessage(userId, "assistant", aiAnswer);
-      void trimUserHistory(userId);
-    }
-    res.json(AskAssistantResponse.parse({ answer: aiAnswer }));
-  } catch (err: unknown) {
-    // Loud log so we can see in production logs if OpenAI is down or misconfigured
-    const e = err as { status?: number; message?: string; code?: string };
-    // eslint-disable-next-line no-console
-    console.error("[amy-ai] OpenAI call failed", {
-      status: e?.status,
-      code: e?.code,
-      message: e?.message?.slice(0, 300),
-    });
-    // Graceful fallback to static FAQ so the user still gets *something* useful
-    const answer = getParentingAdvice(question, childName ?? undefined, childAge ?? undefined);
-    if (userId) {
-      await persistMessage(userId, "user", question);
-      await persistMessage(userId, "assistant", answer);
-      void trimUserHistory(userId);
-    }
-    res.json(AskAssistantResponse.parse({ answer }));
-  }
+      return AskAssistantResponse.parse({ answer });
+    },
+    buildAsyncBody: (jobId) => ({
+      jobId,
+      status: "processing",
+      pollUrl: `/api/ai/jobs/${jobId}`,
+    }),
+  });
 });
 
 // Short-form parenting tip rewrite — strict 30-word output, low cost
@@ -262,32 +243,36 @@ router.post("/ai/rewrite-tip", async (req, res): Promise<void> => {
     return words.length <= 30 ? words.join(" ") : words.slice(0, 30).join(" ") + "…";
   };
 
-  try {
-    const { openai } = await import("@workspace/integrations-openai-ai-server");
+  const { userId } = getAuth(req);
+  const systemPrompt = `You are a warm parenting coach. Rewrite the given tip as one short, warm sentence personalized with the child's name. Maximum 30 words. Return only the sentence — no quotes, no explanation.`;
+  const userPrompt = childName
+    ? `Child name: ${childName}\nTip: ${text}`
+    : `Tip: ${text}`;
 
-    const systemPrompt = `You are a warm parenting coach. Rewrite the given tip as one short, warm sentence personalized with the child's name. Maximum 30 words. Return only the sentence — no quotes, no explanation.`;
-
-    const userPrompt = childName
-      ? `Child name: ${childName}\nTip: ${text}`
-      : `Tip: ${text}`;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+  await submitAiJobAndRespond({
+    res,
+    userId: userId ?? "anonymous",
+    type: "openai.chat",
+    payload: {
+      namespace: "amy-rewrite-tip",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
       max_completion_tokens: 120,
-    });
-
-    const raw = completion.choices[0]?.message?.content?.trim() ?? text;
-    const cleaned = raw.replace(/^["'""]|["'""]$/g, "").trim();
-    res.json({ rewritten: cap(cleaned || text) });
-  } catch {
-    // Graceful fallback — return original tip prefixed with name
-    const fallback = childName ? `For ${childName} — ${text}` : text;
-    res.json({ rewritten: cap(fallback) });
-  }
+    },
+    buildSyncBody: (result) => {
+      const raw =
+        (result as { content: string | null }).content?.trim() ?? text;
+      const cleaned = raw.replace(/^["'""]|["'""]$/g, "").trim();
+      return { rewritten: cap(cleaned || text) };
+    },
+    buildAsyncBody: (jobId) => ({
+      jobId,
+      status: "processing",
+      pollUrl: `/api/ai/jobs/${jobId}`,
+    }),
+  });
 });
 
 export default router;
