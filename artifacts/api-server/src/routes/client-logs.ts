@@ -75,4 +75,10 @@ router.get("/logs/recent", (_req, res) => {
   res.json({ logs: recentLogs.slice(-50) });
 });
 
+/** Trim in-memory client log buffer during periodic cleanup. */
+export function trimClientLogBuffer(): void {
+  const target = Math.floor(MAX_BUFFER / 2);
+  while (recentLogs.length > target) recentLogs.shift();
+}
+
 export default router;
