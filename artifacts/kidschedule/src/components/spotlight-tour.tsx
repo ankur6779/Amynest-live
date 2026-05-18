@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { isAndroidLiteClient } from "@/lib/device-lite";
 
 const TOUR_KEY = "amynest-tour-v1";
 
@@ -77,6 +78,7 @@ export function SpotlightTour() {
   const [spot, setSpot]       = useState<SpotRect | null>(null);
 
   useEffect(() => {
+    if (isAndroidLiteClient()) return;
     const tourDone    = localStorage.getItem(TOUR_KEY) === "done";
     const onboardDone = localStorage.getItem("onboardingComplete") === "true";
     if (tourDone || !onboardDone) return;

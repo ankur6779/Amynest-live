@@ -2,6 +2,25 @@ import { forceClearAllCaches } from "@/lib/force-clear-caches";
 
 const VERSION_KEY = "amynest:deploy-version";
 
+/** Wait for AppCore mount so deploy reload does not look like a post-splash crash. */
+function waitForAppCoreReady(maxMs = 20_000): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  const win = window as Window & { __amynestAppCoreReady?: boolean };
+  if (win.__amynestAppCoreReady) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    const started = Date.now();
+    const tick = () => {
+      if (win.__amynestAppCoreReady || Date.now() - started >= maxMs) {
+        clearInterval(id);
+        resolve();
+      }
+    };
+    const id = setInterval(tick, 120);
+    tick();
+  });
+}
+
 /**
  * Force service worker to activate and reload when deploy meta changes (stale PWA shell).
  */
@@ -24,6 +43,7 @@ export async function syncPwaCacheAndVersion(): Promise<void> {
       } catch {
         /* ignore */
       }
+      await waitForAppCoreReady();
       await forceClearAllCaches();
       window.location.reload();
       return;

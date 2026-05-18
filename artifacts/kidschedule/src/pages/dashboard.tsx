@@ -7,14 +7,20 @@ import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
 import { AmyIcon } from "@/components/amy-icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/lib/firebase-auth-hooks";
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { HeroAmbientLayer } from "@/components/hero-ambient-layer";
+import { lazy, Suspense, useEffect, useState, useMemo, useCallback } from "react";
+import { isAndroidLiteClient } from "@/lib/device-lite";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
 import { getTotalPoints, getBadges, getRewards, redeemReward, type Reward } from "@/lib/rewards";
-import { routineDateKey, routineItems } from "@/lib/routines";
+import { asRoutineList, routineDateKey, routineItems } from "@/lib/routines";
+
+const HeroAmbientLayer = lazy(() =>
+  import("@/components/hero-ambient-layer").then((m) => ({
+    default: m.HeroAmbientLayer,
+  })),
+);
 const POLL_INTERVAL_MS = 30_000;
 type RoutineItem = {
   time: string;
@@ -335,13 +341,17 @@ function SmartHeroSection({
       <div className="absolute -top-16 -right-12 h-48 w-48 rounded-full pointer-events-none blur-3xl" style={{ background: grad.glowA }} />
       <div className="absolute -bottom-20 -left-10 h-40 w-40 rounded-full pointer-events-none blur-3xl" style={{ background: grad.glowB }} />
 
-      {/* Weather-reactive ambient animation layer */}
-      <HeroAmbientLayer
-        weatherCondition={weatherCondition}
-        aqiBucket={aqiBucket}
-        heroTags={heroTags}
-        isNight={isNight}
-      />
+      {/* Weather-reactive ambient layer — skipped on Android PWA (GPU / memory). */}
+      {!isAndroidLiteClient() && (
+        <Suspense fallback={null}>
+          <HeroAmbientLayer
+            weatherCondition={weatherCondition}
+            aqiBucket={aqiBucket}
+            heroTags={heroTags}
+            isNight={isNight}
+          />
+        </Suspense>
+      )}
 
       {/* Row 1: greeting label + weather pill */}
       <div className="relative flex items-center justify-between gap-2">
@@ -542,7 +552,7 @@ function NowNextTimeline({
   }
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const allItems = todayRoutines.flatMap(r => routineItems(r).map(item => ({
+  const allItems = todayRoutines.flatMap(r => routineItems<RoutineItem>(r).map(item => ({
     ...item,
     childName: r.childName,
     routineId: r.id
@@ -700,9 +710,9 @@ function AmySuggestionCard({
   } = useTranslation();
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayRoutines = routines.filter(r => routineDateKey(r) === todayStr);
-  const allItems = todayRoutines.flatMap(r => routineItems(r));
+  const allItems = todayRoutines.flatMap(r => routineItems<RoutineItem>(r));
   const total = allItems.length;
-  const completed = allItems.filter(i => i.status === "completed").length;
+  const completed = allItems.filter((i) => i.status === "completed").length;
   const pct = total > 0 ? Math.round(completed / total * 100) : 0;
   const hour = new Date().getHours();
   const suggestions: {
@@ -1113,8 +1123,9 @@ export default function Dashboard() {
     }
   });
   const lastUpdated = Math.max(summaryUpdatedAt ?? 0, routinesUpdatedAt ?? 0, statsUpdatedAt ?? 0);
-  const streak = computeStreak((allRoutines ?? []) as Routine[]);
-  const routinesCount = (allRoutines ?? []).length;
+  const allRoutinesSafe = asRoutineList<Routine>(allRoutines);
+  const streak = computeStreak(allRoutinesSafe);
+  const routinesCount = allRoutinesSafe.length;
   const routinesMax = entitlements?.limits.routinesMax ?? 1;
   const generateRoutineLocked = !isPremium && routinesCount >= routinesMax;
   function handleGenerateRoutine() {
@@ -1174,7 +1185,7 @@ export default function Dashboard() {
           <div>
             <SectionLabel>{t("pages.dashboard.today")}</SectionLabel>
             <div className="mt-2">
-              <NowNextTimeline routines={(allRoutines ?? []) as Routine[]} />
+              <NowNextTimeline routines={allRoutinesSafe} />
             </div>
           </div>
         </div>
@@ -1188,8 +1199,8 @@ export default function Dashboard() {
           </div>
           <SectionLabel>{t("pages.dashboard.coaching")}</SectionLabel>
           <div className="flex flex-col gap-3 -mt-2">
-            <AmySuggestionCard routines={(allRoutines ?? []) as Routine[]} streak={streak} />
-            <ParentScoreCard routines={(allRoutines ?? []) as Routine[]} streak={streak} />
+            <AmySuggestionCard routines={allRoutinesSafe} streak={streak} />
+            <ParentScoreCard routines={allRoutinesSafe} streak={streak} />
           </div>
         </div>
       </div>

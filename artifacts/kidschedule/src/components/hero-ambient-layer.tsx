@@ -13,6 +13,7 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { useMemo } from "react";
+import { isAndroidLiteClient } from "@/lib/device-lite";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -560,6 +561,8 @@ export function HeroAmbientLayer({
   heroTags = [],
   isNight,
 }: HeroAmbientLayerProps) {
+  if (isAndroidLiteClient()) return null;
+
   const reduced = useReducedMotion() ?? false;
   const cond = weatherCondition ?? "";
 
