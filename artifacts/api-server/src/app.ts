@@ -7,6 +7,8 @@ import { logger } from "./lib/logger";
 import { sendSafeError } from "./lib/safe-api-response";
 import { APEX_PRODUCTION_HOST } from "./lib/canonical-host";
 import { slowApiGuard } from "./middlewares/slow-api-guard";
+import { requestTimeout } from "./middlewares/request-timeout.js";
+import { limitJsonResponse } from "./middlewares/limit-json-response.js";
 import { getMemorySnapshot } from "./utils/memory-monitor.js";
 import { getAiQueueHealth } from "./lib/ai-queue-http.js";
 import { getQueueHealthSnapshot } from "./queue/bootstrap.js";
@@ -22,12 +24,9 @@ app.use((req, res, next) => {
 });
 
 app.use(cookieParser());
+app.use(requestTimeout);
 app.use(slowApiGuard);
-
-app.use((req, _res, next) => {
-  console.log(`${req.method} ${req.path}`);
-  next();
-});
+app.use(limitJsonResponse);
 
 app.use(
   pinoHttp({
@@ -52,11 +51,8 @@ app.use(
 app.use(cors({ credentials: true, origin: true }));
 app.use(
   express.json({
-    limit: "10mb",
-    // Capture the raw request bytes for Razorpay's webhook so we can
-    // verify the X-Razorpay-Signature HMAC. Stored only for that path
-    // to avoid wasting memory on every request.
-    verify: (req: any, _res, buf) => {
+    limit: "1mb",
+    verify: (req: express.Request & { rawBody?: string }, _res, buf) => {
       const url: string = req.originalUrl ?? req.url ?? "";
       if (url.includes("/api/subscription/razorpay/webhook")) {
         req.rawBody = buf.toString("utf8");
@@ -64,13 +60,19 @@ app.use(
     },
   }),
 );
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 app.get("/", (_req, res) => {
   res.json({ status: "running", service: "AmyNest API" });
 });
 
-app.get("/health", async (_req, res) => {
+/** Load balancers / Render keep-warm — minimal response. */
+app.get("/health", (_req, res) => {
+  res.status(200).type("text/plain").send("ok");
+});
+
+/** Detailed health for ops (optional). */
+app.get("/health/status", async (_req, res) => {
   const memory = getMemorySnapshot();
   const queueSnapshot = await getQueueHealthSnapshot();
   const queueStats = await getAiQueueHealth();
@@ -93,9 +95,6 @@ app.get("/health", async (_req, res) => {
 
 app.use("/api", router);
 
-// Clean JSON 404 for anything else this service receives. Without this,
-// Express's default handler returns an HTML "Cannot GET …" page which is
-// confusing in browsers and useless to mobile clients.
 app.use((req, res) => {
   const safeUrl = (() => {
     if (!req.originalUrl.includes("?")) return req.originalUrl;
@@ -111,8 +110,6 @@ app.use((req, res) => {
       kind: "api_server_404",
       method: req.method,
       url: safeUrl,
-      userAgent: req.headers["user-agent"],
-      referer: req.headers["referer"],
     },
     "Unknown route on api-server",
   );
@@ -123,7 +120,6 @@ app.use((req, res) => {
   );
 });
 
-// Last-resort handler — never leave clients with an empty body on thrown errors.
 app.use(
   (
     err: unknown,

@@ -20,6 +20,7 @@ export function registerProcessErrorHandlers(): void {
       },
       "Unhandled promise rejection",
     );
+    // Do not process.exit — keep API alive and return fallbacks to clients.
   });
 
   process.on("uncaughtException", (err) => {
@@ -27,5 +28,6 @@ export function registerProcessErrorHandlers(): void {
       { evt: "uncaught_exception", err, memory: getMemorySnapshot() },
       "Uncaught exception",
     );
+    // Log only; Render will restart on true fatal faults. Avoid exit on transient errors.
   });
 }

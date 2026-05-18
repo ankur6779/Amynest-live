@@ -2,9 +2,15 @@ import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
-import { useUser } from "@/lib/firebase-auth-hooks";
+import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useSubscription } from "@/hooks/use-subscription";
+import { logOnboardingState } from "@/lib/onboarding-debug";
+import {
+  persistOnboardingCache,
+  resolveSetupStatus,
+} from "@/lib/setup-status";
 import {
   getNativePushBridge,
   requestNativePushPermission,
@@ -481,8 +487,11 @@ export default function OnboardingPage() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { user } = useUser();
+  const { isLoaded: authLoaded, isSignedIn } = useAuth();
+  const { entitlements } = useSubscription();
   const authFetch = useAuthFetch();
   const queryClient = useQueryClient();
+  const [navigatingToDashboard, setNavigatingToDashboard] = useState(false);
   const enableNotif = async () => {
     try {
       const native = getNativePushBridge();
@@ -655,12 +664,50 @@ export default function OnboardingPage() {
     // Always mark complete locally — regardless of any individual API failure.
     // AppCore also uses this cache entry so the redirect guard sees it immediately.
     localStorage.setItem("onboardingComplete", "true");
-    queryClient.setQueryData(["onboarding-status"], { onboardingComplete: true, profileComplete: true });
+    const completeStatus = { onboardingComplete: true, profileComplete: true };
+    queryClient.setQueryData(["onboarding-status"], completeStatus);
+    persistOnboardingCache(completeStatus);
+
+    logOnboardingState("save-complete", user, {
+      entitlements,
+      isLoaded: authLoaded,
+      isSignedIn,
+    });
 
     setTimeout(() => setStep("done"), 600);
   }
 
-  function goDashboard() {
+  async function refreshBeforeDashboard(): Promise<void> {
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["children"] });
+      await queryClient.invalidateQueries({ queryKey: ["subscription"] });
+      const status = await resolveSetupStatus(authFetch);
+      persistOnboardingCache(status);
+      queryClient.setQueryData(["onboarding-status"], status);
+    } catch (e) {
+      console.error("[onboarding] refresh before dashboard failed", e);
+    }
+  }
+
+  async function goDashboard() {
+    if (navigatingToDashboard) return;
+    setNavigatingToDashboard(true);
+    logOnboardingState("go-dashboard", user, {
+      entitlements,
+      isLoaded: authLoaded,
+      isSignedIn,
+    });
+    if (!authLoaded) {
+      console.warn("[onboarding] auth not loaded yet, waiting…");
+      await new Promise((r) => setTimeout(r, 400));
+    }
+    if (!isSignedIn) {
+      console.warn("[onboarding] user missing, redirecting to sign-in");
+      setNavigatingToDashboard(false);
+      setLocation("/sign-in");
+      return;
+    }
+    await refreshBeforeDashboard();
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     window.location.assign(`${base}/dashboard`);
   }
@@ -915,7 +962,7 @@ export default function OnboardingPage() {
             onClick={async () => {
               setNotifLoading(true);
               await enableNotif();
-              goDashboard();
+              await goDashboard();
             }}
             className="w-full py-4 rounded-2xl text-primary-foreground font-bold text-base active:scale-95 transition-all"
             style={{
@@ -928,7 +975,8 @@ export default function OnboardingPage() {
           </button>
 
           <button
-            onClick={goDashboard}
+            onClick={() => void goDashboard()}
+            disabled={navigatingToDashboard}
             className="w-full py-3 text-sm font-semibold"
             style={{ color: "hsl(var(--brand-indigo-500))", background: "none", border: "none", cursor: "pointer" }}
           >
@@ -985,6 +1033,7 @@ export default function OnboardingPage() {
             </div>
             <button
               onClick={() => {
+                if (navigatingToDashboard) return;
                 if (
                   typeof window !== "undefined" &&
                   "Notification" in window &&
@@ -992,13 +1041,16 @@ export default function OnboardingPage() {
                 ) {
                   setStep("notifications");
                 } else {
-                  goDashboard();
+                  void goDashboard();
                 }
               }}
-              className="w-full py-4 rounded-2xl text-primary-foreground font-bold text-base active:scale-95 transition-all"
+              disabled={navigatingToDashboard}
+              className="w-full py-4 rounded-2xl text-primary-foreground font-bold text-base active:scale-95 transition-all disabled:opacity-60"
               style={{ background: GRAD, boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
             >
-              {t("screens.onboarding.go_dashboard")}
+              {navigatingToDashboard
+                ? t("screens.onboarding.saving_title")
+                : t("screens.onboarding.go_dashboard")}
             </button>
           </div>
         )}

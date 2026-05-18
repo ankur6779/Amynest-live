@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { z } from "zod/v4";
 import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
@@ -22,7 +22,7 @@ const recentLogs: Array<{
   message: string;
 }> = [];
 
-router.post("/logs", async (req, res): Promise<void> => {
+async function ingestClientLog(req: Request, res: Response): Promise<void> {
   const parsed = ClientLogBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -30,15 +30,20 @@ router.post("/logs", async (req, res): Promise<void> => {
   }
 
   const { userId } = getAuth(req);
+  const meta =
+    parsed.data.meta && typeof parsed.data.meta === "object"
+      ? JSON.parse(JSON.stringify(parsed.data.meta).slice(0, 4000))
+      : undefined;
+
   const entry = {
     ts: Date.now(),
     userId: userId ?? null,
     type: parsed.data.type,
-    message: parsed.data.message,
-    context: parsed.data.context,
-    route: parsed.data.route,
+    message: parsed.data.message.slice(0, 4000),
+    context: parsed.data.context?.slice(0, 256),
+    route: parsed.data.route?.slice(0, 256),
     durationMs: parsed.data.durationMs,
-    meta: parsed.data.meta,
+    meta,
   };
 
   recentLogs.push({
@@ -59,7 +64,11 @@ router.post("/logs", async (req, res): Promise<void> => {
   logFn({ kind: "client_log", ...entry }, `[client:${parsed.data.type}] ${parsed.data.message}`);
 
   res.status(204).end();
-});
+}
+
+router.post("/logs", ingestClientLog);
+/** Alias for web error boundary / onboarding crash reports. */
+router.post("/log-client-error", ingestClientLog);
 
 /** Ops/debug: last N client logs (auth required — mounted after requireAuth). */
 router.get("/logs/recent", (_req, res) => {
