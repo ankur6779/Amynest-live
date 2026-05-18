@@ -2,7 +2,11 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
+import { fileURLToPath } from "node:url";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { clearStaleCachesPlugin } from "../../scripts/vite-plugins/clear-stale-caches.js";
+
+const artifactDir = path.dirname(fileURLToPath(import.meta.url));
 
 const rawPort = process.env.PORT;
 
@@ -28,7 +32,9 @@ if (!basePath) {
 
 export default defineConfig({
   base: basePath,
+  cacheDir: path.resolve(artifactDir, "node_modules/.vite"),
   plugins: [
+    clearStaleCachesPlugin(artifactDir),
     react(),
     runtimeErrorOverlay(),
     tailwindcss(),
@@ -61,6 +67,11 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
   },
   server: {
     port,

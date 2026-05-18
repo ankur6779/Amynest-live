@@ -11,6 +11,7 @@ import {
   installGlobalErrorHandlers,
   logBootContext,
 } from "@/lib/global-error-handlers";
+import { installViteChunkRecovery } from "@/lib/vite-chunk-recovery";
 import {
   clearCacheRecoveryPending,
   runBootCacheRecoveryIfNeeded,
@@ -31,6 +32,7 @@ if (typeof window !== "undefined" && redirectApexToCanonicalWww()) {
   /* Apex → www before auth, cookies, or React mount */
 } else {
 
+installViteChunkRecovery();
 installGlobalErrorHandlers();
 logBootContext();
 

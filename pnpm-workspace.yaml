@@ -1,5 +1,6 @@
 packages:
   - artifacts/*
+  - '!artifacts/amynest-mobile'
   - lib/*
   - lib/integrations/*
   - scripts
