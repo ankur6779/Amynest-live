@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import clientLogsRouter from "./client-logs";
 import childrenRouter from "./children";
 import routinesRouter from "./routines";
 import behaviorsRouter from "./behaviors";
@@ -87,6 +88,7 @@ router.use(spellingPublicRouter);
 // can fetch without bearer tokens. See PHONEME_PROMPTS in phonics.ts.
 router.use(phonicsPublicRouter);
 router.use(requireAuth);
+router.use(clientLogsRouter);
 router.use(onboardingRouter);
 router.use(childrenRouter);
 router.use(routinesRouter);

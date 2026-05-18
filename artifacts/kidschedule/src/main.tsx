@@ -17,9 +17,7 @@ import {
 } from "@/lib/boot-recovery";
 import { syncPwaCacheAndVersion } from "@/lib/pwa-cache-sync";
 import { patchBootDiagnostics } from "@/lib/boot-store";
-
-installGlobalErrorHandlers();
-logBootContext();
+import { redirectApexToCanonicalWww } from "@/lib/canonical-domain";
 
 declare global {
   interface Window {
@@ -27,6 +25,17 @@ declare global {
     __amynestDiag?: () => unknown;
     __amynestAppCoreReady?: boolean;
   }
+}
+
+if (typeof window !== "undefined" && redirectApexToCanonicalWww()) {
+  /* Apex → www before auth, cookies, or React mount */
+} else {
+
+installGlobalErrorHandlers();
+logBootContext();
+
+if (import.meta.env.DEV) {
+  void import("@/lib/stress-harness").then((m) => m.installStressHarness());
 }
 
 const mark = (p: string) => {
@@ -146,3 +155,5 @@ function startSplashDismissal(): void {
 }
 
 void bootstrap();
+
+}

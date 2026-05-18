@@ -9,6 +9,14 @@ import {
   FREE_LIMITS,
 } from "../services/subscriptionService";
 import { featureGate } from "../middlewares/featureGate.js";
+import { enqueueForUser } from "../lib/per-user-queue.js";
+import { checkRoutineGenerationRateLimit } from "../lib/routine-rate-limit.js";
+import {
+  getCachedRoutine,
+  routineCacheKey,
+  setCachedRoutine,
+} from "../lib/routine-generation-cache.js";
+import { normalizeChildForRoutine } from "../lib/fallback-child-profile.js";
 import {
   CreateRoutineBody,
   CheckRoutineQueryParams,
@@ -940,7 +948,8 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
   };
 }
 
-const AI_ROUTINE_GENERATION_TIMEOUT_MS = 10_000;
+/** Hard cap — rule-based fallback runs if OpenAI exceeds this (client races at 8s too). */
+const AI_ROUTINE_GENERATION_TIMEOUT_MS = 8_000;
 
 function withPromiseTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -1307,14 +1316,15 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     return;
   }
 
-  const [child] = await db
+  const [childRow] = await db
     .select()
     .from(childrenTable)
     .where(and(eq(childrenTable.id, parsed.data.childId), eq(childrenTable.userId, userId)));
-  if (!child) {
+  if (!childRow) {
     res.status(404).json({ error: "Child not found" });
     return;
   }
+  const child = normalizeChildForRoutine(childRow);
 
   // Compute age group
   // Optional client-supplied overrides (age/schoolStart/schoolEnd/wakeTime/region).
@@ -1529,14 +1539,46 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
     return;
   }
 
-  const [child] = await db
+  const rateLimit = checkRoutineGenerationRateLimit(userId);
+  if (!rateLimit.allowed) {
+    res.status(429).json({
+      error: "rate_limit",
+      message: "Too many routine generations. Please wait a moment.",
+      retryAfterMs: rateLimit.retryAfterMs,
+    });
+    return;
+  }
+
+  const cacheKey = routineCacheKey({
+    userId,
+    childId: parsed.data.childId,
+    date: parsed.data.date,
+    mood: parsed.data.mood,
+    hasSchool: parsed.data.hasSchool,
+    schoolMealMode: parsed.data.schoolMealMode ?? null,
+  });
+  const cachedHit = getCachedRoutine(cacheKey);
+  if (cachedHit) {
+    res.json({ ...cachedHit, cached: true });
+    return;
+  }
+
+  await enqueueForUser(userId, async () => {
+  const cachedInQueue = getCachedRoutine(cacheKey);
+  if (cachedInQueue) {
+    res.json({ ...cachedInQueue, cached: true });
+    return;
+  }
+
+  const [childRow] = await db
     .select()
     .from(childrenTable)
     .where(and(eq(childrenTable.id, parsed.data.childId), eq(childrenTable.userId, userId)));
-  if (!child) {
+  if (!childRow) {
     res.status(404).json({ error: "Child not found" });
     return;
   }
+  const child = normalizeChildForRoutine(childRow);
 
   // Defense-in-depth: also enforce the legacy "no more than 1 saved routine"
   // cap in case a free user generated, deleted, then tries again — the lifetime
@@ -1783,7 +1825,9 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       childId: parsed.data.childId,
       itemCount: body.items.length,
     });
-    res.json({ ...body, success: true, fallback: false });
+    const successPayload = { ...body, success: true, fallback: false };
+    setCachedRoutine(cacheKey, successPayload);
+    res.json(successPayload);
   } catch (err) {
     console.error("[generate-ai] AI ERROR:", err);
     if (err instanceof Error && err.stack) {
@@ -1890,8 +1934,11 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       childId: parsed.data.childId,
       itemCount: fallbackBody.items.length,
     });
-    res.json({ ...fallbackBody, success: false, fallback: true });
+    const fallbackPayload = { ...fallbackBody, success: false, fallback: true };
+    setCachedRoutine(cacheKey, fallbackPayload);
+    res.json(fallbackPayload);
   }
+  });
 });
 
 router.get("/routines", async (req, res): Promise<void> => {

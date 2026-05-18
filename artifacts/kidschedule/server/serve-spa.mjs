@@ -20,9 +20,8 @@ const STATIC_ROOT = path.resolve(
 );
 const basePath = (process.env.BASE_PATH || "/").replace(/\/+$/, "");
 
-/** Apex host for Firebase Phone OTP / reCAPTCHA (www must not serve the SPA). */
-const CANONICAL_PRODUCTION_HOST = "amynest.in";
-const WWW_PRODUCTION_HOST = `www.${CANONICAL_PRODUCTION_HOST}`;
+const APEX_PRODUCTION_HOST = "amynest.in";
+const CANONICAL_PRODUCTION_HOST = "www.amynest.in";
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -112,9 +111,14 @@ const server = http.createServer((req, res) => {
   }
 
   const url = new URL(req.url || "/", `http://${req.headers.host}`);
+  const hostHeader = (req.headers.host || "").split(":")[0];
 
-  // Do not 301 www → apex here: Cloudflare already canonicalizes apex → www at the edge.
-  // A server-side www redirect + client www→apex redirect caused a blank boot screen.
+  if (hostHeader === APEX_PRODUCTION_HOST) {
+    const target = `https://${CANONICAL_PRODUCTION_HOST}${url.pathname}${url.search}`;
+    res.writeHead(301, { Location: target });
+    res.end();
+    return;
+  }
 
   let pathname = decodeURIComponent(url.pathname);
 

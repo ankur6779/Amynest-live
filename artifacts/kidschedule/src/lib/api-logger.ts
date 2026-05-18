@@ -1,4 +1,6 @@
 import { resolveApiRequestInput } from "@/lib/api";
+import { logError } from "@/lib/crash-logger";
+import { reportSlowApi } from "@/lib/client-logs";
 
 const MAX_ENTRIES = 60;
 const MAX_PAYLOAD_KEYS = 30;
@@ -116,8 +118,15 @@ export async function loggedFetch(
       responsePayload: resPayload,
       error: null,
     });
+    try {
+      const path = new URL(url, "http://local").pathname;
+      reportSlowApi(path, responseTime);
+    } catch {
+      reportSlowApi(url, responseTime);
+    }
     return res;
   } catch (err) {
+    logError(err, `API:${method}:${url}`);
     apiLogger.record({
       endpoint: url,
       method,

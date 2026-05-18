@@ -17,6 +17,7 @@ import {
   enrichRoutinePayload,
   fetchAmyAiRoutine,
   fetchStandardRoutine,
+  type RoutineGenerateResult,
   RoutineGenerationFixedActivityError,
   RoutineGenerationPaywallError,
 } from "@/lib/routine-generation-client";
@@ -181,6 +182,16 @@ type GeneratedRoutine = {
   adaptations?: string[] | null;
   fixedActivitiesResult?: FixedActivitiesResult | null;
 };
+
+function toGeneratedRoutine(data: RoutineGenerateResult): GeneratedRoutine {
+  return {
+    title: data.title,
+    items: data.items as RoutineItem[],
+    adaptations: data.adaptations ?? undefined,
+    fixedActivitiesResult:
+      (data.fixedActivitiesResult as FixedActivitiesResult | null | undefined) ?? null,
+  };
+}
 type ChildType = {
   id: number;
   name: string;
@@ -1076,6 +1087,7 @@ export default function RoutineGenerate() {
     try {
       const generatedData = await fetchAmyAiRoutine(authFetch, buildPayload(), {
         onSlow: () => setAiGeneratingSlow(true),
+        userId,
       });
       if (generatedData.fallback) {
         toast({
@@ -1084,7 +1096,7 @@ export default function RoutineGenerate() {
       }
       const simplified = simplifyForHandler(generatedData.items as any, handlerType) as RoutineItem[];
       handlePostGenerate({
-        ...generatedData,
+        ...toGeneratedRoutine(generatedData),
         items: simplified,
       }, shouldOverride, wakeTime);
     } catch (err) {
@@ -1105,7 +1117,7 @@ export default function RoutineGenerate() {
       try {
         const fallback = await fetchStandardRoutine(authFetch, buildPayload());
         const simplified = simplifyForHandler(fallback.items as any, handlerType) as RoutineItem[];
-        handlePostGenerate({ ...fallback, items: simplified }, shouldOverride, wakeTime);
+        handlePostGenerate({ ...toGeneratedRoutine(fallback), items: simplified }, shouldOverride, wakeTime);
       } catch (finalErr) {
         console.error("Routine generation final fallback failed:", finalErr);
       }

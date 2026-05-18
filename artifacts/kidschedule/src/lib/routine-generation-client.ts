@@ -1,4 +1,6 @@
 import { getApiUrl } from "@/lib/api";
+import { enqueueClientAi } from "@/lib/client-ai-queue";
+import { reportFailedRoutine } from "@/lib/client-logs";
 
 const LOG_TAG = "routine-gen";
 const AI_FETCH_TIMEOUT_MS = 35_000;
@@ -184,6 +186,19 @@ async function postRoutineEndpoint(
 export async function fetchAmyAiRoutine(
   authFetch: AuthFetchFn,
   payload: RoutineGeneratePayload,
+  options?: { onSlow?: () => void; userId?: string | null },
+): Promise<RoutineGenerateResult> {
+  const queueKey = options?.userId ?? payload.userId ?? "guest";
+
+  const runQueued = (): Promise<RoutineGenerateResult> =>
+    enqueueClientAi(queueKey, () => runAmyAiRoutineInner(authFetch, payload, options));
+
+  return runQueued();
+}
+
+async function runAmyAiRoutineInner(
+  authFetch: AuthFetchFn,
+  payload: RoutineGeneratePayload,
   options?: { onSlow?: () => void },
 ): Promise<RoutineGenerateResult> {
   const runAiWithRetries = async (): Promise<RoutineGenerateResult> => {
@@ -205,6 +220,10 @@ export async function fetchAmyAiRoutine(
         }
       }
     }
+    reportFailedRoutine(
+      lastError instanceof Error ? lastError.message : "AI generation failed",
+      "generate-ai",
+    );
     throw lastError ?? new Error("AI generation failed");
   };
 

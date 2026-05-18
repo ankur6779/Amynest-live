@@ -39,12 +39,15 @@ export {
   shouldUseBrowserForPhoneOtp,
 } from "./mobile-phone-environment";
 export {
+  APEX_PRODUCTION_HOST,
   FIREBASE_PHONE_AUTH_DOMAINS,
   CANONICAL_PRODUCTION_HOST,
   CANONICAL_PRODUCTION_ORIGIN,
+  PRODUCTION_COOKIE_DOMAIN,
   getCanonicalWebOrigin,
   isAmyNestProductionHost,
   logPhoneOtpDomainContext,
+  redirectApexToCanonicalWww,
   redirectWwwToCanonicalApex,
   shouldRedirectWwwToApex,
   firebasePhoneAuthDomainHint,

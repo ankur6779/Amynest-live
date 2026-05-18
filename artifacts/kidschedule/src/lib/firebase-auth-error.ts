@@ -96,7 +96,7 @@ export function prettyAuthError(err: unknown): string {
     case "auth/unauthorized-domain":
       return `This domain is not authorized in Firebase. Add "${typeof window !== "undefined" ? window.location.hostname : "this domain"}" to Firebase Console → Authentication → Settings → Authorized domains.`;
     case "auth/unauthorized-continue-uri":
-      return "Verification link domain is not allowed. Add amynest.in under Firebase → Authentication → Settings → Authorized domains, and set the shared email action URL to https://amynest.in/auth/action";
+      return "Verification link domain is not allowed. Add www.amynest.in under Firebase → Authentication → Settings → Authorized domains, and set the shared email action URL to https://www.amynest.in/auth/action";
     case "auth/missing-email":
       return "No email on this account. Sign out and sign up again with an email address.";
     case "auth/requires-recent-login":
@@ -121,10 +121,10 @@ export function prettyAuthError(err: unknown): string {
       return "Apple sign-in failed. Please try again.";
     case "auth/captcha-check-failed": {
       const host = typeof window !== "undefined" ? window.location.hostname : "";
-      if (host === "www.amynest.in") {
+      if (host === "amynest.in") {
         return (
-          "Phone OTP failed: use https://amynest.in (not www). " +
-          "The site should redirect www automatically — try a hard refresh."
+          "Phone OTP failed on amynest.in — open https://www.amynest.in/sign-in " +
+          "(the site redirects apex to www automatically)."
         );
       }
       return (
@@ -153,10 +153,10 @@ export function prettyAuthError(err: unknown): string {
           message.includes("captcha-check-failed"))
       ) {
         const host = typeof window !== "undefined" ? window.location.hostname : "";
-        if (host === "www.amynest.in") {
+        if (host === "amynest.in") {
           return (
-            "Phone OTP failed on www.amynest.in — open https://amynest.in/sign-in instead " +
-            "(www should redirect to the apex domain)."
+            "Phone OTP failed on amynest.in — open https://www.amynest.in/sign-in " +
+            "(apex redirects to www before sign-in)."
           );
         }
         return `Phone verification failed. Add "${host}" to Firebase Authorized domains (amynest.in and www.amynest.in).`;

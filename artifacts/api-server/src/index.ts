@@ -6,6 +6,7 @@ import { startRazorpayWebhookCleanup } from "./lib/razorpayWebhookCleanup";
 import { startWeeklyRecapCron } from "./lib/weeklyRecapCron";
 import { startNotificationCron } from "./lib/notificationCron";
 import { seedPhonicsWordBank } from "./lib/phonicsWordBankSeed";
+import { startRenderKeepWarm } from "./lib/render-keep-warm";
 
 const rawPort = process.env["PORT"];
 
@@ -42,5 +43,6 @@ app.listen(port, (err) => {
   startRazorpayWebhookCleanup();
   startWeeklyRecapCron();
   startNotificationCron();
+  startRenderKeepWarm(port);
   void seedPhonicsWordBank();
 });

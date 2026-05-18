@@ -8,7 +8,7 @@
 
     <!-- SEO: allow indexing, canonical URL -->
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
-    <link rel="canonical" href="https://amynest.in/" />
+    <link rel="canonical" href="https://www.amynest.in/" />
     <meta name="author" content="AmyNest AI" />
     <meta name="keywords" content="parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting, child development, daily routine, kids schedule, parenting coach, AI coach for parents, child behavior tracker, kids meal planner India, speech coach for kids, spelling practice app" />
     <meta name="application-name" content="AmyNest AI" />
@@ -102,8 +102,11 @@
           });
         } catch (_e) { /* ignore */ }
 
-        // www.amynest.in is a valid production host (Cloudflare apex→www). Do NOT redirect
-        // www→apex here — that fought the CDN and prevented React from ever mounting.
+        // Canonical host: www.amynest.in (apex redirects before React boots).
+        if (location.hostname === "amynest.in") {
+          location.replace("https://www.amynest.in" + location.pathname + location.search + location.hash);
+          return;
+        }
 
         // Render "Redirect /* → /index.html" exposes /index.html in the URL bar.
         // Firebase email links must keep /auth/action (not collapse to /?mode=…).
