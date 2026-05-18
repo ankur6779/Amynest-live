@@ -5,9 +5,11 @@ import {
   getDriveKeyDiagnostics,
   getElevenLabsApiKey,
   getGcsDiagnostics,
+  resolveApiPublicUrl,
 } from "../lib/env";
 import { amynestEnvLabel, resolveAmynestEnv } from "../lib/loadEnv";
 import { driveFilesList } from "../lib/googleDrive";
+import { getQueueHealthSnapshot } from "../queue/bootstrap.js";
 import { getTtsCacheStats } from "../services/ttsCacheStats";
 import { ttsStorageBackend } from "../services/ttsAudioStore";
 
@@ -21,20 +23,32 @@ router.get("/healthz", (_req, res) => {
 });
 
 /** Full env diagnostics (no secret values). */
-router.get("/healthz/env", (_req, res) => {
+router.get("/healthz/env", async (_req, res) => {
   const drive = getDriveKeyDiagnostics();
   const gcs = getGcsDiagnostics();
   const elevenlabsConfigured = !!getElevenLabsApiKey();
+  const queue = await getQueueHealthSnapshot();
 
   const amynestEnv = resolveAmynestEnv();
   res.json({
-    ok: drive.resolved && elevenlabsConfigured,
+    ok:
+      drive.resolved &&
+      elevenlabsConfigured &&
+      (queue.queueMode === "memory" || queue.redis),
     amynestEnv,
     profile: amynestEnvLabel(amynestEnv),
     nodeEnv: process.env.NODE_ENV ?? "unknown",
     render: !!process.env.RENDER,
     renderServiceName: process.env.RENDER_SERVICE_NAME ?? null,
-    apiPublicUrl: process.env.API_PUBLIC_URL ?? null,
+    apiPublicUrl: resolveApiPublicUrl(),
+    queue: {
+      mode: queue.queueMode,
+      redis: queue.redis,
+      redisPing: queue.redisPing ?? false,
+      workerExpected: queue.workerExpected,
+      status: queue.status,
+      bullmq: queue.bullmq,
+    },
     services: {
       googleDrive: {
         configured: drive.resolved,

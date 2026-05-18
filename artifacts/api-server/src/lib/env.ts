@@ -72,6 +72,17 @@ export function getElevenLabsApiKey(): string | undefined {
   return readEnv("ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY");
 }
 
+/** Public API base URL — explicit env, then Render service hostname. */
+export function resolveApiPublicUrl(): string | null {
+  const explicit = readEnv("API_PUBLIC_URL");
+  if (explicit) return explicit.replace(/\/$/, "");
+  const renderService = readRaw("RENDER_SERVICE_NAME");
+  if (renderService) {
+    return `https://${renderService.toLowerCase()}.onrender.com`;
+  }
+  return null;
+}
+
 export interface GcsCredentialsParseResult {
   ok: boolean;
   projectId?: string;
@@ -160,17 +171,38 @@ export function getGcsBucketId(): string | undefined {
   );
 }
 
+export type GcsPublicCredentials = {
+  ok: boolean;
+  projectId?: string;
+  clientEmail?: string;
+  source?: GcsCredentialsParseResult["source"];
+  error?: string;
+};
+
+export function toPublicGcsCredentials(
+  parsed: GcsCredentialsParseResult,
+): GcsPublicCredentials {
+  return {
+    ok: parsed.ok,
+    projectId: parsed.projectId,
+    clientEmail: parsed.clientEmail,
+    source: parsed.source,
+    error: parsed.error,
+  };
+}
+
 export function getGcsDiagnostics(): {
   bucketId: EnvPresence;
   bucketName: string | null;
-  credentials: GcsCredentialsParseResult;
+  credentials: GcsPublicCredentials;
   legacyGcsConfigured: boolean;
   ttsStorageForced: string | null;
 } {
   const bucketName = getGcsBucketId() ?? null;
-  const credentials = parseGcsServiceAccountJson();
+  const parsed = parseGcsServiceAccountJson();
+  const credentials = toPublicGcsCredentials(parsed);
   const legacyGcsConfigured =
-    !!bucketName && (credentials.ok || credentials.source === "GOOGLE_APPLICATION_CREDENTIALS");
+    !!bucketName && (parsed.ok || parsed.source === "GOOGLE_APPLICATION_CREDENTIALS");
   return {
     bucketId: bucketName ? "set" : envPresence("DEFAULT_OBJECT_STORAGE_BUCKET_ID"),
     bucketName: bucketName ? `${bucketName.slice(0, 8)}…` : null,
