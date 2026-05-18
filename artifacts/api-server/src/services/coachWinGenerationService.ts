@@ -15,6 +15,67 @@ export const COACH_REMAINING_WINS = 10;
 export const COACH_SOURCE = "amy_coach";
 const NAMESPACE = "ai_coach_v4";
 const DB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+/** Hard cap on initial OpenAI call — response must not wait longer. */
+export const INITIAL_AI_TIMEOUT_MS = 4000;
+
+function aiCallTimeout(ms: number): Promise<never> {
+  return new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("initial_ai_timeout")), ms);
+  });
+}
+
+/** Fast static 2-win plan when AI times out or fails (avoids loading full 12-win fallback). */
+export function staticInitialWinsFallback(goalLabel: string, input: CoachInput): CoachPlan {
+  const age = input.ageGroup ?? "5-7";
+  return {
+    title: `${goalLabel} — start here`,
+    root_cause:
+      `Children in the ${age} age range are still building self-regulation. ` +
+      `Stress around ${goalLabel.toLowerCase()} often reflects an unmet need or skill gap, not defiance.`,
+    summary:
+      "Two starter wins below; the rest of your 12-win plan will appear in a moment.",
+    wins: [
+      {
+        win: 1,
+        title: "Pause and name what you see",
+        objective: "Lower escalation before you coach",
+        deep_explanation:
+          "A brief pause helps your child feel seen. Naming the feeling (e.g. you look frustrated) " +
+          "activates co-regulation pathways described in Gottman's emotion coaching research.",
+        actions: [
+          "Stop talking for 3 breaths",
+          "Say one feeling word you notice",
+          "Ask one short question: what do you need?",
+        ],
+        example:
+          "Parent: 'You look really upset about shoes.' Child nods. Parent waits. Child says 'They're too tight.'",
+        mistake_to_avoid: "Explaining or lecturing before the child feels heard.",
+        micro_task: "Use one feeling word at the next hard moment today.",
+        duration: "3–5 days",
+        science_reference: "Gottman emotion coaching",
+      },
+      {
+        win: 2,
+        title: "Pick one tiny next step",
+        objective: "Make progress without a full lecture",
+        deep_explanation:
+          "Small, repeatable steps build habit loops (BJ Fogg, Tiny Habits). " +
+          "One clear action beats a long list when everyone is already stressed.",
+        actions: [
+          "Choose one behaviour to practice (not three)",
+          "Write it on a sticky note where you'll see it",
+          "Celebrate any attempt, even partial",
+        ],
+        example:
+          "Instead of a 10-minute talk about bedtime, parent says: 'Tonight we try pajamas before the story.'",
+        mistake_to_avoid: "Changing the whole routine at once.",
+        micro_task: "Post one sticky-note reminder tonight.",
+        duration: "5–7 days",
+        science_reference: "BJ Fogg — Tiny Habits",
+      },
+    ],
+  };
+}
 
 export interface CoachWin {
   win: number;
@@ -298,99 +359,73 @@ function buildPromptContext(
   return { triggers, topicBlock, ageBrief };
 }
 
-export async function generateInitialCoachWins(
+async function callInitialCoachAi(
   input: CoachInput,
   goalLabel: string,
-  goalBrief: string,
   renderTopicAnswersBlock: (ta?: Record<string, string | string[]>) => string,
-): Promise<{ plan: CoachPlan; aiOk: boolean }> {
-  const { triggers, topicBlock, ageBrief } = buildPromptContext(
+): Promise<CoachPlan | null> {
+  const { triggers, topicBlock } = buildPromptContext(
     input,
     goalLabel,
-    goalBrief,
+    "",
     renderTopicAnswersBlock,
   );
 
-  const systemPrompt = `You are a specialist child psychologist and parenting coach.
-Generate exactly 2 high-impact, personalized wins for the parent — fast, concise, and actionable.
-Return valid JSON only. No markdown, no commentary.`;
+  const systemPrompt =
+    "Parenting coach. Generate exactly 2 simple, actionable wins. Keep output short. No explanation. Valid JSON only.";
 
-  const userPrompt = `Generate exactly 2 high-impact personalized wins for this parent.
+  const userPrompt = `Generate exactly 2 simple, actionable wins. Keep output short. No explanation.
 
 Goal: ${goalLabel}
-Child age group: ${input.ageGroup} years
+Age: ${input.ageGroup}
 Severity: ${input.severity}
-Common triggers: ${triggers}
-Current routine/approach: ${input.routine}
+Triggers: ${triggers}
+Routine: ${input.routine}
 ${topicBlock}
-Return ONLY valid JSON:
-{
-  "title": "Empathetic title (4-6 words)",
-  "root_cause": "3-4 sentence explanation of WHY this happens at this age",
-  "summary": "2 sentences on how the full 12-win plan will progress",
-  "wins": [
-    {
-      "win": 1,
-      "title": "...",
-      "objective": "...",
-      "deep_explanation": "4-5 substantive lines",
-      "actions": ["...", "...", "..."],
-      "example": "realistic 2-3 sentence story",
-      "mistake_to_avoid": "...",
-      "micro_task": "under 5 minutes today",
-      "duration": "...",
-      "science_reference": "named researcher/theory"
-    },
-    { "win": 2, ... }
-  ]
+JSON only:
+{"title":"...","root_cause":"2 sentences","summary":"1 sentence","wins":[{"win":1,"title":"...","objective":"...","deep_explanation":"2-3 lines","actions":["a","b","c"],"example":"1 sentence","mistake_to_avoid":"...","micro_task":"...","duration":"...","science_reference":"..."},{"win":2,...}]}`;
+
+  const { openai } = await import("@workspace/integrations-openai-ai-server");
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    response_format: { type: "json_object" },
+    max_completion_tokens: 900,
+    temperature: 0.6,
+  });
+  const rawContent = completion.choices[0]?.message?.content?.trim() ?? "";
+  const parsed = JSON.parse(rawContent);
+  if (validatePartialPlan(parsed)) return parsed;
+  return null;
 }
 
-STRICT:
-- EXACTLY 2 wins numbered 1 and 2
-- Focus on connect & diagnose (wins 1-2 of a 12-win arc)
-- 3-5 actions each; every win needs science_reference
-- Tone: warm, specific to ${input.ageGroup} years
-${ageBrief}
-${goalBrief}`;
-
+export async function generateInitialCoachWins(
+  input: CoachInput,
+  goalLabel: string,
+  _goalBrief: string,
+  renderTopicAnswersBlock: (ta?: Record<string, string | string[]>) => string,
+): Promise<{ plan: CoachPlan; aiOk: boolean }> {
   const aiSpan = startCoachPerfSpan("AI_CALL_INITIAL", { goal: input.goal });
   try {
-    const { openai } = await import("@workspace/integrations-openai-ai-server");
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 2200,
-    });
-    const rawContent = completion.choices[0]?.message?.content?.trim() ?? "";
-    try {
-      const parsed = JSON.parse(rawContent);
-      if (validatePartialPlan(parsed)) {
-        aiSpan.end({ aiOk: true, wins: COACH_INITIAL_WINS });
-        return { plan: parsed, aiOk: true };
-      }
-    } catch {
-      /* fall through */
+    const plan = await Promise.race([
+      callInitialCoachAi(input, goalLabel, renderTopicAnswersBlock),
+      aiCallTimeout(INITIAL_AI_TIMEOUT_MS),
+    ]);
+    if (plan) {
+      aiSpan.end({ aiOk: true, wins: COACH_INITIAL_WINS });
+      return { plan, aiOk: true };
     }
     aiSpan.end({ aiOk: false, reason: "validation_failed" });
   } catch (err) {
-    aiSpan.end({ aiOk: false, error: true });
-    logger.error({ err }, "ai-coach initial wins OpenAI error");
+    const timedOut = err instanceof Error && err.message === "initial_ai_timeout";
+    aiSpan.end({ aiOk: false, error: true, timedOut });
+    if (!timedOut) logger.error({ err }, "ai-coach initial wins OpenAI error");
   }
 
-  const full = await loadFallbackPlan(input);
-  return {
-    plan: {
-      title: full.title,
-      root_cause: full.root_cause,
-      summary: full.summary,
-      wins: full.wins.slice(0, COACH_INITIAL_WINS),
-    },
-    aiOk: false,
-  };
+  return { plan: staticInitialWinsFallback(goalLabel, input), aiOk: false };
 }
 
 export async function generateRemainingWinsWithAi(

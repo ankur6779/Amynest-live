@@ -295,6 +295,11 @@ export default function CoachScreen() {
   const scrollerRef = useRef<FlatList<Win>>(null);
   const lastPayloadRef = useRef<{ goal: string; ageGroup: string; severity: string; triggers: string[]; routine: string; } | null>(null);
   const originalWinCountRef = useRef<number>(0);
+  const coachPollActiveRef = useRef(false);
+
+  useEffect(() => () => {
+    coachPollActiveRef.current = false;
+  }, []);
 
   const searchQuery = goalSearch.toLowerCase().trim();
   const filteredCategories = useMemo(() => {
@@ -490,9 +495,33 @@ export default function CoachScreen() {
       goal: payload.goal, ageGroup: payload.ageGroup, severity: payload.severity,
       triggers: payload.triggers, routine: payload.routine,
     };
+    const pollCoachGeneration = async (generationId: string, sessionId: string) => {
+      const pollIntervalMs = 2500;
+      while (coachPollActiveRef.current) {
+        await new Promise((r) => setTimeout(r, pollIntervalMs));
+        if (!coachPollActiveRef.current) return;
+        try {
+          const q = new URLSearchParams({ generationId, sessionId });
+          const statusRes = await authFetch(`/api/coach/status?${q}`);
+          if (!statusRes.ok) continue;
+          const st = (await statusRes.json()) as {
+            status: "partial" | "complete";
+            plan?: Plan;
+          };
+          if (st.plan?.wins?.length) setPlan(st.plan);
+          if (st.status === "complete") {
+            coachPollActiveRef.current = false;
+            return;
+          }
+        } catch {
+          /* retry */
+        }
+      }
+    };
+
     try {
       const { default: i18nInstance } = await import("@/i18n");
-      const res = await authFetch("/api/ai-coach", {
+      const res = await authFetch("/api/coach/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...payload, language: i18nInstance.language || "en" }),
@@ -505,14 +534,23 @@ export default function CoachScreen() {
       }
       if (!res.ok) throw new Error(`Server ${res.status}`);
       void useSubscriptionStore.getState().refresh();
-      const data = (await res.json()) as { plan: Plan; sessionId: string };
+      const data = (await res.json()) as {
+        plan: Plan;
+        sessionId: string;
+        status?: "partial" | "complete";
+        generationId?: string;
+        totalWins?: number;
+      };
       setPlan(data.plan);
-      originalWinCountRef.current = data.plan.wins.length;
+      originalWinCountRef.current = data.totalWins ?? 12;
       setSessionId(data.sessionId);
       setRevealedCount(1);
       setPhase("result");
-      // Free allowance is consumed only on a successful topic completion.
       if (!coachUsage.isPremium) coachUsage.markBlockUsed("completed");
+      if (data.status === "partial" && data.generationId) {
+        coachPollActiveRef.current = true;
+        void pollCoachGeneration(data.generationId, data.sessionId);
+      }
     } catch {
       setPhase("questions");
     }
