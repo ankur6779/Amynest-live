@@ -15,10 +15,8 @@ import {
   getPromptsForAgeMonths,
   monthsToBand,
 } from "@workspace/speech-coach";
-import {
-  speechToText,
-  ensureCompatibleFormat,
-} from "@workspace/integrations-openai-ai-server";
+import { ensureCompatibleFormat } from "@workspace/integrations-openai-ai-server";
+import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 import { z } from "zod";
 import { getAuth } from "../lib/auth";
 import { featureGate } from "../middlewares/featureGate";
@@ -543,17 +541,22 @@ router.post("/speech/transcribe", async (req, res): Promise<void> => {
     return;
   }
 
-  let transcript: string;
-  try {
-    transcript = await speechToText(compatBuffer, compatFormat);
-  } catch (err) {
-    req.log.error({ err, userId }, "speech.transcribe whisper call failed");
-    res.status(502).json({ error: "transcription_failed" });
-    return;
-  }
-
-  req.log.info({ userId, chars: transcript.length }, "speech.transcribe ok");
-  res.json({ transcript });
+  await submitRouteAiJob({
+    routeName: "speech/transcribe",
+    type: "speech.transcribe",
+    userId,
+    input: {
+      audioBase64: compatBuffer.toString("base64"),
+      mimeType: compatFormat === "wav" ? "audio/wav" : "audio/mpeg",
+    },
+    waitMs: 30_000,
+    buildSyncBody: (result) => {
+      const body = result as { text: string };
+      req.log.info({ userId, chars: body.text.length }, "speech.transcribe ok");
+      return { transcript: body.text };
+    },
+    res,
+  });
 });
 
 export default router;

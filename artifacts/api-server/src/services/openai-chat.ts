@@ -1,4 +1,4 @@
-import { openai } from "@workspace/integrations-openai-ai-server";
+import { getOpenAiClient } from "./ai-runtime.js";
 
 export type ChatMessage = {
   role: "system" | "user" | "assistant";
@@ -34,6 +34,7 @@ export async function chatCompletionWithTimeout(
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    const openai = await getOpenAiClient();
     const completion = await openai.chat.completions.create(
       {
         model: params.model ?? "gpt-4o-mini",

@@ -4,7 +4,26 @@ export type AiJobType =
   | "openai.chat"
   | "openai.chat_json"
   | "tts.synthesize"
-  | "routine.generate";
+  | "routine.generate"
+  | "meals.generate"
+  | "meals.ai_generate"
+  | "meals.week_plan"
+  | "meals.family_portions"
+  | "routines.generate"
+  | "routines.enrich_meals"
+  | "spelling.ai_generate"
+  | "spelling.tts_prewarm"
+  | "smart-study.next_questions"
+  | "abacus.tutor"
+  | "phonics.sound"
+  | "phonics.weekly_insight"
+  | "audio-lessons.pregenerate"
+  | "ai-coach.extend"
+  | "ai-coach.stream_plan"
+  | "ai-coach.initial_wins"
+  | "ai-coach.remaining_wins"
+  | "explain.narrative"
+  | "speech.transcribe";
 
 export interface AiJobRecord {
   id: string;

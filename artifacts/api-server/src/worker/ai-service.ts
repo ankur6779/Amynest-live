@@ -15,6 +15,7 @@ export async function processAiJob(data: AiJobQueuePayload): Promise<unknown> {
   const { jobId, type, userId, payload } = data;
   const started = Date.now();
 
+  console.log("Processing job:", jobId);
   logger.info(
     { evt: "ai_worker.job_start", jobId, type, userId, memory: getMemorySnapshot() },
     "AI worker job start",

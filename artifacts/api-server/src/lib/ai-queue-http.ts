@@ -1,15 +1,27 @@
 import type { Response } from "express";
-import { enqueueAiJob, getQueueStats } from "../queue/ai-job-queue.js";
+import { enqueueAiJob, getQueueStats, isBullMqActive } from "../queue/ai-job-queue.js";
 import { waitForJob } from "../queue/ai-job-store.js";
 import { getJobForApi, waitForJobResult, isTerminalStatus } from "../queue/index.js";
-import { isRedisQueueEnabled } from "../queue/redis.js";
+import { isProductionDeployment } from "../queue/mode.js";
 import type { AiJobType } from "../queue/types.js";
 import { checkAiRateLimit } from "../utils/ai-rate-limit.js";
 import { logger } from "./logger.js";
 
 export { isTerminalStatus as isTerminal };
 
+/** Dev / in-memory queue: allow sync completion within this window. */
 export const AI_HTTP_WAIT_MS = Number(process.env.AI_HTTP_WAIT_MS ?? "9_000");
+
+/** BullMQ production: max wait before 202 (default 2.5s; set 0 for immediate 202). */
+const BULLMQ_HTTP_WAIT_MS = Number(process.env.AI_HTTP_WAIT_MS ?? "2_500");
+
+function resolveHttpWaitMs(explicit?: number): number {
+  if (explicit !== undefined) return explicit;
+  if (isBullMqActive()) {
+    return isProductionDeployment() ? 0 : BULLMQ_HTTP_WAIT_MS;
+  }
+  return AI_HTTP_WAIT_MS;
+}
 
 export interface SubmitAiJobOptions {
   res: Response;
@@ -28,7 +40,7 @@ export interface SubmitAiJobOptions {
  * Fast jobs (cache hits) usually finish within `waitMs` and keep the legacy JSON shape.
  */
 export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<void> {
-  const waitMs = opts.waitMs ?? AI_HTTP_WAIT_MS;
+  const waitMs = resolveHttpWaitMs(opts.waitMs);
   const rateKey = opts.rateLimitKey ?? opts.userId;
 
   const rate = checkAiRateLimit(rateKey);
@@ -51,7 +63,7 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
   }
 
   const jobId = enqueued.jobId;
-  const finished = isRedisQueueEnabled()
+  const finished = isBullMqActive()
     ? await waitForJobResult(jobId, waitMs)
     : await waitForJob(jobId, waitMs);
   if (finished && isTerminalStatus(finished.status) && finished.status === "completed") {

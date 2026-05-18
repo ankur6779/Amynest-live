@@ -20,9 +20,33 @@ import {
   type SpellingDifficulty,
   type SpellingWord,
 } from "../data/spelling-words";
-import { readCachedAudio, synthesize } from "../services/elevenLabsService";
+import { readCachedAudio } from "../services/elevenLabsService";
+import { submitRouteAiJob } from "../lib/route-ai-queue.js";
+import { enqueueAiJob } from "../queue/ai-job-queue.js";
 
 const router: IRouter = Router();
+
+async function prewarmWordsTts(
+  userId: string,
+  words: string[],
+  timeoutMs = 60_000,
+): Promise<string[]> {
+  const { wrapJobInput } = await import("../queue/ai-job-payload.js");
+  const enqueued = await enqueueAiJob(
+    "spelling.tts_prewarm",
+    userId,
+    wrapJobInput("spelling/tts-prewarm", { words }),
+  );
+  if (!enqueued.jobId) throw new Error("tts_failed");
+  const { waitForJobResult } = await import("../queue/index.js");
+  const { waitForJob } = await import("../queue/ai-job-store.js");
+  const { isBullMqActive } = await import("../queue/ai-job-queue.js");
+  const finished = isBullMqActive()
+    ? await waitForJobResult(enqueued.jobId, timeoutMs)
+    : await waitForJob(enqueued.jobId, timeoutMs);
+  if (finished?.status !== "completed") throw new Error("tts_failed");
+  return (finished.result as { audioKeys: string[] }).audioKeys ?? [];
+}
 
 // ─── Shared validators ───────────────────────────────────────────────────────
 const ageGroupSchema = z.enum(["2-4", "4-6", "6-8", "8-10+"]);
@@ -492,60 +516,6 @@ const aiResponseSchema = z.object({
   words: z.array(aiWordSchema).min(1).max(15),
 });
 
-async function generateAiWords(
-  age: SpellingAgeGroup,
-  difficulty: SpellingDifficulty,
-  count: number,
-): Promise<SpellingWord[]> {
-  const { openai } = await import("@workspace/integrations-openai-ai-server");
-
-  const ageDescriptor = {
-    "2-4":   "ages 2-4 (foundation: 2-3 letter words, single vowel sounds, no silent letters)",
-    "4-6":   "ages 4-6 (beginner: short CVC and simple blends, max 4-5 letters, easy phonics)",
-    "6-8":   "ages 6-8 (intermediate: 5-6 letter words, common digraphs sh/ch/th, plain phonics)",
-    "8-10+": "ages 8-10+ (advanced: 6-9 letter words, may include silent letters and tricky spellings)",
-  }[age];
-
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    temperature: 0.85,
-    response_format: { type: "json_object" },
-    messages: [
-      {
-        role: "system",
-        content:
-          "You generate kid-friendly spelling word lists. Always return strict JSON. Never include profanity, brand names, proper nouns, or ambiguous spellings.",
-      },
-      {
-        role: "user",
-        content: `Generate ${count} ${difficulty} spelling words for ${ageDescriptor}.
-
-For EACH word return:
-- word: the lowercase target word
-- syllables: array of strings, breaking the word into spoken syllables (e.g. "elephant" -> ["el","e","phant"])
-- chunks: array of phonetic chunks for a missing-letter game, with digraphs grouped (e.g. "ship" -> ["sh","i","p"], "cat" -> ["c","a","t"])
-- hint: a short, kid-friendly clue sentence (max 100 chars), do NOT mention the word itself
-
-Return JSON of the exact shape:
-{ "words": [ { "word": "...", "syllables": ["...",...], "chunks": ["...",...], "hint": "..." }, ... ] }`,
-      },
-    ],
-  });
-
-  const raw = completion.choices[0]?.message?.content ?? "";
-  const parsedJson: unknown = JSON.parse(raw);
-  const validated = aiResponseSchema.parse(parsedJson);
-  return validated.words.map((w) => ({
-    id: `ai-${w.word.toLowerCase()}`,
-    word: w.word.toLowerCase(),
-    ageGroup: age,
-    difficulty,
-    syllables: w.syllables,
-    chunks: w.chunks,
-    hint: w.hint,
-  }));
-}
-
 router.post("/spelling/ai-generate", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
@@ -563,12 +533,23 @@ router.post("/spelling/ai-generate", async (req, res): Promise<void> => {
   const { age, difficulty, count = 10 } = parsed.data;
 
   try {
-    const words = await generateAiWords(age, difficulty, count);
-    logger.info(
-      { evt: "spelling.ai_generate", userId, age, difficulty, count: words.length },
-      "ai words generated",
-    );
-    res.json({ ok: true, words, source: "ai" as const });
+    await submitRouteAiJob({
+      routeName: "spelling/ai-generate",
+      type: "spelling.ai_generate",
+      userId,
+      input: { age, difficulty, count },
+      waitMs: 25_000,
+      buildSyncBody: (result) => {
+        const body = result as { ok: true; words: SpellingWord[]; source: "ai" };
+        logger.info(
+          { evt: "spelling.ai_generate", userId, age, difficulty, count: body.words.length },
+          "ai words generated",
+        );
+        return body;
+      },
+      res,
+    });
+    return;
   } catch (err) {
     const code = err instanceof Error ? err.message : "ai_failed";
     logger.error(
@@ -877,12 +858,12 @@ async function createSpellingSession(args: {
 
   // Pre-warm TTS so the first audio request is a cache hit. Sequential
   // for backpressure against ElevenLabs quotas + a clear failure mode.
-  const audioKeys: string[] = [];
+  let audioKeys: string[] = [];
   try {
-    for (const w of words) {
-      const r = await synthesize(w.word, {});
-      audioKeys.push(r.cacheKey);
-    }
+    audioKeys = await prewarmWordsTts(
+      args.userId,
+      words.map((w) => w.word),
+    );
   } catch (err) {
     const code = err instanceof Error ? err.message : "tts_failed";
     logger.error(
@@ -1828,12 +1809,9 @@ router.post(
     // 0-attempt round and eliminate the kid.
     if (txResult.kind === "audio_pending") {
       const session = txResult.session;
-      const audioKeys: string[] = [];
+      let audioKeys: string[] = [];
       try {
-        for (const w of session.words) {
-          const r = await synthesize(w.word, {});
-          audioKeys.push(r.cacheKey);
-        }
+        audioKeys = await prewarmWordsTts(userId, session.words.map((w) => w.word));
         await db
           .update(spellingSessionsTable)
           .set({ audioKeys })
@@ -1925,12 +1903,12 @@ router.post(
       words: ReturnType<typeof safeWordFor>[];
     } | null = null;
     if (nextSessionData) {
-      const audioKeys: string[] = [];
+      let audioKeys: string[] = [];
       try {
-        for (const w of nextSessionData.words) {
-          const r = await synthesize(w.word, {});
-          audioKeys.push(r.cacheKey);
-        }
+        audioKeys = await prewarmWordsTts(
+          userId,
+          nextSessionData.words.map((w) => w.word),
+        );
         await db
           .update(spellingSessionsTable)
           .set({ audioKeys })

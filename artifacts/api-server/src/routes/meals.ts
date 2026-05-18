@@ -12,6 +12,7 @@ import {
   validateAndEnrichMeal,
   buildInfantFeedingCards,
 } from "../lib/meal-safety.js";
+import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 
 const router: IRouter = Router();
 
@@ -211,66 +212,21 @@ router.get("/meals/generate", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  try {
-    const { openai } = await import("@workspace/integrations-openai-ai-server");
-    const prompt = buildMealPrompt(count, region, type, isVeg);
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.8,
-      max_tokens: 2000,
-      response_format: { type: "json_object" },
-    });
-
-    const raw = completion.choices[0]?.message?.content ?? "{}";
-    let parsed: unknown;
-    try { parsed = JSON.parse(raw); } catch {
-      logger.warn(`[meals/generate] JSON parse failed raw=${raw.slice(0, 200)}`);
-      res.status(502).json({ error: "AI returned invalid JSON. Please retry." });
-      return;
-    }
-
-    let meals: unknown[];
-    if (Array.isArray(parsed)) {
-      meals = parsed;
-    } else if (parsed && typeof parsed === "object") {
-      const obj = parsed as Record<string, unknown>;
-      const found = Object.values(obj).find(v => Array.isArray(v));
-      meals = (found as unknown[]) ?? [];
-    } else {
-      meals = [];
-    }
-
-    if (meals.length === 0) {
-      res.status(502).json({ error: "AI returned no meals. Please retry." });
-      return;
-    }
-
-    const SAFE_TAGS = new Set(["quick","healthy","veg","non-veg","protein","sweet","spicy","light","heavy","kids","tiffin"]);
-    const sanitised = meals.slice(0, 8).map((m) => {
-      if (!m || typeof m !== "object") return null;
-      const o = m as Record<string, unknown>;
-      return {
-        title:        String(o.title ?? "").slice(0, 80),
-        type:         ALLOWED_TYPES.has(String(o.type)) ? String(o.type) : type,
-        region:       String(o.region ?? region).slice(0, 40),
-        ingredients:  (Array.isArray(o.ingredients) ? o.ingredients : []).slice(0, 7).map((i) => String(i).slice(0, 40)),
-        time:         String(o.time ?? "").slice(0, 20),
-        calories:     Math.min(1200, Math.max(50, Number(o.calories) || 200)),
-        tags:         (Array.isArray(o.tags) ? o.tags : []).slice(0, 6).map((t) => String(t).toLowerCase().slice(0, 20)).filter((t) => SAFE_TAGS.has(t)),
-        steps:        (Array.isArray(o.steps) ? o.steps : []).slice(0, 5).map((s) => String(s).slice(0, 300)),
-        imageKeyword: String(o.imageKeyword ?? "").slice(0, 60),
-      };
-    }).filter(Boolean);
-
-    GENERATE_CACHE.set(cacheKey, { meals: sanitised, ts: Date.now() });
-    res.set("Cache-Control", "private, max-age=1800");
-    res.set("X-Cache", "MISS");
-    res.json({ meals: sanitised, cached: false });
-  } catch (err) {
-    logger.error(`[meals/generate] OpenAI error ${String(err)}`);
-    res.status(503).json({ error: "AI service unavailable. Please retry." });
-  }
+  await submitRouteAiJob({
+    routeName: "meals/generate",
+    type: "meals.generate",
+    userId,
+    input: { count, region, type, isVeg },
+    waitMs: 25_000,
+    buildSyncBody: (result) => {
+      const body = result as { meals: unknown[]; cached: false };
+      GENERATE_CACHE.set(cacheKey, { meals: body.meals, ts: Date.now() });
+      res.set("Cache-Control", "private, max-age=1800");
+      res.set("X-Cache", "MISS");
+      return { meals: body.meals, cached: false };
+    },
+    res,
+  });
 });
 
 // ─── AI Meal Generator from Free-Text User Query ─────────────────────────────
@@ -524,123 +480,77 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
     return;
   }
 
+  const prompt = buildAiGeneratePrompt({ query, region, audience, childAge, totalAgeMonths: childAgeMonths, dietType, allergies, foodStyle, subCuisine, country });
+
   try {
-    const { openai } = await import("@workspace/integrations-openai-ai-server");
-
-    const prompt = buildAiGeneratePrompt({ query, region, audience, childAge, totalAgeMonths: childAgeMonths, dietType, allergies, foodStyle, subCuisine, country });
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are Amy, a helpful cooking assistant for parents. You only generate meal recipes. You output strict JSON only — no markdown, no prose outside the JSON.",
-        },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.85,
-      max_tokens: 2500,
-      response_format: { type: "json_object" },
-    });
-
-    const raw = completion.choices[0]?.message?.content ?? "{}";
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      logger.warn(`[meals/ai-generate] JSON parse failed raw=${raw.slice(0, 200)}`);
-      res.status(502).json({ error: "AI returned invalid JSON. Please retry." });
-      return;
-    }
-
-    let rawMeals: unknown[] = [];
-    let amyMessage = "Amy has suggested these meals just for you!";
-
-    if (parsed && typeof parsed === "object") {
-      const obj = parsed as Record<string, unknown>;
-      if (Array.isArray(obj.meals)) rawMeals = obj.meals;
-      else {
-        const found = Object.values(obj).find(v => Array.isArray(v));
-        rawMeals = (found as unknown[]) ?? [];
-      }
-      if (typeof obj.amyMessage === "string" && obj.amyMessage.trim()) {
-        amyMessage = String(obj.amyMessage).slice(0, 180);
-      }
-    }
-
-    if (rawMeals.length === 0) {
-      res.status(502).json({ error: "AI returned no meals. Please retry." });
-      return;
-    }
-
-    const SAFE_TAGS = new Set(["quick","healthy","veg","non-veg","protein","sweet","spicy","light","heavy","kids","tiffin"]);
-
-    const meals = rawMeals.slice(0, 6).map((m, idx) => {
-      if (!m || typeof m !== "object") return null;
-      const o = m as Record<string, unknown>;
-
-      const title = String(o.title ?? "").slice(0, 80) || "Meal";
-      const emoji = typeof o.emoji === "string" && o.emoji.trim()
-        ? o.emoji.trim().slice(0, 4)
-        : DEFAULT_EMOJIS[idx % DEFAULT_EMOJIS.length];
-      const ingredients = (Array.isArray(o.ingredients) ? o.ingredients : [])
-        .slice(0, 8).map((i) => String(i).slice(0, 60));
-      const steps = (Array.isArray(o.steps) ? o.steps : [])
-        .slice(0, 6).map((s) => String(s).slice(0, 300));
-      const prepMinutes = o.prepMinutes != null
-        ? Math.min(120, Math.max(5, Number(o.prepMinutes) || 15))
-        : parsePrepMinutes(String(o.time ?? "15 min"));
-      const calories = Math.min(1200, Math.max(50, Number(o.calories) || 200));
-      const tags: string[] = (Array.isArray(o.tags) ? o.tags : [])
-        .slice(0, 4)
-        .map((t) => String(t).toLowerCase().trim().slice(0, 20))
-        .filter((t) => SAFE_TAGS.has(t));
-      const isVegMeal = o.isVeg === true || o.isVeg === "true"
-        || tags.includes("veg")
-        || (dietType === "veg" || dietType === "vegan" || dietType === "jain");
-
-      const bgGradient = AI_GENERATE_GRADIENTS[idx % AI_GENERATE_GRADIENTS.length] as [string, string];
-      const id = slugify(title) + "-" + idx;
-      const audioText = `${title}. Ingredients: ${ingredients.join(", ")}. Steps: ${steps.join(". ")}`;
-
-      // ── Post-generation safety validation & enrichment ──────────────────
-      const enrichment = childAgeMonths != null
-        ? validateAndEnrichMeal(
-            { title, ingredients, tags, isVeg: isVegMeal },
-            childAgeMonths,
-            allergies,
-            dietType,
-          )
-        : { safetyBadges: [] as string[], whyThisMeal: "", safetyWarning: undefined };
-
-      return {
-        id,
-        title,
-        emoji,
-        bgGradient,
+    await submitRouteAiJob({
+      routeName: "meals/ai-generate",
+      type: "meals.ai_generate",
+      userId,
+      input: {
+        prompt,
         region,
-        category: audience,
-        ingredients,
-        steps,
-        calories,
-        tags,
-        prepMinutes,
-        audioText,
-        isVeg: isVegMeal,
-        matchedIngredients: [] as string[],
-        missingIngredients: [] as string[],
-        safetyBadges: enrichment.safetyBadges,
-        whyThisMeal: enrichment.whyThisMeal,
-        ...(enrichment.safetyWarning ? { safetyWarning: enrichment.safetyWarning } : {}),
-      };
-    }).filter(Boolean);
-
-    const ageBand = childAgeMonths != null ? getAgeBand(childAgeMonths) : undefined;
-    res.set("Cache-Control", "no-store");
-    res.json({ meals, amyMessage, ...(ageBand ? { ageBand } : {}) });
+        audience,
+        childAgeMonths: childAgeMonths ?? undefined,
+        allergies,
+        dietType,
+      },
+      waitMs: 30_000,
+      buildSyncBody: (result) => {
+        const ai = result as { meals: Array<Record<string, unknown>>; amyMessage: string; ageBand?: string };
+        const SAFE_TAGS = new Set(["quick","healthy","veg","non-veg","protein","sweet","spicy","light","heavy","kids","tiffin"]);
+        const meals = ai.meals.slice(0, 6).map((o, idx) => {
+          const title = String(o.title ?? "").slice(0, 80) || "Meal";
+          const emoji = typeof o.emoji === "string" && o.emoji.trim()
+            ? o.emoji.trim().slice(0, 4)
+            : DEFAULT_EMOJIS[idx % DEFAULT_EMOJIS.length];
+          const ingredients = (Array.isArray(o.ingredients) ? o.ingredients : []).slice(0, 8).map(String);
+          const steps = (Array.isArray(o.steps) ? o.steps : []).slice(0, 6).map(String);
+          const prepMinutes = Number(o.prepMinutes) || 15;
+          const calories = Math.min(1200, Math.max(50, Number(o.calories) || 200));
+          const tags = (Array.isArray(o.tags) ? o.tags : [])
+            .slice(0, 4)
+            .map((t) => String(t).toLowerCase().trim().slice(0, 20))
+            .filter((t) => SAFE_TAGS.has(t));
+          const isVegMeal = o.isVeg === true || tags.includes("veg");
+          const bgGradient = AI_GENERATE_GRADIENTS[idx % AI_GENERATE_GRADIENTS.length] as [string, string];
+          const enrichment = childAgeMonths != null
+            ? validateAndEnrichMeal(
+                { title, ingredients, tags, isVeg: isVegMeal },
+                childAgeMonths,
+                allergies,
+                dietType,
+              )
+            : { safetyBadges: [] as string[], whyThisMeal: "", safetyWarning: undefined };
+          return {
+            id: slugify(title) + "-" + idx,
+            title,
+            emoji,
+            bgGradient,
+            region,
+            category: audience,
+            ingredients,
+            steps,
+            calories,
+            tags,
+            prepMinutes,
+            audioText: `${title}. Ingredients: ${ingredients.join(", ")}.`,
+            isVeg: isVegMeal,
+            matchedIngredients: [] as string[],
+            missingIngredients: [] as string[],
+            safetyBadges: enrichment.safetyBadges,
+            whyThisMeal: enrichment.whyThisMeal,
+            ...(enrichment.safetyWarning ? { safetyWarning: enrichment.safetyWarning } : {}),
+          };
+        });
+        res.set("Cache-Control", "no-store");
+        return { meals, amyMessage: ai.amyMessage, ...(ai.ageBand ? { ageBand: ai.ageBand } : {}) };
+      },
+      res,
+    });
+    return;
   } catch (err) {
-    logger.error(`[meals/ai-generate] OpenAI error ${String(err)}`);
+    logger.error(`[meals/ai-generate] queue error ${String(err)}`);
     res.status(503).json({ error: "AI service unavailable. Please retry." });
   }
 });
@@ -877,68 +787,43 @@ router.post("/meals/week-plan", requireAuth, async (req, res): Promise<void> => 
 
   req.log.info({ childAge, childName, dietType, foodStyle, subCuisine, allergies, weather, country, isSchoolGoing, schoolStartTime, schoolEndTime, wakeUpTime, sleepTime, parentWorkType }, "[meals/week-plan] generating");
 
-  try {
-    const { openai } = await import("@workspace/integrations-openai-ai-server");
-    const prompt = buildWeekPlanPrompt({
-      childAge, ageMonths, childName, country, dietType, foodStyle, subCuisine, allergies, weather,
-      isSchoolGoing, schoolStartTime, schoolEndTime, wakeUpTime, sleepTime, travelMode,
-      goals, parentGoals, parentWorkType, parentWorkStart, parentWorkEnd,
-    });
+  const prompt = buildWeekPlanPrompt({
+    childAge, ageMonths, childName, country, dietType, foodStyle, subCuisine, allergies, weather,
+    isSchoolGoing, schoolStartTime, schoolEndTime, wakeUpTime, sleepTime, travelMode,
+    goals, parentGoals, parentWorkType, parentWorkStart, parentWorkEnd,
+  });
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "You are a pediatric nutrition AI. Output ONLY strict JSON, no prose, no markdown." },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 3000,
-      response_format: { type: "json_object" },
-    });
-
-    const raw = completion.choices[0]?.message?.content ?? "{}";
-    let parsed: unknown;
-    try { parsed = JSON.parse(raw); } catch {
-      logger.warn(`[meals/week-plan] JSON parse failed raw=${raw.slice(0, 200)}`);
-      res.status(502).json({ error: "AI returned invalid JSON. Please retry." });
-      return;
-    }
-
-    const obj = parsed as Record<string, unknown>;
-    let weekPlan = Array.isArray(obj.week_plan) ? obj.week_plan : [];
-
-    if (!weekPlan.length) {
-      logger.warn("[meals/week-plan] empty week_plan array from AI");
-      res.status(502).json({ error: "AI returned empty plan. Please retry." });
-      return;
-    }
-
-    const MEAL_KEYS = ["breakfast","mid_morning","lunch","snack","dinner"] as const;
-    // Sanitise — clamp numbers, truncate strings
-    const sanitised = DAYS.map((dayName, di) => {
-      const raw = weekPlan[di] as Record<string, unknown> | undefined ?? {};
-      const meals: Record<string, unknown> = {};
-      for (const key of MEAL_KEYS) {
-        const m = (raw.meals as Record<string, unknown> | undefined)?.[key] as Record<string, unknown> | undefined ?? {};
-        meals[key] = {
-          name:      String(m.name ?? "").slice(0, 100) || "—",
-          protein_g: Math.min(60, Math.max(0, Number(m.protein_g) || 0)),
-          carbs_g:   Math.min(150, Math.max(0, Number(m.carbs_g) || 0)),
-          fiber_g:   Math.min(20, Math.max(0, Number(m.fiber_g) || 0)),
-          calories:  Math.min(800, Math.max(50, Number(m.calories) || 200)),
-        };
-      }
-      return { day: dayName, meals };
-    });
-
-    WEEK_PLAN_CACHE.set(cacheKey, { plan: sanitised, ts: Date.now(), params: paramsFingerprint });
-    res.set("Cache-Control", "private, max-age=3600");
-    res.set("X-Cache", "MISS");
-    res.json({ plan: sanitised, generatedAt: new Date().toISOString(), cached: false });
-  } catch (err) {
-    logger.error(`[meals/week-plan] error ${String(err)}`);
-    res.status(503).json({ error: "AI service unavailable. Please retry." });
-  }
+  await submitRouteAiJob({
+    routeName: "meals/week-plan",
+    type: "meals.week_plan",
+    userId,
+    input: { prompt },
+    waitMs: 35_000,
+    buildSyncBody: (result) => {
+      const weekPlan = (result as { plan: unknown[] }).plan;
+      const MEAL_KEYS = ["breakfast", "mid_morning", "lunch", "snack", "dinner"] as const;
+      const sanitised = DAYS.map((dayName, di) => {
+        const rawDay = weekPlan[di] as Record<string, unknown> | undefined ?? {};
+        const meals: Record<string, unknown> = {};
+        for (const key of MEAL_KEYS) {
+          const m = (rawDay.meals as Record<string, unknown> | undefined)?.[key] as Record<string, unknown> | undefined ?? {};
+          meals[key] = {
+            name: String(m.name ?? "").slice(0, 100) || "—",
+            protein_g: Math.min(60, Math.max(0, Number(m.protein_g) || 0)),
+            carbs_g: Math.min(150, Math.max(0, Number(m.carbs_g) || 0)),
+            fiber_g: Math.min(20, Math.max(0, Number(m.fiber_g) || 0)),
+            calories: Math.min(800, Math.max(50, Number(m.calories) || 200)),
+          };
+        }
+        return { day: dayName, meals };
+      });
+      WEEK_PLAN_CACHE.set(cacheKey, { plan: sanitised, ts: Date.now(), params: paramsFingerprint });
+      res.set("Cache-Control", "private, max-age=3600");
+      res.set("X-Cache", "MISS");
+      return { plan: sanitised, generatedAt: new Date().toISOString(), cached: false };
+    },
+    res,
+  });
 });
 
 
@@ -1050,54 +935,23 @@ router.post("/meals/family-portions", requireAuth, async (req, res): Promise<voi
 
   req.log.info({ mealName, country, dietType }, "[meals/family-portions] generating");
 
-  try {
-    const { openai } = await import("@workspace/integrations-openai-ai-server");
-    const prompt = buildFamilyPortionsPrompt({ mealName, dietType, allergies, country });
+  const prompt = buildFamilyPortionsPrompt({ mealName, dietType, allergies, country });
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "You are a pediatric nutrition expert. Output ONLY strict JSON, no prose, no markdown." },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.3,
-      max_tokens: 500,
-      response_format: { type: "json_object" },
-    });
-
-    const raw = completion.choices[0]?.message?.content ?? "{}";
-    let parsed: unknown;
-    try { parsed = JSON.parse(raw); } catch {
-      logger.warn(`[meals/family-portions] JSON parse failed raw=${raw.slice(0, 200)}`);
-      res.status(502).json({ error: "AI returned invalid JSON. Please retry." });
-      return;
-    }
-
-    const obj = parsed as Record<string, unknown>;
-    const portions = (obj.portions ?? {}) as Record<string, Record<string, unknown>>;
-    const safeStr = (v: unknown, max: number): string | null =>
-      v && String(v).trim() ? String(v).slice(0, max) : null;
-
-    const sanitised = {
-      meal: String(obj.meal ?? mealName).slice(0, 100),
-      portions: {
-        "6_12m": { amount: String(portions["6_12m"]?.amount ?? "—").slice(0, 80), texture: safeStr(portions["6_12m"]?.texture, 60) },
-        "1_3y":  { amount: String(portions["1_3y"]?.amount  ?? "—").slice(0, 80), texture: safeStr(portions["1_3y"]?.texture,  60) },
-        "4_8y":  { amount: String(portions["4_8y"]?.amount  ?? "—").slice(0, 80), texture: safeStr(portions["4_8y"]?.texture,  60) },
-        "adult": { amount: String(portions["adult"]?.amount  ?? "—").slice(0, 80), texture: null },
-      },
-      feeding_tip:  safeStr(obj.feeding_tip,  150),
-      allergy_note: safeStr(obj.allergy_note, 250),
-    };
-
-    FAMILY_PORTIONS_CACHE.set(cacheKey, { data: sanitised, ts: Date.now() });
-    res.set("Cache-Control", "private, max-age=3600");
-    res.set("X-Cache", "MISS");
-    res.json({ ...sanitised, cached: false });
-  } catch (err) {
-    logger.error(`[meals/family-portions] error ${String(err)}`);
-    res.status(503).json({ error: "AI service unavailable. Please retry." });
-  }
+  await submitRouteAiJob({
+    routeName: "meals/family-portions",
+    type: "meals.family_portions",
+    userId,
+    input: { prompt, mealName },
+    waitMs: 15_000,
+    buildSyncBody: (result) => {
+      const sanitised = result as Record<string, unknown>;
+      FAMILY_PORTIONS_CACHE.set(cacheKey, { data: sanitised, ts: Date.now() });
+      res.set("Cache-Control", "private, max-age=3600");
+      res.set("X-Cache", "MISS");
+      return { ...sanitised, cached: false };
+    },
+    res,
+  });
 });
 
 export default router;

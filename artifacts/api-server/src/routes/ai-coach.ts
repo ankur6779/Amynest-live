@@ -12,8 +12,10 @@ import {
   COACH_INITIAL_WINS,
   COACH_TOTAL_WINS,
   dbGetCoachCache,
-  generateInitialCoachWins,
   generateRemainingCoachWins,
+  staticInitialWinsFallback,
+  INITIAL_AI_TIMEOUT_MS,
+  validatePartialPlan,
   getCoachGenerationById,
   getCoachGenerationBySession,
   newCoachGenerationIds,
@@ -851,12 +853,41 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
 
   const goalLabel = GOAL_LABELS[input.goal!] ?? input.goal;
 
-  const { plan: partialPlan, aiOk } = await generateInitialCoachWins(
-    input,
-    goalLabel!,
-    "",
-    renderTopicAnswersBlock,
-  );
+  const topicBlock = renderTopicAnswersBlock(input.topicAnswers);
+  const { enqueueAiJob, isBullMqActive } = await import("../queue/ai-job-queue.js");
+  const { wrapJobInput } = await import("../queue/ai-job-payload.js");
+  const { waitForJobResult } = await import("../queue/index.js");
+  const { waitForJob } = await import("../queue/ai-job-store.js");
+  let partialPlan: CoachPlan = staticInitialWinsFallback(goalLabel!, input);
+  let aiOk = false;
+  if (userId) {
+    console.log("Enqueue:", "ai-coach/initial");
+    const enqueued = await enqueueAiJob(
+      "ai-coach.initial_wins",
+      userId,
+      wrapJobInput("ai-coach/initial", {
+        systemPrompt: "coach-initial",
+        userPrompt: JSON.stringify({ input, goalLabel, topicBlock }),
+      }),
+    );
+    if (enqueued.jobId) {
+      const finished = isBullMqActive()
+        ? await waitForJobResult(enqueued.jobId, INITIAL_AI_TIMEOUT_MS)
+        : await waitForJob(enqueued.jobId, INITIAL_AI_TIMEOUT_MS);
+      if (finished?.status === "completed" && finished.result) {
+        const body = finished.result as { raw: string };
+        try {
+          const parsed = JSON.parse(body.raw);
+          if (validatePartialPlan(parsed)) {
+            partialPlan = parsed;
+            aiOk = true;
+          }
+        } catch {
+          /* fallback */
+        }
+      }
+    }
+  }
 
   const { sessionId: effectiveSessionId, generationId } = newCoachGenerationIds();
 
@@ -904,20 +935,22 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
           status: "partial",
         }),
       ]);
-      generateRemainingCoachWins({
-        generationId,
-        sessionId: effectiveSessionId,
+      const { enqueueAiJob } = await import("../queue/ai-job-queue.js");
+      const { wrapJobInput } = await import("../queue/ai-job-payload.js");
+      void enqueueAiJob(
+        "ai-coach.remaining_wins",
         userId,
-        cacheKey,
-        input,
-        partialPlan,
-        goalLabel: goalLabel!,
-        goalBrief,
-        renderTopicAnswersBlock,
-        memCacheSet: (plan) => {
-          memCache.set(cacheKey, { plan, ts: Date.now() });
-        },
-      });
+        wrapJobInput("ai-coach/remaining", {
+          generationId,
+          sessionId: effectiveSessionId,
+          userId,
+          cacheKey,
+          input,
+          partialPlan,
+          goalLabel: goalLabel!,
+          goalBrief,
+        }),
+      );
     })();
   });
 }
@@ -1125,85 +1158,49 @@ ${goalBrief}`;
   let plan: CoachPlan = fallbackPlan(input);
   let aiOk = false;
   try {
-    const { openai } = await import("@workspace/integrations-openai-ai-server");
-    const stream = await openai.chat.completions.create(
-      {
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-        max_completion_tokens: 8000,
-        stream: true,
-      },
-      // Cancel the upstream OpenAI request as soon as the client disconnects
-      // so we don't keep burning tokens for an abandoned plan.
-      { signal: aiAbort.signal },
-    );
-
-    let buf = "";
-    let lastWinsBuilt = 0;
-    let winCursor = 0;
-    let metaSent = false;
-    const sentWinNumbers = new Set<number>();
-    // Each new win object in the JSON starts with `"win": N`. Counting that
-    // pattern in the buffer gives us a cheap progress indicator (kept for
-    // backwards compatibility with older clients).
-    const winRe = /"win"\s*:\s*\d+/g;
-    for await (const chunk of stream) {
-      if (ended) break;
-      const delta = chunk.choices[0]?.delta?.content ?? "";
-      if (!delta) continue;
-      buf += delta;
-
-      // Emit plan_meta as soon as title/root_cause/summary are all complete.
-      if (!metaSent) {
-        const meta = tryExtractMeta(buf);
-        if (meta) {
-          send("plan_meta", meta);
-          metaSent = true;
-        }
-      }
-
-      // Emit each newly-completed win as a `win` event.
-      const extracted = extractCompletedWins(buf, winCursor);
-      winCursor = extracted.cursor;
-      for (const raw of extracted.wins) {
-        try {
-          const winObj = JSON.parse(raw) as unknown;
-          if (validateWin(winObj) && !sentWinNumbers.has(winObj.win)) {
-            sentWinNumbers.add(winObj.win);
-            send("win", winObj);
+    if (!ended && userId) {
+      const { enqueueAiJob, isBullMqActive } = await import("../queue/ai-job-queue.js");
+      const { wrapJobInput } = await import("../queue/ai-job-payload.js");
+      const { waitForJobResult } = await import("../queue/index.js");
+      const { waitForJob } = await import("../queue/ai-job-store.js");
+      console.log("Enqueue:", "ai-coach/stream");
+      const enqueued = await enqueueAiJob(
+        "ai-coach.stream_plan",
+        userId,
+        wrapJobInput("ai-coach/stream", { systemPrompt, userPrompt }),
+      );
+      if (enqueued.jobId) {
+        const finished = isBullMqActive()
+          ? await waitForJobResult(enqueued.jobId, 90_000)
+          : await waitForJob(enqueued.jobId, 90_000);
+        if (finished?.status === "completed" && finished.result) {
+          const buf = (finished.result as { raw: string }).raw ?? "";
+          const meta = tryExtractMeta(buf);
+          if (meta) send("plan_meta", meta);
+          const extracted = extractCompletedWins(buf, 0);
+          for (const rawWin of extracted.wins) {
+            try {
+              const winObj = JSON.parse(rawWin) as unknown;
+              if (validateWin(winObj)) send("win", winObj);
+            } catch {
+              /* skip partial */
+            }
           }
-        } catch {
-          // unparseable slice — skip; the final JSON.parse below remains the
-          // source of truth.
+          send("progress", { winsBuilt: 12, totalWins: 12 });
+          try {
+            const parsed = JSON.parse(buf);
+            if (validatePlan(parsed)) {
+              plan = parsed;
+              aiOk = true;
+            }
+          } catch (parseErr) {
+            logger.warn({ err: parseErr, cacheKey: cacheKey.slice(0, 8) }, "ai-coach (stream) JSON parse failed");
+          }
         }
       }
-
-      const winsBuilt = Math.min(12, (buf.match(winRe) || []).length);
-      if (winsBuilt > lastWinsBuilt) {
-        lastWinsBuilt = winsBuilt;
-        send("progress", { winsBuilt, totalWins: 12 });
-      }
-    }
-
-    try {
-      const parsed = JSON.parse(buf);
-      if (validatePlan(parsed)) {
-        plan = parsed;
-        aiOk = true;
-      } else {
-        logger.warn({ cacheKey: cacheKey.slice(0, 8) }, "ai-coach (stream) plan validation failed — using fallback");
-      }
-    } catch (parseErr) {
-      logger.warn({ err: parseErr, cacheKey: cacheKey.slice(0, 8) }, "ai-coach (stream) JSON parse failed — using fallback");
     }
   } catch (err) {
-    // AbortError is expected when the client disconnected — don't log as error.
-    const isAbort = (err as { name?: string } | null)?.name === "AbortError";
-    if (!isAbort) logger.error({ err }, "ai-coach (stream) OpenAI error");
+    logger.error({ err }, "ai-coach (stream) queue error");
   }
 
   // If the user already disconnected, skip post-work entirely. finish() has
@@ -1279,38 +1276,25 @@ STRICT:
 - Every win MUST include "science_reference"
 - Output ONLY the JSON object`;
 
-  let wins: Win[] | null = null;
-  let usedFallback = false;
-  try {
-    const { openai } = await import("@workspace/integrations-openai-ai-server");
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 3000,
-    });
-    const rawContent = completion.choices[0]?.message?.content?.trim() ?? "";
-    try {
-      const parsed = JSON.parse(rawContent);
-      const arr = (parsed as { wins?: unknown }).wins;
-      if (Array.isArray(arr) && arr.length === 3 && arr.every(validateWin)
-          && (arr as Win[]).every((w, i) => w.win === start + i)) {
-        wins = arr as Win[];
+  const { submitRouteAiJob } = await import("../lib/route-ai-queue.js");
+  await submitRouteAiJob({
+    routeName: "ai-coach/extend",
+    type: "ai-coach.extend",
+    userId,
+    input: { systemPrompt, userPrompt, startWinNumber: start },
+    waitMs: 30_000,
+    buildSyncBody: (result) => {
+      const body = result as { wins: Win[]; source: string; usedFallback: boolean };
+      let wins = body.wins;
+      let usedFallback = body.usedFallback;
+      if (wins?.length === 3 && wins.every(validateWin) && wins.every((w, i) => w.win === start + i)) {
+        return { wins, source: usedFallback ? "fallback" : "ai" };
       }
-    } catch { /* fall through to fallback */ }
-  } catch (err) {
-    logger.error({ err }, "ai-coach extend OpenAI error");
-  }
-
-  if (!wins) {
-    wins = fallbackExtensionWins(failedWinTitle, start);
-    usedFallback = true;
-  }
-
-  res.json({ wins, source: usedFallback ? "fallback" : "ai" });
+      wins = fallbackExtensionWins(failedWinTitle, start);
+      return { wins, source: "fallback" };
+    },
+    res,
+  });
 });
 
 // ─── POST /ai-coach/feedback ─────────────────────────────────────────────

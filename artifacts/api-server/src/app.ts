@@ -9,6 +9,7 @@ import { APEX_PRODUCTION_HOST } from "./lib/canonical-host";
 import { slowApiGuard } from "./middlewares/slow-api-guard";
 import { getMemorySnapshot } from "./utils/memory-monitor.js";
 import { getAiQueueHealth } from "./lib/ai-queue-http.js";
+import { getQueueHealthSnapshot } from "./queue/bootstrap.js";
 
 const app: Express = express();
 
@@ -71,17 +72,21 @@ app.get("/", (_req, res) => {
 
 app.get("/health", async (_req, res) => {
   const memory = getMemorySnapshot();
-  const queue = await getAiQueueHealth();
-  const status = memory.warn ? "degraded" : "ok";
+  const queueSnapshot = await getQueueHealthSnapshot();
+  const queueStats = await getAiQueueHealth();
+  const status =
+    memory.warn || queueSnapshot.status === "degraded" ? "degraded" : "ok";
   if (memory.warn) {
     logger.warn({ evt: "health.memory_high", memory }, "Health check: high memory");
   }
   res.status(200).json({
     status,
+    redis: queueSnapshot.redis,
+    queueMode: queueSnapshot.queueMode,
+    workerExpected: queueSnapshot.workerExpected,
     service: "AmyNest API",
     memory,
-    aiQueue: queue,
-    redis: !!process.env.REDIS_URL,
+    aiQueue: queueStats,
     uptimeSec: Math.round(process.uptime()),
   });
 });
