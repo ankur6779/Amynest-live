@@ -76,6 +76,8 @@ export default function PricingPage() {
   const isAndroid = isAndroidDevice();
   const nativeBilling = useNativeBilling();
   const isIOS = nativeBilling.platform === "ios";
+  const isAndroidNative = nativeBilling.platform === "android";
+  const isNativeShell = nativeBilling.wrapperPresent;
 
   const onUpgrade = async (method?: "upi") => {
     const key = method === "upi" ? "googlepay" : "razorpay";
@@ -99,7 +101,7 @@ export default function PricingPage() {
     if (!res.ok) setNotice(res.reason ?? "Could not cancel. Please try again."); // i18n-ok: fallback error
   };
 
-  const onUpgradeApple = async () => {
+  const onUpgradeNativeStore = async () => {
     setNotice(null);
     const res = await nativeBilling.purchase(selected);
     if (!res.ok && !res.userCancelled) {
@@ -275,7 +277,7 @@ export default function PricingPage() {
             ) : (
               <button
                 type="button"
-                onClick={onUpgradeApple}
+                onClick={onUpgradeNativeStore}
                 disabled={isProcessing || !nativeBilling.available || plans.length === 0}
                 data-testid="button-upgrade-apple"
                 data-on-dark
@@ -300,11 +302,74 @@ export default function PricingPage() {
                 )}
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => void nativeBilling.restore()}
+              className="w-full text-white/55 text-xs font-semibold py-2 hover:text-white/85"
+            >
+              {t("pricing.restore_purchases")}
+            </button>
           </div>
         )}
 
-        {/* ── India: Google Pay (primary) + Razorpay (secondary) ── */}
-        {!isIOS && isIndia && !isPremium && (
+        {/* Android WebView wrapper → Google Play Billing (required by Play policy) */}
+        {isAndroidNative && !isPremium && (
+          <div className="space-y-2">
+            {nativeBilling.unavailableReason ? (
+              <div
+                data-on-dark
+                className="w-full space-y-2 rounded-xl border border-white/15 bg-white/5 px-4 py-4 text-center"
+              >
+                <Smartphone className="mx-auto h-5 w-5 text-white/60" />
+                <p className="text-sm font-bold text-white/90">{t("pricing.google_play_unavailable")}</p>
+                <p className="text-xs leading-relaxed text-white/55">{nativeBilling.unavailableReason}</p>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={onUpgradeNativeStore}
+                disabled={isProcessing || !nativeBilling.available || plans.length === 0}
+                data-testid="button-upgrade-google-play-native"
+                data-on-dark
+                className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-white shadow-[0_4px_18px_rgba(0,0,0,0.35)] transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {nativeBilling.purchasing ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" style={{ color: "#01875A" }} />
+                    <span className="text-sm font-bold" style={{ color: "#202124" }}>
+                      {t("pricing.google_play_processing")}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <svg width="26" height="28" viewBox="0 0 26 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="M1 1.5L14.5 14L1 26.5V1.5Z" fill="#01875A" stroke="#01875A" strokeWidth="0.5"/>
+                      <path d="M1 1.5L24 10L14.5 14L1 1.5Z" fill="#FFD400" stroke="#FFD400" strokeWidth="0.5"/>
+                      <path d="M1 26.5L14.5 14L24 18L1 26.5Z" fill="#FF3A44" stroke="#FF3A44" strokeWidth="0.5"/>
+                      <path d="M24 10L14.5 14L24 18L26 14L24 10Z" fill="#00AEFF" stroke="#00AEFF" strokeWidth="0.5"/>
+                    </svg>
+                    <span className="text-sm font-bold" style={{ color: "#202124" }}>
+                      {t("pricing.subscribe_google_play")}
+                    </span>
+                  </>
+                )}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => void nativeBilling.restore()}
+              className="w-full text-white/55 text-xs font-semibold py-2 hover:text-white/85"
+            >
+              {t("pricing.restore_purchases")}
+            </button>
+            <p className="text-center text-[10px] text-white/30">
+              {t("pricing.google_play_subtitle")}
+            </p>
+          </div>
+        )}
+
+        {/* ── India browser PWA: Google Pay + Razorpay (not Play wrapper) ── */}
+        {!isNativeShell && !isIOS && isIndia && !isPremium && (
           <>
             {/* PRIMARY: Google Pay button */}
             {/* audit-ok: Google Pay button — white bg with Google brand gray text (#3C4043) and Google blue spinner (#4285F4) per Google Pay brand guidelines */}
@@ -360,8 +425,8 @@ export default function PricingPage() {
           </div>
         )}
 
-        {/* Non-India + Android (non-iOS) → Google Play billing */}
-        {!isIOS && !isIndia && isAndroid && !isPremium && (
+        {/* Non-India + Android browser PWA → open Play Store listing */}
+        {!isNativeShell && !isIOS && !isIndia && isAndroid && !isPremium && (
           <a
             href={PLAY_STORE_URL}
             target="_blank"

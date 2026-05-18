@@ -335,6 +335,8 @@
     "pay_with_apple": "Pay with Apple",
     "apple_processing": "Processing with Apple…",
     "apple_unavailable": "Apple billing is not available right now. Make sure you are signed in to the App Store and try again.",
+    "google_play_unavailable": "Google Play billing is not available right now. Update the app from the Play Store and try again.",
+    "google_play_processing": "Opening Google Play…",
     "restore_purchases": "Restore Purchases"
   },
   "profile": {
