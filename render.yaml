@@ -15,12 +15,12 @@
 databases:
   - name: amynest-db
     databaseName: amynest_db
-    plan: basic_256mb
+    plan: starter
     region: singapore
 
   - name: amynest-db-dev
     databaseName: amynest_db_dev
-    plan: basic_256mb
+    plan: starter
     region: singapore
 
 services:
@@ -88,14 +88,14 @@ services:
         value: "20"
       - key: AMYNEST_ENV
         value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: amynest-db
+          property: connectionString
       - key: REDIS_URL
         fromService:
           type: keyvalue
           name: amynest-redis
-          property: connectionString
-      - key: DATABASE_URL
-        fromDatabase:
-          name: amynest-db
           property: connectionString
       - key: GOOGLE_API_KEY
         sync: false
@@ -129,6 +129,11 @@ services:
         fromDatabase:
           name: amynest-db-dev
           property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: amynest-redis
+          property: connectionString
       - key: GOOGLE_API_KEY
         sync: false
       - key: ELEVENLABS_API_KEY
@@ -136,12 +141,10 @@ services:
 
   # ─── Production static web (amynest.in) ─────────────────────────────────────
   # Dashboard service Amynest-live-1 is a static site (not Node serve-spa).
-  # Keep this block aligned with the dashboard to avoid Blueprint sync failures.
+  # Static sites: no region field (Blueprint spec).
   - type: web
     name: Amynest-live-1
     runtime: static
-    region: singapore
-    plan: starter
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
     buildCommand: >-
@@ -176,7 +179,6 @@ services:
   - type: web
     name: amynest-frontend-dev
     runtime: static
-    region: singapore
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
     buildCommand: >-
