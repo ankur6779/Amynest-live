@@ -3,7 +3,8 @@ import { z } from "zod";
 import { and, eq, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
-import { openai } from "@workspace/integrations-openai-ai-server";
+import { submitRouteAiJob } from "../lib/route-ai-queue.js";
+import { enqueueAiJob } from "../queue/ai-job-queue.js";
 import {
   db,
   childrenTable,
@@ -512,54 +513,32 @@ async function generateWithAi(
   ageYears: number,
   count: number,
   excludeIds: Set<string>,
+  userId: string,
 ): Promise<SmartQuestion[] | null> {
-  const profile = profileFor(country);
-  const subjectMeta = SMART_SUBJECTS.find((s) => s.id === subject);
-  const topic = subjectMeta?.title ?? subject;
-  const prompt = `Generate ${count} math questions for a ${ageYears}-year-old child, difficulty level ${level} (out of 6), topic ${topic}, localized for ${profile.country}.
-
-Rules:
-- simple language a ${ageYears}-year-old understands
-- no repetition
-- use real-life examples featuring "${profile.fruit}", "${profile.treat}", and amounts in ${profile.currencyName} (${profile.currency}) where it fits
-- kid-friendly tone
-- options must be plausible distractors; the answer must exactly match one option string
-
-Output JSON exactly in this shape:
-{"questions":[{"question":"...","options":["...","..."],"answer":"..."}]}`;
-
   try {
-    const completion = await withTimeout(
-      openai.chat.completions.create({
-        model: "gpt-5-nano",
-        messages: [
-          { role: "system", content: "You generate kid-friendly math practice questions. Always reply with valid JSON only." },
-          { role: "user", content: prompt },
-        ],
-        response_format: { type: "json_object" },
+    const { wrapJobInput } = await import("../queue/ai-job-payload.js");
+    const enqueued = await enqueueAiJob(
+      "smart-study.next_questions",
+      userId,
+      wrapJobInput("smart-study/next-questions", {
+        level,
+        subject,
+        country,
+        ageYears,
+        count,
+        excludeIds: [...excludeIds],
       }),
-      4500,
-      "openai smart-study next-questions",
     );
-    const raw = completion.choices?.[0]?.message?.content;
-    if (!raw) return null;
-    const parsed = AiResponseSchema.safeParse(JSON.parse(raw));
-    if (!parsed.success) return null;
-    const out: SmartQuestion[] = [];
-    parsed.data.questions.forEach((q, i) => {
-      if (!q.options.includes(q.answer)) return;
-      // AI ids are time-namespaced so anti-repetition still works for the
-      // session; long-term collisions are unlikely given the timestamp.
-      const id = `ai-L${level}-${subject}-${Date.now()}-${i}`;
-      if (excludeIds.has(id)) return;
-      out.push({
-        id, level, subject,
-        q: q.question,
-        options: q.options,
-        answer: q.answer,
-      });
-    });
-    return out.length > 0 ? out : null;
+    if (!enqueued.jobId) return null;
+    const { waitForJobResult } = await import("../queue/index.js");
+    const { isBullMqActive } = await import("../queue/ai-job-queue.js");
+    const { waitForJob } = await import("../queue/ai-job-store.js");
+    const finished = isBullMqActive()
+      ? await waitForJobResult(enqueued.jobId, 5000)
+      : await waitForJob(enqueued.jobId, 5000);
+    if (finished?.status !== "completed" || !finished.result) return null;
+    const body = finished.result as { questions: SmartQuestion[] };
+    return body.questions?.length ? body.questions : null;
   } catch (err) {
     logger.warn(
       `smart-study AI generation failed (falling back to dataset): ${err instanceof Error ? err.message : String(err)}`,
@@ -609,7 +588,7 @@ router.post("/smart-study/next-questions", async (req, res): Promise<void> => {
     const seenIds = new Set<string>(parseSeenIds(row?.seenQuestionIds));
 
     const aiQuestions = await generateWithAi(
-      level, subject, country, child.age ?? 0, count, seenIds,
+      level, subject, country, child.age ?? 0, count, seenIds, userId,
     );
     let questions: SmartQuestion[] = aiQuestions ?? [];
     let source: "ai" | "dataset" = aiQuestions && aiQuestions.length >= count ? "ai" : "dataset";

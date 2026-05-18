@@ -26,14 +26,20 @@ export async function runAiJobHandler(
   type: string,
   payload: unknown,
 ): Promise<unknown> {
+  const { unwrapJobPayload } = await import("../queue/ai-job-payload.js");
+  const unwrapped = unwrapJobPayload(payload);
+  const inner = unwrapped.routeName === "legacy" ? payload : unwrapped.input;
+
   switch (type) {
     case "openai.chat":
     case "openai.chat_json":
-      return handleOpenAiChat(payload as OpenAiChatPayload, type === "openai.chat_json");
+      return handleOpenAiChat(inner as OpenAiChatPayload, type === "openai.chat_json");
     case "tts.synthesize":
-      return handleTtsSynthesize(payload as TtsSynthesizePayload);
-    default:
-      throw new Error(`unknown_job_type:${type}`);
+      return handleTtsSynthesize(inner as TtsSynthesizePayload);
+    default: {
+      const { dispatchAiJob } = await import("./ai-handlers/index.js");
+      return dispatchAiJob(type, payload);
+    }
   }
 }
 

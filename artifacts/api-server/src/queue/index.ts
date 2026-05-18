@@ -1,12 +1,13 @@
 /**
  * BullMQ + Redis AI job queue (Render: API enqueues, worker processes).
- * Falls back to in-memory queue when REDIS_URL is unset (local dev).
+ * In-memory fallback only in development (production requires REDIS_URL).
  */
 import { Queue } from "bullmq";
 import { randomUUID } from "node:crypto";
 import { logger } from "../lib/logger.js";
 import type { AiJobType, EnqueueResult } from "./types.js";
-import { getRedisConnection, isRedisQueueEnabled } from "./redis.js";
+import { isBullMqActive } from "./mode.js";
+import { getRedisConnection } from "./redis.js";
 import {
   getJobRecord,
   saveJobRecord,
@@ -27,8 +28,8 @@ export type AiJobQueuePayload = {
 let bullQueue: Queue<AiJobQueuePayload> | undefined;
 
 export function getAiJobsQueue(): Queue<AiJobQueuePayload> {
-  if (!isRedisQueueEnabled()) {
-    throw new Error("Redis queue is not enabled");
+  if (!isBullMqActive()) {
+    throw new Error("BullMQ queue is not active — set REDIS_URL");
   }
   if (!bullQueue) {
     bullQueue = new Queue<AiJobQueuePayload>(AI_JOBS_QUEUE_NAME, {
@@ -79,6 +80,7 @@ export async function enqueueBullMqJob(
       { jobId, type, userId: uid, payload },
       { jobId },
     );
+    console.log("Enqueueing job:", jobId);
     logger.info(
       { evt: "ai_job.bullmq_enqueued", jobId, type, userId: uid },
       "AI job enqueued (BullMQ)",
@@ -93,7 +95,7 @@ export async function enqueueBullMqJob(
 }
 
 export async function getBullMqQueueStats(): Promise<Record<string, number>> {
-  if (!isRedisQueueEnabled()) return {};
+  if (!isBullMqActive()) return {};
   const queue = getAiJobsQueue();
   const counts = await queue.getJobCounts(
     "waiting",
@@ -106,7 +108,7 @@ export async function getBullMqQueueStats(): Promise<Record<string, number>> {
 }
 
 export async function getJobForApi(jobId: string): Promise<AiJobRecord | undefined> {
-  if (isRedisQueueEnabled()) {
+  if (isBullMqActive()) {
     return getJobRecord(jobId);
   }
   const { getJob } = await import("./ai-job-store.js");
@@ -114,6 +116,7 @@ export async function getJobForApi(jobId: string): Promise<AiJobRecord | undefin
 }
 
 export { isRedisQueueEnabled, getRedisConnection } from "./redis.js";
+export { getQueueMode, isBullMqActive, mustUseBullMq } from "./mode.js";
 export {
   getJobRecord,
   saveJobRecord,

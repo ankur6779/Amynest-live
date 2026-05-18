@@ -74,9 +74,9 @@ const ExplainMealBody = z.object({
 async function generateNarrative(
   summary: string,
   factors: Array<{ label: string; detail: string }>,
+  userId: string,
 ): Promise<string | undefined> {
   try {
-    const { openai: ai } = await import("@workspace/integrations-openai-ai-server");
     const factorText = factors
       .slice(0, 4)
       .map((f) => `• ${f.label}: ${f.detail}`)
@@ -87,13 +87,22 @@ Key factors:
 ${factorText}
 Keep it conversational, empathetic, and under 80 words. No bullet points.`;
 
-    const resp = await ai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 120,
-      temperature: 0.6,
-    });
-    return resp.choices[0]?.message?.content?.trim() ?? undefined;
+    const { enqueueAiJob, isBullMqActive } = await import("../queue/ai-job-queue.js");
+    const { wrapJobInput } = await import("../queue/ai-job-payload.js");
+    const enqueued = await enqueueAiJob(
+      "explain.narrative",
+      userId,
+      wrapJobInput("explain/narrative", { prompt }),
+    );
+    if (!enqueued.jobId) return undefined;
+    const { waitForJobResult } = await import("../queue/index.js");
+    const { waitForJob } = await import("../queue/ai-job-store.js");
+    const finished = isBullMqActive()
+      ? await waitForJobResult(enqueued.jobId, 12_000)
+      : await waitForJob(enqueued.jobId, 12_000);
+    if (finished?.status !== "completed") return undefined;
+    const body = finished.result as { narrative?: string };
+    return body.narrative;
   } catch {
     return undefined;
   }
@@ -113,7 +122,7 @@ router.post("/explain/routine", async (req, res) => {
   const result = explainRoutine(context as ExplanationContext, sourceEngine);
 
   if (withNarrative && result.factors.length > 0) {
-    result.aiNarrative = await generateNarrative(result.summary, result.factors);
+    result.aiNarrative = await generateNarrative(result.summary, result.factors, auth.userId);
   }
 
   logEntry(auth.userId, {
@@ -144,7 +153,7 @@ router.post("/explain/meal", async (req, res) => {
   const result = explainMeal(context as ExplanationContext, sourceEngine);
 
   if (withNarrative && result.factors.length > 0) {
-    result.aiNarrative = await generateNarrative(result.summary, result.factors);
+    result.aiNarrative = await generateNarrative(result.summary, result.factors, auth.userId);
   }
 
   logEntry(auth.userId, {

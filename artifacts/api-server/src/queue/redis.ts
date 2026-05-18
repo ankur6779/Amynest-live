@@ -12,6 +12,19 @@ export function isRedisQueueEnabled(): boolean {
   return !!getRedisUrl();
 }
 
+/** Ping Redis — used at startup and /health. */
+export async function verifyRedisConnection(): Promise<boolean> {
+  try {
+    const conn = getRedisConnection();
+    const pong = await conn.ping();
+    return pong === "PONG";
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error({ evt: "redis.ping_failed", message }, "Redis ping failed");
+    return false;
+  }
+}
+
 /** Shared ioredis connection for BullMQ + job result storage. */
 export function getRedisConnection(): Redis {
   const url = getRedisUrl();

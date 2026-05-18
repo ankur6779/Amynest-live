@@ -9,6 +9,8 @@ import {
   FREE_LIMITS,
 } from "../services/subscriptionService";
 import { featureGate } from "../middlewares/featureGate.js";
+import { submitRouteAiJob } from "../lib/route-ai-queue.js";
+import { enqueueAiJob } from "../queue/ai-job-queue.js";
 import { enqueueForUser } from "../lib/per-user-queue.js";
 import { checkRoutineGenerationRateLimit } from "../lib/routine-rate-limit.js";
 import {
@@ -323,7 +325,7 @@ Do NOT suggest finger painting, building blocks, pretend play, action songs, sen
 // in a SINGLE batch call. Best-effort: if the OpenAI response is missing or
 // malformed (e.g. test mock returns a routine instead of {slots:[…]}), the
 // items are returned unchanged.
-type EnrichCtx = {
+export type EnrichCtx = {
   foodType: string;
   allergies: string | null;
   foodStyle: string | null;
@@ -463,13 +465,12 @@ The "slots" array MUST have exactly ${targets.length} entries in the same order 
 
   let parsed: { slots?: Array<{ options?: unknown }> } = {};
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "system", content: prompt }],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 1200,
-    });
-    const raw = completion.choices[0]?.message?.content ?? "{}";
+    const { runOpenAiJsonChat } = await import("../services/routines-ai.js");
+    const raw = await runOpenAiJsonChat(
+      [{ role: "system", content: prompt }],
+      1200,
+      openai as import("../services/routines-ai.js").OpenAiJsonClient | undefined,
+    );
     parsed = JSON.parse(raw);
   } catch {
     return items; // best-effort: return unchanged on any failure
@@ -573,8 +574,9 @@ export async function generateAiRoutine(params: {
   specialEvent?: SpecialEventDebug;
   fixedActivities?: FixedActivitiesDebug;
 }> {
-  const openai = params.openaiClient
-    ?? (await import("@workspace/integrations-openai-ai-server")).openai;
+  const { getOpenAiClient } = await import("../services/ai-runtime.js");
+  const openai =
+    params.openaiClient ?? (await getOpenAiClient());
 
   const { resolved: inputs, debug: inputDebug } = resolveRoutineGenerationInputs({
     wakeUpTime: params.wakeUpTime,
@@ -805,17 +807,15 @@ Yesterday's activity categories: ${params.previousActivities.join(", ")}.
 Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the activity types. For example: if yesterday had lots of outdoor play, lean more toward creative or indoor activities today. If yesterday was mostly study-heavy, add more play and family bonding today.
 ` : ""}`;
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
+  const { runOpenAiJsonChat } = await import("../services/routines-ai.js");
+  const raw = await runOpenAiJsonChat(
+    [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 2000,
-  });
-
-  const raw = completion.choices[0]?.message?.content ?? "{}";
+    2000,
+    openai as import("../services/routines-ai.js").OpenAiJsonClient | undefined,
+  );
   const parsed = JSON.parse(raw);
 
   if (!parsed.title || !Array.isArray(parsed.items) || parsed.items.length < 5) {
@@ -1748,86 +1748,96 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
 
   const aiSchoolDay = isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool);
 
+  const routineGenInput = {
+    childName: child.name,
+    age: effectiveAge,
+    ageInMonths: totalAgeMonths,
+    ageGroup,
+    wakeUpTime: effWakeUp,
+    sleepTime: child.sleepTime,
+    schoolStartTime: effSchoolStart,
+    schoolEndTime: effSchoolEnd,
+    hasSchool: aiSchoolDay,
+    foodType,
+    region,
+    country: (pp as Record<string, unknown>)?.country as string | undefined,
+    mood: mood ?? "normal",
+    specialPlans,
+    fixedActivities,
+    fridgeItems,
+    goals: child.goals,
+    travelMode: child.travelMode,
+    childClass: (child as any).childClass ?? undefined,
+    date: parsed.data.date,
+    caregiver,
+    isWeekendDay,
+    previousMeals: previousMeals.length > 0 ? previousMeals : undefined,
+    previousActivities: previousActivities.length > 0 ? previousActivities : undefined,
+    weatherOutdoor: aiEffectiveWeather,
+    environmentalContext: aiEnvContext,
+    customRecipes: aiUserCustomRecipes,
+    allergies: effAllergies,
+    foodStyle: effFoodStyle,
+    subCuisine: effSubCuisine,
+    feedingType: child.feedingType ?? null,
+    sleepPattern: child.sleepPattern ?? null,
+    parentGoals: childIntel.parentGoals,
+    energyProfile: childIntel.energyProfile,
+    learningWeights,
+    previousDayContext,
+    schoolMealMode,
+    childId: String(child.id),
+  };
+
   try {
-    const generated = await withPromiseTimeout(
-      generateAiRoutine({
-        childName: child.name,
-        age: effectiveAge,
-        ageInMonths: totalAgeMonths,
-        ageGroup,
-        wakeUpTime: effWakeUp,
-        sleepTime: child.sleepTime,
-        schoolStartTime: effSchoolStart,
-        schoolEndTime: effSchoolEnd,
-        hasSchool: aiSchoolDay,
-        foodType,
-        region,
-        country: (pp as Record<string, unknown>)?.country as string | undefined,
-        mood: mood ?? "normal",
-        specialPlans,
-        fixedActivities,
-        fridgeItems,
-        goals: child.goals,
-        travelMode: child.travelMode,
-        childClass: (child as any).childClass ?? undefined,
-        date: parsed.data.date,
-        caregiver,
-        isWeekendDay,
-        previousMeals: previousMeals.length > 0 ? previousMeals : undefined,
-        previousActivities: previousActivities.length > 0 ? previousActivities : undefined,
-        weatherOutdoor: aiEffectiveWeather,
-        environmentalContext: aiEnvContext,
-        customRecipes: aiUserCustomRecipes,
-        allergies: effAllergies,
-        foodStyle: effFoodStyle,
-        subCuisine: effSubCuisine,
-        feedingType: child.feedingType ?? null,
-        sleepPattern: child.sleepPattern ?? null,
-        parentGoals: childIntel.parentGoals,
-        energyProfile: childIntel.energyProfile,
-        learningWeights,
-        previousDayContext,
-        schoolMealMode,
-        childId: String(child.id),
-      }),
-      AI_ROUTINE_GENERATION_TIMEOUT_MS,
-      "generateAiRoutine",
-    );
-    assertNonEmptyRoutine(generated, "generateAiRoutine");
-    const aiEnriched = applyEnvironmentalEnrichments(
-      ((generated.items ?? []) as unknown) as EnrichableItem[],
-      aiEnvContext,
-      { region: region as string | null | undefined },
-    );
-    const aiExplCtx: ParentExplanationContext = {
-      hasSchool: aiSchoolDay,
-      isWeekendDay,
-      mood: mood ?? "normal",
-    };
-    const body = GenerateRoutineResponse.parse({
-      ...generated,
-      items: aiEnriched.items as unknown as typeof generated.items,
-      adaptations: finalizeParentAdaptations(
-        [
-          ...((generated.adaptations ?? []) as string[]),
-          ...aiEnriched.extraAdaptations,
-          ...(aiEnriched.hydrationSummary
-            ? [`hydration:${aiEnriched.hydrationSummary}`]
-            : []),
-        ],
-        aiExplCtx,
-      ),
-      fixedActivitiesResult: generated.fixedActivities?.fixedActivitiesApplied
-        ? toFixedActivitiesResult(generated.fixedActivities, child.name)
-        : null,
+    await submitRouteAiJob({
+      routeName: "routines/generate-ai",
+      type: "routines.generate",
+      userId,
+      input: routineGenInput,
+      waitMs: AI_ROUTINE_GENERATION_TIMEOUT_MS,
+      buildSyncBody: (generated) => {
+        const gen = generated as {
+          title: string;
+          items: RoutineItem[];
+          adaptations: string[];
+          fixedActivities?: Parameters<typeof toFixedActivitiesResult>[0];
+        };
+        assertNonEmptyRoutine(gen, "generateAiRoutine");
+        const aiEnriched = applyEnvironmentalEnrichments(
+          (gen.items ?? []) as EnrichableItem[],
+          aiEnvContext,
+          { region: region as string | null | undefined },
+        );
+        const aiExplCtx: ParentExplanationContext = {
+          hasSchool: aiSchoolDay,
+          isWeekendDay,
+          mood: mood ?? "normal",
+        };
+        const body = GenerateRoutineResponse.parse({
+          ...gen,
+          items: aiEnriched.items as unknown as typeof gen.items,
+          adaptations: finalizeParentAdaptations(
+            [
+              ...(gen.adaptations ?? []),
+              ...aiEnriched.extraAdaptations,
+              ...(aiEnriched.hydrationSummary
+                ? [`hydration:${aiEnriched.hydrationSummary}`]
+                : []),
+            ],
+            aiExplCtx,
+          ),
+          fixedActivitiesResult: gen.fixedActivities?.fixedActivitiesApplied
+            ? toFixedActivitiesResult(gen.fixedActivities, child.name)
+            : null,
+        });
+        const successPayload = { ...body, success: true, fallback: false };
+        setCachedRoutine(cacheKey, successPayload);
+        return successPayload;
+      },
+      res,
     });
-    console.info("[generate-ai] success", {
-      childId: parsed.data.childId,
-      itemCount: body.items.length,
-    });
-    const successPayload = { ...body, success: true, fallback: false };
-    setCachedRoutine(cacheKey, successPayload);
-    res.json(successPayload);
+    return;
   } catch (err) {
     console.error("[generate-ai] AI ERROR:", err);
     if (err instanceof Error && err.stack) {
@@ -1979,8 +1989,6 @@ router.get("/routines", async (req, res): Promise<void> => {
   // pipeline was added, without requiring the user to delete and regenerate.
   // We run at most one OpenAI call per routine, fire them concurrently, and
   // update the DB in the background so the response is not delayed.
-  const openai = await import("@workspace/integrations-openai-ai-server").then((m) => m.openai);
-
   const needsEnrichment = (items: RoutineItem[]): boolean =>
     items.some((it) => {
       const cat = (it.category ?? "").toLowerCase();
@@ -2005,35 +2013,24 @@ router.get("/routines", async (req, res): Promise<void> => {
 
   // Fire enrichment concurrently for all routines that need it, then update DB.
   // Each routine gets its own Promise keyed by id so we can await them per-row.
-  const enrichmentByRoutineId = new Map<number, Promise<typeof routinesTable.$inferSelect>>();
   for (const r of results) {
     if (!needsEnrichment(r.items as RoutineItem[])) continue;
-    enrichmentByRoutineId.set(r.id, (async () => {
-      try {
-        const ctx = buildChildEnrichCtx(r.childId);
-        const enrichedItems = await enrichMealOptionsWithAi(r.items as ScheduleItem[], ctx, openai);
-        // Only write back if something actually changed.
-        const changed = enrichedItems.some((it, i) => it.notes !== (r.items as RoutineItem[])[i]?.notes);
-        if (changed) {
-          await db.update(routinesTable).set({ items: enrichedItems }).where(eq(routinesTable.id, r.id));
-        }
-        return { ...r, items: enrichedItems };
-      } catch {
-        return r;
-      }
-    })());
+    const ctx = buildChildEnrichCtx(r.childId);
+    const { wrapJobInput } = await import("../queue/ai-job-payload.js");
+    void enqueueAiJob(
+      "routines.enrich_meals",
+      userId,
+      wrapJobInput("routines/list-enrich", {
+        routineId: r.id,
+        items: r.items,
+        ctx,
+      }),
+    );
   }
-
-  const enrichedResults = await Promise.all(
-    results.map(async (r) => {
-      const job = enrichmentByRoutineId.get(r.id);
-      return job ? await job : r;
-    }),
-  );
 
   res.json(
     ListRoutinesResponse.parse(
-      enrichedResults.map((r) => ({
+      results.map((r) => ({
         ...r,
         childName: childMap.get(r.childId) ?? "Unknown",
         items: r.items as RoutineItem[],

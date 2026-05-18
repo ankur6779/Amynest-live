@@ -1,12 +1,8 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
-import {
-  AMY_VOICE_ID_HINDI,
-  AMY_MODEL_ID_HINDI,
-  TTS_MAX_INPUT_CHARS,
-  synthesize,
-} from "../services/elevenLabsService";
+import { TTS_MAX_INPUT_CHARS } from "../services/elevenLabsService";
+import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 
 const router: IRouter = Router();
 
@@ -52,34 +48,37 @@ router.post("/audio-lessons/pregenerate", async (req, res): Promise<void> => {
 
   const skipped = rawTexts.length - validTexts.length;
 
-  const results = await Promise.allSettled(
-    validTexts.map((text) =>
-      synthesize(text, { voiceId: AMY_VOICE_ID_HINDI, modelId: AMY_MODEL_ID_HINDI }),
-    ),
-  );
-
-  const succeeded = results.filter((r) => r.status === "fulfilled").length;
-  const failed    = results.filter((r) => r.status === "rejected").length;
-  const cached    = results.filter(
-    (r) => r.status === "fulfilled" && r.value.cached,
-  ).length;
-
-  logger.info(
-    {
-      evt: "audio_lessons.pregenerate",
-      userId,
-      total: validTexts.length,
-      succeeded,
-      failed,
-      cached,
-      skipped,
-      voiceId: AMY_VOICE_ID_HINDI,
-      modelId: AMY_MODEL_ID_HINDI,
+  await submitRouteAiJob({
+    routeName: "audio-lessons/pregenerate",
+    type: "audio-lessons.pregenerate",
+    userId,
+    input: { texts: validTexts },
+    waitMs: 120_000,
+    buildSyncBody: (result) => {
+      const body = result as {
+        ok: true;
+        total: number;
+        succeeded: number;
+        failed: number;
+        cached: number;
+        skipped: number;
+      };
+      logger.info(
+        {
+          evt: "audio_lessons.pregenerate",
+          userId,
+          total: body.total,
+          succeeded: body.succeeded,
+          failed: body.failed,
+          cached: body.cached,
+          skipped,
+        },
+        "audio lessons pregenerate complete",
+      );
+      return { ...body, skipped };
     },
-    "audio lessons pregenerate complete",
-  );
-
-  res.json({ ok: true, total: validTexts.length, succeeded, failed, cached, skipped });
+    res,
+  });
 });
 
 export default router;

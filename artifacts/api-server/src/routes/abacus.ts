@@ -19,6 +19,7 @@ import {
   type LevelId,
 } from "@workspace/abacus";
 import { buildAbacusWeeklySummary } from "../services/abacusWeeklySummary";
+import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 
 const router: IRouter = Router();
 
@@ -369,31 +370,20 @@ router.post("/abacus/tutor", async (req, res): Promise<void> => {
       return;
     }
 
-    const { system, user } = buildAbacusTutorPrompt({
-      level: level as LevelId,
-      ageYears: child.age ?? 6,
-      language,
-      question,
+    await submitRouteAiJob({
+      routeName: "abacus/tutor",
+      type: "abacus.tutor",
+      userId,
+      input: {
+        level: level as LevelId,
+        ageYears: child.age ?? 6,
+        language,
+        question,
+      },
+      waitMs: 15_000,
+      buildSyncBody: (result) => result,
+      res,
     });
-
-    const { openai } = await import("@workspace/integrations-openai-ai-server");
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      temperature: 0.6,
-      max_tokens: 220,
-    });
-
-    const reply = completion.choices[0]?.message?.content?.trim() ?? "";
-    if (!reply) {
-      res.status(502).json({ error: "empty_ai_reply" });
-      return;
-    }
-
-    res.json({ ok: true, reply });
   } catch (err) {
     logger.error(
       `abacus tutor failed: ${err instanceof Error ? err.message : String(err)}`,

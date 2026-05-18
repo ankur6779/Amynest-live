@@ -2,6 +2,7 @@
  * In-process AI queue — used when REDIS_URL is not set (local dev only).
  */
 import { logger } from "../lib/logger.js";
+import { isProductionDeployment } from "./mode.js";
 import { AI_CHAT_TIMEOUT_MS } from "../services/openai-chat.js";
 import {
   createJob,
@@ -36,6 +37,11 @@ export function enqueueMemoryJob(
   userId: string,
   payload: unknown,
 ): EnqueueResult {
+  if (isProductionDeployment()) {
+    throw new Error(
+      "In-memory AI queue is disabled in production. Set REDIS_URL and run the BullMQ worker service.",
+    );
+  }
   const active = listActiveJobsForUser(userId);
   const queuedForUser = active.filter((j) => j.status === "queued").length;
   const processingForUser = active.filter((j) => j.status === "processing").length;

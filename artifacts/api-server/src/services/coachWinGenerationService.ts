@@ -305,7 +305,7 @@ export async function getCoachGenerationById(
   }
 }
 
-async function dbSetCoachCache(cacheKey: string, input: CoachInput, plan: CoachPlan): Promise<void> {
+export async function dbSetCoachCache(cacheKey: string, input: CoachInput, plan: CoachPlan): Promise<void> {
   try {
     await db
       .insert(aiCacheTable)
@@ -319,7 +319,7 @@ async function dbSetCoachCache(cacheKey: string, input: CoachInput, plan: CoachP
   }
 }
 
-async function updateCoachSessionPlan(
+export async function updateCoachSessionPlan(
   userId: string,
   sessionId: string,
   plan: CoachPlan,
@@ -385,18 +385,21 @@ ${topicBlock}
 JSON only:
 {"title":"...","root_cause":"2 sentences","summary":"1 sentence","wins":[{"win":1,"title":"...","objective":"...","deep_explanation":"2-3 lines","actions":["a","b","c"],"example":"1 sentence","mistake_to_avoid":"...","micro_task":"...","duration":"...","science_reference":"..."},{"win":2,...}]}`;
 
-  const { openai } = await import("@workspace/integrations-openai-ai-server");
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 900,
-    temperature: 0.6,
-  });
-  const rawContent = completion.choices[0]?.message?.content?.trim() ?? "";
+  const { chatCompletionWithTimeout } = await import("./openai-chat.js");
+  const outcome = await chatCompletionWithTimeout(
+    {
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 900,
+      temperature: 0.6,
+    },
+    INITIAL_AI_TIMEOUT_MS,
+  );
+  const rawContent = outcome.content ?? "";
   const parsed = JSON.parse(rawContent);
   if (validatePartialPlan(parsed)) return parsed;
   return null;
@@ -482,17 +485,20 @@ ${goalBrief}`;
 
   const aiSpan = startCoachPerfSpan("AI_CALL_BACKGROUND", { goal: input.goal });
   try {
-    const { openai } = await import("@workspace/integrations-openai-ai-server");
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 6500,
-    });
-    const rawContent = completion.choices[0]?.message?.content?.trim() ?? "";
+    const { chatCompletionWithTimeout } = await import("./openai-chat.js");
+    const outcome = await chatCompletionWithTimeout(
+      {
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 6500,
+      },
+      60_000,
+    );
+    const rawContent = outcome.content ?? "";
     try {
       const parsed = JSON.parse(rawContent) as { wins?: unknown };
       if (validateRemainingWins(parsed.wins, startWin)) {

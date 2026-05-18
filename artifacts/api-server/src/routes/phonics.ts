@@ -15,9 +15,8 @@ import {
 } from "@workspace/db";
 import {
   readCachedAudio,
-  synthesize,
 } from "../services/elevenLabsService";
-import { openai } from "@workspace/integrations-openai-ai-server";
+import { enqueueAiJob } from "../queue/ai-job-queue.js";
 import {
   AGE_GROUP_LABEL,
   buildAiInsight,
@@ -852,18 +851,26 @@ router.post("/phonics/tests/submit", async (req, res): Promise<void> => {
     let aiSuggestion = "";
     if (session.testType === "weekly" && process.env.OPENAI_API_KEY) {
       try {
-        const ai = await buildAiInsight(
-          {
-            childName: child.name,
-            ageGroupLabel: AGE_GROUP_LABEL[session.ageGroup],
-            accuracyPct: breakdown.accuracyPct,
-            weakSymbols: weakRows.map((r) => r.symbol),
-            perType: breakdown.perType,
-          },
-          openai as any,
+        const { wrapJobInput } = await import("../queue/ai-job-payload.js");
+        const prompt = `Weekly phonics insight for ${child.name}, age ${AGE_GROUP_LABEL[session.ageGroup]}, accuracy ${breakdown.accuracyPct}%, weak: ${weakRows.map((r) => r.symbol).join(", ")}. JSON: { "message": "...", "suggestion": "..." }`;
+        const enqueued = await enqueueAiJob(
+          "phonics.weekly_insight",
+          userId,
+          wrapJobInput("phonics/weekly-insight", { prompt }),
         );
-        aiMessage = ai.message;
-        aiSuggestion = ai.suggestion;
+        if (enqueued.jobId) {
+          const { waitForJobResult } = await import("../queue/index.js");
+          const { waitForJob } = await import("../queue/ai-job-store.js");
+          const { isBullMqActive } = await import("../queue/ai-job-queue.js");
+          const finished = isBullMqActive()
+            ? await waitForJobResult(enqueued.jobId, 12_000)
+            : await waitForJob(enqueued.jobId, 12_000);
+          if (finished?.status === "completed" && finished.result) {
+            const ai = finished.result as { message: string; suggestion: string };
+            aiMessage = ai.message;
+            aiSuggestion = ai.suggestion;
+          }
+        }
       } catch (err) {
         logger.warn(
           `phonics weekly AI insight failed, falling back: ${err instanceof Error ? err.message : String(err)}`,
@@ -1010,7 +1017,7 @@ router.get("/phonics/tests/history/:childId", async (req, res): Promise<void> =>
  * itself; stop consonants get the conventional "uh" trailer ("buh", "duh",
  * "puh") that phonics teachers use to make them audible.
  */
-const PHONEME_PROMPTS: Record<string, string> = {
+export const PHONEME_PROMPTS: Record<string, string> = {
   a: "ah",
   b: "buh",
   c: "kuh",
@@ -1054,11 +1061,26 @@ export const PHONEME_LETTERS = Object.keys(PHONEME_PROMPTS);
  * shared ElevenLabs cache. Returns the same envelope as `synthesize()` so
  * callers can stream via /api/tts/audio/:key.mp3 if they prefer.
  */
+/** @deprecated Use worker job `phonics.sound` — kept for tests that mock the queue. */
 export async function synthesizePhonicsSound(letter: string) {
   const key = letter.toLowerCase();
-  const prompt = PHONEME_PROMPTS[key];
-  if (!prompt) throw new Error("invalid_letter");
-  return synthesize(prompt, { mode: "phonics" });
+  if (!PHONEME_PROMPTS[key]) throw new Error("invalid_letter");
+  const { wrapJobInput } = await import("../queue/ai-job-payload.js");
+  const enqueued = await enqueueAiJob(
+    "phonics.sound",
+    "anonymous",
+    wrapJobInput("phonics/sound", { letter: key }),
+  );
+  if (!enqueued.jobId) throw new Error("audio_unavailable");
+  const { waitForJobResult } = await import("../queue/index.js");
+  const { waitForJob } = await import("../queue/ai-job-store.js");
+  const { isBullMqActive } = await import("../queue/ai-job-queue.js");
+  const finished = isBullMqActive()
+    ? await waitForJobResult(enqueued.jobId, 30_000)
+    : await waitForJob(enqueued.jobId, 30_000);
+  if (finished?.status !== "completed") throw new Error("audio_unavailable");
+  const body = finished.result as { cacheKey: string };
+  return { cacheKey: body.cacheKey, audioUrl: `/api/tts/audio/${body.cacheKey}.mp3`, cached: false, charCount: 0, contentType: "audio/mpeg" };
 }
 
 export const phonicsPublicRouter: IRouter = Router();

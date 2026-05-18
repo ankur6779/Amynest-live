@@ -45,6 +45,7 @@ export function startBullMqWorker(): Worker<AiJobQueuePayload> {
     logger.error({ evt: "bullmq.worker_error", err }, "BullMQ worker error");
   });
 
+  console.log("BullMQ worker started");
   logger.info(
     { evt: "bullmq.worker_started", concurrency: CONCURRENCY, queue: AI_JOBS_QUEUE_NAME },
     "BullMQ AI worker started",

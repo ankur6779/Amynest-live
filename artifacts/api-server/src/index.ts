@@ -4,6 +4,8 @@ import { logStartupEnvDiagnostics } from "./lib/env";
 import { logger } from "./lib/logger";
 import { registerProcessErrorHandlers } from "./utils/async-errors.js";
 import { startMemoryMonitor } from "./utils/memory-monitor.js";
+import { bootstrapApiQueue } from "./queue/bootstrap.js";
+import { isBullMqActive } from "./queue/ai-job-queue.js";
 import { startEmbeddedAiWorker } from "./worker/ai-worker.js";
 import { startRazorpayWebhookCleanup } from "./lib/razorpayWebhookCleanup";
 import { startWeeklyRecapCron } from "./lib/weeklyRecapCron";
@@ -25,31 +27,45 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-registerProcessErrorHandlers();
-startMemoryMonitor();
-startEmbeddedAiWorker();
+async function startServer(): Promise<void> {
+  registerProcessErrorHandlers();
+  startMemoryMonitor();
 
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
+  await bootstrapApiQueue();
+
+  if (!isBullMqActive()) {
+    startEmbeddedAiWorker();
   }
 
-  logAmynestEnvironment();
-  logger.info(
-    {
-      port,
-      amynestEnv: process.env["AMYNEST_ENV"],
-      nodeEnv: process.env.NODE_ENV,
-      render: !!process.env.RENDER,
-    },
-    "Server listening",
-  );
-  console.log(`Server listening on port ${port}`);
-  logStartupEnvDiagnostics();
-  startRazorpayWebhookCleanup();
-  startWeeklyRecapCron();
-  startNotificationCron();
-  startRenderKeepWarm(port);
-  void seedPhonicsWordBank();
+  app.listen(port, (err) => {
+    if (err) {
+      logger.error({ err }, "Error listening on port");
+      process.exit(1);
+    }
+
+    logAmynestEnvironment();
+    logger.info(
+      {
+        port,
+        amynestEnv: process.env["AMYNEST_ENV"],
+        nodeEnv: process.env.NODE_ENV,
+        render: !!process.env.RENDER,
+      },
+      "Server listening",
+    );
+    console.log(`Server listening on port ${port}`);
+    logStartupEnvDiagnostics();
+    startRazorpayWebhookCleanup();
+    startWeeklyRecapCron();
+    startNotificationCron();
+    startRenderKeepWarm(port);
+    void seedPhonicsWordBank();
+  });
+}
+
+startServer().catch((err) => {
+  const message = err instanceof Error ? err.message : String(err);
+  logger.error({ err, message }, "API failed to start");
+  console.error("API failed to start:", message);
+  process.exit(1);
 });
