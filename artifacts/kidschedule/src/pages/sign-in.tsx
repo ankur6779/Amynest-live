@@ -9,6 +9,12 @@ import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError, stashVerificationSendError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { AppleSignInButton } from "@/components/apple-sign-in-button";
+import PhoneAuthFlow from "@/components/phone-auth-flow";
+import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
+import {
+  ENABLE_OAUTH_SIGN_IN,
+  ENABLE_PHONE_OTP,
+} from "@/lib/auth-feature-flags";
 import { getApiUrl } from "@/lib/api";
 
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
@@ -539,9 +545,21 @@ export default function SignInPage() {
         {t("screens.sign_in.subtitle")}
       </p>
 
-      <GoogleSignInButton onError={msg => setError(msg)} />
-      <AppleSignInButton onError={msg => setError(msg)} />
+      {ENABLE_OAUTH_SIGN_IN ? (
+        <>
+          <GoogleSignInButton onError={msg => setError(msg)} />
+          <AppleSignInButton onError={msg => setError(msg)} />
+        </>
+      ) : null}
 
+      {ENABLE_PHONE_OTP ? (
+        <div className="si-phone-wrapper">
+          <PhoneRecaptchaPreload />
+          <PhoneAuthFlow onError={msg => setError(msg)} />
+        </div>
+      ) : null}
+
+      {(ENABLE_OAUTH_SIGN_IN || ENABLE_PHONE_OTP) && (
       <div style={{
       display: "flex",
       alignItems: "center",
@@ -563,6 +581,7 @@ export default function SignInPage() {
         background: "rgba(168,85,247,0.15)"
       }} />
       </div>
+      )}
 
 
       {/* Email + password */}

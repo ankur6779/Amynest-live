@@ -8,6 +8,12 @@ import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError, stashVerificationSendError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { AppleSignInButton } from "@/components/apple-sign-in-button";
+import PhoneAuthFlow from "@/components/phone-auth-flow";
+import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
+import {
+  ENABLE_OAUTH_SIGN_IN,
+  ENABLE_PHONE_OTP,
+} from "@/lib/auth-feature-flags";
 
 // ── Animation keyframes (same classes as sign-in — CSS idempotent in SPA) ────
 const SIGN_UP_CSS = `
@@ -389,9 +395,21 @@ export default function SignUpPage() {
         {t("screens.sign_up.subtitle")}
       </p>
 
-      <GoogleSignInButton onError={msg => setError(msg)} />
-      <AppleSignInButton onError={msg => setError(msg)} />
+      {ENABLE_OAUTH_SIGN_IN ? (
+        <>
+          <GoogleSignInButton onError={msg => setError(msg)} />
+          <AppleSignInButton onError={msg => setError(msg)} />
+        </>
+      ) : null}
 
+      {ENABLE_PHONE_OTP ? (
+        <div className="su-phone-wrapper">
+          <PhoneRecaptchaPreload />
+          <PhoneAuthFlow onError={msg => setError(msg)} />
+        </div>
+      ) : null}
+
+      {(ENABLE_OAUTH_SIGN_IN || ENABLE_PHONE_OTP) && (
       <div style={{
       display: "flex",
       alignItems: "center",
@@ -413,6 +431,7 @@ export default function SignUpPage() {
         background: "rgba(168,85,247,0.15)"
       }} />
       </div>
+      )}
 
       <form onSubmit={onEmail} style={{
       display: "flex",

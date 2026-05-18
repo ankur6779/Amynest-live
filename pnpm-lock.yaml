@@ -702,6 +702,9 @@ importers:
       '@workspace/parenting-articles':
         specifier: workspace:*
         version: link:../../lib/parenting-articles
+      '@workspace/phone-auth':
+        specifier: workspace:*
+        version: link:../../lib/phone-auth
       '@workspace/ptm-prep':
         specifier: workspace:*
         version: link:../../lib/ptm-prep
