@@ -192,45 +192,90 @@ interface GenerateArgs {
   audioPath: string;
 }
 
+function logElevenLabsKeyHint(): void {
+  const apiKey = getElevenLabsApiKey();
+  if (!apiKey) {
+    logger.warn({ evt: "elevenlabs.key_missing" }, "[ElevenLabs] API key not configured");
+    return;
+  }
+  logger.info(
+    { evt: "elevenlabs.key_present", keySuffix: apiKey.slice(-4) },
+    "[ElevenLabs] API key loaded",
+  );
+}
+
 async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
   const { text, voiceId, modelId, mode, cacheKey, audioPath } = args;
 
   const apiKey = getElevenLabsApiKey();
-  if (!apiKey) throw new Error("tts_missing_api_key");
+  if (!apiKey) {
+    logElevenLabsKeyHint();
+    throw new Error("tts_missing_api_key");
+  }
+
+  const elevenUrl = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`;
+  const aiStarted = performance.now();
 
   logger.info(
-    { evt: "tts.generating", cacheKey, charCount: text.length, voiceId, modelId, mode },
-    "TTS: generating new audio",
+    {
+      evt: "elevenlabs.request_start",
+      cacheKey,
+      charCount: text.length,
+      voiceId,
+      modelId,
+      mode,
+      keySuffix: apiKey.slice(-4),
+    },
+    "[ElevenLabs] Request start",
   );
 
-  const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "audio/mpeg",
-        "xi-api-key": apiKey,
-      },
-      body: JSON.stringify({
-        text,
-        model_id: modelId,
-        voice_settings: VOICE_SETTINGS[mode],
-      }),
+  const response = await fetch(elevenUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "audio/mpeg",
+      "xi-api-key": apiKey,
     },
-  );
+    body: JSON.stringify({
+      text,
+      model_id: modelId,
+      voice_settings: VOICE_SETTINGS[mode],
+    }),
+  });
+
+  const aiDurationMs = Math.round(performance.now() - aiStarted);
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
     logger.error(
-      { evt: "tts.upstream_error", status: response.status, detail: detail.slice(0, 500), voiceId },
-      "elevenlabs synthesize failed",
+      {
+        evt: "elevenlabs.error",
+        status: response.status,
+        durationMs: aiDurationMs,
+        detail: detail.slice(0, 500),
+        voiceId,
+      },
+      `[ElevenLabs] Error: HTTP ${response.status}`,
     );
     throw new Error(`tts_upstream_${response.status}`);
   }
 
   const buffer = Buffer.from(await response.arrayBuffer());
-  if (buffer.byteLength === 0) throw new Error("tts_empty_audio");
+  if (buffer.byteLength === 0) {
+    logger.error({ evt: "elevenlabs.empty_audio", durationMs: aiDurationMs }, "[ElevenLabs] Error: empty audio body");
+    throw new Error("tts_empty_audio");
+  }
+
+  logger.info(
+    {
+      evt: "elevenlabs.response_success",
+      durationMs: aiDurationMs,
+      bytes: buffer.byteLength,
+      voiceId,
+      modelId,
+    },
+    "[ElevenLabs] Response success",
+  );
 
   const contentType = "audio/mpeg";
   const backend = ttsStorageBackend();
@@ -293,8 +338,7 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
     );
   }
 
-  const playbackUrl =
-    audioUrl ?? resolveTtsPlaybackUrl(cacheKey, { audioUrl: ttsPublicGcsUrl(cacheKey) ?? undefined });
+  const playbackUrl = resolveTtsPlaybackUrl(cacheKey);
 
   logger.info(
     {

@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { Volume2, Loader2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 /**
@@ -95,8 +97,23 @@ export function AudioPlayButton({
   mode,
   className,
 }: AudioPlayButtonProps) {
-  const { speak, stop, speaking, loading } = useAmyVoice({ onFinished });
+  const { toast } = useToast();
+  const { speak, stop, speaking, loading, error } = useAmyVoice({ onFinished });
   const busy = speaking || loading;
+
+  useEffect(() => {
+    if (!error) return;
+    toast({
+      title: "Voice unavailable",
+      description:
+        error === "playback_blocked_tap_again"
+          ? "Tap play again to start audio (browser blocked autoplay)."
+          : error === "tts_missing_api_key"
+            ? "Amy voice is temporarily unavailable. Please try again later."
+            : error.replace(/_/g, " "),
+      variant: "destructive",
+    });
+  }, [error, toast]);
 
   const handleClick = () => {
     if (busy) {

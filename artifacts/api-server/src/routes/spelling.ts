@@ -2123,10 +2123,6 @@ spellingPublicRouter.get(
         res.status(404).json({ error: "audio_not_found" });
         return;
       }
-      if (cached.audioUrl?.startsWith("https://")) {
-        res.redirect(302, cached.audioUrl);
-        return;
-      }
       res.setHeader("Content-Type", "audio/mpeg");
       res.setHeader("X-Content-Type-Options", "nosniff");
       res.setHeader("Content-Length", String(cached.buffer.byteLength));

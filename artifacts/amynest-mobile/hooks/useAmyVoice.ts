@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
-import { API_BASE_URL } from "@/constants/api";
+import { resolveMediaUrl } from "@/constants/api";
 
 export interface UseAmyVoiceOptions {
   voiceId?: string;
@@ -156,6 +156,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
       setLoading(true);
 
       try {
+        if (__DEV__) console.info("[ElevenLabs] Request start", { chars: text.length, mode });
         const synthRes = await authFetch("/api/tts/synthesize", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -171,8 +172,8 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
 
         if (myId !== reqIdRef.current || !isMountedRef.current) return;
 
-        const fullUrl = `${API_BASE_URL}${data.audioUrl}`;
-        // .replace() loads the new source AND auto-plays once buffered.
+        const fullUrl = resolveMediaUrl(data.audioUrl);
+        if (__DEV__) console.info("[ElevenLabs] Playback URL", fullUrl);
         player.replace({ uri: fullUrl });
         // Apply playback speed if requested (default 1 = normal).
         if (playbackRate && playbackRate !== 1) {
@@ -181,10 +182,11 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         player.play();
         setRequestedPlaying(true);
       } catch (err) {
-        // AbortError is user-initiated cancel, not a failure.
         if ((err as { name?: string })?.name === "AbortError") return;
         if (isMountedRef.current && myId === reqIdRef.current) {
-          setError(err instanceof Error ? err.message : "tts_failed");
+          const message = err instanceof Error ? err.message : "tts_failed";
+          if (__DEV__) console.error("[ElevenLabs] Error:", message);
+          setError(message);
           setRequestedPlaying(false);
         }
       } finally {

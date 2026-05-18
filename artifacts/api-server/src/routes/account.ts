@@ -14,6 +14,7 @@ import {
   usageDailyTable,
   userProgressTable,
   userCoachSessionsTable,
+  coachWinGenerationsTable,
   userAiMessagesTable,
   referralsTable,
 } from "@workspace/db";
@@ -48,6 +49,7 @@ router.delete("/account", async (req, res): Promise<void> => {
       await tx.delete(usageDailyTable).where(eq(usageDailyTable.userId, userId));
       await tx.delete(userProgressTable).where(eq(userProgressTable.userId, userId));
       await tx.delete(userCoachSessionsTable).where(eq(userCoachSessionsTable.userId, userId));
+      await tx.delete(coachWinGenerationsTable).where(eq(coachWinGenerationsTable.userId, userId));
       await tx.delete(userAiMessagesTable).where(eq(userAiMessagesTable.userId, userId));
       await tx.delete(referralsTable).where(
         or(

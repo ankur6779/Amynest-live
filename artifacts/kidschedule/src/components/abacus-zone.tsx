@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTranslation } from "react-i18next";
+import { useAbacusTranslation } from "@/hooks/use-abacus-translation";
+import { abacusLevelLabelDefault, isAbacusLevelSlug } from "@workspace/abacus/i18n";
 import { Volume2, VolumeX, Sparkles, Lock, RotateCw, Trophy } from "lucide-react";
 import {
   abacusValue,
@@ -19,7 +20,6 @@ import {
   type AbacusProblem,
   type AbacusState,
   type LevelId,
-  type LevelMode,
 } from "@workspace/abacus";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
@@ -287,7 +287,7 @@ function LearnMode({
   onStop: () => void;
   speaking: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t } = useAbacusTranslation();
   const script = useMemo(() => buildLessonScript(level), [level]);
   const [step, setStep] = useState(0);
   const cur = script.steps[step];
@@ -336,7 +336,7 @@ function LearnMode({
 }
 
 function PracticeMode({ level }: { level: LevelId }) {
-  const { t } = useTranslation();
+  const { t } = useAbacusTranslation();
   const [problem, setProblem] = useState<AbacusProblem>(() => generateProblem(level, rng(Date.now())));
   const [board, setBoard] = useState<AbacusState>(() => problem.initialState ?? emptyAbacus(problem.rods));
   const [feedback, setFeedback] = useState<"none" | "correct" | "wrong">("none");
@@ -441,7 +441,7 @@ function ChallengeMode({
   level: LevelId;
   onComplete: (accuracyPct: number, points: number) => void;
 }) {
-  const { t } = useTranslation();
+  const { t } = useAbacusTranslation();
   const lvlDef = useMemo(() => LEVELS.find((l) => l.id === level)!, [level]);
   const [seed] = useState(() => Date.now());
   const problems = useMemo(() => generateChallenge(level, seed), [level, seed]);
@@ -548,7 +548,7 @@ function ChallengeMode({
 }
 
 function MentalMode({ level }: { level: LevelId }) {
-  const { t } = useTranslation();
+  const { t } = useAbacusTranslation();
   const [problem, setProblem] = useState<AbacusProblem>(() => generateProblem(level, rng(Date.now())));
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState<"none" | "correct" | "wrong">("none");
@@ -606,7 +606,7 @@ function MentalMode({ level }: { level: LevelId }) {
 }
 
 function TutorMode({ childId, level, ageYears }: { childId: number; level: LevelId; ageYears: number }) {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useAbacusTranslation();
   const authFetch = useAuthFetch();
   const amy = useAmyVoice();
   const [question, setQuestion] = useState("");
@@ -684,7 +684,7 @@ function TutorMode({ childId, level, ageYears }: { childId: number; level: Level
 // ─── Top-level component ────────────────────────────────────────────────
 
 export function AbacusZone({ childId, childName, ageYears }: Props) {
-  const { t } = useTranslation();
+  const { t } = useAbacusTranslation();
   const authFetch = useAuthFetch();
   const amy = useAmyVoice();
   const [progress, setProgress] = useState<ProgressShape | null>(null);
@@ -913,7 +913,10 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
               data-testid={`abacus-level-${l.id}`}
             >
               {!unlocked && <Lock className="h-3 w-3" />}
-              L{l.id} • {t(`abacus.level_${l.slug}` as `abacus.level_${LevelMode}`)}
+              L{l.id} •{" "}
+              {isAbacusLevelSlug(l.slug)
+                ? t(`abacus.level_${l.slug}`, abacusLevelLabelDefault(l.slug))
+                : l.slug}
             </button>
           );
         })}

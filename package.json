@@ -18,6 +18,7 @@
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "build:web": "BASE_PATH=/ PORT=3000 pnpm --filter @workspace/kidschedule build",
     "db:migrate": "pnpm --filter @workspace/scripts run migrate-database",
+    "stress": "pnpm --filter @workspace/scripts run stress-amy-coach",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "codegen": "pnpm --filter @workspace/api-spec run codegen && pnpm run typecheck:libs"
