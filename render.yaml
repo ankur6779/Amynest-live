@@ -15,12 +15,12 @@
 databases:
   - name: amynest-db
     databaseName: amynest_db
-    plan: starter
+    plan: basic-256mb
     region: singapore
 
   - name: amynest-db-dev
     databaseName: amynest_db_dev
-    plan: starter
+    plan: basic-256mb
     region: singapore
 
 services:
