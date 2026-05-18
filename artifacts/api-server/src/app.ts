@@ -87,6 +87,11 @@ export async function createApp(): Promise<Express> {
     res.status(200).type("text/plain").send("ok");
   });
 
+  /** Render healthCheckPath + probes that do not use the /api prefix. */
+  app.get("/healthz", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+  });
+
   /** Detailed health for ops (optional). */
   app.get("/health/status", async (_req, res) => {
     const memory = getMemorySnapshot();

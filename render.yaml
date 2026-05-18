@@ -44,10 +44,14 @@ services:
       corepack prepare pnpm@9.15.0 --activate &&
       NODE_ENV=development pnpm install --frozen-lockfile &&
       pnpm --filter @workspace/api-server build
-    startCommand: pnpm --filter @workspace/api-server start
+    # Direct node (no pnpm parent) — cleaner SIGTERM during deploys; must match build output path.
+    startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
+    healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: NODE_ENV
+        value: production
       - key: NODE_OPTIONS
         value: "--max-old-space-size=400 --expose-gc"
       - key: MEMORY_LIMIT_MB
@@ -56,6 +60,12 @@ services:
         value: production
       - key: API_PUBLIC_URL
         value: https://amynest-backend.onrender.com
+      - key: WORKER_ENABLED
+        value: "false"
+      - key: BACKGROUND_TASKS_ENABLED
+        value: "false"
+      - key: PHONICS_SEED_ENABLED
+        value: "false"
       - key: NOTIFICATIONS_ENABLED
         value: "false"
       - key: DATABASE_URL
@@ -92,12 +102,16 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: NODE_ENV
+        value: production
       - key: NODE_OPTIONS
         value: "--max-old-space-size=400 --expose-gc"
       - key: MEMORY_LIMIT_MB
         value: "512"
       - key: AMYNEST_ENV
         value: production
+      - key: WORKER_ENABLED
+        value: "false"
       - key: DATABASE_URL
         fromDatabase:
           name: amynest-db

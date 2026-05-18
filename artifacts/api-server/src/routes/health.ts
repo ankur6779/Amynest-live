@@ -34,7 +34,9 @@ router.get("/healthz/env", async (_req, res) => {
     ok:
       drive.resolved &&
       elevenlabsConfigured &&
-      (queue.queueMode === "memory" || queue.redis),
+      (queue.queueMode === "memory" ||
+        queue.queueMode === "off" ||
+        queue.redis),
     amynestEnv,
     profile: amynestEnvLabel(amynestEnv),
     nodeEnv: process.env.NODE_ENV ?? "unknown",

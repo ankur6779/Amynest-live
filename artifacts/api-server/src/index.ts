@@ -226,6 +226,27 @@ async function startServer(): Promise<void> {
   const app = await loadApp();
   const server = app.listen(port);
 
+  const gracefulShutdown = (signal: string): void => {
+    logger.info(
+      {
+        evt: "shutdown.signal",
+        signal,
+        uptimeSec: Math.round(process.uptime()),
+        bootMs: bootElapsedMs(),
+      },
+      `Graceful shutdown (${signal})`,
+    );
+    const forceExit = setTimeout(() => process.exit(0), 25_000);
+    forceExit.unref?.();
+    server.close(() => {
+      clearTimeout(forceExit);
+      process.exit(0);
+    });
+  };
+
+  process.once("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.once("SIGINT", () => gracefulShutdown("SIGINT"));
+
   server.on("listening", () => {
     disarmListenDeadline();
     endBootPhase("http_listen", { port, elapsedMs: bootElapsedMs() });

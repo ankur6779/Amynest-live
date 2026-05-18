@@ -39,5 +39,8 @@ ls -la "$BUNDLE"
 echo "[render-ai-worker] starting worker…"
 cd "$API"
 export AMYNEST_ENV="${AMYNEST_ENV:-production}"
+export NODE_ENV="${NODE_ENV:-production}"
 export AMYNEST_AI_WORKER_MODE=standalone
+# BullMQ disabled in production until Redis is stable — worker idles instead of exiting.
+export WORKER_ENABLED="${WORKER_ENABLED:-false}"
 exec node --enable-source-maps "$BUNDLE"
