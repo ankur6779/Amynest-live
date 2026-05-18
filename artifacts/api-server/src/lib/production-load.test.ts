@@ -105,6 +105,13 @@ describe("routine cache", () => {
       title: "Test",
       items: [{ activity: "Breakfast", startTime: "08:00", endTime: "08:30" }],
     } as never);
-    assert.equal(getCachedRoutine(key)?.title, "Test");
+    const cached = getCachedRoutine(key);
+    assert.ok(cached);
+    const title = (cached as { title?: string }).title;
+    assert.equal(
+      typeof title === "string" || cached.fallback === true,
+      true,
+    );
+    assert.equal(title, "Test");
   });
 });
