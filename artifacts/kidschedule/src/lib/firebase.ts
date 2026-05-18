@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import {
   canUseBrowserServiceWorkers,
-  isNativeAmyNestShell,
+  useFirebaseIndexedDbPersistence,
 } from "@/lib/native-shell";
 import { firebaseWebDefaults } from "@/lib/firebase-web-defaults";
 import { patchBootDiagnostics, recordBootError } from "@/lib/boot-store";
@@ -62,7 +62,7 @@ let authInstance: Auth | null = null;
 let initResult: FirebaseInitResult = { status: "pending" };
 
 function createFirebaseAuth(app: FirebaseApp): Auth {
-  const wantsIndexedDbPersistence = isNativeAmyNestShell();
+  const wantsIndexedDbPersistence = useFirebaseIndexedDbPersistence();
 
   if (wantsIndexedDbPersistence) {
     try {

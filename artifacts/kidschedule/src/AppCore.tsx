@@ -82,7 +82,7 @@ const EnvironmentPage = lazy(() => import("@/pages/environment"));
 const FeedbackPage = lazy(() => import("@/pages/feedback"));
 const AdminFeedbackPage = lazy(() => import("@/pages/admin-feedback"));
 
-import { NativeStartupPermissionsGate } from "@/components/native-startup-permissions-gate";
+import { NativeStartupPermissionsGateLazy } from "@/components/native-startup-permissions-gate-lazy";
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
 import { OfflineScreen, useOnlineStatus } from "@/components/offline-screen";
 import { getAppApiBaseOrigin } from "@/lib/api";
@@ -92,7 +92,7 @@ import { DebugPanel } from "@/components/debug-panel";
 import { FcmForegroundHandler } from "@/components/fcm-foreground-handler";
 import { useNotificationDeepLink } from "@/hooks/use-notification-deep-link";
 import { PaywallProvider } from "@/contexts/paywall-context";
-import { PaywallModal } from "@/components/paywall-modal";
+import { PaywallModalLazy } from "@/components/paywall-modal-lazy";
 import { SubscriptionEventBridge } from "@/components/subscription-event-bridge";
 // ReactInstanceRecovery is rendered by the parent App.tsx (the eager
 // shell), so it is NOT imported here — keeping it out of this lazy chunk
@@ -523,7 +523,7 @@ function AppRoutes() {
           <Route component={RouteFailedPage} />
             </Switch>
             </Suspense>
-            <PaywallModal />
+            <PaywallModalLazy />
             <SubscriptionEventBridge />
             <Toaster />
             <DebugPanel />
@@ -579,7 +579,7 @@ export default function AppCore() {
             </AppErrorBoundary>
           {/* Fixed overlay — rendered outside AppRoutes so it appears above all pages */}
           <OfflineGate />
-          <NativeStartupPermissionsGate />
+          <NativeStartupPermissionsGateLazy />
             </FirebaseActionGate>
           </WouterRouter>
         </AuthBootGate>

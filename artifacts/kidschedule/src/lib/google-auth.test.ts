@@ -6,12 +6,16 @@ import {
   shouldUseNativeGoogleAuth,
 } from "./google-auth";
 
-vi.mock("@capacitor/core", () => ({
-  Capacitor: {
-    isNativePlatform: () =>
-      (globalThis as { __capNative?: boolean }).__capNative === true,
-  },
-}));
+function setCapacitorNative(native: boolean) {
+  (globalThis as { __capNative?: boolean }).__capNative = native;
+  Object.defineProperty(window, "Capacitor", {
+    value: {
+      isNativePlatform: () =>
+        (globalThis as { __capNative?: boolean }).__capNative === true,
+    },
+    configurable: true,
+  });
+}
 
 describe("google-auth", () => {
   beforeEach(() => {
@@ -40,7 +44,7 @@ describe("google-auth", () => {
   it("uses native path only in Capacitor native shell", () => {
     expect(shouldUseNativeGoogleAuth()).toBe(false);
 
-    (globalThis as { __capNative?: boolean }).__capNative = true;
+    setCapacitorNative(true);
     Object.defineProperty(window, "location", {
       value: { protocol: "capacitor:", hostname: "localhost" },
       configurable: true,
