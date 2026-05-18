@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import {
   childrenTable,
   db,
@@ -62,10 +62,45 @@ function routinePushOptedIn(uiPrefs: unknown): boolean {
 }
 
 let started = false;
+let pushTokensTableExists: boolean | null = null;
+let loggedMissingPushTokensTable = false;
+let loggedPushTokensCheckFailure = false;
+const loggedCronFailures = new Set<string>();
 
 const TZ = process.env["NOTIFICATION_TZ"] ?? "Asia/Kolkata";
 
+function notificationsEnabled(): boolean {
+  return process.env["NOTIFICATIONS_ENABLED"]?.trim().toLowerCase() !== "false";
+}
+
+async function hasPushTokensTable(): Promise<boolean> {
+  if (pushTokensTableExists !== null) return pushTokensTableExists;
+
+  try {
+    const result = await db.execute<{ exists: boolean }>(sql`
+      SELECT to_regclass('public.push_tokens') IS NOT NULL AS exists
+    `);
+    pushTokensTableExists = result.rows[0]?.exists === true;
+  } catch (err) {
+    pushTokensTableExists = false;
+    if (!loggedPushTokensCheckFailure) {
+      loggedPushTokensCheckFailure = true;
+      logger.warn({ err }, "Notification cron disabled: could not check push_tokens table");
+    }
+    return false;
+  }
+
+  if (!pushTokensTableExists && !loggedMissingPushTokensTable) {
+    loggedMissingPushTokensTable = true;
+    logger.warn("Notification cron skipped: push_tokens table is missing");
+  }
+
+  return pushTokensTableExists;
+}
+
 async function getTargetUsers(): Promise<string[]> {
+  if (!(await hasPushTokensTable())) return [];
+
   const rows = await db
     .selectDistinct({ userId: pushTokensTable.userId })
     .from(pushTokensTable);
@@ -113,8 +148,18 @@ function schedule(name: string, expr: string, runner: () => Promise<unknown>): v
     cron.schedule(
       expr,
       () => {
-        logger.info({ job: name, expr, tz: TZ }, "Notification cron firing");
-        runner().catch((err) => logger.error({ err, job: name }, "Notification cron threw"));
+        void (async () => {
+          try {
+            if (!(await hasPushTokensTable())) return;
+            logger.debug({ job: name, expr, tz: TZ }, "Notification cron firing");
+            await runner();
+          } catch (err) {
+            if (!loggedCronFailures.has(name)) {
+              loggedCronFailures.add(name);
+              logger.error({ err, job: name }, "Notification cron failed; future errors for this job will be suppressed");
+            }
+          }
+        })();
       },
       { timezone: TZ },
     );
@@ -219,6 +264,13 @@ async function dispatchPerItemReminders(): Promise<{
 
 export function startNotificationCron(): void {
   if (started) return;
+  started = true;
+
+  if (!notificationsEnabled()) {
+    logger.info("Notification cron disabled via NOTIFICATIONS_ENABLED=false");
+    return;
+  }
+
   if (process.env["DISABLE_NOTIFICATION_CRON"] === "1") {
     logger.info("Notification cron disabled via DISABLE_NOTIFICATION_CRON");
     return;
@@ -315,7 +367,6 @@ export function startNotificationCron(): void {
   // Suppress unused import warnings
   void buildNutritionInsight;
 
-  started = true;
 }
 
 // Re-export for tests.
