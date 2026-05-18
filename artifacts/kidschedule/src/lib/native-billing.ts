@@ -38,16 +38,14 @@ export type NativePurchaseResult =
   | { ok: true; customerInfo: NativeCustomerInfo }
   | { ok: false; userCancelled?: boolean; error: string; code?: number };
 
+/**
+ * Object injected by Android `WebViewCompat.addWebMessageListener`.
+ * Replies arrive on `onmessage` (not EventTarget.addEventListener) — see
+ * https://developer.android.com/develop/ui/views/layout/webapps/native-api-access-jsbridge
+ */
 type WebMessageListenerObject = {
   postMessage: (data: string) => void;
-  addEventListener: (
-    type: "message",
-    listener: (event: { data: string }) => void,
-  ) => void;
-  removeEventListener: (
-    type: "message",
-    listener: (event: { data: string }) => void,
-  ) => void;
+  onmessage: ((event: { data: string }) => void) | null;
 };
 
 declare global {
@@ -65,7 +63,7 @@ let listenerInstalled = false;
 function installListener(bridge: WebMessageListenerObject) {
   if (listenerInstalled) return;
   listenerInstalled = true;
-  bridge.addEventListener("message", (event) => {
+  bridge.onmessage = (event) => {
     let payload: { cbId?: string };
     try {
       payload = JSON.parse(event.data);
@@ -77,7 +75,7 @@ function installListener(bridge: WebMessageListenerObject) {
     if (!p) return;
     pending.delete(payload.cbId);
     p.resolve(payload);
-  });
+  };
 }
 
 function callAsync<T>(
