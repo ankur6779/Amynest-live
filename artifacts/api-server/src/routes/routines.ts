@@ -940,6 +940,36 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
   };
 }
 
+const AI_ROUTINE_GENERATION_TIMEOUT_MS = 10_000;
+
+function withPromiseTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms}ms`)),
+      ms,
+    );
+    p.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
+function assertNonEmptyRoutine(
+  generated: { title?: string; items?: unknown[] },
+  label: string,
+): void {
+  if (!generated.title || !Array.isArray(generated.items) || generated.items.length < 1) {
+    throw new Error(`${label}: empty routine`);
+  }
+}
+
 // ─── Environmental Intelligence Orchestration helper ─────────────────────
 // Resolves env context with a strict timeout so routine generation NEVER
 // blocks on an external weather/AQI API. Returns null on failure / disabled.
@@ -1658,57 +1688,81 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
     return;
   }
 
+  const clientMeta = req.body as {
+    timezone?: string;
+    dayContext?: { isWeekend?: boolean; dayOfWeek?: number; isToday?: boolean };
+    userId?: string;
+  };
+  console.info("[generate-ai] request", {
+    userId,
+    childId: parsed.data.childId,
+    date: parsed.data.date,
+    timezone: clientMeta.timezone,
+    dayContext: clientMeta.dayContext,
+    mood: mood ?? "normal",
+    hasSchool,
+    weatherOutdoor: aiEffectiveWeather,
+  });
+
+  const aiSchoolDay = isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool);
+
   try {
-    const generated = await generateAiRoutine({
-      childName: child.name,
-      age: effectiveAge,
-      ageInMonths: totalAgeMonths,
-      ageGroup,
-      wakeUpTime: effWakeUp,
-      sleepTime: child.sleepTime,
-      schoolStartTime: effSchoolStart,
-      schoolEndTime: effSchoolEnd,
-      hasSchool: isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool),
-      foodType,
-      region,
-      country: (pp as Record<string, unknown>)?.country as string | undefined,
-      mood: mood ?? "normal",
-      specialPlans,
-      fixedActivities,
-      fridgeItems,
-      goals: child.goals,
-      travelMode: child.travelMode,
-      childClass: (child as any).childClass ?? undefined,
-      date: parsed.data.date,
-      caregiver,
-      isWeekendDay,
-      previousMeals: previousMeals.length > 0 ? previousMeals : undefined,
-      previousActivities: previousActivities.length > 0 ? previousActivities : undefined,
-      weatherOutdoor: aiEffectiveWeather,
-      environmentalContext: aiEnvContext,
-      customRecipes: aiUserCustomRecipes,
-      allergies: effAllergies,
-      foodStyle: effFoodStyle,
-      subCuisine: effSubCuisine,
-      feedingType: child.feedingType ?? null,
-      sleepPattern: child.sleepPattern ?? null,
-      parentGoals: childIntel.parentGoals,
-      energyProfile: childIntel.energyProfile,
-      learningWeights,
-      previousDayContext,
-      schoolMealMode,
-    });
+    const generated = await withPromiseTimeout(
+      generateAiRoutine({
+        childName: child.name,
+        age: effectiveAge,
+        ageInMonths: totalAgeMonths,
+        ageGroup,
+        wakeUpTime: effWakeUp,
+        sleepTime: child.sleepTime,
+        schoolStartTime: effSchoolStart,
+        schoolEndTime: effSchoolEnd,
+        hasSchool: aiSchoolDay,
+        foodType,
+        region,
+        country: (pp as Record<string, unknown>)?.country as string | undefined,
+        mood: mood ?? "normal",
+        specialPlans,
+        fixedActivities,
+        fridgeItems,
+        goals: child.goals,
+        travelMode: child.travelMode,
+        childClass: (child as any).childClass ?? undefined,
+        date: parsed.data.date,
+        caregiver,
+        isWeekendDay,
+        previousMeals: previousMeals.length > 0 ? previousMeals : undefined,
+        previousActivities: previousActivities.length > 0 ? previousActivities : undefined,
+        weatherOutdoor: aiEffectiveWeather,
+        environmentalContext: aiEnvContext,
+        customRecipes: aiUserCustomRecipes,
+        allergies: effAllergies,
+        foodStyle: effFoodStyle,
+        subCuisine: effSubCuisine,
+        feedingType: child.feedingType ?? null,
+        sleepPattern: child.sleepPattern ?? null,
+        parentGoals: childIntel.parentGoals,
+        energyProfile: childIntel.energyProfile,
+        learningWeights,
+        previousDayContext,
+        schoolMealMode,
+        childId: String(child.id),
+      }),
+      AI_ROUTINE_GENERATION_TIMEOUT_MS,
+      "generateAiRoutine",
+    );
+    assertNonEmptyRoutine(generated, "generateAiRoutine");
     const aiEnriched = applyEnvironmentalEnrichments(
       ((generated.items ?? []) as unknown) as EnrichableItem[],
       aiEnvContext,
       { region: region as string | null | undefined },
     );
     const aiExplCtx: ParentExplanationContext = {
-      hasSchool: isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool),
+      hasSchool: aiSchoolDay,
       isWeekendDay,
       mood: mood ?? "normal",
     };
-    res.json(GenerateRoutineResponse.parse({
+    const body = GenerateRoutineResponse.parse({
       ...generated,
       items: aiEnriched.items as unknown as typeof generated.items,
       adaptations: finalizeParentAdaptations(
@@ -1724,8 +1778,17 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       fixedActivitiesResult: generated.fixedActivities?.fixedActivitiesApplied
         ? toFixedActivitiesResult(generated.fixedActivities, child.name)
         : null,
-    }));
-  } catch {
+    });
+    console.info("[generate-ai] success", {
+      childId: parsed.data.childId,
+      itemCount: body.items.length,
+    });
+    res.json({ ...body, success: true, fallback: false });
+  } catch (err) {
+    console.error("[generate-ai] AI ERROR:", err);
+    if (err instanceof Error && err.stack) {
+      console.error("[generate-ai] stack:", err.stack);
+    }
     // Fallback to rule-based if AI fails
     const fallbackSchoolDay = isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool);
     const { resolved: fallbackInputs, debug: fallbackInputDebug } = resolveRoutineGenerationInputs({
@@ -1802,7 +1865,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       previousDayContext,
     });
     const fallbackExplCtx = parentExplanationCtx(fallbackInputs, isWeekendDay);
-    res.json(GenerateRoutineResponse.parse({
+    const fallbackBody = GenerateRoutineResponse.parse({
       ...generated,
       items: fallbackPiped.items as unknown as typeof generated.items,
       adaptations: finalizeParentAdaptations(
@@ -1821,7 +1884,13 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       fixedActivitiesResult: fallbackPiped.fixedActivities.fixedActivitiesApplied
         ? toFixedActivitiesResult(fallbackPiped.fixedActivities, child.name)
         : null,
-    }));
+    });
+    assertNonEmptyRoutine(fallbackBody, "rule-based fallback");
+    console.info("[generate-ai] fallback success", {
+      childId: parsed.data.childId,
+      itemCount: fallbackBody.items.length,
+    });
+    res.json({ ...fallbackBody, success: false, fallback: true });
   }
 });
 

@@ -2,13 +2,17 @@ import { useAuth } from "@/lib/firebase-auth-hooks";
 import { waitForIdToken } from "@/lib/auth-token";
 import { useCallback } from "react";
 import { loggedFetch } from "@/lib/api-logger";
-import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+import { DEFAULT_API_TIMEOUT_MS, fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
 export function useAuthFetch() {
   const { getToken, isSignedIn } = useAuth();
 
   const authFetch = useCallback(
-    async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
+    async (
+      input: RequestInfo | URL,
+      init: RequestInit = {},
+      timeoutMs: number = DEFAULT_API_TIMEOUT_MS,
+    ): Promise<Response> => {
       const headers = new Headers(init.headers);
 
       if (isSignedIn) {
@@ -23,7 +27,9 @@ export function useAuthFetch() {
       }
 
       const initWithHeaders = { ...init, headers };
-      return loggedFetch(input, initWithHeaders, (inp, ini) => fetchWithTimeout(inp, ini));
+      return loggedFetch(input, initWithHeaders, (inp, ini) =>
+        fetchWithTimeout(inp, ini, timeoutMs),
+      );
     },
     [getToken, isSignedIn],
   );

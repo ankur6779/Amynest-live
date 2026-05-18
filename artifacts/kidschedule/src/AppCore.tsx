@@ -273,9 +273,13 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   }
   if (!isSetupComplete(data)) return <Redirect to="/onboarding" />;
   return (
-    <Layout>
-      <Component />
-    </Layout>
+    <AppErrorBoundary label="Layout">
+      <Layout>
+        <AppErrorBoundary label="Page">
+          <Component />
+        </AppErrorBoundary>
+      </Layout>
+    </AppErrorBoundary>
   );
 }
 

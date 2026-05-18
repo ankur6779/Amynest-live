@@ -102,7 +102,8 @@ export function useAuthFetch() {
       // Pass through expected non-2xx that callers handle:
       //   404 → resource missing
       //   402 → feature_locked / paywall
-      if (!lastRes.ok && lastRes.status !== 404 && lastRes.status !== 402) {
+      //   403 → legacy routine_limit_exceeded
+      if (!lastRes.ok && lastRes.status !== 404 && lastRes.status !== 402 && lastRes.status !== 403) {
         const body = await safeReadBody(lastRes);
         const detail = body ? ` — ${body}` : "";
         const sessHint =

@@ -1,7 +1,12 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AppFallbackUi } from "@/components/app-fallback-ui";
 
-type Props = { children: ReactNode; label?: string };
+type Props = {
+  children: ReactNode;
+  label?: string;
+  /** Compact fallback (e.g. menu button) instead of full-screen UI. */
+  fallback?: ReactNode;
+};
 type State = { error: Error | null };
 
 export class AppErrorBoundary extends Component<Props, State> {
@@ -12,11 +17,19 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error("[amynest:AppErrorBoundary]", this.props.label ?? "app", error, info.componentStack);
+    console.error(
+      "APP CRASH:",
+      this.props.label ?? "app",
+      error,
+      info.componentStack,
+    );
   }
 
   render(): ReactNode {
     if (this.state.error) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
       return (
         <AppFallbackUi
           message={this.state.error.message || "An unexpected error occurred."}

@@ -25,6 +25,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { useAuth } from "@/lib/firebase-auth";
+import {
+  enrichRoutinePayload,
+  fetchAmyAiRoutine,
+  fetchStandardRoutine,
+  RoutineGenerationPaywallError,
+} from "@/lib/routine-generation-client";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { brand, palette } from "@/constants/colors";
@@ -131,6 +138,7 @@ export default function GenerateRoutineScreen() {
   const { theme } = useTheme();
   const MOODS = useMemo(() => getMoods(colors.statusRoseBg), [colors.statusRoseBg]);
   const authFetch = useAuthFetch();
+  const { userId } = useAuth();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ childId?: string; date?: string }>();
 
@@ -152,6 +160,7 @@ export default function GenerateRoutineScreen() {
   const [handlerType, setHandlerType] = useState<HandlerKey>("mom");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [aiGeneratingSlow, setAiGeneratingSlow] = useState(false);
 
   // ── Existing routine check (debounced) ──────────────────────────────────
   const [existingRoutine, setExistingRoutine] = useState<{ exists: boolean; routineId?: number } | null>(null);
@@ -528,26 +537,34 @@ export default function GenerateRoutineScreen() {
     const shouldOverride = forceOverride || overrideMode || !!existingRoutine?.exists;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsAiGenerating(true);
+    setAiGeneratingSlow(false);
+    const buildPayload = () =>
+      enrichRoutinePayload(buildGeneratePayload(wakeTime, weatherOverride), userId);
     try {
-      const res = await authFetch("/api/routines/generate-ai", {
-        method: "POST",
-        body: JSON.stringify(buildGeneratePayload(wakeTime, weatherOverride)),
+      const generated = await fetchAmyAiRoutine(authFetch, buildPayload(), {
+        onSlow: () => setAiGeneratingSlow(true),
       });
-      if (await handlePaywallResponse(res)) return;
-      if (!res.ok) throw new Error("AI generate failed");
-      const generated = (await res.json()) as { title: string; items: any[] };
       const simplified = simplifyForHandler(generated.items as any, handlerType) as any[];
       handlePostGenerate({ title: generated.title, items: simplified }, shouldOverride, wakeTime);
-    } catch {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert(
-        t("toasts.routines_generate.save_failed_title", { defaultValue: "Couldn't generate routine" }),
-        t("toasts.routines_generate.generate_failed", { defaultValue: "Failed to generate routine" }),
-      );
+    } catch (err) {
+      if (err instanceof RoutineGenerationPaywallError) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        router.push({ pathname: "/paywall", params: { reason: "routines_limit" } });
+        return;
+      }
+      console.error("Routine generation error:", err);
+      try {
+        const fallback = await fetchStandardRoutine(authFetch, buildPayload());
+        const simplified = simplifyForHandler(fallback.items as any, handlerType) as any[];
+        handlePostGenerate({ title: fallback.title, items: simplified }, shouldOverride, wakeTime);
+      } catch (finalErr) {
+        console.error("Routine generation final fallback failed:", finalErr);
+      }
     } finally {
       setIsAiGenerating(false);
+      setAiGeneratingSlow(false);
     }
-  }, [overrideMode, existingRoutine, authFetch, buildGeneratePayload, handlePaywallResponse, handlerType, handlePostGenerate, t]);
+  }, [overrideMode, existingRoutine, authFetch, buildGeneratePayload, userId, handlerType, handlePostGenerate, router]);
 
   // ── Wake-check entry point ─────────────────────────────────────────────
   const triggerWithWakeCheck = useCallback(async (type: "standard" | "ai", forceOverride: boolean, weatherOverride?: WeatherOutdoor) => {
@@ -1169,6 +1186,7 @@ export default function GenerateRoutineScreen() {
           childName={isGeneratingFamily ? (familyProgress?.currentName ?? "") : (selectedChildData?.name ?? "your child")}
           familyProgress={familyProgress}
           aiMode={isAiGenerating}
+          aiSlow={aiGeneratingSlow}
         />
       )}
 
@@ -2097,10 +2115,12 @@ function GenerateProgressOverlay({
   childName,
   familyProgress,
   aiMode = false,
+  aiSlow = false,
 }: {
   childName: string;
   familyProgress: { current: number; total: number; currentName: string } | null;
   aiMode?: boolean;
+  aiSlow?: boolean;
 }) {
   const { t } = useTranslation();
   const [stepIndex, setStepIndex] = useState(0);
@@ -2139,10 +2159,22 @@ function GenerateProgressOverlay({
           <Ionicons name={step.icon} size={28} color="#fff" />
         </LinearGradient>
         <Text style={styles.progressTitle}>
-          {isFamily ? `Building ${familyProgress?.currentName}'s routine` : `${BRAND.aiName} is planning`}
+          {isFamily
+            ? `Building ${familyProgress?.currentName}'s routine`
+            : aiMode && aiSlow
+              ? t("toasts.routines_generate.ai_unavailable", {
+                  defaultValue: "Generating smart routine... taking longer than usual",
+                })
+              : `${BRAND.aiName} is planning`}
         </Text>
         <Text style={styles.progressStep}>
-          {isFamily ? `${familyProgress?.current} of ${familyProgress?.total} children` : label}
+          {isFamily
+            ? `${familyProgress?.current} of ${familyProgress?.total} children`
+            : aiMode && aiSlow
+              ? t("toasts.routines_generate.ai_unavailable", {
+                  defaultValue: "Generating smart routine... taking longer than usual",
+                })
+              : label}
         </Text>
         <View style={styles.progressBarTrack}>
           {isFamily
