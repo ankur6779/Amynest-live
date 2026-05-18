@@ -12,6 +12,7 @@ import { startWeeklyRecapCron } from "./lib/weeklyRecapCron";
 import { startNotificationCron } from "./lib/notificationCron";
 import { seedPhonicsWordBank } from "./lib/phonicsWordBankSeed";
 import { startRenderKeepWarm } from "./lib/render-keep-warm";
+import { ensurePushTokensTable } from "./lib/ensurePushTokensTable";
 
 const rawPort = process.env["PORT"];
 
@@ -32,6 +33,7 @@ async function startServer(): Promise<void> {
   startMemoryMonitor();
 
   await bootstrapApiQueue();
+  await ensurePushTokensTable();
 
   if (!isBullMqActive()) {
     startEmbeddedAiWorker();

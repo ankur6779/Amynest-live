@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { index, pgTable, text, serial, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const pushTokensTable = pgTable(
   "push_tokens",
@@ -13,6 +13,7 @@ export const pushTokensTable = pgTable(
   },
   (t) => ({
     tokenIdx: uniqueIndex("push_tokens_token_idx").on(t.token),
+    userIdIdx: index("push_tokens_user_id_idx").on(t.userId),
   }),
 );
 
