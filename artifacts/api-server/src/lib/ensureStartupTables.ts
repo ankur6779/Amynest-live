@@ -45,6 +45,22 @@ export async function ensurePushTokensTable(): Promise<void> {
  * Razorpay webhook idempotency log. `event_id` is the Razorpay event id (unique);
  * optional `payload` for debugging; `event_type` used by the webhook handler.
  */
+export async function ensureChildrenFixedActivitiesColumn(): Promise<void> {
+  await db.execute(sql`
+    ALTER TABLE children ADD COLUMN IF NOT EXISTS fixed_activities JSONB
+  `);
+  await db.execute(sql`
+    ALTER TABLE children ALTER COLUMN fixed_activities SET DEFAULT '[]'::jsonb
+  `);
+  await db.execute(sql`
+    UPDATE children SET fixed_activities = '[]'::jsonb WHERE fixed_activities IS NULL
+  `);
+  logger.info(
+    { evt: "db.ensure", table: "children", column: "fixed_activities" },
+    "Ensured children.fixed_activities column exists",
+  );
+}
+
 export async function ensureRazorpayWebhookEventsTable(): Promise<void> {
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS razorpay_webhook_events (
@@ -79,6 +95,7 @@ export async function ensureStartupTables(): Promise<void> {
   const steps: Array<{ name: string; run: () => Promise<void> }> = [
     { name: "push_tokens", run: ensurePushTokensTable },
     { name: "razorpay_webhook_events", run: ensureRazorpayWebhookEventsTable },
+    { name: "children_fixed_activities", run: ensureChildrenFixedActivitiesColumn },
   ];
 
   for (const step of steps) {

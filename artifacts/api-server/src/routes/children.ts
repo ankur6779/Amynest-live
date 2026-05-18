@@ -1,7 +1,13 @@
 import { Router, type IRouter } from "express";
-import { eq, and, asc, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { db, childrenTable, parentProfilesTable } from "@workspace/db";
+import {
+  getChildByIdForUser,
+  insertChildRow,
+  listChildrenForUser,
+  updateChildRow,
+} from "../lib/children-db.js";
 import {
   CreateChildBody,
   UpdateChildBody,
@@ -27,11 +33,7 @@ router.get("/children", async (req, res): Promise<void> => {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  const children = await db
-    .select()
-    .from(childrenTable)
-    .where(eq(childrenTable.userId, userId))
-    .orderBy(asc(childrenTable.createdAt), asc(childrenTable.id));
+  const children = await listChildrenForUser(userId);
   res.json(ListChildrenResponse.parse(children.map((c) => ({ ...c, createdAt: c.createdAt.toISOString() }))));
 });
 
@@ -98,7 +100,7 @@ router.post("/children", async (req, res): Promise<void> => {
     ...inheritedPrefs,
     userId,
   };
-  const [child] = await db.insert(childrenTable).values(insertData).returning();
+  const child = await insertChildRow(insertData);
 
   // Referral system: creating a child counts as the user's first
   // meaningful feature use. Idempotent (only flips pending → valid).
@@ -122,10 +124,7 @@ router.get("/children/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [child] = await db
-    .select()
-    .from(childrenTable)
-    .where(and(eq(childrenTable.id, params.data.id), eq(childrenTable.userId, userId)));
+  const child = await getChildByIdForUser(params.data.id, userId);
   if (!child) {
     res.status(404).json({ error: "Child not found" });
     return;
@@ -154,11 +153,7 @@ router.patch("/children/:id", async (req, res): Promise<void> => {
     foodPrefInherited: parsed.data.foodPrefInherited ?? undefined,
     foodPrefCustomized: parsed.data.foodPrefCustomized ?? undefined,
   };
-  const [child] = await db
-    .update(childrenTable)
-    .set(updateData)
-    .where(and(eq(childrenTable.id, params.data.id), eq(childrenTable.userId, userId)))
-    .returning();
+  const child = await updateChildRow(params.data.id, userId, updateData);
   if (!child) {
     res.status(404).json({ error: "Child not found" });
     return;

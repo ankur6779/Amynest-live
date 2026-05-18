@@ -12,6 +12,11 @@ import { featureGate } from "../middlewares/featureGate.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 import { enqueueAiJob } from "../queue/ai-job-queue.js";
 import { enqueueForUser } from "../lib/per-user-queue.js";
+import {
+  getChildByIdForUser,
+  getFixedActivitiesFromChild,
+  listChildrenForUser,
+} from "../lib/children-db.js";
 import { checkRoutineGenerationRateLimit } from "../lib/routine-rate-limit.js";
 import {
   getCachedRoutine,
@@ -1316,10 +1321,7 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     return;
   }
 
-  const [childRow] = await db
-    .select()
-    .from(childrenTable)
-    .where(and(eq(childrenTable.id, parsed.data.childId), eq(childrenTable.userId, userId)));
+  const childRow = await getChildByIdForUser(parsed.data.childId, userId);
   if (!childRow) {
     res.status(404).json({ error: "Child not found" });
     return;
@@ -1345,7 +1347,7 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     (parsed.data.weatherOutdoor ?? "yes") as WeatherOutdoor;
   const specialPlans = parsed.data.specialPlans ?? undefined;
   const fixedActivities = resolveFixedActivitiesForGenerate(
-    (child as { fixedActivities?: unknown }).fixedActivities,
+    getFixedActivitiesFromChild(child),
     parsed.data.fixedActivities,
   );
   const fridgeItems = parsed.data.fridgeItems ?? undefined;
@@ -1570,10 +1572,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
     return;
   }
 
-  const [childRow] = await db
-    .select()
-    .from(childrenTable)
-    .where(and(eq(childrenTable.id, parsed.data.childId), eq(childrenTable.userId, userId)));
+  const childRow = await getChildByIdForUser(parsed.data.childId, userId);
   if (!childRow) {
     res.status(404).json({ error: "Child not found" });
     return;
@@ -1607,7 +1606,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
     (parsed.data.weatherOutdoor ?? "yes") as WeatherOutdoor;
   const specialPlans = parsed.data.specialPlans ?? undefined;
   const fixedActivities = resolveFixedActivitiesForGenerate(
-    (child as { fixedActivities?: unknown }).fixedActivities,
+    getFixedActivitiesFromChild(child),
     parsed.data.fixedActivities,
   );
   const fridgeItems = parsed.data.fridgeItems ?? undefined;
@@ -1964,7 +1963,7 @@ router.get("/routines", async (req, res): Promise<void> => {
   }
 
   const [children, parentProfiles] = await Promise.all([
-    db.select().from(childrenTable).where(eq(childrenTable.userId, userId)),
+    listChildrenForUser(userId),
     db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId)),
   ]);
   const pp = parentProfiles[0];

@@ -7,6 +7,8 @@ import {
   routinesTable,
   type NotificationCategory,
 } from "@workspace/db";
+import { childIdNameSelect } from "./children-db.js";
+import { isMissingColumnError, withSafeDb } from "./db-safe.js";
 import { logger } from "./logger";
 import {
   dispatchNotification,
@@ -101,10 +103,16 @@ async function hasPushTokensTable(): Promise<boolean> {
 async function getTargetUsers(): Promise<string[]> {
   if (!(await hasPushTokensTable())) return [];
 
-  const rows = await db
-    .selectDistinct({ userId: pushTokensTable.userId })
-    .from(pushTokensTable);
-  return rows.map((r) => r.userId);
+  return withSafeDb(
+    "notification.getTargetUsers",
+    async () => {
+      const rows = await db
+        .selectDistinct({ userId: pushTokensTable.userId })
+        .from(pushTokensTable);
+      return rows.map((r) => r.userId);
+    },
+    [],
+  );
 }
 
 async function dispatchToAll(
@@ -137,7 +145,11 @@ async function dispatchToAll(
       else throttled++;
     } catch (err) {
       failed++;
-      logger.error({ err, userId, category }, "Notification dispatch loop error");
+      if (isMissingColumnError(err)) {
+        logger.warn({ err, userId, category }, "Notification dispatch skipped — missing DB column");
+      } else {
+        logger.error({ err, userId, category }, "Notification dispatch loop error");
+      }
     }
   }
   return { attempted: users.length, sent, throttled, failed };
@@ -156,7 +168,13 @@ function schedule(name: string, expr: string, runner: () => Promise<unknown>): v
           } catch (err) {
             if (!loggedCronFailures.has(name)) {
               loggedCronFailures.add(name);
-              logger.error({ err, job: name }, "Notification cron failed; future errors for this job will be suppressed");
+              const level = isMissingColumnError(err) ? "warn" : "error";
+              logger[level](
+                { err, job: name },
+                isMissingColumnError(err)
+                  ? "Notification cron skipped — missing DB column; future errors for this job will be suppressed"
+                  : "Notification cron failed; future errors for this job will be suppressed",
+              );
             }
           }
         })();
@@ -208,16 +226,21 @@ async function dispatchPerItemReminders(): Promise<{
       if (Number.isNaN(hh) || Number.isNaN(mm)) continue;
       const nowMins = hh * 60 + mm;
 
-      const rows = await db
-        .select({ routine: routinesTable, child: childrenTable })
-        .from(routinesTable)
-        .innerJoin(childrenTable, eq(childrenTable.id, routinesTable.childId))
-        .where(
-          and(
-            eq(childrenTable.userId, userId),
-            eq(routinesTable.date, localDate),
-          ),
-        );
+      const rows = await withSafeDb(
+        `notification.routineItems.${userId}`,
+        () =>
+          db
+            .select({ routine: routinesTable, child: childIdNameSelect })
+            .from(routinesTable)
+            .innerJoin(childrenTable, eq(childrenTable.id, routinesTable.childId))
+            .where(
+              and(
+                eq(childrenTable.userId, userId),
+                eq(routinesTable.date, localDate),
+              ),
+            ),
+        [],
+      );
 
       for (const { routine, child } of rows) {
         if (!routinePushOptedIn(routine.uiPrefs)) continue;
@@ -256,7 +279,11 @@ async function dispatchPerItemReminders(): Promise<{
       }
     } catch (err) {
       failed++;
-      logger.error({ err, userId }, "Per-item routine dispatch error");
+      if (isMissingColumnError(err)) {
+        logger.warn({ err, userId }, "Per-item routine dispatch skipped — missing DB column");
+      } else {
+        logger.error({ err, userId }, "Per-item routine dispatch error");
+      }
     }
   }
   return { attempted: users.length, scheduled, sent, throttled, failed };
@@ -360,7 +387,11 @@ export function startNotificationCron(): void {
 
   // Token health sweep — daily at 03:00 local.
   schedule("token_sweep", "0 3 * * *", async () => {
-    const removed = await pruneStaleTokens(60);
+    const removed = await withSafeDb(
+      "notification.token_sweep",
+      () => pruneStaleTokens(60),
+      0,
+    );
     logger.info({ removed, job: "token_sweep" }, "Token sweep summary");
   });
 

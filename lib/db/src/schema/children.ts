@@ -60,9 +60,9 @@ export const childrenTable = pgTable("children", {
     lastComputedAt: string | null;
   }>(),
   /** Recurring locked activities (tuition, sports, classes) — see FixedActivity in OpenAPI. */
-  fixedActivities: jsonb("fixed_activities").$type<
-    Array<{ activity: string; days: string[]; start: string; end: string }>
-  >(),
+  fixedActivities: jsonb("fixed_activities")
+    .$type<Array<{ activity: string; days: string[]; start: string; end: string }>>()
+    .default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
