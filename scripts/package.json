@@ -9,6 +9,7 @@
     "audit:parent-hub-i18n": "tsx ./src/audit-parent-hub-i18n.ts",
     "watch:openapi": "tsx ./src/watch-openapi.ts",
     "stress-amy-coach": "tsx ./stress-test-amy-coach.ts",
+    "stability-load": "tsx ./src/stability-load-test.ts",
     "typecheck": "pnpm run audit:parent-hub-i18n && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

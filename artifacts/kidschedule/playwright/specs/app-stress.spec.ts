@@ -30,6 +30,8 @@ const ROUTES = [
 ];
 
 const NAV_CYCLES = Number(process.env.STRESS_NAV_CYCLES ?? "60");
+const MENU_CLICKS = Number(process.env.STRESS_MENU_CLICKS ?? "50");
+const TAB_ROUTES = ["/dashboard", "/routines", "/amy-coach", "/parenting-hub"];
 
 test.describe("AmyNest full-app stress", () => {
   test.beforeAll(() => {
@@ -69,13 +71,24 @@ test.describe("AmyNest full-app stress", () => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     const menuBtn = page.getByTestId("button-mobile-menu");
     if (await menuBtn.isVisible().catch(() => false)) {
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < MENU_CLICKS; i++) {
         try {
           await menuBtn.click({ timeout: 2000 });
-          await page.waitForTimeout(150);
+          await page.waitForTimeout(120);
         } catch (e) {
           pageErrors.push(`MENU CLICK: ${e instanceof Error ? e.message : String(e)}`);
         }
+      }
+    }
+
+    // Tab-style routes (Dashboard / Routines / Coach / Hub)
+    for (let i = 0; i < 20; i++) {
+      const tab = TAB_ROUTES[i % TAB_ROUTES.length]!;
+      try {
+        await page.goto(tab, { waitUntil: "domcontentloaded", timeout: 30_000 });
+        await page.waitForTimeout(400);
+      } catch (e) {
+        pageErrors.push(`TAB NAV ${tab}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 

@@ -19,6 +19,8 @@
     "build:web": "BASE_PATH=/ PORT=3000 pnpm --filter @workspace/kidschedule build",
     "db:migrate": "pnpm --filter @workspace/scripts run migrate-database",
     "stress": "pnpm --filter @workspace/scripts run stress-amy-coach",
+    "stability:load": "pnpm --filter @workspace/scripts run stability-load",
+    "stability:api-unit": "pnpm --filter @workspace/api-server exec node --import tsx/esm --test src/lib/production-load.test.ts",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "codegen": "pnpm --filter @workspace/api-spec run codegen && pnpm run typecheck:libs"
