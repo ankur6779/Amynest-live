@@ -4,7 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node ../../scripts/clean-vite-cache.mjs --package=kidschedule",
+    "prebuild": "node ../../scripts/clean-vite-cache.mjs --package=kidschedule",
+    "clean:cache": "node ../../scripts/clean-vite-cache.mjs --package=kidschedule",
+    "clean": "node ../../scripts/clean-vite-cache.mjs --package=kidschedule --dist",
     "dev": "vite --config vite.config.ts --mode development --host 0.0.0.0",
+    "dev:fresh": "vite --config vite.config.ts --mode development --host 0.0.0.0 --force",
     "build": "vite build --config vite.config.ts --mode production",
     "build:dev": "vite build --config vite.config.ts --mode development",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",

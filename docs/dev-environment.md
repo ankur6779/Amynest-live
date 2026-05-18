@@ -65,6 +65,10 @@ pnpm run dev:web
 
 Uses repo-root `.env.development`. With `VITE_USE_LOCAL_API=1`, the app calls `http://localhost:5000`.
 
+**Stale Vite / Tailwind cache (splash then crash):** `predev` / `prebuild` and root `postinstall` run `scripts/clean-vite-cache.mjs`. Manual: `pnpm clean:vite` or `pnpm clean:web`. Nuclear: `pnpm reset` (reinstall) or `pnpm reset:hard` (wipe `node_modules` + reinstall). Dev also full-reloads on `vite:beforeUpdate`; production auto-reloads once on chunk load failure.
+
+**Splash then blank screen** with `Cannot find module .../vite/dist/node/chunks/dist.js` or `@tailwindcss/node` in the console → stale `node_modules/.vite` after `pnpm install` — not the API or Capacitor shell.
+
 ### Expo mobile
 
 ```bash

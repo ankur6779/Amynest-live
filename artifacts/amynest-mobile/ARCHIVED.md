@@ -17,8 +17,10 @@ a separate Expo codebase in sync with every web change.
 
 - Code is preserved here as a reference.
 - No new features will be added to this directory.
-- Workflows (`artifacts/amynest-mobile: expo`) are stopped.
-- If you need to restore this app, the full source is intact.
+- **Removed from `pnpm-workspace.yaml`** — `pnpm install` / `build` / `typecheck` no longer touch Expo deps.
+- Root `dev:mobile` prints an error pointing at PWA + Capacitor.
+- Replit validation workflows for this folder are no-ops.
+- If you need to restore: re-add `artifacts/amynest-mobile` to the workspace and reinstall.
 
 ## Migration reference
 

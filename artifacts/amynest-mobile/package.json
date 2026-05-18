@@ -4,14 +4,14 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "dev": "EXPO_PUBLIC_AMYNEST_ENV=development pnpm exec expo start",
-    "dev:prod-api": "EXPO_PUBLIC_AMYNEST_ENV=production pnpm exec expo start",
-    "dev:replit": "EXPO_PUBLIC_FIREBASE_API_KEY=$FIREBASE_API_KEY EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN EXPO_PUBLIC_FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID EXPO_PUBLIC_FIREBASE_APP_ID=$FIREBASE_APP_ID EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=$FIREBASE_MESSAGING_SENDER_ID EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=$GOOGLE_ANDROID_CLIENT_ID EXPO_PACKAGER_PROXY_URL=https://$REPLIT_EXPO_DEV_DOMAIN EXPO_PUBLIC_DOMAIN=$REPLIT_DEV_DOMAIN EXPO_PUBLIC_REPL_ID=$REPL_ID REACT_NATIVE_PACKAGER_HOSTNAME=$REPLIT_DEV_DOMAIN EXPO_OFFLINE=1 pnpm exec expo start --localhost --port $PORT",
-    "build": "node scripts/build.js",
+    "dev": "node -e \"console.error('ARCHIVED: use artifacts/kidschedule (PWA) + amynest-capacitor (iOS). See ARCHIVED.md.'); process.exit(1)\"",
+    "dev:prod-api": "pnpm run dev",
+    "dev:replit": "pnpm run dev",
+    "build": "node -e \"console.log('ARCHIVED: Expo build skipped (not in pnpm workspace).');\"",
     "serve": "node server/serve.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint .",
-    "test": "vitest run --config vitest.config.ts"
+    "typecheck": "node -e \"console.log('ARCHIVED: typecheck skipped.');\"",
+    "lint": "node -e \"console.log('ARCHIVED: lint skipped.');\"",
+    "test": "node -e \"console.log('ARCHIVED: tests skipped.');\""
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

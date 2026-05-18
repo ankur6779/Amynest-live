@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "node:url";
 import { readFileSync, writeFileSync } from "fs";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { clearStaleCachesPlugin } from "../../scripts/vite-plugins/clear-stale-caches.js";
 
 const artifactDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(artifactDir, "..", "..");
@@ -150,9 +151,11 @@ function amynestServiceWorkerPlugin() {
 export default defineConfig({
   envDir: repoRoot,
   base: basePath,
+  cacheDir: path.resolve(artifactDir, "node_modules/.vite"),
   // Hard refresh on /dashboard etc. must return index.html (Vite dev + preview).
   appType: "spa",
   plugins: [
+    clearStaleCachesPlugin(artifactDir),
     amynestServiceWorkerPlugin(),
     react(),
     tailwindcss(),
@@ -183,11 +186,12 @@ export default defineConfig({
     dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
-    // Same Safari 14 target as build.target above — ensures the dev-server's
-    // pre-bundled copies of Firebase et al. also have class static blocks and
-    // private fields transformed, so Safari works in both dev and production.
+    // Dev pre-bundle only. Do NOT pass "safari14" here — esbuild cannot
+    // downlevel destructuring for that target and optimizeDeps will fail
+    // after a cache clear (--force / postinstall clean). Production Safari
+    // support comes from build.target below.
     esbuildOptions: {
-      target: ["es2020", "safari14"],
+      target: "es2020",
     },
     // Explicit entries force Vite to crawl the WHOLE app statically at
     // startup so it discovers every dep up-front. Without this, Vite would
@@ -253,6 +257,12 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        // Default chunking — explicit so deploys don't inherit stale manual split config.
+        manualChunks: undefined,
+      },
+    },
     // Explicitly target Safari 14+ so esbuild transpiles ES2022 syntax
     // (class static blocks, private class fields #field, logical-assign
     // operators ??=) that Firebase 12 and other modern deps use.
