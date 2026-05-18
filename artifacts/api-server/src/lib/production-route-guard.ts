@@ -81,10 +81,11 @@ export function evaluateHeavyRouteRequest(
 ): GuardDecision {
   const cached = getCachedHeavyResponse(userId, path);
 
-  if (memoryPressureMode) {
-    if (cached != null) return { action: "respond", body: cached, reason: "memory_pressure_cache" };
-    return { action: "fallback", reason: "memory_pressure" };
-  }
+  // Memory pressure is informational only. We NEVER auto-degrade live requests
+  // to a fallback purely because RSS is high — that turned the dashboard into
+  // empty data even under normal V8 heap growth. If pressure is real and the
+  // container OOMs, Render restarts us; until then, serve real data.
+  // Cache-hits below still apply, which gives free CPU/memory relief.
 
   const now = Date.now();
   const historyKey = routeKey(userId, path);

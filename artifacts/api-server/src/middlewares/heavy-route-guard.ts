@@ -8,7 +8,6 @@ import {
   clearHeavyRouteInFlight,
   evaluateHeavyRouteRequest,
   isHeavyRouteInFlight,
-  isMemoryPressureMode,
   markHeavyRouteInFlight,
   setCachedHeavyResponse,
   waitForHeavyRouteCache,
@@ -58,10 +57,8 @@ export function heavyRouteGuard(group: HeavyRouteGroup): RequestHandler {
           respondCached(res, waited, "dedupe_wait");
           return;
         }
-        if (isMemoryPressureMode()) {
-          respondFallback(res, group, path);
-          return;
-        }
+        // If we couldn't piggyback on the in-flight request, fall through and
+        // serve the request normally — never short-circuit to a fallback here.
       }
 
       const decision = evaluateHeavyRouteRequest(group, userId, path);
@@ -70,11 +67,6 @@ export function heavyRouteGuard(group: HeavyRouteGroup): RequestHandler {
         return;
       }
       if (decision.action === "fallback") {
-        respondFallback(res, group, path);
-        return;
-      }
-
-      if (isMemoryPressureMode()) {
         respondFallback(res, group, path);
         return;
       }
