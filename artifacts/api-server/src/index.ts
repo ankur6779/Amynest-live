@@ -217,6 +217,28 @@ function startServer(): void {
       },
       `app.listen failed (${err.code ?? "unknown"})`,
     );
+    // EADDRINUSE on Render usually means the previous container has not yet
+    // released the port. Exiting fast triggers a restart loop. Retry once
+    // after a short delay before giving up so transient port handoff issues
+    // don't cascade into a deploy failure.
+    if (err.code === "EADDRINUSE") {
+      logger.warn(
+        { evt: "http.listen_retry", port, delayMs: 1500 },
+        "Port still bound by previous container — retrying once in 1.5s",
+      );
+      setTimeout(() => {
+        try {
+          server.listen(port);
+        } catch (retryErr) {
+          logger.error(
+            { evt: "http.listen_retry_failed", err: retryErr },
+            "Retry listen failed — exiting so the platform supervisor can restart cleanly",
+          );
+          process.exit(1);
+        }
+      }, 1500);
+      return;
+    }
     process.exit(1);
   });
 }

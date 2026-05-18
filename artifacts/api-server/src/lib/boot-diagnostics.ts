@@ -65,11 +65,11 @@ export function endBootPhase(phase: string, extra?: Record<string, unknown>): vo
   );
 }
 
-/** Mark a phase as failed; preserves the previous "last successful" marker. */
+/**
+ * Mark a phase as failed; preserves the previous "last successful" marker.
+ * Always logs — failures are critical even when DIAG_BOOT_LOGS is off.
+ */
 export function failBootPhase(phase: string, err: unknown): void {
-  if (!DIAG_ON) {
-    return;
-  }
   logger.error(
     {
       evt: "boot.phase.fail",

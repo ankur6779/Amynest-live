@@ -5,6 +5,41 @@ import { db, parentProfilesTable, subscriptionsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 /**
+ * Per-process throttle for the fire-and-forget phone-number sync writes.
+ * Without this every authenticated request issues 2 in-flight DB updates;
+ * under any DB latency they accumulate in memory and the API OOMs on Render.
+ *
+ *   PHONE_SYNC_TTL_MS=86400000  (default 24h between writes per uid)
+ *
+ * The cap is bounded so we never grow this map without limit.
+ */
+const PHONE_SYNC_TTL_MS = Number(process.env["PHONE_SYNC_TTL_MS"] ?? "86400000");
+const PHONE_SYNC_MAX_ENTRIES = 10_000;
+const phoneSyncedAt = new Map<string, number>();
+
+function shouldSyncPhoneNow(uid: string): boolean {
+  const last = phoneSyncedAt.get(uid);
+  if (!last) return true;
+  return Date.now() - last >= PHONE_SYNC_TTL_MS;
+}
+
+function markPhoneSynced(uid: string): void {
+  if (phoneSyncedAt.size >= PHONE_SYNC_MAX_ENTRIES) {
+    // Evict oldest 1000 — simple bound to prevent unlimited growth.
+    let n = 0;
+    for (const k of phoneSyncedAt.keys()) {
+      phoneSyncedAt.delete(k);
+      if (++n >= 1000) break;
+    }
+  }
+  phoneSyncedAt.set(uid, Date.now());
+}
+
+function clearPhoneSynced(uid: string): void {
+  phoneSyncedAt.delete(uid);
+}
+
+/**
  * Decode a JWT payload without verifying — for diagnostic logging only.
  * Never trust the result for authorization decisions.
  */
@@ -63,10 +98,13 @@ export async function requireAuth(
       picture: (decoded.picture as string | undefined) ?? null,
     };
 
-    // Fire-and-forget: persist phone number to parent_profiles and subscriptions
-    // so phone-auth users always have their number stored without blocking the
-    // request. We only write if phoneNumber is present and non-null.
-    if (phoneNumber) {
+    // Throttled fire-and-forget: persist phone number to parent_profiles and
+    // subscriptions at most once per user per PHONE_SYNC_TTL_MS so the writes
+    // do not pile up under traffic (Render DB latency is non-zero, unlike
+    // Replit's co-located DB). Skipped when already synced recently in this
+    // process — clients can still backfill via the dedicated profile route.
+    if (phoneNumber && shouldSyncPhoneNow(decoded.uid)) {
+      markPhoneSynced(decoded.uid);
       Promise.all([
         db
           .update(parentProfilesTable)
@@ -77,6 +115,8 @@ export async function requireAuth(
           .set({ phoneNumber, updatedAt: new Date() })
           .where(eq(subscriptionsTable.userId, decoded.uid)),
       ]).catch((syncErr) => {
+        // Drop the throttle marker so a subsequent request can retry.
+        clearPhoneSynced(decoded.uid);
         logger.warn({ syncErr, uid: decoded.uid }, "requireAuth: phone sync write failed (non-fatal)");
       });
     }
