@@ -5,6 +5,7 @@ import { getAuth } from "../lib/auth";
 import { db, aiCacheTable, userProgressTable, userCoachSessionsTable } from "@workspace/db";
 import { logger } from "../lib/logger.js";
 import { GOAL_IDS, type GoalId } from "../lib/image-map.js";
+import { getGoalPromptSection } from "../lib/goal-prompts.js";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 import { incrementAiUsage } from "../services/subscriptionService.js";
 import {
@@ -782,6 +783,7 @@ function parseCoachInput(raw: CoachInput): { input: CoachInput; goal: string } |
 
 async function handleCoachGenerate(req: import("express").Request, res: import("express").Response): Promise<void> {
   pruneMem();
+  const requestStart = Date.now();
   const requestSpan = startCoachPerfSpan("REQUEST_TOTAL", {
     path: req.path,
     method: req.method,
@@ -815,8 +817,10 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
     memStats.hits++;
     logger.info({ cacheKey: cacheKey.slice(0, 8), source: "memory", stats: memStats }, "ai-coach cache hit");
     const memPayload = completePayload(mem.plan, { cached: true, source: "memory" });
-    requestSpan.end({ status: "complete", cached: true, source: "memory", userId });
-    startCoachPerfSpan("RESPONSE_SENT", { status: "complete", cached: true }).end();
+    const responseMs = Date.now() - requestStart;
+    console.log({ step: "RESPONSE_SENT", time: responseMs, status: "complete", cached: true });
+    requestSpan.end({ status: "complete", cached: true, source: "memory", userId, responseMs });
+    startCoachPerfSpan("RESPONSE_SENT", { status: "complete", cached: true, responseMs }).end();
     res.json(memPayload);
     if (userId) void saveCoachSession(userId, memPayload.sessionId, goal, mem.plan, input);
     return;
@@ -830,8 +834,10 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
     memStats.dbHits++;
     logger.info({ cacheKey: cacheKey.slice(0, 8), source: "db", stats: memStats }, "ai-coach cache hit");
     const dbPayload = completePayload(dbHit, { cached: true, source: "db" });
-    requestSpan.end({ status: "complete", cached: true, source: "db", userId });
-    startCoachPerfSpan("RESPONSE_SENT", { status: "complete", cached: true }).end();
+    const responseMsDb = Date.now() - requestStart;
+    console.log({ step: "RESPONSE_SENT", time: responseMsDb, status: "complete", cached: true });
+    requestSpan.end({ status: "complete", cached: true, source: "db", userId, responseMs: responseMsDb });
+    startCoachPerfSpan("RESPONSE_SENT", { status: "complete", cached: true, responseMs: responseMsDb }).end();
     res.json(dbPayload);
     if (userId) void saveCoachSession(userId, dbPayload.sessionId, goal, dbHit, input);
     return;
@@ -844,36 +850,18 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
   logger.info({ cacheKey: cacheKey.slice(0, 8), goal, stats: memStats }, "ai-coach cache miss — fast initial wins");
 
   const goalLabel = GOAL_LABELS[input.goal!] ?? input.goal;
-  const { getGoalPromptSection } = await import("../lib/goal-prompts.js");
-  const goalBrief = getGoalPromptSection(input.goal!, goalLabel!);
 
   const { plan: partialPlan, aiOk } = await generateInitialCoachWins(
     input,
     goalLabel!,
-    goalBrief,
+    "",
     renderTopicAnswersBlock,
   );
 
-  memCache.set(cacheKey, { plan: partialPlan, ts: Date.now() });
+  const { sessionId: effectiveSessionId, generationId } = newCoachGenerationIds();
 
-  const { sessionId: progressiveSessionId, generationId } = newCoachGenerationIds();
-  const effectiveSessionId = progressiveSessionId;
-
-  if (userId) {
-    await Promise.all([
-      saveCoachSession(userId, effectiveSessionId, goal, partialPlan as ServiceCoachPlan, input),
-      upsertCoachGeneration({
-        generationId,
-        sessionId: effectiveSessionId,
-        userId,
-        cacheKey,
-        input,
-        plan: partialPlan,
-        status: "partial",
-      }),
-    ]);
-  }
-
+  const responseMs = Date.now() - requestStart;
+  console.log({ step: "RESPONSE_SENT", time: responseMs, status: "partial", generationId });
   requestSpan.end({
     status: "partial",
     userId,
@@ -881,8 +869,9 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
     sessionId: effectiveSessionId,
     initialWins: partialPlan.wins.length,
     aiOk,
+    responseMs,
   });
-  startCoachPerfSpan("RESPONSE_SENT", { status: "partial", generationId }).end();
+  startCoachPerfSpan("RESPONSE_SENT", { status: "partial", generationId, responseMs }).end();
 
   res.json({
     plan: partialPlan,
@@ -899,19 +888,37 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
 
   if (!userId) return;
 
-  generateRemainingCoachWins({
-    generationId,
-    sessionId: effectiveSessionId,
-    userId,
-    cacheKey,
-    input,
-    partialPlan,
-    goalLabel: goalLabel!,
-    goalBrief,
-    renderTopicAnswersBlock,
-    memCacheSet: (plan) => {
-      memCache.set(cacheKey, { plan, ts: Date.now() });
-    },
+  setImmediate(() => {
+    const goalBrief = getGoalPromptSection(input.goal!, goalLabel!);
+    memCache.set(cacheKey, { plan: partialPlan, ts: Date.now() });
+    void (async () => {
+      await Promise.all([
+        saveCoachSession(userId, effectiveSessionId, goal, partialPlan as ServiceCoachPlan, input),
+        upsertCoachGeneration({
+          generationId,
+          sessionId: effectiveSessionId,
+          userId,
+          cacheKey,
+          input,
+          plan: partialPlan,
+          status: "partial",
+        }),
+      ]);
+      generateRemainingCoachWins({
+        generationId,
+        sessionId: effectiveSessionId,
+        userId,
+        cacheKey,
+        input,
+        partialPlan,
+        goalLabel: goalLabel!,
+        goalBrief,
+        renderTopicAnswersBlock,
+        memCacheSet: (plan) => {
+          memCache.set(cacheKey, { plan, ts: Date.now() });
+        },
+      });
+    })();
   });
 }
 

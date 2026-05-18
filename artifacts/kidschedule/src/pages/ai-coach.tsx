@@ -868,29 +868,65 @@ export default function AICoachPage() {
       triggers: payload.triggers,
       routine: payload.routine
     };
-    const handleSuccess = (data: {
+    const pollCoachGeneration = async (
+      generationId: string,
+      sessionId: string,
+    ): Promise<void> => {
+      const pollIntervalMs = 2500;
+      while (!ctrl.signal.aborted) {
+        await new Promise((r) => setTimeout(r, pollIntervalMs));
+        if (ctrl.signal.aborted) return;
+        try {
+          const q = new URLSearchParams({ generationId, sessionId });
+          const statusRes = await authFetch(`/api/coach/status?${q}`, {
+            signal: ctrl.signal,
+          });
+          if (!statusRes.ok) continue;
+          const st = (await statusRes.json()) as {
+            status: "partial" | "complete";
+            plan?: Plan;
+          };
+          if (st.plan?.wins?.length) {
+            setPlan(st.plan);
+            setProgressWinCount(st.plan.wins.length);
+          }
+          if (st.status === "complete") {
+            setIsStreaming(false);
+            return;
+          }
+        } catch {
+          if (ctrl.signal.aborted) return;
+        }
+      }
+    };
+
+    const applyCoachResponse = (data: {
       plan: Plan;
       sessionId: string;
-    }) => {
+      status?: "partial" | "complete";
+      generationId?: string;
+      totalWins?: number;
+    }): void => {
       if (!data?.plan?.wins?.length) {
         throw new Error("Empty plan from server");
       }
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
       setPlan(data.plan);
-      // Freeze denominator at the original win count so extensions never drop progress %
-      originalWinCountRef.current = data.plan.wins.length;
+      originalWinCountRef.current = data.totalWins ?? 12;
       setSessionId(data.sessionId);
+      setProgressWinCount(data.plan.wins.length);
       setPhase("result");
-      // Free allowance is consumed only on a successful topic completion.
       if (!coachUsage.isPremium) coachUsage.markBlockUsed("completed");
+      if (data.status === "partial" && data.generationId) {
+        setIsStreaming(true);
+        void pollCoachGeneration(data.generationId, data.sessionId);
+      } else {
+        setIsStreaming(false);
+      }
     };
 
-    // Non-streaming fallback (existing endpoint).
-    const buildViaJson = async (body: string): Promise<void> => {
-      const {
-        default: i18nInstance0
-      } = await import("@/i18n");
-      const res = await authFetch("/api/ai-coach", {
+    const buildViaProgressive = async (body: string): Promise<void> => {
+      const res = await authFetch("/api/coach/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -917,9 +953,13 @@ export default function AICoachPage() {
       const data = (await res.json()) as {
         plan: Plan;
         sessionId: string;
+        status?: "partial" | "complete";
+        generationId?: string;
+        totalWins?: number;
       };
-      handleSuccess(data);
+      applyCoachResponse(data);
     };
+
     try {
       const {
         default: i18nInstance
@@ -929,172 +969,7 @@ export default function AICoachPage() {
         language: i18nInstance.language || "en"
       });
 
-      // Try the streaming endpoint first so the user sees real progress.
-      const streamRes = await authFetch("/api/ai-coach/stream", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "text/event-stream"
-        },
-        body,
-        signal: ctrl.signal
-      });
-      if (streamRes.status === 402) {
-        window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
-          detail: {
-            reason: "ai_quota"
-          }
-        }));
-        setPhase("questions");
-        return;
-      }
-      const ctype = streamRes.headers.get("content-type") || "";
-      if (!streamRes.ok || !ctype.includes("text/event-stream") || !streamRes.body) {
-        // Stream endpoint unavailable — fall back to plain JSON.
-        await buildViaJson(body);
-        return;
-      }
-
-      // Read SSE stream.
-      const reader = streamRes.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let buffer = "";
-      let done: {
-        plan: Plan;
-        sessionId: string;
-      } | null = null;
-      let streamError: string | null = null;
-
-      // Progressive plan we build as `plan_meta` + `win` events stream in,
-      // so the user can start reading win 1 long before all 12 are ready.
-      let streamedMeta: {
-        title: string;
-        root_cause: string;
-        summary: string;
-      } | null = null;
-      const streamedWins: Win[] = [];
-      let promotedToResult = false;
-      const promoteIfReady = (streamSessionId?: string) => {
-        if (promotedToResult) return;
-        if (streamedWins.length === 0 || !streamedMeta) return;
-        promotedToResult = true;
-        const partialPlan: Plan = {
-          title: streamedMeta.title,
-          root_cause: streamedMeta.root_cause,
-          summary: streamedMeta.summary,
-          // Sort defensively in case wins arrive out of order.
-          wins: [...streamedWins].sort((a, b) => a.win - b.win)
-        };
-        setPlan(partialPlan);
-        // Denominator is frozen at the original target (12) so progress %
-        // stays stable as more wins stream in.
-        if (originalWinCountRef.current === 0) originalWinCountRef.current = 12;
-        if (streamSessionId) setSessionId(streamSessionId);
-        setIsStreaming(true);
-        setPhase("result");
-        // Treat the user reaching the result phase as "topic shown" — burns
-        // the free allowance the same as the non-streaming path does.
-        if (!coachUsage.isPremium) coachUsage.markBlockUsed("completed");
-        window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
-      };
-      let pendingStreamSessionId = "";
-      while (true) {
-        if (ctrl.signal.aborted) {
-          try {
-            await reader.cancel();
-          } catch {/* noop */}
-          return;
-        }
-        const {
-          value,
-          done: streamDone
-        } = await reader.read();
-        if (streamDone) break;
-        buffer += decoder.decode(value, {
-          stream: true
-        });
-        // SSE events are delimited by a blank line.
-        let sepIdx: number;
-        while ((sepIdx = buffer.indexOf("\n\n")) !== -1) {
-          const rawEvent = buffer.slice(0, sepIdx);
-          buffer = buffer.slice(sepIdx + 2);
-          const lines = rawEvent.split("\n");
-          let event = "message";
-          let dataStr = "";
-          for (const line of lines) {
-            if (line.startsWith(":")) continue; // comment / heartbeat
-            if (line.startsWith("event:")) event = line.slice(6).trim();else if (line.startsWith("data:")) dataStr += (dataStr ? "\n" : "") + line.slice(5).trim();
-          }
-          if (!dataStr) continue;
-          try {
-            const data = JSON.parse(dataStr);
-            if (event === "progress") {
-              const n = Number(data?.winsBuilt) || 0;
-              setProgressWinCount(Math.max(0, Math.min(12, n)));
-            } else if (event === "session") {
-              if (typeof data?.sessionId === "string" && data.sessionId) {
-                pendingStreamSessionId = data.sessionId;
-                if (promotedToResult) setSessionId(data.sessionId);
-              }
-            } else if (event === "plan_meta") {
-              if (data?.title && data?.root_cause && data?.summary) {
-                streamedMeta = {
-                  title: String(data.title),
-                  root_cause: String(data.root_cause),
-                  summary: String(data.summary)
-                };
-                promoteIfReady(pendingStreamSessionId);
-              }
-            } else if (event === "win") {
-              const w = data as Win;
-              if (typeof w?.win === "number" && !streamedWins.some(existing => existing.win === w.win)) {
-                streamedWins.push(w);
-                if (promotedToResult) {
-                  // Already in result phase — append to the existing plan.
-                  setPlan(prev => {
-                    if (!prev) return prev;
-                    if (prev.wins.some(existing => existing.win === w.win)) return prev;
-                    return {
-                      ...prev,
-                      wins: [...prev.wins, w].sort((a, b) => a.win - b.win)
-                    };
-                  });
-                } else {
-                  promoteIfReady(pendingStreamSessionId);
-                }
-              }
-            } else if (event === "done") {
-              done = data as {
-                plan: Plan;
-                sessionId: string;
-              };
-            } else if (event === "error") {
-              streamError = String(data?.message || "stream error");
-            }
-          } catch {
-            // ignore malformed event
-          }
-        }
-      }
-      setIsStreaming(false);
-      if (done) {
-        // The `done` event delivers the canonical, fully-validated plan.
-        // Replace the progressive reconstruction with it so any drift
-        // (e.g. fallback plan) is the single source of truth.
-        if (promotedToResult) {
-          // Already shown — just swap in the canonical plan + sessionId.
-          if (!coachUsage.isPremium) {
-            // markBlockUsed was already called during promotion; no-op now.
-          }
-          setPlan(done.plan);
-          setSessionId(done.sessionId);
-          originalWinCountRef.current = done.plan.wins.length;
-        } else {
-          handleSuccess(done);
-        }
-        return;
-      }
-      throw new Error(streamError || "Stream ended without a plan");
+      await buildViaProgressive(body);
     } catch (err) {
       // Aborts (component unmount, retry, navigate-away) are expected — silent.
       const isAbort = ctrl.signal.aborted || err instanceof Error && (err.name === "AbortError" || err.message.includes("aborted"));
