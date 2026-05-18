@@ -33,6 +33,7 @@ import { useTranslation } from "react-i18next";
 import { useSubscription } from "@/hooks/use-subscription";
 import { logNavEvent, logNavError } from "@/lib/navigation-log";
 import { safePathStartsWith } from "@/lib/safe-route";
+import { runSafeNavAction, safeHref } from "@/lib/safe-navigation";
 import {
   getUserAvatarUrl,
   getUserDisplayName,
@@ -203,14 +204,12 @@ export function LayoutMobileMenuSheet({
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={safeHref(item.href)}
                 onClick={() => {
-                  try {
+                  runSafeNavAction(item.href, () => {
                     logNavEvent("nav-route", { href: item.href, from: location });
                     closeSidebar();
-                  } catch (err) {
-                    logNavError("nav-route-click", err);
-                  }
+                  });
                 }}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${isActive ? "bg-primary text-primary-foreground font-medium" : "text-foreground/70 hover:bg-muted hover:text-foreground"}`}
               >

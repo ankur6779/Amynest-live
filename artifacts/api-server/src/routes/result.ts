@@ -1,12 +1,13 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "../lib/auth";
-import { buildJobPollResponse, getJobForPoll } from "../lib/ai-queue-http.js";
-import { isTerminal } from "../queue/ai-job-store.js";
+import { buildJobPollResponse, getJobForPoll, isTerminal } from "../lib/ai-queue-http.js";
 
 const router: IRouter = Router();
 
-/** GET /api/ai/jobs/:jobId — legacy poll URL (same as /api/result/:jobId). */
-router.get("/ai/jobs/:jobId", async (req, res): Promise<void> => {
+/**
+ * GET /api/result/:jobId — poll async AI job (BullMQ worker result in Redis).
+ */
+router.get("/result/:jobId", async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -30,7 +31,12 @@ router.get("/ai/jobs/:jobId", async (req, res): Promise<void> => {
   }
 
   const body = buildJobPollResponse(polled.job);
-  res.status(isTerminal(polled.job.status) ? 200 : 202).json(body);
+  if (!isTerminal(polled.job.status)) {
+    res.status(202).json({ ...body, status: "processing" });
+    return;
+  }
+
+  res.status(200).json(body);
 });
 
 export default router;

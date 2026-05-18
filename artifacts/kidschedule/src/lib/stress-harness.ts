@@ -94,7 +94,7 @@ export async function runFullStressSuite(options?: {
   const stopMemory = startMemoryMonitor(5000);
   const navCycles = options?.navCycles ?? 30;
   await stressNavigate(navCycles);
-  spamClicks('[data-testid="button-mobile-menu"]', options?.menuClicks ?? 15);
+  spamClicks('[data-testid="button-mobile-menu"]', options?.menuClicks ?? 50);
   spamClicks('[data-testid="dashboard-generate-routine-btn"]', 10);
   stopMemory();
   return {

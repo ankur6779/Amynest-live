@@ -1,9 +1,13 @@
 import type { Response } from "express";
 import { enqueueAiJob, getQueueStats } from "../queue/ai-job-queue.js";
-import { getJob, waitForJob, isTerminal } from "../queue/ai-job-store.js";
+import { waitForJob } from "../queue/ai-job-store.js";
+import { getJobForApi, waitForJobResult, isTerminalStatus } from "../queue/index.js";
+import { isRedisQueueEnabled } from "../queue/redis.js";
 import type { AiJobType } from "../queue/types.js";
 import { checkAiRateLimit } from "../utils/ai-rate-limit.js";
 import { logger } from "./logger.js";
+
+export { isTerminalStatus as isTerminal };
 
 export const AI_HTTP_WAIT_MS = Number(process.env.AI_HTTP_WAIT_MS ?? "9_000");
 
@@ -36,7 +40,7 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
     return;
   }
 
-  const enqueued = enqueueAiJob(opts.type, opts.userId, opts.payload);
+  const enqueued = await enqueueAiJob(opts.type, opts.userId, opts.payload);
   if (!enqueued.jobId) {
     opts.res.status(429).json({
       error: "ai_queue_busy",
@@ -47,13 +51,15 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
   }
 
   const jobId = enqueued.jobId;
-  const finished = await waitForJob(jobId, waitMs);
-  if (finished && isTerminal(finished.status) && finished.status === "completed") {
+  const finished = isRedisQueueEnabled()
+    ? await waitForJobResult(jobId, waitMs)
+    : await waitForJob(jobId, waitMs);
+  if (finished && isTerminalStatus(finished.status) && finished.status === "completed") {
     opts.res.json(opts.buildSyncBody(finished.result));
     return;
   }
 
-  if (finished && isTerminal(finished.status) && finished.status !== "completed") {
+  if (finished && isTerminalStatus(finished.status) && finished.status !== "completed") {
     logger.warn(
       { evt: "ai_job.http_failed", jobId, status: finished.status, error: finished.error },
       "AI job failed before async response",
@@ -72,21 +78,48 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
     ({
       jobId,
       status: "processing",
-      pollUrl: `/api/ai/jobs/${jobId}`,
+      pollUrl: `/api/result/${jobId}`,
+      legacyPollUrl: `/api/ai/jobs/${jobId}`,
     });
 
   opts.res.status(202).json(asyncBody);
 }
 
-export function getAiQueueHealth(): Record<string, unknown> {
+export async function getAiQueueHealth(): Promise<Record<string, unknown>> {
   return getQueueStats();
 }
 
-export function getJobForPoll(jobId: string, userId: string) {
-  const job = getJob(jobId);
+export async function getJobForPoll(jobId: string, userId: string) {
+  const job = await getJobForApi(jobId);
   if (!job) return { status: 404 as const };
   if (job.userId !== userId && job.userId !== "anonymous") {
     return { status: 403 as const };
   }
   return { status: 200 as const, job };
+}
+
+/** Shared JSON body for GET /api/result/:jobId and GET /api/ai/jobs/:jobId */
+export function buildJobPollResponse(job: {
+  id: string;
+  status: string;
+  type: string;
+  createdAt: number;
+  updatedAt: number;
+  result?: unknown;
+  error?: string;
+  timedOut?: boolean;
+}): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    jobId: job.id,
+    status: job.status,
+    type: job.type,
+    createdAt: job.createdAt,
+    updatedAt: job.updatedAt,
+  };
+  if (isTerminalStatus(job.status as import("../queue/types.js").AiJobStatus)) {
+    if (job.status === "completed") body.result = job.result;
+    else body.error = job.error ?? "failed";
+    if (job.timedOut) body.timedOut = true;
+  }
+  return body;
 }

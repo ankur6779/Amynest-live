@@ -32,7 +32,8 @@ export class AppErrorBoundary extends Component<Props, State> {
       }
       return (
         <AppFallbackUi
-          message={this.state.error.message || "An unexpected error occurred."}
+          title="Something went wrong"
+          message="Something went wrong — try again. Tap reload if the problem continues."
           onReload={() => {
             if (typeof window !== "undefined") window.location.reload();
           }}

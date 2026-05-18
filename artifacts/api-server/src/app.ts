@@ -69,9 +69,9 @@ app.get("/", (_req, res) => {
   res.json({ status: "running", service: "AmyNest API" });
 });
 
-app.get("/health", (_req, res) => {
+app.get("/health", async (_req, res) => {
   const memory = getMemorySnapshot();
-  const queue = getAiQueueHealth();
+  const queue = await getAiQueueHealth();
   const status = memory.warn ? "degraded" : "ok";
   if (memory.warn) {
     logger.warn({ evt: "health.memory_high", memory }, "Health check: high memory");
@@ -81,6 +81,7 @@ app.get("/health", (_req, res) => {
     service: "AmyNest API",
     memory,
     aiQueue: queue,
+    redis: !!process.env.REDIS_URL,
     uptimeSec: Math.round(process.uptime()),
   });
 });

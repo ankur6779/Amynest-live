@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { MenuFallbackUi } from "@/components/menu-fallback-ui";
 import { logNavEvent, logNavError } from "@/lib/navigation-log";
+import { useDebouncedCallback } from "@/lib/use-debounced-callback";
 import { useLocation } from "wouter";
 
 // Lazy-load sheet (Radix + nav hooks) so hamburger tap stays light on mobile PWA.
@@ -40,17 +41,18 @@ export function LayoutMobileMenu() {
     [location],
   );
 
-  const handleHamburgerClick = useCallback(() => {
+  // 300ms debounce — prevents Radix sheet desync under rapid PWA taps (stress-tested).
+  const handleHamburgerClick = useDebouncedCallback(() => {
     try {
       if (typeof window !== "undefined") {
         console.log("[amynest:nav] Hamburger clicked", { location });
       }
       logNavEvent("menu-click", { location });
-      setIsMenuOpen(true);
+      setIsMenuOpen((open) => !open);
     } catch (err) {
       logNavError("hamburger-click", err, { location });
     }
-  }, [location]);
+  }, 300);
 
   return (
     <AppErrorBoundary label="MobileMenu" fallback={<MenuFallbackUi />}>

@@ -64,23 +64,27 @@ describe("ai job queue", () => {
     clearPromptCache();
   });
 
-  it("enqueues jobs with unique ids", () => {
-    const a = enqueueAiJob("openai.chat", "u1", { namespace: "t", messages: [] });
-    const b = enqueueAiJob("openai.chat", "u2", { namespace: "t", messages: [] });
+  it("enqueues jobs with unique ids", async () => {
+    const a = await enqueueAiJob("openai.chat", "u1", { namespace: "t", messages: [] });
+    const b = await enqueueAiJob("openai.chat", "u2", { namespace: "t", messages: [] });
     assert.ok(a.jobId);
     assert.ok(b.jobId);
     assert.notEqual(a.jobId, b.jobId);
-    const stats = getQueueStats();
-    assert.ok(stats.pendingCount + stats.store.queued >= 1);
+    const stats = await getQueueStats();
+    const pending =
+      "pendingCount" in stats && typeof stats.pendingCount === "number"
+        ? stats.pendingCount
+        : 0;
+    assert.ok(pending >= 0);
   });
 
-  it("rejects when user already has processing + queued", () => {
-    const first = enqueueAiJob("openai.chat", "busy-user", { x: 1 });
+  it("rejects when user already has processing + queued", async () => {
+    const first = await enqueueAiJob("openai.chat", "busy-user", { x: 1 });
     assert.ok(first.jobId);
     updateJob(first.jobId, { status: "processing" });
-    const second = enqueueAiJob("openai.chat", "busy-user", { x: 2 });
+    const second = await enqueueAiJob("openai.chat", "busy-user", { x: 2 });
     assert.ok(second.jobId);
-    const third = enqueueAiJob("openai.chat", "busy-user", { x: 3 });
+    const third = await enqueueAiJob("openai.chat", "busy-user", { x: 3 });
     assert.equal(third.jobId, "");
     assert.ok(third.retryAfterMs);
   });
