@@ -1,18 +1,9 @@
+import "./lib/loadEnv";
 import { logAmynestEnvironment } from "./lib/loadEnv";
-import app from "./app";
 import { logStartupEnvDiagnostics } from "./lib/env";
 import { logger } from "./lib/logger";
 import { registerProcessErrorHandlers } from "./utils/async-errors.js";
 import { startMemoryMonitor } from "./utils/memory-monitor.js";
-import { bootstrapApiQueue } from "./queue/bootstrap.js";
-import { isBullMqActive } from "./queue/ai-job-queue.js";
-import { startEmbeddedAiWorker } from "./worker/ai-worker.js";
-import { startRazorpayWebhookCleanup } from "./lib/razorpayWebhookCleanup";
-import { startWeeklyRecapCron } from "./lib/weeklyRecapCron";
-import { startNotificationCron } from "./lib/notificationCron";
-import { seedPhonicsWordBank } from "./lib/phonicsWordBankSeed";
-import { startRenderKeepWarm } from "./lib/render-keep-warm";
-import { ensurePushTokensTable } from "./lib/ensurePushTokensTable";
 import {
   armListenDeadline,
   beginBootPhase,
@@ -20,13 +11,14 @@ import {
   disarmListenDeadline,
   endBootPhase,
   failBootPhase,
+  getEnabledModules,
   getLastSuccessfulBootPhase,
+  isMinimalBoot,
   isModuleEnabled,
   logBootProfile,
   registerBootSignalHandlers,
 } from "./lib/boot-diagnostics.js";
 import { startFastMemoryPoll } from "./lib/memory-poll.js";
-import { verifyDatabaseAtStartup } from "./lib/db-verify.js";
 
 const rawPort = process.env["PORT"];
 
@@ -48,23 +40,26 @@ if (Number.isNaN(port) || port <= 0) {
  * preferred over a restart loop.
  */
 async function runBackgroundPhase(
-  phase: string,
+  name: string,
   fn: () => Promise<unknown> | unknown,
 ): Promise<void> {
-  beginBootPhase(phase);
+  console.log("[bg:start]", name);
+  beginBootPhase(name);
   try {
     await fn();
-    endBootPhase(phase);
-  } catch (err) {
-    failBootPhase(phase, err);
+    console.log("[bg:ok]", name);
+    endBootPhase(name);
+  } catch (e) {
+    console.error("[bg:fail]", name, e);
+    failBootPhase(name, e);
     logger.error(
       {
         evt: "background.phase_failed",
-        phase,
-        err,
-        message: err instanceof Error ? err.message : String(err),
+        phase: name,
+        err: e,
+        message: e instanceof Error ? e.message : String(e),
       },
-      `Background task "${phase}" failed; server stays up in degraded mode`,
+      `Background task "${name}" failed; server stays up in degraded mode`,
     );
   }
 }
@@ -73,19 +68,23 @@ async function runBackgroundPhase(
  * Heavy / I/O-bound boot tasks. Kicked off AFTER `app.listen` so Render's
  * ~10s boot deadline is never at risk — the HTTP listener responds to /health
  * within milliseconds while these run in the background.
- *
- * Each step is independent and fail-safe: any single failure logs and
- * continues so the server keeps serving traffic in degraded mode rather than
- * entering a restart loop.
  */
 async function startBackgroundTasks(): Promise<void> {
+  if (isMinimalBoot()) {
+    logger.info({ evt: "background.skipped" }, "MINIMAL_BOOT=1 — no background tasks");
+    return;
+  }
+
   logger.info(
     { evt: "background.tasks_starting", bootMs: bootElapsedMs() },
     "Kicking off background init tasks",
   );
 
   if (isModuleEnabled("redis")) {
-    await runBackgroundPhase("queue_bootstrap", () => bootstrapApiQueue());
+    await runBackgroundPhase("queue_bootstrap", async () => {
+      const { bootstrapApiQueue } = await import("./queue/bootstrap.js");
+      return bootstrapApiQueue();
+    });
   } else {
     logger.warn(
       { evt: "boot.skip", module: "redis" },
@@ -96,15 +95,17 @@ async function startBackgroundTasks(): Promise<void> {
   if (isModuleEnabled("db")) {
     if (process.env["DIAG_DB_VERIFY"]?.trim() === "1") {
       await runBackgroundPhase("db_verify", async () => {
+        const { verifyDatabaseAtStartup } = await import("./lib/db-verify.js");
         const r = await verifyDatabaseAtStartup();
         if (!r.pingOk) {
           throw new Error(`DB ping failed: ${r.pingError ?? "unknown"}`);
         }
       });
     }
-    await runBackgroundPhase("ensure_push_tokens_table", () =>
-      ensurePushTokensTable(),
-    );
+    await runBackgroundPhase("ensure_push_tokens_table", async () => {
+      const { ensurePushTokensTable } = await import("./lib/ensurePushTokensTable.js");
+      return ensurePushTokensTable();
+    });
   } else {
     logger.warn(
       { evt: "boot.skip", module: "db" },
@@ -115,6 +116,7 @@ async function startBackgroundTasks(): Promise<void> {
   if (isModuleEnabled("worker")) {
     let bullMqActive = false;
     try {
+      const { isBullMqActive } = await import("./queue/ai-job-queue.js");
       bullMqActive = isBullMqActive();
     } catch (err) {
       logger.error(
@@ -123,22 +125,32 @@ async function startBackgroundTasks(): Promise<void> {
       );
     }
     if (!bullMqActive) {
-      await runBackgroundPhase("embedded_ai_worker", () =>
-        startEmbeddedAiWorker(),
-      );
+      await runBackgroundPhase("embedded_ai_worker", async () => {
+        const { startEmbeddedAiWorker } = await import("./worker/ai-worker.js");
+        return startEmbeddedAiWorker();
+      });
     }
   }
 
   if (isModuleEnabled("crons")) {
+    console.log("[bg:start]", "crons");
     beginBootPhase("crons");
     try {
+      const { startRazorpayWebhookCleanup } = await import("./lib/razorpayWebhookCleanup.js");
+      const { startWeeklyRecapCron } = await import("./lib/weeklyRecapCron.js");
+      const { startNotificationCron } = await import("./lib/notificationCron.js");
+      const { startRenderKeepWarm } = await import("./lib/render-keep-warm.js");
+      const { seedPhonicsWordBank } = await import("./lib/phonicsWordBankSeed.js");
+
       startRazorpayWebhookCleanup();
       startWeeklyRecapCron();
       startNotificationCron();
       startRenderKeepWarm(port);
       void seedPhonicsWordBank();
+      console.log("[bg:ok]", "crons");
       endBootPhase("crons");
     } catch (err) {
+      console.error("[bg:fail]", "crons", err);
       failBootPhase("crons", err);
       logger.error(
         { evt: "background.crons_failed", err },
@@ -158,31 +170,50 @@ async function startBackgroundTasks(): Promise<void> {
   );
 }
 
-function startServer(): void {
+async function loadApp() {
+  if (isMinimalBoot()) {
+    return (await import("./app-minimal.js")).default;
+  }
+  const { createApp } = await import("./app.js");
+  return createApp();
+}
+
+async function startServer(): Promise<void> {
   registerProcessErrorHandlers();
   registerBootSignalHandlers();
   logBootProfile();
+
+  const enabled = getEnabledModules();
+  console.log(
+    "BOOT_MODULES:",
+    isMinimalBoot() ? "(minimal — health only)" : enabled.length ? enabled.join(",") : "(none)",
+  );
+
   armListenDeadline();
 
   beginBootPhase("memory_monitor");
   startMemoryMonitor();
-  if (process.env["DIAG_MEMORY_POLL"]?.trim() === "1") {
+  if (isModuleEnabled("memory-poll") && process.env["DIAG_MEMORY_POLL"]?.trim() === "1") {
     startFastMemoryPoll();
   }
   endBootPhase("memory_monitor");
 
   beginBootPhase("http_listen");
+  const app = await loadApp();
   const server = app.listen(port);
 
   server.on("listening", () => {
     disarmListenDeadline();
     endBootPhase("http_listen", { port, elapsedMs: bootElapsedMs() });
 
+    console.log("SERVER_LISTENING");
     logAmynestEnvironment();
     logger.info(
       {
         evt: "server.listening",
         port,
+        minimalBoot: isMinimalBoot(),
+        modules: enabled,
         amynestEnv: process.env["AMYNEST_ENV"],
         nodeEnv: process.env.NODE_ENV,
         render: !!process.env.RENDER,
@@ -217,10 +248,6 @@ function startServer(): void {
       },
       `app.listen failed (${err.code ?? "unknown"})`,
     );
-    // EADDRINUSE on Render usually means the previous container has not yet
-    // released the port. Exiting fast triggers a restart loop. Retry once
-    // after a short delay before giving up so transient port handoff issues
-    // don't cascade into a deploy failure.
     if (err.code === "EADDRINUSE") {
       logger.warn(
         { evt: "http.listen_retry", port, delayMs: 1500 },
@@ -243,9 +270,7 @@ function startServer(): void {
   });
 }
 
-try {
-  startServer();
-} catch (err) {
+void startServer().catch((err) => {
   const message = err instanceof Error ? err.message : String(err);
   logger.error(
     {
@@ -258,4 +283,4 @@ try {
   );
   console.error("API failed to start:", message);
   process.exit(1);
-}
+});
