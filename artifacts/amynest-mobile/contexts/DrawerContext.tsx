@@ -17,9 +17,27 @@ const DrawerContext = createContext<DrawerContextValue>({
 export function DrawerProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const openDrawer = useCallback(() => setIsOpen(true), []);
-  const closeDrawer = useCallback(() => setIsOpen(false), []);
-  const toggleDrawer = useCallback(() => setIsOpen((v) => !v), []);
+  const openDrawer = useCallback(() => {
+    try {
+      setIsOpen(true);
+    } catch (err) {
+      console.error("[amynest:nav] openDrawer failed", err);
+    }
+  }, []);
+  const closeDrawer = useCallback(() => {
+    try {
+      setIsOpen(false);
+    } catch (err) {
+      console.error("[amynest:nav] closeDrawer failed", err);
+    }
+  }, []);
+  const toggleDrawer = useCallback(() => {
+    try {
+      setIsOpen((v) => !v);
+    } catch (err) {
+      console.error("[amynest:nav] toggleDrawer failed", err);
+    }
+  }, []);
 
   return (
     <DrawerContext.Provider value={{ isOpen, openDrawer, closeDrawer, toggleDrawer }}>

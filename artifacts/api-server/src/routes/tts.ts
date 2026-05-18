@@ -6,8 +6,9 @@ import {
   AMY_VOICE_ID_DEFAULT,
   TTS_MAX_INPUT_CHARS,
   readCachedAudio,
-  synthesize,
+  trySynthesizeFromCache,
 } from "../services/elevenLabsService";
+import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
 import { getElevenLabsApiKey } from "../lib/env";
 
 // ─── Public router (mounted BEFORE requireAuth) ──────────────────────────────
@@ -101,34 +102,68 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
 
   try {
     const synthStarted = performance.now();
-    const result = await synthesize(parsed.data.text, {
+    const cacheHit = await trySynthesizeFromCache(parsed.data.text, {
       voiceId: parsed.data.voiceId,
       modelId: parsed.data.modelId,
       mode: parsed.data.mode,
     });
-    const synthDurationMs = Math.round(performance.now() - synthStarted);
 
-    logger.info(
-      {
-        evt: "tts.synthesize",
-        userId,
+    const buildTtsJson = (result: {
+      cacheKey: string;
+      audioUrl: string;
+      cached: boolean;
+      charCount: number;
+      contentType: string;
+    }) => {
+      const synthDurationMs = Math.round(performance.now() - synthStarted);
+      logger.info(
+        {
+          evt: "tts.synthesize",
+          userId,
+          cached: result.cached,
+          charCount: result.charCount,
+          voiceId: parsed.data.voiceId ?? AMY_VOICE_ID_DEFAULT,
+          mode: parsed.data.mode ?? "default",
+          durationMs: synthDurationMs,
+          elevenLabsKeySuffix: getElevenLabsApiKey()?.slice(-4) ?? null,
+        },
+        result.cached ? "TTS: cache hit (synthesize endpoint)" : "TTS: generated (synthesize endpoint)",
+      );
+      return {
+        ok: true,
+        cacheKey: result.cacheKey,
+        audioUrl: result.audioUrl,
         cached: result.cached,
         charCount: result.charCount,
-        voiceId: parsed.data.voiceId ?? AMY_VOICE_ID_DEFAULT,
-        mode: parsed.data.mode ?? "default",
-        durationMs: synthDurationMs,
-        elevenLabsKeySuffix: getElevenLabsApiKey()?.slice(-4) ?? null,
-      },
-      result.cached ? "TTS: cache hit (synthesize endpoint)" : "TTS: generating new audio (synthesize endpoint)",
-    );
+        contentType: result.contentType,
+      };
+    };
 
-    res.json({
-      ok: true,
-      cacheKey: result.cacheKey,
-      audioUrl: result.audioUrl,
-      cached: result.cached,
-      charCount: result.charCount,
-      contentType: result.contentType,
+    if (cacheHit) {
+      res.json(buildTtsJson(cacheHit));
+      return;
+    }
+
+    await submitAiJobAndRespond({
+      res,
+      userId,
+      type: "tts.synthesize",
+      payload: {
+        text: parsed.data.text,
+        options: {
+          voiceId: parsed.data.voiceId,
+          modelId: parsed.data.modelId,
+          mode: parsed.data.mode,
+        },
+      },
+      buildSyncBody: (result) => buildTtsJson(result as Parameters<typeof buildTtsJson>[0]),
+      buildAsyncBody: (jobId) => ({
+        ok: true,
+        jobId,
+        status: "processing",
+        pollUrl: `/api/ai/jobs/${jobId}`,
+        cached: false,
+      }),
     });
   } catch (err) {
     const code = err instanceof Error ? err.message : "tts_failed";

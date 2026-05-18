@@ -25,7 +25,9 @@ export function MenuFallbackUi({ onReload }: Props) {
           } catch {
             /* ignore */
           }
-          window.location.reload();
+          if (typeof window !== "undefined") {
+            window.location.reload();
+          }
         }}
       >
         {t("components.layout.menu_reload", { defaultValue: "Reload" })}

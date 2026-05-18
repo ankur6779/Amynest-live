@@ -243,8 +243,15 @@ function HamburgerButton() {
     >
       <Pressable
         onPress={() => {
-          if (Platform.OS !== "web") Haptics.selectionAsync();
-          toggleDrawer();
+          try {
+            if (typeof console !== "undefined") {
+              console.log("[amynest:nav] Hamburger clicked");
+            }
+            if (Platform.OS !== "web") Haptics.selectionAsync();
+            toggleDrawer();
+          } catch (err) {
+            console.error("[amynest:nav] hamburger failed", err);
+          }
         }}
         style={styles.hamburgerBtn}
         hitSlop={12}

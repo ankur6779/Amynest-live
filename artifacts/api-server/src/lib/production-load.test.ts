@@ -2,6 +2,14 @@ import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { enqueueForUser, clearUserQueues } from "./per-user-queue.js";
 import {
+  enqueueAiJob,
+  resetAiJobQueue,
+  getQueueStats,
+} from "../queue/ai-job-queue.js";
+import { clearJobStore, updateJob } from "../queue/ai-job-store.js";
+import { clearAiRateLimits } from "../utils/ai-rate-limit.js";
+import { clearPromptCache } from "../utils/ai-prompt-cache.js";
+import {
   checkRoutineGenerationRateLimit,
   clearRoutineRateLimits,
 } from "./routine-rate-limit.js";
@@ -45,6 +53,36 @@ describe("routine rate limit", () => {
     if (!blocked.allowed) {
       assert.ok(blocked.retryAfterMs > 0);
     }
+  });
+});
+
+describe("ai job queue", () => {
+  beforeEach(() => {
+    resetAiJobQueue();
+    clearJobStore();
+    clearAiRateLimits();
+    clearPromptCache();
+  });
+
+  it("enqueues jobs with unique ids", () => {
+    const a = enqueueAiJob("openai.chat", "u1", { namespace: "t", messages: [] });
+    const b = enqueueAiJob("openai.chat", "u2", { namespace: "t", messages: [] });
+    assert.ok(a.jobId);
+    assert.ok(b.jobId);
+    assert.notEqual(a.jobId, b.jobId);
+    const stats = getQueueStats();
+    assert.ok(stats.pendingCount + stats.store.queued >= 1);
+  });
+
+  it("rejects when user already has processing + queued", () => {
+    const first = enqueueAiJob("openai.chat", "busy-user", { x: 1 });
+    assert.ok(first.jobId);
+    updateJob(first.jobId, { status: "processing" });
+    const second = enqueueAiJob("openai.chat", "busy-user", { x: 2 });
+    assert.ok(second.jobId);
+    const third = enqueueAiJob("openai.chat", "busy-user", { x: 3 });
+    assert.equal(third.jobId, "");
+    assert.ok(third.retryAfterMs);
   });
 });
 

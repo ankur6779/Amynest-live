@@ -13,9 +13,14 @@ export function useDebouncedAction(cooldownMs = 500) {
       try {
         action();
       } finally {
-        window.setTimeout(() => {
+        // PWA / SSR-safe — avoid touching window during non-browser builds.
+        if (typeof window !== "undefined") {
+          window.setTimeout(() => {
+            busyRef.current = false;
+          }, cooldownMs);
+        } else {
           busyRef.current = false;
-        }, cooldownMs);
+        }
       }
     },
     [cooldownMs],
