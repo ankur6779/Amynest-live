@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, inArray } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
-import { db, childrenTable, routinesTable, behaviorsTable } from "@workspace/db";
+import { db, routinesTable, behaviorsTable } from "@workspace/db";
 import { GetDashboardSummaryResponse, GetRecentRoutinesResponse, GetBehaviorStatsResponse } from "@workspace/api-zod";
 import { buildInsights, type RoutineItem } from "../services/insightsService";
 import {
@@ -9,6 +9,7 @@ import {
   DASHBOARD_RECENT_ROUTINES_FALLBACK,
   DASHBOARD_SUMMARY_FALLBACK,
 } from "../lib/api-fallbacks.js";
+import { listChildrenForUser } from "../lib/children-db.js";
 import { safeRoute } from "../lib/safe-route-handler.js";
 import { heavyRouteGuard } from "../middlewares/heavy-route-guard.js";
 
@@ -32,10 +33,7 @@ router.get(
         .toISOString()
         .split("T")[0];
 
-      const children = await db
-        .select()
-        .from(childrenTable)
-        .where(eq(childrenTable.userId, userId));
+      const children = await listChildrenForUser(userId);
       const childIds = children.map((c) => c.id);
 
       const routines =
@@ -93,10 +91,7 @@ router.get(
         return;
       }
 
-      const children = await db
-        .select()
-        .from(childrenTable)
-        .where(eq(childrenTable.userId, userId));
+      const children = await listChildrenForUser(userId);
       const childMap = new Map(children.map((c) => [c.id, c.name]));
       const childIds = children.map((c) => c.id);
 
@@ -144,10 +139,7 @@ router.get(
         return;
       }
 
-      const children = await db
-        .select()
-        .from(childrenTable)
-        .where(eq(childrenTable.userId, userId));
+      const children = await listChildrenForUser(userId);
       const childIds = children.map((c) => c.id);
 
       const behaviors =
