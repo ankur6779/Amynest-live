@@ -1,15 +1,17 @@
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { build as esbuild } from "esbuild";
-import esbuildPluginPino from "esbuild-plugin-pino";
-import { access } from "node:fs/promises";
-import { rm } from "node:fs/promises";
-
-// Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
-globalThis.require = createRequire(import.meta.url);
+import { access, rm } from "node:fs/promises";
 
 const artifactDir = path.dirname(fileURLToPath(import.meta.url));
+const requireFromPkg = createRequire(path.join(artifactDir, "package.json"));
+
+// Resolve via package.json so pnpm workspace symlinks work on Render.
+const { build: esbuild } = requireFromPkg("esbuild");
+const esbuildPluginPino = requireFromPkg("esbuild-plugin-pino");
+
+// Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
+globalThis.require = requireFromPkg;
 
 async function buildAll() {
   const distDir = path.resolve(artifactDir, "dist");
