@@ -6,8 +6,8 @@ const GROUP_CONFIG: Record<
   HeavyRouteGroup,
   { cacheMs: number; maxPerWindow: number; windowMs: number }
 > = {
-  dashboard: { cacheMs: 10_000, maxPerWindow: 2, windowMs: 5_000 },
-  subscription: { cacheMs: 30_000, maxPerWindow: 1, windowMs: 5_000 },
+  dashboard: { cacheMs: 10_000, maxPerWindow: 6, windowMs: 10_000 },
+  subscription: { cacheMs: 30_000, maxPerWindow: 3, windowMs: 10_000 },
 };
 
 const LOOP_WINDOW_MS = 2_000;
@@ -21,23 +21,6 @@ const responseCache = new Map<string, CacheEntry>();
 const rateTimestamps = new Map<string, number[]>();
 const callHistory = new Map<string, number[]>();
 const inFlightKeys = new Set<string>();
-
-let memoryPressureMode = false;
-
-export function isMemoryPressureMode(): boolean {
-  return memoryPressureMode;
-}
-
-export function setMemoryPressureMode(on: boolean): void {
-  if (memoryPressureMode !== on) {
-    memoryPressureMode = on;
-    if (on) {
-      logger.warn({ evt: "memory.pressure_on" }, "Heavy API routes degraded to cache/fallback");
-    } else {
-      logger.info({ evt: "memory.pressure_off" }, "Heavy API routes restored");
-    }
-  }
-}
 
 function routeKey(userId: string, path: string): string {
   return `${userId}:${path}`;
@@ -81,12 +64,6 @@ export function evaluateHeavyRouteRequest(
 ): GuardDecision {
   const cached = getCachedHeavyResponse(userId, path);
 
-  // Memory pressure is informational only. We NEVER auto-degrade live requests
-  // to a fallback purely because RSS is high — that turned the dashboard into
-  // empty data even under normal V8 heap growth. If pressure is real and the
-  // container OOMs, Render restarts us; until then, serve real data.
-  // Cache-hits below still apply, which gives free CPU/memory relief.
-
   const now = Date.now();
   const historyKey = routeKey(userId, path);
   const recentCalls = (callHistory.get(historyKey) ?? []).filter(
@@ -104,7 +81,7 @@ export function evaluateHeavyRouteRequest(
     return { action: "fallback", reason: "loop_detected" };
   }
 
-  const rateKey = `${group}:${userId}`;
+  const rateKey = `${group}:${routeKey(userId, path)}`;
   const cfg = GROUP_CONFIG[group];
   const hits = (rateTimestamps.get(rateKey) ?? []).filter(
     (t) => now - t < cfg.windowMs,
@@ -113,7 +90,11 @@ export function evaluateHeavyRouteRequest(
     if (cached != null) {
       return { action: "respond", body: cached, reason: "rate_limit_cache" };
     }
-    return { action: "fallback", reason: "rate_limit" };
+    logger.warn(
+      { evt: "api.rate_limit_no_cache", userId, path, count: hits.length, group },
+      "Repeated API calls without cache — allowing live response",
+    );
+    return { action: "proceed" };
   }
   hits.push(now);
   rateTimestamps.set(rateKey, hits);

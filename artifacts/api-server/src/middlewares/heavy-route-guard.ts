@@ -33,7 +33,7 @@ function respondFallback(res: Response, group: HeavyRouteGroup, path: string): v
 }
 
 /**
- * Rate limit, dedupe in-flight GETs, cache responses, and degrade under memory pressure.
+ * Rate limit, dedupe in-flight GETs, and cache responses for heavy read routes.
  */
 export function heavyRouteGuard(group: HeavyRouteGroup): RequestHandler {
   return (req: Request, res: Response, next: NextFunction): void => {

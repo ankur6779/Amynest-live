@@ -1,5 +1,5 @@
 import { logger } from "../lib/logger.js";
-import { cleanupProductionGuardMaps, setMemoryPressureMode } from "../lib/production-route-guard.js";
+import { cleanupProductionGuardMaps } from "../lib/production-route-guard.js";
 import { trimClientLogBuffer } from "../routes/client-logs.js";
 
 /**
@@ -19,9 +19,9 @@ const MEMORY_LIMIT_MB = Number(
     "512",
 );
 
-// Pressure: RSS exceeds this fraction of the container budget.
+// Pressure: RSS exceeds this fraction of the container budget. This is logging
+// and GC only; request routing must never degrade solely from this signal.
 const PRESSURE_RSS_RATIO = Number(process.env.API_MEMORY_PRESSURE_RATIO ?? "0.92");
-const PRESSURE_CLEAR_RATIO = Number(process.env.API_MEMORY_PRESSURE_CLEAR_RATIO ?? "0.80");
 const WARN_RSS_RATIO = Number(process.env.API_MEMORY_WARN_RATIO ?? "0.75");
 
 const LOG_INTERVAL_MS = Number(process.env.AI_MEMORY_LOG_INTERVAL_MS ?? "60000");
@@ -75,14 +75,11 @@ function runMemoryTick(): void {
   const snap = getMemorySnapshot();
 
   if (snap.rssRatio >= PRESSURE_RSS_RATIO) {
-    setMemoryPressureMode(true);
     tryGcHint();
     logger.warn(
-      { evt: "memory.pressure", ...snap },
-      "RSS above pressure threshold",
+      { evt: "memory.rss_pressure", ...snap },
+      "RSS near container limit; requested GC",
     );
-  } else if (snap.rssRatio < PRESSURE_CLEAR_RATIO) {
-    setMemoryPressureMode(false);
   }
 
   if (snap.warn) {

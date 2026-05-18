@@ -1118,7 +1118,8 @@ export default function Dashboard() {
     }
   });
   const {
-    data: childrenList
+    data: childrenList,
+    isLoading: loadingChildren
   } = useListChildren({
     query: {
       queryKey: getListChildrenQueryKey(),
@@ -1173,6 +1174,9 @@ export default function Dashboard() {
   }
 
   const lastUpdated = Math.max(summaryUpdatedAt ?? 0, routinesUpdatedAt ?? 0, statsUpdatedAt ?? 0);
+  const childrenSafe = Array.isArray(childrenList) ? childrenList : [];
+  const recentRoutinesSafe = Array.isArray(routines) ? routines : [];
+  const statsSafe = Array.isArray(stats) ? stats : [];
   const allRoutinesSafe = asRoutineList<Routine>(allRoutines);
   const streak = computeStreak(allRoutinesSafe);
   const routinesCount = allRoutinesSafe.length;
@@ -1185,7 +1189,13 @@ export default function Dashboard() {
       setLocation("/routines/generate");
     }
   }
-  const noChildren = !loadingSummary && (summary?.totalChildren ?? 0) === 0;
+  const summaryFallback = (summary as { fallback?: boolean } | undefined)?.fallback === true;
+  const noChildren =
+    !loadingSummary &&
+    !loadingChildren &&
+    !summaryFallback &&
+    childrenSafe.length === 0 &&
+    (summary?.totalChildren ?? 0) === 0;
   if (noChildren) {
     return <OnboardingScreen displayName={displayName} />;
   }
@@ -1221,9 +1231,9 @@ export default function Dashboard() {
       {/* ── Hero Greeting ───────────────────────────────────────── */}
       <SmartHeroSection
         displayName={displayName}
-        hasChildren={(childrenList?.length ?? 0) > 0}
+        hasChildren={childrenSafe.length > 0}
         lastUpdated={lastUpdated}
-        childProfiles={(childrenList ?? []).map((c: any) => ({ id: c.id, name: c.name, age: c.age, ageMonths: c.ageMonths ?? 0 }))}
+        childProfiles={childrenSafe.map((c: any) => ({ id: c.id, name: c.name, age: c.age, ageMonths: c.ageMonths ?? 0 }))}
       />
 
       {/* ── Two-column layout (desktop) / stacked (mobile) ─────── */}
@@ -1231,7 +1241,7 @@ export default function Dashboard() {
 
         {/* LEFT column: Children + Now/Next */}
         <div className="flex flex-col gap-5">
-          <ChildrenStrip children={childrenList ?? []} />
+          <ChildrenStrip children={childrenSafe} />
           <div>
             <SectionLabel>{t("pages.dashboard.today")}</SectionLabel>
             <div className="mt-2">
@@ -1277,8 +1287,8 @@ export default function Dashboard() {
             {loadingRoutines ? <div className="p-4 space-y-4">
                 <Skeleton className="h-16 w-full rounded-xl" />
                 <Skeleton className="h-16 w-full rounded-xl" />
-              </div> : routines && routines.length > 0 ? <div className="divide-y divide-border/50">
-                {routines.map(routine => {
+              </div> : recentRoutinesSafe.length > 0 ? <div className="divide-y divide-border/50">
+                {recentRoutinesSafe.map(routine => {
               const items = routineItems(routine) as RoutineItem[];
               const done = items.filter(i => i.status === "completed").length;
               const pct = items.length > 0 ? Math.round(done / items.length * 100) : 0;
@@ -1337,8 +1347,8 @@ export default function Dashboard() {
             {loadingStats ? <div className="p-4 space-y-4">
                 <Skeleton className="h-16 w-full rounded-xl" />
                 <Skeleton className="h-16 w-full rounded-xl" />
-              </div> : stats && stats.length > 0 ? <div className="divide-y divide-border/50">
-                {stats.map(stat => <div key={stat.childId} className="p-4">
+              </div> : statsSafe.length > 0 ? <div className="divide-y divide-border/50">
+                {statsSafe.map(stat => <div key={stat.childId} className="p-4">
                     <h4 className="font-bold text-foreground mb-3">{stat.childName}</h4>
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1.5 flex-1 bg-muted dark:bg-card rounded-lg p-2 border border-border dark:border-border">
