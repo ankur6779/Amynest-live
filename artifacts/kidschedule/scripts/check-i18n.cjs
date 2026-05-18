@@ -79,7 +79,6 @@ const _MIGRATED = new Set([
   "src/components/parent-command-center.tsx",
   "src/components/parenting-articles.tsx",
   "src/components/paywall-modal.tsx",
-  "src/components/phone-auth-flow.tsx",
   "src/components/phonics-learning.tsx",
   "src/components/printable-worksheets.tsx",
   "src/components/ptm-prep.tsx",

@@ -1,6 +1,5 @@
 import { lazy, Suspense } from "react";
 import { AuthBootShell } from "@/components/auth-boot-shell";
-import { EagerBootHud } from "@/components/eager-boot-hud";
 import { ReactInstanceRecovery } from "@/components/react-instance-recovery";
 
 // Everything heavy — Firebase Auth, React Query, i18n providers, the
@@ -50,7 +49,6 @@ function App() {
   // the user never sees a blank Suspense fallback even on slow networks.
   return (
     <>
-      <EagerBootHud />
       <ReactInstanceRecovery>
         <Suspense fallback={<AuthBootShell />}>
           <AppCore />

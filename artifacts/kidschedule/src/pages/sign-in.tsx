@@ -7,8 +7,8 @@ import { sendUserEmailVerification } from "@/lib/email-verification";
 import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError, stashVerificationSendError, logFirebaseAuthError } from "@/lib/auth-errors";
-import PhoneAuthFlow from "@/components/phone-auth-flow";
-import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
+import { AppleSignInButton } from "@/components/apple-sign-in-button";
 import { getApiUrl } from "@/lib/api";
 
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
@@ -539,13 +539,9 @@ export default function SignInPage() {
         {t("screens.sign_in.subtitle")}
       </p>
 
-      {/* Phone OTP (wrapped so button picks up si-phone-btn hover class) */}
-      <div className="si-phone-wrapper">
-        <PhoneRecaptchaPreload />
-        <PhoneAuthFlow onError={msg => setError(msg)} />
-      </div>
+      <GoogleSignInButton onError={msg => setError(msg)} />
+      <AppleSignInButton onError={msg => setError(msg)} />
 
-      {/* Divider */}
       <div style={{
       display: "flex",
       alignItems: "center",
@@ -567,6 +563,7 @@ export default function SignInPage() {
         background: "rgba(168,85,247,0.15)"
       }} />
       </div>
+
 
       {/* Email + password */}
       <form onSubmit={onEmail} style={{

@@ -651,3 +651,19 @@
 ):not(:where([data-on-dark], [data-on-dark] *)) {
   border-color: hsl(var(--border));
 }
+
+/* Hide Firebase / Google reCAPTCHA badge if any legacy script injects it */
+.grecaptcha-badge {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Never show boot debug HUD in production (stale bundles / accidental mount) */
+#amynest-boot-debug,
+#amynest-eager-boot-hud,
+#amynest-preboot-hud {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

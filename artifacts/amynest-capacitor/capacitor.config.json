@@ -11,6 +11,8 @@
     "allowNavigation": [
       "amynest.in",
       "*.amynest.in",
+      "appleid.apple.com",
+      "appleid.cdn-apple.com",
       "accounts.google.com",
       "*.google.com",
       "*.googleapis.com",
@@ -51,6 +53,15 @@
     },
     "CapacitorHttp": {
       "enabled": false
+    },
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": false
+    },
+    "SignInWithApple": {
+      "clientId": "com.amynest.app",
+      "redirectURI": "https://amynest.in/auth/apple/callback"
     }
   },
   "packageClassList": [
@@ -58,6 +69,8 @@
     "GeolocationPlugin",
     "PushNotificationsPlugin",
     "PurchasesPlugin",
-    "MicPermissionPlugin"
+    "MicPermissionPlugin",
+    "GoogleAuth",
+    "SignInWithApple"
   ]
 }

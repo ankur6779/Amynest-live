@@ -105,6 +105,20 @@ export function prettyAuthError(err: unknown): string {
       return "Popup was blocked. Please allow popups for this site and try again.";
     case "auth/popup-closed-by-user":
       return "";
+    case "auth/account-exists-with-different-credential":
+      return "An account already exists with this email using a different sign-in method. Try email and password or the method you used originally.";
+    case "auth/credential-already-in-use":
+      return "This Google account is already linked to another user.";
+    case "app/google-no-id-token":
+      return "Google sign-in did not complete. Please try again.";
+    case "app/apple-not-configured":
+      return "Apple Sign-In is not configured for this build.";
+    case "app/apple-no-id-token":
+      return "Apple sign-in did not complete. Please try again.";
+    case "app/apple-session-expired":
+      return "Apple sign-in session expired. Please try again.";
+    case "app/apple-sign-in-failed":
+      return "Apple sign-in failed. Please try again.";
     case "auth/captcha-check-failed": {
       const host = typeof window !== "undefined" ? window.location.hostname : "";
       if (host === "www.amynest.in") {

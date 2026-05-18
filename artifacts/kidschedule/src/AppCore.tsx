@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 import { FirebaseAuthProvider, Show } from "@/lib/firebase-auth";
+import { OAuthRedirectHandler } from "@/components/oauth-redirect-handler";
+import AppleAuthCallbackPage from "@/pages/apple-auth-callback";
 import { useAuth, useClerk } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Toaster } from "@/components/ui/toaster";
@@ -33,7 +35,6 @@ import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { ApiRetryShell } from "@/components/api-retry-shell";
 import { ProductionAppShell } from "@/components/production-app-shell";
-import { BootRouteSync } from "@/components/boot-route-sync";
 import { FetchTimeoutError } from "@/lib/fetch-with-timeout";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
@@ -379,6 +380,7 @@ function AppRoutes() {
             <ReactMountMarker />
             <NativeApiBaseUrlBootstrap />
             <FirebaseAuthBootstrap />
+            <OAuthRedirectHandler />
             <QueryClientCacheInvalidator />
             <ReferralAttributionBridge />
             <FcmForegroundHandler />
@@ -404,6 +406,7 @@ function AppRoutes() {
           <Route path="/auth/callback" component={AuthCallbackPage} />
           {/* Firebase email template may use /auth/action */}
           <Route path="/auth/action" component={AuthCallbackPage} />
+          <Route path="/auth/apple/callback" component={AppleAuthCallbackPage} />
           <Route path="/onboarding" component={OnboardingRouteGuard} />
           <Route path="/dashboard">
             {() => <ProtectedRoute component={Dashboard} />}
@@ -569,7 +572,6 @@ export default function AppCore() {
       <FirebaseAuthProvider>
         <AuthBootGate>
           <WouterRouter base={basePath}>
-            <BootRouteSync />
             <FirebaseActionGate>
               <AppCoreMountMarker />
             <AppErrorBoundary label="AppRoutes">

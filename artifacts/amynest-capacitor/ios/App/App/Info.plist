@@ -58,6 +58,17 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j</string>
+				<string>com.amynest.app</string>
+				<string>capacitor</string>
+			</array>
+		</dict>
+	</array>
 	<key>WKAppBoundDomains</key>
 	<array>
 		<string>amynest.in</string>
@@ -71,6 +82,8 @@
 		<string>recaptcha.net</string>
 		<string>www.recaptcha.net</string>
 		<string>firebaseapp.com</string>
+		<string>appleid.apple.com</string>
+		<string>appleid.cdn-apple.com</string>
 	</array>
 </dict>
 </plist>

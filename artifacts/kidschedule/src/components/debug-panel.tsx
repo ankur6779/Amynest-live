@@ -9,6 +9,7 @@ import { useDebugMode } from "@/contexts/debug-context";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToast } from "@/hooks/use-toast";
+import { SHOW_BOOT_HUD } from "@/lib/is-dev";
 
 const SCREEN_NAMES: Record<string, string> = {
   "/": "Home",
@@ -129,6 +130,8 @@ function ApiCallRow({ entry }: { entry: ApiLogEntry }) {
 }
 
 export function DebugPanel() {
+  if (!SHOW_BOOT_HUD) return null;
+
   const { debugMode, disable } = useDebugMode();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"context" | "logs">("logs");

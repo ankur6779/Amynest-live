@@ -4,9 +4,9 @@ import {
   subscribeBootDiagnostics,
   syncBootRoute,
 } from "@/lib/boot-store";
+import { SHOW_BOOT_HUD } from "@/lib/is-dev";
 
-/** Renders with the eager bundle (before lazy AppCore) — always visible in production. */
-export function EagerBootHud() {
+function EagerBootHudDev() {
   const [diag, setDiag] = useState(getBootDiagnostics);
 
   useEffect(() => {
@@ -37,9 +37,15 @@ export function EagerBootHud() {
         pointerEvents: "none",
       }}
     >
-      <strong style={{ color: "#f9a8d4" }}>AmyNest boot</strong> · host: {diag.hostname} ·
-      route: {diag.route} · firebase: {diag.firebaseStatus} · auth: {diag.authStatus}
+      <strong style={{ color: "#f9a8d4" }}>AmyNest boot</strong> · host:{" "}
+      {diag.hostname} · route: {diag.route} · firebase: {diag.firebaseStatus} ·
+      auth: {diag.authStatus}
       {diag.lastError ? ` · err: ${diag.lastError}` : ""}
     </div>
   );
+}
+
+/** Dev-only eager-bundle boot HUD (stripped from production bundles). */
+export function EagerBootHud() {
+  return SHOW_BOOT_HUD ? <EagerBootHudDev /> : null;
 }
