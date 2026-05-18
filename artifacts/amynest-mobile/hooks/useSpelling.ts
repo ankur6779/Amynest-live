@@ -214,6 +214,7 @@ export function useSpellingTTS(): UseSpellingTTSState {
       setError(null);
     }
     try {
+      const { readResolvedApiJson, resolveAiApiData } = await import("@/lib/poll-result");
       const res = await authFetch("/api/tts/synthesize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -222,7 +223,8 @@ export function useSpellingTTS(): UseSpellingTTSState {
       });
       if (myId !== reqIdRef.current || !isMountedRef.current) return;
       if (!res.ok) throw new Error(`tts_synth_${res.status}`);
-      const data = (await res.json()) as SynthesizeResponse;
+      const data = await readResolvedApiJson<SynthesizeResponse>(res, authFetch);
+      if (!data?.audioUrl) throw new Error("tts_missing_audio_url");
       _playUri(data.audioUrl, myId);
     } catch (err) {
       if ((err as { name?: string })?.name === "AbortError") return;
@@ -298,15 +300,20 @@ export function useSpellingWords(
     setLoading(true);
     setError(null);
     try {
+      const { resolveAiApiData } = await import("@/lib/poll-result");
       const res = await authFetch("/api/spelling/ai-generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ age: ageGroup, difficulty: diff, count: 10 }),
       });
       if (!res.ok) throw new Error(`ai_${res.status}`);
-      const data = (await res.json()) as { ok: true; words: SpellingWord[]; source: SpellingSource };
-      setWords(data.words);
-      setSource(data.source);
+      const raw = await res.json();
+      const data = await resolveAiApiData<{ words: SpellingWord[]; source: SpellingSource }>(
+        raw,
+        authFetch,
+      );
+      setWords(data?.words ?? []);
+      setSource(data?.source ?? "ai");
     } catch (err) {
       setError(err instanceof Error ? err.message : "ai_failed");
     } finally {

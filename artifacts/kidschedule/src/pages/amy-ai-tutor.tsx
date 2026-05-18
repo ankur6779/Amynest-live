@@ -20,6 +20,7 @@ import {
 import { AmyIcon } from "@/components/amy-icon";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { readResolvedApiJson } from "@/lib/poll-result";
 import { useSubscription } from "@/hooks/use-subscription";
 import { cn } from "@/lib/utils";
 
@@ -138,7 +139,7 @@ export default function AmyAiTutorPage() {
         return;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as { reply: TutorReply };
+      const data = await readResolvedApiJson<{ reply: TutorReply }>(res, authFetch);
       if (!data?.reply || typeof data.reply.content !== "string") {
         throw new Error("invalid_reply_shape");
       }

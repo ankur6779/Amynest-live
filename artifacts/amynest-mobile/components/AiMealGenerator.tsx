@@ -124,9 +124,10 @@ export default function AiMealGenerator({
             : `Server error ${res.status}`;
         throw new Error(errMsg);
       }
-      const data: AiGenerateResult = await res.json();
+      const { readResolvedApiJson } = await import("@/lib/poll-result");
+      const data = await readResolvedApiJson<AiGenerateResult>(res, authFetch);
       if (thisId !== requestIdRef.current) return;
-      setResult(data);
+      setResult(data ?? null);
     } catch (e: unknown) {
       if (thisId !== requestIdRef.current) return;
       setError(e instanceof Error ? e.message : "Something went wrong. Please retry.");

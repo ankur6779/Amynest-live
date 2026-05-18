@@ -257,9 +257,10 @@ function AIMealPlanSection({ onMealChange }: { onMealChange?: (mealName: string)
         const j = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(j.error ?? `Server error ${res.status}`);
       }
-      const data = await res.json() as { plan: DayPlan[]; generatedAt: string };
-      setPlan(data.plan);
-      setGeneratedAt(data.generatedAt);
+      const { readResolvedApiJson } = await import("@/lib/poll-result");
+      const data = await readResolvedApiJson<{ plan: DayPlan[]; generatedAt: string }>(res, authFetch);
+      setPlan(data?.plan ?? []);
+      setGeneratedAt(data?.generatedAt ?? "");
       setDayIdx(0);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
@@ -532,8 +533,9 @@ function FamilyModeSection({ suggestedMeal }: { suggestedMeal?: string }) {
         const j = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(j.error ?? `Server error ${res.status}`);
       }
-      const data = await res.json() as FamilyPortionResult;
-      setResult(data);
+      const { readResolvedApiJson } = await import("@/lib/poll-result");
+      const data = await readResolvedApiJson<FamilyPortionResult>(res, authFetch);
+      setResult(data ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {

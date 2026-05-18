@@ -93,11 +93,13 @@ export function RoutineInlineMeals({
             language: i18nInstance.language || "en"
           })
         });
-        const data = r.ok ? (await r.json()) as AiGenerateResult | null : null;
+        if (!r.ok) return;
+        const { readResolvedApiJson } = await import("@/lib/poll-result");
+        const data = await readResolvedApiJson<AiGenerateResult>(r, authFetch);
         if (cancelled) return;
-        if (data && data.meals?.length > 0) {
+        if (data?.meals && data.meals.length > 0) {
           setMeals(data.meals.slice(0, 4));
-          setAmyMsg(data.amyMessage ?? "");
+          setAmyMsg(data?.amyMessage ?? "");
         }
       } catch {
         // ignore

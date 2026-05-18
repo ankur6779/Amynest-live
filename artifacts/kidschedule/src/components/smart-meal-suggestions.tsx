@@ -124,9 +124,10 @@ export function SmartMealSuggestions() {
         };
         throw new Error(err.error ?? `Server error ${res.status}`);
       }
-      const data = (await res.json()) as AiGenerateResult;
-      setMeals(data.meals ?? []);
-      setAmyMessage(data.amyMessage ?? "");
+      const { readResolvedApiJson } = await import("@/lib/poll-result");
+      const data = await readResolvedApiJson<AiGenerateResult>(res, authFetch);
+      setMeals(data?.meals ?? []);
+      setAmyMessage(data?.amyMessage ?? "");
       setHasGenerated(true);
       setTimeout(() => resultsRef.current?.scrollIntoView({
         behavior: "smooth",

@@ -21,6 +21,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { resolveApiMediaUrl } from "@/lib/api";
+import { synthesizeTts } from "@/lib/tts-playback";
 
 const FADE_IN_MS = 2000;
 const FADE_TICK_MS = 60;
@@ -179,19 +180,12 @@ export function useInfantPoemPlayer(): PoemPlayer {
         if (!audioUrl) {
           const controller = new AbortController();
           abortRef.current = controller;
-          const synthRes = await authFetch("/api/tts/synthesize", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text }),
-            signal: controller.signal,
-          });
+          const data = await synthesizeTts(
+            authFetch,
+            { text },
+            { signal: controller.signal },
+          );
           if (myId !== reqIdRef.current) return; // user moved on
-          if (!synthRes.ok) {
-            const body = (await synthRes.json().catch(() => ({}))) as { error?: string };
-            throw new Error(body.error ?? `synthesize_failed_${synthRes.status}`);
-          }
-          const data = (await synthRes.json()) as SynthesizeResponse;
-          if (myId !== reqIdRef.current) return;
           audioUrl = data.audioUrl;
         }
 

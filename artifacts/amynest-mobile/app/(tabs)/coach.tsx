@@ -630,11 +630,13 @@ export default function CoachScreen() {
       }
       if (!res.ok) throw new Error(`Server ${res.status}`);
       void useSubscriptionStore.getState().refresh();
-      const data = (await res.json()) as { wins: Win[] };
-      if (Array.isArray(data.wins) && data.wins.length > 0) {
+      const { readResolvedApiJson } = await import("@/lib/poll-result");
+      const data = await readResolvedApiJson<{ wins?: Win[] }>(res, authFetch);
+      const newWins = data?.wins;
+      if (Array.isArray(newWins) && newWins.length > 0) {
         setPlan((p) => {
           if (!p) return p;
-          const merged = [...p.wins, ...data.wins];
+          const merged = [...p.wins, ...newWins];
           // Immediately reveal all wins (including extensions) so goToCard can
           // safely scroll to the new index without hitting an out-of-range slice.
           setRevealedCount(merged.length);

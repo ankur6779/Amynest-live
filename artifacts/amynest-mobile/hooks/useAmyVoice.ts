@@ -168,7 +168,9 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           const body = (await synthRes.json().catch(() => ({}))) as { error?: string };
           throw new Error(body.error ?? `synthesize_failed_${synthRes.status}`);
         }
-        const data = (await synthRes.json()) as SynthesizeResponse;
+        const { readResolvedApiJson } = await import("@/lib/poll-result");
+        const data = await readResolvedApiJson<SynthesizeResponse>(synthRes, authFetch);
+        if (!data?.audioUrl) throw new Error("tts_missing_audio_url");
 
         if (myId !== reqIdRef.current || !isMountedRef.current) return;
 

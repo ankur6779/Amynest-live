@@ -11,6 +11,7 @@ import { AmyIcon } from "@/components/amy-icon";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
+import { readResolvedApiJson } from "@/lib/poll-result";
 
 interface Message {
   role: "user" | "assistant";
@@ -135,8 +136,8 @@ export default function AssistantPage() {
         return;
       }
       if (!res.ok) throw new Error("api_error");
-      const data = await res.json();
-      const assistantMsg: Message = { role: "assistant", content: data.answer };
+      const data = await readResolvedApiJson<{ answer?: string }>(res, authFetch);
+      const assistantMsg: Message = { role: "assistant", content: data?.answer ?? "" };
       setMessages((prev) => [...prev, assistantMsg]);
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
     } catch {

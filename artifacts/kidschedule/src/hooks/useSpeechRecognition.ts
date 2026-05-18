@@ -420,8 +420,18 @@ export function useSpeechRecognition(
           else setError("transcription_failed");
           return;
         }
-        const j = (await r.json()) as { transcript: string };
-        setTranscript(j.transcript ?? "");
+        const raw = await r.json();
+        const authFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+          const url = typeof input === "string" ? getApiUrl(input) : input;
+          return fetch(url, {
+            ...init,
+            headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
+            credentials: "include",
+          });
+        };
+        const { resolveAiApiData } = await import("@/lib/poll-result");
+        const j = await resolveAiApiData<{ transcript?: string }>(raw, authFetch);
+        setTranscript(j?.transcript ?? "");
       } catch {
         setError("transcription_failed");
       } finally {

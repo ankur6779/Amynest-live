@@ -252,7 +252,8 @@ export default function AmyAIScreen() {
           return;
         }
         if (!pRes.ok) throw new Error(`HTTP ${pRes.status}`);
-        const pJson = await pRes.json().catch(() => null);
+        const { readResolvedApiJson } = await import("@/lib/poll-result");
+        const pJson = await readResolvedApiJson<{ answer?: string }>(pRes, authFetch);
         const parentReply: TutorReply = {
           type: "doubt",
           content: String(pJson?.answer ?? ""),
@@ -286,7 +287,8 @@ export default function AmyAIScreen() {
         return;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json().catch(() => null);
+      const { readResolvedApiJson: readResolved } = await import("@/lib/poll-result");
+      const json = await readResolved<unknown>(res, authFetch);
       // Validate the wire shape against the generated zod schema so any
       // server drift surfaces here as a graceful error bubble instead of
       // a half-rendered tutor turn.

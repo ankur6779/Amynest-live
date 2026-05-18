@@ -1101,13 +1101,13 @@ export default function AICoachPage() {
       }
       if (!res.ok) throw new Error(`Server ${res.status}`);
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
-      const data = (await res.json()) as {
-        wins: Win[];
-      };
-      if (Array.isArray(data.wins) && data.wins.length > 0) {
+      const { readResolvedApiJson } = await import("@/lib/poll-result");
+      const data = await readResolvedApiJson<{ wins?: Win[] }>(res, authFetch);
+      const newWins = data?.wins;
+      if (Array.isArray(newWins) && newWins.length > 0) {
         setPlan(p => p ? {
           ...p,
-          wins: [...p.wins, ...data.wins]
+          wins: [...p.wins, ...newWins]
         } : p);
         toast({
           title: "3 new strategies added 💛",
