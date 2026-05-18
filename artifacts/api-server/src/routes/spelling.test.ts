@@ -1078,7 +1078,8 @@ describe("spelling sessions — DB integration (trust + concurrency)", () => {
 describe("spellingPublicRouter mount (integration)", () => {
   it("serves /api/spelling/sessions/:token/audio/:idx.mp3 publicly through the app", async () => {
     const http = await import("node:http");
-    const { default: app } = await import("../app");
+    const { createApp } = await import("../app.js");
+    const app = await createApp();
 
     const server = http.createServer(app);
     await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));

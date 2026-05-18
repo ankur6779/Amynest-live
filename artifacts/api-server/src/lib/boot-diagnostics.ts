@@ -133,8 +133,16 @@ function parseModuleMask(): Set<BootModule> {
 
 const moduleMask = parseModuleMask();
 
+export function isMinimalBoot(): boolean {
+  return process.env["MINIMAL_BOOT"]?.trim() === "1";
+}
+
 export function isModuleEnabled(module: BootModule): boolean {
   return moduleMask.has(module);
+}
+
+export function getEnabledModules(): BootModule[] {
+  return Array.from(moduleMask);
 }
 
 export function logBootProfile(): void {
