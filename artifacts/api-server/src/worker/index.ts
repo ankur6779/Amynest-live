@@ -22,10 +22,14 @@ import { scheduleMemoryDrain, getMemoryQueueStats } from "../queue/memory-queue.
 import { startBullMqWorker, stopBullMqWorker } from "./bullmq-worker.js";
 import { closeRedisConnection } from "../queue/redis.js";
 
-function exitWorkerDisabled(reason: string): void {
-  logger.info({ evt: "ai_worker.skipped", reason }, "AI worker not started");
-  console.log(`AI worker skipped: ${reason}`);
-  process.exit(0);
+/**
+ * Worker service must stay running on Render even when BullMQ is off — exiting
+ * immediately makes the platform restart the service in a tight loop.
+ */
+function idleWorkerDisabled(reason: string): void {
+  logger.info({ evt: "ai_worker.skipped", reason }, "AI worker idling — no queue processing");
+  console.log(`AI worker skipped: ${reason} — process staying alive (no BullMQ load)`);
+  setInterval(() => {}, 60 * 60 * 1000);
 }
 
 async function startWorker(): Promise<void> {
@@ -34,11 +38,13 @@ async function startWorker(): Promise<void> {
   startMemoryMonitor();
 
   if (!isWorkerEnabled()) {
-    exitWorkerDisabled("WORKER_ENABLED=false");
+    idleWorkerDisabled("WORKER_ENABLED=false");
+    return;
   }
 
   if (isRedisMarkedUnstable()) {
-    exitWorkerDisabled("REDIS_UNSTABLE=true");
+    idleWorkerDisabled("REDIS_UNSTABLE=true");
+    return;
   }
 
   const redisUrl = getRedisUrl();
@@ -70,10 +76,12 @@ async function startWorker(): Promise<void> {
     const pingOk = await verifyRedisConnection();
     markRedisBootstrapResult(pingOk);
     if (!pingOk) {
-      exitWorkerDisabled("Redis ping failed — treating Redis as unstable");
+      idleWorkerDisabled("Redis ping failed — treating Redis as unstable");
+      return;
     }
     if (!isBullMqActive()) {
-      exitWorkerDisabled("BullMQ not active after Redis check");
+      idleWorkerDisabled("BullMQ not active after Redis check");
+      return;
     }
     startBullMqWorker();
     console.log("BullMQ worker started");
