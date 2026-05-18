@@ -53,6 +53,15 @@ if (!raw && typeof __DEV__ !== "undefined" && __DEV__) {
 
 export const API_BASE_URL = raw;
 
+/** Resolve TTS paths from synthesize (`/api/tts/audio/…`) or pass through absolute URLs. */
+export function resolveMediaUrl(pathOrUrl: string): string {
+  const u = (pathOrUrl ?? "").trim();
+  if (!u) return u;
+  if (u.startsWith("http://") || u.startsWith("https://")) return u;
+  const path = u.startsWith("/") ? u : `/${u}`;
+  return `${API_BASE_URL.replace(/\/$/, "")}${path}`;
+}
+
 if (typeof __DEV__ !== "undefined" && __DEV__) {
   console.info(
     `[${BRAND.appName}] ${AMYNEST_PROFILE} — API ${API_BASE_URL} (EXPO_PUBLIC_API_ORIGIN / EXPO_PUBLIC_DOMAIN)`,

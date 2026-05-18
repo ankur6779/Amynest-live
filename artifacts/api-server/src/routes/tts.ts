@@ -8,6 +8,7 @@ import {
   readCachedAudio,
   synthesize,
 } from "../services/elevenLabsService";
+import { getElevenLabsApiKey } from "../lib/env";
 
 // ─── Public router (mounted BEFORE requireAuth) ──────────────────────────────
 //
@@ -31,10 +32,8 @@ ttsPublicRouter.get("/tts/audio/:key.mp3", async (req, res): Promise<void> => {
       res.status(404).json({ error: "not_found" });
       return;
     }
-    if (cached.audioUrl?.startsWith("https://")) {
-      res.redirect(302, cached.audioUrl);
-      return;
-    }
+    // Always proxy audio bytes through the API. Redirecting to GCS breaks
+    // SPA fetch()+blob playback (CORS) and Capacitor/PWA audio loaders.
     if (cached.buffer.byteLength === 0) {
       res.status(404).json({ error: "not_found" });
       return;
@@ -101,11 +100,13 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
   }
 
   try {
+    const synthStarted = performance.now();
     const result = await synthesize(parsed.data.text, {
       voiceId: parsed.data.voiceId,
       modelId: parsed.data.modelId,
       mode: parsed.data.mode,
     });
+    const synthDurationMs = Math.round(performance.now() - synthStarted);
 
     logger.info(
       {
@@ -115,6 +116,8 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
         charCount: result.charCount,
         voiceId: parsed.data.voiceId ?? AMY_VOICE_ID_DEFAULT,
         mode: parsed.data.mode ?? "default",
+        durationMs: synthDurationMs,
+        elevenLabsKeySuffix: getElevenLabsApiKey()?.slice(-4) ?? null,
       },
       result.cached ? "TTS: cache hit (synthesize endpoint)" : "TTS: generating new audio (synthesize endpoint)",
     );

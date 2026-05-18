@@ -277,12 +277,14 @@ export async function ttsAudioBackfillPostgres(
   }
 }
 
+/**
+ * Client-facing playback URL. Always routes through our API so web/mobile
+ * can fetch or attach <audio> without GCS CORS issues. The public stream
+ * handler reads from GCS/Postgres server-side and serves bytes (no 302).
+ */
 export function resolveTtsPlaybackUrl(
   cacheKey: string,
-  row?: { audioUrl?: string | null },
+  _row?: { audioUrl?: string | null },
 ): string {
-  if (row?.audioUrl?.startsWith("https://")) return row.audioUrl;
-  const gcsUrl = ttsPublicGcsUrl(cacheKey);
-  if (gcsUrl && resolveBackend() === "gcs") return gcsUrl;
   return `/api/tts/audio/${cacheKey}.mp3`;
 }

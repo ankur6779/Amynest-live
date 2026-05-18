@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { logTtsClient, logTtsClientError, resolveTtsAudioUrl } from "@/lib/tts-playback";
 
 export interface UseAmyVoiceOptions {
   /** Optional override for the voice persona (ElevenLabs voice id). */
@@ -147,6 +148,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
       setLoading(true);
 
       try {
+        logTtsClient("Request start", { chars: text.length, mode });
         const synthRes = await authFetch("/api/tts/synthesize", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -160,17 +162,21 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         }
         const data = (await synthRes.json()) as SynthesizeResponse;
         if (myId !== reqIdRef.current) return;
+        logTtsClient("Synthesize OK", { cacheKey: data.cacheKey, cached: data.cached });
 
-        // Audio routes also require auth, so we fetch the bytes ourselves
-        // (with the bearer token attached) and play from a blob URL — this
-        // avoids tying auth to <audio> src which can't carry headers.
-        const audioRes = await authFetch(data.audioUrl, { signal: controller.signal });
+        const playbackUrl = resolveTtsAudioUrl(data.audioUrl);
+        const audioRes = await authFetch(playbackUrl, { signal: controller.signal });
         if (myId !== reqIdRef.current) return;
         if (!audioRes.ok) {
-          throw new Error(`audio_fetch_failed_${audioRes.status}`);
+          const errText = await audioRes.text().catch(() => "");
+          throw new Error(`audio_fetch_failed_${audioRes.status}${errText ? `:${errText.slice(0, 80)}` : ""}`);
         }
         const blob = await audioRes.blob();
         if (myId !== reqIdRef.current) return;
+        if (blob.size === 0) {
+          throw new Error("audio_empty_blob");
+        }
+        logTtsClient("Audio blob ready", { bytes: blob.size, type: blob.type });
 
         cleanup();
         const url = URL.createObjectURL(blob);
@@ -182,30 +188,40 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           if (myId !== reqIdRef.current) return;
           setSpeaking(false);
           cleanup();
-          // Natural completion → notify consumer (e.g. paragraph advance).
           onFinishedRef.current?.();
         };
         audio.onerror = () => {
           if (myId !== reqIdRef.current) return;
-          setError("playback_failed");
+          const mediaErr = audio.error;
+          const code = mediaErr?.code ?? "unknown";
+          logTtsClientError("HTMLAudioElement error", new Error(`media_error_${code}`));
+          setError(`playback_failed_${code}`);
           setSpeaking(false);
           cleanup();
         };
         audioRef.current = audio;
 
-        await audio.play();
+        try {
+          await audio.play();
+        } catch (playErr) {
+          logTtsClientError("audio.play() rejected", playErr);
+          const name = (playErr as { name?: string })?.name ?? "play_failed";
+          setError(name === "NotAllowedError" ? "playback_blocked_tap_again" : `play_failed_${name}`);
+          cleanup();
+          setSpeaking(false);
+          return;
+        }
         if (myId !== reqIdRef.current) {
-          // User cancelled between play() being scheduled and resolving —
-          // tear the audio back down so it doesn't keep playing.
           audio.pause();
           cleanup();
           return;
         }
+        logTtsClient("Playback started");
         setSpeaking(true);
       } catch (err) {
-        // Aborts are user-initiated stops, not real errors.
         if ((err as { name?: string })?.name === "AbortError") return;
         if (myId !== reqIdRef.current) return;
+        logTtsClientError("speak failed", err);
         setError(err instanceof Error ? err.message : "tts_failed");
         cleanup();
         setSpeaking(false);

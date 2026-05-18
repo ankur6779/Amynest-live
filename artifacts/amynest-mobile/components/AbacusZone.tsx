@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator, TextInput,
 } from "react-native";
-import { useTranslation } from "react-i18next";
+import { useAbacusTranslation } from "@/hooks/useAbacusTranslation";
+import { abacusLevelLabelDefault, isAbacusLevelSlug } from "@workspace/abacus/i18n";
 import * as Haptics from "expo-haptics";
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming,
@@ -182,7 +183,7 @@ function AbacusBoard({
 // ─── Sub-modes ──────────────────────────────────────────────────────────
 
 function LearnMode({ level }: { level: LevelId }) {
-  const { t } = useTranslation();
+  const { t } = useAbacusTranslation();
   const c = useColors();
   const amy = useAmyVoice();
   const script = useMemo(() => buildLessonScript(level), [level]);
@@ -237,7 +238,7 @@ function LearnMode({ level }: { level: LevelId }) {
 }
 
 function PracticeMode({ level }: { level: LevelId }) {
-  const { t } = useTranslation();
+  const { t } = useAbacusTranslation();
   const c = useColors();
   const [problem, setProblem] = useState<AbacusProblem>(() => generateProblem(level, rng(Date.now())));
   const [board, setBoard] = useState<AbacusState>(() => problem.initialState ?? emptyAbacus(problem.rods));
@@ -329,7 +330,7 @@ function ChallengeMode({
   level: LevelId;
   onComplete: (accuracyPct: number, points: number) => void;
 }) {
-  const { t } = useTranslation();
+  const { t } = useAbacusTranslation();
   const c = useColors();
   const lvlDef = useMemo(() => LEVELS.find((l) => l.id === level)!, [level]);
   const [seed] = useState(() => Date.now());
@@ -438,7 +439,7 @@ function ChallengeMode({
 }
 
 function MentalMode({ level }: { level: LevelId }) {
-  const { t } = useTranslation();
+  const { t } = useAbacusTranslation();
   const c = useColors();
   const [problem, setProblem] = useState<AbacusProblem>(() => generateProblem(level, rng(Date.now())));
   const [answer, setAnswer] = useState("");
@@ -520,7 +521,7 @@ function MentalMode({ level }: { level: LevelId }) {
 }
 
 function TutorMode({ childId, level }: { childId: number; level: LevelId }) {
-  const { t } = useTranslation();
+  const { t } = useAbacusTranslation();
   const c = useColors();
   const authFetch = useAuthFetch();
   const amy = useAmyVoice();
@@ -619,7 +620,7 @@ function TutorMode({ childId, level }: { childId: number; level: LevelId }) {
 // ─── Top-level component ────────────────────────────────────────────────
 
 export function AbacusZone({ childId, childName, ageYears }: Props) {
-  const { t } = useTranslation();
+  const { t } = useAbacusTranslation();
   const c = useColors();
   const authFetch = useAuthFetch();
   const [progress, setProgress] = useState<ProgressShape | null>(null);
@@ -830,7 +831,10 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
                 fontWeight: "800",
                 fontSize: 11,
               }}>
-                L{l.id} • {t(`abacus.level_${l.slug}` as `abacus.level_${typeof l.slug}`)}
+                L{l.id} •{" "}
+                {isAbacusLevelSlug(l.slug)
+                  ? t(`abacus.level_${l.slug}`, abacusLevelLabelDefault(l.slug))
+                  : l.slug}
               </Text>
             </Pressable>
           );

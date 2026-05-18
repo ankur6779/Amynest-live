@@ -7,6 +7,20 @@ import { logger } from "../lib/logger.js";
 import { GOAL_IDS, type GoalId } from "../lib/image-map.js";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 import { incrementAiUsage } from "../services/subscriptionService.js";
+import {
+  COACH_INITIAL_WINS,
+  COACH_TOTAL_WINS,
+  dbGetCoachCache,
+  generateInitialCoachWins,
+  generateRemainingCoachWins,
+  getCoachGenerationById,
+  getCoachGenerationBySession,
+  newCoachGenerationIds,
+  upsertCoachGeneration,
+  validatePlan as validateFullCoachPlan,
+  type CoachPlan as ServiceCoachPlan,
+} from "../services/coachWinGenerationService.js";
+import { startCoachPerfSpan } from "../lib/coach-performance.js";
 
 const router: IRouter = Router();
 
@@ -354,7 +368,7 @@ const GOAL_LABELS: Record<string, string> = {
   "manage-overwhelm": "Manage Daily Overwhelm",
 };
 
-function fallbackPlan(input: CoachInput): CoachPlan {
+export function fallbackPlan(input: CoachInput): CoachPlan {
   const label = GOAL_LABELS[input.goal ?? ""] ?? "Your Parenting Goal";
   const ageGroup = input.ageGroup || "your child's age";
   const mk = (
@@ -748,159 +762,199 @@ async function saveCoachSession(
   }
 }
 
-// ─── POST /ai-coach ──────────────────────────────────────────────────────
-router.post("/ai-coach", aiUsageGate, async (req, res): Promise<void> => {
-  pruneMem();
-  const { userId } = getAuth(req);
-  const raw: CoachInput = req.body ?? {};
+function parseCoachInput(raw: CoachInput): { input: CoachInput; goal: string } | null {
   const goal = norm(raw.goal);
-  if (!GOAL_IDS.includes(goal as GoalId)) {
+  if (!GOAL_IDS.includes(goal as GoalId)) return null;
+  return {
+    goal,
+    input: {
+      goal,
+      ageGroup: clip(raw.ageGroup, 30) || "5-7",
+      severity: clip(raw.severity, 30) || "moderate",
+      triggers: Array.isArray(raw.triggers)
+        ? raw.triggers.filter((t): t is string => typeof t === "string").slice(0, 8).map((t) => clip(t, 50))
+        : [],
+      routine: clip(raw.routine, 200) || "Inconsistent",
+      topicAnswers: parseTopicAnswers(raw.topicAnswers),
+    },
+  };
+}
+
+async function handleCoachGenerate(req: import("express").Request, res: import("express").Response): Promise<void> {
+  pruneMem();
+  const requestSpan = startCoachPerfSpan("REQUEST_TOTAL", {
+    path: req.path,
+    method: req.method,
+  });
+  const { userId } = getAuth(req);
+  const parsed = parseCoachInput((req.body ?? {}) as CoachInput);
+  if (!parsed) {
+    requestSpan.end({ status: "error", httpStatus: 400 });
     res.status(400).json({ error: "invalid goal", validGoals: GOAL_IDS });
     return;
   }
-  const input: CoachInput = {
-    goal,
-    ageGroup: clip(raw.ageGroup, 30) || "5-7",
-    severity: clip(raw.severity, 30) || "moderate",
-    triggers: Array.isArray(raw.triggers)
-      ? raw.triggers.filter((t): t is string => typeof t === "string").slice(0, 8).map((t) => clip(t, 50))
-      : [],
-    routine: clip(raw.routine, 200) || "Inconsistent",
-    topicAnswers: parseTopicAnswers(raw.topicAnswers),
-  };
+  const { input, goal } = parsed;
 
   const cacheKey = buildCacheKey(input);
-  const sessionId = randomUUID();
 
-  // L1
+  const completePayload = (plan: CoachPlan, extra: Record<string, unknown>) => ({
+    plan,
+    wins: plan.wins,
+    status: "complete" as const,
+    totalWins: COACH_TOTAL_WINS,
+    sessionId: randomUUID(),
+    ...extra,
+  });
+
+  const cacheSpan = startCoachPerfSpan("CACHE_LOOKUP", { userId, cacheKey: cacheKey.slice(0, 8) });
+
+  // L1 — full cached plan
   const mem = memCache.get(cacheKey);
-  if (mem && Date.now() - mem.ts < MEMORY_TTL_MS) {
+  if (mem && Date.now() - mem.ts < MEMORY_TTL_MS && mem.plan.wins.length >= COACH_TOTAL_WINS) {
+    cacheSpan.end({ hit: "memory" });
     memStats.hits++;
     logger.info({ cacheKey: cacheKey.slice(0, 8), source: "memory", stats: memStats }, "ai-coach cache hit");
-    res.json({ plan: mem.plan, sessionId, cached: true, source: "memory" });
-    if (userId) void saveCoachSession(userId, sessionId, goal!, mem.plan, input);
+    const memPayload = completePayload(mem.plan, { cached: true, source: "memory" });
+    requestSpan.end({ status: "complete", cached: true, source: "memory", userId });
+    startCoachPerfSpan("RESPONSE_SENT", { status: "complete", cached: true }).end();
+    res.json(memPayload);
+    if (userId) void saveCoachSession(userId, memPayload.sessionId, goal, mem.plan, input);
     return;
   }
 
-  // L2
-  const dbHit = await dbGet(cacheKey);
-  if (dbHit) {
+  // L2 — full cached plan
+  const dbHit = await dbGetCoachCache(cacheKey);
+  if (dbHit && validateFullCoachPlan(dbHit)) {
+    cacheSpan.end({ hit: "db" });
     memCache.set(cacheKey, { plan: dbHit, ts: Date.now() });
     memStats.dbHits++;
     logger.info({ cacheKey: cacheKey.slice(0, 8), source: "db", stats: memStats }, "ai-coach cache hit");
-    res.json({ plan: dbHit, sessionId, cached: true, source: "db" });
-    if (userId) void saveCoachSession(userId, sessionId, goal!, dbHit, input);
+    const dbPayload = completePayload(dbHit, { cached: true, source: "db" });
+    requestSpan.end({ status: "complete", cached: true, source: "db", userId });
+    startCoachPerfSpan("RESPONSE_SENT", { status: "complete", cached: true }).end();
+    res.json(dbPayload);
+    if (userId) void saveCoachSession(userId, dbPayload.sessionId, goal, dbHit, input);
     return;
   }
 
+  cacheSpan.end({ hit: "miss" });
+
   memStats.misses++;
   memStats.aiCalls++;
-  logger.info({ cacheKey: cacheKey.slice(0, 8), goal, stats: memStats }, "ai-coach cache miss — calling AI");
+  logger.info({ cacheKey: cacheKey.slice(0, 8), goal, stats: memStats }, "ai-coach cache miss — fast initial wins");
 
   const goalLabel = GOAL_LABELS[input.goal!] ?? input.goal;
-  const triggers = (input.triggers ?? []).join(", ") || "not specified";
   const { getGoalPromptSection } = await import("../lib/goal-prompts.js");
   const goalBrief = getGoalPromptSection(input.goal!, goalLabel!);
 
-  const systemPrompt = `You are a specialist child psychologist and parenting coach who adapts your expertise to the SPECIFIC parenting goal in front of you.
-You give parents DEEP, complete, step-by-step solutions — never short generic tips.
-Every win you write must feel like a complete module a parent can implement and see results from.
-When the goal is about sleep, write like a paediatric sleep consultant. When it's about tantrums, write like a co-regulation specialist. When it's about screen time, write like a behavioural-addiction expert. Mirror the requested expertise precisely.
-You ALWAYS return valid JSON only. No markdown, no commentary, no code fences, no preamble.`;
+  const { plan: partialPlan, aiOk } = await generateInitialCoachWins(
+    input,
+    goalLabel!,
+    goalBrief,
+    renderTopicAnswersBlock,
+  );
 
-  const userPrompt = `Build a complete 12-win behaviour-change plan for this parenting goal.
+  memCache.set(cacheKey, { plan: partialPlan, ts: Date.now() });
 
-Goal: ${goalLabel}
-Child age group: ${input.ageGroup} years
-Severity: ${input.severity}
-Common triggers: ${triggers}
-Current routine/approach: ${input.routine}
-${renderTopicAnswersBlock(input.topicAnswers)}
-Return ONLY valid JSON in this EXACT shape:
-{
-  "title": "Empathetic title naming the goal in 4-6 words",
-  "root_cause": "3-4 sentence neuroscience/developmental explanation of WHY this challenge happens at this age. Reference brain development, nervous system, or a specific developmental need. Be specific, not generic.",
-  "summary": "2 sentence overview of how the 12 wins progress from connection → diagnosis → skill-building → consistency → identity",
-  "wins": [
-    {
-      "win": 1,
-      "title": "Clear imperative step name (3-6 words)",
-      "objective": "ONE sentence: what this step fixes for parent and child",
-      "deep_explanation": "5-6 lines explaining WHY this works (neuroscience, developmental psychology, or behavioural science). Reference a researcher/principle. Make a parent who reads ONLY this section understand the science.",
-      "actions": ["Specific action 1 (concrete, doable today)", "Specific action 2", "Specific action 3", "Specific action 4 (optional)"],
-      "example": "ONE realistic 2-3 sentence story of a parent applying this step and what shifted",
-      "mistake_to_avoid": "ONE sentence naming the most common parenting mistake that undermines this step",
-      "micro_task": "ONE small task the parent can do TODAY in under 5 minutes to start practising this win",
-      "duration": "How long to practice (e.g. '2-3 days', '1 week', '2 weeks', 'Ongoing')",
-      "science_reference": "Short reference to the underlying scientific concept, study or theory (e.g. 'Operant conditioning (Skinner)', 'Polyvagal Theory (Porges)', 'Dopamine reward system', 'Sleep-cycle research')"
-    }
-  ]
-}
+  const { sessionId: progressiveSessionId, generationId } = newCoachGenerationIds();
+  const effectiveSessionId = progressiveSessionId;
 
-STRICT RULES:
-- EXACTLY 12 wins, numbered 1 through 12 in order
-- Progression must follow: (1-2) Connect & diagnose root cause → (3-4) Set expectations & give autonomy → (5-7) Build regulation & skills → (8-9) Repair & track → (10-11) Consistency & setbacks → (12) Family identity
-- Each win is a COMPLETE module — no overlaps, no repetition
-- Tone: warm, calm, non-judgmental, specific to ${input.ageGroup} years
-- Each "actions" array MUST have 3-5 items
-- Examples must feel real, with names and specifics — not abstract
-- Reference at least 5 different researchers/principles across the 12 wins
-- "deep_explanation" must be 6-8 lines of substantive science, not generic
-- Every win MUST include a "science_reference" naming a real researcher, theory, study, or guideline body (AAP/WHO/CDC/NIH/RCPCH etc.). Generic phrases like "research shows" are NOT acceptable — name the source.
-- When the parent has provided topic-specific context above, weave those specifics into the wins (root_cause, examples, actions, micro_tasks, mistake_to_avoid) so the plan feels personalised — name the location/device/food/trigger they reported instead of generic phrasing.
-- Output ONLY the JSON object — no other text
-
-━━━ AGE-STAGE DEVELOPMENTAL BRIEF (${input.ageGroup}) ━━━
-${input.ageGroup === "10+"
-  ? `TWEEN/TEEN (10+ yrs): Massive prefrontal-cortex remodelling AND limbic-system surge create high emotional reactivity with growing logical capacity (Steinberg, Casey). Identity formation (Erikson stage 5), peer influence eclipses parent influence on social rules but parents still anchor values. Use:
-  - Collaborative problem-solving over directives (Ross Greene)
-  - Validating before guiding — never lecture
-  - Autonomy with scaffolding (Self-Determination Theory: Deci & Ryan)
-  - Shorter, fewer parent-led talks; more questions, more listening
-  - Acknowledge online/social-media reality (Jean Twenge, Jonathan Haidt research)
-  - Avoid power struggles — co-create rules, then enforce them calmly
-  - Privacy + connection balance (research on adolescent brain: B.J. Casey)
-  Wins must respect that the child has growing reasoning power and craves dignity. Avoid baby-talk framing.`
-  : input.ageGroup === "8-10"
-  ? `MIDDLE CHILDHOOD (8–10 yrs): Industry vs Inferiority (Erikson), peer comparisons start, abstract thinking emerges. Wins should build competence, autonomy and emotion-naming vocabulary. Use natural-consequence framing more than punishment.`
-  : input.ageGroup === "5-7"
-  ? `EARLY SCHOOL AGE (5–7 yrs): Concrete operational thinking starting (Piaget), big feelings + still-developing impulse control. Wins lean on visual schedules, role-play, predictable routines and short emotion-coaching scripts.`
-  : `EARLY CHILDHOOD (2–4 yrs): Autonomy vs Shame (Erikson), prefrontal cortex barely online, behaviour IS communication. Wins must rely on co-regulation, choice within limits, and PARENT-led nervous-system regulation as the primary tool.`
-}
-${goalBrief}`;
-
-  let plan: CoachPlan;
-  let aiOk = true;
-  try {
-    const { openai } = await import("@workspace/integrations-openai-ai-server");
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 8000,
-    });
-    const rawContent = completion.choices[0]?.message?.content?.trim() ?? "";
-    try {
-      const parsed = JSON.parse(rawContent);
-      plan = validatePlan(parsed) ? parsed : fallbackPlan(input);
-    } catch {
-      plan = fallbackPlan(input);
-    }
-  } catch (err) {
-    logger.error({ err }, "ai-coach OpenAI error");
-    plan = fallbackPlan(input);
-    aiOk = false;
+  if (userId) {
+    await Promise.all([
+      saveCoachSession(userId, effectiveSessionId, goal, partialPlan as ServiceCoachPlan, input),
+      upsertCoachGeneration({
+        generationId,
+        sessionId: effectiveSessionId,
+        userId,
+        cacheKey,
+        input,
+        plan: partialPlan,
+        status: "partial",
+      }),
+    ]);
   }
 
-  memCache.set(cacheKey, { plan, ts: Date.now() });
-  if (aiOk) await dbSet(cacheKey, input, plan);
+  requestSpan.end({
+    status: "partial",
+    userId,
+    generationId,
+    sessionId: effectiveSessionId,
+    initialWins: partialPlan.wins.length,
+    aiOk,
+  });
+  startCoachPerfSpan("RESPONSE_SENT", { status: "partial", generationId }).end();
 
-  res.json({ plan, sessionId, cached: false, source: "ai", fallback: !aiOk });
-  if (userId) void saveCoachSession(userId, sessionId, goal!, plan, input);
-});
+  res.json({
+    plan: partialPlan,
+    wins: partialPlan.wins,
+    status: "partial" as const,
+    totalWins: COACH_TOTAL_WINS,
+    initialWins: COACH_INITIAL_WINS,
+    sessionId: effectiveSessionId,
+    generationId,
+    cached: false,
+    source: aiOk ? "ai" : "fallback",
+    fallback: !aiOk,
+  });
+
+  if (!userId) return;
+
+  generateRemainingCoachWins({
+    generationId,
+    sessionId: effectiveSessionId,
+    userId,
+    cacheKey,
+    input,
+    partialPlan,
+    goalLabel: goalLabel!,
+    goalBrief,
+    renderTopicAnswersBlock,
+    memCacheSet: (plan) => {
+      memCache.set(cacheKey, { plan, ts: Date.now() });
+    },
+  });
+}
+
+// ─── POST /ai-coach (progressive: 2 wins now, 10 in background) ───────────
+router.post("/ai-coach", aiUsageGate, handleCoachGenerate);
+router.post("/coach/generate", aiUsageGate, handleCoachGenerate);
+
+async function handleCoachStatus(req: import("express").Request, res: import("express").Response): Promise<void> {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const sessionId = clip(req.query.sessionId, 64);
+  const generationId = clip(req.query.generationId, 64);
+  if (!sessionId && !generationId) {
+    res.status(400).json({ error: "sessionId or generationId required" });
+    return;
+  }
+
+  const row = generationId
+    ? await getCoachGenerationById(userId, generationId)
+    : await getCoachGenerationBySession(userId, sessionId!);
+
+  if (!row) {
+    res.status(404).json({ error: "generation not found" });
+    return;
+  }
+
+  res.json({
+    status: row.status,
+    wins: row.plan.wins,
+    plan: row.plan,
+    sessionId: row.sessionId,
+    generationId: row.generationId,
+    totalWins: COACH_TOTAL_WINS,
+    source: "amy_coach",
+  });
+}
+
+router.get("/ai-coach/status", handleCoachStatus);
+router.get("/coach/status", handleCoachStatus);
 
 // ─── POST /ai-coach/stream ───────────────────────────────────────────────
 // Server-Sent Events (SSE) version of /ai-coach. Streams progress events
@@ -972,9 +1026,9 @@ router.post("/ai-coach/stream", aiUsageGate, async (req, res): Promise<void> => 
   };
   req.on("close", finish);
 
-  // ── L1 / L2 cache hit → instant done ──────────────────────────────
+  // ── L1 / L2 cache hit → instant done (only when full 12-win plan cached) ──
   const mem = memCache.get(cacheKey);
-  if (mem && Date.now() - mem.ts < MEMORY_TTL_MS) {
+  if (mem && Date.now() - mem.ts < MEMORY_TTL_MS && mem.plan.wins.length >= COACH_TOTAL_WINS) {
     memStats.hits++;
     logger.info({ cacheKey: cacheKey.slice(0, 8), source: "memory", stats: memStats }, "ai-coach (stream) cache hit");
     planDelivered = true;
@@ -985,7 +1039,7 @@ router.post("/ai-coach/stream", aiUsageGate, async (req, res): Promise<void> => 
   }
 
   const dbHit = await dbGet(cacheKey);
-  if (dbHit) {
+  if (dbHit && validateFullCoachPlan(dbHit)) {
     memCache.set(cacheKey, { plan: dbHit, ts: Date.now() });
     memStats.dbHits++;
     logger.info({ cacheKey: cacheKey.slice(0, 8), source: "db", stats: memStats }, "ai-coach (stream) cache hit");

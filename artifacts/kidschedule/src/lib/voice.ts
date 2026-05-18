@@ -98,31 +98,55 @@ export async function speak(text: string): Promise<void> {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
+    console.info("[ElevenLabs] Request start (voice.speak)");
     const synthRes = await fetch(getApiUrl("/api/tts/synthesize"), {
       method: "POST",
       headers,
       body: JSON.stringify({ text: trimmed, voiceId, modelId }),
     });
-    if (!synthRes.ok) return;
+    if (!synthRes.ok) {
+      const errBody = await synthRes.json().catch(() => ({}));
+      console.error("[ElevenLabs] Synthesize failed", synthRes.status, errBody);
+      return;
+    }
 
     const data = (await synthRes.json()) as { audioUrl: string };
+    console.info("[ElevenLabs] Synthesize OK", data.audioUrl);
 
     const audioHeaders: Record<string, string> = {};
     if (token) audioHeaders["Authorization"] = `Bearer ${token}`;
 
-    const audioRes = await fetch(resolveApiMediaUrl(data.audioUrl), { headers: audioHeaders });
-    if (!audioRes.ok) return;
+    const playbackUrl = resolveApiMediaUrl(data.audioUrl);
+    const audioRes = await fetch(playbackUrl, { headers: audioHeaders });
+    if (!audioRes.ok) {
+      console.error("[ElevenLabs] Audio fetch failed", audioRes.status, playbackUrl);
+      return;
+    }
 
     const blob = await audioRes.blob();
+    if (blob.size === 0) {
+      console.error("[ElevenLabs] Empty audio blob");
+      return;
+    }
     const url  = URL.createObjectURL(blob);
     _objUrl = url;
 
     const audio = new Audio(url);
     _audio = audio;
     audio.onended = stopCurrentAudio;
-    audio.onerror = stopCurrentAudio;
-    await audio.play();
-  } catch {
+    audio.onerror = () => {
+      console.error("[ElevenLabs] HTMLAudioElement error", audio.error?.code);
+      stopCurrentAudio();
+    };
+    try {
+      await audio.play();
+      console.info("[ElevenLabs] Playback started");
+    } catch (playErr) {
+      console.error("[ElevenLabs] audio.play() failed", playErr);
+      stopCurrentAudio();
+    }
+  } catch (err) {
+    console.error("[ElevenLabs] Error:", err instanceof Error ? err.message : err);
     stopCurrentAudio();
   }
 }
