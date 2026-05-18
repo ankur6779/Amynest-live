@@ -96,7 +96,7 @@ export const PARENT_PROFILE_FALLBACK = {
 
 const DASHBOARD_INSIGHTS_FALLBACK = { insights: [], fallback: true as const };
 
-/** Static fallback when rate-limited / memory pressure and no cache. */
+/** Static fallback when a repeated request loop has no cached response. */
 export function getDashboardFallbackForPath(path: string): unknown {
   if (path.includes("/dashboard/summary")) return DASHBOARD_SUMMARY_FALLBACK;
   if (path.includes("/dashboard/recent-routines")) return DASHBOARD_RECENT_ROUTINES_FALLBACK;
