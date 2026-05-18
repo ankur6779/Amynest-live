@@ -9,11 +9,23 @@ import { APEX_PRODUCTION_HOST } from "./lib/canonical-host";
 import { slowApiGuard } from "./middlewares/slow-api-guard";
 import { requestTimeout } from "./middlewares/request-timeout.js";
 import { limitJsonResponse } from "./middlewares/limit-json-response.js";
+import { requestLoopDetector } from "./middlewares/request-loop-detector.js";
 import { getMemorySnapshot } from "./utils/memory-monitor.js";
 import { getAiQueueHealth } from "./lib/ai-queue-http.js";
 import { getQueueHealthSnapshot } from "./queue/bootstrap.js";
+import {
+  bootElapsedMs,
+  getCurrentBootPhase,
+  getLastSuccessfulBootPhase,
+  isModuleEnabled,
+} from "./lib/boot-diagnostics.js";
 
 const app: Express = express();
+const ROUTES_ENABLED = isModuleEnabled("routes");
+const LOOP_DETECT_ENABLED =
+  isModuleEnabled("loop-detect") &&
+  process.env["DIAG_LOOP_DETECT"]?.trim() !== "0" &&
+  !!process.env["DIAG_LOOP_DETECT"];
 
 /** Bare apex → canonical www (matches SPA + Cloudflare). */
 app.use((req, res, next) => {
@@ -27,6 +39,9 @@ app.use(cookieParser());
 app.use(requestTimeout);
 app.use(slowApiGuard);
 app.use(limitJsonResponse);
+if (LOOP_DETECT_ENABLED) {
+  app.use(requestLoopDetector());
+}
 
 app.use(
   pinoHttp({
@@ -91,10 +106,30 @@ app.get("/health/status", async (_req, res) => {
     memory,
     aiQueue: queueStats,
     uptimeSec: Math.round(process.uptime()),
+    boot: {
+      elapsedMs: bootElapsedMs(),
+      currentPhase: getCurrentBootPhase(),
+      lastSuccessfulPhase: getLastSuccessfulBootPhase(),
+      routesMounted: ROUTES_ENABLED,
+    },
   });
 });
 
-app.use("/api", router);
+if (ROUTES_ENABLED) {
+  app.use("/api", router);
+} else {
+  logger.warn(
+    { evt: "boot.routes_disabled" },
+    "MINIMAL_BOOT / BOOT_MODULES: /api router NOT mounted; only /, /health, /health/status served",
+  );
+  app.use("/api", (req, res) => {
+    res.status(503).json({
+      error: "routes_disabled",
+      message: "API routes are disabled for diagnostic boot mode",
+      path: req.originalUrl,
+    });
+  });
+}
 
 app.use((req, res) => {
   const safeUrl = (() => {
