@@ -9,7 +9,7 @@ function run(cmd, args, opts = {}) {
   const result = spawnSync(cmd, args, {
     cwd: root,
     stdio: "inherit",
-    env: process.env,
+    env: opts.env ?? process.env,
     shell: opts.shell ?? false,
   });
   if (result.status !== 0) {
@@ -26,7 +26,9 @@ if (!hasPnpm()) {
   run("corepack", ["prepare", "pnpm@9.15.0", "--activate"], { shell: true });
 }
 
-run("pnpm", ["install", "--frozen-lockfile"]);
+run("pnpm", ["install", "--frozen-lockfile"], {
+  env: { ...process.env, NODE_ENV: "development" },
+});
 run("pnpm", ["--filter", "@workspace/api-server", "build"]);
 run("pnpm", ["--filter", "@workspace/db", "push"]);
 

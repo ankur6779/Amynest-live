@@ -8,7 +8,7 @@
     "dev:built": "AMYNEST_ENV=development NODE_ENV=development pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
     "start": "AMYNEST_ENV=${AMYNEST_ENV:-production} node --enable-source-maps ./dist/index.mjs",
-    "worker:start": "AMYNEST_ENV=${AMYNEST_ENV:-production} AMYNEST_AI_WORKER_MODE=standalone node --enable-source-maps ./dist/worker/index.mjs",
+    "worker:start": "node ./scripts/start-worker.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx/esm --test src/lib/routine-age-feeding.test.ts src/lib/routine-meal-integration.test.ts src/lib/routine-country-structure.test.ts src/lib/routine-country-profile.test.ts src/lib/routine-scheduler.test.ts src/lib/routine-templates.test.ts src/lib/phonicsTests.test.ts src/lib/cryInsight.test.ts src/lib/sleepPredict.test.ts src/routes/routines.test.ts ../../lib/study-zone/src/engagement.test.ts ../../lib/study-zone/src/levels.test.ts ../../lib/study-zone/src/adaptive.test.ts ../../lib/life-skills/src/streak.test.ts ../../lib/family-routine/src/*.test.ts ../../lib/conflict-resolution/src/__tests__/*.test.ts ../../lib/load-forecast/src/__tests__/*.test.ts ../../lib/explainability/src/__tests__/*.test.ts src/lib/__tests__/notificationCron.test.ts src/services/__tests__/notificationContent.test.ts src/services/__tests__/notificationDispatch.test.ts && node --import tsx/esm --test src/routes/child-intelligence.test.ts && node --import tsx/esm --test src/routes/spelling.test.ts && node --import tsx/esm --test src/routes/life-skills.test.ts && node --import tsx/esm --test src/routes/smart-study.test.ts && node --import tsx/esm --experimental-test-module-mocks --test src/routes/abacus.test.ts && node --import tsx/esm --experimental-test-module-mocks --test src/routes/speech.test.ts",
     "test:ai-pipeline": "node --import tsx/esm --test src/routes/routines.test.ts"
@@ -45,7 +45,10 @@
     "ioredis": "^5.6.0",
     "razorpay": "^2.9.6",
     "resend": "^6.12.2",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "esbuild": "^0.27.3",
+    "esbuild-plugin-pino": "^2.3.3",
+    "thread-stream": "3.1.0"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
@@ -53,10 +56,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "catalog:",
     "@types/node-cron": "^3.0.11",
-    "esbuild": "^0.27.3",
-    "esbuild-plugin-pino": "^2.3.3",
     "pino-pretty": "^13",
-    "thread-stream": "3.1.0",
     "tsx": "catalog:"
   }
 }

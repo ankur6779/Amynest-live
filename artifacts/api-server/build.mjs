@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
 import esbuildPluginPino from "esbuild-plugin-pino";
+import { access } from "node:fs/promises";
 import { rm } from "node:fs/promises";
 
 // Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
@@ -121,6 +122,15 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
     `,
     },
   });
+
+  const workerBundle = path.resolve(distDir, "worker/index.mjs");
+  const apiBundle = path.resolve(distDir, "index.mjs");
+  for (const file of [apiBundle, workerBundle]) {
+    await access(file).catch(() => {
+      throw new Error(`Build did not produce required bundle: ${file}`);
+    });
+  }
+  console.log("[build] OK", { apiBundle, workerBundle });
 }
 
 buildAll().catch((err) => {

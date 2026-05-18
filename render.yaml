@@ -42,7 +42,7 @@ services:
     buildCommand: >-
       corepack enable &&
       corepack prepare pnpm@9.15.0 --activate &&
-      pnpm install --frozen-lockfile &&
+      NODE_ENV=development pnpm install --frozen-lockfile &&
       pnpm --filter @workspace/api-server build
     startCommand: pnpm --filter @workspace/api-server start
     envVars:
@@ -83,7 +83,7 @@ services:
     buildCommand: >-
       corepack enable &&
       corepack prepare pnpm@9.15.0 --activate &&
-      pnpm install --frozen-lockfile &&
+      NODE_ENV=development pnpm install --frozen-lockfile &&
       pnpm --filter @workspace/api-server build
     startCommand: pnpm --filter @workspace/api-server worker:start
     envVars:
@@ -118,7 +118,7 @@ services:
     buildCommand: >-
       corepack enable &&
       corepack prepare pnpm@9.15.0 --activate &&
-      pnpm install --frozen-lockfile &&
+      NODE_ENV=development pnpm install --frozen-lockfile &&
       pnpm --filter @workspace/api-server build
     startCommand: AMYNEST_ENV=development pnpm --filter @workspace/api-server start
     envVars:
