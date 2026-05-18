@@ -37,6 +37,11 @@ import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { ApiRetryShell } from "@/components/api-retry-shell";
 import { ProductionAppShell } from "@/components/production-app-shell";
 import { FetchTimeoutError } from "@/lib/fetch-with-timeout";
+import {
+  isSetupComplete,
+  persistOnboardingCache,
+  resolveSetupStatus,
+} from "@/lib/setup-status";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
 // when its route is first matched. The Suspense boundary below renders
@@ -114,62 +119,6 @@ const bootMark = (phase: string) => {
 };
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-
-type OnboardingStatus = {
-  onboardingComplete: boolean;
-  profileComplete: boolean;
-};
-
-/** Match mobile: child + parent rows, or explicit onboarding flag. */
-function isSetupComplete(data: OnboardingStatus | undefined): boolean {
-  if (!data) return false;
-  return data.onboardingComplete || data.profileComplete;
-}
-
-function readOnboardingCache(): OnboardingStatus {
-  const cached = localStorage.getItem("onboardingComplete") === "true";
-  return { onboardingComplete: cached, profileComplete: cached };
-}
-
-function persistOnboardingCache(data: OnboardingStatus): void {
-  if (isSetupComplete(data)) {
-    localStorage.setItem("onboardingComplete", "true");
-  } else {
-    localStorage.removeItem("onboardingComplete");
-  }
-}
-
-async function resolveSetupStatus(
-  authFetch: ReturnType<typeof useAuthFetch>,
-): Promise<OnboardingStatus> {
-  let res = await authFetch("/api/onboarding");
-
-  if (res.status === 401) {
-    const cached = readOnboardingCache();
-    if (isSetupComplete(cached)) return cached;
-    throw new Error("auth-unauthorized");
-  }
-
-  if (!res.ok) {
-    return readOnboardingCache();
-  }
-
-  const data = (await res.json()) as OnboardingStatus;
-  if (isSetupComplete(data)) {
-    return data;
-  }
-
-  // Returning users: children exist but onboarding_profiles flag was never set.
-  const childrenRes = await authFetch("/api/children");
-  if (childrenRes.ok) {
-    const children = (await childrenRes.json()) as unknown;
-    if (Array.isArray(children) && children.length > 0) {
-      return { onboardingComplete: true, profileComplete: true };
-    }
-  }
-
-  return data;
-}
 
 function useOnboardingStatus() {
   const { isSignedIn, isLoaded, getToken } = useAuth();
@@ -257,7 +206,11 @@ function OnboardingRouteGuard() {
     );
   }
   if (isSetupComplete(data)) return <Redirect to="/dashboard" />;
-  return <OnboardingPage />;
+  return (
+    <AppErrorBoundary label="Onboarding">
+      <OnboardingPage />
+    </AppErrorBoundary>
+  );
 }
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType; requiresProfile?: boolean }) {

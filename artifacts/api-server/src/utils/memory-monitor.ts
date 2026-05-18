@@ -1,7 +1,7 @@
 import { logger } from "../lib/logger.js";
 
 const WARN_HEAP_RATIO = Number(process.env.AI_MEMORY_WARN_RATIO ?? "0.7");
-const INTERVAL_MS = Number(process.env.AI_MEMORY_LOG_INTERVAL_MS ?? "60_000");
+const INTERVAL_MS = Number(process.env.AI_MEMORY_LOG_INTERVAL_MS ?? "10_000");
 
 let timer: ReturnType<typeof setInterval> | undefined;
 

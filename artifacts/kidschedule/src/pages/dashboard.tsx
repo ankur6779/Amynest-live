@@ -1,12 +1,14 @@
 import { useTranslation } from "react-i18next";
 import { useGetDashboardSummary, getGetDashboardSummaryQueryKey, useGetRecentRoutines, getGetRecentRoutinesQueryKey, useGetBehaviorStats, getGetBehaviorStatsQueryKey, useListRoutines, getListRoutinesQueryKey, useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Link, useLocation } from "wouter";
+import { Link, Redirect, useLocation } from "wouter";
 import { Calendar, Users, Star, ArrowRight, Activity, TrendingUp, TrendingDown, Minus, Clock, CheckCircle2, Sparkles, Trophy, Bot, Brain, Heart, Target, ChevronRight, MapPin } from "lucide-react";
 import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
 import { AmyIcon } from "@/components/amy-icon";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUser } from "@/lib/firebase-auth-hooks";
+import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
+import { RouteLoadingShell } from "@/components/route-loading-shell";
+import { logDashboardMount } from "@/lib/onboarding-debug";
 import { lazy, Suspense, useEffect, useState, useMemo, useCallback } from "react";
 import { isAndroidLiteClient } from "@/lib/device-lite";
 import { useQuery } from "@tanstack/react-query";
@@ -1053,24 +1055,37 @@ export default function Dashboard() {
     t
   } = useTranslation();
   const {
-    user
+    user,
+    isLoaded: userLoaded,
+    isSignedIn,
   } = useUser();
+  const { isLoaded: authLoaded, authStatus } = useAuth();
   const authFetch = useAuthFetch();
   const [profileName, setProfileName] = useState<string | null>(null);
   const [, setLocation] = useLocation();
   const {
     isPremium,
-    entitlements
+    entitlements,
+    loading: subLoading,
   } = useSubscription();
   const {
     openPaywall
   } = usePaywall();
   useEffect(() => {
-    authFetch("/api/parent-profile").then(r => r.ok ? r.json() : null).then(data => {
-      if (data?.name) setProfileName(data.name);
-    }).catch(() => {});
-  }, []);
-  const displayName = profileName || user?.firstName || user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] || "";
+    authFetch("/api/parent-profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.name) setProfileName(data.name);
+      })
+      .catch((e) => {
+        console.error("[dashboard] parent-profile fetch failed", e);
+      });
+  }, [authFetch]);
+  const displayName =
+    profileName ||
+    user?.firstName ||
+    user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] ||
+    "";
   const {
     data: summary,
     isLoading: loadingSummary,
@@ -1122,11 +1137,46 @@ export default function Dashboard() {
       refetchOnWindowFocus: true
     }
   });
+  const authReady = userLoaded && authLoaded && authStatus !== "loading";
+  const dataBootLoading =
+    authReady && isSignedIn && (loadingSummary || subLoading);
+
+  useEffect(() => {
+    logDashboardMount({
+      user,
+      isLoaded: authReady,
+      isSignedIn: !!isSignedIn,
+      isLoading: dataBootLoading,
+      loadingSummary,
+      subLoading,
+    });
+  }, [
+    user?.id,
+    authReady,
+    isSignedIn,
+    dataBootLoading,
+    loadingSummary,
+    subLoading,
+  ]);
+
+  if (!authReady) {
+    return <RouteLoadingShell />;
+  }
+
+  if (!isSignedIn || !user) {
+    console.warn("[dashboard] user missing, redirecting to sign-in");
+    return <Redirect to="/sign-in" />;
+  }
+
+  if (dataBootLoading) {
+    return <RouteLoadingShell />;
+  }
+
   const lastUpdated = Math.max(summaryUpdatedAt ?? 0, routinesUpdatedAt ?? 0, statsUpdatedAt ?? 0);
   const allRoutinesSafe = asRoutineList<Routine>(allRoutines);
   const streak = computeStreak(allRoutinesSafe);
   const routinesCount = allRoutinesSafe.length;
-  const routinesMax = entitlements?.limits.routinesMax ?? 1;
+  const routinesMax = entitlements?.limits?.routinesMax ?? 1;
   const generateRoutineLocked = !isPremium && routinesCount >= routinesMax;
   function handleGenerateRoutine() {
     if (generateRoutineLocked) {

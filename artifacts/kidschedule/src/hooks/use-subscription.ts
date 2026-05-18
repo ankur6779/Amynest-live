@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { openRazorpayCheckout, type RazorpayCheckoutResponse } from "@/lib/razorpay";
+import { EMPTY_SUBSCRIPTION_RESPONSE } from "@/lib/subscription-defaults";
 
 export type Plan = "free" | "monthly" | "six_month" | "yearly";
 export type Status = "free" | "trialing" | "active" | "past_due" | "canceled";
@@ -63,12 +64,26 @@ export function useSubscription() {
   const query = useQuery<SubscriptionResponse>({
     queryKey: QKEY,
     queryFn: async () => {
-      const res = await authFetch(getApiUrl("/api/subscription"));
-      if (!res.ok) throw new Error(`subscription ${res.status}`);
-      return (await res.json()) as SubscriptionResponse;
+      try {
+        const res = await authFetch(getApiUrl("/api/subscription"));
+        if (!res.ok) {
+          console.error("[subscription] API error", res.status);
+          return EMPTY_SUBSCRIPTION_RESPONSE;
+        }
+        const data = (await res.json()) as SubscriptionResponse;
+        if (!data?.entitlements?.limits) {
+          console.warn("[subscription] missing entitlements.limits, using defaults");
+          return EMPTY_SUBSCRIPTION_RESPONSE;
+        }
+        return data;
+      } catch (e) {
+        console.error("[subscription] fetch failed", e);
+        return EMPTY_SUBSCRIPTION_RESPONSE;
+      }
     },
     enabled: isLoaded && isSignedIn,
     staleTime: 60_000,
+    retry: 1,
   });
 
   const refresh = useCallback(() => {

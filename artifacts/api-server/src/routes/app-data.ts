@@ -17,7 +17,12 @@ router.get("/app-data", async (req, res): Promise<void> => {
     res.json(data);
   } catch (err) {
     req.log?.error({ err }, "app-data failed");
-    res.status(500).json({ error: "Failed to build app data" });
+    res.status(200).json({
+      children: [],
+      routines: [],
+      subscription: null,
+      fallback: true,
+    });
   }
 });
 
@@ -34,7 +39,12 @@ router.post("/app-data/refresh", async (req, res): Promise<void> => {
     res.json(data);
   } catch (err) {
     req.log?.error({ err }, "app-data refresh failed");
-    res.status(500).json({ error: "Failed to refresh app data" });
+    res.status(200).json({
+      children: [],
+      routines: [],
+      subscription: null,
+      fallback: true,
+    });
   }
 });
 

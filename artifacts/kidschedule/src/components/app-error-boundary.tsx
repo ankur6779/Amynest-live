@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AppFallbackUi } from "@/components/app-fallback-ui";
+import { logClientError } from "@/lib/log-client-error";
 
 type Props = {
   children: ReactNode;
@@ -23,6 +24,11 @@ export class AppErrorBoundary extends Component<Props, State> {
       error,
       info.componentStack,
     );
+    void logClientError({
+      label: this.props.label ?? "app",
+      message: error.message,
+      stack: [error.stack, info.componentStack].filter(Boolean).join("\n"),
+    });
   }
 
   render(): ReactNode {

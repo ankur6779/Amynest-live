@@ -12,6 +12,8 @@ import {
 } from "../services/subscriptionService";
 import { getLivePlanPrices } from "../services/rcPricingService";
 import { requireAuth } from "../middlewares/requireAuth";
+import { buildSubscriptionFallbackResponse } from "../lib/api-fallbacks.js";
+import { safeRoute } from "../lib/safe-route-handler.js";
 import {
   createSubscription as rzpCreateSubscription,
   fetchSubscription as rzpFetchSubscription,
@@ -36,72 +38,86 @@ function productIdToPlan(productId: string | undefined | null): Exclude<Plan, "f
 
 const router: IRouter = Router();
 
-router.get("/subscription", requireAuth, async (req, res): Promise<void> => {
-  const { userId, email, phoneNumber } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "unauthorized" });
-    return;
-  }
-  await maybeAutoGrantPremium(userId, email, phoneNumber);
-  const [ent, prices] = await Promise.all([
-    getEntitlements(userId),
-    getLivePlanPrices(),
-  ]);
-  res.json({
-    entitlements: ent,
-    plans: [
-      {
-        id: "monthly" as Plan,
-        title: "Monthly",
-        price: prices.monthly.amount,
-        currency: prices.monthly.currency,
-        period: prices.monthly.period,
-        formattedPrice: prices.monthly.formattedPrice,
-        badge: null,
-        features: [
-          "Unlimited Amy AI",
-          "Personalized Amy Coach",
-          "Unlimited routines & children",
-          "Full Parenting Hub",
+router.get(
+  "/subscription",
+  requireAuth,
+  safeRoute(
+    "GET /subscription",
+    async (req, res): Promise<void> => {
+      const { userId, email, phoneNumber } = getAuth(req);
+      if (!userId) {
+        res.status(401).json({ error: "unauthorized" });
+        return;
+      }
+      try {
+        await maybeAutoGrantPremium(userId, email, phoneNumber);
+      } catch {
+        /* best-effort — never block subscription read */
+      }
+      const [ent, prices] = await Promise.all([
+        getEntitlements(userId),
+        getLivePlanPrices(),
+      ]);
+      res.json({
+        entitlements: ent,
+        plans: [
+          {
+            id: "monthly" as Plan,
+            title: "Monthly",
+            price: prices.monthly.amount,
+            currency: prices.monthly.currency,
+            period: prices.monthly.period,
+            formattedPrice: prices.monthly.formattedPrice,
+            badge: null,
+            features: [
+              "Unlimited Amy AI",
+              "Personalized Amy Coach",
+              "Unlimited routines & children",
+              "Full Parenting Hub",
+            ],
+          },
+          {
+            id: "six_month" as Plan,
+            title: "6 Months",
+            price: prices.six_month.amount,
+            currency: prices.six_month.currency,
+            period: prices.six_month.period,
+            formattedPrice: prices.six_month.formattedPrice,
+            badge: "Most Popular",
+            savingsPercent: Math.round(
+              (1 - prices.six_month.amount / (prices.monthly.amount * 6)) * 100,
+            ),
+            features: [
+              "Everything in Monthly",
+              "Behavior insights & trends",
+              "Save vs monthly billing",
+            ],
+          },
+          {
+            id: "yearly" as Plan,
+            title: "Yearly",
+            price: prices.yearly.amount,
+            currency: prices.yearly.currency,
+            period: prices.yearly.period,
+            formattedPrice: prices.yearly.formattedPrice,
+            badge: "Best Value",
+            savingsPercent: Math.round(
+              (1 - prices.yearly.amount / (prices.monthly.amount * 12)) * 100,
+            ),
+            features: [
+              "Everything in 6 Months",
+              "Adaptive learning",
+              "Priority support",
+            ],
+          },
         ],
-      },
-      {
-        id: "six_month" as Plan,
-        title: "6 Months",
-        price: prices.six_month.amount,
-        currency: prices.six_month.currency,
-        period: prices.six_month.period,
-        formattedPrice: prices.six_month.formattedPrice,
-        badge: "Most Popular",
-        savingsPercent: Math.round(
-          (1 - prices.six_month.amount / (prices.monthly.amount * 6)) * 100,
-        ),
-        features: [
-          "Everything in Monthly",
-          "Behavior insights & trends",
-          "Save vs monthly billing",
-        ],
-      },
-      {
-        id: "yearly" as Plan,
-        title: "Yearly",
-        price: prices.yearly.amount,
-        currency: prices.yearly.currency,
-        period: prices.yearly.period,
-        formattedPrice: prices.yearly.formattedPrice,
-        badge: "Best Value",
-        savingsPercent: Math.round(
-          (1 - prices.yearly.amount / (prices.monthly.amount * 12)) * 100,
-        ),
-        features: [
-          "Everything in 6 Months",
-          "Adaptive learning",
-          "Priority support",
-        ],
-      },
-    ],
-  });
-});
+      });
+    },
+    (_req, res) => {
+      res.status(200).json(buildSubscriptionFallbackResponse());
+    },
+  ),
+);
 
 router.post("/subscription/start-trial", requireAuth, async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;

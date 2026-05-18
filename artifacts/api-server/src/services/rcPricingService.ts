@@ -1,4 +1,5 @@
 import { logger } from "../lib/logger";
+import { fetchWithTimeout } from "../utils/fetch-with-timeout.js";
 import { PLAN_PRICES, type Plan } from "./subscriptionService";
 
 export type PlanPriceMap = Record<
@@ -12,6 +13,8 @@ const RC_GOOGLE_APP_ID = process.env.REVENUECAT_GOOGLE_PLAY_STORE_APP_ID ?? "";
 const RC_SECRET_KEY = process.env.REVENUECAT_SECRET_KEY ?? "";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
+const RC_FETCH_TIMEOUT_MS = Number(process.env.RC_FETCH_TIMEOUT_MS ?? "4000");
+const RC_MAX_PACKAGES = 3;
 
 let cachedPrices: PlanPriceMap | null = null;
 let cacheExpiry = 0;
@@ -62,14 +65,16 @@ function extractAmountAndCurrency(
 
 async function rcFetch(path: string): Promise<unknown> {
   const url = `https://api.revenuecat.com/v2${path}`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     headers: {
       Authorization: `Bearer ${RC_SECRET_KEY}`,
       "Content-Type": "application/json",
     },
+    timeoutMs: RC_FETCH_TIMEOUT_MS,
   });
   if (!res.ok) {
-    throw new Error(`RC API ${res.status}: ${await res.text()}`);
+    const text = await res.text();
+    throw new Error(`RC API ${res.status}: ${text.slice(0, 200)}`);
   }
   return res.json();
 }
@@ -100,7 +105,7 @@ async function fetchLivePrices(): Promise<PlanPriceMap> {
 
     const result = fallbackPrices();
 
-    for (const pkg of packages.items) {
+    for (const pkg of packages.items.slice(0, RC_MAX_PACKAGES)) {
       const plan = PACKAGE_TO_PLAN[pkg.lookup_key];
       if (!plan) continue;
 

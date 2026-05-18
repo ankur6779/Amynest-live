@@ -6,35 +6,46 @@ import {
   GetParentProfileResponse,
   UpsertParentProfileBody,
 } from "@workspace/api-zod";
+import { PARENT_PROFILE_FALLBACK } from "../lib/api-fallbacks.js";
+import { safeRoute } from "../lib/safe-route-handler.js";
 
 const router: IRouter = Router();
 
-router.get("/parent-profile", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get(
+  "/parent-profile",
+  safeRoute(
+    "GET /parent-profile",
+    async (req, res): Promise<void> => {
+      const { userId } = getAuth(req);
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
 
-  const [profile] = await db
-    .select()
-    .from(parentProfilesTable)
-    .where(eq(parentProfilesTable.userId, userId));
+      const [profile] = await db
+        .select()
+        .from(parentProfilesTable)
+        .where(eq(parentProfilesTable.userId, userId));
 
-  if (!profile) {
-    res.status(404).json({ error: "Profile not found" });
-    return;
-  }
+      if (!profile) {
+        res.status(404).json({ error: "Profile not found" });
+        return;
+      }
 
-  res.json(
-    GetParentProfileResponse.parse({
-      ...profile,
-      freeSlots: (profile.freeSlots as any[]) ?? [],
-      createdAt: profile.createdAt.toISOString(),
-      updatedAt: profile.updatedAt.toISOString(),
-    }),
-  );
-});
+      res.json(
+        GetParentProfileResponse.parse({
+          ...profile,
+          freeSlots: (profile.freeSlots as unknown[]) ?? [],
+          createdAt: profile.createdAt.toISOString(),
+          updatedAt: profile.updatedAt.toISOString(),
+        }),
+      );
+    },
+    (_req, res) => {
+      res.status(200).json({ ...PARENT_PROFILE_FALLBACK });
+    },
+  ),
+);
 
 router.put("/parent-profile", async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
