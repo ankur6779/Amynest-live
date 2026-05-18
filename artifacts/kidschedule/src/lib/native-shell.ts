@@ -52,6 +52,29 @@ export function isNativeAmyNestShell(): boolean {
   return false;
 }
 
+/** Capacitor iOS/Android shell (not the legacy AmyNestAndroid WebView APK). */
+export function isCapacitorNativeShell(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return (window as AmyNestWindow).Capacitor?.isNativePlatform?.() === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Firebase IndexedDB auth persistence is reliable on Capacitor iOS only.
+ * Android WebView + Capacitor Android often hang or throw during cold start.
+ */
+export function useFirebaseIndexedDbPersistence(): boolean {
+  if (!isCapacitorNativeShell()) return false;
+  try {
+    return (window as AmyNestWindow).Capacitor?.getPlatform?.() === "ios";
+  } catch {
+    return false;
+  }
+}
+
 /** Browser PWA service workers — disabled inside native WebViews. */
 export function canUseBrowserServiceWorkers(): boolean {
   return hasServiceWorkerOrigin() && !isNativeAmyNestShell();
@@ -71,10 +94,12 @@ function listenForServiceWorkerUpdates(
         installing.state === "installed" &&
         navigator.serviceWorker.controller
       ) {
+        // Do not auto-reload here — mid-boot reloads on Android PWA look like a crash.
+        // Deploy bumps are handled in syncPwaCacheAndVersion (main.tsx).
         navigator.serviceWorker.addEventListener(
           "controllerchange",
           () => {
-            window.location.reload();
+            console.info("[amynest:pwa] Service worker controller changed");
           },
           { once: true },
         );

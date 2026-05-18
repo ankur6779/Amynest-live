@@ -1,3 +1,5 @@
+import { forceClearAllCaches } from "@/lib/force-clear-caches";
+
 const VERSION_KEY = "amynest:deploy-version";
 
 /**
@@ -12,7 +14,7 @@ export async function syncPwaCacheAndVersion(): Promise<void> {
   try {
     const previous = sessionStorage.getItem(VERSION_KEY);
     if (previous && deployMeta && previous !== deployMeta) {
-      console.info("[amynest:pwa] Deploy version changed — reloading once", {
+      console.info("[amynest:pwa] Deploy version changed — clearing caches and reloading", {
         from: previous,
         to: deployMeta,
       });
@@ -22,6 +24,7 @@ export async function syncPwaCacheAndVersion(): Promise<void> {
       } catch {
         /* ignore */
       }
+      await forceClearAllCaches();
       window.location.reload();
       return;
     }

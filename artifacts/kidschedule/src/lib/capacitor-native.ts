@@ -1,10 +1,11 @@
-import { Capacitor } from "@capacitor/core";
-
-/** True when running inside Capacitor iOS/Android (not browser PWA). */
+/** Capacitor runtime check without importing @capacitor/core (smaller / safer on Android PWA). */
 export function isCapacitorNative(): boolean {
   if (typeof window === "undefined") return false;
   try {
-    return Capacitor.isNativePlatform() === true;
+    const cap = (
+      window as Window & { Capacitor?: { isNativePlatform?: () => boolean } }
+    ).Capacitor;
+    return cap?.isNativePlatform?.() === true;
   } catch {
     return false;
   }
