@@ -414,7 +414,7 @@ export default function OnboardingScreen() {
       if (!onboardingRes.ok) throw new Error(`Failed to complete onboarding: ${onboardingRes.status}`);
 
       qc.setQueryData(["onboarding-status"], { onboardingComplete: true, profileComplete: true });
-      await qc.invalidateQueries({ queryKey: ["onboarding-status"] });
+      void qc.invalidateQueries({ queryKey: ["children"] });
       stepRef.current = "done";
       setStep("done");
     } catch (err) {

@@ -26,6 +26,7 @@ import { brand, brandAlpha, palette } from "@/constants/colors";
 import { BRAND } from "@/constants/brand";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
+import { routineDateKey, routineItems } from "@/lib/routines";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
 import RoutineCarousel from "@/components/RoutineCarousel";
 import { ChildrenStrip } from "@/components/ChildrenStrip";
@@ -108,7 +109,7 @@ function formatDate(d: Date): string {
 function computeStreak(routines: Routine[]): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const dateSet = new Set(routines.map((r) => r.date.slice(0, 10)));
+  const dateSet = new Set(routines.map((r) => routineDateKey(r)).filter(Boolean));
   let streak = 0;
   while (true) {
     const d = new Date(today);
@@ -282,8 +283,8 @@ function AmySuggestionCard({ routines, streak }: { routines: Routine[]; streak: 
   const { t } = useTranslation();
   const c = useColors();
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todayRoutines = routines.filter((r) => r.date.slice(0, 10) === todayStr);
-  const allItems = todayRoutines.flatMap((r) => r.items);
+  const todayRoutines = routines.filter((r) => routineDateKey(r) === todayStr);
+  const allItems = todayRoutines.flatMap((r) => routineItems(r));
   const total = allItems.length;
   const completed = allItems.filter((i) => i.status === "completed").length;
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -380,8 +381,8 @@ function ParentScoreCard({ routines, streak }: { routines: Routine[]; streak: nu
   const { t } = useTranslation();
   const c = useColors();
   const last7 = routines.slice(0, 7);
-  const totalItems = last7.flatMap((r) => r.items).length;
-  const completedItems = last7.flatMap((r) => r.items).filter((i) => i.status === "completed").length;
+  const totalItems = last7.flatMap((r) => routineItems(r)).length;
+  const completedItems = last7.flatMap((r) => routineItems(r)).filter((i) => i.status === "completed").length;
   const completionRate = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
   const daysActive = last7.length;
   const streakBonus = Math.min(streak * 5, 30);

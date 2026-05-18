@@ -8,6 +8,7 @@ import {
   sectionCtaLabel,
   tileIdToSection,
 } from "@/app/(tabs)/hub-sections";
+import { normalizeRoutineList, routineItems } from "@/lib/routines";
 
 /**
  * Shared "today's routine" hook used by both the dashboard and the Parent
@@ -91,10 +92,12 @@ export function useTodayRoutine(
     refetch,
   } = useQuery<Routine[]>({
     queryKey: ["routines"],
-    queryFn: () =>
-      authFetch("/api/routines").then((r) =>
-        r.ok ? (r.json() as Promise<Routine[]>) : ([] as Routine[]),
-      ),
+    queryFn: async () => {
+      const res = await authFetch("/api/routines");
+      if (!res.ok) return [] as Routine[];
+      const raw = await res.json();
+      return normalizeRoutineList<Routine>(raw);
+    },
     enabled,
     // The hub redesign reads this cache from two surfaces (dashboard +
     // Today's Plan page). A 5-min staleness window plus a 30-min gc keeps
@@ -109,7 +112,7 @@ export function useTodayRoutine(
 
   const tasks = useMemo<RoutineTask[]>(() => {
     if (!todaysRoutine) return [];
-    return todaysRoutine.items.map((it, idx) => {
+    return routineItems(todaysRoutine).map((it, idx) => {
       // Quick-jump target (Task #191): prefer an explicit `relatedTileId`
       // from the backend, otherwise derive one from the category. Tiles
       // outside the partitioned grid (featured / unmapped) yield a null
@@ -150,8 +153,9 @@ export function useTodayRoutine(
   const taskIdToItemIndex = useCallback(
     (taskId: string): number | null => {
       const idx = parseInt(taskId.split("-")[2] ?? "-1", 10);
-      if (Number.isNaN(idx) || idx < 0) return null;
-      if (!todaysRoutine || idx >= todaysRoutine.items.length) return null;
+      if (Number.isNaN(idx) || idx < 0 || !todaysRoutine) return null;
+      const items = routineItems(todaysRoutine);
+      if (idx >= items.length) return null;
       return idx;
     },
     [todaysRoutine],
@@ -162,10 +166,11 @@ export function useTodayRoutine(
       if (!todaysRoutine) return;
       const idx = taskIdToItemIndex(taskId);
       if (idx == null) return;
-      const cur = todaysRoutine.items[idx];
+      const items = routineItems(todaysRoutine);
+      const cur = items[idx];
       const nextStatus: ItemStatus =
         cur.status === "completed" ? "pending" : "completed";
-      const nextItems = todaysRoutine.items.map((it, i) =>
+      const nextItems = items.map((it, i) =>
         i === idx ? { ...it, status: nextStatus } : it,
       );
       const prevSnapshot = qc.getQueryData<Routine[]>(["routines"]);
