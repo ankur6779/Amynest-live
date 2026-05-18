@@ -77,7 +77,11 @@ export function logAmynestEnvironment(): void {
   const env = loadAmynestEnvFiles();
   const label = amynestEnvLabel(env);
   const renderService = process.env["RENDER_SERVICE_NAME"];
-  const apiPublicUrl = process.env["API_PUBLIC_URL"];
+  const apiPublicUrl =
+    process.env["API_PUBLIC_URL"]?.trim() ||
+    (renderService
+      ? `https://${renderService.toLowerCase()}.onrender.com`
+      : undefined);
 
   const parts = [
     `[AmyNest] Running in ${label} mode`,
