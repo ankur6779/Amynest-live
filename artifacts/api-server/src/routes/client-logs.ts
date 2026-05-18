@@ -9,7 +9,7 @@ const ClientLogBody = z.object({
   type: z.enum(["crash", "slow_api", "failed_routine", "warning", "info"]),
   message: z.string().min(1).max(4000),
   context: z.string().max(256).optional(),
-  meta: z.record(z.unknown()).optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
   durationMs: z.number().optional(),
   route: z.string().max(256).optional(),
 });

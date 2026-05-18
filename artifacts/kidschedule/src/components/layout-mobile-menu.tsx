@@ -1,34 +1,20 @@
-import { lazy, Suspense, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { MenuFallbackUi } from "@/components/menu-fallback-ui";
+import { LayoutMobileMenuSheet } from "@/components/layout-mobile-menu-sheet";
+import { useMobileMenuData } from "@/hooks/use-mobile-menu-data";
 import { logNavEvent, logNavError } from "@/lib/navigation-log";
-import { useDebouncedCallback } from "@/lib/use-debounced-callback";
 import { useLocation } from "wouter";
-
-// Lazy-load sheet (Radix + nav hooks) so hamburger tap stays light on mobile PWA.
-const LayoutMobileMenuSheet = lazy(() =>
-  import("@/components/layout-mobile-menu-sheet").then((m) => ({
-    default: m.LayoutMobileMenuSheet,
-  })),
-);
-
-function MenuLoadingHint() {
-  return (
-    <div className="text-xs text-muted-foreground px-2" aria-live="polite">
-      Menu loading…
-    </div>
-  );
-}
 
 export function LayoutMobileMenu() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
   const { t } = useTranslation();
+  const { safeMenu } = useMobileMenuData();
 
-  // Fix: always sync Radix controlled `open` — never block on auth load (was crashing PWA).
   const handleOpenChange = useCallback(
     (open: boolean) => {
       try {
@@ -41,8 +27,7 @@ export function LayoutMobileMenu() {
     [location],
   );
 
-  // 300ms debounce — prevents Radix sheet desync under rapid PWA taps (stress-tested).
-  const handleHamburgerClick = useDebouncedCallback(() => {
+  const handleMenuToggle = useCallback(() => {
     try {
       if (typeof window !== "undefined") {
         console.log("[amynest:nav] Hamburger clicked", { location });
@@ -52,7 +37,7 @@ export function LayoutMobileMenu() {
     } catch (err) {
       logNavError("hamburger-click", err, { location });
     }
-  }, 300);
+  }, [location]);
 
   return (
     <AppErrorBoundary label="MobileMenu" fallback={<MenuFallbackUi />}>
@@ -64,17 +49,17 @@ export function LayoutMobileMenu() {
         data-testid="button-mobile-menu"
         aria-expanded={isMenuOpen}
         aria-haspopup="dialog"
-        onClick={handleHamburgerClick}
+        onClick={handleMenuToggle}
       >
         <Menu className="h-5 w-5" />
         <span className="sr-only">{t("components.layout.toggle_menu")}</span>
       </Button>
 
-      {isMenuOpen ? (
-        <Suspense fallback={<MenuLoadingHint />}>
-          <LayoutMobileMenuSheet isMenuOpen={isMenuOpen} onOpenChange={handleOpenChange} />
-        </Suspense>
-      ) : null}
+      <LayoutMobileMenuSheet
+        isMenuOpen={isMenuOpen}
+        onOpenChange={handleOpenChange}
+        navItems={safeMenu}
+      />
     </AppErrorBoundary>
   );
 }

@@ -1,3 +1,4 @@
+import type { ScheduleItem } from "../../lib/routine-templates.js";
 import { unwrapJobPayload } from "../../queue/ai-job-payload.js";
 import { handleMealsJob } from "./meals.js";
 
@@ -22,14 +23,16 @@ export async function dispatchAiJob(type: string, payload: unknown): Promise<unk
     }
     case "routines.enrich_meals": {
       const { enrichMealOptionsWithAi } = await import("../../routes/routines.js");
+      const { getOpenAiClient } = await import("../ai-runtime.js");
       const { db, routinesTable } = await import("@workspace/db");
       const { eq } = await import("drizzle-orm");
       const p = input as {
         routineId: number;
-        items: import("../lib/routine-templates.js").ScheduleItem[];
+        items: ScheduleItem[];
         ctx: import("../../routes/routines.js").EnrichCtx;
       };
-      const enriched = await enrichMealOptionsWithAi(p.items, p.ctx);
+      const openai = await getOpenAiClient();
+      const enriched = await enrichMealOptionsWithAi(p.items, p.ctx, openai);
       const changed = enriched.some((it, i) => it.notes !== (p.items[i] as { notes?: string })?.notes);
       if (changed) {
         await db.update(routinesTable).set({ items: enriched }).where(eq(routinesTable.id, p.routineId));

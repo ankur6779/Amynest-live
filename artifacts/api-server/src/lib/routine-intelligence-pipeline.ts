@@ -293,7 +293,7 @@ export function runRoutineIntelligencePipeline(
       time: minsToTime24(e.startMins),
     }));
     const validated = generateValidatedInfantRoutine({
-      ageMonths: ageInMonthsEarly,
+      ageMonths: ageInMonthsEarly ?? 6,
       wakeTime: wake,
       sleepTime: sleep,
       feedingType: mapInfantFeedingMode(
@@ -641,9 +641,7 @@ export function runRoutineIntelligencePipeline(
 
   const rainMode =
     /rain|drizzle|storm/i.test(
-      input.builtContext.environment?.condition ??
-        input.builtContext.weatherCondition ??
-        "",
+      input.builtContext.environment?.condition ?? "",
     ) || input.builtContext.weatherOutdoor === "no";
 
   const energyCurve = enforceEnergyCurve(polished, { rainMode });
@@ -715,9 +713,7 @@ export function runRoutineIntelligencePipeline(
     sleepMins: sleepMinsEarly,
     aqi: state.aqi ?? input.builtContext.environment?.AQI ?? null,
     condition:
-      input.builtContext.environment?.condition ??
-      input.builtContext.weatherCondition ??
-      null,
+      input.builtContext.environment?.condition ?? null,
     hasSchool: flowOpts.hasSchool,
     isWeekendDay: flowOpts.isWeekendDay ?? false,
     country: state.country,
