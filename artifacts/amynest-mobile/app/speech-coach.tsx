@@ -238,8 +238,9 @@ export default function SpeechCoachScreen() {
         return;
       }
       clearTimeout(bailTimer);
-      const { transcript } = (await res.json()) as { transcript: string };
-      const trimmed = transcript?.trim() ?? "";
+      const { readResolvedApiJson } = await import("@/lib/poll-result");
+      const body = await readResolvedApiJson<{ transcript?: string }>(res, authFetch);
+      const trimmed = body?.transcript?.trim() ?? "";
       if (currentText) {
         const r = compareTranscript(currentText, trimmed || "");
         setPromptResult({

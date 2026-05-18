@@ -3,6 +3,7 @@
 
 import { getAuth } from "firebase/auth";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
+import { resolveAiApiData, type AuthFetchFn } from "@/lib/poll-result";
 
 // ─── ElevenLabs Indian Voice IDs ──────────────────────────────
 // English Indian Female — Ananya K
@@ -55,6 +56,13 @@ export async function speak(
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     console.info("[ElevenLabs] Request start (study-tts)");
+    const authFetch: AuthFetchFn = async (input, init) => {
+      const url = typeof input === "string" ? getApiUrl(input) : input;
+      return fetch(url, {
+        ...init,
+        headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
+      });
+    };
     const synthRes = await fetch(getApiUrl("/api/tts/synthesize"), {
       method: "POST",
       headers,
@@ -64,8 +72,12 @@ export async function speak(
       console.error("[ElevenLabs] Synthesize failed", synthRes.status);
       return;
     }
-
-    const data = (await synthRes.json()) as { audioUrl: string };
+    const raw = (await synthRes.json()) as { audioUrl?: string; jobId?: string };
+    const data = await resolveAiApiData<{ audioUrl: string }>(raw, authFetch);
+    if (!data?.audioUrl) {
+      console.error("[ElevenLabs] Synthesize missing audioUrl");
+      return;
+    }
 
     const audioHeaders: Record<string, string> = {};
     if (token) audioHeaders["Authorization"] = `Bearer ${token}`;

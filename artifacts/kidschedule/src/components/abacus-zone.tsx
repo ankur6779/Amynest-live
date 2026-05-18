@@ -632,9 +632,14 @@ function TutorMode({ childId, level, ageYears }: { childId: number; level: Level
           question: question.trim(),
         }),
       });
-      const data = await res.json();
-      if (!res.ok || !data?.reply) throw new Error(data?.error ?? "ai_failed");
-      setReply(data.reply as string);
+      if (!res.ok) {
+        const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(errBody?.error ?? "ai_failed");
+      }
+      const { readResolvedApiJson } = await import("@/lib/poll-result");
+      const data = await readResolvedApiJson<{ reply?: string; error?: string }>(res, authFetch);
+      if (!data?.reply) throw new Error(data?.error ?? "ai_failed");
+      setReply(data.reply);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "ai_failed");
     } finally {

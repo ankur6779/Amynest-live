@@ -1,6 +1,7 @@
 import { getApiUrl } from "@/lib/api";
 import { enqueueClientAi } from "@/lib/client-ai-queue";
 import { reportFailedRoutine } from "@/lib/client-logs";
+import { resolveAiApiData } from "@/lib/poll-result";
 
 const LOG_TAG = "routine-gen";
 const AI_FETCH_TIMEOUT_MS = 35_000;
@@ -172,11 +173,13 @@ async function postRoutineEndpoint(
     throw new Error(`Routine generation failed (${res.status})`);
   }
 
-  if (!isValidRoutine(body)) {
+  const resolved = await resolveAiApiData<RoutineGenerateResult>(body, authFetch);
+
+  if (!isValidRoutine(resolved)) {
     throw new Error("Invalid or empty routine in response");
   }
 
-  return body;
+  return resolved;
 }
 
 /**

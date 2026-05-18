@@ -5,6 +5,7 @@
 
 import { getAuth } from "firebase/auth";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
+import { resolveAiApiData, type AuthFetchFn } from "@/lib/poll-result";
 
 const KEY_ENABLED = "amynest_voice_enabled";
 const KEY_GENDER  = "amynest_voice_gender"; // "female" | "male"
@@ -99,6 +100,13 @@ export async function speak(text: string): Promise<void> {
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     console.info("[ElevenLabs] Request start (voice.speak)");
+    const authFetch: AuthFetchFn = async (input, init) => {
+      const url = typeof input === "string" ? getApiUrl(input) : input;
+      return fetch(url, {
+        ...init,
+        headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
+      });
+    };
     const synthRes = await fetch(getApiUrl("/api/tts/synthesize"), {
       method: "POST",
       headers,
@@ -109,8 +117,12 @@ export async function speak(text: string): Promise<void> {
       console.error("[ElevenLabs] Synthesize failed", synthRes.status, errBody);
       return;
     }
-
-    const data = (await synthRes.json()) as { audioUrl: string };
+    const raw = (await synthRes.json()) as { audioUrl?: string; jobId?: string };
+    const data = await resolveAiApiData<{ audioUrl: string }>(raw, authFetch);
+    if (!data?.audioUrl) {
+      console.error("[ElevenLabs] Synthesize missing audioUrl");
+      return;
+    }
     console.info("[ElevenLabs] Synthesize OK", data.audioUrl);
 
     const audioHeaders: Record<string, string> = {};

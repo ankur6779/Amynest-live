@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { logTtsClient, logTtsClientError, resolveTtsAudioUrl } from "@/lib/tts-playback";
+import { logTtsClient, logTtsClientError, resolveTtsAudioUrl, synthesizeTts } from "@/lib/tts-playback";
 
 export interface UseAmyVoiceOptions {
   /** Optional override for the voice persona (ElevenLabs voice id). */
@@ -149,19 +149,12 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
 
       try {
         logTtsClient("Request start", { chars: text.length, mode });
-        const synthRes = await authFetch("/api/tts/synthesize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, voiceId, modelId, mode }),
-          signal: controller.signal,
-        });
+        const data = await synthesizeTts(
+          authFetch,
+          { text, voiceId, modelId, mode },
+          { signal: controller.signal },
+        );
         if (myId !== reqIdRef.current) return; // superseded by a newer call
-        if (!synthRes.ok) {
-          const body = (await synthRes.json().catch(() => ({}))) as { error?: string };
-          throw new Error(body.error ?? `synthesize_failed_${synthRes.status}`);
-        }
-        const data = (await synthRes.json()) as SynthesizeResponse;
-        if (myId !== reqIdRef.current) return;
         logTtsClient("Synthesize OK", { cacheKey: data.cacheKey, cached: data.cached });
 
         const playbackUrl = resolveTtsAudioUrl(data.audioUrl);

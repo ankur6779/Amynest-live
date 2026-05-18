@@ -127,10 +127,9 @@ export function DailyTips({
         })
       });
       if (!res.ok) throw new Error("rewrite failed");
-      const json = (await res.json()) as {
-        rewritten?: string;
-      };
-      const rewritten = (json.rewritten ?? "").trim();
+      const { readResolvedApiJson } = await import("@/lib/poll-result");
+      const json = await readResolvedApiJson<{ rewritten?: string }>(res, authFetch);
+      const rewritten = (json?.rewritten ?? "").trim();
       if (rewritten) {
         const next = {
           ...aiCache,

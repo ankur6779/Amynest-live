@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { resolveApiMediaUrl } from "@/lib/api";
+import { resolveAiApiData } from "@/lib/poll-result";
+import { synthesizeTts } from "@/lib/tts-playback";
 
 // ─── Shared types (mirror server shape — no codegen yet for /spelling/*) ─────
 
@@ -174,14 +176,11 @@ export function useSpellingTTS(): UseSpellingTTSState {
       setError(null);
       setSpeaking(false);
       try {
-        const res = await authFetch("/api/tts/synthesize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: trimmed }),
-          signal: ac.signal,
-        });
-        if (!res.ok) throw new Error(`tts_synth_${res.status}`);
-        const data = (await res.json()) as SynthesizeResponse;
+        const data = await synthesizeTts(
+          authFetch,
+          { text: trimmed },
+          { signal: ac.signal },
+        );
         if (reqId !== reqIdRef.current) return;
         await playSrc(data.audioUrl, !!opts.slow, reqId);
       } catch (err) {
@@ -269,9 +268,13 @@ export function useSpellingWords(
           body: JSON.stringify({ age: ageGroup, difficulty: diff, count: 10 }),
         });
         if (!res.ok) throw new Error(`ai_${res.status}`);
-        const data = (await res.json()) as { ok: true; words: SpellingWord[]; source: SpellingSource };
-        setWords(data.words);
-        setSource(data.source);
+        const raw = await res.json();
+        const data = await resolveAiApiData<{ ok?: boolean; words: SpellingWord[]; source: SpellingSource }>(
+          raw,
+          authFetch,
+        );
+        setWords(data?.words ?? []);
+        setSource(data?.source ?? "ai");
       } catch (err) {
         setError(err instanceof Error ? err.message : "ai_failed");
       } finally {
