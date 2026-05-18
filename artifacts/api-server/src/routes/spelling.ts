@@ -48,6 +48,22 @@ async function prewarmWordsTts(
   return (finished.result as { audioKeys: string[] }).audioKeys ?? [];
 }
 
+async function generateAiWords(
+  ageGroup: SpellingAgeGroup,
+  difficulty: SpellingDifficulty,
+  count: number,
+): Promise<SpellingWord[]> {
+  const { runSpellingAiGenerate } = await import(
+    "../services/domain-ai/spelling-runners.js"
+  );
+  const result = await runSpellingAiGenerate({
+    age: ageGroup,
+    difficulty,
+    count,
+  });
+  return result.words as SpellingWord[];
+}
+
 // ─── Shared validators ───────────────────────────────────────────────────────
 const ageGroupSchema = z.enum(["2-4", "4-6", "6-8", "8-10+"]);
 const difficultySchema = z.enum(["easy", "medium", "hard"]);

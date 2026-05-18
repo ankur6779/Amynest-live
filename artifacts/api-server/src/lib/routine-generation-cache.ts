@@ -1,11 +1,14 @@
 import { createHash } from "node:crypto";
-import type { GenerateRoutineResponse } from "@workspace/api-zod";
+import { GenerateRoutineResponse } from "@workspace/api-zod";
+import type { z } from "zod/v4";
+
+type GenerateRoutineResponseBody = z.infer<typeof GenerateRoutineResponse>;
 
 const TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_ENTRIES = 500;
 
 type CacheEntry = {
-  body: GenerateRoutineResponse & { success?: boolean; fallback?: boolean };
+  body: GenerateRoutineResponseBody & { success?: boolean; fallback?: boolean };
   expiresAt: number;
 };
 

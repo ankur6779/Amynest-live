@@ -5,7 +5,7 @@ export async function runSpeechTranscribe(input: {
   mimeType: string;
 }): Promise<{ text: string }> {
   const buffer = Buffer.from(input.audioBase64, "base64");
-  const compatible = await ensureCompatibleFormat(buffer, input.mimeType);
-  const text = await speechToText(compatible.buffer, compatible.mimeType);
+  const compatible = await ensureCompatibleFormat(buffer);
+  const text = await speechToText(compatible.buffer, compatible.format);
   return { text };
 }
