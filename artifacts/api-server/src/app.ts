@@ -3,6 +3,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { sendSafeError } from "./lib/safe-api-response";
 
 const app: Express = express();
 
@@ -81,10 +82,26 @@ app.use((req, res) => {
     },
     "Unknown route on api-server",
   );
-  res.status(404).json({
-    error: "not_found",
-    message: `No handler for ${req.method} ${req.originalUrl} on api-server.`,
-  });
+  sendSafeError(
+    res,
+    404,
+    `No handler for ${req.method} ${req.originalUrl} on api-server.`,
+  );
 });
+
+// Last-resort handler — never leave clients with an empty body on thrown errors.
+app.use(
+  (
+    err: unknown,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction,
+  ) => {
+    logger.error({ err }, "Unhandled API error");
+    if (res.headersSent) return;
+    const message = err instanceof Error ? err.message : "Internal server error";
+    sendSafeError(res, 500, message, true);
+  },
+);
 
 export default app;

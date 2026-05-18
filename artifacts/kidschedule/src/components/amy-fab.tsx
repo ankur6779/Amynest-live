@@ -1,12 +1,17 @@
 import { Link, useLocation } from "wouter";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useTranslation } from "react-i18next";
+import { safePathStartsWith } from "@/lib/safe-route";
 export function AmyFab() {
   const {
     t
   } = useTranslation();
   const [location] = useLocation();
-  if (location.startsWith("/assistant") || location.startsWith("/sign-in") || location.startsWith("/sign-up")) {
+  if (
+    safePathStartsWith(location, "/assistant") ||
+    safePathStartsWith(location, "/sign-in") ||
+    safePathStartsWith(location, "/sign-up")
+  ) {
     return null;
   }
   return <div data-tour="amy-fab" className="fixed right-4 z-50 bottom-20 md:bottom-6 amy-fade-in">

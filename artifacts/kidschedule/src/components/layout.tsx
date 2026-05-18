@@ -1,9 +1,16 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Home, Users, Calendar, Star, Menu, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Moon, Sun, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, Trophy, HelpCircle, Wind, MessageSquarePlus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Home, Users, Calendar, Star, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Moon, Sun, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, Trophy, Wind, MessageSquarePlus } from "lucide-react";
 import { useClerk, useUser } from "@/lib/firebase-auth-hooks";
+import { LayoutMobileMenu } from "@/components/layout-mobile-menu";
+import { logNavEvent } from "@/lib/navigation-log";
+import { safePathStartsWith, safePathStartsWithSegment } from "@/lib/safe-route";
+import {
+  getUserAvatarUrl,
+  getUserDisplayName,
+  getUserEmail,
+  getUserInitials,
+} from "@/lib/safe-user-display";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandLogo } from "@/components/brand-logo";
 import { AmyFab } from "@/components/amy-fab";
@@ -181,17 +188,24 @@ export function Layout({
   const {
     isPremium
   } = useSubscription();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   usePushRegistration();
   useCapacitorPushRegistrationSync();
-  const initials = user ? (user.firstName?.[0] ?? "") + (user.lastName?.[0] ?? user.emailAddresses?.[0]?.emailAddress?.[0] ?? "U") : "U";
+  const displayName = getUserDisplayName(user);
+  const email = getUserEmail(user);
+  const initials = getUserInitials(user);
+  const avatarUrl = getUserAvatarUrl(user);
+
+  useEffect(() => {
+    logNavEvent("layout-mounted", { location });
+  }, [location]);
+
   const handleSignOut = () => {
-    setIsSidebarOpen(false);
-    signOut({
-      redirectUrl: "/"
-    });
+    try {
+      void signOut({ redirectUrl: "/" });
+    } catch (err) {
+      console.error("[amynest:nav] sign-out failed", err);
+    }
   };
-  const closeSidebar = () => setIsSidebarOpen(false);
   return <div className="flex min-h-[100dvh] w-full flex-col bg-background">
       {/* Mobile Header — fixed so it never duplicates on Android Chrome */}
       <header className="fixed top-0 left-0 right-0 z-40 flex h-20 w-full items-center justify-between border-b bg-background px-4 md:hidden shadow-sm">
@@ -200,62 +214,7 @@ export function Layout({
           <AmyMascotLogo size={34} />
         </div>
         <div className="flex items-center gap-2">
-          <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsSidebarOpen(true)}>
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">{t("components.layout.toggle_menu")}</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[80vw] sm:w-[350px] flex flex-col p-0 bg-card text-card-foreground">
-              {/* User profile — fixed at top */}
-              <div className="flex items-center gap-3 px-4 pt-5 pb-4 border-b shrink-0">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={user?.imageUrl ?? undefined} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
-                    {initials.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-semibold truncate flex items-center gap-1.5">
-                    <span className="truncate">
-                      {user?.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : user?.emailAddresses?.[0]?.emailAddress}
-                    </span>
-                    {isPremium && <SmartParentBadge />}
-                  </span>
-                  <span className="text-xs text-muted-foreground truncate">{user?.emailAddresses?.[0]?.emailAddress}</span>
-                </div>
-              </div>
-
-              {/* Nav items — scrollable */}
-              <nav className="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-1 text-card-foreground">
-                {NAV_ITEMS.map(item => {
-                const isActive = location === item.href || location.startsWith(item.href);
-                return <Link key={item.href} href={item.href} onClick={closeSidebar} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${isActive ? "bg-primary text-primary-foreground font-medium" : "text-foreground/70 hover:bg-muted hover:text-foreground"}`}>
-                      <item.icon className="h-5 w-5 shrink-0" />
-                      <span className="flex-1 truncate">{t(item.labelKey)}</span>
-                      {item.badge && <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-primary to-primary px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
-                          {item.badge}
-                        </span>}
-                    </Link>;
-              })}
-                <div className="mt-2 pt-2 border-t">
-                  <ThemeToggleRow onToggle={closeSidebar} />
-                </div>
-              </nav>
-
-              {/* Sign Out — always visible at bottom */}
-              <div className="shrink-0 border-t px-4 py-3">
-                <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-foreground/70 hover:bg-muted hover:text-foreground transition-colors">
-                  <LogOut className="h-5 w-5" />
-                  {t("nav.sign_out")}
-                </button>
-                <p className="text-center text-[9px] font-bold tracking-widest uppercase mt-2.5 text-primary/30">
-                  {t("patent_pending.footer_label")}
-                </p>
-              </div>
-            </SheetContent>
-          </Sheet>
+          <LayoutMobileMenu />
         </div>
       </header>
 
@@ -273,7 +232,7 @@ export function Layout({
             </div>
           <nav className="flex flex-1 flex-col gap-1 p-4">
             {NAV_ITEMS.map(item => {
-            const isActive = location === item.href || location.startsWith(item.href);
+            const isActive = safePathStartsWith(location, item.href);
             return <Link key={item.href} href={item.href} data-tour={item.href === "/dashboard" ? "dashboard" : item.href === "/routines" ? "routines" : item.href === "/amy-coach" ? "amy-coach" : item.href === "/parenting-hub" ? "parenting-hub" : undefined} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                   <item.icon className="h-5 w-5 shrink-0" />
                   <span className="flex-1 truncate">{t(item.labelKey)}</span>
@@ -290,19 +249,19 @@ export function Layout({
           <div className="border-t p-4">
             <div className="flex items-center gap-3 mb-3">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.imageUrl ?? undefined} />
+                <AvatarImage src={avatarUrl} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
-                  {initials.toUpperCase()}
+                  {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold truncate flex items-center gap-1.5">
-                  <span className="truncate">
-                    {user?.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : "My Account"}
-                  </span>
-                  {isPremium && <SmartParentBadge />}
+                  <span className="truncate">{displayName}</span>
+                  {isPremium ? <SmartParentBadge /> : null}
                 </span>
-                <span className="text-xs text-muted-foreground truncate">{user?.emailAddresses?.[0]?.emailAddress}</span>
+                {email ? (
+                  <span className="text-xs text-muted-foreground truncate">{email}</span>
+                ) : null}
               </div>
             </div>
             <button onClick={handleSignOut} data-testid="button-sign-out" className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
@@ -318,7 +277,7 @@ export function Layout({
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
           <div className="mx-auto max-w-5xl p-4 md:p-8">
-            {!["/sign-in", "/onboarding", "/notify-prompt"].some(p => location.startsWith(p)) && <div className="mb-4">
+            {!["/sign-in", "/onboarding", "/notify-prompt"].some(p => safePathStartsWith(location, p)) && <div className="mb-4">
                 <NotificationNudgeBanner />
               </div>}
             {children}
@@ -329,7 +288,7 @@ export function Layout({
       {/* Notification enable prompt — shown as a bottom-sheet modal ~1.8s
           after the user opens the app if permission has not been granted yet.
           Snoozes for 3 days on dismiss. Banner above handles denied/reconnect. */}
-      {!["/sign-in", "/onboarding"].some(p => location.startsWith(p)) && (
+      {!["/sign-in", "/onboarding"].some(p => safePathStartsWith(location, p)) && (
         <NotificationPromptModal />
       )}
 
@@ -341,7 +300,7 @@ export function Layout({
       <nav data-on-dark className="fixed bottom-0 left-0 right-0 z-40 h-[78px] bg-card backdrop-blur-xl border-t border-white/10 md:hidden pb-safe">
         <div className="relative flex h-full w-full items-end justify-around px-2 pb-2">
           {BOTTOM_NAV_ITEMS.map(item => {
-          const isActive = location === item.href || location.startsWith(item.href + "/");
+          const isActive = safePathStartsWithSegment(location, item.href);
           if (item.center) {
             return <Link key={item.href} href={item.href} data-tour="amy-coach" className="relative flex flex-col items-center justify-end -translate-y-5">
                   <div className={`flex h-[60px] w-[60px] items-center justify-center rounded-full text-white transition-transform active:scale-90 ${isActive ? "bg-gradient-to-br from-primary to-primary shadow-[0_10px_25px_rgba(99,102,241,0.55)] ring-2 ring-white/20" : "bg-gradient-to-br from-primary to-primary shadow-[0_8px_20px_rgba(99,102,241,0.45)]"}`}>

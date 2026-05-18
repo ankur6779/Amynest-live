@@ -862,7 +862,8 @@
       "save_failed_title": "Could not save routine",
       "save_failed_body": "Please try again in a moment.",
       "generate_failed": "Failed to generate routine",
-      "ai_unavailable": "Amy couldn't generate right now — try the standard routine instead.",
+      "ai_unavailable": "Generating smart routine... taking longer than usual",
+      "ai_fallback_used": "Used a smart backup routine while Amy finishes tuning.",
       "select_child_school": "Please select at least one child and set their school status.",
       "family_generate_failed": "Failed to generate routine for {{name}}",
       "family_save_failed": "Failed to save routine for {{name}}",
@@ -3009,7 +3010,9 @@
     },
     "layout": {
       "smart_parent": "Smart Parent",
-      "toggle_menu": "Toggle menu"
+      "toggle_menu": "Toggle menu",
+      "menu_failed": "Menu failed. Reloading…",
+      "menu_reload": "Reload"
     },
     "life_skills_zone": {
       "level": "Level:"

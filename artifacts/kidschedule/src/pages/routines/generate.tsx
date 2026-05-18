@@ -12,6 +12,14 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Sparkles, Calendar, User, Clock, GraduationCap, Car, Refrigerator, School, Star, Users, CheckCircle2, ChevronDown, ChevronUp, AlertTriangle, ExternalLink, RefreshCw, UserCheck, Zap, Brain } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useAuth } from "@/lib/firebase-auth-hooks";
+import {
+  enrichRoutinePayload,
+  fetchAmyAiRoutine,
+  fetchStandardRoutine,
+  RoutineGenerationFixedActivityError,
+  RoutineGenerationPaywallError,
+} from "@/lib/routine-generation-client";
 import { getApiUrl } from "@/lib/api";
 import { format } from "date-fns";
 import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
@@ -628,6 +636,7 @@ export default function RoutineGenerate() {
   } = useToast();
   const queryClient = useQueryClient();
   const authFetch = useAuthFetch();
+  const { userId } = useAuth();
   const {
     data: children,
     isLoading: loadingChildren
@@ -662,6 +671,7 @@ export default function RoutineGenerate() {
   const generateMutation = useGenerateRoutine();
   const createMutation = useCreateRoutine();
   const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [aiGeneratingSlow, setAiGeneratingSlow] = useState(false);
 
   // Single-child auto-select — when the parent only has one child registered,
   // skip the picker step and preselect that child so the wizard doesn't show
@@ -1039,77 +1049,71 @@ export default function RoutineGenerate() {
     const shouldOverride = forceOverride || overrideMode || !!existingRoutine?.exists;
     const effectiveWeather = weatherForCall ?? weatherOutdoor;
     setIsAiGenerating(true);
-    try {
-      const payload = {
-        childId: selectedChild!,
-        date,
-        hasSchool: hasSchool ?? undefined,
-        schoolMealMode: hasSchool ? schoolMealMode : undefined,
-        specialPlans: appendHandlerToPlans(specialPlans, handlerType),
-        fixedActivities:
-          serializedFixedActivities.length > 0 ? serializedFixedActivities : undefined,
-        confirmBlockingFixedActivities: blockingSaveConfirmed || undefined,
-        fridgeItems: fridgeItems.trim() || undefined,
-        mood: mood !== "normal" ? mood : undefined,
-        age: selectedChildData?.age,
-        wakeTime: wakeTime ?? selectedChildData?.wakeUpTime,
-        schoolStart: selectedChildData?.schoolStartTime,
-        schoolEnd: selectedChildData?.schoolEndTime,
-        region: parentRegion,
-        caregiver: handlerType,
-        weatherOutdoor: effectiveWeather
-      };
-      const res = await authFetch("/api/routines/generate-ai", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
+    setAiGeneratingSlow(false);
+    const buildPayload = () =>
+      enrichRoutinePayload(
+        {
+          childId: selectedChild!,
+          date,
+          hasSchool: hasSchool ?? undefined,
+          schoolMealMode: hasSchool ? schoolMealMode : undefined,
+          specialPlans: appendHandlerToPlans(specialPlans, handlerType),
+          fixedActivities:
+            serializedFixedActivities.length > 0 ? serializedFixedActivities : undefined,
+          confirmBlockingFixedActivities: blockingSaveConfirmed || undefined,
+          fridgeItems: fridgeItems.trim() || undefined,
+          mood: mood !== "normal" ? mood : undefined,
+          age: selectedChildData?.age,
+          wakeTime: wakeTime ?? selectedChildData?.wakeUpTime,
+          schoolStart: selectedChildData?.schoolStartTime,
+          schoolEnd: selectedChildData?.schoolEndTime,
+          region: parentRegion,
+          caregiver: handlerType,
+          weatherOutdoor: effectiveWeather,
         },
-        body: JSON.stringify(payload)
+        userId,
+      );
+    try {
+      const generatedData = await fetchAmyAiRoutine(authFetch, buildPayload(), {
+        onSlow: () => setAiGeneratingSlow(true),
       });
-      if (res.status === 422) {
-        const body = (await res.json().catch(() => null)) as {
-          error?: string;
-          fixedActivitiesResult?: FixedActivitiesResult;
-        } | null;
-        if (body?.error === "fixed_activity_blocking") {
-          setInlineFixedBlocking(body.fixedActivitiesResult ?? null);
-          setLastFixedActivitiesResult(body.fixedActivitiesResult ?? null);
-          return;
-        }
+      if (generatedData.fallback) {
+        toast({
+          title: t("toasts.routines_generate.ai_fallback_used"),
+        });
       }
-      if (res.status === 402 || res.status === 403) {
-        const body = (await res.json().catch(() => null)) as {
-          reason?: string;
-          error?: string;
-          feature?: string;
-        } | null;
-        const isFeatureLocked = res.status === 402 && (body?.error === "feature_locked" || body?.feature === "routine_generate");
-        const isLegacyLimit = res.status === 403 && body?.reason === "routine_limit_exceeded";
-        if (isFeatureLocked || isLegacyLimit) {
-          window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
-            detail: {
-              reason: "routines_limit"
-            }
-          }));
-          return;
-        }
-      }
-      if (!res.ok) throw new Error("Amy AI generation failed");
-      const generatedData = (await res.json()) as GeneratedRoutine;
       const simplified = simplifyForHandler(generatedData.items as any, handlerType) as RoutineItem[];
       handlePostGenerate({
         ...generatedData,
         items: simplified,
       }, shouldOverride, wakeTime);
-    } catch {
-      toast({
-        title: t("toasts.routines_generate.ai_unavailable"),
-        variant: "destructive"
-      });
+    } catch (err) {
+      if (err instanceof RoutineGenerationFixedActivityError) {
+        setInlineFixedBlocking(err.fixedActivitiesResult as FixedActivitiesResult | null);
+        setLastFixedActivitiesResult(err.fixedActivitiesResult as FixedActivitiesResult | null);
+        return;
+      }
+      if (err instanceof RoutineGenerationPaywallError) {
+        window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
+          detail: {
+            reason: "routines_limit",
+          },
+        }));
+        return;
+      }
+      console.error("Routine generation error:", err);
+      try {
+        const fallback = await fetchStandardRoutine(authFetch, buildPayload());
+        const simplified = simplifyForHandler(fallback.items as any, handlerType) as RoutineItem[];
+        handlePostGenerate({ ...fallback, items: simplified }, shouldOverride, wakeTime);
+      } catch (finalErr) {
+        console.error("Routine generation final fallback failed:", finalErr);
+      }
     } finally {
       setIsAiGenerating(false);
+      setAiGeneratingSlow(false);
     }
-  }, [overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, specialPlans, serializedFixedActivities, blockingSaveConfirmed, fridgeItems, mood, handlerType, weatherOutdoor, parentRegion, authFetch, handlePostGenerate, toast, t]);
+  }, [overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, schoolMealMode, specialPlans, serializedFixedActivities, blockingSaveConfirmed, fridgeItems, mood, handlerType, weatherOutdoor, parentRegion, userId, authFetch, handlePostGenerate, toast, t]);
 
   // ── Wake-up confirmation gate ──────────────────────────────────────────────
   const triggerWithWakeCheck = React.useCallback((type: "standard" | "ai", forceOverride: boolean, weatherForCall?: WeatherOutdoorChoice) => {
@@ -1502,10 +1506,18 @@ export default function RoutineGenerate() {
                 </div>
                 <div>
                   <h3 className="font-quicksand text-2xl font-bold mb-2">
-                    {isAiGenerating ? "Amy is crafting your routine…" : "Crafting the perfect day…"}
+                    {isAiGenerating
+                      ? aiGeneratingSlow
+                        ? t("toasts.routines_generate.ai_unavailable")
+                        : t("pages.routines.generate.amy_is_thinking", { defaultValue: "Amy is crafting your routine…" })
+                      : "Crafting the perfect day…"}
                   </h3>
                   <p className="text-muted-foreground">
-                    {isAiGenerating ? "Amy AI is analyzing your child's profile, school schedule, mood, and parent availability to create a truly personalized routine." : "Analyzing school schedule, parent availability, special plans, and behavior history to build a smart routine with family bonding time."}
+                    {isAiGenerating
+                      ? aiGeneratingSlow
+                        ? t("toasts.routines_generate.ai_unavailable")
+                        : "Amy AI is analyzing your child's profile, school schedule, mood, and parent availability to create a truly personalized routine."
+                      : "Analyzing school schedule, parent availability, special plans, and behavior history to build a smart routine with family bonding time."}
                   </p>
                 </div>
                 <div className="w-full max-w-xs bg-muted rounded-full h-2 mt-4 overflow-hidden">
