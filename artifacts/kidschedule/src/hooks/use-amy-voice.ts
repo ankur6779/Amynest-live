@@ -10,10 +10,10 @@ import {
   synthesizeTts,
 } from "@/lib/tts-playback";
 import {
-  createStaticAudioElement,
-  shouldBlockStaticTtsFallback,
+  mustUseStaticOnly,
+  safePlayAudio,
+  tryCreateStaticPlaybackAudio,
 } from "@/lib/static-audio";
-import { isStaticTtsText } from "@workspace/static-audio";
 import { isTtsPlaybackAllowed, recordTtsUserGesture } from "@/lib/tts-guard";
 
 // ─── Global single-flight guard ───────────────────────────────────────────────
@@ -214,13 +214,8 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
 
       try {
         const staticMode = mode === "phonics" ? "phonics" : "default";
-        const isStaticPhrase = isStaticTtsText(text, staticMode);
 
-        if (shouldBlockStaticTtsFallback(text, staticMode)) {
-          return { success: false, error: "tts_static_missing_url" };
-        }
-
-        const staticAudio = createStaticAudioElement(text, staticMode);
+        const staticAudio = tryCreateStaticPlaybackAudio(text, staticMode);
         if (staticAudio) {
           logTtsClient("Static audio hit", { chars: text.length, mode: staticMode });
           cleanup();
@@ -233,15 +228,12 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           };
           staticAudio.onerror = () => {
             if (myId !== reqIdRef.current || !isMounted.current) return;
-            safeSetError("playback_failed_static");
             safeSetSpeaking(false);
             cleanup();
           };
           audioRef.current = staticAudio;
-          try {
-            if (staticAudio.paused) await staticAudio.play();
-          } catch (playErr) {
-            logTtsClientError("static audio.play() rejected", playErr);
+          const played = await safePlayAudio(staticAudio);
+          if (!played) {
             cleanup();
             safeSetSpeaking(false);
             return { success: false, error: "play_failed_static" };
@@ -251,15 +243,12 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
             cleanup();
             return { success: false, error: "tts_cancelled" };
           }
-          logTtsClient("Static playback started");
           safeSetSpeaking(true);
           return { success: true };
         }
 
-        if (isStaticPhrase) {
-          console.warn(
-            "[StaticAudio] Pre-generated URL missing for static phrase — falling back to API (dev only)",
-          );
+        if (mustUseStaticOnly(text, staticMode)) {
+          return { success: false, error: "tts_static_missing_url" };
         }
 
         logTtsClient("Request start", { chars: text.length, mode });
@@ -269,7 +258,6 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           { signal: controller.signal },
         );
         if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };
-        console.log("[TTS RESPONSE]", data);
 
         if (data?.background) {
           console.warn("TTS warming in background — skipping playback");
@@ -311,13 +299,9 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         };
         audioRef.current = audio;
 
-        try {
-          if (audio.paused) await audio.play();
-        } catch (playErr) {
-          console.error("Audio failed:", playErr);
-          logTtsClientError("audio.play() rejected", playErr);
-          const name = (playErr as { name?: string })?.name ?? "play_failed";
-          const errCode = name === "NotAllowedError" ? "playback_blocked_tap_again" : `play_failed_${name}`;
+        const played = await safePlayAudio(audio);
+        if (!played) {
+          const errCode = "playback_blocked_tap_again";
           safeSetError(errCode);
           cleanup();
           safeSetSpeaking(false);

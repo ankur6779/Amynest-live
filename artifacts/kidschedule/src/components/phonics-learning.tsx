@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Target, Lightbulb, ChevronDown, ChevronUp, CheckCircle2, RefreshCw, BookOpen, Trophy, AlertCircle, Loader2, Download, FileText } from "lucide-react";
-import { AudioPlayButton, preloadAmyVoice } from "@/components/audio-play-button";
+import { AudioPlayButton } from "@/components/audio-play-button";
+import { preloadStaticPhrases } from "@/lib/static-audio";
 import { PhonicsTest } from "@/components/phonics-test";
 import { SubItemGate } from "@/components/sub-item-gate";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -45,9 +46,7 @@ function pickTodaysItem(items: DisplayPhonicsItem[], tick = 0): DisplayPhonicsIt
 // ─── Local insight builder (used only when API insights aren't available) ────
 
 function buildLocalInsights(items: DisplayPhonicsItem[], progress: PhonicsProgressMap, shortLabel: string): PhonicsInsight[] {
-  console.log("CHECK DATA:", { items, progress });
   if (!items) {
-    console.error("buildLocalInsights: items is undefined — returning empty insights");
     return [];
   }
   const ins: PhonicsInsight[] = [];
@@ -189,6 +188,29 @@ function PhonicsLearningContent({
   const safeDailyItems = dailyItems ?? [];
   const safeProgress = progress ?? { practiced: {}, mastered: {} };
   const safeInsights = insights ?? [];
+
+  const preloadKeyRef = useRef<string>("");
+  useEffect(() => {
+    if (safeItems.length === 0) return;
+    const key = safeItems
+      .slice(0, 5)
+      .map((i) => i.id)
+      .join(",");
+    if (preloadKeyRef.current === key) return;
+    preloadKeyRef.current = key;
+    preloadStaticPhrases(
+      safeItems.slice(0, 5).map((item) => item.sound),
+      "default",
+      5,
+    );
+    const phonemeOnly = safeItems
+      .slice(0, 5)
+      .map((item) => item.phoneme)
+      .filter((p): p is string => !!p);
+    if (phonemeOnly.length > 0) {
+      preloadStaticPhrases(phonemeOnly, "phonics", 5);
+    }
+  }, [safeItems]);
 
   // Guard while hook is still resolving API / fallback content
   if (loading && !level && safeItems.length === 0) {
