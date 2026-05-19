@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { AuthBootShell } from "@/components/auth-boot-shell";
 import DebugOverlay from "@/components/DebugOverlay";
 import { StaticAudioTestButton } from "@/components/static-audio-test-button";
@@ -24,6 +24,13 @@ declare global {
 }
 
 function App() {
+  const appMountLoggedRef = useRef(false);
+  useEffect(() => {
+    if (appMountLoggedRef.current) return;
+    appMountLoggedRef.current = true;
+    console.log("APP MOUNTED");
+  }, []);
+
   // Suspense fallback is `null` rather than a spinner because the
   // index.html splash screen is still visible at this point — it's not
   // dismissed until BOTH the splash min-time has elapsed AND
