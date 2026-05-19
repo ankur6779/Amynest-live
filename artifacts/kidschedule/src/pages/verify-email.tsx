@@ -17,7 +17,7 @@ import {
   parseFirebaseActionParams,
 } from "@/lib/firebase-action-params";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
-import { isAmyNestWrapper } from "@/lib/native-push-bridge";
+import { shouldShowNativeNotifyPrompt } from "@/lib/native-push-bridge";
 
 const CSS = `
   @keyframes veRingRotate {
@@ -77,12 +77,7 @@ function NeonRingHero() {
 const RESEND_COOLDOWN_SEC = Math.ceil(UX_COOLDOWN_MS / 1000);
 
 function postVerifyPath(): string {
-  if (
-    typeof window !== "undefined" &&
-    isAmyNestWrapper() &&
-    "Notification" in window &&
-    Notification.permission === "default"
-  ) {
+  if (shouldShowNativeNotifyPrompt()) {
     return "/notify-prompt?next=/";
   }
   return "/";

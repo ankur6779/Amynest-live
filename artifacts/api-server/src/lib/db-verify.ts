@@ -3,15 +3,21 @@ import { sql } from "drizzle-orm";
 import { logger } from "./logger";
 
 /**
- * Startup DB diagnostics — ping the DB, log latency, and verify that the tables
- * the cron/dispatch/auth code expects actually exist. Lets you spot a missed
- * migration before the first request hits a "relation does not exist" error.
- *
- * Designed to be SAFE: every step is wrapped in try/catch and returns a result
- * object. Callers decide whether to fail boot or continue degraded.
+ * Startup DB diagnostics — ping the DB, log latency, and verify that tables
+ * and onboarding-critical columns exist. Runs on every boot so schema drift is
+ * visible before the first onboarding save hits a "relation does not exist".
  */
 
-/** Tables the API reads on hot paths (auth, dashboard, notifications, subscriptions). */
+/** Tables the onboarding save flow reads/writes. */
+export const ONBOARDING_CRITICAL_TABLES: readonly string[] = [
+  "children",
+  "parent_profiles",
+  "subscriptions",
+  "push_tokens",
+  "onboarding_profiles",
+];
+
+/** Tables the API reads on hot paths (auth, dashboard, notifications). */
 const CRITICAL_TABLES: readonly string[] = [
   "parent_profiles",
   "children",
@@ -20,7 +26,18 @@ const CRITICAL_TABLES: readonly string[] = [
   "notification_preferences",
   "notification_log",
   "push_tokens",
+  "onboarding_profiles",
   "razorpay_webhook_events",
+];
+
+/** Columns that commonly drift and crash onboarding if missing. */
+const CRITICAL_COLUMNS: ReadonlyArray<{ table: string; column: string }> = [
+  { table: "children", column: "fixed_activities" },
+  { table: "children", column: "parent_goals" },
+  { table: "parent_profiles", column: "food_style" },
+  { table: "parent_profiles", column: "free_slots" },
+  { table: "subscriptions", column: "bonus_expires_at" },
+  { table: "push_tokens", column: "last_seen_at" },
 ];
 
 export interface DbVerificationResult {
@@ -29,7 +46,33 @@ export interface DbVerificationResult {
   pingError?: string;
   tables: Record<string, "present" | "missing" | "error">;
   missingTables: string[];
+  columns: Record<string, "present" | "missing" | "error">;
+  missingColumns: string[];
   durationMs: number;
+}
+
+function columnKey(table: string, column: string): string {
+  return `${table}.${column}`;
+}
+
+async function tableExists(tableName: string): Promise<boolean> {
+  const rs = await db.execute<{ exists: boolean }>(sql`
+    SELECT to_regclass(${`public.${tableName}`}) IS NOT NULL AS exists
+  `);
+  return rs.rows[0]?.exists === true;
+}
+
+async function columnExists(tableName: string, columnName: string): Promise<boolean> {
+  const rs = await db.execute<{ exists: boolean }>(sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = ${tableName}
+        AND column_name = ${columnName}
+    ) AS exists
+  `);
+  return rs.rows[0]?.exists === true;
 }
 
 export async function verifyDatabaseAtStartup(): Promise<DbVerificationResult> {
@@ -39,6 +82,8 @@ export async function verifyDatabaseAtStartup(): Promise<DbVerificationResult> {
     pingLatencyMs: null,
     tables: {},
     missingTables: [],
+    columns: {},
+    missingColumns: [],
     durationMs: 0,
   };
 
@@ -60,10 +105,7 @@ export async function verifyDatabaseAtStartup(): Promise<DbVerificationResult> {
 
   for (const tableName of CRITICAL_TABLES) {
     try {
-      const rs = await db.execute<{ exists: boolean }>(sql`
-        SELECT to_regclass(${"public." + tableName}) IS NOT NULL AS exists
-      `);
-      const exists = rs.rows[0]?.exists === true;
+      const exists = await tableExists(tableName);
       result.tables[tableName] = exists ? "present" : "missing";
       if (!exists) result.missingTables.push(tableName);
     } catch (err) {
@@ -75,29 +117,55 @@ export async function verifyDatabaseAtStartup(): Promise<DbVerificationResult> {
     }
   }
 
+  for (const { table, column } of CRITICAL_COLUMNS) {
+    const key = columnKey(table, column);
+    try {
+      if (result.tables[table] === "missing") {
+        result.columns[key] = "missing";
+        result.missingColumns.push(key);
+        continue;
+      }
+      const exists = await columnExists(table, column);
+      result.columns[key] = exists ? "present" : "missing";
+      if (!exists) result.missingColumns.push(key);
+    } catch (err) {
+      result.columns[key] = "error";
+      logger.warn(
+        { evt: "db.verify.column_error", table, column, err },
+        `Could not verify column ${key}`,
+      );
+    }
+  }
+
   result.durationMs = Date.now() - startedAt;
 
-  if (result.missingTables.length > 0) {
+  const onboardingMissing = ONBOARDING_CRITICAL_TABLES.filter(
+    (t) => result.tables[t] === "missing",
+  );
+
+  if (result.missingTables.length > 0 || result.missingColumns.length > 0) {
     logger.warn(
       {
-        evt: "db.verify.missing_tables",
-        missing: result.missingTables,
-        present: Object.keys(result.tables).filter(
-          (t) => result.tables[t] === "present",
-        ),
+        evt: "db.verify.schema_gaps",
+        missingTables: result.missingTables,
+        missingColumns: result.missingColumns,
+        onboardingMissing,
+        presentTables: Object.keys(result.tables).filter((t) => result.tables[t] === "present"),
         latencyMs: result.pingLatencyMs,
+        durationMs: result.durationMs,
       },
-      `DB verification: ${result.missingTables.length} critical table(s) missing — features depending on them will degrade`,
+      `DB schema gaps: ${result.missingTables.length} missing table(s), ${result.missingColumns.length} missing column(s) — onboarding APIs will use fallbacks where needed`,
     );
   } else {
     logger.info(
       {
         evt: "db.verify.ok",
         tables: Object.keys(result.tables),
+        columns: Object.keys(result.columns),
         latencyMs: result.pingLatencyMs,
         durationMs: result.durationMs,
       },
-      "DB verification: ping OK, all critical tables present",
+      "DB verification: ping OK, all critical tables and columns present",
     );
   }
 

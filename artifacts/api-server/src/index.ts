@@ -120,10 +120,7 @@ async function startBackgroundTasks(): Promise<void> {
         }
       });
     }
-    await runBackgroundPhase("ensure_startup_tables", async () => {
-      const { ensureStartupTables } = await import("./lib/ensureStartupTables.js");
-      return ensureStartupTables();
-    });
+    // Schema ensure runs synchronously before listen (db_schema_ensure phase).
     await runBackgroundPhase("phonics_word_bank_seed", async () => {
       const { seedPhonicsWordBank } = await import("./lib/phonicsWordBankSeed.js");
       return seedPhonicsWordBank();
@@ -221,6 +218,32 @@ async function startServer(): Promise<void> {
     startFastMemoryPoll();
   }
   endBootPhase("memory_monitor");
+
+  beginBootPhase("db_schema_ensure");
+  try {
+    if (isModuleEnabled("db")) {
+      const { ensureStartupTables } = await import("./lib/ensureStartupTables.js");
+      await ensureStartupTables();
+      const { verifyDatabaseAtStartup } = await import("./lib/db-verify.js");
+      await verifyDatabaseAtStartup();
+    } else {
+      logger.warn(
+        { evt: "boot.skip", module: "db" },
+        "DB schema ensure SKIPPED — db module not in BOOT_MODULES",
+      );
+    }
+    endBootPhase("db_schema_ensure");
+  } catch (err) {
+    failBootPhase("db_schema_ensure", err);
+    logger.error(
+      {
+        evt: "db.schema_ensure_failed",
+        err,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "DB schema ensure failed at startup — API continues in degraded mode",
+    );
+  }
 
   beginBootPhase("http_listen");
   const app = await loadApp();

@@ -1,6 +1,6 @@
 import { and, asc, eq, getTableColumns } from "drizzle-orm";
 import { db, childrenTable, type Child, type InsertChild } from "@workspace/db";
-import { isMissingColumnError } from "./db-safe.js";
+import { isMissingColumnError, isSchemaMismatchError } from "./db-safe.js";
 import { logger } from "./logger.js";
 
 export type ChildFixedActivity = {
@@ -87,6 +87,13 @@ export async function listChildrenForUser(userId: string): Promise<Child[]> {
         .orderBy(asc(childrenTable.createdAt), asc(childrenTable.id));
       return rows.map((r) => normalizeChildRow(r) as Child);
     }
+    if (isSchemaMismatchError(err)) {
+      logger.warn(
+        { evt: "db.children.list_schema_mismatch", userId },
+        "listChildrenForUser schema mismatch — returning empty list",
+      );
+      return [];
+    }
     throw err;
   }
 }
@@ -135,6 +142,13 @@ export async function insertChildRow(
       isMissingColumnError(err, "fixed_activities") &&
       (values as { fixedActivities?: unknown }).fixedActivities !== undefined
     ) {
+      const [child] = await db
+        .insert(childrenTable)
+        .values(stripFixedActivities(values))
+        .returning();
+      return normalizeChildRow({ ...child, fixedActivities: [] }) as Child;
+    }
+    if (isMissingColumnError(err)) {
       const [child] = await db
         .insert(childrenTable)
         .values(stripFixedActivities(values))
