@@ -170,19 +170,28 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         }
         const { readResolvedApiJson } = await import("@/lib/poll-result");
         const data = await readResolvedApiJson<SynthesizeResponse>(synthRes, authFetch);
-        if (!data?.audioUrl) throw new Error("tts_missing_audio_url");
+        const audioUrl = data?.audioUrl?.trim() ?? "";
+        if (!audioUrl || audioUrl.includes("undefined")) {
+          console.warn("Invalid audio URL, skipping playback");
+          return;
+        }
 
         if (myId !== reqIdRef.current || !isMountedRef.current) return;
 
-        const fullUrl = resolveMediaUrl(data.audioUrl);
+        console.log("[PLAY AUDIO]", audioUrl);
+        const fullUrl = resolveMediaUrl(audioUrl);
         if (__DEV__) console.info("[ElevenLabs] Playback URL", fullUrl);
-        player.replace({ uri: fullUrl });
-        // Apply playback speed if requested (default 1 = normal).
-        if (playbackRate && playbackRate !== 1) {
-          try { player.setPlaybackRate(playbackRate); } catch {}
+        try {
+          player.replace({ uri: fullUrl });
+          if (playbackRate && playbackRate !== 1) {
+            try { player.setPlaybackRate(playbackRate); } catch {}
+          }
+          player.play();
+          setRequestedPlaying(true);
+        } catch (playErr) {
+          console.error("Audio playback failed", playErr);
+          throw playErr;
         }
-        player.play();
-        setRequestedPlaying(true);
       } catch (err) {
         if ((err as { name?: string })?.name === "AbortError") return;
         if (isMountedRef.current && myId === reqIdRef.current) {

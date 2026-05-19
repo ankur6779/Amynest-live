@@ -5,13 +5,13 @@ import { getElevenLabsApiKey } from "../lib/env";
 import { logger } from "../lib/logger";
 import { fetchWithTimeout } from "../utils/fetch-with-timeout.js";
 import {
+  isValidTtsPublicUrl,
   resolveTtsPlaybackUrl,
   ttsAudioBackfillPostgres,
   ttsAudioExists,
   ttsAudioPath,
   ttsAudioRead,
   ttsGcsUpload,
-  ttsPublicGcsUrl,
   ttsStorageBackend,
 } from "./ttsAudioStore";
 
@@ -327,13 +327,22 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
 
   const contentType = "audio/mpeg";
   const backend = ttsStorageBackend();
-  const storeBytesInPostgres = backend === "postgres";
+  let storeBytesInPostgres = backend === "postgres";
 
   let audioUrl: string | null = null;
   if (!storeBytesInPostgres) {
-    audioUrl = await ttsGcsUpload(cacheKey, buffer, contentType);
-  } else {
-    audioUrl = null;
+    const upload = await ttsGcsUpload(cacheKey, buffer, contentType);
+    if (!upload.success) {
+      logger.error(
+        { evt: "tts.gcs_upload_failed", cacheKey, error: upload.error },
+        "GCS upload failed — falling back to Postgres bytea",
+      );
+      storeBytesInPostgres = true;
+      audioUrl = null;
+    } else {
+      audioUrl = upload.publicUrl;
+      console.log("[TTS GENERATED]", { text: text.slice(0, 120), publicUrl: upload.publicUrl });
+    }
   }
 
   try {
@@ -386,7 +395,11 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
     );
   }
 
-  const playbackUrl = resolveTtsPlaybackUrl(cacheKey);
+  const playbackUrl = resolveTtsPlaybackUrl(cacheKey, { audioUrl });
+  if (!isValidTtsPublicUrl(playbackUrl)) {
+    console.error("Invalid audio URL", playbackUrl);
+    throw new Error("tts_invalid_audio_url");
+  }
 
   logger.info(
     {

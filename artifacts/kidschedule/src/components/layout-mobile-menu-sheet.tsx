@@ -1,4 +1,5 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { useMountedRef } from "@/hooks/use-safe-async";
 import { Link, useLocation } from "wouter";
 import {
   LogOut,
@@ -138,6 +139,8 @@ export function LayoutMobileMenuSheet({
   const { isLoaded, userId } = useAuth();
   const { t } = useTranslation();
   const { isPremium = false } = useSubscription();
+  const isMounted = useMountedRef();
+  const signOutBusyRef = useRef(false);
 
   const safeChildren = childList ?? [];
   const safeMenu = resolveSafeMenu(navItems ?? DEFAULT_MOBILE_MENU);
@@ -146,17 +149,6 @@ export function LayoutMobileMenuSheet({
   const email = getUserEmail(user);
   const initials = getUserInitials(user);
   const avatarUrl = getUserAvatarUrl(user);
-
-  console.log("[MENU RENDER]", { user, children: safeChildren });
-  if (!user) {
-    console.warn("Menu: user missing");
-  }
-
-  useEffect(() => {
-    if (isMenuOpen) {
-      console.log("[MENU DATA]", user, safeChildren);
-    }
-  }, [isMenuOpen, user, safeChildren]);
 
   const closeSidebar = useCallback(() => {
     try {
@@ -167,13 +159,17 @@ export function LayoutMobileMenuSheet({
   }, [onOpenChange]);
 
   const handleSignOut = useCallback(() => {
+    if (signOutBusyRef.current) return;
+    signOutBusyRef.current = true;
     closeSidebar();
     try {
       void signOut({ redirectUrl: "/" });
     } catch (err) {
       logNavError("sign-out", err);
+    } finally {
+      if (isMounted.current) signOutBusyRef.current = false;
     }
-  }, [closeSidebar, signOut]);
+  }, [closeSidebar, signOut, isMounted]);
 
   useEffect(() => {
     if (isMenuOpen) {

@@ -8,7 +8,13 @@ import {
   readEnv,
 } from "../lib/env";
 import { logger } from "../lib/logger";
-import { ttsGcsObjectName, ttsPublicGcsUrl as buildPublicGcsUrl } from "./ttsGcsPaths";
+import {
+  isValidTtsPublicUrl,
+  ttsGcsObjectName,
+  ttsPublicGcsUrl as buildPublicGcsUrl,
+} from "./ttsGcsPaths";
+
+export { isValidTtsPublicUrl };
 
 export type TtsStoreBackend = "postgres" | "gcs";
 
@@ -47,18 +53,26 @@ function resolveBackend(): TtsStoreBackend {
   return backend;
 }
 
+function resolveGcsProjectId(parsed: ReturnType<typeof parseGcsServiceAccountJson>): string | undefined {
+  return (
+    parsed.projectId ??
+    readEnv("GCS_PROJECT_ID", "GOOGLE_CLOUD_PROJECT", "GCLOUD_PROJECT")
+  );
+}
+
 function buildGcsClient(): Storage {
   const parsed = parseGcsServiceAccountJson();
+  const projectId = resolveGcsProjectId(parsed);
   if (parsed.ok && parsed.credentials) {
     const opts: StorageOptions = {
       credentials: parsed.credentials as StorageOptions["credentials"],
-      projectId: parsed.projectId,
+      projectId,
     };
     return new Storage(opts);
   }
 
   if (parsed.ok && parsed.source === "GOOGLE_APPLICATION_CREDENTIALS") {
-    return new Storage({ projectId: parsed.projectId });
+    return new Storage({ projectId });
   }
 
   if (isReplitRuntime()) {
@@ -180,21 +194,32 @@ export async function ttsAudioRead(
   return null;
 }
 
+export type TtsGcsUploadResult =
+  | { success: true; publicUrl: string }
+  | { success: false; error: string };
+
 /**
- * Upload MP3 bytes to GCS. Returns the public object URL.
+ * Upload MP3 bytes to GCS. Returns the stable public object URL.
  * Bucket objects should be world-readable (uniform bucket-level access + allUsers objectViewer).
  */
 export async function ttsGcsUpload(
   cacheKey: string,
   buffer: Buffer,
   contentType = "audio/mpeg",
-): Promise<string> {
+): Promise<TtsGcsUploadResult> {
   if (!legacyGcsConfigured()) {
-    throw new Error("gcs_not_configured");
+    return { success: false, error: "gcs_not_configured" };
   }
+  const bucketName = getGcsBucketId();
+  if (!bucketName) {
+    return { success: false, error: "gcs_bucket_missing" };
+  }
+
   const objectName = ttsGcsObjectName(cacheKey);
-  const publicUrl = ttsPublicGcsUrl(cacheKey);
-  if (!publicUrl) throw new Error("gcs_bucket_missing");
+  const publicUrl = `https://storage.googleapis.com/${bucketName}/${objectName}`;
+  if (!isValidTtsPublicUrl(publicUrl)) {
+    return { success: false, error: "gcs_invalid_public_url" };
+  }
 
   try {
     const file = getBucket().file(objectName);
@@ -203,18 +228,46 @@ export async function ttsGcsUpload(
       resumable: false,
       metadata: { cacheControl: "public, max-age=31536000, immutable" },
     });
+
+    try {
+      await file.makePublic();
+    } catch (makePublicErr) {
+      logger.warn(
+        {
+          evt: "tts.make_public_skipped",
+          cacheKey,
+          message:
+            makePublicErr instanceof Error ? makePublicErr.message : String(makePublicErr),
+        },
+        "TTS: file.makePublic() failed — bucket may use uniform public access",
+      );
+    }
+
+    const [exists] = await file.exists();
+    if (!exists) {
+      console.error("GCS upload failed", { cacheKey, objectName, publicUrl });
+      return { success: false, error: "gcs_upload_failed" };
+    }
+
+    if (!isValidTtsPublicUrl(publicUrl)) {
+      console.error("Invalid audio URL", publicUrl);
+      return { success: false, error: "gcs_invalid_public_url" };
+    }
+
     logger.info(
-      { evt: "tts.uploaded_to_gcs", cacheKey, bytes: buffer.byteLength, objectName },
+      { evt: "tts.uploaded_to_gcs", cacheKey, bytes: buffer.byteLength, objectName, publicUrl },
       "TTS: uploaded to GCS",
     );
-    return publicUrl;
+    console.log("[TTS GENERATED]", { cacheKey, publicUrl });
+    return { success: true, publicUrl };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error("GCS upload failed", { cacheKey, message });
     logger.error(
       { evt: "tts.gcs_upload_failed", cacheKey, message },
       "TTS: GCS upload failed",
     );
-    throw new Error(`tts_gcs_upload_failed: ${message}`);
+    return { success: false, error: "gcs_upload_failed" };
   }
 }
 
@@ -226,8 +279,11 @@ export async function ttsAudioWrite(
 ): Promise<{ storedInPostgres: boolean; audioUrl: string | null }> {
   const mode = resolveBackend();
   if (mode === "gcs") {
-    const audioUrl = await ttsGcsUpload(cacheKey, buffer, contentType);
-    return { storedInPostgres: false, audioUrl };
+    const upload = await ttsGcsUpload(cacheKey, buffer, contentType);
+    if (!upload.success) {
+      throw new Error(upload.error);
+    }
+    return { storedInPostgres: false, audioUrl: upload.publicUrl };
   }
 
   const updated = await db
@@ -278,13 +334,20 @@ export async function ttsAudioBackfillPostgres(
 }
 
 /**
- * Client-facing playback URL. Always routes through our API so web/mobile
- * can fetch or attach <audio> without GCS CORS issues. The public stream
- * handler reads from GCS/Postgres server-side and serves bytes (no 302).
+ * Client-facing playback URL. Prefer a stable public GCS HTTPS URL when
+ * configured; otherwise fall back to the API stream path (local Postgres dev).
  */
 export function resolveTtsPlaybackUrl(
   cacheKey: string,
-  _row?: { audioUrl?: string | null },
+  row?: { audioUrl?: string | null },
 ): string {
+  const stored = row?.audioUrl?.trim() ?? "";
+  if (isValidTtsPublicUrl(stored)) return stored;
+
+  if (legacyGcsConfigured()) {
+    const gcsUrl = ttsPublicGcsUrl(cacheKey);
+    if (gcsUrl && isValidTtsPublicUrl(gcsUrl)) return gcsUrl;
+  }
+
   return `/api/tts/audio/${cacheKey}.mp3`;
 }

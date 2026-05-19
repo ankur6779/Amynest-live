@@ -74,15 +74,17 @@ export async function speak(
     }
     const raw = (await synthRes.json()) as { audioUrl?: string; jobId?: string };
     const data = await resolveAiApiData<{ audioUrl: string }>(raw, authFetch);
-    if (!data?.audioUrl) {
-      console.error("[ElevenLabs] Synthesize missing audioUrl");
+    const audioUrl = data?.audioUrl?.trim() ?? "";
+    if (!audioUrl || audioUrl.includes("undefined")) {
+      console.warn("Invalid audio URL, skipping playback");
       return;
     }
+    console.log("[PLAY AUDIO]", audioUrl);
 
     const audioHeaders: Record<string, string> = {};
     if (token) audioHeaders["Authorization"] = `Bearer ${token}`;
 
-    const playbackUrl = resolveApiMediaUrl(data.audioUrl);
+    const playbackUrl = resolveApiMediaUrl(audioUrl);
     const audioRes = await fetch(playbackUrl, { headers: audioHeaders });
     if (!audioRes.ok) {
       console.error("[ElevenLabs] Audio fetch failed", audioRes.status);

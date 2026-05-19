@@ -189,9 +189,16 @@ export function useInfantPoemPlayer(): PoemPlayer {
           audioUrl = data.audioUrl;
         }
 
+        const trimmedUrl = (audioUrl ?? "").trim();
+        if (!trimmedUrl || trimmedUrl.includes("undefined")) {
+          console.warn("Invalid audio URL, skipping playback");
+          return;
+        }
+        console.log("[PLAY AUDIO]", trimmedUrl);
+
         // Build the audio element. The /api/tts/audio/:key.mp3 route is
         // public (content-addressed) so <audio> can load it without a token.
-        const audio = new Audio(resolveApiMediaUrl(audioUrl));
+        const audio = new Audio(resolveApiMediaUrl(trimmedUrl));
         audio.loop = loopRef.current;
         audio.volume = 0; // begin silent for fade-in
         audio.preload = "auto";
@@ -211,7 +218,18 @@ export function useInfantPoemPlayer(): PoemPlayer {
         };
         audioRef.current = audio;
 
-        await audio.play();
+        try {
+          await audio.play();
+        } catch (playErr) {
+          console.error("Audio playback failed", playErr);
+          if (myId !== reqIdRef.current) return;
+          setError("playback_failed");
+          setIsPlaying(false);
+          setIsPaused(false);
+          clearFade();
+          teardownAudio();
+          return;
+        }
         if (myId !== reqIdRef.current) {
           // User cancelled between play() being scheduled and resolving —
           // tear the audio back down so it doesn't keep playing.

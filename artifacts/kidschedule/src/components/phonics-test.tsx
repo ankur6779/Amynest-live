@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AppErrorBoundary } from "@/components/app-error-boundary";
+import { useMountedRef } from "@/hooks/use-safe-async";
 import {
   GraduationCap, Volume2, Loader2, CheckCircle2,
   Clock, Trophy, RotateCcw, Sparkles, Ear, PencilLine, Blocks, Zap, ChevronLeft,
@@ -233,6 +235,7 @@ function QuestionCard({
     retryCountRef.current = 0;
   }, [question.id]);
 
+  const cardMounted = useMountedRef();
   // Auto-play prompt audio for sound/listening questions on mount.
   useEffect(() => {
     if (!ttsText) return;
@@ -241,7 +244,11 @@ function QuestionCard({
       question.type === "animal_sound" ||
       question.type === "listening"
     ) {
-      void speak(ttsText);
+      void speak(ttsText).then((res) => {
+        if (!res?.success && cardMounted.current) {
+          console.warn("[phonics-test] auto-play skipped:", res?.error);
+        }
+      });
     }
     return () => stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -258,6 +265,7 @@ function QuestionCard({
   // Audio reactions for tap feedback:
   //   correct → cheer ("Yay!"); wrong → replay the prompt audio (max 1 auto-retry).
   useEffect(() => {
+    if (!cardMounted.current) return;
     if (feedback === "correct") {
       stop();
       retryCountRef.current = 0;
@@ -544,9 +552,18 @@ type Phase =
   | { kind: "submitting" }
   | { kind: "result"; data: SubmitResponse };
 
-export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestProps) {
+export function PhonicsTest(props: PhonicsTestProps) {
+  return (
+    <AppErrorBoundary label="PhonicsTest">
+      <PhonicsTestContent {...props} />
+    </AppErrorBoundary>
+  );
+}
+
+function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestProps) {
   useAnimationsCss();
   const authFetch = useAuthFetch();
+  const isMounted = useMountedRef();
   const numericChildId = typeof childId === "number" ? childId : Number(childId);
 
   const [availability, setAvailability] = useState<AvailabilityState | null>(null);
@@ -567,27 +584,66 @@ export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestP
 
   const refreshAvailability = useCallback(async () => {
     if (!Number.isFinite(numericChildId) || numericChildId <= 0) {
-      setAvailLoading(false);
+      if (isMounted.current) setAvailLoading(false);
       return;
     }
+    const controller = new AbortController();
     try {
-      setAvailLoading(true);
-      setAvailError(null);
-      const res = await authFetch(`/api/phonics/tests/availability/${numericChildId}`);
+      if (isMounted.current) {
+        setAvailLoading(true);
+        setAvailError(null);
+      }
+      const res = await authFetch(`/api/phonics/tests/availability/${numericChildId}`, {
+        signal: controller.signal,
+      });
+      if (!isMounted.current) return;
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = (await res.json()) as AvailabilityState;
-      setAvailability(json ?? null);
+      if (isMounted.current) setAvailability(json ?? null);
     } catch (err) {
+      if ((err as { name?: string })?.name === "AbortError") return;
       console.error("[phonics-test] API failed", err);
-      setAvailError(err instanceof Error ? err.message : "Failed to load availability");
+      if (isMounted.current) {
+        setAvailError(err instanceof Error ? err.message : "Failed to load availability");
+      }
     } finally {
-      setAvailLoading(false);
+      if (isMounted.current) setAvailLoading(false);
     }
-  }, [authFetch, numericChildId]);
+  }, [authFetch, numericChildId, isMounted]);
 
   useEffect(() => {
-    void refreshAvailability();
-  }, [refreshAvailability]);
+    const controller = new AbortController();
+    void (async () => {
+      if (!Number.isFinite(numericChildId) || numericChildId <= 0) {
+        if (isMounted.current) setAvailLoading(false);
+        return;
+      }
+      try {
+        if (isMounted.current) {
+          setAvailLoading(true);
+          setAvailError(null);
+        }
+        const res = await authFetch(`/api/phonics/tests/availability/${numericChildId}`, {
+          signal: controller.signal,
+        });
+        if (!isMounted.current || controller.signal.aborted) return;
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = (await res.json()) as AvailabilityState;
+        if (isMounted.current) setAvailability(json ?? null);
+      } catch (err) {
+        if ((err as { name?: string })?.name === "AbortError") return;
+        console.error("[phonics-test] API failed", err);
+        if (isMounted.current) {
+          setAvailError(err instanceof Error ? err.message : "Failed to load availability");
+        }
+      } finally {
+        if (isMounted.current) setAvailLoading(false);
+      }
+    })();
+    return () => controller.abort();
+    // Load once on mount / child change — avoid unstable callback deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numericChildId]);
 
   const eligible = totalAgeMonths >= 12 && (availability?.eligible ?? totalAgeMonths >= 12);
 
@@ -597,14 +653,18 @@ export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestP
   }, []);
 
   // Step 2: actually call the API with the chosen game mode.
+  const startInFlightRef = useRef(false);
   const handleStartWithMode = useCallback(async (testType: TestType, gameMode: GameMode) => {
+    if (startInFlightRef.current) return;
+    startInFlightRef.current = true;
     try {
-      setPhase({ kind: "submitting" });
+      if (isMounted.current) setPhase({ kind: "submitting" });
       const res = await authFetch("/api/phonics/tests/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ childId: numericChildId, testType, gameMode }),
       });
+      if (!isMounted.current) return;
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
         throw new Error(errBody?.error ?? `HTTP ${res.status}`);
@@ -613,18 +673,20 @@ export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestP
       if (!data?.questions || data.questions.length === 0) {
         throw new Error("No questions returned");
       }
+      if (!isMounted.current) return;
       setPhase({
         kind: "running", testType, gameMode, data,
         index: 0, answers: [], selectedIndex: null, feedback: null,
       });
     } catch (err) {
-      // Go back to mode-pick (not idle) so the user stays on the game picker
-      // and can choose a different mode without losing their daily/weekly selection.
+      if (!isMounted.current) return;
       setPhase({ kind: "mode-pick", testType });
       const raw = err instanceof Error ? err.message : "Failed to start test";
       setAvailError(friendlyStartError(raw));
+    } finally {
+      startInFlightRef.current = false;
     }
-  }, [authFetch, numericChildId]);
+  }, [authFetch, numericChildId, isMounted]);
 
   // Common submit-answer flow used by both timer expiry and tap.
   const submitAnswer = useCallback((selectedIndex: number, currentPhase: Extract<Phase, { kind: "running" }>) => {
@@ -636,37 +698,43 @@ export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestP
     // Replay prompt audio on wrong so the child hears it again.
     // (No-op if no ttsText.)
     setTimeout(async () => {
+      if (!isMounted.current) return;
       const isLast = currentPhase.index + 1 >= currentPhase.data.questions.length;
       if (!isLast) {
-        setPhase({
-          ...currentPhase,
-          answers: newAnswers,
-          index: currentPhase.index + 1,
-          selectedIndex: null,
-          feedback: null,
-        });
+        if (isMounted.current) {
+          setPhase({
+            ...currentPhase,
+            answers: newAnswers,
+            index: currentPhase.index + 1,
+            selectedIndex: null,
+            feedback: null,
+          });
+        }
         return;
       }
-      setPhase({ kind: "submitting" });
+      if (isMounted.current) setPhase({ kind: "submitting" });
       try {
         const res = await authFetch("/api/phonics/tests/submit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionToken: currentPhase.data.sessionToken, answers: newAnswers }),
         });
+        if (!isMounted.current) return;
         if (!res.ok) {
           const errBody = await res.json().catch(() => ({}));
           throw new Error(errBody?.error ?? `HTTP ${res.status}`);
         }
         const submitData = (await res.json()) as SubmitResponse;
+        if (!isMounted.current) return;
         setPhase({ kind: "result", data: submitData });
         void refreshAvailability();
       } catch (err) {
+        if (!isMounted.current) return;
         setPhase({ kind: "idle" });
         setAvailError(err instanceof Error ? err.message : "Failed to submit test");
       }
     }, 900);
-  }, [authFetch, refreshAvailability]);
+  }, [authFetch, refreshAvailability, isMounted]);
 
   const handleAnswer = useCallback((selectedIndex: number) => {
     if (phase.kind !== "running") return;

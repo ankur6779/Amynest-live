@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { logTtsClient, logTtsClientError, resolveTtsAudioUrl, synthesizeTts } from "@/lib/tts-playback";
+import { useGuardedSetter, useMountedRef } from "@/hooks/use-safe-async";
+import {
+  isValidAudioUrl,
+  logPlayAudio,
+  logTtsClient,
+  logTtsClientError,
+  resolveClientPlaybackUrl,
+  synthesizeTts,
+} from "@/lib/tts-playback";
 
 // ─── Global single-flight guard ───────────────────────────────────────────────
 // At most one ElevenLabs network round-trip at a time, across all hook
@@ -78,6 +86,7 @@ interface SynthesizeResponse {
  */
 export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState {
   const authFetch = useAuthFetch();
+  const isMounted = useMountedRef();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
   // AbortController for the currently-in-flight synth + audio fetches.
@@ -93,6 +102,9 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
   const [speaking, setSpeaking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const safeSetSpeaking = useGuardedSetter(setSpeaking, isMounted);
+  const safeSetLoading = useGuardedSetter(setLoading, isMounted);
+  const safeSetError = useGuardedSetter(setError, isMounted);
 
   const { voiceId, modelId, playbackRate, onFinished } = options;
 
@@ -141,7 +153,6 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
       abortInFlight();
       cleanup();
       releaseBusy();
-      setSpeaking(false);
     };
   }, [abortInFlight, cleanup, releaseBusy]);
 
@@ -150,9 +161,9 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
     abortInFlight();
     cleanup();
     releaseBusy(); // release immediately — don't wait for async finally
-    setSpeaking(false);
-    setLoading(false);
-  }, [abortInFlight, cleanup, releaseBusy]);
+    safeSetSpeaking(false);
+    safeSetLoading(false);
+  }, [abortInFlight, cleanup, releaseBusy, safeSetSpeaking, safeSetLoading]);
 
   const speak = useCallback(
     async (rawText: string, opts?: SpeakOptions): Promise<SpeakResult> => {
@@ -172,7 +183,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
       const myId = ++reqIdRef.current;
       abortInFlight();
       cleanup();
-      setSpeaking(false);
+      safeSetSpeaking(false);
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -185,8 +196,8 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         }
       }, TTS_TIMEOUT_MS);
 
-      setError(null);
-      setLoading(true);
+      safeSetError(null);
+      safeSetLoading(true);
       _ttsBusy = true;
       busyRef.current = true;
 
@@ -200,10 +211,15 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };
         logTtsClient("Synthesize OK", { cacheKey: data.cacheKey, cached: data.cached });
 
-        const playbackUrl = resolveTtsAudioUrl(data.audioUrl);
+        if (!isValidAudioUrl(data.audioUrl)) {
+          console.warn("Invalid audio URL, skipping playback");
+          return { success: false, error: "tts_invalid_audio_url" };
+        }
+        logPlayAudio(data.audioUrl);
+        const playbackUrl = resolveClientPlaybackUrl(data.audioUrl, data.cacheKey);
         if (!playbackUrl) {
-          console.warn("No audio URL");
-          throw new Error("tts_missing_audio_url");
+          console.warn("Invalid audio URL, skipping playback");
+          return { success: false, error: "tts_invalid_audio_url" };
         }
         const audioRes = await authFetch(playbackUrl, { signal: controller.signal });
         if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };
@@ -228,18 +244,18 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         const audio = new Audio(url);
         audio.playbackRate = playbackRateRef.current;
         audio.onended = () => {
-          if (myId !== reqIdRef.current) return;
-          setSpeaking(false);
+          if (myId !== reqIdRef.current || !isMounted.current) return;
+          safeSetSpeaking(false);
           cleanup();
           onFinishedRef.current?.();
         };
         audio.onerror = () => {
-          if (myId !== reqIdRef.current) return;
+          if (myId !== reqIdRef.current || !isMounted.current) return;
           const mediaErr = audio.error;
           const code = mediaErr?.code ?? "unknown";
           logTtsClientError("HTMLAudioElement error", new Error(`media_error_${code}`));
-          setError(`playback_failed_${code}`);
-          setSpeaking(false);
+          safeSetError(`playback_failed_${code}`);
+          safeSetSpeaking(false);
           cleanup();
         };
         audioRef.current = audio;
@@ -251,52 +267,65 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           logTtsClientError("audio.play() rejected", playErr);
           const name = (playErr as { name?: string })?.name ?? "play_failed";
           const errCode = name === "NotAllowedError" ? "playback_blocked_tap_again" : `play_failed_${name}`;
-          setError(errCode);
+          safeSetError(errCode);
           cleanup();
-          setSpeaking(false);
+          safeSetSpeaking(false);
           return { success: false, error: errCode };
         }
-        if (myId !== reqIdRef.current) {
+        if (myId !== reqIdRef.current || !isMounted.current) {
           audio.pause();
           cleanup();
           return { success: false, error: "tts_cancelled" };
         }
         logTtsClient("Playback started");
-        setSpeaking(true);
+        safeSetSpeaking(true);
         return { success: true };
 
       } catch (err) {
         const errName = (err as { name?: string })?.name;
         if (errName === "AbortError") {
-          if (myId === reqIdRef.current) {
+          if (myId === reqIdRef.current && isMounted.current) {
             // Timeout abort (not superseded by a newer call or stop()).
             console.error("[TTS] timed out — request aborted after", TTS_TIMEOUT_MS, "ms");
-            setError("tts_timeout");
-            setSpeaking(false);
+            safeSetError("tts_timeout");
+            safeSetSpeaking(false);
             return { success: false, error: "tts_timeout" };
           }
           return { success: false, error: "tts_cancelled" };
         }
-        if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };
+        if (myId !== reqIdRef.current || !isMounted.current) {
+          return { success: false, error: "tts_cancelled" };
+        }
         logTtsClientError("speak failed", err);
         const errMsg = err instanceof Error ? err.message : "tts_failed";
-        setError(errMsg);
+        safeSetError(errMsg);
         cleanup();
-        setSpeaking(false);
+        safeSetSpeaking(false);
         return { success: false, error: errMsg };
 
       } finally {
         clearTimeout(timeoutId);
         // Only release the global lock if this call still owns it
         // (i.e. it hasn't already been released by stop() or a newer call).
-        if (myId === reqIdRef.current) {
+        if (myId === reqIdRef.current && isMounted.current) {
           releaseBusy();
-          setLoading(false);
+          safeSetLoading(false);
           if (abortRef.current === controller) abortRef.current = null;
         }
       }
     },
-    [authFetch, cleanup, abortInFlight, releaseBusy, modelId, voiceId],
+    [
+      authFetch,
+      cleanup,
+      abortInFlight,
+      releaseBusy,
+      modelId,
+      voiceId,
+      isMounted,
+      safeSetSpeaking,
+      safeSetLoading,
+      safeSetError,
+    ],
   );
 
   return { speaking, loading, error, speak, stop };
