@@ -4,9 +4,11 @@ import { logTtsClient, logTtsClientError, resolveTtsAudioUrl, synthesizeTts } fr
 
 // ─── Global single-flight guard ───────────────────────────────────────────────
 // At most one ElevenLabs network round-trip at a time, across all hook
-// instances on the page (e.g. multiple AudioPlayButton tiles). A new speak()
-// call while one is already in-flight is skipped with a warning instead of
-// stacking concurrent requests, which causes ai_queue_busy errors.
+// instances on the page. Protected by `busyRef` (instance-level) so that:
+//   • A DIFFERENT instance calling speak() while one is in-flight is skipped.
+//   • The SAME instance calling speak() again cancels its own previous call
+//     (original cancel-and-restart behaviour preserved).
+//   • stop() and unmount cleanly release the lock immediately.
 let _ttsBusy = false;
 const TTS_TIMEOUT_MS = 8_000;
 
@@ -33,20 +35,30 @@ export interface SpeakOptions {
   mode?: "default" | "phonics";
 }
 
+/**
+ * Structured return value from speak(). Callers that drive downstream logic
+ * (play tracking, auto-advance) MUST check `success` before proceeding.
+ * Never throws — all failure modes are represented as { success: false }.
+ */
+export type SpeakResult =
+  | { success: true }
+  | { success: false; error: string };
+
 export interface UseAmyVoiceState {
   speaking: boolean;
   loading: boolean;
   error: string | null;
   /**
-   * Synthesises and plays the given text. Calling again while a previous
-   * synth/playback is in-flight cancels it and starts fresh — consumers that
-   * want toggle (tap-to-stop) UX should check `speaking || loading` first
-   * and call `stop()` themselves.
+   * Synthesises and plays the given text. Always resolves — never throws.
+   * Returns `{ success: true }` when audio starts playing, or
+   * `{ success: false, error }` for any failure (timeout, network, abort,
+   * busy-locked, empty text). Callers that auto-advance or record progress
+   * MUST check `success` before running downstream logic.
    *
    * Pass `{ mode: "phonics" }` for letter-sound playback (different ElevenLabs
    * voice settings, separate cache namespace).
    */
-  speak: (text: string, opts?: SpeakOptions) => Promise<void>;
+  speak: (text: string, opts?: SpeakOptions) => Promise<SpeakResult>;
   stop: () => void;
 }
 
@@ -68,28 +80,26 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
   const authFetch = useAuthFetch();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
-  // AbortController for the currently-in-flight synth + audio fetches. We
-  // keep it in a ref so `stop()` can cancel network work that hasn't yet
-  // produced a response — without this, tapping Stop during loading still
-  // results in a delayed `audio.play()` once the response arrives.
+  // AbortController for the currently-in-flight synth + audio fetches.
   const abortRef = useRef<AbortController | null>(null);
-  // Monotonic request id: every call to `speak()` bumps this. Stale resolves
-  // (older request still resolving after the user moved on) check the id
-  // before mutating state or starting playback.
+  // Monotonic request id: every call to speak() bumps this. Stale resolves
+  // check the id before mutating state or starting playback.
   const reqIdRef = useRef(0);
+  // Tracks whether THIS instance currently holds the global _ttsBusy lock.
+  // Prevents the instance's own finally block from releasing a lock that was
+  // already claimed by a newer speak() call or cleared by stop().
+  const busyRef = useRef(false);
+
   const [speaking, setSpeaking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { voiceId, modelId, playbackRate, onFinished } = options;
 
-  // Refs so live changes to rate / onFinished don't bust speak's identity
-  // (and don't accidentally re-trigger consumer effects that depend on it).
   const playbackRateRef = useRef(playbackRate ?? 1);
   const onFinishedRef = useRef(onFinished);
   useEffect(() => {
     playbackRateRef.current = playbackRate ?? 1;
-    // Apply rate change live to currently-playing audio.
     if (audioRef.current) audioRef.current.playbackRate = playbackRateRef.current;
   }, [playbackRate]);
   useEffect(() => {
@@ -117,40 +127,48 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
     }
   }, []);
 
+  // Release the global busy lock if this instance holds it.
+  const releaseBusy = useCallback(() => {
+    if (busyRef.current) {
+      _ttsBusy = false;
+      busyRef.current = false;
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
-      // Bump the id so any still-resolving promise is treated as stale.
       reqIdRef.current += 1;
       abortInFlight();
       cleanup();
+      releaseBusy();
       setSpeaking(false);
     };
-  }, [abortInFlight, cleanup]);
+  }, [abortInFlight, cleanup, releaseBusy]);
 
   const stop = useCallback(() => {
     reqIdRef.current += 1;
     abortInFlight();
     cleanup();
+    releaseBusy(); // release immediately — don't wait for async finally
     setSpeaking(false);
     setLoading(false);
-  }, [abortInFlight, cleanup]);
+  }, [abortInFlight, cleanup, releaseBusy]);
 
   const speak = useCallback(
-    async (rawText: string, opts?: SpeakOptions) => {
+    async (rawText: string, opts?: SpeakOptions): Promise<SpeakResult> => {
       const text = (rawText ?? "").trim();
-      if (!text) return;
+      if (!text) return { success: false, error: "tts_empty_text" };
       const mode = opts?.mode;
 
-      // Single-flight guard: skip if any other instance is already fetching.
-      // This prevents ai_queue_busy errors from concurrent phonics/puzzle tiles.
-      if (_ttsBusy) {
-        console.warn("[TTS] skipped — another TTS request is already in flight");
-        return;
+      // Cross-instance guard: if a DIFFERENT instance is fetching, skip.
+      // busyRef.current being true means THIS instance set the lock, so we
+      // allow it to cancel its own previous call (cancel-and-restart UX).
+      if (_ttsBusy && !busyRef.current) {
+        console.warn("[TTS] skipped — another TTS instance is already in flight");
+        return { success: false, error: "tts_skipped" };
       }
 
-      // Cancel any in-flight fetch + playing audio on this instance, then
-      // start fresh. Consumers wanting toggle UX gate the call on
-      // `speaking || loading` themselves and call `stop()` first.
+      // Cancel any in-flight fetch + playing audio on this instance.
       const myId = ++reqIdRef.current;
       abortInFlight();
       cleanup();
@@ -170,6 +188,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
       setError(null);
       setLoading(true);
       _ttsBusy = true;
+      busyRef.current = true;
 
       try {
         logTtsClient("Request start", { chars: text.length, mode });
@@ -178,7 +197,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           { text, voiceId, modelId, mode },
           { signal: controller.signal },
         );
-        if (myId !== reqIdRef.current) return; // superseded by a newer call
+        if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };
         logTtsClient("Synthesize OK", { cacheKey: data.cacheKey, cached: data.cached });
 
         const playbackUrl = resolveTtsAudioUrl(data.audioUrl);
@@ -187,16 +206,14 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           throw new Error("tts_missing_audio_url");
         }
         const audioRes = await authFetch(playbackUrl, { signal: controller.signal });
-        if (myId !== reqIdRef.current) return;
+        if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };
         if (!audioRes.ok) {
           const errText = await audioRes.text().catch(() => "");
           throw new Error(`audio_fetch_failed_${audioRes.status}${errText ? `:${errText.slice(0, 80)}` : ""}`);
         }
         const blob = await audioRes.blob();
-        if (myId !== reqIdRef.current) return;
-        if (blob.size === 0) {
-          throw new Error("audio_empty_blob");
-        }
+        if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };
+        if (blob.size === 0) throw new Error("audio_empty_blob");
         logTtsClient("Audio blob ready", { bytes: blob.size, type: blob.type });
 
         cleanup();
@@ -233,45 +250,53 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           console.error("Audio failed:", playErr);
           logTtsClientError("audio.play() rejected", playErr);
           const name = (playErr as { name?: string })?.name ?? "play_failed";
-          setError(name === "NotAllowedError" ? "playback_blocked_tap_again" : `play_failed_${name}`);
+          const errCode = name === "NotAllowedError" ? "playback_blocked_tap_again" : `play_failed_${name}`;
+          setError(errCode);
           cleanup();
           setSpeaking(false);
-          return;
+          return { success: false, error: errCode };
         }
         if (myId !== reqIdRef.current) {
           audio.pause();
           cleanup();
-          return;
+          return { success: false, error: "tts_cancelled" };
         }
         logTtsClient("Playback started");
         setSpeaking(true);
+        return { success: true };
+
       } catch (err) {
         const errName = (err as { name?: string })?.name;
         if (errName === "AbortError") {
-          // If myId is still current the abort came from the timeout (not from
-          // stop() or a newer speak() call — those bump reqIdRef first).
           if (myId === reqIdRef.current) {
+            // Timeout abort (not superseded by a newer call or stop()).
             console.error("[TTS] timed out — request aborted after", TTS_TIMEOUT_MS, "ms");
             setError("tts_timeout");
             setSpeaking(false);
+            return { success: false, error: "tts_timeout" };
           }
-          return;
+          return { success: false, error: "tts_cancelled" };
         }
-        if (myId !== reqIdRef.current) return;
+        if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };
         logTtsClientError("speak failed", err);
-        setError(err instanceof Error ? err.message : "tts_failed");
+        const errMsg = err instanceof Error ? err.message : "tts_failed";
+        setError(errMsg);
         cleanup();
         setSpeaking(false);
+        return { success: false, error: errMsg };
+
       } finally {
         clearTimeout(timeoutId);
-        _ttsBusy = false; // always release the global lock
+        // Only release the global lock if this call still owns it
+        // (i.e. it hasn't already been released by stop() or a newer call).
         if (myId === reqIdRef.current) {
+          releaseBusy();
           setLoading(false);
           if (abortRef.current === controller) abortRef.current = null;
         }
       }
     },
-    [authFetch, cleanup, abortInFlight, modelId, voiceId],
+    [authFetch, cleanup, abortInFlight, releaseBusy, modelId, voiceId],
   );
 
   return { speaking, loading, error, speak, stop };

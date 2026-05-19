@@ -412,7 +412,12 @@ function PlayerSheet({
       setPlaying(false);
       return;
     }
-    void speak(txt);
+    void speak(txt).then((res) => {
+      if (!res?.success) {
+        console.warn("TTS failed, skipping audio flow:", res?.error);
+        setPlaying(false);
+      }
+    });
   }, [playing, paragraphIdx, paragraphs, speak, stop]);
   const next = () => {
     if (paragraphIdx + 1 < paragraphs.length) setParagraphIdx(paragraphIdx + 1);
