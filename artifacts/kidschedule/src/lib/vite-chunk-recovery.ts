@@ -3,6 +3,7 @@
  */
 
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
+import { handleRecoveryReload } from "@/lib/clear-cache-reload";
 import { agentDebugLog } from "@/lib/agent-debug-log";
 import { showProductionCrashOverlay } from "@/lib/production-crash-overlay";
 import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";
@@ -102,14 +103,12 @@ export function tryStaleChunkRecovery(
     return true;
   }
 
-  console.warn("[amynest:chunk] Stale chunk detected — reloading", {
+  console.warn("[amynest:chunk] Stale chunk detected — clearing cache and reloading", {
     message: fullMessage.split("\n")[0],
   });
   reloadInFlight = true;
   markCacheRecoveryPending();
-  window.setTimeout(() => {
-    window.location.reload();
-  }, 8000);
+  void handleRecoveryReload();
   return true;
 }
 

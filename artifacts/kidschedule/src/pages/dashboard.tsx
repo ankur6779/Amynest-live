@@ -10,7 +10,8 @@ import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { agentDebugLog } from "@/lib/agent-debug-log";
 import { logDashboardMount } from "@/lib/onboarding-debug";
-import { lazy, Suspense, useEffect, useState, useMemo, useCallback } from "react";
+import { Suspense, useEffect, useState, useMemo, useCallback } from "react";
+import { lazyPage } from "@/lib/safe-import";
 import { isAndroidLiteClient } from "@/lib/device-lite";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -20,7 +21,7 @@ import { getTotalPoints, getBadges, getRewards, redeemReward, type Reward } from
 import { asRoutineList, routineDateKey, routineItems } from "@/lib/routines";
 import { safeFetch } from "@/lib/safe-fetch";
 
-const HeroAmbientLayer = lazy(() =>
+const HeroAmbientLayer = lazyPage(() =>
   import("@/components/hero-ambient-layer").then((m) => ({
     default: m.HeroAmbientLayer,
   })),

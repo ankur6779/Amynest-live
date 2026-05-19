@@ -1,7 +1,8 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { isCapacitorNativeShell } from "@/lib/native-shell";
+import { lazyPage } from "@/lib/safe-import";
 
-const NativeStartupPermissionsGate = lazy(() =>
+const NativeStartupPermissionsGate = lazyPage(() =>
   import("@/components/native-startup-permissions-gate").then((m) => ({
     default: m.NativeStartupPermissionsGate,
   })),

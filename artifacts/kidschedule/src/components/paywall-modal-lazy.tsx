@@ -1,7 +1,8 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 import { usePaywall } from "@/contexts/paywall-context";
+import { lazyPage } from "@/lib/safe-import";
 
-const PaywallModal = lazy(() =>
+const PaywallModal = lazyPage(() =>
   import("@/components/paywall-modal").then((m) => ({
     default: m.PaywallModal,
   })),
