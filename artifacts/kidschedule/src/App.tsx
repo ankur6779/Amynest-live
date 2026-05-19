@@ -4,7 +4,6 @@ import { initAudioUnlock } from "@/lib/tts-guard";
 import { AuthBootShell } from "@/components/auth-boot-shell";
 import DebugOverlay from "@/components/DebugOverlay";
 import { StaticAudioTestButton } from "@/components/static-audio-test-button";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ReactInstanceRecovery } from "@/components/react-instance-recovery";
 import { safeImportModule } from "@/lib/safe-import";
 
@@ -41,13 +40,12 @@ function App() {
     <>
       <DebugOverlay />
       <StaticAudioTestButton />
-      <ErrorBoundary label="root">
-        <ReactInstanceRecovery>
-          <Suspense fallback={<AuthBootShell />}>
-            <AppCore />
-          </Suspense>
-        </ReactInstanceRecovery>
-      </ErrorBoundary>
+      {/* ErrorBoundary disabled temporarily while verifying QueryClientProvider fix */}
+      <ReactInstanceRecovery>
+        <Suspense fallback={<AuthBootShell />}>
+          <AppCore />
+        </Suspense>
+      </ReactInstanceRecovery>
     </>
   );
 }
