@@ -36,7 +36,7 @@ export function isQuestionLimitReached(): boolean {
 export function recordQuestion(): void {
   try {
     localStorage.setItem(QUESTION_COUNT_KEY(), String(getQuestionsUsed() + 1));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 
 export interface CachedInsights {
@@ -60,11 +60,11 @@ export function saveCachedInsights(data: CachedInsights["data"]): void {
   try {
     const payload: CachedInsights = { data, generatedAt: new Date().toISOString() };
     localStorage.setItem(INSIGHTS_CACHE_KEY(), JSON.stringify(payload));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 
 export function clearInsightsCache(): void {
   try {
     localStorage.removeItem(INSIGHTS_CACHE_KEY());
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }

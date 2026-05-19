@@ -432,7 +432,7 @@ function loadState(childName: string, ageGroup: AgeGroup): PuzzleState {
         usedIds: []
       };
     }
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
   return {
     date: todayStr(),
     difficulty: getDefaultDifficulty(ageGroup),
@@ -446,7 +446,7 @@ function loadState(childName: string, ageGroup: AgeGroup): PuzzleState {
 function saveState(name: string, st: PuzzleState) {
   try {
     localStorage.setItem(LS_KEY + "_" + name, JSON.stringify(st));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 
 // ─── Difficulty config ─────────────────────────────────────────────────────────

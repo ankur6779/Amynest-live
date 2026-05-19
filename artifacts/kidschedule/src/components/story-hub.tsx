@@ -23,7 +23,7 @@ function readStoredIndex(childId: number, max: number): number {
 function writeStoredIndex(childId: number, index: number): void {
   try {
     localStorage.setItem(FLOW_KEY(childId), String(index));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────

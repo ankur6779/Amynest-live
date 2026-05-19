@@ -468,7 +468,7 @@ function loadMathState(childName: string): MathState {
       }
       return p;
     }
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
   return {
     date: todayStr(),
     seenIds: [],
@@ -480,7 +480,7 @@ function loadMathState(childName: string): MathState {
 function saveMathState(childName: string, st: MathState) {
   try {
     localStorage.setItem(`${LS}_${childName}`, JSON.stringify(st));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────

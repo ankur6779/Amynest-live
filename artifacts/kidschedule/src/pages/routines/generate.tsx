@@ -246,7 +246,7 @@ type LastGenSettings = {
   caregiver: HandlerKey;
 };
 export function saveLastGenSettings(s: LastGenSettings): void {
-  try { localStorage.setItem(LAST_GEN_KEY, JSON.stringify(s)); } catch {}
+  try { localStorage.setItem(LAST_GEN_KEY, JSON.stringify(s)); } catch (e) { console.error("REAL ERROR:", e); }
 }
 export function getLastGenSettings(): LastGenSettings | null {
   try {
@@ -267,7 +267,7 @@ function getStoredWakeTime(childId: number, date: string): string | null {
 function storeWakeTime(childId: number, date: string, t: string): void {
   try {
     localStorage.setItem(WAKE_KEY(childId, date), t);
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 
 // Parse "7:00 AM" → total minutes

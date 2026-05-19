@@ -652,7 +652,7 @@ export function AmazingFacts({
       next.has(id) ? next.delete(id) : next.add(id);
       try {
         localStorage.setItem(`${lsKey(childName)}_likes`, JSON.stringify([...next]));
-      } catch {}
+      } catch (e) { console.error("REAL ERROR:", e); }
       return next;
     });
   }, [childName]);

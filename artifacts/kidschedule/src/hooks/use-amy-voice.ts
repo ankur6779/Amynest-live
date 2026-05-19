@@ -2,6 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { logTtsClient, logTtsClientError, resolveTtsAudioUrl, synthesizeTts } from "@/lib/tts-playback";
 
+// ─── Global single-flight guard ───────────────────────────────────────────────
+// At most one ElevenLabs network round-trip at a time, across all hook
+// instances on the page (e.g. multiple AudioPlayButton tiles). A new speak()
+// call while one is already in-flight is skipped with a warning instead of
+// stacking concurrent requests, which causes ai_queue_busy errors.
+let _ttsBusy = false;
+const TTS_TIMEOUT_MS = 8_000;
+
 export interface UseAmyVoiceOptions {
   /** Optional override for the voice persona (ElevenLabs voice id). */
   voiceId?: string;
@@ -133,9 +141,16 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
       if (!text) return;
       const mode = opts?.mode;
 
-      // Always start fresh: cancel any in-flight fetch and tear down any
-      // currently-playing audio. Consumers wanting toggle behaviour gate
-      // the call on `speaking || loading` themselves.
+      // Single-flight guard: skip if any other instance is already fetching.
+      // This prevents ai_queue_busy errors from concurrent phonics/puzzle tiles.
+      if (_ttsBusy) {
+        console.warn("[TTS] skipped — another TTS request is already in flight");
+        return;
+      }
+
+      // Cancel any in-flight fetch + playing audio on this instance, then
+      // start fresh. Consumers wanting toggle UX gate the call on
+      // `speaking || loading` themselves and call `stop()` first.
       const myId = ++reqIdRef.current;
       abortInFlight();
       cleanup();
@@ -144,8 +159,17 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
       const controller = new AbortController();
       abortRef.current = controller;
 
+      // Hard 8-second timeout — aborts the controller if ElevenLabs stalls.
+      const timeoutId = setTimeout(() => {
+        if (abortRef.current === controller) {
+          console.error("[TTS] request timed out after", TTS_TIMEOUT_MS, "ms — aborting");
+          controller.abort();
+        }
+      }, TTS_TIMEOUT_MS);
+
       setError(null);
       setLoading(true);
+      _ttsBusy = true;
 
       try {
         logTtsClient("Request start", { chars: text.length, mode });
@@ -222,13 +246,25 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         logTtsClient("Playback started");
         setSpeaking(true);
       } catch (err) {
-        if ((err as { name?: string })?.name === "AbortError") return;
+        const errName = (err as { name?: string })?.name;
+        if (errName === "AbortError") {
+          // If myId is still current the abort came from the timeout (not from
+          // stop() or a newer speak() call — those bump reqIdRef first).
+          if (myId === reqIdRef.current) {
+            console.error("[TTS] timed out — request aborted after", TTS_TIMEOUT_MS, "ms");
+            setError("tts_timeout");
+            setSpeaking(false);
+          }
+          return;
+        }
         if (myId !== reqIdRef.current) return;
         logTtsClientError("speak failed", err);
         setError(err instanceof Error ? err.message : "tts_failed");
         cleanup();
         setSpeaking(false);
       } finally {
+        clearTimeout(timeoutId);
+        _ttsBusy = false; // always release the global lock
         if (myId === reqIdRef.current) {
           setLoading(false);
           if (abortRef.current === controller) abortRef.current = null;

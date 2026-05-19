@@ -19,7 +19,7 @@ function saveHistory(h: TiffinHistory) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(h));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 interface PickableMeal {
   id: string;

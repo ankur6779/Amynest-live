@@ -21,17 +21,17 @@ function isDismissed(): boolean {
 function snooze() {
   try {
     localStorage.setItem(DISMISS_KEY, String(Date.now() + SNOOZE_DAYS * 86400000));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 function clearDismiss() {
   try {
     localStorage.removeItem(DISMISS_KEY);
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 function markRegistered() {
   try {
     localStorage.setItem(REGISTERED_KEY, String(Date.now()));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 function isRecentlyRegistered(): boolean {
   try {

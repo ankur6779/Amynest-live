@@ -35,7 +35,7 @@ function setStored(key: string, index: number) {
       date: getTodaySeed(),
       index
     }));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 function useRotatingIndex(storageKey: string, items: readonly unknown[]) {
   const [idx, setIdx] = useState<number>(() => {
@@ -719,7 +719,7 @@ export function ToddlerPreschoolMode({
           date: getTodaySeed(),
           counts: next
         }));
-      } catch {}
+      } catch (e) { console.error("REAL ERROR:", e); }
       return next;
     });
   };

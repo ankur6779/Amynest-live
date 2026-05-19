@@ -1137,7 +1137,7 @@ export default function AICoachPage() {
           title: plan.title,
           text
         });
-      } catch {}
+      } catch (e) { console.error("REAL ERROR:", e); }
     } else {
       try {
         await navigator.clipboard.writeText(text);
@@ -1145,7 +1145,7 @@ export default function AICoachPage() {
           title: t("toasts.ai_coach.copied_title"),
           description: t("toasts.ai_coach.copied_body")
         });
-      } catch {}
+      } catch (e) { console.error("REAL ERROR:", e); }
     }
   };
 

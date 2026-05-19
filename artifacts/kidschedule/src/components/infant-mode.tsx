@@ -465,7 +465,7 @@ function useLullabyPlayer() {
     oscRefs.current.forEach(o => {
       try {
         o.stop();
-      } catch {}
+      } catch (e) { console.error("REAL ERROR:", e); }
     });
     oscRefs.current = [];
     setPlaying(null);
@@ -566,7 +566,7 @@ function TipCard({
         date: getTodaySeed(),
         index: i
       }));
-    } catch {}
+    } catch (e) { console.error("REAL ERROR:", e); }
   };
   const handleNext = () => {
     const next = (index + 1) % tips.length;
@@ -581,7 +581,7 @@ function TipCard({
     setJustUnderstood(true);
     try {
       localStorage.setItem(`${storageKey}_understood`, JSON.stringify([...newSet]));
-    } catch {}
+    } catch (e) { console.error("REAL ERROR:", e); }
     setTimeout(() => {
       setJustUnderstood(false);
       setIndex(next);
@@ -726,7 +726,7 @@ function MemoryMoments({
     setMoments(updated);
     try {
       localStorage.setItem(storageKey, JSON.stringify(updated));
-    } catch {}
+    } catch (e) { console.error("REAL ERROR:", e); }
     setText("");
     setAdding(false);
   };
@@ -735,7 +735,7 @@ function MemoryMoments({
     setMoments(updated);
     try {
       localStorage.setItem(storageKey, JSON.stringify(updated));
-    } catch {}
+    } catch (e) { console.error("REAL ERROR:", e); }
   };
   return <Card className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-5">
@@ -823,7 +823,7 @@ export function InfantMode({
     setLullabyIndex(next);
     try {
       localStorage.setItem(lullabyStorageKey, String(next));
-    } catch {}
+    } catch (e) { console.error("REAL ERROR:", e); }
     if (playing) playTrack(LULLABY_TRACKS[next]);
   };
   const currentTrack = LULLABY_TRACKS[lullabyIndex];

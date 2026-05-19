@@ -43,6 +43,10 @@ function pickTodaysItem(items: DisplayPhonicsItem[], tick = 0): DisplayPhonicsIt
 // ─── Local insight builder (used only when API insights aren't available) ────
 
 function buildLocalInsights(items: DisplayPhonicsItem[], progress: PhonicsProgressMap, shortLabel: string): PhonicsInsight[] {
+  console.log("CHECK DATA:", { items, progress });
+  if (!items) {
+    throw new Error("DATA MISSING HERE: buildLocalInsights items is undefined");
+  }
   const ins: PhonicsInsight[] = [];
   const playedIds = Object.keys(progress.practiced);
   const masteredIds = Object.keys(progress.mastered);
@@ -157,6 +161,11 @@ export function PhonicsLearning({
     setStageOverride(null);
   }, [childId]);
   const phonicsData = usePhonicsData(childId, totalAgeMonths, stageOverride);
+
+  console.log("[PHONICS INIT]", phonicsData);
+  if (!phonicsData) {
+    console.error("Phonics data is undefined");
+  }
 
   useEffect(() => {
     console.log("[PHONICS DATA]", phonicsData);
@@ -464,7 +473,13 @@ function PracticeSoundsCard({
   // Preload the first batch of sounds so the first taps are instant. Letter
   // tiles warm the phoneme-mode cache; non-letter tiles warm default mode —
   // matches exactly what the Play button will request on tap.
+  // Guard by first-item id so the loop doesn't re-fire on every render when
+  // the items array gets a new reference but the content hasn't changed.
+  const preloadedKeyRef = useRef<string | null>(null);
   useEffect(() => {
+    const key = safeItems[0]?.id ?? null;
+    if (!key || key === preloadedKeyRef.current) return;
+    preloadedKeyRef.current = key;
     const ctrl = new AbortController();
     (async () => {
       for (const it of safeItems.slice(0, 6)) {
