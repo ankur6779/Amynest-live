@@ -49,6 +49,7 @@ export interface UseAmyVoiceState {
 
 interface SynthesizeResponse {
   ok: true;
+  success: true;
   cacheKey: string;
   audioUrl: string;
   cached: boolean;
@@ -170,11 +171,12 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         }
         const { readResolvedApiJson } = await import("@/lib/poll-result");
         const data = await readResolvedApiJson<SynthesizeResponse>(synthRes, authFetch);
-        const audioUrl = data?.audioUrl?.trim() ?? "";
-        if (!audioUrl || audioUrl.includes("undefined")) {
-          console.warn("Invalid audio URL, skipping playback");
+        if (__DEV__) console.log("[TTS RESPONSE]", data);
+        if (data?.success === false || !data?.audioUrl?.trim() || data.audioUrl.includes("undefined")) {
+          console.warn("TTS failed — skipping audio");
           return;
         }
+        const audioUrl = data.audioUrl.trim();
 
         if (myId !== reqIdRef.current || !isMountedRef.current) return;
 
