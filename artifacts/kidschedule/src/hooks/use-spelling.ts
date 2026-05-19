@@ -143,7 +143,13 @@ export function useSpellingTTS(): UseSpellingTTSState {
 
   const playSrc = useCallback(
     async (src: string, slow: boolean, reqId: number) => {
-      const audio = new Audio(resolveApiMediaUrl(src));
+      const trimmed = (src ?? "").trim();
+      if (!trimmed || trimmed.includes("undefined")) {
+        console.warn("Invalid audio URL, skipping playback");
+        return;
+      }
+      console.log("[PLAY AUDIO]", trimmed);
+      const audio = new Audio(resolveApiMediaUrl(trimmed));
       audio.preload = "auto";
       audio.playbackRate = slow ? 0.65 : 1;
       audio.onended = () => {
@@ -158,7 +164,14 @@ export function useSpellingTTS(): UseSpellingTTSState {
       audioRef.current = audio;
       setLoading(false);
       setSpeaking(true);
-      await audio.play();
+      try {
+        await audio.play();
+      } catch (err) {
+        console.error("Audio playback failed", err);
+        if (reqId !== reqIdRef.current) return;
+        setError("audio_playback_failed");
+        setSpeaking(false);
+      }
     },
     [],
   );

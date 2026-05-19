@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Volume2, Loader2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useToast } from "@/hooks/use-toast";
+import { useInFlightGuard, useMountedRef, useSafeAsync } from "@/hooks/use-safe-async";
 import { cn } from "@/lib/utils";
 
 const DEBOUNCE_MS = 800;
@@ -102,12 +103,15 @@ export function AudioPlayButton({
   const { toast } = useToast();
   const { speak, stop, speaking, loading, error } = useAmyVoice({ onFinished });
   const busy = speaking || loading;
+  const isMounted = useMountedRef();
+  const { safeAsync } = useSafeAsync();
+  const { run: runInFlight } = useInFlightGuard();
   // Debounce ref: ignore taps within DEBOUNCE_MS of each other to prevent
   // double-fire from fast taps or accidental repeated presses.
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!error) return;
+    if (!error || !isMounted.current) return;
     toast({
       title: "Voice unavailable",
       description:
@@ -120,10 +124,9 @@ export function AudioPlayButton({
               : error.replace(/_/g, " "),
       variant: "destructive",
     });
-  }, [error, toast]);
+  }, [error, toast, isMounted]);
 
-  const handleClick = async () => {
-    // Debounce: drop taps that arrive within DEBOUNCE_MS of the previous one.
+  const handleClick = useCallback(async () => {
     if (debounceRef.current) {
       console.warn("[TTS] click debounced — too soon after last tap");
       return;
@@ -132,27 +135,29 @@ export function AudioPlayButton({
       debounceRef.current = null;
     }, DEBOUNCE_MS);
 
-    console.log("[VOICE CLICK START]");
-    try {
-      if (busy) {
-        stop();
-        return;
+    await runInFlight(async () => {
+      const play = safeAsync(async () => {
+        if (busy) {
+          stop();
+          return null;
+        }
+        const trimmed = (text ?? "").trim();
+        if (!trimmed) return null;
+        const res = await speak(trimmed, { mode });
+        if (!res?.success) {
+          console.warn("TTS failed, skipping audio flow:", res?.error);
+          return null;
+        }
+        if (isMounted.current) onPlay?.();
+        return res;
+      });
+      try {
+        await play();
+      } catch (err) {
+        console.error("VOICE ERROR:", err);
       }
-      const trimmed = (text ?? "").trim();
-      if (!trimmed) {
-        throw new Error("No audio URL");
-      }
-      const res = await speak(trimmed, { mode });
-      if (!res?.success) {
-        console.warn("TTS failed, skipping audio flow:", res?.error);
-        return;
-      }
-      // Only record the play after audio actually started.
-      onPlay?.();
-    } catch (err) {
-      console.error("VOICE ERROR:", err);
-    }
-  };
+    });
+  }, [busy, isMounted, mode, onPlay, runInFlight, safeAsync, speak, stop, text]);
 
   return (
     <Button

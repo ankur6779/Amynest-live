@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { useInFlightGuard } from "@/hooks/use-safe-async";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
@@ -14,6 +15,8 @@ export function LayoutMobileMenu() {
   const [location] = useLocation();
   const { t } = useTranslation();
   const { safeMenu, safeChildren } = useMobileMenuData();
+  const { run: runInFlight } = useInFlightGuard();
+  const menuBusyRef = useRef(false);
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
@@ -28,16 +31,19 @@ export function LayoutMobileMenu() {
   );
 
   const handleMenuToggle = useCallback(() => {
-    try {
-      if (typeof window !== "undefined") {
-        console.log("[amynest:nav] Hamburger clicked", { location });
+    if (menuBusyRef.current) return;
+    void runInFlight(async () => {
+      menuBusyRef.current = true;
+      try {
+        logNavEvent("menu-click", { location });
+        setIsMenuOpen((open) => !open);
+      } catch (err) {
+        logNavError("hamburger-click", err, { location });
+      } finally {
+        menuBusyRef.current = false;
       }
-      logNavEvent("menu-click", { location });
-      setIsMenuOpen((open) => !open);
-    } catch (err) {
-      logNavError("hamburger-click", err, { location });
-    }
-  }, [location]);
+    });
+  }, [location, runInFlight]);
 
   return (
     <AppErrorBoundary label="MobileMenu" fallback={<MenuFallbackUi />}>

@@ -290,12 +290,18 @@ export function logStartupEnvDiagnostics(): void {
     logger.info({ evt: "env.ok", service: "elevenlabs" }, "ElevenLabs API key loaded");
   }
 
+  const gcsProjectId = readEnv("GCS_PROJECT_ID", "GOOGLE_CLOUD_PROJECT");
+  const gcsCredsFile = readEnv("GOOGLE_APPLICATION_CREDENTIALS");
+
   if (!gcs.legacyGcsConfigured) {
     logger.info(
       {
         evt: "env.gcs",
         legacyGcsConfigured: false,
         bucketId: gcs.bucketId,
+        gcsBucketName: envPresence("GCS_BUCKET_NAME"),
+        gcsProjectId: gcsProjectId ? "set" : envPresence("GCS_PROJECT_ID"),
+        googleApplicationCredentials: gcsCredsFile ? "set" : envPresence("GOOGLE_APPLICATION_CREDENTIALS"),
         credentialsOk: gcs.credentials.ok,
         credentialsError: gcs.credentials.error,
         ttsStorageForced: gcs.ttsStorageForced,
@@ -308,6 +314,9 @@ export function logStartupEnvDiagnostics(): void {
         evt: "env.ok",
         service: "gcs",
         bucketHint: gcs.bucketName,
+        gcsBucketName: envPresence("GCS_BUCKET_NAME"),
+        gcsProjectId: gcsProjectId ?? gcs.credentials.projectId ?? null,
+        googleApplicationCredentials: gcsCredsFile ? "set" : gcs.credentials.source,
         credentialsSource: gcs.credentials.source,
         projectId: gcs.credentials.projectId,
       },

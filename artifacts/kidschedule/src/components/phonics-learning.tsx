@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { AudioPlayButton, preloadAmyVoice } from "@/components/audio-play-button
 import { PhonicsTest } from "@/components/phonics-test";
 import { SubItemGate } from "@/components/sub-item-gate";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useMountedRef } from "@/hooks/use-safe-async";
 import {
   usePhonicsData,
   type DisplayPhonicsItem,
@@ -142,7 +144,15 @@ interface PhonicsLearningProps {
   childName: string;
   totalAgeMonths: number;
 }
-export function PhonicsLearning({
+export function PhonicsLearning(props: PhonicsLearningProps) {
+  return (
+    <AppErrorBoundary label="Phonics">
+      <PhonicsLearningContent {...props} />
+    </AppErrorBoundary>
+  );
+}
+
+function PhonicsLearningContent({
   childId,
   childName,
   totalAgeMonths
@@ -162,15 +172,6 @@ export function PhonicsLearning({
     setStageOverride(null);
   }, [childId]);
   const phonicsData = usePhonicsData(childId, totalAgeMonths, stageOverride);
-
-  console.log("[PHONICS INIT]", phonicsData);
-  if (!phonicsData) {
-    console.error("Phonics data is undefined");
-  }
-
-  useEffect(() => {
-    console.log("[PHONICS DATA]", phonicsData);
-  }, [phonicsData]);
 
   const {
     level,
@@ -379,9 +380,6 @@ function TodaysActivityCard({
   const todaysItem = useMemo(() => pickTodaysItem(dailyItems, tick), [dailyItems, tick]);
 
   // Warm the TTS cache for today's sound — first tap then plays instantly.
-  // For letter tiles we warm the bare phoneme in phonics mode (matches what
-  // the Play button will actually request); for everything else we warm the
-  // verbose `sound` line in default mode.
   useEffect(() => {
     if (!todaysItem) return;
     const ctrl = new AbortController();
@@ -389,10 +387,11 @@ function TodaysActivityCard({
     const useMode: "phonics" | undefined = todaysItem.phoneme ? "phonics" : undefined;
     void preloadAmyVoice(authFetch, useTts, {
       mode: useMode,
-      signal: ctrl.signal
-    });
+      signal: ctrl.signal,
+    }).catch(() => {});
     return () => ctrl.abort();
-  }, [authFetch, todaysItem?.sound, todaysItem?.phoneme]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authFetch, todaysItem?.id]);
 
   if (!todaysItem) {
     return (
@@ -468,33 +467,34 @@ function PracticeSoundsCard({
     t
   } = useTranslation();
   const authFetch = useAuthFetch();
+  const isMounted = useMountedRef();
   const [blendItem, setBlendItem] = useState<DisplayPhonicsItem | null>(null);
   const safeItems = items ?? [];
 
-  // Preload the first batch of sounds so the first taps are instant. Letter
-  // tiles warm the phoneme-mode cache; non-letter tiles warm default mode —
-  // matches exactly what the Play button will request on tap.
-  // Guard by first-item id so the loop doesn't re-fire on every render when
-  // the items array gets a new reference but the content hasn't changed.
   const preloadedKeyRef = useRef<string | null>(null);
   useEffect(() => {
     const key = safeItems[0]?.id ?? null;
     if (!key || key === preloadedKeyRef.current) return;
     preloadedKeyRef.current = key;
     const ctrl = new AbortController();
-    (async () => {
+    void (async () => {
       for (const it of safeItems.slice(0, 6)) {
-        if (ctrl.signal.aborted) return;
+        if (ctrl.signal.aborted || !isMounted.current) return;
         const text = it.phoneme ?? it.sound;
         const mode: "phonics" | undefined = it.phoneme ? "phonics" : undefined;
-        await preloadAmyVoice(authFetch, text, {
-          mode,
-          signal: ctrl.signal
-        });
+        try {
+          await preloadAmyVoice(authFetch, text, {
+            mode,
+            signal: ctrl.signal,
+          });
+        } catch {
+          return;
+        }
       }
     })();
     return () => ctrl.abort();
-  }, [authFetch, safeItems]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authFetch, safeItems[0]?.id]);
 
   if (safeItems.length === 0) {
     return (

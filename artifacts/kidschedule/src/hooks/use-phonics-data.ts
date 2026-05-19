@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useMountedRef } from "@/hooks/use-safe-async";
 import { safeAuthFetchJson } from "@/lib/safe-auth-fetch-json";
 import {
   PHONICS_LEVELS,
@@ -195,6 +196,7 @@ export function usePhonicsData(
   overrideAgeGroup?: PhonicsAgeGroup | null,
 ): UsePhonicsDataResult {
   const authFetch = useAuthFetch();
+  const isMounted = useMountedRef();
   const defaultLevel = getPhonicsLevel(totalAgeMonths);
   // Stage selector override: if the parent picked a different stage, fetch
   // that stage's content + insights instead. Progress writes are still
@@ -238,19 +240,21 @@ export function usePhonicsData(
   // ── Fetch from API ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!level) {
-      setLoading(false);
+      if (isMounted.current) setLoading(false);
       return;
     }
     const myReq = ++reqIdRef.current;
-    let cancelled = false;
+    const controller = new AbortController();
 
     // FIX (architect #1): wipe per-child caches *immediately* when childId or
     // ageGroup changes so the old child's items/progress never flash on screen.
-    setLoading(true);
-    setApiItems([]);
-    setApiDaily([]);
-    setInsights(null);
-    setProgress(loadLocalProgress(childId, level.ageGroup));
+    if (isMounted.current) {
+      setLoading(true);
+      setApiItems([]);
+      setApiDaily([]);
+      setInsights(null);
+      setProgress(loadLocalProgress(childId, level.ageGroup));
+    }
 
     (async () => {
       try {
@@ -262,8 +266,14 @@ export function usePhonicsData(
           dailyItems?: PhonicsApiItem[] | null;
           progress?: PhonicsApiProgressRow[] | null;
           insights?: PhonicsInsight[] | null;
-        }>(authFetch, `/api/phonics?${qs.toString()}`);
-        if (cancelled || myReq !== reqIdRef.current) return;
+        }>(authFetch, `/api/phonics?${qs.toString()}`, { signal: controller.signal });
+        if (
+          controller.signal.aborted ||
+          !isMounted.current ||
+          myReq !== reqIdRef.current
+        ) {
+          return;
+        }
         if ("fallback" in data && data.fallback) {
           throw new Error("phonics_api_fallback");
         }
@@ -308,17 +318,30 @@ export function usePhonicsData(
           server: serverProgress,
         });
       } catch (err) {
-        if (cancelled || myReq !== reqIdRef.current) return;
+        if (
+          controller.signal.aborted ||
+          !isMounted.current ||
+          myReq !== reqIdRef.current
+        ) {
+          return;
+        }
+        if ((err as { name?: string })?.name === "AbortError") return;
         console.error("[phonics] API failed", err);
         setSource("fallback");
         // (state already cleared above to per-child local snapshot)
       } finally {
-        if (!cancelled && myReq === reqIdRef.current) setLoading(false);
+        if (
+          !controller.signal.aborted &&
+          isMounted.current &&
+          myReq === reqIdRef.current
+        ) {
+          setLoading(false);
+        }
       }
     })();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authFetch, childId, ageGroup, overrideAgeGroup, refreshTick]);

@@ -9,3 +9,12 @@ export function ttsGcsObjectName(cacheKey: string): string {
 export function ttsPublicGcsUrl(cacheKey: string, bucketId: string): string {
   return `https://storage.googleapis.com/${bucketId}/${ttsGcsObjectName(cacheKey)}`;
 }
+
+/** Reject missing, non-string, or template-literal "undefined" URLs. */
+export function isValidTtsPublicUrl(url: unknown): url is string {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (!trimmed || trimmed.includes("undefined")) return false;
+  if (trimmed.startsWith("https://storage.googleapis.com/")) return true;
+  return /^\/api\/tts\/audio\/[a-f0-9]{64}\.mp3$/.test(trimmed);
+}

@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { ttsGcsObjectName, ttsPublicGcsUrl } from "../ttsGcsPaths";
+import { isValidTtsPublicUrl } from "../ttsGcsPaths";
 
 describe("TTS GCS public URL", () => {
   it("builds storage.googleapis.com URL from content hash", () => {
@@ -12,5 +13,9 @@ describe("TTS GCS public URL", () => {
       url,
       `https://storage.googleapis.com/amynest-tts-test/tts-cache/${hash}.mp3`,
     );
+    assert.equal(isValidTtsPublicUrl(url), true);
+    assert.equal(isValidTtsPublicUrl(undefined), false);
+    assert.equal(isValidTtsPublicUrl("https://storage.googleapis.com/b/undefined.mp3"), false);
+    assert.equal(isValidTtsPublicUrl(`/api/tts/audio/${hash}.mp3`), true);
   });
 });

@@ -10,6 +10,7 @@ import {
 } from "../services/elevenLabsService";
 import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
 import { getElevenLabsApiKey } from "../lib/env";
+import { isValidTtsPublicUrl } from "../services/ttsAudioStore";
 
 // ─── Public router (mounted BEFORE requireAuth) ──────────────────────────────
 //
@@ -115,7 +116,21 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
       charCount: number;
       contentType: string;
     }) => {
+      const { audioUrl } = result;
+      if (!isValidTtsPublicUrl(audioUrl)) {
+        console.error("Invalid audio URL", audioUrl);
+        logger.error(
+          { evt: "tts.invalid_audio_url", userId, cacheKey: result.cacheKey, audioUrl },
+          "TTS synthesize: invalid playback URL",
+        );
+        return { success: false as const, ok: false as const, error: "invalid_audio_url" };
+      }
+
       const synthDurationMs = Math.round(performance.now() - synthStarted);
+      console.log("[TTS GENERATED]", {
+        text: parsed.data.text.slice(0, 120),
+        publicUrl: audioUrl,
+      });
       logger.info(
         {
           evt: "tts.synthesize",
@@ -126,13 +141,15 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
           mode: parsed.data.mode ?? "default",
           durationMs: synthDurationMs,
           elevenLabsKeySuffix: getElevenLabsApiKey()?.slice(-4) ?? null,
+          audioUrl,
         },
         result.cached ? "TTS: cache hit (synthesize endpoint)" : "TTS: generated (synthesize endpoint)",
       );
       return {
-        ok: true,
+        ok: true as const,
+        success: true as const,
         cacheKey: result.cacheKey,
-        audioUrl: result.audioUrl,
+        audioUrl,
         cached: result.cached,
         charCount: result.charCount,
         contentType: result.contentType,
@@ -140,7 +157,12 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
     };
 
     if (cacheHit) {
-      res.json(buildTtsJson(cacheHit));
+      const body = buildTtsJson(cacheHit);
+      if (!body.success) {
+        res.status(502).json({ success: false, ok: false, error: body.error });
+        return;
+      }
+      res.json(body);
       return;
     }
 
@@ -156,7 +178,13 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
           mode: parsed.data.mode,
         },
       },
-      buildSyncBody: (result) => buildTtsJson(result as Parameters<typeof buildTtsJson>[0]),
+      buildSyncBody: (result) => {
+        const body = buildTtsJson(result as Parameters<typeof buildTtsJson>[0]);
+        if (!body.success) {
+          throw new Error(body.error);
+        }
+        return body;
+      },
       buildAsyncBody: (jobId) => ({
         ok: true,
         jobId,
@@ -177,7 +205,7 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
       { evt: "tts.synthesize_failed", userId, code },
       "tts synthesize failed",
     );
-    res.status(status).json({ error: code });
+    res.status(status).json({ success: false, ok: false, error: code });
   }
 });
 

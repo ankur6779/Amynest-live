@@ -3,6 +3,12 @@ import { readResolvedApiJson, type AuthFetchFn } from "@/lib/poll-result";
 
 const LOG = "[ElevenLabs]";
 
+/** Reject missing URLs and template strings that contain the literal "undefined". */
+export function isValidAudioUrl(audioUrl: string | null | undefined): audioUrl is string {
+  const u = (audioUrl ?? "").trim();
+  return u.length > 0 && !u.includes("undefined");
+}
+
 export type TtsSynthesizeResponse = {
   audioUrl: string;
   cacheKey?: string;
@@ -28,15 +34,39 @@ export async function synthesizeTts(
     throw new Error(errBody.error ?? `synthesize_failed_${res.status}`);
   }
   const data = await readResolvedApiJson<TtsSynthesizeResponse>(res, authFetch);
-  if (!data?.audioUrl) {
+  if (!isValidAudioUrl(data?.audioUrl)) {
     throw new Error("tts_missing_audio_url");
   }
   return data;
 }
 
-/** Resolve synthesize `audioUrl` (always `/api/tts/audio/…` or absolute) for fetch/play. */
+/** Resolve synthesize `audioUrl` (GCS HTTPS, `/api/tts/audio/…`, or absolute) for fetch/play. */
 export function resolveTtsAudioUrl(audioUrl: string): string {
   return resolveApiMediaUrl(audioUrl);
+}
+
+/**
+ * Web: proxy public GCS URLs through the API stream to avoid CORS on fetch()+blob.
+ * Mobile / direct <audio> can use the GCS URL as returned.
+ */
+export function resolveClientPlaybackUrl(
+  audioUrl: string,
+  cacheKey?: string,
+): string | null {
+  if (!isValidAudioUrl(audioUrl)) return null;
+  const resolved = resolveTtsAudioUrl(audioUrl);
+  if (
+    typeof window !== "undefined" &&
+    cacheKey &&
+    resolved.includes("storage.googleapis.com")
+  ) {
+    return resolveTtsAudioUrl(`/api/tts/audio/${cacheKey}.mp3`);
+  }
+  return resolved;
+}
+
+export function logPlayAudio(audioUrl: string): void {
+  console.log("[PLAY AUDIO]", audioUrl);
 }
 
 export function logTtsClient(step: string, detail?: Record<string, unknown>): void {
