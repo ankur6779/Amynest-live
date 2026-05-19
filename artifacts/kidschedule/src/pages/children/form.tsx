@@ -362,9 +362,7 @@ export default function ChildForm() {
           toast({
             title: t("toasts.children.profile_added")
           });
-          // Hard refresh so subscription/entitlements/onboarding-gate all reload
-          // and the user can immediately use everything.
-          window.location.href = "/dashboard";
+          setLocation("/dashboard");
         },
         onError: (err: any) => {
           if (err?.status === 402 && err?.data?.error === "child_limit_reached") {

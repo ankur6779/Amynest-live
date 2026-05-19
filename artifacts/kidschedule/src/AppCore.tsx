@@ -59,7 +59,6 @@ const RoutineGenerate = lazy(() => import("@/pages/routines/generate"));
 const RoutineDetail = lazy(() => import("@/pages/routines/detail"));
 const BehaviorTracker = lazy(() => import("@/pages/behavior/index"));
 const ParentProfile = lazy(() => import("@/pages/parent-profile"));
-const BabysittersPage = lazy(() => import("@/pages/babysitters/index"));
 const AssistantPage = lazy(() => import("@/pages/assistant"));
 const AmyAiTutorPage = lazy(() => import("@/pages/amy-ai-tutor"));
 const ProgressPage = lazy(() => import("@/pages/progress"));
@@ -482,7 +481,7 @@ function AppRoutes() {
           </Route>
           <Route path="/notify-prompt" component={NotifyPromptRouteGuard} />
           <Route path="/babysitters">
-            {() => <ProtectedRoute component={BabysittersPage} />}
+            <Redirect to="/dashboard" />
           </Route>
           <Route path="/assistant">
             {() => <ProtectedRoute component={AssistantPage} />}

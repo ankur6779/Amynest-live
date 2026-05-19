@@ -13,7 +13,7 @@ export function LayoutMobileMenu() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
   const { t } = useTranslation();
-  const { safeMenu } = useMobileMenuData();
+  const { safeMenu, safeChildren } = useMobileMenuData();
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
@@ -59,6 +59,7 @@ export function LayoutMobileMenu() {
         isMenuOpen={isMenuOpen}
         onOpenChange={handleOpenChange}
         navItems={safeMenu}
+        childList={safeChildren}
       />
     </AppErrorBoundary>
   );

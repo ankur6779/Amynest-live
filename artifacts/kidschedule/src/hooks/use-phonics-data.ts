@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { safeAuthFetchJson } from "@/lib/safe-auth-fetch-json";
 import {
   PHONICS_LEVELS,
   getPhonicsLevel,
@@ -255,17 +256,17 @@ export function usePhonicsData(
       try {
         const qs = new URLSearchParams({ childId: String(childId) });
         if (overrideAgeGroup) qs.set("ageGroup", overrideAgeGroup);
-        const res = await authFetch(`/api/phonics?${qs.toString()}`);
-        if (cancelled || myReq !== reqIdRef.current) return;
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = (await res.json()) as {
+        const data = await safeAuthFetchJson<{
           ageGroup: string | null;
           items?: PhonicsApiItem[] | null;
           dailyItems?: PhonicsApiItem[] | null;
           progress?: PhonicsApiProgressRow[] | null;
           insights?: PhonicsInsight[] | null;
-        };
+        }>(authFetch, `/api/phonics?${qs.toString()}`);
         if (cancelled || myReq !== reqIdRef.current) return;
+        if ("fallback" in data && data.fallback) {
+          throw new Error("phonics_api_fallback");
+        }
 
         const mapItem = (it: PhonicsApiItem): DisplayPhonicsItem => ({
           id: String(it.id),

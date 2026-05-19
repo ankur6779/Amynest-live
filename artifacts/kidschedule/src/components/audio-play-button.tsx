@@ -116,12 +116,21 @@ export function AudioPlayButton({
   }, [error, toast]);
 
   const handleClick = () => {
-    if (busy) {
-      stop();
-      return;
+    try {
+      if (busy) {
+        stop();
+        return;
+      }
+      const trimmed = (text ?? "").trim();
+      if (!trimmed) {
+        console.warn("No audio text");
+        return;
+      }
+      onPlay?.();
+      void speak(trimmed, { mode });
+    } catch (err) {
+      console.error("Audio click failed:", err);
     }
-    onPlay?.();
-    void speak(text, { mode });
   };
 
   return (
