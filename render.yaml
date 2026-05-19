@@ -181,6 +181,10 @@ services:
       pnpm install --frozen-lockfile &&
       BASE_PATH=/ PORT=3000 pnpm --filter @workspace/kidschedule build
     staticPublishPath: ./artifacts/kidschedule/dist/public
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: NODE_VERSION
         value: "20"
