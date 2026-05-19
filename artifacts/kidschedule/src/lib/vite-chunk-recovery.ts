@@ -3,9 +3,9 @@
  */
 
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
+import { agentDebugLog } from "@/lib/agent-debug-log";
 import { showProductionCrashOverlay } from "@/lib/production-crash-overlay";
-
-const PRODUCTION_DEBUG_OVERLAY = !import.meta.env.DEV;
+import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";
 
 const RELOAD_TS_KEY = "amynest:stale-chunk-reload:ts";
 const RELOAD_COUNT_KEY = "amynest:stale-chunk-reload:count";
@@ -80,14 +80,25 @@ export function tryStaleChunkRecovery(
   }
 
   const fullMessage = messageFromUnknown(err, fallbackMessage);
-  showProductionCrashOverlay({
-    kind: "stale-chunk",
-    message: fullMessage.split("\n")[0] ?? "Stale chunk error",
-    stack: fullMessage,
+  // #region agent log
+  agentDebugLog({
+    location: "vite-chunk-recovery.ts:tryStaleChunkRecovery",
+    message: "stale chunk detected",
+    data: {
+      debugOverlay: isCrashDebugOverlayEnabled(),
+      preview: fullMessage.split("\n")[0]?.slice(0, 120) ?? "",
+    },
+    hypothesisId: "H2",
   });
+  // #endregion
 
-  if (PRODUCTION_DEBUG_OVERLAY) {
-    console.warn("[amynest:chunk] Stale chunk — overlay shown, reload suppressed in production");
+  if (isCrashDebugOverlayEnabled()) {
+    showProductionCrashOverlay({
+      kind: "stale-chunk",
+      message: fullMessage.split("\n")[0] ?? "Stale chunk error",
+      stack: fullMessage,
+    });
+    console.warn("[amynest:chunk] Stale chunk — debug overlay shown, reload suppressed");
     return true;
   }
 
