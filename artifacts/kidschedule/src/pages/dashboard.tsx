@@ -11,7 +11,7 @@ import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { logDashboardMount } from "@/lib/onboarding-debug";
 import { lazy, Suspense, useEffect, useState, useMemo, useCallback } from "react";
 import { isAndroidLiteClient } from "@/lib/device-lite";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
@@ -1061,6 +1061,8 @@ export default function Dashboard() {
   } = useUser();
   const { isLoaded: authLoaded, authStatus } = useAuth();
   const authFetch = useAuthFetch();
+  const queryClient = useQueryClient();
+  const onboardingData = queryClient.getQueryData(["onboarding-status"]);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [, setLocation] = useLocation();
   const {
@@ -1163,6 +1165,9 @@ export default function Dashboard() {
   if (!authReady) {
     return <RouteLoadingShell />;
   }
+
+  console.log("[DEBUG] user:", user);
+  console.log("[DEBUG] onboarding:", onboardingData);
 
   if (!isSignedIn || !user) {
     console.warn("[dashboard] user missing, redirecting to sign-in");

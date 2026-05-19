@@ -320,7 +320,7 @@ export default function EventPrepPage() {
     );
   }
 
-  return null;
+  return <div>Loading...</div>;
 }
 
 // ─── Sub-components ─────────────────────────────────────────────────────────

@@ -1,5 +1,4 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { AppFallbackUi } from "@/components/app-fallback-ui";
 import { logClientError } from "@/lib/log-client-error";
 
 type Props = {
@@ -37,13 +36,24 @@ export class AppErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
       return (
-        <AppFallbackUi
-          title="Something went wrong"
-          message="Something went wrong — try again. Tap reload if the problem continues."
-          onReload={() => {
-            if (typeof window !== "undefined") window.location.reload();
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            background: "#000",
+            color: "#0f0",
+            zIndex: 999998,
+            padding: 20,
+            overflow: "auto",
+            fontSize: 12,
           }}
-        />
+        >
+          <h2>🔥 React Crash ({this.props.label ?? "app"})</h2>
+          <pre>{this.state.error.stack ?? this.state.error.message}</pre>
+        </div>
       );
     }
     return this.props.children;

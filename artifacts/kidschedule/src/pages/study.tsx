@@ -269,7 +269,7 @@ function TodaysPlanSection({
     return () => { cancelled = true; };
   }, [childId, getToken]);
 
-  if (loading || !plan) return null;
+  if (loading || !plan) return <div>Loading...</div>;
 
   return (
     <Card className="rounded-2xl mb-3 border-[hsl(var(--brand-indigo-300))] dark:border-[hsl(var(--brand-indigo-800))]">
