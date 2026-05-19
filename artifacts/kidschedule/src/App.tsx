@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { AuthBootShell } from "@/components/auth-boot-shell";
+import DebugOverlay from "@/components/DebugOverlay";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ReactInstanceRecovery } from "@/components/react-instance-recovery";
 
@@ -49,13 +50,16 @@ function App() {
   // gate means the splash always covers the lazy AppCore download, so
   // the user never sees a blank Suspense fallback even on slow networks.
   return (
-    <ErrorBoundary label="root">
-      <ReactInstanceRecovery>
-        <Suspense fallback={<AuthBootShell />}>
-          <AppCore />
-        </Suspense>
-      </ReactInstanceRecovery>
-    </ErrorBoundary>
+    <>
+      <DebugOverlay />
+      <ErrorBoundary label="root">
+        <ReactInstanceRecovery>
+          <Suspense fallback={<AuthBootShell />}>
+            <AppCore />
+          </Suspense>
+        </ReactInstanceRecovery>
+      </ErrorBoundary>
+    </>
   );
 }
 
