@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { useLocation, useSearch } from "wouter";
+import { useState } from "react";
+import { Redirect, useLocation, useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
+import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import {
   isAmyNestWrapper,
@@ -15,33 +16,36 @@ import { getApiUrl } from "@/lib/api";
 const GRAD = "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))";
 const BG   = "linear-gradient(160deg,hsl(var(--brand-indigo-100)) 0%,hsl(var(--brand-violet-50)) 55%,hsl(var(--brand-pink-50)) 100%)";
 
+/** Only allow same-origin relative paths (blocks open redirects). */
+function sanitizeNext(raw: string | null): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
+  return raw;
+}
+
 export default function NotifyPromptPage() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const search          = useSearch();
-  const next            = new URLSearchParams(search).get("next") ?? "/";
+  const next            = sanitizeNext(new URLSearchParams(search).get("next"));
   const { isSignedIn, isLoaded } = useAuth();
   const authFetch = useAuthFetch();
   const [loading, setLoading]    = useState(false);
 
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (!isSignedIn) { setLocation("/sign-in"); return; }
-    // Web push is disabled — only the native Android wrapper drives push.
-    // Redirect immediately on any standard browser.
-    if (!isAmyNestWrapper()) {
-      setLocation(next);
-      return;
+  if (!isLoaded) return <RouteLoadingShell />;
+  if (!isSignedIn) return <Redirect to="/sign-in" />;
+
+  // Web push is disabled — only the native Android/iOS wrapper drives push.
+  if (!isAmyNestWrapper()) {
+    return <Redirect to={next} />;
+  }
+
+  const native = getNativePushBridge();
+  if (native) {
+    const perm = native.getPermissionStatus();
+    if (perm === "granted" || perm === "denied") {
+      return <Redirect to={next} />;
     }
-    // Inside the wrapper: redirect if permission is already resolved.
-    const native = getNativePushBridge();
-    if (native) {
-      const perm = native.getPermissionStatus();
-      if (perm === "granted" || perm === "denied") {
-        setLocation(next);
-      }
-    }
-  }, [isLoaded, isSignedIn, next, setLocation]);
+  }
 
   const handleAllow = async () => {
     setLoading(true);

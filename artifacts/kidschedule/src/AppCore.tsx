@@ -213,6 +213,20 @@ function OnboardingRouteGuard() {
   );
 }
 
+/** Standalone native push prompt — no Layout shell (same pattern as onboarding). */
+function NotifyPromptRouteGuard() {
+  const { isLoaded, isSignedIn, authStatus } = useAuth();
+
+  if (!isLoaded || authStatus === "loading") return <RouteLoadingShell />;
+  if (!isSignedIn) return <Redirect to="/sign-in" />;
+
+  return (
+    <AppErrorBoundary label="NotifyPrompt">
+      <NotifyPromptPage />
+    </AppErrorBoundary>
+  );
+}
+
 function ProtectedRoute({ component: Component }: { component: React.ComponentType; requiresProfile?: boolean }) {
   const { isLoaded, isSignedIn, authStatus } = useAuth();
   const { data, isLoading, isError, error, refetch, isFetching } = useOnboardingStatus();
@@ -420,9 +434,7 @@ function AppRoutes() {
           <Route path="/notification-diagnostics">
             {() => <ProtectedRoute component={NotificationDiagnosticsPage} requiresProfile={false} />}
           </Route>
-          <Route path="/notify-prompt">
-            {() => <ProtectedRoute component={NotifyPromptPage} requiresProfile={false} />}
-          </Route>
+          <Route path="/notify-prompt" component={NotifyPromptRouteGuard} />
           <Route path="/babysitters">
             {() => <ProtectedRoute component={BabysittersPage} />}
           </Route>

@@ -16,6 +16,7 @@ import {
   ENABLE_PHONE_OTP,
 } from "@/lib/auth-feature-flags";
 import { getApiUrl } from "@/lib/api";
+import { isAmyNestWrapper } from "@/lib/native-push-bridge";
 
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
 const SIGN_IN_CSS = `
@@ -333,7 +334,13 @@ export default function SignInPage() {
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetBusy, setResetBusy] = useState(false);
   function postSignInPath() {
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+    // Notify prompt is native-wrapper only — web browsers skip straight to home.
+    if (
+      typeof window !== "undefined" &&
+      isAmyNestWrapper() &&
+      "Notification" in window &&
+      Notification.permission === "default"
+    ) {
       return "/notify-prompt?next=/";
     }
     return "/";
