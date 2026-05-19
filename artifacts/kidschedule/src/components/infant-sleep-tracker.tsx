@@ -33,7 +33,7 @@ function loadHistory(childName: string): SleepDay[] {
 function saveHistory(childName: string, data: SleepDay[]) {
   try {
     localStorage.setItem(lsKey(childName), JSON.stringify(data));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 
 // ─── Time helpers ─────────────────────────────────────────────────────────────

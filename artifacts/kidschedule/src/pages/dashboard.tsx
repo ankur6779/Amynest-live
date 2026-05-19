@@ -474,6 +474,10 @@ function ChildrenStrip({
   const {
     t
   } = useTranslation();
+  console.log("CHECK DATA:", children);
+  if (!children) {
+    throw new Error("DATA MISSING HERE: ChildrenStrip children is undefined");
+  }
   if (children.length === 0) return null;
   return <div>
       <SectionLabel action={<Link href="/children" className="text-[11px] font-bold text-primary dark:text-primary hover:text-primary">

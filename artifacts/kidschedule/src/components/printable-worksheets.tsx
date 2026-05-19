@@ -44,7 +44,7 @@ function getDailyCount(): DailyRecord {
       const rec: DailyRecord = JSON.parse(raw);
       if (rec.date === todayStr()) return rec;
     }
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
   return {
     date: todayStr(),
     count: 0

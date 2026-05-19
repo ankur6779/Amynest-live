@@ -363,7 +363,7 @@ function RecipeModal({
     setVoicePref(pref);
     try {
       localStorage.setItem(STORAGE_VOICE, pref);
-    } catch {}
+    } catch (e) { console.error("REAL ERROR:", e); }
     // Stop any in-flight playback so the next tap uses the new voice.
     stop();
   };

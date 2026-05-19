@@ -25,7 +25,7 @@ function saveDraft(s: PtmSession | null) {
   if (typeof window === "undefined") return;
   try {
     if (s) window.localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(s));else window.localStorage.removeItem(STORAGE_KEY_DRAFT);
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 function loadHistory(): PtmSession[] {
   if (typeof window === "undefined") return [];
@@ -42,7 +42,7 @@ function saveHistory(h: PtmSession[]) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(h));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 const STAGE_ORDER: PtmStage[] = ["prepare", "attend", "act"];
 export function PtmPrepAssistant({

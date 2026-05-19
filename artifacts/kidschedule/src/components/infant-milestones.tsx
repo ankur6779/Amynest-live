@@ -439,7 +439,7 @@ function loadProgress(childName: string): Stored {
     if (migrated) {
       try {
         localStorage.setItem(key, JSON.stringify(out));
-      } catch {}
+      } catch (e) { console.error("REAL ERROR:", e); }
     }
     return out;
   } catch {
@@ -449,7 +449,7 @@ function loadProgress(childName: string): Stored {
 function saveProgress(childName: string, data: Stored) {
   try {
     localStorage.setItem(`amynest:milestones:${childName}`, JSON.stringify(data));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 function getAgeBand(months: number): "0-3" | "3-6" | "6-12" | "12-24" {
   if (months < 3) return "0-3";

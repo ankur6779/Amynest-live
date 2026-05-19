@@ -1,9 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Volume2, Loader2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+
+const DEBOUNCE_MS = 800;
 
 /**
  * Warm the server-side TTS cache for a piece of text without playing it.
@@ -35,8 +37,8 @@ export async function preloadAmyVoice(
       }),
       signal: opts.signal,
     });
-  } catch {
-    /* best-effort; ignore */
+  } catch (e) {
+    console.error("REAL ERROR:", e);
   }
 }
 
@@ -100,6 +102,9 @@ export function AudioPlayButton({
   const { toast } = useToast();
   const { speak, stop, speaking, loading, error } = useAmyVoice({ onFinished });
   const busy = speaking || loading;
+  // Debounce ref: ignore taps within DEBOUNCE_MS of each other to prevent
+  // double-fire from fast taps or accidental repeated presses.
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!error) return;
@@ -110,12 +115,24 @@ export function AudioPlayButton({
           ? "Tap play again to start audio (browser blocked autoplay)."
           : error === "tts_missing_api_key"
             ? "Amy voice is temporarily unavailable. Please try again later."
-            : error.replace(/_/g, " "),
+            : error === "tts_timeout"
+              ? "Voice request timed out. Please try again."
+              : error.replace(/_/g, " "),
       variant: "destructive",
     });
   }, [error, toast]);
 
-  const handleClick = () => {
+  const handleClick = async () => {
+    // Debounce: drop taps that arrive within DEBOUNCE_MS of the previous one.
+    if (debounceRef.current) {
+      console.warn("[TTS] click debounced — too soon after last tap");
+      return;
+    }
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+    }, DEBOUNCE_MS);
+
+    console.log("[VOICE CLICK START]");
     try {
       if (busy) {
         stop();
@@ -123,13 +140,12 @@ export function AudioPlayButton({
       }
       const trimmed = (text ?? "").trim();
       if (!trimmed) {
-        console.warn("No audio text");
-        return;
+        throw new Error("No audio URL");
       }
       onPlay?.();
-      void speak(trimmed, { mode });
+      await speak(trimmed, { mode });
     } catch (err) {
-      console.error("Audio click failed:", err);
+      console.error("VOICE ERROR:", err);
     }
   };
 
@@ -137,6 +153,7 @@ export function AudioPlayButton({
     <Button
       type="button"
       onClick={handleClick}
+      disabled={busy}
       aria-label={ariaLabel ?? `Play ${text}`}
       data-testid={`audio-play-${text.slice(0, 16).replace(/\s+/g, "-").toLowerCase()}`}
       className={cn(

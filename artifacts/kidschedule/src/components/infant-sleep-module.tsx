@@ -124,7 +124,7 @@ function loadSleepLog(childName: string): SleepEvent[] {
 function saveSleepLog(childName: string, log: SleepEvent[]) {
   try {
     localStorage.setItem(`amynest:sleep:${childName}`, JSON.stringify(log));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 function fmtTime(ts: number): string {
   const d = new Date(ts);
@@ -680,7 +680,7 @@ export function RoutineBuilder({
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) return JSON.parse(raw);
-    } catch {}
+    } catch (e) { console.error("REAL ERROR:", e); }
     return generateRoutine(ageMonths);
   });
   const [editing, setEditing] = useState<string | null>(null);
@@ -690,7 +690,7 @@ export function RoutineBuilder({
     setItems(next);
     try {
       localStorage.setItem(storageKey, JSON.stringify(next));
-    } catch {}
+    } catch (e) { console.error("REAL ERROR:", e); }
   };
   const regenerate = () => {
     const fresh = generateRoutine(ageMonths);

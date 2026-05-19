@@ -226,6 +226,13 @@ function QuestionCard({
 
   const ttsText = question.prompt.ttsText ?? question.prompt.text ?? "";
 
+  // Retry counter — reset on each new question, capped at 1 auto-replay on
+  // wrong answer to prevent infinite TTS loops.
+  const retryCountRef = useRef(0);
+  useEffect(() => {
+    retryCountRef.current = 0;
+  }, [question.id]);
+
   // Auto-play prompt audio for sound/listening questions on mount.
   useEffect(() => {
     if (!ttsText) return;
@@ -249,12 +256,18 @@ function QuestionCard({
   }, [speaking, loading, stop, speak, ttsText]);
 
   // Audio reactions for tap feedback:
-  //   correct → cheer ("Yay!"); wrong → replay the prompt audio.
+  //   correct → cheer ("Yay!"); wrong → replay the prompt audio (max 1 auto-retry).
   useEffect(() => {
     if (feedback === "correct") {
       stop();
+      retryCountRef.current = 0;
       void speak("Yay!");
     } else if (feedback === "wrong" && ttsText) {
+      retryCountRef.current += 1;
+      if (retryCountRef.current > 1) {
+        console.warn("[TTS] retry limit reached — skipping auto-replay for wrong answer");
+        return;
+      }
       stop();
       void speak(ttsText);
     }

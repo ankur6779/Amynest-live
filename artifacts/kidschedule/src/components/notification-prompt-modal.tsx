@@ -22,13 +22,13 @@ function isSnoozed(): boolean {
 function snooze() {
   try {
     localStorage.setItem(MODAL_SNOOZE_KEY, String(Date.now() + SNOOZE_DAYS * 86400_000));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 
 function markShown() {
   try {
     localStorage.setItem(MODAL_SHOWN_KEY, "1");
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 
 function shouldShow(): boolean {

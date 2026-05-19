@@ -4,6 +4,15 @@ import DebugOverlay from "@/components/DebugOverlay";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ReactInstanceRecovery } from "@/components/react-instance-recovery";
 
+if (typeof window !== "undefined") {
+  window.onerror = function (msg, url, line, col, error) {
+    console.error("GLOBAL CRASH:", { msg, url, line, col, error });
+  };
+  window.onunhandledrejection = function (event) {
+    console.error("PROMISE CRASH:", event.reason);
+  };
+}
+
 // Everything heavy — Firebase Auth, React Query, i18n providers, the
 // router, every page route, the Layout shell — lives in AppCore. By
 // lazy-loading it here we keep the eager bundle minimal so iOS Safari's

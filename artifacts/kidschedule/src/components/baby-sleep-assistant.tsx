@@ -320,7 +320,7 @@ class SleepSoundEngine {
       try {
         (n as AudioBufferSourceNode).stop?.();
         n.disconnect();
-      } catch {}
+      } catch (e) { console.error("REAL ERROR:", e); }
     });
     this.nodes = [];
     this.gainNode = null;
@@ -487,7 +487,7 @@ function saveChecklist(childName: string, state: Record<string, boolean>) {
       date: todayStr(),
       state
     }));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 function loadTriedTips(childName: string): Set<string> {
   try {
@@ -499,7 +499,7 @@ function loadTriedTips(childName: string): Set<string> {
 function saveTriedTips(childName: string, s: Set<string>) {
   try {
     localStorage.setItem(lsKey(childName, "tried"), JSON.stringify([...s]));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 function loadTipIndices(childName: string): Record<string, number> {
   try {
@@ -511,7 +511,7 @@ function loadTipIndices(childName: string): Record<string, number> {
 function saveTipIndices(childName: string, v: Record<string, number>) {
   try {
     localStorage.setItem(lsKey(childName, "tipidx"), JSON.stringify(v));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 
 // ─── Smart suggestions by age + time ─────────────────────────────────────────

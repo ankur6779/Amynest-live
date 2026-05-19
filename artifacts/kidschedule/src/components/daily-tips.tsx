@@ -22,7 +22,7 @@ function lsGet<T>(key: string, fallback: T): T {
 function lsSet(key: string, value: unknown): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
-  } catch {}
+  } catch (e) { console.error("REAL ERROR:", e); }
 }
 function hashStr(s: string): number {
   let h = 0;

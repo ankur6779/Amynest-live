@@ -147,6 +147,11 @@ export function LayoutMobileMenuSheet({
   const initials = getUserInitials(user);
   const avatarUrl = getUserAvatarUrl(user);
 
+  console.log("[MENU RENDER]", { user, children: safeChildren });
+  if (!user) {
+    console.warn("Menu: user missing");
+  }
+
   useEffect(() => {
     if (isMenuOpen) {
       console.log("[MENU DATA]", user, safeChildren);
