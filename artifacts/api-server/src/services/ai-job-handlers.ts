@@ -97,8 +97,6 @@ async function handleTtsSynthesize(payload: TtsSynthesizePayload): Promise<{
     "TTS job completed",
   );
   return {
-    ok: true,
-    success: true,
     cacheKey: result.cacheKey,
     audioUrl: result.audioUrl,
     contentType: result.contentType,
