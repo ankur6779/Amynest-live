@@ -212,8 +212,40 @@ export function getGcsDiagnostics(): {
   };
 }
 
+/** Fail fast when DATABASE_URL is missing (Render dashboard must supply secrets). */
+export function assertCriticalEnvAtBoot(): void {
+  const hasDb = !!readEnv("DATABASE_URL");
+  const hasFirebase =
+    !!readEnv("FIREBASE_PRIVATE_KEY") || !!readEnv("FIREBASE_SERVICE_ACCOUNT_JSON");
+
+  console.log("ENV CHECK:", {
+    hasDB: hasDb,
+    hasFirebase,
+    hasRedis: !!readEnv("REDIS_URL"),
+  });
+
+  if (!hasDb) {
+    console.error(
+      "DATABASE_URL missing — set it in the Render Dashboard (Blueprint must use sync: false)",
+    );
+    process.exit(1);
+  }
+}
+
 /** Log once at startup — safe for production (no secret values). */
 export function logStartupEnvDiagnostics(): void {
+  const hasDb = !!readEnv("DATABASE_URL");
+  const hasFirebase =
+    !!readEnv("FIREBASE_PRIVATE_KEY") || !!readEnv("FIREBASE_SERVICE_ACCOUNT_JSON");
+
+  console.log("ENV CHECK:", {
+    hasDB: hasDb,
+    hasFirebase,
+    hasRedis: !!readEnv("REDIS_URL"),
+    hasOpenAI: !!readEnv("OPENAI_API_KEY"),
+    hasRazorpay: !!readEnv("RAZORPAY_KEY_SECRET"),
+  });
+
   const amynestEnv = resolveAmynestEnv();
   logger.info(
     {

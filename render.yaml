@@ -1,13 +1,17 @@
-# Render Blueprint — production + development (preview) stacks
+# Render Blueprint — production + development stacks
 # https://render.com/docs/blueprint-spec
+#
+# IMPORTANT: Secrets and connection strings are NOT defined here with values.
+# Set them only in the Render Dashboard. `sync: false` tells Blueprint to
+# register the key once and NEVER overwrite dashboard values on deploy.
 #
 # Production:
 #   Amynest-backend     → https://amynest-backend.onrender.com
-#   Amynest-live-1      → static web (points at production API)
+#   Amynest-live-1      → static web (amynest.in)
 #
-# Development / preview (set secrets in Render dashboard per service):
+# Development / preview:
 #   amynest-dev         → https://amynest-dev.onrender.com
-#   amynest-frontend-dev → static web (points at dev API)
+#   amynest-frontend-dev → static preview web
 #
 # Health / env checks:
 #   GET /api/healthz/env
@@ -45,7 +49,6 @@ services:
       NODE_ENV=development pnpm install --frozen-lockfile &&
       pnpm --filter @workspace/api-server build &&
       pnpm --filter @workspace/db push
-    # Direct node (no pnpm parent) — cleaner SIGTERM during deploys; must match build output path.
     startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
     healthCheckPath: /health
     envVars:
@@ -53,43 +56,48 @@ services:
         value: "20"
       - key: NODE_ENV
         value: production
-      - key: NODE_OPTIONS
-        value: "--max-old-space-size=400 --expose-gc"
-      - key: MEMORY_LIMIT_MB
-        value: "512"
       - key: AMYNEST_ENV
         value: production
-      - key: API_PUBLIC_URL
-        value: https://amynest-backend.onrender.com
-      - key: WORKER_ENABLED
-        value: "false"
-      - key: BACKGROUND_TASKS_ENABLED
-        value: "false"
-      - key: PHONICS_SEED_ENABLED
-        value: "false"
-      - key: NOTIFICATIONS_ENABLED
-        value: "false"
       - key: DATABASE_URL
-        fromDatabase:
-          name: amynest-db
-          property: connectionString
+        sync: false
       - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: amynest-redis
-          property: connectionString
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: REVENUECAT_SECRET_KEY
+        sync: false
+      - key: REVENUECAT_WEBHOOK_SECRET
+        sync: false
       - key: GOOGLE_API_KEY
         sync: false
       - key: ELEVENLABS_API_KEY
         sync: false
-      - key: RESEND_API_KEY
+      - key: API_PUBLIC_URL
         sync: false
-      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+      - key: WORKER_ENABLED
+        sync: false
+      - key: BACKGROUND_TASKS_ENABLED
+        sync: false
+      - key: PHONICS_SEED_ENABLED
+        sync: false
+      - key: NOTIFICATIONS_ENABLED
         sync: false
       - key: EMAIL_FROM
-        value: "AmyNest <hello@amynest.in>"
+        sync: false
 
-  # ─── Production AI worker (BullMQ — processes queued OpenAI / domain jobs) ─
+  # ─── Production AI worker (BullMQ) ─────────────────────────────────────────
   - type: worker
     name: amynest-ai-worker
     runtime: node
@@ -97,7 +105,6 @@ services:
     plan: starter
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
-    # Root Directory on dashboard must be empty (repo root), not artifacts/api-server.
     buildCommand: bash scripts/render-ai-worker-build.sh
     startCommand: bash scripts/render-ai-worker-start.sh
     envVars:
@@ -105,28 +112,23 @@ services:
         value: "20"
       - key: NODE_ENV
         value: production
-      - key: NODE_OPTIONS
-        value: "--max-old-space-size=400 --expose-gc"
-      - key: MEMORY_LIMIT_MB
-        value: "512"
       - key: AMYNEST_ENV
         value: production
-      - key: WORKER_ENABLED
-        value: "false"
       - key: DATABASE_URL
-        fromDatabase:
-          name: amynest-db
-          property: connectionString
+        sync: false
       - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: amynest-redis
-          property: connectionString
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
       - key: GOOGLE_API_KEY
         sync: false
       - key: ELEVENLABS_API_KEY
         sync: false
-      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+      - key: WORKER_ENABLED
         sync: false
 
   # ─── Development / staging API ────────────────────────────────────────────
@@ -147,31 +149,32 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
-      - key: NODE_OPTIONS
-        value: "--max-old-space-size=400 --expose-gc"
-      - key: MEMORY_LIMIT_MB
-        value: "512"
+      - key: NODE_ENV
+        value: development
       - key: AMYNEST_ENV
         value: development
-      - key: API_PUBLIC_URL
-        value: https://amynest-dev.onrender.com
       - key: DATABASE_URL
-        fromDatabase:
-          name: amynest-db-dev
-          property: connectionString
+        sync: false
       - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: amynest-redis
-          property: connectionString
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
       - key: GOOGLE_API_KEY
         sync: false
       - key: ELEVENLABS_API_KEY
         sync: false
+      - key: API_PUBLIC_URL
+        sync: false
 
   # ─── Production static web (amynest.in) ─────────────────────────────────────
-  # Dashboard service Amynest-live-1 is a static site (not Node serve-spa).
-  # Static sites: no region field (Blueprint spec).
   - type: web
     name: Amynest-live-1
     runtime: static
@@ -190,22 +193,20 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
-      - key: BASE_PATH
-        value: /
       - key: VITE_AMYNEST_ENV
         value: production
       - key: VITE_APP_API_ORIGIN
         value: https://amynest-backend.onrender.com
       - key: VITE_FIREBASE_API_KEY
-        value: AIzaSyBjmRgm4uGfSs_hVXN1pSgyncKn_A7T6uo
+        sync: false
       - key: VITE_FIREBASE_AUTH_DOMAIN
-        value: amynest-836ff.firebaseapp.com
+        sync: false
       - key: VITE_FIREBASE_PROJECT_ID
-        value: amynest-836ff
+        sync: false
       - key: VITE_FIREBASE_APP_ID
-        value: 1:573340015027:web:1d05e678f1ba90dca293c6
+        sync: false
       - key: VITE_FIREBASE_MESSAGING_SENDER_ID
-        value: "573340015027"
+        sync: false
       - key: VITE_FIREBASE_VAPID_KEY
         sync: false
 
@@ -242,3 +243,15 @@ services:
         value: development
       - key: VITE_APP_API_ORIGIN
         value: https://amynest-dev.onrender.com
+      - key: VITE_FIREBASE_API_KEY
+        sync: false
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: VITE_FIREBASE_PROJECT_ID
+        sync: false
+      - key: VITE_FIREBASE_APP_ID
+        sync: false
+      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: VITE_FIREBASE_VAPID_KEY
+        sync: false
