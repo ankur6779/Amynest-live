@@ -80,8 +80,7 @@ function applyFirebaseUser(fbUser: FbUser | null): void {
   const prevUid = latestSnapshot.shim?.id ?? null;
   if (
     latestSnapshot.authStatus === authStatus &&
-    prevUid === uid &&
-    latestSnapshot.authStatus !== "loading"
+    prevUid === uid
   ) {
     return;
   }

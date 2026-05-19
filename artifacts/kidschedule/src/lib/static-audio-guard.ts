@@ -57,7 +57,7 @@ export function installStaticAudioConstructorGuard(): void {
 
   const OriginalAudio = window.Audio;
 
-  function GuardedAudio(this: unknown, src?: string | MediaStream): HTMLAudioElement {
+  function GuardedAudio(this: unknown, src?: string): HTMLAudioElement {
     if (typeof src === "string" && src.includes("storage.googleapis.com")) {
       console.error("BLOCKED: Direct GCS Audio usage", src);
       if (import.meta.env.DEV) {
@@ -73,7 +73,7 @@ export function installStaticAudioConstructorGuard(): void {
 
   GuardedAudio.prototype = OriginalAudio.prototype;
   Object.setPrototypeOf(GuardedAudio, OriginalAudio);
-  window.Audio = GuardedAudio as typeof Audio;
+  window.Audio = GuardedAudio as unknown as typeof Audio;
 }
 
 export function installStaticAudioGuards(): void {

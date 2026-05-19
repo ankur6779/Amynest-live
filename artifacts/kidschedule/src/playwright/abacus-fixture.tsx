@@ -34,6 +34,7 @@ const stubAuth: AuthContextValue = {
     setProfileImage: async () => {},
   },
   isLoaded: true,
+  authStatus: "authenticated",
   getToken: async () => null,
   signOut: async () => {},
   addListener: () => () => {},
