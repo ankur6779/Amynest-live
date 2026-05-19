@@ -2,6 +2,16 @@ import { forceClearAllCaches } from "@/lib/force-clear-caches";
 
 const VERSION_KEY = "amynest:deploy-version";
 
+/** Skip SW register on boot — set VITE_SKIP_SW_BOOT=true or sessionStorage `amynest:disable-sw-boot=1`. */
+function shouldSkipServiceWorkerBoot(): boolean {
+  if (import.meta.env.VITE_SKIP_SW_BOOT === "true") return true;
+  try {
+    return sessionStorage.getItem("amynest:disable-sw-boot") === "1";
+  } catch {
+    return false;
+  }
+}
+
 /** Wait for AppCore mount so deploy reload does not look like a post-splash crash. */
 function waitForAppCoreReady(maxMs = 20_000): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
@@ -61,6 +71,11 @@ export async function syncPwaCacheAndVersion(): Promise<void> {
     if (deployMeta) sessionStorage.setItem(VERSION_KEY, deployMeta);
   } catch {
     /* ignore */
+  }
+
+  if (shouldSkipServiceWorkerBoot()) {
+    console.info("[amynest:pwa] Service worker boot registration skipped (debug)");
+    return;
   }
 
   try {

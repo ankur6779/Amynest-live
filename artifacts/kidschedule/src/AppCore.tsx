@@ -124,6 +124,8 @@ function HomeRedirect() {
   const { isSignedIn, isLoaded, authStatus } = useAuth();
   const { data, isError, error, refetch } = useOnboardingStatus();
 
+  console.log("HOME RENDER", { isSignedIn, authStatus, isLoaded });
+
   // Wait for auth to resolve before deciding signed-in vs not. Without this,
   // an authenticated user momentarily sees <LandingPage /> while Firebase is
   // still loading, which can kick off duplicate /api/onboarding fetches once
@@ -303,7 +305,6 @@ function ClientTelemetryBootstrap() {
     const id = setInterval(flush, 30_000);
     return () => {
       clearInterval(id);
-      telemetryStartedRef.current = false;
     };
   }, [isSignedIn]);
 
@@ -311,13 +312,14 @@ function ClientTelemetryBootstrap() {
 }
 
 /** Orval `customFetch` uses relative `/api/...` paths — prepend API origin (Render / local dev). */
+let apiBaseUrlInitialized = false;
+
 function NativeApiBaseUrlBootstrap() {
   useEffect(() => {
+    if (apiBaseUrlInitialized) return;
+    apiBaseUrlInitialized = true;
     const origin = getAppApiBaseOrigin();
     setBaseUrl(origin || null);
-    return () => {
-      setBaseUrl(null);
-    };
   }, []);
 
   return null;
@@ -473,8 +475,13 @@ function AppRoutes() {
 // out. Without this flag the splash could time out (3.2 s full / 1.2 s
 // lite) before AppCore arrived on a slow connection, briefly exposing
 // the empty Suspense fallback.
+let appCoreInitDone = false;
+
 function AppCoreMountMarker() {
   useEffect(() => {
+    if (appCoreInitDone) return;
+    appCoreInitDone = true;
+    console.log("APPCORE MOUNTED (init once)");
     installTtsGestureListener();
     try { (window as Window & { __amynestAppCoreReady?: boolean }).__amynestAppCoreReady = true; } catch (_e) { /* best-effort */ }
     bootMark("appcore-mounted");
