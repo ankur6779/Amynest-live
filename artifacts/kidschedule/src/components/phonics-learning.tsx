@@ -45,7 +45,8 @@ function pickTodaysItem(items: DisplayPhonicsItem[], tick = 0): DisplayPhonicsIt
 function buildLocalInsights(items: DisplayPhonicsItem[], progress: PhonicsProgressMap, shortLabel: string): PhonicsInsight[] {
   console.log("CHECK DATA:", { items, progress });
   if (!items) {
-    throw new Error("DATA MISSING HERE: buildLocalInsights items is undefined");
+    console.error("buildLocalInsights: items is undefined — returning empty insights");
+    return [];
   }
   const ins: PhonicsInsight[] = [];
   const playedIds = Object.keys(progress.practiced);

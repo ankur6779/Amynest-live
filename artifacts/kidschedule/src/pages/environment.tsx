@@ -453,12 +453,10 @@ function ScheduleSection({ children, profile, t }: {
         subtitle={t("pages.environment.section_schedule_sub")}
         sk="schedule"
       />
-      {(console.log("CHECK DATA:", children), null)}
-      {!children && (() => { throw new Error("DATA MISSING HERE: ScheduleSection children is undefined"); })()}
-      {children.length === 0 && (
+      {(children ?? []).length === 0 && (
         <p className={S.noDataLine}>{t("pages.environment.no_children")}</p>
       )}
-      {children.map(child => (
+      {(children ?? []).map(child => (
         <div key={child.id} className={`${CARD_BASE} ${S.childCard}`}>
           <div className={S.childRow}>
             <Baby className={`h-4 w-4 ${S.schedChildBaby}`} />

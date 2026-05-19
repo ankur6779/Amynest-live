@@ -307,13 +307,13 @@ export default function InsightsPage() {
         {/* Abacus weekly progress (per-child) — rendered independently of
             the routines/behaviour activity gate above, so parents whose
             child is only active in the Abacus PRO Zone still see it. */}
-        {!isLoading && data?.hasChildren && abacus && (console.log("CHECK DATA:", abacus.children), true) && abacus.children.length > 0 && (
+        {!isLoading && data?.hasChildren && abacus && (abacus.children ?? []).length > 0 && (
           <div className="space-y-3">
             <h2 className="font-quicksand font-bold text-base text-foreground flex items-center gap-2">
               <Calculator className="h-4 w-4 text-primary" />
               Abacus this week
             </h2>
-            {abacus.children.map((c) => (
+            {(abacus.children ?? []).map((c) => (
               <Card key={c.childId} className="rounded-2xl">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
