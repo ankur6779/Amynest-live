@@ -577,6 +577,22 @@ export function isAmyNestWrapper(): boolean {
   return false;
 }
 
+/** Some Android WebViews expose `Notification` but throw on `.permission`. */
+export function getBrowserNotificationPermission(): NotificationPermission | null {
+  try {
+    if (typeof window === "undefined") return null;
+    if (!("Notification" in window)) return null;
+    return Notification.permission;
+  } catch {
+    return null;
+  }
+}
+
+/** Post-sign-in native notify screen — wrapper only, permission still default. */
+export function shouldShowNativeNotifyPrompt(): boolean {
+  return isAmyNestWrapper() && getBrowserNotificationPermission() === "default";
+}
+
 /**
  * Poll for any bridge to appear, up to timeoutMs.
  * For Capacitor iOS, the bridge is synchronously available so this resolves immediately.

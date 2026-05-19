@@ -43,7 +43,8 @@ services:
       corepack enable &&
       corepack prepare pnpm@9.15.0 --activate &&
       NODE_ENV=development pnpm install --frozen-lockfile &&
-      pnpm --filter @workspace/api-server build
+      pnpm --filter @workspace/api-server build &&
+      pnpm --filter @workspace/db push
     # Direct node (no pnpm parent) — cleaner SIGTERM during deploys; must match build output path.
     startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
     healthCheckPath: /health
@@ -140,7 +141,8 @@ services:
       corepack enable &&
       corepack prepare pnpm@9.15.0 --activate &&
       NODE_ENV=development pnpm install --frozen-lockfile &&
-      pnpm --filter @workspace/api-server build
+      pnpm --filter @workspace/api-server build &&
+      pnpm --filter @workspace/db push
     startCommand: AMYNEST_ENV=development pnpm --filter @workspace/api-server start
     envVars:
       - key: NODE_VERSION

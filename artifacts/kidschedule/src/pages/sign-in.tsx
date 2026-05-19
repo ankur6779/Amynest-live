@@ -16,7 +16,8 @@ import {
   ENABLE_PHONE_OTP,
 } from "@/lib/auth-feature-flags";
 import { getApiUrl } from "@/lib/api";
-import { isAmyNestWrapper } from "@/lib/native-push-bridge";
+import { shouldShowNativeNotifyPrompt } from "@/lib/native-push-bridge";
+import { agentDebugLog } from "@/lib/agent-debug-log";
 
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
 const SIGN_IN_CSS = `
@@ -335,18 +336,24 @@ export default function SignInPage() {
   const [resetBusy, setResetBusy] = useState(false);
   function postSignInPath() {
     // Notify prompt is native-wrapper only — web browsers skip straight to home.
-    if (
-      typeof window !== "undefined" &&
-      isAmyNestWrapper() &&
-      "Notification" in window &&
-      Notification.permission === "default"
-    ) {
+    if (shouldShowNativeNotifyPrompt()) {
       return "/notify-prompt?next=/";
     }
     return "/";
   }
   useEffect(() => {
-    if (isLoaded && isSignedIn) setLocation(postSignInPath());
+    if (isLoaded && isSignedIn) {
+      const path = postSignInPath();
+      // #region agent log
+      agentDebugLog({
+        location: "sign-in.tsx:redirect",
+        message: "post-sign-in redirect",
+        data: { path, isLoaded, isSignedIn },
+        hypothesisId: "H2-H4-H6",
+      });
+      // #endregion
+      setLocation(path);
+    }
   }, [isLoaded, isSignedIn, setLocation]);
   const onEmail = async (e: React.FormEvent) => {
     e.preventDefault();

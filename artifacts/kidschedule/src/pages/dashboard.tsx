@@ -8,6 +8,7 @@ import { AmyIcon } from "@/components/amy-icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
+import { agentDebugLog } from "@/lib/agent-debug-log";
 import { logDashboardMount } from "@/lib/onboarding-debug";
 import { lazy, Suspense, useEffect, useState, useMemo, useCallback } from "react";
 import { isAndroidLiteClient } from "@/lib/device-lite";
@@ -47,6 +48,7 @@ function getGreetingKey(): string {
   if (hour >= 12 && hour < 17) return "dashboard.good_afternoon";
   return "dashboard.good_evening";
 }
+
 function parseTimeToMinutes(t: string): number {
   const [timePart, period] = (t ?? "").split(" ");
   const [hours, minutes] = timePart.split(":").map(Number);
@@ -1074,6 +1076,14 @@ export default function Dashboard() {
     openPaywall
   } = usePaywall();
   useEffect(() => {
+    agentDebugLog({
+      location: "dashboard.tsx:mount",
+      message: "dashboard mounted",
+      data: { path: window.location.pathname },
+      hypothesisId: "H3-H5",
+    });
+  }, []);
+  useEffect(() => {
     authFetch("/api/parent-profile")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -1165,9 +1175,6 @@ export default function Dashboard() {
   if (!authReady) {
     return <RouteLoadingShell />;
   }
-
-  console.log("[DEBUG] user:", user);
-  console.log("[DEBUG] onboarding:", onboardingData);
 
   if (!isSignedIn || !user) {
     console.warn("[dashboard] user missing, redirecting to sign-in");

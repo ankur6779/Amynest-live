@@ -6,7 +6,7 @@ import {
   GetParentProfileResponse,
   UpsertParentProfileBody,
 } from "@workspace/api-zod";
-import { PARENT_PROFILE_FALLBACK } from "../lib/api-fallbacks.js";
+import { PARENT_PROFILE_FALLBACK, ONBOARDING_PARENT_SAVE_FALLBACK } from "../lib/api-fallbacks.js";
 import { safeRoute } from "../lib/safe-route-handler.js";
 
 const router: IRouter = Router();
@@ -47,47 +47,56 @@ router.get(
   ),
 );
 
-router.put("/parent-profile", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.put(
+  "/parent-profile",
+  safeRoute(
+    "PUT /parent-profile",
+    async (req, res): Promise<void> => {
+      const { userId } = getAuth(req);
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
 
-  const parsed = UpsertParentProfileBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
+      const parsed = UpsertParentProfileBody.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: parsed.error.message });
+        return;
+      }
 
-  const now = new Date();
-  const [existing] = await db
-    .select()
-    .from(parentProfilesTable)
-    .where(eq(parentProfilesTable.userId, userId));
+      const now = new Date();
+      const [existing] = await db
+        .select()
+        .from(parentProfilesTable)
+        .where(eq(parentProfilesTable.userId, userId));
 
-  let profile;
-  if (existing) {
-    [profile] = await db
-      .update(parentProfilesTable)
-      .set({ ...parsed.data, updatedAt: now })
-      .where(eq(parentProfilesTable.userId, userId))
-      .returning();
-  } else {
-    [profile] = await db
-      .insert(parentProfilesTable)
-      .values({ userId, ...parsed.data, updatedAt: now })
-      .returning();
-  }
+      let profile;
+      if (existing) {
+        [profile] = await db
+          .update(parentProfilesTable)
+          .set({ ...parsed.data, updatedAt: now })
+          .where(eq(parentProfilesTable.userId, userId))
+          .returning();
+      } else {
+        [profile] = await db
+          .insert(parentProfilesTable)
+          .values({ userId, ...parsed.data, updatedAt: now })
+          .returning();
+      }
 
-  res.json(
-    GetParentProfileResponse.parse({
-      ...profile,
-      freeSlots: (profile.freeSlots as any[]) ?? [],
-      createdAt: profile.createdAt.toISOString(),
-      updatedAt: profile.updatedAt.toISOString(),
-    }),
-  );
-});
+      res.json(
+        GetParentProfileResponse.parse({
+          ...profile,
+          freeSlots: (profile.freeSlots as unknown[]) ?? [],
+          createdAt: profile.createdAt.toISOString(),
+          updatedAt: profile.updatedAt.toISOString(),
+        }),
+      );
+    },
+    (_req, res) => {
+      res.status(200).json({ ...ONBOARDING_PARENT_SAVE_FALLBACK });
+    },
+  ),
+);
 
 export default router;

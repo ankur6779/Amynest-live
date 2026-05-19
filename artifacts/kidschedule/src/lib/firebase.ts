@@ -13,6 +13,7 @@ import {
 } from "@/lib/native-shell";
 import { firebaseWebDefaults } from "@/lib/firebase-web-defaults";
 import { patchBootDiagnostics, recordBootError } from "@/lib/boot-store";
+import { getBrowserNotificationPermission } from "@/lib/native-push-bridge";
 
 const FIREBASE_TAG = "[amynest:firebase]";
 
@@ -175,7 +176,7 @@ export async function setupForegroundNotifications(): Promise<void> {
   if (typeof window === "undefined") return;
   if (!("Notification" in window)) return;
   if (!canUseBrowserServiceWorkers()) return;
-  if (Notification.permission !== "granted") return;
+  if (getBrowserNotificationPermission() !== "granted") return;
   if (!("serviceWorker" in navigator)) return;
 
   try {

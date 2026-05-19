@@ -31,6 +31,11 @@ declare global {
 
 if (typeof window !== "undefined" && redirectApexToCanonicalWww()) {
   /* Apex → www before auth, cookies, or React mount */
+} else if (
+  typeof window !== "undefined" &&
+  /[?&]diag=1/.test(window.location.search || "")
+) {
+  /* ?diag=1 uses lightweight HTML-only diagnostics — main bundle must not run */
 } else {
 
 installViteChunkRecovery();

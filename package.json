@@ -23,6 +23,7 @@
     "build": "pnpm run typecheck && pnpm -r --filter '!@workspace/amynest-mobile' --if-present run build",
     "build:web": "BASE_PATH=/ PORT=3000 pnpm --filter @workspace/kidschedule build",
     "db:migrate": "pnpm --filter @workspace/scripts run migrate-database",
+    "db:push": "pnpm --filter @workspace/db push",
     "stress": "pnpm --filter @workspace/scripts run stress-amy-coach",
     "stability:load": "pnpm --filter @workspace/scripts run stability-load",
     "stability:api-unit": "pnpm --filter @workspace/api-server exec node --import tsx/esm --test src/lib/production-load.test.ts",

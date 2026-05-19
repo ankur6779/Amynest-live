@@ -13,6 +13,7 @@ import {
 } from "@/lib/setup-status";
 import {
   getNativePushBridge,
+  getBrowserNotificationPermission,
   requestNativePushPermission,
   registerNativePushToken,
 } from "@/lib/native-push-bridge";
@@ -1034,11 +1035,7 @@ export default function OnboardingPage() {
             <button
               onClick={() => {
                 if (navigatingToDashboard) return;
-                if (
-                  typeof window !== "undefined" &&
-                  "Notification" in window &&
-                  Notification.permission === "default"
-                ) {
+                if (getBrowserNotificationPermission() === "default") {
                   setStep("notifications");
                 } else {
                   void goDashboard();

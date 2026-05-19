@@ -24,6 +24,10 @@ import {
   FREE_LIMITS,
 } from "../services/subscriptionService";
 import { markReferralValid } from "../services/referralService";
+import { ONBOARDING_CHILD_SAVE_FALLBACK } from "../lib/api-fallbacks.js";
+import { safeRoute } from "../lib/safe-route-handler.js";
+import { isSchemaMismatchError } from "../lib/db-safe.js";
+import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
 
@@ -37,81 +41,102 @@ router.get("/children", async (req, res): Promise<void> => {
   res.json(ListChildrenResponse.parse(children.map((c) => ({ ...c, createdAt: c.createdAt.toISOString() }))));
 });
 
-router.post("/children", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  const parsed = CreateChildBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-
-  // During initial onboarding, bypass the per-child free-tier cap so all
-  // children entered in the setup wizard are saved correctly.
-  const isOnboarding = req.body?.isOnboarding === true;
-
-  if (!isOnboarding) {
-    // Enforce free-tier child cap
-    const sub = await getOrCreateSubscription(userId);
-    if (!isPremiumNow(sub)) {
-      const [{ n }] = await db
-        .select({ n: sql<number>`count(*)::int` })
-        .from(childrenTable)
-        .where(eq(childrenTable.userId, userId));
-      if ((n ?? 0) >= FREE_LIMITS.childrenMax) {
-        res.status(402).json({
-          error: "child_limit_reached",
-          message: `Free plan supports up to ${FREE_LIMITS.childrenMax} child. Upgrade to add more.`,
-          limit: FREE_LIMITS.childrenMax,
-        });
+router.post(
+  "/children",
+  safeRoute(
+    "POST /children",
+    async (req, res): Promise<void> => {
+      const { userId } = getAuth(req);
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
         return;
       }
-    }
-  }
+      const parsed = CreateChildBody.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: parsed.error.message });
+        return;
+      }
 
-  // Auto-inherit food prefs from parent profile when not explicitly provided.
-  // If the caller didn't pass dietType/foodStyle, copy from the parent profile
-  // and mark foodPrefInherited=true so the child form can show the banner.
-  let inheritedPrefs: Record<string, unknown> = {};
-  if (!parsed.data.dietType && !parsed.data.foodStyle) {
-    const [pp] = await db
-      .select()
-      .from(parentProfilesTable)
-      .where(eq(parentProfilesTable.userId, userId));
-    if (pp?.dietType || pp?.foodStyle) {
-      inheritedPrefs = {
-        dietType: pp.dietType ?? null,
-        foodStyle: pp.foodStyle ?? null,
-        subCuisine: pp.subCuisine ?? null,
-        allergies: pp.allergies ?? null,
-        foodPrefInherited: true,
+      const isOnboarding = req.body?.isOnboarding === true;
+
+      if (!isOnboarding) {
+        try {
+          const sub = await getOrCreateSubscription(userId);
+          if (!isPremiumNow(sub)) {
+            const [{ n }] = await db
+              .select({ n: sql<number>`count(*)::int` })
+              .from(childrenTable)
+              .where(eq(childrenTable.userId, userId));
+            if ((n ?? 0) >= FREE_LIMITS.childrenMax) {
+              res.status(402).json({
+                error: "child_limit_reached",
+                message: `Free plan supports up to ${FREE_LIMITS.childrenMax} child. Upgrade to add more.`,
+                limit: FREE_LIMITS.childrenMax,
+              });
+              return;
+            }
+          }
+        } catch (err) {
+          if (isSchemaMismatchError(err)) {
+            logger.warn(
+              { evt: "children.create.subscription_check_skipped", err },
+              "Subscription check skipped — schema mismatch",
+            );
+          } else {
+            throw err;
+          }
+        }
+      }
+
+      let inheritedPrefs: Record<string, unknown> = {};
+      if (!parsed.data.dietType && !parsed.data.foodStyle) {
+        try {
+          const [pp] = await db
+            .select()
+            .from(parentProfilesTable)
+            .where(eq(parentProfilesTable.userId, userId));
+          if (pp?.dietType || pp?.foodStyle) {
+            inheritedPrefs = {
+              dietType: pp.dietType ?? null,
+              foodStyle: pp.foodStyle ?? null,
+              subCuisine: pp.subCuisine ?? null,
+              allergies: pp.allergies ?? null,
+              foodPrefInherited: true,
+            };
+          }
+        } catch (err) {
+          if (!isSchemaMismatchError(err)) throw err;
+          logger.warn(
+            { evt: "children.create.parent_inherit_skipped", err },
+            "Parent food pref inherit skipped — schema mismatch",
+          );
+        }
+      }
+
+      const insertData = {
+        ...parsed.data,
+        foodPrefInherited: parsed.data.foodPrefInherited ?? undefined,
+        foodPrefCustomized: parsed.data.foodPrefCustomized ?? undefined,
+        ...inheritedPrefs,
+        userId,
       };
-    }
-  }
+      const child = await insertChildRow(insertData);
 
-  // Strip nulls from boolean NOT-NULL columns (Zod allows null from OpenAPI nullable, DB does not).
-  const insertData = {
-    ...parsed.data,
-    foodPrefInherited: parsed.data.foodPrefInherited ?? undefined,
-    foodPrefCustomized: parsed.data.foodPrefCustomized ?? undefined,
-    ...inheritedPrefs,
-    userId,
-  };
-  const child = await insertChildRow(insertData);
+      markReferralValid(userId).catch(() => {});
 
-  // Referral system: creating a child counts as the user's first
-  // meaningful feature use. Idempotent (only flips pending → valid).
-  markReferralValid(userId).catch(() => {});
-
-  // Routine generation is intentionally manual — users must explicitly
-  // generate their first routine via the /routines/generate wizard.
-  // Premium users can use "Quick Generate" with last-used settings.
-
-  res.status(201).json(GetChildResponse.parse({ ...child, createdAt: child.createdAt.toISOString() }));
-});
+      res
+        .status(201)
+        .json(GetChildResponse.parse({ ...child, createdAt: child.createdAt.toISOString() }));
+    },
+    (req, res) => {
+      if (req.body?.isOnboarding === true) {
+        res.status(200).json({ ...ONBOARDING_CHILD_SAVE_FALLBACK });
+        return;
+      }
+      res.status(503).json({ ...ONBOARDING_CHILD_SAVE_FALLBACK, error: "schema_mismatch" });
+    },
+  ),
+);
 
 router.get("/children/:id", async (req, res): Promise<void> => {
   const { userId } = getAuth(req);

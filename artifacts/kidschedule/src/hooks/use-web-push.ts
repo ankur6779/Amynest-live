@@ -4,6 +4,7 @@ import { useAuthFetch } from "./use-auth-fetch";
 import { useToast } from "./use-toast";
 import { setupForegroundNotifications } from "@/lib/firebase";
 import { canUseBrowserServiceWorkers } from "@/lib/native-shell";
+import { getBrowserNotificationPermission } from "@/lib/native-push-bridge";
 
 export type WebPushStatus =
   | "idle"
@@ -25,8 +26,9 @@ function isSupportedBrowser(): boolean {
 
 function getPermissionStatus(): WebPushStatus {
   if (!isSupportedBrowser()) return "unsupported";
-  if (Notification.permission === "granted") return "granted";
-  if (Notification.permission === "denied") return "denied";
+  const perm = getBrowserNotificationPermission();
+  if (perm === "granted") return "granted";
+  if (perm === "denied") return "denied";
   return "idle";
 }
 
@@ -75,7 +77,7 @@ export function useWebPush() {
    * Returns true on success, false on failure.
    */
   const refreshRegistration = useCallback(async (): Promise<boolean> => {
-    if (!isSupportedBrowser() || Notification.permission !== "granted") {
+    if (!isSupportedBrowser() || getBrowserNotificationPermission() !== "granted") {
       return false;
     }
     try {

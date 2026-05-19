@@ -170,6 +170,9 @@
         var query = (location.search || "");
         var liteForced = /[?&]liteSplash=1/.test(query);
         var diagForced = /[?&]diag=1/.test(query);
+        if (diagForced) {
+          window.__amynestDiagOnly = true;
+        }
 
         // 2. If the previous boot started recently (< 30s ago) and never
         //    reached the "splash-hidden" phase, treat it as a crash.
@@ -301,11 +304,6 @@
 
         window.__amynestShowCrashOverlay = function (payload) {
           try {
-            var splash = document.getElementById("splash");
-            if (splash) {
-              splash.classList.add("splash-hide");
-              setTimeout(function () { splash.remove(); }, 200);
-            }
             try {
               localStorage.setItem("__amynest_last_crash_v1", JSON.stringify({
                 savedAt: Date.now(),
@@ -313,10 +311,19 @@
                 payload: payload,
               }));
             } catch (_store) {}
+            window.__amynestLastCrash = payload;
+            if (window.__amynestDiagOnly) {
+              if (window.__amynestRefreshDiagPanel) window.__amynestRefreshDiagPanel();
+              return;
+            }
+            var splash = document.getElementById("splash");
+            if (splash) {
+              splash.classList.add("splash-hide");
+              setTimeout(function () { splash.remove(); }, 200);
+            }
             var text = typeof payload === "string"
               ? payload
               : JSON.stringify(Object.assign({ at: new Date().toISOString(), href: location.href, route: location.pathname }, payload), null, 2);
-            window.__amynestLastCrash = payload;
             var el = document.getElementById("amynest-crash-overlay");
             if (!el) {
               el = document.createElement("div");
@@ -367,16 +374,18 @@
           pre.textContent = text;
         };
 
-        setTimeout(function () {
-          try {
-            var r = window.__amynestDiag && window.__amynestDiag();
-            if (!r || !r.phases || r.phases.indexOf("react-rendered") === -1) {
-              window.__amynestShowBootFailed(
-                "The app did not finish loading (no react-rendered). Check your connection and reload.",
-              );
-            }
-          } catch (_e4) {}
-        }, 14000);
+        if (!diagForced) {
+          setTimeout(function () {
+            try {
+              var r = window.__amynestDiag && window.__amynestDiag();
+              if (!r || !r.phases || r.phases.indexOf("react-rendered") === -1) {
+                window.__amynestShowBootFailed(
+                  "The app did not finish loading (no react-rendered). Check your connection and reload.",
+                );
+              }
+            } catch (_e4) {}
+          }, 14000);
+        }
         window.__amynestDiag = function () {
           try { return JSON.parse(localStorage.getItem(KEY) || "null"); }
           catch (_e) { return null; }
@@ -407,6 +416,9 @@
               stack: e && e.error && e.error.stack ? String(e.error.stack) : undefined,
             });
           } catch (_e2) {}
+          if (!window.__amynestDiagOnly && window.__amynestRefreshDiagPanel) {
+            try { window.__amynestRefreshDiagPanel(); } catch (_e3) {}
+          }
         });
         window.addEventListener("unhandledrejection", function (e) {
           try {
@@ -427,30 +439,52 @@
               stack: reason && reason.stack ? String(reason.stack) : undefined,
             });
           } catch (_e2) {}
+          if (!window.__amynestDiagOnly && window.__amynestRefreshDiagPanel) {
+            try { window.__amynestRefreshDiagPanel(); } catch (_e3) {}
+          }
         });
 
-        // 6. Visible diagnostic panel when ?diag=1 — live refresh, splash hidden.
+        // 6. Visible diagnostic panel when ?diag=1 — lightweight (no React bundle).
         if (diagForced) {
-          try {
-            var splashDiag = document.getElementById("splash");
-            if (splashDiag) {
-              splashDiag.classList.add("splash-hide");
-              setTimeout(function () { splashDiag.remove(); }, 100);
-            }
-          } catch (_sd) {}
           function mountDiagPanel() {
             if (document.getElementById("amynest-diag-panel")) return;
+            try {
+              var splashDiag = document.getElementById("splash");
+              if (splashDiag) {
+                splashDiag.classList.add("splash-hide");
+                setTimeout(function () { splashDiag.remove(); }, 100);
+              }
+            } catch (_sd) {}
+            var bar = document.createElement("div");
+            bar.id = "amynest-diag-toolbar";
+            bar.style.cssText =
+              "position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#111;padding:8px 12px;" +
+              "display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid #333;";
+            var btnStyle =
+              "padding:6px 14px;border-radius:6px;border:1px solid #0f0;background:#000;color:#0f0;" +
+              "font:12px/1.2 ui-monospace,Menlo,monospace;cursor:pointer;";
+            var linkStyle =
+              "padding:6px 14px;border-radius:6px;border:1px solid #666;background:#000;color:#9f9;" +
+              "font:12px/1.2 ui-monospace,Menlo,monospace;text-decoration:none;";
+            bar.innerHTML =
+              '<button type="button" id="amynest-diag-refresh" style="' + btnStyle + '">Refresh</button>' +
+              '<a href="/" style="' + linkStyle + '">Open app</a>' +
+              '<span style="color:#9f9;font-size:11px">Lightweight diag — React bundle not loaded</span>';
             var pre = document.createElement("pre");
             pre.id = "amynest-diag-panel";
             pre.style.cssText =
               "position:fixed;inset:0;z-index:2147483646;background:#000;color:#0f0;" +
-              "font:12px/1.4 ui-monospace,Menlo,monospace;padding:16px;margin:0;overflow:auto;" +
-              "white-space:pre-wrap;word-break:break-all;-webkit-overflow-scrolling:touch;";
+              "font:12px/1.4 ui-monospace,Menlo,monospace;padding:56px 16px 16px;margin:0;overflow:auto;" +
+              "white-space:pre-wrap;word-break:break-all;-webkit-overflow-scrolling:touch;box-sizing:border-box;";
+            (document.body || document.documentElement).appendChild(bar);
             (document.body || document.documentElement).appendChild(pre);
+            var refreshBtn = document.getElementById("amynest-diag-refresh");
+            if (refreshBtn) {
+              refreshBtn.addEventListener("click", function () {
+                window.__amynestRefreshDiagPanel && window.__amynestRefreshDiagPanel();
+              });
+            }
             window.__amynestRefreshDiagPanel && window.__amynestRefreshDiagPanel();
-            setInterval(function () {
-              window.__amynestRefreshDiagPanel && window.__amynestRefreshDiagPanel();
-            }, 1500);
           }
           if (document.body) mountDiagPanel();
           else window.addEventListener("DOMContentLoaded", mountDiagPanel);
@@ -1173,28 +1207,24 @@
 
     <div id="recaptcha-container"></div>
     <div id="root"></div>
-    <!-- Vite rewrites src to /assets/index-*.js at build time — do not load dynamically. -->
-    <script type="module" crossorigin id="amynest-entry" src="/src/main.tsx"></script>
+    <!-- Skip React bundle when ?diag=1 — lightweight crash diagnostics only. -->
+    <script type="module" id="amynest-entry">
+      if (!/[?&]diag=1/.test(location.search || "")) {
+        import("/src/main.tsx");
+      } else {
+        window.__amynestDiagOnly = true;
+        window.__amynestMark && window.__amynestMark("diag-only");
+      }
+    </script>
     <script>
       (function () {
-        var entry =
-          document.getElementById("amynest-entry") ||
-          document.querySelector('script[type="module"][src*="assets/index"]');
-        if (!entry || !window.__amynestNeedsCacheRecovery || !window.__amynestForceClearCaches) {
-          return;
-        }
-        var src = entry.getAttribute("src");
-        var crossOrigin = entry.getAttribute("crossorigin");
-        entry.remove();
-        function injectEntry() {
-          var s = document.createElement("script");
-          s.type = "module";
-          s.id = "amynest-entry";
-          s.src = src;
-          if (crossOrigin) s.crossOrigin = crossOrigin;
-          document.body.appendChild(s);
-        }
-        window.__amynestForceClearCaches().then(injectEntry).catch(injectEntry);
+        if (window.__amynestDiagOnly) return;
+        if (!window.__amynestNeedsCacheRecovery || !window.__amynestForceClearCaches) return;
+        var entry = document.getElementById("amynest-entry");
+        if (entry) entry.remove();
+        window.__amynestForceClearCaches()
+          .then(function () { location.reload(); })
+          .catch(function () { location.reload(); });
       })();
     </script>
   </body>

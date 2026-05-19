@@ -37,6 +37,7 @@ import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { ApiRetryShell } from "@/components/api-retry-shell";
 import { ProductionAppShell } from "@/components/production-app-shell";
 import { FetchTimeoutError } from "@/lib/fetch-with-timeout";
+import { agentDebugLog } from "@/lib/agent-debug-log";
 import {
   isSetupComplete,
   persistOnboardingCache,
@@ -152,6 +153,29 @@ function HomeRedirect() {
   const { isLoaded, isSignedIn, authStatus } = useAuth();
   const { data, isLoading, isError, error, refetch, isFetching } = useOnboardingStatus();
 
+  // #region agent log
+  useEffect(() => {
+    const authBlocked =
+      isError && error instanceof Error && error.message === "auth-unauthorized";
+    agentDebugLog({
+      location: "AppCore.tsx:HomeRedirect",
+      message: "home redirect state",
+      data: {
+        isLoaded,
+        isSignedIn,
+        authStatus,
+        isLoading,
+        isFetching,
+        isError,
+        authBlocked,
+        setupComplete: isSetupComplete(data),
+        errMsg: error instanceof Error ? error.message : String(error ?? ""),
+      },
+      hypothesisId: "H1",
+    });
+  }, [isLoaded, isSignedIn, authStatus, isLoading, isFetching, isError, error, data]);
+  // #endregion
+
   if (!isLoaded || authStatus === "loading") {
     return <RouteLoadingShell />;
   }
@@ -232,6 +256,28 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   const { data, isLoading, isError, error, refetch, isFetching } = useOnboardingStatus();
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
+
+  // #region agent log
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    const ready = !isLoading && !isFetching && !authBlocked && !isError && isSetupComplete(data);
+    agentDebugLog({
+      location: "AppCore.tsx:ProtectedRoute",
+      message: ready ? "protected route ready" : "protected route guard",
+      data: {
+        componentName: Component.displayName || Component.name || "anonymous",
+        ready,
+        isLoading,
+        isFetching,
+        isError,
+        authBlocked,
+        setupComplete: isSetupComplete(data),
+        path: typeof window !== "undefined" ? window.location.pathname : "",
+      },
+      hypothesisId: "H3",
+    });
+  }, [isLoaded, isSignedIn, isLoading, isFetching, isError, authBlocked, data, Component]);
+  // #endregion
 
   if (!isLoaded || authStatus === "loading") return <RouteLoadingShell />;
   if (!isSignedIn) return <Redirect to="/sign-in" />;

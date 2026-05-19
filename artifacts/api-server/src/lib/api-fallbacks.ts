@@ -94,6 +94,35 @@ export const PARENT_PROFILE_FALLBACK = {
   fallback: true as const,
 };
 
+/** When onboarding_profiles save fails due to schema/DB errors. */
+export const ONBOARDING_SAVE_FALLBACK = {
+  success: false as const,
+  fallback: true as const,
+  onboardingComplete: false,
+};
+
+/** When GET /onboarding cannot read DB — client treats as fresh onboarding. */
+export const ONBOARDING_STATUS_FALLBACK = {
+  onboardingComplete: false,
+  profileComplete: false,
+  children: [] as unknown[],
+  parent: {},
+  priorityGoal: null,
+  fallback: true as const,
+};
+
+/** When POST /children fails during onboarding wizard. */
+export const ONBOARDING_CHILD_SAVE_FALLBACK = {
+  success: false as const,
+  fallback: true as const,
+};
+
+/** When PUT /parent-profile fails during onboarding wizard. */
+export const ONBOARDING_PARENT_SAVE_FALLBACK = {
+  ...PARENT_PROFILE_FALLBACK,
+  success: false as const,
+};
+
 const DASHBOARD_INSIGHTS_FALLBACK = { insights: [], fallback: true as const };
 
 /** Static fallback when a repeated request loop has no cached response. */

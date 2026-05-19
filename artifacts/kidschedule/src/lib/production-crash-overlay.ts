@@ -91,22 +91,28 @@ export function readPersistedLastCrash(): unknown {
 export function showProductionCrashOverlay(payload: ProductionCrashPayload | string | unknown): void {
   if (typeof document === "undefined") return;
 
-  dismissSplash();
-
-  const bodyText = formatPayload(payload);
-
   persistLastCrash(payload);
 
   try {
     const w = window as Window & {
+      __amynestDiagOnly?: boolean;
       __amynestLastCrash?: ProductionCrashPayload | string;
       __amynestShowCrashOverlay?: typeof showProductionCrashOverlay;
+      __amynestRefreshDiagPanel?: () => void;
     };
     w.__amynestLastCrash = typeof payload === "string" ? payload : (payload as ProductionCrashPayload);
     w.__amynestShowCrashOverlay = showProductionCrashOverlay;
+    if (w.__amynestDiagOnly) {
+      w.__amynestRefreshDiagPanel?.();
+      return;
+    }
   } catch {
     /* ignore */
   }
+
+  dismissSplash();
+
+  const bodyText = formatPayload(payload);
 
   let el = document.getElementById(OVERLAY_ID);
   if (!el) {
