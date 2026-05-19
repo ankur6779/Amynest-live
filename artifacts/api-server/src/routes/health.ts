@@ -12,6 +12,7 @@ import {
   isTtsCacheGcsEnabled,
   resolveApiPublicUrl,
 } from "../lib/env";
+import { getOpenAiTtsConfigSummary } from "../lib/openai-tts-config.js";
 import { amynestEnvLabel, resolveAmynestEnv } from "../lib/loadEnv";
 import { driveFilesList } from "../lib/googleDrive";
 import { getQueueHealthSnapshot } from "../queue/bootstrap.js";
@@ -135,6 +136,7 @@ router.get("/healthz/tts", (_req, res) => {
     elevenLabsTtsEnabled: isElevenLabsTtsEnabled(),
     ttsCacheGcsEnabled: isTtsCacheGcsEnabled(),
     openAiConfigured,
+    openAiTts: getOpenAiTtsConfigSummary(),
     elevenLabsConfigured,
     legacyGcsConfigured,
     ok,
