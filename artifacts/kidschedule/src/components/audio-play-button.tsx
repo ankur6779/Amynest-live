@@ -142,8 +142,13 @@ export function AudioPlayButton({
       if (!trimmed) {
         throw new Error("No audio URL");
       }
+      const res = await speak(trimmed, { mode });
+      if (!res?.success) {
+        console.warn("TTS failed, skipping audio flow:", res?.error);
+        return;
+      }
+      // Only record the play after audio actually started.
       onPlay?.();
-      await speak(trimmed, { mode });
     } catch (err) {
       console.error("VOICE ERROR:", err);
     }

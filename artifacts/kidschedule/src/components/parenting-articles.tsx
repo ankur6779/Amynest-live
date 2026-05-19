@@ -101,7 +101,12 @@ function ArticleModal({
   // the same place — we never double-play.
   useEffect(() => {
     if (activeIdx === null) return;
-    void speak(speechSections[activeIdx]);
+    void speak(speechSections[activeIdx]).then((res) => {
+      if (!res?.success) {
+        console.warn("TTS failed, skipping audio flow:", res?.error);
+        setActiveIdx(null);
+      }
+    });
     // We deliberately depend on activeIdx only — the speak identity changes
     // when network internals change but we don't want to retrigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
