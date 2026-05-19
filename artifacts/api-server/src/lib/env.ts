@@ -72,6 +72,20 @@ export function getElevenLabsApiKey(): string | undefined {
   return readEnv("ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY");
 }
 
+/** Direct OpenAI key or Replit AI integration proxy. */
+export function getOpenAiCredentials(): {
+  configured: boolean;
+  source: "OPENAI_API_KEY" | "AI_INTEGRATIONS" | null;
+} {
+  if (readEnv("OPENAI_API_KEY")) {
+    return { configured: true, source: "OPENAI_API_KEY" };
+  }
+  if (readEnv("AI_INTEGRATIONS_OPENAI_API_KEY", "AI_INTEGRATIONS_OPENAI_BASE_URL")) {
+    return { configured: true, source: "AI_INTEGRATIONS" };
+  }
+  return { configured: false, source: null };
+}
+
 /** Public API base URL — explicit env, then Render service hostname. */
 export function resolveApiPublicUrl(): string | null {
   const explicit = readEnv("API_PUBLIC_URL");

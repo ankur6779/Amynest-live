@@ -41,6 +41,8 @@ cd "$API"
 export AMYNEST_ENV="${AMYNEST_ENV:-production}"
 export NODE_ENV="${NODE_ENV:-production}"
 export AMYNEST_AI_WORKER_MODE=standalone
-# BullMQ disabled in production until Redis is stable — worker idles instead of exiting.
-export WORKER_ENABLED="${WORKER_ENABLED:-false}"
+# Default on when REDIS_URL is set; set WORKER_ENABLED=false to idle without processing.
+if [[ -z "${WORKER_ENABLED:-}" && -n "${REDIS_URL:-}" ]]; then
+  export WORKER_ENABLED=true
+fi
 exec node --enable-source-maps "$BUNDLE"

@@ -54,9 +54,12 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
 
   const enqueued = await enqueueAiJob(opts.type, opts.userId, opts.payload);
   if (!enqueued.jobId) {
-    opts.res.status(429).json({
-      error: "ai_queue_busy",
-      message: "Another AI request is in progress. Please wait.",
+    const queueUnavailable = (enqueued.retryAfterMs ?? 0) === 0;
+    opts.res.status(queueUnavailable ? 503 : 429).json({
+      error: queueUnavailable ? "ai_queue_unavailable" : "ai_queue_busy",
+      message: queueUnavailable
+        ? "AI processing is temporarily unavailable. Try again shortly."
+        : "Another AI request is in progress. Please wait.",
       retryAfterMs: enqueued.retryAfterMs ?? 2_000,
     });
     return;
