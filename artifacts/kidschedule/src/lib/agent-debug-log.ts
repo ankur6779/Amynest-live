@@ -1,9 +1,9 @@
 /** Debug session ring buffer — survives production/mobile where localhost ingest is unreachable. */
-const STORAGE_KEY = "__amynest_agent_debug_39b8ba";
+const STORAGE_KEY = "__amynest_agent_debug_9b2f04";
 const MAX_ENTRIES = 80;
 const INGEST =
   "http://127.0.0.1:7894/ingest/c3ee7ea7-b5b2-44c2-a422-3a06c950411d";
-const SESSION_ID = "39b8ba";
+const SESSION_ID = "9b2f04";
 
 export type AgentDebugPayload = {
   location: string;

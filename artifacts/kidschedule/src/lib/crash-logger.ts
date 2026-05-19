@@ -3,6 +3,8 @@
  * Wired from global-error-handlers and optional dev stress harness.
  */
 
+import { isBenignRuntimeError } from "@/lib/runtime-crash-policy";
+
 export type CrashLogEntry = {
   ts: number;
   context: string;
@@ -13,6 +15,18 @@ export type CrashLogEntry = {
 const MAX_ENTRIES = 100;
 const entries: CrashLogEntry[] = [];
 
+/** Set from installGlobalErrorHandlers before console.error is wrapped (avoids feedback loops). */
+let nativeConsoleError: typeof console.error | null = null;
+
+export function setNativeConsoleError(fn: typeof console.error): void {
+  nativeConsoleError = fn;
+}
+
+function emitConsoleError(...args: unknown[]): void {
+  const log = nativeConsoleError ?? console.error.bind(console);
+  log(...args);
+}
+
 function formatError(error: unknown): { message: string; stack?: string } {
   if (error instanceof Error) {
     return { message: error.message, stack: error.stack };
@@ -21,6 +35,7 @@ function formatError(error: unknown): { message: string; stack?: string } {
 }
 
 export function logError(error: unknown, context = ""): void {
+  if (isBenignRuntimeError(error)) return;
   const { message, stack } = formatError(error);
   const entry: CrashLogEntry = {
     ts: Date.now(),
@@ -30,7 +45,7 @@ export function logError(error: unknown, context = ""): void {
   };
   entries.push(entry);
   if (entries.length > MAX_ENTRIES) entries.shift();
-  console.error("CRASH:", context, error);
+  emitConsoleError("CRASH:", context, error);
   try {
     void import("@/lib/client-logs").then(({ reportCrashToBackend }) => {
       const msg = error instanceof Error ? error.message : String(error ?? "unknown");
@@ -68,6 +83,7 @@ export function installCrashLoggerHandlers(): void {
 
   const prevOnError = window.onerror;
   window.onerror = (msg, url, line, col, err) => {
+    if (isBenignRuntimeError(err ?? msg)) return true;
     logError(err ?? msg, `window.onerror:${url ?? ""}:${line ?? ""}:${col ?? ""}`);
     if (typeof prevOnError === "function") {
       return prevOnError.call(window, msg, url, line, col, err);
@@ -77,6 +93,10 @@ export function installCrashLoggerHandlers(): void {
 
   const prevRejection = window.onunhandledrejection;
   window.onunhandledrejection = (event: PromiseRejectionEvent) => {
+    if (isBenignRuntimeError(event.reason)) {
+      event.preventDefault();
+      return;
+    }
     logError(event.reason, "unhandled promise");
     if (typeof prevRejection === "function") {
       prevRejection.call(window, event);
@@ -86,10 +106,13 @@ export function installCrashLoggerHandlers(): void {
   };
 
   window.addEventListener("error", (event) => {
-    logError(event.error ?? event.message, "window.error");
+    const err = event.error ?? event.message;
+    if (isBenignRuntimeError(err)) return;
+    logError(err, "window.error");
   });
 
   window.addEventListener("unhandledrejection", (event) => {
+    if (isBenignRuntimeError(event.reason)) return;
     logError(event.reason, "unhandledrejection");
   });
 }

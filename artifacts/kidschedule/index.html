@@ -391,9 +391,22 @@
           catch (_e) { return null; }
         };
 
+        function __amynestIsBenignMsg(msg) {
+          if (!msg) return false;
+          var s = String(msg);
+          return (
+            s.indexOf("ResizeObserver") >= 0 ||
+            s.indexOf("AbortError") >= 0 ||
+            s.indexOf("Failed to fetch") >= 0 ||
+            s.indexOf("ChunkLoadError") >= 0 ||
+            s.indexOf("Loading chunk") >= 0
+          );
+        }
+
         // 5. Capture uncaught errors as breadcrumbs (for post-mortem on the
         //    next load — they survive a process kill via localStorage).
         window.addEventListener("error", function (e) {
+          if (__amynestIsBenignMsg((e && e.message) || "")) return;
           try {
             var r = JSON.parse(localStorage.getItem(KEY) || "null");
             if (!r) return;
@@ -421,10 +434,12 @@
           }
         });
         window.addEventListener("unhandledrejection", function (e) {
+          var reason = e && e.reason;
+          var reasonMsg = String((reason && reason.message) || reason || "");
+          if (__amynestIsBenignMsg(reasonMsg)) return;
           try {
             var r = JSON.parse(localStorage.getItem(KEY) || "null");
             if (!r) return;
-            var reason = e && e.reason;
             r.lastReject = {
               msg: String((reason && reason.message) || reason || ""),
               t: Date.now() - r.ts,
@@ -432,7 +447,6 @@
             localStorage.setItem(KEY, JSON.stringify(r));
           } catch (_e) {}
           try {
-            var reason = e && e.reason;
             window.__amynestShowCrashOverlay && window.__amynestShowCrashOverlay({
               kind: "pre-react.rejection",
               message: String((reason && reason.message) || reason || "Unhandled promise rejection"),

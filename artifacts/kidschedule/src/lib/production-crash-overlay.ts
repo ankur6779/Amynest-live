@@ -4,6 +4,14 @@
  * splash screen is still covering the page.
  */
 
+import { agentDebugLog } from "@/lib/agent-debug-log";
+import {
+  isBenignRuntimeError,
+  isCrashDebugOverlayEnabled,
+  isRecoverableRuntimeError,
+  shouldShowProductionCrashOverlay,
+} from "@/lib/runtime-crash-policy";
+
 export type ProductionCrashPayload = {
   kind: string;
   message: string;
@@ -37,6 +45,14 @@ function dismissSplash(): void {
   } catch {
     /* best-effort */
   }
+}
+
+function messageFromPayload(payload: ProductionCrashPayload | string | unknown): string {
+  if (typeof payload === "string") return payload;
+  if (payload && typeof payload === "object" && "message" in payload) {
+    return String((payload as ProductionCrashPayload).message ?? "");
+  }
+  return String(payload ?? "");
 }
 
 function formatPayload(payload: ProductionCrashPayload | string | unknown): string {
@@ -87,9 +103,44 @@ export function readPersistedLastCrash(): unknown {
   }
 }
 
+function errFromPayload(payload: ProductionCrashPayload | string | unknown): unknown {
+  if (typeof payload === "string") return payload;
+  if (payload && typeof payload === "object" && "message" in payload) {
+    return new Error(String((payload as ProductionCrashPayload).message));
+  }
+  return payload;
+}
+
 /** Show full-screen crash overlay — safe to call before React boots. */
 export function showProductionCrashOverlay(payload: ProductionCrashPayload | string | unknown): void {
   if (typeof document === "undefined") return;
+
+  const kind =
+    payload && typeof payload === "object" && "kind" in payload
+      ? String((payload as ProductionCrashPayload).kind)
+      : "unknown";
+  const err = errFromPayload(payload);
+  const showOverlay = shouldShowProductionCrashOverlay(err, kind);
+  // #region agent log
+  agentDebugLog({
+    location: "production-crash-overlay.ts:showProductionCrashOverlay",
+    message: showOverlay ? "crash overlay shown" : "crash overlay suppressed",
+    data: {
+      kind,
+      showOverlay,
+      benign: isBenignRuntimeError(err),
+      recoverable: isRecoverableRuntimeError(err),
+      debugOverlay: isCrashDebugOverlayEnabled(),
+      msgPreview: messageFromPayload(payload).slice(0, 120),
+      path: window.location.pathname,
+    },
+    hypothesisId: "H1-H2-H4",
+  });
+  // #endregion
+  if (!showOverlay) {
+    persistLastCrash(payload);
+    return;
+  }
 
   persistLastCrash(payload);
 
@@ -189,8 +240,13 @@ export function installProductionCrashOverlay(): void {
   w.__amynestShowCrashOverlay = showProductionCrashOverlay;
 
   window.addEventListener("error", (event) => {
+    const err = event.error ?? event.message;
+    if (isBenignRuntimeError(err)) {
+      event.preventDefault();
+      return;
+    }
     showProductionCrashOverlay(
-      payloadFromError(event.error ?? event.message, "window.error", {
+      payloadFromError(err, "window.error", {
         source: event.filename,
         line: event.lineno,
         col: event.colno,
@@ -200,6 +256,10 @@ export function installProductionCrashOverlay(): void {
   });
 
   window.addEventListener("unhandledrejection", (event) => {
+    if (isBenignRuntimeError(event.reason)) {
+      event.preventDefault();
+      return;
+    }
     showProductionCrashOverlay(payloadFromError(event.reason, "unhandledrejection"));
   });
 }

@@ -1,5 +1,6 @@
 import { resolveApiRequestInput } from "@/lib/api";
 import { logError } from "@/lib/crash-logger";
+import { isBenignRuntimeError } from "@/lib/runtime-crash-policy";
 import { reportSlowApi } from "@/lib/client-logs";
 
 const MAX_ENTRIES = 60;
@@ -126,7 +127,9 @@ export async function loggedFetch(
     }
     return res;
   } catch (err) {
-    logError(err, `API:${method}:${url}`);
+    if (!isBenignRuntimeError(err)) {
+      logError(err, `API:${method}:${url}`);
+    }
     apiLogger.record({
       endpoint: url,
       method,

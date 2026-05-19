@@ -1,9 +1,11 @@
-import { recordBootError } from "@/lib/boot-store";
+import { patchBootDiagnostics, recordBootError } from "@/lib/boot-store";
 import {
   installCrashLoggerHandlers,
   logError as logCrashError,
+  setNativeConsoleError,
 } from "@/lib/crash-logger";
 import { installProductionCrashOverlay } from "@/lib/production-crash-overlay";
+import { isBenignRuntimeError } from "@/lib/runtime-crash-policy";
 
 const TAG = "[amynest:boot]";
 
@@ -46,6 +48,11 @@ export function installGlobalErrorHandlers(): void {
   installProductionCrashOverlay();
 
   window.addEventListener("error", (event) => {
+    const err = event.error ?? event.message;
+    if (isBenignRuntimeError(err)) {
+      event.preventDefault();
+      return;
+    }
     const msg = event.message || "Script error";
     const detail = [
       event.filename,
@@ -54,12 +61,16 @@ export function installGlobalErrorHandlers(): void {
     ]
       .filter(Boolean)
       .join(" | ");
-    logCrashError(event.error ?? msg, `boot:${detail}`);
+    logCrashError(err, `boot:${detail}`);
     recordError("window.onerror", msg, detail);
     event.preventDefault();
   });
 
   window.addEventListener("unhandledrejection", (event) => {
+    if (isBenignRuntimeError(event.reason)) {
+      event.preventDefault();
+      return;
+    }
     const msg = formatUnknown(event.reason);
     logCrashError(event.reason, "boot:unhandledrejection");
     recordError("unhandledrejection", msg);
@@ -67,10 +78,30 @@ export function installGlobalErrorHandlers(): void {
   });
 
   const originalError = console.error.bind(console);
+  setNativeConsoleError(originalError);
+
+  let recordingConsoleError = false;
   console.error = (...args: unknown[]) => {
-    originalError(`${TAG} console.error`, ...args);
-    const message = args.map((a) => formatUnknown(a)).join(" ");
-    recordError("console.error", message);
+    originalError(...args);
+    if (recordingConsoleError) return;
+    recordingConsoleError = true;
+    try {
+      const message = args.map((a) => formatUnknown(a)).join(" ");
+      const entry = { ts: Date.now(), source: "console.error", message, detail: undefined };
+      recentErrors.push(entry);
+      if (recentErrors.length > MAX_ERRORS) recentErrors.shift();
+      try {
+        (window as Window & { __amynestRecentErrors?: ErrorEntry[] }).__amynestRecentErrors =
+          recentErrors;
+      } catch {
+        /* ignore */
+      }
+      patchBootDiagnostics({
+        lastError: `console.error: ${message.slice(0, 500)}`,
+      });
+    } finally {
+      recordingConsoleError = false;
+    }
   };
 
   (window as Window & { __amynestGetRecentErrors?: () => ErrorEntry[] }).__amynestGetRecentErrors =

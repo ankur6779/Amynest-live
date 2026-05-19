@@ -6,6 +6,7 @@ import {
   showProductionCrashOverlay,
   type ProductionCrashPayload,
 } from "@/lib/production-crash-overlay";
+import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";
 
 type CrashInfo = {
   kind: ProductionCrashPayload["kind"];
@@ -60,6 +61,10 @@ export default function DebugOverlay() {
   const [payload, setPayload] = useState<OverlayPayload | null>(null);
 
   useEffect(() => {
+    if (!isCrashDebugOverlayEnabled()) {
+      return;
+    }
+
     const show = (kind: CrashInfo["kind"], crash: Omit<CrashInfo, "kind" | "at">) => {
       const full = buildPayload(kind, crash);
       setPayload(full);

@@ -62,7 +62,6 @@ export function recordBootError(source: string, err: unknown): void {
   const message =
     err instanceof Error ? err.message : typeof err === "string" ? err : String(err ?? "unknown");
   const line = `${source}: ${message}`;
-  console.error("[amynest:boot]", line, err);
   patchBootDiagnostics({ lastError: line });
 }
 
