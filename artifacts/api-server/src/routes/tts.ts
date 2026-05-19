@@ -6,9 +6,9 @@ import {
   AMY_VOICE_ID_DEFAULT,
   TTS_MAX_INPUT_CHARS,
   readCachedAudio,
+  synthesize,
   trySynthesizeFromCache,
 } from "../services/elevenLabsService";
-import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
 import { getElevenLabsApiKey } from "../lib/env";
 import { isValidTtsPublicUrl } from "../services/ttsAudioStore";
 
@@ -103,11 +103,15 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
 
   try {
     const synthStarted = performance.now();
-    const cacheHit = await trySynthesizeFromCache(parsed.data.text, {
+    console.log("[TTS START]", parsed.data.text.slice(0, 120));
+
+    const synthOptions = {
       voiceId: parsed.data.voiceId,
       modelId: parsed.data.modelId,
       mode: parsed.data.mode,
-    });
+    };
+
+    const cacheHit = await trySynthesizeFromCache(parsed.data.text, synthOptions);
 
     const buildTtsJson = (result: {
       cacheKey: string;
@@ -166,33 +170,13 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
       return;
     }
 
-    await submitAiJobAndRespond({
-      res,
-      userId,
-      type: "tts.synthesize",
-      payload: {
-        text: parsed.data.text,
-        options: {
-          voiceId: parsed.data.voiceId,
-          modelId: parsed.data.modelId,
-          mode: parsed.data.mode,
-        },
-      },
-      buildSyncBody: (result) => {
-        const body = buildTtsJson(result as Parameters<typeof buildTtsJson>[0]);
-        if (!body.success) {
-          throw new Error(body.error);
-        }
-        return body;
-      },
-      buildAsyncBody: (jobId) => ({
-        ok: true,
-        jobId,
-        status: "processing",
-        pollUrl: `/api/ai/jobs/${jobId}`,
-        cached: false,
-      }),
-    });
+    const result = await synthesize(parsed.data.text, synthOptions);
+    const body = buildTtsJson(result);
+    if (!body.success) {
+      res.status(502).json({ success: false, ok: false, error: body.error });
+      return;
+    }
+    res.json(body);
   } catch (err) {
     const code = err instanceof Error ? err.message : "tts_failed";
     const status =

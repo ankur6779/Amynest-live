@@ -3,9 +3,9 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useGuardedSetter, useMountedRef } from "@/hooks/use-safe-async";
 import {
   isValidAudioUrl,
-  logPlayAudio,
   logTtsClient,
   logTtsClientError,
+  playAudio,
   resolveClientPlaybackUrl,
   synthesizeTts,
 } from "@/lib/tts-playback";
@@ -209,39 +209,22 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           { signal: controller.signal },
         );
         if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };
+        console.log("[TTS RESPONSE]", data);
+
+        if (!data?.success || !isValidAudioUrl(data.audioUrl)) {
+          console.warn("TTS failed — skipping audio");
+          return { success: false, error: "tts_failed" };
+        }
         logTtsClient("Synthesize OK", { cacheKey: data.cacheKey, cached: data.cached });
 
-        if (!isValidAudioUrl(data.audioUrl)) {
-          console.warn("Invalid audio URL, skipping playback");
-          return { success: false, error: "tts_invalid_audio_url" };
-        }
-        logPlayAudio(data.audioUrl);
         const playbackUrl = resolveClientPlaybackUrl(data.audioUrl, data.cacheKey);
         if (!playbackUrl) {
           console.warn("Invalid audio URL, skipping playback");
           return { success: false, error: "tts_invalid_audio_url" };
         }
-        const audioRes = await authFetch(playbackUrl, { signal: controller.signal });
-        if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };
-        if (!audioRes.ok) {
-          const errText = await audioRes.text().catch(() => "");
-          throw new Error(`audio_fetch_failed_${audioRes.status}${errText ? `:${errText.slice(0, 80)}` : ""}`);
-        }
-        const blob = await audioRes.blob();
-        if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };
-        if (blob.size === 0) throw new Error("audio_empty_blob");
-        logTtsClient("Audio blob ready", { bytes: blob.size, type: blob.type });
 
         cleanup();
-        const url = URL.createObjectURL(blob);
-        if (!url) {
-          console.warn("No audio URL");
-          throw new Error("tts_missing_audio_url");
-        }
-        console.log("[VOICE URL]", url);
-        objectUrlRef.current = url;
-
-        const audio = new Audio(url);
+        const audio = playAudio(playbackUrl);
         audio.playbackRate = playbackRateRef.current;
         audio.onended = () => {
           if (myId !== reqIdRef.current || !isMounted.current) return;
@@ -261,7 +244,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         audioRef.current = audio;
 
         try {
-          await audio.play();
+          if (audio.paused) await audio.play();
         } catch (playErr) {
           console.error("Audio failed:", playErr);
           logTtsClientError("audio.play() rejected", playErr);

@@ -10,10 +10,28 @@ export function isValidAudioUrl(audioUrl: string | null | undefined): audioUrl i
 }
 
 export type TtsSynthesizeResponse = {
+  ok?: boolean;
+  success?: boolean;
   audioUrl: string;
   cacheKey?: string;
   cached?: boolean;
 };
+
+/** Create an `HTMLAudioElement` for a resolved HTTPS or API stream URL. */
+export function playAudio(url: string): HTMLAudioElement {
+  try {
+    const resolved = resolveApiMediaUrl(url);
+    logPlayAudio(resolved);
+    const audio = new Audio(resolved);
+    void audio.play().catch((err) => {
+      console.error("Playback failed", err);
+    });
+    return audio;
+  } catch (e) {
+    console.error("Invalid audio URL", url);
+    throw e;
+  }
+}
 
 /** POST /api/tts/synthesize with async job polling when the server returns 202. */
 export async function synthesizeTts(
@@ -34,10 +52,11 @@ export async function synthesizeTts(
     throw new Error(errBody.error ?? `synthesize_failed_${res.status}`);
   }
   const data = await readResolvedApiJson<TtsSynthesizeResponse>(res, authFetch);
-  if (!isValidAudioUrl(data?.audioUrl)) {
-    throw new Error("tts_missing_audio_url");
+  console.log("[TTS RESPONSE]", data);
+  if (data?.success === false || !isValidAudioUrl(data?.audioUrl)) {
+    throw new Error("tts_failed");
   }
-  return data;
+  return { ...data, success: true, ok: true };
 }
 
 /** Resolve synthesize `audioUrl` (GCS HTTPS, `/api/tts/audio/…`, or absolute) for fetch/play. */

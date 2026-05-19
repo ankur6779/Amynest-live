@@ -295,6 +295,7 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
+    console.error("[ElevenLabs] failed", response.status, detail.slice(0, 200));
     logger.error(
       {
         evt: "elevenlabs.error",
@@ -309,7 +310,8 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
   }
 
   const buffer = Buffer.from(await response.arrayBuffer());
-  if (buffer.byteLength === 0) {
+  if (!buffer || buffer.byteLength === 0) {
+    console.error("[ElevenLabs] failed — empty audio buffer");
     logger.error({ evt: "elevenlabs.empty_audio", durationMs: aiDurationMs }, "[ElevenLabs] Error: empty audio body");
     throw new Error("tts_empty_audio");
   }
