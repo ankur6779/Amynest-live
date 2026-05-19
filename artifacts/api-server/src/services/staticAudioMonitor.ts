@@ -1,4 +1,4 @@
-import { getGcsBucketId } from "../lib/env.js";
+import { getGcsBucketId, parseEnvMs } from "../lib/env.js";
 import { logger } from "../lib/logger.js";
 import { getStaticAudioBuffer, prewarmStaticAudioBuffers } from "./staticAudioLoader.js";
 import { legacyGcsConfigured } from "./ttsAudioStore.js";
@@ -8,8 +8,8 @@ import { sendStaticAudioAlert } from "./staticAudioAlerts.js";
 /** Known-good catalog object (good job!). Override via STATIC_AUDIO_PROBE_HASH. */
 const DEFAULT_PROBE_HASH = "20ccf010450267bfff3fb54c9f09820c";
 
-const HEALTH_INTERVAL_MS = Number(process.env.STATIC_AUDIO_HEALTH_INTERVAL_MS ?? "60_000");
-const METRICS_INTERVAL_MS = Number(process.env.STATIC_AUDIO_METRICS_INTERVAL_MS ?? "120_000");
+const HEALTH_INTERVAL_MS = parseEnvMs("STATIC_AUDIO_HEALTH_INTERVAL_MS", 60_000);
+const METRICS_INTERVAL_MS = parseEnvMs("STATIC_AUDIO_METRICS_INTERVAL_MS", 120_000);
 
 let monitorStarted = false;
 let lastGcsProbeOk = true;

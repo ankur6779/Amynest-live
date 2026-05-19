@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { isStaticTtsText } from "@workspace/static-audio";
 import { db, ttsCacheTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import { getElevenLabsApiKey, getGcsBucketId } from "../lib/env";
+import { getElevenLabsApiKey, getGcsBucketId, parseEnvMs } from "../lib/env";
 import { logger } from "../lib/logger";
 import { fetchWithTimeout } from "../utils/fetch-with-timeout.js";
 import {
@@ -289,7 +289,7 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
 
   const fetchTimeoutMs = Math.min(
     TTS_ELEVENLABS_TIMEOUT_MS,
-    Number(process.env.AI_JOB_TIMEOUT_MS ?? "10_000"),
+    parseEnvMs("AI_JOB_TIMEOUT_MS", 30_000),
   );
   const elevenFetch = fetchWithTimeout(elevenUrl, {
     method: "POST",

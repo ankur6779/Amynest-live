@@ -1,9 +1,10 @@
 /**
  * In-process AI queue — used when REDIS_URL is not set (local dev only).
  */
+import { parseEnvMs } from "../lib/env.js";
 import { logger } from "../lib/logger.js";
-import { getQueueMode } from "./mode.js";
 import { AI_CHAT_TIMEOUT_MS } from "../services/openai-chat.js";
+import { getQueueMode } from "./mode.js";
 import {
   createJob,
   getJob,
@@ -15,7 +16,7 @@ import type { AiJobType, EnqueueResult } from "./types.js";
 
 const MAX_CONCURRENT = Number(process.env.AI_MAX_CONCURRENT_JOBS ?? "3");
 const MAX_QUEUED_PER_USER = Number(process.env.AI_MAX_QUEUED_PER_USER ?? "1");
-const JOB_TIMEOUT_MS = Number(process.env.AI_JOB_TIMEOUT_MS ?? String(AI_CHAT_TIMEOUT_MS));
+const JOB_TIMEOUT_MS = parseEnvMs("AI_JOB_TIMEOUT_MS", AI_CHAT_TIMEOUT_MS);
 
 const pending: string[] = [];
 let activeCount = 0;

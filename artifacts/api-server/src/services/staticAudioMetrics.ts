@@ -1,3 +1,4 @@
+import { parseEnvMs } from "../lib/env.js";
 import { logger } from "../lib/logger.js";
 import { getMemoryCacheStats } from "./staticAudioBufferCache.js";
 import { getActiveGcsReads, getMaxConcurrentGcsReads } from "./staticAudioConcurrency.js";
@@ -6,7 +7,7 @@ export type StaticAudioMetricOutcome = "success" | "failed" | "notFound";
 
 const FAILURE_RATE_ALERT = Number(process.env.STATIC_AUDIO_FAILURE_RATE_ALERT ?? "0.05");
 const CIRCUIT_FAILURE_THRESHOLD = Number(process.env.STATIC_AUDIO_CIRCUIT_FAILURES ?? "15");
-const CIRCUIT_COOLDOWN_MS = Number(process.env.STATIC_AUDIO_CIRCUIT_COOLDOWN_MS ?? "60_000");
+const CIRCUIT_COOLDOWN_MS = parseEnvMs("STATIC_AUDIO_CIRCUIT_COOLDOWN_MS", 60_000);
 
 const metrics = {
   total: 0,

@@ -1,12 +1,13 @@
 import { logger } from "../lib/logger.js";
 import { getMemorySnapshot } from "../utils/memory-monitor.js";
+import { parseEnvMs } from "../lib/env.js";
 import { AI_CHAT_TIMEOUT_MS } from "../services/openai-chat.js";
 import { runAiJobHandler } from "../services/ai-job-handlers.js";
 import type { AiJobQueuePayload } from "../queue/index.js";
 import { patchJobRecord, saveJobRecord } from "../queue/job-results.js";
 import type { AiJobRecord } from "../queue/types.js";
 
-const JOB_TIMEOUT_MS = Number(process.env.AI_JOB_TIMEOUT_MS ?? String(AI_CHAT_TIMEOUT_MS));
+const JOB_TIMEOUT_MS = parseEnvMs("AI_JOB_TIMEOUT_MS", AI_CHAT_TIMEOUT_MS);
 
 /**
  * Process one BullMQ AI job — OpenAI / ElevenLabs with timeout + Redis result storage.
