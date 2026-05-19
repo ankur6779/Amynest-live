@@ -35,6 +35,7 @@ import { deriveRoutineConfidence, type RoutineConfidence } from "./routine-healt
 import { polishRoutineOutput } from "./routine-output-polish.js";
 import { enforceSleepIsLast } from "./routine-weather-planning.js";
 import { applyRoutineRealismPolish } from "./routine-realism-polish.js";
+import { applyRoutineOptimizationEngine, applyDecisionEnforcedFinalPass } from "./routine-optimization-engine.js";
 import { enforceEnergyCurve } from "./routine-category-taxonomy.js";
 import { enforceFinalTimelineIntegrity } from "./routine-final-integrity.js";
 import { runTieredValidation } from "./routine-validation-tiers.js";
@@ -113,6 +114,13 @@ export type IntelligencePipelineInput = {
   fixedActivities?: FixedActivityInput[];
   /** Routine date (YYYY-MM-DD) — filters fixedActivities by weekday. */
   routineDate?: string;
+  // ── Decision-enforced layer (forwarded to optimization engine) ──────────
+  /** `home_lunch | packed_lunch | school_lunch | cafeteria | …` */
+  schoolMealMode?: string | null;
+  /** `vegetarian | mixed | non_veg | …` (parent-level diet hint). */
+  diet?: string | null;
+  /** `mom | dad | both | grandparent | babysitter | self`. */
+  caregiver?: string | null;
 };
 
 export type IntelligencePipelineResult = {
@@ -618,6 +626,44 @@ export function runRoutineIntelligencePipeline(
   }
   polished = enforceSleepIsLast(polished, decisionTrace);
 
+  const ageYears =
+    input.ageInMonths != null
+      ? Math.floor(input.ageInMonths / 12)
+      : childProfile.ageInMonths != null
+        ? Math.floor(childProfile.ageInMonths / 12)
+        : undefined;
+  const optimized = applyRoutineOptimizationEngine(polished, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+    isSchoolDay: isSchoolDayForMeals,
+    isWeekendDay: flowOpts.isWeekendDay ?? false,
+    schoolStartMins: scheduleOpts.schoolStartMins,
+    schoolEndMins: scheduleOpts.schoolEndMins,
+    weatherOutdoor: builtContext.weatherOutdoor,
+    temperatureC:
+      builtContext.temperatureC ??
+      builtContext.environment?.temperature ??
+      null,
+    ageGroup: scheduleOpts.ageGroup,
+    // Decision-enforced layer signals
+    age: ageYears,
+    academicIntensity: builtContext.countryProfile.academicIntensity,
+    independenceLevel: builtContext.countryProfile.independenceLevel,
+    dinnerWindow: builtContext.countryProfile.dinnerWindow,
+    schoolMealMode: input.schoolMealMode,
+    diet: input.diet,
+    caregiver: input.caregiver,
+    region: builtContext.region,
+    country: builtContext.country,
+  });
+  polished = optimized.items;
+  if (optimized.adaptations.length) {
+    pipelineDebug(debug, debugLog, "routineOptimizationEngine", optimized.adaptations);
+    fixedParse.debug.adjustmentsMade.push(
+      ...optimized.adaptations.slice(0, 10).map((a) => `optimize: ${a}`),
+    );
+  }
+
   const realism = applyRoutineRealismPolish(polished, {
     wakeMins: wakeMinsEarly,
     sleepMins: sleepMinsEarly,
@@ -670,6 +716,7 @@ export function runRoutineIntelligencePipeline(
   fixedParse.debug.validationWarnings.push(...mealShift.warnings);
 
   polished = enforceSleepIsLast(polished, decisionTrace);
+
   const confidence = deriveRoutineConfidence(
     input.builtContext,
     state,
@@ -733,6 +780,38 @@ export function runRoutineIntelligencePipeline(
   }
   if (finalIntegrity.repaired) {
     pipelineDebug(debug, debugLog, "finalTimelineIntegrityRepaired", true);
+  }
+
+  // Final safety net — re-apply the relabel/recover-only subset of the
+  // decision-enforced layer. Time-preserving so it cannot introduce
+  // overlaps; catches downstream label/category drift from realism polish,
+  // energy curve, and timeline integrity.
+  const finalEnforcement = applyDecisionEnforcedFinalPass(polished, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+    isSchoolDay: isSchoolDayForMeals,
+    isWeekendDay: flowOpts.isWeekendDay ?? false,
+    schoolStartMins: scheduleOpts.schoolStartMins,
+    schoolEndMins: scheduleOpts.schoolEndMins,
+    weatherOutdoor: input.builtContext.weatherOutdoor,
+    temperatureC:
+      input.builtContext.temperatureC ??
+      input.builtContext.environment?.temperature ??
+      null,
+    ageGroup: scheduleOpts.ageGroup,
+    age: ageYears,
+    academicIntensity: input.builtContext.countryProfile.academicIntensity,
+    independenceLevel: input.builtContext.countryProfile.independenceLevel,
+    dinnerWindow: input.builtContext.countryProfile.dinnerWindow,
+    schoolMealMode: input.schoolMealMode,
+    diet: input.diet,
+    caregiver: input.caregiver,
+    region: input.builtContext.region,
+    country: input.builtContext.country,
+  });
+  polished = finalEnforcement.items;
+  if (finalEnforcement.adaptations.length) {
+    pipelineDebug(debug, debugLog, "decisionEnforcedFinal", finalEnforcement.adaptations);
   }
 
   return {
