@@ -85,9 +85,33 @@ export default function AmyAiTutorPage() {
   const [loading, setLoading] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const threadRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [showScrollLatest, setShowScrollLatest] = useState(false);
+
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ behavior, block: "end" });
+    });
+  };
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollToBottom("smooth");
   }, [turns, loading]);
+
+  const handleThreadScroll = () => {
+    const thread = threadRef.current;
+    if (!thread) return;
+    const distanceFromBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight;
+    setShowScrollLatest(distanceFromBottom > 160);
+  };
+
+  const handleInputFocus = () => {
+    setTimeout(() => {
+      inputRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      scrollToBottom("smooth");
+    }, 80);
+  };
 
   // Pull primary child for context — best-effort.
   const { data: childrenData } = useQuery<Array<{ id?: number; name?: string; age?: number | null }>>({
@@ -177,9 +201,12 @@ export default function AmyAiTutorPage() {
   const isEmpty = turns.length === 0;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] max-w-3xl mx-auto" data-testid="amy-tutor-page">
+    <div
+      className="relative mx-auto flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-3xl flex-col bg-background md:h-[calc(100dvh-4rem)] md:max-h-[calc(100dvh-4rem)]"
+      data-testid="amy-tutor-page"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between mb-3 flex-shrink-0">
+      <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-4 md:px-0 md:pt-0">
         <div>
           <h1 className="font-quicksand text-3xl font-bold text-foreground flex items-center gap-2">
             <AmyIcon size={38} bounce ring />
@@ -199,7 +226,7 @@ export default function AmyAiTutorPage() {
       {/* Daily limit bar */}
       <div
         className={cn(
-          "flex-shrink-0 mb-3 rounded-2xl px-4 py-2 flex items-center justify-between gap-3 border text-sm",
+          "mx-4 mb-3 flex shrink-0 items-center justify-between gap-3 rounded-2xl border px-4 py-2 text-sm md:mx-0",
           limitReached
             ? "bg-muted border-border text-foreground"
             : remaining <= 2
@@ -228,7 +255,7 @@ export default function AmyAiTutorPage() {
       </div>
 
       {/* Mode + subject + topic strip */}
-      <div className="flex-shrink-0 mb-3 space-y-2">
+      <div className="shrink-0 space-y-2 px-4 pb-3 md:px-0">
         <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={t("pages.amy_ai_tutor.tutor_mode")}>
           {(Object.keys(MODE_META) as Mode[]).map((m) => {
             const meta = MODE_META[m];
@@ -291,7 +318,12 @@ export default function AmyAiTutorPage() {
       </div>
 
       {/* Chat area */}
-      <div className="flex-1 overflow-y-auto space-y-3 pb-4 pr-1" data-testid="amy-tutor-thread">
+      <div
+        ref={threadRef}
+        onScroll={handleThreadScroll}
+        className="min-h-0 flex-1 overflow-y-auto space-y-3 px-4 pb-24 pr-5"
+        data-testid="amy-tutor-thread"
+      >
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center py-8">
             <AmyIcon size={88} bounce ring />
@@ -320,12 +352,25 @@ export default function AmyAiTutorPage() {
         <div ref={bottomRef} />
       </div>
 
+      {showScrollLatest && (
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => scrollToBottom("smooth")}
+          className="absolute bottom-28 right-4 z-40 rounded-full shadow-lg"
+        >
+          Latest
+        </Button>
+      )}
+
       {/* Composer */}
-      <div className="flex-shrink-0 flex gap-2 border-t border-border pt-3">
+      <div className="sticky bottom-0 z-50 flex w-full shrink-0 gap-2 border-t border-border bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur md:px-0">
         <Textarea
+          ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={onKeyDown}
+          onFocus={handleInputFocus}
           placeholder={limitReached ? "Daily limit reached — upgrade to keep going." : "Ask Amy anything…"}
           disabled={limitReached}
           className="resize-none min-h-[44px] max-h-32 rounded-2xl"

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Home, Users, Calendar, Star, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Moon, Sun, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, Trophy, Wind, MessageSquarePlus } from "lucide-react";
+import { Home, Users, Calendar, Star, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Moon, Sun, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, Trophy, MessageSquarePlus } from "lucide-react";
 import { useClerk, useUser } from "@/lib/firebase-auth-hooks";
 import { LayoutMobileMenu } from "@/components/layout-mobile-menu";
 import { logNavEvent } from "@/lib/navigation-log";
@@ -80,18 +80,14 @@ const NAV_ITEMS: NavItem[] = [{
   labelKey: "nav.parenting_hub",
   icon: BookOpen
 }, {
-  href: "/amy-coach",
-  labelKey: "nav.amy_coach",
-  icon: Brain
-}, {
   href: "/kids-control-center",
   labelKey: "nav.kids_control_center",
   icon: Baby,
   badge: "Soon 🚀"
 }, {
-  href: "/children",
-  labelKey: "nav.children",
-  icon: Users
+  href: "/amy-coach",
+  labelKey: "nav.amy_coach",
+  icon: Brain
 }, {
   href: "/routines",
   labelKey: "nav.routines",
@@ -129,6 +125,10 @@ const NAV_ITEMS: NavItem[] = [{
   labelKey: "nav.nutrition_hub",
   icon: Salad
 }, {
+  href: "/children",
+  labelKey: "nav.children",
+  icon: Users
+}, {
   href: "/parent-profile",
   labelKey: "nav.profile",
   icon: UserCircle
@@ -140,10 +140,6 @@ const NAV_ITEMS: NavItem[] = [{
   href: "/referrals",
   labelKey: "nav.referrals",
   icon: Gift
-}, {
-  href: "/environment",
-  labelKey: "nav.environment",
-  icon: Wind
 }, {
   href: "/feedback",
   labelKey: "nav.feedback",
@@ -194,6 +190,11 @@ export function Layout({
   const email = getUserEmail(user);
   const initials = getUserInitials(user);
   const avatarUrl = getUserAvatarUrl(user);
+  const isChatRoute =
+    safePathStartsWith(location, "/assistant") || safePathStartsWith(location, "/amy-ai-tutor");
+  const isImmersiveRoute =
+    isChatRoute || safePathStartsWith(location, "/phonics") || safePathStartsWith(location, "/speech-coach");
+  const showDashboardChrome = safePathStartsWithSegment(location, "/dashboard");
 
   useEffect(() => {
     logNavEvent("layout-mounted", { location });
@@ -206,9 +207,9 @@ export function Layout({
       console.error("[amynest:nav] sign-out failed", err);
     }
   };
-  return <div className="flex min-h-[100dvh] w-full flex-col bg-background">
+  return <div className="flex h-full min-h-0 w-full flex-col bg-background">
       {/* Mobile Header — fixed so it never duplicates on Android Chrome */}
-      <header className="fixed top-0 left-0 right-0 z-40 flex h-20 w-full items-center justify-between border-b bg-background px-4 md:hidden shadow-sm">
+      {!isImmersiveRoute && <header className="fixed top-0 left-0 right-0 z-40 flex h-20 w-full items-center justify-between border-b bg-background px-4 md:hidden shadow-sm">
         <div className="flex items-center gap-2">
           <BrandLogo size="sm" showTagline={true} />
           <AmyMascotLogo size={34} />
@@ -216,14 +217,14 @@ export function Layout({
         <div className="flex items-center gap-2">
           <LayoutMobileMenu />
         </div>
-      </header>
+      </header>}
 
       {/* Spacer pushes content below the fixed mobile header */}
-      <div className="h-20 md:hidden" aria-hidden="true" />
+      {!isImmersiveRoute && <div className="h-20 md:hidden" aria-hidden="true" />}
 
-      <div className="flex flex-1">
+      <div className="flex min-h-0 flex-1">
         {/* Desktop Sidebar */}
-        <aside className="hidden w-64 flex-col border-r bg-card md:flex">
+        {!isImmersiveRoute && <aside className="hidden w-64 flex-col border-r bg-card md:flex">
           <div className="flex h-24 items-center justify-between border-b px-5 shadow-sm">
             <BrandLogo size="md" showTagline={true} />
             <AmyMascotLogo size={42} />
@@ -272,12 +273,12 @@ export function Layout({
               {t("patent_pending.footer_label")}
             </p>
           </div>
-        </aside>
+        </aside>}
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
-          <div className="mx-auto max-w-5xl p-4 md:p-8">
-            {!["/sign-in", "/onboarding", "/notify-prompt"].some(p => safePathStartsWith(location, p)) && <div className="mb-4">
+        <main className={`flex-1 min-h-0 overflow-y-auto overscroll-y-contain ${showDashboardChrome ? "pb-20 md:pb-0" : "pb-0"}`}>
+          <div className={isImmersiveRoute ? "mx-auto flex h-full min-h-0 w-full flex-col p-0 md:p-0" : "mx-auto max-w-5xl p-4 md:p-8"}>
+            {!isImmersiveRoute && !["/sign-in", "/onboarding", "/notify-prompt"].some(p => safePathStartsWith(location, p)) && <div className="mb-4">
                 <NotificationNudgeBanner />
               </div>}
             {children}
@@ -288,22 +289,18 @@ export function Layout({
       {/* Notification enable prompt — shown as a bottom-sheet modal ~1.8s
           after the user opens the app if permission has not been granted yet.
           Snoozes for 3 days on dismiss. Banner above handles denied/reconnect. */}
-      {!["/sign-in", "/onboarding"].some(p => safePathStartsWith(location, p)) && (
+      {!isImmersiveRoute && !["/sign-in", "/onboarding"].some(p => safePathStartsWith(location, p)) && (
         <NotificationPromptModal />
       )}
 
-      {/* Mobile Bottom Nav — premium 4-tab with center-raised Amy Coach.
-          data-on-dark: this nav is intentionally a dark slate surface in
-          BOTH themes (matches native iOS/Android tab bar conventions),
-          so the legacy-color safety net in index.css must NOT rewrite
-          the white text / white borders inside it on light mode. */}
-      <nav data-on-dark className="fixed bottom-0 left-0 right-0 z-40 h-[78px] bg-card backdrop-blur-xl border-t border-white/10 md:hidden pb-safe">
+      {/* Mobile Bottom Nav — premium 4-tab with center-raised Amy Coach. */}
+      {showDashboardChrome && <nav className="fixed bottom-0 left-0 right-0 z-40 h-[78px] bg-card/95 backdrop-blur-xl border-t border-border md:hidden pb-safe shadow-[0_-8px_28px_var(--shadow-color)]">
         <div className="relative flex h-full w-full items-end justify-around px-2 pb-2">
           {BOTTOM_NAV_ITEMS.map(item => {
           const isActive = safePathStartsWithSegment(location, item.href);
           if (item.center) {
             return <Link key={item.href} href={item.href} data-tour="amy-coach" className="relative flex flex-col items-center justify-end -translate-y-5">
-                  <div className={`flex h-[60px] w-[60px] items-center justify-center rounded-full text-white transition-transform active:scale-90 ${isActive ? "bg-gradient-to-br from-primary to-primary shadow-[0_10px_25px_rgba(99,102,241,0.55)] ring-2 ring-white/20" : "bg-gradient-to-br from-primary to-primary shadow-[0_8px_20px_rgba(99,102,241,0.45)]"}`}>
+                  <div className={`flex h-[60px] w-[60px] items-center justify-center rounded-full text-primary-foreground transition-transform active:scale-90 ${isActive ? "bg-gradient-to-br from-primary to-primary shadow-lg ring-2 ring-primary/20" : "bg-gradient-to-br from-primary to-primary shadow-md"}`}>
                     <item.icon className="h-7 w-7" />
                   </div>
                   <span className={`mt-1 text-[10px] font-semibold ${isActive ? "text-muted-foreground" : "text-muted-foreground"}`}>
@@ -318,10 +315,10 @@ export function Layout({
               </Link>;
         })}
         </div>
-      </nav>
+      </nav>}
 
       {/* Floating Amy AI assistant button */}
-      <AmyFab />
+      {showDashboardChrome && <AmyFab />}
 
       {/* Premium spotlight onboarding tour — auto-shows once after first login */}
       <SpotlightTour />

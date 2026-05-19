@@ -64,7 +64,7 @@ function DetailedTimelinePanel({
       {slots.map((slot, i) => (
         <div
           key={i}
-          className={`rounded-lg p-3 border ${slot.hasConflict ? "border-amber-300 bg-amber-50 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-800"}`}
+          className={`rounded-lg p-3 border ${slot.hasConflict ? "border-amber-300 bg-amber-50 dark:bg-amber-950/20" : "border-border"}`}
         >
           <p className="text-sm font-semibold mb-2">
             {slot.startTime} – {slot.endTime}

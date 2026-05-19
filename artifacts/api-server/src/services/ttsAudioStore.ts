@@ -393,21 +393,4 @@ export async function ttsAudioBackfillPostgres(
   }
 }
 
-/**
- * Client-facing playback URL. Prefer a stable public GCS HTTPS URL when
- * configured; otherwise fall back to the API stream path (local Postgres dev).
- */
-export function resolveTtsPlaybackUrl(
-  cacheKey: string,
-  row?: { audioUrl?: string | null },
-): string {
-  const stored = row?.audioUrl?.trim() ?? "";
-  if (isValidTtsPublicUrl(stored)) return stored;
-
-  if (isTtsCacheGcsEnabled() && legacyGcsConfigured()) {
-    const gcsUrl = ttsPublicGcsUrl(cacheKey);
-    if (gcsUrl && isValidTtsPublicUrl(gcsUrl)) return gcsUrl;
-  }
-
-  return `/api/tts/audio/${cacheKey}.mp3`;
-}
+export { resolveTtsPlaybackUrl } from "./ttsPlaybackUrl.js";

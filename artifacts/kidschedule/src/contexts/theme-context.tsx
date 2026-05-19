@@ -8,19 +8,29 @@ type ThemeContextValue = {
   setMode: (mode: ThemeMode) => void;
 };
 
-const STORAGE_KEY = "amynest:theme";
+export const THEME_STORAGE_KEY = "theme";
+const LEGACY_STORAGE_KEY = "amynest:theme";
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 function readInitialMode(): ThemeMode {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return "light";
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    const stored =
+      window.localStorage.getItem(THEME_STORAGE_KEY) ??
+      window.localStorage.getItem(LEGACY_STORAGE_KEY);
     if (stored === "light" || stored === "dark") return stored;
   } catch {
     /* ignore */
   }
-  return "dark";
+  try {
+    if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
+      return "dark";
+    }
+  } catch {
+    /* ignore */
+  }
+  return "light";
 }
 
 function applyMode(mode: ThemeMode) {
@@ -28,7 +38,12 @@ function applyMode(mode: ThemeMode) {
   const root = document.documentElement;
   if (mode === "dark") root.classList.add("dark");
   else root.classList.remove("dark");
+  root.setAttribute("data-theme", mode);
   root.style.colorScheme = mode;
+  const themeColor = mode === "dark" ? "#0b0b0b" : "#ffffff";
+  document
+    .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    ?.setAttribute("content", themeColor);
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -37,7 +52,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     applyMode(mode);
     try {
-      window.localStorage.setItem(STORAGE_KEY, mode);
+      window.localStorage.setItem(THEME_STORAGE_KEY, mode);
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY);
     } catch {
       /* ignore */
     }

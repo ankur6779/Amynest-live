@@ -57,11 +57,10 @@ const PRIVACY_CONTENT = {
 export default function PrivacyPolicyPage() {
   const { t } = useTranslation();
 
-  // audit-block-ignore-start — public light-mode page; slate tokens are intentional
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white shadow-sm">
+      <header className="border-b border-border bg-card shadow-sm">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
           <Link href="/">
             <span className="flex items-center gap-2 cursor-pointer">
@@ -84,7 +83,7 @@ export default function PrivacyPolicyPage() {
             </span>
           </Link>
           <Link href="/">
-            <span className="text-sm text-slate-600 hover:text-slate-900 cursor-pointer">
+            <span className="text-sm text-muted-foreground hover:text-foreground cursor-pointer">
               ← {t("screens.common.home_link")}
             </span>
           </Link>
@@ -94,28 +93,28 @@ export default function PrivacyPolicyPage() {
       {/* Content */}
       <main className="mx-auto max-w-3xl px-5 py-12">
         <article data-testid="privacy-policy-content">
-          <h1 className="text-3xl font-black text-slate-900 mb-2">
+          <h1 className="text-3xl font-black text-foreground mb-2">
             {PRIVACY_CONTENT.title}
           </h1>
-          <p className="text-sm text-slate-500 italic mb-8">
+          <p className="text-sm text-muted-foreground italic mb-8">
             {PRIVACY_CONTENT.updated}
           </p>
-          <p className="text-slate-700 leading-relaxed mb-8">
+          <p className="text-foreground leading-relaxed mb-8">
             {PRIVACY_CONTENT.intro}
           </p>
 
           {PRIVACY_CONTENT.sections.map((section, i) => (
             <section key={i} className="mb-8">
-              <h2 className="text-xl font-bold text-slate-900 mb-3 mt-8">
+              <h2 className="text-xl font-bold text-foreground mb-3 mt-8">
                 {section.heading}
               </h2>
 
               {section.body && (
-                <p className="text-slate-700 leading-relaxed">{section.body}</p>
+                <p className="text-foreground leading-relaxed">{section.body}</p>
               )}
 
               {section.items && section.items.length > 0 && (
-                <ul className="list-disc pl-6 space-y-2 text-slate-700">
+                <ul className="list-disc pl-6 space-y-2 text-foreground">
                   {section.items.map((item, j) => (
                     <li key={j} className="leading-relaxed">
                       {item}
@@ -125,7 +124,7 @@ export default function PrivacyPolicyPage() {
               )}
 
               {section.note && (
-                <p className="mt-4 text-slate-700 leading-relaxed font-medium">
+                <p className="mt-4 text-foreground leading-relaxed font-medium">
                   {section.note}
                 </p>
               )}
@@ -135,12 +134,11 @@ export default function PrivacyPolicyPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-6">
-        <p className="text-center text-xs text-slate-500">
+      <footer className="border-t border-border bg-card py-6">
+        <p className="text-center text-xs text-muted-foreground">
           {t("screens.common.copyright")}
         </p>
       </footer>
     </div>
   );
-  // audit-block-ignore-end
 }

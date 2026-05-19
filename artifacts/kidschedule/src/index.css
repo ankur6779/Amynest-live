@@ -189,7 +189,7 @@
   --color-muted-foreground: hsl(var(--muted-foreground));
   --color-muted-border: var(--muted-border);
 
-  --color-accent: hsl(var(--accent));
+  --color-accent: hsl(var(--accent-hsl));
   --color-accent-foreground: hsl(var(--accent-foreground));
   --color-accent-border: var(--accent-border);
 
@@ -226,6 +226,16 @@
 
 /* LIGHT MODE */
 :root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --text-primary: #111111;
+  --text-secondary: #555555;
+  --border-color: #e5e5e5;
+  --card-bg: #ffffff;
+  --accent: #2563eb;
+  --shadow-color: rgba(0,0,0, .08);
+  --overlay-bg: rgba(17,17,17, .72);
+
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
 
@@ -271,7 +281,7 @@
   --muted-foreground: 222 20% 45%;
 
   /* Mint / Teal */
-  --accent: 171 77% 43%;
+  --accent-hsl: 171 77% 43%;
   --accent-foreground: 0 0% 100%;
 
   /* Red */
@@ -308,7 +318,7 @@
   --primary-border: hsl(var(--primary));
   --secondary-border: hsl(var(--secondary));
   --muted-border: hsl(var(--muted));
-  --accent-border: hsl(var(--accent));
+  --accent-border: hsl(var(--accent-hsl));
   --destructive-border: hsl(var(--destructive));
 
   /* ── Task #219: brand color scale (used by mascot SVGs,
@@ -401,7 +411,18 @@
   --brand-teal-700: 175 77% 26%;
 }
 
-.dark {
+.dark,
+[data-theme="dark"] {
+  --bg-primary: #0b0b0b;
+  --bg-secondary: #161616;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a3a3a3;
+  --border-color: #2a2a2a;
+  --card-bg: #121212;
+  --accent: #3b82f6;
+  --shadow-color: rgba(0,0,0, .40);
+  --overlay-bg: rgba(0,0,0, .80);
+
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);
 
@@ -441,7 +462,7 @@
   --muted: 222 30% 20%;
   --muted-foreground: 222 20% 70%;
 
-  --accent: 171 77% 43%;
+  --accent-hsl: 171 77% 43%;
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 84% 60%;
@@ -466,6 +487,86 @@
   --shadow-2xl: 0px 12px 0px 0px hsl(var(--border) / 0.5);
 }
 
+/* ── Pull-to-refresh / overscroll bounce (PWA + Capacitor) ───────────────
+ * Document must not scroll; in-app regions (layout main, modals) scroll.
+ * Touch guard in disable-overscroll-gesture.ts blocks pull-at-top. */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
+  touch-action: pan-x pan-y;
+}
+
+html {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  color-scheme: light;
+}
+
+html.dark,
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+::selection {
+  background: hsl(var(--primary) / 0.25);
+  color: hsl(var(--foreground));
+}
+
+* {
+  scrollbar-color: hsl(var(--muted-foreground) / 0.55) hsl(var(--muted) / 0.7);
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.7);
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.45);
+  border: 3px solid hsl(var(--muted) / 0.7);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.65);
+}
+
+#root {
+  height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#app-root {
+  flex: 1;
+  min-height: 0;
+  height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+}
+
+#app-root main,
+#app-root .overflow-y-auto,
+#app-root [data-app-scroll] {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -480,13 +581,62 @@
     font-family: 'Noto Sans Devanagari', 'Nunito', sans-serif;
   }
 
-  .dark body {
-    background: linear-gradient(160deg, #0f0c29 0%, #302b63 55%, #24243e 100%);
-    background-attachment: fixed;
+  .dark body,
+  [data-theme="dark"] body {
+    background: hsl(var(--background));
   }
   
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Quicksand', 'Noto Sans Devanagari', sans-serif;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg-primary: #0b0b0b;
+    --bg-secondary: #161616;
+    --text-primary: #f5f5f5;
+    --text-secondary: #a3a3a3;
+    --border-color: #2a2a2a;
+    --card-bg: #121212;
+    --accent: #3b82f6;
+    --shadow-color: rgba(0,0,0, .40);
+    --overlay-bg: rgba(0,0,0, .80);
+
+    --button-outline: rgba(255,255,255, .10);
+    --badge-outline: rgba(255,255,255, .05);
+    --opaque-button-border-intensity: 9;
+    --elevate-1: rgba(255,255,255, .04);
+    --elevate-2: rgba(255,255,255, .09);
+    --background: 222 47% 11%;
+    --foreground: 40 33% 98%;
+    --border: 222 30% 20%;
+    --card: 222 40% 14%;
+    --card-foreground: 40 33% 98%;
+    --card-border: 222 30% 20%;
+    --sidebar: 222 47% 11%;
+    --sidebar-foreground: 40 33% 98%;
+    --sidebar-border: 222 30% 20%;
+    --sidebar-primary: 14 85% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 30% 20%;
+    --sidebar-accent-foreground: 40 33% 98%;
+    --sidebar-ring: 14 85% 58%;
+    --popover: 222 40% 14%;
+    --popover-foreground: 40 33% 98%;
+    --popover-border: 222 30% 20%;
+    --primary: 14 85% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 93% 57%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 222 30% 20%;
+    --muted-foreground: 222 20% 70%;
+    --accent-hsl: 171 77% 43%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --input: 222 30% 20%;
+    --ring: 14 85% 58%;
   }
 }
 
@@ -595,12 +745,19 @@
 
 /* When running as a standalone PWA or inside Capacitor, avoid notch overlap */
 @media all and (display-mode: standalone) {
-  body {
+  #app-root {
     padding-top:    env(safe-area-inset-top,    0px);
     padding-right:  env(safe-area-inset-right,  0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
     padding-left:   env(safe-area-inset-left,   0px);
   }
+}
+
+.amynest-native-shell #app-root {
+  padding-top:    env(safe-area-inset-top,    0px);
+  padding-right:  env(safe-area-inset-right,  0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left:   env(safe-area-inset-left,   0px);
 }
 
 /* Bottom navigation bar — extra bottom clearance for home indicator */

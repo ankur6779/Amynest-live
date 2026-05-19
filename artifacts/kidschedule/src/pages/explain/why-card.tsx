@@ -41,13 +41,13 @@ function FactorIcon({ icon }: { icon?: string }) {
 function influenceClass(inf: string) {
   if (inf === "positive") return "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-200";
   if (inf === "negative") return "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/30 dark:text-rose-200";
-  return "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300";
+  return "bg-muted text-muted-foreground border-border";
 }
 
 function ConfidenceBar({ value, tier }: { value: number; tier: string }) {
   const { t } = useTranslation();
   const color =
-    tier === "high" ? "bg-emerald-500" : tier === "medium" ? "bg-amber-400" : "bg-slate-400";
+    tier === "high" ? "bg-emerald-500" : tier === "medium" ? "bg-amber-400" : "bg-muted-foreground";
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-xs text-muted-foreground">

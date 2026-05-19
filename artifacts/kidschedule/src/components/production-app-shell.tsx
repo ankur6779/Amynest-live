@@ -55,12 +55,12 @@ function FirebaseInitGate({ children }: Props) {
  */
 export function ProductionAppShell({ children }: Props) {
   return (
-    <>
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       <DomainGate>
-      <FirebaseInitGate>
-        <RedirectLoopGuard>{children}</RedirectLoopGuard>
-      </FirebaseInitGate>
+        <FirebaseInitGate>
+          <RedirectLoopGuard>{children}</RedirectLoopGuard>
+        </FirebaseInitGate>
       </DomainGate>
-    </>
+    </div>
   );
 }

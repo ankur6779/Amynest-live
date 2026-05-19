@@ -154,7 +154,7 @@ export function RoutinesEnvironmentPreview() {
               <span className="text-foreground">{weatherLine}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Wind className="h-4 w-4 text-slate-600 shrink-0" />
+              <Wind className="h-4 w-4 text-muted-foreground shrink-0" />
               <span
                 className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-xs font-bold ${AQI_TONE_CLASSES[display.aqiTone]}`}
               >

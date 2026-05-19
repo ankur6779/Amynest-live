@@ -64,8 +64,9 @@ const AssistantPage = lazyPage(() => import("@/pages/assistant"));
 const AmyAiTutorPage = lazyPage(() => import("@/pages/amy-ai-tutor"));
 const ProgressPage = lazyPage(() => import("@/pages/progress"));
 const ParentingHub = lazyPage(() => import("@/pages/parenting-hub"));
+const PhonicsPage = lazyPage(() => import("@/pages/phonics"));
 const LifeSkillsPage = lazyPage(() => import("@/pages/life-skills"));
-const SpeechCoachPage = lazyPage(() => import("@/pages/speech-coach"));
+const SpeechCoachPage = lazyPage(() => import("@/pages/speech-coach/live-speech-coach"));
 const KidsControlCenterPage = lazyPage(() => import("@/pages/kids-control-center"));
 const StudyPage = lazyPage(() => import("@/pages/study"));
 const EventPrepPage = lazyPage(() => import("@/pages/event-prep"));
@@ -253,6 +254,7 @@ const AssistantRoute = makeProtectedRoute(AssistantPage);
 const AmyAiTutorRoute = makeProtectedRoute(AmyAiTutorPage);
 const ProgressRoute = makeProtectedRoute(ProgressPage);
 const ParentingHubRoute = makeProtectedRoute(ParentingHub);
+const PhonicsRoute = makeProtectedRoute(PhonicsPage);
 const LifeSkillsRoute = makeProtectedRoute(LifeSkillsPage);
 const SpeechCoachRoute = makeProtectedRoute(SpeechCoachPage);
 const KidsControlCenterRoute = makeProtectedRoute(KidsControlCenterPage);
@@ -427,7 +429,10 @@ function AppRoutes() {
           <Route path="/amy-ai-tutor" component={AmyAiTutorRoute} />
           <Route path="/progress" component={ProgressRoute} />
           <Route path="/parenting-hub" component={ParentingHubRoute} />
+          <Route path="/phonics/test" component={PhonicsRoute} />
+          <Route path="/phonics" component={PhonicsRoute} />
           <Route path="/life-skills" component={LifeSkillsRoute} />
+          <Route path="/speech-coach" component={SpeechCoachRoute} />
           <Route path="/parenting-hub/speech-coach" component={SpeechCoachRoute} />
           <Route path="/kids-control-center" component={KidsControlCenterRoute} />
           <Route path="/study" component={StudyRoute} />
