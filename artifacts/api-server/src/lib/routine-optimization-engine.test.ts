@@ -85,7 +85,7 @@ describe("fixAfterSchoolEnergy", () => {
           status: "pending",
         },
       ],
-      { isSchoolDay: true, schoolEndMins: 14 * 60 },
+      { isSchoolDay: true, wakeMins: 7 * 60, sleepMins: 21 * 60, schoolEndMins: 14 * 60 },
     );
     assert.ok(adaptations.length > 0);
     const refuel = items.find((i) => /refuel/i.test(i.activity));

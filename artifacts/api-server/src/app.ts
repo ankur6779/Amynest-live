@@ -98,7 +98,7 @@ export async function createApp(): Promise<Express> {
     let queueSnapshot: {
       status: "ok" | "degraded";
       redis: boolean;
-      queueMode: "bullmq" | "memory" | "off";
+      queueMode: "bullmq" | "memory" | "inline" | "off";
       workerExpected: boolean;
     } = {
       status: "ok",

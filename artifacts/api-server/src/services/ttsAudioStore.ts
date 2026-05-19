@@ -16,6 +16,7 @@ import {
 } from "./ttsGcsPaths";
 
 export { isValidTtsPublicUrl };
+export { isTtsCacheGcsEnabled };
 
 export type TtsStoreBackend = "postgres" | "gcs";
 
