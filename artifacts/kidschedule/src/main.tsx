@@ -20,6 +20,15 @@ import {
 import { syncPwaCacheAndVersion } from "@/lib/pwa-cache-sync";
 import { patchBootDiagnostics } from "@/lib/boot-store";
 import { redirectApexToCanonicalWww } from "@/lib/canonical-domain";
+import { installStaticAudioGuards } from "@/lib/static-audio-guard";
+import {
+  checkStaticAudioHealthOnBoot,
+  installStaticAudioDevTools,
+} from "@/lib/static-audio-telemetry";
+import {
+  injectStaticAudioPreloadHints,
+  installStaticAudioGestureWarmup,
+} from "@/lib/static-audio-edge";
 
 declare global {
   interface Window {
@@ -40,6 +49,11 @@ if (typeof window !== "undefined" && redirectApexToCanonicalWww()) {
 
 installViteChunkRecovery();
 installGlobalErrorHandlers();
+installStaticAudioGuards();
+installStaticAudioDevTools();
+installStaticAudioGestureWarmup();
+injectStaticAudioPreloadHints();
+void checkStaticAudioHealthOnBoot();
 logBootContext();
 
 if (import.meta.env.DEV) {

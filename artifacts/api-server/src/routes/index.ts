@@ -90,6 +90,7 @@ router.use(spellingPublicRouter);
 // public phoneme audio. Mounted BEFORE requireAuth so <audio>/expo-audio
 // can fetch without bearer tokens. See PHONEME_PROMPTS in phonics.ts.
 router.use(phonicsPublicRouter);
+// /api/static-audio/:hash.mp3 — MD5-addressed catalog MP3 stream from GCS.
 router.use(staticAudioPublicRouter);
 router.use(requireAuth);
 router.use(clientLogsRouter);

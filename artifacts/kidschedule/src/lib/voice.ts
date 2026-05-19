@@ -7,8 +7,8 @@ import { getAuth } from "firebase/auth";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
 import {
   mustUseStaticOnly,
+  prepareStaticPlaybackAudio,
   safePlayAudio,
-  tryCreateStaticPlaybackAudio,
 } from "@/lib/static-audio";
 import { resolveAiApiData, type AuthFetchFn } from "@/lib/poll-result";
 
@@ -97,12 +97,15 @@ export async function speak(text: string): Promise<void> {
 
   stopCurrentAudio();
 
-  const staticAudio = tryCreateStaticPlaybackAudio(trimmed);
+  const staticAudio = await prepareStaticPlaybackAudio(trimmed);
   if (staticAudio) {
     _audio = staticAudio;
     staticAudio.onended = stopCurrentAudio;
     staticAudio.onerror = stopCurrentAudio;
-    await safePlayAudio(staticAudio);
+    await safePlayAudio(staticAudio, {
+      proxyUrl: staticAudio.src,
+      phrase: trimmed,
+    });
     return;
   }
 

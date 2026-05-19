@@ -6,7 +6,16 @@ import { logger } from "../lib/logger";
 const router: IRouter = Router();
 
 const ClientLogBody = z.object({
-  type: z.enum(["crash", "slow_api", "failed_routine", "warning", "info"]),
+  type: z.enum([
+    "crash",
+    "slow_api",
+    "failed_routine",
+    "warning",
+    "info",
+    "static_audio_play_failed",
+    "static_audio_missing_url",
+    "static_audio_proxy_failed",
+  ]),
   message: z.string().min(1).max(4000),
   context: z.string().max(256).optional(),
   meta: z.record(z.string(), z.unknown()).optional(),
@@ -54,10 +63,19 @@ async function ingestClientLog(req: Request, res: Response): Promise<void> {
   });
   if (recentLogs.length > MAX_BUFFER) recentLogs.shift();
 
+  const staticAudioError =
+    parsed.data.type === "static_audio_play_failed" ||
+    parsed.data.type === "static_audio_proxy_failed";
+  const staticAudioWarn = parsed.data.type === "static_audio_missing_url";
+
   const logFn =
-    parsed.data.type === "crash" || parsed.data.type === "failed_routine"
+    parsed.data.type === "crash" ||
+    parsed.data.type === "failed_routine" ||
+    staticAudioError
       ? logger.error.bind(logger)
-      : parsed.data.type === "slow_api" || parsed.data.type === "warning"
+      : parsed.data.type === "slow_api" ||
+          parsed.data.type === "warning" ||
+          staticAudioWarn
         ? logger.warn.bind(logger)
         : logger.info.bind(logger);
 

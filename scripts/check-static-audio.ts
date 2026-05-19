@@ -1,13 +1,79 @@
 /**
- * Fail when the shipped static-audio map does not cover the full catalog.
- * Used in prebuild / CI — no ElevenLabs or GCS required.
+ * Fail when the shipped static-audio map does not cover the full catalog,
+ * or when client code would play static audio directly from GCS.
  *
  *   pnpm run check:static-audio
  */
 import { config } from "dotenv";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
 import { listCatalogMissingKeys, REPO_ROOT } from "./static-audio-paths.js";
 
 config({ path: `${REPO_ROOT}/.env` });
+
+const KIDSCHEDULE_SRC = join(REPO_ROOT, "artifacts/kidschedule/src");
+
+/** Files allowed to reference storage.googleapis.com (parse/proxy/guard only). */
+const GCS_REFERENCE_ALLOWLIST = new Set([
+  "lib/static-audio.ts",
+  "lib/static-audio-guard.ts",
+  "lib/static-audio-telemetry.ts",
+  "lib/tts-playback.ts",
+]);
+
+function walkSourceFiles(dir: string, out: string[] = []): string[] {
+  for (const name of readdirSync(dir)) {
+    const path = join(dir, name);
+    if (statSync(path).isDirectory()) {
+      if (name === "data") continue;
+      walkSourceFiles(path, out);
+    } else if (/\.(ts|tsx)$/.test(name)) {
+      out.push(path);
+    }
+  }
+  return out;
+}
+
+function assertNoClientDirectGcsPlayback(): void {
+  const violations: string[] = [];
+
+  for (const file of walkSourceFiles(KIDSCHEDULE_SRC)) {
+    const rel = relative(REPO_ROOT, file).replace(/\\/g, "/");
+    const relFromSrc = relative(KIDSCHEDULE_SRC, file).replace(/\\/g, "/");
+
+    if (GCS_REFERENCE_ALLOWLIST.has(relFromSrc)) continue;
+
+    const content = readFileSync(file, "utf8");
+
+    if (/new\s+Audio\s*\(\s*[`'"][^`'"]*storage\.googleapis\.com/.test(content)) {
+      violations.push(`${rel}: new Audio() with direct GCS URL`);
+    }
+
+    if (/fetch\s*\(\s*[`'"][^`'"]*storage\.googleapis\.com/.test(content)) {
+      violations.push(`${rel}: fetch() to GCS URL`);
+    }
+
+    const lines = content.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.includes("storage.googleapis.com")) continue;
+      const trimmed = line.trim();
+      if (trimmed.startsWith("//") || trimmed.startsWith("*")) continue;
+      violations.push(`${rel}:${i + 1}: references storage.googleapis.com`);
+    }
+  }
+
+  if (violations.length > 0) {
+    console.error("Static audio client regression: direct GCS playback forbidden.\n");
+    for (const v of violations) {
+      console.error(`  - ${v}`);
+    }
+    console.error(
+      "\nStatic catalog audio must use /api/static-audio/{hash}.mp3 via static-audio.ts only.\n",
+    );
+    process.exit(1);
+  }
+}
 
 const missing = listCatalogMissingKeys();
 
@@ -20,4 +86,7 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+assertNoClientDirectGcsPlayback();
+
 console.log("Static audio map: 100% catalog coverage.");
+console.log("Static audio client: no direct GCS playback in source.");

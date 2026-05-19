@@ -1,10 +1,16 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Volume2, Loader2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useToast } from "@/hooks/use-toast";
 import { useInFlightGuard, useMountedRef, useSafeAsync } from "@/hooks/use-safe-async";
-import { preloadStaticPhrases } from "@/lib/static-audio";
+import {
+  onStaticAudioVisualFallback,
+  preloadStaticPhrases,
+  prefetchStaticAudioUrl,
+  lookupStaticAudioUrl,
+} from "@/lib/static-audio";
+import { warmStaticAudioOnFirstGesture } from "@/lib/static-audio-edge";
 import { cn } from "@/lib/utils";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
@@ -29,6 +35,8 @@ interface AudioPlayButtonProps {
   onFinished?: () => void;
   onPlay?: () => void;
   mode?: "default" | "phonics";
+  /** Prefetch on hover (e.g. next phoneme in sequence). */
+  prefetchNextText?: string;
   className?: string;
 }
 
@@ -59,14 +67,28 @@ export function AudioPlayButton({
   onFinished,
   onPlay,
   mode,
+  prefetchNextText,
   className,
 }: AudioPlayButtonProps) {
   const { toast } = useToast();
   const { speak, stop, speaking, loading, error } = useAmyVoice({ onFinished });
+  const [visualFallback, setVisualFallback] = useState(false);
   const busy = speaking || loading;
   const isMounted = useMountedRef();
   const { safeAsync } = useSafeAsync();
   const { run: runInFlight } = useInFlightGuard();
+
+  useEffect(() => {
+    return onStaticAudioVisualFallback(({ phrase }) => {
+      const trimmed = (text ?? "").trim();
+      if (phrase && phrase !== trimmed) return;
+      if (!isMounted.current) return;
+      setVisualFallback(true);
+      window.setTimeout(() => {
+        if (isMounted.current) setVisualFallback(false);
+      }, 1600);
+    });
+  }, [text, isMounted]);
 
   useEffect(() => {
     if (!error || !isMounted.current) return;
@@ -86,8 +108,21 @@ export function AudioPlayButton({
     });
   }, [error, toast, isMounted]);
 
+  const handlePointerEnter = useCallback(() => {
+    const trimmed = (text ?? "").trim();
+    if (!trimmed) return;
+    const currentUrl = lookupStaticAudioUrl(trimmed, mode ?? "default");
+    if (currentUrl) prefetchStaticAudioUrl(currentUrl);
+    const next = (prefetchNextText ?? "").trim();
+    if (next) {
+      const nextUrl = lookupStaticAudioUrl(next, mode ?? "phonics");
+      if (nextUrl) prefetchStaticAudioUrl(nextUrl);
+    }
+  }, [text, mode, prefetchNextText]);
+
   const handleClick = useCallback(async () => {
     recordTtsUserGesture();
+    warmStaticAudioOnFirstGesture();
 
     await runInFlight(async () => {
       const play = safeAsync(async () => {
@@ -98,7 +133,13 @@ export function AudioPlayButton({
         const trimmed = (text ?? "").trim();
         if (!trimmed) return null;
         const res = await speak(trimmed, { mode });
-        if (!res?.success) return null;
+        if (!res?.success) {
+          setVisualFallback(true);
+          window.setTimeout(() => {
+            if (isMounted.current) setVisualFallback(false);
+          }, 1600);
+          return null;
+        }
         if (isMounted.current) onPlay?.();
         return res;
       });
@@ -114,6 +155,7 @@ export function AudioPlayButton({
     <Button
       type="button"
       onClick={handleClick}
+      onPointerEnter={handlePointerEnter}
       disabled={busy}
       aria-label={ariaLabel ?? `Play ${text}`}
       data-testid={`audio-play-${text.slice(0, 16).replace(/\s+/g, "-").toLowerCase()}`}
@@ -122,6 +164,7 @@ export function AudioPlayButton({
         SIZE_CLASSES[size],
         VARIANT_CLASSES[variant],
         busy && "ring-2 ring-offset-2 ring-offset-transparent ring-current/40 animate-pulse",
+        visualFallback && "ring-4 ring-amber-400/80 animate-pulse scale-110",
         className,
       )}
     >

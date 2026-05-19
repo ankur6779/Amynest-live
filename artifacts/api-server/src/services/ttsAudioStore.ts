@@ -147,6 +147,53 @@ async function tryLegacyGcsRead(cacheKey: string): Promise<Buffer | null> {
   }
 }
 
+const STATIC_AUDIO_GCS_TIMEOUT_MS = Number(process.env.STATIC_AUDIO_GCS_TIMEOUT_MS ?? "7000");
+
+async function readStaticAudioFromGcsInner(hash: string): Promise<Buffer | null> {
+  const file = getBucket().file(`static-audio/${hash}.mp3`);
+  const [exists] = await file.exists();
+  if (!exists) return null;
+  const [buffer] = await file.download();
+  return buffer.byteLength > 0 ? buffer : null;
+}
+
+/** Read pre-generated static phrase MP3 from GCS (`static-audio/{md5}.mp3`). */
+export async function readStaticAudioFromGcs(hash: string): Promise<Buffer | null> {
+  if (!/^[a-f0-9]{32}$/.test(hash)) return null;
+  if (!legacyGcsConfigured()) {
+    throw new Error("gcs_not_configured");
+  }
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const result = await Promise.race([
+      readStaticAudioFromGcsInner(hash),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("gcs_timeout")), STATIC_AUDIO_GCS_TIMEOUT_MS);
+      }),
+    ]);
+    return result;
+  } catch (err) {
+    if (err instanceof Error && err.message === "gcs_timeout") {
+      throw err;
+    }
+    const code = (err as { code?: number }).code;
+    if (code === 404) return null;
+    logger.error(
+      {
+        evt: "static_audio.gcs_read_failed",
+        hash,
+        code,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "GCS static audio read failed",
+    );
+    throw err;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function tryLegacyGcsExists(cacheKey: string): Promise<boolean> {
   if (!legacyGcsConfigured()) return false;
   try {
