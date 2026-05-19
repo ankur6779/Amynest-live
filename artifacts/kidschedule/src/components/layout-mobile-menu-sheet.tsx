@@ -132,17 +132,24 @@ export function LayoutMobileMenuSheet({
 }) {
   const [location] = useLocation();
   const { signOut } = useClerk();
-  const { user } = useUser();
+  const { user, isLoaded: userLoaded } = useUser();
   const { isLoaded, userId } = useAuth();
   const { t } = useTranslation();
   const { isPremium = false } = useSubscription();
 
+  const safeUser = user ?? {};
   const safeMenu = resolveSafeMenu(navItems ?? DEFAULT_MOBILE_MENU);
 
   const displayName = getUserDisplayName(user);
   const email = getUserEmail(user);
   const initials = getUserInitials(user);
   const avatarUrl = getUserAvatarUrl(user);
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      console.log("[MENU DATA]", safeUser, safeMenu);
+    }
+  }, [isMenuOpen, safeUser, safeMenu]);
 
   const closeSidebar = useCallback(() => {
     try {
@@ -171,6 +178,21 @@ export function LayoutMobileMenuSheet({
       });
     }
   }, [isMenuOpen, location, userId, isLoaded, user]);
+
+  if (!userLoaded || !user) {
+    return (
+      <Sheet open={isMenuOpen} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="right"
+          className="w-[80vw] sm:w-[350px] flex flex-col p-0 bg-card text-card-foreground"
+        >
+          <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground">
+            Loading menu...
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
 
   return (
     <Sheet open={isMenuOpen} onOpenChange={onOpenChange}>

@@ -14,7 +14,7 @@ type Props = {
 export function SafeRoutePage({
   component: Component,
   label = "Page",
-  suspense = false,
+  suspense = true,
 }: Props) {
   if (!Component) {
     return <RouteFailedPage />;

@@ -260,10 +260,10 @@ export function usePhonicsData(
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as {
           ageGroup: string | null;
-          items: PhonicsApiItem[];
-          dailyItems: PhonicsApiItem[];
-          progress: PhonicsApiProgressRow[];
-          insights: PhonicsInsight[];
+          items?: PhonicsApiItem[] | null;
+          dailyItems?: PhonicsApiItem[] | null;
+          progress?: PhonicsApiProgressRow[] | null;
+          insights?: PhonicsInsight[] | null;
         };
         if (cancelled || myReq !== reqIdRef.current) return;
 
@@ -280,9 +280,9 @@ export function usePhonicsData(
           type: it.type,
         });
 
-        const apiItemsMapped = data.items.map(mapItem);
-        const apiDailyMapped = (data.dailyItems ?? data.items).map(mapItem);
-        const serverProgress = progressArrayToMap(data.progress ?? []);
+        const apiItemsMapped = (data?.items ?? []).map(mapItem);
+        const apiDailyMapped = (data?.dailyItems ?? data?.items ?? []).map(mapItem);
+        const serverProgress = progressArrayToMap(data?.progress ?? []);
 
         // FIX (architect #3): merge any offline writes still living in
         // localStorage so reconnect doesn't silently wipe them. Then queue a
@@ -292,7 +292,7 @@ export function usePhonicsData(
 
         setApiItems(apiItemsMapped);
         setApiDaily(apiDailyMapped);
-        setInsights(data.insights ?? []);
+        setInsights(data?.insights ?? []);
         setProgress(merged);
         setSource("api");
 
@@ -308,7 +308,7 @@ export function usePhonicsData(
         });
       } catch (err) {
         if (cancelled || myReq !== reqIdRef.current) return;
-        console.warn("[phonics] API unavailable, falling back to local:", err);
+        console.error("[phonics] API failed", err);
         setSource("fallback");
         // (state already cleared above to per-child local snapshot)
       } finally {
@@ -329,7 +329,7 @@ export function usePhonicsData(
     items = apiItems;
     dailyItems = apiDaily.length > 0 ? apiDaily : apiItems;
   } else if (level) {
-    items = level.items.map((it) => ({
+    items = (level.items ?? []).map((it) => ({
       id: it.id,
       symbol: it.symbol,
       sound: it.sound,

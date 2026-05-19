@@ -289,7 +289,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   return (
     <AppErrorBoundary label="Layout">
       <Layout>
-        <SafeRoutePage component={Component} label="ProtectedPage" />
+        <SafeRoutePage component={Component} label="ProtectedPage" suspense />
       </Layout>
     </AppErrorBoundary>
   );
