@@ -179,7 +179,8 @@ export function PhonicsLearning({
   const safeProgress = progress ?? { practiced: {}, mastered: {} };
   const safeInsights = insights ?? [];
 
-  if (!phonicsData) {
+  // Guard while hook is still resolving API / fallback content
+  if (loading && !level && safeItems.length === 0) {
     return (
       <Card className="rounded-3xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]">
         <CardContent className="p-8 flex items-center justify-center gap-3 text-muted-foreground">
@@ -274,6 +275,13 @@ function StageSelector({
     >
       {PHONICS_STAGE_ORDER.map((g) => {
         const lvl = PHONICS_LEVELS[g];
+        if (!lvl) {
+          return (
+            <div key={g} className="text-xs text-muted-foreground px-3 py-1.5">
+              Loading...
+            </div>
+          );
+        }
         const isActive = g === active;
         const isDefault = g === defaultStage;
         return (
@@ -451,6 +459,7 @@ function PracticeSoundsCard({
   } = useTranslation();
   const authFetch = useAuthFetch();
   const [blendItem, setBlendItem] = useState<DisplayPhonicsItem | null>(null);
+  const safeItems = items ?? [];
 
   // Preload the first batch of sounds so the first taps are instant. Letter
   // tiles warm the phoneme-mode cache; non-letter tiles warm default mode —
@@ -458,7 +467,7 @@ function PracticeSoundsCard({
   useEffect(() => {
     const ctrl = new AbortController();
     (async () => {
-      for (const it of (items ?? []).slice(0, 6)) {
+      for (const it of safeItems.slice(0, 6)) {
         if (ctrl.signal.aborted) return;
         const text = it.phoneme ?? it.sound;
         const mode: "phonics" | undefined = it.phoneme ? "phonics" : undefined;
@@ -469,11 +478,19 @@ function PracticeSoundsCard({
       }
     })();
     return () => ctrl.abort();
-  }, [authFetch, items]);
+  }, [authFetch, safeItems]);
+
+  if (safeItems.length === 0) {
+    return (
+      <Card data-testid="phonics-practice-sounds" className="rounded-3xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10">
+        <CardContent className="p-5 text-sm text-muted-foreground">Loading phonics...</CardContent>
+      </Card>
+    );
+  }
 
   // Type-driven layout: items that are long-form (sentences/stories) get a
   // list layout with full-width text; everything else uses the tile grid.
-  const hasLongForm = items.some(i => i.type === "sentence" || i.type === "story");
+  const hasLongForm = safeItems.some(i => i.type === "sentence" || i.type === "story");
   const useGrid = !hasLongForm && !level.features.sentenceReading;
   return <Card data-testid="phonics-practice-sounds" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-5">
@@ -486,12 +503,12 @@ function PracticeSoundsCard({
             <p className="text-xs text-muted-foreground">{t("components.phonics_learning.tap_any_tile_to_hear_the_sound")}</p>
           </div>
           <Badge className="bg-muted dark:bg-card text-primary dark:text-muted-foreground border-0 text-[10px] font-bold">
-            {items.length} {items.length === 1 ? "sound" : "sounds"}
+            {safeItems.length} {safeItems.length === 1 ? "sound" : "sounds"}
           </Badge>
         </div>
 
         {useGrid ? <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            {items.map(it => {
+            {safeItems.map(it => {
           const count = progress.practiced[it.id] ?? 0;
           const mastered = !!progress.mastered[it.id];
           const showBlend = level.features.blending && it.example?.includes("–");
@@ -514,7 +531,7 @@ function PracticeSoundsCard({
                 </div>;
         })}
           </div> : <div className="space-y-2">
-            {items.map(it => {
+            {safeItems.map(it => {
           const count = progress.practiced[it.id] ?? 0;
           const mastered = !!progress.mastered[it.id];
           const isLong = it.type === "sentence" || it.type === "story";

@@ -158,6 +158,10 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         logTtsClient("Synthesize OK", { cacheKey: data.cacheKey, cached: data.cached });
 
         const playbackUrl = resolveTtsAudioUrl(data.audioUrl);
+        if (!playbackUrl) {
+          console.warn("No audio URL");
+          throw new Error("tts_missing_audio_url");
+        }
         const audioRes = await authFetch(playbackUrl, { signal: controller.signal });
         if (myId !== reqIdRef.current) return;
         if (!audioRes.ok) {
@@ -173,6 +177,11 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
 
         cleanup();
         const url = URL.createObjectURL(blob);
+        if (!url) {
+          console.warn("No audio URL");
+          throw new Error("tts_missing_audio_url");
+        }
+        console.log("[VOICE URL]", url);
         objectUrlRef.current = url;
 
         const audio = new Audio(url);
@@ -197,6 +206,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         try {
           await audio.play();
         } catch (playErr) {
+          console.error("Audio failed:", playErr);
           logTtsClientError("audio.play() rejected", playErr);
           const name = (playErr as { name?: string })?.name ?? "play_failed";
           setError(name === "NotAllowedError" ? "playback_blocked_tap_again" : `play_failed_${name}`);

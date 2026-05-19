@@ -37,7 +37,7 @@ if (import.meta.env.DEV) {
 
 /**
  * Returns a URL for calling the backend API.
- * Example: `fetch(getApiUrl("/api/healthz"))` → `https://amynest-backend.onrender.com/api/healthz`
+ * Example: `fetch(getApiUrl("/api/healthz"))` → `https://amynest-backend-dykj.onrender.com/api/healthz`
  */
 export function getApiUrl(path: string): string {
   const pathPart = path.startsWith("/") ? path : `/${path}`;
@@ -66,4 +66,23 @@ export function resolveApiRequestInput(input: RequestInfo | URL): RequestInfo | 
     return getApiUrl(input);
   }
   return input;
+}
+
+/** Crash-safe JSON fetch — never throws; returns `{ fallback: true }` on failure. */
+export async function safeFetchJson<T extends Record<string, unknown> = Record<string, unknown>>(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<(T & { fallback?: boolean }) | { fallback: true }> {
+  try {
+    const res = await fetch(resolveApiRequestInput(input), init);
+    const data = (await res.json()) as T;
+    if (!res.ok) {
+      console.error("API error: HTTP", res.status, input);
+      return { fallback: true };
+    }
+    return data;
+  } catch (e) {
+    console.error("API error:", e);
+    return { fallback: true };
+  }
 }

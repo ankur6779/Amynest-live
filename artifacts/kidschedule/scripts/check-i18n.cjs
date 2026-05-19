@@ -111,7 +111,6 @@ const _MIGRATED = new Set([
   "src/components/voice-settings.tsx",
   "src/pages/ai-coach.tsx",
   "src/pages/audio-lessons.tsx",
-  "src/pages/babysitters/index.tsx",
   "src/pages/behavior/index.tsx",
   "src/pages/children/form.tsx",
   "src/pages/children/index.tsx",

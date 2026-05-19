@@ -125,10 +125,12 @@ export function LayoutMobileMenuSheet({
   isMenuOpen,
   onOpenChange,
   navItems,
+  childList = [],
 }: {
   isMenuOpen: boolean;
   onOpenChange: (open: boolean) => void;
   navItems?: MobileNavItem[];
+  childList?: unknown[];
 }) {
   const [location] = useLocation();
   const { signOut } = useClerk();
@@ -137,7 +139,7 @@ export function LayoutMobileMenuSheet({
   const { t } = useTranslation();
   const { isPremium = false } = useSubscription();
 
-  const safeUser = user ?? {};
+  const safeChildren = childList ?? [];
   const safeMenu = resolveSafeMenu(navItems ?? DEFAULT_MOBILE_MENU);
 
   const displayName = getUserDisplayName(user);
@@ -147,9 +149,9 @@ export function LayoutMobileMenuSheet({
 
   useEffect(() => {
     if (isMenuOpen) {
-      console.log("[MENU DATA]", safeUser, safeMenu);
+      console.log("[MENU DATA]", user, safeChildren);
     }
-  }, [isMenuOpen, safeUser, safeMenu]);
+  }, [isMenuOpen, user, safeChildren]);
 
   const closeSidebar = useCallback(() => {
     try {

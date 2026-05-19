@@ -23,7 +23,6 @@ const I18N_DIR = path.join(ROOT, "i18n");
 
 const DEFERRED_FILES = [
   "app/audio-lessons.tsx",
-  "app/babysitters.tsx",
   "app/behavior-history.tsx",
   "app/behavior.tsx",
   "app/children/[id].tsx",

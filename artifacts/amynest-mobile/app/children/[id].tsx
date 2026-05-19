@@ -594,11 +594,6 @@ export default function ChildDetailScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            {babysitters.length === 0 && (
-              <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
-                Add babysitters from the Babysitters tab to assign them here.
-              </Text>
-            )}
 
             {/* ── Infant-only fields ── */}
             {isInfant && (

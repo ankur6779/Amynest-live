@@ -4,7 +4,7 @@ This monorepo supports **DEV** and **PROD** profiles via `AMYNEST_ENV` and match
 
 | Profile | Backend (Render) | Web preview (Render) | Local API |
 |--------|-------------------|----------------------|-----------|
-| **PROD** | `https://amynest-backend.onrender.com` | `Amynest-live-1` | — |
+| **PROD** | `https://amynest-backend-dykj.onrender.com` | `Amynest-live-1` | — |
 | **DEV** | `https://amynest-dev.onrender.com` | `amynest-frontend-dev` | `http://localhost:5000` |
 
 Confirm which profile is running:
@@ -133,7 +133,7 @@ curl https://amynest-dev.onrender.com/api/healthz/env
 ## 5. Production deploy (unchanged)
 
 - **Amynest-backend** — `AMYNEST_ENV=production`, prod `DATABASE_URL`
-- **Amynest-live-1** — `VITE_APP_API_ORIGIN=https://amynest-backend.onrender.com`
+- **Amynest-live-1** — `VITE_APP_API_ORIGIN=https://amynest-backend-dykj.onrender.com`
 
 ---
 

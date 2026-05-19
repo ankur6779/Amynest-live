@@ -8,7 +8,7 @@ function resolveAmynestEnv(): "development" | "production" {
 }
 
 const DEFAULT_ORIGINS = {
-  production: "https://amynest-backend.onrender.com",
+  production: "https://amynest-backend-dykj.onrender.com",
   development: "https://amynest-dev.onrender.com",
   local: "http://localhost:5000",
 } as const;
