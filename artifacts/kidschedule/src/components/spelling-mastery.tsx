@@ -670,12 +670,7 @@ function DictationView({
   }, [childId, ageGroup, difficulty, wordsSource]);
   const word = session.words[idx];
 
-  // Auto-play each new word (200ms delay so the user sees the UI first).
-  useEffect(() => {
-    if (!word?.audioUrl) return;
-    const t = setTimeout(() => void tts.playUrl(word.audioUrl), 200);
-    return () => clearTimeout(t);
-  }, [idx, word?.audioUrl, tts]);
+  // REMOVED auto-play on word change — user taps play to hear the word.
   if (session.loading && session.words.length === 0) {
     return <EmptyOrLoading loading empty={false} />;
   }
@@ -807,12 +802,7 @@ function CompetitionView({
   };
   const word = session.words[idx];
 
-  // Auto-play each new word during the run.
-  useEffect(() => {
-    if (phase !== "running" || !word?.audioUrl) return;
-    const t = setTimeout(() => void tts.playUrl(word.audioUrl), 250);
-    return () => clearTimeout(t);
-  }, [phase, idx, word?.audioUrl, tts]);
+  // REMOVED auto-play during competition run — user taps play to hear the word.
   const submit = async () => {
     if (phase !== "running" || !word || submitting) return;
     const trimmed = guess.trim();
@@ -949,13 +939,8 @@ function TournamentView({
     if (ok) setPhase("playing");
   };
 
-  // Auto-play each new word during the round.
   const word = t.activeSession?.words[idx];
-  useEffect(() => {
-    if (phase !== "playing" || !word?.audioUrl) return;
-    const handle = setTimeout(() => void tts.playUrl(word.audioUrl), 250);
-    return () => clearTimeout(handle);
-  }, [phase, idx, word?.audioUrl, tts]);
+  // REMOVED auto-play during the round — user taps play to hear the word.
   const submit = async () => {
     if (phase !== "playing" || !word || submitting) return;
     const trimmed = guess.trim();

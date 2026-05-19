@@ -802,17 +802,7 @@ function PracticeTab({
   } = useAmyVoice();
   const cur = sessionTricks[idx]!;
 
-  // Auto-speak question
-  const questionKeyRef = useRef(0);
-  useEffect(() => {
-    questionKeyRef.current++;
-    if (!cur) return;
-    void speak(cur.practiceQ.question);
-    return () => {
-      stop();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx]);
+  // REMOVED auto speak on question change — user taps the speaker button.
   const handleSubmit = () => {
     if (!selected || submitted) return;
     stop();

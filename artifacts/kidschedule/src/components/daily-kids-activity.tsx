@@ -1692,15 +1692,10 @@ function OrigamiStepsModal({
     setPhase("steps");
   };
 
-  // Voice — read instruction on step enter
+  // REMOVED auto speak on step enter — user enables voice and taps play per step.
   useEffect(() => {
     if (!voiceOn || phase !== "steps") {
       stop();
-      return;
-    }
-    const instr = item.steps[step]?.instruction ?? "";
-    if (instr) {
-      void speak(instr);
     }
     return () => {
       stop();

@@ -773,11 +773,9 @@ function PuzzleEngine({
     init(state);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Auto-speak question on each new puzzle ───────────────────────────────
+  // REMOVED auto speak on mount — user taps repeat / play to hear the question.
   useEffect(() => {
     if (!cur || done) return;
-    const text = cur.audioQ ?? cur.question;
-    void speak(text);
     if (state.difficulty === "hard" && !submitted) setTimerRunning(true);
     return () => {
       stop();

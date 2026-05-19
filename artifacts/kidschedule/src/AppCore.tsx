@@ -43,6 +43,7 @@ import {
   persistOnboardingCache,
   resolveSetupStatus,
 } from "@/lib/setup-status";
+import { installTtsGestureListener } from "@/lib/tts-guard";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
 // when its route is first matched. The Suspense boundary below renders
@@ -581,6 +582,7 @@ function AppRoutes() {
 // the empty Suspense fallback.
 function AppCoreMountMarker() {
   useEffect(() => {
+    installTtsGestureListener();
     try { (window as Window & { __amynestAppCoreReady?: boolean }).__amynestAppCoreReady = true; } catch (_e) { /* best-effort */ }
     bootMark("appcore-mounted");
   }, []);

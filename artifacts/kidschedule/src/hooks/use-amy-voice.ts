@@ -9,6 +9,7 @@ import {
   resolveClientPlaybackUrl,
   synthesizeTts,
 } from "@/lib/tts-playback";
+import { isTtsPlaybackAllowed, recordTtsUserGesture } from "@/lib/tts-guard";
 
 // ─── Global single-flight guard ───────────────────────────────────────────────
 // At most one ElevenLabs network round-trip at a time, across all hook
@@ -169,6 +170,11 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
     async (rawText: string, opts?: SpeakOptions): Promise<SpeakResult> => {
       const text = (rawText ?? "").trim();
       if (!text) return { success: false, error: "tts_empty_text" };
+      if (!isTtsPlaybackAllowed()) {
+        console.warn("[TTS] blocked until user taps the screen");
+        return { success: false, error: "tts_blocked_until_gesture" };
+      }
+      recordTtsUserGesture();
       const mode = opts?.mode;
 
       // Cross-instance guard: if a DIFFERENT instance is fetching, skip.
@@ -211,9 +217,13 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };
         console.log("[TTS RESPONSE]", data);
 
+        if (data?.background) {
+          console.warn("TTS warming in background — skipping playback");
+          return { success: false, error: "tts_background" };
+        }
         if (!data?.success || !isValidAudioUrl(data.audioUrl)) {
-          console.warn("TTS failed — skipping audio");
-          return { success: false, error: "tts_failed" };
+          console.warn("No audio, skip");
+          return { success: false, error: data?.error ?? "tts_failed" };
         }
         logTtsClient("Synthesize OK", { cacheKey: data.cacheKey, cached: data.cached });
 
@@ -225,6 +235,10 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
 
         cleanup();
         const audio = playAudio(playbackUrl);
+        if (!audio) {
+          console.warn("No audio, skip");
+          return { success: false, error: "tts_invalid_audio_url" };
+        }
         audio.playbackRate = playbackRateRef.current;
         audio.onended = () => {
           if (myId !== reqIdRef.current || !isMounted.current) return;

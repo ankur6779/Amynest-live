@@ -186,12 +186,17 @@ export function useInfantPoemPlayer(): PoemPlayer {
             { signal: controller.signal },
           );
           if (myId !== reqIdRef.current) return; // user moved on
+          if (!data?.success || data.background || !data.audioUrl) {
+            console.warn("No audio, skip");
+            setIsLoading(false);
+            return;
+          }
           audioUrl = data.audioUrl;
         }
 
         const trimmedUrl = (audioUrl ?? "").trim();
         if (!trimmedUrl || trimmedUrl.includes("undefined")) {
-          console.warn("Invalid audio URL, skipping playback");
+          console.warn("No audio, skip");
           return;
         }
         console.log("[PLAY AUDIO]", trimmedUrl);

@@ -36,6 +36,9 @@ export const AMY_MODEL_ID_HINDI  = "eleven_multilingual_v2";
 // Hard guard against huge payloads.
 export const TTS_MAX_INPUT_CHARS = 4000;
 
+/** Hard cap on ElevenLabs round-trip so TTS never blocks the server. */
+const TTS_ELEVENLABS_TIMEOUT_MS = 5_000;
+
 // ─── In-flight single-flight map ────────────────────────────────────────────
 const inFlight = new Map<string, Promise<SynthesizeResult>>();
 
@@ -275,8 +278,11 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
     "[ElevenLabs] Request start",
   );
 
-  const aiTimeoutMs = Number(process.env.AI_JOB_TIMEOUT_MS ?? "10_000");
-  const response = await fetchWithTimeout(elevenUrl, {
+  const fetchTimeoutMs = Math.min(
+    TTS_ELEVENLABS_TIMEOUT_MS,
+    Number(process.env.AI_JOB_TIMEOUT_MS ?? "10_000"),
+  );
+  const elevenFetch = fetchWithTimeout(elevenUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -288,8 +294,18 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
       model_id: modelId,
       voice_settings: VOICE_SETTINGS[mode],
     }),
-    timeoutMs: aiTimeoutMs,
+    timeoutMs: fetchTimeoutMs,
   });
+  const hardTimeout = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error("TTS timeout")), TTS_ELEVENLABS_TIMEOUT_MS);
+  });
+  let response: Awaited<ReturnType<typeof fetchWithTimeout>>;
+  try {
+    response = await Promise.race([elevenFetch, hardTimeout]);
+  } catch (err) {
+    console.error("[ElevenLabs] failed", err instanceof Error ? err.message : err);
+    throw err;
+  }
 
   const aiDurationMs = Math.round(performance.now() - aiStarted);
 

@@ -195,10 +195,17 @@ export function useSpellingTTS(): UseSpellingTTSState {
           { signal: ac.signal },
         );
         if (reqId !== reqIdRef.current) return;
+        if (!data?.success || !data.audioUrl) {
+          console.warn("No audio, skip");
+          setLoading(false);
+          setSpeaking(false);
+          return;
+        }
         await playSrc(data.audioUrl, !!opts.slow, reqId);
       } catch (err) {
         if ((err as DOMException)?.name === "AbortError") return;
         if (reqId !== reqIdRef.current) return;
+        console.error("TTS failed", err);
         setError(err instanceof Error ? err.message : "tts_failed");
         setLoading(false);
         setSpeaking(false);

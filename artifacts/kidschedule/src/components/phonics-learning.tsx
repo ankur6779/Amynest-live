@@ -380,18 +380,7 @@ function TodaysActivityCard({
   const todaysItem = useMemo(() => pickTodaysItem(dailyItems, tick), [dailyItems, tick]);
 
   // Warm the TTS cache for today's sound — first tap then plays instantly.
-  useEffect(() => {
-    if (!todaysItem) return;
-    const ctrl = new AbortController();
-    const useTts = todaysItem.phoneme ?? todaysItem.sound;
-    const useMode: "phonics" | undefined = todaysItem.phoneme ? "phonics" : undefined;
-    void preloadAmyVoice(authFetch, useTts, {
-      mode: useMode,
-      signal: ctrl.signal,
-    }).catch(() => {});
-    return () => ctrl.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authFetch, todaysItem?.id]);
+  // REMOVED TTS preload on mount — avoids background synthesize during app boot.
 
   if (!todaysItem) {
     return (
@@ -472,29 +461,11 @@ function PracticeSoundsCard({
   const safeItems = items ?? [];
 
   const preloadedKeyRef = useRef<string | null>(null);
+  // REMOVED batch TTS preload — only synthesize on user tap (AudioPlayButton).
   useEffect(() => {
     const key = safeItems[0]?.id ?? null;
-    if (!key || key === preloadedKeyRef.current) return;
-    preloadedKeyRef.current = key;
-    const ctrl = new AbortController();
-    void (async () => {
-      for (const it of safeItems.slice(0, 6)) {
-        if (ctrl.signal.aborted || !isMounted.current) return;
-        const text = it.phoneme ?? it.sound;
-        const mode: "phonics" | undefined = it.phoneme ? "phonics" : undefined;
-        try {
-          await preloadAmyVoice(authFetch, text, {
-            mode,
-            signal: ctrl.signal,
-          });
-        } catch {
-          return;
-        }
-      }
-    })();
-    return () => ctrl.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authFetch, safeItems[0]?.id]);
+    if (key) preloadedKeyRef.current = key;
+  }, [safeItems[0]?.id]);
 
   if (safeItems.length === 0) {
     return (
