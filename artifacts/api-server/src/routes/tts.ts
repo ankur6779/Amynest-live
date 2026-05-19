@@ -4,14 +4,24 @@ import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
 import {
   AMY_VOICE_ID_DEFAULT,
+  AMY_MODEL_ID_DEFAULT,
   TTS_MAX_INPUT_CHARS,
+  computeTtsCacheKey,
   readCachedAudio,
   trySynthesizeFromCache,
 } from "../services/elevenLabsService";
-import { getElevenLabsApiKey, getGcsBucketId } from "../lib/env";
+import {
+  getElevenLabsApiKey,
+  getTtsProvider,
+  isElevenLabsTtsEnabled,
+  isTtsCacheGcsEnabled,
+} from "../lib/env";
+import { legacyGcsConfigured } from "../services/ttsAudioStore";
 import { isValidTtsPublicUrl } from "../services/ttsAudioStore";
 import { isStaticTtsText } from "@workspace/static-audio";
 import { synthesizeSafe } from "../services/ttsSafe.js";
+import { registerTtsPending, takeTtsPending } from "../services/ttsPendingRegistry.js";
+import { streamLiveTtsToClient } from "../services/ttsLiveStream.js";
 
 // ─── Public router (mounted BEFORE requireAuth) ──────────────────────────────
 //
@@ -20,6 +30,9 @@ import { synthesizeSafe } from "../services/ttsSafe.js";
 // callers of /tts/synthesize can ever obtain a valid one. Going public lets
 // <audio> / expo-audio load the URL directly without juggling bearer tokens
 // in the source URI.
+//
+// When TTS_PROVIDER=openai, cache misses registered by /tts/synthesize are
+// streamed live from OpenAI (ElevenLabs fallback) without persisting audio.
 export const ttsPublicRouter: IRouter = Router();
 
 ttsPublicRouter.get("/tts/audio/:key.mp3", async (req, res): Promise<void> => {
@@ -31,26 +44,32 @@ ttsPublicRouter.get("/tts/audio/:key.mp3", async (req, res): Promise<void> => {
 
   try {
     const cached = await readCachedAudio(key);
-    if (!cached) {
-      res.status(404).json({ error: "not_found" });
+    if (cached) {
+      if (cached.buffer.byteLength === 0) {
+        res.status(404).json({ error: "not_found" });
+        return;
+      }
+      res.setHeader("Content-Type", "audio/mpeg");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Content-Length", String(cached.buffer.byteLength));
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      res.status(200).end(cached.buffer);
       return;
     }
-    // Always proxy audio bytes through the API. Redirecting to GCS breaks
-    // SPA fetch()+blob playback (CORS) and Capacitor/PWA audio loaders.
-    if (cached.buffer.byteLength === 0) {
-      res.status(404).json({ error: "not_found" });
+
+    const pending = takeTtsPending(key);
+    if (pending) {
+      await streamLiveTtsToClient(res, {
+        cacheKey: key,
+        text: pending.text,
+        voiceId: pending.voiceId,
+        modelId: pending.modelId,
+        mode: pending.mode,
+      });
       return;
     }
-    // Lock the response to a fixed audio MIME regardless of what the cache
-    // row claims. The endpoint is public, so we don't want a future ingest
-    // path that wrote a weird `contentType` to ever serve, say, text/html
-    // from this URL. `nosniff` blocks MIME-sniffing attacks on top of that.
-    res.setHeader("Content-Type", "audio/mpeg");
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("Content-Length", String(cached.buffer.byteLength));
-    // Audio bytes are immutable for a given content hash → safe to cache hard.
-    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    res.status(200).end(cached.buffer);
+
+    res.status(404).json({ error: "not_found" });
   } catch (err) {
     logger.error(
       {
@@ -60,7 +79,7 @@ ttsPublicRouter.get("/tts/audio/:key.mp3", async (req, res): Promise<void> => {
       },
       "tts stream failed",
     );
-    res.status(500).json({ error: "server_error" });
+    if (!res.headersSent) res.status(500).json({ error: "server_error" });
   }
 });
 
@@ -145,6 +164,7 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
           voiceId: parsed.data.voiceId ?? AMY_VOICE_ID_DEFAULT,
           mode: parsed.data.mode ?? "default",
           durationMs: synthDurationMs,
+          ttsProvider: getTtsProvider(),
           elevenLabsKeySuffix: getElevenLabsApiKey()?.slice(-4) ?? null,
           audioUrl,
         },
@@ -173,18 +193,39 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
 
     const text = parsed.data.text;
     const mode = parsed.data.mode ?? "default";
-    if (getGcsBucketId() && isStaticTtsText(text, mode)) {
+    if (isTtsCacheGcsEnabled() && legacyGcsConfigured() && isStaticTtsText(text, mode)) {
       res.status(200).json({
         ok: false,
         success: false,
         error: "tts_static_pregenerated_only",
-        message: "Static phrases must use pre-generated GCS audio (static-audio-map.json).",
+        message: "Static phrases must use pre-generated catalog audio (static-audio-map.json).",
       });
       return;
     }
 
-    // Interactive playback (speak / audio-lessons) needs a ready audioUrl — do not
-    // return background:true and defer synthesis; prewarm uses /audio-lessons/pregenerate.
+    const voiceId = parsed.data.voiceId?.trim() || AMY_VOICE_ID_DEFAULT;
+    const modelId = parsed.data.modelId?.trim() || AMY_MODEL_ID_DEFAULT;
+    const cacheKey = computeTtsCacheKey(text, voiceId, modelId, mode);
+    const audioUrl = `/api/tts/audio/${cacheKey}.mp3`;
+
+    if (getTtsProvider() === "openai" || !isElevenLabsTtsEnabled()) {
+      registerTtsPending(cacheKey, { text, voiceId, modelId, mode });
+      const body = buildTtsJson({
+        cacheKey,
+        audioUrl,
+        cached: false,
+        charCount: text.length,
+        contentType: "audio/mpeg",
+      });
+      if (!body.success) {
+        res.status(200).json({ success: false, ok: false, error: body.error });
+        return;
+      }
+      res.json(body);
+      return;
+    }
+
+    // ElevenLabs provider: generate, cache, then return playback URL.
     const generated = await synthesizeSafe(text, synthOptions);
     if (!generated) {
       res.status(200).json({ success: false, ok: false, error: "tts_failed" });
