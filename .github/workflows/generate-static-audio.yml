@@ -28,12 +28,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Generate and upload static audio
+      - name: Generate and upload static audio (retries until 100% coverage)
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           DEFAULT_OBJECT_STORAGE_BUCKET_ID: ${{ secrets.DEFAULT_OBJECT_STORAGE_BUCKET_ID }}
           GCS_SERVICE_ACCOUNT_JSON: ${{ secrets.GCS_SERVICE_ACCOUNT_JSON }}
           API_PUBLIC_URL: ${{ secrets.API_PUBLIC_URL }}
+          STATIC_AUDIO_MAX_RETRIES: "5"
+          STATIC_AUDIO_TTS_TIMEOUT_MS: "10000"
         run: pnpm run generate:static-audio
 
       - name: Verify 100% coverage
