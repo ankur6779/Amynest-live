@@ -928,6 +928,9 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
     fridgeItems,
     feedingType,
     previousDayContext: params.previousDayContext,
+    schoolMealMode: params.schoolMealMode ?? null,
+    diet: params.foodType,
+    caregiver: params.caregiver,
   });
 
   const parentCtx: ParentExplanationContext = {
@@ -1177,6 +1180,10 @@ function runIntelligencePipelineOnItems(params: {
     activityCompletion?: number;
   };
   childName?: string;
+  // Decision-enforced layer inputs (forwarded to optimization engine)
+  schoolMealMode?: string | null;
+  diet?: string | null;
+  caregiver?: string | null;
 }): {
   items: RoutineItem[];
   pipelineAdaptations: string[];
@@ -1249,6 +1256,9 @@ function runIntelligencePipelineOnItems(params: {
     mealSeed: params.date.split("-").reduce((a, b) => a + Number(b), 0),
     ageInMonths: params.totalAgeMonths,
     feedingType: params.feedingType,
+    schoolMealMode: params.schoolMealMode ?? null,
+    diet: params.diet ?? null,
+    caregiver: params.caregiver ?? null,
     debug: process.env.ROUTINE_SCHEDULER_DEBUG === "1",
   });
 
@@ -1486,6 +1496,9 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     isWeekendDay: ruleIsWeekendDay,
     environmentalContext: ruleEnvContext,
     fridgeItems: ruleInputs.fridgeItems || fridgeItems,
+    schoolMealMode: schoolMealMode ?? null,
+    diet: foodType,
+    caregiver,
   });
 
   const ruleExplCtx = parentExplanationCtx(ruleInputs, ruleIsWeekendDay);
@@ -1916,6 +1929,9 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       environmentalContext: aiEnvContext,
       fridgeItems: fallbackInputs.fridgeItems || fridgeItems,
       previousDayContext,
+      schoolMealMode: schoolMealMode ?? null,
+      diet: foodType,
+      caregiver,
     });
     const fallbackExplCtx = parentExplanationCtx(fallbackInputs, isWeekendDay);
     const fallbackBody = GenerateRoutineResponse.parse({
