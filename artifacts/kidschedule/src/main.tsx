@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { setBaseUrl } from "@workspace/api-client-react";
 import App from "./App";
 import "./index.css";
@@ -47,6 +49,9 @@ if (typeof window !== "undefined" && redirectApexToCanonicalWww()) {
   /* ?diag=1 uses lightweight HTML-only diagnostics — main bundle must not run */
 } else {
 
+/** Single app-wide React Query client — must wrap all useQuery / useMutation hooks. */
+const queryClient = new QueryClient();
+
 installViteChunkRecovery();
 installGlobalErrorHandlers();
 installStaticAudioGuards();
@@ -87,7 +92,13 @@ async function bootstrap(): Promise<void> {
       throw new Error("Missing #root mount node");
     }
 
-    createRoot(rootEl).render(<App />);
+    createRoot(rootEl).render(
+      <QueryClientProvider client={queryClient}>
+        <Suspense fallback={<div>Loading...</div>}>
+          <App />
+        </Suspense>
+      </QueryClientProvider>,
+    );
     mark("react-rendered");
     clearCacheRecoveryPending();
   } catch (err) {

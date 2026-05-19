@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useRef, type ComponentType, type ReactNode } from "react";
 import { lazyPage } from "@/lib/safe-import";
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
-import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 import { FirebaseAuthProvider, Show } from "@/lib/firebase-auth";
 import { OAuthRedirectHandler } from "@/components/oauth-redirect-handler";
@@ -348,8 +348,6 @@ function QueryClientCacheInvalidator() {
   return null;
 }
 
-const queryClient = new QueryClient();
-
 function NotificationDeepLinkBridge() {
   useNotificationDeepLink();
   return null;
@@ -371,7 +369,6 @@ function ReactMountMarker() {
 
 function AppRoutes() {
   return (
-    <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
           <DebugProvider>
@@ -461,7 +458,6 @@ function AppRoutes() {
           </DebugProvider>
         </TooltipProvider>
       </ThemeProvider>
-    </QueryClientProvider>
   );
 }
 
