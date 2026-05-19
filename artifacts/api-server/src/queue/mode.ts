@@ -36,18 +36,23 @@ export function mustUseBullMq(): boolean {
   return isProductionDeployment() && isWorkerEnabled();
 }
 
+function inProcessFallback(): QueueMode {
+  return isProductionDeployment() ? "inline" : "memory";
+}
+
 export function getQueueMode(): QueueMode {
   if (!isWorkerEnabled()) {
     // External BullMQ worker disabled — API still runs OpenAI/ElevenLabs in-process.
-    return isProductionDeployment() ? "inline" : "memory";
+    return inProcessFallback();
   }
-  if (isRedisMarkedUnstable()) return "off";
-  if (redisBootstrapOk === false) return "off";
+  if (isRedisMarkedUnstable()) return inProcessFallback();
 
   const redisUrl = getRedisUrl();
   if (redisUrl) {
     if (redisBootstrapOk === true) return "bullmq";
-    return "off";
+    // Redis missing, bootstrapping, or ping failed — never leave production dead.
+    if (redisBootstrapOk === false) return inProcessFallback();
+    return inProcessFallback();
   }
 
   if (mustUseBullMq()) {
@@ -56,7 +61,7 @@ export function getQueueMode(): QueueMode {
     );
   }
 
-  return isProductionDeployment() ? "off" : "memory";
+  return inProcessFallback();
 }
 
 export function assertProductionQueueConfig(): void {
