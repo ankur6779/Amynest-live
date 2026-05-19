@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from "react";
 import { devLog } from "@/lib/dev-log";
+import { initAudioUnlock } from "@/lib/tts-guard";
 import { AuthBootShell } from "@/components/auth-boot-shell";
 import DebugOverlay from "@/components/DebugOverlay";
 import { StaticAudioTestButton } from "@/components/static-audio-test-button";
@@ -27,6 +28,7 @@ declare global {
 function App() {
   useEffect(() => {
     devLog("APP MOUNTED");
+    initAudioUnlock();
   }, []);
 
   // Suspense fallback is `null` rather than a spinner because the
