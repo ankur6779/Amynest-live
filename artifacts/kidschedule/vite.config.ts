@@ -259,6 +259,10 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
+        // Hashed filenames under /assets — bust CDN/browser cache on every deploy.
+        entryFileNames: "assets/[name]-[hash].js",
+        chunkFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash][extname]",
         // Default chunking — explicit so deploys don't inherit stale manual split config.
         manualChunks: undefined,
       },

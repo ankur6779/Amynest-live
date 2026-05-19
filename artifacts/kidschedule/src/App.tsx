@@ -3,15 +3,7 @@ import { AuthBootShell } from "@/components/auth-boot-shell";
 import DebugOverlay from "@/components/DebugOverlay";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ReactInstanceRecovery } from "@/components/react-instance-recovery";
-
-if (typeof window !== "undefined") {
-  window.onerror = function (msg, url, line, col, error) {
-    console.error("GLOBAL CRASH:", { msg, url, line, col, error });
-  };
-  window.onunhandledrejection = function (event) {
-    console.error("PROMISE CRASH:", event.reason);
-  };
-}
+import { safeImportModule } from "@/lib/safe-import";
 
 // Everything heavy — Firebase Auth, React Query, i18n providers, the
 // router, every page route, the Layout shell — lives in AppCore. By
@@ -20,29 +12,8 @@ if (typeof window !== "undefined") {
 // with 4 GB RAM) doesn't get killed by Jetsam during initial parse +
 // React mount. The splash screen rendered by index.html stays visible
 // until AppCore loads and renders, so there's no blank-screen flash.
-//
-// Retry once on ChunkLoadError. On a flaky mobile network the first
-// fetch can fail (or be served a stale 404 from a CDN edge mid-deploy);
-// a single retry with a cache-busting query string recovers without a
-// full page reload. If it still fails, the rejection bubbles up to the
-// ReactInstanceRecovery error boundary, which renders the recovery UI
-// (rather than leaving the user on a permanent splash).
 const AppCore = lazy(() =>
-  import("./AppCore").catch((firstErr) => {
-    if (typeof window !== "undefined") {
-      try { window.__amynestMark?.("appcore-chunk-retry"); } catch (_e) { /* best-effort */ }
-    }
-    return import(/* @vite-ignore */ `./AppCore?retry=${Date.now()}`).catch(
-      (secondErr) => {
-        if (typeof window !== "undefined") {
-          try { window.__amynestMark?.("appcore-chunk-failed"); } catch (_e) { /* best-effort */ }
-        }
-        // Re-throw the original error so the recovery boundary shows
-        // it. The retry's error is logged via the phase marker above.
-        throw firstErr instanceof Error ? firstErr : secondErr;
-      },
-    );
-  }),
+  safeImportModule(() => import("./AppCore"), "./AppCore"),
 );
 
 declare global {

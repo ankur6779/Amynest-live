@@ -64,10 +64,18 @@ export async function syncPwaCacheAndVersion(): Promise<void> {
   }
 
   try {
-    const reg = await navigator.serviceWorker.register(
-      `${import.meta.env.BASE_URL.replace(/\/$/, "")}/sw.js`,
-      { scope: `${import.meta.env.BASE_URL.replace(/\/$/, "")}/`, updateViaCache: "none" },
-    );
+    const swBase = import.meta.env.BASE_URL.replace(/\/$/, "");
+    const reg = await navigator.serviceWorker.register(`${swBase}/sw.js`, {
+      scope: `${swBase}/`,
+      updateViaCache: "none",
+    });
+
+    // Proactively check every registration for a waiting worker after deploy.
+    await navigator.serviceWorker
+      .getRegistrations()
+      .then((regs) => Promise.all(regs.map((r) => r.update().catch(() => {}))))
+      .catch(() => {});
+
     await reg.update().catch(() => {});
 
     if (reg.waiting) {
