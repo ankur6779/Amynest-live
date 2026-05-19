@@ -5,7 +5,7 @@ import {
   normalizeStaticAudioKey,
   staticAudioMissingKey,
   type StaticAudioMode,
-} from "@workspace/static-audio";
+} from "@workspace/static-audio/browser";
 
 type StaticAudioMapFile = {
   default: Record<string, string>;

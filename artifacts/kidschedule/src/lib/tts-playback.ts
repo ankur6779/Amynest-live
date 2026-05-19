@@ -6,7 +6,7 @@ import {
 } from "@/lib/static-audio";
 import { readResolvedApiJson, type AuthFetchFn } from "@/lib/poll-result";
 import { safePlayAudio } from "@/lib/static-audio";
-import type { StaticAudioMode } from "@workspace/static-audio";
+import type { StaticAudioMode } from "@workspace/static-audio/browser";
 
 const LOG = "[ElevenLabs]";
 
