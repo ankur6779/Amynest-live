@@ -5,6 +5,7 @@ import "./index.css";
 import "./i18n";
 import "./lib/notification-deep-link";
 import { renderCriticalFallbackHtml } from "@/components/app-fallback-ui";
+import { showProductionCrashOverlay } from "@/lib/production-crash-overlay";
 import { initNativeShell } from "./lib/native-shell";
 import { getAppApiBaseOrigin } from "./lib/api";
 import {
@@ -73,6 +74,11 @@ async function bootstrap(): Promise<void> {
   } catch (err) {
     console.error("[amynest:bootstrap] Failed to start app", err);
     mark("bootstrap-failed");
+    showProductionCrashOverlay(
+      err instanceof Error
+        ? { kind: "bootstrap", message: err.message, stack: err.stack }
+        : { kind: "bootstrap", message: String(err ?? "AmyNest could not start.") },
+    );
     const rootEl = document.getElementById("root");
     if (rootEl) {
       renderCriticalFallbackHtml(

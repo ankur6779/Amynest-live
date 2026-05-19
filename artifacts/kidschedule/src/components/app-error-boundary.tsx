@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { logClientError } from "@/lib/log-client-error";
+import { showReactCrashOverlay } from "@/lib/production-crash-overlay";
 
 type Props = {
   children: ReactNode;
@@ -23,6 +24,7 @@ export class AppErrorBoundary extends Component<Props, State> {
       error,
       info.componentStack,
     );
+    showReactCrashOverlay(error, this.props.label ?? "app", info.componentStack ?? undefined);
     void logClientError({
       label: this.props.label ?? "app",
       message: error.message,
