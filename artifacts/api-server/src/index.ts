@@ -1,6 +1,6 @@
 import "./lib/loadEnv";
 import { logAmynestEnvironment } from "./lib/loadEnv";
-import { logStartupEnvDiagnostics } from "./lib/env";
+import { assertCriticalEnvAtBoot, logStartupEnvDiagnostics } from "./lib/env";
 import { logger } from "./lib/logger";
 import { registerProcessErrorHandlers } from "./utils/async-errors.js";
 import { startMemoryMonitor } from "./utils/memory-monitor.js";
@@ -34,6 +34,8 @@ const port = Number(rawPort);
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
+
+assertCriticalEnvAtBoot();
 
 /**
  * Runs a single background-init step with phase logging that NEVER rethrows.
