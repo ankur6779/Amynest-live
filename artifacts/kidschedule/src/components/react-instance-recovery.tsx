@@ -2,6 +2,9 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AppFallbackUi } from "@/components/app-fallback-ui";
 import { handleRecoveryReload } from "@/lib/clear-cache-reload";
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
+import { showProductionCrashOverlay, showReactCrashOverlay } from "@/lib/production-crash-overlay";
+
+const PRODUCTION_DEBUG_OVERLAY = !import.meta.env.DEV;
 
 const RECOVERY_TS_KEY = "amynest:react-instance-recovery:ts";
 const RECOVERY_COUNT_KEY = "amynest:react-instance-recovery:count";
@@ -93,11 +96,25 @@ function installGlobalRecoveryListeners(): void {
 
   window.addEventListener("error", (evt) => {
     if (isRecoverableError(evt.error ?? evt.message)) {
+      if (PRODUCTION_DEBUG_OVERLAY) {
+        showProductionCrashOverlay({
+          kind: "recoverable.error",
+          message: errorMessage(evt.error ?? evt.message),
+        });
+        return;
+      }
       tryAutoRecover();
     }
   });
   window.addEventListener("unhandledrejection", (evt) => {
     if (isRecoverableError(evt.reason)) {
+      if (PRODUCTION_DEBUG_OVERLAY) {
+        showProductionCrashOverlay({
+          kind: "recoverable.rejection",
+          message: errorMessage(evt.reason),
+        });
+        return;
+      }
       tryAutoRecover();
     }
   });
@@ -122,6 +139,10 @@ export class ReactInstanceRecovery extends Component<
   static getDerivedStateFromError(err: unknown): Partial<State> {
     const message =
       err instanceof Error ? err.message : String(err ?? "Unknown error");
+    if (PRODUCTION_DEBUG_OVERLAY) {
+      markCacheRecoveryPending();
+      return { fatal: true, message };
+    }
     if (isRecoverableError(err)) {
       const willReload = tryAutoRecover();
       if (willReload) {
@@ -146,6 +167,15 @@ export class ReactInstanceRecovery extends Component<
       "\nreact componentStack:\n",
       info.componentStack ?? "(no component stack)",
     );
+    if (err instanceof Error) {
+      showReactCrashOverlay(err, "ReactInstanceRecovery", info.componentStack ?? undefined);
+    } else {
+      showProductionCrashOverlay({
+        kind: "react.recovery",
+        message,
+        stack: info.componentStack ?? undefined,
+      });
+    }
   }
 
   render(): ReactNode {

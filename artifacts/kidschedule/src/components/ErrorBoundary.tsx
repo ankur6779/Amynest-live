@@ -1,4 +1,5 @@
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
+import { showReactCrashOverlay } from "@/lib/production-crash-overlay";
 
 type Props = { children: ReactNode; label?: string };
 type State = { error: Error | null };
@@ -12,6 +13,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
     console.error("React crash:", this.props.label ?? "root", error, info);
+    showReactCrashOverlay(error, this.props.label ?? "root", info.componentStack ?? undefined);
   }
 
   render(): ReactNode {

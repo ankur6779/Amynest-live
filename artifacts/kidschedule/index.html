@@ -281,6 +281,13 @@
               splash.classList.add("splash-hide");
               setTimeout(function () { splash.remove(); }, 900);
             }
+            if (window.__amynestShowCrashOverlay) {
+              window.__amynestShowCrashOverlay({
+                kind: "boot-timeout",
+                message: String(message || "AmyNest could not start."),
+              });
+              return;
+            }
             var root = document.getElementById("root");
             if (!root) return;
             root.className = "amynest-boot-failed";
@@ -290,6 +297,35 @@
               '<p style="opacity:0.85;margin:0 0 16px;font-size:14px;line-height:1.5">' + safe + '</p>' +
               '<button type="button" onclick="location.reload()" style="padding:12px 24px;border-radius:999px;border:none;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;font-weight:600;cursor:pointer">Reload AmyNest</button></div>';
           } catch (_e3) {}
+        };
+
+        window.__amynestShowCrashOverlay = function (payload) {
+          try {
+            var splash = document.getElementById("splash");
+            if (splash) {
+              splash.classList.add("splash-hide");
+              setTimeout(function () { splash.remove(); }, 200);
+            }
+            var text = typeof payload === "string"
+              ? payload
+              : JSON.stringify(Object.assign({ at: new Date().toISOString(), href: location.href, route: location.pathname }, payload), null, 2);
+            window.__amynestLastCrash = payload;
+            var el = document.getElementById("amynest-crash-overlay");
+            if (!el) {
+              el = document.createElement("div");
+              el.id = "amynest-crash-overlay";
+              el.setAttribute("role", "alert");
+              el.style.cssText =
+                "position:fixed;inset:0;z-index:2147483647;background:#000;color:#0f0;" +
+                "font:12px/1.45 ui-monospace,Menlo,monospace;padding:20px;margin:0;" +
+                "overflow:auto;white-space:pre-wrap;word-break:break-word;-webkit-overflow-scrolling:touch;";
+              (document.body || document.documentElement).appendChild(el);
+            }
+            el.innerHTML =
+              '<h2 style="color:#f55;margin:0 0 12px;font-size:16px">🔥 APP CRASH DETECTED</h2>' +
+              '<p style="color:#9f9;margin:0 0 10px">Screenshot this screen and share crash.message + crash.stack.</p>' +
+              "<pre style=\"margin:0\">" + text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</pre>";
+          } catch (_e5) {}
         };
 
         setTimeout(function () {
@@ -322,6 +358,16 @@
             };
             localStorage.setItem(KEY, JSON.stringify(r));
           } catch (_e) {}
+          try {
+            window.__amynestShowCrashOverlay && window.__amynestShowCrashOverlay({
+              kind: "pre-react.error",
+              message: String((e && e.message) || "Script error"),
+              source: String((e && e.filename) || ""),
+              line: (e && e.lineno) | 0,
+              col: (e && e.colno) | 0,
+              stack: e && e.error && e.error.stack ? String(e.error.stack) : undefined,
+            });
+          } catch (_e2) {}
         });
         window.addEventListener("unhandledrejection", function (e) {
           try {
@@ -334,6 +380,14 @@
             };
             localStorage.setItem(KEY, JSON.stringify(r));
           } catch (_e) {}
+          try {
+            var reason = e && e.reason;
+            window.__amynestShowCrashOverlay && window.__amynestShowCrashOverlay({
+              kind: "pre-react.rejection",
+              message: String((reason && reason.message) || reason || "Unhandled promise rejection"),
+              stack: reason && reason.stack ? String(reason.stack) : undefined,
+            });
+          } catch (_e2) {}
         });
 
         // 6. Visible diagnostic panel when ?diag=1 is set — gives the user

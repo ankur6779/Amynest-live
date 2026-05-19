@@ -3,6 +3,9 @@
  */
 
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
+import { showProductionCrashOverlay } from "@/lib/production-crash-overlay";
+
+const PRODUCTION_DEBUG_OVERLAY = !import.meta.env.DEV;
 
 const RELOAD_TS_KEY = "amynest:stale-chunk-reload:ts";
 const RELOAD_COUNT_KEY = "amynest:stale-chunk-reload:count";
@@ -57,6 +60,11 @@ export function tryStaleChunkRecovery(
   if (lastTs && now - lastTs < RELOAD_WINDOW_MS) {
     if (count >= MAX_RELOADS_IN_WINDOW) {
       console.warn("[amynest:chunk] Stale chunk reload limit reached — not reloading again");
+      showProductionCrashOverlay({
+        kind: "stale-chunk-limit",
+        message: messageFromUnknown(err, fallbackMessage).split("\n")[0] ?? "Stale chunk reload limit reached",
+        stack: messageFromUnknown(err, fallbackMessage),
+      });
       return false;
     }
     count += 1;
@@ -71,14 +79,26 @@ export function tryStaleChunkRecovery(
     /* ignore */
   }
 
+  const fullMessage = messageFromUnknown(err, fallbackMessage);
+  showProductionCrashOverlay({
+    kind: "stale-chunk",
+    message: fullMessage.split("\n")[0] ?? "Stale chunk error",
+    stack: fullMessage,
+  });
+
+  if (PRODUCTION_DEBUG_OVERLAY) {
+    console.warn("[amynest:chunk] Stale chunk — overlay shown, reload suppressed in production");
+    return true;
+  }
+
   console.warn("[amynest:chunk] Stale chunk detected — reloading", {
-    message: messageFromUnknown(err, fallbackMessage).split("\n")[0],
+    message: fullMessage.split("\n")[0],
   });
   reloadInFlight = true;
   markCacheRecoveryPending();
   window.setTimeout(() => {
     window.location.reload();
-  }, 50);
+  }, 8000);
   return true;
 }
 

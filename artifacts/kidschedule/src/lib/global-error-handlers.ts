@@ -3,6 +3,7 @@ import {
   installCrashLoggerHandlers,
   logError as logCrashError,
 } from "@/lib/crash-logger";
+import { installProductionCrashOverlay } from "@/lib/production-crash-overlay";
 
 const TAG = "[amynest:boot]";
 
@@ -42,6 +43,7 @@ export function installGlobalErrorHandlers(): void {
   installed = true;
 
   installCrashLoggerHandlers();
+  installProductionCrashOverlay();
 
   window.addEventListener("error", (event) => {
     const msg = event.message || "Script error";

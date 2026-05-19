@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { getBootDiagnostics } from "@/lib/boot-store";
 import { getCrashLog, type CrashLogEntry } from "@/lib/crash-logger";
+import {
+  showProductionCrashOverlay,
+  type ProductionCrashPayload,
+} from "@/lib/production-crash-overlay";
 
 type CrashInfo = {
-  kind: "window.onerror" | "unhandledrejection" | "window.error";
+  kind: ProductionCrashPayload["kind"];
   message: string;
   source?: string;
   line?: number;
@@ -48,13 +52,21 @@ function buildPayload(kind: CrashInfo["kind"], crash: Omit<CrashInfo, "kind" | "
   };
 }
 
+/** React mirror of the pre-React DOM crash overlay (kept for tests / devtools). */
 export default function DebugOverlay() {
   const [payload, setPayload] = useState<OverlayPayload | null>(null);
 
   useEffect(() => {
     const show = (kind: CrashInfo["kind"], crash: Omit<CrashInfo, "kind" | "at">) => {
-      setPayload(buildPayload(kind, crash));
+      const full = buildPayload(kind, crash);
+      setPayload(full);
+      showProductionCrashOverlay(full);
     };
+
+    const w = window as Window & { __amynestLastCrash?: unknown };
+    if (w.__amynestLastCrash) {
+      showProductionCrashOverlay(w.__amynestLastCrash);
+    }
 
     const onWindowError = (
       msg: string | Event,
@@ -93,7 +105,6 @@ export default function DebugOverlay() {
       });
     };
 
-    // Chain — do not overwrite handlers installed in main.tsx / crash-logger.
     const prevOnError = window.onerror;
     window.onerror = (msg, src, line, col, err) => {
       onWindowError(msg, src, line, col, err);
@@ -122,33 +133,8 @@ export default function DebugOverlay() {
     };
   }, []);
 
+  // DOM overlay (#amynest-crash-overlay) is the visible production UI.
   if (!payload) return null;
 
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        background: "#000",
-        color: "#0f0",
-        zIndex: 999999,
-        padding: 20,
-        overflow: "auto",
-        fontSize: 12,
-        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-      }}
-    >
-      <h2 style={{ margin: "0 0 12px", color: "#f55" }}>🔥 APP CRASH DETECTED</h2>
-      <p style={{ color: "#9f9", margin: "0 0 8px" }}>
-        Read <strong>crash.message</strong> + <strong>crash.stack</strong> first. If you see
-        &quot;React Crash&quot; instead, it is a render error (check component stack in that overlay).
-      </p>
-      <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-        {JSON.stringify(payload, null, 2)}
-      </pre>
-    </div>
-  );
+  return null;
 }
