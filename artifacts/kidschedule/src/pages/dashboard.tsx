@@ -1147,16 +1147,22 @@ export default function Dashboard() {
     authReady && isSignedIn && (loadingSummary || subLoading);
 
   useEffect(() => {
+    // Single-flight ref lock — once the parent-profile fetch has been
+    // attempted (success OR error), we never re-fire it from this effect.
+    // Previously the catch block reset the ref, which under StrictMode + a
+    // transient network error caused /api/parent-profile to be hit on every
+    // render until it eventually succeeded. The dashboard's other queries
+    // (useGetDashboardSummary, etc.) already handle their own retries with
+    // refetchInterval, so a one-shot here is sufficient.
     if (!authReady || !isSignedIn || profileFetchedRef.current) return;
     profileFetchedRef.current = true;
-    authFetch("/api/parent-profile")
+    void authFetch("/api/parent-profile")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.name) setProfileName(data.name);
       })
       .catch((e) => {
         console.error("[dashboard] parent-profile fetch failed", e);
-        profileFetchedRef.current = false;
       });
   }, [authReady, isSignedIn, authFetch]);
 

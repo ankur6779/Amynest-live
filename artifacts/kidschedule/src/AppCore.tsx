@@ -121,8 +121,15 @@ const bootMark = (phase: string) => {
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function HomeRedirect() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded, authStatus } = useAuth();
   const { data, isError, error, refetch } = useOnboardingStatus();
+
+  // Wait for auth to resolve before deciding signed-in vs not. Without this,
+  // an authenticated user momentarily sees <LandingPage /> while Firebase is
+  // still loading, which can kick off duplicate /api/onboarding fetches once
+  // auth resolves on the next render.
+  const authLoading = !isLoaded || authStatus === "loading";
+  if (authLoading) return <RouteLoadingShell />;
 
   if (!isSignedIn) {
     return <LandingPage />;
@@ -154,11 +161,13 @@ function HomeRedirect() {
 
 /** If setup is already done, leave /onboarding (users often land here from an old redirect). */
 function OnboardingRouteGuard() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded, authStatus } = useAuth();
   const { data, isError, error, refetch } = useOnboardingStatus();
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
 
+  const authLoading = !isLoaded || authStatus === "loading";
+  if (authLoading) return <RouteLoadingShell />;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   if (authBlocked) return <RouteLoadingShell />;
   if (isError) {
@@ -178,8 +187,10 @@ function OnboardingRouteGuard() {
 
 /** Standalone native push prompt — no Layout shell (same pattern as onboarding). */
 function NotifyPromptRouteGuard() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded, authStatus } = useAuth();
 
+  const authLoading = !isLoaded || authStatus === "loading";
+  if (authLoading) return <RouteLoadingShell />;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
 
   return (
@@ -190,11 +201,17 @@ function NotifyPromptRouteGuard() {
 }
 
 function ProtectedRoute({ component: Component }: { component: ComponentType; requiresProfile?: boolean }) {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded, authStatus } = useAuth();
   const { data, isError, error, refetch } = useOnboardingStatus();
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
 
+  // Hard guard: never decide signed-in / signed-out until Firebase has
+  // resolved. Without this gate, a signed-in user with a slow auth resolve
+  // would briefly hit the /sign-in redirect and bounce back, triggering an
+  // unnecessary route remount + duplicate API calls.
+  const authLoading = !isLoaded || authStatus === "loading";
+  if (authLoading) return <RouteLoadingShell />;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   if (authBlocked) return <RouteLoadingShell />;
   if (isError) {
