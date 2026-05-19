@@ -252,7 +252,7 @@ function PhonicsLearningContent({
         </CardContent>
       </Card>;
   }
-  return <div className="space-y-4">
+  return <div id="phonics-learning" className="space-y-4 scroll-mt-24">
       <PersonalizationBadge level={level} childName={childName} />
       <StageSelector
         active={level.ageGroup}
@@ -263,9 +263,11 @@ function PhonicsLearningContent({
           setStageOverride(g === defaultLevel?.ageGroup ? null : g);
         }}
       />
-      <SubItemGate sectionId="hub_phonics" subItemId="phonics_test">
-        <PhonicsTest childId={childId} childName={childName} totalAgeMonths={totalAgeMonths} />
-      </SubItemGate>
+      <div id="phonics-test" className="scroll-mt-24">
+        <SubItemGate sectionId="hub_phonics" subItemId="phonics_test">
+          <PhonicsTest childId={childId} childName={childName} totalAgeMonths={totalAgeMonths} />
+        </SubItemGate>
+      </div>
       <SubItemGate sectionId="hub_phonics" subItemId="phonics_download">
         <PhonicsDownloadCard childId={childId} />
       </SubItemGate>
@@ -275,9 +277,11 @@ function PhonicsLearningContent({
       <SubItemGate sectionId="hub_phonics" subItemId="phonics_practice_sounds">
         <PracticeSoundsCard level={level} items={safeItems} progress={safeProgress} recordPlay={recordPlay} />
       </SubItemGate>
-      <SubItemGate sectionId="hub_phonics" subItemId="phonics_progress">
-        <ProgressTrackerCard level={level} items={safeItems} progress={safeProgress} sourceLabel={phonicsData.source === "api" ? "synced to your account" : "saved on this device"} />
-      </SubItemGate>
+      <div id="phonics-progress" className="scroll-mt-24">
+        <SubItemGate sectionId="hub_phonics" subItemId="phonics_progress">
+          <ProgressTrackerCard level={level} items={safeItems} progress={safeProgress} sourceLabel={phonicsData.source === "api" ? "synced to your account" : "saved on this device"} />
+        </SubItemGate>
+      </div>
       <SubItemGate sectionId="hub_phonics" subItemId="phonics_parent_tips">
         <ParentTipsCard level={level} items={safeItems} progress={safeProgress} insights={safeInsights} />
       </SubItemGate>

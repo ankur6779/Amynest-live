@@ -5,7 +5,7 @@ import {
   fetchElevenLabsTtsStream,
   type SynthesizeMode,
 } from "./elevenLabsService.js";
-import { fetchOpenAiTtsStream } from "./openaiTtsService.js";
+import { streamOpenAiTtsWithCache } from "./openaiTtsStreamCache.js";
 import { pipeFetchAudioToExpress } from "./ttsStreamResponse.js";
 
 export interface LiveTtsParams {
@@ -50,8 +50,7 @@ export async function streamLiveTtsToClient(
 
   if (preferOpenAi) {
     try {
-      const openAiRes = await fetchOpenAiTtsStream(params.text, { mode: params.mode });
-      const ok = await streamUpstreamToClient(res, openAiRes, params.cacheKey, "openai");
+      const ok = await streamOpenAiTtsWithCache(res, params);
       if (ok) return;
     } catch (err) {
       if (!isElevenLabsTtsEnabled()) {

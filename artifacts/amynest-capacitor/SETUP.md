@@ -103,6 +103,15 @@ npx cap open ios
 3. Open `ios/App/App/Info.plist`
    - Copy all keys from `ios-config/Info-permissions.plist` into this file
 4. Replace `ios/App/App/App.entitlements` with `ios-config/AmyNest.entitlements`
+5. **Disable WKWebView rubber-band bounce** (required for native feel):
+   - Copy `ios-config/BounceDisable.swift` into `ios/App/App/` and add it to the App target in Xcode
+   - In `AppDelegate.swift`, after Capacitor finishes launching, call:
+     ```swift
+     DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+       AmyNestBounceDisable.applyToAllWindows()
+     }
+     ```
+   - Set `ios.contentInset` to `"never"` in `capacitor.config.json` (already set in this repo)
 
 #### Build IPA for TestFlight:
 1. In Xcode: **Product → Archive**

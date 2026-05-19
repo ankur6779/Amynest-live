@@ -13,7 +13,6 @@ import { SmartStudyZone } from "@/components/smart-study-zone";
 import { PtmPrepAssistant } from "@/components/ptm-prep";
 import { EventPrepCard } from "@/components/event-prep-card";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
-import { PhonicsLearning } from "@/components/phonics-learning";
 import { SpellingMastery } from "@/components/spelling-mastery";
 import { ColoringBooks } from "@/components/coloring-books";
 import { FunSheets } from "@/components/fun-sheets";
@@ -140,6 +139,43 @@ function HubSection({
           {children}
         </div>}
     </div>;
+}
+
+function PhonicsLaunchCard({
+  title,
+  description,
+  tryFree,
+  onOpen,
+}: {
+  title: string;
+  description: string;
+  tryFree?: boolean;
+  onOpen?: () => void;
+}) {
+  return (
+    <Link
+      href="/phonics"
+      onClick={onOpen}
+      className="group block rounded-2xl border border-white/20 bg-gradient-to-br from-sky-400/30 to-blue-500/15 p-4 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all hover:border-white/40 hover:shadow-[0_10px_36px_-10px_rgba(56,189,248,0.45)]"
+      data-testid="phonics-launch-card"
+    >
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-blue-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40">
+          <AudioLines className="h-5 w-5 text-white" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <p className="truncate font-quicksand text-[15px] font-bold leading-tight text-foreground">{title}</p>
+            {tryFree && <TryFreeBadge />}
+          </div>
+          <p className="mt-0.5 truncate text-[11.5px] text-muted-foreground">{description}</p>
+        </div>
+        <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-primary px-3 text-xs font-black text-primary-foreground transition-transform group-active:scale-95">
+          Open
+        </span>
+      </div>
+    </Link>
+  );
 }
 
 // ─── Amy AI Suggestions Section ───────────────────────────────────────────────
@@ -709,9 +745,12 @@ function ParentingHubPage() {
     bands: ["2-4", "4-6"],
     render: () => {
       return totalAgeMonths >= 12 && totalAgeMonths < 72 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_phonics")}>
-          <HubSection id="phonics" icon={<AudioLines className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.phonics.title")} description={t("parent_hub.web_tiles.phonics.description")} accentClass="bg-gradient-to-br from-sky-400 to-blue-500" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(59,130,246,0.14)100%)" tryFree={tryFreeFor("hub_phonics")} onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}> {/* audit-ok: brand tile accent gradient */}
-            <PhonicsLearning childId={effectiveChild.id} childName={effectiveChild.name} totalAgeMonths={totalAgeMonths} />
-          </HubSection>
+          <PhonicsLaunchCard
+            title={t("parent_hub.web_tiles.phonics.title")}
+            description={t("parent_hub.web_tiles.phonics.description")}
+            tryFree={tryFreeFor("hub_phonics")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}
+          />
         </LockedBlock> : null;
     }
   }, {
@@ -828,7 +867,7 @@ function ParentingHubPage() {
               <p className="text-sm text-muted-foreground">
                 {t("screens.speech_coach.subtitle")}
               </p>
-              <Link href="/parenting-hub/speech-coach">
+              <Link href="/speech-coach">
                 <Button className="w-full rounded-xl gap-2 text-sm font-semibold" data-testid="open-speech-coach">
                   {t("screens.speech_coach.cta.start_practice")}
                   <ArrowRight className="h-4 w-4 ml-auto" />
@@ -844,6 +883,8 @@ function ParentingHubPage() {
   const inForYou = (s: SectionEntry) => s.alwaysCurrent || currentBand !== null && (s.bands?.includes(currentBand) ?? false);
   const forYouAll = sections.filter(inForYou);
   const forYouFeatured = forYouAll.filter(s => s.featured);
+  const forYouStandaloneFeatured = forYouFeatured.filter(s => s.id === "infant-hub");
+  const forYouGroupedFeatured = forYouFeatured.filter(s => s.id !== "infant-hub");
   const forYouGrid = forYouAll.filter(s => !s.featured);
 
   // Section 2 ("Explore Next Stage") is shown ONLY for children whose age is
@@ -861,11 +902,19 @@ function ParentingHubPage() {
           {/* ── SECTION 1: For {Child Name} ─────────────────────────────── */}
           <ForYouHeader childName={effectiveChild.name} band={currentBand} ageGroup={ageGroup} />
 
+          {/* Infant Hub gets its own parent-level tile for 0-24 month children. */}
+          {forYouStandaloneFeatured.length > 0 && <div className="space-y-3">
+              {forYouStandaloneFeatured.map(s => {
+                const node = s.render();
+                return node ? <div key={s.id}>{node}</div> : null;
+              })}
+            </div>}
+
           {/* 5 collapsible section groups — glass + glow tiles */}
           <div className="space-y-3">
             {WEB_HUB_GROUPS.map(group => {
               const tileIds = new Set(WEB_HUB_SECTION_TILE_IDS[group.key] ?? []);
-              const groupFeatured = group.key === "today" ? forYouFeatured : [];
+              const groupFeatured = group.key === "today" ? forYouGroupedFeatured : [];
               const groupGrid = forYouGrid.filter(s => tileIds.has(s.id));
               if (groupFeatured.length === 0 && groupGrid.length === 0) return null;
               const isOpen = expandedGroups.has(group.key);

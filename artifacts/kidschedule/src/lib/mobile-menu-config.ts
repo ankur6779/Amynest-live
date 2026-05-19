@@ -17,7 +17,6 @@ import {
   Trophy,
   UserCircle,
   Users,
-  Wind,
   type LucideIcon,
 } from "lucide-react";
 
@@ -32,14 +31,13 @@ export type MobileNavItem = {
 export const NAV_ITEMS: MobileNavItem[] = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: Home },
   { href: "/parenting-hub", labelKey: "nav.parenting_hub", icon: BookOpen },
-  { href: "/amy-coach", labelKey: "nav.amy_coach", icon: Brain },
   {
     href: "/kids-control-center",
     labelKey: "nav.kids_control_center",
     icon: Baby,
     badge: "Soon 🚀",
   },
-  { href: "/children", labelKey: "nav.children", icon: Users },
+  { href: "/amy-coach", labelKey: "nav.amy_coach", icon: Brain },
   { href: "/routines", labelKey: "nav.routines", icon: Calendar },
   { href: "/progress", labelKey: "nav.progress", icon: TrendingUp },
   { href: "/insights", labelKey: "nav.insights", icon: BarChart2 },
@@ -49,10 +47,10 @@ export const NAV_ITEMS: MobileNavItem[] = [
   { href: "/games", labelKey: "nav.games", icon: Gamepad2 },
   { href: "/recipes", labelKey: "nav.my_recipes", icon: ChefHat },
   { href: "/nutrition", labelKey: "nav.nutrition_hub", icon: Salad },
+  { href: "/children", labelKey: "nav.children", icon: Users },
   { href: "/parent-profile", labelKey: "nav.profile", icon: UserCircle },
   { href: "/pricing", labelKey: "nav.pricing", icon: Sparkles },
   { href: "/referrals", labelKey: "nav.referrals", icon: Gift },
-  { href: "/environment", labelKey: "nav.environment", icon: Wind },
   { href: "/feedback", labelKey: "nav.feedback", icon: MessageSquarePlus },
 ];
 

@@ -159,6 +159,11 @@ export function ParentTasksSection({ group, childName }: ParentTasksSectionProps
  const toggle = (i: number) => setChecked((prev) => ({ ...prev, [i]: !prev[i] }));
  const doneCount = Object.values(checked).filter(Boolean).length;
 
+ const taskRowSurface =
+   "bg-card border-border hover:border-primary/40";
+ const taskRowText = "text-card-foreground";
+ const taskRowMeta = "text-muted-foreground";
+
  return (
  <Card className="rounded-3xl border-2 border-border bg-muted shadow-none">
  <CardContent className="p-5">
@@ -172,7 +177,7 @@ export function ParentTasksSection({ group, childName }: ParentTasksSectionProps
  <p className="text-xs text-foreground">{t("parent_hub.age_sections.parent_tasks.desc", { name: childName })}</p>
  </div>
  </div>
- <div className="text-xs font-bold text-foreground bg-white rounded-full px-3 py-1 border border-border">
+ <div className="text-xs font-bold text-card-foreground bg-card rounded-full px-3 py-1 border border-border shadow-sm">
  {t("parent_hub.age_sections.parent_tasks.done_counter", { done: doneCount, total: tasks.length })}
  </div>
  </div>
@@ -182,18 +187,18 @@ export function ParentTasksSection({ group, childName }: ParentTasksSectionProps
  key={t.task}
  onClick={() => toggle(i)}
  className={`w-full flex items-start gap-3 rounded-2xl p-3 border-2 transition-all text-left ${
- checked[i] ?"bg-muted border-border opacity-75" :"bg-white border-border hover:border-border"
+ checked[i] ? "bg-muted border-border opacity-75" : taskRowSurface
  }`}
  >
  <div className={`mt-0.5 h-5 w-5 rounded-full border-2 shrink-0 flex items-center justify-center ${
- checked[i] ?"bg-primary border-primary" :"border-border"
+ checked[i] ? "bg-primary border-primary" : "border-border"
  }`}>
- {checked[i] && <span className="text-white text-xs">✓</span>}
+ {checked[i] && <span className="text-primary-foreground text-xs">✓</span>}
  </div>
  <span className="text-xl shrink-0 mt-0.5">{t.emoji}</span>
  <div className="flex-1">
- <p className={`text-sm font-medium ${checked[i] ?"line-through text-muted-foreground" :"text-foreground"}`}>{t.task}</p>
- <p className="text-xs text-foreground mt-0.5">⏱ {t.time}</p>
+ <p className={`text-sm font-medium ${checked[i] ? "line-through text-muted-foreground" : taskRowText}`}>{t.task}</p>
+ <p className={`text-xs mt-0.5 ${checked[i] ? "text-muted-foreground" : taskRowMeta}`}>⏱ {t.time}</p>
  </div>
  </button>
  ))}

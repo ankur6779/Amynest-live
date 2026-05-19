@@ -25,7 +25,7 @@
     ]
   },
   "ios": {
-    "contentInset": "always",
+    "contentInset": "never",
     "backgroundColor": "#0a061a",
     "allowsLinkPreview": false,
     "scrollEnabled": true,

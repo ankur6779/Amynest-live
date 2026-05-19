@@ -164,19 +164,19 @@ const LIVE_PULSE = "inline-block h-1.5 w-1.5 rounded-full bg-green-500 animate-p
 const GOAL_CHIP = "text-xs rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 px-2.5 py-0.5";
 const WEEKEND_NOTE = "text-[11px] text-sky-700";
 
-const CARD_BASE = "rounded-xl border border-gray-200 bg-white";
+const CARD_BASE = "rounded-xl border border-border bg-card";
 
 const S = {
-  sectionTitle: "font-bold text-gray-900 text-sm leading-tight",
+  sectionTitle: "font-bold text-card-foreground text-sm leading-tight",
   sectionSub: "text-[11px] text-muted-foreground",
-  rowValue: "text-sm font-semibold text-gray-800 leading-snug",
-  childName: "font-bold text-sm text-gray-800",
-  parentHeader: "font-bold text-sm text-gray-800",
-  metricVal: "text-sm font-bold text-gray-800 leading-tight",
-  riskLabel: "font-semibold text-gray-700",
-  riskVal: "font-bold text-gray-800",
+  rowValue: "text-sm font-semibold text-card-foreground leading-snug",
+  childName: "font-bold text-sm text-card-foreground",
+  parentHeader: "font-bold text-sm text-card-foreground",
+  metricVal: "text-sm font-bold text-card-foreground leading-tight",
+  riskLabel: "font-semibold text-foreground",
+  riskVal: "font-bold text-card-foreground",
   rowLabel: "text-[11px] text-muted-foreground uppercase tracking-wide",
-  rowIconWrap: "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100",
+  rowIconWrap: "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted",
   schoolBadge: "text-[10px] gap-1",
   childRow: "flex items-center gap-2",
   childCard: "p-4 space-y-3",
@@ -194,7 +194,7 @@ const S = {
   rtCollectNote: "text-[11px] text-muted-foreground text-center",
   rtItem: "flex items-center gap-4 bg-amber-50/40 px-4 py-3",
   rtEmoji: "text-xl shrink-0",
-  rtLabel: "text-sm font-semibold text-gray-800",
+  rtLabel: "text-sm font-semibold text-card-foreground",
   rtNote: "text-xs text-muted-foreground",
   goalRow: "mt-0",
   goalLabel: "text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5",
@@ -210,7 +210,7 @@ const S = {
   uvColor: (c: string) => c,
   schedChildBaby: "text-indigo-500",
   schedSchoolIcon: "text-sky-500",
-  schedSchoolOff: "text-gray-400",
+  schedSchoolOff: "text-muted-foreground",
   schedParentWrap: "rounded-xl border border-sky-200 bg-sky-50/60 p-4 space-y-3",
   schedParentIcon: "text-sky-600",
   schedParentIcon2: "text-sky-500",
@@ -228,7 +228,7 @@ const S = {
 const METRIC_ICONS = {
   temp: "text-orange-500",
   humidity: "text-sky-500",
-  wind: "text-slate-500",
+  wind: "text-muted-foreground",
 } as const;
 // audit-block-ignore-end
 

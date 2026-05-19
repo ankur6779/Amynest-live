@@ -95,7 +95,7 @@ export function EnvironmentContextCard({
         </div>
 
         <div className="flex items-start gap-2">
-          <Wind className="h-4 w-4 text-slate-600 shrink-0 mt-0.5" />
+          <Wind className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-bold">
               {t("pages.routines.generate.env_aqi", { defaultValue: "AQI" })}

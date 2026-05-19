@@ -46,14 +46,14 @@ function severityBadge(sev: HouseholdBottleneckPrediction["severity"]) {
     case "medium":
       return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200";
     default:
-      return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200";
+      return "bg-muted text-muted-foreground";
   }
 }
 
 function heatColor(load: number, cap: number): string {
-  if (cap <= 0) return "bg-slate-100 dark:bg-slate-900";
+  if (cap <= 0) return "bg-muted";
   const ratio = load / cap;
-  if (load === 0) return "bg-slate-50 dark:bg-slate-900/40";
+  if (load === 0) return "bg-muted/50";
   if (ratio <= 0.5) return "bg-emerald-100 dark:bg-emerald-900/30";
   if (ratio <= 1.0) return "bg-amber-100 dark:bg-amber-900/40";
   if (ratio <= 1.5) return "bg-orange-200 dark:bg-orange-900/50";

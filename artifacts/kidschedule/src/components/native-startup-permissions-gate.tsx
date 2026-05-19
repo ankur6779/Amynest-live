@@ -280,37 +280,37 @@ export function NativeStartupPermissionsGate() {
   if (allGranted && ready) return null;
   if (!ready) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a061a]/90" aria-busy="true" aria-label="Loading permissions" />
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--overlay-bg)]" aria-busy="true" aria-label="Loading permissions" />
     );
   }
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a061a]/95 p-4 text-slate-100 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--overlay-bg)] p-4 text-foreground backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="native-perm-title"
     >
-      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-white/10 bg-[#120b28] p-5 shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-2xl">
         <h2 id="native-perm-title" className="text-lg font-semibold tracking-tight">
           Allow AmyNest to work fully
         </h2>
-        <p className="mt-2 text-sm text-slate-300">
+        <p className="mt-2 text-sm text-muted-foreground">
           We use location, the microphone, and notifications for reminders and Speech Coach.
           If you turned something off before, use{" "}
-          <span className="font-medium text-white">Open settings</span>
-          {" "}then <span className="font-medium text-white">Check again</span>.
+          <span className="font-medium text-foreground">Open settings</span>
+          {" "}then <span className="font-medium text-foreground">Check again</span>.
         </p>
 
         <ul className="mt-5 space-y-4">
-          <li className="flex gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+          <li className="flex gap-3 rounded-xl border border-border bg-muted/40 p-3">
             <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-violet-300" aria-hidden />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">Location</span>
                 <Pill state={loc} />
               </div>
-              <p className="mt-1 text-xs text-slate-400">While using the app — routines and local tips.</p>
+              <p className="mt-1 text-xs text-muted-foreground">While using the app — routines and local tips.</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button type="button" size="sm" disabled={busy} onClick={() => void requestLocation()}>
                   Allow location
@@ -330,14 +330,14 @@ export function NativeStartupPermissionsGate() {
             </div>
           </li>
 
-          <li className="flex gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+          <li className="flex gap-3 rounded-xl border border-border bg-muted/40 p-3">
             <Mic className="mt-0.5 h-5 w-5 shrink-0 text-violet-300" aria-hidden />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">Microphone</span>
                 <Pill state={mic} />
               </div>
-              <p className="mt-1 text-xs text-slate-400">Speech Coach and read-aloud features.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Speech Coach and read-aloud features.</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button type="button" size="sm" disabled={busy} onClick={() => void requestMicPerm()}>
                   Allow microphone
@@ -357,14 +357,14 @@ export function NativeStartupPermissionsGate() {
             </div>
           </li>
 
-          <li className="flex gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+          <li className="flex gap-3 rounded-xl border border-border bg-muted/40 p-3">
             <Bell className="mt-0.5 h-5 w-5 shrink-0 text-violet-300" aria-hidden />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">Notifications</span>
                 <Pill state={push} />
               </div>
-              <p className="mt-1 text-xs text-slate-400">Routines, school flow, and Amy reminders.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Routines, school flow, and Amy reminders.</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button type="button" size="sm" disabled={busy} onClick={() => void requestPush()}>
                   Allow notifications
@@ -385,11 +385,11 @@ export function NativeStartupPermissionsGate() {
           </li>
         </ul>
 
-        <div className="mt-6 flex flex-col gap-2 border-t border-white/10 pt-4">
+        <div className="mt-6 flex flex-col gap-2 border-t border-border pt-4">
           <Button type="button" className="w-full" disabled={busy} onClick={() => void allowAll()}>
             Allow all (recommended)
           </Button>
-          <Button type="button" variant="ghost" className="w-full text-slate-400" disabled={busy} onClick={onContinue}>
+          <Button type="button" variant="ghost" className="w-full text-muted-foreground" disabled={busy} onClick={onContinue}>
             Not now — ask again next app launch
           </Button>
         </div>

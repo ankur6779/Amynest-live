@@ -57,7 +57,15 @@ export default function AssistantPage() {
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const threadRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showScrollLatest, setShowScrollLatest] = useState(false);
+
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ behavior, block: "end" });
+    });
+  };
 
   // Load saved chat history on mount so parents can pick up where they left off
   useEffect(() => {
@@ -83,8 +91,22 @@ export default function AssistantPage() {
   }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollToBottom("smooth");
   }, [messages, loading]);
+
+  const handleThreadScroll = () => {
+    const thread = threadRef.current;
+    if (!thread) return;
+    const distanceFromBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight;
+    setShowScrollLatest(distanceFromBottom > 160);
+  };
+
+  const handleInputFocus = () => {
+    setTimeout(() => {
+      textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      scrollToBottom("smooth");
+    }, 80);
+  };
 
   // Server-driven gating — no local quota counter. Premium users have no limit.
   const dailyLimit = entitlements?.limits.aiQueriesPerDay ?? 10;
@@ -169,9 +191,9 @@ export default function AssistantPage() {
   const isEmpty = historyLoaded && messages.length === 0;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] max-w-3xl mx-auto">
+    <div className="relative mx-auto flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-3xl flex-col bg-background md:h-[calc(100dvh-4rem)] md:max-h-[calc(100dvh-4rem)]">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 flex-shrink-0">
+      <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-4 md:px-0 md:pt-0">
         <div>
           <h1 className="font-quicksand text-3xl font-bold text-foreground flex items-center gap-2">
             <AmyIcon size={38} bounce ring />
@@ -192,7 +214,7 @@ export default function AssistantPage() {
       </div>
 
       {/* Mode tabs */}
-      <div className="flex-shrink-0 mb-3">
+      <div className="shrink-0 px-4 pb-3 md:px-0">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {WEB_MODES.map(({ id, labelKey, icon: Icon }) => (
             <button
@@ -215,7 +237,7 @@ export default function AssistantPage() {
       </div>
 
       {/* Daily limit bar */}
-      <div className={`flex-shrink-0 mb-3 rounded-2xl px-4 py-2.5 flex items-center justify-between gap-3 border text-sm ${
+      <div className={`mx-4 mb-3 flex shrink-0 items-center justify-between gap-3 rounded-2xl border px-4 py-2.5 text-sm md:mx-0 ${
         limitReached
           ? "bg-muted border-border text-foreground"
           : remaining <= 2
@@ -256,7 +278,11 @@ export default function AssistantPage() {
       </div>
 
       {/* Chat area */}
-      <div className="flex-1 overflow-y-auto space-y-4 pb-4 pr-1">
+      <div
+        ref={threadRef}
+        onScroll={handleThreadScroll}
+        className="min-h-0 flex-1 overflow-y-auto space-y-4 px-4 pb-24 pr-5"
+      >
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full gap-6 text-center py-8">
             <AmyIcon size={96} bounce ring />
@@ -360,8 +386,19 @@ export default function AssistantPage() {
         )}
       </div>
 
+      {showScrollLatest && (
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => scrollToBottom("smooth")}
+          className="absolute bottom-28 right-4 z-40 rounded-full shadow-lg"
+        >
+          {t("ai.scroll_latest", { defaultValue: "Latest" })}
+        </Button>
+      )}
+
       {/* Input */}
-      <div className="flex-shrink-0 pt-3 border-t border-border/50">
+      <div className="sticky bottom-0 z-50 w-full shrink-0 border-t border-border/50 bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur md:px-0">
         {limitReached ? (
           <div className="bg-muted border border-border rounded-2xl p-4 text-center text-foreground space-y-2">
             <p className="font-bold text-sm">{t("ai.quota_exhausted")}</p>
@@ -382,6 +419,7 @@ export default function AssistantPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
+                onFocus={handleInputFocus}
                 className="flex-1 border-none shadow-none resize-none focus-visible:ring-0 min-h-[40px] max-h-[120px] bg-transparent p-0 text-sm placeholder:text-muted-foreground"
                 rows={1}
               />
