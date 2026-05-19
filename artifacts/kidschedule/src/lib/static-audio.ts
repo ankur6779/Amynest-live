@@ -23,6 +23,12 @@ import {
   type StaticAudioMode,
 } from "@workspace/static-audio/browser";
 
+function audioDebugLog(...args: unknown[]): void {
+  if (import.meta.env.DEV || isStaticAudioDebug()) {
+    console.log(...args);
+  }
+}
+
 export {
   assertStaticAudioUrl,
   assertStaticPlaybackUrl,
@@ -364,7 +370,7 @@ async function verifyStaticAudioEndpoint(proxyUrl: string): Promise<number | nul
 
 async function playElementOnce(audio: HTMLAudioElement): Promise<void> {
   audio.currentTime = 0;
-  console.log("[AUDIO PLAY ATTEMPT]");
+  audioDebugLog("[AUDIO PLAY ATTEMPT]");
   await audio.play();
 }
 
@@ -373,7 +379,7 @@ export async function safePlayAudio(
   opts: SafePlayAudioOptions = {},
 ): Promise<boolean> {
   if (isClientStaticAudioCircuitOpen()) {
-    console.error("[AUDIO DEBUG] client circuit open — playback blocked");
+    audioDebugLog("[AUDIO DEBUG] client circuit open — playback blocked");
     // #region agent log
     agentDebugLog({
       hypothesisId: "C",
@@ -461,7 +467,7 @@ export async function playStaticAudio(
   mode: StaticAudioMode = "default",
 ): Promise<boolean> {
   const text = (rawText ?? "").trim();
-  console.log("[AUDIO DEBUG START]", { text, mode });
+  audioDebugLog("[AUDIO DEBUG START]", { text, mode });
   // #region agent log
   agentDebugLog({
     hypothesisId: "A",
@@ -478,7 +484,7 @@ export async function playStaticAudio(
   }
 
   const proxyUrl = lookupStaticAudioUrl(text, mode);
-  console.log("[AUDIO URL]", proxyUrl);
+  audioDebugLog("[AUDIO URL]", proxyUrl);
   // #region agent log
   agentDebugLog({
     hypothesisId: "B",
@@ -507,12 +513,12 @@ export async function playStaticAudio(
     console.error("[AUDIO OBJECT FAILED]", "createStaticPlaybackElement returned null");
     return false;
   }
-  console.log("[AUDIO OBJECT CREATED]", proxyUrl);
+  audioDebugLog("[AUDIO OBJECT CREATED]", proxyUrl);
 
   try {
     const played = await safePlayAudio(audio, { proxyUrl, phrase: text, mode });
     if (played) {
-      console.log("[AUDIO PLAY SUCCESS]");
+      audioDebugLog("[AUDIO PLAY SUCCESS]");
       // #region agent log
       agentDebugLog({
         hypothesisId: "E",

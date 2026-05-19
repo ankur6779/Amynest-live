@@ -1,4 +1,6 @@
-/** Debug session ring buffer — survives production/mobile where localhost ingest is unreachable. */
+import { isDevDebugEnabled } from "@/lib/dev-log";
+
+/** Debug session ring buffer — local dev / explicit VITE_AGENT_DEBUG only. */
 const STORAGE_KEY = "__amynest_agent_debug_9b2f04";
 const MAX_ENTRIES = 80;
 const INGEST =
@@ -25,12 +27,15 @@ function persist(entry: AgentDebugPayload & { timestamp: number }): void {
   }
 }
 
-/** Dual-write: localStorage ring buffer + optional debug ingest (local dev only). */
+/** Ring buffer + optional localhost ingest — disabled in production unless VITE_AGENT_DEBUG. */
 export function agentDebugLog(payload: AgentDebugPayload): void {
+  if (!isDevDebugEnabled()) return;
+
   const entry = { ...payload, timestamp: Date.now() };
   persist(entry);
-  // Production / preview builds must not POST to localhost — Chrome logs failed requests.
+
   if (!import.meta.env.DEV) return;
+
   try {
     fetch(INGEST, {
       method: "POST",

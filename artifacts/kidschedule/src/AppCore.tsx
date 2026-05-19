@@ -43,6 +43,7 @@ import {
 import { installTtsGestureListener } from "@/lib/tts-guard";
 import { OnboardingStatusProvider, useOnboardingStatus } from "@/contexts/onboarding-status-context";
 import { AppInitGate } from "@/components/app-init-gate";
+import { devLog } from "@/lib/dev-log";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
 // when its route is first matched. The Suspense boundary below renders
@@ -124,7 +125,7 @@ function HomeRedirect() {
   const { isSignedIn, isLoaded, authStatus } = useAuth();
   const { data, isError, error, refetch } = useOnboardingStatus();
 
-  console.log("HOME RENDER", { isSignedIn, authStatus, isLoaded });
+  devLog("HOME RENDER", { isSignedIn, authStatus, isLoaded });
 
   // Wait for auth to resolve before deciding signed-in vs not. Without this,
   // an authenticated user momentarily sees <LandingPage /> while Firebase is
@@ -481,7 +482,7 @@ function AppCoreMountMarker() {
   useEffect(() => {
     if (appCoreInitDone) return;
     appCoreInitDone = true;
-    console.log("APPCORE MOUNTED (init once)");
+    devLog("APPCORE MOUNTED (init once)");
     installTtsGestureListener();
     try { (window as Window & { __amynestAppCoreReady?: boolean }).__amynestAppCoreReady = true; } catch (_e) { /* best-effort */ }
     bootMark("appcore-mounted");
