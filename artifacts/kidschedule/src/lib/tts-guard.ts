@@ -15,8 +15,20 @@ function getAudioContextClass(): typeof AudioContext | undefined {
   );
 }
 
-/** Resume a shared AudioContext so Web Audio nodes can start after gesture. */
+/**
+ * Resume (or create) a shared AudioContext so Web Audio nodes can start.
+ * Skips creation when the browser reports the autoplay policy disallows it —
+ * this avoids the Chrome "AudioContext was not allowed to start" warning.
+ */
 function resumeUnlockAudioContext(): void {
+  if (typeof window === "undefined") return;
+
+  type AutoplayPolicyWindow = Window & {
+    getAutoplayPolicy?: (kind: "mediaelement" | "audiocontext") => string;
+  };
+  const policy = (window as AutoplayPolicyWindow).getAutoplayPolicy?.("audiocontext");
+  if (policy === "disallowed") return;
+
   const AudioContextClass = getAudioContextClass();
   if (!AudioContextClass) return;
   try {

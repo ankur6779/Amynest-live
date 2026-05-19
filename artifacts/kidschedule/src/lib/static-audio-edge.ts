@@ -27,9 +27,19 @@ export function getStaticAudioPreloadHintUrls(): string[] {
   return urls;
 }
 
-/** Warm Web Audio / media pipeline on first user gesture. */
+/**
+ * Warm Web Audio / media pipeline on first user gesture.
+ * No-op when called outside a real gesture (autoplay policy would warn otherwise).
+ */
 export function warmStaticAudioOnFirstGesture(): void {
   if (audioContextWarmed || typeof window === "undefined") return;
+
+  type AutoplayPolicyWindow = Window & {
+    getAutoplayPolicy?: (kind: "mediaelement" | "audiocontext") => string;
+  };
+  const policy = (window as AutoplayPolicyWindow).getAutoplayPolicy?.("audiocontext");
+  if (policy === "disallowed") return;
+
   audioContextWarmed = true;
 
   try {
@@ -63,7 +73,12 @@ export function installStaticAudioGestureWarmup(): void {
   window.addEventListener("keydown", once, { capture: true, passive: true });
 }
 
-/** Top 1–2 phrases: `<link rel="preload" as="audio">` for CDN edge fill. */
+/**
+ * Top 1–2 phrases: `<link rel="preload" as="fetch">` for CDN edge fill.
+ * `as="audio"` triggers an "unsupported `as` value" warning on Android Chrome
+ * (Blink only treats it as a hint, not a fetched preload), so we use `fetch`
+ * which is universally supported and fills the HTTP cache identically.
+ */
 export function injectStaticAudioPreloadHints(): void {
   if (typeof document === "undefined") return;
 
@@ -73,7 +88,7 @@ export function injectStaticAudioPreloadHints(): void {
     const link = document.createElement("link");
     link.id = id;
     link.rel = "preload";
-    link.as = "audio";
+    link.as = "fetch";
     link.href = url;
     link.crossOrigin = "anonymous";
     document.head.appendChild(link);

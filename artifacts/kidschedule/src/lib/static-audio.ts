@@ -6,6 +6,7 @@ import {
   assertStaticAudioUrl,
   assertStaticPlaybackUrl,
   forbidDirectGcsUrl,
+  isStaticAudioProxyUrl,
 } from "@/lib/static-audio-guard";
 import {
   emitStaticAudioVisualFallback,
@@ -162,8 +163,9 @@ function staticAudioProxyPath(hash: string): string {
   return `/api/static-audio/${hash}.mp3`;
 }
 
+/** Silent — true when the URL is already an API static-audio stream route. */
 export function isValidStaticPlaybackUrl(url: string): boolean {
-  return assertStaticAudioUrl(url);
+  return isStaticAudioProxyUrl(url);
 }
 
 export function resolveStaticPlaybackUrl(
@@ -173,7 +175,7 @@ export function resolveStaticPlaybackUrl(
   const trimmed = (urlOrMapEntry ?? "").trim();
   if (!trimmed) return null;
 
-  if (isValidStaticPlaybackUrl(trimmed)) {
+  if (isStaticAudioProxyUrl(trimmed)) {
     const resolved = trimmed.startsWith("http") ? trimmed : getApiUrl(trimmed);
     if (import.meta.env.DEV || isStaticAudioDebug()) {
       console.log("[STATIC AUDIO PROXY]", resolved);
@@ -213,10 +215,9 @@ export function lookupStaticAudioUrl(
   }
 
   const proxyUrl = resolveStaticPlaybackUrl(mapEntry, { text, mode });
-  if (!proxyUrl || !isValidStaticPlaybackUrl(proxyUrl)) {
+  if (!proxyUrl || !isStaticAudioProxyUrl(proxyUrl)) {
     const hash = extractStaticAudioHashFromUrl(mapEntry);
-    console.error("INVALID STATIC AUDIO ROUTE", proxyUrl);
-    console.error("STATIC AUDIO PROXY FAILED", { hash });
+    console.error("STATIC AUDIO PROXY FAILED", { hash, proxyUrl });
     reportStaticAudioProxyFailed({ hash, mapEntry: mapEntry.slice(0, 120) }, text, mode);
     if (isCatalogPhrase(text, mode)) {
       recordMissingStaticAudio(normalized, mode, text);

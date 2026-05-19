@@ -14,24 +14,29 @@ export function forbidDirectGcsUrl(url: string): void {
   throw new Error("Static audio must use API proxy only");
 }
 
-/** Validates pathname is an API static-audio stream route. */
-export function assertStaticAudioUrl(url: string): boolean {
+/**
+ * Silent probe — true iff `url` is an API static-audio stream route.
+ * Safe to use in conditionals; never logs.
+ */
+export function isStaticAudioProxyUrl(url: string): boolean {
   const trimmed = (url ?? "").trim();
-  if (!trimmed) {
-    console.error("INVALID STATIC AUDIO ROUTE", url);
-    return false;
-  }
+  if (!trimmed) return false;
   try {
     const path = trimmed.startsWith("http") ? new URL(trimmed).pathname : trimmed;
-    if (!STATIC_PROXY_PATH_RE.test(path)) {
-      console.error("INVALID STATIC AUDIO ROUTE", url);
-      return false;
-    }
-    return true;
+    return STATIC_PROXY_PATH_RE.test(path);
   } catch {
-    console.error("INVALID STATIC AUDIO ROUTE", url);
     return false;
   }
+}
+
+/**
+ * Validates pathname is an API static-audio stream route.
+ * Logs only when called as a hard assertion (i.e. caller expected a proxy URL).
+ */
+export function assertStaticAudioUrl(url: string): boolean {
+  if (isStaticAudioProxyUrl(url)) return true;
+  console.error("INVALID STATIC AUDIO ROUTE", url);
+  return false;
 }
 
 /** Assert proxy route + forbid GCS before creating HTMLAudioElement. */
