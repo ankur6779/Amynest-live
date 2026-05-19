@@ -1,0 +1,54 @@
+# Generate all static TTS MP3s and commit static-audio-map.json.
+# Requires repository secrets: ELEVENLABS_API_KEY, DEFAULT_OBJECT_STORAGE_BUCKET_ID, GCS_SERVICE_ACCOUNT_JSON
+name: Generate static audio
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate and upload static audio
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          DEFAULT_OBJECT_STORAGE_BUCKET_ID: ${{ secrets.DEFAULT_OBJECT_STORAGE_BUCKET_ID }}
+          GCS_SERVICE_ACCOUNT_JSON: ${{ secrets.GCS_SERVICE_ACCOUNT_JSON }}
+          API_PUBLIC_URL: ${{ secrets.API_PUBLIC_URL }}
+        run: pnpm run generate:static-audio
+
+      - name: Verify 100% coverage
+        run: pnpm run check:static-audio
+
+      - name: Commit map updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add artifacts/kidschedule/src/data/static-audio-map.json \
+            artifacts/api-server/src/data/static-audio-map.json
+          if git diff --staged --quiet; then
+            echo "No map changes to commit"
+            exit 0
+          fi
+          git commit -m "auto generated static audio"
+          git push
