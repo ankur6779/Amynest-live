@@ -1,9 +1,20 @@
 # Render Blueprint — production + development stacks
 # https://render.com/docs/blueprint-spec
 #
+# IMPORTANT:
+# Service plan (RAM/CPU) must be managed via Render Dashboard.
+# Do NOT define `plan` in render.yaml — Blueprint sync would overwrite
+# manual upgrades (e.g. standard / 2GB) back to starter on every deploy.
+#
+# DO NOT DEFINE PLAN IN BLUEPRINT — leave plan undefined so the dashboard
+# controls instance type for web, worker, and keyvalue services.
+#
 # IMPORTANT: Secrets and connection strings are NOT defined here with values.
 # Set them only in the Render Dashboard. `sync: false` tells Blueprint to
 # register the key once and NEVER overwrite dashboard values on deploy.
+#
+# Optional: disable Auto Deploy or avoid Blueprint re-sync in the Render
+# Dashboard if you need to prevent any blueprint-driven drift.
 #
 # Production:
 #   Amynest-backend     → https://amynest-backend.onrender.com
@@ -31,7 +42,7 @@ services:
   # ─── Redis (BullMQ AI queue) ───────────────────────────────────────────────
   - type: keyvalue
     name: amynest-redis
-    plan: starter
+    # DO NOT DEFINE PLAN IN BLUEPRINT — dashboard controls RAM/CPU
     region: singapore
     ipAllowList: []
 
@@ -40,7 +51,7 @@ services:
     name: Amynest-backend
     runtime: node
     region: singapore
-    plan: starter
+    # DO NOT DEFINE PLAN IN BLUEPRINT — dashboard controls RAM/CPU
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
     buildCommand: >-
@@ -102,7 +113,7 @@ services:
     name: amynest-ai-worker
     runtime: node
     region: singapore
-    plan: starter
+    # DO NOT DEFINE PLAN IN BLUEPRINT — dashboard controls RAM/CPU
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
     buildCommand: bash scripts/render-ai-worker-build.sh
@@ -136,7 +147,7 @@ services:
     name: amynest-dev
     runtime: node
     region: singapore
-    plan: starter
+    # DO NOT DEFINE PLAN IN BLUEPRINT — dashboard controls RAM/CPU
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
     buildCommand: >-
