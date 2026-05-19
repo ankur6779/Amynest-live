@@ -2,13 +2,24 @@ import {
   getOpenAiApiKeyForFetch,
   getOpenAiAudioSpeechUrl,
 } from "../lib/env.js";
+import {
+  getOpenAiTtsInstructions,
+  getOpenAiTtsModel,
+  getOpenAiTtsVoice,
+  type OpenAiTtsMode,
+} from "../lib/openai-tts-config.js";
 import { logger } from "../lib/logger.js";
+import type { SynthesizeMode } from "./elevenLabsService.js";
 
-const OPENAI_TTS_MODEL = "gpt-4o-mini-tts";
-const OPENAI_TTS_VOICE = "alloy";
+export type OpenAiTtsStreamOptions = {
+  mode?: SynthesizeMode;
+};
 
 /** Request OpenAI speech with a streaming MP3 body (no local buffering). */
-export async function fetchOpenAiTtsStream(text: string): Promise<Response> {
+export async function fetchOpenAiTtsStream(
+  text: string,
+  options: OpenAiTtsStreamOptions = {},
+): Promise<Response> {
   const input = text.trim();
   if (!input) throw new Error("tts_empty_text");
 
@@ -17,9 +28,20 @@ export async function fetchOpenAiTtsStream(text: string): Promise<Response> {
     throw new Error("tts_missing_openai_api_key");
   }
 
+  const mode: OpenAiTtsMode = options.mode ?? "default";
+  const model = getOpenAiTtsModel();
+  const voice = getOpenAiTtsVoice();
+  const instructions = getOpenAiTtsInstructions(mode);
+
   const started = performance.now();
   logger.info(
-    { evt: "openai.tts_request_start", charCount: input.length, model: OPENAI_TTS_MODEL },
+    {
+      evt: "openai.tts_request_start",
+      charCount: input.length,
+      model,
+      voice,
+      mode,
+    },
     "OpenAI TTS request start",
   );
 
@@ -31,9 +53,10 @@ export async function fetchOpenAiTtsStream(text: string): Promise<Response> {
       Accept: "audio/mpeg",
     },
     body: JSON.stringify({
-      model: OPENAI_TTS_MODEL,
-      voice: OPENAI_TTS_VOICE,
+      model,
+      voice,
       input,
+      instructions,
     }),
   });
 

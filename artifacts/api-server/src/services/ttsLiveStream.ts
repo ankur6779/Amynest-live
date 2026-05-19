@@ -50,7 +50,7 @@ export async function streamLiveTtsToClient(
 
   if (preferOpenAi) {
     try {
-      const openAiRes = await fetchOpenAiTtsStream(params.text);
+      const openAiRes = await fetchOpenAiTtsStream(params.text, { mode: params.mode });
       const ok = await streamUpstreamToClient(res, openAiRes, params.cacheKey, "openai");
       if (ok) return;
     } catch (err) {
