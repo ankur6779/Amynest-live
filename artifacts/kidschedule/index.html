@@ -222,6 +222,19 @@
             needsCacheRecovery = true;
           }
         } catch (_e) { /* ignore */ }
+
+        // GUARD: once the inline body script has fired a cache-recovery reload
+        // we mark sessionStorage so the NEXT load skips the recovery branch.
+        // Without this guard the post-recovery boot looks identical to a fresh
+        // crash (no `splash-hidden` in `prev.phases` because the bundle was
+        // removed before React mounted), so prevCrashed stays true on every
+        // reload — producing an infinite reload loop ("jaldi jaldi hits").
+        try {
+          if (sessionStorage.getItem("amynest:cache-recovery-done") === "1") {
+            needsCacheRecovery = false;
+            sessionStorage.removeItem("amynest:cache-recovery-done");
+          }
+        } catch (_eGuard) { /* ignore */ }
         window.__amynestNeedsCacheRecovery = needsCacheRecovery;
 
         window.__amynestForceClearCaches = function () {
@@ -1234,6 +1247,14 @@
       (function () {
         if (window.__amynestDiagOnly) return;
         if (!window.__amynestNeedsCacheRecovery || !window.__amynestForceClearCaches) return;
+        // One-shot guard: mark so the next load skips recovery (otherwise the
+        // boot record has no `splash-hidden` phase and prevCrashed stays true
+        // → infinite reload loop).
+        try { sessionStorage.setItem("amynest:cache-recovery-done", "1"); } catch (_eMark) { /* ignore */ }
+        try { sessionStorage.removeItem("amynest:cache-recovery-pending"); } catch (_eClear) { /* ignore */ }
+        // Reset prev boot record so a future genuine crash isn't masked, but
+        // an immediate reload doesn't see a half-finished boot trail.
+        try { localStorage.removeItem("__amynest_boot_v1"); } catch (_eRec) { /* ignore */ }
         var entry = document.getElementById("amynest-entry");
         if (entry) entry.remove();
         window.__amynestForceClearCaches()
