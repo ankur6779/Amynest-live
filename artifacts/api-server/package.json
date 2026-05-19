@@ -30,6 +30,7 @@
     "@workspace/life-skills": "workspace:*",
     "@workspace/integrations-openai-ai-server": "workspace:*",
     "@workspace/study-zone": "workspace:*",
+    "@workspace/static-audio": "workspace:*",
     "dotenv": "^16.6.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2",

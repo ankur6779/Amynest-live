@@ -3,6 +3,10 @@
 
 import { getAuth } from "firebase/auth";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
+import {
+  createStaticAudioElement,
+  shouldBlockStaticTtsFallback,
+} from "@/lib/static-audio";
 import { resolveAiApiData, type AuthFetchFn } from "@/lib/poll-result";
 
 // ─── ElevenLabs Indian Voice IDs ──────────────────────────────
@@ -45,6 +49,26 @@ export async function speak(
   if (!trimmed) return;
 
   stopSpeaking();
+
+  if (shouldBlockStaticTtsFallback(trimmed)) return;
+
+  const staticAudio = createStaticAudioElement(trimmed);
+  if (staticAudio) {
+    _audio = staticAudio;
+    staticAudio.onended = stopSpeaking;
+    staticAudio.onerror = () => {
+      console.error("[StaticAudio] HTMLAudioElement error", staticAudio.error?.code);
+      stopSpeaking();
+    };
+    try {
+      await staticAudio.play();
+      return;
+    } catch (playErr) {
+      console.error("[StaticAudio] audio.play() failed", playErr);
+      stopSpeaking();
+      return;
+    }
+  }
 
   const isMale  = opts?.gender === "male";
   const voiceId = isMale ? VOICE_EN_MALE : VOICE_EN_FEMALE;

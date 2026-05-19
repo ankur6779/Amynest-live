@@ -253,6 +253,9 @@ importers:
       '@workspace/speech-coach':
         specifier: workspace:*
         version: link:../../lib/speech-coach
+      '@workspace/static-audio':
+        specifier: workspace:*
+        version: link:../../lib/static-audio
       '@workspace/study-zone':
         specifier: workspace:*
         version: link:../../lib/study-zone
@@ -410,6 +413,9 @@ importers:
       '@workspace/speech-coach':
         specifier: workspace:*
         version: link:../../lib/speech-coach
+      '@workspace/static-audio':
+        specifier: workspace:*
+        version: link:../../lib/static-audio
       '@workspace/study-zone':
         specifier: workspace:*
         version: link:../../lib/study-zone
@@ -1170,12 +1176,23 @@ importers:
         specifier: 'catalog:'
         version: 4.21.0
 
+  lib/static-audio: {}
+
   lib/study-zone: {}
 
   lib/tiffin-feedback: {}
 
   scripts:
     dependencies:
+      '@google-cloud/storage':
+        specifier: ^7.19.0
+        version: 7.19.0
+      '@workspace/static-audio':
+        specifier: workspace:*
+        version: link:../lib/static-audio
+      dotenv:
+        specifier: ^16.6.1
+        version: 16.6.1
       pg:
         specifier: ^8.20.0
         version: 8.20.0
