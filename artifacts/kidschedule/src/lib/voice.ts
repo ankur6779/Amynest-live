@@ -6,8 +6,9 @@
 import { getAuth } from "firebase/auth";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
 import {
-  createStaticAudioElement,
-  shouldBlockStaticTtsFallback,
+  mustUseStaticOnly,
+  safePlayAudio,
+  tryCreateStaticPlaybackAudio,
 } from "@/lib/static-audio";
 import { resolveAiApiData, type AuthFetchFn } from "@/lib/poll-result";
 
@@ -96,25 +97,16 @@ export async function speak(text: string): Promise<void> {
 
   stopCurrentAudio();
 
-  if (shouldBlockStaticTtsFallback(trimmed)) return;
-
-  const staticAudio = createStaticAudioElement(trimmed);
+  const staticAudio = tryCreateStaticPlaybackAudio(trimmed);
   if (staticAudio) {
     _audio = staticAudio;
     staticAudio.onended = stopCurrentAudio;
-    staticAudio.onerror = () => {
-      console.error("[StaticAudio] HTMLAudioElement error", staticAudio.error?.code);
-      stopCurrentAudio();
-    };
-    try {
-      await staticAudio.play();
-      return;
-    } catch (playErr) {
-      console.error("[StaticAudio] audio.play() failed", playErr);
-      stopCurrentAudio();
-      return;
-    }
+    staticAudio.onerror = stopCurrentAudio;
+    await safePlayAudio(staticAudio);
+    return;
   }
+
+  if (mustUseStaticOnly(trimmed)) return;
 
   try {
     const token = await getAuth().currentUser?.getIdToken().catch(() => undefined);
@@ -123,7 +115,6 @@ export async function speak(text: string): Promise<void> {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    console.info("[ElevenLabs] Request start (voice.speak)");
     const authFetch: AuthFetchFn = async (input, init) => {
       const url = typeof input === "string" ? getApiUrl(input) : input;
       return fetch(url, {
@@ -148,9 +139,6 @@ export async function speak(text: string): Promise<void> {
       console.warn("Invalid audio URL, skipping playback");
       return;
     }
-    console.info("[ElevenLabs] Synthesize OK", audioUrl);
-    console.log("[PLAY AUDIO]", audioUrl);
-
     const audioHeaders: Record<string, string> = {};
     if (token) audioHeaders["Authorization"] = `Bearer ${token}`;
 
@@ -176,13 +164,7 @@ export async function speak(text: string): Promise<void> {
       console.error("[ElevenLabs] HTMLAudioElement error", audio.error?.code);
       stopCurrentAudio();
     };
-    try {
-      await audio.play();
-      console.info("[ElevenLabs] Playback started");
-    } catch (playErr) {
-      console.error("[ElevenLabs] audio.play() failed", playErr);
-      stopCurrentAudio();
-    }
+    await safePlayAudio(audio);
   } catch (err) {
     console.error("[ElevenLabs] Error:", err instanceof Error ? err.message : err);
     stopCurrentAudio();

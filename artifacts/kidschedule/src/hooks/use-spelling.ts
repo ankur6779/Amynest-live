@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { resolveApiMediaUrl } from "@/lib/api";
 import { resolveAiApiData } from "@/lib/poll-result";
+import { safePlayAudio } from "@/lib/static-audio";
 import { synthesizeTts } from "@/lib/tts-playback";
 
 // ─── Shared types (mirror server shape — no codegen yet for /spelling/*) ─────
@@ -148,7 +149,6 @@ export function useSpellingTTS(): UseSpellingTTSState {
         console.warn("Invalid audio URL, skipping playback");
         return;
       }
-      console.log("[PLAY AUDIO]", trimmed);
       const audio = new Audio(resolveApiMediaUrl(trimmed));
       audio.preload = "auto";
       audio.playbackRate = slow ? 0.65 : 1;
@@ -164,11 +164,8 @@ export function useSpellingTTS(): UseSpellingTTSState {
       audioRef.current = audio;
       setLoading(false);
       setSpeaking(true);
-      try {
-        await audio.play();
-      } catch (err) {
-        console.error("Audio playback failed", err);
-        if (reqId !== reqIdRef.current) return;
+      const played = await safePlayAudio(audio);
+      if (!played && reqId === reqIdRef.current) {
         setError("audio_playback_failed");
         setSpeaking(false);
       }

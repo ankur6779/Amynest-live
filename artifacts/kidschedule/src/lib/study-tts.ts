@@ -4,8 +4,9 @@
 import { getAuth } from "firebase/auth";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
 import {
-  createStaticAudioElement,
-  shouldBlockStaticTtsFallback,
+  mustUseStaticOnly,
+  safePlayAudio,
+  tryCreateStaticPlaybackAudio,
 } from "@/lib/static-audio";
 import { resolveAiApiData, type AuthFetchFn } from "@/lib/poll-result";
 
@@ -50,25 +51,16 @@ export async function speak(
 
   stopSpeaking();
 
-  if (shouldBlockStaticTtsFallback(trimmed)) return;
-
-  const staticAudio = createStaticAudioElement(trimmed);
+  const staticAudio = tryCreateStaticPlaybackAudio(trimmed);
   if (staticAudio) {
     _audio = staticAudio;
     staticAudio.onended = stopSpeaking;
-    staticAudio.onerror = () => {
-      console.error("[StaticAudio] HTMLAudioElement error", staticAudio.error?.code);
-      stopSpeaking();
-    };
-    try {
-      await staticAudio.play();
-      return;
-    } catch (playErr) {
-      console.error("[StaticAudio] audio.play() failed", playErr);
-      stopSpeaking();
-      return;
-    }
+    staticAudio.onerror = stopSpeaking;
+    await safePlayAudio(staticAudio);
+    return;
   }
+
+  if (mustUseStaticOnly(trimmed)) return;
 
   const isMale  = opts?.gender === "male";
   const voiceId = isMale ? VOICE_EN_MALE : VOICE_EN_FEMALE;
@@ -79,7 +71,6 @@ export async function speak(
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    console.info("[ElevenLabs] Request start (study-tts)");
     const authFetch: AuthFetchFn = async (input, init) => {
       const url = typeof input === "string" ? getApiUrl(input) : input;
       return fetch(url, {
@@ -103,8 +94,6 @@ export async function speak(
       console.warn("Invalid audio URL, skipping playback");
       return;
     }
-    console.log("[PLAY AUDIO]", audioUrl);
-
     const audioHeaders: Record<string, string> = {};
     if (token) audioHeaders["Authorization"] = `Bearer ${token}`;
 
@@ -130,12 +119,7 @@ export async function speak(
       console.error("[ElevenLabs] HTMLAudioElement error", audio.error?.code);
       stopSpeaking();
     };
-    try {
-      await audio.play();
-    } catch (playErr) {
-      console.error("[ElevenLabs] audio.play() failed", playErr);
-      stopSpeaking();
-    }
+    await safePlayAudio(audio);
   } catch (err) {
     console.error("[ElevenLabs] Error:", err instanceof Error ? err.message : err);
     stopSpeaking();

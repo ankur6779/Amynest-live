@@ -1,5 +1,12 @@
 import { resolveApiMediaUrl } from "@/lib/api";
+import {
+  isCatalogPhrase,
+  isStaticAudioStrictMode,
+  logDynamicTtsViolation,
+} from "@/lib/static-audio";
 import { readResolvedApiJson, type AuthFetchFn } from "@/lib/poll-result";
+import { safePlayAudio } from "@/lib/static-audio";
+import type { StaticAudioMode } from "@workspace/static-audio";
 
 const LOG = "[ElevenLabs]";
 
@@ -22,16 +29,12 @@ export type TtsSynthesizeResponse = {
 /** Create an `HTMLAudioElement` for a resolved HTTPS or API stream URL. */
 export function playAudio(url: string): HTMLAudioElement | null {
   if (!isValidAudioUrl(url)) {
-    console.warn("No audio, skip");
     return null;
   }
   try {
     const resolved = resolveApiMediaUrl(url);
-    logPlayAudio(resolved);
     const audio = new Audio(resolved);
-    void audio.play().catch((err) => {
-      console.error("Playback failed", err);
-    });
+    void safePlayAudio(audio);
     return audio;
   } catch (e) {
     console.error("Invalid audio URL", url, e);
@@ -39,7 +42,7 @@ export function playAudio(url: string): HTMLAudioElement | null {
   }
 }
 
-/** POST /api/tts/synthesize with async job polling when the server returns 202. */
+/** POST /api/tts/synthesize — dynamic AI content only; catalog phrases are rejected. */
 export async function synthesizeTts(
   authFetch: AuthFetchFn,
   body: Record<string, unknown>,
@@ -47,6 +50,18 @@ export async function synthesizeTts(
     headers?: Record<string, string>;
   },
 ): Promise<TtsSynthesizeResponse> {
+  const text = String(body.text ?? "").trim();
+  const mode: StaticAudioMode = body.mode === "phonics" ? "phonics" : "default";
+
+  if (text && isCatalogPhrase(text, mode)) {
+    logDynamicTtsViolation(text, mode);
+    return {
+      success: false,
+      ok: false,
+      error: "tts_static_pregenerated_only",
+    };
+  }
+
   try {
     const res = await authFetch("/api/tts/synthesize", {
       method: "POST",
@@ -55,23 +70,24 @@ export async function synthesizeTts(
       signal: init?.signal,
     });
     const data = await readResolvedApiJson<TtsSynthesizeResponse>(res, authFetch).catch(() => null);
-    console.log("[TTS RESPONSE]", data);
     if (!res.ok) {
       const errBody = (data ?? {}) as { error?: string };
-      console.error("TTS synthesize HTTP error", res.status, errBody.error);
+      if (import.meta.env.DEV) {
+        console.error("TTS synthesize HTTP error", res.status, errBody.error);
+      }
       return { success: false, ok: false, error: errBody.error ?? `synthesize_failed_${res.status}` };
     }
     if (data?.background) {
-      console.warn("TTS warming in background — no audio yet");
       return { success: false, ok: false, background: true, error: "tts_background" };
     }
     if (data?.success === false || !isValidAudioUrl(data?.audioUrl)) {
-      console.warn("TTS failed — no audio URL");
       return { success: false, ok: false, error: data?.error ?? "tts_failed" };
     }
     return { ...data, success: true, ok: true, audioUrl: data.audioUrl };
   } catch (err) {
-    console.error("TTS synthesize failed", err);
+    if (import.meta.env.DEV && !isStaticAudioStrictMode()) {
+      console.error("TTS synthesize failed", err);
+    }
     return { success: false, ok: false, error: "tts_failed" };
   }
 }
@@ -83,7 +99,6 @@ export function resolveTtsAudioUrl(audioUrl: string): string {
 
 /**
  * Web: proxy public GCS URLs through the API stream to avoid CORS on fetch()+blob.
- * Mobile / direct <audio> can use the GCS URL as returned.
  */
 export function resolveClientPlaybackUrl(
   audioUrl: string,
@@ -99,10 +114,6 @@ export function resolveClientPlaybackUrl(
     return resolveTtsAudioUrl(`/api/tts/audio/${cacheKey}.mp3`);
   }
   return resolved;
-}
-
-export function logPlayAudio(audioUrl: string): void {
-  console.log("[PLAY AUDIO]", audioUrl);
 }
 
 export function logTtsClient(step: string, detail?: Record<string, unknown>): void {
