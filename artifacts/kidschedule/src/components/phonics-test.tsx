@@ -235,24 +235,7 @@ function QuestionCard({
     retryCountRef.current = 0;
   }, [question.id]);
 
-  const cardMounted = useMountedRef();
-  // Auto-play prompt audio for sound/listening questions on mount.
-  useEffect(() => {
-    if (!ttsText) return;
-    if (
-      question.type === "sound_to_letter" ||
-      question.type === "animal_sound" ||
-      question.type === "listening"
-    ) {
-      void speak(ttsText).then((res) => {
-        if (!res?.success && cardMounted.current) {
-          console.warn("[phonics-test] auto-play skipped:", res?.error);
-        }
-      });
-    }
-    return () => stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [question.id]);
+  // REMOVED auto speak on mount — TTS only on user tap (playPrompt).
 
   const playPrompt = useCallback(() => {
     if (speaking || loading) {
@@ -262,22 +245,11 @@ function QuestionCard({
     if (ttsText) void speak(ttsText);
   }, [speaking, loading, stop, speak, ttsText]);
 
-  // Audio reactions for tap feedback:
-  //   correct → cheer ("Yay!"); wrong → replay the prompt audio (max 1 auto-retry).
+  // REMOVED auto speak on feedback — user taps playPrompt to hear audio again.
   useEffect(() => {
-    if (!cardMounted.current) return;
     if (feedback === "correct") {
       stop();
       retryCountRef.current = 0;
-      void speak("Yay!");
-    } else if (feedback === "wrong" && ttsText) {
-      retryCountRef.current += 1;
-      if (retryCountRef.current > 1) {
-        console.warn("[TTS] retry limit reached — skipping auto-replay for wrong answer");
-        return;
-      }
-      stop();
-      void speak(ttsText);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);

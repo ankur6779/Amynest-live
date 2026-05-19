@@ -5,6 +5,7 @@ import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useToast } from "@/hooks/use-toast";
 import { useInFlightGuard, useMountedRef, useSafeAsync } from "@/hooks/use-safe-async";
 import { cn } from "@/lib/utils";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
 
 const DEBOUNCE_MS = 800;
 
@@ -15,32 +16,16 @@ const DEBOUNCE_MS = 800;
  * deliberately silent — preloading is best-effort and never blocks the UI.
  */
 export async function preloadAmyVoice(
-  authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
-  text: string,
-  opts: {
+  _authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+  _text: string,
+  _opts: {
     voiceId?: string;
     modelId?: string;
     mode?: "default" | "phonics";
     signal?: AbortSignal;
   } = {},
 ): Promise<void> {
-  const t = (text ?? "").trim();
-  if (!t) return;
-  try {
-    await authFetch("/api/tts/synthesize", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text: t,
-        voiceId: opts.voiceId,
-        modelId: opts.modelId,
-        mode: opts.mode,
-      }),
-      signal: opts.signal,
-    });
-  } catch (e) {
-    console.error("REAL ERROR:", e);
-  }
+  // Disabled: background preload must not hit TTS during app boot.
 }
 
 interface AudioPlayButtonProps {
@@ -127,6 +112,7 @@ export function AudioPlayButton({
   }, [error, toast, isMounted]);
 
   const handleClick = useCallback(async () => {
+    recordTtsUserGesture();
     if (debounceRef.current) {
       console.warn("[TTS] click debounced — too soon after last tap");
       return;

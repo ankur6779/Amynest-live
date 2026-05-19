@@ -12,13 +12,19 @@ export function isValidAudioUrl(audioUrl: string | null | undefined): audioUrl i
 export type TtsSynthesizeResponse = {
   ok?: boolean;
   success?: boolean;
-  audioUrl: string;
+  background?: boolean;
+  audioUrl?: string;
   cacheKey?: string;
   cached?: boolean;
+  error?: string;
 };
 
 /** Create an `HTMLAudioElement` for a resolved HTTPS or API stream URL. */
-export function playAudio(url: string): HTMLAudioElement {
+export function playAudio(url: string): HTMLAudioElement | null {
+  if (!isValidAudioUrl(url)) {
+    console.warn("No audio, skip");
+    return null;
+  }
   try {
     const resolved = resolveApiMediaUrl(url);
     logPlayAudio(resolved);
@@ -28,8 +34,8 @@ export function playAudio(url: string): HTMLAudioElement {
     });
     return audio;
   } catch (e) {
-    console.error("Invalid audio URL", url);
-    throw e;
+    console.error("Invalid audio URL", url, e);
+    return null;
   }
 }
 
@@ -41,22 +47,33 @@ export async function synthesizeTts(
     headers?: Record<string, string>;
   },
 ): Promise<TtsSynthesizeResponse> {
-  const res = await authFetch("/api/tts/synthesize", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...init?.headers },
-    body: JSON.stringify(body),
-    signal: init?.signal,
-  });
-  if (!res.ok) {
-    const errBody = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errBody.error ?? `synthesize_failed_${res.status}`);
+  try {
+    const res = await authFetch("/api/tts/synthesize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...init?.headers },
+      body: JSON.stringify(body),
+      signal: init?.signal,
+    });
+    const data = await readResolvedApiJson<TtsSynthesizeResponse>(res, authFetch).catch(() => null);
+    console.log("[TTS RESPONSE]", data);
+    if (!res.ok) {
+      const errBody = (data ?? {}) as { error?: string };
+      console.error("TTS synthesize HTTP error", res.status, errBody.error);
+      return { success: false, ok: false, error: errBody.error ?? `synthesize_failed_${res.status}` };
+    }
+    if (data?.background) {
+      console.warn("TTS warming in background — no audio yet");
+      return { success: false, ok: false, background: true, error: "tts_background" };
+    }
+    if (data?.success === false || !isValidAudioUrl(data?.audioUrl)) {
+      console.warn("TTS failed — no audio URL");
+      return { success: false, ok: false, error: data?.error ?? "tts_failed" };
+    }
+    return { ...data, success: true, ok: true, audioUrl: data.audioUrl };
+  } catch (err) {
+    console.error("TTS synthesize failed", err);
+    return { success: false, ok: false, error: "tts_failed" };
   }
-  const data = await readResolvedApiJson<TtsSynthesizeResponse>(res, authFetch);
-  console.log("[TTS RESPONSE]", data);
-  if (data?.success === false || !isValidAudioUrl(data?.audioUrl)) {
-    throw new Error("tts_failed");
-  }
-  return { ...data, success: true, ok: true };
 }
 
 /** Resolve synthesize `audioUrl` (GCS HTTPS, `/api/tts/audio/…`, or absolute) for fetch/play. */

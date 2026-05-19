@@ -6,11 +6,11 @@ import {
   AMY_VOICE_ID_DEFAULT,
   TTS_MAX_INPUT_CHARS,
   readCachedAudio,
-  synthesize,
   trySynthesizeFromCache,
 } from "../services/elevenLabsService";
 import { getElevenLabsApiKey } from "../lib/env";
 import { isValidTtsPublicUrl } from "../services/ttsAudioStore";
+import { synthesizeSafe } from "../services/ttsSafe.js";
 
 // ─── Public router (mounted BEFORE requireAuth) ──────────────────────────────
 //
@@ -163,33 +163,34 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
     if (cacheHit) {
       const body = buildTtsJson(cacheHit);
       if (!body.success) {
-        res.status(502).json({ success: false, ok: false, error: body.error });
+        res.status(200).json({ success: false, ok: false, error: body.error });
         return;
       }
       res.json(body);
       return;
     }
 
-    const result = await synthesize(parsed.data.text, synthOptions);
-    const body = buildTtsJson(result);
-    if (!body.success) {
-      res.status(502).json({ success: false, ok: false, error: body.error });
-      return;
-    }
-    res.json(body);
+    const text = parsed.data.text;
+    setImmediate(() => {
+      void synthesizeSafe(text, synthOptions).catch((err) => {
+        console.error("TTS background failed", err);
+      });
+    });
+
+    res.json({
+      ok: false,
+      success: false,
+      background: true,
+      cached: false,
+    });
   } catch (err) {
     const code = err instanceof Error ? err.message : "tts_failed";
-    const status =
-      code === "tts_text_too_long" || code === "tts_empty_text"
-        ? 400
-        : code === "tts_missing_api_key"
-          ? 503
-          : 502;
+    console.error("TTS synthesize route error", code);
     logger.error(
       { evt: "tts.synthesize_failed", userId, code },
       "tts synthesize failed",
     );
-    res.status(status).json({ success: false, ok: false, error: code });
+    res.status(200).json({ success: false, ok: false, error: code });
   }
 });
 
