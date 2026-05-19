@@ -18,6 +18,7 @@ export type ProductionCrashPayload = {
 };
 
 const OVERLAY_ID = "amynest-crash-overlay";
+const LAST_CRASH_KEY = "__amynest_last_crash_v1";
 
 function escapeHtml(value: string): string {
   return value
@@ -63,6 +64,29 @@ function formatPayload(payload: ProductionCrashPayload | string | unknown): stri
   }
 }
 
+function persistLastCrash(payload: ProductionCrashPayload | string | unknown): void {
+  try {
+    const entry = {
+      savedAt: Date.now(),
+      href: typeof window !== "undefined" ? window.location.href : undefined,
+      payload,
+    };
+    localStorage.setItem(LAST_CRASH_KEY, JSON.stringify(entry));
+  } catch {
+    /* storage may be blocked */
+  }
+}
+
+export function readPersistedLastCrash(): unknown {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(LAST_CRASH_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Show full-screen crash overlay — safe to call before React boots. */
 export function showProductionCrashOverlay(payload: ProductionCrashPayload | string | unknown): void {
   if (typeof document === "undefined") return;
@@ -70,6 +94,8 @@ export function showProductionCrashOverlay(payload: ProductionCrashPayload | str
   dismissSplash();
 
   const bodyText = formatPayload(payload);
+
+  persistLastCrash(payload);
 
   try {
     const w = window as Window & {

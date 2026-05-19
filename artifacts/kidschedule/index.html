@@ -306,6 +306,13 @@
               splash.classList.add("splash-hide");
               setTimeout(function () { splash.remove(); }, 200);
             }
+            try {
+              localStorage.setItem("__amynest_last_crash_v1", JSON.stringify({
+                savedAt: Date.now(),
+                href: location.href,
+                payload: payload,
+              }));
+            } catch (_store) {}
             var text = typeof payload === "string"
               ? payload
               : JSON.stringify(Object.assign({ at: new Date().toISOString(), href: location.href, route: location.pathname }, payload), null, 2);
@@ -325,7 +332,39 @@
               '<h2 style="color:#f55;margin:0 0 12px;font-size:16px">🔥 APP CRASH DETECTED</h2>' +
               '<p style="color:#9f9;margin:0 0 10px">Screenshot this screen and share crash.message + crash.stack.</p>' +
               "<pre style=\"margin:0\">" + text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</pre>";
+            if (window.__amynestRefreshDiagPanel) window.__amynestRefreshDiagPanel();
           } catch (_e5) {}
+        };
+
+        window.__amynestRefreshDiagPanel = function () {
+          var pre = document.getElementById("amynest-diag-panel");
+          if (!pre || typeof window.__amynestDiag !== "function") return;
+          var current = window.__amynestDiag();
+          var lastCrash = null;
+          try { lastCrash = JSON.parse(localStorage.getItem("__amynest_last_crash_v1") || "null"); } catch (_lc) {}
+          var recent = null;
+          try { recent = window.__amynestGetRecentErrors ? window.__amynestGetRecentErrors() : null; } catch (_re) {}
+          var text = "AmyNest boot diagnostics (?diag=1)\n";
+          text += "Updated: " + new Date().toISOString() + "\n\n";
+          if (current && current.prevCrashed && !current.lastError && !(lastCrash && lastCrash.payload)) {
+            text += "NOTE: Previous boot did not finish (no splash-hidden).\n";
+            text += "If no crash below, this may be iOS memory kill (not capturable in JS).\n\n";
+          }
+          if (lastCrash) {
+            text += "── LAST SAVED CRASH ──\n";
+            text += JSON.stringify(lastCrash, null, 2) + "\n\n";
+          } else {
+            text += "── LAST SAVED CRASH ──\n(none — no JS crash captured yet)\n\n";
+          }
+          text += "── CURRENT BOOT ──\n";
+          text += JSON.stringify(current, null, 2) + "\n\n";
+          text += "── PREVIOUS BOOT (page load start) ──\n";
+          text += prev ? JSON.stringify(prev, null, 2) : "(none)";
+          if (recent && recent.length) {
+            text += "\n\n── RECENT ERRORS (this session) ──\n";
+            text += JSON.stringify(recent, null, 2);
+          }
+          pre.textContent = text;
         };
 
         setTimeout(function () {
@@ -390,26 +429,31 @@
           } catch (_e2) {}
         });
 
-        // 6. Visible diagnostic panel when ?diag=1 is set — gives the user
-        //    a one-tap way to share boot info from a stuck device. We show
-        //    BOTH the current record and the previous one (which might
-        //    contain a `lastError` from a crashed boot).
+        // 6. Visible diagnostic panel when ?diag=1 — live refresh, splash hidden.
         if (diagForced) {
-          window.addEventListener("DOMContentLoaded", function () {
+          try {
+            var splashDiag = document.getElementById("splash");
+            if (splashDiag) {
+              splashDiag.classList.add("splash-hide");
+              setTimeout(function () { splashDiag.remove(); }, 100);
+            }
+          } catch (_sd) {}
+          function mountDiagPanel() {
+            if (document.getElementById("amynest-diag-panel")) return;
             var pre = document.createElement("pre");
+            pre.id = "amynest-diag-panel";
             pre.style.cssText =
-              "position:fixed;inset:0;z-index:2147483647;background:#000;color:#0f0;" +
-              "font:12px/1.4 monospace;padding:16px;margin:0;overflow:auto;" +
-              "white-space:pre-wrap;word-break:break-all;";
-            var current = window.__amynestDiag();
-            var text = "AmyNest boot diagnostics\n\n";
-            text += "── CURRENT BOOT ──\n";
-            text += JSON.stringify(current, null, 2) + "\n\n";
-            text += "── PREVIOUS BOOT (from before this page load) ──\n";
-            text += prev ? JSON.stringify(prev, null, 2) : "(none)";
-            pre.textContent = text;
-            document.body && document.body.appendChild(pre);
-          });
+              "position:fixed;inset:0;z-index:2147483646;background:#000;color:#0f0;" +
+              "font:12px/1.4 ui-monospace,Menlo,monospace;padding:16px;margin:0;overflow:auto;" +
+              "white-space:pre-wrap;word-break:break-all;-webkit-overflow-scrolling:touch;";
+            (document.body || document.documentElement).appendChild(pre);
+            window.__amynestRefreshDiagPanel && window.__amynestRefreshDiagPanel();
+            setInterval(function () {
+              window.__amynestRefreshDiagPanel && window.__amynestRefreshDiagPanel();
+            }, 1500);
+          }
+          if (document.body) mountDiagPanel();
+          else window.addEventListener("DOMContentLoaded", mountDiagPanel);
         }
 
         // ── Native Android WebView push bridge (direct-callback entry point) ──
