@@ -5,7 +5,7 @@ const BASE_URL =
 
 export default defineConfig({
   testDir: "./playwright/specs",
-  testMatch: "prod-crash-verify.spec.ts",
+  testMatch: /(prod-crash-verify|audio-lessons-playback)\.spec\.ts/,
   timeout: 300_000,
   retries: 0,
   workers: 1,

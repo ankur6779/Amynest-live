@@ -8,11 +8,32 @@ import { getApiUrl } from "@/lib/api";
 import { usePaywall } from "@/contexts/paywall-context";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
 
 const VOICE_AMY_EN = "QbQKfe9vgx5OsbZUvlFv"; // Ananya K — Indian English Female
 const MODEL_EN = "eleven_turbo_v2_5";
 const AGE_ORDER: AgeBucket[] = ["0-2", "2-4", "5-7", "8-10", "10+"];
 const RESUME_KEY = "amynest_audio_resume_v1";
+const PREGENERATE_SESSION_KEY = "amynest_audio_pregenerate_v1";
+
+function shouldSkipPregenerate(age: AgeBucket, lang: string): boolean {
+  try {
+    const raw = sessionStorage.getItem(PREGENERATE_SESSION_KEY);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw) as { age?: string; lang?: string };
+    return parsed.age === age && parsed.lang === lang;
+  } catch {
+    return false;
+  }
+}
+
+function markPregenerateDone(age: AgeBucket, lang: string): void {
+  try {
+    sessionStorage.setItem(PREGENERATE_SESSION_KEY, JSON.stringify({ age, lang }));
+  } catch {
+    /* quota / private mode */
+  }
+}
 type ResumeMap = Record<string, number>;
 const loadResume = (): ResumeMap => {
   try {
@@ -43,8 +64,10 @@ export default function AudioLessonsPage() {
   const isPremium = sub.isPremium;
   useEffect(() => {
     if (!isPremium) return;
+    if (shouldSkipPregenerate(age, lang)) return;
     const texts = lessonsForAge(age).flatMap(l => getLessonText(l, lang).paragraphs);
     if (texts.length === 0) return;
+    markPregenerateDone(age, lang);
     void authFetch(getApiUrl("/api/audio-lessons/pregenerate"), {
       method: "POST",
       headers: {
@@ -54,7 +77,7 @@ export default function AudioLessonsPage() {
         texts
       })
     }).catch(() => {});
-  }, [age, isPremium, lang]);
+  }, [age, isPremium, lang, authFetch]);
 
   // Per-age-group access: index 0 is the free sample, rest are premium-only.
   type LessonAccess = "free-sample" | "locked" | "open";
@@ -590,7 +613,13 @@ function PlayerSheet({
           opacity: paragraphIdx === 0 ? 0.4 : 1
         }}><SkipBack size={18} /></button>
 
-          <button onClick={() => setPlaying(p => !p)} aria-label={playing ? "Pause" : "Play"} style={{
+          <button
+            onClick={() => {
+              recordTtsUserGesture();
+              setPlaying((p) => !p);
+            }}
+            aria-label={playing ? "Pause" : "Play"}
+            style={{
           color: "#fff",
           background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
           border: "none",

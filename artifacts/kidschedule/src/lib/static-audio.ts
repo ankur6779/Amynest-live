@@ -1,4 +1,5 @@
 import audioMap from "@/data/static-audio-map.json";
+import { agentDebugLog } from "@/lib/agent-debug-log";
 import { getApiUrl } from "@/lib/api";
 import {
   assertStaticAudioUrl,
@@ -331,8 +332,39 @@ export type SafePlayAudioOptions = {
   mode?: StaticAudioMode;
 };
 
+async function verifyStaticAudioEndpoint(proxyUrl: string): Promise<number | null> {
+  if (!import.meta.env.DEV && !isStaticAudioDebug()) return null;
+  try {
+    const res = await fetch(proxyUrl, { method: "GET", credentials: "omit", cache: "no-store" });
+    console.log("[AUDIO RESPONSE STATUS]", res.status);
+    // #region agent log
+    agentDebugLog({
+      hypothesisId: "D",
+      runId: "pre-fix",
+      location: "static-audio.ts:verifyStaticAudioEndpoint",
+      message: "API verify fetch",
+      data: { status: res.status, ok: res.ok, urlTail: proxyUrl.slice(-48) },
+    });
+    // #endregion
+    return res.status;
+  } catch (err) {
+    console.error("[AUDIO FETCH FAILED]", err);
+    // #region agent log
+    agentDebugLog({
+      hypothesisId: "D",
+      runId: "pre-fix",
+      location: "static-audio.ts:verifyStaticAudioEndpoint",
+      message: "API verify fetch failed",
+      data: { error: err instanceof Error ? err.message : String(err) },
+    });
+    // #endregion
+    return null;
+  }
+}
+
 async function playElementOnce(audio: HTMLAudioElement): Promise<void> {
   audio.currentTime = 0;
+  console.log("[AUDIO PLAY ATTEMPT]");
   await audio.play();
 }
 
@@ -341,6 +373,16 @@ export async function safePlayAudio(
   opts: SafePlayAudioOptions = {},
 ): Promise<boolean> {
   if (isClientStaticAudioCircuitOpen()) {
+    console.error("[AUDIO DEBUG] client circuit open — playback blocked");
+    // #region agent log
+    agentDebugLog({
+      hypothesisId: "C",
+      runId: "pre-fix",
+      location: "static-audio.ts:safePlayAudio",
+      message: "client circuit open",
+      data: { phrase: opts.phrase?.slice(0, 80) },
+    });
+    // #endregion
     emitStaticAudioVisualFallback({ phrase: opts.phrase, mode: opts.mode });
     return false;
   }
@@ -418,11 +460,83 @@ export async function playStaticAudio(
   rawText: string,
   mode: StaticAudioMode = "default",
 ): Promise<boolean> {
-  const proxyUrl = lookupStaticAudioUrl(rawText, mode);
-  if (!proxyUrl) return false;
-  const audio = createStaticPlaybackElement(proxyUrl);
-  if (!audio) return false;
-  return safePlayAudio(audio, { proxyUrl, phrase: rawText, mode });
+  const text = (rawText ?? "").trim();
+  console.log("[AUDIO DEBUG START]", { text, mode });
+  // #region agent log
+  agentDebugLog({
+    hypothesisId: "A",
+    runId: "pre-fix",
+    location: "static-audio.ts:playStaticAudio",
+    message: "playStaticAudio invoked",
+    data: { textLen: text.length, mode, circuitOpen: isClientStaticAudioCircuitOpen() },
+  });
+  // #endregion
+
+  if (!text) {
+    console.error("URL RESOLUTION FAILED", rawText);
+    return false;
+  }
+
+  const proxyUrl = lookupStaticAudioUrl(text, mode);
+  console.log("[AUDIO URL]", proxyUrl);
+  // #region agent log
+  agentDebugLog({
+    hypothesisId: "B",
+    runId: "pre-fix",
+    location: "static-audio.ts:playStaticAudio",
+    message: "URL resolved",
+    data: { proxyUrl: proxyUrl?.slice(-64) ?? null, hasUrl: Boolean(proxyUrl) },
+  });
+  // #endregion
+
+  if (!proxyUrl) {
+    console.error("URL RESOLUTION FAILED", text);
+    return false;
+  }
+
+  await verifyStaticAudioEndpoint(proxyUrl);
+
+  let audio: HTMLAudioElement | null;
+  try {
+    audio = createStaticPlaybackElement(proxyUrl);
+  } catch (err) {
+    console.error("[AUDIO OBJECT FAILED]", err);
+    return false;
+  }
+  if (!audio) {
+    console.error("[AUDIO OBJECT FAILED]", "createStaticPlaybackElement returned null");
+    return false;
+  }
+  console.log("[AUDIO OBJECT CREATED]", proxyUrl);
+
+  try {
+    const played = await safePlayAudio(audio, { proxyUrl, phrase: text, mode });
+    if (played) {
+      console.log("[AUDIO PLAY SUCCESS]");
+      // #region agent log
+      agentDebugLog({
+        hypothesisId: "E",
+        runId: "pre-fix",
+        location: "static-audio.ts:playStaticAudio",
+        message: "playback success",
+        data: { urlTail: proxyUrl.slice(-48) },
+      });
+      // #endregion
+    }
+    return played;
+  } catch (err) {
+    console.error("[AUDIO PLAY FAILED]", err);
+    // #region agent log
+    agentDebugLog({
+      hypothesisId: "E",
+      runId: "pre-fix",
+      location: "static-audio.ts:playStaticAudio",
+      message: "playback threw",
+      data: { error: err instanceof Error ? err.message : String(err) },
+    });
+    // #endregion
+    return false;
+  }
 }
 
 export function tryCreateStaticPlaybackAudio(

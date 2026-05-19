@@ -12,6 +12,16 @@ export function stressCredentials(): { email: string; password: string } {
   return { email: DEFAULT_EMAIL, password: DEFAULT_PASSWORD };
 }
 
+/** Dismiss geo country confirmation if it blocks the main UI. */
+export async function dismissCountryPromptIfVisible(page: Page): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const yes = page.getByRole("button", { name: /Yes, that's right/i });
+    if (!(await yes.isVisible({ timeout: 3_000 }).catch(() => false))) return;
+    await yes.click({ force: true });
+    await page.waitForTimeout(800);
+  }
+}
+
 export async function signInWithEmail(page: Page): Promise<void> {
   const { email, password } = stressCredentials();
   await page.goto("/sign-in", { waitUntil: "networkidle", timeout: 90_000 });
@@ -40,4 +50,12 @@ export async function signInWithEmail(page: Page): Promise<void> {
   ).catch(() => {
     /* App may be ready without marker on slow networks */
   });
+  await dismissCountryPromptIfVisible(page);
+  if (page.url().includes("/onboarding")) {
+    await dismissCountryPromptIfVisible(page);
+    await page
+      .waitForURL((url) => !url.pathname.includes("/onboarding"), { timeout: 90_000 })
+      .catch(() => {});
+    await dismissCountryPromptIfVisible(page);
+  }
 }

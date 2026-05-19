@@ -25,10 +25,12 @@ function persist(entry: AgentDebugPayload & { timestamp: number }): void {
   }
 }
 
-/** Dual-write: localStorage ring buffer + optional debug ingest (dev). */
+/** Dual-write: localStorage ring buffer + optional debug ingest (local dev only). */
 export function agentDebugLog(payload: AgentDebugPayload): void {
   const entry = { ...payload, timestamp: Date.now() };
   persist(entry);
+  // Production / preview builds must not POST to localhost — Chrome logs failed requests.
+  if (!import.meta.env.DEV) return;
   try {
     fetch(INGEST, {
       method: "POST",
