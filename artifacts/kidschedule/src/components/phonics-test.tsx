@@ -358,7 +358,7 @@ function QuestionCard({
           "grid gap-2.5",
           question.options.length <= 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2"
         )}>
-          {question.options.map((opt, i) => {
+          {(question.options ?? []).map((opt, i) => {
             const isSelected = selectedIndex === i;
             const showCorrect = feedback === "correct" && isSelected;
             const showWrong   = feedback === "wrong"   && isSelected;
@@ -563,8 +563,9 @@ export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestP
       const res = await authFetch(`/api/phonics/tests/availability/${numericChildId}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = (await res.json()) as AvailabilityState;
-      setAvailability(json);
+      setAvailability(json ?? null);
     } catch (err) {
+      console.error("[phonics-test] API failed", err);
       setAvailError(err instanceof Error ? err.message : "Failed to load availability");
     } finally {
       setAvailLoading(false);
@@ -596,7 +597,7 @@ export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestP
         throw new Error(errBody?.error ?? `HTTP ${res.status}`);
       }
       const data = (await res.json()) as StartResponse;
-      if (!data.questions || data.questions.length === 0) {
+      if (!data?.questions || data.questions.length === 0) {
         throw new Error("No questions returned");
       }
       setPhase({
@@ -703,7 +704,7 @@ export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestP
   }, []);
 
   if (!eligible) {
-    return null;
+    return <div className="text-sm text-muted-foreground">Loading phonics...</div>;
   }
 
   // ─── Render ────────────────────────────────────────────────────────────────

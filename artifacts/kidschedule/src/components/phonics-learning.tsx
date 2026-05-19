@@ -35,8 +35,9 @@ function getTodaySeed(): number {
   return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
 }
 function pickTodaysItem(items: DisplayPhonicsItem[], tick = 0): DisplayPhonicsItem | null {
-  if (items.length === 0) return null;
-  return items[(getTodaySeed() + tick) % items.length] ?? null;
+  const safeItems = items ?? [];
+  if (safeItems.length === 0) return null;
+  return safeItems[(getTodaySeed() + tick) % safeItems.length] ?? null;
 }
 
 // ─── Local insight builder (used only when API insights aren't available) ────
@@ -117,10 +118,13 @@ function ExampleChips({
   words: string[];
   size: "sm" | "md";
 }) {
-  if (words.length === 0) return null;
+  const safeWords = words ?? [];
+  if (safeWords.length === 0) {
+    return <div className="text-xs text-muted-foreground">Loading...</div>;
+  }
   const chipCls = size === "md" ? "px-2 py-0.5 text-[11px]" : "px-1.5 py-[1px] text-[10px]";
   return <div className="mt-1 flex flex-wrap gap-1" data-testid="phonics-example-chips">
-      {words.map(w => <span key={w} className={cn("inline-flex items-center rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground font-medium border border-border dark:border-border", chipCls)}>
+      {(safeWords ?? []).map(w => <span key={w} className={cn("inline-flex items-center rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground font-medium border border-border dark:border-border", chipCls)}>
           {w}
         </span>)}
     </div>;
@@ -152,7 +156,12 @@ export function PhonicsLearning({
   useEffect(() => {
     setStageOverride(null);
   }, [childId]);
-  const data = usePhonicsData(childId, totalAgeMonths, stageOverride);
+  const phonicsData = usePhonicsData(childId, totalAgeMonths, stageOverride);
+
+  useEffect(() => {
+    console.log("[PHONICS DATA]", phonicsData);
+  }, [phonicsData]);
+
   const {
     level,
     defaultLevel,
@@ -163,7 +172,23 @@ export function PhonicsLearning({
     insights,
     recordPlay,
     toggleMastered,
-  } = data;
+  } = phonicsData;
+
+  const safeItems = items ?? [];
+  const safeDailyItems = dailyItems ?? [];
+  const safeProgress = progress ?? { practiced: {}, mastered: {} };
+  const safeInsights = insights ?? [];
+
+  if (!phonicsData) {
+    return (
+      <Card className="rounded-3xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]">
+        <CardContent className="p-8 flex items-center justify-center gap-3 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm">Loading phonics...</span>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Out-of-range fallback
   if (!level) {
@@ -183,7 +208,7 @@ export function PhonicsLearning({
   }
 
   // Initial loading skeleton
-  if (loading && items.length === 0) {
+  if (loading && safeItems.length === 0) {
     return <Card className="rounded-3xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]">
         <CardContent className="p-8 flex items-center justify-center gap-3 text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -209,16 +234,16 @@ export function PhonicsLearning({
         <PhonicsDownloadCard childId={childId} />
       </SubItemGate>
       <SubItemGate sectionId="hub_phonics" subItemId="phonics_todays_activity">
-        <TodaysActivityCard level={level} dailyItems={dailyItems.length > 0 ? dailyItems : items} progress={progress} recordPlay={recordPlay} toggleMastered={toggleMastered} />
+        <TodaysActivityCard level={level} dailyItems={safeDailyItems.length > 0 ? safeDailyItems : safeItems} progress={safeProgress} recordPlay={recordPlay} toggleMastered={toggleMastered} />
       </SubItemGate>
       <SubItemGate sectionId="hub_phonics" subItemId="phonics_practice_sounds">
-        <PracticeSoundsCard level={level} items={items} progress={progress} recordPlay={recordPlay} />
+        <PracticeSoundsCard level={level} items={safeItems} progress={safeProgress} recordPlay={recordPlay} />
       </SubItemGate>
       <SubItemGate sectionId="hub_phonics" subItemId="phonics_progress">
-        <ProgressTrackerCard level={level} items={items} progress={progress} sourceLabel={data.source === "api" ? "synced to your account" : "saved on this device"} />
+        <ProgressTrackerCard level={level} items={safeItems} progress={safeProgress} sourceLabel={phonicsData.source === "api" ? "synced to your account" : "saved on this device"} />
       </SubItemGate>
       <SubItemGate sectionId="hub_phonics" subItemId="phonics_parent_tips">
-        <ParentTipsCard level={level} items={items} progress={progress} insights={insights} />
+        <ParentTipsCard level={level} items={safeItems} progress={safeProgress} insights={safeInsights} />
       </SubItemGate>
     </div>;
 }
@@ -351,7 +376,13 @@ function TodaysActivityCard({
     return () => ctrl.abort();
   }, [authFetch, todaysItem?.sound, todaysItem?.phoneme]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!todaysItem) return null;
+  if (!todaysItem) {
+    return (
+      <Card data-testid="phonics-todays-activity" className="rounded-3xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10">
+        <CardContent className="p-5 text-sm text-muted-foreground">Loading phonics...</CardContent>
+      </Card>
+    );
+  }
   const playCount = progress.practiced[todaysItem.id] ?? 0;
   const isMastered = !!progress.mastered[todaysItem.id];
   const canMaster = playCount > 0 || isMastered;
@@ -427,7 +458,7 @@ function PracticeSoundsCard({
   useEffect(() => {
     const ctrl = new AbortController();
     (async () => {
-      for (const it of items.slice(0, 6)) {
+      for (const it of (items ?? []).slice(0, 6)) {
         if (ctrl.signal.aborted) return;
         const text = it.phoneme ?? it.sound;
         const mode: "phonics" | undefined = it.phoneme ? "phonics" : undefined;
@@ -650,9 +681,13 @@ function ParentTipsCard({
     t
   } = useTranslation();
   const [open, setOpen] = useState(false);
+  const safeInsights = insights ?? [];
 
   // Prefer server-built insights (richer + cached) — fall back to local rules.
-  const display = useMemo(() => insights && insights.length > 0 ? insights : buildLocalInsights(items, progress, level.shortLabel), [insights, items, progress, level.shortLabel]);
+  const display = useMemo(
+    () => (safeInsights.length > 0 ? safeInsights : buildLocalInsights(items, progress, level.shortLabel)),
+    [safeInsights, items, progress, level.shortLabel],
+  );
   return <Card data-testid="phonics-parent-tips" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-4">
@@ -677,13 +712,13 @@ function ParentTipsCard({
         <button type="button" onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between rounded-2xl px-3 py-2 bg-white/40 dark:bg-white/[0.03] border border-white/50 dark:border-white/10 hover:bg-white/60 transition-colors" aria-expanded={open}>
           <span className="text-xs font-bold text-foreground flex items-center gap-2">
             <Target className="h-3.5 w-3.5 text-primary" />
-            {t("components.phonics_learning.how_to_teach")} {level.shortLabel} ({level.parentTips.length} {t("components.phonics_learning.tips")}
+            {t("components.phonics_learning.how_to_teach")} {level.shortLabel} ({(level.parentTips ?? []).length} {t("components.phonics_learning.tips")}
           </span>
           {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
         </button>
 
         {open && <div className="mt-3 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-            {level.parentTips.map((tip, i) => <div key={i} className="rounded-xl bg-white/70 dark:bg-white/[0.05] border border-white/60 dark:border-white/10 px-3 py-2 flex items-start gap-2">
+            {(level.parentTips ?? []).map((tip, i) => <div key={i} className="rounded-xl bg-white/70 dark:bg-white/[0.05] border border-white/60 dark:border-white/10 px-3 py-2 flex items-start gap-2">
                 <span className="text-xs font-bold text-primary shrink-0 mt-0.5">{i + 1}.</span>
                 <p className="text-xs text-foreground leading-relaxed">{tip}</p>
               </div>)}

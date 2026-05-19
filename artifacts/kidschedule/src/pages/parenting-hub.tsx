@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
+import { AppErrorBoundary } from "@/components/app-error-boundary";
+import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -410,7 +412,10 @@ function ChildSelectorPanel({
   const {
     t
   } = useTranslation();
-  if (childList.length === 0) return null;
+  if ((childList ?? []).length === 0) {
+    return <div className="text-xs text-muted-foreground px-4 py-2">Loading...</div>;
+  }
+  const safeChildList = childList ?? [];
   const getInitials = (name: string) => name.trim().split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase();
   const getAge = (child: any) => {
     const months = child.ageMonths ?? 0;
@@ -424,7 +429,7 @@ function ChildSelectorPanel({
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-primary" />
           <span className="text-xs font-bold text-foreground uppercase tracking-wide">
-            {childList.length === 1 ? t("parent_hub.headers.current_child") : t("parent_hub.headers.select_child")}
+            {safeChildList.length === 1 ? t("parent_hub.headers.current_child") : t("parent_hub.headers.select_child")}
           </span>
         </div>
         <Link href="/children/new">
@@ -437,14 +442,14 @@ function ChildSelectorPanel({
 
       {/* Child cards */}
       <div className="flex gap-3 px-3 pb-3 overflow-x-auto scrollbar-none">
-        {childList.map((child: any, idx: number) => {
-        const group = getAgeGroup(child.age, (child as any).ageMonths ?? 0);
+        {(safeChildList ?? []).map((child: any, idx: number) => {
+        const group = getAgeGroup(child?.age ?? 0, (child as any)?.ageMonths ?? 0);
         const info = getAgeGroupInfo(group);
-        const isSelected = effectiveChild?.id === child.id;
+        const isSelected = effectiveChild?.id === child?.id;
         const colorClass = AVATAR_COLORS[idx % AVATAR_COLORS.length];
-        const initials = getInitials(child.name);
+        const initials = getInitials(child?.name ?? "Child");
         const ageLabel = getAge(child);
-        return <button key={child.id} onClick={() => onSelect(child.id)} className={["shrink-0 relative flex flex-col items-center gap-2 rounded-2xl px-4 py-3 min-w-[96px] transition-all duration-200", isSelected ? "bg-primary/10 dark:bg-primary/15 border-2 border-primary shadow-[0_0_0_1px_rgba(168,85,247,0.3),0_4px_16px_-4px_rgba(168,85,247,0.4)]" : "bg-white/50 dark:bg-white/[0.03] border-2 border-border hover:border-primary/50 hover:bg-primary/5"].join(" ")}>
+        return <button key={child?.id ?? idx} onClick={() => onSelect(child.id)} className={["shrink-0 relative flex flex-col items-center gap-2 rounded-2xl px-4 py-3 min-w-[96px] transition-all duration-200", isSelected ? "bg-primary/10 dark:bg-primary/15 border-2 border-primary shadow-[0_0_0_1px_rgba(168,85,247,0.3),0_4px_16px_-4px_rgba(168,85,247,0.4)]" : "bg-white/50 dark:bg-white/[0.03] border-2 border-border hover:border-primary/50 hover:bg-primary/5"].join(" ")}>
               {/* Selected check */}
               {isSelected && <span className="absolute top-2 right-2">
                   <CheckCircle2 className="h-4 w-4 text-primary fill-primary/20" />
@@ -458,7 +463,7 @@ function ChildSelectorPanel({
               {/* Info */}
               <div className="text-center min-w-0 w-full">
                 <p className={`font-bold text-sm truncate ${isSelected ? "text-primary" : "text-foreground"}`}>
-                  {child.name}
+                  {child?.name ?? "Child"}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
                   {info.emoji} {ageLabel}
@@ -476,7 +481,7 @@ function ChildSelectorPanel({
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-export default function ParentingHub() {
+function ParentingHubPage() {
   const {
     t
   } = useTranslation();
@@ -496,7 +501,7 @@ export default function ParentingHub() {
     }
     return null;
   });
-  const childList = children as any[] ?? [];
+  const childList = (children ?? []) as any[];
   const effectiveChild = selectedChildId ? childList.find((c: any) => c.id === selectedChildId) ?? childList[0] : childList[0];
   const ageGroup: AgeGroup | null = effectiveChild ? getAgeGroup(effectiveChild.age, (effectiveChild as any).ageMonths ?? 0) : null;
   const totalAgeMonths = effectiveChild ? effectiveChild.age * 12 + ((effectiveChild as any).ageMonths ?? 0) : 0;
@@ -1126,4 +1131,14 @@ function PageHeader() {
         </button>
       </Link>
     </div>;
+}
+
+export default function ParentingHub() {
+  return (
+    <AppErrorBoundary label="ParentingHub">
+      <Suspense fallback={<RouteLoadingShell />}>
+        <ParentingHubPage />
+      </Suspense>
+    </AppErrorBoundary>
+  );
 }
