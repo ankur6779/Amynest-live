@@ -10,9 +10,10 @@ import {
   synthesizeTts,
 } from "@/lib/tts-playback";
 import {
+  emitStaticAudioVisualFallback,
   mustUseStaticOnly,
+  prepareStaticPlaybackAudio,
   safePlayAudio,
-  tryCreateStaticPlaybackAudio,
 } from "@/lib/static-audio";
 import { isTtsPlaybackAllowed, recordTtsUserGesture } from "@/lib/tts-guard";
 
@@ -215,7 +216,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
       try {
         const staticMode = mode === "phonics" ? "phonics" : "default";
 
-        const staticAudio = tryCreateStaticPlaybackAudio(text, staticMode);
+        const staticAudio = await prepareStaticPlaybackAudio(text, staticMode);
         if (staticAudio) {
           logTtsClient("Static audio hit", { chars: text.length, mode: staticMode });
           cleanup();
@@ -232,10 +233,15 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
             cleanup();
           };
           audioRef.current = staticAudio;
-          const played = await safePlayAudio(staticAudio);
+          const played = await safePlayAudio(staticAudio, {
+            proxyUrl: staticAudio.src,
+            phrase: text,
+            mode: staticMode,
+          });
           if (!played) {
             cleanup();
             safeSetSpeaking(false);
+            emitStaticAudioVisualFallback({ phrase: text, mode: staticMode });
             return { success: false, error: "play_failed_static" };
           }
           if (myId !== reqIdRef.current || !isMounted.current) {
@@ -248,6 +254,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         }
 
         if (mustUseStaticOnly(text, staticMode)) {
+          emitStaticAudioVisualFallback({ phrase: text, mode: staticMode });
           return { success: false, error: "tts_static_missing_url" };
         }
 

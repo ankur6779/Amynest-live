@@ -92,6 +92,11 @@ async function startBackgroundTasks(): Promise<void> {
     "Kicking off background init tasks",
   );
 
+  await runBackgroundPhase("static_audio_monitor", async () => {
+    const { startStaticAudioMonitor } = await import("./services/staticAudioMonitor.js");
+    startStaticAudioMonitor();
+  });
+
   if (isModuleEnabled("redis")) {
     const { isWorkerEnabled } = await import("./queue/mode.js");
     if (isWorkerEnabled()) {

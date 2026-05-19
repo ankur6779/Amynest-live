@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, Target, Lightbulb, ChevronDown, ChevronUp, CheckCircle2, RefreshCw, BookOpen, Trophy, AlertCircle, Loader2, Download, FileText } from "lucide-react";
 import { AudioPlayButton } from "@/components/audio-play-button";
 import { preloadStaticPhrases } from "@/lib/static-audio";
+import { getStaticAudioPrefetchLimit } from "@/lib/static-audio-edge";
 import { PhonicsTest } from "@/components/phonics-test";
 import { SubItemGate } from "@/components/sub-item-gate";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -192,23 +193,24 @@ function PhonicsLearningContent({
   const preloadKeyRef = useRef<string>("");
   useEffect(() => {
     if (safeItems.length === 0) return;
+    const limit = getStaticAudioPrefetchLimit();
     const key = safeItems
-      .slice(0, 5)
+      .slice(0, limit)
       .map((i) => i.id)
       .join(",");
     if (preloadKeyRef.current === key) return;
     preloadKeyRef.current = key;
     preloadStaticPhrases(
-      safeItems.slice(0, 5).map((item) => item.sound),
+      safeItems.slice(0, limit).map((item) => item.sound),
       "default",
-      5,
+      limit,
     );
     const phonemeOnly = safeItems
-      .slice(0, 5)
+      .slice(0, limit)
       .map((item) => item.phoneme)
       .filter((p): p is string => !!p);
     if (phonemeOnly.length > 0) {
-      preloadStaticPhrases(phonemeOnly, "phonics", 5);
+      preloadStaticPhrases(phonemeOnly, "phonics", limit);
     }
   }, [safeItems]);
 
@@ -517,10 +519,12 @@ function PracticeSoundsCard({
         </div>
 
         {useGrid ? <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            {safeItems.map(it => {
+            {safeItems.map((it, idx) => {
           const count = progress.practiced[it.id] ?? 0;
           const mastered = !!progress.mastered[it.id];
           const showBlend = level.features.blending && it.example?.includes("–");
+          const nextItem = safeItems[idx + 1];
+          const prefetchNextText = nextItem ? (nextItem.phoneme ?? nextItem.sound) : undefined;
           return <div key={it.id} data-testid={`phonics-tile-${it.id}`} className={cn("relative rounded-2xl p-3 border bg-white/70 dark:bg-white/[0.05] transition-all hover:scale-[1.02] hover:shadow-md active:scale-95", mastered ? "border-border dark:border-border ring-1 ring-primary animate-pulse-slow" : "border-white/60 dark:border-white/10 hover:border-primary/30")}>
                   {mastered && <CheckCircle2 className="absolute top-1.5 right-1.5 h-3.5 w-3.5 text-primary fill-muted" />}
                   <div className="flex items-center gap-2">
@@ -531,7 +535,7 @@ function PracticeSoundsCard({
                     </div>
                   </div>
                   <div className="mt-2 flex items-center justify-between">
-                    <AudioPlayButton text={it.phoneme ?? it.sound} mode={it.phoneme ? "phonics" : undefined} size="sm" variant="violet" ariaLabel={`Play sound ${it.symbol}`} onPlay={() => recordPlay(it.id, it.contentId)} />
+                    <AudioPlayButton text={it.phoneme ?? it.sound} mode={it.phoneme ? "phonics" : undefined} prefetchNextText={prefetchNextText} size="sm" variant="violet" ariaLabel={`Play sound ${it.symbol}`} onPlay={() => recordPlay(it.id, it.contentId)} />
                     {showBlend && <Button type="button" size="sm" variant="outline" onClick={() => setBlendItem(it)} className="rounded-full h-7 px-2.5 text-[10px] font-bold border-border text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-card">
                         {t("components.phonics_learning.blend")}
                       </Button>}
@@ -540,10 +544,12 @@ function PracticeSoundsCard({
                 </div>;
         })}
           </div> : <div className="space-y-2">
-            {safeItems.map(it => {
+            {safeItems.map((it, idx) => {
           const count = progress.practiced[it.id] ?? 0;
           const mastered = !!progress.mastered[it.id];
           const isLong = it.type === "sentence" || it.type === "story";
+          const nextItem = safeItems[idx + 1];
+          const prefetchNextText = nextItem ? (nextItem.phoneme ?? nextItem.sound) : undefined;
           return <div key={it.id} data-testid={`phonics-tile-${it.id}`} className={cn("flex items-start gap-3 rounded-2xl p-3 border bg-white/70 dark:bg-white/[0.05] transition-all", mastered ? "border-border dark:border-border" : "border-white/60 dark:border-white/10 hover:border-primary/30")}>
                   {it.emoji && <span className="text-xl shrink-0">{it.emoji}</span>}
                   <div className="flex-1 min-w-0">
@@ -559,7 +565,7 @@ function PracticeSoundsCard({
                       </p> : null}
                   </div>
                   {mastered && <CheckCircle2 className="h-4 w-4 text-primary mt-1" />}
-                  <AudioPlayButton text={it.phoneme ?? it.sound} mode={it.phoneme ? "phonics" : undefined} size="sm" variant="violet" ariaLabel={`Read aloud: ${it.symbol}`} onPlay={() => recordPlay(it.id, it.contentId)} />
+                  <AudioPlayButton text={it.phoneme ?? it.sound} mode={it.phoneme ? "phonics" : undefined} prefetchNextText={prefetchNextText} size="sm" variant="violet" ariaLabel={`Read aloud: ${it.symbol}`} onPlay={() => recordPlay(it.id, it.contentId)} />
                 </div>;
         })}
           </div>}
@@ -598,7 +604,7 @@ function BlendPanel({
               <span className="font-quicksand text-xl font-bold text-primary dark:text-muted-foreground">{s}</span>
               {/* BlendPanel sounds are individual phonemes ("c", "a", "t") — */}
               {/* always use phonics mode for crisp single-sound pronunciation. */}
-              <AudioPlayButton text={s} mode="phonics" size="sm" variant="violet" ariaLabel={`Play ${s}`} />
+              <AudioPlayButton text={s} mode="phonics" prefetchNextText={sounds[i + 1]} size="sm" variant="violet" ariaLabel={`Play ${s}`} />
             </div>
             {i < sounds.length - 1 && <span className="text-primary text-xl">+</span>}
           </div>)}
