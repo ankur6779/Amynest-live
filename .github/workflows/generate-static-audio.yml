@@ -17,17 +17,16 @@ jobs:
         with:
           token: ${{ github.token }}
 
-      - uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          version: 9
+          node-version: 18
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: pnpm
+      - name: Install pnpm
+        run: npm install -g pnpm
 
-      - name: Install
-        run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install
 
       - name: Generate and upload static audio
         env:
