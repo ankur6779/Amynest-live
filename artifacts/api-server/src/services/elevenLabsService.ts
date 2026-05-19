@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
+import { isStaticTtsText } from "@workspace/static-audio";
 import { db, ttsCacheTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import { getElevenLabsApiKey } from "../lib/env";
+import { getElevenLabsApiKey, getGcsBucketId } from "../lib/env";
 import { logger } from "../lib/logger";
 import { fetchWithTimeout } from "../utils/fetch-with-timeout.js";
 import {
@@ -255,6 +256,14 @@ function logElevenLabsKeyHint(): void {
 
 async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
   const { text, voiceId, modelId, mode, cacheKey, audioPath } = args;
+
+  if (getGcsBucketId() && isStaticTtsText(text, mode)) {
+    logger.warn(
+      { evt: "tts.static_blocked", cacheKey, mode, charCount: text.length },
+      "Blocked ElevenLabs for static content — use pre-generated GCS audio",
+    );
+    throw new Error("tts_static_pregenerated_only");
+  }
 
   const apiKey = getElevenLabsApiKey();
   if (!apiKey) {

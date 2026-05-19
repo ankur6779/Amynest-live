@@ -5,6 +5,10 @@
 
 import { getAuth } from "firebase/auth";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
+import {
+  createStaticAudioElement,
+  shouldBlockStaticTtsFallback,
+} from "@/lib/static-audio";
 import { resolveAiApiData, type AuthFetchFn } from "@/lib/poll-result";
 
 const KEY_ENABLED = "amynest_voice_enabled";
@@ -91,6 +95,26 @@ export async function speak(text: string): Promise<void> {
   if (!trimmed) return;
 
   stopCurrentAudio();
+
+  if (shouldBlockStaticTtsFallback(trimmed)) return;
+
+  const staticAudio = createStaticAudioElement(trimmed);
+  if (staticAudio) {
+    _audio = staticAudio;
+    staticAudio.onended = stopCurrentAudio;
+    staticAudio.onerror = () => {
+      console.error("[StaticAudio] HTMLAudioElement error", staticAudio.error?.code);
+      stopCurrentAudio();
+    };
+    try {
+      await staticAudio.play();
+      return;
+    } catch (playErr) {
+      console.error("[StaticAudio] audio.play() failed", playErr);
+      stopCurrentAudio();
+      return;
+    }
+  }
 
   try {
     const token = await getAuth().currentUser?.getIdToken().catch(() => undefined);

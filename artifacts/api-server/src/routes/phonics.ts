@@ -1,7 +1,9 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { staticAudioPublicUrl } from "@workspace/static-audio";
 import { getAuth } from "../lib/auth";
+import { getGcsBucketId } from "../lib/env";
 import { logger } from "../lib/logger";
 import {
   db,
@@ -1091,6 +1093,15 @@ phonicsPublicRouter.get("/phonics/sound/:letter.mp3", async (req, res): Promise<
     res.status(400).json({ error: "invalid_letter" });
     return;
   }
+
+  const phoneme = PHONEME_PROMPTS[raw];
+  const bucketId = getGcsBucketId();
+  if (bucketId && phoneme) {
+    const staticUrl = staticAudioPublicUrl(phoneme, bucketId, "phonics");
+    res.redirect(302, staticUrl);
+    return;
+  }
+
   try {
     const result = await synthesizePhonicsSound(raw);
     const cached = await readCachedAudio(result.cacheKey);

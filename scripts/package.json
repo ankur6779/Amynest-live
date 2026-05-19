@@ -10,9 +10,14 @@
     "watch:openapi": "tsx ./src/watch-openapi.ts",
     "stress-amy-coach": "tsx ./stress-test-amy-coach.ts",
     "stability-load": "tsx ./src/stability-load-test.ts",
+    "generate-static-audio": "tsx ./generate-static-audio.ts",
+    "check-static-audio": "tsx ./check-static-audio.ts",
     "typecheck": "pnpm run audit:parent-hub-i18n && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.19.0",
+    "@workspace/static-audio": "workspace:*",
+    "dotenv": "^16.6.1",
     "pg": "^8.20.0"
   },
   "devDependencies": {

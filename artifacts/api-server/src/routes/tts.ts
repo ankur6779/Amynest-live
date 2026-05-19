@@ -8,8 +8,9 @@ import {
   readCachedAudio,
   trySynthesizeFromCache,
 } from "../services/elevenLabsService";
-import { getElevenLabsApiKey } from "../lib/env";
+import { getElevenLabsApiKey, getGcsBucketId } from "../lib/env";
 import { isValidTtsPublicUrl } from "../services/ttsAudioStore";
+import { isStaticTtsText } from "@workspace/static-audio";
 import { synthesizeSafe } from "../services/ttsSafe.js";
 
 // ─── Public router (mounted BEFORE requireAuth) ──────────────────────────────
@@ -171,6 +172,17 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
     }
 
     const text = parsed.data.text;
+    const mode = parsed.data.mode ?? "default";
+    if (getGcsBucketId() && isStaticTtsText(text, mode)) {
+      res.status(200).json({
+        ok: false,
+        success: false,
+        error: "tts_static_pregenerated_only",
+        message: "Static phrases must use pre-generated GCS audio (static-audio-map.json).",
+      });
+      return;
+    }
+
     setImmediate(() => {
       void synthesizeSafe(text, synthOptions).catch((err) => {
         console.error("TTS background failed", err);

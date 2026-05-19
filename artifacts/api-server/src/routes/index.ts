@@ -32,6 +32,7 @@ import featureUsageRouter from "./feature-usage";
 import giftTokensRouter from "./gift-tokens";
 import recipesRouter from "./recipes";
 import ttsRouter, { ttsPublicRouter } from "./tts";
+import { staticAudioPublicRouter } from "./static-audio";
 import audioLessonsRouter from "./audio-lessons";
 import phonicsRouter, { phonicsPublicRouter } from "./phonics";
 import abacusRouter from "./abacus";
@@ -89,6 +90,7 @@ router.use(spellingPublicRouter);
 // public phoneme audio. Mounted BEFORE requireAuth so <audio>/expo-audio
 // can fetch without bearer tokens. See PHONEME_PROMPTS in phonics.ts.
 router.use(phonicsPublicRouter);
+router.use(staticAudioPublicRouter);
 router.use(requireAuth);
 router.use(clientLogsRouter);
 router.use(onboardingRouter);
