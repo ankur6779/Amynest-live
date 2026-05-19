@@ -18,6 +18,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
 import { getTotalPoints, getBadges, getRewards, redeemReward, type Reward } from "@/lib/rewards";
 import { asRoutineList, routineDateKey, routineItems } from "@/lib/routines";
+import { safeFetch } from "@/lib/safe-fetch";
 
 const HeroAmbientLayer = lazy(() =>
   import("@/components/hero-ambient-layer").then((m) => ({
@@ -295,23 +296,19 @@ function SmartHeroSection({
     queryKey: ["reverse-geo", geo?.lat, geo?.lng],
     queryFn: async () => {
       if (!geo) return null;
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${geo.lat}&lon=${geo.lng}&format=json&accept-language=en`,
-          { headers: { "User-Agent": "AmyNest/1.0 (parenting-app)" } },
-        );
-        if (!res.ok) return null;
-        const data = await res.json() as { address?: { city?: string; town?: string; village?: string; state?: string; country_code?: string; county?: string } };
-        const city = data.address?.city ?? data.address?.town ?? data.address?.village ?? data.address?.county;
-        const state = data.address?.state;
-        const cc = data.address?.country_code?.toUpperCase();
-        if (city && state) return `${city}, ${state}`;
-        if (city && cc)    return `${city}, ${cc}`;
-        if (state && cc)   return `${state}, ${cc}`;
-        return null;
-      } catch {
-        return null;
-      }
+      type NominatimResponse = { address?: { city?: string; town?: string; village?: string; state?: string; country_code?: string; county?: string } };
+      const data = await safeFetch<NominatimResponse>(
+        `https://nominatim.openstreetmap.org/reverse?lat=${geo.lat}&lon=${geo.lng}&format=json&accept-language=en`,
+        { headers: { "User-Agent": "AmyNest/1.0 (parenting-app)" } },
+      );
+      if (data?.fallback) return null;
+      const city = data.address?.city ?? data.address?.town ?? data.address?.village ?? data.address?.county;
+      const state = data.address?.state;
+      const cc = data.address?.country_code?.toUpperCase();
+      if (city && state) return `${city}, ${state}`;
+      if (city && cc)    return `${city}, ${cc}`;
+      if (state && cc)   return `${state}, ${cc}`;
+      return null;
     },
     enabled: !!geo,
     staleTime: 30 * 60 * 1000,
@@ -475,10 +472,7 @@ function ChildrenStrip({
     t
   } = useTranslation();
   console.log("CHECK DATA:", children);
-  if (!children) {
-    throw new Error("DATA MISSING HERE: ChildrenStrip children is undefined");
-  }
-  if (children.length === 0) return null;
+  if (!children || children.length === 0) return null;
   return <div>
       <SectionLabel action={<Link href="/children" className="text-[11px] font-bold text-primary dark:text-primary hover:text-primary">
             {t("common.manage")} →
@@ -1105,6 +1099,7 @@ export default function Dashboard() {
   const {
     data: summary,
     isLoading: loadingSummary,
+    isError: isErrorSummary,
     dataUpdatedAt: summaryUpdatedAt
   } = useGetDashboardSummary({
     query: {
@@ -1135,7 +1130,8 @@ export default function Dashboard() {
   });
   const {
     data: childrenList,
-    isLoading: loadingChildren
+    isLoading: loadingChildren,
+    isError: isErrorChildren
   } = useListChildren({
     query: {
       queryKey: getListChildrenQueryKey(),
@@ -1189,6 +1185,33 @@ export default function Dashboard() {
     return <RouteLoadingShell />;
   }
 
+  // Both core queries failed — show a recoverable error instead of a blank or
+  // broken dashboard. React Query will retry automatically in the background.
+  if (isErrorSummary && isErrorChildren) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-6">
+        <span className="text-4xl">⚠️</span>
+        <p className="font-semibold text-foreground text-lg">Something went wrong</p>
+        <p className="text-sm text-muted-foreground">
+          We couldn't load your dashboard. Please check your connection and try again.
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-2 rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold shadow hover:bg-primary/90 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // Summary loaded but returned undefined (non-fatal error, other data may
+  // still render). Show the skeleton so the page isn't blank.
+  if (!summary && !loadingSummary && !isErrorSummary) {
+    console.warn("[dashboard] summary resolved to undefined without error flag");
+  }
+
   const lastUpdated = Math.max(summaryUpdatedAt ?? 0, routinesUpdatedAt ?? 0, statsUpdatedAt ?? 0);
   const childrenSafe = Array.isArray(childrenList) ? childrenList : [];
   const recentRoutinesSafe = Array.isArray(routines) ? routines : [];
@@ -1210,6 +1233,8 @@ export default function Dashboard() {
     !loadingSummary &&
     !loadingChildren &&
     !summaryFallback &&
+    !isErrorSummary &&   // don't redirect to onboarding when API just failed
+    !isErrorChildren &&
     childrenSafe.length === 0 &&
     (summary?.totalChildren ?? 0) === 0;
   if (noChildren) {
