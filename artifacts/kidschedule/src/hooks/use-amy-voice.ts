@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { agentDebugLog } from "@/lib/agent-debug-log";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useGuardedSetter, useMountedRef } from "@/hooks/use-safe-async";
 import {
@@ -7,7 +8,7 @@ import {
   logTtsClientError,
   playAudio,
   resolveClientPlaybackUrl,
-  synthesizeTts,
+  synthesizeTtsWithBackgroundPoll,
 } from "@/lib/tts-playback";
 import {
   emitStaticAudioVisualFallback,
@@ -26,7 +27,6 @@ import { isTtsPlaybackAllowed, recordTtsUserGesture } from "@/lib/tts-guard";
 //   • stop() and unmount cleanly release the lock immediately.
 let _ttsBusy = false;
 const TTS_TIMEOUT_MS = 8_000;
-
 export interface UseAmyVoiceOptions {
   /** Optional override for the voice persona (ElevenLabs voice id). */
   voiceId?: string;
@@ -259,15 +259,30 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         }
 
         logTtsClient("Request start", { chars: text.length, mode });
-        const data = await synthesizeTts(
+        const data = await synthesizeTtsWithBackgroundPoll(
           authFetch,
           { text, voiceId, modelId, mode },
           { signal: controller.signal },
         );
         if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };
 
+        // #region agent log
+        agentDebugLog({
+          runId: "post-fix",
+          hypothesisId: "F",
+          location: "use-amy-voice.ts:speak",
+          message: "synthesizeTts response",
+          data: {
+            background: Boolean(data?.background),
+            success: Boolean(data?.success),
+            hasAudioUrl: Boolean(data?.audioUrl),
+            error: data?.error ?? null,
+          },
+        });
+        // #endregion
+
         if (data?.background) {
-          console.warn("TTS warming in background — skipping playback");
+          console.warn("TTS warming in background — cache not ready after poll");
           return { success: false, error: "tts_background" };
         }
         if (!data?.success || !isValidAudioUrl(data.audioUrl)) {

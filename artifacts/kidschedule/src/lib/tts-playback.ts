@@ -1,4 +1,5 @@
 import { resolveApiMediaUrl } from "@/lib/api";
+import { wait } from "@/lib/poll-result";
 import {
   isCatalogPhrase,
   isStaticAudioStrictMode,
@@ -38,6 +39,32 @@ export function playAudio(url: string): HTMLAudioElement | null {
     console.error("Invalid audio URL", url, e);
     return null;
   }
+}
+
+const TTS_BACKGROUND_POLL_MS = [1500, 2000, 3000, 4000, 5000];
+
+/**
+ * POST /api/tts/synthesize with legacy-server poll when the API returns `background: true`
+ * while warming the cache (production until backend deploy catches up).
+ */
+export async function synthesizeTtsWithBackgroundPoll(
+  authFetch: AuthFetchFn,
+  body: Record<string, unknown>,
+  init?: Omit<RequestInit, "method" | "body" | "headers"> & {
+    headers?: Record<string, string>;
+  },
+): Promise<TtsSynthesizeResponse> {
+  let data = await synthesizeTts(authFetch, body, init);
+  if (!data?.background) return data;
+
+  for (const delayMs of TTS_BACKGROUND_POLL_MS) {
+    await wait(delayMs);
+    const retry = await synthesizeTts(authFetch, body, init);
+    if (retry?.success && isValidAudioUrl(retry.audioUrl)) return retry;
+    if (!retry?.background && retry?.error) return retry;
+    data = retry;
+  }
+  return data;
 }
 
 /** POST /api/tts/synthesize — dynamic AI content only; catalog phrases are rejected. */

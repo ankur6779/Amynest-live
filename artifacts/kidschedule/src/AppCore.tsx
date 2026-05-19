@@ -1,7 +1,6 @@
-import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, type ComponentType, type ReactNode } from "react";
 import { lazyPage } from "@/lib/safe-import";
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
-import { useQuery } from "@tanstack/react-query";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 import { FirebaseAuthProvider, Show } from "@/lib/firebase-auth";
@@ -38,13 +37,12 @@ import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { ApiRetryShell } from "@/components/api-retry-shell";
 import { ProductionAppShell } from "@/components/production-app-shell";
 import { FetchTimeoutError } from "@/lib/fetch-with-timeout";
-import { agentDebugLog } from "@/lib/agent-debug-log";
 import {
   isSetupComplete,
-  persistOnboardingCache,
-  resolveSetupStatus,
 } from "@/lib/setup-status";
 import { installTtsGestureListener } from "@/lib/tts-guard";
+import { OnboardingStatusProvider, useOnboardingStatus } from "@/contexts/onboarding-status-context";
+import { AppInitGate } from "@/components/app-init-gate";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
 // when its route is first matched. The Suspense boundary below renders
@@ -122,64 +120,9 @@ const bootMark = (phase: string) => {
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-function useOnboardingStatus() {
-  const { isSignedIn, isLoaded, getToken } = useAuth();
-  const authFetch = useAuthFetch();
-  return useQuery({
-    queryKey: ["onboarding-status"],
-    queryFn: async () => {
-      const token = await waitForIdToken(getToken);
-      if (!token) {
-        throw new Error("auth-token-pending");
-      }
-
-      const data = await resolveSetupStatus(authFetch);
-      persistOnboardingCache(data);
-      return data;
-    },
-    enabled: isLoaded && isSignedIn,
-    staleTime: 30_000,
-    retry: (failureCount, error) => {
-      const msg = error instanceof Error ? error.message : "";
-      if (msg === "auth-token-pending") return failureCount < 8;
-      if (msg === "auth-unauthorized") return false;
-      if (error instanceof FetchTimeoutError) return failureCount < 1;
-      return failureCount < 2;
-    },
-    retryDelay: (attempt) => Math.min(300 * 2 ** attempt, 4000),
-  });
-}
-
 function HomeRedirect() {
-  const { isLoaded, isSignedIn, authStatus } = useAuth();
-  const { data, isLoading, isError, error, refetch, isFetching } = useOnboardingStatus();
-
-  // #region agent log
-  useEffect(() => {
-    const authBlocked =
-      isError && error instanceof Error && error.message === "auth-unauthorized";
-    agentDebugLog({
-      location: "AppCore.tsx:HomeRedirect",
-      message: "home redirect state",
-      data: {
-        isLoaded,
-        isSignedIn,
-        authStatus,
-        isLoading,
-        isFetching,
-        isError,
-        authBlocked,
-        setupComplete: isSetupComplete(data),
-        errMsg: error instanceof Error ? error.message : String(error ?? ""),
-      },
-      hypothesisId: "H1",
-    });
-  }, [isLoaded, isSignedIn, authStatus, isLoading, isFetching, isError, error, data]);
-  // #endregion
-
-  if (!isLoaded || authStatus === "loading") {
-    return <RouteLoadingShell />;
-  }
+  const { isSignedIn } = useAuth();
+  const { data, isError, error, refetch } = useOnboardingStatus();
 
   if (!isSignedIn) {
     return <LandingPage />;
@@ -187,10 +130,6 @@ function HomeRedirect() {
 
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
-
-  if (isLoading || isFetching) {
-    return <RouteLoadingShell />;
-  }
 
   if (isError && !authBlocked) {
     const timedOut = error instanceof FetchTimeoutError;
@@ -215,14 +154,13 @@ function HomeRedirect() {
 
 /** If setup is already done, leave /onboarding (users often land here from an old redirect). */
 function OnboardingRouteGuard() {
-  const { isLoaded, isSignedIn, authStatus } = useAuth();
-  const { data, isLoading, isError, error, refetch, isFetching } = useOnboardingStatus();
+  const { isSignedIn } = useAuth();
+  const { data, isError, error, refetch } = useOnboardingStatus();
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
 
-  if (!isLoaded || authStatus === "loading") return <RouteLoadingShell />;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
-  if (isLoading || isFetching || authBlocked) return <RouteLoadingShell />;
+  if (authBlocked) return <RouteLoadingShell />;
   if (isError) {
     return (
       <ApiRetryShell
@@ -240,9 +178,8 @@ function OnboardingRouteGuard() {
 
 /** Standalone native push prompt — no Layout shell (same pattern as onboarding). */
 function NotifyPromptRouteGuard() {
-  const { isLoaded, isSignedIn, authStatus } = useAuth();
+  const { isSignedIn } = useAuth();
 
-  if (!isLoaded || authStatus === "loading") return <RouteLoadingShell />;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
 
   return (
@@ -252,37 +189,14 @@ function NotifyPromptRouteGuard() {
   );
 }
 
-function ProtectedRoute({ component: Component }: { component: React.ComponentType; requiresProfile?: boolean }) {
-  const { isLoaded, isSignedIn, authStatus } = useAuth();
-  const { data, isLoading, isError, error, refetch, isFetching } = useOnboardingStatus();
+function ProtectedRoute({ component: Component }: { component: ComponentType; requiresProfile?: boolean }) {
+  const { isSignedIn } = useAuth();
+  const { data, isError, error, refetch } = useOnboardingStatus();
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
 
-  // #region agent log
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
-    const ready = !isLoading && !isFetching && !authBlocked && !isError && isSetupComplete(data);
-    agentDebugLog({
-      location: "AppCore.tsx:ProtectedRoute",
-      message: ready ? "protected route ready" : "protected route guard",
-      data: {
-        componentName: Component.displayName || Component.name || "anonymous",
-        ready,
-        isLoading,
-        isFetching,
-        isError,
-        authBlocked,
-        setupComplete: isSetupComplete(data),
-        path: typeof window !== "undefined" ? window.location.pathname : "",
-      },
-      hypothesisId: "H3",
-    });
-  }, [isLoaded, isSignedIn, isLoading, isFetching, isError, authBlocked, data, Component]);
-  // #endregion
-
-  if (!isLoaded || authStatus === "loading") return <RouteLoadingShell />;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
-  if (isLoading || isFetching || authBlocked) return <RouteLoadingShell />;
+  if (authBlocked) return <RouteLoadingShell />;
   if (isError) {
     return <ApiRetryShell onRetry={() => void refetch()} />;
   }
@@ -295,6 +209,49 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
     </AppErrorBoundary>
   );
 }
+
+/** Stable route component — avoids remounting guards on parent re-renders. */
+function makeProtectedRoute(Component: ComponentType) {
+  function ProtectedRoutePage() {
+    return <ProtectedRoute component={Component} />;
+  }
+  ProtectedRoutePage.displayName = `Protected(${Component.displayName ?? Component.name ?? "Page"})`;
+  return ProtectedRoutePage;
+}
+
+const DashboardRoute = makeProtectedRoute(Dashboard);
+const ChildrenListRoute = makeProtectedRoute(ChildrenList);
+const ChildFormRoute = makeProtectedRoute(ChildForm);
+const RoutinesListRoute = makeProtectedRoute(RoutinesList);
+const RoutineGenerateRoute = makeProtectedRoute(RoutineGenerate);
+const RoutineDetailRoute = makeProtectedRoute(RoutineDetail);
+const BehaviorTrackerRoute = makeProtectedRoute(BehaviorTracker);
+const ParentProfileRoute = makeProtectedRoute(ParentProfile);
+const NotificationSettingsRoute = makeProtectedRoute(NotificationSettingsPage);
+const NotificationDiagnosticsRoute = makeProtectedRoute(NotificationDiagnosticsPage);
+const AssistantRoute = makeProtectedRoute(AssistantPage);
+const AmyAiTutorRoute = makeProtectedRoute(AmyAiTutorPage);
+const ProgressRoute = makeProtectedRoute(ProgressPage);
+const ParentingHubRoute = makeProtectedRoute(ParentingHub);
+const LifeSkillsRoute = makeProtectedRoute(LifeSkillsPage);
+const SpeechCoachRoute = makeProtectedRoute(SpeechCoachPage);
+const KidsControlCenterRoute = makeProtectedRoute(KidsControlCenterPage);
+const StudyRoute = makeProtectedRoute(StudyPage);
+const EventPrepRoute = makeProtectedRoute(EventPrepPage);
+const SchoolMorningFlowRoute = makeProtectedRoute(SchoolMorningFlowPage);
+const AmyCoachRoute = makeProtectedRoute(AmyCoachPage);
+const AmyCoachProgressRoute = makeProtectedRoute(AmyCoachProgressPage);
+const RecipesRoute = makeProtectedRoute(RecipesPage);
+const NutritionHubRoute = makeProtectedRoute(NutritionHubPage);
+const AudioLessonsRoute = makeProtectedRoute(AudioLessonsPage);
+const GamesRoute = makeProtectedRoute(GamesPage);
+const PricingRoute = makeProtectedRoute(PricingPage);
+const ReferralsRoute = makeProtectedRoute(ReferralsPage);
+const InsightsRoute = makeProtectedRoute(InsightsPage);
+const RewardsRoute = makeProtectedRoute(RewardsPage);
+const EnvironmentRoute = makeProtectedRoute(EnvironmentPage);
+const FeedbackRoute = makeProtectedRoute(FeedbackPage);
+const AdminFeedbackRoute = makeProtectedRoute(AdminFeedbackPage);
 
 function FirebaseAuthBootstrap() {
   const { getToken, isSignedIn } = useAuth();
@@ -312,19 +269,26 @@ function FirebaseAuthBootstrap() {
 
 function ClientTelemetryBootstrap() {
   const authFetch = useAuthFetch();
+  const authFetchRef = useRef(authFetch);
+  authFetchRef.current = authFetch;
   const { isSignedIn } = useAuth();
+  const telemetryStartedRef = useRef(false);
 
   useEffect(() => {
-    if (!isSignedIn) return;
+    if (!isSignedIn || telemetryStartedRef.current) return;
+    telemetryStartedRef.current = true;
     const flush = () => {
       void import("@/lib/client-logs").then(({ flushClientLogs }) =>
-        flushClientLogs(authFetch),
+        flushClientLogs(authFetchRef.current),
       );
     };
     flush();
     const id = setInterval(flush, 30_000);
-    return () => clearInterval(id);
-  }, [authFetch, isSignedIn]);
+    return () => {
+      clearInterval(id);
+      telemetryStartedRef.current = false;
+    };
+  }, [isSignedIn]);
 
   return null;
 }
@@ -369,27 +333,6 @@ const queryClient = new QueryClient();
 function NotificationDeepLinkBridge() {
   useNotificationDeepLink();
   return null;
-}
-
-/** Covers auth loading / timeout before routes render. */
-function AuthBootGate({ children }: { children: ReactNode }) {
-  const { authStatus } = useAuth();
-
-  if (authStatus === "loading") {
-    return <AuthBootShell />;
-  }
-
-  if (authStatus === "timeout") {
-    return (
-      <AppFallbackUi
-        title="Sign-in check timed out"
-        message="Firebase auth did not respond in time. Reload to try again."
-        onReload={() => window.location.reload()}
-      />
-    );
-  }
-
-  return <>{children}</>;
 }
 
 function ReactMountMarker() {
@@ -445,116 +388,48 @@ function AppRoutes() {
           <Route path="/auth/action" component={AuthCallbackPage} />
           <Route path="/auth/apple/callback" component={AppleAuthCallbackPage} />
           <Route path="/onboarding" component={OnboardingRouteGuard} />
-          <Route path="/dashboard">
-            {() => <ProtectedRoute component={Dashboard} />}
-          </Route>
-          <Route path="/children">
-            {() => <ProtectedRoute component={ChildrenList} requiresProfile={false} />}
-          </Route>
-          <Route path="/children/new">
-            {() => <ProtectedRoute component={ChildForm} requiresProfile={false} />}
-          </Route>
-          <Route path="/children/:id">
-            {() => <ProtectedRoute component={ChildForm} requiresProfile={false} />}
-          </Route>
-          <Route path="/routines">
-            {() => <ProtectedRoute component={RoutinesList} />}
-          </Route>
-          <Route path="/routines/generate">
-            {() => <ProtectedRoute component={RoutineGenerate} />}
-          </Route>
-          <Route path="/routines/:id">
-            {() => <ProtectedRoute component={RoutineDetail} />}
-          </Route>
-          <Route path="/behavior">
-            {() => <ProtectedRoute component={BehaviorTracker} />}
-          </Route>
+          <Route path="/dashboard" component={DashboardRoute} />
+          <Route path="/children" component={ChildrenListRoute} />
+          <Route path="/children/new" component={ChildFormRoute} />
+          <Route path="/children/:id" component={ChildFormRoute} />
+          <Route path="/routines" component={RoutinesListRoute} />
+          <Route path="/routines/generate" component={RoutineGenerateRoute} />
+          <Route path="/routines/:id" component={RoutineDetailRoute} />
+          <Route path="/behavior" component={BehaviorTrackerRoute} />
           <Route path="/profile">
             <Redirect to="/parent-profile" />
           </Route>
-          <Route path="/parent-profile">
-            {() => <ProtectedRoute component={ParentProfile} requiresProfile={false} />}
-          </Route>
-          <Route path="/notification-settings">
-            {() => <ProtectedRoute component={NotificationSettingsPage} requiresProfile={false} />}
-          </Route>
-          <Route path="/notification-diagnostics">
-            {() => <ProtectedRoute component={NotificationDiagnosticsPage} requiresProfile={false} />}
-          </Route>
+          <Route path="/parent-profile" component={ParentProfileRoute} />
+          <Route path="/notification-settings" component={NotificationSettingsRoute} />
+          <Route path="/notification-diagnostics" component={NotificationDiagnosticsRoute} />
           <Route path="/notify-prompt" component={NotifyPromptRouteGuard} />
           <Route path="/babysitters">
             <Redirect to="/dashboard" />
           </Route>
-          <Route path="/assistant">
-            {() => <ProtectedRoute component={AssistantPage} />}
-          </Route>
-          <Route path="/amy-ai-tutor">
-            {() => <ProtectedRoute component={AmyAiTutorPage} />}
-          </Route>
-          <Route path="/progress">
-            {() => <ProtectedRoute component={ProgressPage} />}
-          </Route>
-          <Route path="/parenting-hub">
-            {() => <ProtectedRoute component={ParentingHub} />}
-          </Route>
-          <Route path="/life-skills">
-            {() => <ProtectedRoute component={LifeSkillsPage} />}
-          </Route>
-          <Route path="/parenting-hub/speech-coach">
-            {() => <ProtectedRoute component={SpeechCoachPage} />}
-          </Route>
-          <Route path="/kids-control-center">
-            {() => <ProtectedRoute component={KidsControlCenterPage} />}
-          </Route>
-          <Route path="/study">
-            {() => <ProtectedRoute component={StudyPage} />}
-          </Route>
-          <Route path="/event-prep">
-            {() => <ProtectedRoute component={EventPrepPage} />}
-          </Route>
-          <Route path="/school-morning-flow">
-            {() => <ProtectedRoute component={SchoolMorningFlowPage} />}
-          </Route>
-          <Route path="/amy-coach">
-            {() => <ProtectedRoute component={AmyCoachPage} />}
-          </Route>
-          <Route path="/amy-coach/progress">
-            {() => <ProtectedRoute component={AmyCoachProgressPage} />}
-          </Route>
-          <Route path="/recipes">
-            {() => <ProtectedRoute component={RecipesPage} />}
-          </Route>
-          <Route path="/nutrition">
-            {() => <ProtectedRoute component={NutritionHubPage} />}
-          </Route>
-          <Route path="/audio-lessons">
-            {() => <ProtectedRoute component={AudioLessonsPage} />}
-          </Route>
-          <Route path="/games">
-            {() => <ProtectedRoute component={GamesPage} />}
-          </Route>
-          <Route path="/pricing">
-            {() => <ProtectedRoute component={PricingPage} requiresProfile={false} />}
-          </Route>
-          <Route path="/referrals">
-            {() => <ProtectedRoute component={ReferralsPage} requiresProfile={false} />}
-          </Route>
-          <Route path="/insights">
-            {() => <ProtectedRoute component={InsightsPage} />}
-          </Route>
-          <Route path="/rewards">
-            {() => <ProtectedRoute component={RewardsPage} />}
-          </Route>
+          <Route path="/assistant" component={AssistantRoute} />
+          <Route path="/amy-ai-tutor" component={AmyAiTutorRoute} />
+          <Route path="/progress" component={ProgressRoute} />
+          <Route path="/parenting-hub" component={ParentingHubRoute} />
+          <Route path="/life-skills" component={LifeSkillsRoute} />
+          <Route path="/parenting-hub/speech-coach" component={SpeechCoachRoute} />
+          <Route path="/kids-control-center" component={KidsControlCenterRoute} />
+          <Route path="/study" component={StudyRoute} />
+          <Route path="/event-prep" component={EventPrepRoute} />
+          <Route path="/school-morning-flow" component={SchoolMorningFlowRoute} />
+          <Route path="/amy-coach" component={AmyCoachRoute} />
+          <Route path="/amy-coach/progress" component={AmyCoachProgressRoute} />
+          <Route path="/recipes" component={RecipesRoute} />
+          <Route path="/nutrition" component={NutritionHubRoute} />
+          <Route path="/audio-lessons" component={AudioLessonsRoute} />
+          <Route path="/games" component={GamesRoute} />
+          <Route path="/pricing" component={PricingRoute} />
+          <Route path="/referrals" component={ReferralsRoute} />
+          <Route path="/insights" component={InsightsRoute} />
+          <Route path="/rewards" component={RewardsRoute} />
           <Route path="/debug-parity" component={DebugParityPage} />
-          <Route path="/environment">
-            {() => <ProtectedRoute component={EnvironmentPage} />}
-          </Route>
-          <Route path="/feedback">
-            {() => <ProtectedRoute component={FeedbackPage} requiresProfile={false} />}
-          </Route>
-          <Route path="/admin/feedback">
-            {() => <ProtectedRoute component={AdminFeedbackPage} requiresProfile={false} />}
-          </Route>
+          <Route path="/environment" component={EnvironmentRoute} />
+          <Route path="/feedback" component={FeedbackRoute} />
+          <Route path="/admin/feedback" component={AdminFeedbackRoute} />
           <Route component={RouteFailedPage} />
             </Switch>
             </Suspense>
@@ -606,19 +481,20 @@ export default function AppCore() {
   return (
     <ProductionAppShell>
       <FirebaseAuthProvider>
-        <AuthBootGate>
-          <WouterRouter base={basePath}>
-            <FirebaseActionGate>
-              <AppCoreMountMarker />
-            <AppErrorBoundary label="AppRoutes">
-              <AppRoutes />
-            </AppErrorBoundary>
-          {/* Fixed overlay — rendered outside AppRoutes so it appears above all pages */}
-          <OfflineGate />
-          <NativeStartupPermissionsGateLazy />
-            </FirebaseActionGate>
-          </WouterRouter>
-        </AuthBootGate>
+        <OnboardingStatusProvider>
+          <AppInitGate>
+            <WouterRouter base={basePath}>
+              <FirebaseActionGate>
+                <AppCoreMountMarker />
+                <AppErrorBoundary label="AppRoutes">
+                  <AppRoutes />
+                </AppErrorBoundary>
+                <OfflineGate />
+                <NativeStartupPermissionsGateLazy />
+              </FirebaseActionGate>
+            </WouterRouter>
+          </AppInitGate>
+        </OnboardingStatusProvider>
       </FirebaseAuthProvider>
     </ProductionAppShell>
   );

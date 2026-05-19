@@ -8,7 +8,8 @@
  *     --config playwright.config.prod-verify.ts
  */
 import { test, expect } from "@playwright/test";
-import { appendFileSync } from "node:fs";
+import { appendFileSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import { signInWithEmail } from "../helpers/auth";
 
 const LOG_PATH =
@@ -32,7 +33,12 @@ function agentLog(payload: Record<string, unknown>): void {
     runId: "prod-verify",
     ...payload,
   });
-  appendFileSync(LOG_PATH, `${line}\n`, { flag: "a" });
+  try {
+    mkdirSync(dirname(LOG_PATH), { recursive: true });
+    appendFileSync(LOG_PATH, `${line}\n`, { flag: "a" });
+  } catch {
+    /* log file optional */
+  }
 }
 
 test("production: no crash overlay after sign-in and navigation", async ({ page }) => {

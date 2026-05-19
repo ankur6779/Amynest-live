@@ -10,7 +10,7 @@ import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { agentDebugLog } from "@/lib/agent-debug-log";
 import { logDashboardMount } from "@/lib/onboarding-debug";
-import { Suspense, useEffect, useState, useMemo, useCallback } from "react";
+import { Suspense, useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { lazyPage } from "@/lib/safe-import";
 import { isAndroidLiteClient } from "@/lib/device-lite";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1082,16 +1082,7 @@ export default function Dashboard() {
       hypothesisId: "H3-H5",
     });
   }, []);
-  useEffect(() => {
-    authFetch("/api/parent-profile")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.name) setProfileName(data.name);
-      })
-      .catch((e) => {
-        console.error("[dashboard] parent-profile fetch failed", e);
-      });
-  }, [authFetch]);
+  const profileFetchedRef = useRef(false);
   const displayName =
     profileName ||
     user?.firstName ||
@@ -1154,6 +1145,20 @@ export default function Dashboard() {
   const authReady = userLoaded && authLoaded && authStatus !== "loading";
   const dataBootLoading =
     authReady && isSignedIn && (loadingSummary || subLoading);
+
+  useEffect(() => {
+    if (!authReady || !isSignedIn || profileFetchedRef.current) return;
+    profileFetchedRef.current = true;
+    authFetch("/api/parent-profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.name) setProfileName(data.name);
+      })
+      .catch((e) => {
+        console.error("[dashboard] parent-profile fetch failed", e);
+        profileFetchedRef.current = false;
+      });
+  }, [authReady, isSignedIn, authFetch]);
 
   useEffect(() => {
     logDashboardMount({

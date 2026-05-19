@@ -1,11 +1,13 @@
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { waitForIdToken } from "@/lib/auth-token";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { loggedFetch } from "@/lib/api-logger";
 import { DEFAULT_API_TIMEOUT_MS, fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
 export function useAuthFetch() {
   const { getToken, isSignedIn } = useAuth();
+  const isSignedInRef = useRef(isSignedIn);
+  isSignedInRef.current = isSignedIn;
 
   const authFetch = useCallback(
     async (
@@ -15,7 +17,7 @@ export function useAuthFetch() {
     ): Promise<Response> => {
       const headers = new Headers(init.headers);
 
-      if (isSignedIn) {
+      if (isSignedInRef.current) {
         const token = await waitForIdToken(getToken);
         if (!token) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -31,7 +33,7 @@ export function useAuthFetch() {
         fetchWithTimeout(inp, ini, timeoutMs),
       );
     },
-    [getToken, isSignedIn],
+    [getToken],
   );
 
   return authFetch;

@@ -183,18 +183,20 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
       return;
     }
 
-    setImmediate(() => {
-      void synthesizeSafe(text, synthOptions).catch((err) => {
-        console.error("TTS background failed", err);
-      });
-    });
+    // Interactive playback (speak / audio-lessons) needs a ready audioUrl — do not
+    // return background:true and defer synthesis; prewarm uses /audio-lessons/pregenerate.
+    const generated = await synthesizeSafe(text, synthOptions);
+    if (!generated) {
+      res.status(200).json({ success: false, ok: false, error: "tts_failed" });
+      return;
+    }
 
-    res.json({
-      ok: false,
-      success: false,
-      background: true,
-      cached: false,
-    });
+    const body = buildTtsJson(generated);
+    if (!body.success) {
+      res.status(200).json({ success: false, ok: false, error: body.error });
+      return;
+    }
+    res.json(body);
   } catch (err) {
     const code = err instanceof Error ? err.message : "tts_failed";
     console.error("TTS synthesize route error", code);

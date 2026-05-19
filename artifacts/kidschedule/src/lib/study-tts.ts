@@ -9,6 +9,7 @@ import {
   safePlayAudio,
 } from "@/lib/static-audio";
 import { resolveAiApiData, type AuthFetchFn } from "@/lib/poll-result";
+import { synthesizeTtsWithBackgroundPoll } from "@/lib/tts-playback";
 
 // ─── ElevenLabs Indian Voice IDs ──────────────────────────────
 // English Indian Female — Ananya K
@@ -81,18 +82,16 @@ export async function speak(
         headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
       });
     };
-    const synthRes = await fetch(getApiUrl("/api/tts/synthesize"), {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ text: trimmed, voiceId, modelId }),
+    const synth = await synthesizeTtsWithBackgroundPoll(authFetch, {
+      text: trimmed,
+      voiceId,
+      modelId,
     });
-    if (!synthRes.ok) {
-      console.error("[ElevenLabs] Synthesize failed", synthRes.status);
+    if (!synth?.success || !synth.audioUrl?.trim()) {
+      console.warn("[ElevenLabs] Synthesize failed", synth?.error ?? "unknown");
       return;
     }
-    const raw = (await synthRes.json()) as { audioUrl?: string; jobId?: string };
-    const data = await resolveAiApiData<{ audioUrl: string }>(raw, authFetch);
-    const audioUrl = data?.audioUrl?.trim() ?? "";
+    const audioUrl = synth.audioUrl.trim();
     if (!audioUrl || audioUrl.includes("undefined")) {
       console.warn("Invalid audio URL, skipping playback");
       return;
