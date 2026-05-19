@@ -2,7 +2,12 @@ import { createHash } from "node:crypto";
 import { isStaticTtsText } from "@workspace/static-audio";
 import { db, ttsCacheTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import { getElevenLabsApiKey, getGcsBucketId, parseEnvMs } from "../lib/env";
+import {
+  getElevenLabsApiKey,
+  getGcsBucketId,
+  isElevenLabsTtsEnabled,
+  parseEnvMs,
+} from "../lib/env";
 import { logger } from "../lib/logger";
 import { fetchWithTimeout } from "../utils/fetch-with-timeout.js";
 import {
@@ -78,11 +83,11 @@ export function inferSynthesizeModeFromCacheKey(
   voiceId: string,
   modelId: string,
 ): SynthesizeMode {
-  const defaultKey = computeCacheKey(text, voiceId, modelId, "default");
+  const defaultKey = computeTtsCacheKey(text, voiceId, modelId, "default");
   return cacheKey === defaultKey ? "default" : "phonics";
 }
 
-function computeCacheKey(
+export function computeTtsCacheKey(
   text: string,
   voiceId: string,
   modelId: string,
@@ -127,7 +132,7 @@ export async function trySynthesizeFromCache(
   const voiceId = options.voiceId?.trim() || AMY_VOICE_ID_DEFAULT;
   const modelId = options.modelId?.trim() || AMY_MODEL_ID_DEFAULT;
   const mode: SynthesizeMode = options.mode ?? "default";
-  const cacheKey = computeCacheKey(text, voiceId, modelId, mode);
+  const cacheKey = computeTtsCacheKey(text, voiceId, modelId, mode);
 
   const existing = await db
     .select()
@@ -162,6 +167,9 @@ export async function synthesize(
   rawText: string,
   options: SynthesizeOptions = {},
 ): Promise<SynthesizeResult> {
+  if (!isElevenLabsTtsEnabled()) {
+    throw new Error("tts_elevenlabs_disabled");
+  }
   const text = rawText.trim();
   if (!text) throw new Error("tts_empty_text");
   if (text.length > TTS_MAX_INPUT_CHARS) throw new Error("tts_text_too_long");
@@ -169,7 +177,7 @@ export async function synthesize(
   const voiceId = options.voiceId?.trim() || AMY_VOICE_ID_DEFAULT;
   const modelId = options.modelId?.trim() || AMY_MODEL_ID_DEFAULT;
   const mode: SynthesizeMode = options.mode ?? "default";
-  const cacheKey = computeCacheKey(text, voiceId, modelId, mode);
+  const cacheKey = computeTtsCacheKey(text, voiceId, modelId, mode);
   const audioPath = ttsAudioPath(cacheKey);
 
   const cachedOnly = await trySynthesizeFromCache(text, options);
@@ -452,6 +460,49 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
   };
 }
 
+/** Live ElevenLabs TTS fetch — returns upstream response body without caching. */
+export async function fetchElevenLabsTtsStream(
+  text: string,
+  options: SynthesizeOptions = {},
+): Promise<Response> {
+  if (!isElevenLabsTtsEnabled()) {
+    throw new Error("tts_elevenlabs_disabled");
+  }
+  const trimmed = text.trim();
+  if (!trimmed) throw new Error("tts_empty_text");
+
+  const voiceId = options.voiceId?.trim() || AMY_VOICE_ID_DEFAULT;
+  const modelId = options.modelId?.trim() || AMY_MODEL_ID_DEFAULT;
+  const mode: SynthesizeMode = options.mode ?? "default";
+
+  const apiKey = getElevenLabsApiKey();
+  if (!apiKey) {
+    logElevenLabsKeyHint();
+    throw new Error("tts_missing_api_key");
+  }
+
+  const elevenUrl = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`;
+  const fetchTimeoutMs = Math.min(
+    TTS_ELEVENLABS_TIMEOUT_MS,
+    parseEnvMs("AI_JOB_TIMEOUT_MS", 30_000),
+  );
+
+  return fetchWithTimeout(elevenUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "audio/mpeg",
+      "xi-api-key": apiKey,
+    },
+    body: JSON.stringify({
+      text: trimmed,
+      model_id: modelId,
+      voice_settings: VOICE_SETTINGS[mode],
+    }),
+    timeoutMs: fetchTimeoutMs,
+  });
+}
+
 /** Download a previously cached MP3 (for API streaming endpoints). */
 export async function readCachedAudio(
   cacheKey: string,
@@ -467,7 +518,7 @@ export async function readCachedAudio(
   const playbackUrl = resolveTtsPlaybackUrl(cacheKey, row);
 
   let buffer = await ttsAudioRead(cacheKey, row.audioData);
-  if (!buffer && row.text) {
+  if (!buffer && row.text && isElevenLabsTtsEnabled()) {
     const mode = inferSynthesizeModeFromCacheKey(cacheKey, row.text, row.voiceId, row.modelId);
     try {
       await synthesize(row.text, { voiceId: row.voiceId, modelId: row.modelId, mode });

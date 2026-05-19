@@ -4,6 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import {
   getGcsBucketId,
   getGcsDiagnostics,
+  isTtsCacheGcsEnabled,
   parseGcsServiceAccountJson,
   readEnv,
 } from "../lib/env";
@@ -32,6 +33,10 @@ function isReplitRuntime(): boolean {
 
 function resolveBackend(): TtsStoreBackend {
   if (backend) return backend;
+  if (!isTtsCacheGcsEnabled()) {
+    backend = "postgres";
+    return backend;
+  }
   const forced = readEnv("TTS_STORAGE")?.toLowerCase();
   if (forced === "postgres" || forced === "db") {
     backend = "postgres";
@@ -130,7 +135,7 @@ export function legacyGcsConfigured(): boolean {
 }
 
 async function tryLegacyGcsRead(cacheKey: string): Promise<Buffer | null> {
-  if (!legacyGcsConfigured()) return null;
+  if (!isTtsCacheGcsEnabled() || !legacyGcsConfigured()) return null;
   try {
     const [buffer] = await getBucket().file(ttsGcsObjectName(cacheKey)).download();
     return buffer.byteLength > 0 ? buffer : null;
@@ -195,7 +200,7 @@ export async function readStaticAudioFromGcs(hash: string): Promise<Buffer | nul
 }
 
 async function tryLegacyGcsExists(cacheKey: string): Promise<boolean> {
-  if (!legacyGcsConfigured()) return false;
+  if (!isTtsCacheGcsEnabled() || !legacyGcsConfigured()) return false;
   try {
     const [exists] = await getBucket().file(ttsGcsObjectName(cacheKey)).exists();
     return exists;
@@ -225,7 +230,12 @@ export async function ttsAudioExists(
   cacheKey: string,
   row?: { audioUrl?: string | null; audioData?: Buffer | null },
 ): Promise<boolean> {
-  if (row?.audioUrl?.startsWith("https://storage.googleapis.com/")) return true;
+  if (
+    isTtsCacheGcsEnabled() &&
+    row?.audioUrl?.startsWith("https://storage.googleapis.com/")
+  ) {
+    return true;
+  }
   if (row?.audioData && row.audioData.byteLength > 0) return true;
   return tryLegacyGcsExists(cacheKey);
 }
@@ -235,7 +245,7 @@ export async function ttsAudioRead(
   audioData: Buffer | null | undefined,
 ): Promise<Buffer | null> {
   if (audioData && audioData.byteLength > 0) return audioData;
-  if (resolveBackend() === "gcs" || legacyGcsConfigured()) {
+  if (isTtsCacheGcsEnabled() && (resolveBackend() === "gcs" || legacyGcsConfigured())) {
     return tryLegacyGcsRead(cacheKey);
   }
   return null;
@@ -254,6 +264,9 @@ export async function ttsGcsUpload(
   buffer: Buffer,
   contentType = "audio/mpeg",
 ): Promise<TtsGcsUploadResult> {
+  if (!isTtsCacheGcsEnabled()) {
+    return { success: false, error: "tts_gcs_disabled" };
+  }
   if (!legacyGcsConfigured()) {
     return { success: false, error: "gcs_not_configured" };
   }
@@ -391,7 +404,7 @@ export function resolveTtsPlaybackUrl(
   const stored = row?.audioUrl?.trim() ?? "";
   if (isValidTtsPublicUrl(stored)) return stored;
 
-  if (legacyGcsConfigured()) {
+  if (isTtsCacheGcsEnabled() && legacyGcsConfigured()) {
     const gcsUrl = ttsPublicGcsUrl(cacheKey);
     if (gcsUrl && isValidTtsPublicUrl(gcsUrl)) return gcsUrl;
   }

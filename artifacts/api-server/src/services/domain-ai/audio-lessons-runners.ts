@@ -1,3 +1,4 @@
+import { isElevenLabsTtsEnabled } from "../../lib/env.js";
 import {
   AMY_VOICE_ID_HINDI,
   AMY_MODEL_ID_HINDI,
@@ -14,6 +15,16 @@ export async function runAudioLessonsPregenerate(input: {
   cached: number;
   skipped: number;
 }> {
+  if (!isElevenLabsTtsEnabled()) {
+    return {
+      ok: true,
+      total: input.texts.length,
+      succeeded: 0,
+      failed: 0,
+      cached: 0,
+      skipped: input.texts.length,
+    };
+  }
   const results = await Promise.allSettled(
     input.texts.map((text) =>
       synthesize(text, { voiceId: AMY_VOICE_ID_HINDI, modelId: AMY_MODEL_ID_HINDI }),

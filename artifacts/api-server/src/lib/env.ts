@@ -84,6 +84,47 @@ export function getElevenLabsApiKey(): string | undefined {
   return readEnv("ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY");
 }
 
+export type TtsProvider = "openai" | "elevenlabs";
+
+function envFlagEnabled(name: string, defaultEnabled: boolean): boolean {
+  const raw = readEnv(name);
+  if (raw == null) return defaultEnabled;
+  const v = raw.toLowerCase();
+  if (v === "0" || v === "false" || v === "no" || v === "off") return false;
+  if (v === "1" || v === "true" || v === "yes" || v === "on") return true;
+  return defaultEnabled;
+}
+
+/** Dynamic TTS via ElevenLabs — temporarily off by default (use OpenAI streaming). */
+export function isElevenLabsTtsEnabled(): boolean {
+  return envFlagEnabled("TTS_ELEVENLABS_ENABLED", false);
+}
+
+/** Store dynamic TTS cache in GCS — temporarily off by default (no GCS reads/writes). */
+export function isTtsCacheGcsEnabled(): boolean {
+  return envFlagEnabled("TTS_USE_GCS", false);
+}
+
+/** Active TTS backend — OpenAI unless ElevenLabs is explicitly re-enabled. */
+export function getTtsProvider(): TtsProvider {
+  if (!isElevenLabsTtsEnabled()) return "openai";
+  const raw = (readEnv("TTS_PROVIDER") ?? "openai").toLowerCase();
+  return raw === "elevenlabs" ? "elevenlabs" : "openai";
+}
+
+export function getOpenAiApiKeyForFetch(): string | undefined {
+  return readEnv("OPENAI_API_KEY", "AI_INTEGRATIONS_OPENAI_API_KEY");
+}
+
+/** OpenAI speech endpoint (direct or Replit AI integration proxy). */
+export function getOpenAiAudioSpeechUrl(): string {
+  const base = readEnv("AI_INTEGRATIONS_OPENAI_BASE_URL");
+  if (base) {
+    return `${base.replace(/\/$/, "")}/audio/speech`;
+  }
+  return "https://api.openai.com/v1/audio/speech";
+}
+
 /** Direct OpenAI key or Replit AI integration proxy. */
 export function getOpenAiCredentials(): {
   configured: boolean;
@@ -315,6 +356,18 @@ export function logStartupEnvDiagnostics(): void {
   } else {
     logger.info({ evt: "env.ok", service: "elevenlabs" }, "ElevenLabs API key loaded");
   }
+
+  const ttsProvider = getTtsProvider();
+  logger.info(
+    {
+      evt: "env.tts_provider",
+      ttsProvider,
+      elevenLabsTtsEnabled: isElevenLabsTtsEnabled(),
+      ttsCacheGcsEnabled: isTtsCacheGcsEnabled(),
+      openAiConfigured: !!getOpenAiApiKeyForFetch(),
+    },
+    `TTS provider: ${ttsProvider} (elevenlabs=${isElevenLabsTtsEnabled()}, gcs_cache=${isTtsCacheGcsEnabled()})`,
+  );
 
   const gcsProjectId = readEnv("GCS_PROJECT_ID", "GOOGLE_CLOUD_PROJECT");
   const gcsCredsFile = readEnv("GOOGLE_APPLICATION_CREDENTIALS");

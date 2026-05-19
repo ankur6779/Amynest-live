@@ -5,7 +5,11 @@ import {
   getDriveKeyDiagnostics,
   getElevenLabsApiKey,
   getGcsDiagnostics,
+  getOpenAiApiKeyForFetch,
   getOpenAiCredentials,
+  getTtsProvider,
+  isElevenLabsTtsEnabled,
+  isTtsCacheGcsEnabled,
   resolveApiPublicUrl,
 } from "../lib/env";
 import { amynestEnvLabel, resolveAmynestEnv } from "../lib/loadEnv";
@@ -115,15 +119,25 @@ router.get("/healthz/tts-cache", async (_req, res) => {
   }
 });
 
-/** Amy / ElevenLabs TTS + GCS storage probe. */
+/** Amy TTS + GCS storage probe. */
 router.get("/healthz/tts", (_req, res) => {
   const elevenLabsConfigured = !!getElevenLabsApiKey();
+  const openAiConfigured = !!getOpenAiApiKeyForFetch();
+  const ttsProvider = getTtsProvider();
   const legacyGcsConfigured = getGcsDiagnostics().legacyGcsConfigured;
+  const ok =
+    ttsProvider === "openai"
+      ? openAiConfigured || elevenLabsConfigured
+      : elevenLabsConfigured;
 
   res.json({
+    ttsProvider,
+    elevenLabsTtsEnabled: isElevenLabsTtsEnabled(),
+    ttsCacheGcsEnabled: isTtsCacheGcsEnabled(),
+    openAiConfigured,
     elevenLabsConfigured,
     legacyGcsConfigured,
-    ok: elevenLabsConfigured,
+    ok,
     ttsStorage: ttsStorageBackend(),
   });
 });
