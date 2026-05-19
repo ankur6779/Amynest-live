@@ -35,6 +35,18 @@ export function envLengthHint(name: string): number | null {
   return v ? v.length : null;
 }
 
+/**
+ * Parse a millisecond duration from env. Strips `_` separators (e.g. "30_000").
+ * `Number("10_000")` is NaN — never use underscore literals in env string defaults.
+ */
+export function parseEnvMs(name: string, fallbackMs: number): number {
+  const raw = readRaw(name);
+  if (!raw) return fallbackMs;
+  const normalized = raw.replace(/_/g, "");
+  const n = Number(normalized);
+  return Number.isFinite(n) && n > 0 ? n : fallbackMs;
+}
+
 const DRIVE_KEY_VARS = [
   "GOOGLE_API_KEY",
   "GOOGLE_DRIVE_API_KEY",

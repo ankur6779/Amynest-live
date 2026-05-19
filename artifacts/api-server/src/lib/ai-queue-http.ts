@@ -12,15 +12,16 @@ import type { AiJobType } from "../queue/types.js";
 import { AI_CHAT_TIMEOUT_MS } from "../services/openai-chat.js";
 import { runAiJobHandler } from "../services/ai-job-handlers.js";
 import { checkAiRateLimit } from "../utils/ai-rate-limit.js";
+import { parseEnvMs } from "./env.js";
 import { logger } from "./logger.js";
 
 export { isTerminalStatus as isTerminal };
 
-/** Dev / in-memory queue: allow sync completion within this window. */
-export const AI_HTTP_WAIT_MS = Number(process.env.AI_HTTP_WAIT_MS ?? "9_000");
+/** Inline/memory queue: wait for job completion before responding (ms). */
+export const AI_HTTP_WAIT_MS = parseEnvMs("AI_HTTP_WAIT_MS", 30_000);
 
-/** BullMQ production: max wait before 202 (default 2.5s; set 0 for immediate 202). */
-const BULLMQ_HTTP_WAIT_MS = Number(process.env.AI_HTTP_WAIT_MS ?? "2_500");
+/** BullMQ: max wait before 202 (set AI_HTTP_WAIT_MS=0 for immediate async). */
+const BULLMQ_HTTP_WAIT_MS = parseEnvMs("AI_HTTP_WAIT_MS", 2_500);
 
 function resolveHttpWaitMs(explicit?: number): number {
   if (explicit !== undefined) return explicit;
@@ -74,11 +75,10 @@ export async function submitAiJobAndRespond(opts: SubmitAiJobOptions): Promise<v
     return;
   }
 
-  // Inline/memory: run on the API process (no Redis, no background drain race).
+  // Inline/memory: handler applies its own OpenAI timeout; avoid a second race that can fire at ~1ms when env ms is NaN.
   if (isInProcessQueueMode()) {
     try {
-      const timeoutMs = Number.isFinite(waitMs) && waitMs > 0 ? waitMs : AI_CHAT_TIMEOUT_MS;
-      const result = await runAiJobWithTimeout(opts.type, opts.payload, timeoutMs);
+      const result = await runAiJobHandler(opts.type, opts.payload);
       opts.res.json(opts.buildSyncBody(result));
       return;
     } catch (err) {
