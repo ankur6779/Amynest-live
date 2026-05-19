@@ -5,6 +5,7 @@ import {
   getDriveKeyDiagnostics,
   getElevenLabsApiKey,
   getGcsDiagnostics,
+  getOpenAiCredentials,
   resolveApiPublicUrl,
 } from "../lib/env";
 import { amynestEnvLabel, resolveAmynestEnv } from "../lib/loadEnv";
@@ -27,16 +28,20 @@ router.get("/healthz/env", async (_req, res) => {
   const drive = getDriveKeyDiagnostics();
   const gcs = getGcsDiagnostics();
   const elevenlabsConfigured = !!getElevenLabsApiKey();
+  const openai = getOpenAiCredentials();
   const queue = await getQueueHealthSnapshot();
 
   const amynestEnv = resolveAmynestEnv();
+  const aiQueueOk =
+    queue.queueMode === "bullmq"
+      ? queue.redis
+      : queue.queueMode === "inline" || queue.queueMode === "memory";
   res.json({
     ok:
       drive.resolved &&
       elevenlabsConfigured &&
-      (queue.queueMode === "memory" ||
-        queue.queueMode === "off" ||
-        queue.redis),
+      openai.configured &&
+      aiQueueOk,
     amynestEnv,
     profile: amynestEnvLabel(amynestEnv),
     nodeEnv: process.env.NODE_ENV ?? "unknown",
@@ -68,6 +73,13 @@ router.get("/healthz/env", async (_req, res) => {
         vars: [
           { name: "ELEVENLABS_API_KEY", presence: elevenlabsConfigured ? "set" : "missing" },
         ],
+      },
+      openai: {
+        configured: openai.configured,
+        source: openai.source,
+        hint: !openai.configured
+          ? "Set OPENAI_API_KEY on Amynest-backend (and amynest-ai-worker if using BullMQ)"
+          : undefined,
       },
       ttsStorage: {
         backend: ttsStorageBackend(),

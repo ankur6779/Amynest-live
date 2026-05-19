@@ -1,7 +1,7 @@
 import { resolveAmynestEnv } from "../lib/loadEnv.js";
 import { getRedisUrl } from "./redis.js";
 
-export type QueueMode = "bullmq" | "memory" | "off";
+export type QueueMode = "bullmq" | "memory" | "inline" | "off";
 
 /** Set by queue bootstrap after a Redis ping (when worker + REDIS_URL are configured). */
 let redisBootstrapOk: boolean | undefined;
@@ -37,7 +37,10 @@ export function mustUseBullMq(): boolean {
 }
 
 export function getQueueMode(): QueueMode {
-  if (!isWorkerEnabled()) return "off";
+  if (!isWorkerEnabled()) {
+    // External BullMQ worker disabled — API still runs OpenAI/ElevenLabs in-process.
+    return isProductionDeployment() ? "inline" : "memory";
+  }
   if (isRedisMarkedUnstable()) return "off";
   if (redisBootstrapOk === false) return "off";
 
@@ -65,8 +68,14 @@ export function isBullMqActive(): boolean {
   return getQueueMode() === "bullmq";
 }
 
-/** Any background AI queue processing (BullMQ or dev in-memory drain). */
+/** Any background AI queue processing (BullMQ, dev memory, or prod inline drain). */
 export function isQueueProcessingEnabled(): boolean {
   const mode = getQueueMode();
-  return mode === "bullmq" || mode === "memory";
+  return mode === "bullmq" || mode === "memory" || mode === "inline";
+}
+
+/** In-process drain on the API host (no Redis). */
+export function isInProcessQueueMode(): boolean {
+  const mode = getQueueMode();
+  return mode === "memory" || mode === "inline";
 }

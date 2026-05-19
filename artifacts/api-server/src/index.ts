@@ -140,22 +140,22 @@ async function startBackgroundTasks(): Promise<void> {
   }
 
   if (isModuleEnabled("worker")) {
-    const { isWorkerEnabled, isBullMqActive } = await import("./queue/mode.js");
-    if (!isWorkerEnabled()) {
-      logger.info(
-        { evt: "boot.skip", module: "worker", reason: "WORKER_ENABLED=false" },
-        "Embedded AI worker SKIPPED",
-      );
-    } else if (isBullMqActive()) {
+    const { isBullMqActive, isInProcessQueueMode } = await import("./queue/mode.js");
+    if (isBullMqActive()) {
       logger.info(
         { evt: "boot.skip", module: "worker", reason: "bullmq_external" },
         "Embedded AI worker SKIPPED — BullMQ runs on worker service",
       );
-    } else {
+    } else if (isInProcessQueueMode()) {
       await runBackgroundPhase("embedded_ai_worker", async () => {
         const { startEmbeddedAiWorker } = await import("./worker/ai-worker.js");
         return startEmbeddedAiWorker();
       });
+    } else {
+      logger.info(
+        { evt: "boot.skip", module: "worker", reason: "queue_off" },
+        "Embedded AI worker SKIPPED — no in-process queue",
+      );
     }
   }
 

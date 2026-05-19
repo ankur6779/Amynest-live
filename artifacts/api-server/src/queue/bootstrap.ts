@@ -12,7 +12,7 @@ import { getRedisUrl, verifyRedisConnection } from "./redis.js";
 export type QueueHealthSnapshot = {
   status: "ok" | "degraded";
   redis: boolean;
-  queueMode: "bullmq" | "memory" | "off";
+  queueMode: "bullmq" | "memory" | "inline" | "off";
   workerExpected: boolean;
   redisPing?: boolean;
   bullmq?: Record<string, number>;
@@ -24,14 +24,19 @@ export async function bootstrapApiQueue(): Promise<QueueHealthSnapshot> {
 
   if (!isWorkerEnabled()) {
     markRedisBootstrapResult(false);
+    const inlineMode = getQueueMode();
     logger.info(
-      { evt: "queue.bootstrap.skipped", reason: "WORKER_ENABLED=false" },
-      "Redis/BullMQ bootstrap skipped — worker disabled",
+      {
+        evt: "queue.bootstrap.skipped",
+        reason: "WORKER_ENABLED=false",
+        inlineMode,
+      },
+      "Redis/BullMQ bootstrap skipped — OpenAI runs in-process on API",
     );
     return {
       status: "ok",
       redis: false,
-      queueMode: "off",
+      queueMode: inlineMode,
       workerExpected: false,
       redisPing: false,
     };
