@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
+
 /**
  * Shown while Firebase Auth resolves the initial session — prevents a blank
  * screen after the HTML splash is dismissed.
  */
-export function AuthBootShell() {
+export function AuthBootShell({ children }: { children?: ReactNode }) {
   return (
     <>
       <style>{`
@@ -37,6 +39,7 @@ export function AuthBootShell() {
           }}
         />
         <p style={{ margin: 0, fontSize: 15, fontWeight: 500 }}>Loading AmyNest…</p>
+        {children}
       </div>
     </>
   );
