@@ -177,7 +177,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
       const text = (rawText ?? "").trim();
       if (!text) return { success: false, error: "tts_empty_text" };
       if (!isTtsPlaybackAllowed()) {
-        console.warn("[TTS] blocked until user taps the screen");
+        console.warn("Audio blocked: waiting for user interaction");
         return { success: false, error: "tts_blocked_until_gesture" };
       }
       recordTtsUserGesture();

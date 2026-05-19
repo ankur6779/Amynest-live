@@ -1,6 +1,7 @@
 import audioMap from "@/data/static-audio-map.json";
 import { agentDebugLog } from "@/lib/agent-debug-log";
 import { getApiUrl } from "@/lib/api";
+import { playHtmlAudio } from "@/lib/tts-guard";
 import {
   assertStaticAudioUrl,
   assertStaticPlaybackUrl,
@@ -369,9 +370,8 @@ async function verifyStaticAudioEndpoint(proxyUrl: string): Promise<number | nul
 }
 
 async function playElementOnce(audio: HTMLAudioElement): Promise<void> {
-  audio.currentTime = 0;
   audioDebugLog("[AUDIO PLAY ATTEMPT]");
-  await audio.play();
+  await playHtmlAudio(audio);
 }
 
 export async function safePlayAudio(

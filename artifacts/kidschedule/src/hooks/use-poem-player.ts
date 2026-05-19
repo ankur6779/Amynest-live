@@ -22,6 +22,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { resolveApiMediaUrl } from "@/lib/api";
 import { synthesizeTts } from "@/lib/tts-playback";
+import { isAudioUnlocked, playHtmlAudio, recordTtsUserGesture } from "@/lib/tts-guard";
 
 const FADE_IN_MS = 2000;
 const FADE_TICK_MS = 60;
@@ -163,6 +164,13 @@ export function useInfantPoemPlayer(): PoemPlayer {
       const text = (opts.text ?? "").trim();
       if (!text && !opts.audioUrl) return;
 
+      recordTtsUserGesture();
+      if (!isAudioUnlocked()) {
+        console.warn("Audio blocked: waiting for user interaction");
+        setError("audio_blocked_until_gesture");
+        return;
+      }
+
       // Cancel anything previous + reset state.
       const myId = ++reqIdRef.current;
       abortInFlight();
@@ -224,7 +232,7 @@ export function useInfantPoemPlayer(): PoemPlayer {
         audioRef.current = audio;
 
         try {
-          await audio.play();
+          await playHtmlAudio(audio);
         } catch (playErr) {
           console.error("Audio playback failed", playErr);
           if (myId !== reqIdRef.current) return;
@@ -272,7 +280,12 @@ export function useInfantPoemPlayer(): PoemPlayer {
   const resume = useCallback(() => {
     const a = audioRef.current;
     if (!a) return;
-    void a.play().catch(() => { /* ignore — onerror surfaces it */ });
+    recordTtsUserGesture();
+    if (!isAudioUnlocked()) {
+      console.warn("Audio blocked: waiting for user interaction");
+      return;
+    }
+    void playHtmlAudio(a).catch(() => { /* ignore — onerror surfaces it */ });
     setIsPaused(false);
   }, []);
 
