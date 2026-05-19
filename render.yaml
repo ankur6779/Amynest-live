@@ -1,5 +1,10 @@
-# Render Blueprint — production + development stacks
+# Render Blueprint — PRODUCTION ONLY
 # https://render.com/docs/blueprint-spec
+#
+# DEV/staging is NOT defined here. Blueprint sync will NOT create or manage
+# amynest-dev, amynest-frontend-dev, or amynest-db-dev. Use local dev
+# (see docs/dev-environment.md) or duplicate prod services manually in the
+# Render Dashboard if you need a hosted preview.
 #
 # IMPORTANT:
 # Service plan (RAM/CPU) must be managed via Render Dashboard.
@@ -15,16 +20,12 @@
 # Use `sync: false` on each key so Blueprint registers the name once and
 # NEVER overwrites dashboard values on deploy.
 #
-# Optional: disable Auto Deploy or avoid Blueprint re-sync in the Render
-# Dashboard if you need to prevent any blueprint-driven drift.
-#
 # Production:
 #   Amynest-backend     → https://amynest-backend-dykj.onrender.com
 #   Amynest-live-1      → static web (amynest.in)
-#
-# Development / preview:
-#   amynest-dev         → https://amynest-dev.onrender.com
-#   amynest-frontend-dev → static preview web
+#   amynest-ai-worker   → BullMQ worker
+#   amynest-redis       → Redis (BullMQ)
+#   amynest-db          → Postgres
 #
 # Health / env checks:
 #   GET /api/healthz/env
@@ -32,11 +33,6 @@
 databases:
   - name: amynest-db
     databaseName: amynest_db
-    plan: basic-256mb
-    region: singapore
-
-  - name: amynest-db-dev
-    databaseName: amynest_db_dev
     plan: basic-256mb
     region: singapore
 
@@ -144,49 +140,6 @@ services:
       - key: WORKER_ENABLED
         sync: false
 
-  # ─── Development / staging API ────────────────────────────────────────────
-  - type: web
-    name: amynest-dev
-    runtime: node
-    region: singapore
-    # DO NOT DEFINE PLAN IN BLUEPRINT — dashboard controls RAM/CPU
-    repo: https://github.com/ankur6779/Amynest-live
-    branch: main
-    buildCommand: >-
-      corepack enable &&
-      corepack prepare pnpm@9.15.0 --activate &&
-      NODE_ENV=development pnpm install --frozen-lockfile &&
-      pnpm --filter @workspace/api-server build &&
-      pnpm --filter @workspace/db push
-    startCommand: AMYNEST_ENV=development pnpm --filter @workspace/api-server start
-    envVars:
-      - key: NODE_VERSION
-        value: "20"
-      - key: NODE_ENV
-        value: development
-      - key: AMYNEST_ENV
-        value: development
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
-      - key: FIREBASE_PRIVATE_KEY
-        sync: false
-      - key: FIREBASE_SERVICE_ACCOUNT_JSON
-        sync: false
-      - key: RAZORPAY_KEY_ID
-        sync: false
-      - key: RAZORPAY_KEY_SECRET
-        sync: false
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: GOOGLE_API_KEY
-        sync: false
-      - key: ELEVENLABS_API_KEY
-        sync: false
-      - key: API_PUBLIC_URL
-        sync: false
-
   # ─── Production static web (amynest.in) ─────────────────────────────────────
   - type: web
     name: Amynest-live-1
@@ -218,52 +171,6 @@ services:
         value: "20"
       - key: VITE_AMYNEST_ENV
         value: production
-      - key: VITE_APP_API_ORIGIN
-        sync: false
-      - key: VITE_FIREBASE_API_KEY
-        sync: false
-      - key: VITE_FIREBASE_AUTH_DOMAIN
-        sync: false
-      - key: VITE_FIREBASE_PROJECT_ID
-        sync: false
-      - key: VITE_FIREBASE_APP_ID
-        sync: false
-      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
-        sync: false
-      - key: VITE_FIREBASE_VAPID_KEY
-        sync: false
-
-  # ─── Development static web (preview) ─────────────────────────────────────
-  - type: web
-    name: amynest-frontend-dev
-    runtime: static
-    repo: https://github.com/ankur6779/Amynest-live
-    branch: main
-    buildCommand: >-
-      corepack enable &&
-      corepack prepare pnpm@9.15.0 --activate &&
-      pnpm install --frozen-lockfile &&
-      BASE_PATH=/ PORT=3000 pnpm --filter @workspace/kidschedule run build:dev
-    staticPublishPath: ./artifacts/kidschedule/dist/public
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    headers:
-      - path: /index.html
-        name: Cache-Control
-        value: no-cache, no-store, must-revalidate
-      - path: /sw.js
-        name: Cache-Control
-        value: no-cache, no-store, must-revalidate
-      - path: /assets/*
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-    envVars:
-      - key: NODE_VERSION
-        value: "20"
-      - key: VITE_AMYNEST_ENV
-        value: development
       - key: VITE_APP_API_ORIGIN
         sync: false
       - key: VITE_FIREBASE_API_KEY

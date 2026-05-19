@@ -6,6 +6,7 @@ import {
   isOnboardingStatusBootLoading,
   useOnboardingStatus,
 } from "@/contexts/onboarding-status-context";
+import { devLog } from "@/lib/dev-log";
 
 // Hard ceiling: even if the onboarding query is still retrying after this
 // many ms, we let the app render. The page-level guards (HomeRedirect,
@@ -21,8 +22,6 @@ const BOOT_HARD_TIMEOUT_MS = 8000;
  * refetching. That stops any chance of the splash re-appearing mid-session
  * and bouncing the route guards into another /api/onboarding storm.
  */
-const appInitGateLoggedRef = { current: false };
-
 export function AppInitGate({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn, authStatus } = useAuth();
   const { user } = useUser();
@@ -64,13 +63,9 @@ export function AppInitGate({ children }: { children: ReactNode }) {
   const ready = isAppReady || forcedReady;
 
   useEffect(() => {
-    if (!appInitGateLoggedRef.current) {
-      appInitGateLoggedRef.current = true;
-      console.log("APP INIT GATE MOUNTED");
-    }
-    console.log("[boot] Auth loading:", authLoading, "authStatus:", authStatus);
-    console.log("[boot] User:", user?.id ?? null);
-    console.log(
+    devLog("[boot] Auth loading:", authLoading, "authStatus:", authStatus);
+    devLog("[boot] User:", user?.id ?? null);
+    devLog(
       "[boot] App ready:",
       ready,
       "setupBootLoading:",

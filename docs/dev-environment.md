@@ -2,10 +2,10 @@
 
 This monorepo supports **DEV** and **PROD** profiles via `AMYNEST_ENV` and matching `.env.development` / `.env.production` files at the **repo root**.
 
-| Profile | Backend (Render) | Web preview (Render) | Local API |
-|--------|-------------------|----------------------|-----------|
-| **PROD** | `https://amynest-backend-dykj.onrender.com` | `Amynest-live-1` | — |
-| **DEV** | `https://amynest-dev.onrender.com` | `amynest-frontend-dev` | `http://localhost:5000` |
+| Profile | Backend | Web | Notes |
+|--------|---------|-----|--------|
+| **PROD** | `https://amynest-backend-dykj.onrender.com` | `Amynest-live-1` (Render) | Managed by `render.yaml` Blueprint |
+| **DEV** | `http://localhost:5000` | `pnpm run dev:web` (Vite) | **Not** in Blueprint — local only by default |
 
 Confirm which profile is running:
 
@@ -98,35 +98,18 @@ pnpm --filter @workspace/amynest-mobile run dev:prod-api
 
 ---
 
-## 4. Deploy preview on Render
+## 4. Hosted DEV preview (optional, manual only)
 
-### Option A — Blueprint (`render.yaml`)
+`render.yaml` is **production-only**. Blueprint sync will **not** create `amynest-dev`, `amynest-frontend-dev`, or `amynest-db-dev`.
 
-1. In Render: **New → Blueprint** → connect repo.
-2. Apply `render.yaml` (creates `amynest-dev`, `amynest-frontend-dev`, `amynest-db-dev`).
-3. For each new service, set **Environment** (sync: false in blueprint):
-   - `GOOGLE_API_KEY` (dev key)
-   - `ELEVENLABS_API_KEY` (dev key)
-4. Deploy. URLs:
-   - API: `https://amynest-dev.onrender.com`
-   - Web: `https://amynest-frontend-dev.onrender.com`
+If you need a hosted staging stack:
 
-### Option B — Manual duplicate
+1. In Render Dashboard: **New → Web Service** (do **not** use Blueprint for DEV).
+2. Duplicate **Amynest-backend** settings; set `AMYNEST_ENV=development` and a dev `DATABASE_URL` on a separate Postgres instance.
+3. Optionally duplicate **Amynest-live-1** as a static site with `build:dev` and `VITE_AMYNEST_ENV=development`.
+4. Point `VITE_APP_API_ORIGIN` / `API_PUBLIC_URL` at your new API URL.
 
-1. Duplicate **Amynest-backend** → rename **amynest-dev**.
-2. Set `AMYNEST_ENV=development`, `API_PUBLIC_URL=https://amynest-dev.onrender.com`.
-3. Attach **amynest-db-dev** (or a separate Postgres instance) as `DATABASE_URL`.
-4. Duplicate static site → **amynest-frontend-dev** with:
-   - `VITE_AMYNEST_ENV=development`
-   - `VITE_APP_API_ORIGIN=https://amynest-dev.onrender.com`
-   - Build: `pnpm --filter @workspace/kidschedule run build:dev`
-
-### Smoke test after deploy
-
-```bash
-curl https://amynest-dev.onrender.com/api/healthz/env
-# Expect: "profile":"DEV","amynestEnv":"development"
-```
+Default workflow: use **local** API + Vite (`pnpm run dev`, `pnpm run dev:web`).
 
 ---
 

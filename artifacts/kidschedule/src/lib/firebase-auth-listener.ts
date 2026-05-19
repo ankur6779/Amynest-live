@@ -2,6 +2,7 @@ import { onAuthStateChanged, type User as FbUser } from "firebase/auth";
 import { getFirebaseAuth } from "./firebase";
 import type { AuthResolutionStatus, ShimUser } from "./firebase-auth-context";
 import { recordBootError } from "@/lib/boot-store";
+import { devLog } from "@/lib/dev-log";
 
 const AUTH_TAG = "[amynest:firebase-auth]";
 const AUTH_RACE_TIMEOUT_MS = 10_000;
@@ -85,7 +86,7 @@ function applyFirebaseUser(fbUser: FbUser | null): void {
     return;
   }
   latestSnapshot = { shim, authStatus };
-  console.log("AUTH STATE CHANGED", { authStatus, uid });
+  devLog("AUTH STATE CHANGED", { authStatus, uid });
   for (const listener of snapshotListeners) {
     try {
       listener(latestSnapshot);
