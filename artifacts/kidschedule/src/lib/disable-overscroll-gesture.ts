@@ -1,7 +1,7 @@
 /**
- * Blocks pull-to-refresh / rubber-band when the user pulls down at the top of
- * the active scroll container (layout main, modals, etc.). Safe for nested
- * scroll regions — only prevents default when that region is already at scrollTop 0.
+ * Blocks pull-to-refresh / rubber-band only when the whole scroll chain is at
+ * the top. Nested scroll regions must still be able to hand the gesture to a
+ * parent that can scroll upward.
  */
 export function installDisableOverscrollGesture(): () => void {
   if (typeof document === "undefined") return () => {};
@@ -31,12 +31,7 @@ export function installDisableOverscrollGesture(): () => void {
       );
     if (!target) return;
 
-    const atDocumentTop =
-      target === document.documentElement || target === document.body;
-    const scrollTop = atDocumentTop
-      ? window.scrollY || document.documentElement.scrollTop || document.body.scrollTop
-      : target.scrollTop;
-    if (scrollTop > 0) return;
+    if (canScrollChainMoveUp(target)) return;
 
     e.preventDefault();
   };
@@ -70,4 +65,21 @@ function findScrollableAncestor(el: Element | null): Element | null {
   }
 
   return document.documentElement;
+}
+
+function canScrollChainMoveUp(target: Element): boolean {
+  if (getDocumentScrollTop() > 0) return true;
+
+  let el: Element | null = target;
+  while (el && el !== document.body && el !== document.documentElement) {
+    if (el.scrollTop > 0) return true;
+    el = el.parentElement;
+  }
+
+  const appRoot = document.getElementById("app-root");
+  return Boolean(appRoot && appRoot !== target && appRoot.scrollTop > 0);
+}
+
+function getDocumentScrollTop(): number {
+  return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
 }
