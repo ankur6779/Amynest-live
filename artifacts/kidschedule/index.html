@@ -12,7 +12,7 @@
     <meta name="author" content="AmyNest AI" />
     <meta name="keywords" content="parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting, child development, daily routine, kids schedule, parenting coach, AI coach for parents, child behavior tracker, kids meal planner India, speech coach for kids, spelling practice app" />
     <meta name="application-name" content="AmyNest AI" />
-    <meta name="amynest-deploy" content="2026-05-20-ptr-scroll-v2" />
+    <meta name="amynest-deploy" content="2026-05-20-ptr-debug-v3" />
     <meta name="rating" content="general" />
     <meta name="revisit-after" content="7 days" />
     <meta name="msapplication-TileColor" content="#A855F7" />
@@ -1295,7 +1295,7 @@
     <!-- Skip React bundle when ?diag=1 — lightweight crash diagnostics only. -->
     <script type="module" id="amynest-entry">
       if (!/[?&]diag=1/.test(location.search || "")) {
-        import("/src/main.tsx?v=2");
+        import("/src/main.tsx?v=3");
       } else {
         window.__amynestDiagOnly = true;
         window.__amynestMark && window.__amynestMark("diag-only");

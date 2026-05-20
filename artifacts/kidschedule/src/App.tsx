@@ -21,6 +21,8 @@ const AppCore = lazy(() =>
 declare global {
   interface Window {
     __amynestMark?: (phase: string) => void;
+    /** Set when pull-to-refresh touch guard is installed (debug / deploy verify). */
+    __PTR_FIX_ACTIVE__?: boolean;
   }
 }
 
@@ -32,6 +34,9 @@ function App() {
 
   // Block pull-to-refresh at scroll top only when needed; skip during active scroll.
   useEffect(() => {
+    window.__PTR_FIX_ACTIVE__ = true;
+    console.log("PTR FIX LOADED");
+
     let startY = 0;
     let isScrolling = false;
     let scrollEndTimer: ReturnType<typeof setTimeout> | undefined;
@@ -53,6 +58,7 @@ function App() {
     };
 
     const onTouchMove = (e: TouchEvent) => {
+      console.log("touchmove fired", window.scrollY);
       if (isScrolling) return;
 
       const currentY = e.touches[0].clientY;
