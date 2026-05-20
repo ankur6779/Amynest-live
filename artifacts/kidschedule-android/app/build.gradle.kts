@@ -47,7 +47,7 @@ android {
         // Production URL. Override at build time if needed:
         // ./gradlew assembleRelease -PwrapperUrl=https://custom.example.com
         val wrapperUrl: String = (project.findProperty("wrapperUrl") as String?)
-            ?: "https://amynest.in"
+            ?: "https://www.amynest.in"
         buildConfigField("String", "WRAPPER_URL", "\"$wrapperUrl\"")
 
         // RevenueCat public Android SDK key (starts with `goog_`).

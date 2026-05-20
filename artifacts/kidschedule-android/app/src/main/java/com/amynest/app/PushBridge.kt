@@ -223,14 +223,14 @@ class PushBridge private constructor(
             val bridge = PushBridge(activity, webView)
 
             // ── Layer 1: synchronous wrapper marker ──────────────────────────
-            val originRule = toOriginRule(trustedOriginUrl)
-            if (originRule != null &&
+            val originRules = WebViewOrigins.originRulesForWrapperUrl(trustedOriginUrl)
+            if (originRules.isNotEmpty() &&
                 WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
             ) {
                 try {
                     val script = "window.__AMYNEST_WRAPPER = '${WRAPPER_VERSION}';"
                     WebViewCompat.addDocumentStartJavaScript(
-                        webView, script, setOf(originRule),
+                        webView, script, originRules,
                     )
                     Log.d(TAG, "Wrapper marker installed (version=$WRAPPER_VERSION)")
                 } catch (t: Throwable) {
@@ -255,12 +255,5 @@ class PushBridge private constructor(
             return bridge
         }
 
-        private fun toOriginRule(url: String): String? {
-            val uri = try { Uri.parse(url) } catch (_: Throwable) { return null }
-            val scheme = uri.scheme?.lowercase() ?: return null
-            val host = uri.host ?: return null
-            val portPart = if (uri.port == -1) "" else ":${uri.port}"
-            return "$scheme://$host$portPart"
-        }
     }
 }

@@ -39,7 +39,7 @@ import java.lang.ref.WeakReference
 class BillingBridge(
     activity: Activity,
     webView: WebView,
-    private val trustedOrigin: String,
+    private val trustedOrigins: Set<String>,
 ) {
     private val activityRef = WeakReference(activity)
     private val webViewRef = WeakReference(webView)
@@ -84,8 +84,9 @@ class BillingBridge(
 
     private fun originMatches(sourceOrigin: Uri): Boolean {
         val src = sourceOrigin.toString().trimEnd('/')
-        val trusted = trustedOrigin.trimEnd('/')
-        return src.equals(trusted, ignoreCase = true)
+        return trustedOrigins.any { trusted ->
+            src.equals(trusted.trimEnd('/'), ignoreCase = true)
+        }
     }
 
     private fun syncUserId(userId: String) {
@@ -268,16 +269,17 @@ class BillingBridge(
                 Log.w(TAG, "WebMessageListener unsupported — bridge disabled")
                 return false
             }
-            val originRule = toOriginRule(trustedOriginUrl) ?: run {
+            val originRules = WebViewOrigins.originRulesForWrapperUrl(trustedOriginUrl)
+            if (originRules.isEmpty()) {
                 Log.w(TAG, "could not derive origin from $trustedOriginUrl — bridge disabled")
                 return false
             }
-            val bridge = BillingBridge(activity, webView, originRule)
+            val bridge = BillingBridge(activity, webView, originRules)
             return try {
                 WebViewCompat.addWebMessageListener(
                     webView,
                     JS_OBJECT_NAME,
-                    setOf(originRule),
+                    originRules,
                 ) { _: WebView, message: WebMessageCompat,
                     sourceOrigin: Uri, _: Boolean,
                     replyProxy: JavaScriptReplyProxy ->
@@ -291,17 +293,5 @@ class BillingBridge(
             }
         }
 
-        /** Strip path/query/fragment so the rule is `scheme://host[:port]`. */
-        private fun toOriginRule(url: String): String? {
-            val uri = try {
-                Uri.parse(url)
-            } catch (_: Throwable) {
-                return null
-            }
-            val scheme = uri.scheme?.lowercase() ?: return null
-            val host = uri.host ?: return null
-            val portPart = if (uri.port == -1) "" else ":${uri.port}"
-            return "$scheme://$host$portPart"
-        }
     }
 }

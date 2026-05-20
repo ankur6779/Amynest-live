@@ -73,8 +73,10 @@ export function NativeStartupPermissionsGate() {
           micOk = true;
         }
 
+        const locState = geo.location as string;
         const locOk =
-          geo.location === "granted" || geo.location === "limited";
+          locState === "granted" ||
+          (Capacitor.getPlatform() === "ios" && locState === "limited");
         const pushOk = push.receive === "granted";
 
         if (locOk && micOk && pushOk) {

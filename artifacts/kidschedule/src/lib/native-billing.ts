@@ -120,7 +120,12 @@ export type NativeBilling = {
 
 /** True if the page is running inside the kidschedule-android wrapper. */
 export function isWrapperPresent(): boolean {
-  return typeof window !== "undefined" && !!window.AmyNestBillingNative;
+  if (typeof window === "undefined") return false;
+  if (window.AmyNestBillingNative) return true;
+  // Billing bridge is origin-scoped; UA is the fallback when apex→www broke injection.
+  return (
+    typeof navigator !== "undefined" && /AmyNestAndroid/.test(navigator.userAgent)
+  );
 }
 
 /**
@@ -130,8 +135,9 @@ export function isWrapperPresent(): boolean {
  * paywall MUST show an error rather than falling back to Razorpay.
  */
 export async function probeBillingAvailability(): Promise<boolean | null> {
+  if (!isWrapperPresent()) return null;
   const bridge = typeof window !== "undefined" ? window.AmyNestBillingNative : undefined;
-  if (!bridge) return null;
+  if (!bridge) return false;
   const result = await callAsync<{ ok: boolean; data?: { available: boolean } }>(
     bridge,
     { action: "isAvailable" },

@@ -3,6 +3,8 @@
  * Capacitor-only modules are loaded at the top level.
  */
 
+import { isAndroidMobileShell } from "@/lib/device-lite";
+
 type NativePlatform = "ios" | "android" | "web";
 
 type AmyNestWindow = Window & {
@@ -94,6 +96,25 @@ function configureNativeViewport(): void {
     });
 }
 
+/** Android PWA / WebView: same width + safe-area rules as Capacitor iOS shell. */
+function configureAndroidMobileShell(): void {
+  if (!isAndroidMobileShell()) return;
+
+  const root = document.documentElement;
+  root.classList.add("amynest-android-shell", "dark");
+  root.setAttribute("data-theme", "dark");
+  root.style.colorScheme = "dark";
+  document
+    .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    ?.setAttribute("content", "#0b0b0b");
+  try {
+    window.localStorage.setItem("theme", "dark");
+    window.localStorage.removeItem("amynest:theme");
+  } catch {
+    /* ignore */
+  }
+}
+
 function listenForServiceWorkerUpdates(
   registration: ServiceWorkerRegistration,
 ): void {
@@ -171,8 +192,10 @@ export function initNativeShell(): void {
       /* ignore */
     }
     configureNativeViewport();
+    configureAndroidMobileShell();
     return;
   }
 
+  configureAndroidMobileShell();
   registerWebServiceWorker();
 }

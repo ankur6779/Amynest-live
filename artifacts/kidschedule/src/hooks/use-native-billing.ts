@@ -183,8 +183,12 @@ export function useNativeBilling(): NativeBillingState {
       if (cancelled) return;
       setAvailable(ok === true);
       if (ok === false) {
+        const bridgeMissing =
+          typeof window !== "undefined" && !window.AmyNestBillingNative;
         setUnavailableReason(
-          "In-app purchases aren't available right now. Please update the app from the Play Store, or contact support if this keeps happening.",
+          bridgeMissing
+            ? "Google Play billing did not connect to the app. Update from the Play Store, then fully close and reopen AmyNest."
+            : "In-app purchases aren't available right now. Please update the app from the Play Store, or contact support if this keeps happening.",
         );
       }
     });
