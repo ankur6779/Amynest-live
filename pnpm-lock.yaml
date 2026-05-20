@@ -126,9 +126,6 @@ importers:
       '@capacitor/push-notifications':
         specifier: ^6.0.0
         version: 6.0.5(@capacitor/core@6.2.1)
-      '@codetrix-studio/capacitor-google-auth':
-        specifier: ^3.4.0-rc.4
-        version: 3.4.0-rc.4(@capacitor/core@6.2.1)
       '@revenuecat/purchases-capacitor':
         specifier: ^13.1.1
         version: 13.1.1(@capacitor/core@6.2.1)

@@ -6,6 +6,7 @@ export type MicNativeStatus = "granted" | "denied" | "undetermined" | "unknown";
 interface MicPermissionPlugin {
   getMicrophoneStatus(): Promise<{ status: MicNativeStatus }>;
   requestMicrophonePermission(): Promise<{ status: MicNativeStatus }>;
+  prepareAudioSessionForRecording(): Promise<{ ok: boolean }>;
   openAppSettings(): Promise<void>;
 }
 
@@ -13,14 +14,26 @@ export const MicPermissionCapacitor = registerPlugin<MicPermissionPlugin>("MicPe
   web: {
     getMicrophoneStatus: async () => ({ status: "unknown" as const }),
     requestMicrophonePermission: async () => ({ status: "unknown" as const }),
+    prepareAudioSessionForRecording: async () => ({ ok: false }),
     openAppSettings: async () => undefined,
   },
   android: {
     getMicrophoneStatus: async () => ({ status: "unknown" as const }),
     requestMicrophonePermission: async () => ({ status: "unknown" as const }),
+    prepareAudioSessionForRecording: async () => ({ ok: false }),
     openAppSettings: async () => undefined,
   },
 });
+
+/** Activates AVAudioSession playAndRecord before WKWebView capture (e.g. after Amy TTS). */
+export async function prepareIosAudioSessionForRecording(): Promise<void> {
+  if (!isCapacitorIosNative()) return;
+  try {
+    await MicPermissionCapacitor.prepareAudioSessionForRecording();
+  } catch {
+    /* plugin missing on old builds */
+  }
+}
 
 export function isCapacitorIosNative(): boolean {
   try {
@@ -54,6 +67,8 @@ export async function requestIosMicrophoneAccess(): Promise<
   "granted" | "denied" | "unknown"
 > {
   if (!isCapacitorIosNative()) return "unknown";
+
+  await prepareIosAudioSessionForRecording();
 
   let nativeStatus: MicNativeStatus = "unknown";
   try {
