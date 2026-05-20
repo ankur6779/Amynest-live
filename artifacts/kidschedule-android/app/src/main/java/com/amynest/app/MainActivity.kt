@@ -267,12 +267,7 @@ class MainActivity : AppCompatActivity() {
                 val url = request.url
                 val scheme = url.scheme?.lowercase() ?: return false
                 if (scheme == "http" || scheme == "https") {
-                    val wrapperHost = Uri.parse(BuildConfig.WRAPPER_URL).host
-                    val targetHost = url.host
-                    val sameOrigin = wrapperHost != null && targetHost != null &&
-                        (targetHost.equals(wrapperHost, ignoreCase = true) ||
-                            targetHost.endsWith(".$wrapperHost", ignoreCase = true))
-                    if (sameOrigin) return false
+                    if (WebViewOrigins.isTrustedAmyNestHost(url.host)) return false
                     openExternal(url)
                     return true
                 }

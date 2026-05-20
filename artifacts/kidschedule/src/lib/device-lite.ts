@@ -22,6 +22,29 @@ export function isStandalonePwa(): boolean {
   }
 }
 
+/**
+ * Installed Android PWA (Chrome standalone / TWA) or legacy AmyNestAndroid WebView.
+ * Used for viewport containment and document-level scrolling (same as Capacitor iOS).
+ */
+export function isAndroidMobileShell(): boolean {
+  if (typeof window === "undefined") return false;
+  if (!isAndroidUa()) return false;
+  return isStandalonePwa() || isNativeAmyNestAndroidWrapper();
+}
+
+/** Legacy kidschedule-android WebView (not Capacitor). */
+export function isNativeAmyNestAndroidWrapper(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    if (typeof (window as Window & { __AMYNEST_WRAPPER?: string }).__AMYNEST_WRAPPER === "string") {
+      return true;
+    }
+    return /AmyNestAndroid/.test(navigator.userAgent);
+  } catch {
+    return false;
+  }
+}
+
 /** True when index.html boot script enabled lite-splash (Android / iOS / crash recovery). */
 export function hasLiteSplashBoot(): boolean {
   if (typeof document === "undefined") return false;

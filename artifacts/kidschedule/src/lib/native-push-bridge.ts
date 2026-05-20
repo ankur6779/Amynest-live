@@ -305,12 +305,12 @@ export async function initCapacitorIOSPush(): Promise<void> {
 
       // 1. Permission — check first so Settings → Allow does not re-prompt
       try {
-        const checked = await plugin.checkPermissions();
+        const checked = await PushNotifications.checkPermissions();
         iosPerm = checked.receive === "granted" ? "granted"
                 : checked.receive === "denied"  ? "denied"
                 : "default";
         if (iosPerm === "default") {
-          const result = await plugin.requestPermissions();
+          const result = await PushNotifications.requestPermissions();
           iosPerm = result.receive === "granted" ? "granted"
                   : result.receive === "denied"  ? "denied"
                   : "default";
