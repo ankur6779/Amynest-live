@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Home, Users, Calendar, Star, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Moon, Sun, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, Trophy, MessageSquarePlus } from "lucide-react";
+import { ArrowLeft, Home, Users, Calendar, Star, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Moon, Sun, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, Trophy, MessageSquarePlus } from "lucide-react";
 import { useClerk, useUser } from "@/lib/firebase-auth-hooks";
 import { LayoutMobileMenu } from "@/components/layout-mobile-menu";
 import { logNavEvent } from "@/lib/navigation-log";
@@ -171,7 +171,7 @@ export function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const {
     signOut
   } = useClerk();
@@ -190,11 +190,10 @@ export function Layout({
   const email = getUserEmail(user);
   const initials = getUserInitials(user);
   const avatarUrl = getUserAvatarUrl(user);
-  const isChatRoute =
-    safePathStartsWith(location, "/assistant") || safePathStartsWith(location, "/amy-ai-tutor");
   const isImmersiveRoute =
-    isChatRoute || safePathStartsWith(location, "/phonics") || safePathStartsWith(location, "/speech-coach");
+    safePathStartsWith(location, "/phonics") || safePathStartsWith(location, "/speech-coach");
   const showDashboardChrome = location === "/dashboard";
+  const canShowBack = !showDashboardChrome && location !== "/";
 
   useEffect(() => {
     logNavEvent("layout-mounted", { location });
@@ -207,10 +206,31 @@ export function Layout({
       console.error("[amynest:nav] sign-out failed", err);
     }
   };
+  const handleBack = () => {
+    try {
+      if (window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+    } catch (err) {
+      console.error("[amynest:nav] history back failed", err);
+    }
+    setLocation("/dashboard");
+  };
   return <div className="main-container flex min-h-dvh w-full flex-col bg-background">
       {/* Mobile Header */}
-      {!isImmersiveRoute && <header className="sticky top-0 z-40 flex h-20 w-full items-center justify-between border-b bg-background px-4 md:hidden shadow-sm">
-        <div className="flex items-center gap-2">
+      {!isImmersiveRoute && <header className="sticky top-0 z-40 flex min-h-20 w-full items-center justify-between gap-2 border-b bg-background px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] md:hidden shadow-sm">
+        <div className="flex min-w-0 items-center gap-2">
+          {canShowBack ? (
+            <button
+              type="button"
+              onClick={handleBack}
+              aria-label="Back"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm active:scale-95"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          ) : null}
           <BrandLogo size="sm" showTagline={true} />
           <AmyMascotLogo size={34} />
         </div>

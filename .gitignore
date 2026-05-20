@@ -63,6 +63,7 @@ artifacts/amynest-capacitor/ios/App/App/capacitor.config.json
 artifacts/amynest-capacitor/ios/App/App/config.xml
 artifacts/amynest-capacitor/ios/**/xcuserdata/
 artifacts/amynest-capacitor/ios/capacitor-cordova-ios-plugins/
+artifacts/amynest-capacitor/www/
 
 # Playwright reports
 artifacts/kidschedule/playwright-report-stress/

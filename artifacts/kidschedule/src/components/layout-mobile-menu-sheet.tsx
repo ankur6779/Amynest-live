@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef } from "react";
 import { useMountedRef } from "@/hooks/use-safe-async";
 import { Link, useLocation } from "wouter";
 import {
+  X,
   LogOut,
   Moon,
   Sun,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useClerk, useUser, useAuth } from "@/lib/firebase-auth-hooks";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from "@/contexts/theme-context";
@@ -182,28 +182,56 @@ export function LayoutMobileMenuSheet({
     }
   }, [isMenuOpen, location, userId, isLoaded, user]);
 
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeSidebar();
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [closeSidebar, isMenuOpen]);
+
+  if (!isMenuOpen) return null;
+
   if (!userLoaded || !user) {
     return (
-      <Sheet open={isMenuOpen} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="right"
-          className="w-[80vw] sm:w-[350px] flex flex-col p-0 bg-card text-card-foreground"
+      <div className="fixed inset-0 z-[100] md:hidden" role="dialog" aria-modal="true">
+        <button
+          type="button"
+          aria-label="Close menu"
+          className="absolute inset-0 bg-[var(--overlay-bg)]"
+          onClick={closeSidebar}
+        />
+        <aside
+          className="absolute bottom-0 right-0 top-0 flex w-[82vw] max-w-[350px] flex-col bg-card text-card-foreground shadow-2xl"
         >
           <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground">
             Loading menu...
           </div>
-        </SheetContent>
-      </Sheet>
+        </aside>
+      </div>
     );
   }
 
   return (
-    <Sheet open={isMenuOpen} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-[80vw] sm:w-[350px] flex flex-col p-0 bg-card text-card-foreground"
+    <div className="fixed inset-0 z-[100] md:hidden" role="dialog" aria-modal="true">
+      <button
+        type="button"
+        aria-label="Close menu"
+        className="absolute inset-0 bg-[var(--overlay-bg)]"
+        onClick={closeSidebar}
+      />
+      <aside
+        className="absolute bottom-0 right-0 top-0 flex w-[82vw] max-w-[350px] flex-col bg-card text-card-foreground shadow-2xl"
       >
-        <div className="flex items-center gap-3 px-4 pt-5 pb-4 border-b shrink-0">
+        <div className="flex items-center gap-3 border-b px-4 pb-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)] shrink-0">
           <Avatar className="h-9 w-9">
             <AvatarImage src={avatarUrl} />
             <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
@@ -219,6 +247,14 @@ export function LayoutMobileMenuSheet({
               <span className="text-xs text-muted-foreground truncate">{email}</span>
             ) : null}
           </div>
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={closeSidebar}
+            className="ml-auto rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-1 text-card-foreground">
@@ -241,7 +277,7 @@ export function LayoutMobileMenuSheet({
             {t("patent_pending.footer_label")}
           </p>
         </div>
-      </SheetContent>
-    </Sheet>
+      </aside>
+    </div>
   );
 }
