@@ -569,6 +569,41 @@ html[data-theme="dark"] {
   overscroll-behavior: none;
 }
 
+/* Absorb pull-to-refresh gestures at the viewport top without shifting layout. */
+.ptr-guard-edge,
+.ptr-guard {
+  pointer-events: auto;
+}
+
+.ptr-guard-edge {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  z-index: 50;
+  touch-action: none;
+  background: transparent;
+}
+
+.ptr-guard {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  padding-top: env(safe-area-inset-top, 0px);
+  box-sizing: content-box;
+  touch-action: none;
+  z-index: 35;
+  background: transparent;
+}
+
+/* Above ptr-guard layers (edge z-50, guard z-35) so header buttons stay clickable. */
+.header {
+  z-index: 60;
+}
+
 .carousel,
 .reel-container {
   touch-action: pan-y;
