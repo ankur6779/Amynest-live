@@ -16,6 +16,7 @@ import { getApiUrl } from "@/lib/api";
 import {
   isCapacitorIosNative,
   MicPermissionCapacitor,
+  prepareIosAudioSessionForRecording,
   requestIosMicrophoneAccess,
 } from "@/lib/mic-permission-capacitor";
 
@@ -104,6 +105,31 @@ function pickRecorderMimeType(): string {
     }
   }
   return isIOSWebKit() ? "audio/mp4" : "audio/webm";
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunk = 0x8000;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+function createMediaRecorder(stream: MediaStream): { rec: MediaRecorder; mimeType: string } {
+  const mimeType = pickRecorderMimeType();
+  if (
+    typeof MediaRecorder !== "undefined" &&
+    MediaRecorder.isTypeSupported(mimeType)
+  ) {
+    try {
+      return { rec: new MediaRecorder(stream, { mimeType }), mimeType };
+    } catch {
+      /* iOS can reject constructor even when isTypeSupported is true */
+    }
+  }
+  return { rec: new MediaRecorder(stream), mimeType };
 }
 
 export type RecognitionMode = "native" | "whisper" | "unsupported";
@@ -388,6 +414,10 @@ export function useSpeechRecognition(
     setTranscript("");
     setInterimTranscript("");
 
+    if (isCapacitorIosNative()) {
+      await prepareIosAudioSessionForRecording();
+    }
+
     const perm = await ensureMicPermission();
     if (perm === "denied") {
       setError("microphone_denied");
@@ -411,9 +441,15 @@ export function useSpeechRecognition(
     }
     streamRef.current = stream;
 
-    const mimeType = pickRecorderMimeType();
-
-    const rec = new MediaRecorder(stream, { mimeType });
+    let rec: MediaRecorder;
+    let mimeType: string;
+    try {
+      ({ rec, mimeType } = createMediaRecorder(stream));
+    } catch {
+      stream.getTracks().forEach((t) => t.stop());
+      setError("recognition_start_failed");
+      return;
+    }
     mediaRecRef.current = rec;
     chunksRef.current = [];
 
@@ -421,16 +457,22 @@ export function useSpeechRecognition(
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
 
+    rec.onerror = () => {
+      setListening(false);
+      setError("recognition_start_failed");
+    };
+
     rec.onstop = async () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       setListening(false);
-      if (chunksRef.current.length === 0) return;
+      if (chunksRef.current.length === 0) {
+        setError("recognition_start_failed");
+        return;
+      }
 
       const blob = new Blob(chunksRef.current, { type: mimeType });
       const arrayBuffer = await blob.arrayBuffer();
-      const base64 = btoa(
-        String.fromCharCode(...new Uint8Array(arrayBuffer)),
-      );
+      const base64 = arrayBufferToBase64(arrayBuffer);
 
       setTranscribing(true);
       try {
@@ -479,7 +521,14 @@ export function useSpeechRecognition(
   }, []);
 
   const stopWhisper = useCallback(() => {
-    mediaRecRef.current?.stop();
+    const rec = mediaRecRef.current;
+    if (!rec || rec.state === "inactive") return;
+    try {
+      if (rec.state === "recording") rec.requestData();
+    } catch {
+      /* ignore — not all platforms support requestData */
+    }
+    rec.stop();
   }, []);
 
   const start = useCallback(() => {

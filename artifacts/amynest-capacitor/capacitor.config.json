@@ -53,11 +53,6 @@
     "CapacitorHttp": {
       "enabled": false
     },
-    "GoogleAuth": {
-      "scopes": ["profile", "email"],
-      "serverClientId": "573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com",
-      "forceCodeForRefreshToken": false
-    },
     "SignInWithApple": {
       "clientId": "com.amynest.app",
       "redirectURI": "https://amynest.in/auth/apple/callback"
@@ -69,7 +64,6 @@
     "PushNotificationsPlugin",
     "PurchasesPlugin",
     "MicPermissionPlugin",
-    "GoogleAuth",
     "SignInWithApple"
   ]
 }

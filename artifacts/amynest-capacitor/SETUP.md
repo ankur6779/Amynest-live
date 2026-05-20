@@ -184,15 +184,7 @@ npx cap sync ios
 ```
 Then in your auth code, open the Google sign-in URL via `Browser.open()` instead of a popup/redirect. Capacitor's SFSafariViewController handles it natively.
 
-### Option B — Use Firebase App Check + native Google Sign-In
-```bash
-npm install @codetrix-studio/capacitor-google-auth
-npx cap sync ios
-```
-Follow the [Capacitor Google Auth docs](https://github.com/CodetrixStudio/CapacitorGoogleAuth).
-
-**Required:** Add your reversed Google client ID to `Info.plist` → `CFBundleURLSchemes`.  
-Get it from `GoogleService-Info.plist` as the value of `REVERSED_CLIENT_ID`.
+Native Google Sign-In (`@codetrix-studio/capacitor-google-auth`) is **not** bundled — auth is phone OTP (`ENABLE_OAUTH_SIGN_IN = false`). `GoogleService-Info.plist` stays for **FCM push** only.
 
 ---
 
