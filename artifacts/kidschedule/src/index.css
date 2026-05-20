@@ -488,17 +488,21 @@
 }
 
 /* ── Pull-to-refresh / overscroll bounce (PWA + Capacitor) ───────────────
- * Document must not scroll; in-app regions (layout main, modals) scroll.
- * Touch guard in disable-overscroll-gesture.ts blocks pull-at-top. */
+ * Keep the document in normal flow so Android Chrome/WebView can smoothly
+ * hand off scroll momentum, while the touch guard blocks pull-at-top refresh. */
 html,
 body {
   margin: 0;
   padding: 0;
   height: 100%;
-  overflow: hidden;
-  overscroll-behavior-y: none;
-  overscroll-behavior-x: none;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
   touch-action: pan-x pan-y;
+}
+
+body {
+  overscroll-behavior: none;
 }
 
 html {
@@ -541,17 +545,20 @@ html[data-theme="dark"] {
 }
 
 #root {
-  height: 100%;
+  height: auto;
   min-height: 100dvh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
   display: flex;
   flex-direction: column;
 }
 
+.app-root,
+.main-container,
 #app-root {
   flex: 1;
-  min-height: 0;
-  height: 100dvh;
+  min-height: 100dvh;
+  height: auto;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: contain;

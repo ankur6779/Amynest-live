@@ -82,6 +82,18 @@ export function canUseBrowserServiceWorkers(): boolean {
 
 let nativeShellInitialized = false;
 
+function configureNativeViewport(): void {
+  if (!isCapacitorNativeShell()) return;
+
+  void import("@capacitor/status-bar")
+    .then(({ StatusBar }) =>
+      StatusBar.setOverlaysWebView({ overlay: false }),
+    )
+    .catch(() => {
+      /* Optional native plugin; web/PWA startup must never depend on it. */
+    });
+}
+
 function listenForServiceWorkerUpdates(
   registration: ServiceWorkerRegistration,
 ): void {
@@ -146,6 +158,7 @@ export function initNativeShell(): void {
 
   if (isNativeAmyNestShell()) {
     document.documentElement.classList.add("amynest-native-shell");
+    configureNativeViewport();
     return;
   }
 

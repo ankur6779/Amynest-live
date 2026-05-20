@@ -207,9 +207,9 @@ export function Layout({
       console.error("[amynest:nav] sign-out failed", err);
     }
   };
-  return <div className="flex h-full min-h-0 w-full flex-col bg-background">
-      {/* Mobile Header — fixed so it never duplicates on Android Chrome */}
-      {!isImmersiveRoute && <header className="fixed top-0 left-0 right-0 z-40 flex h-20 w-full items-center justify-between border-b bg-background px-4 md:hidden shadow-sm">
+  return <div className="main-container flex min-h-dvh w-full flex-col bg-background">
+      {/* Mobile Header */}
+      {!isImmersiveRoute && <header className="sticky top-0 z-40 flex h-20 w-full items-center justify-between border-b bg-background px-4 md:hidden shadow-sm">
         <div className="flex items-center gap-2">
           <BrandLogo size="sm" showTagline={true} />
           <AmyMascotLogo size={34} />
@@ -218,9 +218,6 @@ export function Layout({
           <LayoutMobileMenu />
         </div>
       </header>}
-
-      {/* Spacer pushes content below the fixed mobile header */}
-      {!isImmersiveRoute && <div className="h-20 md:hidden" aria-hidden="true" />}
 
       <div className="flex min-h-0 flex-1">
         {/* Desktop Sidebar */}

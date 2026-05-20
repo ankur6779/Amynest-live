@@ -16,7 +16,7 @@ export function AuthBootShell({ children }: { children?: ReactNode }) {
         role="status"
         aria-label="Loading AmyNest"
         style={{
-          minHeight: "100vh",
+          minHeight: "100dvh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
