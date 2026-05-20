@@ -73,7 +73,7 @@ export default function PhonicsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[100dvh] items-center justify-center bg-background text-muted-foreground">
+      <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         Loading phonics...
       </div>
@@ -82,7 +82,7 @@ export default function PhonicsPage() {
 
   if (!activeChild) {
     return (
-      <div className="flex h-[100dvh] flex-col bg-background">
+      <div className="flex min-h-screen flex-col bg-background">
         <header className="sticky top-0 z-50 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
           <button type="button" onClick={goBack} className="inline-flex items-center gap-2 text-sm font-bold text-foreground">
             <ArrowLeft className="h-4 w-4" />
@@ -108,7 +108,7 @@ export default function PhonicsPage() {
   }
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-background">
+    <div className="flex min-h-screen w-full flex-col bg-background">
       <header className="sticky top-0 z-50 shrink-0 border-b border-border bg-background/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <button
@@ -128,7 +128,7 @@ export default function PhonicsPage() {
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 pb-28 pt-4">
+      <main className="min-h-0 flex-1 px-4 pb-28 pt-4">
         <div className="mx-auto max-w-4xl space-y-4">
           <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
             <div className="flex items-start gap-3">

@@ -20,7 +20,6 @@ import { useTranslation } from "react-i18next";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePushRegistration } from "@/hooks/use-push-registration";
 import { useCapacitorPushRegistrationSync } from "@/hooks/use-capacitor-push-registration-sync";
-import { isAndroidMobileShell } from "@/lib/device-lite";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { NotificationNudgeBanner } from "@/components/notification-nudge-banner";
 import { NotificationPromptModal } from "@/components/notification-prompt-modal";
@@ -169,7 +168,6 @@ export function Layout({
     safePathStartsWith(location, "/phonics") || safePathStartsWith(location, "/speech-coach");
   const showDashboardChrome = location === "/dashboard";
   const canShowBack = !showDashboardChrome && location !== "/";
-  const androidScrollShell = isAndroidMobileShell();
 
   useEffect(() => {
     logNavEvent("layout-mounted", { location });
@@ -267,7 +265,7 @@ export function Layout({
 
         {/* Main Content */}
         <main
-          className={`flex-1 min-h-0 ${androidScrollShell ? "" : "overscroll-y-contain"} ${showDashboardChrome ? "pb-20 md:pb-0" : "pb-0"}`}
+          className={`flex-1 min-h-0 ${showDashboardChrome ? "pb-20 md:pb-0" : "pb-0"}`}
         >
           <div className={isImmersiveRoute ? "mx-auto flex min-h-dvh w-full flex-col p-0 md:p-0" : "mx-auto max-w-5xl p-4 md:p-8"}>
             {!isImmersiveRoute && !["/sign-in", "/onboarding", "/notify-prompt"].some(p => safePathStartsWith(location, p)) && <div className="mb-4">

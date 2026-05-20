@@ -12,7 +12,7 @@
     <meta name="author" content="AmyNest AI" />
     <meta name="keywords" content="parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting, child development, daily routine, kids schedule, parenting coach, AI coach for parents, child behavior tracker, kids meal planner India, speech coach for kids, spelling practice app" />
     <meta name="application-name" content="AmyNest AI" />
-    <meta name="amynest-deploy" content="2026-05-20-android-scroll-v4" />
+    <meta name="amynest-deploy" content="2026-05-20-body-scroll-v1" />
     <meta name="rating" content="general" />
     <meta name="revisit-after" content="7 days" />
     <meta name="msapplication-TileColor" content="#A855F7" />
@@ -584,15 +584,10 @@
         padding: 0;
         width: 100%;
         max-width: 100%;
-        min-height: 100%;
-        min-height: 100dvh;
-        height: auto;
+        height: 100%;
         overflow-x: hidden;
-        overscroll-behavior-y: contain;
-        -webkit-overflow-scrolling: touch;
-        touch-action: pan-x pan-y;
-      }
-      body {
+        overflow-y: auto;
+        touch-action: manipulation;
         overscroll-behavior: none;
       }
       #root, #app-root, .main-container {
@@ -601,34 +596,10 @@
         min-width: 0;
         box-sizing: border-box;
       }
-      html.amynest-android-shell,
-      html.amynest-android-shell body {
-        height: 100%;
-        max-height: 100%;
-        overflow: hidden;
-        overscroll-behavior: none !important;
-        touch-action: none;
-      }
-      html.amynest-android-shell #root {
-        height: 100%;
-        max-height: 100%;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        overscroll-behavior: none !important;
-        touch-action: none;
-      }
       html.amynest-android-shell #app-root {
-        flex: 1 1 auto;
-        display: block;
-        height: 100%;
-        max-height: 100%;
-        min-height: 0;
-        overflow-x: hidden;
-        overflow-y: auto;
-        overscroll-behavior: none !important;
-        -webkit-overflow-scrolling: touch;
-        touch-action: none;
+        height: auto;
+        overflow: visible;
+        overscroll-behavior: none;
         padding-top: env(safe-area-inset-top, 0px);
         padding-right: env(safe-area-inset-right, 0px);
         padding-bottom: env(safe-area-inset-bottom, 0px);

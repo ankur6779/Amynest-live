@@ -191,7 +191,7 @@ export default function AssistantPage() {
   const isEmpty = historyLoaded && messages.length === 0;
 
   return (
-    <div className="relative mx-auto flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-3xl flex-col bg-background md:h-[calc(100dvh-4rem)] md:max-h-[calc(100dvh-4rem)]">
+    <div className="relative mx-auto flex min-h-screen w-full max-w-3xl flex-col bg-background">
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-4 md:px-0 md:pt-0">
         <div>
@@ -281,7 +281,7 @@ export default function AssistantPage() {
       <div
         ref={threadRef}
         onScroll={handleThreadScroll}
-        className="min-h-0 flex-1 overflow-y-auto space-y-4 px-4 pb-24 pr-5"
+        className="min-h-0 flex-1 space-y-4 px-4 pb-24 pr-5"
       >
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full gap-6 text-center py-8">
