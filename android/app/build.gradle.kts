@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -12,12 +15,27 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 15
-        versionName = "1.2.0"
+        versionCode = 28
+        versionName = "1.2.5"
+    }
+
+    signingConfigs {
+        create("release") {
+            val keystorePropertiesFile = rootProject.file("keystore.properties")
+            if (keystorePropertiesFile.exists()) {
+                val keystoreProperties = Properties()
+                keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
+        }
     }
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -38,6 +56,10 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     packaging {
