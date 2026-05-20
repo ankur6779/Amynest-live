@@ -70,7 +70,13 @@ class MainActivity : AppCompatActivity() {
 
         webView = WebView(this).also { wv ->
             wv.id = View.generateViewId()
+            // IMPORTANT: disable overscroll to block system-level pull-to-refresh
+            // and the "glow" effect that can sometimes interfere with web-side scrolling.
             wv.overScrollMode = View.OVER_SCROLL_NEVER
+            wv.isVerticalScrollBarEnabled = false
+            wv.isHorizontalScrollBarEnabled = false
+            // Helps with nested scroll containers in the web app
+            wv.isNestedScrollingEnabled = false
             configureWebView(wv)
         }
         setContentView(webView)
@@ -111,10 +117,10 @@ class MainActivity : AppCompatActivity() {
         pushBridge.setPermission(granted)
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        val deepLink = intent?.getStringExtra("deepLink") ?: return
+        val deepLink = intent.getStringExtra("deepLink") ?: return
         if (deepLink.isBlank()) return
 
         val category = intent.getStringExtra("notifCategory") ?: "routine"
@@ -153,9 +159,28 @@ class MainActivity : AppCompatActivity() {
             allowFileAccess = false
             cacheMode = WebSettings.LOAD_DEFAULT
             userAgentString = (userAgentString ?: "") + " AmyNestAndroid/1.0"
+
+            // Optimal PWA scroll settings
+            useWideViewPort = true
+            loadWithOverviewMode = true
+            displayZoomControls = false
+            builtInZoomControls = false
+            setSupportZoom(false)
+            textZoom = 100
+            
+            // Performance
+            @Suppress("DEPRECATION")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                mediaPlaybackRequiresUserGesture = false
+            }
         }
 
         CookieManager.getInstance().setAcceptThirdPartyCookies(wv, true)
+        
+        // Critical: Ensure WebView doesn't trigger system-level pull-to-refresh
+        wv.overScrollMode = View.OVER_SCROLL_NEVER
+        wv.isVerticalScrollBarEnabled = false
+        wv.isHorizontalScrollBarEnabled = false
 
         wv.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(
@@ -164,9 +189,22 @@ class MainActivity : AppCompatActivity() {
             ): Boolean {
                 val url = request.url ?: return false
                 val host = url.host ?: return false
+                // Match the main domain and any subdomains
                 if (host == "amynest.in" || host.endsWith(".amynest.in")) return false
+                
+                // External links open in browser
                 startActivity(Intent(Intent.ACTION_VIEW, url))
                 return true
+            }
+
+            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                super.onPageStarted(view, url, favicon)
+                // Inject CSS to block pull-to-refresh at the earliest possible moment
+                val css = "html, body { overscroll-behavior-y: none !important; }"
+                val js = "var style = document.createElement('style');" +
+                         "style.innerHTML = '$css';" +
+                         "document.head.appendChild(style);"
+                view?.evaluateJavascript(js, null)
             }
 
             /**
@@ -176,6 +214,14 @@ class MainActivity : AppCompatActivity() {
              */
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
+                
+                // Re-ensure overscroll is disabled on the HTML element
+                view.evaluateJavascript(
+                    "document.documentElement.style.overscrollBehaviorY = 'none';" +
+                    "document.body.style.overscrollBehaviorY = 'none';",
+                    null
+                )
+
                 val dl = pendingNotifDeepLink ?: return
                 val cat = pendingNotifCategory ?: "routine"
                 // Clear so subsequent page loads don't re-fire.
