@@ -36,8 +36,8 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 28
-        versionName = "1.2.5"
+        versionCode = 29
+        versionName = "1.2.6"
 
         // Surface the Firebase / FCM availability to runtime code. PushBridge
         // checks this before attempting to fetch an FCM token, and the WebView
@@ -64,7 +64,7 @@ android {
     signingConfigs {
         if (keystorePropertiesFile.exists()) {
             create("release") {
-                storeFile = file(keystoreProperties["storeFile"] as String)
+                storeFile = rootProject.file(keystoreProperties["storeFile"] as String)
                 storePassword = keystoreProperties["storePassword"] as String
                 keyAlias = keystoreProperties["keyAlias"] as String
                 keyPassword = keystoreProperties["keyPassword"] as String
