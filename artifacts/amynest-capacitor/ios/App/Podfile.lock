@@ -1,0 +1,92 @@
+PODS:
+  - AppAuth (1.7.6):
+    - AppAuth/Core (= 1.7.6)
+    - AppAuth/ExternalUserAgent (= 1.7.6)
+  - AppAuth/Core (1.7.6)
+  - AppAuth/ExternalUserAgent (1.7.6):
+    - AppAuth/Core
+  - Capacitor (6.2.1):
+    - CapacitorCordova
+  - CapacitorApp (6.0.3):
+    - Capacitor
+  - CapacitorCommunityAppleSignIn (6.0.0):
+    - Capacitor
+  - CapacitorCordova (6.2.1)
+  - CapacitorGeolocation (6.1.1):
+    - Capacitor
+  - CapacitorPushNotifications (6.0.5):
+    - Capacitor
+  - CodetrixStudioCapacitorGoogleAuth (0.0.1):
+    - Capacitor
+    - GoogleSignIn (~> 6.2.4)
+  - GoogleSignIn (6.2.4):
+    - AppAuth (~> 1.5)
+    - GTMAppAuth (~> 1.3)
+    - GTMSessionFetcher/Core (< 3.0, >= 1.1)
+  - GTMAppAuth (1.3.1):
+    - AppAuth/Core (~> 1.6)
+    - GTMSessionFetcher/Core (< 3.0, >= 1.5)
+  - GTMSessionFetcher/Core (2.3.0)
+  - PurchasesHybridCommon (13.26.0):
+    - RevenueCat (= 5.20.0)
+  - RevenueCat (5.20.0)
+  - RevenuecatPurchasesCapacitor (9.2.2):
+    - Capacitor
+    - PurchasesHybridCommon (= 13.26.0)
+
+DEPENDENCIES:
+  - "Capacitor (from `../../../../node_modules/.pnpm/@capacitor+ios@6.2.1_@capacitor+core@6.2.1/node_modules/@capacitor/ios`)"
+  - "CapacitorApp (from `../../../../node_modules/.pnpm/@capacitor+app@6.0.3_@capacitor+core@6.2.1/node_modules/@capacitor/app`)"
+  - "CapacitorCommunityAppleSignIn (from `../../../../node_modules/.pnpm/@capacitor-community+apple-sign-in@6.0.0_@capacitor+core@6.2.1/node_modules/@capacitor-community/apple-sign-in`)"
+  - "CapacitorCordova (from `../../../../node_modules/.pnpm/@capacitor+ios@6.2.1_@capacitor+core@6.2.1/node_modules/@capacitor/ios`)"
+  - "CapacitorGeolocation (from `../../../../node_modules/.pnpm/@capacitor+geolocation@6.1.1_@capacitor+core@6.2.1/node_modules/@capacitor/geolocation`)"
+  - "CapacitorPushNotifications (from `../../../../node_modules/.pnpm/@capacitor+push-notifications@6.0.5_@capacitor+core@6.2.1/node_modules/@capacitor/push-notifications`)"
+  - "CodetrixStudioCapacitorGoogleAuth (from `../../../../node_modules/.pnpm/@codetrix-studio+capacitor-google-auth@3.4.0-rc.4_@capacitor+core@6.2.1/node_modules/@codetrix-studio/capacitor-google-auth`)"
+  - "RevenuecatPurchasesCapacitor (from `../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@9.2.2_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor`)"
+
+SPEC REPOS:
+  trunk:
+    - AppAuth
+    - GoogleSignIn
+    - GTMAppAuth
+    - GTMSessionFetcher
+    - PurchasesHybridCommon
+    - RevenueCat
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../../../../node_modules/.pnpm/@capacitor+ios@6.2.1_@capacitor+core@6.2.1/node_modules/@capacitor/ios"
+  CapacitorApp:
+    :path: "../../../../node_modules/.pnpm/@capacitor+app@6.0.3_@capacitor+core@6.2.1/node_modules/@capacitor/app"
+  CapacitorCommunityAppleSignIn:
+    :path: "../../../../node_modules/.pnpm/@capacitor-community+apple-sign-in@6.0.0_@capacitor+core@6.2.1/node_modules/@capacitor-community/apple-sign-in"
+  CapacitorCordova:
+    :path: "../../../../node_modules/.pnpm/@capacitor+ios@6.2.1_@capacitor+core@6.2.1/node_modules/@capacitor/ios"
+  CapacitorGeolocation:
+    :path: "../../../../node_modules/.pnpm/@capacitor+geolocation@6.1.1_@capacitor+core@6.2.1/node_modules/@capacitor/geolocation"
+  CapacitorPushNotifications:
+    :path: "../../../../node_modules/.pnpm/@capacitor+push-notifications@6.0.5_@capacitor+core@6.2.1/node_modules/@capacitor/push-notifications"
+  CodetrixStudioCapacitorGoogleAuth:
+    :path: "../../../../node_modules/.pnpm/@codetrix-studio+capacitor-google-auth@3.4.0-rc.4_@capacitor+core@6.2.1/node_modules/@codetrix-studio/capacitor-google-auth"
+  RevenuecatPurchasesCapacitor:
+    :path: "../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@9.2.2_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor"
+
+SPEC CHECKSUMS:
+  AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
+  Capacitor: c95400d761e376be9da6be5a05f226c0e865cebf
+  CapacitorApp: a19ccb4f5f32d2534be5c6f524d5a9b614a1e8a7
+  CapacitorCommunityAppleSignIn: c9c2541ee7580618055a91b3516c3f0313fe2544
+  CapacitorCordova: 8d93e14982f440181be7304aa9559ca631d77fff
+  CapacitorGeolocation: ef657a46a125be74010f4ce57caae173c23204d2
+  CapacitorPushNotifications: 35abece14371c57172e8321c9ccc8b6fa35fabfe
+  CodetrixStudioCapacitorGoogleAuth: 9dcfabfb7dd804ad6231a1513bc6e81e620cbec6
+  GoogleSignIn: 5651ce3a61e56ca864160e79b484cd9ed3f49b7a
+  GTMAppAuth: 0ff230db599948a9ad7470ca667337803b3fc4dd
+  GTMSessionFetcher: 3a63d75eecd6aa32c2fc79f578064e1214dfdec2
+  PurchasesHybridCommon: fa166fc8b385cf80f581f923c91d8ccffe5dd7f8
+  RevenueCat: e47ff90dfd271fde155a4befe48e8fc02e8281e4
+  RevenuecatPurchasesCapacitor: 6727a4dc1455bdf2374259420719ce5dfbe957fa
+
+PODFILE CHECKSUM: 19108dc36f3b5fd424679edaacebeaa5228592e0
+
+COCOAPODS: 1.16.2

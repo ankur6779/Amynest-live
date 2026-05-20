@@ -1,17 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+
+<!--
+  ╔══════════════════════════════════════════════════════════════════════╗
+  ║  AmyNest — iOS Entitlements                                          ║
+  ║                                                                      ║
+  ║  In Xcode: select the App target → Signing & Capabilities tab.       ║
+  ║  Add these capabilities using the "+ Capability" button:             ║
+  ║    • Push Notifications                                               ║
+  ║    • Background Modes (Audio, Remote notifications, Background fetch) ║
+  ║    • Associated Domains (for Apple App Site Association / App Links)  ║
+  ║    • Access WiFi Information (optional)                               ║
+  ║                                                                      ║
+  ║  Or paste this into  ios/App/App/App.entitlements                    ║
+  ╚══════════════════════════════════════════════════════════════════════╝
+-->
 <plist version="1.0">
 <dict>
-	<key>aps-environment</key>
-	<string>production</string>
-	<key>com.apple.developer.associated-domains</key>
-	<array>
-		<string>applinks:amynest.in</string>
-		<string>webcredentials:amynest.in</string>
-	</array>
-	<key>keychain-access-groups</key>
-	<array>
-		<string>$(AppIdentifierPrefix)com.amynest.app</string>
-	</array>
+
+  <!-- Push Notifications (APNs) -->
+  <key>aps-environment</key>
+  <string>production</string>
+
+  <!-- Associated Domains (deep links + Universal Links) -->
+  <key>com.apple.developer.associated-domains</key>
+  <array>
+    <string>applinks:amynest.in</string>
+    <string>webcredentials:amynest.in</string>
+  </array>
+
+  <!-- Keychain sharing (session persistence across app updates) -->
+  <key>keychain-access-groups</key>
+  <array>
+    <string>$(AppIdentifierPrefix)com.amynest.app</string>
+  </array>
+
 </dict>
 </plist>
