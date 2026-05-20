@@ -25,6 +25,7 @@ import { AmyIcon } from "@/components/amy-icon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { usePrimeIosMicrophone } from "@/hooks/use-prime-ios-microphone";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
@@ -151,6 +152,9 @@ function playCue(type: "success" | "retry") {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
     osc.connect(gain);
     gain.connect(ctx.destination);
+    osc.onended = () => {
+      void ctx.close().catch(() => undefined);
+    };
     osc.start();
     osc.stop(ctx.currentTime + 0.24);
   } catch {
@@ -598,6 +602,7 @@ function EmptyFullScreen({ title, body }: { title: string; body: string }) {
 }
 
 export default function LiveSpeechCoachPage() {
+  usePrimeIosMicrophone();
   const childrenQuery = useListChildren();
   const childList = (childrenQuery.data ?? []) as AnyChild[];
   const eligible = childList.filter((c) => {

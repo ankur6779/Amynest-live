@@ -11,7 +11,9 @@ import {
   initCapacitorIOSPush,
   isAmyNestWrapper,
   isCapacitorIOS,
+  isDeliverableIosPushToken,
   resetCapacitorIOSPushState,
+  waitForDeliverableIosPushToken,
 } from "@/lib/native-push-bridge";
 
 const REGISTERED_KEY = "notify_device_registered_at";
@@ -54,8 +56,7 @@ export function usePushRegistration(): void {
     const deviceName = isCapacitorIOS() ? "AmyNest iOS" : "KidSchedule Android";
 
     const registerToken = async (token: string) => {
-      // Capacitor fires APNs hex first; only the FCM registration token is deliverable from the API.
-      if (isCapacitorIOS() && /^[0-9a-f]{64}$/i.test(token.trim())) return;
+      if (isCapacitorIOS() && !isDeliverableIosPushToken(token)) return;
 
       const key = `${userId}::${token}`;
       if (lastKeyRef.current === key) return;
@@ -102,13 +103,7 @@ export function usePushRegistration(): void {
       }
 
       if (status?.permission === "granted") {
-        const facade = {
-          getFcmEnabled: () => true,
-          getPermissionStatus: () => status.permission,
-          getToken: () => null,
-          platform: "ios" as const,
-        };
-        const token = await getNativePushToken(facade, 20_000);
+        const token = await waitForDeliverableIosPushToken(25_000);
         if (!cancelled && token) await registerToken(token);
       }
     };

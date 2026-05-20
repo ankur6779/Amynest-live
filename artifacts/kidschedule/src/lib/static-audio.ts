@@ -1,7 +1,7 @@
 import audioMap from "@/data/static-audio-map.json";
 import { agentDebugLog } from "@/lib/agent-debug-log";
 import { getApiUrl } from "@/lib/api";
-import { playHtmlAudio } from "@/lib/tts-guard";
+import { configureMobileAudioElement, playHtmlAudio } from "@/lib/tts-guard";
 import {
   assertStaticAudioUrl,
   assertStaticPlaybackUrl,
@@ -313,8 +313,7 @@ export function preloadStaticPhrases(
 function createFreshAudio(proxyUrl: string): HTMLAudioElement {
   assertStaticPlaybackUrl(proxyUrl);
   const audio = new Audio(proxyUrl);
-  // Lazy until play() — browser HTTP cache serves repeat phrases.
-  audio.preload = "none";
+  configureMobileAudioElement(audio);
   return audio;
 }
 
@@ -404,6 +403,11 @@ export async function safePlayAudio(
     }
     return true;
   } catch (err) {
+    const errName = (err as { name?: string })?.name ?? "";
+    const errMsg = err instanceof Error ? err.message : String(err);
+    if (errName === "AbortError" || /aborted/i.test(errMsg)) {
+      return false;
+    }
     console.error("[AUDIO PLAY FAILED]", err);
     reportStaticAudioPlayFailed(err, audio, {
       phrase: opts.phrase,

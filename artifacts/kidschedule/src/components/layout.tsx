@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePushRegistration } from "@/hooks/use-push-registration";
 import { useCapacitorPushRegistrationSync } from "@/hooks/use-capacitor-push-registration-sync";
+import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { NotificationNudgeBanner } from "@/components/notification-nudge-banner";
 import { NotificationPromptModal } from "@/components/notification-prompt-modal";
 import { SpotlightTour } from "@/components/spotlight-tour";
@@ -217,9 +218,9 @@ export function Layout({
     }
     setLocation("/dashboard");
   };
-  return <div className="main-container flex min-h-dvh w-full flex-col bg-background">
+  return <div className="main-container flex min-h-dvh w-full max-w-full min-w-0 flex-col bg-background overflow-x-hidden">
       {/* Mobile Header */}
-      {!isImmersiveRoute && <header className="sticky top-0 z-40 flex min-h-20 w-full items-center justify-between gap-2 border-b bg-background px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] md:hidden shadow-sm">
+      {!isImmersiveRoute && <header className={`sticky top-0 z-40 flex min-h-20 w-full max-w-full min-w-0 items-center justify-between gap-2 border-b bg-background px-4 py-3 md:hidden shadow-sm ${isNativeAmyNestShell() ? "pt-3" : "pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]"}`}>
         <div className="flex min-w-0 items-center gap-2">
           {canShowBack ? (
             <button

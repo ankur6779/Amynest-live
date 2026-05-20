@@ -117,38 +117,63 @@ export function useNativeBilling(): NativeBillingState {
     userIdSyncedRef.current = null;
   }, [platform]);
 
-  // ── iOS: init RevenueCat + probe availability ─────────────────────────────
+  const probeIosBilling = useCallback(async () => {
+    if (!iosShell || !user?.id) return;
+    const result = await initIOSBilling(user.id);
+    if (!result.ok) {
+      setAvailable(false);
+      setPriceByPlan({});
+      setUnavailableReason(result.reason);
+      return;
+    }
+
+    let monthly = await getIOSPackageForPlan("monthly");
+    let sixMonth = await getIOSPackageForPlan("six_month");
+    let yearly = await getIOSPackageForPlan("yearly");
+
+    for (let attempt = 0; attempt < 4 && !monthly && !sixMonth && !yearly; attempt++) {
+      await new Promise((r) => setTimeout(r, 1200));
+      [monthly, sixMonth, yearly] = await Promise.all([
+        getIOSPackageForPlan("monthly"),
+        getIOSPackageForPlan("six_month"),
+        getIOSPackageForPlan("yearly"),
+      ]);
+    }
+
+    const hasStorePlans = !!(monthly || sixMonth || yearly);
+    setAvailable(hasStorePlans);
+    setUnavailableReason(
+      hasStorePlans
+        ? null
+        : "Subscription plans are not loaded from the App Store yet. Confirm products are live in App Store Connect and linked in RevenueCat, then reopen the app.",
+    );
+    setPriceByPlan({
+      ...(monthly?.product.priceString ? { monthly: monthly.product.priceString } : {}),
+      ...(sixMonth?.product.priceString ? { six_month: sixMonth.product.priceString } : {}),
+      ...(yearly?.product.priceString ? { yearly: yearly.product.priceString } : {}),
+    });
+  }, [iosShell, user?.id]);
+
+  // ── iOS: init RevenueCat + probe availability (retry on focus) ───────────
   useEffect(() => {
     if (!iosShell || !user?.id) return;
     let cancelled = false;
-
-    void (async () => {
-      const ok = await initIOSBilling(user.id);
+    const run = async () => {
       if (cancelled) return;
-      if (ok) {
-        setAvailable(true);
-        const [monthly, sixMonth, yearly] = await Promise.all([
-          getIOSPackageForPlan("monthly"),
-          getIOSPackageForPlan("six_month"),
-          getIOSPackageForPlan("yearly"),
-        ]);
-        if (!cancelled) {
-          setPriceByPlan({
-            ...(monthly?.product.priceString ? { monthly: monthly.product.priceString } : {}),
-            ...(sixMonth?.product.priceString ? { six_month: sixMonth.product.priceString } : {}),
-            ...(yearly?.product.priceString ? { yearly: yearly.product.priceString } : {}),
-          });
-        }
-      } else {
-        setAvailable(false);
-        setUnavailableReason(
-          "Apple In-App Purchases aren't available right now. Make sure you are signed in to the App Store, then try again.",
-        );
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [iosShell, user?.id]);
+      await probeIosBilling();
+    };
+    void run();
+    const onRetry = () => {
+      if (!cancelled) void probeIosBilling();
+    };
+    window.addEventListener("focus", onRetry);
+    window.addEventListener("pageshow", onRetry);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", onRetry);
+      window.removeEventListener("pageshow", onRetry);
+    };
+  }, [iosShell, user?.id, probeIosBilling]);
 
   // ── Android: probe Google Play Billing availability ───────────────────────
   useEffect(() => {

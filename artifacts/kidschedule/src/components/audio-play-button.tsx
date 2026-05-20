@@ -120,6 +120,16 @@ export function AudioPlayButton({
     }
   }, [text, mode, prefetchNextText]);
 
+  const handlePointerDown = useCallback(() => {
+    recordTtsUserGesture();
+    warmStaticAudioOnFirstGesture();
+    const trimmed = (text ?? "").trim();
+    if (trimmed) {
+      const url = lookupStaticAudioUrl(trimmed, mode ?? "default");
+      if (url) prefetchStaticAudioUrl(url);
+    }
+  }, [text, mode]);
+
   const handleClick = useCallback(async () => {
     recordTtsUserGesture();
     warmStaticAudioOnFirstGesture();
@@ -155,6 +165,7 @@ export function AudioPlayButton({
     <Button
       type="button"
       onClick={handleClick}
+      onPointerDown={handlePointerDown}
       onPointerEnter={handlePointerEnter}
       disabled={busy}
       aria-label={ariaLabel ?? `Play ${text}`}

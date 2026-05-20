@@ -1,4 +1,5 @@
 import { resolveApiMediaUrl } from "@/lib/api";
+import { configureMobileAudioElement } from "@/lib/tts-guard";
 import { wait } from "@/lib/poll-result";
 import {
   isCatalogPhrase,
@@ -34,6 +35,7 @@ export function playAudio(url: string): HTMLAudioElement | null {
   try {
     const resolved = resolveApiMediaUrl(url);
     const audio = new Audio(resolved);
+    configureMobileAudioElement(audio);
     return audio;
   } catch (e) {
     console.error("Invalid audio URL", url, e);

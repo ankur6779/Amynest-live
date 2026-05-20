@@ -19,6 +19,7 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ChildDobPicker } from "@/components/child-dob-picker";
 import { ChildGoalsCard } from "@/components/intelligence/child-goals-card";
 import { InsightsCard } from "@/components/intelligence/insights-card";
 import { FixedActivitiesEditor } from "@/components/routines/fixed-activities-editor";
@@ -526,7 +527,12 @@ export default function ChildForm() {
                     <FormLabel className="font-bold">{t("pages.children.form.date_of_birth")}</FormLabel>
                     <FormDescription>{t("pages.children.form.we_use_this_to_auto_detect_the_age_group_and_customize_the_r")}</FormDescription>
                     <FormControl>
-                      <Input type="date" max={todayStr} className={inputClass} {...field} />
+                      <ChildDobPicker
+                        value={field.value}
+                        max={todayStr}
+                        onChange={field.onChange}
+                        className="w-full"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>;

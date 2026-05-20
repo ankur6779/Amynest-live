@@ -16,7 +16,12 @@ import {
   prepareStaticPlaybackAudio,
   safePlayAudio,
 } from "@/lib/static-audio";
-import { isTtsPlaybackAllowed, recordTtsUserGesture } from "@/lib/tts-guard";
+import {
+  configureMobileAudioElement,
+  getTtsRequestTimeoutMs,
+  isTtsPlaybackAllowed,
+  recordTtsUserGesture,
+} from "@/lib/tts-guard";
 
 // ─── Global single-flight guard ───────────────────────────────────────────────
 // At most one ElevenLabs network round-trip at a time, across all hook
@@ -26,7 +31,6 @@ import { isTtsPlaybackAllowed, recordTtsUserGesture } from "@/lib/tts-guard";
 //     (original cancel-and-restart behaviour preserved).
 //   • stop() and unmount cleanly release the lock immediately.
 let _ttsBusy = false;
-const TTS_TIMEOUT_MS = 8_000;
 export interface UseAmyVoiceOptions {
   /** Optional override for the voice persona (ElevenLabs voice id). */
   voiceId?: string;
@@ -199,14 +203,18 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
 
       const controller = new AbortController();
       abortRef.current = controller;
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-      // Hard 8-second timeout — aborts the controller if ElevenLabs stalls.
-      const timeoutId = setTimeout(() => {
-        if (abortRef.current === controller) {
-          console.error("[TTS] request timed out after", TTS_TIMEOUT_MS, "ms — aborting");
-          controller.abort();
-        }
-      }, TTS_TIMEOUT_MS);
+      const armTtsNetworkTimeout = () => {
+        const ms = getTtsRequestTimeoutMs();
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          if (abortRef.current === controller) {
+            console.error("[TTS] request timed out after", ms, "ms — aborting");
+            controller.abort();
+          }
+        }, ms);
+      };
 
       safeSetError(null);
       safeSetLoading(true);
@@ -218,8 +226,10 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
 
         const staticAudio = await prepareStaticPlaybackAudio(text, staticMode);
         if (staticAudio) {
+          if (timeoutId) clearTimeout(timeoutId);
           logTtsClient("Static audio hit", { chars: text.length, mode: staticMode });
           cleanup();
+          configureMobileAudioElement(staticAudio);
           staticAudio.playbackRate = playbackRateRef.current;
           staticAudio.onended = () => {
             if (myId !== reqIdRef.current || !isMounted.current) return;
@@ -258,6 +268,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           return { success: false, error: "tts_static_missing_url" };
         }
 
+        armTtsNetworkTimeout();
         logTtsClient("Request start", { chars: text.length, mode });
         const data = await synthesizeTtsWithBackgroundPoll(
           authFetch,
@@ -299,6 +310,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
 
         cleanup();
         const audio = playAudio(playbackUrl);
+        if (timeoutId) clearTimeout(timeoutId);
         if (!audio) {
           console.warn("No audio, skip");
           return { success: false, error: "tts_invalid_audio_url" };
@@ -342,8 +354,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         const errName = (err as { name?: string })?.name;
         if (errName === "AbortError") {
           if (myId === reqIdRef.current && isMounted.current) {
-            // Timeout abort (not superseded by a newer call or stop()).
-            console.error("[TTS] timed out — request aborted after", TTS_TIMEOUT_MS, "ms");
+            console.error("[TTS] timed out — request aborted after", getTtsRequestTimeoutMs(), "ms");
             safeSetError("tts_timeout");
             safeSetSpeaking(false);
             return { success: false, error: "tts_timeout" };
@@ -361,7 +372,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         return { success: false, error: errMsg };
 
       } finally {
-        clearTimeout(timeoutId);
+        if (timeoutId) clearTimeout(timeoutId);
         // Only release the global lock if this call still owns it
         // (i.e. it hasn't already been released by stop() or a newer call).
         if (myId === reqIdRef.current && isMounted.current) {
