@@ -3,7 +3,8 @@ import { Bell, BellOff, X, RefreshCw } from "lucide-react";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
-import { ensureNativePushReady, getNativePushBridge, registerNativePushToken, requestNativePushPermission, type NativePushPermission } from "@/lib/native-push-bridge";
+import { useWebPush } from "@/hooks/use-web-push";
+import { ensureNativePushReady, getBrowserNotificationPermission, getNativePushBridge, registerNativePushToken, requestNativePushPermission, type NativePushPermission } from "@/lib/native-push-bridge";
 import { useTranslation } from "react-i18next";
 const DISMISS_KEY = "notify_nudge_dismissed_until";
 const REGISTERED_KEY = "notify_device_registered_at";
@@ -53,6 +54,7 @@ export function NotificationNudgeBanner() {
     userId
   } = useAuth();
   const authFetch = useAuthFetch();
+  const webPush = useWebPush();
   const computeState = useCallback((): BannerState => {
     if (!isSignedIn || !userId) return "hidden";
     if (typeof window === "undefined") return "hidden";
@@ -68,9 +70,15 @@ export function NotificationNudgeBanner() {
       if (isRecentlyRegistered()) return "hidden";
       return "reconnect";
     }
-    // Not in the native wrapper — web push is disabled, hide the banner.
+    if (!webPush.isSupported) return "hidden";
+    const webPerm = getBrowserNotificationPermission();
+    if (webPerm === "denied") return "denied";
+    if (webPerm === "default") return "ask";
+    if (webPerm === "granted") {
+      return isRecentlyRegistered() ? "hidden" : "reconnect";
+    }
     return "hidden";
-  }, [isSignedIn, userId]);
+  }, [isSignedIn, userId, webPush.isSupported]);
   const [state, setState] = useState<BannerState>(() => computeState());
   const [dismissed, setDismissed] = useState(() => isDismissed());
   const [working, setWorking] = useState(false);
@@ -80,9 +88,11 @@ export function NotificationNudgeBanner() {
     // Hydrate the native bridge cache so subsequent renders see the real
     // permission/token instead of the "default" placeholder.
     let cancelled = false;
-    void ensureNativePushReady().then(() => {
-      if (!cancelled) setState(computeState());
-    });
+    if (getNativePushBridge()) {
+      void ensureNativePushReady().then(() => {
+        if (!cancelled) setState(computeState());
+      });
+    }
 
     // Re-evaluate when the native bridge fires permission/token updates,
     // or when the push hook signals a successful background registration.
@@ -96,7 +106,7 @@ export function NotificationNudgeBanner() {
       window.removeEventListener("amynest-push-token", recompute);
       window.removeEventListener("amynest-push-registered", recompute);
     };
-  }, [computeState]);
+  }, [computeState, webPush.status]);
   const requestAndRegister = async () => {
     setWorking(true);
     try {
@@ -130,8 +140,25 @@ export function NotificationNudgeBanner() {
         return;
       }
 
-      // Not in the native wrapper — web push is disabled, do nothing.
-      setState("hidden");
+      if (webPush.status === "granted") {
+        const ok = await webPush.refreshRegistration();
+        if (ok) {
+          markRegistered();
+          clearDismiss();
+          setState("hidden");
+        } else {
+          setState("reconnect");
+        }
+      } else {
+        await webPush.enable();
+        if (getBrowserNotificationPermission() === "granted") {
+          markRegistered();
+          clearDismiss();
+          setState("hidden");
+        } else {
+          setState(computeState());
+        }
+      }
     } catch {
       setState("denied");
     }
@@ -141,7 +168,7 @@ export function NotificationNudgeBanner() {
     snooze();
     setDismissed(true);
   };
-  if (dismissed || state === "hidden" || state === "ask") return null;
+  if (dismissed || state === "hidden") return null;
   if (state === "denied") {
     // Recovery copy is platform-specific because the steps to re-enable
     // notifications differ a lot across surfaces (Chrome desktop is a

@@ -53,6 +53,8 @@ declare global {
     AndroidPush?: {
       getPushToken(): string | null;
       getPermissionStatus?(): string;
+      requestPermission?(): string | null;
+      refreshToken?(): string | null;
     };
     /** Legacy Android APK (v1): addWebMessageListener message-bus object. */
     AmyNestPushNative?: {
@@ -109,8 +111,26 @@ declare global {
 
 let cachedToken: string | null = null;
 let tokenListenerWired = false;
+let androidCallbackWired = false;
 /** "ios" | "new" | "legacy" | null — which bridge is active */
 let activeBridgeKind: "ios" | "new" | "legacy" | null = null;
+
+function dispatchPushToken(token: string): void {
+  cachedToken = token;
+  try {
+    window.dispatchEvent(
+      new CustomEvent("amynest-push-token", { detail: { token } }),
+    );
+  } catch { /* ignore */ }
+}
+
+function dispatchPushPermission(permission: NativePushPermission): void {
+  try {
+    window.dispatchEvent(
+      new CustomEvent("amynest-push-permission", { detail: { permission } }),
+    );
+  } catch { /* ignore */ }
+}
 
 // ── iOS Capacitor helpers ─────────────────────────────────────────────────
 
@@ -120,9 +140,16 @@ function getCapacitorPlugin() {
 }
 
 export function isCapacitorIOS(): boolean {
+  try {
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
+      return true;
+    }
+  } catch {
+    /* fall through to runtime object */
+  }
   if (typeof window === "undefined") return false;
   const cap = window.Capacitor;
-  return !!(cap && cap.isNativePlatform?.() && cap.getPlatform?.() === "ios");
+  return !!(cap?.isNativePlatform?.() && cap.getPlatform?.() === "ios");
 }
 
 /**
@@ -354,9 +381,37 @@ function tryGetTokenNew(): string | null {
   if (!ap) return null;
   try {
     const t = ap.getPushToken();
-    if (t) { cachedToken = t; return t; }
+    if (t) { dispatchPushToken(t); return t; }
   } catch { /* ignore */ }
   return null;
+}
+
+function refreshTokenNew(): string | null {
+  const ap = getAndroidPush();
+  if (!ap) return tryGetTokenNew();
+  try {
+    const t = ap.refreshToken?.();
+    if (t) {
+      dispatchPushToken(t);
+      return t;
+    }
+  } catch { /* ignore */ }
+  return tryGetTokenNew();
+}
+
+function requestPermissionNew(): NativePushPermission {
+  const ap = getAndroidPush();
+  if (!ap) return "default";
+  try {
+    const raw = ap.requestPermission?.();
+    if (raw === "granted" || raw === "denied" || raw === "default") {
+      dispatchPushPermission(raw);
+      return raw;
+    }
+  } catch { /* ignore */ }
+  const permission = readPermissionNew();
+  dispatchPushPermission(permission);
+  return permission;
 }
 
 function wireTokenListenerOnce() {
@@ -366,6 +421,18 @@ function wireTokenListenerOnce() {
     const detail = (e as CustomEvent<{ token: string }>).detail;
     if (detail?.token) cachedToken = detail.token;
   });
+}
+
+function wireAndroidCallbackOnce() {
+  if (androidCallbackWired || typeof window === "undefined") return;
+  androidCallbackWired = true;
+  const previous = window.onAndroidToken;
+  window.onAndroidToken = (token: string) => {
+    try { previous?.(token); } catch { /* ignore */ }
+    if (!token) return;
+    window.__pendingAndroidToken = token;
+    dispatchPushToken(token);
+  };
 }
 
 // ── Android legacy-bridge helpers ─────────────────────────────────────────
@@ -390,27 +457,13 @@ function installLegacyMessageListener() {
     try {
       const msg = JSON.parse(event.data);
       if (msg.type === "token" && msg.token) {
-        cachedToken = msg.token;
-        try {
-          window.dispatchEvent(
-            new CustomEvent("amynest-push-token", { detail: { token: msg.token } }),
-          );
-        } catch { /* ignore */ }
+        dispatchPushToken(msg.token);
       }
       if (msg.type === "permission" && msg.permission) {
         legacyCachedPermission = msg.permission as NativePushPermission;
-        try {
-          window.dispatchEvent(
-            new CustomEvent("amynest-push-permission", { detail: { permission: msg.permission } }),
-          );
-        } catch { /* ignore */ }
+        dispatchPushPermission(legacyCachedPermission);
         if (msg.permission === "granted" && msg.token) {
-          cachedToken = msg.token;
-          try {
-            window.dispatchEvent(
-              new CustomEvent("amynest-push-token", { detail: { token: msg.token } }),
-            );
-          } catch { /* ignore */ }
+          dispatchPushToken(msg.token);
         }
       }
     } catch { /* ignore */ }
@@ -493,6 +546,7 @@ export function getNativePushBridge(): NativePushFacade | null {
   if (ap) {
     activeBridgeKind = "new";
     wireTokenListenerOnce();
+    wireAndroidCallbackOnce();
     return {
       platform: "android",
       getFcmEnabled: () => true,
@@ -540,11 +594,12 @@ export async function ensureNativePushReady(): Promise<{
   if (ap) {
     activeBridgeKind = "new";
     wireTokenListenerOnce();
+    wireAndroidCallbackOnce();
     const permission = readPermissionNew();
     const fromBridge = tryGetTokenNew();
     const pending = typeof window !== "undefined" ? window.__pendingAndroidToken : null;
     if (pending && !cachedToken) {
-      cachedToken = pending;
+      dispatchPushToken(pending);
       if (typeof window !== "undefined") window.__pendingAndroidToken = null;
     }
     return { fcmEnabled: true, permission, token: cachedToken ?? fromBridge };
@@ -645,7 +700,28 @@ export function requestNativePushPermission(
 
   // Android new APK — OS dialog is triggered natively
   if (activeBridgeKind === "new") {
-    return Promise.resolve(readPermissionNew());
+    const immediate = requestPermissionNew();
+    if (immediate !== "default") return Promise.resolve(immediate);
+    return new Promise((resolve) => {
+      if (typeof window === "undefined") { resolve(immediate); return; }
+      let settled = false;
+      const timer = window.setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        window.removeEventListener("amynest-push-permission", onPermEvt);
+        resolve(readPermissionNew());
+      }, Math.min(timeoutMs, 30_000));
+      const onPermEvt = (e: Event) => {
+        if (settled) return;
+        const p = (e as CustomEvent<{ permission: string }>).detail?.permission;
+        if (p !== "granted" && p !== "denied" && p !== "default") return;
+        settled = true;
+        window.clearTimeout(timer);
+        window.removeEventListener("amynest-push-permission", onPermEvt);
+        resolve(p);
+      };
+      window.addEventListener("amynest-push-permission", onPermEvt);
+    });
   }
 
   // Android legacy APK
@@ -698,6 +774,8 @@ export async function getNativePushToken(
   if (activeBridgeKind === "ios" || activeBridgeKind === "new" || getAndroidPush()) {
     return new Promise((resolve) => {
       if (typeof window === "undefined") { resolve(null); return; }
+      const immediate = activeBridgeKind === "new" ? refreshTokenNew() : cachedToken;
+      if (immediate) { resolve(immediate); return; }
       let settled = false;
       const timer = window.setTimeout(() => {
         if (settled) return;

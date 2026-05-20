@@ -7,7 +7,7 @@ Complete ALL items before submitting. Missing items = **rejection**.
 ## 🔴 CRITICAL — Will cause instant rejection
 
 ### 1. PrivacyInfo.xcprivacy (Privacy Manifest) — Required since May 2024
-- [ ] File placed at `ios/App/App/PrivacyInfo.xcprivacy`
+- [x] File placed at `ios/App/App/PrivacyInfo.xcprivacy`
 - [ ] Added to the Xcode **App** target (check "Target Membership" in File Inspector)
 - [ ] Template: `ios-config/PrivacyInfo.xcprivacy` in this repo ✅
 
@@ -28,7 +28,7 @@ Complete ALL items before submitting. Missing items = **rejection**.
 - [ ] No text that needs translation in the launch screen
 
 ### 5. Export Compliance
-- [ ] `ITSAppUsesNonExemptEncryption = NO` added to Info.plist
+- [x] `ITSAppUsesNonExemptEncryption = NO` added to Info.plist
   (template: `ios-config/ExportCompliance.plist`) ✅
 - [ ] In App Store Connect: "Does your app use encryption?" → **No** (or "Exempt")
 
@@ -37,10 +37,10 @@ Complete ALL items before submitting. Missing items = **rejection**.
 ## 🟡 IMPORTANT — May cause rejection or delay
 
 ### 6. Permission Strings (all must be accurate)
-- [ ] Microphone — `NSMicrophoneUsageDescription`
-- [ ] Camera — `NSCameraUsageDescription`
-- [ ] Photo Library — `NSPhotoLibraryUsageDescription`
-- [ ] Face ID — `NSFaceIDUsageDescription`
+- [x] Microphone — `NSMicrophoneUsageDescription`
+- [x] Camera — `NSCameraUsageDescription`
+- [x] Photo Library — `NSPhotoLibraryUsageDescription`
+- [x] Face ID — `NSFaceIDUsageDescription`
 - [ ] All strings are in the **same language as the app's primary language**
 - [ ] Template: `ios-config/Info-permissions.plist` ✅
 
@@ -74,10 +74,10 @@ Complete ALL items before submitting. Missing items = **rejection**.
   - OR: Remove Google Sign-In entirely and use email/password only
 
 ### 10. In-App Purchases
-- [ ] If using RevenueCat / Razorpay for iOS payments, all in-app purchases
-  must be configured in App Store Connect before review
-- [ ] Subscription plans must have clear descriptions and duration
-- [ ] Restore Purchases button must be visible
+- [x] iOS app uses RevenueCat + Apple In-App Purchase only; Razorpay is blocked inside iOS
+- [ ] Products/subscriptions must be configured in App Store Connect and RevenueCat before review
+- [x] Subscription plans have clear descriptions and duration in the paywall
+- [x] Restore Purchases button is visible
 
 ---
 

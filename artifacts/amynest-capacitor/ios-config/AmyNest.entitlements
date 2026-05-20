@@ -20,8 +20,7 @@
 
   <!-- Push Notifications (APNs) -->
   <key>aps-environment</key>
-  <string>development</string>
-  <!-- Change to "production" before submitting to the App Store -->
+  <string>production</string>
 
   <!-- Associated Domains (deep links + Universal Links) -->
   <key>com.apple.developer.associated-domains</key>

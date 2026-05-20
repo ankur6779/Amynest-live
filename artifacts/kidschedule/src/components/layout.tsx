@@ -194,7 +194,7 @@ export function Layout({
     safePathStartsWith(location, "/assistant") || safePathStartsWith(location, "/amy-ai-tutor");
   const isImmersiveRoute =
     isChatRoute || safePathStartsWith(location, "/phonics") || safePathStartsWith(location, "/speech-coach");
-  const showDashboardChrome = safePathStartsWithSegment(location, "/dashboard");
+  const showDashboardChrome = location === "/dashboard";
 
   useEffect(() => {
     logNavEvent("layout-mounted", { location });

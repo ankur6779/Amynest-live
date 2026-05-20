@@ -27,6 +27,12 @@ type RcConfig = {
   packageMap: Record<Exclude<Plan, "free">, string>;
 };
 
+function detectBillingPlatform(): "ios" | "android" | "web" {
+  if (isCapacitorIOS()) return "ios";
+  if (isWrapperPresent()) return "android";
+  return "web";
+}
+
 export type NativeBillingState = {
   /** "ios" inside Capacitor iOS shell, "android" inside Android wrapper, "web" otherwise. */
   platform: "ios" | "android" | "web";
@@ -42,6 +48,7 @@ export type NativeBillingState = {
    * requires using the native payment method (Apple IAP or Google Play).
    */
   unavailableReason: string | null;
+  priceByPlan: Partial<Record<Exclude<Plan, "free">, string>>;
   purchase: (
     plan: Exclude<Plan, "free">,
   ) => Promise<{ ok: boolean; reason?: string; userCancelled?: boolean }>;
@@ -56,17 +63,34 @@ export type NativeBillingState = {
  *   Browser/PWA     → wrapperPresent: false, callers show Razorpay / web flow
  */
 export function useNativeBilling(): NativeBillingState {
-  const iosShell = useMemo(() => isCapacitorIOS(), []);
-  const androidWrapper = useMemo(
-    () => !iosShell && isWrapperPresent(),
-    [iosShell],
+  const [platform, setPlatform] = useState<"ios" | "android" | "web">(
+    () => detectBillingPlatform(),
   );
-  const platform: "ios" | "android" | "web" = iosShell
-    ? "ios"
-    : androidWrapper
-      ? "android"
-      : "web";
+  const iosShell = platform === "ios";
+  const androidWrapper = platform === "android";
   const wrapperPresent = iosShell || androidWrapper;
+
+  useEffect(() => {
+    let cancelled = false;
+    let attempts = 0;
+    const syncPlatform = () => {
+      if (cancelled) return;
+      const next = detectBillingPlatform();
+      setPlatform((current) => (current === next ? current : next));
+      attempts += 1;
+      if (next === "web" && attempts < 20) {
+        window.setTimeout(syncPlatform, 250);
+      }
+    };
+    syncPlatform();
+    window.addEventListener("focus", syncPlatform);
+    window.addEventListener("pageshow", syncPlatform);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", syncPlatform);
+      window.removeEventListener("pageshow", syncPlatform);
+    };
+  }, []);
 
   // Android bridge (null when not in Android wrapper)
   const androidBridge = useMemo<NativeBilling | null>(
@@ -81,8 +105,17 @@ export function useNativeBilling(): NativeBillingState {
   const [available, setAvailable] = useState(false);
   const [unavailableReason, setUnavailableReason] = useState<string | null>(null);
   const [packageMap, setPackageMap] = useState<RcConfig["packageMap"] | null>(null);
+  const [priceByPlan, setPriceByPlan] = useState<Partial<Record<Exclude<Plan, "free">, string>>>({});
   const [purchasing, setPurchasing] = useState(false);
   const userIdSyncedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    setAvailable(false);
+    setUnavailableReason(null);
+    setPackageMap(null);
+    setPriceByPlan({});
+    userIdSyncedRef.current = null;
+  }, [platform]);
 
   // ── iOS: init RevenueCat + probe availability ─────────────────────────────
   useEffect(() => {
@@ -94,6 +127,18 @@ export function useNativeBilling(): NativeBillingState {
       if (cancelled) return;
       if (ok) {
         setAvailable(true);
+        const [monthly, sixMonth, yearly] = await Promise.all([
+          getIOSPackageForPlan("monthly"),
+          getIOSPackageForPlan("six_month"),
+          getIOSPackageForPlan("yearly"),
+        ]);
+        if (!cancelled) {
+          setPriceByPlan({
+            ...(monthly?.product.priceString ? { monthly: monthly.product.priceString } : {}),
+            ...(sixMonth?.product.priceString ? { six_month: sixMonth.product.priceString } : {}),
+            ...(yearly?.product.priceString ? { yearly: yearly.product.priceString } : {}),
+          });
+        }
       } else {
         setAvailable(false);
         setUnavailableReason(
@@ -138,13 +183,25 @@ export function useNativeBilling(): NativeBillingState {
         const res = await authFetch(getApiUrl("/api/subscription/rc-config"));
         if (!res.ok) return;
         const cfg = (await res.json()) as RcConfig;
-        if (!cancelled) setPackageMap(cfg.packageMap);
+        if (cancelled) return;
+        setPackageMap(cfg.packageMap);
+        const offerings = await androidBridge?.getOfferings();
+        if (!offerings?.ok) return;
+        const nextPrices: Partial<Record<Exclude<Plan, "free">, string>> = {};
+        for (const plan of ["monthly", "six_month", "yearly"] as const) {
+          const nativePackageId = cfg.packageMap[plan];
+          const pkg = offerings.data.packages.find(
+            (p) => p.identifier === nativePackageId || p.productId === nativePackageId,
+          );
+          if (pkg?.priceString) nextPrices[plan] = pkg.priceString;
+        }
+        if (!cancelled) setPriceByPlan(nextPrices);
       } catch {
         /* ignore — paywall shows error when user taps Buy */
       }
     })();
     return () => { cancelled = true; };
-  }, [androidWrapper, available, authFetch]);
+  }, [androidWrapper, androidBridge, available, authFetch]);
 
   // ── purchase ──────────────────────────────────────────────────────────────
   const purchase = useCallback(
@@ -243,6 +300,7 @@ export function useNativeBilling(): NativeBillingState {
     available,
     purchasing,
     unavailableReason,
+    priceByPlan,
     purchase,
     restore,
   };

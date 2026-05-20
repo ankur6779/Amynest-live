@@ -441,7 +441,7 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
       <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
       <div className="relative mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-4">
         <header className="flex items-center gap-3">
-          <Link href="/parenting-hub">
+          <Link href="/speech-coach">
             <Button variant="ghost" size="icon" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -558,9 +558,9 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
                 <RotateCcw className="h-4 w-4" />
                 New Session
               </Button>
-              <Link href="/parenting-hub">
+              <Link href="/speech-coach">
                 <Button type="button" variant="ghost" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
-                  Back to Parent Hub
+                  Back to Speech Coach
                 </Button>
               </Link>
             </div>
@@ -625,7 +625,7 @@ export default function LiveSpeechCoachPage() {
               <Link href="/children/new">
                 <Button className="rounded-full">Add Child</Button>
               </Link>
-              <Link href="/parenting-hub">
+              <Link href="/speech-coach">
                 <Button variant="ghost" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">Back</Button>
               </Link>
             </div>

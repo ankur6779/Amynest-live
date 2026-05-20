@@ -1139,16 +1139,17 @@ export default function SpeechCoachPage() {
           <CheckCircle2 className="h-4 w-4" />
           {t("screens.speech_coach.cta.check_milestones")}
         </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          onClick={() => scrollToSection("speech-section-practice")}
-          data-testid="cta-daily-session"
-        >
-          <Mic className="h-4 w-4" />
-          {t("screens.speech_coach.cta.daily_session")}
-        </Button>
+        <Link href="/speech-coach/live">
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            data-testid="cta-daily-session"
+          >
+            <Mic className="h-4 w-4" />
+            {t("screens.speech_coach.cta.daily_session")}
+          </Button>
+        </Link>
         <Button
           type="button"
           size="sm"

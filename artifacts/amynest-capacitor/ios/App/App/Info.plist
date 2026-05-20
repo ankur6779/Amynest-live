@@ -20,17 +20,31 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
-		<true/>
+		<false/>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<false/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>AmyNest uses the camera only when you choose to capture a child profile or milestone photo.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>AmyNest accesses contacts only if you choose to share a routine with someone from your contacts.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>AmyNest can use Face ID to help protect your parenting data if you enable biometric lock.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>AmyNest uses your location to show nearby school times, weather-aware routines, and local reminders.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>AmyNest uses your microphone for Speech Coach and pronunciation practice.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>AmyNest saves milestone photos to your photo library only when you ask it to save them.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AmyNest accesses your photo library only when you choose a child profile or milestone photo.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
@@ -58,6 +72,8 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>WKAudiovisualMediaTypes</key>
+	<string>none</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
