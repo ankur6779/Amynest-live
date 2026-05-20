@@ -237,13 +237,6 @@ function ReelOverlay({
   const [muted, setMuted] = useState(false);
   const toggleMute = useCallback(() => setMuted(m => !m), []);
 
-  // Scroll to initial index immediately on open
-  useEffect(() => {
-    const feed = feedRef.current;
-    if (!feed) return;
-    feed.scrollTop = initialIndex * feed.clientHeight;
-  }, [initialIndex]);
-
   // Intersection observer to track active video
   useEffect(() => {
     const feed = feedRef.current;

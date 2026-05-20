@@ -202,7 +202,7 @@ export default function AmyAiTutorPage() {
 
   return (
     <div
-      className="relative mx-auto flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-3xl flex-col bg-background md:h-[calc(100dvh-4rem)] md:max-h-[calc(100dvh-4rem)]"
+      className="relative mx-auto flex min-h-screen w-full max-w-3xl flex-col bg-background"
       data-testid="amy-tutor-page"
     >
       {/* Header */}
@@ -321,7 +321,7 @@ export default function AmyAiTutorPage() {
       <div
         ref={threadRef}
         onScroll={handleThreadScroll}
-        className="min-h-0 flex-1 overflow-y-auto space-y-3 px-4 pb-24 pr-5"
+        className="min-h-0 flex-1 space-y-3 px-4 pb-24 pr-5"
         data-testid="amy-tutor-thread"
       >
         {isEmpty ? (

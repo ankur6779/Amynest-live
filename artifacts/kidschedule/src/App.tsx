@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
 import { devLog } from "@/lib/dev-log";
-import { installDisableOverscrollGesture } from "@/lib/disable-overscroll-gesture";
 import { initAudioUnlock } from "@/lib/tts-guard";
 import { AuthBootShell } from "@/components/auth-boot-shell";
 import DebugOverlay from "@/components/DebugOverlay";
@@ -29,7 +28,6 @@ function App() {
   useEffect(() => {
     devLog("APP MOUNTED");
     initAudioUnlock();
-    return installDisableOverscrollGesture();
   }, []);
 
   // Suspense fallback is `null` rather than a spinner because the
@@ -39,7 +37,7 @@ function App() {
   // gate means the splash always covers the lazy AppCore download, so
   // the user never sees a blank Suspense fallback even on slow networks.
   return (
-    <div id="app-root" className="app-root w-full max-w-full min-w-0">
+    <div id="app-root" className="app-root main-scroll w-full max-w-full min-w-0">
       <DebugOverlay />
       <StaticAudioTestButton />
       {/* ErrorBoundary disabled temporarily while verifying QueryClientProvider fix */}

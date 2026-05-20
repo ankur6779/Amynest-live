@@ -482,25 +482,16 @@
   --shadow-2xl: 0px 12px 0px 0px hsl(var(--border) / 0.5);
 }
 
-/* ── Pull-to-refresh / overscroll bounce (PWA + Capacitor) ───────────────
- * Keep the document in normal flow so Android Chrome/WebView can smoothly
- * hand off scroll momentum, while the touch guard blocks pull-at-top refresh. */
 html,
 body {
   margin: 0;
   padding: 0;
   width: 100%;
   max-width: 100%;
-  min-height: 100%;
-  min-height: 100dvh;
-  height: auto;
+  height: 100%;
   overflow-x: hidden;
-  overscroll-behavior-y: contain;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-x pan-y;
-}
-
-body {
+  overflow-y: auto;
+  touch-action: manipulation;
   overscroll-behavior: none;
 }
 
@@ -547,8 +538,8 @@ html[data-theme="dark"] {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  min-height: 100%;
   height: auto;
-  min-height: 100dvh;
   overflow-x: hidden;
   overflow-y: visible;
   display: flex;
@@ -563,22 +554,19 @@ html[data-theme="dark"] {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  min-height: 100dvh;
+  min-height: 0;
   height: auto;
   overflow-x: hidden;
   overflow-y: visible;
-  overscroll-behavior-y: contain;
-  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
 }
 
-#app-root main,
-#app-root .overflow-y-auto,
-#app-root [data-app-scroll] {
-  overscroll-behavior-y: contain;
-  -webkit-overflow-scrolling: touch;
+.main-scroll {
+  height: auto;
+  overflow: visible;
+  overscroll-behavior: none;
 }
 
 @layer base {
@@ -811,58 +799,6 @@ html.amynest-android-shell body {
 .amynest-android-shell #app-root main > * {
   max-width: 100%;
   min-width: 0;
-}
-
-/* ── Android PWA / WebView scrollport ────────────────────────────────────────
- * Document-level scroll is unreliable in Android WebView (scroll-down works,
- * scroll-up stuck; pull-down triggers refresh). One overflow container on
- * #app-root with overscroll-behavior:none fixes both. */
-html.amynest-android-shell,
-html.amynest-android-shell body {
-  height: 100%;
-  max-height: 100%;
-  min-height: 0;
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;
-  overscroll-behavior: none !important;
-  touch-action: none;
-}
-
-html.amynest-android-shell #root {
-  height: 100%;
-  max-height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  overscroll-behavior: none !important;
-  touch-action: none;
-}
-
-html.amynest-android-shell #app-root {
-  flex: 1 1 auto;
-  display: block;
-  height: 100%;
-  max-height: 100%;
-  min-height: 0;
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: none !important;
-  -webkit-overflow-scrolling: touch;
-  touch-action: none;
-}
-
-html.amynest-android-shell .main-container {
-  min-height: 100%;
-  height: auto;
-  overflow: visible;
-}
-
-html.amynest-android-shell #app-root main {
-  overscroll-behavior: auto;
 }
 
 html.amynest-android-shell .main-container > .flex.flex-1 {
