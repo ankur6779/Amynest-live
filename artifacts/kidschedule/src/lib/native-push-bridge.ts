@@ -186,8 +186,53 @@ const iosPluginListenerRemovers: Array<() => void | Promise<void>> = [];
 let iosWindowTokenListener: ((e: Event) => void) | null = null;
 
 /** Capacitor iOS `registration` is the raw APNs device token (64 hex). Server + FCM need the FCM registration token from native. */
-function looksLikeApnsDeviceTokenHex(token: string): boolean {
+export function looksLikeApnsDeviceTokenHex(token: string): boolean {
   return /^[0-9a-f]{64}$/i.test(token.trim());
+}
+
+/** FCM registration tokens are long opaque strings; APNs-only hex is not deliverable from our API. */
+export function isDeliverableIosPushToken(token: string): boolean {
+  const t = token.trim();
+  if (!t || looksLikeApnsDeviceTokenHex(t)) return false;
+  if (t.startsWith("http") || t.startsWith("{")) return false;
+  // Typical FCM iOS token: long, often contains ':' (not 64-char hex).
+  return t.length > 100 && (t.includes(":") || t.length > 140);
+}
+
+/** Wait for native FCM token (AmyNestFcmBridge → amynest-push-token) after permission is granted. */
+export async function waitForDeliverableIosPushToken(timeoutMs = 20_000): Promise<string | null> {
+  if (!isCapacitorIOS()) return null;
+  if (cachedToken && isDeliverableIosPushToken(cachedToken)) return cachedToken;
+
+  await syncCapacitorPushRegistrationWithOs();
+  await initCapacitorIOSPush();
+
+  if (cachedToken && isDeliverableIosPushToken(cachedToken)) return cachedToken;
+
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve(null);
+      return;
+    }
+    let settled = false;
+    const finish = (tok: string | null) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      window.removeEventListener("amynest-push-token", onToken);
+      resolve(tok && isDeliverableIosPushToken(tok) ? tok : null);
+    };
+
+    const timer = window.setTimeout(() => finish(cachedToken), timeoutMs);
+    const onToken = (e: Event) => {
+      const detail = (e as CustomEvent<{ token: string }>).detail;
+      const tok = detail?.token?.trim();
+      if (!tok || !isDeliverableIosPushToken(tok)) return;
+      cachedToken = tok;
+      finish(tok);
+    };
+    window.addEventListener("amynest-push-token", onToken);
+  });
 }
 
 /**
@@ -258,12 +303,18 @@ export async function initCapacitorIOSPush(): Promise<void> {
 
       activeBridgeKind = "ios";
 
-      // 1. Request permission
+      // 1. Permission — check first so Settings → Allow does not re-prompt
       try {
-        const result = await plugin.requestPermissions();
-        iosPerm = result.receive === "granted" ? "granted"
-                : result.receive === "denied"  ? "denied"
+        const checked = await plugin.checkPermissions();
+        iosPerm = checked.receive === "granted" ? "granted"
+                : checked.receive === "denied"  ? "denied"
                 : "default";
+        if (iosPerm === "default") {
+          const result = await plugin.requestPermissions();
+          iosPerm = result.receive === "granted" ? "granted"
+                  : result.receive === "denied"  ? "denied"
+                  : "default";
+        }
         try {
           window.dispatchEvent(
             new CustomEvent("amynest-push-permission", { detail: { permission: iosPerm } }),
@@ -847,14 +898,13 @@ export async function registerNativePushToken(
   if (!facade) return false;
   await ensureNativePushReady();
   if (facade.getPermissionStatus() !== "granted") return false;
-  const token = await getNativePushToken(facade);
-  if (!token) return false;
-  if (
-    (activeBridgeKind === "ios" || isCapacitorIOS()) &&
-    looksLikeApnsDeviceTokenHex(token)
-  ) {
-    return false;
+
+  let token = await getNativePushToken(facade);
+  if (isCapacitorIOS() && (!token || looksLikeApnsDeviceTokenHex(token))) {
+    token = await waitForDeliverableIosPushToken(25_000);
   }
+  if (!token) return false;
+  if (isCapacitorIOS() && !isDeliverableIosPushToken(token)) return false;
   try {
     const res = await authFetch(apiUrl, {
       method: "POST",

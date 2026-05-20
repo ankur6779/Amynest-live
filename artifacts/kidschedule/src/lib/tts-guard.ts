@@ -3,6 +3,8 @@
  * all HTMLAudioElement.play() calls until unlocked.
  */
 
+import { isNativeAmyNestShell } from "@/lib/native-shell";
+
 let audioUnlocked = false;
 let unlockListenersInstalled = false;
 let unlockCtx: AudioContext | null = null;
@@ -62,12 +64,30 @@ export function initAudioUnlock(): void {
     unlockAudio();
     document.removeEventListener("click", onUnlock, true);
     document.removeEventListener("touchstart", onUnlock, true);
+    document.removeEventListener("pointerdown", onUnlock, true);
     document.removeEventListener("keydown", onUnlock, true);
   };
 
   document.addEventListener("click", onUnlock, true);
   document.addEventListener("touchstart", onUnlock, true);
+  document.addEventListener("pointerdown", onUnlock, true);
   document.addEventListener("keydown", onUnlock, true);
+}
+
+/** WKWebView / iOS need inline playback; helps Capacitor audio start after tap. */
+export function configureMobileAudioElement(audio: HTMLAudioElement): void {
+  try {
+    audio.setAttribute("playsinline", "true");
+    audio.setAttribute("webkit-playsinline", "true");
+    (audio as HTMLAudioElement & { playsInline?: boolean }).playsInline = true;
+    audio.preload = "auto";
+  } catch {
+    /* ignore */
+  }
+}
+
+export function getTtsRequestTimeoutMs(): number {
+  return isNativeAmyNestShell() ? 28_000 : 12_000;
 }
 
 /** @deprecated Use initAudioUnlock — kept for existing call sites. */
@@ -93,10 +113,22 @@ export function isTtsPlaybackAllowed(): boolean {
  * @throws When playback is blocked or the element fails to play.
  */
 export async function playHtmlAudio(audio: HTMLAudioElement): Promise<void> {
+  configureMobileAudioElement(audio);
   if (!audioUnlocked) {
     console.warn("Audio blocked: waiting for user interaction");
     throw new Error("audio_blocked_until_gesture");
   }
   audio.currentTime = 0;
-  await audio.play();
+  try {
+    await audio.play();
+  } catch (err) {
+    const name = (err as { name?: string })?.name ?? "";
+    if (name === "NotAllowedError") {
+      unlockAudio();
+      audio.currentTime = 0;
+      await audio.play();
+      return;
+    }
+    throw err;
+  }
 }

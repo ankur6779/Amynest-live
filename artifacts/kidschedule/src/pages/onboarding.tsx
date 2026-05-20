@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
+import { ChildDobPicker } from "@/components/child-dob-picker";
 import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -1092,16 +1093,15 @@ export default function OnboardingPage() {
           </div>
         );
 
-      case "child-dob":
+      case "child-dob": {
+        const maxDob = new Date().toISOString().split("T")[0];
         return (
           <div className="flex flex-col gap-3">
-            <input
-              type="date"
-              className="w-full rounded-2xl px-4 py-3.5 text-sm outline-none border border-border focus:border-primary transition-colors"
-              style={INPUT_DARK}
+            <ChildDobPicker
               value={dobInput}
-              max={new Date().toISOString().split("T")[0]}
-              onChange={(e) => setDobInput(e.target.value)}
+              max={maxDob}
+              selectStyle={INPUT_DARK}
+              onChange={setDobInput}
             />
             <button
               disabled={!dobInput}
@@ -1129,6 +1129,7 @@ export default function OnboardingPage() {
             </button>
           </div>
         );
+      }
 
       // ── Infant path (age < 2) ──────────────────────────────────────────────
       case "infant-feeding": {

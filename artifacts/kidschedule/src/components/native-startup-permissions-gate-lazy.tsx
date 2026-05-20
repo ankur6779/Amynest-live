@@ -17,7 +17,7 @@ export function NativeStartupPermissionsGateLazy() {
 
   useEffect(() => {
     if (!isCapacitorNativeShell()) return;
-    const timer = window.setTimeout(() => setReady(true), 2000);
+    const timer = window.setTimeout(() => setReady(true), 400);
     return () => window.clearTimeout(timer);
   }, []);
 

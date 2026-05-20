@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { useWebPush } from "@/hooks/use-web-push";
-import { ensureNativePushReady, getBrowserNotificationPermission, getNativePushBridge, registerNativePushToken, requestNativePushPermission, type NativePushPermission } from "@/lib/native-push-bridge";
+import { ensureNativePushReady, getBrowserNotificationPermission, getNativePushBridge, isCapacitorIOS, registerNativePushToken, requestNativePushPermission, syncCapacitorPushRegistrationWithOs, type NativePushPermission } from "@/lib/native-push-bridge";
 import { useTranslation } from "react-i18next";
 const DISMISS_KEY = "notify_nudge_dismissed_until";
 const REGISTERED_KEY = "notify_device_registered_at";
@@ -67,6 +67,8 @@ export function NotificationNudgeBanner() {
       const perm: NativePushPermission = native.getPermissionStatus();
       if (perm === "denied") return "denied";
       if (perm === "default") return "ask";
+      // Capacitor iOS: OS notification permission is sufficient; do not show reconnect nag.
+      if (isCapacitorIOS() && perm === "granted") return "hidden";
       if (isRecentlyRegistered()) return "hidden";
       return "reconnect";
     }
@@ -119,6 +121,17 @@ export function NotificationNudgeBanner() {
         const perm = await requestNativePushPermission(native);
         if (perm !== "granted") {
           setState("denied");
+          setWorking(false);
+          return;
+        }
+        if (isCapacitorIOS()) {
+          await syncCapacitorPushRegistrationWithOs();
+          const ok = await registerNativePushToken(authFetch, getApiUrl("/api/push/register"));
+          if (ok) {
+            markRegistered();
+            clearDismiss();
+            setState("hidden");
+          }
           setWorking(false);
           return;
         }

@@ -43,6 +43,15 @@ router.post("/push/register", async (req, res): Promise<void> => {
   const platform = parsed.data.platform ?? "unknown";
   const deviceName = parsed.data.deviceName ?? null;
 
+  if (platform === "ios-capacitor" && looksLikeApnsDeviceTokenHex(token)) {
+    res.status(400).json({
+      ok: false,
+      error: "apns_token_not_deliverable",
+      message: "Waiting for Firebase FCM token — reopen the app after allowing notifications.",
+    });
+    return;
+  }
+
   // Atomic upsert keyed by unique token. If the token already belongs to a
   // different user (legit case: device handed off between accounts), ownership
   // is transferred — Expo push tokens are per device-app install, so only one
@@ -67,6 +76,14 @@ router.post("/push/register", async (req, res): Promise<void> => {
       and(
         eq(pushTokensTable.userId, userId),
         sql`trim(${pushTokensTable.token}) ~ '^[0-9a-fA-F]{64}$'`,
+      ),
+    );
+    // One active iOS install token — drop stale FCM rows that cause all_tokens_failed on test.
+    await db.delete(pushTokensTable).where(
+      and(
+        eq(pushTokensTable.userId, userId),
+        eq(pushTokensTable.platform, "ios-capacitor"),
+        sql`${pushTokensTable.token} <> ${token}`,
       ),
     );
   }

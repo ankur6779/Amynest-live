@@ -19,6 +19,7 @@ import {
   registerNativePushToken,
   requestNativePushPermission,
   resetCapacitorIOSPushState,
+  syncCapacitorPushRegistrationWithOs,
 } from "@/lib/native-push-bridge";
 import { getApiUrl } from "@/lib/api";
 type NotificationIntensity = "minimal" | "balanced" | "active" | "growth";
@@ -135,7 +136,7 @@ function noRegisteredPushDeviceHint(): string {
     if (Capacitor.isNativePlatform()) {
       const p = Capacitor.getPlatform();
       if (p === "ios") {
-        return "Allow notifications in the App Notifications section above, or open Settings → AmyNest → Notifications. Wait a few seconds after enabling, then try again.";
+        return "Stay on this screen for a few seconds so the device can register, then tap Send Test again. On Simulator, use a real iPhone. If it still fails, ensure Firebase has an iOS app (com.amynest.app) with a valid GoogleService-Info.plist.";
       }
       if (p === "android") {
         return "Allow notifications for AmyNest in Android Settings, reopen the app, wait a few seconds, then try again.";
@@ -412,6 +413,21 @@ export default function NotificationSettingsPage() {
   useEffect(() => {
     if (data && !local) setLocal(data);
   }, [data, local]);
+
+  // Capacitor iOS: permission can be granted in Settings while the FCM token was never posted.
+  useEffect(() => {
+    if (!isCapacitorIOS()) return;
+    let cancelled = false;
+    void (async () => {
+      await syncCapacitorPushRegistrationWithOs();
+      if (!cancelled) {
+        await registerNativePushToken(authFetch, getApiUrl("/api/push/register"));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authFetch]);
   const patch = useMutation({
     mutationFn: async (next: Partial<Prefs>) => {
       const r = await authFetch("/api/notifications/categories", {
@@ -458,20 +474,30 @@ export default function NotificationSettingsPage() {
   });
   const testDelivery = useMutation({
     mutationFn: async () => {
-      const attempt = async () => {
-        const r = await authFetch("/api/notifications/test", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            category: "insights",
-            onlyPlatforms: testNotificationOnlyPlatforms(),
-          }),
-        });
-        if (!r.ok) throw new Error(`Server error ${r.status}`);
-        return (await r.json()) as { status?: string; reason?: string };
-      };
+      if (isCapacitorIOS()) {
+        resetCapacitorIOSPushState();
+        await syncCapacitorPushRegistrationWithOs();
+        const registered = await registerNativePushToken(
+          authFetch,
+          getApiUrl("/api/push/register"),
+        );
+        if (!registered) {
+          throw new Error(
+            "Could not register this iPhone for push yet. Wait 10 seconds on this screen, then try again.",
+          );
+        }
+      }
 
-      return await attempt();
+      const r = await authFetch("/api/notifications/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: "insights",
+          onlyPlatforms: testNotificationOnlyPlatforms(),
+        }),
+      });
+      if (!r.ok) throw new Error(`Server error ${r.status}`);
+      return (await r.json()) as { status?: string; reason?: string; detail?: string };
     },
     onSuccess: (result) => {
       const status = result.status ?? "unknown";
@@ -486,10 +512,18 @@ export default function NotificationSettingsPage() {
           description: noRegisteredPushDeviceHint(),
           variant: "destructive",
         });
+      } else if (status === "failed" && result.reason === "all_tokens_failed") {
+        toast({
+          title: "Push delivery failed",
+          description:
+            result.detail ??
+            "FCM could not deliver to this device. Use a real iPhone (not Simulator), delete and reinstall the app, then test again. Confirm APNs key is uploaded in Firebase → Cloud Messaging.",
+          variant: "destructive",
+        });
       } else {
         toast({
           title: "Not sent",
-          description: `${status}${result.reason ? ` — ${result.reason}` : ""}`,
+          description: `${status}${result.reason ? ` — ${result.reason}` : ""}${result.detail ? ` (${result.detail})` : ""}`,
           variant: "destructive",
         });
       }

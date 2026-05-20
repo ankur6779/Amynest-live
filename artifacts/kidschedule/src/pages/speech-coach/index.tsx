@@ -49,6 +49,7 @@ import {
   type SessionDifficulty,
   PronunciationCompanion,
 } from "./pronunciation-companion";
+import { usePrimeIosMicrophone } from "@/hooks/use-prime-ios-microphone";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -1084,6 +1085,7 @@ function ExpertSection({ child }: { child: AnyChild | null }) {
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function SpeechCoachPage() {
+  usePrimeIosMicrophone();
   const { t } = useTranslation();
   const childrenQuery = useListChildren();
   const childList = (childrenQuery.data ?? []) as AnyChild[];

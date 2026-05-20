@@ -2,14 +2,22 @@
 // useSpeechRecognition — Web Speech API wrapper with MediaRecorder fallback
 //
 // Primary:  window.SpeechRecognition / webkitSpeechRecognition (Chrome, Edge,
-//           Safari 14.1+) — fully client-side, no server round-trip.
+//           desktop Safari) — fully client-side, no server round-trip.
 // Fallback: MediaRecorder → base64 → POST /api/speech/transcribe (Whisper)
 //           used when the native API is unavailable (e.g. Firefox).
+//
+// iOS Capacitor WKWebView: always use Whisper. webkitSpeechRecognition floods
+// WebKit IPC (SpeechRecognitionRemoteRealtimeMediaSourceManager) and triggers
+// RBS "WebKit Media Playback" assertion noise alongside HTMLAudioElement TTS.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { getApiUrl } from "@/lib/api";
-import { MicPermissionCapacitor } from "@/lib/mic-permission-capacitor";
+import {
+  isCapacitorIosNative,
+  MicPermissionCapacitor,
+  requestIosMicrophoneAccess,
+} from "@/lib/mic-permission-capacitor";
 
 // ── Web Speech API ambient declarations ─────────────────────────────────────
 // These types are part of the WICG Speech API spec but are not yet included
@@ -61,6 +69,43 @@ function getNativeSpeechRecognition(): (new () => SpeechRecognitionInstance) | n
   return window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null;
 }
 
+/** iPhone/iPad Safari and WKWebView — interim STT results overwhelm WebKit IPC. */
+function isIOSWebKit(): boolean {
+  if (typeof navigator === "undefined") return false;
+  try {
+    if (/iPad|iPhone|iPod/i.test(navigator.userAgent)) return true;
+    return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  } catch {
+    return false;
+  }
+}
+
+function canUseMediaRecorder(): boolean {
+  return typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia;
+}
+
+/** Prefer Whisper on all iOS WebKit — webkitSpeechRecognition floods IPC in WKWebView. */
+function resolveRecognitionMode(
+  nativeCls: (new () => SpeechRecognitionInstance) | null,
+): RecognitionMode {
+  if (isIOSWebKit() && canUseMediaRecorder()) return "whisper";
+  if (nativeCls !== null) return "native";
+  if (canUseMediaRecorder()) return "whisper";
+  return "unsupported";
+}
+
+function pickRecorderMimeType(): string {
+  const candidates = isIOSWebKit()
+    ? ["audio/mp4", "audio/aac", "audio/webm;codecs=opus", "audio/webm"]
+    : ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac"];
+  for (const mime of candidates) {
+    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(mime)) {
+      return mime;
+    }
+  }
+  return isIOSWebKit() ? "audio/mp4" : "audio/webm";
+}
+
 export type RecognitionMode = "native" | "whisper" | "unsupported";
 
 export interface SpeechRecognitionState {
@@ -109,19 +154,8 @@ function isAndroidWebViewWrapper(): boolean {
   }
 }
 
-/** Capacitor native iOS shell — same idea as native-push-bridge but kept local to avoid import cycles. */
 function isCapacitorIOS(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    const cap = (
-      window as Window & {
-        Capacitor?: { isNativePlatform?: () => boolean; getPlatform?: () => string };
-      }
-    ).Capacitor;
-    return !!(cap?.isNativePlatform?.() === true && cap.getPlatform?.() === "ios");
-  } catch {
-    return false;
-  }
+  return isCapacitorIosNative();
 }
 
 /** After returning from iOS Settings (or task switcher), re-probe mic instead of trusting stale cache. */
@@ -158,27 +192,14 @@ async function ensureMicPermission(): Promise<"granted" | "denied"> {
       // iOS Capacitor: AVAudioSession matches Settings; WKWebView Permissions API and
       // even getUserMedia can disagree or re-prompt. If native says granted, trust it.
       if (isCapacitorIOS()) {
-        try {
-          const { status } = await MicPermissionCapacitor.getMicrophoneStatus();
-          if (status === "granted") {
-            _micPermCache.state = "granted";
-            return "granted";
-          }
-          if (status === "denied") {
-            _micPermCache.state = "denied";
-            return "denied";
-          }
-          if (status === "undetermined") {
-            const req = await MicPermissionCapacitor.requestMicrophonePermission();
-            if (req.status === "granted") {
-              _micPermCache.state = "granted";
-              return "granted";
-            }
-            _micPermCache.state = "denied";
-            return "denied";
-          }
-        } catch {
-          /* older builds without MicPermission — fall through */
+        const iosMic = await requestIosMicrophoneAccess();
+        if (iosMic === "granted") {
+          _micPermCache.state = "granted";
+          return "granted";
+        }
+        if (iosMic === "denied") {
+          _micPermCache.state = "denied";
+          return "denied";
         }
       }
 
@@ -269,16 +290,16 @@ export function useSpeechRecognition(
   getAuthTokenRef.current = options?.getAuthToken;
 
   const Cls = getNativeSpeechRecognition();
-  const mode: RecognitionMode =
-    Cls !== null
-      ? "native"
-      : typeof navigator !== "undefined" && navigator.mediaDevices !== undefined
-        ? "whisper"
-        : "unsupported";
+  const mode = resolveRecognitionMode(Cls);
+  const resultRafRef = useRef<number | null>(null);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      if (resultRafRef.current != null) {
+        cancelAnimationFrame(resultRafRef.current);
+        resultRafRef.current = null;
+      }
       recRef.current?.abort();
       mediaRecRef.current?.stop();
       streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -315,7 +336,8 @@ export function useSpeechRecognition(
     recRef.current = rec;
     rec.lang = lang;
     rec.continuous = false;
-    rec.interimResults = true;
+    // Interim results on iOS WebKit cause IPC throttling (800+ pending messages).
+    rec.interimResults = !isIOSWebKit();
     rec.maxAlternatives = 1;
 
     rec.onstart = () => setListening(true);
@@ -340,8 +362,12 @@ export function useSpeechRecognition(
         if (r.isFinal) final += text;
         else interim += text;
       }
-      if (final) setTranscript((prev) => (prev + " " + final).trim());
-      setInterimTranscript(interim);
+      if (resultRafRef.current != null) cancelAnimationFrame(resultRafRef.current);
+      resultRafRef.current = requestAnimationFrame(() => {
+        resultRafRef.current = null;
+        if (final) setTranscript((prev) => (prev + " " + final).trim());
+        setInterimTranscript(interim);
+      });
     };
 
     try {
@@ -362,9 +388,21 @@ export function useSpeechRecognition(
     setTranscript("");
     setInterimTranscript("");
 
+    const perm = await ensureMicPermission();
+    if (perm === "denied") {
+      setError("microphone_denied");
+      return;
+    }
+
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       _micPermCache.state = "granted";
     } catch {
       _micPermCache.state = "denied";
@@ -373,11 +411,7 @@ export function useSpeechRecognition(
     }
     streamRef.current = stream;
 
-    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-      ? "audio/webm;codecs=opus"
-      : MediaRecorder.isTypeSupported("audio/webm")
-        ? "audio/webm"
-        : "audio/mp4";
+    const mimeType = pickRecorderMimeType();
 
     const rec = new MediaRecorder(stream, { mimeType });
     mediaRecRef.current = rec;
@@ -439,7 +473,8 @@ export function useSpeechRecognition(
       }
     };
 
-    rec.start();
+    // Timeslice keeps memory bounded during long Live Coach listens (up to 8s).
+    rec.start(400);
     setListening(true);
   }, []);
 

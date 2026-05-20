@@ -1,9 +1,6 @@
 import UIKit
 
-/// Disables rubber-band bounce on WKWebView's internal UIScrollView (and any
-/// other scroll views in the window). Paste into `AppDelegate.swift` and call
-/// from `application(_:didFinishLaunchingWithOptions:)` and, if you use scenes,
-/// from `scene(_:willConnectTo:options:)`.
+/// Disables rubber-band bounce on WKWebView's internal UIScrollView.
 enum AmyNestBounceDisable {
     static func apply(to window: UIWindow?) {
         guard let window else { return }
@@ -11,17 +8,11 @@ enum AmyNestBounceDisable {
     }
 
     static func applyToAllWindows() {
-        if #available(iOS 15.0, *) {
-            for scene in UIApplication.shared.connectedScenes {
-                guard let windowScene = scene as? UIWindowScene else { continue }
-                for window in windowScene.windows {
-                    disableBounce(in: window)
-                }
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            for window in windowScene.windows {
+                disableBounce(in: window)
             }
-            return
-        }
-        for window in UIApplication.shared.windows {
-            disableBounce(in: window)
         }
     }
 
@@ -39,15 +30,3 @@ enum AmyNestBounceDisable {
         walk(root)
     }
 }
-
-// Example (AppDelegate.swift):
-//
-// func application(
-//   _ application: UIApplication,
-//   didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-// ) -> Bool {
-//   DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-//     AmyNestBounceDisable.applyToAllWindows()
-//   }
-//   return true
-// }

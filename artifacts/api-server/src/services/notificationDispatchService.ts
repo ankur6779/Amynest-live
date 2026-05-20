@@ -52,6 +52,8 @@ export type DispatchStatus = "sent" | "throttled" | "failed" | "duplicate" | "no
 export interface DispatchResult {
   status: DispatchStatus;
   reason?: string;
+  /** Human-readable FCM/APNs error when status is `failed` (e.g. test push). */
+  detail?: string;
   ticketIds?: string[];
 }
 
@@ -324,16 +326,23 @@ async function sendFcmAndroidPush(
   });
 }
 
+function formatFcmError(err: unknown): string {
+  if (!err || typeof err !== "object") return String(err);
+  const e = err as { code?: string; message?: string; errorInfo?: { message?: string } };
+  const code = typeof e.code === "string" ? e.code : "";
+  const msg =
+    (typeof e.message === "string" && e.message) ||
+    (e.errorInfo && typeof e.errorInfo.message === "string" ? e.errorInfo.message : "");
+  return [code, msg].filter(Boolean).join(": ") || "FCM send failed";
+}
+
 async function sendFcmIosPush(
   token: string,
   input: DispatchInput,
 ): Promise<void> {
+  // iOS: alert payload via APNs only (top-level `notification` can break delivery on some builds).
   await getMessaging(adminApp()).send({
     token,
-    notification: {
-      title: input.title,
-      body: input.body,
-    },
     apns: {
       headers: {
         "apns-priority": "10",
@@ -395,7 +404,8 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     (t) =>
       !Expo.isExpoPushToken(t.token) &&
       (t.platform === "ios" || t.platform === "ios-capacitor") &&
-      !looksLikeApnsDeviceTokenHex(t.token),
+      !looksLikeApnsDeviceTokenHex(t.token) &&
+      !t.token.startsWith("http"),
   );
 
   if (
@@ -542,6 +552,7 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   }
 
   // ── FCM iOS (Capacitor native — FCM registration token, not raw APNs hex) ──
+  let lastIosFcmError: string | undefined;
   if (iosFcmTokens.length > 0) {
     const results = await Promise.allSettled(
       iosFcmTokens.map(async (t) => {
@@ -549,6 +560,7 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
           await sendFcmIosPush(t.token, input);
           return true;
         } catch (err) {
+          lastIosFcmError = formatFcmError(err);
           if (isFcmInvalidTokenError(err)) {
             await pruneInvalidToken(t.token, "fcm:unregistered");
           }
@@ -593,7 +605,11 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
       },
       "Notification dispatch: all tokens failed",
     );
-    return { status: "failed", reason: "all_tokens_failed" };
+    return {
+      status: "failed",
+      reason: "all_tokens_failed",
+      detail: lastIosFcmError,
+    };
   }
 
   await logEvent(input, "sent", undefined, platform);

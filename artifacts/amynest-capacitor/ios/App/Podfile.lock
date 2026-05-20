@@ -19,20 +19,78 @@ PODS:
   - CodetrixStudioCapacitorGoogleAuth (0.0.1):
     - Capacitor
     - GoogleSignIn (~> 6.2.4)
+  - Firebase/CoreOnly (12.13.0):
+    - FirebaseCore (~> 12.13.0)
+  - Firebase/Messaging (12.13.0):
+    - Firebase/CoreOnly
+    - FirebaseMessaging (~> 12.13.0)
+  - FirebaseCore (12.13.0):
+    - FirebaseCoreInternal (~> 12.13.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/Logger (~> 8.1)
+  - FirebaseCoreInternal (12.13.0):
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+  - FirebaseInstallations (12.13.0):
+    - FirebaseCore (~> 12.13.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/UserDefaults (~> 8.1)
+    - PromisesObjC (~> 2.4)
+  - FirebaseMessaging (12.13.0):
+    - FirebaseCore (~> 12.13.0)
+    - FirebaseInstallations (~> 12.13.0)
+    - GoogleDataTransport (~> 10.1)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/Reachability (~> 8.1)
+    - GoogleUtilities/UserDefaults (~> 8.1)
+    - nanopb (~> 3.30910.0)
+  - GoogleDataTransport (10.1.0):
+    - nanopb (~> 3.30910.0)
+    - PromisesObjC (~> 2.4)
   - GoogleSignIn (6.2.4):
     - AppAuth (~> 1.5)
     - GTMAppAuth (~> 1.3)
     - GTMSessionFetcher/Core (< 3.0, >= 1.1)
+  - GoogleUtilities/AppDelegateSwizzler (8.1.0):
+    - GoogleUtilities/Environment
+    - GoogleUtilities/Logger
+    - GoogleUtilities/Network
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Environment (8.1.0):
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Logger (8.1.0):
+    - GoogleUtilities/Environment
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Network (8.1.0):
+    - GoogleUtilities/Logger
+    - "GoogleUtilities/NSData+zlib"
+    - GoogleUtilities/Privacy
+    - GoogleUtilities/Reachability
+  - "GoogleUtilities/NSData+zlib (8.1.0)":
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Privacy (8.1.0)
+  - GoogleUtilities/Reachability (8.1.0):
+    - GoogleUtilities/Logger
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/UserDefaults (8.1.0):
+    - GoogleUtilities/Logger
+    - GoogleUtilities/Privacy
   - GTMAppAuth (1.3.1):
     - AppAuth/Core (~> 1.6)
     - GTMSessionFetcher/Core (< 3.0, >= 1.5)
   - GTMSessionFetcher/Core (2.3.0)
-  - PurchasesHybridCommon (13.26.0):
-    - RevenueCat (= 5.20.0)
-  - RevenueCat (5.20.0)
-  - RevenuecatPurchasesCapacitor (9.2.2):
+  - nanopb (3.30910.0):
+    - nanopb/decode (= 3.30910.0)
+    - nanopb/encode (= 3.30910.0)
+  - nanopb/decode (3.30910.0)
+  - nanopb/encode (3.30910.0)
+  - PromisesObjC (2.4.0)
+  - PurchasesHybridCommon (18.6.0):
+    - RevenueCat (= 5.72.0)
+  - RevenueCat (5.72.0)
+  - RevenuecatPurchasesCapacitor (13.1.1):
     - Capacitor
-    - PurchasesHybridCommon (= 13.26.0)
+    - PurchasesHybridCommon (= 18.6.0)
 
 DEPENDENCIES:
   - "Capacitor (from `../../../../node_modules/.pnpm/@capacitor+ios@6.2.1_@capacitor+core@6.2.1/node_modules/@capacitor/ios`)"
@@ -42,14 +100,25 @@ DEPENDENCIES:
   - "CapacitorGeolocation (from `../../../../node_modules/.pnpm/@capacitor+geolocation@6.1.1_@capacitor+core@6.2.1/node_modules/@capacitor/geolocation`)"
   - "CapacitorPushNotifications (from `../../../../node_modules/.pnpm/@capacitor+push-notifications@6.0.5_@capacitor+core@6.2.1/node_modules/@capacitor/push-notifications`)"
   - "CodetrixStudioCapacitorGoogleAuth (from `../../../../node_modules/.pnpm/@codetrix-studio+capacitor-google-auth@3.4.0-rc.4_@capacitor+core@6.2.1/node_modules/@codetrix-studio/capacitor-google-auth`)"
-  - "RevenuecatPurchasesCapacitor (from `../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@9.2.2_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor`)"
+  - Firebase/CoreOnly
+  - Firebase/Messaging
+  - "RevenuecatPurchasesCapacitor (from `../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@13.1.1_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor`)"
 
 SPEC REPOS:
   trunk:
     - AppAuth
+    - Firebase
+    - FirebaseCore
+    - FirebaseCoreInternal
+    - FirebaseInstallations
+    - FirebaseMessaging
+    - GoogleDataTransport
     - GoogleSignIn
+    - GoogleUtilities
     - GTMAppAuth
     - GTMSessionFetcher
+    - nanopb
+    - PromisesObjC
     - PurchasesHybridCommon
     - RevenueCat
 
@@ -69,7 +138,7 @@ EXTERNAL SOURCES:
   CodetrixStudioCapacitorGoogleAuth:
     :path: "../../../../node_modules/.pnpm/@codetrix-studio+capacitor-google-auth@3.4.0-rc.4_@capacitor+core@6.2.1/node_modules/@codetrix-studio/capacitor-google-auth"
   RevenuecatPurchasesCapacitor:
-    :path: "../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@9.2.2_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor"
+    :path: "../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@13.1.1_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor"
 
 SPEC CHECKSUMS:
   AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
@@ -80,13 +149,22 @@ SPEC CHECKSUMS:
   CapacitorGeolocation: ef657a46a125be74010f4ce57caae173c23204d2
   CapacitorPushNotifications: 35abece14371c57172e8321c9ccc8b6fa35fabfe
   CodetrixStudioCapacitorGoogleAuth: 9dcfabfb7dd804ad6231a1513bc6e81e620cbec6
+  Firebase: 7d62445aeabdaea36f7d372f33052fed9a72514f
+  FirebaseCore: 58905958aa00a061397a0fd759ae4b55bddb3576
+  FirebaseCoreInternal: 37bee58388fc6d183f0ab1b32d69ae44f2cf8aad
+  FirebaseInstallations: 134bde50e477628ded76070efdb12d515d53f948
+  FirebaseMessaging: 30564b85d2f81a96f9d312bd23acf8186ff092ae
+  GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
   GoogleSignIn: 5651ce3a61e56ca864160e79b484cd9ed3f49b7a
+  GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   GTMAppAuth: 0ff230db599948a9ad7470ca667337803b3fc4dd
   GTMSessionFetcher: 3a63d75eecd6aa32c2fc79f578064e1214dfdec2
-  PurchasesHybridCommon: fa166fc8b385cf80f581f923c91d8ccffe5dd7f8
-  RevenueCat: e47ff90dfd271fde155a4befe48e8fc02e8281e4
-  RevenuecatPurchasesCapacitor: 6727a4dc1455bdf2374259420719ce5dfbe957fa
+  nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
+  PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
+  PurchasesHybridCommon: 89a3ddba365c20457a4712bc3d6377b0ea3c9b4f
+  RevenueCat: 136390ad99039cdd692156af5e479293ae83b2a9
+  RevenuecatPurchasesCapacitor: 006d88975222cc477532cb1d87da4006a139fa92
 
-PODFILE CHECKSUM: 19108dc36f3b5fd424679edaacebeaa5228592e0
+PODFILE CHECKSUM: 2b81a4d91a280ed70f74ec0fd63e4e4781815435
 
 COCOAPODS: 1.16.2

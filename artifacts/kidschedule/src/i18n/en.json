@@ -3032,14 +3032,14 @@
       "fat": "Fat"
     },
     "notification_nudge_banner": {
-      "notifications_blocked_hain": "Notifications blocked hain",
+      "notifications_blocked_hain": "Notifications are blocked",
       "dismiss": "Dismiss",
-      "notifications_reconnect_karo": "🔔 Notifications reconnect karo",
-      "reminders_setup_nahi_hai_ek_tap_mein_fresh_setup_ho_jayega": "Reminders setup nahi hai. Ek tap mein fresh setup ho jayega.",
+      "notifications_reconnect_karo": "Reconnect notifications",
+      "reminders_setup_nahi_hai_ek_tap_mein_fresh_setup_ho_jayega": "Reminders are not set up yet. Tap once to finish setup.",
       "later": "Later",
       "dismiss_2": "Dismiss",
-      "routine_reminders_enable_karo": "🔔 Routine reminders enable karo!",
-      "bedtime_meals_aur_routines_time_pe_yaad_dilayenge": "Bedtime, meals aur routines time pe yaad dilayenge.",
+      "routine_reminders_enable_karo": "Enable routine reminders",
+      "bedtime_meals_aur_routines_time_pe_yaad_dilayenge": "We will remind you about bedtime, meals, and routines on time.",
       "later_2": "Later",
       "dismiss_3": "Dismiss"
     },
