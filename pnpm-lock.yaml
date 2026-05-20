@@ -130,7 +130,7 @@ importers:
         specifier: ^3.4.0-rc.4
         version: 3.4.0-rc.4(@capacitor/core@6.2.1)
       '@revenuecat/purchases-capacitor':
-        specifier: ^9.0.0
+        specifier: ^9.2.2
         version: 9.2.2(@capacitor/core@6.2.1)
     devDependencies:
       '@capacitor/cli':
