@@ -5,13 +5,14 @@ import { isAndroidMobileShell } from "@/lib/device-lite";
  * the top. Nested scroll regions must still be able to hand the gesture to a
  * parent that can scroll upward.
  *
- * Android mobile shells still need a JS guard: Chrome/WebView can ignore CSS
- * overscroll-behavior and turn a top-edge pull into a page refresh. The guard
- * only cancels downward pulls when the entire scroll chain is already at top.
+ * Android mobile shells need a stronger path: some WebViews get stuck after a
+ * downward document scroll and then treat the next downward gesture as refresh.
+ * We drive the active scroll container directly and cancel only gestures we
+ * handled, so links/taps and horizontal carousels still work.
  */
 export function installDisableOverscrollGesture(): () => void {
   if (typeof document === "undefined") return () => {};
-  if (isAndroidMobileShell()) return installAndroidPullToRefreshGuard();
+  if (isAndroidMobileShell()) return installAndroidScrollDriver();
 
   let startY = 0;
   let scrollTarget: Element | null = null;
@@ -52,17 +53,21 @@ export function installDisableOverscrollGesture(): () => void {
   };
 }
 
-function installAndroidPullToRefreshGuard(): () => void {
+function installAndroidScrollDriver(): () => void {
   let startX = 0;
   let startY = 0;
-  let scrollTarget: Element | null = null;
+  let lastY = 0;
+  let activeScroller: Element | null = null;
+  let gestureLockedToScroll = false;
 
   const onTouchStart = (e: TouchEvent) => {
     if (e.touches.length !== 1) return;
     const touch = e.touches[0];
     startX = touch.clientX;
     startY = touch.clientY;
-    scrollTarget = findScrollableAncestor(
+    lastY = touch.clientY;
+    gestureLockedToScroll = false;
+    activeScroller = findScrollableAncestor(
       document.elementFromPoint(touch.clientX, touch.clientY),
     );
   };
@@ -71,20 +76,45 @@ function installAndroidPullToRefreshGuard(): () => void {
     if (e.touches.length !== 1) return;
     const touch = e.touches[0];
     const dx = touch.clientX - startX;
-    const dy = touch.clientY - startY;
+    const dy = touch.clientY - lastY;
+    const totalDy = touch.clientY - startY;
 
-    // Horizontal swipes and upward swipes must never be cancelled.
-    if (dy <= 0 || Math.abs(dx) > Math.abs(dy)) return;
+    // Horizontal swipes (carousels/reels) must never be captured.
+    if (!gestureLockedToScroll && Math.abs(dx) > Math.abs(totalDy)) return;
 
-    const target =
-      scrollTarget ??
+    const scroller =
+      activeScroller ??
       findScrollableAncestor(
         document.elementFromPoint(touch.clientX, touch.clientY),
       );
-    if (!target) return;
+    if (!scroller) return;
 
-    if (canScrollChainMoveUp(target)) return;
-    e.preventDefault();
+    const maxScrollTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    const current = scroller.scrollTop;
+    const next = clamp(current - dy, 0, maxScrollTop);
+    const canMove = Math.abs(next - current) > 0.5;
+
+    lastY = touch.clientY;
+
+    if (canMove) {
+      scroller.scrollTop = next;
+      gestureLockedToScroll = true;
+      e.preventDefault();
+      return;
+    }
+
+    // At the top, cancel pull-down so Android Chrome/WebView cannot refresh.
+    if (dy > 0 && !canScrollChainMoveUp(scroller)) {
+      gestureLockedToScroll = true;
+      e.preventDefault();
+      return;
+    }
+
+    // At the bottom, cancel extra push-up rubber-band for consistency.
+    if (dy < 0 && current >= maxScrollTop - 1) {
+      gestureLockedToScroll = true;
+      e.preventDefault();
+    }
   };
 
   document.addEventListener("touchstart", onTouchStart, {
@@ -100,6 +130,10 @@ function installAndroidPullToRefreshGuard(): () => void {
     document.removeEventListener("touchstart", onTouchStart, { capture: true });
     document.removeEventListener("touchmove", onTouchMove, { capture: true });
   };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 function findScrollableAncestor(el: Element | null): Element | null {
