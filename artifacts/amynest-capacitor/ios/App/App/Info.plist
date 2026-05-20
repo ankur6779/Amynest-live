@@ -20,37 +20,10 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<false/>
-		<key>NSAllowsArbitraryLoadsInWebContent</key>
-		<false/>
-	</dict>
-	<key>NSCameraUsageDescription</key>
-	<string>AmyNest uses the camera only when you choose to capture a child profile or milestone photo.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>AmyNest accesses contacts only if you choose to share a routine with someone from your contacts.</string>
-	<key>NSFaceIDUsageDescription</key>
-	<string>AmyNest can use Face ID to help protect your parenting data if you enable biometric lock.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>AmyNest uses your location to show nearby school times, weather-aware routines, and local reminders.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>AmyNest uses your microphone for Speech Coach and pronunciation practice.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>AmyNest saves milestone photos to your photo library only when you ask it to save them.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>AmyNest accesses your photo library only when you choose a child profile or milestone photo.</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-	</array>
 	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen.storyboard</string>
+	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
@@ -60,8 +33,7 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
@@ -71,20 +43,44 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<true/>
-	<key>WKAudiovisualMediaTypes</key>
-	<string>none</string>
-	<key>CFBundleURLTypes</key>
+	<false/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>AmyNest uses your microphone for the Speech Coach and pronunciation practice features.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>AmyNest uses the camera to let you capture your child's milestones and share them in the app.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AmyNest accesses your photo library to let you upload your child's photo for their profile.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>AmyNest saves milestone photos to your photo library.</string>
+	<key>UIBackgroundModes</key>
 	<array>
-		<dict>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.googleusercontent.apps.573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j</string>
-				<string>com.amynest.app</string>
-				<string>capacitor</string>
-			</array>
-		</dict>
+		<string>audio</string>
+		<string>remote-notification</string>
+		<string>fetch</string>
 	</array>
+	<key>NSFaceIDUsageDescription</key>
+	<string>AmyNest can use Face ID to securely unlock your parenting data.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>AmyNest accesses your contacts only when you choose to share a routine via the Share Routine feature.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<false/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>amynest.in</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<true/>
+			</dict>
+		</dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+	</dict>
 	<key>WKAppBoundDomains</key>
 	<array>
 		<string>amynest.in</string>
@@ -92,14 +88,33 @@
 		<string>clerk.amynest.in</string>
 		<string>googleapis.com</string>
 		<string>gstatic.com</string>
-		<string>www.gstatic.com</string>
 		<string>google.com</string>
+		<string>firebaseapp.com</string>
+		<string>www.gstatic.com</string>
 		<string>www.google.com</string>
 		<string>recaptcha.net</string>
 		<string>www.recaptcha.net</string>
-		<string>firebaseapp.com</string>
 		<string>appleid.apple.com</string>
 		<string>appleid.cdn-apple.com</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.amynest.app</string>
+				<string>capacitor</string>
+				<string>com.googleusercontent.apps.573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j</string>
+			</array>
+		</dict>
+	</array>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
+	<key>WKAudiovisualMediaTypes</key>
+	<string>none</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>AmyNest uses your location to show nearby school times, weather-aware routines, and local reminders.</string>
 </dict>
 </plist>
