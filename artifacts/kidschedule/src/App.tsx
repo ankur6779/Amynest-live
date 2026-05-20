@@ -30,37 +30,51 @@ function App() {
     initAudioUnlock();
   }, []);
 
-  // Block pull-to-refresh at scroll top; allow normal upward scroll via threshold.
+  // Block pull-to-refresh at scroll top only when needed; skip during active scroll.
   useEffect(() => {
     let startY = 0;
-    let isPulling = false;
+    let isScrolling = false;
+    let scrollEndTimer: ReturnType<typeof setTimeout> | undefined;
 
-    const THRESHOLD = 10;
+    const THRESHOLD = 12;
+
+    const onScroll = () => {
+      isScrolling = true;
+      if (scrollEndTimer !== undefined) clearTimeout(scrollEndTimer);
+      scrollEndTimer = setTimeout(() => {
+        isScrolling = false;
+        scrollEndTimer = undefined;
+      }, 120);
+    };
 
     const onTouchStart = (e: TouchEvent) => {
       startY = e.touches[0].clientY;
-      isPulling = false;
+      if (isScrolling) return;
     };
 
     const onTouchMove = (e: TouchEvent) => {
+      if (isScrolling) return;
+
       const currentY = e.touches[0].clientY;
       const deltaY = currentY - startY;
       const isAtTop = window.scrollY === 0;
 
       if (isAtTop && deltaY > THRESHOLD) {
-        isPulling = true;
         e.preventDefault();
-        return;
       }
     };
 
     const touchStartOpts: AddEventListenerOptions = { passive: true };
     const touchMoveOpts: AddEventListenerOptions = { passive: false };
+    const scrollOpts: AddEventListenerOptions = { passive: true };
 
+    window.addEventListener("scroll", onScroll, scrollOpts);
     document.addEventListener("touchstart", onTouchStart, touchStartOpts);
     document.addEventListener("touchmove", onTouchMove, touchMoveOpts);
 
     return () => {
+      if (scrollEndTimer !== undefined) clearTimeout(scrollEndTimer);
+      window.removeEventListener("scroll", onScroll, scrollOpts);
       document.removeEventListener("touchstart", onTouchStart, touchStartOpts);
       document.removeEventListener("touchmove", onTouchMove, touchMoveOpts);
     };
