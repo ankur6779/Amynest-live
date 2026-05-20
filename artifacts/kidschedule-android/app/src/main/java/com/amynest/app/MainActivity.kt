@@ -39,7 +39,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.amynest.app.databinding.ActivityMainBinding
 
 private const val TAG = "MainActivity"
@@ -48,7 +47,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var webView: WebView
-    private lateinit var swipe: SwipeRefreshLayout
     private var pushBridge: PushBridge? = null
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
@@ -116,6 +114,8 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         // Android 15 edge-to-edge: pad content below status bar / above nav bar.
         WindowCompat.getInsetsController(window, window.decorView).apply {
             isAppearanceLightStatusBars = false
@@ -134,8 +134,8 @@ class MainActivity : AppCompatActivity() {
         ViewCompat.requestApplyInsets(binding.root)
 
         webView = binding.webview
-        swipe = binding.swipeRefresh
-        swipe.isEnabled = false
+        webView.overScrollMode = View.OVER_SCROLL_NEVER
+        webView.isNestedScrollingEnabled = false
 
         // Stash any deep-link from the notification tap that launched us so
         // we can route the WebView to it after the initial page loads.
@@ -266,8 +266,7 @@ class MainActivity : AppCompatActivity() {
         // window.AmyNestPushNative and window.__AMYNEST_WRAPPER are unavailable.
         s.userAgentString = "${s.userAgentString} AmyNestAndroid/${BuildConfig.VERSION_NAME}"
         webView.overScrollMode = View.OVER_SCROLL_NEVER
-        webView.isNestedScrollingEnabled = true
-        swipe.isNestedScrollingEnabled = false
+        webView.isNestedScrollingEnabled = false
 
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
@@ -314,7 +313,6 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-                swipe.isRefreshing = false
                 drainPendingDeepLink()
             }
 
@@ -324,7 +322,6 @@ class MainActivity : AppCompatActivity() {
                 error: WebResourceError
             ) {
                 if (request.isForMainFrame) {
-                    swipe.isRefreshing = false
                     showOffline()
                 }
             }
@@ -456,15 +453,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun showOffline() {
         binding.offlineLayout.visibility = View.VISIBLE
-        swipe.visibility = View.GONE
-        swipe.isRefreshing = false
+        webView.visibility = View.GONE
         startAutoReconnect()
     }
 
     private fun showWebView() {
         stopAutoReconnect()
         binding.offlineLayout.visibility = View.GONE
-        swipe.visibility = View.VISIBLE
+        webView.visibility = View.VISIBLE
     }
 
     /**

@@ -17,6 +17,7 @@ import android.webkit.CookieManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.google.firebase.messaging.FirebaseMessaging
 import org.json.JSONObject
 
@@ -61,6 +62,7 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         hideSystemChrome()
 
         // Capture notification tap extras BEFORE building the WebView so the
