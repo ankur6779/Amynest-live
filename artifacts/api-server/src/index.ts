@@ -16,6 +16,7 @@ import {
   isBackgroundTasksEnabled,
   isMinimalBoot,
   isModuleEnabled,
+  isNotificationCronEnabled,
   logBootProfile,
   registerBootSignalHandlers,
 } from "./lib/boot-diagnostics.js";
@@ -78,11 +79,20 @@ async function startBackgroundTasks(): Promise<void> {
     return;
   }
 
+  // Auto push notifications: always start the in-process cron when enabled,
+  // even if other background tasks are disabled (Render free tier / minimal boot).
+  if (isModuleEnabled("crons") && isNotificationCronEnabled()) {
+    await runBackgroundPhase("notification_cron", async () => {
+      const { startNotificationCron } = await import("./lib/notificationCron.js");
+      startNotificationCron();
+    });
+  }
+
   if (!isBackgroundTasksEnabled()) {
     console.log("[bg] skipped (disabled)");
     logger.info(
       { evt: "background.skipped", reason: "BACKGROUND_TASKS_ENABLED=false" },
-      "All background tasks skipped — zero post-listen load",
+      "Non-cron background tasks skipped",
     );
     return;
   }
@@ -165,12 +175,10 @@ async function startBackgroundTasks(): Promise<void> {
     try {
       const { startRazorpayWebhookCleanup } = await import("./lib/razorpayWebhookCleanup.js");
       const { startWeeklyRecapCron } = await import("./lib/weeklyRecapCron.js");
-      const { startNotificationCron } = await import("./lib/notificationCron.js");
       const { startRenderKeepWarm } = await import("./lib/render-keep-warm.js");
 
       startRazorpayWebhookCleanup();
       startWeeklyRecapCron();
-      startNotificationCron();
       startRenderKeepWarm(port);
       console.log("[bg:ok]", "crons");
       endBootPhase("crons");

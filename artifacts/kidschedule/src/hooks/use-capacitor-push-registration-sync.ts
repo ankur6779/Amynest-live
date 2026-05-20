@@ -11,6 +11,17 @@ export function useCapacitorPushRegistrationSync(): void {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!Capacitor.isNativePlatform()) return;
-    void syncCapacitorPushRegistrationWithOs();
+
+    const sync = () => {
+      void syncCapacitorPushRegistrationWithOs();
+    };
+
+    sync();
+
+    const onVis = () => {
+      if (document.visibilityState === "visible") sync();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
   }, []);
 }

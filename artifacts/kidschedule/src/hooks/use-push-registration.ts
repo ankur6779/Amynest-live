@@ -141,23 +141,39 @@ export function usePushRegistration(): void {
         return;
       }
 
-      // ── Android path (new + legacy APK) ──────────────────────────────────
-      // Wait up to 8s for whichever bridge wires up first (new or legacy).
-      const facade = await awaitNativePushBridge(8_000);
-      if (cancelled || !facade) return;
+      const runAndroidPushRegistration = async (): Promise<void> => {
+        const facade = await awaitNativePushBridge(8_000);
+        if (cancelled || !facade) return;
 
-      const status = await ensureNativePushReady();
+        const status = await ensureNativePushReady();
+        if (cancelled) return;
+
+        if (status?.token) {
+          await registerToken(status.token);
+          return;
+        }
+
+        if (status?.permission === "granted") {
+          const token = await getNativePushToken(facade, 15_000);
+          if (!cancelled && token) await registerToken(token);
+        }
+      };
+
+      // ── Android path (new + legacy APK) ──────────────────────────────────
+      await runAndroidPushRegistration();
       if (cancelled) return;
 
-      if (status?.token) {
-        await registerToken(status.token);
-        return;
-      }
-
-      if (status?.permission === "granted") {
-        const token = await getNativePushToken(facade, 15_000);
-        if (!cancelled && token) await registerToken(token);
-      }
+      // Re-register when app returns to foreground (Settings → enable notifications,
+      // or FCM token rotated while backgrounded) — mirrors MainActivity.onResume.
+      const onAndroidVis = () => {
+        if (document.visibilityState !== "visible" || cancelled) return;
+        lastKeyRef.current = null;
+        void runAndroidPushRegistration();
+      };
+      document.addEventListener("visibilitychange", onAndroidVis);
+      iosVisCleanup = () => {
+        document.removeEventListener("visibilitychange", onAndroidVis);
+      };
     })();
 
     // Re-register on token rotation (all bridges dispatch amynest-push-token)

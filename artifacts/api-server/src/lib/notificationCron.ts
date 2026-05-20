@@ -251,7 +251,9 @@ async function dispatchPerItemReminders(): Promise<{
           if (item.status === "completed" || item.status === "skipped") continue;
           const itemMins = timeStringToMinutes(item.time);
           if (itemMins < 0) continue;
-          if (itemMins - REMINDER_LEAD_MINUTES !== nowMins) continue;
+          // 3-minute window (cron fires every minute; dedupKey prevents duplicate sends).
+          const reminderStart = itemMins - REMINDER_LEAD_MINUTES;
+          if (nowMins < reminderStart || nowMins >= reminderStart + 3) continue;
 
           scheduled++;
           const built = buildRoutineItem({
@@ -398,6 +400,22 @@ export function startNotificationCron(): void {
   // Suppress unused import warnings
   void buildNutritionInsight;
 
+}
+
+/** External cron ping (Render scheduled job) — runs per-task routine reminders. */
+export async function runNotificationCronPing(): Promise<{
+  ok: boolean;
+  skipped?: string;
+  routine?: Awaited<ReturnType<typeof dispatchPerItemReminders>>;
+}> {
+  if (!notificationsEnabled()) {
+    return { ok: false, skipped: "NOTIFICATIONS_ENABLED=false" };
+  }
+  if (!(await hasPushTokensTable())) {
+    return { ok: false, skipped: "push_tokens_missing" };
+  }
+  const routine = await dispatchPerItemReminders();
+  return { ok: true, routine };
 }
 
 // Re-export for tests.
