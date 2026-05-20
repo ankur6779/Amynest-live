@@ -43,6 +43,14 @@ function App() {
 
     const THRESHOLD = 12;
 
+    const getScrollTop = (): number => {
+      const content = document.querySelector(".app-content");
+      if (content instanceof HTMLElement) return content.scrollTop;
+      const root = document.getElementById("root");
+      if (root) return root.scrollTop;
+      return window.scrollY;
+    };
+
     const onScroll = () => {
       isScrolling = true;
       if (scrollEndTimer !== undefined) clearTimeout(scrollEndTimer);
@@ -58,12 +66,12 @@ function App() {
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      console.log("touchmove fired", window.scrollY);
+      console.log("touchmove fired", getScrollTop());
       if (isScrolling) return;
 
       const currentY = e.touches[0].clientY;
       const deltaY = currentY - startY;
-      const isAtTop = window.scrollY === 0;
+      const isAtTop = getScrollTop() === 0;
 
       if (isAtTop && deltaY > THRESHOLD) {
         e.preventDefault();
@@ -72,15 +80,15 @@ function App() {
 
     const touchStartOpts: AddEventListenerOptions = { passive: true };
     const touchMoveOpts: AddEventListenerOptions = { passive: false };
-    const scrollOpts: AddEventListenerOptions = { passive: true };
+    const scrollOpts: AddEventListenerOptions = { passive: true, capture: true };
 
-    window.addEventListener("scroll", onScroll, scrollOpts);
+    document.addEventListener("scroll", onScroll, scrollOpts);
     document.addEventListener("touchstart", onTouchStart, touchStartOpts);
     document.addEventListener("touchmove", onTouchMove, touchMoveOpts);
 
     return () => {
       if (scrollEndTimer !== undefined) clearTimeout(scrollEndTimer);
-      window.removeEventListener("scroll", onScroll, scrollOpts);
+      document.removeEventListener("scroll", onScroll, scrollOpts);
       document.removeEventListener("touchstart", onTouchStart, touchStartOpts);
       document.removeEventListener("touchmove", onTouchMove, touchMoveOpts);
     };
@@ -93,7 +101,7 @@ function App() {
   // gate means the splash always covers the lazy AppCore download, so
   // the user never sees a blank Suspense fallback even on slow networks.
   return (
-    <div id="app-root" className="app-root main-scroll w-full max-w-full min-w-0">
+    <div id="app-root" className="app-root main-scroll h-full min-h-0 w-full max-w-full min-w-0 overflow-hidden">
       <DebugOverlay />
       <StaticAudioTestButton />
       {/* ErrorBoundary disabled temporarily while verifying QueryClientProvider fix */}
