@@ -112,14 +112,13 @@ class MainActivity : AppCompatActivity() {
 
         webView = binding.webview
         swipe = binding.swipeRefresh
+        swipe.isEnabled = false
 
         // Stash any deep-link from the notification tap that launched us so
         // we can route the WebView to it after the initial page loads.
         pendingDeepLink = extractDeepLink(intent)
 
         configureWebView()
-
-        swipe.setOnRefreshListener { webView.reload() }
 
         binding.offlineRetry.setOnClickListener {
             if (isOnline()) {
@@ -243,6 +242,7 @@ class MainActivity : AppCompatActivity() {
         // This is the last-resort wrapper-detection signal when both
         // window.AmyNestPushNative and window.__AMYNEST_WRAPPER are unavailable.
         s.userAgentString = "${s.userAgentString} AmyNestAndroid/${BuildConfig.VERSION_NAME}"
+        webView.overScrollMode = View.OVER_SCROLL_NEVER
 
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)

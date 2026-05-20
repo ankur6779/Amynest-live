@@ -70,6 +70,7 @@ class MainActivity : AppCompatActivity() {
 
         webView = WebView(this).also { wv ->
             wv.id = View.generateViewId()
+            wv.overScrollMode = View.OVER_SCROLL_NEVER
             configureWebView(wv)
         }
         setContentView(webView)
