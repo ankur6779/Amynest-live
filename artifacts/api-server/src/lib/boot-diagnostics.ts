@@ -139,15 +139,32 @@ export function isMinimalBoot(): boolean {
   return process.env["MINIMAL_BOOT"]?.trim() === "1";
 }
 
+function envNotificationsEnabled(): boolean {
+  return process.env["NOTIFICATIONS_ENABLED"]?.trim().toLowerCase() !== "false";
+}
+
+/**
+ * In-process notification cron (morning routine, insights, per-task reminders).
+ * Defaults ON unless explicitly disabled — auto pushes depend on this.
+ */
+export function isNotificationCronEnabled(): boolean {
+  if (process.env["DISABLE_NOTIFICATION_CRON"] === "1") return false;
+  return envNotificationsEnabled();
+}
+
 /**
  * Post-listen background work (DB ensures, crons, queue bootstrap, seeds).
- * Default: on in development, off in production unless explicitly enabled.
+ * Default: on in development; in production ON unless BACKGROUND_TASKS_ENABLED=false
+ * or NOTIFICATIONS_ENABLED=false (so scheduled pushes are not silently skipped).
  */
 export function isBackgroundTasksEnabled(): boolean {
   const raw = process.env["BACKGROUND_TASKS_ENABLED"]?.trim().toLowerCase();
   if (raw === "true" || raw === "1" || raw === "on" || raw === "yes") return true;
   if (raw === "false" || raw === "0" || raw === "off" || raw === "no") return false;
-  return resolveAmynestEnv() !== "production";
+  if (resolveAmynestEnv() === "production") {
+    return envNotificationsEnabled();
+  }
+  return true;
 }
 
 export function isModuleEnabled(module: BootModule): boolean {
@@ -168,8 +185,8 @@ export function logBootProfile(): void {
       diagMemoryPoll: process.env["DIAG_MEMORY_POLL"]?.trim() === "1",
       diagLoopDetect: process.env["DIAG_LOOP_DETECT"]?.trim() === "1",
       diagDbVerify: process.env["DIAG_DB_VERIFY"]?.trim() === "1",
-      notificationsEnabled:
-        process.env["NOTIFICATIONS_ENABLED"]?.trim().toLowerCase() !== "false",
+      notificationsEnabled: envNotificationsEnabled(),
+      notificationCronEnabled: isNotificationCronEnabled(),
       workerEnabled: process.env["WORKER_ENABLED"] ?? "(default)",
       backgroundTasksEnabled: isBackgroundTasksEnabled(),
       redisUnstable: process.env["REDIS_UNSTABLE"]?.trim() === "1",

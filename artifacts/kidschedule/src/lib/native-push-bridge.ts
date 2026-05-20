@@ -195,8 +195,8 @@ export function isDeliverableIosPushToken(token: string): boolean {
   const t = token.trim();
   if (!t || looksLikeApnsDeviceTokenHex(t)) return false;
   if (t.startsWith("http") || t.startsWith("{")) return false;
-  // Typical FCM iOS token: long, often contains ':' (not 64-char hex).
-  return t.length > 100 && (t.includes(":") || t.length > 140);
+  // FCM iOS tokens are typically 140+ chars but format varies — reject only obvious APNs hex.
+  return t.length >= 80;
 }
 
 /** Wait for native FCM token (AmyNestFcmBridge → amynest-push-token) after permission is granted. */

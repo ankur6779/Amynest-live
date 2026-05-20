@@ -368,4 +368,26 @@ router.post("/notifications/opened", async (req, res): Promise<void> => {
   res.json({ ok: true });
 });
 
+/**
+ * POST /api/notifications/cron/ping
+ * Optional Render Cron / external scheduler — runs per-task routine reminders.
+ * Header: x-cron-secret: <NOTIFICATION_CRON_SECRET>
+ */
+router.post("/notifications/cron/ping", async (req, res): Promise<void> => {
+  const expected = process.env["NOTIFICATION_CRON_SECRET"];
+  const provided = req.headers["x-cron-secret"];
+  if (!expected || provided !== expected) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  try {
+    const { runNotificationCronPing } = await import("../lib/notificationCron.js");
+    const result = await runNotificationCronPing();
+    res.json(result);
+  } catch (err) {
+    logger.error({ err }, "Notification cron ping failed");
+    res.status(500).json({ error: "Cron ping failed" });
+  }
+});
+
 export default router;
