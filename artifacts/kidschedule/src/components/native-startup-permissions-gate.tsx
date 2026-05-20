@@ -13,6 +13,23 @@ const SESSION_SKIP_KEY = "amynest_native_perm_gate_skip_v1";
 
 type TriState = "unknown" | "granted" | "denied" | "prompt";
 
+function getNativePlatform(): "ios" | "android" | "web" {
+  try {
+    const platform = Capacitor.getPlatform();
+    return platform === "ios" || platform === "android" ? platform : "web";
+  } catch {
+    return "web";
+  }
+}
+
+function isCapacitorNative(): boolean {
+  try {
+    return Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
+}
+
 function mapLoc(v: string | undefined): TriState {
   if (v === "granted" || v === "limited") return "granted";
   if (v === "denied") return "denied";
@@ -44,7 +61,7 @@ async function micQueryState(): Promise<TriState> {
 
 async function requestMic(): Promise<TriState> {
   try {
-    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
+    if (isCapacitorNative() && getNativePlatform() === "ios") {
       try {
         const { status } = await MicPermissionCapacitor.requestMicrophonePermission();
         if (status === "granted") return "granted";
@@ -65,7 +82,7 @@ async function requestMic(): Promise<TriState> {
 
 /** After native/Web mic request, sync pill state from AVAudioSession on iOS. */
 async function requestMicWithIosFallback(): Promise<TriState> {
-  if (Capacitor.getPlatform() === "ios") {
+  if (getNativePlatform() === "ios") {
     try {
       const { status } = await MicPermissionCapacitor.requestMicrophonePermission();
       if (status === "granted") return "granted";
@@ -78,7 +95,7 @@ async function requestMicWithIosFallback(): Promise<TriState> {
   }
   const next = await requestMic();
   if (next === "granted") return "granted";
-  if (Capacitor.getPlatform() === "ios") {
+  if (getNativePlatform() === "ios") {
     const native = await getIosNativeMicrophoneGateState();
     if (native === "granted") return "granted";
   }
@@ -87,9 +104,9 @@ async function requestMicWithIosFallback(): Promise<TriState> {
 
 async function openNativeSettings(): Promise<void> {
   try {
-    const platform = Capacitor.getPlatform();
+    const platform = getNativePlatform();
     if (platform === "ios") {
-      window.location.assign("app-settings:");
+      await MicPermissionCapacitor.openAppSettings();
       return;
     }
     if (platform === "android") {
@@ -127,7 +144,7 @@ function Pill({ state }: { state: TriState }) {
  */
 export function NativeStartupPermissionsGate() {
   const isCap = useMemo(
-    () => typeof window !== "undefined" && Capacitor.isNativePlatform(),
+    () => typeof window !== "undefined" && isCapacitorNative(),
     [],
   );
 
@@ -157,7 +174,7 @@ export function NativeStartupPermissionsGate() {
       // iOS WKWebView: `navigator.permissions.query({ name: "microphone" })` often stays
       // "prompt" even when Settings → AmyNest → Microphone is On — use AVAudioSession via
       // MicPermissionPlugin instead so the gate matches the real OS state.
-      if (Capacitor.getPlatform() === "ios") {
+      if (getNativePlatform() === "ios") {
         const nativeMic = await getIosNativeMicrophoneGateState();
         setMic(nativeMic === "unknown" ? await micQueryState() : nativeMic);
       } else {
@@ -228,7 +245,7 @@ export function NativeStartupPermissionsGate() {
     setBusy(true);
     try {
       const next = await requestMicWithIosFallback();
-      if (Capacitor.getPlatform() === "ios") {
+      if (getNativePlatform() === "ios") {
         const nativeMic = await getIosNativeMicrophoneGateState();
         setMic(nativeMic !== "unknown" ? nativeMic : next);
       } else {

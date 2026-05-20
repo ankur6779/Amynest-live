@@ -180,6 +180,7 @@ export function PaywallModal() {
           <div className="grid sm:grid-cols-3 gap-3 mb-5">
             {plans.map(p => {
               const isSelected = p.id === selected;
+              const priceLabel = nativeBilling.priceByPlan[p.id] ?? `₹${p.price}`;
               return (
                 <button
                   key={p.id}
@@ -199,7 +200,7 @@ export function PaywallModal() {
                   )}
                   <div className="font-bold text-sm mb-1">{p.title}</div>
                   <div className="flex items-baseline gap-1 mb-2">
-                    <span className="text-2xl font-black">₹{p.price}</span>
+                    <span className="text-2xl font-black">{priceLabel}</span>
                     <span className="text-xs text-white/60">/ {p.period}</span>
                   </div>
                   {typeof p.savingsPercent === "number" && p.savingsPercent > 0 && (
