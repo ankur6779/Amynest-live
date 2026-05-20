@@ -161,7 +161,11 @@ class MainActivity : AppCompatActivity() {
                 MotionEvent.ACTION_MOVE -> {
                     val deltaY = event.y - startY
                     v.parent?.requestDisallowInterceptTouchEvent(true)
-                    if (!target.canScrollVertically(-1) && deltaY > 20f) {
+                    if (
+                        !target.canScrollVertically(-1) &&
+                        target.scrollY == 0 &&
+                        deltaY > 20f
+                    ) {
                         return@setOnTouchListener true
                     }
                 }
