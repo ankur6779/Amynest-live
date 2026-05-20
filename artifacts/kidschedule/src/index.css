@@ -813,6 +813,56 @@ html.amynest-android-shell body {
   min-width: 0;
 }
 
+/* ── Android PWA / WebView scrollport ────────────────────────────────────────
+ * Document-level scroll is unreliable in Android WebView (scroll-down works,
+ * scroll-up stuck; pull-down triggers refresh). One overflow container on
+ * #app-root with overscroll-behavior:none fixes both. */
+html.amynest-android-shell,
+html.amynest-android-shell body {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.amynest-android-shell #root {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+html.amynest-android-shell #app-root {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+html.amynest-android-shell .main-container {
+  min-height: min-content;
+  height: auto;
+  overflow: visible;
+}
+
+html.amynest-android-shell #app-root main {
+  overscroll-behavior: auto;
+}
+
+html.amynest-android-shell .main-container > .flex.flex-1 {
+  min-height: 0;
+}
+
 /* Bottom navigation bar — extra bottom clearance for home indicator */
 .bottom-nav-safe {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.25rem);
