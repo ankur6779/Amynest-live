@@ -5,12 +5,13 @@ import { isAndroidMobileShell } from "@/lib/device-lite";
  * the top. Nested scroll regions must still be able to hand the gesture to a
  * parent that can scroll upward.
  *
- * Skipped on Android mobile shells: preventDefault on touchmove breaks scroll-up
- * in Chrome/WebView; those shells use #app-root scroll + overscroll-behavior:none.
+ * Android mobile shells still need a JS guard: Chrome/WebView can ignore CSS
+ * overscroll-behavior and turn a top-edge pull into a page refresh. The guard
+ * only cancels downward pulls when the entire scroll chain is already at top.
  */
 export function installDisableOverscrollGesture(): () => void {
   if (typeof document === "undefined") return () => {};
-  if (isAndroidMobileShell()) return () => {};
+  if (isAndroidMobileShell()) return installAndroidPullToRefreshGuard();
 
   let startY = 0;
   let scrollTarget: Element | null = null;
@@ -51,6 +52,56 @@ export function installDisableOverscrollGesture(): () => void {
   };
 }
 
+function installAndroidPullToRefreshGuard(): () => void {
+  let startX = 0;
+  let startY = 0;
+  let scrollTarget: Element | null = null;
+
+  const onTouchStart = (e: TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    scrollTarget = findScrollableAncestor(
+      document.elementFromPoint(touch.clientX, touch.clientY),
+    );
+  };
+
+  const onTouchMove = (e: TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+
+    // Horizontal swipes and upward swipes must never be cancelled.
+    if (dy <= 0 || Math.abs(dx) > Math.abs(dy)) return;
+
+    const target =
+      scrollTarget ??
+      findScrollableAncestor(
+        document.elementFromPoint(touch.clientX, touch.clientY),
+      );
+    if (!target) return;
+
+    if (canScrollChainMoveUp(target)) return;
+    e.preventDefault();
+  };
+
+  document.addEventListener("touchstart", onTouchStart, {
+    passive: true,
+    capture: true,
+  });
+  document.addEventListener("touchmove", onTouchMove, {
+    passive: false,
+    capture: true,
+  });
+
+  return () => {
+    document.removeEventListener("touchstart", onTouchStart, { capture: true });
+    document.removeEventListener("touchmove", onTouchMove, { capture: true });
+  };
+}
+
 function findScrollableAncestor(el: Element | null): Element | null {
   while (el && el !== document.body && el !== document.documentElement) {
     const style = window.getComputedStyle(el);
@@ -78,12 +129,12 @@ function canScrollChainMoveUp(target: Element): boolean {
 
   let el: Element | null = target;
   while (el && el !== document.body && el !== document.documentElement) {
-    if (el.scrollTop > 0) return true;
+    if (el.scrollTop > 1) return true;
     el = el.parentElement;
   }
 
   const appRoot = document.getElementById("app-root");
-  return Boolean(appRoot && appRoot !== target && appRoot.scrollTop > 0);
+  return Boolean(appRoot && appRoot !== target && appRoot.scrollTop > 1);
 }
 
 function getDocumentScrollTop(): number {
