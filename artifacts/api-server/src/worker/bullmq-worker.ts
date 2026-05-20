@@ -4,10 +4,10 @@ import {
   AI_JOBS_QUEUE_NAME,
   type AiJobQueuePayload,
 } from "../queue/index.js";
-import { getRedisConnection, isRedisQueueEnabled } from "../queue/redis.js";
+import { getBullMqRedisConnection, isRedisQueueEnabled } from "../queue/redis.js";
 import { processAiJob } from "./ai-service.js";
 
-const CONCURRENCY = Number(process.env.AI_MAX_CONCURRENT_JOBS ?? "3");
+const CONCURRENCY = Number(process.env.AI_MAX_CONCURRENT_JOBS ?? "5");
 
 let worker: Worker<AiJobQueuePayload> | undefined;
 
@@ -21,7 +21,7 @@ export function startBullMqWorker(): Worker<AiJobQueuePayload> {
     AI_JOBS_QUEUE_NAME,
     async (job) => processAiJob(job.data),
     {
-      connection: getRedisConnection(),
+      connection: getBullMqRedisConnection(),
       concurrency: CONCURRENCY,
     },
   );
