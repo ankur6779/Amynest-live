@@ -39,7 +39,7 @@ function App() {
   // gate means the splash always covers the lazy AppCore download, so
   // the user never sees a blank Suspense fallback even on slow networks.
   return (
-    <div id="app-root">
+    <div id="app-root" className="app-root">
       <DebugOverlay />
       <StaticAudioTestButton />
       {/* ErrorBoundary disabled temporarily while verifying QueryClientProvider fix */}

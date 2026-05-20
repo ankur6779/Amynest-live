@@ -16,7 +16,7 @@ export function AppFallbackUi({
     <div
       role="alert"
       style={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -65,5 +65,5 @@ export function renderCriticalFallbackHtml(
   message = "AmyNest could not start. Please refresh the page.",
 ): void {
   const safe = message.replace(/</g, "&lt;");
-  root.innerHTML = `<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0a061a;color:#f0e8ff;font-family:system-ui,sans-serif;text-align:center"><div><p style="font-weight:600;margin:0 0 12px;font-size:18px">Something went wrong</p><p style="opacity:0.85;margin:0 0 16px;font-size:14px;line-height:1.5">${safe}</p><button type="button" onclick="location.reload()" style="padding:12px 24px;border-radius:999px;border:none;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;font-weight:600;cursor:pointer">Reload</button></div></div>`;
+  root.innerHTML = `<div style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0a061a;color:#f0e8ff;font-family:system-ui,sans-serif;text-align:center"><div><p style="font-weight:600;margin:0 0 12px;font-size:18px">Something went wrong</p><p style="opacity:0.85;margin:0 0 16px;font-size:14px;line-height:1.5">${safe}</p><button type="button" onclick="location.reload()" style="padding:12px 24px;border-radius:999px;border:none;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;font-weight:600;cursor:pointer">Reload</button></div></div>`;
 }

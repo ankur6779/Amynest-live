@@ -588,15 +588,17 @@
         margin: 0;
         padding: 0;
         height: 100%;
-        overscroll-behavior: none;
+        overflow-x: hidden;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
         touch-action: pan-x pan-y;
       }
       body {
-        overflow: hidden;
+        overscroll-behavior: none;
       }
 
       #root.amynest-boot-failed {
-        min-height: 100vh;
+        min-height: 100dvh;
         display: flex;
         align-items: center;
         justify-content: center;

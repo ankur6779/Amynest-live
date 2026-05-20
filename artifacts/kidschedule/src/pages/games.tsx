@@ -100,7 +100,7 @@ export default function GamesPage() {
 
   return (
     <div style={{
-      minHeight: "100vh",
+      minHeight: "100dvh",
       background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 55%, #0c1220 100%)",
       color: "#fff",
       paddingBottom: 80,

@@ -29,7 +29,14 @@ export function installDisableOverscrollGesture(): () => void {
       findScrollableAncestor(
         document.elementFromPoint(touch.clientX, touch.clientY),
       );
-    if (!target || target.scrollTop > 0) return;
+    if (!target) return;
+
+    const atDocumentTop =
+      target === document.documentElement || target === document.body;
+    const scrollTop = atDocumentTop
+      ? window.scrollY || document.documentElement.scrollTop || document.body.scrollTop
+      : target.scrollTop;
+    if (scrollTop > 0) return;
 
     e.preventDefault();
   };

@@ -322,7 +322,7 @@ function ReelOverlay({
         {videos.map((video, i) => <div key={video.id} data-index={i} ref={el => {
         reelRefs.current[i] = el;
       }} style={{
-        height: "100vh",
+        height: "100dvh",
         scrollSnapAlign: "start",
         flexShrink: 0
       }}>

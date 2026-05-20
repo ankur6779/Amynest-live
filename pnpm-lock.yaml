@@ -356,6 +356,9 @@ importers:
       '@capacitor/push-notifications':
         specifier: ^6.0.0
         version: 6.0.5(@capacitor/core@6.2.1)
+      '@capacitor/status-bar':
+        specifier: '6'
+        version: 6.0.3(@capacitor/core@6.2.1)
       '@codetrix-studio/capacitor-google-auth':
         specifier: ^3.4.0-rc.4
         version: 3.4.0-rc.4(@capacitor/core@6.2.1)
@@ -1781,6 +1784,11 @@ packages:
 
   '@capacitor/push-notifications@6.0.5':
     resolution: {integrity: sha512-CsRmb0cnZd9Uwx24ym4My5fNKrQvwI4D51aMEph5pUZy+LAjp6q0y4NJe8DEgwaVdAqVLbb4rqn75AZ4WSiFYg==}
+    peerDependencies:
+      '@capacitor/core': ^6.0.0
+
+  '@capacitor/status-bar@6.0.3':
+    resolution: {integrity: sha512-nFlgSmtx6Zwaw0tEvZgQsWHBeOfWWB/AvEoCApopLT4mHkBVoSrwkLvy2PjZs5wxCbsmqvQczr3XCyTwaDZVQg==}
     peerDependencies:
       '@capacitor/core': ^6.0.0
 
@@ -9283,6 +9291,10 @@ snapshots:
       '@capacitor/core': 6.2.1
 
   '@capacitor/push-notifications@6.0.5(@capacitor/core@6.2.1)':
+    dependencies:
+      '@capacitor/core': 6.2.1
+
+  '@capacitor/status-bar@6.0.3(@capacitor/core@6.2.1)':
     dependencies:
       '@capacitor/core': 6.2.1
 
