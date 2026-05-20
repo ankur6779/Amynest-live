@@ -7,7 +7,7 @@ import { randomUUID } from "node:crypto";
 import { logger } from "../lib/logger.js";
 import type { AiJobType, EnqueueResult } from "./types.js";
 import { isBullMqActive } from "./mode.js";
-import { getRedisConnection } from "./redis.js";
+import { getBullMqRedisConnection } from "./redis.js";
 import {
   getJobRecord,
   saveJobRecord,
@@ -33,7 +33,7 @@ export function getAiJobsQueue(): Queue<AiJobQueuePayload> {
   }
   if (!bullQueue) {
     bullQueue = new Queue<AiJobQueuePayload>(AI_JOBS_QUEUE_NAME, {
-      connection: getRedisConnection(),
+      connection: getBullMqRedisConnection(),
       defaultJobOptions: {
         attempts: 1,
         removeOnComplete: { count: 200 },

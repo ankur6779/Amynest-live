@@ -1,4 +1,5 @@
 import Redis from "ioredis";
+import type { RedisOptions } from "ioredis";
 import { logger } from "../lib/logger.js";
 
 const REDIS_CONNECT_MS = Number(process.env.REDIS_CONNECT_TIMEOUT_MS ?? "5000");
@@ -6,6 +7,7 @@ const REDIS_COMMAND_MS = Number(process.env.REDIS_COMMAND_TIMEOUT_MS ?? "5000");
 const REDIS_MAX_RECONNECT = Number(process.env.REDIS_MAX_RECONNECT_ATTEMPTS ?? "30");
 
 let shared: Redis | undefined;
+let bullMqShared: Redis | undefined;
 
 function waitForRedisReady(conn: Redis, timeoutMs: number): Promise<void> {
   if (conn.status === "ready") {
@@ -43,13 +45,16 @@ function waitForRedisReady(conn: Redis, timeoutMs: number): Promise<void> {
 }
 
 function resetRedisConnection(): void {
-  if (!shared) return;
-  try {
-    shared.disconnect();
-  } catch {
-    /* ignore */
+  for (const conn of [shared, bullMqShared]) {
+    if (!conn) continue;
+    try {
+      conn.disconnect();
+    } catch {
+      /* ignore */
+    }
   }
   shared = undefined;
+  bullMqShared = undefined;
 }
 
 export function getRedisUrl(): string | undefined {
@@ -89,34 +94,58 @@ export async function verifyRedisConnection(): Promise<boolean> {
   return false;
 }
 
-/** Shared ioredis connection for BullMQ + job result storage. */
-export function getRedisConnection(): Redis {
+function createRedisConnection(label: "commands" | "bullmq"): Redis {
   const url = getRedisUrl();
   if (!url) {
     throw new Error("REDIS_URL is not configured");
   }
+
+  const options: RedisOptions = {
+    maxRetriesPerRequest: null,
+    enableReadyCheck: true,
+    lazyConnect: false,
+    connectTimeout: REDIS_CONNECT_MS,
+    retryStrategy: (times) =>
+      times > REDIS_MAX_RECONNECT ? null : Math.min(times * 250, 5000),
+    enableOfflineQueue: false,
+  };
+
+  // BullMQ workers use blocking Redis commands; commandTimeout turns those into
+  // repeated "Command timed out" worker errors even when Redis is healthy.
+  if (label === "commands") {
+    options.commandTimeout = REDIS_COMMAND_MS;
+  }
+
+  const conn = new Redis(url, options);
+  conn.on("error", (err) => {
+    logger.error({ evt: "redis.error", label, message: err.message }, "Redis connection error");
+  });
+  return conn;
+}
+
+/** Shared ioredis connection for short API/result-store commands. */
+export function getRedisConnection(): Redis {
   if (!shared) {
-    shared = new Redis(url, {
-      // BullMQ workers need null; API uses commandTimeout to avoid hung commands.
-      maxRetriesPerRequest: null,
-      enableReadyCheck: true,
-      lazyConnect: false,
-      connectTimeout: REDIS_CONNECT_MS,
-      commandTimeout: REDIS_COMMAND_MS,
-      retryStrategy: (times) =>
-        times > REDIS_MAX_RECONNECT ? null : Math.min(times * 250, 5000),
-      enableOfflineQueue: false,
-    });
-    shared.on("error", (err) => {
-      logger.error({ evt: "redis.error", message: err.message }, "Redis connection error");
-    });
+    shared = createRedisConnection("commands");
   }
   return shared;
+}
+
+/** Dedicated BullMQ connection without commandTimeout for blocking queue ops. */
+export function getBullMqRedisConnection(): Redis {
+  if (!bullMqShared) {
+    bullMqShared = createRedisConnection("bullmq");
+  }
+  return bullMqShared;
 }
 
 export async function closeRedisConnection(): Promise<void> {
   if (shared) {
     await shared.quit();
     shared = undefined;
+  }
+  if (bullMqShared) {
+    await bullMqShared.quit();
+    bullMqShared = undefined;
   }
 }
