@@ -4,14 +4,11 @@ import { Link, useLocation } from "wouter";
 import {
   X,
   LogOut,
-  Moon,
-  Sun,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { useClerk, useUser, useAuth } from "@/lib/firebase-auth-hooks";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useTheme } from "@/contexts/theme-context";
 import { useTranslation } from "react-i18next";
 import { useSubscription } from "@/hooks/use-subscription";
 import { logNavEvent, logNavError } from "@/lib/navigation-log";
@@ -39,43 +36,6 @@ function SmartParentBadge({ className = "" }: { className?: string }) {
       <Sparkles className="h-2.5 w-2.5" />
       {t("components.layout.smart_parent")}
     </span>
-  );
-}
-
-function ThemeToggleRow({ onToggle }: { onToggle?: () => void }) {
-  const { mode, toggleTheme } = useTheme();
-  const { t } = useTranslation();
-  const isDark = mode === "dark";
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        try {
-          toggleTheme();
-          onToggle?.();
-        } catch (err) {
-          logNavError("theme-toggle", err);
-        }
-      }}
-      data-testid="button-theme-toggle"
-      className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-    >
-      <span className="flex items-center gap-3">
-        {isDark ? (
-          <Moon className="h-5 w-5 text-primary" />
-        ) : (
-          <Sun className="h-5 w-5 text-primary" />
-        )}
-        <span>{isDark ? t("nav.dark_mode") : t("nav.light_mode")}</span>
-      </span>
-      <span
-        className={`relative h-6 w-11 rounded-full border transition-colors ${isDark ? "bg-primary border-border" : "bg-muted border-border"}`}
-      >
-        <span
-          className={`absolute top-0.5 h-5 w-5 rounded-full shadow-md transition-transform ${isDark ? "translate-x-5 bg-primary" : "translate-x-0.5 bg-primary"}`}
-        />
-      </span>
-    </button>
   );
 }
 
@@ -259,9 +219,6 @@ export function LayoutMobileMenuSheet({
 
         <nav className="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-1 text-card-foreground">
           <MenuItems items={safeMenu} location={location} onNavigate={closeSidebar} />
-          <div className="mt-2 pt-2 border-t">
-            <ThemeToggleRow onToggle={closeSidebar} />
-          </div>
         </nav>
 
         <div className="shrink-0 border-t px-4 py-3">

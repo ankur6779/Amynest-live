@@ -157,7 +157,19 @@ export function initNativeShell(): void {
   nativeShellInitialized = true;
 
   if (isNativeAmyNestShell()) {
-    document.documentElement.classList.add("amynest-native-shell");
+    const root = document.documentElement;
+    root.classList.add("amynest-native-shell", "dark");
+    root.setAttribute("data-theme", "dark");
+    root.style.colorScheme = "dark";
+    document
+      .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+      ?.setAttribute("content", "#0b0b0b");
+    try {
+      window.localStorage.setItem("theme", "dark");
+      window.localStorage.removeItem("amynest:theme");
+    } catch {
+      /* ignore */
+    }
     configureNativeViewport();
     return;
   }

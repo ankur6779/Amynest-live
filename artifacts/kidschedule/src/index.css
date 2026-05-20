@@ -224,61 +224,56 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* LIGHT MODE */
+/* Dark-only default (:root) — app does not offer light mode */
 :root {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f5f5;
-  --text-primary: #111111;
-  --text-secondary: #555555;
-  --border-color: #e5e5e5;
-  --card-bg: #ffffff;
-  --accent: #2563eb;
-  --shadow-color: rgba(0,0,0, .08);
-  --overlay-bg: rgba(17,17,17, .72);
+  --bg-primary: #0b0b0b;
+  --bg-secondary: #161616;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a3a3a3;
+  --border-color: #2a2a2a;
+  --card-bg: #121212;
+  --accent: #3b82f6;
+  --shadow-color: rgba(0,0,0, .40);
+  --overlay-bg: rgba(0,0,0, .80);
 
-  --button-outline: rgba(0,0,0, .10);
-  --badge-outline: rgba(0,0,0, .05);
+  --button-outline: rgba(255,255,255, .10);
+  --badge-outline: rgba(255,255,255, .05);
 
-  --opaque-button-border-intensity: -8;
+  --opaque-button-border-intensity: 9;
 
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .08);
+  --elevate-1: rgba(255,255,255, .04);
+  --elevate-2: rgba(255,255,255, .09);
 
-  /* Warm cream background */
-  --background: 40 33% 98%;
-  /* Deep navy/charcoal foreground */
-  --foreground: 222 47% 18%;
+  --background: 222 47% 11%;
+  --foreground: 40 33% 98%;
 
-  --border: 40 10% 90%;
+  --border: 222 30% 20%;
 
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 18%;
-  --card-border: 40 15% 92%;
+  --card: 222 40% 14%;
+  --card-foreground: 40 33% 98%;
+  --card-border: 222 30% 20%;
 
-  --sidebar: 40 33% 98%;
-  --sidebar-foreground: 222 47% 18%;
-  --sidebar-border: 40 15% 92%;
+  --sidebar: 222 47% 11%;
+  --sidebar-foreground: 40 33% 98%;
+  --sidebar-border: 222 30% 20%;
   --sidebar-primary: 14 85% 58%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 40 20% 94%;
-  --sidebar-accent-foreground: 222 47% 18%;
+  --sidebar-accent: 222 30% 20%;
+  --sidebar-accent-foreground: 40 33% 98%;
   --sidebar-ring: 14 85% 58%;
 
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 18%;
-  --popover-border: 40 15% 92%;
+  --popover: 222 40% 14%;
+  --popover-foreground: 40 33% 98%;
+  --popover-border: 222 30% 20%;
 
-  /* Coral / Orange */
   --primary: 14 85% 58%;
   --primary-foreground: 0 0% 100%;
 
-  /* Soft Yellow */
   --secondary: 45 93% 57%;
-  --secondary-foreground: 222 47% 18%;
+  --secondary-foreground: 222 47% 11%;
 
-  /* Soft beige/sand */
-  --muted: 40 20% 94%;
-  --muted-foreground: 222 20% 45%;
+  --muted: 222 30% 20%;
+  --muted-foreground: 222 20% 70%;
 
   /* Mint / Teal */
   --accent-hsl: 171 77% 43%;
@@ -288,7 +283,7 @@
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 40 15% 90%;
+  --input: 222 30% 20%;
   --ring: 14 85% 58%;
 
   --chart-1: 14 85% 58%;
@@ -510,7 +505,7 @@ body {
 html {
   background: var(--bg-primary);
   color: var(--text-primary);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 html.dark,

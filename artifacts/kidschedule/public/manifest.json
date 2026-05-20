@@ -9,7 +9,7 @@
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#0f0c29",
-  "theme_color": "#A855F7",
+  "theme_color": "#0b0b0b",
   "lang": "en",
   "dir": "ltr",
   "categories": ["education", "lifestyle", "kids"],

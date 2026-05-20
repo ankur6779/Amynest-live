@@ -20,6 +20,7 @@
 		AMY100000000000000000003 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AMY200000000000000000003 /* PrivacyInfo.xcprivacy */; };
 		AMY100000000000000000004 /* AmyNestFcmBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AMY200000000000000000005 /* AmyNestFcmBridge.swift */; };
 		AMY100000000000000000005 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = AMY200000000000000000006 /* GoogleService-Info.plist */; };
+		AMY100000000000000000007 /* AmyNestAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = AMY200000000000000000007 /* AmyNestAppearance.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +41,7 @@
 		AMY200000000000000000004 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		AMY200000000000000000005 /* AmyNestFcmBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmyNestFcmBridge.swift; sourceTree = "<group>"; };
 		AMY200000000000000000006 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		AMY200000000000000000007 /* AmyNestAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmyNestAppearance.swift; sourceTree = "<group>"; };
 		FC68EB0AF532CFC21C3344DD /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -88,6 +90,7 @@
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				AMY200000000000000000001 /* MicPermissionPlugin.swift */,
 				AMY200000000000000000002 /* BounceDisable.swift */,
+				AMY200000000000000000007 /* AmyNestAppearance.swift */,
 				AMY200000000000000000005 /* AmyNestFcmBridge.swift */,
 				AMY200000000000000000006 /* GoogleService-Info.plist */,
 				AMY200000000000000000003 /* PrivacyInfo.xcprivacy */,
@@ -233,6 +236,7 @@
 				AMY100000000000000000001 /* MicPermissionPlugin.swift in Sources */,
 				AMY100000000000000000002 /* BounceDisable.swift in Sources */,
 				AMY100000000000000000004 /* AmyNestFcmBridge.swift in Sources */,
+				AMY100000000000000000007 /* AmyNestAppearance.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -404,10 +408,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = AmyNest_Final_Profile;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_VERSION = 5.0;
@@ -440,10 +440,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = AmyNest_Final_Profile;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
 				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_VERSION = 5.0;
