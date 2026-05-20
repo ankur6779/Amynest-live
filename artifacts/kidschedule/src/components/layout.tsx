@@ -191,33 +191,39 @@ export function Layout({
     }
     setLocation("/dashboard");
   };
-  return <div className="main-container relative flex min-h-dvh w-full max-w-full min-w-0 flex-col bg-background overflow-x-clip box-border">
+  return (
+    <div className="app-shell main-container relative w-full max-w-full min-w-0 bg-background overflow-x-clip box-border">
       <div className="ptr-guard-edge" aria-hidden="true" />
       <div className="ptr-guard" aria-hidden="true" />
-      {/* Mobile Header */}
-      {!isImmersiveRoute && <header className={`header sticky top-0 flex min-h-20 w-full max-w-full min-w-0 items-center justify-between gap-2 border-b bg-background px-4 py-3 md:hidden shadow-sm ${isNativeAmyNestShell() ? "pt-3" : "pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]"}`}>
-        <div className="flex min-w-0 items-center gap-2">
-          {canShowBack ? (
-            <button
-              type="button"
-              onClick={handleBack}
-              aria-label="Back"
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm active:scale-95"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-          ) : null}
-          <BrandLogo size="sm" showTagline={true} />
-          <AmyMascotLogo size={34} />
-        </div>
-        <div className="flex items-center gap-2">
-          <LayoutMobileMenu />
-        </div>
-      </header>}
 
-      <div className="flex w-full max-w-full min-w-0 flex-1 min-h-0">
+      {!isImmersiveRoute ? (
+        <header
+          className={`app-header header flex min-h-20 w-full max-w-full min-w-0 shrink-0 items-center justify-between gap-2 border-b bg-background px-4 py-3 md:hidden shadow-sm ${isNativeAmyNestShell() ? "pt-3" : "pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]"}`}
+        >
+          <div className="flex min-w-0 items-center gap-2">
+            {canShowBack ? (
+              <button
+                type="button"
+                onClick={handleBack}
+                aria-label="Back"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm active:scale-95"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            ) : null}
+            <BrandLogo size="sm" showTagline={true} />
+            <AmyMascotLogo size={34} />
+          </div>
+          <div className="flex items-center gap-2">
+            <LayoutMobileMenu />
+          </div>
+        </header>
+      ) : null}
+
+      <main className="app-content flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col md:flex-row">
         {/* Desktop Sidebar */}
-        {!isImmersiveRoute && <aside className="hidden w-64 flex-col border-r bg-card md:flex">
+        {!isImmersiveRoute && <aside className="hidden w-64 shrink-0 flex-col border-r bg-card md:flex">
           <div className="flex h-24 items-center justify-between border-b px-5 shadow-sm">
             <BrandLogo size="md" showTagline={true} />
             <AmyMascotLogo size={42} />
@@ -265,54 +271,94 @@ export function Layout({
           </div>
         </aside>}
 
-        {/* Main Content */}
-        <main
-          className={`flex-1 min-h-0 ${showDashboardChrome ? "pb-20 md:pb-0" : "pb-0"}`}
-        >
-          <div className={isImmersiveRoute ? "mx-auto flex min-h-dvh w-full flex-col p-0 md:p-0" : "mx-auto max-w-5xl p-4 md:p-8"}>
-            {!isImmersiveRoute && !["/sign-in", "/onboarding", "/notify-prompt"].some(p => safePathStartsWith(location, p)) && <div className="mb-4">
-                <NotificationNudgeBanner />
-              </div>}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div
+            className={
+              isImmersiveRoute
+                ? "mx-auto flex w-full min-h-0 flex-1 flex-col p-0 md:p-0"
+                : "mx-auto w-full max-w-5xl flex-1 p-4 md:p-8"
+            }
+          >
+            {!isImmersiveRoute &&
+              !["/sign-in", "/onboarding", "/notify-prompt"].some((p) =>
+                safePathStartsWith(location, p),
+              ) && (
+                <div className="mb-4">
+                  <NotificationNudgeBanner />
+                </div>
+              )}
             {children}
           </div>
-        </main>
-      </div>
-
-      {/* Notification enable prompt — shown as a bottom-sheet modal ~1.8s
-          after the user opens the app if permission has not been granted yet.
-          Snoozes for 3 days on dismiss. Banner above handles denied/reconnect. */}
-      {!isImmersiveRoute && !["/sign-in", "/onboarding"].some(p => safePathStartsWith(location, p)) && (
-        <NotificationPromptModal />
-      )}
-
-      {/* Mobile Bottom Nav — premium 4-tab with center-raised Amy Coach. */}
-      {showDashboardChrome && <nav className="fixed bottom-0 left-0 right-0 z-40 h-[78px] bg-card/95 backdrop-blur-xl border-t border-border md:hidden pb-safe shadow-[0_-8px_28px_var(--shadow-color)]">
-        <div className="relative flex h-full w-full items-end justify-around px-2 pb-2">
-          {BOTTOM_NAV_ITEMS.map(item => {
-          const isActive = safePathStartsWithSegment(location, item.href);
-          if (item.center) {
-            return <Link key={item.href} href={item.href} data-tour="amy-coach" className="relative flex flex-col items-center justify-end -translate-y-5">
-                  <div className={`flex h-[60px] w-[60px] items-center justify-center rounded-full text-primary-foreground transition-transform active:scale-90 ${isActive ? "bg-gradient-to-br from-primary to-primary shadow-lg ring-2 ring-primary/20" : "bg-gradient-to-br from-primary to-primary shadow-md"}`}>
-                    <item.icon className="h-7 w-7" />
-                  </div>
-                  <span className={`mt-1 text-[10px] font-semibold ${isActive ? "text-muted-foreground" : "text-muted-foreground"}`}>
-                    {t(item.labelKey)}
-                  </span>
-                </Link>;
-          }
-          return <Link key={item.href} href={item.href} data-tour={item.href === "/dashboard" ? "dashboard" : item.href === "/routines" ? "routines" : item.href === "/parenting-hub" ? "parenting-hub" : undefined} className={`relative flex flex-1 flex-col items-center justify-center gap-1 px-1 py-2 transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
-                <item.icon className={`h-5 w-5 ${isActive ? "fill-primary" : ""}`} />
-                <span className="text-[11px] font-medium leading-none">{t(item.labelKey)}</span>
-                {isActive && <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-muted" />}
-              </Link>;
-        })}
         </div>
-      </nav>}
+        </div>
+      </main>
 
-      {/* Floating Amy AI assistant button */}
-      {showDashboardChrome && <AmyFab />}
+      {showDashboardChrome ? (
+        <footer className="app-footer shrink-0 md:hidden">
+          <nav
+            className="h-[78px] w-full border-t border-border bg-card/95 pb-safe shadow-[0_-8px_28px_var(--shadow-color)] backdrop-blur-xl"
+            aria-label={t("nav.dashboard")}
+          >
+            <div className="relative flex h-full w-full items-end justify-around px-2 pb-2">
+              {BOTTOM_NAV_ITEMS.map((item) => {
+                const isActive = safePathStartsWithSegment(location, item.href);
+                if (item.center) {
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      data-tour="amy-coach"
+                      className="relative flex flex-col items-center justify-end -translate-y-5"
+                    >
+                      <div
+                        className={`flex h-[60px] w-[60px] items-center justify-center rounded-full text-primary-foreground transition-transform active:scale-90 ${isActive ? "bg-gradient-to-br from-primary to-primary shadow-lg ring-2 ring-primary/20" : "bg-gradient-to-br from-primary to-primary shadow-md"}`}
+                      >
+                        <item.icon className="h-7 w-7" />
+                      </div>
+                      <span className="mt-1 text-[10px] font-semibold text-muted-foreground">
+                        {t(item.labelKey)}
+                      </span>
+                    </Link>
+                  );
+                }
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    data-tour={
+                      item.href === "/dashboard"
+                        ? "dashboard"
+                        : item.href === "/routines"
+                          ? "routines"
+                          : item.href === "/parenting-hub"
+                            ? "parenting-hub"
+                            : undefined
+                    }
+                    className={`relative flex flex-1 flex-col items-center justify-center gap-1 px-1 py-2 transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                  >
+                    <item.icon className={`h-5 w-5 ${isActive ? "fill-primary" : ""}`} />
+                    <span className="text-[11px] font-medium leading-none">
+                      {t(item.labelKey)}
+                    </span>
+                    {isActive ? (
+                      <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-muted" />
+                    ) : null}
+                  </Link>
+                );
+              })}
+            </div>
+          </nav>
+        </footer>
+      ) : null}
 
-      {/* Premium spotlight onboarding tour — auto-shows once after first login */}
+      {!isImmersiveRoute &&
+        !["/sign-in", "/onboarding"].some((p) => safePathStartsWith(location, p)) && (
+          <NotificationPromptModal />
+        )}
+
+      {showDashboardChrome ? <AmyFab /> : null}
+
       <SpotlightTour />
-    </div>;
+    </div>
+  );
 }
