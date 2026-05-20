@@ -7,8 +7,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        AmyNestAppearance.forceDarkMode()
         AmyNestFcmBridge.shared.configureIfNeeded()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            AmyNestAppearance.forceDarkMode()
             AmyNestBounceDisable.applyToAllWindows()
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -27,6 +29,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
+        AmyNestAppearance.forceDarkMode()
         AmyNestFcmBridge.shared.refreshTokenToWebView()
     }
 

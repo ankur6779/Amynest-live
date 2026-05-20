@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Home, Users, Calendar, Star, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Moon, Sun, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, Trophy, MessageSquarePlus } from "lucide-react";
+import { ArrowLeft, Home, Users, Calendar, Star, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, Trophy, MessageSquarePlus } from "lucide-react";
 import { useClerk, useUser } from "@/lib/firebase-auth-hooks";
 import { LayoutMobileMenu } from "@/components/layout-mobile-menu";
 import { logNavEvent } from "@/lib/navigation-log";
@@ -16,7 +16,6 @@ import { BrandLogo } from "@/components/brand-logo";
 import { AmyFab } from "@/components/amy-fab";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
-import { useTheme } from "@/contexts/theme-context";
 import { useTranslation } from "react-i18next";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePushRegistration } from "@/hooks/use-push-registration";
@@ -37,32 +36,6 @@ function SmartParentBadge({
       <Sparkles className="h-2.5 w-2.5" />
       {t("components.layout.smart_parent")}
     </span>;
-}
-function ThemeToggleRow({
-  onToggle
-}: {
-  onToggle?: () => void;
-}) {
-  const {
-    mode,
-    toggleTheme
-  } = useTheme();
-  const {
-    t
-  } = useTranslation();
-  const isDark = mode === "dark";
-  return <button type="button" onClick={() => {
-    toggleTheme();
-    onToggle?.();
-  }} data-testid="button-theme-toggle" className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-      <span className="flex items-center gap-3">
-        {isDark ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
-        <span>{isDark ? t("nav.dark_mode") : t("nav.light_mode")}</span>
-      </span>
-      <span className={`relative h-6 w-11 rounded-full border transition-colors ${isDark ? "bg-primary border-border" : "bg-muted border-border"}`}>
-        <span className={`absolute top-0.5 h-5 w-5 rounded-full shadow-md transition-transform ${isDark ? "translate-x-5 bg-primary" : "translate-x-0.5 bg-primary"}`} />
-      </span>
-    </button>;
 }
 type NavItem = {
   href: string;
@@ -260,9 +233,6 @@ export function Layout({
                     </span>}
                 </Link>;
           })}
-            <div className="mt-2 pt-2 border-t">
-              <ThemeToggleRow />
-            </div>
           </nav>
           {/* Desktop user / sign-out */}
           <div className="border-t p-4">

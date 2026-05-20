@@ -16,6 +16,7 @@
     "serve:spa": "node server/serve-spa.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --config vitest.config.ts",
+    "generate:ipad-screenshots": "node scripts/generate-ipad-appstore-screenshots.mjs",
     "test:e2e": "playwright test --config playwright.config.ts",
     "test:stress": "playwright test --config playwright.config.stress.ts"
   },

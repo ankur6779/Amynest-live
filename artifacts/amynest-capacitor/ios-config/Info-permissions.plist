@@ -96,6 +96,9 @@
   <string>UIStatusBarStyleLightContent</string>
   <key>UIViewControllerBasedStatusBarAppearance</key>
   <false/>
+  <!-- Dark-only app — ignore iOS system light mode for native chrome + WKWebView -->
+  <key>UIUserInterfaceStyle</key>
+  <string>Dark</string>
 
   <!-- ── Orientation ── -->
   <key>UISupportedInterfaceOrientations</key>

@@ -1,6 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo } from "react";
 
-export type ThemeMode = "light" | "dark";
+/** App ships dark-only; light mode is not offered in the UI. */
+export type ThemeMode = "dark";
 
 type ThemeContextValue = {
   mode: ThemeMode;
@@ -13,61 +14,39 @@ const LEGACY_STORAGE_KEY = "amynest:theme";
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-function readInitialMode(): ThemeMode {
-  if (typeof window === "undefined") return "light";
-  try {
-    const stored =
-      window.localStorage.getItem(THEME_STORAGE_KEY) ??
-      window.localStorage.getItem(LEGACY_STORAGE_KEY);
-    if (stored === "light" || stored === "dark") return stored;
-  } catch {
-    /* ignore */
-  }
-  try {
-    if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
-      return "dark";
-    }
-  } catch {
-    /* ignore */
-  }
-  return "light";
-}
-
-function applyMode(mode: ThemeMode) {
+function applyDarkMode() {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  if (mode === "dark") root.classList.add("dark");
-  else root.classList.remove("dark");
-  root.setAttribute("data-theme", mode);
-  root.style.colorScheme = mode;
-  const themeColor = mode === "dark" ? "#0b0b0b" : "#ffffff";
+  root.classList.add("dark");
+  root.setAttribute("data-theme", "dark");
+  root.style.colorScheme = "dark";
   document
     .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-    ?.setAttribute("content", themeColor);
+    ?.setAttribute("content", "#0b0b0b");
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<ThemeMode>(() => readInitialMode());
-
   useEffect(() => {
-    applyMode(mode);
+    applyDarkMode();
     try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, mode);
+      window.localStorage.setItem(THEME_STORAGE_KEY, "dark");
       window.localStorage.removeItem(LEGACY_STORAGE_KEY);
     } catch {
       /* ignore */
     }
-  }, [mode]);
+  }, []);
 
-  const setMode = useCallback((next: ThemeMode) => setModeState(next), []);
-  const toggleTheme = useCallback(
-    () => setModeState((cur) => (cur === "dark" ? "light" : "dark")),
-    [],
-  );
+  const setMode = useCallback((_next: ThemeMode) => {
+    applyDarkMode();
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    applyDarkMode();
+  }, []);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ mode, toggleTheme, setMode }),
-    [mode, toggleTheme, setMode],
+    () => ({ mode: "dark", toggleTheme, setMode }),
+    [toggleTheme, setMode],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
