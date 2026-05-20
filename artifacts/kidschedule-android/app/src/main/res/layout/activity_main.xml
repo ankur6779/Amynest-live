@@ -7,21 +7,15 @@
     android:fitsSystemWindows="false"
     android:background="@color/brand_background">
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipeRefresh"
+    <WebView
+        android:id="@+id/webview"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:enabled="false"
+        android:overScrollMode="never"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <WebView
-            android:id="@+id/webview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- ── Offline overlay ─────────────────────────────────────────────── -->
     <androidx.constraintlayout.widget.ConstraintLayout
