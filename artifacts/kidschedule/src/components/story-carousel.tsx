@@ -51,7 +51,7 @@ export function StoryCarousel({
         </div>
       </div>
 
-      <div ref={trackRef} className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div ref={trackRef} className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 [touch-action:pan-y] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {stories.map(story => <StoryCard key={`${title}-${story.id}`} story={story} onClick={onSelect} size={size} />)}
       </div>
     </section>;
