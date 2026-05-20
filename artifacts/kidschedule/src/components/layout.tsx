@@ -219,7 +219,7 @@ export function Layout({
         </div>
       </header>}
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex flex-1">
         {/* Desktop Sidebar */}
         {!isImmersiveRoute && <aside className="hidden w-64 flex-col border-r bg-card md:flex">
           <div className="flex h-24 items-center justify-between border-b px-5 shadow-sm">
@@ -273,8 +273,8 @@ export function Layout({
         </aside>}
 
         {/* Main Content */}
-        <main className={`flex-1 min-h-0 overflow-y-auto overscroll-y-contain ${showDashboardChrome ? "pb-20 md:pb-0" : "pb-0"}`}>
-          <div className={isImmersiveRoute ? "mx-auto flex h-full min-h-0 w-full flex-col p-0 md:p-0" : "mx-auto max-w-5xl p-4 md:p-8"}>
+        <main className={`flex-1 overscroll-y-contain ${showDashboardChrome ? "pb-20 md:pb-0" : "pb-0"}`}>
+          <div className={isImmersiveRoute ? "mx-auto flex min-h-dvh w-full flex-col p-0 md:p-0" : "mx-auto max-w-5xl p-4 md:p-8"}>
             {!isImmersiveRoute && !["/sign-in", "/onboarding", "/notify-prompt"].some(p => safePathStartsWith(location, p)) && <div className="mb-4">
                 <NotificationNudgeBanner />
               </div>}
