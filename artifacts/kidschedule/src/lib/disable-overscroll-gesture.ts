@@ -59,6 +59,18 @@ function installAndroidScrollDriver(): () => void {
   let lastY = 0;
   let activeScroller: Element | null = null;
   let gestureLockedToScroll = false;
+  const root = document.documentElement;
+  const body = document.body;
+  const appRoot = document.getElementById("app-root");
+  const previousTouchActions = [
+    [root, root.style.touchAction],
+    [body, body.style.touchAction],
+    ...(appRoot ? ([[appRoot, appRoot.style.touchAction]] as const) : []),
+  ] as const;
+
+  root.style.touchAction = "none";
+  body.style.touchAction = "none";
+  if (appRoot) appRoot.style.touchAction = "none";
 
   const onTouchStart = (e: TouchEvent) => {
     if (e.touches.length !== 1) return;
@@ -129,6 +141,9 @@ function installAndroidScrollDriver(): () => void {
   return () => {
     document.removeEventListener("touchstart", onTouchStart, { capture: true });
     document.removeEventListener("touchmove", onTouchMove, { capture: true });
+    for (const [el, touchAction] of previousTouchActions) {
+      el.style.touchAction = touchAction;
+    }
   };
 }
 

@@ -825,7 +825,8 @@ html.amynest-android-shell body {
   width: 100%;
   max-width: 100%;
   overflow: hidden;
-  overscroll-behavior: none;
+  overscroll-behavior: none !important;
+  touch-action: none;
 }
 
 html.amynest-android-shell #root {
@@ -835,6 +836,8 @@ html.amynest-android-shell #root {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  overscroll-behavior: none !important;
+  touch-action: none;
 }
 
 html.amynest-android-shell #app-root {
@@ -847,9 +850,9 @@ html.amynest-android-shell #app-root {
   max-width: 100%;
   overflow-x: hidden;
   overflow-y: auto;
-  overscroll-behavior: none;
+  overscroll-behavior: none !important;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
+  touch-action: none;
 }
 
 html.amynest-android-shell .main-container {
