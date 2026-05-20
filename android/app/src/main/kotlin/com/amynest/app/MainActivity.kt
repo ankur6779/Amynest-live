@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -148,6 +149,27 @@ class MainActivity : AppCompatActivity() {
 
     // ── WebView configuration ────────────────────────────────────────────────
 
+    @SuppressLint("ClickableViewAccessibility")
+    private fun installWebViewPullGestureBlocker(target: WebView) {
+        var startY = 0f
+        target.setOnTouchListener { v, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    startY = event.y
+                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val deltaY = event.y - startY
+                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                    if (!target.canScrollVertically(-1) && deltaY > 20f) {
+                        return@setOnTouchListener true
+                    }
+                }
+            }
+            false
+        }
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private fun configureWebView(wv: WebView) {
         wv.settings.apply {
@@ -156,6 +178,7 @@ class MainActivity : AppCompatActivity() {
             databaseEnabled = true
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             setSupportMultipleWindows(false)
+            javaScriptCanOpenWindowsAutomatically = false
             allowContentAccess = true
             loadsImagesAutomatically = true
             allowFileAccess = false
@@ -183,6 +206,7 @@ class MainActivity : AppCompatActivity() {
         wv.overScrollMode = View.OVER_SCROLL_NEVER
         wv.isVerticalScrollBarEnabled = false
         wv.isHorizontalScrollBarEnabled = false
+        installWebViewPullGestureBlocker(wv)
 
         wv.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(
@@ -190,13 +214,19 @@ class MainActivity : AppCompatActivity() {
                 request: WebResourceRequest,
             ): Boolean {
                 val url = request.url ?: return false
-                val host = url.host ?: return false
-                // Match the main domain and any subdomains
-                if (host == "amynest.in" || host.endsWith(".amynest.in")) return false
-                
-                // External links open in browser
-                startActivity(Intent(Intent.ACTION_VIEW, url))
-                return true
+                val scheme = url.scheme?.lowercase() ?: return false
+                // Pure WebView — keep all http(s) navigation inside the app.
+                if (scheme == "http" || scheme == "https") {
+                    view.loadUrl(url.toString())
+                    return true
+                }
+                if (scheme == "mailto" || scheme == "tel" || scheme == "sms") {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, url))
+                    } catch (_: ActivityNotFoundException) { /* ignore */ }
+                    return true
+                }
+                return false
             }
 
             override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
