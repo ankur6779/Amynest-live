@@ -17,6 +17,7 @@ import android.os.Build
 import android.util.Log
 import android.os.Bundle
 import android.os.Environment
+import android.view.MotionEvent
 import android.view.View
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
@@ -133,7 +134,7 @@ class MainActivity : AppCompatActivity() {
         }
         ViewCompat.requestApplyInsets(binding.root)
 
-        webView = binding.webview
+        webView = binding.webView
         webView.overScrollMode = View.OVER_SCROLL_NEVER
         webView.isNestedScrollingEnabled = false
 
@@ -256,7 +257,8 @@ class MainActivity : AppCompatActivity() {
         s.mediaPlaybackRequiresUserGesture = false
         s.allowFileAccess = false
         s.allowContentAccess = false
-        s.javaScriptCanOpenWindowsAutomatically = true
+        s.javaScriptCanOpenWindowsAutomatically = false
+        s.setSupportMultipleWindows(false)
         s.setGeolocationEnabled(true)
         s.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
         s.cacheMode = WebSettings.LOAD_DEFAULT
@@ -267,6 +269,7 @@ class MainActivity : AppCompatActivity() {
         s.userAgentString = "${s.userAgentString} AmyNestAndroid/${BuildConfig.VERSION_NAME}"
         webView.overScrollMode = View.OVER_SCROLL_NEVER
         webView.isNestedScrollingEnabled = false
+        installWebViewPullGestureBlocker(webView)
 
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
@@ -282,7 +285,7 @@ class MainActivity : AppCompatActivity() {
                 val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
                 dm.enqueue(request)
             } catch (_: Exception) {
-                openExternal(Uri.parse(url))
+                loadHttpUrlInWebView(Uri.parse(url))
             }
         }
 
@@ -290,9 +293,9 @@ class MainActivity : AppCompatActivity() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val url = request.url
                 val scheme = url.scheme?.lowercase() ?: return false
+                // Pure WebView — never open http(s) in Chrome / Custom Tabs.
                 if (scheme == "http" || scheme == "https") {
-                    if (WebViewOrigins.isTrustedAmyNestHost(url.host)) return false
-                    openExternal(url)
+                    view.loadUrl(url.toString())
                     return true
                 }
                 if (scheme == "intent") {
@@ -301,7 +304,7 @@ class MainActivity : AppCompatActivity() {
                 if (scheme == "mailto" || scheme == "tel" || scheme == "sms" ||
                     scheme == "market" || scheme == "whatsapp" ||
                     scheme == "geo" || scheme == "maps") {
-                    openExternal(url)
+                    openExternalApp(url)
                     return true
                 }
                 return false
@@ -328,6 +331,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.webChromeClient = object : WebChromeClient() {
+            override fun onCreateWindow(
+                view: WebView?,
+                isDialog: Boolean,
+                isUserGesture: Boolean,
+                resultMsg: android.os.Message?,
+            ): Boolean {
+                val target = view?.hitTestResult?.extra
+                if (!target.isNullOrBlank()) {
+                    loadHttpUrlInWebView(Uri.parse(target))
+                }
+                return false
+            }
+
             override fun onPermissionRequest(request: PermissionRequest) {
                 val androidPerms = mutableListOf<String>()
                 for (resource in request.resources) {
@@ -392,7 +408,44 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun openExternal(uri: Uri) {
+    /**
+     * Block native pull-down at scroll top; return false otherwise so WebView scroll works.
+     */
+    @SuppressLint("ClickableViewAccessibility")
+    private fun installWebViewPullGestureBlocker(target: WebView) {
+        var startY = 0f
+        target.setOnTouchListener { v, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    startY = event.y
+                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val deltaY = event.y - startY
+                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                    if (!target.canScrollVertically(-1) && deltaY > 20f) {
+                        return@setOnTouchListener true
+                    }
+                }
+            }
+            false
+        }
+    }
+
+    /** Load http(s) inside the app WebView — never Chrome Custom Tabs / browser. */
+    private fun loadHttpUrlInWebView(uri: Uri) {
+        val scheme = uri.scheme?.lowercase()
+        if (scheme != "http" && scheme != "https") return
+        webView.loadUrl(uri.toString())
+    }
+
+    /** Non-http schemes only (tel, mailto, maps, Play Store, etc.). */
+    private fun openExternalApp(uri: Uri) {
+        val scheme = uri.scheme?.lowercase()
+        if (scheme == "http" || scheme == "https") {
+            loadHttpUrlInWebView(uri)
+            return
+        }
         try {
             val intent = Intent(Intent.ACTION_VIEW, uri).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -408,7 +461,7 @@ class MainActivity : AppCompatActivity() {
      *
      * Parses the intent, tries to resolve and launch it. If no activity can
      * handle the parsed intent and the URI specifies a `S.browser_fallback_url`
-     * extra, opens that fallback URL externally instead.
+     * extra, loads that fallback URL in the WebView instead.
      *
      * Returns true if the navigation has been consumed (handled or fallback
      * launched); false if the WebView should handle the URL itself.
@@ -439,13 +492,19 @@ class MainActivity : AppCompatActivity() {
     private fun openFallback(intent: Intent): Boolean {
         val fallback = intent.getStringExtra("browser_fallback_url")
         if (!fallback.isNullOrBlank()) {
-            openExternal(Uri.parse(fallback))
+            val uri = Uri.parse(fallback)
+            val scheme = uri.scheme?.lowercase()
+            if (scheme == "http" || scheme == "https") {
+                loadHttpUrlInWebView(uri)
+            } else {
+                openExternalApp(uri)
+            }
             return true
         }
         // Try Play Store for the package, if specified.
         val pkg = intent.`package`
         if (!pkg.isNullOrBlank()) {
-            openExternal(Uri.parse("market://details?id=$pkg"))
+            openExternalApp(Uri.parse("market://details?id=$pkg"))
             return true
         }
         return true

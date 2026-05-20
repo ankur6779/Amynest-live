@@ -8,7 +8,7 @@
     android:background="@color/brand_background">
 
     <WebView
-        android:id="@+id/webview"
+        android:id="@+id/webView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:overScrollMode="never"
