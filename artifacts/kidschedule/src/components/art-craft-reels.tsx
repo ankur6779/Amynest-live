@@ -305,7 +305,7 @@ function ReelOverlay({
     flexDirection: "column"
   }}>
       {/* Feed */}
-      <div ref={feedRef} style={{
+      <div ref={feedRef} className="reel-container" style={{
       flex: 1,
       overflowY: "scroll",
       scrollSnapType: "y mandatory",
