@@ -37,17 +37,13 @@ function isCapacitorAndroid(): boolean {
 }
 
 /**
- * Installed Android PWA, Play Store WebView wrapper, or Capacitor Android.
- * Uses a dedicated #app-root scrollport (see index.css .amynest-android-shell).
+ * Android Chrome, installed PWA, Play Store WebView wrapper, or Capacitor Android.
+ * All Android clients use the same scroll containment path because Chrome's
+ * native pull-to-refresh can fight document-level scrolling.
  */
 export function isAndroidMobileShell(): boolean {
   if (typeof window === "undefined") return false;
-  if (!isAndroidUa()) return false;
-  return (
-    isStandalonePwa() ||
-    isNativeAmyNestAndroidWrapper() ||
-    isCapacitorAndroid()
-  );
+  return isAndroidUa();
 }
 
 /** Legacy kidschedule-android WebView (not Capacitor). */
