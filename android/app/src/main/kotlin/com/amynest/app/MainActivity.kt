@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewTreeObserver
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -45,6 +46,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var pushBridge: PushBridge
+    private var webViewTopScrollLockListener: ViewTreeObserver.OnScrollChangedListener? = null
 
     /** Notification tap payload waiting for onPageFinished to deliver to the web page. */
     private var pendingNotifDeepLink: String? = null
@@ -147,7 +149,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        webViewTopScrollLockListener?.let { listener ->
+            if (::webView.isInitialized) {
+                val observer = webView.viewTreeObserver
+                if (observer.isAlive) {
+                    observer.removeOnScrollChangedListener(listener)
+                }
+            }
+        }
+        webViewTopScrollLockListener = null
+        super.onDestroy()
+    }
+
     // ── WebView configuration ────────────────────────────────────────────────
+
+    private fun installWebViewTopOverscrollLock(target: WebView) {
+        val listener = ViewTreeObserver.OnScrollChangedListener {
+            if (target.scrollY <= 0) {
+                target.scrollTo(0, 1)
+            }
+        }
+        webViewTopScrollLockListener = listener
+        target.viewTreeObserver.addOnScrollChangedListener(listener)
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun installWebViewPullGestureBlocker(target: WebView) {
@@ -211,6 +236,7 @@ class MainActivity : AppCompatActivity() {
         wv.isVerticalScrollBarEnabled = false
         wv.isHorizontalScrollBarEnabled = false
         installWebViewPullGestureBlocker(wv)
+        installWebViewTopOverscrollLock(wv)
 
         wv.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(
