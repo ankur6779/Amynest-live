@@ -101,7 +101,7 @@ function amynestServiceWorkerPlugin() {
       process.env.RENDER_GIT_COMMIT?.slice(0, 12) ??
       process.env.GITHUB_SHA?.slice(0, 12) ??
       String(Date.now());
-    const cacheName = `amynest-v3-${commit}`;
+    const cacheName = `amynest-v4-${commit}`;
 
     const fcmBlock = buildFcmServiceWorkerBlock();
     const fcmLegacy = fcmBlock

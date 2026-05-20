@@ -1,9 +1,9 @@
-/* Auto-generated on build — do not edit. Cache: amynest-v3-1779286085234 */
+/* Auto-generated on build — do not edit. Cache: amynest-v4-ptr-scroll-v2 */
 /**
  * AmyNest root service worker (source — built to /sw.js with a deploy-specific cache id).
  *
  * - skipWaiting + clients.claim on every deploy
- * - Versioned cache (amynest-v3-*); purge all other cache names on activate
+ * - Versioned cache (amynest-v4-*); purge all other cache names on activate
  * - Navigation: always network (never serve cached index.html)
  * - Static hashed assets: browser/CDN cache only (SW does not intercept)
  * - FCM block appended at build time via importScripts snippet
@@ -11,7 +11,7 @@
 
 /* global self, caches, clients, importScripts, firebase */
 
-const CACHE_NAME = "amynest-v3-1779286085234";
+const CACHE_NAME = "amynest-v4-ptr-scroll-v2";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -26,15 +26,13 @@ self.addEventListener("message", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    (async () => {
-      const keys = await caches.keys();
-      await Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) return caches.delete(key);
+    caches.keys().then((names) =>
+      Promise.all(
+        names.map((name) => {
+          if (name !== CACHE_NAME) return caches.delete(name);
         }),
-      );
-      await self.clients.claim();
-    })(),
+      ).then(() => self.clients.claim()),
+    ),
   );
 });
 
@@ -66,5 +64,4 @@ self.addEventListener("fetch", (event) => {
     ),
   );
 });
-
 

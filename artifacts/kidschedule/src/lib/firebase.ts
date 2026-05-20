@@ -14,6 +14,7 @@ import {
 import { firebaseWebDefaults } from "@/lib/firebase-web-defaults";
 import { patchBootDiagnostics, recordBootError } from "@/lib/boot-store";
 import { getBrowserNotificationPermission } from "@/lib/native-push-bridge";
+import { serviceWorkerScriptUrl } from "@/lib/pwa-version";
 
 const FIREBASE_TAG = "[amynest:firebase]";
 
@@ -258,10 +259,13 @@ export async function getWebPushToken(
   const scope = `${basePath}/`;
   let swReg = await navigator.serviceWorker.getRegistration(scope);
   if (!swReg) {
-    swReg = await navigator.serviceWorker.register(`${basePath}/sw.js`, {
-      scope,
-      updateViaCache: "none",
-    });
+    swReg = await navigator.serviceWorker.register(
+      serviceWorkerScriptUrl(basePath),
+      {
+        scope,
+        updateViaCache: "none",
+      },
+    );
   }
   await swReg.update().catch(() => {});
   await navigator.serviceWorker.ready;

@@ -30,6 +30,42 @@ function App() {
     initAudioUnlock();
   }, []);
 
+  // Block pull-to-refresh at scroll top; allow normal upward scroll via threshold.
+  useEffect(() => {
+    let startY = 0;
+    let isPulling = false;
+
+    const THRESHOLD = 10;
+
+    const onTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+      isPulling = false;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      const currentY = e.touches[0].clientY;
+      const deltaY = currentY - startY;
+      const isAtTop = window.scrollY === 0;
+
+      if (isAtTop && deltaY > THRESHOLD) {
+        isPulling = true;
+        e.preventDefault();
+        return;
+      }
+    };
+
+    const touchStartOpts: AddEventListenerOptions = { passive: true };
+    const touchMoveOpts: AddEventListenerOptions = { passive: false };
+
+    document.addEventListener("touchstart", onTouchStart, touchStartOpts);
+    document.addEventListener("touchmove", onTouchMove, touchMoveOpts);
+
+    return () => {
+      document.removeEventListener("touchstart", onTouchStart, touchStartOpts);
+      document.removeEventListener("touchmove", onTouchMove, touchMoveOpts);
+    };
+  }, []);
+
   // Suspense fallback is `null` rather than a spinner because the
   // index.html splash screen is still visible at this point — it's not
   // dismissed until BOTH the splash min-time has elapsed AND

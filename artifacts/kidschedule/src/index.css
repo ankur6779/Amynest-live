@@ -492,7 +492,7 @@ body {
   overflow-x: clip;
   overflow-y: auto;
   touch-action: manipulation;
-  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }
 
 html {
