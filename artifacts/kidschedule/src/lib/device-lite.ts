@@ -22,14 +22,32 @@ export function isStandalonePwa(): boolean {
   }
 }
 
+function isCapacitorAndroid(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const cap = (
+      window as Window & {
+        Capacitor?: { isNativePlatform?: () => boolean; getPlatform?: () => string };
+      }
+    ).Capacitor;
+    return cap?.isNativePlatform?.() === true && cap.getPlatform?.() === "android";
+  } catch {
+    return false;
+  }
+}
+
 /**
- * Installed Android PWA (Chrome standalone / TWA) or legacy AmyNestAndroid WebView.
- * Used for viewport containment and document-level scrolling (same as Capacitor iOS).
+ * Installed Android PWA, Play Store WebView wrapper, or Capacitor Android.
+ * Uses a dedicated #app-root scrollport (see index.css .amynest-android-shell).
  */
 export function isAndroidMobileShell(): boolean {
   if (typeof window === "undefined") return false;
   if (!isAndroidUa()) return false;
-  return isStandalonePwa() || isNativeAmyNestAndroidWrapper();
+  return (
+    isStandalonePwa() ||
+    isNativeAmyNestAndroidWrapper() ||
+    isCapacitorAndroid()
+  );
 }
 
 /** Legacy kidschedule-android WebView (not Capacitor). */

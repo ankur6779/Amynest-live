@@ -243,6 +243,8 @@ class MainActivity : AppCompatActivity() {
         // window.AmyNestPushNative and window.__AMYNEST_WRAPPER are unavailable.
         s.userAgentString = "${s.userAgentString} AmyNestAndroid/${BuildConfig.VERSION_NAME}"
         webView.overScrollMode = View.OVER_SCROLL_NEVER
+        webView.isNestedScrollingEnabled = true
+        swipe.isNestedScrollingEnabled = false
 
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)

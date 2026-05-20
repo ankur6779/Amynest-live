@@ -1,16 +1,16 @@
-import { isAndroidUa } from "@/lib/device-lite";
+import { isAndroidMobileShell } from "@/lib/device-lite";
 
 /**
  * Blocks pull-to-refresh / rubber-band only when the whole scroll chain is at
  * the top. Nested scroll regions must still be able to hand the gesture to a
  * parent that can scroll upward.
  *
- * Skipped on Android PWA/WebView: preventDefault on touchmove breaks document
- * scroll-back on Chrome/Android WebView; pull-to-refresh is handled natively.
+ * Skipped on Android mobile shells: preventDefault on touchmove breaks scroll-up
+ * in Chrome/WebView; those shells use #app-root scroll + overscroll-behavior:none.
  */
 export function installDisableOverscrollGesture(): () => void {
   if (typeof document === "undefined") return () => {};
-  if (isAndroidUa()) return () => {};
+  if (isAndroidMobileShell()) return () => {};
 
   let startY = 0;
   let scrollTarget: Element | null = null;
