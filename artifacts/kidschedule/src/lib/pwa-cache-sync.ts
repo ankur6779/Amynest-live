@@ -1,4 +1,5 @@
 import { forceClearAllCaches } from "@/lib/force-clear-caches";
+import { getDeployVersion, serviceWorkerScriptUrl } from "@/lib/pwa-version";
 
 const VERSION_KEY = "amynest:deploy-version";
 
@@ -37,8 +38,7 @@ function waitForAppCoreReady(maxMs = 20_000): Promise<void> {
 export async function syncPwaCacheAndVersion(): Promise<void> {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
-  const deployMeta =
-    document.querySelector('meta[name="amynest-deploy"]')?.getAttribute("content") ?? "";
+  const deployMeta = getDeployVersion();
 
   try {
     const previous = sessionStorage.getItem(VERSION_KEY);
@@ -79,11 +79,14 @@ export async function syncPwaCacheAndVersion(): Promise<void> {
   }
 
   try {
-    const swBase = import.meta.env.BASE_URL.replace(/\/$/, "");
-    const reg = await navigator.serviceWorker.register(`${swBase}/sw.js`, {
-      scope: `${swBase}/`,
-      updateViaCache: "none",
-    });
+    const swBase = import.meta.env.BASE_URL;
+    const reg = await navigator.serviceWorker.register(
+      serviceWorkerScriptUrl(swBase),
+      {
+        scope: `${swBase.replace(/\/$/, "")}/`,
+        updateViaCache: "none",
+      },
+    );
 
     // Proactively check every registration for a waiting worker after deploy.
     await navigator.serviceWorker
