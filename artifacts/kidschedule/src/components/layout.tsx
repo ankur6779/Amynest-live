@@ -191,7 +191,7 @@ export function Layout({
     }
     setLocation("/dashboard");
   };
-  return <div className="main-container flex min-h-dvh w-full max-w-full min-w-0 flex-col bg-background overflow-x-hidden box-border">
+  return <div className="main-container flex min-h-dvh w-full max-w-full min-w-0 flex-col bg-background overflow-x-clip box-border">
       {/* Mobile Header */}
       {!isImmersiveRoute && <header className={`sticky top-0 z-40 flex min-h-20 w-full max-w-full min-w-0 items-center justify-between gap-2 border-b bg-background px-4 py-3 md:hidden shadow-sm ${isNativeAmyNestShell() ? "pt-3" : "pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]"}`}>
         <div className="flex min-w-0 items-center gap-2">
