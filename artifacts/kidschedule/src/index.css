@@ -560,7 +560,7 @@ html[data-theme="dark"] {
   min-height: 100dvh;
   height: auto;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: visible;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   display: flex;
