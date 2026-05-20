@@ -1,4 +1,4 @@
-/* Auto-generated on build — do not edit. Cache: amynest-v4-ptr-scroll-v2 */
+/* Auto-generated on build — do not edit. Cache: amynest-v4-1779303320483 */
 /**
  * AmyNest root service worker (source — built to /sw.js with a deploy-specific cache id).
  *
@@ -11,7 +11,7 @@
 
 /* global self, caches, clients, importScripts, firebase */
 
-const CACHE_NAME = "amynest-v4-ptr-scroll-v2";
+const CACHE_NAME = "amynest-v4-1779303320483";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -64,4 +64,5 @@ self.addEventListener("fetch", (event) => {
     ),
   );
 });
+
 
