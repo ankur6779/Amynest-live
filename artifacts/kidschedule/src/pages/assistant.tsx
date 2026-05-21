@@ -191,7 +191,7 @@ export default function AssistantPage() {
   const isEmpty = historyLoaded && messages.length === 0;
 
   return (
-    <div className="assistant-chat-page relative mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden bg-background">
+    <div className="assistant-chat-page relative mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col bg-background">
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-4 md:px-0 md:pt-0">
         <div>
@@ -392,13 +392,14 @@ export default function AssistantPage() {
           type="button"
           size="sm"
           onClick={() => scrollToChatEnd("smooth")}
-          className="absolute bottom-24 right-4 z-40 rounded-full shadow-lg"
+          className="absolute bottom-36 right-4 z-40 rounded-full shadow-lg"
         >
           {t("ai.scroll_latest", { defaultValue: "Latest" })}
         </Button>
       )}
+      </div>
 
-      {/* Input */}
+      {/* Input — fixed above keyboard / system nav */}
       <div className="chat-input border-t border-border/50">
         <div className="mx-auto w-full max-w-3xl">
         {limitReached ? (
@@ -440,7 +441,6 @@ export default function AssistantPage() {
           </>
         )}
         </div>
-      </div>
       </div>
     </div>
   );
