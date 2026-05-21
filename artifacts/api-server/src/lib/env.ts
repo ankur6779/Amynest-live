@@ -80,11 +80,7 @@ export function getDriveKeyDiagnostics(): {
   };
 }
 
-export function getElevenLabsApiKey(): string | undefined {
-  return readEnv("ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY");
-}
-
-export type TtsProvider = "openai" | "elevenlabs";
+export type TtsProvider = "openai";
 
 function envFlagEnabled(name: string, defaultEnabled: boolean): boolean {
   const raw = readEnv(name);
@@ -95,21 +91,14 @@ function envFlagEnabled(name: string, defaultEnabled: boolean): boolean {
   return defaultEnabled;
 }
 
-/** Dynamic TTS via ElevenLabs — temporarily off by default (use OpenAI streaming). */
-export function isElevenLabsTtsEnabled(): boolean {
-  return envFlagEnabled("TTS_ELEVENLABS_ENABLED", false);
-}
-
-/** Store dynamic TTS cache in GCS — temporarily off by default (no GCS reads/writes). */
+/** Store dynamic TTS cache in GCS — enable in production for shared phonics/audio cache. */
 export function isTtsCacheGcsEnabled(): boolean {
   return envFlagEnabled("TTS_USE_GCS", false);
 }
 
-/** Active TTS backend — OpenAI unless ElevenLabs is explicitly re-enabled. */
+/** All TTS uses OpenAI (gpt-4o-mini-tts). */
 export function getTtsProvider(): TtsProvider {
-  if (!isElevenLabsTtsEnabled()) return "openai";
-  const raw = (readEnv("TTS_PROVIDER") ?? "openai").toLowerCase();
-  return raw === "elevenlabs" ? "elevenlabs" : "openai";
+  return "openai";
 }
 
 export function getOpenAiApiKeyForFetch(): string | undefined {
@@ -327,7 +316,7 @@ export function logStartupEnvDiagnostics(): void {
 
   const drive = getDriveKeyDiagnostics();
   const gcs = getGcsDiagnostics();
-  const eleven = !!getElevenLabsApiKey();
+  const openAiTts = !!getOpenAiApiKeyForFetch();
 
   if (!drive.resolved) {
     logger.warn(
@@ -348,13 +337,13 @@ export function logStartupEnvDiagnostics(): void {
     );
   }
 
-  if (!eleven) {
+  if (!openAiTts) {
     logger.warn(
-      { evt: "env.missing", service: "elevenlabs" },
-      "ELEVENLABS_API_KEY not set — Amy TTS will return 503",
+      { evt: "env.missing", service: "openai_tts" },
+      "OPENAI_API_KEY not set — Amy TTS will return 503",
     );
   } else {
-    logger.info({ evt: "env.ok", service: "elevenlabs" }, "ElevenLabs API key loaded");
+    logger.info({ evt: "env.ok", service: "openai_tts" }, "OpenAI TTS API key loaded");
   }
 
   const ttsProvider = getTtsProvider();
@@ -362,11 +351,10 @@ export function logStartupEnvDiagnostics(): void {
     {
       evt: "env.tts_provider",
       ttsProvider,
-      elevenLabsTtsEnabled: isElevenLabsTtsEnabled(),
       ttsCacheGcsEnabled: isTtsCacheGcsEnabled(),
-      openAiConfigured: !!getOpenAiApiKeyForFetch(),
+      openAiConfigured: openAiTts,
     },
-    `TTS provider: ${ttsProvider} (elevenlabs=${isElevenLabsTtsEnabled()}, gcs_cache=${isTtsCacheGcsEnabled()})`,
+    `TTS provider: ${ttsProvider} (gcs_cache=${isTtsCacheGcsEnabled()})`,
   );
 
   const gcsProjectId = readEnv("GCS_PROJECT_ID", "GOOGLE_CLOUD_PROJECT");

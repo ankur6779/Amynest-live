@@ -11,44 +11,51 @@ export type PhonicsSoundEntry = {
   audioText: string;
 };
 
+const VOWEL_LETTERS = new Set(["a", "e", "i", "o", "u"]);
+
+function letterAudioText(letter: string, sound: string, example: string): string {
+  if (VOWEL_LETTERS.has(letter)) return `${letter} as in ${example}`;
+  return sound.length <= 2 ? sound : `${letter} as in ${example}`;
+}
+
 export const PHONICS_SOUNDS: Record<string, PhonicsSoundEntry> = {
-  a: { sound: "æ", example: "apple", audioText: "a as in apple" },
-  b: { sound: "b", example: "bat", audioText: "b as in bat" },
-  c: { sound: "k", example: "cat", audioText: "c as in cat" },
-  d: { sound: "d", example: "dog", audioText: "d as in dog" },
-  e: { sound: "ɛ", example: "egg", audioText: "e as in egg" },
-  f: { sound: "f", example: "fish", audioText: "f as in fish" },
-  g: { sound: "g", example: "goat", audioText: "g as in goat" },
-  h: { sound: "h", example: "hat", audioText: "h as in hat" },
-  i: { sound: "ɪ", example: "igloo", audioText: "i as in igloo" },
-  j: { sound: "dʒ", example: "jam", audioText: "j as in jam" },
-  k: { sound: "k", example: "kite", audioText: "k as in kite" },
-  l: { sound: "l", example: "lion", audioText: "l as in lion" },
-  m: { sound: "m", example: "mat", audioText: "m as in mat" },
-  n: { sound: "n", example: "net", audioText: "n as in net" },
-  o: { sound: "ɒ", example: "octopus", audioText: "o as in octopus" },
-  p: { sound: "p", example: "pen", audioText: "p as in pen" },
-  q: { sound: "kw", example: "queen", audioText: "q as in queen" },
-  r: { sound: "r", example: "rat", audioText: "r as in rat" },
-  s: { sound: "s", example: "sun", audioText: "s as in sun" },
-  t: { sound: "t", example: "top", audioText: "t as in top" },
-  u: { sound: "ʌ", example: "umbrella", audioText: "u as in umbrella" },
-  v: { sound: "v", example: "van", audioText: "v as in van" },
-  w: { sound: "w", example: "water", audioText: "w as in water" },
-  x: { sound: "ks", example: "box", audioText: "x as in box" },
-  y: { sound: "j", example: "yak", audioText: "y as in yak" },
-  z: { sound: "z", example: "zebra", audioText: "z as in zebra" },
+  a: { sound: "æ", example: "apple", audioText: letterAudioText("a", "æ", "apple") },
+  b: { sound: "b", example: "bat", audioText: letterAudioText("b", "b", "bat") },
+  c: { sound: "k", example: "cat", audioText: letterAudioText("c", "k", "cat") },
+  d: { sound: "d", example: "dog", audioText: letterAudioText("d", "d", "dog") },
+  e: { sound: "ɛ", example: "egg", audioText: letterAudioText("e", "ɛ", "egg") },
+  f: { sound: "f", example: "fish", audioText: letterAudioText("f", "f", "fish") },
+  g: { sound: "g", example: "goat", audioText: letterAudioText("g", "g", "goat") },
+  h: { sound: "h", example: "hat", audioText: letterAudioText("h", "h", "hat") },
+  i: { sound: "ɪ", example: "igloo", audioText: letterAudioText("i", "ɪ", "igloo") },
+  j: { sound: "dʒ", example: "jam", audioText: letterAudioText("j", "j", "jam") },
+  k: { sound: "k", example: "kite", audioText: letterAudioText("k", "k", "kite") },
+  l: { sound: "l", example: "lion", audioText: letterAudioText("l", "l", "lion") },
+  m: { sound: "m", example: "mat", audioText: letterAudioText("m", "m", "mat") },
+  n: { sound: "n", example: "net", audioText: letterAudioText("n", "n", "net") },
+  o: { sound: "ɒ", example: "octopus", audioText: letterAudioText("o", "ɒ", "octopus") },
+  p: { sound: "p", example: "pen", audioText: letterAudioText("p", "p", "pen") },
+  q: { sound: "kw", example: "queen", audioText: letterAudioText("q", "kw", "queen") },
+  r: { sound: "r", example: "rat", audioText: letterAudioText("r", "r", "rat") },
+  s: { sound: "s", example: "sun", audioText: letterAudioText("s", "s", "sun") },
+  t: { sound: "t", example: "top", audioText: letterAudioText("t", "t", "top") },
+  u: { sound: "ʌ", example: "umbrella", audioText: letterAudioText("u", "ʌ", "umbrella") },
+  v: { sound: "v", example: "van", audioText: letterAudioText("v", "v", "van") },
+  w: { sound: "w", example: "water", audioText: letterAudioText("w", "w", "water") },
+  x: { sound: "ks", example: "box", audioText: letterAudioText("x", "ks", "box") },
+  y: { sound: "j", example: "yak", audioText: letterAudioText("y", "j", "yak") },
+  z: { sound: "z", example: "zebra", audioText: letterAudioText("z", "z", "zebra") },
 };
 
 /** Common digraphs taught in blending stages. */
 export const PHONICS_DIGRAPH_SOUNDS: Record<string, PhonicsSoundEntry> = {
-  sh: { sound: "ʃ", example: "ship", audioText: "sh as in ship" },
-  ch: { sound: "tʃ", example: "chop", audioText: "ch as in chop" },
-  th: { sound: "θ", example: "thumb", audioText: "th as in thumb" },
-  wh: { sound: "w", example: "whale", audioText: "wh as in whale" },
-  ph: { sound: "f", example: "phone", audioText: "ph as in phone" },
-  ng: { sound: "ŋ", example: "ring", audioText: "ng as in ring" },
-  ck: { sound: "k", example: "duck", audioText: "ck as in duck" },
+  sh: { sound: "ʃ", example: "ship", audioText: "sh" },
+  ch: { sound: "tʃ", example: "chop", audioText: "ch" },
+  th: { sound: "θ", example: "thumb", audioText: "th" },
+  wh: { sound: "w", example: "whale", audioText: "wh" },
+  ph: { sound: "f", example: "phone", audioText: "ph" },
+  ng: { sound: "ŋ", example: "ring", audioText: "ng" },
+  ck: { sound: "k", example: "duck", audioText: "ck" },
 };
 
 /** Legacy bare-phoneme spellings → letter key (kidschedule + API historical). */
@@ -177,5 +184,6 @@ export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export * from "./phonics-text.js";
 export * from "./cvc.js";
 export { playCvcBlend, type CvcBlendPhase, type CvcBlendSpeakFn, type PlayCvcBlendOptions } from "./cvc-blend.js";

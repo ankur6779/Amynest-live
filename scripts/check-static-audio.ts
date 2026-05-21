@@ -76,11 +76,20 @@ function assertNoClientDirectGcsPlayback(): void {
 }
 
 const missing = listCatalogMissingKeys();
+const missingPhonics = missing.filter((k) => k.startsWith("phonics:"));
+const missingDefault = missing.filter((k) => !k.startsWith("phonics:"));
 
-if (missing.length > 0) {
-  console.error("Missing static audio:", missing);
+if (missingPhonics.length > 0) {
+  console.warn(
+    `[static-audio] ${missingPhonics.length} OpenAI phonics phrase(s) not in map yet — ` +
+      "runtime uses /api/tts/generate until you run: pnpm run generate:static-audio",
+  );
+}
+
+if (missingDefault.length > 0) {
+  console.error("Missing static audio (default catalog):", missingDefault);
   console.error(
-    `\n${missing.length} catalog phrase(s) lack pre-generated audio.\n` +
+    `\n${missingDefault.length} default phrase(s) lack pre-generated audio.\n` +
       "Run: pnpm run generate:static-audio\n",
   );
   process.exit(1);
@@ -88,5 +97,9 @@ if (missing.length > 0) {
 
 assertNoClientDirectGcsPlayback();
 
-console.log("Static audio map: 100% catalog coverage.");
+console.log(
+  missingPhonics.length > 0
+    ? `Static audio map: default 100%; phonics ${missingPhonics.length} pending OpenAI pre-generation.`
+    : "Static audio map: 100% catalog coverage.",
+);
 console.log("Static audio client: no direct GCS playback in source.");

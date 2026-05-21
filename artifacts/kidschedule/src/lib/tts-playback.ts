@@ -1,9 +1,7 @@
 import { resolveApiMediaUrl } from "@/lib/api";
 import { configureMobileAudioElement } from "@/lib/tts-guard";
-import { wait } from "@/lib/poll-result";
 import {
   isCatalogPhrase,
-  isStaticAudioStrictMode,
   logDynamicTtsViolation,
 } from "@/lib/static-audio";
 import { readResolvedApiJson, type AuthFetchFn } from "@/lib/poll-result";
@@ -11,6 +9,7 @@ import {
   getPhonicsAudioText,
   getPhonemeAudioText,
   getCvcWordAudioText,
+  formatBlendLine,
 } from "@workspace/phonics-sounds";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
 
@@ -25,7 +24,6 @@ export function isValidAudioUrl(audioUrl: string | null | undefined): audioUrl i
 export type TtsSynthesizeResponse = {
   ok?: boolean;
   success?: boolean;
-  background?: boolean;
   audioUrl?: string;
   cacheKey?: string;
   cached?: boolean;
@@ -48,43 +46,23 @@ export function playAudio(url: string): HTMLAudioElement | null {
   }
 }
 
-const TTS_BACKGROUND_POLL_MS = [1500, 2000, 3000, 4000, 5000];
+function resolvePhrase(body: Record<string, unknown>): string {
+  const phonemeKey = String(body.phoneme ?? "").trim();
+  const cvcWord = String(body.word ?? "").trim().toLowerCase();
+  const blendWord = String(body.blend ?? "").trim().toLowerCase();
+  const letterKey = String(body.letter ?? "").trim().toLowerCase();
+  const raw = String(body.text ?? "").trim();
 
-/**
- * POST /api/tts/synthesize with legacy-server poll when the API returns `background: true`
- * while warming the cache (production until backend deploy catches up).
- */
-export async function synthesizeTtsWithBackgroundPoll(
-  authFetch: AuthFetchFn,
-  body: Record<string, unknown>,
-  init?: Omit<RequestInit, "method" | "body" | "headers"> & {
-    headers?: Record<string, string>;
-  },
-): Promise<TtsSynthesizeResponse> {
-  const mode = body.mode === "phonics" ? "phonics" : "default";
-  let data =
-    mode === "phonics"
-      ? await generateTts(authFetch, body, init)
-      : await synthesizeTts(authFetch, body, init);
-  if (data?.success && isValidAudioUrl(data.audioUrl)) return data;
-  if (mode === "phonics") {
-    data = await synthesizeTts(authFetch, body, init);
-  } else {
-    return data;
-  }
-  if (!data?.background) return data;
-
-  for (const delayMs of TTS_BACKGROUND_POLL_MS) {
-    await wait(delayMs);
-    const retry = await synthesizeTts(authFetch, body, init);
-    if (retry?.success && isValidAudioUrl(retry.audioUrl)) return retry;
-    if (!retry?.background && retry?.error) return retry;
-    data = retry;
-  }
-  return data;
+  if (phonemeKey) return getPhonemeAudioText(phonemeKey);
+  if (blendWord) return formatBlendLine(blendWord);
+  if (letterKey) return getPhonicsAudioText(letterKey);
+  if (cvcWord && !raw) return getCvcWordAudioText(cvcWord);
+  return getPhonicsAudioText(raw) || raw;
 }
 
-/** POST /api/tts/generate — OpenAI TTS with GCS cache (phonics-friendly). */
+/**
+ * Unified TTS — always POST /api/tts/generate (OpenAI, cache-first).
+ */
 export async function generateTts(
   authFetch: AuthFetchFn,
   body: Record<string, unknown>,
@@ -94,18 +72,18 @@ export async function generateTts(
 ): Promise<TtsSynthesizeResponse> {
   const phonemeKey = String(body.phoneme ?? "").trim();
   const cvcWord = String(body.word ?? "").trim().toLowerCase();
-  const raw = String(body.text ?? body.letter ?? phonemeKey ?? cvcWord ?? "").trim();
-  if (!raw && !phonemeKey && !cvcWord) {
+  const blendWord = String(body.blend ?? "").trim().toLowerCase();
+  const letterKey = String(body.letter ?? "").trim().toLowerCase();
+  const phrase = resolvePhrase(body);
+  if (!phrase && !phonemeKey && !cvcWord && !blendWord && !letterKey) {
     return { success: false, ok: false, error: "tts_empty_text" };
   }
-  const letterKey = String(body.letter ?? "").trim().toLowerCase();
-  const phrase = phonemeKey
-    ? getPhonemeAudioText(phonemeKey)
-    : letterKey
-      ? getPhonicsAudioText(letterKey)
-      : cvcWord && !String(body.text ?? "").trim()
-        ? getCvcWordAudioText(cvcWord)
-        : getPhonicsAudioText(raw) || raw;
+
+  const mode: StaticAudioMode = body.mode === "phonics" ? "phonics" : "default";
+  if (phrase && isCatalogPhrase(phrase, mode) && import.meta.env.PROD) {
+    logDynamicTtsViolation(phrase, mode);
+  }
+
   try {
     const res = await authFetch("/api/tts/generate", {
       method: "POST",
@@ -115,10 +93,11 @@ export async function generateTts(
         letter: letterKey || undefined,
         phoneme: phonemeKey || undefined,
         word: cvcWord || undefined,
-        voice: body.voice ?? "alloy",
+        blend: blendWord || undefined,
+        voice: body.voice ?? body.voiceId ?? "alloy",
         speed: body.speed ?? 0.9,
-        mode: body.mode ?? "phonics",
-        category: body.category ?? "phonics",
+        mode,
+        category: body.category ?? (mode === "phonics" ? "phonics" : "words"),
       }),
       signal: init?.signal,
     });
@@ -149,64 +128,16 @@ export async function generateTts(
   }
 }
 
-/** POST /api/tts/synthesize — dynamic AI content only; catalog phrases are rejected. */
-export async function synthesizeTts(
-  authFetch: AuthFetchFn,
-  body: Record<string, unknown>,
-  init?: Omit<RequestInit, "method" | "body" | "headers"> & {
-    headers?: Record<string, string>;
-  },
-): Promise<TtsSynthesizeResponse> {
-  const text = String(body.text ?? "").trim();
-  const mode: StaticAudioMode = body.mode === "phonics" ? "phonics" : "default";
+/** @deprecated Alias — all callers should use generateTts. */
+export const synthesizeTtsWithBackgroundPoll = generateTts;
 
-  if (text && isCatalogPhrase(text, mode)) {
-    logDynamicTtsViolation(text, mode);
-    return {
-      success: false,
-      ok: false,
-      error: "tts_static_pregenerated_only",
-    };
-  }
+/** @deprecated Alias — all callers should use generateTts. */
+export const synthesizeTts = generateTts;
 
-  try {
-    const res = await authFetch("/api/tts/synthesize", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...init?.headers },
-      body: JSON.stringify(body),
-      signal: init?.signal,
-    });
-    const data = await readResolvedApiJson<TtsSynthesizeResponse>(res, authFetch).catch(() => null);
-    if (!res.ok) {
-      const errBody = (data ?? {}) as { error?: string };
-      if (import.meta.env.DEV) {
-        console.error("TTS synthesize HTTP error", res.status, errBody.error);
-      }
-      return { success: false, ok: false, error: errBody.error ?? `synthesize_failed_${res.status}` };
-    }
-    if (data?.background) {
-      return { success: false, ok: false, background: true, error: "tts_background" };
-    }
-    if (data?.success === false || !isValidAudioUrl(data?.audioUrl)) {
-      return { success: false, ok: false, error: data?.error ?? "tts_failed" };
-    }
-    return { ...data, success: true, ok: true, audioUrl: data.audioUrl };
-  } catch (err) {
-    if (import.meta.env.DEV && !isStaticAudioStrictMode()) {
-      console.error("TTS synthesize failed", err);
-    }
-    return { success: false, ok: false, error: "tts_failed" };
-  }
-}
-
-/** Resolve synthesize `audioUrl` (GCS HTTPS, `/api/tts/audio/…`, or absolute) for fetch/play. */
 export function resolveTtsAudioUrl(audioUrl: string): string {
   return resolveApiMediaUrl(audioUrl);
 }
 
-/**
- * Web: proxy public GCS URLs through the API stream to avoid CORS on fetch()+blob.
- */
 export function resolveClientPlaybackUrl(
   audioUrl: string,
   cacheKey?: string,

@@ -1,9 +1,4 @@
-import { isElevenLabsTtsEnabled } from "../../lib/env.js";
-import {
-  AMY_VOICE_ID_HINDI,
-  AMY_MODEL_ID_HINDI,
-  synthesize,
-} from "../elevenLabsService.js";
+import { generateOpenAiTts } from "../ttsGenerate.js";
 
 export async function runAudioLessonsPregenerate(input: {
   texts: string[];
@@ -15,25 +10,17 @@ export async function runAudioLessonsPregenerate(input: {
   cached: number;
   skipped: number;
 }> {
-  if (!isElevenLabsTtsEnabled()) {
-    return {
-      ok: true,
-      total: input.texts.length,
-      succeeded: 0,
-      failed: 0,
-      cached: 0,
-      skipped: input.texts.length,
-    };
-  }
   const results = await Promise.allSettled(
     input.texts.map((text) =>
-      synthesize(text, { voiceId: AMY_VOICE_ID_HINDI, modelId: AMY_MODEL_ID_HINDI }),
+      generateOpenAiTts({ text, mode: "default", category: "sentences" }),
     ),
   );
-  const succeeded = results.filter((r) => r.status === "fulfilled").length;
-  const failed = results.filter((r) => r.status === "rejected").length;
+  const succeeded = results.filter((r) => r.status === "fulfilled" && r.value).length;
+  const failed = results.filter(
+    (r) => r.status === "rejected" || (r.status === "fulfilled" && !r.value),
+  ).length;
   const cached = results.filter(
-    (r) => r.status === "fulfilled" && r.value.cached,
+    (r) => r.status === "fulfilled" && r.value?.cached,
   ).length;
   return {
     ok: true,

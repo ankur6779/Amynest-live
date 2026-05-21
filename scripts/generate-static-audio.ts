@@ -1,8 +1,8 @@
 /**
- * Pre-generate ElevenLabs MP3s for all static TTS phrases and upload to GCS.
+ * Pre-generate OpenAI TTS MP3s for all static TTS phrases and upload to GCS.
  *
  * Usage:
- *   ELEVENLABS_API_KEY=... DEFAULT_OBJECT_STORAGE_BUCKET_ID=... \
+ *   OPENAI_API_KEY=... DEFAULT_OBJECT_STORAGE_BUCKET_ID=... \
  *     GCS_SERVICE_ACCOUNT_JSON='...' \
  *     pnpm run generate:static-audio
  *
@@ -34,18 +34,10 @@ import {
 config({ path: `${REPO_ROOT}/.env` });
 config({ path: `${REPO_ROOT}/.env.local`, override: true });
 
-const AMY_VOICE_ID = process.env.STATIC_AUDIO_VOICE_ID?.trim() || "QbQKfe9vgx5OsbZUvlFv";
-const AMY_MODEL_ID = process.env.STATIC_AUDIO_MODEL_ID?.trim() || "eleven_turbo_v2_5";
-const TTS_TIMEOUT_MS = Number(process.env.STATIC_AUDIO_TTS_TIMEOUT_MS ?? "10_000");
+const OPENAI_VOICE = process.env.STATIC_AUDIO_VOICE?.trim() || "alloy";
+const OPENAI_MODEL = process.env.STATIC_AUDIO_MODEL?.trim() || "gpt-4o-mini-tts";
+const TTS_TIMEOUT_MS = Number(process.env.STATIC_AUDIO_TTS_TIMEOUT_MS ?? "30_000");
 const MAX_PASS_RETRIES = Number(process.env.STATIC_AUDIO_MAX_RETRIES ?? "5");
-
-const VOICE_SETTINGS: Record<
-  StaticAudioMode,
-  { stability: number; similarity_boost: number; style: number; use_speaker_boost: boolean }
-> = {
-  default: { stability: 0.5, similarity_boost: 0.75, style: 0, use_speaker_boost: true },
-  phonics: { stability: 0.85, similarity_boost: 0.85, style: 0, use_speaker_boost: true },
-};
 
 const TOTAL_PHRASES = getStaticTtsEntries().length;
 
@@ -114,10 +106,21 @@ async function gcsObjectExists(
 }
 
 async function generateAudio(text: string, mode: StaticAudioMode): Promise<Buffer> {
-  const apiKey = process.env.ELEVENLABS_API_KEY?.trim();
-  if (!apiKey) throw new Error("ELEVENLABS_API_KEY is not set");
+  const apiKey =
+    process.env.OPENAI_API_KEY?.trim() ||
+    process.env.AI_INTEGRATIONS_OPENAI_API_KEY?.trim();
+  if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
 
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(AMY_VOICE_ID)}?output_format=mp3_44100_128`;
+  const base = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL?.trim();
+  const url = base
+    ? `${base.replace(/\/$/, "")}/audio/speech`
+    : "https://api.openai.com/v1/audio/speech";
+
+  const instructions =
+    mode === "phonics"
+      ? "Speak clearly for young children learning phonics. Short crisp phoneme sounds; vowels use the example word."
+      : "Warm, clear Indian English for parents and children.";
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TTS_TIMEOUT_MS);
 
@@ -125,21 +128,22 @@ async function generateAudio(text: string, mode: StaticAudioMode): Promise<Buffe
     const res = await fetch(url, {
       method: "POST",
       headers: {
-        "xi-api-key": apiKey,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
         Accept: "audio/mpeg",
       },
       body: JSON.stringify({
-        text,
-        model_id: AMY_MODEL_ID,
-        voice_settings: VOICE_SETTINGS[mode],
+        model: OPENAI_MODEL,
+        voice: OPENAI_VOICE,
+        input: text,
+        instructions,
       }),
       signal: controller.signal,
     });
 
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
-      throw new Error(`TTS failed (${res.status}): ${detail.slice(0, 200)}`);
+      throw new Error(`OpenAI TTS failed (${res.status}): ${detail.slice(0, 200)}`);
     }
 
     const buf = Buffer.from(await res.arrayBuffer());

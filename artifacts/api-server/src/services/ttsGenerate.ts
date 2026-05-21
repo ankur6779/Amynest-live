@@ -4,7 +4,7 @@ import {
   computeTtsCacheKey,
   trySynthesizeFromCache,
   type SynthesizeMode,
-} from "./elevenLabsService.js";
+} from "./ttsCacheService.js";
 import { fetchOpenAiTtsStream } from "./openaiTtsService.js";
 import { persistOpenAiTtsCache } from "./openaiTtsPersist.js";
 import { getOpenAiTtsModel, getOpenAiTtsVoice } from "../lib/openai-tts-config.js";
@@ -13,6 +13,7 @@ import {
   getPhonicsCacheFileName,
   getPhonemeCacheFileName,
   getCvcWordCacheFileName,
+  getBlendCacheFileName,
 } from "@workspace/phonics-sounds";
 import { logger } from "../lib/logger.js";
 
@@ -46,6 +47,8 @@ export interface TtsGenerateInput {
   phonemeKey?: string;
   /** CVC whole word → word_cat */
   cvcWord?: string;
+  /** CVC blend → blend_cat */
+  blendWord?: string;
 }
 
 export interface TtsGenerateResult {
@@ -55,8 +58,7 @@ export interface TtsGenerateResult {
 }
 
 /**
- * OpenAI TTS with GCS/Postgres cache reuse. Used by POST /api/tts/generate.
- * ElevenLabs is not called from this path.
+ * OpenAI TTS with GCS/Postgres cache reuse. Single source of truth for all TTS.
  */
 export async function generateOpenAiTts(
   input: TtsGenerateInput,
@@ -111,11 +113,13 @@ export async function generateOpenAiTts(
       category: input.category ?? "words",
       objectName: input.phonemeKey
         ? `tts/phonics/${getPhonemeCacheFileName(input.phonemeKey)}.mp3`
-        : input.cvcWord
-          ? `tts/phonics/${getCvcWordCacheFileName(input.cvcWord)}.mp3`
-          : input.letterKey
-            ? `tts/phonics/${getPhonicsCacheFileName(input.letterKey)}.mp3`
-            : ttsCategoryObjectName(input.category ?? "words", text),
+        : input.blendWord
+          ? `tts/phonics/${getBlendCacheFileName(input.blendWord)}.mp3`
+          : input.cvcWord
+            ? `tts/phonics/${getCvcWordCacheFileName(input.cvcWord)}.mp3`
+            : input.letterKey
+              ? `tts/phonics/${getPhonicsCacheFileName(input.letterKey)}.mp3`
+              : ttsCategoryObjectName(input.category ?? "words", text),
       cached: false,
     },
     "OpenAI TTS generated and cached",
