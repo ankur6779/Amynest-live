@@ -3,6 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+    <script>
+      (function () {
+        function setRealHeight() {
+          document.documentElement.style.setProperty(
+            '--vh',
+            window.innerHeight * 0.01 + 'px'
+          );
+        }
+
+        window.addEventListener('resize', setRealHeight);
+        window.addEventListener('load', setRealHeight);
+        setRealHeight();
+      })();
+    </script>
     <title>AmyNest AI — Where Smart Parenting Begins</title>
     <meta name="description" content="AI-powered parenting coach with patent-pending adaptive scheduling technology. Personalized routines, meal plans, and contextual child-development intelligence for your child." />
 
@@ -12,7 +27,7 @@
     <meta name="author" content="AmyNest AI" />
     <meta name="keywords" content="parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting, child development, daily routine, kids schedule, parenting coach, AI coach for parents, child behavior tracker, kids meal planner India, speech coach for kids, spelling practice app" />
     <meta name="application-name" content="AmyNest AI" />
-    <meta name="amynest-deploy" content="2026-05-20-scroll-reset-v7" />
+    <meta name="amynest-deploy" content="2026-05-21-webview-vh-v8" />
     <meta name="rating" content="general" />
     <meta name="revisit-after" content="7 days" />
     <meta name="msapplication-TileColor" content="#A855F7" />
@@ -597,7 +612,7 @@
       }
 
       #root.amynest-boot-failed {
-        min-height: 100dvh;
+        min-height: calc(var(--vh, 1vh) * 100);
         display: flex;
         align-items: center;
         justify-content: center;
