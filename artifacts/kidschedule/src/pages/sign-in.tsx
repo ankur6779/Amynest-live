@@ -9,7 +9,7 @@ import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError, stashVerificationSendError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
-import { AppleSignInButton } from "@/components/apple-sign-in-button";
+import { handleAppleLogin } from "@/lib/apple-auth";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
 import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
 import {
@@ -54,6 +54,17 @@ const SIGN_IN_CSS = `
     background: rgba(168,85,247,0.18) !important;
     box-shadow: 0 0 0 1px rgba(168,85,247,0.70), 0 0 22px rgba(168,85,247,0.45) !important;
   }
+  .si-oauth-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    z-index: 2;
+  }
+  .si-apple-btn:hover:not(:disabled) {
+    transform: scale(1.015);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.40), 0 0 0 2px rgba(168,85,247,0.45) !important;
+  }
   .si-submit-btn {
     transition: transform 0.18s ease, box-shadow 0.18s ease !important;
   }
@@ -62,6 +73,66 @@ const SIGN_IN_CSS = `
     box-shadow: 0 0 42px rgba(236,72,153,0.65), 0 6px 22px rgba(0,0,0,0.38) !important;
   }
 `;
+
+function AppleMark() {
+  return (
+    <svg width="18" height="22" viewBox="0 0 814 1000" aria-hidden fill="currentColor">
+      <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76.5 0-103.7 40.8-165.9 40.8s-109.3-38.5-155.5-115C31.5 711.6.5 486.6 68.5 347.5c33.8-67.6 93.7-110.5 158.9-111.5 62.3-1.1 121.1 41.7 159.5 41.7 37.1 0 106.2-51.4 179-44 30.4 1.3 115.8 12.3 170.7 92.7-4.4 2.7-102 59.6-101.5 177.5zM650.3 71.5C682.7 32.7 704.7 0 704.7 0s-56.1 2.7-119.5 35.3C526.7 55.9 490 79.5 464 110c-30.4 37.5-45.8 84.5-42.4 133.5 44.9 3.4 90.6-22.9 128.7-62.2z" />
+    </svg>
+  );
+}
+
+/** Inline on sign-in page so the button ships in the sign-in chunk (not phone-auth). */
+function SignInAppleButton({ onError }: { onError?: (message: string) => void }) {
+  const { t } = useTranslation();
+  const [busy, setBusy] = useState(false);
+
+  const onClick = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await handleAppleLogin();
+    } catch (err: unknown) {
+      logFirebaseAuthError("apple:sign-in", err);
+      const message = prettyAuthError(err);
+      if (message) onError?.(message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => void onClick()}
+      disabled={busy}
+      className="si-apple-btn"
+      data-testid="button-apple-sign-in"
+      style={{
+        width: "100%",
+        height: "50px",
+        borderRadius: "14px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "10px",
+        background: busy ? "rgba(255,255,255,0.82)" : "#FFFFFF",
+        border: "1px solid rgba(255,255,255,0.90)",
+        color: "#000000",
+        fontSize: "15px",
+        fontWeight: 600,
+        cursor: busy ? "not-allowed" : "pointer",
+        fontFamily: "inherit",
+        boxShadow: busy
+          ? "none"
+          : "0 2px 16px rgba(0,0,0,0.35), 0 0 0 1px rgba(168,85,247,0.25)",
+      }}
+    >
+      <AppleMark />
+      {busy ? t("auth.connecting") : t("auth.continue_with_apple")}
+    </button>
+  );
+}
 
 // ── Input focus / blur handlers ───────────────────────────────────────────────
 function glowFocus(e: React.FocusEvent<HTMLInputElement>) {
@@ -547,20 +618,22 @@ export default function SignInPage() {
         {t("screens.sign_in.subtitle")}
       </p>
 
-      {ENABLE_GOOGLE_SIGN_IN ? (
-        <GoogleSignInButton onError={msg => setError(msg)} />
-      ) : null}
+      <div className="si-oauth-stack">
+        {ENABLE_GOOGLE_SIGN_IN ? (
+          <GoogleSignInButton onError={msg => setError(msg)} />
+        ) : null}
 
-      {ENABLE_APPLE_SIGN_IN ? (
-        <AppleSignInButton onError={msg => setError(msg)} />
-      ) : null}
+        {ENABLE_APPLE_SIGN_IN ? (
+          <SignInAppleButton onError={msg => setError(msg)} />
+        ) : null}
 
-      {ENABLE_PHONE_OTP ? (
-        <div className="si-phone-wrapper">
-          <PhoneRecaptchaPreload />
-          <PhoneAuthFlow onError={msg => setError(msg)} />
-        </div>
-      ) : null}
+        {ENABLE_PHONE_OTP ? (
+          <div className="si-phone-wrapper">
+            <PhoneRecaptchaPreload />
+            <PhoneAuthFlow onError={msg => setError(msg)} />
+          </div>
+        ) : null}
+      </div>
 
       {(ENABLE_GOOGLE_SIGN_IN || ENABLE_APPLE_SIGN_IN || ENABLE_PHONE_OTP) && (
       <div style={{
