@@ -212,12 +212,17 @@ describe("speech routes — smoke", () => {
       daysActive: number;
       milestonesTotal: number;
       score: number;
+      dailyTrend: Array<{ date: string; attempts: number; avgScore: number }>;
+      weakSounds: Array<{ promptId: string; avgScore: number }>;
     };
     assert.ok(body.promptsAttempted >= 1);
     assert.ok(body.promptsClear >= 1);
     assert.ok(body.daysActive >= 1);
     assert.ok(body.milestonesTotal > 0);
     assert.ok(body.score >= 0 && body.score <= 100);
+    assert.ok(Array.isArray(body.dailyTrend));
+    assert.equal(body.dailyTrend.length, 7);
+    assert.ok(Array.isArray(body.weakSounds));
   });
 
   it("POST /speech/expert-waitlist is idempotent on (userId, childId)", async () => {

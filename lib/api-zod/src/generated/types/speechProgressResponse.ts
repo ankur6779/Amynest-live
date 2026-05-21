@@ -5,6 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SpeechDailyTrendEntry } from './speechDailyTrendEntry';
+import type { SpeechWeakSoundEntry } from './speechWeakSoundEntry';
 
 export interface SpeechProgressResponse {
   childId: number;
@@ -20,4 +22,6 @@ export interface SpeechProgressResponse {
   promptsClear: number;
   milestonesOnTrack: number;
   milestonesTotal: number;
+  dailyTrend: SpeechDailyTrendEntry[];
+  weakSounds: SpeechWeakSoundEntry[];
 }

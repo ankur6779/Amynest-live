@@ -3718,6 +3718,14 @@ components:
           type: integer
         milestonesTotal:
           type: integer
+        dailyTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpeechDailyTrendEntry"
+        weakSounds:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpeechWeakSoundEntry"
       required:
         - childId
         - rangeStart
@@ -3732,6 +3740,34 @@ components:
         - promptsClear
         - milestonesOnTrack
         - milestonesTotal
+        - dailyTrend
+        - weakSounds
+
+    SpeechDailyTrendEntry:
+      type: object
+      properties:
+        date:
+          type: string
+        attempts:
+          type: integer
+        clearCount:
+          type: integer
+        avgScore:
+          type: integer
+      required: [date, attempts, clearCount, avgScore]
+
+    SpeechWeakSoundEntry:
+      type: object
+      properties:
+        promptId:
+          type: string
+        promptText:
+          type: string
+        avgScore:
+          type: integer
+        attempts:
+          type: integer
+      required: [promptId, promptText, avgScore, attempts]
 
     JoinSpeechExpertWaitlistBody:
       type: object

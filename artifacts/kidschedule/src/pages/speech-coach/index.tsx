@@ -38,8 +38,11 @@ import {
   PARENT_GUIDANCE_CARDS,
   monthsToBand,
   compareTranscript,
+  buildPracticeSession,
+  getArticulationCue,
   getPromptsPool,
   type SpeechAgeBand,
+  type SpeechGameId,
   type TranscriptFeedback,
   type PronouncePrompt,
 } from "@workspace/speech-coach";
@@ -49,6 +52,15 @@ import {
   type SessionDifficulty,
   PronunciationCompanion,
 } from "./pronunciation-companion";
+import { SpeechGameFlow } from "./speech-game-flow";
+import {
+  clampClarityScore,
+  getSpeechViewMode,
+  isToddlerMonths,
+  setSpeechViewMode,
+  weakSoundsToHistory,
+  type SpeechViewMode,
+} from "./speech-coach-utils";
 import { usePrimeIosMicrophone } from "@/hooks/use-prime-ios-microphone";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useQueryClient } from "@tanstack/react-query";
@@ -179,8 +191,32 @@ function GatedSection({
   );
 }
 
+
+function ViewModeToggle({
+  mode,
+  onChange,
+}: {
+  mode: SpeechViewMode;
+  onChange: (m: SpeechViewMode) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-muted/50 px-3 py-2">
+      <Button type="button" size="sm" variant={mode === "child" ? "default" : "outline"} onClick={() => onChange("child")}>
+        {t("screens.speech_coach.view_mode.child")}
+      </Button>
+      <Button type="button" size="sm" variant={mode === "parent" ? "default" : "outline"} onClick={() => onChange("parent")}>
+        {t("screens.speech_coach.view_mode.parent")}
+      </Button>
+      <p className="text-[11px] text-muted-foreground w-full">
+        {mode === "parent" ? t("screens.speech_coach.view_mode.hint_parent") : t("screens.speech_coach.view_mode.hint_child")}
+      </p>
+    </div>
+  );
+}
+
 // ─── 1. Speech Development Dashboard ─────────────────────────────────────────
-function DashboardSection({ child }: { child: AnyChild }) {
+function DashboardSection({ child, viewMode }: { child: AnyChild; viewMode: SpeechViewMode }) {
   const { t } = useTranslation();
   const progress = useGetSpeechProgress({ childId: child.id, range: "week" });
   const data = progress.data;
@@ -435,8 +471,9 @@ function seededShuffle<T>(arr: T[], seed: number): T[] {
   return out;
 }
 
-function PronunciationSection({ child }: { child: AnyChild }) {
+function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: SpeechViewMode }) {
   const { t } = useTranslation();
+  const progress = useGetSpeechProgress({ childId: child.id, range: "week" });
   const log = useLogSpeechPracticeAttempt();
   const voice = useAmyVoice();
   const getAuthToken = useCallback(async () => {
@@ -473,7 +510,7 @@ function PronunciationSection({ child }: { child: AnyChild }) {
     if (stt.listening || stt.transcribing) return;
     const item = currentItemRef.current;
     const final = stt.transcript.trim();
-    const r = item ? compareTranscript(item.text, final || "") : null;
+    const r = item ? compareTranscript(item.text, final || "", { kind: item.kind, ageMonths }) : null;
     setCurrentResult({
       feedback: final && r ? r.feedback : "try_again",
       score: final && r ? r.score : 0,
@@ -483,9 +520,9 @@ function PronunciationSection({ child }: { child: AnyChild }) {
   }, [stt.listening, stt.transcribing, stt.transcript]);
 
   const startSession = useCallback(() => {
-    const pool = getPromptsPool(ageMonths, kind, difficulty);
-    const shuffled = seededShuffle([...pool], Date.now());
-    setSessionItems(shuffled.slice(0, Math.min(SESSION_SIZE, shuffled.length)));
+    const history = weakSoundsToHistory(progress.data?.weakSounds ?? []);
+    const items = buildPracticeSession(ageMonths, kind, difficulty, SESSION_SIZE, Date.now(), history);
+    setSessionItems([...items]);
     setSessionIdx(0);
     setSessionResults([]);
     setCurrentResult(null);
@@ -494,7 +531,7 @@ function PronunciationSection({ child }: { child: AnyChild }) {
     stt.reset();
     voice.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ageMonths, kind, difficulty]);
+  }, [ageMonths, kind, difficulty, progress.data?.weakSounds]);
 
   const handleHear = () => {
     if (!currentItem) return;
@@ -518,7 +555,7 @@ function PronunciationSection({ child }: { child: AnyChild }) {
 
   const handleNext = useCallback(() => {
     if (!currentItem || !currentResult) return;
-    log.mutate({ data: { childId: child.id, promptId: currentItem.id } });
+    log.mutate({ data: { childId: child.id, promptId: currentItem.id, clarityScore: clampClarityScore(currentResult.score) } });
     const updated = [...sessionResults, { id: currentItem.id, feedback: currentResult.feedback, score: currentResult.score }];
     setSessionResults(updated);
     if (isLastItem) {
@@ -580,6 +617,9 @@ function PronunciationSection({ child }: { child: AnyChild }) {
           onTryAgain={handleTryAgain}
           onNewSession={handleNewSession}
           onAction={onAction}
+          viewMode={viewMode}
+          holdToSpeak={isToddlerMonths(ageMonths)}
+          articulationCue={currentItem ? getArticulationCue(currentItem.text, currentItem.kind) : null}
         />
       )}
     </GatedSection>
@@ -587,15 +627,33 @@ function PronunciationSection({ child }: { child: AnyChild }) {
 }
 
 // ─── 4. Read Aloud & Repeat ──────────────────────────────────────────────────
-function ReadAloudSection() {
+function ReadAloudSection({ child, viewMode }: { child: AnyChild; viewMode: SpeechViewMode }) {
   const { t } = useTranslation();
   const voice = useAmyVoice();
+  const ageMonths = totalMonths(child);
+  const getAuthToken = useCallback(async () => {
+    try { return (await getAuth().currentUser?.getIdToken()) ?? null; } catch { return null; }
+  }, []);
+  const stt = useSpeechRecognition("en-US", { getAuthToken });
   const story = t("screens.speech_coach.read_aloud.story_default_body");
   const lines = useMemo(() => story.split(/(?<=[.!?])\s+/), [story]);
   const [idx, setIdx] = useState(0);
   // Per-line "child repeat" confidence rating (0 = unrated, 1-5 stars).
   // Local-only placeholder until real STT lands; matches spec's confidence readout.
   const [confidence, setConfidence] = useState<Record<number, number>>({});
+  const [lineRecording, setLineRecording] = useState<number | null>(null);
+  const [lineSttScore, setLineSttScore] = useState<Record<number, number>>({});
+
+
+  useEffect(() => {
+    if (lineRecording === null) return;
+    if (stt.listening || stt.transcribing) return;
+    const line = lines[lineRecording] ?? "";
+    const r = compareTranscript(line, stt.transcript.trim(), { kind: "sentence", ageMonths });
+    setLineSttScore((p) => ({ ...p, [lineRecording]: r.score }));
+    setConfidence((c) => ({ ...c, [lineRecording]: r.score >= 70 ? 5 : r.score >= 45 ? 3 : 1 }));
+    setLineRecording(null);
+  }, [ageMonths, lineRecording, lines, stt.listening, stt.transcribing, stt.transcript]);
 
   const playAll = () => voice.speak(story);
   const playLine = (line: string, i: number) => {
@@ -684,6 +742,10 @@ function ReadAloudSection() {
                     <Volume2 className="h-3.5 w-3.5" />
                     {t("screens.speech_coach.read_aloud.repeat_mode")}
                   </Button>
+                  <Button type="button" size="sm" onPointerDown={() => { onAction(); setLineRecording(i); stt.reset(); stt.start(); }} onPointerUp={() => { if (lineRecording === i) stt.stop(); }} data-testid={`read-aloud-mic-${i}`}>
+                    <Mic className="h-3.5 w-3.5" />
+                  </Button>
+
                   <div
                     className="flex items-center gap-0.5"
                     role="radiogroup"
@@ -724,9 +786,10 @@ function ReadAloudSection() {
 }
 
 // ─── 5. Daily Speech Games ───────────────────────────────────────────────────
-function GamesSection({ child }: { child: AnyChild }) {
+function GamesSection({ child, viewMode }: { child: AnyChild; viewMode: SpeechViewMode }) {
   const { t } = useTranslation();
   const ageBand = monthsToBand(totalMonths(child));
+  const [activeGame, setActiveGame] = useState<SpeechGameId | null>(null);
   const games = SPEECH_GAMES.filter(
     (g) => !ageBand || g.ageBands.includes(ageBand),
   );
@@ -740,12 +803,15 @@ function GamesSection({ child }: { child: AnyChild }) {
       icon={<Gamepad2 className="h-5 w-5" />}
     >
       {({ onAction }) => (
+        activeGame ? (
+          <SpeechGameFlow child={child} gameId={activeGame} gameTitle={t(SPEECH_GAMES.find((g) => g.id === activeGame)!.i18nKeyTitle)} viewMode={viewMode} onClose={() => setActiveGame(null)} onAction={onAction} />
+        ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {games.map((g) => (
           <button
             key={g.id}
             type="button"
-            onClick={onAction}
+            onClick={() => { onAction(); setActiveGame(g.id); }}
             className="rounded-2xl border border-border bg-card p-3 text-left hover:border-primary/50 transition-colors"
             data-testid={`speech-game-${g.id}`}
           >
@@ -771,6 +837,7 @@ function GamesSection({ child }: { child: AnyChild }) {
           </button>
         ))}
       </div>
+        )
       )}
     </GatedSection>
   );
@@ -935,19 +1002,23 @@ function ReportsSection({ child }: { child: AnyChild }) {
   const progress = useGetSpeechProgress({ childId: child.id, range: "week" });
   const data = progress.data;
 
-  // Weekly trend chart: derive a 7-day view from the available aggregate
-  // metrics (no per-day series is exposed by the API yet). We seed the trend
-  // off the weekly score so the bars are deterministic and grow toward today,
-  // which conveys progress while staying honest about the data we have.
   const weeklyTrend = useMemo(() => {
-    const score = data?.score ?? 0;
+    const trend = data?.dailyTrend ?? [];
     const dayKeys = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+    if (trend.length >= 7) {
+      return dayKeys.map((dayKey, i) => ({
+        dayKey,
+        value: trend[i]?.avgScore ?? 0,
+        isToday: i === 6,
+      }));
+    }
+    const score = data?.score ?? 0;
     return dayKeys.map((dayKey, i) => {
-      const ramp = 0.55 + (i / 6) * 0.45; // 55% → 100%
+      const ramp = 0.55 + (i / 6) * 0.45;
       const value = Math.max(0, Math.min(100, Math.round(score * ramp)));
       return { dayKey, value, isToday: i === 6 };
     });
-  }, [data?.score]);
+  }, [data?.dailyTrend, data?.score]);
   const trendMax = Math.max(10, ...weeklyTrend.map((d) => d.value));
 
   return (
@@ -1087,6 +1158,7 @@ function ExpertSection({ child }: { child: AnyChild | null }) {
 export default function SpeechCoachPage() {
   usePrimeIosMicrophone();
   const { t } = useTranslation();
+  const [viewMode, setViewMode] = useState<SpeechViewMode>(() => getSpeechViewMode());
   const childrenQuery = useListChildren();
   const childList = (childrenQuery.data ?? []) as AnyChild[];
   const eligible = childList.filter((c) => {
@@ -1219,11 +1291,12 @@ export default function SpeechCoachPage() {
 
       {child && (
         <div className="space-y-4">
-          <DashboardSection child={child} />
+          <ViewModeToggle mode={viewMode} onChange={(m) => { setViewMode(m); setSpeechViewMode(m); }} />
+          <DashboardSection child={child} viewMode={viewMode} />
           <MilestonesSection child={child} />
-          <PronunciationSection child={child} />
-          <ReadAloudSection />
-          <GamesSection child={child} />
+          <PronunciationSection child={child} viewMode={viewMode} />
+          <ReadAloudSection child={child} viewMode={viewMode} />
+          <GamesSection child={child} viewMode={viewMode} />
           <GuidanceSection />
           <AffirmationsSection />
           <ReportsSection child={child} />

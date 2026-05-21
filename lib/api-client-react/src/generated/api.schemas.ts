@@ -1785,6 +1785,20 @@ export interface SpeechPracticeAttempt {
   parentNote?: string | null;
 }
 
+export interface SpeechDailyTrendEntry {
+  date: string;
+  attempts: number;
+  clearCount: number;
+  avgScore: number;
+}
+
+export interface SpeechWeakSoundEntry {
+  promptId: string;
+  promptText: string;
+  avgScore: number;
+  attempts: number;
+}
+
 export interface SpeechProgressResponse {
   childId: number;
   rangeStart: string;
@@ -1799,6 +1813,8 @@ export interface SpeechProgressResponse {
   promptsClear: number;
   milestonesOnTrack: number;
   milestonesTotal: number;
+  dailyTrend: SpeechDailyTrendEntry[];
+  weakSounds: SpeechWeakSoundEntry[];
 }
 
 export interface JoinSpeechExpertWaitlistBody {

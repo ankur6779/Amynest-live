@@ -8,17 +8,61 @@ import {
   SPEECH_COACH_I18N_MANIFEST,
   SPEECH_GAMES,
   SPEECH_MILESTONES,
+  buildAdaptivePromptSession,
+  buildGamePromptSession,
+  compareTranscript,
   computeWeeklyProgressScore,
   getAllAffirmations,
   getAllGuidanceCards,
   getGamesForAgeMonths,
   getMilestonesForAgeMonths,
   getPromptsForAgeMonths,
+  getTranscriptThresholds,
   monthsToBand,
 } from "../index";
 import type { SpeechAgeBand } from "../index";
 
 const ALL_BANDS: readonly SpeechAgeBand[] = ["1y", "2y", "3y", "4y_plus"];
+
+describe("compareTranscript", () => {
+  it("scores single letters leniently for child STT variants", () => {
+    const r = compareTranscript("A", "ay", { kind: "letter", ageMonths: 24 });
+    assert.ok(r.score >= 70, `expected pass-ish score, got ${r.score}`);
+    assert.equal(r.feedback, "great");
+  });
+  it("uses lower toddler thresholds", () => {
+    const toddler = getTranscriptThresholds(18);
+    const older = getTranscriptThresholds(48);
+    assert.ok(toddler.great < older.great);
+  });
+  it("gives partial credit for close words", () => {
+    const r = compareTranscript("butterfly", "butter fly", {
+      kind: "word",
+      ageMonths: 48,
+    });
+    assert.ok(r.score >= 50);
+  });
+});
+
+describe("buildAdaptivePromptSession", () => {
+  it("returns a non-empty session from a pool", () => {
+    const pool = getPromptsForAgeMonths(36, "word");
+    const session = buildAdaptivePromptSession(
+      pool,
+      [{ promptId: pool[0]!.id, bestScore: 40, attempts: 2 }],
+      5,
+      42,
+    );
+    assert.ok(session.length >= 1 && session.length <= 5);
+  });
+});
+
+describe("buildGamePromptSession", () => {
+  it("returns prompts for animal_sounds at 3y", () => {
+    const session = buildGamePromptSession("animal_sounds", 36, 7);
+    assert.ok(session.length >= 1);
+  });
+});
 
 // ─── monthsToBand boundaries ─────────────────────────────────────────────────
 
