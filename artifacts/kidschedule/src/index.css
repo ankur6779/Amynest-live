@@ -564,6 +564,16 @@ html[data-theme="dark"] {
   padding-bottom: 120px;
 }
 
+.app-scroll:has(.assistant-chat-page) {
+  overflow: hidden;
+  padding-bottom: 0;
+}
+
+.assistant-chat-page {
+  flex: 1;
+  min-height: 0;
+}
+
 .app-shell,
 .main-container {
   display: flex;
@@ -898,4 +908,19 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
+}
+
+.chat-input {
+  position: fixed;
+  bottom: max(env(safe-area-inset-bottom, 0px), 10px);
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  box-sizing: border-box;
+}
+
+.chat-body {
+  height: 100%;
+  overflow-y: auto;
+  padding-bottom: 80px;
 }
