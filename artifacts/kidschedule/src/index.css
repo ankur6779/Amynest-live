@@ -539,12 +539,10 @@ html[data-theme="dark"] {
   min-width: 0;
   height: 100%;
   max-height: 100dvh;
-  overflow-x: clip;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  -webkit-overflow-scrolling: touch;
 }
 
 .app-root,
@@ -555,24 +553,32 @@ html[data-theme="dark"] {
   min-width: 0;
   min-height: 0;
   height: 100%;
-  overflow-x: clip;
+  max-height: 100dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
 }
 
+.app-scroll {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  overflow-x: clip;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
 .app-shell,
 .main-container {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  min-height: 0;
-  height: 100%;
-  max-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  min-height: 100%;
   box-sizing: border-box;
 }
 
@@ -590,52 +596,6 @@ html[data-theme="dark"] {
   flex-shrink: 0;
 }
 
-.app-content {
-  flex: 1;
-  min-height: 0;
-  overflow-x: clip;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-}
-
-.main-scroll {
-  height: auto;
-  overflow: visible;
-  overscroll-behavior: none;
-}
-
-/* Absorb pull-to-refresh gestures at the viewport top without shifting layout. */
-.ptr-guard-edge,
-.ptr-guard {
-  pointer-events: auto;
-}
-
-.ptr-guard-edge {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 8px;
-  z-index: 50;
-  touch-action: none;
-  background: transparent;
-}
-
-.ptr-guard {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 40px;
-  padding-top: env(safe-area-inset-top, 0px);
-  box-sizing: content-box;
-  touch-action: none;
-  z-index: 35;
-  background: transparent;
-}
-
-/* Above ptr-guard layers (edge z-50, guard z-35) so header buttons stay clickable. */
 .header {
   z-index: 60;
 }
