@@ -86,7 +86,10 @@ export function consumeStoredAppleRawNonce(): string | null {
   return raw;
 }
 
-export async function initAppleWebSdk(hashedNonce: string): Promise<void> {
+async function initAppleWebSdk(
+  hashedNonce: string,
+  usePopup: boolean,
+): Promise<void> {
   const clientId = getAppleWebClientId();
   if (!clientId) {
     throw Object.assign(
@@ -102,15 +105,57 @@ export async function initAppleWebSdk(hashedNonce: string): Promise<void> {
     redirectURI: getAppleRedirectUri(),
     state: "amynest-sign-in",
     nonce: hashedNonce,
-    usePopup: false,
+    usePopup,
   });
 }
 
 /** Redirect-based Sign in with Apple (no popup). */
 export async function loginWithAppleWebSdk(): Promise<void> {
   const { hashedNonce } = await prepareAppleWebNonce();
-  await initAppleWebSdk(hashedNonce);
+  await initAppleWebSdk(hashedNonce, false);
   await window.AppleID!.auth.signIn();
+}
+
+type ApplePopupSignInResponse = {
+  authorization?: AppleAuthorization;
+  user?: {
+    name?: { firstName?: string; lastName?: string };
+  };
+};
+
+/** Popup-based Sign in with Apple — works on static hosting (no form_post callback). */
+export async function loginWithAppleWebSdkPopup(): Promise<{
+  idToken: string;
+  rawNonce: string;
+  fullName: string | null;
+}> {
+  const { rawNonce, hashedNonce } = await prepareAppleWebNonce();
+  await initAppleWebSdk(hashedNonce, true);
+
+  try {
+    const result = (await window.AppleID!.auth.signIn()) as ApplePopupSignInResponse;
+    const idToken = result.authorization?.id_token;
+    if (!idToken) {
+      throw Object.assign(
+        new Error("Apple did not return an ID token."),
+        { code: "app/apple-no-id-token" },
+      );
+    }
+    const first = result.user?.name?.firstName ?? "";
+    const last = result.user?.name?.lastName ?? "";
+    const fullName = [first, last].filter(Boolean).join(" ").trim() || null;
+    sessionStorage.removeItem(APPLE_RAW_NONCE_STORAGE_KEY);
+    return { idToken, rawNonce, fullName };
+  } catch (err) {
+    sessionStorage.removeItem(APPLE_RAW_NONCE_STORAGE_KEY);
+    const message = (err as { error?: string })?.error ?? "";
+    if (message === "popup_closed_by_user") {
+      throw Object.assign(new Error("Sign-in cancelled."), {
+        code: "auth/popup-closed-by-user",
+      });
+    }
+    throw err;
+  }
 }
 
 /**
@@ -179,5 +224,5 @@ export function waitForAppleWebRedirectResult(): Promise<{
 export async function bootAppleWebCallbackListener(
   hashedNonce: string,
 ): Promise<void> {
-  await initAppleWebSdk(hashedNonce);
+  await initAppleWebSdk(hashedNonce, false);
 }

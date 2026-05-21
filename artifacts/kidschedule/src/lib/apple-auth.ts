@@ -3,6 +3,7 @@ import { isCapacitorNative } from "@/lib/capacitor-native";
 import {
   OAuthProvider,
   signInWithCredential,
+  signInWithPopup,
   signInWithRedirect,
   updateProfile,
   type UserCredential,
@@ -18,7 +19,7 @@ import {
   getAppleWebClientId,
 } from "@/lib/apple-auth-defaults";
 import {
-  loginWithAppleWebSdk,
+  loginWithAppleWebSdkPopup,
   waitForAppleWebRedirectResult,
   bootAppleWebCallbackListener,
   prepareAppleWebNonce,
@@ -89,12 +90,31 @@ async function signInFirebaseWithAppleToken(
   return result;
 }
 
-/** Firebase redirect fallback when web Services ID uses OAuth provider only. */
-export function loginWithAppleFirebaseRedirect(): Promise<void> {
+function buildAppleFirebaseProvider(): OAuthProvider {
   const provider = new OAuthProvider("apple.com");
   provider.addScope("email");
   provider.addScope("name");
-  return signInWithRedirect(getFirebaseAuth(), provider);
+  return provider;
+}
+
+/** Firebase OAuth popup — preferred on mobile browsers. */
+async function loginWithAppleFirebasePopup(): Promise<UserCredential | null> {
+  const provider = buildAppleFirebaseProvider();
+  try {
+    return await signInWithPopup(getFirebaseAuth(), provider);
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code;
+    if (code === "auth/popup-blocked") {
+      await signInWithRedirect(getFirebaseAuth(), provider);
+      return null;
+    }
+    throw err;
+  }
+}
+
+/** Firebase redirect fallback when popups are blocked. */
+export function loginWithAppleFirebaseRedirect(): Promise<void> {
+  return signInWithRedirect(getFirebaseAuth(), buildAppleFirebaseProvider());
 }
 
 export async function loginNativeApple(): Promise<void> {
@@ -130,12 +150,23 @@ export async function loginNativeApple(): Promise<void> {
 }
 
 /**
- * Web browser: always use Firebase OAuth redirect.
- * Static hosts (Render) return an empty body on POST, so Apple's form_post
- * redirect to /auth/apple/callback cannot work without a server endpoint.
+ * Web browser: Apple JS SDK popup when Services ID is configured, otherwise
+ * Firebase OAuth popup (redirect if the popup is blocked).
  */
 export async function loginWithAppleWeb(): Promise<void> {
-  return loginWithAppleFirebaseRedirect();
+  if (getAppleWebClientId()) {
+    const { idToken, rawNonce, fullName } = await loginWithAppleWebSdkPopup();
+    await signInFirebaseWithAppleToken(idToken, rawNonce, fullName);
+    console.info(`${APPLE_TAG} web popup sign-in success`);
+    return;
+  }
+
+  const result = await loginWithAppleFirebasePopup();
+  if (result?.user) {
+    console.info(`${APPLE_TAG} firebase popup sign-in success`, {
+      uid: result.user.uid,
+    });
+  }
 }
 
 /** Complete Apple JS SDK redirect on /auth/apple/callback. */
