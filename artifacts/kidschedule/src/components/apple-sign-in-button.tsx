@@ -49,21 +49,26 @@ export function AppleSignInButton({ onError, className }: Props) {
       style={{
         width: "100%",
         height: "50px",
-        borderRadius: "999px",
+        borderRadius: "14px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: "10px",
-        background: busy ? "rgba(30,30,30,0.75)" : "#000000",
-        border: "1px solid rgba(255,255,255,0.12)",
-        color: "#FFFFFF",
+        /* White Apple button — required contrast on dark auth card */
+        background: busy ? "rgba(255,255,255,0.82)" : "#FFFFFF",
+        border: "1px solid rgba(255,255,255,0.90)",
+        color: "#000000",
         fontSize: "15px",
         fontWeight: 600,
         cursor: busy ? "not-allowed" : "pointer",
         fontFamily: "inherit",
-        boxShadow: busy ? "none" : "0 2px 12px rgba(0,0,0,0.35)",
+        boxShadow: busy
+          ? "none"
+          : "0 2px 16px rgba(0,0,0,0.35), 0 0 0 1px rgba(168,85,247,0.25)",
         transition: "transform 0.18s ease, box-shadow 0.18s ease",
-        marginTop: "10px",
+        position: "relative",
+        zIndex: 2,
+        flexShrink: 0,
       }}
     >
       <AppleMark />
