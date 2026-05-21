@@ -920,7 +920,8 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
 }
 
 .chat-body {
-  height: 100%;
+  flex: 1;
   overflow-y: auto;
-  padding-bottom: 80px;
+  padding: 16px;
+  padding-bottom: 100px;
 }
