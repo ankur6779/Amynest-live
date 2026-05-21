@@ -14,7 +14,6 @@ import {
 import { firebaseWebDefaults } from "@/lib/firebase-web-defaults";
 import { patchBootDiagnostics, recordBootError } from "@/lib/boot-store";
 import { getBrowserNotificationPermission } from "@/lib/native-push-bridge";
-import { serviceWorkerScriptUrl } from "@/lib/pwa-version";
 
 const FIREBASE_TAG = "[amynest:firebase]";
 
@@ -257,15 +256,10 @@ export async function getWebPushToken(
   // Use the root AmyNest SW only. Registering firebase-messaging-sw.js at the
   // same scope used to replace sw.js and drop deploy/navigation handlers.
   const scope = `${basePath}/`;
-  let swReg = await navigator.serviceWorker.getRegistration(scope);
+  const swReg = await navigator.serviceWorker.getRegistration(scope);
   if (!swReg) {
-    swReg = await navigator.serviceWorker.register(
-      serviceWorkerScriptUrl(basePath),
-      {
-        scope,
-        updateViaCache: "none",
-      },
-    );
+    console.info("[FCM] Web push skipped — service worker registration disabled");
+    return "";
   }
   await swReg.update().catch(() => {});
   await navigator.serviceWorker.ready;

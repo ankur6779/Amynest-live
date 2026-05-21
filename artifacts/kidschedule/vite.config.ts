@@ -256,6 +256,7 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    assetsDir: "assets",
     rollupOptions: {
       output: {
         // Hashed filenames under /assets — bust CDN/browser cache on every deploy.
