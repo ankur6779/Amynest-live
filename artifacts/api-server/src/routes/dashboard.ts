@@ -142,12 +142,15 @@ router.get(
       const children = await listChildrenForUser(userId);
       const childIds = children.map((c) => c.id);
 
+      const today = new Date().toISOString().split("T")[0];
+
       const behaviors =
         childIds.length > 0
           ? await db
               .select()
               .from(behaviorsTable)
-              .where(inArray(behaviorsTable.childId, childIds))
+              .where(eq(behaviorsTable.date, today!))
+              .then((rows) => rows.filter((b) => childIds.includes(b.childId)))
           : [];
 
       const stats = children.map((child) => {
