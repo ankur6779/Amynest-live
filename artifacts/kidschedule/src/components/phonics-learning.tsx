@@ -25,7 +25,7 @@ import {
   type PhonicsLevel,
 } from "@/lib/phonics-content";
 import { getPhonicsAudioText, getPhonicsWordAudioText } from "@workspace/phonics-sounds";
-import { playPhonicsBlend, resolvePhonicsPlaybackText } from "@/lib/phonics-audio";
+import { playPhonicsBlend, playCvcBlendWithSpeak, resolvePhonicsPlaybackText } from "@/lib/phonics-audio";
 import { CvcBlendPanel, CvcBlendingPracticeCard } from "@/components/cvc-blend-panel";
 import { PhonicsCurriculumDashboard } from "@/components/phonics-curriculum-dashboard";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
@@ -690,14 +690,25 @@ function BlendPanel({
   const [blending, setBlending] = useState(false);
   const sounds = (item.example ?? item.symbol).split("–").map(s => s.trim()).filter(Boolean);
   const word = item.symbol.trim().toLowerCase();
+  const cvcEntry = getCvcWordEntry(word);
 
   const runBlend = async (slow: boolean) => {
     setBlending(true);
     try {
-      await playPhonicsBlend(word, speak, {
-        slow,
-        onLetter: (idx) => setActiveLetter(idx >= 0 ? idx : null),
-      });
+      if (cvcEntry) {
+        await playCvcBlendWithSpeak(cvcEntry, speak, {
+          skipSlowPass: !slow,
+          onPhoneme: (idx, phase) => {
+            if (phase === "word") setActiveLetter(null);
+            else setActiveLetter(idx >= 0 ? idx : null);
+          },
+        });
+      } else {
+        await playPhonicsBlend(word, speak, {
+          slow,
+          onLetter: (idx) => setActiveLetter(idx >= 0 ? idx : null),
+        });
+      }
       onPlay();
     } finally {
       setBlending(false);

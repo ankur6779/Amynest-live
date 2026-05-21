@@ -55,6 +55,8 @@ export interface SpeakOptions {
   phoneme?: string;
   /** CVC whole word for word_* cache stem. */
   word?: string;
+  /** Resolve only after audio ends (sequential phonics blending). */
+  waitUntilEnd?: boolean;
 }
 
 /**
@@ -223,6 +225,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
       safeSetLoading(true);
       _ttsBusy = true;
       busyRef.current = true;
+      let deferBusyRelease = false;
 
       try {
         const staticMode = mode === "phonics" ? "phonics" : "default";
@@ -234,17 +237,6 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           cleanup();
           configureMobileAudioElement(staticAudio);
           staticAudio.playbackRate = playbackRateRef.current;
-          staticAudio.onended = () => {
-            if (myId !== reqIdRef.current || !isMounted.current) return;
-            safeSetSpeaking(false);
-            cleanup();
-            onFinishedRef.current?.();
-          };
-          staticAudio.onerror = () => {
-            if (myId !== reqIdRef.current || !isMounted.current) return;
-            safeSetSpeaking(false);
-            cleanup();
-          };
           audioRef.current = staticAudio;
           const played = await safePlayAudio(staticAudio, {
             proxyUrl: staticAudio.src,
@@ -263,6 +255,21 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
             return { success: false, error: "tts_cancelled" };
           }
           safeSetSpeaking(true);
+          if (waitUntilEnd) {
+            deferBusyRelease = true;
+            return await waitForPlaybackEnd(staticAudio, myId);
+          }
+          staticAudio.onended = () => {
+            if (myId !== reqIdRef.current || !isMounted.current) return;
+            safeSetSpeaking(false);
+            cleanup();
+            onFinishedRef.current?.();
+          };
+          staticAudio.onerror = () => {
+            if (myId !== reqIdRef.current || !isMounted.current) return;
+            safeSetSpeaking(false);
+            cleanup();
+          };
           return { success: true };
         }
 
@@ -311,21 +318,6 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           return { success: false, error: "tts_invalid_audio_url" };
         }
         audio.playbackRate = playbackRateRef.current;
-        audio.onended = () => {
-          if (myId !== reqIdRef.current || !isMounted.current) return;
-          safeSetSpeaking(false);
-          cleanup();
-          onFinishedRef.current?.();
-        };
-        audio.onerror = () => {
-          if (myId !== reqIdRef.current || !isMounted.current) return;
-          const mediaErr = audio.error;
-          const code = mediaErr?.code ?? "unknown";
-          logTtsClientError("HTMLAudioElement error", new Error(`media_error_${code}`));
-          safeSetError(`playback_failed_${code}`);
-          safeSetSpeaking(false);
-          cleanup();
-        };
         audioRef.current = audio;
 
         const played = await safePlayAudio(audio);
@@ -343,6 +335,25 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         }
         logTtsClient("Playback started");
         safeSetSpeaking(true);
+        if (waitUntilEnd) {
+          deferBusyRelease = true;
+          return await waitForPlaybackEnd(audio, myId);
+        }
+        audio.onended = () => {
+          if (myId !== reqIdRef.current || !isMounted.current) return;
+          safeSetSpeaking(false);
+          cleanup();
+          onFinishedRef.current?.();
+        };
+        audio.onerror = () => {
+          if (myId !== reqIdRef.current || !isMounted.current) return;
+          const mediaErr = audio.error;
+          const code = mediaErr?.code ?? "unknown";
+          logTtsClientError("HTMLAudioElement error", new Error(`media_error_${code}`));
+          safeSetError(`playback_failed_${code}`);
+          safeSetSpeaking(false);
+          cleanup();
+        };
         return { success: true };
 
       } catch (err) {
@@ -370,7 +381,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         if (timeoutId) clearTimeout(timeoutId);
         // Only release the global lock if this call still owns it
         // (i.e. it hasn't already been released by stop() or a newer call).
-        if (myId === reqIdRef.current && isMounted.current) {
+        if (!deferBusyRelease && myId === reqIdRef.current && isMounted.current) {
           releaseBusy();
           safeSetLoading(false);
           if (abortRef.current === controller) abortRef.current = null;
