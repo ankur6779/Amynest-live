@@ -244,6 +244,12 @@ importers:
       '@workspace/load-forecast':
         specifier: workspace:*
         version: link:../../lib/load-forecast
+      '@workspace/phonics-curriculum':
+        specifier: workspace:*
+        version: link:../../lib/phonics-curriculum
+      '@workspace/phonics-sounds':
+        specifier: workspace:*
+        version: link:../../lib/phonics-sounds
       '@workspace/safety':
         specifier: workspace:*
         version: link:../../lib/safety
@@ -407,6 +413,12 @@ importers:
       '@workspace/phone-auth':
         specifier: workspace:*
         version: link:../../lib/phone-auth
+      '@workspace/phonics-curriculum':
+        specifier: workspace:*
+        version: link:../../lib/phonics-curriculum
+      '@workspace/phonics-sounds':
+        specifier: workspace:*
+        version: link:../../lib/phonics-sounds
       '@workspace/ptm-prep':
         specifier: workspace:*
         version: link:../../lib/ptm-prep
@@ -1166,6 +1178,14 @@ importers:
         specifier: ^1.12.9
         version: 1.13.2
 
+  lib/phonics-curriculum:
+    dependencies:
+      '@workspace/phonics-sounds':
+        specifier: workspace:*
+        version: link:../phonics-sounds
+
+  lib/phonics-sounds: {}
+
   lib/ptm-prep: {}
 
   lib/safety: {}
@@ -1176,7 +1196,11 @@ importers:
         specifier: 'catalog:'
         version: 4.21.0
 
-  lib/static-audio: {}
+  lib/static-audio:
+    dependencies:
+      '@workspace/phonics-sounds':
+        specifier: workspace:*
+        version: link:../phonics-sounds
 
   lib/study-zone: {}
 

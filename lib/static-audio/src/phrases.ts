@@ -1,12 +1,7 @@
 import {
   getPhonicsAudioText,
-  getPhonicsAudioTextsForStaticCatalog,
   getPhonicsAudioTextByLetter,
   getPhonicsWordAudioText,
-  getCvcPhonemeAudioTextsForStaticCatalog,
-  getCvcWordEntry,
-  getPhonemeAudioText,
-  getCvcWordAudioText,
 } from "@workspace/phonics-sounds";
 import { normalizeStaticAudioKey } from "./normalize.js";
 import type { StaticAudioMode, StaticTtsEntry } from "./types.js";
@@ -197,28 +192,21 @@ export function getStaticTtsEntries(): StaticTtsEntry[] {
       text: `${letter} says ${phon}. ${letter} for ${word}.`,
       mode: "default",
     });
-    entries.push({ text: getPhonicsAudioText(letter.toLowerCase()), mode: "phonics" });
+    // Static map uses legacy bare phoneme keys (buh, ih) — runtime TTS uses getPhonicsAudioText().
+    entries.push({ text: phon, mode: "phonics" });
   }
 
-  for (const text of getCvcPhonemeAudioTextsForStaticCatalog()) {
-    entries.push({ text, mode: "phonics" });
-  }
+  const legacyPhonemeByLetter = Object.fromEntries(
+    ALPHABET.map(([letter, phon]) => [letter.toLowerCase(), phon]),
+  ) as Record<string, string>;
 
   for (const [word, blend] of CVC_WORDS) {
     const sounds = blend.split("–");
     entries.push({ text: `${sounds.join(". ")}. ${word}.`, mode: "default" });
-    entries.push({ text: getCvcWordAudioText(word), mode: "phonics" });
-    entries.push({ text: getPhonicsWordAudioText(word), mode: "phonics" });
-    const cvcEntry = getCvcWordEntry(word);
-    if (cvcEntry) {
-      for (const p of cvcEntry.phonemes) {
-        entries.push({ text: getPhonemeAudioText(p), mode: "phonics" });
-      }
-    } else {
-      for (const ch of sounds) {
-        const key = ch.trim().toLowerCase();
-        if (key) entries.push({ text: getPhonicsAudioText(key), mode: "phonics" });
-      }
+    for (const ch of sounds) {
+      const key = ch.trim().toLowerCase();
+      const legacy = legacyPhonemeByLetter[key];
+      if (legacy) entries.push({ text: legacy, mode: "phonics" });
     }
   }
 
@@ -232,15 +220,11 @@ export function getStaticTtsEntries(): StaticTtsEntry[] {
 
   for (const [dig, phon, word] of DIGRAPHS) {
     entries.push({ text: `${dig} says ${phon}, like in ${word}.`, mode: "default" });
-    entries.push({ text: getPhonicsAudioText(dig), mode: "phonics" });
+    entries.push({ text: phon, mode: "phonics" });
   }
 
   for (const line of STORY_LINES) {
     entries.push({ text: line, mode: "default" });
-  }
-
-  for (const audioText of getPhonicsAudioTextsForStaticCatalog()) {
-    entries.push({ text: audioText, mode: "phonics" });
   }
 
   for (const text of LEGACY_PHONICS_SOUNDS) {
