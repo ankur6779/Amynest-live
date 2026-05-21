@@ -8,7 +8,6 @@ import { AmyIcon } from "@/components/amy-icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
-import { agentDebugLog } from "@/lib/agent-debug-log";
 import { logDashboardMount } from "@/lib/onboarding-debug";
 import { Suspense, useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { lazyPage } from "@/lib/safe-import";
@@ -1073,14 +1072,6 @@ export default function Dashboard() {
   const {
     openPaywall
   } = usePaywall();
-  useEffect(() => {
-    agentDebugLog({
-      location: "dashboard.tsx:mount",
-      message: "dashboard mounted",
-      data: { path: window.location.pathname },
-      hypothesisId: "H3-H5",
-    });
-  }, []);
   const profileFetchedRef = useRef(false);
   const displayName =
     profileName ||

@@ -17,8 +17,6 @@ import {
 } from "@/lib/auth-feature-flags";
 import { getApiUrl } from "@/lib/api";
 import { shouldShowNativeNotifyPrompt } from "@/lib/native-push-bridge";
-import { agentDebugLog } from "@/lib/agent-debug-log";
-
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
 const SIGN_IN_CSS = `
   @keyframes siRingRotate {
@@ -344,14 +342,6 @@ export default function SignInPage() {
   useEffect(() => {
     if (isLoaded && isSignedIn) {
       const path = postSignInPath();
-      // #region agent log
-      agentDebugLog({
-        location: "sign-in.tsx:redirect",
-        message: "post-sign-in redirect",
-        data: { path, isLoaded, isSignedIn },
-        hypothesisId: "H2-H4-H6",
-      });
-      // #endregion
       setLocation(path);
     }
   }, [isLoaded, isSignedIn, setLocation]);

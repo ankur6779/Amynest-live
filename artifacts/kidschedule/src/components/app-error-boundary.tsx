@@ -1,5 +1,4 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { agentDebugLog } from "@/lib/agent-debug-log";
 import { logClientError } from "@/lib/log-client-error";
 import { showReactCrashOverlay } from "@/lib/production-crash-overlay";
 
@@ -19,20 +18,6 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    // #region agent log
-    agentDebugLog({
-      location: "app-error-boundary.tsx:componentDidCatch",
-      message: "react crash caught",
-      data: {
-        label: this.props.label ?? "app",
-        errMsg: error.message,
-        errName: error.name,
-        path: typeof window !== "undefined" ? window.location.pathname : "",
-        stackTop: (error.stack ?? "").slice(0, 400),
-      },
-      hypothesisId: "H3-H5",
-    });
-    // #endregion
     console.error(
       "APP CRASH:",
       this.props.label ?? "app",
