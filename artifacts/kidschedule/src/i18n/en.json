@@ -275,6 +275,49 @@
     "system_limit_message": "You've used your free messages. Upgrade to continue.",
     "empty_short": "Ask Amy anything — pick a starter or type below.",
     "input_limit_placeholder": "Upgrade to continue chatting with Amy",
+    "no_tab_topics": "No suggestions available. Ask anything!",
+    "tab_topics": {
+      "parenting": {
+        "bedtime": "Bedtime routine",
+        "screen_time": "Screen time tips",
+        "tantrums": "Tantrum handling",
+        "food": "Healthy food habits",
+        "study": "Study routine",
+        "confidence": "Confidence building"
+      },
+      "teach": {
+        "alphabets": "Teach alphabets to toddlers",
+        "math": "Basic math for kids",
+        "reading": "Improve reading skills",
+        "fun_learning": "Fun learning activities",
+        "memory": "Memory improvement tricks",
+        "creative_thinking": "Creative thinking games"
+      },
+      "practice": {
+        "habit_checklist": "Daily habit checklist",
+        "focus": "Focus improvement exercises",
+        "speech": "Speech practice for kids",
+        "listening": "Listening skills practice",
+        "discipline": "Routine discipline training",
+        "emotional_control": "Emotional control practice"
+      },
+      "quiz": {
+        "general": "General knowledge quiz",
+        "math": "Math quiz (easy)",
+        "english": "English vocabulary quiz",
+        "science": "Science basics quiz",
+        "logic": "Logical reasoning quiz",
+        "memory": "Memory challenge quiz"
+      },
+      "doubt": {
+        "not_listening": "My child is not listening",
+        "mobile_addiction": "Child addicted to mobile",
+        "not_eating": "Child not eating properly",
+        "aggression": "Aggressive behavior issues",
+        "school_anxiety": "School anxiety problem",
+        "sleep": "Sleep problems in kids"
+      }
+    },
     "empty_body": "Don't worry, I'm here to help ❤️ Ask me about sleep, food, behavior, school anxiety, screen time — anything.",
     "popular_questions": "Popular Questions",
     "suggested_q1": "My child won't eat vegetables — what can I do?",
