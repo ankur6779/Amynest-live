@@ -1,9 +1,16 @@
 import { useTranslation } from "react-i18next";
 import { useGetDashboardSummary, getGetDashboardSummaryQueryKey, useGetRecentRoutines, getGetRecentRoutinesQueryKey, useGetBehaviorStats, getGetBehaviorStatsQueryKey, useListRoutines, getListRoutinesQueryKey, useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Link, Redirect, useLocation } from "wouter";
-import { Calendar, Users, Star, ArrowRight, Activity, TrendingUp, TrendingDown, Minus, Clock, CheckCircle2, Sparkles, Trophy, Bot, Brain, Heart, Target, ChevronRight, MapPin, Flame, Medal, Ribbon } from "lucide-react";
+import { Calendar, Users, Star, ArrowRight, Activity, TrendingUp, Clock, CheckCircle2, Sparkles, Bot, Brain, Heart, Target, ChevronRight, MapPin, Ribbon } from "lucide-react";
 import { DashboardSectionHeader } from "@/components/dashboard-section-header";
+import {
+  BehaviorHighlightsSection,
+  DashboardWeeklyInsightsCard,
+  RecentRoutinesCollapsible,
+  RewardsCompactCard,
+  TodaySnapshotCard,
+} from "@/components/dashboard-phase2-widgets";
 import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
 import { AmyIcon } from "@/components/amy-icon";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,7 +24,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
-import { getTotalPoints, getBadges, getRewards, redeemReward, type Reward } from "@/lib/rewards";
 import { asRoutineList, routineDateKey, routineItems } from "@/lib/routines";
 import { safeFetch } from "@/lib/safe-fetch";
 
@@ -761,143 +767,6 @@ function NowNextTimeline({
     </Card>;
 }
 
-// ─── Streak Card (compact row) ────────────────────────────────────────────
-function StreakCard({ streak, routines }: { streak: number; routines: Routine[] }) {
-  const { t } = useTranslation();
-  const dateSet = new Set(routines.map((r) => routineDateKey(r)).filter(Boolean));
-  const last7Keys = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().slice(0, 10);
-  });
-  const sub =
-    streak === 0
-      ? t("dashboard.streak_start_today")
-      : streak >= 3
-        ? t("dashboard.streak_on_roll")
-        : t("dashboard.streak_keep_going");
-  const badge =
-    streak >= 7
-      ? `🏆 ${t("dashboard.streak_epic")}`
-      : streak >= 3
-        ? `🔥 ${t("dashboard.streak_hot")}`
-        : `✨ ${t("dashboard.streak_active")}`;
-
-  return (
-    <Link href="/progress">
-      <div className="flex items-center gap-3 p-3.5 rounded-2xl border border-border bg-card hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer">
-        <Flame className={`h-7 w-7 shrink-0 ${streak === 0 ? "text-muted-foreground/40" : "text-orange-500"}`} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-black text-2xl text-foreground leading-none">{streak}</span>
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-              {t("dashboard.day_streak")}
-            </span>
-          </div>
-          <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>
-          <div className="flex gap-1 mt-2">
-            {last7Keys.map((key) => (
-              <span
-                key={key}
-                className={`h-2 w-2 rounded-full ${dateSet.has(key) ? "bg-orange-500" : "bg-muted"}`}
-              />
-            ))}
-          </div>
-          {streak > 0 && streak < 7 ? (
-            <p className="text-[10px] text-muted-foreground mt-1.5">
-              {t("dashboard.streak_goal", { days: 7 - streak })}
-            </p>
-          ) : null}
-        </div>
-        {streak > 0 ? (
-          <span className="text-xs font-bold text-primary bg-muted border border-border px-2 py-0.5 rounded-full shrink-0">
-            {badge}
-          </span>
-        ) : null}
-      </div>
-    </Link>
-  );
-}
-
-// ─── Flat Stat Tile ───────────────────────────────────────────────────────
-function StatTile({
-  label,
-  value,
-  sublabel,
-  icon,
-  href,
-}: {
-  label: string;
-  value: number | string;
-  sublabel: string;
-  icon: React.ReactNode;
-  href: string;
-}) {
-  return (
-    <Link href={href} className="block">
-      <div className="flex flex-col gap-2 p-3.5 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-sm transition-all h-full">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{label}</span>
-          <span className="text-primary">{icon}</span>
-        </div>
-        <div>
-          <div className="text-2xl font-black text-foreground leading-none">{value}</div>
-          <div className="text-[10px] font-medium text-muted-foreground mt-0.5 leading-snug">{sublabel}</div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-// ─── Stats 2×2 Grid ───────────────────────────────────────────────────────
-function StatsGrid({ summary, loading }: { summary: any; loading: boolean }) {
-  const { t } = useTranslation();
-  if (loading) {
-    return (
-      <div className="grid grid-cols-2 gap-2">
-        {Array(4)
-          .fill(0)
-          .map((_, i) => (
-            <Skeleton key={i} className="h-20 rounded-xl" />
-          ))}
-      </div>
-    );
-  }
-  return (
-    <div className="grid grid-cols-2 gap-2">
-      <StatTile
-        label={t("dashboard.stat_plans_week")}
-        value={summary?.routinesGeneratedThisWeek || 0}
-        sublabel={t("dashboard.stat_plans_week_sub")}
-        icon={<Calendar className="h-3.5 w-3.5" />}
-        href="/routines"
-      />
-      <StatTile
-        label={t("dashboard.stat_great_today")}
-        value={summary?.positiveBehaviorsToday || 0}
-        sublabel={t("dashboard.stat_great_today_sub")}
-        icon={<TrendingUp className="h-3.5 w-3.5" />}
-        href="/behavior"
-      />
-      <StatTile
-        label={t("dashboard.stat_support_today")}
-        value={summary?.negativeBehaviorsToday || 0}
-        sublabel={t("dashboard.stat_support_today_sub")}
-        icon={<Heart className="h-3.5 w-3.5" />}
-        href="/behavior"
-      />
-      <StatTile
-        label={t("dashboard.stat_total_routines")}
-        value={summary?.totalRoutines || 0}
-        sublabel={t("dashboard.stat_total_routines_sub")}
-        icon={<Activity className="h-3.5 w-3.5" />}
-        href="/children"
-      />
-    </div>
-  );
-}
-
 type AmyTip = { emoji: string; text: string; actionLabel?: string; href?: string; onAction?: () => void };
 
 // ─── Amy AI Suggestion Card ───────────────────────────────────────────────
@@ -974,7 +843,7 @@ function AmySuggestionCard({
     });
   }
 
-  const display = suggestions.slice(0, 2);
+  const display = suggestions.slice(0, 1);
 
   return (
     <div className="rounded-2xl border border-border bg-muted/30 dark:bg-card overflow-hidden">
@@ -1088,85 +957,6 @@ function ParentScoreCard({
         ) : null}
       </div>
     </div>;
-}
-
-// ─── Rewards Card ─────────────────────────────────────────────────────────
-function RewardsCard({
-  streak
-}: {
-  streak: number;
-}) {
-  const {
-    t
-  } = useTranslation();
-  const [points, setPoints] = useState(0);
-  const [badges, setBadges] = useState<ReturnType<typeof getBadges>>([]);
-  const [rewards, setRewards] = useState<Reward[]>([]);
-  const [redeemMsg, setRedeemMsg] = useState<string | null>(null);
-  useEffect(() => {
-    setPoints(getTotalPoints());
-    setBadges(getBadges());
-    setRewards(getRewards());
-  }, []);
-  const handleRedeem = (reward: Reward) => {
-    const ok = redeemReward(reward, "Child");
-    if (ok) {
-      setPoints(getTotalPoints());
-      setRedeemMsg(`🎉 Redeemed: ${reward.emoji} ${reward.label}!`);
-      setTimeout(() => setRedeemMsg(null), 3000);
-    } else {
-      setRedeemMsg(`❌ Not enough points (need ${reward.cost})`);
-      setTimeout(() => setRedeemMsg(null), 2000);
-    }
-  };
-  return <Card className="rounded-2xl shadow-sm border-border/50 overflow-hidden">
-      <CardHeader className="pb-3 border-b border-border/50">
-        <div className="flex items-center justify-between">
-          <CardTitle className="font-quicksand text-base flex items-center gap-2">
-            <Medal className="h-4 w-4 text-primary" />
-            {t("pages.dashboard.rewards_points")}
-          </CardTitle>
-          <div className="flex items-center gap-1.5 bg-muted dark:bg-card text-primary dark:text-muted-foreground rounded-full px-3 py-1 border border-border dark:border-border">
-            <Star className="h-3.5 w-3.5 fill-primary" />
-            <span className="font-black text-sm">{points}</span>
-            <span className="text-xs font-medium">{t("pages.dashboard.pts")}</span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-4 space-y-4">
-        {redeemMsg && <div className="text-sm font-medium text-center py-1.5 px-3 bg-muted dark:bg-card border border-border dark:border-border rounded-xl text-primary dark:text-muted-foreground">
-            {redeemMsg}
-          </div>}
-        {badges.length > 0 && <div>
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">{t("pages.dashboard.badges_earned")}</p>
-            <div className="flex flex-wrap gap-2">
-              {badges.map(b => <div key={b.id} className="flex items-center gap-1.5 bg-muted dark:bg-card border border-border dark:border-border rounded-full px-2.5 py-1 text-xs font-bold text-primary dark:text-muted-foreground">
-                  {b.emoji} {b.label}
-                </div>)}
-            </div>
-          </div>}
-        {badges.length === 0 && <p className="text-xs text-muted-foreground">{t("pages.dashboard.complete_tasks_to_earn_badges_complete_a_task_to_unlock")} <strong>{t("pages.dashboard.first_day_completed")}</strong>.</p>}
-        <div>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">{t("pages.dashboard.reward_store")}</p>
-          <div className="space-y-2">
-            {rewards.slice(0, 4).map(r => {
-            return <div key={r.id} className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border/50">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{r.emoji}</span>
-                  <div>
-                    <p className="text-sm font-semibold leading-tight">{r.label}</p>
-                    <p className="text-xs text-muted-foreground">{r.cost} {t("pages.dashboard.pts_2")}</p>
-                  </div>
-                </div>
-                <button onClick={() => handleRedeem(r)} className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all ${points >= r.cost ? "bg-primary text-white hover:bg-primary" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
-                  {t("pages.dashboard.redeem")}
-                </button>
-              </div>;
-          })}
-          </div>
-        </div>
-      </CardContent>
-    </Card>;
 }
 
 // ─── Onboarding Screen ────────────────────────────────────────────────────
@@ -1414,6 +1204,18 @@ export default function Dashboard() {
   );
   const streak = useMemo(() => computeStreak(allRoutinesSafe), [allRoutines]);
 
+  const todayProgress = useMemo(() => {
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const todayList = filterRoutinesByChild(allRoutinesSafe, selectedChildId).filter(
+      (r) => routineDateKey(r) === todayKey,
+    );
+    const items = todayList.flatMap((r) => routineItems<RoutineItem>(r));
+    return {
+      done: items.filter((i) => i.status === "completed").length,
+      total: items.length,
+    };
+  }, [allRoutines, selectedChildId]);
+
   useEffect(() => {
     // Single-flight ref lock — once the parent-profile fetch has been
     // attempted (success OR error), we never re-fire it from this effect.
@@ -1573,12 +1375,21 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* RIGHT column: Streak + Stats + Amy + Parent Score */}
+            {/* RIGHT column: Snapshot + Amy + Score + Weekly insights */}
             <div className="flex flex-col gap-4">
               <DashboardSectionHeader label={t("dashboard.at_a_glance")} icon={Activity} />
-              <div className="flex flex-col gap-3 -mt-2">
-                <StreakCard streak={streak} routines={allRoutinesSafe} />
-                <StatsGrid summary={summary} loading={loadingSummary} />
+              <div className="-mt-2">
+                {loadingSummary ? (
+                  <Skeleton className="h-36 rounded-2xl" />
+                ) : (
+                  <TodaySnapshotCard
+                    streak={streak}
+                    routines={allRoutinesSafe}
+                    summary={summary}
+                    todayDone={todayProgress.done}
+                    todayTotal={todayProgress.total}
+                  />
+                )}
               </div>
               <DashboardSectionHeader label={t("dashboard.coaching")} icon={Sparkles} />
               <div className="flex flex-col gap-3 -mt-2">
@@ -1588,131 +1399,22 @@ export default function Dashboard() {
                   onGenerate={handleGenerateRoutine}
                 />
                 <ParentScoreCard routines={allRoutinesSafe} streak={streak} />
+                <DashboardWeeklyInsightsCard selectedChildId={selectedChildId} />
               </div>
             </div>
           </div>
 
-          {/* ── Below-fold: Recent Routines + Behavior Highlights ────── */}
+          {/* ── Below-fold: Behavior + Recent (shorter scroll) ────── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Recent Routines */}
-            <Card className="rounded-2xl shadow-sm border-border/50 overflow-hidden flex flex-col">
-              <CardHeader className="bg-muted/30 pb-4 border-b border-border/50">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="font-quicksand text-lg flex items-center gap-2">
-                      <Calendar className="h-5 w-5 text-primary" />
-                      {t("pages.dashboard.recent_routines")}
-                    </CardTitle>
-                    <CardDescription>{t("pages.dashboard.latest_generated_schedules")}</CardDescription>
-                  </div>
-                  <Link href="/routines" className="text-sm font-medium text-primary dark:text-primary hover:underline flex items-center">
-                    {t("pages.dashboard.view_all_2")} <ArrowRight className="h-4 w-4 ml-1" />
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0 flex-1">
-                {loadingRoutines ? <div className="p-4 space-y-4">
-                    <Skeleton className="h-16 w-full rounded-xl" />
-                    <Skeleton className="h-16 w-full rounded-xl" />
-                  </div> : filteredRecentRoutines.length > 0 ? <div className="divide-y divide-border/50">
-                    {filteredRecentRoutines.map(routine => {
-                  const items = routineItems(routine) as RoutineItem[];
-                  const done = items.filter(i => i.status === "completed").length;
-                  const pct = items.length > 0 ? Math.round(done / items.length * 100) : 0;
-                  return <Link key={routine.id} href={`/routines/${routine.id}`} className="block hover:bg-muted/30 transition-colors p-4 group">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-foreground group-hover:text-primary dark:group-hover:text-primary transition-colors truncate">{routine.title}</h4>
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                                <span className="inline-flex items-center justify-center rounded-full bg-muted dark:bg-card px-2 py-0.5 text-xs font-medium text-primary dark:text-muted-foreground border border-border dark:border-border">
-                                  {routine.childName}
-                                </span>
-                                <span>{new Date(routine.date).toLocaleDateString(undefined, {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric"
-                            })}</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0 ml-2 min-w-[56px]">
-                              {items.length > 0 ? (
-                                <div className="text-right w-full">
-                                  <div className="text-xs font-bold text-foreground">{pct}%</div>
-                                  <div className="w-[52px] h-1 rounded-full bg-muted ml-auto mt-1 overflow-hidden">
-                                    <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
-                                  </div>
-                                  <div className="text-[10px] text-muted-foreground mt-0.5">{done}/{items.length}</div>
-                                </div>
-                              ) : null}
-                              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0" />
-                            </div>
-                          </div>
-                        </Link>;
-                })}
-                  </div> : <div className="p-8 text-center flex flex-col items-center justify-center text-muted-foreground h-full min-h-[200px]">
-                    <Calendar className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                    <p>{t("pages.dashboard.no_routines_created_yet")}</p>
-                    <Link href="/routines/generate" className="mt-4 text-primary dark:text-primary font-medium hover:underline">
-                      {t("pages.dashboard.create_your_first_routine")}
-                    </Link>
-                  </div>}
-              </CardContent>
-            </Card>
-
-            {/* Behavior Highlights */}
-            <Card className="rounded-2xl shadow-sm border-border/50 overflow-hidden flex flex-col">
-              <CardHeader className="bg-muted/30 pb-4 border-b border-border/50">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="font-quicksand text-lg flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-primary" />
-                      {t("pages.dashboard.behavior_highlights")}
-                    </CardTitle>
-                    <CardDescription>{t("dashboard.behavior_today_subtitle")}</CardDescription>
-                  </div>
-                  <Link href="/behavior" className="text-sm font-medium text-primary dark:text-primary hover:underline flex items-center">
-                    {t("pages.dashboard.log_behavior")} <ArrowRight className="h-4 w-4 ml-1" />
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0 flex-1">
-                {loadingStats ? <div className="p-4 space-y-4">
-                    <Skeleton className="h-16 w-full rounded-xl" />
-                    <Skeleton className="h-16 w-full rounded-xl" />
-                  </div> : filteredBehaviorStats.length > 0 ? <div className="divide-y divide-border/50">
-                    {filteredBehaviorStats.map((stat: { childId: number; childName: string; positive: number; negative: number; neutral: number }) => <div key={stat.childId} className="p-4">
-                        <h4 className="font-bold text-foreground mb-3">{stat.childName}</h4>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="flex items-center gap-1.5 bg-muted dark:bg-card rounded-lg px-2.5 py-2 border border-border">
-                            <TrendingUp className="h-3.5 w-3.5 text-primary" />
-                            <span className="text-[10px] text-muted-foreground">{t("dashboard.positive_label")}</span>
-                            <span className="font-bold text-primary">{stat.positive}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 bg-destructive/10 rounded-lg px-2.5 py-2 border border-destructive/20">
-                            <Heart className="h-3.5 w-3.5 text-destructive" />
-                            <span className="text-[10px] text-muted-foreground">{t("dashboard.negative_label")}</span>
-                            <span className="font-bold text-destructive">{stat.negative}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2.5 py-2 border border-border">
-                            <Minus className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="text-[10px] text-muted-foreground">{t("dashboard.neutral_label")}</span>
-                            <span className="font-bold text-foreground/70">{stat.neutral}</span>
-                          </div>
-                        </div>
-                      </div>)}
-                  </div> : <div className="p-8 text-center flex flex-col items-center justify-center text-muted-foreground h-full min-h-[200px]">
-                    <Star className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                    <p>{t("pages.dashboard.no_behavior_logged_yet")}</p>
-                    <Link href="/behavior" className="mt-4 text-primary dark:text-primary font-medium hover:underline">
-                      {t("pages.dashboard.track_a_behavior")}
-                    </Link>
-                  </div>}
-              </CardContent>
-            </Card>
+            <BehaviorHighlightsSection
+              stats={filteredBehaviorStats}
+              loading={loadingStats}
+              selectedChildName={selectedChild?.name ?? null}
+            />
+            <RecentRoutinesCollapsible routines={filteredRecentRoutines} loading={loadingRoutines} />
           </div>
 
-          {/* Rewards Card */}
-          <RewardsCard streak={streak} />
+          <RewardsCompactCard />
 
           {/* ── Gaming Reward ─────────────────────────────────────────── */}
           <Link href="/games">
