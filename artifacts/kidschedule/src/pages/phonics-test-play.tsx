@@ -3,6 +3,7 @@ import { Link, useLocation, useSearch } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { PhonicsTest } from "@/components/phonics-test";
+import { cn } from "@/lib/utils";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
@@ -46,6 +47,14 @@ export default function PhonicsTestPlayPage() {
     window.localStorage.setItem(ACTIVE_CHILD_STORAGE_KEY, String(childId));
   }, [childId]);
 
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
   const goBack = () => {
     if (window.history.length > 1) {
       window.history.back();
@@ -65,37 +74,43 @@ export default function PhonicsTestPlayPage() {
     );
   }
 
+  const testSubtitle =
+    testType === "weekly" ? "Weekly — 20 questions" : "Daily — 5 questions";
+
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background">
-      <header className="sticky top-0 z-50 shrink-0 border-b border-border bg-background/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center gap-3">
+    <div
+      className={cn(
+        "flex h-[100dvh] max-h-[100dvh] min-h-0 w-full flex-col overflow-hidden",
+        "bg-[#0B1220] text-white",
+      )}
+    >
+      <header className="shrink-0 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={goBack}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white"
             aria-label="Back"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div className="min-w-0">
-            <h1 className="font-quicksand text-xl font-black text-foreground">Phonics Test</h1>
-            <p className="text-xs text-muted-foreground">
-              {testType === "weekly" ? "Weekly — 20 questions" : "Daily — 5 questions"}
-            </p>
+            <h1 className="font-quicksand text-xl font-semibold leading-tight text-white">
+              Phonics Test
+            </h1>
+            <p className="text-sm text-white/60">{testSubtitle}</p>
           </div>
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 px-4 pb-[100px] pt-4">
-        <div className="mx-auto max-w-4xl">
-          <PhonicsTest
-            childId={childId}
-            childName={childName}
-            totalAgeMonths={totalAgeMonths}
-            initialTestType={testType}
-            playOnly
-          />
-        </div>
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]">
+        <PhonicsTest
+          childId={childId}
+          childName={childName}
+          totalAgeMonths={totalAgeMonths}
+          initialTestType={testType}
+          playOnly
+        />
       </main>
     </div>
   );
