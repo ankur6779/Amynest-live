@@ -538,7 +538,7 @@ html[data-theme="dark"] {
   max-width: 100%;
   min-width: 0;
   height: 100%;
-  max-height: 100dvh;
+  max-height: calc(var(--vh, 1vh) * 100);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -546,7 +546,7 @@ html[data-theme="dark"] {
 }
 
 #app-root {
-  height: 100dvh;
+  height: calc(var(--vh, 1vh) * 100);
   overflow: hidden;
 }
 
