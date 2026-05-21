@@ -897,12 +897,3 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
   visibility: hidden !important;
   pointer-events: none !important;
 }
-
-.ask-amy-fab {
-  position: fixed;
-  bottom: 90px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 70;
-}
-
