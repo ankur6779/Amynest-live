@@ -3,12 +3,10 @@ import { HealthCheckResponse } from "@workspace/api-zod";
 import {
   getDriveApiKey,
   getDriveKeyDiagnostics,
-  getElevenLabsApiKey,
   getGcsDiagnostics,
   getOpenAiApiKeyForFetch,
   getOpenAiCredentials,
   getTtsProvider,
-  isElevenLabsTtsEnabled,
   isTtsCacheGcsEnabled,
   resolveApiPublicUrl,
 } from "../lib/env";
@@ -33,7 +31,6 @@ router.get("/healthz", (_req, res) => {
 router.get("/healthz/env", async (_req, res) => {
   const drive = getDriveKeyDiagnostics();
   const gcs = getGcsDiagnostics();
-  const elevenlabsConfigured = !!getElevenLabsApiKey();
   const openai = getOpenAiCredentials();
   const queue = await getQueueHealthSnapshot();
 
@@ -53,12 +50,9 @@ router.get("/healthz/env", async (_req, res) => {
     queue.queueMode === "bullmq"
       ? queue.redis
       : queue.queueMode === "inline" || queue.queueMode === "memory";
+  const openAiTtsConfigured = !!getOpenAiApiKeyForFetch();
   res.json({
-    ok:
-      drive.resolved &&
-      elevenlabsConfigured &&
-      openai.configured &&
-      aiQueueOk,
+    ok: drive.resolved && openAiTtsConfigured && openai.configured && aiQueueOk,
     amynestEnv,
     profile: amynestEnvLabel(amynestEnv),
     nodeEnv: process.env.NODE_ENV ?? "unknown",
@@ -85,11 +79,10 @@ router.get("/healthz/env", async (_req, res) => {
             ? "Set GOOGLE_API_KEY on Amynest-backend in Render → Environment"
             : undefined,
       },
-      elevenlabs: {
-        configured: elevenlabsConfigured,
-        vars: [
-          { name: "ELEVENLABS_API_KEY", presence: elevenlabsConfigured ? "set" : "missing" },
-        ],
+      tts: {
+        provider: getTtsProvider(),
+        openAiTtsConfigured,
+        cacheGcsEnabled: isTtsCacheGcsEnabled(),
       },
       openai: {
         configured: openai.configured,
@@ -142,24 +135,17 @@ router.get("/healthz/tts-cache", async (_req, res) => {
 
 /** Amy TTS + GCS storage probe. */
 router.get("/healthz/tts", (_req, res) => {
-  const elevenLabsConfigured = !!getElevenLabsApiKey();
   const openAiConfigured = !!getOpenAiApiKeyForFetch();
   const ttsProvider = getTtsProvider();
   const legacyGcsConfigured = getGcsDiagnostics().legacyGcsConfigured;
-  const ok =
-    ttsProvider === "openai"
-      ? openAiConfigured || elevenLabsConfigured
-      : elevenLabsConfigured;
 
   res.json({
     ttsProvider,
-    elevenLabsTtsEnabled: isElevenLabsTtsEnabled(),
     ttsCacheGcsEnabled: isTtsCacheGcsEnabled(),
     openAiConfigured,
     openAiTts: getOpenAiTtsConfigSummary(),
-    elevenLabsConfigured,
     legacyGcsConfigured,
-    ok,
+    ok: openAiConfigured,
     ttsStorage: ttsStorageBackend(),
   });
 });

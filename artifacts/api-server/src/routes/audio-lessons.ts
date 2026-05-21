@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
-import { TTS_MAX_INPUT_CHARS } from "../services/elevenLabsService";
+import { TTS_MAX_INPUT_CHARS } from "../services/ttsCacheService.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 
 const router: IRouter = Router();

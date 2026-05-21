@@ -9,7 +9,7 @@ import {
   type OpenAiTtsMode,
 } from "../lib/openai-tts-config.js";
 import { logger } from "../lib/logger.js";
-import type { SynthesizeMode } from "./elevenLabsService.js";
+import type { SynthesizeMode } from "./ttsCacheService.js";
 
 export type OpenAiTtsStreamOptions = {
   mode?: SynthesizeMode;

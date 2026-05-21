@@ -1,7 +1,7 @@
 import type { Response as ExpressResponse } from "express";
 import { logger } from "../lib/logger.js";
-import type { SynthesizeMode } from "./elevenLabsService.js";
-import { readCachedAudio } from "./elevenLabsService.js";
+import type { SynthesizeMode } from "./ttsCacheService.js";
+import { readCachedAudio } from "./ttsCacheService.js";
 import { fetchOpenAiTtsStream } from "./openaiTtsService.js";
 import { persistOpenAiTtsCache } from "./openaiTtsPersist.js";
 

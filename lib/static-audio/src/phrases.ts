@@ -1,12 +1,14 @@
 import {
-  getPhonicsAudioText,
+  formatBlendLine,
   getPhonicsAudioTextByLetter,
-  getPhonicsWordAudioText,
+  getPhonicsAudioTextsForStaticCatalog,
+  getCvcPhonemeAudioTextsForStaticCatalog,
+  CVC_WORDS as PHONICS_CVC_ENTRIES,
 } from "@workspace/phonics-sounds";
 import { normalizeStaticAudioKey } from "./normalize.js";
 import type { StaticAudioMode, StaticTtsEntry } from "./types.js";
 
-/** Instructional TTS lines per letter/digraph (e.g. "i as in igloo"). */
+/** Instructional TTS lines per letter/digraph — OpenAI phonics catalog. */
 export const PHONEME_PROMPTS: Record<string, string> = getPhonicsAudioTextByLetter();
 
 /** UI feedback and coaching lines used across games, phonics, and study flows. */
@@ -192,22 +194,21 @@ export function getStaticTtsEntries(): StaticTtsEntry[] {
       text: `${letter} says ${phon}. ${letter} for ${word}.`,
       mode: "default",
     });
-    // Static map uses legacy bare phoneme keys (buh, ih) — runtime TTS uses getPhonicsAudioText().
-    entries.push({ text: phon, mode: "phonics" });
   }
 
-  const legacyPhonemeByLetter = Object.fromEntries(
-    ALPHABET.map(([letter, phon]) => [letter.toLowerCase(), phon]),
-  ) as Record<string, string>;
+  for (const text of getPhonicsAudioTextsForStaticCatalog()) {
+    entries.push({ text, mode: "phonics" });
+  }
+  for (const text of getCvcPhonemeAudioTextsForStaticCatalog()) {
+    entries.push({ text, mode: "phonics" });
+  }
+  for (const entry of PHONICS_CVC_ENTRIES) {
+    entries.push({ text: formatBlendLine(entry.word), mode: "phonics" });
+  }
 
   for (const [word, blend] of CVC_WORDS) {
     const sounds = blend.split("–");
     entries.push({ text: `${sounds.join(". ")}. ${word}.`, mode: "default" });
-    for (const ch of sounds) {
-      const key = ch.trim().toLowerCase();
-      const legacy = legacyPhonemeByLetter[key];
-      if (legacy) entries.push({ text: legacy, mode: "phonics" });
-    }
   }
 
   for (const word of SIGHT_WORDS) {

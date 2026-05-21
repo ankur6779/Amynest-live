@@ -14,9 +14,8 @@ import {
   type PhonicsContentRow,
   type PhonicsProgressRow,
 } from "@workspace/db";
-import {
-  readCachedAudio,
-} from "../services/elevenLabsService";
+import { readCachedAudio } from "../services/ttsCacheService.js";
+import { generateOpenAiTts } from "../services/ttsGenerate.js";
 import { enqueueAiJob } from "../queue/ai-job-queue.js";
 import {
   AGE_GROUP_LABEL,
@@ -1176,18 +1175,24 @@ phonicsPublicRouter.get("/phonics/sound/:letter.mp3", async (req, res): Promise<
   }
 
   try {
-    const result = await synthesizePhonicsSound(raw);
-    const cached = await readCachedAudio(result.cacheKey);
-    if (!cached) {
-      // synthesize() just wrote the row + GCS object, so a miss here is a
-      // genuine infra fault, not a normal cache miss.
+    const generated = await generateOpenAiTts({
+      text: audioText,
+      mode: "phonics",
+      category: "phonics",
+      letterKey: raw,
+    });
+    if (!generated) {
+      res.status(502).json({ error: "audio_unavailable" });
+      return;
+    }
+    const cached = await readCachedAudio(generated.cacheKey);
+    if (!cached?.buffer?.byteLength) {
       res.status(500).json({ error: "audio_unavailable" });
       return;
     }
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Content-Length", String(cached.buffer.byteLength));
-    // Phoneme bytes are immutable for a given letter → safe to cache hard.
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     res.status(200).end(cached.buffer);
   } catch (err) {

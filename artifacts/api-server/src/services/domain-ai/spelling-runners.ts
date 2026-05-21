@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { chatCompletionWithTimeout } from "../openai-chat.js";
-import { synthesize } from "../elevenLabsService.js";
+import { generateOpenAiTts } from "../ttsGenerate.js";
 
 const aiWordSchema = z.object({
   word: z.string().min(1).max(40),
@@ -66,8 +66,8 @@ export async function runSpellingTtsPrewarm(input: {
 }): Promise<{ audioKeys: string[] }> {
   const audioKeys: string[] = [];
   for (const word of input.words) {
-    const r = await synthesize(word, {});
-    audioKeys.push(r.cacheKey);
+    const r = await generateOpenAiTts({ text: word, mode: "default", category: "words" });
+    if (r) audioKeys.push(r.cacheKey);
   }
   return { audioKeys };
 }

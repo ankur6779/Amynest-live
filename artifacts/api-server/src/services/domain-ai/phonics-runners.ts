@@ -1,6 +1,8 @@
 import { chatCompletionWithTimeout } from "../openai-chat.js";
-import { synthesize, readCachedAudio } from "../elevenLabsService.js";
+import { generateOpenAiTts } from "../ttsGenerate.js";
+import { getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { PHONEME_PROMPTS } from "../../routes/phonics.js";
+import { readCachedAudio } from "../ttsCacheService.js";
 
 export async function runPhonicsSound(input: { letter: string }): Promise<{
   cacheKey: string;
@@ -9,7 +11,14 @@ export async function runPhonicsSound(input: { letter: string }): Promise<{
   const key = input.letter.toLowerCase();
   const prompt = PHONEME_PROMPTS[key as keyof typeof PHONEME_PROMPTS];
   if (!prompt) throw new Error("invalid_letter");
-  const result = await synthesize(prompt, { mode: "phonics" });
+  const phrase = getPhonicsAudioText(key);
+  const result = await generateOpenAiTts({
+    text: phrase || prompt,
+    mode: "phonics",
+    category: "phonics",
+    letterKey: key,
+  });
+  if (!result) throw new Error("audio_unavailable");
   const cached = await readCachedAudio(result.cacheKey);
   if (!cached?.buffer?.byteLength) throw new Error("audio_unavailable");
   return { cacheKey: result.cacheKey, buffer: cached.buffer };

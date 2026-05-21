@@ -1,7 +1,7 @@
 import { db, ttsCacheTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
-import type { SynthesizeMode } from "./elevenLabsService.js";
+import type { SynthesizeMode } from "./ttsCacheService.js";
 import {
   isTtsCacheGcsEnabled,
   legacyGcsConfigured,

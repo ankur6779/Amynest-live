@@ -1,4 +1,5 @@
-import { synthesize, type SynthesizeOptions } from "./elevenLabsService.js";
+import { generateOpenAiTts } from "./ttsGenerate.js";
+import type { SynthesizeOptions } from "./ttsCacheService.js";
 import type { ChatMessage } from "./openai-chat.js";
 import { chatCompletionWithTimeout, AI_CHAT_TIMEOUT_MS } from "./openai-chat.js";
 import {
@@ -86,21 +87,28 @@ async function handleTtsSynthesize(payload: TtsSynthesizePayload): Promise<{
   charCount: number;
   cached: boolean;
 }> {
-  const result = await synthesize(payload.text, payload.options ?? {});
+  const opts = payload.options ?? {};
+  const result = await generateOpenAiTts({
+    text: payload.text,
+    voice: opts.voiceId,
+    mode: opts.mode ?? "default",
+    category: opts.mode === "phonics" ? "phonics" : "words",
+  });
+  if (!result) throw new Error("tts_failed");
   logger.info(
     {
       evt: "ai_job.tts_done",
       cacheKey: result.cacheKey,
       cached: result.cached,
-      charCount: result.charCount,
+      charCount: payload.text.length,
     },
     "TTS job completed",
   );
   return {
     cacheKey: result.cacheKey,
-    audioUrl: result.audioUrl,
-    contentType: result.contentType,
-    charCount: result.charCount,
+    audioUrl: result.url,
+    contentType: "audio/mpeg",
+    charCount: payload.text.length,
     cached: result.cached,
   };
 }

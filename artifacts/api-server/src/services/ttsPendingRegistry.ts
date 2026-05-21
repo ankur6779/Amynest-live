@@ -1,4 +1,4 @@
-import type { SynthesizeMode } from "./elevenLabsService.js";
+import type { SynthesizeMode } from "./ttsCacheService.js";
 
 export interface TtsPendingStream {
   text: string;

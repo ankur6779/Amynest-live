@@ -20,7 +20,7 @@ import {
   type SpellingDifficulty,
   type SpellingWord,
 } from "../data/spelling-words";
-import { readCachedAudio } from "../services/elevenLabsService";
+import { readCachedAudio } from "../services/ttsCacheService.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 import { enqueueAiJob } from "../queue/ai-job-queue.js";
 
