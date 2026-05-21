@@ -293,7 +293,7 @@ export function Layout({
       {showDashboardChrome ? (
         <footer className="app-footer shrink-0 md:hidden">
           <nav
-            className="h-[78px] w-full border-t border-border bg-card/95 pb-safe shadow-[0_-8px_28px_var(--shadow-color)] backdrop-blur-xl"
+            className="h-[78px] w-full border-t border-border bg-card/95 shadow-[0_-8px_28px_var(--shadow-color)] backdrop-blur-xl"
             aria-label={t("nav.dashboard")}
           >
             <div className="relative flex h-full w-full items-end justify-around px-2 pb-2">

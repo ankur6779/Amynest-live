@@ -10,11 +10,12 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.webkit.CookieManager
+import android.webkit.ServiceWorkerController
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.webkit.CookieManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -23,7 +24,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import org.json.JSONObject
 
 private const val TAG = "MainActivity"
-private const val BASE_URL = "https://amynest.in"
+private const val BASE_URL = "https://www.amynest.in"
 
 /**
  * MainActivity — full-screen WebView wrapper for https://amynest.in.
@@ -78,8 +79,14 @@ class MainActivity : AppCompatActivity() {
             wv.isHorizontalScrollBarEnabled = false
 
             configureWebView(wv)
+            wv.clearCache(true)
+            wv.clearHistory()
         }
         setContentView(webView)
+
+        val cookieManager = CookieManager.getInstance()
+        cookieManager.removeAllCookies(null)
+        cookieManager.flush()
 
         BillingBridge.installOn(this, webView)
 
@@ -162,7 +169,7 @@ class MainActivity : AppCompatActivity() {
             allowContentAccess = true
             loadsImagesAutomatically = true
             allowFileAccess = false
-            cacheMode = WebSettings.LOAD_DEFAULT
+            cacheMode = WebSettings.LOAD_NO_CACHE
             userAgentString = (userAgentString ?: "") + " AmyNestAndroid/1.0"
 
             // Optimal PWA scroll settings
@@ -181,6 +188,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         CookieManager.getInstance().setAcceptThirdPartyCookies(wv, true)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            ServiceWorkerController.getInstance()
+                .serviceWorkerWebSettings
+                .cacheMode = WebSettings.LOAD_NO_CACHE
+        }
         
         wv.overScrollMode = View.OVER_SCROLL_NEVER
         wv.isVerticalScrollBarEnabled = false
@@ -230,9 +243,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            WebView.setWebContentsDebuggingEnabled(true)
-        }
+        WebView.setWebContentsDebuggingEnabled(true)
     }
 
     // ── URL construction ─────────────────────────────────────────────────────
@@ -240,7 +251,7 @@ class MainActivity : AppCompatActivity() {
     private fun buildLaunchUrl(intent: Intent?): String {
         val deepLink = intent?.getStringExtra("deepLink")
         if (!deepLink.isNullOrBlank()) return deepLinkToUrl(deepLink)
-        return BASE_URL
+        return "$BASE_URL?v=${System.currentTimeMillis()}"
     }
 
     /**
