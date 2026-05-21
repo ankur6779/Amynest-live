@@ -26,17 +26,33 @@ import type {
   WeeklyProgressInput,
   WeeklyProgressScore,
 } from "./types";
+import {
+  SPEECH_COACH_MAX_MONTHS,
+  SPEECH_COACH_MIN_MONTHS,
+} from "./types";
 
 /**
  * Map a child's age in months to a Speech Coach band.
- * Returns `null` for children outside the 1–8 year (12–96 month) range.
+ * Returns `null` only outside {@link SPEECH_COACH_MIN_MONTHS}–{@link SPEECH_COACH_MAX_MONTHS}.
  */
 export function monthsToBand(months: number): SpeechAgeBand | null {
-  if (!Number.isFinite(months) || months < 12 || months >= 97) return null;
+  if (!Number.isFinite(months) || months < SPEECH_COACH_MIN_MONTHS) return null;
+  if (months >= SPEECH_COACH_MAX_MONTHS) return null;
+  if (months < 12) return "infant";
   if (months < 24) return "1y";
   if (months < 36) return "2y";
   if (months < 48) return "3y";
   return "4y_plus";
+}
+
+/** True when the child is in the infant band (under 12 months). */
+export function isInfantAgeMonths(months: number): boolean {
+  return monthsToBand(months) === "infant";
+}
+
+/** Whether Speech Coach content and sessions apply to this age in months. */
+export function isSpeechCoachEligibleAgeMonths(months: number): boolean {
+  return monthsToBand(months) !== null;
 }
 
 /** Milestones for the band matching the given age in months. */
@@ -76,7 +92,7 @@ export function getPromptsPool(
   difficulty: PronouncePromptDifficulty,
 ): readonly PronouncePrompt[] {
   const band = monthsToBand(months);
-  const matchBand = band !== null ? band : "1y";
+  const matchBand: SpeechAgeBand = band ?? "infant";
 
   const matches = PRONUNCIATION_PROMPTS.filter(
     (p) =>

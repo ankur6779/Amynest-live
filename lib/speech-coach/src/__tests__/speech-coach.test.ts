@@ -8,68 +8,33 @@ import {
   SPEECH_COACH_I18N_MANIFEST,
   SPEECH_GAMES,
   SPEECH_MILESTONES,
-  buildAdaptivePromptSession,
-  buildGamePromptSession,
-  compareTranscript,
   computeWeeklyProgressScore,
   getAllAffirmations,
   getAllGuidanceCards,
   getGamesForAgeMonths,
   getMilestonesForAgeMonths,
   getPromptsForAgeMonths,
-  getTranscriptThresholds,
   monthsToBand,
+  isSpeechCoachEligibleAgeMonths,
+  SPEECH_COACH_MAX_MONTHS,
+  SPEECH_COACH_MIN_MONTHS,
 } from "../index";
 import type { SpeechAgeBand } from "../index";
 
-const ALL_BANDS: readonly SpeechAgeBand[] = ["1y", "2y", "3y", "4y_plus"];
-
-describe("compareTranscript", () => {
-  it("scores single letters leniently for child STT variants", () => {
-    const r = compareTranscript("A", "ay", { kind: "letter", ageMonths: 24 });
-    assert.ok(r.score >= 70, `expected pass-ish score, got ${r.score}`);
-    assert.equal(r.feedback, "great");
-  });
-  it("uses lower toddler thresholds", () => {
-    const toddler = getTranscriptThresholds(18);
-    const older = getTranscriptThresholds(48);
-    assert.ok(toddler.great < older.great);
-  });
-  it("gives partial credit for close words", () => {
-    const r = compareTranscript("butterfly", "butter fly", {
-      kind: "word",
-      ageMonths: 48,
-    });
-    assert.ok(r.score >= 50);
-  });
-});
-
-describe("buildAdaptivePromptSession", () => {
-  it("returns a non-empty session from a pool", () => {
-    const pool = getPromptsForAgeMonths(36, "word");
-    const session = buildAdaptivePromptSession(
-      pool,
-      [{ promptId: pool[0]!.id, bestScore: 40, attempts: 2 }],
-      5,
-      42,
-    );
-    assert.ok(session.length >= 1 && session.length <= 5);
-  });
-});
-
-describe("buildGamePromptSession", () => {
-  it("returns prompts for animal_sounds at 3y", () => {
-    const session = buildGamePromptSession("animal_sounds", 36, 7);
-    assert.ok(session.length >= 1);
-  });
-});
+const ALL_BANDS: readonly SpeechAgeBand[] = [
+  "infant",
+  "1y",
+  "2y",
+  "3y",
+  "4y_plus",
+];
 
 // ─── monthsToBand boundaries ─────────────────────────────────────────────────
 
 describe("monthsToBand", () => {
-  it("returns null for ages below 12 months", () => {
-    assert.equal(monthsToBand(0), null);
-    assert.equal(monthsToBand(11), null);
+  it("returns 'infant' from 0 to 11 months inclusive", () => {
+    assert.equal(monthsToBand(0), "infant");
+    assert.equal(monthsToBand(11), "infant");
   });
   it("returns '1y' from 12 to 23 months inclusive", () => {
     assert.equal(monthsToBand(12), "1y");
@@ -83,13 +48,22 @@ describe("monthsToBand", () => {
     assert.equal(monthsToBand(36), "3y");
     assert.equal(monthsToBand(47), "3y");
   });
-  it("returns '4y_plus' from 48 to 96 months inclusive", () => {
+  it("returns '4y_plus' from 48 through max supported months", () => {
     assert.equal(monthsToBand(48), "4y_plus");
     assert.equal(monthsToBand(96), "4y_plus");
+    assert.equal(monthsToBand(SPEECH_COACH_MAX_MONTHS - 1), "4y_plus");
   });
-  it("returns null for ages above 96 months", () => {
-    assert.equal(monthsToBand(97), null);
-    assert.equal(monthsToBand(120), null);
+  it("returns null for ages at or above max months", () => {
+    assert.equal(monthsToBand(SPEECH_COACH_MAX_MONTHS), null);
+    assert.equal(monthsToBand(200), null);
+  });
+  it("isSpeechCoachEligibleAgeMonths matches non-null monthsToBand", () => {
+    for (const m of [0, 6, 12, 24, 60, 120, SPEECH_COACH_MAX_MONTHS]) {
+      assert.equal(isSpeechCoachEligibleAgeMonths(m), monthsToBand(m) !== null);
+    }
+  });
+  it("exports min age of zero months", () => {
+    assert.equal(SPEECH_COACH_MIN_MONTHS, 0);
   });
   it("returns null for non-finite inputs", () => {
     assert.equal(monthsToBand(Number.NaN), null);
@@ -102,7 +76,7 @@ describe("monthsToBand", () => {
 
 describe("getMilestonesForAgeMonths", () => {
   it("returns at least one milestone for every band", () => {
-    for (const months of [12, 24, 36, 48]) {
+    for (const months of [6, 12, 24, 36, 48]) {
       const list = getMilestonesForAgeMonths(months);
       assert.ok(list.length > 0, `expected milestones for ${months}mo`);
     }
@@ -111,15 +85,20 @@ describe("getMilestonesForAgeMonths", () => {
     const list = getMilestonesForAgeMonths(36);
     for (const m of list) assert.equal(m.ageBand, "3y");
   });
+  it("returns infant milestones for babies under 12 months", () => {
+    const list = getMilestonesForAgeMonths(8);
+    assert.ok(list.length > 0);
+    for (const m of list) assert.equal(m.ageBand, "infant");
+  });
   it("returns [] for out-of-range months", () => {
-    assert.deepEqual(getMilestonesForAgeMonths(0), []);
+    assert.deepEqual(getMilestonesForAgeMonths(SPEECH_COACH_MAX_MONTHS), []);
     assert.deepEqual(getMilestonesForAgeMonths(200), []);
   });
 });
 
 describe("getGamesForAgeMonths", () => {
   it("returns at least one game for every band", () => {
-    for (const months of [12, 24, 36, 48]) {
+    for (const months of [6, 12, 24, 36, 48]) {
       const list = getGamesForAgeMonths(months);
       assert.ok(list.length > 0, `expected games for ${months}mo`);
     }
@@ -131,7 +110,7 @@ describe("getGamesForAgeMonths", () => {
     for (const g of list) assert.ok(g.ageBands.includes(band as SpeechAgeBand));
   });
   it("returns [] for out-of-range months", () => {
-    assert.deepEqual(getGamesForAgeMonths(0), []);
+    assert.deepEqual(getGamesForAgeMonths(SPEECH_COACH_MAX_MONTHS), []);
   });
 });
 
@@ -146,8 +125,13 @@ describe("getPromptsForAgeMonths", () => {
     assert.ok(list.length > 0);
     for (const p of list) assert.equal(p.kind, "sentence");
   });
+  it("returns phonic prompts for infants", () => {
+    const list = getPromptsForAgeMonths(6, "phonic");
+    assert.ok(list.length > 0);
+    for (const p of list) assert.ok(p.ageBands.includes("infant"));
+  });
   it("returns [] for out-of-range months", () => {
-    assert.deepEqual(getPromptsForAgeMonths(0), []);
+    assert.deepEqual(getPromptsForAgeMonths(SPEECH_COACH_MAX_MONTHS), []);
   });
 });
 

@@ -1698,6 +1698,7 @@
       "milestones": {
         "section_title": "Milestone Checker",
         "tab": {
+          "infant": "Infant",
           "1y": "1 Year",
           "2y": "2 Years",
           "3y": "3 Years",
@@ -1708,6 +1709,10 @@
           "needs_attention": "Needs Attention",
           "consult_expert": "Consult Expert"
         },
+        "m_infant_cooing": {"label": "Makes cooing and vowel sounds", "hint": "Long \"oo\" and \"ah\" sounds during calm, face-to-face time."},
+        "m_infant_responds_voice": {"label": "Turns toward a familiar voice", "hint": "Looks or quiets when you speak softly from the side."},
+        "m_infant_babbling": {"label": "Babbles with consonant sounds", "hint": "Strings like \"ba-ba\" or \"ma-ma\" — meaning comes later."},
+        "m_infant_joint_attention": {"label": "Shares attention with you", "hint": "Looks at you, then at a toy you name or point to."},
         "m_1y_first_words": {
           "label": "Says first real words",
           "hint": "Like \"mama\", \"dada\", or a familiar pet's name."

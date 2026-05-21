@@ -7,7 +7,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Coarse speech-development bands the Speech Coach UI groups by. */
-export type SpeechAgeBand = "1y" | "2y" | "3y" | "4y_plus";
+export type SpeechAgeBand = "infant" | "1y" | "2y" | "3y" | "4y_plus";
+
+/** Inclusive age window (months) supported by Speech Coach (birth through ~11 years). */
+export const SPEECH_COACH_MIN_MONTHS = 0;
+export const SPEECH_COACH_MAX_MONTHS = 132;
 
 /** Per-child status for a given milestone. */
 export type MilestoneStatus =

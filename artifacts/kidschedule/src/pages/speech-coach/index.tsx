@@ -37,6 +37,7 @@ import {
   SPEECH_AFFIRMATIONS,
   PARENT_GUIDANCE_CARDS,
   monthsToBand,
+  isSpeechCoachEligibleAgeMonths,
   compareTranscript,
   buildPracticeSession,
   getArticulationCue,
@@ -80,6 +81,7 @@ type AnyChild = {
 };
 
 const BAND_TABS: readonly { band: SpeechAgeBand; key: string }[] = [
+  { band: "infant", key: "infant" },
   { band: "1y", key: "1y" },
   { band: "2y", key: "2y" },
   { band: "3y", key: "3y" },
@@ -349,6 +351,7 @@ function MilestonesSection({ child }: { child: AnyChild }) {
       (milestones.data?.milestones ?? []).filter((m) => {
         // Pull band from the well-known id prefix (m_<band>_…) since the
         // API entry doesn't return ageBand directly.
+        if (m.id.startsWith("m_infant_")) return tab === "infant";
         if (m.id.startsWith("m_1y_")) return tab === "1y";
         if (m.id.startsWith("m_2y_")) return tab === "2y";
         if (m.id.startsWith("m_3y_")) return tab === "3y";
@@ -1161,10 +1164,9 @@ export default function SpeechCoachPage() {
   const [viewMode, setViewMode] = useState<SpeechViewMode>(() => getSpeechViewMode());
   const childrenQuery = useListChildren();
   const childList = (childrenQuery.data ?? []) as AnyChild[];
-  const eligible = childList.filter((c) => {
-    const m = totalMonths(c);
-    return m >= 12 && m < 97;
-  });
+  const eligible = childList.filter((c) =>
+    isSpeechCoachEligibleAgeMonths(totalMonths(c)),
+  );
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const child =
     eligible.find((c) => c.id === selectedId) ?? eligible[0] ?? null;

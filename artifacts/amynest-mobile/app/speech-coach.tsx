@@ -47,6 +47,7 @@ const PRONOUNCE_TABS: readonly PronouncePromptKind[] = [
 ] as const;
 
 const MILESTONE_TABS: readonly SpeechAgeBand[] = [
+  "infant",
   "1y",
   "2y",
   "3y",
@@ -80,7 +81,11 @@ export default function SpeechCoachScreen() {
     () => (Array.isArray(childrenData) ? childrenData : []),
     [childrenData],
   );
-  const child = children[0] ?? null;
+  const eligibleChildren = useMemo(
+    () => children.filter((c) => isSpeechCoachEligibleAgeMonths(ageMonthsOf(c))),
+    [children],
+  );
+  const child = eligibleChildren[0] ?? null;
   const childAgeMonths = ageMonthsOf(child);
   const childBand = monthsToBand(childAgeMonths) ?? "1y";
 

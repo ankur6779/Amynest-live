@@ -3544,7 +3544,7 @@ components:
     # ─── Speech Coach ──────────────────────────────────────────────────
     SpeechAgeBand:
       type: string
-      enum: [1y, 2y, 3y, 4y_plus]
+      enum: [infant, 1y, 2y, 3y, 4y_plus]
 
     SpeechMilestoneStatus:
       type: string
