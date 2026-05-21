@@ -9,6 +9,11 @@ import { fetchOpenAiTtsStream } from "./openaiTtsService.js";
 import { persistOpenAiTtsCache } from "./openaiTtsPersist.js";
 import { getOpenAiTtsModel, getOpenAiTtsVoice } from "../lib/openai-tts-config.js";
 import { isValidTtsPublicUrl, resolveTtsPlaybackUrl } from "./ttsAudioStore.js";
+import {
+  getPhonicsCacheFileName,
+  getPhonemeCacheFileName,
+  getCvcWordCacheFileName,
+} from "@workspace/phonics-sounds";
 import { logger } from "../lib/logger.js";
 
 export type TtsGenerateCategory = "words" | "sentences" | "phonics";
@@ -35,6 +40,12 @@ export interface TtsGenerateInput {
   speed?: number;
   mode?: SynthesizeMode;
   category?: TtsGenerateCategory;
+  /** When set, logged as stable GCS object stem (phonics_a_apple). */
+  letterKey?: string;
+  /** IPA phoneme key → phoneme_k / phoneme_æ_apple */
+  phonemeKey?: string;
+  /** CVC whole word → word_cat */
+  cvcWord?: string;
 }
 
 export interface TtsGenerateResult {
@@ -98,7 +109,13 @@ export async function generateOpenAiTts(
       evt: "tts.generate",
       cacheKey,
       category: input.category ?? "words",
-      objectName: ttsCategoryObjectName(input.category ?? "words", text),
+      objectName: input.phonemeKey
+        ? `tts/phonics/${getPhonemeCacheFileName(input.phonemeKey)}.mp3`
+        : input.cvcWord
+          ? `tts/phonics/${getCvcWordCacheFileName(input.cvcWord)}.mp3`
+          : input.letterKey
+            ? `tts/phonics/${getPhonicsCacheFileName(input.letterKey)}.mp3`
+            : ttsCategoryObjectName(input.category ?? "words", text),
       cached: false,
     },
     "OpenAI TTS generated and cached",

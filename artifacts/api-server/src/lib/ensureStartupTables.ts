@@ -217,6 +217,81 @@ export async function ensureRazorpayWebhookEventsTable(): Promise<void> {
 }
 
 /** Run all startup table ensures (non-throwing per step). */
+/** Phonics curriculum engine — daily plans, progress, AI word cache. */
+export async function ensurePhonicsCurriculumTables(): Promise<void> {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS phonics_curriculum_progress (
+      id SERIAL PRIMARY KEY,
+      child_id INTEGER NOT NULL,
+      user_id TEXT NOT NULL,
+      current_level INTEGER NOT NULL DEFAULT 1,
+      mastery_score INTEGER NOT NULL DEFAULT 0,
+      weak_phonemes JSONB NOT NULL DEFAULT '[]',
+      streak INTEGER NOT NULL DEFAULT 0,
+      last_played_at TIMESTAMPTZ,
+      last_test_score INTEGER,
+      last_test_at TIMESTAMPTZ,
+      completed_today JSONB NOT NULL DEFAULT '{"date":"","ids":[]}',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS phonics_curriculum_progress_child_uq
+      ON phonics_curriculum_progress (child_id)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS phonics_curriculum_progress_user_idx
+      ON phonics_curriculum_progress (user_id)
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS phonics_daily_plans (
+      id SERIAL PRIMARY KEY,
+      child_id INTEGER NOT NULL,
+      user_id TEXT NOT NULL,
+      plan_date TEXT NOT NULL,
+      plan_json JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS phonics_daily_plans_child_date_uq
+      ON phonics_daily_plans (child_id, plan_date)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS phonics_daily_plans_user_idx
+      ON phonics_daily_plans (user_id)
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS phonics_content_cache (
+      id SERIAL PRIMARY KEY,
+      cache_key TEXT NOT NULL,
+      level INTEGER NOT NULL,
+      vowel_focus TEXT,
+      words JSONB NOT NULL DEFAULT '[]',
+      prompt TEXT NOT NULL DEFAULT '',
+      source TEXT NOT NULL DEFAULT 'ai',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS phonics_content_cache_key_uq
+      ON phonics_content_cache (cache_key)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS phonics_content_cache_level_idx
+      ON phonics_content_cache (level)
+  `);
+
+  logger.info(
+    { evt: "db.ensure", table: "phonics_curriculum" },
+    "Ensured phonics curriculum tables",
+  );
+}
+
 export async function ensureStartupTables(): Promise<void> {
   const steps: Array<{ name: string; run: () => Promise<void> }> = [
     { name: "children", run: ensureChildrenTable },
@@ -225,6 +300,7 @@ export async function ensureStartupTables(): Promise<void> {
     { name: "onboarding_profiles", run: ensureOnboardingProfilesTable },
     { name: "push_tokens", run: ensurePushTokensTable },
     { name: "razorpay_webhook_events", run: ensureRazorpayWebhookEventsTable },
+    { name: "phonics_curriculum", run: ensurePhonicsCurriculumTables },
   ];
 
   const failed: string[] = [];

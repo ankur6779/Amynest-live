@@ -76,13 +76,13 @@ export function getOpenAiTtsInstructions(mode: OpenAiTtsMode = "default"): strin
 
   if (accent === "us") {
     if (phonics) {
-      return "Speak clearly and slowly in a warm, friendly female American English voice. Enunciate each sound for young children learning phonics.";
+      return "Speak clearly and slowly in a warm, friendly female American English voice. For lines like 'i as in igloo', pronounce only the phoneme sound heard in that example word — never the alphabet letter name. Short and crisp.";
     }
     return "Speak in a warm, friendly female American English voice, like a supportive parenting coach.";
   }
 
   if (phonics) {
-    return "Speak clearly and slowly with a natural Indian English accent in a warm, friendly female voice. Enunciate each sound for children learning phonics.";
+    return "Speak clearly and slowly with a natural Indian English accent in a warm, friendly female voice. For lines like 'i as in igloo', pronounce only the phoneme in the example word — never the alphabet letter name. Short and crisp.";
   }
   return "Speak in a warm, friendly female voice with a natural Indian English accent, like a caring Indian parent coach. Keep tone gentle and clear.";
 }

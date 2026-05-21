@@ -86,6 +86,10 @@ async function startBackgroundTasks(): Promise<void> {
       const { startNotificationCron } = await import("./lib/notificationCron.js");
       startNotificationCron();
     });
+    await runBackgroundPhase("phonics_curriculum_cron", async () => {
+      const { startPhonicsCurriculumCron } = await import("./lib/phonicsCurriculumCron.js");
+      startPhonicsCurriculumCron();
+    });
   }
 
   if (!isBackgroundTasksEnabled()) {

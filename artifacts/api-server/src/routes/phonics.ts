@@ -31,6 +31,19 @@ import {
   type TestType,
 } from "../lib/phonicsTests";
 import { getPhonicsSessionSecret } from "../lib/phonicsSessionSecret.js";
+import {
+  getPhonicsAudioText,
+  getPhonicsAudioTextByLetter,
+} from "@workspace/phonics-sounds";
+import {
+  getDailyPlanForChild,
+  getOrCreateCurriculumProgress,
+  markPlanActivityComplete,
+  applyCurriculumTestResult,
+  todayIsoUtc,
+} from "../lib/phonicsCurriculumService.js";
+import { generatePhonicsWordsCached } from "../lib/phonicsContentAi.js";
+import { PHONICS_CURRICULUM_LEVELS } from "@workspace/phonics-curriculum";
 
 const router: IRouter = Router();
 
@@ -772,6 +785,11 @@ router.post("/phonics/tests/start", async (req, res): Promise<void> => {
     const recentItemIds = (last?.weakConcepts as number[] | null) ?? [];
     const count = testType === "daily" ? DAILY_COUNT : WEEKLY_COUNT;
     const seed = Date.now() ^ (childId * 2654435761);
+    const curriculum = await getOrCreateCurriculumProgress(
+      childId,
+      userId,
+      totalMonths,
+    );
     const questions = generateQuestions({
       ageGroup,
       contentRows,
@@ -780,6 +798,8 @@ router.post("/phonics/tests/start", async (req, res): Promise<void> => {
       seed,
       gameMode,
       testType,
+      curriculumLevel: curriculum?.currentLevel,
+      weakPhonemes: curriculum?.weakPhonemes,
     });
     if (questions.length < count) {
       // Not enough variety to form a full test — degrade gracefully by
@@ -1005,6 +1025,18 @@ router.post("/phonics/tests/submit", async (req, res): Promise<void> => {
       throw err;
     }
 
+    const childTotalMonths =
+      (child.age ?? 0) * 12 + (child.ageMonths ?? 0);
+    const curriculumUpdate = await applyCurriculumTestResult(
+      session.childId,
+      userId,
+      {
+        scorePct: breakdown.accuracyPct,
+        weakConceptIds: breakdown.weakConceptIds,
+        weakSymbols: weakRows.map((r) => r.symbol),
+      },
+    );
+
     res.json({
       result: resultRow,
       breakdown,
@@ -1016,9 +1048,18 @@ router.post("/phonics/tests/submit", async (req, res): Promise<void> => {
       })),
       insight: {
         performanceLabel: insight.performanceLabel,
-        text: finalInsightText,
+        text: curriculumUpdate?.outcome.insight ?? finalInsightText,
         suggestion: finalSuggestion,
       },
+      curriculum: curriculumUpdate
+        ? {
+            currentLevel: curriculumUpdate.progress.currentLevel,
+            masteryScore: curriculumUpdate.progress.masteryScore,
+            weakPhonemes: curriculumUpdate.progress.weakPhonemes,
+            levelChanged: curriculumUpdate.outcome.levelChanged,
+            repeatLevel: curriculumUpdate.outcome.repeatLevel,
+          }
+        : undefined,
     });
   } catch (err) {
     logger.error(
@@ -1083,50 +1124,10 @@ router.get("/phonics/tests/history/:childId", async (req, res): Promise<void> =>
 // crisp, repeatable phoneme renders. See elevenLabsService VOICE_SETTINGS.
 
 /**
- * Letter → spoken phoneme. Strings are what we hand to ElevenLabs verbatim,
- * so they are deliberately phonetic ASCII spellings — NOT the letter name.
- *
- * Short vowels are used ("ah" for A, "eh" for E, etc.) because that's what
- * early-reader phonics curricula start with. Continuous consonants are
- * stretched ("fff", "mmm", "sss", "lll") so the child hears the sound
- * itself; stop consonants get the conventional "uh" trailer ("buh", "duh",
- * "puh") that phonics teachers use to make them audible.
+ * Letter/digraph → instructional TTS line (e.g. "i as in igloo").
+ * Never bare letter names — ensures phoneme sounds, not alphabet pronunciation.
  */
-export const PHONEME_PROMPTS: Record<string, string> = {
-  a: "ah",
-  b: "buh",
-  c: "kuh",
-  d: "duh",
-  e: "eh",
-  f: "fff",
-  g: "guh",
-  h: "huh",
-  i: "ih",
-  j: "juh",
-  k: "kuh",
-  l: "lll",
-  m: "mmm",
-  n: "nnn",
-  o: "ah",
-  p: "puh",
-  q: "kwuh",
-  r: "rrr",
-  s: "sss",
-  t: "tuh",
-  u: "uh",
-  v: "vvv",
-  w: "wuh",
-  x: "ks",
-  y: "yuh",
-  z: "zzz",
-  // Common digraphs taught in stages 3-4
-  sh: "shhh",
-  ch: "chuh",
-  th: "thhh",
-  ph: "fff",
-  wh: "wuh",
-  ng: "ng",
-};
+export const PHONEME_PROMPTS: Record<string, string> = getPhonicsAudioTextByLetter();
 
 /** Allowed letter param values — exposed for tests + the public route guard. */
 export const PHONEME_LETTERS = Object.keys(PHONEME_PROMPTS);
@@ -1167,9 +1168,9 @@ phonicsPublicRouter.get("/phonics/sound/:letter.mp3", async (req, res): Promise<
     return;
   }
 
-  const phoneme = PHONEME_PROMPTS[raw];
-  if (phoneme) {
-    const hash = getStaticAudioObjectKey(phoneme, "phonics");
+  const audioText = getPhonicsAudioText(raw);
+  if (audioText && PHONEME_PROMPTS[raw]) {
+    const hash = getStaticAudioObjectKey(audioText, "phonics");
     res.redirect(302, `/api/static-audio/${hash}.mp3`);
     return;
   }
@@ -1203,6 +1204,168 @@ phonicsPublicRouter.get("/phonics/sound/:letter.mp3", async (req, res): Promise<
     } else {
       res.status(502).json({ error: "audio_unavailable" });
     }
+  }
+});
+
+// ─── Phonics curriculum engine ───────────────────────────────────────────────
+
+const CurriculumPlanBody = z.object({
+  childId: z.number().int().positive(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+
+router.post("/phonics/curriculum/daily-plan", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  const parsed = CurriculumPlanBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return;
+  }
+  try {
+    const child = await loadOwnedChild(parsed.data.childId, userId);
+    if (!child) {
+      res.status(404).json({ error: "child_not_found" });
+      return;
+    }
+    const months = (child.age ?? 0) * 12 + (child.ageMonths ?? 0);
+    const dateIso = parsed.data.date ?? todayIsoUtc();
+    const result = await getDailyPlanForChild(
+      parsed.data.childId,
+      userId,
+      months,
+      dateIso,
+    );
+    if (!result) {
+      res.status(503).json({
+        error: "curriculum_unavailable",
+        message: "Run lib/db/sql/phonics_curriculum_schema.sql to enable the curriculum engine.",
+      });
+      return;
+    }
+    const progress = await getOrCreateCurriculumProgress(
+      parsed.data.childId,
+      userId,
+      months,
+    );
+    res.json({
+      plan: result.plan,
+      completionPct: result.completionPct,
+      progress,
+      levels: PHONICS_CURRICULUM_LEVELS,
+    });
+  } catch (err) {
+    logger.error(
+      `phonics curriculum daily-plan failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+const CompleteActivityBody = z.object({
+  childId: z.number().int().positive(),
+  activityId: z.string().min(1).max(120),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+
+router.post("/phonics/curriculum/complete-activity", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  const parsed = CompleteActivityBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return;
+  }
+  try {
+    const child = await loadOwnedChild(parsed.data.childId, userId);
+    if (!child) {
+      res.status(404).json({ error: "child_not_found" });
+      return;
+    }
+    const progress = await markPlanActivityComplete(
+      parsed.data.childId,
+      userId,
+      parsed.data.activityId,
+      parsed.data.date ?? todayIsoUtc(),
+    );
+    if (!progress) {
+      res.status(503).json({ error: "curriculum_unavailable" });
+      return;
+    }
+    res.json({ ok: true, progress });
+  } catch (err) {
+    logger.error(
+      `phonics curriculum complete-activity failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+router.get("/phonics/curriculum/progress/:childId", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  const childId = Number(req.params.childId);
+  if (!Number.isFinite(childId) || childId <= 0) {
+    res.status(400).json({ error: "invalid_child_id" });
+    return;
+  }
+  try {
+    const child = await loadOwnedChild(childId, userId);
+    if (!child) {
+      res.status(404).json({ error: "child_not_found" });
+      return;
+    }
+    const months = (child.age ?? 0) * 12 + (child.ageMonths ?? 0);
+    const progress = await getOrCreateCurriculumProgress(childId, userId, months);
+    if (!progress) {
+      res.status(503).json({ error: "curriculum_unavailable" });
+      return;
+    }
+    res.json({ progress, levels: PHONICS_CURRICULUM_LEVELS });
+  } catch (err) {
+    logger.error(
+      `phonics curriculum progress failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+const AiWordsQuery = z.object({
+  level: z.coerce.number().int().min(1).max(6).default(2),
+  vowel: z.string().min(1).max(8).default("a"),
+});
+
+router.get("/phonics/curriculum/ai-words", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  const parsed = AiWordsQuery.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_query" });
+    return;
+  }
+  try {
+    const words = await generatePhonicsWordsCached(
+      parsed.data.level,
+      parsed.data.vowel,
+    );
+    res.json({ words, level: parsed.data.level, vowel: parsed.data.vowel });
+  } catch (err) {
+    logger.error(
+      `phonics ai-words failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    res.status(500).json({ error: "server_error" });
   }
 });
 

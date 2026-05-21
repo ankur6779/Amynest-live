@@ -7,6 +7,11 @@ import {
   logDynamicTtsViolation,
 } from "@/lib/static-audio";
 import { readResolvedApiJson, type AuthFetchFn } from "@/lib/poll-result";
+import {
+  getPhonicsAudioText,
+  getPhonemeAudioText,
+  getCvcWordAudioText,
+} from "@workspace/phonics-sounds";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
 
 const LOG = "[TTS]";
@@ -87,14 +92,29 @@ export async function generateTts(
     headers?: Record<string, string>;
   },
 ): Promise<TtsSynthesizeResponse> {
-  const text = String(body.text ?? "").trim();
-  if (!text) return { success: false, ok: false, error: "tts_empty_text" };
+  const phonemeKey = String(body.phoneme ?? "").trim();
+  const cvcWord = String(body.word ?? "").trim().toLowerCase();
+  const raw = String(body.text ?? body.letter ?? phonemeKey ?? cvcWord ?? "").trim();
+  if (!raw && !phonemeKey && !cvcWord) {
+    return { success: false, ok: false, error: "tts_empty_text" };
+  }
+  const letterKey = String(body.letter ?? "").trim().toLowerCase();
+  const phrase = phonemeKey
+    ? getPhonemeAudioText(phonemeKey)
+    : letterKey
+      ? getPhonicsAudioText(letterKey)
+      : cvcWord && !String(body.text ?? "").trim()
+        ? getCvcWordAudioText(cvcWord)
+        : getPhonicsAudioText(raw) || raw;
   try {
     const res = await authFetch("/api/tts/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...init?.headers },
       body: JSON.stringify({
-        text,
+        text: phrase,
+        letter: letterKey || undefined,
+        phoneme: phonemeKey || undefined,
+        word: cvcWord || undefined,
         voice: body.voice ?? "alloy",
         speed: body.speed ?? 0.9,
         mode: body.mode ?? "phonics",
