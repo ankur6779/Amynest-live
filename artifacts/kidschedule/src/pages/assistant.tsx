@@ -91,7 +91,8 @@ export default function AssistantPage() {
   }, []);
 
   useEffect(() => {
-    scrollToChatEnd("smooth");
+    const el = document.getElementById("chat-end");
+    el?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleThreadScroll = () => {
@@ -103,7 +104,7 @@ export default function AssistantPage() {
 
   const handleInputFocus = () => {
     setTimeout(() => {
-      scrollToChatEnd("smooth");
+      document.getElementById("chat-end")?.scrollIntoView();
     }, 300);
   };
 
@@ -276,11 +277,12 @@ export default function AssistantPage() {
         )}
       </div>
 
-      {/* Chat area */}
+      {/* Chat */}
+      <div className="chat-wrapper relative">
       <div
         ref={threadRef}
         onScroll={handleThreadScroll}
-        className="chat-body min-h-0 flex-1 space-y-4"
+        className="chat-body space-y-4"
       >
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full gap-6 text-center py-8">
@@ -390,15 +392,15 @@ export default function AssistantPage() {
           type="button"
           size="sm"
           onClick={() => scrollToChatEnd("smooth")}
-          className="absolute bottom-36 right-4 z-40 rounded-full shadow-lg"
+          className="absolute bottom-24 right-4 z-40 rounded-full shadow-lg"
         >
           {t("ai.scroll_latest", { defaultValue: "Latest" })}
         </Button>
       )}
 
       {/* Input */}
-      <div className="chat-input shrink-0 border-t border-border/50 bg-background/95 pt-3 backdrop-blur">
-        <div className="mx-auto w-full max-w-3xl px-4 md:px-0">
+      <div className="chat-input border-t border-border/50">
+        <div className="mx-auto w-full max-w-3xl">
         {limitReached ? (
           <div className="bg-muted border border-border rounded-2xl p-4 text-center text-foreground space-y-2">
             <p className="font-bold text-sm">{t("ai.quota_exhausted")}</p>
@@ -432,12 +434,13 @@ export default function AssistantPage() {
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground text-center mt-2 mb-3">
+            <p className="text-xs text-muted-foreground text-center mt-2">
               {t("ai.send_hint")}
             </p>
           </>
         )}
         </div>
+      </div>
       </div>
     </div>
   );
