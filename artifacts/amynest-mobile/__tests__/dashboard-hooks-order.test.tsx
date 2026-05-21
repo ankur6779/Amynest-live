@@ -51,6 +51,17 @@ describe("Dashboard hooks-order regression (Task #249)", () => {
     rerender(<ChildrenStrip children={[oneChild]} onManage={noop} onAdd={noop} />);
     rerender(<ChildrenStrip children={[]} onManage={noop} onAdd={noop} />);
     rerender(<ChildrenStrip children={[otherChild]} onManage={noop} onAdd={noop} />);
+    rerender(
+      <ChildrenStrip
+        children={[oneChild, otherChild]}
+        selectedChildId={oneChild.id}
+        onSelectChild={noop}
+        onPressChild={noop}
+        progressByChildId={{ 1: { done: 1, total: 3 }, 2: { done: 0, total: 0 } }}
+        onManage={noop}
+        onAdd={noop}
+      />,
+    );
   });
 
   it("MobileRecipeCard: toggling empty ↔ populated does not throw", () => {

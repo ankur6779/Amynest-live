@@ -192,6 +192,7 @@ export default function RoutineCarousel({
   return (
     <ScrollView
       horizontal
+      nestedScrollEnabled
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.list}
       decelerationRate="fast"
