@@ -1,8 +1,7 @@
 import { signInWithPhoneNumber, type Auth, type ConfirmationResult } from "firebase/auth";
 import {
   canRunInAppPhoneRecaptcha,
-  isStandalonePwa,
-  shouldUseBrowserForPhoneOtp,
+  shouldSuggestBrowserOtpFallback,
 } from "./mobile-phone-environment";
 import { logPhoneOtpDomainContext } from "./site-domain";
 import {
@@ -19,9 +18,6 @@ const HARD_FAIL_MESSAGE =
 
 const NOT_READY_MESSAGE =
   "Security check is still loading. Wait a moment, then try again.";
-
-const PWA_MESSAGE =
-  "Please open in browser for OTP verification. The installed app cannot complete phone security checks.";
 
 export type SendPhoneOtpResult =
   | { success: true; confirmation: ConfirmationResult }
@@ -45,11 +41,10 @@ export async function sendPhoneOtpSafely(
     return { success: false, error: "Invalid phone number" };
   }
 
-  if (!canRunInAppPhoneRecaptcha() || isStandalonePwa()) {
+  if (!canRunInAppPhoneRecaptcha()) {
     return {
       success: false,
-      error: PWA_MESSAGE,
-      suggestBrowser: true,
+      error: NOT_READY_MESSAGE,
     };
   }
 
@@ -96,7 +91,7 @@ export async function sendPhoneOtpSafely(
       success: false,
       error: message,
       needsRefresh: true,
-      suggestBrowser: shouldUseBrowserForPhoneOtp(),
+      suggestBrowser: shouldSuggestBrowserOtpFallback(),
     };
   }
 }

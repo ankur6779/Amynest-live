@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { firebaseAuth } from "@/lib/firebase";
-import { isStandalonePwa, preloadInvisibleRecaptcha } from "@workspace/phone-auth";
+import { canRunInAppPhoneRecaptcha, preloadInvisibleRecaptcha } from "@workspace/phone-auth";
 
 /**
  * Preload invisible reCAPTCHA on auth page mount (browser tab only — never in PWA).
@@ -8,8 +8,8 @@ import { isStandalonePwa, preloadInvisibleRecaptcha } from "@workspace/phone-aut
  */
 export function PhoneRecaptchaPreload() {
   useEffect(() => {
-    if (isStandalonePwa()) {
-      console.info("[phone-recaptcha-preload] skipped — standalone PWA");
+    if (!canRunInAppPhoneRecaptcha()) {
+      console.info("[phone-recaptcha-preload] skipped — in-app phone auth unavailable");
       return;
     }
 

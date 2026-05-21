@@ -261,11 +261,9 @@ class MainActivity : AppCompatActivity() {
         s.setGeolocationEnabled(true)
         s.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
         s.cacheMode = WebSettings.LOAD_DEFAULT
-        // "AmyNestAndroid" matches the UA check in isAmyNestWrapper() on the web side
-        // (native-push-bridge.ts: /AmyNestAndroid/.test(navigator.userAgent)).
-        // This is the last-resort wrapper-detection signal when both
-        // window.AmyNestPushNative and window.__AMYNEST_WRAPPER are unavailable.
-        s.userAgentString = "${s.userAgentString} AmyNestAndroid/${BuildConfig.VERSION_NAME}"
+        // Chrome-like UA helps Firebase reCAPTCHA / phone auth in WebView; AmyNestAndroid
+        // suffix is detected by the web app (native-push-bridge.ts, phone-auth shell).
+        WebViewUserAgent.apply(s, BuildConfig.VERSION_NAME)
         webView.overScrollMode = View.OVER_SCROLL_NEVER
         webView.isNestedScrollingEnabled = false
 

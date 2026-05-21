@@ -1,5 +1,5 @@
 import { RecaptchaVerifier, type Auth } from "firebase/auth";
-import { isStandalonePwa } from "./mobile-phone-environment";
+import { canRunInAppPhoneRecaptcha } from "./mobile-phone-environment";
 
 export const RECAPTCHA_CONTAINER_ID = "recaptcha-container";
 
@@ -71,8 +71,8 @@ function renderWithTimeout(verifier: RecaptchaVerifier): Promise<number> {
  */
 export async function preloadInvisibleRecaptcha(auth: Auth): Promise<boolean> {
   if (typeof window === "undefined") return false;
-  if (isStandalonePwa()) {
-    console.info("[recaptcha] skip preload in standalone PWA");
+  if (!canRunInAppPhoneRecaptcha()) {
+    console.info("[recaptcha] skip preload — in-app phone auth unavailable");
     return false;
   }
 

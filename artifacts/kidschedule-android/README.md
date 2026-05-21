@@ -75,7 +75,24 @@ printed instructions to create `keystore.properties` in the project root.
 
 ## 7. Build the signed release AAB and APK
 
-Always pass both `wrapperUrl` AND `revenueCatApiKey` when building. Without
+> **AAB local par nahi milti agar sirf cloud/CI par build chala ho** — Gradle
+> output sirf us machine par `app/build/outputs/bundle/release/` mein hoti hai.
+> Apne laptop par yahi folder banane ke liye neeche wala script chalao.
+
+**Quick build (recommended):**
+
+```bash
+cd artifacts/kidschedule-android
+bash scripts/build-release-aab.sh
+```
+
+AAB path after success:
+
+```
+artifacts/kidschedule-android/app/build/outputs/bundle/release/app-release.aab
+```
+
+Always pass both `wrapperUrl` AND `revenueCatApiKey` when building manually. Without
 the RevenueCat key, the app falls back to web payments — which Google Play
 will reject for digital subscriptions.
 

@@ -1,0 +1,5 @@
+What's new in 1.4.0
+
+• Phone sign-in and OTP verification now work inside the app — no forced browser redirect
+• Improved WebView compatibility for Firebase reCAPTCHA and phone auth
+• Performance and stability improvements
