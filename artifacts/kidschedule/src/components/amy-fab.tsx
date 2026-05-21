@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "wouter";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
@@ -12,13 +12,6 @@ const FAB_STYLE: CSSProperties = {
   zIndex: 9999,
 };
 
-function footerAnchoredBottom(): string {
-  const footer = document.querySelector(".app-footer") as HTMLElement | null;
-  if (!footer) return "100px";
-  const footerHeight = footer.offsetHeight || 80;
-  return `${footerHeight + 20}px`;
-}
-
 /** Only floating Ask Amy control — portaled to body for Android WebView. */
 export function AmyFab() {
   const { t } = useTranslation();
@@ -26,21 +19,46 @@ export function AmyFab() {
   const [mounted, setMounted] = useState(false);
   const [bottom, setBottom] = useState("100px");
 
+  const updateFabPosition = useCallback(() => {
+    const footer = document.querySelector(".app-footer") as HTMLElement | null;
+
+    if (!footer) {
+      setBottom("100px");
+      return;
+    }
+
+    const height = footer.offsetHeight;
+    console.log("Footer height:", height);
+    setBottom(`${height + 20}px`);
+  }, []);
+
+  const scheduleFabPosition = useCallback(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(updateFabPosition);
+    });
+  }, [updateFabPosition]);
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!mounted) return;
-    const update = () => setBottom(footerAnchoredBottom());
-    update();
-    window.addEventListener("resize", update);
-    const retry = window.setTimeout(update, 150);
+
+    scheduleFabPosition();
+    updateFabPosition();
+
+    window.addEventListener("resize", updateFabPosition);
+    window.addEventListener("load", updateFabPosition);
+
+    const t = window.setTimeout(updateFabPosition, 300);
+
     return () => {
-      window.removeEventListener("resize", update);
-      window.clearTimeout(retry);
+      window.removeEventListener("resize", updateFabPosition);
+      window.removeEventListener("load", updateFabPosition);
+      window.clearTimeout(t);
     };
-  }, [mounted, location]);
+  }, [mounted, location, scheduleFabPosition, updateFabPosition]);
 
   if (
     !mounted ||
