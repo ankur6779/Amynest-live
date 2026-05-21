@@ -15,7 +15,8 @@ import {
   SPEECH_MILESTONES,
 } from "./content";
 import {
-  getDefaultPromptsForKind,
+  filterCatalogByDifficulty,
+  getPracticeCatalog,
   LETTER_PRONUNCIATION_PROMPTS,
 } from "./pronunciation-datasets";
 import type {
@@ -87,64 +88,20 @@ export function getPromptsForAgeMonths(
   );
 }
 
-function promptLevel(p: PronouncePrompt): PronouncePromptDifficulty {
-  return p.difficulty ?? "easy";
-}
-
-/** Match selected difficulty or include easy baseline prompts. */
-function matchesDifficulty(
-  p: PronouncePrompt,
-  difficulty: PronouncePromptDifficulty,
-): boolean {
-  const level = promptLevel(p);
-  return level === difficulty || level === "easy";
-}
-
-function filterPrompts(
-  kind: PronouncePromptKind,
-  matchBand: SpeechAgeBand,
-  difficulty: PronouncePromptDifficulty,
-  requireBand: boolean,
-): readonly PronouncePrompt[] {
-  return PRONUNCIATION_PROMPTS.filter((p) => {
-    if (p.kind !== kind) return false;
-    if (requireBand && !p.ageBands.includes(matchBand)) return false;
-    return matchesDifficulty(p, difficulty);
-  });
-}
-
 /**
- * Return all prompts matching age band, kind, and difficulty.
- * Letters always include the full A–Z set. Never returns an empty pool for a
- * known kind — falls back to easy, then any band, then category defaults.
+ * Return prompts for kind + difficulty. Full category catalogs span every age
+ * band; difficulty uses the selected level plus easy items. Letters always
+ * return the full A–Z set.
  */
 export function getPromptsPool(
-  months: number,
+  _months: number,
   kind: PronouncePromptKind,
   difficulty: PronouncePromptDifficulty,
 ): readonly PronouncePrompt[] {
   if (kind === "letter") {
     return LETTER_PRONUNCIATION_PROMPTS;
   }
-
-  const band = monthsToBand(months);
-  const matchBand: SpeechAgeBand = band ?? "infant";
-
-  let pool = filterPrompts(kind, matchBand, difficulty, true);
-  if (pool.length > 0) return pool;
-
-  pool = PRONUNCIATION_PROMPTS.filter(
-    (p) => p.kind === kind && p.ageBands.includes(matchBand),
-  );
-  if (pool.length > 0) return pool;
-
-  pool = filterPrompts(kind, matchBand, difficulty, false);
-  if (pool.length > 0) return pool;
-
-  pool = PRONUNCIATION_PROMPTS.filter((p) => p.kind === kind);
-  if (pool.length > 0) return pool;
-
-  return getDefaultPromptsForKind(kind);
+  return filterCatalogByDifficulty(getPracticeCatalog(kind), difficulty);
 }
 
 /**

@@ -59,8 +59,16 @@ export {
   type WeakSoundEntry,
 } from "./weak-sounds";
 export {
+  filterCatalogByDifficulty,
+  getPracticeCatalog,
   getPromptSpeakText,
   LETTER_PRONUNCIATION_PROMPTS,
+  PHONIC_PRONUNCIATION_PROMPTS,
+  WORD_PRONUNCIATION_PROMPTS,
+  SENTENCE_PRONUNCIATION_PROMPTS,
+  WORDS_DATA,
+  SENTENCES_DATA,
   LETTERS_DATA,
 } from "./pronunciation-datasets";
+
 
