@@ -103,9 +103,9 @@ export default function AssistantPage() {
 
   const handleInputFocus = () => {
     setTimeout(() => {
-      textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      window.scrollTo(0, document.body.scrollHeight);
       scrollToBottom("smooth");
-    }, 80);
+    }, 300);
   };
 
   // Server-driven gating — no local quota counter. Premium users have no limit.
@@ -191,7 +191,7 @@ export default function AssistantPage() {
   const isEmpty = historyLoaded && messages.length === 0;
 
   return (
-    <div className="relative mx-auto flex min-h-screen w-full max-w-3xl flex-col bg-background">
+    <div className="assistant-chat-page relative mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden bg-background">
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-4 md:px-0 md:pt-0">
         <div>
@@ -281,7 +281,7 @@ export default function AssistantPage() {
       <div
         ref={threadRef}
         onScroll={handleThreadScroll}
-        className="min-h-0 flex-1 space-y-4 px-4 pb-24 pr-5"
+        className="chat-body min-h-0 flex-1 space-y-4 px-4 pr-5 md:px-0"
       >
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full gap-6 text-center py-8">
@@ -391,14 +391,15 @@ export default function AssistantPage() {
           type="button"
           size="sm"
           onClick={() => scrollToBottom("smooth")}
-          className="absolute bottom-28 right-4 z-40 rounded-full shadow-lg"
+          className="absolute bottom-36 right-4 z-40 rounded-full shadow-lg"
         >
           {t("ai.scroll_latest", { defaultValue: "Latest" })}
         </Button>
       )}
 
       {/* Input */}
-      <div className="sticky bottom-0 z-50 w-full shrink-0 border-t border-border/50 bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur md:px-0">
+      <div className="chat-input shrink-0 border-t border-border/50 bg-background/95 pt-3 backdrop-blur">
+        <div className="mx-auto w-full max-w-3xl px-4 md:px-0">
         {limitReached ? (
           <div className="bg-muted border border-border rounded-2xl p-4 text-center text-foreground space-y-2">
             <p className="font-bold text-sm">{t("ai.quota_exhausted")}</p>
@@ -432,11 +433,12 @@ export default function AssistantPage() {
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground text-center mt-2">
+            <p className="text-xs text-muted-foreground text-center mt-2 mb-3">
               {t("ai.send_hint")}
             </p>
           </>
         )}
+        </div>
       </div>
     </div>
   );
