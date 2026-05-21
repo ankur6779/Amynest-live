@@ -2212,7 +2212,19 @@ export const GetSpeechProgressResponse = zod.object({
   "promptsAttempted": zod.number(),
   "promptsClear": zod.number(),
   "milestonesOnTrack": zod.number(),
-  "milestonesTotal": zod.number()
+  "milestonesTotal": zod.number(),
+  "dailyTrend": zod.array(zod.object({
+  "date": zod.string(),
+  "attempts": zod.number(),
+  "clearCount": zod.number(),
+  "avgScore": zod.number()
+})),
+  "weakSounds": zod.array(zod.object({
+  "promptId": zod.string(),
+  "promptText": zod.string(),
+  "avgScore": zod.number(),
+  "attempts": zod.number()
+}))
 })
 
 

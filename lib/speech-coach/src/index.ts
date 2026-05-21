@@ -18,6 +18,7 @@ export {
   getAllAffirmations,
   getAllGuidanceCards,
   computeWeeklyProgressScore,
+  buildPracticeSession,
 } from "./helpers";
 export {
   SPEECH_COACH_I18N_MANIFEST,
@@ -25,6 +26,29 @@ export {
 } from "./i18n-manifest";
 export {
   compareTranscript,
+  getTranscriptThresholds,
+  type CompareTranscriptOptions,
   type TranscriptFeedback,
   type TranscriptResult,
+  type TranscriptThresholds,
 } from "./transcript";
+export {
+  buildAdaptivePromptSession,
+  seededShuffle,
+  type PromptScoreHistory,
+} from "./adaptive";
+export {
+  SPEECH_GAME_SESSIONS,
+  buildGamePromptSession,
+  getGamePromptPool,
+  type SpeechGameSessionConfig,
+} from "./games";
+export { getArticulationCue, type ArticulationCue } from "./articulation";
+export {
+  aggregateDailyTrend,
+  aggregateWeakSounds,
+  historyFromAttempts,
+  type DailyTrendEntry,
+  type PracticeAttemptRow,
+  type WeakSoundEntry,
+} from "./weak-sounds";

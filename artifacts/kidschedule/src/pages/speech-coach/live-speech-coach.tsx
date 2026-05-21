@@ -13,8 +13,9 @@ import {
   Trophy,
   Volume2,
 } from "lucide-react";
-import { useListChildren, useLogSpeechPracticeAttempt } from "@workspace/api-client-react";
+import { useGetSpeechProgress, useListChildren, useLogSpeechPracticeAttempt } from "@workspace/api-client-react";
 import {
+  buildPracticeSession,
   compareTranscript,
   getPromptsPool,
   type PronouncePrompt,
@@ -28,6 +29,7 @@ import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { usePrimeIosMicrophone } from "@/hooks/use-prime-ios-microphone";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
+import { clampClarityScore, weakSoundsToHistory } from "./speech-coach-utils";
 
 type AnyChild = {
   id: number;
@@ -51,6 +53,7 @@ type AgeMode = {
   kind: PronouncePromptKind;
   difficulty: PronouncePromptDifficulty;
   sessionSize: number;
+  toddler?: boolean;
 };
 
 type Result = {
@@ -88,6 +91,9 @@ function seededShuffle<T>(items: T[], seed: number): T[] {
 }
 
 function getAgeMode(months: number): AgeMode {
+  if (months < 36) {
+    return { label: "Ages 1-2", intro: "Short sounds — hold the mic while you speak.", kind: "phonic", difficulty: "easy", sessionSize: 4, toddler: true };
+  }
   if (months < 72) {
     return {
       label: "Ages 3-5",
@@ -115,9 +121,10 @@ function getAgeMode(months: number): AgeMode {
   };
 }
 
-function buildTasks(months: number): PronouncePrompt[] {
+function buildTasks(months: number, history: ReturnType<typeof weakSoundsToHistory>): PronouncePrompt[] {
   const mode = getAgeMode(months);
-  const primary = [...getPromptsPool(months, mode.kind, mode.difficulty)];
+  const primary = buildPracticeSession(months, mode.kind, mode.difficulty, mode.sessionSize + 4, Date.now(), history);
+  if (primary.length >= mode.sessionSize) return [...primary].slice(0, mode.sessionSize);
   const secondary =
     mode.kind === "sentence"
       ? [...getPromptsPool(months, "word", "advanced")]
@@ -168,7 +175,7 @@ declare global {
   }
 }
 
-function evaluate(task: PronouncePrompt, transcript: string, mode: AgeMode): Result {
+function evaluate(task: PronouncePrompt, transcript: string, mode: AgeMode, ageMonths: number): Result {
   const trimmed = transcript.trim();
   if (!trimmed) {
     return {
@@ -181,9 +188,11 @@ function evaluate(task: PronouncePrompt, transcript: string, mode: AgeMode): Res
     };
   }
 
-  const result = compareTranscript(task.text, trimmed);
-  const correct = result.score >= 80;
-  const close = result.score >= 50;
+  const result = compareTranscript(task.text, trimmed, { kind: task.kind, ageMonths });
+  const passAt = mode.toddler ? 70 : 80;
+  const closeAt = mode.toddler ? 45 : 50;
+  const correct = result.score >= passAt;
+  const close = result.score >= closeAt;
   const confidence = Math.round(result.score) / 100;
 
   if (correct) {
@@ -258,7 +267,9 @@ function AmyHero({ state, success }: { state: CoachState; success: boolean }) {
 function LiveSpeechCoach({ child }: { child: AnyChild }) {
   const ageMonths = totalMonths(child);
   const mode = useMemo(() => getAgeMode(ageMonths), [ageMonths]);
-  const [tasks, setTasks] = useState<PronouncePrompt[]>(() => buildTasks(ageMonths));
+  const progress = useGetSpeechProgress({ childId: child.id, range: "week" });
+  const practiceHistory = useMemo(() => weakSoundsToHistory(progress.data?.weakSounds ?? []), [progress.data?.weakSounds]);
+  const [tasks, setTasks] = useState<PronouncePrompt[]>(() => buildTasks(ageMonths, practiceHistory));
   const [idx, setIdx] = useState(0);
   const [state, setState] = useState<CoachState>("idle");
   const [lastResult, setLastResult] = useState<Result | null>(null);
@@ -302,7 +313,7 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
   }, [state]);
 
   useEffect(() => {
-    setTasks(buildTasks(ageMonths));
+    setTasks(buildTasks(ageMonths, practiceHistory));
     setIdx(0);
     setState("idle");
     setLastResult(null);
@@ -313,7 +324,7 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
     stt.reset();
     voice.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [child.id, ageMonths]);
+  }, [child.id, ageMonths, practiceHistory]);
 
   useEffect(() => {
     if (state !== "listening") return;
@@ -372,20 +383,20 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
     setState("processing");
     setStatus("Checking your voice...");
     await new Promise((resolve) => window.setTimeout(resolve, 450));
-    const result = evaluate(current, stt.transcript, mode);
+    const result = evaluate(current, stt.transcript, mode, ageMonths);
     setLastResult(result);
     setScore((n) => n + result.points);
     setStreak((n) => (result.correct ? n + 1 : 0));
     playCue(result.correct ? "success" : "retry");
     setSuccessFlash(result.correct);
     window.setTimeout(() => setSuccessFlash(false), 900);
-    logAttempt.mutate({ data: { childId: child.id, promptId: current.id } });
+    logAttempt.mutate({ data: { childId: child.id, promptId: current.id, clarityScore: clampClarityScore(Math.round(result.confidence * 100)) } });
 
     const feedbackText = result.correct
       ? result.feedback
       : `${result.feedback} ${result.improvement ?? ""}`;
     await speak(feedbackText, "feedback");
-  }, [child.id, current, logAttempt, mode, speak, stt.transcript]);
+  }, [ageMonths, child.id, current, logAttempt, mode, speak, stt.transcript]);
 
   useEffect(() => {
     if (state !== "listening") return;
@@ -420,7 +431,7 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
   }, [current, mode, speak, stt]);
 
   const restart = useCallback(() => {
-    const fresh = buildTasks(ageMonths);
+    const fresh = buildTasks(ageMonths, practiceHistory);
     setTasks(fresh);
     setIdx(0);
     setScore(0);
@@ -431,7 +442,7 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
     setHasStarted(false);
     stt.reset();
     voice.stop();
-  }, [ageMonths, stt, voice]);
+  }, [ageMonths, practiceHistory, stt, voice]);
 
   if (!current && state !== "complete") {
     return (
@@ -607,7 +618,7 @@ export default function LiveSpeechCoachPage() {
   const childList = (childrenQuery.data ?? []) as AnyChild[];
   const eligible = childList.filter((c) => {
     const months = totalMonths(c);
-    return months >= 36 && months < 132;
+    return months >= 12 && months < 132;
   });
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const child = eligible.find((c) => c.id === selectedId) ?? eligible[0] ?? null;
@@ -623,8 +634,8 @@ export default function LiveSpeechCoachPage() {
           <CardContent className="space-y-4 p-6 text-center">
             <AmyIcon size={64} ring bounce />
             <div>
-              <h1 className="font-quicksand text-xl font-black">Speech Coach is for ages 3-10</h1>
-              <p className="mt-2 text-sm text-white/65">Add or select a child between 3 and 10 years old to start a live session.</p>
+              <h1 className="font-quicksand text-xl font-black">Speech Coach is for ages 1-10</h1>
+              <p className="mt-2 text-sm text-white/65">Add or select a child between 1 and 10 years old to start a live session.</p>
             </div>
             <div className="flex justify-center gap-2">
               <Link href="/children/new">

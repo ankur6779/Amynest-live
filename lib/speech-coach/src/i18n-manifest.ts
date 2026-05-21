@@ -156,6 +156,10 @@ export const SPEECH_COACH_I18N_MANIFEST: I18nKeyManifest = {
   "screens.speech_coach.read_aloud.compare_playback": "Compare playback",
   "screens.speech_coach.read_aloud.parent_listening": "Parent listening mode",
   "screens.speech_coach.read_aloud.confidence_score": "Confidence score",
+  "screens.speech_coach.read_aloud.hold_to_speak": "Hold mic and read this line",
+  "screens.speech_coach.read_aloud.release_to_check": "Release to check",
+  "screens.speech_coach.read_aloud.line_clear": "Clear!",
+  "screens.speech_coach.read_aloud.line_try_again": "Try again — tap Hear, then hold mic",
   "screens.speech_coach.read_aloud.story_default_title": "Riya & the Rainy Day",
   "screens.speech_coach.read_aloud.story_default_body":
     "Riya looked outside. It was raining. She smiled, picked up her umbrella, and ran into the garden. The flowers were dancing in the rain.",

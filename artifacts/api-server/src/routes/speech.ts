@@ -385,6 +385,21 @@ router.get("/speech/progress", async (req, res): Promise<void> => {
     milestonesTotal,
   });
 
+  const dailyTrend = aggregateDailyTrend(
+    attempts.map((a) => ({
+      attemptedAt: a.attemptedAt,
+      clarityScore: a.clarityScore,
+    })),
+    rangeStart,
+  );
+  const weakSounds = aggregateWeakSounds(
+    attempts.map((a) => ({
+      promptId: a.promptId,
+      clarityScore: a.clarityScore,
+    })),
+    8,
+  );
+
   res.json({
     childId: child.id,
     rangeStart: rangeStart.toISOString().slice(0, 10),
@@ -399,6 +414,8 @@ router.get("/speech/progress", async (req, res): Promise<void> => {
     promptsClear,
     milestonesOnTrack,
     milestonesTotal: milestones.length,
+    dailyTrend,
+    weakSounds,
   });
 });
 

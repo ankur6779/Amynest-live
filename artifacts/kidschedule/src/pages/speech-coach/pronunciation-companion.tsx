@@ -21,11 +21,13 @@ import type { SpeechRecognitionState } from "@/hooks/useSpeechRecognition";
 import type { UseAmyVoiceState } from "@/hooks/use-amy-voice";
 import { isCapacitorIOS, openNativeAppSettings } from "@/lib/native-push-bridge";
 import type {
+  ArticulationCue,
   TranscriptFeedback,
   PronouncePrompt,
   PronouncePromptDifficulty,
 } from "@workspace/speech-coach";
 import type { SpeechPromptKind } from "@workspace/api-client-react";
+import type { SpeechViewMode } from "./speech-coach-utils";
 
 // ── Exported types (imported by index.tsx) ────────────────────────────────────
 export type SessionPhase = "setup" | "practice" | "done";
@@ -560,6 +562,10 @@ export interface PronunciationCompanionProps {
   onTryAgain: () => void;
   onNewSession: () => void;
   onAction: () => void;
+  viewMode?: SpeechViewMode;
+  compactMode?: boolean;
+  articulationCue?: ArticulationCue | null;
+  holdToSpeak?: boolean;
 }
 
 export function PronunciationCompanion({
@@ -585,6 +591,10 @@ export function PronunciationCompanion({
   onTryAgain,
   onNewSession,
   onAction,
+  viewMode = "parent",
+  compactMode = false,
+  articulationCue = null,
+  holdToSpeak = false,
 }: PronunciationCompanionProps) {
   const { t } = useTranslation();
   const capIos = isCapacitorIOS();

@@ -5,6 +5,8 @@
 // cache responses based on inputs alone.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { buildAdaptivePromptSession, seededShuffle } from "./adaptive";
+import type { PromptScoreHistory } from "./adaptive";
 import {
   PARENT_GUIDANCE_CARDS,
   PRONUNCIATION_PROMPTS,
@@ -28,12 +30,6 @@ import type {
 /**
  * Map a child's age in months to a Speech Coach band.
  * Returns `null` for children outside the 1–8 year (12–96 month) range.
- *
- * Boundaries (inclusive low, exclusive high):
- *   12-23 → "1y"
- *   24-35 → "2y"
- *   36-47 → "3y"
- *   48-96 → "4y_plus"
  */
 export function monthsToBand(months: number): SpeechAgeBand | null {
   if (!Number.isFinite(months) || months < 12 || months >= 97) return null;
@@ -73,11 +69,6 @@ export function getPromptsForAgeMonths(
 
 /**
  * Return all prompts matching the given age band, kind, and difficulty.
- * Falls back to "easy" prompts (difficulty undefined or "easy") when the
- * strict difficulty slice is empty, so a session is never blank.
- *
- * Deterministic ordering — callers should shuffle in the UI layer using
- * their own entropy source so this helper stays cache-safe.
  */
 export function getPromptsPool(
   months: number,
@@ -95,13 +86,32 @@ export function getPromptsPool(
   );
   if (matches.length > 0) return matches;
 
-  // Fallback: any prompt for this kind + band regardless of difficulty
   return PRONUNCIATION_PROMPTS.filter(
     (p) => p.kind === kind && p.ageBands.includes(matchBand),
   );
 }
 
-/** All affirmation cards (band-agnostic). Exposed as a helper for symmetry. */
+/**
+ * Build a pronunciation practice session (adaptive when history is provided).
+ */
+export function buildPracticeSession(
+  months: number,
+  kind: PronouncePromptKind,
+  difficulty: PronouncePromptDifficulty,
+  sessionSize: number,
+  seed: number,
+  history: readonly PromptScoreHistory[] = [],
+): readonly PronouncePrompt[] {
+  const pool = getPromptsPool(months, kind, difficulty);
+  if (pool.length === 0) return [];
+  const size = Math.max(1, Math.min(sessionSize, pool.length));
+  if (history.length > 0) {
+    return buildAdaptivePromptSession(pool, history, size, seed);
+  }
+  return seededShuffle([...pool], seed).slice(0, size);
+}
+
+/** All affirmation cards (band-agnostic). */
 export function getAllAffirmations(): readonly AffirmationCard[] {
   return SPEECH_AFFIRMATIONS;
 }
@@ -120,11 +130,6 @@ const clampPct = (n: number): number => {
 
 /**
  * Compute a deterministic weekly progress score from rolled-up inputs.
- *
- * Component weights:
- *   pronunciation 40% · consistency 30% · milestone 30%
- *
- * Defensive: zero-division guarded; over-counted clear prompts clamped to 100%.
  */
 export function computeWeeklyProgressScore(
   input: WeeklyProgressInput,
