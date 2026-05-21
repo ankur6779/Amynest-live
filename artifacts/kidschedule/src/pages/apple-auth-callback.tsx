@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import {
-  ensureAppleCallbackNonceReady,
-  resolveAppleWebCallback,
-} from "@/lib/apple-auth";
+import { isFirebaseAuthReady } from "@/lib/firebase";
+import { resolveFirebaseAuthRedirectResult } from "@/lib/firebase-oauth-redirect";
 import { prettyAuthError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { AuthBootShell } from "@/components/auth-boot-shell";
 
 /**
- * Apple Sign-In redirect target (Apple JS SDK, usePopup: false).
- * Register this URL in Apple Developer → Services ID → Return URLs.
+ * Legacy Apple JS SDK callback route. Web sign-in now uses Firebase redirect
+ * (completes on /sign-in via OAuthRedirectHandler). This page recovers users
+ * who land here after an old redirect or misconfigured Return URL.
  */
 export default function AppleAuthCallbackPage() {
   const { t } = useTranslation();
@@ -22,13 +21,19 @@ export default function AppleAuthCallbackPage() {
 
     void (async () => {
       try {
-        await ensureAppleCallbackNonceReady();
-        const result = await resolveAppleWebCallback();
+        if (!isFirebaseAuthReady()) {
+          await new Promise((r) => setTimeout(r, 500));
+        }
         if (cancelled) return;
+
+        const result = await resolveFirebaseAuthRedirectResult();
+        if (cancelled) return;
+
         if (result?.user) {
           setLocation("/");
           return;
         }
+
         setError(t("screens.auth_action.invalid_link"));
       } catch (err: unknown) {
         if (cancelled) return;

@@ -4,6 +4,8 @@
  * Web: Apple Services ID (Sign in with Apple → Services IDs in Developer portal).
  * Native iOS: app bundle ID passed to @capacitor-community/apple-sign-in.
  */
+import { CANONICAL_PRODUCTION_ORIGIN } from "@workspace/phone-auth";
+
 export const appleAuthDefaults = {
   /** e.g. in.amynest.web — set VITE_APPLE_WEB_CLIENT_ID in production */
   webClientId: "",
@@ -32,9 +34,14 @@ export function getAppleRedirectUri(): string {
   if (fromEnv) return fromEnv;
 
   if (typeof window === "undefined") {
-    return `https://www.amynest.in${appleAuthDefaults.redirectPath}`;
+    return `${CANONICAL_PRODUCTION_ORIGIN}${appleAuthDefaults.redirectPath}`;
   }
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   const path = appleAuthDefaults.redirectPath.replace(/^\//, "");
-  return `${window.location.origin}${base}/${path}`;
+  const origin =
+    window.location.hostname === "amynest.in" ||
+    window.location.hostname === "www.amynest.in"
+      ? CANONICAL_PRODUCTION_ORIGIN
+      : window.location.origin;
+  return `${origin}${base}/${path}`.replace(/([^:]\/)\/+/g, "$1");
 }

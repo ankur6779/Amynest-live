@@ -1,28 +1,33 @@
 import { useEffect } from "react";
+import { useLocation } from "wouter";
 import { isFirebaseAuthReady } from "@/lib/firebase";
 import { prettyAuthError } from "@/lib/auth-errors";
 import { useToast } from "@/hooks/use-toast";
-import { ENABLE_OAUTH_SIGN_IN } from "@/lib/auth-feature-flags";
+import {
+  ENABLE_APPLE_SIGN_IN,
+  ENABLE_GOOGLE_SIGN_IN,
+} from "@/lib/auth-feature-flags";
+import { resolveFirebaseAuthRedirectResult } from "@/lib/firebase-oauth-redirect";
 
 /**
- * Completes Google sign-in after Firebase redirect (web/PWA only).
- * Loaded via dynamic import so Capacitor / auth helpers stay out of the initial AppCore parse path.
+ * Completes Firebase OAuth redirect (Apple / Google) after the user returns from
+ * the provider. Must run on every web load — not gated by ENABLE_OAUTH_SIGN_IN.
  */
 export function OAuthRedirectHandler() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!ENABLE_OAUTH_SIGN_IN) return;
+    if (!ENABLE_APPLE_SIGN_IN && !ENABLE_GOOGLE_SIGN_IN) return;
     let cancelled = false;
 
     const run = async () => {
       if (!isFirebaseAuthReady()) return;
 
       try {
-        const { resolveGoogleRedirectResult } = await import("@/lib/google-auth");
-        if (cancelled) return;
-        const result = await resolveGoogleRedirectResult();
-        if (cancelled || !result) return;
+        const result = await resolveFirebaseAuthRedirectResult();
+        if (cancelled || !result?.user) return;
+        setLocation("/");
       } catch (err) {
         if (cancelled) return;
         const message = prettyAuthError(err);
@@ -32,6 +37,7 @@ export function OAuthRedirectHandler() {
           title: "Sign-in failed",
           description: message,
         });
+        setLocation("/sign-in");
       }
     };
 
@@ -43,7 +49,7 @@ export function OAuthRedirectHandler() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [toast]);
+  }, [setLocation, toast]);
 
   return null;
 }
