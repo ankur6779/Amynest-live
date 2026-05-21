@@ -1,15 +1,44 @@
 import { getCanonicalWebOrigin } from "./site-domain";
 
 type AmyNestWindow = Window & {
-  Capacitor?: { isNativePlatform?: () => boolean };
+  Capacitor?: {
+    isNativePlatform?: () => boolean;
+    getPlatform?: () => string;
+  };
   __AMYNEST_WRAPPER?: string;
   AndroidPush?: unknown;
   AmyNestPushNative?: unknown;
 };
 
-/** Installed PWA (Add to Home Screen) — reCAPTCHA must not run inside standalone WebView. */
+/**
+ * Capacitor iOS/Android shell or legacy kidschedule-android WebView APK.
+ * OTP + invisible reCAPTCHA must run in-app for these environments.
+ */
+export function isNativePhoneAuthShell(): boolean {
+  if (typeof window === "undefined") return false;
+
+  const win = window as AmyNestWindow;
+  const proto = window.location?.protocol ?? "";
+
+  if (proto === "capacitor:" || proto === "ionic:") return true;
+  if (win.Capacitor?.isNativePlatform?.() === true) return true;
+  if (typeof win.__AMYNEST_WRAPPER === "string") return true;
+  if (win.AndroidPush != null || win.AmyNestPushNative != null) return true;
+
+  if (typeof navigator !== "undefined") {
+    const ua = navigator.userAgent || "";
+    if (/AmyNestAndroid/i.test(ua)) return true;
+  }
+
+  return false;
+}
+
+/** Installed PWA (Add to Home Screen) in a mobile browser — not a native wrapper. */
 export function isStandalonePwa(): boolean {
   if (typeof window === "undefined") return false;
+
+  // Native shells may still report standalone display-mode; never treat them as PWA-only.
+  if (isNativePhoneAuthShell()) return false;
 
   try {
     if (window.matchMedia("(display-mode: standalone)").matches) return true;
@@ -39,13 +68,9 @@ export function isMobilePhoneOtpEnvironment(): boolean {
     return false;
   }
 
-  const win = window as AmyNestWindow;
-  const ua = navigator.userAgent || "";
+  if (isNativePhoneAuthShell()) return true;
 
-  if (win.Capacitor?.isNativePlatform?.() === true) return true;
-  if (typeof win.__AMYNEST_WRAPPER === "string") return true;
-  if (win.AndroidPush != null || win.AmyNestPushNative != null) return true;
-  if (/AmyNestAndroid/i.test(ua)) return true;
+  const ua = navigator.userAgent || "";
   if (/Android|iPhone|iPad|iPod/i.test(ua)) return true;
   if (/Mac/.test(ua) && navigator.maxTouchPoints > 1) return true;
 
@@ -63,12 +88,23 @@ export function isMobilePhoneOtpEnvironment(): boolean {
   return false;
 }
 
-/** Never run reCAPTCHA inside installed PWA — use system browser instead. */
+/** True when in-app invisible reCAPTCHA + Firebase phone auth should run. */
 export function canRunInAppPhoneRecaptcha(): boolean {
-  return !isStandalonePwa();
+  if (isNativePhoneAuthShell()) return true;
+  return true;
 }
 
+/**
+ * Never force OTP through an external browser (Capacitor / WebView must stay in-app).
+ * @deprecated Prefer {@link shouldSuggestBrowserOtpFallback} for optional fallback UI.
+ */
 export function shouldUseBrowserForPhoneOtp(): boolean {
+  return false;
+}
+
+/** Optional "Continue in browser" after a failed in-app attempt (installed PWA only). */
+export function shouldSuggestBrowserOtpFallback(): boolean {
+  if (isNativePhoneAuthShell()) return false;
   return isStandalonePwa();
 }
 
@@ -85,6 +121,6 @@ export function openPhoneOtpInExternalBrowser(
   returnPath = "/sign-in",
 ): void {
   const url = buildPhoneOtpBrowserUrl(phoneE164, returnPath);
-  console.info("[phone-otp] Opening system browser for OTP (standalone PWA)", url);
+  console.info("[phone-otp] Opening browser tab for OTP fallback", url);
   window.location.assign(url);
 }

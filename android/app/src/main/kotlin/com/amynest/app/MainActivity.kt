@@ -172,7 +172,12 @@ class MainActivity : AppCompatActivity() {
             loadsImagesAutomatically = true
             allowFileAccess = false
             cacheMode = WebSettings.LOAD_NO_CACHE
-            userAgentString = (userAgentString ?: "") + " AmyNestAndroid/1.0"
+            val model = Build.MODEL.replace(";", " ").trim()
+            val release = Build.VERSION.RELEASE
+            userAgentString =
+                "Mozilla/5.0 (Linux; Android $release; $model) " +
+                "AppleWebKit/537.36 (KHTML, like Gecko) " +
+                "Chrome/131.0.0.0 Mobile Safari/537.36 AmyNestAndroid/1.0"
 
             // Optimal PWA scroll settings
             useWideViewPort = true

@@ -34,8 +34,10 @@ export {
   canRunInAppPhoneRecaptcha,
   isAndroidPwa,
   isMobilePhoneOtpEnvironment,
+  isNativePhoneAuthShell,
   isStandalonePwa,
   openPhoneOtpInExternalBrowser,
+  shouldSuggestBrowserOtpFallback,
   shouldUseBrowserForPhoneOtp,
 } from "./mobile-phone-environment";
 export {
