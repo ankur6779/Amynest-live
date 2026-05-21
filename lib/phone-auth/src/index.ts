@@ -32,6 +32,7 @@ export {
 export {
   buildPhoneOtpBrowserUrl,
   canRunInAppPhoneRecaptcha,
+  isAmyNestNativeWrapper,
   isAndroidPwa,
   isMobilePhoneOtpEnvironment,
   isStandalonePwa,
