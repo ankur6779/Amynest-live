@@ -122,6 +122,8 @@
     "@workspace/ptm-prep": "workspace:*",
     "@workspace/speech-coach": "workspace:*",
     "@workspace/static-audio": "workspace:*",
+    "@workspace/phonics-sounds": "workspace:*",
+    "@workspace/phonics-curriculum": "workspace:*",
     "@workspace/study-zone": "workspace:*",
     "@workspace/tiffin-feedback": "workspace:*",
     "firebase": "^12.12.1",

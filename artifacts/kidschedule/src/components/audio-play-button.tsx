@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Volume2, Loader2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
@@ -11,6 +11,7 @@ import {
   lookupStaticAudioUrl,
 } from "@/lib/static-audio";
 import { warmStaticAudioOnFirstGesture } from "@/lib/static-audio-edge";
+import { getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { cn } from "@/lib/utils";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
@@ -34,9 +35,17 @@ interface AudioPlayButtonProps {
   ariaLabel?: string;
   onFinished?: () => void;
   onPlay?: () => void;
+  /** Fired when playback ends (success or stop). */
+  onSpeakingEnd?: () => void;
   mode?: "default" | "phonics";
   /** Prefetch on hover (e.g. next phoneme in sequence). */
   prefetchNextText?: string;
+  /** Slower playback for repeat / blending (0.75 ≈ teaching pace). */
+  slow?: boolean;
+  /** IPA phoneme key for GCS cache (phoneme_k). */
+  phonemeKey?: string;
+  /** CVC word key for GCS cache (word_cat). */
+  cvcWordKey?: string;
   className?: string;
 }
 
@@ -66,12 +75,24 @@ export function AudioPlayButton({
   ariaLabel,
   onFinished,
   onPlay,
+  onSpeakingEnd,
   mode,
   prefetchNextText,
+  slow = false,
+  phonemeKey,
+  cvcWordKey,
   className,
 }: AudioPlayButtonProps) {
   const { toast } = useToast();
-  const { speak, stop, speaking, loading, error } = useAmyVoice({ onFinished });
+  const playbackRate = slow ? 0.78 : 1;
+  const handleFinished = useCallback(() => {
+    onFinished?.();
+    onSpeakingEnd?.();
+  }, [onFinished, onSpeakingEnd]);
+  const { speak, stop, speaking, loading, error } = useAmyVoice({
+    onFinished: handleFinished,
+    playbackRate,
+  });
   const [visualFallback, setVisualFallback] = useState(false);
   const busy = speaking || loading;
   const isMounted = useMountedRef();
@@ -108,27 +129,36 @@ export function AudioPlayButton({
     });
   }, [error, toast, isMounted]);
 
-  const handlePointerEnter = useCallback(() => {
+  const resolvedText = useMemo(() => {
     const trimmed = (text ?? "").trim();
-    if (!trimmed) return;
-    const currentUrl = lookupStaticAudioUrl(trimmed, mode ?? "default");
-    if (currentUrl) prefetchStaticAudioUrl(currentUrl);
+    if (!trimmed) return "";
+    return mode === "phonics" ? getPhonicsAudioText(trimmed) : trimmed;
+  }, [text, mode]);
+
+  const resolvedPrefetch = useMemo(() => {
     const next = (prefetchNextText ?? "").trim();
-    if (next) {
-      const nextUrl = lookupStaticAudioUrl(next, mode ?? "phonics");
+    if (!next) return "";
+    return mode === "phonics" ? getPhonicsAudioText(next) : next;
+  }, [prefetchNextText, mode]);
+
+  const handlePointerEnter = useCallback(() => {
+    if (!resolvedText) return;
+    const currentUrl = lookupStaticAudioUrl(resolvedText, mode ?? "default");
+    if (currentUrl) prefetchStaticAudioUrl(currentUrl);
+    if (resolvedPrefetch) {
+      const nextUrl = lookupStaticAudioUrl(resolvedPrefetch, mode ?? "phonics");
       if (nextUrl) prefetchStaticAudioUrl(nextUrl);
     }
-  }, [text, mode, prefetchNextText]);
+  }, [resolvedText, resolvedPrefetch, mode]);
 
   const handlePointerDown = useCallback(() => {
     recordTtsUserGesture();
     warmStaticAudioOnFirstGesture();
-    const trimmed = (text ?? "").trim();
-    if (trimmed) {
-      const url = lookupStaticAudioUrl(trimmed, mode ?? "default");
+    if (resolvedText) {
+      const url = lookupStaticAudioUrl(resolvedText, mode ?? "default");
       if (url) prefetchStaticAudioUrl(url);
     }
-  }, [text, mode]);
+  }, [resolvedText, mode]);
 
   const handleClick = useCallback(async () => {
     recordTtsUserGesture();
@@ -140,9 +170,12 @@ export function AudioPlayButton({
           stop();
           return null;
         }
-        const trimmed = (text ?? "").trim();
-        if (!trimmed) return null;
-        const res = await speak(trimmed, { mode });
+        if (!resolvedText) return null;
+        const res = await speak(resolvedText, {
+          mode,
+          phoneme: phonemeKey,
+          word: cvcWordKey,
+        });
         if (!res?.success) {
           setVisualFallback(true);
           window.setTimeout(() => {
@@ -159,7 +192,7 @@ export function AudioPlayButton({
         // speak() never throws — guard only
       }
     });
-  }, [busy, isMounted, mode, onPlay, runInFlight, safeAsync, speak, stop, text]);
+  }, [busy, isMounted, mode, onPlay, runInFlight, safeAsync, speak, stop, resolvedText]);
 
   return (
     <Button

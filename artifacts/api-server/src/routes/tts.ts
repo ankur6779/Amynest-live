@@ -24,6 +24,11 @@ import { registerTtsPending, takeTtsPending } from "../services/ttsPendingRegist
 import { streamLiveTtsToClient } from "../services/ttsLiveStream.js";
 import { generateOpenAiTts } from "../services/ttsGenerate.js";
 import { getOpenAiTtsVoice } from "../lib/openai-tts-config.js";
+import {
+  getPhonicsAudioText,
+  getPhonemeAudioText,
+  getCvcWordAudioText,
+} from "@workspace/phonics-sounds";
 
 // ─── Public router (mounted BEFORE requireAuth) ──────────────────────────────
 //
@@ -251,13 +256,23 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
   }
 });
 
-const generateSchema = z.object({
-  text: z.string().min(1).max(TTS_MAX_INPUT_CHARS),
-  voice: z.string().min(1).max(64).optional(),
-  speed: z.number().min(0.5).max(2).optional(),
-  mode: z.enum(["default", "phonics"]).optional(),
-  category: z.enum(["words", "sentences", "phonics"]).optional(),
-});
+const generateSchema = z
+  .object({
+    text: z.string().max(TTS_MAX_INPUT_CHARS).optional(),
+    /** Single letter key (a–z or digraph) — resolves to instructional audioText. */
+    letter: z.string().min(1).max(8).optional(),
+    /** IPA phoneme key (k, æ, …) — resolves to PHONEME_AUDIO line. */
+    phoneme: z.string().min(1).max(8).optional(),
+    /** CVC whole word for word_* cache stem. */
+    word: z.string().min(1).max(32).optional(),
+    voice: z.string().min(1).max(64).optional(),
+    speed: z.number().min(0.5).max(2).optional(),
+    mode: z.enum(["default", "phonics"]).optional(),
+    category: z.enum(["words", "sentences", "phonics"]).optional(),
+  })
+  .refine((d) => !!(d.text?.trim() || d.letter?.trim() || d.phoneme?.trim()), {
+    message: "text, letter, or phoneme required",
+  });
 
 /**
  * POST /api/tts/generate
@@ -286,13 +301,34 @@ router.post("/tts/generate", async (req, res): Promise<void> => {
     return;
   }
 
+  const rawText = parsed.data.text?.trim() ?? "";
+  const letterKey = parsed.data.letter?.trim().toLowerCase() ?? "";
+  const phonemeKey = parsed.data.phoneme?.trim() ?? "";
+  const cvcWord = parsed.data.word?.trim().toLowerCase() ?? "";
+
+  const phrase = phonemeKey
+    ? getPhonemeAudioText(phonemeKey)
+    : letterKey
+      ? getPhonicsAudioText(letterKey)
+      : cvcWord && !rawText
+        ? getCvcWordAudioText(cvcWord)
+        : getPhonicsAudioText(rawText) || rawText;
+
+  if (!phrase) {
+    res.status(400).json({ error: "invalid_body" });
+    return;
+  }
+
   try {
     const result = await generateOpenAiTts({
-      text: parsed.data.text,
+      text: phrase,
       voice: parsed.data.voice ?? getOpenAiTtsVoice(),
       speed: parsed.data.speed,
-      mode: parsed.data.mode,
-      category: parsed.data.category,
+      mode: parsed.data.mode ?? "phonics",
+      category: parsed.data.category ?? "phonics",
+      letterKey: letterKey || undefined,
+      phonemeKey: phonemeKey || undefined,
+      cvcWord: cvcWord || undefined,
     });
     if (!result || !isValidTtsPublicUrl(result.url)) {
       res.status(502).json({ error: "tts_failed" });

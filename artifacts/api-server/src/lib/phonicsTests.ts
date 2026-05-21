@@ -9,6 +9,11 @@
 
 import crypto from "node:crypto";
 import type { PhonicsContentRow } from "@workspace/db";
+import {
+  buildWeeklyTestMix,
+  wordsForWeakPhoneme,
+  clampCurriculumLevel,
+} from "@workspace/phonics-curriculum";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -383,7 +388,8 @@ function buildBlendingQ(row: PhonicsContentRow, ctx: BuildContext, idx: number):
     prompt: {
       instruction: "Blend the sounds — which word is it?",
       text: spellOut(word),
-      ttsText: spellOut(word).replace(/-/g, "... "),
+      /** Client runs CVC phoneme blend (k…æ…t → cat), not letter names. */
+      ttsText: word,
     },
     options,
     correctIndex,
@@ -586,6 +592,10 @@ export interface GenerateOptions {
   gameMode?: GameMode;
   /** Drives weekly progressive difficulty when set. */
   testType?: TestType;
+  /** Curriculum level 1–6 for weekly 40/30/30 mix. */
+  curriculumLevel?: number;
+  /** Weak IPA phonemes for weekly weak-bucket questions. */
+  weakPhonemes?: string[];
 }
 
 /** Mini-game builders used for daily mixed sessions. */
@@ -596,6 +606,85 @@ const MIXED_GAME_ROTATION: QuestionType[] = [
   "word_pic",
 ];
 
+function rowMatchesWeak(row: PhonicsContentRow, weakWords: Set<string>): boolean {
+  const w = exampleWord(row).toLowerCase();
+  return weakWords.has(w) || weakWords.has(row.symbol.trim().toLowerCase());
+}
+
+/** Weekly test: 40% current level, 30% previous, 30% weak-area words. */
+function generateWeeklyCurriculumQuestions(opts: GenerateOptions): Question[] {
+  const {
+    ageGroup,
+    contentRows,
+    count,
+    recentItemIds = [],
+    seed,
+    gameMode = "hear_tap",
+    curriculumLevel = 2,
+    weakPhonemes = [],
+  } = opts;
+
+  const level = clampCurriculumLevel(curriculumLevel);
+  const mix = buildWeeklyTestMix({
+    count,
+    currentLevel: level,
+    weakPhonemes,
+    seed,
+  });
+  const weakWords = new Set<string>();
+  for (const ph of weakPhonemes) {
+    for (const w of wordsForWeakPhoneme(ph, 6)) weakWords.add(w);
+  }
+
+  const rng = mulberry32(seed || 1);
+  const recent = new Set(recentItemIds);
+  const active = contentRows.filter((r) => r.active !== false);
+  const pool = active.filter((r) => !recent.has(r.id));
+  const ctx: BuildContext = {
+    rng,
+    letterRows: active.filter((r) => r.type === "letter"),
+    wordRows: active.filter((r) => Boolean(r.example || r.emoji)),
+    soundRows: active.filter((r) => r.type === "sound"),
+    cvcRows: active.filter((r) => isCvc(exampleWord(r))),
+  };
+  const mixedTypes: QuestionType[] = AGE_TYPES[ageGroup];
+  const out: Question[] = [];
+  let typeCursor = 0;
+
+  for (const slot of mix) {
+    if (out.length >= count) break;
+    let candidates = [...pool];
+    if (slot.bucket === "weak" && weakWords.size > 0) {
+      const weakRows = candidates.filter((r) => rowMatchesWeak(r, weakWords));
+      if (weakRows.length > 0) candidates = weakRows;
+    } else if (slot.bucket === "previous") {
+      const letters = candidates.filter((r) => r.type === "letter" || isCvc(exampleWord(r)));
+      if (letters.length > 0) candidates = letters;
+    }
+    const ordered = shuffle(candidates, rng);
+    for (const row of ordered) {
+      if (out.length >= count) break;
+      let built: Question | null = null;
+      for (let i = 0; i < mixedTypes.length; i++) {
+        const t = mixedTypes[(typeCursor + i) % mixedTypes.length]!;
+        built = BUILDERS[t](row, ctx, out.length);
+        if (built) break;
+      }
+      if (built) {
+        out.push(built);
+        typeCursor++;
+        break;
+      }
+    }
+  }
+
+  if (out.length < count) {
+    const topUp = generateQuestions({ ...opts, testType: undefined, count: count - out.length });
+    out.push(...topUp);
+  }
+  return out.slice(0, count);
+}
+
 export function generateQuestions(opts: GenerateOptions): Question[] {
   const {
     ageGroup,
@@ -605,7 +694,12 @@ export function generateQuestions(opts: GenerateOptions): Question[] {
     seed,
     gameMode = "hear_tap",
     testType,
+    curriculumLevel,
   } = opts;
+
+  if (testType === "weekly" && curriculumLevel) {
+    return generateWeeklyCurriculumQuestions(opts);
+  }
 
   if (gameMode === "mixed") {
     return generateMixedQuestions(opts);

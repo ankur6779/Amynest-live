@@ -217,6 +217,7 @@ export default function PhonicsPage() {
           )}
 
           <PhonicsLearning
+            childQuery={search}
             childId={activeChild.id}
             childName={activeChild.name}
             totalAgeMonths={totalAgeMonths}

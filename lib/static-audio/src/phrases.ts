@@ -1,5 +1,18 @@
+import {
+  getPhonicsAudioText,
+  getPhonicsAudioTextsForStaticCatalog,
+  getPhonicsAudioTextByLetter,
+  getPhonicsWordAudioText,
+  getCvcPhonemeAudioTextsForStaticCatalog,
+  getCvcWordEntry,
+  getPhonemeAudioText,
+  getCvcWordAudioText,
+} from "@workspace/phonics-sounds";
 import { normalizeStaticAudioKey } from "./normalize.js";
 import type { StaticAudioMode, StaticTtsEntry } from "./types.js";
+
+/** Instructional TTS lines per letter/digraph (e.g. "i as in igloo"). */
+export const PHONEME_PROMPTS: Record<string, string> = getPhonicsAudioTextByLetter();
 
 /** UI feedback and coaching lines used across games, phonics, and study flows. */
 const UI_PHRASES: string[] = [
@@ -19,45 +32,6 @@ const UI_PHRASES: string[] = [
   "Your turn!",
   "Tap to hear Amy",
 ];
-
-/**
- * Letter → bare phoneme (matches `PHONEME_PROMPTS` in api-server phonics route).
- * Generated in `phonics` mode with tighter voice settings.
- */
-export const PHONEME_PROMPTS: Record<string, string> = {
-  a: "ah",
-  b: "buh",
-  c: "kuh",
-  d: "duh",
-  e: "eh",
-  f: "fff",
-  g: "guh",
-  h: "huh",
-  i: "ih",
-  j: "juh",
-  k: "kuh",
-  l: "lll",
-  m: "mmm",
-  n: "nnn",
-  o: "ah",
-  p: "puh",
-  q: "kwuh",
-  r: "rrr",
-  s: "sss",
-  t: "tuh",
-  u: "uh",
-  v: "vvv",
-  w: "wuh",
-  x: "ks",
-  y: "yuh",
-  z: "zzz",
-  sh: "shhh",
-  ch: "chuh",
-  th: "thhh",
-  ph: "fff",
-  wh: "wuh",
-  ng: "ng",
-};
 
 // ─── Canonical phonics catalog (mirrors api-server/scripts/seedPhonics.ts) ───
 
@@ -223,12 +197,29 @@ export function getStaticTtsEntries(): StaticTtsEntry[] {
       text: `${letter} says ${phon}. ${letter} for ${word}.`,
       mode: "default",
     });
-    entries.push({ text: phon, mode: "phonics" });
+    entries.push({ text: getPhonicsAudioText(letter.toLowerCase()), mode: "phonics" });
+  }
+
+  for (const text of getCvcPhonemeAudioTextsForStaticCatalog()) {
+    entries.push({ text, mode: "phonics" });
   }
 
   for (const [word, blend] of CVC_WORDS) {
     const sounds = blend.split("–");
     entries.push({ text: `${sounds.join(". ")}. ${word}.`, mode: "default" });
+    entries.push({ text: getCvcWordAudioText(word), mode: "phonics" });
+    entries.push({ text: getPhonicsWordAudioText(word), mode: "phonics" });
+    const cvcEntry = getCvcWordEntry(word);
+    if (cvcEntry) {
+      for (const p of cvcEntry.phonemes) {
+        entries.push({ text: getPhonemeAudioText(p), mode: "phonics" });
+      }
+    } else {
+      for (const ch of sounds) {
+        const key = ch.trim().toLowerCase();
+        if (key) entries.push({ text: getPhonicsAudioText(key), mode: "phonics" });
+      }
+    }
   }
 
   for (const word of SIGHT_WORDS) {
@@ -241,15 +232,15 @@ export function getStaticTtsEntries(): StaticTtsEntry[] {
 
   for (const [dig, phon, word] of DIGRAPHS) {
     entries.push({ text: `${dig} says ${phon}, like in ${word}.`, mode: "default" });
-    entries.push({ text: phon, mode: "phonics" });
+    entries.push({ text: getPhonicsAudioText(dig), mode: "phonics" });
   }
 
   for (const line of STORY_LINES) {
     entries.push({ text: line, mode: "default" });
   }
 
-  for (const phoneme of Object.values(PHONEME_PROMPTS)) {
-    entries.push({ text: phoneme, mode: "phonics" });
+  for (const audioText of getPhonicsAudioTextsForStaticCatalog()) {
+    entries.push({ text: audioText, mode: "phonics" });
   }
 
   for (const text of LEGACY_PHONICS_SOUNDS) {

@@ -51,6 +51,10 @@ export interface SpeakOptions {
    * "buh" is pronounced as the actual sound, not the spoken word "buh".
    */
   mode?: "default" | "phonics";
+  /** IPA phoneme key for CVC blend cache (phoneme_k). */
+  phoneme?: string;
+  /** CVC whole word for word_* cache stem. */
+  word?: string;
 }
 
 /**
@@ -271,7 +275,14 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         logTtsClient("Request start", { chars: text.length, mode });
         const data = await synthesizeTtsWithBackgroundPoll(
           authFetch,
-          { text, voiceId, modelId, mode },
+          {
+            text,
+            voiceId,
+            modelId,
+            mode,
+            phoneme: opts?.phoneme,
+            word: opts?.word,
+          },
           { signal: controller.signal },
         );
         if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };

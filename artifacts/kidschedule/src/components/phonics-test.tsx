@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { getCvcWordEntry, getPhonicsAudioText } from "@workspace/phonics-sounds";
+import { playCvcBlendWithSpeak } from "@/lib/phonics-audio";
 import { cn } from "@/lib/utils";
 
 // ─── API shapes ──────────────────────────────────────────────────────────────
@@ -67,10 +69,11 @@ async function preloadTtsPhrase(
   const key = `${mode}:${text}`;
   if (ttsUrlCache.has(key)) return ttsUrlCache.get(key);
   try {
+    const phrase = getPhonicsAudioText(text);
     const res = await authFetch("/api/tts/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, mode, category: "phonics", voice: "alloy", speed: 0.9 }),
+      body: JSON.stringify({ text: phrase, mode, category: "phonics", voice: "alloy", speed: 0.9 }),
     });
     if (!res.ok) return null;
     const json = (await res.json()) as { url?: string; audioUrl?: string };
@@ -397,7 +400,13 @@ function QuestionCard({
 }: QuestionCardProps) {
   const { speaking, loading, speak, stop } = useAmyVoice();
 
-  const ttsText = question.prompt.ttsText ?? question.prompt.text ?? "";
+  const rawTts = question.prompt.ttsText ?? question.prompt.text ?? "";
+  const blendWord =
+    question.type === "blending"
+      ? (question.options[question.correctIndex]?.label ?? rawTts).trim().toLowerCase()
+      : "";
+  const cvcEntry = blendWord ? getCvcWordEntry(blendWord) : undefined;
+  const ttsText = rawTts && question.type !== "blending" ? getPhonicsAudioText(rawTts) : rawTts;
 
   // Retry counter — reset on each new question, capped at 1 auto-replay on
   // wrong answer to prevent infinite TTS loops.
@@ -413,8 +422,12 @@ function QuestionCard({
       stop();
       return;
     }
-    if (ttsText) void speak(ttsText);
-  }, [speaking, loading, stop, speak, ttsText]);
+    if (cvcEntry) {
+      void playCVCBlendWithSpeak(cvcEntry, speak);
+      return;
+    }
+    if (ttsText) void speak(getPhonicsAudioText(ttsText), { mode: "phonics" });
+  }, [speaking, loading, stop, speak, ttsText, cvcEntry]);
 
   // REMOVED auto speak on feedback — user taps playPrompt to hear audio again.
   useEffect(() => {
