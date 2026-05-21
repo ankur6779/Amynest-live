@@ -10,6 +10,7 @@
  *
  * Writes static-audio-map.json to kidschedule + api-server data dirs.
  */
+import { readFileSync } from "node:fs";
 import { config } from "dotenv";
 import { Storage } from "@google-cloud/storage";
 import {
@@ -33,10 +34,58 @@ import {
 
 config({ path: `${REPO_ROOT}/.env` });
 config({ path: `${REPO_ROOT}/.env.local`, override: true });
+config({ path: `${REPO_ROOT}/Amynest-backend-dykj.env`, override: true });
+
+/** Parse a Render .env line (single- or double-quoted JSON blob). */
+function parseRenderEnvJsonLine(text: string, key: string): Record<string, unknown> | null {
+  const line = text.split(/\r?\n/).find((l) => l.startsWith(`${key}=`));
+  if (!line) return null;
+  const eq = line.indexOf("=");
+  let val = line.slice(eq + 1).trim();
+  if (
+    (val.startsWith('"') && val.endsWith('"')) ||
+    (val.startsWith("'") && val.endsWith("'"))
+  ) {
+    val = val.slice(1, -1);
+  }
+  val = val.replace(/\\"/g, '"');
+  try {
+    return JSON.parse(val) as Record<string, unknown>;
+  } catch {
+    try {
+      return JSON.parse(val.replace(/\\n/g, "\n")) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }
+}
+
+/** Read service-account JSON from Render export (dotenv breaks long GCS blobs). */
+function loadGcsCredentialsFromRenderEnvFile(): Record<string, unknown> | null {
+  const envPath = `${REPO_ROOT}/Amynest-backend-dykj.env`;
+  try {
+    const text = readFileSync(envPath, "utf8");
+    return (
+      parseRenderEnvJsonLine(text, "GCS_SERVICE_ACCOUNT_JSON") ??
+      parseRenderEnvJsonLine(text, "FIREBASE_SERVICE_ACCOUNT_JSON")
+    );
+  } catch {
+    return null;
+  }
+}
 
 const OPENAI_VOICE = process.env.STATIC_AUDIO_VOICE?.trim() || "alloy";
 const OPENAI_MODEL = process.env.STATIC_AUDIO_MODEL?.trim() || "gpt-4o-mini-tts";
-const TTS_TIMEOUT_MS = Number(process.env.STATIC_AUDIO_TTS_TIMEOUT_MS ?? "30_000");
+
+/** `Number("30_000")` is NaN — strip `_` from env ms values. */
+function parseEnvMs(name: string, fallbackMs: number): number {
+  const raw = process.env[name]?.trim();
+  if (!raw) return fallbackMs;
+  const n = Number(raw.replace(/_/g, ""));
+  return Number.isFinite(n) && n > 0 ? n : fallbackMs;
+}
+
+const TTS_TIMEOUT_MS = parseEnvMs("STATIC_AUDIO_TTS_TIMEOUT_MS", 30_000);
 const MAX_PASS_RETRIES = Number(process.env.STATIC_AUDIO_MAX_RETRIES ?? "5");
 
 const TOTAL_PHRASES = getStaticTtsEntries().length;
@@ -52,10 +101,60 @@ function getBucketName(): string {
   );
 }
 
+/** Normalize Render .env exports where dotenv leaves \\\" and literal newlines. */
+function renderEnvJsonCandidates(raw: string): string[] {
+  const t = raw.trim();
+  const out = new Set<string>([t]);
+  const push = (s: string) => {
+    if (s.trim()) out.add(s);
+  };
+  if (t.includes("\\n")) push(t.replace(/\\n/g, "\n"));
+  if (t.includes('\\"')) push(t.replace(/\\"/g, '"'));
+  let combo = t;
+  if (combo.includes("\\n")) combo = combo.replace(/\\n/g, "\n");
+  if (combo.includes('\\"')) combo = combo.replace(/\\"/g, '"');
+  push(combo);
+  if (t.startsWith('"') && t.endsWith('"')) {
+    try {
+      push(JSON.parse(t) as string);
+    } catch {
+      /* ignore */
+    }
+  }
+  return [...out];
+}
+
+/** Parse service-account JSON from Render exports (escaped \\n, quoted string, or base64). */
+function tryParseJsonObject(raw: string): Record<string, unknown> | null {
+  for (const s of renderEnvJsonCandidates(raw)) {
+    try {
+      return JSON.parse(s) as Record<string, unknown>;
+    } catch {
+      /* try next */
+    }
+  }
+  try {
+    const decoded = Buffer.from(raw.trim(), "base64").toString("utf8");
+    return JSON.parse(decoded) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 function buildStorage(): Storage {
+  const fromFile = loadGcsCredentialsFromRenderEnvFile();
+  if (fromFile) {
+    return new Storage({
+      credentials: fromFile as Storage["options"]["credentials"],
+      projectId: typeof fromFile.project_id === "string" ? fromFile.project_id : undefined,
+    });
+  }
   const json = process.env.GCS_SERVICE_ACCOUNT_JSON?.trim();
   if (json) {
-    const creds = JSON.parse(json) as Record<string, unknown>;
+    const creds = tryParseJsonObject(json);
+    if (!creds) {
+      throw new Error("GCS_SERVICE_ACCOUNT_JSON is set but not valid JSON");
+    }
     return new Storage({
       credentials: creds as Storage["options"]["credentials"],
       projectId: typeof creds.project_id === "string" ? creds.project_id : undefined,
