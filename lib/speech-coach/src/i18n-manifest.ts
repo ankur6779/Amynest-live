@@ -46,6 +46,7 @@ export const SPEECH_COACH_I18N_MANIFEST: I18nKeyManifest = {
 
   // ── Section: Milestone Checker ───────────────────────────────────────────
   "screens.speech_coach.milestones.section_title": "Milestone Checker",
+  "screens.speech_coach.milestones.tab.infant": "Infant",
   "screens.speech_coach.milestones.tab.1y": "1 Year",
   "screens.speech_coach.milestones.tab.2y": "2 Years",
   "screens.speech_coach.milestones.tab.3y": "3 Years",
@@ -53,6 +54,24 @@ export const SPEECH_COACH_I18N_MANIFEST: I18nKeyManifest = {
   "screens.speech_coach.milestones.status.on_track": "On Track",
   "screens.speech_coach.milestones.status.needs_attention": "Needs Attention",
   "screens.speech_coach.milestones.status.consult_expert": "Consult Expert",
+
+  // Infant milestones
+  "screens.speech_coach.milestones.m_infant_cooing.label":
+    "Makes cooing and vowel sounds",
+  "screens.speech_coach.milestones.m_infant_cooing.hint":
+    "Long \"oo\" and \"ah\" sounds during calm, face-to-face time.",
+  "screens.speech_coach.milestones.m_infant_responds_voice.label":
+    "Turns toward a familiar voice",
+  "screens.speech_coach.milestones.m_infant_responds_voice.hint":
+    "Looks or quiets when you speak softly from the side.",
+  "screens.speech_coach.milestones.m_infant_babbling.label":
+    "Babbles with consonant sounds",
+  "screens.speech_coach.milestones.m_infant_babbling.hint":
+    "Strings like \"ba-ba\" or \"ma-ma\" — meaning comes later.",
+  "screens.speech_coach.milestones.m_infant_joint_attention.label":
+    "Shares attention with you",
+  "screens.speech_coach.milestones.m_infant_joint_attention.hint":
+    "Looks at you, then at a toy you name or point to.",
 
   // 1y milestones
   "screens.speech_coach.milestones.m_1y_first_words.label":
@@ -156,10 +175,6 @@ export const SPEECH_COACH_I18N_MANIFEST: I18nKeyManifest = {
   "screens.speech_coach.read_aloud.compare_playback": "Compare playback",
   "screens.speech_coach.read_aloud.parent_listening": "Parent listening mode",
   "screens.speech_coach.read_aloud.confidence_score": "Confidence score",
-  "screens.speech_coach.read_aloud.hold_to_speak": "Hold mic and read this line",
-  "screens.speech_coach.read_aloud.release_to_check": "Release to check",
-  "screens.speech_coach.read_aloud.line_clear": "Clear!",
-  "screens.speech_coach.read_aloud.line_try_again": "Try again — tap Hear, then hold mic",
   "screens.speech_coach.read_aloud.story_default_title": "Riya & the Rainy Day",
   "screens.speech_coach.read_aloud.story_default_body":
     "Riya looked outside. It was raining. She smiled, picked up her umbrella, and ran into the garden. The flowers were dancing in the rain.",

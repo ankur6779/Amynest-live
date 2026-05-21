@@ -1685,6 +1685,7 @@ export type SpeechAgeBand = typeof SpeechAgeBand[keyof typeof SpeechAgeBand];
 
 
 export const SpeechAgeBand = {
+  infant: 'infant',
   '1y': '1y',
   '2y': '2y',
   '3y': '3y',

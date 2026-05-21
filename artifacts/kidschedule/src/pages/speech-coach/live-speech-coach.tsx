@@ -18,6 +18,7 @@ import {
   buildPracticeSession,
   compareTranscript,
   getPromptsPool,
+  isSpeechCoachEligibleAgeMonths,
   type PronouncePrompt,
   type PronouncePromptDifficulty,
   type PronouncePromptKind,
@@ -91,6 +92,9 @@ function seededShuffle<T>(items: T[], seed: number): T[] {
 }
 
 function getAgeMode(months: number): AgeMode {
+  if (months < 12) {
+    return { label: "Infant", intro: "Parent-led vowels — celebrate any sound.", kind: "phonic", difficulty: "easy", sessionSize: 4, toddler: true };
+  }
   if (months < 36) {
     return { label: "Ages 1-2", intro: "Short sounds — hold the mic while you speak.", kind: "phonic", difficulty: "easy", sessionSize: 4, toddler: true };
   }
@@ -616,10 +620,9 @@ export default function LiveSpeechCoachPage() {
   usePrimeIosMicrophone();
   const childrenQuery = useListChildren();
   const childList = (childrenQuery.data ?? []) as AnyChild[];
-  const eligible = childList.filter((c) => {
-    const months = totalMonths(c);
-    return months >= 12 && months < 132;
-  });
+  const eligible = childList.filter((c) =>
+    isSpeechCoachEligibleAgeMonths(totalMonths(c)),
+  );
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const child = eligible.find((c) => c.id === selectedId) ?? eligible[0] ?? null;
 

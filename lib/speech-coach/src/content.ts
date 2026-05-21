@@ -20,6 +20,12 @@ const M = (id: string): { i18nKeyLabel: string; i18nKeyHint: string } => ({
 });
 
 export const SPEECH_MILESTONES: readonly SpeechMilestone[] = [
+  // ── Infant (0-11 months) ─────────────────────────────────────────────────
+  { id: "m_infant_cooing", ageBand: "infant", category: "first_words", ...M("m_infant_cooing") },
+  { id: "m_infant_responds_voice", ageBand: "infant", category: "social_communication", ...M("m_infant_responds_voice") },
+  { id: "m_infant_babbling", ageBand: "infant", category: "pronunciation", ...M("m_infant_babbling") },
+  { id: "m_infant_joint_attention", ageBand: "infant", category: "social_communication", ...M("m_infant_joint_attention") },
+
   // ── 1 year (12-23 months) ────────────────────────────────────────────────
   { id: "m_1y_first_words", ageBand: "1y", category: "first_words", ...M("m_1y_first_words") },
   { id: "m_1y_responds_name", ageBand: "1y", category: "social_communication", ...M("m_1y_responds_name") },
@@ -48,7 +54,7 @@ export const SPEECH_MILESTONES: readonly SpeechMilestone[] = [
 export const SPEECH_GAMES: readonly SpeechGame[] = [
   {
     id: "animal_sounds",
-    ageBands: ["1y", "2y", "3y"],
+    ageBands: ["infant", "1y", "2y", "3y"],
     rewardStars: 2,
     badgeId: "badge_zoo_voice",
     i18nKeyTitle: "screens.speech_coach.games.animal_sounds.title",
@@ -190,10 +196,13 @@ export const PRONUNCIATION_PROMPTS: readonly PronouncePrompt[] = [
   { id: "L_Y", kind: "letter", text: "Y", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "advanced" },
   { id: "L_Z", kind: "letter", text: "Z", ageBands: ["4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "advanced" },
 
-  // ── Phonics — Easy (1y, 2y) ───────────────────────────────────────────────
-  { id: "P_ma", kind: "phonic", text: "ma", ageBands: ["1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
-  { id: "P_pa", kind: "phonic", text: "pa", ageBands: ["1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
-  { id: "P_ba", kind: "phonic", text: "ba", ageBands: ["1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
+  // ── Phonics — Easy (infant, 1y, 2y) ───────────────────────────────────────
+  { id: "P_ah", kind: "phonic", text: "ah", ageBands: ["infant"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
+  { id: "P_oo", kind: "phonic", text: "oo", ageBands: ["infant"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
+  { id: "P_eh", kind: "phonic", text: "eh", ageBands: ["infant"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
+  { id: "P_ma", kind: "phonic", text: "ma", ageBands: ["infant", "1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
+  { id: "P_pa", kind: "phonic", text: "pa", ageBands: ["infant", "1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
+  { id: "P_ba", kind: "phonic", text: "ba", ageBands: ["infant", "1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
   { id: "P_da", kind: "phonic", text: "da", ageBands: ["1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
   { id: "P_ga", kind: "phonic", text: "ga", ageBands: ["1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
   { id: "P_ha", kind: "phonic", text: "ha", ageBands: ["1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },

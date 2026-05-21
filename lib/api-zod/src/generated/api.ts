@@ -2110,10 +2110,10 @@ export const GetSpeechMilestonesQueryParams = zod.object({
 export const GetSpeechMilestonesResponse = zod.object({
   "childId": zod.number(),
   "ageMonths": zod.number().nullish(),
-  "ageBand": zod.enum(['1y', '2y', '3y', '4y_plus']).nullish(),
+  "ageBand": zod.enum(['infant', '1y', '2y', '3y', '4y_plus']).nullish(),
   "milestones": zod.array(zod.object({
   "id": zod.string(),
-  "ageBand": zod.enum(['1y', '2y', '3y', '4y_plus']),
+  "ageBand": zod.enum(['infant', '1y', '2y', '3y', '4y_plus']),
   "category": zod.enum(['first_words', 'two_word_phrase', 'pronunciation', 'social_communication', 'vocabulary', 'sentences']),
   "i18nKeyLabel": zod.string(),
   "i18nKeyHint": zod.string(),
@@ -2154,7 +2154,7 @@ export const GetSpeechPracticePromptsQueryParams = zod.object({
 export const GetSpeechPracticePromptsResponse = zod.object({
   "childId": zod.number(),
   "ageMonths": zod.number().nullish(),
-  "ageBand": zod.enum(['1y', '2y', '3y', '4y_plus']).nullish(),
+  "ageBand": zod.enum(['infant', '1y', '2y', '3y', '4y_plus']).nullish(),
   "prompts": zod.array(zod.object({
   "id": zod.string(),
   "kind": zod.enum(['letter', 'phonic', 'word', 'sentence']),
