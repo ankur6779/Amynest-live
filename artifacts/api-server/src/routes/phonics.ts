@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
@@ -43,6 +45,10 @@ import {
 } from "../lib/phonicsCurriculumService.js";
 import { generatePhonicsWordsCached } from "../lib/phonicsContentAi.js";
 import { PHONICS_CURRICULUM_LEVELS } from "@workspace/phonics-curriculum";
+import {
+  getOrCreateSubscription,
+  isPremiumNow,
+} from "../services/subscriptionService.js";
 
 const router: IRouter = Router();
 
@@ -291,9 +297,28 @@ router.get("/phonics", async (req, res): Promise<void> => {
 // Allowlist of downloadable phonics resources. Adding a new file means
 // adding a row here so users can't pollute analytics with arbitrary keys.
 const PHONICS_DOWNLOADABLE_FILES = {
-  "phonics-mastery-15-sets": "Phonics-Mastery-15-Sets.pdf",
+  "phonics-mastery-15-sets": {
+    fileName: "Phonics-Mastery-15-Sets.pdf",
+    publicBasename: "phonics-mastery-15-sets.pdf",
+  },
 } as const;
 type PhonicsDownloadableKey = keyof typeof PHONICS_DOWNLOADABLE_FILES;
+
+function resolvePhonicsWorkbookPath(meta: (typeof PHONICS_DOWNLOADABLE_FILES)[PhonicsDownloadableKey]): string | null {
+  const envPath = process.env.PHONICS_WORKBOOK_PDF_PATH?.trim();
+  if (envPath && existsSync(envPath)) return envPath;
+
+  const cwd = process.cwd();
+  const candidates = [
+    path.join(cwd, "artifacts", "kidschedule", "public", meta.publicBasename),
+    path.join(cwd, "public", meta.publicBasename),
+    path.join(cwd, meta.publicBasename),
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate;
+  }
+  return null;
+}
 
 const DownloadBody = z.object({
   fileKey: z.enum(
@@ -302,10 +327,70 @@ const DownloadBody = z.object({
   childId: z.number().int().positive().optional(),
 });
 
+const WorkbookDownloadQuery = z.object({
+  fileKey: z
+    .enum(
+      Object.keys(PHONICS_DOWNLOADABLE_FILES) as [
+        PhonicsDownloadableKey,
+        ...PhonicsDownloadableKey[],
+      ],
+    )
+    .default("phonics-mastery-15-sets"),
+});
+
+// ─── GET /api/phonics/workbook/download ──────────────────────────────────────
+//
+// Premium-only PDF download. Frontend must use this route — public static
+// URLs are not a security boundary.
+
+router.get("/phonics/workbook/download", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const sub = await getOrCreateSubscription(userId);
+  if (!isPremiumNow(sub)) {
+    res.status(403).json({ message: "Premium required" });
+    return;
+  }
+
+  const parsed = WorkbookDownloadQuery.safeParse({
+    fileKey:
+      typeof req.query.fileKey === "string" ? req.query.fileKey : "phonics-mastery-15-sets",
+  });
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    return;
+  }
+
+  const meta = PHONICS_DOWNLOADABLE_FILES[parsed.data.fileKey];
+  const filePath = resolvePhonicsWorkbookPath(meta);
+  if (!filePath) {
+    res.status(404).json({ error: "file_not_found" });
+    return;
+  }
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${meta.fileName}"; filename*=UTF-8''${encodeURIComponent(meta.fileName)}`,
+  );
+  res.setHeader("Cache-Control", "private, no-store");
+  res.sendFile(path.resolve(filePath));
+});
+
 router.post("/phonics/downloads", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const sub = await getOrCreateSubscription(userId);
+  if (!isPremiumNow(sub)) {
+    res.status(403).json({ message: "Premium required" });
     return;
   }
 
@@ -316,7 +401,7 @@ router.post("/phonics/downloads", async (req, res): Promise<void> => {
   }
   const { fileKey, childId } = parsed.data;
   // Server is the source of truth for the file name — never trust the client.
-  const fileName = PHONICS_DOWNLOADABLE_FILES[fileKey];
+  const fileName = PHONICS_DOWNLOADABLE_FILES[fileKey].fileName;
 
   try {
     // If a child is specified, ensure it belongs to this user — otherwise

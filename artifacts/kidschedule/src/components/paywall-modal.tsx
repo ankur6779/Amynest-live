@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Sparkles, Check, X, Smartphone, Zap, Gift, ArrowLeft, Headphones, CalendarDays, Brain, Users, MessageCircle, BarChart3, LayoutGrid, type LucideIcon } from "lucide-react";
+import { Sparkles, Check, X, Smartphone, Zap, Gift, ArrowLeft, Headphones, CalendarDays, Brain, Users, MessageCircle, BarChart3, LayoutGrid, FileText, type LucideIcon } from "lucide-react";
 import { isIndiaRegion } from "@/lib/geo";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { useLocation } from "wouter";
@@ -74,6 +74,11 @@ const REASON_COPY: Record<string, {
     title: "Unlock Full Parenting Power 🚀",
     subtitle: "You've explored 1 feature. Unlock unlimited routines, full AI personalization, all activities & smart insights.",
     icon: Sparkles
+  },
+  phonics_workbook: {
+    title: "Unlock Phonics Workbook",
+    subtitle: "Get full access to printable worksheets and practice material",
+    icon: FileText
   }
 };
 
@@ -94,6 +99,10 @@ export function PaywallModal() {
 
   const copy = REASON_COPY[state.reason] ?? REASON_COPY.feature;
   const HeroIcon = copy.icon;
+  const upgradeCtaLabel =
+    state.reason === "phonics_workbook"
+      ? "Upgrade to Premium"
+      : null;
 
   // ── Payment handlers ──────────────────────────────────────────────────────
 
@@ -279,7 +288,9 @@ export function PaywallModal() {
               className="w-full h-12 text-base font-extrabold bg-gradient-to-r from-primary to-primary hover:opacity-90 border-0 shadow-[0_10px_24px_rgba(255,78,205,0.5)]"
             >
               <Zap className="h-4 w-4 mr-2" />
-              {submitting ? "Opening Razorpay…" : "Pay with UPI / Card"}
+              {submitting
+                ? "Opening Razorpay…"
+                : (upgradeCtaLabel ?? "Pay with UPI / Card")}
             </Button>
           )}
 

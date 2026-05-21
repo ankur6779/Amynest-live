@@ -10,6 +10,8 @@ import { getStaticAudioPrefetchLimit } from "@/lib/static-audio-edge";
 import { PhonicsTest } from "@/components/phonics-test";
 import { SubItemGate } from "@/components/sub-item-gate";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useSubscription } from "@/hooks/use-subscription";
+import { usePaywall } from "@/contexts/paywall-context";
 import { useMountedRef } from "@/hooks/use-safe-async";
 import {
   usePhonicsData,
@@ -903,7 +905,6 @@ function ParentTipsCard({
 const PHONICS_PDF = {
   fileKey: "phonics-mastery-15-sets",
   fileName: "Phonics-Mastery-15-Sets.pdf",
-  url: "/phonics-mastery-15-sets.pdf"
 } as const;
 function PhonicsDownloadCard({
   childId
@@ -913,6 +914,8 @@ function PhonicsDownloadCard({
   const {
     t
   } = useTranslation();
+  const { isPremium } = useSubscription();
+  const { openPaywall } = usePaywall();
   const numericChildId = typeof childId === "number" ? childId : Number.isFinite(Number(childId)) ? Number(childId) : null;
   const authFetch = useAuthFetch();
   const [downloading, setDownloading] = useState(false);
@@ -944,56 +947,74 @@ function PhonicsDownloadCard({
     })();
     return () => ctrl.abort();
   }, [authFetch]);
-  const handleDownload = async () => {
+  const handleDownloadClick = () => {
     if (downloading) return;
+    if (!isPremium) {
+      openPaywall("phonics_workbook");
+      return;
+    }
+    void handlePremiumDownload();
+  };
+
+  const handlePremiumDownload = async () => {
     setDownloading(true);
     setError(null);
 
-    // Strict requirement: every download MUST be saved to the DB. So we
-    // log first and only trigger the browser download if logging succeeds.
-    // The badge count is server-authoritative — never incremented on
-    // failure — so it always reflects what's actually in the DB.
     try {
-      const res = await authFetch("/api/phonics/downloads", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          fileKey: PHONICS_PDF.fileKey,
-          ...(numericChildId !== null ? {
-            childId: numericChildId
-          } : {})
-        })
-      });
-      if (!res.ok) {
-        setError(res.status === 401 ? "Please sign in again to download." : "Couldn't record your download. Please try again.");
-        setDownloading(false);
+      const downloadRes = await authFetch(
+        `/api/phonics/workbook/download?fileKey=${encodeURIComponent(PHONICS_PDF.fileKey)}`,
+        { method: "GET" },
+      );
+      if (downloadRes.status === 403) {
+        openPaywall("phonics_workbook");
         return;
       }
-      const data = (await res.json()) as {
-        ok?: boolean;
-        totalDownloads?: number;
-      };
-      if (typeof data.totalDownloads === "number") {
-        setDownloadCount(data.totalDownloads);
+      if (!downloadRes.ok) {
+        setError(
+          downloadRes.status === 401
+            ? "Please sign in again to download."
+            : "Couldn't download the workbook. Please try again.",
+        );
+        return;
       }
 
-      // Logging confirmed — now trigger the browser download.
+      const blob = await downloadRes.blob();
+      const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = PHONICS_PDF.url;
+      a.href = objectUrl;
       a.download = PHONICS_PDF.fileName;
       a.rel = "noopener";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      URL.revokeObjectURL(objectUrl);
+
+      // Log every successful download to the DB (server also enforces premium).
+      const logRes = await authFetch("/api/phonics/downloads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileKey: PHONICS_PDF.fileKey,
+          ...(numericChildId !== null ? { childId: numericChildId } : {}),
+        }),
+      });
+      if (logRes.ok) {
+        const data = (await logRes.json()) as { totalDownloads?: number };
+        if (typeof data.totalDownloads === "number") {
+          setDownloadCount(data.totalDownloads);
+        }
+      }
     } catch {
       setError("Network error — please check your connection and try again.");
     } finally {
       setDownloading(false);
     }
   };
+
   return <Card data-testid="phonics-download-card" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
+      <span className="absolute top-3 right-3 z-10 text-xs bg-yellow-500 text-black px-2 py-1 rounded-md font-semibold">
+        Premium
+      </span>
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
@@ -1012,15 +1033,36 @@ function PhonicsDownloadCard({
             </Badge>}
         </div>
 
-        <Button type="button" onClick={handleDownload} disabled={downloading} data-testid="phonics-download-button" className="w-full rounded-2xl gap-2 font-semibold bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white shadow-md disabled:opacity-70">
-          {downloading ? <>
+        <button
+          type="button"
+          onClick={handleDownloadClick}
+          disabled={downloading}
+          data-testid="phonics-download-button"
+          className={cn(
+            "w-full rounded-xl py-3 text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-70",
+            isPremium
+              ? "bg-orange-500 hover:bg-orange-600"
+              : "bg-gray-600 opacity-70",
+          )}
+        >
+          {downloading ? (
+            <>
               <Loader2 className="h-4 w-4 animate-spin" />
               {t("components.phonics_learning.preparing_download")}
-            </> : <>
-              <Download className="h-4 w-4" />
-              {t("components.phonics_learning.download_pdf_free_unlimited_re_downloads")}
-            </>}
-        </Button>
+            </>
+          ) : (
+            <>
+              {!isPremium ? <span aria-hidden>🔒</span> : <Download className="h-4 w-4" />}
+              {t("components.phonics_learning.download_pdf")}
+            </>
+          )}
+        </button>
+
+        {!isPremium && (
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            {t("components.phonics_learning.available_with_premium")}
+          </p>
+        )}
 
         {error && <p className="text-xs text-primary dark:text-primary mt-2 flex items-center gap-1.5">
             <AlertCircle className="h-3.5 w-3.5" />
