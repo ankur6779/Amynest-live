@@ -44,6 +44,7 @@ import type { AgeGroup } from "@/lib/age-groups";
 import type { AgeBand } from "@/lib/age-bands";
 import { getAgeBand, getNextAgeBand, bandLabel } from "@/lib/age-bands";
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
+import { hubTileGroupKey } from "@/lib/hub-routine-links";
 
 // ── 5-section grouping for the "For You" content ────────────────────────────
 // Maps each premium section key to the tile IDs that live inside it.
@@ -559,6 +560,27 @@ function ParentingHubPage() {
       return next;
     });
   };
+
+  // Deep-link from dashboard timeline / For you today (`/parenting-hub#tile-id`).
+  useEffect(() => {
+    if (typeof window === "undefined" || !effectiveChild) return;
+    const tileId = window.location.hash.replace(/^#/, "").trim();
+    if (!tileId) return;
+    const groupKey = hubTileGroupKey(tileId);
+    if (groupKey) {
+      setExpandedGroups((prev) => {
+        const next = new Set(prev);
+        next.add(groupKey);
+        return next;
+      });
+    }
+    const scrollToTile = () => {
+      const el = document.querySelector(`[data-section-id="${tileId}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    const tId = window.setTimeout(scrollToTile, 350);
+    return () => window.clearTimeout(tId);
+  }, [effectiveChild?.id, isLoading]);
 
   const handleChildSelect = (id: number) => {
     setSelectedChildId(id);

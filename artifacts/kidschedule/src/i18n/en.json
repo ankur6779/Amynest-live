@@ -276,7 +276,13 @@
     "behavior_empty_title": "Log a win today",
     "behavior_empty_sub": "A quick note helps you spot patterns and celebrate progress.",
     "behavior_empty_sub_child": "Log how {{name}} did today — even small wins count.",
-    "behavior_empty_cta": "Log behavior now"
+    "behavior_empty_cta": "Log behavior now",
+    "for_you_today": "For you today",
+    "for_you_today_sub": "Picked for {{name}} from Parent Hub",
+    "for_you_pick_sub": "For {{name}}",
+    "for_you_view_hub": "View all in Parent Hub",
+    "hub_jump": "Open {{tile}}",
+    "hub_jump_short": "Hub"
   },
   "coach": {
     "title_amy": "Amy",

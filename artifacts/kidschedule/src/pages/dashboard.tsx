@@ -11,6 +11,8 @@ import {
   RewardsCompactCard,
   TodaySnapshotCard,
 } from "@/components/dashboard-phase2-widgets";
+import { ForYouTodaySection } from "@/components/dashboard-hub-widgets";
+import { hubJumpForCategory } from "@/lib/hub-routine-links";
 import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
 import { AmyIcon } from "@/components/amy-icon";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -737,31 +739,59 @@ function NowNextTimeline({
         const isCurrent = currentIdx >= 0 && idx === 0;
         const isNext = idx === (currentIdx >= 0 ? 1 : 0);
         const completed = item.status === "completed";
-        return <Link key={`${item.routineId}-${idx}`} href={`/routines/${item.routineId}`}>
-              <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isCurrent ? "bg-primary text-white" : "bg-muted/50 hover:bg-muted"}`}>
-                <div className={`flex flex-col items-center w-14 shrink-0 ${isCurrent ? "text-white" : "text-muted-foreground"}`}>
-                  <div className="text-xs font-bold">{item.time}</div>
-                  {isCurrent && <span className="mt-1 text-[9px] font-black uppercase bg-white/25 px-1.5 py-0.5 rounded-full">{t("pages.dashboard.now")}</span>}
-                  {!isCurrent && isNext && <span className="mt-1 text-[9px] font-black uppercase bg-muted dark:bg-card text-primary dark:text-muted-foreground px-1.5 py-0.5 rounded-full">{t("pages.dashboard.next")}</span>}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className={`font-bold text-sm ${isCurrent ? "text-white" : "text-foreground"} ${completed ? "line-through opacity-60" : ""}`} style={{
-                wordBreak: "break-word",
-                whiteSpace: "normal"
-              }}>
-                    {item.activity}
-                  </div>
-                  <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 flex-wrap ${isCurrent ? "text-muted-foreground" : "text-muted-foreground"}`}>
-                    <span>{item.childName} · {item.duration}m</span>
-                    {item.ageBand && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold rounded-full px-1.5 py-0.5 border ${isCurrent ? "bg-white/20 text-white border-white/30" : "text-primary bg-muted border-border"}`}>
-                        <Users className="h-2.5 w-2.5" />
-                        {t("pages.dashboard.ages")} {item.ageBand.replace("-", "–")}
-                      </span>}
-                  </div>
-                </div>
-                {completed && !isCurrent && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
+        const hubJump = hubJumpForCategory(item.category);
+        const hubTileLabel = hubJump
+          ? t(`parent_hub.web_tiles.${hubJump.tileId}.title`, { defaultValue: hubJump.tileId })
+          : "";
+        return (
+          <div
+            key={`${item.routineId}-${idx}`}
+            className={`flex items-center gap-2 p-3 rounded-xl transition-all ${isCurrent ? "bg-primary text-white" : "bg-muted/50 hover:bg-muted"}`}
+          >
+            <Link href={`/routines/${item.routineId}`} className="flex flex-1 items-center gap-3 min-w-0">
+              <div className={`flex flex-col items-center w-14 shrink-0 ${isCurrent ? "text-white" : "text-muted-foreground"}`}>
+                <div className="text-xs font-bold">{item.time}</div>
+                {isCurrent && <span className="mt-1 text-[9px] font-black uppercase bg-white/25 px-1.5 py-0.5 rounded-full">{t("pages.dashboard.now")}</span>}
+                {!isCurrent && isNext && <span className="mt-1 text-[9px] font-black uppercase bg-muted dark:bg-card text-primary dark:text-muted-foreground px-1.5 py-0.5 rounded-full">{t("pages.dashboard.next")}</span>}
               </div>
-            </Link>;
+              <div className="flex-1 min-w-0">
+                <div
+                  className={`font-bold text-sm ${isCurrent ? "text-white" : "text-foreground"} ${completed ? "line-through opacity-60" : ""}`}
+                  style={{ wordBreak: "break-word", whiteSpace: "normal" }}
+                >
+                  {item.activity}
+                </div>
+                <div className="text-[11px] mt-0.5 flex items-center gap-1.5 flex-wrap text-muted-foreground">
+                  <span className={isCurrent ? "text-white/80" : undefined}>
+                    {item.childName} · {item.duration}m
+                  </span>
+                  {item.ageBand && (
+                    <span
+                      className={`inline-flex items-center gap-0.5 text-[9px] font-bold rounded-full px-1.5 py-0.5 border ${isCurrent ? "bg-white/20 text-white border-white/30" : "text-primary bg-muted border-border"}`}
+                    >
+                      <Users className="h-2.5 w-2.5" />
+                      {t("pages.dashboard.ages")} {item.ageBand.replace("-", "–")}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {completed && !isCurrent && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
+            </Link>
+            {hubJump ? (
+              <Link
+                href={hubJump.href}
+                className={`shrink-0 max-w-[88px] text-center text-[9px] font-black uppercase leading-tight px-2 py-1.5 rounded-lg border transition-colors ${
+                  isCurrent
+                    ? "border-white/40 text-white hover:bg-white/15"
+                    : "border-primary/30 text-primary bg-card hover:bg-primary/5"
+                }`}
+                title={t("dashboard.hub_jump", { tile: hubTileLabel })}
+              >
+                {t("dashboard.hub_jump_short")}
+              </Link>
+            ) : null}
+          </div>
+        );
       })}
       </div>
     </Card>;
@@ -1365,6 +1395,12 @@ export default function Dashboard() {
                 onSelectChild={setSelectedChildId}
                 onOpenChild={(id) => setLocation(`/children/${id}`)}
                 progressByChildId={progressByChildId}
+              />
+              <ForYouTodaySection
+                child={
+                  (selectedChild ??
+                    (childrenSafe.length === 1 ? (childrenSafe[0] as ChildRow) : null)) as ChildRow | null
+                }
               />
               <div>
                 <NowNextTimeline
