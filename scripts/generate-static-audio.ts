@@ -355,9 +355,12 @@ function mergeStats(into: PassStats, from: PassStats): void {
 }
 
 async function run(): Promise<void> {
-  if (!process.env.ELEVENLABS_API_KEY?.trim()) {
+  const openAiKey =
+    process.env.OPENAI_API_KEY?.trim() ||
+    process.env.AI_INTEGRATIONS_OPENAI_API_KEY?.trim();
+  if (!openAiKey) {
     throw new Error(
-      "ELEVENLABS_API_KEY is not set. Add it to .env at the repo root, then run: pnpm run generate:static-audio",
+      "OPENAI_API_KEY is not set. Add it to .env at the repo root, then run: pnpm run generate:static-audio",
     );
   }
 
