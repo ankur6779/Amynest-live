@@ -1,17 +1,7 @@
 import { forceClearAllCaches } from "@/lib/force-clear-caches";
-import { getDeployVersion, serviceWorkerScriptUrl } from "@/lib/pwa-version";
+import { getDeployVersion } from "@/lib/pwa-version";
 
 const VERSION_KEY = "amynest:deploy-version";
-
-/** Skip SW register on boot — set VITE_SKIP_SW_BOOT=true or sessionStorage `amynest:disable-sw-boot=1`. */
-function shouldSkipServiceWorkerBoot(): boolean {
-  if (import.meta.env.VITE_SKIP_SW_BOOT === "true") return true;
-  try {
-    return sessionStorage.getItem("amynest:disable-sw-boot") === "1";
-  } catch {
-    return false;
-  }
-}
 
 /** Wait for AppCore mount so deploy reload does not look like a post-splash crash. */
 function waitForAppCoreReady(maxMs = 20_000): Promise<void> {
@@ -33,10 +23,10 @@ function waitForAppCoreReady(maxMs = 20_000): Promise<void> {
 }
 
 /**
- * Force service worker to activate and reload when deploy meta changes (stale PWA shell).
+ * Track deploy meta changes and reload once when the shell version changes.
  */
 export async function syncPwaCacheAndVersion(): Promise<void> {
-  if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+  if (typeof window === "undefined") return;
 
   const deployMeta = getDeployVersion();
 
@@ -71,39 +61,5 @@ export async function syncPwaCacheAndVersion(): Promise<void> {
     if (deployMeta) sessionStorage.setItem(VERSION_KEY, deployMeta);
   } catch {
     /* ignore */
-  }
-
-  if (shouldSkipServiceWorkerBoot()) {
-    console.info("[amynest:pwa] Service worker boot registration skipped (debug)");
-    return;
-  }
-
-  try {
-    const swBase = import.meta.env.BASE_URL;
-    const reg = await navigator.serviceWorker.register(
-      serviceWorkerScriptUrl(swBase),
-      {
-        scope: `${swBase.replace(/\/$/, "")}/`,
-        updateViaCache: "none",
-      },
-    );
-
-    // Proactively check every registration for a waiting worker after deploy.
-    await navigator.serviceWorker
-      .getRegistrations()
-      .then((regs) => Promise.all(regs.map((r) => r.update().catch(() => {}))))
-      .catch(() => {});
-
-    await reg.update().catch(() => {});
-
-    if (reg.waiting) {
-      reg.waiting.postMessage({ type: "SKIP_WAITING" });
-    }
-
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      console.info("[amynest:pwa] New service worker active");
-    });
-  } catch (err) {
-    console.warn("[amynest:pwa] Service worker registration failed", err);
   }
 }

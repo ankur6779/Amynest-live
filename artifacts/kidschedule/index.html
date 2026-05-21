@@ -27,7 +27,8 @@
     <meta name="author" content="AmyNest AI" />
     <meta name="keywords" content="parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting, child development, daily routine, kids schedule, parenting coach, AI coach for parents, child behavior tracker, kids meal planner India, speech coach for kids, spelling practice app" />
     <meta name="application-name" content="AmyNest AI" />
-    <meta name="amynest-deploy" content="2026-05-21-assistant-scroll-v22" />
+    <meta name="app-build-version" content="v1.0.1" />
+    <meta name="amynest-deploy" content="2026-05-21-build-v1.0.1" />
     <meta name="rating" content="general" />
     <meta name="revisit-after" content="7 days" />
     <meta name="msapplication-TileColor" content="#A855F7" />
@@ -1300,7 +1301,7 @@
     <!-- Skip React bundle when ?diag=1 — lightweight crash diagnostics only. -->
     <script type="module" id="amynest-entry">
       if (!/[?&]diag=1/.test(location.search || "")) {
-        import("/src/main.tsx?v=6");
+        import("/src/main.tsx?v=1001");
       } else {
         window.__amynestDiagOnly = true;
         window.__amynestMark && window.__amynestMark("diag-only");
@@ -1324,6 +1325,44 @@
           .then(function () { location.reload(); })
           .catch(function () { location.reload(); });
       })();
+    </script>
+    <script>
+      (function () {
+        try {
+          var currentVersion = document
+            .querySelector('meta[name="app-build-version"]')
+            ?.getAttribute("content");
+
+          var storedVersion = localStorage.getItem("app_build_version");
+
+          if (storedVersion && storedVersion !== currentVersion) {
+            if (window.caches && caches.keys) {
+              caches.keys().then(function (keys) {
+                keys.forEach(function (k) {
+                  caches.delete(k);
+                });
+              });
+            }
+
+            localStorage.clear();
+
+            setTimeout(function () {
+              location.reload();
+            }, 300);
+          }
+
+          if (currentVersion) {
+            localStorage.setItem("app_build_version", currentVersion);
+          }
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).catch(function () {});
+        });
+      }
     </script>
   </body>
 </html>
