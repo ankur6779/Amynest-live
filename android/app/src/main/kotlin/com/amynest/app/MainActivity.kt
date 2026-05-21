@@ -227,17 +227,6 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
                 super.onPageStarted(view, url, favicon)
-                // Inject CSS to fix layout gaps, block pull-to-refresh and lock dashboard footer
-                val css = "html, body { height: 100% !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; overscroll-behavior-y: none !important; } " +
-                         "#app-root, .app-root { height: 100% !important; height: 100vh !important; height: 100dvh !important; display: flex !important; flex-direction: column !important; padding-top: env(safe-area-inset-top) !important; padding-bottom: env(safe-area-inset-bottom) !important; } " +
-                         ".app-footer { position: sticky !important; bottom: 0 !important; z-index: 60 !important; flex-shrink: 0 !important; } " +
-                         ".dashboard-page { display: flex !important; flex-direction: column !important; min-height: 100% !important; } " +
-                         ".dashboard-content { flex: 1 !important; min-height: 0 !important; padding-bottom: 90px !important; } " +
-                         ".ask-amy-fab { position: absolute !important; bottom: 70px !important; z-index: 65 !important; }"
-                val js = "var style = document.createElement('style');" +
-                         "style.innerHTML = '$css';" +
-                         "document.head.appendChild(style);"
-                view?.evaluateJavascript(js, null)
             }
 
             /**
@@ -247,15 +236,6 @@ class MainActivity : AppCompatActivity() {
              */
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
-                
-                // Re-ensure layout fixes and overscroll is disabled
-                view.evaluateJavascript(
-                    "document.documentElement.style.height = '100%';" +
-                    "document.body.style.height = '100%';" +
-                    "document.documentElement.style.overscrollBehaviorY = 'none';" +
-                    "document.body.style.overscrollBehaviorY = 'none';",
-                    null
-                )
 
                 val dl = pendingNotifDeepLink ?: return
                 val cat = pendingNotifCategory ?: "routine"
