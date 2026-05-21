@@ -13,7 +13,12 @@ import type {
   SpeechGame,
   SpeechMilestone,
 } from "./types";
-import { LETTER_PRONUNCIATION_PROMPTS } from "./pronunciation-datasets";
+import {
+  LETTER_PRONUNCIATION_PROMPTS,
+  PHONIC_PRONUNCIATION_PROMPTS,
+  WORD_PRONUNCIATION_PROMPTS,
+  SENTENCE_PRONUNCIATION_PROMPTS,
+} from "./pronunciation-datasets";
 
 const M = (id: string): { i18nKeyLabel: string; i18nKeyHint: string } => ({
   i18nKeyLabel: `screens.speech_coach.milestones.${id}.label`,
@@ -165,111 +170,8 @@ const HINT = (kind: string): string =>
   `screens.speech_coach.prompts.hint.${kind}`;
 
 export const PRONUNCIATION_PROMPTS: readonly PronouncePrompt[] = [
-  // ── Letters — full A–Z, all ages (phonics TTS via speakText) ─────────────
   ...LETTER_PRONUNCIATION_PROMPTS,
-
-  // ── Phonics — Easy (infant, 1y, 2y) ───────────────────────────────────────
-  { id: "P_ah", kind: "phonic", text: "ah", ageBands: ["infant"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
-  { id: "P_oo", kind: "phonic", text: "oo", ageBands: ["infant"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
-  { id: "P_eh", kind: "phonic", text: "eh", ageBands: ["infant"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
-  { id: "P_ma", kind: "phonic", text: "ma", ageBands: ["infant", "1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
-  { id: "P_pa", kind: "phonic", text: "pa", ageBands: ["infant", "1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
-  { id: "P_ba", kind: "phonic", text: "ba", ageBands: ["infant", "1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
-  { id: "P_da", kind: "phonic", text: "da", ageBands: ["1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
-  { id: "P_ga", kind: "phonic", text: "ga", ageBands: ["1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
-  { id: "P_ha", kind: "phonic", text: "ha", ageBands: ["1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
-  { id: "P_na", kind: "phonic", text: "na", ageBands: ["1y", "2y"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
-
-  // ── Phonics — Medium (2y, 3y) ─────────────────────────────────────────────
-  { id: "P_ta", kind: "phonic", text: "ta", ageBands: ["2y", "3y"], i18nKeyHint: HINT("phonic"), difficulty: "medium" },
-  { id: "P_ka", kind: "phonic", text: "ka", ageBands: ["2y", "3y"], i18nKeyHint: HINT("phonic"), difficulty: "medium" },
-  { id: "P_la", kind: "phonic", text: "la", ageBands: ["2y", "3y"], i18nKeyHint: HINT("phonic"), difficulty: "medium" },
-  { id: "P_ra", kind: "phonic", text: "ra", ageBands: ["2y", "3y"], i18nKeyHint: HINT("phonic"), difficulty: "medium" },
-  { id: "P_sa", kind: "phonic", text: "sa", ageBands: ["2y", "3y"], i18nKeyHint: HINT("phonic"), difficulty: "medium" },
-  { id: "P_wa", kind: "phonic", text: "wa", ageBands: ["2y", "3y"], i18nKeyHint: HINT("phonic"), difficulty: "medium" },
-  { id: "P_ya", kind: "phonic", text: "ya", ageBands: ["2y", "3y"], i18nKeyHint: HINT("phonic"), difficulty: "medium" },
-  { id: "P_fa", kind: "phonic", text: "fa", ageBands: ["2y", "3y"], i18nKeyHint: HINT("phonic"), difficulty: "medium" },
-
-  // ── Phonics — Advanced (3y, 4y_plus) ─────────────────────────────────────
-  { id: "P_sh", kind: "phonic", text: "sh", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("phonic"), difficulty: "advanced" },
-  { id: "P_th", kind: "phonic", text: "th", ageBands: ["4y_plus"], i18nKeyHint: HINT("phonic"), difficulty: "advanced" },
-  { id: "P_ch", kind: "phonic", text: "ch", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("phonic"), difficulty: "advanced" },
-  { id: "P_wh", kind: "phonic", text: "wh", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("phonic"), difficulty: "advanced" },
-  { id: "P_bl", kind: "phonic", text: "bl", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("phonic"), difficulty: "advanced" },
-  { id: "P_cr", kind: "phonic", text: "cr", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("phonic"), difficulty: "advanced" },
-  { id: "P_st", kind: "phonic", text: "st", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("phonic"), difficulty: "advanced" },
-  { id: "P_tr", kind: "phonic", text: "tr", ageBands: ["4y_plus"], i18nKeyHint: HINT("phonic"), difficulty: "advanced" },
-  { id: "P_gr", kind: "phonic", text: "gr", ageBands: ["4y_plus"], i18nKeyHint: HINT("phonic"), difficulty: "advanced" },
-  { id: "P_pr", kind: "phonic", text: "pr", ageBands: ["4y_plus"], i18nKeyHint: HINT("phonic"), difficulty: "advanced" },
-
-  // ── Words — Easy (1y, 2y) ─────────────────────────────────────────────────
-  { id: "W_mama", kind: "word", text: "mama", ageBands: ["1y", "2y"], i18nKeyHint: HINT("word"), difficulty: "easy" },
-  { id: "W_dada", kind: "word", text: "dada", ageBands: ["1y", "2y"], i18nKeyHint: HINT("word"), difficulty: "easy" },
-  { id: "W_ball", kind: "word", text: "ball", ageBands: ["1y", "2y", "3y"], i18nKeyHint: HINT("word"), difficulty: "easy" },
-  { id: "W_cat", kind: "word", text: "cat", ageBands: ["1y", "2y"], i18nKeyHint: HINT("word"), difficulty: "easy" },
-  { id: "W_dog", kind: "word", text: "dog", ageBands: ["1y", "2y"], i18nKeyHint: HINT("word"), difficulty: "easy" },
-  { id: "W_cup", kind: "word", text: "cup", ageBands: ["1y", "2y"], i18nKeyHint: HINT("word"), difficulty: "easy" },
-  { id: "W_up", kind: "word", text: "up", ageBands: ["1y", "2y"], i18nKeyHint: HINT("word"), difficulty: "easy" },
-  { id: "W_go", kind: "word", text: "go", ageBands: ["1y", "2y"], i18nKeyHint: HINT("word"), difficulty: "easy" },
-  { id: "W_no", kind: "word", text: "no", ageBands: ["1y", "2y"], i18nKeyHint: HINT("word"), difficulty: "easy" },
-  { id: "W_bye", kind: "word", text: "bye", ageBands: ["1y", "2y"], i18nKeyHint: HINT("word"), difficulty: "easy" },
-  { id: "W_more", kind: "word", text: "more", ageBands: ["1y", "2y"], i18nKeyHint: HINT("word"), difficulty: "easy" },
-  { id: "W_milk", kind: "word", text: "milk", ageBands: ["1y", "2y"], i18nKeyHint: HINT("word"), difficulty: "easy" },
-  { id: "W_hat", kind: "word", text: "hat", ageBands: ["1y", "2y"], i18nKeyHint: HINT("word"), difficulty: "easy" },
-  { id: "W_bed", kind: "word", text: "bed", ageBands: ["2y", "3y"], i18nKeyHint: HINT("word"), difficulty: "easy" },
-
-  // ── Words — Medium (2y, 3y) ───────────────────────────────────────────────
-  { id: "W_water", kind: "word", text: "water", ageBands: ["2y", "3y"], i18nKeyHint: HINT("word"), difficulty: "medium" },
-  { id: "W_apple", kind: "word", text: "apple", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("word"), difficulty: "medium" },
-  { id: "W_happy", kind: "word", text: "happy", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("word"), difficulty: "medium" },
-  { id: "W_baby", kind: "word", text: "baby", ageBands: ["2y", "3y"], i18nKeyHint: HINT("word"), difficulty: "medium" },
-  { id: "W_help", kind: "word", text: "help", ageBands: ["2y", "3y"], i18nKeyHint: HINT("word"), difficulty: "medium" },
-  { id: "W_open", kind: "word", text: "open", ageBands: ["2y", "3y"], i18nKeyHint: HINT("word"), difficulty: "medium" },
-  { id: "W_play", kind: "word", text: "play", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("word"), difficulty: "medium" },
-  { id: "W_book", kind: "word", text: "book", ageBands: ["2y", "3y"], i18nKeyHint: HINT("word"), difficulty: "medium" },
-  { id: "W_tree", kind: "word", text: "tree", ageBands: ["2y", "3y"], i18nKeyHint: HINT("word"), difficulty: "medium" },
-  { id: "W_blue", kind: "word", text: "blue", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("word"), difficulty: "medium" },
-  { id: "W_bird", kind: "word", text: "bird", ageBands: ["2y", "3y"], i18nKeyHint: HINT("word"), difficulty: "medium" },
-  { id: "W_fish", kind: "word", text: "fish", ageBands: ["2y", "3y"], i18nKeyHint: HINT("word"), difficulty: "medium" },
-  { id: "W_frog", kind: "word", text: "frog", ageBands: ["2y", "3y"], i18nKeyHint: HINT("word"), difficulty: "medium" },
-  { id: "W_star", kind: "word", text: "star", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("word"), difficulty: "medium" },
-
-  // ── Words — Advanced (3y, 4y_plus) ───────────────────────────────────────
-  { id: "W_butterfly", kind: "word", text: "butterfly", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("word"), difficulty: "advanced" },
-  { id: "W_elephant", kind: "word", text: "elephant", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("word"), difficulty: "advanced" },
-  { id: "W_rainbow", kind: "word", text: "rainbow", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("word"), difficulty: "advanced" },
-  { id: "W_purple", kind: "word", text: "purple", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("word"), difficulty: "advanced" },
-  { id: "W_banana", kind: "word", text: "banana", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("word"), difficulty: "advanced" },
-  { id: "W_yellow", kind: "word", text: "yellow", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("word"), difficulty: "advanced" },
-  { id: "W_turtle", kind: "word", text: "turtle", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("word"), difficulty: "advanced" },
-  { id: "W_umbrella", kind: "word", text: "umbrella", ageBands: ["4y_plus"], i18nKeyHint: HINT("word"), difficulty: "advanced" },
-  { id: "W_beautiful", kind: "word", text: "beautiful", ageBands: ["4y_plus"], i18nKeyHint: HINT("word"), difficulty: "advanced" },
-  { id: "W_together", kind: "word", text: "together", ageBands: ["4y_plus"], i18nKeyHint: HINT("word"), difficulty: "advanced" },
-  { id: "W_strawberry", kind: "word", text: "strawberry", ageBands: ["4y_plus"], i18nKeyHint: HINT("word"), difficulty: "advanced" },
-  { id: "W_chocolate", kind: "word", text: "chocolate", ageBands: ["4y_plus"], i18nKeyHint: HINT("word"), difficulty: "advanced" },
-
-  // ── Sentences — Easy (1y, 2y) ─────────────────────────────────────────────
-  { id: "S_i_see", kind: "sentence", text: "I see it.", ageBands: ["1y", "2y"], i18nKeyHint: HINT("sentence"), difficulty: "easy" },
-  { id: "S_come_here", kind: "sentence", text: "Come here.", ageBands: ["1y", "2y"], i18nKeyHint: HINT("sentence"), difficulty: "easy" },
-  { id: "S_all_done", kind: "sentence", text: "All done.", ageBands: ["1y", "2y"], i18nKeyHint: HINT("sentence"), difficulty: "easy" },
-  { id: "S_more_milk", kind: "sentence", text: "I want more milk.", ageBands: ["2y", "3y"], i18nKeyHint: HINT("sentence"), difficulty: "easy" },
-  { id: "S_go_play", kind: "sentence", text: "Let us go play.", ageBands: ["2y", "3y"], i18nKeyHint: HINT("sentence"), difficulty: "easy" },
-
-  // ── Sentences — Medium (2y, 3y) ───────────────────────────────────────────
-  { id: "S_thank_you", kind: "sentence", text: "Thank you, mama.", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("sentence"), difficulty: "medium" },
-  { id: "S_i_want_water", kind: "sentence", text: "I want some water.", ageBands: ["2y", "3y"], i18nKeyHint: HINT("sentence"), difficulty: "medium" },
-  { id: "S_this_is_fun", kind: "sentence", text: "This is so fun!", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("sentence"), difficulty: "medium" },
-  { id: "S_help_me_please", kind: "sentence", text: "Help me please.", ageBands: ["2y", "3y"], i18nKeyHint: HINT("sentence"), difficulty: "medium" },
-  { id: "S_what_is_that", kind: "sentence", text: "What is that?", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("sentence"), difficulty: "medium" },
-  { id: "S_i_love_you", kind: "sentence", text: "I love you.", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("sentence"), difficulty: "medium" },
-  { id: "S_cat_happy", kind: "sentence", text: "The cat is happy.", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("sentence"), difficulty: "medium" },
-
-  // ── Sentences — Advanced (3y, 4y_plus) ───────────────────────────────────
-  { id: "S_play_park", kind: "sentence", text: "Can we play in the park?", ageBands: ["4y_plus"], i18nKeyHint: HINT("sentence"), difficulty: "advanced" },
-  { id: "S_rainbow_beautiful", kind: "sentence", text: "The rainbow is so beautiful.", ageBands: ["4y_plus"], i18nKeyHint: HINT("sentence"), difficulty: "advanced" },
-  { id: "S_where_is_mama", kind: "sentence", text: "Where is mama going?", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("sentence"), difficulty: "advanced" },
-  { id: "S_i_am_happy_today", kind: "sentence", text: "I am very happy today.", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("sentence"), difficulty: "advanced" },
-  { id: "S_can_you_help_me", kind: "sentence", text: "Can you please help me?", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("sentence"), difficulty: "advanced" },
-  { id: "S_i_want_to_play_outside", kind: "sentence", text: "I want to play outside.", ageBands: ["4y_plus"], i18nKeyHint: HINT("sentence"), difficulty: "advanced" },
-  { id: "S_my_favorite_color", kind: "sentence", text: "My favourite colour is blue.", ageBands: ["4y_plus"], i18nKeyHint: HINT("sentence"), difficulty: "advanced" },
+  ...PHONIC_PRONUNCIATION_PROMPTS,
+  ...WORD_PRONUNCIATION_PROMPTS,
+  ...SENTENCE_PRONUNCIATION_PROMPTS,
 ] as const;

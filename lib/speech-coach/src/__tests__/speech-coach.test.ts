@@ -380,4 +380,27 @@ describe("getPromptSpeakText", () => {
     assert.equal(getPromptSpeakText(c!), "k");
   });
 });
+describe("universal word and sentence catalogs", () => {
+  it("returns the same word pool for infant and school-age at each difficulty", () => {
+    for (const difficulty of ["easy", "medium", "advanced"] as const) {
+      const infant = getPromptsPool(6, "word", difficulty);
+      const older = getPromptsPool(60, "word", difficulty);
+      assert.equal(infant.length, older.length);
+      assert.ok(infant.length >= 14, `words ${difficulty}`);
+    }
+  });
+  it("returns the same sentence pool for all ages at each difficulty", () => {
+    for (const difficulty of ["easy", "medium", "advanced"] as const) {
+      const infant = getPromptsPool(6, "sentence", difficulty);
+      const older = getPromptsPool(60, "sentence", difficulty);
+      assert.equal(infant.length, older.length);
+      assert.ok(infant.length >= 5, `sentences ${difficulty}`);
+    }
+  });
+  it("medium words include easy baseline items", () => {
+    const medium = getPromptsPool(24, "word", "medium");
+    assert.ok(medium.some((p) => p.text === "mama"));
+    assert.ok(medium.some((p) => p.text === "apple"));
+  });
+});
 
