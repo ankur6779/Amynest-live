@@ -897,3 +897,15 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
   visibility: hidden !important;
   pointer-events: none !important;
 }
+
+#amy-fab-floating {
+  position: fixed !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  pointer-events: none;
+}
+
+#amy-fab-floating > * {
+  pointer-events: auto;
+}

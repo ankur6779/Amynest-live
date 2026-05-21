@@ -1,21 +1,48 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "wouter";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useTranslation } from "react-i18next";
 import { safePathStartsWith } from "@/lib/safe-route";
 
-/** Footer nav height (h-[78px]) + center tab lift (~20px) + gap above tabs. */
-const FAB_BOTTOM = "calc(98px + var(--safe-bottom, 0px) + 16px)";
+const FAB_STYLE: CSSProperties = {
+  position: "fixed",
+  left: "50%",
+  transform: "translateX(-50%)",
+  zIndex: 9999,
+};
 
+function measureFabBottom(): string {
+  const footer = document.querySelector("footer.app-footer");
+  if (!footer) return "110px";
+  const rect = footer.getBoundingClientRect();
+  const gap = 12;
+  const px = Math.round(window.innerHeight - rect.top + gap);
+  return `${Math.max(px, 110)}px`;
+}
+
+/** Only floating Ask Amy control — portaled to body for Android WebView. */
 export function AmyFab() {
   const { t } = useTranslation();
   const [location] = useLocation();
   const [mounted, setMounted] = useState(false);
+  const [bottom, setBottom] = useState("110px");
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useLayoutEffect(() => {
+    if (!mounted) return;
+    const update = () => setBottom(measureFabBottom());
+    update();
+    window.addEventListener("resize", update);
+    const retry = window.setTimeout(update, 150);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.clearTimeout(retry);
+    };
+  }, [mounted, location]);
 
   if (
     !mounted ||
@@ -28,17 +55,15 @@ export function AmyFab() {
 
   return createPortal(
     <div
+      id="amy-fab-floating"
       data-tour="amy-fab"
+      data-amynest-fab="active"
       style={{
-        position: "fixed",
-        bottom: FAB_BOTTOM,
-        left: "50%",
-        transform: "translateX(-50%)",
-        zIndex: 70,
-        pointerEvents: "none",
+        ...FAB_STYLE,
+        bottom,
       }}
     >
-      <div className="amy-fade-in" style={{ pointerEvents: "auto" }}>
+      <div className="amy-fade-in">
         <Link
           href="/assistant"
           aria-label={t("components.amy_fab.ask_amy_ai")}
