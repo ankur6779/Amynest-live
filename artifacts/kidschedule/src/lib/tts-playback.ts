@@ -9,7 +9,7 @@ import {
 import { readResolvedApiJson, type AuthFetchFn } from "@/lib/poll-result";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
 
-const LOG = "[ElevenLabs]";
+const LOG = "[TTS]";
 
 /** Reject missing URLs and template strings that contain the literal "undefined". */
 export function isValidAudioUrl(audioUrl: string | null | undefined): audioUrl is string {
@@ -56,7 +56,17 @@ export async function synthesizeTtsWithBackgroundPoll(
     headers?: Record<string, string>;
   },
 ): Promise<TtsSynthesizeResponse> {
-  let data = await synthesizeTts(authFetch, body, init);
+  const mode = body.mode === "phonics" ? "phonics" : "default";
+  let data =
+    mode === "phonics"
+      ? await generateTts(authFetch, body, init)
+      : await synthesizeTts(authFetch, body, init);
+  if (data?.success && isValidAudioUrl(data.audioUrl)) return data;
+  if (mode === "phonics") {
+    data = await synthesizeTts(authFetch, body, init);
+  } else {
+    return data;
+  }
   if (!data?.background) return data;
 
   for (const delayMs of TTS_BACKGROUND_POLL_MS) {
@@ -67,6 +77,56 @@ export async function synthesizeTtsWithBackgroundPoll(
     data = retry;
   }
   return data;
+}
+
+/** POST /api/tts/generate — OpenAI TTS with GCS cache (phonics-friendly). */
+export async function generateTts(
+  authFetch: AuthFetchFn,
+  body: Record<string, unknown>,
+  init?: Omit<RequestInit, "method" | "body" | "headers"> & {
+    headers?: Record<string, string>;
+  },
+): Promise<TtsSynthesizeResponse> {
+  const text = String(body.text ?? "").trim();
+  if (!text) return { success: false, ok: false, error: "tts_empty_text" };
+  try {
+    const res = await authFetch("/api/tts/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...init?.headers },
+      body: JSON.stringify({
+        text,
+        voice: body.voice ?? "alloy",
+        speed: body.speed ?? 0.9,
+        mode: body.mode ?? "phonics",
+        category: body.category ?? "phonics",
+      }),
+      signal: init?.signal,
+    });
+    const data = await readResolvedApiJson<{
+      ok?: boolean;
+      url?: string;
+      audioUrl?: string;
+      cacheKey?: string;
+      cached?: boolean;
+      error?: string;
+    }>(res, authFetch).catch(() => null);
+    if (!res.ok || !data?.ok) {
+      return { success: false, ok: false, error: data?.error ?? `generate_failed_${res.status}` };
+    }
+    const audioUrl = data.url ?? data.audioUrl;
+    if (!isValidAudioUrl(audioUrl)) {
+      return { success: false, ok: false, error: "tts_invalid_audio_url" };
+    }
+    return {
+      success: true,
+      ok: true,
+      audioUrl,
+      cacheKey: data.cacheKey,
+      cached: data.cached,
+    };
+  } catch {
+    return { success: false, ok: false, error: "tts_failed" };
+  }
 }
 
 /** POST /api/tts/synthesize — dynamic AI content only; catalog phrases are rejected. */

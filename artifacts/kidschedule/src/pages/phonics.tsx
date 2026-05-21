@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { ArrowLeft, BookOpen, ClipboardCheck, GraduationCap, Loader2, Play, TrendingUp, UserPlus } from "lucide-react";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,8 @@ function scrollToSection(id: string) {
 }
 
 export default function PhonicsPage() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const search = useSearch();
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
     const saved = Number(window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY));
@@ -58,10 +59,17 @@ export default function PhonicsPage() {
     window.localStorage.setItem(ACTIVE_CHILD_STORAGE_KEY, String(activeChild.id));
   }, [activeChild]);
 
+  const goToTest = (type?: "daily" | "weekly") => {
+    if (!activeChild) return;
+    const params = new URLSearchParams({ childId: String(activeChild.id) });
+    if (type) params.set("type", type);
+    setLocation(`/phonics/test?${params.toString()}`);
+  };
+
   useEffect(() => {
-    if (!window.location.pathname.endsWith("/test")) return;
+    if (!location.includes("/phonics/test")) return;
     window.setTimeout(() => scrollToSection("phonics-test"), 150);
-  }, []);
+  }, [location, search]);
 
   const goBack = () => {
     if (window.history.length > 1) {
@@ -128,7 +136,7 @@ export default function PhonicsPage() {
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 px-4 pb-28 pt-4">
+      <main className="min-h-0 flex-1 px-4 pb-[100px] pt-4">
         <div className="mx-auto max-w-4xl space-y-4">
           <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
             <div className="flex items-start gap-3">
@@ -179,7 +187,7 @@ export default function PhonicsPage() {
                 <p className="mt-1 font-quicksand text-lg font-black text-foreground">Daily or Weekly</p>
                 <button
                   type="button"
-                  onClick={() => scrollToSection("phonics-test")}
+                  onClick={() => goToTest()}
                   disabled={!isEligible}
                   className="mt-1 text-xs font-bold text-primary disabled:text-muted-foreground"
                 >
@@ -212,26 +220,32 @@ export default function PhonicsPage() {
             childId={activeChild.id}
             childName={activeChild.name}
             totalAgeMonths={totalAgeMonths}
+            initialTestType={
+              (() => {
+                const t = new URLSearchParams(search).get("type");
+                return t === "daily" || t === "weekly" ? t : undefined;
+              })()
+            }
           />
         </div>
       </main>
 
-      <div className="sticky bottom-0 z-50 shrink-0 border-t border-border bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-[#0B1220] px-4 pb-[env(safe-area-inset-bottom,0px)] pt-2 shadow-lg backdrop-blur">
         <div className="mx-auto grid max-w-4xl grid-cols-2 gap-3">
           <Button
             type="button"
             variant="outline"
             onClick={() => scrollToSection("phonics-learning")}
-            className="h-12 rounded-2xl gap-2"
+            className="h-12 rounded-2xl gap-2 border-white/20 text-white hover:bg-white/10"
           >
             <Play className="h-4 w-4" />
             Continue
           </Button>
           <Button
             type="button"
-            onClick={() => scrollToSection("phonics-test")}
+            onClick={() => goToTest()}
             disabled={!isEligible}
-            className="h-12 rounded-2xl gap-2"
+            className="h-12 rounded-2xl gap-2 bg-orange-500 font-semibold text-white hover:bg-orange-600"
           >
             <ClipboardCheck className="h-4 w-4" />
             Start Test

@@ -35,7 +35,13 @@ export type TestType = "daily" | "weekly";
  *   speed_challenge → mixed types like hear_tap, but each question carries
  *                     a `prompt.meta.timeLimitSec` for the client timer.
  */
-export type GameMode = "hear_tap" | "missing_letter" | "build_word" | "speed_challenge";
+export type GameMode =
+  | "hear_tap"
+  | "missing_letter"
+  | "build_word"
+  | "speed_challenge"
+  /** Daily quick-start: rotates mini-game builders each question. */
+  | "mixed";
 
 export type QuestionType =
   | "animal_sound" // TTS animal sound → pick emoji
@@ -75,6 +81,8 @@ export interface QuestionPrompt {
     targetWord?: string;
     letterPool?: string[];
     timeLimitSec?: number;
+    /** Client hint for mixed daily sessions (which mini-game UI to show). */
+    uiGame?: string;
   };
 }
 
@@ -576,10 +584,32 @@ export interface GenerateOptions {
   seed: number;
   /** Visual flavor — defaults to `hear_tap` (mixed types from AGE_TYPES). */
   gameMode?: GameMode;
+  /** Drives weekly progressive difficulty when set. */
+  testType?: TestType;
 }
 
+/** Mini-game builders used for daily mixed sessions. */
+const MIXED_GAME_ROTATION: QuestionType[] = [
+  "missing_letter",
+  "build_word",
+  "listening",
+  "word_pic",
+];
+
 export function generateQuestions(opts: GenerateOptions): Question[] {
-  const { ageGroup, contentRows, count, recentItemIds = [], seed, gameMode = "hear_tap" } = opts;
+  const {
+    ageGroup,
+    contentRows,
+    count,
+    recentItemIds = [],
+    seed,
+    gameMode = "hear_tap",
+    testType,
+  } = opts;
+
+  if (gameMode === "mixed") {
+    return generateMixedQuestions(opts);
+  }
   const rng = mulberry32(seed || 1);
 
   const recent = new Set(recentItemIds);
@@ -678,6 +708,64 @@ export function generateQuestions(opts: GenerateOptions): Question[] {
           meta: { ...(q.prompt.meta ?? {}), timeLimitSec: SPEED_TIME_LIMIT_SEC },
         },
       };
+    }
+  }
+
+  // Weekly tests: tighten time limits on later questions (progressive difficulty).
+  if (testType === "weekly" && out.length > 0) {
+    for (let i = 0; i < out.length; i++) {
+      const progress = i / Math.max(out.length - 1, 1);
+      if (progress < 0.4) continue;
+      const q = out[i]!;
+      const base = q.prompt.meta?.timeLimitSec ?? SPEED_TIME_LIMIT_SEC;
+      const limit = progress >= 0.75 ? Math.max(4, base - 3) : Math.max(5, base - 1);
+      out[i] = {
+        ...q,
+        prompt: {
+          ...q.prompt,
+          meta: { ...(q.prompt.meta ?? {}), timeLimitSec: limit },
+        },
+      };
+    }
+  }
+
+  return out;
+}
+
+/** Daily mixed mini-games — one builder style per question, rotating. */
+function generateMixedQuestions(opts: GenerateOptions): Question[] {
+  const { count, seed, ageGroup, contentRows, recentItemIds = [], testType } = opts;
+  const out: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const locked = MIXED_GAME_ROTATION[i % MIXED_GAME_ROTATION.length]!;
+    const modeForPass: GameMode =
+      locked === "missing_letter"
+        ? "missing_letter"
+        : locked === "build_word"
+          ? "build_word"
+          : "hear_tap";
+    const batch = generateQuestions({
+      ageGroup,
+      contentRows,
+      count: 1,
+      recentItemIds: [...recentItemIds, ...out.map((q) => q.conceptId)],
+      seed: seed ^ (i * 0x9e3779b1),
+      gameMode: modeForPass,
+      testType,
+    });
+    if (batch[0]) {
+      const q = batch[0];
+      out.push({
+        ...q,
+        id: `q${out.length + 1}`,
+        prompt: {
+          ...q.prompt,
+          meta: {
+            ...(q.prompt.meta ?? {}),
+            uiGame: locked,
+          },
+        },
+      });
     }
   }
   return out;
