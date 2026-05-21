@@ -32,8 +32,9 @@ export function AmyFab() {
       style={{
         position: "fixed",
         bottom: "110px",
-        left: "50%",
-        transform: "translateX(-50%)",
+        right: "20px",
+        left: "auto",
+        transform: "none",
         zIndex: 1100,
       }}
     >
