@@ -56,15 +56,15 @@ export default function AssistantPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const threadRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showScrollLatest, setShowScrollLatest] = useState(false);
 
-  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
-    requestAnimationFrame(() => {
-      bottomRef.current?.scrollIntoView({ behavior, block: "end" });
-    });
+  const scrollToChatEnd = (behavior: ScrollBehavior = "smooth") => {
+    const el = document.getElementById("chat-end");
+    if (el) {
+      el.scrollIntoView({ behavior });
+    }
   };
 
   // Load saved chat history on mount so parents can pick up where they left off
@@ -91,8 +91,8 @@ export default function AssistantPage() {
   }, []);
 
   useEffect(() => {
-    scrollToBottom("smooth");
-  }, [messages, loading]);
+    scrollToChatEnd("smooth");
+  }, [messages]);
 
   const handleThreadScroll = () => {
     const thread = threadRef.current;
@@ -103,8 +103,7 @@ export default function AssistantPage() {
 
   const handleInputFocus = () => {
     setTimeout(() => {
-      window.scrollTo(0, document.body.scrollHeight);
-      scrollToBottom("smooth");
+      scrollToChatEnd("smooth");
     }, 300);
   };
 
@@ -281,7 +280,7 @@ export default function AssistantPage() {
       <div
         ref={threadRef}
         onScroll={handleThreadScroll}
-        className="chat-body min-h-0 flex-1 space-y-4 px-4 pr-5 md:px-0"
+        className="chat-body min-h-0 flex-1 space-y-4"
       >
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full gap-6 text-center py-8">
@@ -381,7 +380,7 @@ export default function AssistantPage() {
                 </Card>
               </div>
             )}
-            <div ref={bottomRef} />
+            <div id="chat-end" />
           </>
         )}
       </div>
@@ -390,7 +389,7 @@ export default function AssistantPage() {
         <Button
           type="button"
           size="sm"
-          onClick={() => scrollToBottom("smooth")}
+          onClick={() => scrollToChatEnd("smooth")}
           className="absolute bottom-36 right-4 z-40 rounded-full shadow-lg"
         >
           {t("ai.scroll_latest", { defaultValue: "Latest" })}
