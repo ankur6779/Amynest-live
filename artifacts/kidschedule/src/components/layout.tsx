@@ -273,7 +273,7 @@ export function Layout({
           <div
             className={
               isImmersiveRoute || isAssistantRoute
-                ? "mx-auto flex w-full min-h-0 flex-1 flex-col p-0 md:p-0"
+                ? `mx-auto flex w-full min-h-0 flex-1 flex-col p-0 md:p-0${isAssistantRoute ? " assistant-route-content h-full" : ""}`
                 : "mx-auto w-full max-w-5xl flex-1 p-4 md:p-8"
             }
           >
