@@ -7,12 +7,13 @@
 # Render Dashboard if you need a hosted preview.
 #
 # IMPORTANT:
-# Service plan (RAM/CPU) must be managed via Render Dashboard.
+# Instance plans (RAM/CPU/storage) must be managed via Render Dashboard.
 # Do NOT define `plan` in render.yaml — Blueprint sync would overwrite
-# manual upgrades (e.g. standard / 2GB) back to starter on every deploy.
+# manual upgrades (e.g. larger Postgres tier, standard web, 2GB worker)
+# back to the values in this file on every deploy.
 #
 # DO NOT DEFINE PLAN IN BLUEPRINT — leave plan undefined so the dashboard
-# controls instance type for web, worker, and keyvalue services.
+# controls plans for Postgres (amynest-db), web, worker, and keyvalue services.
 #
 # IMPORTANT:
 # Do NOT store secrets or production values here.
@@ -33,7 +34,7 @@
 databases:
   - name: amynest-db
     databaseName: amynest_db
-    plan: basic-256mb
+    # DO NOT DEFINE PLAN IN BLUEPRINT — dashboard controls Postgres tier (e.g. basic-256mb → basic-1gb)
     region: singapore
 
 services:
