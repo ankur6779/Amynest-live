@@ -2,7 +2,8 @@ import { useTranslation } from "react-i18next";
 import { useGetDashboardSummary, getGetDashboardSummaryQueryKey, useGetRecentRoutines, getGetRecentRoutinesQueryKey, useGetBehaviorStats, getGetBehaviorStatsQueryKey, useListRoutines, getListRoutinesQueryKey, useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Link, Redirect, useLocation } from "wouter";
-import { Calendar, Users, Star, ArrowRight, Activity, TrendingUp, TrendingDown, Minus, Clock, CheckCircle2, Sparkles, Trophy, Bot, Brain, Heart, Target, ChevronRight, MapPin } from "lucide-react";
+import { Calendar, Users, Star, ArrowRight, Activity, TrendingUp, TrendingDown, Minus, Clock, CheckCircle2, Sparkles, Trophy, Bot, Brain, Heart, Target, ChevronRight, MapPin, Flame, Medal, Ribbon } from "lucide-react";
+import { DashboardSectionHeader } from "@/components/dashboard-section-header";
 import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
 import { AmyIcon } from "@/components/amy-icon";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -74,6 +75,37 @@ function computeStreak(routines: Routine[]): number {
     }
   }
   return streak;
+}
+
+type ChildRow = { id: number; name: string; age: number; ageMonths?: number };
+type ChildTodayProgress = { done: number; total: number };
+
+function computeChildProgressMap(
+  children: ChildRow[],
+  routines: Routine[],
+  todayKey: string,
+): Record<number, ChildTodayProgress> {
+  const map: Record<number, ChildTodayProgress> = {};
+  for (const child of children) {
+    const routine = routines.find(
+      (r) => routineDateKey(r) === todayKey && r.childId === child.id,
+    );
+    if (!routine) {
+      map[child.id] = { done: 0, total: 0 };
+      continue;
+    }
+    const items = routineItems<RoutineItem>(routine);
+    map[child.id] = {
+      done: items.filter((i) => i.status === "completed").length,
+      total: items.length,
+    };
+  }
+  return map;
+}
+
+function filterRoutinesByChild(routines: Routine[], childId: number | null): Routine[] {
+  if (childId == null) return routines;
+  return routines.filter((r) => r.childId === childId);
 }
 
 // audit-block-ignore-start
@@ -464,54 +496,113 @@ function SectionLabel({
 
 // ─── Children Profile Strip (horizontal scroll) ────────────────────────────
 function ChildrenStrip({
-  children
+  children,
+  selectedChildId,
+  onSelectChild,
+  onOpenChild,
+  progressByChildId,
 }: {
-  children: any[];
+  children: ChildRow[];
+  selectedChildId: number | null;
+  onSelectChild: (id: number | null) => void;
+  onOpenChild: (id: number) => void;
+  progressByChildId: Record<number, ChildTodayProgress>;
 }) {
-  const {
-    t
-  } = useTranslation();
+  const { t } = useTranslation();
   if (!children || children.length === 0) return null;
-  return <div>
-      <SectionLabel action={<Link href="/children" className="text-[11px] font-bold text-primary dark:text-primary hover:text-primary">
-            {t("common.manage")} →
-          </Link>}>
-        {t("dashboard.your_little_ones")}
-      </SectionLabel>
-      <div className="flex gap-2.5 overflow-x-auto pb-1 snap-x snap-mandatory -mx-0.5 px-0.5 mt-2">
-        {children.map((c: any, i: number) => {
-        const ageMonths = c.ageMonths ?? 0;
-        const group = getAgeGroup(c.age, ageMonths);
-        const info = getAgeGroupInfo(group);
-        return <Link key={c.id} href={`/children/${c.id}`}>
-              <div className="relative shrink-0 snap-start min-w-[160px] sm:min-w-[175px] rounded-2xl border border-border bg-card p-3.5 overflow-hidden transition-all hover:scale-[1.02] hover:border-border dark:hover:border-primary hover:shadow-sm cursor-pointer" style={{
-            animationDelay: `${i * 80}ms`
-          }}>
-                <div className="flex items-center gap-2.5">
-                  <div className="h-10 w-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-muted dark:bg-card border border-border dark:border-border">
-                    {info.emoji}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-sm leading-tight truncate text-foreground">{c.name}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{formatAge(c.age, ageMonths)}</p>
-                  </div>
+  const showAll = children.length > 1;
+
+  return (
+    <div>
+      <DashboardSectionHeader
+        label={t("dashboard.your_little_ones")}
+        icon={Users}
+        action={
+          <Link href="/children" className="text-[11px] font-bold text-primary hover:underline">
+            {t("dashboard.manage")} →
+          </Link>
+        }
+      />
+      <div className="flex gap-2.5 overflow-x-auto pb-1 snap-x snap-mandatory -mx-0.5 px-0.5 overscroll-x-contain">
+        {showAll ? (
+          <button
+            type="button"
+            onClick={() => onSelectChild(null)}
+            className={`relative shrink-0 snap-start min-w-[100px] rounded-2xl border p-3.5 text-left transition-all ${
+              selectedChildId == null
+                ? "border-primary bg-primary/10 shadow-sm"
+                : "border-border bg-card hover:border-primary/40"
+            }`}
+          >
+            <div className="text-xl mb-1">👨‍👩‍👧</div>
+            <p className="font-bold text-sm text-foreground">{t("dashboard.all_children")}</p>
+          </button>
+        ) : null}
+        {children.map((c, i) => {
+          const ageMonths = c.ageMonths ?? 0;
+          const group = getAgeGroup(c.age, ageMonths);
+          const info = getAgeGroupInfo(group);
+          const selected = selectedChildId === c.id;
+          const prog = progressByChildId[c.id];
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => {
+                if (selected) onOpenChild(c.id);
+                else onSelectChild(c.id);
+              }}
+              className={`relative shrink-0 snap-start min-w-[160px] sm:min-w-[175px] rounded-2xl border p-3.5 text-left transition-all hover:shadow-sm ${
+                selected
+                  ? "border-primary bg-primary/10"
+                  : "border-border bg-card hover:border-primary/40"
+              }`}
+              style={{ animationDelay: `${i * 80}ms` }}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="relative h-10 w-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-muted dark:bg-card border border-border">
+                  {info.emoji}
+                  {prog && prog.total > 0 ? (
+                    <span
+                      className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-card ${
+                        prog.done >= prog.total ? "bg-primary" : "bg-muted-foreground/40"
+                      }`}
+                    />
+                  ) : null}
                 </div>
-                <p className="text-[10px] text-muted-foreground/60 mt-2 italic">
-                  {t("pages.dashboard.personalised_for")} {c.name}
-                </p>
+                <div className="min-w-0">
+                  <p className="font-bold text-sm leading-tight truncate text-foreground">{c.name}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{formatAge(c.age, ageMonths)}</p>
+                </div>
               </div>
-            </Link>;
-      })}
-        <Link href="/children/new">
-          <div className="shrink-0 snap-start min-w-[110px] rounded-2xl border border-dashed border-border p-3.5 flex items-center justify-center text-center hover:border-border hover:bg-muted dark:hover:bg-card transition-all cursor-pointer">
+              {prog && prog.total > 0 ? (
+                <p className="text-[10px] font-bold text-primary mt-2">
+                  {t("dashboard.tasks_today_short", { done: prog.done, total: prog.total })}
+                </p>
+              ) : null}
+            </button>
+          );
+        })}
+        <Link href="/children/new" className="shrink-0 snap-start min-w-[110px]">
+          <div className="rounded-2xl border border-dashed border-border p-3.5 flex items-center justify-center text-center h-full hover:border-primary/40 hover:bg-muted/50 transition-all">
             <div>
               <div className="text-xl mb-1">➕</div>
-              <p className="text-xs font-bold text-muted-foreground">{t("pages.dashboard.add_child")}</p>
+              <p className="text-xs font-bold text-muted-foreground">{t("dashboard.add_child")}</p>
             </div>
           </div>
         </Link>
       </div>
-    </div>;
+      {selectedChildId != null && children.length > 1 ? (
+        <button
+          type="button"
+          onClick={() => onSelectChild(null)}
+          className="mt-2 text-[11px] font-bold text-primary hover:underline w-full text-center"
+        >
+          {t("dashboard.clear_filter")}
+        </button>
+      ) : null}
+    </div>
+  );
 }
 
 // ─── Live indicator dot ────────────────────────────────────────────────────
@@ -525,31 +616,67 @@ function LiveDot() {
     </span>;
 }
 
+function TimelineProgressChip({ done, total }: { done: number; total: number }) {
+  const { t } = useTranslation();
+  if (total <= 0) return null;
+  const pct = Math.min(100, Math.round((done / total) * 100));
+  return (
+    <div className="text-right shrink-0">
+      <p className="text-[11px] font-bold text-primary">{t("dashboard.timeline_progress", { done, total })}</p>
+      <div className="w-[72px] h-1 rounded-full bg-muted mt-1 ml-auto overflow-hidden">
+        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
 // ─── Now / Next Timeline ───────────────────────────────────────────────────
 function NowNextTimeline({
-  routines
+  routines,
+  selectedChildName,
+  onGenerate,
 }: {
   routines: Routine[];
+  selectedChildName?: string | null;
+  onGenerate?: () => void;
 }) {
-  const {
-    t
-  } = useTranslation();
+  const { t } = useTranslation();
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todayRoutines = routines.filter(r => routineDateKey(r) === todayStr);
+  const todayRoutines = routines.filter((r) => routineDateKey(r) === todayStr);
   if (todayRoutines.length === 0) {
-    return <Card className="rounded-2xl border-2 border-dashed border-border bg-card">
+    return (
+      <Card className="rounded-2xl border-2 border-dashed border-border bg-card">
         <CardContent className="p-6 text-center space-y-3">
           <div className="text-4xl">🗓️</div>
-          <p className="font-bold text-foreground">{t("pages.dashboard.no_plan_for_today_yet")}</p>
-          <p className="text-xs text-muted-foreground">{t("pages.dashboard.create_today_s_routine_in_one_tap")}</p>
-          <Link href="/routines/generate">
-            <button className="mt-1 inline-flex items-center gap-2 rounded-full bg-primary hover:bg-primary text-white font-bold text-sm px-5 py-2.5 transition-colors">
+          <p className="font-bold text-foreground">
+            {selectedChildName
+              ? t("dashboard.no_plan_for_child", { name: selectedChildName })
+              : t("pages.dashboard.no_plan_for_today_yet")}
+          </p>
+          <p className="text-xs text-muted-foreground">{t("dashboard.no_plan_subtitle")}</p>
+          {onGenerate ? (
+            <button
+              type="button"
+              onClick={onGenerate}
+              className="mt-1 inline-flex items-center gap-2 rounded-full bg-primary hover:bg-primary/90 text-white font-bold text-sm px-5 py-2.5 transition-colors"
+            >
               <Sparkles className="h-4 w-4" />
-              {t("pages.dashboard.plan_my_child_s_day")}
+              {t("dashboard.generate_today")}
             </button>
-          </Link>
+          ) : (
+            <Link href="/routines/generate">
+              <button
+                type="button"
+                className="mt-1 inline-flex items-center gap-2 rounded-full bg-primary hover:bg-primary/90 text-white font-bold text-sm px-5 py-2.5 transition-colors"
+              >
+                <Sparkles className="h-4 w-4" />
+                {t("dashboard.generate_today")}
+              </button>
+            </Link>
+          )}
         </CardContent>
-      </Card>;
+      </Card>
+    );
   }
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
@@ -577,16 +704,27 @@ function NowNextTimeline({
         </CardContent>
       </Card>;
   }
+  const allTodayItems = todayRoutines.flatMap((r) => routineItems<RoutineItem>(r));
+  const doneCount = allTodayItems.filter((i) => i.status === "completed").length;
+  const nextItem = allItems.find((item) => item.status !== "completed");
+
   return <Card className="rounded-2xl border border-border bg-card overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-primary" />
-          <span className="font-quicksand font-bold text-sm text-foreground">{t("pages.dashboard.today_s_timeline")}</span>
-          <LiveDot />
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-primary shrink-0" />
+            <span className="font-quicksand font-bold text-sm text-foreground">{t("dashboard.todays_timeline")}</span>
+            <LiveDot />
+          </div>
+          {nextItem ? (
+            <p className="text-[11px] text-muted-foreground mt-1 truncate">
+              {t("dashboard.timeline_next_up", { task: nextItem.activity })}
+            </p>
+          ) : doneCount > 0 && doneCount >= allTodayItems.length ? (
+            <p className="text-[11px] text-muted-foreground mt-1">{t("dashboard.day_complete")}</p>
+          ) : null}
         </div>
-        <Link href="/routines" className="text-xs font-bold text-primary dark:text-primary hover:text-primary flex items-center gap-0.5">
-          {t("pages.dashboard.view_all")} <ArrowRight className="h-3 w-3 ml-0.5" />
-        </Link>
+        <TimelineProgressChip done={doneCount} total={allTodayItems.length} />
       </div>
       <div className="p-3 space-y-1.5">
         {displayItems.map((item, idx) => {
@@ -624,33 +762,62 @@ function NowNextTimeline({
 }
 
 // ─── Streak Card (compact row) ────────────────────────────────────────────
-function StreakCard({
-  streak
-}: {
-  streak: number;
-}) {
-  const {
-    t
-  } = useTranslation();
-  return <Link href="/progress">
-      <div className="flex items-center gap-3 p-3.5 rounded-2xl border border-border bg-card hover:border-border dark:hover:border-primary hover:shadow-sm transition-all cursor-pointer group">
-        <div className={`text-2xl ${streak === 0 ? "grayscale opacity-40" : ""}`}>🔥</div>
+function StreakCard({ streak, routines }: { streak: number; routines: Routine[] }) {
+  const { t } = useTranslation();
+  const dateSet = new Set(routines.map((r) => routineDateKey(r)).filter(Boolean));
+  const last7Keys = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().slice(0, 10);
+  });
+  const sub =
+    streak === 0
+      ? t("dashboard.streak_start_today")
+      : streak >= 3
+        ? t("dashboard.streak_on_roll")
+        : t("dashboard.streak_keep_going");
+  const badge =
+    streak >= 7
+      ? `🏆 ${t("dashboard.streak_epic")}`
+      : streak >= 3
+        ? `🔥 ${t("dashboard.streak_hot")}`
+        : `✨ ${t("dashboard.streak_active")}`;
+
+  return (
+    <Link href="/progress">
+      <div className="flex items-center gap-3 p-3.5 rounded-2xl border border-border bg-card hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer">
+        <Flame className={`h-7 w-7 shrink-0 ${streak === 0 ? "text-muted-foreground/40" : "text-orange-500"}`} />
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1.5">
             <span className="font-black text-2xl text-foreground leading-none">{streak}</span>
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{t("pages.dashboard.day_streak")}</span>
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+              {t("dashboard.day_streak")}
+            </span>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
-            {streak === 0 ? "Start today!" : streak >= 3 ? "You're on a roll!" : "Keep going!"}
-          </p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>
+          <div className="flex gap-1 mt-2">
+            {last7Keys.map((key) => (
+              <span
+                key={key}
+                className={`h-2 w-2 rounded-full ${dateSet.has(key) ? "bg-orange-500" : "bg-muted"}`}
+              />
+            ))}
+          </div>
+          {streak > 0 && streak < 7 ? (
+            <p className="text-[10px] text-muted-foreground mt-1.5">
+              {t("dashboard.streak_goal", { days: 7 - streak })}
+            </p>
+          ) : null}
         </div>
-        <div className="shrink-0">
-          {streak > 0 && <span className="text-xs font-bold text-primary dark:text-primary bg-muted dark:bg-card border border-border dark:border-border px-2 py-0.5 rounded-full">
-              {streak >= 7 ? "🏆 Epic" : streak >= 3 ? "🔥 Hot" : "✨ Active"}
-            </span>}
-        </div>
+        {streak > 0 ? (
+          <span className="text-xs font-bold text-primary bg-muted border border-border px-2 py-0.5 rounded-full shrink-0">
+            {badge}
+          </span>
+        ) : null}
       </div>
-    </Link>;
+    </Link>
+  );
 }
 
 // ─── Flat Stat Tile ───────────────────────────────────────────────────────
@@ -658,121 +825,197 @@ function StatTile({
   label,
   value,
   sublabel,
-  icon
+  icon,
+  href,
 }: {
   label: string;
   value: number | string;
   sublabel: string;
   icon: React.ReactNode;
+  href: string;
 }) {
-  return <div className="flex flex-col gap-2 p-3.5 rounded-xl border border-border bg-card">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{label}</span>
-        <span className="text-primary dark:text-primary">{icon}</span>
+  return (
+    <Link href={href} className="block">
+      <div className="flex flex-col gap-2 p-3.5 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-sm transition-all h-full">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{label}</span>
+          <span className="text-primary">{icon}</span>
+        </div>
+        <div>
+          <div className="text-2xl font-black text-foreground leading-none">{value}</div>
+          <div className="text-[10px] font-medium text-muted-foreground mt-0.5 leading-snug">{sublabel}</div>
+        </div>
       </div>
-      <div>
-        <div className="text-2xl font-black text-foreground leading-none">{value}</div>
-        <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mt-0.5">{sublabel}</div>
-      </div>
-    </div>;
+    </Link>
+  );
 }
 
 // ─── Stats 2×2 Grid ───────────────────────────────────────────────────────
-function StatsGrid({
-  summary,
-  loading
-}: {
-  summary: any;
-  loading: boolean;
-}) {
+function StatsGrid({ summary, loading }: { summary: any; loading: boolean }) {
+  const { t } = useTranslation();
   if (loading) {
-    return <div className="grid grid-cols-2 gap-2">
-        {Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
-      </div>;
+    return (
+      <div className="grid grid-cols-2 gap-2">
+        {Array(4)
+          .fill(0)
+          .map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
+          ))}
+      </div>
+    );
   }
-  return <div className="grid grid-cols-2 gap-2">
-      <StatTile label="Routines" value={summary?.routinesGeneratedThisWeek || 0} sublabel="this week" icon={<Calendar className="h-3.5 w-3.5" />} />
-      <StatTile label="Great Job" value={summary?.positiveBehaviorsToday || 0} sublabel="today" icon={<TrendingUp className="h-3.5 w-3.5" />} />
-      <StatTile label="Challenging" value={summary?.negativeBehaviorsToday || 0} sublabel="today" icon={<TrendingDown className="h-3.5 w-3.5" />} />
-      <StatTile label="Children" value={summary?.totalChildren || 0} sublabel="total" icon={<Users className="h-3.5 w-3.5" />} />
-    </div>;
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <StatTile
+        label={t("dashboard.stat_plans_week")}
+        value={summary?.routinesGeneratedThisWeek || 0}
+        sublabel={t("dashboard.stat_plans_week_sub")}
+        icon={<Calendar className="h-3.5 w-3.5" />}
+        href="/routines"
+      />
+      <StatTile
+        label={t("dashboard.stat_great_today")}
+        value={summary?.positiveBehaviorsToday || 0}
+        sublabel={t("dashboard.stat_great_today_sub")}
+        icon={<TrendingUp className="h-3.5 w-3.5" />}
+        href="/behavior"
+      />
+      <StatTile
+        label={t("dashboard.stat_support_today")}
+        value={summary?.negativeBehaviorsToday || 0}
+        sublabel={t("dashboard.stat_support_today_sub")}
+        icon={<Heart className="h-3.5 w-3.5" />}
+        href="/behavior"
+      />
+      <StatTile
+        label={t("dashboard.stat_total_routines")}
+        value={summary?.totalRoutines || 0}
+        sublabel={t("dashboard.stat_total_routines_sub")}
+        icon={<Activity className="h-3.5 w-3.5" />}
+        href="/children"
+      />
+    </div>
+  );
 }
+
+type AmyTip = { emoji: string; text: string; actionLabel?: string; href?: string; onAction?: () => void };
 
 // ─── Amy AI Suggestion Card ───────────────────────────────────────────────
 function AmySuggestionCard({
   routines,
-  streak
+  streak,
+  onGenerate,
 }: {
   routines: Routine[];
   streak: number;
+  onGenerate: () => void;
 }) {
-  const {
-    t
-  } = useTranslation();
+  const { t } = useTranslation();
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todayRoutines = routines.filter(r => routineDateKey(r) === todayStr);
-  const allItems = todayRoutines.flatMap(r => routineItems<RoutineItem>(r));
+  const todayRoutines = routines.filter((r) => routineDateKey(r) === todayStr);
+  const allItems = todayRoutines.flatMap((r) => routineItems<RoutineItem>(r));
   const total = allItems.length;
   const completed = allItems.filter((i) => i.status === "completed").length;
-  const pct = total > 0 ? Math.round(completed / total * 100) : 0;
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
   const hour = new Date().getHours();
-  const suggestions: {
-    emoji: string;
-    text: string;
-  }[] = [];
+  const suggestions: AmyTip[] = [];
+
   if (total === 0) {
     suggestions.push({
       emoji: "📅",
-      text: "No routine for today yet. Generate one to get started!"
+      text: "No routine for today yet. Generate one to get started!",
+      actionLabel: t("dashboard.amy_generate_routine"),
+      onAction: onGenerate,
     });
   } else if (pct < 30 && hour >= 14) {
     suggestions.push({
       emoji: "⚡",
-      text: "Your child seems behind today — try shorter, easier tasks to build momentum."
+      text: "Your child seems behind today — try shorter, easier tasks to build momentum.",
+      actionLabel: t("dashboard.amy_generate_routine"),
+      onAction: onGenerate,
     });
   } else if (pct >= 80) {
     suggestions.push({
       emoji: "🌟",
-      text: "Amazing progress today! Consider a small reward to celebrate."
+      text: "Amazing progress today! Consider a small reward to celebrate.",
+      actionLabel: t("dashboard.amy_view_rewards"),
+      href: "/rewards",
     });
   }
   if (hour >= 15 && hour <= 17) {
     suggestions.push({
       emoji: "❤️",
-      text: "Good time for a 15-min bonding activity — a quick walk or board game goes a long way."
+      text: "Good time for a 15-min bonding activity — a quick walk or board game goes a long way.",
+      actionLabel: t("dashboard.amy_open_hub"),
+      href: "/parenting-hub",
     });
   }
   if (streak >= 3) {
     suggestions.push({
       emoji: "🔥",
-      text: `You're on a ${streak}-day streak! Consistency builds habits.`
+      text: `You're on a ${streak}-day streak! Consistency builds habits.`,
+      actionLabel: t("dashboard.amy_view_progress"),
+      href: "/progress",
     });
   } else if (streak === 0 && hour < 10) {
     suggestions.push({
       emoji: "☀️",
-      text: "Fresh start today! Generate a routine to set a positive tone for the day."
+      text: "Fresh start today! Generate a routine to set a positive tone for the day.",
+      actionLabel: t("dashboard.amy_generate_routine"),
+      onAction: onGenerate,
     });
   }
   if (hour >= 19) {
     suggestions.push({
       emoji: "🌙",
-      text: "Wind-down time! End screen time 30 min before sleep for better rest."
+      text: "Wind-down time! End screen time 30 min before sleep for better rest.",
+      actionLabel: t("dashboard.amy_open_hub"),
+      href: "/parenting-hub",
     });
   }
+
   const display = suggestions.slice(0, 2);
-  return <div className="rounded-2xl border border-border dark:border-border bg-muted dark:bg-card overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border dark:border-border">
+
+  return (
+    <div className="rounded-2xl border border-border bg-muted/30 dark:bg-card overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
         <AmyIcon size={18} bounce />
         <span className="font-quicksand font-bold text-sm text-foreground">{t("pages.dashboard.amy_ai_suggests")}</span>
       </div>
       <div className="p-3 space-y-2">
-        {display.map((s, i) => <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white dark:bg-card border border-border text-sm">
+        {display.map((s, i) => (
+          <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-card border border-border text-sm">
             <span className="text-base shrink-0 mt-0.5">{s.emoji}</span>
-            <p className="leading-snug text-foreground/85">{s.text}</p>
-          </div>)}
-        {display.length === 0 && <p className="text-xs text-muted-foreground text-center py-2">{t("pages.dashboard.all_looking_good_today")}</p>}
+            <div className="flex-1 min-w-0 space-y-2">
+              <p className="leading-snug text-foreground/85">{s.text}</p>
+              {s.actionLabel && s.href ? (
+                <Link
+                  href={s.href}
+                  className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-[11px] font-bold px-3 py-1.5 hover:bg-primary/90"
+                >
+                  {s.actionLabel}
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              ) : null}
+              {s.actionLabel && s.onAction ? (
+                <button
+                  type="button"
+                  onClick={s.onAction}
+                  className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-[11px] font-bold px-3 py-1.5 hover:bg-primary/90"
+                >
+                  {s.actionLabel}
+                  <ArrowRight className="h-3 w-3" />
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ))}
+        {display.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-2">{t("pages.dashboard.all_looking_good_today")}</p>
+        ) : null}
       </div>
-    </div>;
+    </div>
+  );
 }
 
 // ─── Parent Score Card ────────────────────────────────────────────────────
@@ -794,23 +1037,28 @@ function ParentScoreCard({
   const streakBonus = Math.min(streak * 5, 30);
   const score = Math.min(Math.round(completionRate * 0.5 + daysActive * 5 + streakBonus), 100);
   const grade = score >= 80 ? "A" : score >= 60 ? "B" : score >= 40 ? "C" : "D";
-  const percentile = score >= 80 ? 90 : score >= 60 ? 70 : score >= 40 ? 50 : score >= 20 ? 30 : 15;
+  const tasksNeeded = score < 60 ? Math.max(1, Math.ceil((60 - score) / 12)) : 0;
   return <div className="rounded-2xl border border-border bg-card overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-        <Trophy className="h-4 w-4 text-primary" />
-        <span className="font-quicksand font-bold text-sm text-foreground">{t("pages.dashboard.parent_score")}</span>
+        <Ribbon className="h-4 w-4 text-primary" />
+        <div>
+          <span className="font-quicksand font-bold text-sm text-foreground block">{t("dashboard.parent_score")}</span>
+          <span className="text-[11px] text-muted-foreground">{t("dashboard.parent_score_sub")}</span>
+        </div>
       </div>
       <div className="p-4 space-y-3">
         <div className="flex items-center gap-3">
-          <div className="h-14 w-14 rounded-2xl bg-muted dark:bg-card border border-border dark:border-border flex items-center justify-center shrink-0">
-            <span className="font-black text-2xl text-primary dark:text-primary">{grade}</span>
+          <div className="h-14 w-14 rounded-2xl bg-muted dark:bg-card border border-border flex items-center justify-center shrink-0">
+            <span className="font-black text-2xl text-primary">{grade}</span>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-1.5">
               <span className="font-black text-2xl text-foreground">{score}</span>
               <span className="text-xs text-muted-foreground font-bold">/100</span>
             </div>
-            <p className="text-xs text-muted-foreground">{t("pages.dashboard.top")} {100 - percentile}{t("pages.dashboard.of_parents")}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("pages.dashboard.completion")} {completionRate}% · {t("pages.dashboard.days_active")} {daysActive}/7
+            </p>
           </div>
         </div>
         <div className="space-y-1.5">
@@ -833,9 +1081,11 @@ function ParentScoreCard({
           }} />
           </div>
         </div>
-        {score < 60 && <p className="text-xs text-muted-foreground bg-muted rounded-xl p-2.5 border border-border">
-            {t("pages.dashboard.complete_5_tasks_per_day_to_boost_your_score")}
-          </p>}
+        {score < 60 && tasksNeeded > 0 ? (
+          <p className="text-xs text-muted-foreground bg-muted rounded-xl p-2.5 border border-border">
+            {t("dashboard.score_boost_hint", { count: tasksNeeded })}
+          </p>
+        ) : null}
       </div>
     </div>;
 }
@@ -873,7 +1123,7 @@ function RewardsCard({
       <CardHeader className="pb-3 border-b border-border/50">
         <div className="flex items-center justify-between">
           <CardTitle className="font-quicksand text-base flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-primary" />
+            <Medal className="h-4 w-4 text-primary" />
             {t("pages.dashboard.rewards_points")}
           </CardTitle>
           <div className="flex items-center gap-1.5 bg-muted dark:bg-card text-primary dark:text-muted-foreground rounded-full px-3 py-1 border border-border dark:border-border">
@@ -1063,6 +1313,7 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const onboardingData = queryClient.getQueryData(["onboarding-status"]);
   const [profileName, setProfileName] = useState<string | null>(null);
+  const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
   const [, setLocation] = useLocation();
   const {
     isPremium,
@@ -1135,6 +1386,33 @@ export default function Dashboard() {
   const authReady = userLoaded && authLoaded && authStatus !== "loading";
   const dataBootLoading =
     authReady && isSignedIn && (loadingSummary || subLoading);
+
+  const childrenSafe = Array.isArray(childrenList) ? childrenList : [];
+  const recentRoutinesSafe = Array.isArray(routines) ? routines : [];
+  const statsSafe = Array.isArray(stats) ? stats : [];
+  const allRoutinesSafe = asRoutineList<Routine>(allRoutines);
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const progressByChildId = useMemo(
+    () => computeChildProgressMap(childrenSafe as ChildRow[], allRoutinesSafe, todayKey),
+    [childrenList, allRoutines, todayKey],
+  );
+  const filteredRoutines = useMemo(
+    () => filterRoutinesByChild(allRoutinesSafe, selectedChildId),
+    [allRoutines, selectedChildId],
+  );
+  const filteredRecentRoutines = useMemo(
+    () => filterRoutinesByChild(recentRoutinesSafe, selectedChildId),
+    [routines, selectedChildId],
+  );
+  const filteredBehaviorStats = useMemo(() => {
+    if (selectedChildId == null) return statsSafe;
+    return statsSafe.filter((s: { childId: number }) => s.childId === selectedChildId);
+  }, [stats, selectedChildId]);
+  const selectedChild = useMemo(
+    () => (childrenSafe as ChildRow[]).find((c) => c.id === selectedChildId) ?? null,
+    [childrenList, selectedChildId],
+  );
+  const streak = useMemo(() => computeStreak(allRoutinesSafe), [allRoutines]);
 
   useEffect(() => {
     // Single-flight ref lock — once the parent-profile fetch has been
@@ -1215,11 +1493,6 @@ export default function Dashboard() {
   }
 
   const lastUpdated = Math.max(summaryUpdatedAt ?? 0, routinesUpdatedAt ?? 0, statsUpdatedAt ?? 0);
-  const childrenSafe = Array.isArray(childrenList) ? childrenList : [];
-  const recentRoutinesSafe = Array.isArray(routines) ? routines : [];
-  const statsSafe = Array.isArray(stats) ? stats : [];
-  const allRoutinesSafe = asRoutineList<Routine>(allRoutines);
-  const streak = computeStreak(allRoutinesSafe);
   const routinesCount = allRoutinesSafe.length;
   const routinesMax = entitlements?.limits?.routinesMax ?? 1;
   const generateRoutineLocked = !isPremium && routinesCount >= routinesMax;
@@ -1284,25 +1557,36 @@ export default function Dashboard() {
 
             {/* LEFT column: Children + Now/Next */}
             <div className="flex flex-col gap-5">
-              <ChildrenStrip children={childrenSafe} />
+              <ChildrenStrip
+                children={childrenSafe as ChildRow[]}
+                selectedChildId={selectedChildId}
+                onSelectChild={setSelectedChildId}
+                onOpenChild={(id) => setLocation(`/children/${id}`)}
+                progressByChildId={progressByChildId}
+              />
               <div>
-                <SectionLabel>{t("pages.dashboard.today")}</SectionLabel>
-                <div className="mt-2">
-                  <NowNextTimeline routines={allRoutinesSafe} />
-                </div>
+                <NowNextTimeline
+                  routines={filteredRoutines}
+                  selectedChildName={selectedChild?.name ?? null}
+                  onGenerate={handleGenerateRoutine}
+                />
               </div>
             </div>
 
             {/* RIGHT column: Streak + Stats + Amy + Parent Score */}
             <div className="flex flex-col gap-4">
-              <SectionLabel>{t("pages.dashboard.at_a_glance")}</SectionLabel>
+              <DashboardSectionHeader label={t("dashboard.at_a_glance")} icon={Activity} />
               <div className="flex flex-col gap-3 -mt-2">
-                <StreakCard streak={streak} />
+                <StreakCard streak={streak} routines={allRoutinesSafe} />
                 <StatsGrid summary={summary} loading={loadingSummary} />
               </div>
-              <SectionLabel>{t("pages.dashboard.coaching")}</SectionLabel>
+              <DashboardSectionHeader label={t("dashboard.coaching")} icon={Sparkles} />
               <div className="flex flex-col gap-3 -mt-2">
-                <AmySuggestionCard routines={allRoutinesSafe} streak={streak} />
+                <AmySuggestionCard
+                  routines={filteredRoutines}
+                  streak={streak}
+                  onGenerate={handleGenerateRoutine}
+                />
                 <ParentScoreCard routines={allRoutinesSafe} streak={streak} />
               </div>
             </div>
@@ -1330,8 +1614,8 @@ export default function Dashboard() {
                 {loadingRoutines ? <div className="p-4 space-y-4">
                     <Skeleton className="h-16 w-full rounded-xl" />
                     <Skeleton className="h-16 w-full rounded-xl" />
-                  </div> : recentRoutinesSafe.length > 0 ? <div className="divide-y divide-border/50">
-                    {recentRoutinesSafe.map(routine => {
+                  </div> : filteredRecentRoutines.length > 0 ? <div className="divide-y divide-border/50">
+                    {filteredRecentRoutines.map(routine => {
                   const items = routineItems(routine) as RoutineItem[];
                   const done = items.filter(i => i.status === "completed").length;
                   const pct = items.length > 0 ? Math.round(done / items.length * 100) : 0;
@@ -1350,11 +1634,16 @@ export default function Dashboard() {
                             })}</span>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0 ml-2">
-                              {items.length > 0 && <div className="text-right">
+                            <div className="flex items-center gap-2 shrink-0 ml-2 min-w-[56px]">
+                              {items.length > 0 ? (
+                                <div className="text-right w-full">
                                   <div className="text-xs font-bold text-foreground">{pct}%</div>
-                                  <div className="text-[10px] text-muted-foreground">{done}/{items.length}</div>
-                                </div>}
+                                  <div className="w-[52px] h-1 rounded-full bg-muted ml-auto mt-1 overflow-hidden">
+                                    <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                                  </div>
+                                  <div className="text-[10px] text-muted-foreground mt-0.5">{done}/{items.length}</div>
+                                </div>
+                              ) : null}
                               <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0" />
                             </div>
                           </div>
@@ -1379,7 +1668,7 @@ export default function Dashboard() {
                       <Activity className="h-5 w-5 text-primary" />
                       {t("pages.dashboard.behavior_highlights")}
                     </CardTitle>
-                    <CardDescription>{t("pages.dashboard.overall_stats_by_child")}</CardDescription>
+                    <CardDescription>{t("dashboard.behavior_today_subtitle")}</CardDescription>
                   </div>
                   <Link href="/behavior" className="text-sm font-medium text-primary dark:text-primary hover:underline flex items-center">
                     {t("pages.dashboard.log_behavior")} <ArrowRight className="h-4 w-4 ml-1" />
@@ -1390,26 +1679,23 @@ export default function Dashboard() {
                 {loadingStats ? <div className="p-4 space-y-4">
                     <Skeleton className="h-16 w-full rounded-xl" />
                     <Skeleton className="h-16 w-full rounded-xl" />
-                  </div> : statsSafe.length > 0 ? <div className="divide-y divide-border/50">
-                    {statsSafe.map(stat => <div key={stat.childId} className="p-4">
+                  </div> : filteredBehaviorStats.length > 0 ? <div className="divide-y divide-border/50">
+                    {filteredBehaviorStats.map((stat: { childId: number; childName: string; positive: number; negative: number; neutral: number }) => <div key={stat.childId} className="p-4">
                         <h4 className="font-bold text-foreground mb-3">{stat.childName}</h4>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1.5 flex-1 bg-muted dark:bg-card rounded-lg p-2 border border-border dark:border-border">
-                            <div className="bg-muted dark:bg-card p-1 rounded-md text-primary dark:text-primary">
-                              <TrendingUp className="h-3.5 w-3.5" />
-                            </div>
-                            <span className="font-bold text-primary dark:text-muted-foreground">{stat.positive}</span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex items-center gap-1.5 bg-muted dark:bg-card rounded-lg px-2.5 py-2 border border-border">
+                            <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                            <span className="text-[10px] text-muted-foreground">{t("dashboard.positive_label")}</span>
+                            <span className="font-bold text-primary">{stat.positive}</span>
                           </div>
-                          <div className="flex items-center gap-1.5 flex-1 bg-destructive/10 rounded-lg p-2">
-                            <div className="bg-destructive/20 p-1 rounded-md text-destructive">
-                              <TrendingDown className="h-3.5 w-3.5" />
-                            </div>
+                          <div className="flex items-center gap-1.5 bg-destructive/10 rounded-lg px-2.5 py-2 border border-destructive/20">
+                            <Heart className="h-3.5 w-3.5 text-destructive" />
+                            <span className="text-[10px] text-muted-foreground">{t("dashboard.negative_label")}</span>
                             <span className="font-bold text-destructive">{stat.negative}</span>
                           </div>
-                          <div className="flex items-center gap-1.5 flex-1 bg-muted rounded-lg p-2">
-                            <div className="bg-foreground/10 p-1 rounded-md text-foreground/70">
-                              <Minus className="h-3.5 w-3.5" />
-                            </div>
+                          <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2.5 py-2 border border-border">
+                            <Minus className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-[10px] text-muted-foreground">{t("dashboard.neutral_label")}</span>
                             <span className="font-bold text-foreground/70">{stat.neutral}</span>
                           </div>
                         </div>
