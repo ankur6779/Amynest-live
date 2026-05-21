@@ -94,6 +94,7 @@ export function getCvcWordEntry(word: string): CvcWordEntry | undefined {
 export function getCvcWordsByLevel(level: 1 | 2 | 3): CvcWordEntry[] {
   if (level === 3) return getCvcWordsRandomOrder();
   return CVC_WORDS.filter((e) => e.level === level);
+}
 
 /** Level 3 practice: shuffled copy of all unique words. */
 export function getCvcWordsRandomOrder(): CvcWordEntry[] {
