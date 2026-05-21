@@ -143,6 +143,8 @@ interface PhonicsLearningProps {
   childId: number | string;
   childName: string;
   totalAgeMonths: number;
+  /** Deep-link from /phonics/test?type=daily|weekly */
+  initialTestType?: "daily" | "weekly";
 }
 export function PhonicsLearning(props: PhonicsLearningProps) {
   return (
@@ -155,7 +157,8 @@ export function PhonicsLearning(props: PhonicsLearningProps) {
 function PhonicsLearningContent({
   childId,
   childName,
-  totalAgeMonths
+  totalAgeMonths,
+  initialTestType,
 }: PhonicsLearningProps) {
   const {
     t
@@ -265,7 +268,12 @@ function PhonicsLearningContent({
       />
       <div id="phonics-test" className="scroll-mt-24">
         <SubItemGate sectionId="hub_phonics" subItemId="phonics_test">
-          <PhonicsTest childId={childId} childName={childName} totalAgeMonths={totalAgeMonths} />
+          <PhonicsTest
+            childId={childId}
+            childName={childName}
+            totalAgeMonths={totalAgeMonths}
+            initialTestType={initialTestType}
+          />
         </SubItemGate>
       </div>
       <SubItemGate sectionId="hub_phonics" subItemId="phonics_download">

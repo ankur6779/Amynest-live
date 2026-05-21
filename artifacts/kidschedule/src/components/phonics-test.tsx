@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useSearch } from "wouter";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { useMountedRef } from "@/hooks/use-safe-async";
 import {
@@ -16,7 +17,70 @@ import { cn } from "@/lib/utils";
 // ─── API shapes ──────────────────────────────────────────────────────────────
 
 type TestType = "daily" | "weekly";
-type GameMode = "hear_tap" | "missing_letter" | "build_word" | "speed_challenge";
+type GameMode = "hear_tap" | "missing_letter" | "build_word" | "speed_challenge" | "mixed";
+
+const RESUME_STORAGE_PREFIX = "amynest:phonics-test-resume:";
+
+interface TestConfigState {
+  ok: boolean;
+  eligible: boolean;
+  hasContent: boolean;
+  daily: { questionCount: number; available: boolean; nextAvailableAt: string | null };
+  weekly: { questionCount: number; available: boolean; nextAvailableAt: string | null };
+}
+
+interface SavedTestSession {
+  testType: TestType;
+  gameMode: GameMode;
+  data: StartResponse;
+  index: number;
+  answers: { questionId: string; selectedIndex: number }[];
+  savedAt: number;
+  expiresAt: string;
+}
+
+/** Short tap feedback — Web Audio, no network. */
+function playTapSound(ok: boolean) {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = ok ? 880 : 220;
+    gain.gain.value = 0.08;
+    osc.start();
+    osc.stop(ctx.currentTime + (ok ? 0.12 : 0.18));
+    osc.onended = () => void ctx.close();
+  } catch {
+    /* ignore — optional UX polish */
+  }
+}
+
+const ttsUrlCache = new Map<string, string>();
+
+async function preloadTtsPhrase(
+  authFetch: ReturnType<typeof useAuthFetch>,
+  text: string,
+  mode: "default" | "phonics" = "phonics",
+) {
+  const key = `${mode}:${text}`;
+  if (ttsUrlCache.has(key)) return ttsUrlCache.get(key);
+  try {
+    const res = await authFetch("/api/tts/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, mode, category: "phonics", voice: "alloy", speed: 0.9 }),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { url?: string; audioUrl?: string };
+    const url = json.url ?? json.audioUrl;
+    if (url) ttsUrlCache.set(key, url);
+    return url ?? null;
+  } catch {
+    return null;
+  }
+}
 
 interface AvailabilityState {
   ageGroup: string | null;
@@ -98,7 +162,7 @@ const START_ERROR_COPY: Record<string, string> = {
   age_not_supported:
     "Phonics tests are for ages 1–6. Please pick a child in that range.",
   session_misconfigured:
-    "Something is misconfigured on our side. Please try again in a moment.",
+    "We could not start the test securely. Please refresh the app and try again.",
   unauthorized: "Please sign in again to start the test.",
   invalid_body: "Something went wrong starting the test. Please try again.",
 };
@@ -506,6 +570,9 @@ export interface PhonicsTestProps {
   childId: number | string;
   childName: string;
   totalAgeMonths: number;
+  initialTestType?: TestType;
+  /** When true, render focused play UI (used on /phonics/test/play). */
+  playOnly?: boolean;
 }
 
 type Phase =
@@ -532,15 +599,27 @@ export function PhonicsTest(props: PhonicsTestProps) {
   );
 }
 
-function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestProps) {
+function PhonicsTestContent({
+  childId,
+  childName,
+  totalAgeMonths,
+  initialTestType,
+  playOnly = false,
+}: PhonicsTestProps) {
   useAnimationsCss();
   const authFetch = useAuthFetch();
   const isMounted = useMountedRef();
+  const [, setLocation] = useLocation();
+  const search = useSearch();
   const numericChildId = typeof childId === "number" ? childId : Number(childId);
+  const displayName = childName.trim() || "your child";
 
   const [availability, setAvailability] = useState<AvailabilityState | null>(null);
+  const [testConfig, setTestConfig] = useState<TestConfigState | null>(null);
   const [availLoading, setAvailLoading] = useState(true);
   const [availError, setAvailError] = useState<string | null>(null);
+  const [startError, setStartError] = useState<string | null>(null);
+  const [resumeSession, setResumeSession] = useState<SavedTestSession | null>(null);
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [now, setNow] = useState(Date.now());
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
@@ -583,6 +662,8 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
     }
   }, [authFetch, numericChildId, isMounted]);
 
+  const resumeKey = `${RESUME_STORAGE_PREFIX}${numericChildId}`;
+
   useEffect(() => {
     const controller = new AbortController();
     void (async () => {
@@ -595,40 +676,127 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
           setAvailLoading(true);
           setAvailError(null);
         }
-        const res = await authFetch(`/api/phonics/tests/availability/${numericChildId}`, {
-          signal: controller.signal,
-        });
+        const [availRes, configRes] = await Promise.all([
+          authFetch(`/api/phonics/tests/availability/${numericChildId}`, {
+            signal: controller.signal,
+          }),
+          authFetch(`/api/phonics/test-config/${numericChildId}`, {
+            signal: controller.signal,
+          }),
+        ]);
         if (!isMounted.current || controller.signal.aborted) return;
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as AvailabilityState;
+        if (!availRes.ok) throw new Error(`HTTP ${availRes.status}`);
+        const json = (await availRes.json()) as AvailabilityState;
         if (isMounted.current) setAvailability(json ?? null);
+        if (configRes.ok) {
+          const cfg = (await configRes.json()) as TestConfigState;
+          if (isMounted.current && cfg?.ok) setTestConfig(cfg);
+        }
       } catch (err) {
         if ((err as { name?: string })?.name === "AbortError") return;
         console.error("[phonics-test] API failed", err);
         if (isMounted.current) {
-          setAvailError(err instanceof Error ? err.message : "Failed to load availability");
+          setAvailError("Could not load test availability. Pull to refresh or try again.");
         }
       } finally {
         if (isMounted.current) setAvailLoading(false);
       }
     })();
     return () => controller.abort();
-    // Load once on mount / child change — avoid unstable callback deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [numericChildId]);
 
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(resumeKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as SavedTestSession;
+      if (new Date(saved.expiresAt).getTime() <= Date.now()) {
+        window.localStorage.removeItem(resumeKey);
+        return;
+      }
+      if (saved.index < saved.data.questions.length) {
+        setResumeSession(saved);
+      }
+    } catch {
+      window.localStorage.removeItem(resumeKey);
+    }
+  }, [resumeKey]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    const type = params.get("type") ?? initialTestType;
+    if (type === "daily" || type === "weekly") {
+      setPhase({ kind: "mode-pick", testType: type });
+    }
+  }, [search, initialTestType]);
+
   const eligible = totalAgeMonths >= 12 && (availability?.eligible ?? totalAgeMonths >= 12);
 
-  // Step 1 of starting a test: pick a game mode.
-  const handlePickTest = useCallback((testType: TestType) => {
-    setPhase({ kind: "mode-pick", testType });
-  }, []);
+  const persistResume = useCallback(
+    (running: Extract<Phase, { kind: "running" }>) => {
+      const payload: SavedTestSession = {
+        testType: running.testType,
+        gameMode: running.gameMode,
+        data: running.data,
+        index: running.index,
+        answers: running.answers,
+        savedAt: Date.now(),
+        expiresAt: running.data.expiresAt,
+      };
+      window.localStorage.setItem(resumeKey, JSON.stringify(payload));
+    },
+    [resumeKey],
+  );
+
+  const clearResume = useCallback(() => {
+    window.localStorage.removeItem(resumeKey);
+    setResumeSession(null);
+  }, [resumeKey]);
+
+  const startTest = useCallback(
+    (testType: TestType) => {
+      setStartError(null);
+      const params = new URLSearchParams({
+        type: testType,
+        childId: String(numericChildId),
+      });
+      setLocation(`/phonics/test?${params.toString()}`);
+      setPhase({ kind: "mode-pick", testType });
+    },
+    [numericChildId, setLocation],
+  );
+
+  const handlePickTest = useCallback(
+    (testType: TestType) => {
+      startTest(testType);
+    },
+    [startTest],
+  );
+
+  const handleResume = useCallback(() => {
+    if (!resumeSession) return;
+    setPhase({
+      kind: "running",
+      testType: resumeSession.testType,
+      gameMode: resumeSession.gameMode,
+      data: resumeSession.data,
+      index: resumeSession.index,
+      answers: resumeSession.answers,
+      selectedIndex: null,
+      feedback: null,
+    });
+    setLocation(
+      `/phonics/test/play?type=${resumeSession.testType}&childId=${numericChildId}`,
+    );
+  }, [resumeSession, numericChildId, setLocation]);
 
   // Step 2: actually call the API with the chosen game mode.
   const startInFlightRef = useRef(false);
   const handleStartWithMode = useCallback(async (testType: TestType, gameMode: GameMode) => {
     if (startInFlightRef.current) return;
     startInFlightRef.current = true;
+    setStartError(null);
     try {
       if (isMounted.current) setPhase({ kind: "submitting" });
       const res = await authFetch("/api/phonics/tests/start", {
@@ -643,22 +811,33 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
       }
       const data = (await res.json()) as StartResponse;
       if (!data?.questions || data.questions.length === 0) {
-        throw new Error("No questions returned");
+        throw new Error("not_enough_content");
       }
       if (!isMounted.current) return;
-      setPhase({
+      clearResume();
+      const running: Extract<Phase, { kind: "running" }> = {
         kind: "running", testType, gameMode, data,
         index: 0, answers: [], selectedIndex: null, feedback: null,
-      });
+      };
+      setPhase(running);
+      persistResume(running);
+      setLocation(`/phonics/test/play?type=${testType}&childId=${numericChildId}`);
+
+      const first = data.questions[0];
+      const next = data.questions[1];
+      const tts0 = first?.prompt.ttsText ?? first?.prompt.text;
+      const tts1 = next?.prompt.ttsText ?? next?.prompt.text;
+      if (tts0) void preloadTtsPhrase(authFetch, tts0, "phonics");
+      if (tts1) void preloadTtsPhrase(authFetch, tts1, "phonics");
     } catch (err) {
       if (!isMounted.current) return;
       setPhase({ kind: "mode-pick", testType });
       const raw = err instanceof Error ? err.message : "Failed to start test";
-      setAvailError(friendlyStartError(raw));
+      setStartError(friendlyStartError(raw));
     } finally {
       startInFlightRef.current = false;
     }
-  }, [authFetch, numericChildId, isMounted]);
+  }, [authFetch, numericChildId, isMounted, setLocation, clearResume, persistResume]);
 
   // Common submit-answer flow used by both timer expiry and tap.
   const submitAnswer = useCallback((selectedIndex: number, currentPhase: Extract<Phase, { kind: "running" }>) => {
@@ -667,6 +846,7 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
     const correctish = isCorrectClientSide(q, selectedIndex);
     const newAnswers = [...currentPhase.answers, { questionId: q.id, selectedIndex }];
     setPhase({ ...currentPhase, answers: newAnswers, selectedIndex, feedback: correctish ? "correct" : "wrong" });
+    playTapSound(correctish);
     // Replay prompt audio on wrong so the child hears it again.
     // (No-op if no ttsText.)
     setTimeout(async () => {
@@ -674,13 +854,18 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
       const isLast = currentPhase.index + 1 >= currentPhase.data.questions.length;
       if (!isLast) {
         if (isMounted.current) {
-          setPhase({
+          const nextPhase: Extract<Phase, { kind: "running" }> = {
             ...currentPhase,
             answers: newAnswers,
             index: currentPhase.index + 1,
             selectedIndex: null,
             feedback: null,
-          });
+          };
+          setPhase(nextPhase);
+          persistResume(nextPhase);
+          const nq = currentPhase.data.questions[nextPhase.index + 1];
+          const preloadText = nq?.prompt.ttsText ?? nq?.prompt.text;
+          if (preloadText) void preloadTtsPhrase(authFetch, preloadText, "phonics");
         }
         return;
       }
@@ -699,6 +884,7 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
         const submitData = (await res.json()) as SubmitResponse;
         if (!isMounted.current) return;
         setPhase({ kind: "result", data: submitData });
+        clearResume();
         void refreshAvailability();
       } catch (err) {
         if (!isMounted.current) return;
@@ -706,7 +892,7 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
         setAvailError(err instanceof Error ? err.message : "Failed to submit test");
       }
     }, 900);
-  }, [authFetch, refreshAvailability, isMounted]);
+  }, [authFetch, refreshAvailability, isMounted, persistResume, clearResume]);
 
   const handleAnswer = useCallback((selectedIndex: number) => {
     if (phase.kind !== "running") return;
@@ -719,7 +905,13 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
       window.clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    if (phase.kind !== "running" || phase.gameMode !== "speed_challenge") {
+    const qLimit = phase.kind === "running"
+      ? phase.data.questions[phase.index]?.prompt.meta?.timeLimitSec
+      : null;
+    const hasTimer =
+      phase.kind === "running" &&
+      (phase.gameMode === "speed_challenge" || (qLimit != null && qLimit > 0));
+    if (!hasTimer) {
       setSecondsLeft(null);
       return;
     }
@@ -753,8 +945,10 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
   }, [phase.kind === "running" ? `${phase.index}-${phase.selectedIndex}` : phase.kind]);
 
   const handleDone = useCallback(() => {
+    clearResume();
     setPhase({ kind: "idle" });
-  }, []);
+    setLocation("/phonics");
+  }, [clearResume, setLocation]);
 
   if (!eligible) {
     return <div className="text-sm text-muted-foreground">Loading phonics...</div>;
@@ -765,9 +959,13 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
   return (
     <Card
       data-testid="phonics-test-card"
-      className="border-border bg-card dark:bg-card shadow-md"
+      className={cn(
+        "border-border bg-card dark:bg-card shadow-md",
+        playOnly && "border-0 shadow-none bg-transparent",
+      )}
     >
-      <CardContent className="p-5 sm:p-6 space-y-4">
+      <CardContent className={cn("p-5 sm:p-6 space-y-4", playOnly && "p-0")}>
+        {!playOnly && (
         <div className="flex items-center gap-3">
           <div className="rounded-2xl p-2.5 bg-primary text-primary-foreground shadow-md">
             <GraduationCap className="h-5 w-5" />
@@ -777,21 +975,41 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
               Phonics Test
             </h3>
             <p className="text-xs text-muted-foreground">
-              Quick check of {childName}'s phonics — Daily 5 questions or Weekly 20.
+              Quick check of {displayName}'s phonics — Daily 5 questions or Weekly 20.
             </p>
           </div>
         </div>
+        )}
 
         {availLoading && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading availability…
+          <div className="space-y-2 py-2" data-testid="phonics-test-shimmer">
+            <div className="h-14 animate-pulse rounded-2xl bg-muted" />
+            <div className="h-14 animate-pulse rounded-2xl bg-muted" />
           </div>
         )}
 
         {availError && (
-          <p className="text-xs text-foreground" data-testid="phonics-test-error">
+          <p className="text-xs text-rose-600 dark:text-rose-400" data-testid="phonics-test-error">
             {availError}
           </p>
+        )}
+
+        {startError && (
+          <p className="text-xs text-rose-600 dark:text-rose-400" data-testid="phonics-test-start-error">
+            {startError}
+          </p>
+        )}
+
+        {resumeSession && phase.kind === "idle" && !availLoading && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleResume}
+            className="w-full rounded-2xl border-primary text-primary"
+            data-testid="phonics-test-resume"
+          >
+            Resume Test (Q {resumeSession.index + 1} / {resumeSession.data.questions.length})
+          </Button>
         )}
 
         {phase.kind === "idle" && availability && !availLoading && (
@@ -801,7 +1019,12 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
               const cd = formatCountdown(info.nextAvailableAt);
               const _now = now; // eslint-disable-line @typescript-eslint/no-unused-vars
               const label = tt === "daily" ? "Daily Test" : "Weekly Test";
-              const sub = tt === "daily" ? "5 questions • once a day" : "20 questions • once a week";
+              const dailyCount = testConfig?.daily.questionCount ?? 5;
+              const weeklyCount = testConfig?.weekly.questionCount ?? 20;
+              const sub =
+                tt === "daily"
+                  ? `${dailyCount} questions • once a day`
+                  : `${weeklyCount} questions • once a week`;
               return (
                 <Button
                   key={tt}
@@ -838,7 +1061,12 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
           <div className="space-y-3" data-testid="phonics-test-mode-pick">
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-bold text-foreground">
-                Pick a game for {childName}'s {phase.testType === "daily" ? "Daily" : "Weekly"} Test
+                Pick a game for {displayName}'s {phase.testType === "daily" ? "Daily" : "Weekly"} Test
+                {phase.testType === "weekly" && (
+                  <span className="block text-[11px] font-medium text-muted-foreground">
+                    Difficulty increases as you go
+                  </span>
+                )}
               </p>
               <Button
                 type="button"
@@ -850,6 +1078,20 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
                 <ChevronLeft className="h-3 w-3" /> Back
               </Button>
             </div>
+            {phase.testType === "daily" && (
+              <button
+                type="button"
+                onClick={() => handleStartWithMode("daily", "mixed")}
+                data-testid="phonics-test-mode-mixed"
+                className={cn(
+                  "w-full rounded-2xl p-3 text-left text-white bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md",
+                  "hover:scale-[1.01] active:scale-95 transition-transform",
+                )}
+              >
+                <div className="text-sm font-extrabold">Surprise Mix</div>
+                <div className="text-[10px] opacity-90">5 questions • random mini-games</div>
+              </button>
+            )}
             <div className="grid grid-cols-2 gap-2.5">
               {GAME_MODES.map(({ id, label, sub, Icon, bg }) => (
                 <button
@@ -873,8 +1115,11 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
         )}
 
         {phase.kind === "submitting" && (
-          <div className="flex items-center gap-2 py-6 justify-center text-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" /> Working…
+          <div className="space-y-3 py-4" data-testid="phonics-test-submitting">
+            <div className="h-24 animate-pulse rounded-3xl bg-muted" />
+            <div className="flex items-center justify-center gap-2 text-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" /> Starting test…
+            </div>
           </div>
         )}
 
@@ -886,12 +1131,17 @@ function PhonicsTestContent({ childId, childName, totalAgeMonths }: PhonicsTestP
             onAnswer={handleAnswer}
             selectedIndex={phase.selectedIndex}
             feedback={phase.feedback}
-            secondsLeft={phase.gameMode === "speed_challenge" ? secondsLeft : null}
+            secondsLeft={
+              phase.gameMode === "speed_challenge" ||
+              (phase.data.questions[phase.index]?.prompt.meta?.timeLimitSec ?? 0) > 0
+                ? secondsLeft
+                : null
+            }
           />
         )}
 
         {phase.kind === "result" && (
-          <ResultPanel data={phase.data} childName={childName} onDone={handleDone} />
+          <ResultPanel data={phase.data} childName={displayName} onDone={handleDone} />
         )}
       </CardContent>
     </Card>

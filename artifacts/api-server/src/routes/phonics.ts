@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
@@ -549,10 +550,28 @@ const WEEKLY_COUNT = 20;
  * a missing/short secret causes /tests/start to fail loudly rather than
  * silently producing forgeable tokens.
  */
-const SESSION_SECRET = process.env.SESSION_SECRET ?? "";
+/** Resolve a 32+ char secret for phonics session encryption (prod requires SESSION_SECRET). */
+function resolvePhonicsSessionSecret(): string {
+  const direct = (process.env.SESSION_SECRET ?? "").trim();
+  if (direct.length >= 32) return direct;
+  const jwt = (process.env.JWT_SECRET ?? process.env.AUTH_SECRET ?? "").trim();
+  if (jwt.length >= 32) return jwt;
+  if (process.env.NODE_ENV !== "production") {
+    return crypto.createHash("sha256").update("amynest-phonics-dev-session-v1").digest("hex");
+  }
+  return direct;
+}
+
+const SESSION_SECRET = resolvePhonicsSessionSecret();
 
 const TestTypeSchema = z.enum(["daily", "weekly"]);
-const GameModeSchema = z.enum(["hear_tap", "missing_letter", "build_word", "speed_challenge"]);
+const GameModeSchema = z.enum([
+  "hear_tap",
+  "missing_letter",
+  "build_word",
+  "speed_challenge",
+  "mixed",
+]);
 
 async function loadLastResult(
   childId: number,
@@ -586,6 +605,74 @@ async function loadActiveContent(ageGroup: string): Promise<PhonicsContentRow[]>
     )
     .orderBy(asc(phonicsContentTable.level));
 }
+
+// ─── GET /api/phonics/test-config/:childId ─────────────────────────────────────
+//
+// Lightweight config for the test UI — availability + counts. Only surfaces
+// errors when the child lookup actually fails (no fake misconfiguration).
+
+router.get("/phonics/test-config/:childId", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  const childId = Number(req.params.childId);
+  if (!Number.isFinite(childId) || childId <= 0) {
+    res.status(400).json({ error: "invalid_child_id" });
+    return;
+  }
+  try {
+    const child = await loadOwnedChild(childId, userId);
+    if (!child) {
+      res.status(404).json({ error: "child_not_found" });
+      return;
+    }
+    const totalMonths = (child.age ?? 0) * 12 + (child.ageMonths ?? 0);
+    const ageGroup = ageGroupForMonths(totalMonths);
+    if (!ageGroup) {
+      res.json({
+        ok: true,
+        eligible: false,
+        ageGroup: null,
+        daily: { questionCount: DAILY_COUNT, available: false },
+        weekly: { questionCount: WEEKLY_COUNT, available: false },
+        gameModes: ["hear_tap", "missing_letter", "build_word", "speed_challenge", "mixed"],
+      });
+      return;
+    }
+    const [dailyLast, weeklyLast] = await Promise.all([
+      loadLastResult(childId, userId, "daily"),
+      loadLastResult(childId, userId, "weekly"),
+    ]);
+    const dailyState = isAvailable("daily", dailyLast?.completedAt ?? null);
+    const weeklyState = isAvailable("weekly", weeklyLast?.completedAt ?? null);
+    const contentRows = await loadActiveContent(ageGroup);
+    res.json({
+      ok: true,
+      eligible: true,
+      ageGroup,
+      ageGroupLabel: AGE_GROUP_LABEL[ageGroup],
+      hasContent: contentRows.length > 0,
+      daily: {
+        questionCount: DAILY_COUNT,
+        available: dailyState.available,
+        nextAvailableAt: dailyState.nextAvailableAt,
+      },
+      weekly: {
+        questionCount: WEEKLY_COUNT,
+        available: weeklyState.available,
+        nextAvailableAt: weeklyState.nextAvailableAt,
+      },
+      gameModes: ["hear_tap", "missing_letter", "build_word", "speed_challenge", "mixed"],
+    });
+  } catch (err) {
+    logger.error(
+      `phonics test-config failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    res.status(500).json({ error: "server_error" });
+  }
+});
 
 // ─── GET /api/phonics/tests/availability/:childId ────────────────────────────
 
@@ -706,6 +793,7 @@ router.post("/phonics/tests/start", async (req, res): Promise<void> => {
       recentItemIds,
       seed,
       gameMode,
+      testType,
     });
     if (questions.length < count) {
       // Not enough variety to form a full test — degrade gracefully by

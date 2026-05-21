@@ -22,6 +22,8 @@ import { isStaticTtsText } from "@workspace/static-audio";
 import { synthesizeSafe } from "../services/ttsSafe.js";
 import { registerTtsPending, takeTtsPending } from "../services/ttsPendingRegistry.js";
 import { streamLiveTtsToClient } from "../services/ttsLiveStream.js";
+import { generateOpenAiTts } from "../services/ttsGenerate.js";
+import { getOpenAiTtsVoice } from "../lib/openai-tts-config.js";
 
 // ─── Public router (mounted BEFORE requireAuth) ──────────────────────────────
 //
@@ -246,6 +248,72 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
       "tts synthesize failed",
     );
     res.status(200).json({ success: false, ok: false, error: code });
+  }
+});
+
+const generateSchema = z.object({
+  text: z.string().min(1).max(TTS_MAX_INPUT_CHARS),
+  voice: z.string().min(1).max(64).optional(),
+  speed: z.number().min(0.5).max(2).optional(),
+  mode: z.enum(["default", "phonics"]).optional(),
+  category: z.enum(["words", "sentences", "phonics"]).optional(),
+});
+
+/**
+ * POST /api/tts/generate
+ *
+ * OpenAI-only TTS for phonics and dynamic phrases. Checks GCS/DB cache first,
+ * then generates with gpt-4o-mini-tts and persists for reuse.
+ */
+router.post("/tts/generate", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const parsed = generateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return;
+  }
+
+  if (getTtsProvider() === "elevenlabs" && isElevenLabsTtsEnabled()) {
+    res.status(503).json({
+      error: "tts_openai_only",
+      message: "Use TTS_PROVIDER=openai for /api/tts/generate",
+    });
+    return;
+  }
+
+  try {
+    const result = await generateOpenAiTts({
+      text: parsed.data.text,
+      voice: parsed.data.voice ?? getOpenAiTtsVoice(),
+      speed: parsed.data.speed,
+      mode: parsed.data.mode,
+      category: parsed.data.category,
+    });
+    if (!result || !isValidTtsPublicUrl(result.url)) {
+      res.status(502).json({ error: "tts_failed" });
+      return;
+    }
+    res.json({
+      ok: true,
+      url: result.url,
+      audioUrl: result.url,
+      cacheKey: result.cacheKey,
+      cached: result.cached,
+    });
+  } catch (err) {
+    logger.error(
+      {
+        evt: "tts.generate_failed",
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "tts generate failed",
+    );
+    res.status(502).json({ error: "tts_failed" });
   }
 });
 

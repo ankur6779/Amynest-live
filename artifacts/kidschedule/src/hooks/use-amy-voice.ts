@@ -23,7 +23,7 @@ import {
 } from "@/lib/tts-guard";
 
 // ─── Global single-flight guard ───────────────────────────────────────────────
-// At most one ElevenLabs network round-trip at a time, across all hook
+// At most one TTS network round-trip at a time, across all hook
 // instances on the page. Protected by `busyRef` (instance-level) so that:
 //   • A DIFFERENT instance calling speak() while one is in-flight is skipped.
 //   • The SAME instance calling speak() again cancels its own previous call
@@ -31,7 +31,7 @@ import {
 //   • stop() and unmount cleanly release the lock immediately.
 let _ttsBusy = false;
 export interface UseAmyVoiceOptions {
-  /** Optional override for the voice persona (ElevenLabs voice id). */
+  /** Optional override for the voice persona (OpenAI voice id). */
   voiceId?: string;
   /** Optional override for the model id (defaults to Turbo v2.5 server-side). */
   modelId?: string;
@@ -46,7 +46,7 @@ export interface UseAmyVoiceOptions {
 
 export interface SpeakOptions {
   /**
-   * `phonics` swaps to crisp ElevenLabs voice settings tuned for teaching
+   * `phonics` swaps to crisp OpenAI voice settings tuned for teaching
    * phoneme sounds. Used by the Phonics learning UI on letter tiles so
    * "buh" is pronounced as the actual sound, not the spoken word "buh".
    */
@@ -73,7 +73,7 @@ export interface UseAmyVoiceState {
    * busy-locked, empty text). Callers that auto-advance or record progress
    * MUST check `success` before running downstream logic.
    *
-   * Pass `{ mode: "phonics" }` for letter-sound playback (different ElevenLabs
+   * Pass `{ mode: "phonics" }` for letter-sound playback (phonics TTS cache
    * voice settings, separate cache namespace).
    */
   speak: (text: string, opts?: SpeakOptions) => Promise<SpeakResult>;
@@ -90,7 +90,7 @@ interface SynthesizeResponse {
 }
 
 /**
- * High-quality Amy TTS via ElevenLabs, with the server doing the actual
+ * High-quality Amy TTS via OpenAI (gpt-4o-mini-tts), with the server doing the actual
  * caching. The client's only job is to swap an <audio> source and tear it
  * down on unmount. We keep at most one audio element alive per consumer.
  */
