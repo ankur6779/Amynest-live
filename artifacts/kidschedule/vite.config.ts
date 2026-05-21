@@ -20,6 +20,9 @@ if (Number.isNaN(port) || port <= 0) {
 /** Asset base for Vite (`/` for static hosting on Render). */
 const basePath = process.env.BASE_PATH ?? "/";
 
+/** PWA / service-worker cache bucket — bump on deploy to purge stale shells. */
+const CACHE_VERSION = "amynest-v5";
+
 function readFirebaseSwEnv() {
   const apiKey =
     process.env.VITE_FIREBASE_API_KEY ?? process.env.FIREBASE_API_KEY ?? "";
@@ -97,11 +100,7 @@ function amynestServiceWorkerPlugin() {
   const distPublicDir = path.resolve(artifactDir, "dist/public");
 
   function writeServiceWorkers() {
-    const commit =
-      process.env.RENDER_GIT_COMMIT?.slice(0, 12) ??
-      process.env.GITHUB_SHA?.slice(0, 12) ??
-      String(Date.now());
-    const cacheName = `amynest-v4-${commit}`;
+    const cacheName = CACHE_VERSION;
 
     const fcmBlock = buildFcmServiceWorkerBlock();
     const fcmLegacy = fcmBlock

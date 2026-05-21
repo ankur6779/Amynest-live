@@ -54,6 +54,7 @@ const queryClient = new QueryClient();
 
 installViteChunkRecovery();
 installGlobalErrorHandlers();
+installDeployModuleErrorReload();
 installStaticAudioGuards();
 installStaticAudioDevTools();
 installStaticAudioGestureWarmup();
@@ -72,6 +73,27 @@ const mark = (p: string) => {
     /* breadcrumbs are best-effort */
   }
 };
+
+/** One-shot reload when a stale module graph crashes the app after deploy. */
+function installDeployModuleErrorReload(): void {
+  if (typeof window === "undefined") return;
+  const RELOAD_KEY = "amynest:deploy-error-reload";
+  const MODULE_CRASH =
+    /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Failed to load module script|Loading chunk|ChunkLoadError|Cannot find module/i;
+
+  window.addEventListener("error", (event) => {
+    const msg = String(event.message ?? event.error ?? "");
+    if (!MODULE_CRASH.test(msg)) return;
+
+    try {
+      if (sessionStorage.getItem(RELOAD_KEY) === "1") return;
+      sessionStorage.setItem(RELOAD_KEY, "1");
+    } catch {
+      /* sessionStorage blocked — still attempt one reload */
+    }
+    window.location.reload();
+  });
+}
 
 async function bootstrap(): Promise<void> {
   try {

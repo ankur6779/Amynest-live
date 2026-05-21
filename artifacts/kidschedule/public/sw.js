@@ -1,9 +1,9 @@
-/* Auto-generated on build — do not edit. Cache: amynest-v4-1779331899687 */
+/* Auto-generated on build — do not edit. Cache: amynest-v5 */
 /**
  * AmyNest root service worker (source — built to /sw.js with a deploy-specific cache id).
  *
  * - skipWaiting + clients.claim on every deploy
- * - Versioned cache (amynest-v4-*); purge all other cache names on activate
+ * - Versioned cache (amynest-v5); purge all other cache names on activate
  * - Navigation: always network (never serve cached index.html)
  * - Static hashed assets: browser/CDN cache only (SW does not intercept)
  * - FCM block appended at build time via importScripts snippet
@@ -11,7 +11,7 @@
 
 /* global self, caches, clients, importScripts, firebase */
 
-const CACHE_NAME = "amynest-v4-1779331899687";
+const CACHE_NAME = "amynest-v5";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
