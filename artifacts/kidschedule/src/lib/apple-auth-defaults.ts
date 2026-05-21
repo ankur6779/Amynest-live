@@ -5,6 +5,7 @@
  * Native iOS: app bundle ID passed to @capacitor-community/apple-sign-in.
  */
 import { CANONICAL_PRODUCTION_ORIGIN } from "@workspace/phone-auth";
+import { firebaseWebDefaults } from "@/lib/firebase-web-defaults";
 
 export const appleAuthDefaults = {
   /** e.g. in.amynest.web — set VITE_APPLE_WEB_CLIENT_ID in production */
@@ -44,4 +45,12 @@ export function getAppleRedirectUri(): string {
       ? CANONICAL_PRODUCTION_ORIGIN
       : window.location.origin;
   return `${origin}${base}/${path}`.replace(/([^:]\/)\/+/g, "$1");
+}
+
+/** Return URL Apple must allow when using Firebase OAuth redirect/popup on web. */
+export function getFirebaseAppleOAuthHandlerUrl(): string {
+  const authDomain =
+    (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined)?.trim() ||
+    firebaseWebDefaults.authDomain;
+  return `https://${authDomain}/__/auth/handler`;
 }

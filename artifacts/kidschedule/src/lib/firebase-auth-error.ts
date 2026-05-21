@@ -2,6 +2,7 @@ import {
   VerificationInflightError,
   VerificationRateLimitError,
 } from "./email-verification-rate";
+import { getFirebaseAppleOAuthHandlerUrl } from "@/lib/apple-auth-defaults";
 
 export type ParsedFirebaseAuthError = {
   code: string;
@@ -92,7 +93,7 @@ export function prettyAuthError(err: unknown): string {
     case "auth/too-many-requests":
       return "Too many attempts. Try again in a minute.";
     case "auth/operation-not-allowed":
-      return "Email/Password sign-in is not enabled. Go to Firebase Console → Authentication → Sign-in method → enable Email/Password.";
+      return "This sign-in method is not enabled. Open Firebase Console → Authentication → Sign-in method and turn on the provider you are using.";
     case "auth/unauthorized-domain":
       return `This domain is not authorized in Firebase. Add "${typeof window !== "undefined" ? window.location.hostname : "this domain"}" to Firebase Console → Authentication → Settings → Authorized domains.`;
     case "auth/unauthorized-continue-uri":
@@ -147,6 +148,18 @@ export function prettyAuthError(err: unknown): string {
       return "You are not signed in. Go back to Sign in and try again.";
     default: {
       const message = (err as { message?: string })?.message?.trim();
+      if (
+        message &&
+        /invalid.request|invalid_request|invalid web redirect/i.test(message)
+      ) {
+        const handler = getFirebaseAppleOAuthHandlerUrl();
+        return (
+          "Apple Sign-In is not configured correctly. In Apple Developer → " +
+          "Identifiers → your Services ID → Sign in with Apple → Configure, " +
+          `add Return URL: ${handler}. Also enable Apple in Firebase Authentication ` +
+          "with the same Services ID, Team ID, Key ID, and .p8 key."
+        );
+      }
       if (
         message &&
         (message.includes("Hostname match not found") ||
