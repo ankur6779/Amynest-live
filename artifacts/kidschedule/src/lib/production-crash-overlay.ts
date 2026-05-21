@@ -4,11 +4,8 @@
  * splash screen is still covering the page.
  */
 
-import { agentDebugLog } from "@/lib/agent-debug-log";
 import {
   isBenignRuntimeError,
-  isCrashDebugOverlayEnabled,
-  isRecoverableRuntimeError,
   shouldShowProductionCrashOverlay,
 } from "@/lib/runtime-crash-policy";
 
@@ -121,22 +118,6 @@ export function showProductionCrashOverlay(payload: ProductionCrashPayload | str
       : "unknown";
   const err = errFromPayload(payload);
   const showOverlay = shouldShowProductionCrashOverlay(err, kind);
-  // #region agent log
-  agentDebugLog({
-    location: "production-crash-overlay.ts:showProductionCrashOverlay",
-    message: showOverlay ? "crash overlay shown" : "crash overlay suppressed",
-    data: {
-      kind,
-      showOverlay,
-      benign: isBenignRuntimeError(err),
-      recoverable: isRecoverableRuntimeError(err),
-      debugOverlay: isCrashDebugOverlayEnabled(),
-      msgPreview: messageFromPayload(payload).slice(0, 120),
-      path: window.location.pathname,
-    },
-    hypothesisId: "H1-H2-H4",
-  });
-  // #endregion
   if (!showOverlay) {
     persistLastCrash(payload);
     return;

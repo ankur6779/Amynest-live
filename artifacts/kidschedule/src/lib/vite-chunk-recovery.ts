@@ -4,7 +4,6 @@
 
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
 import { handleRecoveryReload } from "@/lib/clear-cache-reload";
-import { agentDebugLog } from "@/lib/agent-debug-log";
 import { showProductionCrashOverlay } from "@/lib/production-crash-overlay";
 import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";
 
@@ -81,17 +80,6 @@ export function tryStaleChunkRecovery(
   }
 
   const fullMessage = messageFromUnknown(err, fallbackMessage);
-  // #region agent log
-  agentDebugLog({
-    location: "vite-chunk-recovery.ts:tryStaleChunkRecovery",
-    message: "stale chunk detected",
-    data: {
-      debugOverlay: isCrashDebugOverlayEnabled(),
-      preview: fullMessage.split("\n")[0]?.slice(0, 120) ?? "",
-    },
-    hypothesisId: "H2",
-  });
-  // #endregion
 
   if (isCrashDebugOverlayEnabled()) {
     showProductionCrashOverlay({

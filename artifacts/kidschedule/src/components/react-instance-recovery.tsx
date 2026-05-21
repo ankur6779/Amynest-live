@@ -2,7 +2,6 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AppFallbackUi } from "@/components/app-fallback-ui";
 import { handleRecoveryReload } from "@/lib/clear-cache-reload";
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
-import { agentDebugLog } from "@/lib/agent-debug-log";
 import { showProductionCrashOverlay, showReactCrashOverlay } from "@/lib/production-crash-overlay";
 import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";
 
@@ -96,17 +95,6 @@ function installGlobalRecoveryListeners(): void {
 
   window.addEventListener("error", (evt) => {
     if (isRecoverableError(evt.error ?? evt.message)) {
-      // #region agent log
-      agentDebugLog({
-        location: "react-instance-recovery.tsx:global.error",
-        message: "recoverable window error",
-        data: {
-          debugOverlay: isCrashDebugOverlayEnabled(),
-          willRecover: !isCrashDebugOverlayEnabled(),
-        },
-        hypothesisId: "H2",
-      });
-      // #endregion
       if (isCrashDebugOverlayEnabled()) {
         showProductionCrashOverlay({
           kind: "recoverable.error",
@@ -119,17 +107,6 @@ function installGlobalRecoveryListeners(): void {
   });
   window.addEventListener("unhandledrejection", (evt) => {
     if (isRecoverableError(evt.reason)) {
-      // #region agent log
-      agentDebugLog({
-        location: "react-instance-recovery.tsx:global.rejection",
-        message: "recoverable unhandled rejection",
-        data: {
-          debugOverlay: isCrashDebugOverlayEnabled(),
-          willRecover: !isCrashDebugOverlayEnabled(),
-        },
-        hypothesisId: "H2",
-      });
-      // #endregion
       if (isCrashDebugOverlayEnabled()) {
         showProductionCrashOverlay({
           kind: "recoverable.rejection",
@@ -161,18 +138,6 @@ export class ReactInstanceRecovery extends Component<
   static getDerivedStateFromError(err: unknown): Partial<State> {
     const message =
       err instanceof Error ? err.message : String(err ?? "Unknown error");
-    // #region agent log
-    agentDebugLog({
-      location: "react-instance-recovery.tsx:getDerivedStateFromError",
-      message: "error boundary caught",
-      data: {
-        msg: message.slice(0, 200),
-        recoverable: isRecoverableError(err),
-        debugOverlay: isCrashDebugOverlayEnabled(),
-      },
-      hypothesisId: "H2-H3",
-    });
-    // #endregion
     if (isCrashDebugOverlayEnabled()) {
       markCacheRecoveryPending();
       return { fatal: true, message };

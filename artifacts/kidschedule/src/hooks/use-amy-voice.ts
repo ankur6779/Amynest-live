@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { agentDebugLog } from "@/lib/agent-debug-log";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useGuardedSetter, useMountedRef } from "@/hooks/use-safe-async";
 import {
@@ -276,21 +275,6 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           { signal: controller.signal },
         );
         if (myId !== reqIdRef.current) return { success: false, error: "tts_cancelled" };
-
-        // #region agent log
-        agentDebugLog({
-          runId: "post-fix",
-          hypothesisId: "F",
-          location: "use-amy-voice.ts:speak",
-          message: "synthesizeTts response",
-          data: {
-            background: Boolean(data?.background),
-            success: Boolean(data?.success),
-            hasAudioUrl: Boolean(data?.audioUrl),
-            error: data?.error ?? null,
-          },
-        });
-        // #endregion
 
         if (data?.background) {
           console.warn("TTS warming in background — cache not ready after poll");

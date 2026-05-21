@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { getBootDiagnostics } from "@/lib/boot-store";
-import { readAgentDebugLog } from "@/lib/agent-debug-log";
 import { getCrashLog, type CrashLogEntry } from "@/lib/crash-logger";
 import {
   showProductionCrashOverlay,
@@ -32,7 +31,6 @@ type OverlayPayload = {
   boot: ReturnType<typeof getBootDiagnostics>;
   recentErrors: RecentError[];
   crashLog: CrashLogEntry[];
-  agentDebugLog: ReturnType<typeof readAgentDebugLog>;
 };
 
 function readRecentErrors(): RecentError[] {
@@ -52,7 +50,6 @@ function buildPayload(kind: CrashInfo["kind"], crash: Omit<CrashInfo, "kind" | "
     boot: getBootDiagnostics(),
     recentErrors: readRecentErrors(),
     crashLog: [...getCrashLog()].slice(-10),
-    agentDebugLog: readAgentDebugLog().slice(-15),
   };
 }
 

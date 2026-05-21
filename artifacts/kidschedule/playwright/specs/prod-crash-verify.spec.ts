@@ -104,14 +104,7 @@ test("production: no crash overlay after sign-in and navigation", async ({ page 
 
   const snapshot = await page
     .evaluate(() => {
-      let agentDebug: unknown = null;
       let lastCrash: unknown = null;
-      try {
-        const raw = localStorage.getItem("__amynest_agent_debug_9b2f04");
-        agentDebug = raw ? JSON.parse(raw) : null;
-      } catch {
-        /* ignore */
-      }
       try {
         const raw = localStorage.getItem("__amynest_last_crash_v1");
         lastCrash = raw ? JSON.parse(raw) : null;
@@ -120,14 +113,13 @@ test("production: no crash overlay after sign-in and navigation", async ({ page 
       }
       const w = window as Window & { __amynestCrashLog?: Array<{ message: string }> };
       return {
-        agentDebug,
         lastCrash,
         crashLog: w.__amynestCrashLog?.slice(-10) ?? [],
       };
     })
-    .catch(() => ({ agentDebug: null, lastCrash: null, crashLog: [] as Array<{ message: string }> }));
+    .catch(() => ({ lastCrash: null, crashLog: [] as Array<{ message: string }> }));
 
-  const { agentDebug, lastCrash, crashLog } = snapshot;
+  const { lastCrash, crashLog } = snapshot;
 
   const criticalPageErrors = pageErrors.filter(
     (m) =>
@@ -143,7 +135,6 @@ test("production: no crash overlay after sign-in and navigation", async ({ page 
     data: {
       criticalPageErrors,
       consoleErrorSample: consoleErrors.slice(0, 5),
-      agentDebugTail: Array.isArray(agentDebug) ? agentDebug.slice(-5) : agentDebug,
       lastCrash,
       crashLogCount: crashLog.length,
       crashLogMessages: crashLog.map((c) => c.message).slice(0, 5),

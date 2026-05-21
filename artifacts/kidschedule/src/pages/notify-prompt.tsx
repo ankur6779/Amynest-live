@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { agentDebugLog } from "@/lib/agent-debug-log";
+import { useState } from "react";
 import { Redirect, useLocation, useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
@@ -31,23 +30,6 @@ export default function NotifyPromptPage() {
   const { isSignedIn, isLoaded } = useAuth();
   const authFetch = useAuthFetch();
   const [loading, setLoading]    = useState(false);
-
-  // #region agent log
-  useEffect(() => {
-    agentDebugLog({
-      location: "notify-prompt.tsx:mount",
-      message: "notify prompt mounted",
-      data: {
-        isLoaded,
-        isSignedIn,
-        next,
-        isWrapper: isAmyNestWrapper(),
-        hasNative: !!getNativePushBridge(),
-      },
-      hypothesisId: "H2",
-    });
-  }, [isLoaded, isSignedIn, next]);
-  // #endregion
 
   if (!isLoaded) return <RouteLoadingShell />;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
