@@ -130,13 +130,11 @@ export async function loginNativeApple(): Promise<void> {
 }
 
 /**
- * Web: Apple JS SDK redirect (usePopup: false).
- * Falls back to Firebase redirect if VITE_APPLE_WEB_CLIENT_ID is unset.
+ * Web browser: always use Firebase OAuth redirect.
+ * Static hosts (Render) return an empty body on POST, so Apple's form_post
+ * redirect to /auth/apple/callback cannot work without a server endpoint.
  */
 export async function loginWithAppleWeb(): Promise<void> {
-  if (getAppleWebClientId()) {
-    return loginWithAppleWebSdk();
-  }
   return loginWithAppleFirebaseRedirect();
 }
 

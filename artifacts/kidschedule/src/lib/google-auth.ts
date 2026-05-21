@@ -1,14 +1,14 @@
 import {
   GoogleAuthProvider,
-  getRedirectResult,
   signInWithCredential,
   signInWithRedirect,
   type UserCredential,
 } from "firebase/auth";
 import { logFirebaseAuthError } from "@/lib/firebase-auth-error";
-import { getFirebaseAuth, isFirebaseAuthReady } from "@/lib/firebase";
+import { getFirebaseAuth } from "@/lib/firebase";
 import { isCapacitorNative } from "@/lib/capacitor-native";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
+import { resolveFirebaseAuthRedirectResult } from "@/lib/firebase-oauth-redirect";
 import {
   googleAuthDefaults,
   reversedGoogleWebClientId,
@@ -92,31 +92,9 @@ export async function handleGoogleLogin(): Promise<void> {
   return loginWithGoogleRedirect();
 }
 
-let redirectResultConsumed = false;
-
 /**
- * Call once after Firebase init on web/PWA to complete signInWithRedirect round-trip.
- * No-op in Capacitor native shells.
+ * @deprecated Use resolveFirebaseAuthRedirectResult — kept for call-site compatibility.
  */
 export async function resolveGoogleRedirectResult(): Promise<UserCredential | null> {
-  if (typeof window === "undefined") return null;
-  if (shouldUseNativeGoogleAuth()) return null;
-  if (redirectResultConsumed) return null;
-  if (!isFirebaseAuthReady()) return null;
-
-  redirectResultConsumed = true;
-  try {
-    const result = await getRedirectResult(getFirebaseAuth());
-    if (result?.user) {
-      console.info(`${GOOGLE_TAG} redirect sign-in success`, {
-        uid: result.user.uid,
-        email: result.user.email,
-      });
-    }
-    return result;
-  } catch (err) {
-    redirectResultConsumed = false;
-    logFirebaseAuthError("google:redirect", err);
-    return null;
-  }
+  return resolveFirebaseAuthRedirectResult();
 }

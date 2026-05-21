@@ -55,7 +55,7 @@
     },
     "SignInWithApple": {
       "clientId": "com.amynest.app",
-      "redirectURI": "https://amynest.in/auth/apple/callback"
+      "redirectURI": "https://www.amynest.in/auth/apple/callback"
     }
   },
   "packageClassList": [
