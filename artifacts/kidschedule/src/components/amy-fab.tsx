@@ -12,13 +12,11 @@ const FAB_STYLE: CSSProperties = {
   zIndex: 9999,
 };
 
-function measureFabBottom(): string {
-  const footer = document.querySelector("footer.app-footer");
-  if (!footer) return "110px";
-  const rect = footer.getBoundingClientRect();
-  const gap = 12;
-  const px = Math.round(window.innerHeight - rect.top + gap);
-  return `${Math.max(px, 110)}px`;
+function footerAnchoredBottom(): string {
+  const footer = document.querySelector(".app-footer") as HTMLElement | null;
+  if (!footer) return "100px";
+  const footerHeight = footer.offsetHeight || 80;
+  return `${footerHeight + 20}px`;
 }
 
 /** Only floating Ask Amy control — portaled to body for Android WebView. */
@@ -26,7 +24,7 @@ export function AmyFab() {
   const { t } = useTranslation();
   const [location] = useLocation();
   const [mounted, setMounted] = useState(false);
-  const [bottom, setBottom] = useState("110px");
+  const [bottom, setBottom] = useState("100px");
 
   useEffect(() => {
     setMounted(true);
@@ -34,7 +32,7 @@ export function AmyFab() {
 
   useLayoutEffect(() => {
     if (!mounted) return;
-    const update = () => setBottom(measureFabBottom());
+    const update = () => setBottom(footerAnchoredBottom());
     update();
     window.addEventListener("resize", update);
     const retry = window.setTimeout(update, 150);
