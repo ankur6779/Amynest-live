@@ -1835,10 +1835,11 @@
           "next_word": "Next Word",
           "try_again": "Try Again",
           "hear_amy": "Hear Amy",
-          "no_prompts": "No words for this selection — try a different difficulty or category.",
+          "no_prompts": "Loading practice…",
           "score_label": "Score",
           "xp_earned": "+{{xp}} XP",
-          "session_size": "{{count}} words"
+          "session_size": "{{count}} words",
+          "loading_practice": "Loading practice…"
         },
         "hear_again": "Hear it again"
       },

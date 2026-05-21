@@ -41,6 +41,7 @@ import {
   compareTranscript,
   buildPracticeSession,
   getArticulationCue,
+  getPromptSpeakText,
   getPromptsPool,
   type SpeechAgeBand,
   type SpeechGameId,
@@ -551,7 +552,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
   const handleHear = () => {
     if (!currentItem) return;
     const mode = (currentItem.kind === "phonic" || currentItem.kind === "letter") ? "phonics" : "default";
-    void voice.speak(currentItem.text, { mode: mode as "phonics" | "default" });
+    void voice.speak(getPromptSpeakText(currentItem), { mode: mode as "phonics" | "default" });
     if (promptPhase === "idle") setPromptPhase("heard");
     if (viewMode === "parent") {
       const cue = getArticulationCue(currentItem.text, currentItem.kind);
@@ -602,7 +603,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
   };
 
   const pool = getPromptsPool(ageMonths, kind, difficulty);
-  const sessionSize = Math.min(SESSION_SIZE, pool.length);
+  const sessionSize = Math.max(1, Math.min(SESSION_SIZE, pool.length));
 
   return (
     <GatedSection

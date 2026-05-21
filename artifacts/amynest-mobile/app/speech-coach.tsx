@@ -30,6 +30,7 @@ import {
   monthsToBand,
   compareTranscript,
   getPromptsPool,
+  getPromptSpeakText,
   type PronouncePrompt,
   type PronouncePromptDifficulty,
   type PronouncePromptKind,
@@ -449,7 +450,7 @@ export default function SpeechCoachScreen() {
                 </Text>
                 {pool.length === 0 ? (
                   <Text style={[s.intro, { color: c.mutedForeground, textAlign: "center" }]}>
-                    {t("screens.speech_coach.pronounce.session.no_prompts")}
+                    {t("screens.speech_coach.pronounce.session.loading_practice")}
                   </Text>
                 ) : (
                   <Pressable
@@ -655,7 +656,7 @@ export default function SpeechCoachScreen() {
                 <Pressable
                   onPress={() => {
                     const isPhonic = currentSessionItem.kind === "phonic" || currentSessionItem.kind === "letter";
-                    handleSpeak(currentSessionItem.text, isPhonic ? "phonics" : undefined);
+                    handleSpeak(getPromptSpeakText(currentSessionItem), isPhonic ? "phonics" : undefined);
                     if (promptPhase === "idle") setPromptPhase("heard");
                   }}
                   disabled={sttRecording || sttTranscribing}

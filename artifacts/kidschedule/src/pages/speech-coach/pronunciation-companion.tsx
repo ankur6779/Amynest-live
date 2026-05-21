@@ -659,6 +659,16 @@ export function PronunciationCompanion({
         ? `linear-gradient(to right, ${C.amber}, rgba(251,191,36,0.7))`
         : `linear-gradient(to right, ${C.red}, rgba(239,68,68,0.7))`;
 
+
+  useEffect(() => {
+    if (sessionPhase !== "setup" || sessionSize > 0) return;
+    const timer = window.setTimeout(() => {
+      onAction();
+      onStartSession();
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [sessionPhase, sessionSize, onAction, onStartSession]);
+
   const isChildView = viewMode === "child";
   const showParentControls = !isChildView && !compactMode;
 
@@ -799,7 +809,7 @@ export function PronunciationCompanion({
                   style={{ color: C.purpleDim }}
                   data-on-dark
                 >
-                  {t("screens.speech_coach.pronounce.session.no_prompts")}
+                  {t("screens.speech_coach.pronounce.session.loading_practice")}
                 </p>
               ) : (
                 <button

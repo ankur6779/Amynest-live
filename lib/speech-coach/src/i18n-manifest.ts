@@ -171,6 +171,8 @@ export const SPEECH_COACH_I18N_MANIFEST: I18nKeyManifest = {
     "Lovely effort — try saying it a little more slowly.",
   "screens.speech_coach.pronounce.feedback_improvement":
     "Excellent improvement today!",
+  "screens.speech_coach.pronounce.session.loading_practice": "Loading practice…",
+  "screens.speech_coach.pronounce.session.no_prompts": "Loading practice…",
   "screens.speech_coach.pronounce.placeholder_note":
     "Speech analysis coming soon — for now, you decide together how it sounded.",
 

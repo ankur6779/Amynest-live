@@ -9,6 +9,7 @@ import {
   buildGamePromptSession,
   compareTranscript,
   getArticulationCue,
+  getPromptSpeakText,
   type SpeechGameId,
   type TranscriptFeedback,
 } from "@workspace/speech-coach";
@@ -131,7 +132,7 @@ export function SpeechGameFlow({
       currentItem.kind === "phonic" || currentItem.kind === "letter"
         ? "phonics"
         : "default";
-    void voice.speak(currentItem.text, { mode: mode as "phonics" | "default" });
+    void voice.speak(getPromptSpeakText(currentItem), { mode: mode as "phonics" | "default" });
     if (promptPhase === "idle") setPromptPhase("heard");
     const cue = getArticulationCue(currentItem.text, currentItem.kind);
     if (cue && viewMode === "parent") {

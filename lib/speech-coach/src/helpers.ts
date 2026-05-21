@@ -14,6 +14,10 @@ import {
   SPEECH_GAMES,
   SPEECH_MILESTONES,
 } from "./content";
+import {
+  getDefaultPromptsForKind,
+  LETTER_PRONUNCIATION_PROMPTS,
+} from "./pronunciation-datasets";
 import type {
   AffirmationCard,
   GuidanceCard,
@@ -83,28 +87,64 @@ export function getPromptsForAgeMonths(
   );
 }
 
+function promptLevel(p: PronouncePrompt): PronouncePromptDifficulty {
+  return p.difficulty ?? "easy";
+}
+
+/** Match selected difficulty or include easy baseline prompts. */
+function matchesDifficulty(
+  p: PronouncePrompt,
+  difficulty: PronouncePromptDifficulty,
+): boolean {
+  const level = promptLevel(p);
+  return level === difficulty || level === "easy";
+}
+
+function filterPrompts(
+  kind: PronouncePromptKind,
+  matchBand: SpeechAgeBand,
+  difficulty: PronouncePromptDifficulty,
+  requireBand: boolean,
+): readonly PronouncePrompt[] {
+  return PRONUNCIATION_PROMPTS.filter((p) => {
+    if (p.kind !== kind) return false;
+    if (requireBand && !p.ageBands.includes(matchBand)) return false;
+    return matchesDifficulty(p, difficulty);
+  });
+}
+
 /**
- * Return all prompts matching the given age band, kind, and difficulty.
+ * Return all prompts matching age band, kind, and difficulty.
+ * Letters always include the full A–Z set. Never returns an empty pool for a
+ * known kind — falls back to easy, then any band, then category defaults.
  */
 export function getPromptsPool(
   months: number,
   kind: PronouncePromptKind,
   difficulty: PronouncePromptDifficulty,
 ): readonly PronouncePrompt[] {
+  if (kind === "letter") {
+    return LETTER_PRONUNCIATION_PROMPTS;
+  }
+
   const band = monthsToBand(months);
   const matchBand: SpeechAgeBand = band ?? "infant";
 
-  const matches = PRONUNCIATION_PROMPTS.filter(
-    (p) =>
-      p.kind === kind &&
-      p.ageBands.includes(matchBand) &&
-      (p.difficulty ?? "easy") === difficulty,
-  );
-  if (matches.length > 0) return matches;
+  let pool = filterPrompts(kind, matchBand, difficulty, true);
+  if (pool.length > 0) return pool;
 
-  return PRONUNCIATION_PROMPTS.filter(
+  pool = PRONUNCIATION_PROMPTS.filter(
     (p) => p.kind === kind && p.ageBands.includes(matchBand),
   );
+  if (pool.length > 0) return pool;
+
+  pool = filterPrompts(kind, matchBand, difficulty, false);
+  if (pool.length > 0) return pool;
+
+  pool = PRONUNCIATION_PROMPTS.filter((p) => p.kind === kind);
+  if (pool.length > 0) return pool;
+
+  return getDefaultPromptsForKind(kind);
 }
 
 /**
@@ -119,7 +159,6 @@ export function buildPracticeSession(
   history: readonly PromptScoreHistory[] = [],
 ): readonly PronouncePrompt[] {
   const pool = getPromptsPool(months, kind, difficulty);
-  if (pool.length === 0) return [];
   const size = Math.max(1, Math.min(sessionSize, pool.length));
   if (history.length > 0) {
     return buildAdaptivePromptSession(pool, history, size, seed);

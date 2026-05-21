@@ -14,6 +14,9 @@ import {
   getGamesForAgeMonths,
   getMilestonesForAgeMonths,
   getPromptsForAgeMonths,
+  getPromptsPool,
+  getPromptSpeakText,
+  buildPracticeSession,
   monthsToBand,
   isSpeechCoachEligibleAgeMonths,
   SPEECH_COACH_MAX_MONTHS,
@@ -343,3 +346,38 @@ describe("band-agnostic getters", () => {
     assert.equal(getAllGuidanceCards().length, PARENT_GUIDANCE_CARDS.length);
   });
 });
+
+describe("getPromptsPool", () => {
+  it("returns full A–Z for Letters at any age and difficulty", () => {
+    for (const months of [6, 24, 60, 100]) {
+      for (const difficulty of ["easy", "medium", "advanced"] as const) {
+        const pool = getPromptsPool(months, "letter", difficulty);
+        assert.equal(pool.length, 26, `letters at ${months}mo ${difficulty}`);
+        assert.ok(pool.every((p) => p.kind === "letter"));
+      }
+    }
+  });
+  it("never returns an empty pool for phonic, word, or sentence", () => {
+    for (const kind of ["phonic", "word", "sentence"] as const) {
+      const pool = getPromptsPool(8, kind, "easy");
+      assert.ok(pool.length > 0, `expected ${kind} prompts for infant`);
+    }
+  });
+  it("buildPracticeSession never returns empty for letters", () => {
+    const session = buildPracticeSession(6, "letter", "advanced", 5, 42);
+    assert.ok(session.length >= 1);
+  });
+});
+
+describe("getPromptSpeakText", () => {
+  it("uses phonics line for letters, not the glyph name", () => {
+    const pool = getPromptsPool(24, "letter", "easy");
+    const a = pool.find((p) => p.text === "A");
+    assert.ok(a);
+    assert.equal(getPromptSpeakText(a!), "a as in apple");
+    const c = pool.find((p) => p.text === "C");
+    assert.ok(c);
+    assert.equal(getPromptSpeakText(c!), "k");
+  });
+});
+
