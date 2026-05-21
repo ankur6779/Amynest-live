@@ -7,6 +7,23 @@ type AmyNestWindow = Window & {
   AmyNestPushNative?: unknown;
 };
 
+/** AmyNest Android/iOS WebView or Capacitor shell — OTP must run in-app, not external browser. */
+export function isAmyNestNativeWrapper(): boolean {
+  if (typeof window === "undefined") return false;
+
+  const win = window as AmyNestWindow;
+  if (win.Capacitor?.isNativePlatform?.() === true) return true;
+  if (typeof win.__AMYNEST_WRAPPER === "string" && win.__AMYNEST_WRAPPER.length > 0) {
+    return true;
+  }
+  if (win.AndroidPush != null || win.AmyNestPushNative != null) return true;
+  if (typeof navigator !== "undefined" && /AmyNestAndroid/i.test(navigator.userAgent || "")) {
+    return true;
+  }
+
+  return false;
+}
+
 /** Installed PWA (Add to Home Screen) — reCAPTCHA must not run inside standalone WebView. */
 export function isStandalonePwa(): boolean {
   if (typeof window === "undefined") return false;
@@ -63,12 +80,14 @@ export function isMobilePhoneOtpEnvironment(): boolean {
   return false;
 }
 
-/** Never run reCAPTCHA inside installed PWA — use system browser instead. */
+/** Never run reCAPTCHA inside installed PWA — use system browser instead. Native app WebView is allowed. */
 export function canRunInAppPhoneRecaptcha(): boolean {
+  if (isAmyNestNativeWrapper()) return true;
   return !isStandalonePwa();
 }
 
 export function shouldUseBrowserForPhoneOtp(): boolean {
+  if (isAmyNestNativeWrapper()) return false;
   return isStandalonePwa();
 }
 

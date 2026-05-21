@@ -1,5 +1,5 @@
 import { RecaptchaVerifier, type Auth } from "firebase/auth";
-import { isStandalonePwa } from "./mobile-phone-environment";
+import { isAmyNestNativeWrapper, isStandalonePwa } from "./mobile-phone-environment";
 
 export const RECAPTCHA_CONTAINER_ID = "recaptcha-container";
 
@@ -71,7 +71,9 @@ function renderWithTimeout(verifier: RecaptchaVerifier): Promise<number> {
  */
 export async function preloadInvisibleRecaptcha(auth: Auth): Promise<boolean> {
   if (typeof window === "undefined") return false;
-  if (isStandalonePwa()) {
+  if (isAmyNestNativeWrapper()) {
+    console.info("[recaptcha] preload allowed in AmyNest native wrapper");
+  } else if (isStandalonePwa()) {
     console.info("[recaptcha] skip preload in standalone PWA");
     return false;
   }

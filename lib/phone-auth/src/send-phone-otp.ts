@@ -45,7 +45,7 @@ export async function sendPhoneOtpSafely(
     return { success: false, error: "Invalid phone number" };
   }
 
-  if (!canRunInAppPhoneRecaptcha() || isStandalonePwa()) {
+  if (shouldUseBrowserForPhoneOtp()) {
     return {
       success: false,
       error: PWA_MESSAGE,
