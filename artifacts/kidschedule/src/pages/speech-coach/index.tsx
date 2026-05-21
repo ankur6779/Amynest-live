@@ -204,10 +204,22 @@ function ViewModeToggle({
   const { t } = useTranslation();
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-muted/50 px-3 py-2">
-      <Button type="button" size="sm" variant={mode === "child" ? "default" : "outline"} onClick={() => onChange("child")}>
+      <Button
+        type="button"
+        size="sm"
+        variant={mode === "child" ? "default" : "outline"}
+        data-testid="speech-view-mode-child"
+        onClick={() => onChange("child")}
+      >
         {t("screens.speech_coach.view_mode.child")}
       </Button>
-      <Button type="button" size="sm" variant={mode === "parent" ? "default" : "outline"} onClick={() => onChange("parent")}>
+      <Button
+        type="button"
+        size="sm"
+        variant={mode === "parent" ? "default" : "outline"}
+        data-testid="speech-view-mode-parent"
+        onClick={() => onChange("parent")}
+      >
         {t("screens.speech_coach.view_mode.parent")}
       </Button>
       <p className="text-[11px] text-muted-foreground w-full">
@@ -539,8 +551,12 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
   const handleHear = () => {
     if (!currentItem) return;
     const mode = (currentItem.kind === "phonic" || currentItem.kind === "letter") ? "phonics" : "default";
-    voice.speak(currentItem.text, { mode: mode as "phonics" | "default" });
+    void voice.speak(currentItem.text, { mode: mode as "phonics" | "default" });
     if (promptPhase === "idle") setPromptPhase("heard");
+    if (viewMode === "parent") {
+      const cue = getArticulationCue(currentItem.text, currentItem.kind);
+      if (cue) void voice.speak(cue.coachLine, { mode: "default" });
+    }
   };
 
   const handleRecord = () => {
@@ -621,8 +637,13 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
           onNewSession={handleNewSession}
           onAction={onAction}
           viewMode={viewMode}
-          holdToSpeak={isToddlerMonths(ageMonths)}
-          articulationCue={currentItem ? getArticulationCue(currentItem.text, currentItem.kind) : null}
+          compactMode={viewMode === "child"}
+          holdToSpeak={viewMode === "child" || isToddlerMonths(ageMonths)}
+          articulationCue={
+            viewMode === "parent" && currentItem
+              ? getArticulationCue(currentItem.text, currentItem.kind)
+              : null
+          }
         />
       )}
     </GatedSection>
@@ -1294,14 +1315,24 @@ export default function SpeechCoachPage() {
       {child && (
         <div className="space-y-4">
           <ViewModeToggle mode={viewMode} onChange={(m) => { setViewMode(m); setSpeechViewMode(m); }} />
-          <DashboardSection child={child} viewMode={viewMode} />
-          <MilestonesSection child={child} />
+          {viewMode === "parent" ? (
+            <>
+              <DashboardSection child={child} viewMode={viewMode} />
+              <MilestonesSection child={child} />
+            </>
+          ) : null}
           <PronunciationSection child={child} viewMode={viewMode} />
-          <ReadAloudSection child={child} viewMode={viewMode} />
+          {viewMode === "parent" ? (
+            <ReadAloudSection child={child} viewMode={viewMode} />
+          ) : null}
           <GamesSection child={child} viewMode={viewMode} />
-          <GuidanceSection />
-          <AffirmationsSection />
-          <ReportsSection child={child} />
+          {viewMode === "parent" ? (
+            <>
+              <GuidanceSection />
+              <AffirmationsSection />
+              <ReportsSection child={child} />
+            </>
+          ) : null}
           <ExpertSection child={child} />
         </div>
       )}

@@ -29,6 +29,14 @@ export const SPEECH_COACH_I18N_MANIFEST: I18nKeyManifest = {
   "screens.speech_coach.cta.view_progress": "View Progress",
   "screens.speech_coach.cta.ask_amy_coach": "Ask Amy Coach",
 
+  // ── Parent vs child view toggle ───────────────────────────────────────────
+  "screens.speech_coach.view_mode.child": "Child view",
+  "screens.speech_coach.view_mode.parent": "Parent view",
+  "screens.speech_coach.view_mode.hint_child":
+    "Bigger buttons and simpler practice — made for your child to tap along.",
+  "screens.speech_coach.view_mode.hint_parent":
+    "Full dashboard, milestones, tips, and coaching notes for you.",
+
   // ── Section: Speech Development Dashboard ────────────────────────────────
   "screens.speech_coach.dashboard.title": "Speech Development Dashboard",
   "screens.speech_coach.dashboard.speech_age": "Speech age",
