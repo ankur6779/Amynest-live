@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -75,7 +75,7 @@ export function PhonicsCurriculumDashboard({
   childId,
   childQuery,
 }: PhonicsCurriculumDashboardProps) {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { data, loading, error, completeActivity } = usePhonicsCurriculum(childId);
 
   const plan = data?.plan;
@@ -98,14 +98,14 @@ export function PhonicsCurriculumDashboard({
 
   const openActivity = (activity: PlanActivity) => {
     if (activity.kind === "daily_test") {
-      navigate(`/phonics/test${qs({ type: "daily" })}`);
+      setLocation(`/phonics/test${qs({ type: "daily" })}`);
       return;
     }
     if (activity.kind === "blend_word" && getCvcWordEntry(activity.target)) {
-      navigate(`/phonics${qs({ blend: activity.target })}`);
+      setLocation(`/phonics${qs({ blend: activity.target })}`);
       return;
     }
-    navigate(`/phonics${qs({})}`);
+    setLocation(`/phonics${qs({})}`);
   };
 
   if (loading && !plan) {
@@ -216,7 +216,7 @@ export function PhonicsCurriculumDashboard({
         type="button"
         variant="outline"
         className="w-full rounded-2xl border-amber-500/40 text-amber-700 dark:text-amber-300"
-        onClick={() => navigate(`/phonics/test${qs({ type: "weekly" })}`)}
+        onClick={() => setLocation(`/phonics/test${qs({ type: "weekly" })}`)}
       >
         <Trophy className="h-4 w-4 mr-2" />
         Weekly test (20 questions)
