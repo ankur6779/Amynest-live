@@ -8,9 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.MotionEvent
 import android.view.View
-import android.view.ViewTreeObserver
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -46,7 +44,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var pushBridge: PushBridge
-    private var webViewTopScrollLockListener: ViewTreeObserver.OnScrollChangedListener? = null
 
     /** Notification tap payload waiting for onPageFinished to deliver to the web page. */
     private var pendingNotifDeepLink: String? = null
@@ -150,54 +147,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        webViewTopScrollLockListener?.let { listener ->
-            if (::webView.isInitialized) {
-                val observer = webView.viewTreeObserver
-                if (observer.isAlive) {
-                    observer.removeOnScrollChangedListener(listener)
-                }
-            }
-        }
-        webViewTopScrollLockListener = null
         super.onDestroy()
     }
 
     // ── WebView configuration ────────────────────────────────────────────────
-
-    private fun installWebViewTopOverscrollLock(target: WebView) {
-        val listener = ViewTreeObserver.OnScrollChangedListener {
-            if (target.scrollY <= 0) {
-                target.scrollTo(0, 1)
-            }
-        }
-        webViewTopScrollLockListener = listener
-        target.viewTreeObserver.addOnScrollChangedListener(listener)
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    private fun installWebViewPullGestureBlocker(target: WebView) {
-        var startY = 0f
-        target.setOnTouchListener { v, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    startY = event.y
-                    v.parent?.requestDisallowInterceptTouchEvent(true)
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    val deltaY = event.y - startY
-                    v.parent?.requestDisallowInterceptTouchEvent(true)
-                    if (
-                        !target.canScrollVertically(-1) &&
-                        target.scrollY == 0 &&
-                        deltaY > 20f
-                    ) {
-                        return@setOnTouchListener true
-                    }
-                }
-            }
-            false
-        }
-    }
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun configureWebView(wv: WebView) {
@@ -231,12 +184,9 @@ class MainActivity : AppCompatActivity() {
 
         CookieManager.getInstance().setAcceptThirdPartyCookies(wv, true)
         
-        // Critical: Ensure WebView doesn't trigger system-level pull-to-refresh
         wv.overScrollMode = View.OVER_SCROLL_NEVER
         wv.isVerticalScrollBarEnabled = false
         wv.isHorizontalScrollBarEnabled = false
-        installWebViewPullGestureBlocker(wv)
-        installWebViewTopOverscrollLock(wv)
 
         wv.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(
