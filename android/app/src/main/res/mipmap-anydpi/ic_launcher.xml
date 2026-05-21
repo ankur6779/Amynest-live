@@ -6,6 +6,6 @@
         </shape>
     </item>
     <item>
-        <drawable android:drawable="@drawable/ic_launcher_foreground" />
+        <drawable android:drawable="@drawable/ic_launcher_mascot" />
     </item>
 </layer-list>

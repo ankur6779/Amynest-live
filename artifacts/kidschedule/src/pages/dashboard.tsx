@@ -1266,193 +1266,195 @@ export default function Dashboard() {
     );
   }
   return (
-    // audit-block-ignore-start
-    <div data-on-dark className="-mx-4 md:-mx-8 -mt-4 md:-mt-8 -mb-20 md:-mb-8 px-4 md:px-8 pt-4 md:pt-8 pb-24 md:pb-12 bg-[#0a1024] min-h-[calc(100dvh-2rem)]">
-      {/* audit-block-ignore-end */}
-      <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-8">
+    <div className="dashboard-content">
+        {/* audit-block-ignore-start */}
+        <div data-on-dark className="-mx-4 md:-mx-8 -mt-4 md:-mt-8 -mb-20 md:-mb-8 px-4 md:px-8 pt-4 md:pt-8 pb-24 md:pb-12 bg-[#0a1024] min-h-[calc(100dvh-2rem)]">
+          {/* audit-block-ignore-end */}
+          <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-8">
 
-      {/* ── Hero Greeting ───────────────────────────────────────── */}
-      <SmartHeroSection
-        displayName={displayName}
-        hasChildren={childrenSafe.length > 0}
-        lastUpdated={lastUpdated}
-        childProfiles={childrenSafe.map((c: any) => ({ id: c.id, name: c.name, age: c.age, ageMonths: c.ageMonths ?? 0 }))}
-      />
+          {/* ── Hero Greeting ───────────────────────────────────────── */}
+          <SmartHeroSection
+            displayName={displayName}
+            hasChildren={childrenSafe.length > 0}
+            lastUpdated={lastUpdated}
+            childProfiles={childrenSafe.map((c: any) => ({ id: c.id, name: c.name, age: c.age, ageMonths: c.ageMonths ?? 0 }))}
+          />
 
-      {/* ── Two-column layout (desktop) / stacked (mobile) ─────── */}
-      <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 items-start">
+          {/* ── Two-column layout (desktop) / stacked (mobile) ─────── */}
+          <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 items-start">
 
-        {/* LEFT column: Children + Now/Next */}
-        <div className="flex flex-col gap-5">
-          <ChildrenStrip children={childrenSafe} />
-          <div>
-            <SectionLabel>{t("pages.dashboard.today")}</SectionLabel>
-            <div className="mt-2">
-              <NowNextTimeline routines={allRoutinesSafe} />
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT column: Streak + Stats + Amy + Parent Score */}
-        <div className="flex flex-col gap-4">
-          <SectionLabel>{t("pages.dashboard.at_a_glance")}</SectionLabel>
-          <div className="flex flex-col gap-3 -mt-2">
-            <StreakCard streak={streak} />
-            <StatsGrid summary={summary} loading={loadingSummary} />
-          </div>
-          <SectionLabel>{t("pages.dashboard.coaching")}</SectionLabel>
-          <div className="flex flex-col gap-3 -mt-2">
-            <AmySuggestionCard routines={allRoutinesSafe} streak={streak} />
-            <ParentScoreCard routines={allRoutinesSafe} streak={streak} />
-          </div>
-        </div>
-      </div>
-
-      {/* ── Below-fold: Recent Routines + Behavior Highlights ────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Recent Routines */}
-        <Card className="rounded-2xl shadow-sm border-border/50 overflow-hidden flex flex-col">
-          <CardHeader className="bg-muted/30 pb-4 border-b border-border/50">
-            <div className="flex items-center justify-between">
+            {/* LEFT column: Children + Now/Next */}
+            <div className="flex flex-col gap-5">
+              <ChildrenStrip children={childrenSafe} />
               <div>
-                <CardTitle className="font-quicksand text-lg flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-primary" />
-                  {t("pages.dashboard.recent_routines")}
-                </CardTitle>
-                <CardDescription>{t("pages.dashboard.latest_generated_schedules")}</CardDescription>
+                <SectionLabel>{t("pages.dashboard.today")}</SectionLabel>
+                <div className="mt-2">
+                  <NowNextTimeline routines={allRoutinesSafe} />
+                </div>
               </div>
-              <Link href="/routines" className="text-sm font-medium text-primary dark:text-primary hover:underline flex items-center">
-                {t("pages.dashboard.view_all_2")} <ArrowRight className="h-4 w-4 ml-1" />
-              </Link>
             </div>
-          </CardHeader>
-          <CardContent className="p-0 flex-1">
-            {loadingRoutines ? <div className="p-4 space-y-4">
-                <Skeleton className="h-16 w-full rounded-xl" />
-                <Skeleton className="h-16 w-full rounded-xl" />
-              </div> : recentRoutinesSafe.length > 0 ? <div className="divide-y divide-border/50">
-                {recentRoutinesSafe.map(routine => {
-              const items = routineItems(routine) as RoutineItem[];
-              const done = items.filter(i => i.status === "completed").length;
-              const pct = items.length > 0 ? Math.round(done / items.length * 100) : 0;
-              return <Link key={routine.id} href={`/routines/${routine.id}`} className="block hover:bg-muted/30 transition-colors p-4 group">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-foreground group-hover:text-primary dark:group-hover:text-primary transition-colors truncate">{routine.title}</h4>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                            <span className="inline-flex items-center justify-center rounded-full bg-muted dark:bg-card px-2 py-0.5 text-xs font-medium text-primary dark:text-muted-foreground border border-border dark:border-border">
-                              {routine.childName}
-                            </span>
-                            <span>{new Date(routine.date).toLocaleDateString(undefined, {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric"
-                        })}</span>
+
+            {/* RIGHT column: Streak + Stats + Amy + Parent Score */}
+            <div className="flex flex-col gap-4">
+              <SectionLabel>{t("pages.dashboard.at_a_glance")}</SectionLabel>
+              <div className="flex flex-col gap-3 -mt-2">
+                <StreakCard streak={streak} />
+                <StatsGrid summary={summary} loading={loadingSummary} />
+              </div>
+              <SectionLabel>{t("pages.dashboard.coaching")}</SectionLabel>
+              <div className="flex flex-col gap-3 -mt-2">
+                <AmySuggestionCard routines={allRoutinesSafe} streak={streak} />
+                <ParentScoreCard routines={allRoutinesSafe} streak={streak} />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Below-fold: Recent Routines + Behavior Highlights ────── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Recent Routines */}
+            <Card className="rounded-2xl shadow-sm border-border/50 overflow-hidden flex flex-col">
+              <CardHeader className="bg-muted/30 pb-4 border-b border-border/50">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="font-quicksand text-lg flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-primary" />
+                      {t("pages.dashboard.recent_routines")}
+                    </CardTitle>
+                    <CardDescription>{t("pages.dashboard.latest_generated_schedules")}</CardDescription>
+                  </div>
+                  <Link href="/routines" className="text-sm font-medium text-primary dark:text-primary hover:underline flex items-center">
+                    {t("pages.dashboard.view_all_2")} <ArrowRight className="h-4 w-4 ml-1" />
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0 flex-1">
+                {loadingRoutines ? <div className="p-4 space-y-4">
+                    <Skeleton className="h-16 w-full rounded-xl" />
+                    <Skeleton className="h-16 w-full rounded-xl" />
+                  </div> : recentRoutinesSafe.length > 0 ? <div className="divide-y divide-border/50">
+                    {recentRoutinesSafe.map(routine => {
+                  const items = routineItems(routine) as RoutineItem[];
+                  const done = items.filter(i => i.status === "completed").length;
+                  const pct = items.length > 0 ? Math.round(done / items.length * 100) : 0;
+                  return <Link key={routine.id} href={`/routines/${routine.id}`} className="block hover:bg-muted/30 transition-colors p-4 group">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-foreground group-hover:text-primary dark:group-hover:text-primary transition-colors truncate">{routine.title}</h4>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                                <span className="inline-flex items-center justify-center rounded-full bg-muted dark:bg-card px-2 py-0.5 text-xs font-medium text-primary dark:text-muted-foreground border border-border dark:border-border">
+                                  {routine.childName}
+                                </span>
+                                <span>{new Date(routine.date).toLocaleDateString(undefined, {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric"
+                            })}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0 ml-2">
+                              {items.length > 0 && <div className="text-right">
+                                  <div className="text-xs font-bold text-foreground">{pct}%</div>
+                                  <div className="text-[10px] text-muted-foreground">{done}/{items.length}</div>
+                                </div>}
+                              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0" />
+                            </div>
+                          </div>
+                        </Link>;
+                })}
+                  </div> : <div className="p-8 text-center flex flex-col items-center justify-center text-muted-foreground h-full min-h-[200px]">
+                    <Calendar className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                    <p>{t("pages.dashboard.no_routines_created_yet")}</p>
+                    <Link href="/routines/generate" className="mt-4 text-primary dark:text-primary font-medium hover:underline">
+                      {t("pages.dashboard.create_your_first_routine")}
+                    </Link>
+                  </div>}
+              </CardContent>
+            </Card>
+
+            {/* Behavior Highlights */}
+            <Card className="rounded-2xl shadow-sm border-border/50 overflow-hidden flex flex-col">
+              <CardHeader className="bg-muted/30 pb-4 border-b border-border/50">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="font-quicksand text-lg flex items-center gap-2">
+                      <Activity className="h-5 w-5 text-primary" />
+                      {t("pages.dashboard.behavior_highlights")}
+                    </CardTitle>
+                    <CardDescription>{t("pages.dashboard.overall_stats_by_child")}</CardDescription>
+                  </div>
+                  <Link href="/behavior" className="text-sm font-medium text-primary dark:text-primary hover:underline flex items-center">
+                    {t("pages.dashboard.log_behavior")} <ArrowRight className="h-4 w-4 ml-1" />
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0 flex-1">
+                {loadingStats ? <div className="p-4 space-y-4">
+                    <Skeleton className="h-16 w-full rounded-xl" />
+                    <Skeleton className="h-16 w-full rounded-xl" />
+                  </div> : statsSafe.length > 0 ? <div className="divide-y divide-border/50">
+                    {statsSafe.map(stat => <div key={stat.childId} className="p-4">
+                        <h4 className="font-bold text-foreground mb-3">{stat.childName}</h4>
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-1.5 flex-1 bg-muted dark:bg-card rounded-lg p-2 border border-border dark:border-border">
+                            <div className="bg-muted dark:bg-card p-1 rounded-md text-primary dark:text-primary">
+                              <TrendingUp className="h-3.5 w-3.5" />
+                            </div>
+                            <span className="font-bold text-primary dark:text-muted-foreground">{stat.positive}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-1 bg-destructive/10 rounded-lg p-2">
+                            <div className="bg-destructive/20 p-1 rounded-md text-destructive">
+                              <TrendingDown className="h-3.5 w-3.5" />
+                            </div>
+                            <span className="font-bold text-destructive">{stat.negative}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-1 bg-muted rounded-lg p-2">
+                            <div className="bg-foreground/10 p-1 rounded-md text-foreground/70">
+                              <Minus className="h-3.5 w-3.5" />
+                            </div>
+                            <span className="font-bold text-foreground/70">{stat.neutral}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0 ml-2">
-                          {items.length > 0 && <div className="text-right">
-                              <div className="text-xs font-bold text-foreground">{pct}%</div>
-                              <div className="text-[10px] text-muted-foreground">{done}/{items.length}</div>
-                            </div>}
-                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0" />
-                        </div>
-                      </div>
-                    </Link>;
-            })}
-              </div> : <div className="p-8 text-center flex flex-col items-center justify-center text-muted-foreground h-full min-h-[200px]">
-                <Calendar className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                <p>{t("pages.dashboard.no_routines_created_yet")}</p>
-                <Link href="/routines/generate" className="mt-4 text-primary dark:text-primary font-medium hover:underline">
-                  {t("pages.dashboard.create_your_first_routine")}
-                </Link>
-              </div>}
-          </CardContent>
-        </Card>
+                      </div>)}
+                  </div> : <div className="p-8 text-center flex flex-col items-center justify-center text-muted-foreground h-full min-h-[200px]">
+                    <Star className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                    <p>{t("pages.dashboard.no_behavior_logged_yet")}</p>
+                    <Link href="/behavior" className="mt-4 text-primary dark:text-primary font-medium hover:underline">
+                      {t("pages.dashboard.track_a_behavior")}
+                    </Link>
+                  </div>}
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Behavior Highlights */}
-        <Card className="rounded-2xl shadow-sm border-border/50 overflow-hidden flex flex-col">
-          <CardHeader className="bg-muted/30 pb-4 border-b border-border/50">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="font-quicksand text-lg flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-primary" />
-                  {t("pages.dashboard.behavior_highlights")}
-                </CardTitle>
-                <CardDescription>{t("pages.dashboard.overall_stats_by_child")}</CardDescription>
+          {/* Rewards Card */}
+          <RewardsCard streak={streak} />
+
+          {/* ── Gaming Reward ─────────────────────────────────────────── */}
+          <Link href="/games">
+            <button type="button" className="w-full text-left rounded-2xl p-4 border border-border hover:border-border dark:hover:border-border bg-card hover:bg-muted dark:hover:bg-card hover:shadow-sm transition-all flex items-center gap-4">
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 text-xl bg-muted dark:bg-card border border-border dark:border-border">
+                🎮
               </div>
-              <Link href="/behavior" className="text-sm font-medium text-primary dark:text-primary hover:underline flex items-center">
-                {t("pages.dashboard.log_behavior")} <ArrowRight className="h-4 w-4 ml-1" />
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0 flex-1">
-            {loadingStats ? <div className="p-4 space-y-4">
-                <Skeleton className="h-16 w-full rounded-xl" />
-                <Skeleton className="h-16 w-full rounded-xl" />
-              </div> : statsSafe.length > 0 ? <div className="divide-y divide-border/50">
-                {statsSafe.map(stat => <div key={stat.childId} className="p-4">
-                    <h4 className="font-bold text-foreground mb-3">{stat.childName}</h4>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1.5 flex-1 bg-muted dark:bg-card rounded-lg p-2 border border-border dark:border-border">
-                        <div className="bg-muted dark:bg-card p-1 rounded-md text-primary dark:text-primary">
-                          <TrendingUp className="h-3.5 w-3.5" />
-                        </div>
-                        <span className="font-bold text-primary dark:text-muted-foreground">{stat.positive}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-1 bg-destructive/10 rounded-lg p-2">
-                        <div className="bg-destructive/20 p-1 rounded-md text-destructive">
-                          <TrendingDown className="h-3.5 w-3.5" />
-                        </div>
-                        <span className="font-bold text-destructive">{stat.negative}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-1 bg-muted rounded-lg p-2">
-                        <div className="bg-foreground/10 p-1 rounded-md text-foreground/70">
-                          <Minus className="h-3.5 w-3.5" />
-                        </div>
-                        <span className="font-bold text-foreground/70">{stat.neutral}</span>
-                      </div>
-                    </div>
-                  </div>)}
-              </div> : <div className="p-8 text-center flex flex-col items-center justify-center text-muted-foreground h-full min-h-[200px]">
-                <Star className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                <p>{t("pages.dashboard.no_behavior_logged_yet")}</p>
-                <Link href="/behavior" className="mt-4 text-primary dark:text-primary font-medium hover:underline">
-                  {t("pages.dashboard.track_a_behavior")}
-                </Link>
-              </div>}
-          </CardContent>
-        </Card>
-      </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-quicksand font-bold text-sm leading-tight text-foreground">{t("pages.dashboard.gaming_reward")}</p>
+                <p className="text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
+                  {t("pages.dashboard.earn_points_from_routines_unlock_mini_games_and_redeem_real_")}
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            </button>
+          </Link>
 
-      {/* Rewards Card */}
-      <RewardsCard streak={streak} />
-
-      {/* ── Gaming Reward ─────────────────────────────────────────── */}
-      <Link href="/games">
-        <button type="button" className="w-full text-left rounded-2xl p-4 border border-border hover:border-border dark:hover:border-border bg-card hover:bg-muted dark:hover:bg-card hover:shadow-sm transition-all flex items-center gap-4">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 text-xl bg-muted dark:bg-card border border-border dark:border-border">
-            🎮
+          {/* ── Primary CTA ──────────────────────────────────────────── */}
+          <button type="button" onClick={handleGenerateRoutine} data-testid="dashboard-generate-routine-btn" className="w-full h-14 rounded-2xl bg-primary hover:bg-primary text-white font-black text-base shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            {t("pages.dashboard.generate_today_s_routine")}
+          </button>
+          <p className="text-center text-[10px] font-medium text-muted-foreground/60 mt-1.5 tracking-wide">
+            {t("patent_pending.microcopy_routine")}
+          </p>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-quicksand font-bold text-sm leading-tight text-foreground">{t("pages.dashboard.gaming_reward")}</p>
-            <p className="text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
-              {t("pages.dashboard.earn_points_from_routines_unlock_mini_games_and_redeem_real_")}
-            </p>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-        </button>
-      </Link>
-
-      {/* ── Primary CTA ──────────────────────────────────────────── */}
-      <button type="button" onClick={handleGenerateRoutine} data-testid="dashboard-generate-routine-btn" className="w-full h-14 rounded-2xl bg-primary hover:bg-primary text-white font-black text-base shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2">
-        <Sparkles className="h-5 w-5" />
-        {t("pages.dashboard.generate_today_s_routine")}
-      </button>
-      <p className="text-center text-[10px] font-medium text-muted-foreground/60 mt-1.5 tracking-wide">
-        {t("patent_pending.microcopy_routine")}
-      </p>
-      </div>
+        </div>
     </div>
   );
 }
