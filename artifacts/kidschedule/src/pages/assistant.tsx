@@ -12,13 +12,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { readResolvedApiJson } from "@/lib/poll-result";
+import { TAB_TOPICS, type AssistantTabId } from "@/lib/assistant-tab-topics";
 
 interface Message {
   role: "user" | "assistant" | "system";
   content: string;
 }
 
-type WebMode = "parenting" | "teach" | "practice" | "quiz" | "doubt";
+type WebMode = AssistantTabId;
 
 const WEB_MODES: { id: WebMode; labelKey: string; hintKey: string; placeholderKey: string; icon: React.ElementType }[] = [
   { id: "parenting", labelKey: "ai.mode_parenting", hintKey: "ai.mode_parenting_hint", placeholderKey: "ai.web_placeholder_parenting", icon: Heart },
@@ -27,24 +28,6 @@ const WEB_MODES: { id: WebMode; labelKey: string; hintKey: string; placeholderKe
   { id: "quiz",      labelKey: "ai.mode_quiz",       hintKey: "ai.mode_quiz_hint",      placeholderKey: "ai.web_placeholder_quiz",       icon: Lightbulb },
   { id: "doubt",     labelKey: "ai.mode_doubt",      hintKey: "ai.mode_doubt_hint",     placeholderKey: "ai.web_placeholder_doubt",      icon: HelpCircle },
 ];
-
-const PARENTING_CHIP_KEYS = [
-  "ai.web_chip_parenting_1",
-  "ai.web_chip_parenting_2",
-  "ai.web_chip_parenting_3",
-  "ai.web_chip_parenting_4",
-  "ai.web_chip_parenting_5",
-  "ai.web_chip_parenting_6",
-] as const;
-
-const SUGGESTED_QUESTION_KEYS = [
-  "ai.suggested_q1",
-  "ai.suggested_q2",
-  "ai.suggested_q3",
-  "ai.suggested_q4",
-  "ai.suggested_q5",
-  "ai.suggested_q6",
-] as const;
 
 export default function AssistantPage() {
   const { t } = useTranslation();
@@ -211,6 +194,14 @@ export default function AssistantPage() {
 
   // Suppress the empty-state flash while we're still loading saved history
   const isEmpty = historyLoaded && messages.length === 0;
+  const tabTopics = TAB_TOPICS[mode] ?? [];
+
+  const handleTopicClick = (topicKey: string) => {
+    const text = t(topicKey);
+    setInput(text);
+    textareaRef.current?.focus();
+    void sendMessage(text);
+  };
 
   const renderSystemLimitMessage = () => (
     <div className="flex justify-center px-1">
@@ -326,18 +317,23 @@ export default function AssistantPage() {
         {isEmpty ? (
           <div className="flex flex-col gap-3 py-2">
             <p className="text-center text-sm text-muted-foreground">{t("ai.empty_short")}</p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {(mode === "parenting" ? PARENTING_CHIP_KEYS : SUGGESTED_QUESTION_KEYS).map((key, i) => (
-                <button
-                  key={i}
-                  onClick={() => sendMessage(t(key))}
-                  disabled={limitReached}
-                  className="text-left text-sm p-2.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all text-foreground/80 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {t(key)}
-                </button>
-              ))}
-            </div>
+            {tabTopics.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground">{t("ai.no_tab_topics")}</p>
+            ) : (
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {tabTopics.map((topicKey) => (
+                  <button
+                    key={topicKey}
+                    type="button"
+                    onClick={() => handleTopicClick(topicKey)}
+                    disabled={limitReached}
+                    className="text-left text-sm p-2.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all text-foreground/80 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {t(topicKey)}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <>
