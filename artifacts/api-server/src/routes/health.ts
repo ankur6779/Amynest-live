@@ -18,6 +18,7 @@ import { driveFilesList } from "../lib/googleDrive";
 import { getQueueHealthSnapshot } from "../queue/bootstrap.js";
 import { getTtsCacheStats } from "../services/ttsCacheStats";
 import { ttsStorageBackend } from "../services/ttsAudioStore";
+import { resolvePhonicsSessionSecret } from "../lib/phonicsSessionSecret.js";
 
 const STORY_PROBE_FOLDER_ID = "1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj";
 
@@ -35,6 +36,17 @@ router.get("/healthz/env", async (_req, res) => {
   const elevenlabsConfigured = !!getElevenLabsApiKey();
   const openai = getOpenAiCredentials();
   const queue = await getQueueHealthSnapshot();
+
+  let phonicsSession: { ok: boolean; source?: string; error?: string } = { ok: false };
+  try {
+    const { source } = resolvePhonicsSessionSecret();
+    phonicsSession = { ok: true, source };
+  } catch (err) {
+    phonicsSession = {
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
 
   const amynestEnv = resolveAmynestEnv();
   const aiQueueOk =
@@ -92,6 +104,14 @@ router.get("/healthz/env", async (_req, res) => {
         hint: !gcs.legacyGcsConfigured
           ? "Without GCS, TTS uses Postgres (audio_data column). Set DEFAULT_OBJECT_STORAGE_BUCKET_ID + GCS_SERVICE_ACCOUNT_JSON to use GCS."
           : undefined,
+      },
+      phonicsTests: {
+        sessionSecretReady: phonicsSession.ok,
+        source: phonicsSession.source ?? null,
+        hint: !phonicsSession.ok
+          ? "Set SESSION_SECRET (32+ chars) on Amynest-backend, or ensure DATABASE_URL is configured for derived session keys"
+          : undefined,
+        error: phonicsSession.error ?? null,
       },
     },
   });

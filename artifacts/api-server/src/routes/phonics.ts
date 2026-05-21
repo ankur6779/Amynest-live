@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
@@ -31,6 +30,7 @@ import {
   verifySession,
   type TestType,
 } from "../lib/phonicsTests";
+import { getPhonicsSessionSecret } from "../lib/phonicsSessionSecret.js";
 
 const router: IRouter = Router();
 
@@ -550,20 +550,6 @@ const WEEKLY_COUNT = 20;
  * a missing/short secret causes /tests/start to fail loudly rather than
  * silently producing forgeable tokens.
  */
-/** Resolve a 32+ char secret for phonics session encryption (prod requires SESSION_SECRET). */
-function resolvePhonicsSessionSecret(): string {
-  const direct = (process.env.SESSION_SECRET ?? "").trim();
-  if (direct.length >= 32) return direct;
-  const jwt = (process.env.JWT_SECRET ?? process.env.AUTH_SECRET ?? "").trim();
-  if (jwt.length >= 32) return jwt;
-  if (process.env.NODE_ENV !== "production") {
-    return crypto.createHash("sha256").update("amynest-phonics-dev-session-v1").digest("hex");
-  }
-  return direct;
-}
-
-const SESSION_SECRET = resolvePhonicsSessionSecret();
-
 const TestTypeSchema = z.enum(["daily", "weekly"]);
 const GameModeSchema = z.enum([
   "hear_tap",
@@ -823,7 +809,7 @@ router.post("/phonics/tests/start", async (req, res): Promise<void> => {
     try {
       sessionToken = signSession(
         { userId, childId, testType, ageGroup, questions, issuedAt, gameMode },
-        SESSION_SECRET,
+        getPhonicsSessionSecret(),
       );
     } catch (err) {
       // Misconfiguration (missing/short SESSION_SECRET) — never silently
@@ -878,7 +864,7 @@ router.post("/phonics/tests/submit", async (req, res): Promise<void> => {
     return;
   }
   const { sessionToken, answers } = parsed.data;
-  const session = verifySession(sessionToken, SESSION_SECRET);
+  const session = verifySession(sessionToken, getPhonicsSessionSecret());
   if (!session) {
     res.status(400).json({ error: "invalid_or_expired_session" });
     return;
