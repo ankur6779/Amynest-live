@@ -2,6 +2,7 @@ import { onAuthStateChanged, type User as FbUser } from "firebase/auth";
 import { getFirebaseAuth } from "./firebase";
 import type { AuthResolutionStatus, ShimUser } from "./firebase-auth-context";
 import { recordBootError } from "@/lib/boot-store";
+import { isEmailVerificationBypassEmail } from "./email-verification-bypass";
 import { devLog } from "@/lib/dev-log";
 
 const AUTH_TAG = "[amynest:firebase-auth]";
@@ -53,13 +54,7 @@ function fbToShim(u: FirebaseUserLike): ShimUser {
 }
 
 function buildShimFromFirebaseUser(fbUser: FbUser | null): ShimUser | null {
-  const VERIFICATION_BYPASS_EMAILS = new Set([
-    "demo@amynest.in",
-    "googleplay.reviewer@amynest.app",
-  ]);
-  const bypassEmail =
-    fbUser?.email != null &&
-    VERIFICATION_BYPASS_EMAILS.has(fbUser.email.toLowerCase().trim());
+  const bypassEmail = isEmailVerificationBypassEmail(fbUser?.email);
   const isUnverifiedEmailUser =
     fbUser !== null &&
     !fbUser.emailVerified &&

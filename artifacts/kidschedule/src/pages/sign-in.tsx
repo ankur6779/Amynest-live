@@ -3,6 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { signInWithEmailAndPassword, signOut as fbSignOut } from "firebase/auth";
 import { sendUserPasswordResetEmail } from "@/lib/password-reset";
+import { isEmailVerificationBypassEmail } from "@/lib/email-verification-bypass";
 import { sendUserEmailVerification } from "@/lib/email-verification";
 import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/firebase-auth-hooks";
@@ -12,7 +13,8 @@ import { AppleSignInButton } from "@/components/apple-sign-in-button";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
 import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
 import {
-  ENABLE_OAUTH_SIGN_IN,
+  ENABLE_APPLE_SIGN_IN,
+  ENABLE_GOOGLE_SIGN_IN,
   ENABLE_PHONE_OTP,
 } from "@/lib/auth-feature-flags";
 import { getApiUrl } from "@/lib/api";
@@ -351,12 +353,8 @@ export default function SignInPage() {
     setBusy(true);
     try {
       const cred = await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
-      // Bypass accounts skip email verification — they are allowed straight in.
-      const VERIFICATION_BYPASS_EMAILS = new Set([
-        "demo@amynest.in",
-        "googleplay.reviewer@amynest.app",
-      ]);
-      const isBypass = VERIFICATION_BYPASS_EMAILS.has(cred.user.email?.toLowerCase().trim() ?? "");
+      const loginEmail = cred.user.email ?? email.trim();
+      const isBypass = isEmailVerificationBypassEmail(loginEmail);
       if (!cred.user.emailVerified && !isBypass) {
         // Send verification email on sign-in (verify page only resends if user taps).
         let verifySendFailed = false;
@@ -549,11 +547,12 @@ export default function SignInPage() {
         {t("screens.sign_in.subtitle")}
       </p>
 
-      {ENABLE_OAUTH_SIGN_IN ? (
-        <>
-          <GoogleSignInButton onError={msg => setError(msg)} />
-          <AppleSignInButton onError={msg => setError(msg)} />
-        </>
+      {ENABLE_GOOGLE_SIGN_IN ? (
+        <GoogleSignInButton onError={msg => setError(msg)} />
+      ) : null}
+
+      {ENABLE_APPLE_SIGN_IN ? (
+        <AppleSignInButton onError={msg => setError(msg)} />
       ) : null}
 
       {ENABLE_PHONE_OTP ? (
@@ -563,7 +562,7 @@ export default function SignInPage() {
         </div>
       ) : null}
 
-      {(ENABLE_OAUTH_SIGN_IN || ENABLE_PHONE_OTP) && (
+      {(ENABLE_GOOGLE_SIGN_IN || ENABLE_APPLE_SIGN_IN || ENABLE_PHONE_OTP) && (
       <div style={{
       display: "flex",
       alignItems: "center",

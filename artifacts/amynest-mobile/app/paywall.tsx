@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Platform,
   Image,
+  Linking,
 } from "react-native";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -617,6 +618,27 @@ export default function PaywallScreen() {
           </Pressable>
 
           {/* ── Legal footer ─────────────────────────────────────────── */}
+          <View style={styles.legalLinks}>
+            <Pressable
+              onPress={() => router.push("/privacy")}
+              hitSlop={8}
+              accessibilityRole="link"
+              accessibilityLabel={t("screens.tabs_profile.privacy_policy")}
+            >
+              <Text style={styles.legalLinkText}>{t("screens.tabs_profile.privacy_policy")}</Text>
+            </Pressable>
+            <Text style={styles.legalDot}>·</Text>
+            <Pressable
+              onPress={() => void Linking.openURL("https://amynest.in/terms")}
+              hitSlop={8}
+              accessibilityRole="link"
+              accessibilityLabel={t("screens.paywall.terms_of_use", { defaultValue: "Terms of Use" })}
+            >
+              <Text style={styles.legalLinkText}>
+                {t("screens.paywall.terms_of_use", { defaultValue: "Terms of Use" })}
+              </Text>
+            </Pressable>
+          </View>
           <Text style={styles.footer}>
             Subscription renews automatically. Cancel anytime in Google Play or App Store settings.
             {"\n"}Patent Pending — Indian Provisional Patent Filed.
@@ -1099,6 +1121,24 @@ const styles = StyleSheet.create({
   },
 
   // Legal footer
+  legalLinks: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 6,
+  },
+  legalLinkText: {
+    color: "rgba(255,255,255,0.45)",
+    fontSize: 11,
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
+  legalDot: {
+    color: "rgba(255,255,255,0.25)",
+    fontSize: 11,
+  },
   footer: {
     color: "rgba(255,255,255,0.2)",
     fontSize: 10,

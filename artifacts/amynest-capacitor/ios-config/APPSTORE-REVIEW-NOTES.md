@@ -6,10 +6,11 @@ Use this text in App Store Connect Review Notes for the Capacitor iOS build.
 
 AmyNest supports email/password, Google Sign-In, and Sign in with Apple. If a reviewer account is needed, provide a temporary test account with a seeded child profile before submission.
 
-Suggested test account:
+Suggested test account (paste into App Store Connect → App Review Information):
 
-- Email: `apple-review@amynest.in`
-- Password: provide privately in App Store Connect only
+- **Username:** `apple.review@amynest.in`
+- **Password:** `AmyNestReview2025!`
+- Email verification is skipped for this inbox — sign in goes straight to the app.
 - Region: India
 
 ## What To Test

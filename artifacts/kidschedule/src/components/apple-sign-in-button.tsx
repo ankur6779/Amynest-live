@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { handleAppleLogin, isAppleSignInAvailable } from "@/lib/apple-auth";
+import { handleAppleLogin } from "@/lib/apple-auth";
 import { prettyAuthError, logFirebaseAuthError } from "@/lib/auth-errors";
-import { ENABLE_OAUTH_SIGN_IN } from "@/lib/auth-feature-flags";
+import { ENABLE_APPLE_SIGN_IN } from "@/lib/auth-feature-flags";
 
 type Props = {
   onError?: (message: string) => void;
@@ -21,7 +21,7 @@ export function AppleSignInButton({ onError, className }: Props) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
 
-  if (!ENABLE_OAUTH_SIGN_IN || !isAppleSignInAvailable()) {
+  if (!ENABLE_APPLE_SIGN_IN) {
     return null;
   }
 

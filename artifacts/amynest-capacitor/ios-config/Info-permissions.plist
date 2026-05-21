@@ -31,10 +31,9 @@
   <!-- ── Push Notifications (handled at runtime — no plist key needed, ──
        ── but the APS environment entitlement IS required in Entitlements) ── -->
 
-  <!-- ── Background Audio (lullaby player in Infant Hub) ── -->
+  <!-- ── Background modes (push + background fetch only; no native background audio) ── -->
   <key>UIBackgroundModes</key>
   <array>
-    <string>audio</string>
     <string>remote-notification</string>
     <string>fetch</string>
   </array>
