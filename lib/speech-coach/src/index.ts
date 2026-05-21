@@ -58,3 +58,9 @@ export {
   type PracticeAttemptRow,
   type WeakSoundEntry,
 } from "./weak-sounds";
+export {
+  getPromptSpeakText,
+  LETTER_PRONUNCIATION_PROMPTS,
+  LETTERS_DATA,
+} from "./pronunciation-datasets";
+

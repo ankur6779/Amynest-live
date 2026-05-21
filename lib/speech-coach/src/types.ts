@@ -100,6 +100,8 @@ export interface PronouncePrompt {
   i18nKeyHint: string;
   /** Difficulty level. Defaults to "easy" when omitted. */
   difficulty?: PronouncePromptDifficulty;
+  /** Optional TTS line (e.g. phoneme sound for letters). Falls back to `text`. */
+  speakText?: string;
 }
 
 /** Inputs to the weekly progress scorer. */

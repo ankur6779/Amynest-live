@@ -13,6 +13,7 @@ import type {
   SpeechGame,
   SpeechMilestone,
 } from "./types";
+import { LETTER_PRONUNCIATION_PROMPTS } from "./pronunciation-datasets";
 
 const M = (id: string): { i18nKeyLabel: string; i18nKeyHint: string } => ({
   i18nKeyLabel: `screens.speech_coach.milestones.${id}.label`,
@@ -164,37 +165,8 @@ const HINT = (kind: string): string =>
   `screens.speech_coach.prompts.hint.${kind}`;
 
 export const PRONUNCIATION_PROMPTS: readonly PronouncePrompt[] = [
-  // ── Letters — Easy (1y, 2y, 3y) ──────────────────────────────────────────
-  { id: "L_A", kind: "letter", text: "A", ageBands: ["1y", "2y", "3y"], i18nKeyHint: HINT("letter"), difficulty: "easy" },
-  { id: "L_B", kind: "letter", text: "B", ageBands: ["1y", "2y", "3y"], i18nKeyHint: HINT("letter"), difficulty: "easy" },
-  { id: "L_M", kind: "letter", text: "M", ageBands: ["1y", "2y"], i18nKeyHint: HINT("letter"), difficulty: "easy" },
-  { id: "L_O", kind: "letter", text: "O", ageBands: ["1y", "2y", "3y"], i18nKeyHint: HINT("letter"), difficulty: "easy" },
-  { id: "L_P", kind: "letter", text: "P", ageBands: ["1y", "2y", "3y"], i18nKeyHint: HINT("letter"), difficulty: "easy" },
-  { id: "L_E", kind: "letter", text: "E", ageBands: ["2y", "3y"], i18nKeyHint: HINT("letter"), difficulty: "easy" },
-  { id: "L_I", kind: "letter", text: "I", ageBands: ["2y", "3y"], i18nKeyHint: HINT("letter"), difficulty: "easy" },
-  { id: "L_U", kind: "letter", text: "U", ageBands: ["2y", "3y"], i18nKeyHint: HINT("letter"), difficulty: "easy" },
-
-  // ── Letters — Medium (2y, 3y, 4y_plus) ───────────────────────────────────
-  { id: "L_C", kind: "letter", text: "C", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "medium" },
-  { id: "L_D", kind: "letter", text: "D", ageBands: ["2y", "3y"], i18nKeyHint: HINT("letter"), difficulty: "medium" },
-  { id: "L_F", kind: "letter", text: "F", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "medium" },
-  { id: "L_G", kind: "letter", text: "G", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "medium" },
-  { id: "L_H", kind: "letter", text: "H", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "medium" },
-  { id: "L_K", kind: "letter", text: "K", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "medium" },
-  { id: "L_N", kind: "letter", text: "N", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "medium" },
-  { id: "L_T", kind: "letter", text: "T", ageBands: ["2y", "3y", "4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "medium" },
-  { id: "L_W", kind: "letter", text: "W", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "medium" },
-
-  // ── Letters — Advanced (3y, 4y_plus) ─────────────────────────────────────
-  { id: "L_J", kind: "letter", text: "J", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "advanced" },
-  { id: "L_L", kind: "letter", text: "L", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "advanced" },
-  { id: "L_Q", kind: "letter", text: "Q", ageBands: ["4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "advanced" },
-  { id: "L_R", kind: "letter", text: "R", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "advanced" },
-  { id: "L_S", kind: "letter", text: "S", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "advanced" },
-  { id: "L_V", kind: "letter", text: "V", ageBands: ["4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "advanced" },
-  { id: "L_X", kind: "letter", text: "X", ageBands: ["4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "advanced" },
-  { id: "L_Y", kind: "letter", text: "Y", ageBands: ["3y", "4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "advanced" },
-  { id: "L_Z", kind: "letter", text: "Z", ageBands: ["4y_plus"], i18nKeyHint: HINT("letter"), difficulty: "advanced" },
+  // ── Letters — full A–Z, all ages (phonics TTS via speakText) ─────────────
+  ...LETTER_PRONUNCIATION_PROMPTS,
 
   // ── Phonics — Easy (infant, 1y, 2y) ───────────────────────────────────────
   { id: "P_ah", kind: "phonic", text: "ah", ageBands: ["infant"], i18nKeyHint: HINT("phonic"), difficulty: "easy" },
