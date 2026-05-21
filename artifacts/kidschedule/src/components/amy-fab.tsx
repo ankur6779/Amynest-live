@@ -1,64 +1,19 @@
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "wouter";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useTranslation } from "react-i18next";
 import { safePathStartsWith } from "@/lib/safe-route";
 
-const FAB_STYLE: CSSProperties = {
-  position: "fixed",
-  left: "50%",
-  transform: "translateX(-50%)",
-  zIndex: 9999,
-};
-
 /** Only floating Ask Amy control — portaled to body for Android WebView. */
 export function AmyFab() {
   const { t } = useTranslation();
   const [location] = useLocation();
   const [mounted, setMounted] = useState(false);
-  const [bottom, setBottom] = useState("100px");
-
-  const updateFabPosition = useCallback(() => {
-    const footer = document.querySelector(".app-footer") as HTMLElement | null;
-
-    if (!footer) {
-      setBottom("100px");
-      return;
-    }
-
-    const height = footer.offsetHeight;
-    console.log("Footer height:", height);
-    setBottom(`${height + 20}px`);
-  }, []);
-
-  const scheduleFabPosition = useCallback(() => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(updateFabPosition);
-    });
-  }, [updateFabPosition]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-
-    scheduleFabPosition();
-    updateFabPosition();
-
-    window.addEventListener("resize", updateFabPosition);
-    window.addEventListener("load", updateFabPosition);
-
-    const t = window.setTimeout(updateFabPosition, 300);
-
-    return () => {
-      window.removeEventListener("resize", updateFabPosition);
-      window.removeEventListener("load", updateFabPosition);
-      window.clearTimeout(t);
-    };
-  }, [mounted, location, scheduleFabPosition, updateFabPosition]);
 
   if (
     !mounted ||
@@ -75,8 +30,11 @@ export function AmyFab() {
       data-tour="amy-fab"
       data-amynest-fab="active"
       style={{
-        ...FAB_STYLE,
-        bottom,
+        position: "fixed",
+        bottom: "110px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 1100,
       }}
     >
       <div className="amy-fade-in">
