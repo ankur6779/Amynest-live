@@ -196,6 +196,113 @@ const GAME_MODES: Array<{
   { id: "speed_challenge", label: "Speed Round",     sub: "Beat the clock!",       Icon: Zap,        bg: "from-amber-500 to-orange-500" },
 ];
 
+// ─── Game mode picker (compact — fits mobile viewport without scroll) ────────
+
+interface ModePickPanelProps {
+  testType: TestType;
+  startError: string | null;
+  onBack: () => void;
+  onSelectMode: (mode: GameMode) => void;
+  onSelectMixed: () => void;
+  /** When false, uses immersive play-route card (#111827 on #0B1220). */
+  embedded?: boolean;
+}
+
+function ModePickPanel({
+  testType,
+  startError,
+  onBack,
+  onSelectMode,
+  onSelectMixed,
+  embedded = false,
+}: ModePickPanelProps) {
+  return (
+    <div
+      data-testid="phonics-test-mode-pick"
+      className={cn(
+        "w-full max-w-md",
+        embedded
+          ? "space-y-2"
+          : "rounded-2xl bg-[#111827] p-4",
+      )}
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h2
+          className={cn(
+            "text-base font-semibold leading-tight",
+            embedded ? "text-foreground" : "text-white",
+          )}
+        >
+          Pick a game
+        </h2>
+        <button
+          type="button"
+          onClick={onBack}
+          className={cn(
+            "shrink-0 text-sm",
+            embedded ? "text-muted-foreground" : "text-white/60",
+          )}
+        >
+          Back
+        </button>
+      </div>
+
+      {testType === "weekly" && (
+        <p
+          className={cn(
+            "mb-3 text-xs",
+            embedded ? "text-muted-foreground" : "text-white/50",
+          )}
+        >
+          Difficulty increases as you go
+        </p>
+      )}
+
+      {startError && (
+        <p className="mb-2 text-xs text-rose-400" data-testid="phonics-test-start-error">
+          {startError}
+        </p>
+      )}
+
+      {testType === "daily" && (
+        <button
+          type="button"
+          onClick={onSelectMixed}
+          data-testid="phonics-test-mode-mixed"
+          className={cn(
+            "mb-2 flex h-[64px] w-full flex-col justify-center rounded-xl p-3 text-left text-white",
+            "bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md",
+            "active:scale-[0.98] transition-transform",
+          )}
+        >
+          <span className="text-sm font-semibold leading-tight">Surprise Mix</span>
+          <span className="text-xs text-white/60 leading-tight">5 questions • random mini-games</span>
+        </button>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        {GAME_MODES.map(({ id, label, sub, Icon, bg }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onSelectMode(id)}
+            data-testid={`phonics-test-mode-${id}`}
+            className={cn(
+              "flex h-[90px] flex-col justify-center rounded-xl p-3 text-left text-white",
+              "bg-gradient-to-br shadow-md active:scale-[0.98] transition-transform",
+              bg,
+            )}
+          >
+            <Icon className="mb-1 h-4 w-4 shrink-0" />
+            <span className="text-sm font-semibold leading-tight">{label}</span>
+            <span className="text-xs text-white/60 leading-tight">{sub}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Inline keyframes (fun animations) ───────────────────────────────────────
 //
 // We inject one <style> tag the first time the component mounts so we don't
@@ -761,7 +868,7 @@ function PhonicsTestContent({
         type: testType,
         childId: String(numericChildId),
       });
-      setLocation(`/phonics/test?${params.toString()}`);
+      setLocation(`/phonics/test/play?${params.toString()}`);
       setPhase({ kind: "mode-pick", testType });
     },
     [numericChildId, setLocation],
@@ -950,8 +1057,42 @@ function PhonicsTestContent({
     setLocation("/phonics");
   }, [clearResume, setLocation]);
 
+  const handleModePickBack = useCallback(() => {
+    setStartError(null);
+    setPhase({ kind: "idle" });
+    if (playOnly) setLocation("/phonics");
+  }, [playOnly, setLocation]);
+
   if (!eligible) {
     return <div className="text-sm text-muted-foreground">Loading phonics...</div>;
+  }
+
+  // Immersive play route: centered picker, no page scroll (640–800px phones).
+  if (playOnly && phase.kind === "mode-pick") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="flex min-h-0 flex-1 items-center justify-center">
+          <ModePickPanel
+            testType={phase.testType}
+            startError={startError}
+            onBack={handleModePickBack}
+            onSelectMode={(mode) => void handleStartWithMode(phase.testType, mode)}
+            onSelectMixed={() => void handleStartWithMode("daily", "mixed")}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (playOnly && phase.kind === "submitting") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-4">
+        <div className="h-20 w-full max-w-md animate-pulse rounded-2xl bg-white/10" />
+        <div className="flex items-center gap-2 text-sm text-white/80">
+          <Loader2 className="h-5 w-5 animate-spin" /> Starting test…
+        </div>
+      </div>
+    );
   }
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -961,10 +1102,15 @@ function PhonicsTestContent({
       data-testid="phonics-test-card"
       className={cn(
         "border-border bg-card dark:bg-card shadow-md",
-        playOnly && "border-0 shadow-none bg-transparent",
+        playOnly && "flex min-h-0 flex-1 flex-col border-0 bg-transparent shadow-none",
       )}
     >
-      <CardContent className={cn("p-5 sm:p-6 space-y-4", playOnly && "p-0")}>
+      <CardContent
+        className={cn(
+          "space-y-4 p-5 sm:p-6",
+          playOnly && "flex min-h-0 flex-1 flex-col overflow-y-auto p-4",
+        )}
+      >
         {!playOnly && (
         <div className="flex items-center gap-3">
           <div className="rounded-2xl p-2.5 bg-primary text-primary-foreground shadow-md">
@@ -1058,60 +1204,14 @@ function PhonicsTestContent({
         )}
 
         {phase.kind === "mode-pick" && (
-          <div className="space-y-3" data-testid="phonics-test-mode-pick">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-bold text-foreground">
-                Pick a game for {displayName}'s {phase.testType === "daily" ? "Daily" : "Weekly"} Test
-                {phase.testType === "weekly" && (
-                  <span className="block text-[11px] font-medium text-muted-foreground">
-                    Difficulty increases as you go
-                  </span>
-                )}
-              </p>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => setPhase({ kind: "idle" })}
-                className="text-xs gap-1"
-              >
-                <ChevronLeft className="h-3 w-3" /> Back
-              </Button>
-            </div>
-            {phase.testType === "daily" && (
-              <button
-                type="button"
-                onClick={() => handleStartWithMode("daily", "mixed")}
-                data-testid="phonics-test-mode-mixed"
-                className={cn(
-                  "w-full rounded-2xl p-3 text-left text-white bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md",
-                  "hover:scale-[1.01] active:scale-95 transition-transform",
-                )}
-              >
-                <div className="text-sm font-extrabold">Surprise Mix</div>
-                <div className="text-[10px] opacity-90">5 questions • random mini-games</div>
-              </button>
-            )}
-            <div className="grid grid-cols-2 gap-2.5">
-              {GAME_MODES.map(({ id, label, sub, Icon, bg }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => handleStartWithMode(phase.testType, id)}
-                  data-testid={`phonics-test-mode-${id}`}
-                  className={cn(
-                    "rounded-2xl p-3 text-left text-white bg-gradient-to-br shadow-md",
-                    "hover:scale-[1.02] active:scale-95 transition-transform",
-                    bg,
-                  )}
-                >
-                  <Icon className="h-5 w-5 mb-1.5" />
-                  <div className="text-sm font-extrabold leading-tight">{label}</div>
-                  <div className="text-[10px] opacity-90 leading-tight">{sub}</div>
-                </button>
-              ))}
-            </div>
-          </div>
+          <ModePickPanel
+            embedded
+            testType={phase.testType}
+            startError={startError}
+            onBack={handleModePickBack}
+            onSelectMode={(mode) => void handleStartWithMode(phase.testType, mode)}
+            onSelectMixed={() => void handleStartWithMode("daily", "mixed")}
+          />
         )}
 
         {phase.kind === "submitting" && (
