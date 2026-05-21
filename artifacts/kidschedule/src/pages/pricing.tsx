@@ -534,6 +534,28 @@ export default function PricingPage() {
             {t("pricing.cancel_anytime")}
           </span>
         </div>
+
+        <div className="flex items-center justify-center gap-3 pt-3 text-xs">
+          <a
+            href="https://amynest.in/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="pricing-link-privacy"
+            className="text-white/45 underline underline-offset-2 hover:text-white/70 transition-colors"
+          >
+            {t("pages.landing.privacy_policy")}
+          </a>
+          <span className="text-white/25">·</span>
+          <a
+            href="https://amynest.in/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="pricing-link-terms"
+            className="text-white/45 underline underline-offset-2 hover:text-white/70 transition-colors"
+          >
+            {t("pages.landing.terms_of_service")}
+          </a>
+        </div>
       </div>
 
       {/* ── Payment-processing overlay ── */}

@@ -330,6 +330,28 @@ export function PaywallModal() {
           <p className="text-center text-[11px] text-white/35 mt-2">
             {t("components.paywall_modal.cancel_anytime_renews_automatically_until_canceled")}
           </p>
+
+          <div className="flex items-center justify-center gap-3 mt-3 text-[11px]">
+            <a
+              href="https://amynest.in/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/45 underline underline-offset-2 hover:text-white/70 transition-colors"
+              data-testid="paywall-link-privacy"
+            >
+              {t("pages.landing.privacy_policy")}
+            </a>
+            <span className="text-white/25">·</span>
+            <a
+              href="https://amynest.in/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/45 underline underline-offset-2 hover:text-white/70 transition-colors"
+              data-testid="paywall-link-terms"
+            >
+              {t("pages.landing.terms_of_service")}
+            </a>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

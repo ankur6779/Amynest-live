@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { handleGoogleLogin } from "@/lib/google-auth";
 import { prettyAuthError, logFirebaseAuthError } from "@/lib/auth-errors";
-import { ENABLE_OAUTH_SIGN_IN } from "@/lib/auth-feature-flags";
+import { ENABLE_GOOGLE_SIGN_IN } from "@/lib/auth-feature-flags";
 
 type Props = {
   onError?: (message: string) => void;
@@ -36,7 +36,7 @@ export function GoogleSignInButton({ onError, className }: Props) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
 
-  if (!ENABLE_OAUTH_SIGN_IN) return null;
+  if (!ENABLE_GOOGLE_SIGN_IN) return null;
 
   const onClick = async () => {
     if (busy) return;

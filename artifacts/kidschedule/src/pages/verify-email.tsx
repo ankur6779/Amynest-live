@@ -3,6 +3,7 @@ import { useLocation, useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
 import { signOut as fbSignOut } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
+import { isEmailVerificationBypassEmail } from "@/lib/email-verification-bypass";
 import { sendUserEmailVerification } from "@/lib/email-verification";
 import { getVerificationRateStatus, UX_COOLDOWN_MS } from "@/lib/email-verification-rate";
 import {
@@ -118,7 +119,16 @@ function VerifyEmailInboxPage() {
 
   const goHomeIfVerified = useCallback(async () => {
     const user = firebaseAuth.currentUser;
+    const bypassFromUrl = isEmailVerificationBypassEmail(email);
+    if (bypassFromUrl) {
+      setLocation(postVerifyPath());
+      return;
+    }
     if (!user) return;
+    if (isEmailVerificationBypassEmail(user.email)) {
+      setLocation(postVerifyPath());
+      return;
+    }
     try {
       await user.reload();
       if (user.emailVerified) {
@@ -128,7 +138,13 @@ function VerifyEmailInboxPage() {
     } catch {
       /* ignore */
     }
-  }, [setLocation]);
+  }, [setLocation, email]);
+
+  useEffect(() => {
+    if (isEmailVerificationBypassEmail(email)) {
+      setLocation(postVerifyPath());
+    }
+  }, [email, setLocation]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -169,6 +185,7 @@ function VerifyEmailInboxPage() {
     if (!authReady) return;
     const user = firebaseAuth.currentUser;
     if (!user || user.emailVerified) return;
+    if (isEmailVerificationBypassEmail(user.email ?? email)) return;
 
     if (sentOnArrival) {
       setMessage(t("screens.verify_email.resent"));

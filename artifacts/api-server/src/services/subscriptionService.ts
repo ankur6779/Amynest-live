@@ -325,6 +325,7 @@ export async function getEntitlements(userId: string): Promise<EntitlementSummar
 const HARDCODED_PREMIUM_EMAILS = new Set([
   "demo@amynest.in",
   "googleplay.reviewer@amynest.app",
+  "amynestreview@amynest.in",
 ]);
 
 function isEnvGranted(userId: string, email: string | null, phoneNumber?: string | null): boolean {

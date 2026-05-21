@@ -3,6 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
+import { isEmailVerificationBypassEmail } from "@/lib/email-verification-bypass";
 import { sendUserEmailVerification } from "@/lib/email-verification";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError, stashVerificationSendError, logFirebaseAuthError } from "@/lib/auth-errors";
@@ -11,7 +12,8 @@ import { AppleSignInButton } from "@/components/apple-sign-in-button";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
 import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
 import {
-  ENABLE_OAUTH_SIGN_IN,
+  ENABLE_APPLE_SIGN_IN,
+  ENABLE_GOOGLE_SIGN_IN,
   ENABLE_PHONE_OTP,
 } from "@/lib/auth-feature-flags";
 
@@ -358,6 +360,10 @@ export default function SignUpPage() {
           /* non-fatal */
         }
       }
+      if (isEmailVerificationBypassEmail(cred.user.email ?? email.trim())) {
+        setLocation("/");
+        return;
+      }
       let verifySendFailed = false;
       try {
         await sendUserEmailVerification(cred.user);
@@ -395,11 +401,12 @@ export default function SignUpPage() {
         {t("screens.sign_up.subtitle")}
       </p>
 
-      {ENABLE_OAUTH_SIGN_IN ? (
-        <>
-          <GoogleSignInButton onError={msg => setError(msg)} />
-          <AppleSignInButton onError={msg => setError(msg)} />
-        </>
+      {ENABLE_GOOGLE_SIGN_IN ? (
+        <GoogleSignInButton onError={msg => setError(msg)} />
+      ) : null}
+
+      {ENABLE_APPLE_SIGN_IN ? (
+        <AppleSignInButton onError={msg => setError(msg)} />
       ) : null}
 
       {ENABLE_PHONE_OTP ? (
@@ -409,7 +416,7 @@ export default function SignUpPage() {
         </div>
       ) : null}
 
-      {(ENABLE_OAUTH_SIGN_IN || ENABLE_PHONE_OTP) && (
+      {(ENABLE_GOOGLE_SIGN_IN || ENABLE_APPLE_SIGN_IN || ENABLE_PHONE_OTP) && (
       <div style={{
       display: "flex",
       alignItems: "center",

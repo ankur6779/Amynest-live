@@ -54,8 +54,19 @@ export function shouldUseNativeAppleAuth(): boolean {
 
 export function isAppleSignInAvailable(): boolean {
   if (shouldUseNativeAppleAuth()) return true;
+  if (typeof window !== "undefined") {
+    const proto = (window.location.protocol || "").toLowerCase();
+    if (proto === "capacitor:" || proto === "ionic:") {
+      try {
+        return Capacitor.getPlatform() === "ios";
+      } catch {
+        return true;
+      }
+    }
+  }
   if (typeof window === "undefined") return false;
-  return Boolean(getAppleWebClientId());
+  // Web: Apple JS SDK when Services ID is set; otherwise Firebase redirect still works.
+  return true;
 }
 
 async function signInFirebaseWithAppleToken(
