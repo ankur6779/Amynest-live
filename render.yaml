@@ -83,6 +83,10 @@ services:
         sync: false
       - key: OPENAI_API_KEY
         sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: PHONICS_SESSION_SECRET
+        sync: false
       - key: RESEND_API_KEY
         sync: false
       - key: REVENUECAT_SECRET_KEY
@@ -132,6 +136,10 @@ services:
       - key: FIREBASE_SERVICE_ACCOUNT_JSON
         sync: false
       - key: OPENAI_API_KEY
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: PHONICS_SESSION_SECRET
         sync: false
       - key: GOOGLE_API_KEY
         sync: false
