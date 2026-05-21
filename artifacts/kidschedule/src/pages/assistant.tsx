@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Send, Loader2, User, Sparkles, RefreshCw, Zap, RotateCcw, Heart, GraduationCap, CheckSquare, Lightbulb, HelpCircle } from "lucide-react";
+import { Send, Loader2, User, RefreshCw, Zap, RotateCcw, Heart, GraduationCap, CheckSquare, Lightbulb, HelpCircle } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -14,7 +14,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { readResolvedApiJson } from "@/lib/poll-result";
 
 interface Message {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
 }
 
@@ -58,16 +58,16 @@ export default function AssistantPage() {
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
   const chatWrapperRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showScrollLatest, setShowScrollLatest] = useState(false);
 
   const scrollToChatEnd = (behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
     const thread = threadRef.current;
     if (thread) {
       thread.scrollTo({ top: thread.scrollHeight, behavior });
-      return;
     }
-    document.getElementById("chat-end")?.scrollIntoView({ behavior, block: "end" });
   };
 
   // Load saved chat history on mount so parents can pick up where they left off
@@ -133,7 +133,6 @@ export default function AssistantPage() {
 
   // Server-driven gating — no local quota counter. Premium users have no limit.
   const dailyLimit = entitlements?.limits.aiQueriesPerDay ?? 10;
-  const questionsUsed = entitlements?.usage.aiQueriesToday ?? 0;
   const remainingRaw = entitlements?.usage.aiQueriesRemaining; // null for premium
   const remaining = isPremium ? Infinity : Math.max(0, remainingRaw ?? dailyLimit);
   const limitReached = !isPremium && remaining <= 0;
@@ -213,190 +212,144 @@ export default function AssistantPage() {
   // Suppress the empty-state flash while we're still loading saved history
   const isEmpty = historyLoaded && messages.length === 0;
 
-  return (
-    <div className="assistant-chat-page relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col bg-background">
-      {/* Header */}
-      <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-4 md:px-0 md:pt-0">
-        <div>
-          <h1 className="font-quicksand text-3xl font-bold text-foreground flex items-center gap-2">
-            <AmyIcon size={38} bounce ring />
-            {t("ai.page_title")}
-            <Badge className="bg-card text-primary-foreground text-xs font-bold border-0 ml-1">
-              <Zap className="h-3 w-3 mr-1" />
-              {t("ai.badge_label")}
-            </Badge>
-          </h1>
-          <p className="text-muted-foreground mt-1">{t("ai.subtitle")}</p>
-        </div>
-        {!isEmpty && (
-          <Button variant="ghost" size="sm" onClick={clearChat} className="rounded-full gap-2 text-muted-foreground">
-            <RefreshCw className="h-4 w-4" />
-            {t("ai.clear_chat")}
+  const renderSystemLimitMessage = () => (
+    <div className="flex justify-center px-1">
+      <div className="w-full max-w-md rounded-2xl border border-border/60 bg-muted/40 px-4 py-3 text-center text-sm text-foreground">
+        <p>{t("ai.system_limit_message")}</p>
+        <Link href="/pricing" className="mt-2 inline-block">
+          <Button size="sm" className="rounded-full gap-1.5" data-testid="button-upgrade-system">
+            <Zap className="h-3.5 w-3.5" />
+            {t("ai.upgrade_premium")}
           </Button>
-        )}
+        </Link>
       </div>
+    </div>
+  );
 
-      {/* Mode tabs */}
-      <div className="shrink-0 px-4 pb-3 md:px-0">
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+  const renderMessageBubble = (msg: Message, i: number) => {
+    if (msg.role === "system") {
+      return (
+        <div key={`system-${i}`} className="flex justify-center">
+          <div className="max-w-[90%] rounded-2xl border border-dashed border-border bg-muted/30 px-4 py-2.5 text-center text-sm text-muted-foreground">
+            {msg.content}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div key={i} className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+        <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+          msg.role !== "assistant" ? "bg-secondary/20 text-secondary-foreground" : ""
+        }`}>
+          {msg.role === "assistant" ? <AmyIcon size={32} ring /> : <User className="h-3.5 w-3.5" />}
+        </div>
+        <div className={`max-w-[85%] ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col gap-1`}>
+          <Card className={`rounded-2xl shadow-sm ${
+            msg.role === "user"
+              ? "bg-primary text-primary-foreground border-primary rounded-tr-sm"
+              : "bg-card border-border rounded-tl-sm"
+          }`}>
+            <CardContent className="p-3">
+              <p className={`text-sm leading-relaxed whitespace-pre-wrap ${
+                msg.role === "user" ? "text-primary-foreground" : "text-foreground"
+              }`}>
+                {msg.content}
+              </p>
+            </CardContent>
+          </Card>
+          {msg.role === "assistant" && (
+            <Badge variant="outline" className="text-[10px] text-muted-foreground border-none px-0 h-auto">
+              {t("ai.disclaimer")}
+            </Badge>
+          )}
+          {msg.role === "user" && !loading && !limitReached && (
+            <button
+              type="button"
+              onClick={() => sendMessage(msg.content)}
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors px-1"
+              data-testid={`ask-again-${i}`}
+              aria-label={t("ai.ask_again")}
+            >
+              <RotateCcw className="h-3 w-3" />
+              {t("ai.ask_again")}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="assistant-chat-page chat-container relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col bg-background">
+      <header className="assistant-chat-header shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <AmyIcon size={28} ring />
+            <h1 className="truncate font-quicksand text-lg font-bold text-foreground">
+              {t("ai.page_title")}
+            </h1>
+          </div>
+          {!isEmpty && (
+            <Button variant="ghost" size="sm" onClick={clearChat} className="h-8 shrink-0 rounded-full px-2 text-muted-foreground">
+              <RefreshCw className="h-4 w-4" />
+              <span className="sr-only">{t("ai.clear_chat")}</span>
+            </Button>
+          )}
+        </div>
+        <div className="assistant-chat-tabs mt-2 flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
           {WEB_MODES.map(({ id, labelKey, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setMode(id)}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all border ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
                 mode === id
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card text-muted-foreground border-border hover:border-primary/40"
               }`}
             >
-              <Icon className="h-3.5 w-3.5 shrink-0" />
+              <Icon className="h-3 w-3 shrink-0" />
               {t(labelKey)}
             </button>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground italic mt-1.5 px-0.5">
-          {t(WEB_MODES.find((m) => m.id === mode)!.hintKey)}
-        </p>
-      </div>
+      </header>
 
-      {/* Daily limit bar */}
-      <div className={`mx-4 mb-3 flex shrink-0 items-center justify-between gap-3 rounded-2xl border px-4 py-2.5 text-sm md:mx-0 ${
-        limitReached
-          ? "bg-muted border-border text-foreground"
-          : remaining <= 2
-          ? "bg-muted border-border text-foreground"
-          : "bg-primary/5 border-primary/20 text-primary/80"
-      }`}>
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 shrink-0" />
-          {limitReached ? (
-            <span className="font-bold">{t("ai.quota_exhausted_upgrade")}</span>
-          ) : (
-            <span>
-              {remaining === 1
-                ? t("ai.quota_remaining_singular", { remaining, limit: dailyLimit })
-                : t("ai.quota_remaining", { remaining, limit: dailyLimit })}
-            </span>
-          )}
-        </div>
-        {limitReached ? (
-          <Link href="/pricing">
-            <Button size="sm" className="rounded-full gap-1.5 shrink-0 bg-primary hover:bg-primary text-primary-foreground" data-testid="button-upgrade-banner">
-              <Zap className="h-3.5 w-3.5" />
-              {t("ai.upgrade")}
-            </Button>
-          </Link>
-        ) : (
-          <div className="flex gap-1">
-            {Array.from({ length: dailyLimit }).map((_, i) => (
-              <div
-                key={i}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i < questionsUsed ? "bg-current opacity-80" : "bg-current opacity-20"
-                }`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Chat */}
       <div className="chat-wrapper relative" ref={chatWrapperRef}>
       <div
         ref={threadRef}
         onScroll={handleThreadScroll}
-        className="chat-body space-y-4"
+        className="chat-body chat-messages space-y-3"
       >
+        {limitReached ? renderSystemLimitMessage() : null}
+
         {isEmpty ? (
-          <div className="flex flex-col items-center justify-center h-full gap-6 text-center py-8">
-            <AmyIcon size={96} bounce ring />
-            <div>
-              <h2 className="font-quicksand text-xl font-bold text-foreground mb-1">{t("ai.empty_heading")}</h2>
-              <p className="text-muted-foreground text-sm max-w-xs">
-                {t("ai.empty_body")}
-              </p>
+          <div className="flex flex-col gap-3 py-2">
+            <p className="text-center text-sm text-muted-foreground">{t("ai.empty_short")}</p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {(mode === "parenting" ? PARENTING_CHIP_KEYS : SUGGESTED_QUESTION_KEYS).map((key, i) => (
+                <button
+                  key={i}
+                  onClick={() => sendMessage(t(key))}
+                  disabled={limitReached}
+                  className="text-left text-sm p-2.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all text-foreground/80 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {t(key)}
+                </button>
+              ))}
             </div>
-
-            <div className="w-full max-w-lg">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-3">{t("ai.popular_questions")}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {(mode === "parenting" ? PARENTING_CHIP_KEYS : SUGGESTED_QUESTION_KEYS).map((key, i) => (
-                  <button
-                    key={i}
-                    onClick={() => sendMessage(t(key))}
-                    disabled={limitReached}
-                    className="text-left text-sm p-3 rounded-2xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all text-foreground/80 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {t(key)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {limitReached && (
-              <div className="bg-muted border border-border rounded-2xl p-5 text-sm text-foreground max-w-sm text-center space-y-3">
-                <p className="font-bold text-base">{t("ai.quota_exhausted")}</p>
-                <p>{t("ai.quota_exhausted_body", { limit: dailyLimit })}</p>
-                <Link href="/pricing">
-                  <Button className="w-full rounded-full gap-2 bg-primary hover:bg-primary text-primary-foreground" data-testid="button-upgrade-empty">
-                    <Zap className="h-4 w-4" />
-                    {t("ai.upgrade_premium")}
-                  </Button>
-                </Link>
-              </div>
-            )}
           </div>
         ) : (
           <>
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
-                <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
-                  msg.role !== "assistant" ? "bg-secondary/20 text-secondary-foreground" : ""
-                }`}>
-                  {msg.role === "assistant" ? <AmyIcon size={36} ring /> : <User className="h-4 w-4" />}
-                </div>
-                <div className={`max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col gap-1`}>
-                  <Card className={`rounded-2xl shadow-sm ${
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground border-primary rounded-tr-sm"
-                      : "bg-card border-border rounded-tl-sm"
-                  }`}>
-                    <CardContent className="p-3.5">
-                      <p className={`text-sm leading-relaxed whitespace-pre-wrap ${
-                        msg.role === "user" ? "text-primary-foreground" : "text-foreground"
-                      }`}>
-                        {msg.content}
-                      </p>
-                    </CardContent>
-                  </Card>
-                  {msg.role === "assistant" && (
-                    <Badge variant="outline" className="text-xs text-muted-foreground border-none px-0 h-auto">
-                      {t("ai.disclaimer")}
-                    </Badge>
-                  )}
-                  {msg.role === "user" && !loading && !limitReached && (
-                    <button
-                      type="button"
-                      onClick={() => sendMessage(msg.content)}
-                      className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors px-1"
-                      data-testid={`ask-again-${i}`}
-                      aria-label={t("ai.ask_again")}
-                    >
-                      <RotateCcw className="h-3 w-3" />
-                      {t("ai.ask_again")}
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+            {messages.map((msg, i) => renderMessageBubble(msg, i))}
 
             {loading && (
-              <div className="flex gap-3">
+              <div className="flex gap-2.5">
                 <div className="shrink-0">
-                  <AmyIcon size={36} bounce ring />
+                  <AmyIcon size={32} ring />
                 </div>
                 <Card className="rounded-2xl rounded-tl-sm border-border shadow-sm">
-                  <CardContent className="p-3.5">
+                  <CardContent className="p-3">
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       {t("ai.thinking")}
@@ -405,9 +358,9 @@ export default function AssistantPage() {
                 </Card>
               </div>
             )}
-            <div id="chat-end" />
           </>
         )}
+        <div id="chat-end" ref={messagesEndRef} />
       </div>
 
       {showScrollLatest && (
@@ -425,44 +378,31 @@ export default function AssistantPage() {
       {/* Input — fixed above keyboard / system nav */}
       <div className="chat-input border-t border-border/50">
         <div className="mx-auto w-full max-w-3xl">
-        {limitReached ? (
-          <div className="bg-muted border border-border rounded-2xl p-4 text-center text-foreground space-y-2">
-            <p className="font-bold text-sm">{t("ai.quota_exhausted")}</p>
-            <p className="text-xs">{t("ai.quota_exhausted_input", { limit: dailyLimit })}</p>
-            <Link href="/pricing">
-              <Button size="sm" className="rounded-full gap-1.5 bg-primary hover:bg-primary text-primary-foreground" data-testid="button-upgrade-input">
-                <Zap className="h-3.5 w-3.5" />
-                {t("ai.upgrade_premium")}
-              </Button>
-            </Link>
+          <div className="flex gap-3 items-end bg-card rounded-2xl border border-border p-3 shadow-sm focus-within:border-primary transition-colors">
+            <Textarea
+              ref={textareaRef}
+              placeholder={
+                limitReached
+                  ? t("ai.input_limit_placeholder")
+                  : t(WEB_MODES.find((m) => m.id === mode)!.placeholderKey)
+              }
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={handleInputFocus}
+              disabled={limitReached}
+              className="flex-1 border-none shadow-none resize-none focus-visible:ring-0 min-h-[40px] max-h-[120px] bg-transparent p-0 text-sm placeholder:text-muted-foreground disabled:opacity-60"
+              rows={1}
+            />
+            <Button
+              onClick={() => sendMessage()}
+              disabled={!input.trim() || loading || limitReached}
+              size="icon"
+              className="rounded-xl h-9 w-9 shrink-0"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
           </div>
-        ) : (
-          <>
-            <div className="flex gap-3 items-end bg-card rounded-2xl border border-border p-3 shadow-sm focus-within:border-primary transition-colors">
-              <Textarea
-                ref={textareaRef}
-                placeholder={t(WEB_MODES.find((m) => m.id === mode)!.placeholderKey)}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onFocus={handleInputFocus}
-                className="flex-1 border-none shadow-none resize-none focus-visible:ring-0 min-h-[40px] max-h-[120px] bg-transparent p-0 text-sm placeholder:text-muted-foreground"
-                rows={1}
-              />
-              <Button
-                onClick={() => sendMessage()}
-                disabled={!input.trim() || loading || limitReached}
-                size="icon"
-                className="rounded-xl h-9 w-9 shrink-0"
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              {t("ai.send_hint")}
-            </p>
-          </>
-        )}
         </div>
       </div>
     </div>
