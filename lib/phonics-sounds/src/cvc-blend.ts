@@ -30,7 +30,7 @@ export async function playCvcBlend(
   options?: PlayCvcBlendOptions,
 ): Promise<void> {
   const { phonemes, word } = wordObj;
-  const slowGap = options?.slowGapMs ?? 300;
+  const slowGap = options?.slowGapMs ?? 350;
   const fastGap = options?.fastGapMs ?? 120;
 
   if (!options?.skipSlowPass) {

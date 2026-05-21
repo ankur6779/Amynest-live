@@ -423,7 +423,7 @@ function QuestionCard({
       return;
     }
     if (cvcEntry) {
-      void playCVCBlendWithSpeak(cvcEntry, speak);
+      void playCvcBlendWithSpeak(cvcEntry, speak);
       return;
     }
     if (ttsText) void speak(getPhonicsAudioText(ttsText), { mode: "phonics" });
