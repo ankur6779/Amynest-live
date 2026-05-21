@@ -2,12 +2,14 @@ package com.amynest.app
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -72,13 +74,27 @@ class MainActivity : AppCompatActivity() {
 
         webView = WebView(this).also { wv ->
             wv.id = View.generateViewId()
-            // IMPORTANT: disable overscroll to block system-level pull-to-refresh
-            // and the "glow" effect that can sometimes interfere with web-side scrolling.
             wv.overScrollMode = View.OVER_SCROLL_NEVER
             wv.isVerticalScrollBarEnabled = false
             wv.isHorizontalScrollBarEnabled = false
-            // Helps with nested scroll containers in the web app
-            wv.isNestedScrollingEnabled = false
+            
+            // Fix Android scroll: block native pull-to-refresh when at the top
+            wv.setOnTouchListener(object : View.OnTouchListener {
+                private var lastY = 0f
+                override fun onTouch(v: View, event: MotionEvent): Boolean {
+                    when (event.action) {
+                        MotionEvent.ACTION_DOWN -> lastY = event.y
+                        MotionEvent.ACTION_MOVE -> {
+                            val deltaY = event.y - lastY
+                            if (!wv.canScrollVertically(-1) && deltaY > 20f) {
+                                return true // consume to block pull-to-refresh
+                            }
+                        }
+                    }
+                    return false
+                }
+            })
+
             configureWebView(wv)
         }
         setContentView(webView)
@@ -211,8 +227,13 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
                 super.onPageStarted(view, url, favicon)
-                // Inject CSS to block pull-to-refresh at the earliest possible moment
-                val css = "html, body { overscroll-behavior-y: none !important; }"
+                // Inject CSS to fix layout gaps, block pull-to-refresh and lock dashboard footer
+                val css = "html, body { height: 100% !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; overscroll-behavior-y: none !important; } " +
+                         "#app-root, .app-root { height: 100% !important; height: 100vh !important; height: 100dvh !important; display: flex !important; flex-direction: column !important; padding-top: env(safe-area-inset-top) !important; padding-bottom: env(safe-area-inset-bottom) !important; } " +
+                         ".app-footer { position: sticky !important; bottom: 0 !important; z-index: 60 !important; flex-shrink: 0 !important; } " +
+                         ".dashboard-page { display: flex !important; flex-direction: column !important; min-height: 100% !important; } " +
+                         ".dashboard-content { flex: 1 !important; min-height: 0 !important; padding-bottom: 90px !important; } " +
+                         ".ask-amy-fab { position: absolute !important; bottom: 70px !important; z-index: 65 !important; }"
                 val js = "var style = document.createElement('style');" +
                          "style.innerHTML = '$css';" +
                          "document.head.appendChild(style);"
@@ -227,8 +248,10 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
                 
-                // Re-ensure overscroll is disabled on the HTML element
+                // Re-ensure layout fixes and overscroll is disabled
                 view.evaluateJavascript(
+                    "document.documentElement.style.height = '100%';" +
+                    "document.body.style.height = '100%';" +
                     "document.documentElement.style.overscrollBehaviorY = 'none';" +
                     "document.body.style.overscrollBehaviorY = 'none';",
                     null

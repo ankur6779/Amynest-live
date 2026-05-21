@@ -9,14 +9,14 @@ plugins {
 
 android {
     namespace = "com.amynest.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.amynest.app"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 28
-        versionName = "1.2.5"
+        targetSdk = 35
+        versionCode = 35
+        versionName = "1.3.2"
     }
 
     signingConfigs {
