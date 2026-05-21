@@ -16,9 +16,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTodayRoutine } from "@/hooks/useTodayRoutine";
 import { useTranslation } from "react-i18next";
+import type { RoutineTask } from "@/contexts/ProgressContext";
+import { categoryIcon } from "@/constants/categoryIcons";
+import {
+  routineCategoryToTileId,
+  sectionCtaLabel,
+  tileIdToSection,
+} from "@/app/(tabs)/hub-sections";
 
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -29,7 +36,8 @@ import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { routineDateKey, routineItems } from "@/lib/routines";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
 import RoutineCarousel from "@/components/RoutineCarousel";
-import { ChildrenStrip } from "@/components/ChildrenStrip";
+import { ChildrenStrip, type ChildTodayProgress } from "@/components/ChildrenStrip";
+import { DashboardSectionHeader } from "@/components/DashboardSectionHeader";
 import {
   getTotalPoints,
   getBadges,
@@ -121,48 +129,112 @@ function computeStreak(routines: Routine[]): number {
   return streak;
 }
 
-// ─── Section Header ───────────────────────────────────────────────────────────
+function buildTasksFromRoutine(routine: Routine): RoutineTask[] {
+  return routineItems(routine).map((it, idx) => {
+    const relatedTileId = routineCategoryToTileId(it.category) ?? undefined;
+    const section = relatedTileId ? tileIdToSection(relatedTileId) : null;
+    const continueLabel = section ? sectionCtaLabel(section) : undefined;
+    return {
+      id: `t-${routine.id}-${idx}`,
+      title: it.activity,
+      time: it.time,
+      minutes: it.duration ?? 30,
+      icon: categoryIcon(it.category),
+      done: it.status === "completed",
+      ageBand: it.ageBand,
+      relatedTileId,
+      continueLabel,
+    };
+  });
+}
 
-function SectionHeader({
-  label,
-  actionLabel,
-  onAction,
-  accentColor,
-}: {
-  label: string;
-  actionLabel?: string;
-  onAction?: () => void;
-  accentColor?: string;
-}) {
-  const c = useColors();
+function computeChildProgressMap(
+  children: Child[],
+  routines: Routine[],
+  todayKey: string,
+): Record<number, ChildTodayProgress> {
+  const map: Record<number, ChildTodayProgress> = {};
+  for (const child of children) {
+    const routine = routines.find(
+      (r) => routineDateKey(r) === todayKey && r.childId === child.id,
+    );
+    if (!routine) {
+      map[child.id] = { done: 0, total: 0 };
+      continue;
+    }
+    const items = routineItems(routine);
+    map[child.id] = {
+      done: items.filter((i) => i.status === "completed").length,
+      total: items.length,
+    };
+  }
+  return map;
+}
+
+function TimelineProgressChip({ done, total }: { done: number; total: number }) {
+  const { t } = useTranslation();
+  if (total <= 0) return null;
+  const pct = Math.min(100, Math.round((done / total) * 100));
   return (
-    <View style={sectionHdrStyles.row}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        {accentColor && <View style={[sectionHdrStyles.accent, { backgroundColor: accentColor }]} />}
-        <Text style={[sectionHdrStyles.label, { color: c.mutedForeground }]}>{label.toUpperCase()}</Text>
+    <View style={timelineChipStyles.wrap}>
+      <Text style={timelineChipStyles.label}>
+        {t("dashboard.timeline_progress", { done, total })}
+      </Text>
+      <View style={timelineChipStyles.track}>
+        <View style={[timelineChipStyles.fill, { width: `${pct}%` }]} />
       </View>
-      {actionLabel && onAction && (
-        <TouchableOpacity onPress={onAction}>
-          <Text style={sectionHdrStyles.action}>{actionLabel} →</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 }
-const sectionHdrStyles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, marginBottom: 10 },
-  label: { fontSize: 10.5, fontWeight: "800", letterSpacing: 1.6 },
-  action: { fontSize: 11, fontWeight: "700", color: brand.violet600 },
-  accent: { width: 3, height: 13, borderRadius: 2 },
+const timelineChipStyles = StyleSheet.create({
+  wrap: { alignItems: "flex-end", minWidth: 80 },
+  label: { fontSize: 11, fontWeight: "800", color: brand.violet600, letterSpacing: -0.2 },
+  track: {
+    width: 72,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: brandAlpha.violet600_12,
+    marginTop: 4,
+    overflow: "hidden",
+  },
+  fill: { height: 4, borderRadius: 999, backgroundColor: palette.emerald400 },
 });
 
 // ─── Streak Card ──────────────────────────────────────────────────────────────
 
-function StreakCard({ streak, onPress }: { streak: number; onPress: () => void }) {
+function StreakCard({
+  streak,
+  routines,
+  onPress,
+}: {
+  streak: number;
+  routines: Routine[];
+  onPress: () => void;
+}) {
   const { t } = useTranslation();
   const c = useColors();
-  const label = streak >= 7 ? "🏆 Epic" : streak >= 3 ? "🔥 Hot" : "✨ Active";
+  const badgeLabel =
+    streak >= 7
+      ? `🏆 ${t("dashboard.streak_epic")}`
+      : streak >= 3
+        ? `🔥 ${t("dashboard.streak_hot")}`
+        : `✨ ${t("dashboard.streak_active")}`;
   const isActive = streak > 0;
+  const dateSet = new Set(routines.map((r) => routineDateKey(r)).filter(Boolean));
+  const last7Keys = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().slice(0, 10);
+  });
+  const sub =
+    streak === 0
+      ? t("dashboard.streak_start_today")
+      : streak >= 3
+        ? t("dashboard.streak_on_roll")
+        : t("dashboard.streak_keep_going");
+  const daysToEpic = Math.max(0, 7 - streak);
+
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -174,21 +246,37 @@ function StreakCard({ streak, onPress }: { streak: number; onPress: () => void }
           : { borderColor: brandAlpha.violet600_18, backgroundColor: c.surface ?? "rgba(255,255,255,0.06)" },
       ]}
     >
-      <Text style={[streakStyles.fire, { opacity: streak === 0 ? 0.35 : 1 }]}>🔥</Text>
+      <Ionicons name="flame" size={28} color={isActive ? brand.amber400 : c.mutedForeground} style={{ opacity: streak === 0 ? 0.35 : 1 }} />
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5 }}>
           <Text style={[streakStyles.num, { color: isActive ? brand.amber400 : c.foreground }]}>{streak}</Text>
-          <Text style={[streakStyles.unit, { color: c.mutedForeground }]}>{t("screens.tabs_index.day_streak")}</Text>
+          <Text style={[streakStyles.unit, { color: c.mutedForeground }]}>{t("dashboard.day_streak")}</Text>
         </View>
-        <Text style={[streakStyles.sub, { color: c.mutedForeground }]}>
-          {streak === 0 ? "Start today!" : streak >= 3 ? "You're on a roll!" : "Keep going!"}
-        </Text>
+        <Text style={[streakStyles.sub, { color: c.mutedForeground }]}>{sub}</Text>
+        <View style={streakStyles.weekRow}>
+          {last7Keys.map((key) => (
+            <View
+              key={key}
+              style={[
+                streakStyles.weekDot,
+                {
+                  backgroundColor: dateSet.has(key) ? brand.amber400 : brandAlpha.violet600_12,
+                },
+              ]}
+            />
+          ))}
+        </View>
+        {streak > 0 && streak < 7 ? (
+          <Text style={[streakStyles.goal, { color: c.mutedForeground }]}>
+            {t("dashboard.streak_goal", { days: daysToEpic })}
+          </Text>
+        ) : null}
       </View>
-      {isActive && (
+      {isActive ? (
         <View style={[streakStyles.badge, { backgroundColor: brandAlpha.amber400_14, borderColor: brandAlpha.amber400_22 }]}>
-          <Text style={[streakStyles.badgeText, { color: brand.amber400 }]}>{label}</Text>
+          <Text style={[streakStyles.badgeText, { color: brand.amber400 }]}>{badgeLabel}</Text>
         </View>
-      )}
+      ) : null}
     </TouchableOpacity>
   );
 }
@@ -203,10 +291,12 @@ const streakStyles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
   },
-  fire: { fontSize: 28 },
   num: { fontSize: 26, fontWeight: "900", letterSpacing: -0.5 },
   unit: { fontSize: 10, fontWeight: "800", letterSpacing: 1 },
   sub: { fontSize: 11, fontWeight: "500", marginTop: 2 },
+  weekRow: { flexDirection: "row", gap: 4, marginTop: 8 },
+  weekDot: { width: 8, height: 8, borderRadius: 4 },
+  goal: { fontSize: 10, fontWeight: "600", marginTop: 6 },
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -227,38 +317,111 @@ const TILE_ACCENTS: Record<string, TileAccent> = {
   children:    { bg: "rgba(244,114,182,0.12)",         border: "rgba(244,114,182,0.22)",         iconColor: brand.pink400,    valueColor: brand.pink400 },
 };
 
-function StatTile({ label, value, sub, icon, accent }: { label: string; value: number | string; sub: string; icon: string; accent: TileAccent }) {
+function StatTile({
+  label,
+  value,
+  sub,
+  icon,
+  accent,
+  onPress,
+}: {
+  label: string;
+  value: number | string;
+  sub: string;
+  icon: string;
+  accent: TileAccent;
+  onPress?: () => void;
+}) {
   const c = useColors();
-  return (
-    <View style={[statStyles.tile, { borderColor: accent.border, backgroundColor: accent.bg }]}>
+  const inner = (
+    <>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <Text style={[statStyles.label, { color: c.mutedForeground }]}>{label.toUpperCase()}</Text>
-        <Ionicons name={icon as any} size={14} color={accent.iconColor} />
+        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={14} color={accent.iconColor} />
       </View>
       <Text style={[statStyles.value, { color: accent.valueColor }]}>{value}</Text>
-      <Text style={[statStyles.sub, { color: c.mutedForeground }]}>{sub.toUpperCase()}</Text>
-    </View>
+      <Text style={[statStyles.sub, { color: c.mutedForeground }]}>{sub}</Text>
+    </>
+  );
+  if (!onPress) {
+    return (
+      <View style={[statStyles.tile, { borderColor: accent.border, backgroundColor: accent.bg }]}>
+        {inner}
+      </View>
+    );
+  }
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        statStyles.tile,
+        { borderColor: accent.border, backgroundColor: accent.bg, opacity: pressed ? 0.88 : 1 },
+      ]}
+    >
+      {inner}
+    </Pressable>
   );
 }
 
-function StatsGrid({ summary, loading }: { summary: DashboardSummary | null; loading: boolean }) {
+function StatsGrid({
+  summary,
+  loading,
+  onPressPlans,
+  onPressWins,
+  onPressSupport,
+  onPressChildren,
+}: {
+  summary: DashboardSummary | null;
+  loading: boolean;
+  onPressPlans: () => void;
+  onPressWins: () => void;
+  onPressSupport: () => void;
+  onPressChildren: () => void;
+}) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <View style={statStyles.grid}>
         {[0, 1, 2, 3].map((i) => (
-          <View key={i} style={[statStyles.tile, { borderColor: brandAlpha.violet600_10, opacity: 0.4 }]}>
-            <ActivityIndicator size="small" color={brand.violet400} />
-          </View>
+          <View key={i} style={[statStyles.tile, statStyles.tileSkeleton, { borderColor: brandAlpha.violet600_10 }]} />
         ))}
       </View>
     );
   }
   return (
     <View style={statStyles.grid}>
-      <StatTile label="Routines"    value={summary?.routinesGeneratedThisWeek ?? 0} sub="this week" icon="calendar-outline"      accent={TILE_ACCENTS.routines} />
-      <StatTile label="Great Job"   value={summary?.positiveBehaviorsToday ?? 0}    sub="today"     icon="trending-up-outline"   accent={TILE_ACCENTS.great} />
-      <StatTile label="Challenging" value={summary?.negativeBehaviorsToday ?? 0}    sub="today"     icon="trending-down-outline" accent={TILE_ACCENTS.challenging} />
-      <StatTile label="Children"    value={summary?.totalChildren ?? 0}             sub="total"     icon="people-outline"        accent={TILE_ACCENTS.children} />
+      <StatTile
+        label={t("dashboard.stat_plans_week")}
+        value={summary?.routinesGeneratedThisWeek ?? 0}
+        sub={t("dashboard.stat_plans_week_sub")}
+        icon="calendar-outline"
+        accent={TILE_ACCENTS.routines}
+        onPress={onPressPlans}
+      />
+      <StatTile
+        label={t("dashboard.stat_great_today")}
+        value={summary?.positiveBehaviorsToday ?? 0}
+        sub={t("dashboard.stat_great_today_sub")}
+        icon="trending-up-outline"
+        accent={TILE_ACCENTS.great}
+        onPress={onPressWins}
+      />
+      <StatTile
+        label={t("dashboard.stat_support_today")}
+        value={summary?.negativeBehaviorsToday ?? 0}
+        sub={t("dashboard.stat_support_today_sub")}
+        icon="heart-outline"
+        accent={TILE_ACCENTS.challenging}
+        onPress={onPressSupport}
+      />
+      <StatTile
+        label={t("dashboard.stat_total_routines")}
+        value={summary?.totalRoutines ?? 0}
+        sub={t("dashboard.stat_total_routines_sub")}
+        icon="albums-outline"
+        accent={TILE_ACCENTS.children}
+        onPress={onPressChildren}
+      />
     </View>
   );
 }
@@ -274,12 +437,34 @@ const statStyles = StyleSheet.create({
   },
   label: { fontSize: 9.5, fontWeight: "800", letterSpacing: 0.8 },
   value: { fontSize: 26, fontWeight: "900", letterSpacing: -0.5, lineHeight: 30 },
-  sub: { fontSize: 9, fontWeight: "700", letterSpacing: 0.5, marginTop: 2 },
+  sub: { fontSize: 10, fontWeight: "600", marginTop: 2, lineHeight: 13 },
+  tileSkeleton: { minHeight: 80, opacity: 0.35 },
 });
 
 // ─── Amy AI Suggestion Card ───────────────────────────────────────────────────
 
-function AmySuggestionCard({ routines, streak }: { routines: Routine[]; streak: number }) {
+type AmyTip = {
+  emoji: string;
+  text: string;
+  actionLabel?: string;
+  onAction?: () => void;
+};
+
+function AmySuggestionCard({
+  routines,
+  streak,
+  onGenerate,
+  onOpenHub,
+  onViewRewards,
+  onViewProgress,
+}: {
+  routines: Routine[];
+  streak: number;
+  onGenerate: () => void;
+  onOpenHub: () => void;
+  onViewRewards: () => void;
+  onViewProgress: () => void;
+}) {
   const { t } = useTranslation();
   const c = useColors();
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -290,28 +475,63 @@ function AmySuggestionCard({ routines, streak }: { routines: Routine[]; streak: 
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
   const hour = new Date().getHours();
 
-  const suggestions: { emoji: string; text: string }[] = [];
+  const suggestions: AmyTip[] = [];
 
   if (total === 0) {
-    suggestions.push({ emoji: "📅", text: "No routine for today yet. Generate one to get started!" });
+    suggestions.push({
+      emoji: "📅",
+      text: "No routine for today yet. Generate one to get started!",
+      actionLabel: t("dashboard.amy_generate_routine"),
+      onAction: onGenerate,
+    });
   } else if (pct < 30 && hour >= 14) {
-    suggestions.push({ emoji: "⚡", text: "Your child seems behind today — try shorter, easier tasks to build momentum." });
+    suggestions.push({
+      emoji: "⚡",
+      text: "Your child seems behind today — try shorter, easier tasks to build momentum.",
+      actionLabel: t("dashboard.amy_generate_routine"),
+      onAction: onGenerate,
+    });
   } else if (pct >= 80) {
-    suggestions.push({ emoji: "🌟", text: "Amazing progress today! Consider a small reward to celebrate." });
+    suggestions.push({
+      emoji: "🌟",
+      text: "Amazing progress today! Consider a small reward to celebrate.",
+      actionLabel: t("dashboard.amy_view_rewards"),
+      onAction: onViewRewards,
+    });
   }
 
   if (hour >= 15 && hour <= 17) {
-    suggestions.push({ emoji: "❤️", text: "Good time for a 15-min bonding activity — a quick walk or board game goes a long way." });
+    suggestions.push({
+      emoji: "❤️",
+      text: "Good time for a 15-min bonding activity — a quick walk or board game goes a long way.",
+      actionLabel: t("dashboard.amy_open_hub"),
+      onAction: onOpenHub,
+    });
   }
 
   if (streak >= 3) {
-    suggestions.push({ emoji: "🔥", text: `You're on a ${streak}-day streak! Consistency builds habits.` });
+    suggestions.push({
+      emoji: "🔥",
+      text: `You're on a ${streak}-day streak! Consistency builds habits.`,
+      actionLabel: t("dashboard.amy_view_progress"),
+      onAction: onViewProgress,
+    });
   } else if (streak === 0 && hour < 10) {
-    suggestions.push({ emoji: "☀️", text: "Fresh start today! Generate a routine to set a positive tone for the day." });
+    suggestions.push({
+      emoji: "☀️",
+      text: "Fresh start today! Generate a routine to set a positive tone for the day.",
+      actionLabel: t("dashboard.amy_generate_routine"),
+      onAction: onGenerate,
+    });
   }
 
   if (hour >= 19) {
-    suggestions.push({ emoji: "🌙", text: "Wind-down time! End screen time 30 min before sleep for better rest." });
+    suggestions.push({
+      emoji: "🌙",
+      text: "Wind-down time! End screen time 30 min before sleep for better rest.",
+      actionLabel: t("dashboard.amy_open_hub"),
+      onAction: onOpenHub,
+    });
   }
 
   const display = suggestions.slice(0, 2);
@@ -332,9 +552,17 @@ function AmySuggestionCard({ routines, streak }: { routines: Routine[]; streak: 
           <Text style={[amyStyles.allGood, { color: c.mutedForeground }]}>{t("screens.tabs_index.all_looking_good_today")}</Text>
         ) : (
           display.map((s, i) => (
-            <View key={i} style={[amyStyles.tip, { borderColor: brandAlpha.violet600_12, backgroundColor: "rgba(255,255,255,0.04)" }]}>
+            <View key={i} style={[amyStyles.tip, { borderColor: brandAlpha.violet600_12, backgroundColor: brandAlpha.violet600_04 }]}>
               <Text style={amyStyles.tipEmoji}>{s.emoji}</Text>
-              <Text style={[amyStyles.tipText, { color: c.foreground }]}>{s.text}</Text>
+              <View style={{ flex: 1, gap: 8 }}>
+                <Text style={[amyStyles.tipText, { color: c.foreground }]}>{s.text}</Text>
+                {s.actionLabel && s.onAction ? (
+                  <TouchableOpacity onPress={s.onAction} style={amyStyles.tipCta} activeOpacity={0.85}>
+                    <Text style={amyStyles.tipCtaText}>{s.actionLabel}</Text>
+                    <Ionicons name="arrow-forward" size={12} color="#fff" />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             </View>
           ))
         )}
@@ -371,7 +599,18 @@ const amyStyles = StyleSheet.create({
     borderWidth: 1,
   },
   tipEmoji: { fontSize: 16, marginTop: 1 },
-  tipText: { flex: 1, fontSize: 13, lineHeight: 19, fontWeight: "500" },
+  tipText: { fontSize: 13, lineHeight: 19, fontWeight: "500" },
+  tipCta: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: brand.violet600,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+  },
+  tipCtaText: { fontSize: 11.5, fontWeight: "800", color: "#fff" },
   allGood: { textAlign: "center", fontSize: 12, paddingVertical: 8, fontWeight: "500" },
 });
 
@@ -388,13 +627,16 @@ function ParentScoreCard({ routines, streak }: { routines: Routine[]; streak: nu
   const streakBonus = Math.min(streak * 5, 30);
   const score = Math.min(Math.round(completionRate * 0.5 + daysActive * 5 + streakBonus), 100);
   const grade = score >= 80 ? "A" : score >= 60 ? "B" : score >= 40 ? "C" : "D";
-  const percentile = score >= 80 ? 90 : score >= 60 ? 70 : score >= 40 ? 50 : score >= 20 ? 30 : 15;
+  const tasksNeeded = score < 60 ? Math.max(1, Math.ceil((60 - score) / 12)) : 0;
 
   return (
     <View style={[scoreStyles.card, { borderColor: brandAlpha.violet600_15, backgroundColor: c.surface ?? "rgba(255,255,255,0.04)" }]}>
       <View style={scoreStyles.header}>
-        <Ionicons name="trophy-outline" size={16} color={brand.violet500} />
-        <Text style={[scoreStyles.headerText, { color: c.foreground }]}>{t("screens.tabs_index.parent_score")}</Text>
+        <Ionicons name="ribbon-outline" size={16} color={brand.violet500} />
+        <View>
+          <Text style={[scoreStyles.headerText, { color: c.foreground }]}>{t("dashboard.parent_score")}</Text>
+          <Text style={[scoreStyles.headerSub, { color: c.mutedForeground }]}>{t("dashboard.parent_score_sub")}</Text>
+        </View>
       </View>
       <View style={scoreStyles.body}>
         <LinearGradient
@@ -410,7 +652,9 @@ function ParentScoreCard({ routines, streak }: { routines: Routine[]; streak: nu
             <Text style={[scoreStyles.scoreNum, { color: c.foreground }]}>{score}</Text>
             <Text style={[scoreStyles.scoreOf, { color: c.mutedForeground }]}>/100</Text>
           </View>
-          <Text style={[scoreStyles.percentile, { color: c.mutedForeground }]}>Top {100 - percentile}% of parents</Text>
+          <Text style={[scoreStyles.percentile, { color: c.mutedForeground }]}>
+            {t("screens.tabs_index.completion")} {completionRate}% · {t("screens.tabs_index.days_active")} {daysActive}/7
+          </Text>
         </View>
       </View>
       <View style={scoreStyles.bars}>
@@ -429,18 +673,21 @@ function ParentScoreCard({ routines, streak }: { routines: Routine[]; streak: nu
           <View style={[scoreStyles.fill, { width: `${(daysActive / 7) * 100}%` as any, backgroundColor: brand.indigo500 }]} />
         </View>
       </View>
-      {score < 60 && (
+      {score < 60 && tasksNeeded > 0 ? (
         <View style={[scoreStyles.hint, { borderColor: brandAlpha.violet600_12, backgroundColor: brandAlpha.violet600_04 }]}>
-          <Text style={[{ fontSize: 12, color: c.mutedForeground }]}>{t("screens.tabs_index.complete_5_tasks_per_day_to_boost_your_s")}</Text>
+          <Text style={[{ fontSize: 12, color: c.mutedForeground }]}>
+            {t("dashboard.score_boost_hint", { count: tasksNeeded })}
+          </Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
 const scoreStyles = StyleSheet.create({
   card: { marginHorizontal: 20, borderRadius: 16, borderWidth: 1, overflow: "hidden", marginBottom: 10 },
-  header: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "rgba(124,58,237,0.1)" },
+  header: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: brandAlpha.violet600_10 },
   headerText: { fontSize: 13.5, fontWeight: "800", letterSpacing: -0.2 },
+  headerSub: { fontSize: 11, fontWeight: "500", marginTop: 2 },
   body: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
   gradeBadge: { width: 54, height: 54, borderRadius: 14, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   grade: { fontSize: 26, fontWeight: "900" },
@@ -510,13 +757,16 @@ function RecentRoutinesList({
                 </Text>
               </View>
             </View>
-            <View style={{ alignItems: "flex-end", gap: 2 }}>
-              {items.length > 0 && (
+            <View style={{ alignItems: "flex-end", gap: 4, minWidth: 56 }}>
+              {items.length > 0 ? (
                 <>
                   <Text style={[recentStyles.pct, { color: c.foreground }]}>{pct}%</Text>
+                  <View style={recentStyles.barTrack}>
+                    <View style={[recentStyles.barFill, { width: `${pct}%` }]} />
+                  </View>
                   <Text style={[recentStyles.pctSub, { color: c.mutedForeground }]}>{done}/{items.length}</Text>
                 </>
-              )}
+              ) : null}
             </View>
             <Ionicons name="chevron-forward" size={14} color={brand.violet400} style={{ marginLeft: 8 }} />
           </TouchableOpacity>
@@ -535,6 +785,14 @@ const recentStyles = StyleSheet.create({
   childPillText: { fontSize: 10, fontWeight: "700", color: brand.violet600 },
   date: { fontSize: 11, fontWeight: "500" },
   pct: { fontSize: 13, fontWeight: "800" },
+  barTrack: {
+    width: 52,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: brandAlpha.violet600_12,
+    overflow: "hidden",
+  },
+  barFill: { height: 4, borderRadius: 999, backgroundColor: palette.emerald400 },
   pctSub: { fontSize: 10, fontWeight: "500" },
 });
 
@@ -565,17 +823,20 @@ function BehaviorHighlights({ stats, loading }: { stats: BehaviorStat[]; loading
           style={[behaviorStyles.row, idx < stats.length - 1 && { borderBottomWidth: 1, borderBottomColor: brandAlpha.violet600_10 }]}
         >
           <Text style={[behaviorStyles.childName, { color: c.foreground }]}>{stat.childName}</Text>
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-            <View style={[behaviorStyles.statBadge, { backgroundColor: "rgba(139,92,246,0.08)", borderColor: brandAlpha.violet600_18 }]}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+            <View style={[behaviorStyles.statBadge, { backgroundColor: brandAlpha.violet600_08, borderColor: brandAlpha.violet600_18 }]}>
               <Ionicons name="trending-up-outline" size={12} color={brand.violet600} />
+              <Text style={[behaviorStyles.statLabel, { color: c.mutedForeground }]}>{t("dashboard.positive_label")}</Text>
               <Text style={[behaviorStyles.statNum, { color: brand.violet700 ?? brand.violet600 }]}>{stat.positive}</Text>
             </View>
-            <View style={[behaviorStyles.statBadge, { backgroundColor: "rgba(239,68,68,0.08)", borderColor: "rgba(239,68,68,0.2)" }]}>
-              <Ionicons name="trending-down-outline" size={12} color={c.destructive} />
+            <View style={[behaviorStyles.statBadge, { backgroundColor: brandAlpha.rose400_12, borderColor: brandAlpha.rose400_18 }]}>
+              <Ionicons name="heart-outline" size={12} color={c.destructive} />
+              <Text style={[behaviorStyles.statLabel, { color: c.mutedForeground }]}>{t("dashboard.negative_label")}</Text>
               <Text style={[behaviorStyles.statNum, { color: c.destructive }]}>{stat.negative}</Text>
             </View>
             <View style={[behaviorStyles.statBadge, { backgroundColor: "rgba(120,120,120,0.08)", borderColor: "rgba(120,120,120,0.2)" }]}>
               <Ionicons name="remove-outline" size={12} color={c.mutedForeground} />
+              <Text style={[behaviorStyles.statLabel, { color: c.mutedForeground }]}>{t("dashboard.neutral_label")}</Text>
               <Text style={[behaviorStyles.statNum, { color: c.mutedForeground }]}>{stat.neutral}</Text>
             </View>
           </View>
@@ -590,6 +851,7 @@ const behaviorStyles = StyleSheet.create({
   row: { padding: 14 },
   childName: { fontSize: 14, fontWeight: "700" },
   statBadge: { flexDirection: "row", alignItems: "center", gap: 5, borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 },
+  statLabel: { fontSize: 10, fontWeight: "600" },
   statNum: { fontSize: 13, fontWeight: "800" },
 });
 
@@ -629,8 +891,8 @@ function RewardsCard({ onViewAll }: { onViewAll: () => void }) {
     <View style={[rewardsStyles.card, { borderColor: brandAlpha.amber400_18, backgroundColor: brandAlpha.amber400_08 }]}>
       <View style={rewardsStyles.header}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Ionicons name="trophy-outline" size={16} color={brand.amber400} />
-          <Text style={[rewardsStyles.headerText, { color: c.foreground }]}>{t("screens.tabs_index.rewards_points")}</Text>
+          <Ionicons name="medal-outline" size={16} color={brand.amber400} />
+          <Text style={[rewardsStyles.headerText, { color: c.foreground }]}>{t("dashboard.rewards_points")}</Text>
         </View>
         <View style={[rewardsStyles.pointsBadge, { backgroundColor: brandAlpha.amber400_14, borderColor: brandAlpha.amber400_22 }]}>
           <Ionicons name="star" size={12} color={brand.amber400} />
@@ -843,7 +1105,6 @@ export default function DashboardScreen() {
     dataUpdatedAt: routinesUpdatedAt,
     refetch: refetchRoutines,
     onToggle,
-    taskIdToItemIndex,
   } = useTodayRoutine({ enabled: !!profileComplete });
 
   // ── Children ──────────────────────────────────────────────────────────────
@@ -893,6 +1154,98 @@ export default function DashboardScreen() {
 
   // ── Dedicated manual-refresh state (isolated from 30s background polling) ─
   const [manualRefreshing, setManualRefreshing] = useState(false);
+  const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
+
+  const effectiveRoutine = useMemo(() => {
+    const todayList = routines.filter((r) => routineDateKey(r) === todayStr);
+    if (selectedChildId != null) {
+      return todayList.find((r) => r.childId === selectedChildId) ?? null;
+    }
+    return todaysRoutine ?? todayList[0] ?? null;
+  }, [routines, todayStr, selectedChildId, todaysRoutine]);
+
+  const displayTasks = useMemo((): RoutineTask[] => {
+    if (selectedChildId == null) return tasks;
+    if (!effectiveRoutine) return [];
+    return buildTasksFromRoutine(effectiveRoutine);
+  }, [selectedChildId, tasks, effectiveRoutine]);
+
+  const progressByChildId = useMemo(
+    () => computeChildProgressMap(children, routines, todayStr),
+    [children, routines, todayStr],
+  );
+
+  const filteredBehaviorStats = useMemo(() => {
+    if (selectedChildId == null) return behaviorStats;
+    return behaviorStats.filter((s) => s.childId === selectedChildId);
+  }, [behaviorStats, selectedChildId]);
+
+  const filteredRecentRoutines = useMemo(() => {
+    if (selectedChildId == null) return recentRoutines;
+    return recentRoutines.filter((r) => r.childId === selectedChildId);
+  }, [recentRoutines, selectedChildId]);
+
+  const selectedChild = useMemo(
+    () => children.find((ch) => ch.id === selectedChildId) ?? null,
+    [children, selectedChildId],
+  );
+
+  const timelineProgress = useMemo(() => {
+    const done = displayTasks.filter((t) => t.done).length;
+    return { done, total: displayTasks.length };
+  }, [displayTasks]);
+
+  const nextPendingTask = useMemo(
+    () => displayTasks.find((t) => !t.done) ?? null,
+    [displayTasks],
+  );
+
+  const saveRoutineItemsMut = useMutation({
+    mutationFn: ({ routineId, items }: { routineId: number; items: RoutineItem[] }) =>
+      authFetch(`/api/routines/${routineId}/items`, {
+        method: "PATCH",
+        body: JSON.stringify({ items }),
+      }),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ["routine", String(variables.routineId)] });
+      qc.invalidateQueries({ queryKey: ["routines"] });
+    },
+  });
+
+  const handleToggle = useCallback(
+    (taskId: string) => {
+      const routine = effectiveRoutine;
+      if (!routine) return;
+      if (todaysRoutine && routine.id === todaysRoutine.id) {
+        onToggle(taskId);
+        return;
+      }
+      const idx = parseInt(taskId.split("-")[2] ?? "-1", 10);
+      if (Number.isNaN(idx) || idx < 0) return;
+      const items = routineItems(routine);
+      if (idx >= items.length) return;
+      const cur = items[idx];
+      const nextStatus: ItemStatus = cur.status === "completed" ? "pending" : "completed";
+      const nextItems = items.map((it, i) =>
+        i === idx ? { ...it, status: nextStatus } : it,
+      );
+      const prevSnapshot = qc.getQueryData<Routine[]>(["routines"]);
+      qc.setQueryData<Routine[]>(["routines"], (prev) => {
+        if (!prev) return prev;
+        return prev.map((r) => (r.id === routine.id ? { ...r, items: nextItems } : r));
+      });
+      saveRoutineItemsMut.mutate(
+        { routineId: routine.id, items: nextItems },
+        {
+          onError: () => {
+            if (prevSnapshot) qc.setQueryData<Routine[]>(["routines"], prevSnapshot);
+            else void qc.invalidateQueries({ queryKey: ["routines"] });
+          },
+        },
+      );
+    },
+    [effectiveRoutine, todaysRoutine, onToggle, qc, saveRoutineItemsMut],
+  );
 
   // ── Refetch all on pull-to-refresh ────────────────────────────────────────
   const refetch = useCallback(async () => {
@@ -914,13 +1267,14 @@ export default function DashboardScreen() {
 
   const onPressCard = useCallback(
     (taskId: string) => {
-      if (!todaysRoutine) return;
-      const idx = taskIdToItemIndex(taskId);
+      const routine = effectiveRoutine ?? todaysRoutine;
+      if (!routine) return;
+      const idx = parseInt(taskId.split("-")[2] ?? "-1", 10);
       const params: Record<string, string> = {};
-      if (idx != null) params.highlight = String(idx);
-      router.push({ pathname: "/routines/[id]", params: { id: String(todaysRoutine.id), ...params } });
+      if (!Number.isNaN(idx) && idx >= 0) params.highlight = String(idx);
+      router.push({ pathname: "/routines/[id]", params: { id: String(routine.id), ...params } });
     },
-    [todaysRoutine, router, taskIdToItemIndex],
+    [effectiveRoutine, todaysRoutine, router],
   );
 
   // ── Guards ────────────────────────────────────────────────────────────────
@@ -1004,30 +1358,44 @@ export default function DashboardScreen() {
         {!loadingChildren && children.length > 0 && (
           <ChildrenStrip
             children={children}
+            selectedChildId={selectedChildId}
+            onSelectChild={setSelectedChildId}
+            onPressChild={(id) => router.push({ pathname: "/children/[id]", params: { id: String(id) } } as never)}
+            progressByChildId={progressByChildId}
             onManage={() => router.push("/children" as never)}
             onAdd={() => router.push("/children/new" as never)}
           />
         )}
 
         {/* ── Today's Timeline ──────────────────────────────────────── */}
-        <View style={mainStyles.sectionHeaderRow}>
-          <View style={[mainStyles.timelineAccent, { backgroundColor: brand.violet500 }]} />
-          <Ionicons name="calendar-outline" size={16} color={brand.violet400} />
-          <Text style={[mainStyles.sectionTitle, { color: c.foreground }]}>
-            {t("dashboard.todays_timeline")}
-          </Text>
-        </View>
+        <DashboardSectionHeader
+          label={t("dashboard.todays_timeline")}
+          subtitle={
+            nextPendingTask
+              ? t("dashboard.timeline_next_up", { task: nextPendingTask.title })
+              : timelineProgress.total > 0 && timelineProgress.done >= timelineProgress.total
+                ? t("dashboard.day_complete")
+                : undefined
+          }
+          icon="calendar-outline"
+          accentColor={brand.violet500}
+          rightSlot={
+            <TimelineProgressChip done={timelineProgress.done} total={timelineProgress.total} />
+          }
+        />
 
         {loadingRoutines || manualRefreshing ? (
           <View style={mainStyles.loaderRow}>
             <ActivityIndicator color={c.primary} />
           </View>
-        ) : tasks.length > 0 ? (
-          <RoutineCarousel tasks={tasks} onToggle={onToggle} onPressCard={onPressCard} />
+        ) : displayTasks.length > 0 ? (
+          <RoutineCarousel tasks={displayTasks} onToggle={handleToggle} onPressCard={onPressCard} />
         ) : (
           <View style={mainStyles.emptyWrap}>
             <Text style={[mainStyles.emptyTitle, { color: c.foreground }]}>
-              {t("dashboard.no_plan_today")}
+              {selectedChild
+                ? t("dashboard.no_plan_for_child", { name: selectedChild.name })
+                : t("dashboard.no_plan_today")}
             </Text>
             <Text style={[mainStyles.emptyText, { color: c.mutedForeground }]}>
               {t("dashboard.no_plan_subtitle")}
@@ -1054,48 +1422,65 @@ export default function DashboardScreen() {
         )}
 
         {/* ── At a Glance ───────────────────────────────────────────── */}
-        <View style={{ marginTop: 24, marginBottom: 14 }}>
-          <SectionHeader label="At a Glance" accentColor={brand.amber400} />
+        <View style={{ marginTop: 24 }}>
+          <DashboardSectionHeader label={t("dashboard.at_a_glance")} icon="stats-chart-outline" accentColor={brand.amber400} />
         </View>
-        <StreakCard streak={streak} onPress={() => router.push("/progress" as never)} />
-        <StatsGrid summary={summary} loading={loadingSummary || manualRefreshing} />
+        <StreakCard streak={streak} routines={routines} onPress={() => router.push("/progress" as never)} />
+        <StatsGrid
+          summary={summary}
+          loading={loadingSummary || manualRefreshing}
+          onPressPlans={() => router.push("/(tabs)/routines" as never)}
+          onPressWins={() => router.push("/behavior" as never)}
+          onPressSupport={() => router.push("/behavior" as never)}
+          onPressChildren={() => router.push("/children" as never)}
+        />
 
         {/* ── Coaching ──────────────────────────────────────────────── */}
-        <View style={{ marginBottom: 14 }}>
-          <SectionHeader label="Coaching" accentColor={brand.indigo500} />
+        <View style={{ marginTop: 16 }}>
+          <DashboardSectionHeader label={t("dashboard.coaching")} icon="sparkles-outline" accentColor={brand.indigo500} />
         </View>
-        <AmySuggestionCard routines={routines} streak={streak} />
+        <AmySuggestionCard
+          routines={routines}
+          streak={streak}
+          onGenerate={goToGenerate}
+          onOpenHub={() => router.push("/(tabs)/hub" as never)}
+          onViewRewards={() => router.push("/rewards" as never)}
+          onViewProgress={() => router.push("/progress" as never)}
+        />
         <ParentScoreCard routines={routines} streak={streak} />
 
         {/* ── Recent Routines ───────────────────────────────────────── */}
-        <View style={{ marginTop: 16, marginBottom: 14 }}>
-          <SectionHeader
-            label="Recent Routines"
-            actionLabel="View all"
+        <View style={{ marginTop: 16 }}>
+          <DashboardSectionHeader
+            label={t("dashboard.recent_routines")}
+            actionLabel={t("dashboard.view_all")}
             onAction={() => router.push("/(tabs)/routines" as never)}
+            icon="time-outline"
             accentColor={palette.emerald400}
           />
         </View>
         <RecentRoutinesList
-          routines={recentRoutines}
+          routines={filteredRecentRoutines}
           loading={loadingRecent || manualRefreshing}
           onPress={(id) => router.push({ pathname: "/routines/[id]", params: { id: String(id) } })}
         />
 
         {/* ── Behavior Highlights ───────────────────────────────────── */}
-        <View style={{ marginTop: 16, marginBottom: 14 }}>
-          <SectionHeader
-            label="Behavior Highlights"
-            actionLabel="Log"
+        <View style={{ marginTop: 16 }}>
+          <DashboardSectionHeader
+            label={t("dashboard.behavior_highlights")}
+            subtitle={t("dashboard.behavior_today_subtitle")}
+            actionLabel={t("dashboard.log_behavior")}
             onAction={() => router.push("/behavior" as never)}
+            icon="heart-outline"
             accentColor={brand.rose400}
           />
         </View>
-        <BehaviorHighlights stats={behaviorStats} loading={loadingBehavior || manualRefreshing} />
+        <BehaviorHighlights stats={filteredBehaviorStats} loading={loadingBehavior || manualRefreshing} />
 
         {/* ── Rewards ───────────────────────────────────────────────── */}
-        <View style={{ marginTop: 16, marginBottom: 14 }}>
-          <SectionHeader label="Rewards & Points" accentColor={brand.pink400} />
+        <View style={{ marginTop: 16 }}>
+          <DashboardSectionHeader label={t("dashboard.rewards_points")} icon="medal-outline" accentColor={brand.pink400} />
         </View>
         <RewardsCard onViewAll={() => router.push("/rewards" as never)} />
 
