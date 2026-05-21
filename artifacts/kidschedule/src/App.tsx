@@ -21,8 +21,6 @@ const AppCore = lazy(() =>
 declare global {
   interface Window {
     __amynestMark?: (phase: string) => void;
-    /** Set when pull-to-refresh touch guard is installed (debug / deploy verify). */
-    __PTR_FIX_ACTIVE__?: boolean;
   }
 }
 
@@ -32,68 +30,6 @@ function App() {
     initAudioUnlock();
   }, []);
 
-  // Block pull-to-refresh at scroll top only when needed; skip during active scroll.
-  useEffect(() => {
-    window.__PTR_FIX_ACTIVE__ = true;
-    console.log("PTR FIX LOADED");
-
-    let startY = 0;
-    let isScrolling = false;
-    let scrollEndTimer: ReturnType<typeof setTimeout> | undefined;
-
-    const THRESHOLD = 12;
-
-    const getScrollTop = (): number => {
-      const content = document.querySelector(".app-content");
-      if (content instanceof HTMLElement) return content.scrollTop;
-      const root = document.getElementById("root");
-      if (root) return root.scrollTop;
-      return window.scrollY;
-    };
-
-    const onScroll = () => {
-      isScrolling = true;
-      if (scrollEndTimer !== undefined) clearTimeout(scrollEndTimer);
-      scrollEndTimer = setTimeout(() => {
-        isScrolling = false;
-        scrollEndTimer = undefined;
-      }, 120);
-    };
-
-    const onTouchStart = (e: TouchEvent) => {
-      startY = e.touches[0].clientY;
-      if (isScrolling) return;
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      console.log("touchmove fired", getScrollTop());
-      if (isScrolling) return;
-
-      const currentY = e.touches[0].clientY;
-      const deltaY = currentY - startY;
-      const isAtTop = getScrollTop() === 0;
-
-      if (isAtTop && deltaY > THRESHOLD) {
-        e.preventDefault();
-      }
-    };
-
-    const touchStartOpts: AddEventListenerOptions = { passive: true };
-    const touchMoveOpts: AddEventListenerOptions = { passive: false };
-    const scrollOpts: AddEventListenerOptions = { passive: true, capture: true };
-
-    document.addEventListener("scroll", onScroll, scrollOpts);
-    document.addEventListener("touchstart", onTouchStart, touchStartOpts);
-    document.addEventListener("touchmove", onTouchMove, touchMoveOpts);
-
-    return () => {
-      if (scrollEndTimer !== undefined) clearTimeout(scrollEndTimer);
-      document.removeEventListener("scroll", onScroll, scrollOpts);
-      document.removeEventListener("touchstart", onTouchStart, touchStartOpts);
-      document.removeEventListener("touchmove", onTouchMove, touchMoveOpts);
-    };
-  }, []);
-
   // Suspense fallback is `null` rather than a spinner because the
   // index.html splash screen is still visible at this point — it's not
   // dismissed until BOTH the splash min-time has elapsed AND
@@ -101,15 +37,17 @@ function App() {
   // gate means the splash always covers the lazy AppCore download, so
   // the user never sees a blank Suspense fallback even on slow networks.
   return (
-    <div id="app-root" className="app-root main-scroll h-full min-h-0 w-full max-w-full min-w-0 overflow-hidden">
-      <DebugOverlay />
-      <StaticAudioTestButton />
-      {/* ErrorBoundary disabled temporarily while verifying QueryClientProvider fix */}
-      <ReactInstanceRecovery>
-        <Suspense fallback={<AuthBootShell />}>
-          <AppCore />
-        </Suspense>
-      </ReactInstanceRecovery>
+    <div id="app-root" className="app-root w-full max-w-full min-w-0">
+      <div className="app-scroll">
+        <DebugOverlay />
+        <StaticAudioTestButton />
+        {/* ErrorBoundary disabled temporarily while verifying QueryClientProvider fix */}
+        <ReactInstanceRecovery>
+          <Suspense fallback={<AuthBootShell />}>
+            <AppCore />
+          </Suspense>
+        </ReactInstanceRecovery>
+      </div>
     </div>
   );
 }

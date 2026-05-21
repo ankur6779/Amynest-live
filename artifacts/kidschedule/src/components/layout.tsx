@@ -193,9 +193,6 @@ export function Layout({
   };
   return (
     <div className="app-shell main-container relative w-full max-w-full min-w-0 bg-background overflow-x-clip box-border">
-      <div className="ptr-guard-edge" aria-hidden="true" />
-      <div className="ptr-guard" aria-hidden="true" />
-
       {!isImmersiveRoute ? (
         <header
           className={`app-header header flex min-h-20 w-full max-w-full min-w-0 shrink-0 items-center justify-between gap-2 border-b bg-background px-4 py-3 md:hidden shadow-sm ${isNativeAmyNestShell() ? "pt-3" : "pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]"}`}
@@ -220,7 +217,7 @@ export function Layout({
         </header>
       ) : null}
 
-      <main className="app-content flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col">
+      <main className="flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col">
         <div className="flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col md:flex-row">
         {/* Desktop Sidebar */}
         {!isImmersiveRoute && <aside className="hidden w-64 shrink-0 flex-col border-r bg-card md:flex">
