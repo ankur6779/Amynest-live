@@ -9,7 +9,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -77,23 +76,6 @@ class MainActivity : AppCompatActivity() {
             wv.overScrollMode = View.OVER_SCROLL_NEVER
             wv.isVerticalScrollBarEnabled = false
             wv.isHorizontalScrollBarEnabled = false
-            
-            // Fix Android scroll: block native pull-to-refresh when at the top
-            wv.setOnTouchListener(object : View.OnTouchListener {
-                private var lastY = 0f
-                override fun onTouch(v: View, event: MotionEvent): Boolean {
-                    when (event.action) {
-                        MotionEvent.ACTION_DOWN -> lastY = event.y
-                        MotionEvent.ACTION_MOVE -> {
-                            val deltaY = event.y - lastY
-                            if (!wv.canScrollVertically(-1) && deltaY > 20f) {
-                                return true // consume to block pull-to-refresh
-                            }
-                        }
-                    }
-                    return false
-                }
-            })
 
             configureWebView(wv)
         }
