@@ -17,9 +17,7 @@ import android.os.Build
 import android.util.Log
 import android.os.Bundle
 import android.os.Environment
-import android.view.MotionEvent
 import android.view.View
-import android.view.ViewTreeObserver
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
@@ -66,7 +64,6 @@ class MainActivity : AppCompatActivity() {
      * when the user presses Reconnect.
      */
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
-    private var webViewTopScrollLockListener: ViewTreeObserver.OnScrollChangedListener? = null
 
     private val fileChooserLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -271,8 +268,6 @@ class MainActivity : AppCompatActivity() {
         s.userAgentString = "${s.userAgentString} AmyNestAndroid/${BuildConfig.VERSION_NAME}"
         webView.overScrollMode = View.OVER_SCROLL_NEVER
         webView.isNestedScrollingEnabled = false
-        installWebViewPullGestureBlocker(webView)
-        installWebViewTopOverscrollLock(webView)
 
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
@@ -408,59 +403,6 @@ class MainActivity : AppCompatActivity() {
                     false
                 }
             }
-        }
-    }
-
-    /**
-     * Never allow scrollY to reach 0 — keeps WebView 1px below top so pull-down cannot arm.
-     * Complements [installWebViewPullGestureBlocker]; does not replace it.
-     */
-    private fun installWebViewTopOverscrollLock(target: WebView) {
-        val listener = ViewTreeObserver.OnScrollChangedListener {
-            if (target.scrollY <= 0) {
-                target.scrollTo(0, 1)
-            }
-        }
-        webViewTopScrollLockListener = listener
-        target.viewTreeObserver.addOnScrollChangedListener(listener)
-    }
-
-    private fun removeWebViewTopOverscrollLock() {
-        val listener = webViewTopScrollLockListener ?: return
-        if (::webView.isInitialized) {
-            val observer = webView.viewTreeObserver
-            if (observer.isAlive) {
-                observer.removeOnScrollChangedListener(listener)
-            }
-        }
-        webViewTopScrollLockListener = null
-    }
-
-    /**
-     * Block native pull-down at scroll top; return false otherwise so WebView scroll works.
-     */
-    @SuppressLint("ClickableViewAccessibility")
-    private fun installWebViewPullGestureBlocker(target: WebView) {
-        var startY = 0f
-        target.setOnTouchListener { v, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    startY = event.y
-                    v.parent?.requestDisallowInterceptTouchEvent(true)
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    val deltaY = event.y - startY
-                    v.parent?.requestDisallowInterceptTouchEvent(true)
-                    if (
-                        !target.canScrollVertically(-1) &&
-                        target.scrollY == 0 &&
-                        deltaY > 20f
-                    ) {
-                        return@setOnTouchListener true
-                    }
-                }
-            }
-            false
         }
     }
 
@@ -712,7 +654,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        removeWebViewTopOverscrollLock()
         // Clear the process-level token-rotation listener so the FcmService
         // does not hold a strong reference to a destroyed activity. The
         // FcmService still persists rotated tokens to SharedPreferences,
