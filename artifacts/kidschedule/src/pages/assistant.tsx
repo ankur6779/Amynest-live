@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
@@ -57,14 +57,17 @@ export default function AssistantPage() {
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
+  const chatWrapperRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showScrollLatest, setShowScrollLatest] = useState(false);
 
   const scrollToChatEnd = (behavior: ScrollBehavior = "smooth") => {
-    const el = document.getElementById("chat-end");
-    if (el) {
-      el.scrollIntoView({ behavior });
+    const thread = threadRef.current;
+    if (thread) {
+      thread.scrollTo({ top: thread.scrollHeight, behavior });
+      return;
     }
+    document.getElementById("chat-end")?.scrollIntoView({ behavior, block: "end" });
   };
 
   // Load saved chat history on mount so parents can pick up where they left off
@@ -91,9 +94,31 @@ export default function AssistantPage() {
   }, []);
 
   useEffect(() => {
-    const el = document.getElementById("chat-end");
-    el?.scrollIntoView({ behavior: "smooth" });
+    scrollToChatEnd("smooth");
   }, [messages]);
+
+  // Android WebView: flex height chain often fails — pin scroll area to wrapper height.
+  useLayoutEffect(() => {
+    const wrapper = chatWrapperRef.current;
+    const body = threadRef.current;
+    if (!wrapper || !body) return;
+
+    const syncScrollArea = () => {
+      const height = wrapper.clientHeight;
+      if (height <= 0) return;
+      body.style.height = `${height}px`;
+      body.style.maxHeight = `${height}px`;
+    };
+
+    syncScrollArea();
+    const observer = new ResizeObserver(syncScrollArea);
+    observer.observe(wrapper);
+    window.addEventListener("resize", syncScrollArea);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", syncScrollArea);
+    };
+  }, [historyLoaded]);
 
   const handleThreadScroll = () => {
     const thread = threadRef.current;
@@ -103,9 +128,7 @@ export default function AssistantPage() {
   };
 
   const handleInputFocus = () => {
-    setTimeout(() => {
-      document.getElementById("chat-end")?.scrollIntoView();
-    }, 300);
+    setTimeout(() => scrollToChatEnd("smooth"), 300);
   };
 
   // Server-driven gating — no local quota counter. Premium users have no limit.
@@ -191,7 +214,7 @@ export default function AssistantPage() {
   const isEmpty = historyLoaded && messages.length === 0;
 
   return (
-    <div className="assistant-chat-page relative mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col bg-background">
+    <div className="assistant-chat-page relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col bg-background">
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-4 md:px-0 md:pt-0">
         <div>
@@ -278,7 +301,7 @@ export default function AssistantPage() {
       </div>
 
       {/* Chat */}
-      <div className="chat-wrapper relative">
+      <div className="chat-wrapper relative" ref={chatWrapperRef}>
       <div
         ref={threadRef}
         onScroll={handleThreadScroll}
