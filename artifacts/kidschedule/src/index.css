@@ -561,6 +561,7 @@ html[data-theme="dark"] {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior-y: none;
+  padding-bottom: calc(80px + var(--safe-bottom));
 }
 
 .app-shell,
@@ -585,6 +586,7 @@ html[data-theme="dark"] {
   position: sticky;
   bottom: 0;
   z-index: 60;
+  padding-bottom: var(--safe-bottom);
 }
 
 .header {
@@ -770,6 +772,7 @@ html[data-theme="dark"] {
   --sar: env(safe-area-inset-right,  0px);
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left,   0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* When running as a standalone PWA or inside Capacitor, avoid notch overlap */
@@ -777,7 +780,6 @@ html[data-theme="dark"] {
   #app-root {
     padding-top:    env(safe-area-inset-top,    0px);
     padding-right:  env(safe-area-inset-right,  0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
     padding-left:   env(safe-area-inset-left,   0px);
   }
 }
@@ -786,7 +788,6 @@ html[data-theme="dark"] {
 .amynest-android-shell #app-root {
   padding-top:    env(safe-area-inset-top,    0px);
   padding-right:  env(safe-area-inset-right,  0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
   padding-left:   env(safe-area-inset-left,   0px);
   width: 100%;
   max-width: 100%;
@@ -895,5 +896,13 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
+}
+
+.ask-amy-fab {
+  position: fixed;
+  bottom: calc(70px + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
 }
 
