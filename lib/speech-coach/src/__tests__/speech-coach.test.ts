@@ -292,6 +292,16 @@ describe("SPEECH_COACH_I18N_MANIFEST", () => {
       );
     }
   });
+  it("includes parent vs child view mode labels and hints", () => {
+    for (const k of [
+      "screens.speech_coach.view_mode.child",
+      "screens.speech_coach.view_mode.parent",
+      "screens.speech_coach.view_mode.hint_child",
+      "screens.speech_coach.view_mode.hint_parent",
+    ]) {
+      assert.ok(has(k), `missing ${k}`);
+    }
+  });
   it("provides a string for every milestone label + hint", () => {
     for (const m of SPEECH_MILESTONES) {
       assert.ok(has(m.i18nKeyLabel), `missing ${m.i18nKeyLabel}`);

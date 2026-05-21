@@ -659,42 +659,57 @@ export function PronunciationCompanion({
         ? `linear-gradient(to right, ${C.amber}, rgba(251,191,36,0.7))`
         : `linear-gradient(to right, ${C.red}, rgba(239,68,68,0.7))`;
 
+  const isChildView = viewMode === "child";
+  const showParentControls = !isChildView && !compactMode;
+
   return (
     <div className="space-y-3">
-      {/* ── Difficulty + category pill tabs ───────────────────────────────── */}
-      <div className="space-y-2">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
-            {t("screens.speech_coach.pronounce.difficulty.label")}
-          </p>
+      {showParentControls ? (
+        <div className="space-y-2">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
+              {t("screens.speech_coach.pronounce.difficulty.label")}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {DIFFICULTY_TAB_KEYS.map((d) => (
+                <PillTab
+                  key={d}
+                  active={difficulty === d}
+                  disabled={sessionPhase === "practice"}
+                  onClick={() => onDifficultyChange(d)}
+                  testId={`pronounce-difficulty-${d}`}
+                >
+                  {t(`screens.speech_coach.pronounce.difficulty.${d}`)}
+                </PillTab>
+              ))}
+            </div>
+          </div>
           <div className="flex flex-wrap gap-1.5">
-            {DIFFICULTY_TAB_KEYS.map((d) => (
+            {PROMPT_TAB_KEYS.map((k) => (
               <PillTab
-                key={d}
-                active={difficulty === d}
+                key={k}
+                active={kind === k}
                 disabled={sessionPhase === "practice"}
-                onClick={() => onDifficultyChange(d)}
-                testId={`pronounce-difficulty-${d}`}
+                onClick={() => onKindChange(k)}
+                testId={`pronounce-tab-${k}`}
               >
-                {t(`screens.speech_coach.pronounce.difficulty.${d}`)}
+                {t(`screens.speech_coach.pronounce.tab.${k}`)}
               </PillTab>
             ))}
           </div>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {PROMPT_TAB_KEYS.map((k) => (
-            <PillTab
-              key={k}
-              active={kind === k}
-              disabled={sessionPhase === "practice"}
-              onClick={() => onKindChange(k)}
-              testId={`pronounce-tab-${k}`}
-            >
-              {t(`screens.speech_coach.pronounce.tab.${k}`)}
-            </PillTab>
-          ))}
+      ) : null}
+
+      {articulationCue && viewMode === "parent" ? (
+        <div
+          className="rounded-xl border px-3 py-2 text-xs leading-relaxed"
+          style={{ borderColor: C.panelBorder, color: C.textMid, background: "rgba(139,92,246,0.08)" }}
+          data-testid="speech-articulation-cue"
+        >
+          <p className="font-semibold mb-0.5">{articulationCue.label}</p>
+          <p>{articulationCue.tip}</p>
         </div>
-      </div>
+      ) : null}
 
       {/* ── Futuristic dark panel ──────────────────────────────────────────── */}
       <div
