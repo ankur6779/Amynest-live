@@ -1348,6 +1348,7 @@
       "success_message": "✅ Your email has been successfully verified. Please go back and sign in.",
       "error_message": "❌ Verification link expired or invalid. Please request a new email.",
       "go_to_login": "Go to Login",
+      "continue_to_app": "Continue to AmyNest",
       "redirect_hint": "Redirecting to login in {{seconds}} seconds…",
       "sign_in_button": "Sign in to AmyNest",
       "invalid_link": "This verification link is missing required information."

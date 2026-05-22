@@ -64,6 +64,10 @@ function fbToShim(u: FirebaseUserLike): ShimUser {
   };
 }
 
+function isPasswordOnlyEmailUser(fbUser: FbUser): boolean {
+  return fbUser.providerData.every((p) => p.providerId === "password");
+}
+
 function buildShimFromFirebaseUser(fbUser: FbUser | null): ShimUser | null {
   const resolvedEmail = resolveFirebaseUserEmail(fbUser);
   const bypassEmail = isEmailVerificationBypassEmail(resolvedEmail);
@@ -71,8 +75,35 @@ function buildShimFromFirebaseUser(fbUser: FbUser | null): ShimUser | null {
     fbUser !== null &&
     !fbUser.emailVerified &&
     !bypassEmail &&
-    fbUser.providerData.every((p) => p.providerId === "password");
+    isPasswordOnlyEmailUser(fbUser);
   return fbUser && !isUnverifiedEmailUser ? fbToShim(fbUser as FirebaseUserLike) : null;
+}
+
+const verificationReloadInflight = new Set<string>();
+
+function scheduleEmailVerificationSync(fbUser: FbUser): void {
+  if (fbUser.emailVerified) return;
+  if (isEmailVerificationBypassEmail(resolveFirebaseUserEmail(fbUser))) return;
+  if (!isPasswordOnlyEmailUser(fbUser)) return;
+  if (verificationReloadInflight.has(fbUser.uid)) return;
+
+  verificationReloadInflight.add(fbUser.uid);
+  void fbUser
+    .reload()
+    .then(async () => {
+      const auth = getFirebaseAuth();
+      const current = auth.currentUser;
+      if (current?.uid === fbUser.uid && current.emailVerified) {
+        await current.getIdToken(true).catch(() => {});
+      }
+      applyFirebaseUser(auth.currentUser);
+    })
+    .catch(() => {
+      /* ignore — user may still be genuinely unverified */
+    })
+    .finally(() => {
+      verificationReloadInflight.delete(fbUser.uid);
+    });
 }
 
 function applyFirebaseUser(fbUser: FbUser | null): void {
@@ -137,7 +168,27 @@ export function ensureFirebaseAuthListener(): void {
 
   onAuthStateChanged(auth, (fbUser) => {
     applyFirebaseUser(fbUser);
+    if (fbUser) scheduleEmailVerificationSync(fbUser);
   });
+}
+
+/** Re-read currentUser after reload(); onAuthStateChanged does not always fire. */
+export function refreshFirebaseAuthSnapshot(): void {
+  try {
+    applyFirebaseUser(getFirebaseAuth().currentUser);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Pull latest emailVerified from Firebase (e.g. after inbox link on another device). */
+export async function syncUserEmailVerificationFromServer(
+  user: FbUser,
+): Promise<FbUser> {
+  await user.reload();
+  await user.getIdToken(true).catch(() => {});
+  refreshFirebaseAuthSnapshot();
+  return user;
 }
 
 export function subscribeAuthSnapshot(listener: SnapshotListener): () => void {

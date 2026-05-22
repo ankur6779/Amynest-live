@@ -7,10 +7,22 @@ import { resetVerificationRateLimit } from "@/lib/email-verification-rate";
 import { logFirebaseAuthError } from "@/lib/firebase-auth-error";
 import { parseFirebaseActionParams } from "@/lib/firebase-action-params";
 import { waitForFirebaseAuthReady } from "@/lib/wait-for-firebase-auth-ready";
+import {
+  refreshFirebaseAuthSnapshot,
+  syncUserEmailVerificationFromServer,
+} from "@/lib/firebase-auth-listener";
+import { shouldShowNativeNotifyPrompt } from "@/lib/native-push-bridge";
 
 type VerifyStatus = "verifying" | "success" | "error";
 
 const REDIRECT_DELAY_MS = 3000;
+
+function postVerifyPath(): string {
+  if (shouldShowNativeNotifyPrompt()) {
+    return "/notify-prompt?next=/";
+  }
+  return "/";
+}
 
 const SHELL: React.CSSProperties = {
   minHeight: "100dvh",
@@ -87,16 +99,22 @@ export default function VerifyEmailActionPage() {
 
         const user = firebaseAuth.currentUser;
         if (user) {
-          await user.reload();
-          await user.getIdToken(true);
+          await syncUserEmailVerificationFromServer(user);
           resetVerificationRateLimit(user.uid);
+        } else {
+          refreshFirebaseAuthSnapshot();
         }
 
         console.info("[verify-email-action] Email verified successfully");
         setStatus("success");
 
+        const nextPath =
+          firebaseAuth.currentUser?.emailVerified === true
+            ? postVerifyPath()
+            : "/sign-in";
+
         setTimeout(() => {
-          if (!cancelled) setLocation("/sign-in");
+          if (!cancelled) setLocation(nextPath);
         }, REDIRECT_DELAY_MS);
       } catch (err: unknown) {
         if (cancelled) return;
