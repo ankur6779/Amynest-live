@@ -9,6 +9,7 @@ export {
   COACH_AUDIO_GOAL_STORAGE_KEY,
   TIER_LABELS,
   LESSON_SERIES,
+  orphanLessonIdsForAge,
   seriesForAge,
   getSeriesById,
   resolveSeriesLessons,

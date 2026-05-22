@@ -12,6 +12,7 @@ import {
   numberToDigits,
   numberToWords,
   prepareAmySpeechInput,
+  prepareAmyLessonParagraphSpeech,
   splitAtIntentMarkers,
   splitSemanticPhrases,
   getPhonicsTrainingAudioText,
@@ -109,6 +110,15 @@ describe("amy-speech-mode", () => {
 
   it("normalizes sentence numbers naturally", () => {
     expect(normalizeSentenceNumbers("I have 2 cats")).toBe("i have two cats");
+  });
+
+  it("lesson paragraphs play as one phrase (no semantic split)", () => {
+    const long =
+      "The 4-month sleep regression is not a regression. Pick one approach for two weeks.";
+    const policy = prepareAmyLessonParagraphSpeech(long);
+    expect(policy.useSemanticSplit).toBe(false);
+    expect(policy.phrases).toHaveLength(1);
+    expect(prepareAmySpeechInput(long, { lessonParagraph: true }).phrases).toHaveLength(1);
   });
 });
 

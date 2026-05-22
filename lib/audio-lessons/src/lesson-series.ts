@@ -85,6 +85,18 @@ export const LESSON_SERIES: LessonSeries[] = [
     ],
   },
   {
+    id: "toddler-screens-immunity",
+    ageBucket: "2-4",
+    emoji: "📺",
+    title: { en: "Screens, Immunity & Smiles" },
+    description: { en: "Screen limits under 5, immunity myths, and cavity-free habits." },
+    lessonIds: [
+      "toddler-screen-time",
+      "health-immunity-truth",
+      "health-dental-care",
+    ],
+  },
+  {
     id: "school-emotions",
     ageBucket: "5-7",
     emoji: "💛",
@@ -121,6 +133,18 @@ export const LESSON_SERIES: LessonSeries[] = [
     ],
   },
   {
+    id: "school-digital-body-health",
+    ageBucket: "5-7",
+    emoji: "👀",
+    title: { en: "Digital Health & School Stress" },
+    description: { en: "Eyes and posture, exam worry, and a healthy weight mindset." },
+    lessonIds: [
+      "health-digital-eyes-posture",
+      "early-school-exam-anxiety",
+      "health-childhood-obesity",
+    ],
+  },
+  {
     id: "tween-growing-up",
     ageBucket: "8-10",
     emoji: "🌱",
@@ -149,11 +173,11 @@ export const LESSON_SERIES: LessonSeries[] = [
     ageBucket: "8-10",
     emoji: "📱",
     title: { en: "Screens & School Stress" },
-    description: { en: "Balance, exam pressure, and digital wellbeing." },
+    description: { en: "Screen balance, exam pressure, and building independence." },
     lessonIds: [
       "tween-screen-balance",
       "tween-exam-stress",
-      "health-digital-eyes-posture",
+      "tween-independence",
     ],
   },
   {
@@ -185,11 +209,11 @@ export const LESSON_SERIES: LessonSeries[] = [
     ageBucket: "10+",
     emoji: "💚",
     title: { en: "Stress & Mental Health" },
-    description: { en: "Board exams, warning signs, and staying connected." },
+    description: { en: "Board exams, warning signs, and repairing after conflict." },
     lessonIds: [
       "teen-exam-boards-stress",
       "teen-mental-health-signs",
-      "teen-staying-connected",
+      "teen-parent-teen-repair",
     ],
   },
 ];

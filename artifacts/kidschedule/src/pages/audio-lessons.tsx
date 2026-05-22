@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Volume2, Pause, Play, SkipBack, SkipForward, Headphones, Sparkles, Gauge, X, Clock, Loader2, Lock, ListMusic, ChevronDown, ChevronUp, Check } from "lucide-react";
@@ -745,6 +745,9 @@ function PlayerSheet({
   const [playing, setPlaying] = useState(false);
   const [paragraphIdx, setParagraphIdx] = useState(0);
   const [rate, setRate] = useState<number>(1);
+  /** Ignores stale onFinished from a previous paragraph playback. */
+  const playbackSessionRef = useRef(0);
+  const activePlaybackSessionRef = useRef(0);
 
   const text = useMemo(() => getLessonText(lesson, lang), [lesson, lang]);
   const paragraphs = text.paragraphs;
@@ -752,6 +755,7 @@ function PlayerSheet({
   // Auto-advance to the next paragraph when the current one finishes
   // playing, or stop if we're at the end.
   const handleFinished = useCallback(() => {
+    if (activePlaybackSessionRef.current !== playbackSessionRef.current) return;
     setParagraphIdx((i) => {
       if (i + 1 >= paragraphs.length) {
         setPlaying(false);
@@ -800,11 +804,15 @@ function PlayerSheet({
       setPlaying(false);
       return;
     }
-    void speak(txt).then((res) => {
+    const session = ++playbackSessionRef.current;
+    void speak(txt, { waitUntilEnd: true, lessonParagraph: true }).then((res) => {
+      if (session !== playbackSessionRef.current) return;
       if (!res?.success) {
         console.warn("TTS failed, skipping audio flow:", res?.error);
         setPlaying(false);
+        return;
       }
+      activePlaybackSessionRef.current = session;
     });
   }, [playing, paragraphIdx, paragraphs, speak, stop]);
 

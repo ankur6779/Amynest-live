@@ -674,8 +674,28 @@ export function logAmyModeDiagnosis(
   );
 }
 
+/**
+ * Amy Audio Lessons — play each paragraph as one continuous unit.
+ * Avoids speech_coach semantic splits and duplicate onFinished callbacks.
+ */
+export function prepareAmyLessonParagraphSpeech(raw: string): AmySpeechPolicy {
+  const originalText = (raw ?? "").trim();
+  const speechMode: AmySpeechMode = "sentence";
+  const baseNormalized = normalizeSentenceNumbers(originalText);
+  const prosody = getProsodyProfile(speechMode, baseNormalized, 1);
+  const phrase = formatProsodyForTts(baseNormalized, speechMode, prosody);
+  const policy = buildPolicy(originalText, phrase, speechMode, [phrase]);
+  policy.useSemanticSplit = false;
+  policy.allowSpeechCoachSplit = false;
+  policy.allowPhonicsSequence = false;
+  return policy;
+}
+
 /** Guard: normalize + classify before any pipeline layer runs. */
 export function prepareAmySpeechInput(raw: string, opts?: SpeakOptions): AmySpeechPolicy {
+  if (opts?.lessonParagraph) {
+    return prepareAmyLessonParagraphSpeech(raw);
+  }
   const originalText = (raw ?? "").trim();
   const speechMode = detectSpeechMode(originalText, opts);
   const baseNormalized = normalizeText(originalText, speechMode);
