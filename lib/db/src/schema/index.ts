@@ -37,6 +37,7 @@ export * from "./custom_recipes";
 export * from "./admin_premium_grants";
 export * from "./feature_usage";
 export * from "./tts_cache";
+export * from "./static_audio_registry";
 export * from "./gift_tokens";
 export * from "./notification_preferences";
 export * from "./notification_log";

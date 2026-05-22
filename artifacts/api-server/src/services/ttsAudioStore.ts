@@ -163,6 +163,52 @@ async function readStaticAudioFromGcsInner(hash: string): Promise<Buffer | null>
   return buffer.byteLength > 0 ? buffer : null;
 }
 
+function getSecondaryBucketId(): string | null {
+  return readEnv("SECONDARY_GCS_BUCKET_ID", "STATIC_AUDIO_BACKUP_BUCKET_ID") ?? null;
+}
+
+/** Read from optional backup bucket when primary GCS misses. */
+export async function readStaticAudioFromSecondaryGcs(hash: string): Promise<Buffer | null> {
+  const bucketId = getSecondaryBucketId();
+  if (!bucketId || !legacyGcsConfigured()) return null;
+  try {
+    const [exists] = await getGcsClient().bucket(bucketId).file(`static-audio/${hash}.mp3`).exists();
+    if (!exists) return null;
+    const [buffer] = await getGcsClient().bucket(bucketId).file(`static-audio/${hash}.mp3`).download();
+    return buffer.byteLength > 0 ? buffer : null;
+  } catch {
+    return null;
+  }
+}
+
+export type StaticGcsWriteResult =
+  | { success: true; publicUrl: string }
+  | { success: false; error: string };
+
+/** Upload static-audio/{hash}.mp3 to primary GCS bucket. */
+export async function writeStaticAudioToGcs(
+  hash: string,
+  buffer: Buffer,
+): Promise<StaticGcsWriteResult> {
+  if (!legacyGcsConfigured()) return { success: false, error: "gcs_not_configured" };
+  const bucketName = getGcsBucketId();
+  if (!bucketName) return { success: false, error: "gcs_bucket_missing" };
+  const objectName = `static-audio/${hash}.mp3`;
+  const publicUrl = `https://storage.googleapis.com/${bucketName}/${objectName}`;
+  try {
+    const file = getBucket().file(objectName);
+    await file.save(buffer, {
+      contentType: "audio/mpeg",
+      resumable: false,
+      metadata: { cacheControl: "public, max-age=31536000, immutable" },
+    });
+    await file.makePublic().catch(() => {});
+    return { success: true, publicUrl };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 /** Read pre-generated static phrase MP3 from GCS (`static-audio/{md5}.mp3`). */
 export async function readStaticAudioFromGcs(hash: string): Promise<Buffer | null> {
   if (!/^[a-f0-9]{32}$/.test(hash)) return null;

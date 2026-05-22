@@ -130,21 +130,36 @@ export function recordStaticAudioPlaybackSuccess(): void {
 export function emitStaticAudioVisualFallback(detail?: {
   phrase?: string;
   mode?: StaticAudioMode;
+  highlightWords?: string[];
+  showTapToHear?: boolean;
+  animated?: boolean;
 }): void {
   if (typeof window === "undefined") return;
   window.dispatchEvent(
     new CustomEvent("amynest-static-audio-fallback", {
-      detail: detail ?? {},
+      detail: {
+        showTapToHear: true,
+        animated: true,
+        ...detail,
+      },
     }),
   );
 }
 
+export type StaticAudioVisualFallbackDetail = {
+  phrase?: string;
+  mode?: StaticAudioMode;
+  highlightWords?: string[];
+  showTapToHear?: boolean;
+  animated?: boolean;
+};
+
 export function onStaticAudioVisualFallback(
-  handler: (detail: { phrase?: string; mode?: StaticAudioMode }) => void,
+  handler: (detail: StaticAudioVisualFallbackDetail) => void,
 ): () => void {
   if (typeof window === "undefined") return () => {};
   const listener = (e: Event) => {
-    handler((e as CustomEvent<{ phrase?: string; mode?: StaticAudioMode }>).detail ?? {});
+    handler((e as CustomEvent<StaticAudioVisualFallbackDetail>).detail ?? {});
   };
   window.addEventListener("amynest-static-audio-fallback", listener);
   return () => window.removeEventListener("amynest-static-audio-fallback", listener);

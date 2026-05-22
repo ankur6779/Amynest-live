@@ -1204,9 +1204,18 @@ importers:
 
   lib/static-audio:
     dependencies:
+      '@workspace/audio-lessons':
+        specifier: workspace:*
+        version: link:../audio-lessons
       '@workspace/phonics-sounds':
         specifier: workspace:*
         version: link:../phonics-sounds
+      '@workspace/speech-coach':
+        specifier: workspace:*
+        version: link:../speech-coach
+      '@workspace/study-zone':
+        specifier: workspace:*
+        version: link:../study-zone
 
   lib/study-zone: {}
 
@@ -1217,9 +1226,24 @@ importers:
       '@google-cloud/storage':
         specifier: ^7.19.0
         version: 7.19.0
+      '@workspace/audio-lessons':
+        specifier: workspace:*
+        version: link:../lib/audio-lessons
+      '@workspace/db':
+        specifier: workspace:*
+        version: link:../lib/db
+      '@workspace/phonics-sounds':
+        specifier: workspace:*
+        version: link:../lib/phonics-sounds
+      '@workspace/speech-coach':
+        specifier: workspace:*
+        version: link:../lib/speech-coach
       '@workspace/static-audio':
         specifier: workspace:*
         version: link:../lib/static-audio
+      '@workspace/study-zone':
+        specifier: workspace:*
+        version: link:../lib/study-zone
       dotenv:
         specifier: ^16.6.1
         version: 16.6.1

@@ -77,7 +77,7 @@ export async function generateTts(
   }
 
   const mode: StaticAudioMode = body.mode === "phonics" ? "phonics" : "default";
-  if (phrase && isCatalogPhrase(phrase, mode) && import.meta.env.PROD) {
+  if (phrase && isCatalogPhrase(phrase, mode) && import.meta.env.DEV) {
     logDynamicTtsViolation(phrase, mode);
   }
 

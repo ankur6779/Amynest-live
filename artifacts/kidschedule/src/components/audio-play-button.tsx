@@ -114,16 +114,22 @@ export function AudioPlayButton({
   }, [toast, isMounted]);
 
   useEffect(() => {
-    return onStaticAudioVisualFallback(({ phrase }) => {
+    return onStaticAudioVisualFallback(({ phrase, showTapToHear }) => {
       const trimmed = (text ?? "").trim();
       if (phrase && phrase !== trimmed) return;
       if (!isMounted.current) return;
       setVisualFallback(true);
+      if (showTapToHear !== false) {
+        toast({
+          title: "Tap to hear again",
+          description: trimmed || "Amy voice",
+        });
+      }
       window.setTimeout(() => {
         if (isMounted.current) setVisualFallback(false);
-      }, 1600);
+      }, 2200);
     });
-  }, [text, isMounted]);
+  }, [text, isMounted, toast]);
 
   useEffect(() => {
     if (!error || !isMounted.current) return;

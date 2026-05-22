@@ -7,6 +7,7 @@ export {
 export { normalizeStaticAudioKey } from "./normalize.js";
 export {
   computeCatalogMissingStaticAudioKeys,
+  computeCorpusMissingStaticAudioKeys,
   extractTextFromMissingKey,
   mergeMissingStaticAudioKeys,
   parseStaticAudioMissingKey,
@@ -20,3 +21,8 @@ export {
   isStaticTtsText,
 } from "./phrases.js";
 export type { StaticAudioMap, StaticAudioMode, StaticTtsEntry } from "./types.js";
+export {
+  collectAllSpeakablePhrases,
+  buildHashToPhraseIndex,
+  type SpeakablePhraseRecord,
+} from "./phrase-corpus.js";

@@ -1,0 +1,131 @@
+/**
+ * Layer 4 — offline emergency audio (no API / GCS).
+ * Web Audio tones + speech synthesis for A–Z and common coaching phrases.
+ */
+
+import { getPhonicsAudioText, normalizePhonicsLetterKey } from "@workspace/phonics-sounds";
+import { audioManager } from "@/lib/audio-manager";
+
+const EMERGENCY_WORDS: Record<string, string> = {
+  yes: "yes",
+  no: "no",
+  good: "good",
+  "good job": "good job",
+  "good job!": "good job",
+  "try again": "try again",
+  "try again!": "try again",
+  "well done": "well done",
+  "well done!": "well done",
+  great: "great",
+  amazing: "amazing",
+  listen: "listen",
+  hello: "hello",
+  hi: "hi",
+};
+
+let audioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  try {
+    if (!audioCtx) {
+      const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!Ctx) return null;
+      audioCtx = new Ctx();
+    }
+    if (audioCtx.state === "suspended") void audioCtx.resume();
+    return audioCtx;
+  } catch {
+    return null;
+  }
+}
+
+/** Short teaching tone — distinct pitch per letter index. */
+export async function playPhonicsPlaceholderTone(letterIndex = 0): Promise<boolean> {
+  const ctx = getAudioContext();
+  if (!ctx) return false;
+  try {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const base = 280 + (letterIndex % 12) * 35;
+    osc.frequency.value = base;
+    osc.type = "sine";
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.22);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.24);
+    await new Promise<void>((r) => setTimeout(r, 260));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function speakWithSynthesis(text: string): Promise<boolean> {
+  if (typeof window === "undefined" || !window.speechSynthesis) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.92;
+      u.pitch = 1.05;
+      u.volume = 1;
+      let done = false;
+      const finish = (ok: boolean) => {
+        if (done) return;
+        done = true;
+        resolve(ok);
+      };
+      u.onend = () => finish(true);
+      u.onerror = () => finish(false);
+      window.speechSynthesis.speak(u);
+      setTimeout(() => finish(true), Math.min(4000, 400 + text.length * 80));
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
+export function resolveEmergencyPhrase(rawText: string): string | null {
+  const text = (rawText ?? "").trim();
+  if (!text) return null;
+  const norm = text.toLowerCase();
+  if (EMERGENCY_WORDS[norm]) return EMERGENCY_WORDS[norm];
+  const key = normalizePhonicsLetterKey(text);
+  if (key) return getPhonicsAudioText(key);
+  if (text.length === 1 && /[a-z]/i.test(text)) return getPhonicsAudioText(text);
+  return text.length <= 40 ? text : null;
+}
+
+/** Play emergency phrase: synthesis first, then placeholder tone. */
+export async function playEmergencyPhrase(rawText: string): Promise<boolean> {
+  const phrase = resolveEmergencyPhrase(rawText);
+  if (!phrase) {
+    const idx = (rawText.codePointAt(0) ?? 65) % 26;
+    return playPhonicsPlaceholderTone(idx);
+  }
+  const spoke = await speakWithSynthesis(phrase);
+  if (spoke) return true;
+  const key = normalizePhonicsLetterKey(phrase) ?? phrase[0]?.toLowerCase() ?? "a";
+  const idx = key.charCodeAt(0) - 97;
+  return playPhonicsPlaceholderTone(Number.isFinite(idx) ? idx : 0);
+}
+
+export async function playEmergencyViaAudioElement(objectUrl: string): Promise<boolean> {
+  try {
+    const audio = audioManager.create(objectUrl);
+    const played = await audioManager.play(
+      audio,
+      { source: "emergency", channel: "speech", interrupt: true, srcType: "static" },
+      { channel: "speech", interrupt: true, maxRetries: 1 },
+    );
+    if (!played) return false;
+    const end = await audioManager.waitUntilEnd(audio, () => false);
+    return end.ok;
+  } catch {
+    return false;
+  }
+}

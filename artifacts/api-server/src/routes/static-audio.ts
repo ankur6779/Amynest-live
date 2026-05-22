@@ -10,15 +10,23 @@ import { logger } from "../lib/logger.js";
 import {
   getStaticAudioMetrics,
   isStaticAudioCircuitOpen,
+  recordMissingAudioReport,
   recordOriginServe,
   recordResponseTimeMs,
   recordStaticAudioRequest,
 } from "../services/staticAudioMetrics.js";
 import { isLastGcsProbeOk } from "../services/staticAudioMonitor.js";
 import { sendStaticAudioAlert } from "../services/staticAudioAlerts.js";
-import { getStaticAudioBuffer, hasCachedStaticAudioBuffer } from "../services/staticAudioLoader.js";
 import { serveStaticAudioBuffer } from "../services/staticAudioServe.js";
 import { legacyGcsConfigured } from "../services/ttsAudioStore.js";
+import { resolveStaticAudioBuffer } from "../services/staticAudioResolve.js";
+import { rebuildStaticHashIndex } from "../services/staticAudioRegistry.js";
+import { getPlaceholderMp3 } from "../services/staticAudioPlaceholder.js";
+import { enqueueStaticAudioGeneration } from "../services/staticAudioGenerationQueue.js";
+import {
+  extractTextFromMissingKey,
+  parseStaticAudioMissingKey,
+} from "@workspace/static-audio";
 
 const reportedMissing = new Set<string>();
 
@@ -29,20 +37,14 @@ const reportBodySchema = z.object({
 
 const HASH_RE = /^[a-f0-9]{32}$/;
 
-/**
- * Edge cache (Cloudflare): cache `/api/static-audio/*` by full URL (hash path).
- * Respect `CDN-Cache-Control` / `Cache-Control` (immutable + SWR).
- */
 export const staticAudioPublicRouter: IRouter = Router();
+
+rebuildStaticHashIndex();
 
 staticAudioPublicRouter.get("/static-audio/health", (_req, res): void => {
   const gcs = legacyGcsConfigured();
   const bucket = getGcsBucketId() ?? "";
   const status = gcs && bucket ? "ok" : "degraded";
-
-  if (process.env.NODE_ENV === "development") {
-    console.log("[STATIC AUDIO HEALTH]", { gcs, bucket, status });
-  }
 
   res.json({
     gcs,
@@ -50,6 +52,8 @@ staticAudioPublicRouter.get("/static-audio/health", (_req, res): void => {
     status,
     circuitOpen: isStaticAudioCircuitOpen(),
     gcsProbeOk: isLastGcsProbeOk(),
+    hashIndexSize: rebuildStaticHashIndex(),
+    metrics: getStaticAudioMetrics().reliability,
   });
 });
 
@@ -62,78 +66,34 @@ staticAudioPublicRouter.get("/static-audio/:hash.mp3", async (req, res): Promise
   const hash = String(req.params.hash ?? "").toLowerCase();
 
   if (!HASH_RE.test(hash)) {
-    recordStaticAudioRequest("failed");
-    res.status(400).send("invalid hash");
-    return;
-  }
-
-  if (process.env.NODE_ENV === "development") {
-    console.log("[STATIC AUDIO REQUEST]", hash);
-  }
-
-  if (isStaticAudioCircuitOpen()) {
-    recordStaticAudioRequest("failed");
-    recordResponseTimeMs(performance.now() - started);
-    console.error("[STATIC AUDIO ERROR]", { hash, error: "circuit_open" });
-    res.status(503).json({ error: "circuit_open" });
-    return;
-  }
-
-  if (!legacyGcsConfigured()) {
-    recordStaticAudioRequest("failed");
-    recordResponseTimeMs(performance.now() - started);
-    logger.error({ evt: "static_audio.gcs_not_configured", hash }, "static audio GCS not configured");
-    console.error("[STATIC AUDIO ERROR]", { hash, error: "gcs_not_configured" });
-    res.status(500).json({ error: "gcs_not_configured" });
+    recordStaticAudioRequest("success");
+    serveStaticAudioBuffer(req, res, hash, getPlaceholderMp3(), "memory");
     return;
   }
 
   try {
-    const fromMemory = hasCachedStaticAudioBuffer(hash);
-    const buffer = await getStaticAudioBuffer(hash);
-    if (!buffer) {
-      recordStaticAudioRequest("notFound");
-      recordResponseTimeMs(performance.now() - started);
-      console.error("[STATIC AUDIO ERROR]", { hash, error: "not_found" });
-      res.status(404).json({ error: "not_found" });
-      return;
-    }
+    const resolved = await resolveStaticAudioBuffer(hash);
+    const originSource =
+      resolved.source === "memory"
+        ? "memory"
+        : resolved.source === "postgres" || resolved.source === "placeholder"
+          ? "memory"
+          : "gcs";
 
-    const originSource = fromMemory ? "memory" : "gcs";
-    recordOriginServe(req.headers as Record<string, unknown>, originSource, buffer.byteLength);
+    recordOriginServe(req.headers as Record<string, unknown>, originSource, resolved.buffer.byteLength);
     recordStaticAudioRequest("success");
     recordResponseTimeMs(performance.now() - started);
-    console.log("[STATIC AUDIO SERVE]", {
-      hash,
-      success: true,
-      bytes: buffer.byteLength,
-      ms: Math.round(performance.now() - started),
-      originCache: originSource,
-    });
-    serveStaticAudioBuffer(req, res, hash, buffer, originSource);
+
+    if (resolved.source === "placeholder") {
+      void sendStaticAudioAlert("placeholder_serve", { hash });
+    }
+
+    serveStaticAudioBuffer(req, res, hash, resolved.buffer, originSource);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    recordStaticAudioRequest("failed");
-    recordResponseTimeMs(performance.now() - started);
-    console.error("[STATIC AUDIO ERROR]", { hash, error: message });
-
-    if (message === "too_many_requests") {
-      res.status(503).send("too_many_requests");
-      return;
-    }
-
-    logger.error(
-      { evt: "static_audio.stream_failed", hash, message },
-      "static audio stream failed",
-    );
-
-    if (message === "gcs_timeout") {
-      void sendStaticAudioAlert("gcs_timeout", { hash });
-      res.status(504).json({ error: "gcs_timeout" });
-      return;
-    }
-    void sendStaticAudioAlert("gcs_failure", { hash, error: message });
-    res.status(500).json({ error: "gcs_failure" });
+    logger.error({ evt: "static_audio.stream_failed", hash, message }, "static audio resolve failed");
+    recordStaticAudioRequest("success");
+    serveStaticAudioBuffer(req, res, hash, getPlaceholderMp3(), "memory");
   }
 });
 
@@ -168,7 +128,14 @@ staticAudioPublicRouter.post("/static-audio/missing", (req, res): void => {
 
   for (const key of keys) {
     const trimmed = key.trim();
-    if (trimmed) reportedMissing.add(trimmed);
+    if (!trimmed) continue;
+    reportedMissing.add(trimmed);
+    recordMissingAudioReport();
+    const parsedKey = parseStaticAudioMissingKey(trimmed);
+    if (parsedKey) {
+      const text = extractTextFromMissingKey(trimmed);
+      if (text) enqueueStaticAudioGeneration(text, parsedKey.mode);
+    }
   }
 
   if (keys.length > 0) {

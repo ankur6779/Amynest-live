@@ -7,7 +7,8 @@
 import { config } from "dotenv";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import { listCatalogMissingKeys, REPO_ROOT } from "./static-audio-paths.js";
+import { computeCorpusMissingStaticAudioKeys } from "@workspace/static-audio";
+import { listCatalogMissingKeys, loadStaticAudioMap, REPO_ROOT } from "./static-audio-paths.js";
 
 config({ path: `${REPO_ROOT}/.env` });
 
@@ -97,9 +98,17 @@ if (missingDefault.length > 0) {
 
 assertNoClientDirectGcsPlayback();
 
+const corpusMissing = computeCorpusMissingStaticAudioKeys(loadStaticAudioMap());
+if (corpusMissing.length > 0) {
+  console.warn(
+    `[static-audio] ${corpusMissing.length} extended corpus phrase(s) not pre-generated yet — ` +
+      "API on-demand + generate:static-audio will fill these.",
+  );
+}
+
 console.log(
   missingPhonics.length > 0
     ? `Static audio map: default 100%; phonics ${missingPhonics.length} pending OpenAI pre-generation.`
-    : "Static audio map: 100% catalog coverage.",
+    : "Static audio map: 100% core catalog coverage.",
 );
 console.log("Static audio client: no direct GCS playback in source.");
