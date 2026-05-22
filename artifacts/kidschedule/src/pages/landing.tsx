@@ -1,9 +1,41 @@
 import { Link } from "wouter";
-import { ArrowRight, Sparkles, Brain, Calendar, LayoutGrid, MessageCircle, Zap, CheckCircle2, Flame, Smartphone, Moon, EarOff, Utensils, Target, ListChecks, HelpCircle, ShieldCheck, BookOpen, Microscope, TrendingUp, Video, Star, Users, Lightbulb, Puzzle, Palette, FileText, Baby, GraduationCap, Activity, Heart, Award, Gamepad2, BarChart3, FlaskConical, Calculator } from "lucide-react";
+import { ArrowRight, Sparkles, Brain, Calendar, LayoutGrid, MessageCircle, Zap, CheckCircle2, Flame, Smartphone, Moon, EarOff, Utensils, Target, ListChecks, HelpCircle, ShieldCheck, BookOpen, Microscope, TrendingUp, Video, Star, Users, Lightbulb, Puzzle, Palette, FileText, Baby, GraduationCap, Activity, Heart, Award, Gamepad2, BarChart3, FlaskConical, Calculator, Mic, Headphones } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useTranslation } from "react-i18next";
 const COACH_HIGHLIGHT_KEYS = ["landing.highlight_1", "landing.highlight_2", "landing.highlight_3", "landing.highlight_4"];
+const LEARNING_SPOTLIGHT = [{
+  icon: Mic,
+  titleKey: "landing.spotlight_speech_title",
+  descKey: "landing.spotlight_speech_desc",
+  highlightKeys: ["landing.spotlight_speech_h1", "landing.spotlight_speech_h2", "landing.spotlight_speech_h3", "landing.spotlight_speech_h4"],
+  gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))",
+  glow: "rgba(56,189,248,0.45)",
+  cardBg: "linear-gradient(135deg, rgba(56,189,248,0.18) 0%, rgba(99,102,241,0.12) 60%, rgba(255,255,255,0.04) 100%)",
+  borderColor: "rgba(56,189,248,0.35)",
+  radial: "hsl(var(--brand-cyan-500))"
+}, {
+  icon: GraduationCap,
+  titleKey: "landing.spotlight_phonics_title",
+  descKey: "landing.spotlight_phonics_desc",
+  highlightKeys: ["landing.spotlight_phonics_h1", "landing.spotlight_phonics_h2", "landing.spotlight_phonics_h3", "landing.spotlight_phonics_h4"],
+  gradient: "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-pink-500)))",
+  glow: "rgba(236,72,153,0.45)",
+  cardBg: "linear-gradient(135deg, rgba(236,72,153,0.16) 0%, rgba(168,85,247,0.12) 60%, rgba(255,255,255,0.04) 100%)",
+  borderColor: "rgba(236,72,153,0.35)",
+  radial: "hsl(var(--brand-pink-500))"
+}, {
+  icon: Headphones,
+  titleKey: "landing.spotlight_audio_title",
+  descKey: "landing.spotlight_audio_desc",
+  highlightKeys: ["landing.spotlight_audio_h1", "landing.spotlight_audio_h2", "landing.spotlight_audio_h3", "landing.spotlight_audio_h4"],
+  gradient: "linear-gradient(135deg,hsl(var(--brand-violet-600)),hsl(var(--brand-purple-500)))",
+  glow: "rgba(168,85,247,0.45)",
+  cardBg: "linear-gradient(135deg, rgba(168,85,247,0.18) 0%, rgba(123,63,242,0.12) 60%, rgba(255,255,255,0.04) 100%)",
+  borderColor: "rgba(168,85,247,0.35)",
+  radial: "hsl(var(--brand-purple-500))",
+  wide: true
+}];
 const PROBLEMS = [{
   icon: Flame,
   labelKey: "landing.problem_tantrums",
@@ -46,6 +78,30 @@ const SECONDARY_FEATURES = [{
   gradient: "linear-gradient(135deg,hsl(var(--brand-yellow-300)),hsl(var(--brand-orange-500)))"
 }];
 const NEW_HUB_FEATURES = [{
+  icon: Mic,
+  titleKey: "landing.new_speech_title",
+  descKey: "landing.new_speech_desc",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))",
+  glow: "rgba(56,189,248,0.45)"
+}, {
+  icon: GraduationCap,
+  titleKey: "landing.new_phonics_title",
+  descKey: "landing.new_phonics_desc",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-pink-500)))",
+  glow: "rgba(236,72,153,0.45)"
+}, {
+  icon: Headphones,
+  titleKey: "landing.new_audio_title",
+  descKey: "landing.new_audio_desc",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-violet-600)),hsl(var(--brand-purple-500)))",
+  glow: "rgba(168,85,247,0.45)"
+}, {
+  icon: BookOpen,
+  titleKey: "landing.new_smart_study_title",
+  descKey: "landing.new_smart_study_desc",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-cyan-500)))",
+  glow: "rgba(99,102,241,0.45)"
+}, {
   icon: Baby,
   titleKey: "landing.new_infant_title",
   descKey: "landing.new_infant_desc",
@@ -57,18 +113,6 @@ const NEW_HUB_FEATURES = [{
   descKey: "landing.new_abacus_desc",
   gradient: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-red-500)))",
   glow: "rgba(245,158,11,0.45)"
-}, {
-  icon: FileText,
-  titleKey: "landing.new_funsheets_title",
-  descKey: "landing.new_funsheets_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-emerald-500)))",
-  glow: "rgba(16,185,129,0.45)"
-}, {
-  icon: Palette,
-  titleKey: "landing.new_coloring_title",
-  descKey: "landing.new_coloring_desc",
-  gradient: "linear-gradient(135deg,hsl(var(--brand-pink-500)),hsl(var(--brand-orange-500)))",
-  glow: "rgba(236,72,153,0.45)"
 }];
 const STEPS = [{
   icon: Target,
@@ -111,6 +155,48 @@ const SCIENCE_STATS = [{
 }];
 const SCIENCE_CITATIONS = ["📚 Habit Loop — Charles Duhigg (2012)", "🧠 Growth Mindset — Dr. Carol Dweck, Stanford", "👶 AAP Screen Time Guidelines (2023)", "💤 CDC Infant Sleep Standards", "🎯 Positive Reinforcement — B.F. Skinner", "🌱 Montessori Life Skills Framework", "📊 Executive Function — Harvard Center on the Developing Child", "❤️ Secure Attachment — Dr. Daniel Siegel", "⚡ CPS Model — Dr. Ross Greene", "🍎 SEL Framework — CASEL"];
 const ALL_FEATURES = [{
+  icon: Mic,
+  titleKey: "landing.spotlight_speech_title",
+  descKey: "landing.spotlight_speech_desc",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))",
+  badge: "Featured"
+}, {
+  icon: GraduationCap,
+  titleKey: "landing.spotlight_phonics_title",
+  descKey: "landing.spotlight_phonics_desc",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-pink-500)))",
+  badge: "Featured"
+}, {
+  icon: Headphones,
+  titleKey: "landing.spotlight_audio_title",
+  descKey: "landing.spotlight_audio_desc",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-violet-600)),hsl(var(--brand-purple-500)))",
+  badge: "New"
+}, {
+  icon: BookOpen,
+  titleKey: "landing.new_smart_study_title",
+  descKey: "landing.new_smart_study_desc",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-cyan-500)))",
+  badge: "New"
+}, {
+  icon: Video,
+  title: "Kids Story Hub",
+  desc: "Bedtime, moral & fun stories in a Netflix-style hub — fresh stories matched to your child's age every day.",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-sky-400)),hsl(var(--brand-indigo-500)))",
+  badge: "New"
+}, {
+  icon: Utensils,
+  title: "Nutrition Hub",
+  desc: "Age-wise nutrition science, meal ideas, and tiffin suggestions aligned with WHO and ICMR guidance.",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-emerald-500)),hsl(var(--brand-green-500)))",
+  badge: null
+}, {
+  icon: Brain,
+  title: "Amy AI Tutor",
+  desc: "Personalized tutoring across subjects — Amy adapts explanations to your child's age and learning pace.",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
+  badge: null
+}, {
   icon: ShieldCheck,
   title: "Kids Control Center",
   desc: "Child-safe UI with screen time limits, focus mode & parent lock — built on AAP's 2023 digital wellness guidelines. Coming soon.",
@@ -525,6 +611,134 @@ export default function LandingPage() {
         </div>
       </div>
 
+      {/* LEARNING SPOTLIGHT — Speech Coach, Phonics, Audio Lessons */}
+      <section className="relative z-10 px-5 pb-20">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10 md:mb-12">
+            <div className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white" style={{
+            background: "linear-gradient(135deg,rgba(56,189,248,0.22),rgba(168,85,247,0.18))",
+            border: "1px solid rgba(56,189,248,0.4)",
+            boxShadow: "0 6px 20px rgba(56,189,248,0.25)"
+          }}>
+              <Mic className="h-3 w-3" />
+              {t("landing.learning_eyebrow")}
+            </div>
+            <h2 className="font-quicksand font-bold text-3xl md:text-5xl text-white mb-3">
+              {t("landing.learning_heading")}
+            </h2>
+            <p className="text-white/65 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+              {t("landing.learning_sub")}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6 mb-5 md:mb-6">
+            {LEARNING_SPOTLIGHT.filter((m) => !m.wide).map(({
+            icon: Icon,
+            titleKey,
+            descKey,
+            highlightKeys,
+            gradient,
+            cardBg,
+            borderColor,
+            radial
+          }) => <div key={titleKey} className="amy-glass-card rounded-3xl p-8 md:p-10 relative overflow-hidden min-h-[320px]" style={{
+            background: cardBg,
+            borderColor
+          }}>
+                <div aria-hidden className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-40 pointer-events-none" style={{
+              background: `radial-gradient(circle,${radial},transparent 70%)`
+            }} />
+                <div className="relative h-full flex flex-col">
+                  <div className="flex flex-col gap-5 mb-6">
+                    <div className="h-16 w-16 md:h-[4.5rem] md:w-[4.5rem] rounded-2xl flex items-center justify-center shrink-0" style={{
+                  background: gradient,
+                  boxShadow: "0 12px 36px rgba(168,85,247,0.45)"
+                }}>
+                      <Icon className="h-8 w-8 md:h-9 md:w-9 text-white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-3 flex-wrap">
+                        <h3 className="font-quicksand font-bold text-2xl md:text-3xl text-white">
+                          {t(titleKey)}
+                        </h3>
+                        <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{
+                      background: gradient,
+                      boxShadow: "0 4px 14px rgba(236,72,153,0.4)"
+                    }}>
+                          {t("landing.featured_badge")}
+                        </span>
+                      </div>
+                      <p className="text-white/75 text-sm md:text-base leading-relaxed">
+                        {t(descKey)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-auto">
+                    {highlightKeys.map((key) => <div key={key} className="flex items-start gap-2.5 rounded-xl px-3.5 py-2.5" style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.08)"
+                  }}>
+                        <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground shrink-0 mt-0.5" />
+                        <span className="text-white/85 text-xs md:text-sm font-medium">{t(key)}</span>
+                      </div>)}
+                  </div>
+                </div>
+              </div>)}
+          </div>
+
+          {LEARNING_SPOTLIGHT.filter((m) => m.wide).map(({
+          icon: Icon,
+          titleKey,
+          descKey,
+          highlightKeys,
+          gradient,
+          cardBg,
+          borderColor,
+          radial
+        }) => <div key={titleKey} className="amy-glass-card rounded-3xl p-8 md:p-10 relative overflow-hidden" style={{
+          background: cardBg,
+          borderColor
+        }}>
+              <div aria-hidden className="absolute -top-16 -right-16 w-72 h-72 rounded-full opacity-35 pointer-events-none" style={{
+            background: `radial-gradient(circle,${radial},transparent 70%)`
+          }} />
+              <div className="relative flex flex-col md:flex-row md:items-start gap-6 md:gap-10">
+                <div className="h-16 w-16 md:h-[4.5rem] md:w-[4.5rem] rounded-2xl flex items-center justify-center shrink-0" style={{
+              background: gradient,
+              boxShadow: "0 12px 36px rgba(168,85,247,0.45)"
+            }}>
+                  <Icon className="h-8 w-8 md:h-9 md:w-9 text-white" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    <h3 className="font-quicksand font-bold text-2xl md:text-3xl text-white">
+                      {t(titleKey)}
+                    </h3>
+                    <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{
+                  background: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))",
+                  boxShadow: "0 4px 14px rgba(56,189,248,0.4)"
+                }}>
+                      {t("landing.new_badge")}
+                    </span>
+                  </div>
+                  <p className="text-white/75 text-sm md:text-base leading-relaxed mb-6 max-w-3xl">
+                    {t(descKey)}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {highlightKeys.map((key) => <div key={key} className="flex items-start gap-2.5 rounded-xl px-3.5 py-2.5" style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.08)"
+                }}>
+                        <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />
+                        <span className="text-white/85 text-xs md:text-sm font-medium">{t(key)}</span>
+                      </div>)}
+                  </div>
+                </div>
+              </div>
+            </div>)}
+        </div>
+      </section>
+
       {/* PROBLEM HOOK */}
       <section className="relative z-10 px-5 pb-20">
         <div className="max-w-5xl mx-auto">
@@ -626,51 +840,6 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Kids Control Center hero card */}
-          <div className="amy-glass-card rounded-3xl p-7 md:p-10 mb-5 relative overflow-hidden" style={{
-          background: "linear-gradient(135deg, rgba(123,63,242,0.18) 0%, rgba(255,78,205,0.12) 60%, rgba(255,255,255,0.04) 100%)",
-          borderColor: "rgba(123,63,242,0.35)"
-        }}>
-            <div aria-hidden className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-35 pointer-events-none" style={{
-            background: "radial-gradient(circle,#FF4ECD,transparent 70%)"
-          }} />
-            <div className="relative">
-              <div className="flex flex-col md:flex-row md:items-start gap-5 md:gap-7 mb-6">
-                <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl flex items-center justify-center shrink-0" style={{
-                background: "linear-gradient(135deg,hsl(var(--brand-violet-600)),#FF4ECD)",
-                boxShadow: "0 10px 30px rgba(255,78,205,0.45)"
-              }}>
-                  <ShieldCheck className="h-7 w-7 md:h-8 md:w-8 text-white" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-3 flex-wrap">
-                    <h3 className="font-quicksand font-bold text-xl md:text-2xl text-white">
-                      {t("pages.landing.kids_control_center")}
-                    </h3>
-                    <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{
-                    background: "linear-gradient(135deg,hsl(var(--brand-violet-600)),#FF4ECD)",
-                    boxShadow: "0 4px 14px rgba(255,78,205,0.4)"
-                  }}>
-                      {t("pages.landing.coming_soon")}
-                    </span>
-                  </div>
-                  <p className="text-white/75 text-sm md:text-base leading-relaxed">
-                    {t("pages.landing.a_dedicated_child_safe_experience_built_on_aap_s_2023_digita")}
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                {["Screen Time Limits (AAP-aligned)", "Child-Safe Focus Mode", "Routine Sync with Parent App", "PIN-Protected Parent Lock"].map(feat => <div key={feat} className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5" style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.08)"
-              }}>
-                    <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground shrink-0" />
-                    <span className="text-white/85 text-xs md:text-sm font-medium">{feat}</span>
-                  </div>)}
-              </div>
-            </div>
-          </div>
-
           {/* Secondary feature cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
             {SECONDARY_FEATURES.map(({
@@ -731,7 +900,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
             {NEW_HUB_FEATURES.map(({
             icon: Icon,
             titleKey,
@@ -791,11 +960,11 @@ export default function LandingPage() {
             descKey,
             gradient,
             badge
-          }) => <div key={title} className="amy-feature-card rounded-2xl p-5 md:p-6 flex flex-col gap-3 relative overflow-hidden">
+          }) => <div key={titleKey ?? title} className="amy-feature-card rounded-2xl p-5 md:p-6 flex flex-col gap-3 relative overflow-hidden">
                 {badge && <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white" style={{
-              background: badge === "New" ? "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))" : "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-red-500)))"
+              background: badge === "New" ? "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))" : badge === "Featured" ? "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-pink-500)))" : badge === "Coming Soon" ? "linear-gradient(135deg,hsl(var(--brand-violet-600)),#FF4ECD)" : "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-red-500)))"
             }}>
-                    {badge === "New" ? t("landing.new_badge") : badge}
+                    {badge === "New" ? t("landing.new_badge") : badge === "Featured" ? t("landing.featured_badge") : badge === "Coming Soon" ? t("pages.landing.coming_soon") : badge}
                   </span>}
                 <div className="flex items-start gap-3">
                   <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{
