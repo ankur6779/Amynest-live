@@ -28,6 +28,7 @@
     "stability:load": "pnpm --filter @workspace/scripts run stability-load",
     "generate:static-audio": "pnpm --filter @workspace/scripts run generate-static-audio",
     "generate:static-audio:force": "pnpm --filter @workspace/scripts run generate-static-audio -- --force-all",
+    "generate:static-audio:audio-lessons": "pnpm run scan:speakable-phrases && pnpm --filter @workspace/scripts run generate-static-audio -- --audio-lessons-only",
     "check:static-audio": "pnpm --filter @workspace/scripts run check-static-audio",
     "scan:speakable-phrases": "pnpm --filter @workspace/scripts run scan-speakable-phrases",
     "check:amy-voice": "pnpm --filter @workspace/scripts run check-amy-voice-usage",
