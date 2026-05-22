@@ -100,6 +100,7 @@
     "@capacitor/app": "^6.0.0",
     "@capacitor/core": "^6.2.0",
     "@capacitor/geolocation": "^6.1.1",
+    "@capacitor/keyboard": "^6.0.0",
     "@capacitor/push-notifications": "^6.0.0",
     "@capacitor/status-bar": "6",
     "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",

@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
+import { OnboardingChatShell } from "@/components/onboarding-chat-shell";
 import { ChildDobPicker } from "@/components/child-dob-picker";
 import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,14 @@ import {
   requestNativePushPermission,
   registerNativePushToken,
 } from "@/lib/native-push-bridge";
+import {
+  checkGeoPermission,
+  getCurrentCoords,
+  isGeoPermissionDenied,
+  requestGeoPermission,
+  reverseGeocodeCountry,
+  type GeoCoords,
+} from "@/lib/onboarding-location";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type AgeGroup = "infant" | "toddler" | "kid";
@@ -49,7 +58,18 @@ interface ParentData {
   mobileNumber: string;
   allergies: string;
   country: string;
+  latitude?: number;
+  longitude?: number;
 }
+
+type LocationDetectionState =
+  | { status: "idle" }
+  | { status: "checking" }
+  | { status: "needs-permission" }
+  | { status: "fetching" }
+  | { status: "detected" }
+  | { status: "denied" }
+  | { status: "error" };
 
 interface ChatMessage {
   role: "amy" | "user";
@@ -520,19 +540,16 @@ export default function OnboardingPage() {
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [countryCode, setCountryCode] = useState("");
   const [countryName, setCountryName] = useState("");
-  const [detectedCountry, setDetectedCountry] = useState<{ code: string; name: string } | "loading" | null>("loading");
+  const [locationState, setLocationState] = useState<LocationDetectionState>({ status: "idle" });
+  const [detectedCoords, setDetectedCoords] = useState<GeoCoords | null>(null);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [countryPickerRequired, setCountryPickerRequired] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
+  const [locationRequesting, setLocationRequesting] = useState(false);
 
   const [children, setChildren] = useState<ChildData[]>([]);
   const [curr, setCurr] = useState<Partial<ChildData>>({});
   const [parent, setParent] = useState<Partial<ParentData>>({});
-
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, typing, step]);
 
   // Amy sends a message after a typing delay
   function amySays(text: string, delay = 700) {
@@ -636,6 +653,8 @@ export default function OnboardingPage() {
         foodStyle: derivedFoodStyle,
         subCuisine: derivedSubCuisine || null,
       };
+      if (typeof parent.latitude === "number") parentBody.latitude = parent.latitude;
+      if (typeof parent.longitude === "number") parentBody.longitude = parent.longitude;
       if (parent.mobileNumber) parentBody.mobileNumber = parent.mobileNumber;
       if (parent.allergies) parentBody.allergies = parent.allergies;
       await authFetch("/api/parent-profile", {
@@ -714,62 +733,114 @@ export default function OnboardingPage() {
     window.location.assign(`${base}/dashboard`);
   }
 
-  // ─── Country detection ───────────────────────────────────────────────────────
-  useEffect(() => {
-    async function detect() {
-      try {
-        const controller = new AbortController();
-        const tid = setTimeout(() => controller.abort(), 4000);
-        const res = await fetch("https://ipapi.co/json/", { signal: controller.signal });
-        clearTimeout(tid);
-        if (res.ok) {
-          const data = await res.json() as { country_code?: string; country_name?: string };
-          if (data.country_code && data.country_name) {
-            setCountryCode(data.country_code);
-            setCountryName(data.country_name);
-            setDetectedCountry({ code: data.country_code, name: data.country_name });
-            return;
-          }
-        }
-      } catch { /* network or timeout */ }
-      // Fallback: browser locale e.g. "en-IN" → "IN"
-      const lang = navigator.language || (navigator.languages?.[0] ?? "");
-      const parts = lang.split("-");
-      if (parts.length === 2 && parts[1].length === 2) {
-        const code = parts[1].toUpperCase();
-        const found = ALL_COUNTRIES.find((c) => c.code === code);
-        if (found) {
-          setCountryCode(found.code);
-          setCountryName(found.name);
-          setDetectedCountry({ code: found.code, name: found.name });
-          return;
-        }
+  // ─── Country detection (GPS + reverse geocode) ───────────────────────────────
+  async function fetchLocationFromGps() {
+    setLocationState({ status: "fetching" });
+    try {
+      const coords = await getCurrentCoords();
+      const result = await reverseGeocodeCountry(coords.latitude, coords.longitude);
+      if (!result) {
+        setLocationState({ status: "error" });
+        setCountryPickerRequired(true);
+        setShowCountryPicker(true);
+        return;
       }
-      // Detection failed — show picker directly
-      setDetectedCountry(null);
+
+      const known = ALL_COUNTRIES.find((c) => c.code === result.countryCode);
+      const name = known?.name ?? result.countryName;
+      setCountryCode(result.countryCode);
+      setCountryName(name);
+      setDetectedCoords(coords);
+      setLocationState({ status: "detected" });
+      setCountryPickerRequired(false);
+      setShowCountryPicker(false);
+    } catch (error) {
+      if (isGeoPermissionDenied(error)) {
+        setLocationState({ status: "denied" });
+      } else {
+        setLocationState({ status: "error" });
+      }
+      setCountryPickerRequired(true);
       setShowCountryPicker(true);
     }
-    detect();
-  }, []);
+  }
 
-  function confirmCountry(code: string, name: string) {
+  async function handleAllowLocation() {
+    if (locationRequesting) return;
+    setLocationRequesting(true);
+    try {
+      const permission = await requestGeoPermission();
+      if (permission === "denied") {
+        setLocationState({ status: "denied" });
+        setCountryPickerRequired(true);
+        setShowCountryPicker(true);
+        return;
+      }
+      await fetchLocationFromGps();
+    } finally {
+      setLocationRequesting(false);
+    }
+  }
+
+  useEffect(() => {
+    if (step !== "country-confirm") return;
+
+    let cancelled = false;
+
+    (async () => {
+      setLocationState({ status: "checking" });
+      const permission = await checkGeoPermission();
+      if (cancelled) return;
+
+      if (permission === "granted") {
+        await fetchLocationFromGps();
+        return;
+      }
+
+      if (permission === "denied") {
+        setLocationState({ status: "denied" });
+        setCountryPickerRequired(true);
+        setShowCountryPicker(true);
+        return;
+      }
+
+      setLocationState({ status: "needs-permission" });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  function confirmCountry(code: string, name: string, coords?: GeoCoords | null) {
     setCountryCode(code);
     setCountryName(name);
     setShowCountryPicker(false);
     setCountrySearch("");
+    setCountryPickerRequired(false);
     setRegionDrillDown(false);
-    // Pre-seed recommended cuisines so user sees them highlighted (but not locked in)
     const recs = getRecommendedCuisines(code);
     setSelectedRegions(recs.slice(0, 1));
-    setParent((p) => ({ ...p, country: code }));
+    setParent((p) => ({
+      ...p,
+      country: code,
+      latitude: coords?.latitude,
+      longitude: coords?.longitude,
+    }));
     amySays(t("screens.onboarding.child_name_after_country"), 300);
     setTimeout(() => setStep("child-name"), 1300);
   }
 
   // ─── Country-confirm step ────────────────────────────────────────────────────
   if (step === "country-confirm") {
-    const isDetecting = detectedCountry === "loading";
-    const flag = flagEmoji(countryCode);
+    const isLocating =
+      locationState.status === "idle" ||
+      locationState.status === "checking" ||
+      locationState.status === "fetching";
+    const needsPermission = locationState.status === "needs-permission";
+    const showDetected = locationState.status === "detected" && countryCode;
+    const flag = countryCode ? flagEmoji(countryCode) : "";
     const searchResults = countrySearch.trim().length > 0
       ? ALL_COUNTRIES.filter((c) =>
           c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
@@ -778,27 +849,45 @@ export default function OnboardingPage() {
       : [];
 
     if (showCountryPicker) {
+      const pickerTitle = countryPickerRequired
+        ? t("screens.onboarding.country_manual_required_title")
+        : t("screens.onboarding.country_pick_popular");
+      const pickerHint =
+        locationState.status === "denied"
+          ? t("screens.onboarding.country_permission_denied")
+          : locationState.status === "error"
+            ? t("screens.onboarding.country_fetch_error")
+            : null;
+
       return (
         <div className="min-h-dvh flex flex-col" style={{ background: BG }}>
-          {/* Header */}
           <div
             className="sticky top-0 z-10 px-4 py-4 flex items-center gap-3"
             style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderBottom: "1px solid rgba(168,85,247,0.15)" }}
           >
-            <button
-              onClick={() => { setShowCountryPicker(false); setCountrySearch(""); }}
-              className="w-8 h-8 flex items-center justify-center rounded-full"
-              style={{ background: GLASS_BG, color: "#fff" }}
-            >
-              ←
-            </button>
+            {!countryPickerRequired ? (
+              <button
+                onClick={() => { setShowCountryPicker(false); setCountrySearch(""); }}
+                className="w-8 h-8 flex items-center justify-center rounded-full"
+                style={{ background: GLASS_BG, color: "#fff" }}
+              >
+                ←
+              </button>
+            ) : (
+              <div className="w-8 h-8" aria-hidden="true" />
+            )}
             <h2 className="text-base font-bold" style={{ color: "#fff" }}>
-              {t("screens.onboarding.country_pick_popular")}
+              {pickerTitle}
             </h2>
           </div>
 
           <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4 max-w-lg mx-auto w-full">
-            {/* Top 6 grid */}
+            {pickerHint ? (
+              <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>
+                {pickerHint}
+              </p>
+            ) : null}
+
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.5)" }}>
               {t("screens.onboarding.country_pick_popular")}
             </p>
@@ -816,7 +905,6 @@ export default function OnboardingPage() {
               ))}
             </div>
 
-            {/* Search bar */}
             <div className="relative">
               <input
                 type="text"
@@ -830,7 +918,6 @@ export default function OnboardingPage() {
               <span className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.4)", fontSize: 16 }}>🔍</span>
             </div>
 
-            {/* Search results */}
             {countrySearch.trim().length > 0 && (
               searchResults.length === 0 ? (
                 <p className="text-sm text-center py-4" style={{ color: "rgba(255,255,255,0.5)" }}>
@@ -864,7 +951,7 @@ export default function OnboardingPage() {
       >
         <AmyMascotLogo size={56} />
 
-        {isDetecting ? (
+        {isLocating ? (
           <div className="flex flex-col items-center gap-4">
             <div
               className="w-10 h-10 rounded-full border-2"
@@ -874,13 +961,46 @@ export default function OnboardingPage() {
                 animation: "spin 0.9s linear infinite",
               }}
             />
-            <p className="text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
+            <p className="text-sm text-center" style={{ color: "rgba(255,255,255,0.65)" }}>
               {t("screens.onboarding.country_detecting")}
             </p>
           </div>
-        ) : (
+        ) : needsPermission ? (
           <>
-            {/* Detected card */}
+            <div className="text-center max-w-sm">
+              <h2 className="text-xl font-extrabold mb-3" style={{ color: "#fff" }}>
+                {t("screens.onboarding.country_location_prompt_title")}
+              </h2>
+              <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
+                {t("screens.onboarding.country_location_prompt_body")}
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 w-full max-w-sm">
+              <button
+                disabled={locationRequesting}
+                onClick={() => void handleAllowLocation()}
+                className="w-full py-4 rounded-2xl font-bold text-base active:scale-95 transition-all disabled:opacity-60"
+                style={{ background: GRAD, color: "#fff", boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
+              >
+                {locationRequesting
+                  ? t("screens.onboarding.country_detecting")
+                  : t("screens.onboarding.country_allow_location")}
+              </button>
+              <button
+                onClick={() => {
+                  setCountryPickerRequired(true);
+                  setShowCountryPicker(true);
+                }}
+                className="w-full py-3 text-sm font-semibold"
+                style={{ color: "rgba(255,255,255,0.65)", background: "none", border: "none" }}
+              >
+                {t("screens.onboarding.country_select_manually")}
+              </button>
+            </div>
+          </>
+        ) : showDetected ? (
+          <>
             <div
               className="w-full max-w-sm rounded-3xl p-6 flex flex-col items-center gap-3"
               style={{ background: GLASS_BG, border: GLASS_BORDER }}
@@ -894,17 +1014,19 @@ export default function OnboardingPage() {
               </h2>
             </div>
 
-            {/* Actions */}
             <div className="flex flex-col gap-3 w-full max-w-sm">
               <button
-                onClick={() => confirmCountry(countryCode, countryName)}
+                onClick={() => confirmCountry(countryCode, countryName, detectedCoords)}
                 className="w-full py-4 rounded-2xl font-bold text-base active:scale-95 transition-all"
                 style={{ background: GRAD, color: "#fff", boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
               >
                 {t("screens.onboarding.country_confirm_yes")}
               </button>
               <button
-                onClick={() => setShowCountryPicker(true)}
+                onClick={() => {
+                  setCountryPickerRequired(false);
+                  setShowCountryPicker(true);
+                }}
                 className="w-full py-3 text-sm font-semibold"
                 style={{ color: "rgba(255,255,255,0.65)", background: "none", border: "none" }}
               >
@@ -912,7 +1034,7 @@ export default function OnboardingPage() {
               </button>
             </div>
           </>
-        )}
+        ) : null}
       </div>
     );
   }
@@ -1759,39 +1881,31 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col" style={{ background: BG }}>
-      <div
-        className="sticky top-0 z-10"
-        style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderBottom: "1px solid rgba(168,85,247,0.15)" }}
-      >
-        <div className="flex items-center justify-between px-4 pt-3 pb-1">
-          <div className="flex items-center gap-2.5">
-            <AmyAvatar size={8} />
-            <div>
-              <p className="text-xs font-bold" style={{ color: "#fff" }}>{t("screens.onboarding.amy_coach")}</p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{t("screens.onboarding.setting_up")}</p>
-            </div>
-          </div>
-          <span className="text-[11px] font-semibold px-3 py-1.5" style={{ color: "rgba(255,255,255,0.7)" }}>
-            {t("screens.onboarding.setup_required")}
-          </span>
-        </div>
-        <ProgressBar step={step} />
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-3 max-w-lg mx-auto w-full">
-        {messages.map((msg, i) =>
-          msg.role === "amy"
-            ? <AmyBubble key={i} text={msg.text} />
-            : <UserBubble key={i} text={msg.text} />
-        )}
-        {typing && <TypingBubble />}
-        <div ref={chatEndRef} />
-      </div>
-
-      {!typing && step !== "intro" && (
+    <OnboardingChatShell
+      scrollDeps={[messages, typing, step]}
+      style={{ background: BG }}
+      header={(
         <div
-          className="sticky bottom-0 px-4 py-4 max-w-lg mx-auto w-full"
+          className="z-10"
+          style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderBottom: "1px solid rgba(168,85,247,0.15)" }}
+        >
+          <div className="flex items-center justify-between px-4 pt-3 pb-1">
+            <div className="flex items-center gap-2.5">
+              <AmyAvatar size={8} />
+              <div>
+                <p className="text-xs font-bold" style={{ color: "#fff" }}>{t("screens.onboarding.amy_coach")}</p>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{t("screens.onboarding.setting_up")}</p>
+              </div>
+            </div>
+            <span className="text-[11px] font-semibold px-3 py-1.5" style={{ color: "rgba(255,255,255,0.7)" }}>
+              {t("screens.onboarding.setup_required")}
+            </span>
+          </div>
+          <ProgressBar step={step} />
+        </div>
+      )}
+      footer={!typing && step !== "intro" ? (
+        <div
           style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderTop: "1px solid rgba(168,85,247,0.15)" }}
         >
           {renderInput()}
@@ -1799,7 +1913,14 @@ export default function OnboardingPage() {
             {t("patent_pending.powered_by")}
           </p>
         </div>
+      ) : null}
+    >
+      {messages.map((msg, i) =>
+        msg.role === "amy"
+          ? <AmyBubble key={i} text={msg.text} />
+          : <UserBubble key={i} text={msg.text} />
       )}
-    </div>
+      {typing && <TypingBubble />}
+    </OnboardingChatShell>
   );
 }

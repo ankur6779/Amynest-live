@@ -22,4 +22,8 @@ export interface UpsertParentProfileBody {
   dietType?: string | null;
   foodStyle?: string | null;
   subCuisine?: string | null;
+  /** ISO-3166-1 alpha-2 country code (e.g. IN, US, GB) */
+  country?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }

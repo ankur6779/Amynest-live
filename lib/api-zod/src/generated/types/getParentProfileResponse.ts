@@ -24,6 +24,12 @@ export interface GetParentProfileResponse {
   dietType?: string | null;
   foodStyle?: string | null;
   subCuisine?: string | null;
+  /** ISO-3166-1 alpha-2 country code (e.g. IN, US, GB) */
+  country?: string | null;
+  /** Last known GPS latitude from onboarding or environment features */
+  latitude?: number | null;
+  /** Last known GPS longitude from onboarding or environment features */
+  longitude?: number | null;
   createdAt: string;
   updatedAt: string;
 }

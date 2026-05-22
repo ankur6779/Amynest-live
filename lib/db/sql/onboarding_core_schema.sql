@@ -71,6 +71,9 @@ ALTER TABLE parent_profiles ADD COLUMN IF NOT EXISTS diet_type TEXT;
 ALTER TABLE parent_profiles ADD COLUMN IF NOT EXISTS food_style TEXT;
 ALTER TABLE parent_profiles ADD COLUMN IF NOT EXISTS sub_cuisine TEXT;
 ALTER TABLE parent_profiles ADD COLUMN IF NOT EXISTS free_slots JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE parent_profiles ADD COLUMN IF NOT EXISTS country TEXT;
+ALTER TABLE parent_profiles ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
+ALTER TABLE parent_profiles ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
 
 -- ── subscriptions ─────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS subscriptions (

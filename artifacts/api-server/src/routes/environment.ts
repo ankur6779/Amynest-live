@@ -78,7 +78,7 @@ router.get("/environment/context", async (req, res): Promise<void> => {
       date: today,
       latitude: latParam ?? null,
       longitude: lngParam ?? null,
-      country: (parentProfile as { country?: string | null } | undefined)?.country ?? null,
+      country: parentProfile?.country ?? null,
       region: parentProfile?.region ?? null,
     });
 
