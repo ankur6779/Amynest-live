@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useGuardedSetter, useMountedRef } from "@/hooks/use-safe-async";
-import { enforceAmySpeechPolicyInvariants, prepareAmySpeechInput } from "@/lib/amy-speech-mode";
+import { prepareAmySpeechInput } from "@/lib/amy-speech-mode";
+import { enforceAmySpeechPolicyInvariants } from "@/lib/amy-voice-invariants";
 import { buildAdaptiveDelivery } from "@/lib/amy-voice-emotion";
 import {
   assessAmyDifficulty,
