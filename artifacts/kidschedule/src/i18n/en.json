@@ -2501,6 +2501,10 @@
         "title": "Daily Tips",
         "description": "Amy AI picks today's best tips for you"
       },
+      "generate-routine": {
+        "title": "Generate Today's Routine",
+        "description": "Build a smart, personalised plan for today"
+      },
       "emotional": {
         "title": "Emotional Support",
         "description": "For the tough parenting days"
@@ -2747,6 +2751,14 @@
       "creativity": "Creativity & Activities",
       "stories": "Stories & Communication",
       "support": "Parent Support"
+    },
+    "quick_actions": {
+      "ask_amy": "Ask Amy",
+      "story": "Story Time",
+      "phonics": "Phonics",
+      "routine": "Routine",
+      "activities": "Activities",
+      "worksheets": "Worksheets"
     }
   },
   "components": {
