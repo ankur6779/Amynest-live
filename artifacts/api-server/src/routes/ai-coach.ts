@@ -12,17 +12,16 @@ import {
   COACH_INITIAL_WINS,
   COACH_TOTAL_WINS,
   dbGetCoachCache,
-  dbSetCoachCache,
+  generateRemainingCoachWins,
   staticInitialWinsFallback,
   INITIAL_AI_TIMEOUT_MS,
   validatePartialPlan,
   getCoachGenerationById,
   getCoachGenerationBySession,
-  updateCoachSessionPlan,
+  newCoachGenerationIds,
+  upsertCoachGeneration,
   validatePlan as validateFullCoachPlan,
-  validateWin as validateServiceWin,
   type CoachPlan as ServiceCoachPlan,
-  type CoachWin as ServiceCoachWin,
 } from "../services/coachWinGenerationService.js";
 import { startCoachPerfSpan } from "../lib/coach-performance.js";
 
@@ -890,19 +889,20 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
     }
   }
 
-  const effectiveSessionId = randomUUID();
+  const { sessionId: effectiveSessionId, generationId } = newCoachGenerationIds();
 
   const responseMs = Date.now() - requestStart;
-  console.log({ step: "RESPONSE_SENT", time: responseMs, status: "partial", lazy: true });
+  console.log({ step: "RESPONSE_SENT", time: responseMs, status: "partial", generationId });
   requestSpan.end({
     status: "partial",
     userId,
+    generationId,
     sessionId: effectiveSessionId,
     initialWins: partialPlan.wins.length,
     aiOk,
     responseMs,
   });
-  startCoachPerfSpan("RESPONSE_SENT", { status: "partial", responseMs }).end();
+  startCoachPerfSpan("RESPONSE_SENT", { status: "partial", generationId, responseMs }).end();
 
   res.json({
     plan: partialPlan,
@@ -911,141 +911,53 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
     totalWins: COACH_TOTAL_WINS,
     initialWins: COACH_INITIAL_WINS,
     sessionId: effectiveSessionId,
+    generationId,
     cached: false,
     source: aiOk ? "ai" : "fallback",
     fallback: !aiOk,
-    lazyWins: true,
   });
 
-  if (userId) {
-    void saveCoachSession(userId, effectiveSessionId, goal, partialPlan as ServiceCoachPlan, input);
-  }
-}
+  if (!userId) return;
 
-// ─── POST /coach/next-win — lazy win 3..12 on parent advance ─────────────
-async function handleCoachNextWin(req: import("express").Request, res: import("express").Response): Promise<void> {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "unauthorized" });
-    return;
-  }
-
-  const parsed = parseCoachInput((req.body ?? {}) as CoachInput);
-  if (!parsed) {
-    res.status(400).json({ error: "invalid goal", validGoals: GOAL_IDS });
-    return;
-  }
-  const { input, goal } = parsed;
-
-  const raw = req.body ?? {};
-  const sessionId = clip(raw.sessionId, 64);
-  if (!sessionId) {
-    res.status(400).json({ error: "sessionId required" });
-    return;
-  }
-
-  const planMeta = raw.plan as Record<string, unknown> | undefined;
-  if (
-    !planMeta ||
-    !isStr(planMeta.title) ||
-    !isStr(planMeta.root_cause) ||
-    !isStr(planMeta.summary)
-  ) {
-    res.status(400).json({ error: "invalid plan meta" });
-    return;
-  }
-
-  const existingRaw = Array.isArray(raw.existingWins) ? raw.existingWins : [];
-  const existingWins: ServiceCoachWin[] = [];
-  for (const w of existingRaw.slice(0, COACH_TOTAL_WINS)) {
-    if (!validateServiceWin(w)) {
-      res.status(400).json({ error: "invalid existingWins" });
-      return;
-    }
-    existingWins.push(w as ServiceCoachWin);
-  }
-
-  const nextWinNumber = existingWins.length + 1;
-  if (nextWinNumber < COACH_INITIAL_WINS + 1 || nextWinNumber > COACH_TOTAL_WINS) {
-    res.status(400).json({
-      error: nextWinNumber > COACH_TOTAL_WINS ? "plan_complete" : "invalid_win_sequence",
-      totalWins: COACH_TOTAL_WINS,
-    });
-    return;
-  }
-  if (!existingWins.every((w, i) => w.win === i + 1)) {
-    res.status(400).json({ error: "wins must be numbered 1..n in order" });
-    return;
-  }
-
-  const goalLabel = GOAL_LABELS[input.goal!] ?? input.goal;
-  const goalBrief = getGoalPromptSection(input.goal!, goalLabel!);
-  const topicBlock = renderTopicAnswersBlock(input.topicAnswers);
-  const cacheKey = buildCacheKey(input);
-  const meta = {
-    title: planMeta.title as string,
-    root_cause: planMeta.root_cause as string,
-    summary: planMeta.summary as string,
-  };
-
-  const { submitRouteAiJob } = await import("../lib/route-ai-queue.js");
-  await submitRouteAiJob({
-    routeName: "ai-coach/next-win",
-    type: "ai-coach.next_win",
-    userId,
-    input: {
-      input,
-      goalLabel: goalLabel!,
-      goalBrief,
-      meta,
-      existingWins,
-      nextWinNumber,
-      topicBlock,
-    },
-    waitMs: 25_000,
-    buildSyncBody: (result) => {
-      const body = result as { win: Win; aiOk: boolean };
-      const win = body.win;
-      if (!validateWin(win) || win.win !== nextWinNumber) {
-        const fallbackSlice = fallbackPlan(input).wins[nextWinNumber - 1];
-        if (!fallbackSlice) {
-          return { error: "next_win_failed" };
-        }
-        const mergedWins = [...existingWins, fallbackSlice];
-        const plan: CoachPlan = { ...meta, wins: mergedWins };
-        void updateCoachSessionPlan(userId, sessionId, plan as ServiceCoachPlan);
-        return {
-          win: fallbackSlice,
-          status: mergedWins.length >= COACH_TOTAL_WINS ? "complete" : "partial",
-          totalWins: COACH_TOTAL_WINS,
-          source: "fallback",
-        };
-      }
-
-      const mergedWins = [...existingWins, win];
-      const plan: CoachPlan = { ...meta, wins: mergedWins };
-      void updateCoachSessionPlan(userId, sessionId, plan as ServiceCoachPlan);
-      if (mergedWins.length >= COACH_TOTAL_WINS) {
-        memCache.set(cacheKey, { plan, ts: Date.now() });
-        void dbSetCoachCache(cacheKey, input, plan as ServiceCoachPlan);
-      }
-
-      return {
-        win,
-        status: mergedWins.length >= COACH_TOTAL_WINS ? "complete" : "partial",
-        totalWins: COACH_TOTAL_WINS,
-        source: body.aiOk ? "ai" : "fallback",
-      };
-    },
-    res,
+  setImmediate(() => {
+    const goalBrief = getGoalPromptSection(input.goal!, goalLabel!);
+    memCache.set(cacheKey, { plan: partialPlan, ts: Date.now() });
+    void (async () => {
+      await Promise.all([
+        saveCoachSession(userId, effectiveSessionId, goal, partialPlan as ServiceCoachPlan, input),
+        upsertCoachGeneration({
+          generationId,
+          sessionId: effectiveSessionId,
+          userId,
+          cacheKey,
+          input,
+          plan: partialPlan,
+          status: "partial",
+        }),
+      ]);
+      const { enqueueAiJob } = await import("../queue/ai-job-queue.js");
+      const { wrapJobInput } = await import("../queue/ai-job-payload.js");
+      void enqueueAiJob(
+        "ai-coach.remaining_wins",
+        userId,
+        wrapJobInput("ai-coach/remaining", {
+          generationId,
+          sessionId: effectiveSessionId,
+          userId,
+          cacheKey,
+          input,
+          partialPlan,
+          goalLabel: goalLabel!,
+          goalBrief,
+        }),
+      );
+    })();
   });
 }
 
-// ─── POST /ai-coach (2 wins now; wins 3–12 lazy on /coach/next-win) ───────
+// ─── POST /ai-coach (progressive: 2 wins now, 10 in background) ───────────
 router.post("/ai-coach", aiUsageGate, handleCoachGenerate);
 router.post("/coach/generate", aiUsageGate, handleCoachGenerate);
-router.post("/ai-coach/next-win", handleCoachNextWin);
-router.post("/coach/next-win", handleCoachNextWin);
 
 async function handleCoachStatus(req: import("express").Request, res: import("express").Response): Promise<void> {
   const { userId } = getAuth(req);

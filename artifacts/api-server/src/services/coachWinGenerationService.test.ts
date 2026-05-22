@@ -7,7 +7,6 @@ process.env.DATABASE_URL ??=
 const {
   COACH_INITIAL_WINS,
   COACH_TOTAL_WINS,
-  coachWinPhaseHint,
   mergeCoachPlan,
   validatePartialPlan,
   validatePlan,
@@ -55,10 +54,5 @@ describe("coachWinGenerationService", () => {
     );
     assert.equal(merged.wins[0]!.win, 1);
     assert.equal(merged.wins[COACH_INITIAL_WINS]!.win, COACH_INITIAL_WINS + 1);
-  });
-
-  it("coachWinPhaseHint covers win 3 through 12", () => {
-    assert.equal(coachWinPhaseHint(3), "Set expectations & give autonomy");
-    assert.equal(coachWinPhaseHint(12), "Family identity & long-term");
   });
 });
