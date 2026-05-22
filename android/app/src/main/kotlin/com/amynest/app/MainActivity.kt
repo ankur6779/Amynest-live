@@ -123,6 +123,14 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+
+        val viewUrl = intentViewUrl(intent)
+        if (viewUrl != null) {
+            Log.d(TAG, "App link navigation (onNewIntent) → $viewUrl")
+            webView.post { webView.loadUrl(viewUrl) }
+            return
+        }
+
         val deepLink = intent.getStringExtra("deepLink") ?: return
         if (deepLink.isBlank()) return
 
@@ -247,7 +255,22 @@ class MainActivity : AppCompatActivity() {
     private fun buildLaunchUrl(intent: Intent?): String {
         val deepLink = intent?.getStringExtra("deepLink")
         if (!deepLink.isNullOrBlank()) return deepLinkToUrl(deepLink)
+        val viewUrl = intentViewUrl(intent)
+        if (viewUrl != null) return viewUrl
         return "$BASE_URL?v=${System.currentTimeMillis()}"
+    }
+
+    /** https://www.amynest.in/... or https://amynest.in/... from email / App Links. */
+    private fun intentViewUrl(intent: Intent?): String? {
+        val data = intent?.data ?: return null
+        if (!isAllowedAmyNestHttps(data)) return null
+        return data.toString()
+    }
+
+    private fun isAllowedAmyNestHttps(uri: Uri): Boolean {
+        if (uri.scheme?.lowercase() != "https") return false
+        val host = uri.host?.lowercase() ?: return false
+        return host == "www.amynest.in" || host == "amynest.in"
     }
 
     /**

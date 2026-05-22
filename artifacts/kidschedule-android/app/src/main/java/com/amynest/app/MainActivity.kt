@@ -169,7 +169,13 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState)
         } else {
-            loadInitialUrl()
+            val launchLink = extractDeepLink(intent)
+            if (launchLink != null) {
+                showWebView()
+                navigateToDeepLink(launchLink)
+            } else {
+                loadInitialUrl()
+            }
         }
 
         // PERMANENT FIX: auto-request POST_NOTIFICATIONS on every cold start.
@@ -678,6 +684,12 @@ class MainActivity : AppCompatActivity() {
         if (data.scheme.equals("kidschedule", ignoreCase = true)) {
             return data.getQueryParameter("path")
         }
+        val host = data.host?.lowercase()
+        if (data.scheme?.lowercase() == "https" &&
+            (host == "www.amynest.in" || host == "amynest.in")
+        ) {
+            return data.toString()
+        }
         return null
     }
 
@@ -688,8 +700,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun navigateToDeepLink(path: String) {
-        val safePath = if (path.startsWith("/")) path else "/$path"
-        val target = BuildConfig.WRAPPER_URL.trimEnd('/') + safePath
+        val target = if (path.startsWith("http://") || path.startsWith("https://")) {
+            path
+        } else {
+            val safePath = if (path.startsWith("/")) path else "/$path"
+            BuildConfig.WRAPPER_URL.trimEnd('/') + safePath
+        }
         webView.post { webView.loadUrl(target) }
     }
 }
