@@ -3,7 +3,12 @@ import { logger } from "../lib/logger.js";
 import { generateAndPersistStaticPhrase } from "./staticAudioGeneration.js";
 import { recordGenerationQueueDepth } from "./staticAudioMetrics.js";
 
-type QueuedPhrase = { text: string; mode: StaticAudioMode; hash?: string };
+type QueuedPhrase = {
+  text: string;
+  mode: StaticAudioMode;
+  hash?: string;
+  priority: number;
+};
 
 const pending = new Map<string, QueuedPhrase>();
 let processing = false;
@@ -18,12 +23,33 @@ export function enqueueStaticAudioGeneration(
   text: string,
   mode: StaticAudioMode,
   hash?: string,
+  priority = 25,
 ): void {
   const key = `${mode}:${text.trim().toLowerCase()}`;
-  if (pending.has(key)) return;
-  pending.set(key, { text: text.trim(), mode, hash });
+  const existing = pending.get(key);
+  if (existing && existing.priority >= priority) return;
+  pending.set(key, {
+    text: text.trim(),
+    mode,
+    hash,
+    priority: existing ? Math.max(existing.priority, priority) : priority,
+  });
   recordGenerationQueueDepth(pending.size);
   void drainQueue();
+}
+
+function pickHighestPriorityJob(): [string, QueuedPhrase] | null {
+  let bestKey: string | null = null;
+  let best: QueuedPhrase | null = null;
+  for (const [key, job] of pending) {
+    if (!best || job.priority > best.priority) {
+      best = job;
+      bestKey = key;
+    }
+  }
+  if (!bestKey || !best) return null;
+  pending.delete(bestKey);
+  return [bestKey, best];
 }
 
 async function drainQueue(): Promise<void> {
@@ -31,14 +57,15 @@ async function drainQueue(): Promise<void> {
   processing = true;
   try {
     while (pending.size > 0) {
-      const [key, job] = pending.entries().next().value as [string, QueuedPhrase];
-      pending.delete(key);
+      const next = pickHighestPriorityJob();
+      if (!next) break;
+      const [, job] = next;
       recordGenerationQueueDepth(pending.size);
       try {
         await generateAndPersistStaticPhrase(job.text, job.mode, "missing_report");
       } catch (err) {
         logger.error(
-          { evt: "static_audio.queue_job_failed", err: String(err) },
+          { evt: "static_audio.queue_job_failed", err: String(err), priority: job.priority },
           "static audio queue job failed",
         );
       }

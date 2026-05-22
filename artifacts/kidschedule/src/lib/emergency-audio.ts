@@ -25,6 +25,51 @@ const EMERGENCY_WORDS: Record<string, string> = {
 };
 
 let audioCtx: AudioContext | null = null;
+let cachedVoice: SpeechSynthesisVoice | null = null;
+let voicesPreloaded = false;
+
+const PREFERRED_VOICE_NAMES = [
+  "samantha",
+  "karen",
+  "moira",
+  "google us english",
+  "microsoft zira",
+  "english united states",
+  "en-us",
+];
+
+function pickNaturalVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  const en = voices.filter((v) => /^en(-|_|$)/i.test(v.lang));
+  const pool = en.length > 0 ? en : voices;
+  for (const pref of PREFERRED_VOICE_NAMES) {
+    const match = pool.find((v) => v.name.toLowerCase().includes(pref));
+    if (match) return match;
+  }
+  return pool.find((v) => v.localService) ?? pool[0] ?? null;
+}
+
+function cacheSpeechSynthesisVoice(): void {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length === 0) return;
+  cachedVoice = pickNaturalVoice(voices);
+  voicesPreloaded = true;
+}
+
+/** Preload and cache a consistent en voice for fast synthesis fallback. */
+export function preloadSpeechSynthesisVoices(): void {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  cacheSpeechSynthesisVoice();
+  window.speechSynthesis.onvoiceschanged = () => cacheSpeechSynthesisVoice();
+  if (!voicesPreloaded) {
+    window.speechSynthesis.getVoices();
+  }
+}
+
+export function getCachedSpeechSynthesisVoice(): SpeechSynthesisVoice | null {
+  if (!cachedVoice) cacheSpeechSynthesisVoice();
+  return cachedVoice;
+}
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined" || !shouldUseWebAudioUnlock() || !isAudioUnlocked()) {
@@ -67,13 +112,24 @@ export async function playPhonicsPlaceholderTone(letterIndex = 0): Promise<boole
   }
 }
 
-function speakWithSynthesis(text: string): Promise<boolean> {
+/** Natural speech fallback — full phrase via browser speechSynthesis (no phonics). */
+export function playNaturalSpeechSynthesis(
+  text: string,
+  rate = 0.92,
+): Promise<boolean> {
+  return speakWithSynthesis(text, rate);
+}
+
+function speakWithSynthesis(text: string, rate = 0.92): Promise<boolean> {
   if (typeof window === "undefined" || !window.speechSynthesis) return Promise.resolve(false);
   return new Promise((resolve) => {
     try {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
-      u.rate = 0.92;
+      const voice = getCachedSpeechSynthesisVoice();
+      if (voice) u.voice = voice;
+      u.lang = voice?.lang ?? "en-US";
+      u.rate = Math.min(1.1, Math.max(0.75, rate));
       u.pitch = 1.05;
       u.volume = 1;
       let done = false;

@@ -33,6 +33,7 @@ const reportedMissing = new Set<string>();
 const reportBodySchema = z.object({
   keys: z.array(z.string().min(1).max(256)).max(50).optional(),
   key: z.string().min(1).max(256).optional(),
+  priorities: z.record(z.string(), z.number()).optional(),
 });
 
 const HASH_RE = /^[a-f0-9]{32}$/;
@@ -134,7 +135,8 @@ staticAudioPublicRouter.post("/static-audio/missing", (req, res): void => {
     const parsedKey = parseStaticAudioMissingKey(trimmed);
     if (parsedKey) {
       const text = extractTextFromMissingKey(trimmed);
-      if (text) enqueueStaticAudioGeneration(text, parsedKey.mode);
+      const priority = parsed.data.priorities?.[trimmed] ?? 25;
+      if (text) enqueueStaticAudioGeneration(text, parsedKey.mode, undefined, priority);
     }
   }
 

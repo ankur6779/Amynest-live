@@ -106,43 +106,100 @@ function warnOnce(key: string, message: string, ...args: unknown[]): void {
   console.warn(message, ...args);
 }
 
-function recordMissingStaticAudio(normalized: string, mode: StaticAudioMode, text: string): void {
+function recordMissingStaticAudio(
+  normalized: string,
+  mode: StaticAudioMode,
+  text: string,
+  priority = 25,
+  enqueueServer = true,
+): void {
   if (!normalized) return;
   const key = staticAudioMissingKey(mode, normalized);
   missingKeys.add(key);
-  warnOnce(`missing:${key}`, "Missing static audio:", normalized);
-  if (import.meta.env.PROD) {
-    void reportMissingToServer(key);
+  warnOnce(`missing:${key}`, "Missing static audio:", normalized, `(p${priority})`);
+  if (import.meta.env.PROD && enqueueServer) {
+    reportMissingToServer(key, priority);
   }
   if (import.meta.env.PROD || isStaticAudioStrictMode()) {
     console.error("CRITICAL: Missing static audio in production", { text, mode, normalized });
   }
 }
 
-let reportQueue: string[] = [];
+/**
+ * Auto-learning — queue phrase for static audio generation after synthesis/visual fallback.
+ * Prefer queueAmyVoiceLearning() for priority-aware batching.
+ */
+export function queueAmyVoiceStaticGeneration(
+  rawText: string,
+  mode: StaticAudioMode = "default",
+  reason?: string,
+  priority = 25,
+): void {
+  const text = (rawText ?? "").trim();
+  if (!text) return;
+  const normalized = normalizeStaticAudioKey(text);
+  if (!normalized) return;
+  logAmyVoiceDiag("auto_learn_queue", {
+    text: text.slice(0, 100),
+    mode,
+    reason: reason ?? "fallback",
+    priority,
+  });
+  recordMissingStaticAudio(normalized, mode, text, priority);
+}
+
+let reportQueue: Array<{ key: string; priority: number }> = [];
 let reportTimer: ReturnType<typeof setTimeout> | null = null;
 
 function flushMissingReports(): void {
-  const keys = [...new Set(reportQueue)];
+  const merged = new Map<string, number>();
+  for (const entry of reportQueue) {
+    merged.set(entry.key, Math.max(merged.get(entry.key) ?? 0, entry.priority));
+  }
   reportQueue = [];
   reportTimer = null;
-  if (keys.length === 0) return;
+  if (merged.size === 0) return;
+
+  const sorted = [...merged.entries()].sort((a, b) => b[1] - a[1]);
+  const keys = sorted.map(([k]) => k);
+  const priorities = Object.fromEntries(sorted);
+
   void import("@/lib/api")
     .then(({ getApiUrl: apiUrl }) =>
       fetch(apiUrl("/api/static-audio/missing"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keys }),
+        body: JSON.stringify({ keys, priorities }),
         keepalive: true,
       }),
     )
     .catch(() => {});
 }
 
-function reportMissingToServer(key: string): void {
-  reportQueue.push(key);
+function reportMissingToServer(key: string, priority = 25): void {
+  reportQueue.push({ key, priority });
   if (reportTimer) return;
   reportTimer = setTimeout(flushMissingReports, 500);
+}
+
+/** Batched prioritized learning reports from amy-voice-learning. */
+export function reportAmyVoiceLearningBatch(
+  entries: ReadonlyArray<{
+    key: string;
+    text: string;
+    mode: StaticAudioMode;
+    priority: number;
+    reason: string;
+  }>,
+): void {
+  for (const entry of entries) {
+    const normalized = normalizeStaticAudioKey(entry.text);
+    if (!normalized) continue;
+    recordMissingStaticAudio(normalized, entry.mode, entry.text, entry.priority, false);
+    if (import.meta.env.PROD) {
+      reportMissingToServer(entry.key, entry.priority);
+    }
+  }
 }
 
 export function getMissingStaticAudioKeys(): string[] {
