@@ -17,7 +17,8 @@ import type { StaticAudioMode } from "@workspace/static-audio/browser";
 
 const LOG = "[AudioManager]";
 const DEFAULT_MAX_RETRIES = 2;
-const PLAYBACK_WATCHDOG_MS = 1000;
+/** Allow slow CDN / mobile decode before treating start as failed */
+const PLAYBACK_WATCHDOG_MS = 4500;
 const URL_CACHE_MAX = 20;
 const SOFT_RESET_EVERY_PLAYS = 25;
 const SILENT_OUTPUT_RECOVERY_THRESHOLD = 2;
@@ -214,22 +215,21 @@ class AudioManagerImpl {
     registerAudioManagerInstance(this.instanceId);
   }
 
-  private isActiveInstance(): boolean {
-    if (this.invalidated) return false;
-    return this.instanceId === getActiveAudioManagerInstanceId();
+  isInvalidated(): boolean {
+    return this.invalidated;
   }
 
-  private guardInactive(caller: string): boolean {
-    if (this.isActiveInstance()) return false;
-    console.warn(LOG, "stale instance ignored", { caller, instanceId: this.instanceId });
-    return true;
-  }
-
-  /** Invalidate this instance when a newer manager is constructed. */
+  /** Invalidate this instance when a newer manager is constructed (HMR only). */
   invalidate(): void {
     this.invalidated = true;
     this.stop();
     this.urlCache.clear();
+  }
+
+  private assertUsable(): boolean {
+    if (!this.invalidated) return true;
+    console.warn(LOG, "ignored call on invalidated instance", { instanceId: this.instanceId });
+    return false;
   }
 
   getPlaybackState(): AudioPlaybackState {
@@ -333,23 +333,15 @@ class AudioManagerImpl {
     this.warmMediaPipeline(true);
   }
 
-  /** Correct muted/zero volume; return false if still inaudible. */
+  /** Only fix browser-muted output — volume may be 0 intentionally (poem fade-in). */
   private verifyAudibleOutput(audio: HTMLAudioElement): boolean {
-    let corrected = false;
     if (audio.muted) {
       audio.muted = false;
-      corrected = true;
     }
-    if (audio.volume <= 0) {
-      audio.volume = 1;
-      corrected = true;
-    }
-    if (audio.muted || audio.volume <= 0) {
+    if (audio.muted) {
       this.silentOutputStreak += 1;
-      logStructured("silent output detected", new Error(AUDIO_ERROR.SILENT_OUTPUT), {
+      logStructured("silent output detected (muted)", new Error(AUDIO_ERROR.SILENT_OUTPUT), {
         attempt: this.silentOutputStreak,
-        corrected,
-        muted: audio.muted,
         volume: audio.volume,
       }, audio);
       if (this.silentOutputStreak >= SILENT_OUTPUT_RECOVERY_THRESHOLD) {
@@ -364,7 +356,7 @@ class AudioManagerImpl {
   private isPlaybackValid(audio: HTMLAudioElement): boolean {
     if (audio.error) return false;
     if (audio.ended) return true;
-    return !audio.paused && audio.currentTime > 0;
+    return !audio.paused;
   }
 
   /** Brand-new element — never reuse cached instance. */
@@ -414,7 +406,7 @@ class AudioManagerImpl {
 
   /** Stop speech + UI playback; revokes owned blob after speech ends. */
   stop(): void {
-    if (this.guardInactive("stop")) return;
+    if (!this.assertUsable()) return;
     this.playInFlight = false;
     this.releaseChannel("speech", true);
     this.releaseChannel("ui", false);
@@ -486,7 +478,7 @@ class AudioManagerImpl {
   }
 
   private async onAppVisible(): Promise<void> {
-    if (!this.isActiveInstance()) return;
+    if (!this.assertUsable()) return;
     this.wasPausedForBackground = false;
     this.externalPauseDetected = false;
     this.pipelineWarmed = false;
@@ -597,7 +589,7 @@ class AudioManagerImpl {
   }
 
   getCached(url: string, opts: { forceReload?: boolean } = {}): HTMLAudioElement {
-    if (this.guardInactive("getCached")) return this.create(url);
+    if (!this.assertUsable()) return this.create(url);
     const key = url.startsWith("blob:") ? url : resolveApiMediaUrl(url);
     const existing = this.urlCache.get(key);
     if (existing) {
@@ -708,7 +700,15 @@ class AudioManagerImpl {
 
       const timeoutId = window.setTimeout(() => {
         cleanup();
-        if (!audio.ended && audio.currentTime === 0) {
+        if (audio.ended) {
+          resolve();
+          return;
+        }
+        if (!audio.paused) {
+          resolve();
+          return;
+        }
+        if (!audio.ended && audio.paused && audio.currentTime === 0) {
           reject(new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG));
           return;
         }
@@ -725,12 +725,16 @@ class AudioManagerImpl {
     channel: AudioChannel,
     attempt: number,
   ): Promise<void> {
+    recordTtsUserGesture();
+
     if (!isTtsPlaybackAllowed()) {
       throw new Error(AUDIO_ERROR.GESTURE_BLOCKED);
     }
 
     configureMobileAudioElement(audio);
-    audio.currentTime = 0;
+    if (audio.currentTime > 0.05) {
+      audio.currentTime = 0;
+    }
 
     try {
       await audio.play();
@@ -857,7 +861,7 @@ class AudioManagerImpl {
     meta: AudioPlayMeta = {},
     opts: AudioPlayOptions = {},
   ): Promise<boolean> {
-    if (this.guardInactive("play")) return false;
+    if (!this.assertUsable()) return false;
 
     const channel = opts.channel ?? meta.channel ?? "speech";
     const interrupt = opts.interrupt ?? meta.interrupt ?? false;
@@ -900,9 +904,10 @@ class AudioManagerImpl {
     const resolvedUrl = proxyUrl || element.src;
 
     try {
-      if (resolvedUrl) {
-        this.prepareElementForReplay(element, resolvedUrl, true);
+      if (resolvedUrl && element.src !== resolvedUrl) {
+        element.src = resolvedUrl;
       }
+      configureMobileAudioElement(element);
 
       this.markChannelPlaying(channel, element, token, resolvedUrl, meta);
       this.pendingFocusReplay = { proxyUrl: resolvedUrl, meta, channel };
@@ -1133,8 +1138,11 @@ function bootstrapAudioManager(): AudioManagerImpl {
     return new AudioManagerImpl();
   }
   const w = window as unknown as Record<string, AudioManagerImpl | undefined>;
-  const prev = w[GLOBAL_MANAGER_REF_KEY];
-  if (prev) prev.invalidate();
+  const existing = w[GLOBAL_MANAGER_REF_KEY];
+  if (existing && !existing.isInvalidated()) {
+    return existing;
+  }
+  if (existing) existing.invalidate();
   const mgr = new AudioManagerImpl();
   w[GLOBAL_MANAGER_REF_KEY] = mgr;
   mgr.installLifecycle();

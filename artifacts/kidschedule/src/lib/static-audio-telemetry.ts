@@ -155,11 +155,14 @@ export function reportStaticAudioEvent(
   type: StaticAudioClientEventType,
   message: string,
   meta?: Record<string, unknown>,
+  opts?: { countTowardCircuit?: boolean },
 ): void {
   staticAudioVerbose(type, message, meta);
   console.error(`[STATIC AUDIO EVENT] ${type}`, message, meta ?? {});
 
-  recordSessionFailure();
+  if (opts?.countTowardCircuit !== false) {
+    recordSessionFailure();
+  }
 
   if (typeof window === "undefined") return;
 
@@ -222,11 +225,19 @@ export function reportStaticAudioPlayFailed(
   extra?: Record<string, unknown>,
 ): void {
   const message = err instanceof Error ? err.message : String(err);
-  reportStaticAudioEvent("static_audio_play_failed", message, {
-    url: audio.src,
-    mediaError: audio.error?.code,
-    ...extra,
-  });
+  const isGestureBlock =
+    /USER_INTERACTION|gesture|NotAllowed|autoplay/i.test(message) ||
+    extra?.error === "USER_INTERACTION_REQUIRED";
+  reportStaticAudioEvent(
+    "static_audio_play_failed",
+    message,
+    {
+      url: audio.src,
+      mediaError: audio.error?.code,
+      ...extra,
+    },
+    { countTowardCircuit: !isGestureBlock },
+  );
   const phrase = typeof extra?.phrase === "string" ? extra.phrase : undefined;
   const mode = extra?.mode as StaticAudioMode | undefined;
   emitStaticAudioVisualFallback({ phrase, mode });

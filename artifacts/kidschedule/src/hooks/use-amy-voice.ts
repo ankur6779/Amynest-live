@@ -188,11 +188,11 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
     async (rawText: string, opts?: SpeakOptions): Promise<SpeakResult> => {
       const text = (rawText ?? "").trim();
       if (!text) return { success: false, error: "tts_empty_text" };
+      recordTtsUserGesture();
       if (!isTtsPlaybackAllowed()) {
         console.warn("Audio blocked: waiting for user interaction");
         return { success: false, error: "tts_blocked_until_gesture" };
       }
-      recordTtsUserGesture();
       const mode = opts?.mode;
       const waitUntilEnd = opts?.waitUntilEnd ?? false;
 
