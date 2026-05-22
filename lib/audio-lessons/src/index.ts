@@ -626,6 +626,14 @@ export function seriesForAge(age: AgeBucket): LessonSeries[] {
   return LESSON_SERIES.filter((s) => s.ageBucket === age);
 }
 
+/** Lessons in this age bucket not yet in any same-age 3-part series. */
+export function orphanLessonIdsForAge(age: AgeBucket): string[] {
+  const inSeries = new Set(
+    LESSON_SERIES.filter((s) => s.ageBucket === age).flatMap((s) => s.lessonIds),
+  );
+  return LESSONS.filter((l) => l.ageBucket === age && !inSeries.has(l.id)).map((l) => l.id);
+}
+
 export function getSeriesById(id: string): LessonSeries | undefined {
   return LESSON_SERIES.find((s) => s.id === id);
 }

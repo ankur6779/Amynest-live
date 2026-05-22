@@ -106,6 +106,7 @@ function PlayerSheet({
   const [paragraphIdx, setParagraphIdx] = useState(0);
   const [rate, setRate] = useState<SpeedOption>(1);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const playbackSessionRef = useRef(0);
 
   // When current paragraph finishes naturally, auto-advance to next.
   const handleFinished = useCallback(() => {
@@ -144,6 +145,16 @@ function PlayerSheet({
     void saveResume(lesson.id, paragraphIdx);
   }, [lesson.id, paragraphIdx]);
 
+  const startParagraphPlayback = useCallback(() => {
+    const txt = paragraphs[paragraphIdx];
+    if (!txt) {
+      setPlaying(false);
+      return;
+    }
+    playbackSessionRef.current += 1;
+    void speak(txt);
+  }, [paragraphIdx, paragraphs, speak]);
+
   // Drive playback: when `playing` flips on (or paragraph changes while
   // playing) start a fresh synth; when it flips off, stop.
   useEffect(() => {
@@ -151,26 +162,16 @@ function PlayerSheet({
       stop();
       return;
     }
-    const txt = paragraphs[paragraphIdx];
-    if (!txt) {
-      setPlaying(false);
-      return;
-    }
-    void speak(txt);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playing, paragraphIdx]);
+    startParagraphPlayback();
+  }, [playing, paragraphIdx, startParagraphPlayback, stop]);
 
-  // Stop when speed changes mid-play (will restart with new rate next cycle).
+  // Restart current paragraph at new speed (invalidate stale didJustFinish).
   useEffect(() => {
-    if (playing) {
-      stop();
-      // brief settle so `stop()` fires before next speak()
-      const tid = setTimeout(() => {
-        void speak(paragraphs[paragraphIdx]);
-      }, 80);
-      return () => clearTimeout(tid);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!playing) return;
+    stop();
+    const tid = setTimeout(() => startParagraphPlayback(), 80);
+    return () => clearTimeout(tid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only on rate change
   }, [rate]);
 
   useEffect(() => {

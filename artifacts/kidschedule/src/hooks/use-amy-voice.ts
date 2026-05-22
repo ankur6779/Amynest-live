@@ -49,6 +49,8 @@ export interface SpeakOptions {
   phoneme?: string;
   word?: string;
   waitUntilEnd?: boolean;
+  /** Amy Audio Lessons: one paragraph = one TTS unit (no semantic phrase splits). */
+  lessonParagraph?: boolean;
   /** Pre-computed speech mode policy (set by prepareAmySpeechInput). */
   speechPolicy?: AmySpeechPolicy;
 }
@@ -244,9 +246,11 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           result.layer === "speech_coach_split"
         ) {
           safeSetSpeaking(false);
+        } else if (speechPolicy.useSemanticSplit || opts?.waitUntilEnd) {
+          safeSetSpeaking(false);
         } else {
           const el = audioManager.getCurrentElement();
-          if (el && !opts?.waitUntilEnd) {
+          if (el) {
             const prevEnded = el.onended;
             el.onended = (ev) => {
               prevEnded?.call(el, ev);

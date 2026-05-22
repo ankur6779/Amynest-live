@@ -82,6 +82,8 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
   const abortRef = useRef<AbortController | null>(null);
   // Monotonic request token; stale resolves bail before touching the player.
   const reqIdRef = useRef(0);
+  /** Matches reqIdRef when audio is actively playing (ignores stale didJustFinish). */
+  const activePlaybackReqRef = useRef(0);
   // Keep latest onFinished in a ref so we don't re-create callbacks when it changes.
   const onFinishedRef = useRef(options.onFinished);
   onFinishedRef.current = options.onFinished;
@@ -111,10 +113,10 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
   // expo-audio fires `didJustFinish` on natural end → reset our state and
   // notify the caller via onFinished.
   useEffect(() => {
-    if (status.didJustFinish) {
-      setRequestedPlaying(false);
-      onFinishedRef.current?.();
-    }
+    if (!status.didJustFinish) return;
+    if (activePlaybackReqRef.current !== reqIdRef.current) return;
+    setRequestedPlaying(false);
+    onFinishedRef.current?.();
   }, [status.didJustFinish]);
 
   const stop = useCallback(() => {
@@ -189,6 +191,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
             try { player.setPlaybackRate(playbackRate); } catch {}
           }
           player.play();
+          activePlaybackReqRef.current = myId;
           setRequestedPlaying(true);
         } catch (playErr) {
           console.error("Audio playback failed", playErr);
