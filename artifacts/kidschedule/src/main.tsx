@@ -83,6 +83,9 @@ logBootContext();
 
 if (import.meta.env.DEV) {
   void import("@/lib/stress-harness").then((m) => m.installStressHarness());
+  void import("@/lib/amy-voice-field-validation").then((m) =>
+    m.installAmyVoiceFieldValidationHarness(),
+  );
 }
 
 const mark = (p: string) => {

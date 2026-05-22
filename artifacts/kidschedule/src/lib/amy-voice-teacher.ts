@@ -16,6 +16,8 @@ export type TeacherDeliveryContext = {
   multiStep: boolean;
   /** Consecutive successful deliveries — drives fast recovery and minimal guidance. */
   successStreak?: number;
+  /** Cohort-driven guidance override. */
+  guidanceTierOverride?: GuidanceTier | null;
 };
 
 export type GuidanceTier = "full" | "light" | "minimal";
@@ -120,7 +122,7 @@ export function wrapWithGuidanceStructure(
 }
 
 const TEACHER_LAYER_RE =
-  /^(let's try|watch carefully|here's the next|alright|that's okay|you're getting|great work sticking|that was tricky|you kept going|nice|got it|there you go|right)\b/i;
+  /^(let's try|let's do this|watch carefully|here's the next|here we go|alright|that's okay|you're getting|great work sticking|that was tricky|you kept going|nice|got it|there you go|right|first|then|finally|try)\b/i;
 
 function hasTeacherLayer(phrase: string): boolean {
   const p = phrase.trim();
@@ -197,6 +199,9 @@ function applyRecoverySupport(phrases: string[], difficulty: AmyDifficultyLevel)
   if (hasTeacherLayer(phrases[0]!)) return phrases;
 
   const recovery = pickTeacherPhrase(RECOVERY_FRAMES, "recovery");
+  void import("@/lib/amy-voice-analytics").then((m) =>
+    m.recordAmyVoiceRecoveryUsage("struggling_support"),
+  );
   return applyLayer(phrases, 0, recovery, "recovery");
 }
 
@@ -250,7 +255,7 @@ export function applyTeacherDelivery(ctx: TeacherDeliveryContext): string[] {
   let phrases = [...ctx.phrases].map((p) => p.trim()).filter(Boolean);
   if (phrases.length === 0) return phrases;
 
-  const tier = getGuidanceTier(ctx);
+  const tier = ctx.guidanceTierOverride ?? getGuidanceTier(ctx);
   if (tier === "minimal") return phrases;
 
   const effortRecovery = detectEffortRecovery(

@@ -28,6 +28,54 @@ const TRANSITION_RE = /\b(then|next|after|now)\b/i;
 let sessionEmotion: AmyEmotion = "neutral";
 let sessionPlaybackRate = 1;
 
+type SessionToneAnchor = {
+  playbackRate: number;
+  synthesisRate: number;
+  phraseGapMs: number;
+  phonicsGapMs: number;
+};
+
+/** Max deviation from session anchor (±10–12%). */
+const PROSODY_DEVIATION_RATIO = 0.11;
+const SESSION_BLEND_IN = 0.28;
+
+let sessionAnchor: SessionToneAnchor | null = null;
+
+function ensureSessionAnchor(base: AmyProsodyProfile): void {
+  if (sessionAnchor) return;
+  sessionAnchor = {
+    playbackRate: base.playbackRate,
+    synthesisRate: base.synthesisRate,
+    phraseGapMs: base.phraseGapMs,
+    phonicsGapMs: base.phonicsGapMs,
+  };
+}
+
+function clampToSessionAnchor(value: number, anchor: number): number {
+  const spread = anchor * PROSODY_DEVIATION_RATIO;
+  return Math.min(anchor + spread, Math.max(anchor - spread, value));
+}
+
+/** Keep prosody within ±11% of the session anchor profile. */
+export function anchorProsodyToSession(prosody: AmyProsodyProfile): AmyProsodyProfile {
+  if (!sessionAnchor) return prosody;
+  return {
+    ...prosody,
+    playbackRate:
+      Math.round(clampToSessionAnchor(prosody.playbackRate, sessionAnchor.playbackRate) * 1000) /
+      1000,
+    synthesisRate:
+      Math.round(clampToSessionAnchor(prosody.synthesisRate, sessionAnchor.synthesisRate) * 1000) /
+      1000,
+    phraseGapMs: Math.round(
+      clampToSessionAnchor(prosody.phraseGapMs, sessionAnchor.phraseGapMs),
+    ),
+    phonicsGapMs: Math.round(
+      clampToSessionAnchor(prosody.phonicsGapMs, sessionAnchor.phonicsGapMs),
+    ),
+  };
+}
+
 /** Detect emotional tone from text and speech mode. */
 export function detectAmyEmotion(text: string, speechMode: AmySpeechMode): AmyEmotion {
   const t = (text ?? "").trim();
@@ -107,23 +155,33 @@ export function blendProsodyWithSessionTone(
   prosody: AmyProsodyProfile,
   emotion: AmyEmotion,
 ): AmyProsodyProfile {
-  const blendedRate = sessionPlaybackRate * 0.35 + prosody.playbackRate * 0.65;
+  const blendedRate =
+    sessionPlaybackRate * (1 - SESSION_BLEND_IN) + prosody.playbackRate * SESSION_BLEND_IN;
   sessionPlaybackRate = blendedRate;
   sessionEmotion = emotion;
   return {
     ...prosody,
     playbackRate: Math.round(blendedRate * 1000) / 1000,
-    synthesisRate: Math.round((sessionPlaybackRate * 0.35 + prosody.synthesisRate * 0.65) * 1000) / 1000,
+    synthesisRate:
+      Math.round(
+        (sessionPlaybackRate * (1 - SESSION_BLEND_IN) + prosody.synthesisRate * SESSION_BLEND_IN) *
+          1000,
+      ) / 1000,
   };
 }
 
-export function getSessionAmyTone(): { emotion: AmyEmotion; playbackRate: number } {
-  return { emotion: sessionEmotion, playbackRate: sessionPlaybackRate };
+export function getSessionAmyTone(): {
+  emotion: AmyEmotion;
+  playbackRate: number;
+  anchor: SessionToneAnchor | null;
+} {
+  return { emotion: sessionEmotion, playbackRate: sessionPlaybackRate, anchor: sessionAnchor };
 }
 
 export function resetSessionAmyTone(): void {
   sessionEmotion = "neutral";
   sessionPlaybackRate = 1;
+  sessionAnchor = null;
 }
 
 /** Micro-timing between semantic phrases — smooth instructional transitions. */
@@ -178,6 +236,8 @@ export function buildAdaptiveDelivery(
   const rawEmotion = detectAmyEmotion(text, speechMode);
   let emotion = resolveDeliveryEmotion(rawEmotion, detectedIntent);
 
+  ensureSessionAnchor(base);
+
   let prosody = applyEmotionToProsody(base, emotion);
   prosody = applyIntentToProsody(prosody, detectedIntent);
   prosody = applyReplayProsody(prosody, replayCount);
@@ -187,6 +247,7 @@ export function buildAdaptiveDelivery(
   emotion = mergeDifficultyEmotion(emotion, difficulty, diff.preferEncouraging);
 
   prosody = blendProsodyWithSessionTone(prosody, emotion);
+  prosody = anchorProsodyToSession(prosody);
 
   return {
     prosody,

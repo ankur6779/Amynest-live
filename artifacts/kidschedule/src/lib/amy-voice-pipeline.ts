@@ -51,10 +51,8 @@ import {
   prepareAmySpeechInput,
   type AmySpeechPolicy,
 } from "@/lib/amy-speech-mode";
-import {
-  queueAmyVoiceLearning,
-  recordAmyVoicePhraseMiss,
-} from "@/lib/amy-voice-learning";
+import { enforceAmySpeechPolicyInvariants } from "@/lib/amy-voice-invariants";
+import { maybeQueueAmyVoiceLearning } from "@/lib/amy-voice-learning";
 import { computePhraseTransitionGap } from "@/lib/amy-voice-emotion";
 import {
   recordAmyVoiceDeliveryFallback,
@@ -898,27 +896,6 @@ function pushFailure(
   chain.push({ layer, error: result.error });
 }
 
-function maybeQueueAmyVoiceLearning(
-  policy: AmySpeechPolicy,
-  layer: AmyVoiceLayer | string,
-): void {
-  const shouldLearn =
-    layer === "text_visual" ||
-    (layer === "emergency_local" && policy.preferSpeechSynthesisFallback);
-  if (!shouldLearn) return;
-
-  recordAmyVoicePhraseMiss(policy.normalizedText, policy.pipelineMode, policy.speechMode);
-  queueAmyVoiceLearning(
-    policy.normalizedText,
-    policy.pipelineMode,
-    policy.speechMode,
-    String(layer),
-  );
-  for (const phrase of policy.phrases) {
-    recordAmyVoicePhraseMiss(phrase, policy.pipelineMode, policy.speechMode);
-    queueAmyVoiceLearning(phrase, policy.pipelineMode, policy.speechMode, `${layer}_phrase`);
-  }
-}
 
 async function speakSemanticPhrases(
   policy: AmySpeechPolicy,
@@ -934,6 +911,8 @@ async function speakSemanticPhrases(
 
   for (let i = 0; i < policy.phrases.length; i++) {
     if (isStale(ctx)) return { success: false, error: "tts_cancelled" };
+    const attentionSilence = policy.phraseAttentionSilenceMs?.[i] ?? 0;
+    if (attentionSilence > 0) await delay(attentionSilence);
     const phrase = policy.phrases[i]!;
     preloadAmyVoiceNextPhrase(policy.phrases[i + 1], policy.pipelineMode);
     const phrasePolicy: AmySpeechPolicy = {
@@ -1026,7 +1005,9 @@ export async function speakAmyVoice(
   opts: SpeakOptions | undefined,
   ctx: AmyVoicePipelineContext,
 ): Promise<SpeakResult & { layer?: AmyVoiceLayer }> {
-  const policy = opts?.speechPolicy ?? prepareAmySpeechInput(rawText, opts);
+  const policy = enforceAmySpeechPolicyInvariants(
+    opts?.speechPolicy ?? prepareAmySpeechInput(rawText, opts),
+  );
   const depth = ctx.depth ?? 0;
 
   if (depth === 0 && policy.useSemanticSplit && policy.phrases.length > 1) {
@@ -1058,6 +1039,11 @@ export async function speakAmyVoice(
   recordTtsUserGesture();
   resetClientStaticAudioCircuit();
   resetTtsApiCircuit();
+
+  const attentionSilence = policy.phraseAttentionSilenceMs?.[0] ?? 0;
+  if (depth === 0 && attentionSilence > 0) {
+    await delay(attentionSilence);
+  }
 
   const primaryMode: StaticAudioMode = policy.pipelineMode;
   if (isAndroidAmyNestAudioClient()) {
