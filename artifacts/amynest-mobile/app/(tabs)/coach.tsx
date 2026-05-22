@@ -291,12 +291,15 @@ export default function CoachScreen() {
   const [feedbackByWin, setFeedbackByWin] = useState<Record<number, Feedback>>({});
   const [extending, setExtending] = useState(false);
   const [revealedCount, setRevealedCount] = useState(0);
-  const [loadingNextWin, setLoadingNextWin] = useState(false);
 
   const scrollerRef = useRef<FlatList<Win>>(null);
   const lastPayloadRef = useRef<{ goal: string; ageGroup: string; severity: string; triggers: string[]; routine: string; } | null>(null);
   const originalWinCountRef = useRef<number>(0);
-  const fetchingNextRef = useRef(false);
+  const coachPollActiveRef = useRef(false);
+
+  useEffect(() => () => {
+    coachPollActiveRef.current = false;
+  }, []);
 
   const searchQuery = goalSearch.toLowerCase().trim();
   const filteredCategories = useMemo(() => {
@@ -492,6 +495,30 @@ export default function CoachScreen() {
       goal: payload.goal, ageGroup: payload.ageGroup, severity: payload.severity,
       triggers: payload.triggers, routine: payload.routine,
     };
+    const pollCoachGeneration = async (generationId: string, sessionId: string) => {
+      const pollIntervalMs = 2500;
+      while (coachPollActiveRef.current) {
+        await new Promise((r) => setTimeout(r, pollIntervalMs));
+        if (!coachPollActiveRef.current) return;
+        try {
+          const q = new URLSearchParams({ generationId, sessionId });
+          const statusRes = await authFetch(`/api/coach/status?${q}`);
+          if (!statusRes.ok) continue;
+          const st = (await statusRes.json()) as {
+            status: "partial" | "complete";
+            plan?: Plan;
+          };
+          if (st.plan?.wins?.length) setPlan(st.plan);
+          if (st.status === "complete") {
+            coachPollActiveRef.current = false;
+            return;
+          }
+        } catch {
+          /* retry */
+        }
+      }
+    };
+
     try {
       const { default: i18nInstance } = await import("@/i18n");
       const res = await authFetch("/api/coach/generate", {
@@ -511,14 +538,19 @@ export default function CoachScreen() {
         plan: Plan;
         sessionId: string;
         status?: "partial" | "complete";
+        generationId?: string;
         totalWins?: number;
       };
       setPlan(data.plan);
       originalWinCountRef.current = data.totalWins ?? 12;
       setSessionId(data.sessionId);
-      setRevealedCount(Math.min(2, data.plan.wins.length));
+      setRevealedCount(1);
       setPhase("result");
       if (!coachUsage.isPremium) coachUsage.markBlockUsed("completed");
+      if (data.status === "partial" && data.generationId) {
+        coachPollActiveRef.current = true;
+        void pollCoachGeneration(data.generationId, data.sessionId);
+      }
     } catch {
       setPhase("questions");
     }
@@ -543,64 +575,6 @@ export default function CoachScreen() {
     if (idx !== activeIdx) setActiveIdx(idx);
   };
 
-  const fetchNextWin = async (): Promise<number | null> => {
-    if (!plan || !lastPayloadRef.current || !sessionId || fetchingNextRef.current) return null;
-    const total = originalWinCountRef.current || 12;
-    if (plan.wins.length >= total) return plan.wins.length;
-
-    fetchingNextRef.current = true;
-    setLoadingNextWin(true);
-    try {
-      const { default: i18nInstance } = await import("@/i18n");
-      const res = await authFetch("/api/coach/next-win", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...lastPayloadRef.current,
-          sessionId,
-          plan: { title: plan.title, root_cause: plan.root_cause, summary: plan.summary },
-          existingWins: plan.wins,
-          language: i18nInstance.language || "en",
-        }),
-      });
-      if (res.status === 402) {
-        await useSubscriptionStore.getState().refresh();
-        router.push({ pathname: "/paywall", params: { reason: "ai_quota" } });
-        return null;
-      }
-      if (!res.ok) throw new Error(`Server ${res.status}`);
-      const { readResolvedApiJson } = await import("@/lib/poll-result");
-      const data = await readResolvedApiJson<{ win?: Win }>(res, authFetch);
-      if (!data?.win) throw new Error("empty win");
-      const newLen = plan.wins.length + 1;
-      setPlan((p) => {
-        if (!p) return p;
-        const merged = [...p.wins, data.win!];
-        setRevealedCount(merged.length);
-        return { ...p, wins: merged };
-      });
-      return newLen;
-    } catch {
-      return null;
-    } finally {
-      fetchingNextRef.current = false;
-      setLoadingNextWin(false);
-    }
-  };
-
-  const advanceAfterFeedback = async (targetIdx: number) => {
-    if (!plan) return;
-    const total = originalWinCountRef.current || 12;
-    let deckLen = plan.wins.length;
-    if (targetIdx >= deckLen && deckLen < total && lastPayloadRef.current) {
-      const fetched = await fetchNextWin();
-      if (!fetched) return;
-      deckLen = fetched;
-    }
-    setRevealedCount((c) => Math.max(c, Math.min(deckLen, targetIdx + 1)));
-    setTimeout(() => goToCard(Math.min(deckLen - 1, targetIdx)), 80);
-  };
-
   // ─── Feedback
   const submitFeedback = async (winNumber: number, feedback: Feedback) => {
     if (!plan || !sessionId) return;
@@ -623,12 +597,10 @@ export default function CoachScreen() {
     const denom = originalWinCountRef.current || plan.wins.length;
     const newPct = Math.min(100, Math.round((newSum / denom) * 100));
     const isLastCard = activeIdx === plan.wins.length - 1;
-    const atPlanEnd = plan.wins.length >= (originalWinCountRef.current || 12);
-    const canExtend = !!lastPayloadRef.current;
-    if (canExtend && newPct < 100 && (feedback === "no" || (isLastCard && atPlanEnd))) {
+    if (newPct < 100 && (feedback === "no" || isLastCard)) {
       await requestExtension(winNumber);
     } else {
-      await advanceAfterFeedback(activeIdx + 1);
+      setTimeout(() => goToCard(Math.min(plan.wins.length - 1, activeIdx + 1)), 250);
     }
   };
 
@@ -687,7 +659,6 @@ export default function CoachScreen() {
     setPhase("goals"); setGoalId(""); setAnswers({}); setPlan(null);
     originalWinCountRef.current = 0; setSessionId(""); setActiveIdx(0);
     setFeedbackByWin({}); lastPayloadRef.current = null; setRevealedCount(0);
-    fetchingNextRef.current = false; setLoadingNextWin(false);
   };
 
   const topPad = insets.top + (Platform.OS === "web" ? 16 : 0);
@@ -1295,7 +1266,7 @@ export default function CoachScreen() {
           </View>
           <Text style={styles.loaderTitle}>{t("screens.tabs_coach.building_your_plan")}</Text>
           <Text style={styles.loaderSub}>
-            Starting your first 2 steps for {selectedGoal?.title.toLowerCase()}. More load as you go — mark each step and tap Next.
+            Analysing your answers and crafting 12 deep, research-backed wins for {selectedGoal?.title.toLowerCase()}. Takes ~10 seconds.
           </Text>
           <ActivityIndicator size="large" color="#fff" style={{ marginTop: 24 }} />
         </View>
@@ -1339,7 +1310,7 @@ export default function CoachScreen() {
         </View>
 
         {/* Typing indicator — visible while cards are still cascading in */}
-        {(loadingNextWin || revealedCount < plan.wins.length) && (
+        {revealedCount < plan.wins.length && (
           <TypingIndicator label={t("screens.tabs_coach.generating_wins")} />
         )}
 
@@ -1411,10 +1382,10 @@ export default function CoachScreen() {
                   <Text style={styles.prevBtnText}>{t("screens.tabs_coach.prev")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => void advanceAfterFeedback(activeIdx + 1)}
-                  disabled={nextDisabled || loadingNextWin}
+                  onPress={() => goToCard(Math.min(plan.wins.length - 1, activeIdx + 1))}
+                  disabled={nextDisabled}
                   activeOpacity={0.85}
-                  style={{ opacity: nextDisabled || loadingNextWin ? 0.4 : 1 }}
+                  style={{ opacity: nextDisabled ? 0.4 : 1 }}
                 >
                   <LinearGradient
                     colors={[brand.violet500, brand.pink500 /* audit-ok: accent pink gradient end-stop */]}

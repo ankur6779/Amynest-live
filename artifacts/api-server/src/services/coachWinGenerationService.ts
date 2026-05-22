@@ -17,8 +17,6 @@ const NAMESPACE = "ai_coach_v4";
 const DB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 /** Hard cap on initial OpenAI call — response must not wait longer. */
 export const INITIAL_AI_TIMEOUT_MS = 4000;
-/** Per lazy win (win 3–12) — one call when parent advances. */
-export const NEXT_WIN_AI_TIMEOUT_MS = 22_000;
 
 function aiCallTimeout(ms: number): Promise<never> {
   return new Promise((_, reject) => {
@@ -35,7 +33,7 @@ export function staticInitialWinsFallback(goalLabel: string, input: CoachInput):
       `Children in the ${age} age range are still building self-regulation. ` +
       `Stress around ${goalLabel.toLowerCase()} often reflects an unmet need or skill gap, not defiance.`,
     summary:
-      "Two starter wins below; mark each step and tap Next — Amy will load the next win when you're ready.",
+      "Two starter wins below; the rest of your 12-win plan will appear in a moment.",
     wins: [
       {
         win: 1,
@@ -431,106 +429,6 @@ export async function generateInitialCoachWins(
   }
 
   return { plan: staticInitialWinsFallback(goalLabel, input), aiOk: false };
-}
-
-export function coachWinPhaseHint(winNumber: number): string {
-  if (winNumber <= 2) return "Connect & diagnose";
-  if (winNumber <= 4) return "Set expectations & give autonomy";
-  if (winNumber <= 7) return "Build regulation & skills";
-  if (winNumber <= 9) return "Repair & track progress";
-  if (winNumber <= 11) return "Consistency & setbacks";
-  return "Family identity & long-term";
-}
-
-export async function generateNextCoachWin(
-  input: CoachInput,
-  goalLabel: string,
-  goalBrief: string,
-  meta: Pick<CoachPlan, "title" | "root_cause" | "summary">,
-  existingWins: CoachWin[],
-  nextWinNumber: number,
-  renderTopicAnswersBlock: (ta?: Record<string, string | string[]>) => string,
-): Promise<{ win: CoachWin; aiOk: boolean }> {
-  if (
-    nextWinNumber < COACH_INITIAL_WINS + 1 ||
-    nextWinNumber > COACH_TOTAL_WINS ||
-    existingWins.length !== nextWinNumber - 1
-  ) {
-    throw new Error("invalid_next_win_request");
-  }
-
-  const phase = coachWinPhaseHint(nextWinNumber);
-  const { triggers, topicBlock } = buildPromptContext(
-    input,
-    goalLabel,
-    goalBrief,
-    renderTopicAnswersBlock,
-  );
-  const existingSummary = existingWins
-    .map((w) => `#${w.win} "${w.title}" — ${w.objective}`)
-    .join("\n");
-
-  const systemPrompt =
-    "Parenting coach. Generate exactly ONE next win in a 12-win plan. Valid JSON only. No markdown.";
-
-  const userPrompt = `Goal: ${goalLabel}
-Age: ${input.ageGroup} | Severity: ${input.severity}
-Triggers: ${triggers} | Routine: ${input.routine}
-${topicBlock}
-Plan: ${meta.title}
-Root cause: ${meta.root_cause}
-
-Wins already done (do NOT repeat):
-${existingSummary}
-
-Write win #${nextWinNumber} of ${COACH_TOTAL_WINS}. Phase: ${phase}.
-Return ONLY:
-{"win":{"win":${nextWinNumber},"title":"3-6 words","objective":"one sentence","deep_explanation":"4-5 lines","actions":["a","b","c"],"example":"2 sentences","mistake_to_avoid":"one sentence","micro_task":"under 5 min today","duration":"e.g. 3-5 days","science_reference":"named researcher/theory"}}
-STRICT: win number must be ${nextWinNumber}; 3-5 actions; no overlap with prior wins.
-${goalBrief}`;
-
-  const aiSpan = startCoachPerfSpan("AI_CALL_NEXT_WIN", {
-    goal: input.goal,
-    win: nextWinNumber,
-  });
-  try {
-    const { chatCompletionWithTimeout } = await import("./openai-chat.js");
-    const outcome = await chatCompletionWithTimeout(
-      {
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-        max_completion_tokens: 1200,
-        temperature: 0.6,
-      },
-      NEXT_WIN_AI_TIMEOUT_MS,
-    );
-    const rawContent = outcome.content ?? "";
-    try {
-      const parsed = JSON.parse(rawContent) as { win?: unknown };
-      const w = parsed.win;
-      if (validateWin(w) && (w as CoachWin).win === nextWinNumber) {
-        aiSpan.end({ aiOk: true, win: nextWinNumber });
-        return { win: w as CoachWin, aiOk: true };
-      }
-    } catch {
-      /* fall through */
-    }
-    aiSpan.end({ aiOk: false, reason: "validation_failed" });
-  } catch (err) {
-    aiSpan.end({ aiOk: false, error: true });
-    logger.error({ err, win: nextWinNumber }, "ai-coach next win OpenAI error");
-  }
-
-  const full = await loadFallbackPlan(input);
-  const fallback = full.wins[nextWinNumber - 1];
-  if (fallback && validateWin(fallback)) {
-    return { win: { ...fallback, win: nextWinNumber }, aiOk: false };
-  }
-  throw new Error("next_win_fallback_unavailable");
 }
 
 export async function generateRemainingWinsWithAi(

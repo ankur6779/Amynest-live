@@ -91,10 +91,6 @@ export async function dispatchAiJob(type: string, payload: unknown): Promise<unk
       const { runCoachInitialWins } = await import("../domain-ai/coach-runners.js");
       return runCoachInitialWins(input as Parameters<typeof runCoachInitialWins>[0]);
     }
-    case "ai-coach.next_win": {
-      const { runCoachNextWin } = await import("../domain-ai/coach-runners.js");
-      return runCoachNextWin(input as Parameters<typeof runCoachNextWin>[0]);
-    }
     case "ai-coach.remaining_wins": {
       const { runCoachRemainingWins } = await import("../domain-ai/coach-runners.js");
       return runCoachRemainingWins(

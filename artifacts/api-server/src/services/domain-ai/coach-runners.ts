@@ -67,27 +67,6 @@ export async function runCoachInitialWins(input: {
   return { raw: JSON.stringify(plan) };
 }
 
-export async function runCoachNextWin(input: {
-  input: import("../coachWinGenerationService.js").CoachInput;
-  goalLabel: string;
-  goalBrief: string;
-  meta: Pick<import("../coachWinGenerationService.js").CoachPlan, "title" | "root_cause" | "summary">;
-  existingWins: import("../coachWinGenerationService.js").CoachWin[];
-  nextWinNumber: number;
-  topicBlock: string;
-}): Promise<{ win: import("../coachWinGenerationService.js").CoachWin; aiOk: boolean }> {
-  const svc = await import("../coachWinGenerationService.js");
-  return svc.generateNextCoachWin(
-    input.input,
-    input.goalLabel,
-    input.goalBrief,
-    input.meta,
-    input.existingWins,
-    input.nextWinNumber,
-    () => input.topicBlock,
-  );
-}
-
 export async function runCoachRemainingWins(job: {
   generationId: string;
   sessionId: string;

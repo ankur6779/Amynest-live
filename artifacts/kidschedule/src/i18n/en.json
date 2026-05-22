@@ -293,7 +293,7 @@
     "building_starting": "Building your plan…",
     "building_progress": "Crafting win {{built}} of {{total}}…",
     "building_finalising": "Finalising your plan…",
-    "building_subtitle": "Preparing your first 2 steps for {{goal}}. More load as you mark each step and tap Next."
+    "building_subtitle": "Analysing your answers and crafting 12 deep, research-backed wins for {{goal}}."
   },
   "hub": {
     "title": "Parenting Hub",
