@@ -313,7 +313,7 @@ function createFreshAudio(proxyUrl: string): HTMLAudioElement {
 
 function getOrCreateCachedAudio(proxyUrl: string): HTMLAudioElement {
   assertStaticPlaybackUrl(proxyUrl);
-  return audioManager.getCached(proxyUrl, { forceReload: true });
+  return audioManager.getCached(proxyUrl, { forceReload: false });
 }
 
 export type SafePlayAudioOptions = {

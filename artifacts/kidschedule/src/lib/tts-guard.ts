@@ -46,9 +46,9 @@ function resumeUnlockAudioContext(): void {
 }
 
 function unlockAudio(): void {
-  if (audioUnlocked) return;
   audioUnlocked = true;
   resumeUnlockAudioContext();
+  void import("@/lib/static-audio-telemetry").then((m) => m.resetClientStaticAudioCircuit());
   void import("@/lib/audio-manager").then((m) => m.audioManager.warmMediaPipeline(true));
 }
 

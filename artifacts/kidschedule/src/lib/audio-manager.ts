@@ -704,7 +704,7 @@ class AudioManagerImpl {
           resolve();
           return;
         }
-        if (!audio.paused) {
+        if (audio.currentTime > 0.02 && !audio.paused) {
           resolve();
           return;
         }
@@ -712,7 +712,11 @@ class AudioManagerImpl {
           reject(new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG));
           return;
         }
-        resolve();
+        if (audio.currentTime > 0.02) {
+          resolve();
+          return;
+        }
+        reject(new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG));
       }, PLAYBACK_WATCHDOG_MS);
 
       checkProgress();
