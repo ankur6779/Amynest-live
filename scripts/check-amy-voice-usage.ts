@@ -34,6 +34,7 @@ const ALLOWLIST = new Set([
   "lib/amy-voice-struggle-insights.ts",
   "lib/amy-voice-invariants.ts",
   "lib/amy-voice-governance.ts",
+  "lib/amy-voice-personality.ts",
   "lib/amy-voice-audio-diag.ts",
   "lib/elevenlabs-fallback-tts.ts",
   "lib/emergency-audio.ts",

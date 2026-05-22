@@ -27,6 +27,7 @@ const MASCOT_PATH = path.join(ROOT, "public/pwa-icon-512.png");
 const BASE_URL = normalizeBaseUrl(process.env.PLAYWRIGHT_BASE_URL ?? "https://www.amynest.in");
 const EMAIL = process.env.STRESS_TEST_EMAIL ?? "demo@amynest.in";
 const PASSWORD = process.env.STRESS_TEST_PASSWORD ?? "AmyNest@2025";
+const SKIP_RECORD = process.env.SKIP_RECORD === "1";
 
 const WIDTH = 1080;
 const HEIGHT = 1920;
@@ -40,11 +41,6 @@ const SCENES = [
   { id: "progress", duration: 3, caption: "Track your child's progress" },
   { id: "cta", duration: 2, caption: null },
 ];
-
-const FONT =
-  process.platform === "darwin"
-    ? "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
-    : "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf";
 
 function normalizeBaseUrl(raw) {
   const trimmed = raw.replace(/\/$/, "");
@@ -64,22 +60,10 @@ function run(cmd, args, opts = {}) {
   }
 }
 
-function escapeDrawtext(text) {
-  return text
-    .replace(/\\/g, "\\\\")
-    .replace(/:/g, "\\:")
-    .replace(/'/g, "\\'")
-    .replace(/,/g, "\\,");
-}
-
-function captionOverlay(caption, duration) {
-  if (!caption) return "";
-  const text = escapeDrawtext(caption);
-  const end = Math.max(0.1, duration - 0.2).toFixed(2);
-  return [
-    "drawbox=x=0:y=h-200:w=iw:h=200:color=black@0.5:t=fill",
-    `drawtext=fontfile='${FONT}':text='${text}':fontsize=44:fontcolor=white@0.95:x=(w-text_w)/2:y=h-130:enable='between(t\\,0.2\\,${end})'`,
-  ].join(",");
+function assertFfmpeg() {
+  if (spawnSync("ffmpeg", ["-version"]).status !== 0) {
+    throw new Error("ffmpeg is required. Install with: brew install ffmpeg");
+  }
 }
 
 async function dismissCountryPromptIfVisible(page) {
@@ -106,10 +90,7 @@ async function signIn(page) {
     { timeout: 120_000 },
   );
   await page
-    .waitForFunction(
-      () => (window).__amynestAppCoreReady === true,
-      { timeout: 45_000 },
-    )
+    .waitForFunction(() => window.__amynestAppCoreReady === true, { timeout: 45_000 })
     .catch(() => {});
   await dismissCountryPromptIfVisible(page);
   if (page.url().includes("/onboarding")) {
@@ -151,9 +132,9 @@ async function recordAppSegments(browser, storageState) {
   console.log("Recording launch splash…");
   await recordSegment(browser, storageState, "launch", async (page) => {
     await page.goto(`${BASE_URL}/dashboard`, { waitUntil: "commit", timeout: 60_000 });
-    await page.waitForSelector("#splash, [data-testid='dashboard-root'], main", {
-      timeout: 20_000,
-    }).catch(() => {});
+    await page
+      .waitForSelector("#splash, [data-testid='dashboard-root'], main", { timeout: 20_000 })
+      .catch(() => {});
     await page.waitForTimeout(2_200);
   });
 
@@ -179,13 +160,6 @@ async function recordAppSegments(browser, storageState) {
 
     await page.mouse.wheel(0, 280);
     await page.waitForTimeout(900);
-
-    const schoolYes = page.getByRole("button", { name: /yes|school/i }).first();
-    if (await schoolYes.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await schoolYes.click().catch(() => {});
-      await page.waitForTimeout(600);
-    }
-
     await page.mouse.wheel(0, 220);
     await page.waitForTimeout(1_500);
   });
@@ -196,9 +170,7 @@ async function recordAppSegments(browser, storageState) {
     await dismissCountryPromptIfVisible(page);
     await page.waitForTimeout(1_200);
 
-    const startBtn = page
-      .getByRole("button", { name: /practice|start|listen|play|try/i })
-      .first();
+    const startBtn = page.getByRole("button", { name: /practice|start|listen|play|try/i }).first();
     if (await startBtn.isVisible({ timeout: 6_000 }).catch(() => false)) {
       await startBtn.click({ timeout: 4_000 }).catch(() => {});
       await page.waitForTimeout(1_000);
@@ -206,12 +178,6 @@ async function recordAppSegments(browser, storageState) {
 
     await page.mouse.wheel(0, 320);
     await page.waitForTimeout(900);
-
-    const micBtn = page.locator('[data-testid*="mic"], button:has(svg)').filter({ hasText: /./ }).first();
-    if (await micBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await micBtn.click({ timeout: 2_000 }).catch(() => {});
-    }
-
     await page.waitForTimeout(1_800);
   });
 
@@ -227,26 +193,81 @@ async function recordAppSegments(browser, storageState) {
   });
 }
 
-function buildSceneClip(input, scene, output) {
-  const { duration, caption } = scene;
+async function renderOverlayPngs(browser) {
+  const overlayDir = path.join(WORK_DIR, "overlays");
+  await mkdir(overlayDir, { recursive: true });
+
+  const ctx = await browser.newContext({
+    viewport: { width: WIDTH, height: HEIGHT },
+    deviceScaleFactor: 1,
+  });
+  const page = await ctx.newPage();
+
+  for (const scene of SCENES) {
+    if (scene.id === "cta") {
+      const html = `<!DOCTYPE html><html><head><style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{width:${WIDTH}px;height:${HEIGHT}px;background:linear-gradient(180deg,#1a1035 0%,#0f0c29 55%,#080612 100%);
+          font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:80px}
+        .logo{height:72px;object-fit:contain}
+        .mascot{width:160px;height:160px;border-radius:36px;box-shadow:0 0 60px rgba(168,85,247,.45)}
+        .headline{font-size:42px;font-weight:700;text-align:center;line-height:1.25;max-width:900px;color:rgba(255,255,255,.95)}
+        .brand{font-size:76px;font-weight:800;background:linear-gradient(120deg,#c084fc,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+      </style></head><body>
+        <img class="logo" src="file://${LOGO_PATH}" alt="" />
+        <img class="mascot" src="file://${MASCOT_PATH}" alt="" />
+        <p class="headline">Start your child's learning journey today</p>
+        <p class="brand">AmyNest</p>
+      </body></html>`;
+      await page.setContent(html, { waitUntil: "load" });
+      await page.waitForTimeout(300);
+      await page.screenshot({
+        path: path.join(WORK_DIR, "cta.png"),
+        type: "png",
+      });
+      continue;
+    }
+
+    const html = `<!DOCTYPE html><html><head><style>
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{width:${WIDTH}px;height:${HEIGHT}px;background:transparent}
+      .bar{position:absolute;left:0;right:0;bottom:0;height:200px;background:rgba(0,0,0,.52);display:flex;align-items:center;justify-content:center;padding:0 48px}
+      .text{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;font-size:46px;font-weight:700;color:#fff;text-align:center;line-height:1.2;letter-spacing:-.02em}
+    </style></head><body>
+      <div class="bar"><p class="text">${scene.caption}</p></div>
+    </body></html>`;
+    await page.setContent(html, { waitUntil: "load" });
+    await page.locator(".bar").screenshot({
+      path: path.join(overlayDir, `${scene.id}-caption.png`),
+      type: "png",
+      omitBackground: true,
+    });
+  }
+
+  await page.close();
+  await ctx.close();
+}
+
+function buildSceneClip(input, scene, captionPng, output) {
+  const { duration } = scene;
+  const fadeOut = Math.max(0, duration - 0.25).toFixed(2);
   const vf = [
-    `scale=${WIDTH}:${HEIGHT}:force_original_aspect_ratio=increase`,
-    `crop=${WIDTH}:${HEIGHT}`,
-    "setsar=1",
-    `fade=t=in:st=0:d=0.25`,
-    `fade=t=out:st=${Math.max(0, duration - 0.25).toFixed(2)}:d=0.25`,
-    captionOverlay(caption, duration),
-  ]
-    .filter(Boolean)
-    .join(",");
+    `[0:v]scale=${WIDTH}:${HEIGHT}:force_original_aspect_ratio=increase,crop=${WIDTH}:${HEIGHT},setsar=1,fade=t=in:st=0:d=0.25,fade=t=out:st=${fadeOut}:d=0.25[v]`,
+    `[1:v]scale=${WIDTH}:-1[caption]`,
+    `[v][caption]overlay=0:H-h:format=auto,format=yuv420p`,
+  ].join(";");
 
   run("ffmpeg", [
     "-y",
     "-i",
     input,
+    "-loop",
+    "1",
+    "-i",
+    captionPng,
     "-t",
     String(duration),
-    "-vf",
+    "-filter_complex",
     vf,
     "-an",
     "-c:v",
@@ -262,39 +283,16 @@ function buildSceneClip(input, scene, output) {
 }
 
 function buildCtaClip(output) {
-  const headline = escapeDrawtext("Start your child's learning journey today");
-  const brand = escapeDrawtext("AmyNest");
-  const filter = [
-    `color=c=0x0f0c29:s=${WIDTH}x${HEIGHT}:d=2:r=30`,
-    `[bg]`,
-    `[1:v]scale=260:-1[logo]`,
-    `[bg][logo]overlay=(W-w)/2:H*0.28[tmp1]`,
-    `[2:v]scale=180:-1[mascot]`,
-    `[tmp1][mascot]overlay=(W-w)/2:H*0.46[tmp2]`,
-    `[tmp2]drawtext=fontfile='${FONT}':text='${headline}':fontsize=40:fontcolor=white@0.92:x=(w-text_w)/2:y=H*0.68[tmp3]`,
-    `[tmp3]drawtext=fontfile='${FONT}':text='${brand}':fontsize=72:fontcolor=0xE879F9:x=(w-text_w)/2:y=H*0.78,format=yuv420p[out]`,
-  ].join(";");
-
   run("ffmpeg", [
     "-y",
-    "-f",
-    "lavfi",
-    "-i",
-    `color=c=0x0f0c29:s=${WIDTH}x${HEIGHT}:d=2:r=30`,
     "-loop",
     "1",
     "-i",
-    LOGO_PATH,
-    "-loop",
-    "1",
-    "-i",
-    MASCOT_PATH,
-    "-filter_complex",
-    filter,
-    "-map",
-    "[out]",
+    path.join(WORK_DIR, "cta.png"),
     "-t",
     "2",
+    "-vf",
+    `scale=${WIDTH}:${HEIGHT},fade=t=in:st=0:d=0.3,fade=t=out:st=1.7:d=0.3,format=yuv420p`,
     "-an",
     "-c:v",
     "libx264",
@@ -336,31 +334,37 @@ function concatClips(clips, output) {
 }
 
 async function main() {
-  spawnSync("ffmpeg", ["-version"], { stdio: "ignore" });
-  if (spawnSync("ffmpeg", ["-version"]).status !== 0) {
-    throw new Error("ffmpeg is required. Install with: brew install ffmpeg");
-  }
+  assertFfmpeg();
 
-  await rm(WORK_DIR, { recursive: true, force: true });
+  if (!SKIP_RECORD) {
+    await rm(WORK_DIR, { recursive: true, force: true });
+  }
   await mkdir(WORK_DIR, { recursive: true });
   await mkdir(OUT_DIR, { recursive: true });
 
   const browser = await chromium.launch({ headless: true });
-  const authContext = await browser.newContext({
-    viewport: VIEWPORT,
-    deviceScaleFactor: SCALE,
-    isMobile: true,
-    hasTouch: true,
-    locale: "en-US",
-    colorScheme: "dark",
-  });
-  const authPage = await authContext.newPage();
-  console.log(`Signing in to ${BASE_URL}…`);
-  await signIn(authPage);
-  const storageState = await authContext.storageState();
-  await authContext.close();
 
-  await recordAppSegments(browser, storageState);
+  if (!SKIP_RECORD) {
+    const authContext = await browser.newContext({
+      viewport: VIEWPORT,
+      deviceScaleFactor: SCALE,
+      isMobile: true,
+      hasTouch: true,
+      locale: "en-US",
+      colorScheme: "dark",
+    });
+    const authPage = await authContext.newPage();
+    console.log(`Signing in to ${BASE_URL}…`);
+    await signIn(authPage);
+    const storageState = await authContext.storageState();
+    await authContext.close();
+    await recordAppSegments(browser, storageState);
+  } else {
+    console.log("SKIP_RECORD=1 — reusing existing .webm segments");
+  }
+
+  console.log("Rendering caption overlays…");
+  await renderOverlayPngs(browser);
   await browser.close();
 
   console.log("Compositing final video…");
@@ -370,7 +374,12 @@ async function main() {
     if (scene.id === "cta") {
       buildCtaClip(out);
     } else {
-      buildSceneClip(path.join(WORK_DIR, `${scene.id}.webm`), scene, out);
+      buildSceneClip(
+        path.join(WORK_DIR, `${scene.id}.webm`),
+        scene,
+        path.join(WORK_DIR, "overlays", `${scene.id}-caption.png`),
+        out,
+      );
     }
     builtClips.push(out);
   }
