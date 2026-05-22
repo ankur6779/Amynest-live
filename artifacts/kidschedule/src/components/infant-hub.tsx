@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, ThumbsUp, RotateCcw, CheckCircle2, ShieldAlert, ChevronDown, ChevronUp, Syringe, Zap, BookOpen, Activity, Star, AlertTriangle, Baby, Flame, MessageCircle, BedDouble, ListChecks, Music2, X, Loader2 } from "lucide-react";
+import { Brain, ThumbsUp, RotateCcw, CheckCircle2, ShieldAlert, ChevronDown, ChevronUp, Syringe, Zap, BookOpen, Activity, Star, AlertTriangle, Baby, Flame, MessageCircle, BedDouble, ListChecks, Music2, X, Loader2, Sparkles } from "lucide-react";
 import { getApiUrl } from "@/lib/api";
 import { BabyCuesEngine, CommunicationCoaching } from "@/components/infant-baby-cues";
 import { CryInsight } from "@/components/cry-insight";
@@ -9,6 +9,7 @@ import { SleepPredict } from "@/components/sleep-predict";
 import { WakeWindowSystem, SleepIssueDetector, RoutineBuilder, SleepWeeklyInsights } from "@/components/infant-sleep-module";
 import { BuddyMilestonePlanner } from "@/components/infant-milestones";
 import { WhiteNoiseLullaby } from "@/components/infant-sounds";
+import { InfantFeedingTracker } from "@/components/infant-feeding-tracker";
 import { INFANT_CATEGORIES, type InfantCategory, type Lang, getTipsForAge, getAmyInsight, pickLang, VACCINATIONS, getUpcomingVaccinationsWithLog, getVaccinationSummary, type VaxStatus, type VaxLogMap, getIsoWeekKey } from "@workspace/infant-hub";
 import { formatAge } from "@/lib/age-groups";
 import { useToast } from "@/hooks/use-toast";
@@ -29,37 +30,6 @@ function getBand(months: number): "0-3" | "3-6" | "6-9" | "9-12" | "12-18" | "18
   if (months < 12) return "9-12";
   if (months < 18) return "12-18";
   return "18-24";
-}
-function getFeedingGuide(months: number): {
-  type: string;
-  freq: string;
-  tip: string;
-} {
-  if (months < 6) return {
-    type: "Breast milk / Formula only",
-    freq: "Every 2–3 hrs · 8–12 times/day",
-    tip: "Watch hunger cues — rooting, lip-smacking, sucking fists. Crying is a late hunger sign."
-  };
-  if (months < 9) return {
-    type: "Breast milk + Puree start (6 m+)",
-    freq: "Breast 5–6×/day + 1–2 meals",
-    tip: "Start single-ingredient purees: banana, carrot, sweet potato. No honey, salt or sugar before 12 months."
-  };
-  if (months < 12) return {
-    type: "Breast milk + Soft solids",
-    freq: "Breast 4–5×/day + 2–3 meals",
-    tip: "Introduce family textures slowly. Finger foods (soft): banana slices, soft dal pieces, khichdi."
-  };
-  if (months < 18) return {
-    type: "Family meals + Milk top-up",
-    freq: "3 meals + 2 snacks · Milk 2–3×/day",
-    tip: "Offer cow's milk (full fat) from 12 months. Serve small, soft portions of everything the family eats."
-  };
-  return {
-    type: "Full family meals",
-    freq: "3 meals + 1–2 snacks",
-    tip: "Self-feeding is great — let them make mess! Keeps 300–400 ml cow's milk/day for calcium."
-  };
 }
 
 // ─── Daily Activities ─────────────────────────────────────────────────────────
@@ -307,27 +277,6 @@ function IHSection({
       {open && <div className="px-4 pb-4 pt-1">{children}</div>}
     </div>
   );
-}
-
-// ─── Feeding & Sleep Module ───────────────────────────────────────────────────
-function FeedingReference({
-  ageMonths
-}: {
-  ageMonths: number;
-}) {
-  const {
-    t
-  } = useTranslation();
-  const feed = getFeedingGuide(ageMonths);
-  return <div className="rounded-xl bg-muted dark:bg-card border border-border dark:border-border p-3">
-      <div className="flex items-center gap-2 mb-2">
-        <Flame className="h-4 w-4 text-primary" />
-        <p className="text-xs font-bold text-primary dark:text-foreground">{t("components.infant_hub.feeding_guide")}</p>
-      </div>
-      <p className="text-xs font-semibold text-primary dark:text-foreground">{feed.type}</p>
-      <p className="text-xs text-primary dark:text-muted-foreground mt-0.5">{feed.freq}</p>
-      <p className="text-[11px] text-primary dark:text-muted-foreground mt-1.5 leading-snug">{feed.tip}</p>
-    </div>;
 }
 
 // ─── Daily Activities ─────────────────────────────────────────────────────────
@@ -812,14 +761,20 @@ export function InfantHub({
                   </div>
                 </IHSection>
 
-                {/* 3. Milestone Buddy */}
-                <IHSection icon={<Activity className="h-4 w-4" />} title={t("components.infant_hub.milestone_buddy")} accentClass="bg-gradient-to-br from-violet-400 to-purple-500" cardColor="linear-gradient(135deg,rgba(167,139,250,0.28)0%,rgba(168,85,247,0.13)100%)" badge={t("components.infant_hub.badge_track")}>
-                  <BuddyMilestonePlanner childId={childId} childName={childName} ageMonths={ageMonths} />
+                {/* 3. Cry Insight — promoted smart tool (right after sleep) */}
+                <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.cry_insight")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardColor="linear-gradient(135deg,rgba(251,113,133,0.28)0%,rgba(236,72,153,0.13)100%)" badge={t("components.infant_hub.badge_smart")}>
+                  <div className="rounded-xl bg-gradient-to-r from-rose-500/10 to-pink-500/10 border border-rose-400/25 px-3 py-2.5 mb-3 flex items-start gap-2">
+                    <Sparkles className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-foreground/90 leading-snug">
+                      {t("components.infant_hub.cry_insight_promo")}
+                    </p>
+                  </div>
+                  <CryInsight childId={childId} childName={childName} ageMonths={ageMonths} />
                 </IHSection>
 
-                {/* 4. Cry Insight */}
-                <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.cry_insight")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardColor="linear-gradient(135deg,rgba(251,113,133,0.28)0%,rgba(236,72,153,0.13)100%)" badge="Beta">
-                  <CryInsight childId={childId} childName={childName} ageMonths={ageMonths} />
+                {/* 4. Milestone Buddy */}
+                <IHSection icon={<Activity className="h-4 w-4" />} title={t("components.infant_hub.milestone_buddy")} accentClass="bg-gradient-to-br from-violet-400 to-purple-500" cardColor="linear-gradient(135deg,rgba(167,139,250,0.28)0%,rgba(168,85,247,0.13)100%)" badge={t("components.infant_hub.badge_track")}>
+                  <BuddyMilestonePlanner childId={childId} childName={childName} ageMonths={ageMonths} />
                 </IHSection>
 
                 {/* 5. White Noise & Lullabies */}
@@ -827,9 +782,9 @@ export function InfantHub({
                   <WhiteNoiseLullaby ageMonths={ageMonths} />
                 </IHSection>
 
-                {/* 6. Feeding Reference */}
-                <IHSection icon={<Flame className="h-4 w-4" />} title={t("components.infant_hub.feeding_reference")} accentClass="bg-gradient-to-br from-red-400 to-orange-500" cardColor="linear-gradient(135deg,rgba(248,113,113,0.28)0%,rgba(249,115,22,0.13)100%)">
-                  <FeedingReference ageMonths={ageMonths} />
+                {/* 6. Feeding Tracker */}
+                <IHSection icon={<Flame className="h-4 w-4" />} title={t("components.infant_hub.feeding_tracker")} accentClass="bg-gradient-to-br from-red-400 to-orange-500" cardColor="linear-gradient(135deg,rgba(248,113,113,0.28)0%,rgba(249,115,22,0.13)100%)" badge={t("components.infant_hub.badge_tracker")}>
+                  <InfantFeedingTracker childId={childId} ageMonths={ageMonths} lang={lang} />
                 </IHSection>
 
                 {/* 7. Health & Care */}
