@@ -6,6 +6,7 @@ export type AmyVoiceLayer =
   | "static"
   | "cache"
   | "api"
+  | "elevenlabs"
   | "phonics_sequence"
   | "speech_coach_split"
   | "emergency_local"
@@ -15,6 +16,7 @@ export type AmyVoiceTelemetryEvent =
   | "static_success"
   | "cache_success"
   | "api_success"
+  | "elevenlabs_success"
   | "phonics_sequence_success"
   | "speech_coach_split_success"
   | "emergency_local_success"
@@ -54,6 +56,8 @@ function eventToLayer(event: AmyVoiceTelemetryEvent): AmyVoiceLayer | null {
       return "cache";
     case "api_success":
       return "api";
+    case "elevenlabs_success":
+      return "elevenlabs";
     case "phonics_sequence_success":
       return "phonics_sequence";
     case "speech_coach_split_success":

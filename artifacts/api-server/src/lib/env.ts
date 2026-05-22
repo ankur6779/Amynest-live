@@ -80,7 +80,7 @@ export function getDriveKeyDiagnostics(): {
   };
 }
 
-export type TtsProvider = "openai";
+export type TtsProvider = "openai" | "elevenlabs";
 
 function envFlagEnabled(name: string, defaultEnabled: boolean): boolean {
   const raw = readEnv(name);
@@ -96,7 +96,20 @@ export function isTtsCacheGcsEnabled(): boolean {
   return envFlagEnabled("TTS_USE_GCS", false);
 }
 
-/** All TTS uses OpenAI (gpt-4o-mini-tts). */
+export function getElevenLabsApiKey(): string | undefined {
+  return readEnv("ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY");
+}
+
+/**
+ * Optional Amy-voice fallback when static + OpenAI fail.
+ * Requires ELEVENLABS_API_KEY; disable with TTS_ELEVENLABS_FALLBACK_ENABLED=false.
+ */
+export function isElevenLabsFallbackEnabled(): boolean {
+  if (!getElevenLabsApiKey()) return false;
+  return envFlagEnabled("TTS_ELEVENLABS_FALLBACK_ENABLED", true);
+}
+
+/** Primary dynamic TTS — OpenAI. ElevenLabs is fallback-only. */
 export function getTtsProvider(): TtsProvider {
   return "openai";
 }
@@ -346,6 +359,23 @@ export function logStartupEnvDiagnostics(): void {
     logger.info({ evt: "env.ok", service: "openai_tts" }, "OpenAI TTS API key loaded");
   }
 
+  const eleven = !!getElevenLabsApiKey();
+  if (!eleven) {
+    logger.info(
+      { evt: "env.optional", service: "elevenlabs_fallback" },
+      "ELEVENLABS_API_KEY not set — Amy fallback will skip ElevenLabs layer",
+    );
+  } else {
+    logger.info(
+      {
+        evt: "env.ok",
+        service: "elevenlabs_fallback",
+        enabled: isElevenLabsFallbackEnabled(),
+      },
+      "ElevenLabs fallback available for Amy voice pipeline",
+    );
+  }
+
   const ttsProvider = getTtsProvider();
   logger.info(
     {
@@ -353,8 +383,9 @@ export function logStartupEnvDiagnostics(): void {
       ttsProvider,
       ttsCacheGcsEnabled: isTtsCacheGcsEnabled(),
       openAiConfigured: openAiTts,
+      elevenLabsFallback: isElevenLabsFallbackEnabled(),
     },
-    `TTS provider: ${ttsProvider} (gcs_cache=${isTtsCacheGcsEnabled()})`,
+    `TTS provider: ${ttsProvider} (gcs_cache=${isTtsCacheGcsEnabled()}, elevenlabs_fallback=${isElevenLabsFallbackEnabled()})`,
   );
 
   const gcsProjectId = readEnv("GCS_PROJECT_ID", "GOOGLE_CLOUD_PROJECT");
