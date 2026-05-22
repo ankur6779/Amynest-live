@@ -41,6 +41,8 @@ jobs:
         run: pnpm run generate:static-audio
 
       - name: Verify 100% coverage
+        env:
+          STATIC_AUDIO_REQUIRE_FULL_CORPUS: "1"
         run: pnpm run check:static-audio
 
       - name: Commit map updates

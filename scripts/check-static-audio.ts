@@ -98,19 +98,28 @@ if (missingDefault.length > 0) {
 
 assertNoClientDirectGcsPlayback();
 
+const requireFullCorpus =
+  process.env.STATIC_AUDIO_REQUIRE_FULL_CORPUS === "1" ||
+  process.env.STATIC_AUDIO_REQUIRE_FULL_CORPUS === "true";
+
 const corpusMissing = computeCorpusMissingStaticAudioKeys(loadStaticAudioMap());
 if (corpusMissing.length > 0) {
-  console.error(
-    `[static-audio] ${corpusMissing.length} extended corpus phrase(s) not in map.\n` +
-      "Run: pnpm run generate:static-audio\n",
-  );
-  console.error("Sample missing keys:", corpusMissing.slice(0, 20));
-  process.exit(1);
+  const msg =
+    `[static-audio] ${corpusMissing.length} extended corpus phrase(s) not in map — ` +
+    "run: pnpm run generate:static-audio";
+  if (requireFullCorpus) {
+    console.error(`${msg}\n`);
+    console.error("Sample missing keys:", corpusMissing.slice(0, 20));
+    process.exit(1);
+  }
+  console.warn(`${msg} (API on-demand TTS until pre-generated).`);
 }
 
 console.log(
   missingPhonics.length > 0
     ? `Static audio map: default 100%; phonics ${missingPhonics.length} pending OpenAI pre-generation.`
-    : "Static audio map: 100% full corpus coverage (core + extended).",
+    : corpusMissing.length > 0
+      ? `Static audio map: core catalog 100%; extended corpus ${corpusMissing.length} pending.`
+      : "Static audio map: 100% full corpus coverage (core + extended).",
 );
 console.log("Static audio client: no direct GCS playback in source.");
