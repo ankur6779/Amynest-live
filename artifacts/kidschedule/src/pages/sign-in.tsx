@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { signInWithEmailAndPassword, signOut as fbSignOut } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { syncUserEmailVerificationFromServer } from "@/lib/firebase-auth-listener";
 import { sendUserPasswordResetEmail } from "@/lib/password-reset";
 import { isEmailVerificationBypassEmail } from "@/lib/email-verification-bypass";
 import { sendUserEmailVerification } from "@/lib/email-verification";
@@ -457,13 +458,14 @@ export default function SignInPage() {
     setBusy(true);
     try {
       const cred = await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
-      const loginEmail = (cred.user.email ?? email.trim()).toLowerCase().trim();
+      const user = await syncUserEmailVerificationFromServer(cred.user);
+      const loginEmail = (user.email ?? email.trim()).toLowerCase().trim();
       const isBypass = isEmailVerificationBypassEmail(loginEmail);
-      if (!cred.user.emailVerified && !isBypass) {
+      if (!user.emailVerified && !isBypass) {
         // Send verification email on sign-in (verify page only resends if user taps).
         let verifySendFailed = false;
         try {
-          await sendUserEmailVerification(cred.user);
+          await sendUserEmailVerification(user);
         } catch (verifyErr: unknown) {
           logFirebaseAuthError("sign-in:sendEmailVerification", verifyErr);
           stashVerificationSendError(verifyErr);
@@ -477,7 +479,7 @@ export default function SignInPage() {
       }
       if (isBypass) {
         try {
-          await cred.user.getIdToken(true);
+          await user.getIdToken(true);
         } catch {
           /* non-fatal — auth listener will still pick up the session */
         }

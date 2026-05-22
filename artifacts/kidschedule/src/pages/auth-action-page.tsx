@@ -14,6 +14,11 @@ import {
   parseFirebaseActionParams,
 } from "@/lib/firebase-action-params";
 import { waitForFirebaseAuthReady } from "@/lib/wait-for-firebase-auth-ready";
+import {
+  refreshFirebaseAuthSnapshot,
+  syncUserEmailVerificationFromServer,
+} from "@/lib/firebase-auth-listener";
+import { shouldShowNativeNotifyPrompt } from "@/lib/native-push-bridge";
 
 type ActionStatus =
   | "loading"
@@ -60,6 +65,13 @@ const INPUT_STYLE: React.CSSProperties = {
   fontFamily: "inherit",
   boxSizing: "border-box",
 };
+
+function postVerifyPath(): string {
+  if (shouldShowNativeNotifyPrompt()) {
+    return "/notify-prompt?next=/";
+  }
+  return "/";
+}
 
 const LOGIN_BUTTON: React.CSSProperties = {
   display: "inline-block",
@@ -139,9 +151,10 @@ export default function AuthActionPage() {
 
           const user = firebaseAuth.currentUser;
           if (user) {
-            await user.reload();
-            await user.getIdToken(true);
+            await syncUserEmailVerificationFromServer(user);
             resetVerificationRateLimit(user.uid);
+          } else {
+            refreshFirebaseAuthSnapshot();
           }
 
           setStatus("emailVerified");
@@ -222,9 +235,15 @@ export default function AuthActionPage() {
               <p style={{ margin: "0 0 24px", fontSize: 15, color: "rgba(134,239,172,0.95)", lineHeight: 1.55 }}>
                 {t("screens.verify_email_action.success_message")}
               </p>
-              <Link href="/sign-in" style={LOGIN_BUTTON}>
-                {t("screens.verify_email_action.go_to_login")}
-              </Link>
+              {firebaseAuth.currentUser?.emailVerified ? (
+                <Link href={postVerifyPath()} style={LOGIN_BUTTON}>
+                  {t("screens.verify_email_action.continue_to_app")}
+                </Link>
+              ) : (
+                <Link href="/sign-in" style={LOGIN_BUTTON}>
+                  {t("screens.verify_email_action.go_to_login")}
+                </Link>
+              )}
             </>
           )}
 

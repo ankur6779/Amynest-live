@@ -81,14 +81,8 @@ class MainActivity : AppCompatActivity() {
             wv.isHorizontalScrollBarEnabled = false
 
             configureWebView(wv)
-            wv.clearCache(true)
-            wv.clearHistory()
         }
         setContentView(webView)
-
-        val cookieManager = CookieManager.getInstance()
-        cookieManager.removeAllCookies(null)
-        cookieManager.flush()
 
         BillingBridge.installOn(this, webView)
 

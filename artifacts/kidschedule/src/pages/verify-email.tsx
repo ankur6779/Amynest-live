@@ -13,6 +13,7 @@ import {
   prettyAuthError,
 } from "@/lib/firebase-auth-error";
 import { waitForFirebaseUser } from "@/lib/wait-for-firebase-user";
+import { syncUserEmailVerificationFromServer } from "@/lib/firebase-auth-listener";
 import {
   buildCanonicalAuthActionHref,
   parseFirebaseActionParams,
@@ -130,9 +131,8 @@ function VerifyEmailInboxPage() {
       return;
     }
     try {
-      await user.reload();
+      await syncUserEmailVerificationFromServer(user);
       if (user.emailVerified) {
-        await user.getIdToken(true);
         setLocation(postVerifyPath());
       }
     } catch {
