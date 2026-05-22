@@ -100,15 +100,17 @@ assertNoClientDirectGcsPlayback();
 
 const corpusMissing = computeCorpusMissingStaticAudioKeys(loadStaticAudioMap());
 if (corpusMissing.length > 0) {
-  console.warn(
-    `[static-audio] ${corpusMissing.length} extended corpus phrase(s) not pre-generated yet — ` +
-      "API on-demand + generate:static-audio will fill these.",
+  console.error(
+    `[static-audio] ${corpusMissing.length} extended corpus phrase(s) not in map.\n` +
+      "Run: pnpm run generate:static-audio\n",
   );
+  console.error("Sample missing keys:", corpusMissing.slice(0, 20));
+  process.exit(1);
 }
 
 console.log(
   missingPhonics.length > 0
     ? `Static audio map: default 100%; phonics ${missingPhonics.length} pending OpenAI pre-generation.`
-    : "Static audio map: 100% core catalog coverage.",
+    : "Static audio map: 100% full corpus coverage (core + extended).",
 );
 console.log("Static audio client: no direct GCS playback in source.");

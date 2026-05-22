@@ -6,7 +6,7 @@
  *     GCS_SERVICE_ACCOUNT_JSON='...' \
  *     pnpm run generate:static-audio
  *
- * Retries until 100% catalog coverage (max 5 passes). Use --force-all to re-upload everything.
+ * Retries until 100% full corpus coverage (max 5 passes). Use --force-all to re-upload everything.
  *
  * Writes static-audio-map.json to kidschedule + api-server data dirs.
  */
@@ -14,7 +14,7 @@ import { readFileSync } from "node:fs";
 import { config } from "dotenv";
 import { Storage } from "@google-cloud/storage";
 import {
-  computeCatalogMissingStaticAudioKeys,
+  computeCorpusMissingStaticAudioKeys,
   extractTextFromMissingKey,
   getStaticAudioObjectKey,
   collectAllSpeakablePhrases,
@@ -88,6 +88,8 @@ function parseEnvMs(name: string, fallbackMs: number): number {
 
 const TTS_TIMEOUT_MS = parseEnvMs("STATIC_AUDIO_TTS_TIMEOUT_MS", 30_000);
 const MAX_PASS_RETRIES = Number(process.env.STATIC_AUDIO_MAX_RETRIES ?? "5");
+/** Pause between OpenAI calls when generating (avoids rate limits in CI). */
+const INTER_REQUEST_MS = parseEnvMs("STATIC_AUDIO_INTER_REQUEST_MS", 300);
 
 const CORPUS_PHRASES = collectAllSpeakablePhrases();
 const TOTAL_PHRASES = CORPUS_PHRASES.length;
@@ -180,7 +182,7 @@ function isEntryComplete(map: StaticAudioMap, mode: StaticAudioMode, text: strin
 }
 
 function logCoverageSummary(map: StaticAudioMap, passLabel: string): number {
-  const missing = computeCatalogMissingStaticAudioKeys(map);
+  const missing = computeCorpusMissingStaticAudioKeys(map);
   const covered = TOTAL_PHRASES - missing.length;
   console.log(`[COVERAGE] ${passLabel}`, {
     totalPhrases: TOTAL_PHRASES,
@@ -302,9 +304,9 @@ async function fetchMissingFromApi(): Promise<string[]> {
 }
 
 async function collectMissingKeys(map: StaticAudioMap): Promise<string[]> {
-  const catalogMissing = computeCatalogMissingStaticAudioKeys(map);
+  const corpusMissing = computeCorpusMissingStaticAudioKeys(map);
   const apiMissing = await fetchMissingFromApi();
-  return mergeMissingStaticAudioKeys(catalogMissing, apiMissing);
+  return mergeMissingStaticAudioKeys(corpusMissing, apiMissing);
 }
 
 async function generateAndMapEntry(
@@ -328,8 +330,14 @@ async function generateAndMapEntry(
     console.log("[DONE]", key, url);
   };
 
+  const delay = () =>
+    INTER_REQUEST_MS > 0
+      ? new Promise((r) => setTimeout(r, INTER_REQUEST_MS))
+      : Promise.resolve();
+
   try {
     await attempt();
+    await delay();
     return true;
   } catch (firstErr) {
     console.warn("[RETRY]", key, firstErr instanceof Error ? firstErr.message : firstErr);
@@ -399,7 +407,7 @@ async function runCatalogPass(
 ): Promise<PassStats> {
   const stats: PassStats = { generated: 0, skipped: 0, backfilled: 0, failed: 0 };
 
-  console.log(`[PASS] Full catalog (${TOTAL_PHRASES} phrases), skipExisting=${skipExisting}`);
+  console.log(`[PASS] Full corpus (${TOTAL_PHRASES} phrases), skipExisting=${skipExisting}`);
 
   for (const entry of CORPUS_PHRASES) {
     await ensureCatalogEntry(entry.text, entry.mode, map, storage, bucketName, skipExisting, stats);
@@ -511,7 +519,7 @@ async function run(): Promise<void> {
   }
 
   writeStaticAudioMap(map);
-  const finalMissing = computeCatalogMissingStaticAudioKeys(map);
+  const finalMissing = computeCorpusMissingStaticAudioKeys(map);
 
   console.log("[SUMMARY]", {
     totalPhrases: TOTAL_PHRASES,
@@ -524,11 +532,14 @@ async function run(): Promise<void> {
   });
 
   if (finalMissing.length > 0) {
-    console.error("Still missing:", finalMissing);
+    console.error("Still missing:", finalMissing.slice(0, 50));
+    if (finalMissing.length > 50) {
+      console.error(`... and ${finalMissing.length - 50} more`);
+    }
     process.exit(1);
   }
 
-  console.log("[DONE] All static audio generated — 100% catalog coverage");
+  console.log("[DONE] All static audio generated — 100% full corpus coverage");
   console.log(`Map written to:\n  ${STATIC_AUDIO_MAP_PATHS.join("\n  ")}`);
 
   if (totals.failed > 0) {
