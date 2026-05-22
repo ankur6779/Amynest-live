@@ -135,21 +135,33 @@ function reportAmyVoiceTelemetry(
         const token = await user.getIdToken().catch(() => null);
         if (token) headers.Authorization = `Bearer ${token}`;
       }
-      await fetch(getApiUrl("/api/log-client-error"), {
+      const logType = `amy_voice_${type}`;
+      const summary =
+        typeof meta?.error === "string"
+          ? `${type}: ${meta.error}`
+          : typeof meta?.layer === "string"
+            ? `${type} (${meta.layer})`
+            : type;
+
+      const res = await fetch(getApiUrl("/api/log-client-error"), {
         method: "POST",
         headers,
         body: JSON.stringify({
-          type: `amy_voice_${type}`,
-          message: type,
+          type: logType,
+          message: summary.slice(0, 4000),
           route: window.location.pathname,
           meta: {
             userAgent: navigator.userAgent,
             lastSuccessLayer,
+            amyVoiceEvent: type,
             ...meta,
           },
         }),
         keepalive: true,
       });
+      if (!res.ok && (import.meta.env.DEV || import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true")) {
+        console.warn(LOG, "telemetry rejected", res.status, logType);
+      }
     } catch {
       /* never throw */
     }

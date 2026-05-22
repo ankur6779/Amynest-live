@@ -6,15 +6,19 @@ import { logger } from "../lib/logger";
 const router: IRouter = Router();
 
 const ClientLogBody = z.object({
-  type: z.enum([
-    "crash",
-    "slow_api",
-    "failed_routine",
-    "warning",
-    "info",
-    "static_audio_play_failed",
-    "static_audio_missing_url",
-    "static_audio_proxy_failed",
+  type: z.union([
+    z.enum([
+      "crash",
+      "slow_api",
+      "failed_routine",
+      "warning",
+      "info",
+      "static_audio_play_failed",
+      "static_audio_missing_url",
+      "static_audio_proxy_failed",
+    ]),
+    /** Amy voice pipeline telemetry (`use-amy-voice` / `amy-voice-telemetry.ts`). */
+    z.string().regex(/^amy_voice_[a-z0-9_]+$/),
   ]),
   message: z.string().min(1).max(4000),
   context: z.string().max(256).optional(),
@@ -63,19 +67,25 @@ async function ingestClientLog(req: Request, res: Response): Promise<void> {
   });
   if (recentLogs.length > MAX_BUFFER) recentLogs.shift();
 
+  const logType = parsed.data.type;
   const staticAudioError =
-    parsed.data.type === "static_audio_play_failed" ||
-    parsed.data.type === "static_audio_proxy_failed";
-  const staticAudioWarn = parsed.data.type === "static_audio_missing_url";
+    logType === "static_audio_play_failed" || logType === "static_audio_proxy_failed";
+  const staticAudioWarn = logType === "static_audio_missing_url";
+  const amyVoiceError =
+    logType.startsWith("amy_voice_") &&
+    (logType.includes("failed") || logType.includes("failure"));
+  const amyVoiceWarn = logType.startsWith("amy_voice_") && logType.includes("fallback");
 
   const logFn =
-    parsed.data.type === "crash" ||
-    parsed.data.type === "failed_routine" ||
-    staticAudioError
+    logType === "crash" ||
+    logType === "failed_routine" ||
+    staticAudioError ||
+    amyVoiceError
       ? logger.error.bind(logger)
-      : parsed.data.type === "slow_api" ||
-          parsed.data.type === "warning" ||
-          staticAudioWarn
+      : logType === "slow_api" ||
+          logType === "warning" ||
+          staticAudioWarn ||
+          amyVoiceWarn
         ? logger.warn.bind(logger)
         : logger.info.bind(logger);
 
