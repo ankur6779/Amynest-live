@@ -27,6 +27,7 @@ vi.mock("@/hooks/use-amy-voice", () => ({
     lastVoiceOpts = opts;
     return {
       speak: speakMock,
+      primeSpeakGesture: vi.fn(),
       stop: stopMock,
       speaking: mockState.speaking,
       loading: mockState.loading,

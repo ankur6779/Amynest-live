@@ -8,14 +8,14 @@ import {
   isCapacitorIosShell,
   isStandalonePwa,
   isIosUa,
-  isAndroidUa,
-  isNativeAmyNestAndroidWrapper,
+  isAndroidAmyNestAudioClient,
 } from "@/lib/device-lite";
 
 /** crossOrigin on remote MP3 often breaks playback in installed PWA / WebView shells. */
 function shouldSetAudioCrossOrigin(): boolean {
   if (isNativeAmyNestShell() || isCapacitorIosShell()) return false;
-  if (isStandalonePwa() && (isIosUa() || isAndroidUa())) return false;
+  if (isAndroidAmyNestAudioClient()) return false;
+  if (isStandalonePwa() && isIosUa()) return false;
   return true;
 }
 
@@ -75,9 +75,8 @@ export function initAudioUnlock(): void {
   if (unlockListenersInstalled) return;
   unlockListenersInstalled = true;
 
-  // Play Store WebView: native layer sets mediaPlaybackRequiresUserGesture=false,
-  // but Chromium still blocks async play() after fetch — unlock at boot.
-  if (isNativeAmyNestAndroidWrapper()) {
+  // Android PWA / WebView: Chromium blocks async play() after fetch — unlock at boot.
+  if (isAndroidAmyNestAudioClient()) {
     unlockAudio();
   }
 
@@ -109,6 +108,9 @@ export function configureMobileAudioElement(audio: HTMLAudioElement): void {
       !audio.src.startsWith("data:")
     ) {
       audio.crossOrigin = "anonymous";
+    } else {
+      audio.removeAttribute("crossorigin");
+      (audio as HTMLAudioElement & { crossOrigin: string | null }).crossOrigin = null;
     }
   } catch {
     /* ignore */

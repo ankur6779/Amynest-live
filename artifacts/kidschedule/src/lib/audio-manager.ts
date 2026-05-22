@@ -4,7 +4,7 @@
  */
 
 import { resolveApiMediaUrl } from "@/lib/api";
-import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import {
   configureMobileAudioElement,
   isTtsPlaybackAllowed,
@@ -23,7 +23,7 @@ const PLAYBACK_WATCHDOG_MS = 4500;
 const ANDROID_WEBVIEW_WATCHDOG_MS = 9000;
 
 function playbackWatchdogMs(): number {
-  return isNativeAmyNestAndroidWrapper() ? ANDROID_WEBVIEW_WATCHDOG_MS : PLAYBACK_WATCHDOG_MS;
+  return isAndroidAmyNestAudioClient() ? ANDROID_WEBVIEW_WATCHDOG_MS : PLAYBACK_WATCHDOG_MS;
 }
 const URL_CACHE_MAX = 20;
 const SOFT_RESET_EVERY_PLAYS = 25;
@@ -215,6 +215,8 @@ class AudioManagerImpl {
   private totalSuccessfulPlays = 0;
   private pendingFocusReplay: PendingFocusReplay | null = null;
   private invalidated = false;
+  /** Gesture-only primers — separate from speech cache so pointerdown does not corrupt playback. */
+  private gesturePrimeElements = new Map<string, HTMLAudioElement>();
 
   constructor() {
     this.instanceId = ++nextAudioManagerInstanceId;
@@ -440,20 +442,50 @@ class AudioManagerImpl {
   }
 
   /**
-   * Start play() synchronously inside pointerdown/click — Android WebView often
+   * Start play() synchronously inside pointerdown/click — Android PWA/WebView often
    * rejects audio.play() after await fetch/prepare even when gestures are unlocked.
    */
   primeSpeechUrlInUserGesture(proxyUrl: string): void {
-    if (!isNativeAmyNestAndroidWrapper()) return;
+    if (!isAndroidAmyNestAudioClient()) return;
     const trimmed = (proxyUrl ?? "").trim();
     if (!trimmed) return;
     recordTtsUserGesture();
     try {
-      const audio = this.getCached(trimmed, { forceReload: false });
-      configureMobileAudioElement(audio);
-      audio.currentTime = 0;
-      const p = audio.play();
-      if (p) void p.catch(() => {});
+      const resolved = trimmed.startsWith("blob:") ? trimmed : resolveApiMediaUrl(trimmed);
+      let prime = this.gesturePrimeElements.get(resolved);
+      if (!prime) {
+        prime = new Audio(resolved);
+        configureMobileAudioElement(prime);
+        this.gesturePrimeElements.set(resolved, prime);
+        while (this.gesturePrimeElements.size > 10) {
+          const first = this.gesturePrimeElements.keys().next().value;
+          if (!first) break;
+          const el = this.gesturePrimeElements.get(first);
+          this.gesturePrimeElements.delete(first);
+          if (el) {
+            try {
+              el.pause();
+              el.removeAttribute("src");
+              el.load();
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+      }
+      prime.pause();
+      prime.currentTime = 0;
+      prime.volume = 0.02;
+      prime.muted = false;
+      const p = prime.play();
+      if (p) {
+        void p
+          .then(() => {
+            prime!.pause();
+            prime!.currentTime = 0;
+          })
+          .catch(() => {});
+      }
     } catch {
       /* best-effort */
     }
@@ -702,6 +734,21 @@ class AudioManagerImpl {
           resolve();
           return true;
         }
+        if (
+          isAndroidAmyNestAudioClient() &&
+          !audio.paused &&
+          !audio.ended &&
+          audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+        ) {
+          if (!this.verifyAudibleOutput(audio)) {
+            cleanup();
+            reject(new Error(AUDIO_ERROR.SILENT_OUTPUT));
+            return true;
+          }
+          cleanup();
+          resolve();
+          return true;
+        }
         return false;
       };
 
@@ -743,6 +790,14 @@ class AudioManagerImpl {
           resolve();
           return;
         }
+        if (
+          !audio.paused &&
+          audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+          this.verifyAudibleOutput(audio)
+        ) {
+          resolve();
+          return;
+        }
         reject(new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG));
       }, playbackWatchdogMs());
 
@@ -763,19 +818,39 @@ class AudioManagerImpl {
     }
 
     configureMobileAudioElement(audio);
+    audio.muted = false;
+    if (audio.volume <= 0) audio.volume = 1;
     if (audio.currentTime > 0.05) {
       audio.currentTime = 0;
     }
 
-    try {
+    const tryPlay = async (): Promise<void> => {
       await audio.play();
+    };
+
+    try {
+      await tryPlay();
     } catch (err) {
       const name = (err as { name?: string })?.name ?? "";
       logStructured("attemptPlay play() rejected", err, { attempt }, audio);
-      if (name === "NotAllowedError" || isNotAllowedError(err)) {
+      if (
+        isAndroidAmyNestAudioClient() &&
+        (name === "NotAllowedError" || isNotAllowedError(err))
+      ) {
+        this.warmMediaPipeline(true);
+        try {
+          await tryPlay();
+        } catch (retryErr) {
+          if (isNotAllowedError(retryErr)) {
+            throw new Error(AUDIO_ERROR.USER_INTERACTION_REQUIRED);
+          }
+          throw retryErr;
+        }
+      } else if (name === "NotAllowedError" || isNotAllowedError(err)) {
         throw new Error(AUDIO_ERROR.USER_INTERACTION_REQUIRED);
+      } else {
+        throw err;
       }
-      throw err;
     }
 
     await this.runPlaybackWatchdog(audio, token, channel);

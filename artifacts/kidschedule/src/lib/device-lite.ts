@@ -15,11 +15,20 @@ export function isAndroidUa(): boolean {
 export function isStandalonePwa(): boolean {
   if (typeof window === "undefined") return false;
   try {
-    if (window.matchMedia?.("(display-mode: standalone)")?.matches) return true;
+    const modes = ["standalone", "fullscreen", "minimal-ui"] as const;
+    for (const mode of modes) {
+      if (window.matchMedia?.(`(display-mode: ${mode})`)?.matches) return true;
+    }
     return (navigator as Navigator & { standalone?: boolean }).standalone === true;
   } catch {
     return false;
   }
+}
+
+/** Installed PWA or Play Store WebView on Android. */
+export function isAndroidInstalledAmyNestApp(): boolean {
+  if (!isAndroidUa()) return false;
+  return isStandalonePwa() || isNativeAmyNestAndroidWrapper();
 }
 
 function isCapacitorAndroid(): boolean {
@@ -57,6 +66,14 @@ export function isNativeAmyNestAndroidWrapper(): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * All Android AmyNest surfaces — Chrome tab, installed PWA, Play WebView, Capacitor.
+ * Shares gesture priming, relaxed playback watchdog, and no crossOrigin on remote MP3.
+ */
+export function isAndroidAmyNestAudioClient(): boolean {
+  return isAndroidUa();
 }
 
 /** True when index.html boot script enabled lite-splash (Android / iOS / crash recovery). */

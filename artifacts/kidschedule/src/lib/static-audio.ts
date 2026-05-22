@@ -327,7 +327,7 @@ export function preloadStaticPhrases(
   }
 }
 
-/** Play Store WebView: call from pointerdown before async speak(). */
+/** Android PWA/WebView: call from pointerdown before async speak(). */
 export function primeStaticAudioInUserGesture(
   rawText: string,
   mode: StaticAudioMode = "default",
@@ -335,7 +335,11 @@ export function primeStaticAudioInUserGesture(
   const text = (rawText ?? "").trim();
   if (!text) return;
   const proxyUrl = lookupStaticAudioUrl(text, mode);
-  if (proxyUrl) audioManager.primeSpeechUrlInUserGesture(proxyUrl);
+  if (!proxyUrl) return;
+  audioManager.primeSpeechUrlInUserGesture(proxyUrl);
+  void import("@/lib/local-tts-cache").then((m) =>
+    m.warmLocalCacheFromUrl(m.localCacheKeyForPhrase(text, mode), proxyUrl),
+  );
 }
 
 function createFreshAudio(proxyUrl: string): HTMLAudioElement {
