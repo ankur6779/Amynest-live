@@ -10,7 +10,6 @@ import {
 } from "firebase/auth";
 import { logFirebaseAuthError } from "@/lib/firebase-auth-error";
 import { getFirebaseAuth } from "@/lib/firebase";
-import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { generateRawNonce, sha256Hex } from "@/lib/auth-nonce";
 import {
   appleAuthDefaults,
@@ -45,7 +44,7 @@ export function isAppleCallbackPath(): boolean {
 
 /** Native Sign in with Apple via Capacitor (iOS only). */
 export function shouldUseNativeAppleAuth(): boolean {
-  if (!isNativeAmyNestShell() || !isCapacitorNative()) return false;
+  if (!isCapacitorNative()) return false;
   try {
     return Capacitor.getPlatform() === "ios";
   } catch {
