@@ -1,4 +1,4 @@
-# Generate all static TTS MP3s and commit static-audio-map.json.
+# Pre-generate all static TTS MP3s (core catalog + extended corpus) and commit static-audio-map.json.
 # Requires secrets: OPENAI_API_KEY, DEFAULT_OBJECT_STORAGE_BUCKET_ID, GCS_SERVICE_ACCOUNT_JSON
 name: Generate static audio
 
@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Generate and upload static audio (retries until 100% coverage)
+      - name: Generate and upload static audio (full corpus, retries until 100%)
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AI_INTEGRATIONS_OPENAI_API_KEY: ${{ secrets.AI_INTEGRATIONS_OPENAI_API_KEY }}
@@ -36,7 +36,8 @@ jobs:
           GCS_SERVICE_ACCOUNT_JSON: ${{ secrets.GCS_SERVICE_ACCOUNT_JSON }}
           API_PUBLIC_URL: ${{ secrets.API_PUBLIC_URL }}
           STATIC_AUDIO_MAX_RETRIES: "5"
-          STATIC_AUDIO_TTS_TIMEOUT_MS: "10000"
+          STATIC_AUDIO_TTS_TIMEOUT_MS: "30000"
+          STATIC_AUDIO_INTER_REQUEST_MS: "350"
         run: pnpm run generate:static-audio
 
       - name: Verify 100% coverage
