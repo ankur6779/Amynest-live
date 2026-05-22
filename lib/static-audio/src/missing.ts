@@ -101,13 +101,21 @@ export function buildStaticTtsEntryByMissingKey(): Map<
   { text: string; mode: StaticAudioMode }
 > {
   const index = new Map<string, { text: string; mode: StaticAudioMode }>();
-  for (const entry of collectAllSpeakablePhrases()) {
+  for (const entry of getStaticTtsEntries()) {
     const normalized = normalizeStaticAudioKey(entry.text);
     if (!normalized) continue;
     index.set(staticAudioMissingKey(entry.mode, normalized), {
       text: entry.text,
       mode: entry.mode,
     });
+  }
+  for (const entry of collectAllSpeakablePhrases()) {
+    const normalized = normalizeStaticAudioKey(entry.text);
+    if (!normalized) continue;
+    const k = staticAudioMissingKey(entry.mode, normalized);
+    if (!index.has(k)) {
+      index.set(k, { text: entry.text, mode: entry.mode });
+    }
   }
   return index;
 }

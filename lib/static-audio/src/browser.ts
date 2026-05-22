@@ -2,7 +2,11 @@
  * Browser-safe exports (no node:crypto). Use `@workspace/static-audio` on the server.
  */
 export { normalizeStaticAudioKey } from "./normalize.js";
-export { staticAudioMissingKey } from "./missing.js";
+export {
+  staticAudioMissingKey,
+  parseStaticAudioMissingKey,
+  extractTextFromMissingKey,
+} from "./missing-browser.js";
 export {
   PHONEME_PROMPTS,
   buildStaticTtsLookup,
