@@ -4,6 +4,7 @@
  */
 
 import { resolveApiMediaUrl } from "@/lib/api";
+import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 import {
   configureMobileAudioElement,
   isTtsPlaybackAllowed,
@@ -19,6 +20,11 @@ const LOG = "[AudioManager]";
 const DEFAULT_MAX_RETRIES = 2;
 /** Allow slow CDN / mobile decode before treating start as failed */
 const PLAYBACK_WATCHDOG_MS = 4500;
+const ANDROID_WEBVIEW_WATCHDOG_MS = 9000;
+
+function playbackWatchdogMs(): number {
+  return isNativeAmyNestAndroidWrapper() ? ANDROID_WEBVIEW_WATCHDOG_MS : PLAYBACK_WATCHDOG_MS;
+}
 const URL_CACHE_MAX = 20;
 const SOFT_RESET_EVERY_PLAYS = 25;
 const SILENT_OUTPUT_RECOVERY_THRESHOLD = 2;
@@ -433,6 +439,26 @@ class AudioManagerImpl {
     this.warmMediaPipeline(true);
   }
 
+  /**
+   * Start play() synchronously inside pointerdown/click — Android WebView often
+   * rejects audio.play() after await fetch/prepare even when gestures are unlocked.
+   */
+  primeSpeechUrlInUserGesture(proxyUrl: string): void {
+    if (!isNativeAmyNestAndroidWrapper()) return;
+    const trimmed = (proxyUrl ?? "").trim();
+    if (!trimmed) return;
+    recordTtsUserGesture();
+    try {
+      const audio = this.getCached(trimmed, { forceReload: false });
+      configureMobileAudioElement(audio);
+      audio.currentTime = 0;
+      const p = audio.play();
+      if (p) void p.catch(() => {});
+    } catch {
+      /* best-effort */
+    }
+  }
+
   isPlaybackAllowed(): boolean {
     return isTtsPlaybackAllowed();
   }
@@ -599,14 +625,15 @@ class AudioManagerImpl {
       audio.onerror = null;
       audio.currentTime = 0;
       if (audio.src !== key) audio.src = key;
-      try {
-        audio.load();
-      } catch {
-        /* ignore */
-      }
       configureMobileAudioElement(audio);
       if (opts.forceReload !== false) {
         this.prepareElementForReplay(audio, key, true);
+      } else if (audio.readyState < HTMLMediaElement.HAVE_METADATA) {
+        try {
+          audio.load();
+        } catch {
+          /* ignore */
+        }
       }
       this.touchCacheEntry(key, audio);
       return audio;
@@ -717,7 +744,7 @@ class AudioManagerImpl {
           return;
         }
         reject(new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG));
-      }, PLAYBACK_WATCHDOG_MS);
+      }, playbackWatchdogMs());
 
       checkProgress();
     });

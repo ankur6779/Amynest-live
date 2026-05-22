@@ -9,6 +9,7 @@ import {
   preloadStaticPhrases,
   prefetchStaticAudioUrl,
   lookupStaticAudioUrl,
+  primeStaticAudioInUserGesture,
 } from "@/lib/static-audio";
 import { getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { cn } from "@/lib/utils";
@@ -174,6 +175,7 @@ export function AudioPlayButton({
   const handlePointerDown = useCallback(() => {
     audioManager.unlockFromUserGesture();
     if (resolvedText) {
+      primeStaticAudioInUserGesture(resolvedText, mode ?? "default");
       const url = lookupStaticAudioUrl(resolvedText, mode ?? "default");
       if (url) prefetchStaticAudioUrl(url);
     }
