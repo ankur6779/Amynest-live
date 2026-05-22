@@ -21,11 +21,12 @@ import {
 } from "@/lib/native-push-bridge";
 import {
   checkGeoPermission,
-  getCurrentCoords,
-  isGeoPermissionDenied,
-  requestGeoPermission,
-  reverseGeocodeCountry,
+  fetchGrantedLocation,
+  requestLocationWithUserGesture,
+  resolveLocationFallback,
   type GeoCoords,
+  type LocationSource,
+  type ResolvedLocation,
 } from "@/lib/onboarding-location";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -60,6 +61,7 @@ interface ParentData {
   country: string;
   latitude?: number;
   longitude?: number;
+  locationSource?: LocationSource;
 }
 
 type LocationDetectionState =
@@ -68,8 +70,8 @@ type LocationDetectionState =
   | { status: "needs-permission" }
   | { status: "fetching" }
   | { status: "detected" }
+  | { status: "fallback" }
   | { status: "denied" }
-  | { status: "error" };
 
 interface ChatMessage {
   role: "amy" | "user";
@@ -542,6 +544,7 @@ export default function OnboardingPage() {
   const [countryName, setCountryName] = useState("");
   const [locationState, setLocationState] = useState<LocationDetectionState>({ status: "idle" });
   const [detectedCoords, setDetectedCoords] = useState<GeoCoords | null>(null);
+  const [locationSource, setLocationSource] = useState<LocationSource | null>(null);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [countryPickerRequired, setCountryPickerRequired] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
@@ -655,6 +658,7 @@ export default function OnboardingPage() {
       };
       if (typeof parent.latitude === "number") parentBody.latitude = parent.latitude;
       if (typeof parent.longitude === "number") parentBody.longitude = parent.longitude;
+      if (parent.locationSource) parentBody.locationSource = parent.locationSource;
       if (parent.mobileNumber) parentBody.mobileNumber = parent.mobileNumber;
       if (parent.allergies) parentBody.allergies = parent.allergies;
       await authFetch("/api/parent-profile", {
@@ -733,50 +737,39 @@ export default function OnboardingPage() {
     window.location.assign(`${base}/dashboard`);
   }
 
-  // ─── Country detection (GPS + reverse geocode) ───────────────────────────────
-  async function fetchLocationFromGps() {
-    setLocationState({ status: "fetching" });
-    try {
-      const coords = await getCurrentCoords();
-      const result = await reverseGeocodeCountry(coords.latitude, coords.longitude);
-      if (!result) {
-        setLocationState({ status: "error" });
-        setCountryPickerRequired(true);
-        setShowCountryPicker(true);
-        return;
-      }
+  function applyResolvedLocation(resolved: ResolvedLocation) {
+    const known = ALL_COUNTRIES.find((c) => c.code === resolved.country.countryCode);
+    const name = known?.name ?? resolved.country.countryName;
+    setCountryCode(resolved.country.countryCode);
+    setCountryName(name);
+    setDetectedCoords(resolved.coords);
+    setLocationSource(resolved.source);
+    setLocationState({ status: "detected" });
+    setCountryPickerRequired(false);
+    setShowCountryPicker(false);
+  }
 
-      const known = ALL_COUNTRIES.find((c) => c.code === result.countryCode);
-      const name = known?.name ?? result.countryName;
-      setCountryCode(result.countryCode);
-      setCountryName(name);
-      setDetectedCoords(coords);
-      setLocationState({ status: "detected" });
-      setCountryPickerRequired(false);
-      setShowCountryPicker(false);
-    } catch (error) {
-      if (isGeoPermissionDenied(error)) {
-        setLocationState({ status: "denied" });
-      } else {
-        setLocationState({ status: "error" });
-      }
-      setCountryPickerRequired(true);
-      setShowCountryPicker(true);
+  async function handleLocationFallback() {
+    setLocationState({ status: "fallback" });
+    const fallback = await resolveLocationFallback();
+    if (fallback) {
+      applyResolvedLocation(fallback);
+      return;
     }
+    setLocationState({ status: "denied" });
+    setCountryPickerRequired(true);
+    setShowCountryPicker(true);
   }
 
   async function handleAllowLocation() {
     if (locationRequesting) return;
     setLocationRequesting(true);
+    setLocationState({ status: "fetching" });
     try {
-      const permission = await requestGeoPermission();
-      if (permission === "denied") {
-        setLocationState({ status: "denied" });
-        setCountryPickerRequired(true);
-        setShowCountryPicker(true);
-        return;
-      }
-      await fetchLocationFromGps();
+      const resolved = await requestLocationWithUserGesture();
+      applyResolvedLocation(resolved);
+    } catch {
+      await handleLocationFallback();
     } finally {
       setLocationRequesting(false);
     }
@@ -786,25 +779,21 @@ export default function OnboardingPage() {
     if (step !== "country-confirm") return;
 
     let cancelled = false;
+    setLocationState({ status: "needs-permission" });
 
     (async () => {
-      setLocationState({ status: "checking" });
       const permission = await checkGeoPermission();
       if (cancelled) return;
 
-      if (permission === "granted") {
-        await fetchLocationFromGps();
-        return;
-      }
+      if (permission !== "granted") return;
 
-      if (permission === "denied") {
-        setLocationState({ status: "denied" });
-        setCountryPickerRequired(true);
-        setShowCountryPicker(true);
-        return;
+      setLocationState({ status: "fetching" });
+      try {
+        const resolved = await fetchGrantedLocation();
+        if (!cancelled) applyResolvedLocation(resolved);
+      } catch {
+        if (!cancelled) await handleLocationFallback();
       }
-
-      setLocationState({ status: "needs-permission" });
     })();
 
     return () => {
@@ -813,7 +802,11 @@ export default function OnboardingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  function confirmCountry(code: string, name: string, coords?: GeoCoords | null) {
+  function confirmCountry(
+    code: string,
+    name: string,
+    opts?: { coords?: GeoCoords | null; source?: LocationSource },
+  ) {
     setCountryCode(code);
     setCountryName(name);
     setShowCountryPicker(false);
@@ -822,11 +815,13 @@ export default function OnboardingPage() {
     setRegionDrillDown(false);
     const recs = getRecommendedCuisines(code);
     setSelectedRegions(recs.slice(0, 1));
+    const source = opts?.source ?? "manual";
     setParent((p) => ({
       ...p,
       country: code,
-      latitude: coords?.latitude,
-      longitude: coords?.longitude,
+      latitude: opts?.coords?.latitude,
+      longitude: opts?.coords?.longitude,
+      locationSource: source,
     }));
     amySays(t("screens.onboarding.child_name_after_country"), 300);
     setTimeout(() => setStep("child-name"), 1300);
@@ -835,9 +830,8 @@ export default function OnboardingPage() {
   // ─── Country-confirm step ────────────────────────────────────────────────────
   if (step === "country-confirm") {
     const isLocating =
-      locationState.status === "idle" ||
-      locationState.status === "checking" ||
-      locationState.status === "fetching";
+      locationState.status === "fetching" ||
+      locationState.status === "fallback";
     const needsPermission = locationState.status === "needs-permission";
     const showDetected = locationState.status === "detected" && countryCode;
     const flag = countryCode ? flagEmoji(countryCode) : "";
@@ -855,9 +849,7 @@ export default function OnboardingPage() {
       const pickerHint =
         locationState.status === "denied"
           ? t("screens.onboarding.country_permission_denied")
-          : locationState.status === "error"
-            ? t("screens.onboarding.country_fetch_error")
-            : null;
+          : null;
 
       return (
         <div className="min-h-dvh flex flex-col" style={{ background: BG }}>
@@ -895,7 +887,7 @@ export default function OnboardingPage() {
               {TOP_COUNTRIES.map((c) => (
                 <button
                   key={c.code}
-                  onClick={() => confirmCountry(c.code, c.name)}
+                  onClick={() => confirmCountry(c.code, c.name, { source: "manual" })}
                   className="flex items-center gap-2.5 px-4 py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all text-left"
                   style={CHIP_DARK}
                 >
@@ -928,7 +920,7 @@ export default function OnboardingPage() {
                   {searchResults.map((c) => (
                     <button
                       key={c.code}
-                      onClick={() => confirmCountry(c.code, c.name)}
+                      onClick={() => confirmCountry(c.code, c.name, { source: "manual" })}
                       className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all text-left"
                       style={CHIP_DARK}
                     >
@@ -1006,7 +998,9 @@ export default function OnboardingPage() {
               style={{ background: GLASS_BG, border: GLASS_BORDER }}
             >
               <p className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.65)" }}>
-                {t("screens.onboarding.country_detected_in")}
+                {locationSource === "ip"
+                  ? t("screens.onboarding.country_detected_ip")
+                  : t("screens.onboarding.country_detected_in")}
               </p>
               <span style={{ fontSize: 56, lineHeight: 1 }}>{flag}</span>
               <h2 className="text-2xl font-extrabold text-center" style={{ color: "#fff" }}>
@@ -1016,7 +1010,10 @@ export default function OnboardingPage() {
 
             <div className="flex flex-col gap-3 w-full max-w-sm">
               <button
-                onClick={() => confirmCountry(countryCode, countryName, detectedCoords)}
+                onClick={() => confirmCountry(countryCode, countryName, {
+                  coords: detectedCoords,
+                  source: locationSource ?? "manual",
+                })}
                 className="w-full py-4 rounded-2xl font-bold text-base active:scale-95 transition-all"
                 style={{ background: GRAD, color: "#fff", boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
               >
@@ -1118,15 +1115,16 @@ export default function OnboardingPage() {
       <div className="min-h-dvh flex flex-col items-center justify-center gap-6 px-5" style={{ background: BG }}>
         {step === "saving" ? (
           <>
-            <div
-              className="w-20 h-20 rounded-full flex items-center justify-center shadow-xl"
-              style={{ background: GRAD, animation: "pulse-glow 1.5s ease-in-out infinite" }}
-            >
-              <span className="text-4xl">🧠</span>
+            <div className="amy-setup-glow-ring">
+              <span className="amy-setup-glow-ring__label">Amy</span>
             </div>
-            <div className="text-center">
-              <p className="text-xl font-bold" style={{ color: "#fff" }}>{t("screens.onboarding.saving_title")}</p>
-              <p className="font-bold text-2xl mt-1" style={{ color: "rgba(255,255,255,0.85)" }}>{t("screens.onboarding.saving_subtitle")}</p>
+            <div className="text-center max-w-sm">
+              <p className="text-xl font-bold leading-snug" style={{ color: "#fff" }}>
+                {t("screens.onboarding.saving_title")}
+              </p>
+              <p className="text-sm mt-2 leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>
+                {t("screens.onboarding.saving_subtitle")}
+              </p>
             </div>
             <div className="flex gap-2">
               {[0, 1, 2].map((i) => (

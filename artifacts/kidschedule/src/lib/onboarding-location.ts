@@ -5,11 +5,19 @@ export interface GeoCoords {
   longitude: number;
 }
 
+export type LocationSource = "gps" | "ip" | "manual";
+
 export type GeoPermissionState = "granted" | "denied" | "prompt" | "unknown";
 
 export interface ReverseGeocodeResult {
   countryCode: string;
   countryName: string;
+}
+
+export interface ResolvedLocation {
+  coords: GeoCoords | null;
+  country: ReverseGeocodeResult;
+  source: LocationSource;
 }
 
 export function isGeoPermissionDenied(error: unknown): boolean {
@@ -48,32 +56,13 @@ export async function checkGeoPermission(): Promise<GeoPermissionState> {
   return "unknown";
 }
 
-export async function requestGeoPermission(): Promise<GeoPermissionState> {
-  if (isCapacitorNative()) {
-    try {
-      const { Geolocation } = await import("@capacitor/geolocation");
-      const result = await Geolocation.requestPermissions();
-      const state = result.location as string;
-      if (state === "granted" || state === "limited") return "granted";
-      if (state === "denied") return "denied";
-      return "prompt";
-    } catch {
-      return "unknown";
-    }
-  }
-
-  return "unknown";
-}
-
-export async function getCurrentCoords(options?: { timeout?: number }): Promise<GeoCoords> {
-  const timeout = options?.timeout ?? 12_000;
-
+async function getCoordsFromGps(timeout = 10_000): Promise<GeoCoords> {
   if (isCapacitorNative()) {
     const { Geolocation } = await import("@capacitor/geolocation");
     const pos = await Geolocation.getCurrentPosition({
       enableHighAccuracy: true,
       timeout,
-      maximumAge: 120_000,
+      maximumAge: 0,
     });
     return {
       latitude: pos.coords.latitude,
@@ -92,9 +81,39 @@ export async function getCurrentCoords(options?: { timeout?: number }): Promise<
         longitude: pos.coords.longitude,
       }),
       reject,
-      { enableHighAccuracy: true, timeout, maximumAge: 120_000 },
+      { enableHighAccuracy: true, timeout, maximumAge: 0 },
     );
   });
+}
+
+/**
+ * Request location inside a user gesture (button click).
+ * Capacitor: requestPermissions → getCurrentPosition.
+ * Web: getCurrentPosition directly (triggers the browser prompt).
+ */
+export async function requestLocationWithUserGesture(): Promise<ResolvedLocation> {
+  if (isCapacitorNative()) {
+    const { Geolocation } = await import("@capacitor/geolocation");
+    const perm = await Geolocation.requestPermissions();
+    const state = perm.location as string;
+    if (state !== "granted" && state !== "limited") {
+      throw new Error("permission-denied");
+    }
+  }
+
+  const coords = await getCoordsFromGps();
+  const country = await reverseGeocodeCountry(coords.latitude, coords.longitude);
+  if (!country) throw new Error("geocode-failed");
+
+  return { coords, country, source: "gps" };
+}
+
+/** Silent GPS read when permission was already granted (no new prompt). */
+export async function fetchGrantedLocation(): Promise<ResolvedLocation> {
+  const coords = await getCoordsFromGps();
+  const country = await reverseGeocodeCountry(coords.latitude, coords.longitude);
+  if (!country) throw new Error("geocode-failed");
+  return { coords, country, source: "gps" };
 }
 
 export async function reverseGeocodeCountry(
@@ -118,4 +137,30 @@ export async function reverseGeocodeCountry(
     countryCode,
     countryName: countryName || countryCode,
   };
+}
+
+export async function detectCountryFromIp(): Promise<ReverseGeocodeResult | null> {
+  try {
+    const controller = new AbortController();
+    const tid = window.setTimeout(() => controller.abort(), 4000);
+    const res = await fetch("https://ipapi.co/json/", { signal: controller.signal });
+    window.clearTimeout(tid);
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as { country_code?: string; country_name?: string };
+    if (!data.country_code || !data.country_name) return null;
+
+    return {
+      countryCode: data.country_code.toUpperCase(),
+      countryName: data.country_name,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function resolveLocationFallback(): Promise<ResolvedLocation | null> {
+  const ipCountry = await detectCountryFromIp();
+  if (!ipCountry) return null;
+  return { coords: null, country: ipCountry, source: "ip" };
 }

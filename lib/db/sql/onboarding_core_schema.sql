@@ -74,6 +74,7 @@ ALTER TABLE parent_profiles ADD COLUMN IF NOT EXISTS free_slots JSONB DEFAULT '[
 ALTER TABLE parent_profiles ADD COLUMN IF NOT EXISTS country TEXT;
 ALTER TABLE parent_profiles ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
 ALTER TABLE parent_profiles ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
+ALTER TABLE parent_profiles ADD COLUMN IF NOT EXISTS location_source TEXT;
 
 -- ── subscriptions ─────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS subscriptions (
