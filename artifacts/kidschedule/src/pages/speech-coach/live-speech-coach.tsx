@@ -17,6 +17,7 @@ import { useGetSpeechProgress, useListChildren, useLogSpeechPracticeAttempt } fr
 import {
   buildPracticeSession,
   compareTranscript,
+  getPromptSpeakText,
   getPromptsPool,
   isSpeechCoachEligibleAgeMonths,
   type PronouncePrompt,
@@ -139,8 +140,7 @@ function buildTasks(months: number, history: ReturnType<typeof weakSoundsToHisto
 }
 
 function speakPromptText(task: PronouncePrompt, mode: AgeMode): string {
-  if (mode.kind === "sentence") return `Listen carefully. Can you say: ${task.text}`;
-  return `Can you say: ${task.text.toUpperCase()}?`;
+  return getPromptSpeakText(task);
 }
 
 function correctionFor(task: PronouncePrompt, mode: AgeMode): string {

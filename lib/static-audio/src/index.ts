@@ -4,7 +4,7 @@ export {
   staticAudioGcsObjectName,
   staticAudioPublicUrl,
 } from "./keys.js";
-export { normalizeStaticAudioKey } from "./normalize.js";
+export { normalizeStaticAudioKey, normalizeSpeakTextForLookup } from "./normalize.js";
 export {
   computeCatalogMissingStaticAudioKeys,
   computeCorpusMissingStaticAudioKeys,

@@ -7,6 +7,8 @@ import {
   PLAY_CATEGORIES, BASIC_SUBJECTS, ADVANCED_SUBJECTS,
   resolveStudyMode, MODE_LABELS,
   SMART_SUBJECTS,
+  collapseSpeakWhitespace,
+  getPlayItemSpeakText,
   type StudyMode, type PlayCategory, type PlayItem,
   type SubjectPack, type StudyTopic,
   type DailyPlan, type PlanItem,
@@ -415,7 +417,7 @@ function PlayCategoryView({
   if (!cat) return <p className="text-sm text-muted-foreground">{t("screens.study.category_not_found")}</p>;
   const completed = new Set(progress?.play[cat.id] ?? []);
   const handleTap = (item: PlayItem) => {
-    speak(item.speak);
+    speak(getPlayItemSpeakText(item, cat.id));
     fx.play("tap");
     setPoppedId(item.id);
     window.setTimeout(() => setPoppedId((v) => (v === item.id ? null : v)), 350);
@@ -681,7 +683,7 @@ function TopicDetail({
               className="rounded-full"
               onClick={() => {
                 if (amySpeaking || amyLoading) { amyStop(); return; }
-                amySpeak(topic.notes.replace(/\n/g, "."));
+                amySpeak(collapseSpeakWhitespace(topic.notes));
               }}
             >
               {(amySpeaking || amyLoading) ? <VolumeX className="h-4 w-4 mr-1" /> : <Volume2 className="h-4 w-4 mr-1" />}
