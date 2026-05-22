@@ -37,8 +37,7 @@ export async function playCvcBlend(
     for (let i = 0; i < phonemes.length; i++) {
       const p = phonemes[i]!;
       options?.onPhoneme?.(i, "slow");
-      const res = await speak(getPhonemeAudioText(p), { phoneme: p, phase: "slow" });
-      if (!res.success) return;
+      await speak(getPhonemeAudioText(p), { phoneme: p, phase: "slow" });
       await delay(slowGap);
     }
   }
@@ -46,11 +45,11 @@ export async function playCvcBlend(
   for (let i = 0; i < phonemes.length; i++) {
     const p = phonemes[i]!;
     options?.onPhoneme?.(i, "fast");
-    const res = await speak(getPhonemeAudioText(p), { phoneme: p, phase: "fast" });
-    if (!res.success) return;
+    await speak(getPhonemeAudioText(p), { phoneme: p, phase: "fast" });
     await delay(fastGap);
   }
 
+  await delay(150);
   options?.onPhoneme?.(-1, "word");
   await speak(getCvcWordAudioText(word), { word, phase: "word" });
 }

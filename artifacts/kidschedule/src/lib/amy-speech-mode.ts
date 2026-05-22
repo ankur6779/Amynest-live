@@ -707,6 +707,11 @@ export function prepareAmySpeechInput(raw: string, opts?: SpeakOptions): AmySpee
   const policy = buildPolicy(originalText, normalizedText, speechMode, phrases);
   policy.prosody = prosody;
 
+  // CVC blend finale — play whole word, never re-decompose into phonemes.
+  if (opts?.word) {
+    policy.allowPhonicsSequence = false;
+  }
+
   logAmyVoiceDiag("speech_mode", {
     mode: speechMode,
     normalized: policy.normalizedText.slice(0, 120),
