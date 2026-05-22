@@ -245,11 +245,31 @@ function reportAmyVoiceTelemetry(
 
 /** Post-launch monitoring events (health alerts, periodic snapshots). */
 export function reportAmyVoiceMonitoring(
-  kind: "health_alert" | "health_snapshot" | "analytics",
+  kind: "health_alert" | "health_snapshot" | "analytics" | "runtime_snapshot",
   meta?: Record<string, unknown>,
 ): void {
   if (import.meta.env.DEV || import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true") {
     console.info(LOG, kind, meta ?? "");
   }
   reportAmyVoiceTelemetry("fallback_used", { monitoringKind: kind, ...meta });
+}
+
+/** Unified runtime snapshot — health, analytics, governance, experiments, delivery. */
+export function reportAmyVoiceRuntimeSnapshot(meta?: Record<string, unknown>): void {
+  void (async () => {
+    try {
+      const { getAmyVoiceRuntimeSnapshot } = await import("@/lib/amy-voice-delivery-profile");
+      const runtime = await getAmyVoiceRuntimeSnapshot();
+      if (import.meta.env.DEV || import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true") {
+        console.info(LOG, "runtime_snapshot", runtime);
+      }
+      reportAmyVoiceTelemetry("fallback_used", {
+        monitoringKind: "runtime_snapshot",
+        runtime,
+        ...meta,
+      });
+    } catch {
+      /* never throw */
+    }
+  })();
 }

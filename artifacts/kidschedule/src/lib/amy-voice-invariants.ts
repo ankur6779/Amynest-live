@@ -54,6 +54,11 @@ export function capInstructionPauses(text: string, max = AMY_VOICE_INVARIANTS.ma
   });
 }
 
+/** Clamp prosody rates and gaps to protected bounds after live delivery tuning. */
+export function clampAmyProsodyToInvariants(prosody: AmyProsodyProfile): AmyProsodyProfile {
+  return clampProsody(prosody);
+}
+
 function clampProsody(prosody: AmyProsodyProfile): AmyProsodyProfile {
   return {
     ...prosody,
