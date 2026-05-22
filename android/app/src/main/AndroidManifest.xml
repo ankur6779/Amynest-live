@@ -49,6 +49,15 @@
                 activity instead of the browser. Requires assetlinks.json hosted
                 at https://amynest.in/.well-known/assetlinks.json (already done).
             -->
+            <!-- Firebase email links use https://www.amynest.in/auth/action -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="www.amynest.in" />
+            </intent-filter>
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

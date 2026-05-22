@@ -14,12 +14,12 @@ import {
 } from "@/lib/firebase-auth-error";
 import { waitForFirebaseUser } from "@/lib/wait-for-firebase-user";
 import { syncUserEmailVerificationFromServer } from "@/lib/firebase-auth-listener";
+import { resolvePostVerifyDestination } from "@/lib/post-verify-destination";
 import {
   buildCanonicalAuthActionHref,
   parseFirebaseActionParams,
 } from "@/lib/firebase-action-params";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
-import { shouldShowNativeNotifyPrompt } from "@/lib/native-push-bridge";
 
 const CSS = `
   @keyframes veRingRotate {
@@ -78,11 +78,8 @@ function NeonRingHero() {
 
 const RESEND_COOLDOWN_SEC = Math.ceil(UX_COOLDOWN_MS / 1000);
 
-function postVerifyPath(): string {
-  if (shouldShowNativeNotifyPrompt()) {
-    return "/notify-prompt?next=/";
-  }
-  return "/";
+async function postVerifyPath(): Promise<string> {
+  return resolvePostVerifyDestination();
 }
 
 /** Inbox / resend UI after sign-up. Email action links use /auth/action. */
@@ -122,18 +119,18 @@ function VerifyEmailInboxPage() {
     const user = firebaseAuth.currentUser;
     const bypassFromUrl = isEmailVerificationBypassEmail(email);
     if (bypassFromUrl) {
-      setLocation(postVerifyPath());
+      setLocation(await postVerifyPath());
       return;
     }
     if (!user) return;
     if (isEmailVerificationBypassEmail(user.email)) {
-      setLocation(postVerifyPath());
+      setLocation(await postVerifyPath());
       return;
     }
     try {
       await syncUserEmailVerificationFromServer(user);
       if (user.emailVerified) {
-        setLocation(postVerifyPath());
+        setLocation(await postVerifyPath());
       }
     } catch {
       /* ignore */
@@ -142,7 +139,7 @@ function VerifyEmailInboxPage() {
 
   useEffect(() => {
     if (isEmailVerificationBypassEmail(email)) {
-      setLocation(postVerifyPath());
+      void postVerifyPath().then(setLocation);
     }
   }, [email, setLocation]);
 

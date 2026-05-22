@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import {
   applyActionCode,
@@ -18,7 +18,7 @@ import {
   refreshFirebaseAuthSnapshot,
   syncUserEmailVerificationFromServer,
 } from "@/lib/firebase-auth-listener";
-import { shouldShowNativeNotifyPrompt } from "@/lib/native-push-bridge";
+import { EmailVerifiedSuccess } from "@/components/email-verified-success";
 
 type ActionStatus =
   | "loading"
@@ -66,13 +66,6 @@ const INPUT_STYLE: React.CSSProperties = {
   boxSizing: "border-box",
 };
 
-function postVerifyPath(): string {
-  if (shouldShowNativeNotifyPrompt()) {
-    return "/notify-prompt?next=/";
-  }
-  return "/";
-}
-
 const LOGIN_BUTTON: React.CSSProperties = {
   display: "inline-block",
   padding: "14px 32px",
@@ -109,6 +102,7 @@ function Spinner() {
  */
 export default function AuthActionPage() {
   const { t } = useTranslation();
+  const [, setLocation] = useLocation();
   const [status, setStatus] = useState<ActionStatus>("loading");
   const [oobCode, setOobCode] = useState<string | null>(null);
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
@@ -228,23 +222,7 @@ export default function AuthActionPage() {
           )}
 
           {status === "emailVerified" && (
-            <>
-              <h2 style={{ margin: "0 0 12px", fontSize: 22, fontWeight: 800, color: "#fff" }}>
-                {t("screens.auth_action.email_verified_title")}
-              </h2>
-              <p style={{ margin: "0 0 24px", fontSize: 15, color: "rgba(134,239,172,0.95)", lineHeight: 1.55 }}>
-                {t("screens.verify_email_action.success_message")}
-              </p>
-              {firebaseAuth.currentUser?.emailVerified ? (
-                <Link href={postVerifyPath()} style={LOGIN_BUTTON}>
-                  {t("screens.verify_email_action.continue_to_app")}
-                </Link>
-              ) : (
-                <Link href="/sign-in" style={LOGIN_BUTTON}>
-                  {t("screens.verify_email_action.go_to_login")}
-                </Link>
-              )}
-            </>
+            <EmailVerifiedSuccess onNavigate={setLocation} />
           )}
 
           {status === "showResetForm" && (

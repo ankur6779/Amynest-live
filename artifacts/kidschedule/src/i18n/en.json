@@ -1349,6 +1349,12 @@
       "error_message": "❌ Verification link expired or invalid. Please request a new email.",
       "go_to_login": "Go to Login",
       "continue_to_app": "Continue to AmyNest",
+      "open_amynest_app": "Open AmyNest app",
+      "back_to_inbox": "Back to inbox",
+      "close_this_tab": "You can close this tab. Your email is verified — continue in the AmyNest app.",
+      "browser_success_message": "Your email is verified. Open the AmyNest app on your phone to finish setup (or sign in if you already use the app).",
+      "in_app_success_message": "Your email is verified. Continuing in AmyNest…",
+      "auto_continue_hint": "Redirecting automatically…",
       "redirect_hint": "Redirecting to login in {{seconds}} seconds…",
       "sign_in_button": "Sign in to AmyNest",
       "invalid_link": "This verification link is missing required information."

@@ -11,18 +11,9 @@ import {
   refreshFirebaseAuthSnapshot,
   syncUserEmailVerificationFromServer,
 } from "@/lib/firebase-auth-listener";
-import { shouldShowNativeNotifyPrompt } from "@/lib/native-push-bridge";
+import { EmailVerifiedSuccess } from "@/components/email-verified-success";
 
 type VerifyStatus = "verifying" | "success" | "error";
-
-const REDIRECT_DELAY_MS = 3000;
-
-function postVerifyPath(): string {
-  if (shouldShowNativeNotifyPrompt()) {
-    return "/notify-prompt?next=/";
-  }
-  return "/";
-}
 
 const SHELL: React.CSSProperties = {
   minHeight: "100dvh",
@@ -107,15 +98,6 @@ export default function VerifyEmailActionPage() {
 
         console.info("[verify-email-action] Email verified successfully");
         setStatus("success");
-
-        const nextPath =
-          firebaseAuth.currentUser?.emailVerified === true
-            ? postVerifyPath()
-            : "/sign-in";
-
-        setTimeout(() => {
-          if (!cancelled) setLocation(nextPath);
-        }, REDIRECT_DELAY_MS);
       } catch (err: unknown) {
         if (cancelled) return;
         console.error("Verification failed:", err);
@@ -127,7 +109,7 @@ export default function VerifyEmailActionPage() {
     return () => {
       cancelled = true;
     };
-  }, [setLocation]);
+  }, []);
 
   return (
     <div style={SHELL}>
@@ -141,25 +123,7 @@ export default function VerifyEmailActionPage() {
           </>
         )}
 
-        {status === "success" && (
-          <>
-            <p style={{
-              margin: "0 0 24px",
-              fontSize: "15px",
-              color: "rgba(134,239,172,0.95)",
-              lineHeight: 1.55,
-              fontWeight: 600,
-            }}>
-              {t("screens.verify_email_action.success_message")}
-            </p>
-            <Link href="/sign-in" style={LOGIN_BUTTON}>
-              {t("screens.verify_email_action.go_to_login")}
-            </Link>
-            <p style={{ marginTop: 16, fontSize: "12px", color: "rgba(200,180,255,0.45)" }}>
-              {t("screens.verify_email_action.redirect_hint", { seconds: 3 })}
-            </p>
-          </>
-        )}
+        {status === "success" && <EmailVerifiedSuccess onNavigate={setLocation} />}
 
         {status === "error" && (
           <>
