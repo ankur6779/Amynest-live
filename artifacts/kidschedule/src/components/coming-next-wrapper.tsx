@@ -1,14 +1,12 @@
-import { Lock } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { AgeBand } from "@/lib/age-bands";
-import { bandLowerLabel, bandRangeLabel } from "@/lib/age-bands";
+import { bandRangeLabel } from "@/lib/age-bands";
 
 /**
- * Wraps a HubSection (or any section card) to give it the "Coming Next" look:
- * slightly dimmed, premium border, and a "Coming Next · For Age X+" pill.
- *
- * Content stays interactive — parents can preview, but the visual treatment
- * makes it clear this is a future stage. This is intentionally a thin
- * decorator so we don't fork every existing section component.
+ * Wraps a HubSection in Section 2 ("Try Early Access") with a freemium pill.
+ * Content stays fully interactive — LockedBlock inside handles one-time-free
+ * then paywall for free users; premium users get full access.
  */
 export function ComingNextWrapper({
   band,
@@ -17,25 +15,27 @@ export function ComingNextWrapper({
   band: AgeBand;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
+
   return (
-    <div className="relative group/coming-next">
-      {/* Coming Next pill — sits above the card */}
-      <div className="absolute -top-2.5 left-3 z-10 flex items-center gap-1.5 rounded-full bg-card border border-border px-2.5 py-0.5 shadow-sm">
-        <Lock className="h-2.5 w-2.5 text-foreground" />
+    <div className="relative group/early-access">
+      <div className="absolute -top-2.5 left-3 z-10 flex items-center gap-1.5 rounded-full bg-card border border-primary/30 px-2.5 py-0.5 shadow-sm">
+        <Sparkles className="h-2.5 w-2.5 text-primary" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">
-          Coming next · For age {bandLowerLabel(band)}
+          {t("parent_hub.badges.early_access_pill")}
         </span>
       </div>
 
-      {/* Dimmed surface — content stays interactive (preview allowed) */}
       <div
         className={[
           "rounded-2xl transition-all duration-300",
-          "ring-1 ring-primary",
-          "opacity-75 saturate-75 hover:opacity-100 hover:saturate-100",
+          "ring-1 ring-primary/60",
           "shadow-[0_2px_18px_-10px_rgba(245,158,11,0.35)]",
+          "hover:ring-primary hover:shadow-[0_4px_24px_-8px_rgba(245,158,11,0.45)]",
         ].join(" ")}
-        title={`Preview — unlocks fully at ${bandRangeLabel(band)}`}
+        title={t("parent_hub.badges.early_access_tooltip", {
+          range: bandRangeLabel(band),
+        })}
       >
         {children}
       </div>

@@ -7,7 +7,7 @@ import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, ChevronUp, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, Zap, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Calculator, Sigma } from "lucide-react";
+import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, ChevronUp, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, Zap, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText } from "lucide-react";
 import { OlympiadZone } from "@/components/olympiad-zone";
 import { SmartStudyZone } from "@/components/smart-study-zone";
 import { PtmPrepAssistant } from "@/components/ptm-prep";
@@ -46,6 +46,8 @@ import {
   isHubSectionVisible,
   shouldRenderHubTileContent,
   shouldShowExploreSection,
+  shouldBypassHubMonthGates,
+  SECTION_2_EARLY_ACCESS_TILE_IDS,
 } from "@/lib/hub-visibility";
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
 
@@ -601,9 +603,11 @@ function ParentingHubPage() {
       </div>;
   }
 
-  // ── Two-section layout: For You (current band) + Explore Next (next band) ──
+  // ── Two-section layout: For You (current band) + Early Access (2+ modules) ──
   const currentBand: AgeBand | null = effectiveChild ? getAgeBand(effectiveChild.age, (effectiveChild as any).ageMonths ?? 0) : null;
   const nextBand: AgeBand | null = currentBand ? getNextAgeBand(currentBand) : null;
+  const showSection2 = shouldShowExploreSection(totalAgeMonths, currentBand, nextBand);
+  const earlyAccessBypass = shouldBypassHubMonthGates(totalAgeMonths, currentBand, nextBand);
   type SectionEntry = {
     id: string;
     /** Always renders in "For You" regardless of band. */
@@ -655,7 +659,7 @@ function ParentingHubPage() {
     id: "smart-math-tricks",
     bands: ["4-6", "6-8"] as AgeBand[],
     render: () => {
-      if (!ageGroup && !isTwoPlus) return null;
+      if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
       return <HubSection id="smart-math-tricks" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.smart-math-tricks.title")} description={t("parent_hub.web_tiles.smart-math-tricks.description")} accentClass="bg-gradient-to-br from-orange-400 to-amber-500" cardClass="linear-gradient(135deg,rgba(251,146,60,0.30)0%,rgba(251,191,36,0.14)100%)"> {/* audit-ok: brand tile accent gradient */}
           <SmartMathTricks childName={effectiveChild.name} ageYears={effectiveChild.age} />
         </HubSection>;
@@ -666,7 +670,7 @@ function ParentingHubPage() {
     id: "abacus",
     bands: ["4-6", "6-8", "8-10"] as AgeBand[],
     render: () => {
-      if (!ageGroup && !isTwoPlus) return null;
+      if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_abacus")}>
           <HubSection id="abacus" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("pages.parenting_hub.abacus_pro_zone")} // audit-ok: brand product name, intentional EN-only
         description="Learn the soroban — beads, brain & speed math" accentClass="bg-gradient-to-br from-teal-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(45,212,191,0.30)0%,rgba(34,211,238,0.14)100%)" tryFree={tryFreeFor("hub_abacus")} onOpen={() => hubUsage.markFeatureUsed("hub_abacus")}>
@@ -754,7 +758,7 @@ function ParentingHubPage() {
     id: "phonics",
     bands: ["2-4", "4-6"],
     render: () => {
-      if (!shouldRenderHubTileContent("phonics", totalAgeMonths, isTwoPlus)) return null;
+      if (!shouldRenderHubTileContent("phonics", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_phonics")}>
           <PhonicsLaunchCard
             title={t("parent_hub.web_tiles.phonics.title")}
@@ -768,7 +772,7 @@ function ParentingHubPage() {
     id: "ptm-prep",
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
-      if (!shouldRenderHubTileContent("ptm-prep", totalAgeMonths, isTwoPlus)) return null;
+      if (!shouldRenderHubTileContent("ptm-prep", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_ptm_prep")}>
           <HubSection id="ptm-prep" icon={<ClipboardList className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} accentClass="bg-gradient-to-br from-slate-500 to-blue-600" cardClass="linear-gradient(135deg,rgba(100,116,139,0.30)0%,rgba(37,99,235,0.14)100%)" tryFree={tryFreeFor("hub_ptm_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}> {/* audit-ok: brand tile accent gradient */}
             <PtmPrepAssistant child={{
@@ -783,7 +787,7 @@ function ParentingHubPage() {
     id: "smart-study",
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
-      if (!shouldRenderHubTileContent("smart-study", totalAgeMonths, isTwoPlus)) return null;
+      if (!shouldRenderHubTileContent("smart-study", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_smart_study")}>
           <HubSection id="smart-study" icon={<GraduationCap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.smart-study.title")} description={t("parent_hub.web_tiles.smart-study.description")} accentClass="bg-gradient-to-br from-indigo-400 to-blue-500" cardClass="linear-gradient(135deg,rgba(129,140,248,0.30)0%,rgba(59,130,246,0.14)100%)" tryFree={tryFreeFor("hub_smart_study")} onOpen={() => hubUsage.markFeatureUsed("hub_smart_study")}> {/* audit-ok: brand tile accent gradient */}
             <SmartStudyZone />
@@ -806,7 +810,7 @@ function ParentingHubPage() {
     id: "event-prep",
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
-      if (!shouldRenderHubTileContent("event-prep", totalAgeMonths, isTwoPlus)) return null;
+      if (!shouldRenderHubTileContent("event-prep", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_event_prep")}>
           <HubSection id="event-prep" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.event-prep.title")} description={t("parent_hub.web_tiles.event-prep.description")} accentClass="bg-gradient-to-br from-amber-400 to-orange-500" cardClass="linear-gradient(135deg,rgba(251,191,36,0.30)0%,rgba(249,115,22,0.14)100%)" tryFree={tryFreeFor("hub_event_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_event_prep")}> {/* audit-ok: brand tile accent gradient */}
             <EventPrepCard />
@@ -817,7 +821,7 @@ function ParentingHubPage() {
     id: "olympiad",
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
-      if (!shouldRenderHubTileContent("olympiad", totalAgeMonths, isTwoPlus)) return null;
+      if (!shouldRenderHubTileContent("olympiad", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_olympiad")}>
           <HubSection id="olympiad" icon={<Trophy className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.olympiad.title")} description={t("parent_hub.web_tiles.olympiad.description")} accentClass="bg-gradient-to-br from-yellow-400 to-amber-500" cardClass="linear-gradient(135deg,rgba(250,204,21,0.30)0%,rgba(245,158,11,0.14)100%)" tryFree={tryFreeFor("hub_olympiad")} onOpen={() => hubUsage.markFeatureUsed("hub_olympiad")}> {/* audit-ok: brand tile accent gradient */}
             <OlympiadZone child={{
@@ -832,7 +836,7 @@ function ParentingHubPage() {
     id: "life-skills",
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
-      if (!shouldRenderHubTileContent("life-skills", totalAgeMonths, isTwoPlus)) return null;
+      if (!shouldRenderHubTileContent("life-skills", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_life_skills")}>
           <HubSection id="life-skills" icon={<Compass className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.life-skills.title")} description={t("parent_hub.web_tiles.life-skills.description")} accentClass="bg-gradient-to-br from-emerald-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,211,238,0.14)100%)" tryFree={tryFreeFor("hub_life_skills")} onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}> {/* audit-ok: brand tile accent gradient */}
             <LifeSkillsZone child={{
@@ -845,13 +849,13 @@ function ParentingHubPage() {
     }
   }, {
     // Coloring Books — Google-Drive-backed PDF library. Shows for age
-    // 2+ only (preview tile in Section 2 covers the 0-2 band). Daily
+    // 2+ only (early-access tile in Section 2 covers the 0-2 band). Daily
     // download cap (2/day per child) and the "never repeat" rule are
     // enforced server-side in artifacts/api-server/src/routes/coloring.ts.
     id: "coloring-books",
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
-      if (!shouldRenderHubTileContent("coloring-books", totalAgeMonths, isTwoPlus)) return null;
+      if (!shouldRenderHubTileContent("coloring-books", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_coloring_books")}>
           <HubSection id="coloring-books" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.coloring-books.title")} description={t("parent_hub.web_tiles.coloring-books.description")} accentClass="bg-gradient-to-br from-pink-400 to-rose-500" cardClass="linear-gradient(135deg,rgba(244,114,182,0.30)0%,rgba(251,113,133,0.14)100%)" tryFree={tryFreeFor("hub_coloring_books")} onOpen={() => hubUsage.markFeatureUsed("hub_coloring_books")}> {/* audit-ok: brand tile accent gradient */}
             <ColoringBooks childId={effectiveChild.id} childName={effectiveChild.name} />
@@ -860,13 +864,13 @@ function ParentingHubPage() {
     }
   }, {
     // Fun Sheets — activity & learning PDFs from two Google Drive folders.
-    // Shows for age 2+ only; preview tile in Section 2 covers 0–24m.
+    // Shows for age 2+ only; early-access tile in Section 2 covers 0–24m.
     // Daily cap: 2 downloads/day per child (server-enforced).
     // Sorting: not-yet-downloaded first, already-downloaded last.
     id: "fun-sheets",
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
-      if (!shouldRenderHubTileContent("fun-sheets", totalAgeMonths, isTwoPlus)) return null;
+      if (!shouldRenderHubTileContent("fun-sheets", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_fun_sheets")}>
           <HubSection id="fun-sheets" icon={<FileDown className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.fun-sheets.title")} description={t("parent_hub.web_tiles.fun-sheets.description")} accentClass="bg-gradient-to-br from-lime-400 to-green-500" cardClass="linear-gradient(135deg,rgba(163,230,53,0.30)0%,rgba(34,197,94,0.14)100%)" tryFree={tryFreeFor("hub_fun_sheets")} onOpen={() => hubUsage.markFeatureUsed("hub_fun_sheets")}> {/* audit-ok: brand tile accent gradient */}
             <FunSheets childId={effectiveChild.id} childName={effectiveChild.name} />
@@ -907,7 +911,8 @@ function ParentingHubPage() {
   const forYouGroupedFeatured = forYouFeatured.filter(s => s.id !== "infant-hub");
   const forYouGrid = forYouAll.filter(s => !s.featured);
 
-  const showSection2 = shouldShowExploreSection(totalAgeMonths, currentBand, nextBand);
+  const sectionById = new Map(sections.map(s => [s.id, s]));
+
   return <div className="max-w-6xl mx-auto space-y-6 pb-12">
       <PageHeader />
 
@@ -1000,15 +1005,20 @@ function ParentingHubPage() {
             })}
           </div>
 
-          {/* ── SECTION 2: Explore Next Stage — ONLY for 0-24 month children ── */}
+          {/* ── SECTION 2: Try Early Access (2+ modules) — infants 0–24 months ── */}
           {showSection2 && nextBand && <>
               <ExploreNextHeader childName={effectiveChild.name} band={nextBand} />
-              <div data-testid="section-2-previews" className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start pt-2">
-                {SECTION_2_PREVIEW_TILES.map(tile => {
-            return <ComingNextWrapper key={tile.id} band={nextBand}>
-                    <PreviewHubCard id={tile.id} icon={tile.icon} title={t(`parent_hub.web_tiles_preview.${tile.id}.title`)} description={t(`parent_hub.web_tiles_preview.${tile.id}.description`)} accentClass={tile.accentClass} />
-                  </ComingNextWrapper>;
-          })}
+              <div data-testid="section-2-early-access" className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start pt-2">
+                {SECTION_2_EARLY_ACCESS_TILE_IDS.map(tileId => {
+                  const section = sectionById.get(tileId);
+                  if (!section) return null;
+                  const node = section.render();
+                  return node ? (
+                    <ComingNextWrapper key={tileId} band={nextBand}>
+                      {node}
+                    </ComingNextWrapper>
+                  ) : null;
+                })}
               </div>
             </>}
         </>}
@@ -1062,84 +1072,7 @@ function ForYouHeader({
     </div>;
 }
 
-// ─── Section 2 preview tiles ────────────────────────────────────────────────
-// Fixed list shown ONLY for 0–24 month children. Title & description are
-// looked up at render time via `t("parent_hub.web_tiles_preview.<id>.title")`
-// so each tile re-renders when the active language changes.
-const SECTION_2_PREVIEW_TILES: Array<{
-  id: string;
-  icon: React.ReactNode;
-  accentClass: string;
-}> = [{
-  id: "life-skills",
-  icon: <Compass className="h-5 w-5 text-primary" />,
-  accentClass: "bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card"
-}, {
-  id: "olympiad",
-  icon: <Trophy className="h-5 w-5 text-primary" />,
-  accentClass: "bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card"
-}, {
-  id: "event-prep",
-  icon: <Sparkles className="h-5 w-5 text-primary" />,
-  accentClass: "bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card"
-}, {
-  id: "smart-math-tricks",
-  icon: <Sigma className="h-5 w-5 text-primary" />,
-  accentClass: "bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card"
-}, {
-  id: "abacus",
-  icon: <Calculator className="h-5 w-5 text-primary" />,
-  accentClass: "bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card"
-}, {
-  id: "smart-study",
-  icon: <GraduationCap className="h-5 w-5 text-primary" />,
-  accentClass: "bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card"
-}, {
-  id: "ptm-prep",
-  icon: <ClipboardList className="h-5 w-5 text-primary" />,
-  accentClass: "bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card"
-}, {
-  id: "phonics",
-  icon: <AudioLines className="h-5 w-5 text-primary" />,
-  accentClass: "bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card"
-}, {
-  id: "coloring-books",
-  icon: <Palette className="h-5 w-5 text-primary" />,
-  accentClass: "bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card"
-}, {
-  id: "fun-sheets",
-  icon: <FileDown className="h-5 w-5 text-primary" />,
-  accentClass: "bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card"
-}];
-function PreviewHubCard({
-  id,
-  icon,
-  title,
-  description,
-  accentClass
-}: {
-  id: string;
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  accentClass: string;
-}) {
-  return <div data-section-id={id} data-preview-only="true" className={["group relative rounded-2xl overflow-hidden", "bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl", "border border-white/50 dark:border-white/10", "shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]"].join(" ")}>
-      <div className="w-full flex items-center gap-3 px-4 py-3.5 text-left">
-        <div className={["w-11 h-11 rounded-2xl flex items-center justify-center shrink-0", "shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]", "ring-1 ring-white/40 dark:ring-white/10", accentClass].join(" ")}>
-          {icon}
-        </div>
-        <div className="min-w-0">
-          <p className="font-quicksand font-bold text-[15px] leading-tight text-foreground truncate">
-            {title}
-          </p>
-          <p className="text-[11.5px] text-muted-foreground mt-0.5 truncate">
-            {description}
-          </p>
-        </div>
-      </div>
-    </div>;
-}
+// ─── Section 2 header ───────────────────────────────────────────────────────
 function ExploreNextHeader({
   childName,
   band

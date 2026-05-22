@@ -2136,6 +2136,8 @@
       "premium": "Premium",
       "premium_feature": "Premium feature",
       "premium_feature_aria": "Premium feature — tap to upgrade",
+      "early_access_pill": "✨ Try Early Access (2+ Modules)",
+      "early_access_tooltip": "Early access — unlocks fully at {{range}}",
       "new": "New"
     },
     "age_groups": {
@@ -2644,11 +2646,11 @@
     },
     "headers": {
       "section1_for": "Section 1 · For you",
-      "section2_next": "Section 2 · Coming next",
+      "section2_next": "Section 2 · Early access",
       "for_child": "For {{name}}",
       "personalised": "Personalised content tuned to where {{name}} is right now.",
       "explore_next": "Explore the next stage for {{name}}",
-      "explore_blurb": "We grow as {{name}} grows — here's a peek at what unlocks next so you can plan ahead and stay one step in front.",
+      "explore_blurb": "Try every 2+ module once for free — upgrade for unlimited access as {{name}} grows.",
       "current_child": "Current Child",
       "select_child": "Select Child",
       "add_child": "Add child",

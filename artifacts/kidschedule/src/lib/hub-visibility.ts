@@ -64,7 +64,24 @@ export function isHubSectionVisible(
   );
 }
 
-/** Section 2 ("Explore Next") — infants in band 0-2 only; disabled at 24+ months. */
+/** Section 2 early-access tiles — 2+ modules shown to 0–24 month infants. */
+export const SECTION_2_EARLY_ACCESS_TILE_IDS = [
+  "life-skills",
+  "olympiad",
+  "event-prep",
+  "smart-math-tricks",
+  "abacus",
+  "smart-study",
+  "ptm-prep",
+  "phonics",
+  "coloring-books",
+  "fun-sheets",
+] as const;
+
+export type Section2EarlyAccessTileId =
+  (typeof SECTION_2_EARLY_ACCESS_TILE_IDS)[number];
+
+/** Section 2 ("Try Early Access") — infants in band 0-2 only; disabled at 24+ months. */
 export function shouldShowExploreSection(
   childAgeMonths: number,
   currentBand: AgeBand | null,
@@ -72,6 +89,15 @@ export function shouldShowExploreSection(
 ): boolean {
   if (childAgeMonths >= 24) return false;
   return currentBand === "0-2" && nextBand !== null;
+}
+
+/** Bypass month gates for Section 2 interactive early-access tiles. */
+export function shouldBypassHubMonthGates(
+  childAgeMonths: number,
+  currentBand: AgeBand | null,
+  nextBand: AgeBand | null,
+): boolean {
+  return shouldShowExploreSection(childAgeMonths, currentBand, nextBand);
 }
 
 /** Whether a tile's render() should run (month gates bypassed at 24+ months). */
