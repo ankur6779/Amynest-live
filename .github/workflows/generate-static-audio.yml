@@ -56,4 +56,6 @@ jobs:
             exit 0
           fi
           git commit -m "auto generated static audio"
-          git push
+          # main may advance while generation runs (e.g. deploy fixes) — rebase before push
+          git pull --rebase origin main
+          git push origin main
