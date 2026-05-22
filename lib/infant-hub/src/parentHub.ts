@@ -604,6 +604,13 @@ export function getMilestonesForAge(months: number): Milestone[] {
   );
 }
 
+/** Stable week key for rotating weekly content (YYYY * 100 + week-of-year). */
+export function getIsoWeekKey(d = new Date()): number {
+  const start = new Date(d.getFullYear(), 0, 1).getTime();
+  const week = Math.floor((d.getTime() - start) / (7 * 24 * 60 * 60 * 1000));
+  return d.getFullYear() * 100 + week;
+}
+
 // ─── Baby Cues ─────────────────────────────────────────────────────────────
 export type CueCategory = "hunger" | "sleep" | "overstim" | "discomfort";
 

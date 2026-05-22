@@ -292,6 +292,38 @@ export async function ensurePhonicsCurriculumTables(): Promise<void> {
   );
 }
 
+export async function ensureInfantMilestoneProgressTable(): Promise<void> {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS infant_milestone_progress (
+      id            SERIAL PRIMARY KEY,
+      user_id       TEXT NOT NULL,
+      child_id      INTEGER NOT NULL,
+      milestone_id  TEXT NOT NULL,
+      state         TEXT NOT NULL,
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS infant_milestone_progress_child_milestone_uniq
+      ON infant_milestone_progress (child_id, milestone_id)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS infant_milestone_progress_child_idx
+      ON infant_milestone_progress (child_id)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS infant_milestone_progress_user_idx
+      ON infant_milestone_progress (user_id)
+  `);
+
+  logger.info(
+    { evt: "db.ensure", table: "infant_milestone_progress" },
+    "Ensured infant_milestone_progress table",
+  );
+}
+
 export async function ensureStartupTables(): Promise<void> {
   const steps: Array<{ name: string; run: () => Promise<void> }> = [
     { name: "children", run: ensureChildrenTable },
@@ -301,6 +333,7 @@ export async function ensureStartupTables(): Promise<void> {
     { name: "push_tokens", run: ensurePushTokensTable },
     { name: "razorpay_webhook_events", run: ensureRazorpayWebhookEventsTable },
     { name: "phonics_curriculum", run: ensurePhonicsCurriculumTables },
+    { name: "infant_milestone_progress", run: ensureInfantMilestoneProgressTable },
   ];
 
   const failed: string[] = [];
