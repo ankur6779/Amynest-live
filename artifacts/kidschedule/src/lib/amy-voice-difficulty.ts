@@ -12,8 +12,35 @@ export type AmyDifficultyLevel = "confident" | "neutral" | "struggling";
 let sessionFallbackCount = 0;
 let sessionSuccessStreak = 0;
 let previousDifficultyLevel: AmyDifficultyLevel = "neutral";
+let smoothedDifficultyTarget = 0.5;
 const recentReplayMs: number[] = [];
 const HESITATION_WINDOW_MS = 25_000;
+const DIFFICULTY_SMOOTHING = 0.32;
+
+function rawLevelToTarget(level: AmyDifficultyLevel): number {
+  switch (level) {
+    case "confident":
+      return 0.18;
+    case "struggling":
+      return 0.82;
+    default:
+      return 0.5;
+  }
+}
+
+function targetToLevel(target: number): AmyDifficultyLevel {
+  if (target < 0.34) return "confident";
+  if (target > 0.66) return "struggling";
+  return "neutral";
+}
+
+/** Gradually move session difficulty toward the latest assessment. */
+export function smoothDifficultyLevel(raw: AmyDifficultyLevel): AmyDifficultyLevel {
+  smoothedDifficultyTarget =
+    smoothedDifficultyTarget * (1 - DIFFICULTY_SMOOTHING) +
+    rawLevelToTarget(raw) * DIFFICULTY_SMOOTHING;
+  return targetToLevel(smoothedDifficultyTarget);
+}
 
 export function recordAmyVoiceDeliveryFallback(): void {
   sessionFallbackCount += 1;
@@ -56,22 +83,19 @@ export function assessAmyDifficulty(
   if (hesitation >= 3) score += 2;
   else if (hesitation >= 2) score += 1;
 
-  if (score >= 5) return { level: "struggling", score };
-
-  // Fast recovery: consecutive successes restore normal pacing immediately.
-  if (sessionSuccessStreak >= 2 && score <= 2) {
-    return { level: score === 0 ? "confident" : "neutral", score };
+  if (score >= 5) {
+    return { level: smoothDifficultyLevel("struggling"), score };
   }
 
   if (
     score === 0 &&
     replayCount <= 1 &&
     sessionFallbackCount === 0 &&
-    sessionSuccessStreak >= 2
+    sessionSuccessStreak >= 3
   ) {
-    return { level: "confident", score: 0 };
+    return { level: smoothDifficultyLevel("confident"), score: 0 };
   }
-  return { level: "neutral", score };
+  return { level: smoothDifficultyLevel("neutral"), score };
 }
 
 export function getSessionSuccessStreak(): number {
@@ -130,6 +154,7 @@ export function resetAmyDifficultySession(): void {
   sessionFallbackCount = 0;
   sessionSuccessStreak = 0;
   previousDifficultyLevel = "neutral";
+  smoothedDifficultyTarget = 0.5;
   recentReplayMs.length = 0;
 }
 

@@ -14,6 +14,8 @@
     "check-static-audio": "tsx ./check-static-audio.ts",
     "scan-speakable-phrases": "tsx ./scan-speakable-phrases.ts",
     "check-amy-voice-usage": "tsx ./check-amy-voice-usage.ts",
+    "validate:amy-voice-field": "tsx ./src/amy-voice-field-validation.ts",
+    "review:amy-voice-weekly": "tsx ./src/amy-voice-weekly-review.ts",
     "typecheck": "pnpm run audit:parent-hub-i18n && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

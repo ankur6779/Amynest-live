@@ -11,6 +11,7 @@ import type { AmyEmotion } from "@/lib/amy-voice-emotion";
 import type { AmyDifficultyLevel } from "@/lib/amy-voice-difficulty";
 import type { AmyIntent } from "@/lib/amy-voice-intent";
 import type { SpeakOptions } from "@/hooks/use-amy-voice";
+import { enforceAmySpeechPolicyInvariants } from "@/lib/amy-voice-invariants";
 
 export type AmySpeechMode =
   | "math"
@@ -688,7 +689,7 @@ export function prepareAmyLessonParagraphSpeech(raw: string): AmySpeechPolicy {
   policy.useSemanticSplit = false;
   policy.allowSpeechCoachSplit = false;
   policy.allowPhonicsSequence = false;
-  return policy;
+  return enforceAmySpeechPolicyInvariants(policy);
 }
 
 /** Guard: normalize + classify before any pipeline layer runs. */
@@ -715,5 +716,5 @@ export function prepareAmySpeechInput(raw: string, opts?: SpeakOptions): AmySpee
     prosody: policy.prosody,
   });
 
-  return policy;
+  return enforceAmySpeechPolicyInvariants(policy);
 }

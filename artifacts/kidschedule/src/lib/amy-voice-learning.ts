@@ -3,8 +3,9 @@
  */
 
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
-import type { AmySpeechMode } from "@/lib/amy-speech-mode";
+import type { AmySpeechMode, AmySpeechPolicy } from "@/lib/amy-speech-mode";
 import { normalizeStaticAudioKey, type StaticAudioMode } from "@workspace/static-audio/browser";
+import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
 
 export type LearningTier = "speech_coach" | "phonics" | "math" | "general";
 
@@ -123,6 +124,26 @@ export function computeLearningPriority(
   return score;
 }
 
+const HIGH_PRIORITY_SPEECH_MODES = new Set<AmySpeechMode>([
+  "speech_coach",
+  "phonics",
+  "spelling",
+]);
+
+/** Gate learning enqueue to prevent queue overload at scale. */
+export function shouldQueueAmyVoiceLearning(
+  policy: AmySpeechPolicy,
+  layer: AmyVoiceLayer | string,
+): boolean {
+  const isFallback =
+    layer === "text_visual" ||
+    (layer === "emergency_local" && policy.preferSpeechSynthesisFallback);
+  if (!isFallback) return false;
+
+  const highPriority = HIGH_PRIORITY_SPEECH_MODES.has(policy.speechMode);
+  return policy.replayCount >= 2 || highPriority;
+}
+
 export function getAmyVoiceLearningSnapshot(): {
   topReplays: Array<{ key: string; count: number }>;
   topMisses: Array<{ key: string; count: number }>;
@@ -194,4 +215,34 @@ export function queueAmyVoiceLearning(
     reason,
   });
   scheduleLearnFlush();
+}
+
+/** Record miss and queue only when fallback + replay/high-priority gate passes. */
+export function maybeQueueAmyVoiceLearning(
+  policy: AmySpeechPolicy,
+  layer: AmyVoiceLayer | string,
+): void {
+  if (!shouldQueueAmyVoiceLearning(policy, layer)) return;
+
+  recordAmyVoicePhraseMiss(policy.normalizedText, policy.pipelineMode, policy.speechMode);
+  queueAmyVoiceLearning(
+    policy.normalizedText,
+    policy.pipelineMode,
+    policy.speechMode,
+    String(layer),
+  );
+  for (const phrase of policy.phrases) {
+    recordAmyVoicePhraseMiss(phrase, policy.pipelineMode, policy.speechMode);
+    queueAmyVoiceLearning(phrase, policy.pipelineMode, policy.speechMode, `${layer}_phrase`);
+  }
+}
+
+export function resetAmyVoiceLearningSession(): void {
+  missCounts.clear();
+  replayCounts.clear();
+  learnQueue = [];
+  if (learnFlushTimer) {
+    clearTimeout(learnFlushTimer);
+    learnFlushTimer = null;
+  }
 }

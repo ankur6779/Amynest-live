@@ -11,8 +11,14 @@ import {
   mergeDifficultyEmotion,
   recordAmyVoiceDeliveryFallback,
   resetAmyDifficultySession,
+  smoothDifficultyLevel,
 } from "./amy-voice-difficulty";
-import { buildAdaptiveDelivery, detectAmyEmotion } from "./amy-voice-emotion";
+import {
+  anchorProsodyToSession,
+  buildAdaptiveDelivery,
+  detectAmyEmotion,
+  resetSessionAmyTone,
+} from "./amy-voice-emotion";
 import { getProsodyProfile } from "./amy-speech-mode";
 
 describe("amy-voice-intent", () => {
@@ -46,12 +52,24 @@ describe("amy-voice-intent", () => {
 });
 
 describe("amy-voice-difficulty", () => {
-  it("detects struggling from high replay count", () => {
+  it("detects struggling from high replay count after gradual smoothing", () => {
     resetAmyDifficultySession();
     recordAmyVoiceDeliveryFallback();
     recordAmyVoiceDeliveryFallback();
-    const result = assessAmyDifficulty("hello", "default", 4);
-    expect(result.level).toBe("struggling");
+    let level: ReturnType<typeof assessAmyDifficulty>["level"] = "neutral";
+    for (let i = 0; i < 4; i++) {
+      level = assessAmyDifficulty("hello", "default", 4).level;
+    }
+    expect(level).toBe("struggling");
+  });
+
+  it("smooths difficulty transitions gradually", () => {
+    resetAmyDifficultySession();
+    expect(smoothDifficultyLevel("neutral")).toBe("neutral");
+    const first = smoothDifficultyLevel("struggling");
+    expect(first).toBe("neutral");
+    const third = smoothDifficultyLevel("struggling");
+    expect(third).toBe("struggling");
   });
 
   it("speeds up for confident learners", () => {
@@ -69,6 +87,7 @@ describe("amy-voice-difficulty", () => {
 describe("buildAdaptiveDelivery", () => {
   it("combines intent emotion and difficulty", () => {
     resetAmyDifficultySession();
+    resetSessionAmyTone();
     const base = getProsodyProfile("speech_coach", "try again and listen", 2);
     const delivery = buildAdaptiveDelivery(
       base,
@@ -82,5 +101,19 @@ describe("buildAdaptiveDelivery", () => {
     expect(delivery.emotion).toBe("encouraging");
     expect(delivery.prosody.playbackRate).toBeLessThan(base.playbackRate);
     expect(detectAmyEmotion("try again", "sentence")).toBe("encouraging");
+  });
+
+  it("anchors prosody within session deviation bounds", () => {
+    resetSessionAmyTone();
+    const base = getProsodyProfile("sentence", "add twelve apples", 1);
+    const first = buildAdaptiveDelivery(base, "sentence", "add twelve apples", 0);
+    const extreme = {
+      ...first.prosody,
+      playbackRate: base.playbackRate * 1.35,
+      phraseGapMs: base.phraseGapMs * 1.35,
+    };
+    const anchored = anchorProsodyToSession(extreme);
+    expect(anchored.playbackRate).toBeLessThanOrEqual(base.playbackRate * 1.12);
+    expect(anchored.playbackRate).toBeGreaterThanOrEqual(base.playbackRate * 0.88);
   });
 });

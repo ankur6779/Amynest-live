@@ -213,6 +213,8 @@ function reportAmyVoiceTelemetry(
             : type;
 
       const { getAdaptiveSnapshot } = await import("@/lib/amy-voice-adaptive");
+      const { getAmyVoiceHealthSnapshot } = await import("@/lib/amy-voice-health");
+      const { getAmyVoiceAnalyticsSnapshot } = await import("@/lib/amy-voice-analytics");
       const res = await fetch(getApiUrl("/api/log-client-error"), {
         method: "POST",
         headers,
@@ -225,6 +227,8 @@ function reportAmyVoiceTelemetry(
             lastSuccessLayer,
             amyVoiceEvent: type,
             adaptive: getAdaptiveSnapshot(),
+            health: getAmyVoiceHealthSnapshot(),
+            analytics: getAmyVoiceAnalyticsSnapshot(),
             ...meta,
           },
         }),
@@ -237,4 +241,15 @@ function reportAmyVoiceTelemetry(
       /* never throw */
     }
   })();
+}
+
+/** Post-launch monitoring events (health alerts, periodic snapshots). */
+export function reportAmyVoiceMonitoring(
+  kind: "health_alert" | "health_snapshot" | "analytics",
+  meta?: Record<string, unknown>,
+): void {
+  if (import.meta.env.DEV || import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true") {
+    console.info(LOG, kind, meta ?? "");
+  }
+  reportAmyVoiceTelemetry("fallback_used", { monitoringKind: kind, ...meta });
 }
