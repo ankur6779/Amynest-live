@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { applyActionCode } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
@@ -63,7 +63,6 @@ function readActionParams(): { mode: string | null; oobCode: string | null } {
 
 export default function VerifyEmailActionPage() {
   const { t } = useTranslation();
-  const [, setLocation] = useLocation();
   const [status, setStatus] = useState<VerifyStatus>("verifying");
 
   useEffect(() => {
@@ -123,7 +122,7 @@ export default function VerifyEmailActionPage() {
           </>
         )}
 
-        {status === "success" && <EmailVerifiedSuccess onNavigate={setLocation} />}
+        {status === "success" && <EmailVerifiedSuccess />}
 
         {status === "error" && (
           <>

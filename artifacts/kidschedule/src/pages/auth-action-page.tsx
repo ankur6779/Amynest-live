@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import {
   applyActionCode,
@@ -102,7 +102,6 @@ function Spinner() {
  */
 export default function AuthActionPage() {
   const { t } = useTranslation();
-  const [, setLocation] = useLocation();
   const [status, setStatus] = useState<ActionStatus>("loading");
   const [oobCode, setOobCode] = useState<string | null>(null);
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
@@ -222,7 +221,7 @@ export default function AuthActionPage() {
           )}
 
           {status === "emailVerified" && (
-            <EmailVerifiedSuccess onNavigate={setLocation} />
+            <EmailVerifiedSuccess />
           )}
 
           {status === "showResetForm" && (
