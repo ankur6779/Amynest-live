@@ -7,7 +7,7 @@ import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, ChevronUp, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, Zap, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText } from "lucide-react";
+import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon } from "lucide-react";
 import { OlympiadZone } from "@/components/olympiad-zone";
 import { SmartStudyZone } from "@/components/smart-study-zone";
 import { PtmPrepAssistant } from "@/components/ptm-prep";
@@ -53,15 +53,45 @@ import { ComingNextWrapper } from "@/components/coming-next-wrapper";
 
 // ── 5-section grouping for the "For You" content ────────────────────────────
 // Maps each premium section key to the tile IDs that live inside it.
-// Featured tiles (command-center, infant-hub, tomorrow-forecast) always land
-// in "today" regardless of this map.
 const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
-  today:      ["amy-ai", "daily-tips"],
+  today:      ["amy-ai", "daily-tips", "generate-routine", "tomorrow-forecast", "command-center"],
   learning:   ["smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad", "event-prep"],
   creativity: ["activities", "art-craft", "coloring-books", "fun-sheets"],
   stories:    ["story-hub", "speech-coach"],
   support:    ["articles", "emotional", "life-skills", "ptm-prep"],
 };
+
+/** Explicit render order inside the "Today For You" group. */
+const TODAY_TILE_ORDER = [
+  "amy-ai",
+  "daily-tips",
+  "generate-routine",
+  "tomorrow-forecast",
+  "command-center",
+] as const;
+
+const HUB_EXPANDED_GROUPS_KEY = "amynest:hub:expandedGroups";
+const DEFAULT_EXPANDED_GROUPS = ["today", "learning"];
+
+function loadExpandedGroups(): Set<string> {
+  if (typeof window === "undefined") return new Set(DEFAULT_EXPANDED_GROUPS);
+  try {
+    const raw = window.localStorage.getItem(HUB_EXPANDED_GROUPS_KEY);
+    if (raw) return new Set(JSON.parse(raw) as string[]);
+  } catch {
+    /* ignore corrupt storage */
+  }
+  return new Set(DEFAULT_EXPANDED_GROUPS);
+}
+
+function persistExpandedGroups(groups: Set<string>): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(HUB_EXPANDED_GROUPS_KEY, JSON.stringify([...groups]));
+  } catch {
+    /* ignore quota errors */
+  }
+}
 
 const WEB_HUB_GROUPS = [
   { key: "today",      emoji: "✨", i18n: "parent_hub.section_groups.today"      },
@@ -89,6 +119,8 @@ interface SectionProps {
   /** Tailwind gradient classes for the card background tile tint */
   cardClass?: string;
   defaultOpen?: boolean;
+  /** Subtle pulse glow — used for Ask Amy AI in Today For You. */
+  highlighted?: boolean;
   /** Show a small "Try Free" pill in the header (first-time-free features). */
   tryFree?: boolean;
   children: React.ReactNode;
@@ -101,6 +133,7 @@ function HubSection({
   accentClass,
   cardClass,
   defaultOpen = false,
+  highlighted = false,
   tryFree = false,
   onOpen,
   children
@@ -120,13 +153,14 @@ function HubSection({
   className={["group relative rounded-2xl overflow-hidden transition-all duration-300 ease-out",
   cardClass ? "backdrop-blur-xl" : "bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl",
   "border border-white/20 dark:border-white/10", "shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]",
+  highlighted && !open ? "border-primary/35 shadow-[0_0_0_1px_rgba(168,85,247,0.35),0_14px_44px_-10px_rgba(168,85,247,0.42)] ring-1 ring-primary/25" : "",
   // Hover glow
   "hover:border-white/40 dark:hover:border-white/20", "hover:shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_10px_36px_-10px_rgba(0,0,0,0.3)]",
   // Active (expanded) glow — stronger
   open ? "border-white/30 dark:border-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_18px_50px_-12px_rgba(0,0,0,0.4)]" : ""].join(" ")}>
       <button onClick={toggle} className={["w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left", "transition-colors duration-200", open ? "bg-black/[0.06] dark:bg-black/[0.12]" : "hover:bg-white/10 dark:hover:bg-white/[0.04]"].join(" ")} aria-expanded={open}>
         <div className="flex items-center gap-3 min-w-0">
-          <div className={["w-11 h-11 rounded-2xl flex items-center justify-center shrink-0", "shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]", "ring-1 ring-white/40 dark:ring-white/10", accentClass].join(" ")}>
+          <div className={["w-11 h-11 rounded-2xl flex items-center justify-center shrink-0", "shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]", "ring-1 ring-white/40 dark:ring-white/10", accentClass, highlighted && !open ? "animate-[pulse_3s_ease-in-out_infinite]" : ""].join(" ")}>
             {icon}
           </div>
           <div className="min-w-0">
@@ -134,7 +168,7 @@ function HubSection({
               <p className="font-quicksand font-bold text-[15px] leading-tight text-foreground truncate">{title}</p>
               {tryFree && <TryFreeBadge />}
             </div>
-            <p className="text-[11.5px] text-muted-foreground mt-0.5 truncate">{description}</p>
+            <p className="text-[12px] text-muted-foreground/90 mt-0.5 truncate">{description}</p>
           </div>
         </div>
         <span className={["shrink-0 w-7 h-7 rounded-full flex items-center justify-center", "border border-border/50 bg-white/50 dark:bg-white/5", "transition-transform duration-300", open ? "rotate-180 text-primary border-primary/40" : "text-muted-foreground"].join(" ")}>
@@ -145,6 +179,75 @@ function HubSection({
           {children}
         </div>}
     </div>;
+}
+
+function RoutineLaunchCard({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <Link
+      href="/routines/generate"
+      className="group block rounded-2xl border border-white/20 bg-gradient-to-br from-emerald-400/30 to-teal-500/15 p-4 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all hover:border-white/40 hover:shadow-[0_10px_36px_-10px_rgba(52,211,153,0.45)]"
+      data-testid="routine-launch-card"
+      data-section-id="generate-routine"
+    >
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40">
+          <Calendar className="h-5 w-5 text-white" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-quicksand text-[15px] font-bold leading-tight text-foreground">{title}</p>
+          <p className="mt-0.5 truncate text-[12px] text-muted-foreground/90">{description}</p>
+        </div>
+        <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-primary px-3 text-xs font-black text-primary-foreground transition-transform group-active:scale-95">
+          Open
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+const HUB_QUICK_ACTIONS = [
+  { id: "ask-amy",    group: "today",      tileId: "amy-ai",          emoji: "💜", i18n: "parent_hub.quick_actions.ask_amy" },
+  { id: "story",      group: "stories",    tileId: "story-hub",       emoji: "📖", i18n: "parent_hub.quick_actions.story" },
+  { id: "phonics",    group: "learning",   tileId: "phonics",         emoji: "🔤", i18n: "parent_hub.quick_actions.phonics" },
+  { id: "routine",    group: "today",      tileId: "generate-routine", emoji: "📅", i18n: "parent_hub.quick_actions.routine" },
+  { id: "activities", group: "creativity", tileId: "activities",      emoji: "🎨", i18n: "parent_hub.quick_actions.activities" },
+  { id: "worksheets", group: "creativity", tileId: "fun-sheets",      emoji: "📄", i18n: "parent_hub.quick_actions.worksheets" },
+] as const;
+
+function HubQuickActions({
+  onNavigate,
+}: {
+  onNavigate: (group: string, tileId?: string) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1" data-testid="hub-quick-actions">
+      {HUB_QUICK_ACTIONS.map(action => (
+        <button
+          key={action.id}
+          type="button"
+          onClick={() => onNavigate(action.group, action.tileId)}
+          className={[
+            "shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2",
+            "text-xs font-bold text-foreground",
+            "bg-white/60 dark:bg-white/[0.06] backdrop-blur-xl",
+            "border border-white/30 dark:border-white/10",
+            "shadow-[0_2px_12px_-4px_rgba(15,23,42,0.12)]",
+            "hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95",
+          ].join(" ")}
+        >
+          <span aria-hidden>{action.emoji}</span>
+          {t(action.i18n)}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function PhonicsLaunchCard({
@@ -556,15 +659,29 @@ function ParentingHubPage() {
   const hubUsage = useFeatureUsage();
   const tryFreeFor = (id: string) => !hubUsage.isPremium && !hubUsage.hasUsedFeature(id);
 
-  // Section-group expand/collapse — all collapsed by default.
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    () => new Set(),
-  );
+  // Section-group expand/collapse — Today + Learning open by default; persisted.
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(loadExpandedGroups);
   const toggleGroup = (key: string) => {
     setExpandedGroups(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key); else next.add(key);
+      persistExpandedGroups(next);
       return next;
+    });
+  };
+  const navigateHub = (group: string, tileId?: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      next.add(group);
+      persistExpandedGroups(next);
+      return next;
+    });
+    requestAnimationFrame(() => {
+      if (tileId) {
+        document.querySelector(`[data-section-id="${tileId}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        document.getElementById(`hub-group-${group}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     });
   };
 
@@ -623,15 +740,16 @@ function ParentingHubPage() {
   {
     id: "command-center",
     alwaysCurrent: true,
-    featured: true,
     render: () => {
-      return <HubSection id="command-center" icon={<Zap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.command-center.title")} description={t("parent_hub.web_tiles.command-center.description")} accentClass="bg-gradient-to-br from-indigo-500 to-violet-600" cardClass="linear-gradient(135deg,rgba(99,102,241,0.30)0%,rgba(139,92,246,0.14)100%)" defaultOpen={false}> {/* audit-ok: brand tile accent gradient */}
+      return (
+        <div data-section-id="command-center">
           <ParentCommandCenter child={{
-          id: effectiveChild.id,
-          name: effectiveChild.name,
-          age: effectiveChild.age
-        }} />
-        </HubSection>;
+            id: effectiveChild.id,
+            name: effectiveChild.name,
+            age: effectiveChild.age,
+          }} />
+        </div>
+      );
     }
   },
   // ── INFANT HUB (band-restricted, featured) ────────────────────────────
@@ -647,9 +765,8 @@ function ParentingHubPage() {
   }, {
     id: "tomorrow-forecast",
     alwaysCurrent: true,
-    featured: true,
     render: () => {
-      return <HubSection id="tomorrow-forecast" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.tomorrow-forecast.title")} description={t("parent_hub.web_tiles.tomorrow-forecast.description")} accentClass="bg-gradient-to-br from-sky-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(34,211,238,0.14)100%)" defaultOpen={false}> {/* audit-ok: brand tile accent gradient */}
+      return <HubSection id="tomorrow-forecast" icon={<Moon className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.tomorrow-forecast.title")} description={t("parent_hub.web_tiles.tomorrow-forecast.description")} accentClass="bg-gradient-to-br from-sky-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(34,211,238,0.14)100%)" defaultOpen={false}> {/* audit-ok: brand tile accent gradient */}
           <FuturePredictor childId={effectiveChild.id} />
         </HubSection>;
     }
@@ -684,9 +801,20 @@ function ParentingHubPage() {
     id: "amy-ai",
     alwaysCurrent: true,
     render: () => {
-      return <HubSection id="amy-ai" icon={<AmyIcon size={22} bounce />} title={t("parent_hub.web_tiles.amy-ai.title")} description={t("parent_hub.web_tiles.amy-ai.description")} accentClass="bg-gradient-to-br from-violet-500 to-purple-600" cardClass="linear-gradient(135deg,rgba(139,92,246,0.30)0%,rgba(217,70,239,0.14)100%)"> {/* audit-ok: brand tile accent gradient */}
+      return <HubSection id="amy-ai" highlighted icon={<AmyIcon size={22} bounce />} title={t("parent_hub.web_tiles.amy-ai.title")} description={t("parent_hub.web_tiles.amy-ai.description")} accentClass="bg-gradient-to-br from-violet-500 to-purple-600" cardClass="linear-gradient(135deg,rgba(139,92,246,0.30)0%,rgba(217,70,239,0.14)100%)" defaultOpen={true}> {/* audit-ok: brand tile accent gradient */}
           <AmyAISuggestionsSection />
         </HubSection>;
+    }
+  }, {
+    id: "generate-routine",
+    alwaysCurrent: true,
+    render: () => {
+      return (
+        <RoutineLaunchCard
+          title={t("parent_hub.web_tiles.generate-routine.title")}
+          description={t("parent_hub.web_tiles.generate-routine.description")}
+        />
+      );
     }
   }, {
     id: "articles",
@@ -704,7 +832,7 @@ function ParentingHubPage() {
     render: () => {
       if (!ageGroup && !isTwoPlus) return null;
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_tips")}>
-          <HubSection id="daily-tips" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.daily-tips.title")} description={t("parent_hub.web_tiles.daily-tips.description")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500" cardClass="linear-gradient(135deg,rgba(251,191,36,0.30)0%,rgba(234,179,8,0.14)100%)" tryFree={tryFreeFor("hub_tips")} onOpen={() => hubUsage.markFeatureUsed("hub_tips")}> {/* audit-ok: brand tile accent gradient */}
+          <HubSection id="daily-tips" icon={<Lightbulb className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.daily-tips.title")} description={t("parent_hub.web_tiles.daily-tips.description")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500" cardClass="linear-gradient(135deg,rgba(251,191,36,0.30)0%,rgba(234,179,8,0.14)100%)" tryFree={tryFreeFor("hub_tips")} onOpen={() => hubUsage.markFeatureUsed("hub_tips")}> {/* audit-ok: brand tile accent gradient */}
             <DailyTips ageGroup={ageGroup!} childName={effectiveChild.name} />
           </HubSection>
         </LockedBlock>;
@@ -908,10 +1036,12 @@ function ParentingHubPage() {
   );
   const forYouFeatured = forYouAll.filter(s => s.featured);
   const forYouStandaloneFeatured = forYouFeatured.filter(s => s.id === "infant-hub");
-  const forYouGroupedFeatured = forYouFeatured.filter(s => s.id !== "infant-hub");
   const forYouGrid = forYouAll.filter(s => !s.featured);
 
   const sectionById = new Map(sections.map(s => [s.id, s]));
+  const todayTiles = TODAY_TILE_ORDER
+    .map(id => sectionById.get(id))
+    .filter((s): s is SectionEntry => !!s && isHubSectionVisible(s, currentBand!, totalAgeMonths));
 
   return <div className="max-w-6xl mx-auto space-y-6 pb-12">
       <PageHeader />
@@ -922,6 +1052,8 @@ function ParentingHubPage() {
       {effectiveChild && currentBand && <>
           {/* ── SECTION 1: For {Child Name} ─────────────────────────────── */}
           <ForYouHeader childName={effectiveChild.name} band={currentBand} ageGroup={ageGroup} />
+
+          <HubQuickActions onNavigate={navigateHub} />
 
           {/* Infant Hub gets its own parent-level tile for 0-24 month children. */}
           {forYouStandaloneFeatured.length > 0 && <div className="space-y-3">
@@ -935,9 +1067,13 @@ function ParentingHubPage() {
           <div className="space-y-3">
             {WEB_HUB_GROUPS.map(group => {
               const tileIds = new Set(WEB_HUB_SECTION_TILE_IDS[group.key] ?? []);
-              const groupFeatured = group.key === "today" ? forYouGroupedFeatured : [];
-              const groupGrid = forYouGrid.filter(s => tileIds.has(s.id));
-              if (groupFeatured.length === 0 && groupGrid.length === 0) return null;
+              const isToday = group.key === "today";
+              const groupGrid = isToday ? [] : forYouGrid.filter(s => tileIds.has(s.id));
+              if (isToday) {
+                if (todayTiles.length === 0) return null;
+              } else if (groupGrid.length === 0) {
+                return null;
+              }
               const isOpen = expandedGroups.has(group.key);
               const gs = GROUP_GLASS[group.key] ?? GROUP_GLASS.today;
               return (
@@ -982,15 +1118,12 @@ function ParentingHubPage() {
                   </button>
                   {isOpen && (
                     <div className="px-4 pb-5 pt-3 border-t border-white/25 dark:border-white/[0.07] bg-white/20 dark:bg-white/[0.01] animate-in fade-in slide-in-from-top-1 duration-300 space-y-3">
-                      {groupFeatured.length > 0 && (
-                        <div className="space-y-3">
-                          {groupFeatured.map(s => {
-                            const node = s.render();
-                            return node ? <div key={s.id}>{node}</div> : null;
-                          })}
-                        </div>
-                      )}
-                      {groupGrid.length > 0 && (
+                      {isToday ? (
+                        todayTiles.map(s => {
+                          const node = s.render();
+                          return node ? <div key={s.id}>{node}</div> : null;
+                        })
+                      ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
                           {groupGrid.map(s => {
                             const node = s.render();
