@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, ThumbsUp, RotateCcw, CheckCircle2, ShieldAlert, ChevronDown, ChevronUp, Syringe, Zap, BookOpen, Activity, Star, AlertTriangle, Lightbulb, Baby, Flame, MessageCircle, BedDouble, ListChecks, Music2, AlarmClock, X, Loader2 } from "lucide-react";
+import { Brain, ThumbsUp, RotateCcw, CheckCircle2, ShieldAlert, ChevronDown, ChevronUp, Syringe, Zap, BookOpen, Activity, Star, AlertTriangle, Baby, Flame, MessageCircle, BedDouble, ListChecks, Music2, X, Loader2 } from "lucide-react";
 import { getApiUrl } from "@/lib/api";
 import { BabyCuesEngine, CommunicationCoaching } from "@/components/infant-baby-cues";
 import { CryInsight } from "@/components/cry-insight";
@@ -9,7 +9,7 @@ import { SleepPredict } from "@/components/sleep-predict";
 import { WakeWindowSystem, SleepIssueDetector, RoutineBuilder, SleepWeeklyInsights } from "@/components/infant-sleep-module";
 import { BuddyMilestonePlanner } from "@/components/infant-milestones";
 import { WhiteNoiseLullaby } from "@/components/infant-sounds";
-import { INFANT_CATEGORIES, type InfantCategory, type Lang, getTipsForAge, getAmyInsight, pickLang, VACCINATIONS, getUpcomingVaccinationsWithLog, getVaccinationSummary, type VaxStatus, type VaxLogMap } from "@workspace/infant-hub";
+import { INFANT_CATEGORIES, type InfantCategory, type Lang, getTipsForAge, getAmyInsight, pickLang, VACCINATIONS, getUpcomingVaccinationsWithLog, getVaccinationSummary, type VaxStatus, type VaxLogMap, getIsoWeekKey } from "@workspace/infant-hub";
 import { formatAge } from "@/lib/age-groups";
 import { useToast } from "@/hooks/use-toast";
 interface InfantHubProps {
@@ -76,7 +76,22 @@ const ACTIVITIES: Record<string, Activity[]> = {
     desc: "Show black-and-white patterns or simple faces 20–30 cm from baby's eyes. Newborn vision is still developing — high contrast is what they can actually see.",
     duration: "5 min"
   }],
-  "3-6": [],
+  "3-6": [{
+    emoji: "🤸",
+    title: "Tummy Time Games",
+    desc: "Place baby on tummy with a rolled towel under chest for support. Hold a high-contrast toy just above eye level and slowly move side to side — builds neck and shoulder strength for rolling.",
+    duration: "3–5 min · 2× daily"
+  }, {
+    emoji: "🪞",
+    title: "Mirror Discovery",
+    desc: "Hold an unbreakable mirror 20 cm from baby's face during tummy time or supported sitting. Babies love faces — mirror play builds self-awareness and social attention.",
+    duration: "2–3 min"
+  }, {
+    emoji: "🎵",
+    title: "Sing & Bounce",
+    desc: "Hold baby on your lap and bounce gently to a simple rhyme (Twinkle Twinkle, Itsy Bitsy). Rhythm + movement wires the vestibular system and language rhythm together.",
+    duration: "3–5 min"
+  }],
   "6-9": [{
     emoji: "🛁",
     title: "Bath Play",
@@ -105,7 +120,22 @@ const ACTIVITIES: Record<string, Activity[]> = {
     desc: "Walk outside and name everything — dog, flower, car, puddle, sky. Novel outdoor environments stimulate attention and curiosity that indoor play can't replicate.",
     duration: "20 min"
   }],
-  "18-24": []
+  "18-24": [{
+    emoji: "🧩",
+    title: "Simple Shape Puzzle",
+    desc: "Offer a chunky 2–3 piece puzzle or shape sorter. Let them try without correcting — trial-and-error builds problem-solving and fine motor control.",
+    duration: "10 min"
+  }, {
+    emoji: "📚",
+    title: "Picture Book Routine",
+    desc: "Same book, same time each day (before nap works well). Point and name objects; pause and let them point back. Repetition builds vocabulary faster than new books every night.",
+    duration: "10–15 min"
+  }, {
+    emoji: "⚽",
+    title: "Kick & Chase",
+    desc: "Place a soft ball near their feet while they lie on back, or roll it gently during crawling play. Chasing builds coordination and the joy of purposeful movement.",
+    duration: "10 min"
+  }]
 };
 
 // ─── Common Issues ─────────────────────────────────────────────────────────────
@@ -135,50 +165,86 @@ const COMMON_ISSUES = [{
   content: "Babies can't blow their nose — use a nasal aspirator and saline drops before feeds. Keep room humidified. Slightly elevate head end of mattress (not pillow). Under 2 years: NO over-the-counter cough/cold medicine. Breastfeed frequently — milk transfers antibodies. See doctor if breathing is laboured or symptoms worsen after 10 days."
 }];
 
-// ─── Weekly Insight ───────────────────────────────────────────────────────────
-function getWeeklyInsight(name: string, months: number): {
+// ─── Weekly Focus (rotates by calendar week) ─────────────────────────────────
+type WeeklyFocusVariant = {
   headline: string;
   body: string;
   next: string;
-} {
+};
+
+function getWeeklyFocusVariants(name: string, months: number): WeeklyFocusVariant[] {
   const band = getBand(months);
-  const map: Record<string, {
-    headline: string;
-    body: string;
-    next: string;
-  }> = {
-    "0-3": {
+  const maps: Record<string, WeeklyFocusVariant[]> = {
+    "0-3": [{
       headline: `${name} is building the brain's first 'trust map'`,
-      body: "Every time you respond to crying, you're literally growing neural connections. The brain grows 1 mm³ per second in the first 3 months — more than any other time in life.",
+      body: "Every time you respond to crying, you're literally growing neural connections. The brain grows faster in the first 3 months than at any other time in life.",
       next: "Watch for the first social smile this week — it's the beginning of intentional communication."
-    },
-    "3-6": {
+    }, {
+      headline: `${name}'s senses are waking up`,
+      body: "High-contrast visuals, your voice, and skin-to-skin contact are the richest inputs right now. Short, calm sessions beat long overstimulating ones.",
+      next: "Try 5 minutes of face-to-face talk after each feed when baby is alert but calm."
+    }, {
+      headline: `Tiny routines help ${name} feel safe`,
+      body: "Predictable sequences — nappy, feed, burp, cuddle — teach the nervous system what comes next. Safety is the foundation for every later skill.",
+      next: "Pick one small bedtime cue (same song or phrase) and use it every night this week."
+    }],
+    "3-6": [{
       headline: `${name}'s brain is craving new sensations`,
-      body: "This is the prime window for sensory experiences. Different textures, sounds, faces, and environments all build rich neural networks. The more varied (and safe) inputs, the better.",
-      next: "Start tummy time daily and notice how head control is improving week by week."
-    },
-    "6-9": {
-      headline: `${name} is entering the world of solid foods & big emotions`,
-      body: "Stranger anxiety peaking right now is actually a great sign — it means attachment is forming perfectly. Separation anxiety and clinginess at 6–9 months is healthy, not a problem.",
+      body: "This is the prime window for varied textures, sounds, faces, and environments. Safe novelty builds rich neural networks.",
+      next: "Start tummy time daily and notice how head control improves week by week."
+    }, {
+      headline: `${name} is learning that people respond back`,
+      body: "Serve-and-return — you coo, they coo, you smile, they smile — is the #1 language builder before words appear.",
+      next: "Copy one sound baby makes today and wait 5 seconds. See if they try again."
+    }],
+    "6-9": [{
+      headline: `${name} is entering solids & big emotions`,
+      body: "Stranger anxiety peaking now is a healthy sign — attachment is forming perfectly. Clinginess at 6–9 months is normal, not a problem.",
       next: "Try one new solid food this week. Wait 3 days before introducing the next to watch for reactions."
-    },
-    "9-12": {
+    }, {
+      headline: `${name} is becoming a little explorer`,
+      body: "Rolling, reaching, and mouthing objects are how the brain maps the world. Messy play is productive play.",
+      next: "Create a small 'yes space' on the floor with 3 safe objects to explore freely."
+    }],
+    "9-12": [{
       headline: `${name}'s first word is closer than you think`,
-      body: "Babbling is shadow speech — the brain is rehearsing. Every 'ba-da-ma-ga' is practice. Your response (treating babble as meaningful) accelerates the process.",
-      next: "Point and name everything this week: door, shoe, spoon, ball. Repetition + pointing = fastest vocabulary path."
-    },
-    "12-18": {
+      body: "Babbling is shadow speech — the brain is rehearsing. Treating babble as meaningful accelerates real words.",
+      next: "Point and name everything this week: door, shoe, spoon, ball."
+    }, {
+      headline: `${name} understands more than they can say`,
+      body: "Receptive language runs ahead of speech. Simple gestures (wave, clap) often appear before clear words.",
+      next: "Play 'where is the…?' and give them a moment to look or point before you answer."
+    }],
+    "12-18": [{
       headline: `${name} is moving from baby to toddler at speed`,
-      body: "The switch from 2 naps to 1 often happens between 14–18 months and causes a rough patch. Stick to consistent timing and it usually settles within 2–3 weeks.",
-      next: "Introduce a simple 2-step routine: 'First shoes, then outside.' This builds executive function."
-    },
-    "18-24": {
+      body: "The switch from 2 naps to 1 often happens between 14–18 months and causes a rough patch. Consistent timing usually settles it within 2–3 weeks.",
+      next: "Introduce a simple 2-step routine: 'First shoes, then outside.'"
+    }, {
+      headline: `${name} wants to do things themselves`,
+      body: "Autonomy bursts ('me do it!') are healthy — they're building executive function, not being defiant.",
+      next: "Offer two acceptable choices at mealtime: banana or apple? Both win for you."
+    }],
+    "18-24": [{
       headline: `${name}'s language is about to explode`,
-      body: "Between 18–24 months, most toddlers go from 20 words to 50+. The 'word spurt' usually hits suddenly after a quiet patch — it's coming. Keep reading and narrating.",
-      next: "Start asking 'where is the...?' questions and give them a moment to point. This builds vocabulary comprehension faster than drilling."
-    }
+      body: "Between 18–24 months, many toddlers jump from ~20 words to 50+. The 'word spurt' often follows a quiet patch — keep narrating.",
+      next: "Ask 'where is the…?' questions and wait for a point before helping."
+    }, {
+      headline: `${name} is practicing social rules`,
+      body: "Turn-taking in play, early pretend (feeding a doll), and mimicking chores are signs of advanced cognitive growth.",
+      next: "Include them in one real household task this week — wiping table, sorting socks."
+    }]
   };
-  return map[band] ?? map["0-3"];
+  return maps[band] ?? maps["0-3"];
+}
+
+function getWeeklyFocus(name: string, months: number): WeeklyFocusVariant {
+  const variants = getWeeklyFocusVariants(name, months);
+  const wk = getIsoWeekKey();
+  return variants[wk % variants.length]!;
+}
+
+function weeklyFocusDoneKey(childId: number): string {
+  return `amynest:weekly-focus-done:${childId}:${getIsoWeekKey()}`;
 }
 
 // ─── Collapsible Section ──────────────────────────────────────────────────────
@@ -493,18 +559,33 @@ function HealthCare({
     </div>;
 }
 
-// ─── Weekly AI Insight ────────────────────────────────────────────────────────
-function WeeklyInsight({
+// ─── This Week's Focus ────────────────────────────────────────────────────────
+function WeeklyFocus({
+  childId,
   childName,
   ageMonths
 }: {
+  childId: number;
   childName: string;
   ageMonths: number;
 }) {
   const {
     t
   } = useTranslation();
-  const insight = getWeeklyInsight(childName, ageMonths);
+  const focus = getWeeklyFocus(childName, ageMonths);
+  const doneKey = weeklyFocusDoneKey(childId);
+  const [tryDone, setTryDone] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(doneKey) === "1";
+  });
+  const toggleTryDone = () => {
+    const next = !tryDone;
+    setTryDone(next);
+    try {
+      if (next) window.localStorage.setItem(doneKey, "1");
+      else window.localStorage.removeItem(doneKey);
+    } catch (e) { console.error("REAL ERROR:", e); }
+  };
   return <div className="space-y-3">
       <div className="rounded-xl bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border border-border dark:border-border p-4">
         <div className="flex items-center gap-2 mb-2">
@@ -512,19 +593,33 @@ function WeeklyInsight({
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground">{t("components.infant_hub.this_week_s_insight")}</p>
         </div>
         <p className="font-bold text-sm text-primary dark:text-foreground leading-snug mb-2">
-          {insight.headline}
+          {focus.headline}
         </p>
         <p className="text-[12px] text-primary dark:text-muted-foreground leading-relaxed">
-          {insight.body}
+          {focus.body}
         </p>
       </div>
-      <div className="rounded-xl bg-muted dark:bg-card border border-border dark:border-border p-3 flex gap-2.5">
-        <Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-        <div>
+      <button
+        type="button"
+        onClick={toggleTryDone}
+        className={["w-full rounded-xl border p-3 flex gap-2.5 text-left transition-colors",
+          tryDone
+            ? "bg-primary/10 border-primary/40"
+            : "bg-muted dark:bg-card border-border dark:border-border hover:border-primary/30",
+        ].join(" ")}
+      >
+        <span className={["mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+          tryDone ? "bg-primary border-primary text-white" : "border-border",
+        ].join(" ")}>
+          {tryDone && <CheckCircle2 className="h-3 w-3" />}
+        </span>
+        <div className="min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-wide text-primary mb-0.5">{t("components.infant_hub.try_this_week")}</p>
-          <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{insight.next}</p>
+          <p className={`text-[12px] leading-snug ${tryDone ? "text-muted-foreground line-through" : "text-primary dark:text-muted-foreground"}`}>
+            {focus.next}
+          </p>
         </div>
-      </div>
+      </button>
     </div>;
 }
 
@@ -686,22 +781,18 @@ export function InfantHub({
             </button>
 
             {isParentingOpen && <div className="space-y-3">
-                {/* ── 1. Weekly AI Insight ─────────────────────────────────────── */}
-                {/* audit-ok: intentional vibrant per-tile accent gradient */}
-                <IHSection icon={<Star className="h-4 w-4" />} title={t("components.infant_hub.weekly_insight")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500" cardColor="linear-gradient(135deg,rgba(251,191,36,0.28)0%,rgba(234,179,8,0.13)100%)" badge="New" defaultOpen>
-                  <WeeklyInsight childName={childName} ageMonths={ageMonths} />
+                {/* 1. This Week's Focus */}
+                <IHSection icon={<Star className="h-4 w-4" />} title={t("components.infant_hub.weekly_focus")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500" cardColor="linear-gradient(135deg,rgba(251,191,36,0.28)0%,rgba(234,179,8,0.13)100%)" badge={t("components.infant_hub.badge_weekly")} defaultOpen>
+                  <WeeklyFocus childId={childId} childName={childName} ageMonths={ageMonths} />
                 </IHSection>
 
-                {/* ── 2. Milestone Tracker — Buddy Planner ─────────────────────────────── */}
-                {/* audit-ok: intentional vibrant per-tile accent gradient */}
-                <IHSection icon={<Activity className="h-4 w-4" />} title={t("components.infant_hub.milestone_buddy")} accentClass="bg-gradient-to-br from-violet-400 to-purple-500" cardColor="linear-gradient(135deg,rgba(167,139,250,0.28)0%,rgba(168,85,247,0.13)100%)" badge="Plan">
-                  <BuddyMilestonePlanner childName={childName} ageMonths={ageMonths} />
-                </IHSection>
-
-                {/* ── 3. Sleep System (Wake Window + Issues + Routine + Insights) ──────── */}
-                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                {/* 2. Sleep System (+ Amy Sleep Prediction merged in) */}
                 <IHSection icon={<BedDouble className="h-4 w-4" />} title={t("components.infant_hub.sleep_system")} accentClass="bg-gradient-to-br from-blue-400 to-indigo-500" cardColor="linear-gradient(135deg,rgba(96,165,250,0.28)0%,rgba(99,102,241,0.13)100%)" badge="Live">
                   <div className="space-y-5">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2">{t("components.infant_hub.sleep_prediction")}</p>
+                      <SleepPredict childId={childId} childName={childName} ageMonths={ageMonths} />
+                    </div>
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2">{t("components.infant_hub.wake_window_tracker")}</p>
                       <WakeWindowSystem childName={childName} ageMonths={ageMonths} />
@@ -721,44 +812,32 @@ export function InfantHub({
                   </div>
                 </IHSection>
 
-                {/* ── 4. White Noise & Lullabies ───────────────────────────────────────── */}
-                {/* audit-ok: intentional vibrant per-tile accent gradient */}
-                <IHSection icon={<Music2 className="h-4 w-4" />} title={t("components.infant_hub.white_noise_lullabies")} accentClass="bg-gradient-to-br from-cyan-400 to-teal-500" cardColor="linear-gradient(135deg,rgba(34,211,238,0.28)0%,rgba(20,184,166,0.13)100%)">
-                  <WhiteNoiseLullaby ageMonths={ageMonths} />
+                {/* 3. Milestone Buddy */}
+                <IHSection icon={<Activity className="h-4 w-4" />} title={t("components.infant_hub.milestone_buddy")} accentClass="bg-gradient-to-br from-violet-400 to-purple-500" cardColor="linear-gradient(135deg,rgba(167,139,250,0.28)0%,rgba(168,85,247,0.13)100%)" badge={t("components.infant_hub.badge_track")}>
+                  <BuddyMilestonePlanner childId={childId} childName={childName} ageMonths={ageMonths} />
                 </IHSection>
 
-                {/* ── 4b. Cry Insight (Beta) ─────────────────────────────────────────── */}
-                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                {/* 4. Cry Insight */}
                 <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.cry_insight")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardColor="linear-gradient(135deg,rgba(251,113,133,0.28)0%,rgba(236,72,153,0.13)100%)" badge="Beta">
                   <CryInsight childId={childId} childName={childName} ageMonths={ageMonths} />
                 </IHSection>
 
-                {/* ── 4c. Sleep Prediction (Beta) ────────────────────────────────────── */}
-                {/* audit-ok: intentional vibrant per-tile accent gradient */}
-                <IHSection icon={<AlarmClock className="h-4 w-4" />} title={t("components.infant_hub.sleep_prediction")} accentClass="bg-gradient-to-br from-orange-400 to-amber-500" cardColor="linear-gradient(135deg,rgba(251,146,60,0.28)0%,rgba(251,191,36,0.13)100%)" badge="Beta">
-                  <SleepPredict childId={childId} childName={childName} ageMonths={ageMonths} />
+                {/* 5. White Noise & Lullabies */}
+                <IHSection icon={<Music2 className="h-4 w-4" />} title={t("components.infant_hub.white_noise_lullabies")} accentClass="bg-gradient-to-br from-cyan-400 to-teal-500" cardColor="linear-gradient(135deg,rgba(34,211,238,0.28)0%,rgba(20,184,166,0.13)100%)">
+                  <WhiteNoiseLullaby ageMonths={ageMonths} />
                 </IHSection>
 
-                {/* ── 5. Feeding Reference ─────────────────────────────────────────────── */}
-                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                {/* 6. Feeding Reference */}
                 <IHSection icon={<Flame className="h-4 w-4" />} title={t("components.infant_hub.feeding_reference")} accentClass="bg-gradient-to-br from-red-400 to-orange-500" cardColor="linear-gradient(135deg,rgba(248,113,113,0.28)0%,rgba(249,115,22,0.13)100%)">
                   <FeedingReference ageMonths={ageMonths} />
                 </IHSection>
 
-                {/* ── 6. Daily Activities — only shown when there are ideas for this age── */}
-                {/* audit-ok: intentional vibrant per-tile accent gradient */}
-                {(ACTIVITIES[getBand(ageMonths)] ?? []).length > 0 && <IHSection icon={<Zap className="h-4 w-4" />} title={t("components.infant_hub.today_s_activities")} accentClass="bg-gradient-to-br from-emerald-400 to-green-500" cardColor="linear-gradient(135deg,rgba(52,211,153,0.28)0%,rgba(34,197,94,0.13)100%)" badge={`${(ACTIVITIES[getBand(ageMonths)] ?? []).length} idea${(ACTIVITIES[getBand(ageMonths)] ?? []).length === 1 ? "" : "s"}`}>
-                    <DailyActivities ageMonths={ageMonths} />
-                  </IHSection>}
-
-                {/* ── 6. Health & Care ─────────────────────────────────────────────────── */}
-                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                {/* 7. Health & Care */}
                 <IHSection icon={<Syringe className="h-4 w-4" />} title={t("components.infant_hub.health_care")} accentClass="bg-gradient-to-br from-teal-400 to-cyan-500" cardColor="linear-gradient(135deg,rgba(45,212,191,0.28)0%,rgba(34,211,238,0.13)100%)">
                   <HealthCare childId={childId} ageMonths={ageMonths} />
                 </IHSection>
 
-                {/* ── 7. Parent Coaching — Baby Cues + Communication ─────────── */}
-                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                {/* 8. Parent Coaching */}
                 <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.parent_coaching")} accentClass="bg-gradient-to-br from-purple-400 to-indigo-500" cardColor="linear-gradient(135deg,rgba(192,132,252,0.28)0%,rgba(129,140,248,0.13)100%)" badge="Interactive">
                   <div className="space-y-5">
                     <div>
@@ -777,6 +856,11 @@ export function InfantHub({
                     </div>
                   </div>
                 </IHSection>
+
+                {/* 9. Today's Activities */}
+                {(ACTIVITIES[getBand(ageMonths)] ?? []).length > 0 && <IHSection icon={<Zap className="h-4 w-4" />} title={t("components.infant_hub.today_s_activities")} accentClass="bg-gradient-to-br from-emerald-400 to-green-500" cardColor="linear-gradient(135deg,rgba(52,211,153,0.28)0%,rgba(34,197,94,0.13)100%)" badge={`${(ACTIVITIES[getBand(ageMonths)] ?? []).length} idea${(ACTIVITIES[getBand(ageMonths)] ?? []).length === 1 ? "" : "s"}`}>
+                    <DailyActivities ageMonths={ageMonths} />
+                  </IHSection>}
               </div>}
           </CardContent>
         </Card>}

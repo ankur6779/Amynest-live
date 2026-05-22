@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, Trophy, Target, Heart, ChevronDown, ChevronUp, PlayCircle, CheckCircle2, RotateCcw, ArrowUp, Clock, TrendingUp, Lightbulb, Smile, Baby, BookOpen } from "lucide-react";
+import { Sparkles, Trophy, Target, Heart, ChevronDown, ChevronUp, PlayCircle, CheckCircle2, RotateCcw, ArrowUp, Clock, TrendingUp, Lightbulb, Smile, Baby, BookOpen, Cloud, CloudOff } from "lucide-react";
+import { getApiUrl } from "@/lib/api";
 
 // ─── Milestone Data Model ─────────────────────────────────────────────────────
 type MState = "not_started" | "in_progress" | "achieved";
@@ -379,6 +380,70 @@ type Stored = Record<string, {
   updatedAt: number;
 }>;
 
+function mergeProgress(local: Stored, remote: Stored): Stored {
+  const merged = { ...local };
+  for (const [id, remoteEntry] of Object.entries(remote)) {
+    const localEntry = merged[id];
+    if (!localEntry || remoteEntry.updatedAt >= localEntry.updatedAt) {
+      merged[id] = remoteEntry;
+    }
+  }
+  return merged;
+}
+
+async function fetchRemoteProgress(childId: number): Promise<Stored | null> {
+  try {
+    const r = await fetch(getApiUrl(`/api/infant-milestones/${childId}`), {
+      credentials: "include",
+    });
+    if (!r.ok) return null;
+    const j = (await r.json()) as {
+      ok: boolean;
+      progress: Stored;
+    };
+    return j.ok ? j.progress : null;
+  } catch {
+    return null;
+  }
+}
+
+async function pushProgressToServer(childId: number, data: Stored): Promise<Stored | null> {
+  try {
+    const r = await fetch(getApiUrl(`/api/infant-milestones/${childId}/sync`), {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ progress: data }),
+    });
+    if (!r.ok) return null;
+    const j = (await r.json()) as { ok: boolean; progress: Stored };
+    return j.ok ? j.progress : null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveRemoteMilestone(
+  childId: number,
+  milestoneId: string,
+  state: MState,
+): Promise<boolean> {
+  try {
+    const r = await fetch(
+      getApiUrl(`/api/infant-milestones/${childId}/${encodeURIComponent(milestoneId)}`),
+      {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state }),
+      },
+    );
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
 // Map from old MilestoneTracker IDs → new BuddyMilestone IDs (only direct equivalents)
 const OLD_TO_NEW_ID: Record<string, string> = {
   m0_lift_head: "b03_head_lift",
@@ -501,9 +566,11 @@ const PARENT_TIPS = ["Don't worry if your baby is slightly behind — milestone 
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function BuddyMilestonePlanner({
+  childId,
   childName,
   ageMonths
 }: {
+  childId: number;
   childName: string;
   ageMonths: number;
 }) {
@@ -514,13 +581,48 @@ export function BuddyMilestonePlanner({
     toast
   } = useToast();
   const [progress, setProgress] = useState<Stored>(() => loadProgress(childName));
+  const [syncState, setSyncState] = useState<"idle" | "syncing" | "synced" | "offline">("idle");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [tipIdx, setTipIdx] = useState(0);
 
-  // Reload when child changes
+  // Load local + merge cloud on mount / child change
   useEffect(() => {
-    setProgress(loadProgress(childName));
-  }, [childName]);
+    let cancelled = false;
+    const local = loadProgress(childName);
+    setProgress(local);
+    setSyncState("syncing");
+
+    (async () => {
+      const remote = await fetchRemoteProgress(childId);
+      if (cancelled) return;
+
+      if (!remote) {
+        setSyncState("offline");
+        return;
+      }
+
+      const merged = mergeProgress(local, remote);
+      const localHasNewer = Object.entries(local).some(([id, entry]) => {
+        const remoteEntry = remote[id];
+        return !remoteEntry || entry.updatedAt > remoteEntry.updatedAt;
+      });
+
+      let finalProgress = merged;
+      if (localHasNewer || Object.keys(remote).length === 0) {
+        const synced = await pushProgressToServer(childId, merged);
+        if (synced) finalProgress = mergeProgress(merged, synced);
+      }
+
+      if (cancelled) return;
+      saveProgress(childName, finalProgress);
+      setProgress(finalProgress);
+      setSyncState("synced");
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [childId, childName]);
   const ageBand = getAgeBand(ageMonths);
   const ageMilestones = useMemo(() => getMilestonesForAge(ageMonths), [ageMonths]);
   const bandMilestones = useMemo(() => MILESTONES.filter(m => {
@@ -549,6 +651,9 @@ export function BuddyMilestonePlanner({
       saveProgress(childName, next);
       return next;
     });
+    void saveRemoteMilestone(childId, id, state).then(ok => {
+      setSyncState(ok ? "synced" : "offline");
+    });
     if (state === "achieved") {
       const idx = Math.floor(Math.random() * 3) + 1;
       toast({
@@ -560,7 +665,7 @@ export function BuddyMilestonePlanner({
         description: t(`toasts.infant_milestones.in_progress_${idx}`)
       });
     }
-  }, [childName, toast]);
+  }, [childId, childName, toast, t]);
 
   // Weekly summary stats (across the current age band, not just plan)
   const stats = useMemo(() => {
@@ -585,7 +690,22 @@ export function BuddyMilestonePlanner({
             <Trophy className="h-4 w-4 text-primary dark:text-muted-foreground" />
             <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground">{t("components.infant_milestones.weekly_summary")}</p>
           </div>
-          <span className="text-[10px] font-bold text-primary dark:text-muted-foreground">{getBandLabel(ageBand)}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-primary dark:text-muted-foreground">{getBandLabel(ageBand)}</span>
+            {syncState === "synced" && (
+              <span className="inline-flex items-center gap-0.5 text-[9px] text-muted-foreground" title={t("components.infant_milestones.synced")}>
+                <Cloud className="h-3 w-3" />
+              </span>
+            )}
+            {syncState === "offline" && (
+              <span className="inline-flex items-center gap-0.5 text-[9px] text-muted-foreground" title={t("components.infant_milestones.sync_offline")}>
+                <CloudOff className="h-3 w-3" />
+              </span>
+            )}
+            {syncState === "syncing" && (
+              <span className="text-[9px] text-muted-foreground">{t("components.infant_milestones.syncing")}</span>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2 mb-3">
