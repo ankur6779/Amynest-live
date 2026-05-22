@@ -20,7 +20,7 @@ import {
 import { getApiUrl } from "@/lib/api";
 import { shouldShowNativeNotifyPrompt } from "@/lib/native-push-bridge";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
-import { isLowMemoryIosClient } from "@/lib/device-lite";
+import { isCapacitorIosShell, isLowMemoryIosClient } from "@/lib/device-lite";
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
 const SIGN_IN_CSS = `
   @keyframes siRingRotate {
@@ -643,13 +643,24 @@ export default function SignInPage() {
         {t("screens.sign_in.subtitle")}
       </p>
 
-      <div className="si-oauth-stack">
-        {ENABLE_GOOGLE_SIGN_IN ? (
-          <GoogleSignInButton onError={msg => setError(msg)} />
-        ) : null}
-
+      <div
+        className="si-oauth-stack"
+        style={
+          isCapacitorIosShell()
+            ? {
+                marginBottom: 4,
+                flexShrink: 0,
+                minHeight: 50,
+              }
+            : undefined
+        }
+      >
         {ENABLE_APPLE_SIGN_IN ? (
           <SignInAppleButton onError={msg => setError(msg)} />
+        ) : null}
+
+        {ENABLE_GOOGLE_SIGN_IN ? (
+          <GoogleSignInButton onError={msg => setError(msg)} />
         ) : null}
 
         {ENABLE_PHONE_OTP ? (

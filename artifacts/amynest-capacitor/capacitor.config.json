@@ -4,9 +4,8 @@
   "webDir": "www",
   "bundledWebRuntime": false,
   "server": {
-    "url": "https://www.amynest.in",
     "androidScheme": "https",
-    "iosScheme": "https",
+    "iosScheme": "capacitor",
     "cleartext": false,
     "allowNavigation": [
       "amynest.in",

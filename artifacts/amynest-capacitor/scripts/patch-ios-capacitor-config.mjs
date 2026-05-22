@@ -11,9 +11,6 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const configPath = resolve(root, "ios/App/App/capacitor.config.json");
 const REQUIRED_LOCAL_PLUGINS = ["MicPermissionPlugin"];
 
-/** iOS Capacitor loads live www (see amynest-capacitor/capacitor.config.json). */
-const REQUIRED_SERVER_URL = "https://www.amynest.in";
-
 if (!existsSync(configPath)) {
   console.warn("⚠️  Skip patch-ios-capacitor-config — no ios/App/App/capacitor.config.json");
   process.exit(0);
@@ -23,11 +20,14 @@ const config = JSON.parse(readFileSync(configPath, "utf8"));
 const list = Array.isArray(config.packageClassList) ? [...config.packageClassList] : [];
 let changed = false;
 
-if (!config.server) config.server = {};
-if (config.server.url !== REQUIRED_SERVER_URL) {
-  config.server.url = REQUIRED_SERVER_URL;
-  config.server.iosScheme = "https";
-  config.server.androidScheme = "https";
+// Capacitor iOS must ship bundled www — remote server.url hides stale-cache issues
+// and breaks offline review; App Store build reads ios/App/App/public directly.
+if (config.server?.url) {
+  delete config.server.url;
+  changed = true;
+}
+if (config.server && config.server.iosScheme !== "capacitor") {
+  config.server.iosScheme = "capacitor";
   changed = true;
 }
 
@@ -38,11 +38,15 @@ for (const plugin of REQUIRED_LOCAL_PLUGINS) {
   }
 }
 
+if (!list.includes("SignInWithApple") && list.some((p) => p.includes("SignIn"))) {
+  /* cap sync usually keeps SignInWithApple — no-op */
+}
+
 if (!changed) {
-  console.log("✅  capacitor.config.json already lists local iOS plugins");
+  console.log("✅  capacitor.config.json already patched for iOS");
   process.exit(0);
 }
 
 config.packageClassList = list;
 writeFileSync(configPath, `${JSON.stringify(config, null, "\t")}\n`, "utf8");
-console.log(`✅  Patched packageClassList (+ ${REQUIRED_LOCAL_PLUGINS.join(", ")})`);
+console.log("✅  Patched ios/App/App/capacitor.config.json (bundled www + local plugins)");

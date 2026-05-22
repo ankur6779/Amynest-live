@@ -869,6 +869,17 @@ html[data-theme="dark"] {
   max-width: 100%;
 }
 
+.amynest-native-shell .si-oauth-stack,
+.amynest-native-shell .si-apple-btn {
+  flex-shrink: 0;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.amynest-native-shell .si-apple-btn {
+  min-height: 50px;
+}
+
 html.amynest-native-shell,
 html.amynest-native-shell body,
 html.amynest-android-shell,

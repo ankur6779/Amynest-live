@@ -57,6 +57,7 @@ run("pnpm", ["run", "build:web"], {
     BASE_PATH: "/",
     PORT: "3000",
     VITE_AMYNEST_ENV: "production",
+    VITE_AMYNEST_CAPACITOR_IOS_BUILD: "true",
     ...(revenueCatIosKey ? { VITE_REVENUECAT_IOS_API_KEY: revenueCatIosKey } : {}),
   },
 });

@@ -21,7 +21,12 @@ import { Layout } from "@/components/layout";
 // iOS Jetsam mid-mount on iPhones opened from in-app browsers.
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
-const SignInPage = lazyPage(() => import("@/pages/sign-in"));
+import SignInPageEager from "@/pages/sign-in";
+const SignInPageLazy = lazyPage(() => import("@/pages/sign-in"));
+const SignInPage =
+  import.meta.env.VITE_AMYNEST_CAPACITOR_IOS_BUILD === "true"
+    ? SignInPageEager
+    : SignInPageLazy;
 const SignUpPage = lazyPage(() => import("@/pages/sign-up"));
 const AppleAuthCallbackPage = lazyPage(() => import("@/pages/apple-auth-callback"));
 const VerifyEmailPage = lazyPage(() => import("@/pages/verify-email"));
@@ -43,6 +48,8 @@ import {
 import { installTtsGestureListener } from "@/lib/tts-guard";
 import { OnboardingStatusProvider, useOnboardingStatus } from "@/contexts/onboarding-status-context";
 import { AppInitGate } from "@/components/app-init-gate";
+import { CapacitorIosAuthPreload } from "@/components/capacitor-ios-auth-preload";
+import { isCapacitorIosShell } from "@/lib/device-lite";
 import { devLog } from "@/lib/dev-log";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
@@ -138,6 +145,9 @@ function HomeRedirect() {
   if (authLoading) return <RouteLoadingShell />;
 
   if (!isSignedIn) {
+    if (isCapacitorIosShell()) {
+      return <Redirect to="/sign-in" />;
+    }
     return <LandingPage />;
   }
 
@@ -384,6 +394,7 @@ function AppRoutes() {
             <FirebaseAuthBootstrap />
             <ClientTelemetryBootstrap />
             <OAuthRedirectHandler />
+            <CapacitorIosAuthPreload />
             <QueryClientCacheInvalidator />
             <ReferralAttributionBridge />
             <FcmForegroundHandler />
