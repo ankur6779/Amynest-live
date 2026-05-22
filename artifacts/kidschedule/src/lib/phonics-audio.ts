@@ -52,8 +52,7 @@ async function playGraphemeBlend(
     for (let i = 0; i < letters.length; i++) {
       const ch = letters[i]!;
       options?.onLetter?.(i, ch);
-      const res = await speak(getPhonicsAudioText(ch), rateOpts);
-      if (!res.success) return;
+      await speak(getPhonicsAudioText(ch), rateOpts);
       await delay(slowGap);
     }
   }
@@ -61,11 +60,11 @@ async function playGraphemeBlend(
   for (let i = 0; i < letters.length; i++) {
     const ch = letters[i]!;
     options?.onLetter?.(i, ch);
-    const res = await speak(getPhonicsAudioText(ch), rateOpts);
-    if (!res.success) return;
+    await speak(getPhonicsAudioText(ch), rateOpts);
     await delay(fastGap);
   }
 
+  await delay(150);
   options?.onLetter?.(-1, word);
   await speak(getCvcWordAudioText(word), { ...rateOpts, word });
 }

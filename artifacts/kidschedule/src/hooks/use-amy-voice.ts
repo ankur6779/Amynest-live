@@ -83,7 +83,7 @@ export interface UseAmyVoiceState {
 }
 
 /**
- * Amy voice — parallel fail-safe pipeline (pregen race → dynamic race → phonics
+ * Amy voice — fail-safe pipeline (pregen race → OpenAI → ElevenLabs → phonics
  * → word split → emergency → text/visual). Never silent.
  */
 export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState {

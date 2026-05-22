@@ -421,6 +421,11 @@ class AudioManagerImpl {
     this.wasPausedForBackground = false;
   }
 
+  /** Halt all active playback before starting a fallback TTS layer. */
+  stopAll(): void {
+    this.stop();
+  }
+
   /**
    * Register a blob URL — does NOT revoke on play start.
    * Previous blob is revoked only when replaced or after playback ends.

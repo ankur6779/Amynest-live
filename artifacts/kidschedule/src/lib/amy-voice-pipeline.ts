@@ -1,8 +1,8 @@
 /**
- * Amy voice — intelligent parallel fallback (audible validation, quality race, adaptive).
+ * Amy voice — fail-safe fallback pipeline (audible validation, sequential dynamic TTS).
  *
  * Layer 1: Static + cache — parallel quality race (static > cache)
- * Layer 2: OpenAI immediately; ElevenLabs staggered — abort losers on win
+ * Layer 2: OpenAI first → ElevenLabs only on failure (no overlap)
  * Layer 3–6: Phonics → word split → emergency → visual (after dynamic fully fails)
  */
 
@@ -59,16 +59,14 @@ import {
   recordAmyVoiceDeliverySuccess,
 } from "@/lib/amy-voice-difficulty";
 import { preloadAmyVoiceNextPhrase } from "@/lib/amy-voice-preload";
-import { normalizePhonicsLetterKey, PHONICS_DIGRAPH_SOUNDS } from "@workspace/phonics-sounds";
+import { normalizePhonicsLetterKey, PHONICS_DIGRAPH_SOUNDS, getCvcWordAudioText } from "@workspace/phonics-sounds";
 import { isStaticTtsText, type StaticAudioMode } from "@workspace/static-audio/browser";
 import type { SpeakOptions, SpeakResult } from "@/hooks/use-amy-voice";
 import {
   getAdaptiveSnapshot,
-  getElevenLabsStaggerMs,
   shouldDeferElevenLabsFallback,
 } from "@/lib/amy-voice-adaptive";
 import {
-  getDynamicLayerQuality,
   getPregenLayerOrder,
   getPregenLayerQuality,
   setSessionLastSuccessfulLayer,
@@ -85,7 +83,10 @@ import {
 
 const LAYER1_TIMEOUT_MS = 1200;
 const LAYER2_TIMEOUT_MS = 1500;
+const OPENAI_DYNAMIC_TIMEOUT_MS = 1500;
+const ELEVENLABS_DYNAMIC_TIMEOUT_MS = 1800;
 const NEVER_SILENT_MS = 1500;
+const BLEND_WORD_FINALE_GAP_MS = 150;
 const QUALITY_PICK_WINDOW_MS = 150;
 const SPEECH_COACH_RETRY_DELAY_MS = 350;
 
@@ -186,14 +187,13 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   ]);
 }
 
-/** Strict audible check — reject silent / invalid elements before race winner. */
+/** Strict audible check — playback must have started with valid duration. */
 function validateAudibleElement(audio: HTMLAudioElement): boolean {
   if (audio.muted) return false;
   if (audio.volume <= 0) return false;
   const dur = audio.duration;
-  if (Number.isFinite(dur) && dur <= 0) return false;
-  if (!audio.ended && audio.currentTime <= 0.01) return false;
-  if (audio.paused && audio.currentTime <= 0 && audio.readyState < 3) return false;
+  if (!Number.isFinite(dur) || dur <= 0) return false;
+  if (audio.currentTime <= 0) return false;
   return true;
 }
 
@@ -595,132 +595,172 @@ async function attemptElevenLabsPlay(
   return { ok: false, error: "elevenlabs_play_failed" };
 }
 
-/**
- * Layer 2 — OpenAI starts immediately; ElevenLabs after stagger if still pending.
- * Single attempt each; abort slower request when winner is chosen.
- */
-async function tryDynamicParallelLayer(
+type DynamicProvider = "openai" | "elevenlabs";
+
+async function tryPlayWithWatchdog(
+  provider: DynamicProvider,
   text: string,
   opts: SpeakOptions | undefined,
   ctx: AmyVoicePipelineContext,
   waitUntilEnd: boolean,
-  layerTimeoutMs = LAYER2_TIMEOUT_MS,
+  timeoutMs: number,
+  signal?: AbortSignal,
+): Promise<PlayAttemptResult> {
+  const run =
+    provider === "openai"
+      ? () => attemptOpenAiPlay(text, opts, ctx, waitUntilEnd, signal)
+      : () => attemptElevenLabsPlay(text, opts, ctx, waitUntilEnd, signal);
+
+  try {
+    return await withTimeout(run(), timeoutMs, provider);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "layer_error";
+    return {
+      ok: false,
+      error: msg.includes("timeout") ? "layer_timeout" : "layer_error",
+    };
+  }
+}
+
+/** OpenAI may be audibly playing even if the attempt returned failure — do not overlap ElevenLabs. */
+function resolveOpenAiAudibleSuccess(): PlayAttemptResult | null {
+  const active = audioManager.getCurrentElement();
+  if (!active || !validateAudibleElement(active)) return null;
+  recordAmyVoiceLayerSuccess("api_success", { recovered: "audible_watchdog" });
+  return {
+    ok: true,
+    layer: "api",
+    stopPlayback: () => {
+      active.pause();
+      active.currentTime = 0;
+    },
+  };
+}
+
+/**
+ * Layer 2 — OpenAI first; ElevenLabs only after OpenAI fully fails (no parallel race).
+ */
+async function tryDynamicSequentialLayer(
+  text: string,
+  opts: SpeakOptions | undefined,
+  ctx: AmyVoicePipelineContext,
+  waitUntilEnd: boolean,
+  _layerTimeoutMs = LAYER2_TIMEOUT_MS,
 ): Promise<PlayAttemptResult> {
   const openAiAbort = new AbortController();
   const elevenAbort = new AbortController();
-  const staggerMs = getElevenLabsStaggerMs();
-  const runners: LayerRunner[] = [];
 
-  if (!shouldSkipLiveTtsApi()) {
-    runners.push({
-      quality: getDynamicLayerQuality("api"),
-      run: () => attemptOpenAiPlay(text, opts, ctx, waitUntilEnd, openAiAbort.signal),
-    });
+  const canUseOpenAi = !shouldSkipLiveTtsApi();
+  const canUseEleven = !isAmyVoiceOffline() && !shouldDeferElevenLabsFallback();
+
+  if (!canUseOpenAi && !canUseEleven) {
+    return { ok: false, error: "dynamic_skipped" };
   }
 
-  const canUseEleven =
-    !isAmyVoiceOffline() && !shouldDeferElevenLabsFallback();
-
-  return new Promise((resolve) => {
-    if (runners.length === 0 && !canUseEleven) {
-      resolve({ ok: false, error: "dynamic_skipped" });
-      return;
-    }
-
-    let settled = false;
-    const pool: Array<PlayAttemptResult & { ok: true; quality: number }> = [];
-    let failures = 0;
-    let expected = runners.length + (canUseEleven ? 1 : 0);
-    let pickTimer: ReturnType<typeof setTimeout> | null = null;
-    let elevenStarted = false;
-
-    const abortLosers = () => {
-      openAiAbort.abort();
-      elevenAbort.abort();
-    };
-
-    const finalize = () => {
-      if (settled) return;
-      settled = true;
-      if (pickTimer) clearTimeout(pickTimer);
-      clearTimeout(layerTimer);
-      clearTimeout(staggerTimer);
-
-      if (pool.length === 0) {
-        abortLosers();
-        resolve({ ok: false, error: "dynamic_failed" });
-        return;
-      }
-      pool.sort((a, b) => b.quality - a.quality);
-      const winner = pool[0]!;
-      stopLoserPlaybacks(winner, pool);
-      abortLosers();
-      const { quality: _q, ...result } = winner;
-      resolve(result);
-    };
-
-    const layerTimer = setTimeout(finalize, layerTimeoutMs);
-
-    const schedulePick = () => {
-      if (pickTimer || settled) return;
-      pickTimer = setTimeout(() => {
-        pickTimer = null;
-        finalize();
-      }, QUALITY_PICK_WINDOW_MS);
-    };
-
-    const onOutcome = (result: PlayAttemptResult, quality: number) => {
-      if (settled) {
-        if (result.ok) result.stopPlayback?.();
-        return;
-      }
-      if (result.ok) {
-        pool.push({ ...result, quality });
-        if (pool.length === 1) schedulePick();
-        return;
-      }
-      failures += 1;
-      if (failures >= expected && pool.length === 0) finalize();
-    };
-
-    logTtsClient("Layer2 staggered", {
-      staggerMs,
-      canUseEleven,
-      timeoutMs: layerTimeoutMs,
-      adaptive: getAdaptiveSnapshot(),
-    });
-
-    for (const r of runners) {
-      void withTimeout(r.run(), layerTimeoutMs, "openai")
-        .then((out) => onOutcome(out, r.quality))
-        .catch((err) => {
-          const msg = err instanceof Error ? err.message : "layer_error";
-          onOutcome(
-            { ok: false, error: msg.includes("timeout") ? "layer_timeout" : "layer_error" },
-            r.quality,
-          );
-        });
-    }
-
-    const staggerTimer = setTimeout(() => {
-      if (settled || elevenStarted || !canUseEleven) return;
-      elevenStarted = true;
-      const q = getDynamicLayerQuality("elevenlabs");
-      void withTimeout(
-        attemptElevenLabsPlay(text, opts, ctx, waitUntilEnd, elevenAbort.signal),
-        layerTimeoutMs,
-        "elevenlabs",
-      )
-        .then((out) => onOutcome(out, q))
-        .catch((err) => {
-          const msg = err instanceof Error ? err.message : "layer_error";
-          onOutcome(
-            { ok: false, error: msg.includes("timeout") ? "layer_timeout" : "layer_error" },
-            q,
-          );
-        });
-    }, runners.length > 0 ? staggerMs : 0);
+  logTtsClient("Layer2 sequential", {
+    canUseOpenAi,
+    canUseEleven,
+    openAiTimeoutMs: OPENAI_DYNAMIC_TIMEOUT_MS,
+    elevenTimeoutMs: ELEVENLABS_DYNAMIC_TIMEOUT_MS,
+    adaptive: getAdaptiveSnapshot(),
   });
+
+  if (canUseOpenAi) {
+    console.log("[AmyTTS] Using OpenAI");
+    const openaiResult = await tryPlayWithWatchdog(
+      "openai",
+      text,
+      opts,
+      ctx,
+      waitUntilEnd,
+      OPENAI_DYNAMIC_TIMEOUT_MS,
+      openAiAbort.signal,
+    );
+
+    if (openaiResult.ok) {
+      elevenAbort.abort();
+      return openaiResult;
+    }
+
+    if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+
+    const recovered = resolveOpenAiAudibleSuccess();
+    if (recovered) {
+      elevenAbort.abort();
+      return recovered;
+    }
+
+    console.log("[AmyTTS] OpenAI failed, falling back to ElevenLabs");
+  }
+
+  if (!canUseEleven) {
+    return { ok: false, error: canUseOpenAi ? "dynamic_failed" : "dynamic_skipped" };
+  }
+
+  if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+
+  audioManager.stopAll();
+
+  const elevenResult = await tryPlayWithWatchdog(
+    "elevenlabs",
+    text,
+    opts,
+    ctx,
+    waitUntilEnd,
+    ELEVENLABS_DYNAMIC_TIMEOUT_MS,
+    elevenAbort.signal,
+  );
+
+  return elevenResult.ok ? elevenResult : { ok: false, error: elevenResult.error ?? "dynamic_failed" };
+}
+
+/**
+ * CVC blend finale — static/cache word audio, then OpenAI TTS only (no ElevenLabs).
+ */
+async function playPhonicsBlendFinale(
+  word: string,
+  ctx: AmyVoicePipelineContext,
+  opts: SpeakOptions | undefined,
+  waitUntilEnd: boolean,
+): Promise<PlayAttemptResult> {
+  const wordText = getCvcWordAudioText(word);
+  if (!wordText) return { ok: false, error: "blend_finale_empty" };
+
+  const staticResult = await attemptStaticPlay(wordText, "phonics", ctx, waitUntilEnd, true);
+  if (staticResult.ok) return staticResult;
+
+  const cacheResult = await attemptCachePlay(wordText, "phonics", ctx, waitUntilEnd, true);
+  if (cacheResult.ok) return cacheResult;
+
+  if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+
+  if (!shouldSkipLiveTtsApi()) {
+    const openAiResult = await tryPlayWithWatchdog(
+      "openai",
+      wordText,
+      { ...opts, mode: "phonics", word: wordText, waitUntilEnd },
+      ctx,
+      waitUntilEnd,
+      OPENAI_DYNAMIC_TIMEOUT_MS,
+    );
+    if (openAiResult.ok) return openAiResult;
+
+    const recovered = resolveOpenAiAudibleSuccess();
+    if (recovered) return recovered;
+  }
+
+  const emergency = await withTimeout(
+    playEmergencyPhrase(wordText),
+    NEVER_SILENT_MS,
+    "blend_finale_emergency",
+  ).catch(() => false);
+  if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+  if (emergency) {
+    recordAmyVoiceLayerSuccess("emergency_local_success", { source: "blend_finale" });
+    return { ok: true, layer: "emergency_local" };
+  }
+
+  return { ok: false, error: "blend_finale_failed" };
 }
 
 async function tryPhonicsSequenceLayer(
@@ -728,6 +768,7 @@ async function tryPhonicsSequenceLayer(
   mode: StaticAudioMode,
   ctx: AmyVoicePipelineContext,
   policy?: AmySpeechPolicy,
+  opts?: SpeakOptions,
 ): Promise<PlayAttemptResult> {
   if (policy && !policy.allowPhonicsSequence) {
     recordAmyVoiceLayerFailed("phonics_sequence", "blocked_by_speech_mode");
@@ -774,7 +815,15 @@ async function tryPhonicsSequenceLayer(
     }
   }
 
-  recordAmyVoiceLayerSuccess("phonics_sequence_success", { parts: parts.length });
+  await delay(BLEND_WORD_FINALE_GAP_MS);
+
+  const finale = await playPhonicsBlendFinale(text, ctx, opts, true);
+  if (!finale.ok) {
+    recordAmyVoiceLayerFailed("phonics_sequence", "blend_finale_failed");
+    return { ok: false, error: "phonics_sequence_failed" };
+  }
+
+  recordAmyVoiceLayerSuccess("phonics_sequence_success", { parts: parts.length, word: text });
   ctx.onFinished?.();
   return { ok: true, layer: "phonics_sequence" };
 }
@@ -1073,7 +1122,7 @@ export async function speakAmyVoice(
 
   const runDynamic = async (): Promise<PlayAttemptResult | null> => {
     if (policy.forcePhonicsOnly || shallow) return null;
-    let result = await tryDynamicParallelLayer(
+    let result = await tryDynamicSequentialLayer(
       text,
       opts,
       pipelineCtx,
@@ -1084,7 +1133,7 @@ export async function speakAmyVoice(
     recordAmyVoiceFallbackUsed("api", "api_retry");
     await delay(SPEECH_COACH_RETRY_DELAY_MS);
     if (isStale(pipelineCtx)) return { ok: false, error: "tts_cancelled" };
-    return tryDynamicParallelLayer(
+    return tryDynamicSequentialLayer(
       text,
       opts,
       pipelineCtx,
@@ -1102,6 +1151,12 @@ export async function speakAmyVoice(
       policy.forcePhonicsOnly,
     );
 
+  const tryBlendWordFinale = async (): Promise<PlayAttemptResult | null> => {
+    if (!opts?.word || shallow) return null;
+    if (isStale(pipelineCtx)) return { ok: false, error: "tts_cancelled" };
+    return playPhonicsBlendFinale(opts.word, pipelineCtx, opts, waitUntilEnd);
+  };
+
   if (policy.preferDynamicTts && !policy.forcePhonicsOnly && !shallow) {
     const layer2 = await runDynamic();
     if (layer2?.ok) return finishSpeak(layer2, waitUntilEnd, pipelineCtx, policy, depth);
@@ -1111,10 +1166,18 @@ export async function speakAmyVoice(
     const layer1 = await runPregen();
     if (layer1.ok) return finishSpeak(layer1, waitUntilEnd, pipelineCtx, policy, depth);
     pushFailure(failureChain, layer1, "static");
+
+    const wordFinale = await tryBlendWordFinale();
+    if (wordFinale?.ok) return finishSpeak(wordFinale, waitUntilEnd, pipelineCtx, policy, depth);
+    if (wordFinale) pushFailure(failureChain, wordFinale, "api");
   } else {
     const layer1 = await runPregen();
     if (layer1.ok) return finishSpeak(layer1, waitUntilEnd, pipelineCtx, policy, depth);
     pushFailure(failureChain, layer1, "static");
+
+    const wordFinale = await tryBlendWordFinale();
+    if (wordFinale?.ok) return finishSpeak(wordFinale, waitUntilEnd, pipelineCtx, policy, depth);
+    if (wordFinale) pushFailure(failureChain, wordFinale, "api");
 
     if (!policy.forcePhonicsOnly && !shallow) {
       if (isStale(pipelineCtx)) return { success: false, error: "tts_cancelled" };
@@ -1128,8 +1191,8 @@ export async function speakAmyVoice(
     if (isStale(pipelineCtx)) return { success: false, error: "tts_cancelled" };
     recordAmyVoiceFallbackUsed("api", "phonics_sequence");
     const layer3 = await withTimeout(
-      tryPhonicsSequenceLayer(text, mode, pipelineCtx, policy),
-      LAYER2_TIMEOUT_MS,
+      tryPhonicsSequenceLayer(text, mode, pipelineCtx, policy, opts),
+      LAYER2_TIMEOUT_MS + OPENAI_DYNAMIC_TIMEOUT_MS,
       "phonics_layer",
     ).catch((e) => ({
       ok: false as const,

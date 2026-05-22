@@ -33,7 +33,7 @@ describe("playCvcBlend", () => {
     assert.equal(getPhonemeAudioText("t"), "t");
   });
 
-  it("stops the chain when speak fails", async () => {
+  it("always attempts the whole word even when a phoneme speak fails", async () => {
     const cat = getCvcWordEntry("cat");
     assert.ok(cat);
 
@@ -41,7 +41,7 @@ describe("playCvcBlend", () => {
     let n = 0;
     await playCvcBlend(
       cat!,
-      async (text) => {
+      async (text, meta) => {
         calls.push(text);
         n += 1;
         return { success: n < 2 };
@@ -49,6 +49,7 @@ describe("playCvcBlend", () => {
       { slowGapMs: 0, fastGapMs: 0 },
     );
 
-    assert.equal(calls.length, 2);
+    assert.ok(calls.includes(getCvcWordAudioText("cat")));
+    assert.equal(calls[calls.length - 1], getCvcWordAudioText("cat"));
   });
 });
