@@ -5,6 +5,7 @@
 
 import { getPhonicsAudioText, normalizePhonicsLetterKey } from "@workspace/phonics-sounds";
 import { audioManager } from "@/lib/audio-manager";
+import { isAudioUnlocked, shouldUseWebAudioUnlock } from "@/lib/tts-guard";
 
 const EMERGENCY_WORDS: Record<string, string> = {
   yes: "yes",
@@ -26,14 +27,16 @@ const EMERGENCY_WORDS: Record<string, string> = {
 let audioCtx: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined" || !shouldUseWebAudioUnlock() || !isAudioUnlocked()) {
+    return null;
+  }
   try {
     if (!audioCtx) {
       const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctx) return null;
       audioCtx = new Ctx();
     }
-    if (audioCtx.state === "suspended") void audioCtx.resume();
+    if (audioCtx.state === "suspended") void audioCtx.resume().catch(() => {});
     return audioCtx;
   } catch {
     return null;

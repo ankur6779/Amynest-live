@@ -438,7 +438,7 @@ class AudioManagerImpl {
     if (this.lastPlayError === AUDIO_ERROR.USER_INTERACTION_REQUIRED) {
       this.lastPlayError = null;
     }
-    this.warmMediaPipeline(true);
+    this.warmMediaPipeline(true, { fromUserGesture: true });
   }
 
   /**
@@ -495,9 +495,15 @@ class AudioManagerImpl {
     return isTtsPlaybackAllowed();
   }
 
-  warmMediaPipeline(force = false): void {
+  warmMediaPipeline(
+    force = false,
+    opts: { fromUserGesture?: boolean } = {},
+  ): void {
     if (this.pipelineWarmed && !force) return;
     if (typeof window === "undefined") return;
+
+    const fromGesture = opts.fromUserGesture === true;
+    if (isAndroidAmyNestAudioClient() && !fromGesture) return;
 
     type AutoplayPolicyWindow = Window & {
       getAutoplayPolicy?: (kind: "mediaelement" | "audiocontext") => string;
@@ -507,19 +513,23 @@ class AudioManagerImpl {
 
     this.pipelineWarmed = true;
 
-    try {
-      const Ctx =
-        window.AudioContext ??
-        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (Ctx) {
-        const ctx = new Ctx();
-        void ctx.resume().catch(() => {});
+    if (!isAndroidAmyNestAudioClient()) {
+      try {
+        const Ctx =
+          window.AudioContext ??
+          (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (Ctx) {
+          const ctx = new Ctx();
+          void ctx.resume().catch(() => {});
+        }
+      } catch {
+        /* optional */
       }
-    } catch {
-      /* optional */
     }
 
-    this.playSilentUnlockBuffer();
+    if (fromGesture || !isAndroidAmyNestAudioClient()) {
+      this.playSilentUnlockBuffer();
+    }
   }
 
   private playSilentUnlockBuffer(): void {
@@ -734,21 +744,6 @@ class AudioManagerImpl {
           resolve();
           return true;
         }
-        if (
-          isAndroidAmyNestAudioClient() &&
-          !audio.paused &&
-          !audio.ended &&
-          audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
-        ) {
-          if (!this.verifyAudibleOutput(audio)) {
-            cleanup();
-            reject(new Error(AUDIO_ERROR.SILENT_OUTPUT));
-            return true;
-          }
-          cleanup();
-          resolve();
-          return true;
-        }
         return false;
       };
 
@@ -787,14 +782,6 @@ class AudioManagerImpl {
           return;
         }
         if (audio.currentTime > 0.02) {
-          resolve();
-          return;
-        }
-        if (
-          !audio.paused &&
-          audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
-          this.verifyAudibleOutput(audio)
-        ) {
           resolve();
           return;
         }
@@ -837,7 +824,7 @@ class AudioManagerImpl {
         isAndroidAmyNestAudioClient() &&
         (name === "NotAllowedError" || isNotAllowedError(err))
       ) {
-        this.warmMediaPipeline(true);
+        this.warmMediaPipeline(true, { fromUserGesture: true });
         try {
           await tryPlay();
         } catch (retryErr) {

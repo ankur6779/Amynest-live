@@ -36,8 +36,13 @@ function getAudioContextClass(): typeof AudioContext | undefined {
  * Skips creation when the browser reports the autoplay policy disallows it —
  * this avoids the Chrome "AudioContext was not allowed to start" warning.
  */
+/** Amy voice on Android uses HTMLAudioElement — Web Audio at boot causes autoplay warnings. */
+export function shouldUseWebAudioUnlock(): boolean {
+  return !isAndroidAmyNestAudioClient();
+}
+
 function resumeUnlockAudioContext(): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || !shouldUseWebAudioUnlock()) return;
 
   type AutoplayPolicyWindow = Window & {
     getAutoplayPolicy?: (kind: "mediaelement" | "audiocontext") => string;
@@ -52,18 +57,27 @@ function resumeUnlockAudioContext(): void {
       unlockCtx = new AudioContextClass();
     }
     if (unlockCtx.state === "suspended") {
-      void unlockCtx.resume();
+      void unlockCtx.resume().catch(() => {});
     }
   } catch {
     /* best-effort — HTMLAudioElement unlock is primary */
   }
 }
 
-function unlockAudio(): void {
+/**
+ * @param fromUserGesture When false, only flips the HTML-audio gate (no AudioContext / silent warm).
+ */
+function unlockAudio(fromUserGesture = false): void {
   audioUnlocked = true;
-  resumeUnlockAudioContext();
+  if (fromUserGesture) {
+    resumeUnlockAudioContext();
+  }
   void import("@/lib/static-audio-telemetry").then((m) => m.resetClientStaticAudioCircuit());
-  void import("@/lib/audio-manager").then((m) => m.audioManager.warmMediaPipeline(true));
+  if (fromUserGesture) {
+    void import("@/lib/audio-manager").then((m) =>
+      m.audioManager.warmMediaPipeline(true, { fromUserGesture: true }),
+    );
+  }
 }
 
 /**
@@ -75,13 +89,13 @@ export function initAudioUnlock(): void {
   if (unlockListenersInstalled) return;
   unlockListenersInstalled = true;
 
-  // Android PWA / WebView: Chromium blocks async play() after fetch — unlock at boot.
+  // Android PWA: allow HTML Amy voice after tap without creating AudioContext at boot.
   if (isAndroidAmyNestAudioClient()) {
-    unlockAudio();
+    audioUnlocked = true;
   }
 
   const onUnlock = () => {
-    unlockAudio();
+    unlockAudio(true);
     document.removeEventListener("click", onUnlock, true);
     document.removeEventListener("touchstart", onUnlock, true);
     document.removeEventListener("pointerdown", onUnlock, true);
@@ -128,7 +142,7 @@ export function installTtsGestureListener(): void {
 
 /** Call from button handlers in the same gesture turn as playback. */
 export function recordTtsUserGesture(): void {
-  unlockAudio();
+  unlockAudio(true);
 }
 
 export function isAudioUnlocked(): boolean {

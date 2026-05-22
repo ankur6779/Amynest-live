@@ -24,6 +24,7 @@ import {
   primeStaticAudioInUserGesture,
   safePlayAudio,
 } from "@/lib/static-audio";
+import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import {
   emitAmyVoiceTextFallback,
@@ -147,9 +148,22 @@ async function playElementWithNeverSilentWatchdog(
 
   if (!played) return false;
 
-  // Static/cache: AudioManager already ran the playback watchdog — do not re-check at 1.5s
-  // (mobile decode often needs >1.5s and falsely failed every module).
   if (meta.source === "static" || meta.source === "cache") {
+    if (isAndroidAmyNestAudioClient()) {
+      const audible = await waitForAudible(audio, 4000);
+      logAmyVoiceDiag("static_play_verify", {
+        phrase: meta.phrase.slice(0, 80),
+        audible,
+        currentTime: audio.currentTime,
+        paused: audio.paused,
+        readyState: audio.readyState,
+        srcType: audio.src.startsWith("blob:") ? "blob" : "remote",
+      });
+      if (!audible) {
+        audio.pause();
+        return false;
+      }
+    }
     if (meta.waitUntilEnd) {
       const end = await audioManager.waitUntilEnd(audio, ctx.isCancelled);
       return end.ok;
@@ -185,9 +199,11 @@ async function tryStaticLayer(
     if (!proxyUrl) {
       if (tryMode === mode) {
         recordAmyVoiceLayerFailed("static", "no_map_url", { text: text.slice(0, 80), mode: tryMode });
+        logAmyVoiceDiag("static_no_map", { text: text.slice(0, 120), mode: tryMode });
       }
       continue;
     }
+    logAmyVoiceDiag("static_try", { text: text.slice(0, 80), mode: tryMode, url: proxyUrl.slice(-72) });
     const audio = await prepareStaticPlaybackAudio(text, tryMode);
     if (!audio) {
       recordAmyVoiceLayerFailed(
