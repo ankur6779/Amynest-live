@@ -239,6 +239,9 @@ export function getPromotedExperimentVariants(): Partial<AmyVoiceExperimentAssig
   return { ...promotedVariants };
 }
 
+/** @alias getPromotedExperimentVariants */
+export const getPromotedVariants = getPromotedExperimentVariants;
+
 export function evaluateExperimentGovernanceFromResults(
   results: Array<{
     experiment: AmyVoiceExperimentId;
@@ -274,6 +277,9 @@ export function maybeEvaluateExperimentGovernance(
   outcomesSinceEvaluation = 0;
   evaluateExperimentGovernanceFromResults(results);
 }
+
+/** @alias maybeEvaluateExperimentGovernance */
+export const maybeEvaluateExperimentPromotion = maybeEvaluateExperimentGovernance;
 
 export function getExperimentAuditLog(limit = 20): ExperimentAuditEntry[] {
   bootstrapAmyVoiceGovernanceForRuntime();

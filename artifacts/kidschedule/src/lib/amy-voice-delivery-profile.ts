@@ -2,6 +2,7 @@
  * Unified Amy voice delivery profile — merges learning cohorts + A/B experiments.
  */
 
+import type { AmyProsodyProfile } from "@/lib/amy-speech-mode";
 import type { AmyDifficultyLevel } from "@/lib/amy-voice-difficulty";
 import {
   getAmyVoiceCohortAdjustments,
@@ -14,9 +15,19 @@ import {
   getAmyVoiceExperimentModifiers,
   getAmyVoiceExperimentSnapshot,
   recordAmyVoiceExperimentOutcome,
+  type AmyVoiceExperimentAssignment,
 } from "@/lib/amy-voice-experiments";
-import { clampDeliveryModifiersToInvariants, getAmyVoiceInvariantSnapshot } from "@/lib/amy-voice-invariants";
-import { getAmyVoiceGovernanceSnapshot } from "@/lib/amy-voice-governance";
+import {
+  clampAmyProsodyToInvariants,
+  clampDeliveryModifiersToInvariants,
+  getAmyVoiceInvariantSnapshot,
+} from "@/lib/amy-voice-invariants";
+import {
+  bootstrapAmyVoiceGovernanceForRuntime,
+  getAmyVoiceGovernanceSnapshot,
+  getPromotedVariants,
+} from "@/lib/amy-voice-governance";
+import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
 
 export type AmyVoiceDeliveryModifiers = {
   encouragementMultiplier: number;
@@ -39,6 +50,61 @@ export type AmyVoiceDeliverySignals = {
   difficulty: AmyDifficultyLevel;
   durationMs: number;
 };
+
+export type AmyVoiceRuntimeSnapshot = {
+  at: number;
+  health: import("@/lib/amy-voice-health").AmyVoiceHealthSnapshot;
+  analytics: Omit<
+    import("@/lib/amy-voice-analytics").AmyVoiceAnalyticsSnapshot,
+    "delivery"
+  >;
+  governance: ReturnType<typeof getAmyVoiceGovernanceSnapshot>;
+  experiments: ReturnType<typeof getAmyVoiceExperimentSnapshot>;
+  deliveryProfile: AmyVoiceDeliveryProfile | null;
+  promotedVariants: Partial<AmyVoiceExperimentAssignment>;
+  invariants: ReturnType<typeof getAmyVoiceInvariantSnapshot>;
+};
+
+const RUNTIME_SNAPSHOT_INTERVAL = 10;
+let runtimeOutcomeCount = 0;
+let lastDeliveryProfile: AmyVoiceDeliveryProfile | null = null;
+
+export function isAmyVoiceFallbackLayer(layer?: AmyVoiceLayer | string): boolean {
+  return (
+    layer === "emergency_local" ||
+    layer === "text_visual" ||
+    layer === "phonics_sequence" ||
+    layer === "speech_coach_split"
+  );
+}
+
+/** Apply clamped cohort/experiment modifiers to adaptive prosody. */
+export function applyAmyVoiceDeliveryModifiers(
+  prosody: AmyProsodyProfile,
+  modifiers: AmyVoiceDeliveryModifiers,
+): AmyProsodyProfile {
+  const clamped = clampDeliveryModifiersToInvariants(modifiers);
+  let next: AmyProsodyProfile = {
+    ...prosody,
+    playbackRate: prosody.playbackRate + clamped.pacingRateDelta,
+    synthesisRate: prosody.synthesisRate + clamped.pacingRateDelta,
+    phraseGapMs: prosody.phraseGapMs + clamped.pacingGapDelta,
+    phonicsGapMs: prosody.phonicsGapMs + Math.round(clamped.pacingGapDelta * 0.35),
+  };
+
+  if (clamped.encouragementMultiplier !== 1) {
+    const rateFactor = 1 - (clamped.encouragementMultiplier - 1) * 0.04;
+    next.playbackRate *= rateFactor;
+    next.synthesisRate *= rateFactor;
+    next.phraseGapMs += Math.round((clamped.encouragementMultiplier - 1) * 40);
+  }
+
+  if (clamped.microHumanizeMultiplier !== 1) {
+    next.phraseGapMs += Math.round((clamped.microHumanizeMultiplier - 1) * 25);
+  }
+
+  return clampAmyProsodyToInvariants(next);
+}
 
 function mergeModifiers(
   cohort: AmyVoiceCohortAdjustments,
@@ -64,6 +130,7 @@ function clampMergedModifiers(
 export function resolveAmyVoiceDeliveryProfile(
   signals: Omit<AmyVoiceDeliverySignals, "durationMs"> & { durationMs?: number },
 ): AmyVoiceDeliveryProfile {
+  bootstrapAmyVoiceGovernanceForRuntime();
   const cohort = getAmyVoiceCohortAdjustments({
     replayCount: signals.replayCount,
     difficulty: signals.difficulty,
@@ -72,13 +139,15 @@ export function resolveAmyVoiceDeliveryProfile(
   const experimentVariants = getAmyVoiceExperimentAssignment();
   const experiment = getAmyVoiceExperimentModifiers(experimentVariants);
 
-  return {
+  const profile: AmyVoiceDeliveryProfile = {
     cohortId: cohort.cohortId,
     experimentVariants,
     modifiers: clampMergedModifiers(mergeModifiers(cohort, experiment)),
     guidanceTier: cohort.guidanceTier,
     supportLevel: cohort.supportLevel,
   };
+  lastDeliveryProfile = profile;
+  return profile;
 }
 
 export function recordAmyVoiceDeliveryOutcome(
@@ -91,6 +160,37 @@ export function recordAmyVoiceDeliveryOutcome(
     durationMs: outcome.durationMs,
     fallback: outcome.fallback,
   });
+  runtimeOutcomeCount += 1;
+  if (runtimeOutcomeCount % RUNTIME_SNAPSHOT_INTERVAL === 0) {
+    void import("@/lib/amy-voice-telemetry").then((m) =>
+      m.reportAmyVoiceRuntimeSnapshot({ trigger: "batched_outcomes" }),
+    );
+  }
+}
+
+export async function getAmyVoiceRuntimeSnapshot(): Promise<AmyVoiceRuntimeSnapshot> {
+  bootstrapAmyVoiceGovernanceForRuntime();
+  const [{ getAmyVoiceHealthSnapshot }, { getAmyVoiceAnalyticsSnapshot }] = await Promise.all([
+    import("@/lib/amy-voice-health"),
+    import("@/lib/amy-voice-analytics"),
+  ]);
+  const analytics = getAmyVoiceAnalyticsSnapshot();
+  const { delivery: _delivery, ...analyticsCore } = analytics;
+
+  return {
+    at: Date.now(),
+    health: getAmyVoiceHealthSnapshot(),
+    analytics: analyticsCore,
+    governance: getAmyVoiceGovernanceSnapshot(),
+    experiments: getAmyVoiceExperimentSnapshot(),
+    deliveryProfile: lastDeliveryProfile,
+    promotedVariants: getPromotedVariants(),
+    invariants: getAmyVoiceInvariantSnapshot(),
+  };
+}
+
+export function getLastAmyVoiceDeliveryProfile(): AmyVoiceDeliveryProfile | null {
+  return lastDeliveryProfile;
 }
 
 export function getAmyVoiceDeliverySnapshot(): {
@@ -108,6 +208,8 @@ export function getAmyVoiceDeliverySnapshot(): {
 }
 
 export function resetAmyVoiceDeliveryProfileSession(): void {
+  runtimeOutcomeCount = 0;
+  lastDeliveryProfile = null;
   void import("@/lib/amy-voice-cohorts").then((m) => m.resetAmyVoiceCohortSession());
   void import("@/lib/amy-voice-experiments").then((m) => m.resetAmyVoiceExperimentMetrics());
 }

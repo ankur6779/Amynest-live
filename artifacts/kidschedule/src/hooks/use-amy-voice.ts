@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useGuardedSetter, useMountedRef } from "@/hooks/use-safe-async";
-import { prepareAmySpeechInput } from "@/lib/amy-speech-mode";
+import { enforceAmySpeechPolicyInvariants, prepareAmySpeechInput } from "@/lib/amy-speech-mode";
 import { buildAdaptiveDelivery } from "@/lib/amy-voice-emotion";
 import {
   assessAmyDifficulty,
@@ -23,11 +23,23 @@ import {
   recordAmyVoiceSessionPhrase,
 } from "@/lib/amy-voice-preload";
 import {
+  applyAmyVoiceDeliveryModifiers,
+  isAmyVoiceFallbackLayer,
+  recordAmyVoiceDeliveryOutcome,
+  resolveAmyVoiceDeliveryProfile,
+  type AmyVoiceDeliveryProfile,
+} from "@/lib/amy-voice-delivery-profile";
+import { bootstrapAmyVoiceGovernanceForRuntime } from "@/lib/amy-voice-governance";
+import { recordAmyVoiceSpeakOutcome } from "@/lib/amy-voice-health";
+import {
+  recordAmyVoiceDifficultyTransition,
+  recordAmyVoiceStrugglePhrase,
+} from "@/lib/amy-voice-analytics";
+import {
   speakAmyVoice,
   mapPlayErrorToSpeakResult,
   type AmyVoicePipelineContext,
 } from "@/lib/amy-voice-pipeline";
-import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { audioManager } from "@/lib/audio-manager";
 import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
@@ -164,6 +176,10 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
 
       try {
         safeSetSpeaking(true);
+        bootstrapAmyVoiceGovernanceForRuntime();
+        const speakStartedAt = performance.now();
+        let deliveryProfile: AmyVoiceDeliveryProfile | null = null;
+
         const speechPolicy = prepareAmySpeechInput(text, opts);
         const replayCount = recordAmyVoicePhraseReplay(
           speechPolicy.normalizedText,
@@ -182,6 +198,12 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           replayCount,
         );
         const previousDifficulty = commitDifficultyLevel(difficulty.level);
+        recordAmyVoiceDifficultyTransition(previousDifficulty, difficulty.level);
+
+        deliveryProfile = resolveAmyVoiceDeliveryProfile({
+          replayCount,
+          difficulty: difficulty.level,
+        });
 
         let phrases = speechPolicy.phrases;
         if (difficulty.level === "struggling") {
@@ -195,6 +217,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           speechMode: speechPolicy.speechMode,
           multiStep: phrases.length > 1 || speechPolicy.useSemanticSplit,
           successStreak: getSessionSuccessStreak(),
+          guidanceTierOverride: deliveryProfile.guidanceTier,
         });
         speechPolicy.phrases = phrases;
         speechPolicy.useSemanticSplit = phrases.length > 1;
@@ -211,7 +234,10 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           intent,
           difficulty.level,
         );
-        speechPolicy.prosody = delivery.prosody;
+        speechPolicy.prosody = applyAmyVoiceDeliveryModifiers(
+          delivery.prosody,
+          deliveryProfile.modifiers,
+        );
         speechPolicy.emotion = delivery.emotion;
         speechPolicy.intent = delivery.intent;
         speechPolicy.difficultyLevel = delivery.difficulty;
@@ -221,14 +247,50 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           speechPolicy.pipelineMode,
           speechPolicy.speechMode,
         );
-        recordAmyVoiceSessionPhrase(speechPolicy.normalizedText);
-        preloadAmyVoiceAnticipatory(speechPolicy);
-        const pipelineMode = speechPolicy.pipelineMode;
-        const result = await speakAmyVoice(speechPolicy.normalizedText, {
+        const finalizedPolicy = enforceAmySpeechPolicyInvariants(speechPolicy);
+        recordAmyVoiceSessionPhrase(finalizedPolicy.normalizedText);
+        preloadAmyVoiceAnticipatory(finalizedPolicy);
+        const pipelineMode = finalizedPolicy.pipelineMode;
+        const result = await speakAmyVoice(finalizedPolicy.normalizedText, {
           ...opts,
           mode: pipelineMode,
-          speechPolicy,
+          speechPolicy: finalizedPolicy,
         }, pipelineCtx);
+
+        const durationMs = Math.round(performance.now() - speakStartedAt);
+        const fallback = result.success
+          ? isAmyVoiceFallbackLayer(result.layer)
+          : true;
+        if (deliveryProfile) {
+          recordAmyVoiceDeliveryOutcome(deliveryProfile, {
+            replayCount,
+            difficulty: difficulty.level,
+            durationMs,
+            fallback,
+          });
+        }
+        if (result.success) {
+          recordAmyVoiceSpeakOutcome({
+            speechMode: finalizedPolicy.speechMode,
+            pipelineMode: finalizedPolicy.pipelineMode,
+            layer: result.layer,
+            replayCount,
+            durationMs,
+            success: true,
+          });
+        }
+        if (replayCount >= 2 || fallback || difficulty.level === "struggling") {
+          recordAmyVoiceStrugglePhrase(
+            finalizedPolicy.normalizedText,
+            finalizedPolicy.speechMode,
+            finalizedPolicy.pipelineMode,
+            {
+              replayCount,
+              difficulty: difficulty.level,
+              fallback,
+            },
+          );
+        }
 
         if (myId !== reqIdRef.current || !isMounted.current) {
           return { success: false, error: "tts_cancelled" };
@@ -246,7 +308,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           result.layer === "speech_coach_split"
         ) {
           safeSetSpeaking(false);
-        } else if (speechPolicy.useSemanticSplit || opts?.waitUntilEnd) {
+        } else if (finalizedPolicy.useSemanticSplit || opts?.waitUntilEnd) {
           safeSetSpeaking(false);
         } else {
           const el = audioManager.getCurrentElement();

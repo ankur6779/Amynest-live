@@ -5,6 +5,7 @@
 import {
   getPromotedExperimentVariants,
   maybeEvaluateExperimentGovernance,
+  resetAmyVoiceGovernanceForTests,
 } from "@/lib/amy-voice-governance";
 
 export type AmyVoiceExperimentId =
@@ -178,6 +179,13 @@ function metricKey(experiment: AmyVoiceExperimentId, variant: string): string {
   return `${experiment}:${variant}`;
 }
 
+export function recordExperimentOutcome(
+  assignment: AmyVoiceExperimentAssignment,
+  outcome: { replayCount: number; durationMs: number; fallback: boolean },
+): void {
+  recordAmyVoiceExperimentOutcome(assignment, outcome);
+}
+
 export function recordAmyVoiceExperimentOutcome(
   assignment: AmyVoiceExperimentAssignment,
   outcome: { replayCount: number; durationMs: number; fallback: boolean },
@@ -247,4 +255,5 @@ export function resetAmyVoiceExperimentsForTests(): void {
       /* ignore */
     }
   }
+  resetAmyVoiceGovernanceForTests();
 }
