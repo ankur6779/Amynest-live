@@ -2,7 +2,6 @@ import { Link } from "wouter";
 import { ArrowRight, Sparkles, Brain, Calendar, LayoutGrid, MessageCircle, Zap, CheckCircle2, Flame, Smartphone, Moon, EarOff, Utensils, Target, ListChecks, HelpCircle, ShieldCheck, BookOpen, Microscope, TrendingUp, Video, Star, Users, Lightbulb, Puzzle, Palette, FileText, Baby, GraduationCap, Activity, Heart, Award, Gamepad2, BarChart3, FlaskConical, Calculator } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
-import heroImg from "@assets/ChatGPT_Image_Apr_26,_2026,_10_19_57_PM_1777222212106.png";
 import { useTranslation } from "react-i18next";
 const COACH_HIGHLIGHT_KEYS = ["landing.highlight_1", "landing.highlight_2", "landing.highlight_3", "landing.highlight_4"];
 const PROBLEMS = [{
@@ -468,11 +467,19 @@ export default function LandingPage() {
       {/* HERO */}
       <section className="relative z-10 flex flex-col items-center text-center px-5 pt-12 pb-16">
         <div className="amy-fade-up-1 relative -mb-6 flex items-center justify-center">
-          <div className="amy-hero-float">
-            <img src={heroImg} alt={t("pages.landing.amynest_ai_2")} className="amy-hero-glow w-80 md:w-[560px] object-contain" style={{
-            mixBlendMode: "screen"
-          }} />
-          </div>
+          <picture>
+            <source media="(min-width: 768px)" srcSet="/amynest-hero-logo.webp" type="image/webp" />
+            <source media="(max-width: 767px)" srcSet="/amynest-hero-logo-mobile.webp" type="image/webp" />
+            <img
+              src="/amynest-hero-logo-mobile.webp"
+              alt={t("pages.landing.amynest_ai_2")}
+              className="amy-hero-static w-64 sm:w-72 md:w-[480px] max-w-full h-auto object-contain"
+              width={600}
+              height={400}
+              decoding="async"
+              fetchPriority="high"
+            />
+          </picture>
         </div>
 
         <h1 className="amy-fade-up-2 amy-color-cycle font-quicksand font-black text-4xl md:text-6xl leading-[1.1] tracking-tight max-w-3xl mb-4">
