@@ -57,9 +57,8 @@ export const WEB_HUB_TILES: readonly WebHubTile[] = [
   { id: "fun-sheets",     title: "Fun Sheets",              bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"], ageMonthsMin: 24 },
 ];
 
-// Section 2 — fixed preview tiles the web renders ONLY for 0-24 month children.
-// Source: SECTION_2_PREVIEW_TILES in parenting-hub.tsx (10 tiles, in order).
-// Last synced: parenting-hub.tsx SECTION_2_PREVIEW_TILES array.
+// Section 2 — interactive early-access tiles the web renders ONLY for 0-24 month
+// infants in band 0-2. Source: SECTION_2_EARLY_ACCESS_TILE_IDS in hub-visibility.ts.
 export const WEB_SECTION_2_TILES: readonly { id: string; title: string }[] = [
   { id: "life-skills",       title: "🧭 Life Skills Mode" },
   { id: "olympiad",          title: "🏆 Smart Olympiad Zone" },

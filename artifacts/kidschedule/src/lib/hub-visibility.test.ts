@@ -4,6 +4,7 @@ import {
   checkMonthRules,
   isHubSectionVisible,
   shouldShowExploreSection,
+  shouldBypassHubMonthGates,
 } from "./hub-visibility";
 
 describe("isHubSectionVisible", () => {
@@ -69,6 +70,13 @@ describe("shouldShowExploreSection", () => {
   it("is off at 24+ months", () => {
     expect(shouldShowExploreSection(24, "2-4", "4-6")).toBe(false);
     expect(shouldShowExploreSection(12, "0-2", "2-4")).toBe(true);
+  });
+});
+
+describe("shouldBypassHubMonthGates", () => {
+  it("matches explore section visibility", () => {
+    expect(shouldBypassHubMonthGates(12, "0-2", "2-4")).toBe(true);
+    expect(shouldBypassHubMonthGates(24, "2-4", "4-6")).toBe(false);
   });
 });
 
