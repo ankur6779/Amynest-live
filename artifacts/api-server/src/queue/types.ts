@@ -21,6 +21,7 @@ export type AiJobType =
   | "ai-coach.extend"
   | "ai-coach.stream_plan"
   | "ai-coach.initial_wins"
+  | "ai-coach.next_win"
   | "ai-coach.remaining_wins"
   | "explain.narrative"
   | "speech.transcribe";
