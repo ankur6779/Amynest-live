@@ -30,6 +30,7 @@ import {
   getInfantProblem,
   pickLang as pickInfLang,
 } from "@workspace/infant-problems";
+import { COACH_AUDIO_GOAL_STORAGE_KEY } from "@workspace/audio-lessons";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface GoalItem { id: string; title: string; emoji: string; bg: [string, string] }
@@ -408,6 +409,7 @@ export default function CoachScreen() {
       return;
     }
     setGoalId(id);
+    void AsyncStorage.setItem(COACH_AUDIO_GOAL_STORAGE_KEY, id).catch(() => undefined);
     if (isInfantProblemId(id)) {
       // Infant problem flow renders a static plan immediately on next screen —
       // counts as a completion for free-quota purposes.
@@ -766,7 +768,11 @@ export default function CoachScreen() {
             {/* ── Amy Audio Lessons (search mode) ────────────────────── */}
             <TouchableOpacity
               activeOpacity={0.9}
-              onPress={() => { Haptics.selectionAsync(); router.push("/audio-lessons" as never); }}
+              onPress={() => {
+                Haptics.selectionAsync();
+                const q = goalId ? `?goal=${encodeURIComponent(goalId)}` : "";
+                router.push(`/audio-lessons${q}` as never);
+              }}
               accessibilityRole="button"
               accessibilityLabel={t("screens.tabs_coach.open_amy_audio_lessons")}
               style={{ marginBottom: 14, borderRadius: 20, overflow: "hidden" }}

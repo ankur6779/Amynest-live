@@ -1,22 +1,60 @@
-export type AgeBucket = "0-2" | "2-4" | "5-7" | "8-10" | "10+";
-export type LangCode = "en";
+export type {
+  AgeBucket,
+  LangCode,
+  LessonTier,
+  MultiLang,
+  Lesson,
+} from "./lesson-types.js";
+export { TIER_LABELS, sortLessons } from "./lesson-types.js";
 
-export interface MultiLang {
-  en: string;
-}
+import type { AgeBucket, LangCode, Lesson, LessonTier } from "./lesson-types.js";
+import { sortLessons } from "./lesson-types.js";
+import { PHASE1_LESSONS } from "./phase1-lessons.js";
+import { COACH_GOAL_TO_LESSON_IDS, COACH_AUDIO_GOAL_STORAGE_KEY } from "./coach-recommendations.js";
+import { LESSON_SERIES, type LessonSeries } from "./lesson-series.js";
+import {
+  LESSONS_COMPLETE_STORAGE_KEY,
+  parseCompletedLessonIds,
+  serializeCompletedLessonIds,
+  markLessonComplete,
+  getSeriesProgress,
+  firstIncompleteLessonId,
+  partIndexForLesson,
+  type SeriesProgress,
+} from "./series-progress.js";
 
-export interface Lesson {
-  id: string;
-  title: MultiLang;
-  description: MultiLang;
-  durationMin: number;
-  ageBucket: AgeBucket;
-  emoji: string;
-  expert: string;
-  paragraphs: {
-    en: string[];
-  };
-}
+export { COACH_GOAL_TO_LESSON_IDS, COACH_AUDIO_GOAL_STORAGE_KEY };
+export { LESSON_SERIES, type LessonSeries };
+export {
+  LESSONS_COMPLETE_STORAGE_KEY,
+  parseCompletedLessonIds,
+  serializeCompletedLessonIds,
+  markLessonComplete,
+  getSeriesProgress,
+  firstIncompleteLessonId,
+  partIndexForLesson,
+  type SeriesProgress,
+};
+
+/** Optional tier overrides for legacy catalog entries. */
+const TIER_BY_ID: Partial<Record<string, LessonTier>> = {
+  "infant-feeding-cues": "quick",
+  "infant-tummy-time": "quick",
+  "infant-bonding-language": "quick",
+  "toddler-no-phase": "quick",
+  "toddler-potty-readiness": "quick",
+  "early-school-friendship": "quick",
+  "early-school-homework": "quick",
+  "early-school-growth-mindset": "quick",
+  "tween-sibling-fights": "quick",
+  "tween-talking-to-them": "quick",
+  "teen-staying-connected": "quick",
+  "health-early-milestones": "deep",
+  "health-immunity-truth": "deep",
+  "health-hidden-nutrition-gaps": "deep",
+  "health-childhood-obesity": "deep",
+  "health-digital-eyes-posture": "deep",
+};
 
 export function getLessonText(lesson: Lesson, _lang?: string) {
   return {
@@ -26,9 +64,12 @@ export function getLessonText(lesson: Lesson, _lang?: string) {
   };
 }
 
-const L = (l: Lesson): Lesson => l;
+const L = (l: Omit<Lesson, "tier"> & { tier?: LessonTier }): Lesson => ({
+  ...l,
+  tier: l.tier ?? TIER_BY_ID[l.id] ?? "standard",
+});
 
-export const LESSONS: Lesson[] = [
+const CATALOG_LESSONS: Lesson[] = [
   // ─── 0–2 yrs ─────────────────────────────────────────────────────
   L({
     id: "infant-sleep-foundations",
@@ -542,6 +583,25 @@ export const LESSONS: Lesson[] = [
   }),
 ];
 
+export const LESSONS: Lesson[] = sortLessons([...CATALOG_LESSONS, ...PHASE1_LESSONS]);
+
+export function getRecommendedLessonsForCoachGoal(goalId: string, limit = 3): Lesson[] {
+  const ids = COACH_GOAL_TO_LESSON_IDS[goalId];
+  if (!ids?.length) return [];
+  const byId = new Map(LESSONS.map((l) => [l.id, l]));
+  const out: Lesson[] = [];
+  for (const id of ids) {
+    const lesson = byId.get(id);
+    if (lesson) out.push(lesson);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+export function getLessonById(id: string): Lesson | undefined {
+  return LESSONS.find((l) => l.id === id);
+}
+
 export const AGE_LABELS: Record<AgeBucket, Record<LangCode, string>> = {
   "0-2": { en: "0–2 years (infant)" },
   "2-4": { en: "2–4 years (toddler)" },
@@ -556,4 +616,27 @@ export function getAgeLabel(bucket: AgeBucket, _lang?: string): string {
 
 export function lessonsForAge(age: AgeBucket): Lesson[] {
   return LESSONS.filter((l) => l.ageBucket === age);
+}
+
+export function lessonCountForAge(age: AgeBucket): number {
+  return lessonsForAge(age).length;
+}
+
+export function seriesForAge(age: AgeBucket): LessonSeries[] {
+  return LESSON_SERIES.filter((s) => s.ageBucket === age);
+}
+
+export function getSeriesById(id: string): LessonSeries | undefined {
+  return LESSON_SERIES.find((s) => s.id === id);
+}
+
+export function resolveSeriesLessons(series: LessonSeries): Lesson[] {
+  const byId = new Map(LESSONS.map((l) => [l.id, l]));
+  return series.lessonIds
+    .map((id) => byId.get(id))
+    .filter((l): l is Lesson => l != null);
+}
+
+export function totalSeriesMinutes(series: LessonSeries): number {
+  return resolveSeriesLessons(series).reduce((sum, l) => sum + l.durationMin, 0);
 }
