@@ -17,7 +17,8 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Mic, Square, Activity, Baby, AlertTriangle, ShieldAlert, Loader2, RefreshCw, Sparkles, History } from "lucide-react";
+import { Mic, Square, Activity, Baby, AlertTriangle, ShieldAlert, Loader2, RefreshCw, Sparkles, History, MessageCircleHeart } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { getApiUrl } from "@/lib/api";
 interface CryInsightProps {
@@ -510,6 +511,21 @@ export function CryInsight({
                 {t("components.cry_insight.the_cry_pattern_the_info_you_shared_looks_intense_if_baby_se")}
               </p>
             </div>}
+
+          <Link
+            href={`/assistant?q=${encodeURIComponent(
+              `My baby ${childName} (${ageMonths} months) may be crying because of ${CAUSE_META[result.primary.cause].label.toLowerCase()}. ${result.suggestion} What else should I try?`,
+            )}`}
+          >
+            <button
+              type="button"
+              className="w-full mt-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 px-4 py-2.5 text-sm font-bold text-white shadow hover:brightness-110 transition"
+              data-testid="cry-ask-amy"
+            >
+              <MessageCircleHeart className="h-4 w-4" />
+              {t("components.cry_insight.ask_amy_followup")}
+            </button>
+          </Link>
         </div>}
 
       {/* History */}
