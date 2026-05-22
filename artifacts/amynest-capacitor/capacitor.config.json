@@ -4,8 +4,9 @@
   "webDir": "www",
   "bundledWebRuntime": false,
   "server": {
+    "url": "https://www.amynest.in",
     "androidScheme": "https",
-    "iosScheme": "capacitor",
+    "iosScheme": "https",
     "cleartext": false,
     "allowNavigation": [
       "amynest.in",
@@ -38,7 +39,7 @@
   },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 2500,
+      "launchShowDuration": 600,
       "launchAutoHide": true,
       "backgroundColor": "#0a061a",
       "androidSplashResourceName": "splash",

@@ -30,6 +30,17 @@ type FirebaseUserLike = {
   getIdToken: (forceRefresh?: boolean) => Promise<string>;
 };
 
+function resolveFirebaseUserEmail(
+  fbUser: FbUser | null | undefined,
+): string | null {
+  if (!fbUser) return null;
+  if (fbUser.email) return fbUser.email;
+  for (const provider of fbUser.providerData) {
+    if (provider.email) return provider.email;
+  }
+  return null;
+}
+
 function fbToShim(u: FirebaseUserLike): ShimUser {
   const display = u.displayName ?? "";
   const [first, ...rest] = display.split(" ");
@@ -54,7 +65,8 @@ function fbToShim(u: FirebaseUserLike): ShimUser {
 }
 
 function buildShimFromFirebaseUser(fbUser: FbUser | null): ShimUser | null {
-  const bypassEmail = isEmailVerificationBypassEmail(fbUser?.email);
+  const resolvedEmail = resolveFirebaseUserEmail(fbUser);
+  const bypassEmail = isEmailVerificationBypassEmail(resolvedEmail);
   const isUnverifiedEmailUser =
     fbUser !== null &&
     !fbUser.emailVerified &&

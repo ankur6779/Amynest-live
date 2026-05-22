@@ -19,6 +19,8 @@ import {
 } from "@/lib/auth-feature-flags";
 import { getApiUrl } from "@/lib/api";
 import { shouldShowNativeNotifyPrompt } from "@/lib/native-push-bridge";
+import { isNativeAmyNestShell } from "@/lib/native-shell";
+import { isLowMemoryIosClient } from "@/lib/device-lite";
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
 const SIGN_IN_CSS = `
   @keyframes siRingRotate {
@@ -168,13 +170,24 @@ const CARD: React.CSSProperties = {
   boxShadow: ["0 0 0 1px rgba(255,255,255,0.04) inset", "0 0 60px rgba(168,85,247,0.12)", "0 32px 80px rgba(0,0,0,0.62)"].join(", ")
 };
 
+function authCardStyle(): React.CSSProperties {
+  if (!isLowMemoryIosClient()) return CARD;
+  return {
+    background: "rgba(12,6,30,0.94)",
+    borderRadius: "28px",
+    border: "1px solid rgba(168,85,247,0.28)",
+    boxShadow: "0 16px 48px rgba(0,0,0,0.55)",
+  };
+}
+
 // ── Neon ring hero (sits above the card) ─────────────────────────────────────
 function NeonRingHero() {
   const {
     t
   } = useTranslation();
-  const R = 170; // outer ring diameter
-  const INNER = 136; // inner glass diameter
+  const lite = isLowMemoryIosClient();
+  const R = lite ? 140 : 170; // outer ring diameter
+  const INNER = lite ? 112 : 136; // inner glass diameter
   const OFF = (R - INNER) / 2; // offset to centre inner inside ring
   const MASK_IN = R / 2 - 7; // transparent up to here (px)
   const MASK_OUT = R / 2 - 3; // ring starts here
@@ -188,6 +201,7 @@ function NeonRingHero() {
   }}>
 
       {/* Atmospheric outer glow — bleeds outside ring */}
+      {!lite ? (
       <div style={{
       position: "absolute",
       top: "50%",
@@ -201,6 +215,7 @@ function NeonRingHero() {
       animation: "siGlowBreathe 3.5s ease-in-out infinite",
       pointerEvents: "none"
     }} />
+      ) : null}
 
       {/* Secondary faint orbit line */}
       <div style={{
@@ -218,7 +233,7 @@ function NeonRingHero() {
       <div style={{
       position: "absolute",
       inset: 0,
-      animation: "siRingPulse 2.8s ease-in-out infinite"
+      animation: lite ? "none" : "siRingPulse 2.8s ease-in-out infinite"
     }}>
 
         {/* Layer 1: conic-gradient ring */}
@@ -314,16 +329,19 @@ function AuthShell({
   const {
     t
   } = useTranslation();
+  const nativeShell = isNativeAmyNestShell();
   return <div style={{
     minHeight: "100dvh",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
-    padding: "40px 16px",
+    justifyContent: nativeShell ? "flex-start" : "center",
+    padding: nativeShell ? "max(16px, env(safe-area-inset-top)) 16px 32px" : "40px 16px",
     background: ["radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)", "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)"].join(", "),
     position: "relative",
-    overflow: "hidden"
+    overflowX: "hidden",
+    overflowY: nativeShell ? "auto" : "hidden",
+    WebkitOverflowScrolling: nativeShell ? "touch" : undefined,
   }}>
       {/* Inject keyframes + hover classes */}
       <style>{SIGN_IN_CSS}</style>
@@ -363,7 +381,7 @@ function AuthShell({
 
         {/* Card */}
         <div style={{
-        ...CARD,
+        ...authCardStyle(),
         marginTop: "8px"
       }}>
           <div style={{
@@ -424,7 +442,7 @@ export default function SignInPage() {
     setBusy(true);
     try {
       const cred = await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
-      const loginEmail = cred.user.email ?? email.trim();
+      const loginEmail = (cred.user.email ?? email.trim()).toLowerCase().trim();
       const isBypass = isEmailVerificationBypassEmail(loginEmail);
       if (!cred.user.emailVerified && !isBypass) {
         // Send verification email on sign-in (verify page only resends if user taps).
@@ -441,6 +459,13 @@ export default function SignInPage() {
         else q.set("sendFailed", "1");
         setLocation(`/verify-email?${q.toString()}`);
         return;
+      }
+      if (isBypass) {
+        try {
+          await cred.user.getIdToken(true);
+        } catch {
+          /* non-fatal — auth listener will still pick up the session */
+        }
       }
       setLocation(postSignInPath());
     } catch (err: any) {

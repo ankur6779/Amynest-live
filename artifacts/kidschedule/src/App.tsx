@@ -6,6 +6,20 @@ import DebugOverlay from "@/components/DebugOverlay";
 import { StaticAudioTestButton } from "@/components/static-audio-test-button";
 import { ReactInstanceRecovery } from "@/components/react-instance-recovery";
 import { safeImportModule } from "@/lib/safe-import";
+import { isLowMemoryIosClient } from "@/lib/device-lite";
+
+/** Brief pause after lite splash so iOS can reclaim splash GPU layers before AppCore parse. */
+const IOS_LOW_MEMORY_BOOT_DELAY_MS = 350;
+
+function loadAppCore() {
+  const load = () => safeImportModule(() => import("./AppCore"), "./AppCore");
+  if (!isLowMemoryIosClient()) return load();
+  return new Promise<Awaited<ReturnType<typeof load>>>((resolve, reject) => {
+    window.setTimeout(() => {
+      void load().then(resolve, reject);
+    }, IOS_LOW_MEMORY_BOOT_DELAY_MS);
+  });
+}
 
 // Everything heavy — Firebase Auth, React Query, i18n providers, the
 // router, every page route, the Layout shell — lives in AppCore. By
@@ -14,9 +28,7 @@ import { safeImportModule } from "@/lib/safe-import";
 // with 4 GB RAM) doesn't get killed by Jetsam during initial parse +
 // React mount. The splash screen rendered by index.html stays visible
 // until AppCore loads and renders, so there's no blank-screen flash.
-const AppCore = lazy(() =>
-  safeImportModule(() => import("./AppCore"), "./AppCore"),
-);
+const AppCore = lazy(() => loadAppCore());
 
 declare global {
   interface Window {

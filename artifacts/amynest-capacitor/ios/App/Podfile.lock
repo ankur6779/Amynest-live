@@ -68,12 +68,12 @@ PODS:
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
   - PromisesObjC (2.4.0)
-  - PurchasesHybridCommon (13.38.1):
-    - RevenueCat (= 5.29.0)
-  - RevenueCat (5.29.0)
-  - RevenuecatPurchasesCapacitor (9.2.2):
+  - PurchasesHybridCommon (18.6.0):
+    - RevenueCat (= 5.72.0)
+  - RevenueCat (5.72.0)
+  - RevenuecatPurchasesCapacitor (13.1.1):
     - Capacitor
-    - PurchasesHybridCommon (= 13.38.1)
+    - PurchasesHybridCommon (= 18.6.0)
 
 DEPENDENCIES:
   - "Capacitor (from `../../../../node_modules/.pnpm/@capacitor+ios@6.2.1_@capacitor+core@6.2.1/node_modules/@capacitor/ios`)"
@@ -84,7 +84,7 @@ DEPENDENCIES:
   - "CapacitorPushNotifications (from `../../../../node_modules/.pnpm/@capacitor+push-notifications@6.0.5_@capacitor+core@6.2.1/node_modules/@capacitor/push-notifications`)"
   - Firebase/CoreOnly
   - Firebase/Messaging
-  - "RevenuecatPurchasesCapacitor (from `../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@9.2.2_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor`)"
+  - "RevenuecatPurchasesCapacitor (from `../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@13.1.1_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor`)"
 
 SPEC REPOS:
   trunk:
@@ -114,7 +114,7 @@ EXTERNAL SOURCES:
   CapacitorPushNotifications:
     :path: "../../../../node_modules/.pnpm/@capacitor+push-notifications@6.0.5_@capacitor+core@6.2.1/node_modules/@capacitor/push-notifications"
   RevenuecatPurchasesCapacitor:
-    :path: "../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@9.2.2_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor"
+    :path: "../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@13.1.1_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor"
 
 SPEC CHECKSUMS:
   Capacitor: c95400d761e376be9da6be5a05f226c0e865cebf
@@ -132,10 +132,10 @@ SPEC CHECKSUMS:
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
-  PurchasesHybridCommon: 5a46c67f78680dee9289783edbcebd983ff7bd9c
-  RevenueCat: 5fa12c42c14b390dd2423897e925f407f474b8fa
-  RevenuecatPurchasesCapacitor: a2b248cebbc38d44bdc3efc1c659fad16520fed2
+  PurchasesHybridCommon: 89a3ddba365c20457a4712bc3d6377b0ea3c9b4f
+  RevenueCat: 136390ad99039cdd692156af5e479293ae83b2a9
+  RevenuecatPurchasesCapacitor: 006d88975222cc477532cb1d87da4006a139fa92
 
-PODFILE CHECKSUM: 5ad7f0c8893acbfafa05b81db5f05eb8075f41da
+PODFILE CHECKSUM: 6b09434c5de0aa367867f0922f03a5160689f427
 
 COCOAPODS: 1.16.2

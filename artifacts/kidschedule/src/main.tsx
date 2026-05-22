@@ -146,7 +146,7 @@ function startSplashDismissal(): void {
 
   const isLiteSplash =
     document.documentElement.classList.contains("lite-splash");
-  const SPLASH_MIN_MS = !isRootEntry ? 0 : isLiteSplash ? 1200 : 3200;
+  const SPLASH_MIN_MS = !isRootEntry ? 0 : isLiteSplash ? 900 : 3200;
   const SPLASH_MAX_MS = 12000;
 
   const splashStartedAt = performance.now();
