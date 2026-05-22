@@ -64,7 +64,7 @@ public class MicPermissionPlugin: CAPPlugin, CAPBridgedPlugin {
             try session.setCategory(
                 .playAndRecord,
                 mode: .default,
-                options: [.defaultToSpeaker, .allowBluetooth, .mixWithOthers]
+                options: [.defaultToSpeaker, .allowBluetoothHFP, .mixWithOthers]
             )
             try session.setActive(true, options: [])
         } catch {

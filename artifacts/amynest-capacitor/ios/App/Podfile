@@ -35,7 +35,8 @@ def mark_cocoapods_scripts_always_run(project)
 end
 
 def third_party_pod_target?(name)
-  name.include?('RevenueCat') ||
+  name.start_with?('Capacitor') ||
+    name.include?('RevenueCat') ||
     name.include?('Purchases') ||
     name.include?('Firebase') ||
     name.include?('GoogleUtilities') ||
@@ -62,6 +63,10 @@ post_install do |installer|
         config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
         config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
         config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+        swift_flags = config.build_settings['OTHER_SWIFT_FLAGS'] || '$(inherited)'
+        unless swift_flags.to_s.include?('-suppress-warnings')
+          config.build_settings['OTHER_SWIFT_FLAGS'] = "#{swift_flags} -suppress-warnings"
+        end
       end
 
       flags = config.build_settings['OTHER_CFLAGS'] || '$(inherited)'

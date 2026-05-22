@@ -13,9 +13,9 @@ import { handleAppleLogin } from "@/lib/apple-auth";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
 import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
 import {
-  ENABLE_APPLE_SIGN_IN,
   ENABLE_GOOGLE_SIGN_IN,
   ENABLE_PHONE_OTP,
+  shouldShowAppleSignIn,
 } from "@/lib/auth-feature-flags";
 import { getApiUrl } from "@/lib/api";
 import { shouldShowNativeNotifyPrompt } from "@/lib/native-push-bridge";
@@ -88,6 +88,7 @@ function AppleMark() {
 function SignInAppleButton({ onError }: { onError?: (message: string) => void }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
+  const nativeIos = isCapacitorIosShell();
 
   const onClick = async () => {
     if (busy) return;
@@ -113,21 +114,35 @@ function SignInAppleButton({ onError }: { onError?: (message: string) => void })
       style={{
         width: "100%",
         height: "50px",
+        minHeight: "50px",
         borderRadius: "14px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: "10px",
-        background: busy ? "rgba(255,255,255,0.82)" : "#FFFFFF",
-        border: "1px solid rgba(255,255,255,0.90)",
-        color: "#000000",
+        background: busy
+          ? nativeIos
+            ? "rgba(0,0,0,0.72)"
+            : "rgba(255,255,255,0.82)"
+          : nativeIos
+            ? "#000000"
+            : "#FFFFFF",
+        border: nativeIos
+          ? "1px solid rgba(255,255,255,0.35)"
+          : "1px solid rgba(255,255,255,0.90)",
+        color: nativeIos ? "#FFFFFF" : "#000000",
         fontSize: "15px",
         fontWeight: 600,
         cursor: busy ? "not-allowed" : "pointer",
         fontFamily: "inherit",
         boxShadow: busy
           ? "none"
-          : "0 2px 16px rgba(0,0,0,0.35), 0 0 0 1px rgba(168,85,247,0.25)",
+          : nativeIos
+            ? "0 2px 16px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12)"
+            : "0 2px 16px rgba(0,0,0,0.35), 0 0 0 1px rgba(168,85,247,0.25)",
+        flexShrink: 0,
+        visibility: "visible",
+        opacity: 1,
       }}
     >
       <AppleMark />
@@ -643,6 +658,15 @@ export default function SignInPage() {
         {t("screens.sign_in.subtitle")}
       </p>
 
+      {shouldShowAppleSignIn() ? (
+        <div
+          data-testid="native-apple-sign-in-slot"
+          style={{ marginBottom: 14, width: "100%", flexShrink: 0 }}
+        >
+          <SignInAppleButton onError={msg => setError(msg)} />
+        </div>
+      ) : null}
+
       <div
         className="si-oauth-stack"
         style={
@@ -655,10 +679,6 @@ export default function SignInPage() {
             : undefined
         }
       >
-        {ENABLE_APPLE_SIGN_IN ? (
-          <SignInAppleButton onError={msg => setError(msg)} />
-        ) : null}
-
         {ENABLE_GOOGLE_SIGN_IN ? (
           <GoogleSignInButton onError={msg => setError(msg)} />
         ) : null}
@@ -671,7 +691,7 @@ export default function SignInPage() {
         ) : null}
       </div>
 
-      {(ENABLE_GOOGLE_SIGN_IN || ENABLE_APPLE_SIGN_IN || ENABLE_PHONE_OTP) && (
+      {(ENABLE_GOOGLE_SIGN_IN || shouldShowAppleSignIn() || ENABLE_PHONE_OTP) && (
       <div style={{
       display: "flex",
       alignItems: "center",

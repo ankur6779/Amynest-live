@@ -174,6 +174,14 @@ export function Layout({
     logNavEvent("layout-mounted", { location });
   }, [location]);
 
+  useEffect(() => {
+    document.body.classList.toggle("has-tabbar", showDashboardChrome);
+    document.body.classList.toggle("no-tabbar", !showDashboardChrome);
+    return () => {
+      document.body.classList.remove("has-tabbar", "no-tabbar");
+    };
+  }, [showDashboardChrome]);
+
   const handleSignOut = () => {
     try {
       void signOut({ redirectUrl: "/" });
@@ -292,12 +300,15 @@ export function Layout({
         </div>
       </main>
 
-      {showDashboardChrome ? (
-        <footer className="app-footer shrink-0 md:hidden">
-          <nav
-            className="h-[78px] w-full border-t border-border bg-card/95 shadow-[0_-8px_28px_var(--shadow-color)] backdrop-blur-xl"
-            aria-label={t("nav.dashboard")}
-          >
+      <footer
+        className={`app-footer tabbar shrink-0 md:hidden${showDashboardChrome ? "" : " hidden"}`}
+        aria-hidden={!showDashboardChrome}
+      >
+        <nav
+          className="h-[78px] w-full border-t border-border bg-card/95 shadow-[0_-8px_28px_var(--shadow-color)] backdrop-blur-xl"
+          aria-label={t("nav.dashboard")}
+          hidden={!showDashboardChrome}
+        >
             <div className="relative flex h-full w-full items-end justify-around px-2 pb-2">
               {BOTTOM_NAV_ITEMS.map((item) => {
                 const isActive = safePathStartsWithSegment(location, item.href);
@@ -347,8 +358,7 @@ export function Layout({
               })}
             </div>
           </nav>
-        </footer>
-      ) : null}
+      </footer>
 
       {!isImmersiveRoute &&
         !["/sign-in", "/onboarding"].some((p) => safePathStartsWith(location, p)) && (

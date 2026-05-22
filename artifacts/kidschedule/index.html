@@ -132,6 +132,15 @@
           });
         } catch (_e) { /* ignore */ }
 
+        try {
+          var cap = window.Capacitor;
+          if (cap && cap.isNativePlatform && cap.isNativePlatform()) {
+            document.documentElement.classList.add("amynest-native-shell", "dark");
+            document.documentElement.setAttribute("data-theme", "dark");
+            document.documentElement.style.colorScheme = "dark";
+          }
+        } catch (_capBoot) { /* ignore */ }
+
         // Canonical host: www.amynest.in (apex redirects before React boots).
         if (location.hostname === "amynest.in") {
           location.replace("https://www.amynest.in" + location.pathname + location.search + location.hash);
