@@ -689,6 +689,10 @@ export function prepareAmyLessonParagraphSpeech(raw: string): AmySpeechPolicy {
   policy.useSemanticSplit = false;
   policy.allowSpeechCoachSplit = false;
   policy.allowPhonicsSequence = false;
+  // Pregenerated lesson audio lives in TTS cache — hit cache/static before live API.
+  policy.preferDynamicTts = false;
+  policy.retryDynamicTts = false;
+  policy.preferSpeechSynthesisFallback = false;
   return enforceAmySpeechPolicyInvariants(policy);
 }
 

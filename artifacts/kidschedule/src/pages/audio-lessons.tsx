@@ -805,21 +805,24 @@ function PlayerSheet({
       return;
     }
     const session = ++playbackSessionRef.current;
+    activePlaybackSessionRef.current = session;
     void speak(txt, { waitUntilEnd: true, lessonParagraph: true }).then((res) => {
       if (session !== playbackSessionRef.current) return;
       if (!res?.success) {
         console.warn("TTS failed, skipping audio flow:", res?.error);
         setPlaying(false);
-        return;
       }
-      activePlaybackSessionRef.current = session;
     });
   }, [playing, paragraphIdx, paragraphs, speak, stop]);
 
   useEffect(() => {
+    playbackSessionRef.current = 0;
+    activePlaybackSessionRef.current = 0;
     if (autoPlay) {
       recordTtsUserGesture();
       setPlaying(true);
+    } else {
+      setPlaying(false);
     }
   }, [autoPlay, lesson.id]);
 
@@ -1022,11 +1025,7 @@ function PlayerSheet({
           cursor: "pointer",
           boxShadow: "0 8px 24px rgba(139,92,246,0.5)"
         }}>
-            {loading && playing ? <Loader2 size={24} className="animate-spin" /> : playing && speaking ? <Pause size={26} /> : playing ?
-          // Playing has been requested but audio is still preparing.
-          <Loader2 size={24} className="animate-spin" /> : <Play size={26} style={{
-            marginLeft: 3
-          }} />}
+            {!playing ? <Play size={26} style={{ marginLeft: 3 }} /> : loading && !speaking ? <Loader2 size={24} className="animate-spin" /> : <Pause size={26} />}
           </button>
 
           <button onClick={next} disabled={paragraphIdx === paragraphs.length - 1} aria-label={t("pages.audio_lessons.next")} style={{

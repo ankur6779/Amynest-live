@@ -182,75 +182,84 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         let deliveryProfile: AmyVoiceDeliveryProfile | null = null;
 
         const speechPolicy = prepareAmySpeechInput(text, opts);
-        const replayCount = recordAmyVoicePhraseReplay(
-          speechPolicy.normalizedText,
-          speechPolicy.pipelineMode,
-          speechPolicy.speechMode,
-        );
-        if (replayCount >= 2) recordAmyVoiceHesitation();
+        let finalizedPolicy: AmySpeechPolicy;
+        let replayCount = 0;
+        let difficultyLevel: AmySpeechPolicy["difficultyLevel"] = "neutral";
 
-        const intent = detectAmyIntent(
-          speechPolicy.normalizedText,
-          speechPolicy.speechMode,
-        );
-        const difficulty = assessAmyDifficulty(
-          speechPolicy.normalizedText,
-          speechPolicy.pipelineMode,
-          replayCount,
-        );
-        const previousDifficulty = commitDifficultyLevel(difficulty.level);
-        recordAmyVoiceDifficultyTransition(previousDifficulty, difficulty.level);
+        if (opts?.lessonParagraph) {
+          finalizedPolicy = enforceAmySpeechPolicyInvariants(speechPolicy);
+        } else {
+          replayCount = recordAmyVoicePhraseReplay(
+            speechPolicy.normalizedText,
+            speechPolicy.pipelineMode,
+            speechPolicy.speechMode,
+          );
+          if (replayCount >= 2) recordAmyVoiceHesitation();
 
-        deliveryProfile = resolveAmyVoiceDeliveryProfile({
-          replayCount,
-          difficulty: difficulty.level,
-        });
+          const intent = detectAmyIntent(
+            speechPolicy.normalizedText,
+            speechPolicy.speechMode,
+          );
+          const difficulty = assessAmyDifficulty(
+            speechPolicy.normalizedText,
+            speechPolicy.pipelineMode,
+            replayCount,
+          );
+          difficultyLevel = difficulty.level;
+          const previousDifficulty = commitDifficultyLevel(difficulty.level);
+          recordAmyVoiceDifficultyTransition(previousDifficulty, difficulty.level);
 
-        let phrases = speechPolicy.phrases;
-        if (difficulty.level === "struggling") {
-          phrases = simplifyPhrasesForDifficulty(phrases, true);
+          deliveryProfile = resolveAmyVoiceDeliveryProfile({
+            replayCount,
+            difficulty: difficulty.level,
+          });
+
+          let phrases = speechPolicy.phrases;
+          if (difficulty.level === "struggling") {
+            phrases = simplifyPhrasesForDifficulty(phrases, true);
+          }
+          phrases = applyTeacherDelivery({
+            phrases,
+            intent,
+            difficulty: difficulty.level,
+            previousDifficulty,
+            speechMode: speechPolicy.speechMode,
+            multiStep: phrases.length > 1 || speechPolicy.useSemanticSplit,
+            successStreak: getSessionSuccessStreak(),
+            guidanceTierOverride: deliveryProfile.guidanceTier,
+          });
+          speechPolicy.phrases = phrases;
+          speechPolicy.useSemanticSplit = phrases.length > 1;
+          speechPolicy.normalizedText =
+            phrases.length === 1
+              ? phrases[0]!
+              : phrases.join(speechPolicy.prosody.pauseMarker);
+
+          const delivery = buildAdaptiveDelivery(
+            speechPolicy.prosody,
+            speechPolicy.speechMode,
+            speechPolicy.normalizedText,
+            replayCount,
+            intent,
+            difficulty.level,
+          );
+          speechPolicy.prosody = applyAmyVoiceDeliveryModifiers(
+            delivery.prosody,
+            deliveryProfile.modifiers,
+          );
+          speechPolicy.emotion = delivery.emotion;
+          speechPolicy.intent = delivery.intent;
+          speechPolicy.difficultyLevel = delivery.difficulty;
+          speechPolicy.replayCount = replayCount;
+          speechPolicy.learningPriority = computeLearningPriority(
+            speechPolicy.normalizedText,
+            speechPolicy.pipelineMode,
+            speechPolicy.speechMode,
+          );
+          finalizedPolicy = enforceAmySpeechPolicyInvariants(speechPolicy);
+          recordAmyVoiceSessionPhrase(finalizedPolicy.normalizedText);
+          preloadAmyVoiceAnticipatory(finalizedPolicy);
         }
-        phrases = applyTeacherDelivery({
-          phrases,
-          intent,
-          difficulty: difficulty.level,
-          previousDifficulty,
-          speechMode: speechPolicy.speechMode,
-          multiStep: phrases.length > 1 || speechPolicy.useSemanticSplit,
-          successStreak: getSessionSuccessStreak(),
-          guidanceTierOverride: deliveryProfile.guidanceTier,
-        });
-        speechPolicy.phrases = phrases;
-        speechPolicy.useSemanticSplit = phrases.length > 1;
-        speechPolicy.normalizedText =
-          phrases.length === 1
-            ? phrases[0]!
-            : phrases.join(speechPolicy.prosody.pauseMarker);
-
-        const delivery = buildAdaptiveDelivery(
-          speechPolicy.prosody,
-          speechPolicy.speechMode,
-          speechPolicy.normalizedText,
-          replayCount,
-          intent,
-          difficulty.level,
-        );
-        speechPolicy.prosody = applyAmyVoiceDeliveryModifiers(
-          delivery.prosody,
-          deliveryProfile.modifiers,
-        );
-        speechPolicy.emotion = delivery.emotion;
-        speechPolicy.intent = delivery.intent;
-        speechPolicy.difficultyLevel = delivery.difficulty;
-        speechPolicy.replayCount = replayCount;
-        speechPolicy.learningPriority = computeLearningPriority(
-          speechPolicy.normalizedText,
-          speechPolicy.pipelineMode,
-          speechPolicy.speechMode,
-        );
-        const finalizedPolicy = enforceAmySpeechPolicyInvariants(speechPolicy);
-        recordAmyVoiceSessionPhrase(finalizedPolicy.normalizedText);
-        preloadAmyVoiceAnticipatory(finalizedPolicy);
         const pipelineMode = finalizedPolicy.pipelineMode;
         const result = await speakAmyVoice(finalizedPolicy.normalizedText, {
           ...opts,
@@ -265,7 +274,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         if (deliveryProfile) {
           recordAmyVoiceDeliveryOutcome(deliveryProfile, {
             replayCount,
-            difficulty: difficulty.level,
+            difficulty: difficultyLevel,
             durationMs,
             fallback,
           });
@@ -280,14 +289,14 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
             success: true,
           });
         }
-        if (replayCount >= 2 || fallback || difficulty.level === "struggling") {
+        if (replayCount >= 2 || fallback || difficultyLevel === "struggling") {
           recordAmyVoiceStrugglePhrase(
             finalizedPolicy.normalizedText,
             finalizedPolicy.speechMode,
             finalizedPolicy.pipelineMode,
             {
               replayCount,
-              difficulty: difficulty.level,
+              difficulty: difficultyLevel,
               fallback,
             },
           );
