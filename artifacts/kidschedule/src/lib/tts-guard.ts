@@ -49,6 +49,7 @@ function unlockAudio(): void {
   if (audioUnlocked) return;
   audioUnlocked = true;
   resumeUnlockAudioContext();
+  void import("@/lib/audio-manager").then((m) => m.audioManager.warmMediaPipeline(true));
 }
 
 /**
@@ -112,23 +113,20 @@ export function isTtsPlaybackAllowed(): boolean {
  * Play an HTMLAudioElement only after user interaction has unlocked audio.
  * @throws When playback is blocked or the element fails to play.
  */
+/** @deprecated Prefer audioManager.play — kept for legacy call sites. */
 export async function playHtmlAudio(audio: HTMLAudioElement): Promise<void> {
-  configureMobileAudioElement(audio);
-  if (!audioUnlocked) {
-    console.warn("Audio blocked: waiting for user interaction");
-    throw new Error("audio_blocked_until_gesture");
-  }
-  audio.currentTime = 0;
-  try {
-    await audio.play();
-  } catch (err) {
-    const name = (err as { name?: string })?.name ?? "";
-    if (name === "NotAllowedError") {
-      unlockAudio();
-      audio.currentTime = 0;
-      await audio.play();
-      return;
+  const { audioManager, AUDIO_ERROR } = await import("@/lib/audio-manager");
+  const ok = await audioManager.play(
+    audio,
+    { source: "playHtmlAudio" },
+    { maxRetries: 1, channel: "speech", interrupt: true },
+  );
+  if (!ok) {
+    const last = audioManager.getLastPlayError();
+    if (last === AUDIO_ERROR.USER_INTERACTION_REQUIRED || !audioUnlocked) {
+      console.warn("Audio blocked: waiting for user interaction");
+      throw new Error(AUDIO_ERROR.USER_INTERACTION_REQUIRED);
     }
-    throw err;
+    throw new Error(last ?? "audio_play_failed");
   }
 }

@@ -1,4 +1,5 @@
 import { getAppApiBaseOrigin } from "@/lib/api";
+import { audioManager } from "@/lib/audio-manager";
 import { lookupStaticAudioUrl } from "@/lib/static-audio";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
 
@@ -6,8 +7,6 @@ const PRELOAD_HINT_PHRASES: Array<{ text: string; mode: StaticAudioMode }> = [
   { text: "good job!", mode: "default" },
   { text: "listen carefully", mode: "default" },
 ];
-
-let audioContextWarmed = false;
 
 export function isMobileStaticAudioDevice(): boolean {
   if (typeof navigator === "undefined") return false;
@@ -32,34 +31,7 @@ export function getStaticAudioPreloadHintUrls(): string[] {
  * No-op when called outside a real gesture (autoplay policy would warn otherwise).
  */
 export function warmStaticAudioOnFirstGesture(): void {
-  if (audioContextWarmed || typeof window === "undefined") return;
-
-  type AutoplayPolicyWindow = Window & {
-    getAutoplayPolicy?: (kind: "mediaelement" | "audiocontext") => string;
-  };
-  const policy = (window as AutoplayPolicyWindow).getAutoplayPolicy?.("audiocontext");
-  if (policy === "disallowed") return;
-
-  audioContextWarmed = true;
-
-  try {
-    const Ctx =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (Ctx) {
-      const ctx = new Ctx();
-      void ctx.resume().catch(() => {});
-    }
-  } catch {
-    /* optional */
-  }
-
-  try {
-    const warm = new Audio();
-    warm.preload = "none";
-  } catch {
-    /* ignore */
-  }
+  audioManager.warmMediaPipeline();
 }
 
 export function installStaticAudioGestureWarmup(): void {

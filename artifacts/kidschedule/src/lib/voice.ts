@@ -5,6 +5,7 @@
 
 import { getAuth } from "firebase/auth";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
+import { audioManager } from "@/lib/audio-manager";
 import {
   mustUseStaticOnly,
   prepareStaticPlaybackAudio,
@@ -69,22 +70,8 @@ export async function getVoicesForLang(_lang: VoiceLang): Promise<LabeledVoice[]
 export async function getEnglishVoices(): Promise<unknown[]>                       { return []; }
 export function loadVoices(): Promise<unknown[]>                                   { return Promise.resolve([]); }
 
-// ─── Audio singleton ─────────────────────────────────────────
-
-let _audio: HTMLAudioElement | null = null;
-let _objUrl: string | null = null;
-
 function stopCurrentAudio() {
-  if (_audio) {
-    _audio.pause();
-    _audio.removeAttribute("src");
-    _audio.load();
-    _audio = null;
-  }
-  if (_objUrl) {
-    URL.revokeObjectURL(_objUrl);
-    _objUrl = null;
-  }
+  audioManager.stop();
 }
 
 // ─── Core speak via ElevenLabs ────────────────────────────────
@@ -99,13 +86,13 @@ export async function speak(text: string): Promise<void> {
 
   const staticAudio = await prepareStaticPlaybackAudio(trimmed);
   if (staticAudio) {
-    _audio = staticAudio;
     staticAudio.onended = stopCurrentAudio;
     staticAudio.onerror = stopCurrentAudio;
-    await safePlayAudio(staticAudio, {
+    const played = await safePlayAudio(staticAudio, {
       proxyUrl: staticAudio.src,
       phrase: trimmed,
     });
+    if (!played) console.error("[Voice] Static playback failed", trimmed);
     return;
   }
 
@@ -157,17 +144,21 @@ export async function speak(text: string): Promise<void> {
       console.error("[ElevenLabs] Empty audio blob");
       return;
     }
-    const url  = URL.createObjectURL(blob);
-    _objUrl = url;
+    const url = URL.createObjectURL(blob);
+    audioManager.trackObjectUrl(url);
 
-    const audio = new Audio(url);
-    _audio = audio;
+    const audio = audioManager.create(url);
     audio.onended = stopCurrentAudio;
     audio.onerror = () => {
       console.error("[ElevenLabs] HTMLAudioElement error", audio.error?.code);
       stopCurrentAudio();
     };
-    await safePlayAudio(audio);
+    const played = await audioManager.play(
+      audio,
+      { proxyUrl: url, phrase: trimmed, source: "voice", channel: "speech", interrupt: true, srcType: "blob" },
+      { channel: "speech", interrupt: true },
+    );
+    if (!played) console.error("[Voice] Playback failed after retries", trimmed);
   } catch (err) {
     console.error("[ElevenLabs] Error:", err instanceof Error ? err.message : err);
     stopCurrentAudio();

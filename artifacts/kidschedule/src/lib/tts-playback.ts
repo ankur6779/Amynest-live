@@ -1,5 +1,5 @@
 import { resolveApiMediaUrl } from "@/lib/api";
-import { configureMobileAudioElement } from "@/lib/tts-guard";
+import { audioManager } from "@/lib/audio-manager";
 import {
   isCatalogPhrase,
   logDynamicTtsViolation,
@@ -36,10 +36,7 @@ export function playAudio(url: string): HTMLAudioElement | null {
     return null;
   }
   try {
-    const resolved = resolveApiMediaUrl(url);
-    const audio = new Audio(resolved);
-    configureMobileAudioElement(audio);
-    return audio;
+    return audioManager.create(url);
   } catch (e) {
     console.error("Invalid audio URL", url, e);
     return null;

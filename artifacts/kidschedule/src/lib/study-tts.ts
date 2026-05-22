@@ -3,6 +3,7 @@
 
 import { getAuth } from "firebase/auth";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
+import { audioManager } from "@/lib/audio-manager";
 import {
   mustUseStaticOnly,
   prepareStaticPlaybackAudio,
@@ -19,22 +20,8 @@ const VOICE_EN_MALE   = "oaz5NvoRIhcJystOASAA";
 
 const MODEL_EN = "eleven_turbo_v2_5";
 
-// ─── Audio singleton ─────────────────────────────────────────
-
-let _audio: HTMLAudioElement | null = null;
-let _objUrl: string | null = null;
-
 export function stopSpeaking() {
-  if (_audio) {
-    _audio.pause();
-    _audio.removeAttribute("src");
-    _audio.load();
-    _audio = null;
-  }
-  if (_objUrl) {
-    URL.revokeObjectURL(_objUrl);
-    _objUrl = null;
-  }
+  audioManager.stop();
 }
 
 export function ttsAvailable(): boolean {
@@ -54,13 +41,13 @@ export async function speak(
 
   const staticAudio = await prepareStaticPlaybackAudio(trimmed);
   if (staticAudio) {
-    _audio = staticAudio;
     staticAudio.onended = stopSpeaking;
     staticAudio.onerror = stopSpeaking;
-    await safePlayAudio(staticAudio, {
+    const played = await safePlayAudio(staticAudio, {
       proxyUrl: staticAudio.src,
       phrase: trimmed,
     });
+    if (!played) console.error("[StudyTTS] Static playback failed", trimmed);
     return;
   }
 
@@ -111,17 +98,21 @@ export async function speak(
       console.error("[ElevenLabs] Empty audio blob");
       return;
     }
-    const url  = URL.createObjectURL(blob);
-    _objUrl = url;
+    const url = URL.createObjectURL(blob);
+    audioManager.trackObjectUrl(url);
 
-    const audio = new Audio(url);
-    _audio = audio;
+    const audio = audioManager.create(url);
     audio.onended = stopSpeaking;
     audio.onerror = () => {
       console.error("[ElevenLabs] HTMLAudioElement error", audio.error?.code);
       stopSpeaking();
     };
-    await safePlayAudio(audio);
+    const played = await audioManager.play(
+      audio,
+      { proxyUrl: url, phrase: trimmed, source: "study-tts", channel: "speech", interrupt: true, srcType: "blob" },
+      { channel: "speech", interrupt: true },
+    );
+    if (!played) console.error("[StudyTTS] Playback failed after retries", trimmed);
   } catch (err) {
     console.error("[ElevenLabs] Error:", err instanceof Error ? err.message : err);
     stopSpeaking();

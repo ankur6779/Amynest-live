@@ -20,9 +20,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { audioManager } from "@/lib/audio-manager";
 import { resolveApiMediaUrl } from "@/lib/api";
 import { synthesizeTts } from "@/lib/tts-playback";
-import { isAudioUnlocked, playHtmlAudio, recordTtsUserGesture } from "@/lib/tts-guard";
+import { isAudioUnlocked, recordTtsUserGesture } from "@/lib/tts-guard";
 
 const FADE_IN_MS = 2000;
 const FADE_TICK_MS = 60;
@@ -211,10 +212,9 @@ export function useInfantPoemPlayer(): PoemPlayer {
 
         // Build the audio element. The /api/tts/audio/:key.mp3 route is
         // public (content-addressed) so <audio> can load it without a token.
-        const audio = new Audio(resolveApiMediaUrl(trimmedUrl));
+        const audio = audioManager.create(trimmedUrl);
         audio.loop = loopRef.current;
         audio.volume = 0; // begin silent for fade-in
-        audio.preload = "auto";
         audio.onended = () => {
           if (myId !== reqIdRef.current) return;
           // For looped playback this never fires (browser auto-loops).
@@ -231,10 +231,19 @@ export function useInfantPoemPlayer(): PoemPlayer {
         };
         audioRef.current = audio;
 
-        try {
-          await playHtmlAudio(audio);
-        } catch (playErr) {
-          console.error("Audio playback failed", playErr);
+        const played = await audioManager.play(
+          audio,
+          {
+            proxyUrl: resolveApiMediaUrl(trimmedUrl),
+            source: "poem-player",
+            channel: "speech",
+            interrupt: true,
+            srcType: "tts",
+          },
+          { channel: "speech", interrupt: true },
+        );
+        if (!played) {
+          console.error("[PoemPlayer] Audio playback failed after retries", trimmedUrl);
           if (myId !== reqIdRef.current) return;
           setError("playback_failed");
           setIsPlaying(false);
@@ -285,7 +294,9 @@ export function useInfantPoemPlayer(): PoemPlayer {
       console.warn("Audio blocked: waiting for user interaction");
       return;
     }
-    void playHtmlAudio(a).catch(() => { /* ignore — onerror surfaces it */ });
+    void audioManager.resumeElement(a).then((ok) => {
+      if (!ok) setError("playback_failed");
+    });
     setIsPaused(false);
   }, []);
 
