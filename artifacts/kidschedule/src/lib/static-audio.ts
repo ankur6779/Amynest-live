@@ -1,6 +1,6 @@
 import audioMap from "@/data/static-audio-map.json";
 import { getApiUrl } from "@/lib/api";
-import { configureMobileAudioElement, playHtmlAudio } from "@/lib/tts-guard";
+import { audioManager } from "@/lib/audio-manager";
 import {
   assertStaticAudioUrl,
   assertStaticPlaybackUrl,
@@ -15,7 +15,6 @@ import {
   reportStaticAudioMissingUrl,
   reportStaticAudioPlayFailed,
   reportStaticAudioProxyFailed,
-  staticAudioRetryDelayMs,
 } from "@/lib/static-audio-telemetry";
 import {
   isStaticTtsText,
@@ -53,10 +52,6 @@ export function isStaticAudioPlaybackPaused(): boolean {
   return isClientStaticAudioCircuitOpen();
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 type StaticAudioMapFile = {
   default: Record<string, string>;
   phonics: Record<string, string>;
@@ -67,8 +62,6 @@ const raw = audioMap as StaticAudioMapFile;
 const missingKeys = new Set<string>();
 const loggedMissing = new Set<string>();
 const loggedViolations = new Set<string>();
-
-const audioCache = new Map<string, HTMLAudioElement>();
 
 const STATIC_GCS_HASH_RE = /\/static-audio\/([a-f0-9]{32})\.mp3$/i;
 
@@ -311,24 +304,12 @@ export function preloadStaticPhrases(
 
 function createFreshAudio(proxyUrl: string): HTMLAudioElement {
   assertStaticPlaybackUrl(proxyUrl);
-  const audio = new Audio(proxyUrl);
-  configureMobileAudioElement(audio);
-  return audio;
+  return audioManager.create(proxyUrl);
 }
 
 function getOrCreateCachedAudio(proxyUrl: string): HTMLAudioElement {
-  const existing = audioCache.get(proxyUrl);
-  if (existing) {
-    existing.pause();
-    existing.currentTime = 0;
-    if (existing.src !== proxyUrl) {
-      existing.src = proxyUrl;
-    }
-    return existing;
-  }
-  const audio = createFreshAudio(proxyUrl);
-  audioCache.set(proxyUrl, audio);
-  return audio;
+  assertStaticPlaybackUrl(proxyUrl);
+  return audioManager.getCached(proxyUrl, { forceReload: true });
 }
 
 export type SafePlayAudioOptions = {
@@ -350,11 +331,6 @@ async function verifyStaticAudioEndpoint(proxyUrl: string): Promise<number | nul
   }
 }
 
-async function playElementOnce(audio: HTMLAudioElement): Promise<void> {
-  audioDebugLog("[AUDIO PLAY ATTEMPT]");
-  await playHtmlAudio(audio);
-}
-
 export async function safePlayAudio(
   audio: HTMLAudioElement,
   opts: SafePlayAudioOptions = {},
@@ -366,53 +342,38 @@ export async function safePlayAudio(
   }
 
   const proxyUrl = opts.proxyUrl ?? audio.src;
+  audioDebugLog("[AUDIO PLAY ATTEMPT]");
 
-  try {
-    await playElementOnce(audio);
+  const played = await audioManager.play(
+    audio,
+    {
+      proxyUrl,
+      phrase: opts.phrase,
+      mode: opts.mode,
+      source: "static",
+      channel: "speech",
+      interrupt: true,
+      srcType: "static",
+    },
+    { maxRetries: 2, channel: "speech", interrupt: true },
+  );
+
+  if (played) {
     recordStaticAudioPlaybackSuccess();
     if (import.meta.env.DEV || isStaticAudioDebug()) {
       console.log("[AUDIO PLAY SUCCESS]", { url: audio.src });
     }
     return true;
-  } catch (err) {
-    const errName = (err as { name?: string })?.name ?? "";
-    const errMsg = err instanceof Error ? err.message : String(err);
-    if (errName === "AbortError" || /aborted/i.test(errMsg)) {
-      return false;
-    }
-    console.error("[AUDIO PLAY FAILED]", err);
-    reportStaticAudioPlayFailed(err, audio, {
-      phrase: opts.phrase,
-      mode: opts.mode,
-      attempt: "first",
-    });
-
-    if (proxyUrl && isValidStaticPlaybackUrl(proxyUrl) && !isClientStaticAudioCircuitOpen()) {
-      audioCache.delete(proxyUrl);
-      await sleep(staticAudioRetryDelayMs());
-      try {
-        const retryAudio = createFreshAudio(proxyUrl);
-        await playElementOnce(retryAudio);
-        audioCache.set(proxyUrl, retryAudio);
-        recordStaticAudioPlaybackSuccess();
-        if (import.meta.env.DEV || isStaticAudioDebug()) {
-          console.log("[AUDIO PLAY SUCCESS]", { url: proxyUrl, retry: true });
-        }
-        return true;
-      } catch (retryErr) {
-        console.error("[AUDIO PLAY FAILED]", retryErr);
-        reportStaticAudioPlayFailed(retryErr, audio, {
-          phrase: opts.phrase,
-          mode: opts.mode,
-          attempt: "retry",
-          proxyUrl,
-        });
-      }
-    }
-
-    emitStaticAudioVisualFallback({ phrase: opts.phrase, mode: opts.mode });
-    return false;
   }
+
+  reportStaticAudioPlayFailed(new Error("audio_play_failed"), audio, {
+    phrase: opts.phrase,
+    mode: opts.mode,
+    attempt: "exhausted",
+    proxyUrl,
+  });
+  emitStaticAudioVisualFallback({ phrase: opts.phrase, mode: opts.mode });
+  return false;
 }
 
 function createStaticPlaybackElement(proxyUrl: string): HTMLAudioElement | null {

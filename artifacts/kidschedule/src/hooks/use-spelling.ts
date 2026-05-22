@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { audioManager } from "@/lib/audio-manager";
 import { resolveApiMediaUrl } from "@/lib/api";
 import { resolveAiApiData } from "@/lib/poll-result";
-import { safePlayAudio } from "@/lib/static-audio";
 import { synthesizeTts } from "@/lib/tts-playback";
 
 // ─── Shared types (mirror server shape — no codegen yet for /spelling/*) ─────
@@ -149,8 +149,7 @@ export function useSpellingTTS(): UseSpellingTTSState {
         console.warn("Invalid audio URL, skipping playback");
         return;
       }
-      const audio = new Audio(resolveApiMediaUrl(trimmed));
-      audio.preload = "auto";
+      const audio = audioManager.create(trimmed);
       audio.playbackRate = slow ? 0.65 : 1;
       audio.onended = () => {
         if (reqId !== reqIdRef.current) return;
@@ -164,8 +163,19 @@ export function useSpellingTTS(): UseSpellingTTSState {
       audioRef.current = audio;
       setLoading(false);
       setSpeaking(true);
-      const played = await safePlayAudio(audio);
+      const played = await audioManager.play(
+        audio,
+        {
+          proxyUrl: resolveApiMediaUrl(trimmed),
+          source: "spelling",
+          channel: "speech",
+          interrupt: true,
+          srcType: "tts",
+        },
+        { channel: "speech", interrupt: true },
+      );
       if (!played && reqId === reqIdRef.current) {
+        console.error("[Spelling] Audio playback failed after retries", trimmed);
         setError("audio_playback_failed");
         setSpeaking(false);
       }

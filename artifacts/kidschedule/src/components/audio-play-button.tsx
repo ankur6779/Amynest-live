@@ -10,10 +10,13 @@ import {
   prefetchStaticAudioUrl,
   lookupStaticAudioUrl,
 } from "@/lib/static-audio";
-import { warmStaticAudioOnFirstGesture } from "@/lib/static-audio-edge";
 import { getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { cn } from "@/lib/utils";
-import { recordTtsUserGesture } from "@/lib/tts-guard";
+import {
+  audioManager,
+  AUDIO_UI_MESSAGE,
+  onAudioNeedsUserGesture,
+} from "@/lib/audio-manager";
 
 /**
  * Warm static GCS audio for a phrase (no ElevenLabs / API).
@@ -100,6 +103,17 @@ export function AudioPlayButton({
   const { run: runInFlight } = useInFlightGuard();
 
   useEffect(() => {
+    return onAudioNeedsUserGesture(() => {
+      if (!isMounted.current) return;
+      toast({
+        title: "Sound disabled",
+        description: AUDIO_UI_MESSAGE.TAP_TO_ENABLE_SOUND,
+        variant: "destructive",
+      });
+    });
+  }, [toast, isMounted]);
+
+  useEffect(() => {
     return onStaticAudioVisualFallback(({ phrase }) => {
       const trimmed = (text ?? "").trim();
       if (phrase && phrase !== trimmed) return;
@@ -117,7 +131,7 @@ export function AudioPlayButton({
       title: "Voice unavailable",
       description:
         error === "playback_blocked_tap_again"
-          ? "Tap play again to start audio (browser blocked autoplay)."
+          ? AUDIO_UI_MESSAGE.TAP_TO_ENABLE_SOUND
           : error === "tts_missing_api_key"
             ? "Amy voice is temporarily unavailable. Please try again later."
             : error === "tts_timeout"
@@ -152,8 +166,7 @@ export function AudioPlayButton({
   }, [resolvedText, resolvedPrefetch, mode]);
 
   const handlePointerDown = useCallback(() => {
-    recordTtsUserGesture();
-    warmStaticAudioOnFirstGesture();
+    audioManager.unlockFromUserGesture();
     if (resolvedText) {
       const url = lookupStaticAudioUrl(resolvedText, mode ?? "default");
       if (url) prefetchStaticAudioUrl(url);
@@ -161,8 +174,7 @@ export function AudioPlayButton({
   }, [resolvedText, mode]);
 
   const handleClick = useCallback(async () => {
-    recordTtsUserGesture();
-    warmStaticAudioOnFirstGesture();
+    audioManager.unlockFromUserGesture();
 
     await runInFlight(async () => {
       const play = safeAsync(async () => {

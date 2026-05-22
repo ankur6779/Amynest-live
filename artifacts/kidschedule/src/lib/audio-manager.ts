@@ -1,0 +1,1144 @@
+/**
+ * Global HTMLAudioElement playback — channels, lifecycle recovery, retries,
+ * mobile unlock, and structured failure reporting (no silent failures).
+ */
+
+import { resolveApiMediaUrl } from "@/lib/api";
+import {
+  configureMobileAudioElement,
+  isTtsPlaybackAllowed,
+  recordTtsUserGesture,
+} from "@/lib/tts-guard";
+import { staticAudioRetryDelayMs } from "@/lib/static-audio-telemetry";
+import {
+  emitStaticAudioVisualFallback,
+} from "@/lib/static-audio-telemetry";
+import type { StaticAudioMode } from "@workspace/static-audio/browser";
+
+const LOG = "[AudioManager]";
+const DEFAULT_MAX_RETRIES = 2;
+const PLAYBACK_WATCHDOG_MS = 1000;
+const URL_CACHE_MAX = 20;
+const SOFT_RESET_EVERY_PLAYS = 25;
+const SILENT_OUTPUT_RECOVERY_THRESHOLD = 2;
+
+const GLOBAL_INSTANCE_KEY = "__amynestAudioManagerInstanceId";
+
+export const AUDIO_UI_MESSAGE = {
+  TAP_TO_ENABLE_SOUND: "Tap to enable sound",
+} as const;
+
+export type AudioPlaybackState = {
+  needsUserInteraction: boolean;
+  lastError: string | null;
+  instanceId: number;
+};
+
+type CacheEntry = {
+  audio: HTMLAudioElement;
+  lastUsed: number;
+};
+
+type PendingFocusReplay = {
+  proxyUrl: string;
+  meta: AudioPlayMeta;
+  channel: AudioChannel;
+};
+
+/** Latest singleton wins — stale instances (HMR / duplicate bundles) no-op. */
+function registerAudioManagerInstance(id: number): void {
+  if (typeof window === "undefined") return;
+  (window as unknown as Record<string, number>)[GLOBAL_INSTANCE_KEY] = id;
+}
+
+function getActiveAudioManagerInstanceId(): number {
+  if (typeof window === "undefined") return 1;
+  return (window as unknown as Record<string, number>)[GLOBAL_INSTANCE_KEY] ?? 1;
+}
+
+let nextAudioManagerInstanceId = 0;
+
+export function emitAudioNeedsUserGesture(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent("amynest-audio-needs-gesture", {
+      detail: { message: AUDIO_UI_MESSAGE.TAP_TO_ENABLE_SOUND },
+    }),
+  );
+}
+
+export function onAudioNeedsUserGesture(
+  handler: (detail: { message: string }) => void,
+): () => void {
+  if (typeof window === "undefined") return () => {};
+  const listener = (e: Event) => {
+    handler((e as CustomEvent<{ message: string }>).detail ?? { message: AUDIO_UI_MESSAGE.TAP_TO_ENABLE_SOUND });
+  };
+  window.addEventListener("amynest-audio-needs-gesture", listener);
+  return () => window.removeEventListener("amynest-audio-needs-gesture", listener);
+}
+
+/** Minimal silent MP3 — unlocks media pipeline on Android Chrome / WebView without audible output. */
+const SILENT_MP3_DATA_URI =
+  "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAcQv8xUAAAAAAP/7kGQAAAAGkH8QAAABpB/gAAACAAQAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
+
+export const AUDIO_ERROR = {
+  USER_INTERACTION_REQUIRED: "USER_INTERACTION_REQUIRED",
+  PLAYBACK_BUSY: "PLAYBACK_BUSY",
+  PLAYBACK_WATCHDOG: "PLAYBACK_WATCHDOG",
+  PLAYBACK_FAILED: "PLAYBACK_FAILED",
+  SILENT_OUTPUT: "SILENT_OUTPUT",
+  GESTURE_BLOCKED: "audio_blocked_until_gesture",
+} as const;
+
+export type AudioChannel = "speech" | "ui";
+
+export type AudioSrcType = "blob" | "static" | "tts" | "unknown";
+
+export type AudioPlayMeta = {
+  phrase?: string;
+  mode?: StaticAudioMode;
+  proxyUrl?: string;
+  source?: string;
+  channel?: AudioChannel;
+  /** Stop current speech and play immediately (quiz replay, speak cancel-restart). */
+  interrupt?: boolean;
+  srcType?: AudioSrcType;
+};
+
+export type AudioPlayOptions = {
+  maxRetries?: number;
+  channel?: AudioChannel;
+  interrupt?: boolean;
+  /** @internal Prevents infinite force-restart recursion */
+  _internalRestart?: boolean;
+};
+
+export type AudioPlayResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+type ChannelState = {
+  current: HTMLAudioElement | null;
+  playing: boolean;
+  playToken: number;
+};
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function inferSrcType(url: string): AudioSrcType {
+  const u = (url ?? "").trim();
+  if (u.startsWith("blob:")) return "blob";
+  if (u.includes("/api/static-audio/")) return "static";
+  if (u.includes("/api/tts/")) return "tts";
+  return "unknown";
+}
+
+function isNotAllowedError(err: unknown): boolean {
+  const name = (err as { name?: string })?.name ?? "";
+  const msg = err instanceof Error ? err.message : String(err);
+  return (
+    name === "NotAllowedError" ||
+    /notallowed|user interaction|autoplay/i.test(msg) ||
+    msg === AUDIO_ERROR.GESTURE_BLOCKED
+  );
+}
+
+function isRetryableError(err: unknown): boolean {
+  if (isNotAllowedError(err)) return false;
+  const name = (err as { name?: string })?.name ?? "";
+  const msg = err instanceof Error ? err.message : String(err);
+  if (name === "AbortError" || /aborted|superseded/i.test(msg)) return false;
+  if (msg === AUDIO_ERROR.PLAYBACK_BUSY) return false;
+  return true;
+}
+
+function audioElementDebug(audio: HTMLAudioElement | null): Record<string, unknown> {
+  if (!audio) return {};
+  return {
+    src: audio.src?.slice(0, 160),
+    readyState: audio.readyState,
+    networkState: audio.networkState,
+    currentTime: audio.currentTime,
+    duration: audio.duration,
+    paused: audio.paused,
+    ended: audio.ended,
+    mediaError: audio.error?.code,
+  };
+}
+
+function logStructured(
+  step: string,
+  err: unknown,
+  detail: Record<string, unknown>,
+  audio?: HTMLAudioElement | null,
+): void {
+  const message = err instanceof Error ? err.message : String(err);
+  const name = (err as { name?: string })?.name ?? "";
+  console.error(LOG, step, {
+    errorName: name,
+    errorMessage: message,
+    ...detail,
+    ...(audio ? audioElementDebug(audio) : {}),
+  });
+}
+
+class AudioManagerImpl {
+  readonly instanceId: number;
+
+  private channels: Record<AudioChannel, ChannelState> = {
+    speech: { current: null, playing: false, playToken: 0 },
+    ui: { current: null, playing: false, playToken: 0 },
+  };
+
+  private ownedObjectUrl: string | null = null;
+  private urlCache = new Map<string, CacheEntry>();
+  private pipelineWarmed = false;
+  private silentWarmEl: HTMLAudioElement | null = null;
+  private lifecycleInstalled = false;
+  private playInFlight = false;
+  private consecutiveFailures = 0;
+  private lastPlayError: string | null = null;
+  private wasPausedForBackground = false;
+  private appInitiatedPause = false;
+  private externalPauseDetected = false;
+  private silentOutputStreak = 0;
+  private totalSuccessfulPlays = 0;
+  private pendingFocusReplay: PendingFocusReplay | null = null;
+  private invalidated = false;
+
+  constructor() {
+    this.instanceId = ++nextAudioManagerInstanceId;
+    registerAudioManagerInstance(this.instanceId);
+  }
+
+  private isActiveInstance(): boolean {
+    if (this.invalidated) return false;
+    return this.instanceId === getActiveAudioManagerInstanceId();
+  }
+
+  private guardInactive(caller: string): boolean {
+    if (this.isActiveInstance()) return false;
+    console.warn(LOG, "stale instance ignored", { caller, instanceId: this.instanceId });
+    return true;
+  }
+
+  /** Invalidate this instance when a newer manager is constructed. */
+  invalidate(): void {
+    this.invalidated = true;
+    this.stop();
+    this.urlCache.clear();
+  }
+
+  getPlaybackState(): AudioPlaybackState {
+    return {
+      needsUserInteraction: this.needsUserInteraction(),
+      lastError: this.lastPlayError,
+      instanceId: this.instanceId,
+    };
+  }
+
+  needsUserInteraction(): boolean {
+    return this.lastPlayError === AUDIO_ERROR.USER_INTERACTION_REQUIRED;
+  }
+
+  installLifecycle(): void {
+    if (this.lifecycleInstalled || typeof document === "undefined") return;
+    this.lifecycleInstalled = true;
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") {
+        const speech = this.channels.speech.current;
+        if (speech && !speech.ended && !speech.paused) {
+          this.pauseElement(speech);
+          this.wasPausedForBackground = true;
+          const src = speech.src?.trim();
+          if (src) {
+            this.pendingFocusReplay = {
+              proxyUrl: src,
+              meta: { source: "background-pause", interrupt: true, srcType: inferSrcType(src) },
+              channel: "speech",
+            };
+          }
+        }
+        return;
+      }
+
+      void this.onAppVisible();
+    });
+
+    const onGesture = () => this.unlockFromUserGesture();
+    document.addEventListener("pointerdown", onGesture, { capture: true, passive: true });
+    document.addEventListener("click", onGesture, { capture: true, passive: true });
+  }
+
+  getLastPlayError(): string | null {
+    return this.lastPlayError;
+  }
+
+  private setLastError(error: string | null): void {
+    this.lastPlayError = error;
+    if (error === AUDIO_ERROR.USER_INTERACTION_REQUIRED) {
+      emitAudioNeedsUserGesture();
+    }
+  }
+
+  private pauseElement(audio: HTMLAudioElement): void {
+    this.appInitiatedPause = true;
+    try {
+      audio.pause();
+    } catch {
+      /* ignore */
+    }
+    this.appInitiatedPause = false;
+  }
+
+  private touchCacheEntry(key: string, audio: HTMLAudioElement): void {
+    this.urlCache.set(key, { audio, lastUsed: Date.now() });
+    this.evictCacheLru();
+  }
+
+  private evictCacheLru(): void {
+    while (this.urlCache.size > URL_CACHE_MAX) {
+      let oldestKey: string | null = null;
+      let oldestUsed = Infinity;
+      for (const [key, entry] of this.urlCache) {
+        if (entry.lastUsed < oldestUsed) {
+          oldestUsed = entry.lastUsed;
+          oldestKey = key;
+        }
+      }
+      if (!oldestKey) break;
+      const entry = this.urlCache.get(oldestKey);
+      this.urlCache.delete(oldestKey);
+      if (entry?.audio) {
+        entry.audio.onended = null;
+        entry.audio.onerror = null;
+        this.pauseElement(entry.audio);
+        try {
+          entry.audio.removeAttribute("src");
+          entry.audio.load();
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  }
+
+  private softResetPipeline(): void {
+    console.info(LOG, "soft pipeline reset", { totalSuccessfulPlays: this.totalSuccessfulPlays });
+    this.pipelineWarmed = false;
+    this.warmMediaPipeline(true);
+  }
+
+  /** Correct muted/zero volume; return false if still inaudible. */
+  private verifyAudibleOutput(audio: HTMLAudioElement): boolean {
+    let corrected = false;
+    if (audio.muted) {
+      audio.muted = false;
+      corrected = true;
+    }
+    if (audio.volume <= 0) {
+      audio.volume = 1;
+      corrected = true;
+    }
+    if (audio.muted || audio.volume <= 0) {
+      this.silentOutputStreak += 1;
+      logStructured("silent output detected", new Error(AUDIO_ERROR.SILENT_OUTPUT), {
+        attempt: this.silentOutputStreak,
+        corrected,
+        muted: audio.muted,
+        volume: audio.volume,
+      }, audio);
+      if (this.silentOutputStreak >= SILENT_OUTPUT_RECOVERY_THRESHOLD) {
+        this.triggerRecovery();
+      }
+      return false;
+    }
+    this.silentOutputStreak = 0;
+    return true;
+  }
+
+  private isPlaybackValid(audio: HTMLAudioElement): boolean {
+    if (audio.error) return false;
+    if (audio.ended) return true;
+    return !audio.paused && audio.currentTime > 0;
+  }
+
+  /** Brand-new element — never reuse cached instance. */
+  private createFreshElement(proxyUrl: string): HTMLAudioElement {
+    const key = proxyUrl.startsWith("blob:") ? proxyUrl : resolveApiMediaUrl(proxyUrl);
+    this.urlCache.delete(key);
+    const audio = this.create(key);
+    this.touchCacheEntry(key, audio);
+    return audio;
+  }
+
+  private channelState(channel: AudioChannel): ChannelState {
+    return this.channels[channel];
+  }
+
+  private revokeOwnedBlob(): void {
+    if (!this.ownedObjectUrl) return;
+    try {
+      URL.revokeObjectURL(this.ownedObjectUrl);
+    } catch {
+      /* ignore */
+    }
+    this.ownedObjectUrl = null;
+  }
+
+  private releaseChannel(channel: AudioChannel, revokeBlob: boolean): void {
+    const state = this.channelState(channel);
+    state.playToken += 1;
+    const a = state.current;
+    if (a) {
+      a.onended = null;
+      a.onerror = null;
+      this.pauseElement(a);
+      try {
+        a.removeAttribute("src");
+        a.load();
+      } catch {
+        /* ignore */
+      }
+    }
+    state.current = null;
+    state.playing = false;
+    if (revokeBlob && channel === "speech") {
+      this.revokeOwnedBlob();
+    }
+  }
+
+  /** Stop speech + UI playback; revokes owned blob after speech ends. */
+  stop(): void {
+    if (this.guardInactive("stop")) return;
+    this.playInFlight = false;
+    this.releaseChannel("speech", true);
+    this.releaseChannel("ui", false);
+    this.wasPausedForBackground = false;
+  }
+
+  /**
+   * Register a blob URL — does NOT revoke on play start.
+   * Previous blob is revoked only when replaced or after playback ends.
+   */
+  trackObjectUrl(url: string): void {
+    if (!url.startsWith("blob:")) return;
+    if (this.ownedObjectUrl && this.ownedObjectUrl !== url) {
+      this.revokeOwnedBlob();
+    }
+    this.ownedObjectUrl = url;
+  }
+
+  unlockFromUserGesture(): void {
+    recordTtsUserGesture();
+    if (this.lastPlayError === AUDIO_ERROR.USER_INTERACTION_REQUIRED) {
+      this.lastPlayError = null;
+    }
+    this.warmMediaPipeline(true);
+  }
+
+  isPlaybackAllowed(): boolean {
+    return isTtsPlaybackAllowed();
+  }
+
+  warmMediaPipeline(force = false): void {
+    if (this.pipelineWarmed && !force) return;
+    if (typeof window === "undefined") return;
+
+    type AutoplayPolicyWindow = Window & {
+      getAutoplayPolicy?: (kind: "mediaelement" | "audiocontext") => string;
+    };
+    const policy = (window as AutoplayPolicyWindow).getAutoplayPolicy?.("audiocontext");
+    if (!force && policy === "disallowed") return;
+
+    this.pipelineWarmed = true;
+
+    try {
+      const Ctx =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (Ctx) {
+        const ctx = new Ctx();
+        void ctx.resume().catch(() => {});
+      }
+    } catch {
+      /* optional */
+    }
+
+    this.playSilentUnlockBuffer();
+  }
+
+  private playSilentUnlockBuffer(): void {
+    try {
+      if (!this.silentWarmEl) {
+        this.silentWarmEl = new Audio(SILENT_MP3_DATA_URI);
+        this.silentWarmEl.volume = 0.001;
+        configureMobileAudioElement(this.silentWarmEl);
+      }
+      void this.silentWarmEl.play().catch(() => {});
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private async onAppVisible(): Promise<void> {
+    if (!this.isActiveInstance()) return;
+    this.wasPausedForBackground = false;
+    this.externalPauseDetected = false;
+    this.pipelineWarmed = false;
+    this.warmMediaPipeline(true);
+
+    const audio = this.channels.speech.current;
+    if (!audio || audio.ended) return;
+
+    const proxyUrl = audio.src?.trim();
+    if (!proxyUrl) return;
+
+    if (!isTtsPlaybackAllowed()) {
+      this.setLastError(AUDIO_ERROR.USER_INTERACTION_REQUIRED);
+      return;
+    }
+
+    logStructured("app visible — resume attempt", new Error("resume"), {
+      attempt: 1,
+      srcType: inferSrcType(proxyUrl),
+    }, audio);
+
+    let resumed = false;
+    if (audio.paused) {
+      resumed = await this.resumeElement(audio);
+    } else {
+      resumed = this.isPlaybackValid(audio);
+    }
+
+    if (resumed) return;
+
+    const pending = this.pendingFocusReplay ?? {
+      proxyUrl,
+      meta: { source: "focus-replay", interrupt: true, srcType: inferSrcType(proxyUrl) },
+      channel: "speech" as AudioChannel,
+    };
+
+    logStructured("focus resume failed — restart from beginning", new Error("focus_restart"), {
+      attempt: 1,
+      srcType: inferSrcType(proxyUrl),
+    }, audio);
+
+    const fresh = this.createFreshElement(proxyUrl);
+    this.pendingFocusReplay = null;
+    await this.play(fresh, pending.meta, {
+      channel: pending.channel,
+      interrupt: true,
+      maxRetries: 1,
+    });
+  }
+
+  /** Full pipeline reset after exhausted retries — avoids stuck/broken state. */
+  private triggerRecovery(): void {
+    console.error(LOG, "AudioManager recovery triggered");
+    this.playInFlight = false;
+    this.stop();
+    this.urlCache.clear();
+    this.pipelineWarmed = false;
+    this.consecutiveFailures = 0;
+    this.warmMediaPipeline(true);
+  }
+
+  private clearChannelOnFailure(channel: AudioChannel): void {
+    const state = this.channelState(channel);
+    const a = state.current;
+    if (a) {
+      a.onended = null;
+      a.onerror = null;
+      try {
+        a.pause();
+      } catch {
+        /* ignore */
+      }
+    }
+    state.current = null;
+    state.playing = false;
+  }
+
+  private prepareElementForReplay(
+    audio: HTMLAudioElement,
+    resolvedUrl: string,
+    forceReload: boolean,
+  ): void {
+    this.pauseElement(audio);
+    audio.onended = null;
+    audio.onerror = null;
+    audio.currentTime = 0;
+    if (audio.src !== resolvedUrl) {
+      audio.src = resolvedUrl;
+      forceReload = true;
+    }
+    if (forceReload || audio.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      try {
+        audio.load();
+      } catch {
+        /* ignore */
+      }
+    }
+    configureMobileAudioElement(audio);
+  }
+
+  create(url?: string): HTMLAudioElement {
+    const audio =
+      url != null && url.length > 0
+        ? new Audio(url.startsWith("blob:") ? url : resolveApiMediaUrl(url))
+        : new Audio();
+    configureMobileAudioElement(audio);
+    return audio;
+  }
+
+  getCached(url: string, opts: { forceReload?: boolean } = {}): HTMLAudioElement {
+    if (this.guardInactive("getCached")) return this.create(url);
+    const key = url.startsWith("blob:") ? url : resolveApiMediaUrl(url);
+    const existing = this.urlCache.get(key);
+    if (existing) {
+      const audio = existing.audio;
+      this.pauseElement(audio);
+      audio.onended = null;
+      audio.onerror = null;
+      audio.currentTime = 0;
+      if (audio.src !== key) audio.src = key;
+      try {
+        audio.load();
+      } catch {
+        /* ignore */
+      }
+      configureMobileAudioElement(audio);
+      if (opts.forceReload !== false) {
+        this.prepareElementForReplay(audio, key, true);
+      }
+      this.touchCacheEntry(key, audio);
+      return audio;
+    }
+    const audio = this.create(key);
+    this.touchCacheEntry(key, audio);
+    return audio;
+  }
+
+  invalidateCache(url: string): void {
+    const key = url.startsWith("blob:") ? url : resolveApiMediaUrl(url);
+    this.urlCache.delete(key);
+  }
+
+  private elementFromSrcPreferReuse(
+    proxyUrl: string,
+    failedElement: HTMLAudioElement,
+  ): HTMLAudioElement {
+    return this.createFreshElement(proxyUrl);
+  }
+
+  /**
+   * After play() resolves: fail if currentTime stays 0 for 1s (not ended).
+   * Clears when time progresses or the clip ends.
+   */
+  private runPlaybackWatchdog(
+    audio: HTMLAudioElement,
+    token: number,
+    channel: AudioChannel,
+  ): Promise<void> {
+    if (!audio.paused && audio.currentTime > 0) return Promise.resolve();
+
+    return new Promise((resolve, reject) => {
+      let cleared = false;
+
+      const cleanup = () => {
+        if (cleared) return;
+        cleared = true;
+        window.clearTimeout(timeoutId);
+        window.clearInterval(pollId);
+        audio.removeEventListener("playing", onProgress);
+        audio.removeEventListener("timeupdate", onProgress);
+        audio.removeEventListener("canplay", onProgress);
+        audio.removeEventListener("ended", onProgress);
+        audio.removeEventListener("error", onError);
+      };
+
+      const checkProgress = () => {
+        if (token !== this.channelState(channel).playToken) {
+          cleanup();
+          reject(new Error("audio_superseded"));
+          return true;
+        }
+        if (audio.ended) {
+          cleanup();
+          resolve();
+          return true;
+        }
+        if (audio.currentTime > 0 && !audio.paused) {
+          if (!this.verifyAudibleOutput(audio)) {
+            cleanup();
+            reject(new Error(AUDIO_ERROR.SILENT_OUTPUT));
+            return true;
+          }
+          cleanup();
+          resolve();
+          return true;
+        }
+        return false;
+      };
+
+      const onProgress = () => {
+        checkProgress();
+      };
+
+      const onError = () => {
+        cleanup();
+        const code = audio.error?.code ?? "unknown";
+        reject(new Error(`media_error_${code}`));
+      };
+
+      audio.addEventListener("playing", onProgress);
+      audio.addEventListener("timeupdate", onProgress);
+      audio.addEventListener("canplay", onProgress);
+      audio.addEventListener("ended", onProgress);
+      audio.addEventListener("error", onError, { once: true });
+
+      const pollId = window.setInterval(() => {
+        checkProgress();
+      }, 100);
+
+      const timeoutId = window.setTimeout(() => {
+        cleanup();
+        if (!audio.ended && audio.currentTime === 0) {
+          reject(new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG));
+          return;
+        }
+        resolve();
+      }, PLAYBACK_WATCHDOG_MS);
+
+      checkProgress();
+    });
+  }
+
+  private async attemptPlay(
+    audio: HTMLAudioElement,
+    token: number,
+    channel: AudioChannel,
+    attempt: number,
+  ): Promise<void> {
+    if (!isTtsPlaybackAllowed()) {
+      throw new Error(AUDIO_ERROR.GESTURE_BLOCKED);
+    }
+
+    configureMobileAudioElement(audio);
+    audio.currentTime = 0;
+
+    try {
+      await audio.play();
+    } catch (err) {
+      const name = (err as { name?: string })?.name ?? "";
+      logStructured("attemptPlay play() rejected", err, { attempt }, audio);
+      if (name === "NotAllowedError" || isNotAllowedError(err)) {
+        throw new Error(AUDIO_ERROR.USER_INTERACTION_REQUIRED);
+      }
+      throw err;
+    }
+
+    await this.runPlaybackWatchdog(audio, token, channel);
+
+    if (!this.verifyAudibleOutput(audio)) {
+      throw new Error(AUDIO_ERROR.SILENT_OUTPUT);
+    }
+
+    if (!this.isPlaybackValid(audio)) {
+      throw new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG);
+    }
+
+    if (token !== this.channelState(channel).playToken) {
+      this.pauseElement(audio);
+      throw new Error("audio_superseded");
+    }
+  }
+
+  private attachExternalPauseHandler(
+    channel: AudioChannel,
+    audio: HTMLAudioElement,
+    state: ChannelState,
+    proxyUrl: string,
+    meta: AudioPlayMeta,
+  ): void {
+    const onPause = () => {
+      if (this.appInitiatedPause) return;
+      if (state.current !== audio || audio.ended) return;
+      this.externalPauseDetected = true;
+      const src = proxyUrl || audio.src;
+      if (src) {
+        this.pendingFocusReplay = {
+          proxyUrl: src,
+          meta: { ...meta, interrupt: true },
+          channel,
+        };
+      }
+      logStructured("external pause (focus loss)", new Error("focus_pause"), {
+        attempt: 0,
+        srcType: inferSrcType(src),
+      }, audio);
+    };
+    audio.addEventListener("pause", onPause);
+  }
+
+  private markChannelPlaying(
+    channel: AudioChannel,
+    audio: HTMLAudioElement,
+    token: number,
+    proxyUrl: string,
+    meta: AudioPlayMeta,
+  ): void {
+    const state = this.channelState(channel);
+    if (state.current && state.current !== audio) {
+      if (channel === "speech") {
+        this.releaseChannel("speech", false);
+      } else {
+        this.releaseChannel("ui", false);
+      }
+    }
+    state.playToken = token;
+    state.current = audio;
+    state.playing = true;
+
+    const blobUrl = audio.src.startsWith("blob:") ? audio.src : null;
+
+    audio.onended = () => {
+      if (state.current === audio) {
+        state.playing = false;
+        state.current = null;
+      }
+      if (blobUrl && this.ownedObjectUrl === blobUrl) {
+        this.revokeOwnedBlob();
+      }
+    };
+
+    audio.onerror = () => {
+      if (state.current === audio) {
+        state.playing = false;
+      }
+    };
+
+    this.attachExternalPauseHandler(channel, audio, state, proxyUrl, meta);
+  }
+
+  private async forceRestartPlayback(
+    proxyUrl: string,
+    meta: AudioPlayMeta,
+    opts: AudioPlayOptions,
+    channel: AudioChannel,
+  ): Promise<boolean> {
+    logStructured("force restart playback", new Error("force_restart"), {
+      attempt: 0,
+      srcType: meta.srcType ?? inferSrcType(proxyUrl),
+      source: meta.source,
+    });
+    this.releaseChannel(channel, false);
+    const fresh = this.createFreshElement(proxyUrl);
+    return this.play(
+      fresh,
+      { ...meta, proxyUrl, interrupt: true },
+      { ...opts, interrupt: true, _internalRestart: true },
+    );
+  }
+
+  private surfaceFallback(meta: AudioPlayMeta): void {
+    if (meta.phrase || meta.mode) {
+      emitStaticAudioVisualFallback({ phrase: meta.phrase, mode: meta.mode });
+    }
+  }
+
+  async play(
+    audio: HTMLAudioElement,
+    meta: AudioPlayMeta = {},
+    opts: AudioPlayOptions = {},
+  ): Promise<boolean> {
+    if (this.guardInactive("play")) return false;
+
+    const channel = opts.channel ?? meta.channel ?? "speech";
+    const interrupt = opts.interrupt ?? meta.interrupt ?? false;
+    const maxRetries = opts.maxRetries ?? DEFAULT_MAX_RETRIES;
+    const proxyUrl = (meta.proxyUrl ?? audio.src)?.trim();
+    const srcType = meta.srcType ?? inferSrcType(proxyUrl || audio.src);
+
+    if (this.playInFlight && channel === "speech" && !interrupt) {
+      this.setLastError(AUDIO_ERROR.PLAYBACK_BUSY);
+      logStructured("play rejected — busy", new Error(AUDIO_ERROR.PLAYBACK_BUSY), {
+        attempt: 0,
+        srcType,
+        source: meta.source,
+      }, audio);
+      return false;
+    }
+
+    if (channel === "speech" && this.channels.speech.playing && !interrupt) {
+      this.setLastError(AUDIO_ERROR.PLAYBACK_BUSY);
+      logStructured("play rejected — speech active", new Error(AUDIO_ERROR.PLAYBACK_BUSY), {
+        attempt: 0,
+        srcType,
+        source: meta.source,
+      }, audio);
+      return false;
+    }
+
+    if (interrupt && channel === "speech") {
+      this.releaseChannel("speech", false);
+    }
+
+    const state = this.channelState(channel);
+    const token = state.playToken + 1;
+    state.playToken = token;
+
+    this.playInFlight = true;
+    this.setLastError(null);
+
+    let element = audio;
+    const resolvedUrl = proxyUrl || element.src;
+
+    try {
+      if (resolvedUrl) {
+        this.prepareElementForReplay(element, resolvedUrl, true);
+      }
+
+      this.markChannelPlaying(channel, element, token, resolvedUrl, meta);
+      this.pendingFocusReplay = { proxyUrl: resolvedUrl, meta, channel };
+
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        if (token !== state.playToken) {
+          return false;
+        }
+
+        try {
+          await this.attemptPlay(element, token, channel, attempt + 1);
+
+          if (!this.isPlaybackValid(element)) {
+            throw new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG);
+          }
+
+          this.consecutiveFailures = 0;
+          this.silentOutputStreak = 0;
+          this.totalSuccessfulPlays += 1;
+          if (this.totalSuccessfulPlays % SOFT_RESET_EVERY_PLAYS === 0) {
+            this.softResetPipeline();
+          }
+          this.pendingFocusReplay = null;
+
+          if (import.meta.env.DEV) {
+            console.info(LOG, "play success", {
+              srcType,
+              attempt: attempt + 1,
+              source: meta.source,
+              channel,
+              ...audioElementDebug(element),
+            });
+          }
+          return true;
+        } catch (err) {
+          if ((err as Error).message === "audio_superseded") {
+            this.clearChannelOnFailure(channel);
+            return false;
+          }
+
+          if (isNotAllowedError(err)) {
+            this.setLastError(AUDIO_ERROR.USER_INTERACTION_REQUIRED);
+            this.consecutiveFailures += 1;
+            logStructured("play blocked — gesture required", err, {
+              attempt: attempt + 1,
+              srcType,
+              source: meta.source,
+              channel,
+            }, element);
+            this.clearChannelOnFailure(channel);
+            this.surfaceFallback(meta);
+            return false;
+          }
+
+          if (!isRetryableError(err)) {
+            this.clearChannelOnFailure(channel);
+            return false;
+          }
+
+          logStructured(`play failed (attempt ${attempt + 1}/${maxRetries + 1})`, err, {
+            attempt: attempt + 1,
+            srcType,
+            proxyUrl: proxyUrl?.slice(0, 120),
+            source: meta.source,
+            channel,
+          }, element);
+
+          if (attempt >= maxRetries || !proxyUrl) break;
+
+          await sleep(staticAudioRetryDelayMs());
+          element = this.createFreshElement(proxyUrl);
+          state.current = element;
+          this.prepareElementForReplay(element, resolvedUrl, true);
+          this.markChannelPlaying(channel, element, token, resolvedUrl, meta);
+        }
+      }
+
+      if (proxyUrl && !opts._internalRestart) {
+        const restarted = await this.forceRestartPlayback(proxyUrl, meta, opts, channel);
+        if (restarted) {
+          this.pendingFocusReplay = null;
+          return true;
+        }
+      }
+
+      this.consecutiveFailures += 1;
+      this.setLastError(AUDIO_ERROR.PLAYBACK_FAILED);
+      this.clearChannelOnFailure(channel);
+      this.triggerRecovery();
+      this.surfaceFallback(meta);
+      return false;
+    } finally {
+      if (token === this.channelState(channel).playToken) {
+        this.playInFlight = false;
+      }
+    }
+  }
+
+  async playUrl(url: string, meta: AudioPlayMeta = {}, opts?: AudioPlayOptions): Promise<boolean> {
+    if (!url?.trim()) {
+      logStructured("playUrl empty", new Error("empty_url"), { attempt: 0, srcType: "unknown" });
+      this.setLastError(AUDIO_ERROR.PLAYBACK_FAILED);
+      return false;
+    }
+    try {
+      const srcType = meta.srcType ?? inferSrcType(url);
+      const audio = this.create(url);
+      return this.play(audio, { ...meta, proxyUrl: url, srcType }, opts);
+    } catch (err) {
+      logStructured("playUrl create failed", err, { attempt: 0, srcType: inferSrcType(url) });
+      this.setLastError(AUDIO_ERROR.PLAYBACK_FAILED);
+      return false;
+    }
+  }
+
+  waitUntilEnd(audio: HTMLAudioElement, isCancelled: () => boolean): Promise<AudioPlayResult> {
+    return new Promise((resolve) => {
+      let settled = false;
+
+      const done = (result: AudioPlayResult) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(fallbackTimer);
+        audio.onended = null;
+        audio.onerror = null;
+        if (!result.ok) {
+          this.channels.speech.playing = false;
+          if (this.channels.speech.current === audio) {
+            this.channels.speech.current = null;
+          }
+        }
+        resolve(result);
+      };
+
+      const durationSec =
+        Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
+      const fallbackMs = durationSec > 0 ? (durationSec + 1) * 1000 : 30_000;
+
+      const fallbackTimer = window.setTimeout(() => {
+        if (isCancelled()) return done({ ok: false, error: "audio_cancelled" });
+        logStructured("waitUntilEnd fallback timeout", new Error("wait_until_end_timeout"), {
+          attempt: 0,
+          srcType: inferSrcType(audio.src),
+          fallbackMs,
+        }, audio);
+        if (audio.ended) {
+          this.channels.speech.playing = false;
+          return done({ ok: true });
+        }
+        this.channels.speech.playing = false;
+        if (this.channels.speech.current === audio) {
+          this.channels.speech.current = null;
+        }
+        done({ ok: false, error: "wait_until_end_timeout" });
+      }, fallbackMs);
+
+      audio.onended = () => {
+        if (isCancelled()) return done({ ok: false, error: "audio_cancelled" });
+        this.channels.speech.playing = false;
+        if (this.channels.speech.current === audio) {
+          this.channels.speech.current = null;
+        }
+        done({ ok: true });
+      };
+
+      audio.onerror = () => {
+        if (isCancelled()) return done({ ok: false, error: "audio_cancelled" });
+        const code = audio.error?.code ?? "unknown";
+        logStructured("waitUntilEnd media error", new Error(`media_error_${code}`), {
+          attempt: 0,
+          srcType: inferSrcType(audio.src),
+        }, audio);
+        this.channels.speech.playing = false;
+        if (this.channels.speech.current === audio) {
+          this.channels.speech.current = null;
+        }
+        done({ ok: false, error: `playback_failed_${code}` });
+      };
+    });
+  }
+
+  async resumeElement(audio: HTMLAudioElement): Promise<boolean> {
+    if (!isTtsPlaybackAllowed()) {
+      this.setLastError(AUDIO_ERROR.USER_INTERACTION_REQUIRED);
+      logStructured("resume blocked", new Error(AUDIO_ERROR.GESTURE_BLOCKED), {
+        attempt: 0,
+        srcType: inferSrcType(audio.src),
+      });
+      return false;
+    }
+
+    configureMobileAudioElement(audio);
+    try {
+      await audio.play();
+      await this.runPlaybackWatchdog(audio, this.channels.speech.playToken, "speech");
+      this.channels.speech.playing = true;
+      return true;
+    } catch (err) {
+      if (isNotAllowedError(err)) {
+        this.setLastError(AUDIO_ERROR.USER_INTERACTION_REQUIRED);
+        return false;
+      }
+      logStructured("resume failed — retrying via play", err, {
+        attempt: 1,
+        srcType: inferSrcType(audio.src),
+      });
+      return this.play(
+        audio,
+        { proxyUrl: audio.src, source: "resume-retry", interrupt: true },
+        { maxRetries: 1, channel: "speech", interrupt: true },
+      );
+    }
+  }
+
+  getCurrentElement(): HTMLAudioElement | null {
+    return this.channels.speech.current;
+  }
+
+  isSpeechPlaying(): boolean {
+    return this.channels.speech.playing || this.playInFlight;
+  }
+}
+
+const GLOBAL_MANAGER_REF_KEY = "__amynestAudioManagerRef";
+
+function bootstrapAudioManager(): AudioManagerImpl {
+  if (typeof window === "undefined") {
+    return new AudioManagerImpl();
+  }
+  const w = window as unknown as Record<string, AudioManagerImpl | undefined>;
+  const prev = w[GLOBAL_MANAGER_REF_KEY];
+  if (prev) prev.invalidate();
+  const mgr = new AudioManagerImpl();
+  w[GLOBAL_MANAGER_REF_KEY] = mgr;
+  mgr.installLifecycle();
+  return mgr;
+}
+
+export const audioManager = bootstrapAudioManager();
