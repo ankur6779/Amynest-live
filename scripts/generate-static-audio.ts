@@ -75,7 +75,11 @@ function loadGcsCredentialsFromRenderEnvFile(): Record<string, unknown> | null {
   }
 }
 
-const OPENAI_VOICE = process.env.STATIC_AUDIO_VOICE?.trim() || "alloy";
+/** Female default — must match api-server getOpenAiTtsVoice() (coral / nova). */
+const OPENAI_VOICE =
+  process.env.STATIC_AUDIO_VOICE?.trim() ||
+  process.env.OPENAI_TTS_VOICE?.trim() ||
+  "coral";
 const OPENAI_MODEL = process.env.STATIC_AUDIO_MODEL?.trim() || "gpt-4o-mini-tts";
 
 /** `Number("30_000")` is NaN — strip `_` from env ms values. */
@@ -496,7 +500,21 @@ async function run(): Promise<void> {
   let missingCount = logCoverageSummary(map, "initial");
   let retryCount = 0;
 
+  if (missingCount === 0 && !forceAll) {
+    console.log(
+      "[SKIP] Map already has 100% corpus coverage — no OpenAI TTS calls were made.",
+    );
+    console.log(
+      "[HINT] To regenerate ALL MP3s (e.g. switch alloy → coral female voice), run:",
+    );
+    console.log("       pnpm run generate:static-audio -- --force-all");
+    console.log(`[CONFIG] Current voice=${OPENAI_VOICE} model=${OPENAI_MODEL}`);
+  }
+
   if (missingCount > 0 || forceAll) {
+    if (forceAll) {
+      console.log(`[FORCE-ALL] Regenerating every phrase with voice=${OPENAI_VOICE} (~30–90 min in CI)`);
+    }
     const firstPass = await runCatalogPass(map, storage, bucketName, skipExisting);
     mergeStats(totals, firstPass);
     Object.assign(map, loadStaticAudioMap());

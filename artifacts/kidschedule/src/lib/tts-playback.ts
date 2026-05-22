@@ -82,20 +82,25 @@ export async function generateTts(
   }
 
   try {
+    const voiceOverride = String(body.voice ?? body.voiceId ?? "").trim();
+    const payload: Record<string, unknown> = {
+      text: phrase,
+      letter: letterKey || undefined,
+      phoneme: phonemeKey || undefined,
+      word: cvcWord || undefined,
+      blend: blendWord || undefined,
+      speed: body.speed ?? 0.9,
+      mode,
+      category: body.category ?? (mode === "phonics" ? "phonics" : "words"),
+    };
+    // Omit voice when unset — server uses OPENAI_TTS_VOICE (coral/nova female default).
+    // Never default to "alloy" here; it sounds male/neutral and bypasses server config.
+    if (voiceOverride) payload.voice = voiceOverride;
+
     const res = await authFetch("/api/tts/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...init?.headers },
-      body: JSON.stringify({
-        text: phrase,
-        letter: letterKey || undefined,
-        phoneme: phonemeKey || undefined,
-        word: cvcWord || undefined,
-        blend: blendWord || undefined,
-        voice: body.voice ?? body.voiceId ?? "alloy",
-        speed: body.speed ?? 0.9,
-        mode,
-        category: body.category ?? (mode === "phonics" ? "phonics" : "words"),
-      }),
+      body: JSON.stringify(payload),
       signal: init?.signal,
     });
     const data = await readResolvedApiJson<{
