@@ -1,8 +1,29 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Volume2, Pause, Play, SkipBack, SkipForward, Headphones, Sparkles, Gauge, X, Clock, Loader2, Lock } from "lucide-react";
-import { LESSONS, lessonsForAge, getLessonText, getAgeLabel, type AgeBucket, type Lesson } from "@/lib/audio-lessons";
+import { ArrowLeft, Volume2, Pause, Play, SkipBack, SkipForward, Headphones, Sparkles, Gauge, X, Clock, Loader2, Lock, ListMusic, ChevronDown, ChevronUp, Check } from "lucide-react";
+import {
+  lessonsForAge,
+  getLessonText,
+  getAgeLabel,
+  getLessonById,
+  getRecommendedLessonsForCoachGoal,
+  COACH_AUDIO_GOAL_STORAGE_KEY,
+  seriesForAge,
+  resolveSeriesLessons,
+  totalSeriesMinutes,
+  LESSONS_COMPLETE_STORAGE_KEY,
+  parseCompletedLessonIds,
+  serializeCompletedLessonIds,
+  markLessonComplete,
+  getSeriesProgress,
+  firstIncompleteLessonId,
+  partIndexForLesson,
+  type AgeBucket,
+  type Lesson,
+  type LessonTier,
+  type LessonSeries,
+} from "@/lib/audio-lessons";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { usePaywall } from "@/contexts/paywall-context";
@@ -48,6 +69,10 @@ export default function AudioLessonsPage() {
   const [age, setAge] = useState<AgeBucket>("2-4");
   const [open, setOpen] = useState<Lesson | null>(null);
   const [unlocking, setUnlocking] = useState(false);
+  const [completedIds, setCompletedIds] = useState<Set<string>>(() => new Set());
+  const [expandedSeriesId, setExpandedSeriesId] = useState<string | null>(null);
+  const [activeSeries, setActiveSeries] = useState<LessonSeries | null>(null);
+  const [playerAutoPlay, setPlayerAutoPlay] = useState(false);
   const { t } = useTranslation();
   const lang = "en";
   const authFetch = useAuthFetch();
@@ -56,6 +81,56 @@ export default function AudioLessonsPage() {
   } = usePaywall();
   const sub = useSubscription();
   const lessons = lessonsForAge(age);
+  const ageSeries = useMemo(() => seriesForAge(age), [age]);
+
+  useEffect(() => {
+    try {
+      setCompletedIds(parseCompletedLessonIds(localStorage.getItem(LESSONS_COMPLETE_STORAGE_KEY)));
+    } catch {
+      setCompletedIds(new Set());
+    }
+  }, []);
+
+  const persistCompleted = useCallback((ids: Set<string>) => {
+    setCompletedIds(ids);
+    try {
+      localStorage.setItem(LESSONS_COMPLETE_STORAGE_KEY, serializeCompletedLessonIds(ids));
+    } catch {
+      /* quota */
+    }
+  }, []);
+
+  const coachGoalId = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const fromUrl = new URLSearchParams(window.location.search).get("goal")?.trim() ?? "";
+    if (fromUrl) return fromUrl;
+    try {
+      return sessionStorage.getItem(COACH_AUDIO_GOAL_STORAGE_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  }, []);
+
+  const recommendedLessons = useMemo(
+    () => (coachGoalId ? getRecommendedLessonsForCoachGoal(coachGoalId, 3) : []),
+    [coachGoalId],
+  );
+
+  const recommendedIds = useMemo(
+    () => new Set(recommendedLessons.map((l) => l.id)),
+    [recommendedLessons],
+  );
+
+  const otherLessons = useMemo(
+    () => lessons.filter((l) => !recommendedIds.has(l.id)),
+    [lessons, recommendedIds],
+  );
+
+  const tierLabel = (tier: LessonTier) => {
+    if (tier === "quick") return t("pages.audio_lessons.tier_quick");
+    if (tier === "deep") return t("pages.audio_lessons.tier_deep");
+    return t("pages.audio_lessons.tier_standard");
+  };
 
   // Pre-warm the audio cache for paragraphs of the current age group in the
   // user's selected language. Fire-and-forget — this is a background
@@ -79,44 +154,216 @@ export default function AudioLessonsPage() {
     }).catch(() => {});
   }, [age, isPremium, lang, authFetch]);
 
-  // Per-age-group access: index 0 is the free sample, rest are premium-only.
+  // Per-age-group access: first two lessons are free samples, rest are premium-only.
   type LessonAccess = "free-sample" | "locked" | "open";
-  const getLessonAccess = (idx: number): LessonAccess => {
+  const getLessonAccess = (lesson: Lesson): LessonAccess => {
     if (isPremium) return "open";
-    return idx === 0 ? "free-sample" : "locked";
+    const idx = lessons.findIndex((l) => l.id === lesson.id);
+    return idx >= 0 && idx < 2 ? "free-sample" : "locked";
   };
 
-  // Lesson 0 in each age section is ALWAYS free — open it directly, no
-  // server gate. Lessons 1+ require premium; free users see the paywall.
-  // Premium users bypass everything. Server /consume is only called for
-  // the premium path to track usage analytics (fire-and-forget).
-  const handlePickLesson = async (l: Lesson, idx: number) => {
-    if (unlocking) return;
+  const openLessonPlayer = useCallback((l: Lesson, opts?: { series?: LessonSeries | null; autoPlay?: boolean }) => {
+    setActiveSeries(opts?.series ?? null);
+    setPlayerAutoPlay(!!opts?.autoPlay);
+    setOpen(l);
+  }, []);
 
-    // Free users: lesson 0 is always free — open immediately, no gate.
-    if (!isPremium && idx === 0) {
-      setOpen(l);
+  const handlePickLesson = async (
+    l: Lesson,
+    opts?: { series?: LessonSeries | null; autoPlay?: boolean },
+  ) => {
+    if (unlocking) return;
+    const access = getLessonAccess(l);
+
+    if (access === "free-sample") {
+      openLessonPlayer(l, opts);
       return;
     }
 
-    // Free users: any other lesson → paywall.
-    if (!isPremium && idx !== 0) {
+    if (access === "locked") {
       openPaywall("audio_lessons");
       return;
     }
 
-    // Premium users: consume endpoint (tracks analytics, never blocks).
     setUnlocking(true);
     try {
       await authFetch(getApiUrl("/api/features/audio_lesson/consume"), {
         method: "POST"
-      }).catch(() => {/* fire-and-forget; never block the premium user */});
-      setOpen(l);
+      }).catch(() => {/* fire-and-forget */});
+      openLessonPlayer(l, opts);
     } catch {
-      setOpen(l);
+      openLessonPlayer(l, opts);
     } finally {
       setUnlocking(false);
     }
+  };
+
+  const handleStartSeries = (series: LessonSeries) => {
+    const nextId = firstIncompleteLessonId(series, completedIds) ?? series.lessonIds[0];
+    const lesson = getLessonById(nextId);
+    if (!lesson) return;
+    void handlePickLesson(lesson, { series, autoPlay: true });
+  };
+
+  const handleLessonComplete = useCallback((lessonId: string) => {
+    const nextCompleted = markLessonComplete(completedIds, lessonId);
+    persistCompleted(nextCompleted);
+    if (!activeSeries) return;
+    const idx = activeSeries.lessonIds.indexOf(lessonId);
+    if (idx < 0) return;
+    const nextId = activeSeries.lessonIds[idx + 1];
+    if (!nextId) return;
+    const nextLesson = getLessonById(nextId);
+    if (!nextLesson) return;
+    const access = getLessonAccess(nextLesson);
+    if (access === "locked") {
+      openPaywall("audio_lessons");
+      return;
+    }
+    window.setTimeout(() => {
+      if (access === "free-sample") {
+        openLessonPlayer(nextLesson, { series: activeSeries, autoPlay: true });
+        return;
+      }
+      void authFetch(getApiUrl("/api/features/audio_lesson/consume"), { method: "POST" }).catch(() => {});
+      openLessonPlayer(nextLesson, { series: activeSeries, autoPlay: true });
+    }, 1200);
+  }, [activeSeries, completedIds, persistCompleted, openLessonPlayer, authFetch, isPremium, lessons]);
+
+  const renderLessonCard = (l: Lesson, highlight?: boolean) => {
+    const text = getLessonText(l, lang);
+    const access = getLessonAccess(l);
+    const isLocked = access === "locked";
+    const isFree = access === "free-sample";
+    return (
+      <button
+        key={l.id}
+        onClick={() => void handlePickLesson(l)}
+        disabled={unlocking}
+        style={{
+          textAlign: "left",
+          background: highlight
+            ? "rgba(52,211,153,0.08)"
+            : isLocked
+              ? "rgba(255,255,255,0.03)"
+              : "rgba(255,255,255,0.06)",
+          border: highlight
+            ? "1px solid rgba(52,211,153,0.45)"
+            : isLocked
+              ? "1px solid rgba(139,92,246,0.12)"
+              : isFree
+                ? "1px solid rgba(52,211,153,0.35)"
+                : "1px solid rgba(139,92,246,0.25)",
+          borderRadius: 16,
+          padding: 16,
+          cursor: unlocking ? "wait" : "pointer",
+          opacity: unlocking ? 0.7 : 1,
+          display: "flex",
+          gap: 12,
+          alignItems: "flex-start",
+          color: "#fff",
+          transition: "transform 0.15s, background 0.15s",
+          position: "relative",
+          width: "100%",
+        }}
+        onMouseDown={e => { e.currentTarget.style.transform = "scale(0.99)"; }}
+        onMouseUp={e => { e.currentTarget.style.transform = "scale(1)"; }}
+        onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+      >
+        {isFree && (
+          <div style={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            background: "linear-gradient(135deg, hsl(var(--brand-emerald-600)), hsl(var(--brand-emerald-500)))",
+            color: "#fff",
+            fontSize: 10,
+            fontWeight: 800,
+            padding: "3px 8px",
+            borderRadius: 999,
+          }}>
+            {t("pages.audio_lessons.free")}
+          </div>
+        )}
+        {isLocked && (
+          <div style={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            background: "rgba(251,191,36,0.15)",
+            border: "1px solid rgba(251,191,36,0.5)",
+            color: "hsl(var(--brand-amber-300))",
+            fontSize: 10,
+            fontWeight: 800,
+            padding: "3px 8px",
+            borderRadius: 999,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}>
+            <Lock size={9} /> {t("pages.audio_lessons.premium")}
+          </div>
+        )}
+        <div style={{
+          fontSize: 30,
+          lineHeight: 1,
+          width: 48,
+          height: 48,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: isLocked ? "rgba(139,92,246,0.08)" : "rgba(139,92,246,0.15)",
+          borderRadius: 12,
+          flexShrink: 0,
+        }}>{l.emoji}</div>
+        <div style={{ flex: 1, minWidth: 0, paddingRight: isLocked || isFree ? 72 : 0 }}>
+          <h3 style={{
+            margin: "0 0 4px",
+            fontSize: 15,
+            fontWeight: 800,
+            fontFamily: "Quicksand, sans-serif",
+            color: isLocked ? "rgba(255,255,255,0.7)" : "#fff",
+          }}>
+            {text.title}
+          </h3>
+          <p style={{
+            margin: "0 0 8px",
+            color: isLocked ? "rgba(199,192,232,0.6)" : "#c7c0e8",
+            fontSize: 13,
+            lineHeight: 1.45,
+          }}>
+            {text.description}
+          </p>
+          <div style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 11.5,
+            color: isLocked ? "rgba(169,159,217,0.5)" : "#a99fd9",
+          }}>
+            <span style={{
+              padding: "2px 8px",
+              borderRadius: 999,
+              background:
+                l.tier === "quick"
+                  ? "rgba(16,185,129,0.2)"
+                  : l.tier === "deep"
+                    ? "rgba(251,191,36,0.15)"
+                    : "rgba(139,92,246,0.2)",
+              fontWeight: 700,
+              fontSize: 10,
+            }}>
+              {tierLabel(l.tier)}
+            </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <Clock size={12} /> {l.durationMin} {t("pages.audio_lessons.min")}
+            </span>
+          </div>
+        </div>
+        {!isLocked && <Volume2 size={18} color="hsl(var(--brand-violet-300))" style={{ flexShrink: 0, marginTop: 4 }} />}
+      </button>
+    );
   };
   return <div style={{
     minHeight: "100dvh",
@@ -180,7 +427,14 @@ export default function AudioLessonsPage() {
         lineHeight: 1.55,
         margin: 0
       }}>
-          {"Hands full? Let Amy talk you through the most important parenting topics for your child's age group. Each lesson is 3–5 minutes. Tap any lesson to listen."}
+          {t("pages.audio_lessons.intro")}
+        </p>
+        <p style={{
+          color: "#a99fd9",
+          fontSize: 12,
+          margin: "8px 0 0",
+        }}>
+          {t("pages.audio_lessons.lesson_count", { count: lessons.length })}
         </p>
       </div>
 
@@ -211,148 +465,240 @@ export default function AudioLessonsPage() {
       })}
       </div>
 
-      {/* Lesson grid */}
+      {/* Series / playlists */}
+      {ageSeries.length > 0 && (
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "4px 16px 0" }}>
+          <h2 style={{
+            fontFamily: "Quicksand, sans-serif",
+            fontSize: 14,
+            fontWeight: 800,
+            margin: "0 0 4px",
+            color: "#c7c0e8",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}>
+            <ListMusic size={16} color="hsl(var(--brand-violet-300))" />
+            {t("pages.audio_lessons.series_title")}
+          </h2>
+          <p style={{ margin: "0 0 12px", fontSize: 12, color: "#a99fd9" }}>
+            {t("pages.audio_lessons.series_subtitle")}
+          </p>
+          <div style={{ display: "grid", gap: 10 }}>
+            {ageSeries.map((series) => {
+              const progress = getSeriesProgress(series, completedIds);
+              const seriesLessons = resolveSeriesLessons(series);
+              const totalMin = totalSeriesMinutes(series);
+              const expanded = expandedSeriesId === series.id;
+              const nextId = firstIncompleteLessonId(series, completedIds);
+              const ctaKey = progress.completed > 0 && nextId
+                ? "pages.audio_lessons.series_continue"
+                : "pages.audio_lessons.series_start";
+              return (
+                <div
+                  key={series.id}
+                  style={{
+                    borderRadius: 16,
+                    border: "1px solid rgba(139,92,246,0.35)",
+                    background: "rgba(139,92,246,0.08)",
+                    overflow: "hidden",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setExpandedSeriesId(expanded ? null : series.id)}
+                    style={{
+                      width: "100%",
+                      textAlign: "left",
+                      padding: 14,
+                      background: "transparent",
+                      border: "none",
+                      color: "#fff",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                      <div style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 12,
+                        background: "rgba(139,92,246,0.2)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 22,
+                        flexShrink: 0,
+                      }}>
+                        {series.emoji}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                          <h3 style={{
+                            margin: 0,
+                            fontSize: 15,
+                            fontWeight: 800,
+                            fontFamily: "Quicksand, sans-serif",
+                          }}>
+                            {series.title.en}
+                          </h3>
+                          {expanded ? <ChevronUp size={18} color="#a99fd9" /> : <ChevronDown size={18} color="#a99fd9" />}
+                        </div>
+                        <p style={{ margin: "4px 0 8px", fontSize: 12, color: "#c7c0e8", lineHeight: 1.4 }}>
+                          {series.description.en}
+                        </p>
+                        <p style={{ margin: 0, fontSize: 11, color: "#a99fd9" }}>
+                          {t("pages.audio_lessons.series_meta", {
+                            parts: series.lessonIds.length,
+                            minutes: totalMin,
+                          })}
+                        </p>
+                        <div style={{
+                          marginTop: 8,
+                          height: 4,
+                          borderRadius: 2,
+                          background: "rgba(139,92,246,0.2)",
+                          overflow: "hidden",
+                        }}>
+                          <div style={{
+                            width: `${progress.percent}%`,
+                            height: "100%",
+                            background: "linear-gradient(90deg, hsl(var(--brand-emerald-500)), hsl(var(--brand-violet-500)))",
+                            transition: "width 0.3s",
+                          }} />
+                        </div>
+                        <p style={{ margin: "6px 0 0", fontSize: 10, color: "#7a749b" }}>
+                          {t("pages.audio_lessons.series_progress", {
+                            done: progress.completed,
+                            total: progress.total,
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                  {expanded && (
+                    <div style={{ padding: "0 14px 12px", display: "grid", gap: 8 }}>
+                      {seriesLessons.map((sl, i) => {
+                        const done = completedIds.has(sl.id);
+                        const access = getLessonAccess(sl);
+                        const locked = access === "locked";
+                        return (
+                          <button
+                            key={sl.id}
+                            type="button"
+                            onClick={() => void handlePickLesson(sl, { series, autoPlay: false })}
+                            disabled={unlocking}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                              padding: "10px 12px",
+                              borderRadius: 12,
+                              border: "1px solid rgba(139,92,246,0.2)",
+                              background: "rgba(255,255,255,0.04)",
+                              color: "#fff",
+                              cursor: unlocking ? "wait" : "pointer",
+                              opacity: locked ? 0.65 : 1,
+                              textAlign: "left",
+                            }}
+                          >
+                            <span style={{
+                              width: 22,
+                              height: 22,
+                              borderRadius: 999,
+                              background: done ? "hsl(var(--brand-emerald-500))" : "rgba(139,92,246,0.25)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 11,
+                              fontWeight: 800,
+                              flexShrink: 0,
+                            }}>
+                              {done ? <Check size={12} /> : i + 1}
+                            </span>
+                            <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>
+                              {getLessonText(sl, lang).title}
+                            </span>
+                            {locked && <Lock size={12} color="hsl(var(--brand-amber-300))" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div style={{ padding: "0 14px 14px" }}>
+                    <button
+                      type="button"
+                      onClick={() => handleStartSeries(series)}
+                      disabled={unlocking || progress.percent === 100}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: 999,
+                        border: "none",
+                        background: progress.percent === 100
+                          ? "rgba(255,255,255,0.08)"
+                          : "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
+                        color: "#fff",
+                        fontWeight: 800,
+                        fontSize: 13,
+                        cursor: progress.percent === 100 ? "default" : "pointer",
+                        opacity: progress.percent === 100 ? 0.6 : 1,
+                      }}
+                    >
+                      {progress.percent === 100
+                        ? t("pages.audio_lessons.series_complete")
+                        : t(ctaKey)}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Recommended (Amy Coach) */}
+      {recommendedLessons.length > 0 && (
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "8px 16px 0" }}>
+          <h2 style={{
+            fontFamily: "Quicksand, sans-serif",
+            fontSize: 14,
+            fontWeight: 800,
+            margin: "0 0 4px",
+            color: "hsl(var(--brand-emerald-300))",
+          }}>
+            {t("pages.audio_lessons.recommended_title")}
+          </h2>
+          <p style={{ margin: "0 0 10px", fontSize: 12, color: "#a99fd9" }}>
+            {t("pages.audio_lessons.recommended_subtitle")}
+          </p>
+          <div style={{ display: "grid", gap: 12 }}>
+            {recommendedLessons.map((l) => renderLessonCard(l, true))}
+          </div>
+        </div>
+      )}
+
+      {/* All lessons */}
       <div style={{
-      maxWidth: 720,
-      margin: "0 auto",
-      padding: "8px 16px",
-      display: "grid",
-      gridTemplateColumns: "1fr",
-      gap: 12
-    }}>
-        {lessons.map((l, idx) => {
-        const text = getLessonText(l, lang);
-        const access = getLessonAccess(idx);
-        const isLocked = access === "locked";
-        const isFree = access === "free-sample";
-        return <button key={l.id} onClick={() => void handlePickLesson(l, idx)} disabled={unlocking} style={{
-          textAlign: "left",
-          background: isLocked ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
-          border: isLocked ? "1px solid rgba(139,92,246,0.12)" : isFree ? "1px solid rgba(52,211,153,0.35)" : "1px solid rgba(139,92,246,0.25)",
-          borderRadius: 16,
-          padding: 16,
-          cursor: unlocking ? "wait" : "pointer",
-          opacity: unlocking ? 0.7 : 1,
-          display: "flex",
-          gap: 12,
-          alignItems: "flex-start",
-          color: "#fff",
-          transition: "transform 0.15s, background 0.15s",
-          position: "relative"
-        }} onMouseDown={e => e.currentTarget.style.transform = "scale(0.99)"} onMouseUp={e => e.currentTarget.style.transform = "scale(1)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
-              {/* Free / Lock badge */}
-              {isFree && <div style={{
-            position: "absolute",
-            top: 10,
-            right: 10,
-            background: "linear-gradient(135deg, hsl(var(--brand-emerald-600)), hsl(var(--brand-emerald-500)))",
-            color: "#fff",
-            fontSize: 10,
+        maxWidth: 720,
+        margin: "0 auto",
+        padding: "8px 16px",
+        display: "grid",
+        gridTemplateColumns: "1fr",
+        gap: 12,
+      }}>
+        {otherLessons.length > 0 && recommendedLessons.length > 0 && (
+          <h2 style={{
+            fontFamily: "Quicksand, sans-serif",
+            fontSize: 14,
             fontWeight: 800,
-            padding: "3px 8px",
-            borderRadius: 999,
-            letterSpacing: "0.06em",
-            boxShadow: "0 2px 8px rgba(16,185,129,0.45)"
+            margin: "4px 0 0",
+            color: "#c7c0e8",
           }}>
-                  {t("pages.audio_lessons.free")}
-                </div>}
-              {isLocked && <div style={{
-            position: "absolute",
-            top: 10,
-            right: 10,
-            background: "rgba(251,191,36,0.15)",
-            border: "1px solid rgba(251,191,36,0.5)",
-            color: "hsl(var(--brand-amber-300))",
-            fontSize: 10,
-            fontWeight: 800,
-            padding: "3px 8px",
-            borderRadius: 999,
-            letterSpacing: "0.06em",
-            display: "flex",
-            alignItems: "center",
-            gap: 4
-          }}>
-                  <Lock size={9} /> {t("pages.audio_lessons.premium")}
-                </div>}
-
-              {/* Emoji icon */}
-              <div style={{
-            fontSize: 30,
-            lineHeight: 1,
-            width: 48,
-            height: 48,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: isLocked ? "rgba(139,92,246,0.08)" : "rgba(139,92,246,0.15)",
-            borderRadius: 12,
-            flexShrink: 0
-          }}>{l.emoji}</div>
-
-              <div style={{
-            flex: 1,
-            minWidth: 0,
-            paddingRight: isLocked || isFree ? 60 : 0
-          }}>
-                <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 4
-            }}>
-                  <h3 style={{
-                margin: 0,
-                fontSize: 15,
-                fontWeight: 800,
-                fontFamily: "Quicksand, sans-serif",
-                color: isLocked ? "rgba(255,255,255,0.7)" : "#fff"
-              }}>
-                    {text.title}
-                  </h3>
-                </div>
-                <p style={{
-              margin: "0 0 8px",
-              color: isLocked ? "rgba(199,192,232,0.6)" : "#c7c0e8",
-              fontSize: 13,
-              lineHeight: 1.45
-            }}>
-                  {text.description}
-                </p>
-                <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              fontSize: 11.5,
-              color: isLocked ? "rgba(169,159,217,0.5)" : "#a99fd9"
-            }}>
-                  <span style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4
-              }}>
-                    <Clock size={12} /> {l.durationMin} {t("pages.audio_lessons.min")}
-                  </span>
-                  <span style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4
-              }}>
-                    <Sparkles size={12} /> {l.expert}
-                  </span>
-                </div>
-              </div>
-
-              {/* Right icon */}
-              {isLocked ? <Lock size={16} color="rgba(251,191,36,0.6)" style={{
-            flexShrink: 0,
-            marginTop: 4,
-            display: "none"
-          }} /> : <Volume2 size={18} color="hsl(var(--brand-violet-300))" style={{
-            flexShrink: 0,
-            marginTop: 4
-          }} />}
-            </button>;
-      })}
+            {t("pages.audio_lessons.all_lessons")}
+          </h2>
+        )}
+        {otherLessons.map((l) => renderLessonCard(l))}
+        {recommendedLessons.length === 0 && lessons.map((l) => renderLessonCard(l))}
         {lessons.length === 0 && <div style={{
         textAlign: "center",
         color: "#a99fd9",
@@ -362,17 +708,35 @@ export default function AudioLessonsPage() {
           </div>}
       </div>
 
-      {open && <PlayerSheet lesson={open} onClose={() => setOpen(null)} />}
+      {open && (
+        <PlayerSheet
+          lesson={open}
+          series={activeSeries}
+          autoPlay={playerAutoPlay}
+          onClose={() => {
+            setOpen(null);
+            setActiveSeries(null);
+            setPlayerAutoPlay(false);
+          }}
+          onLessonComplete={handleLessonComplete}
+        />
+      )}
     </div>;
 }
 
 // ─── Player ─────────────────────────────────────────────────────────
 function PlayerSheet({
   lesson,
-  onClose
+  series,
+  autoPlay,
+  onClose,
+  onLessonComplete,
 }: {
   lesson: Lesson;
+  series: LessonSeries | null;
+  autoPlay?: boolean;
   onClose: () => void;
+  onLessonComplete?: (lessonId: string) => void;
 }) {
   const lang = "en";
   const {
@@ -388,14 +752,15 @@ function PlayerSheet({
   // Auto-advance to the next paragraph when the current one finishes
   // playing, or stop if we're at the end.
   const handleFinished = useCallback(() => {
-    setParagraphIdx(i => {
+    setParagraphIdx((i) => {
       if (i + 1 >= paragraphs.length) {
         setPlaying(false);
+        onLessonComplete?.(lesson.id);
         return i;
       }
       return i + 1;
     });
-  }, [paragraphs.length]);
+  }, [paragraphs.length, lesson.id, onLessonComplete]);
   const {
     speaking,
     loading,
@@ -442,6 +807,15 @@ function PlayerSheet({
       }
     });
   }, [playing, paragraphIdx, paragraphs, speak, stop]);
+
+  useEffect(() => {
+    if (autoPlay) {
+      recordTtsUserGesture();
+      setPlaying(true);
+    }
+  }, [autoPlay, lesson.id]);
+
+  const seriesPart = series ? partIndexForLesson(series, lesson.id) : -1;
   const next = () => {
     if (paragraphIdx + 1 < paragraphs.length) setParagraphIdx(paragraphIdx + 1);
   };
@@ -494,7 +868,15 @@ function PlayerSheet({
               <div style={{
               fontSize: 11,
               color: "#a99fd9"
-            }}>{lesson.expert} · {lesson.durationMin} {t("pages.audio_lessons.min_2")}</div>
+            }}>
+                {series && seriesPart >= 0
+                  ? t("pages.audio_lessons.series_part", {
+                      series: series.title.en,
+                      current: seriesPart + 1,
+                      total: series.lessonIds.length,
+                    })
+                  : `${lesson.expert} · ${lesson.durationMin} ${t("pages.audio_lessons.min_2")}`}
+              </div>
             </div>
           </div>
           <button onClick={onClose} aria-label={t("pages.audio_lessons.close")} style={{

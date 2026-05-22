@@ -9,6 +9,7 @@ import { Sparkles, ArrowLeft, ArrowRight, Loader2, Search, Check, ChevronLeft, R
 import { useTranslation } from "react-i18next";
 import { INFANT_PROBLEMS, isInfantProblemId, getInfantProblem, pickLang as pickInfLang } from "@workspace/infant-problems";
 import { getTopicQuestions } from "@workspace/coach-topic-questions";
+import { COACH_AUDIO_GOAL_STORAGE_KEY } from "@/lib/audio-lessons";
 
 // ─── Goals (categorized) ───────────────────────────────────────────────────
 interface GoalItem {
@@ -734,6 +735,11 @@ export default function AICoachPage() {
       return;
     }
     setGoalId(id);
+    try {
+      sessionStorage.setItem(COACH_AUDIO_GOAL_STORAGE_KEY, id);
+    } catch {
+      /* private mode */
+    }
     if (isInfantProblemId(id)) {
       const problem = getInfantProblem(id);
       if (problem && problem.wins && problem.wins.length > 0) {
@@ -1359,7 +1365,10 @@ export default function AICoachPage() {
         </div>
 
         {/* Audio Lessons entry card */}
-        <button data-on-dark onClick={() => setLocation("/audio-lessons")} className="relative w-full rounded-3xl p-4 border border-border text-left backdrop-blur-md hover:border-border hover:scale-[1.01] active:scale-[0.98] transition-all overflow-hidden flex items-center gap-4" style={{
+        <button data-on-dark onClick={() => {
+          const q = goalId ? `?goal=${encodeURIComponent(goalId)}` : "";
+          setLocation(`/audio-lessons${q}`);
+        }} className="relative w-full rounded-3xl p-4 border border-border text-left backdrop-blur-md hover:border-border hover:scale-[1.01] active:scale-[0.98] transition-all overflow-hidden flex items-center gap-4" style={{
         background: "linear-gradient(135deg,rgba(76,29,149,0.88) 0%,rgba(190,24,93,0.78) 100%)",
         boxShadow: "0 0 24px rgba(139,92,246,0.35), inset 0 1px 0 rgba(255,255,255,0.14)"
       }}>
