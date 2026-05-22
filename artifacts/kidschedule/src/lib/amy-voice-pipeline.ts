@@ -26,6 +26,7 @@ import {
 import {
   emitAmyVoiceTextFallback,
 } from "@/lib/amy-voice-visual-fallback";
+import { resetClientStaticAudioCircuit } from "@/lib/static-audio-telemetry";
 import {
   isAmyVoiceOffline,
   recordTtsApiFailure,
@@ -143,6 +144,16 @@ async function playElementWithNeverSilentWatchdog(
         );
 
   if (!played) return false;
+
+  // Static/cache: AudioManager already ran the playback watchdog — do not re-check at 1.5s
+  // (mobile decode often needs >1.5s and falsely failed every module).
+  if (meta.source === "static" || meta.source === "cache") {
+    if (meta.waitUntilEnd) {
+      const end = await audioManager.waitUntilEnd(audio, ctx.isCancelled);
+      return end.ok;
+    }
+    return true;
+  }
 
   const audible = await Promise.race([
     waitForAudible(audio, NEVER_SILENT_MS),
@@ -410,6 +421,7 @@ export async function speakAmyVoice(
   if (!text) return { success: false, error: "tts_empty_text" };
 
   recordTtsUserGesture();
+  resetClientStaticAudioCircuit();
   if (!isTtsPlaybackAllowed()) {
     tryTextVisualLayer(text, opts?.mode === "phonics" ? "phonics" : "default");
     return { success: true, layer: "text_visual" };

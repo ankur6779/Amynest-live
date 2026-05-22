@@ -40,6 +40,14 @@ export function isClientStaticAudioCircuitOpen(): boolean {
   return true;
 }
 
+/** Clear client circuit after an explicit user tap (new speak gesture). */
+export function resetClientStaticAudioCircuit(): void {
+  clientCircuitOpen = false;
+  clientCircuitUntil = 0;
+  sessionFailureCount = 0;
+  sessionAlertShown = false;
+}
+
 export function getSessionStaticAudioFailureCount(): number {
   return sessionFailureCount;
 }
