@@ -44,12 +44,24 @@ import {
   localCacheKeyForTts,
   warmLocalCacheFromUrl,
 } from "@/lib/local-tts-cache";
-import { playEmergencyPhrase } from "@/lib/emergency-audio";
+import { playEmergencyPhrase, playNaturalSpeechSynthesis } from "@/lib/emergency-audio";
 import {
-  getPhonicsAudioText,
-  normalizePhonicsLetterKey,
-  PHONICS_DIGRAPH_SOUNDS,
-} from "@workspace/phonics-sounds";
+  getPhonicsTrainingAudioText,
+  logAmyModeDiagnosis,
+  prepareAmySpeechInput,
+  type AmySpeechPolicy,
+} from "@/lib/amy-speech-mode";
+import {
+  queueAmyVoiceLearning,
+  recordAmyVoicePhraseMiss,
+} from "@/lib/amy-voice-learning";
+import { computePhraseTransitionGap } from "@/lib/amy-voice-emotion";
+import {
+  recordAmyVoiceDeliveryFallback,
+  recordAmyVoiceDeliverySuccess,
+} from "@/lib/amy-voice-difficulty";
+import { preloadAmyVoiceNextPhrase } from "@/lib/amy-voice-preload";
+import { normalizePhonicsLetterKey, PHONICS_DIGRAPH_SOUNDS } from "@workspace/phonics-sounds";
 import { isStaticTtsText, type StaticAudioMode } from "@workspace/static-audio/browser";
 import type { SpeakOptions, SpeakResult } from "@/hooks/use-amy-voice";
 import {
@@ -77,10 +89,13 @@ const LAYER1_TIMEOUT_MS = 1200;
 const LAYER2_TIMEOUT_MS = 1500;
 const NEVER_SILENT_MS = 1500;
 const QUALITY_PICK_WINDOW_MS = 150;
-const PHONICS_GAP_MS = 280;
-const WORD_GAP_MS = 380;
+const SPEECH_COACH_RETRY_DELAY_MS = 350;
 
-const DIGRAPH_KEYS = Object.keys(PHONICS_DIGRAPH_SOUNDS).sort((a, b) => b.length - a.length);
+const PRIORITY_PHONICS_CHUNKS = ["sh", "ch", "th", "ph", "ng", "ck"] as const;
+const OTHER_DIGRAPH_KEYS = Object.keys(PHONICS_DIGRAPH_SOUNDS)
+  .filter((k) => !PRIORITY_PHONICS_CHUNKS.includes(k as (typeof PRIORITY_PHONICS_CHUNKS)[number]))
+  .sort((a, b) => b.length - a.length);
+const PHONICS_CHUNK_ORDER = [...PRIORITY_PHONICS_CHUNKS, ...OTHER_DIGRAPH_KEYS];
 
 /** Bumps on each top-level speak — stale parallel runners abort. */
 let activeSpeakGeneration = 0;
@@ -116,7 +131,8 @@ function isStale(ctx: AmyVoicePipelineContext): boolean {
   return ctx.speakGeneration !== activeSpeakGeneration;
 }
 
-function staticModesToTry(primary: StaticAudioMode): StaticAudioMode[] {
+function staticModesToTry(primary: StaticAudioMode, phonicsOnly = false): StaticAudioMode[] {
+  if (phonicsOnly) return [primary];
   const alt: StaticAudioMode = primary === "phonics" ? "default" : "phonics";
   return [primary, alt];
 }
@@ -128,20 +144,20 @@ function splitWords(text: string): string[] {
     .filter((w) => w.length > 0);
 }
 
-/** Prefer digraph chunks (sh, ch, th…) then single letters. */
+/** Prefer digraph chunks (sh, ch, th…) then single letters — phoneme training lines. */
 export function decomposePhonicsChunks(text: string): string[] {
   const trimmed = text.trim();
   const key = normalizePhonicsLetterKey(trimmed);
-  if (key) return [getPhonicsAudioText(key)];
+  if (key) return [getPhonicsTrainingAudioText(key)];
 
   const lower = trimmed.toLowerCase();
   const parts: string[] = [];
   let i = 0;
   while (i < lower.length) {
     let matched = false;
-    for (const dg of DIGRAPH_KEYS) {
+    for (const dg of PHONICS_CHUNK_ORDER) {
       if (lower.startsWith(dg, i)) {
-        parts.push(getPhonicsAudioText(dg));
+        parts.push(getPhonicsTrainingAudioText(dg));
         i += dg.length;
         matched = true;
         break;
@@ -149,10 +165,20 @@ export function decomposePhonicsChunks(text: string): string[] {
     }
     if (matched) continue;
     const c = lower[i];
-    if (c && /[a-z]/.test(c)) parts.push(getPhonicsAudioText(c));
+    if (c && /[a-z]/.test(c)) parts.push(getPhonicsTrainingAudioText(c));
     i += 1;
   }
-  return parts;
+  return parts.filter(Boolean);
+}
+
+/** Spelling mode: "c a t" → per-letter phonics training lines. */
+function decomposeSpellingLetters(text: string): string[] {
+  return text
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((l) => /^[a-z]{1,2}$/.test(l))
+    .map((l) => getPhonicsTrainingAudioText(l));
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -335,8 +361,9 @@ async function attemptStaticPlay(
   mode: StaticAudioMode,
   ctx: AmyVoicePipelineContext,
   waitUntilEnd: boolean,
+  phonicsOnly = false,
 ): Promise<PlayAttemptResult> {
-  for (const tryMode of staticModesToTry(mode)) {
+  for (const tryMode of staticModesToTry(mode, phonicsOnly)) {
     if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
     const proxyUrl = lookupStaticAudioUrl(text, tryMode);
     if (!proxyUrl) continue;
@@ -374,8 +401,9 @@ async function attemptCachePlay(
   mode: StaticAudioMode,
   ctx: AmyVoicePipelineContext,
   waitUntilEnd: boolean,
+  phonicsOnly = false,
 ): Promise<PlayAttemptResult> {
-  for (const tryMode of staticModesToTry(mode)) {
+  for (const tryMode of staticModesToTry(mode, phonicsOnly)) {
     if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
     const key = localCacheKeyForPhrase(text, tryMode);
     const objectUrl = await getLocalCachedAudioUrl(key);
@@ -418,14 +446,15 @@ async function tryPregeneratedParallelLayer(
   mode: StaticAudioMode,
   ctx: AmyVoicePipelineContext,
   waitUntilEnd: boolean,
+  phonicsOnly = false,
 ): Promise<PlayAttemptResult> {
   const order = getPregenLayerOrder();
   const runners: LayerRunner[] = order.map((kind) => ({
     quality: getPregenLayerQuality(kind),
     run: () =>
       kind === "static"
-        ? attemptStaticPlay(text, mode, ctx, waitUntilEnd)
-        : attemptCachePlay(text, mode, ctx, waitUntilEnd),
+        ? attemptStaticPlay(text, mode, ctx, waitUntilEnd, phonicsOnly)
+        : attemptCachePlay(text, mode, ctx, waitUntilEnd, phonicsOnly),
   }));
 
   logAmyVoiceDiag("layer1_parallel", {
@@ -577,6 +606,7 @@ async function tryDynamicParallelLayer(
   opts: SpeakOptions | undefined,
   ctx: AmyVoicePipelineContext,
   waitUntilEnd: boolean,
+  layerTimeoutMs = LAYER2_TIMEOUT_MS,
 ): Promise<PlayAttemptResult> {
   const openAiAbort = new AbortController();
   const elevenAbort = new AbortController();
@@ -631,7 +661,7 @@ async function tryDynamicParallelLayer(
       resolve(result);
     };
 
-    const layerTimer = setTimeout(finalize, LAYER2_TIMEOUT_MS);
+    const layerTimer = setTimeout(finalize, layerTimeoutMs);
 
     const schedulePick = () => {
       if (pickTimer || settled) return;
@@ -658,12 +688,12 @@ async function tryDynamicParallelLayer(
     logTtsClient("Layer2 staggered", {
       staggerMs,
       canUseEleven,
-      timeoutMs: LAYER2_TIMEOUT_MS,
+      timeoutMs: layerTimeoutMs,
       adaptive: getAdaptiveSnapshot(),
     });
 
     for (const r of runners) {
-      void withTimeout(r.run(), LAYER2_TIMEOUT_MS, "openai")
+      void withTimeout(r.run(), layerTimeoutMs, "openai")
         .then((out) => onOutcome(out, r.quality))
         .catch((err) => {
           const msg = err instanceof Error ? err.message : "layer_error";
@@ -679,8 +709,8 @@ async function tryDynamicParallelLayer(
       elevenStarted = true;
       const q = getDynamicLayerQuality("elevenlabs");
       void withTimeout(
-        () => attemptElevenLabsPlay(text, opts, ctx, waitUntilEnd, elevenAbort.signal),
-        LAYER2_TIMEOUT_MS,
+        attemptElevenLabsPlay(text, opts, ctx, waitUntilEnd, elevenAbort.signal),
+        layerTimeoutMs,
         "elevenlabs",
       )
         .then((out) => onOutcome(out, q))
@@ -699,8 +729,16 @@ async function tryPhonicsSequenceLayer(
   text: string,
   mode: StaticAudioMode,
   ctx: AmyVoicePipelineContext,
+  policy?: AmySpeechPolicy,
 ): Promise<PlayAttemptResult> {
-  const parts = decomposePhonicsChunks(text);
+  if (policy && !policy.allowPhonicsSequence) {
+    recordAmyVoiceLayerFailed("phonics_sequence", "blocked_by_speech_mode");
+    return { ok: false, error: "phonics_sequence_blocked" };
+  }
+  const parts =
+    policy?.speechMode === "spelling"
+      ? decomposeSpellingLetters(text)
+      : decomposePhonicsChunks(text);
   if (parts.length === 0 || (parts.length === 1 && parts[0] === text)) {
     recordAmyVoiceLayerFailed("phonics_sequence", "not_decomposable");
     return { ok: false, error: "phonics_sequence_skip" };
@@ -715,7 +753,13 @@ async function tryPhonicsSequenceLayer(
   for (let i = 0; i < parts.length; i++) {
     if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
     const part = parts[i]!;
-    const sub = await speakAmyVoice(part, { mode: "phonics", waitUntilEnd: true }, subCtx);
+    preloadAmyVoiceNextPhrase(parts[i + 1], "phonics");
+    const partPolicy = prepareAmySpeechInput(part, { mode: "phonics", waitUntilEnd: true });
+    const sub = await speakAmyVoice(
+      partPolicy.normalizedText,
+      { mode: "phonics", waitUntilEnd: true, speechPolicy: partPolicy },
+      subCtx,
+    );
     if (!sub.success) {
       const emergency = await withTimeout(
         playEmergencyPhrase(part),
@@ -727,7 +771,9 @@ async function tryPhonicsSequenceLayer(
         return { ok: false, error: "phonics_sequence_failed" };
       }
     }
-    if (i < parts.length - 1) await delay(PHONICS_GAP_MS);
+    if (i < parts.length - 1) {
+      await delay(policy?.prosody.phonicsGapMs ?? 115);
+    }
   }
 
   recordAmyVoiceLayerSuccess("phonics_sequence_success", { parts: parts.length });
@@ -739,7 +785,12 @@ async function trySpeechCoachSplitLayer(
   text: string,
   mode: StaticAudioMode,
   ctx: AmyVoicePipelineContext,
+  policy?: AmySpeechPolicy,
 ): Promise<PlayAttemptResult> {
+  if (policy && !policy.allowSpeechCoachSplit) {
+    recordAmyVoiceLayerFailed("speech_coach_split", "blocked_by_speech_mode");
+    return { ok: false, error: "speech_coach_split_blocked" };
+  }
   const words = splitWords(text);
   if (words.length <= 1) {
     recordAmyVoiceLayerFailed("speech_coach_split", "single_word");
@@ -762,12 +813,36 @@ async function trySpeechCoachSplitLayer(
     if (!sub.success) {
       await speakAmyVoice(word, { mode: "phonics", waitUntilEnd: true }, subCtx);
     }
-    if (i < words.length - 1) await delay(WORD_GAP_MS);
+    if (i < words.length - 1) await delay(380);
   }
 
   recordAmyVoiceLayerSuccess("speech_coach_split_success", { words: words.length });
   ctx.onFinished?.();
   return { ok: true, layer: "speech_coach_split" };
+}
+
+async function trySpeechSynthesisLayer(
+  text: string,
+  ctx: AmyVoicePipelineContext,
+  policy: AmySpeechPolicy,
+): Promise<PlayAttemptResult> {
+  if (!policy.preferSpeechSynthesisFallback) {
+    recordAmyVoiceLayerFailed("emergency_local", "synthesis_blocked");
+    return { ok: false, error: "synthesis_blocked" };
+  }
+  const ok = await withTimeout(
+    playNaturalSpeechSynthesis(text, policy.prosody.synthesisRate),
+    NEVER_SILENT_MS,
+    "synthesis",
+  ).catch(() => false);
+  if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+  if (ok) {
+    recordAmyVoiceLayerSuccess("emergency_local_success", { source: "speechSynthesis" });
+    recordAmyVoiceFallbackUsed("api", "speech_synthesis");
+    return { ok: true, layer: "emergency_local" };
+  }
+  recordAmyVoiceLayerFailed("emergency_local", "synthesis_failed");
+  return { ok: false, error: "synthesis_failed" };
 }
 
 async function tryEmergencyLayer(
@@ -823,6 +898,106 @@ function pushFailure(
   chain.push({ layer, error: result.error });
 }
 
+function maybeQueueAmyVoiceLearning(
+  policy: AmySpeechPolicy,
+  layer: AmyVoiceLayer | string,
+): void {
+  const shouldLearn =
+    layer === "text_visual" ||
+    (layer === "emergency_local" && policy.preferSpeechSynthesisFallback);
+  if (!shouldLearn) return;
+
+  recordAmyVoicePhraseMiss(policy.normalizedText, policy.pipelineMode, policy.speechMode);
+  queueAmyVoiceLearning(
+    policy.normalizedText,
+    policy.pipelineMode,
+    policy.speechMode,
+    String(layer),
+  );
+  for (const phrase of policy.phrases) {
+    recordAmyVoicePhraseMiss(phrase, policy.pipelineMode, policy.speechMode);
+    queueAmyVoiceLearning(phrase, policy.pipelineMode, policy.speechMode, `${layer}_phrase`);
+  }
+}
+
+async function speakSemanticPhrases(
+  policy: AmySpeechPolicy,
+  opts: SpeakOptions | undefined,
+  ctx: AmyVoicePipelineContext,
+): Promise<SpeakResult & { layer?: AmyVoiceLayer }> {
+  const subCtx: AmyVoicePipelineContext = {
+    ...ctx,
+    depth: (ctx.depth ?? 0) + 1,
+    speakGeneration: undefined,
+  };
+  let lastLayer: AmyVoiceLayer | undefined;
+
+  for (let i = 0; i < policy.phrases.length; i++) {
+    if (isStale(ctx)) return { success: false, error: "tts_cancelled" };
+    const phrase = policy.phrases[i]!;
+    preloadAmyVoiceNextPhrase(policy.phrases[i + 1], policy.pipelineMode);
+    const phrasePolicy: AmySpeechPolicy = {
+      ...policy,
+      originalText: phrase,
+      normalizedText: phrase,
+      phrases: [phrase],
+      useSemanticSplit: false,
+    };
+    const sub = await speakAmyVoice(
+      phrase,
+      { ...opts, mode: policy.pipelineMode, speechPolicy: phrasePolicy },
+      subCtx,
+    );
+    if (!sub.success) return sub;
+    lastLayer = sub.layer;
+    if (i < policy.phrases.length - 1) {
+      const nextPhrase = policy.phrases[i + 1]!;
+      const gap = computePhraseTransitionGap(
+        phrase,
+        nextPhrase,
+        policy.prosody.phraseGapMs,
+        policy.emotion,
+        policy.intent,
+      );
+      await delay(gap);
+    }
+  }
+
+  recordAmyVoiceLayerSuccess("api_success", {
+    semanticPhrases: policy.phrases.length,
+  });
+  ctx.onFinished?.();
+  logAmyModeDiagnosis(policy, lastLayer ?? "semantic_split");
+  maybeQueueAmyVoiceLearning(policy, lastLayer ?? "semantic_split");
+  return { success: true, layer: lastLayer };
+}
+
+function finishSpeak(
+  result: PlayAttemptResult,
+  waitUntilEnd: boolean,
+  ctx: AmyVoicePipelineContext,
+  policy: AmySpeechPolicy,
+  depth: number,
+): SpeakResult & { layer?: AmyVoiceLayer } {
+  if (depth === 0) {
+    const layer = result.ok ? result.layer : "failed";
+    logAmyModeDiagnosis(policy, layer);
+    if (result.ok) {
+      if (
+        layer === "emergency_local" ||
+        layer === "text_visual" ||
+        layer === "phonics_sequence"
+      ) {
+        recordAmyVoiceDeliveryFallback();
+      } else {
+        recordAmyVoiceDeliverySuccess();
+      }
+      maybeQueueAmyVoiceLearning(policy, layer);
+    }
+  }
+  return finalizeSuccess(result, waitUntilEnd, ctx);
+}
+
 function finalizeSuccess(
   result: PlayAttemptResult,
   waitUntilEnd: boolean,
@@ -851,26 +1026,54 @@ export async function speakAmyVoice(
   opts: SpeakOptions | undefined,
   ctx: AmyVoicePipelineContext,
 ): Promise<SpeakResult & { layer?: AmyVoiceLayer }> {
-  const text = (rawText ?? "").trim();
+  const policy = opts?.speechPolicy ?? prepareAmySpeechInput(rawText, opts);
+  const depth = ctx.depth ?? 0;
+
+  if (depth === 0 && policy.useSemanticSplit && policy.phrases.length > 1) {
+    const speakGeneration = ++activeSpeakGeneration;
+    const pipelineCtx: AmyVoicePipelineContext = {
+      ...ctx,
+      speakGeneration,
+      depth,
+      playbackRate: ctx.playbackRate * policy.prosody.playbackRate,
+    };
+    recordTtsUserGesture();
+    resetClientStaticAudioCircuit();
+    resetTtsApiCircuit();
+    resetAmyVoiceTelemetry();
+    return speakSemanticPhrases(policy, opts, pipelineCtx);
+  }
+
+  const text = policy.normalizedText.trim();
   if (!text) return { success: false, error: "tts_empty_text" };
 
-  const depth = ctx.depth ?? 0;
   const speakGeneration = depth === 0 ? ++activeSpeakGeneration : activeSpeakGeneration;
-  const pipelineCtx: AmyVoicePipelineContext = { ...ctx, speakGeneration, depth };
+  const pipelineCtx: AmyVoicePipelineContext = {
+    ...ctx,
+    speakGeneration,
+    depth,
+    playbackRate: ctx.playbackRate * policy.prosody.playbackRate,
+  };
 
   recordTtsUserGesture();
   resetClientStaticAudioCircuit();
   resetTtsApiCircuit();
 
-  const primaryMode: StaticAudioMode = opts?.mode === "phonics" ? "phonics" : "default";
+  const primaryMode: StaticAudioMode = policy.pipelineMode;
   if (isAndroidAmyNestAudioClient()) {
     primeStaticAudioInUserGesture(text, primaryMode);
   }
 
   if (!isTtsPlaybackAllowed()) {
     const emergency = await tryEmergencyLayer(text, pipelineCtx);
-    if (emergency.ok) return finalizeSuccess(emergency, opts?.waitUntilEnd ?? false, pipelineCtx);
+    if (emergency.ok) {
+      return finishSpeak(emergency, opts?.waitUntilEnd ?? false, pipelineCtx, policy, depth);
+    }
     tryTextVisualLayer(text, primaryMode);
+    if (depth === 0) {
+      logAmyModeDiagnosis(policy, "text_visual");
+      maybeQueueAmyVoiceLearning(policy, "text_visual");
+    }
     return { success: true, layer: "text_visual" };
   }
 
@@ -882,49 +1085,109 @@ export async function speakAmyVoice(
 
   if (isStale(pipelineCtx)) return { success: false, error: "tts_cancelled" };
 
-  const layer1 = await tryPregeneratedParallelLayer(text, mode, pipelineCtx, waitUntilEnd);
-  if (layer1.ok) return finalizeSuccess(layer1, waitUntilEnd, pipelineCtx);
-  pushFailure(failureChain, layer1, "static");
+  const runDynamic = async (): Promise<PlayAttemptResult | null> => {
+    if (policy.forcePhonicsOnly || shallow) return null;
+    let result = await tryDynamicParallelLayer(
+      text,
+      opts,
+      pipelineCtx,
+      waitUntilEnd,
+      policy.dynamicTimeoutMs,
+    );
+    if (result.ok || !policy.retryDynamicTts || isStale(pipelineCtx)) return result;
+    recordAmyVoiceFallbackUsed("api", "api_retry");
+    await delay(SPEECH_COACH_RETRY_DELAY_MS);
+    if (isStale(pipelineCtx)) return { ok: false, error: "tts_cancelled" };
+    return tryDynamicParallelLayer(
+      text,
+      opts,
+      pipelineCtx,
+      waitUntilEnd,
+      policy.dynamicTimeoutMs,
+    );
+  };
 
-  if (!shallow) {
+  const runPregen = async (): Promise<PlayAttemptResult> =>
+    tryPregeneratedParallelLayer(
+      text,
+      mode,
+      pipelineCtx,
+      waitUntilEnd,
+      policy.forcePhonicsOnly,
+    );
+
+  if (policy.preferDynamicTts && !policy.forcePhonicsOnly && !shallow) {
+    const layer2 = await runDynamic();
+    if (layer2?.ok) return finishSpeak(layer2, waitUntilEnd, pipelineCtx, policy, depth);
+    if (layer2) pushFailure(failureChain, layer2, "api");
+
     if (isStale(pipelineCtx)) return { success: false, error: "tts_cancelled" };
-    const layer2 = await tryDynamicParallelLayer(text, opts, pipelineCtx, waitUntilEnd);
-    if (layer2.ok) return finalizeSuccess(layer2, waitUntilEnd, pipelineCtx);
-    pushFailure(failureChain, layer2, "api");
+    const layer1 = await runPregen();
+    if (layer1.ok) return finishSpeak(layer1, waitUntilEnd, pipelineCtx, policy, depth);
+    pushFailure(failureChain, layer1, "static");
+  } else {
+    const layer1 = await runPregen();
+    if (layer1.ok) return finishSpeak(layer1, waitUntilEnd, pipelineCtx, policy, depth);
+    pushFailure(failureChain, layer1, "static");
+
+    if (!policy.forcePhonicsOnly && !shallow) {
+      if (isStale(pipelineCtx)) return { success: false, error: "tts_cancelled" };
+      const layer2 = await runDynamic();
+      if (layer2?.ok) return finishSpeak(layer2, waitUntilEnd, pipelineCtx, policy, depth);
+      if (layer2) pushFailure(failureChain, layer2, "api");
+    }
+  }
+
+  if (!shallow && policy.allowPhonicsSequence) {
+    if (isStale(pipelineCtx)) return { success: false, error: "tts_cancelled" };
     recordAmyVoiceFallbackUsed("api", "phonics_sequence");
-
-    if (isStale(pipelineCtx)) return { success: false, error: "tts_cancelled" };
     const layer3 = await withTimeout(
-      tryPhonicsSequenceLayer(text, mode, pipelineCtx),
+      tryPhonicsSequenceLayer(text, mode, pipelineCtx, policy),
       LAYER2_TIMEOUT_MS,
       "phonics_layer",
     ).catch((e) => ({
       ok: false as const,
       error: e instanceof Error ? e.message : "phonics_timeout",
     }));
-    if (layer3.ok) return finalizeSuccess(layer3, waitUntilEnd, pipelineCtx);
+    if (layer3.ok) return finishSpeak(layer3, waitUntilEnd, pipelineCtx, policy, depth);
     pushFailure(failureChain, layer3, "phonics_sequence");
+  }
 
+  if (!shallow && policy.allowSpeechCoachSplit) {
     if (isStale(pipelineCtx)) return { success: false, error: "tts_cancelled" };
     const layer4 = await withTimeout(
-      trySpeechCoachSplitLayer(text, mode, pipelineCtx),
+      trySpeechCoachSplitLayer(text, mode, pipelineCtx, policy),
       LAYER2_TIMEOUT_MS,
       "speech_split",
     ).catch((e) => ({
       ok: false as const,
       error: e instanceof Error ? e.message : "speech_split_timeout",
     }));
-    if (layer4.ok) return finalizeSuccess(layer4, waitUntilEnd, pipelineCtx);
+    if (layer4.ok) return finishSpeak(layer4, waitUntilEnd, pipelineCtx, policy, depth);
     pushFailure(failureChain, layer4, "speech_coach_split");
+  }
+
+  if (!shallow && policy.preferSpeechSynthesisFallback) {
+    if (isStale(pipelineCtx)) return { success: false, error: "tts_cancelled" };
+    const synth = await trySpeechSynthesisLayer(text, pipelineCtx, policy);
+    if (synth.ok) return finishSpeak(synth, waitUntilEnd, pipelineCtx, policy, depth);
+    pushFailure(failureChain, synth, "emergency_local");
   }
 
   if (isStale(pipelineCtx)) return { success: false, error: "tts_cancelled" };
   const layer5 = await tryEmergencyLayer(text, pipelineCtx);
-  if (layer5.ok) return finalizeSuccess(layer5, waitUntilEnd, pipelineCtx);
+  if (layer5.ok) return finishSpeak(layer5, waitUntilEnd, pipelineCtx, policy, depth);
   pushFailure(failureChain, layer5, "emergency_local");
 
-  recordAmyVoiceFailureChain(text, failureChain, { mode });
+  recordAmyVoiceFailureChain(text, failureChain, {
+    mode,
+    speechMode: policy.speechMode,
+  });
   tryTextVisualLayer(text, mode);
+  if (depth === 0) {
+    logAmyModeDiagnosis(policy, "text_visual");
+    maybeQueueAmyVoiceLearning(policy, "text_visual");
+  }
   return { success: true, layer: "text_visual" };
 }
 

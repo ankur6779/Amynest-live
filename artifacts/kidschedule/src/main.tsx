@@ -27,6 +27,7 @@ import {
   checkStaticAudioHealthOnBoot,
   installStaticAudioDevTools,
 } from "@/lib/static-audio-telemetry";
+import { preloadSpeechSynthesisVoices } from "@/lib/emergency-audio";
 import { installAmyVoiceAudioDiagnostics } from "@/lib/amy-voice-audio-diag";
 import {
   injectStaticAudioPreloadHints,
@@ -75,6 +76,7 @@ installStaticAudioGuards();
 installStaticAudioDevTools();
 installStaticAudioGestureWarmup();
 injectStaticAudioPreloadHints();
+preloadSpeechSynthesisVoices();
 installAmyVoiceAudioDiagnostics();
 void checkStaticAudioHealthOnBoot();
 logBootContext();

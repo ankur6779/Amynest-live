@@ -1,6 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useGuardedSetter, useMountedRef } from "@/hooks/use-safe-async";
+import { prepareAmySpeechInput } from "@/lib/amy-speech-mode";
+import { buildAdaptiveDelivery } from "@/lib/amy-voice-emotion";
+import {
+  assessAmyDifficulty,
+  commitDifficultyLevel,
+  getSessionSuccessStreak,
+  recordAmyVoiceHesitation,
+} from "@/lib/amy-voice-difficulty";
+import {
+  detectAmyIntent,
+  simplifyPhrasesForDifficulty,
+} from "@/lib/amy-voice-intent";
+import { applyTeacherDelivery } from "@/lib/amy-voice-teacher";
+import {
+  recordAmyVoicePhraseReplay,
+  computeLearningPriority,
+} from "@/lib/amy-voice-learning";
+import {
+  preloadAmyVoiceAnticipatory,
+  recordAmyVoiceSessionPhrase,
+} from "@/lib/amy-voice-preload";
 import {
   speakAmyVoice,
   mapPlayErrorToSpeakResult,
@@ -21,11 +42,15 @@ export interface UseAmyVoiceOptions {
   onFinished?: () => void;
 }
 
+import type { AmySpeechPolicy } from "@/lib/amy-speech-mode";
+
 export interface SpeakOptions {
   mode?: "default" | "phonics";
   phoneme?: string;
   word?: string;
   waitUntilEnd?: boolean;
+  /** Pre-computed speech mode policy (set by prepareAmySpeechInput). */
+  speechPolicy?: AmySpeechPolicy;
 }
 
 export type SpeakResult =
@@ -137,7 +162,71 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
 
       try {
         safeSetSpeaking(true);
-        const result = await speakAmyVoice(text, opts, pipelineCtx);
+        const speechPolicy = prepareAmySpeechInput(text, opts);
+        const replayCount = recordAmyVoicePhraseReplay(
+          speechPolicy.normalizedText,
+          speechPolicy.pipelineMode,
+          speechPolicy.speechMode,
+        );
+        if (replayCount >= 2) recordAmyVoiceHesitation();
+
+        const intent = detectAmyIntent(
+          speechPolicy.normalizedText,
+          speechPolicy.speechMode,
+        );
+        const difficulty = assessAmyDifficulty(
+          speechPolicy.normalizedText,
+          speechPolicy.pipelineMode,
+          replayCount,
+        );
+        const previousDifficulty = commitDifficultyLevel(difficulty.level);
+
+        let phrases = speechPolicy.phrases;
+        if (difficulty.level === "struggling") {
+          phrases = simplifyPhrasesForDifficulty(phrases, true);
+        }
+        phrases = applyTeacherDelivery({
+          phrases,
+          intent,
+          difficulty: difficulty.level,
+          previousDifficulty,
+          speechMode: speechPolicy.speechMode,
+          multiStep: phrases.length > 1 || speechPolicy.useSemanticSplit,
+          successStreak: getSessionSuccessStreak(),
+        });
+        speechPolicy.phrases = phrases;
+        speechPolicy.useSemanticSplit = phrases.length > 1;
+        speechPolicy.normalizedText =
+          phrases.length === 1
+            ? phrases[0]!
+            : phrases.join(speechPolicy.prosody.pauseMarker);
+
+        const delivery = buildAdaptiveDelivery(
+          speechPolicy.prosody,
+          speechPolicy.speechMode,
+          speechPolicy.normalizedText,
+          replayCount,
+          intent,
+          difficulty.level,
+        );
+        speechPolicy.prosody = delivery.prosody;
+        speechPolicy.emotion = delivery.emotion;
+        speechPolicy.intent = delivery.intent;
+        speechPolicy.difficultyLevel = delivery.difficulty;
+        speechPolicy.replayCount = replayCount;
+        speechPolicy.learningPriority = computeLearningPriority(
+          speechPolicy.normalizedText,
+          speechPolicy.pipelineMode,
+          speechPolicy.speechMode,
+        );
+        recordAmyVoiceSessionPhrase(speechPolicy.normalizedText);
+        preloadAmyVoiceAnticipatory(speechPolicy);
+        const pipelineMode = speechPolicy.pipelineMode;
+        const result = await speakAmyVoice(speechPolicy.normalizedText, {
+          ...opts,
+          mode: pipelineMode,
+          speechPolicy,
+        }, pipelineCtx);
 
         if (myId !== reqIdRef.current || !isMounted.current) {
           return { success: false, error: "tts_cancelled" };

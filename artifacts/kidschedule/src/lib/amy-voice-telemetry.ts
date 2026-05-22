@@ -134,6 +134,61 @@ export function recordAmyVoiceFailureChain(
   });
 }
 
+/** Rolling mode detection + fallback stats for tuning detection rules. */
+export type AmyModeStatsSnapshot = {
+  totalSpeaks: number;
+  byMode: Record<
+    string,
+    {
+      count: number;
+      layers: Record<string, number>;
+      fallbacks: Record<string, number>;
+    }
+  >;
+};
+
+const modeStats: AmyModeStatsSnapshot = { totalSpeaks: 0, byMode: {} };
+const FALLBACK_LAYERS = new Set<AmyVoiceLayer | string>([
+  "emergency_local",
+  "text_visual",
+  "phonics_sequence",
+  "speech_coach_split",
+]);
+
+function ensureModeBucket(mode: string) {
+  if (!modeStats.byMode[mode]) {
+    modeStats.byMode[mode] = { count: 0, layers: {}, fallbacks: {} };
+  }
+  return modeStats.byMode[mode]!;
+}
+
+export function recordAmyModeOutcome(
+  mode: string,
+  layer: string,
+  detail?: Record<string, unknown>,
+): void {
+  modeStats.totalSpeaks += 1;
+  const bucket = ensureModeBucket(mode);
+  bucket.count += 1;
+  bucket.layers[layer] = (bucket.layers[layer] ?? 0) + 1;
+  if (FALLBACK_LAYERS.has(layer)) {
+    bucket.fallbacks[layer] = (bucket.fallbacks[layer] ?? 0) + 1;
+  }
+  if (import.meta.env.DEV && modeStats.totalSpeaks % 15 === 0) {
+    console.info(LOG, "mode_stats", getAmyModeStatsSnapshot());
+  }
+  reportAmyVoiceTelemetry("fallback_used", {
+    speechMode: mode,
+    outcomeLayer: layer,
+    modeStats: getAmyModeStatsSnapshot(),
+    ...detail,
+  });
+}
+
+export function getAmyModeStatsSnapshot(): AmyModeStatsSnapshot {
+  return JSON.parse(JSON.stringify(modeStats)) as AmyModeStatsSnapshot;
+}
+
 function reportAmyVoiceTelemetry(
   type: AmyVoiceTelemetryEvent,
   meta?: Record<string, unknown>,
