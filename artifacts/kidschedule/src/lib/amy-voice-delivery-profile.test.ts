@@ -23,6 +23,7 @@ import {
 import { resetAmyVoiceCohortSession } from "./amy-voice-cohorts";
 import { resetAmyVoiceHealthMetrics } from "./amy-voice-health";
 import { resetAmyVoiceAnalytics } from "./amy-voice-analytics";
+import { resetAmyVoicePersonalitySession } from "./amy-voice-personality";
 
 describe("amy-voice-delivery-profile", () => {
   beforeEach(() => {
@@ -32,6 +33,7 @@ describe("amy-voice-delivery-profile", () => {
     resetAmyVoiceExperimentsForTests();
     resetAmyVoiceHealthMetrics();
     resetAmyVoiceAnalytics();
+    resetAmyVoicePersonalitySession();
     setAmyVoiceExperimentAssignmentForTests({
       encouragement_frequency: "control",
       pacing: "control",
@@ -138,5 +140,23 @@ describe("amy-voice-delivery-profile", () => {
     expect(snapshot.experiments.assignment).toBeDefined();
     expect(snapshot.deliveryProfile?.cohortId).toContain("struggling");
     expect(snapshot.invariants.enforced).toBe(true);
+    expect(snapshot.personality.baseline.modifiers.encouragementMultiplier.target).toBe(1);
+  });
+
+  it("preserves experiment assignments while stabilizing modifier drift", () => {
+    setAmyVoiceExperimentAssignmentForTests({
+      encouragement_frequency: "frequent",
+      pacing: "slower",
+      instruction_style: "conversational",
+    });
+
+    for (let i = 0; i < 10; i++) {
+      const profile = resolveAmyVoiceDeliveryProfile({
+        replayCount: 4,
+        difficulty: "struggling",
+      });
+      expect(profile.experimentVariants.encouragement_frequency).toBe("frequent");
+      expect(profile.experimentVariants.pacing).toBe("slower");
+    }
   });
 });

@@ -27,6 +27,11 @@ import {
   getAmyVoiceGovernanceSnapshot,
   getPromotedVariants,
 } from "@/lib/amy-voice-governance";
+import {
+  getAmyVoicePersonalitySnapshot,
+  resetAmyVoicePersonalitySession,
+  stabilizeAmyVoiceDeliveryModifiers,
+} from "@/lib/amy-voice-personality";
 import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
 
 export type AmyVoiceDeliveryModifiers = {
@@ -63,6 +68,7 @@ export type AmyVoiceRuntimeSnapshot = {
   deliveryProfile: AmyVoiceDeliveryProfile | null;
   promotedVariants: Partial<AmyVoiceExperimentAssignment>;
   invariants: ReturnType<typeof getAmyVoiceInvariantSnapshot>;
+  personality: ReturnType<typeof getAmyVoicePersonalitySnapshot>;
 };
 
 const RUNTIME_SNAPSHOT_INTERVAL = 10;
@@ -138,11 +144,13 @@ export function resolveAmyVoiceDeliveryProfile(
   });
   const experimentVariants = getAmyVoiceExperimentAssignment();
   const experiment = getAmyVoiceExperimentModifiers(experimentVariants);
+  const merged = clampMergedModifiers(mergeModifiers(cohort, experiment));
+  const stabilized = stabilizeAmyVoiceDeliveryModifiers(merged);
 
   const profile: AmyVoiceDeliveryProfile = {
     cohortId: cohort.cohortId,
     experimentVariants,
-    modifiers: clampMergedModifiers(mergeModifiers(cohort, experiment)),
+    modifiers: stabilized.modifiers,
     guidanceTier: cohort.guidanceTier,
     supportLevel: cohort.supportLevel,
   };
@@ -186,6 +194,7 @@ export async function getAmyVoiceRuntimeSnapshot(): Promise<AmyVoiceRuntimeSnaps
     deliveryProfile: lastDeliveryProfile,
     promotedVariants: getPromotedVariants(),
     invariants: getAmyVoiceInvariantSnapshot(),
+    personality: getAmyVoicePersonalitySnapshot(),
   };
 }
 
@@ -210,6 +219,7 @@ export function getAmyVoiceDeliverySnapshot(): {
 export function resetAmyVoiceDeliveryProfileSession(): void {
   runtimeOutcomeCount = 0;
   lastDeliveryProfile = null;
+  resetAmyVoicePersonalitySession();
   void import("@/lib/amy-voice-cohorts").then((m) => m.resetAmyVoiceCohortSession());
   void import("@/lib/amy-voice-experiments").then((m) => m.resetAmyVoiceExperimentMetrics());
 }
