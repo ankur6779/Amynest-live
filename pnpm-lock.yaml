@@ -407,6 +407,9 @@ importers:
       '@workspace/load-forecast':
         specifier: workspace:*
         version: link:../../lib/load-forecast
+      '@workspace/math-tricks':
+        specifier: workspace:*
+        version: link:../../lib/math-tricks
       '@workspace/morning-flow':
         specifier: workspace:*
         version: link:../../lib/morning-flow
@@ -1169,6 +1172,8 @@ importers:
         specifier: workspace:*
         version: link:../family-routine
 
+  lib/math-tricks: {}
+
   lib/morning-flow: {}
 
   lib/olympiad: {}
@@ -1207,6 +1212,9 @@ importers:
       '@workspace/audio-lessons':
         specifier: workspace:*
         version: link:../audio-lessons
+      '@workspace/math-tricks':
+        specifier: workspace:*
+        version: link:../math-tricks
       '@workspace/phonics-sounds':
         specifier: workspace:*
         version: link:../phonics-sounds

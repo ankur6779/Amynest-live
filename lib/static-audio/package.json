@@ -10,6 +10,7 @@
     "./browser": "./src/browser.ts"
   },
   "dependencies": {
+    "@workspace/math-tricks": "workspace:*",
     "@workspace/phonics-sounds": "workspace:*",
     "@workspace/speech-coach": "workspace:*",
     "@workspace/study-zone": "workspace:*",

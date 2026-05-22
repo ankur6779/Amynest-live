@@ -360,34 +360,45 @@ async function attemptStaticPlay(
   ctx: AmyVoicePipelineContext,
   waitUntilEnd: boolean,
   phonicsOnly = false,
+  fallbackTexts: string[] = [],
 ): Promise<PlayAttemptResult> {
-  for (const tryMode of staticModesToTry(mode, phonicsOnly)) {
-    if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
-    const proxyUrl = lookupStaticAudioUrl(text, tryMode);
-    if (!proxyUrl) continue;
+  const candidates = [
+    text,
+    ...fallbackTexts.filter((f) => {
+      const alt = f.trim();
+      return alt && alt !== text.trim();
+    }),
+  ];
 
-    const audio = await prepareStaticPlaybackAudio(text, tryMode, { quiet: true });
-    if (!audio) continue;
+  for (const candidate of candidates) {
+    for (const tryMode of staticModesToTry(mode, phonicsOnly)) {
+      if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+      const proxyUrl = lookupStaticAudioUrl(candidate, tryMode);
+      if (!proxyUrl) continue;
 
-    const ok = await playElementWithNeverSilentWatchdog(audio, ctx, {
-      proxyUrl,
-      phrase: text,
-      mode: tryMode,
-      source: "static",
-      waitUntilEnd,
-    });
-    if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
-    if (ok) {
-      void warmLocalCacheFromUrl(localCacheKeyForPhrase(text, tryMode), proxyUrl);
-      recordAmyVoiceLayerSuccess("static_success", { mode: tryMode });
-      return {
-        ok: true,
-        layer: "static",
-        stopPlayback: () => {
-          audio.pause();
-          audio.currentTime = 0;
-        },
-      };
+      const audio = await prepareStaticPlaybackAudio(candidate, tryMode, { quiet: true });
+      if (!audio) continue;
+
+      const ok = await playElementWithNeverSilentWatchdog(audio, ctx, {
+        proxyUrl,
+        phrase: candidate,
+        mode: tryMode,
+        source: "static",
+        waitUntilEnd,
+      });
+      if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+      if (ok) {
+        void warmLocalCacheFromUrl(localCacheKeyForPhrase(candidate, tryMode), proxyUrl);
+        recordAmyVoiceLayerSuccess("static_success", { mode: tryMode });
+        return {
+          ok: true,
+          layer: "static",
+          stopPlayback: () => {
+            audio.pause();
+            audio.currentTime = 0;
+          },
+        };
+      }
     }
   }
   recordAmyVoiceLayerFailed("static", "static_failed");
@@ -445,13 +456,14 @@ async function tryPregeneratedParallelLayer(
   ctx: AmyVoicePipelineContext,
   waitUntilEnd: boolean,
   phonicsOnly = false,
+  fallbackTexts: string[] = [],
 ): Promise<PlayAttemptResult> {
   const order = getPregenLayerOrder();
   const runners: LayerRunner[] = order.map((kind) => ({
     quality: getPregenLayerQuality(kind),
     run: () =>
       kind === "static"
-        ? attemptStaticPlay(text, mode, ctx, waitUntilEnd, phonicsOnly)
+        ? attemptStaticPlay(text, mode, ctx, waitUntilEnd, phonicsOnly, fallbackTexts)
         : attemptCachePlay(text, mode, ctx, waitUntilEnd, phonicsOnly),
   }));
 
@@ -1142,6 +1154,11 @@ export async function speakAmyVoice(
     );
   };
 
+  const staticFallbackTexts =
+    policy.originalText.trim() && policy.originalText.trim() !== text
+      ? [policy.originalText]
+      : [];
+
   const runPregen = async (): Promise<PlayAttemptResult> =>
     tryPregeneratedParallelLayer(
       text,
@@ -1149,6 +1166,7 @@ export async function speakAmyVoice(
       pipelineCtx,
       waitUntilEnd,
       policy.forcePhonicsOnly,
+      staticFallbackTexts,
     );
 
   const tryBlendWordFinale = async (): Promise<PlayAttemptResult | null> => {
