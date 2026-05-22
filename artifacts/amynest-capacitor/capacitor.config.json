@@ -53,6 +53,10 @@
     "CapacitorHttp": {
       "enabled": false
     },
+    "Keyboard": {
+      "resize": "body",
+      "resizeOnFullScreen": true
+    },
     "SignInWithApple": {
       "clientId": "com.amynest.app",
       "redirectURI": "https://www.amynest.in/auth/apple/callback"
@@ -61,6 +65,7 @@
   "packageClassList": [
     "AppPlugin",
     "GeolocationPlugin",
+    "KeyboardPlugin",
     "PushNotificationsPlugin",
     "PurchasesPlugin",
     "MicPermissionPlugin",

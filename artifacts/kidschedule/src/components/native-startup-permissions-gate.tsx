@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
-import { Geolocation } from "@capacitor/geolocation";
 import { PushNotifications } from "@capacitor/push-notifications";
 import {
   getIosNativeMicrophoneGateState,
@@ -21,8 +20,8 @@ function isCapacitorNative(): boolean {
 }
 
 /**
- * On Capacitor iOS/Android, triggers the real OS permission dialogs in sequence
- * (location → microphone → notifications). No custom full-screen permission UI.
+ * On Capacitor iOS/Android, triggers OS permission dialogs for microphone and
+ * notifications. Location is requested intentionally during onboarding.
  */
 export function NativeStartupPermissionsGate() {
   const isCap = useMemo(
@@ -60,8 +59,7 @@ export function NativeStartupPermissionsGate() {
 
     (async () => {
       try {
-        const [geo, push] = await Promise.all([
-          Geolocation.checkPermissions(),
+        const [push] = await Promise.all([
           PushNotifications.checkPermissions(),
         ]);
 
@@ -73,13 +71,9 @@ export function NativeStartupPermissionsGate() {
           micOk = true;
         }
 
-        const locState = geo.location as string;
-        const locOk =
-          locState === "granted" ||
-          (Capacitor.getPlatform() === "ios" && locState === "limited");
         const pushOk = push.receive === "granted";
 
-        if (locOk && micOk && pushOk) {
+        if (micOk && pushOk) {
           await syncCapacitorPushRegistrationWithOs();
           if (!cancelled) complete();
           return;
@@ -93,10 +87,6 @@ export function NativeStartupPermissionsGate() {
           if (micAfter !== "granted") {
             await requestIosMicrophoneAccess();
           }
-        }
-
-        if (!locOk) {
-          await Geolocation.requestPermissions();
         }
 
         const pushResult = await PushNotifications.requestPermissions();

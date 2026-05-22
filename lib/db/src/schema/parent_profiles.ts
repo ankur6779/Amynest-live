@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, jsonb, boolean, doublePrecision } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -16,6 +16,9 @@ export const parentProfilesTable = pgTable("parent_profiles", {
   foodType: text("food_type").notNull().default("non_veg"),
   allergies: text("allergies"),
   region: text("region").notNull().default("mixed"),
+  country: text("country"),
+  latitude: doublePrecision("latitude"),
+  longitude: doublePrecision("longitude"),
   dietType: text("diet_type"),
   foodStyle: text("food_style"),
   subCuisine: text("sub_cuisine"),

@@ -2235,6 +2235,18 @@ components:
         subCuisine:
           type: string
           nullable: true
+        country:
+          type: string
+          nullable: true
+          description: ISO-3166-1 alpha-2 country code (e.g. IN, US, GB)
+        latitude:
+          type: number
+          nullable: true
+          description: Last known GPS latitude from onboarding or environment features
+        longitude:
+          type: number
+          nullable: true
+          description: Last known GPS longitude from onboarding or environment features
         createdAt:
           type: string
         updatedAt:
@@ -2290,6 +2302,16 @@ components:
           nullable: true
         subCuisine:
           type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+          description: ISO-3166-1 alpha-2 country code (e.g. IN, US, GB)
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
           nullable: true
 
     GetRecipeBody:

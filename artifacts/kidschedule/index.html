@@ -7,14 +7,20 @@
     <script>
       (function () {
         function setRealHeight() {
-          document.documentElement.style.setProperty(
-            '--vh',
-            window.innerHeight * 0.01 + 'px'
-          );
+          var vv = window.visualViewport;
+          var height = vv ? vv.height : window.innerHeight;
+          var offsetTop = vv ? vv.offsetTop : 0;
+          document.documentElement.style.setProperty('--vh', height * 0.01 + 'px');
+          document.documentElement.style.setProperty('--vv-height', height + 'px');
+          document.documentElement.style.setProperty('--vv-offset-top', offsetTop + 'px');
         }
 
         window.addEventListener('resize', setRealHeight);
         window.addEventListener('load', setRealHeight);
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener('resize', setRealHeight);
+          window.visualViewport.addEventListener('scroll', setRealHeight);
+        }
         setRealHeight();
       })();
     </script>

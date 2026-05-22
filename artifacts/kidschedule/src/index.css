@@ -989,8 +989,39 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
 .chat-container {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
-  height: calc(var(--vh, 1vh) * 100);
+  height: var(--vv-height, calc(var(--vh, 1vh) * 100));
+  max-height: var(--vv-height, calc(var(--vh, 1vh) * 100));
+}
+
+.onboarding-chat-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.onboarding-chat-messages-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.onboarding-chat-messages {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
+}
+
+.onboarding-chat-input {
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .assistant-chat-header {
