@@ -6,7 +6,7 @@
   "scripts": {
     "build:web": "node scripts/build-web.mjs",
     "sync": "npx cap sync",
-    "sync:ios": "npx cap sync ios && node scripts/patch-ios-capacitor-config.mjs",
+    "sync:ios": "npx cap sync ios && node scripts/patch-ios-capacitor-config.mjs && node scripts/patch-geolocation-ios.mjs",
     "sync:android": "npx cap sync android",
     "open:ios": "npx cap open ios",
     "open:android": "npx cap open android",
