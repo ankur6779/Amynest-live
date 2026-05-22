@@ -1471,6 +1471,7 @@ export const GetParentProfileResponse = zod.object({
   "country": zod.string().nullish().describe('ISO-3166-1 alpha-2 country code (e.g. IN, US, GB)'),
   "latitude": zod.number().nullish().describe('Last known GPS latitude from onboarding or environment features'),
   "longitude": zod.number().nullish().describe('Last known GPS longitude from onboarding or environment features'),
+  "locationSource": zod.string().nullish().describe('How country was determined — gps, ip, or manual'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1500,7 +1501,8 @@ export const UpsertParentProfileBody = zod.object({
   "subCuisine": zod.string().nullish(),
   "country": zod.string().nullish().describe('ISO-3166-1 alpha-2 country code (e.g. IN, US, GB)'),
   "latitude": zod.number().nullish(),
-  "longitude": zod.number().nullish()
+  "longitude": zod.number().nullish(),
+  "locationSource": zod.string().nullish().describe('How country was determined — gps, ip, or manual')
 })
 
 export const UpsertParentProfileResponse = zod.object({
@@ -1527,6 +1529,7 @@ export const UpsertParentProfileResponse = zod.object({
   "country": zod.string().nullish().describe('ISO-3166-1 alpha-2 country code (e.g. IN, US, GB)'),
   "latitude": zod.number().nullish().describe('Last known GPS latitude from onboarding or environment features'),
   "longitude": zod.number().nullish().describe('Last known GPS longitude from onboarding or environment features'),
+  "locationSource": zod.string().nullish().describe('How country was determined — gps, ip, or manual'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })

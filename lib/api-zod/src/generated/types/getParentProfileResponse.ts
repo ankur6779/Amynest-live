@@ -30,6 +30,8 @@ export interface GetParentProfileResponse {
   latitude?: number | null;
   /** Last known GPS longitude from onboarding or environment features */
   longitude?: number | null;
+  /** How country was determined — gps, ip, or manual */
+  locationSource?: string | null;
   createdAt: string;
   updatedAt: string;
 }

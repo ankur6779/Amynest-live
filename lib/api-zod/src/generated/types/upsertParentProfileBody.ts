@@ -26,4 +26,6 @@ export interface UpsertParentProfileBody {
   country?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  /** How country was determined — gps, ip, or manual */
+  locationSource?: string | null;
 }

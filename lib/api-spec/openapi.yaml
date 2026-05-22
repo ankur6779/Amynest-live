@@ -2247,6 +2247,10 @@ components:
           type: number
           nullable: true
           description: Last known GPS longitude from onboarding or environment features
+        locationSource:
+          type: string
+          nullable: true
+          description: How country was determined — gps, ip, or manual
         createdAt:
           type: string
         updatedAt:
@@ -2313,6 +2317,10 @@ components:
         longitude:
           type: number
           nullable: true
+        locationSource:
+          type: string
+          nullable: true
+          description: How country was determined — gps, ip, or manual
 
     GetRecipeBody:
       type: object

@@ -19,6 +19,7 @@ export const parentProfilesTable = pgTable("parent_profiles", {
   country: text("country"),
   latitude: doublePrecision("latitude"),
   longitude: doublePrecision("longitude"),
+  locationSource: text("location_source"),
   dietType: text("diet_type"),
   foodStyle: text("food_style"),
   subCuisine: text("sub_cuisine"),
