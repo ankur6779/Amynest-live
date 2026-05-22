@@ -10,6 +10,7 @@ import {
 } from "@workspace/study-zone";
 import { getStaticAudioHash, getStaticAudioObjectKey } from "./keys.js";
 import { normalizeStaticAudioKey } from "./normalize.js";
+import { getMathTrickAudioTextsForStaticCatalog } from "@workspace/math-tricks";
 import { getStaticTtsEntries } from "./phrases.js";
 import type { StaticAudioMode, StaticTtsEntry } from "./types.js";
 
@@ -133,6 +134,12 @@ function collectAudioLessonPhrases(): SpeakablePhraseRecord[] {
   return out;
 }
 
+function collectMathTrickPhrases(): SpeakablePhraseRecord[] {
+  return getMathTrickAudioTextsForStaticCatalog()
+    .map((t) => toRecord(t, "default", "math_tricks"))
+    .filter((r): r is SpeakablePhraseRecord => r !== null);
+}
+
 function collectPhonicsExtras(): SpeakablePhraseRecord[] {
   const lines = [
     ...getPhonicsAudioTextsForStaticCatalog(),
@@ -154,6 +161,7 @@ export function collectAllSpeakablePhrases(): SpeakablePhraseRecord[] {
     ...collectSpeechCoachPhrases(),
     ...collectAudioLessonPhrases(),
     ...collectPhonicsExtras(),
+    ...collectMathTrickPhrases(),
     ...EXTRA_DEFAULT_PHRASES.map((t) => toRecord(t, "default", "extra_default")).filter(
       (r): r is SpeakablePhraseRecord => r !== null,
     ),

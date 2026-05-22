@@ -3498,6 +3498,10 @@
     "smart_math_tricks": {
       "how_it_works": "HOW IT WORKS",
       "example": "EXAMPLE",
+      "steps": "STEP BY STEP",
+      "parent_tip": "💡 Parent tip",
+      "hear_trick": "Hear Trick",
+      "playing": "Playing…",
       "try_it": "✏️ Try It",
       "mark_as_mastered": "Mark as mastered",
       "check": "Check ✓",
@@ -3510,8 +3514,17 @@
       "try_again": "🔄 Try Again",
       "check_answer": "Check Answer ✓",
       "smart_math_tricks": "🧮 Smart Math Tricks",
+      "subtitle_young": "Basic addition & counting tricks",
+      "subtitle_older": "Multiplication & mental math shortcuts",
       "age": "· Age",
-      "mastered_2": "mastered"
+      "mastered_2": "mastered",
+      "day_streak": "day streak",
+      "tab_today": "Today",
+      "tab_learn": "Learn All",
+      "tab_practice": "Practice",
+      "perfect_score": "🌟 Perfect! You're a math genius!",
+      "good_score": "👍 Great work! Keep practising!",
+      "keep_going": "💪 Keep going — you'll nail it!"
     },
     "smart_meal_suggestions": {
       "amy_ai_meal_generator": "Amy AI Meal Generator",

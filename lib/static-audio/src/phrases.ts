@@ -1,3 +1,4 @@
+import { getMathTrickAudioTextsForStaticCatalog } from "@workspace/math-tricks";
 import {
   formatBlendLine,
   getPhonicsAudioTextByLetter,
@@ -229,6 +230,10 @@ export function getStaticTtsEntries(): StaticTtsEntry[] {
   }
 
   for (const text of LEGACY_PHONICS_SOUNDS) {
+    entries.push({ text, mode: "default" });
+  }
+
+  for (const text of getMathTrickAudioTextsForStaticCatalog()) {
     entries.push({ text, mode: "default" });
   }
 

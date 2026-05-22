@@ -117,6 +117,7 @@
     "@workspace/infant-problems": "workspace:*",
     "@workspace/life-skills": "workspace:*",
     "@workspace/load-forecast": "workspace:*",
+    "@workspace/math-tricks": "workspace:*",
     "@workspace/morning-flow": "workspace:*",
     "@workspace/olympiad": "workspace:*",
     "@workspace/parenting-articles": "workspace:*",
