@@ -43,8 +43,8 @@ export interface UseAmyVoiceState {
 }
 
 /**
- * Amy voice with fail-safe multi-layer fallback (static → cache → API → phonics
- * sequence → speech-coach split → emergency → text/visual). Never silent.
+ * Amy voice with fail-safe multi-layer fallback (static → cache → OpenAI →
+ * ElevenLabs → phonics sequence → speech-coach split → emergency → text/visual).
  */
 export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState {
   const authFetch = useAuthFetch();

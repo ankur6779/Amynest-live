@@ -504,20 +504,33 @@ async function createStaticPlaybackElementAsync(
   return createStaticPlaybackElement(proxyUrl);
 }
 
+export type PreparePlaybackOptions = {
+  /** Pipeline handles UX — suppress early visual-only events. */
+  quiet?: boolean;
+};
+
 export async function prepareStaticPlaybackAudio(
   rawText: string,
   mode: StaticAudioMode = "default",
+  options?: PreparePlaybackOptions,
 ): Promise<HTMLAudioElement | null> {
   if (isClientStaticAudioCircuitOpen()) {
-    emitStaticAudioVisualFallback({ phrase: rawText, mode });
+    if (!options?.quiet) emitStaticAudioVisualFallback({ phrase: rawText, mode });
     return null;
   }
   const proxyUrl = lookupStaticAudioUrl(rawText, mode);
   if (!proxyUrl) {
-    emitStaticAudioVisualFallback({ phrase: rawText, mode });
+    if (!options?.quiet) emitStaticAudioVisualFallback({ phrase: rawText, mode });
     return null;
   }
   return createStaticPlaybackElementAsync(proxyUrl);
+}
+
+/** Remote MP3 (live TTS / cache proxy) — same Android blob path as static. */
+export async function prepareRemotePlaybackAudio(
+  playbackUrl: string,
+): Promise<HTMLAudioElement | null> {
+  return createStaticPlaybackElementAsync(playbackUrl);
 }
 
 export async function playStaticAudio(

@@ -7,6 +7,12 @@ import { isValidTtsPublicUrl } from "../services/ttsAudioStore";
 import { takeTtsPending } from "../services/ttsPendingRegistry.js";
 import { streamLiveTtsToClient } from "../services/ttsLiveStream.js";
 import { generateOpenAiTts } from "../services/ttsGenerate.js";
+import {
+  AMY_MODEL_ID_DEFAULT as ELEVEN_MODEL_DEFAULT,
+  AMY_VOICE_ID_DEFAULT as ELEVEN_VOICE_DEFAULT,
+  synthesizeElevenLabsFallback,
+} from "../services/elevenLabsFallbackService.js";
+import { isElevenLabsFallbackEnabled } from "../lib/env.js";
 import { getOpenAiTtsVoice } from "../lib/openai-tts-config.js";
 import {
   getPhonicsText,
@@ -137,8 +143,8 @@ router.post("/tts/generate", async (req, res): Promise<void> => {
       text: phrase,
       voice: clientVoice && clientVoice.length > 0 ? clientVoice : getOpenAiTtsVoice(),
       speed: parsed.data.speed,
-      mode: parsed.data.mode ?? "phonics",
-      category: parsed.data.category ?? "phonics",
+      mode: parsed.data.mode ?? "default",
+      category: parsed.data.category ?? "words",
       letterKey: letterKey || undefined,
       phonemeKey: phonemeKey || undefined,
       cvcWord: cvcWord || undefined,
@@ -164,6 +170,67 @@ router.post("/tts/generate", async (req, res): Promise<void> => {
       "tts generate failed",
     );
     res.status(502).json({ error: "tts_failed" });
+  }
+});
+
+const elevenLabsFallbackSchema = z.object({
+  text: z.string().min(1).max(TTS_MAX_INPUT_CHARS),
+  voiceId: z.string().min(1).max(64).optional(),
+  modelId: z.string().min(1).max(64).optional(),
+  mode: z.enum(["default", "phonics"]).optional(),
+});
+
+/**
+ * POST /api/tts/elevenlabs-fallback — optional layer after OpenAI fails.
+ * Cache-first (legacy ElevenLabs MP3s); live ElevenLabs only when ELEVENLABS_API_KEY is set.
+ */
+router.post("/tts/elevenlabs-fallback", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  if (!isElevenLabsFallbackEnabled()) {
+    res.status(503).json({ ok: false, error: "elevenlabs_fallback_disabled" });
+    return;
+  }
+
+  const parsed = elevenLabsFallbackSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return;
+  }
+
+  const text = parsed.data.text.trim();
+  const mode = parsed.data.mode ?? "default";
+
+  try {
+    const result = await synthesizeElevenLabsFallback(text, {
+      voiceId: parsed.data.voiceId ?? ELEVEN_VOICE_DEFAULT,
+      modelId: parsed.data.modelId ?? ELEVEN_MODEL_DEFAULT,
+      mode,
+    });
+    if (!result || !isValidTtsPublicUrl(result.audioUrl)) {
+      res.status(502).json({ ok: false, error: "tts_failed" });
+      return;
+    }
+    res.json({
+      ok: true,
+      success: true,
+      url: result.audioUrl,
+      audioUrl: result.audioUrl,
+      cacheKey: result.cacheKey,
+      cached: result.cached,
+      provider: "elevenlabs",
+    });
+  } catch (err) {
+    const code = err instanceof Error ? err.message : "tts_failed";
+    logger.error(
+      { evt: "tts.elevenlabs_fallback_failed", userId, code },
+      "elevenlabs fallback failed",
+    );
+    res.status(502).json({ ok: false, error: code });
   }
 });
 

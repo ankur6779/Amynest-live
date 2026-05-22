@@ -1,8 +1,8 @@
 /**
  * Amy voice fail-safe pipeline — strict multi-layer fallback, never silent.
  *
- * Order: static → local cache → live TTS → phonics sequence → speech-coach split
- *        → emergency local → text/visual UX
+ * Order: static → local cache → live OpenAI TTS → ElevenLabs fallback → phonics
+ *        sequence → speech-coach split → emergency local → text/visual UX
  */
 
 import type { AuthFetchFn } from "@/lib/poll-result";
@@ -11,6 +11,7 @@ import {
   isTtsPlaybackAllowed,
   recordTtsUserGesture,
 } from "@/lib/tts-guard";
+import { generateElevenLabsFallbackTts } from "@/lib/elevenlabs-fallback-tts";
 import {
   generateTts,
   isValidAudioUrl,
@@ -20,6 +21,7 @@ import {
 } from "@/lib/tts-playback";
 import {
   lookupStaticAudioUrl,
+  prepareRemotePlaybackAudio,
   prepareStaticPlaybackAudio,
   primeStaticAudioInUserGesture,
   safePlayAudio,
@@ -34,6 +36,7 @@ import {
   isAmyVoiceOffline,
   recordTtsApiFailure,
   recordTtsApiSuccess,
+  resetTtsApiCircuit,
   shouldSkipLiveTtsApi,
 } from "@/lib/amy-voice-circuit";
 import {
@@ -119,7 +122,7 @@ async function playElementWithNeverSilentWatchdog(
     proxyUrl: string;
     phrase: string;
     mode?: StaticAudioMode;
-    source: "static" | "tts" | "cache";
+    source: "static" | "tts" | "cache" | "elevenlabs";
     waitUntilEnd: boolean;
   },
 ): Promise<boolean> {
@@ -138,7 +141,7 @@ async function playElementWithNeverSilentWatchdog(
             proxyUrl: meta.proxyUrl,
             phrase: meta.phrase,
             mode: meta.mode,
-            source: meta.source === "cache" ? "static" : "tts",
+            source: meta.source === "elevenlabs" ? "tts" : meta.source === "cache" ? "static" : "tts",
             channel: "speech",
             interrupt: true,
             srcType: meta.source === "cache" ? "static" : "tts",
@@ -148,34 +151,16 @@ async function playElementWithNeverSilentWatchdog(
 
   if (!played) return false;
 
-  if (meta.source === "static" || meta.source === "cache") {
-    if (isAndroidAmyNestAudioClient()) {
-      const audible = await waitForAudible(audio, 4000);
-      logAmyVoiceDiag("static_play_verify", {
-        phrase: meta.phrase.slice(0, 80),
-        audible,
-        currentTime: audio.currentTime,
-        paused: audio.paused,
-        readyState: audio.readyState,
-        srcType: audio.src.startsWith("blob:") ? "blob" : "remote",
-      });
-      if (!audible) {
-        audio.pause();
-        return false;
-      }
-    }
-    if (meta.waitUntilEnd) {
-      const end = await audioManager.waitUntilEnd(audio, ctx.isCancelled);
-      return end.ok;
-    }
-    return true;
-  }
-
-  const audible = await Promise.race([
-    waitForAudible(audio, NEVER_SILENT_MS),
-    delay(NEVER_SILENT_MS).then(() => false),
-  ]);
-
+  const verifyMs = isAndroidAmyNestAudioClient() ? 4000 : NEVER_SILENT_MS;
+  const audible = await waitForAudible(audio, verifyMs);
+  logAmyVoiceDiag(`${meta.source}_play_verify`, {
+    phrase: meta.phrase.slice(0, 80),
+    audible,
+    currentTime: audio.currentTime,
+    paused: audio.paused,
+    readyState: audio.readyState,
+    srcType: audio.src.startsWith("blob:") ? "blob" : "remote",
+  });
   if (!audible) {
     audio.pause();
     return false;
@@ -204,7 +189,7 @@ async function tryStaticLayer(
       continue;
     }
     logAmyVoiceDiag("static_try", { text: text.slice(0, 80), mode: tryMode, url: proxyUrl.slice(-72) });
-    const audio = await prepareStaticPlaybackAudio(text, tryMode);
+    const audio = await prepareStaticPlaybackAudio(text, tryMode, { quiet: true });
     if (!audio) {
       recordAmyVoiceLayerFailed(
         tryMode === mode ? "static" : "static_alt_mode",
@@ -319,7 +304,8 @@ async function tryLiveTtsLayer(
     playbackUrl,
   );
 
-  const audio = playAudio(playbackUrl);
+  const audio =
+    (await prepareRemotePlaybackAudio(playbackUrl)) ?? playAudio(playbackUrl);
   if (!audio) {
     recordAmyVoiceLayerFailed("api", "audio_element_failed");
     return { ok: false, error: "tts_invalid_audio_url" };
@@ -340,6 +326,65 @@ async function tryLiveTtsLayer(
   }
   recordAmyVoiceLayerFailed("api", "play_failed_or_silent");
   return { ok: false, error: "api_play_failed" };
+}
+
+async function tryElevenLabsLayer(
+  text: string,
+  opts: SpeakOptions | undefined,
+  ctx: AmyVoicePipelineContext,
+  waitUntilEnd: boolean,
+): Promise<PlayAttemptResult> {
+  if (isAmyVoiceOffline()) {
+    recordAmyVoiceLayerFailed("elevenlabs", "offline");
+    return { ok: false, error: "elevenlabs_offline" };
+  }
+
+  logTtsClient("Pipeline ElevenLabs fallback", { chars: text.length });
+  const data = await generateElevenLabsFallbackTts(ctx.authFetch, text, {
+    mode: opts?.mode,
+    voiceId: ctx.voiceId,
+    modelId: ctx.modelId,
+  });
+
+  if (ctx.isCancelled()) return { ok: false, error: "tts_cancelled" };
+
+  if (data.error === "elevenlabs_fallback_disabled") {
+    recordAmyVoiceLayerFailed("elevenlabs", "disabled");
+    return { ok: false, error: "elevenlabs_disabled" };
+  }
+
+  if (!data?.success || !isValidAudioUrl(data.audioUrl)) {
+    recordAmyVoiceLayerFailed("elevenlabs", data?.error ?? "elevenlabs_failed");
+    return { ok: false, error: data?.error ?? "elevenlabs_failed" };
+  }
+
+  const playbackUrl = data.audioUrl;
+  if (data.cacheKey) {
+    void warmLocalCacheFromUrl(localCacheKeyForTts(data.cacheKey), playbackUrl);
+  }
+
+  const audio =
+    (await prepareRemotePlaybackAudio(playbackUrl)) ?? playAudio(playbackUrl);
+  if (!audio) {
+    recordAmyVoiceLayerFailed("elevenlabs", "audio_element_failed");
+    return { ok: false, error: "tts_invalid_audio_url" };
+  }
+
+  const ok = await playElementWithNeverSilentWatchdog(audio, ctx, {
+    proxyUrl: playbackUrl,
+    phrase: text,
+    mode: opts?.mode === "phonics" ? "phonics" : "default",
+    source: "elevenlabs",
+    waitUntilEnd,
+  });
+
+  if (ctx.isCancelled()) return { ok: false, error: "tts_cancelled" };
+  if (ok) {
+    recordAmyVoiceLayerSuccess("elevenlabs_success", { cacheKey: data.cacheKey });
+    return { ok: true, layer: "elevenlabs" };
+  }
+  recordAmyVoiceLayerFailed("elevenlabs", "play_failed_or_silent");
+  return { ok: false, error: "elevenlabs_play_failed" };
 }
 
 async function tryPhonicsSequenceLayer(
@@ -440,6 +485,7 @@ export async function speakAmyVoice(
 
   recordTtsUserGesture();
   resetClientStaticAudioCircuit();
+  resetTtsApiCircuit();
 
   const primaryMode: StaticAudioMode = opts?.mode === "phonics" ? "phonics" : "default";
   if (isAndroidAmyNestAudioClient()) {
@@ -447,6 +493,12 @@ export async function speakAmyVoice(
   }
 
   if (!isTtsPlaybackAllowed()) {
+    const emergency = await tryEmergencyLayer(text);
+    if (emergency.ok) return { success: true, layer: emergency.layer };
+    if (!shouldSkipLiveTtsApi()) {
+      const api = await tryLiveTtsLayer(text, opts, ctx, opts?.waitUntilEnd ?? false);
+      if (api.ok) return { success: true, layer: api.layer };
+    }
     tryTextVisualLayer(text, primaryMode);
     return { success: true, layer: "text_visual" };
   }
@@ -464,6 +516,7 @@ export async function speakAmyVoice(
       ? []
       : [
           () => tryLiveTtsLayer(text, opts, ctx, waitUntilEnd),
+          () => tryElevenLabsLayer(text, opts, ctx, waitUntilEnd),
           () => tryPhonicsSequenceLayer(text, mode, ctx),
           () => trySpeechCoachSplitLayer(text, mode, ctx),
         ]),
@@ -479,6 +532,7 @@ export async function speakAmyVoice(
         (result.layer === "static" ||
           result.layer === "cache" ||
           result.layer === "api" ||
+          result.layer === "elevenlabs" ||
           result.layer === "emergency_local")
       ) {
         ctx.onFinished?.();
@@ -493,7 +547,9 @@ export async function speakAmyVoice(
             ? "cache"
             : result.error.includes("api")
               ? "api"
-              : result.error.includes("phonics")
+              : result.error.includes("elevenlabs")
+                ? "elevenlabs"
+                : result.error.includes("phonics")
                 ? "phonics_sequence"
                 : result.error.includes("speech")
                   ? "speech_coach_split"
@@ -503,6 +559,19 @@ export async function speakAmyVoice(
   }
 
   recordAmyVoiceFailureChain(text, failureChain, { mode });
+
+  if (!shallow && !shouldSkipLiveTtsApi()) {
+    resetTtsApiCircuit();
+    logTtsClient("Pipeline last-chance API", { chars: text.length });
+    const lastApi = await tryLiveTtsLayer(text, opts, ctx, waitUntilEnd);
+    if (lastApi.ok) return { success: true, layer: lastApi.layer };
+  }
+
+  if (!shallow) {
+    const lastEleven = await tryElevenLabsLayer(text, opts, ctx, waitUntilEnd);
+    if (lastEleven.ok) return { success: true, layer: lastEleven.layer };
+  }
+
   tryTextVisualLayer(text, mode);
   return { success: true, layer: "text_visual" };
 }

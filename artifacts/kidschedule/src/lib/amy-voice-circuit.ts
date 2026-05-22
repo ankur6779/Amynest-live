@@ -24,6 +24,12 @@ export function recordTtsApiSuccess(): void {
   ttsApiCircuitUntil = 0;
 }
 
+/** Fresh user speak — do not inherit a prior API failure window. */
+export function resetTtsApiCircuit(): void {
+  consecutiveTtsFailures = 0;
+  ttsApiCircuitUntil = 0;
+}
+
 export function shouldSkipLiveTtsApi(): boolean {
   return isAmyVoiceOffline() || isTtsApiCircuitOpen();
 }
