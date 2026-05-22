@@ -17,6 +17,7 @@ import {
   computeCatalogMissingStaticAudioKeys,
   extractTextFromMissingKey,
   getStaticAudioObjectKey,
+  collectAllSpeakablePhrases,
   getStaticTtsEntries,
   mergeMissingStaticAudioKeys,
   normalizeStaticAudioKey,
@@ -88,7 +89,8 @@ function parseEnvMs(name: string, fallbackMs: number): number {
 const TTS_TIMEOUT_MS = parseEnvMs("STATIC_AUDIO_TTS_TIMEOUT_MS", 30_000);
 const MAX_PASS_RETRIES = Number(process.env.STATIC_AUDIO_MAX_RETRIES ?? "5");
 
-const TOTAL_PHRASES = getStaticTtsEntries().length;
+const CORPUS_PHRASES = collectAllSpeakablePhrases();
+const TOTAL_PHRASES = CORPUS_PHRASES.length;
 
 type PassStats = { generated: number; skipped: number; backfilled: number; failed: number };
 
@@ -399,8 +401,8 @@ async function runCatalogPass(
 
   console.log(`[PASS] Full catalog (${TOTAL_PHRASES} phrases), skipExisting=${skipExisting}`);
 
-  for (const { text, mode } of getStaticTtsEntries()) {
-    await ensureCatalogEntry(text, mode, map, storage, bucketName, skipExisting, stats);
+  for (const entry of CORPUS_PHRASES) {
+    await ensureCatalogEntry(entry.text, entry.mode, map, storage, bucketName, skipExisting, stats);
   }
 
   writeStaticAudioMap(map);

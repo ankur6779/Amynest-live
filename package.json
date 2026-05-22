@@ -28,6 +28,8 @@
     "stability:load": "pnpm --filter @workspace/scripts run stability-load",
     "generate:static-audio": "pnpm --filter @workspace/scripts run generate-static-audio",
     "check:static-audio": "pnpm --filter @workspace/scripts run check-static-audio",
+    "scan:speakable-phrases": "pnpm --filter @workspace/scripts run scan-speakable-phrases",
+    "check:amy-voice": "pnpm --filter @workspace/scripts run check-amy-voice-usage",
     "stability:api-unit": "pnpm --filter @workspace/api-server exec node --import tsx/esm --test src/lib/production-load.test.ts",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"!@workspace/amynest-mobile\" --filter \"./scripts\" --if-present run typecheck",

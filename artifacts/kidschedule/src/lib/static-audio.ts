@@ -232,15 +232,19 @@ export function hasStaticAudio(rawText: string, mode: StaticAudioMode = "default
   return lookupStaticAudioUrl(rawText, mode) !== null;
 }
 
-export function mustUseStaticOnly(rawText: string, mode: StaticAudioMode = "default"): boolean {
-  return isCatalogPhrase(rawText, mode);
+/**
+ * Catalog phrases prefer static audio but always fall back to TTS / emergency layers.
+ * @deprecated Blocking removed — returns false so callers never skip fallback chain.
+ */
+export function mustUseStaticOnly(_rawText: string, _mode: StaticAudioMode = "default"): boolean {
+  return false;
 }
 
 export function shouldBlockStaticTtsFallback(
-  rawText: string,
-  mode: StaticAudioMode = "default",
+  _rawText: string,
+  _mode: StaticAudioMode = "default",
 ): boolean {
-  return mustUseStaticOnly(rawText, mode);
+  return false;
 }
 
 export function logDynamicTtsViolation(rawText: string, mode: StaticAudioMode = "default"): void {
@@ -317,6 +321,8 @@ export type SafePlayAudioOptions = {
   proxyUrl?: string;
   phrase?: string;
   mode?: StaticAudioMode;
+  /** Suppress visual fallback event (pipeline handles layer 5). */
+  quiet?: boolean;
 };
 
 async function verifyStaticAudioEndpoint(proxyUrl: string): Promise<number | null> {
@@ -337,7 +343,7 @@ export async function safePlayAudio(
 ): Promise<boolean> {
   if (isClientStaticAudioCircuitOpen()) {
     audioDebugLog("[AUDIO DEBUG] client circuit open — playback blocked");
-    emitStaticAudioVisualFallback({ phrase: opts.phrase, mode: opts.mode });
+    if (!opts.quiet) emitStaticAudioVisualFallback({ phrase: opts.phrase, mode: opts.mode });
     return false;
   }
 
@@ -372,7 +378,7 @@ export async function safePlayAudio(
     attempt: "exhausted",
     proxyUrl,
   });
-  emitStaticAudioVisualFallback({ phrase: opts.phrase, mode: opts.mode });
+  if (!opts.quiet) emitStaticAudioVisualFallback({ phrase: opts.phrase, mode: opts.mode });
   return false;
 }
 

@@ -34,6 +34,11 @@ let circuitOpen = false;
 let circuitOpenedAt = 0;
 let consecutiveFailures = 0;
 let lastAlertAt = 0;
+let dbFallbackServes = 0;
+let placeholderServes = 0;
+let onDemandGenerations = 0;
+let generationQueueSize = 0;
+let missingAudioReports = 0;
 
 export function recordGcsRead(byteLength: number): void {
   gcsReads += 1;
@@ -164,6 +169,26 @@ export function checkFailureRateAlert(): void {
   );
 }
 
+export function recordDbFallbackServe(): void {
+  dbFallbackServes += 1;
+}
+
+export function recordPlaceholderServe(): void {
+  placeholderServes += 1;
+}
+
+export function recordOnDemandGeneration(): void {
+  onDemandGenerations += 1;
+}
+
+export function recordGenerationQueueDepth(size: number): void {
+  generationQueueSize = size;
+}
+
+export function recordMissingAudioReport(): void {
+  missingAudioReports += 1;
+}
+
 export function getStaticAudioMetrics() {
   const mem = getMemoryCacheStats();
   const avgResponseTimeMs =
@@ -191,6 +216,17 @@ export function getStaticAudioMetrics() {
       edgeHitSignals: reportedCdnEdgeHit,
       edgeMissSignals: reportedCdnEdgeMiss,
     },
+    reliability: {
+      dbFallbackServes,
+      placeholderServes,
+      onDemandGenerations,
+      generationQueueSize,
+      missingAudioReports,
+      fallbackRate:
+        metrics.total > 0
+          ? Number(((dbFallbackServes + placeholderServes) / metrics.total).toFixed(4))
+          : 0,
+    },
   };
 }
 
@@ -213,4 +249,9 @@ export function resetStaticAudioMetricsForTests(): void {
   circuitOpenedAt = 0;
   consecutiveFailures = 0;
   lastAlertAt = 0;
+  dbFallbackServes = 0;
+  placeholderServes = 0;
+  onDemandGenerations = 0;
+  generationQueueSize = 0;
+  missingAudioReports = 0;
 }

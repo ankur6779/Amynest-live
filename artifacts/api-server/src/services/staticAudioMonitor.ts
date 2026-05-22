@@ -3,6 +3,8 @@ import { logger } from "../lib/logger.js";
 import { getStaticAudioBuffer, prewarmStaticAudioBuffers } from "./staticAudioLoader.js";
 import { legacyGcsConfigured } from "./ttsAudioStore.js";
 import { getStaticAudioMetrics } from "./staticAudioMetrics.js";
+import { runStaticAudioGenerationCron } from "./staticAudioGenerationQueue.js";
+import { rebuildStaticHashIndex } from "./staticAudioRegistry.js";
 import { sendStaticAudioAlert } from "./staticAudioAlerts.js";
 
 /** Known-good catalog object (good job!). Override via STATIC_AUDIO_PROBE_HASH. */
@@ -102,7 +104,16 @@ export function startStaticAudioMonitor(): void {
 
   setInterval(() => {
     logMetricsSnapshot();
+    const rel = getStaticAudioMetrics().reliability;
+    if (rel.fallbackRate > 0.05 && rel.dbFallbackServes + rel.placeholderServes > 10) {
+      void sendStaticAudioAlert("fallback_rate_high", rel);
+    }
   }, METRICS_INTERVAL_MS);
+
+  setInterval(() => {
+    rebuildStaticHashIndex();
+    void runStaticAudioGenerationCron();
+  }, 5 * 60_000);
 
   logger.info(
     {

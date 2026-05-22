@@ -1,4 +1,5 @@
 import { normalizeStaticAudioKey } from "./normalize.js";
+import { collectAllSpeakablePhrases } from "./phrase-corpus.js";
 import { getStaticTtsEntries } from "./phrases.js";
 import type { StaticAudioMap, StaticAudioMode } from "./types.js";
 
@@ -47,6 +48,22 @@ export function computeCatalogMissingStaticAudioKeys(map: StaticAudioMap): strin
   return [...missing].sort();
 }
 
+/** Extended corpus (study zone, speech coach, lessons) — warn in CI, generate via cron. */
+export function computeCorpusMissingStaticAudioKeys(map: StaticAudioMap): string[] {
+  const indexed = indexMapKeys(map);
+  const missing = new Set<string>();
+
+  for (const { text, mode } of collectAllSpeakablePhrases()) {
+    const normalized = normalizeStaticAudioKey(text);
+    if (!normalized) continue;
+    if (!indexed[mode].has(normalized)) {
+      missing.add(staticAudioMissingKey(mode, normalized));
+    }
+  }
+
+  return [...missing].sort();
+}
+
 export function mergeMissingStaticAudioKeys(...lists: Iterable<string>[]): string[] {
   const merged = new Set<string>();
   for (const list of lists) {
@@ -84,7 +101,7 @@ export function buildStaticTtsEntryByMissingKey(): Map<
   { text: string; mode: StaticAudioMode }
 > {
   const index = new Map<string, { text: string; mode: StaticAudioMode }>();
-  for (const entry of getStaticTtsEntries()) {
+  for (const entry of collectAllSpeakablePhrases()) {
     const normalized = normalizeStaticAudioKey(entry.text);
     if (!normalized) continue;
     index.set(staticAudioMissingKey(entry.mode, normalized), {
