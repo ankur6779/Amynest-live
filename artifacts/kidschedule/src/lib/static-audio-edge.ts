@@ -33,7 +33,7 @@ export function getStaticAudioPreloadHintUrls(): string[] {
  * No-op when called outside a real gesture (autoplay policy would warn otherwise).
  */
 export function warmStaticAudioOnFirstGesture(): void {
-  audioManager.warmMediaPipeline();
+  audioManager.warmMediaPipeline(false, { fromUserGesture: true });
 }
 
 export function installStaticAudioGestureWarmup(): void {

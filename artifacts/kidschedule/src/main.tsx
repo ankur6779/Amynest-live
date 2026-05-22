@@ -27,6 +27,7 @@ import {
   checkStaticAudioHealthOnBoot,
   installStaticAudioDevTools,
 } from "@/lib/static-audio-telemetry";
+import { installAmyVoiceAudioDiagnostics } from "@/lib/amy-voice-audio-diag";
 import {
   injectStaticAudioPreloadHints,
   installStaticAudioGestureWarmup,
@@ -74,6 +75,7 @@ installStaticAudioGuards();
 installStaticAudioDevTools();
 installStaticAudioGestureWarmup();
 injectStaticAudioPreloadHints();
+installAmyVoiceAudioDiagnostics();
 void checkStaticAudioHealthOnBoot();
 logBootContext();
 

@@ -1,5 +1,7 @@
 import audioMap from "@/data/static-audio-map.json";
 import { getApiUrl } from "@/lib/api";
+import { isAmyVoiceAudioDebugEnabled, logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
+import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { audioManager } from "@/lib/audio-manager";
 import {
   assertStaticAudioUrl,
@@ -25,7 +27,7 @@ import {
 } from "@workspace/static-audio/browser";
 
 function audioDebugLog(...args: unknown[]): void {
-  if (import.meta.env.DEV || isStaticAudioDebug()) {
+  if (import.meta.env.DEV || isStaticAudioDebug() || isAmyVoiceAudioDebugEnabled()) {
     console.log(...args);
   }
 }
@@ -211,20 +213,13 @@ function resolveMapEntry(
   return null;
 }
 
-export function lookupStaticAudioUrl(
+function lookupStaticAudioUrlForMode(
   rawText: string,
-  mode: StaticAudioMode = "default",
+  mode: StaticAudioMode,
 ): string | null {
   const text = rawText.trim();
   const resolved = resolveMapEntry(text, mode);
-  if (!resolved) {
-    const normalized = normalizeSpeakTextForLookup(text);
-    if (normalized && isCatalogPhrase(text, mode)) {
-      recordMissingStaticAudio(normalized, mode, text);
-      reportStaticAudioMissingUrl(text, mode);
-    }
-    return null;
-  }
+  if (!resolved) return null;
 
   const { mapEntry, normalized } = resolved;
   const proxyUrl = resolveStaticPlaybackUrl(mapEntry, { text, mode });
@@ -238,11 +233,44 @@ export function lookupStaticAudioUrl(
     return null;
   }
 
-  if (import.meta.env.DEV || isStaticAudioDebug()) {
+  if (import.meta.env.DEV || isStaticAudioDebug() || isAmyVoiceAudioDebugEnabled()) {
     console.log("[STATIC AUDIO LOOKUP]", { text, normalized, mode, url: proxyUrl });
   }
 
   return proxyUrl;
+}
+
+export function lookupStaticAudioUrl(
+  rawText: string,
+  mode: StaticAudioMode = "default",
+): string | null {
+  const text = rawText.trim();
+  const altMode: StaticAudioMode = mode === "phonics" ? "default" : "phonics";
+
+  for (const tryMode of [mode, altMode]) {
+    const proxyUrl = lookupStaticAudioUrlForMode(text, tryMode);
+    if (proxyUrl) {
+      if (tryMode !== mode) {
+        logAmyVoiceDiag("lookup_alt_mode", { text: text.slice(0, 80), primary: mode, hit: tryMode });
+      }
+      return proxyUrl;
+    }
+  }
+
+  const normalized = normalizeSpeakTextForLookup(text);
+  if (normalized && isCatalogPhrase(text, mode)) {
+    recordMissingStaticAudio(normalized, mode, text);
+    reportStaticAudioMissingUrl(text, mode);
+  }
+
+  logAmyVoiceDiag("lookup_miss", {
+    text: text.slice(0, 120),
+    normalized,
+    mode,
+    catalog: isCatalogPhrase(text, mode),
+  });
+
+  return null;
 }
 
 export function getStaticAudioUrl(rawText: string, mode: StaticAudioMode = "default"): string | null {
@@ -384,7 +412,8 @@ export async function safePlayAudio(
   }
 
   const proxyUrl = opts.proxyUrl ?? audio.src;
-  audioDebugLog("[AUDIO PLAY ATTEMPT]");
+  const srcType = audio.src.startsWith("blob:") ? "blob" : "static";
+  audioDebugLog("[AUDIO PLAY ATTEMPT]", { srcType, proxyUrl: proxyUrl.slice(-80) });
 
   const played = await audioManager.play(
     audio,
@@ -395,7 +424,7 @@ export async function safePlayAudio(
       source: "static",
       channel: "speech",
       interrupt: true,
-      srcType: "static",
+      srcType,
     },
     { maxRetries: 2, channel: "speech", interrupt: true },
   );
@@ -426,6 +455,55 @@ function createStaticPlaybackElement(proxyUrl: string): HTMLAudioElement | null 
   }
 }
 
+/**
+ * Android installed PWA: fetch MP3 into a blob URL first.
+ * Avoids cross-origin Range/206 decode bugs on HTMLAudioElement.src.
+ */
+async function createStaticPlaybackElementFromBlob(
+  proxyUrl: string,
+): Promise<HTMLAudioElement | null> {
+  const absUrl = proxyUrl.startsWith("http") ? proxyUrl : getApiUrl(proxyUrl);
+  try {
+    const res = await fetch(absUrl, {
+      method: "GET",
+      credentials: "omit",
+      cache: "force-cache",
+      mode: "cors",
+    });
+    logAmyVoiceDiag("blob_fetch", {
+      url: absUrl.slice(-72),
+      status: res.status,
+      ok: res.ok,
+    });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    if (blob.size < 64) {
+      logAmyVoiceDiag("blob_empty", { bytes: blob.size });
+      return null;
+    }
+    const blobUrl = URL.createObjectURL(blob);
+    audioManager.trackObjectUrl(blobUrl);
+    return audioManager.create(blobUrl);
+  } catch (err) {
+    logAmyVoiceDiag("blob_fetch_error", {
+      url: absUrl.slice(-72),
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
+  }
+}
+
+async function createStaticPlaybackElementAsync(
+  proxyUrl: string,
+): Promise<HTMLAudioElement | null> {
+  if (isAndroidAmyNestAudioClient()) {
+    const blobEl = await createStaticPlaybackElementFromBlob(proxyUrl);
+    if (blobEl) return blobEl;
+    logAmyVoiceDiag("blob_fallback_remote", { url: proxyUrl.slice(-72) });
+  }
+  return createStaticPlaybackElement(proxyUrl);
+}
+
 export async function prepareStaticPlaybackAudio(
   rawText: string,
   mode: StaticAudioMode = "default",
@@ -439,7 +517,7 @@ export async function prepareStaticPlaybackAudio(
     emitStaticAudioVisualFallback({ phrase: rawText, mode });
     return null;
   }
-  return createStaticPlaybackElement(proxyUrl);
+  return createStaticPlaybackElementAsync(proxyUrl);
 }
 
 export async function playStaticAudio(
@@ -466,7 +544,7 @@ export async function playStaticAudio(
 
   let audio: HTMLAudioElement | null;
   try {
-    audio = createStaticPlaybackElement(proxyUrl);
+    audio = await createStaticPlaybackElementAsync(proxyUrl);
   } catch (err) {
     console.error("[AUDIO OBJECT FAILED]", err);
     return false;
