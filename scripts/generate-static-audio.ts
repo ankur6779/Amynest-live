@@ -6,7 +6,9 @@
  *     GCS_SERVICE_ACCOUNT_JSON='...' \
  *     pnpm run generate:static-audio
  *
- * Retries until 100% full corpus coverage (max 5 passes). Use --force-all to re-upload everything.
+ * Retries until 100% coverage for the selected scope (max 5 passes).
+ *   --force-all            Regenerate entire corpus
+ *   --audio-lessons-only   Regenerate all Amy Audio Lesson paragraphs + titles
  *
  * Writes static-audio-map.json to kidschedule + api-server data dirs.
  */
@@ -95,8 +97,20 @@ const MAX_PASS_RETRIES = Number(process.env.STATIC_AUDIO_MAX_RETRIES ?? "5");
 /** Pause between OpenAI calls when generating (avoids rate limits in CI). */
 const INTER_REQUEST_MS = parseEnvMs("STATIC_AUDIO_INTER_REQUEST_MS", 300);
 
-const CORPUS_PHRASES = collectAllSpeakablePhrases();
-const TOTAL_PHRASES = CORPUS_PHRASES.length;
+const ALL_CORPUS_PHRASES = collectAllSpeakablePhrases();
+
+function resolvePhraseScope(): {
+  phrases: typeof ALL_CORPUS_PHRASES;
+  label: string;
+  audioLessonsOnly: boolean;
+} {
+  const audioLessonsOnly = process.argv.includes("--audio-lessons-only");
+  if (audioLessonsOnly) {
+    const phrases = ALL_CORPUS_PHRASES.filter((e) => e.source.startsWith("audio_lessons"));
+    return { phrases, label: "audio_lessons", audioLessonsOnly: true };
+  }
+  return { phrases: ALL_CORPUS_PHRASES, label: "full_corpus", audioLessonsOnly: false };
+}
 
 type PassStats = { generated: number; skipped: number; backfilled: number; failed: number };
 
@@ -185,11 +199,18 @@ function isEntryComplete(map: StaticAudioMap, mode: StaticAudioMode, text: strin
   return isValidMapUrl(map[mode]?.[mapKey]);
 }
 
-function logCoverageSummary(map: StaticAudioMap, passLabel: string): number {
-  const missing = computeCorpusMissingStaticAudioKeys(map);
-  const covered = TOTAL_PHRASES - missing.length;
+function logCoverageSummary(
+  map: StaticAudioMap,
+  passLabel: string,
+  scopePhrases: typeof ALL_CORPUS_PHRASES,
+): number {
+  const scopeKeys = new Set(
+    scopePhrases.map((e) => staticAudioMissingKey(e.mode, e.normalizedKey)),
+  );
+  const missing = computeCorpusMissingStaticAudioKeys(map).filter((k) => scopeKeys.has(k));
+  const covered = scopePhrases.length - missing.length;
   console.log(`[COVERAGE] ${passLabel}`, {
-    totalPhrases: TOTAL_PHRASES,
+    scope: scopePhrases.length,
     covered,
     missing: missing.length,
   });
@@ -408,12 +429,13 @@ async function runCatalogPass(
   storage: Storage,
   bucketName: string,
   skipExisting: boolean,
+  scopePhrases: typeof ALL_CORPUS_PHRASES,
 ): Promise<PassStats> {
   const stats: PassStats = { generated: 0, skipped: 0, backfilled: 0, failed: 0 };
 
-  console.log(`[PASS] Full corpus (${TOTAL_PHRASES} phrases), skipExisting=${skipExisting}`);
+  console.log(`[PASS] Scope (${scopePhrases.length} phrases), skipExisting=${skipExisting}`);
 
-  for (const entry of CORPUS_PHRASES) {
+  for (const entry of scopePhrases) {
     await ensureCatalogEntry(entry.text, entry.mode, map, storage, bucketName, skipExisting, stats);
   }
 
@@ -484,23 +506,28 @@ async function run(): Promise<void> {
 
   const storage = buildStorage();
   const forceAll = process.argv.includes("--force-all");
-  const skipExisting = !forceAll;
+  const { phrases: scopePhrases, label: scopeLabel, audioLessonsOnly } = resolvePhraseScope();
+  const skipExisting = audioLessonsOnly ? false : !forceAll;
 
   console.log("[CONFIG]", {
     bucketName,
-    totalPhrases: TOTAL_PHRASES,
+    scope: scopeLabel,
+    scopePhrases: scopePhrases.length,
+    allCorpusPhrases: ALL_CORPUS_PHRASES.length,
     maxPassRetries: MAX_PASS_RETRIES,
     ttsTimeoutMs: TTS_TIMEOUT_MS,
     skipExisting,
+    audioLessonsOnly,
+    forceAll,
   });
 
   const map = loadStaticAudioMap();
   const totals: PassStats = { generated: 0, skipped: 0, backfilled: 0, failed: 0 };
 
-  let missingCount = logCoverageSummary(map, "initial");
+  let missingCount = logCoverageSummary(map, "initial", scopePhrases);
   let retryCount = 0;
 
-  if (missingCount === 0 && !forceAll) {
+  if (missingCount === 0 && !forceAll && !audioLessonsOnly) {
     console.log(
       "[SKIP] Map already has 100% corpus coverage — no OpenAI TTS calls were made.",
     );
@@ -508,23 +535,42 @@ async function run(): Promise<void> {
       "[HINT] To regenerate ALL MP3s (e.g. switch alloy → coral female voice), run:",
     );
     console.log("       pnpm run generate:static-audio -- --force-all");
+    console.log(
+      "[HINT] To regenerate only Amy Audio Lesson paragraphs, run:",
+    );
+    console.log("       pnpm run generate:static-audio -- --audio-lessons-only");
     console.log(`[CONFIG] Current voice=${OPENAI_VOICE} model=${OPENAI_MODEL}`);
   }
 
-  if (missingCount > 0 || forceAll) {
+  if (missingCount > 0 || forceAll || audioLessonsOnly) {
     if (forceAll) {
       console.log(`[FORCE-ALL] Regenerating every phrase with voice=${OPENAI_VOICE} (~30–90 min in CI)`);
     }
-    const firstPass = await runCatalogPass(map, storage, bucketName, skipExisting);
+    if (audioLessonsOnly) {
+      console.log(
+        `[AUDIO-LESSONS] Regenerating ${scopePhrases.length} lesson paragraph/title phrase(s) with voice=${OPENAI_VOICE}`,
+      );
+    }
+    const firstPass = await runCatalogPass(
+      map,
+      storage,
+      bucketName,
+      skipExisting,
+      forceAll ? ALL_CORPUS_PHRASES : scopePhrases,
+    );
     mergeStats(totals, firstPass);
     Object.assign(map, loadStaticAudioMap());
-    missingCount = logCoverageSummary(map, "after catalog pass");
+    missingCount = logCoverageSummary(map, "after catalog pass", scopePhrases);
     console.log("[PASS STATS] catalog", firstPass);
   }
 
+  const scopeKeySet = new Set(
+    scopePhrases.map((e) => staticAudioMissingKey(e.mode, e.normalizedKey)),
+  );
+
   while (missingCount > 0 && retryCount < MAX_PASS_RETRIES) {
     retryCount++;
-    const missingKeys = await collectMissingKeys(map);
+    const missingKeys = (await collectMissingKeys(map)).filter((k) => scopeKeySet.has(k));
     console.log(`[RETRY] Pass ${retryCount}/${MAX_PASS_RETRIES} — missing keys count: ${missingKeys.length}`);
 
     if (missingKeys.length === 0) break;
@@ -532,15 +578,16 @@ async function run(): Promise<void> {
     const passStats = await runMissingKeysPass(missingKeys, map, storage, bucketName, skipExisting);
     mergeStats(totals, passStats);
     Object.assign(map, loadStaticAudioMap());
-    missingCount = logCoverageSummary(map, `after retry ${retryCount}`);
+    missingCount = logCoverageSummary(map, `after retry ${retryCount}`, scopePhrases);
     console.log("[PASS STATS] missing-only", passStats);
   }
 
   writeStaticAudioMap(map);
-  const finalMissing = computeCorpusMissingStaticAudioKeys(map);
+  const finalMissing = computeCorpusMissingStaticAudioKeys(map).filter((k) => scopeKeySet.has(k));
 
   console.log("[SUMMARY]", {
-    totalPhrases: TOTAL_PHRASES,
+    scope: scopeLabel,
+    scopePhrases: scopePhrases.length,
     generated: totals.generated,
     backfilledFromGcs: totals.backfilled,
     skipped: totals.skipped,
@@ -557,7 +604,17 @@ async function run(): Promise<void> {
     process.exit(1);
   }
 
-  console.log("[DONE] All static audio generated — 100% full corpus coverage");
+  if (!audioLessonsOnly) {
+    const fullMissing = computeCorpusMissingStaticAudioKeys(map);
+    if (fullMissing.length > 0) {
+      console.error(
+        `[WARN] Scope complete but full corpus still missing ${fullMissing.length} phrase(s). Run without --audio-lessons-only.`,
+      );
+      process.exit(1);
+    }
+  }
+
+  console.log("[DONE] Static audio generated for scope — 100% coverage within scope");
   console.log(`Map written to:\n  ${STATIC_AUDIO_MAP_PATHS.join("\n  ")}`);
 
   if (totals.failed > 0) {

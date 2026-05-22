@@ -10,6 +10,11 @@ on:
         required: false
         default: false
         type: boolean
+      audio_lessons_only:
+        description: "Regenerate only Amy Audio Lesson paragraphs + titles (~264 phrases)."
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -47,9 +52,13 @@ jobs:
           STATIC_AUDIO_TTS_TIMEOUT_MS: "30000"
           STATIC_AUDIO_INTER_REQUEST_MS: "350"
         run: |
+          pnpm run scan:speakable-phrases
           if [ "${{ inputs.force_regenerate }}" = "true" ]; then
             echo "Force regenerate: all phrases with female voice (coral)"
             pnpm run generate:static-audio -- --force-all
+          elif [ "${{ inputs.audio_lessons_only }}" = "true" ]; then
+            echo "Regenerate Amy Audio Lesson corpus only"
+            pnpm run generate:static-audio -- --audio-lessons-only
           else
             pnpm run generate:static-audio
           fi
@@ -64,7 +73,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add artifacts/kidschedule/src/data/static-audio-map.json \
-            artifacts/api-server/src/data/static-audio-map.json
+            artifacts/api-server/src/data/static-audio-map.json \
+            artifacts/kidschedule/src/data/speakable-phrase-corpus.json
           if git diff --staged --quiet; then
             echo "No map changes to commit"
             exit 0
