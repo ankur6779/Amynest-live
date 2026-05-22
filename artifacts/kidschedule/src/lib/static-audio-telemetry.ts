@@ -1,4 +1,5 @@
 import { getApiUrl } from "@/lib/api";
+import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { getFirebaseAuth } from "@/lib/firebase";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
 
@@ -251,6 +252,8 @@ export function reportStaticAudioPlayFailed(
   const isGestureBlock =
     /USER_INTERACTION|gesture|NotAllowed|autoplay/i.test(message) ||
     extra?.error === "USER_INTERACTION_REQUIRED";
+  const isAndroidWatchdog =
+    isAndroidAmyNestAudioClient() && /PLAYBACK_WATCHDOG/i.test(message);
   reportStaticAudioEvent(
     "static_audio_play_failed",
     message,
@@ -259,7 +262,7 @@ export function reportStaticAudioPlayFailed(
       mediaError: audio.error?.code,
       ...extra,
     },
-    { countTowardCircuit: !isGestureBlock },
+    { countTowardCircuit: !isGestureBlock && !isAndroidWatchdog },
   );
   const phrase = typeof extra?.phrase === "string" ? extra.phrase : undefined;
   const mode = extra?.mode as StaticAudioMode | undefined;
@@ -280,17 +283,19 @@ export async function checkStaticAudioHealthOnBoot(): Promise<void> {
       gcsProbeOk?: boolean;
     };
 
-    if (body.circuitOpen) {
+    if (body.circuitOpen && !isAndroidAmyNestAudioClient()) {
       clientCircuitOpen = true;
       clientCircuitUntil = Date.now() + CLIENT_CIRCUIT_MS;
     }
 
     if (!res.ok || body.status !== "ok" || !body.gcs || body.gcsProbeOk === false) {
       console.error("STATIC AUDIO SYSTEM DOWN", { status: res.status, body });
-      reportStaticAudioEvent("static_audio_proxy_failed", "Static audio health check failed", {
-        httpStatus: res.status,
-        ...body,
-      });
+      reportStaticAudioEvent(
+        "static_audio_proxy_failed",
+        "Static audio health check failed",
+        { httpStatus: res.status, ...body },
+        { countTowardCircuit: false },
+      );
       return;
     }
     staticAudioVerbose("health ok", body);

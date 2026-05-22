@@ -1,5 +1,6 @@
 import { getAppApiBaseOrigin } from "@/lib/api";
 import { audioManager } from "@/lib/audio-manager";
+import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { lookupStaticAudioUrl } from "@/lib/static-audio";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
@@ -63,7 +64,7 @@ export function injectStaticAudioPreloadHints(): void {
     link.rel = "preload";
     link.as = "fetch";
     link.href = url;
-    if (!isNativeAmyNestShell()) {
+    if (!isNativeAmyNestShell() && !isAndroidAmyNestAudioClient()) {
       link.crossOrigin = "anonymous";
     }
     document.head.appendChild(link);

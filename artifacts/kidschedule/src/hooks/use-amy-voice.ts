@@ -7,7 +7,9 @@ import {
   type AmyVoicePipelineContext,
 } from "@/lib/amy-voice-pipeline";
 import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
+import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { audioManager } from "@/lib/audio-manager";
+import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
 let _ttsBusy = false;
@@ -35,6 +37,8 @@ export interface UseAmyVoiceState {
   loading: boolean;
   error: string | null;
   speak: (text: string, opts?: SpeakOptions) => Promise<SpeakResult>;
+  /** Android PWA/WebView: call from onPointerDown before onClick speak(). */
+  primeSpeakGesture: (text: string, opts?: SpeakOptions) => void;
   stop: () => void;
 }
 
@@ -195,5 +199,13 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
     ],
   );
 
-  return { speaking, loading, error, speak, stop };
+  const primeSpeakGesture = useCallback((rawText: string, opts?: SpeakOptions) => {
+    if (!isAndroidAmyNestAudioClient()) return;
+    const text = (rawText ?? "").trim();
+    if (!text) return;
+    recordTtsUserGesture();
+    primeStaticAudioInUserGesture(text, opts?.mode === "phonics" ? "phonics" : "default");
+  }, []);
+
+  return { speaking, loading, error, speak, primeSpeakGesture, stop };
 }

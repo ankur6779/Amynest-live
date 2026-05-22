@@ -24,7 +24,7 @@ import {
   primeStaticAudioInUserGesture,
   safePlayAudio,
 } from "@/lib/static-audio";
-import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import {
   emitAmyVoiceTextFallback,
 } from "@/lib/amy-voice-visual-fallback";
@@ -426,7 +426,7 @@ export async function speakAmyVoice(
   resetClientStaticAudioCircuit();
 
   const primaryMode: StaticAudioMode = opts?.mode === "phonics" ? "phonics" : "default";
-  if (isNativeAmyNestAndroidWrapper()) {
+  if (isAndroidAmyNestAudioClient()) {
     primeStaticAudioInUserGesture(text, primaryMode);
   }
 
