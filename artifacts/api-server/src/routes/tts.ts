@@ -132,9 +132,10 @@ router.post("/tts/generate", async (req, res): Promise<void> => {
   const blendWord = parsed.data.blend?.trim().toLowerCase() ?? "";
 
   try {
+    const clientVoice = parsed.data.voice?.trim();
     const result = await generateOpenAiTts({
       text: phrase,
-      voice: parsed.data.voice ?? getOpenAiTtsVoice(),
+      voice: clientVoice && clientVoice.length > 0 ? clientVoice : getOpenAiTtsVoice(),
       speed: parsed.data.speed,
       mode: parsed.data.mode ?? "phonics",
       category: parsed.data.category ?? "phonics",

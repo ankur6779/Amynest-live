@@ -73,7 +73,7 @@ async function preloadTtsPhrase(
     const res = await authFetch("/api/tts/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: phrase, mode, category: "phonics", voice: "alloy", speed: 0.9 }),
+      body: JSON.stringify({ text: phrase, mode, category: "phonics", speed: 0.9 }),
     });
     if (!res.ok) return null;
     const json = (await res.json()) as { url?: string; audioUrl?: string };

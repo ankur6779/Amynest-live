@@ -4,6 +4,12 @@ name: Generate static audio
 
 on:
   workflow_dispatch:
+    inputs:
+      force_regenerate:
+        description: "Regenerate ALL MP3s (use after changing voice e.g. alloy → coral). Takes ~30–90 min."
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -35,10 +41,18 @@ jobs:
           DEFAULT_OBJECT_STORAGE_BUCKET_ID: ${{ secrets.DEFAULT_OBJECT_STORAGE_BUCKET_ID }}
           GCS_SERVICE_ACCOUNT_JSON: ${{ secrets.GCS_SERVICE_ACCOUNT_JSON }}
           API_PUBLIC_URL: ${{ secrets.API_PUBLIC_URL }}
+          STATIC_AUDIO_VOICE: coral
+          OPENAI_TTS_VOICE: coral
           STATIC_AUDIO_MAX_RETRIES: "5"
           STATIC_AUDIO_TTS_TIMEOUT_MS: "30000"
           STATIC_AUDIO_INTER_REQUEST_MS: "350"
-        run: pnpm run generate:static-audio
+        run: |
+          if [ "${{ inputs.force_regenerate }}" = "true" ]; then
+            echo "Force regenerate: all phrases with female voice (coral)"
+            pnpm run generate:static-audio -- --force-all
+          else
+            pnpm run generate:static-audio
+          fi
 
       - name: Verify 100% coverage
         env:
