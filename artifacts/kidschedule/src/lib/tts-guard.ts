@@ -82,6 +82,9 @@ export function configureMobileAudioElement(audio: HTMLAudioElement): void {
     audio.setAttribute("webkit-playsinline", "true");
     (audio as HTMLAudioElement & { playsInline?: boolean }).playsInline = true;
     audio.preload = "auto";
+    if (audio.src && !audio.src.startsWith("blob:") && !audio.src.startsWith("data:")) {
+      audio.crossOrigin = "anonymous";
+    }
   } catch {
     /* ignore */
   }
