@@ -327,6 +327,17 @@ export function preloadStaticPhrases(
   }
 }
 
+/** Play Store WebView: call from pointerdown before async speak(). */
+export function primeStaticAudioInUserGesture(
+  rawText: string,
+  mode: StaticAudioMode = "default",
+): void {
+  const text = (rawText ?? "").trim();
+  if (!text) return;
+  const proxyUrl = lookupStaticAudioUrl(text, mode);
+  if (proxyUrl) audioManager.primeSpeechUrlInUserGesture(proxyUrl);
+}
+
 function createFreshAudio(proxyUrl: string): HTMLAudioElement {
   assertStaticPlaybackUrl(proxyUrl);
   return audioManager.create(proxyUrl);

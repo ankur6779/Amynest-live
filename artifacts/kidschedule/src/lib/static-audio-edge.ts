@@ -1,5 +1,6 @@
 import { getAppApiBaseOrigin } from "@/lib/api";
 import { audioManager } from "@/lib/audio-manager";
+import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { lookupStaticAudioUrl } from "@/lib/static-audio";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
 
@@ -62,7 +63,9 @@ export function injectStaticAudioPreloadHints(): void {
     link.rel = "preload";
     link.as = "fetch";
     link.href = url;
-    link.crossOrigin = "anonymous";
+    if (!isNativeAmyNestShell()) {
+      link.crossOrigin = "anonymous";
+    }
     document.head.appendChild(link);
   }
 

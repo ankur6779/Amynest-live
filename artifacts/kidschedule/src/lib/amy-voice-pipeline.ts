@@ -21,8 +21,10 @@ import {
 import {
   lookupStaticAudioUrl,
   prepareStaticPlaybackAudio,
+  primeStaticAudioInUserGesture,
   safePlayAudio,
 } from "@/lib/static-audio";
+import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 import {
   emitAmyVoiceTextFallback,
 } from "@/lib/amy-voice-visual-fallback";
@@ -422,8 +424,14 @@ export async function speakAmyVoice(
 
   recordTtsUserGesture();
   resetClientStaticAudioCircuit();
+
+  const primaryMode: StaticAudioMode = opts?.mode === "phonics" ? "phonics" : "default";
+  if (isNativeAmyNestAndroidWrapper()) {
+    primeStaticAudioInUserGesture(text, primaryMode);
+  }
+
   if (!isTtsPlaybackAllowed()) {
-    tryTextVisualLayer(text, opts?.mode === "phonics" ? "phonics" : "default");
+    tryTextVisualLayer(text, primaryMode);
     return { success: true, layer: "text_visual" };
   }
 

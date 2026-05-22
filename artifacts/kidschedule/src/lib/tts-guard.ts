@@ -9,6 +9,7 @@ import {
   isStandalonePwa,
   isIosUa,
   isAndroidUa,
+  isNativeAmyNestAndroidWrapper,
 } from "@/lib/device-lite";
 
 /** crossOrigin on remote MP3 often breaks playback in installed PWA / WebView shells. */
@@ -73,6 +74,12 @@ export function initAudioUnlock(): void {
   if (typeof document === "undefined") return;
   if (unlockListenersInstalled) return;
   unlockListenersInstalled = true;
+
+  // Play Store WebView: native layer sets mediaPlaybackRequiresUserGesture=false,
+  // but Chromium still blocks async play() after fetch — unlock at boot.
+  if (isNativeAmyNestAndroidWrapper()) {
+    unlockAudio();
+  }
 
   const onUnlock = () => {
     unlockAudio();
