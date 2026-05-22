@@ -596,10 +596,9 @@ export default function AICoachPage() {
   const [feedbackByWin, setFeedbackByWin] = useState<Record<number, Feedback>>({});
   const [extending, setExtending] = useState(false);
   const [progressWinCount, setProgressWinCount] = useState(0);
-  // True while we're still receiving streamed wins from the server. Used
-  // to distinguish "Next is disabled because we're at the last available
-  // win and more are still loading" from "we're at the genuine last card."
-  const [isStreaming, setIsStreaming] = useState(false);
+  // True while lazy-loading the next win (3–12) after parent marks feedback.
+  const [loadingNextWin, setLoadingNextWin] = useState(false);
+  const fetchingNextRef = useRef(false);
 
   // Keep last submitted answers/payload around so we can call /extend later
   const lastPayloadRef = useRef<{
@@ -828,7 +827,8 @@ export default function AICoachPage() {
     setActiveIdx(0);
     setFeedbackByWin({});
     setProgressWinCount(0);
-    setIsStreaming(false);
+    setLoadingNextWin(false);
+    fetchingNextRef.current = false;
     setPlan(null);
     setSessionId("");
     const ageMap: Record<string, string> = {
@@ -868,43 +868,10 @@ export default function AICoachPage() {
       triggers: payload.triggers,
       routine: payload.routine
     };
-    const pollCoachGeneration = async (
-      generationId: string,
-      sessionId: string,
-    ): Promise<void> => {
-      const pollIntervalMs = 2500;
-      while (!ctrl.signal.aborted) {
-        await new Promise((r) => setTimeout(r, pollIntervalMs));
-        if (ctrl.signal.aborted) return;
-        try {
-          const q = new URLSearchParams({ generationId, sessionId });
-          const statusRes = await authFetch(`/api/coach/status?${q}`, {
-            signal: ctrl.signal,
-          });
-          if (!statusRes.ok) continue;
-          const st = (await statusRes.json()) as {
-            status: "partial" | "complete";
-            plan?: Plan;
-          };
-          if (st.plan?.wins?.length) {
-            setPlan(st.plan);
-            setProgressWinCount(st.plan.wins.length);
-          }
-          if (st.status === "complete") {
-            setIsStreaming(false);
-            return;
-          }
-        } catch {
-          if (ctrl.signal.aborted) return;
-        }
-      }
-    };
-
     const applyCoachResponse = (data: {
       plan: Plan;
       sessionId: string;
       status?: "partial" | "complete";
-      generationId?: string;
       totalWins?: number;
     }): void => {
       if (!data?.plan?.wins?.length) {
@@ -917,12 +884,6 @@ export default function AICoachPage() {
       setProgressWinCount(data.plan.wins.length);
       setPhase("result");
       if (!coachUsage.isPremium) coachUsage.markBlockUsed("completed");
-      if (data.status === "partial" && data.generationId) {
-        setIsStreaming(true);
-        void pollCoachGeneration(data.generationId, data.sessionId);
-      } else {
-        setIsStreaming(false);
-      }
     };
 
     const buildViaProgressive = async (body: string): Promise<void> => {
@@ -954,7 +915,6 @@ export default function AICoachPage() {
         plan: Plan;
         sessionId: string;
         status?: "partial" | "complete";
-        generationId?: string;
         totalWins?: number;
       };
       applyCoachResponse(data);
@@ -1010,6 +970,72 @@ export default function AICoachPage() {
     });
   };
 
+  // ─── Lazy win: load win 3–12 when parent advances (one API call per win)
+  const fetchNextWin = async (): Promise<number | null> => {
+    if (!plan || !lastPayloadRef.current || !sessionId || fetchingNextRef.current) {
+      return null;
+    }
+    const total = originalWinCountRef.current || 12;
+    if (plan.wins.length >= total) return plan.wins.length;
+
+    fetchingNextRef.current = true;
+    setLoadingNextWin(true);
+    try {
+      const { default: i18nInstance } = await import("@/i18n");
+      const res = await authFetch("/api/coach/next-win", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...lastPayloadRef.current,
+          sessionId,
+          plan: {
+            title: plan.title,
+            root_cause: plan.root_cause,
+            summary: plan.summary,
+          },
+          existingWins: plan.wins,
+          language: i18nInstance.language || "en",
+        }),
+      });
+      if (res.status === 402) {
+        window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
+          detail: { reason: "ai_quota" },
+        }));
+        return null;
+      }
+      if (!res.ok) throw new Error(`Server ${res.status}`);
+      const { readResolvedApiJson } = await import("@/lib/poll-result");
+      const data = await readResolvedApiJson<{ win?: Win }>(res, authFetch);
+      if (!data?.win) throw new Error("empty win");
+      const newLen = plan.wins.length + 1;
+      setPlan((p) => (p ? { ...p, wins: [...p.wins, data.win!] } : p));
+      setProgressWinCount(newLen);
+      return newLen;
+    } catch {
+      toast({
+        title: "Couldn't load the next step",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      fetchingNextRef.current = false;
+      setLoadingNextWin(false);
+    }
+  };
+
+  const advanceAfterFeedback = async (targetIdx: number) => {
+    if (!plan) return;
+    const total = originalWinCountRef.current || 12;
+    let deckLen = plan.wins.length;
+    if (targetIdx >= deckLen && deckLen < total && lastPayloadRef.current) {
+      const fetched = await fetchNextWin();
+      if (!fetched) return;
+      deckLen = fetched;
+    }
+    setTimeout(() => goToCard(Math.min(deckLen - 1, targetIdx)), 300);
+  };
+
   // ─── Feedback (yes / somewhat / no)
   const submitFeedback = async (winNumber: number, feedback: Feedback) => {
     if (!plan || !sessionId) return;
@@ -1044,22 +1070,21 @@ export default function AICoachPage() {
     const denom = originalWinCountRef.current || plan.wins.length;
     const newPct = Math.min(100, Math.round(newSum / denom * 100));
     const isLastCard = activeIdx === plan.wins.length - 1;
+    const atPlanEnd = plan.wins.length >= (originalWinCountRef.current || 12);
 
-    // Rule: extend ONLY when progress < 100% AND we have an AI payload
-    // (infant static plans have no payload — they're pre-built, not AI-generated).
-    //   - "Not worked for me" on any card → extend (adaptive help)
-    //   - Any button on the LAST card while still below 100% → extend (keep going)
-    // At 100% — no more extensions, ever.
+    // Extend: "Not worked" always; on the final plan card only (not while lazy-loading).
     const canExtend = !!lastPayloadRef.current;
-    if (canExtend && newPct < 100 && (feedback === "no" || isLastCard)) {
+    if (canExtend && newPct < 100 && (feedback === "no" || (isLastCard && atPlanEnd))) {
       await requestExtension(winNumber);
     } else {
       toast({
         title: feedback === "yes" ? "Win locked in 🎉" : "Progress noted 💜",
-        description: feedback === "yes" ? "Marked as complete. Moving to next step." : "Partial progress counted. Keep going."
+        description:
+          feedback === "yes"
+            ? "Marked as complete. Moving to next step."
+            : "Partial progress counted. Keep going.",
       });
-      // Auto-advance to the next card
-      setTimeout(() => goToCard(activeIdx + 1), 300);
+      await advanceAfterFeedback(activeIdx + 1);
     }
   };
 
@@ -1167,6 +1192,8 @@ export default function AICoachPage() {
     setActiveIdx(0);
     setFeedbackByWin({});
     lastPayloadRef.current = null;
+    fetchingNextRef.current = false;
+    setLoadingNextWin(false);
   };
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -1755,7 +1782,7 @@ export default function AICoachPage() {
         const atLastLoaded = activeIdx >= plan.wins.length - 1;
         // While streaming, "last loaded" doesn't mean "last in plan" — the
         // next win is still on its way, so we show a generating hint.
-        const waitingForNext = atLastLoaded && isStreaming;
+        const waitingForNext = atLastLoaded && loadingNextWin;
         // Next is disabled when (a) we're at the genuine last card, OR
         // (b) the next streamed win hasn't arrived yet, OR (c) the parent
         // hasn't selected feedback for the visible card yet.
@@ -1824,7 +1851,7 @@ export default function AICoachPage() {
             }}>
                   <ArrowLeft size={14} /> {t("pages.ai_coach.prev")}
                 </button>
-                <button data-on-dark onClick={() => goToCard(Math.min(plan.wins.length - 1, activeIdx + 1))} disabled={nextDisabled} title={!hasFeedback ? "Mark how this win went before moving on" : waitingForNext ? "Generating next strategy…" : undefined} style={{
+                <button data-on-dark onClick={() => void advanceAfterFeedback(activeIdx + 1)} disabled={nextDisabled || loadingNextWin} title={!hasFeedback ? "Mark how this win went before moving on" : waitingForNext ? "Generating next strategy…" : undefined} style={{
               color: "#fff",
               background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
               boxShadow: "0 4px 12px rgba(139,92,246,0.3)",

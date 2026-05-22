@@ -1,7 +1,13 @@
 import { LESSONS } from "@workspace/audio-lessons";
 import { getPhonicsAudioTextsForStaticCatalog, getCvcPhonemeAudioTextsForStaticCatalog } from "@workspace/phonics-sounds";
 import { getPromptSpeakText, PRONUNCIATION_PROMPTS, getArticulationCue } from "@workspace/speech-coach";
-import { PLAY_CATEGORIES, BASIC_SUBJECTS, ADVANCED_SUBJECTS } from "@workspace/study-zone";
+import {
+  PLAY_CATEGORIES,
+  BASIC_SUBJECTS,
+  ADVANCED_SUBJECTS,
+  collapseSpeakWhitespace,
+  getPlayItemSpeakText,
+} from "@workspace/study-zone";
 import { getStaticAudioHash, getStaticAudioObjectKey } from "./keys.js";
 import { normalizeStaticAudioKey } from "./normalize.js";
 import { getStaticTtsEntries } from "./phrases.js";
@@ -73,18 +79,25 @@ function fromEntries(entries: StaticTtsEntry[], source: string): SpeakablePhrase
 
 function collectStudyZonePhrases(): SpeakablePhraseRecord[] {
   const out: SpeakablePhraseRecord[] = [];
+  const pushLine = (line: string, source: string) => {
+    const r = toRecord(line, "default", source);
+    if (r) out.push(r);
+    const collapsed = collapseSpeakWhitespace(line);
+    if (collapsed !== line.trim()) {
+      const c = toRecord(collapsed, "default", `${source}_collapsed`);
+      if (c) out.push(c);
+    }
+  };
+
   for (const cat of PLAY_CATEGORIES) {
     for (const item of cat.items) {
-      const r = toRecord(item.speak, "default", "study_zone_play");
-      if (r) out.push(r);
+      pushLine(getPlayItemSpeakText(item, cat.id), "study_zone_play");
     }
   }
   for (const subject of [...BASIC_SUBJECTS, ...ADVANCED_SUBJECTS]) {
     for (const topic of subject.topics) {
-      for (const line of [topic.notes, topic.amyPrompt]) {
-        const r = toRecord(line, "default", "study_zone_topic");
-        if (r) out.push(r);
-      }
+      pushLine(topic.notes, "study_zone_topic_notes");
+      pushLine(topic.amyPrompt, "study_zone_topic_prompt");
     }
   }
   return out;

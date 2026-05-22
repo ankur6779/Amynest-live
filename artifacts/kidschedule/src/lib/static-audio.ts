@@ -19,6 +19,7 @@ import {
 import {
   isStaticTtsText,
   normalizeStaticAudioKey,
+  normalizeSpeakTextForLookup,
   staticAudioMissingKey,
   type StaticAudioMode,
 } from "@workspace/static-audio/browser";
@@ -189,23 +190,43 @@ export function resolveStaticPlaybackUrl(
   return resolved;
 }
 
+function resolveMapEntry(
+  rawText: string,
+  mode: StaticAudioMode,
+): { mapEntry: string; normalized: string } | null {
+  const text = rawText.trim();
+  if (!text) return null;
+
+  const keys = [
+    normalizeStaticAudioKey(text),
+    normalizeSpeakTextForLookup(text),
+  ];
+  const seen = new Set<string>();
+  for (const normalized of keys) {
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    const mapEntry = map[mode]?.[normalized];
+    if (mapEntry) return { mapEntry, normalized };
+  }
+  return null;
+}
+
 export function lookupStaticAudioUrl(
   rawText: string,
   mode: StaticAudioMode = "default",
 ): string | null {
   const text = rawText.trim();
-  const normalized = normalizeStaticAudioKey(text);
-  if (!normalized) return null;
-
-  const mapEntry = map[mode]?.[normalized] ?? null;
-  if (!mapEntry) {
-    if (isCatalogPhrase(text, mode)) {
+  const resolved = resolveMapEntry(text, mode);
+  if (!resolved) {
+    const normalized = normalizeSpeakTextForLookup(text);
+    if (normalized && isCatalogPhrase(text, mode)) {
       recordMissingStaticAudio(normalized, mode, text);
       reportStaticAudioMissingUrl(text, mode);
     }
     return null;
   }
 
+  const { mapEntry, normalized } = resolved;
   const proxyUrl = resolveStaticPlaybackUrl(mapEntry, { text, mode });
   if (!proxyUrl || !isStaticAudioProxyUrl(proxyUrl)) {
     const hash = extractStaticAudioHashFromUrl(mapEntry);

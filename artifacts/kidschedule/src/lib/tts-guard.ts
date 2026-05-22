@@ -4,6 +4,19 @@
  */
 
 import { isNativeAmyNestShell } from "@/lib/native-shell";
+import {
+  isCapacitorIosShell,
+  isStandalonePwa,
+  isIosUa,
+  isAndroidUa,
+} from "@/lib/device-lite";
+
+/** crossOrigin on remote MP3 often breaks playback in installed PWA / WebView shells. */
+function shouldSetAudioCrossOrigin(): boolean {
+  if (isNativeAmyNestShell() || isCapacitorIosShell()) return false;
+  if (isStandalonePwa() && (isIosUa() || isAndroidUa())) return false;
+  return true;
+}
 
 let audioUnlocked = false;
 let unlockListenersInstalled = false;
@@ -82,7 +95,12 @@ export function configureMobileAudioElement(audio: HTMLAudioElement): void {
     audio.setAttribute("webkit-playsinline", "true");
     (audio as HTMLAudioElement & { playsInline?: boolean }).playsInline = true;
     audio.preload = "auto";
-    if (audio.src && !audio.src.startsWith("blob:") && !audio.src.startsWith("data:")) {
+    if (
+      shouldSetAudioCrossOrigin() &&
+      audio.src &&
+      !audio.src.startsWith("blob:") &&
+      !audio.src.startsWith("data:")
+    ) {
       audio.crossOrigin = "anonymous";
     }
   } catch {

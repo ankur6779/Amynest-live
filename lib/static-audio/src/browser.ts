@@ -1,7 +1,7 @@
 /**
  * Browser-safe exports (no node:crypto). Use `@workspace/static-audio` on the server.
  */
-export { normalizeStaticAudioKey } from "./normalize.js";
+export { normalizeStaticAudioKey, normalizeSpeakTextForLookup } from "./normalize.js";
 export {
   staticAudioMissingKey,
   parseStaticAudioMissingKey,
