@@ -11,6 +11,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const configPath = resolve(root, "ios/App/App/capacitor.config.json");
 const REQUIRED_LOCAL_PLUGINS = ["MicPermissionPlugin"];
 
+/** iOS Capacitor loads live www (see amynest-capacitor/capacitor.config.json). */
+const REQUIRED_SERVER_URL = "https://www.amynest.in";
+
 if (!existsSync(configPath)) {
   console.warn("⚠️  Skip patch-ios-capacitor-config — no ios/App/App/capacitor.config.json");
   process.exit(0);
@@ -19,6 +22,14 @@ if (!existsSync(configPath)) {
 const config = JSON.parse(readFileSync(configPath, "utf8"));
 const list = Array.isArray(config.packageClassList) ? [...config.packageClassList] : [];
 let changed = false;
+
+if (!config.server) config.server = {};
+if (config.server.url !== REQUIRED_SERVER_URL) {
+  config.server.url = REQUIRED_SERVER_URL;
+  config.server.iosScheme = "https";
+  config.server.androidScheme = "https";
+  changed = true;
+}
 
 for (const plugin of REQUIRED_LOCAL_PLUGINS) {
   if (!list.includes(plugin)) {

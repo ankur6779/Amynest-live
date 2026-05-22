@@ -16,6 +16,7 @@ import {
   ENABLE_GOOGLE_SIGN_IN,
   ENABLE_PHONE_OTP,
 } from "@/lib/auth-feature-flags";
+import { isNativeAmyNestShell } from "@/lib/native-shell";
 
 // ── Animation keyframes (same classes as sign-in — CSS idempotent in SPA) ────
 const SIGN_UP_CSS = `
@@ -240,16 +241,19 @@ function AuthShell({
   const {
     t
   } = useTranslation();
+  const nativeShell = isNativeAmyNestShell();
   return <div style={{
     minHeight: "100dvh",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
-    padding: "40px 16px",
+    justifyContent: nativeShell ? "flex-start" : "center",
+    padding: nativeShell ? "max(16px, env(safe-area-inset-top)) 16px 32px" : "40px 16px",
     background: ["radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)", "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)"].join(", "),
     position: "relative",
-    overflow: "hidden"
+    overflowX: "hidden",
+    overflowY: nativeShell ? "auto" : "hidden",
+    WebkitOverflowScrolling: nativeShell ? "touch" : undefined,
   }}>
       <style>{SIGN_UP_CSS}</style>
 
@@ -360,7 +364,13 @@ export default function SignUpPage() {
           /* non-fatal */
         }
       }
-      if (isEmailVerificationBypassEmail(cred.user.email ?? email.trim())) {
+      const signupEmail = (cred.user.email ?? email.trim()).toLowerCase().trim();
+      if (isEmailVerificationBypassEmail(signupEmail)) {
+        try {
+          await cred.user.getIdToken(true);
+        } catch {
+          /* non-fatal */
+        }
         setLocation("/");
         return;
       }
