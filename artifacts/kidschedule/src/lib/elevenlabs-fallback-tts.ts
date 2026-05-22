@@ -47,7 +47,12 @@ export function resolveElevenLabsVoiceIds(
 export async function generateElevenLabsFallbackTts(
   authFetch: AuthFetchFn,
   text: string,
-  opts?: { mode?: StaticAudioMode; voiceId?: string; modelId?: string },
+  opts?: {
+    mode?: StaticAudioMode;
+    voiceId?: string;
+    modelId?: string;
+    signal?: AbortSignal;
+  },
 ): Promise<TtsSynthesizeResponse> {
   const phrase = text.trim();
   if (!phrase) return { success: false, ok: false, error: "tts_empty_text" };
@@ -60,6 +65,7 @@ export async function generateElevenLabsFallbackTts(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: phrase, voiceId, modelId, mode }),
+      signal: opts?.signal,
     });
     const data = await readResolvedApiJson<{
       ok?: boolean;

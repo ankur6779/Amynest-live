@@ -76,7 +76,12 @@ export function recordAmyVoiceLayerSuccess(
   detail?: Record<string, unknown>,
 ): void {
   const layer = eventToLayer(event);
-  if (layer) lastSuccessLayer = layer;
+  if (layer) {
+    lastSuccessLayer = layer;
+    void import("@/lib/amy-voice-session").then((m) =>
+      m.recordSessionLayerOutcome(layer, true),
+    );
+  }
   if (import.meta.env.DEV || import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true") {
     console.info(LOG, event, detail ?? "");
   }
@@ -89,6 +94,11 @@ export function recordAmyVoiceLayerFailed(
   detail?: Record<string, unknown>,
 ): void {
   lastFailureChain.push({ layer, error });
+  if (layer !== "static_alt_mode") {
+    void import("@/lib/amy-voice-session").then((m) =>
+      m.recordSessionLayerOutcome(layer, false),
+    );
+  }
   if (import.meta.env.DEV || import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true") {
     console.warn(LOG, "layer_failed", layer, error, detail ?? "");
   }
@@ -147,6 +157,7 @@ function reportAmyVoiceTelemetry(
             ? `${type} (${meta.layer})`
             : type;
 
+      const { getAdaptiveSnapshot } = await import("@/lib/amy-voice-adaptive");
       const res = await fetch(getApiUrl("/api/log-client-error"), {
         method: "POST",
         headers,
@@ -158,6 +169,7 @@ function reportAmyVoiceTelemetry(
             userAgent: navigator.userAgent,
             lastSuccessLayer,
             amyVoiceEvent: type,
+            adaptive: getAdaptiveSnapshot(),
             ...meta,
           },
         }),

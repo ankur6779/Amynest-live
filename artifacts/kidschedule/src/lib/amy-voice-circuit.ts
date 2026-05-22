@@ -1,6 +1,7 @@
-/** TTS API circuit breaker — skip live API for 30s after failures. */
+/** TTS API circuit breaker — adaptive duration from recent failure rate. */
 
-const TTS_API_CIRCUIT_MS = 30_000;
+import { getAdaptiveApiCircuitMs } from "@/lib/amy-voice-adaptive";
+
 let ttsApiCircuitUntil = 0;
 let consecutiveTtsFailures = 0;
 
@@ -16,7 +17,7 @@ export function isTtsApiCircuitOpen(): boolean {
 
 export function recordTtsApiFailure(): void {
   consecutiveTtsFailures += 1;
-  ttsApiCircuitUntil = Date.now() + TTS_API_CIRCUIT_MS;
+  ttsApiCircuitUntil = Date.now() + getAdaptiveApiCircuitMs();
 }
 
 export function recordTtsApiSuccess(): void {
