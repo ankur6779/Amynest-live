@@ -31,6 +31,24 @@ export function isAndroidInstalledAmyNestApp(): boolean {
   return isStandalonePwa() || isNativeAmyNestAndroidWrapper();
 }
 
+/** Android Chrome installed PWA only (not Play WebView, not Capacitor). */
+export function isAndroidInstalledPwa(): boolean {
+  if (typeof window === "undefined") return false;
+  if (!isAndroidUa() || !isStandalonePwa()) return false;
+  if (isNativeAmyNestAndroidWrapper()) return false;
+  try {
+    const cap = (
+      window as Window & {
+        Capacitor?: { isNativePlatform?: () => boolean };
+      }
+    ).Capacitor;
+    if (cap?.isNativePlatform?.()) return false;
+  } catch {
+    /* ignore */
+  }
+  return true;
+}
+
 function isCapacitorAndroid(): boolean {
   if (typeof window === "undefined") return false;
   try {
