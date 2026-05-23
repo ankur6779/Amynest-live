@@ -19,6 +19,8 @@ import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { getProfileCountryByCode } from "@workspace/phone-auth";
+import ProfileCountryPickerModal from "@/components/ProfileCountryPickerModal";
 
 type Colors = ReturnType<typeof useColors>;
 
@@ -31,6 +33,7 @@ type ParentProfile = {
   workType: string;
   gender?: string;
   mobileNumber?: string;
+  country?: string | null;
   workStartTime?: string;
   workEndTime?: string;
   freeSlots?: FreeSlot[];
@@ -152,6 +155,8 @@ export default function ProfileScreen() {
   const [role, setRole] = useState("mother");
   const [gender, setGender] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
+  const [country, setCountry] = useState("");
+  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
   const [workType, setWorkType] = useState("work_from_home");
   const [workStartTime, setWorkStartTime] = useState("");
   const [workEndTime, setWorkEndTime] = useState("");
@@ -249,6 +254,7 @@ export default function ProfileScreen() {
       setRole(profile.role ?? "mother");
       setGender(profile.gender ?? "");
       setMobileNumber(profile.mobileNumber ?? "");
+      setCountry(profile.country ?? "");
       setWorkType(profile.workType ?? "work_from_home");
       setWorkStartTime(profile.workStartTime ?? "");
       setWorkEndTime(profile.workEndTime ?? "");
@@ -353,6 +359,10 @@ export default function ProfileScreen() {
       if (name) body.name = name;
       if (gender) body.gender = gender;
       if (mobileNumber) body.mobileNumber = mobileNumber;
+      if (country) {
+        body.country = country;
+        body.locationSource = "manual";
+      }
       if (workStartTime) body.workStartTime = workStartTime;
       if (workEndTime) body.workEndTime = workEndTime;
       if (freeSlots.length > 0) body.freeSlots = freeSlots;
@@ -567,6 +577,26 @@ export default function ProfileScreen() {
               placeholderTextColor={colors.mutedForeground}
               keyboardType="phone-pad"
             />
+          </Field>
+
+          <Field label={t("screens.tabs_profile.country")} colors={colors}>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.selectionAsync();
+                setCountryPickerOpen(true);
+              }}
+              style={[styles.input, styles.countryPicker, { borderColor: colors.border, backgroundColor: colors.background }]}
+            >
+              <Text style={{ color: country ? colors.foreground : colors.mutedForeground, fontSize: 15 }}>
+                {country
+                  ? `${getProfileCountryByCode(country)?.flag ?? ""} ${getProfileCountryByCode(country)?.name ?? country}`
+                  : t("screens.tabs_profile.select_country")}
+              </Text>
+              <Ionicons name="chevron-down" size={18} color={colors.mutedForeground} />
+            </TouchableOpacity>
+            <Text style={[styles.hint, { color: colors.mutedForeground }]}>
+              {t("screens.tabs_profile.country_hint")}
+            </Text>
           </Field>
         </Section>
 
@@ -917,6 +947,13 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         )}
       </ScrollView>
+
+      <ProfileCountryPickerModal
+        visible={countryPickerOpen}
+        selectedCode={country}
+        onSelect={(c) => setCountry(c.code)}
+        onClose={() => setCountryPickerOpen(false)}
+      />
     </View>
   );
 }
@@ -1051,6 +1088,11 @@ const styles = StyleSheet.create({
   input: {
     height: 44, borderRadius: 12, borderWidth: 1.5,
     paddingHorizontal: 14, fontSize: 15, fontFamily: "Inter_400Regular",
+  },
+  countryPicker: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   textArea: { height: 80, paddingTop: 12, paddingBottom: 12 },
   hint: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },

@@ -101,6 +101,7 @@ const FeedbackPage = lazyPage(() => import("@/pages/feedback"));
 const AdminFeedbackPage = lazyPage(() => import("@/pages/admin-feedback"));
 
 import { NativeStartupPermissionsGateLazy } from "@/components/native-startup-permissions-gate-lazy";
+import { PwaAndroidPermissionsGateLazy } from "@/components/pwa-android-permissions-gate-lazy";
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
 import { OfflineScreen, useOnlineStatus } from "@/components/offline-screen";
 import { getAppApiBaseOrigin } from "@/lib/api";
@@ -537,6 +538,7 @@ export default function AppCore() {
                 </AppErrorBoundary>
                 <OfflineGate />
                 <NativeStartupPermissionsGateLazy />
+                <PwaAndroidPermissionsGateLazy />
               </FirebaseActionGate>
             </WouterRouter>
           </AppInitGate>

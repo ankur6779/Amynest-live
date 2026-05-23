@@ -218,10 +218,10 @@ const COUNTRY_ALIASES: Record<string, LaunchCountry> = {
 
 /** Normalize free-text / ISO country into a launch-market code. */
 export function normalizeCountryCode(country: string | null | undefined): LaunchCountry {
-  if (!country?.trim()) return "IN";
+  if (!country?.trim()) return "US";
   const key = country.trim().toUpperCase();
   if (key in PROFILES) return key as LaunchCountry;
-  return COUNTRY_ALIASES[key] ?? "IN";
+  return COUNTRY_ALIASES[key] ?? "US";
 }
 
 export function getCountryRoutineProfile(

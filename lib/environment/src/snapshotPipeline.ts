@@ -35,7 +35,7 @@ const COUNTRY_AQI_DEFAULTS: Record<string, number> = {
 };
 
 export function estimateAQIByCountry(country?: string | null): number {
-  if (!country?.trim()) return 100;
+  if (!country?.trim()) return 60;
   const key = country.trim();
   const upper = key.toUpperCase();
   return (

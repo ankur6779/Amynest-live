@@ -19,7 +19,7 @@ import {
   shouldShowAppleSignIn,
 } from "@/lib/auth-feature-flags";
 import { getApiUrl } from "@/lib/api";
-import { shouldShowNativeNotifyPrompt } from "@/lib/native-push-bridge";
+import { shouldShowPermissionsSetupPromptAsync } from "@/lib/pwa-android-permissions";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { isCapacitorIosShell, isLowMemoryIosClient } from "@/lib/device-lite";
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
@@ -439,18 +439,16 @@ export default function SignInPage() {
   const [resetEmail, setResetEmail] = useState("");
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetBusy, setResetBusy] = useState(false);
-  function postSignInPath() {
-    // Notify prompt is native-wrapper only — web browsers skip straight to home.
-    if (shouldShowNativeNotifyPrompt()) {
-      return "/notify-prompt?next=/";
-    }
-    return "/";
-  }
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      const path = postSignInPath();
-      setLocation(path);
-    }
+    if (!isLoaded || !isSignedIn) return;
+    let cancelled = false;
+    void shouldShowPermissionsSetupPromptAsync().then((show) => {
+      if (cancelled) return;
+      setLocation(show ? "/notify-prompt?next=/" : "/");
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [isLoaded, isSignedIn, setLocation]);
   const onEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -484,7 +482,8 @@ export default function SignInPage() {
           /* non-fatal — auth listener will still pick up the session */
         }
       }
-      setLocation(postSignInPath());
+      const showPerms = await shouldShowPermissionsSetupPromptAsync();
+      setLocation(showPerms ? "/notify-prompt?next=/" : "/");
     } catch (err: any) {
       setError(prettyAuthError(err));
     } finally {

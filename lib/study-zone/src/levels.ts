@@ -63,11 +63,11 @@ export const COUNTRY_PROFILES: Record<Country, CountryProfile> = {
   AU:      { country: "AU",      currency: "$",   currencyName: "dollars", fruit: "apple",  fruitEmoji: "🍎", treat: "cookie",  place: "school bus" },
   NZ:      { country: "NZ",      currency: "$",   currencyName: "dollars", fruit: "apple",  fruitEmoji: "🍎", treat: "cookie",  place: "school bus" },
   AE:      { country: "AE",      currency: "د.إ", currencyName: "dirhams", fruit: "date",   fruitEmoji: "🌴", treat: "date",    place: "mall" },
-  DEFAULT: { country: "DEFAULT", currency: "₹",   currencyName: "rupees",  fruit: "mango",  fruitEmoji: "🥭", treat: "laddoo",  place: "school bag" },
+  DEFAULT: { country: "DEFAULT", currency: "$",   currencyName: "dollars", fruit: "apple",  fruitEmoji: "🍎", treat: "cookie",  place: "school bus" },
 };
 
 export function profileFor(country: string | null | undefined): CountryProfile {
-  if (!country) return COUNTRY_PROFILES.DEFAULT;
+  if (!country) return COUNTRY_PROFILES.US;
   const key = country.toUpperCase() as Country;
   return COUNTRY_PROFILES[key] ?? COUNTRY_PROFILES.DEFAULT;
 }

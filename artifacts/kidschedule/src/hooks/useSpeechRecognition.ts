@@ -13,12 +13,12 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { getApiUrl } from "@/lib/api";
+import { isCapacitorIosNative, prepareIosAudioSessionForRecording } from "@/lib/mic-permission-capacitor";
 import {
-  isCapacitorIosNative,
-  MicPermissionCapacitor,
-  prepareIosAudioSessionForRecording,
-  requestIosMicrophoneAccess,
-} from "@/lib/mic-permission-capacitor";
+  openMicrophoneStream,
+  requestMicrophoneAccess,
+  resetMicrophonePermissionCache,
+} from "@/lib/microphone-permission";
 
 // ── Web Speech API ambient declarations ─────────────────────────────────────
 // These types are part of the WICG Speech API spec but are not yet included
@@ -146,144 +146,6 @@ export interface SpeechRecognitionState {
   reset: () => void;
 }
 
-// ── Android PWA mic-permission helper ────────────────────────────────────────
-// On Android Chrome / PWA, SpeechRecognition.start() does NOT trigger the OS
-// permission dialog on its own — it just fires onerror:"not-allowed" silently.
-// We must call getUserMedia({audio:true}) first so the system dialog appears.
-// Once the user grants access the browser caches it; subsequent calls return
-// instantly without showing the dialog again.
-//
-// We also cache the result in a module-level ref so the prompt only ever shows
-// once per page load (not on every tap-to-record). iOS Capacitor WKWebView can
-// keep a stale "denied" across Settings → Allow → return without reloading JS;
-// we reset that case (see ensureMicPermission + visibility listener below).
-const _micPermCache: { state: "unknown" | "granted" | "denied" } = {
-  state: "unknown",
-};
-
-let _micPermInFlight: Promise<"granted" | "denied"> | null = null;
-let _iosMicVisibilityWired = false;
-
-/**
- * Returns true when running inside the AmyNest Android WebView wrapper
- * (kidschedule-android APK). Detected via the custom UA token injected by
- * MainActivity: s.userAgentString += " AmyNestAndroid/<version>".
- *
- * We deliberately do NOT import isAmyNestWrapper() from native-push-bridge
- * here to avoid a circular-dependency risk in this low-level hook.
- */
-function isAndroidWebViewWrapper(): boolean {
-  try {
-    return /AmyNestAndroid/.test(navigator.userAgent);
-  } catch {
-    return false;
-  }
-}
-
-function isCapacitorIOS(): boolean {
-  return isCapacitorIosNative();
-}
-
-/** After returning from iOS Settings (or task switcher), re-probe mic instead of trusting stale cache. */
-function wireIosCapacitorMicCacheResetOnce(): void {
-  if (_iosMicVisibilityWired || typeof document === "undefined" || typeof window === "undefined") return;
-  if (!isCapacitorIOS()) return;
-  _iosMicVisibilityWired = true;
-
-  const onForeground = () => {
-    try {
-      if (document.visibilityState === "visible") _micPermCache.state = "unknown";
-    } catch {
-      /* ignore */
-    }
-  };
-  document.addEventListener("visibilitychange", onForeground);
-  window.addEventListener("pageshow", onForeground);
-}
-
-async function ensureMicPermission(): Promise<"granted" | "denied"> {
-  wireIosCapacitorMicCacheResetOnce();
-
-  // iOS Capacitor: user may fix mic in Settings while our JS bundle stays warm — clear stale "denied".
-  if (_micPermCache.state === "denied" && isCapacitorIOS()) {
-    _micPermCache.state = "unknown";
-  }
-
-  if (_micPermCache.state !== "unknown") return _micPermCache.state;
-
-  if (_micPermInFlight) return _micPermInFlight;
-
-  const run = async (): Promise<"granted" | "denied"> => {
-    try {
-      // iOS Capacitor: AVAudioSession matches Settings; WKWebView Permissions API and
-      // even getUserMedia can disagree or re-prompt. If native says granted, trust it.
-      if (isCapacitorIOS()) {
-        const iosMic = await requestIosMicrophoneAccess();
-        if (iosMic === "granted") {
-          _micPermCache.state = "granted";
-          return "granted";
-        }
-        if (iosMic === "denied") {
-          _micPermCache.state = "denied";
-          return "denied";
-        }
-      }
-
-      // ⚠️ Android WebView wrapper + iOS Capacitor WKWebView:
-      // navigator.permissions.query({ name: "microphone" }) can disagree with the
-      // real OS / embedder permission state. Skip it and use getUserMedia, which
-      // is the source of truth for capture.
-      const inWrapper = isAndroidWebViewWrapper();
-      const skipPermissionsQuery = inWrapper || isCapacitorIOS();
-
-      if (!skipPermissionsQuery && typeof navigator !== "undefined" && navigator.permissions) {
-        try {
-          const status = await navigator.permissions.query({
-            name: "microphone" as PermissionName,
-          });
-          if (status.state === "granted") {
-            _micPermCache.state = "granted";
-            return "granted";
-          }
-          if (status.state === "denied") {
-            _micPermCache.state = "denied";
-            return "denied";
-          }
-          // state === "prompt" — fall through to getUserMedia below
-        } catch {
-          // Permissions API not supported — fall through
-        }
-      }
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop()); // release immediately
-        _micPermCache.state = "granted";
-        return "granted";
-      } catch {
-        if (isCapacitorIOS()) {
-          try {
-            const { status } = await MicPermissionCapacitor.getMicrophoneStatus();
-            if (status === "granted") {
-              _micPermCache.state = "granted";
-              return "granted";
-            }
-          } catch {
-            /* ignore */
-          }
-        }
-        _micPermCache.state = "denied";
-        return "denied";
-      }
-    } finally {
-      _micPermInFlight = null;
-    }
-  };
-
-  _micPermInFlight = run();
-  return _micPermInFlight;
-}
-
 // Normalise SpeechRecognition error codes → our own error keys
 function normaliseSpeechError(code: string): string {
   if (code === "not-allowed" || code === "permission-denied")
@@ -350,11 +212,9 @@ export function useSpeechRecognition(
     setInterimTranscript("");
     setError(null);
 
-    // ⚠️ Android PWA fix: request mic permission explicitly before starting
-    // recognition, so the OS dialog appears instead of silently failing.
-    const perm = await ensureMicPermission();
-    if (perm === "denied") {
-      setError("microphone_denied");
+    const access = await requestMicrophoneAccess({ forFeature: true });
+    if (!access.granted) {
+      setError(access.reason === "unavailable" ? "recognition_start_failed" : "microphone_denied");
       return;
     }
 
@@ -375,7 +235,7 @@ export function useSpeechRecognition(
       const code = normaliseSpeechError(e.error);
       if (code !== "aborted") setError(code);
       // Reset cached permission if user revoked it mid-session
-      if (code === "microphone_denied") _micPermCache.state = "unknown";
+      if (code === "microphone_denied") resetMicrophonePermissionCache();
       setListening(false);
     };
     rec.onresult = (e: SpeechRecognitionEvent) => {
@@ -418,27 +278,19 @@ export function useSpeechRecognition(
       await prepareIosAudioSessionForRecording();
     }
 
-    const perm = await ensureMicPermission();
-    if (perm === "denied") {
-      setError("microphone_denied");
+    const opened = await openMicrophoneStream(
+      {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+      { forFeature: true },
+    );
+    if (!opened.ok) {
+      setError(opened.reason === "unavailable" ? "recognition_start_failed" : "microphone_denied");
       return;
     }
-
-    let stream: MediaStream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-      _micPermCache.state = "granted";
-    } catch {
-      _micPermCache.state = "denied";
-      setError("microphone_denied");
-      return;
-    }
+    const stream = opened.stream;
     streamRef.current = stream;
 
     let rec: MediaRecorder;

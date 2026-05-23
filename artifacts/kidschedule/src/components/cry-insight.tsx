@@ -21,6 +21,7 @@ import { Mic, Square, Activity, Baby, AlertTriangle, ShieldAlert, Loader2, Refre
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { getApiUrl } from "@/lib/api";
+import { openMicrophoneStream } from "@/lib/microphone-permission";
 interface CryInsightProps {
   childId: number;
   childName: string;
@@ -278,18 +279,20 @@ export function CryInsight({
   // ─── Start recording ────────────────────────────────────────────────────────
   const startRecording = useCallback(async () => {
     if (recording || analysing) return;
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+    const opened = await openMicrophoneStream(true, { forFeature: true });
+    if (!opened.ok) {
       toast({
-        title: t("toasts.cry_insight.mic_unavailable_title"),
-        description: t("toasts.cry_insight.mic_unavailable_body"),
-        variant: "destructive"
+        title: t("toasts.cry_insight.mic_denied_title"),
+        description:
+          opened.reason === "unavailable"
+            ? t("toasts.cry_insight.mic_unavailable_body")
+            : t("toasts.cry_insight.mic_denied_body"),
+        variant: "destructive",
       });
       return;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true
-      });
+      const stream = opened.stream;
       streamRef.current = stream;
       const rec = new MediaRecorder(stream);
       chunksRef.current = [];

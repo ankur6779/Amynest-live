@@ -58,7 +58,7 @@ export function maxOutdoorMinutesFromAqi(aqi: number): number | null {
 /** Resolved outdoor duration cap for enforcement (policy ∩ AQI hard cap). */
 export function resolveOutdoorDurationCap(
   aqi: number | null | undefined,
-  country: LaunchCountry | string = "IN",
+  country: LaunchCountry | string = "US",
 ): number | null {
   if (aqi == null || !Number.isFinite(aqi)) return null;
   const policy = deriveAqiOutdoorPolicy(aqi, country);
@@ -89,7 +89,7 @@ export function enforceOutdoorDurationLimits(
   const adjustments: string[] = [];
   if (!items.length) return { items, adjustments };
 
-  const country = opts.country ?? "IN";
+  const country = opts.country ?? "US";
   const rainy = isRainyCondition(opts.condition);
   const rainyCap = opts.rainyDayMaxMins ?? 10;
   const aqiCap = resolveOutdoorDurationCap(opts.aqi, country);
@@ -385,7 +385,7 @@ function policyFromExposureMode(
 
 export function deriveAqiOutdoorPolicy(
   aqi: number | null | undefined,
-  country: LaunchCountry | string = "IN",
+  country: LaunchCountry | string = "US",
 ): AqiOutdoorPolicy {
   const unknown: AqiOutdoorPolicy = {
     category: "unknown",
@@ -417,7 +417,7 @@ export function deriveAqiOutdoorPolicy(
 
 /** @deprecated Use `exposureMode` on policy — tolerant controlled/limited outdoor. */
 export function usesMetroAqiPolicy(country: LaunchCountry | string | undefined): boolean {
-  return aqiCultureProfile(country ?? "IN") === "tolerant";
+  return aqiCultureProfile(country ?? "US") === "tolerant";
 }
 
 export function isAdvisoryExposureMode(mode: ExposureMode): boolean {
@@ -429,7 +429,7 @@ export function buildGlobalAqiAdvisory(
   exposureMode: ExposureMode,
   country?: LaunchCountry | string,
 ): RoutineAqiAdvisory {
-  const culture = aqiCultureProfile(country ?? "IN");
+  const culture = aqiCultureProfile(country ?? "US");
   const actions: string[] = [];
 
   if (aqi > 100) {
@@ -499,7 +499,7 @@ export function buildAqiAdvisory(
   exposureMode?: ExposureMode,
 ): RoutineAqiAdvisory {
   const mode =
-    exposureMode ?? resolveExposureModeForAqi(aqi, country ?? "IN");
+    exposureMode ?? resolveExposureModeForAqi(aqi, country ?? "US");
   return buildGlobalAqiAdvisory(aqi, mode, country);
 }
 
@@ -551,7 +551,7 @@ export function attachAqiAdvisory(
   country?: LaunchCountry | string,
   exposureMode?: ExposureMode,
 ): RoutineScheduleItem {
-  const policy = deriveAqiOutdoorPolicy(aqi, country ?? "IN");
+  const policy = deriveAqiOutdoorPolicy(aqi, country ?? "US");
   const mode = exposureMode ?? policy.exposureMode;
   const advisory = buildGlobalAqiAdvisory(aqi, mode, country);
   return {
@@ -708,7 +708,7 @@ export function validateAqiOutdoorRules(
   const warnings: string[] = [];
   if (aqi == null || !Number.isFinite(aqi)) return warnings;
 
-  const policy = deriveAqiOutdoorPolicy(aqi, country ?? "IN");
+  const policy = deriveAqiOutdoorPolicy(aqi, country ?? "US");
 
   if (policy.exposureMode === "indoor_only") {
     for (const it of items) {
@@ -739,7 +739,7 @@ export function validateAqiOutdoorRules(
   if (
     policy.allowOutdoor &&
     (policy.exposureMode === "controlled" || policy.exposureMode === "limited") &&
-    aqiCultureProfile(country ?? "IN") === "tolerant" &&
+    aqiCultureProfile(country ?? "US") === "tolerant" &&
     aqi > 200
   ) {
     const outdoorItems = items.filter(

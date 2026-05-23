@@ -694,7 +694,7 @@ function buildWeekPlanPrompt(opts: {
 
 CHILD PROFILE:
 - Child: ${childLabel}
-- Country: ${country || "India"}
+- Country: ${country || "United States"}
 - Cuisine style: ${cuisineLabel}
 - Diet: ${dietRule}
 ${allergyBlock ? `- ${allergyBlock}\n` : ""}
@@ -760,7 +760,7 @@ router.post("/meals/week-plan", requireAuth, async (req, res): Promise<void> => 
   const foodStyle: string = child?.foodStyle ?? pp?.foodStyle ?? "indian";
   const subCuisine: string | null = child?.subCuisine ?? pp?.subCuisine ?? null;
   const allergies: string = child?.allergies ?? pp?.allergies ?? "";
-  const country = String(req.body?.country ?? "India").slice(0, 50);
+  const country = String(req.body?.country ?? "United States").slice(0, 50);
 
   // Environmental / routine context
   const isSchoolGoing = child?.isSchoolGoing ?? undefined;
@@ -912,7 +912,7 @@ router.post("/meals/family-portions", requireAuth, async (req, res): Promise<voi
     return;
   }
 
-  const country = String(req.body?.country ?? "India").slice(0, 50);
+  const country = String(req.body?.country ?? "United States").slice(0, 50);
   const forceRefresh = req.body?.forceRefresh === true;
 
   const [children, parentProfiles] = await Promise.all([

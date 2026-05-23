@@ -17,6 +17,12 @@ describe("getCountryRoutineProfile", () => {
     assert.equal(normalizeCountryCode("New Zealand"), "NZ");
   });
 
+  it("defaults missing country to US", () => {
+    assert.equal(normalizeCountryCode(null), "US");
+    assert.equal(normalizeCountryCode(""), "US");
+    assert.equal(normalizeCountryCode("   "), "US");
+  });
+
   it("USA has early dinner and high extracurricular culture", () => {
     const p = getCountryRoutineProfile("US");
     assert.equal(p.extracurricularCulture, "high");

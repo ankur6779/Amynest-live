@@ -1,7 +1,7 @@
 import { getApiUrl } from "@/lib/api";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { waitForIdToken } from "@/lib/auth-token";
-import { shouldShowNativeNotifyPrompt } from "@/lib/native-push-bridge";
+import { shouldShowPermissionsSetupPromptAsync } from "@/lib/pwa-android-permissions";
 import { isSetupComplete, resolveSetupStatus } from "@/lib/setup-status";
 
 /**
@@ -9,7 +9,7 @@ import { isSetupComplete, resolveSetupStatus } from "@/lib/setup-status";
  * Prefers onboarding for new accounts; otherwise dashboard or home redirect.
  */
 export async function resolvePostVerifyDestination(): Promise<string> {
-  if (shouldShowNativeNotifyPrompt()) {
+  if (await shouldShowPermissionsSetupPromptAsync()) {
     return "/notify-prompt?next=/";
   }
 
