@@ -3,12 +3,15 @@
 
 import { getAuth } from "firebase/auth";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
+import { resetTtsApiCircuit } from "@/lib/amy-voice-circuit";
 import { audioManager } from "@/lib/audio-manager";
 import {
   mustUseStaticOnly,
   prepareStaticPlaybackAudio,
   safePlayAudio,
 } from "@/lib/static-audio";
+import { resetClientStaticAudioCircuit } from "@/lib/static-audio-telemetry";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
 import { resolveAiApiData, type AuthFetchFn } from "@/lib/poll-result";
 import { synthesizeTtsWithBackgroundPoll } from "@/lib/tts-playback";
 
@@ -37,6 +40,9 @@ export async function speak(
   const trimmed = text.trim();
   if (!trimmed) return;
 
+  recordTtsUserGesture();
+  resetClientStaticAudioCircuit();
+  resetTtsApiCircuit();
   stopSpeaking();
 
   const staticAudio = await prepareStaticPlaybackAudio(trimmed);

@@ -1,6 +1,6 @@
 import "./lib/loadEnv";
 import { logAmynestEnvironment } from "./lib/loadEnv";
-import { assertCriticalEnvAtBoot, logStartupEnvDiagnostics } from "./lib/env";
+import { assertCriticalEnvAtBoot, assertAudioEnvAtBoot, logStartupEnvDiagnostics } from "./lib/env";
 import { logger } from "./lib/logger";
 import { registerProcessErrorHandlers } from "./utils/async-errors.js";
 import { startMemoryMonitor } from "./utils/memory-monitor.js";
@@ -37,6 +37,7 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 assertCriticalEnvAtBoot();
+assertAudioEnvAtBoot();
 
 /**
  * Runs a single background-init step with phase logging that NEVER rethrows.

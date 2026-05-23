@@ -30,6 +30,7 @@
 #
 # Health / env checks:
 #   GET /api/healthz/env
+#   GET /api/healthz/audio   — audio stack (static GCS + OpenAI TTS + fallbacks)
 
 databases:
   - name: amynest-db
@@ -98,6 +99,24 @@ services:
         sync: false
       - key: ELEVENLABS_API_KEY
         sync: false
+      - key: GCS_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: GCS_SERVICE_ACCOUNT_JSON_B64
+        sync: false
+      - key: DEFAULT_OBJECT_STORAGE_BUCKET_ID
+        sync: false
+      - key: GCS_BUCKET_NAME
+        sync: false
+      - key: GCS_PROJECT_ID
+        sync: false
+      - key: TTS_USE_GCS
+        sync: false
+      - key: TTS_ELEVENLABS_FALLBACK_ENABLED
+        sync: false
+      - key: OPENAI_TTS_VOICE
+        sync: false
+      - key: OPENAI_TTS_ACCENT
+        sync: false
       - key: API_PUBLIC_URL
         sync: false
       - key: WORKER_ENABLED
@@ -145,6 +164,22 @@ services:
       - key: GOOGLE_API_KEY
         sync: false
       - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: GCS_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: GCS_SERVICE_ACCOUNT_JSON_B64
+        sync: false
+      - key: DEFAULT_OBJECT_STORAGE_BUCKET_ID
+        sync: false
+      - key: GCS_BUCKET_NAME
+        sync: false
+      - key: GCS_PROJECT_ID
+        sync: false
+      - key: TTS_USE_GCS
+        sync: false
+      - key: TTS_ELEVENLABS_FALLBACK_ENABLED
+        sync: false
+      - key: OPENAI_TTS_VOICE
         sync: false
       - key: WORKER_ENABLED
         sync: false
