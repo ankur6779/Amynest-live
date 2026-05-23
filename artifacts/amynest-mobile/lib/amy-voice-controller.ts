@@ -1,18 +1,32 @@
+import { resolveMediaUrl } from "@/constants/api";
+import {
+  buildTtsCacheKeyPayload,
+  createRunLatest,
+  getPhonicsAudioText,
+} from "@workspace/phonics-sounds";
+import * as Crypto from "expo-crypto";
 import type { AuthFetchFn } from "@/lib/poll-result";
 import { readResolvedApiJson } from "@/lib/poll-result";
-import { resolveMediaUrl } from "@/constants/api";
-import { getPhonicsAudioText } from "@workspace/phonics-sounds";
 import {
   deleteLocalTts,
   getLocalTtsUri,
   saveLocalTtsFromUrl,
 } from "@/lib/local-tts-cache";
 import { flashTtsToast } from "@/lib/tts-toast";
-import { logTts, type TtsAudioSource } from "@/lib/amy-voice-telemetry";
+import {
+  logTts,
+  type TtsAudioSource,
+  type TtsDeviceInfo,
+} from "@/lib/amy-voice-telemetry";
 import {
   abortSignalWithTimeout,
   delay,
 } from "@/lib/fetch-with-timeout";
+import {
+  adaptiveTimeoutMs,
+  getNetworkLabel,
+} from "@/lib/network-adaptive-timeout";
+import { Platform } from "react-native";
 
 export type AmyVoiceMode = "default" | "phonics";
 
@@ -30,6 +44,8 @@ export type AmyVoicePlayer = {
   play: () => void;
   pause: () => void;
   setPlaybackRate?: (rate: number) => void;
+  /** Resolves true when native player reports audible playback started. */
+  waitUntilPlaying?: (timeoutMs: number) => Promise<boolean>;
 };
 
 type SynthesizeResponse = {
@@ -43,20 +59,41 @@ type SynthesizeResponse = {
 
 type SpeakResult = { ok: true } | { ok: false; error: string };
 
-const SYNTH_TIMEOUT_MS = 15_000;
+export type PlaybackState = "idle" | "loading" | "playing";
+
+const SYNTH_TIMEOUT_FAST_MS = 8_000;
+const SYNTH_TIMEOUT_SLOW_MS = 20_000;
+const DOWNLOAD_TIMEOUT_FAST_MS = 10_000;
+const DOWNLOAD_TIMEOUT_SLOW_MS = 20_000;
+const PLAYBACK_WATCHDOG_MS = 4_000;
 const RETRY_DELAY_MS = 300;
+
+const DEFAULT_VOICE_ID = "nova";
+const DEFAULT_MODEL_ID = "tts-1";
+
+const speakRunner = createRunLatest();
 
 /** Monotonic request version — stale async work bails when id !== current. */
 let currentRequestId = 0;
-/** Strict mutex — only one speak pipeline at a time. */
-let isBusy = false;
-let speakMutexTail: Promise<void> = Promise.resolve();
 /** Double-play guard — only the latest token may call play(). */
 let activePlayToken: symbol | null = null;
 let abortController: AbortController | null = null;
+let playbackState: PlaybackState = "idle";
 
 export function getAmyVoiceGlobalReqId(): number {
   return currentRequestId;
+}
+
+export function getAmyVoicePlaybackState(): PlaybackState {
+  return playbackState;
+}
+
+function setPlaybackState(next: PlaybackState): void {
+  playbackState = next;
+}
+
+function deviceInfo(): TtsDeviceInfo {
+  return Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "other";
 }
 
 function isRequestCurrent(requestId: number): boolean {
@@ -73,10 +110,21 @@ function isPlayTokenActive(token: symbol): boolean {
   return activePlayToken === token;
 }
 
+async function computeExpectedCacheKey(
+  text: string,
+  voiceId: string,
+  modelId: string,
+  mode: AmyVoiceMode,
+): Promise<string> {
+  const payload = buildTtsCacheKeyPayload(text, voiceId, modelId, mode);
+  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, payload);
+}
+
 /** Cancel in-flight network + invalidate play token (preemptive stop on tap). */
 export function stopAllAmyVoice(player: AmyVoicePlayer | null): void {
   currentRequestId += 1;
   activePlayToken = null;
+  setPlaybackState("idle");
   if (abortController) {
     abortController.abort();
     abortController = null;
@@ -97,25 +145,34 @@ export function normalizeAmyVoiceText(rawText: string, mode?: AmyVoiceMode): str
   return mode === "phonics" ? getPhonicsAudioText(trimmed) : trimmed;
 }
 
-/** Serialize speak/playUrl — no parallel pipelines. */
+async function resolveStaticFallbackUrlAsync(
+  text: string,
+  mode: AmyVoiceMode,
+): Promise<string> {
+  const staticMode = mode === "phonics" ? "phonics" : "default";
+  const hash = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.MD5,
+    `${staticMode}\0${text}`,
+  );
+  return resolveMediaUrl(`/api/static-audio/${hash}.mp3`);
+}
+
+/** Latest-wins — superseded queued speaks reject immediately. */
 function withSpeakMutex<T>(fn: () => Promise<T>): Promise<T> {
-  const run = async (): Promise<T> => {
-    if (isBusy) {
-      /* Preempt: latest tap wins — prior pipeline will see stale requestId. */
+  return speakRunner.runLatest(async () => {
+    if (playbackState === "playing") {
+      /* Force stop before loading next utterance. */
     }
-    isBusy = true;
+    setPlaybackState("loading");
     try {
       return await fn();
-    } finally {
-      isBusy = false;
+    } catch (err) {
+      if ((err as { code?: string })?.code !== "tts_superseded") {
+        setPlaybackState("idle");
+      }
+      throw err;
     }
-  };
-  const next = speakMutexTail.then(run, run);
-  speakMutexTail = next.then(
-    () => undefined,
-    () => undefined,
-  );
-  return next;
+  });
 }
 
 async function synthesizeOnce(
@@ -124,7 +181,8 @@ async function synthesizeOnce(
   opts: AmyVoiceSpeakOptions,
   parentSignal?: AbortSignal,
 ): Promise<SynthesizeResponse> {
-  const { signal, clear } = abortSignalWithTimeout(SYNTH_TIMEOUT_MS, parentSignal);
+  const timeoutMs = adaptiveTimeoutMs(SYNTH_TIMEOUT_FAST_MS, SYNTH_TIMEOUT_SLOW_MS);
+  const { signal, clear } = abortSignalWithTimeout(timeoutMs, parentSignal);
   try {
     const res = await authFetch("/api/tts/synthesize", {
       method: "POST",
@@ -154,8 +212,6 @@ async function resolvePlaybackUri(
 ): Promise<{ uri: string; source: TtsAudioSource } | null> {
   if (!isRequestCurrent(requestId)) return null;
 
-  let source: TtsAudioSource = "remote";
-
   if (cacheKey) {
     const local = await getLocalTtsUri(cacheKey);
     if (!isRequestCurrent(requestId)) return null;
@@ -170,6 +226,40 @@ async function resolvePlaybackUri(
   }
 
   return { uri: resolveMediaUrl(audioUrl), source: "remote" };
+}
+
+async function guardedPlay(
+  player: AmyVoicePlayer,
+  requestId: number,
+  playToken: symbol,
+): Promise<void> {
+  if (!isRequestCurrent(requestId) || !isPlayTokenActive(playToken)) {
+    throw new Error("tts_stale_play");
+  }
+
+  const playStartedAt = Date.now();
+  player.play();
+
+  const started = await player.waitUntilPlaying?.(PLAYBACK_WATCHDOG_MS);
+  const playStartDelayMs = Date.now() - playStartedAt;
+
+  if (started === false) {
+    logTts({
+      module: "amy-voice-controller",
+      source: "unknown",
+      latencyMs: playStartDelayMs,
+      success: false,
+      errorType: "playback_stuck",
+      requestId,
+      playStartDelayMs,
+      device: deviceInfo(),
+      network: getNetworkLabel(),
+    });
+    stopAllAmyVoice(player);
+    throw new Error("playback_stuck");
+  }
+
+  setPlaybackState("playing");
 }
 
 async function playResolvedUri(
@@ -197,11 +287,26 @@ async function playResolvedUri(
     }
   }
 
-  if (!isRequestCurrent(requestId) || !isPlayTokenActive(playToken)) {
-    throw new Error("tts_stale_play");
-  }
+  await guardedPlay(player, requestId, playToken);
+}
 
-  player.play();
+async function tryStaticFallbackPlay(
+  player: AmyVoicePlayer,
+  text: string,
+  mode: AmyVoiceMode,
+  requestId: number,
+  playToken: symbol,
+  playbackRate: number,
+): Promise<boolean> {
+  if (mode !== "phonics" && mode !== "default") return false;
+  try {
+    const uri = await resolveStaticFallbackUrlAsync(text, mode);
+    await playResolvedUri(player, uri, requestId, playToken, playbackRate);
+    return true;
+  } catch {
+    setPlaybackState("idle");
+    return false;
+  }
 }
 
 async function amyVoiceSpeakInternal(
@@ -211,8 +316,12 @@ async function amyVoiceSpeakInternal(
   opts: AmyVoiceSpeakOptions = {},
 ): Promise<SpeakResult> {
   const startedAt = Date.now();
+  const queueWaitMs = speakRunner.getPendingQueueWaitMs();
   const text = normalizeAmyVoiceText(rawText, opts.mode);
   const moduleName = opts.module ?? "unknown";
+  const mode = opts.mode ?? "default";
+  const voiceId = opts.voiceId?.trim() || DEFAULT_VOICE_ID;
+  const modelId = opts.modelId?.trim() || DEFAULT_MODEL_ID;
 
   if (!text) {
     logTts({
@@ -221,6 +330,8 @@ async function amyVoiceSpeakInternal(
       latencyMs: 0,
       success: false,
       errorType: "tts_empty_text",
+      device: deviceInfo(),
+      network: getNetworkLabel(),
     });
     return { ok: false, error: "tts_empty_text" };
   }
@@ -237,6 +348,7 @@ async function amyVoiceSpeakInternal(
     source: TtsAudioSource,
     cacheKey?: string,
     errorType?: string,
+    extra?: { playStartDelayMs?: number },
   ) => {
     logTts({
       module: moduleName,
@@ -246,6 +358,10 @@ async function amyVoiceSpeakInternal(
       success,
       errorType,
       requestId,
+      queueWaitMs,
+      device: deviceInfo(),
+      network: getNetworkLabel(),
+      ...extra,
     });
   };
 
@@ -282,6 +398,16 @@ async function amyVoiceSpeakInternal(
 
     const cacheKey = data.cacheKey ?? "";
     const audioUrl = data.audioUrl.trim();
+
+    if (cacheKey) {
+      const expected = await computeExpectedCacheKey(text, voiceId, modelId, mode);
+      if (expected !== cacheKey) {
+        await deleteLocalTts(cacheKey);
+        finishLog(false, "unknown", cacheKey, "cache_key_mismatch");
+        return { ok: false, error: "cache_key_mismatch" };
+      }
+    }
+
     const resolved = await resolvePlaybackUri(cacheKey, audioUrl, requestId);
 
     if (!isRequestCurrent(requestId)) {
@@ -305,7 +431,7 @@ async function amyVoiceSpeakInternal(
       return { ok: true };
     } catch (playErr) {
       const msg = playErr instanceof Error ? playErr.message : "playback_failed";
-      if (msg === "tts_stale_play") {
+      if (msg === "tts_stale_play" || msg === "tts_cancelled") {
         return { ok: false, error: "tts_cancelled" };
       }
       finishLog(false, resolved.source, cacheKey, msg);
@@ -334,13 +460,34 @@ async function amyVoiceSpeakInternal(
       result.error !== "tts_cancelled" &&
       isRequestCurrent(requestId)
     ) {
+      const staticOk = await tryStaticFallbackPlay(
+        player,
+        text,
+        mode,
+        requestId,
+        playToken,
+        opts.playbackRate ?? 1,
+      );
+      if (staticOk) {
+        finishLog(true, "static", undefined);
+        return { ok: true };
+      }
       flashTtsToast("Could not play audio. Tap again.");
+      setPlaybackState("idle");
+    }
+
+    if (!result.ok) {
+      setPlaybackState("idle");
     }
 
     return result;
   } catch (err) {
+    if ((err as { code?: string })?.code === "tts_superseded") {
+      return { ok: false, error: "tts_cancelled" };
+    }
     const msg = err instanceof Error ? err.message : "tts_failed";
     finishLog(false, "unknown", undefined, msg);
+    setPlaybackState("idle");
     if (isRequestCurrent(requestId)) {
       flashTtsToast("Could not play audio. Tap again.");
     }
@@ -351,7 +498,7 @@ async function amyVoiceSpeakInternal(
 }
 
 /**
- * Global Amy voice — mutex, request versioning, play token, timeout, one retry.
+ * Global Amy voice — latest-wins mutex, request versioning, play token, timeout, one retry.
  */
 export function amyVoiceSpeak(
   authFetch: AuthFetchFn,
@@ -378,6 +525,8 @@ async function amyVoicePlayUrlInternal(
       latencyMs: 0,
       success: false,
       errorType: "tts_invalid_url",
+      device: deviceInfo(),
+      network: getNetworkLabel(),
     });
     return { ok: false, error: "tts_invalid_url" };
   }
@@ -395,6 +544,9 @@ async function amyVoicePlayUrlInternal(
       latencyMs: Date.now() - startedAt,
       success: true,
       requestId,
+      queueWaitMs: speakRunner.getPendingQueueWaitMs(),
+      device: deviceInfo(),
+      network: getNetworkLabel(),
     });
     return { ok: true };
   } catch (err) {
@@ -409,7 +561,10 @@ async function amyVoicePlayUrlInternal(
       success: false,
       errorType: msg,
       requestId,
+      device: deviceInfo(),
+      network: getNetworkLabel(),
     });
+    setPlaybackState("idle");
     if (isRequestCurrent(requestId)) {
       flashTtsToast("Could not play audio. Tap again.");
     }
@@ -427,5 +582,5 @@ export function amyVoicePlayUrl(
 }
 
 export function isAmyVoicePlayingGlobal(): boolean {
-  return isBusy;
+  return speakRunner.isRunning() || playbackState === "playing";
 }

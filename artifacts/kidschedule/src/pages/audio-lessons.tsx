@@ -747,24 +747,25 @@ function PlayerSheet({
   const [rate, setRate] = useState<number>(1);
   /** Ignores stale onFinished from a previous paragraph playback. */
   const playbackSessionRef = useRef(0);
-  const activePlaybackSessionRef = useRef(0);
 
   const text = useMemo(() => getLessonText(lesson, lang), [lesson, lang]);
   const paragraphs = text.paragraphs;
 
-  // Auto-advance to the next paragraph when the current one finishes
-  // playing, or stop if we're at the end.
-  const handleFinished = useCallback(() => {
-    if (activePlaybackSessionRef.current !== playbackSessionRef.current) return;
-    setParagraphIdx((i) => {
-      if (i + 1 >= paragraphs.length) {
-        setPlaying(false);
-        onLessonComplete?.(lesson.id);
-        return i;
-      }
-      return i + 1;
-    });
-  }, [paragraphs.length, lesson.id, onLessonComplete]);
+  const advanceParagraph = useCallback(
+    (session: number) => {
+      if (session !== playbackSessionRef.current) return;
+      setParagraphIdx((i) => {
+        if (i + 1 >= paragraphs.length) {
+          setPlaying(false);
+          onLessonComplete?.(lesson.id);
+          return i;
+        }
+        return i + 1;
+      });
+    },
+    [paragraphs.length, lesson.id, onLessonComplete],
+  );
+
   const {
     speaking,
     loading,
@@ -775,7 +776,6 @@ function PlayerSheet({
     voiceId: VOICE_AMY_EN,
     modelId: MODEL_EN,
     playbackRate: rate,
-    onFinished: handleFinished
   });
 
   // Resume from saved index
@@ -805,19 +805,21 @@ function PlayerSheet({
       return;
     }
     const session = ++playbackSessionRef.current;
-    activePlaybackSessionRef.current = session;
-    void speak(txt, { waitUntilEnd: true, lessonParagraph: true }).then((res) => {
+    void speak(txt, {
+      waitUntilEnd: true,
+      lessonParagraph: true,
+      onFinished: () => advanceParagraph(session),
+    }).then((res) => {
       if (session !== playbackSessionRef.current) return;
       if (!res?.success) {
         console.warn("TTS failed, skipping audio flow:", res?.error);
         setPlaying(false);
       }
     });
-  }, [playing, paragraphIdx, paragraphs, speak, stop]);
+  }, [playing, paragraphIdx, paragraphs, speak, stop, advanceParagraph]);
 
   useEffect(() => {
     playbackSessionRef.current = 0;
-    activePlaybackSessionRef.current = 0;
     if (autoPlay) {
       recordTtsUserGesture();
       setPlaying(true);

@@ -1,12 +1,14 @@
 /**
- * Global speak safety: request versioning, strict mutex, play-token guard.
+ * Global speak safety: request versioning, latest-wins execution, play-token guard.
  * Used by useAmyVoice + amy-voice-pipeline to prevent race-condition playback.
  */
 
+import { createRunLatest } from "@workspace/phonics-sounds";
+
 let currentRequestId = 0;
-let isBusy = false;
-let speakMutexTail: Promise<void> = Promise.resolve();
 let activePlayToken: symbol | null = null;
+
+const speakRunner = createRunLatest();
 
 export function bumpSpeakRequestId(): number {
   currentRequestId += 1;
@@ -36,26 +38,43 @@ export function cancelAllSpeakRequests(): number {
   return bumpSpeakRequestId();
 }
 
-/** Only one speak pipeline at a time; latest queued after prior finishes or preempts via requestId. */
+export type PlaybackState = "idle" | "loading" | "playing";
+
+let playbackState: PlaybackState = "idle";
+
+export function getPlaybackState(): PlaybackState {
+  return playbackState;
+}
+
+export function setPlaybackState(next: PlaybackState): void {
+  playbackState = next;
+}
+
+/** Latest-wins — old taps are discarded instead of queued behind stale work. */
 export function withSpeakMutex<T>(fn: () => Promise<T>): Promise<T> {
-  const run = async (): Promise<T> => {
-    isBusy = true;
-    try {
-      return await fn();
-    } finally {
-      isBusy = false;
+  return speakRunner.runLatest(async () => {
+    if (playbackState === "playing") {
+      cancelAllSpeakRequests();
     }
-  };
-  const next = speakMutexTail.then(run, run);
-  speakMutexTail = next.then(
-    () => undefined,
-    () => undefined,
-  );
-  return next;
+    setPlaybackState("loading");
+    try {
+      const result = await fn();
+      return result;
+    } catch (err) {
+      if ((err as { code?: string })?.code !== "tts_superseded") {
+        setPlaybackState("idle");
+      }
+      throw err;
+    }
+  });
 }
 
 export function isSpeakPipelineBusy(): boolean {
-  return isBusy;
+  return speakRunner.isRunning();
+}
+
+export function getSpeakQueueWaitMs(): number {
+  return speakRunner.getPendingQueueWaitMs();
 }
 
 export function abortSignalWithTimeout(

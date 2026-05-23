@@ -1062,17 +1062,21 @@ function finishSpeak(
       maybeQueueAmyVoiceLearning(policy, layer);
     }
   }
-  return finalizeSuccess(result, waitUntilEnd, ctx);
+  return finalizeSuccess(result, waitUntilEnd, ctx, depth);
 }
 
 function finalizeSuccess(
   result: PlayAttemptResult,
   waitUntilEnd: boolean,
   ctx: AmyVoicePipelineContext,
+  depth = 0,
 ): SpeakResult & { layer?: AmyVoiceLayer } {
   if (!result.ok) return { success: false, error: result.error };
   setSessionLastSuccessfulLayer(result.layer);
+  // Only the top-level speak should notify callers — nested phrase/word
+  // playback must not fire onFinished early (e.g. audio lesson auto-advance).
   if (
+    depth === 0 &&
     waitUntilEnd &&
     (result.layer === "static" ||
       result.layer === "cache" ||

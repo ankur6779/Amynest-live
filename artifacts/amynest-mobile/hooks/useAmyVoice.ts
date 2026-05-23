@@ -15,6 +15,8 @@ export interface SpeakOptions {
   mode?: "default" | "phonics";
   /** Logical module name for structured error logs. */
   module?: string;
+  /** Per-utterance finish callback (overrides hook-level onFinished). */
+  onFinished?: () => void;
 }
 
 export interface UseAmyVoiceState {
@@ -53,7 +55,9 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         voiceId,
         modelId,
         playbackRate,
-        onFinished: () => onFinishedRef.current?.(),
+        onFinished: () => {
+          (opts?.onFinished ?? onFinishedRef.current)?.();
+        },
       };
       await ctx.speak(rawText, payload);
     },

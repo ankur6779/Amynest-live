@@ -106,25 +106,28 @@ function PlayerSheet({
   const [paragraphIdx, setParagraphIdx] = useState(0);
   const [rate, setRate] = useState<SpeedOption>(1);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+  /** Ignores stale onFinished from a previous paragraph playback. */
   const playbackSessionRef = useRef(0);
 
-  // When current paragraph finishes naturally, auto-advance to next.
-  const handleFinished = useCallback(() => {
-    setParagraphIdx((i) => {
-      if (i + 1 >= paragraphs.length) {
-        setPlaying(false);
-        onLessonComplete?.(lesson.id);
-        return i;
-      }
-      return i + 1;
-    });
-  }, [paragraphs.length, lesson.id, onLessonComplete]);
+  const advanceParagraph = useCallback(
+    (session: number) => {
+      if (session !== playbackSessionRef.current) return;
+      setParagraphIdx((i) => {
+        if (i + 1 >= paragraphs.length) {
+          setPlaying(false);
+          onLessonComplete?.(lesson.id);
+          return i;
+        }
+        return i + 1;
+      });
+    },
+    [paragraphs.length, lesson.id, onLessonComplete],
+  );
 
   const { speaking, loading, error, speak, stop } = useAmyVoice({
     voiceId: AMY_VOICE_ENGLISH,
     modelId: MODEL_EN,
     playbackRate: rate,
-    onFinished: handleFinished,
   });
 
   // Resume from saved index on mount.
@@ -151,9 +154,12 @@ function PlayerSheet({
       setPlaying(false);
       return;
     }
-    playbackSessionRef.current += 1;
-    void speak(txt);
-  }, [paragraphIdx, paragraphs, speak]);
+    const session = ++playbackSessionRef.current;
+    void speak(txt, {
+      module: "audio_lessons",
+      onFinished: () => advanceParagraph(session),
+    });
+  }, [paragraphIdx, paragraphs, speak, advanceParagraph]);
 
   // Drive playback: when `playing` flips on (or paragraph changes while
   // playing) start a fresh synth; when it flips off, stop.
@@ -175,7 +181,9 @@ function PlayerSheet({
   }, [rate]);
 
   useEffect(() => {
+    playbackSessionRef.current = 0;
     if (autoPlay) setPlaying(true);
+    else setPlaying(false);
   }, [autoPlay, lesson.id]);
 
   const seriesPart = series ? partIndexForLesson(series, lesson.id) : -1;

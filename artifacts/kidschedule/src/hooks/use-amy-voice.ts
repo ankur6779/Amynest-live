@@ -47,10 +47,12 @@ import {
   cancelAllSpeakRequests,
   getSpeakRequestId,
   isSpeakRequestCurrent,
+  setPlaybackState,
   withSpeakMutex,
 } from "@/lib/amy-voice-safety";
 import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
+import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
 
 let _ttsBusy = false;
 
@@ -76,6 +78,8 @@ export interface SpeakOptions {
   staticCatalogTexts?: string[];
   /** Pre-computed speech mode policy (set by prepareAmySpeechInput). */
   speechPolicy?: AmySpeechPolicy;
+  /** Per-utterance finish callback (overrides hook-level onFinished). */
+  onFinished?: () => void;
 }
 
 export type SpeakResult =
@@ -150,6 +154,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
     abortInFlight();
     audioManager.stopAll();
     releaseBusy();
+    setPlaybackState("idle");
     safeSetSpeaking(false);
     safeSetLoading(false);
   }, [abortInFlight, releaseBusy, safeSetSpeaking, safeSetLoading]);
@@ -187,7 +192,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         isCancelled: () => !isSpeakRequestCurrent(myId) || !isMounted.current,
         onFinished: () => {
           if (!isSpeakRequestCurrent(myId) || !isMounted.current) return;
-          onFinishedRef.current?.();
+          (opts?.onFinished ?? onFinishedRef.current)?.();
         },
       };
 
@@ -325,8 +330,11 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         if (!result.success) {
           safeSetError("error" in result ? result.error : "tts_failed");
           safeSetSpeaking(false);
+          setPlaybackState("idle");
           return result;
         }
+
+        setPlaybackState("playing");
 
         if (
           result.layer === "text_visual" ||
@@ -344,7 +352,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
               prevEnded?.call(el, ev);
               if (!isSpeakRequestCurrent(myId) || !isMounted.current) return;
               safeSetSpeaking(false);
-              onFinishedRef.current?.();
+              (opts?.onFinished ?? onFinishedRef.current)?.();
             };
           } else {
             safeSetSpeaking(false);
@@ -359,6 +367,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         const mapped = mapPlayErrorToSpeakResult(err);
         safeSetError(mapped.error);
         safeSetSpeaking(false);
+        setPlaybackState("idle");
         return mapped;
       } finally {
         if (isSpeakRequestCurrent(myId) && isMounted.current) {
