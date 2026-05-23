@@ -11,7 +11,10 @@ let sessionAlertShown = false;
 let clientCircuitOpen = false;
 let clientCircuitUntil = 0;
 const CLIENT_CIRCUIT_MS = 60_000;
-const CLIENT_CIRCUIT_THRESHOLD = 5;
+const CLIENT_CIRCUIT_THRESHOLD = 8;
+
+const TRANSIENT_DEPLOY_ERROR_RE =
+  /502|503|504|fetch failed|failed to fetch|network|econnrefused|timeout|unreachable/i;
 
 async function bearerToken(): Promise<string | null> {
   try {
@@ -117,6 +120,13 @@ function maybeShowSessionAlert(): void {
   );
 }
 
+function isTransientDeployFailure(message: string, meta?: Record<string, unknown>): boolean {
+  if (TRANSIENT_DEPLOY_ERROR_RE.test(message)) return true;
+  const status = meta?.httpStatus ?? meta?.status;
+  if (typeof status === "number" && (status === 0 || status >= 502)) return true;
+  return false;
+}
+
 function recordSessionFailure(): void {
   sessionFailureCount += 1;
   if (sessionFailureCount >= CLIENT_CIRCUIT_THRESHOLD) {
@@ -184,7 +194,7 @@ export function reportStaticAudioEvent(
   staticAudioVerbose(type, message, meta);
   console.error(`[STATIC AUDIO EVENT] ${type}`, message, meta ?? {});
 
-  if (opts?.countTowardCircuit !== false) {
+  if (opts?.countTowardCircuit !== false && !isTransientDeployFailure(message, meta)) {
     recordSessionFailure();
   }
 
@@ -262,7 +272,10 @@ export function reportStaticAudioPlayFailed(
       mediaError: audio.error?.code,
       ...extra,
     },
-    { countTowardCircuit: !isGestureBlock && !isAndroidWatchdog },
+    {
+      countTowardCircuit:
+        !isGestureBlock && !isAndroidWatchdog && !isTransientDeployFailure(message, extra),
+    },
   );
   const phrase = typeof extra?.phrase === "string" ? extra.phrase : undefined;
   const mode = extra?.mode as StaticAudioMode | undefined;
@@ -271,9 +284,21 @@ export function reportStaticAudioPlayFailed(
 
 export async function checkStaticAudioHealthOnBoot(): Promise<void> {
   if (typeof window === "undefined") return;
+
+  const { waitForAudioApiOnBoot, startAudioApiRecoveryWatcher, markAudioApiUnreachable } =
+    await import("@/lib/audio-api-recovery");
+
+  startAudioApiRecoveryWatcher();
+
+  const bootOk = await waitForAudioApiOnBoot();
+  if (!bootOk) {
+    markAudioApiUnreachable();
+    console.warn("[STATIC AUDIO] API not ready at boot — deploy recovery watcher active");
+  }
+
   try {
     const healthUrl = getApiUrl("/api/static-audio/health");
-    const res = await fetch(healthUrl);
+    const res = await fetch(healthUrl, { cache: "no-store" });
     recordClientCdnCacheStatus(healthUrl, res);
     const body = (await res.json().catch(() => ({}))) as {
       gcs?: boolean;
@@ -283,27 +308,44 @@ export async function checkStaticAudioHealthOnBoot(): Promise<void> {
       gcsProbeOk?: boolean;
     };
 
-    if (body.circuitOpen && !isAndroidAmyNestAudioClient()) {
-      clientCircuitOpen = true;
-      clientCircuitUntil = Date.now() + CLIENT_CIRCUIT_MS;
+    // Never mirror server circuit to client — deploy blips must not block playback.
+    if (body.circuitOpen) {
+      console.warn("[STATIC AUDIO] Server circuit open — client playback stays enabled");
     }
 
-    if (!res.ok || body.status !== "ok" || !body.gcs || body.gcsProbeOk === false) {
-      console.error("STATIC AUDIO SYSTEM DOWN", { status: res.status, body });
+    if (!res.ok || body.status !== "ok" || !body.gcs) {
+      console.warn("STATIC AUDIO DEGRADED AT BOOT", { status: res.status, body });
       reportStaticAudioEvent(
         "static_audio_proxy_failed",
-        "Static audio health check failed",
+        "Static audio health check degraded at boot",
+        { httpStatus: res.status, ...body },
+        { countTowardCircuit: false },
+      );
+      if (!bootOk) markAudioApiUnreachable();
+      return;
+    }
+
+    if (body.gcsProbeOk === false) {
+      console.warn("STATIC AUDIO GCS PROBE PENDING", body);
+      reportStaticAudioEvent(
+        "static_audio_proxy_failed",
+        "Static audio GCS probe warming up",
         { httpStatus: res.status, ...body },
         { countTowardCircuit: false },
       );
       return;
     }
+
     staticAudioVerbose("health ok", body);
   } catch (err) {
-    console.error("STATIC AUDIO SYSTEM DOWN", err);
-    reportStaticAudioEvent("static_audio_proxy_failed", "Static audio health check unreachable", {
-      error: err instanceof Error ? err.message : String(err),
-    });
+    console.warn("STATIC AUDIO BOOT HEALTH UNREACHABLE", err);
+    markAudioApiUnreachable();
+    reportStaticAudioEvent(
+      "static_audio_proxy_failed",
+      "Static audio health check unreachable at boot",
+      { error: err instanceof Error ? err.message : String(err) },
+      { countTowardCircuit: false },
+    );
   }
 }
 

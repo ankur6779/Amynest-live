@@ -301,6 +301,57 @@ export function assertCriticalEnvAtBoot(): void {
   }
 }
 
+/** Audio stack env — logs missing keys (never exits; TTS degrades gracefully). */
+export function assertAudioEnvAtBoot(): void {
+  const openAi = !!getOpenAiApiKeyForFetch();
+  const gcs = getGcsDiagnostics();
+  const bucket = !!getGcsBucketId();
+  const eleven = !!getElevenLabsApiKey();
+
+  const missingCritical: string[] = [];
+  if (!openAi) missingCritical.push("OPENAI_API_KEY");
+  if (!bucket) missingCritical.push("DEFAULT_OBJECT_STORAGE_BUCKET_ID|GCS_BUCKET_NAME");
+  if (!gcs.credentials.ok && gcs.credentials.source !== "GOOGLE_APPLICATION_CREDENTIALS") {
+    missingCritical.push("GCS_SERVICE_ACCOUNT_JSON|GCS_SERVICE_ACCOUNT_JSON_B64");
+  }
+
+  if (missingCritical.length > 0) {
+    logger.error(
+      {
+        evt: "env.audio_missing",
+        missing: missingCritical,
+        hint: "Set on Amynest-backend in Render Dashboard — render.yaml registers names with sync:false only",
+      },
+      `AUDIO CRITICAL: missing env — ${missingCritical.join(", ")}`,
+    );
+    console.error("AUDIO CRITICAL: missing env keys:", missingCritical.join(", "));
+  } else {
+    logger.info(
+      {
+        evt: "env.audio_ok",
+        ttsUseGcs: isTtsCacheGcsEnabled(),
+        elevenLabsFallback: isElevenLabsFallbackEnabled(),
+        gcsBucket: bucket,
+      },
+      "Audio env stack OK (static GCS + OpenAI TTS)",
+    );
+  }
+
+  if (!eleven) {
+    logger.info(
+      { evt: "env.audio_optional", key: "ELEVENLABS_API_KEY" },
+      "ElevenLabs fallback optional — set ELEVENLABS_API_KEY for layer-3 TTS",
+    );
+  }
+
+  if (!isTtsCacheGcsEnabled() && gcs.legacyGcsConfigured) {
+    logger.warn(
+      { evt: "env.audio_recommend", key: "TTS_USE_GCS", current: "false" },
+      "TTS_USE_GCS=false — dynamic TTS cache uses Postgres; set TTS_USE_GCS=true in production",
+    );
+  }
+}
+
 /** Log once at startup — safe for production (no secret values). */
 export function logStartupEnvDiagnostics(): void {
   const hasDb = !!readEnv("DATABASE_URL");

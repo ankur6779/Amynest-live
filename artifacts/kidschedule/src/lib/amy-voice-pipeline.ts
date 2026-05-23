@@ -534,7 +534,7 @@ async function attemptOpenAiPlay(
 
   if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
   if (!data?.success || !isValidAudioUrl(data.audioUrl)) {
-    recordTtsApiFailure();
+    recordTtsApiFailure(data?.error);
     recordAmyVoiceLayerFailed("api", data?.error ?? "tts_failed");
     return { ok: false, error: data?.error ?? "tts_failed" };
   }

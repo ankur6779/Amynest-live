@@ -3,10 +3,13 @@ import { HealthCheckResponse } from "@workspace/api-zod";
 import {
   getDriveApiKey,
   getDriveKeyDiagnostics,
+  getElevenLabsApiKey,
+  getGcsBucketId,
   getGcsDiagnostics,
   getOpenAiApiKeyForFetch,
   getOpenAiCredentials,
   getTtsProvider,
+  isElevenLabsFallbackEnabled,
   isTtsCacheGcsEnabled,
   resolveApiPublicUrl,
 } from "../lib/env";
@@ -17,6 +20,8 @@ import { getQueueHealthSnapshot } from "../queue/bootstrap.js";
 import { getTtsCacheStats } from "../services/ttsCacheStats";
 import { ttsStorageBackend } from "../services/ttsAudioStore";
 import { resolvePhonicsSessionSecret } from "../lib/phonicsSessionSecret.js";
+import { isLastGcsProbeOk } from "../services/staticAudioMonitor.js";
+import { isStaticAudioCircuitOpen } from "../services/staticAudioMetrics.js";
 
 const STORY_PROBE_FOLDER_ID = "1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj";
 
@@ -147,6 +152,64 @@ router.get("/healthz/tts", (_req, res) => {
     legacyGcsConfigured,
     ok: openAiConfigured,
     ttsStorage: ttsStorageBackend(),
+  });
+});
+
+/**
+ * Audio stack readiness — static MP3 proxy + OpenAI TTS + optional ElevenLabs fallback.
+ * Use after deploy: GET /api/healthz/audio (no secrets).
+ */
+router.get("/healthz/audio", (_req, res) => {
+  const gcs = getGcsDiagnostics();
+  const openAiConfigured = !!getOpenAiApiKeyForFetch();
+  const elevenLabsConfigured = !!getElevenLabsApiKey();
+  const elevenLabsFallback = isElevenLabsFallbackEnabled();
+  const bucketSet = !!getGcsBucketId();
+  const gcsReady = gcs.legacyGcsConfigured && bucketSet;
+  const gcsProbeOk = isLastGcsProbeOk();
+  const staticCircuitOpen = isStaticAudioCircuitOpen();
+
+  const missing: string[] = [];
+  if (!openAiConfigured) missing.push("OPENAI_API_KEY");
+  if (!bucketSet) missing.push("DEFAULT_OBJECT_STORAGE_BUCKET_ID or GCS_BUCKET_NAME");
+  if (!gcs.credentials.ok && gcs.credentials.source !== "GOOGLE_APPLICATION_CREDENTIALS") {
+    missing.push("GCS_SERVICE_ACCOUNT_JSON or GCS_SERVICE_ACCOUNT_JSON_B64");
+  }
+  if (!elevenLabsConfigured) {
+    missing.push("ELEVENLABS_API_KEY (optional fallback)");
+  }
+  if (!isTtsCacheGcsEnabled()) {
+    missing.push("TTS_USE_GCS=true (recommended in production)");
+  }
+
+  const ok = openAiConfigured && gcsReady;
+
+  res.status(ok ? 200 : 503).json({
+    ok,
+    tts: {
+      provider: getTtsProvider(),
+      openAiConfigured,
+      elevenLabsConfigured,
+      elevenLabsFallback,
+      cacheGcsEnabled: isTtsCacheGcsEnabled(),
+      storageBackend: ttsStorageBackend(),
+      openAiTts: getOpenAiTtsConfigSummary(),
+    },
+    staticAudio: {
+      gcsConfigured: gcsReady,
+      gcsProbeOk,
+      serverCircuitOpen: staticCircuitOpen,
+      bucketHint: gcs.bucketName,
+    },
+    env: {
+      openAiApiKey: openAiConfigured ? "set" : "missing",
+      elevenLabsApiKey: elevenLabsConfigured ? "set" : "missing",
+      gcsCredentials: gcs.credentials.ok ? "set" : "missing",
+      bucketId: bucketSet ? "set" : "missing",
+      ttsUseGcs: isTtsCacheGcsEnabled(),
+    },
+    missingEnv: missing.filter((m) => !m.includes("optional") && !m.includes("recommended")),
+    hints: missing,
   });
 });
 
