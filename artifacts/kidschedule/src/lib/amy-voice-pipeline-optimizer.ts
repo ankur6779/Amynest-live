@@ -3,7 +3,7 @@
  * Does not own playback lifecycle (see amy-voice-controller.ts).
  */
 
-import { prepareAmyLessonParagraphSpeech } from "@/lib/amy-speech-mode";
+import { prepareAmyLessonParagraphSpeech, prepareAmyParentHubSpeech } from "@/lib/amy-speech-mode";
 import { shouldSkipLiveTtsApi } from "@/lib/amy-voice-circuit";
 import type { AmySpeechPolicy } from "@/lib/amy-speech-mode";
 import type { SpeakOptions } from "@/hooks/use-amy-voice";
@@ -42,7 +42,7 @@ import {
   queueServerTelemetry,
 } from "@/lib/amy-voice-pipeline-server-sync";
 import {
-  assertPrefetchCacheKey,
+  assertPrefetchCacheKey as assertLessonPrefetchCacheKey,
   assertVerbatimLessonText,
   createAudioIdentity,
   lessonLocalCacheKey,
@@ -50,6 +50,15 @@ import {
   logLessonAudioIdentity,
   type AudioIdentity,
 } from "@/lib/lesson-audio-identity";
+import {
+  assertPrefetchCacheKey as assertParentHubPrefetchCacheKey,
+  assertVerbatimParentHubText,
+  isParentHubAudioIdentity,
+  logParentHubAudioIdentity,
+  parentHubLocalCacheKey,
+  parentHubPipelineCacheKey,
+  type ParentHubAudioIdentity,
+} from "@/lib/parent-hub-audio-identity";
 
 export type { DeviceClass, LearnableLayer, LayerScoringContext, NetworkProfile, PipelineStrategy };
 
@@ -83,12 +92,26 @@ export function pipelineCacheKey(
 ): string {
   const kind = opts?.lessonParagraph
     ? "lesson"
-    : opts?.catalogPlayback
-      ? "catalog"
-      : "default";
+    : opts?.parentHub
+      ? "parent"
+      : opts?.catalogPlayback
+        ? "catalog"
+        : "default";
+
+  if (opts?.parentHub) {
+    if (!isParentHubAudioIdentity(opts.audioIdentity)) {
+      const msg = "Parent Hub pipelineCacheKey requires audioIdentity";
+      if (import.meta.env.DEV) throw new Error(msg);
+      console.error("[ParentHubAudioIdentity]", msg);
+      const trimmed = text.trim();
+      return `${kind}:${mode}:${hashCacheKeySync(trimmed)}`;
+    }
+    assertVerbatimParentHubText(text, opts.audioIdentity.text);
+    return parentHubPipelineCacheKey(opts.audioIdentity);
+  }
 
   if (opts?.lessonParagraph) {
-    if (!opts.audioIdentity) {
+    if (!opts.audioIdentity || isParentHubAudioIdentity(opts.audioIdentity)) {
       const msg = "Lesson pipelineCacheKey requires audioIdentity";
       if (import.meta.env.DEV) throw new Error(msg);
       console.error("[LessonAudioIdentity]", msg);
@@ -392,7 +415,7 @@ export function prefetchLessonParagraph(
   const playbackKey = lessonPipelineCacheKey(identity, policy.pipelineMode);
   const cacheKey = playbackKey;
 
-  assertPrefetchCacheKey(cacheKey, playbackKey);
+  assertLessonPrefetchCacheKey(cacheKey, playbackKey);
   logLessonAudioIdentity(identity, { phase: "prefetch_start" });
 
   if (previousIdentity) {
@@ -466,6 +489,66 @@ export function prefetchLessonParagraphText(
       ? createAudioIdentity(lessonId, paragraphIndex - 1, previousText)
       : undefined;
   prefetchLessonParagraph(identity, authFetch, voiceId, modelId, previousIdentity);
+}
+
+/** Predictive prefetch for Parent Hub read-aloud (identity-scoped). */
+export function prefetchParentHubItem(
+  identity: ParentHubAudioIdentity,
+  authFetch: AuthFetchFn,
+  voiceId?: string,
+  modelId?: string,
+  previousIdentity?: ParentHubAudioIdentity,
+): void {
+  const policy = prepareAmyParentHubSpeech(identity.text);
+  const playbackKey = parentHubPipelineCacheKey(identity);
+  const cacheKey = playbackKey;
+
+  assertParentHubPrefetchCacheKey(cacheKey, playbackKey);
+  logParentHubAudioIdentity(identity, { phase: "prefetch_start" });
+
+  if (previousIdentity) {
+    const fromKey = parentHubPipelineCacheKey(previousIdentity);
+    const predicted = getPredictedNextKey(fromKey);
+    if (predicted && predicted !== cacheKey) return;
+  }
+
+  if (prefetchInFlight.has(cacheKey)) return;
+  prefetchInFlight.add(cacheKey);
+
+  void (async () => {
+    try {
+      preloadStaticPhrases([identity.text], policy.pipelineMode, 1);
+      const staticUrl = lookupStaticAudioUrl(identity.text, policy.pipelineMode);
+      if (staticUrl) {
+        void warmLocalCacheFromUrl(parentHubLocalCacheKey(identity), staticUrl);
+      }
+      if (shouldSkipLiveTtsApi() || isSlowNetwork()) return;
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8_000);
+      const data = await generateTts(
+        authFetch,
+        {
+          text: identity.text,
+          voiceId,
+          modelId,
+          mode: policy.pipelineMode,
+        },
+        { signal: controller.signal },
+      ).finally(() => clearTimeout(timer));
+
+      if (data?.success && data.cacheKey && data.audioUrl) {
+        const playbackUrl = resolveClientPlaybackUrl(data.audioUrl, data.cacheKey);
+        if (playbackUrl) {
+          void warmLocalCacheFromUrl(parentHubLocalCacheKey(identity), playbackUrl);
+        }
+      }
+    } catch {
+      /* best-effort prefetch */
+    } finally {
+      prefetchInFlight.delete(cacheKey);
+    }
+  })();
 }
 
 export function waitUntilEndWithCap(

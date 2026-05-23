@@ -23,7 +23,14 @@ import { enforceAmySpeechPolicyInvariants } from "@/lib/amy-voice-invariants";
 import {
   assertVerbatimLessonText,
   logLessonAudioIdentity,
+  type AudioIdentity,
 } from "@/lib/lesson-audio-identity";
+import {
+  assertVerbatimParentHubText,
+  isParentHubAudioIdentity,
+  logParentHubAudioIdentity,
+  type ParentHubAudioIdentity,
+} from "@/lib/parent-hub-audio-identity";
 import { buildAdaptiveDelivery } from "@/lib/amy-voice-emotion";
 import {
   assessAmyDifficulty,
@@ -85,8 +92,10 @@ export interface SpeakOptions {
   /** Long-form narration (stories, articles) — implies full-required. */
   narration?: boolean;
   lessonParagraph?: boolean;
-  /** Canonical lesson paragraph identity — required for lesson playback. */
-  audioIdentity?: import("@/lib/lesson-audio-identity").AudioIdentity;
+  /** Parent Hub read-aloud — implies verbatim identity + full-required by default. */
+  parentHub?: boolean;
+  /** Canonical lesson paragraph or Parent Hub identity — required for guarded playback. */
+  audioIdentity?: AudioIdentity | ParentHubAudioIdentity;
   /** @deprecated Use audioIdentity.lessonId */
   lessonId?: string;
   /** @deprecated Use audioIdentity.paragraphIdx */
@@ -252,16 +261,34 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
     opts: SpeakOptions | undefined,
     runtime: AmyVoiceRuntime,
   ): Promise<SpeakResult> {
-    const text = (rawText ?? "").trim();
+    const parentHubIdentity =
+      opts?.parentHub && isParentHubAudioIdentity(opts.audioIdentity)
+        ? opts.audioIdentity
+        : null;
+    const text = parentHubIdentity
+      ? parentHubIdentity.text
+      : (rawText ?? "").trim();
     if (!text) {
       return { success: false, error: "tts_empty_text" };
     }
 
     const requestId = createSpeakRequest();
 
+    if (opts?.parentHub) {
+      const identity = opts.audioIdentity;
+      if (!isParentHubAudioIdentity(identity)) {
+        const msg = "Parent Hub playback requires audioIdentity";
+        if (import.meta.env.DEV) throw new Error(msg);
+        console.error("[ParentHubAudioIdentity]", msg);
+        return { success: false, error: "parent_hub_identity_missing" };
+      }
+      assertVerbatimParentHubText(rawText, identity.text);
+      logParentHubAudioIdentity(identity, { phase: "speak_start", requestId });
+    }
+
     if (opts?.lessonParagraph) {
       const identity = opts.audioIdentity;
-      if (!identity) {
+      if (!identity || isParentHubAudioIdentity(identity)) {
         const msg = "Lesson playback requires audioIdentity";
         if (import.meta.env.DEV) throw new Error(msg);
         console.error("[LessonAudioIdentity]", msg);
@@ -316,11 +343,19 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       let replayCount = 0;
       let difficultyLevel: AmySpeechPolicy["difficultyLevel"] = "neutral";
 
-      if (opts?.lessonParagraph || opts?.catalogPlayback) {
+      if (opts?.lessonParagraph || opts?.catalogPlayback || opts?.parentHub) {
         finalizedPolicy = enforceAmySpeechPolicyInvariants(speechPolicy);
-        if (opts?.lessonParagraph && opts.audioIdentity) {
+        if (
+          opts?.lessonParagraph &&
+          opts.audioIdentity &&
+          !isParentHubAudioIdentity(opts.audioIdentity)
+        ) {
           assertVerbatimLessonText(finalizedPolicy.normalizedText, opts.audioIdentity.text);
           assertVerbatimLessonText(finalizedPolicy.originalText, opts.audioIdentity.text);
+        }
+        if (opts?.parentHub && isParentHubAudioIdentity(opts.audioIdentity)) {
+          assertVerbatimParentHubText(finalizedPolicy.normalizedText, opts.audioIdentity.text);
+          assertVerbatimParentHubText(finalizedPolicy.originalText, opts.audioIdentity.text);
         }
       } else {
         replayCount = recordAmyVoicePhraseReplay(

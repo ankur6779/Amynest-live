@@ -3,6 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, ThumbsUp, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import {
+  createParentHubAudioIdentity,
+  PARENT_HUB_SECTIONS,
+} from "@/lib/parent-hub-audio-identity";
 import type { AgeGroup } from "@/lib/age-groups";
 import { ALL_HUB_FACTS, type HubFact } from "@workspace/parent-hub-speak";
 
@@ -160,7 +164,16 @@ export function AmazingFacts({
     setQuiz(null);
     setPlayingId(fact.id);
     const text = factDisplayText(fact, lang);
-    void speak(text).then(() => {
+    const identity = createParentHubAudioIdentity({
+      sectionId: PARENT_HUB_SECTIONS.FACTS,
+      itemId: fact.id,
+      text,
+    });
+    void speak(identity.text, {
+      parentHub: true,
+      audioIdentity: identity,
+      playbackMode: "full-required",
+    }).then(() => {
       setPlayingId(null);
     });
   }, [playingId, speak, pause, lang]);

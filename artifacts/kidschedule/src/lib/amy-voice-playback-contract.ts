@@ -17,6 +17,7 @@ export type PlaybackMode = "partial-ok" | "full-required";
 export type PlaybackModeInput = {
   playbackMode?: PlaybackMode;
   lessonParagraph?: boolean;
+  parentHub?: boolean;
   narration?: boolean;
   waitUntilEnd?: boolean;
   mode?: "default" | "phonics";
@@ -50,7 +51,7 @@ const STREAM_STALL_MS = 400;
 /** Safe default — full audio required unless explicitly partial-ok. */
 export function resolvePlaybackMode(opts?: PlaybackModeInput): PlaybackMode {
   if (opts?.playbackMode) return opts.playbackMode;
-  if (opts?.lessonParagraph || opts?.narration) return "full-required";
+  if (opts?.lessonParagraph || opts?.parentHub || opts?.narration) return "full-required";
   if (opts?.waitUntilEnd) return "full-required";
   if (opts?.mode === "phonics") return "partial-ok";
   return "full-required";

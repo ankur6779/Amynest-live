@@ -1,5 +1,9 @@
 import { useState, useMemo, useCallback } from "react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import {
+  createParentHubAudioIdentity,
+  PARENT_HUB_SECTIONS,
+} from "@/lib/parent-hub-audio-identity";
 import { ALL_DAILY_STORIES, buildDailyStorySpeakText, type DailyStory } from "@workspace/parent-hub-speak";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -333,7 +337,15 @@ export function DailyStorySection({
     }
     pause();
     setPlayingId(story.id);
-    void speak(`${story.title}. ${story.story}. The moral is: ${story.moral}`, {
+    const text = storySpeech(story);
+    const identity = createParentHubAudioIdentity({
+      sectionId: PARENT_HUB_SECTIONS.DAILY_STORIES,
+      itemId: story.id,
+      text,
+    });
+    void speak(identity.text, {
+      parentHub: true,
+      audioIdentity: identity,
       playbackMode: "full-required",
       narration: true,
     }).then((res) => {

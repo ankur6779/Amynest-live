@@ -680,6 +680,19 @@ export function logAmyModeDiagnosis(
  * Amy Audio Lessons — play each paragraph as one continuous unit.
  * Avoids speech_coach semantic splits and duplicate onFinished callbacks.
  */
+export function prepareAmyParentHubSpeech(raw: string): AmySpeechPolicy {
+  const originalText = raw ?? "";
+  const policy = buildPolicy(originalText, originalText, "sentence", [originalText]);
+  policy.useSemanticSplit = false;
+  policy.allowSpeechCoachSplit = false;
+  policy.allowPhonicsSequence = false;
+  policy.preferDynamicTts = false;
+  policy.retryDynamicTts = true;
+  policy.preferSpeechSynthesisFallback = true;
+  policy.dynamicTimeoutMs = getTtsRequestTimeoutMs();
+  return enforceAmySpeechPolicyInvariants(policy);
+}
+
 export function prepareAmyLessonParagraphSpeech(raw: string): AmySpeechPolicy {
   const originalText = (raw ?? "").trim();
   // Verbatim catalog text — static map + server pregenerate both key on raw paragraphs.
@@ -714,6 +727,9 @@ export function prepareAmyCatalogSpeech(raw: string): AmySpeechPolicy {
 export function prepareAmySpeechInput(raw: string, opts?: SpeakOptions): AmySpeechPolicy {
   if (opts?.catalogPlayback) {
     return prepareAmyCatalogSpeech(raw);
+  }
+  if (opts?.parentHub) {
+    return prepareAmyParentHubSpeech(raw);
   }
   if (opts?.lessonParagraph) {
     return prepareAmyLessonParagraphSpeech(raw);
