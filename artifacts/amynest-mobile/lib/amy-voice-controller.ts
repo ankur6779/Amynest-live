@@ -1,9 +1,7 @@
 import { resolveMediaUrl } from "@/constants/api";
-import {
-  buildTtsCacheKeyPayload,
-  createRunLatest,
-  getPhonicsAudioText,
-} from "@workspace/phonics-sounds";
+import { getPhonicsAudioText } from "@workspace/phonics-sounds";
+import { buildTtsCacheKeyPayload } from "@workspace/phonics-sounds/tts-cache-key";
+import { createRunLatest } from "@workspace/phonics-sounds/run-latest";
 import * as Crypto from "expo-crypto";
 import type { AuthFetchFn } from "@/lib/poll-result";
 import { readResolvedApiJson } from "@/lib/poll-result";
