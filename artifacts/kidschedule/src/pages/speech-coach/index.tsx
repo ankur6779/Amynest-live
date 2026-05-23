@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
+import { AppLink } from "@/components/app-link";
 import { useTranslation } from "react-i18next";
 import { getAuth } from "firebase/auth";
 import {
@@ -1196,12 +1197,12 @@ export default function SpeechCoachPage() {
       data-testid="speech-coach-page"
     >
       <div className="flex items-center gap-2">
-        <Link href="/parenting-hub">
+        <AppLink href="/parenting-hub" replace source="speech-coach-back">
           <Button variant="ghost" size="sm">
             <ChevronLeft className="h-4 w-4" />
             {t("parent_hub.shell.title")}
           </Button>
-        </Link>
+        </AppLink>
         <Mic className="h-5 w-5 text-primary" />
         <h1 className="text-xl font-bold text-foreground">
           {t("screens.speech_coach.title")}
@@ -1234,7 +1235,7 @@ export default function SpeechCoachPage() {
           <CheckCircle2 className="h-4 w-4" />
           {t("screens.speech_coach.cta.check_milestones")}
         </Button>
-        <Link href="/speech-coach/live">
+        <AppLink href="/speech-coach/live" source="speech-coach-live">
           <Button
             type="button"
             size="sm"
@@ -1244,7 +1245,7 @@ export default function SpeechCoachPage() {
             <Mic className="h-4 w-4" />
             {t("screens.speech_coach.cta.daily_session")}
           </Button>
-        </Link>
+        </AppLink>
         <Button
           type="button"
           size="sm"
@@ -1255,7 +1256,7 @@ export default function SpeechCoachPage() {
           <BarChart3 className="h-4 w-4" />
           {t("screens.speech_coach.cta.view_progress")}
         </Button>
-        <Link href="/parenting-hub">
+        <AppLink href="/parenting-hub" replace source="speech-coach-ask-amy">
           <Button
             type="button"
             size="sm"
@@ -1265,7 +1266,7 @@ export default function SpeechCoachPage() {
             <Heart className="h-4 w-4" />
             {t("screens.speech_coach.cta.ask_amy_coach")}
           </Button>
-        </Link>
+        </AppLink>
       </div>
 
       {childrenQuery.isLoading && (

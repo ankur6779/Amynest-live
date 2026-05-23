@@ -1,6 +1,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
+import { AppLink } from "@/components/app-link";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
@@ -474,12 +475,12 @@ function ActivitiesSection({
         <p className="text-sm text-muted-foreground mb-3">
           {t("parent_hub.tiles.activities.lead")}
         </p>
-        <Link href="/audio-lessons">
+        <AppLink href="/audio-lessons" source="hub-audio-lessons">
           <Button className="w-full rounded-xl gap-2 text-sm font-semibold" data-testid="open-audio-lessons">
             {t("pages.audio_lessons.amy_audio_lessons")}
             <ArrowRight className="h-4 w-4 ml-auto" />
           </Button>
-        </Link>
+        </AppLink>
       </SubSection>
 
       <LockedBlock locked={hubUsage.isFeatureLocked("hub_gaming_rewards")}>
@@ -1093,12 +1094,12 @@ function ParentingHubPage() {
               <p className="text-sm text-muted-foreground">
                 {t("screens.speech_coach.subtitle")}
               </p>
-              <Link href="/speech-coach">
+              <AppLink href="/speech-coach" source="hub-speech-coach">
                 <Button className="w-full rounded-xl gap-2 text-sm font-semibold" data-testid="open-speech-coach">
                   {t("screens.speech_coach.cta.start_practice")}
                   <ArrowRight className="h-4 w-4 ml-auto" />
                 </Button>
-              </Link>
+              </AppLink>
             </div>
           </HubSection>
         </LockedBlock>;

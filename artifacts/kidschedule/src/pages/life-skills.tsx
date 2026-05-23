@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
+import { AppLink } from "@/components/app-link";
 import { useTranslation } from "react-i18next";
 import { useListChildren } from "@workspace/api-client-react";
 import { ageBandForLifeSkills, ageBandLabel } from "@workspace/life-skills";
@@ -22,12 +23,12 @@ export default function LifeSkillsPage() {
   return (
     <div className="container mx-auto max-w-2xl p-4 space-y-4">
       <div className="flex items-center gap-2">
-        <Link href="/parenting-hub">
+        <AppLink href="/parenting-hub" replace source="life-skills-back">
           <Button variant="ghost" size="sm">
             <ChevronLeft className="h-4 w-4" />
             {t("pages.life_skills_page.back")}
           </Button>
-        </Link>
+        </AppLink>
         <Compass className="h-5 w-5 text-emerald-600" />{/* audit-ok: brand emerald for life-skills marker, mirrors hub icon */}
         <h1 className="text-xl font-bold">{t("pages.life_skills_page.title")}</h1>
       </div>
