@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "channel": "production",
+  "bundleVersion": "1.0.1",
+  "bundleUrl": "https://amynest-backend-dykj.onrender.com/api/app/ota/bundle/amynest-www-1.0.1.zip",
+  "checksum": "b8f803743909834551bdb1d0f78e77f3999dc52985c34d109ef582eef39f7cdb",
+  "minNativeBuild": 9,
+  "maxNativeBuild": null,
+  "policy": "patch-only",
+  "releaseNotes": "Nutrition Hub premium gating, OTA infrastructure, bug fixes.",
+  "changeClasses": ["bugfix", "ui-copy"]
+}

@@ -65,3 +65,12 @@ run("pnpm", ["run", "build:web"], {
 run("node", [resolve(__dirname, "copy-www.mjs")], {
   cwd: resolve(__dirname, ".."),
 });
+
+run("node", [resolve(__dirname, "patch-capacitor-ota-config.mjs")], {
+  cwd: resolve(__dirname, ".."),
+  env: {
+    VITE_APP_API_ORIGIN: process.env.VITE_APP_API_ORIGIN,
+    OTA_UPDATE_API_ORIGIN: process.env.OTA_UPDATE_API_ORIGIN,
+    OTA_BUILTIN_BUNDLE_VERSION: process.env.OTA_BUILTIN_BUNDLE_VERSION,
+  },
+});

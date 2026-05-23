@@ -23,6 +23,8 @@ export const PARENT_HUB_FEATURES = [
   "hub_phonics_learning",
   "hub_phonics_test",
   "hub_nutrition",
+  "nutrition_week_plan",
+  "nutrition_family_ai",
   "hub_art_craft",
   "hub_worksheets",
   "hub_facts",

@@ -37,6 +37,10 @@ The iOS app uses Apple In-App Purchase through RevenueCat for all subscriptions.
 
 Normal web/PWA users in India may use Razorpay. Android native wrappers use the Google Play Billing bridge when available.
 
+## Over-The-Air (OTA) Web Updates
+
+The iOS build may download **small web-only patches** (JavaScript/CSS bug fixes) from our HTTPS API using the Capacitor Updater plugin. This does **not** install native code. **Major features, billing changes, and permission changes** still require a new App Store version. OTA updates are limited to **patch-level** semver bumps (e.g. 1.0.4 → 1.0.5).
+
 ## Privacy And Safety
 
 The app is a parenting assistant for routines, learning, behavior logs, and child development guidance. It does not track users across third-party apps or websites for advertising. The Privacy Manifest is included at `ios/App/App/PrivacyInfo.xcprivacy`.

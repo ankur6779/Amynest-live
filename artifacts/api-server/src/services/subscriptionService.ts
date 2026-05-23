@@ -62,6 +62,9 @@ export const FREE_FEATURE_LIMITS = {
   hub_speech_guidance: 1,    // section 6 — Parent Guidance
   hub_speech_affirmations: 1,// section 7 — Emotion & Confidence Builder
   hub_speech_reports: 1,     // section 8 — Speech Progress Reports
+  // ── Nutrition Hub (AI meal plan + family portions) ─────────────────────
+  nutrition_week_plan: 1,    // one 7-day AI meal plan per lifetime
+  nutrition_family_ai: 1,    // one AI family-portion lookup per lifetime
 } as const;
 
 export type FeatureKey = keyof typeof FREE_FEATURE_LIMITS;
@@ -85,6 +88,8 @@ export const FEATURE_SCOPE: Record<FeatureKey, "daily" | "lifetime"> = {
   hub_speech_guidance: "lifetime",
   hub_speech_affirmations: "lifetime",
   hub_speech_reports: "lifetime",
+  nutrition_week_plan: "lifetime",
+  nutrition_family_ai: "lifetime",
 };
 
 export type FeatureUsage = {

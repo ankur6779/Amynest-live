@@ -1,74 +1,89 @@
 {
-  "appId": "com.amynest.app",
-  "appName": "AmyNest",
-  "webDir": "www",
-  "bundledWebRuntime": false,
-  "server": {
-    "androidScheme": "https",
-    "iosScheme": "capacitor",
-    "cleartext": false,
-    "allowNavigation": [
-      "amynest.in",
-      "*.amynest.in",
-      "appleid.apple.com",
-      "appleid.cdn-apple.com",
-      "accounts.google.com",
-      "*.google.com",
-      "*.googleapis.com",
-      "*.gstatic.com",
-      "*.recaptcha.net",
-      "*.firebaseapp.com",
-      "*.firebaseio.com",
-      "*.firebase.com",
-      "securetoken.googleapis.com"
-    ]
-  },
-  "ios": {
-    "contentInset": "automatic",
-    "backgroundColor": "#0a061a",
-    "allowsLinkPreview": false,
-    "scrollEnabled": true,
-    "limitsNavigationsToAppBoundDomains": false
-  },
-  "android": {
-    "backgroundColor": "#0a061a",
-    "allowMixedContent": false,
-    "captureInput": true,
-    "useLegacyBridge": false
-  },
-  "plugins": {
-    "SplashScreen": {
-      "launchShowDuration": 600,
-      "launchAutoHide": true,
-      "backgroundColor": "#0a061a",
-      "androidSplashResourceName": "splash",
-      "androidScaleType": "CENTER_CROP",
-      "showSpinner": false,
-      "splashFullScreen": true,
-      "splashImmersive": true
-    },
-    "PushNotifications": {
-      "presentationOptions": ["badge", "sound", "alert"]
-    },
-    "CapacitorHttp": {
-      "enabled": false
-    },
-    "Keyboard": {
-      "resize": "body",
-      "resizeOnFullScreen": true
-    },
-    "SignInWithApple": {
-      "clientId": "com.amynest.app",
-      "redirectURI": "https://www.amynest.in/auth/apple/callback"
-    }
-  },
-  "packageClassList": [
-    "AppPlugin",
-    "GeolocationPlugin",
-    "KeyboardPlugin",
-    "PushNotificationsPlugin",
-    "PurchasesPlugin",
-    "MicPermissionPlugin",
-    "SignInWithApple"
-  ]
+	"appId": "com.amynest.app",
+	"appName": "AmyNest",
+	"webDir": "www",
+	"bundledWebRuntime": false,
+	"server": {
+		"androidScheme": "https",
+		"iosScheme": "capacitor",
+		"cleartext": false,
+		"allowNavigation": [
+			"amynest.in",
+			"*.amynest.in",
+			"appleid.apple.com",
+			"appleid.cdn-apple.com",
+			"accounts.google.com",
+			"*.google.com",
+			"*.googleapis.com",
+			"*.gstatic.com",
+			"*.recaptcha.net",
+			"*.firebaseapp.com",
+			"*.firebaseio.com",
+			"*.firebase.com",
+			"securetoken.googleapis.com"
+		]
+	},
+	"ios": {
+		"contentInset": "automatic",
+		"backgroundColor": "#0a061a",
+		"allowsLinkPreview": false,
+		"scrollEnabled": true,
+		"limitsNavigationsToAppBoundDomains": false
+	},
+	"android": {
+		"backgroundColor": "#0a061a",
+		"allowMixedContent": false,
+		"captureInput": true,
+		"useLegacyBridge": false
+	},
+	"plugins": {
+		"SplashScreen": {
+			"launchShowDuration": 600,
+			"launchAutoHide": true,
+			"backgroundColor": "#0a061a",
+			"androidSplashResourceName": "splash",
+			"androidScaleType": "CENTER_CROP",
+			"showSpinner": false,
+			"splashFullScreen": true,
+			"splashImmersive": true
+		},
+		"PushNotifications": {
+			"presentationOptions": [
+				"badge",
+				"sound",
+				"alert"
+			]
+		},
+		"CapacitorHttp": {
+			"enabled": false
+		},
+		"Keyboard": {
+			"resize": "body",
+			"resizeOnFullScreen": true
+		},
+		"SignInWithApple": {
+			"clientId": "com.amynest.app",
+			"redirectURI": "https://www.amynest.in/auth/apple/callback"
+		},
+		"CapacitorUpdater": {
+			"autoUpdate": true,
+			"autoDeletePrevious": true,
+			"resetWhenUpdate": true,
+			"directUpdate": false,
+			"allowModifyUrl": false,
+			"statsUrl": "",
+			"updateUrl": "https://amynest-backend-dykj.onrender.com/api/app/ota/check",
+			"version": "1.0.0",
+			"defaultChannel": "production"
+		}
+	},
+	"packageClassList": [
+		"AppPlugin",
+		"GeolocationPlugin",
+		"KeyboardPlugin",
+		"PushNotificationsPlugin",
+		"PurchasesPlugin",
+		"MicPermissionPlugin",
+		"SignInWithApple"
+	]
 }

@@ -52,6 +52,7 @@ import { AppInitGate } from "@/components/app-init-gate";
 import { CapacitorIosAuthPreload } from "@/components/capacitor-ios-auth-preload";
 import { isCapacitorIosShell } from "@/lib/device-lite";
 import { devLog } from "@/lib/dev-log";
+import { initCapacitorOta } from "@/lib/capacitor-ota";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
 // when its route is first matched. The Suspense boundary below renders
@@ -504,6 +505,7 @@ function AppCoreMountMarker() {
     if (appCoreInitDone) return;
     appCoreInitDone = true;
     devLog("APPCORE MOUNTED (init once)");
+    void initCapacitorOta();
     installTtsGestureListener();
     try { (window as Window & { __amynestAppCoreReady?: boolean }).__amynestAppCoreReady = true; } catch (_e) { /* best-effort */ }
     bootMark("appcore-mounted");

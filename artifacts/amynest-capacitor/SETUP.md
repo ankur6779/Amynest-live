@@ -244,6 +244,19 @@ padding-bottom: env(safe-area-inset-bottom, 0px);
 
 ---
 
+## OTA (patch-only web updates — Apple Guideline 2.5.2)
+
+Capgo `@capgo/capacitor-updater` checks `POST /api/app/ota/check` on launch. The server only offers **patch** bumps (`1.0.4` → `1.0.5`), not minor/major — those require App Store.
+
+1. Build web: `pnpm run build:web`
+2. Publish zip: `pnpm run publish:ota -- --version 1.0.1 --bundle-url https://your-cdn/ota/amynest-www-1.0.1.zip`
+3. Upload zip to CDN, set `enabled: true` in `artifacts/api-server/ota/manifest.production.json`, deploy API
+4. Store build must ship with matching `OTA_BUILTIN_BUNDLE_VERSION` / `CapacitorUpdater.version` (e.g. `1.0.0`)
+
+See `artifacts/api-server/ota/README.md` and `ios-config/APPSTORE-REVIEW-NOTES.md`.
+
+---
+
 ## Troubleshooting
 
 | Problem | Fix |
