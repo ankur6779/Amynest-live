@@ -112,10 +112,7 @@ function useSpeechHubGate(featureId: string) {
   const usage = useFeatureUsage();
   const firedRef = useRef(false);
   const locked = usage.isFeatureLocked(featureId);
-  // Same expression as `tryFreeFor` in parenting-hub.tsx (line ~468).
-  const tryFreeFor = (id: string) =>
-    !usage.isPremium && !usage.hasUsedFeature(id);
-  const tryFree = tryFreeFor(featureId);
+  const tryFree = usage.tryFreeFor(featureId);
 
   const onAction = () => {
     if (firedRef.current) return;

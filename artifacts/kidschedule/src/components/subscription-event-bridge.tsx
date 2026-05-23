@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePaywall } from "@/contexts/paywall-context";
 import { useSubscription } from "@/hooks/use-subscription";
 
@@ -10,6 +11,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 export function SubscriptionEventBridge() {
   const { openPaywall } = usePaywall();
   const { refresh } = useSubscription();
+  const qc = useQueryClient();
 
   useEffect(() => {
     const onOpen = (e: Event) => {
@@ -17,14 +19,19 @@ export function SubscriptionEventBridge() {
       const reason = detail?.reason as Parameters<typeof openPaywall>[0];
       openPaywall(reason ?? "feature");
     };
-    const onRefresh = () => refresh();
+    const onRefresh = () => {
+      refresh();
+      // Re-sync feature-usage counts after purchase/restore/expiry so
+      // freemium locks reflect the latest subscription state.
+      void qc.invalidateQueries({ queryKey: ["feature-usage"] });
+    };
     window.addEventListener("amynest:open-paywall", onOpen);
     window.addEventListener("amynest:refresh-subscription", onRefresh);
     return () => {
       window.removeEventListener("amynest:open-paywall", onOpen);
       window.removeEventListener("amynest:refresh-subscription", onRefresh);
     };
-  }, [openPaywall, refresh]);
+  }, [openPaywall, refresh, qc]);
 
   return null;
 }
