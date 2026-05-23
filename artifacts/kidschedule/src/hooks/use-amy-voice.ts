@@ -171,8 +171,8 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
       audioManager.stopAll();
 
       if (_ttsBusy && !busyRef.current) {
-        console.warn("[TTS] skipped — another TTS instance is already in flight");
-        return { success: false, error: "tts_skipped" };
+        console.warn("[TTS] clearing stale global busy lock");
+        _ttsBusy = false;
       }
 
       const myId = getSpeakRequestId();
@@ -370,9 +370,14 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         setPlaybackState("idle");
         return mapped;
       } finally {
-        if (isSpeakRequestCurrent(myId) && isMounted.current) {
+        if (busyRef.current) {
           releaseBusy();
+        }
+        if (isMounted.current) {
           safeSetLoading(false);
+          if (!isSpeakRequestCurrent(myId)) {
+            safeSetSpeaking(false);
+          }
         }
       }
       });

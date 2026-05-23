@@ -754,6 +754,7 @@ function PlayerSheet({
     t
   } = useTranslation();
   const [playing, setPlaying] = useState(false);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [paragraphIdx, setParagraphIdx] = useState(0);
   const [rate, setRate] = useState<number>(1);
   /** Ignores stale onFinished from a previous paragraph playback. */
@@ -812,8 +813,12 @@ function PlayerSheet({
         error: res?.error,
         layer: res?.layer,
       });
+      stopRef.current();
       playingRef.current = false;
       setPlaying(false);
+      setPlaybackError(res?.error ?? "playback_failed");
+    } else {
+      setPlaybackError(null);
     }
   }, []);
 
@@ -833,7 +838,17 @@ function PlayerSheet({
           lessonParagraph: true,
           onFinished: () => advanceParagraph(session),
         })
-        .then((res) => handleSpeakResult(session, res));
+        .then((res) => handleSpeakResult(session, res))
+        .catch((err: unknown) => {
+          if (session !== playbackSessionRef.current) return;
+          console.warn("[AudioLessons] paragraph speak rejected", err);
+          stopRef.current();
+          playingRef.current = false;
+          setPlaying(false);
+          setPlaybackError(
+            err instanceof Error ? err.message : "playback_failed",
+          );
+        });
     },
     [paragraphs, advanceParagraph, handleSpeakResult],
   );
@@ -857,13 +872,22 @@ function PlayerSheet({
     saveResume(r);
   }, [lesson.id, paragraphIdx]);
 
-  // Pause / cleanup when playback stops.
+  // Stop TTS only when transitioning from playing → paused (not on initial mount).
+  const prevPlayingRef = useRef<boolean | null>(null);
   useEffect(() => {
-    if (!playing) {
+    if (prevPlayingRef.current === true && !playing) {
       playingRef.current = false;
       stopRef.current();
     }
+    prevPlayingRef.current = playing;
   }, [playing]);
+
+  useEffect(() => {
+    return () => {
+      playingRef.current = false;
+      stopRef.current();
+    };
+  }, []);
 
   // Auto-advance: when paragraph index changes during active playback, speak the new paragraph.
   useEffect(() => {
@@ -880,6 +904,7 @@ function PlayerSheet({
     playingRef.current = false;
     skipParagraphEffectRef.current = false;
     if (autoPlay) {
+      setPlaybackError(null);
       recordTtsUserGesture();
       playingRef.current = true;
       setPlaying(true);
@@ -970,7 +995,7 @@ function PlayerSheet({
           </button>
         </div>
 
-        {error && <div style={{
+        {(error || playbackError) && <div style={{
         padding: 12,
         borderRadius: 12,
         background: "rgba(239,68,68,0.12)",
@@ -979,7 +1004,11 @@ function PlayerSheet({
         fontSize: 13,
         marginBottom: 12
       }}>
-            {"Couldn't load Amy's voice right now. Please try again in a moment — you can still read the lesson below."}
+            {error
+              ? "Couldn't load Amy's voice right now. Please try again in a moment — you can still read the lesson below."
+              : playbackError === "playback_blocked_tap_again"
+                ? "Tap Play again to start Amy's voice."
+                : "Amy's voice couldn't play this paragraph. Tap Play to try again."}
           </div>}
 
         {/* Progress dots */}
@@ -1079,13 +1108,14 @@ function PlayerSheet({
               primeStaticAudioInUserGesture(txt, "default");
             }}
             onClick={() => {
-              if (playing) {
+              if (playingRef.current) {
                 playingRef.current = false;
                 stopRef.current();
                 setPlaying(false);
                 return;
               }
               recordTtsUserGesture();
+              setPlaybackError(null);
               playingRef.current = true;
               setPlaying(true);
               skipParagraphEffectRef.current = true;
