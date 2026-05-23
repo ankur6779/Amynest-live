@@ -51,7 +51,7 @@ export function LayoutMobileMenu() {
         type="button"
         variant="ghost"
         size="icon"
-        className="md:hidden"
+        className="md:hidden h-10 w-10 min-h-10 min-w-10"
         data-testid="button-mobile-menu"
         aria-expanded={isMenuOpen}
         aria-haspopup="dialog"

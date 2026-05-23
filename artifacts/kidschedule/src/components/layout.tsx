@@ -20,10 +20,11 @@ import { useTranslation } from "react-i18next";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePushRegistration } from "@/hooks/use-push-registration";
 import { useCapacitorPushRegistrationSync } from "@/hooks/use-capacitor-push-registration-sync";
-import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { NotificationNudgeBanner } from "@/components/notification-nudge-banner";
 import { NotificationPromptModal } from "@/components/notification-prompt-modal";
 import { SpotlightTour } from "@/components/spotlight-tour";
+import { ScreenContainer } from "@/components/screen-container";
+import { useAppHeaderHeight } from "@/hooks/use-app-header-height";
 function SmartParentBadge({
   className = ""
 }: {
@@ -169,6 +170,8 @@ export function Layout({
   const isAssistantRoute = safePathStartsWithSegment(location, "/assistant");
   const showDashboardChrome = location === "/dashboard";
   const canShowBack = !showDashboardChrome && location !== "/";
+  const showMobileHeader = !isImmersiveRoute;
+  const headerRef = useAppHeaderHeight(showMobileHeader);
 
   useEffect(() => {
     logNavEvent("layout-mounted", { location });
@@ -202,31 +205,34 @@ export function Layout({
   };
   return (
     <div className="app-shell main-container relative w-full max-w-full min-w-0 bg-background overflow-x-clip box-border">
-      {!isImmersiveRoute ? (
+      {showMobileHeader ? (
         <header
-          className={`app-header header flex min-h-20 w-full max-w-full min-w-0 shrink-0 items-center justify-between gap-2 border-b bg-background px-4 py-3 md:hidden shadow-sm ${isNativeAmyNestShell() ? "pt-3" : "pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]"}`}
+          ref={headerRef}
+          className="app-header header w-full max-w-full min-w-0 shrink-0 border-b border-border/80 md:hidden shadow-sm"
         >
-          <div className="flex min-w-0 items-center gap-2">
-            {canShowBack ? (
-              <button
-                type="button"
-                onClick={handleBack}
-                aria-label="Back"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm active:scale-95"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-            ) : null}
-            <BrandLogo size="sm" showTagline={true} />
-            <AmyMascotLogo size={34} />
-          </div>
-          <div className="flex items-center gap-2">
-            <LayoutMobileMenu />
+          <div className="app-header__bar">
+            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+              {canShowBack ? (
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  aria-label="Back"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm active:scale-95"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+              ) : null}
+              <BrandLogo size="sm" showTagline={false} />
+              <AmyMascotLogo size={26} />
+            </div>
+            <div className="flex shrink-0 items-center">
+              <LayoutMobileMenu />
+            </div>
           </div>
         </header>
       ) : null}
 
-      <main className="flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col">
+      <main className="app-shell-main flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col">
         <div className="flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col md:flex-row">
         {/* Desktop Sidebar */}
         {!isImmersiveRoute && <aside className="hidden w-64 shrink-0 flex-col border-r bg-card md:flex">
@@ -278,10 +284,11 @@ export function Layout({
         </aside>}
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <div
+          <ScreenContainer
+            noOffset={isImmersiveRoute || isAssistantRoute}
             className={
               isImmersiveRoute || isAssistantRoute
-                ? `mx-auto flex w-full min-h-0 flex-1 flex-col p-0 md:p-0${isAssistantRoute ? " assistant-route-content h-full" : ""}`
+                ? `mx-auto w-full min-h-0 flex-1 flex-col p-0 md:p-0${isAssistantRoute ? " assistant-route-content h-full" : ""}`
                 : "mx-auto w-full max-w-5xl flex-1 p-4 md:p-8"
             }
           >
@@ -295,7 +302,7 @@ export function Layout({
                 </div>
               )}
             {children}
-          </div>
+          </ScreenContainer>
         </div>
         </div>
       </main>

@@ -258,6 +258,10 @@
           document.documentElement.style.colorScheme = "dark";
         }
 
+        if (isStandalonePwa) {
+          document.documentElement.classList.add("amynest-pwa-standalone");
+        }
+
         if (prevCrashed || liteForced || isIOS || isAndroid) {
           document.documentElement.classList.add("lite-splash");
         }

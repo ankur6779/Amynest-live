@@ -3,7 +3,7 @@
  * Capacitor-only modules are loaded at the top level.
  */
 
-import { isAndroidMobileShell } from "@/lib/device-lite";
+import { isAndroidMobileShell, isStandalonePwa } from "@/lib/device-lite";
 
 type NativePlatform = "ios" | "android" | "web";
 
@@ -97,6 +97,11 @@ function configureNativeViewport(): void {
 }
 
 /** Android PWA / WebView: same width + safe-area rules as Capacitor iOS shell. */
+function configureStandalonePwaShell(): void {
+  if (!isStandalonePwa()) return;
+  document.documentElement.classList.add("amynest-pwa-standalone");
+}
+
 function configureAndroidMobileShell(): void {
   if (!isAndroidMobileShell()) return;
 
@@ -193,9 +198,11 @@ export function initNativeShell(): void {
     }
     configureNativeViewport();
     configureAndroidMobileShell();
+    configureStandalonePwaShell();
     return;
   }
 
   configureAndroidMobileShell();
+  configureStandalonePwaShell();
   registerWebServiceWorker();
 }
