@@ -9,7 +9,7 @@ import { useSubscription, type Plan } from "@/hooks/use-subscription";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { useNativeBilling } from "@/hooks/use-native-billing";
 import { isIndiaRegion, isAndroidDevice, PLAY_STORE_URL } from "@/lib/geo";
-import { displayPlanPrice } from "@/lib/plan-price";
+import { resolvePlanPriceLabel } from "@/lib/plan-price";
 import { presentNativeRCPaywall } from "@/lib/native-rc-paywall";
 
 // Dates >= this year are sentinel "no real expiry" values from the DB
@@ -196,6 +196,7 @@ export default function PricingPage() {
           <div className="grid gap-3 sm:grid-cols-3">
             {plans.map((p) => {
               const isSel = p.id === selected;
+              const priceLabel = resolvePlanPriceLabel(p, nativeBilling.priceByPlan);
               return (
                 <button
                   key={p.id}
@@ -229,7 +230,7 @@ export default function PricingPage() {
                   </div>
 
                   <div className="mb-1 flex items-baseline gap-1">
-                    <span className="text-3xl font-black text-white">{displayPlanPrice(p)}</span>
+                    <span className="text-3xl font-black text-white">{priceLabel}</span>
                     <span className="text-xs text-white/50">/ {p.period}</span>
                   </div>
 
