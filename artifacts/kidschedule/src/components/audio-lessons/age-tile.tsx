@@ -42,6 +42,10 @@ export function AgeTile({ meta, onExplore }: AgeTileProps) {
         flexDirection: "column",
         gap: 12,
         minHeight: 148,
+        minWidth: 0,
+        width: "100%",
+        maxWidth: "100%",
+        boxSizing: "border-box",
         position: "relative",
         overflow: "hidden",
       }}

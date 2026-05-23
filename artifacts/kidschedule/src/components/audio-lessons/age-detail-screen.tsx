@@ -162,7 +162,8 @@ export function AgeDetailScreen({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -16 }}
       transition={{ duration: 0.28, ease: "easeOut" }}
-      style={{ maxWidth: 720, margin: "0 auto", padding: "8px 16px 100px" }}
+      className="amynest-page-inset w-full min-w-0 overflow-x-clip box-border"
+      style={{ paddingTop: 8, paddingBottom: 100 }}
       data-testid={`age-detail-${ageGroup}`}
     >
       <div style={{ marginBottom: 16 }}>

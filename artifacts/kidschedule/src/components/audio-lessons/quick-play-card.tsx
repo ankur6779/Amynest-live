@@ -24,6 +24,9 @@ export function AmyQuickPlayCard({ card, onPlay }: QuickPlayCardProps) {
       onClick={onPlay}
       style={{
         width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        boxSizing: "border-box",
         textAlign: "left",
         padding: "16px",
         borderRadius: 18,
@@ -33,7 +36,8 @@ export function AmyQuickPlayCard({ card, onPlay }: QuickPlayCardProps) {
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
-        gap: 14,
+        gap: 10,
+        overflow: "hidden",
       }}
     >
       <div
@@ -79,10 +83,11 @@ export function AmyQuickPlayCard({ card, onPlay }: QuickPlayCardProps) {
           gap: 5,
           fontSize: 12,
           fontWeight: 800,
-          padding: "8px 12px",
+          padding: "8px 10px",
           borderRadius: 999,
           background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
           flexShrink: 0,
+          whiteSpace: "nowrap",
         }}
       >
         {isContinue ? <RotateCcw size={13} /> : <Play size={13} />}
