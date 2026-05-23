@@ -4,14 +4,19 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { getApiUrl } from "@/lib/api";
+import {
+  getMaxFreeOpens,
+  isFeatureQuotaExhausted,
+} from "@/lib/feature-usage-limits";
 
 /**
  * "First-Time Free + Preview Lock" model — for the Parent Hub only.
  *
- * Each Parent Hub feature is usable ONCE for free (lifetime, server-side).
- * After the first use, free users see the locked overlay; premium users keep
- * full access. Status is fetched once per session (then optimistically updated
- * on `markFeatureUsed`) so the UI never blocks.
+ * Each Parent Hub tile is usable up to MAX_FREE_HUB_TILE_OPENS times for free
+ * (lifetime, server-side useCount). After the quota is exhausted, free users
+ * see the locked overlay; premium users keep full access. Premium status is
+ * re-evaluated on every render and when subscription data refetches (e.g.
+ * after purchase/restore or when the app returns to foreground after expiry).
  */
 
 export interface FeatureStatus {
@@ -39,8 +44,8 @@ export function useFeatureUsage() {
 
   /**
    * Features the user has opened during the *current* page-session. The
-   * server-side `hasUsedOnce` flips to true on first open, but we don't want
-   * the section the user just opened to instantly blur out underneath them
+   * server-side useCount increments on each open, but we don't want the
+   * section the user just opened to instantly blur out underneath them
    * — the lock should apply on the *next* attempt (page refresh / fresh
    * navigation back to the hub). A ref is intentional: mutating it does not
    * cause a re-render, so it can't fight the optimistic cache update.
@@ -66,13 +71,18 @@ export function useFeatureUsage() {
     },
   });
 
-  const usedSet = useMemo(() => {
-    const s = new Set<string>();
+  const useCountMap = useMemo(() => {
+    const m = new Map<string, number>();
     for (const f of query.data?.features ?? []) {
-      if (f.hasUsedOnce) s.add(f.featureId);
+      m.set(f.featureId, f.useCount ?? 0);
     }
-    return s;
+    return m;
   }, [query.data]);
+
+  const getUseCount = useCallback(
+    (featureId: string): number => useCountMap.get(featureId) ?? 0,
+    [useCountMap],
+  );
 
   const trackMutation = useMutation({
     mutationFn: async (featureId: string) => {
@@ -109,49 +119,55 @@ export function useFeatureUsage() {
     },
   });
 
-  /** True when the user has consumed their one free use of this feature. */
+  /** True when the free quota for this feature is fully consumed. */
   const hasUsedFeature = useCallback(
-    (featureId: string): boolean => usedSet.has(featureId),
-    [usedSet],
+    (featureId: string): boolean =>
+      isFeatureQuotaExhausted(getUseCount(featureId), featureId),
+    [getUseCount],
+  );
+
+  /** Show "Try Free" badge — only before the first open. */
+  const tryFreeFor = useCallback(
+    (featureId: string): boolean =>
+      !isPremium && getUseCount(featureId) === 0,
+    [isPremium, getUseCount],
   );
 
   /**
-   * True iff (used once) AND (not premium) AND (not freshly opened this
-   * session). Premium users are never locked. The freshly-opened guard
-   * gives the user a continuous read of the feature they *just* unlocked
-   * — the lock activates on their next visit.
+   * True iff (quota exhausted) AND (not premium) AND (not freshly opened this
+   * session). Premium users are never locked. When subscription expires,
+   * isPremium flips false and locks re-apply from stored useCount.
    */
   const isFeatureLocked = useCallback(
     (featureId: string): boolean => {
       if (isPremium) return false;
       if (freshlyOpenedRef.current.has(featureId)) return false;
-      return usedSet.has(featureId);
+      return hasUsedFeature(featureId);
     },
-    [isPremium, usedSet],
+    [isPremium, hasUsedFeature],
   );
 
   /**
-   * Record one usage of a feature. Idempotent per first-time semantics — the
-   * server returns `firstTime: true` only on the very first call. Premium
-   * users don't need server tracking; we still log it so analytics stay
-   * accurate, but the call is fire-and-forget.
+   * Record one usage of a feature. Each open increments server useCount until
+   * the per-feature free quota is reached. Premium users bypass locks but
+   * usage is still tracked for analytics.
    */
   const markFeatureUsed = useCallback(
     (featureId: string) => {
-      // Mark as freshly opened first so the LockedBlock won't blur the
-      // very content the user is currently using.
       freshlyOpenedRef.current.add(featureId);
-      // Skip the network round-trip if the server already knows; the local
-      // session is preserved by the ref above.
-      if (usedSet.has(featureId) && !isPremium) return;
+      const count = getUseCount(featureId);
+      const max = getMaxFreeOpens(featureId);
+      if (!isPremium && count >= max) return;
       trackMutation.mutate(featureId);
     },
-    [trackMutation, usedSet, isPremium],
+    [trackMutation, getUseCount, isPremium],
   );
 
   return {
     isPremium,
     isLoaded: query.isFetched || !isSignedIn,
+    getUseCount,
+    tryFreeFor,
     hasUsedFeature,
     isFeatureLocked,
     markFeatureUsed,

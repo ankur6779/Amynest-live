@@ -258,10 +258,12 @@ export function useNativeBilling(): NativeBillingState {
           if (result.ok) {
             // Invalidate subscription cache (webhook may take a moment)
             await qc.invalidateQueries({ queryKey: ["subscription"] });
+            await qc.invalidateQueries({ queryKey: ["feature-usage"] });
             for (const delay of [1500, 3500, 6000]) {
               await new Promise((r) => setTimeout(r, delay));
               await qc.invalidateQueries({ queryKey: ["subscription"] });
             }
+            window.dispatchEvent(new Event("amynest:refresh-subscription"));
           }
           return result;
         }
@@ -284,10 +286,12 @@ export function useNativeBilling(): NativeBillingState {
           };
         }
         await qc.invalidateQueries({ queryKey: ["subscription"] });
+        await qc.invalidateQueries({ queryKey: ["feature-usage"] });
         for (const delay of [1500, 3500, 6000]) {
           await new Promise((r) => setTimeout(r, delay));
           await qc.invalidateQueries({ queryKey: ["subscription"] });
         }
+        window.dispatchEvent(new Event("amynest:refresh-subscription"));
         return { ok: true };
       } catch (err) {
         return {
@@ -309,6 +313,8 @@ export function useNativeBilling(): NativeBillingState {
       const result = await restoreIOSPurchases();
       if (result.ok) {
         await qc.invalidateQueries({ queryKey: ["subscription"] });
+        await qc.invalidateQueries({ queryKey: ["feature-usage"] });
+        window.dispatchEvent(new Event("amynest:refresh-subscription"));
         return result.isPremium;
       }
       return false;
@@ -318,6 +324,8 @@ export function useNativeBilling(): NativeBillingState {
     const res = await androidBridge.restore();
     if (res.ok) {
       await qc.invalidateQueries({ queryKey: ["subscription"] });
+      await qc.invalidateQueries({ queryKey: ["feature-usage"] });
+      window.dispatchEvent(new Event("amynest:refresh-subscription"));
       return true;
     }
     return false;

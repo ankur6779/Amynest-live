@@ -84,6 +84,7 @@ export function useSubscription() {
     },
     enabled: isLoaded && isSignedIn,
     staleTime: 60_000,
+    refetchOnWindowFocus: true,
     retry: 1,
   });
 

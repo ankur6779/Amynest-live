@@ -464,7 +464,7 @@ function ActivitiesSection({
     t
   } = useTranslation();
   const hubUsage = useFeatureUsage();
-  const tryFreeFor = (id: string) => !hubUsage.isPremium && !hubUsage.hasUsedFeature(id);
+  const tryFreeFor = hubUsage.tryFreeFor;
   const isInfant = ageGroup === "infant";
   const isToddlerOrPreschool = ageGroup === "toddler" || ageGroup === "preschool";
   const isOlder = !isInfant && !isToddlerOrPreschool;
@@ -711,7 +711,7 @@ function ParentingHubPage() {
   // for free (server-tracked). After that, free users see the locked overlay;
   // premium users always get full access.
   const hubUsage = useFeatureUsage();
-  const tryFreeFor = (id: string) => !hubUsage.isPremium && !hubUsage.hasUsedFeature(id);
+  const tryFreeFor = hubUsage.tryFreeFor;
 
   // Section-group expand/collapse — Today + Learning open by default; persisted.
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(loadExpandedGroups);

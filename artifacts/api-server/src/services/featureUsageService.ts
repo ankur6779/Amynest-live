@@ -44,6 +44,10 @@ export const PARENT_HUB_FEATURES = [
   "hub_kids_control_center",
   "hub_command_center",
   "hub_tomorrow_forecast",
+  // Web Parent Hub tile IDs that previously failed server validation
+  "hub_phonics",
+  "hub_spelling_mastery",
+  "hub_speech",
 ] as const;
 
 export type ParentHubFeatureId = (typeof PARENT_HUB_FEATURES)[number];
@@ -92,9 +96,10 @@ export async function getUserFeatureStatus(
 /**
  * Record one usage of a feature. Atomic via PG upsert: the first call inserts
  * a row with hasUsedOnce=true / useCount=1; subsequent calls bump useCount +
- * lastUsedAt without changing hasUsedOnce or firstUsedAt. Concurrent calls
- * cannot violate the unique (userId, featureId) constraint. Emits a
- * structured analytics log line.
+ * lastUsedAt without changing hasUsedOnce or firstUsedAt. The client gates
+ * free access using useCount (Parent Hub tiles: 2 lifetime opens; nutrition /
+ * speech sub-sections: 1). Concurrent calls cannot violate the unique
+ * (userId, featureId) constraint. Emits a structured analytics log line.
  */
 export async function trackFeatureUsage(
   userId: string,
