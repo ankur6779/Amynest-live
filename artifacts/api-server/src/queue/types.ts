@@ -18,6 +18,7 @@ export type AiJobType =
   | "phonics.sound"
   | "phonics.weekly_insight"
   | "audio-lessons.pregenerate"
+  | "tts.pregenerate"
   | "ai-coach.extend"
   | "ai-coach.stream_plan"
   | "ai-coach.initial_wins"

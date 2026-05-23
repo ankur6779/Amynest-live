@@ -47,6 +47,7 @@ import {
 } from "@/lib/setup-status";
 import { installTtsGestureListener } from "@/lib/tts-guard";
 import { OnboardingStatusProvider, useOnboardingStatus } from "@/contexts/onboarding-status-context";
+import { AmyVoiceProvider } from "@/contexts/amy-voice-provider";
 import { AppInitGate } from "@/components/app-init-gate";
 import { CapacitorIosAuthPreload } from "@/components/capacitor-ios-auth-preload";
 import { isCapacitorIosShell } from "@/lib/device-lite";
@@ -525,6 +526,7 @@ export default function AppCore() {
   return (
     <ProductionAppShell>
       <FirebaseAuthProvider>
+        <AmyVoiceProvider>
         <OnboardingStatusProvider>
           <AppInitGate>
             <WouterRouter base={basePath}>
@@ -539,6 +541,7 @@ export default function AppCore() {
             </WouterRouter>
           </AppInitGate>
         </OnboardingStatusProvider>
+        </AmyVoiceProvider>
       </FirebaseAuthProvider>
     </ProductionAppShell>
   );

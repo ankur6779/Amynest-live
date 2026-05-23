@@ -8,6 +8,7 @@
 
 import type { AuthFetchFn } from "@/lib/poll-result";
 import { audioManager, AUDIO_ERROR } from "@/lib/audio-manager";
+import { cancelAllSpeakRequests } from "@/lib/amy-voice-safety";
 import {
   isTtsPlaybackAllowed,
   recordTtsUserGesture,
@@ -459,7 +460,7 @@ async function attemptCachePlay(
   return { ok: false, error: "cache_miss" };
 }
 
-/** Layer 1 — static + IndexedDB cache in parallel (quality-weighted winner). */
+/** Layer 1 — static + IndexedDB cache (sequential for phonics to prevent overlap). */
 async function tryPregeneratedParallelLayer(
   text: string,
   mode: StaticAudioMode,
@@ -481,7 +482,23 @@ async function tryPregeneratedParallelLayer(
     order,
     timeoutMs: LAYER1_TIMEOUT_MS,
     adaptive: getAdaptiveSnapshot(),
+    sequential: mode === "phonics" || phonicsOnly,
   });
+
+  if (mode === "phonics" || phonicsOnly) {
+    const sorted = [...runners].sort((a, b) => b.quality - a.quality);
+    for (const runner of sorted) {
+      if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+      try {
+        const result = await withTimeout(runner.run(), LAYER1_TIMEOUT_MS, "runner");
+        if (result.ok) return result;
+      } catch {
+        /* try next */
+      }
+    }
+    return { ok: false, error: "layer_failed" };
+  }
+
   const result = await raceQualityWeightedPlay(runners, LAYER1_TIMEOUT_MS);
   if (result.ok) return result;
 
@@ -1090,6 +1107,8 @@ export async function speakAmyVoice(
       playbackRate: ctx.playbackRate * policy.prosody.playbackRate,
     };
     recordTtsUserGesture();
+    cancelAllSpeakRequests();
+    audioManager.stopAll();
     resetClientStaticAudioCircuit();
     resetTtsApiCircuit();
     resetAmyVoiceTelemetry();
@@ -1108,6 +1127,8 @@ export async function speakAmyVoice(
   };
 
   recordTtsUserGesture();
+  cancelAllSpeakRequests();
+  audioManager.stopAll();
   resetClientStaticAudioCircuit();
   resetTtsApiCircuit();
 

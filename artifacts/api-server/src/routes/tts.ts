@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { TTS_MAX_INPUT_CHARS, readCachedAudio } from "../services/ttsCacheService";
-import { isValidTtsPublicUrl } from "../services/ttsAudioStore";
+import { isValidTtsPublicUrl, MIN_TTS_BYTES } from "../services/ttsAudioStore";
 import { takeTtsPending } from "../services/ttsPendingRegistry.js";
 import { streamLiveTtsToClient } from "../services/ttsLiveStream.js";
 import { generateOpenAiTts } from "../services/ttsGenerate.js";
@@ -19,6 +19,7 @@ import {
   getPhonicsAudioText,
   formatBlendLine,
 } from "@workspace/phonics-sounds";
+import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 
 export const ttsPublicRouter: IRouter = Router();
 
@@ -29,20 +30,41 @@ ttsPublicRouter.get("/tts/audio/:key.mp3", async (req, res): Promise<void> => {
     return;
   }
 
-  try {
-    const cached = await readCachedAudio(key);
-    if (cached) {
-      if (cached.buffer.byteLength === 0) {
-        res.status(404).json({ error: "not_found" });
-        return;
+  const streamCached = async (attempt: number): Promise<boolean> => {
+    try {
+      const cached = await readCachedAudio(key);
+      if (cached) {
+        if (cached.buffer.byteLength < MIN_TTS_BYTES) {
+          if (attempt === 0) return streamCached(1);
+          res.status(404).json({ error: "not_found" });
+          return true;
+        }
+        res.setHeader("Content-Type", "audio/mpeg");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        res.setHeader("Content-Length", String(cached.buffer.byteLength));
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        res.status(200).end(cached.buffer);
+        return true;
       }
-      res.setHeader("Content-Type", "audio/mpeg");
-      res.setHeader("X-Content-Type-Options", "nosniff");
-      res.setHeader("Content-Length", String(cached.buffer.byteLength));
-      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-      res.status(200).end(cached.buffer);
-      return;
+      return false;
+    } catch (err) {
+      logger.warn(
+        {
+          evt: "tts.stream_read_retry",
+          key,
+          attempt,
+          message: err instanceof Error ? err.message : String(err),
+        },
+        "TTS audio read failed — retrying once",
+      );
+      if (attempt === 0) return streamCached(1);
+      throw err;
     }
+  };
+
+  try {
+    const served = await streamCached(0);
+    if (served) return;
 
     const pending = takeTtsPending(key);
     if (pending) {
@@ -299,6 +321,76 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
     logger.error({ evt: "tts.synthesize_failed", userId, code }, "tts synthesize failed");
     res.status(200).json({ success: false, ok: false, error: code });
   }
+});
+
+/**
+ * POST /api/tts/pregenerate
+ *
+ * Batch-warm TTS cache for visible phrases (phonics tiles, lesson snippets).
+ * Already-cached texts are no-ops. Runs in the AI job queue when deferred.
+ */
+router.post("/tts/pregenerate", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const rawTexts = req.body?.texts;
+  if (!Array.isArray(rawTexts) || rawTexts.length === 0) {
+    res.status(400).json({ error: "invalid_texts" });
+    return;
+  }
+  if (rawTexts.length > 300) {
+    res.status(400).json({ error: "too_many_texts" });
+    return;
+  }
+
+  const mode = req.body?.mode === "phonics" ? ("phonics" as const) : ("default" as const);
+  const validTexts = rawTexts
+    .filter((t): t is string => typeof t === "string")
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0 && t.length <= TTS_MAX_INPUT_CHARS);
+
+  if (validTexts.length === 0) {
+    res.json({ ok: true, total: 0, succeeded: 0, failed: 0, cached: 0, skipped: rawTexts.length });
+    return;
+  }
+
+  const skipped = rawTexts.length - validTexts.length;
+
+  await submitRouteAiJob({
+    routeName: "tts/pregenerate",
+    type: "tts.pregenerate",
+    userId,
+    input: { texts: validTexts, mode },
+    waitMs: 120_000,
+    buildSyncBody: (result) => {
+      const body = result as {
+        ok: true;
+        total: number;
+        succeeded: number;
+        failed: number;
+        cached: number;
+        skipped: number;
+      };
+      logger.info(
+        {
+          evt: "tts.pregenerate",
+          userId,
+          total: body.total,
+          succeeded: body.succeeded,
+          failed: body.failed,
+          cached: body.cached,
+          skipped,
+          mode,
+        },
+        "tts pregenerate complete",
+      );
+      return { ...body, skipped };
+    },
+    res,
+  });
 });
 
 export default router;

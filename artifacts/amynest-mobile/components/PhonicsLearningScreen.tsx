@@ -14,6 +14,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
+import { resolvePhonicsPlaybackText } from "@workspace/phonics-sounds";
+import type { UseAmyVoiceState } from "@/hooks/useAmyVoice";
 import { useTheme } from "@/contexts/ThemeContext";
 import { brand, palette } from "@/constants/colors";
 import {
@@ -81,13 +83,14 @@ function PlayButton({
   mode,
   size = "md",
   onPlay,
+  voice,
 }: {
   text: string;
   mode?: "phonics" | "default";
   size?: "sm" | "md" | "lg";
   onPlay?: () => void;
+  voice: UseAmyVoiceState;
 }) {
-  const voice = useAmyVoice();
   const dim = size === "lg" ? 56 : size === "md" ? 44 : 36;
   const icon = size === "lg" ? 26 : size === "md" ? 22 : 18;
   const busy = voice.speaking || voice.loading;
@@ -98,7 +101,7 @@ function PlayButton({
       return;
     }
     onPlay?.();
-    void voice.speak(text, { mode });
+    void voice.speak(text, { mode, module: "phonics_learning" });
   };
 
   return (
@@ -219,12 +222,14 @@ function TodaysActivityCard({
   progress,
   onPlay,
   onToggleMastered,
+  voice,
 }: {
   dailyItems: DisplayPhonicsItem[];
   focus: string;
   progress: { practiced: Record<string, number>; mastered: Record<string, true> }; // i18n-ok: type signature
   onPlay: (id: string, contentId?: number) => void;
   onToggleMastered: (id: string, contentId?: number) => void;
+  voice: UseAmyVoiceState;
 }) {
   const [tick, setTick] = useState(0);
   const todaysItem = useMemo(
@@ -302,9 +307,10 @@ function TodaysActivityCard({
           ) : null}
         </View>
         <PlayButton
-          text={todaysItem.phoneme ?? todaysItem.sound}
+          text={resolvePhonicsPlaybackText(todaysItem)}
           mode={todaysItem.phoneme ? "phonics" : "default"}
           size="lg"
+          voice={voice}
           onPlay={() => onPlay(todaysItem.id, todaysItem.contentId)}
         />
       </LinearGradient>
@@ -351,10 +357,12 @@ function PracticeSoundsCard({
   items,
   progress,
   onPlay,
+  voice,
 }: {
   items: DisplayPhonicsItem[];
   progress: { practiced: Record<string, number>; mastered: Record<string, true> }; // i18n-ok: type signature
   onPlay: (id: string, contentId?: number) => void;
+  voice: UseAmyVoiceState;
 }) {
   const { t } = useTranslation();
   if (items.length === 0) return null;
@@ -388,6 +396,7 @@ function PracticeSoundsCard({
               count={progress.practiced[it.id] ?? 0}
               mastered={!!progress.mastered[it.id]}
               onPlay={() => onPlay(it.id, it.contentId)}
+              voice={voice}
             />
           ))}
         </View>
@@ -400,6 +409,7 @@ function PracticeSoundsCard({
               count={progress.practiced[it.id] ?? 0}
               mastered={!!progress.mastered[it.id]}
               onPlay={() => onPlay(it.id, it.contentId)}
+              voice={voice}
             />
           ))}
         </View>
@@ -413,11 +423,13 @@ function PracticeTile({
   count,
   mastered,
   onPlay,
+  voice,
 }: {
   item: DisplayPhonicsItem;
   count: number;
   mastered: boolean;
   onPlay: () => void;
+  voice: UseAmyVoiceState;
 }) {
   return (
     <View
@@ -466,9 +478,10 @@ function PracticeTile({
         }}
       >
         <PlayButton
-          text={item.phoneme ?? item.sound}
+          text={resolvePhonicsPlaybackText(item)}
           mode={item.phoneme ? "phonics" : "default"}
           size="sm"
+          voice={voice}
           onPlay={onPlay}
         />
         {count > 0 && (
@@ -492,11 +505,13 @@ function PracticeRow({
   count,
   mastered,
   onPlay,
+  voice,
 }: {
   item: DisplayPhonicsItem;
   count: number;
   mastered: boolean;
   onPlay: () => void;
+  voice: UseAmyVoiceState;
 }) {
   return (
     <View
@@ -536,9 +551,10 @@ function PracticeRow({
         </Text>
       )}
       <PlayButton
-        text={item.phoneme ?? item.sound}
+        text={resolvePhonicsPlaybackText(item)}
         mode={item.phoneme ? "phonics" : "default"}
         size="sm"
+        voice={voice}
         onPlay={onPlay}
       />
     </View>
@@ -609,6 +625,7 @@ export default function PhonicsLearningScreen() {
     totalAgeMonths,
     stageOverride,
   );
+  const voice = useAmyVoice();
   const { ageGroup, defaultAgeGroup, loading, error, items, dailyItems, progress, recordPlay, toggleMastered } = data;
   const stageMeta = ageGroup ? PHONICS_STAGE_META[ageGroup] : null;
 
@@ -762,11 +779,13 @@ export default function PhonicsLearningScreen() {
               progress={progress}
               onPlay={recordPlay}
               onToggleMastered={toggleMastered}
+              voice={voice}
             />
             <PracticeSoundsCard
               items={items}
               progress={progress}
               onPlay={recordPlay}
+              voice={voice}
             />
           </>
         )}

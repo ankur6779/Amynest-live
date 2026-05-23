@@ -5,6 +5,7 @@ import {
   getPhonicsCacheFileName,
   normalizePhonicsLetterKey,
   resolvePhonicsLetterFromSymbol,
+  resolvePhonicsPlaybackText,
 } from "./index.js";
 import {
   getPhonemeAudioText,
@@ -70,5 +71,12 @@ describe("cvc blending", () => {
     assert.ok(log.some((l) => l.startsWith("slow:k sound")));
     assert.ok(log.some((l) => l.startsWith("fast:k sound")));
     assert.equal(log[log.length - 1], "word:cat");
+  });
+
+  it("resolvePhonicsPlaybackText from symbol + phoneme", () => {
+    assert.equal(
+      resolvePhonicsPlaybackText({ symbol: "A", phoneme: "æ", sound: "a as in apple" }),
+      "a as in apple",
+    );
   });
 });

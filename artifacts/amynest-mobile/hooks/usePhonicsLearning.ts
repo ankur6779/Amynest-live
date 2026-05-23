@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { resolvePhonicsPlaybackText } from "@workspace/phonics-sounds";
+import { pregenerateTtsTexts } from "@/lib/pregenerate-tts";
 
 export type PhonicsAgeGroup = "12_24m" | "2_3y" | "3_4y" | "4_5y" | "5_6y";
 export const PHONICS_AGE_GROUPS: PhonicsAgeGroup[] = [
@@ -270,6 +272,15 @@ export function usePhonicsLearning(
         setInsights(data.insights ?? []);
         setProgress(serverProgress);
         await saveLocalProgress(childId, ageGroup, serverProgress);
+
+        const pregenTexts = [...mappedItems, ...mappedDaily].map((it) =>
+          resolvePhonicsPlaybackText({
+            symbol: it.symbol,
+            phoneme: it.phoneme ?? null,
+            sound: it.sound,
+          }),
+        );
+        pregenerateTtsTexts(authFetch, pregenTexts, "phonics");
       } catch (err) {
         if (cancelled || myReq !== reqIdRef.current) return;
         setError(err instanceof Error ? err.message : "phonics_load_failed");

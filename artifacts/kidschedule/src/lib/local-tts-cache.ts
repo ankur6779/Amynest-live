@@ -9,6 +9,9 @@ const DB_NAME = "amynest_amy_voice_cache";
 const STORE = "audio";
 const DB_VERSION = 1;
 const MAX_ENTRIES = 80;
+/** Reject truncated / corrupt MP3 blobs. */
+export const MIN_LOCAL_BLOB_BYTES = 500;
+const FETCH_TIMEOUT_MS = 10_000;
 
 type CacheRow = { key: string; blob: Blob; updatedAt: number };
 
@@ -44,6 +47,25 @@ export function localCacheKeyForTts(cacheKey: string): string {
   return `tts:${cacheKey}`;
 }
 
+export async function deleteLocalCachedAudio(key: string): Promise<void> {
+  const db = await openDb();
+  if (!db) return;
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).delete(key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    /* ignore */
+  }
+}
+
+function isValidBlob(blob: Blob | null | undefined): blob is Blob {
+  return Boolean(blob && blob.size >= MIN_LOCAL_BLOB_BYTES);
+}
+
 export async function getLocalCachedAudioUrl(key: string): Promise<string | null> {
   const db = await openDb();
   if (!db) return null;
@@ -54,8 +76,11 @@ export async function getLocalCachedAudioUrl(key: string): Promise<string | null
       req.onsuccess = () => resolve(req.result as CacheRow | undefined);
       req.onerror = () => reject(req.error);
     });
-    if (!row?.blob || row.blob.size === 0) return null;
-    return URL.createObjectURL(row.blob);
+    if (!isValidBlob(row?.blob)) {
+      if (row) void deleteLocalCachedAudio(key);
+      return null;
+    }
+    return URL.createObjectURL(row!.blob);
   } catch {
     return null;
   }
@@ -63,7 +88,7 @@ export async function getLocalCachedAudioUrl(key: string): Promise<string | null
 
 export async function putLocalCachedAudio(key: string, blob: Blob): Promise<void> {
   const db = await openDb();
-  if (!db || blob.size === 0) return;
+  if (!db || !isValidBlob(blob)) return;
   try {
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE, "readwrite");
@@ -100,15 +125,24 @@ async function pruneLocalCache(db: IDBDatabase): Promise<void> {
   }
 }
 
-/** Fetch URL and persist for offline replay. */
+/** Fetch URL and persist for offline replay (timeout + size validation). */
 export async function warmLocalCacheFromUrl(key: string, url: string): Promise<void> {
   if (!url || typeof fetch === "undefined") return;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(url, { credentials: "omit", cache: "force-cache" });
+    const res = await fetch(url, {
+      credentials: "omit",
+      cache: "force-cache",
+      signal: controller.signal,
+    });
     if (!res.ok) return;
     const blob = await res.blob();
-    if (blob.size > 0) await putLocalCachedAudio(key, blob);
+    if (isValidBlob(blob)) await putLocalCachedAudio(key, blob);
+    else void deleteLocalCachedAudio(key);
   } catch {
     /* ignore */
+  } finally {
+    clearTimeout(timer);
   }
 }

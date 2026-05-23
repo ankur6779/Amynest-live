@@ -1,8 +1,7 @@
 // i18n-ignore-start
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
-import { API_BASE_URL } from "@/constants/api";
+import { useAmyVoiceContext } from "@/contexts/AmyVoiceProvider";
 
 // ─── Shared types (mirror server shape) ──────────────────────────────────────
 
@@ -144,118 +143,31 @@ export interface UseSpellingTTSState {
   stop: () => void;
 }
 
-interface SynthesizeResponse {
-  ok: true;
-  cacheKey: string;
-  audioUrl: string;
-  cached: boolean;
-  charCount: number;
-  contentType: string;
-}
-
 export function useSpellingTTS(): UseSpellingTTSState {
-  const authFetch = useAuthFetch();
-  const player = useAudioPlayer(null);
-  const status = useAudioPlayerStatus(player);
-  const [requestedPlaying, setRequestedPlaying] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  const reqIdRef = useRef(0);
-  const isMountedRef = useRef(true);
+  const ctx = useAmyVoiceContext();
 
-  const speaking = requestedPlaying && status.playing;
+  const speak = useCallback(
+    async (text: string, _opts?: { slow?: boolean }) => {
+      await ctx.speak(text, { module: "spelling" });
+    },
+    [ctx],
+  );
 
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-      abortRef.current?.abort();
-      try { player.pause(); } catch {}
-    };
-  }, [player]);
+  const playUrl = useCallback(
+    async (url: string, _opts?: { slow?: boolean }) => {
+      await ctx.playUrl(url, { module: "spelling" });
+    },
+    [ctx],
+  );
 
-  useEffect(() => {
-    if (status.didJustFinish) {
-      setRequestedPlaying(false);
-    }
-  }, [status.didJustFinish]);
-
-  const stop = useCallback(() => {
-    reqIdRef.current++;
-    abortRef.current?.abort();
-    abortRef.current = null;
-    try { player.pause(); } catch {}
-    if (isMountedRef.current) {
-      setRequestedPlaying(false);
-      setLoading(false);
-    }
-  }, [player]);
-
-  const _playUri = useCallback((uri: string, myId: number) => {
-    if (myId !== reqIdRef.current || !isMountedRef.current) return;
-    const fullUri = uri.startsWith("http") ? uri : `${API_BASE_URL}${uri}`;
-    player.replace({ uri: fullUri });
-    player.play();
-    if (isMountedRef.current) setRequestedPlaying(true);
-  }, [player]);
-
-  const speak = useCallback(async (text: string, opts?: { slow?: boolean }) => {
-    const trimmed = (text ?? "").trim();
-    if (!trimmed) return;
-    const myId = ++reqIdRef.current;
-    abortRef.current?.abort();
-    try { player.pause(); } catch {}
-    const controller = new AbortController();
-    abortRef.current = controller;
-    if (isMountedRef.current) {
-      setRequestedPlaying(false);
-      setLoading(true);
-      setError(null);
-    }
-    try {
-      const { readResolvedApiJson, resolveAiApiData } = await import("@/lib/poll-result");
-      const res = await authFetch("/api/tts/synthesize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: trimmed }),
-        signal: controller.signal,
-      });
-      if (myId !== reqIdRef.current || !isMountedRef.current) return;
-      if (!res.ok) throw new Error(`tts_synth_${res.status}`);
-      const data = await readResolvedApiJson<SynthesizeResponse>(res, authFetch);
-      if (!data?.audioUrl) throw new Error("tts_missing_audio_url");
-      _playUri(data.audioUrl, myId);
-    } catch (err) {
-      if ((err as { name?: string })?.name === "AbortError") return;
-      if (isMountedRef.current && myId === reqIdRef.current) {
-        setError(err instanceof Error ? err.message : "tts_failed");
-        setRequestedPlaying(false);
-      }
-    } finally {
-      if (isMountedRef.current && myId === reqIdRef.current) {
-        setLoading(false);
-        if (abortRef.current === controller) abortRef.current = null;
-      }
-    }
-  }, [authFetch, _playUri, player]);
-
-  const playUrl = useCallback(async (url: string, _opts?: { slow?: boolean }) => {
-    if (!url) return;
-    const myId = ++reqIdRef.current;
-    abortRef.current?.abort();
-    abortRef.current = null;
-    try { player.pause(); } catch {}
-    if (isMountedRef.current) {
-      setError(null);
-      setLoading(true);
-      setRequestedPlaying(false);
-    }
-    _playUri(url, myId);
-    if (isMountedRef.current && myId === reqIdRef.current) setLoading(false);
-  }, [_playUri, player]);
-
-  return { speaking, loading, error, speak, playUrl, stop };
+  return {
+    speaking: ctx.speaking,
+    loading: ctx.loading,
+    error: ctx.error,
+    speak,
+    playUrl,
+    stop: ctx.stop,
+  };
 }
 
 // ─── useSpellingWords ────────────────────────────────────────────────────────

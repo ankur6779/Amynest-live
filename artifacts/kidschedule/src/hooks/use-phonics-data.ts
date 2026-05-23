@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useMountedRef } from "@/hooks/use-safe-async";
 import { safeAuthFetchJson } from "@/lib/safe-auth-fetch-json";
+import { pregenerateTtsTexts } from "@/lib/pregenerate-tts";
+import { resolvePhonicsPlaybackText } from "@/lib/phonics-audio";
 import {
   PHONICS_LEVELS,
   getPhonicsLevel,
@@ -306,6 +308,15 @@ export function usePhonicsData(
         setInsights(data?.insights ?? []);
         setProgress(merged);
         setSource("api");
+
+        const pregenTexts = [...apiItemsMapped, ...apiDailyMapped].map((it) =>
+          resolvePhonicsPlaybackText({
+            symbol: it.symbol,
+            phoneme: it.phoneme ?? null,
+            sound: it.sound,
+          }),
+        );
+        pregenerateTtsTexts(authFetch, pregenTexts, "phonics");
 
         // Best-effort replay: for any item where local is *ahead* of the
         // server, fire the missing writes. We don't await — failures are
