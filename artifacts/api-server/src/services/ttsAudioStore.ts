@@ -135,16 +135,37 @@ export function legacyGcsConfigured(): boolean {
   return getGcsDiagnostics().legacyGcsConfigured;
 }
 
-async function tryLegacyGcsRead(cacheKey: string): Promise<Buffer | null> {
+async function tryLegacyGcsRead(cacheKey: string, attempt = 0): Promise<Buffer | null> {
   if (!isTtsCacheGcsEnabled() || !legacyGcsConfigured()) return null;
   try {
     const [buffer] = await getBucket().file(ttsGcsObjectName(cacheKey)).download();
-    return buffer.byteLength > 0 ? buffer : null;
+    if (isValidTtsBuffer(buffer)) return buffer;
+    if (attempt === 0) {
+      logger.warn(
+        { evt: "tts.gcs_read_retry", cacheKey, bytes: buffer?.byteLength ?? 0 },
+        "GCS TTS read undersized — retrying once",
+      );
+      return tryLegacyGcsRead(cacheKey, 1);
+    }
+    return null;
   } catch (err) {
+    if (attempt === 0) {
+      logger.warn(
+        {
+          evt: "tts.gcs_read_failed",
+          cacheKey,
+          attempt,
+          message: err instanceof Error ? err.message : String(err),
+        },
+        "GCS TTS read failed — retrying once",
+      );
+      return tryLegacyGcsRead(cacheKey, 1);
+    }
     logger.warn(
       {
         evt: "tts.gcs_read_failed",
         cacheKey,
+        attempt,
         message: err instanceof Error ? err.message : String(err),
       },
       "GCS TTS read failed",
@@ -154,6 +175,12 @@ async function tryLegacyGcsRead(cacheKey: string): Promise<Buffer | null> {
 }
 
 const STATIC_AUDIO_GCS_TIMEOUT_MS = Number(process.env.STATIC_AUDIO_GCS_TIMEOUT_MS ?? "7000");
+/** Minimum MP3 payload — rejects truncated / corrupt cache entries. */
+export const MIN_TTS_BYTES = 500;
+
+function isValidTtsBuffer(buffer: Buffer | null | undefined): buffer is Buffer {
+  return Boolean(buffer && buffer.byteLength >= MIN_TTS_BYTES);
+}
 
 async function readStaticAudioFromGcsInner(hash: string): Promise<Buffer | null> {
   const file = getBucket().file(`static-audio/${hash}.mp3`);
@@ -277,21 +304,27 @@ export async function ttsAudioExists(
   cacheKey: string,
   row?: { audioUrl?: string | null; audioData?: Buffer | null },
 ): Promise<boolean> {
-  if (
-    isTtsCacheGcsEnabled() &&
-    row?.audioUrl?.startsWith("https://storage.googleapis.com/")
-  ) {
-    return true;
-  }
-  if (row?.audioData && row.audioData.byteLength > 0) return true;
-  return tryLegacyGcsExists(cacheKey);
+  const buffer = await ttsAudioRead(cacheKey, row?.audioData);
+  if (isValidTtsBuffer(buffer)) return true;
+
+  logger.warn(
+    {
+      evt: "tts.cache_ghost_row",
+      cacheKey,
+      bytes: buffer?.byteLength ?? 0,
+      hasGcsUrl: Boolean(row?.audioUrl?.startsWith("https://storage.googleapis.com/")),
+      hasPostgresBytes: Boolean(row?.audioData && row.audioData.byteLength > 0),
+    },
+    "TTS cache row exists but bytes are not readable — treating as miss",
+  );
+  return false;
 }
 
 export async function ttsAudioRead(
   cacheKey: string,
   audioData: Buffer | null | undefined,
 ): Promise<Buffer | null> {
-  if (audioData && audioData.byteLength > 0) return audioData;
+  if (isValidTtsBuffer(audioData)) return audioData;
   if (isTtsCacheGcsEnabled() && (resolveBackend() === "gcs" || legacyGcsConfigured())) {
     return tryLegacyGcsRead(cacheKey);
   }

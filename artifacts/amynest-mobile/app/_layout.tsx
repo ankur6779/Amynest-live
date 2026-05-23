@@ -36,6 +36,7 @@ import "@/i18n";
 import { brand } from "@/constants/colors";
 import { initCrashReporter } from "@/utils/crashReporter";
 import { DebugProvider } from "@/contexts/DebugContext";
+import { AmyVoiceProvider } from "@/contexts/AmyVoiceProvider";
 import { DebugPanel } from "@/components/DebugPanel";
 import { OfflineScreen } from "@/components/OfflineScreen";
 import { useNetworkStore, selectIsOnline } from "@/store/useNetworkStore";
@@ -347,7 +348,9 @@ export default function RootLayout() {
                   <KeyboardProvider>
                     <DebugProvider>
                     <AuthGate>
-                      <RootLayoutNav />
+                      <AmyVoiceProvider>
+                        <RootLayoutNav />
+                      </AmyVoiceProvider>
                       <DebugPanel />
                     </AuthGate>
                     </DebugProvider>

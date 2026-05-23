@@ -127,6 +127,20 @@ export function resolvePhonicsLetterFromSymbol(
   return null;
 }
 
+/** Canonical TTS phrase for phonics tiles — same key on Web, Android PWA, and iOS. */
+export function resolvePhonicsPlaybackText(input: {
+  symbol: string;
+  phoneme?: string | null;
+  sound?: string;
+}): string {
+  const key = resolvePhonicsLetterFromSymbol(input.symbol, input.phoneme ?? null);
+  if (key) return getPhonicsAudioText(key);
+  if (input.phoneme) return getPhonicsAudioText(input.phoneme);
+  const sound = (input.sound ?? "").trim();
+  if (/ as in /i.test(sound)) return sound;
+  return sound || input.symbol.trim();
+}
+
 /**
  * TTS phrase for a letter, digraph, or legacy phoneme string.
  * Pass-through if already an "as in" instructional line.

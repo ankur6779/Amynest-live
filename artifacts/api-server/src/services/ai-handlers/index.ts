@@ -79,6 +79,11 @@ export async function dispatchAiJob(type: string, payload: unknown): Promise<unk
       );
     }
 
+    case "tts.pregenerate": {
+      const { runTtsPregenerate } = await import("../domain-ai/tts-pregenerate-runner.js");
+      return runTtsPregenerate(input as Parameters<typeof runTtsPregenerate>[0]);
+    }
+
     case "ai-coach.extend": {
       const { runCoachExtend } = await import("../domain-ai/coach-runners.js");
       return runCoachExtend(input as Parameters<typeof runCoachExtend>[0]);

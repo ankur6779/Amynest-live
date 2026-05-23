@@ -43,6 +43,12 @@ import {
 } from "@/lib/amy-voice-pipeline";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { audioManager } from "@/lib/audio-manager";
+import {
+  cancelAllSpeakRequests,
+  getSpeakRequestId,
+  isSpeakRequestCurrent,
+  withSpeakMutex,
+} from "@/lib/amy-voice-safety";
 import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
@@ -139,9 +145,10 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
   }, [abortInFlight, releaseBusy]);
 
   const stop = useCallback(() => {
-    reqIdRef.current += 1;
+    cancelAllSpeakRequests();
+    reqIdRef.current = getSpeakRequestId();
     abortInFlight();
-    audioManager.stop();
+    audioManager.stopAll();
     releaseBusy();
     safeSetSpeaking(false);
     safeSetLoading(false);
@@ -149,17 +156,22 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
 
   const speak = useCallback(
     async (rawText: string, opts?: SpeakOptions): Promise<SpeakResult> => {
+      return withSpeakMutex(async () => {
       const text = (rawText ?? "").trim();
       if (!text) return { success: false, error: "tts_empty_text" };
 
       recordTtsUserGesture();
+
+      cancelAllSpeakRequests();
+      audioManager.stopAll();
 
       if (_ttsBusy && !busyRef.current) {
         console.warn("[TTS] skipped — another TTS instance is already in flight");
         return { success: false, error: "tts_skipped" };
       }
 
-      const myId = ++reqIdRef.current;
+      const myId = getSpeakRequestId();
+      reqIdRef.current = myId;
       abortInFlight();
       safeSetSpeaking(false);
       safeSetError(null);
@@ -172,9 +184,9 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         voiceId,
         modelId,
         playbackRate: playbackRateRef.current,
-        isCancelled: () => myId !== reqIdRef.current || !isMounted.current,
+        isCancelled: () => !isSpeakRequestCurrent(myId) || !isMounted.current,
         onFinished: () => {
-          if (myId !== reqIdRef.current || !isMounted.current) return;
+          if (!isSpeakRequestCurrent(myId) || !isMounted.current) return;
           onFinishedRef.current?.();
         },
       };
@@ -306,7 +318,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
           );
         }
 
-        if (myId !== reqIdRef.current || !isMounted.current) {
+        if (!isSpeakRequestCurrent(myId) || !isMounted.current) {
           return { success: false, error: "tts_cancelled" };
         }
 
@@ -330,7 +342,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
             const prevEnded = el.onended;
             el.onended = (ev) => {
               prevEnded?.call(el, ev);
-              if (myId !== reqIdRef.current || !isMounted.current) return;
+              if (!isSpeakRequestCurrent(myId) || !isMounted.current) return;
               safeSetSpeaking(false);
               onFinishedRef.current?.();
             };
@@ -341,7 +353,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
 
         return result;
       } catch (err) {
-        if (myId !== reqIdRef.current || !isMounted.current) {
+        if (!isSpeakRequestCurrent(myId) || !isMounted.current) {
           return { success: false, error: "tts_cancelled" };
         }
         const mapped = mapPlayErrorToSpeakResult(err);
@@ -349,11 +361,12 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         safeSetSpeaking(false);
         return mapped;
       } finally {
-        if (myId === reqIdRef.current && isMounted.current) {
+        if (isSpeakRequestCurrent(myId) && isMounted.current) {
           releaseBusy();
           safeSetLoading(false);
         }
       }
+      });
     },
     [
       authFetch,

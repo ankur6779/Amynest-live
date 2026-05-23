@@ -6,7 +6,7 @@ import {
   getCvcWordAudioText,
   getCvcWordEntry,
   playCvcBlend,
-  resolvePhonicsLetterFromSymbol,
+  resolvePhonicsPlaybackText as resolvePhonicsPlaybackTextShared,
   type CvcWordEntry,
   type CvcBlendPhase,
   type PlayCvcBlendOptions,
@@ -26,11 +26,7 @@ export function resolvePhonicsPlaybackText(input: {
   phoneme?: string | null;
   sound?: string;
 }): string {
-  const key = resolvePhonicsLetterFromSymbol(input.symbol, input.phoneme ?? null);
-  if (key) return getPhonicsAudioText(key);
-  if (input.phoneme) return getPhonicsAudioText(input.phoneme);
-  if (/ as in /i.test(input.sound ?? "")) return input.sound!.trim();
-  return input.sound?.trim() || input.symbol;
+  return resolvePhonicsPlaybackTextShared(input);
 }
 
 async function playGraphemeBlend(

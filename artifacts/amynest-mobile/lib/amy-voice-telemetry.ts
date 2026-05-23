@@ -1,4 +1,4 @@
-export type TtsAudioSource = "local" | "remote" | "gcs" | "static" | "regenerated" | "unknown";
+export type TtsAudioSource = "local" | "remote" | "gcs" | "regenerated" | "unknown";
 
 export type TtsLogPayload = {
   module: string;
@@ -13,9 +13,12 @@ export type TtsLogPayload = {
 
 /** Structured TTS playback log — one line per attempt for production triage. */
 export function logTts(payload: TtsLogPayload): void {
-  const line = { evt: "tts.playback", ...payload };
+  const line = {
+    evt: "tts.playback",
+    ...payload,
+  };
   if (payload.success) {
-    if (import.meta.env.DEV) console.info("[TTS]", line);
+    if (__DEV__) console.info("[TTS]", line);
   } else {
     console.warn("[TTS]", line);
   }
