@@ -54,11 +54,11 @@ describe("Smart Study levels — country localization", () => {
     assert.match(uae, /date/);
   });
 
-  it("falls back to DEFAULT (India-leaning) for unknown countries", () => {
+  it("falls back to US-leaning DEFAULT for unknown countries", () => {
     const out = localize("A {fruit} costs {currency}10", "ZZ");
-    assert.match(out, /mango/);
+    assert.match(out, /apple/);
     const p = profileFor(null);
-    assert.equal(p.country, "DEFAULT");
+    assert.equal(p.country, "US");
   });
 });
 

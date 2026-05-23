@@ -6,6 +6,12 @@ export {
   getDefaultCountry,
   type PhoneCountry,
 } from "./countries";
+export {
+  PROFILE_COUNTRIES,
+  getProfileCountryByCode,
+  filterProfileCountries,
+  type ProfileCountry,
+} from "./profile-countries";
 export { detectDefaultCountry } from "./detect-country";
 export {
   formatPhoneE164,

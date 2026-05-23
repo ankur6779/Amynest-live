@@ -13,6 +13,7 @@ import { UserCircle, Save, Plus, Trash2, Clock, Utensils, Camera, Loader2, Bell 
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { getApiUrl } from "@/lib/api";
+import { PROFILE_COUNTRIES, getProfileCountryByCode } from "@workspace/phone-auth";
 
 interface FreeSlot {
   start: string;
@@ -85,6 +86,7 @@ interface ParentProfile {
   role: string;
   gender: string;
   mobileNumber: string;
+  country: string;
   workType: string;
   workStartTime: string;
   workEndTime: string;
@@ -117,6 +119,7 @@ export default function ParentProfilePage() {
     role: "mother",
     gender: "",
     mobileNumber: "",
+    country: "",
     workType: "work_from_home",
     workStartTime: "",
     workEndTime: "",
@@ -159,6 +162,7 @@ export default function ParentProfilePage() {
               role: data.role ?? "mother",
               gender: data.gender ?? "",
               mobileNumber: data.mobileNumber ?? "",
+              country: data.country ?? "",
               workType: data.workType ?? "work_from_home",
               workStartTime: data.workStartTime ?? "",
               workEndTime: data.workEndTime ?? "",
@@ -238,6 +242,10 @@ export default function ParentProfilePage() {
       };
       if (profile.gender) body.gender = profile.gender;
       if (profile.mobileNumber) body.mobileNumber = profile.mobileNumber;
+      if (profile.country) {
+        body.country = profile.country;
+        body.locationSource = "manual";
+      }
       if (profile.workStartTime) body.workStartTime = profile.workStartTime;
       if (profile.workEndTime) body.workEndTime = profile.workEndTime;
       if (profile.freeSlots.length > 0) body.freeSlots = profile.freeSlots;
@@ -382,6 +390,32 @@ export default function ParentProfilePage() {
                 value={profile.mobileNumber}
                 onChange={e => setProfile(p => ({ ...p, mobileNumber: e.target.value }))}
               />
+            </div>
+
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <Label>{t("pages.parent_profile.country")}</Label>
+              <Select
+                value={profile.country || undefined}
+                onValueChange={v => setProfile(p => ({ ...p, country: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("pages.parent_profile.select_country")} />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {PROFILE_COUNTRIES.map(c => (
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.flag} {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {profile.country
+                  ? t("pages.parent_profile.country_selected_hint", {
+                      country: getProfileCountryByCode(profile.country)?.name ?? profile.country,
+                    })
+                  : t("pages.parent_profile.country_hint")}
+              </p>
             </div>
           </div>
         </CardContent>
