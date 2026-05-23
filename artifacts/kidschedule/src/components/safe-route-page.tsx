@@ -1,8 +1,22 @@
 import type { ComponentType } from "react";
+import { Suspense, useEffect, useState } from "react";
 import RouteFailedPage from "@/pages/route-failed";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
-import { RouteLoadingShell } from "@/components/route-loading-shell";
-import { Suspense } from "react";
+import { RouteContentLoadingShell } from "@/components/route-loading-shell";
+
+const ROUTE_FALLBACK_DELAY_MS = 120;
+
+function DelayedRouteContentLoadingShell() {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShow(true), ROUTE_FALLBACK_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  if (!show) return null;
+  return <RouteContentLoadingShell />;
+}
 
 type Props = {
   component: ComponentType | undefined | null;
@@ -22,7 +36,11 @@ export function SafeRoutePage({
   const body = <Component />;
   return (
     <AppErrorBoundary label={label}>
-      {suspense ? <Suspense fallback={<RouteLoadingShell />}>{body}</Suspense> : body}
+      {suspense ? (
+        <Suspense fallback={<DelayedRouteContentLoadingShell />}>{body}</Suspense>
+      ) : (
+        body
+      )}
     </AppErrorBoundary>
   );
 }
