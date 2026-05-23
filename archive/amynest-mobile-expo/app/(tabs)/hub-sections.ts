@@ -91,7 +91,7 @@ export const TILE_SECTION_MAP: Readonly<Record<string, Exclude<SectionKey, "toda
   olympiad: "modules",
   "coloring-books": "modules",
   "fun-sheets": "modules",
-  worksheets: "modules",
+  worksheets: "activities",
   facts: "modules",
   "skills-focus": "modules",
   speech_coach: "modules",

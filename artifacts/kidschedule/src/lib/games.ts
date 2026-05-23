@@ -1,5 +1,6 @@
 // Gaming Reward — unlock + daily-limit + skill-tracking, layered on lib/rewards.ts.
 import { getTotalPoints } from "./rewards";
+import { canUnlockGameWithStreak, getCachedRoutineStreak, STREAK_UNLOCK_DAYS } from "./routine-streak-cache";
 
 export type GameCategory =
   | "brain" | "memory" | "math" | "focus" | "creativity" | "behavior" | "action" | "puzzle";
@@ -10,33 +11,34 @@ export interface GameDef {
   category: GameCategory;
   emoji: string;
   blurb: string;
-  unlockCost: number;        // points needed to unlock the FIRST time
-  rewardMin: number;         // points awarded for completion
-  rewardMax: number;         // bonus on perfect score
+  unlockCost: number;
+  rewardMin: number;
+  rewardMax: number;
   status: "ready" | "soon";
   ageHint?: string;
+  /** Requires premium subscription to play (free users see upgrade). */
+  premiumOnly?: boolean;
 }
 
+/** Always playable for free users (no point unlock required). */
+export const FREE_STARTER_GAME_IDS = ["pattern-match", "what-should-you-do"] as const;
+
+export const DAILY_LIMIT_FREE = 3;
+export const DAILY_LIMIT_PREMIUM = 12;
+
 export const GAMES: GameDef[] = [
-  // ── Brain & Logic ───────────────────────────────────────────
   { id: "pattern-match",    title: "Pattern Match",    category: "brain",     emoji: "🧩", blurb: "Spot the next shape in the pattern.",          unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "5+" },
   { id: "odd-one-out",      title: "Odd One Out",      category: "brain",     emoji: "🔍", blurb: "Find the one that does not belong.",           unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "5+" },
-  // ── Memory ──────────────────────────────────────────────────
   { id: "card-flip",        title: "Card Flip Match",  category: "memory",    emoji: "🃏", blurb: "Flip and match the pairs.",                    unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "4+" },
   { id: "sequence",         title: "Sequence Memory",  category: "memory",    emoji: "🎵", blurb: "Repeat the colour sequence.",                  unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "5+" },
   { id: "color-memory",     title: "Color Memory",     category: "memory",    emoji: "🎨", blurb: "Watch the colours, then recall in order.",     unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "5+" },
-  // ── Math & Learning ─────────────────────────────────────────
   { id: "speed-math",       title: "Speed Math",       category: "math",      emoji: "➕", blurb: "Solve quick sums against the clock.",          unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "6+" },
   { id: "number-match",     title: "Number Match",     category: "math",      emoji: "🔢", blurb: "Match the number to the count of dots.",       unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "4+" },
-  // ── Focus & Observation ─────────────────────────────────────
   { id: "find-mistake",     title: "Find the Mistake", category: "focus",     emoji: "🕵️", blurb: "Spot the wrong character in a row.",           unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "6+" },
-  // ── Action & Coordination ───────────────────────────────────
   { id: "target-tap",       title: "Target Tap",       category: "action",    emoji: "🎯", blurb: "Tap targets before they vanish.",              unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "5+" },
-  // ── Behavior (USP) ──────────────────────────────────────────
   { id: "what-should-you-do", title: "What Should You Do?", category: "behavior", emoji: "💛", blurb: "Pick the kind, smart choice in real-life situations.", unlockCost: 50, rewardMin: 8, rewardMax: 15, status: "ready", ageHint: "6+" },
-  // ── Coming soon ─────────────────────────────────────────────
-  { id: "spot-difference",  title: "Spot the Difference", category: "focus",     emoji: "👀", blurb: "Find what changed between two pictures.",  unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready" },
-  { id: "hidden-objects",   title: "Hidden Objects",      category: "focus",     emoji: "🔭", blurb: "Find hidden items in the scene.",          unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready" },
+  { id: "spot-difference",  title: "Spot the Difference", category: "focus",     emoji: "👀", blurb: "Find what changed between two pictures.",  unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready", premiumOnly: true },
+  { id: "hidden-objects",   title: "Hidden Objects",      category: "focus",     emoji: "🔭", blurb: "Find hidden items in the scene.",          unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready", premiumOnly: true },
   { id: "color-fill",       title: "Color Fill",          category: "creativity",emoji: "🖍️", blurb: "Fill the picture with the right colours.", unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready" },
   { id: "shape-match",      title: "Shape Matching",      category: "creativity",emoji: "🔷", blurb: "Drag shapes into matching slots.",         unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready" },
   { id: "maze-escape",      title: "Maze Escape",         category: "action",    emoji: "🗺️", blurb: "Guide the dot out of the maze.",           unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "ready" },
@@ -61,44 +63,135 @@ export const CATEGORY_EMOJI: Record<GameCategory, string> = {
 const UNLOCKED_KEY  = "amynest_unlocked_games_v1";
 const PLAY_LOG_KEY  = "amynest_game_play_log_v1";
 const SKILLS_KEY    = "amynest_skill_progress_v1";
-const DAILY_LIMIT   = 15;
+
+export function isFreeStarter(id: string): boolean {
+  return (FREE_STARTER_GAME_IDS as readonly string[]).includes(id);
+}
+
+export function dailyLimit(isPremium = false): number {
+  return isPremium ? DAILY_LIMIT_PREMIUM : DAILY_LIMIT_FREE;
+}
 
 export function getUnlocked(): string[] {
   try { return JSON.parse(localStorage.getItem(UNLOCKED_KEY) ?? "[]"); } catch { return []; }
 }
+
 export function isUnlocked(id: string): boolean {
   return getUnlocked().includes(id);
 }
 
-export function unlockGame(id: string): { ok: boolean; reason?: string } {
+/** Free starters are treated as unlocked for play. Premium unlocks the full catalog. */
+export function isGameUnlockedForPlay(id: string, isPremium = false): boolean {
+  if (isPremium) return true;
+  if (isFreeStarter(id)) return true;
+  return isUnlocked(id);
+}
+
+export function requiresPremiumToPlay(game: GameDef): boolean {
+  return !!game.premiumOnly;
+}
+
+export function canPlayGame(game: GameDef, isPremium = false): boolean {
+  if (game.status !== "ready") return false;
+  if (game.premiumOnly && !isPremium) return false;
+  return isGameUnlockedForPlay(game.id, isPremium);
+}
+
+function persistUnlocked(list: string[]): void {
+  localStorage.setItem(UNLOCKED_KEY, JSON.stringify(list));
+}
+
+/** Ensures free starter games appear in the unlocked list for ledger consistency. */
+export function ensureStarterUnlocks(): void {
+  const list = getUnlocked();
+  let changed = false;
+  for (const id of FREE_STARTER_GAME_IDS) {
+    if (!list.includes(id)) {
+      list.push(id);
+      changed = true;
+    }
+  }
+  if (changed) persistUnlocked(list);
+}
+
+export function unlockGame(
+  id: string,
+  opts?: { isPremium?: boolean },
+): { ok: boolean; reason?: string; via?: "points" | "streak" | "premium" | "starter" } {
+  const isPremium = opts?.isPremium ?? false;
   const game = GAMES.find((g) => g.id === id);
   if (!game) return { ok: false, reason: "Game not found." };
-  if (isUnlocked(id)) return { ok: true };
-  const points = getTotalPoints();
-  if (points < game.unlockCost) {
-    return { ok: false, reason: `You need ${game.unlockCost} points to unlock this game (you have ${points}).` };
+  if (game.premiumOnly && !isPremium) {
+    return { ok: false, reason: "This game is included with Premium." };
   }
-  const remaining = points - game.unlockCost;
-  localStorage.setItem("amynest_points", String(remaining));
-  const ledger = JSON.parse(localStorage.getItem("amynest_ledger") ?? "[]");
-  ledger.unshift({
-    date: new Date().toISOString(),
-    childName: "Game Unlock",
-    activity: `Unlocked: ${game.title}`,
-    points: -game.unlockCost,
-  });
-  localStorage.setItem("amynest_ledger", JSON.stringify(ledger.slice(0, 50)));
+  if (isGameUnlockedForPlay(id, isPremium)) {
+    return { ok: true, via: isPremium ? "premium" : isFreeStarter(id) ? "starter" : undefined };
+  }
 
-  const list = getUnlocked();
-  list.push(id);
-  localStorage.setItem(UNLOCKED_KEY, JSON.stringify(list));
-  return { ok: true };
+  if (isPremium) {
+    const list = getUnlocked();
+    if (!list.includes(id)) list.push(id);
+    persistUnlocked(list);
+    return { ok: true, via: "premium" };
+  }
+
+  if (isFreeStarter(id)) {
+    const list = getUnlocked();
+    if (!list.includes(id)) list.push(id);
+    persistUnlocked(list);
+    return { ok: true, via: "starter" };
+  }
+
+  const points = getTotalPoints();
+  if (points >= game.unlockCost) {
+    const remaining = points - game.unlockCost;
+    localStorage.setItem("amynest_points", String(remaining));
+    const ledger = JSON.parse(localStorage.getItem("amynest_ledger") ?? "[]");
+    ledger.unshift({
+      date: new Date().toISOString(),
+      childName: "Game Unlock",
+      activity: `Unlocked: ${game.title}`,
+      points: -game.unlockCost,
+    });
+    localStorage.setItem("amynest_ledger", JSON.stringify(ledger.slice(0, 50)));
+    const list = getUnlocked();
+    list.push(id);
+    persistUnlocked(list);
+    return { ok: true, via: "points" };
+  }
+
+  if (canUnlockGameWithStreak()) {
+    const list = getUnlocked();
+    list.push(id);
+    persistUnlocked(list);
+    const ledger = JSON.parse(localStorage.getItem("amynest_ledger") ?? "[]");
+    ledger.unshift({
+      date: new Date().toISOString(),
+      childName: "Game Unlock",
+      activity: `Streak unlock (${STREAK_UNLOCK_DAYS} days): ${game.title}`,
+      points: 0,
+    });
+    localStorage.setItem("amynest_ledger", JSON.stringify(ledger.slice(0, 50)));
+    return { ok: true, via: "streak" };
+  }
+
+  const streak = getCachedRoutineStreak();
+  return {
+    ok: false,
+    reason: `Need ${game.unlockCost} points (you have ${points}), or a ${STREAK_UNLOCK_DAYS}-day routine streak (current: ${streak} days).`,
+  };
 }
 
 interface PlayEntry { id: string; date: string; pointsEarned: number; perfect: boolean; score?: number; total?: number }
 
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+function daysAgoISO(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
 }
 
 export function getPlayLog(): PlayEntry[] {
@@ -109,10 +202,38 @@ export function gamesPlayedToday(): number {
   const today = todayStr();
   return getPlayLog().filter((e) => e.date.startsWith(today)).length;
 }
-export function dailyLimit(): number { return DAILY_LIMIT; }
-export function dailyLimitReached(): boolean { return gamesPlayedToday() >= DAILY_LIMIT; }
 
-// ── Skill Tracking ───────────────────────────────────────────
+export function dailyLimitReached(isPremium = false): boolean {
+  return gamesPlayedToday() >= dailyLimit(isPremium);
+}
+
+export interface WeeklyGameSummary {
+  playsLast7Days: number;
+  perfectCount: number;
+  pointsEarned: number;
+  topCategory: GameCategory | null;
+  categoryAccuracies: { cat: GameCategory; pct: number }[];
+}
+
+export function getWeeklyGameSummary(): WeeklyGameSummary {
+  const since = daysAgoISO(6);
+  const log = getPlayLog().filter((e) => e.date.slice(0, 10) >= since);
+  const skills = getSkills();
+  const skillCats: GameCategory[] = ["brain", "memory", "math", "focus", "behavior", "action", "creativity"];
+  const categoryAccuracies = skillCats
+    .map((cat) => ({ cat, pct: getSkillPercent(cat) }))
+    .filter((x) => skills[x.cat]?.attempts > 0)
+    .sort((a, b) => b.pct - a.pct);
+
+  return {
+    playsLast7Days: log.length,
+    perfectCount: log.filter((e) => e.perfect).length,
+    pointsEarned: log.reduce((sum, e) => sum + e.pointsEarned, 0),
+    topCategory: categoryAccuracies[0]?.cat ?? null,
+    categoryAccuracies,
+  };
+}
+
 type SkillRecord = Record<GameCategory, { attempts: number; correct: number; plays: number }>;
 
 function emptySkills(): SkillRecord {
@@ -136,7 +257,6 @@ export function getSkills(): SkillRecord {
   } catch { return emptySkills(); }
 }
 
-/** Returns 0-100 % accuracy across all attempts in a category. */
 export function getSkillPercent(cat: GameCategory): number {
   const s = getSkills()[cat];
   if (!s || s.attempts === 0) return 0;
@@ -149,7 +269,6 @@ export function recordPlay(id: string, score: number, total: number, perfect: bo
   log.unshift({ id, date: new Date().toISOString(), pointsEarned, perfect, score, total });
   localStorage.setItem(PLAY_LOG_KEY, JSON.stringify(log.slice(0, 200)));
 
-  // Wallet update (inline to avoid circular import)
   const current = parseInt(localStorage.getItem("amynest_points") ?? "0", 10);
   localStorage.setItem("amynest_points", String(current + pointsEarned));
   const ledger = JSON.parse(localStorage.getItem("amynest_ledger") ?? "[]");
@@ -162,7 +281,6 @@ export function recordPlay(id: string, score: number, total: number, perfect: bo
   });
   localStorage.setItem("amynest_ledger", JSON.stringify(ledger.slice(0, 50)));
 
-  // Skill tracking — clamp inputs so any game-side bug can't corrupt aggregates
   if (game) {
     const safeTotal = Math.max(1, Math.floor(total));
     const safeScore = Math.max(0, Math.min(safeTotal, Math.floor(score)));
@@ -176,14 +294,18 @@ export function recordPlay(id: string, score: number, total: number, perfect: bo
   }
 }
 
-// ── Amy AI Suggestion ────────────────────────────────────────
-export function amySuggestion(): { gameId: string | null; line: string } {
-  const unlocked = getUnlocked();
-  const playable = GAMES.filter((g) => g.status === "ready" && unlocked.includes(g.id));
+export function amySuggestion(isPremium = false): { gameId: string | null; line: string } {
+  ensureStarterUnlocks();
+  const playable = GAMES.filter((g) => g.status === "ready" && canPlayGame(g, isPremium));
   if (playable.length === 0) {
+    if (!isPremium) {
+      return {
+        gameId: null,
+        line: "Unlock Pattern Match and What Should You Do? free — earn 50 points or keep a 5-day routine streak for more.",
+      };
+    }
     return { gameId: null, line: "Earn 50 points from your routines to unlock your first game." };
   }
-  // Suggest the category with the LOWEST skill % (room to grow), tie-break by priority
   const skills = getSkills();
   const pri: GameCategory[] = ["behavior", "memory", "math", "brain", "focus", "action"];
   playable.sort((a, b) => {
@@ -203,5 +325,7 @@ export function amySuggestion(): { gameId: string | null; line: string } {
     action:     `Sharpen reflexes with '${pick.title}'.`,
     puzzle:     `Build problem-solving with '${pick.title}'.`,
   };
-  return { gameId: pick.id, line: `Amy AI Suggests: ${lines[pick.category]}` };
+  return { gameId: pick.id, line: `Amy suggests: ${lines[pick.category]}` };
 }
+
+export { STREAK_UNLOCK_DAYS, getCachedRoutineStreak, canUnlockGameWithStreak };

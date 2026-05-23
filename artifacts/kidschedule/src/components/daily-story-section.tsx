@@ -475,12 +475,14 @@ function FeaturedCard({
   story,
   isPlaying,
   onPlay,
+  onPrimePlay,
   expanded,
   onToggleExpand
 }: {
   story: Story;
   isPlaying: boolean;
   onPlay(): void;
+  onPrimePlay(): void;
   expanded: boolean;
   onToggleExpand(): void;
 }) {
@@ -548,7 +550,7 @@ function FeaturedCard({
 
       {/* Action buttons */}
       <div className="flex gap-2 px-4 pb-4">
-        <button onClick={onPlay} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold border transition-all active:scale-95" style={{
+        <button onPointerDown={onPrimePlay} onClick={onPlay} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold border transition-all active:scale-95" style={{
         background: isPlaying ? c.bg : "transparent",
         borderColor: c.color + "40",
         color: c.color
@@ -570,12 +572,14 @@ function StoryCard({
   story,
   isPlaying,
   onPlay,
+  onPrimePlay,
   expanded,
   onToggleExpand
 }: {
   story: Story;
   isPlaying: boolean;
   onPlay(): void;
+  onPrimePlay(): void;
   expanded: boolean;
   onToggleExpand(): void;
 }) {
@@ -623,7 +627,7 @@ function StoryCard({
 
       {/* Buttons */}
       <div className="flex gap-2 mt-2.5">
-        <button onClick={onPlay} className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95" style={{
+        <button onPointerDown={onPrimePlay} onClick={onPlay} className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95" style={{
         borderColor: c.color + "30",
         color: c.color,
         background: isPlaying ? c.bg : "transparent"
@@ -659,8 +663,13 @@ export function DailyStorySection({
   const [playingId, setPlayingId] = useState<string | null>(null);
   const {
     speak,
-    stop
+    stop,
+    primeSpeakGesture
   } = useAmyVoice();
+  const storySpeech = useCallback(
+    (story: Story) => `${story.title}. ${story.story}. The moral is: ${story.moral}`,
+    [],
+  );
   const visible = useMemo(() => pool.slice(0, (page + 1) * PAGE), [pool, page]);
   const toggleExpand = useCallback((id: string) => {
     setExpanded(prev => {
@@ -701,10 +710,10 @@ export function DailyStorySection({
       </div>
 
       {/* Featured story */}
-      <FeaturedCard story={featured} isPlaying={playingId === featured.id} onPlay={() => handlePlay(featured)} expanded={expanded.has(featured.id)} onToggleExpand={() => toggleExpand(featured.id)} />
+      <FeaturedCard story={featured} isPlaying={playingId === featured.id} onPrimePlay={() => primeSpeakGesture(storySpeech(featured))} onPlay={() => handlePlay(featured)} expanded={expanded.has(featured.id)} onToggleExpand={() => toggleExpand(featured.id)} />
 
       {/* Remaining stories */}
-      {rest.map(story => <StoryCard key={story.id} story={story} isPlaying={playingId === story.id} onPlay={() => handlePlay(story)} expanded={expanded.has(story.id)} onToggleExpand={() => toggleExpand(story.id)} />)}
+      {rest.map(story => <StoryCard key={story.id} story={story} isPlaying={playingId === story.id} onPrimePlay={() => primeSpeakGesture(storySpeech(story))} onPlay={() => handlePlay(story)} expanded={expanded.has(story.id)} onToggleExpand={() => toggleExpand(story.id)} />)}
 
       {/* Load More */}
       {hasMore && <button onClick={() => setPage(p => p + 1)} className="w-full mt-3 py-3 rounded-2xl border-2 border-dashed text-sm font-bold text-primary dark:text-muted-foreground border-border dark:border-border hover:bg-muted dark:hover:bg-muted transition-all active:scale-[0.98]">

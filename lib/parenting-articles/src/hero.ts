@@ -8,7 +8,7 @@ import type { ArticleCategory } from "./articles";
  *
  * `gradient` values are plain hex strings so they're safe to consume from
  * both Tailwind-classed web (kidschedule) and the React Native colors
- * palette / brand tokens (amynest-mobile). Both ends still get to map them
+ * palette / brand tokens (kidschedule). Both ends still get to map them
  * onto their own color system at render time if they want — these are just
  * pleasant defaults.
  */

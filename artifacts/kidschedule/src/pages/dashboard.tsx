@@ -26,6 +26,9 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
 import { asRoutineList, routineDateKey, routineItems } from "@/lib/routines";
 import { safeFetch } from "@/lib/safe-fetch";
+import { cacheRoutineStreak } from "@/lib/routine-streak-cache";
+import { LockedBlock } from "@/components/locked-block";
+import { useFeatureUsage } from "@/hooks/use-feature-usage";
 
 const HeroAmbientLayer = lazyPage(() =>
   import("@/components/hero-ambient-layer").then((m) => ({
@@ -1203,6 +1206,11 @@ export default function Dashboard() {
     [childrenList, selectedChildId],
   );
   const streak = useMemo(() => computeStreak(allRoutinesSafe), [allRoutines]);
+  const hubUsage = useFeatureUsage();
+
+  useEffect(() => {
+    cacheRoutineStreak(streak);
+  }, [streak]);
 
   const todayProgress = useMemo(() => {
     const todayKey = new Date().toISOString().slice(0, 10);
@@ -1417,20 +1425,25 @@ export default function Dashboard() {
           <RewardsCompactCard />
 
           {/* ── Gaming Reward ─────────────────────────────────────────── */}
-          <Link href="/games">
-            <button type="button" className="w-full text-left rounded-2xl p-4 border border-border hover:border-border dark:hover:border-border bg-card hover:bg-muted dark:hover:bg-card hover:shadow-sm transition-all flex items-center gap-4">
-              <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 text-xl bg-muted dark:bg-card border border-border dark:border-border">
-                🎮
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-quicksand font-bold text-sm leading-tight text-foreground">{t("pages.dashboard.gaming_reward")}</p>
-                <p className="text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
-                  {t("pages.dashboard.earn_points_from_routines_unlock_mini_games_and_redeem_real_")}
-                </p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-            </button>
-          </Link>
+          <LockedBlock locked={hubUsage.isFeatureLocked("hub_gaming_rewards")}>
+            <Link
+              href="/games"
+              onClick={() => hubUsage.markFeatureUsed("hub_gaming_rewards")}
+            >
+              <button type="button" className="w-full text-left rounded-2xl p-4 border border-border hover:border-border dark:hover:border-border bg-card hover:bg-muted dark:hover:bg-card hover:shadow-sm transition-all flex items-center gap-4">
+                <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 text-xl bg-muted dark:bg-card border border-border dark:border-border">
+                  🎮
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-quicksand font-bold text-sm leading-tight text-foreground">{t("pages.dashboard.gaming_reward")}</p>
+                  <p className="text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
+                    {t("pages.dashboard.earn_points_from_routines_unlock_mini_games_and_redeem_real_")}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              </button>
+            </Link>
+          </LockedBlock>
 
           {/* ── Primary CTA ──────────────────────────────────────────── */}
           <button type="button" onClick={handleGenerateRoutine} data-testid="dashboard-generate-routine-btn" className="w-full h-14 rounded-2xl bg-primary hover:bg-primary text-white font-black text-base shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2">

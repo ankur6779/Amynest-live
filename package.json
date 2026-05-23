@@ -17,10 +17,10 @@
     "dev": "pnpm run dev:api",
     "dev:api": "pnpm --filter @workspace/api-server dev",
     "dev:web": "pnpm --filter @workspace/kidschedule dev",
-    "dev:mobile": "node -e \"console.error('Expo app (artifacts/amynest-mobile) is archived. Use: pnpm dev:web (PWA) + artifacts/amynest-capacitor (iOS).'); process.exit(1)\"",
+    "dev:mobile": "node -e \"console.error('Expo app archived at archive/amynest-mobile-expo. Use: pnpm dev:web + artifacts/amynest-capacitor (iOS/Android).'); process.exit(1)\"",
     "build:api": "pnpm --filter @workspace/api-server build",
     "start:api": "pnpm --filter @workspace/api-server start",
-    "build": "pnpm run check:static-audio && pnpm run typecheck && pnpm -r --filter '!@workspace/amynest-mobile' --if-present run build",
+    "build": "pnpm run check:static-audio && pnpm run typecheck && pnpm -r --if-present run build",
     "build:web": "pnpm run check:static-audio && BASE_PATH=/ PORT=3000 pnpm --filter @workspace/kidschedule build",
     "db:migrate": "pnpm --filter @workspace/scripts run migrate-database",
     "db:push": "pnpm --filter @workspace/db push",
@@ -39,7 +39,7 @@
     "review:amy-voice-weekly": "pnpm --filter @workspace/scripts run review:amy-voice-weekly",
     "stability:api-unit": "pnpm --filter @workspace/api-server exec node --import tsx/esm --test src/lib/production-load.test.ts",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"!@workspace/amynest-mobile\" --filter \"./scripts\" --if-present run typecheck",
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "codegen": "pnpm --filter @workspace/api-spec run codegen && pnpm run typecheck:libs"
   },
   "simple-git-hooks": {

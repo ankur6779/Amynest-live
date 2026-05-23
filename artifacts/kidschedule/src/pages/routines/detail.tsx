@@ -22,6 +22,7 @@ import { VoiceSettingsPanel } from "@/components/voice-settings";
 import { runAdaptiveEngine, type AdaptiveMood, type AdaptiveSleepQuality } from "@workspace/family-routine";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { RoutineAdaptationsCard } from "@/components/intelligence/routine-adaptations-card";
+import { RoutineHubActivityBanner } from "@/components/routine-hub-activity-banner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 type ItemStatus = "pending" | "completed" | "skipped" | "delayed";
 type RoutineItem = {
@@ -1456,6 +1457,12 @@ export default function RoutineDetail() {
               </div>
             </div>
           </div>}
+
+        <RoutineHubActivityBanner
+          items={items}
+          childName={routine?.childName}
+          dateMode={dateMode}
+        />
 
         {/* Amy AI suggests banner — driven by the Adaptive Engine */}
         <div className="rounded-2xl border-2 border-border bg-gradient-to-r from-muted to-muted p-4 flex items-start gap-3">

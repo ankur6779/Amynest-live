@@ -7,7 +7,7 @@ import { RouteLoadingShell } from "@/components/route-loading-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon } from "lucide-react";
+import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon, Gift } from "lucide-react";
 import { OlympiadZone } from "@/components/olympiad-zone";
 import { SmartStudyZone } from "@/components/smart-study-zone";
 import { PtmPrepAssistant } from "@/components/ptm-prep";
@@ -50,13 +50,14 @@ import {
   SECTION_2_EARLY_ACCESS_TILE_IDS,
 } from "@/lib/hub-visibility";
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
+import { applyParentingHubDeepLink } from "@/lib/hub-activity-cross-link";
 
 // ── 5-section grouping for the "For You" content ────────────────────────────
 // Maps each premium section key to the tile IDs that live inside it.
 const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
   today:      ["amy-ai", "daily-tips", "generate-routine", "tomorrow-forecast", "command-center"],
   learning:   ["smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad", "event-prep"],
-  creativity: ["activities", "art-craft", "coloring-books", "fun-sheets"],
+  creativity: ["activities", "art-craft", "worksheets", "coloring-books", "fun-sheets"],
   stories:    ["story-hub", "speech-coach"],
   support:    ["articles", "emotional", "life-skills", "ptm-prep"],
 };
@@ -217,7 +218,7 @@ const HUB_QUICK_ACTIONS = [
   { id: "phonics",    group: "learning",   tileId: "phonics",         emoji: "🔤", i18n: "parent_hub.quick_actions.phonics" },
   { id: "routine",    group: "today",      tileId: "generate-routine", emoji: "📅", i18n: "parent_hub.quick_actions.routine" },
   { id: "activities", group: "creativity", tileId: "activities",      emoji: "🎨", i18n: "parent_hub.quick_actions.activities" },
-  { id: "worksheets", group: "creativity", tileId: "fun-sheets",      emoji: "📄", i18n: "parent_hub.quick_actions.worksheets" },
+  { id: "worksheets", group: "creativity", tileId: "worksheets",      emoji: "📄", i18n: "parent_hub.quick_actions.worksheets" },
 ] as const;
 
 function HubQuickActions({
@@ -462,10 +463,67 @@ function ActivitiesSection({
   const {
     t
   } = useTranslation();
+  const hubUsage = useFeatureUsage();
+  const tryFreeFor = (id: string) => !hubUsage.isPremium && !hubUsage.hasUsedFeature(id);
   const isInfant = ageGroup === "infant";
   const isToddlerOrPreschool = ageGroup === "toddler" || ageGroup === "preschool";
   const isOlder = !isInfant && !isToddlerOrPreschool;
   return <div className="space-y-2.5">
+
+      <SubSection gateSection="hub_activities" icon={<AudioLines className="h-4 w-4 text-white" />} title={t("parent_hub.tiles_activity.audio_lessons.title")} description={t("parent_hub.tiles_activity.audio_lessons.desc")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(34,211,238,0.26)0%,rgba(6,182,212,0.12)100%)">
+        <p className="text-sm text-muted-foreground mb-3">
+          {t("parent_hub.tiles.activities.lead")}
+        </p>
+        <Link href="/audio-lessons">
+          <Button className="w-full rounded-xl gap-2 text-sm font-semibold" data-testid="open-audio-lessons">
+            {t("pages.audio_lessons.amy_audio_lessons")}
+            <ArrowRight className="h-4 w-4 ml-auto" />
+          </Button>
+        </Link>
+      </SubSection>
+
+      <LockedBlock locked={hubUsage.isFeatureLocked("hub_gaming_rewards")}>
+        <SubSection
+          gateSection="hub_activities"
+          icon={<Gamepad2 className="h-4 w-4 text-white" />}
+          title={t("parent_hub.tiles_activity.gaming_reward.title")}
+          description={t("parent_hub.tiles_activity.gaming_reward.desc")}
+          accentClass="bg-gradient-to-br from-violet-500 to-purple-600"
+          cardClass="linear-gradient(135deg,rgba(139,92,246,0.28)0%,rgba(168,85,247,0.12)100%)"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            {tryFreeFor("hub_gaming_rewards") ? <TryFreeBadge /> : null}
+          </div>
+          <p className="text-sm text-muted-foreground mb-3">{t("screens.games.hub_teaser")}</p>
+          <Link href="/games" onClick={() => hubUsage.markFeatureUsed("hub_gaming_rewards")}>
+            <Button className="w-full rounded-xl gap-2 text-sm font-semibold" data-testid="open-gaming-rewards">
+              {t("screens.games.title")}
+              <ArrowRight className="h-4 w-4 ml-auto" />
+            </Button>
+          </Link>
+        </SubSection>
+      </LockedBlock>
+
+      <LockedBlock locked={hubUsage.isFeatureLocked("hub_rewards_shop")}>
+        <SubSection
+          gateSection="hub_activities"
+          icon={<Gift className="h-4 w-4 text-white" />}
+          title={t("parent_hub.tiles_activity.rewards_shop.title")}
+          description={t("parent_hub.tiles_activity.rewards_shop.desc")}
+          accentClass="bg-gradient-to-br from-amber-400 to-orange-500"
+          cardClass="linear-gradient(135deg,rgba(251,191,36,0.28)0%,rgba(234,179,8,0.12)100%)"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            {tryFreeFor("hub_rewards_shop") ? <TryFreeBadge /> : null}
+          </div>
+          <Link href="/rewards" onClick={() => hubUsage.markFeatureUsed("hub_rewards_shop")}>
+            <Button variant="outline" className="w-full rounded-xl gap-2 text-sm font-semibold" data-testid="open-rewards-shop">
+              {t("parent_hub.tiles_activity.rewards_shop.title")}
+              <ArrowRight className="h-4 w-4 ml-auto" />
+            </Button>
+          </Link>
+        </SubSection>
+      </LockedBlock>
 
       {/* ── INFANT ─────────────────────────────────────────────────────── */}
       {isInfant && <>
@@ -536,10 +594,6 @@ function ActivitiesSection({
           </SubSection>
         </>}
 
-      {/* ── Printable Worksheets (all age groups) ──────────────────────── */}
-      <SubSection gateSection="hub_activities" icon={<FileDown className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.printable-worksheets-all.title")} description={t("parent_hub.subsections.printable-worksheets-all.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(163,230,53,0.26)0%,rgba(34,197,94,0.12)100%)">
-        <PrintableWorksheets childAgeMonths={totalAgeMonths} />
-      </SubSection>
     </div>;
 }
 
@@ -725,6 +779,15 @@ function ParentingHubPage() {
   const nextBand: AgeBand | null = currentBand ? getNextAgeBand(currentBand) : null;
   const showSection2 = shouldShowExploreSection(totalAgeMonths, currentBand, nextBand);
   const earlyAccessBypass = shouldBypassHubMonthGates(totalAgeMonths, currentBand, nextBand);
+
+  useEffect(() => {
+    if (!effectiveChild || !currentBand) return;
+    const frame = requestAnimationFrame(() => {
+      applyParentingHubDeepLink(navigateHub);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [effectiveChild?.id, currentBand]);
+
   type SectionEntry = {
     id: string;
     /** Always renders in "For You" regardless of band. */
@@ -867,6 +930,17 @@ function ParentingHubPage() {
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_art_craft")}>
           <HubSection id="art-craft" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.art-craft.title")} description={t("parent_hub.web_tiles.art-craft.description")} accentClass="bg-gradient-to-br from-orange-400 to-red-500" cardClass="linear-gradient(135deg,rgba(251,146,60,0.30)0%,rgba(239,68,68,0.14)100%)" tryFree={tryFreeFor("hub_art_craft")} onOpen={() => hubUsage.markFeatureUsed("hub_art_craft")}> {/* audit-ok: brand tile accent gradient */}
             <ArtCraftReels />
+          </HubSection>
+        </LockedBlock>;
+    }
+  },
+  {
+    id: "worksheets",
+    alwaysCurrent: true,
+    render: () => {
+      return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_worksheets")}>
+          <HubSection id="worksheets" icon={<FileDown className="h-5 w-5 text-white" />} title={t("parent_hub.tiles.worksheets.title")} description={t("parent_hub.tiles.worksheets.desc")} accentClass="bg-gradient-to-br from-sky-400 to-indigo-500" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(99,102,241,0.14)100%)" tryFree={tryFreeFor("hub_worksheets")} onOpen={() => hubUsage.markFeatureUsed("hub_worksheets")}> {/* audit-ok: brand tile accent gradient */}
+            <PrintableWorksheets childAgeMonths={totalAgeMonths} />
           </HubSection>
         </LockedBlock>;
     }

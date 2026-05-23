@@ -2,13 +2,14 @@
 
 This Expo React Native app has been **archived** and is no longer actively maintained.
 
+**Location:** `archive/amynest-mobile-expo/` (moved from `artifacts/amynest-mobile/`).
+
 ## Why archived?
 
 The project has moved to a **single-codebase strategy**:
 
 - The web app (`artifacts/kidschedule`) is now the source of truth for all UI and features.
-- **Android** is served via the native WebView wrapper in `kidschedule-android/` (Gradle project).
-- **iOS** is served via the Capacitor shell in `artifacts/amynest-capacitor/`.
+- **iOS** and **Android (Play Store)** use the Capacitor shell in `artifacts/amynest-capacitor/`.
 
 This gives one codebase → two native apps, eliminating the overhead of keeping
 a separate Expo codebase in sync with every web change.
@@ -20,7 +21,7 @@ a separate Expo codebase in sync with every web change.
 - **Removed from `pnpm-workspace.yaml`** — `pnpm install` / `build` / `typecheck` no longer touch Expo deps.
 - Root `dev:mobile` prints an error pointing at PWA + Capacitor.
 - Replit validation workflows for this folder are no-ops.
-- If you need to restore: re-add `artifacts/amynest-mobile` to the workspace and reinstall.
+- If you need to restore: move back to `artifacts/amynest-mobile`, re-add to `pnpm-workspace.yaml`, and reinstall.
 
 ## Migration reference
 
