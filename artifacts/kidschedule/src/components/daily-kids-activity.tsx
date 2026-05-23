@@ -1,6 +1,10 @@
 import { useState, useMemo, useEffect, useCallback, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import {
+  createParentHubAudioIdentity,
+  PARENT_HUB_SECTIONS,
+} from "@/lib/parent-hub-audio-identity";
 import { HUB_ORIGAMI, type HubOrigami } from "@workspace/parent-hub-speak";
 
 // ─── Drive embed helper ───────────────────────────────────────────────────────
@@ -1202,9 +1206,19 @@ function OrigamiStepsModal({
       if (!voiceOn || phase !== "steps") return;
       const instruction = item.steps[step]?.instruction?.trim();
       if (!instruction) return;
-      void speak(instruction, { onFinished: opts?.onFinished });
+      const identity = createParentHubAudioIdentity({
+        sectionId: PARENT_HUB_SECTIONS.KIDS_ACTIVITY,
+        itemId: `${item.id}:step-${step}`,
+        text: instruction,
+      });
+      void speak(identity.text, {
+        parentHub: true,
+        audioIdentity: identity,
+        playbackMode: "full-required",
+        onFinished: opts?.onFinished,
+      });
     },
-    [voiceOn, phase, step, item.steps, speak],
+    [voiceOn, phase, step, item.steps, item.id, speak],
   );
 
   useEffect(() => {

@@ -1,10 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X, Clock, Bookmark, BookmarkCheck, ThumbsUp, ChevronRight, BookOpen, Sparkles, Volume2, Loader2, Square } from "lucide-react";
 import { ARTICLES, CATEGORY_COLORS, AGE_TAG_LABELS, getArticlesForAgeMonths, getSavedArticles, toggleSavedArticle, setLastReadArticle, getLastReadArticleId, getArticleHero, articleToSpeechSections, type Article, type ArticleCategory } from "@/lib/articles-data";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { prefetchParentHubItem } from "@/lib/amy-voice-pipeline-optimizer";
+import {
+  createParentHubAudioIdentity,
+  logParentHubAudioIdentity,
+  PARENT_HUB_SECTIONS,
+  type ParentHubAudioIdentity,
+} from "@/lib/parent-hub-audio-identity";
 import { SubItemGate } from "@/components/sub-item-gate";
 
 // ─── Article Hero Banner ───────────────────────────────────────────────────
@@ -73,6 +81,24 @@ function ArticleModal({
   const speechSections = useMemo(() => articleToSpeechSections(article), [article]);
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [autoAdvance, setAutoAdvance] = useState(false);
+  const authFetch = useAuthFetch();
+  const activeIdxRef = useRef(activeIdx);
+  const autoAdvanceRef = useRef(autoAdvance);
+  activeIdxRef.current = activeIdx;
+  autoAdvanceRef.current = autoAdvance;
+
+  const identityForSection = useCallback(
+    (idx: number): ParentHubAudioIdentity | null => {
+      const text = speechSections[idx];
+      if (!text?.trim()) return null;
+      return createParentHubAudioIdentity({
+        sectionId: PARENT_HUB_SECTIONS.ARTICLES,
+        itemId: `${article.id}:${idx}`,
+        text,
+      });
+    },
+    [article.id, speechSections],
+  );
   const handleFinished = useCallback(() => {
     if (!autoAdvance) {
       setActiveIdx(null);
@@ -101,16 +127,33 @@ function ArticleModal({
   // the same place — we never double-play.
   useEffect(() => {
     if (activeIdx === null) return;
-    void speak(speechSections[activeIdx]).then((res) => {
+    const identity = identityForSection(activeIdx);
+    if (!identity) return;
+    logParentHubAudioIdentity(identity, { phase: "article_playback" });
+    void speak(identity.text, {
+      parentHub: true,
+      audioIdentity: identity,
+      playbackMode: "full-required",
+      waitUntilEnd: autoAdvanceRef.current,
+      onFinished: autoAdvanceRef.current ? handleFinished : undefined,
+    }).then((res) => {
       if (!res?.success) {
         console.warn("TTS failed, skipping audio flow:", res?.error);
         setActiveIdx(null);
       }
     });
-    // We deliberately depend on activeIdx only — the speak identity changes
-    // when network internals change but we don't want to retrigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIdx]);
+
+  useEffect(() => {
+    if (activeIdx === null || !autoAdvance) return;
+    const nextIdx = activeIdx + 1;
+    if (nextIdx >= speechSections.length) return;
+    const currentIdentity = identityForSection(activeIdx);
+    const nextIdentity = identityForSection(nextIdx);
+    if (!nextIdentity) return;
+    prefetchParentHubItem(nextIdentity, authFetch, undefined, undefined, currentIdentity ?? undefined);
+  }, [activeIdx, autoAdvance, speechSections.length, authFetch, identityForSection]);
 
   const stopPlayback = useCallback(() => {
     setAutoAdvance(false);

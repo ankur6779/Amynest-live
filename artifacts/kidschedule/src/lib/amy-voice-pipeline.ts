@@ -15,7 +15,14 @@ import {
   assertVerbatimLessonText,
   lessonLocalCacheKey,
   logLessonAudioIdentity,
+  type AudioIdentity,
 } from "@/lib/lesson-audio-identity";
+import {
+  assertVerbatimParentHubText,
+  isParentHubAudioIdentity,
+  logParentHubAudioIdentity,
+  parentHubLocalCacheKey,
+} from "@/lib/parent-hub-audio-identity";
 import type { AuthFetchFn } from "@/lib/poll-result";
 import { audioManager, AUDIO_ERROR } from "@/lib/audio-manager";
 import { runWithControlledAudioStop } from "@/lib/amy-voice-safety";
@@ -492,11 +499,52 @@ async function attemptCachePlay(
   fallbackTexts: string[] = [],
   opts?: SpeakOptions,
 ): Promise<PlayAttemptResult> {
-  if (opts?.audioIdentity) {
+  if (opts?.parentHub && isParentHubAudioIdentity(opts.audioIdentity)) {
+    assertVerbatimParentHubText(text, opts.audioIdentity.text);
+    for (const tryMode of staticModesToTry(mode, phonicsOnly)) {
+      if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+      const identityKey = parentHubLocalCacheKey(opts.audioIdentity);
+      const objectUrl = await getLocalCachedAudioUrl(identityKey);
+      if (!objectUrl) continue;
+
+      const audio = playAudio(objectUrl);
+      if (!audio) {
+        URL.revokeObjectURL(objectUrl);
+        continue;
+      }
+
+      const play = await playElementWithNeverSilentWatchdog(audio, ctx, {
+        proxyUrl: objectUrl,
+        phrase: opts.audioIdentity.text,
+        mode: tryMode,
+        source: "cache",
+        waitUntilEnd,
+      });
+      URL.revokeObjectURL(objectUrl);
+      if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+      if (play.ok) {
+        recordAmyVoiceLayerSuccess("cache_success", { mode: tryMode });
+        return {
+          ok: true,
+          layer: "cache",
+          playedDuration: play.playedDuration,
+          expectedDuration: play.expectedDuration,
+          stopPlayback: () => {
+            audio.pause();
+            audio.currentTime = 0;
+          },
+        };
+      }
+    }
+  } else if (
+    opts?.lessonParagraph &&
+    opts.audioIdentity &&
+    !isParentHubAudioIdentity(opts.audioIdentity)
+  ) {
     assertVerbatimLessonText(text, opts.audioIdentity.text);
     for (const tryMode of staticModesToTry(mode, phonicsOnly)) {
       if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
-      const identityKey = lessonLocalCacheKey(opts.audioIdentity, tryMode);
+      const identityKey = lessonLocalCacheKey(opts.audioIdentity as AudioIdentity, tryMode);
       const objectUrl = await getLocalCachedAudioUrl(identityKey);
       if (!objectUrl) continue;
 
@@ -1469,7 +1517,14 @@ export async function speakAmyVoice(
   const text = policy.normalizedText.trim();
   if (!text) return { success: false, error: "tts_empty_text" };
 
-  if (opts?.lessonParagraph && opts.audioIdentity) {
+  if (opts?.parentHub && isParentHubAudioIdentity(opts.audioIdentity)) {
+    assertVerbatimParentHubText(text, opts.audioIdentity.text);
+    logParentHubAudioIdentity(opts.audioIdentity, { phase: "pipeline_entry" });
+  } else if (
+    opts?.lessonParagraph &&
+    opts.audioIdentity &&
+    !isParentHubAudioIdentity(opts.audioIdentity)
+  ) {
     assertVerbatimLessonText(text, opts.audioIdentity.text);
     logLessonAudioIdentity(opts.audioIdentity, { phase: "pipeline_entry" });
   }
@@ -1507,7 +1562,7 @@ export async function speakAmyVoice(
       logAmyModeDiagnosis(policy, "text_visual");
       maybeQueueAmyVoiceLearning(policy, "text_visual");
     }
-    if (opts?.lessonParagraph) {
+    if (opts?.lessonParagraph || opts?.parentHub) {
       return { success: false, error: "playback_blocked_tap_again", layer: "text_visual" };
     }
     return { success: true, layer: "text_visual" };
@@ -1774,7 +1829,7 @@ export async function speakAmyVoice(
     logAmyModeDiagnosis(policy, "text_visual");
     maybeQueueAmyVoiceLearning(policy, "text_visual");
   }
-  if (opts?.lessonParagraph) {
+  if (opts?.lessonParagraph || opts?.parentHub) {
     return endPipeline({ success: false, error: "tts_no_audible_layer", layer: "text_visual" });
   }
   return endPipeline({ success: true, layer: "text_visual" }, "text_visual");

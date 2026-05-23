@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import {
+  createParentHubAudioIdentity,
+  PARENT_HUB_SECTIONS,
+} from "@/lib/parent-hub-audio-identity";
 import type { AgeGroup } from "@/lib/age-groups";
 import {
   ALL_HUB_PUZZLES,
@@ -458,6 +462,22 @@ function PuzzleEngine({
     });
   }, [submitted, cur, idx, childName]);
 
+  const speakParentHub = useCallback(
+    (text: string, itemId: string, playbackMode: "full-required" | "partial-ok" = "partial-ok") => {
+      const identity = createParentHubAudioIdentity({
+        sectionId: PARENT_HUB_SECTIONS.PUZZLE,
+        itemId,
+        text,
+      });
+      return speak(identity.text, {
+        parentHub: true,
+        audioIdentity: identity,
+        playbackMode,
+      });
+    },
+    [speak],
+  );
+
   // ── Submit ───────────────────────────────────────────────────────────────
   const handleSubmit = useCallback(() => {
     if (!selected || !cur || submitted) return;
@@ -467,9 +487,9 @@ function PuzzleEngine({
     setSubmitted(true);
     if (isCorrect) {
       setCorrectKey(k => k + 1);
-      void speak("Correct! Well done!");
+      void speakParentHub("Correct! Well done!", `${cur.id}:correct`);
     } else {
-      void speak(buildPuzzleAnswerSpeakText(cur.correctAnswer));
+      void speakParentHub(buildPuzzleAnswerSpeakText(cur.correctAnswer), `${cur.id}:answer`);
     }
     setResults(prev => {
       const next = [...prev];
@@ -495,7 +515,7 @@ function PuzzleEngine({
       saveState(childName, next);
       return next;
     });
-  }, [selected, cur, submitted, idx, childName, speak, pause]);
+  }, [selected, cur, submitted, idx, childName, speakParentHub, pause]);
 
   // ── Next puzzle ──────────────────────────────────────────────────────────
   const handleNext = useCallback(() => {
@@ -528,8 +548,10 @@ function PuzzleEngine({
   }, [state, childName, init, pause]);
   const handleRepeat = useCallback(() => {
     pause();
-    if (cur) void speak(buildPuzzleQuestionSpeakText(cur));
-  }, [cur, speak, pause]);
+    if (cur) {
+      void speakParentHub(buildPuzzleQuestionSpeakText(cur), `${cur.id}:question`, "full-required");
+    }
+  }, [cur, speakParentHub, pause]);
   if (puzzles.length === 0) return null;
 
   // ── Session done ─────────────────────────────────────────────────────────

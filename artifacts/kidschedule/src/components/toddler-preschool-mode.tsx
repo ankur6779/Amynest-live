@@ -10,6 +10,10 @@ import {
   type HubShortStory,
 } from "@workspace/parent-hub-speak";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import {
+  createParentHubAudioIdentity,
+  PARENT_HUB_SECTIONS,
+} from "@/lib/parent-hub-audio-identity";
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS
@@ -540,7 +544,18 @@ function StoryPlayer({
       pause();
       return;
     }
-    speak(buildShortStorySpeakText(story));
+    const text = buildShortStorySpeakText(story);
+    const identity = createParentHubAudioIdentity({
+      sectionId: PARENT_HUB_SECTIONS.TODDLER_STORIES,
+      itemId: `${accentColor}:${idx}`,
+      text,
+    });
+    void speak(identity.text, {
+      parentHub: true,
+      audioIdentity: identity,
+      playbackMode: "full-required",
+      narration: true,
+    });
   };
   const handleNext = () => {
     pause();

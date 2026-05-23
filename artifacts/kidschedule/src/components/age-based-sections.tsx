@@ -6,6 +6,10 @@ import { Volume2, VolumeX } from "lucide-react";
 import { AgeGroup, SKILL_FOCUS_BY_GROUP, STORIES_BY_GROUP, PARENT_TASKS_BY_GROUP } from "@/lib/age-groups";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { buildAgeGroupStorySpeakText } from "@workspace/parent-hub-speak";
+import {
+  createParentHubAudioIdentity,
+  PARENT_HUB_SECTIONS,
+} from "@/lib/parent-hub-audio-identity";
 
 // ─────────────────────────────────────────────────────────────
 // Skill Focus Section
@@ -71,7 +75,18 @@ export function StorySection({ group, childName }: StorySectionProps) {
  const handleSpeak = () => {
  if (!story) return;
  if (speaking || loading) { pause(); return; }
- speak(storyText);
+ const text = storyText;
+ const identity = createParentHubAudioIdentity({
+   sectionId: PARENT_HUB_SECTIONS.AGE_STORIES,
+   itemId: `${group}:${activeIdx}`,
+   text,
+ });
+ void speak(identity.text, {
+   parentHub: true,
+   audioIdentity: identity,
+   playbackMode: "full-required",
+   narration: true,
+ });
  };
 
  if (!story) return null;
