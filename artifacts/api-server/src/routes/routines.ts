@@ -2096,7 +2096,8 @@ router.post("/routines", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { userId } = getAuth(req);
+  const auth = getAuth(req);
+  const userId = auth.userId;
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -2164,6 +2165,12 @@ router.post("/routines", async (req, res): Promise<void> => {
     // "Why this routine?" card stays populated when the routine is re-opened.
     adaptations: parsed.data.adaptations ?? [],
   }).returning();
+
+  const { tryMarkReferralValidForUser } = await import("../services/referralService.js");
+  tryMarkReferralValidForUser(userId, {
+    emailVerified: auth.emailVerified,
+    phoneNumber: auth.phoneNumber,
+  }).catch(() => {});
 
   res.status(201).json(
     GetRoutineResponse.parse({

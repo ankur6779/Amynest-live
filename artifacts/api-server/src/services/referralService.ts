@@ -2,36 +2,51 @@ import {
   db,
   subscriptionsTable,
   referralsTable,
+  childrenTable,
+  usageDailyTable,
+  routinesTable,
   type Referral,
   type Subscription,
 } from "@workspace/db";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import {
   getOrCreateSubscription,
   isPremiumNow,
   extendBonusPremium,
 } from "./subscriptionService";
 import { createGiftToken } from "./giftTokenService";
+import { dispatchNotification } from "./notificationDispatchService";
+import { logger } from "../lib/logger";
+import {
+  REFERRAL_REWARD_DAYS,
+  REFERRAL_VALID_THRESHOLD,
+  REFERRAL_PAID_THRESHOLD,
+  REFERRAL_REWARD_CAP,
+  REFERRAL_ATTRIBUTION_WINDOW_DAYS,
+  REFERRER_DAILY_ATTRIBUTION_CAP,
+  isReferralIdentityVerified,
+  computeEarnedMilestones,
+  type ReferralIdentity,
+} from "./referralPolicy";
 
-type DbExec = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-// ─── Tunable constants ───────────────────────────────────────────────────────
-
-/** Days of premium granted per referral milestone (3 valid + 1 paid). */
-export const REFERRAL_REWARD_DAYS = 30;
-
-/** Referrals required for one milestone (counts referrals in valid OR paid status). */
-export const REFERRAL_VALID_THRESHOLD = 3;
-
-/** Of the valid referrals, how many must have paid for one milestone. */
-export const REFERRAL_PAID_THRESHOLD = 1;
-
-/** Cumulative cap on referral rewards a single user can earn (3 = 90 days). */
-export const REFERRAL_REWARD_CAP = 3;
+export {
+  REFERRAL_REWARD_DAYS,
+  REFERRAL_VALID_THRESHOLD,
+  REFERRAL_PAID_THRESHOLD,
+  REFERRAL_REWARD_CAP,
+  REFERRAL_ATTRIBUTION_WINDOW_DAYS,
+  REFERRER_DAILY_ATTRIBUTION_CAP,
+  isReferralIdentityVerified,
+  computeEarnedMilestones,
+  revenueCatCountsForReferralPaid,
+} from "./referralPolicy";
+export type { ReferralIdentity } from "./referralPolicy";
 
 /** Length of the human-readable referral code (uppercase alphanumeric). */
 const CODE_LEN = 7;
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // omit confusing chars
+
+const REFERRAL_ATTRIBUTION_WINDOW_MS = REFERRAL_ATTRIBUTION_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
 function randomCode(len = CODE_LEN): string {
   let out = "";
@@ -39,6 +54,33 @@ function randomCode(len = CODE_LEN): string {
     out += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
   }
   return out;
+}
+
+// ─── Qualifying activity ─────────────────────────────────────────────────────
+
+/**
+ * At least one meaningful app action: child profile, feature usage, or saved routine.
+ */
+export async function hasQualifyingReferralActivity(userId: string): Promise<boolean> {
+  const [childRow, usageRow, routineRow] = await Promise.all([
+    db
+      .select({ id: childrenTable.id })
+      .from(childrenTable)
+      .where(eq(childrenTable.userId, userId))
+      .limit(1),
+    db
+      .select({ id: usageDailyTable.id })
+      .from(usageDailyTable)
+      .where(and(eq(usageDailyTable.userId, userId), sql`${usageDailyTable.count} > 0`))
+      .limit(1),
+    db
+      .select({ id: routinesTable.id })
+      .from(routinesTable)
+      .innerJoin(childrenTable, eq(childrenTable.id, routinesTable.childId))
+      .where(eq(childrenTable.userId, userId))
+      .limit(1),
+  ]);
+  return childRow.length > 0 || usageRow.length > 0 || routineRow.length > 0;
 }
 
 // ─── Code allocation ─────────────────────────────────────────────────────────
@@ -60,14 +102,11 @@ export async function getOrCreateReferralCode(userId: string): Promise<string> {
         .where(
           and(
             eq(subscriptionsTable.userId, userId),
-            // only assign if still null — keeps the operation idempotent under
-            // concurrent calls
             sql`${subscriptionsTable.referralCode} IS NULL`,
           ),
         )
         .returning();
       if (updated?.referralCode) return updated.referralCode;
-      // someone else assigned it concurrently — re-read
       const fresh = await getOrCreateSubscription(userId);
       if (fresh.referralCode) return fresh.referralCode;
     } catch {
@@ -86,11 +125,34 @@ async function findUserByReferralCode(code: string): Promise<Subscription | null
   return rows[0] ?? null;
 }
 
+async function countReferrerAttributionsToday(referrerUserId: string): Promise<number> {
+  const dayStart = new Date();
+  dayStart.setUTCHours(0, 0, 0, 0);
+  const rows = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(referralsTable)
+    .where(
+      and(
+        eq(referralsTable.referrerUserId, referrerUserId),
+        gte(referralsTable.createdAt, dayStart),
+      ),
+    );
+  return rows[0]?.n ?? 0;
+}
+
 // ─── Attribution ─────────────────────────────────────────────────────────────
 
 export type AttributeResult =
   | { ok: true; alreadyAttributed: boolean; referrerUserId: string }
-  | { ok: false; reason: "invalid_code" | "self_referral" | "already_referred_by_other" };
+  | {
+      ok: false;
+      reason:
+        | "invalid_code"
+        | "self_referral"
+        | "already_referred_by_other"
+        | "attribution_window_expired"
+        | "referrer_daily_cap";
+    };
 
 /**
  * Records that `referredUserId` was referred by the owner of `code`.
@@ -106,9 +168,30 @@ export async function attributeReferral(
   if (!referrer) return { ok: false, reason: "invalid_code" };
   if (referrer.userId === referredUserId) return { ok: false, reason: "self_referral" };
 
-  // Atomic insert: if a row already exists for this referredUserId we get
-  // zero rows back and re-read to determine whether it was the same referrer
-  // (idempotent success) or a different one (conflict).
+  const existing = await db
+    .select()
+    .from(referralsTable)
+    .where(eq(referralsTable.referredUserId, referredUserId))
+    .limit(1);
+
+  if (existing[0]) {
+    if (existing[0].referrerUserId === referrer.userId) {
+      return { ok: true, alreadyAttributed: true, referrerUserId: referrer.userId };
+    }
+    return { ok: false, reason: "already_referred_by_other" };
+  }
+
+  const referredSub = await getOrCreateSubscription(referredUserId);
+  const accountAgeMs = Date.now() - referredSub.createdAt.getTime();
+  if (accountAgeMs > REFERRAL_ATTRIBUTION_WINDOW_MS) {
+    return { ok: false, reason: "attribution_window_expired" };
+  }
+
+  const todayCount = await countReferrerAttributionsToday(referrer.userId);
+  if (todayCount >= REFERRER_DAILY_ATTRIBUTION_CAP) {
+    return { ok: false, reason: "referrer_daily_cap" };
+  }
+
   const inserted = await db
     .insert(referralsTable)
     .values({
@@ -124,12 +207,12 @@ export async function attributeReferral(
     return { ok: true, alreadyAttributed: false, referrerUserId: referrer.userId };
   }
 
-  const existing = await db
+  const reread = await db
     .select()
     .from(referralsTable)
     .where(eq(referralsTable.referredUserId, referredUserId))
     .limit(1);
-  if (existing[0]?.referrerUserId === referrer.userId) {
+  if (reread[0]?.referrerUserId === referrer.userId) {
     return { ok: true, alreadyAttributed: true, referrerUserId: referrer.userId };
   }
   return { ok: false, reason: "already_referred_by_other" };
@@ -138,10 +221,10 @@ export async function attributeReferral(
 // ─── Status transitions ──────────────────────────────────────────────────────
 
 /**
- * Promote pending → valid for the given referred user (if they have one).
- * Safe to call on every "first-feature-use" trigger.
+ * Promote pending → valid when identity is verified and qualifying activity exists.
+ * Safe to call repeatedly (idempotent).
  */
-export async function markReferralValid(referredUserId: string): Promise<void> {
+async function promoteReferralToValid(referredUserId: string): Promise<boolean> {
   const updated = await db
     .update(referralsTable)
     .set({ status: "valid", validatedAt: new Date() })
@@ -156,21 +239,39 @@ export async function markReferralValid(referredUserId: string): Promise<void> {
   const referrerId = updated[0]?.referrerUserId;
   if (referrerId) {
     await tryGrantReferralReward(referrerId);
+    return true;
   }
+  return false;
 }
 
 /**
- * Promote pending|valid → paid for the given referred user. Called from the
- * subscription activation path (paid subscription via webhook).
+ * Promote pending → valid when identity is verified and qualifying activity exists.
+ * Safe to call repeatedly (idempotent).
  */
-export async function markReferralPaid(referredUserId: string): Promise<void> {
+export async function tryMarkReferralValidForUser(
+  referredUserId: string,
+  identity: ReferralIdentity,
+): Promise<boolean> {
+  if (!isReferralIdentityVerified(identity)) return false;
+  if (!(await hasQualifyingReferralActivity(referredUserId))) return false;
+  return promoteReferralToValid(referredUserId);
+}
+
+/**
+ * Promote pending|valid → paid for the referred user (converted payment only).
+ */
+export async function markReferralPaid(
+  referredUserId: string,
+  opts: { countsAsPaid?: boolean } = {},
+): Promise<void> {
+  if (opts.countsAsPaid === false) return;
+
   const now = new Date();
   const updated = await db
     .update(referralsTable)
     .set({
       status: "paid",
       paidAt: now,
-      // ensure validatedAt is filled so the row counts as valid too
       validatedAt: sql`COALESCE(${referralsTable.validatedAt}, ${now})`,
     })
     .where(
@@ -184,6 +285,22 @@ export async function markReferralPaid(referredUserId: string): Promise<void> {
   const referrerId = updated[0]?.referrerUserId;
   if (referrerId) {
     await tryGrantReferralReward(referrerId);
+  }
+}
+
+/** Best-effort paid mark — used when activateSubscription short-circuits idempotently. */
+export async function ensureReferralPaidMarked(
+  referredUserId: string,
+  countsAsPaid: boolean,
+): Promise<void> {
+  if (!countsAsPaid) return;
+  try {
+    await markReferralPaid(referredUserId, { countsAsPaid: true });
+  } catch (err) {
+    logger.warn(
+      { err, referredUserId },
+      "ensureReferralPaidMarked failed",
+    );
   }
 }
 
@@ -214,25 +331,32 @@ async function countReferrals(referrerUserId: string): Promise<{ valid: number; 
   return { valid: rows[0]?.valid ?? 0, paid: rows[0]?.paid ?? 0 };
 }
 
-/**
- * Compute how many full reward milestones a user has EARNED based on their
- * current referral counts. One milestone = REFERRAL_VALID_THRESHOLD valid
- * referrals AND REFERRAL_PAID_THRESHOLD paid referrals.
- */
-function computeEarnedMilestones(valid: number, paid: number): number {
-  const fromValid = Math.floor(valid / REFERRAL_VALID_THRESHOLD);
-  const fromPaid = Math.floor(paid / REFERRAL_PAID_THRESHOLD);
-  return Math.min(fromValid, fromPaid, REFERRAL_REWARD_CAP);
+async function notifyReferralRewardUnlocked(
+  referrerUserId: string,
+  granted: number,
+  milestoneIndex: number,
+  isPaidReferrer: boolean,
+): Promise<void> {
+  try {
+    const days = granted * REFERRAL_REWARD_DAYS;
+    await dispatchNotification({
+      userId: referrerUserId,
+      category: "milestone",
+      title: "Referral reward unlocked! 🎉",
+      body: isPaidReferrer
+        ? `You earned ${granted} gift token${granted === 1 ? "" : "s"} to share with friends.`
+        : `You unlocked ${days} days of premium via referrals.`,
+      deepLink: "/referrals",
+      dedupKey: `referral_reward_${referrerUserId}_${milestoneIndex}`,
+      bypassCategoryCheck: false,
+    });
+  } catch (err) {
+    logger.warn({ err, referrerUserId }, "referral_reward_push_failed");
+  }
 }
 
 /**
  * Idempotently grants any unclaimed reward milestones for the referrer.
- *
- * Reward forks by subscriber status:
- *   • Free user  → extend bonusExpiresAt by REFERRAL_REWARD_DAYS per milestone
- *   • Paid user  → create one gift token per milestone (shareable with any friend)
- *
- * Returns the number of NEW milestones granted in this call.
  */
 export async function tryGrantReferralReward(referrerUserId: string): Promise<number> {
   const sub = await getOrCreateSubscription(referrerUserId);
@@ -244,11 +368,6 @@ export async function tryGrantReferralReward(referrerUserId: string): Promise<nu
 
   const isPaid = isPremiumNow(sub);
 
-  // Atomically bump the granted counter — only the row whose granted value
-  // is still `already` will succeed, preventing double-grants under concurrent callers.
-  // For free users, bonus days extension is inside the transaction.
-  // For paid users, gift token creation happens AFTER the transaction commits
-  // (gift tokens use their own DB connection and can't participate in the tx).
   const granted = await db.transaction(async (tx) => {
     const updated = await tx
       .update(subscriptionsTable)
@@ -266,18 +385,21 @@ export async function tryGrantReferralReward(referrerUserId: string): Promise<nu
     if (updated.length === 0) return 0;
 
     if (!isPaid) {
-      // Free user: extend bonus premium so they get free premium access.
       await extendBonusPremium(referrerUserId, toGrant * REFERRAL_REWARD_DAYS, tx);
     }
     return toGrant;
   });
 
   if (granted > 0 && isPaid) {
-    // Paid user: grant one shareable gift token per milestone, post-commit.
     for (let i = 0; i < granted; i++) {
       await createGiftToken(referrerUserId, REFERRAL_REWARD_DAYS);
     }
   }
+
+  if (granted > 0) {
+    await notifyReferralRewardUnlocked(referrerUserId, granted, already + granted, isPaid);
+  }
+
   return granted;
 }
 

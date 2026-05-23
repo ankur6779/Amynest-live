@@ -23,7 +23,7 @@ import {
   isPremiumNow,
   FREE_LIMITS,
 } from "../services/subscriptionService";
-import { markReferralValid } from "../services/referralService";
+import { tryMarkReferralValidForUser } from "../services/referralService";
 import { ONBOARDING_CHILD_SAVE_FALLBACK } from "../lib/api-fallbacks.js";
 import { safeRoute } from "../lib/safe-route-handler.js";
 import { isSchemaMismatchError } from "../lib/db-safe.js";
@@ -46,7 +46,8 @@ router.post(
   safeRoute(
     "POST /children",
     async (req, res): Promise<void> => {
-      const { userId } = getAuth(req);
+      const auth = getAuth(req);
+      const userId = auth.userId;
       if (!userId) {
         res.status(401).json({ error: "Unauthorized" });
         return;
@@ -122,7 +123,10 @@ router.post(
       };
       const child = await insertChildRow(insertData);
 
-      markReferralValid(userId).catch(() => {});
+      tryMarkReferralValidForUser(userId, {
+        emailVerified: auth.emailVerified,
+        phoneNumber: auth.phoneNumber,
+      }).catch(() => {});
 
       res
         .status(201)

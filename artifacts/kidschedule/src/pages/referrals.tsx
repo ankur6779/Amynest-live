@@ -6,12 +6,10 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useReferrals, type GiftToken } from "@/hooks/use-referrals";
+import { buildGiftShareLink, buildReferralShareLink } from "@/lib/referral-links";
 import { AmyIcon } from "@/components/amy-icon";
 function buildLink(code: string): string {
-  if (typeof window === "undefined") return `?ref=${code}`;
-  const url = new URL(window.location.origin);
-  url.searchParams.set("ref", code);
-  return url.toString();
+  return buildReferralShareLink(code);
 }
 function daysLeft(iso: string | null): number | null {
   if (!iso) return null;
@@ -40,7 +38,7 @@ function GiftTokenCard({
     const text = t("screens.referrals.gift_share_text", {
       days: token.bonusDays,
       code: token.giftCode,
-      url: `${window.location.origin}/?gift=${token.giftCode}`
+      url: buildGiftShareLink(token.giftCode)
     });
     if ((navigator as any).share) {
       try {
@@ -413,14 +411,24 @@ export default function ReferralsPage() {
             {t("screens.referrals.no_referrals")}
           </div> : <div className="space-y-2">
             {referrals.map(r => {
+          const joined = new Date(r.createdAt).toLocaleDateString();
+          const activeOn = r.validatedAt
+            ? new Date(r.validatedAt).toLocaleDateString()
+            : null;
           return <div key={r.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/20 px-4 py-2.5">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className={`h-2 w-2 rounded-full shrink-0 ${r.status === "paid" ? "bg-primary" : r.status === "valid" ? "bg-primary" : "bg-muted"}`} />
-                  <span className="text-sm font-semibold truncate">{t("screens.referrals.friend_label", {
-                  id: r.id
-                })}</span>
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`h-2 w-2 rounded-full shrink-0 ${r.status === "paid" ? "bg-primary" : r.status === "valid" ? "bg-primary" : "bg-muted"}`} />
+                    <span className="text-sm font-semibold truncate">{t("screens.referrals.friend_label", {
+                    id: r.id
+                  })}</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground pl-4">
+                    {t("screens.referrals.joined_on", { date: joined })}
+                    {activeOn ? ` · ${t("screens.referrals.active_on", { date: activeOn })}` : ""}
+                  </span>
                 </div>
-                <Badge variant={r.status === "paid" ? "default" : "secondary"} className={`text-[10px] uppercase font-bold ${r.status === "paid" ? "bg-primary hover:bg-primary" : r.status === "valid" ? "bg-primary hover:bg-primary text-white" : ""}`}>
+                <Badge variant={r.status === "paid" ? "default" : "secondary"} className={`text-[10px] uppercase font-bold shrink-0 ${r.status === "paid" ? "bg-primary hover:bg-primary" : r.status === "valid" ? "bg-primary hover:bg-primary text-white" : ""}`}>
                   {r.status === "paid" ? t("screens.referrals.status_paid") : r.status === "valid" ? t("screens.referrals.status_active") : t("screens.referrals.status_pending")}
                 </Badge>
               </div>;

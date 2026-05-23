@@ -103,7 +103,8 @@ export function useReferrals() {
   };
 }
 
-const PENDING_KEY = "amynest_pending_referral_code";
+export const PENDING_REFERRAL_KEY = "amynest_pending_referral_code";
+export const PENDING_GIFT_KEY = "amynest_pending_gift_code";
 
 export function capturePendingReferralCode(): string | null {
   try {
@@ -111,10 +112,10 @@ export function capturePendingReferralCode(): string | null {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref")?.trim();
     if (ref) {
-      window.localStorage.setItem(PENDING_KEY, ref);
+      window.localStorage.setItem(PENDING_REFERRAL_KEY, ref);
       return ref;
     }
-    return window.localStorage.getItem(PENDING_KEY);
+    return window.localStorage.getItem(PENDING_REFERRAL_KEY);
   } catch {
     return null;
   }
@@ -123,7 +124,7 @@ export function capturePendingReferralCode(): string | null {
 export function clearPendingReferralCode(): void {
   try {
     if (typeof window === "undefined") return;
-    window.localStorage.removeItem(PENDING_KEY);
+    window.localStorage.removeItem(PENDING_REFERRAL_KEY);
   } catch {
     // ignore
   }
@@ -132,7 +133,40 @@ export function clearPendingReferralCode(): void {
 export function readPendingReferralCode(): string | null {
   try {
     if (typeof window === "undefined") return null;
-    return window.localStorage.getItem(PENDING_KEY);
+    return window.localStorage.getItem(PENDING_REFERRAL_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function capturePendingGiftCode(): string | null {
+  try {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    const gift = params.get("gift")?.trim();
+    if (gift) {
+      window.localStorage.setItem(PENDING_GIFT_KEY, gift.toUpperCase());
+      return gift;
+    }
+    return window.localStorage.getItem(PENDING_GIFT_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingGiftCode(): void {
+  try {
+    if (typeof window === "undefined") return;
+    window.localStorage.removeItem(PENDING_GIFT_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+export function readPendingGiftCode(): string | null {
+  try {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem(PENDING_GIFT_KEY);
   } catch {
     return null;
   }

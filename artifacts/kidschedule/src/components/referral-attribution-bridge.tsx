@@ -41,7 +41,9 @@ export function ReferralAttributionBridge() {
         const terminal =
           reason === "invalid_code" ||
           reason === "self_referral" ||
-          reason === "already_referred_by_other";
+          reason === "already_referred_by_other" ||
+          reason === "attribution_window_expired" ||
+          reason === "referrer_daily_cap";
         if (terminal) {
           clearPendingReferralCode();
         } else {

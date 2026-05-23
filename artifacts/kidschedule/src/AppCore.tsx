@@ -91,6 +91,7 @@ const GamesPage = lazyPage(() => import("@/pages/games"));
 const OnboardingPage = lazyPage(() => import("@/pages/onboarding"));
 const PricingPage = lazyPage(() => import("@/pages/pricing"));
 const ReferralsPage = lazyPage(() => import("@/pages/referrals"));
+const ReferralDeepLinkPage = lazyPage(() => import("@/pages/referral-deep-link"));
 const InsightsPage = lazyPage(() => import("@/pages/insights"));
 const RewardsPage = lazyPage(() => import("@/pages/rewards"));
 const NotificationSettingsPage = lazyPage(() => import("@/pages/notification-settings"));
@@ -104,6 +105,7 @@ const AdminFeedbackPage = lazyPage(() => import("@/pages/admin-feedback"));
 import { NativeStartupPermissionsGateLazy } from "@/components/native-startup-permissions-gate-lazy";
 import { PwaAndroidPermissionsGateLazy } from "@/components/pwa-android-permissions-gate-lazy";
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
+import { GiftAttributionBridge } from "@/components/gift-attribution-bridge";
 import { OfflineScreen, useOnlineStatus } from "@/components/offline-screen";
 import { getAppApiBaseOrigin } from "@/lib/api";
 import { waitForIdToken } from "@/lib/auth-token";
@@ -286,6 +288,8 @@ const AudioLessonsRoute = makeProtectedRoute(AudioLessonsPage);
 const GamesRoute = makeProtectedRoute(GamesPage);
 const PricingRoute = makeProtectedRoute(PricingPage);
 const ReferralsRoute = makeProtectedRoute(ReferralsPage);
+/** Public — universal link `/referral/:code` captures invite before sign-in. */
+const ReferralDeepLinkRoute = ReferralDeepLinkPage;
 const InsightsRoute = makeProtectedRoute(InsightsPage);
 const RewardsRoute = makeProtectedRoute(RewardsPage);
 const EnvironmentRoute = makeProtectedRoute(EnvironmentPage);
@@ -400,6 +404,7 @@ function AppRoutes() {
             <CapacitorIosAuthPreload />
             <QueryClientCacheInvalidator />
             <ReferralAttributionBridge />
+            <GiftAttributionBridge />
             <FcmForegroundHandler />
             <NotificationDeepLinkBridge />
             <Suspense fallback={<RouteLoadingShell />}>
@@ -466,6 +471,7 @@ function AppRoutes() {
           <Route path="/audio-lessons" component={AudioLessonsRoute} />
           <Route path="/games" component={GamesRoute} />
           <Route path="/pricing" component={PricingRoute} />
+          <Route path="/referral/:code" component={ReferralDeepLinkRoute} />
           <Route path="/referrals" component={ReferralsRoute} />
           <Route path="/insights" component={InsightsRoute} />
           <Route path="/rewards" component={RewardsRoute} />
