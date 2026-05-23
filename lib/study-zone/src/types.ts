@@ -52,7 +52,9 @@ export interface StudyTopic {
   title: string;
   /** 3–5 line plain-language note. */
   notes: string;
-  /** Seed prompt fed to Amy AI when the parent taps "Ask Amy". */
+  /** Kid-friendly line Amy speaks aloud (English, global). */
+  amySpeak: string;
+  /** Seed prompt fed to Amy AI when the parent taps "Ask Amy" (not spoken). */
   amyPrompt: string;
   /**
    * Optional inline SVG illustration (raw markup, no XML prolog).
@@ -62,6 +64,9 @@ export interface StudyTopic {
   imageExample?: string;
   questions: PracticeQuestion[];
 }
+
+/** Topic content before `amySpeak` is attached from the global catalog. */
+export type StudyTopicDraft = Omit<StudyTopic, "amySpeak">;
 
 export interface SubjectPack<TId extends string = string> {
   id: TId;

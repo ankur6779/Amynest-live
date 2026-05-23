@@ -109,6 +109,16 @@ function resolvePhraseScope(): {
     const phrases = ALL_CORPUS_PHRASES.filter((e) => e.source.startsWith("audio_lessons"));
     return { phrases, label: "audio_lessons", audioLessonsOnly: true };
   }
+  const studyZoneOnly = process.argv.includes("--study-zone-only");
+  if (studyZoneOnly) {
+    const phrases = ALL_CORPUS_PHRASES.filter((e) => e.source.startsWith("study_zone"));
+    return { phrases, label: "study_zone", audioLessonsOnly: false };
+  }
+  const spellingOnly = process.argv.includes("--spelling-only");
+  if (spellingOnly) {
+    const phrases = ALL_CORPUS_PHRASES.filter((e) => e.source === "spelling_mastery");
+    return { phrases, label: "spelling_mastery", audioLessonsOnly: false };
+  }
   return { phrases: ALL_CORPUS_PHRASES, label: "full_corpus", audioLessonsOnly: false };
 }
 
@@ -539,6 +549,10 @@ async function run(): Promise<void> {
       "[HINT] To regenerate only Amy Audio Lesson paragraphs, run:",
     );
     console.log("       pnpm run generate:static-audio -- --audio-lessons-only");
+    console.log(
+      "[HINT] To regenerate only Spelling Mastery words/chunks, run:",
+    );
+    console.log("       pnpm run generate:static-audio:spelling");
     console.log(`[CONFIG] Current voice=${OPENAI_VOICE} model=${OPENAI_MODEL}`);
   }
 

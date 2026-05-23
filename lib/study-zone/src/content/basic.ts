@@ -1,4 +1,5 @@
-import type { SubjectPack, BasicSubjectId } from "../types";
+import type { SubjectPack, BasicSubjectId, StudyTopicDraft } from "../types";
+import { enrichSubjectPacks } from "./enrich-topics";
 import {
   IMG_ADDITION, IMG_SUBTRACTION, IMG_MULTIPLICATION, IMG_DIVISION,
   IMG_FRACTIONS, IMG_GEOMETRY_BASICS, IMG_CLOCK,
@@ -7,7 +8,7 @@ import {
   IMG_NOUNS, IMG_VERBS, IMG_ADJECTIVES, IMG_PRONOUNS, IMG_SENTENCES,
 } from "./images";
 
-export const BASIC_SUBJECTS: SubjectPack<BasicSubjectId>[] = [
+const BASIC_SUBJECTS_DRAFT: Array<Omit<SubjectPack<BasicSubjectId>, "topics"> & { topics: StudyTopicDraft[] }> = [
   // ── Math ────────────────────────────────────────────────────────────────────
   {
     id: "math",
@@ -184,12 +185,12 @@ export const BASIC_SUBJECTS: SubjectPack<BasicSubjectId>[] = [
         title: "Weather & Seasons",
         imageExample: IMG_WEATHER,
         notes:
-          "Weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold.\nSeasons are longer changes: Summer (hot), Winter (cold), Monsoon/Rainy, Autumn, Spring.\nIndia mainly has 3 seasons: summer, winter and rainy.\nWe change our clothes and activities based on the weather.",
-        amyPrompt: "Explain the main seasons and types of weather for a class 2-4 child with examples.",
+          "Weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold.\nSeasons are longer changes: Spring, Summer, Autumn (Fall), and Winter.\nIn many places, spring brings flowers, summer is warm, autumn has falling leaves, and winter is cold.\nWe change our clothes and activities based on the weather.",
+        amyPrompt: "Explain the four seasons and common weather types for a class 2-4 child with examples.",
         questions: [
-          { q: "Which season is the hottest?",     options: ["Winter", "Summer", "Autumn", "Spring"], answer: 1 },
-          { q: "When does it rain a lot in India?", options: ["Summer", "Winter", "Monsoon", "Spring"], answer: 2 },
-          { q: "We wear a coat in which season?",  options: ["Summer", "Monsoon", "Winter", "Spring"], answer: 2 },
+          { q: "Which season is usually the hottest?",     options: ["Winter", "Summer", "Autumn", "Spring"], answer: 1 },
+          { q: "When do many places get the most rain?", options: ["Summer", "Winter", "Spring", "Varies by region"], answer: 3 },
+          { q: "We wear a coat in which season?",  options: ["Summer", "Autumn", "Winter", "Spring"], answer: 2 },
           { q: "What shows today's weather?",      options: ["Calendar", "Clock", "Thermometer/Sky", "Ruler"], answer: 2 },
         ],
       },
@@ -198,7 +199,7 @@ export const BASIC_SUBJECTS: SubjectPack<BasicSubjectId>[] = [
         title: "Food & Nutrition",
         imageExample: IMG_FOOD_GROUPS,
         notes:
-          "We eat food to get energy and stay healthy.\nFood groups: vegetables (broccoli, carrot), fruits (apple, mango), grains (rice, bread), protein (egg, dal), dairy (milk, cheese).\nEating all food groups is called a balanced diet.\nJunk food (chips, cold drinks) has very little nutrition and should be eaten less.",
+          "We eat food to get energy and stay healthy.\nFood groups: vegetables (broccoli, carrot), fruits (apple, banana), grains (rice, bread), protein (egg, chicken, beans), dairy (milk, cheese).\nEating all food groups is called a balanced diet.\nJunk food (chips, sugary drinks) has very little nutrition and should be eaten less.",
         amyPrompt: "Explain the food groups and why a balanced diet is important for a class 3-5 child.",
         questions: [
           { q: "Which gives us the most energy?",    options: ["Grains", "Sweets", "Water", "Salt"], answer: 0 },
@@ -221,11 +222,11 @@ export const BASIC_SUBJECTS: SubjectPack<BasicSubjectId>[] = [
         title: "Nouns",
         imageExample: IMG_NOUNS,
         notes:
-          "A noun is a naming word.\nIt names a person (Riya), a place (school), an animal (dog) or a thing (book).\nCommon nouns name general things (cat, city).\nProper nouns name specific things and start with a capital letter (Delhi, Riya).",
+          "A noun is a naming word.\nIt names a person (Emma), a place (school), an animal (dog) or a thing (book).\nCommon nouns name general things (cat, city).\nProper nouns name specific things and start with a capital letter (London, Emma).",
         amyPrompt: "Explain nouns with simple examples for a class 1-3 child.",
         questions: [
           { q: "Which word is a noun?",    options: ["Run", "Quickly", "Apple", "Happy"], answer: 2 },
-          { q: "Which is a proper noun?",  options: ["girl", "boy", "Sara", "school"], answer: 2 },
+          { q: "Which is a proper noun?",  options: ["girl", "boy", "Emma", "school"], answer: 2 },
           { q: "A noun names a ___?",      options: ["sound only", "person, place, animal or thing", "colour only", "feeling only"], answer: 1 },
           { q: "Pick the noun: 'The dog is barking.'", options: ["barking", "loudly", "is", "dog"], answer: 3 },
         ],
@@ -263,11 +264,11 @@ export const BASIC_SUBJECTS: SubjectPack<BasicSubjectId>[] = [
         title: "Pronouns",
         imageExample: IMG_PRONOUNS,
         notes:
-          "A pronoun is a word that replaces a noun to avoid repetition.\nExamples: I, you, he, she, it, we, they.\n'Riya is happy. She is happy.' — 'She' replaces 'Riya'.\nUsing pronouns makes sentences shorter and less repetitive.",
+          "A pronoun is a word that replaces a noun to avoid repetition.\nExamples: I, you, he, she, it, we, they.\n'Emma is happy. She is happy.' — 'She' replaces 'Emma'.\nUsing pronouns makes sentences shorter and less repetitive.",
         amyPrompt: "Explain pronouns with examples for a class 2-4 child.",
         questions: [
           { q: "Which is a pronoun?",             options: ["Dog", "Run", "She", "Happy"], answer: 2 },
-          { q: "Pronoun for 'Ram and Shyam'?",    options: ["He", "She", "They", "It"], answer: 2 },
+          { q: "Pronoun for 'Tom and Jake'?",    options: ["He", "She", "They", "It"], answer: 2 },
           { q: "Pronoun for one boy?",             options: ["She", "He", "They", "We"], answer: 1 },
           { q: "Pronouns are used to replace ___?", options: ["Adjectives", "Nouns", "Verbs", "Adverbs"], answer: 1 },
         ],
@@ -277,7 +278,7 @@ export const BASIC_SUBJECTS: SubjectPack<BasicSubjectId>[] = [
         title: "Making Sentences",
         imageExample: IMG_SENTENCES,
         notes:
-          "A sentence is a group of words that makes complete sense.\nEvery sentence has a subject (who/what) and a verb (action).\nIt starts with a capital letter and ends with a full stop, question mark or exclamation mark.\nExample: 'Riya reads books.' — Riya is the subject, reads is the verb.",
+          "A sentence is a group of words that makes complete sense.\nEvery sentence has a subject (who/what) and a verb (action).\nIt starts with a capital letter and ends with a full stop, question mark or exclamation mark.\nExample: 'Emma reads books.' — Emma is the subject, reads is the verb.",
         amyPrompt: "Explain what makes a good sentence with two examples for a class 2-4 child.",
         questions: [
           { q: "A sentence must begin with a ___?", options: ["full stop", "comma", "capital letter", "question mark"], answer: 2 },
@@ -297,15 +298,15 @@ export const BASIC_SUBJECTS: SubjectPack<BasicSubjectId>[] = [
     topics: [
       {
         id: "india-basics",
-        title: "About India",
+        title: "Countries & Capitals",
         notes:
-          "India is a large and beautiful country in Asia.\nCapital: New Delhi. National flag: saffron, white, green with a blue Ashoka Chakra.\nNational animal: Tiger. National bird: Peacock. National flower: Lotus.\nNational language (official): Hindi. National fruit: Mango.",
-        amyPrompt: "Share 4 fun facts about India that a class 2-4 child would enjoy.",
+          "A country is a large area with its own government.\nEvery country has a capital city where the government usually works.\nExamples: United States — Washington, D.C.; United Kingdom — London; France — Paris; Japan — Tokyo.\nCountries also have flags, anthems, and symbols like national animals or flowers.",
+        amyPrompt: "Share 4 fun facts about countries and capitals for a class 2-4 child (global examples).",
         questions: [
-          { q: "Capital of India?",          options: ["Mumbai", "New Delhi", "Chennai", "Kolkata"], answer: 1 },
-          { q: "National animal of India?",  options: ["Lion", "Elephant", "Tiger", "Peacock"], answer: 2 },
-          { q: "National bird of India?",    options: ["Sparrow", "Parrot", "Peacock", "Crow"], answer: 2 },
-          { q: "How many colours on the Indian flag?", options: ["2", "3", "4", "5"], answer: 1 },
+          { q: "Capital of the United States?", options: ["New York", "Washington, D.C.", "Los Angeles", "Chicago"], answer: 1 },
+          { q: "Capital of the United Kingdom?", options: ["Paris", "London", "Dublin", "Edinburgh"], answer: 1 },
+          { q: "Capital of France?", options: ["Rome", "Berlin", "Paris", "Madrid"], answer: 2 },
+          { q: "A capital city is where the ___ usually works.", options: ["farm", "government", "beach", "zoo"], answer: 1 },
         ],
       },
       {
@@ -323,22 +324,22 @@ export const BASIC_SUBJECTS: SubjectPack<BasicSubjectId>[] = [
       },
       {
         id: "indian-festivals",
-        title: "Indian Festivals",
+        title: "Festivals Around the World",
         notes:
-          "India has many wonderful festivals celebrated by people of all religions.\nDiwali — festival of lights celebrated by Hindus.\nEid — celebrated by Muslims after Ramadan.\nChristmas — birth of Jesus Christ, celebrated on 25 December.\nHoli — colourful spring festival. Guru Nanak Jayanti — Sikh festival.",
-        amyPrompt: "Name 5 Indian festivals, the religion they belong to, and one fun fact about each, for a class 2-4 child.",
+          "Festivals are special days when people celebrate with family and friends.\nChristmas — celebrated on 25 December with lights and gifts.\nDiwali — festival of lights in autumn.\nEid — celebrated after Ramadan with feasts and charity.\nChinese New Year — spring festival with dragons and red decorations.\nThanksgiving — harvest celebration in the United States and Canada.",
+        amyPrompt: "Name 5 world festivals and one fun fact about each for a class 2-4 child.",
         questions: [
-          { q: "Diwali is the festival of?",          options: ["Colours", "Lights", "Water", "Sweets"], answer: 1 },
+          { q: "Diwali is the festival of?",          options: ["Colours", "Lights", "Water", "Snow"], answer: 1 },
           { q: "Christmas is celebrated on?",          options: ["25 Nov", "25 Dec", "25 Jan", "25 Feb"], answer: 1 },
-          { q: "Holi is famous for playing with?",    options: ["Water", "Lights", "Colours", "Crackers"], answer: 2 },
-          { q: "Eid is mainly celebrated by?",        options: ["Hindus", "Sikhs", "Christians", "Muslims"], answer: 3 },
+          { q: "Holi is famous for playing with?",    options: ["Water", "Lights", "Colours", "Snow"], answer: 2 },
+          { q: "Thanksgiving is linked to giving thanks for?", options: ["Birthdays", "Harvest", "Rain", "Sports"], answer: 1 },
         ],
       },
       {
         id: "transport",
         title: "Modes of Transport",
         notes:
-          "Transport means ways of travelling from one place to another.\nLand transport: bus, car, train, bicycle, auto-rickshaw.\nWater transport: boat, ship, ferry.\nAir transport: aeroplane, helicopter.\nFastest transport: aeroplane. Oldest in India: bullock cart.",
+          "Transport means ways of travelling from one place to another.\nLand transport: bus, car, train, bicycle, scooter.\nWater transport: boat, ship, ferry.\nAir transport: aeroplane, helicopter.\nFastest transport: aeroplane. Slowest on land: walking.",
         amyPrompt: "Explain the three modes of transport with two examples each, for a class 1-3 child.",
         questions: [
           { q: "Which is air transport?",     options: ["Bus", "Ship", "Aeroplane", "Train"], answer: 2 },
@@ -363,3 +364,5 @@ export const BASIC_SUBJECTS: SubjectPack<BasicSubjectId>[] = [
     ],
   },
 ];
+
+export const BASIC_SUBJECTS: SubjectPack<BasicSubjectId>[] = enrichSubjectPacks(BASIC_SUBJECTS_DRAFT);
