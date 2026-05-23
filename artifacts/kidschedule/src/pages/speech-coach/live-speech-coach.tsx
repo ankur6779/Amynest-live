@@ -1,6 +1,7 @@
 // audit-block-ignore-start -- immersive Speech Coach uses intentional neon dark UI accents.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
+import { AppLink } from "@/components/app-link";
 import { getAuth } from "firebase/auth";
 import {
   ArrowLeft,
@@ -460,11 +461,11 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
       <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
       <div className="relative mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-4">
         <header className="flex items-center gap-3">
-          <Link href="/speech-coach">
+          <AppLink href="/speech-coach" replace source="live-speech-coach-back">
             <Button variant="ghost" size="icon" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
               <ArrowLeft className="h-5 w-5" />
             </Button>
-          </Link>
+          </AppLink>
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200/80">Live AI Speech Coach</p>
             <h1 className="truncate font-quicksand text-xl font-black">{child.name}'s voice session</h1>
@@ -577,11 +578,11 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
                 <RotateCcw className="h-4 w-4" />
                 New Session
               </Button>
-              <Link href="/speech-coach">
+              <AppLink href="/speech-coach" replace source="live-speech-coach-complete">
                 <Button type="button" variant="ghost" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
                   Back to Speech Coach
                 </Button>
-              </Link>
+              </AppLink>
             </div>
           )}
         </section>
@@ -607,9 +608,9 @@ function EmptyFullScreen({ title, body }: { title: string; body: string }) {
           <AmyIcon size={56} ring bounce />
           <h1 className="font-quicksand text-xl font-black">{title}</h1>
           <p className="text-sm text-white/65">{body}</p>
-          <Link href="/parenting-hub">
+          <AppLink href="/parenting-hub" replace source="live-speech-coach-empty">
             <Button className="rounded-full">Back to Parent Hub</Button>
-          </Link>
+          </AppLink>
         </CardContent>
       </Card>
     </main>
@@ -644,9 +645,9 @@ export default function LiveSpeechCoachPage() {
               <Link href="/children/new">
                 <Button className="rounded-full">Add Child</Button>
               </Link>
-              <Link href="/speech-coach">
+              <AppLink href="/speech-coach" replace source="live-speech-coach-ineligible">
                 <Button variant="ghost" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">Back</Button>
-              </Link>
+              </AppLink>
             </div>
           </CardContent>
         </Card>

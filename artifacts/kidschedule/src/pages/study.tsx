@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
+import { useAppNavigate } from "@/components/app-link";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import {
   PLAY_CATEGORIES, BASIC_SUBJECTS, ADVANCED_SUBJECTS,
@@ -56,7 +57,7 @@ type View =
 
 export default function StudyPage() {
   const { t } = useTranslation();
-  const [, navigate] = useLocation();
+  const { navigate } = useAppNavigate();
   const { data: children, isLoading } = useListChildren({
     query: { queryKey: getListChildrenQueryKey() },
   });
@@ -87,7 +88,7 @@ export default function StudyPage() {
   const goBack = () => {
     if (view.kind === "play-home" || view.kind === "study-home") {
       if (list.length > 1) setView({ kind: "child-pick" });
-      else navigate("/parenting-hub");
+      else navigate("/parenting-hub", { replace: true, source: "study-back" });
       return;
     }
     if (view.kind === "play-cat" || view.kind === "study-subject") {
@@ -104,7 +105,7 @@ export default function StudyPage() {
       setView({ kind: "study-home", childId: view.childId, mode: view.mode });
       return;
     }
-    navigate("/parenting-hub");
+    navigate("/parenting-hub", { replace: true, source: "study-back" });
   };
 
   return (

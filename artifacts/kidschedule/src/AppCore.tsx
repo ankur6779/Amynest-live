@@ -51,6 +51,7 @@ import { AmyVoiceProvider } from "@/contexts/amy-voice-provider";
 import { AppInitGate } from "@/components/app-init-gate";
 import { CapacitorIosAuthPreload } from "@/components/capacitor-ios-auth-preload";
 import { CapacitorRoutePreload } from "@/components/capacitor-route-preload";
+import { NavigationHistoryGuard } from "@/components/navigation-history-guard";
 import { isCapacitorIosShell } from "@/lib/device-lite";
 import { devLog } from "@/lib/dev-log";
 import { initCapacitorOta } from "@/lib/capacitor-ota";
@@ -409,6 +410,7 @@ function AppRoutes() {
             <GiftAttributionBridge />
             <FcmForegroundHandler />
             <NotificationDeepLinkBridge />
+            <NavigationHistoryGuard />
             <Suspense fallback={<RouteLoadingShell />}>
             <Switch>
           <Route path="/" component={HomeRedirect} />
@@ -460,8 +462,12 @@ function AppRoutes() {
           <Route path="/life-skills" component={LifeSkillsRoute} />
           <Route path="/speech-coach/live" component={LiveSpeechCoachRoute} />
           <Route path="/speech-coach" component={SpeechCoachRoute} />
-          <Route path="/parenting-hub/speech-coach/live" component={LiveSpeechCoachRoute} />
-          <Route path="/parenting-hub/speech-coach" component={SpeechCoachRoute} />
+          <Route path="/parenting-hub/speech-coach/live">
+            <Redirect to="/speech-coach/live" replace />
+          </Route>
+          <Route path="/parenting-hub/speech-coach">
+            <Redirect to="/speech-coach" replace />
+          </Route>
           <Route path="/kids-control-center" component={KidsControlCenterRoute} />
           <Route path="/study" component={StudyRoute} />
           <Route path="/event-prep" component={EventPrepRoute} />

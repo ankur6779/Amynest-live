@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { AppLink } from "@/components/app-link";
+import { smartBack } from "@/lib/safe-navigation";
 import { ArrowLeft, Home, Users, Calendar, Star, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, Trophy, MessageSquarePlus } from "lucide-react";
 import { useClerk, useUser } from "@/lib/firebase-auth-hooks";
 import { LayoutMobileMenu } from "@/components/layout-mobile-menu";
@@ -196,15 +198,7 @@ export function Layout({
     }
   };
   const handleBack = () => {
-    try {
-      if (window.history.length > 1) {
-        window.history.back();
-        return;
-      }
-    } catch (err) {
-      console.error("[amynest:nav] history back failed", err);
-    }
-    setLocation("/dashboard");
+    smartBack(setLocation, location, "layout-header-back");
   };
   return (
     <div className="app-shell main-container relative w-full max-w-full min-w-0 bg-background overflow-x-clip box-border">
@@ -324,10 +318,11 @@ export function Layout({
                 const isActive = safePathStartsWithSegment(location, item.href);
                 if (item.center) {
                   return (
-                    <Link
+                    <AppLink
                       key={item.href}
                       href={item.href}
-                      onPointerDown={() => prefetchRouteChunk(item.href)}
+                      tabNav
+                      source="bottom-nav-center"
                       data-tour="amy-coach"
                       className="relative flex flex-col items-center justify-end -translate-y-5"
                     >
@@ -339,14 +334,15 @@ export function Layout({
                       <span className="mt-1 text-[10px] font-semibold text-muted-foreground">
                         {t(item.labelKey)}
                       </span>
-                    </Link>
+                    </AppLink>
                   );
                 }
                 return (
-                  <Link
+                  <AppLink
                     key={item.href}
                     href={item.href}
-                    onPointerDown={() => prefetchRouteChunk(item.href)}
+                    tabNav
+                    source="bottom-nav"
                     data-tour={
                       item.href === "/dashboard"
                         ? "dashboard"
@@ -365,7 +361,7 @@ export function Layout({
                     {isActive ? (
                       <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-muted" />
                     ) : null}
-                  </Link>
+                  </AppLink>
                 );
               })}
             </div>

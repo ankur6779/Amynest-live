@@ -1,10 +1,35 @@
 /**
- * Navigation guards for PWA stress — debounce, double-click prevention, safe wouter paths.
+ * Navigation guards for PWA stress — debounce, dedup, replace rules, cycle prevention.
  */
-import { logNavError } from "@/lib/navigation-log";
+import { useCallback } from "react";
+import { useLocation } from "wouter";
+import { logNavError, logNavEvent } from "@/lib/navigation-log";
+import {
+  getParentRoute,
+  getPreviousRoute,
+  isSameRoute,
+  isTabRootRoute,
+  normalizeRoutePath,
+  recordRouteTransition,
+  shouldReplaceNavigation,
+  wouldCreateCycle,
+  type NavMethod,
+} from "@/lib/navigation-stack";
 
 const DEFAULT_DEBOUNCE_MS = 300;
 const navInFlight = new Map<string, number>();
+
+export type AppNavigateOptions = {
+  replace?: boolean;
+  /** Force push even when replace heuristics would apply */
+  push?: boolean;
+  source?: string;
+};
+
+type NavigateFn = (
+  to: string,
+  options?: { replace?: boolean; state?: unknown },
+) => void;
 
 /** Returns false if the same route was triggered within `debounceMs`. */
 export function shouldAllowNav(
@@ -34,6 +59,106 @@ export function runSafeNavAction(
 
 /** Safe href for wouter Link — never pass undefined. */
 export function safeHref(href: string | null | undefined, fallback = "/dashboard"): string {
-  if (typeof href === "string" && href.startsWith("/")) return href;
+  if (typeof href === "string" && href.startsWith("/")) return normalizeRoutePath(href);
   return fallback;
+}
+
+export function resolveNavMethod(
+  from: string,
+  to: string,
+  options?: AppNavigateOptions,
+): NavMethod {
+  if (options?.push) return "push";
+  if (options?.replace || shouldReplaceNavigation(from, to)) return "replace";
+  if (wouldCreateCycle(from, to)) return "replace";
+  return "push";
+}
+
+export function appNavigate(
+  navigate: NavigateFn,
+  from: string,
+  to: string,
+  options?: AppNavigateOptions,
+): boolean {
+  const target = normalizeRoutePath(to);
+  const current = normalizeRoutePath(from);
+
+  if (isSameRoute(current, target)) {
+    logNavEvent("nav-skip-duplicate", { from: current, to: target, source: options?.source });
+    return false;
+  }
+
+  const method = resolveNavMethod(current, target, options);
+  const replace = method === "replace";
+
+  logNavEvent(replace ? "nav-replace" : "nav-push", {
+    from: current,
+    to: target,
+    source: options?.source,
+  });
+
+  recordRouteTransition(current, target, replace ? "replace" : "push");
+  navigate(target, { replace });
+  return true;
+}
+
+export function smartBack(
+  navigate: NavigateFn,
+  current: string,
+  source = "smart-back",
+): void {
+  const currentNorm = normalizeRoutePath(current);
+  const previous = getPreviousRoute();
+
+  logNavEvent("nav-back", { from: currentNorm, previous, source });
+
+  if (typeof window !== "undefined" && window.history.length > 1) {
+    const wouldCycle =
+      previous != null && wouldCreateCycle(currentNorm, previous);
+    if (!wouldCycle) {
+      try {
+        window.history.back();
+        return;
+      } catch (err) {
+        logNavError("history-back", err, { from: currentNorm, source });
+      }
+    }
+  }
+
+  const parent = getParentRoute(currentNorm);
+  if (parent) {
+    appNavigate(navigate, currentNorm, parent, { replace: true, source });
+    return;
+  }
+
+  if (!isTabRootRoute(currentNorm)) {
+    appNavigate(navigate, currentNorm, "/dashboard", { replace: true, source });
+    return;
+  }
+
+  logNavEvent("nav-back-at-root", { route: currentNorm, source });
+}
+
+export function useAppNavigate() {
+  const [location, navigate] = useLocation();
+
+  const go = useCallback(
+    (to: string, options?: AppNavigateOptions) => {
+      runSafeNavAction(`${location}->${to}`, () => {
+        appNavigate(navigate, location, to, options);
+      });
+    },
+    [location, navigate],
+  );
+
+  const back = useCallback(
+    (source?: string) => {
+      runSafeNavAction(`back:${location}`, () => {
+        smartBack(navigate, location, source);
+      });
+    },
+    [location, navigate],
+  );
+
+  return { location, navigate: go, back };
 }

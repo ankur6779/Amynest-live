@@ -23,7 +23,7 @@ const CATEGORY_ROUTES: Record<string, string> = {
   good_night:        "/routines",
   parenting_tips:    "/parenting-hub",
   story_time:        "/parenting-hub",
-  phonics:           "/parenting-hub/speech-coach",
+  phonics:           "/speech-coach",
   learning_activity: "/study",
   milestone:         "/progress",
 };
