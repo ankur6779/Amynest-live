@@ -648,7 +648,7 @@ export default function AICoachPage() {
   const totalMatches = useMemo(() => filteredCategories.reduce((n, c) => n + c.items.length, 0), [filteredCategories]);
   const selectedGoal = ALL_GOALS.find(g => g.id === goalId);
 
-  // Free-tier gate: parents may COMPLETE exactly ONE coach topic for free.
+  // Free-tier gate: parents may COMPLETE up to TWO coach topics for free.
   // The free allowance is consumed only when a topic plan is successfully
   // shown. Picking a goal that is never finished does NOT burn it.
   const coachUsage = useSectionUsage("amy_coach");
@@ -660,9 +660,10 @@ export default function AICoachPage() {
   const getGoalAccess = useCallback((goalId: string): GoalAccess => {
     if (coachUsage.isPremium) return "open";
     if (!FREE_GOAL_IDS.has(goalId)) return "locked";
+    if (coachUsage.blockUsedIds.includes(goalId)) return "open";
     if (coachUsage.fullyUsed) return "locked";
     return "try-free";
-  }, [coachUsage.isPremium, coachUsage.fullyUsed]);
+  }, [coachUsage.isPremium, coachUsage.blockUsedIds, coachUsage.fullyUsed]);
 
   // ─── Resume session: detect ?resume=<sessionId>, load plan + feedback ────
   useEffect(() => {
@@ -741,8 +742,12 @@ export default function AICoachPage() {
       openPaywall("coach_locked");
       return;
     }
-    // Free goal but free try already used → paywall
-    if (!coachUsage.isPremium && coachUsage.fullyUsed) {
+    // Free goal but quota exhausted and not a previously completed topic → paywall
+    if (
+      !coachUsage.isPremium &&
+      coachUsage.fullyUsed &&
+      !coachUsage.blockUsedIds.includes(id)
+    ) {
       openPaywall("coach_locked");
       return;
     }
@@ -770,7 +775,7 @@ export default function AICoachPage() {
         setFeedbackByWin({});
         setPhase("result");
         // Static infant plan renders immediately — counts as completion.
-        if (!coachUsage.isPremium) coachUsage.markBlockUsed("completed");
+        if (!coachUsage.isPremium) coachUsage.markBlockUsed(id);
         return;
       }
       // Fallback to the legacy 1-page view if the problem has no wins yet.
@@ -901,7 +906,7 @@ export default function AICoachPage() {
       setSessionId(data.sessionId);
       setProgressWinCount(data.plan.wins.length);
       setPhase("result");
-      if (!coachUsage.isPremium) coachUsage.markBlockUsed("completed");
+      if (!coachUsage.isPremium && goalId) coachUsage.markBlockUsed(goalId);
     };
 
     const buildViaProgressive = async (body: string): Promise<void> => {
