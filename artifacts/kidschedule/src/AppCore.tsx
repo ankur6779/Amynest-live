@@ -50,6 +50,7 @@ import { OnboardingStatusProvider, useOnboardingStatus } from "@/contexts/onboar
 import { AmyVoiceProvider } from "@/contexts/amy-voice-provider";
 import { AppInitGate } from "@/components/app-init-gate";
 import { CapacitorIosAuthPreload } from "@/components/capacitor-ios-auth-preload";
+import { CapacitorRoutePreload } from "@/components/capacitor-route-preload";
 import { isCapacitorIosShell } from "@/lib/device-lite";
 import { devLog } from "@/lib/dev-log";
 import { initCapacitorOta } from "@/lib/capacitor-ota";
@@ -402,6 +403,7 @@ function AppRoutes() {
             <ClientTelemetryBootstrap />
             <OAuthRedirectHandler />
             <CapacitorIosAuthPreload />
+            <CapacitorRoutePreload />
             <QueryClientCacheInvalidator />
             <ReferralAttributionBridge />
             <GiftAttributionBridge />

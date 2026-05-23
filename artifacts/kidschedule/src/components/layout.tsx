@@ -25,6 +25,7 @@ import { NotificationPromptModal } from "@/components/notification-prompt-modal"
 import { SpotlightTour } from "@/components/spotlight-tour";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAppHeaderHeight } from "@/hooks/use-app-header-height";
+import { prefetchRouteChunk } from "@/lib/route-chunk-preload";
 function SmartParentBadge({
   className = ""
 }: {
@@ -324,6 +325,7 @@ export function Layout({
                     <Link
                       key={item.href}
                       href={item.href}
+                      onPointerDown={() => prefetchRouteChunk(item.href)}
                       data-tour="amy-coach"
                       className="relative flex flex-col items-center justify-end -translate-y-5"
                     >
@@ -342,6 +344,7 @@ export function Layout({
                   <Link
                     key={item.href}
                     href={item.href}
+                    onPointerDown={() => prefetchRouteChunk(item.href)}
                     data-tour={
                       item.href === "/dashboard"
                         ? "dashboard"

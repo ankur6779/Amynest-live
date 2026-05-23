@@ -25,6 +25,7 @@ import {
   getUserEmail,
   getUserInitials,
 } from "@/lib/safe-user-display";
+import { prefetchRouteChunk } from "@/lib/route-chunk-preload";
 
 function SmartParentBadge({ className = "" }: { className?: string }) {
   const { t } = useTranslation();
@@ -60,6 +61,7 @@ function MenuItems({
           <Link
             key={item.href}
             href={safeHref(item.href)}
+            onPointerDown={() => prefetchRouteChunk(item.href)}
             onClick={() => {
               runSafeNavAction(item.href, () => {
                 logNavEvent("nav-route", { href: item.href, from: location });
