@@ -58,6 +58,7 @@ import debugRouter from "./debug";
 import authRouter from "./auth";
 import environmentRouter from "./environment";
 import userFeedbackRouter from "./user-feedback";
+import audioHealthRouter from "./audio-health";
 import otaRouter from "./ota";
 import contentOrchestrationRouter from "./content-orchestration";
 import eventPrepRouter from "./event-prep";
@@ -150,6 +151,7 @@ router.use(speechRouter);
 router.use(debugRouter);
 router.use(environmentRouter);
 router.use(userFeedbackRouter);
+router.use(audioHealthRouter);
 router.use(contentOrchestrationRouter);
 router.use(eventPrepRouter);
 

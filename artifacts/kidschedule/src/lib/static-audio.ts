@@ -1,6 +1,7 @@
 import audioMap from "@/data/static-audio-map.json";
 import { getApiUrl } from "@/lib/api";
 import { isAmyVoiceAudioDebugEnabled, logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
+import { validateAudioBlob } from "@/lib/amy-voice-audio-start";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { audioManager } from "@/lib/audio-manager";
 import {
@@ -534,7 +535,9 @@ async function createStaticPlaybackElementFromBlob(
     });
     if (!res.ok) return null;
     const blob = await res.blob();
-    if (blob.size < 64) {
+    try {
+      validateAudioBlob(blob);
+    } catch {
       logAmyVoiceDiag("blob_empty", { bytes: blob.size });
       return null;
     }

@@ -103,6 +103,8 @@ const DebugParityPage = lazyPage(() => import("@/pages/debug-parity"));
 const EnvironmentPage = lazyPage(() => import("@/pages/environment"));
 const FeedbackPage = lazyPage(() => import("@/pages/feedback"));
 const AdminFeedbackPage = lazyPage(() => import("@/pages/admin-feedback"));
+const AdminAudioHealthPage = lazyPage(() => import("@/pages/admin-audio-health"));
+const AdminDashboardPage = lazyPage(() => import("@/pages/admin-dashboard"));
 
 import { NativeStartupPermissionsGateLazy } from "@/components/native-startup-permissions-gate-lazy";
 import { PwaAndroidPermissionsGateLazy } from "@/components/pwa-android-permissions-gate-lazy";
@@ -113,6 +115,7 @@ import { getAppApiBaseOrigin } from "@/lib/api";
 import { waitForIdToken } from "@/lib/auth-token";
 import { DebugProvider } from "@/contexts/debug-context";
 import { DebugPanel } from "@/components/debug-panel";
+import { AudioHealthOverlay } from "@/components/audio-health-overlay";
 import { FcmForegroundHandler } from "@/components/fcm-foreground-handler";
 import { useNotificationDeepLink } from "@/hooks/use-notification-deep-link";
 import { PaywallProvider } from "@/contexts/paywall-context";
@@ -297,6 +300,8 @@ const RewardsRoute = makeProtectedRoute(RewardsPage);
 const EnvironmentRoute = makeProtectedRoute(EnvironmentPage);
 const FeedbackRoute = makeProtectedRoute(FeedbackPage);
 const AdminFeedbackRoute = makeProtectedRoute(AdminFeedbackPage);
+const AdminAudioHealthRoute = makeProtectedRoute(AdminAudioHealthPage);
+const AdminDashboardRoute = makeProtectedRoute(AdminDashboardPage);
 
 function FirebaseAuthBootstrap() {
   const { getToken, isSignedIn } = useAuth();
@@ -329,8 +334,16 @@ function ClientTelemetryBootstrap() {
     };
     flush();
     const id = setInterval(flush, 30_000);
+
+    let stopOpsPolling: (() => void) | undefined;
+    void import("@/lib/admin-audio-ops").then(({ startAdminAudioOpsPolling, stopAdminAudioOpsPolling }) => {
+      startAdminAudioOpsPolling();
+      stopOpsPolling = stopAdminAudioOpsPolling;
+    });
+
     return () => {
       clearInterval(id);
+      stopOpsPolling?.();
     };
   }, [isSignedIn]);
 
@@ -487,6 +500,8 @@ function AppRoutes() {
           <Route path="/environment" component={EnvironmentRoute} />
           <Route path="/feedback" component={FeedbackRoute} />
           <Route path="/admin/feedback" component={AdminFeedbackRoute} />
+          <Route path="/admin/dashboard" component={AdminDashboardRoute} />
+          <Route path="/admin/audio-health" component={AdminAudioHealthRoute} />
           <Route component={RouteFailedPage} />
             </Switch>
             </Suspense>
@@ -494,6 +509,7 @@ function AppRoutes() {
             <SubscriptionEventBridge />
             <Toaster />
             <DebugPanel />
+            <AudioHealthOverlay />
           </PaywallProvider>
           </DebugProvider>
         </TooltipProvider>
@@ -521,6 +537,9 @@ function AppCoreMountMarker() {
     devLog("APPCORE MOUNTED (init once)");
     void initCapacitorOta();
     installTtsGestureListener();
+    void import("@/lib/admin-audio-ops").then(({ startAdminAudioOpsPolling }) => {
+      startAdminAudioOpsPolling();
+    });
     try { (window as Window & { __amynestAppCoreReady?: boolean }).__amynestAppCoreReady = true; } catch (_e) { /* best-effort */ }
     bootMark("appcore-mounted");
   }, []);

@@ -69,7 +69,22 @@ import {
   mapPlayErrorToSpeakResult,
   type AmyVoicePipelineContext,
 } from "@/lib/amy-voice-pipeline";
+import {
+  isSilentSpeakLayer,
+  playControllerEmergencyAudio,
+  resetGuardFailures,
+  shouldBypassAudioGuard,
+  trackGuardFailure,
+  type PlaybackFailureFeedback,
+} from "@/lib/amy-voice-audio-guard";
 import { audioManager } from "@/lib/audio-manager";
+import {
+  logAudioHealthFailure,
+  logAudioHealthFallback,
+  logAudioHealthSuccess,
+  mapAmyLayerToHealthLayer,
+  startAudioHealthSpeak,
+} from "@/lib/audio-health";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import {
   resolvePlaybackMode,
@@ -108,7 +123,7 @@ export interface SpeakOptions {
 
 export type SpeakResult =
   | { success: true; layer?: AmyVoiceLayer }
-  | { success: false; error: string; layer?: AmyVoiceLayer };
+  | { success: false; error: string; layer?: AmyVoiceLayer; handled?: boolean };
 
 export type AmyVoiceControllerSnapshot = {
   status: AmyVoiceStatus;
@@ -122,6 +137,8 @@ export interface AmyVoiceRuntime {
   modelId?: string;
   playbackRate?: number;
   onFinished?: () => void;
+  /** Surface retry when pipeline + emergency both fail. */
+  onPlaybackFailure?: (feedback: PlaybackFailureFeedback) => void;
   /** When false, onFinished and UI-facing errors are suppressed for this hook instance. */
   isMounted?: () => boolean;
 }
@@ -239,6 +256,69 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
     this.publish(snapshotFromStatus("idle", null, requestId));
   }
 
+  private async handleAudioFailure(
+    result: SpeakResult,
+    ctx: {
+      requestId: number;
+      rawText: string;
+      opts?: SpeakOptions;
+      runtime: AmyVoiceRuntime;
+    },
+  ): Promise<SpeakResult> {
+    const error = "error" in result ? result.error : "tts_failed";
+    const layer = "layer" in result ? result.layer : undefined;
+
+    if (shouldBypassAudioGuard(error)) {
+      return { success: false, error, layer };
+    }
+
+    trackGuardFailure();
+    logTts({ event: "audio_failure", error, layer: result.layer });
+    logAudioHealthFailure(error, mapAmyLayerToHealthLayer(layer));
+
+    if (isCurrentSpeakRequest(ctx.requestId)) {
+      try {
+        const emergencyResult = await playControllerEmergencyAudio();
+        if (emergencyResult.success) {
+          resetGuardFailures();
+          logTts({ event: "emergency_success" });
+          logTts({ event: "final_guard", status: "fallback", error });
+          logAudioHealthFallback(
+            mapAmyLayerToHealthLayer(layer) ?? "api",
+            "emergency",
+          );
+          logAudioHealthSuccess({
+            layer: "emergency",
+            fallbackUsed: true,
+          });
+          if (!ctx.runtime.isMounted || ctx.runtime.isMounted()) {
+            this.transition(ctx.requestId, "idle", null);
+          }
+          return emergencyResult;
+        }
+      } catch (err) {
+        logTts({
+          event: "emergency_failed",
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    const retry = () => this.runSpeak(ctx.rawText, ctx.opts, ctx.runtime);
+
+    if (!ctx.runtime.isMounted || ctx.runtime.isMounted()) {
+      ctx.runtime.onPlaybackFailure?.({
+        message: "Audio failed. Tap to retry.",
+        error,
+        retry,
+      });
+      this.transition(ctx.requestId, "idle", error);
+    }
+
+    logTts({ event: "final_guard", status: "error", error });
+    return { success: false, error, layer, handled: true };
+  }
+
   /** User intent: speak text. Latest tap wins. */
   speak(
     rawText: string,
@@ -314,6 +394,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
     }
     logTts({ reason: "speak_start", requestId, textPreview: text.slice(0, 80) });
 
+    startAudioHealthSpeak(opts);
     recordTtsUserGesture();
     this.stopCurrentAudio();
     this.abortController = new AbortController();
@@ -487,11 +568,29 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       if (!result.success) {
         const err = "error" in result ? result.error : "tts_failed";
         logTts({ reason: "speak_failed", requestId, error: err, layer: result.layer });
-        if (!runtime.isMounted || runtime.isMounted()) {
-          this.transition(requestId, "idle", err);
-        }
-        return result;
+        return this.handleAudioFailure(result, {
+          requestId,
+          rawText,
+          opts,
+          runtime,
+        });
       }
+
+      if (isSilentSpeakLayer(result.layer)) {
+        logTts({ reason: "silent_layer", requestId, layer: result.layer });
+        return this.handleAudioFailure(
+          { success: false, error: "silent_layer", layer: result.layer },
+          { requestId, rawText, opts, runtime },
+        );
+      }
+
+      resetGuardFailures();
+      logTts({ event: "final_guard", status: "success" });
+      logAudioHealthSuccess({
+        layer: mapAmyLayerToHealthLayer(result.layer),
+        fallbackUsed: isAmyVoiceFallbackLayer(result.layer),
+        totalDurationMs: durationMs,
+      });
 
       if (
         result.layer !== "text_visual" &&
@@ -523,10 +622,12 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       const mapped = mapPlayErrorToSpeakResult(err);
       const errMsg = mapped.success ? "tts_failed" : mapped.error;
       logTts({ reason: "speak_error", requestId, error: errMsg });
-      if (!runtime.isMounted || runtime.isMounted()) {
-        this.transition(requestId, "idle", errMsg);
-      }
-      return mapped;
+      return this.handleAudioFailure(mapped, {
+        requestId,
+        rawText,
+        opts,
+        runtime,
+      });
     } finally {
       if (isCurrentSpeakRequest(requestId) && this.snapshot.status !== "idle") {
         this.transition(requestId, "idle", this.snapshot.error);

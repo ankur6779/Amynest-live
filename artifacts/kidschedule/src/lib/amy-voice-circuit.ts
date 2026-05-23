@@ -1,6 +1,7 @@
 /** TTS API circuit breaker — adaptive duration from recent failure rate. */
 
 import { getAdaptiveApiCircuitMs } from "@/lib/amy-voice-adaptive";
+import { isAdminApiDisabled } from "@/lib/admin-audio-ops";
 
 let ttsApiCircuitUntil = 0;
 let consecutiveTtsFailures = 0;
@@ -49,7 +50,13 @@ export function resetTtsApiCircuit(): void {
 }
 
 export function shouldSkipLiveTtsApi(): boolean {
-  return isAmyVoiceOffline() || isTtsApiCircuitOpen();
+  return isAdminApiDisabled() || isAmyVoiceOffline() || isTtsApiCircuitOpen();
+}
+
+/** Force API layer offline after repeated audible-start failures. */
+export function forceOpenTtsApiCircuit(durationMs: number): void {
+  consecutiveTtsFailures = TTS_CIRCUIT_FAILURE_THRESHOLD;
+  ttsApiCircuitUntil = Date.now() + Math.max(durationMs, 1_000);
 }
 
 export function getTtsApiCircuitRemainingMs(): number {
