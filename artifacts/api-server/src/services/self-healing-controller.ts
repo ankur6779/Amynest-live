@@ -18,6 +18,7 @@ import {
   updateHealthLatches,
 } from "./heal-hysteresis.js";
 import { healLog, scheduleJitteredInterval, tryHealAction, tryHealRecoveryAction } from "./heal-stability-guard.js";
+import { evaluateSelfHealAlerts } from "./admin-alert-hooks.js";
 import {
   collectSystemMetrics,
   getSystemHealthState,
@@ -274,6 +275,10 @@ async function runRecoveryCycle(): Promise<void> {
   ) {
     disableSafeMode();
   }
+
+  if (metrics) {
+    await evaluateSelfHealAlerts(metrics);
+  }
 }
 
 async function runMetricsTick(): Promise<void> {
@@ -281,6 +286,7 @@ async function runMetricsTick(): Promise<void> {
     const metrics = await collectSystemMetrics();
     updateSystemHealthFromMetrics(metrics);
     evaluateAutoActions(metrics);
+    await evaluateSelfHealAlerts(metrics);
   } catch (err) {
     healLog(
       "error",
