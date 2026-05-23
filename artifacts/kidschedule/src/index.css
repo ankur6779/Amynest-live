@@ -667,6 +667,40 @@ body.no-tabbar .app-scroll {
   top: 0;
   z-index: 60;
   flex-shrink: 0;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: hsl(var(--background) / 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.app-header__bar {
+  display: flex;
+  height: 3.5rem;
+  min-height: 3.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.375rem;
+  padding: 0 0.75rem;
+}
+
+/*
+ * Installed Android PWA: keep the header fixed so Chrome pull-to-refresh stays
+ * on the scroll container; offset page content with padding-top (not margin).
+ */
+@media (max-width: 767px) {
+  html.amynest-android-shell.amynest-pwa-standalone .app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 60;
+  }
+
+  html.amynest-android-shell.amynest-pwa-standalone
+    .app-screen-content:not(.app-screen-content--no-offset) {
+    padding-top: calc(var(--app-header-height, 3.5rem) + var(--app-header-content-gap, 8px));
+  }
 }
 
 .app-footer {
@@ -871,6 +905,8 @@ body.no-tabbar .app-scroll {
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left,   0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --app-header-height: 3.5rem;
+  --app-header-content-gap: 8px;
 }
 
 /* When running as a standalone PWA or inside Capacitor, avoid notch overlap */
