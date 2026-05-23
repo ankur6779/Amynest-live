@@ -27,6 +27,10 @@ export const HUB_MODULE_PREFIXES = [
   "/study",
   "/life-skills",
   "/school-morning-flow",
+  "/smart-math-tricks",
+  "/abacus",
+  "/spelling",
+  "/olympiad",
 ];
 
 const PARENT_ROUTE: Record<string, string> = {
@@ -39,6 +43,10 @@ const PARENT_ROUTE: Record<string, string> = {
   "/study": "/parenting-hub",
   "/life-skills": "/parenting-hub",
   "/school-morning-flow": "/parenting-hub",
+  "/smart-math-tricks": "/parenting-hub",
+  "/abacus": "/parenting-hub",
+  "/spelling": "/parenting-hub",
+  "/olympiad": "/parenting-hub",
 };
 
 const MAX_STACK = 8;

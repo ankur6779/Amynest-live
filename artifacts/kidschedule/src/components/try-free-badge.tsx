@@ -2,8 +2,8 @@ import { Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 /**
- * Small "Try Free" pill shown on Parent Hub features the user hasn't used
- * yet (and isn't premium). Tells them this feature is free for one use.
+ * Small "Try Free" pill shown on Parent Hub features that still have
+ * lifetime free opens remaining (and the user isn't premium).
  */
 export function TryFreeBadge({ className = "" }: { className?: string }) {
   const { t } = useTranslation();
