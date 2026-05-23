@@ -247,6 +247,9 @@ importers:
       '@workspace/family-routine':
         specifier: workspace:*
         version: link:../../lib/family-routine
+      '@workspace/gaming-rewards':
+        specifier: workspace:*
+        version: link:../../lib/gaming-rewards
       '@workspace/infant-hub':
         specifier: workspace:*
         version: link:../../lib/infant-hub
@@ -380,6 +383,9 @@ importers:
       '@capacitor/geolocation':
         specifier: ^6.1.1
         version: 6.1.1(@capacitor/core@6.2.1)
+      '@capacitor/haptics':
+        specifier: ^6.0.0
+        version: 6.0.3(@capacitor/core@6.2.1)
       '@capacitor/keyboard':
         specifier: ^6.0.0
         version: 6.0.4(@capacitor/core@6.2.1)
@@ -419,6 +425,9 @@ importers:
       '@workspace/family-routine':
         specifier: workspace:*
         version: link:../../lib/family-routine
+      '@workspace/gaming-rewards':
+        specifier: workspace:*
+        version: link:../../lib/gaming-rewards
       '@workspace/infant-hub':
         specifier: workspace:*
         version: link:../../lib/infant-hub
@@ -1119,6 +1128,9 @@ importers:
       '@opentelemetry/api':
         specifier: ^1.9.1
         version: 1.9.1
+      '@workspace/gaming-rewards':
+        specifier: workspace:*
+        version: link:../gaming-rewards
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0)
@@ -1157,6 +1169,8 @@ importers:
   lib/explainability: {}
 
   lib/family-routine: {}
+
+  lib/gaming-rewards: {}
 
   lib/infant-hub: {}
 
@@ -1864,6 +1878,11 @@ packages:
 
   '@capacitor/geolocation@6.1.1':
     resolution: {integrity: sha512-zR24reZqkb9farg+qVqR0+DdDYs05SqkiqxCENoPofk/QWD6AobcHKDZutwifqO66jK2rM0ECo8MvbQv4MUTyA==}
+    peerDependencies:
+      '@capacitor/core': ^6.0.0
+
+  '@capacitor/haptics@6.0.3':
+    resolution: {integrity: sha512-6yKF0+lRUZEEx1GDFWgnKHia974np7o1OgmRl/btL9cSMZh0TSDZTyDMH/qcy4AM39CfuIeLs4N4h5lwixXLuQ==}
     peerDependencies:
       '@capacitor/core': ^6.0.0
 
@@ -9399,6 +9418,10 @@ snapshots:
       tslib: 2.8.1
 
   '@capacitor/geolocation@6.1.1(@capacitor/core@6.2.1)':
+    dependencies:
+      '@capacitor/core': 6.2.1
+
+  '@capacitor/haptics@6.0.3(@capacitor/core@6.2.1)':
     dependencies:
       '@capacitor/core': 6.2.1
 

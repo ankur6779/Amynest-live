@@ -14,6 +14,11 @@ import {
 } from "@/lib/games";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
+import { useGamingWallet } from "@/hooks/use-gaming-wallet";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useAuth } from "@/lib/firebase-auth-hooks";
+import { unlockGamingGame, recordGamingPlay } from "@/lib/gaming-wallet-api";
+import { hapticGameSuccess } from "@/lib/game-haptics";
 import {
   getTotalPoints, addPoints, getRewards, saveRewards, redeemReward, getRedemptions,
   type Reward,
@@ -44,6 +49,9 @@ export default function GamesPage() {
   const [, setLocation] = useLocation();
   const { isPremium } = useSubscription();
   const hubUsage = useFeatureUsage();
+  const authFetch = useAuthFetch();
+  const { isSignedIn } = useAuth();
+  const { wallet: serverWallet, refresh: refreshWallet } = useGamingWallet();
   const [points, setPoints] = useState<number>(getTotalPoints());
   const [unlockedTick, setUnlockedTick] = useState(0);
   const [active, setActive] = useState<ActiveGame>(null);
@@ -59,12 +67,12 @@ export default function GamesPage() {
   // Re-sync points whenever modals close
   useEffect(() => { setPoints(getTotalPoints()); }, [active, showRedeem, unlockedTick]);
 
-  const playedToday = gamesPlayedToday();
-  const limit = dailyLimit(isPremium);
-  const limitHit = dailyLimitReached(isPremium);
+  const playedToday = serverWallet?.gamesPlayedToday ?? gamesPlayedToday();
+  const limit = serverWallet?.dailyLimit ?? dailyLimit(isPremium);
+  const limitHit = playedToday >= limit;
   const suggestion = useMemo(() => amySuggestion(isPremium), [unlockedTick, active, isPremium]);
   const weekly = useMemo(() => getWeeklyGameSummary(), [unlockedTick, active]);
-  const routineStreak = getCachedRoutineStreak();
+  const routineStreak = serverWallet?.routineStreakDays ?? getCachedRoutineStreak();
   const suggestedGame = suggestion.gameId
     ? GAMES.find((g) => g.id === suggestion.gameId)
     : undefined;
@@ -75,15 +83,25 @@ export default function GamesPage() {
     setUnlockedTick((tick) => tick + 1);
   };
 
-  const onUnlock = (g: GameDef) => {
+  const onUnlock = async (g: GameDef) => {
     setError(null);
     if (requiresPremiumToPlay(g) && !isPremium) {
       setError(t("screens.games.premium_required"));
       return;
     }
-    const r = unlockGame(g.id, { isPremium });
-    if (!r.ok) setError(r.reason ?? t("screens.games.could_not_unlock"));
-    else setPoints(getTotalPoints());
+    try {
+      if (isSignedIn) {
+        await unlockGamingGame(authFetch, g.id);
+        setPoints(getTotalPoints());
+        await refreshWallet();
+      } else {
+        const r = unlockGame(g.id, { isPremium });
+        if (!r.ok) setError(r.reason ?? t("screens.games.could_not_unlock"));
+        else setPoints(getTotalPoints());
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("screens.games.could_not_unlock"));
+    }
     setUnlockedTick((tick) => tick + 1);
   };
 
@@ -106,14 +124,30 @@ export default function GamesPage() {
     if (suggestedGame) onPlay(suggestedGame);
   };
 
-  const finishGame = (g: GameDef, score: number, total: number) => {
+  const finishGame = async (g: GameDef, score: number, total: number) => {
     const ratio = total === 0 ? 0 : score / total;
     const perfect = ratio >= 0.95;
-    const earned = perfect
+    let earned = perfect
       ? g.rewardMax
       : Math.max(g.rewardMin, Math.round(g.rewardMin + (g.rewardMax - g.rewardMin) * ratio));
-    recordPlay(g.id, score, total, perfect, earned);
+    try {
+      if (isSignedIn) {
+        const out = await recordGamingPlay(authFetch, { gameId: g.id, score, total });
+        earned = out.pointsEarned;
+        void hapticGameSuccess(out.perfect);
+        await refreshWallet();
+      } else {
+        recordPlay(g.id, score, total, perfect, earned);
+        void hapticGameSuccess(perfect);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("screens.games.limit_reached_msg", { count: limit }));
+      setActive(null);
+      return;
+    }
+    setPoints(getTotalPoints());
     setActive({ kind: "result", game: g, score, total, pointsEarned: earned, perfect });
+    setUnlockedTick((tick) => tick + 1);
   };
 
   // Group games by category for the grid
