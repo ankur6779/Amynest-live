@@ -226,6 +226,9 @@ importers:
       '@workspace/conflict-resolution':
         specifier: workspace:*
         version: link:../../lib/conflict-resolution
+      '@workspace/content-orchestration':
+        specifier: workspace:*
+        version: link:../../lib/content-orchestration
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
@@ -322,6 +325,9 @@ importers:
       thread-stream:
         specifier: 3.1.0
         version: 3.1.0
+      ws:
+        specifier: ^8.18.1
+        version: 8.20.1
       zod:
         specifier: 'catalog:'
         version: 3.25.76
@@ -341,6 +347,9 @@ importers:
       '@types/node-cron':
         specifier: ^3.0.11
         version: 3.0.11
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
       pino-pretty:
         specifier: ^13
         version: 13.1.3
@@ -4407,6 +4416,9 @@ packages:
 
   '@types/webxr@0.5.24':
     resolution: {integrity: sha512-h8fgEd/DpoS9CBrjEQXR+dIDraopAEfu4wYVNY2tEPwk60stPWhvZMf4Foo5FakuQ7HFZoa8WceaWFervK2Ovg==}
+
+  '@types/ws@8.18.1':
+    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
   '@types/yargs-parser@21.0.3':
     resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
@@ -12313,6 +12325,10 @@ snapshots:
 
   '@types/webxr@0.5.24': {}
 
+  '@types/ws@8.18.1':
+    dependencies:
+      '@types/node': 25.7.0
+
   '@types/yargs-parser@21.0.3':
     optional: true
 
@@ -17063,8 +17079,7 @@ snapshots:
   ws@7.5.10:
     optional: true
 
-  ws@8.20.1:
-    optional: true
+  ws@8.20.1: {}
 
   xcode@3.0.1:
     dependencies:
