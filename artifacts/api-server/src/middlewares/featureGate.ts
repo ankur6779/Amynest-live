@@ -38,6 +38,17 @@ export function featureGate(feature: FeatureKey) {
 
     const limit = FREE_FEATURE_LIMITS[feature];
     const newCount = await incrementFeatureUsage(userId, feature, 1);
+    if (newCount === 1) {
+      const auth = getAuth(req);
+      void import("../services/referralService.js")
+        .then(({ tryMarkReferralValidForUser }) =>
+          tryMarkReferralValidForUser(userId, {
+            emailVerified: auth.emailVerified,
+            phoneNumber: auth.phoneNumber,
+          }),
+        )
+        .catch(() => undefined);
+    }
     if (newCount > limit) {
       // Roll back the reservation — over the lifetime cap.
       await incrementFeatureUsage(userId, feature, -1).catch(() => undefined);

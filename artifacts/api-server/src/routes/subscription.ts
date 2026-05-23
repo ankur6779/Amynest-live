@@ -211,6 +211,8 @@ router.post("/subscription/webhook", async (req, res): Promise<void> => {
     product_id?: string;
     expiration_at_ms?: number;
     transaction_id?: string;
+    period_type?: string;
+    price?: number;
   };
 
   const userId = event.app_user_id ?? event.original_app_user_id;
@@ -231,11 +233,15 @@ router.post("/subscription/webhook", async (req, res): Promise<void> => {
         res.status(200).json({ ok: true, ignored: "unknown_plan", productId: event.product_id });
         return;
       }
+      const { revenueCatCountsForReferralPaid } = await import(
+        "../services/referralService.js"
+      );
       await activateSubscription(userId, plan, {
         provider: "revenuecat",
         periodEnd,
         providerCustomerId: userId,
         providerSubscriptionId: event.transaction_id,
+        countsForReferralPaid: revenueCatCountsForReferralPaid(event),
       });
       res.json({ ok: true, applied: { userId, plan } });
       return;

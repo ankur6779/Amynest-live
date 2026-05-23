@@ -1,6 +1,8 @@
 /**
  * Default API origins when `VITE_APP_API_ORIGIN` is unset.
  * Override per environment via repo-root `.env.development` / `.env.production`.
+ *
+ * Referral share links use `VITE_APP_WEB_ORIGIN` (see `lib/referral-links.ts`).
  */
 export const API_ORIGINS = {
   production: "https://amynest-backend-dykj.onrender.com",

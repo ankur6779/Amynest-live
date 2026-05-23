@@ -5,6 +5,7 @@ import {
   getReferralStats,
   listReferrals,
   tryGrantReferralReward,
+  tryMarkReferralValidForUser,
 } from "../services/referralService";
 import { listGiftTokens } from "../services/giftTokenService";
 
@@ -58,7 +59,8 @@ router.get("/referrals/me", async (req, res): Promise<void> => {
  * landing page query string.
  */
 router.post("/referrals/attribute", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
+  const auth = getAuth(req);
+  const userId = auth.userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
@@ -73,6 +75,11 @@ router.post("/referrals/attribute", async (req, res): Promise<void> => {
     res.status(400).json({ error: result.reason });
     return;
   }
+  // Self-heal race: child/feature may predate attribution.
+  await tryMarkReferralValidForUser(userId, {
+    emailVerified: auth.emailVerified,
+    phoneNumber: auth.phoneNumber,
+  });
   res.json({
     ok: true,
     alreadyAttributed: result.alreadyAttributed,

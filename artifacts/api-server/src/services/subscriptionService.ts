@@ -460,7 +460,14 @@ export async function startTrial(userId: string): Promise<Subscription> {
 export async function activateSubscription(
   userId: string,
   plan: Exclude<Plan, "free">,
-  opts: { provider?: "stripe" | "revenuecat" | "razorpay"; periodEnd?: Date; providerCustomerId?: string; providerSubscriptionId?: string } = {},
+  opts: {
+    provider?: "stripe" | "revenuecat" | "razorpay";
+    periodEnd?: Date;
+    providerCustomerId?: string;
+    providerSubscriptionId?: string;
+    /** When false, referred-user row is not promoted to paid (e.g. RevenueCat trial). */
+    countsForReferralPaid?: boolean;
+  } = {},
   dbExec: DbExec = db,
 ): Promise<Subscription> {
   const existing = await getOrCreateSubscription(userId, dbExec);
@@ -486,6 +493,13 @@ export async function activateSubscription(
       (existing.currentPeriodEnd &&
         existing.currentPeriodEnd.getTime() === opts.periodEnd.getTime()))
   ) {
+    const countsForReferralPaid = opts.countsForReferralPaid !== false;
+    try {
+      const { ensureReferralPaidMarked } = await import("./referralService");
+      await ensureReferralPaidMarked(userId, countsForReferralPaid);
+    } catch {
+      // best-effort
+    }
     return existing;
   }
   const [updated] = await dbExec
@@ -508,7 +522,9 @@ export async function activateSubscription(
   // connection. Failures here must not break activation, so swallow.
   try {
     const { markReferralPaid } = await import("./referralService");
-    await markReferralPaid(userId);
+    await markReferralPaid(userId, {
+      countsAsPaid: opts.countsForReferralPaid !== false,
+    });
   } catch {
     // best-effort
   }

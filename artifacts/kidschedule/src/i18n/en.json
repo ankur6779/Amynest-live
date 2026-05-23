@@ -1501,6 +1501,8 @@
       "your_referrals": "Your referrals",
       "no_referrals": "No referrals yet. Share your code to get started!",
       "friend_label": "Friend #{{id}}",
+      "joined_on": "Joined {{date}}",
+      "active_on": "Active {{date}}",
       "status_paid": "Paid",
       "status_active": "Active",
       "status_pending": "Pending",
