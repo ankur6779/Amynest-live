@@ -41,14 +41,14 @@ export function HubModulePageShell({
     return Number.isFinite(saved) && saved > 0 ? saved : null;
   });
 
-  const { data: children = [], isLoading } = useListChildren({
+  const { data: childProfiles = [], isLoading } = useListChildren({
     query: {
       queryKey: getListChildrenQueryKey(),
       refetchOnWindowFocus: true,
     },
   });
 
-  const childList = (children ?? []) as HubChild[];
+  const childList = (childProfiles ?? []) as HubChild[];
   const eligibleChildren = childList.filter((child) => {
     const totalAgeMonths = child.age * 12 + (child.ageMonths ?? 0);
     return filterChild ? filterChild(child, totalAgeMonths) : true;
