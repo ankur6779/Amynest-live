@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAmyVoice, type SpeakResult } from "@/hooks/use-amy-voice";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { prefetchLessonParagraphText } from "@/lib/amy-voice-pipeline-optimizer";
+import { prefetchLessonParagraph } from "@/lib/amy-voice-pipeline-optimizer";
+import {
+  assertLessonSpeakConsistency,
+  createAudioIdentity,
+  logLessonAudioIdentity,
+  type AudioIdentity,
+} from "@/lib/lesson-audio-identity";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
 const LESSON_AUDIBLE_LAYERS = new Set([
@@ -19,12 +25,15 @@ export interface UseLessonPlaybackOptions {
   modelId: string;
   playbackRate?: number;
   autoPlay?: boolean;
+  initialParagraphIdx?: number;
   onLessonComplete?: (lessonId: string) => void;
 }
 
 export interface UseLessonPlaybackResult {
   paragraphIdx: number;
+  uiIdentity: AudioIdentity | null;
   setParagraphIdx: (idx: number) => void;
+  jumpToParagraph: (idx: number) => void;
   intent: "idle" | "playing";
   playbackError: string | null;
   speaking: boolean;
@@ -33,6 +42,23 @@ export interface UseLessonPlaybackResult {
   play: () => void;
   pause: () => void;
   primeSpeakGesture: (text: string) => void;
+}
+
+function clampParagraphIdx(idx: number, length: number): number {
+  if (length <= 0) return 0;
+  if (idx < 0) return 0;
+  if (idx >= length) return 0;
+  return idx;
+}
+
+function identityForParagraph(
+  lessonId: string,
+  paragraphs: string[],
+  idx: number,
+): AudioIdentity | null {
+  const text = paragraphs[idx];
+  if (!text?.trim()) return null;
+  return createAudioIdentity(lessonId, idx, text);
 }
 
 /**
@@ -46,26 +72,42 @@ export function useLessonPlayback({
   modelId,
   playbackRate = 1,
   autoPlay = false,
+  initialParagraphIdx = 0,
   onLessonComplete,
 }: UseLessonPlaybackOptions): UseLessonPlaybackResult {
-  const [paragraphIdx, setParagraphIdx] = useState(0);
+  const [paragraphIdx, setParagraphIdxState] = useState(() =>
+    clampParagraphIdx(initialParagraphIdx, paragraphs.length),
+  );
   const [intent, setIntent] = useState<"idle" | "playing">("idle");
   const [playbackError, setPlaybackError] = useState<string | null>(null);
 
   const intentRef = useRef(intent);
   const paragraphIdxRef = useRef(paragraphIdx);
+  const lessonIdRef = useRef(lessonId);
+  const paragraphsRef = useRef(paragraphs);
   const playbackSessionRef = useRef(0);
   const skipParagraphEffectRef = useRef(false);
 
   intentRef.current = intent;
   paragraphIdxRef.current = paragraphIdx;
+  lessonIdRef.current = lessonId;
+  paragraphsRef.current = paragraphs;
+
+  const uiIdentity = identityForParagraph(lessonId, paragraphs, paragraphIdx);
+
+  const setParagraphIdx = useCallback(
+    (idx: number) => {
+      setParagraphIdxState(clampParagraphIdx(idx, paragraphs.length));
+    },
+    [paragraphs.length],
+  );
 
   const advanceParagraph = useCallback(
     (session: number) => {
       if (session !== playbackSessionRef.current) return;
       if (intentRef.current !== "playing") return;
 
-      setParagraphIdx((i) => {
+      setParagraphIdxState((i) => {
         if (i + 1 >= paragraphs.length) {
           intentRef.current = "idle";
           setIntent("idle");
@@ -118,17 +160,25 @@ export function useLessonPlayback({
 
   const speakParagraphAt = useCallback(
     (idx: number) => {
-      const txt = paragraphs[idx];
+      const activeLessonId = lessonIdRef.current;
+      const activeParagraphs = paragraphsRef.current;
+      const txt = activeParagraphs[idx];
       if (!txt?.trim()) {
         intentRef.current = "idle";
         setIntent("idle");
         return;
       }
 
+      const identity = createAudioIdentity(activeLessonId, idx, txt);
+      logLessonAudioIdentity(identity, { phase: "playback_start" });
+
       const session = ++playbackSessionRef.current;
-      void speak(txt, {
+      void speak(identity.text, {
         waitUntilEnd: true,
         lessonParagraph: true,
+        audioIdentity: identity,
+        lessonId: activeLessonId,
+        lessonParagraphIndex: idx,
         playbackMode: "full-required",
         onFinished: () => advanceParagraph(session),
       })
@@ -145,7 +195,7 @@ export function useLessonPlayback({
           );
         });
     },
-    [paragraphs, speak, advanceParagraph, handleSpeakResult, pauseVoice],
+    [speak, advanceParagraph, handleSpeakResult, pauseVoice],
   );
 
   const speakParagraphAtRef = useRef(speakParagraphAt);
@@ -167,6 +217,29 @@ export function useLessonPlayback({
     pauseVoice();
   }, [pauseVoice]);
 
+  const jumpToParagraph = useCallback(
+    (idx: number) => {
+      const next = clampParagraphIdx(idx, paragraphs.length);
+      if (next === paragraphIdxRef.current) return;
+
+      if (intentRef.current === "playing") {
+        playbackSessionRef.current += 1;
+        pauseVoice();
+        intentRef.current = "playing";
+        setIntent("playing");
+        paragraphIdxRef.current = next;
+        setParagraphIdxState(next);
+        skipParagraphEffectRef.current = true;
+        speakParagraphAtRef.current(next);
+        return;
+      }
+
+      paragraphIdxRef.current = next;
+      setParagraphIdxState(next);
+    },
+    [paragraphs.length, pauseVoice],
+  );
+
   useEffect(() => {
     if (intent !== "playing") return;
     if (skipParagraphEffectRef.current) {
@@ -177,38 +250,45 @@ export function useLessonPlayback({
   }, [paragraphIdx, intent]);
 
   useEffect(() => {
+    const nextIdx = clampParagraphIdx(initialParagraphIdx, paragraphs.length);
     playbackSessionRef.current = 0;
     intentRef.current = "idle";
     skipParagraphEffectRef.current = false;
     setIntent("idle");
     setPlaybackError(null);
+    setParagraphIdxState(nextIdx);
+    paragraphIdxRef.current = nextIdx;
 
     if (autoPlay) {
       recordTtsUserGesture();
       intentRef.current = "playing";
       setIntent("playing");
       skipParagraphEffectRef.current = true;
-      speakParagraphAtRef.current(paragraphIdxRef.current);
+      speakParagraphAtRef.current(nextIdx);
     }
-  }, [autoPlay, lessonId]);
+  }, [autoPlay, lessonId, initialParagraphIdx, paragraphs.length]);
 
   useEffect(() => {
     if (intent !== "playing") return;
     const nextText = paragraphs[paragraphIdx + 1];
     if (!nextText?.trim()) return;
-    const currentText = paragraphs[paragraphIdx];
-    prefetchLessonParagraphText(
-      nextText,
+    const currentIdentity = identityForParagraph(lessonId, paragraphs, paragraphIdx);
+    const nextIdentity = identityForParagraph(lessonId, paragraphs, paragraphIdx + 1);
+    if (!nextIdentity) return;
+    prefetchLessonParagraph(
+      nextIdentity,
       authFetch,
       voiceId,
       modelId,
-      currentText,
+      currentIdentity ?? undefined,
     );
-  }, [intent, paragraphIdx, paragraphs, authFetch, voiceId, modelId]);
+  }, [intent, paragraphIdx, paragraphs, authFetch, voiceId, modelId, lessonId]);
 
   return {
     paragraphIdx,
+    uiIdentity,
     setParagraphIdx,
+    jumpToParagraph,
     intent,
     playbackError,
     speaking,
@@ -216,7 +296,11 @@ export function useLessonPlayback({
     error,
     play,
     pause,
-    primeSpeakGesture: (text: string) =>
-      primeSpeakGesture(text, { lessonParagraph: true }),
+    primeSpeakGesture: (text: string) => {
+      const idx = paragraphIdxRef.current;
+      const identity = identityForParagraph(lessonIdRef.current, paragraphsRef.current, idx);
+      if (identity) assertLessonSpeakConsistency(identity, text);
+      primeSpeakGesture(text, { lessonParagraph: true, audioIdentity: identity ?? undefined });
+    },
   };
 }

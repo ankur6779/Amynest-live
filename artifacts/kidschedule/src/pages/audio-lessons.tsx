@@ -535,6 +535,7 @@ export default function AudioLessonsPage() {
 
       {open && (
         <PlayerSheet
+          key={open.id}
           lesson={open}
           series={activeSeries}
           autoPlay={playerAutoPlay}

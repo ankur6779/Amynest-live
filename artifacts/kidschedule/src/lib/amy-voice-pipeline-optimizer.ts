@@ -12,10 +12,7 @@ import {
   generateTts,
   resolveClientPlaybackUrl,
 } from "@/lib/tts-playback";
-import {
-  localCacheKeyForTts,
-  warmLocalCacheFromUrl,
-} from "@/lib/local-tts-cache";
+import { warmLocalCacheFromUrl } from "@/lib/local-tts-cache";
 import { preloadStaticPhrases, lookupStaticAudioUrl } from "@/lib/static-audio";
 import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
@@ -44,6 +41,15 @@ import {
   hashCacheKeySync,
   queueServerTelemetry,
 } from "@/lib/amy-voice-pipeline-server-sync";
+import {
+  assertPrefetchCacheKey,
+  assertVerbatimLessonText,
+  createAudioIdentity,
+  lessonLocalCacheKey,
+  lessonPipelineCacheKey,
+  logLessonAudioIdentity,
+  type AudioIdentity,
+} from "@/lib/lesson-audio-identity";
 
 export type { DeviceClass, LearnableLayer, LayerScoringContext, NetworkProfile, PipelineStrategy };
 
@@ -80,6 +86,19 @@ export function pipelineCacheKey(
     : opts?.catalogPlayback
       ? "catalog"
       : "default";
+
+  if (opts?.lessonParagraph) {
+    if (!opts.audioIdentity) {
+      const msg = "Lesson pipelineCacheKey requires audioIdentity";
+      if (import.meta.env.DEV) throw new Error(msg);
+      console.error("[LessonAudioIdentity]", msg);
+      const trimmed = text.trim();
+      return `${kind}:${mode}:${hashCacheKeySync(trimmed)}`;
+    }
+    assertVerbatimLessonText(text, opts.audioIdentity.text);
+    return lessonPipelineCacheKey(opts.audioIdentity, mode);
+  }
+
   return `${kind}:${mode}:${text.trim().toLowerCase().slice(0, 240)}`;
 }
 
@@ -339,9 +358,13 @@ export async function runStagedPregenRace(
   return secondFinal.ok ? secondFinal : firstFinal;
 }
 
-export function recordLessonTransition(fromText: string, toText: string, mode: StaticAudioMode): void {
-  const fromKey = pipelineCacheKey(fromText, mode, { lessonParagraph: true });
-  const toKey = pipelineCacheKey(toText, mode, { lessonParagraph: true });
+export function recordLessonTransition(
+  fromIdentity: AudioIdentity,
+  toIdentity: AudioIdentity,
+  mode: StaticAudioMode,
+): void {
+  const fromKey = lessonPipelineCacheKey(fromIdentity, mode);
+  const toKey = lessonPipelineCacheKey(toIdentity, mode);
   recordPhraseTransition(fromKey, toKey);
   queueServerTelemetry({
     cacheKey: fromKey,
@@ -350,34 +373,31 @@ export function recordLessonTransition(fromText: string, toText: string, mode: S
     latency: 0,
     deviceClass: getDeviceClass(),
     networkType: getNetworkProfile(),
-    textLength: toText.length,
+    textLength: toIdentity.text.length,
     module: "lesson",
     fromKeyHash: hashCacheKeySync(fromKey),
     toKeyHash: hashCacheKeySync(toKey),
   });
 }
 
-/** Predictive + sequential prefetch for lesson paragraphs. */
-export function prefetchLessonParagraphText(
-  text: string,
+/** Predictive + sequential prefetch for lesson paragraphs (identity-scoped). */
+export function prefetchLessonParagraph(
+  identity: AudioIdentity,
   authFetch: AuthFetchFn,
   voiceId?: string,
   modelId?: string,
-  previousText?: string,
+  previousIdentity?: AudioIdentity,
 ): void {
-  const trimmed = (text ?? "").trim();
-  if (!trimmed) return;
+  const policy = prepareAmyLessonParagraphSpeech(identity.text);
+  const playbackKey = lessonPipelineCacheKey(identity, policy.pipelineMode);
+  const cacheKey = playbackKey;
 
-  const policy = prepareAmyLessonParagraphSpeech(trimmed);
-  const cacheKey = pipelineCacheKey(trimmed, policy.pipelineMode, {
-    lessonParagraph: true,
-  });
+  assertPrefetchCacheKey(cacheKey, playbackKey);
+  logLessonAudioIdentity(identity, { phase: "prefetch_start" });
 
-  if (previousText?.trim()) {
-    recordLessonTransition(previousText, trimmed, policy.pipelineMode);
-    const fromKey = pipelineCacheKey(previousText, policy.pipelineMode, {
-      lessonParagraph: true,
-    });
+  if (previousIdentity) {
+    recordLessonTransition(previousIdentity, identity, policy.pipelineMode);
+    const fromKey = lessonPipelineCacheKey(previousIdentity, policy.pipelineMode);
     const predicted = getPredictedNextKey(fromKey);
     if (predicted && predicted !== cacheKey) return;
   }
@@ -387,23 +407,22 @@ export function prefetchLessonParagraphText(
 
   void (async () => {
     try {
-      preloadStaticPhrases([policy.normalizedText], policy.pipelineMode, 1);
-      const staticUrl = lookupStaticAudioUrl(policy.normalizedText, policy.pipelineMode);
+      preloadStaticPhrases([identity.text], policy.pipelineMode, 1);
+      const staticUrl = lookupStaticAudioUrl(identity.text, policy.pipelineMode);
       if (staticUrl) {
         void warmLocalCacheFromUrl(
-          localCacheKeyForTts(`static:${policy.normalizedText.slice(0, 80)}`),
+          lessonLocalCacheKey(identity, policy.pipelineMode),
           staticUrl,
         );
       }
       if (shouldSkipLiveTtsApi() || isSlowNetwork()) return;
 
-      // Lessons are full-required — never prefetch partial stream chunks.
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 8_000);
       const data = await generateTts(
         authFetch,
         {
-          text: policy.normalizedText,
+          text: identity.text,
           voiceId,
           modelId,
           mode: policy.pipelineMode,
@@ -414,7 +433,7 @@ export function prefetchLessonParagraphText(
       if (data?.success && data.cacheKey && data.audioUrl) {
         const playbackUrl = resolveClientPlaybackUrl(data.audioUrl, data.cacheKey);
         if (playbackUrl) {
-          void warmLocalCacheFromUrl(localCacheKeyForTts(data.cacheKey), playbackUrl);
+          void warmLocalCacheFromUrl(lessonLocalCacheKey(identity, policy.pipelineMode), playbackUrl);
         }
       }
     } catch {
@@ -423,6 +442,30 @@ export function prefetchLessonParagraphText(
       prefetchInFlight.delete(cacheKey);
     }
   })();
+}
+
+/** @deprecated Use prefetchLessonParagraph with AudioIdentity. */
+export function prefetchLessonParagraphText(
+  text: string,
+  authFetch: AuthFetchFn,
+  voiceId?: string,
+  modelId?: string,
+  previousText?: string,
+  lessonId?: string,
+  paragraphIndex?: number,
+): void {
+  if (!lessonId || paragraphIndex == null) {
+    if (import.meta.env.DEV) {
+      throw new Error("prefetchLessonParagraphText requires lessonId and paragraphIndex");
+    }
+    return;
+  }
+  const identity = createAudioIdentity(lessonId, paragraphIndex, text);
+  const previousIdentity =
+    previousText?.trim() && paragraphIndex > 0
+      ? createAudioIdentity(lessonId, paragraphIndex - 1, previousText)
+      : undefined;
+  prefetchLessonParagraph(identity, authFetch, voiceId, modelId, previousIdentity);
 }
 
 export function waitUntilEndWithCap(

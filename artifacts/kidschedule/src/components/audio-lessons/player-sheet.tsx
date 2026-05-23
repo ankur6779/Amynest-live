@@ -48,9 +48,15 @@ export function PlayerSheet({
   const text = useMemo(() => getLessonText(lesson, lang), [lesson, lang]);
   const paragraphs = text.paragraphs;
 
+  const initialParagraphIdx = useMemo(() => {
+    const saved = loadResume()[lesson.id] ?? 0;
+    if (saved > 0 && saved < paragraphs.length) return saved;
+    return 0;
+  }, [lesson.id, paragraphs.length]);
+
   const {
     paragraphIdx,
-    setParagraphIdx,
+    jumpToParagraph,
     intent,
     playbackError,
     speaking,
@@ -66,6 +72,7 @@ export function PlayerSheet({
     modelId: MODEL_EN,
     playbackRate: rate,
     autoPlay,
+    initialParagraphIdx,
     onLessonComplete,
   });
 
@@ -78,13 +85,6 @@ export function PlayerSheet({
   const handleMinimize = useCallback(() => {
     onMinimize();
   }, [onMinimize]);
-
-  useEffect(() => {
-    const r = loadResume();
-    const saved = r[lesson.id] ?? 0;
-    if (saved > 0 && saved < paragraphs.length) setParagraphIdx(saved);
-    else if (saved >= paragraphs.length) setParagraphIdx(0);
-  }, [lesson.id, paragraphs.length, setParagraphIdx]);
 
   useEffect(() => {
     const r = loadResume();
@@ -245,7 +245,7 @@ export function PlayerSheet({
             {paragraphs.map((p, i) => (
               <button
                 key={i}
-                onClick={() => setParagraphIdx(i)}
+                onClick={() => jumpToParagraph(i)}
                 style={{
                   textAlign: "left",
                   color: i === paragraphIdx ? "#fff" : "#c7c0e8",
@@ -275,7 +275,7 @@ export function PlayerSheet({
           }}
         >
           <button
-            onClick={() => paragraphIdx > 0 && setParagraphIdx(paragraphIdx - 1)}
+            onClick={() => paragraphIdx > 0 && jumpToParagraph(paragraphIdx - 1)}
             disabled={paragraphIdx === 0}
             aria-label={t("pages.audio_lessons.previous")}
             style={{
@@ -333,7 +333,7 @@ export function PlayerSheet({
 
           <button
             onClick={() =>
-              paragraphIdx + 1 < paragraphs.length && setParagraphIdx(paragraphIdx + 1)
+              paragraphIdx + 1 < paragraphs.length && jumpToParagraph(paragraphIdx + 1)
             }
             disabled={paragraphIdx === paragraphs.length - 1}
             aria-label={t("pages.audio_lessons.next")}
