@@ -4,11 +4,8 @@
  * only shows dialogs after explicit user gestures (button taps).
  */
 
-import { isCapacitorNative } from "@/lib/capacitor-native";
 import {
-  isAndroidUa,
-  isNativeAmyNestAndroidWrapper,
-  isStandalonePwa,
+  isAndroidInstalledPwa as isAndroidInstalledPwaClient,
 } from "@/lib/device-lite";
 import {
   getBrowserNotificationPermission,
@@ -29,11 +26,7 @@ export type PermissionSnapshot = {
 
 /** Installed AmyNest PWA on Android (not Play WebView, not Capacitor). */
 export function isAndroidInstalledPwa(): boolean {
-  if (typeof window === "undefined") return false;
-  if (!isAndroidUa() || !isStandalonePwa()) return false;
-  if (isNativeAmyNestAndroidWrapper()) return false;
-  if (isCapacitorNative()) return false;
-  return true;
+  return isAndroidInstalledPwaClient();
 }
 
 function snoozeMs(days: number): number {
