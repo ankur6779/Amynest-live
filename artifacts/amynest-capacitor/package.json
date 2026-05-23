@@ -24,11 +24,12 @@
     "@capacitor/app": "^6.0.0",
     "@capacitor/core": "^6.2.0",
     "@capacitor/geolocation": "^6.1.1",
-    "@capacitor/keyboard": "^6.0.0",
     "@capacitor/ios": "^6.2.0",
+    "@capacitor/keyboard": "^6.0.0",
     "@capacitor/push-notifications": "^6.0.0",
+    "@capgo/capacitor-updater": "^6.40.0",
     "@revenuecat/purchases-capacitor": "^13.1.1",
-    "@capgo/capacitor-updater": "^6.40.0"
+    "@revenuecat/purchases-capacitor-ui": "13.1.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.2.0"

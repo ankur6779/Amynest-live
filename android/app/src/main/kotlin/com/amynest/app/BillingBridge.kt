@@ -18,6 +18,8 @@ import com.revenuecat.purchases.getOfferingsWith
 import com.revenuecat.purchases.logInWith
 import com.revenuecat.purchases.purchaseWith
 import com.revenuecat.purchases.restorePurchasesWith
+import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallActivityLauncher
+import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallResult
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -27,12 +29,7 @@ import java.lang.ref.WeakReference
  * Google Play Billing (via RevenueCat) bridge for the AmyNest WebView wrapper.
  *
  * Exposes `window.AmyNestBillingNative` to the web page running at
- * [ALLOWED_ORIGIN] only. Cross-origin iframes cannot reach this bridge.
- *
- * The web app (`kidschedule/src/lib/native-billing.ts`) probes
- * `window.AmyNestBillingNative` on startup. If present, the paywall shows
- * Google Play Billing as the primary option (Play Store policy requires this).
- * If absent, the paywall shows Razorpay for India users (browser/sideload).
+ * amynest.in / www.amynest.in only. Cross-origin iframes cannot reach this bridge.
  */
 class BillingBridge(
     activity: Activity,
@@ -40,10 +37,22 @@ class BillingBridge(
 ) {
     private val activityRef = WeakReference(activity)
     private val webViewRef = WeakReference(webView)
+    private var paywallLauncher: PaywallActivityLauncher? = null
+    private var pendingPaywallReply: Pair<JavaScriptReplyProxy, String>? = null
+
+    fun attachPaywallLauncher(launcher: PaywallActivityLauncher) {
+        paywallLauncher = launcher
+    }
+
+    fun onPaywallResult(result: PaywallResult) {
+        val pending = pendingPaywallReply ?: return
+        pendingPaywallReply = null
+        resolve(pending.first, pending.second, paywallResultToJson(result))
+    }
 
     fun handleMessage(rawMessage: String, sourceOrigin: Uri, replyProxy: JavaScriptReplyProxy) {
         val src = sourceOrigin.toString().trimEnd('/')
-        if (!src.equals(ALLOWED_ORIGIN.trimEnd('/'), ignoreCase = true)) {
+        if (ALLOWED_ORIGINS.none { src.equals(it.trimEnd('/'), ignoreCase = true) }) {
             Log.w(TAG, "rejected message from untrusted origin: $sourceOrigin")
             return
         }
@@ -65,8 +74,14 @@ class BillingBridge(
                 resolve(replyProxy, cbId, JSONObject().put("ok", true))
             }
             "getOfferings" -> getOfferings(replyProxy, cbId)
-            "purchase"     -> purchase(replyProxy, cbId, msg.optString("packageId"))
-            "restore"      -> restore(replyProxy, cbId)
+            "purchase" -> purchase(replyProxy, cbId, msg.optString("packageId"))
+            "presentPaywall" -> presentPaywall(
+                replyProxy,
+                cbId,
+                msg.optBoolean("ifNeeded"),
+                msg.optString("entitlementId", DEFAULT_ENTITLEMENT_ID),
+            )
+            "restore" -> restore(replyProxy, cbId)
             "getCustomerInfo" -> getCustomerInfo(replyProxy, cbId)
             else -> resolveError(replyProxy, cbId, "unknown_action:$action")
         }
@@ -140,6 +155,35 @@ class BillingBridge(
         )
     }
 
+    private fun presentPaywall(
+        replyProxy: JavaScriptReplyProxy,
+        cbId: String,
+        ifNeeded: Boolean,
+        entitlementId: String,
+    ) {
+        if (!ensureReady(replyProxy, cbId)) return
+        val launcher = paywallLauncher
+        if (launcher == null) {
+            resolveError(replyProxy, cbId, "paywall_launcher_unavailable")
+            return
+        }
+        if (pendingPaywallReply != null) {
+            resolveError(replyProxy, cbId, "paywall_already_presenting")
+            return
+        }
+        pendingPaywallReply = replyProxy to cbId
+        try {
+            if (ifNeeded && entitlementId.isNotBlank()) {
+                launcher.launchIfNeeded(entitlementId)
+            } else {
+                launcher.launch()
+            }
+        } catch (t: Throwable) {
+            pendingPaywallReply = null
+            resolveError(replyProxy, cbId, t.message ?: "paywall_launch_failed")
+        }
+    }
+
     private fun restore(replyProxy: JavaScriptReplyProxy, cbId: String) {
         if (!ensureReady(replyProxy, cbId)) return
         Purchases.sharedInstance.restorePurchasesWith(
@@ -205,6 +249,15 @@ class BillingBridge(
             .put("isPremium", info.entitlements.active.isNotEmpty())
     }
 
+    private fun paywallResultToJson(result: PaywallResult): JSONObject = when (result) {
+        is PaywallResult.Purchased -> JSONObject().put("result", "PURCHASED")
+        is PaywallResult.Restored -> JSONObject().put("result", "RESTORED")
+        PaywallResult.Cancelled -> JSONObject().put("result", "CANCELLED")
+        is PaywallResult.Error -> JSONObject()
+            .put("result", "ERROR")
+            .put("error", result.error.message ?: "paywall_error")
+    }
+
     private fun resolve(replyProxy: JavaScriptReplyProxy, cbId: String, data: JSONObject) {
         sendRaw(replyProxy, cbId, JSONObject().put("ok", true).put("data", data))
     }
@@ -235,42 +288,37 @@ class BillingBridge(
     companion object {
         private const val TAG = "BillingBridge"
         const val JS_OBJECT_NAME = "AmyNestBillingNative"
+        const val DEFAULT_ENTITLEMENT_ID = "premium"
 
-        // RevenueCat public Android SDK key — safe to commit (client-only key,
-        // cannot modify server-side data; security comes from the webhook secret).
         const val RC_API_KEY = "goog_wswrltSsrqhqrsQrVvOPavTIzMA"
 
-        // Only inject the bridge for pages served from this exact origin.
-        const val ALLOWED_ORIGIN = "https://amynest.in"
+        private val ALLOWED_ORIGINS: Set<String> = setOf(
+            "https://amynest.in",
+            "https://www.amynest.in",
+        )
 
-        /**
-         * Install the bridge. Returns true if successful, false if the device's
-         * System WebView is too old to support [WebViewFeature.WEB_MESSAGE_LISTENER]
-         * (pre-2020 devices — extremely rare). In that case the web app falls
-         * back to its non-wrapper payment UI.
-         */
-        fun installOn(activity: Activity, webView: WebView): Boolean {
+        fun installOn(activity: Activity, webView: WebView): BillingBridge? {
             if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
                 Log.w(TAG, "WebMessageListener unsupported — billing bridge disabled")
-                return false
+                return null
             }
             val bridge = BillingBridge(activity, webView)
             return try {
                 WebViewCompat.addWebMessageListener(
                     webView,
                     JS_OBJECT_NAME,
-                    setOf(ALLOWED_ORIGIN),
+                    ALLOWED_ORIGINS,
                 ) { _: WebView, message: WebMessageCompat,
                     sourceOrigin: Uri, _: Boolean,
                     replyProxy: JavaScriptReplyProxy ->
                     val data = message.data ?: return@addWebMessageListener
                     bridge.handleMessage(data, sourceOrigin, replyProxy)
                 }
-                Log.d(TAG, "Billing bridge installed (origin=$ALLOWED_ORIGIN)")
-                true
+                Log.d(TAG, "Billing bridge installed (origins=$ALLOWED_ORIGINS)")
+                bridge
             } catch (t: Throwable) {
                 Log.e(TAG, "addWebMessageListener failed", t)
-                false
+                null
             }
         }
     }

@@ -1,6 +1,7 @@
 import {
   FREE_LIMITS,
   PLAN_PRICES,
+  formatPlanPrice,
   type EntitlementSummary,
   type Plan,
 } from "../services/subscriptionService.js";
@@ -36,9 +37,9 @@ function planCard(
     id,
     title,
     price: p.amount,
-    currency: "INR",
+    currency: p.currency,
     period: p.period,
-    formattedPrice: `₹${p.amount}`,
+    formattedPrice: formatPlanPrice(p.amount, p.currency),
     badge,
     ...(savingsPercent != null ? { savingsPercent } : {}),
     features:
@@ -60,8 +61,8 @@ export function buildSubscriptionFallbackResponse() {
     entitlements: buildFreeEntitlements(),
     plans: [
       planCard("monthly", "Monthly", null),
-      planCard("six_month", "6 Months", "Most Popular", 16),
-      planCard("yearly", "Yearly", "Best Value", 37),
+      planCard("six_month", "6 Months", "Most Popular", 17),
+      planCard("yearly", "Yearly", "Best Value", 33),
     ],
     fallback: true,
   };

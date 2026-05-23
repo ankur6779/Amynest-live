@@ -44,6 +44,7 @@ export type PlanCard = {
   price: number;
   currency: string;
   period: string;
+  formattedPrice?: string;
   badge: string | null;
   savingsPercent?: number;
   features: string[];
