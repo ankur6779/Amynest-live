@@ -167,7 +167,9 @@ export function Layout({
   const initials = getUserInitials(user);
   const avatarUrl = getUserAvatarUrl(user);
   const isImmersiveRoute =
-    safePathStartsWith(location, "/phonics") || safePathStartsWith(location, "/speech-coach");
+    safePathStartsWith(location, "/phonics") ||
+    safePathStartsWith(location, "/speech-coach") ||
+    safePathStartsWith(location, "/audio-lessons");
   const isAssistantRoute = safePathStartsWithSegment(location, "/assistant");
   const showDashboardChrome = location === "/dashboard";
   const canShowBack = !showDashboardChrome && location !== "/";
@@ -284,13 +286,13 @@ export function Layout({
           </div>
         </aside>}
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip">
           <ScreenContainer
             noOffset={isImmersiveRoute || isAssistantRoute}
             className={
               isImmersiveRoute || isAssistantRoute
-                ? `mx-auto w-full min-h-0 flex-1 flex-col p-0 md:p-0${isAssistantRoute ? " assistant-route-content h-full" : ""}`
-                : "mx-auto w-full max-w-5xl flex-1 p-4 md:p-8"
+                ? `mx-auto w-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip p-0 md:p-0${isAssistantRoute ? " assistant-route-content h-full" : ""}`
+                : "mx-auto w-full max-w-5xl min-w-0 flex-1 overflow-x-clip px-3 py-4 sm:px-4 md:p-8"
             }
           >
             {!isImmersiveRoute &&

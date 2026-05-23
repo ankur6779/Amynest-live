@@ -23,6 +23,9 @@ export function AmyDailyPickCard({ card, onPlay }: DailyPickCardProps) {
       onClick={onPlay}
       style={{
         width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        boxSizing: "border-box",
         textAlign: "left",
         padding: "16px",
         borderRadius: 18,

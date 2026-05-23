@@ -306,6 +306,7 @@ export default function AudioLessonsPage() {
 
   return (
     <div
+      className="w-full max-w-full min-w-0 overflow-x-clip box-border"
       style={{
         minHeight: "100dvh",
         background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 55%, #0c1220 100%)",
@@ -318,15 +319,21 @@ export default function AudioLessonsPage() {
           position: "sticky",
           top: 0,
           zIndex: 20,
-          padding: "14px 16px",
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
           background: "linear-gradient(180deg, rgba(15,12,41,0.95) 0%, rgba(15,12,41,0.7) 100%)",
           backdropFilter: "blur(8px)",
           borderBottom: "1px solid rgba(139,92,246,0.2)",
         }}
       >
+        <div
+          className="amynest-page-inset"
+          style={{
+            paddingTop: 14,
+            paddingBottom: 14,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
         <button
           onClick={() => {
             if (selectedAge) {
@@ -364,18 +371,19 @@ export default function AudioLessonsPage() {
             {t("pages.audio_lessons.amy_audio_lessons")}
           </h1>
         </div>
+        </div>
       </div>
 
       {!selectedAge ? (
         <>
-          <div style={{ padding: "20px 16px 8px", maxWidth: 720, margin: "0 auto" }}>
+          <div className="amynest-page-inset" style={{ paddingTop: 20, paddingBottom: 8 }}>
             <p style={{ color: "#c7c0e8", fontSize: 14, lineHeight: 1.55, margin: 0 }}>
               {t("pages.audio_lessons.intro_home")}
             </p>
           </div>
 
           {resumeTarget && (
-            <div style={{ maxWidth: 720, margin: "0 auto", padding: "8px 16px 0" }}>
+            <div className="amynest-page-inset" style={{ paddingTop: 8 }}>
               <button
                 type="button"
                 data-testid="resume-lesson-banner"
@@ -429,7 +437,7 @@ export default function AudioLessonsPage() {
           )}
 
           {!isPremium && (
-            <div style={{ maxWidth: 720, margin: "12px auto 0", padding: "0 16px" }}>
+            <div className="amynest-page-inset" style={{ paddingTop: 12 }}>
               <div
                 style={{
                   padding: "10px 12px",
@@ -449,7 +457,7 @@ export default function AudioLessonsPage() {
             </div>
           )}
 
-          <div style={{ maxWidth: 720, margin: "0 auto", padding: "12px 16px 0", display: "grid", gap: 10 }}>
+          <div className="amynest-page-inset" style={{ paddingTop: 12, display: "grid", gap: 10 }}>
             {amyHome.quickPlay && (
               <AmyQuickPlayCard
                 card={amyHome.quickPlay}
@@ -464,7 +472,7 @@ export default function AudioLessonsPage() {
             )}
           </div>
 
-          <div style={{ maxWidth: 720, margin: "0 auto", padding: "12px 16px 0" }}>
+          <div className="amynest-page-inset" style={{ paddingTop: 12, paddingBottom: 4 }}>
             <button
               type="button"
               data-testid="emergency-cta"
@@ -491,12 +499,12 @@ export default function AudioLessonsPage() {
           </div>
 
           <div
+            className="amynest-page-inset"
             style={{
-              maxWidth: 720,
-              margin: "0 auto",
-              padding: "16px",
+              paddingTop: 16,
+              paddingBottom: 16,
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
               gap: 12,
             }}
             data-testid="age-tiles-grid"

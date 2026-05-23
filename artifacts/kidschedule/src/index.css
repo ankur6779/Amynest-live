@@ -582,6 +582,9 @@ html[data-theme="dark"] {
 .app-scroll {
   flex: 1;
   min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
   overflow-y: auto;
   overscroll-behavior-y: none;
   padding-bottom: 0;
@@ -693,6 +696,47 @@ body.no-tabbar .app-scroll {
   min-width: 0;
   min-height: 100%;
   box-sizing: border-box;
+}
+
+.app-shell-main {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.app-screen-content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+  box-sizing: border-box;
+}
+
+/* Shared page inset — keeps cards/tiles inside the viewport on mobile WebView */
+.amynest-page-inset {
+  width: 100%;
+  max-width: 720px;
+  margin-inline: auto;
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .app-screen-content > :not([class*="overflow-x-auto"]):not([class*="overflow-x-scroll"]) {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /*
+   * auto-fill grids with fixed min track sizes blow past narrow viewports;
+   * clamp the minimum track to the container width.
+   */
+  .app-screen-content .grid[style*="auto-fill"],
+  .app-screen-content .grid[style*="minmax("] {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr)) !important;
+  }
 }
 
 .app-header {
@@ -991,6 +1035,15 @@ body.no-tabbar .app-scroll {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
+}
+
+.amynest-native-shell .app-screen-content,
+.amynest-android-shell .app-screen-content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
   box-sizing: border-box;
 }
 

@@ -17,7 +17,7 @@ export function ScreenContainer({ children, noOffset = false, className }: Props
   return (
     <div
       className={cn(
-        "app-screen-content flex min-h-0 min-w-0 flex-1 flex-col",
+        "app-screen-content flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip box-border",
         noOffset && "app-screen-content--no-offset",
         className,
       )}
