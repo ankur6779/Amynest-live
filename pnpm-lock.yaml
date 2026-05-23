@@ -135,6 +135,9 @@ importers:
       '@revenuecat/purchases-capacitor':
         specifier: ^13.1.1
         version: 13.1.1(@capacitor/core@6.2.1)
+      '@revenuecat/purchases-capacitor-ui':
+        specifier: 13.1.1
+        version: 13.1.1(@capacitor/core@6.2.1)
     devDependencies:
       '@capacitor/cli':
         specifier: ^6.2.0
@@ -3893,10 +3896,23 @@ packages:
   '@replit/vite-plugin-runtime-error-modal@0.0.6':
     resolution: {integrity: sha512-53iuzLsrvcUnWxAo0fvNrUhOf7LYJ+3at61dZeTIrkaZD4vGNjTbvE0j50TFcjjTC9UM74uprlnQ4+L2A//Cjg==}
 
+  '@revenuecat/purchases-capacitor-ui@13.1.1':
+    resolution: {integrity: sha512-3oNz/zE3gwm8UhwigHfVp5i9TAuO/syl9gvE+MFYL/3LzxzDKQPv0ARJ9YkxbGo5fdj0sIQxyttmJpPfCL5i5w==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@revenuecat/purchases-capacitor@10.4.0':
+    resolution: {integrity: sha512-205im5Bs1BY8wLt+qaS0O2GTWtSHUMFc3Z8U2QaVx4EN0hHOk9gqx2bNaUEH+cOWTUPlNz9yikdiMUSTjJzwyA==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
+
   '@revenuecat/purchases-capacitor@13.1.1':
     resolution: {integrity: sha512-Tzapdxn8k8rLsPtgykHIImMsoOl+r6Hcq64pqVEc2G2FF3MoObxqvNASO02D9dZQ7CBLacV2nau1wI3mXzThsQ==}
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
+
+  '@revenuecat/purchases-typescript-internal-esm@14.3.0':
+    resolution: {integrity: sha512-7mkuBupATfPvBw+skTE/chY6UEux9ZidTbKBOcZ/MgALKJdcww7LgSbChdyoGdQlSJXBFf1zRPzHH+RB7y+LQA==}
 
   '@revenuecat/purchases-typescript-internal-esm@18.6.0':
     resolution: {integrity: sha512-mXneiik9+9UlVYKa4vilAMP1N+NsyNK7U0cuv+yG7VqPG2nI6cQ28U3afxMwMrTGQXkBTP8cDfdUlFqpRiutjQ==}
@@ -11838,10 +11854,23 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
 
+  '@revenuecat/purchases-capacitor-ui@13.1.1(@capacitor/core@6.2.1)':
+    dependencies:
+      '@capacitor/core': 6.2.1
+      '@revenuecat/purchases-capacitor': 10.4.0(@capacitor/core@6.2.1)
+      '@revenuecat/purchases-typescript-internal-esm': 18.6.0
+
+  '@revenuecat/purchases-capacitor@10.4.0(@capacitor/core@6.2.1)':
+    dependencies:
+      '@capacitor/core': 6.2.1
+      '@revenuecat/purchases-typescript-internal-esm': 14.3.0
+
   '@revenuecat/purchases-capacitor@13.1.1(@capacitor/core@6.2.1)':
     dependencies:
       '@capacitor/core': 6.2.1
       '@revenuecat/purchases-typescript-internal-esm': 18.6.0
+
+  '@revenuecat/purchases-typescript-internal-esm@14.3.0': {}
 
   '@revenuecat/purchases-typescript-internal-esm@18.6.0': {}
 

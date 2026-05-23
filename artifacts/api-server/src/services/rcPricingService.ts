@@ -1,6 +1,6 @@
 import { logger } from "../lib/logger";
 import { fetchWithTimeout } from "../utils/fetch-with-timeout.js";
-import { PLAN_PRICES, type Plan } from "./subscriptionService";
+import { PLAN_PRICES, formatPlanPrice, type Plan } from "./subscriptionService";
 
 export type PlanPriceMap = Record<
   Exclude<Plan, "free">,
@@ -29,21 +29,21 @@ function fallbackPrices(): PlanPriceMap {
   return {
     monthly: {
       amount: PLAN_PRICES.monthly.amount,
-      currency: "INR",
+      currency: PLAN_PRICES.monthly.currency,
       period: PLAN_PRICES.monthly.period,
-      formattedPrice: `₹${PLAN_PRICES.monthly.amount}`,
+      formattedPrice: formatPlanPrice(PLAN_PRICES.monthly.amount, PLAN_PRICES.monthly.currency),
     },
     six_month: {
       amount: PLAN_PRICES.six_month.amount,
-      currency: "INR",
+      currency: PLAN_PRICES.six_month.currency,
       period: PLAN_PRICES.six_month.period,
-      formattedPrice: `₹${PLAN_PRICES.six_month.amount}`,
+      formattedPrice: formatPlanPrice(PLAN_PRICES.six_month.amount, PLAN_PRICES.six_month.currency),
     },
     yearly: {
       amount: PLAN_PRICES.yearly.amount,
-      currency: "INR",
+      currency: PLAN_PRICES.yearly.currency,
       period: PLAN_PRICES.yearly.period,
-      formattedPrice: `₹${PLAN_PRICES.yearly.amount}`,
+      formattedPrice: formatPlanPrice(PLAN_PRICES.yearly.amount, PLAN_PRICES.yearly.currency),
     },
   };
 }
@@ -57,7 +57,7 @@ function extractAmountAndCurrency(
     return {
       amount: fallbackAmount,
       currency: fallbackCurrency,
-      formattedPrice: `₹${fallbackAmount}`,
+      formattedPrice: formatPlanPrice(fallbackAmount, fallbackCurrency),
     };
   }
   return { amount: fallbackAmount, currency: fallbackCurrency, formattedPrice: priceString };

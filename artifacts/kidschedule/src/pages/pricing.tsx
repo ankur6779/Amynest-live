@@ -6,8 +6,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
+import { useUser } from "@/lib/firebase-auth-hooks";
 import { useNativeBilling } from "@/hooks/use-native-billing";
 import { isIndiaRegion, isAndroidDevice, PLAY_STORE_URL } from "@/lib/geo";
+import { displayPlanPrice } from "@/lib/plan-price";
+import { presentNativeRCPaywall } from "@/lib/native-rc-paywall";
 
 // Dates >= this year are sentinel "no real expiry" values from the DB
 const SENTINEL_YEAR = 2099;
@@ -48,6 +51,7 @@ export default function PricingPage() {
     loading,
     cancelSubscription,
   } = useSubscription();
+  const { user } = useUser();
 
   const [selected, setSelected] = useState<Exclude<Plan, "free">>("six_month");
   const [submitting, setSubmitting] = useState<"googlepay" | "razorpay" | null>(null);
@@ -103,6 +107,13 @@ export default function PricingPage() {
 
   const onUpgradeNativeStore = async () => {
     setNotice(null);
+    const rc = await presentNativeRCPaywall({ userId: user?.id });
+    if (rc.handled) {
+      if (rc.purchased || rc.restored) {
+        window.dispatchEvent(new Event("amynest:refresh-subscription"));
+      }
+      return;
+    }
     const res = await nativeBilling.purchase(selected);
     if (!res.ok && !res.userCancelled) {
       setNotice(res.reason ?? t("pricing.checkout_unavailable"));
@@ -218,7 +229,7 @@ export default function PricingPage() {
                   </div>
 
                   <div className="mb-1 flex items-baseline gap-1">
-                    <span className="text-3xl font-black text-white">₹{p.price}</span>
+                    <span className="text-3xl font-black text-white">{displayPlanPrice(p)}</span>
                     <span className="text-xs text-white/50">/ {p.period}</span>
                   </div>
 

@@ -9,6 +9,7 @@ import { usePaywall } from "@/contexts/paywall-context";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
 import { useNativeBilling } from "@/hooks/use-native-billing";
 import { useTranslation } from "react-i18next";
+import { displayPlanPrice } from "@/lib/plan-price";
 
 const REASON_COPY: Record<string, {
   title: string;
@@ -194,7 +195,7 @@ export function PaywallModal() {
           <div className="grid sm:grid-cols-3 gap-3 mb-5">
             {plans.map(p => {
               const isSelected = p.id === selected;
-              const priceLabel = nativeBilling.priceByPlan[p.id] ?? `₹${p.price}`;
+              const priceLabel = nativeBilling.priceByPlan[p.id] ?? displayPlanPrice(p);
               return (
                 <button
                   key={p.id}

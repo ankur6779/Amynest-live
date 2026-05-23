@@ -81,7 +81,8 @@ dependencies {
 
     // Google Play Billing via RevenueCat. Handles purchase verification and
     // subscription state through the backend RevenueCat webhook.
-    implementation("com.revenuecat.purchases:purchases:8.10.4")
+    implementation("com.revenuecat.purchases:purchases:8.19.2")
+    implementation("com.revenuecat.purchases:purchases-ui:8.19.2")
 
     // Firebase BOM — keeps all Firebase versions aligned
     implementation(platform("com.google.firebase:firebase-bom:33.3.0"))

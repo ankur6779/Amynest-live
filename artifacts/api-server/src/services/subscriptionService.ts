@@ -16,11 +16,31 @@ type DbExec = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type Plan = "free" | "monthly" | "six_month" | "yearly";
 export type Status = "free" | "trialing" | "active" | "past_due" | "canceled";
 
-export const PLAN_PRICES: Record<Exclude<Plan, "free">, { amount: number; period: string }> = {
-  monthly: { amount: 199, period: "month" },
-  six_month: { amount: 999, period: "6 months" },
-  yearly: { amount: 1499, period: "year" },
+/** Default display / store-reference prices (USD). Shown when RevenueCat live prices are unavailable. */
+export const PLAN_PRICES: Record<
+  Exclude<Plan, "free">,
+  { amount: number; period: string; currency: "USD" }
+> = {
+  monthly: { amount: 4.99, period: "month", currency: "USD" },
+  six_month: { amount: 24.99, period: "6 months", currency: "USD" },
+  yearly: { amount: 39.99, period: "year", currency: "USD" },
 };
+
+/** India-only Razorpay checkout amounts (INR). Not used for default UI pricing. */
+export const RAZORPAY_PLAN_PRICES_INR: Record<Exclude<Plan, "free">, { amount: number }> = {
+  monthly: { amount: 199 },
+  six_month: { amount: 999 },
+  yearly: { amount: 1499 },
+};
+
+export function formatPlanPrice(
+  amount: number,
+  currency: string,
+): string {
+  if (currency === "USD") return `$${amount.toFixed(2)}`;
+  if (currency === "INR") return `₹${amount}`;
+  return `${currency} ${amount}`;
+}
 
 export const FREE_LIMITS = {
   // Daily cap for free Amy AI messages — resets every UTC day.

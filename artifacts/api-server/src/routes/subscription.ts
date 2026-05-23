@@ -8,6 +8,7 @@ import {
   activateSubscription,
   maybeAutoGrantPremium,
   PLAN_PRICES,
+  RAZORPAY_PLAN_PRICES_INR,
   type Plan,
 } from "../services/subscriptionService";
 import { getLivePlanPrices } from "../services/rcPricingService";
@@ -389,7 +390,7 @@ router.post(
         subscriptionId: sub.id,
         keyId: process.env.RAZORPAY_KEY_ID,
         plan,
-        amount: PLAN_PRICES[plan].amount,
+        amount: RAZORPAY_PLAN_PRICES_INR[plan].amount,
         currency: "INR",
       });
     } catch (err: any) {

@@ -114,6 +114,13 @@ export type NativeBilling = {
   setUserId: (userId: string) => Promise<void>;
   getOfferings: () => Promise<{ ok: true; data: NativeOfferings } | { ok: false; error: string }>;
   purchase: (packageId: string) => Promise<NativePurchaseResult>;
+  presentPaywall: (options?: {
+    ifNeeded?: boolean;
+    entitlementId?: string;
+  }) => Promise<
+    | { ok: true; data: { result: string; error?: string } }
+    | { ok: false; error: string }
+  >;
   restore: () => Promise<{ ok: true; data: NativeCustomerInfo } | { ok: false; error: string }>;
   getCustomerInfo: () => Promise<{ ok: true; data: NativeCustomerInfo } | { ok: false; error: string }>;
 };
@@ -160,6 +167,12 @@ export function getNativeBilling(): NativeBilling | null {
     },
     getOfferings: () => callAsync(bridge, { action: "getOfferings" }),
     purchase: (pkg) => callAsync(bridge, { action: "purchase", packageId: pkg }),
+    presentPaywall: (options) =>
+      callAsync(bridge, {
+        action: "presentPaywall",
+        ifNeeded: options?.ifNeeded === true,
+        entitlementId: options?.entitlementId ?? "premium",
+      }, 120_000),
     restore: () => callAsync(bridge, { action: "restore" }),
     getCustomerInfo: () => callAsync(bridge, { action: "getCustomerInfo" }),
   };

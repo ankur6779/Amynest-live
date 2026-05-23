@@ -22,6 +22,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import com.google.firebase.messaging.FirebaseMessaging
+import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallActivityLauncher
+import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallResultHandler
 import org.json.JSONObject
 
 private const val TAG = "MainActivity"
@@ -47,6 +49,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var pushBridge: PushBridge
+    private var billingBridge: BillingBridge? = null
+    private var paywallLauncher: PaywallActivityLauncher? = null
 
     /** Notification tap payload waiting for onPageFinished to deliver to the web page. */
     private var pendingNotifDeepLink: String? = null
@@ -84,7 +88,18 @@ class MainActivity : AppCompatActivity() {
         }
         setContentView(webView)
 
-        BillingBridge.installOn(this, webView)
+        billingBridge = BillingBridge.installOn(this, webView)
+        if (billingBridge != null) {
+            paywallLauncher = PaywallActivityLauncher(
+                this,
+                PaywallResultHandler { result ->
+                    billingBridge?.onPaywallResult(result)
+                },
+            )
+            billingBridge?.attachPaywallLauncher(paywallLauncher!!)
+        } else {
+            Log.w(TAG, "Billing bridge not installed — in-app purchases unavailable")
+        }
 
         pushBridge = PushBridge(
             context = this,
