@@ -1,4 +1,5 @@
 import { Storage, type StorageOptions } from "@google-cloud/storage";
+import { createHash } from "node:crypto";
 import { db, ttsCacheTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import {
@@ -139,10 +140,11 @@ async function tryLegacyGcsRead(cacheKey: string, attempt = 0): Promise<Buffer |
   if (!isTtsCacheGcsEnabled() || !legacyGcsConfigured()) return null;
   try {
     const [buffer] = await getBucket().file(ttsGcsObjectName(cacheKey)).download();
+    const byteLen = buffer?.byteLength ?? 0;
     if (isValidTtsBuffer(buffer)) return buffer;
     if (attempt === 0) {
       logger.warn(
-        { evt: "tts.gcs_read_retry", cacheKey, bytes: buffer?.byteLength ?? 0 },
+        { evt: "tts.gcs_read_retry", cacheKey, bytes: byteLen },
         "GCS TTS read undersized — retrying once",
       );
       return tryLegacyGcsRead(cacheKey, 1);
@@ -178,8 +180,27 @@ const STATIC_AUDIO_GCS_TIMEOUT_MS = Number(process.env.STATIC_AUDIO_GCS_TIMEOUT_
 /** Minimum MP3 payload — rejects truncated / corrupt cache entries. */
 export const MIN_TTS_BYTES = 500;
 
+export function computeTtsContentSha256(buffer: Buffer): string {
+  return createHash("sha256").update(buffer).digest("hex");
+}
+
 function isValidTtsBuffer(buffer: Buffer | null | undefined): buffer is Buffer {
   return Boolean(buffer && buffer.byteLength >= MIN_TTS_BYTES);
+}
+
+function isBufferChecksumValid(
+  buffer: Buffer,
+  expectedSha256?: string | null,
+): boolean {
+  if (!expectedSha256) return true;
+  return computeTtsContentSha256(buffer) === expectedSha256;
+}
+
+export function isValidTtsBufferWithChecksum(
+  buffer: Buffer | null | undefined,
+  expectedSha256?: string | null,
+): buffer is Buffer {
+  return isValidTtsBuffer(buffer) && isBufferChecksumValid(buffer, expectedSha256);
 }
 
 async function readStaticAudioFromGcsInner(hash: string): Promise<Buffer | null> {
@@ -302,16 +323,17 @@ export function ttsAudioPath(cacheKey: string): string {
 
 export async function ttsAudioExists(
   cacheKey: string,
-  row?: { audioUrl?: string | null; audioData?: Buffer | null },
+  row?: { audioUrl?: string | null; audioData?: Buffer | null; contentSha256?: string | null },
 ): Promise<boolean> {
-  const buffer = await ttsAudioRead(cacheKey, row?.audioData);
+  const buffer = await ttsAudioRead(cacheKey, row?.audioData, row?.contentSha256);
   if (isValidTtsBuffer(buffer)) return true;
 
+  const byteLen = buffer?.byteLength ?? 0;
   logger.warn(
     {
       evt: "tts.cache_ghost_row",
       cacheKey,
-      bytes: buffer?.byteLength ?? 0,
+      bytes: byteLen,
       hasGcsUrl: Boolean(row?.audioUrl?.startsWith("https://storage.googleapis.com/")),
       hasPostgresBytes: Boolean(row?.audioData && row.audioData.byteLength > 0),
     },
@@ -323,10 +345,19 @@ export async function ttsAudioExists(
 export async function ttsAudioRead(
   cacheKey: string,
   audioData: Buffer | null | undefined,
+  expectedSha256?: string | null,
 ): Promise<Buffer | null> {
-  if (isValidTtsBuffer(audioData)) return audioData;
+  if (isValidTtsBufferWithChecksum(audioData, expectedSha256)) return audioData;
   if (isTtsCacheGcsEnabled() && (resolveBackend() === "gcs" || legacyGcsConfigured())) {
-    return tryLegacyGcsRead(cacheKey);
+    const fromGcs = await tryLegacyGcsRead(cacheKey);
+    if (isValidTtsBufferWithChecksum(fromGcs, expectedSha256)) return fromGcs;
+    if (fromGcs !== null && expectedSha256 && !isBufferChecksumValid(fromGcs, expectedSha256)) {
+      logger.warn(
+        { evt: "tts.checksum_mismatch", cacheKey, bytes: fromGcs.byteLength },
+        "TTS GCS bytes failed checksum — treating as miss",
+      );
+    }
+    return null;
   }
   return null;
 }
@@ -366,7 +397,10 @@ export async function ttsGcsUpload(
     await file.save(buffer, {
       contentType,
       resumable: false,
-      metadata: { cacheControl: "public, max-age=31536000, immutable" },
+      metadata: {
+        cacheControl: "public, max-age=31536000, immutable",
+        contentSha256: computeTtsContentSha256(buffer),
+      },
     });
 
     try {

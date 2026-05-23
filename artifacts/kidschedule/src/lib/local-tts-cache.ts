@@ -4,14 +4,17 @@
  */
 
 import { normalizeStaticAudioKey, type StaticAudioMode } from "@workspace/static-audio/browser";
+import { adaptiveTimeoutMs } from "@/lib/network-adaptive-timeout";
 
 const DB_NAME = "amynest_amy_voice_cache";
 const STORE = "audio";
 const DB_VERSION = 1;
 const MAX_ENTRIES = 80;
+const MAX_CACHE_BYTES = 50 * 1024 * 1024;
 /** Reject truncated / corrupt MP3 blobs. */
 export const MIN_LOCAL_BLOB_BYTES = 500;
-const FETCH_TIMEOUT_MS = 10_000;
+const FETCH_TIMEOUT_FAST_MS = 10_000;
+const FETCH_TIMEOUT_SLOW_MS = 20_000;
 
 type CacheRow = { key: string; blob: Blob; updatedAt: number };
 
@@ -110,13 +113,26 @@ async function pruneLocalCache(db: IDBDatabase): Promise<void> {
       req.onsuccess = () => resolve((req.result as CacheRow[]) ?? []);
       req.onerror = () => reject(req.error);
     });
-    if (rows.length <= MAX_ENTRIES) return;
+    if (rows.length === 0) return;
+
     rows.sort((a, b) => a.updatedAt - b.updatedAt);
-    const toDrop = rows.slice(0, rows.length - MAX_ENTRIES);
+
+    let totalBytes = rows.reduce((sum, row) => sum + (row.blob?.size ?? 0), 0);
+    const toDrop = new Set<string>();
+
+    while (rows.length - toDrop.size > MAX_ENTRIES || totalBytes > MAX_CACHE_BYTES) {
+      const next = rows.find((row) => !toDrop.has(row.key));
+      if (!next) break;
+      toDrop.add(next.key);
+      totalBytes -= next.blob?.size ?? 0;
+    }
+
+    if (toDrop.size === 0) return;
+
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE, "readwrite");
       const store = tx.objectStore(STORE);
-      for (const row of toDrop) store.delete(row.key);
+      for (const key of toDrop) store.delete(key);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
@@ -129,7 +145,10 @@ async function pruneLocalCache(db: IDBDatabase): Promise<void> {
 export async function warmLocalCacheFromUrl(key: string, url: string): Promise<void> {
   if (!url || typeof fetch === "undefined") return;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const timer = setTimeout(
+    () => controller.abort(),
+    adaptiveTimeoutMs(FETCH_TIMEOUT_FAST_MS, FETCH_TIMEOUT_SLOW_MS),
+  );
   try {
     const res = await fetch(url, {
       credentials: "omit",

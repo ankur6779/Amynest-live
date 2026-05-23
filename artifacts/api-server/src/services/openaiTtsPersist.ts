@@ -8,6 +8,7 @@ import {
   ttsAudioPath,
   ttsGcsUpload,
   ttsStorageBackend,
+  computeTtsContentSha256,
 } from "./ttsAudioStore.js";
 
 export type OpenAiTtsPersistParams = {
@@ -62,6 +63,8 @@ export async function persistOpenAiTtsCache(params: OpenAiTtsPersistParams): Pro
     }
   }
 
+  const contentSha256 = computeTtsContentSha256(buffer);
+
   try {
     await db
       .insert(ttsCacheTable)
@@ -73,6 +76,7 @@ export async function persistOpenAiTtsCache(params: OpenAiTtsPersistParams): Pro
         audioPath,
         audioUrl: playbackPath,
         contentType,
+        contentSha256,
         charCount: text.length,
         hitCount: 0,
         audioData: storeBytesInPostgres ? buffer : null,
@@ -86,6 +90,7 @@ export async function persistOpenAiTtsCache(params: OpenAiTtsPersistParams): Pro
           audioPath,
           audioUrl: playbackPath,
           contentType,
+          contentSha256,
           charCount: text.length,
           ...(storeBytesInPostgres ? { audioData: buffer } : { audioData: null }),
           lastAccessedAt: sql`now()`,

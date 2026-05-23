@@ -16,6 +16,7 @@ import {
   ttsAudioPath,
   ttsGcsUpload,
   ttsStorageBackend,
+  computeTtsContentSha256,
 } from "./ttsAudioStore";
 
 // ─── Indian ElevenLabs Voice IDs ────────────────────────────────────────────
@@ -371,6 +372,7 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
   }
 
   try {
+    const contentSha256 = computeTtsContentSha256(buffer);
     await db
       .insert(ttsCacheTable)
       .values({
@@ -381,6 +383,7 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
         audioPath,
         audioUrl,
         contentType,
+        contentSha256,
         charCount: text.length,
         hitCount: 0,
         audioData: storeBytesInPostgres ? buffer : null,
@@ -394,6 +397,7 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
           audioPath,
           audioUrl,
           contentType,
+          contentSha256,
           charCount: text.length,
           ...(storeBytesInPostgres ? { audioData: buffer } : { audioData: null }),
           lastAccessedAt: sql`now()`,

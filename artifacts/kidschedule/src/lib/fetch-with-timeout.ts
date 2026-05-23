@@ -1,4 +1,9 @@
+import { adaptiveTimeoutMs } from "@/lib/network-adaptive-timeout";
+
 const DEFAULT_API_TIMEOUT_MS = 8_000;
+const DEFAULT_API_TIMEOUT_SLOW_MS = 20_000;
+
+export { adaptiveTimeoutMs, getNetworkLabel, getNetworkTier } from "@/lib/network-adaptive-timeout";
 
 export class FetchTimeoutError extends Error {
   constructor(ms: number) {
@@ -15,8 +20,12 @@ export async function fetchWithTimeout(
   init: RequestInit = {},
   timeoutMs = DEFAULT_API_TIMEOUT_MS,
 ): Promise<Response> {
+  const effectiveMs =
+    timeoutMs === DEFAULT_API_TIMEOUT_MS
+      ? adaptiveTimeoutMs(DEFAULT_API_TIMEOUT_MS, DEFAULT_API_TIMEOUT_SLOW_MS)
+      : timeoutMs;
   const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  const timer = window.setTimeout(() => controller.abort(), effectiveMs);
 
   const signals: AbortSignal[] = [];
   if (init.signal) signals.push(init.signal);
@@ -36,7 +45,7 @@ export async function fetchWithTimeout(
     return response;
   } catch (err) {
     if (controller.signal.aborted && !(init.signal as AbortSignal | undefined)?.aborted) {
-      throw new FetchTimeoutError(timeoutMs);
+      throw new FetchTimeoutError(effectiveMs);
     }
     throw err;
   } finally {

@@ -8,18 +8,20 @@ import React, {
   useState,
   type ReactNode,
 } from "react";
-import { AppState, type AppStateStatus } from "react-native";
-import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import { AppState, Platform, type AppStateStatus } from "react-native";
+import { useAudioPlayer, useAudioPlayerStatus, AudioModule } from "expo-audio";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import {
   amyVoiceSpeak,
   amyVoicePlayUrl,
   getAmyVoiceGlobalReqId,
+  getAmyVoicePlaybackState,
   stopAllAmyVoice,
   type AmyVoiceMode,
   type AmyVoicePlayer,
   type AmyVoiceSpeakOptions,
 } from "@/lib/amy-voice-controller";
+import { delay } from "@/lib/fetch-with-timeout";
 
 export type { AmyVoiceMode };
 
@@ -41,16 +43,28 @@ export type AmyVoiceContextValue = {
 
 const AmyVoiceContext = createContext<AmyVoiceContextValue | null>(null);
 
+async function ensurePlaybackAudioSession(): Promise<void> {
+  try {
+    await AudioModule.setIsAudioActiveAsync(true);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function AmyVoiceProvider({ children }: { children: ReactNode }) {
   const authFetch = useAuthFetch();
   const player = useAudioPlayer(null);
   const status = useAudioPlayerStatus(player);
+  const statusRef = useRef(status);
+  statusRef.current = status;
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requestedPlaying, setRequestedPlaying] = useState(false);
   const activeReqRef = useRef(0);
   const onFinishedRef = useRef<(() => void) | undefined>(undefined);
   const wasBackgroundRef = useRef(false);
+  const expectedPlayingRef = useRef(false);
 
   const playerAdapter = useMemo(
     (): AmyVoicePlayer => ({
@@ -70,11 +84,25 @@ export function AmyVoiceProvider({ children }: { children: ReactNode }) {
           /* ignore */
         }
       },
+      waitUntilPlaying: async (timeoutMs: number) => {
+        const startedAt = Date.now();
+        while (Date.now() - startedAt < timeoutMs) {
+          const s = statusRef.current;
+          if (s.playing || (s.currentTime ?? 0) > 0) return true;
+          await delay(50);
+        }
+        const s = statusRef.current;
+        return Boolean(s.playing || (s.currentTime ?? 0) > 0);
+      },
     }),
     [player],
   );
 
   const speaking = requestedPlaying && status.playing;
+
+  useEffect(() => {
+    void ensurePlaybackAudioSession();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -86,6 +114,7 @@ export function AmyVoiceProvider({ children }: { children: ReactNode }) {
     const onState = (next: AppStateStatus) => {
       if (next !== "active") {
         wasBackgroundRef.current = true;
+        expectedPlayingRef.current = false;
         stopAllAmyVoice(playerAdapter);
         setRequestedPlaying(false);
         setLoading(false);
@@ -95,26 +124,45 @@ export function AmyVoiceProvider({ children }: { children: ReactNode }) {
 
       if (wasBackgroundRef.current) {
         wasBackgroundRef.current = false;
-        try {
-          player.pause();
-        } catch {
-          /* reset stale native session after background */
-        }
+        void (async () => {
+          try {
+            player.pause();
+          } catch {
+            /* reset stale native session after background / interruption */
+          }
+          await ensurePlaybackAudioSession();
+        })();
       }
     };
     const sub = AppState.addEventListener("change", onState);
     return () => sub.remove();
   }, [playerAdapter, player]);
 
+  /* iOS / OS audio interruption — playing dropped while we still expect audio. */
+  useEffect(() => {
+    if (!expectedPlayingRef.current) return;
+    if (status.playing) return;
+    if (getAmyVoicePlaybackState() !== "playing") return;
+    if (status.didJustFinish) return;
+
+    expectedPlayingRef.current = false;
+    stopAllAmyVoice(playerAdapter);
+    setRequestedPlaying(false);
+    setLoading(false);
+    void ensurePlaybackAudioSession();
+  }, [status.playing, status.didJustFinish, playerAdapter]);
+
   useEffect(() => {
     if (!status.didJustFinish) return;
     if (activeReqRef.current !== getAmyVoiceGlobalReqId()) return;
+    expectedPlayingRef.current = false;
     setRequestedPlaying(false);
     onFinishedRef.current?.();
     onFinishedRef.current = undefined;
   }, [status.didJustFinish]);
 
   const stop = useCallback(() => {
+    expectedPlayingRef.current = false;
     stopAllAmyVoice(playerAdapter);
     setRequestedPlaying(false);
     setLoading(false);
@@ -137,12 +185,17 @@ export function AmyVoiceProvider({ children }: { children: ReactNode }) {
       const text = (rawText ?? "").trim();
       if (!text) return;
 
-      /* Preemptive stop on every user action — cancels pending async + audio. */
       stopAllAmyVoice(playerAdapter);
+      activeReqRef.current = 0;
       onFinishedRef.current = opts?.onFinished;
       setError(null);
       setLoading(true);
       setRequestedPlaying(false);
+      expectedPlayingRef.current = false;
+
+      if (Platform.OS === "ios") {
+        await ensurePlaybackAudioSession();
+      }
 
       const result = await amyVoiceSpeak(authFetch, playerAdapter, text, {
         mode: opts?.mode,
@@ -152,11 +205,11 @@ export function AmyVoiceProvider({ children }: { children: ReactNode }) {
         module: opts?.module,
       });
 
-      activeReqRef.current = getAmyVoiceGlobalReqId();
-
       if (result.ok) {
+        activeReqRef.current = getAmyVoiceGlobalReqId();
+        expectedPlayingRef.current = true;
         setRequestedPlaying(true);
-      } else if (result.error !== "tts_cancelled") {
+      } else if (result.error !== "tts_cancelled" && result.error !== "tts_superseded") {
         setError(result.error);
       }
 
@@ -171,11 +224,13 @@ export function AmyVoiceProvider({ children }: { children: ReactNode }) {
       setError(null);
       setLoading(true);
       setRequestedPlaying(false);
+      expectedPlayingRef.current = false;
 
       const result = await amyVoicePlayUrl(playerAdapter, url, opts);
       activeReqRef.current = getAmyVoiceGlobalReqId();
 
       if (result.ok) {
+        expectedPlayingRef.current = true;
         setRequestedPlaying(true);
       } else if (result.error !== "tts_cancelled") {
         setError(result.error);

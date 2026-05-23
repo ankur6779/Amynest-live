@@ -38,6 +38,8 @@ export const ttsCacheTable = pgTable(
     audioUrl: text("audio_url"),
     audioData: bytea("audio_data"),
     contentType: varchar("content_type", { length: 32 }).notNull().default("audio/mpeg"),
+    /** SHA-256 hex digest of MP3 bytes — detects corrupt uploads. */
+    contentSha256: varchar("content_sha256", { length: 64 }),
     charCount: integer("char_count").notNull(),
     hitCount: integer("hit_count").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

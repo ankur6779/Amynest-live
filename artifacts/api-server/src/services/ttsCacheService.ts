@@ -115,7 +115,7 @@ export async function readCachedAudio(
   const row = rows[0]!;
   const playbackUrl = resolveTtsPlaybackUrl(cacheKey, row);
 
-  const buffer = await ttsAudioRead(cacheKey, row.audioData);
+  const buffer = await ttsAudioRead(cacheKey, row.audioData, row.contentSha256);
   if (!buffer) return null;
 
   void ttsAudioBackfillPostgres(cacheKey, buffer);

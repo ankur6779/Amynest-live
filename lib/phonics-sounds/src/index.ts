@@ -201,3 +201,9 @@ export function delay(ms: number): Promise<void> {
 export * from "./phonics-text.js";
 export * from "./cvc.js";
 export { playCvcBlend, type CvcBlendPhase, type CvcBlendSpeakFn, type PlayCvcBlendOptions } from "./cvc-blend.js";
+export {
+  buildTtsCacheKeyPayload,
+  computeTtsCacheKey,
+  type TtsSynthesizeMode,
+} from "./tts-cache-key.js";
+export { createRunLatest, type RunLatestExecutor } from "./run-latest.js";

@@ -1,4 +1,12 @@
-export type TtsAudioSource = "local" | "remote" | "gcs" | "regenerated" | "unknown";
+export type TtsAudioSource =
+  | "local"
+  | "remote"
+  | "gcs"
+  | "static"
+  | "regenerated"
+  | "unknown";
+
+export type TtsDeviceInfo = "ios" | "android" | "web" | "other";
 
 export type TtsLogPayload = {
   module: string;
@@ -9,6 +17,10 @@ export type TtsLogPayload = {
   errorType?: string;
   requestId?: number;
   phase?: string;
+  queueWaitMs?: number;
+  playStartDelayMs?: number;
+  device?: TtsDeviceInfo;
+  network?: string;
 };
 
 /** Structured TTS playback log — one line per attempt for production triage. */

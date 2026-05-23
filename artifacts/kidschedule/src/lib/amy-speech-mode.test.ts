@@ -133,6 +133,14 @@ describe("amy-speech-mode", () => {
     expect(policy.retryDynamicTts).toBe(false);
     expect(prepareAmySpeechInput(long, { lessonParagraph: true }).phrases).toHaveLength(1);
   });
+
+  it("long lesson paragraphs without lessonParagraph flag would semantic-split", () => {
+    const colic =
+      "Colic is defined as intense crying for more than 3 hours a day, more than 3 days a week, for at least 3 weeks — usually peaking around 6 to 8 weeks. It is not your fault.";
+    const withoutFlag = prepareAmySpeechInput(colic);
+    expect(withoutFlag.phrases.length).toBeGreaterThan(1);
+    expect(withoutFlag.useSemanticSplit).toBe(true);
+  });
 });
 
 describe("amy-voice-learning", () => {
