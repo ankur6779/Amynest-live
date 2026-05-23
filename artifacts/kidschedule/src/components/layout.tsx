@@ -55,18 +55,30 @@ const NAV_ITEMS: NavItem[] = [{
   labelKey: "nav.parenting_hub",
   icon: BookOpen
 }, {
-  href: "/kids-control-center",
-  labelKey: "nav.kids_control_center",
-  icon: Baby,
-  badge: "Soon 🚀"
-}, {
   href: "/amy-coach",
   labelKey: "nav.amy_coach",
   icon: Brain
 }, {
+  href: "/nutrition",
+  labelKey: "nav.nutrition_hub",
+  icon: Salad
+}, {
   href: "/routines",
   labelKey: "nav.routines",
   icon: Calendar
+}, {
+  href: "/games",
+  labelKey: "nav.games",
+  icon: Gamepad2
+}, {
+  href: "/assistant",
+  labelKey: "nav.amy_ai",
+  icon: Bot
+}, {
+  href: "/kids-control-center",
+  labelKey: "nav.kids_control_center",
+  icon: Baby,
+  badge: "Soon 🚀"
 }, {
   href: "/progress",
   labelKey: "nav.progress",
@@ -84,21 +96,9 @@ const NAV_ITEMS: NavItem[] = [{
   labelKey: "nav.behavior",
   icon: Star
 }, {
-  href: "/assistant",
-  labelKey: "nav.amy_ai",
-  icon: Bot
-}, {
-  href: "/games",
-  labelKey: "nav.games",
-  icon: Gamepad2
-}, {
   href: "/recipes",
   labelKey: "nav.my_recipes",
   icon: ChefHat
-}, {
-  href: "/nutrition",
-  labelKey: "nav.nutrition_hub",
-  icon: Salad
 }, {
   href: "/children",
   labelKey: "nav.children",
