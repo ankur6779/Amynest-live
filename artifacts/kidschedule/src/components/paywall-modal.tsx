@@ -79,6 +79,11 @@ const REASON_COPY: Record<string, {
     title: "Unlock Phonics Workbook",
     subtitle: "Get full access to printable worksheets and practice material",
     icon: FileText
+  },
+  hub_nutrition: {
+    title: "Unlock Nutrition Coach",
+    subtitle: "Unlimited AI meal plans, allergy-aware family portions & personalized nutrition tips.",
+    icon: Sparkles
   }
 };
 

@@ -129,6 +129,9 @@ importers:
       '@capacitor/push-notifications':
         specifier: ^6.0.0
         version: 6.0.5(@capacitor/core@6.2.1)
+      '@capgo/capacitor-updater':
+        specifier: ^6.40.0
+        version: 6.45.10(@capacitor/core@6.2.1)
       '@revenuecat/purchases-capacitor':
         specifier: ^13.1.1
         version: 13.1.1(@capacitor/core@6.2.1)
@@ -223,6 +226,9 @@ importers:
       '@workspace/conflict-resolution':
         specifier: workspace:*
         version: link:../../lib/conflict-resolution
+      '@workspace/content-orchestration':
+        specifier: workspace:*
+        version: link:../../lib/content-orchestration
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
@@ -368,6 +374,9 @@ importers:
       '@capacitor/status-bar':
         specifier: '6'
         version: 6.0.3(@capacitor/core@6.2.1)
+      '@capgo/capacitor-updater':
+        specifier: ^6.40.0
+        version: 6.45.10(@capacitor/core@6.2.1)
       '@codetrix-studio/capacitor-google-auth':
         specifier: ^3.4.0-rc.4
         version: 3.4.0-rc.4(@capacitor/core@6.2.1)
@@ -1087,6 +1096,8 @@ importers:
       '@workspace/family-routine':
         specifier: workspace:*
         version: link:../family-routine
+
+  lib/content-orchestration: {}
 
   lib/db:
     dependencies:
@@ -1853,6 +1864,11 @@ packages:
 
   '@capacitor/status-bar@6.0.3':
     resolution: {integrity: sha512-nFlgSmtx6Zwaw0tEvZgQsWHBeOfWWB/AvEoCApopLT4mHkBVoSrwkLvy2PjZs5wxCbsmqvQczr3XCyTwaDZVQg==}
+    peerDependencies:
+      '@capacitor/core': ^6.0.0
+
+  '@capgo/capacitor-updater@6.45.10':
+    resolution: {integrity: sha512-mi+F9bQ6dYTk/6CJWV3GWh8dpdQtkbR+ECr7IjimoH+mniD7iBOmVPjRCinC+FcfQPSBwiUvOT0XcWKKx9og5Q==}
     peerDependencies:
       '@capacitor/core': ^6.0.0
 
@@ -9363,6 +9379,10 @@ snapshots:
       '@capacitor/core': 6.2.1
 
   '@capacitor/status-bar@6.0.3(@capacitor/core@6.2.1)':
+    dependencies:
+      '@capacitor/core': 6.2.1
+
+  '@capgo/capacitor-updater@6.45.10(@capacitor/core@6.2.1)':
     dependencies:
       '@capacitor/core': 6.2.1
 

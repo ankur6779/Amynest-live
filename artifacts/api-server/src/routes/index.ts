@@ -47,6 +47,7 @@ import vaccinationsRouter from "./vaccinations";
 import infantMilestonesRouter from "./infant-milestones";
 import parentTasksRouter from "./parent-tasks";
 import smartStudyRouter from "./smart-study";
+import contentOrchestrationRouter from "./content-orchestration";
 import lifeSkillsRouter from "./life-skills";
 import childIntelligenceRouter from "./child-intelligence";
 import householdRouter from "./household";
@@ -57,6 +58,7 @@ import debugRouter from "./debug";
 import authRouter from "./auth";
 import environmentRouter from "./environment";
 import userFeedbackRouter from "./user-feedback";
+import otaRouter from "./ota";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -93,6 +95,8 @@ router.use(spellingPublicRouter);
 router.use(phonicsPublicRouter);
 // /api/static-audio/:hash.mp3 — MD5-addressed catalog MP3 stream from GCS.
 router.use(staticAudioPublicRouter);
+// Capacitor OTA (Capgo) — public POST, patch-only web bundles (Apple Guideline 2.5.2).
+router.use(otaRouter);
 router.use(requireAuth);
 router.use(clientLogsRouter);
 router.use(onboardingRouter);
@@ -134,6 +138,7 @@ router.use(vaccinationsRouter);
 router.use(infantMilestonesRouter);
 router.use(parentTasksRouter);
 router.use(smartStudyRouter);
+router.use(contentOrchestrationRouter);
 router.use(lifeSkillsRouter);
 router.use(childIntelligenceRouter);
 router.use(householdRouter);

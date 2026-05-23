@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { requireAuth } from "../middlewares/requireAuth";
+import { featureGate } from "../middlewares/featureGate.js";
 import { suggestMeals, type MealRegion } from "../lib/meal-suggestions";
 import { logger } from "../lib/logger.js";
 import { db } from "@workspace/db";
@@ -731,7 +732,7 @@ OUTPUT FORMAT (exactly this shape):
 Generate all 7 days (Monday through Sunday).`;
 }
 
-router.post("/meals/week-plan", requireAuth, async (req, res): Promise<void> => {
+router.post("/meals/week-plan", requireAuth, featureGate("nutrition_week_plan"), async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Login required." });
@@ -899,7 +900,7 @@ OUTPUT:
 }`;
 }
 
-router.post("/meals/family-portions", requireAuth, async (req, res): Promise<void> => {
+router.post("/meals/family-portions", requireAuth, featureGate("nutrition_family_ai"), async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Login required." });

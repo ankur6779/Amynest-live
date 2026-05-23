@@ -97,6 +97,7 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@capgo/capacitor-updater": "^6.40.0",
     "@capacitor-community/apple-sign-in": "^6.0.0",
     "@capacitor/app": "^6.0.0",
     "@capacitor/core": "^6.2.0",

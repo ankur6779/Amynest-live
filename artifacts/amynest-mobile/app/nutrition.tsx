@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, TouchableOpacity,
-  Alert, Platform, UIManager, LayoutAnimation, ActivityIndicator,
+  Alert, Platform, UIManager, LayoutAnimation, ActivityIndicator, TextInput,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,12 +11,18 @@ import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { palette, brand } from "@/constants/colors";
 import {
-  AGE_GROUPS, NUTRIENTS, FAMILY_PORTIONS,
+  AGE_GROUPS, NUTRIENTS,
   MEDICAL_DISCLAIMER, REFERENCES, AgeGroupId, Nutrient,
 } from "@/lib/nutrition-data";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTranslation } from "react-i18next";
 import { useNutritionRegion, RegionalFoodSource } from "@/lib/nutrition-region";
+import { useFeatureUsage } from "@/hooks/useFeatureUsage";
+import PremiumLock from "@/components/PremiumLock";
+import TryFreeBadge from "@/components/TryFreeBadge";
+
+const NUTRITION_WEEK_PLAN_FEATURE = "nutrition_week_plan";
+const NUTRITION_FAMILY_AI_FEATURE = "nutrition_family_ai";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -230,9 +236,13 @@ const WEATHER_OPTS: { val: WeatherOpt; label: string; icon: string }[] = [
   { val: "cold",     label: "Cold",     icon: "snow-outline" },
 ];
 
-function AIMealPlanTab() {
+function AIMealPlanTab({ onMealChange }: { onMealChange?: (mealName: string) => void }) {
   const { t } = useTranslation();
   const authFetch = useAuthFetch();
+  const router = useRouter();
+  const usage = useFeatureUsage();
+  const mealLocked = usage.isFeatureLocked(NUTRITION_WEEK_PLAN_FEATURE);
+  const mealTryFree = !usage.isPremium && !usage.hasUsedFeature(NUTRITION_WEEK_PLAN_FEATURE);
   const [weather, setWeather] = useState<WeatherOpt>("moderate");
   const [dayIdx, setDayIdx] = useState(0);
   const [plan, setPlan] = useState<DayPlan[] | null>(null);
@@ -240,7 +250,21 @@ function AIMealPlanTab() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (plan && plan[dayIdx]) {
+      onMealChange?.(plan[dayIdx].meals.lunch.name);
+    }
+  }, [plan, dayIdx, onMealChange]);
+
+  const openNutritionPaywall = useCallback(() => {
+    router.push({ pathname: "/paywall", params: { reason: "hub_nutrition" } });
+  }, [router]);
+
   const generate = useCallback(async (forceRefresh = false) => {
+    if (!usage.isPremium && (mealLocked || (forceRefresh && usage.hasUsedFeature(NUTRITION_WEEK_PLAN_FEATURE)))) {
+      openNutritionPaywall();
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -249,32 +273,54 @@ function AIMealPlanTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ weather, forceRefresh }),
       });
+      if (res.status === 402) {
+        const j = await res.json().catch(() => ({})) as { error?: string; feature?: string };
+        if (j.error === "feature_locked" || j.feature === NUTRITION_WEEK_PLAN_FEATURE) {
+          openNutritionPaywall();
+          return;
+        }
+      }
       if (!res.ok) {
         const j = await res.json().catch(() => ({})) as { error?: string };
         throw new Error((j as any).error ?? `Server error ${res.status}`);
       }
-      const data = await res.json() as { plan: DayPlan[]; generatedAt: string };
-      setPlan(data.plan);
-      setGeneratedAt(data.generatedAt);
+      const { readResolvedApiJson } = await import("@/lib/poll-result");
+      const data = await readResolvedApiJson<{ plan: DayPlan[]; generatedAt: string }>(res, authFetch);
+      setPlan(data?.plan ?? []);
+      setGeneratedAt(data?.generatedAt ?? "");
       setDayIdx(0);
+      if (mealTryFree) {
+        usage.markFeatureUsed(NUTRITION_WEEK_PLAN_FEATURE);
+        usage.markFeatureUsed("hub_nutrition");
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
-  }, [authFetch, weather]);
+  }, [authFetch, weather, usage, mealLocked, mealTryFree, openNutritionPaywall]);
 
   const day = plan?.[dayIdx];
+  const showMealLock = !usage.isPremium && mealLocked && !plan;
 
   return (
+    <PremiumLock
+      forceLocked={showMealLock}
+      reason="hub_nutrition"
+      label={t("screens.nutrition.try_free")}
+      cta="Unlock Nutrition Coach"
+    >
     <View style={{ gap: 14 }}>
       {/* Header */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Text style={{ fontSize: 22 }}>🤖</Text>
-        <View>
-          <Text style={{ fontSize: 15, fontWeight: "800", color: palette.slate800 }}>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <Text style={{ fontSize: 15, fontWeight: "800", color: palette.slate800 }}>
             {t("screens.nutrition.ai_plan_title")}
           </Text>
+          {mealTryFree ? <TryFreeBadge /> : null}
+          </View>
           <Text style={{ fontSize: 11, color: palette.slate500 }}>
             {t("screens.nutrition.ai_plan_subtitle")}
           </Text>
@@ -455,53 +501,283 @@ function AIMealPlanTab() {
         </View>
       )}
     </View>
+    </PremiumLock>
   );
 }
 
-// ─── Family Mode Tab ───────────────────────────────────────────────────────────
-function FamilyModeTab() {
+// ─── Family Mode Tab (AI portions — web parity) ───────────────────────────────
+type PortionEntry = { amount: string; texture: string | null };
+type FamilyPortionResult = {
+  meal: string;
+  portions: { "6_12m": PortionEntry; "1_3y": PortionEntry; "4_8y": PortionEntry; adult: PortionEntry };
+  feeding_tip: string | null;
+  allergy_note: string | null;
+};
+
+const FAMILY_AGE_SLOTS: { key: keyof FamilyPortionResult["portions"]; icon: string; labelKey: string }[] = [
+  { key: "6_12m", icon: "👶", labelKey: "screens.nutrition.family_age_6_12m" },
+  { key: "1_3y", icon: "🧒", labelKey: "screens.nutrition.family_age_1_3y" },
+  { key: "4_8y", icon: "👦", labelKey: "screens.nutrition.family_age_4_8y" },
+  { key: "adult", icon: "👨", labelKey: "screens.nutrition.family_age_adult" },
+];
+
+function FamilyModeTab({ suggestedMeal }: { suggestedMeal?: string }) {
   const { t } = useTranslation();
+  const authFetch = useAuthFetch();
+  const router = useRouter();
+  const usage = useFeatureUsage();
+  const familyLocked = usage.isFeatureLocked(NUTRITION_FAMILY_AI_FEATURE);
+  const familyTryFree = !usage.isPremium && !usage.hasUsedFeature(NUTRITION_FAMILY_AI_FEATURE);
+  const [dishInput, setDishInput] = useState("");
+  const [result, setResult] = useState<FamilyPortionResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (suggestedMeal && !dishInput) setDishInput(suggestedMeal);
+  }, [suggestedMeal]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const openNutritionPaywall = useCallback(() => {
+    router.push({ pathname: "/paywall", params: { reason: "hub_nutrition" } });
+  }, [router]);
+
+  const generate = useCallback(async (forceRefresh = false) => {
+    const dish = dishInput.trim();
+    if (!dish) return;
+    if (!usage.isPremium && (familyLocked || (forceRefresh && usage.hasUsedFeature(NUTRITION_FAMILY_AI_FEATURE)))) {
+      openNutritionPaywall();
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await authFetch("/api/meals/family-portions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ meal_name: dish, forceRefresh }),
+      });
+      if (res.status === 402) {
+        const j = await res.json().catch(() => ({})) as { error?: string; feature?: string };
+        if (j.error === "feature_locked" || j.feature === NUTRITION_FAMILY_AI_FEATURE) {
+          openNutritionPaywall();
+          return;
+        }
+      }
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(j.error ?? `Server error ${res.status}`);
+      }
+      const { readResolvedApiJson } = await import("@/lib/poll-result");
+      const data = await readResolvedApiJson<FamilyPortionResult>(res, authFetch);
+      setResult(data ?? null);
+      if (familyTryFree) {
+        usage.markFeatureUsed(NUTRITION_FAMILY_AI_FEATURE);
+        usage.markFeatureUsed("hub_nutrition");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }, [authFetch, dishInput, usage, familyLocked, familyTryFree, openNutritionPaywall]);
+
+  const showFamilyLock = !usage.isPremium && familyLocked && !result;
+
   return (
+    <PremiumLock
+      forceLocked={showFamilyLock}
+      reason="hub_nutrition"
+      label={t("screens.nutrition.try_free")}
+      cta="Unlock Nutrition Coach"
+    >
     <View style={{ gap: 12 }}>
-      {/* Info */}
       <View style={{ backgroundColor: palette.violet50, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: palette.violet200 }}>
-        <Text style={{ fontSize: 13, fontWeight: "700", color: brand.violet600, marginBottom: 4 }}>
-          {t("screens.nutrition.section_family")}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+          <Text style={{ fontSize: 13, fontWeight: "700", color: brand.violet600 }}>
+            {t("screens.nutrition.section_family")}
+          </Text>
+          {familyTryFree ? <TryFreeBadge /> : null}
+        </View>
         <Text style={{ fontSize: 12, color: brand.violet800 }}>
-          {t("screens.nutrition.family_desc")}
+          {t("screens.nutrition.section_family_desc")}
         </Text>
       </View>
 
-      {/* Column headers */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View>
-          <View style={[styles.tableRow, { backgroundColor: palette.slate100 }]}>
-            <Text style={[styles.tableCell, styles.tableCellFirst, styles.tableHeader]}>{t("screens.nutrition.table_food")}</Text>
-            {["🍼\n6–12m", "🧒\n1–3y", "📚\n6–10y", "🌱\n10–15y", "👨‍👩\nAdult", "🤰\nPregnant"].map((h, i) => (
-              <Text key={i} style={[styles.tableCell, styles.tableHeader]}>{h}</Text>
-            ))}
-          </View>
-          {FAMILY_PORTIONS.map((row, ri) => (
-            <View key={ri} style={[styles.tableRow, ri % 2 === 0 ? { backgroundColor: "#ffffff" } : { backgroundColor: palette.slate50 }]}>
-              <View style={[styles.tableCell, styles.tableCellFirst, { flexDirection: "row", alignItems: "center", gap: 6 }]}>
-                <Text style={{ fontSize: 18 }}>{row.emoji}</Text>
-                <View>
-                  <Text style={{ fontSize: 11, fontWeight: "600", color: palette.slate800 }}>{row.food}</Text>
-                  <Text style={{ fontSize: 10, color: palette.slate500 }}>{row.foodHi}</Text>
-                </View>
-              </View>
-              {[row.infant, row.toddler, row.schoolChild, row.teen, row.adult, row.pregnant].map((v, ci) => (
-                <Text key={ci} style={[styles.tableCell, { fontSize: 10, color: palette.gray700 }]}>{v}</Text>
-              ))}
-            </View>
+      <Text style={{ fontSize: 12, fontWeight: "700", color: palette.slate800 }}>
+        {t("screens.nutrition.family_enter_dish")}
+      </Text>
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <TextInput
+          value={dishInput}
+          onChangeText={setDishInput}
+          placeholder={t("screens.nutrition.family_dish_placeholder")}
+          placeholderTextColor={palette.slate400}
+          onSubmitEditing={() => generate()}
+          style={{
+            flex: 1,
+            borderWidth: 1,
+            borderColor: palette.slate200,
+            borderRadius: 10,
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            fontSize: 14,
+            color: palette.slate800,
+            backgroundColor: "#fff",
+          }}
+        />
+        <Pressable
+          onPress={() => generate()}
+          disabled={loading || !dishInput.trim()}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            backgroundColor: dishInput.trim() ? brand.violet600 : palette.slate300,
+            borderRadius: 10,
+            paddingHorizontal: 14,
+            justifyContent: "center",
+          }}
+        >
+          {loading
+            ? <ActivityIndicator size="small" color="#fff" />
+            : <Ionicons name="flash" size={16} color="#fff" />}
+          <Text style={{ fontSize: 12, fontWeight: "700", color: "#fff" }}>
+            {t("screens.nutrition.family_generate_btn")}
+          </Text>
+        </Pressable>
+      </View>
+
+      {suggestedMeal && dishInput !== suggestedMeal ? (
+        <Pressable
+          onPress={() => setDishInput(suggestedMeal)}
+          style={{
+            alignSelf: "flex-start",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            borderWidth: 1,
+            borderColor: brand.violet400,
+            backgroundColor: palette.violet50,
+            borderRadius: 20,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+          }}
+        >
+          <Ionicons name="globe-outline" size={12} color={brand.violet600} />
+          <Text style={{ fontSize: 11, color: brand.violet600, fontWeight: "600" }}>
+            {t("screens.nutrition.family_use_from_planner", { meal: suggestedMeal })}
+          </Text>
+        </Pressable>
+      ) : null}
+
+      {!result && !loading && !error ? (
+        <View style={{
+          borderRadius: 16, borderWidth: 1, borderStyle: "dashed", borderColor: palette.slate200,
+          padding: 24, alignItems: "center",
+        }}>
+          <Text style={{ fontSize: 36, marginBottom: 8 }}>🍽️</Text>
+          <Text style={{ fontSize: 12, color: palette.slate500, textAlign: "center" }}>
+            {t("screens.nutrition.family_empty_hint")}
+          </Text>
+        </View>
+      ) : null}
+
+      {loading ? (
+        <View style={{ gap: 10, opacity: 0.75 }}>
+          {[1, 2, 3, 4].map(i => (
+            <View key={i} style={{ height: 72, borderRadius: 12, backgroundColor: palette.slate100, borderWidth: 1, borderColor: palette.slate200 }} />
           ))}
         </View>
-      </ScrollView>
-      <Text style={{ fontSize: 10, color: palette.slate400, textAlign: "center" }}>
-        {t("screens.nutrition.katori_note")}
-      </Text>
+      ) : null}
+
+      {error && !loading ? (
+        <View style={{ borderRadius: 12, borderWidth: 1, borderColor: palette.rose300, backgroundColor: palette.rose50, padding: 12, gap: 8 }}>
+          <Text style={{ fontSize: 12, color: palette.rose700 }}>{error}</Text>
+          <Pressable onPress={() => generate(true)} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Ionicons name="refresh" size={14} color={palette.rose700} />
+            <Text style={{ fontSize: 12, fontWeight: "600", color: palette.rose700 }}>{t("screens.nutrition.ai_plan_retry")}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {result && !loading ? (
+        <View style={{ gap: 12 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <Text style={{ fontSize: 18, fontWeight: "800", color: palette.slate800 }}>{result.meal}</Text>
+            {result.allergy_note ? (
+              <View style={{ borderWidth: 1, borderColor: palette.rose300, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
+                <Text style={{ fontSize: 10, color: palette.rose700, fontWeight: "600" }}>
+                  {t("screens.nutrition.family_allergy_modified")}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          <View style={{ gap: 10 }}>
+            {FAMILY_AGE_SLOTS.map(ag => {
+              const p = result.portions[ag.key];
+              return (
+                <View
+                  key={ag.key}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    gap: 12,
+                    borderWidth: 1,
+                    borderColor: palette.slate200,
+                    borderRadius: 12,
+                    padding: 12,
+                    backgroundColor: "#fff",
+                  }}
+                >
+                  <Text style={{ fontSize: 28 }}>{ag.icon}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 10, fontWeight: "700", color: palette.slate500, textTransform: "uppercase", marginBottom: 2 }}>
+                      {t(ag.labelKey)}
+                    </Text>
+                    <Text style={{ fontSize: 16, fontWeight: "800", color: palette.slate800 }}>{p.amount}</Text>
+                    {p.texture ? (
+                      <Text style={{ fontSize: 11, color: palette.slate500, fontStyle: "italic", marginTop: 2 }}>{p.texture}</Text>
+                    ) : null}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          {result.feeding_tip ? (
+            <View style={{ backgroundColor: palette.violet50, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: palette.violet200 }}>
+              <Text style={{ fontSize: 10, fontWeight: "700", color: palette.slate500, marginBottom: 4 }}>
+                {t("screens.nutrition.family_feeding_tip")}
+              </Text>
+              <Text style={{ fontSize: 12, color: palette.slate700, lineHeight: 18 }}>{result.feeding_tip}</Text>
+            </View>
+          ) : null}
+
+          {result.allergy_note ? (
+            <View style={{ backgroundColor: palette.rose50, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: palette.rose200 }}>
+              <Text style={{ fontSize: 12, color: palette.rose800 }}>{result.allergy_note}</Text>
+            </View>
+          ) : null}
+
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+            <Text style={{ fontSize: 10, color: palette.slate500, flex: 1 }}>
+              {t("screens.nutrition.family_smart_text")}
+            </Text>
+            <Pressable
+              onPress={() => generate(true)}
+              style={{ flexDirection: "row", alignItems: "center", gap: 4, borderWidth: 1, borderColor: palette.slate200, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 }}
+            >
+              <Ionicons name="refresh" size={14} color={palette.slate500} />
+              <Text style={{ fontSize: 11, fontWeight: "600", color: palette.slate500 }}>
+                {t("screens.nutrition.family_regenerate")}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
     </View>
+    </PremiumLock>
   );
 }
 
@@ -616,6 +892,7 @@ export default function NutritionScreen() {
   const [selectedNutrient, setSelectedNutrient] = useState<Nutrient | null>(null);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [showRefs, setShowRefs] = useState(false);
+  const [suggestedMeal, setSuggestedMeal] = useState("");
 
   const activeAg = AGE_GROUPS.find(a => a.id === activeAgeId)!;
   const ac = AGE_COLORS[activeAgeId];
@@ -765,7 +1042,7 @@ export default function NutritionScreen() {
               <Text style={{ fontSize: 12, color: palette.slate500, marginBottom: 12 }}>
                 {t("screens.nutrition.section_meal_desc")}
               </Text>
-              <AIMealPlanTab />
+              <AIMealPlanTab onMealChange={setSuggestedMeal} />
             </View>
           )}
 
@@ -776,7 +1053,7 @@ export default function NutritionScreen() {
               <Text style={{ fontSize: 12, color: palette.slate500, marginBottom: 12 }}>
                 {t("screens.nutrition.section_family_desc")}
               </Text>
-              <FamilyModeTab />
+              <FamilyModeTab suggestedMeal={suggestedMeal} />
             </View>
           )}
 

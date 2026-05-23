@@ -23,6 +23,13 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
   useNutritionRegion, RegionConfig, RegionalFoodSource,
 } from "@/lib/nutrition-region";
+import { LockedBlock } from "@/components/locked-block";
+import { TryFreeBadge } from "@/components/try-free-badge";
+import { useFeatureUsage } from "@/hooks/use-feature-usage";
+import { usePaywall } from "@/contexts/paywall-context";
+
+const NUTRITION_WEEK_PLAN_FEATURE = "nutrition_week_plan";
+const NUTRITION_FAMILY_AI_FEATURE = "nutrition_family_ai";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = "nutrients" | "meals" | "family" | "score";
@@ -230,6 +237,10 @@ function LoadingSkeleton() {
 function AIMealPlanSection({ onMealChange }: { onMealChange?: (mealName: string) => void }) {
   const { t } = useTranslation();
   const authFetch = useAuthFetch();
+  const usage = useFeatureUsage();
+  const { openPaywall } = usePaywall();
+  const mealLocked = usage.isFeatureLocked(NUTRITION_WEEK_PLAN_FEATURE);
+  const mealTryFree = !usage.isPremium && !usage.hasUsedFeature(NUTRITION_WEEK_PLAN_FEATURE);
   const [weather, setWeather] = useState<WeatherType>("moderate");
   const [dayIdx, setDayIdx] = useState(0);
   const [plan, setPlan] = useState<DayPlan[] | null>(null);
@@ -245,6 +256,10 @@ function AIMealPlanSection({ onMealChange }: { onMealChange?: (mealName: string)
   }, [plan, dayIdx, onMealChange]);
 
   const generate = useCallback(async (forceRefresh = false) => {
+    if (!usage.isPremium && (mealLocked || (forceRefresh && usage.hasUsedFeature(NUTRITION_WEEK_PLAN_FEATURE)))) {
+      openPaywall("hub_nutrition");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -253,6 +268,13 @@ function AIMealPlanSection({ onMealChange }: { onMealChange?: (mealName: string)
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ weather, forceRefresh }),
       });
+      if (res.status === 402) {
+        const j = await res.json().catch(() => ({})) as { error?: string; feature?: string };
+        if (j.error === "feature_locked" || j.feature === NUTRITION_WEEK_PLAN_FEATURE) {
+          openPaywall("hub_nutrition");
+          return;
+        }
+      }
       if (!res.ok) {
         const j = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(j.error ?? `Server error ${res.status}`);
@@ -262,12 +284,16 @@ function AIMealPlanSection({ onMealChange }: { onMealChange?: (mealName: string)
       setPlan(data?.plan ?? []);
       setGeneratedAt(data?.generatedAt ?? "");
       setDayIdx(0);
+      if (mealTryFree) {
+        usage.markFeatureUsed(NUTRITION_WEEK_PLAN_FEATURE);
+        usage.markFeatureUsed("hub_nutrition");
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
-  }, [authFetch, weather]);
+  }, [authFetch, weather, usage, mealLocked, mealTryFree, openPaywall]);
 
   const day = plan?.[dayIdx];
 
@@ -280,12 +306,14 @@ function AIMealPlanSection({ onMealChange }: { onMealChange?: (mealName: string)
   const dayShorts = t("nutrition_hub.days", { returnObjects: true }) as string[];
 
   return (
+    <LockedBlock locked={mealLocked && !plan}>
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h3 className="font-bold text-lg flex items-center gap-2">
             <Globe className="w-5 h-5 text-primary" />
             {t("nutrition_hub.ai_plan.title")}
+            {mealTryFree && <TryFreeBadge />}
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">{t("nutrition_hub.ai_plan.subtitle")}</p>
         </div>
@@ -398,6 +426,7 @@ function AIMealPlanSection({ onMealChange }: { onMealChange?: (mealName: string)
         </>
       )}
     </div>
+    </LockedBlock>
   );
 }
 
@@ -508,6 +537,10 @@ const AGE_SLOT_CONFIG: { key: keyof FamilyPortionResult["portions"]; icon: strin
 function FamilyModeSection({ suggestedMeal }: { suggestedMeal?: string }) {
   const { t } = useTranslation();
   const authFetch = useAuthFetch();
+  const usage = useFeatureUsage();
+  const { openPaywall } = usePaywall();
+  const familyLocked = usage.isFeatureLocked(NUTRITION_FAMILY_AI_FEATURE);
+  const familyTryFree = !usage.isPremium && !usage.hasUsedFeature(NUTRITION_FAMILY_AI_FEATURE);
   const [dishInput, setDishInput] = useState("");
   const [result, setResult] = useState<FamilyPortionResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -521,6 +554,10 @@ function FamilyModeSection({ suggestedMeal }: { suggestedMeal?: string }) {
   const generate = useCallback(async (forceRefresh = false) => {
     const dish = dishInput.trim();
     if (!dish) return;
+    if (!usage.isPremium && (familyLocked || (forceRefresh && usage.hasUsedFeature(NUTRITION_FAMILY_AI_FEATURE)))) {
+      openPaywall("hub_nutrition");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -529,6 +566,13 @@ function FamilyModeSection({ suggestedMeal }: { suggestedMeal?: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ meal_name: dish, forceRefresh }),
       });
+      if (res.status === 402) {
+        const j = await res.json().catch(() => ({})) as { error?: string; feature?: string };
+        if (j.error === "feature_locked" || j.feature === NUTRITION_FAMILY_AI_FEATURE) {
+          openPaywall("hub_nutrition");
+          return;
+        }
+      }
       if (!res.ok) {
         const j = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(j.error ?? `Server error ${res.status}`);
@@ -536,20 +580,28 @@ function FamilyModeSection({ suggestedMeal }: { suggestedMeal?: string }) {
       const { readResolvedApiJson } = await import("@/lib/poll-result");
       const data = await readResolvedApiJson<FamilyPortionResult>(res, authFetch);
       setResult(data ?? null);
+      if (familyTryFree) {
+        usage.markFeatureUsed(NUTRITION_FAMILY_AI_FEATURE);
+        usage.markFeatureUsed("hub_nutrition");
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
-  }, [authFetch, dishInput]);
+  }, [authFetch, dishInput, usage, familyLocked, familyTryFree, openPaywall]);
 
   return (
+    <LockedBlock locked={familyLocked && !result}>
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-start gap-3 rounded-xl bg-muted border border-border p-4">
         <Users className="h-5 w-5 text-foreground mt-0.5 shrink-0" />
         <div>
-          <p className="font-semibold text-foreground">{t("nutrition_hub.family.section_title")}</p>
+          <p className="font-semibold text-foreground flex items-center gap-2 flex-wrap">
+            {t("nutrition_hub.family.section_title")}
+            {familyTryFree && <TryFreeBadge />}
+          </p>
           <p className="text-sm text-foreground">{t("nutrition_hub.family.section_desc")}</p>
         </div>
       </div>
@@ -691,6 +743,7 @@ function FamilyModeSection({ suggestedMeal }: { suggestedMeal?: string }) {
         </div>
       )}
     </div>
+    </LockedBlock>
   );
 }
 

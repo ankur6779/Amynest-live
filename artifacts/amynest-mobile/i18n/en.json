@@ -1557,7 +1557,21 @@
       "ai_plan_error": "Couldn't generate plan",
       "ai_plan_retry": "Retry",
       "ai_plan_generated": "Generated {{date}}",
-      "ai_plan_regen": "Regenerate Plan"
+      "ai_plan_regen": "Regenerate Plan",
+      "family_enter_dish": "Enter a dish name",
+      "family_dish_placeholder": "e.g. Pasta, Dal Chawal, Chicken Soup…",
+      "family_generate_btn": "Generate Portions",
+      "family_use_from_planner": "Use from Meal Planner: {{meal}}",
+      "family_empty_hint": "Enter any dish — AI will suggest age-appropriate portions for the whole family.",
+      "family_allergy_modified": "Allergy modified",
+      "family_feeding_tip": "Amy's Tip",
+      "family_regenerate": "Regenerate",
+      "family_smart_text": "Same meal, different portions — no separate cooking needed",
+      "family_age_6_12m": "6–12 Months",
+      "family_age_1_3y": "1–3 Years",
+      "family_age_4_8y": "4–8 Years",
+      "family_age_adult": "Adult",
+      "try_free": "Try free"
     },
     "study": {
       "title": "📚 Smart Study Zone",
