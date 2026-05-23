@@ -1,0 +1,5 @@
+file '/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/.appstore-preview-work/launch.mp4'
+file '/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/.appstore-preview-work/personalize.mp4'
+file '/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/.appstore-preview-work/learning.mp4'
+file '/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/.appstore-preview-work/progress.mp4'
+file '/Users/macbook/AmyNestProject/AmyNest-AI/artifacts/kidschedule/.appstore-preview-work/cta.mp4'
