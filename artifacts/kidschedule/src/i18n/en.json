@@ -876,6 +876,8 @@
       "extras_added_body": "Scroll to the end of your deck to see them.",
       "extras_failed_title": "Couldn't load extras",
       "extras_failed_body": "Please tap 'Not worked for me' again in a moment.",
+      "next_step_failed_title": "Couldn't load the next step",
+      "next_step_failed_body": "Please tap Next or try again in a moment.",
       "copied_title": "Copied!",
       "copied_body": "Plan copied to clipboard."
     },
