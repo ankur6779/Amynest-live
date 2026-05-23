@@ -17,6 +17,7 @@
     "@google-cloud/storage": "^7.19.0",
     "@replit/connectors-sdk": "^0.4.0",
     "@workspace/abacus": "workspace:*",
+    "@workspace/gaming-rewards": "workspace:*",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/phonics-sounds": "workspace:*",

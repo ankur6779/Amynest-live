@@ -78,3 +78,4 @@ export * from "./speech_progress";
 export * from "./speech_practice_log";
 export * from "./speech_expert_waitlist";
 export * from "./user_feedback";
+export * from "./gaming_wallet";

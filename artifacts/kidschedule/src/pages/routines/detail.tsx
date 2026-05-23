@@ -16,6 +16,9 @@ import { getApiUrl } from "@/lib/api";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { addPoints, checkAndAwardBadges, getTotalPoints } from "@/lib/rewards";
+import { earnGamingPoints } from "@/lib/gaming-wallet-api";
+import { useAuth } from "@/lib/firebase-auth-hooks";
+import { routineDateKey } from "@/lib/routines";
 import { MealRecipeCard } from "@/components/MealRecipeCard";
 import { announceCurrentTask, isVoiceEnabled, getVoiceSettings } from "@/lib/voice";
 import { VoiceSettingsPanel } from "@/components/voice-settings";
@@ -438,6 +441,7 @@ export default function RoutineDetail() {
   } = useToast();
   const queryClient = useQueryClient();
   const authFetch = useAuthFetch();
+  const { isSignedIn } = useAuth();
   const { isPremium, entitlements } = useSubscription();
   const isRoutineGenerateLocked = !isPremium && (entitlements?.usage.features?.routine_generate?.locked ?? false);
   const [localItems, setLocalItems] = useState<RoutineItem[] | null>(null);
@@ -1007,7 +1011,20 @@ export default function RoutineDetail() {
         // Award points for completing task — use per-task points if present
         const childName = (childData as any)?.name ?? routine?.childName ?? "Child";
         const earned = (item as any).rewardPoints ?? 10;
-        addPoints(childName, item.activity, earned);
+        if (isSignedIn && routine?.id != null) {
+          const day = routineDateKey(routine as { date?: string }) || new Date().toISOString().slice(0, 10);
+          void earnGamingPoints(authFetch, {
+            childName,
+            activity: item.activity,
+            amount: earned,
+            source: "routine",
+            idempotencyKey: `routine-${routine.id}-${index}-${day}`,
+          }).catch(() => {
+            addPoints(childName, item.activity, earned);
+          });
+        } else {
+          addPoints(childName, item.activity, earned);
+        }
         toast({
           title: `+${earned} points earned 🎉`,
           description: item.activity
@@ -1028,7 +1045,7 @@ export default function RoutineDetail() {
       saveItemsMutation.mutate(updated);
       return updated;
     });
-  }, [saveItemsMutation, toast, routine]);
+  }, [saveItemsMutation, toast, routine, childData, isSignedIn, authFetch]);
 
   // Notifications
   const scheduleNotifications = useCallback((items: RoutineItem[]) => {
