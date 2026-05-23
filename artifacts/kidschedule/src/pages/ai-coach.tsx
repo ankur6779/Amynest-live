@@ -5,11 +5,12 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { useSectionUsage } from "@/hooks/use-section-usage";
 import { usePaywall } from "@/contexts/paywall-context";
-import { Sparkles, ArrowLeft, ArrowRight, Loader2, Search, Check, ChevronLeft, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart, Printer, Volume2, VolumeX, Lock } from "lucide-react";
+import { Sparkles, ArrowLeft, ArrowRight, Loader2, Search, Check, ChevronLeft, ChevronRight, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart, Printer, Volume2, VolumeX, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { INFANT_PROBLEMS, isInfantProblemId, getInfantProblem, pickLang as pickInfLang } from "@workspace/infant-problems";
 import { getTopicQuestions } from "@workspace/coach-topic-questions";
 import { COACH_AUDIO_GOAL_STORAGE_KEY } from "@/lib/audio-lessons";
+import { AGE_TILE_META } from "@/lib/audio-lessons-nav";
 
 /** Lazy win generation can take ~25s server-side; default fetch timeout is 8s. */
 const COACH_AI_FETCH_TIMEOUT_MS = 90_000;
@@ -435,6 +436,32 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   }]
 }];
 const ALL_GOALS: GoalItem[] = GOAL_CATEGORIES.flatMap(c => c.items);
+
+/** Per-category tile gradients — same palette as Amy Audio Lessons age tiles. */
+const COACH_CATEGORY_TILE_GRADIENTS: Record<string, string> = {
+  behavior: "linear-gradient(135deg, hsl(var(--brand-pink-500) / 0.35), hsl(var(--brand-violet-600) / 0.25))",
+  "screen-focus": "linear-gradient(135deg, hsl(var(--brand-amber-400) / 0.3), hsl(var(--brand-pink-500) / 0.25))",
+  eating: "linear-gradient(135deg, hsl(var(--brand-emerald-500) / 0.28), hsl(var(--brand-violet-500) / 0.22))",
+  sleep: "linear-gradient(135deg, hsl(var(--brand-violet-500) / 0.3), hsl(var(--brand-violet-700) / 0.28))",
+  learning: "linear-gradient(135deg, hsl(var(--brand-violet-400) / 0.32), hsl(var(--brand-emerald-500) / 0.2))",
+  "infant-problems": "linear-gradient(135deg, hsl(var(--brand-pink-500) / 0.38), hsl(var(--brand-violet-600) / 0.26))",
+  "parenting-challenges": "linear-gradient(135deg, hsl(var(--brand-amber-400) / 0.28), hsl(var(--brand-violet-500) / 0.24))",
+  "toddler-behavior": "linear-gradient(135deg, hsl(var(--brand-amber-400) / 0.32), hsl(var(--brand-pink-500) / 0.24))",
+  "daily-skills": "linear-gradient(135deg, hsl(var(--brand-emerald-500) / 0.3), hsl(var(--brand-violet-500) / 0.22))",
+  "family-dynamics": "linear-gradient(135deg, hsl(var(--brand-violet-400) / 0.3), hsl(var(--brand-pink-500) / 0.22))",
+  "special-situations": "linear-gradient(135deg, hsl(var(--brand-violet-600) / 0.32), hsl(var(--brand-amber-400) / 0.18))",
+  "kids-health-concern": "linear-gradient(135deg, hsl(var(--brand-emerald-500) / 0.26), hsl(var(--brand-violet-600) / 0.24))",
+  "for-you": "linear-gradient(135deg, hsl(var(--brand-pink-500) / 0.32), hsl(var(--brand-violet-400) / 0.22))",
+};
+
+const COACH_TILE_BORDER = "1px solid rgba(139,92,246,0.28)";
+
+function coachCategoryGradient(categoryId: string): string {
+  return (
+    COACH_CATEGORY_TILE_GRADIENTS[categoryId]
+    ?? "linear-gradient(135deg, hsl(var(--brand-violet-500) / 0.3), hsl(var(--brand-violet-600) / 0.25))"
+  );
+}
 
 // ─── Free vs Premium goal gating ──────────────────────────────────────────
 // Exactly ONE goal per category is offered as a free sample.
@@ -1296,18 +1323,25 @@ export default function AICoachPage() {
             </Link>
           </div>
 
-          <div className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-border p-4" style={{
-          background: "linear-gradient(135deg,rgba(139,92,246,0.2) 0%,rgba(236,72,153,0.1) 100%)",
-          boxShadow: "0 0 35px rgba(139,92,246,0.25), inset 0 1px 0 rgba(255,255,255,0.07)"
+          <div className="relative rounded-[18px] overflow-hidden backdrop-blur-md p-4" style={{
+          background: coachCategoryGradient(activeCat.id),
+          border: COACH_TILE_BORDER,
+          boxShadow: "0 0 35px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.08)"
         }}>
-            <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full blur-3xl pointer-events-none" style={{
-            background: "rgba(139,92,246,0.3)"
-          }} />
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: "rgba(255,255,255,0.04)" }}
+            />
             <div className="flex items-center gap-3 relative">
-              <span className="text-4xl">{activeCat.emoji}</span>
+              <div
+                className="w-12 h-12 rounded-[14px] flex items-center justify-center text-3xl shrink-0"
+                style={{ background: "rgba(255,255,255,0.12)" }}
+              >
+                {activeCat.emoji}
+              </div>
               <div>
                 <h1 className="font-quicksand text-xl font-bold text-white">{activeCat.title}</h1>
-                <p className="text-xs text-white/50">{activeCat.items.length} {t("pages.ai_coach.goals_pick_one_to_start")}</p>
+                <p className="text-xs" style={{ color: "rgba(199,192,232,0.9)" }}>{activeCat.items.length} {t("pages.ai_coach.goals_pick_one_to_start")}</p>
               </div>
             </div>
           </div>
@@ -1320,18 +1354,27 @@ export default function AICoachPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {activeCat.items.map(g => {
             const access = getGoalAccess(g.id);
-            return <button key={g.id} data-on-dark onClick={() => handlePickGoal(g.id)} className="relative rounded-2xl p-5 border text-left backdrop-blur-md hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center gap-4 overflow-hidden" style={{
-              background: "linear-gradient(135deg,rgba(76,29,149,0.85) 0%,rgba(124,58,237,0.78) 60%,rgba(190,24,93,0.72) 100%)",
-              boxShadow: "0 6px 22px rgba(124,58,237,0.4), inset 0 1px 0 rgba(255,255,255,0.14)",
-              borderColor: access === "locked" ? "rgba(255,255,255,0.15)" : "rgba(167,139,250,0.6)",
+            return <button key={g.id} data-on-dark onClick={() => handlePickGoal(g.id)} className="relative rounded-[18px] p-5 text-left backdrop-blur-md hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center gap-4 overflow-hidden" style={{
+              background: coachCategoryGradient(activeCat.id),
+              border: COACH_TILE_BORDER,
+              boxShadow: "0 0 18px rgba(139,92,246,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
               opacity: access === "locked" ? 0.85 : 1
             }}>
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ background: "rgba(255,255,255,0.04)" }}
+                  />
                   <GoalBadge access={access} />
-                  <span className="text-3xl shrink-0">{g.emoji}</span>
-                  <div className="flex-1 pr-14">
+                  <div
+                    className="w-11 h-11 rounded-[14px] flex items-center justify-center text-2xl shrink-0 relative"
+                    style={{ background: "rgba(255,255,255,0.12)" }}
+                  >
+                    {g.emoji}
+                  </div>
+                  <div className="flex-1 pr-14 relative">
                     <p className="font-quicksand font-bold text-base text-white leading-tight">{g.title}</p>
                     <p className="text-[11px] mt-1" style={{
-                  color: access === "locked" ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.8)"
+                  color: access === "locked" ? "rgba(255,255,255,0.55)" : "rgba(199,192,232,0.9)"
                 }}>
                       {access === "locked" ? "Unlock with Premium" : "Tap to start →"}
                     </p>
@@ -1393,35 +1436,63 @@ export default function AICoachPage() {
         <button data-on-dark onClick={() => {
           const q = goalId ? `?goal=${encodeURIComponent(goalId)}` : "";
           setLocation(`/audio-lessons${q}`);
-        }} className="relative w-full rounded-3xl p-4 border border-border text-left backdrop-blur-md hover:border-border hover:scale-[1.01] active:scale-[0.98] transition-all overflow-hidden flex items-center gap-4" style={{
-        background: "linear-gradient(135deg,rgba(76,29,149,0.88) 0%,rgba(190,24,93,0.78) 100%)",
-        boxShadow: "0 0 24px rgba(139,92,246,0.35), inset 0 1px 0 rgba(255,255,255,0.14)"
+        }} className="relative w-full rounded-[18px] p-4 text-left backdrop-blur-md hover:scale-[1.01] active:scale-[0.98] transition-all overflow-hidden flex items-center gap-4" style={{
+        background: AGE_TILE_META[0]!.gradient,
+        border: COACH_TILE_BORDER,
+        boxShadow: "0 0 24px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.08)"
       }}>
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-2xl" style={{
-          background: "linear-gradient(135deg,hsl(var(--brand-violet-400)),hsl(var(--brand-pink-400)))"
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: "rgba(255,255,255,0.04)" }}
+          />
+          <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-2xl relative" style={{
+          background: "rgba(255,255,255,0.12)"
         }}>
             🎙️
           </div>
-          <div className="flex-1">
-            <p className="font-quicksand font-bold text-base text-white leading-tight">{t("pages.ai_coach.amy_audio_lessons")}</p>
-            <p className="text-[11.5px] text-white/85 mt-0.5">{t("pages.ai_coach.hands_full_listen_to_age_curated_parenting_lessons_3_5_min_e")}</p>
+          <div className="flex-1 relative min-w-0">
+            <p className="font-quicksand font-bold text-[15px] text-white leading-tight">{t("pages.ai_coach.amy_audio_lessons")}</p>
+            <p className="text-[12px] mt-1 leading-snug" style={{ color: "rgba(199,192,232,0.9)" }}>{t("pages.ai_coach.hands_full_listen_to_age_curated_parenting_lessons_3_5_min_e")}</p>
           </div>
-          <span className="text-muted-foreground text-lg shrink-0">→</span>
+          <ChevronRight size={18} color="rgba(255,255,255,0.5)" className="shrink-0 relative" />
         </button>
 
         <div className="grid grid-cols-2 gap-3">
-          {GOAL_CATEGORIES.map((cat, i) => {
-          return <button key={cat.id} data-on-dark onClick={() => setSelectedCategoryId(cat.id)} className="relative rounded-3xl p-5 border border-border text-left backdrop-blur-md hover:border-border hover:scale-[1.02] active:scale-[0.97] transition-all duration-200 overflow-hidden" style={{
-            background: "linear-gradient(135deg,rgba(76,29,149,0.85) 0%,rgba(124,58,237,0.78) 60%,rgba(190,24,93,0.75) 100%)",
-            boxShadow: "0 6px 24px rgba(124,58,237,0.45), inset 0 1px 0 rgba(255,255,255,0.14)",
-            animationDelay: `${i * 60}ms`
+          {GOAL_CATEGORIES.map((cat) => {
+          return <button key={cat.id} data-on-dark onClick={() => setSelectedCategoryId(cat.id)} className="relative rounded-[18px] p-4 text-left backdrop-blur-md hover:scale-[1.02] active:scale-[0.97] transition-all duration-200 overflow-hidden flex flex-col gap-3 min-h-[148px]" style={{
+            background: coachCategoryGradient(cat.id),
+            border: COACH_TILE_BORDER,
+            boxShadow: "0 0 20px rgba(139,92,246,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
           }}>
-              <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full blur-2xl opacity-60 pointer-events-none" style={{
-              background: "rgba(236,72,153,0.45)"
-            }} />
-              <span className="text-4xl block mb-3 relative">{cat.emoji}</span>
-              <p className="font-quicksand font-bold text-base text-white leading-tight relative">{cat.title}</p>
-              <p className="text-[11px] text-white/80 mt-1 relative">{cat.items.length} {t("pages.ai_coach.goals")}</p>
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{ background: "rgba(255,255,255,0.04)" }}
+              />
+              <div className="flex items-start justify-between gap-2 relative">
+                <div
+                  className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-2xl"
+                  style={{ background: "rgba(255,255,255,0.12)" }}
+                >
+                  {cat.emoji}
+                </div>
+                <ChevronRight size={18} color="rgba(255,255,255,0.5)" className="shrink-0 mt-1" />
+              </div>
+              <div className="relative flex-1 flex flex-col">
+                <p className="font-quicksand font-bold text-[15px] text-white leading-tight">{cat.title}</p>
+                <p className="text-[11px] mt-1" style={{ color: "rgba(169,159,217,0.85)" }}>
+                  {cat.items.length} {t("pages.ai_coach.goals")}
+                </p>
+                <span
+                  className="mt-auto self-start pt-2 text-[12px] font-extrabold px-3 py-1.5 rounded-full"
+                  style={{
+                    background: "rgba(255,255,255,0.14)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    color: "#fff",
+                  }}
+                >
+                  {t("pages.audio_lessons.explore")}
+                </span>
+              </div>
             </button>;
         })}
         </div>
