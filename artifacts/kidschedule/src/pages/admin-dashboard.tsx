@@ -101,9 +101,58 @@ interface DashboardData {
     disableStreaming: boolean;
     disableApi: boolean;
     forceEmergencyMode: boolean;
+    safeMode?: boolean;
+    pregenerationPaused?: boolean;
+    reduceDbReads?: boolean;
+    selfHealEnabled?: boolean;
     cacheClearedAt: number | null;
   };
 }
+
+type SystemHealthData = {
+  health: {
+    apiHealthy: boolean;
+    streamingHealthy: boolean;
+    cacheHealthy: boolean;
+    workerHealthy: boolean;
+    dbHealthy: boolean;
+    failureRate: number;
+    avgTTFA: number;
+    lastUpdated: number;
+  };
+  metrics: {
+    audioFailureRate: number;
+    apiErrorRate: number;
+    streamingStallRate: number;
+    workerQueueDelayMs: number;
+    cacheHitRate: number;
+    dbLatencyMs: number;
+    redisHealthy: boolean;
+  };
+  incidents: Array<{ type: string; cause: string; detectedAt: number }>;
+  services?: {
+    downCount: number;
+    services: Array<{
+      service: string;
+      status: "UP" | "DOWN";
+      consecutiveFailures: number;
+      lastError: string | null;
+    }>;
+  };
+  predictive?: {
+    ops: {
+      degradedMode: boolean;
+      apiUsageFactor: number;
+      prefetchDepth: number;
+      layerWeights: {
+        cache: number;
+        api: number;
+        streaming: number;
+      };
+    };
+    predictedIncidents: Array<{ type: string; cause: string; detectedAt: number }>;
+  };
+};
 
 type AdminAction =
   | "disable_streaming"
@@ -113,7 +162,11 @@ type AdminAction =
   | "clear_cache"
   | "force_emergency"
   | "reset_emergency"
-  | "reset_all";
+  | "reset_all"
+  | "enable_safe_mode"
+  | "disable_safe_mode"
+  | "enable_self_heal"
+  | "disable_self_heal";
 
 function pct(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
@@ -199,6 +252,16 @@ export default function AdminDashboardPage() {
     refetchInterval: 15_000,
   });
 
+  const { data: systemHealth } = useQuery({
+    queryKey: ["admin-system-health"],
+    queryFn: async (): Promise<SystemHealthData> => {
+      const res = await authFetch("/api/admin/system-health");
+      if (!res.ok) throw new Error(`http_${res.status}`);
+      return res.json();
+    },
+    refetchInterval: 20_000,
+  });
+
   const actionMutation = useMutation({
     mutationFn: async (action: AdminAction) => {
       const res = await authFetch("/api/admin/dashboard/actions", {
@@ -211,6 +274,7 @@ export default function AdminDashboardPage() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-system-health"] });
     },
   });
 
@@ -354,17 +418,127 @@ export default function AdminDashboardPage() {
                   loading={actionMutation.isPending}
                 />
                 <ActionButton
+                  label={data.ops.safeMode ? "Disable Safe Mode" : "Enable Safe Mode"}
+                  active={!!data.ops.safeMode}
+                  danger
+                  onClick={() =>
+                    actionMutation.mutate(data.ops.safeMode ? "disable_safe_mode" : "enable_safe_mode")
+                  }
+                  loading={actionMutation.isPending}
+                />
+                <ActionButton
+                  label={data.ops.selfHealEnabled === false ? "Enable Self-Heal" : "Disable Self-Heal"}
+                  active={data.ops.selfHealEnabled === false}
+                  onClick={() =>
+                    actionMutation.mutate(
+                      data.ops.selfHealEnabled === false ? "enable_self_heal" : "disable_self_heal",
+                    )
+                  }
+                  loading={actionMutation.isPending}
+                />
+                <ActionButton
                   label="Reset All"
                   onClick={() => actionMutation.mutate("reset_all")}
                   loading={actionMutation.isPending}
                 />
               </div>
+              {(data.ops.pregenerationPaused || data.ops.reduceDbReads) && (
+                <p className="text-[11px] text-amber-300 mt-2">
+                  {data.ops.pregenerationPaused && "Pregeneration paused · "}
+                  {data.ops.reduceDbReads && "Non-critical DB reads reduced"}
+                </p>
+              )}
               {data.ops.cacheClearedAt && (
                 <p className="text-[11px] text-muted-foreground mt-2">
                   Cache cleared {new Date(data.ops.cacheClearedAt).toLocaleString()}
                 </p>
               )}
             </Section>
+
+            {systemHealth && (
+              <Section title="System Health (Self-Healing)">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3">
+                  {(
+                    [
+                      ["API", systemHealth.health.apiHealthy],
+                      ["Streaming", systemHealth.health.streamingHealthy],
+                      ["Cache", systemHealth.health.cacheHealthy],
+                      ["Worker", systemHealth.health.workerHealthy],
+                      ["DB", systemHealth.health.dbHealthy],
+                    ] as const
+                  ).map(([label, ok]) => (
+                    <MiniStat
+                      key={label}
+                      label={label}
+                      value={ok ? "🟢 OK" : "🔴 Down"}
+                    />
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-muted-foreground">
+                  <span>API err: {pct(systemHealth.metrics.apiErrorRate)}</span>
+                  <span>Stall: {pct(systemHealth.metrics.streamingStallRate)}</span>
+                  <span>Queue: {Math.round(systemHealth.metrics.workerQueueDelayMs)}ms</span>
+                  <span>DB: {Math.round(systemHealth.metrics.dbLatencyMs)}ms</span>
+                </div>
+                {systemHealth.incidents.length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    {systemHealth.incidents.slice(0, 3).map((inc) => (
+                      <p key={`${inc.detectedAt}-${inc.cause}`} className="text-xs text-amber-200/90">
+                        Incident: {inc.cause} · {new Date(inc.detectedAt).toLocaleTimeString()}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                {systemHealth.services && (
+                  <div className="mt-4 pt-3 border-t border-white/10">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60 mb-2">
+                      Service heartbeats (10s poll)
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {systemHealth.services.services.map((svc) => (
+                        <MiniStat
+                          key={svc.service}
+                          label={svc.service}
+                          value={svc.status === "UP" ? "🟢 UP" : "🔴 DOWN"}
+                          sub={
+                            svc.status === "DOWN" && svc.lastError
+                              ? svc.lastError.slice(0, 40)
+                              : svc.consecutiveFailures > 0
+                                ? `${svc.consecutiveFailures} fail(s)`
+                                : undefined
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {systemHealth.predictive && (
+                  <div className="mt-4 pt-3 border-t border-white/10">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60 mb-2">
+                      Predictive healing
+                      {systemHealth.predictive.ops.degradedMode && (
+                        <span className="ml-2 text-amber-300">DEGRADED MODE</span>
+                      )}
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-muted-foreground mb-2">
+                      <span>API factor: {pct(1 - systemHealth.predictive.ops.apiUsageFactor)}</span>
+                      <span>Cache wt: {pct(systemHealth.predictive.ops.layerWeights.cache)}</span>
+                      <span>API wt: {pct(systemHealth.predictive.ops.layerWeights.api)}</span>
+                      <span>Prefetch: {systemHealth.predictive.ops.prefetchDepth} para</span>
+                    </div>
+                    {systemHealth.predictive.predictedIncidents.length > 0 && (
+                      <div className="space-y-1">
+                        {systemHealth.predictive.predictedIncidents.slice(0, 3).map((inc) => (
+                          <p key={`${inc.detectedAt}-${inc.cause}`} className="text-xs text-amber-200/80">
+                            Predicted: {inc.cause} · {new Date(inc.detectedAt).toLocaleTimeString()}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Section>
+            )}
 
             {/* 2. Audio health */}
             <Section title="Audio Health">
@@ -552,11 +726,20 @@ export default function AdminDashboardPage() {
   );
 }
 
-function MiniStat({ label, value }: { label: string; value: string }) {
+function MiniStat({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+}) {
   return (
     <div className="rounded-xl bg-white/[0.03] border border-white/10 px-3 py-2">
       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="text-lg font-bold font-quicksand">{value}</p>
+      {sub && <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{sub}</p>}
     </div>
   );
 }

@@ -82,9 +82,9 @@ export async function createApp(): Promise<Express> {
     res.json({ status: "running", service: "AmyNest API" });
   });
 
-  /** Load balancers / Render keep-warm — minimal response. */
+  /** Load balancers / Render keep-warm — heartbeat for crash poller. */
   app.get("/health", (_req, res) => {
-    res.status(200).type("text/plain").send("ok");
+    res.status(200).json({ ok: true, timestamp: Date.now() });
   });
 
   /** Render healthCheckPath + probes that do not use the /api prefix. */

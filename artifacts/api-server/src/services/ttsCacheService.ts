@@ -3,6 +3,7 @@ import { db, ttsCacheTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { getOpenAiTtsModel, getOpenAiTtsVoice } from "../lib/openai-tts-config.js";
 import { logger } from "../lib/logger.js";
+import { shouldReduceDbReads } from "./admin-ops-store.js";
 import {
   resolveTtsPlaybackUrl,
   ttsAudioBackfillPostgres,
@@ -82,14 +83,16 @@ export async function trySynthesizeFromCache(
   if (!row || !(await ttsAudioExists(cacheKey, row))) return null;
 
   const audioUrl = resolveTtsPlaybackUrl(cacheKey, row);
-  void db
-    .update(ttsCacheTable)
-    .set({
-      hitCount: sql`${ttsCacheTable.hitCount} + 1`,
-      lastAccessedAt: sql`now()`,
-    })
-    .where(eq(ttsCacheTable.cacheKey, cacheKey))
-    .catch(() => {});
+  if (!shouldReduceDbReads()) {
+    void db
+      .update(ttsCacheTable)
+      .set({
+        hitCount: sql`${ttsCacheTable.hitCount} + 1`,
+        lastAccessedAt: sql`now()`,
+      })
+      .where(eq(ttsCacheTable.cacheKey, cacheKey))
+      .catch(() => {});
+  }
 
   return {
     cacheKey,

@@ -32,6 +32,11 @@ router.get("/healthz", (_req, res) => {
   res.json(data);
 });
 
+/** Heartbeat for crash detection poller. */
+router.get("/health", (_req, res) => {
+  res.json({ ok: true, timestamp: Date.now() });
+});
+
 /** Full env diagnostics (no secret values). */
 router.get("/healthz/env", async (_req, res) => {
   const drive = getDriveKeyDiagnostics();

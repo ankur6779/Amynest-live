@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAmyVoice, type SpeakResult } from "@/hooks/use-amy-voice";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { prefetchLessonParagraph } from "@/lib/amy-voice-pipeline-optimizer";
+import { getPredictivePrefetchDepth, getAdminAudioOps } from "@/lib/admin-audio-ops";
+import { getServerPrefetchDepth } from "@/lib/amy-voice-pipeline-server-sync";
 import {
   assertLessonSpeakConsistency,
   createAudioIdentity,
@@ -270,18 +272,31 @@ export function useLessonPlayback({
 
   useEffect(() => {
     if (intent !== "playing") return;
-    const nextText = paragraphs[paragraphIdx + 1];
-    if (!nextText?.trim()) return;
-    const currentIdentity = identityForParagraph(lessonId, paragraphs, paragraphIdx);
-    const nextIdentity = identityForParagraph(lessonId, paragraphs, paragraphIdx + 1);
-    if (!nextIdentity) return;
-    prefetchLessonParagraph(
-      nextIdentity,
-      authFetch,
-      voiceId,
-      modelId,
-      currentIdentity ?? undefined,
+    const prefetchDepth = Math.max(
+      getPredictivePrefetchDepth(),
+      getServerPrefetchDepth(),
+      getAdminAudioOps().prefetchDepth ?? 1,
     );
+
+    for (let offset = 1; offset <= prefetchDepth; offset += 1) {
+      const nextIdx = paragraphIdx + offset;
+      const nextText = paragraphs[nextIdx];
+      if (!nextText?.trim()) break;
+
+      const prevIdx = nextIdx - 1;
+      const previousIdentity =
+        prevIdx >= 0 ? identityForParagraph(lessonId, paragraphs, prevIdx) : undefined;
+      const nextIdentity = identityForParagraph(lessonId, paragraphs, nextIdx);
+      if (!nextIdentity) continue;
+
+      prefetchLessonParagraph(
+        nextIdentity,
+        authFetch,
+        voiceId,
+        modelId,
+        previousIdentity ?? undefined,
+      );
+    }
   }, [intent, paragraphIdx, paragraphs, authFetch, voiceId, modelId, lessonId]);
 
   return {

@@ -47,7 +47,7 @@ import {
 } from "@/lib/static-audio";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
-import { isAdminEmergencyForced } from "@/lib/admin-audio-ops";
+import { isAdminEmergencyForced, isCacheDisabled } from "@/lib/admin-audio-ops";
 import { emitAmyVoiceTextFallback } from "@/lib/amy-voice-visual-fallback";
 import { resetClientStaticAudioCircuit } from "@/lib/static-audio-telemetry";
 import {
@@ -529,6 +529,8 @@ async function attemptCachePlay(
   fallbackTexts: string[] = [],
   opts?: SpeakOptions,
 ): Promise<PlayAttemptResult> {
+  if (isCacheDisabled()) return { ok: false, error: "cache_disabled" };
+
   if (opts?.parentHub && isParentHubAudioIdentity(opts.audioIdentity)) {
     assertVerbatimParentHubText(text, opts.audioIdentity.text);
     for (const tryMode of staticModesToTry(mode, phonicsOnly)) {

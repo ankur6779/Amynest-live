@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getAuth } from "../lib/auth";
 import {
   applyAdminOpsAction,
-  getAdminOpsState,
+  getAdminOpsControlPanel,
   type AdminOpsAction,
 } from "../services/admin-ops-store";
 import {
@@ -11,6 +11,9 @@ import {
   getAudioHealthDashboard,
   ingestAudioHealthEvents,
 } from "../services/audio-health-store";
+import { getSystemHealthSnapshot } from "../services/system-health-store";
+import { getPredictiveOpsState, getPredictedIncidents } from "../services/predictive-ops-store";
+import { getMetricsHistory } from "../services/predictive-trend-store";
 
 const router: IRouter = Router();
 
@@ -47,6 +50,10 @@ const actionSchema = z.object({
     "force_emergency",
     "reset_emergency",
     "reset_all",
+    "enable_safe_mode",
+    "disable_safe_mode",
+    "enable_self_heal",
+    "disable_self_heal",
   ]),
 });
 
@@ -85,7 +92,10 @@ router.post("/audio-health", async (req, res): Promise<void> => {
  * GET /api/audio-ops — live ops flags for all authenticated clients.
  */
 router.get("/audio-ops", (_req, res): void => {
-  res.json(getAdminOpsState());
+  res.json({
+    ...getAdminOpsControlPanel(),
+    ...getPredictiveOpsState(),
+  });
 });
 
 /**
@@ -99,6 +109,36 @@ router.get("/admin/dashboard", async (req, res): Promise<void> => {
   }
 
   res.json(getAdminDashboard());
+});
+
+/**
+ * GET /api/admin/system-health — global infra + audio health snapshot.
+ */
+router.get("/admin/system-health", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+
+  res.json(await getSystemHealthSnapshot());
+});
+
+/**
+ * GET /api/admin/predictive-health — trend history + predicted incidents.
+ */
+router.get("/admin/predictive-health", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+
+  res.json({
+    ops: getPredictiveOpsState(),
+    trends: getMetricsHistory(),
+    predictedIncidents: getPredictedIncidents(),
+  });
 });
 
 /**

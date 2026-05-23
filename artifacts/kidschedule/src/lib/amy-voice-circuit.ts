@@ -2,6 +2,7 @@
 
 import { getAdaptiveApiCircuitMs } from "@/lib/amy-voice-adaptive";
 import { isAdminApiDisabled } from "@/lib/admin-audio-ops";
+import { isApiBackoffActive, resetApiBackoff } from "@/lib/amy-voice-api-backoff";
 
 let ttsApiCircuitUntil = 0;
 let consecutiveTtsFailures = 0;
@@ -41,16 +42,23 @@ export function recordTtsApiFailure(error?: string): void {
 export function recordTtsApiSuccess(): void {
   consecutiveTtsFailures = 0;
   ttsApiCircuitUntil = 0;
+  resetApiBackoff();
 }
 
 /** Fresh user speak — do not inherit a prior API failure window. */
 export function resetTtsApiCircuit(): void {
   consecutiveTtsFailures = 0;
   ttsApiCircuitUntil = 0;
+  resetApiBackoff();
 }
 
 export function shouldSkipLiveTtsApi(): boolean {
-  return isAdminApiDisabled() || isAmyVoiceOffline() || isTtsApiCircuitOpen();
+  return (
+    isAdminApiDisabled() ||
+    isAmyVoiceOffline() ||
+    isTtsApiCircuitOpen() ||
+    isApiBackoffActive()
+  );
 }
 
 /** Force API layer offline after repeated audible-start failures. */

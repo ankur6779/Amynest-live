@@ -20,10 +20,12 @@ import {
   formatBlendLine,
 } from "@workspace/phonics-sounds";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
+import { isPregenerationPaused } from "../services/admin-ops-store.js";
 import {
   ingestTtsTelemetry,
   resolveTtsStrategy,
 } from "../services/ttsIntelligenceService.js";
+import { applyPredictiveStrategyAdjustments } from "../services/predictive-strategy.js";
 import {
   computeTtsCacheKey,
   AMY_MODEL_ID_DEFAULT,
@@ -384,6 +386,11 @@ router.post("/tts/pregenerate", async (req, res): Promise<void> => {
     return;
   }
 
+  if (isPregenerationPaused()) {
+    res.status(503).json({ error: "pregeneration_paused", ok: false });
+    return;
+  }
+
   const rawTexts = req.body?.texts;
   if (!Array.isArray(rawTexts) || rawTexts.length === 0) {
     res.status(400).json({ error: "invalid_texts" });
@@ -502,7 +509,7 @@ router.get("/tts/strategy", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(resolveTtsStrategy(parsed.data));
+  res.json(applyPredictiveStrategyAdjustments(resolveTtsStrategy(parsed.data)));
 });
 
 /**

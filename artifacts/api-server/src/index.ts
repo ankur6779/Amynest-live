@@ -112,6 +112,21 @@ async function startBackgroundTasks(): Promise<void> {
     startStaticAudioMonitor();
   });
 
+  await runBackgroundPhase("self_healing_controller", async () => {
+    const { startSelfHealingController } = await import("./services/self-healing-controller.js");
+    startSelfHealingController();
+  });
+
+  await runBackgroundPhase("crash_recovery_controller", async () => {
+    const { startCrashRecoveryController } = await import("./services/crash-recovery-controller.js");
+    startCrashRecoveryController();
+  });
+
+  await runBackgroundPhase("predictive_healing_controller", async () => {
+    const { startPredictiveHealingController } = await import("./services/predictive-healing-controller.js");
+    startPredictiveHealingController();
+  });
+
   if (isModuleEnabled("redis")) {
     const { isWorkerEnabled } = await import("./queue/mode.js");
     if (isWorkerEnabled()) {

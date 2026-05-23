@@ -7,6 +7,13 @@ import {
 import { readResolvedApiJson, type AuthFetchFn } from "@/lib/poll-result";
 import { getTtsRequestTimeoutMs } from "@/lib/tts-guard";
 import {
+  isApiBackoffActive,
+  recordApiBackoffFailure,
+  resetApiBackoff,
+  waitForApiBackoff,
+} from "@/lib/amy-voice-api-backoff";
+import { shouldSkipLiveTtsApi } from "@/lib/amy-voice-circuit";
+import {
   getPhonicsAudioText,
   getPhonemeAudioText,
   getCvcWordAudioText,
@@ -82,6 +89,13 @@ export async function generateTts(
     logDynamicTtsViolation(phrase, mode);
   }
 
+  if (shouldSkipLiveTtsApi() || isApiBackoffActive()) {
+    await waitForApiBackoff();
+    if (shouldSkipLiveTtsApi()) {
+      return { success: false, ok: false, error: "api_circuit_open" };
+    }
+  }
+
   try {
     const voiceOverride = String(body.voice ?? body.voiceId ?? "").trim();
     const payload: Record<string, unknown> = {
@@ -117,8 +131,10 @@ export async function generateTts(
       error?: string;
     }>(res, authFetch).catch(() => null);
     if (!res.ok || !data?.ok) {
+      recordApiBackoffFailure();
       return { success: false, ok: false, error: data?.error ?? `generate_failed_${res.status}` };
     }
+    resetApiBackoff();
     const audioUrl = data.url ?? data.audioUrl;
     if (!isValidAudioUrl(audioUrl)) {
       return { success: false, ok: false, error: "tts_invalid_audio_url" };
@@ -131,6 +147,7 @@ export async function generateTts(
       cached: data.cached,
     };
   } catch {
+    recordApiBackoffFailure();
     return { success: false, ok: false, error: "tts_failed" };
   }
 }

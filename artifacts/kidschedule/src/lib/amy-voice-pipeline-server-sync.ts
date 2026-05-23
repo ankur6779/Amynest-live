@@ -13,6 +13,17 @@ export type ServerTtsStrategy = {
   apiDegraded: boolean;
   popularCacheKeys: string[];
   transitions: Record<string, Record<string, number>>;
+  degradedMode?: boolean;
+  layerWeights?: {
+    static: number;
+    cache: number;
+    api: number;
+    streaming: number;
+    elevenlabs: number;
+  };
+  apiUsageFactor?: number;
+  streamingWeightFactor?: number;
+  prefetchDepth?: number;
 };
 
 export type ServerTelemetryEvent = {
@@ -79,6 +90,24 @@ export function isApiGloballyDegraded(): boolean {
   return cachedStrategy?.apiDegraded ?? false;
 }
 
+export function isServerDegradedMode(): boolean {
+  return cachedStrategy?.degradedMode ?? false;
+}
+
+export function getServerPrefetchDepth(): number {
+  return Math.max(1, Math.min(2, cachedStrategy?.prefetchDepth ?? 1));
+}
+
+export function getServerLayerWeight(layer: LearnableLayer): number {
+  const weights = cachedStrategy?.layerWeights;
+  if (!weights) return 1;
+  if (layer === "static") return weights.static;
+  if (layer === "cache") return weights.cache;
+  if (layer === "api") return weights.api;
+  if (layer === "elevenlabs") return weights.elevenlabs;
+  return 1;
+}
+
 export function getServerStrategy(): ServerTtsStrategy {
   return cachedStrategy ?? DEFAULT_STRATEGY;
 }
@@ -93,6 +122,11 @@ export function getServerLayerScore(
   let score = Math.max(0.1, rankScore);
   score += strategy.boosts[layer] ?? 0;
   score -= strategy.penalties[layer] ?? 0;
+  score *= getServerLayerWeight(layer);
+
+  if (strategy.apiUsageFactor != null && strategy.apiUsageFactor < 1 && layer === "api") {
+    score *= strategy.apiUsageFactor;
+  }
 
   if (context.networkProfile === "slow" && (layer === "api" || layer === "elevenlabs")) {
     score -= 0.1;
