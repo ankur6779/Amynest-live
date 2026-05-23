@@ -168,6 +168,28 @@ export function mergeCoachPlan(
   };
 }
 
+function minimalCoachFallbackWin(winNumber: number, goalLabel: string): CoachWin {
+  return {
+    win: winNumber,
+    title: "Try one smaller step",
+    objective: `Make steady progress on ${goalLabel.toLowerCase()}`,
+    deep_explanation:
+      "When a strategy feels too big, shrinking the step keeps momentum without overwhelming your child. " +
+      "Small wins rebuild trust and make the next attempt easier.",
+    actions: [
+      "Pick one tiny action for today only",
+      "Practice once when everyone is calm",
+      "Celebrate any attempt, even partial",
+    ],
+    example:
+      "Instead of fixing the whole routine, parent says: 'Tonight we try one thing — shoes by the door before story.'",
+    mistake_to_avoid: "Adding more rules when the current step still feels too hard.",
+    micro_task: "Write one sticky-note reminder for today's tiny step.",
+    duration: "3–5 days",
+    science_reference: "BJ Fogg — Tiny Habits",
+  };
+}
+
 async function loadFallbackPlan(input: CoachInput): Promise<CoachPlan> {
   const mod = await import("../routes/ai-coach.js");
   return mod.fallbackPlan(input);
@@ -530,7 +552,11 @@ ${goalBrief}`;
   if (fallback && validateWin(fallback)) {
     return { win: { ...fallback, win: nextWinNumber }, aiOk: false };
   }
-  throw new Error("next_win_fallback_unavailable");
+  logger.warn({ win: nextWinNumber, goal: input.goal }, "ai-coach next win using minimal fallback");
+  return {
+    win: minimalCoachFallbackWin(nextWinNumber, goalLabel),
+    aiOk: false,
+  };
 }
 
 export async function generateRemainingWinsWithAi(

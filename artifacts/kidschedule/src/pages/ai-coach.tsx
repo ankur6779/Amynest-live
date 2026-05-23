@@ -11,6 +11,9 @@ import { INFANT_PROBLEMS, isInfantProblemId, getInfantProblem, pickLang as pickI
 import { getTopicQuestions } from "@workspace/coach-topic-questions";
 import { COACH_AUDIO_GOAL_STORAGE_KEY } from "@/lib/audio-lessons";
 
+/** Lazy win generation can take ~25s server-side; default fetch timeout is 8s. */
+const COACH_AI_FETCH_TIMEOUT_MS = 90_000;
+
 // ─── Goals (categorized) ───────────────────────────────────────────────────
 interface GoalItem {
   id: string;
@@ -600,14 +603,18 @@ export default function AICoachPage() {
   const [loadingNextWin, setLoadingNextWin] = useState(false);
   const fetchingNextRef = useRef(false);
 
-  // Keep last submitted answers/payload around so we can call /extend later
+  // Keep last submitted answers/payload around so lazy /next-win and /extend work
   const lastPayloadRef = useRef<{
     goal: string;
     ageGroup: string;
     severity: string;
     triggers: string[];
     routine: string;
+    topicAnswers?: Record<string, string | string[]>;
   } | null>(null);
+
+  const planRef = useRef(plan);
+  planRef.current = plan;
 
   // Freeze the denominator at the original plan size (12).
   // Extension cards are bonus — adding them must never drop the progress %.
@@ -677,6 +684,7 @@ export default function AICoachPage() {
             triggers: string[];
             routine: string;
             language?: string;
+            topicAnswers?: Record<string, string | string[]>;
           };
           feedbacks: Record<string, string>;
         };
@@ -691,15 +699,19 @@ export default function AICoachPage() {
         setSessionId(data.sessionId);
         setGoalId(data.goalId);
         setFeedbackByWin(restoredFeedbacks);
-        originalWinCountRef.current = data.plan.wins.length;
+        originalWinCountRef.current = 12;
 
-        // Restore lastPayloadRef so /extend can work if needed
+        // Restore lastPayloadRef so lazy /next-win and /extend work after resume
+        const resumedTopicAnswers = data.inputs.topicAnswers;
         lastPayloadRef.current = {
           goal: data.inputs.goal,
           ageGroup: data.inputs.ageGroup,
           severity: data.inputs.severity,
           triggers: data.inputs.triggers ?? [],
-          routine: data.inputs.routine
+          routine: data.inputs.routine,
+          topicAnswers: resumedTopicAnswers && Object.keys(resumedTopicAnswers).length > 0
+            ? resumedTopicAnswers
+            : undefined,
         };
 
         // Jump to the first incomplete win (no feedback yet), or last win if all done
@@ -871,7 +883,8 @@ export default function AICoachPage() {
       ageGroup: payload.ageGroup,
       severity: payload.severity,
       triggers: payload.triggers,
-      routine: payload.routine
+      routine: payload.routine,
+      topicAnswers: Object.keys(topicAnswers).length > 0 ? topicAnswers : undefined,
     };
     const applyCoachResponse = (data: {
       plan: Plan;
@@ -899,7 +912,7 @@ export default function AICoachPage() {
         },
         body,
         signal: ctrl.signal
-      });
+      }, COACH_AI_FETCH_TIMEOUT_MS);
       if (res.status === 402) {
         window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
           detail: {
@@ -976,11 +989,12 @@ export default function AICoachPage() {
   };
 
   const fetchNextWin = async (): Promise<number | null> => {
-    if (!plan || !lastPayloadRef.current || !sessionId || fetchingNextRef.current) {
+    const currentPlan = planRef.current;
+    if (!currentPlan || !lastPayloadRef.current || !sessionId || fetchingNextRef.current) {
       return null;
     }
     const total = originalWinCountRef.current || 12;
-    if (plan.wins.length >= total) return plan.wins.length;
+    if (currentPlan.wins.length >= total) return currentPlan.wins.length;
 
     fetchingNextRef.current = true;
     setLoadingNextWin(true);
@@ -993,14 +1007,14 @@ export default function AICoachPage() {
           ...lastPayloadRef.current,
           sessionId,
           plan: {
-            title: plan.title,
-            root_cause: plan.root_cause,
-            summary: plan.summary,
+            title: currentPlan.title,
+            root_cause: currentPlan.root_cause,
+            summary: currentPlan.summary,
           },
-          existingWins: plan.wins,
+          existingWins: currentPlan.wins,
           language: i18nInstance.language || "en",
         }),
-      });
+      }, COACH_AI_FETCH_TIMEOUT_MS);
       if (res.status === 402) {
         window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
           detail: { reason: "ai_quota" },
@@ -1011,14 +1025,15 @@ export default function AICoachPage() {
       const { readResolvedApiJson } = await import("@/lib/poll-result");
       const data = await readResolvedApiJson<{ win?: Win }>(res, authFetch);
       if (!data?.win) throw new Error("empty win");
-      const newLen = plan.wins.length + 1;
+      const newLen = currentPlan.wins.length + 1;
       setPlan((p) => (p ? { ...p, wins: [...p.wins, data.win!] } : p));
       setProgressWinCount(newLen);
       return newLen;
-    } catch {
+    } catch (err) {
+      console.error("[ai-coach] fetchNextWin failed:", err);
       toast({
-        title: "Couldn't load the next step",
-        description: "Please try again in a moment.",
+        title: t("toasts.ai_coach.next_step_failed_title", "Couldn't load the next step"),
+        description: t("toasts.ai_coach.next_step_failed_body", "Please tap Next or try again in a moment."),
         variant: "destructive",
       });
       return null;
@@ -1029,9 +1044,10 @@ export default function AICoachPage() {
   };
 
   const advanceAfterFeedback = async (targetIdx: number) => {
-    if (!plan) return;
+    const currentPlan = planRef.current;
+    if (!currentPlan) return;
     const total = originalWinCountRef.current || 12;
-    let deckLen = plan.wins.length;
+    let deckLen = currentPlan.wins.length;
     if (targetIdx >= deckLen && deckLen < total && lastPayloadRef.current) {
       const fetched = await fetchNextWin();
       if (!fetched) return;
@@ -1092,10 +1108,10 @@ export default function AICoachPage() {
   };
 
   // ─── Adaptive: ask backend for 3 more wins when a step doesn't work
-  const requestExtension = async (failedWinNumber: number) => {
-    if (!plan || !lastPayloadRef.current || extending) return;
+  const requestExtension = async (failedWinNumber: number): Promise<boolean> => {
+    if (!plan || !lastPayloadRef.current || extending) return false;
     const failedWin = plan.wins.find(w => w.win === failedWinNumber);
-    if (!failedWin) return;
+    if (!failedWin) return false;
     // Capture the card the user is currently on — we'll go one step forward from here
     const nextIdx = activeIdx + 1;
     setExtending(true);
@@ -1117,7 +1133,7 @@ export default function AICoachPage() {
           existingWinTitles: plan.wins.map(w => w.title),
           language: i18nInstanceX.language || "en"
         })
-      });
+      }, COACH_AI_FETCH_TIMEOUT_MS);
       if (res.status === 402) {
         window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
         window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
@@ -1125,7 +1141,7 @@ export default function AICoachPage() {
             reason: "ai_quota"
           }
         }));
-        return;
+        return false;
       }
       if (!res.ok) throw new Error(`Server ${res.status}`);
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
@@ -1138,18 +1154,22 @@ export default function AICoachPage() {
           wins: [...p.wins, ...newWins]
         } : p);
         toast({
-          title: "3 new strategies added 💛",
-          description: "Scroll to the end of your deck to see them."
+          title: t("toasts.ai_coach.extras_added_title"),
+          description: t("toasts.ai_coach.extras_added_body")
         });
         // Go to the very next card from where the user tapped — NOT the extension cards
         setTimeout(() => goToCard(nextIdx), 80);
+        return true;
       }
-    } catch {
+      return false;
+    } catch (err) {
+      console.error("[ai-coach] requestExtension failed:", err);
       toast({
-        title: "Couldn't load extras",
-        description: "Please tap 'Not worked for me' again in a moment.",
+        title: t("toasts.ai_coach.extras_failed_title"),
+        description: t("toasts.ai_coach.extras_failed_body"),
         variant: "destructive"
       });
+      return false;
     } finally {
       setExtending(false);
     }
@@ -1781,13 +1801,11 @@ export default function AICoachPage() {
         const currentWin = plan.wins[activeIdx];
         const hasFeedback = currentWin ? !!feedbackByWin[currentWin.win] : false;
         const atLastLoaded = activeIdx >= plan.wins.length - 1;
-        // While streaming, "last loaded" doesn't mean "last in plan" — the
-        // next win is still on its way, so we show a generating hint.
+        const totalPlan = originalWinCountRef.current || 12;
+        const canLoadMoreWins = plan.wins.length < totalPlan;
         const waitingForNext = atLastLoaded && loadingNextWin;
-        // Next is disabled when (a) we're at the genuine last card, OR
-        // (b) the next streamed win hasn't arrived yet, OR (c) the parent
-        // hasn't selected feedback for the visible card yet.
-        const nextDisabled = atLastLoaded || !hasFeedback;
+        const atGenuineEnd = atLastLoaded && !canLoadMoreWins;
+        const nextDisabled = !hasFeedback || loadingNextWin || atGenuineEnd;
         return <div className="app-bottom-action-bar" style={{
           flexShrink: 0,
           width: "100%",
