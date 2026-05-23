@@ -404,6 +404,9 @@ importers:
       '@workspace/age-content':
         specifier: workspace:*
         version: link:../../lib/age-content
+      '@workspace/amy-intelligence':
+        specifier: workspace:*
+        version: link:../../lib/amy-intelligence
       '@workspace/audio-lessons':
         specifier: workspace:*
         version: link:../../lib/audio-lessons
@@ -1090,6 +1093,8 @@ importers:
   lib/abacus: {}
 
   lib/age-content: {}
+
+  lib/amy-intelligence: {}
 
   lib/api-client-react:
     dependencies:

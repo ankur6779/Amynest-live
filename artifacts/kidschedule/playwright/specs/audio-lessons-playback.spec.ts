@@ -41,7 +41,11 @@ test("audio lessons: play paragraph without tts_background failure", async ({ pa
     timeout: 60_000,
   });
 
-  const lessonCard = page.locator("button").filter({ has: page.locator("h3") }).first();
+  const ageTile = page.getByTestId("age-tile-2-4");
+  await ageTile.click({ timeout: 30_000 });
+  await page.waitForTimeout(800);
+
+  const lessonCard = page.getByTestId(/lesson-card-/).first();
   await lessonCard.click({ timeout: 30_000 });
   await page.waitForTimeout(1_500);
 
