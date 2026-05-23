@@ -129,7 +129,7 @@ export function AmazingFacts({
   const [refreshCount, setRefreshCount] = useState(0);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [quiz, setQuiz] = useState<QuizState | null>(null);
-  const { speak, stop, primeSpeakGesture, speaking, loading } = useAmyVoice();
+  const { speak, pause, primeSpeakGesture, speaking, loading } = useAmyVoice();
   useEffect(() => {
     const seed = dateSeed(todayStr() + refreshCount, childName);
     setFacts(pickFacts(ageGroup, seed));
@@ -145,31 +145,31 @@ export function AmazingFacts({
     });
   }, [childName]);
   const refreshFacts = () => {
-    stop();
+    pause();
     setPlayingId(null);
     setQuiz(null);
     setRefreshCount(c => c + 1);
   };
   const handleListen = useCallback((fact: Fact) => {
     if (playingId === fact.id) {
-      stop();
+      pause();
       setPlayingId(null);
       return;
     }
-    stop();
+    pause();
     setQuiz(null);
     setPlayingId(fact.id);
     const text = factDisplayText(fact, lang);
     void speak(text).then(() => {
       setPlayingId(null);
     });
-  }, [playingId, speak, stop, lang]);
+  }, [playingId, speak, pause, lang]);
   const startQuiz = useCallback((fact: Fact) => {
-    stop();
+    pause();
     setPlayingId(null);
     const q = buildFactQuiz(fact, facts, lang);
     setQuiz({ factId: fact.id, ...q });
-  }, [facts, lang, stop]);
+  }, [facts, lang, pause]);
   const answerQuiz = useCallback((pickedTrue: boolean) => {
     setQuiz(prev => {
       if (!prev) return prev;

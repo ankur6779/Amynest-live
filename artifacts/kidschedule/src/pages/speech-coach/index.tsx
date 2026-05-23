@@ -542,7 +542,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
     setPromptPhase("idle");
     setSessionPhase("practice");
     stt.reset();
-    voice.stop();
+    voice.pause();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ageMonths, kind, difficulty, progress.data?.weakSounds]);
 
@@ -582,7 +582,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
       setPromptPhase("idle");
       setCurrentResult(null);
       stt.reset();
-      voice.stop();
+      voice.pause();
     }
   }, [currentItem, currentResult, sessionResults, isLastItem, child.id, log, stt, voice]);
 
@@ -596,7 +596,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
     setSessionPhase("setup");
     setSessionItems([]);
     stt.reset();
-    voice.stop();
+    voice.pause();
   };
 
   const pool = getPromptsPool(ageMonths, kind, difficulty);
@@ -709,7 +709,7 @@ function ReadAloudSection({ child, viewMode }: { child: AnyChild; viewMode: Spee
           size="sm"
           onClick={() => {
             onAction();
-            voice.speaking || voice.loading ? voice.stop() : playAll();
+            voice.speaking || voice.loading ? voice.pause() : playAll();
           }}
           data-testid="read-aloud-play-story"
         >

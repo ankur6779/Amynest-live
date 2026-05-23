@@ -1,80 +1,35 @@
 /**
- * Global speak safety: request versioning, latest-wins execution, play-token guard.
- * Used by useAmyVoice + amy-voice-pipeline to prevent race-condition playback.
+ * Global speak safety utilities — request ownership + shared helpers.
+ * Playback lifecycle is owned by amy-voice-controller.ts.
  */
 
-import { createRunLatest } from "@/lib/run-latest";
+export {
+  createSpeakRequest,
+  isCurrentSpeakRequest,
+  invalidateSpeakRequests,
+  bumpSpeakRequestId,
+  getSpeakRequestId,
+  isSpeakRequestCurrent,
+  cancelAllSpeakRequests,
+  runWithControlledAudioStop,
+} from "@/lib/amy-voice-ownership";
 
-let currentRequestId = 0;
-let activePlayToken: symbol | null = null;
+export type { AmyVoiceStatus as PlaybackState } from "@/lib/amy-voice-controller";
 
-const speakRunner = createRunLatest();
+import { amyVoiceController } from "@/lib/amy-voice-controller";
 
-export function bumpSpeakRequestId(): number {
-  currentRequestId += 1;
-  activePlayToken = null;
-  return currentRequestId;
+/** @deprecated Use amyVoiceController.getSnapshot().status */
+export function getPlaybackState() {
+  return amyVoiceController.getSnapshot().status;
 }
 
-export function getSpeakRequestId(): number {
-  return currentRequestId;
-}
-
-export function isSpeakRequestCurrent(requestId: number): boolean {
-  return requestId === currentRequestId;
-}
-
-export function beginSpeakPlayToken(): symbol {
-  const token = Symbol("web_amy_voice_play");
-  activePlayToken = token;
-  return token;
-}
-
-export function isSpeakPlayTokenActive(token: symbol): boolean {
-  return activePlayToken === token;
-}
-
-export function cancelAllSpeakRequests(): number {
-  return bumpSpeakRequestId();
-}
-
-export type PlaybackState = "idle" | "loading" | "playing";
-
-let playbackState: PlaybackState = "idle";
-
-export function getPlaybackState(): PlaybackState {
-  return playbackState;
-}
-
-export function setPlaybackState(next: PlaybackState): void {
-  playbackState = next;
-}
-
-/** Latest-wins — old taps are discarded instead of queued behind stale work. */
-export function withSpeakMutex<T>(fn: () => Promise<T>): Promise<T> {
-  return speakRunner.runLatest(async () => {
-    if (playbackState === "playing") {
-      cancelAllSpeakRequests();
-    }
-    setPlaybackState("loading");
-    try {
-      const result = await fn();
-      return result;
-    } catch (err) {
-      if ((err as { code?: string })?.code !== "tts_superseded") {
-        setPlaybackState("idle");
-      }
-      throw err;
-    }
-  });
-}
-
-export function isSpeakPipelineBusy(): boolean {
-  return speakRunner.isRunning();
-}
-
-export function getSpeakQueueWaitMs(): number {
-  return speakRunner.getPendingQueueWaitMs();
+/** @deprecated Controller owns state transitions — no external callers */
+export function setPlaybackState(_next: "idle" | "loading" | "playing"): void {
+  if (import.meta.env.DEV) {
+    console.warn(
+      "[amy-voice-safety] setPlaybackState is deprecated — use amyVoiceController.pause()",
+    );
+  }
 }
 
 export function abortSignalWithTimeout(

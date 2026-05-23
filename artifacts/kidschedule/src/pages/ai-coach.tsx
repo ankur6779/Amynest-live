@@ -2433,7 +2433,7 @@ export function ListenButton({
   }), []);
   const {
     speak,
-    stop,
+    pause,
     speaking,
     loading
   } = useAmyVoice(voiceOpts);
@@ -2447,7 +2447,7 @@ export function ListenButton({
   }, [win]);
   const handleClick = () => {
     if (speaking || loading) {
-      stop();
+      pause();
       return;
     }
     speak(buildText());

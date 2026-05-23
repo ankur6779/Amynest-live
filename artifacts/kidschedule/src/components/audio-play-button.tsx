@@ -39,7 +39,7 @@ interface AudioPlayButtonProps {
   ariaLabel?: string;
   onFinished?: () => void;
   onPlay?: () => void;
-  /** Fired when playback ends (success or stop). */
+  /** Fired when playback ends (success or pause). */
   onSpeakingEnd?: () => void;
   mode?: "default" | "phonics";
   /** Prefetch on hover (e.g. next phoneme in sequence). */
@@ -93,7 +93,7 @@ export function AudioPlayButton({
     onFinished?.();
     onSpeakingEnd?.();
   }, [onFinished, onSpeakingEnd]);
-  const { speak, stop, speaking, loading, error } = useAmyVoice({
+  const { speak, pause, speaking, loading, error } = useAmyVoice({
     onFinished: handleFinished,
     playbackRate,
   });
@@ -187,7 +187,7 @@ export function AudioPlayButton({
     await runInFlight(async () => {
       const play = safeAsync(async () => {
         if (busy) {
-          stop();
+          pause();
           return null;
         }
         if (!resolvedText) return null;
@@ -212,7 +212,7 @@ export function AudioPlayButton({
         // speak() never throws — guard only
       }
     });
-  }, [busy, isMounted, mode, onPlay, runInFlight, safeAsync, speak, stop, resolvedText]);
+  }, [busy, isMounted, mode, onPlay, runInFlight, safeAsync, speak, pause, resolvedText]);
 
   return (
     <Button

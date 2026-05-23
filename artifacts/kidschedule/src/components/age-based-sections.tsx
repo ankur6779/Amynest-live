@@ -64,13 +64,13 @@ export function StorySection({ group, childName }: StorySectionProps) {
  const { t } = useTranslation();
  const stories = STORIES_BY_GROUP[group];
  const [activeIdx, setActiveIdx] = useState(0);
- const { speak, stop, speaking, loading, primeSpeakGesture } = useAmyVoice();
+ const { speak, pause, speaking, loading, primeSpeakGesture } = useAmyVoice();
  const story = stories[activeIdx];
 
  const storyText = story ? buildAgeGroupStorySpeakText(story) : "";
  const handleSpeak = () => {
  if (!story) return;
- if (speaking || loading) { stop(); return; }
+ if (speaking || loading) { pause(); return; }
  speak(storyText);
  };
 
@@ -95,7 +95,7 @@ export function StorySection({ group, childName }: StorySectionProps) {
  {stories.map((s, i) => (
  <button
  key={s.title}
- onClick={() => { setActiveIdx(i); stop(); }}
+ onClick={() => { setActiveIdx(i); pause(); }}
  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
  i === activeIdx
  ?"bg-primary text-white border-primary"

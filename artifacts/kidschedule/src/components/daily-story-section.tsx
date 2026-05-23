@@ -313,7 +313,7 @@ export function DailyStorySection({
   const [playingId, setPlayingId] = useState<string | null>(null);
   const {
     speak,
-    stop,
+    pause,
     primeSpeakGesture
   } = useAmyVoice();
   const storySpeech = useCallback((story: Story) => buildDailyStorySpeakText(story), []);
@@ -327,17 +327,17 @@ export function DailyStorySection({
   }, []);
   const handlePlay = useCallback((story: Story) => {
     if (playingId === story.id) {
-      stop();
+      pause();
       setPlayingId(null);
       return;
     }
-    stop();
+    pause();
     setPlayingId(story.id);
     void speak(`${story.title}. ${story.story}. The moral is: ${story.moral}`).then((res) => {
       if (!res?.success) console.warn("TTS failed, skipping audio flow:", res?.error);
       setPlayingId(null);
     });
-  }, [playingId, speak, stop]);
+  }, [playingId, speak, pause]);
   const hasMore = visible.length < pool.length;
   if (pool.length === 0) return null;
   const [featured, ...rest] = visible as [Story, ...Story[]];

@@ -398,7 +398,7 @@ interface QuestionCardProps {
 function QuestionCard({
   question, index, total, onAnswer, selectedIndex, feedback, secondsLeft,
 }: QuestionCardProps) {
-  const { speaking, loading, speak, stop } = useAmyVoice();
+  const { speaking, loading, speak, pause } = useAmyVoice();
 
   const rawTts = question.prompt.ttsText ?? question.prompt.text ?? "";
   const blendWord =
@@ -419,7 +419,7 @@ function QuestionCard({
 
   const playPrompt = useCallback(() => {
     if (speaking || loading) {
-      stop();
+      pause();
       return;
     }
     if (cvcEntry) {
@@ -427,12 +427,12 @@ function QuestionCard({
       return;
     }
     if (ttsText) void speak(getPhonicsAudioText(ttsText), { mode: "phonics" });
-  }, [speaking, loading, stop, speak, ttsText, cvcEntry]);
+  }, [speaking, loading, pause, speak, ttsText, cvcEntry]);
 
   // REMOVED auto speak on feedback — user taps playPrompt to hear audio again.
   useEffect(() => {
     if (feedback === "correct") {
-      stop();
+      pause();
       retryCountRef.current = 0;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
