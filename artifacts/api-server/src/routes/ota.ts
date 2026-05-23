@@ -1,18 +1,15 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { existsSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import {
   evaluateOtaCheck,
+  resolveApiServerRoot,
   type CapgoOtaCheckBody,
 } from "../services/otaService.js";
 
 const router: IRouter = Router();
 
-const OTA_BUNDLES_DIR = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  "../../ota/bundles",
-);
+const OTA_BUNDLES_DIR = resolve(resolveApiServerRoot(), "ota/bundles");
 
 /** Serve published www zip bundles (upload same files to CDN in production). */
 router.get("/app/ota/bundle/:filename", (req: Request, res: Response): void => {
