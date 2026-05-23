@@ -812,8 +812,10 @@ function PlayerSheet({
     }).then((res) => {
       if (session !== playbackSessionRef.current) return;
       if (!res?.success) {
-        console.warn("TTS failed, skipping audio flow:", res?.error);
-        setPlaying(false);
+        // Silent skip - don't show error to user for lessons
+        console.warn("TTS failed for lesson paragraph, auto-advancing:", res?.error);
+        // Auto-advance to next paragraph after a short delay
+        setTimeout(() => advanceParagraph(session), 500);
       }
     });
   }, [playing, paragraphIdx, paragraphs, speak, stop, advanceParagraph]);
