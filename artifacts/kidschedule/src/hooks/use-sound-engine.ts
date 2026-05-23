@@ -377,7 +377,7 @@ function buildSound(id: SoundId, b: BuildContext, initialVolume: number): Active
 // the call site.
 void DEFAULT_VOLUMES;
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
+// ─── Hook ───────────────────────────────────────────────────────────────────
 
 export function useSoundEngine(): SoundEngine {
   const ctxRef = useRef<AudioContext | null>(null);
@@ -484,12 +484,21 @@ export function useSoundEngine(): SoundEngine {
     window.setTimeout(() => cleanup(), FADE_SECONDS * 1000 + 50);
   }, []);
 
-  const play = useCallback((id: SoundId) => {
+  const play = useCallback(async (id: SoundId) => {
     if (activeRef.current.has(id)) return; // already playing
     const ctx = ensureContext();
     const masterGain = masterGainRef.current!;
     const buffers = buffersRef.current!;
-    if (ctx.state === "suspended") void ctx.resume();
+    
+    // FIX: Resume the audio context properly if it's suspended, and wait for it
+    if (ctx.state === "suspended") {
+      try {
+        await ctx.resume();
+      } catch (err) {
+        console.error("Failed to resume AudioContext:", err);
+        return;
+      }
+    }
 
     const slot = buildSound(id, {
       ctx,
