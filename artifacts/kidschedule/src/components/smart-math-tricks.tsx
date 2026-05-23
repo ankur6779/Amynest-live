@@ -1,8 +1,7 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import {
   MATH_TRICKS,
-  buildTrickSpeakText,
   getMathTrickMeta,
   pickTricksSpaced,
   type MathTrick,
@@ -195,8 +194,16 @@ function TrickCard({
     speak,
     stop,
     speaking,
-    loading
+    loading,
+    primeSpeakGesture,
   } = useAmyVoice();
+  const trickSpeakOpts = useMemo(
+    () => ({
+      catalogPlayback: true as const,
+      staticCatalogTexts: [trick.audioText],
+    }),
+    [trick.audioText],
+  );
   const [practiceMode, setPracticeMode] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -207,8 +214,11 @@ function TrickCard({
       stop();
       return;
     }
-    void speak(buildTrickSpeakText(trick, childName));
-  }, [speaking, loading, speak, stop, trick, childName]);
+    void speak(trick.audioText, trickSpeakOpts);
+  }, [speaking, loading, speak, stop, trick.audioText, trickSpeakOpts]);
+  const handlePrimeSpeak = useCallback(() => {
+    primeSpeakGesture(trick.audioText, trickSpeakOpts);
+  }, [primeSpeakGesture, trick.audioText, trickSpeakOpts]);
   const handleSubmit = useCallback(() => {
     if (!selected) return;
     setSubmitted(true);
@@ -216,7 +226,7 @@ function TrickCard({
     onPracticeResult?.(ok);
     if (ok) {
       setFloatKey((k) => k + 1);
-      void speak("Correct! Well done!");
+      void speak("Correct! Well done!", { catalogPlayback: true });
       onStar();
     } else {
       void speak(`The correct answer is ${trick.practiceQ.answer}`);
@@ -261,6 +271,12 @@ function TrickCard({
       animation: "mt-appear 200ms ease both"
     }}>
           {/* Example box */}
+          {childName.trim() && (
+            <p className="text-center text-xs font-bold" style={{ color: "hsl(var(--brand-amber-300))" }}>
+              {t("components.smart_math_tricks.amy_greeting", { name: childName.trim() })}
+            </p>
+          )}
+
           <div className="rounded-xl px-4 py-3 text-center" style={{
         background: `${trick.color}22`,
         border: `1px solid ${trick.color}44`
@@ -304,7 +320,11 @@ function TrickCard({
 
           {/* Actions row */}
           {!practiceMode && <div className="flex gap-2">
-              <button onClick={handleSpeak} className="flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95" style={{
+              <button
+                onPointerDown={handlePrimeSpeak}
+                onClick={handleSpeak}
+                className="flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                style={{
           background: speaking || loading ? `${trick.color}33` : "rgba(255,255,255,0.1)",
           border: `1.5px solid ${speaking || loading ? trick.color : "rgba(255,255,255,0.15)"}`,
           color: speaking || loading ? trick.color : "rgba(255,255,255,0.7)"
@@ -529,7 +549,7 @@ function PracticeTab({
     onPracticeResult(cur.id, isC);
     if (isC) {
       setFloatKey((k) => k + 1);
-      void speak("Correct! Well done!");
+      void speak("Correct! Well done!", { catalogPlayback: true });
       onStar(cur.id);
     } else {
       void speak(`The correct answer is ${cur.practiceQ.answer}. ${cur.practiceQ.hint}`);

@@ -3496,6 +3496,7 @@
       "winddown_reminder_body": "Dim lights, slow voices, and start your calming routine."
     },
     "smart_math_tricks": {
+      "amy_greeting": "Hi {{name}}! Tap Hear Trick for Amy.",
       "how_it_works": "HOW IT WORKS",
       "example": "EXAMPLE",
       "steps": "STEP BY STEP",

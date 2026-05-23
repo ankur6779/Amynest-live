@@ -12,6 +12,7 @@ import {
   numberToDigits,
   numberToWords,
   prepareAmySpeechInput,
+  prepareAmyCatalogSpeech,
   prepareAmyLessonParagraphSpeech,
   splitAtIntentMarkers,
   splitSemanticPhrases,
@@ -110,6 +111,16 @@ describe("amy-speech-mode", () => {
 
   it("normalizes sentence numbers naturally", () => {
     expect(normalizeSentenceNumbers("I have 2 cats")).toBe("i have two cats");
+  });
+
+  it("catalog playback keeps verbatim text and prefers static audio", () => {
+    const trick =
+      "Doubling! When you add a number to itself, you double it. 6 plus 6 equals 12. Try doubling 7 — seven plus seven is 14!";
+    const policy = prepareAmyCatalogSpeech(trick);
+    expect(policy.normalizedText).toBe(trick);
+    expect(policy.preferDynamicTts).toBe(false);
+    expect(policy.useSemanticSplit).toBe(false);
+    expect(prepareAmySpeechInput(trick, { catalogPlayback: true }).normalizedText).toBe(trick);
   });
 
   it("lesson paragraphs play as one phrase (no semantic split)", () => {

@@ -696,8 +696,27 @@ export function prepareAmyLessonParagraphSpeech(raw: string): AmySpeechPolicy {
   return enforceAmySpeechPolicyInvariants(policy);
 }
 
+/**
+ * Pre-generated static catalog lines (math tricks, etc.) — verbatim text for map lookup.
+ * Static audio first; no math prosody pauses or digit→word normalization.
+ */
+export function prepareAmyCatalogSpeech(raw: string): AmySpeechPolicy {
+  const originalText = (raw ?? "").trim();
+  const policy = buildPolicy(originalText, originalText, "sentence", [originalText]);
+  policy.useSemanticSplit = false;
+  policy.allowPhonicsSequence = false;
+  policy.allowSpeechCoachSplit = false;
+  policy.preferDynamicTts = false;
+  policy.retryDynamicTts = false;
+  policy.preferSpeechSynthesisFallback = true;
+  return enforceAmySpeechPolicyInvariants(policy);
+}
+
 /** Guard: normalize + classify before any pipeline layer runs. */
 export function prepareAmySpeechInput(raw: string, opts?: SpeakOptions): AmySpeechPolicy {
+  if (opts?.catalogPlayback) {
+    return prepareAmyCatalogSpeech(raw);
+  }
   if (opts?.lessonParagraph) {
     return prepareAmyLessonParagraphSpeech(raw);
   }
