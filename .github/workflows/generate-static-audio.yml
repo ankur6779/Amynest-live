@@ -93,6 +93,8 @@ jobs:
         run: pnpm run check:static-audio
 
       - name: Commit map updates
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -104,6 +106,6 @@ jobs:
             exit 0
           fi
           git commit -m "auto generated static audio"
-          # main may advance while generation runs (e.g. deploy fixes) — rebase before push
+          # main may advance while generation runs — rebase, then push with token (pull drops checkout creds)
           git pull --rebase origin main
-          git push origin main
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
