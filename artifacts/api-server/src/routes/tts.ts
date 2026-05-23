@@ -28,6 +28,7 @@ import {
   computeTtsCacheKey,
   AMY_MODEL_ID_DEFAULT,
 } from "../services/ttsCacheService.js";
+import { recordApiHealthSample } from "../services/api-health-store.js";
 import { getOpenAiTtsModel } from "../lib/openai-tts-config.js";
 import { streamOpenAiTtsWithCache } from "../services/openaiTtsStreamCache.js";
 import { ingestRlTelemetry, resolveRlStrategy } from "../services/ttsRlService.js";
@@ -170,6 +171,7 @@ router.post("/tts/generate", async (req, res): Promise<void> => {
   const cvcWord = parsed.data.word?.trim().toLowerCase() ?? "";
   const blendWord = parsed.data.blend?.trim().toLowerCase() ?? "";
 
+  const startedAt = Date.now();
   try {
     const clientVoice = parsed.data.voice?.trim();
     const result = await generateOpenAiTts({
@@ -184,9 +186,20 @@ router.post("/tts/generate", async (req, res): Promise<void> => {
       blendWord: blendWord || undefined,
     });
     if (!result || !isValidTtsPublicUrl(result.url)) {
+      recordApiHealthSample({
+        route: "generate",
+        success: false,
+        latencyMs: Date.now() - startedAt,
+        errorType: "tts_failed",
+      });
       res.status(502).json({ error: "tts_failed" });
       return;
     }
+    recordApiHealthSample({
+      route: "generate",
+      success: true,
+      latencyMs: Date.now() - startedAt,
+    });
     res.json({
       ok: true,
       url: result.url,
@@ -195,6 +208,12 @@ router.post("/tts/generate", async (req, res): Promise<void> => {
       cached: result.cached,
     });
   } catch (err) {
+    recordApiHealthSample({
+      route: "generate",
+      success: false,
+      latencyMs: Date.now() - startedAt,
+      errorType: err instanceof Error ? err.message : "tts_failed",
+    });
     logger.error(
       {
         evt: "tts.generate_failed",
@@ -304,6 +323,7 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
   };
 
   const phrase = resolvePhrase(body);
+  const startedAt = Date.now();
   try {
     const result = await generateOpenAiTts({
       text: phrase,
@@ -315,9 +335,20 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
       blendWord: parsed.data.blend,
     });
     if (!result || !isValidTtsPublicUrl(result.url)) {
+      recordApiHealthSample({
+        route: "synthesize",
+        success: false,
+        latencyMs: Date.now() - startedAt,
+        errorType: "tts_failed",
+      });
       res.status(200).json({ success: false, ok: false, error: "tts_failed" });
       return;
     }
+    recordApiHealthSample({
+      route: "synthesize",
+      success: true,
+      latencyMs: Date.now() - startedAt,
+    });
     res.json({
       ok: true,
       success: true,
@@ -329,6 +360,12 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
     });
   } catch (err) {
     const code = err instanceof Error ? err.message : "tts_failed";
+    recordApiHealthSample({
+      route: "synthesize",
+      success: false,
+      latencyMs: Date.now() - startedAt,
+      errorType: code,
+    });
     logger.error({ evt: "tts.synthesize_failed", userId, code }, "tts synthesize failed");
     res.status(200).json({ success: false, ok: false, error: code });
   }
@@ -499,6 +536,7 @@ router.post("/tts/stream", async (req, res): Promise<void> => {
 
   res.setHeader("X-TTS-Cache-Key", cacheKey);
 
+  const startedAt = Date.now();
   try {
     const ok = await streamOpenAiTtsWithCache(res, {
       text: phrase,
@@ -507,10 +545,22 @@ router.post("/tts/stream", async (req, res): Promise<void> => {
       mode,
       cacheKey,
     });
+    recordApiHealthSample({
+      route: "stream",
+      success: ok,
+      latencyMs: Date.now() - startedAt,
+      errorType: ok ? undefined : "tts_stream_failed",
+    });
     if (!ok && !res.headersSent) {
       res.status(502).json({ error: "tts_stream_failed" });
     }
   } catch (err) {
+    recordApiHealthSample({
+      route: "stream",
+      success: false,
+      latencyMs: Date.now() - startedAt,
+      errorType: err instanceof Error ? err.message : "tts_stream_failed",
+    });
     logger.error(
       {
         evt: "tts.stream_route_failed",

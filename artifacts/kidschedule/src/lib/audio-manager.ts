@@ -4,6 +4,11 @@
  */
 
 import { resolveApiMediaUrl } from "@/lib/api";
+import {
+  logAudioStart,
+  playWithAudibleStartGuarantee,
+  validateAudioSrc,
+} from "@/lib/amy-voice-audio-start";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import {
   configureMobileAudioElement,
@@ -159,6 +164,7 @@ function isRetryableError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   if (name === "AbortError" || /aborted|superseded/i.test(msg)) return false;
   if (msg === AUDIO_ERROR.PLAYBACK_BUSY) return false;
+  if (msg === "invalid_audio_src" || msg === "invalid_audio_blob") return false;
   return true;
 }
 
@@ -802,6 +808,7 @@ class AudioManagerImpl {
     token: number,
     channel: AudioChannel,
     attempt: number,
+    meta?: AudioPlayMeta,
   ): Promise<void> {
     recordTtsUserGesture();
 
@@ -816,38 +823,35 @@ class AudioManagerImpl {
       audio.currentTime = 0;
     }
 
-    const tryPlay = async (): Promise<void> => {
-      await audio.play();
-    };
+    validateAudioSrc(audio);
 
     try {
-      await tryPlay();
+      await playWithAudibleStartGuarantee({
+        audio,
+        layer: meta?.source,
+        play: async () => {
+          await audio.play();
+        },
+        unlockGesture: () => this.unlockFromUserGesture(),
+      });
     } catch (err) {
-      const name = (err as { name?: string })?.name ?? "";
-      logStructured("attemptPlay play() rejected", err, { attempt }, audio);
-      if (
-        isAndroidAmyNestAudioClient() &&
-        (name === "NotAllowedError" || isNotAllowedError(err))
-      ) {
-        this.warmMediaPipeline(true, { fromUserGesture: true });
-        try {
-          await tryPlay();
-        } catch (retryErr) {
-          if (isNotAllowedError(retryErr)) {
-            throw new Error(AUDIO_ERROR.USER_INTERACTION_REQUIRED);
-          }
-          throw retryErr;
-        }
-      } else if (name === "NotAllowedError" || isNotAllowedError(err)) {
+      logStructured("attemptPlay audible start failed", err, { attempt }, audio);
+      if (isNotAllowedError(err)) {
         throw new Error(AUDIO_ERROR.USER_INTERACTION_REQUIRED);
-      } else {
-        throw err;
       }
+      throw err;
     }
 
     await this.runPlaybackWatchdog(audio, token, channel);
 
     if (!this.verifyAudibleOutput(audio)) {
+      logAudioStart({
+        event: "audio_start",
+        success: false,
+        src: audio.src,
+        layer: meta?.source,
+        error: AUDIO_ERROR.SILENT_OUTPUT,
+      });
       throw new Error(AUDIO_ERROR.SILENT_OUTPUT);
     }
 
@@ -1016,7 +1020,7 @@ class AudioManagerImpl {
         }
 
         try {
-          await this.attemptPlay(element, token, channel, attempt + 1);
+          await this.attemptPlay(element, token, channel, attempt + 1, meta);
 
           if (!this.isPlaybackValid(element)) {
             throw new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG);

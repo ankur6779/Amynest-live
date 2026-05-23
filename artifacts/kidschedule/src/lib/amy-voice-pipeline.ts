@@ -47,6 +47,7 @@ import {
 } from "@/lib/static-audio";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
+import { isAdminEmergencyForced } from "@/lib/admin-audio-ops";
 import { emitAmyVoiceTextFallback } from "@/lib/amy-voice-visual-fallback";
 import { resetClientStaticAudioCircuit } from "@/lib/static-audio-telemetry";
 import {
@@ -118,6 +119,14 @@ import {
   resolveAdaptiveTtsSpeed,
   supportsStreamingPlayback,
 } from "@/lib/amy-voice-stream-player";
+import {
+  isStreamingTemporarilyDisabled,
+} from "@/lib/amy-voice-audio-guard";
+import {
+  logAudioHealthFailure,
+  markAudioHealthAudibleStart,
+  mapAmyLayerToHealthLayer,
+} from "@/lib/audio-health";
 import {
   canUseStreaming,
   getExpectedAudioDurationSec,
@@ -374,8 +383,19 @@ async function playElementWithNeverSilentWatchdog(
     source: "static" | "tts" | "cache" | "elevenlabs";
     waitUntilEnd: boolean;
   },
-): Promise<{ ok: boolean; playedDuration?: number; expectedDuration?: number }> {
+): Promise<{ ok: boolean; playedDuration?: number; expectedDuration?: number; error?: string }> {
   if (isStale(ctx)) return { ok: false };
+
+  const playStartedAt = performance.now();
+  const healthLayer = mapAmyLayerToHealthLayer(
+    meta.source === "static"
+      ? "static"
+      : meta.source === "cache"
+        ? "cache"
+        : meta.source === "elevenlabs"
+          ? "elevenlabs"
+          : "api",
+  );
 
   audio.playbackRate = ctx.playbackRate;
   const played =
@@ -400,7 +420,7 @@ async function playElementWithNeverSilentWatchdog(
           { channel: "speech", interrupt: true, maxRetries: 1 },
         );
 
-  if (!played || isStale(ctx)) return { ok: false };
+  if (!played || isStale(ctx)) return { ok: false, error: "audio_play_failed" };
 
   const audible = await waitForAudible(audio, NEVER_SILENT_MS);
   logAmyVoiceDiag(`${meta.source}_play_verify`, {
@@ -413,8 +433,11 @@ async function playElementWithNeverSilentWatchdog(
   });
   if (!audible) {
     audio.pause();
-    return { ok: false };
+    logAudioHealthFailure("audio_start_timeout", healthLayer);
+    return { ok: false, error: "audio_start_timeout" };
   }
+
+  markAudioHealthAudibleStart(healthLayer, { startedAt: playStartedAt });
 
   if (meta.waitUntilEnd) {
     const completion = await waitForSafePlaybackCompletion({
@@ -739,6 +762,7 @@ async function attemptOpenAiPlay(
   if (
     canUseStreaming(playbackMode) &&
     supportsStreamingPlayback() &&
+    !isStreamingTemporarilyDisabled() &&
     !isStreamingLayerPenalized(cacheKeyHint)
   ) {
     const stream = await playStreamingTts(ctx.authFetch, streamBody, {
@@ -1579,6 +1603,13 @@ export async function speakAmyVoice(
       return { success: false, error: "playback_blocked_tap_again", layer: "text_visual" };
     }
     return { success: true, layer: "text_visual" };
+  }
+
+  if (depth === 0 && isAdminEmergencyForced()) {
+    const emergency = await tryEmergencyLayer(text, pipelineCtx);
+    if (emergency.ok) {
+      return finishSpeak(emergency, opts?.waitUntilEnd ?? false, pipelineCtx, policy, depth);
+    }
   }
 
   if (depth === 0) resetAmyVoiceTelemetry();

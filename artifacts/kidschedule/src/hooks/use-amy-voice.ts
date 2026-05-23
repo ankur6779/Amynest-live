@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore, createElement } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useMountedRef } from "@/hooks/use-safe-async";
+import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import {
   amyVoiceController,
   snapshotToHookState,
@@ -51,6 +53,12 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
   const { voiceId, modelId, playbackRate, onFinished } = options;
   const playbackRateRef = useRef(playbackRate ?? 1);
   const onFinishedRef = useRef(onFinished);
+  const { toast } = useToast();
+  const toastRef = useRef(toast);
+
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
 
   useEffect(() => {
     playbackRateRef.current = playbackRate ?? 1;
@@ -73,6 +81,18 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         playbackRate: playbackRateRef.current,
         onFinished: onFinishedRef.current,
         isMounted: () => isMounted.current,
+        onPlaybackFailure: ({ message, retry }) => {
+          if (!isMounted.current) return;
+          toastRef.current({
+            title: message,
+            variant: "destructive",
+            action: createElement(
+              ToastAction,
+              { altText: "Retry audio playback", onClick: () => void retry() },
+              "Retry",
+            ),
+          });
+        },
       });
     },
     [authFetch, voiceId, modelId, isMounted],

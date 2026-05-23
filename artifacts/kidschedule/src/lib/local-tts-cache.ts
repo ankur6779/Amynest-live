@@ -141,6 +141,21 @@ async function pruneLocalCache(db: IDBDatabase): Promise<void> {
   }
 }
 
+export async function clearAllLocalCachedAudio(): Promise<void> {
+  const db = await openDb();
+  if (!db) return;
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Fetch URL and persist for offline replay (timeout + size validation). */
 export async function warmLocalCacheFromUrl(key: string, url: string): Promise<void> {
   if (!url || typeof fetch === "undefined") return;
