@@ -7,6 +7,7 @@ import {
   PHONICS_DIGRAPH_SOUNDS,
 } from "@workspace/phonics-sounds";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
+import { getTtsRequestTimeoutMs } from "@/lib/tts-guard";
 import type { AmyEmotion } from "@/lib/amy-voice-emotion";
 import type { AmyDifficultyLevel } from "@/lib/amy-voice-difficulty";
 import type { AmyIntent } from "@/lib/amy-voice-intent";
@@ -689,10 +690,11 @@ export function prepareAmyLessonParagraphSpeech(raw: string): AmySpeechPolicy {
   policy.useSemanticSplit = false;
   policy.allowSpeechCoachSplit = false;
   policy.allowPhonicsSequence = false;
-  // Pregenerated lesson audio lives in TTS cache — hit cache/static before live API.
-  policy.preferDynamicTts = false;
-  policy.retryDynamicTts = false;
-  policy.preferSpeechSynthesisFallback = false;
+  // Pregenerated lesson MP3s live in server TTS cache — dynamic layer first, long timeout.
+  policy.preferDynamicTts = true;
+  policy.retryDynamicTts = true;
+  policy.preferSpeechSynthesisFallback = true;
+  policy.dynamicTimeoutMs = getTtsRequestTimeoutMs();
   return enforceAmySpeechPolicyInvariants(policy);
 }
 

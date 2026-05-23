@@ -129,8 +129,9 @@ describe("amy-speech-mode", () => {
     const policy = prepareAmyLessonParagraphSpeech(long);
     expect(policy.useSemanticSplit).toBe(false);
     expect(policy.phrases).toHaveLength(1);
-    expect(policy.preferDynamicTts).toBe(false);
-    expect(policy.retryDynamicTts).toBe(false);
+    expect(policy.preferDynamicTts).toBe(true);
+    expect(policy.retryDynamicTts).toBe(true);
+    expect(policy.dynamicTimeoutMs).toBeGreaterThanOrEqual(12_000);
     expect(prepareAmySpeechInput(long, { lessonParagraph: true }).phrases).toHaveLength(1);
   });
 
