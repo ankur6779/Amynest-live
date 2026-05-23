@@ -22,7 +22,12 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
-import * as Speech from "expo-speech";
+import {
+  getPlayItemCatalogSpeakOpts,
+  getTopicNotesCatalogSpeakOpts,
+  getTopicAmyCatalogSpeakOpts,
+} from "@workspace/study-zone";
+import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { SvgXml } from "react-native-svg";
 
 import {
@@ -664,6 +669,7 @@ function PlayCategoryView({
 }) {
   const [xpTrigger, setXpTrigger] = useState(0);
   const [xpAmount, setXpAmount] = useState(0);
+  const { speak, stop, speaking, loading } = useAmyVoice();
   const cat = PLAY_CATEGORIES.find((c) => c.id === categoryId) as
     | PlayCategory
     | undefined;
@@ -683,7 +689,12 @@ function PlayCategoryView({
 
   const handleTap = async (item: PlayItem) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Speech.speak(item.speak, { language: "en-IN", rate: 0.85 });
+    const speakOpts = getPlayItemCatalogSpeakOpts(item, cat.id);
+    if (speaking || loading) {
+      stop();
+    } else {
+      void speak(speakOpts.staticCatalogTexts[0]!, speakOpts);
+    }
     const { progress: nextP, engagement } = await markPlayItem(
       childId,
       cat.id,
@@ -1229,9 +1240,17 @@ function TopicDetail({
   const [submitted, setSubmitted] = useState(false);
   const [xpTrigger, setXpTrigger] = useState(0);
   const [xpAmount, setXpAmount] = useState(0);
-  const [speaking, setSpeaking] = useState(false);
+  const { speak, stop, speaking, loading } = useAmyVoice();
+  const notesSpeakOpts = useMemo(
+    () => (topic ? getTopicNotesCatalogSpeakOpts(topic) : null),
+    [topic],
+  );
+  const amySpeakOpts = useMemo(
+    () => (topic ? getTopicAmyCatalogSpeakOpts(topic) : null),
+    [topic],
+  );
 
-  if (!subj || !topic) {
+  if (!subj || !topic || !notesSpeakOpts || !amySpeakOpts) {
     return (
       <View style={styles.center}>
         <Text style={styles.emptyTitle}>
@@ -1288,20 +1307,20 @@ function TopicDetail({
     }).catch(() => {});
   };
 
-  const handleSpeak = () => {
-    if (speaking) {
-      Speech.stop();
-      setSpeaking(false);
+  const handleSpeakNotes = () => {
+    if (speaking || loading) {
+      stop();
       return;
     }
-    setSpeaking(true);
-    const text = topic.notes.replace(/\n/g, ". ");
-    Speech.speak(text, {
-      language: "en-IN",
-      rate: 0.85,
-      onDone: () => setSpeaking(false),
-      onError: () => setSpeaking(false),
-    });
+    void speak(notesSpeakOpts.staticCatalogTexts[0]!, notesSpeakOpts);
+  };
+
+  const handleSpeakAmy = () => {
+    if (speaking || loading) {
+      stop();
+      return;
+    }
+    void speak(amySpeakOpts.staticCatalogTexts[0]!, amySpeakOpts);
   };
 
   const emoji =
@@ -1337,19 +1356,19 @@ function TopicDetail({
             {t("screens.study.notes_title")}
           </Text>
           <Pressable
-            onPress={handleSpeak}
+            onPress={handleSpeakNotes}
             style={({ pressed }) => [
               styles.speakBtn,
               pressed && { opacity: 0.85 },
             ]}
           >
             <Ionicons
-              name={speaking ? "volume-mute" : "volume-medium"}
+              name={speaking || loading ? "volume-mute" : "volume-medium"}
               size={18}
               color={brand.primary}
             />
             <Text style={styles.speakBtnText}>
-              {speaking
+              {speaking || loading
                 ? t("screens.study.try_again")
                 : t("screens.study.read_aloud")}
             </Text>
@@ -1358,7 +1377,7 @@ function TopicDetail({
         <Text style={styles.notesText}>{topic.notes}</Text>
 
         <Pressable
-          onPress={handleSpeak}
+          onPress={handleSpeakAmy}
           style={({ pressed }) => [
             styles.amyPromptBtn,
             pressed && { opacity: 0.85 },

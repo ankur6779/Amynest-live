@@ -18,6 +18,9 @@ import {
 import { speak, stopSpeaking, ttsAvailable } from "@/lib/study-tts";
 import { EventPrepGenerator } from "@/components/event-prep-generator";
 import { EventPrepHomeView, EventDetailView, CharacterCardView } from "@/components/event-prep-views";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useEventPrepQuickAction } from "@/hooks/use-event-prep-ai";
+import type { QuickActionType } from "@workspace/event-prep";
 
 type Child = { id: number; name: string; age: number; ageMonths?: number };
 
@@ -46,6 +49,9 @@ function checklistKey(eventId: string, childId: number) {
 
 export default function EventPrepPage() {
   const { t } = useTranslation();
+  const authFetch = useAuthFetch();
+  const { run: runQuickAction, loading: quickActionLoading, result: quickActionResult, clear: clearQuickAction } =
+    useEventPrepQuickAction(authFetch);
   const { data: children, isLoading } = useListChildren({
     query: { queryKey: getListChildrenQueryKey() },
   });
@@ -56,6 +62,7 @@ export default function EventPrepPage() {
   const [countryOverride, setCountryOverride] = useState<EventPrepCountry | null>(loadCountryOverride);
   const [searchQuery, setSearchQuery] = useState("");
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
+  const [customTheme, setCustomTheme] = useState("");
 
   const country = useMemo(
     () => detectEventPrepCountry(countryOverride),
@@ -87,6 +94,20 @@ export default function EventPrepPage() {
     if (view.kind === "child-pick") return null;
     return list.find((c) => c.id === (view as { childId: number }).childId) ?? null;
   }, [view, list]);
+
+  const handleQuickAction = (type: QuickActionType) => {
+    if (view.kind !== "event-detail" || !child) return;
+    const ev = findSchoolEvent(view.eventId);
+    if (!ev) return;
+    void runQuickAction({
+      type,
+      event: ev,
+      childAge: child.age,
+      childName: child.name,
+      country,
+      customTheme: customTheme || undefined,
+    });
+  };
 
   const handleSpeak = (id: string, text: string) => {
     if (!ttsAvailable()) return;
@@ -198,7 +219,8 @@ export default function EventPrepPage() {
       <EventDetailView
         ev={ev}
         child={child}
-        onBack={() => setView({ kind: "home", childId: child.id })}
+        country={country}
+        onBack={() => { clearQuickAction(); setView({ kind: "home", childId: child.id }); }}
         onOpenCostumes={(catId) => {
           setFilter({});
           setView({ kind: "category", childId: child.id, categoryId: catId });
@@ -206,6 +228,12 @@ export default function EventPrepPage() {
         onSpeak={handleSpeak}
         speaking={speaking}
         t={t}
+        quickActionLoading={quickActionLoading}
+        quickActionResult={quickActionResult}
+        onQuickAction={handleQuickAction}
+        onClearQuickAction={clearQuickAction}
+        customTheme={customTheme}
+        onCustomThemeChange={setCustomTheme}
       />
     );
   }

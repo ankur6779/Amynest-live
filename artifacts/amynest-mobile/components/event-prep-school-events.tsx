@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
+import { View, Text, Pressable, TextInput, ScrollView, Image, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -10,6 +10,9 @@ import {
   recommendForChild,
   getTimelyCategory,
   COUNTRY_CONFIGS,
+  getEventImages,
+  type QuickActionType,
+  type QuickActionResult,
   type EventCategoryId,
   type EventPrepCountry,
   type CountryConfig,
@@ -222,10 +225,18 @@ interface DetailProps {
   onSpeak: (id: string, text: string) => void;
   speakingId: string | null;
   t: TFunction;
+  quickActionLoading?: QuickActionType | null;
+  quickActionResult?: QuickActionResult | null;
+  onQuickAction?: (type: QuickActionType) => void;
+  onClearQuickAction?: () => void;
+  customTheme?: string;
+  onCustomThemeChange?: (v: string) => void;
 }
 
 export function MobileEventDetail({
   ev, child, onBack, onOpenCostumes, onSpeak, speakingId, t,
+  quickActionLoading, quickActionResult, onQuickAction, onClearQuickAction,
+  customTheme, onCustomThemeChange,
 }: DetailProps) {
   const key = checklistKey(ev.id, child.id);
   const [checked, setChecked] = useState<Record<number, boolean>>({});
@@ -241,6 +252,7 @@ export function MobileEventDetail({
   }, [checked, key]);
 
   const done = ev.checklist.filter((_, i) => checked[i]).length;
+  const images = getEventImages(ev.id);
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 64 }}>
@@ -248,6 +260,10 @@ export function MobileEventDetail({
         <Ionicons name="arrow-back" size={20} color={palette.gray700} />
         <Text style={S.backText}>{t("screens.event_prep.back")}</Text>
       </Pressable>
+
+      {images?.banner && (
+        <Image source={{ uri: images.banner }} style={S.bannerImg} resizeMode="cover" />
+      )}
 
       <LinearGradient colors={ev.accent} style={S.detailHero}>
         <Text style={{ fontSize: 56 }}>{ev.emoji}</Text>
@@ -258,6 +274,79 @@ export function MobileEventDetail({
       <DetailCard title={t("screens.event_prep.event_overview")}>
         <Text style={S.body}>{ev.overview}</Text>
       </DetailCard>
+
+      {onQuickAction && (
+        <View style={S.quickCard}>
+          <Text style={S.detailHead}>{t("screens.event_prep.quick_actions")}</Text>
+          {onCustomThemeChange && (
+            <TextInput
+              value={customTheme ?? ""}
+              onChangeText={onCustomThemeChange}
+              placeholder={t("screens.event_prep.custom_theme_placeholder")}
+              placeholderTextColor={palette.gray400}
+              style={S.themeInput}
+            />
+          )}
+          <View style={S.quickRow}>
+            {(["speech", "costume", "checklist"] as QuickActionType[]).map((type) => (
+              <Pressable
+                key={type}
+                onPress={() => onQuickAction(type)}
+                disabled={!!quickActionLoading}
+                style={[S.quickBtn, quickActionLoading === type && { opacity: 0.6 }]}
+              >
+                {quickActionLoading === type ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={S.quickBtnText}>
+                    {type === "speech" ? t("screens.event_prep.quick_speech")
+                      : type === "costume" ? t("screens.event_prep.quick_costume")
+                      : t("screens.event_prep.quick_checklist")}
+                  </Text>
+                )}
+              </Pressable>
+            ))}
+          </View>
+          {quickActionResult && (
+            <View style={S.quickResult}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Text style={S.detailHead}>{quickActionResult.title}</Text>
+                {quickActionResult.source === "ai" && (
+                  <Text style={S.aiBadge}>{t("screens.event_prep.amy_ai_badge")}</Text>
+                )}
+                {onClearQuickAction && (
+                  <Pressable onPress={onClearQuickAction} style={{ marginLeft: "auto" }}>
+                    <Text style={{ color: palette.gray500 }}>✕</Text>
+                  </Pressable>
+                )}
+              </View>
+              <Text style={S.body}>{quickActionResult.intro}</Text>
+              {quickActionResult.items.map((item, i) => (
+                <Text key={i} style={S.bullet}>• {item}</Text>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+
+      {images && (images.costumes.length > 0 || images.activities.length > 0) && (
+        <DetailCard title={t("screens.event_prep.visual_inspiration")}>
+          {images.costumes.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+              {images.costumes.map((uri, i) => (
+                <Image key={i} source={{ uri }} style={S.thumbImg} resizeMode="cover" />
+              ))}
+            </ScrollView>
+          )}
+          {images.activities.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 8 }}>
+              {images.activities.map((uri, i) => (
+                <Image key={i} source={{ uri }} style={S.thumbImg} resizeMode="cover" />
+              ))}
+            </ScrollView>
+          )}
+        </DetailCard>
+      )}
 
       <DetailCard title={t("screens.event_prep.what_to_prepare")}>
         {ev.whatToPrepare.map((item, i) => (
@@ -382,6 +471,15 @@ const S = {
   recMeta: { fontSize: 10, color: palette.gray500, marginTop: 2 },
   backRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 6, marginBottom: 4 },
   backText: { fontSize: 14, color: palette.gray700, fontWeight: "600" as const },
+  bannerImg: { width: "100%", height: 160, borderRadius: 16, marginTop: 8 },
+  thumbImg: { width: 120, height: 90, borderRadius: 12 },
+  quickCard: { backgroundColor: "#fff", borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1, borderColor: palette.pink200, gap: 10 },
+  quickRow: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 8 },
+  quickBtn: { backgroundColor: palette.pink600, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999 },
+  quickBtnText: { color: "#fff", fontSize: 11, fontWeight: "800" as const },
+  quickResult: { marginTop: 4, padding: 10, borderRadius: 12, backgroundColor: palette.pink50, borderWidth: 1, borderColor: palette.pink200 },
+  aiBadge: { fontSize: 10, fontWeight: "800" as const, color: palette.pink600, backgroundColor: palette.pink100, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
+  themeInput: { borderWidth: 1, borderColor: palette.pink200, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, fontSize: 13, color: palette.gray800, backgroundColor: "#fff" },
   detailHero: { borderRadius: 20, padding: 24, alignItems: "center" as const, marginTop: 8 },
   detailTitle: { color: "#fff", fontSize: 22, fontWeight: "800" as const, marginTop: 8 },
   detailTag: { color: "rgba(255,255,255,0.9)", fontSize: 13, marginTop: 2 },

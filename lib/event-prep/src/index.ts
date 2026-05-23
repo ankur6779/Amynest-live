@@ -42,6 +42,20 @@ export {
   formatCountdown,
 } from "./events";
 
+export {
+  getEventImages,
+  withEventImages,
+  type EventImages,
+} from "./eventImages";
+
+export {
+  generateQuickActionLocal,
+  parseQuickActionAiResponse,
+  type QuickActionType,
+  type QuickActionResult,
+  type QuickActionInput,
+} from "./quickActions";
+
 /** Find a single character by id (or undefined). */
 export function findCharacter(id: string): EventCharacter | undefined {
   return EVENT_CHARACTERS.find((c) => c.id === id);

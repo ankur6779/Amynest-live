@@ -1268,7 +1268,18 @@
       "event_not_found": "Event not found.",
       "timeline_day": "T-{{days}}",
       "timeline_event_day": "Event day",
-      "checklist_progress": "{{done}} of {{total}} done"
+      "checklist_progress": "{{done}} of {{total}} done",
+      "quick_actions": "Amy quick actions",
+      "quick_speech": "Generate speech",
+      "quick_costume": "Costume idea",
+      "quick_checklist": "Generate checklist",
+      "visual_inspiration": "Visual inspiration",
+      "costume_photos": "Costume ideas",
+      "activity_photos": "Activity ideas",
+      "amy_ai_badge": "Amy AI",
+      "generating": "Generating…",
+      "custom_theme_label": "Custom theme (optional)",
+      "custom_theme_placeholder": "e.g. space explorer for Diwali"
     },
     "notify_prompt": {
       "title": "Stay on Track with Reminders",

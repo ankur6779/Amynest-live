@@ -200,9 +200,38 @@ function getCtx(): AudioContext | null {
   return _ctx;
 }
 
+async function resumeFxContext(): Promise<AudioContext | null> {
+  const ctx = getCtx();
+  if (!ctx) return null;
+  if (ctx.state === "suspended") {
+    try {
+      await ctx.resume();
+    } catch {
+      return null;
+    }
+  }
+  return ctx;
+}
+
 function tone(freq: number, dur: number, type: OscillatorType = "sine", startGain = 0.18) {
   const ctx = getCtx();
   if (!ctx) return;
+  if (ctx.state === "suspended") {
+    void ctx.resume().then(() => {
+      if (ctx.state === "running") playTone(ctx, freq, dur, type, startGain);
+    });
+    return;
+  }
+  playTone(ctx, freq, dur, type, startGain);
+}
+
+function playTone(
+  ctx: AudioContext,
+  freq: number,
+  dur: number,
+  type: OscillatorType,
+  startGain: number,
+) {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = type;
@@ -244,7 +273,10 @@ export function useStudyFx() {
   return {
     play(name: keyof typeof playFx) {
       if (mutedRef.current) return;
-      try { playFx[name](); } catch { /* AudioContext blocked */ }
+      void resumeFxContext().then((ctx) => {
+        if (!ctx) return;
+        try { playFx[name](); } catch { /* AudioContext blocked */ }
+      });
     },
     setMuted(m: boolean) {
       mutedRef.current = m;
