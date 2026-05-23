@@ -116,7 +116,7 @@ export default function PhonicsPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background">
+    <div className="flex min-h-dvh w-full flex-col bg-background">
       <header className="sticky top-0 z-50 shrink-0 border-b border-border bg-background/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <button
@@ -136,7 +136,7 @@ export default function PhonicsPage() {
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 px-4 pb-[100px] pt-4">
+      <main className="scroll-safe min-h-0 flex-1 px-4 pt-4">
         <div className="mx-auto max-w-4xl space-y-4">
           <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
             <div className="flex items-start gap-3">
@@ -231,7 +231,7 @@ export default function PhonicsPage() {
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-[#0B1220] px-4 pb-[env(safe-area-inset-bottom,0px)] pt-2 shadow-lg backdrop-blur">
+      <div className="bottom-controls z-50 border-t border-border bg-[#0B1220] px-4 pt-2 shadow-lg backdrop-blur">
         <div className="mx-auto grid max-w-4xl grid-cols-2 gap-3">
           <Button
             type="button"
