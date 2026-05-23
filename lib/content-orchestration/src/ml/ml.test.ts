@@ -20,7 +20,7 @@ import {
   computeRewardSignal,
   computeContextAwareReward,
 } from "./trainingPipeline.js";
-import { evaluateHybridRealtimeDecision } from "./hybridDecision.js";
+import { evaluateHybridRealtimeDecision, weightedSelect, DEFAULT_MIN_ML_WEIGHT } from "./hybridDecision.js";
 import { applySafetyScorePenalties } from "./safetyGuard.js";
 import {
   ucbSelect,
@@ -30,7 +30,7 @@ import {
 } from "./banditEngine.js";
 import { applyOscillationGuard, countDirectionChanges } from "./oscillationGuard.js";
 import { buildSegmentKey, resetSegmentModelRegistry } from "./segmentModels.js";
-import { resolveEffectiveMlFlags, resetDeploymentSafety, ML_ROLLOUT_STAGES } from "./deploymentSafety.js";
+import { resolveEffectiveMlFlags, resetDeploymentSafety, configureDeploymentSafety, ML_ROLLOUT_STAGES } from "./deploymentSafety.js";
 import { NBA_ACTIONS } from "./types.js";
 import { isChildInMlTraffic, clearBanditState } from "./nbaEngine.js";
 import { clearMlMetrics, computeMlMetrics } from "./metrics.js";
@@ -252,10 +252,14 @@ describe("hybridDecision", () => {
     resetGlobalTrainingPipeline();
     clearBanditState("ml-child");
     resetDeploymentSafety();
+    configureDeploymentSafety({
+      rolloutStageIndex: ML_ROLLOUT_STAGES.length - 1,
+      forceRuleFallback: false,
+    });
     resetSegmentModelRegistry();
   });
 
-  it("uses ML when confidence high and in traffic", () => {
+  it("uses weighted hybrid blend when ML enabled and in traffic", () => {
     const state = mockState();
     const decision = evaluateHybridRealtimeDecision(
       state,
@@ -269,7 +273,11 @@ describe("hybridDecision", () => {
       },
       state.attention,
       {
-        mlFlags: { ...DEFAULT_ML_EXPERIMENTS, mlTrafficPercentage: 1, mlConfidenceThreshold: 0.1 },
+        mlFlags: {
+          ...DEFAULT_ML_EXPERIMENTS,
+          mlTrafficPercentage: 1,
+          minMlParticipationWeight: DEFAULT_MIN_ML_WEIGHT,
+        },
         ctx: { ageBand: "24_36", developmentStage: "toddler" },
         logTraining: false,
       },
@@ -277,6 +285,52 @@ describe("hybridDecision", () => {
     assert.ok(decision.source === "ml" || decision.source === "rule");
     assert.ok(decision.confidence !== undefined);
     assert.ok((state.recentNbaActions?.length ?? 0) <= 3);
+  });
+
+  it("weighted hybrid selects ML at least min participation rate over many events", () => {
+    const state = mockState();
+    let mlCount = 0;
+    const trials = 120;
+    for (let i = 0; i < trials; i++) {
+      const decision = evaluateHybridRealtimeDecision(
+        state,
+        {
+          type: i % 3 === 0 ? "CONTENT_SKIPPED" : "CONTENT_COMPLETED",
+          childId: "ml-child",
+          contentId: "c1",
+          moduleId: "phonics",
+          timestamp: Date.now() + i,
+          metadata: { responseTime: 500 + i, correct: i % 4 !== 0 },
+        },
+        state.attention,
+        {
+          mlFlags: {
+            ...DEFAULT_ML_EXPERIMENTS,
+            mlTrafficPercentage: 1,
+            minMlParticipationWeight: DEFAULT_MIN_ML_WEIGHT,
+          },
+          ctx: { ageBand: "24_36", developmentStage: "toddler" },
+          logTraining: false,
+        },
+      );
+      if (decision.source === "ml") mlCount += 1;
+    }
+    const mlRate = mlCount / trials;
+    assert.ok(
+      mlRate >= DEFAULT_MIN_ML_WEIGHT - 0.12,
+      `expected ML rate >= ${DEFAULT_MIN_ML_WEIGHT - 0.12}, got ${mlRate.toFixed(2)}`,
+    );
+  });
+
+  it("weightedSelect returns candidate with proportional weights", () => {
+    const picked = weightedSelect(
+      [
+        { weight: 0.7, source: "ml" as const, nbaAction: "KEEP_AS_IS" as const },
+        { weight: 0.3, source: "rule" as const, nbaAction: "KEEP_AS_IS" as const },
+      ],
+      0.1,
+    );
+    assert.equal(picked.source, "ml");
   });
 
   it("falls back to rules when ML disabled", () => {

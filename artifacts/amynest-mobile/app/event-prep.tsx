@@ -11,10 +11,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import {
   EVENT_CATEGORIES, EVENT_CHARACTERS,
-  charactersByCategory, applyFilters, recommendForChild, speechForAge,
+  charactersByCategory, applyFilters, speechForAge,
+  detectEventPrepCountry, countryConfig,
+  getUpcomingEvents, getNextEvent, findSchoolEvent, searchSchoolEvents,
   type EventCategory, type EventCharacter, type EventCategoryId, type EventFilter,
+  type EventPrepCountry,
 } from "@workspace/event-prep";
 import { EventPrepGeneratorSheet } from "@/components/event-prep-generator-sheet";
+import { MobileEventPrepHome, MobileEventDetail, loadEventPrepCountry, saveEventPrepCountry } from "@/components/event-prep-school-events";
 import { brand, palette } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
 
@@ -24,6 +28,7 @@ type View0 =
   | { kind: "child-pick" }
   | { kind: "home"; childId: number }
   | { kind: "category"; childId: number; categoryId: EventCategoryId }
+  | { kind: "event-detail"; childId: number; eventId: string }
   | { kind: "detail"; childId: number; characterId: string };
 
 export default function EventPrepScreen() {
@@ -43,7 +48,24 @@ export default function EventPrepScreen() {
   const [filter, setFilter] = useState<EventFilter>({});
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [genOpen, setGenOpen] = useState(false);
+  const [countryOverride, setCountryOverride] = useState<EventPrepCountry | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const { speak, stop, speaking } = useAmyVoice();
+
+  React.useEffect(() => {
+    loadEventPrepCountry().then(setCountryOverride);
+  }, []);
+
+  const country = useMemo(() => detectEventPrepCountry(countryOverride), [countryOverride]);
+  const countryInfo = countryConfig(country);
+  const upcoming = useMemo(() => getUpcomingEvents(country, 5), [country]);
+  const nextEvent = useMemo(() => getNextEvent(country), [country]);
+  const visibleEvents = useMemo(() => searchSchoolEvents(searchQuery, country), [searchQuery, country]);
+
+  const setCountry = (c: EventPrepCountry) => {
+    setCountryOverride(c);
+    void saveEventPrepCountry(c);
+  };
 
   React.useEffect(() => {
     if (view.kind === "child-pick" && children.length === 1) {
@@ -125,80 +147,53 @@ export default function EventPrepScreen() {
     return (
       <LinearGradient colors={theme.gradient} style={{ flex: 1 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
         <Stack.Screen options={{ title: t("screens.event_prep.screen_title") }} />
-        <ScrollView contentContainerStyle={S.scroll}>
-          <Text style={S.h1}>{t("screens.event_prep.header_title")}</Text>
-          <Text style={S.sub}>{t("screens.event_prep.home_subtitle", { name: child.name })}</Text>
-
-          {/* Amy AI Generator entry */}
-          <Pressable onPress={() => setGenOpen(true)} style={S.lastMinHero}>
-            <LinearGradient
-              colors={[brand.purple600, palette.pink600, palette.orange500]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={S.heroGrad}
-            >
-              <View style={S.heroIcon}><Ionicons name="sparkles" size={26} color="#fff" /></View>
-              <View style={{ flex: 1 }}>
-                <Text style={S.heroTitle}>{t("screens.event_prep.amy_generator_title")}</Text>
-                <Text style={S.heroSub}>{t("screens.event_prep.amy_generator_sub")}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={22} color="#fff" />
-            </LinearGradient>
-          </Pressable>
-
-          {/* Last-Minute hero */}
-          <Pressable
-            onPress={() => {
-              setFilter({ lastMinute: true });
-              setView({ kind: "category", childId: child.id, categoryId: "fancy-dress" });
-            }}
-            style={S.lastMinHero}
-          >
-            <LinearGradient
-              colors={[palette.amber400, palette.orange500, brand.pink500]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={S.heroGrad}
-            >
-              <View style={S.heroIcon}><Ionicons name="flash" size={28} color="#fff" /></View>
-              <View style={{ flex: 1 }}>
-                <Text style={S.heroTitle}>{t("screens.event_prep.last_minute_title")}</Text>
-                <Text style={S.heroSub}>{t("screens.event_prep.last_minute_sub")}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={22} color="#fff" />
-            </LinearGradient>
-          </Pressable>
-
-          {/* Amy AI picks */}
-          <Text style={S.h2}>{t("screens.event_prep.amy_picks", { name: child.name })}</Text>
-          <AmyRecsRow child={child} onOpen={(id) => setView({ kind: "detail", childId: child.id, characterId: id })} />
-
-          {/* Categories */}
-          <Text style={S.h2}>{t("screens.event_prep.browse_by_event")}</Text>
-          {EVENT_CATEGORIES.map((cat) => (
-            <Pressable
-              key={cat.id}
-              onPress={() => { setFilter({}); setView({ kind: "category", childId: child.id, categoryId: cat.id }); }}
-              style={S.catCard}
-            >
-              <LinearGradient
-                colors={cat.accent}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={S.catGrad}
-              >
-                <Text style={S.catEmoji}>{cat.emoji}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={S.catTitle}>{cat.title}</Text>
-                  <Text style={S.catBlurb}>{cat.blurb}</Text>
-                </View>
-                <Text style={S.catCount}>{charactersByCategory(cat.id).length}</Text>
-              </LinearGradient>
-            </Pressable>
-          ))}
-        </ScrollView>
-
+        <MobileEventPrepHome
+          child={child}
+          country={country}
+          countryInfo={countryInfo}
+          nextEvent={nextEvent}
+          upcoming={upcoming}
+          visibleEvents={visibleEvents}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onCountryChange={setCountry}
+          onGenerator={() => setGenOpen(true)}
+          onLastMinute={() => {
+            setFilter({ lastMinute: true });
+            setView({ kind: "category", childId: child.id, categoryId: "fancy-dress" });
+          }}
+          onEventOpen={(eventId) => setView({ kind: "event-detail", childId: child.id, eventId })}
+          onCharacterOpen={(id) => setView({ kind: "detail", childId: child.id, characterId: id })}
+          onCategoryOpen={(id) => { setFilter({}); setView({ kind: "category", childId: child.id, categoryId: id as EventCategoryId }); }}
+          t={t}
+        />
         <EventPrepGeneratorSheet
           visible={genOpen}
           onClose={() => setGenOpen(false)}
           onOpenCharacter={(id) => setView({ kind: "detail", childId: child.id, characterId: id })}
+        />
+      </LinearGradient>
+    );
+  }
+
+  // ── event detail ───────────────────────────────────────────────────────────
+  if (view.kind === "event-detail" && child) {
+    const ev = findSchoolEvent(view.eventId);
+    if (!ev) {
+      setView({ kind: "home", childId: child.id });
+      return null;
+    }
+    return (
+      <LinearGradient colors={theme.gradient} style={{ flex: 1 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
+        <Stack.Screen options={{ title: ev.name }} />
+        <MobileEventDetail
+          ev={ev}
+          child={child}
+          onBack={() => setView({ kind: "home", childId: child.id })}
+          onOpenCostumes={(catId) => { setFilter({}); setView({ kind: "category", childId: child.id, categoryId: catId }); }}
+          onSpeak={handleSpeak}
+          speakingId={speakingId}
+          t={t}
         />
       </LinearGradient>
     );
@@ -344,28 +339,6 @@ function Chip({ active, onPress, children }: { active: boolean; onPress: () => v
     <Pressable onPress={onPress} style={[S.chip, active && S.chipActive]}>
       <Text style={[S.chipText, active && S.chipTextActive]}>{children}</Text>
     </Pressable>
-  );
-}
-
-function AmyRecsRow({ child, onOpen }: { child: Child; onOpen: (id: string) => void }) {
-  const { t } = useTranslation();
-  const m = new Date().getMonth();
-  const cat: EventCategoryId =
-    m === 0 ? "republic-day" :
-    (m === 7 || m === 8) ? "independence-day" :
-    m === 9 ? "gandhi-jayanti" :
-    (m === 11 || m === 1) ? "annual-day" : "fancy-dress";
-  const recs = recommendForChild(cat, child.age);
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 4 }}>
-      {recs.map((ch) => (
-        <Pressable key={ch.id} onPress={() => onOpen(ch.id)} style={S.recCard}>
-          <Text style={{ fontSize: 32 }}>{ch.emoji}</Text>
-          <Text style={S.recName}>{ch.character}</Text>
-          <Text style={S.recMeta}>{ch.timeMinutes} {t("screens.event_prep.minutes_short")} · {ch.difficulty}</Text>
-        </Pressable>
-      ))}
-    </ScrollView>
   );
 }
 

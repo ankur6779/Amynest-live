@@ -24,7 +24,7 @@ export function evaluateFailSafe(metrics: {
 }): boolean {
   const breach =
     metrics.engagementScore < UX_ENGAGEMENT_FLOOR ||
-    metrics.retentionRate < UX_RETENTION_FLOOR;
+    (metrics.retentionRate > 0 && metrics.retentionRate < UX_RETENTION_FLOOR);
   failSafeActive = breach;
   if (breach) {
     configureDeploymentSafety({ forceRuleFallback: true, rolloutStageIndex: 0 });

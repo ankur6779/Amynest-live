@@ -143,7 +143,10 @@ export type MlMetrics = {
 export type MlExperimentFlags = {
   mlEnabled: boolean;
   mlTrafficPercentage: number;
+  /** @deprecated Threshold gating removed; use minMlParticipationWeight in weighted hybrid blend. */
   mlConfidenceThreshold: number;
+  /** Floor for ML weight in hybrid blend (default 0.3). */
+  minMlParticipationWeight?: number;
   banditEpsilon: number;
   banditStrategy: "epsilon_greedy" | "ucb" | "guided";
   forceRuleFallback?: boolean;

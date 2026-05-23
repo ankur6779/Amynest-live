@@ -6,6 +6,7 @@ export * from "./safetyGuard.js";
 export * from "./actionMapper.js";
 export * from "./nbaEngine.js";
 export * from "./hybridDecision.js";
+export * from "./nbaDecisionHooks.js";
 export * from "./trainingPipeline.js";
 export * from "./metrics.js";
 export * from "./segmentModels.js";
