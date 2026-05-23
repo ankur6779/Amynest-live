@@ -37,6 +37,15 @@ const AGE_ORDER: AgeBucket[] = ["0-2", "2-4", "5-7", "8-10", "10+"];
 const RESUME_KEY = "amynest_audio_resume_v1";
 const PREGENERATE_SESSION_KEY = "amynest_audio_pregenerate_v1";
 
+/** Layers that actually played audio — lesson player must not skip without one of these. */
+const LESSON_AUDIBLE_LAYERS = new Set([
+  "static",
+  "cache",
+  "api",
+  "elevenlabs",
+  "emergency_local",
+]);
+
 function shouldSkipPregenerate(age: AgeBucket, lang: string): boolean {
   try {
     const raw = sessionStorage.getItem(PREGENERATE_SESSION_KEY);
@@ -771,7 +780,8 @@ function PlayerSheet({
     loading,
     error,
     speak,
-    stop
+    stop,
+    primeSpeakGesture,
   } = useAmyVoice({
     voiceId: VOICE_AMY_EN,
     modelId: MODEL_EN,
@@ -792,8 +802,7 @@ function PlayerSheet({
     saveResume(r);
   }, [lesson.id, paragraphIdx]);
 
-  // Drive playback: when `playing` flips on (or paragraph changes
-  // while playing) start a fresh synth; when it flips off, stop.
+  // Drive playback: when `playing` flips on (or paragraph changes while playing) start TTS.
   useEffect(() => {
     if (!playing) {
       stop();
@@ -811,11 +820,16 @@ function PlayerSheet({
       onFinished: () => advanceParagraph(session),
     }).then((res) => {
       if (session !== playbackSessionRef.current) return;
-      if (!res?.success) {
-        // Silent skip - don't show error to user for lessons
-        console.warn("TTS failed for lesson paragraph, auto-advancing:", res?.error);
-        // Auto-advance to next paragraph after a short delay
-        setTimeout(() => advanceParagraph(session), 500);
+      const heard =
+        res?.success === true &&
+        res.layer != null &&
+        LESSON_AUDIBLE_LAYERS.has(res.layer);
+      if (!heard) {
+        console.warn("[AudioLessons] paragraph playback failed — staying on paragraph", {
+          error: res?.error,
+          layer: res?.layer,
+        });
+        setPlaying(false);
       }
     });
   }, [playing, paragraphIdx, paragraphs, speak, stop, advanceParagraph]);
@@ -1011,6 +1025,10 @@ function PlayerSheet({
         }}><SkipBack size={18} /></button>
 
           <button
+            onPointerDown={() => {
+              const txt = paragraphs[paragraphIdx];
+              if (txt) primeSpeakGesture(txt, { lessonParagraph: true });
+            }}
             onClick={() => {
               recordTtsUserGesture();
               setPlaying((p) => !p);

@@ -5,6 +5,7 @@ import {
   logDynamicTtsViolation,
 } from "@/lib/static-audio";
 import { readResolvedApiJson, type AuthFetchFn } from "@/lib/poll-result";
+import { getTtsRequestTimeoutMs } from "@/lib/tts-guard";
 import {
   getPhonicsAudioText,
   getPhonemeAudioText,
@@ -97,12 +98,16 @@ export async function generateTts(
     // Never default to "alloy" here; it sounds male/neutral and bypasses server config.
     if (voiceOverride) payload.voice = voiceOverride;
 
-    const res = await authFetch("/api/tts/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...init?.headers },
-      body: JSON.stringify(payload),
-      signal: init?.signal,
-    });
+    const res = await authFetch(
+      "/api/tts/generate",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...init?.headers },
+        body: JSON.stringify(payload),
+        signal: init?.signal,
+      },
+      getTtsRequestTimeoutMs(),
+    );
     const data = await readResolvedApiJson<{
       ok?: boolean;
       url?: string;

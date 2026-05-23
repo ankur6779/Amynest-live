@@ -684,10 +684,12 @@ async function tryDynamicSequentialLayer(
   opts: SpeakOptions | undefined,
   ctx: AmyVoicePipelineContext,
   waitUntilEnd: boolean,
-  _layerTimeoutMs = LAYER2_TIMEOUT_MS,
+  dynamicTimeoutMs = OPENAI_DYNAMIC_TIMEOUT_MS,
 ): Promise<PlayAttemptResult> {
   const openAiAbort = new AbortController();
   const elevenAbort = new AbortController();
+  const openAiTimeoutMs = Math.max(dynamicTimeoutMs, OPENAI_DYNAMIC_TIMEOUT_MS);
+  const elevenTimeoutMs = Math.max(openAiTimeoutMs + 3_000, ELEVENLABS_DYNAMIC_TIMEOUT_MS);
 
   const canUseOpenAi = !shouldSkipLiveTtsApi();
   const canUseEleven = !isAmyVoiceOffline() && !shouldDeferElevenLabsFallback();
@@ -699,8 +701,8 @@ async function tryDynamicSequentialLayer(
   logTtsClient("Layer2 sequential", {
     canUseOpenAi,
     canUseEleven,
-    openAiTimeoutMs: OPENAI_DYNAMIC_TIMEOUT_MS,
-    elevenTimeoutMs: ELEVENLABS_DYNAMIC_TIMEOUT_MS,
+    openAiTimeoutMs,
+    elevenTimeoutMs,
     adaptive: getAdaptiveSnapshot(),
   });
 
@@ -712,7 +714,7 @@ async function tryDynamicSequentialLayer(
       opts,
       ctx,
       waitUntilEnd,
-      OPENAI_DYNAMIC_TIMEOUT_MS,
+      openAiTimeoutMs,
       openAiAbort.signal,
     );
 
@@ -746,7 +748,7 @@ async function tryDynamicSequentialLayer(
     opts,
     ctx,
     waitUntilEnd,
-    ELEVENLABS_DYNAMIC_TIMEOUT_MS,
+    elevenTimeoutMs,
     elevenAbort.signal,
   );
 
@@ -1156,6 +1158,9 @@ export async function speakAmyVoice(
       logAmyModeDiagnosis(policy, "text_visual");
       maybeQueueAmyVoiceLearning(policy, "text_visual");
     }
+    if (opts?.lessonParagraph) {
+      return { success: false, error: "playback_blocked_tap_again", layer: "text_visual" };
+    }
     return { success: true, layer: "text_visual" };
   }
 
@@ -1291,6 +1296,9 @@ export async function speakAmyVoice(
   if (depth === 0) {
     logAmyModeDiagnosis(policy, "text_visual");
     maybeQueueAmyVoiceLearning(policy, "text_visual");
+  }
+  if (opts?.lessonParagraph) {
+    return { success: false, error: "tts_no_audible_layer", layer: "text_visual" };
   }
   return { success: true, layer: "text_visual" };
 }
