@@ -3,7 +3,7 @@
  * Used by useAmyVoice + amy-voice-pipeline to prevent race-condition playback.
  */
 
-import { createRunLatest } from "@workspace/phonics-sounds";
+import { createRunLatest } from "@/lib/run-latest";
 
 let currentRequestId = 0;
 let activePlayToken: symbol | null = null;
