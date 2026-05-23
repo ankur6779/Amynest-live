@@ -4,9 +4,17 @@ import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { logger } from "../lib/logger.js";
 
-/** `artifacts/api-server` root (works on Render when process cwd is repo root). */
-function apiServerRoot(): string {
-  return resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const OTA_MANIFEST_REL = "ota/manifest.production.json";
+
+/** `artifacts/api-server` root — works from `dist/index.mjs` and from `src/services`. */
+export function resolveApiServerRoot(): string {
+  const here = dirname(fileURLToPath(import.meta.url));
+  for (const root of [resolve(here, ".."), resolve(here, "../..")]) {
+    if (existsSync(resolve(root, OTA_MANIFEST_REL))) {
+      return root;
+    }
+  }
+  return resolve(here, "..");
 }
 
 /** Apple-safe OTA: patch-only web bundle updates (Guideline 2.5.2). */
@@ -65,7 +73,7 @@ const DEFAULT_MANIFEST_REL = "ota/manifest.production.json";
 function manifestPath(): string {
   const fromEnv = process.env.OTA_MANIFEST_PATH?.trim();
   if (fromEnv) return resolve(fromEnv);
-  return resolve(apiServerRoot(), DEFAULT_MANIFEST_REL);
+  return resolve(resolveApiServerRoot(), DEFAULT_MANIFEST_REL);
 }
 
 export function loadOtaManifest(): OtaManifest | null {
