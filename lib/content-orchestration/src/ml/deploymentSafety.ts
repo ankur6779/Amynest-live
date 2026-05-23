@@ -20,6 +20,10 @@ const DEFAULT_SAFETY: DeploymentSafetyConfig = {
 
 let runtimeSafety: DeploymentSafetyConfig = { ...DEFAULT_SAFETY };
 
+export function getDeploymentSafetyConfig(): Readonly<DeploymentSafetyConfig> {
+  return runtimeSafety;
+}
+
 export function configureDeploymentSafety(partial: Partial<DeploymentSafetyConfig>): void {
   runtimeSafety = { ...runtimeSafety, ...partial };
 }

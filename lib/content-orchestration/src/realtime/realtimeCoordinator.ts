@@ -55,6 +55,7 @@ export type RealtimeCoordinatorOptions = {
   experiments?: RealtimeExperimentFlags;
   ml?: MlExperimentFlags;
   fallback?: FallbackMode;
+  confidenceCalibrationOffset?: number;
   onProfileFlush?: (childId: string, profile: LearningProfile) => void | Promise<void>;
   onNbaLog?: (log: NbaDecisionLog) => void | Promise<void>;
 };
@@ -67,6 +68,7 @@ export class RealtimeCoordinator {
   private readonly experiments: RealtimeExperimentFlags;
   private readonly ml: MlExperimentFlags;
   private readonly fallback: FallbackMode;
+  private readonly confidenceCalibrationOffset: number;
   private readonly onProfileFlush?: RealtimeCoordinatorOptions["onProfileFlush"];
   private readonly onNbaLog?: RealtimeCoordinatorOptions["onNbaLog"];
   private lastDecisionMeta = new Map<string, EnrichedRealtimeDecision>();
@@ -75,8 +77,9 @@ export class RealtimeCoordinator {
     this.bus = options.eventBus ?? new RealtimeEventBus();
     const resolved = resolveRealtimeConfig();
     this.experiments = options.experiments ?? DEFAULT_REALTIME_EXPERIMENTS;
-    this.ml = resolveEffectiveMlFlags(options.ml ?? resolved.ml, computeMlMetrics());
+    this.ml = options.ml ?? resolved.ml;
     this.fallback = options.fallback ?? resolved.fallback;
+    this.confidenceCalibrationOffset = options.confidenceCalibrationOffset ?? 0;
     this.onProfileFlush = options.onProfileFlush;
     this.onNbaLog = options.onNbaLog;
     getGlobalTrainingPipeline({
@@ -152,7 +155,7 @@ export class RealtimeCoordinator {
   ): SessionUpdateMessage | null {
     if (raw.type === "subscribe") {
       const state = this.subscribe(raw.childId, raw);
-      return this.buildUpdate(state, hybridDecisionInFallbackMode());
+      return this.buildUpdate(state, hybridDecisionInFallbackMode(raw.childId));
     }
 
     if (raw.type !== "event") return null;
@@ -166,7 +169,7 @@ export class RealtimeCoordinator {
     if (!state) return null;
 
     if (this.fallback.realtimeDisabled || !this.experiments.realtimeEnabled) {
-      return this.buildUpdate(state, hybridDecisionInFallbackMode());
+      return this.buildUpdate(state, hybridDecisionInFallbackMode(event.childId));
     }
 
     state.lastEventAt = event.timestamp;
@@ -235,6 +238,7 @@ export class RealtimeCoordinator {
           behavioralPrediction: state.behavioralPrediction,
         },
         logTraining: true,
+        confidenceCalibrationOffset: this.confidenceCalibrationOffset,
       },
     );
 
@@ -289,6 +293,10 @@ export class RealtimeCoordinator {
 
   getSession(childId: string): RealtimeSessionState | undefined {
     return this.sessions.get(childId);
+  }
+
+  getLastDecisionMeta(childId: string): EnrichedRealtimeDecision | undefined {
+    return this.lastDecisionMeta.get(childId);
   }
 
   endSession(childId: string): void {

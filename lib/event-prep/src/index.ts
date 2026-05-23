@@ -6,11 +6,41 @@ export type {
   EventFilter,
 } from "./types";
 
+export type {
+  EventPrepCountry,
+  SchoolEventCategory,
+  PrepTimelineStep,
+  SchoolEvent,
+  UpcomingEvent,
+  CountryConfig,
+} from "./eventTypes";
+
 import type { EventCategoryId, EventCharacter, EventFilter } from "./types";
+import type { EventPrepCountry } from "./eventTypes";
 import { EVENT_CATEGORIES } from "./content/categories";
 import { EVENT_CHARACTERS } from "./content/characters";
+import { getNextEvent } from "./events";
 
 export { EVENT_CATEGORIES, EVENT_CHARACTERS };
+
+export {
+  detectEventPrepCountry,
+  countryConfig,
+  COUNTRY_CONFIGS,
+} from "./country";
+
+export {
+  ALL_SCHOOL_EVENTS,
+  EVENTS_IN,
+  EVENTS_US,
+  getEvents,
+  findSchoolEvent,
+  getUpcomingEvents,
+  getNextEvent,
+  searchSchoolEvents,
+  daysUntilEvent,
+  formatCountdown,
+} from "./events";
 
 /** Find a single character by id (or undefined). */
 export function findCharacter(id: string): EventCharacter | undefined {
@@ -62,6 +92,19 @@ export function recommendForChild(
 export function speechForAge(c: EventCharacter, ageYears: number): string {
   if (ageYears <= 5 && c.speechShort) return c.speechShort;
   return c.speech;
+}
+
+/** Pick the most relevant costume category based on country + calendar. */
+export function getTimelyCategory(country?: EventPrepCountry | null): EventCategoryId {
+  const next = getNextEvent(country);
+  if (next?.event.costumeCategory) return next.event.costumeCategory;
+
+  const m = new Date().getMonth();
+  if (m === 0) return "republic-day";
+  if (m === 7 || m === 8) return "independence-day";
+  if (m === 9) return "gandhi-jayanti";
+  if (m === 11 || m === 1) return "annual-day";
+  return "fancy-dress";
 }
 
 // ─── Amy AI Event Generator ─────────────────────────────────────────────────
@@ -191,13 +234,29 @@ export interface GeneratorResult {
   fellBack: boolean;
 }
 
-function pickTimelyOccasion(): EventOccasionId {
+function pickTimelyOccasion(country?: EventPrepCountry | null): EventOccasionId {
+  const next = getNextEvent(country);
+  const idMap: Record<string, EventOccasionId> = {
+    "in-independence-day": "independence-day",
+    "in-republic-day": "republic-day",
+    "in-gandhi-jayanti": "gandhi-jayanti",
+    "in-childrens-day": "childrens-day",
+    "in-annual-day": "annual-day",
+    "in-fancy-dress": "fancy-dress",
+    "in-diwali": "fancy-dress",
+    "in-holi": "fancy-dress",
+    "us-halloween": "fancy-dress",
+    "us-christmas": "annual-day",
+    "us-thanksgiving": "fancy-dress",
+  };
+  if (next && idMap[next.event.id]) return idMap[next.event.id]!;
+
   const m = new Date().getMonth();
   if (m === 0) return "republic-day";
   if (m === 7 || m === 8) return "independence-day";
   if (m === 9) return "gandhi-jayanti";
-  if (m === 10) return "childrens-day";       // November
-  if (m === 11 || m === 1) return "annual-day"; // December / February
+  if (m === 10) return "childrens-day";
+  if (m === 11 || m === 1) return "annual-day";
   return "fancy-dress";
 }
 

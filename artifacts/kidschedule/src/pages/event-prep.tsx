@@ -3,17 +3,21 @@ import { useTranslation } from "react-i18next";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import {
   EVENT_CATEGORIES, EVENT_CHARACTERS,
-  charactersByCategory, applyFilters, recommendForChild, speechForAge,
-  type EventCategory, type EventCharacter, type EventCategoryId, type EventFilter,
+  charactersByCategory, applyFilters, speechForAge,
+  detectEventPrepCountry, countryConfig,
+  getUpcomingEvents, getNextEvent, findSchoolEvent, searchSchoolEvents,
+  type EventCategoryId, type EventFilter,
+  type EventPrepCountry,
 } from "@workspace/event-prep";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ArrowLeft, Volume2, VolumeX, Clock, Sparkles, Zap, Filter, ChevronRight, Wand2,
+  ArrowLeft, Volume2, VolumeX, Clock, Filter, ChevronRight,
 } from "lucide-react";
 import { speak, stopSpeaking, ttsAvailable } from "@/lib/study-tts";
 import { EventPrepGenerator } from "@/components/event-prep-generator";
+import { EventPrepHomeView, EventDetailView, CharacterCardView } from "@/components/event-prep-views";
 
 type Child = { id: number; name: string; age: number; ageMonths?: number };
 
@@ -22,7 +26,23 @@ type View =
   | { kind: "home"; childId: number }
   | { kind: "category"; childId: number; categoryId: EventCategoryId }
   | { kind: "generator"; childId: number }
+  | { kind: "event-detail"; childId: number; eventId: string }
   | { kind: "detail"; childId: number; characterId: string };
+
+const COUNTRY_STORAGE_KEY = "eventPrepCountry";
+const COUNTRY_OPTIONS: EventPrepCountry[] = ["IN", "US", "GB", "AU", "CA", "NZ", "global"];
+
+function loadCountryOverride(): EventPrepCountry | null {
+  try {
+    const v = localStorage.getItem(COUNTRY_STORAGE_KEY);
+    if (v && COUNTRY_OPTIONS.includes(v as EventPrepCountry)) return v as EventPrepCountry;
+  } catch { /* ignore */ }
+  return null;
+}
+
+function checklistKey(eventId: string, childId: number) {
+  return `eventPrepChecklist:${eventId}:${childId}`;
+}
 
 export default function EventPrepPage() {
   const { t } = useTranslation();
@@ -33,6 +53,27 @@ export default function EventPrepPage() {
   const [view, setView] = useState<View>({ kind: "child-pick" });
   const [filter, setFilter] = useState<EventFilter>({});
   const [speaking, setSpeaking] = useState<string | null>(null);
+  const [countryOverride, setCountryOverride] = useState<EventPrepCountry | null>(loadCountryOverride);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
+
+  const country = useMemo(
+    () => detectEventPrepCountry(countryOverride),
+    [countryOverride],
+  );
+  const countryInfo = countryConfig(country);
+  const upcoming = useMemo(() => getUpcomingEvents(country, 5), [country]);
+  const nextEvent = useMemo(() => getNextEvent(country), [country]);
+  const visibleEvents = useMemo(
+    () => searchSchoolEvents(searchQuery, country),
+    [searchQuery, country],
+  );
+
+  const setCountry = (c: EventPrepCountry) => {
+    setCountryOverride(c);
+    try { localStorage.setItem(COUNTRY_STORAGE_KEY, c); } catch { /* ignore */ }
+    setCountryPickerOpen(false);
+  };
 
   // Auto-pick when only one child (effect, not render-time state mutation).
   const single = list.length === 1 ? list[0] : null;
@@ -110,77 +151,62 @@ export default function EventPrepPage() {
     );
   }
 
-  // ─── home (categories + AI picks + last-minute) ───────────────────────────
+  // ─── home ───────────────────────────────────────────────────────────────────
   if (view.kind === "home" && child) {
     return (
-      <div className="container mx-auto p-6 max-w-5xl">
-        <BackBar onBack={() => list.length > 1 && setView({ kind: "child-pick" })} canBack={list.length > 1}>
-          <Header
-            title={t("screens.event_prep.home_title")}
-            subtitle={t("screens.event_prep.home_subtitle", { name: child.name })}
-          />
-        </BackBar>
+      <EventPrepHomeView
+        child={child}
+        country={country}
+        countryInfo={countryInfo}
+        countryPickerOpen={countryPickerOpen}
+        setCountryPickerOpen={setCountryPickerOpen}
+        setCountry={setCountry}
+        nextEvent={nextEvent}
+        upcoming={upcoming}
+        visibleEvents={visibleEvents}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onGenerator={() => setView({ kind: "generator", childId: child.id })}
+        onLastMinute={() => {
+          setFilter({ lastMinute: true });
+          setView({ kind: "category", childId: child.id, categoryId: "fancy-dress" });
+        }}
+        onEventOpen={(eventId) => setView({ kind: "event-detail", childId: child.id, eventId })}
+        onCharacterOpen={(id) => setView({ kind: "detail", childId: child.id, characterId: id })}
+        onCategoryOpen={(categoryId) => {
+          setFilter({});
+          setView({ kind: "category", childId: child.id, categoryId });
+        }}
+        onBack={() => list.length > 1 && setView({ kind: "child-pick" })}
+        canBack={list.length > 1}
+        t={t}
+      />
+    );
+  }
 
-        {/* ✨ Amy AI Generator entry */}
-        <Card
-          onClick={() => setView({ kind: "generator", childId: child.id })}
-          className="cursor-pointer mt-4 border-border bg-card hover:border-primary transition"
-        >
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center">
-              <Wand2 className="h-7 w-7" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-lg">{t("screens.event_prep.amy_generator_title")}</h3>
-              <p className="text-sm text-muted-foreground">
-                {t("screens.event_prep.amy_generator_sub")}
-              </p>
-            </div>
-            <ChevronRight className="h-6 w-6 text-foreground" />
-          </CardContent>
-        </Card>
-
-        {/* Last-minute hero */}
-        <Card
-          onClick={() => {
-            setFilter({ lastMinute: true });
-            setView({ kind: "category", childId: child.id, categoryId: "fancy-dress" });
-          }}
-          className="cursor-pointer mt-4 border-border bg-card hover:border-primary transition"
-        >
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center">
-              <Zap className="h-7 w-7" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-lg">{t("screens.event_prep.last_minute_title")}</h3>
-              <p className="text-sm text-muted-foreground">
-                {t("screens.event_prep.last_minute_sub")}
-              </p>
-            </div>
-            <ChevronRight className="h-6 w-6 text-foreground" />
-          </CardContent>
-        </Card>
-
-        {/* Amy AI quick picks */}
-        <h2 className="font-bold mt-6 mb-3 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-foreground" /> {t("screens.event_prep.amy_picks", { name: child.name })}
-        </h2>
-        <AmyRecommendations child={child} onOpen={(id) => setView({ kind: "detail", childId: child.id, characterId: id })} />
-
-        {/* Browse by event */}
-        <h2 className="font-bold mt-8 mb-3">{t("screens.event_prep.browse_by_event")}</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {EVENT_CATEGORIES.map((cat) => (
-            <CategoryCard
-              key={cat.id}
-              category={cat}
-              count={charactersByCategory(cat.id).length}
-              onOpen={() => { setFilter({}); setView({ kind: "category", childId: child.id, categoryId: cat.id }); }}
-            />
-          ))}
+  // ─── event detail ─────────────────────────────────────────────────────────
+  if (view.kind === "event-detail" && child) {
+    const ev = findSchoolEvent(view.eventId);
+    if (!ev) {
+      return (
+        <div className="container mx-auto p-6">
+          <Card><CardContent className="p-6">{t("screens.event_prep.event_not_found")}</CardContent></Card>
         </div>
-      </div>
+      );
+    }
+    return (
+      <EventDetailView
+        ev={ev}
+        child={child}
+        onBack={() => setView({ kind: "home", childId: child.id })}
+        onOpenCostumes={(catId) => {
+          setFilter({});
+          setView({ kind: "category", childId: child.id, categoryId: catId });
+        }}
+        onSpeak={handleSpeak}
+        speaking={speaking}
+        t={t}
+      />
     );
   }
 
@@ -229,10 +255,11 @@ export default function EventPrepPage() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
             {filtered.map((ch) => (
-              <CharacterCard
+              <CharacterCardView
                 key={ch.id}
                 ch={ch}
                 onOpen={() => setView({ kind: "detail", childId: child.id, characterId: ch.id })}
+                t={t}
               />
             ))}
           </div>
@@ -347,61 +374,6 @@ function BackBar({ onBack, canBack, children }: { onBack: () => void; canBack: b
   );
 }
 
-function CategoryCard({ category, count, onOpen }: { category: EventCategory; count: number; onOpen: () => void }) {
-  const { t } = useTranslation();
-  return (
-    <Card
-      onClick={onOpen}
-      className="cursor-pointer overflow-hidden hover:shadow-lg transition border-2 border-transparent hover:border-border"
-    >
-      <div
-        className="p-5 text-primary-foreground"
-        style={{ background: `linear-gradient(135deg, ${category.accent[0]}, ${category.accent[1]})` }}
-      >
-        <div className="text-4xl mb-1">{category.emoji}</div>
-        <div className="font-bold text-lg">{category.title}</div>
-      </div>
-      <CardContent className="p-3 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{category.blurb}</span>
-        <span className="text-xs font-semibold text-foreground">{t("screens.event_prep.ideas_count", { count })}</span>
-      </CardContent>
-    </Card>
-  );
-}
-
-function CharacterCard({ ch, onOpen }: { ch: EventCharacter; onOpen: () => void }) {
-  const { t } = useTranslation();
-  return (
-    <Card
-      onClick={onOpen}
-      className="cursor-pointer overflow-hidden hover:shadow-lg transition border-2 border-transparent hover:border-border"
-    >
-      <div
-        data-on-dark
-        className="p-6 relative h-32 flex items-center justify-center text-primary-foreground"
-        style={{ background: `linear-gradient(135deg, ${ch.accent[0]}, ${ch.accent[1]})` }}
-      >
-        <div className="text-6xl">{ch.emoji}</div>
-        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-foreground text-[10px] font-bold flex items-center gap-1">
-          <Clock className="h-3 w-3" /> {ch.timeMinutes} {t("screens.event_prep.minutes_short")}
-        </div>
-        <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-card text-[10px] font-bold">
-          {ch.difficulty}
-        </div>
-        {ch.lowCost && (
-          <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-card text-[10px] font-bold">
-            💸
-          </div>
-        )}
-      </div>
-      <CardContent className="p-3">
-        <div className="font-bold leading-tight">{ch.character}</div>
-        <div className="text-xs text-muted-foreground mt-0.5 truncate">{ch.tagline}</div>
-      </CardContent>
-    </Card>
-  );
-}
-
 function FilterBar({ filter, setFilter }: { filter: EventFilter; setFilter: (f: EventFilter) => void }) {
   const { t } = useTranslation();
   const toggle = (key: keyof EventFilter) =>
@@ -445,47 +417,3 @@ function Pill({ children }: { children: React.ReactNode }) {
   );
 }
 
-function AmyRecommendations({ child, onOpen }: { child: Child; onOpen: (id: string) => void }) {
-  const { t } = useTranslation();
-  // Pick the most relevant category for "today" — defaults to fancy-dress
-  // unless we're within ~3 weeks of a national event.
-  const category: EventCategoryId = pickTimelyCategory();
-  const recs = recommendForChild(category, child.age);
-  const cat = EVENT_CATEGORIES.find((c) => c.id === category)!;
-
-  return (
-    <Card className="border-border bg-card">
-      <CardContent className="p-4">
-        <div className="text-xs text-muted-foreground mb-3">
-          {t("screens.event_prep.best_matches_prefix")}<strong>{cat.title}</strong>{t("screens.event_prep.best_matches_suffix", { name: child.name, age: child.age })}
-        </div>
-        <div className="grid sm:grid-cols-3 gap-3">
-          {recs.map((ch) => (
-            <button
-              key={ch.id}
-              onClick={() => onOpen(ch.id)}
-              className="text-left rounded-xl p-3 bg-card border hover:border-primary transition"
-            >
-              <div className="text-3xl">{ch.emoji}</div>
-              <div className="font-bold text-sm mt-1">{ch.character}</div>
-              <div className="text-[11px] text-muted-foreground mt-0.5">
-                {ch.timeMinutes} {t("screens.event_prep.minutes_short")} · {ch.difficulty}
-              </div>
-            </button>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/** Pick the most relevant event for "right now" based on month proximity. */
-function pickTimelyCategory(): EventCategoryId {
-  const m = new Date().getMonth(); // 0-Jan ... 11-Dec
-  if (m === 0)  return "republic-day";       // January
-  if (m === 7)  return "independence-day";   // August
-  if (m === 8)  return "independence-day";   // early September fallout
-  if (m === 9)  return "gandhi-jayanti";     // October
-  if (m === 11 || m === 1) return "annual-day"; // December / February — annual day season
-  return "fancy-dress";
-}
