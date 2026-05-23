@@ -325,6 +325,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       modelId: runtime.modelId,
       playbackRate: runtime.playbackRate ?? 1,
       playbackMode: resolvePlaybackMode(opts),
+      paragraphIdx: opts?.audioIdentity?.paragraphIdx,
       isCancelled: () => !isCurrentSpeakRequest(requestId),
       onFinished: () => {
         if (!isCurrentSpeakRequest(requestId)) return;

@@ -4,7 +4,7 @@
  * RULE:
  * - Streaming is ONLY for partial-ok playback
  * - Full-required playback MUST use complete audio
- * - HTMLAudioElement "ended" cannot be trusted for partial streams
+ * - HTMLAudioElement "ended" cannot be trusted for full-required (lessons)
  *
  * New modules MUST set playbackMode explicitly. Default: "full-required".
  */
@@ -44,7 +44,16 @@ export type SafeCompletionResult = {
   earlyCompletion: boolean;
 };
 
+export type PlaybackCompletionDebugLog = {
+  paragraphIdx?: number;
+  duration: number;
+  currentTime: number;
+  trigger: "timer" | "ended" | "manual" | "failsafe";
+};
+
 const FULL_PLAYBACK_RATIO = 0.98;
+const EARLY_END_IGNORE_RATIO = 0.95;
+const FAILSAFE_MULTIPLIER = 1.5;
 const STREAM_POLL_MS = 80;
 const STREAM_STALL_MS = 400;
 
@@ -81,14 +90,25 @@ export function getExpectedAudioDurationSec(audio: HTMLAudioElement): number {
   return Number.isFinite(d) && d > 0 ? d : 0;
 }
 
+/** Single source of completion for full-required playback. */
+export function isPlaybackComplete(currentTime: number, duration: number): boolean {
+  if (duration <= 0) return false;
+  return currentTime >= duration * FULL_PLAYBACK_RATIO;
+}
+
+/** Early browser "ended" events below this ratio are ignored. */
+export function isEarlyEndedEvent(currentTime: number, duration: number): boolean {
+  if (duration <= 0) return false;
+  return currentTime < duration * EARLY_END_IGNORE_RATIO;
+}
+
 export function shouldTriggerCompletion(input: SafeCompletionInput): boolean {
   const { mode, actualPlayedDuration, expectedDuration } = input;
   if (mode === "full-required") {
     if (expectedDuration <= 0) {
-      // Unknown duration — require ended + non-trivial play time
       return actualPlayedDuration >= 0.25;
     }
-    return actualPlayedDuration >= expectedDuration * FULL_PLAYBACK_RATIO;
+    return isPlaybackComplete(actualPlayedDuration, expectedDuration);
   }
   return true;
 }
@@ -99,28 +119,165 @@ export function logTtsEarlyCompletion(payload: EarlyCompletionLog): void {
   }
 }
 
+export function logPlaybackCompletion(payload: PlaybackCompletionDebugLog): void {
+  if (import.meta.env.DEV) {
+    console.log("[AmyVoicePlayback]", payload);
+  }
+}
+
 function delay(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+function resolveDurationSec(
+  audio: HTMLAudioElement,
+  knownDurationSec?: number,
+): number {
+  if (knownDurationSec != null && knownDurationSec > 0) return knownDurationSec;
+  return getExpectedAudioDurationSec(audio);
+}
+
+/**
+ * Full-required completion — duration polling only; onended is never trusted.
+ */
+async function waitForFullRequiredCompletion(
+  audio: HTMLAudioElement,
+  isCancelled: () => boolean,
+  opts?: { paragraphIdx?: number; knownDurationSec?: number },
+): Promise<SafeCompletionResult> {
+  const duration = resolveDurationSec(audio, opts?.knownDurationSec);
+
+  if (!duration || duration < 1) {
+    if (import.meta.env.DEV) {
+      console.warn("[AmyVoicePlayback] invalid duration — fallback to ended", {
+        paragraphIdx: opts?.paragraphIdx,
+        duration,
+      });
+    }
+    const waitResult = await audioManager.waitUntilEnd(audio, isCancelled);
+    const actualPlayedDuration = audio.currentTime;
+    logPlaybackCompletion({
+      paragraphIdx: opts?.paragraphIdx,
+      duration,
+      currentTime: actualPlayedDuration,
+      trigger: "ended",
+    });
+    return {
+      ok: waitResult.ok,
+      actualPlayedDuration,
+      expectedDuration: duration,
+      earlyCompletion: false,
+    };
+  }
+
+  const playStartMs = performance.now();
+  const maxElapsedSec = duration * FAILSAFE_MULTIPLIER;
+  let hasCompleted = false;
+
+  const finalize = (
+    trigger: PlaybackCompletionDebugLog["trigger"],
+    ok: boolean,
+    earlyCompletion: boolean,
+  ): SafeCompletionResult => {
+    if (hasCompleted) {
+      return {
+        ok: false,
+        actualPlayedDuration: audio.currentTime,
+        expectedDuration: duration,
+        earlyCompletion: false,
+      };
+    }
+    hasCompleted = true;
+    const currentTime = audio.currentTime;
+    logPlaybackCompletion({
+      paragraphIdx: opts?.paragraphIdx,
+      duration,
+      currentTime,
+      trigger,
+    });
+    return {
+      ok,
+      actualPlayedDuration: currentTime,
+      expectedDuration: duration,
+      earlyCompletion,
+    };
+  };
+
+  while (true) {
+    if (isCancelled()) {
+      return finalize("manual", false, false);
+    }
+
+    const currentTime = audio.currentTime;
+    const elapsedSec = (performance.now() - playStartMs) / 1000;
+
+    if (duration > 0 && isPlaybackComplete(currentTime, duration)) {
+      return finalize("timer", true, false);
+    }
+
+    if (audio.ended && duration > 0 && isEarlyEndedEvent(currentTime, duration)) {
+      logPlaybackCompletion({
+        paragraphIdx: opts?.paragraphIdx,
+        duration,
+        currentTime,
+        trigger: "ended",
+      });
+      if (import.meta.env.DEV) {
+        console.warn("[AmyVoicePlayback] early-ended ignored", {
+          paragraphIdx: opts?.paragraphIdx,
+          duration,
+          currentTime,
+        });
+      }
+      try {
+        void audio.play();
+      } catch {
+        /* resume best-effort */
+      }
+    }
+
+    if (elapsedSec > maxElapsedSec) {
+      return finalize("failsafe", true, false);
+    }
+
+    await delay(STREAM_POLL_MS);
+  }
+}
+
 /**
  * Wait for playback completion without trusting "ended" on partial streams.
- * Full-file playback may use audioManager.waitUntilEnd (ended is reliable).
+ * Full-required: duration polling only — never audio.onended.
  */
 export async function waitForSafePlaybackCompletion(opts: {
   audio: HTMLAudioElement;
   mode: PlaybackMode;
   isCancelled: () => boolean;
   usedStreaming?: boolean;
+  paragraphIdx?: number;
+  knownDurationSec?: number;
 }): Promise<SafeCompletionResult> {
-  const { audio, mode, isCancelled, usedStreaming = false } = opts;
-  const expectedDuration = getExpectedAudioDurationSec(audio);
+  const {
+    audio,
+    mode,
+    isCancelled,
+    usedStreaming = false,
+    paragraphIdx,
+    knownDurationSec,
+  } = opts;
+
+  if (mode === "full-required") {
+    return waitForFullRequiredCompletion(audio, isCancelled, {
+      paragraphIdx,
+      knownDurationSec,
+    });
+  }
 
   if (usedStreaming) {
-    return waitForStreamingPlaybackCompletion(audio, mode, isCancelled, expectedDuration);
+    return waitForStreamingPlaybackCompletion(audio, mode, isCancelled, knownDurationSec ?? getExpectedAudioDurationSec(audio));
   }
 
   const waitResult = await audioManager.waitUntilEnd(audio, isCancelled);
+  const expectedDuration = resolveDurationSec(audio, knownDurationSec);
   const actualPlayedDuration = audio.currentTime;
   const earlyCompletion =
     waitResult.ok &&
@@ -158,7 +315,7 @@ async function waitForStreamingPlaybackCompletion(
   let lastAdvanceAt = Date.now();
   const maxWaitMs =
     expectedDuration > 0
-      ? Math.min((expectedDuration * 1.5 + 1) * 1000, 120_000)
+      ? Math.min((expectedDuration * FAILSAFE_MULTIPLIER + 1) * 1000, 120_000)
       : 30_000;
 
   while (Date.now() - startedAt < maxWaitMs) {
@@ -189,7 +346,7 @@ async function waitForStreamingPlaybackCompletion(
           earlyCompletion: false,
         };
       }
-      if (expectedDuration > 0 && actualPlayedDuration >= expectedDuration * FULL_PLAYBACK_RATIO) {
+      if (expectedDuration > 0 && isPlaybackComplete(actualPlayedDuration, expectedDuration)) {
         return {
           ok: true,
           actualPlayedDuration,
