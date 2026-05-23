@@ -1788,7 +1788,7 @@ export default function AICoachPage() {
         // (b) the next streamed win hasn't arrived yet, OR (c) the parent
         // hasn't selected feedback for the visible card yet.
         const nextDisabled = atLastLoaded || !hasFeedback;
-        return <div style={{
+        return <div className="app-bottom-action-bar" style={{
           flexShrink: 0,
           width: "100%",
           zIndex: 20,
@@ -1939,7 +1939,7 @@ function WinCard({
     }} />
 
       {/* Scrollable content — full card */}
-      <div style={{
+      <div className="app-win-card-body" style={{
       position: "absolute",
       inset: 0,
       padding: "92px 22px 130px",

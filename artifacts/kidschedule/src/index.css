@@ -587,10 +587,43 @@ html[data-theme="dark"] {
   padding-bottom: 0;
 }
 
-/* Tab bar clearance only when the bottom nav is visible (dashboard, mobile). */
+/* Tab bar clearance when the bottom nav is visible (dashboard, mobile). */
 @media (max-width: 767px) {
   body.has-tabbar .app-scroll {
     padding-bottom: calc(110px + max(env(safe-area-inset-bottom, 0px), 10px));
+  }
+
+  /*
+   * Android PWA / WebView: env(safe-area-inset-bottom) is often 0 with 3-button
+   * navigation, so reserve a minimum base above the system nav bar globally.
+   */
+  html.amynest-android-shell {
+    --app-bottom-safe-base: 48px;
+    --app-bottom-clearance: max(
+      var(--app-bottom-safe-base),
+      env(safe-area-inset-bottom, 0px),
+      12px
+    );
+  }
+
+  html.amynest-android-shell .app-footer {
+    bottom: var(--app-bottom-clearance);
+  }
+
+  html.amynest-android-shell body.has-tabbar .app-scroll {
+    padding-bottom: calc(110px + var(--app-bottom-clearance)) !important;
+  }
+
+  html.amynest-android-shell body.no-tabbar .app-scroll:not(:has(.assistant-chat-page)) {
+    padding-bottom: var(--app-bottom-clearance) !important;
+  }
+
+  html.amynest-android-shell .chat-input {
+    bottom: var(--app-bottom-clearance);
+  }
+
+  html.amynest-android-shell .app-fixed-below-header {
+    bottom: var(--app-bottom-clearance) !important;
   }
 }
 
@@ -719,9 +752,18 @@ body.no-tabbar .app-scroll {
   z-index: 1000;
 }
 
-/* Mobile nav drawer footer — safe-area on devices with a home indicator */
-.mobile-menu-sheet-footer {
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+.pb-app-safe {
+  padding-bottom: var(--app-bottom-clearance);
+}
+
+@media (max-width: 767px) {
+  html.amynest-android-shell .mobile-menu-sheet-footer {
+    padding-bottom: var(--app-bottom-clearance);
+  }
+
+  html.amynest-android-shell #amy-fab-floating {
+    bottom: calc(110px + var(--app-bottom-clearance));
+  }
 }
 
 .app-footer.tabbar.hidden {
@@ -919,6 +961,8 @@ body.no-tabbar .app-scroll {
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --app-header-height: 3.5rem;
   --app-header-content-gap: 8px;
+  --app-bottom-safe-base: 0px;
+  --app-bottom-clearance: max(env(safe-area-inset-bottom, 0px), 12px);
 }
 
 /* When running as a standalone PWA or inside Capacitor, avoid notch overlap */

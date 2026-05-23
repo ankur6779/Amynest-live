@@ -11,6 +11,7 @@ type Props = {
 /**
  * Scrollable page content that starts below the fixed mobile header.
  * Uses padding-top (not margin-top) so Android PWA pull-to-refresh stays stable.
+ * Bottom clearance for system navigation is applied on `.app-scroll` via CSS.
  */
 export function ScreenContainer({ children, noOffset = false, className }: Props) {
   return (
