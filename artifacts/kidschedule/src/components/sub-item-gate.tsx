@@ -9,7 +9,7 @@ interface SubItemGateProps {
   /**
    * The Parent Hub section this sub-item lives in (e.g. "hub_articles",
    * "hub_tips", "hub_story_hub"). Sub-items in different sections are
-   * tracked independently — each gated section gets ONE free sub-item.
+   * tracked independently — each gated section gets TWO free sub-items.
    */
   sectionId: string;
   /**
@@ -34,14 +34,12 @@ interface SubItemGateProps {
  * Wraps a single interactive sub-item inside a gated Parent Hub section.
  *
  * Behaviour for free users:
- *   • If no sub-item in this section has been used → renders children with
- *     a small "Try Free" pill in the top-right. The first tap inside the
- *     children records this sub-item as the free one and lets the click
- *     propagate normally.
- *   • If THIS sub-item is the one the user already used → passthrough.
- *   • If a different sub-item in this section has been used → renders
- *     children visually but non-interactive, with a "Premium feature"
- *     lock pill that routes to /pricing on tap.
+ *   • If fewer than two sub-items in this section have been used → unused
+ *     items render with a "Try Free" pill. The first tap records this
+ *     sub-item and lets the click propagate normally.
+ *   • If THIS sub-item is one the user already used → passthrough.
+ *   • If two other sub-items are already used → renders children visually
+ *     but non-interactive, with a "Premium feature" lock pill → /pricing.
  *
  * Premium users always see passthrough — no badges, no overlays.
  */
@@ -53,7 +51,7 @@ export function SubItemGate({
 }: SubItemGateProps) {
   const [, setLocation] = useLocation();
   const { t } = useTranslation();
-  const { isPremium, blockUsedId, isBlockLocked, markBlockUsed } =
+  const { isPremium, blockUsedIds, isBlockLocked, markBlockUsed } =
     useSectionUsage(sectionId);
 
   const goPricing = useCallback(() => setLocation("/pricing"), [setLocation]);
@@ -63,8 +61,8 @@ export function SubItemGate({
     return className ? <div className={className}>{children}</div> : <>{children}</>;
   }
 
-  // Already the free sub-item the user picked → passthrough, no badge.
-  if (blockUsedId === subItemId) {
+  // Already one of the free sub-items the user picked → passthrough, no badge.
+  if (blockUsedIds.includes(subItemId)) {
     return className ? <div className={className}>{children}</div> : <>{children}</>;
   }
 
@@ -96,7 +94,7 @@ export function SubItemGate({
     );
   }
 
-  // Try-free variant — first interaction marks this as the free sub-item.
+  // Try-free variant — interaction marks this as a free sub-item.
   return (
     <div
       className={`relative ${className ?? ""}`.trim()}
