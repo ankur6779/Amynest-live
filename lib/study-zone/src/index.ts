@@ -3,7 +3,16 @@ export * from "./engagement";
 export * from "./adaptive";
 export * from "./levels";
 export { PLAY_CATEGORIES } from "./content/play";
-export { collapseSpeakWhitespace, getPlayItemSpeakText } from "./play-speak";
+export {
+  collapseSpeakWhitespace,
+  getPlayItemSpeakText,
+  getPlayItemCatalogSpeakOpts,
+  getTopicNotesSpeakText,
+  getTopicAmySpeakText,
+  getTopicNotesCatalogSpeakOpts,
+  getTopicAmyCatalogSpeakOpts,
+  type StudyCatalogSpeakOpts,
+} from "./play-speak";
 export { BASIC_SUBJECTS } from "./content/basic";
 export { ADVANCED_SUBJECTS } from "./content/advanced";
 

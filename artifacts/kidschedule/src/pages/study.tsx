@@ -7,8 +7,9 @@ import {
   PLAY_CATEGORIES, BASIC_SUBJECTS, ADVANCED_SUBJECTS,
   resolveStudyMode, MODE_LABELS,
   SMART_SUBJECTS,
-  collapseSpeakWhitespace,
-  getPlayItemSpeakText,
+  getPlayItemCatalogSpeakOpts,
+  getTopicNotesCatalogSpeakOpts,
+  getTopicAmyCatalogSpeakOpts,
   type StudyMode, type PlayCategory, type PlayItem,
   type SubjectPack, type StudyTopic,
   type DailyPlan, type PlanItem,
@@ -408,7 +409,7 @@ function PlayCategoryView({
 }) {
   const { t } = useTranslation();
   const cat = PLAY_CATEGORIES.find((c) => c.id === (categoryId as PlayCategory["id"]));
-  const { speak } = useAmyVoice();
+  const { speak, primeSpeakGesture } = useAmyVoice();
   const fx = useStudyFx();
   const { toast } = useToast();
   const [poppedId, setPoppedId] = useState<string | null>(null);
@@ -417,7 +418,8 @@ function PlayCategoryView({
   if (!cat) return <p className="text-sm text-muted-foreground">{t("screens.study.category_not_found")}</p>;
   const completed = new Set(progress?.play[cat.id] ?? []);
   const handleTap = (item: PlayItem) => {
-    speak(getPlayItemSpeakText(item, cat.id));
+    const speakOpts = getPlayItemCatalogSpeakOpts(item, cat.id);
+    void speak(speakOpts.staticCatalogTexts[0]!, speakOpts);
     fx.play("tap");
     setPoppedId(item.id);
     window.setTimeout(() => setPoppedId((v) => (v === item.id ? null : v)), 350);
@@ -450,6 +452,10 @@ function PlayCategoryView({
           return (
             <motion.button
               key={item.id}
+              onPointerDown={() => {
+                const opts = getPlayItemCatalogSpeakOpts(item, cat.id);
+                primeSpeakGesture(opts.staticCatalogTexts[0]!, opts);
+              }}
               onClick={() => handleTap(item)}
               animate={popping ? { scale: [1, 1.08, 1], boxShadow: ["0 0 0 0 rgba(99,102,241,0)", "0 0 0 10px rgba(99,102,241,0.18)", "0 0 0 0 rgba(99,102,241,0)"] } : { scale: 1 }}
               transition={{ duration: 0.4 }}
@@ -586,9 +592,19 @@ function TopicDetail({
   const fx = useStudyFx();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { speak: amySpeak, stop: amyStop, speaking: amySpeaking, loading: amyLoading } = useAmyVoice();
+  const { speak: amySpeak, stop: amyStop, speaking: amySpeaking, loading: amyLoading, primeSpeakGesture } = useAmyVoice();
+  const notesSpeakOpts = useMemo(
+    () => (topic ? getTopicNotesCatalogSpeakOpts(topic) : null),
+    [topic],
+  );
+  const amySpeakOpts = useMemo(
+    () => (topic ? getTopicAmyCatalogSpeakOpts(topic) : null),
+    [topic],
+  );
   const { getToken } = useAuth();
-  if (!subj || !topic) return <p className="text-sm text-muted-foreground">{t("screens.study.topic_not_found")}</p>;
+  if (!subj || !topic || !notesSpeakOpts || !amySpeakOpts) {
+    return <p className="text-sm text-muted-foreground">{t("screens.study.topic_not_found")}</p>;
+  }
 
   const score = topic.questions.reduce((acc, q, i) => acc + (picks[i] === q.answer ? 1 : 0), 0);
   const total = topic.questions.length;
@@ -681,9 +697,10 @@ function TopicDetail({
               size="sm"
               variant="outline"
               className="rounded-full"
+              onPointerDown={() => primeSpeakGesture(notesSpeakOpts.staticCatalogTexts[0]!, notesSpeakOpts)}
               onClick={() => {
                 if (amySpeaking || amyLoading) { amyStop(); return; }
-                amySpeak(collapseSpeakWhitespace(topic.notes));
+                void amySpeak(notesSpeakOpts.staticCatalogTexts[0]!, notesSpeakOpts);
               }}
             >
               {(amySpeaking || amyLoading) ? <VolumeX className="h-4 w-4 mr-1" /> : <Volume2 className="h-4 w-4 mr-1" />}
@@ -695,9 +712,10 @@ function TopicDetail({
             <Button
               variant="secondary"
               className="rounded-full"
+              onPointerDown={() => primeSpeakGesture(amySpeakOpts.staticCatalogTexts[0]!, amySpeakOpts)}
               onClick={() => {
                 if (amySpeaking || amyLoading) { amyStop(); return; }
-                amySpeak(topic.amyPrompt);
+                void amySpeak(amySpeakOpts.staticCatalogTexts[0]!, amySpeakOpts);
               }}
             >
               {t("screens.study.hear_amy_prompt")}

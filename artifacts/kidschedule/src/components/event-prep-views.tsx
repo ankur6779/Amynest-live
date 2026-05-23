@@ -6,6 +6,10 @@ import {
   recommendForChild,
   getTimelyCategory,
   COUNTRY_CONFIGS,
+  getEventImages,
+  type EventImages,
+  type QuickActionType,
+  type QuickActionResult,
   type EventCategory,
   type EventCategoryId,
   type EventCharacter,
@@ -19,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   ArrowLeft, Volume2, VolumeX, Clock, Sparkles, Zap, ChevronRight, Wand2,
-  Search, MapPin, Calendar, CheckCircle2, Circle,
+  Search, MapPin, Calendar, CheckCircle2, Circle, Loader2, ImageIcon,
 } from "lucide-react";
 
 export type EventPrepChild = { id: number; name: string; age: number; ageMonths?: number };
@@ -140,7 +144,7 @@ export function EventPrepHomeView({
       {nextEvent && !searchQuery && (
         <Card
           onClick={() => onEventOpen(nextEvent.event.id)}
-          className="cursor-pointer mt-4 overflow-hidden border-2 border-primary/30 hover:border-primary transition shadow-md"
+          className="cursor-pointer mt-4 overflow-hidden border-2 border-primary/30 hover:border-primary transition shadow-md event-prep-card-lift"
         >
           <div
             className="p-5 text-primary-foreground"
@@ -156,7 +160,7 @@ export function EventPrepHomeView({
                 <div className="text-sm opacity-90">{nextEvent.event.dateLabel}</div>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-black">{countdownLabel(nextEvent.daysUntil, t)}</div>
+                <div className="text-2xl font-black event-prep-countdown-pulse">{countdownLabel(nextEvent.daysUntil, t)}</div>
                 <div className="text-xs opacity-80">{t("screens.event_prep.next_event")}</div>
               </div>
             </div>
@@ -250,7 +254,7 @@ function SchoolEventCard({
   event, badge, onOpen,
 }: { event: SchoolEvent; badge?: string; onOpen: () => void }) {
   return (
-    <Card onClick={onOpen} className="cursor-pointer overflow-hidden hover:shadow-md transition border hover:border-primary">
+    <Card onClick={onOpen} className="cursor-pointer overflow-hidden hover:shadow-md transition border hover:border-primary event-prep-card-lift">
       <div className="flex items-center gap-3 p-4">
         <div
           className="h-12 w-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
@@ -339,10 +343,24 @@ interface EventDetailProps {
   onSpeak: (id: string, text: string) => void;
   speaking: string | null;
   t: TFunction;
+  country?: EventPrepCountry;
+  quickActionLoading?: QuickActionType | null;
+  quickActionResult?: QuickActionResult | null;
+  onQuickAction?: (type: QuickActionType) => void;
+  onClearQuickAction?: () => void;
+  customTheme?: string;
+  onCustomThemeChange?: (v: string) => void;
 }
 
 export function EventDetailView({
   ev, child, onBack, onOpenCostumes, onSpeak, speaking, t,
+  country,
+  quickActionLoading,
+  quickActionResult,
+  onQuickAction,
+  onClearQuickAction,
+  customTheme,
+  onCustomThemeChange,
 }: EventDetailProps) {
   const storageKey = checklistStorageKey(ev.id, child.id);
   const [checked, setChecked] = useState<Record<number, boolean>>(() => {
@@ -361,12 +379,19 @@ export function EventDetailView({
   }, [checked, storageKey]);
 
   const doneCount = ev.checklist.filter((_, i) => checked[i]).length;
+  const images = getEventImages(ev.id);
 
   return (
     <div className="container mx-auto p-6 max-w-3xl pb-16">
       <BackBar onBack={onBack} canBack>
         <PageHeader title={`${ev.emoji} ${ev.name}`} subtitle={ev.dateLabel} />
       </BackBar>
+
+      {images?.banner && (
+        <div className="mt-4 rounded-2xl overflow-hidden shadow-md">
+          <LazyEventImage src={images.banner} alt={ev.name} className="w-full h-44 object-cover" />
+        </div>
+      )}
 
       <div
         className="rounded-2xl mt-4 p-6 text-primary-foreground shadow-lg"
@@ -379,6 +404,96 @@ export function EventDetailView({
       <Section title={t("screens.event_prep.event_overview")}>
         <p className="text-sm leading-relaxed">{ev.overview}</p>
       </Section>
+
+      {onQuickAction && (
+        <Card className="mt-3 border-primary/20 bg-gradient-to-br from-muted/50 to-card">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <h3 className="font-bold text-sm">{t("screens.event_prep.quick_actions")}</h3>
+            </div>
+            {onCustomThemeChange && (
+              <Input
+                value={customTheme ?? ""}
+                onChange={(e) => onCustomThemeChange(e.target.value)}
+                placeholder={t("screens.event_prep.custom_theme_placeholder")}
+                className="rounded-full text-sm"
+              />
+            )}
+            <div className="flex flex-wrap gap-2">
+              {(["speech", "costume", "checklist"] as QuickActionType[]).map((type) => (
+                <Button
+                  key={type}
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full"
+                  disabled={!!quickActionLoading}
+                  onClick={() => onQuickAction(type)}
+                >
+                  {quickActionLoading === type ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : null}
+                  {type === "speech" && t("screens.event_prep.quick_speech")}
+                  {type === "costume" && t("screens.event_prep.quick_costume")}
+                  {type === "checklist" && t("screens.event_prep.quick_checklist")}
+                </Button>
+              ))}
+            </div>
+            {quickActionResult && (
+              <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm">{quickActionResult.title}</span>
+                  {quickActionResult.source === "ai" && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                      {t("screens.event_prep.amy_ai_badge")}
+                    </span>
+                  )}
+                  {onClearQuickAction && (
+                    <button type="button" onClick={onClearQuickAction} className="text-xs text-muted-foreground ml-auto">
+                      ✕
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">{quickActionResult.intro}</p>
+                <ul className="text-sm space-y-1 list-disc pl-4">
+                  {quickActionResult.items.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {images && (images.costumes.length > 0 || images.activities.length > 0) && (
+        <Section title={t("screens.event_prep.visual_inspiration")}>
+          {images.costumes.length > 0 && (
+            <div className="mb-3">
+              <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
+                <ImageIcon className="h-3 w-3" /> {t("screens.event_prep.costume_photos")}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {images.costumes.map((src, i) => (
+                  <LazyEventImage key={i} src={src} alt="" className="w-full h-24 object-cover rounded-lg" />
+                ))}
+              </div>
+            </div>
+          )}
+          {images.activities.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
+                <ImageIcon className="h-3 w-3" /> {t("screens.event_prep.activity_photos")}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {images.activities.map((src, i) => (
+                  <LazyEventImage key={i} src={src} alt="" className="w-full h-24 object-cover rounded-lg" />
+                ))}
+              </div>
+            </div>
+          )}
+        </Section>
+      )}
 
       <Section title={t("screens.event_prep.what_to_prepare")}>
         <BulletList items={ev.whatToPrepare} />
@@ -483,6 +598,21 @@ function Section({
         {children}
       </CardContent>
     </Card>
+  );
+}
+
+function LazyEventImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+      className={className}
+    />
   );
 }
 

@@ -7,10 +7,13 @@ import {
   ADVANCED_SUBJECTS,
   collapseSpeakWhitespace,
   getPlayItemSpeakText,
+  getTopicAmySpeakText,
+  getTopicNotesSpeakText,
 } from "@workspace/study-zone";
 import { getStaticAudioHash, getStaticAudioObjectKey } from "./keys.js";
 import { normalizeStaticAudioKey } from "./normalize.js";
 import { getMathTrickAudioTextsForStaticCatalog } from "@workspace/math-tricks";
+import { getSpellingAudioTextsForStaticCatalog } from "@workspace/spelling-catalog";
 import { getStaticTtsEntries } from "./phrases.js";
 import type { StaticAudioMode, StaticTtsEntry } from "./types.js";
 
@@ -97,8 +100,8 @@ function collectStudyZonePhrases(): SpeakablePhraseRecord[] {
   }
   for (const subject of [...BASIC_SUBJECTS, ...ADVANCED_SUBJECTS]) {
     for (const topic of subject.topics) {
-      pushLine(topic.notes, "study_zone_topic_notes");
-      pushLine(topic.amyPrompt, "study_zone_topic_prompt");
+      pushLine(getTopicNotesSpeakText(topic), "study_zone_topic_notes");
+      pushLine(getTopicAmySpeakText(topic), "study_zone_topic_prompt");
     }
   }
   return out;
@@ -140,6 +143,12 @@ function collectMathTrickPhrases(): SpeakablePhraseRecord[] {
     .filter((r): r is SpeakablePhraseRecord => r !== null);
 }
 
+function collectSpellingPhrases(): SpeakablePhraseRecord[] {
+  return getSpellingAudioTextsForStaticCatalog()
+    .map((t) => toRecord(t, "default", "spelling_mastery"))
+    .filter((r): r is SpeakablePhraseRecord => r !== null);
+}
+
 function collectPhonicsExtras(): SpeakablePhraseRecord[] {
   const lines = [
     ...getPhonicsAudioTextsForStaticCatalog(),
@@ -162,6 +171,7 @@ export function collectAllSpeakablePhrases(): SpeakablePhraseRecord[] {
     ...collectAudioLessonPhrases(),
     ...collectPhonicsExtras(),
     ...collectMathTrickPhrases(),
+    ...collectSpellingPhrases(),
     ...EXTRA_DEFAULT_PHRASES.map((t) => toRecord(t, "default", "extra_default")).filter(
       (r): r is SpeakablePhraseRecord => r !== null,
     ),

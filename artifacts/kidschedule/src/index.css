@@ -1178,3 +1178,18 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
   padding: 12px;
   padding-bottom: 100px;
 }
+
+/* ── Event Prep Phase 3 — card lift + countdown pulse ───────────── */
+@keyframes eventPrepCountdownPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.event-prep-countdown-pulse {
+  animation: eventPrepCountdownPulse 2.2s ease-in-out infinite;
+}
+.event-prep-card-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.event-prep-card-lift:hover {
+  transform: translateY(-2px) scale(1.01);
+}

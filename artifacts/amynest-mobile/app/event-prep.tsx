@@ -1,6 +1,6 @@
-import React, {  useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator,
+  View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Image, TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -16,9 +16,11 @@ import {
   getUpcomingEvents, getNextEvent, findSchoolEvent, searchSchoolEvents,
   type EventCategory, type EventCharacter, type EventCategoryId, type EventFilter,
   type EventPrepCountry,
+  type QuickActionType,
 } from "@workspace/event-prep";
 import { EventPrepGeneratorSheet } from "@/components/event-prep-generator-sheet";
 import { MobileEventPrepHome, MobileEventDetail, loadEventPrepCountry, saveEventPrepCountry } from "@/components/event-prep-school-events";
+import { useEventPrepQuickAction } from "@/hooks/useEventPrepAi";
 import { brand, palette } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
 
@@ -50,6 +52,9 @@ export default function EventPrepScreen() {
   const [genOpen, setGenOpen] = useState(false);
   const [countryOverride, setCountryOverride] = useState<EventPrepCountry | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [customTheme, setCustomTheme] = useState("");
+  const { run: runQuickAction, loading: quickActionLoading, result: quickActionResult, clear: clearQuickAction } =
+    useEventPrepQuickAction(authFetch);
   const { speak, stop, speaking } = useAmyVoice();
 
   React.useEffect(() => {
@@ -82,6 +87,20 @@ export default function EventPrepScreen() {
     if (view.kind === "child-pick") return null;
     return children.find((c) => c.id === (view as { childId: number }).childId) ?? null;
   }, [view, children]);
+
+  const handleQuickAction = (type: QuickActionType) => {
+    if (view.kind !== "event-detail" || !child) return;
+    const ev = findSchoolEvent(view.eventId);
+    if (!ev) return;
+    void runQuickAction({
+      type,
+      event: ev,
+      childAge: child.age,
+      childName: child.name,
+      country,
+      customTheme: customTheme || undefined,
+    });
+  };
 
   const handleSpeak = (id: string, text: string) => {
     if (speakingId === id && speaking) {
@@ -189,11 +208,17 @@ export default function EventPrepScreen() {
         <MobileEventDetail
           ev={ev}
           child={child}
-          onBack={() => setView({ kind: "home", childId: child.id })}
+          onBack={() => { clearQuickAction(); setView({ kind: "home", childId: child.id }); }}
           onOpenCostumes={(catId) => { setFilter({}); setView({ kind: "category", childId: child.id, categoryId: catId }); }}
           onSpeak={handleSpeak}
           speakingId={speakingId}
           t={t}
+          quickActionLoading={quickActionLoading}
+          quickActionResult={quickActionResult}
+          onQuickAction={handleQuickAction}
+          onClearQuickAction={clearQuickAction}
+          customTheme={customTheme}
+          onCustomThemeChange={setCustomTheme}
         />
       </LinearGradient>
     );

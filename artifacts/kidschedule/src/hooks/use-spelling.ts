@@ -3,7 +3,17 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { audioManager } from "@/lib/audio-manager";
 import { resolveApiMediaUrl } from "@/lib/api";
 import { resolveAiApiData } from "@/lib/poll-result";
-import { synthesizeTts } from "@/lib/tts-playback";
+import { pregenerateTtsTexts } from "@/lib/pregenerate-tts";
+import {
+  generateTts,
+  resolveClientPlaybackUrl,
+} from "@/lib/tts-playback";
+import {
+  lookupStaticAudioUrl,
+  prepareRemotePlaybackAudio,
+  prepareStaticPlaybackAudio,
+  primeStaticAudioInUserGesture,
+} from "@/lib/static-audio";
 
 // ─── Shared types (mirror server shape — no codegen yet for /spelling/*) ─────
 
@@ -62,7 +72,7 @@ export interface LeaderboardRow {
 }
 
 // Map ageMonths -> spelling age group. MUST stay in sync with the server's
-// `spellingAgeGroupFor` (artifacts/api-server/src/data/spelling-words.ts) so
+// `spellingAgeGroupFor` (@workspace/spelling-catalog) so
 // the default age band shown in the UI matches the band used for progress
 // partitioning on the server.
 export function spellingAgeGroupFor(ageMonths: number): SpellingAgeGroup {
@@ -72,15 +82,11 @@ export function spellingAgeGroupFor(ageMonths: number): SpellingAgeGroup {
   return "8-10+";
 }
 
-// ─── useSpellingTTS — speaks one word via /api/tts/synthesize ───────────────
+// ─── useSpellingTTS — static-audio-first word playback ─────────────────────
 //
-// Built on the same /api/tts pipeline as poems / phonics, but kept local
-// rather than reusing useAmyVoice because the spelling player wants finer
-// control: explicit slow mode (playbackRate 0.65), and the ability to
-// pre-cache the next word's MP3 while the current one is playing.
-//
-// Slow mode uses playbackRate on <audio>, NOT a server-side flag — the
-// underlying ElevenLabs MP3 is the same, just played back slower.
+// Curated spelling words/chunks are pre-generated in the static catalog
+// (see @workspace/spelling-catalog). AI-generated words fall back to
+// /api/tts/generate. Slow mode uses playbackRate 0.65 on the same MP3.
 
 interface SynthesizeResponse {
   ok: true;
@@ -95,7 +101,7 @@ export interface UseSpellingTTSState {
   speaking: boolean;
   loading: boolean;
   error: string | null;
-  /** Speak the given text via /api/tts/synthesize (legacy reveals-the-word path). */
+  /** Static catalog first, then /api/tts/generate for AI words. */
   speak: (text: string, opts?: { slow?: boolean }) => Promise<void>;
   /**
    * Play a pre-prepared audio URL directly (e.g. session-scoped audio for
@@ -103,6 +109,8 @@ export interface UseSpellingTTSState {
    * synthesize step — the URL is the authoritative source.
    */
   playUrl: (url: string, opts?: { slow?: boolean }) => Promise<void>;
+  /** Prime static MP3 in a user gesture (mobile WebView autoplay). */
+  prime: (text: string) => void;
   stop: () => void;
 }
 
@@ -142,14 +150,8 @@ export function useSpellingTTS(): UseSpellingTTSState {
     };
   }, [cleanup]);
 
-  const playSrc = useCallback(
-    async (src: string, slow: boolean, reqId: number) => {
-      const trimmed = (src ?? "").trim();
-      if (!trimmed || trimmed.includes("undefined")) {
-        console.warn("Invalid audio URL, skipping playback");
-        return;
-      }
-      const audio = audioManager.create(trimmed);
+  const playElement = useCallback(
+    async (audio: HTMLAudioElement, slow: boolean, reqId: number, proxyUrl: string) => {
       audio.playbackRate = slow ? 0.65 : 1;
       audio.onended = () => {
         if (reqId !== reqIdRef.current) return;
@@ -166,7 +168,7 @@ export function useSpellingTTS(): UseSpellingTTSState {
       const played = await audioManager.play(
         audio,
         {
-          proxyUrl: resolveApiMediaUrl(trimmed),
+          proxyUrl,
           source: "spelling",
           channel: "speech",
           interrupt: true,
@@ -175,12 +177,27 @@ export function useSpellingTTS(): UseSpellingTTSState {
         { channel: "speech", interrupt: true },
       );
       if (!played && reqId === reqIdRef.current) {
-        console.error("[Spelling] Audio playback failed after retries", trimmed);
+        console.error("[Spelling] Audio playback failed after retries", proxyUrl);
         setError("audio_playback_failed");
         setSpeaking(false);
       }
     },
     [],
+  );
+
+  const playSrc = useCallback(
+    async (src: string, slow: boolean, reqId: number) => {
+      const trimmed = (src ?? "").trim();
+      if (!trimmed || trimmed.includes("undefined")) {
+        console.warn("Invalid audio URL, skipping playback");
+        return;
+      }
+      const proxyUrl = resolveApiMediaUrl(trimmed);
+      const prepared = await prepareRemotePlaybackAudio(proxyUrl);
+      const audio = prepared ?? audioManager.create(proxyUrl);
+      await playElement(audio, slow, reqId, proxyUrl);
+    },
+    [playElement],
   );
 
   const speak = useCallback(
@@ -196,19 +213,32 @@ export function useSpellingTTS(): UseSpellingTTSState {
       setError(null);
       setSpeaking(false);
       try {
-        const data = await synthesizeTts(
+        const staticAudio = await prepareStaticPlaybackAudio(trimmed, "default");
+        if (reqId !== reqIdRef.current) return;
+        if (staticAudio) {
+          const proxyUrl =
+            lookupStaticAudioUrl(trimmed, "default") ??
+            resolveApiMediaUrl(staticAudio.src);
+          await playElement(staticAudio, !!opts.slow, reqId, proxyUrl);
+          return;
+        }
+
+        const data = await generateTts(
           authFetch,
-          { text: trimmed },
+          { text: trimmed, category: "words" },
           { signal: ac.signal },
         );
         if (reqId !== reqIdRef.current) return;
         if (!data?.success || !data.audioUrl) {
-          console.warn("No audio, skip");
+          console.warn("[Spelling] No audio for phrase", trimmed);
           setLoading(false);
           setSpeaking(false);
+          setError(data?.error ?? "tts_failed");
           return;
         }
-        await playSrc(data.audioUrl, !!opts.slow, reqId);
+        const playbackUrl =
+          resolveClientPlaybackUrl(data.audioUrl, data.cacheKey) ?? data.audioUrl;
+        await playSrc(playbackUrl, !!opts.slow, reqId);
       } catch (err) {
         if ((err as DOMException)?.name === "AbortError") return;
         if (reqId !== reqIdRef.current) return;
@@ -218,7 +248,7 @@ export function useSpellingTTS(): UseSpellingTTSState {
         setSpeaking(false);
       }
     },
-    [authFetch, cleanup, playSrc],
+    [authFetch, cleanup, playElement, playSrc],
   );
 
   const playUrl = useCallback(
@@ -242,7 +272,13 @@ export function useSpellingTTS(): UseSpellingTTSState {
     [cleanup, playSrc],
   );
 
-  return { speaking, loading, error, speak, playUrl, stop };
+  const prime = useCallback((text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    primeStaticAudioInUserGesture(trimmed, "default");
+  }, []);
+
+  return { speaking, loading, error, speak, playUrl, prime, stop };
 }
 
 // ─── useSpellingWords — fetches a fresh batch of words ──────────────────────
@@ -277,6 +313,11 @@ export function useSpellingWords(
       const data = (await res.json()) as { ok: true; words: SpellingWord[]; source: SpellingSource };
       setWords(data.words);
       setSource(data.source);
+      const speakLines = data.words.flatMap((w) => [
+        w.word,
+        ...w.chunks.filter((c) => c.trim().length >= 2),
+      ]);
+      pregenerateTtsTexts(authFetch, speakLines, "default");
     } catch (err) {
       setError(err instanceof Error ? err.message : "words_failed");
     } finally {
