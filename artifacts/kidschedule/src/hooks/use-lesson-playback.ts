@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAmyVoice, type SpeakResult } from "@/hooks/use-amy-voice";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { prefetchLessonParagraphText } from "@/lib/amy-voice-pipeline-optimizer";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
 const LESSON_AUDIBLE_LAYERS = new Set([
@@ -88,6 +90,8 @@ export function useLessonPlayback({
     modelId,
     playbackRate,
   });
+
+  const authFetch = useAuthFetch();
 
   const handleSpeakResult = useCallback((session: number, res: SpeakResult | undefined) => {
     if (session !== playbackSessionRef.current) return;
@@ -186,6 +190,20 @@ export function useLessonPlayback({
       speakParagraphAtRef.current(paragraphIdxRef.current);
     }
   }, [autoPlay, lessonId]);
+
+  useEffect(() => {
+    if (intent !== "playing") return;
+    const nextText = paragraphs[paragraphIdx + 1];
+    if (!nextText?.trim()) return;
+    const currentText = paragraphs[paragraphIdx];
+    prefetchLessonParagraphText(
+      nextText,
+      authFetch,
+      voiceId,
+      modelId,
+      currentText,
+    );
+  }, [intent, paragraphIdx, paragraphs, authFetch, voiceId, modelId]);
 
   return {
     paragraphIdx,

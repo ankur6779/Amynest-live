@@ -20,6 +20,17 @@ import {
   formatBlendLine,
 } from "@workspace/phonics-sounds";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
+import {
+  ingestTtsTelemetry,
+  resolveTtsStrategy,
+} from "../services/ttsIntelligenceService.js";
+import {
+  computeTtsCacheKey,
+  AMY_MODEL_ID_DEFAULT,
+} from "../services/ttsCacheService.js";
+import { getOpenAiTtsModel } from "../lib/openai-tts-config.js";
+import { streamOpenAiTtsWithCache } from "../services/openaiTtsStreamCache.js";
+import { ingestRlTelemetry, resolveRlStrategy } from "../services/ttsRlService.js";
 
 export const ttsPublicRouter: IRouter = Router();
 
@@ -391,6 +402,172 @@ router.post("/tts/pregenerate", async (req, res): Promise<void> => {
     },
     res,
   });
+});
+
+const telemetryEventSchema = z.object({
+  cacheKeyHash: z.string().min(8).max(128),
+  layer: z.enum(["static", "cache", "api", "elevenlabs"]),
+  success: z.boolean(),
+  latency: z.number().min(0).max(60_000),
+  deviceClass: z.enum(["low", "mid", "high"]).or(z.string().max(16)),
+  networkType: z.enum(["fast", "slow"]).or(z.string().max(16)),
+  textLength: z.number().int().min(0).max(2000),
+  module: z.enum(["lesson", "phonics", "catalog", "default"]).optional(),
+  exploration: z.boolean().optional(),
+  fromKeyHash: z.string().min(8).max(128).optional(),
+  toKeyHash: z.string().min(8).max(128).optional(),
+});
+
+const telemetryBodySchema = z.object({
+  events: z.array(telemetryEventSchema).min(1).max(50),
+});
+
+/**
+ * POST /api/tts/telemetry — batched pipeline learning events (hashed keys only).
+ */
+router.post("/tts/telemetry", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const parsed = telemetryBodySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return;
+  }
+
+  const { accepted } = ingestTtsTelemetry(parsed.data.events);
+  res.status(202).json({ ok: true, accepted });
+});
+
+const strategyQuerySchema = z.object({
+  deviceClass: z.enum(["low", "mid", "high"]).optional(),
+  networkType: z.enum(["fast", "slow"]).optional(),
+  textLength: z.coerce.number().int().min(0).max(2000).optional(),
+  module: z.enum(["lesson", "phonics", "catalog", "default"]).optional(),
+});
+
+/**
+ * GET /api/tts/strategy — global layer strategy for client hybrid scoring.
+ */
+router.get("/tts/strategy", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const parsed = strategyQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    return;
+  }
+
+  res.json(resolveTtsStrategy(parsed.data));
+});
+
+/**
+ * POST /api/tts/stream — streaming MP3 (cache-first, live OpenAI pipe).
+ * Response: audio/mpeg with X-TTS-Cache-Key header.
+ */
+router.post("/tts/stream", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const parsed = generateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return;
+  }
+
+  const phrase = resolvePhrase(parsed.data);
+  if (!phrase) {
+    res.status(400).json({ error: "invalid_body" });
+    return;
+  }
+
+  const mode = parsed.data.mode ?? "default";
+  const clientVoice = parsed.data.voice?.trim();
+  const voiceId = (clientVoice && clientVoice.length > 0 ? clientVoice : getOpenAiTtsVoice()).slice(0, 64);
+  const modelId = getOpenAiTtsModel() || AMY_MODEL_ID_DEFAULT;
+  const cacheKey = computeTtsCacheKey(phrase, voiceId, modelId, mode);
+
+  res.setHeader("X-TTS-Cache-Key", cacheKey);
+
+  try {
+    const ok = await streamOpenAiTtsWithCache(res, {
+      text: phrase,
+      voiceId,
+      modelId,
+      mode,
+      cacheKey,
+    });
+    if (!ok && !res.headersSent) {
+      res.status(502).json({ error: "tts_stream_failed" });
+    }
+  } catch (err) {
+    logger.error(
+      {
+        evt: "tts.stream_route_failed",
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "tts stream route failed",
+    );
+    if (!res.headersSent) res.status(502).json({ error: "tts_stream_failed" });
+  }
+});
+
+const rlEventSchema = z.object({
+  contextKey: z.string().min(4).max(64),
+  layer: z.enum(["static", "cache", "api", "elevenlabs"]),
+  reward: z.number().min(-2).max(2),
+  ttfaMs: z.number().min(0).max(60_000),
+  bufferingEvents: z.number().int().min(0).max(100),
+  success: z.boolean(),
+  exploration: z.boolean().optional(),
+  streaming: z.boolean().optional(),
+});
+
+const rlTelemetryBodySchema = z.object({
+  events: z.array(rlEventSchema).min(1).max(50),
+});
+
+/**
+ * POST /api/tts/rl-telemetry — batched RL reward events.
+ */
+router.post("/tts/rl-telemetry", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const parsed = rlTelemetryBodySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return;
+  }
+
+  const { accepted } = ingestRlTelemetry(parsed.data.events);
+  res.status(202).json({ ok: true, accepted });
+});
+
+/**
+ * GET /api/tts/rl-strategy — aggregated Q-values for hybrid RL merge.
+ */
+router.get("/tts/rl-strategy", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  res.json(resolveRlStrategy());
 });
 
 export default router;
