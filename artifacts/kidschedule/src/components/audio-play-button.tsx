@@ -193,6 +193,7 @@ export function AudioPlayButton({
         if (!resolvedText) return null;
         const res = await speak(resolvedText, {
           mode,
+          playbackMode: "partial-ok",
           phoneme: phonemeKey,
           word: cvcWordKey,
         });

@@ -18,7 +18,7 @@ import {
   runWithControlledAudioStop,
   warnExternalAudioStop,
 } from "@/lib/amy-voice-ownership";
-import { prepareAmySpeechInput } from "@/lib/amy-speech-mode";
+import { prepareAmySpeechInput, type AmySpeechPolicy } from "@/lib/amy-speech-mode";
 import { enforceAmySpeechPolicyInvariants } from "@/lib/amy-voice-invariants";
 import { buildAdaptiveDelivery } from "@/lib/amy-voice-emotion";
 import {
@@ -60,17 +60,26 @@ import {
 } from "@/lib/amy-voice-pipeline";
 import { audioManager } from "@/lib/audio-manager";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
-import type { AmySpeechPolicy } from "@/lib/amy-speech-mode";
+import {
+  resolvePlaybackMode,
+  type PlaybackMode,
+} from "@/lib/amy-voice-playback-contract";
 import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
 import type { AuthFetchFn } from "@/lib/poll-result";
 
 export type AmyVoiceStatus = "idle" | "loading" | "playing";
+
+export type { PlaybackMode } from "@/lib/amy-voice-playback-contract";
 
 export interface SpeakOptions {
   mode?: "default" | "phonics";
   phoneme?: string;
   word?: string;
   waitUntilEnd?: boolean;
+  /** Explicit playback contract — default: full-required (safe). */
+  playbackMode?: PlaybackMode;
+  /** Long-form narration (stories, articles) — implies full-required. */
+  narration?: boolean;
   lessonParagraph?: boolean;
   catalogPlayback?: boolean;
   staticCatalogTexts?: string[];
@@ -251,6 +260,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       voiceId: runtime.voiceId,
       modelId: runtime.modelId,
       playbackRate: runtime.playbackRate ?? 1,
+      playbackMode: resolvePlaybackMode(opts),
       isCancelled: () => !isCurrentSpeakRequest(requestId),
       onFinished: () => {
         if (!isCurrentSpeakRequest(requestId)) return;

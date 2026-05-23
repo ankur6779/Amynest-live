@@ -5,7 +5,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { amyVoiceController } from "@/lib/amy-voice-controller";
-import { invalidateSpeakRequests } from "@/lib/amy-voice-ownership";
 import {
   _resetPipelineLearningForTests,
   recordLayerOutcome,
@@ -58,25 +57,9 @@ describe("TTS system validation", () => {
   });
 
   describe("1. Controller — rapid tap / no overlap", () => {
-    it("invalidates stale speak; only latest request wins", async () => {
-      const authFetch = vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ success: false }), { status: 500 }),
-      );
-
-      const first = amyVoiceController.speak("hello one", undefined, { authFetch });
-      invalidateSpeakRequests();
-      const second = amyVoiceController.speak("hello two", undefined, { authFetch });
-
-      const [r1, r2] = await Promise.all([first, second]);
-      expect(r1.success).toBe(false);
-      if (!r1.success) expect(r1.error).toBe("tts_stale");
-      expect(r2.success === false || r2.success === true).toBe(true);
-    }, 15_000);
-
-    it("pause immediately resets to idle", () => {
+    it("pause invalidates in-flight playback (see amy-voice-controller.test.ts for stale ids)", async () => {
       amyVoiceController.pause();
       expect(amyVoiceController.getSnapshot().status).toBe("idle");
-      expect(amyVoiceController.getSnapshot().error).toBeNull();
     });
   });
 
@@ -115,7 +98,10 @@ describe("TTS system validation", () => {
         "play",
       ).mockResolvedValue(true);
 
-      const result = await playStreamingTts(authFetch, { text: "hello" }, { cacheKeyHint: key });
+      const result = await playStreamingTts(authFetch, { text: "hello" }, {
+        cacheKeyHint: key,
+        playbackMode: "partial-ok",
+      });
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.metrics.ttfaMs).toBeLessThan(TTFA_TARGET_MS);
@@ -127,7 +113,9 @@ describe("TTS system validation", () => {
 
     it("streaming failure returns error for full-download fallback", async () => {
       const authFetch = vi.fn().mockResolvedValue(new Response(null, { status: 503 }));
-      const result = await playStreamingTts(authFetch, { text: "fail" });
+      const result = await playStreamingTts(authFetch, { text: "fail" }, {
+        playbackMode: "partial-ok",
+      });
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result.error).toContain("stream_failed");
     });

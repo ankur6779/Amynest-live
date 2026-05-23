@@ -1,6 +1,11 @@
 /**
  * Amy voice — adaptive fallback pipeline (staged pregen, time budget, layer memory).
  *
+ * RULE:
+ * - Streaming is ONLY for partial-ok playback (see amy-voice-playback-contract)
+ * - Full-required playback MUST use complete audio
+ * - HTMLAudioElement "ended" cannot be trusted for partial streams
+ *
  * Layer 1: Static then cache — staged race (static first, cache after ~130ms)
  * Layer 2: OpenAI first → ElevenLabs only on failure (no overlap)
  * Layer 3–6: Phonics → word split → emergency → synthesis → visual
@@ -84,7 +89,6 @@ import {
   pipelineCacheKey,
   resolvePipelineStrategy,
   runStagedPregenRace,
-  waitUntilEndWithCap,
   type LearnableLayer,
   type PipelineStrategy,
 } from "@/lib/amy-voice-pipeline-optimizer";
@@ -103,6 +107,13 @@ import {
   supportsStreamingPlayback,
 } from "@/lib/amy-voice-stream-player";
 import {
+  canUseStreaming,
+  logTtsEarlyCompletion,
+  shouldTriggerCompletion,
+  waitForSafePlaybackCompletion,
+  type PlaybackMode,
+} from "@/lib/amy-voice-playback-contract";
+import {
   recordAmyVoiceFailureChain,
   recordAmyVoiceFallbackUsed,
   recordAmyVoiceLayerFailed,
@@ -111,6 +122,8 @@ import {
   type AmyVoiceLayer,
   type FailureChainEntry,
 } from "@/lib/amy-voice-telemetry";
+
+export type { PlaybackMode };
 
 const LAYER1_TIMEOUT_MS = 1200;
 const LAYER2_TIMEOUT_MS = 1500;
@@ -135,6 +148,7 @@ export type AmyVoicePipelineContext = {
   voiceId?: string;
   modelId?: string;
   playbackRate: number;
+  playbackMode: PlaybackMode;
   isCancelled: () => boolean;
   onFinished?: () => void;
   depth?: number;
@@ -143,7 +157,14 @@ export type AmyVoicePipelineContext = {
 };
 
 type PlayAttemptResult =
-  | { ok: true; layer: AmyVoiceLayer; stopPlayback?: () => void }
+  | {
+      ok: true;
+      layer: AmyVoiceLayer;
+      stopPlayback?: () => void;
+      playedDuration?: number;
+      expectedDuration?: number;
+      usedStreaming?: boolean;
+    }
   | { ok: false; error: string };
 
 type LayerRunner = {
@@ -336,8 +357,8 @@ async function playElementWithNeverSilentWatchdog(
     source: "static" | "tts" | "cache" | "elevenlabs";
     waitUntilEnd: boolean;
   },
-): Promise<boolean> {
-  if (isStale(ctx)) return false;
+): Promise<{ ok: boolean; playedDuration?: number; expectedDuration?: number }> {
+  if (isStale(ctx)) return { ok: false };
 
   audio.playbackRate = ctx.playbackRate;
   const played =
@@ -362,7 +383,7 @@ async function playElementWithNeverSilentWatchdog(
           { channel: "speech", interrupt: true, maxRetries: 1 },
         );
 
-  if (!played || isStale(ctx)) return false;
+  if (!played || isStale(ctx)) return { ok: false };
 
   const audible = await waitForAudible(audio, NEVER_SILENT_MS);
   logAmyVoiceDiag(`${meta.source}_play_verify`, {
@@ -375,20 +396,23 @@ async function playElementWithNeverSilentWatchdog(
   });
   if (!audible) {
     audio.pause();
-    return false;
+    return { ok: false };
   }
 
   if (meta.waitUntilEnd) {
-    const duration =
-      Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
-    const end = await waitUntilEndWithCap(
-      () => audioManager.waitUntilEnd(audio, ctx.isCancelled),
-      duration,
-      () => isStale(ctx) || ctx.isCancelled(),
-    );
-    return end.ok;
+    const completion = await waitForSafePlaybackCompletion({
+      audio,
+      mode: ctx.playbackMode,
+      isCancelled: () => isStale(ctx) || ctx.isCancelled(),
+      usedStreaming: false,
+    });
+    return {
+      ok: completion.ok,
+      playedDuration: completion.actualPlayedDuration,
+      expectedDuration: completion.expectedDuration,
+    };
   }
-  return true;
+  return { ok: true };
 }
 
 function uniqueStaticCandidates(primary: string, extras: string[]): string[] {
@@ -426,7 +450,7 @@ async function attemptStaticPlay(
       const audio = await prepareStaticPlaybackAudio(candidate, tryMode, { quiet: true });
       if (!audio) continue;
 
-      const ok = await playElementWithNeverSilentWatchdog(audio, ctx, {
+      const play = await playElementWithNeverSilentWatchdog(audio, ctx, {
         proxyUrl,
         phrase: candidate,
         mode: tryMode,
@@ -434,12 +458,14 @@ async function attemptStaticPlay(
         waitUntilEnd,
       });
       if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
-      if (ok) {
+      if (play.ok) {
         void warmLocalCacheFromUrl(localCacheKeyForPhrase(candidate, tryMode), proxyUrl);
         recordAmyVoiceLayerSuccess("static_success", { mode: tryMode });
         return {
           ok: true,
           layer: "static",
+          playedDuration: play.playedDuration,
+          expectedDuration: play.expectedDuration,
           stopPlayback: () => {
             audio.pause();
             audio.currentTime = 0;
@@ -471,7 +497,7 @@ async function attemptCachePlay(
       continue;
     }
 
-    const ok = await playElementWithNeverSilentWatchdog(audio, ctx, {
+    const play = await playElementWithNeverSilentWatchdog(audio, ctx, {
       proxyUrl: objectUrl,
       phrase: text,
       mode: tryMode,
@@ -480,11 +506,13 @@ async function attemptCachePlay(
     });
     URL.revokeObjectURL(objectUrl);
     if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
-    if (ok) {
+    if (play.ok) {
       recordAmyVoiceLayerSuccess("cache_success", { mode: tryMode });
       return {
         ok: true,
         layer: "cache",
+        playedDuration: play.playedDuration,
+        expectedDuration: play.expectedDuration,
         stopPlayback: () => {
           audio.pause();
           audio.currentTime = 0;
@@ -600,14 +628,17 @@ async function attemptOpenAiPlay(
   };
 
   const startedAt = Date.now();
+  const playbackMode = ctx.playbackMode;
 
   if (
+    canUseStreaming(playbackMode) &&
     supportsStreamingPlayback() &&
     !isStreamingLayerPenalized(cacheKeyHint)
   ) {
     const stream = await playStreamingTts(ctx.authFetch, streamBody, {
       signal,
       cacheKeyHint,
+      playbackMode,
     });
 
     if (stream.ok) {
@@ -646,25 +677,40 @@ async function attemptOpenAiPlay(
         );
 
         if (waitUntilEnd) {
-          const duration =
-            Number.isFinite(stream.audio.duration) && stream.audio.duration > 0
-              ? stream.audio.duration
-              : 0;
-          await waitUntilEndWithCap(
-            () => audioManager.waitUntilEnd(stream.audio, ctx.isCancelled),
-            duration,
-            () => isStale(ctx) || ctx.isCancelled(),
-          );
-        }
-
-        return {
-          ok: true,
-          layer: "api",
-          stopPlayback: () => {
+          const completion = await waitForSafePlaybackCompletion({
+            audio: stream.audio,
+            mode: playbackMode,
+            isCancelled: () => isStale(ctx) || ctx.isCancelled(),
+            usedStreaming: true,
+          });
+          if (!completion.ok) {
+            penalizeStreamingLayer(cacheKeyHint);
             stream.audio.pause();
-            stream.audio.currentTime = 0;
-          },
-        };
+            URL.revokeObjectURL(stream.objectUrl);
+            recordAmyVoiceLayerFailed("api", "streaming_early_completion");
+          } else {
+            return {
+              ok: true,
+              layer: "api",
+              playedDuration: completion.actualPlayedDuration,
+              expectedDuration: completion.expectedDuration,
+              usedStreaming: true,
+              stopPlayback: () => {
+                stream.audio.pause();
+                stream.audio.currentTime = 0;
+              },
+            };
+          }
+        } else {
+          return {
+            ok: true,
+            layer: "api",
+            stopPlayback: () => {
+              stream.audio.pause();
+              stream.audio.currentTime = 0;
+            },
+          };
+        }
       }
 
       penalizeStreamingLayer(cacheKeyHint);
@@ -697,7 +743,7 @@ async function attemptOpenAiPlay(
     (await prepareRemotePlaybackAudio(playbackUrl)) ?? playAudio(playbackUrl);
   if (!audio) return { ok: false, error: "tts_invalid_audio_url" };
 
-  const ok = await playElementWithNeverSilentWatchdog(audio, ctx, {
+  const play = await playElementWithNeverSilentWatchdog(audio, ctx, {
     proxyUrl: playbackUrl,
     phrase: text,
     mode,
@@ -706,7 +752,7 @@ async function attemptOpenAiPlay(
   });
 
   if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
-  if (ok) {
+  if (play.ok) {
     recordAmyVoiceLayerSuccess("api_success", { cacheKey: data.cacheKey });
     recordRlOutcome(
       buildRlTelemetryPayload(scoringContext, "api", true, Date.now() - startedAt, Date.now() - startedAt, 0, false, false),
@@ -715,6 +761,8 @@ async function attemptOpenAiPlay(
     return {
       ok: true,
       layer: "api",
+      playedDuration: play.playedDuration,
+      expectedDuration: play.expectedDuration,
       stopPlayback: () => {
         audio.pause();
         audio.currentTime = 0;
@@ -762,7 +810,7 @@ async function attemptElevenLabsPlay(
     (await prepareRemotePlaybackAudio(playbackUrl)) ?? playAudio(playbackUrl);
   if (!audio) return { ok: false, error: "tts_invalid_audio_url" };
 
-  const ok = await playElementWithNeverSilentWatchdog(audio, ctx, {
+  const play = await playElementWithNeverSilentWatchdog(audio, ctx, {
     proxyUrl: playbackUrl,
     phrase: text,
     mode: opts?.mode === "phonics" ? "phonics" : "default",
@@ -771,11 +819,13 @@ async function attemptElevenLabsPlay(
   });
 
   if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
-  if (ok) {
+  if (play.ok) {
     recordAmyVoiceLayerSuccess("elevenlabs_success", { cacheKey: data.cacheKey });
     return {
       ok: true,
       layer: "elevenlabs",
+      playedDuration: play.playedDuration,
+      expectedDuration: play.expectedDuration,
       stopPlayback: () => {
         audio.pause();
         audio.currentTime = 0;
@@ -1241,6 +1291,26 @@ function finalizeSuccess(
       result.layer === "elevenlabs" ||
       result.layer === "emergency_local")
   ) {
+    const played =
+      result.playedDuration ?? 0;
+    const expected = result.expectedDuration ?? 0;
+    if (
+      expected > 0 &&
+      !shouldTriggerCompletion({
+        mode: ctx.playbackMode,
+        actualPlayedDuration: played,
+        expectedDuration: expected,
+      })
+    ) {
+      logTtsEarlyCompletion({
+        errorType: "early_completion",
+        mode: ctx.playbackMode,
+        playedDuration: played,
+        expectedDuration: expected,
+        usedStreaming: result.usedStreaming,
+      });
+      return { success: false, error: "early_completion", layer: result.layer };
+    }
     ctx.onFinished?.();
   }
   return { success: true, layer: result.layer };

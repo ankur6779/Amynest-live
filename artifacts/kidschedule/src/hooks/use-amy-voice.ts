@@ -11,7 +11,7 @@ import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
-export type { SpeakOptions, SpeakResult } from "@/lib/amy-voice-controller";
+export type { SpeakOptions, SpeakResult, PlaybackMode } from "@/lib/amy-voice-controller";
 export type { AmySpeechPolicy } from "@/lib/amy-speech-mode";
 
 export interface UseAmyVoiceOptions {

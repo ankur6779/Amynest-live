@@ -2450,7 +2450,7 @@ export function ListenButton({
       pause();
       return;
     }
-    speak(buildText());
+    speak(buildText(), { playbackMode: "partial-ok" });
   };
   const isActive = speaking || loading;
   const langChipBase: React.CSSProperties = {
