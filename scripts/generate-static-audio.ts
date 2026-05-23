@@ -119,6 +119,11 @@ function resolvePhraseScope(): {
     const phrases = ALL_CORPUS_PHRASES.filter((e) => e.source === "spelling_mastery");
     return { phrases, label: "spelling_mastery", audioLessonsOnly: false };
   }
+  const parentHubOnly = process.argv.includes("--parent-hub-only");
+  if (parentHubOnly) {
+    const phrases = ALL_CORPUS_PHRASES.filter((e) => e.source === "parent_hub");
+    return { phrases, label: "parent_hub", audioLessonsOnly: false };
+  }
   return { phrases: ALL_CORPUS_PHRASES, label: "full_corpus", audioLessonsOnly: false };
 }
 

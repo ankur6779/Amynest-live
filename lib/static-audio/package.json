@@ -15,6 +15,7 @@
     "@workspace/phonics-sounds": "workspace:*",
     "@workspace/speech-coach": "workspace:*",
     "@workspace/study-zone": "workspace:*",
-    "@workspace/audio-lessons": "workspace:*"
+    "@workspace/audio-lessons": "workspace:*",
+    "@workspace/parent-hub-speak": "workspace:*"
   }
 }

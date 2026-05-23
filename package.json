@@ -31,6 +31,7 @@
     "generate:static-audio:audio-lessons": "pnpm run scan:speakable-phrases && pnpm --filter @workspace/scripts run generate-static-audio -- --audio-lessons-only",
     "generate:static-audio:study-zone": "pnpm run scan:speakable-phrases && pnpm --filter @workspace/scripts run generate-static-audio -- --study-zone-only",
     "generate:static-audio:spelling": "pnpm --filter @workspace/scripts run generate-static-audio -- --spelling-only",
+    "generate:static-audio:parent-hub": "pnpm run scan:speakable-phrases && pnpm --filter @workspace/scripts run generate-static-audio -- --parent-hub-only",
     "backfill:spelling-static-audio": "pnpm --filter @workspace/scripts run backfill-spelling-static-audio",
     "check:static-audio": "pnpm --filter @workspace/scripts run check-static-audio",
     "scan:speakable-phrases": "pnpm --filter @workspace/scripts run scan-speakable-phrases",

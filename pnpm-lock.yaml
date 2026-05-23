@@ -449,6 +449,9 @@ importers:
       '@workspace/olympiad':
         specifier: workspace:*
         version: link:../../lib/olympiad
+      '@workspace/parent-hub-speak':
+        specifier: workspace:*
+        version: link:../../lib/parent-hub-speak
       '@workspace/parenting-articles':
         specifier: workspace:*
         version: link:../../lib/parenting-articles
@@ -1218,6 +1221,8 @@ importers:
 
   lib/olympiad: {}
 
+  lib/parent-hub-speak: {}
+
   lib/parenting-articles: {}
 
   lib/phone-auth:
@@ -1257,6 +1262,9 @@ importers:
       '@workspace/math-tricks':
         specifier: workspace:*
         version: link:../math-tricks
+      '@workspace/parent-hub-speak':
+        specifier: workspace:*
+        version: link:../parent-hub-speak
       '@workspace/phonics-sounds':
         specifier: workspace:*
         version: link:../phonics-sounds

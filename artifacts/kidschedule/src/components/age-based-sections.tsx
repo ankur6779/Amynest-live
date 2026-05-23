@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX } from "lucide-react";
 import { AgeGroup, SKILL_FOCUS_BY_GROUP, STORIES_BY_GROUP, PARENT_TASKS_BY_GROUP } from "@/lib/age-groups";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { buildAgeGroupStorySpeakText } from "@workspace/parent-hub-speak";
 
 // ─────────────────────────────────────────────────────────────
 // Skill Focus Section
@@ -66,9 +67,7 @@ export function StorySection({ group, childName }: StorySectionProps) {
  const { speak, stop, speaking, loading, primeSpeakGesture } = useAmyVoice();
  const story = stories[activeIdx];
 
- const storyText = story
-   ? `${story.title}. ${story.story}. Moral: ${story.moral}`
-   : "";
+ const storyText = story ? buildAgeGroupStorySpeakText(story) : "";
  const handleSpeak = () => {
  if (!story) return;
  if (speaking || loading) { stop(); return; }

@@ -124,6 +124,7 @@
     "@workspace/morning-flow": "workspace:*",
     "@workspace/olympiad": "workspace:*",
     "@workspace/parenting-articles": "workspace:*",
+    "@workspace/parent-hub-speak": "workspace:*",
     "@workspace/phone-auth": "workspace:*",
     "@workspace/ptm-prep": "workspace:*",
     "@workspace/speech-coach": "workspace:*",
