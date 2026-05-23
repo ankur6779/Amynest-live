@@ -1523,7 +1523,8 @@ export default function AICoachPage() {
     const visibleNum = ageSkipped ? qIndex : qIndex + 1;
     const progressPct = visibleNum / visibleTotal * 100;
     const questionCategoryId = coachGoalCategoryId(goalId);
-    return <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
+    return <div className="app-fixed-below-header fixed inset-0 z-40 flex flex-col overflow-y-auto bg-background">
+        <div className="mx-auto flex w-full max-w-xl flex-1 flex-col space-y-6 px-4 py-6">
         <button onClick={handleBackQ} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back_3")}
         </button>
@@ -1582,6 +1583,7 @@ export default function AICoachPage() {
         }}>
             {qIndex < QUESTIONS.length - 1 ? "Next →" : "Build My Plan ✨"}
           </button>
+        </div>
         </div>
       </div>;
   }
