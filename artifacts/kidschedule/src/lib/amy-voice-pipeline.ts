@@ -120,6 +120,7 @@ import {
 } from "@/lib/amy-voice-stream-player";
 import {
   canUseStreaming,
+  getExpectedAudioDurationSec,
   logTtsEarlyCompletion,
   shouldTriggerCompletion,
   waitForSafePlaybackCompletion,
@@ -163,9 +164,13 @@ export type AmyVoicePipelineContext = {
   playbackMode: PlaybackMode;
   isCancelled: () => boolean;
   onFinished?: () => void;
+  /** Lesson paragraph index for completion debug logs. */
+  paragraphIdx?: number;
   depth?: number;
   /** Set for top-level speak only — invalidates losing parallel runners. */
   speakGeneration?: number;
+  /** Guards against duplicate onFinished from finalizeSuccess. */
+  completionFinalized?: boolean;
 };
 
 type PlayAttemptResult =
@@ -417,6 +422,8 @@ async function playElementWithNeverSilentWatchdog(
       mode: ctx.playbackMode,
       isCancelled: () => isStale(ctx) || ctx.isCancelled(),
       usedStreaming: false,
+      paragraphIdx: ctx.paragraphIdx,
+      knownDurationSec: getExpectedAudioDurationSec(audio),
     });
     return {
       ok: completion.ok,
@@ -781,6 +788,8 @@ async function attemptOpenAiPlay(
             mode: playbackMode,
             isCancelled: () => isStale(ctx) || ctx.isCancelled(),
             usedStreaming: true,
+            paragraphIdx: ctx.paragraphIdx,
+            knownDurationSec: getExpectedAudioDurationSec(stream.audio),
           });
           if (!completion.ok) {
             penalizeStreamingLayer(cacheKeyHint);
@@ -1410,6 +1419,10 @@ function finalizeSuccess(
       });
       return { success: false, error: "early_completion", layer: result.layer };
     }
+    if (ctx.completionFinalized) {
+      return { success: true, layer: result.layer };
+    }
+    ctx.completionFinalized = true;
     ctx.onFinished?.();
   }
   return { success: true, layer: result.layer };
