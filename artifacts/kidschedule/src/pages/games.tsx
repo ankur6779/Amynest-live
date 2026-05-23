@@ -5,10 +5,15 @@ import {
   ArrowLeft, Lock, Sparkles, Gamepad2, Trophy, X, Coins, Gift, Plus, Trash2, Check,
 } from "lucide-react";
 import {
-  GAMES, CATEGORY_LABEL, CATEGORY_EMOJI, isUnlocked, unlockGame, recordPlay,
+  GAMES, CATEGORY_LABEL, CATEGORY_EMOJI, unlockGame, recordPlay,
   gamesPlayedToday, dailyLimit, dailyLimitReached, amySuggestion, getSkillPercent,
+  canPlayGame, isGameUnlockedForPlay, ensureStarterUnlocks, getWeeklyGameSummary,
+  getCachedRoutineStreak, canUnlockGameWithStreak, STREAK_UNLOCK_DAYS,
+  requiresPremiumToPlay, isFreeStarter, DAILY_LIMIT_FREE,
   type GameDef, type GameCategory,
 } from "@/lib/games";
+import { useSubscription } from "@/hooks/use-subscription";
+import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import {
   getTotalPoints, addPoints, getRewards, saveRewards, redeemReward, getRedemptions,
   type Reward,
@@ -37,19 +42,32 @@ type ActiveGame =
 export default function GamesPage() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
+  const { isPremium } = useSubscription();
+  const hubUsage = useFeatureUsage();
   const [points, setPoints] = useState<number>(getTotalPoints());
   const [unlockedTick, setUnlockedTick] = useState(0);
   const [active, setActive] = useState<ActiveGame>(null);
   const [showRedeem, setShowRedeem] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    ensureStarterUnlocks();
+    hubUsage.markFeatureUsed("hub_gaming_rewards");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- track hub entry once per mount
+  }, []);
+
   // Re-sync points whenever modals close
   useEffect(() => { setPoints(getTotalPoints()); }, [active, showRedeem, unlockedTick]);
 
   const playedToday = gamesPlayedToday();
-  const limit = dailyLimit();
-  const limitHit = dailyLimitReached();
-  const suggestion = useMemo(() => amySuggestion(), [unlockedTick, active]);
+  const limit = dailyLimit(isPremium);
+  const limitHit = dailyLimitReached(isPremium);
+  const suggestion = useMemo(() => amySuggestion(isPremium), [unlockedTick, active, isPremium]);
+  const weekly = useMemo(() => getWeeklyGameSummary(), [unlockedTick, active]);
+  const routineStreak = getCachedRoutineStreak();
+  const suggestedGame = suggestion.gameId
+    ? GAMES.find((g) => g.id === suggestion.gameId)
+    : undefined;
 
   const devGrantPoints = () => {
     addPoints("DEV", "DEV: test grant", 1000);
@@ -59,18 +77,33 @@ export default function GamesPage() {
 
   const onUnlock = (g: GameDef) => {
     setError(null);
-    const r = unlockGame(g.id);
+    if (requiresPremiumToPlay(g) && !isPremium) {
+      setError(t("screens.games.premium_required"));
+      return;
+    }
+    const r = unlockGame(g.id, { isPremium });
     if (!r.ok) setError(r.reason ?? t("screens.games.could_not_unlock"));
+    else setPoints(getTotalPoints());
     setUnlockedTick((tick) => tick + 1);
   };
 
   const onPlay = (g: GameDef) => {
+    if (!canPlayGame(g, isPremium)) {
+      if (requiresPremiumToPlay(g) && !isPremium) {
+        setError(t("screens.games.premium_required"));
+      }
+      return;
+    }
     if (limitHit) {
       setError(t("screens.games.limit_reached_msg", { count: limit }));
       return;
     }
     setError(null);
     setActive({ kind: "play", game: g });
+  };
+
+  const onPlaySuggested = () => {
+    if (suggestedGame) onPlay(suggestedGame);
   };
 
   const finishGame = (g: GameDef, score: number, total: number) => {
@@ -153,20 +186,55 @@ export default function GamesPage() {
             onClick={() => setShowRedeem(true)}
             style={{ color: "#fff", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(139,92,246,0.3)", padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
           ><Gift size={13} /> {t("screens.games.redeem_button")}</button>
+          <button
+            onClick={() => setLocation("/rewards")}
+            style={{ color: "#fff", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(245,158,11,0.35)", padding: "6px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer" }}
+          >{t("screens.games.rewards_shop_link")}</button>
+          {!isPremium && (
+            <button
+              onClick={() => setLocation("/pricing")}
+              style={{ color: "#fff", background: "linear-gradient(135deg,hsl(var(--brand-violet-500)),hsl(var(--brand-pink-500)))", border: "none", padding: "6px 10px", borderRadius: 999, fontSize: 11, fontWeight: 800, cursor: "pointer" }}
+            >{t("screens.games.upgrade_premium")}</button>
+          )}
         </div>
       </div>
 
       {/* Daily limit + Amy suggestion */}
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 16px 4px" }}>
         <div style={{
-          background: "rgba(255,255,255,0.05)",
-          border: "1px solid rgba(139,92,246,0.25)",
-          borderRadius: 14, padding: 12,
-          display: "flex", alignItems: "center", gap: 10, fontSize: 13,
+          background: "linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(236,72,153,0.12) 100%)",
+          border: "1px solid rgba(139,92,246,0.35)",
+          borderRadius: 14, padding: 14,
+          display: "flex", flexDirection: "column", gap: 10,
         }}>
-          <Sparkles size={18} color="hsl(var(--brand-amber-300))" />
-          <div style={{ flex: 1, color: "#e6e1f5" }}>{suggestion.line}</div>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+            <Sparkles size={20} color="hsl(var(--brand-amber-300))" style={{ flexShrink: 0, marginTop: 2 }} />
+            <div style={{ flex: 1, color: "#e6e1f5", fontSize: 13.5, lineHeight: 1.45, fontWeight: 600 }}>{suggestion.line}</div>
+          </div>
+          {suggestedGame && canPlayGame(suggestedGame, isPremium) && !limitHit && (
+            <button
+              type="button"
+              onClick={onPlaySuggested}
+              style={{
+                alignSelf: "flex-start",
+                background: "linear-gradient(135deg, hsl(var(--brand-amber-500)), hsl(var(--brand-orange-500)))",
+                color: "#fff", border: "none", borderRadius: 999,
+                padding: "8px 16px", fontSize: 12.5, fontWeight: 800, cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 6,
+              }}
+            >
+              {suggestedGame.emoji} {t("screens.games.amy_play_now")}
+            </button>
+          )}
         </div>
+        {!isPremium && (
+          <p style={{ marginTop: 8, fontSize: 11.5, color: "#a99fd9", lineHeight: 1.4 }}>
+            {t("screens.games.free_tier_hint", { limit: DAILY_LIMIT_FREE })}
+          </p>
+        )}
+        <p style={{ marginTop: 6, fontSize: 11.5, color: "#8b7ec8", lineHeight: 1.4 }}>
+          {t("screens.games.streak_unlock_hint", { days: STREAK_UNLOCK_DAYS, current: routineStreak })}
+        </p>
         <div style={{
           marginTop: 10,
           display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -176,6 +244,31 @@ export default function GamesPage() {
           <span>{t("screens.games.earn_to_unlock")}</span>
         </div>
       </div>
+
+      {isPremium && weekly.playsLast7Days > 0 && (
+        <div style={{ maxWidth: 720, margin: "12px auto 0", padding: "0 16px" }}>
+          <div style={{
+            background: "rgba(16,185,129,0.1)",
+            border: "1px solid rgba(16,185,129,0.3)",
+            borderRadius: 14, padding: "12px 14px",
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "hsl(var(--brand-green-400))", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>
+              {t("screens.games.weekly_summary_title")}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", fontSize: 12, color: "#c7c0e8" }}>
+              <span>{t("screens.games.weekly_plays", { count: weekly.playsLast7Days })}</span>
+              <span>{t("screens.games.weekly_perfect", { count: weekly.perfectCount })}</span>
+              <span>{t("screens.games.weekly_points", { count: weekly.pointsEarned })}</span>
+              {weekly.topCategory != null && (
+                <span>{t("screens.games.weekly_top_skill", {
+                  category: CATEGORY_LABEL[weekly.topCategory].split("&")[0].trim(),
+                  pct: weekly.categoryAccuracies[0]?.pct ?? 0,
+                })}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div style={{
@@ -237,8 +330,11 @@ export default function GamesPage() {
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 }}>
               {list.map((g) => {
-                const unlocked = isUnlocked(g.id);
+                const playable = canPlayGame(g, isPremium);
+                const unlocked = isGameUnlockedForPlay(g.id, isPremium);
                 const soon = g.status === "soon";
+                const premiumOnly = requiresPremiumToPlay(g) && !isPremium;
+                const showLock = !unlocked && !soon && !premiumOnly;
                 return (
                   <div
                     key={g.id}
@@ -249,21 +345,35 @@ export default function GamesPage() {
                       borderRadius: 16, padding: 14,
                       display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
                       opacity: soon ? 0.6 : 1,
-                      filter: !unlocked && !soon ? "blur(0.4px)" : "none",
+                      filter: showLock ? "blur(0.4px)" : "none",
                     }}
                   >
-                    {!unlocked && !soon && (
+                    {g.premiumOnly && (
+                      <div style={{
+                        position: "absolute", top: 8, left: 8,
+                        background: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-orange-500)))",
+                        borderRadius: 999, padding: "2px 8px", fontSize: 9, fontWeight: 800, color: "#fff",
+                      }}>{t("screens.games.premium_game")}</div>
+                    )}
+                    {showLock && (
                       <div style={{
                         position: "absolute", top: 8, right: 8,
                         background: "rgba(0,0,0,0.4)", borderRadius: 999,
                         padding: 4,
                       }}><Lock size={11} color="hsl(var(--brand-amber-300))" /></div>
                     )}
+                    {isFreeStarter(g.id) && !isPremium && (
+                      <div style={{
+                        position: "absolute", top: 8, right: 8,
+                        background: "rgba(16,185,129,0.35)", borderRadius: 999,
+                        padding: "2px 7px", fontSize: 9, fontWeight: 800, color: "#fff",
+                      }}>FREE</div>
+                    )}
                     <div style={{
                       fontSize: 36, lineHeight: 1, width: 56, height: 56,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       background: "rgba(139,92,246,0.15)", borderRadius: 14,
-                      filter: !unlocked && !soon ? "grayscale(0.6)" : "none",
+                      filter: showLock ? "grayscale(0.6)" : "none",
                     }}>{g.emoji}</div>
                     <div style={{ fontSize: 13.5, fontWeight: 800, fontFamily: "Quicksand, sans-serif", textAlign: "center", lineHeight: 1.2 }}>
                       {g.title}
@@ -274,8 +384,20 @@ export default function GamesPage() {
 
                     {soon ? (
                       <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: "hsl(var(--brand-amber-300))" }}>{t("screens.games.coming_soon")}</div>
-                    ) : unlocked ? (
+                    ) : premiumOnly ? (
                       <button
+                        type="button"
+                        onClick={() => setLocation("/pricing")}
+                        style={{
+                          marginTop: 6, width: "100%",
+                          background: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-orange-500)))",
+                          color: "#fff", border: "none", borderRadius: 999,
+                          padding: "7px 0", fontSize: 11.5, fontWeight: 700, cursor: "pointer",
+                        }}
+                      >{t("screens.games.upgrade_premium")}</button>
+                    ) : playable ? (
+                      <button
+                        type="button"
                         onClick={() => onPlay(g)}
                         disabled={limitHit}
                         style={{
@@ -290,16 +412,26 @@ export default function GamesPage() {
                       >{t("screens.games.play")}</button>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => onUnlock(g)}
                         style={{
                           marginTop: 6, width: "100%",
-                          background: "rgba(255,255,255,0.08)",
-                          color: "#fff", border: "1px solid rgba(139,92,246,0.4)", borderRadius: 999,
-                          padding: "7px 0", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                          background: canUnlockGameWithStreak()
+                            ? "rgba(16,185,129,0.2)"
+                            : "rgba(255,255,255,0.08)",
+                          color: "#fff",
+                          border: canUnlockGameWithStreak()
+                            ? "1px solid rgba(16,185,129,0.5)"
+                            : "1px solid rgba(139,92,246,0.4)",
+                          borderRadius: 999,
+                          padding: "7px 0", fontSize: 11, fontWeight: 700, cursor: "pointer",
                           display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                         }}
                       >
-                        <Lock size={11} /> {t("screens.games.points_short", { cost: g.unlockCost })}
+                        <Lock size={11} />
+                        {canUnlockGameWithStreak()
+                          ? t("screens.games.unlock_streak_btn", { days: STREAK_UNLOCK_DAYS })
+                          : t("screens.games.points_short", { cost: g.unlockCost })}
                       </button>
                     )}
                   </div>

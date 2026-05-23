@@ -62,9 +62,9 @@ const LOGO = require("../../assets/images/amynest-logo.png");
 // (all band-matched tiles) then groups them here for collapsible display.
 const SECTION_TODAY_IDS      = new Set(["amy", "tips"]);
 const SECTION_LEARNING_IDS   = new Set(["smart-study","phonics-learning","phonics","olympiad","abacus","smart-math-tricks","skills-focus"]);
-const SECTION_CREATIVITY_IDS = new Set(["activities","art-craft","coloring-books","fun-sheets","daily-puzzle","morning-flow"]);
+const SECTION_CREATIVITY_IDS = new Set(["activities","art-craft","worksheets","coloring-books","fun-sheets","daily-puzzle","morning-flow"]);
 const SECTION_STORIES_IDS    = new Set(["story-hub","speech_coach","daily-story"]);
-const SECTION_SUPPORT_IDS    = new Set(["articles","emotional","ptm-prep","life-skills","event-prep","kids-control-center","meals","facts","worksheets","infant-parenting"]);
+const SECTION_SUPPORT_IDS    = new Set(["articles","emotional","ptm-prep","life-skills","event-prep","kids-control-center","meals","facts","infant-parenting"]);
 
 const HUB_SECTION_GROUPS = [
   { key: "today",      emoji: "✨", i18nKey: "parent_hub.section_groups.today",      tileIds: SECTION_TODAY_IDS,      defaultOpen: true  },

@@ -1,5 +1,5 @@
 // Shared, platform-agnostic age-segmented content datasets used by both the
-// web (`artifacts/kidschedule`) and mobile (`artifacts/amynest-mobile`) Parent
+// web (`artifacts/kidschedule`) / Capacitor mobile Parent
 // Hubs. Pure data + helpers — no React, DOM, or React Native imports — so the
 // same module can be consumed from a Vite-bundled web app and from an Expo
 // React Native bundle without conditional exports.

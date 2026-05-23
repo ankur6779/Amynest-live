@@ -1176,7 +1176,12 @@ export function DailyKidsActivity({
   return <div className="space-y-5 animate-in fade-in duration-500">
 
       {/* ── Origami Steps Modal ─────────────────────────────────── */}
-      {stepsItem && <OrigamiStepsModal item={stepsItem} onClose={() => setStepsItem(null)} />}
+      {stepsItem && <OrigamiStepsModal
+          item={stepsItem}
+          childName={childName}
+          onClose={() => setStepsItem(null)}
+          onComplete={(id) => toggleDone(id)}
+        />}
 
       {/* ── Drive Preview Modal ─────────────────────────────────── */}
       {modalItem && <DrivePreviewModal item={modalItem} onClose={closeModal} isSaved={saved.has(modalItem.id)} onSave={() => toggleSaved(modalItem.id)} />}
@@ -1634,12 +1639,32 @@ function AnimatedFoldStage({
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
+function origamiCompletionsKey(childName: string) {
+  return `amynest.origami.completions.${childName.replace(/\s+/g, "_").toLowerCase()}`;
+}
+
+function recordOrigamiCompletion(childName: string, origamiId: string): number {
+  try {
+    const key = origamiCompletionsKey(childName);
+    const raw = JSON.parse(localStorage.getItem(key) || "{}") as Record<string, number>;
+    raw[origamiId] = (raw[origamiId] ?? 0) + 1;
+    localStorage.setItem(key, JSON.stringify(raw));
+    return Object.values(raw).reduce((a, b) => a + b, 0);
+  } catch {
+    return 1;
+  }
+}
+
 function OrigamiStepsModal({
   item,
-  onClose
+  childName,
+  onClose,
+  onComplete
 }: {
   item: Origami;
+  childName: string;
   onClose(): void;
+  onComplete?(origamiId: string): void;
 }) {
   const {
     t
@@ -1649,7 +1674,9 @@ function OrigamiStepsModal({
   const [animKey, setAnimKey] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [autoPlay, setAutoPlay] = useState(false);
-  const [voiceOn, setVoiceOn] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(true);
+  const [completionTotal, setCompletionTotal] = useState<number | null>(null);
+  const [shared, setShared] = useState(false);
   const total = item.steps.length;
   const {
     speak,
@@ -1666,13 +1693,16 @@ function OrigamiStepsModal({
       const next = prev + 1;
       if (next >= total) {
         setPhase("done");
+        const totalDone = recordOrigamiCompletion(childName, item.id);
+        setCompletionTotal(totalDone);
+        onComplete?.(item.id);
         return prev;
       }
       setAnimKey(k => k + 1);
       setIsPlaying(true);
       return next;
     });
-  }, [total]);
+  }, [total, childName, item.id, onComplete]);
   const goPrev = useCallback(() => {
     setStep(prev => {
       if (prev <= 0) return prev;
@@ -1692,25 +1722,70 @@ function OrigamiStepsModal({
     setPhase("steps");
   };
 
-  // REMOVED auto speak on step enter — user enables voice and taps play per step.
+  const speakCurrentStep = useCallback(
+    (opts?: { onFinished?: () => void }) => {
+      if (!voiceOn || phase !== "steps") return;
+      const instruction = item.steps[step]?.instruction?.trim();
+      if (!instruction) return;
+      stop();
+      void speak(instruction, { onFinished: opts?.onFinished });
+    },
+    [voiceOn, phase, step, item.steps, speak, stop],
+  );
+
   useEffect(() => {
     if (!voiceOn || phase !== "steps") {
       stop();
+      return;
+    }
+    if (autoPlay && isPlaying) {
+      speakCurrentStep({
+        onFinished: () => {
+          if (autoPlay && isPlaying) {
+            window.setTimeout(() => goNext(), 500);
+          }
+        },
+      });
+    } else {
+      speakCurrentStep();
     }
     return () => {
       stop();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, voiceOn, phase]);
+  }, [step, voiceOn, phase, autoPlay, isPlaying, speakCurrentStep, stop, goNext]);
 
-  // Auto-play — advance after animation duration (~3 s)
+  // Auto-play without voice — advance after animation (~3 s)
   useEffect(() => {
-    if (!autoPlay || !isPlaying || phase !== "steps") return;
-    const t = setTimeout(() => {
-      goNext();
-    }, 3200);
-    return () => clearTimeout(t);
-  }, [autoPlay, isPlaying, phase, animKey, goNext]);
+    if (!autoPlay || !isPlaying || phase !== "steps" || voiceOn) return;
+    const timer = window.setTimeout(() => goNext(), 3200);
+    return () => window.clearTimeout(timer);
+  }, [autoPlay, isPlaying, phase, animKey, goNext, voiceOn]);
+
+  const shareCompletion = useCallback(async () => {
+    const message = t("components.daily_kids_activity.share_message", {
+      child: childName,
+      title: item.title,
+      emoji: item.emoji,
+    });
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({
+          title: t("components.daily_kids_activity.share_title"),
+          text: message,
+        });
+        setShared(true);
+        return;
+      }
+    } catch {
+      /* user cancelled share */
+    }
+    try {
+      await navigator.clipboard.writeText(message);
+      setShared(true);
+    } catch {
+      /* ignore */
+    }
+  }, [childName, item.title, item.emoji, t]);
 
   // Keyboard nav
   useEffect(() => {
@@ -1797,6 +1872,7 @@ function OrigamiStepsModal({
             <button onClick={() => {
           setPhase("steps");
           setIsPlaying(true);
+          setVoiceOn(true);
         }} className="mx-6 mb-10 w-[calc(100%-3rem)] py-4 rounded-2xl font-black text-lg text-white transition-all active:scale-95" style={{
           background: `linear-gradient(135deg,${item.accent},${item.accent}bb)`
         }}>
@@ -1827,7 +1903,13 @@ function OrigamiStepsModal({
                     {t("components.daily_kids_activity.auto")}
                   </button>
                   {/* Voice toggle */}
-                  <button onClick={() => setVoiceOn(v => !v)} aria-label={t("components.daily_kids_activity.toggle_voice")} className="text-[10px] font-black px-2 py-0.5 rounded-full border transition-all" style={{
+                  <button onClick={() => {
+                setVoiceOn(v => {
+                  const next = !v;
+                  if (!next) stop();
+                  return next;
+                });
+              }} aria-label={t("components.daily_kids_activity.toggle_voice")} className="text-[10px] font-black px-2 py-0.5 rounded-full border transition-all" style={{
                 borderColor: voiceOn ? "hsl(var(--brand-green-500))" : "rgba(255,255,255,0.15)",
                 color: voiceOn ? "hsl(var(--brand-green-500))" : "rgba(255,255,255,0.35)",
                 background: voiceOn ? "#22c55e22" : "transparent"
@@ -1867,7 +1949,10 @@ function OrigamiStepsModal({
                 </button>
 
                 {/* Replay */}
-                <button onClick={replay} aria-label={t("components.daily_kids_activity.replay_animation")} className="w-10 h-10 flex items-center justify-center rounded-full font-bold text-base transition-all active:scale-90" style={{
+                <button onClick={() => {
+              replay();
+              if (voiceOn) speakCurrentStep();
+            }} aria-label={t("components.daily_kids_activity.replay_animation")} className="w-10 h-10 flex items-center justify-center rounded-full font-bold text-base transition-all active:scale-90" style={{
               background: "rgba(255,255,255,0.08)",
               color: "rgba(255,255,255,0.7)"
             }}>
@@ -1950,11 +2035,27 @@ function OrigamiStepsModal({
             </div>
 
             <h2 className="text-white font-black text-2xl mb-2">{t("components.daily_kids_activity.you_did_it")}</h2>
-            <p className="text-white/60 text-sm px-8 mb-8 leading-relaxed">
+            <p className="text-white/60 text-sm px-8 mb-2 leading-relaxed">
               {t("components.daily_kids_activity.amazing_work_your")} <strong className="text-white/80">{item.title}</strong> {t("components.daily_kids_activity.is_complete")}
             </p>
+            {completionTotal != null && completionTotal > 0 && <p className="text-emerald-300/90 text-xs font-bold px-8 mb-6">
+                {t("components.daily_kids_activity.completion_streak", {
+                  name: childName,
+                  count: completionTotal,
+                })}
+              </p>}
 
             <div className="flex flex-col gap-3 px-6 w-full">
+              <button
+                type="button"
+                onClick={() => void shareCompletion()}
+                className="w-full py-3.5 rounded-2xl font-bold text-sm text-white transition-all active:scale-95 border border-white/20"
+                style={{ background: "rgba(255,255,255,0.12)" }}
+              >
+                {shared
+                  ? t("components.daily_kids_activity.shared")
+                  : t("components.daily_kids_activity.share_win")}
+              </button>
               <button onClick={restart} className="w-full py-4 rounded-2xl font-black text-base text-white transition-all active:scale-95" style={{
             background: `linear-gradient(135deg,${item.accent},${item.accent}bb)`
           }}>

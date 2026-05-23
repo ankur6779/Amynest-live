@@ -63,14 +63,16 @@ export function StorySection({ group, childName }: StorySectionProps) {
  const { t } = useTranslation();
  const stories = STORIES_BY_GROUP[group];
  const [activeIdx, setActiveIdx] = useState(0);
- const { speak, stop, speaking, loading } = useAmyVoice();
+ const { speak, stop, speaking, loading, primeSpeakGesture } = useAmyVoice();
  const story = stories[activeIdx];
 
+ const storyText = story
+   ? `${story.title}. ${story.story}. Moral: ${story.moral}`
+   : "";
  const handleSpeak = () => {
  if (!story) return;
  if (speaking || loading) { stop(); return; }
- const text = `${story.title}. ${story.story}. Moral: ${story.moral}`;
- speak(text);
+ speak(storyText);
  };
 
  if (!story) return null;
@@ -117,6 +119,7 @@ export function StorySection({ group, childName }: StorySectionProps) {
  size="sm"
  variant="outline"
  className={`rounded-full h-8 px-3 transition-all ${(speaking || loading) ?"bg-muted border-primary text-foreground" :"border-border text-foreground hover:bg-muted"}`}
+ onPointerDown={() => { if (storyText) primeSpeakGesture(storyText); }}
  onClick={handleSpeak}
  >
  {(speaking || loading) ? (

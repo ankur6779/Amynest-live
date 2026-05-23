@@ -1566,7 +1566,21 @@
       "save": "Save",
       "label_placeholder": "e.g. Ice cream after dinner",
       "recent_redemptions": "Recent redemptions ({{count}})",
-      "redemption_minus_pts": "−{{cost}} pts"
+      "redemption_minus_pts": "−{{cost}} pts",
+      "hub_teaser": "Skill-based mini games — earn points from routines, unlock with points or a 5-day streak.",
+      "free_tier_hint": "Free: 2 starter games · {{limit}} plays/day. Premium unlocks all games.",
+      "streak_unlock_hint": "{{days}}-day routine streak unlocks games without points (current: {{current}} days).",
+      "premium_game": "Premium",
+      "upgrade_premium": "Upgrade for all games",
+      "rewards_shop_link": "Rewards Shop",
+      "amy_play_now": "Play now",
+      "weekly_summary_title": "Weekly game summary",
+      "weekly_plays": "{{count}} plays (7 days)",
+      "weekly_perfect": "{{count}} perfect scores",
+      "weekly_points": "+{{count}} points earned",
+      "weekly_top_skill": "Strongest: {{category}} ({{pct}}%)",
+      "unlock_streak_btn": "Unlock free ({{days}}-day streak)",
+      "premium_required": "Premium game — upgrade to play."
     },
     "study": {
       "back": "Back",
@@ -2595,6 +2609,10 @@
         "title": "🎨 Coloring Books",
         "description": "Printable coloring sheets — preview, then download (2/day)"
       },
+      "worksheets": {
+        "title": "📄 Printable Worksheets",
+        "description": "Coloring, math, tracing & more — 5 free downloads per day"
+      },
       "fun-sheets": {
         "title": "📄 Fun Sheets",
         "description": "Printable activity & learning PDFs — preview, then download (2/day)"
@@ -2809,11 +2827,25 @@
   },
   "components": {
     "amazing_facts": {
+      "listen": "Listen to this fact",
+      "quiz": "Quick quiz",
+      "quiz_prompt": "True or false?",
+      "true": "True ✓",
+      "false": "False ✗",
+      "quiz_correct": "Correct! Great listening 🎉",
+      "quiz_wrong": "Not quite — the fact you heard was: \"{{answer}}\"",
       "amazing_facts_for_today": "Amazing Facts for Today",
       "show_new_facts": "Show New Facts",
       "interesting": "Interesting!",
       "liked": "Liked",
-      "tap_for_fresh_facts_tap_to_mark_favourites": "Tap 🔄 for fresh facts · Tap 👍 to mark favourites"
+      "tap_for_fresh_facts_tap_to_mark_favourites": "Tap 🔄 for fresh facts · Tap 👍 to mark favourites · Tap ? for a quiz"
+    },
+    "routine_hub_banner": {
+      "eyebrow": "Activities & Learning",
+      "title": "Time for {{activity}} with {{name}}",
+      "your_child": "your child",
+      "subtitle": "{{count}} play & learn blocks in today's routine — open matching hub activities.",
+      "cta": "Open in Parent Hub"
     },
     "amy_fab": {
       "ask_amy_ai": "Ask Amy AI",
@@ -2929,6 +2961,11 @@
       "is_complete": "is complete!",
       "try_again": "🔁 Try Again",
       "done": "✓ Done",
+      "share_win": "📤 Share this win",
+      "shared": "✓ Copied / shared!",
+      "share_title": "Origami win — AmyNest",
+      "share_message": "{{child}} finished {{emoji}} {{title}} on AmyNest! 🎉",
+      "completion_streak": "{{name}} has completed {{count}} origami crafts — keep going!",
       "steps_2": "Steps",
       "view_steps": "View Steps",
       "guide": "⬇ Guide"

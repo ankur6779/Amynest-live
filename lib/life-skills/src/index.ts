@@ -1,5 +1,5 @@
 // ─── Life Skills Mode — shared data + helpers ────────────────────────────────
-// Used by both web (artifacts/kidschedule) and mobile (artifacts/amynest-mobile).
+// Used by kidschedule (web + Capacitor iOS/Android).
 // Pure data, no platform deps.
 // Languages: English (en), Hindi (hi), Hinglish (hinglish).
 // Task content is English-only; UI labels, categories, and difficulty are tri-lingual.

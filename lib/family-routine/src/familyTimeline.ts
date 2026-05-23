@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────
 // Family-mode preview helpers shared between web (kidschedule) and mobile
-// (amynest-mobile). Pure TS — no React, no platform deps.
+// (kidschedule / Capacitor). Pure TS — no React, no platform deps.
 // ─────────────────────────────────────────────────────────────────────────
 
 export type FRTimelineItem = {

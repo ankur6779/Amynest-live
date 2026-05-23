@@ -69,19 +69,16 @@ Uses repo-root `.env.development`. With `VITE_USE_LOCAL_API=1`, the app calls `h
 
 **Splash then blank screen** with `Cannot find module .../vite/dist/node/chunks/dist.js` or `@tailwindcss/node` in the console → stale `node_modules/.vite` after `pnpm install` — not the API or Capacitor shell.
 
-### Expo mobile
+### Capacitor mobile (iOS / Android)
+
+The Expo app is archived at `archive/amynest-mobile-expo/`. Mobile ships as Capacitor wrapping kidschedule:
 
 ```bash
-pnpm run dev:mobile
+pnpm run dev:web          # develop UI
+# then sync/build — see artifacts/amynest-capacitor/SETUP.md
 ```
 
-Copy Firebase keys into `artifacts/amynest-mobile/.env` or set `EXPO_PUBLIC_*` in repo-root `.env.development` (Expo loads project `.env*`; symlink or duplicate keys as needed).
-
-To hit **production** API from Expo:
-
-```bash
-pnpm --filter @workspace/amynest-mobile run dev:prod-api
-```
+`pnpm run dev:mobile` prints a reminder and exits (Expo removed).
 
 ---
 
