@@ -530,20 +530,20 @@ function StoryPlayer({
   } = useRotatingIndex(`amynest_story_${accentColor}`, stories);
   const {
     speak,
-    stop,
+    pause,
     speaking,
     loading
   } = useAmyVoice();
   const story = stories[idx];
   const handleSpeak = () => {
     if (speaking || loading) {
-      stop();
+      pause();
       return;
     }
     speak(buildShortStorySpeakText(story));
   };
   const handleNext = () => {
-    stop();
+    pause();
     next();
   };
   return <Card className="rounded-3xl border-2 border-border dark:border-border bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card shadow-none">

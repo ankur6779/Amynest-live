@@ -88,7 +88,7 @@ function ArticleModal({
   }, [autoAdvance, speechSections.length]);
   const {
     speak,
-    stop,
+    pause,
     speaking,
     loading,
     error
@@ -112,13 +112,11 @@ function ArticleModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIdx]);
 
-  // Stop playback when the modal closes.
-  useEffect(() => () => stop(), [stop]);
   const stopPlayback = useCallback(() => {
     setAutoAdvance(false);
     setActiveIdx(null);
-    stop();
-  }, [stop]);
+    pause();
+  }, [pause]);
   const playFromStart = () => {
     setAutoAdvance(true);
     setActiveIdx(0);
@@ -154,7 +152,7 @@ function ArticleModal({
           <Button variant="ghost" size="icon" onClick={handleSave} className={`rounded-full ${saved ? "text-primary" : "text-muted-foreground"}`} aria-label={saved ? "Unsave article" : "Save article"}>
             {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
           </Button>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full" aria-label={t("components.parenting_articles.close_article")}>
+          <Button variant="ghost" size="icon" onClick={() => { stopPlayback(); onClose(); }} className="rounded-full" aria-label={t("components.parenting_articles.close_article")}>
             <X className="h-5 w-5" />
           </Button>
         </div>

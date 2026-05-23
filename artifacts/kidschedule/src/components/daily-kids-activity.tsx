@@ -1155,7 +1155,7 @@ function OrigamiStepsModal({
   const total = item.steps.length;
   const {
     speak,
-    stop,
+    pause,
     speaking
   } = useAmyVoice();
   const goTo = useCallback((next: number) => {
@@ -1202,17 +1202,13 @@ function OrigamiStepsModal({
       if (!voiceOn || phase !== "steps") return;
       const instruction = item.steps[step]?.instruction?.trim();
       if (!instruction) return;
-      stop();
       void speak(instruction, { onFinished: opts?.onFinished });
     },
-    [voiceOn, phase, step, item.steps, speak, stop],
+    [voiceOn, phase, step, item.steps, speak],
   );
 
   useEffect(() => {
-    if (!voiceOn || phase !== "steps") {
-      stop();
-      return;
-    }
+    if (!voiceOn || phase !== "steps") return;
     if (autoPlay && isPlaying) {
       speakCurrentStep({
         onFinished: () => {
@@ -1224,10 +1220,12 @@ function OrigamiStepsModal({
     } else {
       speakCurrentStep();
     }
-    return () => {
-      stop();
-    };
-  }, [step, voiceOn, phase, autoPlay, isPlaying, speakCurrentStep, stop, goNext]);
+  }, [step, voiceOn, phase, autoPlay, isPlaying, speakCurrentStep, goNext]);
+
+  const handleClose = useCallback(() => {
+    pause();
+    onClose();
+  }, [pause, onClose]);
 
   // Auto-play without voice — advance after animation (~3 s)
   useEffect(() => {
@@ -1265,7 +1263,7 @@ function OrigamiStepsModal({
   // Keyboard nav
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
       if (phase === "steps") {
         if (e.key === "ArrowRight" || e.key === "ArrowDown") goNext();
         if (e.key === "ArrowLeft" || e.key === "ArrowUp") goPrev();
@@ -1282,7 +1280,7 @@ function OrigamiStepsModal({
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", handler);
     };
-  }, [phase, onClose, goNext, goPrev]);
+  }, [phase, handleClose, goNext, goPrev]);
   const cur = item.steps[step]!;
   const timeEst = DIFFICULTY_TIME[item.difficulty] ?? "~10 min";
 
@@ -1291,7 +1289,7 @@ function OrigamiStepsModal({
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" style={{
       animation: "og-fade-in 180ms ease both"
-    }} onClick={onClose} />
+    }} onClick={handleClose} />
 
       {/* Panel */}
       <div className="relative z-10 w-full sm:max-w-md flex flex-col overflow-hidden shadow-2xl" style={{
@@ -1304,7 +1302,7 @@ function OrigamiStepsModal({
         {phase === "cover" && <div className="flex flex-col items-center text-center overflow-y-auto" style={{
         background: "linear-gradient(160deg,hsl(var(--brand-indigo-950)) 0%,#0f0f1a 100%)"
       }}>
-            <button onClick={onClose} aria-label={t("components.daily_kids_activity.close_3")} className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
+            <button onClick={handleClose} aria-label={t("components.daily_kids_activity.close_3")} className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
 
             {/* Animated preview */}
             <div className="mt-10 mb-4 rounded-3xl flex items-center justify-center shadow-2xl border border-white/10" style={{
@@ -1360,7 +1358,7 @@ function OrigamiStepsModal({
         background: "#0f0f18"
       }}>
             {/* Close */}
-            <button onClick={onClose} aria-label={t("components.daily_kids_activity.close_4")} className="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
+            <button onClick={handleClose} aria-label={t("components.daily_kids_activity.close_4")} className="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
 
             {/* ── Top bar: title + step badge + progress ── */}
             <div className="px-5 pt-4 pb-3 flex-shrink-0">
@@ -1381,7 +1379,7 @@ function OrigamiStepsModal({
                   <button onClick={() => {
                 setVoiceOn(v => {
                   const next = !v;
-                  if (!next) stop();
+                  if (!next) pause();
                   return next;
                 });
               }} aria-label={t("components.daily_kids_activity.toggle_voice")} className="text-[10px] font-black px-2 py-0.5 rounded-full border transition-all" style={{
@@ -1493,7 +1491,7 @@ function OrigamiStepsModal({
         {phase === "done" && <div className="flex flex-col items-center text-center overflow-y-auto pb-10" style={{
         background: "linear-gradient(160deg,hsl(var(--brand-green-900)) 0%,#0f0f18 100%)"
       }}>
-            <button onClick={onClose} aria-label={t("components.daily_kids_activity.close_5")} className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
+            <button onClick={handleClose} aria-label={t("components.daily_kids_activity.close_5")} className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
 
             <div className="mt-12 mb-4" style={{
           animation: "og-pop-in 500ms cubic-bezier(0.34,1.56,0.64,1) both"
@@ -1536,7 +1534,7 @@ function OrigamiStepsModal({
           }}>
                 {t("components.daily_kids_activity.try_again")}
               </button>
-              <button onClick={onClose} className="w-full py-3.5 rounded-2xl font-bold text-sm text-white/70 hover:text-white transition-colors border border-white/10" style={{
+              <button onClick={handleClose} className="w-full py-3.5 rounded-2xl font-bold text-sm text-white/70 hover:text-white transition-colors border border-white/10" style={{
             background: "rgba(255,255,255,0.05)"
           }}>
                 {t("components.daily_kids_activity.done")}

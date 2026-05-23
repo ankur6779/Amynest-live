@@ -8,7 +8,7 @@
 
 import type { AuthFetchFn } from "@/lib/poll-result";
 import { audioManager, AUDIO_ERROR } from "@/lib/audio-manager";
-import { cancelAllSpeakRequests } from "@/lib/amy-voice-safety";
+import { runWithControlledAudioStop } from "@/lib/amy-voice-safety";
 import {
   isTtsPlaybackAllowed,
   recordTtsUserGesture,
@@ -740,7 +740,7 @@ async function tryDynamicSequentialLayer(
 
   if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
 
-  audioManager.stopAll();
+  runWithControlledAudioStop(() => audioManager.stopAll());
 
   const elevenResult = await tryPlayWithWatchdog(
     "elevenlabs",
@@ -1113,8 +1113,7 @@ export async function speakAmyVoice(
       playbackRate: ctx.playbackRate * policy.prosody.playbackRate,
     };
     recordTtsUserGesture();
-    cancelAllSpeakRequests();
-    audioManager.stopAll();
+    runWithControlledAudioStop(() => audioManager.stopAll());
     resetClientStaticAudioCircuit();
     resetTtsApiCircuit();
     resetAmyVoiceTelemetry();
@@ -1133,8 +1132,7 @@ export async function speakAmyVoice(
   };
 
   recordTtsUserGesture();
-  cancelAllSpeakRequests();
-  audioManager.stopAll();
+  runWithControlledAudioStop(() => audioManager.stopAll());
   resetClientStaticAudioCircuit();
   resetTtsApiCircuit();
 

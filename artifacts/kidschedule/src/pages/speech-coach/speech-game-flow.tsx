@@ -123,7 +123,7 @@ export function SpeechGameFlow({
     setPromptPhase("idle");
     setSessionPhase(items.length > 0 ? "practice" : "setup");
     stt.reset();
-    voice.stop();
+    voice.pause();
   };
 
   const handleHear = () => {
@@ -178,7 +178,7 @@ export function SpeechGameFlow({
       setPromptPhase("idle");
       setCurrentResult(null);
       stt.reset();
-      voice.stop();
+      voice.pause();
     }
   };
 
@@ -230,7 +230,7 @@ export function SpeechGameFlow({
             setSessionPhase("setup");
             setSessionItems([]);
             stt.reset();
-            voice.stop();
+            voice.pause();
           }}
           onAction={onAction}
           viewMode={viewMode}

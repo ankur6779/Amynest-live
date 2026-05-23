@@ -398,7 +398,7 @@ function PuzzleEngine({
   const [timerRunning, setTimerRunning] = useState(false);
   const {
     speak,
-    stop,
+    pause,
     speaking
   } = useAmyVoice();
   const cur = puzzles[idx];
@@ -427,7 +427,7 @@ function PuzzleEngine({
     if (!cur || done) return;
     if (state.difficulty === "hard" && !submitted) setTimerRunning(true);
     return () => {
-      stop();
+      pause();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questionKey]);
@@ -462,7 +462,7 @@ function PuzzleEngine({
   const handleSubmit = useCallback(() => {
     if (!selected || !cur || submitted) return;
     setTimerRunning(false);
-    stop();
+    pause();
     const isCorrect = selected === cur.correctAnswer;
     setSubmitted(true);
     if (isCorrect) {
@@ -495,11 +495,11 @@ function PuzzleEngine({
       saveState(childName, next);
       return next;
     });
-  }, [selected, cur, submitted, idx, childName, speak, stop]);
+  }, [selected, cur, submitted, idx, childName, speak, pause]);
 
   // ── Next puzzle ──────────────────────────────────────────────────────────
   const handleNext = useCallback(() => {
-    stop();
+    pause();
     setLevelMsg(null);
     if (idx + 1 >= puzzles.length) {
       setDone(true);
@@ -510,9 +510,9 @@ function PuzzleEngine({
       setTimerRunning(false);
       setQuestionKey(k => k + 1);
     }
-  }, [idx, puzzles.length, stop]);
+  }, [idx, puzzles.length, pause]);
   const handleRestart = useCallback(() => {
-    stop();
+    pause();
     const fresh: PuzzleState = {
       date: todayStr(),
       difficulty: state.difficulty,
@@ -525,11 +525,11 @@ function PuzzleEngine({
     setState(fresh);
     saveState(childName, fresh);
     init(fresh);
-  }, [state, childName, init, stop]);
+  }, [state, childName, init, pause]);
   const handleRepeat = useCallback(() => {
-    stop();
+    pause();
     if (cur) void speak(buildPuzzleQuestionSpeakText(cur));
-  }, [cur, speak, stop]);
+  }, [cur, speak, pause]);
   if (puzzles.length === 0) return null;
 
   // ── Session done ─────────────────────────────────────────────────────────

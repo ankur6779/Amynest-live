@@ -326,7 +326,7 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
     setStatus("Tap Start and Amy will begin.");
     setHasStarted(false);
     stt.reset();
-    voice.stop();
+    voice.pause();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [child.id, ageMonths, practiceHistory]);
 
@@ -374,7 +374,7 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
     }
     listenStartedRef.current = true;
     stt.reset();
-    voice.stop();
+    voice.pause();
     setLastResult(null);
     setState("listening");
     setStatus("Listening...");
@@ -445,7 +445,7 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
     setStatus("Tap Start and Amy will begin.");
     setHasStarted(false);
     stt.reset();
-    voice.stop();
+    voice.pause();
   }, [ageMonths, practiceHistory, stt, voice]);
 
   if (!current && state !== "complete") {

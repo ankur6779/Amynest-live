@@ -18,7 +18,7 @@ import userEvent from "@testing-library/user-event";
 
 // Capture which voice options the component asks for.
 const speakMock = vi.fn();
-const stopMock = vi.fn();
+const pauseMock = vi.fn();
 let lastVoiceOpts: { voiceId?: string; modelId?: string } | undefined;
 let mockState = { speaking: false, loading: false };
 
@@ -28,7 +28,7 @@ vi.mock("@/hooks/use-amy-voice", () => ({
     return {
       speak: speakMock,
       primeSpeakGesture: vi.fn(),
-      stop: stopMock,
+      pause: pauseMock,
       speaking: mockState.speaking,
       loading: mockState.loading,
       error: null,
@@ -58,7 +58,7 @@ const sampleWin: Win = {
 
 beforeEach(() => {
   speakMock.mockReset();
-  stopMock.mockReset();
+  pauseMock.mockReset();
   lastVoiceOpts = undefined;
   mockState = { speaking: false, loading: false };
   cleanup();
@@ -90,6 +90,6 @@ describe("ListenButton (Coach)", () => {
     render(<ListenButton win={sampleWin} />);
 
     await user.click(screen.getByTestId("coach-listen-btn"));
-    expect(stopMock).toHaveBeenCalled();
+    expect(pauseMock).toHaveBeenCalled();
   });
 });

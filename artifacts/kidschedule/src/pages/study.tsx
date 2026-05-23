@@ -592,7 +592,7 @@ function TopicDetail({
   const fx = useStudyFx();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { speak: amySpeak, stop: amyStop, speaking: amySpeaking, loading: amyLoading, primeSpeakGesture } = useAmyVoice();
+  const { speak: amySpeak, pause: amyPause, speaking: amySpeaking, loading: amyLoading, primeSpeakGesture } = useAmyVoice();
   const notesSpeakOpts = useMemo(
     () => (topic ? getTopicNotesCatalogSpeakOpts(topic) : null),
     [topic],
@@ -699,7 +699,7 @@ function TopicDetail({
               className="rounded-full"
               onPointerDown={() => primeSpeakGesture(notesSpeakOpts.staticCatalogTexts[0]!, notesSpeakOpts)}
               onClick={() => {
-                if (amySpeaking || amyLoading) { amyStop(); return; }
+                if (amySpeaking || amyLoading) { amyPause(); return; }
                 void amySpeak(notesSpeakOpts.staticCatalogTexts[0]!, notesSpeakOpts);
               }}
             >
@@ -714,7 +714,7 @@ function TopicDetail({
               className="rounded-full"
               onPointerDown={() => primeSpeakGesture(amySpeakOpts.staticCatalogTexts[0]!, amySpeakOpts)}
               onClick={() => {
-                if (amySpeaking || amyLoading) { amyStop(); return; }
+                if (amySpeaking || amyLoading) { amyPause(); return; }
                 void amySpeak(amySpeakOpts.staticCatalogTexts[0]!, amySpeakOpts);
               }}
             >

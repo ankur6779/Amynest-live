@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Volume2, Pause, Play, SkipBack, SkipForward, Headphones, Sparkles, Gauge, X, Clock, Loader2, Lock, ListMusic, ChevronDown, ChevronUp, Check } from "lucide-react";
@@ -28,8 +28,7 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { usePaywall } from "@/contexts/paywall-context";
 import { useSubscription } from "@/hooks/use-subscription";
-import { useAmyVoice } from "@/hooks/use-amy-voice";
-import type { SpeakResult } from "@/hooks/use-amy-voice";
+import { useLessonPlayback } from "@/hooks/use-lesson-playback";
 import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
@@ -38,15 +37,6 @@ const MODEL_EN = "eleven_turbo_v2_5";
 const AGE_ORDER: AgeBucket[] = ["0-2", "2-4", "5-7", "8-10", "10+"];
 const RESUME_KEY = "amynest_audio_resume_v1";
 const PREGENERATE_SESSION_KEY = "amynest_audio_pregenerate_v1";
-
-/** Layers that actually played audio — lesson player must not skip without one of these. */
-const LESSON_AUDIBLE_LAYERS = new Set([
-  "static",
-  "cache",
-  "api",
-  "elevenlabs",
-  "emergency_local",
-]);
 
 function shouldSkipPregenerate(age: AgeBucket, lang: string): boolean {
   try {
@@ -750,120 +740,47 @@ function PlayerSheet({
   onLessonComplete?: (lessonId: string) => void;
 }) {
   const lang = "en";
-  const {
-    t
-  } = useTranslation();
-  const [playing, setPlaying] = useState(false);
-  const [playbackError, setPlaybackError] = useState<string | null>(null);
-  const [paragraphIdx, setParagraphIdx] = useState(0);
+  const { t } = useTranslation();
   const [rate, setRate] = useState<number>(1);
-  /** Ignores stale onFinished from a previous paragraph playback. */
-  const playbackSessionRef = useRef(0);
-  /** True while a lesson should keep chaining paragraphs after each finishes. */
-  const playingRef = useRef(false);
-  /** Skip one effect cycle when play was started synchronously from the tap handler. */
-  const skipParagraphEffectRef = useRef(false);
-  const paragraphIdxRef = useRef(0);
 
   const text = useMemo(() => getLessonText(lesson, lang), [lesson, lang]);
   const paragraphs = text.paragraphs;
 
-  const advanceParagraph = useCallback(
-    (session: number) => {
-      if (session !== playbackSessionRef.current) return;
-      setParagraphIdx((i) => {
-        if (i + 1 >= paragraphs.length) {
-          playingRef.current = false;
-          setPlaying(false);
-          onLessonComplete?.(lesson.id);
-          return i;
-        }
-        return i + 1;
-      });
-    },
-    [paragraphs.length, lesson.id, onLessonComplete],
-  );
-
   const {
+    paragraphIdx,
+    setParagraphIdx,
+    intent,
+    playbackError,
     speaking,
     loading,
     error,
-    speak,
-    stop,
+    play,
+    pause,
     primeSpeakGesture,
-  } = useAmyVoice({
+  } = useLessonPlayback({
+    paragraphs,
+    lessonId: lesson.id,
     voiceId: VOICE_AMY_EN,
     modelId: MODEL_EN,
     playbackRate: rate,
+    autoPlay,
+    onLessonComplete,
   });
 
-  const speakRef = useRef(speak);
-  const stopRef = useRef(stop);
-  speakRef.current = speak;
-  stopRef.current = stop;
+  const playing = intent === "playing";
 
-  const handleSpeakResult = useCallback((session: number, res: SpeakResult | undefined) => {
-    if (session !== playbackSessionRef.current) return;
-    const heard =
-      res?.success === true &&
-      res.layer != null &&
-      LESSON_AUDIBLE_LAYERS.has(res.layer);
-    if (!heard) {
-      console.warn("[AudioLessons] paragraph playback failed — staying on paragraph", {
-        error: res?.error,
-        layer: res?.layer,
-      });
-      stopRef.current();
-      playingRef.current = false;
-      setPlaying(false);
-      setPlaybackError(res?.error ?? "playback_failed");
-    } else {
-      setPlaybackError(null);
-    }
-  }, []);
-
-  /** Start (or restart) TTS for the current paragraph index. */
-  const playParagraphAt = useCallback(
-    (idx: number) => {
-      const txt = paragraphs[idx];
-      if (!txt?.trim()) {
-        playingRef.current = false;
-        setPlaying(false);
-        return;
-      }
-      const session = ++playbackSessionRef.current;
-      void speakRef
-        .current(txt, {
-          waitUntilEnd: true,
-          lessonParagraph: true,
-          onFinished: () => advanceParagraph(session),
-        })
-        .then((res) => handleSpeakResult(session, res))
-        .catch((err: unknown) => {
-          if (session !== playbackSessionRef.current) return;
-          console.warn("[AudioLessons] paragraph speak rejected", err);
-          stopRef.current();
-          playingRef.current = false;
-          setPlaying(false);
-          setPlaybackError(
-            err instanceof Error ? err.message : "playback_failed",
-          );
-        });
-    },
-    [paragraphs, advanceParagraph, handleSpeakResult],
-  );
-
-  const playParagraphAtRef = useRef(playParagraphAt);
-  playParagraphAtRef.current = playParagraphAt;
-
-  paragraphIdxRef.current = paragraphIdx;
+  const handleClose = useCallback(() => {
+    pause();
+    onClose();
+  }, [pause, onClose]);
 
   // Resume from saved index
   useEffect(() => {
     const r = loadResume();
     const saved = r[lesson.id] ?? 0;
-    if (saved > 0 && saved < paragraphs.length) setParagraphIdx(saved);else if (saved >= paragraphs.length) setParagraphIdx(0);
-  }, [lesson.id, paragraphs.length]);
+    if (saved > 0 && saved < paragraphs.length) setParagraphIdx(saved);
+    else if (saved >= paragraphs.length) setParagraphIdx(0);
+  }, [lesson.id, paragraphs.length, setParagraphIdx]);
 
   // Persist position
   useEffect(() => {
@@ -871,49 +788,6 @@ function PlayerSheet({
     r[lesson.id] = paragraphIdx;
     saveResume(r);
   }, [lesson.id, paragraphIdx]);
-
-  // Stop TTS only when transitioning from playing → paused (not on initial mount).
-  const prevPlayingRef = useRef<boolean | null>(null);
-  useEffect(() => {
-    if (prevPlayingRef.current === true && !playing) {
-      playingRef.current = false;
-      stopRef.current();
-    }
-    prevPlayingRef.current = playing;
-  }, [playing]);
-
-  useEffect(() => {
-    return () => {
-      playingRef.current = false;
-      stopRef.current();
-    };
-  }, []);
-
-  // Auto-advance: when paragraph index changes during active playback, speak the new paragraph.
-  useEffect(() => {
-    if (!playingRef.current || !playing) return;
-    if (skipParagraphEffectRef.current) {
-      skipParagraphEffectRef.current = false;
-      return;
-    }
-    playParagraphAtRef.current(paragraphIdxRef.current);
-  }, [paragraphIdx, playing]);
-
-  useEffect(() => {
-    playbackSessionRef.current = 0;
-    playingRef.current = false;
-    skipParagraphEffectRef.current = false;
-    if (autoPlay) {
-      setPlaybackError(null);
-      recordTtsUserGesture();
-      playingRef.current = true;
-      setPlaying(true);
-      skipParagraphEffectRef.current = true;
-      playParagraphAtRef.current(paragraphIdxRef.current);
-    } else {
-      setPlaying(false);
-    }
-  }, [autoPlay, lesson.id]);
 
   const seriesPart = series ? partIndexForLesson(series, lesson.id) : -1;
   const next = () => {
@@ -931,7 +805,7 @@ function PlayerSheet({
     display: "flex",
     alignItems: "flex-end",
     justifyContent: "center"
-  }} onClick={onClose}>
+  }} onClick={handleClose}>
       <div onClick={e => e.stopPropagation()} style={{
       width: "100%",
       maxWidth: 560,
@@ -979,7 +853,7 @@ function PlayerSheet({
               </div>
             </div>
           </div>
-          <button onClick={onClose} aria-label={t("pages.audio_lessons.close")} style={{
+          <button onClick={handleClose} aria-label={t("pages.audio_lessons.close")} style={{
           color: "hsl(var(--brand-violet-300))",
           background: "rgba(167,139,250,0.15)",
           borderRadius: 999,
@@ -1104,22 +978,12 @@ function PlayerSheet({
               const txt = paragraphs[paragraphIdx];
               if (!txt) return;
               recordTtsUserGesture();
-              primeSpeakGesture(txt, { lessonParagraph: true });
+              primeSpeakGesture(txt);
               primeStaticAudioInUserGesture(txt, "default");
             }}
             onClick={() => {
-              if (playingRef.current) {
-                playingRef.current = false;
-                stopRef.current();
-                setPlaying(false);
-                return;
-              }
-              recordTtsUserGesture();
-              setPlaybackError(null);
-              playingRef.current = true;
-              setPlaying(true);
-              skipParagraphEffectRef.current = true;
-              playParagraphAtRef.current(paragraphIdxRef.current);
+              if (playing) pause();
+              else play();
             }}
             aria-label={playing ? "Pause" : "Play"}
             style={{

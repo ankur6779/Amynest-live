@@ -1,0 +1,32 @@
+# Amy voice ownership (mandatory)
+
+TTS playback is owned by `amy-voice-controller.ts`. UI must never bypass it.
+
+## Allowed (UI / components)
+
+- `useAmyVoice().speak(text, opts?)` — start playback
+- `useAmyVoice().pause()` — explicit user intent only (close, back, toggle off)
+- `useAmyVoice().primeSpeakGesture()` — Android gesture priming on pointerdown
+
+## Forbidden
+
+- `useAmyVoice().stop()` — removed; use `pause()`
+- `useEffect(() => () => pause(), [])` or any lifecycle cleanup that stops audio
+- Direct `audioManager.stop()` / `stopAll()` outside controller/pipeline
+- Importing `@/lib/amy-voice-ownership` from UI code
+
+## Enforcement
+
+- CI: `pnpm check:amy-voice` (usage + contract scripts + unit tests)
+- Dev: controller warns when `audioManager.stop*` is called outside controlled paths
+
+## When closing modals / sheets
+
+Call `pause()` in the close handler, not in unmount effects:
+
+```tsx
+const handleClose = () => {
+  pause();
+  onClose();
+};
+```

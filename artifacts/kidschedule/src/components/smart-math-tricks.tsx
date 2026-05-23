@@ -192,7 +192,7 @@ function TrickCard({
   } = useTranslation();
   const {
     speak,
-    stop,
+    pause,
     speaking,
     loading,
     primeSpeakGesture,
@@ -211,11 +211,11 @@ function TrickCard({
   const meta = getMathTrickMeta(trick.id);
   const handleSpeak = useCallback(() => {
     if (speaking || loading) {
-      stop();
+      pause();
       return;
     }
     void speak(trick.audioText, trickSpeakOpts);
-  }, [speaking, loading, speak, stop, trick.audioText, trickSpeakOpts]);
+  }, [speaking, loading, speak, pause, trick.audioText, trickSpeakOpts]);
   const handlePrimeSpeak = useCallback(() => {
     primeSpeakGesture(trick.audioText, trickSpeakOpts);
   }, [primeSpeakGesture, trick.audioText, trickSpeakOpts]);
@@ -531,14 +531,14 @@ function PracticeTab({
   const [floatKey, setFloatKey] = useState(0);
   const {
     speak,
-    stop
+    pause
   } = useAmyVoice();
   const cur = sessionTricks[idx]!;
 
   // REMOVED auto speak on question change — user taps the speaker button.
   const handleSubmit = () => {
     if (!selected || submitted) return;
-    stop();
+    pause();
     const isC = selected === cur.practiceQ.answer;
     setSubmitted(true);
     setResults(prev => {
@@ -556,7 +556,7 @@ function PracticeTab({
     }
   };
   const handleNext = () => {
-    stop();
+    pause();
     if (idx + 1 >= SESSION_SIZE) {
       setDone(true);
       onSessionComplete();
@@ -567,7 +567,7 @@ function PracticeTab({
     }
   };
   const handleRestart = () => {
-    stop();
+    pause();
     setIdx(0);
     setSelected(null);
     setSubmitted(false);

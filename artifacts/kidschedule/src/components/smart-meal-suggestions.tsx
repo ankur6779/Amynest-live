@@ -343,7 +343,7 @@ function RecipeModal({
     loading,
     error,
     speak,
-    stop
+    pause
   } = useAmyVoice({
     voiceId
   });
@@ -357,7 +357,7 @@ function RecipeModal({
   }, []);
   const handleReadAloud = () => {
     // Toggle: tap while loading/playing stops, otherwise starts fresh.
-    if (speaking || loading) stop();else void speak(meal.audioText);
+    if (speaking || loading) pause();else void speak(meal.audioText);
   };
   const switchVoice = (pref: "female" | "male") => {
     setVoicePref(pref);
@@ -365,7 +365,7 @@ function RecipeModal({
       localStorage.setItem(STORAGE_VOICE, pref);
     } catch (e) { console.error("REAL ERROR:", e); }
     // Stop any in-flight playback so the next tap uses the new voice.
-    stop();
+    pause();
   };
   return <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4 animate-in fade-in duration-200" onClick={onClose}>
       <div className="bg-card rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>

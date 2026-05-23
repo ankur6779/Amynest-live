@@ -60,7 +60,7 @@ export function EventPrepGenerator({
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const {
     speak: amySpeak,
-    stop: amyStop,
+    pause: amyPause,
     speaking: amySpeaking
   } = useAmyVoice();
 
@@ -75,17 +75,17 @@ export function EventPrepGenerator({
       timeMinutes: time,
       budget
     };
-    amyStop();
+    amyPause();
     setSpeakingId(null);
     setResult(generateEventIdea(input));
   };
   const handleSpeak = (id: string, text: string) => {
     if (speakingId === id && amySpeaking) {
-      amyStop();
+      amyPause();
       setSpeakingId(null);
       return;
     }
-    amyStop();
+    amyPause();
     setSpeakingId(id);
     amySpeak(text);
   };
