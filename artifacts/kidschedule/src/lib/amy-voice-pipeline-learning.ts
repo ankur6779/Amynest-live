@@ -12,10 +12,12 @@ import {
 import {
   getMergedTransitionProbability,
   getServerLayerScore,
+  getServerPrefetchDepth,
   isApiGloballyDegraded,
   mergeHybridScore,
   refreshServerTtsStrategy,
 } from "@/lib/amy-voice-pipeline-server-sync";
+import { shouldSkipApiForPredictiveThrottle } from "@/lib/admin-audio-ops";
 import {
   buildRlContextKey,
   computeRlReward,
@@ -383,6 +385,9 @@ export function getRankedLearnableLayers(
     if (isLayerScorePenalized(layer, cacheKey)) penalized.add(layer);
   }
   if (isApiGloballyDegraded()) {
+    penalized.add("api");
+  }
+  if (shouldSkipApiForPredictiveThrottle()) {
     penalized.add("api");
   }
   if (isStreamingLayerPenalized(cacheKey)) {

@@ -1,5 +1,6 @@
 import type { AiJobRecord, AiJobStatus } from "./types.js";
 import { getRedisConnection, isRedisQueueEnabled } from "./redis.js";
+import { isCacheDisabled } from "../services/admin-ops-store.js";
 
 const JOB_KEY_PREFIX = "job:";
 const USER_ACTIVE_PREFIX = "ai:user:";
@@ -14,7 +15,7 @@ function userActiveKey(userId: string): string {
 }
 
 export async function saveJobRecord(record: AiJobRecord): Promise<void> {
-  if (!isRedisQueueEnabled()) return;
+  if (!isRedisQueueEnabled() || isCacheDisabled()) return;
   const redis = getRedisConnection();
   await redis.set(jobKey(record.id), JSON.stringify(record), "EX", TTL_SEC);
 }

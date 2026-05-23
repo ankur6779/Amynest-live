@@ -69,6 +69,10 @@ export function getApiHealthSnapshot(now = Date.now()): ApiHealthSnapshot {
   const cutoff = now - WINDOW_MS;
   const windowSamples = samples.filter((s) => s.at >= cutoff);
 
+  return buildSnapshotFromSamples(windowSamples);
+}
+
+function buildSnapshotFromSamples(windowSamples: ApiSample[]): ApiHealthSnapshot {
   const routes: ApiRouteStats[] = (["generate", "stream", "synthesize"] as ApiRoute[]).map(
     (route) => {
       const rows = windowSamples.filter((s) => s.route === route);
@@ -94,6 +98,17 @@ export function getApiHealthSnapshot(now = Date.now()): ApiHealthSnapshot {
   );
 
   return { routes };
+}
+
+/** Short window for recovery probes (default 2 minutes). */
+export function getRecentApiHealthSnapshot(
+  now = Date.now(),
+  windowMs = 2 * 60 * 1000,
+): ApiHealthSnapshot {
+  prune(now);
+  const cutoff = now - windowMs;
+  const recent = samples.filter((s) => s.at >= cutoff);
+  return buildSnapshotFromSamples(recent);
 }
 
 /** Test-only reset. */

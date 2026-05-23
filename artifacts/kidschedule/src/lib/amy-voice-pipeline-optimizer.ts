@@ -5,6 +5,7 @@
 
 import { prepareAmyLessonParagraphSpeech, prepareAmyParentHubSpeech } from "@/lib/amy-speech-mode";
 import { shouldSkipLiveTtsApi } from "@/lib/amy-voice-circuit";
+import { isSafeModeActive, isCacheDisabled } from "@/lib/admin-audio-ops";
 import type { AmySpeechPolicy } from "@/lib/amy-speech-mode";
 import type { SpeakOptions } from "@/hooks/use-amy-voice";
 import type { AuthFetchFn } from "@/lib/poll-result";
@@ -438,7 +439,7 @@ export function prefetchLessonParagraph(
           staticUrl,
         );
       }
-      if (shouldSkipLiveTtsApi() || isSlowNetwork()) return;
+      if (shouldSkipLiveTtsApi() || isSafeModeActive() || isCacheDisabled() || isSlowNetwork()) return;
 
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 8_000);
@@ -522,7 +523,7 @@ export function prefetchParentHubItem(
       if (staticUrl) {
         void warmLocalCacheFromUrl(parentHubLocalCacheKey(identity), staticUrl);
       }
-      if (shouldSkipLiveTtsApi() || isSlowNetwork()) return;
+      if (shouldSkipLiveTtsApi() || isSafeModeActive() || isCacheDisabled() || isSlowNetwork()) return;
 
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 8_000);

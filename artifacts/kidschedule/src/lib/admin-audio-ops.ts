@@ -1,5 +1,5 @@
 /**
- * Poll server-side admin ops flags (streaming/API disable, emergency mode).
+ * Poll server-side admin ops flags (streaming/API disable, emergency mode, safe mode).
  */
 
 import { getApiUrl } from "@/lib/api";
@@ -8,6 +8,25 @@ export type AdminAudioOps = {
   disableStreaming: boolean;
   disableApi: boolean;
   forceEmergencyMode: boolean;
+  safeMode: boolean;
+  pregenerationPaused: boolean;
+  reduceDbReads: boolean;
+  cacheDisabled: boolean;
+  selfHealEnabled: boolean;
+  streamingEnabled: boolean;
+  apiEnabled: boolean;
+  cacheEnabled: boolean;
+  degradedMode: boolean;
+  apiUsageFactor: number;
+  streamingWeightFactor: number;
+  prefetchDepth: number;
+  layerWeights?: {
+    static: number;
+    cache: number;
+    api: number;
+    streaming: number;
+    elevenlabs: number;
+  };
   cacheClearedAt: number | null;
   updatedAt: number;
 };
@@ -16,6 +35,18 @@ let cachedOps: AdminAudioOps = {
   disableStreaming: false,
   disableApi: false,
   forceEmergencyMode: false,
+  safeMode: false,
+  pregenerationPaused: false,
+  reduceDbReads: false,
+  cacheDisabled: false,
+  selfHealEnabled: true,
+  streamingEnabled: true,
+  apiEnabled: true,
+  cacheEnabled: true,
+  degradedMode: false,
+  apiUsageFactor: 1,
+  streamingWeightFactor: 1,
+  prefetchDepth: 1,
   cacheClearedAt: null,
   updatedAt: 0,
 };
@@ -36,7 +67,38 @@ export function isAdminApiDisabled(): boolean {
 }
 
 export function isAdminEmergencyForced(): boolean {
-  return cachedOps.forceEmergencyMode;
+  return cachedOps.forceEmergencyMode || cachedOps.safeMode;
+}
+
+export function isSafeModeActive(): boolean {
+  return cachedOps.safeMode;
+}
+
+export function isSystemApiHealthy(): boolean {
+  return cachedOps.apiEnabled && !cachedOps.disableApi;
+}
+
+export function isSystemStreamingHealthy(): boolean {
+  return cachedOps.streamingEnabled && !cachedOps.disableStreaming;
+}
+
+export function isCacheDisabled(): boolean {
+  return cachedOps.cacheDisabled || cachedOps.cacheEnabled === false;
+}
+
+export function isDegradedModeActive(): boolean {
+  return cachedOps.degradedMode;
+}
+
+export function getPredictivePrefetchDepth(): number {
+  return Math.max(1, Math.min(2, cachedOps.prefetchDepth || 1));
+}
+
+export function shouldSkipApiForPredictiveThrottle(): boolean {
+  if (cachedOps.degradedMode && cachedOps.apiUsageFactor < 1) {
+    return Math.random() > cachedOps.apiUsageFactor;
+  }
+  return false;
 }
 
 async function fetchOps(): Promise<void> {
@@ -55,7 +117,22 @@ async function fetchOps(): Promise<void> {
     if (!res.ok) return;
 
     const ops = (await res.json()) as AdminAudioOps;
-    cachedOps = ops;
+    cachedOps = {
+      ...ops,
+      streamingEnabled: ops.streamingEnabled ?? !ops.disableStreaming,
+      apiEnabled: ops.apiEnabled ?? !ops.disableApi,
+      safeMode: ops.safeMode ?? false,
+      pregenerationPaused: ops.pregenerationPaused ?? false,
+      reduceDbReads: ops.reduceDbReads ?? false,
+      cacheDisabled: ops.cacheDisabled ?? false,
+      selfHealEnabled: ops.selfHealEnabled ?? true,
+      cacheEnabled: ops.cacheEnabled ?? !ops.cacheDisabled,
+      degradedMode: ops.degradedMode ?? false,
+      apiUsageFactor: ops.apiUsageFactor ?? 1,
+      streamingWeightFactor: ops.streamingWeightFactor ?? 1,
+      prefetchDepth: ops.prefetchDepth ?? 1,
+      layerWeights: ops.layerWeights,
+    };
 
     if (ops.cacheClearedAt && ops.cacheClearedAt > lastSeenCacheClear) {
       lastSeenCacheClear = ops.cacheClearedAt;
@@ -96,6 +173,18 @@ export function resetAdminAudioOpsForTests(): void {
     disableStreaming: false,
     disableApi: false,
     forceEmergencyMode: false,
+    safeMode: false,
+    pregenerationPaused: false,
+    reduceDbReads: false,
+    cacheDisabled: false,
+    selfHealEnabled: true,
+    streamingEnabled: true,
+    apiEnabled: true,
+    cacheEnabled: true,
+    degradedMode: false,
+    apiUsageFactor: 1,
+    streamingWeightFactor: 1,
+    prefetchDepth: 1,
     cacheClearedAt: null,
     updatedAt: 0,
   };

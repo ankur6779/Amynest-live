@@ -21,6 +21,26 @@ import { getRedisUrl, isRedisQueueEnabled, verifyRedisConnection } from "../queu
 import { scheduleMemoryDrain, getMemoryQueueStats } from "../queue/memory-queue.js";
 import { startBullMqWorker, stopBullMqWorker } from "./bullmq-worker.js";
 import { closeRedisConnection } from "../queue/redis.js";
+import http from "node:http";
+
+function startWorkerHealthServer(): void {
+  const port = Number(process.env.WORKER_HEALTH_PORT ?? 9090);
+  if (!Number.isFinite(port) || port <= 0) return;
+
+  const server = http.createServer((req, res) => {
+    if (req.url === "/health" || req.url === "/health/") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: true, timestamp: Date.now() }));
+      return;
+    }
+    res.writeHead(404).end();
+  });
+
+  server.listen(port, () => {
+    logger.info({ evt: "ai_worker.health_listen", port }, "Worker health server listening");
+    console.log(`Worker health on :${port}/health`);
+  });
+}
 
 /**
  * Worker service must stay running on Render even when BullMQ is off — exiting
@@ -36,6 +56,7 @@ async function startWorker(): Promise<void> {
   registerProcessErrorHandlers();
   logAmynestEnvironment();
   startMemoryMonitor();
+  startWorkerHealthServer();
 
   if (!isWorkerEnabled()) {
     idleWorkerDisabled("WORKER_ENABLED=false");
