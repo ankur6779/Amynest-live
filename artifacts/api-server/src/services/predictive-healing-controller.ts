@@ -30,6 +30,7 @@ import {
   reduceStreamingWeight,
   relaxPredictiveAdjustments,
 } from "./predictive-ops-store.js";
+import { evaluatePredictiveAlerts, emitPredictiveInfoAlert } from "./admin-alert-hooks.js";
 import { getAdminOpsState } from "./admin-ops-store.js";
 
 const TICK_INTERVAL_MS = Number(process.env.PREDICTIVE_HEAL_TICK_MS ?? 30_000);
@@ -85,7 +86,17 @@ function collectSample(now: number): void {
   }, now);
 }
 
-function evaluateTrendRules(now: number): void {
+function recordPredictiveIncidentWithAlert(
+  cause: string,
+  metric: string,
+  value: number,
+  now: number,
+): void {
+  recordPredictedIncident(cause, metric, value, now);
+  void emitPredictiveInfoAlert(cause, metric, value, now);
+}
+
+async function evaluateTrendRules(now: number): Promise<void> {
   const ops = getAdminOpsState();
   if (!ops.selfHealEnabled || ops.safeMode) return;
 
@@ -103,7 +114,7 @@ function evaluateTrendRules(now: number): void {
     );
   if (apiTrend) {
     if (guardedPredictiveAction("preemptive_reduce_api", "increasing_api_error_trend", preemptivelyReduceApiUsage)) {
-      recordPredictedIncident("api_degrading", "apiErrorRate", latest.apiErrorRate, now);
+      recordPredictiveIncidentWithAlert("api_degrading", "apiErrorRate", latest.apiErrorRate, now);
       preventiveActions += 1;
     }
   }
@@ -115,7 +126,7 @@ function evaluateTrendRules(now: number): void {
     );
   if (apiAnomaly) {
     if (guardedPredictiveAction("preemptive_reduce_api", "api_error_anomaly", preemptivelyReduceApiUsage)) {
-      recordPredictedIncident("api_anomaly", "apiErrorRate", latest.apiErrorRate, now);
+      recordPredictiveIncidentWithAlert("api_anomaly", "apiErrorRate", latest.apiErrorRate, now);
       preventiveActions += 1;
     }
   }
@@ -127,7 +138,7 @@ function evaluateTrendRules(now: number): void {
     );
   if (ttfaTrend) {
     if (guardedPredictiveAction("prioritize_cache", "increasing_ttfa_trend", prioritizeCacheOverApi)) {
-      recordPredictedIncident("ttfa_spike_predicted", "ttfa", latest.ttfa, now);
+      recordPredictiveIncidentWithAlert("ttfa_spike_predicted", "ttfa", latest.ttfa, now);
       preventiveActions += 1;
     }
   }
@@ -139,7 +150,7 @@ function evaluateTrendRules(now: number): void {
     );
   if (ttfaAnomaly) {
     if (guardedPredictiveAction("prioritize_cache", "ttfa_anomaly", prioritizeCacheOverApi)) {
-      recordPredictedIncident("ttfa_anomaly", "ttfa", latest.ttfa, now);
+      recordPredictiveIncidentWithAlert("ttfa_anomaly", "ttfa", latest.ttfa, now);
       preventiveActions += 1;
     }
   }
@@ -152,7 +163,12 @@ function evaluateTrendRules(now: number): void {
     );
   if (streamingSignal) {
     if (guardedPredictiveAction("reduce_streaming_weight", "rising_stall_rate", reduceStreamingWeight)) {
-      recordPredictedIncident("streaming_instability_predicted", "streamingStallRate", latest.streamingStallRate, now);
+      recordPredictiveIncidentWithAlert(
+        "streaming_instability_predicted",
+        "streamingStallRate",
+        latest.streamingStallRate,
+        now,
+      );
       preventiveActions += 1;
     }
   }
@@ -164,7 +180,7 @@ function evaluateTrendRules(now: number): void {
     );
   if (failureAnomaly) {
     if (guardedPredictiveAction("enable_degraded_mode", "failure_rate_anomaly", enableDegradedMode)) {
-      recordPredictedIncident("failure_rate_anomaly", "failureRate", latest.failureRate, now);
+      recordPredictiveIncidentWithAlert("failure_rate_anomaly", "failureRate", latest.failureRate, now);
       preventiveActions += 1;
     }
   }
@@ -175,9 +191,20 @@ function evaluateTrendRules(now: number): void {
     confirmPredictiveSignal("multi_signal", preventiveActions >= 2)
   ) {
     if (guardedPredictiveAction("enable_degraded_mode", "multiple_preventive_signals", enableDegradedMode)) {
-      recordPredictedIncident("multi_signal_degradation", "composite", preventiveActions, now);
+      recordPredictiveIncidentWithAlert("multi_signal_degradation", "composite", preventiveActions, now);
     }
   }
+
+  const ttfaRising =
+    ttfaTrend || ttfaAnomaly || (isIncreasingTrend(history.ttfa) && latest.ttfa > 800);
+  const streamingUnstable = !!streamingSignal;
+  await evaluatePredictiveAlerts(
+    ttfaRising,
+    streamingUnstable,
+    latest.ttfa,
+    latest.streamingStallRate,
+    now,
+  );
 }
 
 function evaluateRecovery(now: number): void {
@@ -219,7 +246,7 @@ function evaluateRecovery(now: number): void {
 
 export function runPredictiveHealTick(now = Date.now()): void {
   collectSample(now);
-  evaluateTrendRules(now);
+  void evaluateTrendRules(now);
   evaluateRecovery(now);
 }
 

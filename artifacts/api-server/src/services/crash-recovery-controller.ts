@@ -9,8 +9,8 @@ import {
   getSelfHealActorId,
 } from "./admin-ops-store.js";
 import { healLog, scheduleJitteredInterval, tryHealAction, tryHealRecoveryAction } from "./heal-stability-guard.js";
+import { alertServiceDown, alertServiceRecovered } from "./admin-alert-hooks.js";
 import { enableSafeMode } from "./self-healing-controller.js";
-import { sendServiceCrashAlert } from "./service-crash-alerts.js";
 import {
   defaultServiceProbes,
   type ServiceProbes,
@@ -197,7 +197,10 @@ function handleServiceDown(
       break;
   }
 
-  void sendServiceCrashAlert("service_crash", service, payload);
+  void alertServiceDown(service, {
+    consecutiveFailures: heartbeat.consecutiveFailures,
+    error: heartbeat.lastError ?? undefined,
+  });
 
   if (getDownServiceCount() >= MULTI_DOWN_SAFE_MODE_THRESHOLD) {
     const ops = getAdminOpsState();
@@ -214,9 +217,7 @@ function handleServiceDown(
         redisHealthy: false,
       } satisfies SystemMetrics);
       crashApplied.backend.safeMode = true;
-      void sendServiceCrashAlert("multi_service_down", "multiple", {
-        downCount: getDownServiceCount(),
-      });
+      void alertServiceDown("multiple", { downCount: getDownServiceCount() });
     }
   }
 }
@@ -241,7 +242,7 @@ function handleServiceDegraded(service: MonitoredService): void {
 function handleServiceUp(service: MonitoredService): void {
   const payload = logServiceCrashEvent(service, "up");
   healLog("info", payload, `service ${service} recovered`, { always: true });
-  void sendServiceCrashAlert("service_recovery", service, payload);
+  void alertServiceRecovered(service);
 
   switch (service) {
     case "backend":

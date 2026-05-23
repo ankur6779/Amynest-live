@@ -14,6 +14,7 @@ import {
 import { getSystemHealthSnapshot } from "../services/system-health-store";
 import { getPredictiveOpsState, getPredictedIncidents } from "../services/predictive-ops-store";
 import { getMetricsHistory } from "../services/predictive-trend-store";
+import { getAdminAlerts } from "../services/admin-alert-system";
 
 const router: IRouter = Router();
 
@@ -96,6 +97,19 @@ router.get("/audio-ops", (_req, res): void => {
     ...getAdminOpsControlPanel(),
     ...getPredictiveOpsState(),
   });
+});
+
+/**
+ * GET /api/admin/alerts — recent admin alert feed (dashboard-only INFO + all severities).
+ */
+router.get("/admin/alerts", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+
+  res.json({ alerts: getAdminAlerts() });
 });
 
 /**
