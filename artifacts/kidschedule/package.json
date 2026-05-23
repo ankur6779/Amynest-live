@@ -109,6 +109,7 @@
     "@capacitor/status-bar": "6",
     "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "@workspace/age-content": "workspace:*",
+    "@workspace/amy-intelligence": "workspace:*",
     "@workspace/audio-lessons": "workspace:*",
     "@workspace/behavior-tracker": "workspace:*",
     "@workspace/coach-topic-questions": "workspace:*",
