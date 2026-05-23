@@ -32,7 +32,9 @@
     "@workspace/life-skills": "workspace:*",
     "@workspace/integrations-openai-ai-server": "workspace:*",
     "@workspace/study-zone": "workspace:*",
+    "@workspace/content-orchestration": "workspace:*",
     "@workspace/static-audio": "workspace:*",
+    "ws": "^8.18.1",
     "dotenv": "^16.6.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2",
@@ -59,6 +61,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "catalog:",
     "@types/node-cron": "^3.0.11",
+    "@types/ws": "^8.18.1",
     "pino-pretty": "^13",
     "tsx": "catalog:"
   }

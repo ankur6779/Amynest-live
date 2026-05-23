@@ -58,6 +58,7 @@ import authRouter from "./auth";
 import environmentRouter from "./environment";
 import userFeedbackRouter from "./user-feedback";
 import otaRouter from "./ota";
+import contentOrchestrationRouter from "./content-orchestration";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -146,5 +147,6 @@ router.use(speechRouter);
 router.use(debugRouter);
 router.use(environmentRouter);
 router.use(userFeedbackRouter);
+router.use(contentOrchestrationRouter);
 
 export default router;

@@ -293,6 +293,20 @@ async function startServer(): Promise<void> {
     disarmListenDeadline();
     endBootPhase("http_listen", { port, elapsedMs: bootElapsedMs() });
 
+    void (async () => {
+      try {
+        const { attachContentRealtimeGateway } = await import(
+          "./lib/contentRealtimeGateway.js"
+        );
+        attachContentRealtimeGateway(server);
+      } catch (err) {
+        logger.warn(
+          { evt: "realtime.attach_failed", err },
+          "Content realtime WebSocket failed to attach — HTTP fallback only",
+        );
+      }
+    })();
+
     console.log("SERVER_LISTENING");
     logAmynestEnvironment();
     logger.info(
