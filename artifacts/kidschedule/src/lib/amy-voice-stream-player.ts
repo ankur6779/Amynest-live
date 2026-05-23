@@ -1,7 +1,8 @@
-/**
- * Streaming-first TTS playback — start on first chunk, fallback to full download.
- */
-
+import {
+  canUseStreaming,
+  assertStreamingAllowed,
+  type PlaybackMode,
+} from "@/lib/amy-voice-playback-contract";
 import { audioManager } from "@/lib/audio-manager";
 import { configureMobileAudioElement } from "@/lib/tts-guard";
 import type { AuthFetchFn } from "@/lib/poll-result";
@@ -112,13 +113,25 @@ function attachBufferMonitor(audio: HTMLAudioElement): { getCount: () => number 
 
 /**
  * Stream POST /api/tts/stream — play as soon as prefix bytes arrive.
+ * ONLY for playbackMode === "partial-ok" — enforced centrally via canUseStreaming.
  */
 export async function playStreamingTts(
   authFetch: AuthFetchFn,
   body: Record<string, unknown>,
-  opts?: { signal?: AbortSignal; cacheKeyHint?: string; prefetchOnly?: boolean },
+  opts?: {
+    signal?: AbortSignal;
+    cacheKeyHint?: string;
+    prefetchOnly?: boolean;
+    playbackMode?: PlaybackMode;
+  },
 ): Promise<StreamPlayResult> {
   const startedAt = Date.now();
+  const playbackMode = opts?.playbackMode ?? "full-required";
+
+  if (!canUseStreaming(playbackMode)) {
+    assertStreamingAllowed(playbackMode, true);
+    return { ok: false, error: "streaming_blocked_full_required" };
+  }
 
   if (!supportsStreamingPlayback()) {
     return { ok: false, error: "streaming_unsupported" };
@@ -239,12 +252,14 @@ export async function playStreamingTts(
   }
 }
 
-/** Low-priority first-chunk prefetch for next paragraph. */
+/** Low-priority first-chunk prefetch — partial-ok contexts only. */
 export function prefetchStreamingChunk(
   authFetch: AuthFetchFn,
   body: Record<string, unknown>,
   cacheKeyHint: string,
+  playbackMode: PlaybackMode = "partial-ok",
 ): void {
+  if (!canUseStreaming(playbackMode)) return;
   void (async () => {
     try {
       const controller = new AbortController();

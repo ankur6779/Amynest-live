@@ -44,7 +44,6 @@ import {
   hashCacheKeySync,
   queueServerTelemetry,
 } from "@/lib/amy-voice-pipeline-server-sync";
-import { prefetchStreamingChunk, resolveAdaptiveTtsSpeed } from "@/lib/amy-voice-stream-player";
 
 export type { DeviceClass, LearnableLayer, LayerScoringContext, NetworkProfile, PipelineStrategy };
 
@@ -398,18 +397,7 @@ export function prefetchLessonParagraphText(
       }
       if (shouldSkipLiveTtsApi() || isSlowNetwork()) return;
 
-      prefetchStreamingChunk(
-        authFetch,
-        {
-          text: policy.normalizedText,
-          voiceId,
-          modelId,
-          mode: policy.pipelineMode,
-          speed: resolveAdaptiveTtsSpeed(isSlowNetwork()),
-        },
-        cacheKey,
-      );
-
+      // Lessons are full-required — never prefetch partial stream chunks.
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 8_000);
       const data = await generateTts(

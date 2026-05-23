@@ -333,7 +333,10 @@ export function DailyStorySection({
     }
     pause();
     setPlayingId(story.id);
-    void speak(`${story.title}. ${story.story}. The moral is: ${story.moral}`).then((res) => {
+    void speak(`${story.title}. ${story.story}. The moral is: ${story.moral}`, {
+      playbackMode: "full-required",
+      narration: true,
+    }).then((res) => {
       if (!res?.success) console.warn("TTS failed, skipping audio flow:", res?.error);
       setPlayingId(null);
     });

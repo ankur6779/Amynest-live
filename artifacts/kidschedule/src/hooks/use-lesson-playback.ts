@@ -129,6 +129,7 @@ export function useLessonPlayback({
       void speak(txt, {
         waitUntilEnd: true,
         lessonParagraph: true,
+        playbackMode: "full-required",
         onFinished: () => advanceParagraph(session),
       })
         .then((res) => handleSpeakResult(session, res))
