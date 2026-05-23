@@ -3,6 +3,8 @@ import { Link, useLocation, useSearch } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { PhonicsTest } from "@/components/phonics-test";
+import { LockedBlock } from "@/components/locked-block";
+import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
 import { cn } from "@/lib/utils";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
@@ -14,6 +16,7 @@ const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 export default function PhonicsTestPlayPage() {
   const [, setLocation] = useLocation();
   const search = useSearch();
+  const { locked, onEngage } = useHubModuleGate("hub_phonics");
 
   const { data: children = [] } = useListChildren({
     query: { queryKey: getListChildrenQueryKey() },
@@ -104,13 +107,23 @@ export default function PhonicsTestPlayPage() {
       </header>
 
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]">
-        <PhonicsTest
-          childId={childId}
-          childName={childName}
-          totalAgeMonths={totalAgeMonths}
-          initialTestType={testType}
-          playOnly
-        />
+        <LockedBlock locked={locked} rounded="rounded-2xl">
+          <div
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            onPointerDownCapture={() => onEngage()}
+            onKeyDownCapture={(e) => {
+              if (e.key === "Enter" || e.key === " ") onEngage();
+            }}
+          >
+            <PhonicsTest
+              childId={childId}
+              childName={childName}
+              totalAgeMonths={totalAgeMonths}
+              initialTestType={testType}
+              playOnly
+            />
+          </div>
+        </LockedBlock>
       </main>
     </div>
   );

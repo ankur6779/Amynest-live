@@ -126,10 +126,10 @@ export function useFeatureUsage() {
     [getUseCount],
   );
 
-  /** Show "Try Free" badge — only before the first open. */
+  /** Show "Try Free" badge while the user still has lifetime free opens left. */
   const tryFreeFor = useCallback(
     (featureId: string): boolean =>
-      !isPremium && getUseCount(featureId) === 0,
+      !isPremium && !isFeatureQuotaExhausted(getUseCount(featureId), featureId),
     [isPremium, getUseCount],
   );
 

@@ -4,8 +4,10 @@ import { ArrowLeft, BookOpen, ClipboardCheck, GraduationCap, Loader2, Play, Tren
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { LockedBlock } from "@/components/locked-block";
 import { PhonicsLearning } from "@/components/phonics-learning";
 import { getPhonicsLevel } from "@/lib/phonics-content";
+import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
 
 type Child = {
   id: number;
@@ -23,6 +25,7 @@ function scrollToSection(id: string) {
 export default function PhonicsPage() {
   const [location, setLocation] = useLocation();
   const search = useSearch();
+  const { locked, onEngage } = useHubModuleGate("hub_phonics");
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
     const saved = Number(window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY));
@@ -42,9 +45,8 @@ export default function PhonicsPage() {
     return totalAgeMonths >= 12 && totalAgeMonths < 72;
   });
   const activeChild =
-    childList.find((child) => child.id === selectedChildId) ??
+    eligibleChildren.find((child) => child.id === selectedChildId) ??
     eligibleChildren[0] ??
-    childList[0] ??
     null;
 
   const totalAgeMonths = activeChild
@@ -89,6 +91,7 @@ export default function PhonicsPage() {
   }
 
   if (!activeChild) {
+    const noEligibleChild = childList.length > 0 && eligibleChildren.length === 0;
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <header className="sticky top-0 z-50 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
@@ -103,7 +106,9 @@ export default function PhonicsPage() {
               <UserPlus className="mx-auto h-10 w-10 text-primary" />
               <h1 className="font-quicksand text-2xl font-bold text-foreground">Add a child to start phonics</h1>
               <p className="text-sm text-muted-foreground">
-                Phonics Learning is personalised by age, so create a child profile first.
+                {noEligibleChild
+                  ? "Phonics Learning supports ages 1–6. Select or add a child in that range."
+                  : "Phonics Learning is personalised by age, so create a child profile first."}
               </p>
               <Link href="/children/new">
                 <Button className="w-full rounded-2xl">Add Child</Button>
@@ -137,7 +142,14 @@ export default function PhonicsPage() {
       </header>
 
       <main className="scroll-safe min-h-0 flex-1 px-4 pt-4">
-        <div className="mx-auto max-w-4xl space-y-4">
+        <LockedBlock locked={locked} rounded="rounded-2xl">
+          <div
+            className="mx-auto max-w-4xl space-y-4"
+            onPointerDownCapture={() => onEngage()}
+            onKeyDownCapture={(e) => {
+              if (e.key === "Enter" || e.key === " ") onEngage();
+            }}
+          >
           <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
             <div className="flex items-start gap-3">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
@@ -197,9 +209,9 @@ export default function PhonicsPage() {
             </Card>
           </section>
 
-          {childList.length > 1 && (
+          {eligibleChildren.length > 1 && (
             <section className="flex gap-2 overflow-x-auto pb-1" aria-label="Choose child">
-              {childList.map((child) => (
+              {eligibleChildren.map((child) => (
                 <button
                   key={child.id}
                   type="button"
@@ -228,10 +240,18 @@ export default function PhonicsPage() {
               })()
             }
           />
-        </div>
+          </div>
+        </LockedBlock>
       </main>
 
-      <div className="bottom-controls z-50 border-t border-border bg-[#0B1220] px-4 pt-2 shadow-lg backdrop-blur">
+      <LockedBlock locked={locked} rounded="rounded-none">
+        <div
+          className="bottom-controls z-50 border-t border-border bg-[#0B1220] px-4 pt-2 shadow-lg backdrop-blur"
+          onPointerDownCapture={() => onEngage()}
+          onKeyDownCapture={(e) => {
+            if (e.key === "Enter" || e.key === " ") onEngage();
+          }}
+        >
         <div className="mx-auto grid max-w-4xl grid-cols-2 gap-3">
           <Button
             type="button"
@@ -252,7 +272,8 @@ export default function PhonicsPage() {
             Start Test
           </Button>
         </div>
-      </div>
+        </div>
+      </LockedBlock>
     </div>
   );
 }

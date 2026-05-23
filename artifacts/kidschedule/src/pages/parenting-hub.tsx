@@ -9,12 +9,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon, Gift } from "lucide-react";
-import { OlympiadZone } from "@/components/olympiad-zone";
 import { SmartStudyZone } from "@/components/smart-study-zone";
 import { PtmPrepAssistant } from "@/components/ptm-prep";
 import { EventPrepCard } from "@/components/event-prep-card";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
-import { SpellingMastery } from "@/components/spelling-mastery";
+import { HubLaunchCard } from "@/components/hub-launch-card";
 import { ColoringBooks } from "@/components/coloring-books";
 import { FunSheets } from "@/components/fun-sheets";
 import { StoryHub } from "@/components/story-hub";
@@ -25,8 +24,6 @@ import { SkillFocusSection, StorySection, ParentTasksSection } from "@/component
 import { DailyStorySection } from "@/components/daily-story-section";
 import { ToddlerPreschoolMode, type ToddlerShowOnly } from "@/components/toddler-preschool-mode";
 import { DailyPuzzle } from "@/components/daily-puzzle";
-import { SmartMathTricks } from "@/components/smart-math-tricks";
-import { AbacusZone } from "@/components/abacus-zone";
 import { AmazingFacts } from "@/components/amazing-facts";
 import { DailyKidsActivity } from "@/components/daily-kids-activity";
 import { ArtCraftReels } from "@/components/art-craft-reels";
@@ -249,43 +246,6 @@ function HubQuickActions({
         </button>
       ))}
     </div>
-  );
-}
-
-function PhonicsLaunchCard({
-  title,
-  description,
-  tryFree,
-  onOpen,
-}: {
-  title: string;
-  description: string;
-  tryFree?: boolean;
-  onOpen?: () => void;
-}) {
-  return (
-    <Link
-      href="/phonics"
-      onClick={onOpen}
-      className="group block rounded-2xl border border-white/20 bg-gradient-to-br from-sky-400/30 to-blue-500/15 p-4 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all hover:border-white/40 hover:shadow-[0_10px_36px_-10px_rgba(56,189,248,0.45)]"
-      data-testid="phonics-launch-card"
-    >
-      <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-blue-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40">
-          <AudioLines className="h-5 w-5 text-white" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <p className="truncate font-quicksand text-[15px] font-bold leading-tight text-foreground">{title}</p>
-            {tryFree && <TryFreeBadge />}
-          </div>
-          <p className="mt-0.5 truncate text-[11.5px] text-muted-foreground">{description}</p>
-        </div>
-        <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-primary px-3 text-xs font-black text-primary-foreground transition-transform group-active:scale-95">
-          Open
-        </span>
-      </div>
-    </Link>
   );
 }
 
@@ -835,29 +795,50 @@ function ParentingHubPage() {
         </HubSection>;
     }
   },
-  // ── Smart Math Tricks (age 4–8, shown near top of grid) ─────────────
+  // ── Smart Math Tricks (age 4–8, full-screen route) ───────────────────
   {
     id: "smart-math-tricks",
     bands: ["4-6", "6-8"] as AgeBand[],
     render: () => {
       if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
-      return <HubSection id="smart-math-tricks" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.smart-math-tricks.title")} description={t("parent_hub.web_tiles.smart-math-tricks.description")} accentClass="bg-gradient-to-br from-orange-400 to-amber-500" cardClass="linear-gradient(135deg,rgba(251,146,60,0.30)0%,rgba(251,191,36,0.14)100%)"> {/* audit-ok: brand tile accent gradient */}
-          <SmartMathTricks childName={effectiveChild.name} ageYears={effectiveChild.age} />
-        </HubSection>;
+      return (
+        <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_smart_math_tricks")}>
+          <HubLaunchCard
+            href="/smart-math-tricks"
+            title={t("parent_hub.web_tiles.smart-math-tricks.title")}
+            description={t("parent_hub.web_tiles.smart-math-tricks.description")}
+            icon={<Sparkles className="h-5 w-5 text-white" />}
+            accentClass="bg-gradient-to-br from-orange-400 to-amber-500"
+            cardClass="bg-gradient-to-br from-orange-400/30 to-amber-500/15 hover:shadow-[0_10px_36px_-10px_rgba(251,146,60,0.45)]"
+            tryFree={tryFreeFor("hub_smart_math_tricks")}
+            testId="smart-math-tricks-launch-card"
+            sectionId="smart-math-tricks"
+          />
+        </LockedBlock>
+      );
     }
   },
-  // ── Abacus PRO Zone (age 4–10, learn/practice/challenge/mental/tutor) ─
+  // ── Abacus PRO Zone (age 4–10, full-screen route) ────────────────────
   {
     id: "abacus",
     bands: ["4-6", "6-8", "8-10"] as AgeBand[],
     render: () => {
       if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
-      return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_abacus")}>
-          <HubSection id="abacus" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("pages.parenting_hub.abacus_pro_zone")} // audit-ok: brand product name, intentional EN-only
-        description="Learn the soroban — beads, brain & speed math" accentClass="bg-gradient-to-br from-teal-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(45,212,191,0.30)0%,rgba(34,211,238,0.14)100%)" tryFree={tryFreeFor("hub_abacus")} onOpen={() => hubUsage.markFeatureUsed("hub_abacus")}>
-            <AbacusZone childId={effectiveChild.id} childName={effectiveChild.name} ageYears={effectiveChild.age} />
-          </HubSection>
-        </LockedBlock>;
+      return (
+        <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_abacus")}>
+          <HubLaunchCard
+            href="/abacus"
+            title={t("pages.parenting_hub.abacus_pro_zone")}
+            description="Learn the soroban — beads, brain & speed math"
+            icon={<Sparkles className="h-5 w-5 text-white" />}
+            accentClass="bg-gradient-to-br from-teal-400 to-cyan-500"
+            cardClass="bg-gradient-to-br from-teal-400/30 to-cyan-500/15 hover:shadow-[0_10px_36px_-10px_rgba(45,212,191,0.45)]"
+            tryFree={tryFreeFor("hub_abacus")}
+            testId="abacus-launch-card"
+            sectionId="abacus"
+          />
+        </LockedBlock>
+      );
     }
   },
   // ── GRID — always-current ─────────────────────────────────────────────
@@ -962,14 +943,21 @@ function ParentingHubPage() {
     bands: ["2-4", "4-6"],
     render: () => {
       if (!shouldRenderHubTileContent("phonics", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
-      return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_phonics")}>
-          <PhonicsLaunchCard
+      return (
+        <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_phonics")}>
+          <HubLaunchCard
+            href="/phonics"
             title={t("parent_hub.web_tiles.phonics.title")}
             description={t("parent_hub.web_tiles.phonics.description")}
+            icon={<AudioLines className="h-5 w-5 text-white" />}
+            accentClass="bg-gradient-to-br from-sky-400 to-blue-500"
+            cardClass="bg-gradient-to-br from-sky-400/30 to-blue-500/15 hover:shadow-[0_10px_36px_-10px_rgba(56,189,248,0.45)]"
             tryFree={tryFreeFor("hub_phonics")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}
+            testId="phonics-launch-card"
+            sectionId="phonics"
           />
-        </LockedBlock>;
+        </LockedBlock>
+      );
     }
   }, {
     id: "ptm-prep",
@@ -998,16 +986,26 @@ function ParentingHubPage() {
         </LockedBlock>;
     }
   }, {
-    // ── Spelling Mastery — standalone tile (promoted out of Activities & Learning) ─
+    // ── Spelling Mastery — full-screen route ───────────────────────────
     id: "spelling-mastery",
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       if (!shouldRenderHubTileContent("spelling-mastery", totalAgeMonths, isTwoPlus)) return null;
-      return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_spelling_mastery")}>
-          <HubSection id="spelling-mastery" icon={<GraduationCap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.spelling-mastery.title")} description={t("parent_hub.web_tiles.spelling-mastery.description")} accentClass="bg-gradient-to-br from-green-400 to-teal-500" cardClass="linear-gradient(135deg,rgba(74,222,128,0.30)0%,rgba(45,212,191,0.14)100%)" tryFree={tryFreeFor("hub_spelling_mastery")} onOpen={() => hubUsage.markFeatureUsed("hub_spelling_mastery")}> {/* audit-ok: brand tile accent gradient */}
-            <SpellingMastery childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={totalAgeMonths} />
-          </HubSection>
-        </LockedBlock>;
+      return (
+        <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_spelling_mastery")}>
+          <HubLaunchCard
+            href="/spelling"
+            title={t("parent_hub.web_tiles.spelling-mastery.title")}
+            description={t("parent_hub.web_tiles.spelling-mastery.description")}
+            icon={<GraduationCap className="h-5 w-5 text-white" />}
+            accentClass="bg-gradient-to-br from-green-400 to-teal-500"
+            cardClass="bg-gradient-to-br from-green-400/30 to-teal-500/15 hover:shadow-[0_10px_36px_-10px_rgba(74,222,128,0.45)]"
+            tryFree={tryFreeFor("hub_spelling_mastery")}
+            testId="spelling-mastery-launch-card"
+            sectionId="spelling-mastery"
+          />
+        </LockedBlock>
+      );
     }
   }, {
     id: "event-prep",
@@ -1025,15 +1023,21 @@ function ParentingHubPage() {
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       if (!shouldRenderHubTileContent("olympiad", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
-      return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_olympiad")}>
-          <HubSection id="olympiad" icon={<Trophy className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.olympiad.title")} description={t("parent_hub.web_tiles.olympiad.description")} accentClass="bg-gradient-to-br from-yellow-400 to-amber-500" cardClass="linear-gradient(135deg,rgba(250,204,21,0.30)0%,rgba(245,158,11,0.14)100%)" tryFree={tryFreeFor("hub_olympiad")} onOpen={() => hubUsage.markFeatureUsed("hub_olympiad")}> {/* audit-ok: brand tile accent gradient */}
-            <OlympiadZone child={{
-            id: effectiveChild.id,
-            name: effectiveChild.name,
-            age: effectiveChild.age
-          }} />
-          </HubSection>
-        </LockedBlock>;
+      return (
+        <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_olympiad")}>
+          <HubLaunchCard
+            href="/olympiad"
+            title={t("parent_hub.web_tiles.olympiad.title")}
+            description={t("parent_hub.web_tiles.olympiad.description")}
+            icon={<Trophy className="h-5 w-5 text-white" />}
+            accentClass="bg-gradient-to-br from-yellow-400 to-amber-500"
+            cardClass="bg-gradient-to-br from-yellow-400/30 to-amber-500/15 hover:shadow-[0_10px_36px_-10px_rgba(250,204,21,0.45)]"
+            tryFree={tryFreeFor("hub_olympiad")}
+            testId="olympiad-launch-card"
+            sectionId="olympiad"
+          />
+        </LockedBlock>
+      );
     }
   }, {
     id: "life-skills",

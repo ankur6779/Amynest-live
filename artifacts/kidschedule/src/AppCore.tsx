@@ -82,6 +82,10 @@ const SpeechCoachPage = lazyPage(() => import("@/pages/speech-coach/index"));
 const LiveSpeechCoachPage = lazyPage(() => import("@/pages/speech-coach/live-speech-coach"));
 const KidsControlCenterPage = lazyPage(() => import("@/pages/kids-control-center"));
 const StudyPage = lazyPage(() => import("@/pages/study"));
+const SmartMathTricksPage = lazyPage(() => import("@/pages/smart-math-tricks"));
+const AbacusPage = lazyPage(() => import("@/pages/abacus"));
+const SpellingPage = lazyPage(() => import("@/pages/spelling"));
+const OlympiadPage = lazyPage(() => import("@/pages/olympiad"));
 const EventPrepPage = lazyPage(() => import("@/pages/event-prep"));
 const SchoolMorningFlowPage = lazyPage(() => import("@/pages/school-morning-flow"));
 const AmyCoachPage = lazyPage(() => import("@/pages/ai-coach"));
@@ -283,6 +287,10 @@ const SpeechCoachRoute = makeProtectedRoute(SpeechCoachPage);
 const LiveSpeechCoachRoute = makeProtectedRoute(LiveSpeechCoachPage);
 const KidsControlCenterRoute = makeProtectedRoute(KidsControlCenterPage);
 const StudyRoute = makeProtectedRoute(StudyPage);
+const SmartMathTricksRoute = makeProtectedRoute(SmartMathTricksPage);
+const AbacusRoute = makeProtectedRoute(AbacusPage);
+const SpellingRoute = makeProtectedRoute(SpellingPage);
+const OlympiadRoute = makeProtectedRoute(OlympiadPage);
 const EventPrepRoute = makeProtectedRoute(EventPrepPage);
 const SchoolMorningFlowRoute = makeProtectedRoute(SchoolMorningFlowPage);
 const AmyCoachRoute = makeProtectedRoute(AmyCoachPage);
@@ -483,6 +491,10 @@ function AppRoutes() {
           </Route>
           <Route path="/kids-control-center" component={KidsControlCenterRoute} />
           <Route path="/study" component={StudyRoute} />
+          <Route path="/smart-math-tricks" component={SmartMathTricksRoute} />
+          <Route path="/abacus" component={AbacusRoute} />
+          <Route path="/spelling" component={SpellingRoute} />
+          <Route path="/olympiad" component={OlympiadRoute} />
           <Route path="/event-prep" component={EventPrepRoute} />
           <Route path="/school-morning-flow" component={SchoolMorningFlowRoute} />
           <Route path="/amy-coach" component={AmyCoachRoute} />
