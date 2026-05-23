@@ -1976,6 +1976,894 @@
     "source": "static_catalog"
   },
   {
+    "text": "cat",
+    "mode": "default",
+    "normalizedKey": "cat",
+    "hash": "063cbec8fc2b9eb94ca28103cc8a37ee",
+    "objectKey": "063cbec8fc2b9eb94ca28103cc8a37ee",
+    "source": "static_catalog"
+  },
+  {
+    "text": "bat",
+    "mode": "default",
+    "normalizedKey": "bat",
+    "hash": "d0ffab1e7d9244cfce9f39307cca44dc",
+    "objectKey": "d0ffab1e7d9244cfce9f39307cca44dc",
+    "source": "static_catalog"
+  },
+  {
+    "text": "dog",
+    "mode": "default",
+    "normalizedKey": "dog",
+    "hash": "732df657078cca1859a8d170e3638d57",
+    "objectKey": "732df657078cca1859a8d170e3638d57",
+    "source": "static_catalog"
+  },
+  {
+    "text": "sun",
+    "mode": "default",
+    "normalizedKey": "sun",
+    "hash": "340be7788a55512b3843fb54333b355d",
+    "objectKey": "340be7788a55512b3843fb54333b355d",
+    "source": "static_catalog"
+  },
+  {
+    "text": "hat",
+    "mode": "default",
+    "normalizedKey": "hat",
+    "hash": "c4620d75b0300cc569aacfc35ea681e9",
+    "objectKey": "c4620d75b0300cc569aacfc35ea681e9",
+    "source": "static_catalog"
+  },
+  {
+    "text": "pen",
+    "mode": "default",
+    "normalizedKey": "pen",
+    "hash": "c696cbf7ad7ab34d3a8a7680a9834aa5",
+    "objectKey": "c696cbf7ad7ab34d3a8a7680a9834aa5",
+    "source": "static_catalog"
+  },
+  {
+    "text": "cup",
+    "mode": "default",
+    "normalizedKey": "cup",
+    "hash": "e6a4dc39b508271816d7ba67cca1e122",
+    "objectKey": "e6a4dc39b508271816d7ba67cca1e122",
+    "source": "static_catalog"
+  },
+  {
+    "text": "bed",
+    "mode": "default",
+    "normalizedKey": "bed",
+    "hash": "b76d0e183e4d3498548e3a04b015fa41",
+    "objectKey": "b76d0e183e4d3498548e3a04b015fa41",
+    "source": "static_catalog"
+  },
+  {
+    "text": "pig",
+    "mode": "default",
+    "normalizedKey": "pig",
+    "hash": "dafeeef6a0027c1cdec7be7a52defef9",
+    "objectKey": "dafeeef6a0027c1cdec7be7a52defef9",
+    "source": "static_catalog"
+  },
+  {
+    "text": "bus",
+    "mode": "default",
+    "normalizedKey": "bus",
+    "hash": "83d2c006679001794e4378b749cb88ce",
+    "objectKey": "83d2c006679001794e4378b749cb88ce",
+    "source": "static_catalog"
+  },
+  {
+    "text": "mug",
+    "mode": "default",
+    "normalizedKey": "mug",
+    "hash": "b0925c39750613daf437165685f2a3cd",
+    "objectKey": "b0925c39750613daf437165685f2a3cd",
+    "source": "static_catalog"
+  },
+  {
+    "text": "jam",
+    "mode": "default",
+    "normalizedKey": "jam",
+    "hash": "3f52e78a8a93cec75d728175e4932501",
+    "objectKey": "3f52e78a8a93cec75d728175e4932501",
+    "source": "static_catalog"
+  },
+  {
+    "text": "fan",
+    "mode": "default",
+    "normalizedKey": "fan",
+    "hash": "decb4ef22de9336bdde71d7869e6dfce",
+    "objectKey": "decb4ef22de9336bdde71d7869e6dfce",
+    "source": "static_catalog"
+  },
+  {
+    "text": "box",
+    "mode": "default",
+    "normalizedKey": "box",
+    "hash": "5c415f6448cb7c6c5f718c5792a37c37",
+    "objectKey": "5c415f6448cb7c6c5f718c5792a37c37",
+    "source": "static_catalog"
+  },
+  {
+    "text": "toy",
+    "mode": "default",
+    "normalizedKey": "toy",
+    "hash": "c8c336047870725fb61d3ab829218ac5",
+    "objectKey": "c8c336047870725fb61d3ab829218ac5",
+    "source": "static_catalog"
+  },
+  {
+    "text": "oy",
+    "mode": "default",
+    "normalizedKey": "oy",
+    "hash": "77f35f34d3581cf5736f0aa4a5b36b66",
+    "objectKey": "77f35f34d3581cf5736f0aa4a5b36b66",
+    "source": "static_catalog"
+  },
+  {
+    "text": "milk",
+    "mode": "default",
+    "normalizedKey": "milk",
+    "hash": "45615a0b98dadfec09e44fa3bf98a324",
+    "objectKey": "45615a0b98dadfec09e44fa3bf98a324",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ball",
+    "mode": "default",
+    "normalizedKey": "ball",
+    "hash": "879a0c5ac2876205e64322f75ab27eae",
+    "objectKey": "879a0c5ac2876205e64322f75ab27eae",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ll",
+    "mode": "default",
+    "normalizedKey": "ll",
+    "hash": "f9a9cca9e0dbf0fb3c8c3d75a2628278",
+    "objectKey": "f9a9cca9e0dbf0fb3c8c3d75a2628278",
+    "source": "static_catalog"
+  },
+  {
+    "text": "frog",
+    "mode": "default",
+    "normalizedKey": "frog",
+    "hash": "5fe2c429184856b3835a7ca2dd917ccc",
+    "objectKey": "5fe2c429184856b3835a7ca2dd917ccc",
+    "source": "static_catalog"
+  },
+  {
+    "text": "fish",
+    "mode": "default",
+    "normalizedKey": "fish",
+    "hash": "9e6d653c19b2b98b36514c4e68012077",
+    "objectKey": "9e6d653c19b2b98b36514c4e68012077",
+    "source": "static_catalog"
+  },
+  {
+    "text": "sh",
+    "mode": "default",
+    "normalizedKey": "sh",
+    "hash": "ab9344efa5e91d5cff9eb93af67e9d38",
+    "objectKey": "ab9344efa5e91d5cff9eb93af67e9d38",
+    "source": "static_catalog"
+  },
+  {
+    "text": "tree",
+    "mode": "default",
+    "normalizedKey": "tree",
+    "hash": "bafe142f196640b600adae867afee909",
+    "objectKey": "bafe142f196640b600adae867afee909",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ee",
+    "mode": "default",
+    "normalizedKey": "ee",
+    "hash": "348d0f25bcce5dd002b1cd9146a66313",
+    "objectKey": "348d0f25bcce5dd002b1cd9146a66313",
+    "source": "static_catalog"
+  },
+  {
+    "text": "book",
+    "mode": "default",
+    "normalizedKey": "book",
+    "hash": "a6bf737f53f13a6d258bc60e32583f4d",
+    "objectKey": "a6bf737f53f13a6d258bc60e32583f4d",
+    "source": "static_catalog"
+  },
+  {
+    "text": "oo",
+    "mode": "default",
+    "normalizedKey": "oo",
+    "hash": "f641ddd6cf6c9bfdfcce0cc6f61bbfeb",
+    "objectKey": "f641ddd6cf6c9bfdfcce0cc6f61bbfeb",
+    "source": "static_catalog"
+  },
+  {
+    "text": "cake",
+    "mode": "default",
+    "normalizedKey": "cake",
+    "hash": "ffc2d6827ca3b494a9eb014b28a54690",
+    "objectKey": "ffc2d6827ca3b494a9eb014b28a54690",
+    "source": "static_catalog"
+  },
+  {
+    "text": "kite",
+    "mode": "default",
+    "normalizedKey": "kite",
+    "hash": "6d5fd67783e76f4ed6865ca178459d69",
+    "objectKey": "6d5fd67783e76f4ed6865ca178459d69",
+    "source": "static_catalog"
+  },
+  {
+    "text": "moon",
+    "mode": "default",
+    "normalizedKey": "moon",
+    "hash": "c0169c435de93d765b593141789c49ba",
+    "objectKey": "c0169c435de93d765b593141789c49ba",
+    "source": "static_catalog"
+  },
+  {
+    "text": "star",
+    "mode": "default",
+    "normalizedKey": "star",
+    "hash": "e447f2ab559d9cce888c6121825c5961",
+    "objectKey": "e447f2ab559d9cce888c6121825c5961",
+    "source": "static_catalog"
+  },
+  {
+    "text": "jump",
+    "mode": "default",
+    "normalizedKey": "jump",
+    "hash": "ea7a71e7ec19b939620509dc6cac1faf",
+    "objectKey": "ea7a71e7ec19b939620509dc6cac1faf",
+    "source": "static_catalog"
+  },
+  {
+    "text": "drum",
+    "mode": "default",
+    "normalizedKey": "drum",
+    "hash": "443a5f724dd961d741aaffdcbfeb428e",
+    "objectKey": "443a5f724dd961d741aaffdcbfeb428e",
+    "source": "static_catalog"
+  },
+  {
+    "text": "leaf",
+    "mode": "default",
+    "normalizedKey": "leaf",
+    "hash": "807582c028069e77cd2c7be52734df77",
+    "objectKey": "807582c028069e77cd2c7be52734df77",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ea",
+    "mode": "default",
+    "normalizedKey": "ea",
+    "hash": "39b241f653c6c6a73cbd923e0eb4c11d",
+    "objectKey": "39b241f653c6c6a73cbd923e0eb4c11d",
+    "source": "static_catalog"
+  },
+  {
+    "text": "bird",
+    "mode": "default",
+    "normalizedKey": "bird",
+    "hash": "ebf94d2da0ddb6381107fe617498cab3",
+    "objectKey": "ebf94d2da0ddb6381107fe617498cab3",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ir",
+    "mode": "default",
+    "normalizedKey": "ir",
+    "hash": "ea31da7c593dd6ac64bca529881c5cfa",
+    "objectKey": "ea31da7c593dd6ac64bca529881c5cfa",
+    "source": "static_catalog"
+  },
+  {
+    "text": "hand",
+    "mode": "default",
+    "normalizedKey": "hand",
+    "hash": "2a21000759dacc08423f2ca1919ee51f",
+    "objectKey": "2a21000759dacc08423f2ca1919ee51f",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ship",
+    "mode": "default",
+    "normalizedKey": "ship",
+    "hash": "d7a8493960a292d70a70ed5514a49fc2",
+    "objectKey": "d7a8493960a292d70a70ed5514a49fc2",
+    "source": "static_catalog"
+  },
+  {
+    "text": "chair",
+    "mode": "default",
+    "normalizedKey": "chair",
+    "hash": "006d1d26b994d371ab99355cefbc63e7",
+    "objectKey": "006d1d26b994d371ab99355cefbc63e7",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ch",
+    "mode": "default",
+    "normalizedKey": "ch",
+    "hash": "04fb8072fe519481c1e90c92419c42e7",
+    "objectKey": "04fb8072fe519481c1e90c92419c42e7",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ai",
+    "mode": "default",
+    "normalizedKey": "ai",
+    "hash": "f4921fe00a58920dd966a93a6a1f5fee",
+    "objectKey": "f4921fe00a58920dd966a93a6a1f5fee",
+    "source": "static_catalog"
+  },
+  {
+    "text": "train",
+    "mode": "default",
+    "normalizedKey": "train",
+    "hash": "fac7bf42934b5ebe1fbd59b5fa652505",
+    "objectKey": "fac7bf42934b5ebe1fbd59b5fa652505",
+    "source": "static_catalog"
+  },
+  {
+    "text": "black",
+    "mode": "default",
+    "normalizedKey": "black",
+    "hash": "4853cdd4509d9f1f9103da9db0227ce9",
+    "objectKey": "4853cdd4509d9f1f9103da9db0227ce9",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ck",
+    "mode": "default",
+    "normalizedKey": "ck",
+    "hash": "7930eb966aa112ee38fa65f1bda35ba8",
+    "objectKey": "7930eb966aa112ee38fa65f1bda35ba8",
+    "source": "static_catalog"
+  },
+  {
+    "text": "cloud",
+    "mode": "default",
+    "normalizedKey": "cloud",
+    "hash": "71eee3f167256a8a61b5926216fb1d35",
+    "objectKey": "71eee3f167256a8a61b5926216fb1d35",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ou",
+    "mode": "default",
+    "normalizedKey": "ou",
+    "hash": "424504427d8c58406bbdbb936e86b3eb",
+    "objectKey": "424504427d8c58406bbdbb936e86b3eb",
+    "source": "static_catalog"
+  },
+  {
+    "text": "plant",
+    "mode": "default",
+    "normalizedKey": "plant",
+    "hash": "f989652429c035d56eec1d387def532c",
+    "objectKey": "f989652429c035d56eec1d387def532c",
+    "source": "static_catalog"
+  },
+  {
+    "text": "brush",
+    "mode": "default",
+    "normalizedKey": "brush",
+    "hash": "92f2fd045a58715927bb441e929787de",
+    "objectKey": "92f2fd045a58715927bb441e929787de",
+    "source": "static_catalog"
+  },
+  {
+    "text": "sheep",
+    "mode": "default",
+    "normalizedKey": "sheep",
+    "hash": "ee0ccaf16b81b5288c01344279e70ad6",
+    "objectKey": "ee0ccaf16b81b5288c01344279e70ad6",
+    "source": "static_catalog"
+  },
+  {
+    "text": "three",
+    "mode": "default",
+    "normalizedKey": "three",
+    "hash": "26b6629f850dd7602645719f32551ac6",
+    "objectKey": "26b6629f850dd7602645719f32551ac6",
+    "source": "static_catalog"
+  },
+  {
+    "text": "th",
+    "mode": "default",
+    "normalizedKey": "th",
+    "hash": "fa9b7707b923977beac7089012d05f08",
+    "objectKey": "fa9b7707b923977beac7089012d05f08",
+    "source": "static_catalog"
+  },
+  {
+    "text": "beach",
+    "mode": "default",
+    "normalizedKey": "beach",
+    "hash": "b819b430942123c58be01cc752c7e85e",
+    "objectKey": "b819b430942123c58be01cc752c7e85e",
+    "source": "static_catalog"
+  },
+  {
+    "text": "grape",
+    "mode": "default",
+    "normalizedKey": "grape",
+    "hash": "cb557e9174f54423e76aa7f755333056",
+    "objectKey": "cb557e9174f54423e76aa7f755333056",
+    "source": "static_catalog"
+  },
+  {
+    "text": "queen",
+    "mode": "default",
+    "normalizedKey": "queen",
+    "hash": "8a16970710fe6524e3da294c9b3a323c",
+    "objectKey": "8a16970710fe6524e3da294c9b3a323c",
+    "source": "static_catalog"
+  },
+  {
+    "text": "qu",
+    "mode": "default",
+    "normalizedKey": "qu",
+    "hash": "fa1e5b2d9b4fcab196b23db9ac848303",
+    "objectKey": "fa1e5b2d9b4fcab196b23db9ac848303",
+    "source": "static_catalog"
+  },
+  {
+    "text": "phone",
+    "mode": "default",
+    "normalizedKey": "phone",
+    "hash": "1c06b5eb50ae387fec35784908df990a",
+    "objectKey": "1c06b5eb50ae387fec35784908df990a",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ph",
+    "mode": "default",
+    "normalizedKey": "ph",
+    "hash": "1de069b900d4867d57373bca86e8c3eb",
+    "objectKey": "1de069b900d4867d57373bca86e8c3eb",
+    "source": "static_catalog"
+  },
+  {
+    "text": "snake",
+    "mode": "default",
+    "normalizedKey": "snake",
+    "hash": "0f9e1b3568025b8064c8480d62429a92",
+    "objectKey": "0f9e1b3568025b8064c8480d62429a92",
+    "source": "static_catalog"
+  },
+  {
+    "text": "knife",
+    "mode": "default",
+    "normalizedKey": "knife",
+    "hash": "9152a911b1f4054c4f89864f58eacda8",
+    "objectKey": "9152a911b1f4054c4f89864f58eacda8",
+    "source": "static_catalog"
+  },
+  {
+    "text": "kn",
+    "mode": "default",
+    "normalizedKey": "kn",
+    "hash": "5d8dc18e5badc5c2628c1a24504507df",
+    "objectKey": "5d8dc18e5badc5c2628c1a24504507df",
+    "source": "static_catalog"
+  },
+  {
+    "text": "school",
+    "mode": "default",
+    "normalizedKey": "school",
+    "hash": "cd7dcf4cc146d0e4d12e6bbb74506c9a",
+    "objectKey": "cd7dcf4cc146d0e4d12e6bbb74506c9a",
+    "source": "static_catalog"
+  },
+  {
+    "text": "balloon",
+    "mode": "default",
+    "normalizedKey": "balloon",
+    "hash": "d6e0b43ac03aa9e5c363cdf4fb6316a6",
+    "objectKey": "d6e0b43ac03aa9e5c363cdf4fb6316a6",
+    "source": "static_catalog"
+  },
+  {
+    "text": "bal",
+    "mode": "default",
+    "normalizedKey": "bal",
+    "hash": "d660d7995c28e6effc725bf63766b1f3",
+    "objectKey": "d660d7995c28e6effc725bf63766b1f3",
+    "source": "static_catalog"
+  },
+  {
+    "text": "loon",
+    "mode": "default",
+    "normalizedKey": "loon",
+    "hash": "8cbfc0021327d9a40a3f9145cfa22b7a",
+    "objectKey": "8cbfc0021327d9a40a3f9145cfa22b7a",
+    "source": "static_catalog"
+  },
+  {
+    "text": "picture",
+    "mode": "default",
+    "normalizedKey": "picture",
+    "hash": "4339a5b7a137b201981f5ef99f90e63d",
+    "objectKey": "4339a5b7a137b201981f5ef99f90e63d",
+    "source": "static_catalog"
+  },
+  {
+    "text": "pic",
+    "mode": "default",
+    "normalizedKey": "pic",
+    "hash": "96bbc93c6f70d68051ec3f2ffb6ac15d",
+    "objectKey": "96bbc93c6f70d68051ec3f2ffb6ac15d",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ture",
+    "mode": "default",
+    "normalizedKey": "ture",
+    "hash": "4c30722c3459932cf7aa568a6345e8bd",
+    "objectKey": "4c30722c3459932cf7aa568a6345e8bd",
+    "source": "static_catalog"
+  },
+  {
+    "text": "library",
+    "mode": "default",
+    "normalizedKey": "library",
+    "hash": "e7fec8a8e648d2cb51dc2f2410b6d4dd",
+    "objectKey": "e7fec8a8e648d2cb51dc2f2410b6d4dd",
+    "source": "static_catalog"
+  },
+  {
+    "text": "lib",
+    "mode": "default",
+    "normalizedKey": "lib",
+    "hash": "8432e160b03d6a87d8dc02b08fad377a",
+    "objectKey": "8432e160b03d6a87d8dc02b08fad377a",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ra",
+    "mode": "default",
+    "normalizedKey": "ra",
+    "hash": "cbed5288b34b7ad9559cbf1f41bd1d93",
+    "objectKey": "cbed5288b34b7ad9559cbf1f41bd1d93",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ry",
+    "mode": "default",
+    "normalizedKey": "ry",
+    "hash": "16289bb9f242e51be086bbb2f7507877",
+    "objectKey": "16289bb9f242e51be086bbb2f7507877",
+    "source": "static_catalog"
+  },
+  {
+    "text": "journey",
+    "mode": "default",
+    "normalizedKey": "journey",
+    "hash": "af0e6a5e37af497430d4fa2eeca02bdd",
+    "objectKey": "af0e6a5e37af497430d4fa2eeca02bdd",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ey",
+    "mode": "default",
+    "normalizedKey": "ey",
+    "hash": "27d4a758172e1676551a89318d5ed2fd",
+    "objectKey": "27d4a758172e1676551a89318d5ed2fd",
+    "source": "static_catalog"
+  },
+  {
+    "text": "jour",
+    "mode": "default",
+    "normalizedKey": "jour",
+    "hash": "e1a2035873d8840f8237e1b41a859a99",
+    "objectKey": "e1a2035873d8840f8237e1b41a859a99",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ney",
+    "mode": "default",
+    "normalizedKey": "ney",
+    "hash": "85912fc363886b9f9ade21d8edba6e5b",
+    "objectKey": "85912fc363886b9f9ade21d8edba6e5b",
+    "source": "static_catalog"
+  },
+  {
+    "text": "elephant",
+    "mode": "default",
+    "normalizedKey": "elephant",
+    "hash": "c60fb1ff0ce2569574d924f238df5515",
+    "objectKey": "c60fb1ff0ce2569574d924f238df5515",
+    "source": "static_catalog"
+  },
+  {
+    "text": "el",
+    "mode": "default",
+    "normalizedKey": "el",
+    "hash": "f0dae8f2239052f1d929f342751628e2",
+    "objectKey": "f0dae8f2239052f1d929f342751628e2",
+    "source": "static_catalog"
+  },
+  {
+    "text": "phant",
+    "mode": "default",
+    "normalizedKey": "phant",
+    "hash": "1b1c5630d368f097b9a99c06822d9aef",
+    "objectKey": "1b1c5630d368f097b9a99c06822d9aef",
+    "source": "static_catalog"
+  },
+  {
+    "text": "mountain",
+    "mode": "default",
+    "normalizedKey": "mountain",
+    "hash": "de691639a2ac395d995d9e76040062ab",
+    "objectKey": "de691639a2ac395d995d9e76040062ab",
+    "source": "static_catalog"
+  },
+  {
+    "text": "moun",
+    "mode": "default",
+    "normalizedKey": "moun",
+    "hash": "b99d4c63078e78b146f92832cb91f359",
+    "objectKey": "b99d4c63078e78b146f92832cb91f359",
+    "source": "static_catalog"
+  },
+  {
+    "text": "tain",
+    "mode": "default",
+    "normalizedKey": "tain",
+    "hash": "09b4682060a911409ae27ec18cfe1234",
+    "objectKey": "09b4682060a911409ae27ec18cfe1234",
+    "source": "static_catalog"
+  },
+  {
+    "text": "computer",
+    "mode": "default",
+    "normalizedKey": "computer",
+    "hash": "5b52333363bc8a6a72e74f47b39e422d",
+    "objectKey": "5b52333363bc8a6a72e74f47b39e422d",
+    "source": "static_catalog"
+  },
+  {
+    "text": "com",
+    "mode": "default",
+    "normalizedKey": "com",
+    "hash": "084412564d7701a5eb4d3c761e1ea064",
+    "objectKey": "084412564d7701a5eb4d3c761e1ea064",
+    "source": "static_catalog"
+  },
+  {
+    "text": "pu",
+    "mode": "default",
+    "normalizedKey": "pu",
+    "hash": "a1860c4a1911748adc62e6099fd32c6f",
+    "objectKey": "a1860c4a1911748adc62e6099fd32c6f",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ter",
+    "mode": "default",
+    "normalizedKey": "ter",
+    "hash": "b2f1a8453250deb372cc515e2211185c",
+    "objectKey": "b2f1a8453250deb372cc515e2211185c",
+    "source": "static_catalog"
+  },
+  {
+    "text": "vacation",
+    "mode": "default",
+    "normalizedKey": "vacation",
+    "hash": "b7824524b56531644ef284d28ff69d35",
+    "objectKey": "b7824524b56531644ef284d28ff69d35",
+    "source": "static_catalog"
+  },
+  {
+    "text": "tion",
+    "mode": "default",
+    "normalizedKey": "tion",
+    "hash": "993e9dda65b77e18fd5bf7849042a76e",
+    "objectKey": "993e9dda65b77e18fd5bf7849042a76e",
+    "source": "static_catalog"
+  },
+  {
+    "text": "va",
+    "mode": "default",
+    "normalizedKey": "va",
+    "hash": "1c55b9735a75ea11f1ebc6854c234d0f",
+    "objectKey": "1c55b9735a75ea11f1ebc6854c234d0f",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ca",
+    "mode": "default",
+    "normalizedKey": "ca",
+    "hash": "10f5f1d15e66576f1e7385ec2b09d157",
+    "objectKey": "10f5f1d15e66576f1e7385ec2b09d157",
+    "source": "static_catalog"
+  },
+  {
+    "text": "language",
+    "mode": "default",
+    "normalizedKey": "language",
+    "hash": "8e1f76f6fe5ad1f5540edd051fdc358d",
+    "objectKey": "8e1f76f6fe5ad1f5540edd051fdc358d",
+    "source": "static_catalog"
+  },
+  {
+    "text": "lan",
+    "mode": "default",
+    "normalizedKey": "lan",
+    "hash": "facd5d25d03e2070ed6b45aef97251f0",
+    "objectKey": "facd5d25d03e2070ed6b45aef97251f0",
+    "source": "static_catalog"
+  },
+  {
+    "text": "guage",
+    "mode": "default",
+    "normalizedKey": "guage",
+    "hash": "a79d51dc65adda2dee0cda7000d650a1",
+    "objectKey": "a79d51dc65adda2dee0cda7000d650a1",
+    "source": "static_catalog"
+  },
+  {
+    "text": "because",
+    "mode": "default",
+    "normalizedKey": "because",
+    "hash": "0ab8d0f58cc7674b0e9180f135ca906a",
+    "objectKey": "0ab8d0f58cc7674b0e9180f135ca906a",
+    "source": "static_catalog"
+  },
+  {
+    "text": "au",
+    "mode": "default",
+    "normalizedKey": "au",
+    "hash": "a78c01b103dfa327e3666333be66286e",
+    "objectKey": "a78c01b103dfa327e3666333be66286e",
+    "source": "static_catalog"
+  },
+  {
+    "text": "be",
+    "mode": "default",
+    "normalizedKey": "be",
+    "hash": "2b07b906a13b0c7a43cacc95bdb3c56c",
+    "objectKey": "2b07b906a13b0c7a43cacc95bdb3c56c",
+    "source": "static_catalog"
+  },
+  {
+    "text": "cause",
+    "mode": "default",
+    "normalizedKey": "cause",
+    "hash": "674e6dac1588dc84e29d36aaa8c000c9",
+    "objectKey": "674e6dac1588dc84e29d36aaa8c000c9",
+    "source": "static_catalog"
+  },
+  {
+    "text": "beautiful",
+    "mode": "default",
+    "normalizedKey": "beautiful",
+    "hash": "e3f32ae6a738a812ef2eab9187e371bf",
+    "objectKey": "e3f32ae6a738a812ef2eab9187e371bf",
+    "source": "static_catalog"
+  },
+  {
+    "text": "eau",
+    "mode": "default",
+    "normalizedKey": "eau",
+    "hash": "61f1b783a79f2965ffee2e74039eb9d3",
+    "objectKey": "61f1b783a79f2965ffee2e74039eb9d3",
+    "source": "static_catalog"
+  },
+  {
+    "text": "beau",
+    "mode": "default",
+    "normalizedKey": "beau",
+    "hash": "462f5d624ebb5d9268ab3725b7d92647",
+    "objectKey": "462f5d624ebb5d9268ab3725b7d92647",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ti",
+    "mode": "default",
+    "normalizedKey": "ti",
+    "hash": "9b26a0a2066821381bb93ebbe562ad84",
+    "objectKey": "9b26a0a2066821381bb93ebbe562ad84",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ful",
+    "mode": "default",
+    "normalizedKey": "ful",
+    "hash": "9d49e5ce7ce2e036d1a106d1ca2b3449",
+    "objectKey": "9d49e5ce7ce2e036d1a106d1ca2b3449",
+    "source": "static_catalog"
+  },
+  {
+    "text": "knowledge",
+    "mode": "default",
+    "normalizedKey": "knowledge",
+    "hash": "4af855ca3f9bf79f8dd7bb701822940d",
+    "objectKey": "4af855ca3f9bf79f8dd7bb701822940d",
+    "source": "static_catalog"
+  },
+  {
+    "text": "dge",
+    "mode": "default",
+    "normalizedKey": "dge",
+    "hash": "da8af6ce11db661c58fff7d86dd66e8f",
+    "objectKey": "da8af6ce11db661c58fff7d86dd66e8f",
+    "source": "static_catalog"
+  },
+  {
+    "text": "know",
+    "mode": "default",
+    "normalizedKey": "know",
+    "hash": "0d97f6c848160959d9f39417e1f64bb1",
+    "objectKey": "0d97f6c848160959d9f39417e1f64bb1",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ledge",
+    "mode": "default",
+    "normalizedKey": "ledge",
+    "hash": "a48285617ed4b51382eede3fd5c39c1d",
+    "objectKey": "a48285617ed4b51382eede3fd5c39c1d",
+    "source": "static_catalog"
+  },
+  {
+    "text": "science",
+    "mode": "default",
+    "normalizedKey": "science",
+    "hash": "68a1be246555c0dcecbfce81a3f26303",
+    "objectKey": "68a1be246555c0dcecbfce81a3f26303",
+    "source": "static_catalog"
+  },
+  {
+    "text": "sci",
+    "mode": "default",
+    "normalizedKey": "sci",
+    "hash": "9d8c3e733a854b70113ce203bc27e0ec",
+    "objectKey": "9d8c3e733a854b70113ce203bc27e0ec",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ence",
+    "mode": "default",
+    "normalizedKey": "ence",
+    "hash": "38521d79045c0c8efb2b863ca861837e",
+    "objectKey": "38521d79045c0c8efb2b863ca861837e",
+    "source": "static_catalog"
+  },
+  {
+    "text": "friendship",
+    "mode": "default",
+    "normalizedKey": "friendship",
+    "hash": "5b085b985d0a40cc54f7614f869c47a8",
+    "objectKey": "5b085b985d0a40cc54f7614f869c47a8",
+    "source": "static_catalog"
+  },
+  {
+    "text": "ie",
+    "mode": "default",
+    "normalizedKey": "ie",
+    "hash": "c947bc261da11b858bbc2ffd3f3062c0",
+    "objectKey": "c947bc261da11b858bbc2ffd3f3062c0",
+    "source": "static_catalog"
+  },
+  {
+    "text": "friend",
+    "mode": "default",
+    "normalizedKey": "friend",
+    "hash": "fface83ba30dcc29786b5e5b04924df1",
+    "objectKey": "fface83ba30dcc29786b5e5b04924df1",
+    "source": "static_catalog"
+  },
+  {
     "text": "A for Apple",
     "mode": "default",
     "normalizedKey": "a for apple",
@@ -2200,14 +3088,6 @@
     "source": "study_zone_play"
   },
   {
-    "text": "Three",
-    "mode": "default",
-    "normalizedKey": "three",
-    "hash": "c4ed0bca83de07365b9cd7928870987a",
-    "objectKey": "c4ed0bca83de07365b9cd7928870987a",
-    "source": "study_zone_play"
-  },
-  {
     "text": "Four",
     "mode": "default",
     "normalizedKey": "four",
@@ -2408,14 +3288,6 @@
     "source": "study_zone_play"
   },
   {
-    "text": "Black",
-    "mode": "default",
-    "normalizedKey": "black",
-    "hash": "a46b93be5e7c1758232856726a712f79",
-    "objectKey": "a46b93be5e7c1758232856726a712f79",
-    "source": "study_zone_play"
-  },
-  {
     "text": "White",
     "mode": "default",
     "normalizedKey": "white",
@@ -2456,14 +3328,6 @@
     "source": "study_zone_play"
   },
   {
-    "text": "Star",
-    "mode": "default",
-    "normalizedKey": "star",
-    "hash": "11fbba8c214a39a02aa2e616c2ac5b0b",
-    "objectKey": "11fbba8c214a39a02aa2e616c2ac5b0b",
-    "source": "study_zone_play"
-  },
-  {
     "text": "Heart",
     "mode": "default",
     "normalizedKey": "heart",
@@ -2485,22 +3349,6 @@
     "normalizedKey": "oval",
     "hash": "05cd7f95149de60beb9247291af317cf",
     "objectKey": "05cd7f95149de60beb9247291af317cf",
-    "source": "study_zone_play"
-  },
-  {
-    "text": "Dog",
-    "mode": "default",
-    "normalizedKey": "dog",
-    "hash": "8d20c253609df6d18f07b05f5495b336",
-    "objectKey": "8d20c253609df6d18f07b05f5495b336",
-    "source": "study_zone_play"
-  },
-  {
-    "text": "Cat",
-    "mode": "default",
-    "normalizedKey": "cat",
-    "hash": "89f124f692c6665d8ef2b2290339ac8e",
-    "objectKey": "89f124f692c6665d8ef2b2290339ac8e",
     "source": "study_zone_play"
   },
   {
@@ -2536,14 +3384,6 @@
     "source": "study_zone_play"
   },
   {
-    "text": "Elephant",
-    "mode": "default",
-    "normalizedKey": "elephant",
-    "hash": "5f007298fc63b1332dd1554f4a82aa01",
-    "objectKey": "5f007298fc63b1332dd1554f4a82aa01",
-    "source": "study_zone_play"
-  },
-  {
     "text": "Monkey",
     "mode": "default",
     "normalizedKey": "monkey",
@@ -2565,22 +3405,6 @@
     "normalizedKey": "rabbit",
     "hash": "240df6001100820876b8a6fa980651b7",
     "objectKey": "240df6001100820876b8a6fa980651b7",
-    "source": "study_zone_play"
-  },
-  {
-    "text": "Fish",
-    "mode": "default",
-    "normalizedKey": "fish",
-    "hash": "ee191dc9d619d903cda92f89a2380bf3",
-    "objectKey": "ee191dc9d619d903cda92f89a2380bf3",
-    "source": "study_zone_play"
-  },
-  {
-    "text": "Bird",
-    "mode": "default",
-    "normalizedKey": "bird",
-    "hash": "4cfddbf9523b59c5d5d2bd393c626a24",
-    "objectKey": "4cfddbf9523b59c5d5d2bd393c626a24",
     "source": "study_zone_play"
   },
   {
@@ -2645,14 +3469,6 @@
     "normalizedKey": "bread",
     "hash": "7135872aaaec0a1749c9f6cefdcd9b05",
     "objectKey": "7135872aaaec0a1749c9f6cefdcd9b05",
-    "source": "study_zone_play"
-  },
-  {
-    "text": "Milk",
-    "mode": "default",
-    "normalizedKey": "milk",
-    "hash": "4c45cee7ed6db95d990c978d15484ac3",
-    "objectKey": "4c45cee7ed6db95d990c978d15484ac3",
     "source": "study_zone_play"
   },
   {
@@ -2752,36 +3568,20 @@
     "source": "study_zone_play"
   },
   {
-    "text": "Addition means putting numbers together to find the total.\nWhen you add, you combine two groups: 2 + 3 means 2 things and 3 more.\nThe '+' sign means add. The '=' sign shows the answer.\nExample: 2 + 3 = 5.",
-    "mode": "default",
-    "normalizedKey": "addition means putting numbers together to find the total.\nwhen you add, you combine two groups: 2 + 3 means 2 things and 3 more.\nthe '+' sign means add. the '=' sign shows the answer.\nexample: 2 + 3 = 5.",
-    "hash": "062bcc9ecdb4be1c3a5e666ed6f93a41",
-    "objectKey": "062bcc9ecdb4be1c3a5e666ed6f93a41",
-    "source": "study_zone_topic_notes"
-  },
-  {
     "text": "Addition means putting numbers together to find the total. When you add, you combine two groups: 2 + 3 means 2 things and 3 more. The '+' sign means add. The '=' sign shows the answer. Example: 2 + 3 = 5.",
     "mode": "default",
     "normalizedKey": "addition means putting numbers together to find the total. when you add, you combine two groups: 2 + 3 means 2 things and 3 more. the '+' sign means add. the '=' sign shows the answer. example: 2 + 3 = 5.",
     "hash": "8f86b3db27329121429ea0e2e3dd91d4",
     "objectKey": "8f86b3db27329121429ea0e2e3dd91d4",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain addition simply for a class 1-5 child with one fun real-life example.",
-    "mode": "default",
-    "normalizedKey": "explain addition simply for a class 1-5 child with one fun real-life example.",
-    "hash": "e9b55f203823a47fa643b47d59dcad65",
-    "objectKey": "e9b55f203823a47fa643b47d59dcad65",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Subtraction means taking some away from a group to find what is left.\nThe '−' sign means subtract (minus).\nExample: If you have 8 apples and eat 3, you have 8 − 3 = 5 left.\nThe answer in subtraction is called the difference.",
-    "mode": "default",
-    "normalizedKey": "subtraction means taking some away from a group to find what is left.\nthe '−' sign means subtract (minus).\nexample: if you have 8 apples and eat 3, you have 8 − 3 = 5 left.\nthe answer in subtraction is called the difference.",
-    "hash": "fe8d965590dfa8bbd0f5dbf781584ddb",
-    "objectKey": "fe8d965590dfa8bbd0f5dbf781584ddb",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Addition means putting numbers together to find the total.",
+    "mode": "default",
+    "normalizedKey": "addition means putting numbers together to find the total.",
+    "hash": "8f18ef76944ad813a7fb8c0f3a55cd82",
+    "objectKey": "8f18ef76944ad813a7fb8c0f3a55cd82",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Subtraction means taking some away from a group to find what is left. The '−' sign means subtract (minus). Example: If you have 8 apples and eat 3, you have 8 − 3 = 5 left. The answer in subtraction is called the difference.",
@@ -2789,23 +3589,15 @@
     "normalizedKey": "subtraction means taking some away from a group to find what is left. the '−' sign means subtract (minus). example: if you have 8 apples and eat 3, you have 8 − 3 = 5 left. the answer in subtraction is called the difference.",
     "hash": "7525cc38cd2340901a2b587ddff505a1",
     "objectKey": "7525cc38cd2340901a2b587ddff505a1",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain subtraction for a class 1-3 child using a simple take-away story.",
-    "mode": "default",
-    "normalizedKey": "explain subtraction for a class 1-3 child using a simple take-away story.",
-    "hash": "452eee1583f6c569f031dd4dc02af11c",
-    "objectKey": "452eee1583f6c569f031dd4dc02af11c",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Multiplication is a quick way to add the same number many times.\n3 × 4 means: add 3 four times = 3 + 3 + 3 + 3 = 12.\nThe '×' sign means multiply.\nLearning times tables makes multiplication faster.",
-    "mode": "default",
-    "normalizedKey": "multiplication is a quick way to add the same number many times.\n3 × 4 means: add 3 four times = 3 + 3 + 3 + 3 = 12.\nthe '×' sign means multiply.\nlearning times tables makes multiplication faster.",
-    "hash": "0dfd19096c7d9ed4598f1d2c36ffdc00",
-    "objectKey": "0dfd19096c7d9ed4598f1d2c36ffdc00",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Subtraction means taking some away from a group to find what is left.",
+    "mode": "default",
+    "normalizedKey": "subtraction means taking some away from a group to find what is left.",
+    "hash": "c1408b58783a6dcc50fff1d81731895e",
+    "objectKey": "c1408b58783a6dcc50fff1d81731895e",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Multiplication is a quick way to add the same number many times. 3 × 4 means: add 3 four times = 3 + 3 + 3 + 3 = 12. The '×' sign means multiply. Learning times tables makes multiplication faster.",
@@ -2813,23 +3605,15 @@
     "normalizedKey": "multiplication is a quick way to add the same number many times. 3 × 4 means: add 3 four times = 3 + 3 + 3 + 3 = 12. the '×' sign means multiply. learning times tables makes multiplication faster.",
     "hash": "0591af5962776005ea7ebb63f93b7364",
     "objectKey": "0591af5962776005ea7ebb63f93b7364",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain multiplication as repeated addition for a class 2-4 child with one example.",
-    "mode": "default",
-    "normalizedKey": "explain multiplication as repeated addition for a class 2-4 child with one example.",
-    "hash": "83aff2d03e81b979a2e2a1c21bf92c9c",
-    "objectKey": "83aff2d03e81b979a2e2a1c21bf92c9c",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Division means sharing equally or splitting into equal groups.\n12 ÷ 3 means: share 12 things into 3 equal groups → 4 in each group.\nThe '÷' sign means divide.\nDivision is the opposite of multiplication.",
-    "mode": "default",
-    "normalizedKey": "division means sharing equally or splitting into equal groups.\n12 ÷ 3 means: share 12 things into 3 equal groups → 4 in each group.\nthe '÷' sign means divide.\ndivision is the opposite of multiplication.",
-    "hash": "a589cd2f5106c3943bf2223f302d2042",
-    "objectKey": "a589cd2f5106c3943bf2223f302d2042",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Multiplication is a quick way to add the same number many times.",
+    "mode": "default",
+    "normalizedKey": "multiplication is a quick way to add the same number many times.",
+    "hash": "3e63f3ea6377e0b521c3540351296577",
+    "objectKey": "3e63f3ea6377e0b521c3540351296577",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Division means sharing equally or splitting into equal groups. 12 ÷ 3 means: share 12 things into 3 equal groups → 4 in each group. The '÷' sign means divide. Division is the opposite of multiplication.",
@@ -2837,23 +3621,15 @@
     "normalizedKey": "division means sharing equally or splitting into equal groups. 12 ÷ 3 means: share 12 things into 3 equal groups → 4 in each group. the '÷' sign means divide. division is the opposite of multiplication.",
     "hash": "b7beb9f77ff4e4edd48cdc891e685986",
     "objectKey": "b7beb9f77ff4e4edd48cdc891e685986",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain division as equal sharing for a class 2-4 child with a sweets-sharing example.",
-    "mode": "default",
-    "normalizedKey": "explain division as equal sharing for a class 2-4 child with a sweets-sharing example.",
-    "hash": "74cad20c85f4d1031d2d24b6e8138bd4",
-    "objectKey": "74cad20c85f4d1031d2d24b6e8138bd4",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "A fraction shows part of a whole.\nIf a pizza is cut into 4 equal pieces and you eat 1, you ate 1/4 of it.\nThe top number (numerator) = how many parts you have.\nThe bottom number (denominator) = total equal parts the whole is divided into.",
-    "mode": "default",
-    "normalizedKey": "a fraction shows part of a whole.\nif a pizza is cut into 4 equal pieces and you eat 1, you ate 1/4 of it.\nthe top number (numerator) = how many parts you have.\nthe bottom number (denominator) = total equal parts the whole is divided into.",
-    "hash": "e396b0f8ad8f3a19f22d86a3d3f7e337",
-    "objectKey": "e396b0f8ad8f3a19f22d86a3d3f7e337",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Division means sharing equally or splitting into equal groups.",
+    "mode": "default",
+    "normalizedKey": "division means sharing equally or splitting into equal groups.",
+    "hash": "98702eed75637e4fa47f130c89ffabe9",
+    "objectKey": "98702eed75637e4fa47f130c89ffabe9",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "A fraction shows part of a whole. If a pizza is cut into 4 equal pieces and you eat 1, you ate 1/4 of it. The top number (numerator) = how many parts you have. The bottom number (denominator) = total equal parts the whole is divided into.",
@@ -2861,23 +3637,15 @@
     "normalizedKey": "a fraction shows part of a whole. if a pizza is cut into 4 equal pieces and you eat 1, you ate 1/4 of it. the top number (numerator) = how many parts you have. the bottom number (denominator) = total equal parts the whole is divided into.",
     "hash": "a3254f53eff0e3941a3ca2dd16a9f328",
     "objectKey": "a3254f53eff0e3941a3ca2dd16a9f328",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain fractions using a pizza or chocolate example for a class 3-5 child.",
-    "mode": "default",
-    "normalizedKey": "explain fractions using a pizza or chocolate example for a class 3-5 child.",
-    "hash": "7ceff8c685e1ea41496d950e21e3eaad",
-    "objectKey": "7ceff8c685e1ea41496d950e21e3eaad",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Shapes are everywhere around us.\nA circle has no corners — like a wheel.\nA square has 4 equal sides and 4 corners — like a dice face.\nA triangle has 3 sides and 3 corners.\nA rectangle has 4 sides — opposite sides are equal — like a book cover.",
-    "mode": "default",
-    "normalizedKey": "shapes are everywhere around us.\na circle has no corners — like a wheel.\na square has 4 equal sides and 4 corners — like a dice face.\na triangle has 3 sides and 3 corners.\na rectangle has 4 sides — opposite sides are equal — like a book cover.",
-    "hash": "5a93f2a6f3c88d92af7a967b7fe7477f",
-    "objectKey": "5a93f2a6f3c88d92af7a967b7fe7477f",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "A fraction shows part of a whole.",
+    "mode": "default",
+    "normalizedKey": "a fraction shows part of a whole.",
+    "hash": "8812ff01f08cb51c0647659c3fcd59e9",
+    "objectKey": "8812ff01f08cb51c0647659c3fcd59e9",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Shapes are everywhere around us. A circle has no corners — like a wheel. A square has 4 equal sides and 4 corners — like a dice face. A triangle has 3 sides and 3 corners. A rectangle has 4 sides — opposite sides are equal — like a book cover.",
@@ -2885,23 +3653,15 @@
     "normalizedKey": "shapes are everywhere around us. a circle has no corners — like a wheel. a square has 4 equal sides and 4 corners — like a dice face. a triangle has 3 sides and 3 corners. a rectangle has 4 sides — opposite sides are equal — like a book cover.",
     "hash": "9667eead56fb8efcbaa62c4ac496248a",
     "objectKey": "9667eead56fb8efcbaa62c4ac496248a",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Describe the 4 basic 2D shapes with one everyday example each for a class 1-3 child.",
-    "mode": "default",
-    "normalizedKey": "describe the 4 basic 2d shapes with one everyday example each for a class 1-3 child.",
-    "hash": "e0d49f77fe6ef65bfad37467368ecdbb",
-    "objectKey": "e0d49f77fe6ef65bfad37467368ecdbb",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "A clock shows us what time it is.\nThe short hand shows the hour. The long hand shows the minutes.\nThere are 24 hours in a day, 7 days in a week, and 12 months in a year.\nMonths: January, February, March, April, May, June, July, August, September, October, November, December.",
-    "mode": "default",
-    "normalizedKey": "a clock shows us what time it is.\nthe short hand shows the hour. the long hand shows the minutes.\nthere are 24 hours in a day, 7 days in a week, and 12 months in a year.\nmonths: january, february, march, april, may, june, july, august, september, october, november, december.",
-    "hash": "badf7190f7a757ab9ac3b6f82eb89ca3",
-    "objectKey": "badf7190f7a757ab9ac3b6f82eb89ca3",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Shapes are everywhere around us.",
+    "mode": "default",
+    "normalizedKey": "shapes are everywhere around us.",
+    "hash": "48be1fc84f36e3d99eae72c421f08b03",
+    "objectKey": "48be1fc84f36e3d99eae72c421f08b03",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "A clock shows us what time it is. The short hand shows the hour. The long hand shows the minutes. There are 24 hours in a day, 7 days in a week, and 12 months in a year. Months: January, February, March, April, May, June, July, August, September, October, November, December.",
@@ -2909,23 +3669,15 @@
     "normalizedKey": "a clock shows us what time it is. the short hand shows the hour. the long hand shows the minutes. there are 24 hours in a day, 7 days in a week, and 12 months in a year. months: january, february, march, april, may, june, july, august, september, october, november, december.",
     "hash": "3325d27408b7b3253a637f9f3847f6e9",
     "objectKey": "3325d27408b7b3253a637f9f3847f6e9",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain how to read a clock and name the days of the week for a class 1-3 child.",
-    "mode": "default",
-    "normalizedKey": "explain how to read a clock and name the days of the week for a class 1-3 child.",
-    "hash": "ee5768ed27b188fc2c2cb286869acd1a",
-    "objectKey": "ee5768ed27b188fc2c2cb286869acd1a",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Plants have several main parts:\nRoots — hold the plant in soil and drink up water.\nStem — carries water from roots to leaves.\nLeaves — make food for the plant using sunlight (photosynthesis).\nFlower — makes seeds so new plants can grow.",
-    "mode": "default",
-    "normalizedKey": "plants have several main parts:\nroots — hold the plant in soil and drink up water.\nstem — carries water from roots to leaves.\nleaves — make food for the plant using sunlight (photosynthesis).\nflower — makes seeds so new plants can grow.",
-    "hash": "0d549ca928d80461c5cbc7de67b2f821",
-    "objectKey": "0d549ca928d80461c5cbc7de67b2f821",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "A clock shows us what time it is.",
+    "mode": "default",
+    "normalizedKey": "a clock shows us what time it is.",
+    "hash": "2a7875afbab9567dbe2a07bbf666864b",
+    "objectKey": "2a7875afbab9567dbe2a07bbf666864b",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Plants have several main parts: Roots — hold the plant in soil and drink up water. Stem — carries water from roots to leaves. Leaves — make food for the plant using sunlight (photosynthesis). Flower — makes seeds so new plants can grow.",
@@ -2933,23 +3685,15 @@
     "normalizedKey": "plants have several main parts: roots — hold the plant in soil and drink up water. stem — carries water from roots to leaves. leaves — make food for the plant using sunlight (photosynthesis). flower — makes seeds so new plants can grow.",
     "hash": "192b0d45f17cdd6dd827c5e7fbd9850f",
     "objectKey": "192b0d45f17cdd6dd827c5e7fbd9850f",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "List the main parts of a plant and what each one does, for a class 1-3 child.",
-    "mode": "default",
-    "normalizedKey": "list the main parts of a plant and what each one does, for a class 1-3 child.",
-    "hash": "8c38c71875705d99652be0ee6f565705",
-    "objectKey": "8c38c71875705d99652be0ee6f565705",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Animals live in different places called habitats.\nPet animals (dog, cat) live with us at home.\nWild animals (lion, elephant) live in forests or jungles.\nFarm animals (cow, hen) live on farms.\nWater animals (fish, dolphin) live in rivers, lakes or seas.",
-    "mode": "default",
-    "normalizedKey": "animals live in different places called habitats.\npet animals (dog, cat) live with us at home.\nwild animals (lion, elephant) live in forests or jungles.\nfarm animals (cow, hen) live on farms.\nwater animals (fish, dolphin) live in rivers, lakes or seas.",
-    "hash": "8d0eb6475fb20408df45c497976c1cd1",
-    "objectKey": "8d0eb6475fb20408df45c497976c1cd1",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Plants have several main parts:",
+    "mode": "default",
+    "normalizedKey": "plants have several main parts:",
+    "hash": "727e0460beae97dc9e655ecd6408617e",
+    "objectKey": "727e0460beae97dc9e655ecd6408617e",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Animals live in different places called habitats. Pet animals (dog, cat) live with us at home. Wild animals (lion, elephant) live in forests or jungles. Farm animals (cow, hen) live on farms. Water animals (fish, dolphin) live in rivers, lakes or seas.",
@@ -2957,23 +3701,15 @@
     "normalizedKey": "animals live in different places called habitats. pet animals (dog, cat) live with us at home. wild animals (lion, elephant) live in forests or jungles. farm animals (cow, hen) live on farms. water animals (fish, dolphin) live in rivers, lakes or seas.",
     "hash": "b03b1d1e19c693ed8a38ffd80a7aa9f2",
     "objectKey": "b03b1d1e19c693ed8a38ffd80a7aa9f2",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain four types of animals with two examples each, for a class 1-3 child.",
-    "mode": "default",
-    "normalizedKey": "explain four types of animals with two examples each, for a class 1-3 child.",
-    "hash": "b4f7c186ddc6ce7c57287bf4622f15e1",
-    "objectKey": "b4f7c186ddc6ce7c57287bf4622f15e1",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Everything around us is made of matter.\nMatter has three main states: solid, liquid, and gas.\nA solid (like a stone) keeps its own shape.\nA liquid (like water) takes the shape of its container.\nA gas (like air) spreads out and fills everywhere.",
-    "mode": "default",
-    "normalizedKey": "everything around us is made of matter.\nmatter has three main states: solid, liquid, and gas.\na solid (like a stone) keeps its own shape.\na liquid (like water) takes the shape of its container.\na gas (like air) spreads out and fills everywhere.",
-    "hash": "1628e115d57d9a394be0624e637b919c",
-    "objectKey": "1628e115d57d9a394be0624e637b919c",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Animals live in different places called habitats.",
+    "mode": "default",
+    "normalizedKey": "animals live in different places called habitats.",
+    "hash": "57ec51971a77b895a3dda5ad0bc8671f",
+    "objectKey": "57ec51971a77b895a3dda5ad0bc8671f",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Everything around us is made of matter. Matter has three main states: solid, liquid, and gas. A solid (like a stone) keeps its own shape. A liquid (like water) takes the shape of its container. A gas (like air) spreads out and fills everywhere.",
@@ -2981,23 +3717,15 @@
     "normalizedKey": "everything around us is made of matter. matter has three main states: solid, liquid, and gas. a solid (like a stone) keeps its own shape. a liquid (like water) takes the shape of its container. a gas (like air) spreads out and fills everywhere.",
     "hash": "1f52548adc2442574b359a7b8264fac0",
     "objectKey": "1f52548adc2442574b359a7b8264fac0",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain solid, liquid and gas with one everyday example each, for a class 3-5 child.",
-    "mode": "default",
-    "normalizedKey": "explain solid, liquid and gas with one everyday example each, for a class 3-5 child.",
-    "hash": "a25f2c95e8210b798165268276190c0d",
-    "objectKey": "a25f2c95e8210b798165268276190c0d",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Our body has many important parts.\nHead — has brain, eyes, ears, nose and mouth.\nArms and hands — used for holding, writing and eating.\nLegs and feet — used for walking, running and jumping.\nWe must take care of our body by eating well, exercising and sleeping.",
-    "mode": "default",
-    "normalizedKey": "our body has many important parts.\nhead — has brain, eyes, ears, nose and mouth.\narms and hands — used for holding, writing and eating.\nlegs and feet — used for walking, running and jumping.\nwe must take care of our body by eating well, exercising and sleeping.",
-    "hash": "e55d1d743598ad5552cf54402de5135b",
-    "objectKey": "e55d1d743598ad5552cf54402de5135b",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Everything around us is made of matter.",
+    "mode": "default",
+    "normalizedKey": "everything around us is made of matter.",
+    "hash": "4b9c76feb2981df7bfe235369db2bc3f",
+    "objectKey": "4b9c76feb2981df7bfe235369db2bc3f",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Our body has many important parts. Head — has brain, eyes, ears, nose and mouth. Arms and hands — used for holding, writing and eating. Legs and feet — used for walking, running and jumping. We must take care of our body by eating well, exercising and sleeping.",
@@ -3005,23 +3733,15 @@
     "normalizedKey": "our body has many important parts. head — has brain, eyes, ears, nose and mouth. arms and hands — used for holding, writing and eating. legs and feet — used for walking, running and jumping. we must take care of our body by eating well, exercising and sleeping.",
     "hash": "4c33d477f2fa805fceb21994e4b55bbd",
     "objectKey": "4c33d477f2fa805fceb21994e4b55bbd",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Name the main body parts and their uses for a class 1-3 child.",
-    "mode": "default",
-    "normalizedKey": "name the main body parts and their uses for a class 1-3 child.",
-    "hash": "d1d0ffe0a9cbc6d11341422085f22641",
-    "objectKey": "d1d0ffe0a9cbc6d11341422085f22641",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold.\nSeasons are longer changes: Summer (hot), Winter (cold), Monsoon/Rainy, Autumn, Spring.\nIndia mainly has 3 seasons: summer, winter and rainy.\nWe change our clothes and activities based on the weather.",
-    "mode": "default",
-    "normalizedKey": "weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold.\nseasons are longer changes: summer (hot), winter (cold), monsoon/rainy, autumn, spring.\nindia mainly has 3 seasons: summer, winter and rainy.\nwe change our clothes and activities based on the weather.",
-    "hash": "152c54f37fcd9f3412535edfcb9e8ac2",
-    "objectKey": "152c54f37fcd9f3412535edfcb9e8ac2",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Our body has many important parts.",
+    "mode": "default",
+    "normalizedKey": "our body has many important parts.",
+    "hash": "f31967d666bdc70171ef54ce944b5dcd",
+    "objectKey": "f31967d666bdc70171ef54ce944b5dcd",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold. Seasons are longer changes: Summer (hot), Winter (cold), Monsoon/Rainy, Autumn, Spring. India mainly has 3 seasons: summer, winter and rainy. We change our clothes and activities based on the weather.",
@@ -3029,23 +3749,15 @@
     "normalizedKey": "weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold. seasons are longer changes: summer (hot), winter (cold), monsoon/rainy, autumn, spring. india mainly has 3 seasons: summer, winter and rainy. we change our clothes and activities based on the weather.",
     "hash": "66ed4efffd726bb2c81426948dcc85d9",
     "objectKey": "66ed4efffd726bb2c81426948dcc85d9",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain the main seasons and types of weather for a class 2-4 child with examples.",
-    "mode": "default",
-    "normalizedKey": "explain the main seasons and types of weather for a class 2-4 child with examples.",
-    "hash": "8cca31b6514c8e933f2a6431040670f5",
-    "objectKey": "8cca31b6514c8e933f2a6431040670f5",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "We eat food to get energy and stay healthy.\nFood groups: vegetables (broccoli, carrot), fruits (apple, mango), grains (rice, bread), protein (egg, dal), dairy (milk, cheese).\nEating all food groups is called a balanced diet.\nJunk food (chips, cold drinks) has very little nutrition and should be eaten less.",
-    "mode": "default",
-    "normalizedKey": "we eat food to get energy and stay healthy.\nfood groups: vegetables (broccoli, carrot), fruits (apple, mango), grains (rice, bread), protein (egg, dal), dairy (milk, cheese).\neating all food groups is called a balanced diet.\njunk food (chips, cold drinks) has very little nutrition and should be eaten less.",
-    "hash": "e3b517936527b13b8fe9853b7be403e4",
-    "objectKey": "e3b517936527b13b8fe9853b7be403e4",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold.",
+    "mode": "default",
+    "normalizedKey": "weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold.",
+    "hash": "dcd5f9272e04d8001010fce97d1dc90d",
+    "objectKey": "dcd5f9272e04d8001010fce97d1dc90d",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "We eat food to get energy and stay healthy. Food groups: vegetables (broccoli, carrot), fruits (apple, mango), grains (rice, bread), protein (egg, dal), dairy (milk, cheese). Eating all food groups is called a balanced diet. Junk food (chips, cold drinks) has very little nutrition and should be eaten less.",
@@ -3053,23 +3765,15 @@
     "normalizedKey": "we eat food to get energy and stay healthy. food groups: vegetables (broccoli, carrot), fruits (apple, mango), grains (rice, bread), protein (egg, dal), dairy (milk, cheese). eating all food groups is called a balanced diet. junk food (chips, cold drinks) has very little nutrition and should be eaten less.",
     "hash": "833df18db2e82445d3b67852f0e10cd0",
     "objectKey": "833df18db2e82445d3b67852f0e10cd0",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain the food groups and why a balanced diet is important for a class 3-5 child.",
-    "mode": "default",
-    "normalizedKey": "explain the food groups and why a balanced diet is important for a class 3-5 child.",
-    "hash": "30d7215348c50cace519b94fbe7529ab",
-    "objectKey": "30d7215348c50cace519b94fbe7529ab",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "A noun is a naming word.\nIt names a person (Riya), a place (school), an animal (dog) or a thing (book).\nCommon nouns name general things (cat, city).\nProper nouns name specific things and start with a capital letter (Delhi, Riya).",
-    "mode": "default",
-    "normalizedKey": "a noun is a naming word.\nit names a person (riya), a place (school), an animal (dog) or a thing (book).\ncommon nouns name general things (cat, city).\nproper nouns name specific things and start with a capital letter (delhi, riya).",
-    "hash": "8844451058e627c69e00410b2993ef5c",
-    "objectKey": "8844451058e627c69e00410b2993ef5c",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "We eat food to get energy and stay healthy.",
+    "mode": "default",
+    "normalizedKey": "we eat food to get energy and stay healthy.",
+    "hash": "c48cfd9c01a02ae267937e22dfd6a503",
+    "objectKey": "c48cfd9c01a02ae267937e22dfd6a503",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "A noun is a naming word. It names a person (Riya), a place (school), an animal (dog) or a thing (book). Common nouns name general things (cat, city). Proper nouns name specific things and start with a capital letter (Delhi, Riya).",
@@ -3077,23 +3781,15 @@
     "normalizedKey": "a noun is a naming word. it names a person (riya), a place (school), an animal (dog) or a thing (book). common nouns name general things (cat, city). proper nouns name specific things and start with a capital letter (delhi, riya).",
     "hash": "0876e79b770dc995229f249838172375",
     "objectKey": "0876e79b770dc995229f249838172375",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain nouns with simple examples for a class 1-3 child.",
-    "mode": "default",
-    "normalizedKey": "explain nouns with simple examples for a class 1-3 child.",
-    "hash": "c7c1321d3434ef77dd5d2fbc11070b97",
-    "objectKey": "c7c1321d3434ef77dd5d2fbc11070b97",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "A verb is an action or doing word.\nWords like run, eat, jump, write and read are verbs.\nVerbs tell us what someone or something is doing.\nEvery sentence must have a verb.",
-    "mode": "default",
-    "normalizedKey": "a verb is an action or doing word.\nwords like run, eat, jump, write and read are verbs.\nverbs tell us what someone or something is doing.\nevery sentence must have a verb.",
-    "hash": "8e7c59098af3eb7eb5d7ba8f853c2849",
-    "objectKey": "8e7c59098af3eb7eb5d7ba8f853c2849",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "A noun is a naming word.",
+    "mode": "default",
+    "normalizedKey": "a noun is a naming word.",
+    "hash": "8d7820917f692ba59abdfb5ea3ee5b2c",
+    "objectKey": "8d7820917f692ba59abdfb5ea3ee5b2c",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "A verb is an action or doing word. Words like run, eat, jump, write and read are verbs. Verbs tell us what someone or something is doing. Every sentence must have a verb.",
@@ -3101,23 +3797,15 @@
     "normalizedKey": "a verb is an action or doing word. words like run, eat, jump, write and read are verbs. verbs tell us what someone or something is doing. every sentence must have a verb.",
     "hash": "e6df181eafb13285c9498f572e9d009e",
     "objectKey": "e6df181eafb13285c9498f572e9d009e",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain verbs with three simple action examples for a class 1-3 child.",
-    "mode": "default",
-    "normalizedKey": "explain verbs with three simple action examples for a class 1-3 child.",
-    "hash": "fc343b850dfb13522fbd6fbbf0ce8bdf",
-    "objectKey": "fc343b850dfb13522fbd6fbbf0ce8bdf",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "An adjective is a describing word — it tells us more about a noun.\nIt can describe size (big, small), colour (red, blue), shape (round, flat), taste (sweet, sour) or feel (hot, cold).\nExample: 'The big elephant' — 'big' is the adjective describing the elephant.",
-    "mode": "default",
-    "normalizedKey": "an adjective is a describing word — it tells us more about a noun.\nit can describe size (big, small), colour (red, blue), shape (round, flat), taste (sweet, sour) or feel (hot, cold).\nexample: 'the big elephant' — 'big' is the adjective describing the elephant.",
-    "hash": "1834f6361ff371120a7237e13e4c89ae",
-    "objectKey": "1834f6361ff371120a7237e13e4c89ae",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "A verb is an action or doing word.",
+    "mode": "default",
+    "normalizedKey": "a verb is an action or doing word.",
+    "hash": "770a2199ed0569095ab0c60aa1393f1a",
+    "objectKey": "770a2199ed0569095ab0c60aa1393f1a",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "An adjective is a describing word — it tells us more about a noun. It can describe size (big, small), colour (red, blue), shape (round, flat), taste (sweet, sour) or feel (hot, cold). Example: 'The big elephant' — 'big' is the adjective describing the elephant.",
@@ -3125,23 +3813,15 @@
     "normalizedKey": "an adjective is a describing word — it tells us more about a noun. it can describe size (big, small), colour (red, blue), shape (round, flat), taste (sweet, sour) or feel (hot, cold). example: 'the big elephant' — 'big' is the adjective describing the elephant.",
     "hash": "5fd4fd03803405ff7d455c1800c17c3f",
     "objectKey": "5fd4fd03803405ff7d455c1800c17c3f",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain adjectives with 5 simple examples for a class 2-4 child.",
-    "mode": "default",
-    "normalizedKey": "explain adjectives with 5 simple examples for a class 2-4 child.",
-    "hash": "fc100824d75c5deaefd17227a8c78c42",
-    "objectKey": "fc100824d75c5deaefd17227a8c78c42",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "A pronoun is a word that replaces a noun to avoid repetition.\nExamples: I, you, he, she, it, we, they.\n'Riya is happy. She is happy.' — 'She' replaces 'Riya'.\nUsing pronouns makes sentences shorter and less repetitive.",
-    "mode": "default",
-    "normalizedKey": "a pronoun is a word that replaces a noun to avoid repetition.\nexamples: i, you, he, she, it, we, they.\n'riya is happy. she is happy.' — 'she' replaces 'riya'.\nusing pronouns makes sentences shorter and less repetitive.",
-    "hash": "9a1f04794b5028eb38e71c6f815a5ae8",
-    "objectKey": "9a1f04794b5028eb38e71c6f815a5ae8",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "An adjective is a describing word — it tells us more about a noun.",
+    "mode": "default",
+    "normalizedKey": "an adjective is a describing word — it tells us more about a noun.",
+    "hash": "f79d6455f11922e9383deb4e3f98559a",
+    "objectKey": "f79d6455f11922e9383deb4e3f98559a",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "A pronoun is a word that replaces a noun to avoid repetition. Examples: I, you, he, she, it, we, they. 'Riya is happy. She is happy.' — 'She' replaces 'Riya'. Using pronouns makes sentences shorter and less repetitive.",
@@ -3149,23 +3829,15 @@
     "normalizedKey": "a pronoun is a word that replaces a noun to avoid repetition. examples: i, you, he, she, it, we, they. 'riya is happy. she is happy.' — 'she' replaces 'riya'. using pronouns makes sentences shorter and less repetitive.",
     "hash": "2abb2995d3d522762237a131708be68a",
     "objectKey": "2abb2995d3d522762237a131708be68a",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain pronouns with examples for a class 2-4 child.",
-    "mode": "default",
-    "normalizedKey": "explain pronouns with examples for a class 2-4 child.",
-    "hash": "ca890d64d303771a5a47d8e076e8bae0",
-    "objectKey": "ca890d64d303771a5a47d8e076e8bae0",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "A sentence is a group of words that makes complete sense.\nEvery sentence has a subject (who/what) and a verb (action).\nIt starts with a capital letter and ends with a full stop, question mark or exclamation mark.\nExample: 'Riya reads books.' — Riya is the subject, reads is the verb.",
-    "mode": "default",
-    "normalizedKey": "a sentence is a group of words that makes complete sense.\nevery sentence has a subject (who/what) and a verb (action).\nit starts with a capital letter and ends with a full stop, question mark or exclamation mark.\nexample: 'riya reads books.' — riya is the subject, reads is the verb.",
-    "hash": "11d462945e5efe5a6db76be554ea31d0",
-    "objectKey": "11d462945e5efe5a6db76be554ea31d0",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "A pronoun is a word that replaces a noun to avoid repetition.",
+    "mode": "default",
+    "normalizedKey": "a pronoun is a word that replaces a noun to avoid repetition.",
+    "hash": "f7476ae2d89e427a2d59025a4e121953",
+    "objectKey": "f7476ae2d89e427a2d59025a4e121953",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "A sentence is a group of words that makes complete sense. Every sentence has a subject (who/what) and a verb (action). It starts with a capital letter and ends with a full stop, question mark or exclamation mark. Example: 'Riya reads books.' — Riya is the subject, reads is the verb.",
@@ -3173,23 +3845,15 @@
     "normalizedKey": "a sentence is a group of words that makes complete sense. every sentence has a subject (who/what) and a verb (action). it starts with a capital letter and ends with a full stop, question mark or exclamation mark. example: 'riya reads books.' — riya is the subject, reads is the verb.",
     "hash": "7d02e5fd20fa342a464190539038bffe",
     "objectKey": "7d02e5fd20fa342a464190539038bffe",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain what makes a good sentence with two examples for a class 2-4 child.",
-    "mode": "default",
-    "normalizedKey": "explain what makes a good sentence with two examples for a class 2-4 child.",
-    "hash": "faa015b2d45c214f2df93ceaa23b3ed5",
-    "objectKey": "faa015b2d45c214f2df93ceaa23b3ed5",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "India is a large and beautiful country in Asia.\nCapital: New Delhi. National flag: saffron, white, green with a blue Ashoka Chakra.\nNational animal: Tiger. National bird: Peacock. National flower: Lotus.\nNational language (official): Hindi. National fruit: Mango.",
-    "mode": "default",
-    "normalizedKey": "india is a large and beautiful country in asia.\ncapital: new delhi. national flag: saffron, white, green with a blue ashoka chakra.\nnational animal: tiger. national bird: peacock. national flower: lotus.\nnational language (official): hindi. national fruit: mango.",
-    "hash": "ad1f78a5def5f03412e81af9cb7a8cad",
-    "objectKey": "ad1f78a5def5f03412e81af9cb7a8cad",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "A sentence is a group of words that makes complete sense.",
+    "mode": "default",
+    "normalizedKey": "a sentence is a group of words that makes complete sense.",
+    "hash": "a242bbe89a255df8954d578961dd45ec",
+    "objectKey": "a242bbe89a255df8954d578961dd45ec",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "India is a large and beautiful country in Asia. Capital: New Delhi. National flag: saffron, white, green with a blue Ashoka Chakra. National animal: Tiger. National bird: Peacock. National flower: Lotus. National language (official): Hindi. National fruit: Mango.",
@@ -3197,23 +3861,15 @@
     "normalizedKey": "india is a large and beautiful country in asia. capital: new delhi. national flag: saffron, white, green with a blue ashoka chakra. national animal: tiger. national bird: peacock. national flower: lotus. national language (official): hindi. national fruit: mango.",
     "hash": "c8bbcf5827892c2195e9e16494f4a398",
     "objectKey": "c8bbcf5827892c2195e9e16494f4a398",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Share 4 fun facts about India that a class 2-4 child would enjoy.",
-    "mode": "default",
-    "normalizedKey": "share 4 fun facts about india that a class 2-4 child would enjoy.",
-    "hash": "84734ef122a3b9d26bc53b18a20351de",
-    "objectKey": "84734ef122a3b9d26bc53b18a20351de",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "The Sun is at the centre of our solar system.\n8 planets orbit the Sun: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune.\nEarth is the only known planet with life.\nThe Moon is Earth's natural satellite.",
-    "mode": "default",
-    "normalizedKey": "the sun is at the centre of our solar system.\n8 planets orbit the sun: mercury, venus, earth, mars, jupiter, saturn, uranus, neptune.\nearth is the only known planet with life.\nthe moon is earth's natural satellite.",
-    "hash": "d888fc170fb27ff1dab09c865e1f735e",
-    "objectKey": "d888fc170fb27ff1dab09c865e1f735e",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "India is a large and beautiful country in Asia.",
+    "mode": "default",
+    "normalizedKey": "india is a large and beautiful country in asia.",
+    "hash": "47b401c4bec9cb96858adc0ce808472d",
+    "objectKey": "47b401c4bec9cb96858adc0ce808472d",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "The Sun is at the centre of our solar system. 8 planets orbit the Sun: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune. Earth is the only known planet with life. The Moon is Earth's natural satellite.",
@@ -3221,23 +3877,15 @@
     "normalizedKey": "the sun is at the centre of our solar system. 8 planets orbit the sun: mercury, venus, earth, mars, jupiter, saturn, uranus, neptune. earth is the only known planet with life. the moon is earth's natural satellite.",
     "hash": "e1c84a6160060469d78043f344d9aa5e",
     "objectKey": "e1c84a6160060469d78043f344d9aa5e",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Tell a class 2-5 child about the planets in a fun, easy way with a memory trick.",
-    "mode": "default",
-    "normalizedKey": "tell a class 2-5 child about the planets in a fun, easy way with a memory trick.",
-    "hash": "106caed592dc8fd111980af0293a69af",
-    "objectKey": "106caed592dc8fd111980af0293a69af",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "India has many wonderful festivals celebrated by people of all religions.\nDiwali — festival of lights celebrated by Hindus.\nEid — celebrated by Muslims after Ramadan.\nChristmas — birth of Jesus Christ, celebrated on 25 December.\nHoli — colourful spring festival. Guru Nanak Jayanti — Sikh festival.",
-    "mode": "default",
-    "normalizedKey": "india has many wonderful festivals celebrated by people of all religions.\ndiwali — festival of lights celebrated by hindus.\neid — celebrated by muslims after ramadan.\nchristmas — birth of jesus christ, celebrated on 25 december.\nholi — colourful spring festival. guru nanak jayanti — sikh festival.",
-    "hash": "5586ba96e310bbcaf63fea7dfde1dfee",
-    "objectKey": "5586ba96e310bbcaf63fea7dfde1dfee",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "The Sun is at the centre of our solar system.",
+    "mode": "default",
+    "normalizedKey": "the sun is at the centre of our solar system.",
+    "hash": "6d6e0b35a30a90fe4e657859fb859eb8",
+    "objectKey": "6d6e0b35a30a90fe4e657859fb859eb8",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "India has many wonderful festivals celebrated by people of all religions. Diwali — festival of lights celebrated by Hindus. Eid — celebrated by Muslims after Ramadan. Christmas — birth of Jesus Christ, celebrated on 25 December. Holi — colourful spring festival. Guru Nanak Jayanti — Sikh festival.",
@@ -3245,23 +3893,15 @@
     "normalizedKey": "india has many wonderful festivals celebrated by people of all religions. diwali — festival of lights celebrated by hindus. eid — celebrated by muslims after ramadan. christmas — birth of jesus christ, celebrated on 25 december. holi — colourful spring festival. guru nanak jayanti — sikh festival.",
     "hash": "d23623ab40a643bc2328f6faebff0640",
     "objectKey": "d23623ab40a643bc2328f6faebff0640",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Name 5 Indian festivals, the religion they belong to, and one fun fact about each, for a class 2-4 child.",
-    "mode": "default",
-    "normalizedKey": "name 5 indian festivals, the religion they belong to, and one fun fact about each, for a class 2-4 child.",
-    "hash": "54b632a3c58a50923b4756356b37f52d",
-    "objectKey": "54b632a3c58a50923b4756356b37f52d",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Transport means ways of travelling from one place to another.\nLand transport: bus, car, train, bicycle, auto-rickshaw.\nWater transport: boat, ship, ferry.\nAir transport: aeroplane, helicopter.\nFastest transport: aeroplane. Oldest in India: bullock cart.",
-    "mode": "default",
-    "normalizedKey": "transport means ways of travelling from one place to another.\nland transport: bus, car, train, bicycle, auto-rickshaw.\nwater transport: boat, ship, ferry.\nair transport: aeroplane, helicopter.\nfastest transport: aeroplane. oldest in india: bullock cart.",
-    "hash": "7647e374b8f75bb0bd2f01f9d91b41bf",
-    "objectKey": "7647e374b8f75bb0bd2f01f9d91b41bf",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "India has many wonderful festivals celebrated by people of all religions.",
+    "mode": "default",
+    "normalizedKey": "india has many wonderful festivals celebrated by people of all religions.",
+    "hash": "a8bd60bac0e03f92fff46924273515b5",
+    "objectKey": "a8bd60bac0e03f92fff46924273515b5",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Transport means ways of travelling from one place to another. Land transport: bus, car, train, bicycle, auto-rickshaw. Water transport: boat, ship, ferry. Air transport: aeroplane, helicopter. Fastest transport: aeroplane. Oldest in India: bullock cart.",
@@ -3269,23 +3909,15 @@
     "normalizedKey": "transport means ways of travelling from one place to another. land transport: bus, car, train, bicycle, auto-rickshaw. water transport: boat, ship, ferry. air transport: aeroplane, helicopter. fastest transport: aeroplane. oldest in india: bullock cart.",
     "hash": "ea871f3b48e49069fb280d0583e7c35d",
     "objectKey": "ea871f3b48e49069fb280d0583e7c35d",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain the three modes of transport with two examples each, for a class 1-3 child.",
-    "mode": "default",
-    "normalizedKey": "explain the three modes of transport with two examples each, for a class 1-3 child.",
-    "hash": "7b7e59df486fe0d377fac6b5af701f7c",
-    "objectKey": "7b7e59df486fe0d377fac6b5af701f7c",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Community helpers are people who help others in our society.\nDoctor — treats sick people.\nTeacher — helps us learn.\nPolice officer — keeps us safe.\nFarmer — grows food for everyone.\nFirefighter — puts out fires. Postman — delivers letters.",
-    "mode": "default",
-    "normalizedKey": "community helpers are people who help others in our society.\ndoctor — treats sick people.\nteacher — helps us learn.\npolice officer — keeps us safe.\nfarmer — grows food for everyone.\nfirefighter — puts out fires. postman — delivers letters.",
-    "hash": "b99742c49c1385ba67ca1a043acea73d",
-    "objectKey": "b99742c49c1385ba67ca1a043acea73d",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Transport means ways of travelling from one place to another.",
+    "mode": "default",
+    "normalizedKey": "transport means ways of travelling from one place to another.",
+    "hash": "38ab09f3ac235ac1861f970ae8af5f59",
+    "objectKey": "38ab09f3ac235ac1861f970ae8af5f59",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Community helpers are people who help others in our society. Doctor — treats sick people. Teacher — helps us learn. Police officer — keeps us safe. Farmer — grows food for everyone. Firefighter — puts out fires. Postman — delivers letters.",
@@ -3293,23 +3925,15 @@
     "normalizedKey": "community helpers are people who help others in our society. doctor — treats sick people. teacher — helps us learn. police officer — keeps us safe. farmer — grows food for everyone. firefighter — puts out fires. postman — delivers letters.",
     "hash": "cdd8e7a8f1264a7d5990e012f303ec0f",
     "objectKey": "cdd8e7a8f1264a7d5990e012f303ec0f",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Describe 5 community helpers and what they do, in a way a class 1-3 child can understand.",
-    "mode": "default",
-    "normalizedKey": "describe 5 community helpers and what they do, in a way a class 1-3 child can understand.",
-    "hash": "e3d11a02aafd12aa2eb93ed5df14f5bb",
-    "objectKey": "e3d11a02aafd12aa2eb93ed5df14f5bb",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Algebra uses letters (variables) in place of unknown numbers.\nAn equation states two expressions are equal, e.g. x + 3 = 7.\nTo solve, perform the same operation on both sides until the variable is alone.\nExample: x + 3 = 7  →  x = 7 − 3  →  x = 4.\nLIKE terms can be added; UNLIKE terms cannot.",
-    "mode": "default",
-    "normalizedKey": "algebra uses letters (variables) in place of unknown numbers.\nan equation states two expressions are equal, e.g. x + 3 = 7.\nto solve, perform the same operation on both sides until the variable is alone.\nexample: x + 3 = 7  →  x = 7 − 3  →  x = 4.\nlike terms can be added; unlike terms cannot.",
-    "hash": "8cf6cb651ef32bc3eab71adae22160d0",
-    "objectKey": "8cf6cb651ef32bc3eab71adae22160d0",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Community helpers are people who help others in our society.",
+    "mode": "default",
+    "normalizedKey": "community helpers are people who help others in our society.",
+    "hash": "0bdb5264aaf02abb7f8926395df8a2b6",
+    "objectKey": "0bdb5264aaf02abb7f8926395df8a2b6",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Algebra uses letters (variables) in place of unknown numbers. An equation states two expressions are equal, e.g. x + 3 = 7. To solve, perform the same operation on both sides until the variable is alone. Example: x + 3 = 7 → x = 7 − 3 → x = 4. LIKE terms can be added; UNLIKE terms cannot.",
@@ -3317,23 +3941,15 @@
     "normalizedKey": "algebra uses letters (variables) in place of unknown numbers. an equation states two expressions are equal, e.g. x + 3 = 7. to solve, perform the same operation on both sides until the variable is alone. example: x + 3 = 7 → x = 7 − 3 → x = 4. like terms can be added; unlike terms cannot.",
     "hash": "43c49ce9e1347dd25fee2757155b2ae9",
     "objectKey": "43c49ce9e1347dd25fee2757155b2ae9",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain algebra basics — variables and simple equations — for a class 6-8 student with one worked example.",
-    "mode": "default",
-    "normalizedKey": "explain algebra basics — variables and simple equations — for a class 6-8 student with one worked example.",
-    "hash": "944defdc5083f2df1a3432aab576b2f0",
-    "objectKey": "944defdc5083f2df1a3432aab576b2f0",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "A linear equation in two variables (y = mx + c) gives a straight line when plotted.\n'm' is the slope (steepness of the line).\n'c' is the y-intercept (where the line crosses the y-axis).\nExample: y = 2x + 1 — slope is 2, y-intercept is 1.\nTwo simultaneous linear equations can be solved by substitution or elimination.",
-    "mode": "default",
-    "normalizedKey": "a linear equation in two variables (y = mx + c) gives a straight line when plotted.\n'm' is the slope (steepness of the line).\n'c' is the y-intercept (where the line crosses the y-axis).\nexample: y = 2x + 1 — slope is 2, y-intercept is 1.\ntwo simultaneous linear equations can be solved by substitution or elimination.",
-    "hash": "25a9e0b51a4a834772b9a55ae9718135",
-    "objectKey": "25a9e0b51a4a834772b9a55ae9718135",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Algebra uses letters (variables) in place of unknown numbers.",
+    "mode": "default",
+    "normalizedKey": "algebra uses letters (variables) in place of unknown numbers.",
+    "hash": "c247fab1f462c58ea5b3c979bd870e7f",
+    "objectKey": "c247fab1f462c58ea5b3c979bd870e7f",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "A linear equation in two variables (y = mx + c) gives a straight line when plotted. 'm' is the slope (steepness of the line). 'c' is the y-intercept (where the line crosses the y-axis). Example: y = 2x + 1 — slope is 2, y-intercept is 1. Two simultaneous linear equations can be solved by substitution or elimination.",
@@ -3341,23 +3957,15 @@
     "normalizedKey": "a linear equation in two variables (y = mx + c) gives a straight line when plotted. 'm' is the slope (steepness of the line). 'c' is the y-intercept (where the line crosses the y-axis). example: y = 2x + 1 — slope is 2, y-intercept is 1. two simultaneous linear equations can be solved by substitution or elimination.",
     "hash": "d147f8e62c7460f84ed09c51955e9209",
     "objectKey": "d147f8e62c7460f84ed09c51955e9209",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain y = mx + c and how to draw a straight-line graph for a class 8-10 student.",
-    "mode": "default",
-    "normalizedKey": "explain y = mx + c and how to draw a straight-line graph for a class 8-10 student.",
-    "hash": "42bc39fabea65ebb9ad2f6e1b4493ae9",
-    "objectKey": "42bc39fabea65ebb9ad2f6e1b4493ae9",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "A quadratic equation has the form ax² + bx + c = 0 (a ≠ 0).\nIts graph is a U-shaped curve called a parabola.\nRoots (solutions) can be found by factorisation, completing the square or the quadratic formula:\n  x = (−b ± √(b²−4ac)) / 2a\nThe discriminant D = b²−4ac tells us the nature of roots.",
-    "mode": "default",
-    "normalizedKey": "a quadratic equation has the form ax² + bx + c = 0 (a ≠ 0).\nits graph is a u-shaped curve called a parabola.\nroots (solutions) can be found by factorisation, completing the square or the quadratic formula:\n  x = (−b ± √(b²−4ac)) / 2a\nthe discriminant d = b²−4ac tells us the nature of roots.",
-    "hash": "894233ea058fe48c88e1659fd6b0a579",
-    "objectKey": "894233ea058fe48c88e1659fd6b0a579",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "A linear equation in two variables (y = mx + c) gives a straight line when plotted.",
+    "mode": "default",
+    "normalizedKey": "a linear equation in two variables (y = mx + c) gives a straight line when plotted.",
+    "hash": "e846cd28782001e45f60f24792a80aa4",
+    "objectKey": "e846cd28782001e45f60f24792a80aa4",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "A quadratic equation has the form ax² + bx + c = 0 (a ≠ 0). Its graph is a U-shaped curve called a parabola. Roots (solutions) can be found by factorisation, completing the square or the quadratic formula: x = (−b ± √(b²−4ac)) / 2a The discriminant D = b²−4ac tells us the nature of roots.",
@@ -3365,23 +3973,15 @@
     "normalizedKey": "a quadratic equation has the form ax² + bx + c = 0 (a ≠ 0). its graph is a u-shaped curve called a parabola. roots (solutions) can be found by factorisation, completing the square or the quadratic formula: x = (−b ± √(b²−4ac)) / 2a the discriminant d = b²−4ac tells us the nature of roots.",
     "hash": "1d3ae504a60d49ff569704a21716e0c3",
     "objectKey": "1d3ae504a60d49ff569704a21716e0c3",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain quadratic equations with the formula and one example for a class 9-10 student.",
-    "mode": "default",
-    "normalizedKey": "explain quadratic equations with the formula and one example for a class 9-10 student.",
-    "hash": "ba195c1d3dd39c15f4a4f4b6cfaa43ee",
-    "objectKey": "ba195c1d3dd39c15f4a4f4b6cfaa43ee",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "A triangle has 3 sides and 3 angles. The sum of all angles is always 180°.\nTypes by sides: equilateral (all equal), isosceles (two equal), scalene (all different).\nTypes by angles: acute (all < 90°), right (one = 90°), obtuse (one > 90°).\nArea = ½ × base × height. Pythagoras: a² + b² = c² for right triangles.",
-    "mode": "default",
-    "normalizedKey": "a triangle has 3 sides and 3 angles. the sum of all angles is always 180°.\ntypes by sides: equilateral (all equal), isosceles (two equal), scalene (all different).\ntypes by angles: acute (all < 90°), right (one = 90°), obtuse (one > 90°).\narea = ½ × base × height. pythagoras: a² + b² = c² for right triangles.",
-    "hash": "dc4e2b25a3e3ffa12eb4b2e0eb309e4d",
-    "objectKey": "dc4e2b25a3e3ffa12eb4b2e0eb309e4d",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "A quadratic equation has the form ax² + bx + c = 0 (a ≠ 0).",
+    "mode": "default",
+    "normalizedKey": "a quadratic equation has the form ax² + bx + c = 0 (a ≠ 0).",
+    "hash": "368bd5d98ed1874a6b889f52e7050886",
+    "objectKey": "368bd5d98ed1874a6b889f52e7050886",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "A triangle has 3 sides and 3 angles. The sum of all angles is always 180°. Types by sides: equilateral (all equal), isosceles (two equal), scalene (all different). Types by angles: acute (all < 90°), right (one = 90°), obtuse (one > 90°). Area = ½ × base × height. Pythagoras: a² + b² = c² for right triangles.",
@@ -3389,23 +3989,15 @@
     "normalizedKey": "a triangle has 3 sides and 3 angles. the sum of all angles is always 180°. types by sides: equilateral (all equal), isosceles (two equal), scalene (all different). types by angles: acute (all < 90°), right (one = 90°), obtuse (one > 90°). area = ½ × base × height. pythagoras: a² + b² = c² for right triangles.",
     "hash": "c2b3126928fe7399056148d02dd92d44",
     "objectKey": "c2b3126928fe7399056148d02dd92d44",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Summarise types of triangles, angle-sum and Pythagoras theorem for a class 6-8 student.",
-    "mode": "default",
-    "normalizedKey": "summarise types of triangles, angle-sum and pythagoras theorem for a class 6-8 student.",
-    "hash": "06028ce0b89446ac12912ad7428bf9ab",
-    "objectKey": "06028ce0b89446ac12912ad7428bf9ab",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Mensuration is the branch of math that measures lengths, areas and volumes.\nArea of rectangle = l × b. Perimeter of rectangle = 2(l + b).\nArea of circle = πr². Circumference = 2πr.\nArea of triangle = ½ × base × height.\nVolume of cuboid = l × b × h. Volume of cylinder = πr²h.",
-    "mode": "default",
-    "normalizedKey": "mensuration is the branch of math that measures lengths, areas and volumes.\narea of rectangle = l × b. perimeter of rectangle = 2(l + b).\narea of circle = πr². circumference = 2πr.\narea of triangle = ½ × base × height.\nvolume of cuboid = l × b × h. volume of cylinder = πr²h.",
-    "hash": "7810689911f5b685cb7214da4f532519",
-    "objectKey": "7810689911f5b685cb7214da4f532519",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "A triangle has 3 sides and 3 angles. The sum of all angles is always 180°.",
+    "mode": "default",
+    "normalizedKey": "a triangle has 3 sides and 3 angles. the sum of all angles is always 180°.",
+    "hash": "7e5e9f50aef08def6ffd507d53e449ae",
+    "objectKey": "7e5e9f50aef08def6ffd507d53e449ae",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Mensuration is the branch of math that measures lengths, areas and volumes. Area of rectangle = l × b. Perimeter of rectangle = 2(l + b). Area of circle = πr². Circumference = 2πr. Area of triangle = ½ × base × height. Volume of cuboid = l × b × h. Volume of cylinder = πr²h.",
@@ -3413,23 +4005,15 @@
     "normalizedKey": "mensuration is the branch of math that measures lengths, areas and volumes. area of rectangle = l × b. perimeter of rectangle = 2(l + b). area of circle = πr². circumference = 2πr. area of triangle = ½ × base × height. volume of cuboid = l × b × h. volume of cylinder = πr²h.",
     "hash": "17816fe9e6bf2e1aa1602064de5363d3",
     "objectKey": "17816fe9e6bf2e1aa1602064de5363d3",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Give area and perimeter formulas for rectangle, circle and triangle for a class 7-9 student.",
-    "mode": "default",
-    "normalizedKey": "give area and perimeter formulas for rectangle, circle and triangle for a class 7-9 student.",
-    "hash": "350b3796f1a778236cb6f4995e631806",
-    "objectKey": "350b3796f1a778236cb6f4995e631806",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Trigonometry studies the relationship between angles and sides of a right triangle.\nFor angle θ:\n  sin θ = opposite / hypotenuse\n  cos θ = adjacent / hypotenuse\n  tan θ = opposite / adjacent  (SOH-CAH-TOA)\nKey values: sin 30°=½, cos 60°=½, tan 45°=1, sin 90°=1.",
-    "mode": "default",
-    "normalizedKey": "trigonometry studies the relationship between angles and sides of a right triangle.\nfor angle θ:\n  sin θ = opposite / hypotenuse\n  cos θ = adjacent / hypotenuse\n  tan θ = opposite / adjacent  (soh-cah-toa)\nkey values: sin 30°=½, cos 60°=½, tan 45°=1, sin 90°=1.",
-    "hash": "e420e57664ba973c6d79a2049f852ad3",
-    "objectKey": "e420e57664ba973c6d79a2049f852ad3",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Mensuration is the branch of math that measures lengths, areas and volumes.",
+    "mode": "default",
+    "normalizedKey": "mensuration is the branch of math that measures lengths, areas and volumes.",
+    "hash": "508ce65126e0e7db634362892e7c6384",
+    "objectKey": "508ce65126e0e7db634362892e7c6384",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Trigonometry studies the relationship between angles and sides of a right triangle. For angle θ: sin θ = opposite / hypotenuse cos θ = adjacent / hypotenuse tan θ = opposite / adjacent (SOH-CAH-TOA) Key values: sin 30°=½, cos 60°=½, tan 45°=1, sin 90°=1.",
@@ -3437,23 +4021,15 @@
     "normalizedKey": "trigonometry studies the relationship between angles and sides of a right triangle. for angle θ: sin θ = opposite / hypotenuse cos θ = adjacent / hypotenuse tan θ = opposite / adjacent (soh-cah-toa) key values: sin 30°=½, cos 60°=½, tan 45°=1, sin 90°=1.",
     "hash": "47e2dc60f9bdb529a90cd58cca377f85",
     "objectKey": "47e2dc60f9bdb529a90cd58cca377f85",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain sin, cos, tan in a right triangle for a class 9-10 student with one worked example.",
-    "mode": "default",
-    "normalizedKey": "explain sin, cos, tan in a right triangle for a class 9-10 student with one worked example.",
-    "hash": "23ac6108a4c1616ef0344b00c82e77b4",
-    "objectKey": "23ac6108a4c1616ef0344b00c82e77b4",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Statistics is the study of collecting and analysing data.\nMean = sum of all values ÷ number of values. (Average)\nMedian = the middle value when data is arranged in order.\nMode = the value that appears most often.\nRange = highest value − lowest value.",
-    "mode": "default",
-    "normalizedKey": "statistics is the study of collecting and analysing data.\nmean = sum of all values ÷ number of values. (average)\nmedian = the middle value when data is arranged in order.\nmode = the value that appears most often.\nrange = highest value − lowest value.",
-    "hash": "4f22d1b4277cadb733ebb19efe42871e",
-    "objectKey": "4f22d1b4277cadb733ebb19efe42871e",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Trigonometry studies the relationship between angles and sides of a right triangle.",
+    "mode": "default",
+    "normalizedKey": "trigonometry studies the relationship between angles and sides of a right triangle.",
+    "hash": "7eff9d21d00855aca6e0841369dc9937",
+    "objectKey": "7eff9d21d00855aca6e0841369dc9937",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Statistics is the study of collecting and analysing data. Mean = sum of all values ÷ number of values. (Average) Median = the middle value when data is arranged in order. Mode = the value that appears most often. Range = highest value − lowest value.",
@@ -3461,23 +4037,15 @@
     "normalizedKey": "statistics is the study of collecting and analysing data. mean = sum of all values ÷ number of values. (average) median = the middle value when data is arranged in order. mode = the value that appears most often. range = highest value − lowest value.",
     "hash": "3f5364a93dceaee3d2d03f7a7f17fdce",
     "objectKey": "3f5364a93dceaee3d2d03f7a7f17fdce",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain mean, median and mode with a worked example for a class 8-10 student.",
-    "mode": "default",
-    "normalizedKey": "explain mean, median and mode with a worked example for a class 8-10 student.",
-    "hash": "932fd82bd744b196f4d31c312442377a",
-    "objectKey": "932fd82bd744b196f4d31c312442377a",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "A force is a push or pull that changes speed, direction or shape of an object.\nNewton's First Law: A body remains at rest or in uniform motion unless an external force acts.\nNewton's Second Law: F = m × a (Force = mass × acceleration).\nNewton's Third Law: Every action has an equal and opposite reaction.",
-    "mode": "default",
-    "normalizedKey": "a force is a push or pull that changes speed, direction or shape of an object.\nnewton's first law: a body remains at rest or in uniform motion unless an external force acts.\nnewton's second law: f = m × a (force = mass × acceleration).\nnewton's third law: every action has an equal and opposite reaction.",
-    "hash": "4c63e1e853e3b67836329c02526c8007",
-    "objectKey": "4c63e1e853e3b67836329c02526c8007",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Statistics is the study of collecting and analysing data.",
+    "mode": "default",
+    "normalizedKey": "statistics is the study of collecting and analysing data.",
+    "hash": "548c5ae95d066d01fe6b1a2ba79af5ca",
+    "objectKey": "548c5ae95d066d01fe6b1a2ba79af5ca",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "A force is a push or pull that changes speed, direction or shape of an object. Newton's First Law: A body remains at rest or in uniform motion unless an external force acts. Newton's Second Law: F = m × a (Force = mass × acceleration). Newton's Third Law: Every action has an equal and opposite reaction.",
@@ -3485,23 +4053,15 @@
     "normalizedKey": "a force is a push or pull that changes speed, direction or shape of an object. newton's first law: a body remains at rest or in uniform motion unless an external force acts. newton's second law: f = m × a (force = mass × acceleration). newton's third law: every action has an equal and opposite reaction.",
     "hash": "a84beee11ede52d5b1f431316bc3bbd7",
     "objectKey": "a84beee11ede52d5b1f431316bc3bbd7",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain Newton's three laws of motion with one daily-life example each for a class 8-10 student.",
-    "mode": "default",
-    "normalizedKey": "explain newton's three laws of motion with one daily-life example each for a class 8-10 student.",
-    "hash": "9fe30e8d1872a7a7fb68207a94548c8b",
-    "objectKey": "9fe30e8d1872a7a7fb68207a94548c8b",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "All living organisms are made of cells (cell theory).\nCells were first observed by Robert Hooke in 1665.\nPlant cell: has cell wall, chloroplasts and a large central vacuole.\nAnimal cell: no cell wall; usually no chloroplasts.\nNucleus controls all cell activities. Mitochondria is the powerhouse of the cell.",
-    "mode": "default",
-    "normalizedKey": "all living organisms are made of cells (cell theory).\ncells were first observed by robert hooke in 1665.\nplant cell: has cell wall, chloroplasts and a large central vacuole.\nanimal cell: no cell wall; usually no chloroplasts.\nnucleus controls all cell activities. mitochondria is the powerhouse of the cell.",
-    "hash": "75c5d2cefc9f9b47d4c5eb39ead4b887",
-    "objectKey": "75c5d2cefc9f9b47d4c5eb39ead4b887",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "A force is a push or pull that changes speed, direction or shape of an object.",
+    "mode": "default",
+    "normalizedKey": "a force is a push or pull that changes speed, direction or shape of an object.",
+    "hash": "9781ca0ba6d31d6e83a80a5c9a7384b8",
+    "objectKey": "9781ca0ba6d31d6e83a80a5c9a7384b8",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "All living organisms are made of cells (cell theory). Cells were first observed by Robert Hooke in 1665. Plant cell: has cell wall, chloroplasts and a large central vacuole. Animal cell: no cell wall; usually no chloroplasts. Nucleus controls all cell activities. Mitochondria is the powerhouse of the cell.",
@@ -3509,23 +4069,15 @@
     "normalizedKey": "all living organisms are made of cells (cell theory). cells were first observed by robert hooke in 1665. plant cell: has cell wall, chloroplasts and a large central vacuole. animal cell: no cell wall; usually no chloroplasts. nucleus controls all cell activities. mitochondria is the powerhouse of the cell.",
     "hash": "9f1ab678206aaf63a43820f2b541bce1",
     "objectKey": "9f1ab678206aaf63a43820f2b541bce1",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Compare plant and animal cells with their main parts for a class 8-9 student.",
-    "mode": "default",
-    "normalizedKey": "compare plant and animal cells with their main parts for a class 8-9 student.",
-    "hash": "97f0692f8e0df40eadc02effe5bb0cd5",
-    "objectKey": "97f0692f8e0df40eadc02effe5bb0cd5",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Acids are sour and turn blue litmus red (lemon juice, vinegar, HCl).\nBases are bitter/soapy and turn red litmus blue (soap, baking soda, NaOH).\npH scale: 0–14. <7 = acidic, 7 = neutral, >7 = basic/alkaline.\nNeutralisation: Acid + Base → Salt + Water.",
-    "mode": "default",
-    "normalizedKey": "acids are sour and turn blue litmus red (lemon juice, vinegar, hcl).\nbases are bitter/soapy and turn red litmus blue (soap, baking soda, naoh).\nph scale: 0–14. <7 = acidic, 7 = neutral, >7 = basic/alkaline.\nneutralisation: acid + base → salt + water.",
-    "hash": "0b36f0c793d7ba010ae80b2d7306e4d0",
-    "objectKey": "0b36f0c793d7ba010ae80b2d7306e4d0",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "All living organisms are made of cells (cell theory).",
+    "mode": "default",
+    "normalizedKey": "all living organisms are made of cells (cell theory).",
+    "hash": "9ca2b01c9de76eab998579bd1ee18b3f",
+    "objectKey": "9ca2b01c9de76eab998579bd1ee18b3f",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Acids are sour and turn blue litmus red (lemon juice, vinegar, HCl). Bases are bitter/soapy and turn red litmus blue (soap, baking soda, NaOH). pH scale: 0–14. <7 = acidic, 7 = neutral, >7 = basic/alkaline. Neutralisation: Acid + Base → Salt + Water.",
@@ -3533,23 +4085,15 @@
     "normalizedKey": "acids are sour and turn blue litmus red (lemon juice, vinegar, hcl). bases are bitter/soapy and turn red litmus blue (soap, baking soda, naoh). ph scale: 0–14. <7 = acidic, 7 = neutral, >7 = basic/alkaline. neutralisation: acid + base → salt + water.",
     "hash": "5f00b2146ec14ed7e1c7794e88ea4354",
     "objectKey": "5f00b2146ec14ed7e1c7794e88ea4354",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain the pH scale and neutralisation for a class 7-10 student with everyday examples.",
-    "mode": "default",
-    "normalizedKey": "explain the ph scale and neutralisation for a class 7-10 student with everyday examples.",
-    "hash": "532db4eefbb50a9f7064b253d02e52c2",
-    "objectKey": "532db4eefbb50a9f7064b253d02e52c2",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Electric current is the flow of electrons through a conductor.\nOhm's Law: V = I × R  (Voltage = Current × Resistance).\nA circuit needs a source (battery), conducting wires and a load (bulb/motor).\nConductors (copper) allow current to flow; insulators (rubber) do not.\nSeries circuit: one path. Parallel circuit: multiple paths.",
-    "mode": "default",
-    "normalizedKey": "electric current is the flow of electrons through a conductor.\nohm's law: v = i × r  (voltage = current × resistance).\na circuit needs a source (battery), conducting wires and a load (bulb/motor).\nconductors (copper) allow current to flow; insulators (rubber) do not.\nseries circuit: one path. parallel circuit: multiple paths.",
-    "hash": "8f8298d0a4d39578a83aaf79a405e0c9",
-    "objectKey": "8f8298d0a4d39578a83aaf79a405e0c9",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Acids are sour and turn blue litmus red (lemon juice, vinegar, HCl).",
+    "mode": "default",
+    "normalizedKey": "acids are sour and turn blue litmus red (lemon juice, vinegar, hcl).",
+    "hash": "10f77f09354006372deed38f60da5249",
+    "objectKey": "10f77f09354006372deed38f60da5249",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Electric current is the flow of electrons through a conductor. Ohm's Law: V = I × R (Voltage = Current × Resistance). A circuit needs a source (battery), conducting wires and a load (bulb/motor). Conductors (copper) allow current to flow; insulators (rubber) do not. Series circuit: one path. Parallel circuit: multiple paths.",
@@ -3557,23 +4101,15 @@
     "normalizedKey": "electric current is the flow of electrons through a conductor. ohm's law: v = i × r (voltage = current × resistance). a circuit needs a source (battery), conducting wires and a load (bulb/motor). conductors (copper) allow current to flow; insulators (rubber) do not. series circuit: one path. parallel circuit: multiple paths.",
     "hash": "ed705a9ca19a85c910f41e7433af8501",
     "objectKey": "ed705a9ca19a85c910f41e7433af8501",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain Ohm's law and basic electric circuits for a class 8-10 student with a simple analogy.",
-    "mode": "default",
-    "normalizedKey": "explain ohm's law and basic electric circuits for a class 8-10 student with a simple analogy.",
-    "hash": "f86b9d4dfe92b1d08b6a572de5e9d002",
-    "objectKey": "f86b9d4dfe92b1d08b6a572de5e9d002",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Digestion breaks food into nutrients the body can absorb.\nPath: Mouth → Oesophagus → Stomach → Small Intestine → Large Intestine → Rectum.\nSaliva in the mouth starts digestion of carbohydrates.\nStomach acid digests proteins. Small intestine absorbs nutrients.\nLarge intestine absorbs water; waste exits as faeces.",
-    "mode": "default",
-    "normalizedKey": "digestion breaks food into nutrients the body can absorb.\npath: mouth → oesophagus → stomach → small intestine → large intestine → rectum.\nsaliva in the mouth starts digestion of carbohydrates.\nstomach acid digests proteins. small intestine absorbs nutrients.\nlarge intestine absorbs water; waste exits as faeces.",
-    "hash": "69a7b7916d4d873c08ac1d981119c726",
-    "objectKey": "69a7b7916d4d873c08ac1d981119c726",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Electric current is the flow of electrons through a conductor.",
+    "mode": "default",
+    "normalizedKey": "electric current is the flow of electrons through a conductor.",
+    "hash": "931bdb212d402b861bb82976690a315b",
+    "objectKey": "931bdb212d402b861bb82976690a315b",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Digestion breaks food into nutrients the body can absorb. Path: Mouth → Oesophagus → Stomach → Small Intestine → Large Intestine → Rectum. Saliva in the mouth starts digestion of carbohydrates. Stomach acid digests proteins. Small intestine absorbs nutrients. Large intestine absorbs water; waste exits as faeces.",
@@ -3581,23 +4117,15 @@
     "normalizedKey": "digestion breaks food into nutrients the body can absorb. path: mouth → oesophagus → stomach → small intestine → large intestine → rectum. saliva in the mouth starts digestion of carbohydrates. stomach acid digests proteins. small intestine absorbs nutrients. large intestine absorbs water; waste exits as faeces.",
     "hash": "a7f802646076255f1ac52b9738597c1d",
     "objectKey": "a7f802646076255f1ac52b9738597c1d",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain the human digestive system step by step for a class 7-9 student.",
-    "mode": "default",
-    "normalizedKey": "explain the human digestive system step by step for a class 7-9 student.",
-    "hash": "c51fff2a638e8d0770ddc9b07cb593da",
-    "objectKey": "c51fff2a638e8d0770ddc9b07cb593da",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Light travels in straight lines at 3×10⁸ m/s in a vacuum.\nReflection: light bounces off a surface (Law: angle of incidence = angle of reflection).\nRefraction: light bends when it moves from one medium to another.\nConvex lens converges (focuses) light — used in magnifying glasses.\nConcave lens diverges (spreads) light — used in spectacles for short-sight.",
-    "mode": "default",
-    "normalizedKey": "light travels in straight lines at 3×10⁸ m/s in a vacuum.\nreflection: light bounces off a surface (law: angle of incidence = angle of reflection).\nrefraction: light bends when it moves from one medium to another.\nconvex lens converges (focuses) light — used in magnifying glasses.\nconcave lens diverges (spreads) light — used in spectacles for short-sight.",
-    "hash": "b7540790a1454c63caa21f181337038d",
-    "objectKey": "b7540790a1454c63caa21f181337038d",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Digestion breaks food into nutrients the body can absorb.",
+    "mode": "default",
+    "normalizedKey": "digestion breaks food into nutrients the body can absorb.",
+    "hash": "440456a6f1fd87432a73dade17a030b1",
+    "objectKey": "440456a6f1fd87432a73dade17a030b1",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Light travels in straight lines at 3×10⁸ m/s in a vacuum. Reflection: light bounces off a surface (Law: angle of incidence = angle of reflection). Refraction: light bends when it moves from one medium to another. Convex lens converges (focuses) light — used in magnifying glasses. Concave lens diverges (spreads) light — used in spectacles for short-sight.",
@@ -3605,23 +4133,15 @@
     "normalizedKey": "light travels in straight lines at 3×10⁸ m/s in a vacuum. reflection: light bounces off a surface (law: angle of incidence = angle of reflection). refraction: light bends when it moves from one medium to another. convex lens converges (focuses) light — used in magnifying glasses. concave lens diverges (spreads) light — used in spectacles for short-sight.",
     "hash": "9d8c6a6a20afab4ca3a8d08837043d5b",
     "objectKey": "9d8c6a6a20afab4ca3a8d08837043d5b",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain reflection and refraction of light with everyday examples for a class 8-10 student.",
-    "mode": "default",
-    "normalizedKey": "explain reflection and refraction of light with everyday examples for a class 8-10 student.",
-    "hash": "cb34e6c07f9469b59d77139179732dfa",
-    "objectKey": "cb34e6c07f9469b59d77139179732dfa",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Tense shows WHEN something happens.\nPresent Simple: I write. (now / regularly)\nPast Simple: I wrote. (completed)\nFuture Simple: I will write. (coming)\nEach tense has simple, continuous, perfect and perfect-continuous forms.",
-    "mode": "default",
-    "normalizedKey": "tense shows when something happens.\npresent simple: i write. (now / regularly)\npast simple: i wrote. (completed)\nfuture simple: i will write. (coming)\neach tense has simple, continuous, perfect and perfect-continuous forms.",
-    "hash": "dc6de561a712d37590c7f01f7cc66c4d",
-    "objectKey": "dc6de561a712d37590c7f01f7cc66c4d",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Light travels in straight lines at 3×10⁸ m/s in a vacuum.",
+    "mode": "default",
+    "normalizedKey": "light travels in straight lines at 3×10⁸ m/s in a vacuum.",
+    "hash": "827054d9f24917bb34efafe785d3e997",
+    "objectKey": "827054d9f24917bb34efafe785d3e997",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Tense shows WHEN something happens. Present Simple: I write. (now / regularly) Past Simple: I wrote. (completed) Future Simple: I will write. (coming) Each tense has simple, continuous, perfect and perfect-continuous forms.",
@@ -3629,23 +4149,15 @@
     "normalizedKey": "tense shows when something happens. present simple: i write. (now / regularly) past simple: i wrote. (completed) future simple: i will write. (coming) each tense has simple, continuous, perfect and perfect-continuous forms.",
     "hash": "cee28c71e699d25c7fa02f7f07cb83b5",
     "objectKey": "cee28c71e699d25c7fa02f7f07cb83b5",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain past, present and future tenses with one example sentence each for a class 6-8 student.",
-    "mode": "default",
-    "normalizedKey": "explain past, present and future tenses with one example sentence each for a class 6-8 student.",
-    "hash": "d5edf877f261cbb96ca2e9111ae20822",
-    "objectKey": "d5edf877f261cbb96ca2e9111ae20822",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Active voice: subject does the action — 'Riya writes a letter.'\nPassive voice: action is done to the subject — 'A letter is written by Riya.'\nUse passive when the doer is unknown or unimportant.\nFormation: subject + form of 'be' + past participle + (by + agent).",
-    "mode": "default",
-    "normalizedKey": "active voice: subject does the action — 'riya writes a letter.'\npassive voice: action is done to the subject — 'a letter is written by riya.'\nuse passive when the doer is unknown or unimportant.\nformation: subject + form of 'be' + past participle + (by + agent).",
-    "hash": "502be1de1be4333008621a16c72d1dc5",
-    "objectKey": "502be1de1be4333008621a16c72d1dc5",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Tense shows WHEN something happens.",
+    "mode": "default",
+    "normalizedKey": "tense shows when something happens.",
+    "hash": "1bc859b1e32a51276e51ad417978d944",
+    "objectKey": "1bc859b1e32a51276e51ad417978d944",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Active voice: subject does the action — 'Riya writes a letter.' Passive voice: action is done to the subject — 'A letter is written by Riya.' Use passive when the doer is unknown or unimportant. Formation: subject + form of 'be' + past participle + (by + agent).",
@@ -3653,23 +4165,15 @@
     "normalizedKey": "active voice: subject does the action — 'riya writes a letter.' passive voice: action is done to the subject — 'a letter is written by riya.' use passive when the doer is unknown or unimportant. formation: subject + form of 'be' + past participle + (by + agent).",
     "hash": "0728664eea770db66b905ea93ef14aa0",
     "objectKey": "0728664eea770db66b905ea93ef14aa0",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain how to convert active voice to passive voice with two examples for a class 7-9 student.",
-    "mode": "default",
-    "normalizedKey": "explain how to convert active voice to passive voice with two examples for a class 7-9 student.",
-    "hash": "9bed5e0c50eba1616d38df240b024009",
-    "objectKey": "9bed5e0c50eba1616d38df240b024009",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "A preposition is a word that shows the relationship between a noun/pronoun and another word in the sentence.\nPrepositions of place: in, on, under, behind, beside, between, above.\nPrepositions of time: at (at 5 o'clock), on (on Monday), in (in July).\nPrepositions of direction: to, towards, through, across.\nExample: 'The cat is on the mat.' — 'on' is the preposition.",
-    "mode": "default",
-    "normalizedKey": "a preposition is a word that shows the relationship between a noun/pronoun and another word in the sentence.\nprepositions of place: in, on, under, behind, beside, between, above.\nprepositions of time: at (at 5 o'clock), on (on monday), in (in july).\nprepositions of direction: to, towards, through, across.\nexample: 'the cat is on the mat.' — 'on' is the preposition.",
-    "hash": "948e0fddf703bdf858dd5d9c83bcc7cc",
-    "objectKey": "948e0fddf703bdf858dd5d9c83bcc7cc",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Active voice: subject does the action — 'Riya writes a letter.'",
+    "mode": "default",
+    "normalizedKey": "active voice: subject does the action — 'riya writes a letter.'",
+    "hash": "34d0e9ac1bd9a0c369b0adf96fbdf717",
+    "objectKey": "34d0e9ac1bd9a0c369b0adf96fbdf717",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "A preposition is a word that shows the relationship between a noun/pronoun and another word in the sentence. Prepositions of place: in, on, under, behind, beside, between, above. Prepositions of time: at (at 5 o'clock), on (on Monday), in (in July). Prepositions of direction: to, towards, through, across. Example: 'The cat is on the mat.' — 'on' is the preposition.",
@@ -3677,23 +4181,15 @@
     "normalizedKey": "a preposition is a word that shows the relationship between a noun/pronoun and another word in the sentence. prepositions of place: in, on, under, behind, beside, between, above. prepositions of time: at (at 5 o'clock), on (on monday), in (in july). prepositions of direction: to, towards, through, across. example: 'the cat is on the mat.' — 'on' is the preposition.",
     "hash": "a2b2edddae0b7a58ffd5f78a9e6d1211",
     "objectKey": "a2b2edddae0b7a58ffd5f78a9e6d1211",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain prepositions of place and time with 5 examples each for a class 6-8 student.",
-    "mode": "default",
-    "normalizedKey": "explain prepositions of place and time with 5 examples each for a class 6-8 student.",
-    "hash": "f954b12a4a11ef7a742645219e71bd2b",
-    "objectKey": "f954b12a4a11ef7a742645219e71bd2b",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Direct speech repeats the exact words: She said, \"I am happy.\"\nReported (indirect) speech changes the words to describe what was said: She said that she was happy.\nThe tense usually shifts back one step: is → was, will → would, can → could.\nPronoun and time expressions also change: I → she, today → that day.",
-    "mode": "default",
-    "normalizedKey": "direct speech repeats the exact words: she said, \"i am happy.\"\nreported (indirect) speech changes the words to describe what was said: she said that she was happy.\nthe tense usually shifts back one step: is → was, will → would, can → could.\npronoun and time expressions also change: i → she, today → that day.",
-    "hash": "987a3ff1f84a59984e6a51f613fdcac9",
-    "objectKey": "987a3ff1f84a59984e6a51f613fdcac9",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "A preposition is a word that shows the relationship between a noun/pronoun and another word in the sentence.",
+    "mode": "default",
+    "normalizedKey": "a preposition is a word that shows the relationship between a noun/pronoun and another word in the sentence.",
+    "hash": "d98c1e846e96f678a3be36a76c255ccb",
+    "objectKey": "d98c1e846e96f678a3be36a76c255ccb",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "Direct speech repeats the exact words: She said, \"I am happy.\" Reported (indirect) speech changes the words to describe what was said: She said that she was happy. The tense usually shifts back one step: is → was, will → would, can → could. Pronoun and time expressions also change: I → she, today → that day.",
@@ -3701,23 +4197,15 @@
     "normalizedKey": "direct speech repeats the exact words: she said, \"i am happy.\" reported (indirect) speech changes the words to describe what was said: she said that she was happy. the tense usually shifts back one step: is → was, will → would, can → could. pronoun and time expressions also change: i → she, today → that day.",
     "hash": "cae77ce89aa0ee2565c9dc23689de2fa",
     "objectKey": "cae77ce89aa0ee2565c9dc23689de2fa",
-    "source": "study_zone_topic_notes_collapsed"
-  },
-  {
-    "text": "Explain how to convert direct speech to reported speech for a class 7-9 student with two examples.",
-    "mode": "default",
-    "normalizedKey": "explain how to convert direct speech to reported speech for a class 7-9 student with two examples.",
-    "hash": "d46e3096e1df439cb203b9b88ebd9515",
-    "objectKey": "d46e3096e1df439cb203b9b88ebd9515",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "An essay is a piece of writing that expresses ideas on a topic.\nStructure: Introduction (introduce the topic), Body (explain ideas with examples), Conclusion (summarise).\nAlways use clear, simple sentences. Use connectors: firstly, however, therefore, in conclusion.\nKeep paragraphs focused — one main idea per paragraph.",
-    "mode": "default",
-    "normalizedKey": "an essay is a piece of writing that expresses ideas on a topic.\nstructure: introduction (introduce the topic), body (explain ideas with examples), conclusion (summarise).\nalways use clear, simple sentences. use connectors: firstly, however, therefore, in conclusion.\nkeep paragraphs focused — one main idea per paragraph.",
-    "hash": "dafa96cfac3ff5b5b62d3fbfb1831bc9",
-    "objectKey": "dafa96cfac3ff5b5b62d3fbfb1831bc9",
     "source": "study_zone_topic_notes"
+  },
+  {
+    "text": "Direct speech repeats the exact words: She said, \"I am happy.\"",
+    "mode": "default",
+    "normalizedKey": "direct speech repeats the exact words: she said, \"i am happy.\"",
+    "hash": "f51a7ab4bd2ddfba562b530e8c0aa0a0",
+    "objectKey": "f51a7ab4bd2ddfba562b530e8c0aa0a0",
+    "source": "study_zone_topic_prompt"
   },
   {
     "text": "An essay is a piece of writing that expresses ideas on a topic. Structure: Introduction (introduce the topic), Body (explain ideas with examples), Conclusion (summarise). Always use clear, simple sentences. Use connectors: firstly, however, therefore, in conclusion. Keep paragraphs focused — one main idea per paragraph.",
@@ -3725,14 +4213,14 @@
     "normalizedKey": "an essay is a piece of writing that expresses ideas on a topic. structure: introduction (introduce the topic), body (explain ideas with examples), conclusion (summarise). always use clear, simple sentences. use connectors: firstly, however, therefore, in conclusion. keep paragraphs focused — one main idea per paragraph.",
     "hash": "b990bedccb224a598b0e597b6310929b",
     "objectKey": "b990bedccb224a598b0e597b6310929b",
-    "source": "study_zone_topic_notes_collapsed"
+    "source": "study_zone_topic_notes"
   },
   {
-    "text": "Explain how to write a simple essay with introduction, body and conclusion for a class 7-9 student.",
+    "text": "An essay is a piece of writing that expresses ideas on a topic.",
     "mode": "default",
-    "normalizedKey": "explain how to write a simple essay with introduction, body and conclusion for a class 7-9 student.",
-    "hash": "afb9d053c6089c488d2a45374b33e73d",
-    "objectKey": "afb9d053c6089c488d2a45374b33e73d",
+    "normalizedKey": "an essay is a piece of writing that expresses ideas on a topic.",
+    "hash": "a1921950a4ba0b98d8dc70b5bfbe2e7e",
+    "objectKey": "a1921950a4ba0b98d8dc70b5bfbe2e7e",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -4032,22 +4520,6 @@
     "source": "speech_coach_word"
   },
   {
-    "text": "ball",
-    "mode": "default",
-    "normalizedKey": "ball",
-    "hash": "879a0c5ac2876205e64322f75ab27eae",
-    "objectKey": "879a0c5ac2876205e64322f75ab27eae",
-    "source": "speech_coach_word"
-  },
-  {
-    "text": "cup",
-    "mode": "default",
-    "normalizedKey": "cup",
-    "hash": "e6a4dc39b508271816d7ba67cca1e122",
-    "objectKey": "e6a4dc39b508271816d7ba67cca1e122",
-    "source": "speech_coach_word"
-  },
-  {
     "text": "up",
     "mode": "default",
     "normalizedKey": "up",
@@ -4085,22 +4557,6 @@
     "normalizedKey": "more",
     "hash": "394ed5709a21369188621881ff52843f",
     "objectKey": "394ed5709a21369188621881ff52843f",
-    "source": "speech_coach_word"
-  },
-  {
-    "text": "hat",
-    "mode": "default",
-    "normalizedKey": "hat",
-    "hash": "c4620d75b0300cc569aacfc35ea681e9",
-    "objectKey": "c4620d75b0300cc569aacfc35ea681e9",
-    "source": "speech_coach_word"
-  },
-  {
-    "text": "bed",
-    "mode": "default",
-    "normalizedKey": "bed",
-    "hash": "b76d0e183e4d3498548e3a04b015fa41",
-    "objectKey": "b76d0e183e4d3498548e3a04b015fa41",
     "source": "speech_coach_word"
   },
   {
@@ -4152,30 +4608,6 @@
     "source": "speech_coach_word"
   },
   {
-    "text": "book",
-    "mode": "default",
-    "normalizedKey": "book",
-    "hash": "a6bf737f53f13a6d258bc60e32583f4d",
-    "objectKey": "a6bf737f53f13a6d258bc60e32583f4d",
-    "source": "speech_coach_word"
-  },
-  {
-    "text": "tree",
-    "mode": "default",
-    "normalizedKey": "tree",
-    "hash": "bafe142f196640b600adae867afee909",
-    "objectKey": "bafe142f196640b600adae867afee909",
-    "source": "speech_coach_word"
-  },
-  {
-    "text": "frog",
-    "mode": "default",
-    "normalizedKey": "frog",
-    "hash": "5fe2c429184856b3835a7ca2dd917ccc",
-    "objectKey": "5fe2c429184856b3835a7ca2dd917ccc",
-    "source": "speech_coach_word"
-  },
-  {
     "text": "butterfly",
     "mode": "default",
     "normalizedKey": "butterfly",
@@ -4205,14 +4637,6 @@
     "normalizedKey": "umbrella",
     "hash": "c85faaa0ed2d6654c596427c3db130a0",
     "objectKey": "c85faaa0ed2d6654c596427c3db130a0",
-    "source": "speech_coach_word"
-  },
-  {
-    "text": "beautiful",
-    "mode": "default",
-    "normalizedKey": "beautiful",
-    "hash": "e3f32ae6a738a812ef2eab9187e371bf",
-    "objectKey": "e3f32ae6a738a812ef2eab9187e371bf",
     "source": "speech_coach_word"
   },
   {
