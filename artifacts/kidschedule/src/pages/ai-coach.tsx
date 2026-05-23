@@ -455,12 +455,29 @@ const COACH_CATEGORY_TILE_GRADIENTS: Record<string, string> = {
 };
 
 const COACH_TILE_BORDER = "1px solid rgba(139,92,246,0.28)";
+const COACH_TILE_SHADOW = "0 0 35px hsl(var(--brand-violet-500) / 0.2), inset 0 1px 0 hsl(var(--foreground) / 0.08)";
 
 function coachCategoryGradient(categoryId: string): string {
   return (
     COACH_CATEGORY_TILE_GRADIENTS[categoryId]
     ?? "linear-gradient(135deg, hsl(var(--brand-violet-500) / 0.3), hsl(var(--brand-violet-600) / 0.25))"
   );
+}
+
+/** Category gradient layered on the theme card surface — readable in light + dark. */
+function coachCategoryPanelBackground(categoryId: string): string {
+  return `${coachCategoryGradient(categoryId)}, hsl(var(--card))`;
+}
+
+const GOAL_TO_CATEGORY: Record<string, string> = {};
+GOAL_CATEGORIES.forEach(cat => {
+  cat.items.forEach(g => {
+    GOAL_TO_CATEGORY[g.id] = cat.id;
+  });
+});
+
+function coachGoalCategoryId(goalId: string): string {
+  return GOAL_TO_CATEGORY[goalId] ?? "";
 }
 
 // ─── Free vs Premium goal gating ──────────────────────────────────────────
@@ -1505,48 +1522,49 @@ export default function AICoachPage() {
     const visibleTotal = ageSkipped ? QUESTIONS.length - 1 : QUESTIONS.length;
     const visibleNum = ageSkipped ? qIndex : qIndex + 1;
     const progressPct = visibleNum / visibleTotal * 100;
+    const questionCategoryId = coachGoalCategoryId(goalId);
     return <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
         <button onClick={handleBackQ} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back_3")}
         </button>
 
-        <div data-on-dark className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-border p-5 space-y-5" style={{
-        background: "linear-gradient(135deg,rgba(76,29,149,0.92) 0%,rgba(124,58,237,0.85) 50%,rgba(190,24,93,0.82) 100%)",
-        boxShadow: "0 0 50px rgba(139,92,246,0.45), inset 0 1px 0 rgba(255,255,255,0.18)"
+        <div data-on-dark className="coach-question-panel relative rounded-3xl overflow-hidden backdrop-blur-md p-5 space-y-5" style={{
+        background: coachCategoryPanelBackground(questionCategoryId),
+        border: COACH_TILE_BORDER,
+        boxShadow: COACH_TILE_SHADOW
       }}>
-          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl pointer-events-none" style={{
-          background: "rgba(139,92,246,0.55)"
-        }} />
-          <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full blur-2xl pointer-events-none" style={{
-          background: "rgba(236,72,153,0.4)"
-        }} />
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: "rgba(255,255,255,0.04)" }}
+          />
 
           <div className="relative">
-            <div className="flex items-center justify-between text-xs text-white/70 mb-1.5">
+            <div className="flex items-center justify-between text-xs mb-1.5" style={{ color: "rgba(199,192,232,0.9)" }}>
               <span className="font-semibold">{t("pages.ai_coach.question")} {visibleNum} of {visibleTotal}</span>
               <span>{selectedGoal?.title}</span>
             </div>
-            <div className="h-2 bg-white/15 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-muted to-muted transition-all" style={{
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.15)" }}>
+              <div className="h-full transition-all rounded-full" style={{
               width: `${progressPct}%`,
-              boxShadow: "0 0 8px rgba(255,255,255,0.6)"
+              background: "linear-gradient(90deg, hsl(var(--primary)), hsl(var(--brand-violet-400)))",
+              boxShadow: "0 0 8px hsl(var(--primary) / 0.45)"
             }} />
             </div>
           </div>
 
           <div className="relative space-y-1">
             <h2 className="font-quicksand text-xl font-bold text-white">{currentQ.prompt}</h2>
-            {currentQ.type === "multi" && <p className="text-xs text-white/70">{t("pages.ai_coach.pick_any_that_apply")}</p>}
+            {currentQ.type === "multi" && <p className="text-xs" style={{ color: "rgba(199,192,232,0.9)" }}>{t("pages.ai_coach.pick_any_that_apply")}</p>}
           </div>
 
           <div className="relative space-y-2">
             {currentQ.options.map(opt => {
             const selected = currentQ.type === "multi" ? (answers[currentQ.id] as string[] ?? []).includes(opt) : answers[currentQ.id] === opt;
-            return <button key={opt} onClick={() => handleSelectOption(opt)} className="w-full text-left px-4 py-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 backdrop-blur-sm" style={selected ? {
-              background: "linear-gradient(135deg,rgba(255,255,255,0.28) 0%,rgba(255,255,255,0.15) 100%)",
-              border: "1px solid rgba(255,255,255,0.7)",
+            return <button key={opt} onClick={() => handleSelectOption(opt)} className="coach-question-option w-full text-left px-4 py-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 backdrop-blur-sm" style={selected ? {
+              background: "linear-gradient(135deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.15) 100%)",
+              border: "1px solid rgba(255,255,255,0.55)",
               color: "#fff",
-              boxShadow: "0 0 20px rgba(255,255,255,0.25)"
+              boxShadow: "0 0 16px hsl(var(--primary) / 0.25)"
             } : {
               background: "rgba(255,255,255,0.12)",
               border: "1px solid rgba(255,255,255,0.25)",
@@ -1559,8 +1577,8 @@ export default function AICoachPage() {
           </div>
 
           <button data-on-dark onClick={handleNextQ} disabled={!isAnswered} className="relative w-full py-4 rounded-2xl font-bold text-base text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all" style={{
-          background: "linear-gradient(135deg,hsl(var(--brand-violet-400)),hsl(var(--brand-pink-400)))",
-          boxShadow: isAnswered ? "0 0 30px rgba(255,255,255,0.45)" : "none"
+          background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--brand-violet-500)))",
+          boxShadow: isAnswered ? "0 0 24px hsl(var(--primary) / 0.45)" : "none"
         }}>
             {qIndex < QUESTIONS.length - 1 ? "Next →" : "Build My Plan ✨"}
           </button>

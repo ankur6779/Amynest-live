@@ -30,14 +30,9 @@ export function AudioPlayerBar({
       exit={{ opacity: 0, y: 16 }}
       transition={{ duration: 0.22 }}
       data-testid="audio-player-bar"
+      className="bottom-controls"
       style={{
-        position: "fixed",
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 50,
-        padding: "10px max(12px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px))",
-        boxSizing: "border-box",
+        padding: "10px max(12px, env(safe-area-inset-right, 0px)) 10px max(12px, env(safe-area-inset-left, 0px))",
         background: "linear-gradient(180deg, rgba(15,12,41,0.2) 0%, rgba(15,12,41,0.95) 40%)",
         backdropFilter: "blur(10px)",
         borderTop: "1px solid rgba(139,92,246,0.35)",

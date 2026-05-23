@@ -9,7 +9,5 @@ export const APP_HEADER_HEIGHT_CSS_VAR = "--app-header-height";
 /** Use in fixed/absolute shells that must start below the mobile app header. */
 export const APP_HEADER_HEIGHT_OFFSET = `var(${APP_HEADER_HEIGHT_CSS_VAR}, 3.5rem)`;
 
-/** Minimum clearance above Android 3-button system navigation (px). */
-export const APP_BOTTOM_SAFE_BASE_PX = 48;
-
+/** Bottom safe-area padding token — use with env(safe-area-inset-bottom) in CSS. */
 export const APP_BOTTOM_CLEARANCE_CSS_VAR = "--app-bottom-clearance";

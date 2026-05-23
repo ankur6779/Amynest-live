@@ -50,7 +50,7 @@ function App() {
   // the user never sees a blank Suspense fallback even on slow networks.
   return (
     <div id="app-root" className="app-root w-full max-w-full min-w-0">
-      <div className="app-scroll">
+      <div className="app-scroll page-content">
         <DebugOverlay />
         <StaticAudioTestButton />
         {/* ErrorBoundary disabled temporarily while verifying QueryClientProvider fix */}

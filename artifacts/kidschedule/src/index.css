@@ -505,15 +505,17 @@
 
 html,
 body,
-#app-root {
+#root {
   margin: 0;
   padding: 0;
   width: 100%;
   max-width: 100%;
   height: 100%;
-  overflow: hidden;
   touch-action: manipulation;
-  overscroll-behavior-y: none;
+}
+
+body {
+  overscroll-behavior-y: auto;
 }
 
 html {
@@ -559,9 +561,7 @@ html[data-theme="dark"] {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  height: 100%;
-  max-height: calc(var(--vh, 1vh) * 100);
-  overflow: hidden;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -570,69 +570,58 @@ html[data-theme="dark"] {
 #app-root {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   box-sizing: border-box;
 }
 
 .app-root {
-  height: 100%;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 100dvh;
 }
 
-.app-scroll {
+/* Primary scroll surface — .page-content is the documented alias */
+.app-scroll,
+.page-content {
   flex: 1;
   min-height: 0;
   min-width: 0;
   max-width: 100%;
   overflow-x: clip;
   overflow-y: auto;
-  overscroll-behavior-y: none;
-  padding-bottom: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Tab bar clearance when the bottom nav is visible (dashboard, mobile). */
+/* Tab bar clearance only when the bottom nav is visible (dashboard). */
 @media (max-width: 767px) {
-  body.has-tabbar .app-scroll {
-    padding-bottom: calc(110px + max(env(safe-area-inset-bottom, 0px), 10px));
-  }
-
-  /*
-   * Android PWA / WebView: env(safe-area-inset-bottom) is often 0 with 3-button
-   * navigation, so reserve a minimum base above the system nav bar globally.
-   */
-  html.amynest-android-shell {
-    --app-bottom-safe-base: 48px;
-    --app-bottom-clearance: max(
-      var(--app-bottom-safe-base),
-      env(safe-area-inset-bottom, 0px),
-      12px
-    );
-  }
-
-  html.amynest-android-shell .app-footer {
-    bottom: var(--app-bottom-clearance);
-  }
-
-  html.amynest-android-shell body.has-tabbar .app-scroll {
-    padding-bottom: calc(110px + var(--app-bottom-clearance)) !important;
-  }
-
-  html.amynest-android-shell body.no-tabbar .app-scroll:not(:has(.assistant-chat-page)) {
-    padding-bottom: var(--app-bottom-clearance) !important;
-  }
-
-  html.amynest-android-shell .chat-input {
-    bottom: var(--app-bottom-clearance);
-  }
-
-  html.amynest-android-shell .app-fixed-below-header {
-    bottom: var(--app-bottom-clearance) !important;
+  body.has-tabbar .app-scroll,
+  body.has-tabbar .page-content {
+    padding-bottom: calc(110px + 16px + env(safe-area-inset-bottom, 0px));
   }
 }
 
-body.no-tabbar,
-body.no-tabbar .app-scroll {
-  padding-bottom: 0 !important;
+/* Reserve space above fixed bottom controls (audio player, sticky bars). */
+.scroll-safe {
+  padding-bottom: 120px;
+}
+
+.scroll-safe--audio {
+  padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Fixed bottom controls — outside the scroll flow */
+.bottom-controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
 }
 
 .app-scroll:has(.assistant-chat-page) {
@@ -789,24 +778,27 @@ body.no-tabbar .app-scroll {
 
 .app-footer {
   position: fixed;
-  bottom: max(env(safe-area-inset-bottom, 0px), 10px);
   left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 78px;
   z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
 }
 
 .pb-app-safe {
-  padding-bottom: var(--app-bottom-clearance);
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
 @media (max-width: 767px) {
   html.amynest-android-shell .mobile-menu-sheet-footer {
-    padding-bottom: var(--app-bottom-clearance);
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   }
 
   html.amynest-android-shell #amy-fab-floating {
-    bottom: calc(110px + var(--app-bottom-clearance));
+    bottom: calc(110px + 16px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -1005,8 +997,7 @@ body.no-tabbar .app-scroll {
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --app-header-height: 3.5rem;
   --app-header-content-gap: 8px;
-  --app-bottom-safe-base: 0px;
-  --app-bottom-clearance: max(env(safe-area-inset-bottom, 0px), 12px);
+  --app-bottom-clearance: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
 /* When running as a standalone PWA or inside Capacitor, avoid notch overlap */
@@ -1136,6 +1127,13 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
   border-color: hsl(var(--border));
 }
 
+/* Amy Coach question panel — category-tinted card, readable in light + dark */
+:root:not(.dark) .coach-question-panel[data-on-dark] {
+  box-shadow:
+    0 4px 24px hsl(var(--brand-violet-600) / 0.14),
+    inset 0 1px 0 hsl(var(--foreground) / 0.06);
+}
+
 /* Hide Firebase / Google reCAPTCHA badge if any legacy script injects it */
 .grecaptcha-badge {
   visibility: hidden !important;
@@ -1208,13 +1206,13 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
 
 .chat-input {
   position: fixed;
-  bottom: env(safe-area-inset-bottom, 0px);
-  bottom: max(env(safe-area-inset-bottom, 0px), 10px);
   left: 0;
   right: 0;
+  bottom: 0;
   width: auto;
   z-index: 1000;
   padding: 10px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   background: hsl(var(--background));
   box-sizing: border-box;
 }
