@@ -64,6 +64,8 @@ Complete ALL items before submitting. Missing items = **rejection**.
   - Simulated gambling: **None**
   - Horror/fear themes: **None**
   - Mature/suggestive themes: **None**
+  - **Parental Controls: None** (Kids Control Center is a coming-soon preview, not active controls)
+  - **Age Assurance: None** (no age-verification gate in the app)
   - **Result: 4+** (suitable for all ages)
 
 ### 9. Sign-In with Apple (if using Google Sign-In)
@@ -89,7 +91,16 @@ Complete ALL items before submitting. Missing items = **rejection**.
 
 ### 12. Background Modes
 - [ ] Only declare background modes that the app ACTUALLY uses
-  (audio → lullaby player; remote-notification → FCM push)
+- [ ] **Do NOT** include `audio` — lullabies/infant sounds play in the foreground only
+- [ ] Required: `remote-notification` (FCM push), `fetch` (background fetch)
+- [ ] Rejection 2.5.4 (May 2026): build 12 had `audio` without background playback; removed in repo
+
+### 12b. App Privacy — Tracking (Guideline 5.1.2)
+- [ ] App Store Connect → App Privacy → “Do you or your third-party partners use data for tracking?” → **No**
+- [ ] For **every** collected data type, **Used for Tracking** = **unchecked**
+- [ ] `PrivacyInfo.xcprivacy` has `NSPrivacyTracking` = **false** (matches Connect labels)
+- [ ] Do **not** add App Tracking Transparency unless you truly cross-app track for ads
+- [ ] iOS uses Firebase/Messaging only (not Firebase Analytics); RevenueCat is for IAP only
 
 ### 13. WebView Content
 - [ ] The WebView loads HTTPS only (no mixed content)
