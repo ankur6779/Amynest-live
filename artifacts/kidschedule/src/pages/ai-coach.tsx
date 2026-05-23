@@ -1569,7 +1569,7 @@ export default function AICoachPage() {
 
   // ── PHASE: LOADING ───────────────────────────────────────────────────
   if (phase === "resuming") {
-    return <div className="fixed inset-0 z-50 bg-gradient-to-br from-primary via-primary to-primary flex items-center justify-center">
+    return <div className="app-fixed-below-header fixed inset-0 z-50 bg-gradient-to-br from-primary via-primary to-primary flex items-center justify-center">
         <div className="text-center text-white px-8 space-y-6">
           <div className="relative w-20 h-20 mx-auto">
             <Loader2 className="absolute inset-0 w-20 h-20 animate-spin" />
@@ -1585,7 +1585,7 @@ export default function AICoachPage() {
     const TOTAL_WINS = 12;
     const built = Math.max(0, Math.min(TOTAL_WINS, progressWinCount));
     const pct = Math.round(built / TOTAL_WINS * 100);
-    return <div className="fixed inset-0 z-50 bg-gradient-to-br from-primary via-primary to-primary flex items-center justify-center">
+    return <div className="app-fixed-below-header fixed inset-0 z-50 bg-gradient-to-br from-primary via-primary to-primary flex items-center justify-center">
         <div className="text-center text-white px-8 space-y-6 w-full max-w-sm">
           <div className="relative w-20 h-20 mx-auto">
             <Sparkles className="absolute inset-0 w-20 h-20 animate-spin" style={{
@@ -1616,13 +1616,8 @@ export default function AICoachPage() {
 
   // ── PHASE: RESULT ────────────────────────────────────────────────────
   if (phase === "result" && plan) {
-    return <div style={{
-      position: "fixed",
-      inset: 0,
+    return <div className="app-fixed-below-header fixed inset-0 z-50 flex flex-col" style={{
       background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 55%, #0c1220 100%)",
-      zIndex: 50,
-      display: "flex",
-      flexDirection: "column"
     }}>
         {/* Top bar — dark glass */}
         <div style={{

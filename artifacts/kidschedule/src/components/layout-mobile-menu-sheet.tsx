@@ -162,7 +162,7 @@ export function LayoutMobileMenuSheet({
 
   if (!userLoaded || !user) {
     return (
-      <div className="fixed inset-0 z-[100] md:hidden" role="dialog" aria-modal="true">
+      <div className="fixed inset-0 z-[1100] md:hidden" role="dialog" aria-modal="true">
         <button
           type="button"
           aria-label="Close menu"
@@ -181,7 +181,7 @@ export function LayoutMobileMenuSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-[100] md:hidden" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[1100] md:hidden" role="dialog" aria-modal="true">
       <button
         type="button"
         aria-label="Close menu"
@@ -221,11 +221,12 @@ export function LayoutMobileMenuSheet({
           <MenuItems items={safeMenu} location={location} onNavigate={closeSidebar} />
         </nav>
 
-        <div className="shrink-0 border-t px-4 py-3">
+        <div className="mobile-menu-sheet-footer shrink-0 border-t px-4 py-3">
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-foreground/70 hover:bg-muted hover:text-foreground transition-colors"
+            data-testid="button-sign-out-mobile"
+            className="flex w-full min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-foreground/70 hover:bg-muted hover:text-foreground transition-colors"
           >
             <LogOut className="h-5 w-5" />
             {t("nav.sign_out")}
