@@ -15,6 +15,11 @@ on:
         required: false
         default: false
         type: boolean
+      spelling_only:
+        description: "Regenerate only Spelling Mastery words and chunks (~111 phrases)."
+        required: false
+        default: false
+        type: boolean
       study_zone_only:
         description: "Regenerate only Smart Study Zone play + topic phrases."
         required: false
@@ -67,6 +72,9 @@ jobs:
           elif [ "${{ inputs.study_zone_only }}" = "true" ]; then
             echo "Regenerate Smart Study Zone corpus only"
             pnpm run generate:static-audio -- --study-zone-only
+          elif [ "${{ inputs.spelling_only }}" = "true" ]; then
+            echo "Regenerate Spelling Mastery corpus only"
+            pnpm run generate:static-audio -- --spelling-only
           else
             pnpm run generate:static-audio
           fi
