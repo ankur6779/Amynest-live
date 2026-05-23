@@ -354,6 +354,22 @@ async function playElementWithNeverSilentWatchdog(
   return true;
 }
 
+function uniqueStaticCandidates(primary: string, extras: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const push = (raw: string) => {
+    const t = raw.trim();
+    if (!t) return;
+    const key = t.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(t);
+  };
+  for (const e of extras) push(e);
+  push(primary);
+  return out;
+}
+
 async function attemptStaticPlay(
   text: string,
   mode: StaticAudioMode,
@@ -362,13 +378,7 @@ async function attemptStaticPlay(
   phonicsOnly = false,
   fallbackTexts: string[] = [],
 ): Promise<PlayAttemptResult> {
-  const candidates = [
-    text,
-    ...fallbackTexts.filter((f) => {
-      const alt = f.trim();
-      return alt && alt !== text.trim();
-    }),
-  ];
+  const candidates = uniqueStaticCandidates(text, fallbackTexts);
 
   for (const candidate of candidates) {
     for (const tryMode of staticModesToTry(mode, phonicsOnly)) {
@@ -1154,10 +1164,12 @@ export async function speakAmyVoice(
     );
   };
 
-  const staticFallbackTexts =
-    policy.originalText.trim() && policy.originalText.trim() !== text
+  const staticFallbackTexts = [
+    ...(opts?.staticCatalogTexts ?? []),
+    ...(policy.originalText.trim() && policy.originalText.trim() !== text
       ? [policy.originalText]
-      : [];
+      : []),
+  ];
 
   const runPregen = async (): Promise<PlayAttemptResult> =>
     tryPregeneratedParallelLayer(

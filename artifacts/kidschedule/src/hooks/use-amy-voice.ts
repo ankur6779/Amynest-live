@@ -64,6 +64,10 @@ export interface SpeakOptions {
   waitUntilEnd?: boolean;
   /** Amy Audio Lessons: one paragraph = one TTS unit (no semantic phrase splits). */
   lessonParagraph?: boolean;
+  /** Pre-generated static catalog phrase (math tricks) — verbatim text, static MP3 first. */
+  catalogPlayback?: boolean;
+  /** Extra lines to try for static-audio lookup before live TTS. */
+  staticCatalogTexts?: string[];
   /** Pre-computed speech mode policy (set by prepareAmySpeechInput). */
   speechPolicy?: AmySpeechPolicy;
 }
@@ -186,7 +190,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         let replayCount = 0;
         let difficultyLevel: AmySpeechPolicy["difficultyLevel"] = "neutral";
 
-        if (opts?.lessonParagraph) {
+        if (opts?.lessonParagraph || opts?.catalogPlayback) {
           finalizedPolicy = enforceAmySpeechPolicyInvariants(speechPolicy);
         } else {
           replayCount = recordAmyVoicePhraseReplay(
