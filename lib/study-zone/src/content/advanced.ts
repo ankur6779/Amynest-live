@@ -1,4 +1,5 @@
-import type { SubjectPack, AdvancedSubjectId } from "../types";
+import type { SubjectPack, AdvancedSubjectId, StudyTopicDraft } from "../types";
+import { enrichSubjectPacks } from "./enrich-topics";
 import {
   IMG_ALGEBRA, IMG_TRIANGLES, IMG_TRIGONOMETRY,
   IMG_QUADRATIC, IMG_STATISTICS, IMG_MENSURATION, IMG_LINEAR_EQ,
@@ -7,7 +8,7 @@ import {
   IMG_TENSES, IMG_ACTIVE_PASSIVE, IMG_PREPOSITIONS, IMG_REPORTED_SPEECH,
 } from "./images";
 
-export const ADVANCED_SUBJECTS: SubjectPack<AdvancedSubjectId>[] = [
+const ADVANCED_SUBJECTS_DRAFT: Array<Omit<SubjectPack<AdvancedSubjectId>, "topics"> & { topics: StudyTopicDraft[] }> = [
   // ── Math ────────────────────────────────────────────────────────────────────
   {
     id: "math",
@@ -234,7 +235,7 @@ export const ADVANCED_SUBJECTS: SubjectPack<AdvancedSubjectId>[] = [
         title: "Active and Passive Voice",
         imageExample: IMG_ACTIVE_PASSIVE,
         notes:
-          "Active voice: subject does the action — 'Riya writes a letter.'\nPassive voice: action is done to the subject — 'A letter is written by Riya.'\nUse passive when the doer is unknown or unimportant.\nFormation: subject + form of 'be' + past participle + (by + agent).",
+          "Active voice: subject does the action — 'Emma writes a letter.'\nPassive voice: action is done to the subject — 'A letter is written by Emma.'\nUse passive when the doer is unknown or unimportant.\nFormation: subject + form of 'be' + past participle + (by + agent).",
         amyPrompt: "Explain how to convert active voice to passive voice with two examples for a class 7-9 student.",
         questions: [
           { q: "Passive of 'He plays football.'?", options: ["Football is played by him.", "Football was played by him.", "Football will be played by him.", "Football has played him."], answer: 0 },
@@ -287,3 +288,5 @@ export const ADVANCED_SUBJECTS: SubjectPack<AdvancedSubjectId>[] = [
     ],
   },
 ];
+
+export const ADVANCED_SUBJECTS: SubjectPack<AdvancedSubjectId>[] = enrichSubjectPacks(ADVANCED_SUBJECTS_DRAFT);

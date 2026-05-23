@@ -3576,11 +3576,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Addition means putting numbers together to find the total.",
+    "text": "Addition means putting numbers together. Two plus three equals five!",
     "mode": "default",
-    "normalizedKey": "addition means putting numbers together to find the total.",
-    "hash": "8f18ef76944ad813a7fb8c0f3a55cd82",
-    "objectKey": "8f18ef76944ad813a7fb8c0f3a55cd82",
+    "normalizedKey": "addition means putting numbers together. two plus three equals five!",
+    "hash": "7c335fd7c0f19597e782d133ccd08760",
+    "objectKey": "7c335fd7c0f19597e782d133ccd08760",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3592,11 +3592,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Subtraction means taking some away from a group to find what is left.",
+    "text": "Subtraction means taking some away. Eight minus three leaves five!",
     "mode": "default",
-    "normalizedKey": "subtraction means taking some away from a group to find what is left.",
-    "hash": "c1408b58783a6dcc50fff1d81731895e",
-    "objectKey": "c1408b58783a6dcc50fff1d81731895e",
+    "normalizedKey": "subtraction means taking some away. eight minus three leaves five!",
+    "hash": "213c0a50a344664d286d252006826be3",
+    "objectKey": "213c0a50a344664d286d252006826be3",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3608,11 +3608,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Multiplication is a quick way to add the same number many times.",
+    "text": "Multiplication is adding the same number again and again. Three times four is twelve!",
     "mode": "default",
-    "normalizedKey": "multiplication is a quick way to add the same number many times.",
-    "hash": "3e63f3ea6377e0b521c3540351296577",
-    "objectKey": "3e63f3ea6377e0b521c3540351296577",
+    "normalizedKey": "multiplication is adding the same number again and again. three times four is twelve!",
+    "hash": "8cf3dcba99d1a9a75de23aaf513aa80b",
+    "objectKey": "8cf3dcba99d1a9a75de23aaf513aa80b",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3624,11 +3624,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Division means sharing equally or splitting into equal groups.",
+    "text": "Division means sharing equally. Twelve shared by three gives four in each group!",
     "mode": "default",
-    "normalizedKey": "division means sharing equally or splitting into equal groups.",
-    "hash": "98702eed75637e4fa47f130c89ffabe9",
-    "objectKey": "98702eed75637e4fa47f130c89ffabe9",
+    "normalizedKey": "division means sharing equally. twelve shared by three gives four in each group!",
+    "hash": "7bffb3715974f9e8685cad51a5e6cd2d",
+    "objectKey": "7bffb3715974f9e8685cad51a5e6cd2d",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3640,11 +3640,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "A fraction shows part of a whole.",
+    "text": "A fraction is a part of a whole. One quarter means one piece out of four!",
     "mode": "default",
-    "normalizedKey": "a fraction shows part of a whole.",
-    "hash": "8812ff01f08cb51c0647659c3fcd59e9",
-    "objectKey": "8812ff01f08cb51c0647659c3fcd59e9",
+    "normalizedKey": "a fraction is a part of a whole. one quarter means one piece out of four!",
+    "hash": "fb308640559964f3266d04bf13525abd",
+    "objectKey": "fb308640559964f3266d04bf13525abd",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3656,11 +3656,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Shapes are everywhere around us.",
+    "text": "Shapes are all around us — circles, squares, triangles, and rectangles!",
     "mode": "default",
-    "normalizedKey": "shapes are everywhere around us.",
-    "hash": "48be1fc84f36e3d99eae72c421f08b03",
-    "objectKey": "48be1fc84f36e3d99eae72c421f08b03",
+    "normalizedKey": "shapes are all around us — circles, squares, triangles, and rectangles!",
+    "hash": "e6d4a1141841cd234d81b255f9853ea8",
+    "objectKey": "e6d4a1141841cd234d81b255f9853ea8",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3672,11 +3672,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "A clock shows us what time it is.",
+    "text": "A clock tells the time. There are seven days in a week and twelve months in a year!",
     "mode": "default",
-    "normalizedKey": "a clock shows us what time it is.",
-    "hash": "2a7875afbab9567dbe2a07bbf666864b",
-    "objectKey": "2a7875afbab9567dbe2a07bbf666864b",
+    "normalizedKey": "a clock tells the time. there are seven days in a week and twelve months in a year!",
+    "hash": "78a9dc876a1f05971bc19e3cf9c706f5",
+    "objectKey": "78a9dc876a1f05971bc19e3cf9c706f5",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3688,11 +3688,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Plants have several main parts:",
+    "text": "Plants have roots, stems, leaves, and flowers. Leaves use sunlight to make food!",
     "mode": "default",
-    "normalizedKey": "plants have several main parts:",
-    "hash": "727e0460beae97dc9e655ecd6408617e",
-    "objectKey": "727e0460beae97dc9e655ecd6408617e",
+    "normalizedKey": "plants have roots, stems, leaves, and flowers. leaves use sunlight to make food!",
+    "hash": "4a7e13da5e1bd8dfd285202904364dfd",
+    "objectKey": "4a7e13da5e1bd8dfd285202904364dfd",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3704,11 +3704,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Animals live in different places called habitats.",
+    "text": "Animals live in different homes — pets at home, wild animals in forests, fish in water!",
     "mode": "default",
-    "normalizedKey": "animals live in different places called habitats.",
-    "hash": "57ec51971a77b895a3dda5ad0bc8671f",
-    "objectKey": "57ec51971a77b895a3dda5ad0bc8671f",
+    "normalizedKey": "animals live in different homes — pets at home, wild animals in forests, fish in water!",
+    "hash": "15538ce7f1506614adc0e70e8ce037f8",
+    "objectKey": "15538ce7f1506614adc0e70e8ce037f8",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3720,11 +3720,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Everything around us is made of matter.",
+    "text": "Matter can be a solid, a liquid, or a gas. Ice is solid, water is liquid, air is gas!",
     "mode": "default",
-    "normalizedKey": "everything around us is made of matter.",
-    "hash": "4b9c76feb2981df7bfe235369db2bc3f",
-    "objectKey": "4b9c76feb2981df7bfe235369db2bc3f",
+    "normalizedKey": "matter can be a solid, a liquid, or a gas. ice is solid, water is liquid, air is gas!",
+    "hash": "a5f4fd8ba5e14d21fa6707743f058ba2",
+    "objectKey": "a5f4fd8ba5e14d21fa6707743f058ba2",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3736,59 +3736,59 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Our body has many important parts.",
+    "text": "Your body has a head, arms, legs, and a brain that helps you think and learn!",
     "mode": "default",
-    "normalizedKey": "our body has many important parts.",
-    "hash": "f31967d666bdc70171ef54ce944b5dcd",
-    "objectKey": "f31967d666bdc70171ef54ce944b5dcd",
+    "normalizedKey": "your body has a head, arms, legs, and a brain that helps you think and learn!",
+    "hash": "e591a365d9f9eb91f9573cea3385a0d0",
+    "objectKey": "e591a365d9f9eb91f9573cea3385a0d0",
     "source": "study_zone_topic_prompt"
   },
   {
-    "text": "Weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold. Seasons are longer changes: Summer (hot), Winter (cold), Monsoon/Rainy, Autumn, Spring. India mainly has 3 seasons: summer, winter and rainy. We change our clothes and activities based on the weather.",
+    "text": "Weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold. Seasons are longer changes: Spring, Summer, Autumn (Fall), and Winter. In many places, spring brings flowers, summer is warm, autumn has falling leaves, and winter is cold. We change our clothes and activities based on the weather.",
     "mode": "default",
-    "normalizedKey": "weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold. seasons are longer changes: summer (hot), winter (cold), monsoon/rainy, autumn, spring. india mainly has 3 seasons: summer, winter and rainy. we change our clothes and activities based on the weather.",
-    "hash": "66ed4efffd726bb2c81426948dcc85d9",
-    "objectKey": "66ed4efffd726bb2c81426948dcc85d9",
+    "normalizedKey": "weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold. seasons are longer changes: spring, summer, autumn (fall), and winter. in many places, spring brings flowers, summer is warm, autumn has falling leaves, and winter is cold. we change our clothes and activities based on the weather.",
+    "hash": "5e273fd0ce961f1305344dfbab160eea",
+    "objectKey": "5e273fd0ce961f1305344dfbab160eea",
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold.",
+    "text": "Weather changes day to day — sunny, rainy, cloudy, or snowy. Seasons last longer!",
     "mode": "default",
-    "normalizedKey": "weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold.",
-    "hash": "dcd5f9272e04d8001010fce97d1dc90d",
-    "objectKey": "dcd5f9272e04d8001010fce97d1dc90d",
+    "normalizedKey": "weather changes day to day — sunny, rainy, cloudy, or snowy. seasons last longer!",
+    "hash": "05871d6379c12954338b01018a447fa7",
+    "objectKey": "05871d6379c12954338b01018a447fa7",
     "source": "study_zone_topic_prompt"
   },
   {
-    "text": "We eat food to get energy and stay healthy. Food groups: vegetables (broccoli, carrot), fruits (apple, mango), grains (rice, bread), protein (egg, dal), dairy (milk, cheese). Eating all food groups is called a balanced diet. Junk food (chips, cold drinks) has very little nutrition and should be eaten less.",
+    "text": "We eat food to get energy and stay healthy. Food groups: vegetables (broccoli, carrot), fruits (apple, banana), grains (rice, bread), protein (egg, chicken, beans), dairy (milk, cheese). Eating all food groups is called a balanced diet. Junk food (chips, sugary drinks) has very little nutrition and should be eaten less.",
     "mode": "default",
-    "normalizedKey": "we eat food to get energy and stay healthy. food groups: vegetables (broccoli, carrot), fruits (apple, mango), grains (rice, bread), protein (egg, dal), dairy (milk, cheese). eating all food groups is called a balanced diet. junk food (chips, cold drinks) has very little nutrition and should be eaten less.",
-    "hash": "833df18db2e82445d3b67852f0e10cd0",
-    "objectKey": "833df18db2e82445d3b67852f0e10cd0",
+    "normalizedKey": "we eat food to get energy and stay healthy. food groups: vegetables (broccoli, carrot), fruits (apple, banana), grains (rice, bread), protein (egg, chicken, beans), dairy (milk, cheese). eating all food groups is called a balanced diet. junk food (chips, sugary drinks) has very little nutrition and should be eaten less.",
+    "hash": "638b5bcfe24024bb2875531084fb9523",
+    "objectKey": "638b5bcfe24024bb2875531084fb9523",
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "We eat food to get energy and stay healthy.",
+    "text": "Healthy food gives you energy. Eat fruits, vegetables, grains, and protein every day!",
     "mode": "default",
-    "normalizedKey": "we eat food to get energy and stay healthy.",
-    "hash": "c48cfd9c01a02ae267937e22dfd6a503",
-    "objectKey": "c48cfd9c01a02ae267937e22dfd6a503",
+    "normalizedKey": "healthy food gives you energy. eat fruits, vegetables, grains, and protein every day!",
+    "hash": "f977dacf3c667cad71b61c9887e818cb",
+    "objectKey": "f977dacf3c667cad71b61c9887e818cb",
     "source": "study_zone_topic_prompt"
   },
   {
-    "text": "A noun is a naming word. It names a person (Riya), a place (school), an animal (dog) or a thing (book). Common nouns name general things (cat, city). Proper nouns name specific things and start with a capital letter (Delhi, Riya).",
+    "text": "A noun is a naming word. It names a person (Emma), a place (school), an animal (dog) or a thing (book). Common nouns name general things (cat, city). Proper nouns name specific things and start with a capital letter (London, Emma).",
     "mode": "default",
-    "normalizedKey": "a noun is a naming word. it names a person (riya), a place (school), an animal (dog) or a thing (book). common nouns name general things (cat, city). proper nouns name specific things and start with a capital letter (delhi, riya).",
-    "hash": "0876e79b770dc995229f249838172375",
-    "objectKey": "0876e79b770dc995229f249838172375",
+    "normalizedKey": "a noun is a naming word. it names a person (emma), a place (school), an animal (dog) or a thing (book). common nouns name general things (cat, city). proper nouns name specific things and start with a capital letter (london, emma).",
+    "hash": "37c2c8f2dc6bbbcdfcaed4a7baa81ad2",
+    "objectKey": "37c2c8f2dc6bbbcdfcaed4a7baa81ad2",
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "A noun is a naming word.",
+    "text": "A noun names a person, place, animal, or thing — like dog, school, or apple!",
     "mode": "default",
-    "normalizedKey": "a noun is a naming word.",
-    "hash": "8d7820917f692ba59abdfb5ea3ee5b2c",
-    "objectKey": "8d7820917f692ba59abdfb5ea3ee5b2c",
+    "normalizedKey": "a noun names a person, place, animal, or thing — like dog, school, or apple!",
+    "hash": "c68a38cc285f372f986e7b7d928a8c5b",
+    "objectKey": "c68a38cc285f372f986e7b7d928a8c5b",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3800,11 +3800,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "A verb is an action or doing word.",
+    "text": "A verb is a doing word — run, jump, eat, and read are all verbs!",
     "mode": "default",
-    "normalizedKey": "a verb is an action or doing word.",
-    "hash": "770a2199ed0569095ab0c60aa1393f1a",
-    "objectKey": "770a2199ed0569095ab0c60aa1393f1a",
+    "normalizedKey": "a verb is a doing word — run, jump, eat, and read are all verbs!",
+    "hash": "1ed44a98941ef24734b62274c22e965a",
+    "objectKey": "1ed44a98941ef24734b62274c22e965a",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3816,59 +3816,59 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "An adjective is a describing word — it tells us more about a noun.",
+    "text": "An adjective describes a noun — like big, red, sweet, or cold!",
     "mode": "default",
-    "normalizedKey": "an adjective is a describing word — it tells us more about a noun.",
-    "hash": "f79d6455f11922e9383deb4e3f98559a",
-    "objectKey": "f79d6455f11922e9383deb4e3f98559a",
+    "normalizedKey": "an adjective describes a noun — like big, red, sweet, or cold!",
+    "hash": "c67960fe1cab32cfbb4b28511de6cd19",
+    "objectKey": "c67960fe1cab32cfbb4b28511de6cd19",
     "source": "study_zone_topic_prompt"
   },
   {
-    "text": "A pronoun is a word that replaces a noun to avoid repetition. Examples: I, you, he, she, it, we, they. 'Riya is happy. She is happy.' — 'She' replaces 'Riya'. Using pronouns makes sentences shorter and less repetitive.",
+    "text": "A pronoun is a word that replaces a noun to avoid repetition. Examples: I, you, he, she, it, we, they. 'Emma is happy. She is happy.' — 'She' replaces 'Emma'. Using pronouns makes sentences shorter and less repetitive.",
     "mode": "default",
-    "normalizedKey": "a pronoun is a word that replaces a noun to avoid repetition. examples: i, you, he, she, it, we, they. 'riya is happy. she is happy.' — 'she' replaces 'riya'. using pronouns makes sentences shorter and less repetitive.",
-    "hash": "2abb2995d3d522762237a131708be68a",
-    "objectKey": "2abb2995d3d522762237a131708be68a",
+    "normalizedKey": "a pronoun is a word that replaces a noun to avoid repetition. examples: i, you, he, she, it, we, they. 'emma is happy. she is happy.' — 'she' replaces 'emma'. using pronouns makes sentences shorter and less repetitive.",
+    "hash": "1f050c2c9527a1f4f7a4f479a27fd372",
+    "objectKey": "1f050c2c9527a1f4f7a4f479a27fd372",
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "A pronoun is a word that replaces a noun to avoid repetition.",
+    "text": "A pronoun replaces a noun so we do not repeat it — I, you, he, she, and they!",
     "mode": "default",
-    "normalizedKey": "a pronoun is a word that replaces a noun to avoid repetition.",
-    "hash": "f7476ae2d89e427a2d59025a4e121953",
-    "objectKey": "f7476ae2d89e427a2d59025a4e121953",
+    "normalizedKey": "a pronoun replaces a noun so we do not repeat it — i, you, he, she, and they!",
+    "hash": "4966454da00de94aedae343a4eb51756",
+    "objectKey": "4966454da00de94aedae343a4eb51756",
     "source": "study_zone_topic_prompt"
   },
   {
-    "text": "A sentence is a group of words that makes complete sense. Every sentence has a subject (who/what) and a verb (action). It starts with a capital letter and ends with a full stop, question mark or exclamation mark. Example: 'Riya reads books.' — Riya is the subject, reads is the verb.",
+    "text": "A sentence is a group of words that makes complete sense. Every sentence has a subject (who/what) and a verb (action). It starts with a capital letter and ends with a full stop, question mark or exclamation mark. Example: 'Emma reads books.' — Emma is the subject, reads is the verb.",
     "mode": "default",
-    "normalizedKey": "a sentence is a group of words that makes complete sense. every sentence has a subject (who/what) and a verb (action). it starts with a capital letter and ends with a full stop, question mark or exclamation mark. example: 'riya reads books.' — riya is the subject, reads is the verb.",
-    "hash": "7d02e5fd20fa342a464190539038bffe",
-    "objectKey": "7d02e5fd20fa342a464190539038bffe",
+    "normalizedKey": "a sentence is a group of words that makes complete sense. every sentence has a subject (who/what) and a verb (action). it starts with a capital letter and ends with a full stop, question mark or exclamation mark. example: 'emma reads books.' — emma is the subject, reads is the verb.",
+    "hash": "a152f346cbd204e82580977be9276942",
+    "objectKey": "a152f346cbd204e82580977be9276942",
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "A sentence is a group of words that makes complete sense.",
+    "text": "A sentence is a group of words that makes sense and ends with a full stop!",
     "mode": "default",
-    "normalizedKey": "a sentence is a group of words that makes complete sense.",
-    "hash": "a242bbe89a255df8954d578961dd45ec",
-    "objectKey": "a242bbe89a255df8954d578961dd45ec",
+    "normalizedKey": "a sentence is a group of words that makes sense and ends with a full stop!",
+    "hash": "5d1c8a02eb7a61035f772be6151a2c0a",
+    "objectKey": "5d1c8a02eb7a61035f772be6151a2c0a",
     "source": "study_zone_topic_prompt"
   },
   {
-    "text": "India is a large and beautiful country in Asia. Capital: New Delhi. National flag: saffron, white, green with a blue Ashoka Chakra. National animal: Tiger. National bird: Peacock. National flower: Lotus. National language (official): Hindi. National fruit: Mango.",
+    "text": "A country is a large area with its own government. Every country has a capital city where the government usually works. Examples: United States — Washington, D.C.; United Kingdom — London; France — Paris; Japan — Tokyo. Countries also have flags, anthems, and symbols like national animals or flowers.",
     "mode": "default",
-    "normalizedKey": "india is a large and beautiful country in asia. capital: new delhi. national flag: saffron, white, green with a blue ashoka chakra. national animal: tiger. national bird: peacock. national flower: lotus. national language (official): hindi. national fruit: mango.",
-    "hash": "c8bbcf5827892c2195e9e16494f4a398",
-    "objectKey": "c8bbcf5827892c2195e9e16494f4a398",
+    "normalizedKey": "a country is a large area with its own government. every country has a capital city where the government usually works. examples: united states — washington, d.c.; united kingdom — london; france — paris; japan — tokyo. countries also have flags, anthems, and symbols like national animals or flowers.",
+    "hash": "3733a0cff362f0c80e975ec3e6e630c5",
+    "objectKey": "3733a0cff362f0c80e975ec3e6e630c5",
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "India is a large and beautiful country in Asia.",
+    "text": "Every country has a capital city and special symbols like a flag and national animal!",
     "mode": "default",
-    "normalizedKey": "india is a large and beautiful country in asia.",
-    "hash": "47b401c4bec9cb96858adc0ce808472d",
-    "objectKey": "47b401c4bec9cb96858adc0ce808472d",
+    "normalizedKey": "every country has a capital city and special symbols like a flag and national animal!",
+    "hash": "6f46f3f105f420cef3572fb66b80ae3a",
+    "objectKey": "6f46f3f105f420cef3572fb66b80ae3a",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3880,43 +3880,43 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "The Sun is at the centre of our solar system.",
+    "text": "The Sun is at the center. Earth is our home planet, and the Moon goes around Earth!",
     "mode": "default",
-    "normalizedKey": "the sun is at the centre of our solar system.",
-    "hash": "6d6e0b35a30a90fe4e657859fb859eb8",
-    "objectKey": "6d6e0b35a30a90fe4e657859fb859eb8",
+    "normalizedKey": "the sun is at the center. earth is our home planet, and the moon goes around earth!",
+    "hash": "9e323cf2c88ab193a477e9d047febab8",
+    "objectKey": "9e323cf2c88ab193a477e9d047febab8",
     "source": "study_zone_topic_prompt"
   },
   {
-    "text": "India has many wonderful festivals celebrated by people of all religions. Diwali — festival of lights celebrated by Hindus. Eid — celebrated by Muslims after Ramadan. Christmas — birth of Jesus Christ, celebrated on 25 December. Holi — colourful spring festival. Guru Nanak Jayanti — Sikh festival.",
+    "text": "Festivals are special days when people celebrate with family and friends. Christmas — celebrated on 25 December with lights and gifts. Diwali — festival of lights in autumn. Eid — celebrated after Ramadan with feasts and charity. Chinese New Year — spring festival with dragons and red decorations. Thanksgiving — harvest celebration in the United States and Canada.",
     "mode": "default",
-    "normalizedKey": "india has many wonderful festivals celebrated by people of all religions. diwali — festival of lights celebrated by hindus. eid — celebrated by muslims after ramadan. christmas — birth of jesus christ, celebrated on 25 december. holi — colourful spring festival. guru nanak jayanti — sikh festival.",
-    "hash": "d23623ab40a643bc2328f6faebff0640",
-    "objectKey": "d23623ab40a643bc2328f6faebff0640",
+    "normalizedKey": "festivals are special days when people celebrate with family and friends. christmas — celebrated on 25 december with lights and gifts. diwali — festival of lights in autumn. eid — celebrated after ramadan with feasts and charity. chinese new year — spring festival with dragons and red decorations. thanksgiving — harvest celebration in the united states and canada.",
+    "hash": "f7d5e0a54ad77e1bde2a1fb238877993",
+    "objectKey": "f7d5e0a54ad77e1bde2a1fb238877993",
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "India has many wonderful festivals celebrated by people of all religions.",
+    "text": "People celebrate festivals with lights, colors, music, and food all around the world!",
     "mode": "default",
-    "normalizedKey": "india has many wonderful festivals celebrated by people of all religions.",
-    "hash": "a8bd60bac0e03f92fff46924273515b5",
-    "objectKey": "a8bd60bac0e03f92fff46924273515b5",
+    "normalizedKey": "people celebrate festivals with lights, colors, music, and food all around the world!",
+    "hash": "7355e4523350343ea84eb60af7d995a8",
+    "objectKey": "7355e4523350343ea84eb60af7d995a8",
     "source": "study_zone_topic_prompt"
   },
   {
-    "text": "Transport means ways of travelling from one place to another. Land transport: bus, car, train, bicycle, auto-rickshaw. Water transport: boat, ship, ferry. Air transport: aeroplane, helicopter. Fastest transport: aeroplane. Oldest in India: bullock cart.",
+    "text": "Transport means ways of travelling from one place to another. Land transport: bus, car, train, bicycle, scooter. Water transport: boat, ship, ferry. Air transport: aeroplane, helicopter. Fastest transport: aeroplane. Slowest on land: walking.",
     "mode": "default",
-    "normalizedKey": "transport means ways of travelling from one place to another. land transport: bus, car, train, bicycle, auto-rickshaw. water transport: boat, ship, ferry. air transport: aeroplane, helicopter. fastest transport: aeroplane. oldest in india: bullock cart.",
-    "hash": "ea871f3b48e49069fb280d0583e7c35d",
-    "objectKey": "ea871f3b48e49069fb280d0583e7c35d",
+    "normalizedKey": "transport means ways of travelling from one place to another. land transport: bus, car, train, bicycle, scooter. water transport: boat, ship, ferry. air transport: aeroplane, helicopter. fastest transport: aeroplane. slowest on land: walking.",
+    "hash": "774214c345b98fb1e42bfdf2075c9f16",
+    "objectKey": "774214c345b98fb1e42bfdf2075c9f16",
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Transport means ways of travelling from one place to another.",
+    "text": "We travel by land, water, or air — buses and trains on land, boats on water, planes in the sky!",
     "mode": "default",
-    "normalizedKey": "transport means ways of travelling from one place to another.",
-    "hash": "38ab09f3ac235ac1861f970ae8af5f59",
-    "objectKey": "38ab09f3ac235ac1861f970ae8af5f59",
+    "normalizedKey": "we travel by land, water, or air — buses and trains on land, boats on water, planes in the sky!",
+    "hash": "a130e7ed29618252e4bd2e47f9b1631d",
+    "objectKey": "a130e7ed29618252e4bd2e47f9b1631d",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3928,11 +3928,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Community helpers are people who help others in our society.",
+    "text": "Doctors, teachers, farmers, and firefighters are helpers who keep our community strong!",
     "mode": "default",
-    "normalizedKey": "community helpers are people who help others in our society.",
-    "hash": "0bdb5264aaf02abb7f8926395df8a2b6",
-    "objectKey": "0bdb5264aaf02abb7f8926395df8a2b6",
+    "normalizedKey": "doctors, teachers, farmers, and firefighters are helpers who keep our community strong!",
+    "hash": "2571f09610d5f870556c2f3f24c9d73d",
+    "objectKey": "2571f09610d5f870556c2f3f24c9d73d",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3944,11 +3944,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Algebra uses letters (variables) in place of unknown numbers.",
+    "text": "In algebra, letters stand for unknown numbers. If x plus three equals seven, x is four!",
     "mode": "default",
-    "normalizedKey": "algebra uses letters (variables) in place of unknown numbers.",
-    "hash": "c247fab1f462c58ea5b3c979bd870e7f",
-    "objectKey": "c247fab1f462c58ea5b3c979bd870e7f",
+    "normalizedKey": "in algebra, letters stand for unknown numbers. if x plus three equals seven, x is four!",
+    "hash": "897e5009299248ed8c1a7c659ea525c4",
+    "objectKey": "897e5009299248ed8c1a7c659ea525c4",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3960,11 +3960,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "A linear equation in two variables (y = mx + c) gives a straight line when plotted.",
+    "text": "A straight-line graph follows y equals m x plus c. m is the slope and c is where it crosses the y-axis!",
     "mode": "default",
-    "normalizedKey": "a linear equation in two variables (y = mx + c) gives a straight line when plotted.",
-    "hash": "e846cd28782001e45f60f24792a80aa4",
-    "objectKey": "e846cd28782001e45f60f24792a80aa4",
+    "normalizedKey": "a straight-line graph follows y equals m x plus c. m is the slope and c is where it crosses the y-axis!",
+    "hash": "121a3b3d995e19151188892ec45d3877",
+    "objectKey": "121a3b3d995e19151188892ec45d3877",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3976,11 +3976,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "A quadratic equation has the form ax² + bx + c = 0 (a ≠ 0).",
+    "text": "A quadratic equation curves like a U-shape called a parabola. It has the form a x squared plus b x plus c!",
     "mode": "default",
-    "normalizedKey": "a quadratic equation has the form ax² + bx + c = 0 (a ≠ 0).",
-    "hash": "368bd5d98ed1874a6b889f52e7050886",
-    "objectKey": "368bd5d98ed1874a6b889f52e7050886",
+    "normalizedKey": "a quadratic equation curves like a u-shape called a parabola. it has the form a x squared plus b x plus c!",
+    "hash": "92706494e062720b3a7d14df2fb5b83b",
+    "objectKey": "92706494e062720b3a7d14df2fb5b83b",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -3992,11 +3992,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "A triangle has 3 sides and 3 angles. The sum of all angles is always 180°.",
+    "text": "Every triangle has three sides and three angles that always add up to one hundred eighty degrees!",
     "mode": "default",
-    "normalizedKey": "a triangle has 3 sides and 3 angles. the sum of all angles is always 180°.",
-    "hash": "7e5e9f50aef08def6ffd507d53e449ae",
-    "objectKey": "7e5e9f50aef08def6ffd507d53e449ae",
+    "normalizedKey": "every triangle has three sides and three angles that always add up to one hundred eighty degrees!",
+    "hash": "bb20afe17ab46798e93d2bb201e145dc",
+    "objectKey": "bb20afe17ab46798e93d2bb201e145dc",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -4008,11 +4008,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Mensuration is the branch of math that measures lengths, areas and volumes.",
+    "text": "Area tells how much space a shape covers. Perimeter is the distance around the outside!",
     "mode": "default",
-    "normalizedKey": "mensuration is the branch of math that measures lengths, areas and volumes.",
-    "hash": "508ce65126e0e7db634362892e7c6384",
-    "objectKey": "508ce65126e0e7db634362892e7c6384",
+    "normalizedKey": "area tells how much space a shape covers. perimeter is the distance around the outside!",
+    "hash": "12dabb4ce254788a3c3ae1fe4575b2f3",
+    "objectKey": "12dabb4ce254788a3c3ae1fe4575b2f3",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -4024,11 +4024,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Trigonometry studies the relationship between angles and sides of a right triangle.",
+    "text": "In a right triangle, sine, cosine, and tangent connect angles to side lengths. Remember SOH CAH TOA!",
     "mode": "default",
-    "normalizedKey": "trigonometry studies the relationship between angles and sides of a right triangle.",
-    "hash": "7eff9d21d00855aca6e0841369dc9937",
-    "objectKey": "7eff9d21d00855aca6e0841369dc9937",
+    "normalizedKey": "in a right triangle, sine, cosine, and tangent connect angles to side lengths. remember soh cah toa!",
+    "hash": "0fe627bde01742ad1705d1ece919fa29",
+    "objectKey": "0fe627bde01742ad1705d1ece919fa29",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -4040,11 +4040,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Statistics is the study of collecting and analysing data.",
+    "text": "Mean is the average, median is the middle value, and mode is the value that appears most often!",
     "mode": "default",
-    "normalizedKey": "statistics is the study of collecting and analysing data.",
-    "hash": "548c5ae95d066d01fe6b1a2ba79af5ca",
-    "objectKey": "548c5ae95d066d01fe6b1a2ba79af5ca",
+    "normalizedKey": "mean is the average, median is the middle value, and mode is the value that appears most often!",
+    "hash": "310474ab746cb81af4ba32cc5ed40c7d",
+    "objectKey": "310474ab746cb81af4ba32cc5ed40c7d",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -4056,11 +4056,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "A force is a push or pull that changes speed, direction or shape of an object.",
+    "text": "A force is a push or pull. Newton taught us that every action has an equal opposite reaction!",
     "mode": "default",
-    "normalizedKey": "a force is a push or pull that changes speed, direction or shape of an object.",
-    "hash": "9781ca0ba6d31d6e83a80a5c9a7384b8",
-    "objectKey": "9781ca0ba6d31d6e83a80a5c9a7384b8",
+    "normalizedKey": "a force is a push or pull. newton taught us that every action has an equal opposite reaction!",
+    "hash": "f63008de6cb7fefb8e28d58ef360adfb",
+    "objectKey": "f63008de6cb7fefb8e28d58ef360adfb",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -4072,11 +4072,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "All living organisms are made of cells (cell theory).",
+    "text": "All living things are made of tiny cells. Plant cells have a wall; animal cells do not!",
     "mode": "default",
-    "normalizedKey": "all living organisms are made of cells (cell theory).",
-    "hash": "9ca2b01c9de76eab998579bd1ee18b3f",
-    "objectKey": "9ca2b01c9de76eab998579bd1ee18b3f",
+    "normalizedKey": "all living things are made of tiny cells. plant cells have a wall; animal cells do not!",
+    "hash": "8977a0c08208a67f70931aa90cafc238",
+    "objectKey": "8977a0c08208a67f70931aa90cafc238",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -4088,11 +4088,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Acids are sour and turn blue litmus red (lemon juice, vinegar, HCl).",
+    "text": "Acids taste sour and bases feel soapy. The pH scale runs from zero to fourteen — seven is neutral!",
     "mode": "default",
-    "normalizedKey": "acids are sour and turn blue litmus red (lemon juice, vinegar, hcl).",
-    "hash": "10f77f09354006372deed38f60da5249",
-    "objectKey": "10f77f09354006372deed38f60da5249",
+    "normalizedKey": "acids taste sour and bases feel soapy. the ph scale runs from zero to fourteen — seven is neutral!",
+    "hash": "bb0feb78e824027dcfc80d6d2346a189",
+    "objectKey": "bb0feb78e824027dcfc80d6d2346a189",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -4104,11 +4104,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Electric current is the flow of electrons through a conductor.",
+    "text": "Electric current flows through conductors like copper. Voltage equals current times resistance!",
     "mode": "default",
-    "normalizedKey": "electric current is the flow of electrons through a conductor.",
-    "hash": "931bdb212d402b861bb82976690a315b",
-    "objectKey": "931bdb212d402b861bb82976690a315b",
+    "normalizedKey": "electric current flows through conductors like copper. voltage equals current times resistance!",
+    "hash": "d4e990ed6ccbb01a00b974f37081543a",
+    "objectKey": "d4e990ed6ccbb01a00b974f37081543a",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -4120,11 +4120,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Digestion breaks food into nutrients the body can absorb.",
+    "text": "Food travels from your mouth through your stomach to your intestines where nutrients are absorbed!",
     "mode": "default",
-    "normalizedKey": "digestion breaks food into nutrients the body can absorb.",
-    "hash": "440456a6f1fd87432a73dade17a030b1",
-    "objectKey": "440456a6f1fd87432a73dade17a030b1",
+    "normalizedKey": "food travels from your mouth through your stomach to your intestines where nutrients are absorbed!",
+    "hash": "1ecfba2eed6e0ead143826e91c7d77e3",
+    "objectKey": "1ecfba2eed6e0ead143826e91c7d77e3",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -4136,11 +4136,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Light travels in straight lines at 3×10⁸ m/s in a vacuum.",
+    "text": "Light travels in straight lines. It reflects off mirrors and bends when it enters water!",
     "mode": "default",
-    "normalizedKey": "light travels in straight lines at 3×10⁸ m/s in a vacuum.",
-    "hash": "827054d9f24917bb34efafe785d3e997",
-    "objectKey": "827054d9f24917bb34efafe785d3e997",
+    "normalizedKey": "light travels in straight lines. it reflects off mirrors and bends when it enters water!",
+    "hash": "ed33ab136f347db6c34e10b8cd770eac",
+    "objectKey": "ed33ab136f347db6c34e10b8cd770eac",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -4152,27 +4152,27 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Tense shows WHEN something happens.",
+    "text": "Tense tells when something happens — past, present, or future!",
     "mode": "default",
-    "normalizedKey": "tense shows when something happens.",
-    "hash": "1bc859b1e32a51276e51ad417978d944",
-    "objectKey": "1bc859b1e32a51276e51ad417978d944",
+    "normalizedKey": "tense tells when something happens — past, present, or future!",
+    "hash": "aff82c5d6dd7ef51d92da21d7d50817b",
+    "objectKey": "aff82c5d6dd7ef51d92da21d7d50817b",
     "source": "study_zone_topic_prompt"
   },
   {
-    "text": "Active voice: subject does the action — 'Riya writes a letter.' Passive voice: action is done to the subject — 'A letter is written by Riya.' Use passive when the doer is unknown or unimportant. Formation: subject + form of 'be' + past participle + (by + agent).",
+    "text": "Active voice: subject does the action — 'Emma writes a letter.' Passive voice: action is done to the subject — 'A letter is written by Emma.' Use passive when the doer is unknown or unimportant. Formation: subject + form of 'be' + past participle + (by + agent).",
     "mode": "default",
-    "normalizedKey": "active voice: subject does the action — 'riya writes a letter.' passive voice: action is done to the subject — 'a letter is written by riya.' use passive when the doer is unknown or unimportant. formation: subject + form of 'be' + past participle + (by + agent).",
-    "hash": "0728664eea770db66b905ea93ef14aa0",
-    "objectKey": "0728664eea770db66b905ea93ef14aa0",
+    "normalizedKey": "active voice: subject does the action — 'emma writes a letter.' passive voice: action is done to the subject — 'a letter is written by emma.' use passive when the doer is unknown or unimportant. formation: subject + form of 'be' + past participle + (by + agent).",
+    "hash": "184b576c287fac62aacb2e0e0c6973d7",
+    "objectKey": "184b576c287fac62aacb2e0e0c6973d7",
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Active voice: subject does the action — 'Riya writes a letter.'",
+    "text": "Active voice: the subject does the action. Passive voice: the action is done to the subject!",
     "mode": "default",
-    "normalizedKey": "active voice: subject does the action — 'riya writes a letter.'",
-    "hash": "34d0e9ac1bd9a0c369b0adf96fbdf717",
-    "objectKey": "34d0e9ac1bd9a0c369b0adf96fbdf717",
+    "normalizedKey": "active voice: the subject does the action. passive voice: the action is done to the subject!",
+    "hash": "d8141d54e2ac95f585638dd926923b47",
+    "objectKey": "d8141d54e2ac95f585638dd926923b47",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -4184,11 +4184,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "A preposition is a word that shows the relationship between a noun/pronoun and another word in the sentence.",
+    "text": "Prepositions show place or time — in, on, under, at, and between!",
     "mode": "default",
-    "normalizedKey": "a preposition is a word that shows the relationship between a noun/pronoun and another word in the sentence.",
-    "hash": "d98c1e846e96f678a3be36a76c255ccb",
-    "objectKey": "d98c1e846e96f678a3be36a76c255ccb",
+    "normalizedKey": "prepositions show place or time — in, on, under, at, and between!",
+    "hash": "a61dba84affc908f166da36e4f9646d5",
+    "objectKey": "a61dba84affc908f166da36e4f9646d5",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -4200,11 +4200,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "Direct speech repeats the exact words: She said, \"I am happy.\"",
+    "text": "Reported speech tells what someone said without using their exact words!",
     "mode": "default",
-    "normalizedKey": "direct speech repeats the exact words: she said, \"i am happy.\"",
-    "hash": "f51a7ab4bd2ddfba562b530e8c0aa0a0",
-    "objectKey": "f51a7ab4bd2ddfba562b530e8c0aa0a0",
+    "normalizedKey": "reported speech tells what someone said without using their exact words!",
+    "hash": "e4fc071900b6cdfba9442f59d24b56da",
+    "objectKey": "e4fc071900b6cdfba9442f59d24b56da",
     "source": "study_zone_topic_prompt"
   },
   {
@@ -4216,11 +4216,11 @@
     "source": "study_zone_topic_notes"
   },
   {
-    "text": "An essay is a piece of writing that expresses ideas on a topic.",
+    "text": "A good essay has an introduction, body paragraphs, and a conclusion!",
     "mode": "default",
-    "normalizedKey": "an essay is a piece of writing that expresses ideas on a topic.",
-    "hash": "a1921950a4ba0b98d8dc70b5bfbe2e7e",
-    "objectKey": "a1921950a4ba0b98d8dc70b5bfbe2e7e",
+    "normalizedKey": "a good essay has an introduction, body paragraphs, and a conclusion!",
+    "hash": "aae5d23ddafe074cebac7ae12c591ecb",
+    "objectKey": "aae5d23ddafe074cebac7ae12c591ecb",
     "source": "study_zone_topic_prompt"
   },
   {

@@ -15,6 +15,11 @@ on:
         required: false
         default: false
         type: boolean
+      study_zone_only:
+        description: "Regenerate only Smart Study Zone play + topic phrases."
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -59,6 +64,9 @@ jobs:
           elif [ "${{ inputs.audio_lessons_only }}" = "true" ]; then
             echo "Regenerate Amy Audio Lesson corpus only"
             pnpm run generate:static-audio -- --audio-lessons-only
+          elif [ "${{ inputs.study_zone_only }}" = "true" ]; then
+            echo "Regenerate Smart Study Zone corpus only"
+            pnpm run generate:static-audio -- --study-zone-only
           else
             pnpm run generate:static-audio
           fi
