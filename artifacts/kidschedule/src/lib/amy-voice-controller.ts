@@ -20,6 +20,10 @@ import {
 } from "@/lib/amy-voice-ownership";
 import { prepareAmySpeechInput, type AmySpeechPolicy } from "@/lib/amy-speech-mode";
 import { enforceAmySpeechPolicyInvariants } from "@/lib/amy-voice-invariants";
+import {
+  assertVerbatimLessonText,
+  logLessonAudioIdentity,
+} from "@/lib/lesson-audio-identity";
 import { buildAdaptiveDelivery } from "@/lib/amy-voice-emotion";
 import {
   assessAmyDifficulty,
@@ -81,6 +85,12 @@ export interface SpeakOptions {
   /** Long-form narration (stories, articles) — implies full-required. */
   narration?: boolean;
   lessonParagraph?: boolean;
+  /** Canonical lesson paragraph identity — required for lesson playback. */
+  audioIdentity?: import("@/lib/lesson-audio-identity").AudioIdentity;
+  /** @deprecated Use audioIdentity.lessonId */
+  lessonId?: string;
+  /** @deprecated Use audioIdentity.paragraphIdx */
+  lessonParagraphIndex?: number;
   catalogPlayback?: boolean;
   staticCatalogTexts?: string[];
   speechPolicy?: AmySpeechPolicy;
@@ -248,6 +258,33 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
     }
 
     const requestId = createSpeakRequest();
+
+    if (opts?.lessonParagraph) {
+      const identity = opts.audioIdentity;
+      if (!identity) {
+        const msg = "Lesson playback requires audioIdentity";
+        if (import.meta.env.DEV) throw new Error(msg);
+        console.error("[LessonAudioIdentity]", msg);
+        return { success: false, error: "lesson_identity_missing" };
+      }
+      assertVerbatimLessonText(text, identity.text);
+      if (identity.lessonId !== opts.lessonId && opts.lessonId != null) {
+        const msg = "Lesson speak lessonId mismatch";
+        if (import.meta.env.DEV) throw new Error(msg);
+        console.error("[LessonAudioIdentity]", msg);
+        return { success: false, error: "lesson_identity_mismatch" };
+      }
+      if (
+        identity.paragraphIdx !== opts.lessonParagraphIndex &&
+        opts.lessonParagraphIndex != null
+      ) {
+        const msg = "Lesson speak paragraphIdx mismatch";
+        if (import.meta.env.DEV) throw new Error(msg);
+        console.error("[LessonAudioIdentity]", msg);
+        return { success: false, error: "lesson_identity_mismatch" };
+      }
+      logLessonAudioIdentity(identity, { phase: "speak_start", requestId });
+    }
     logTts({ reason: "speak_start", requestId, textPreview: text.slice(0, 80) });
 
     recordTtsUserGesture();
@@ -281,6 +318,10 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
       if (opts?.lessonParagraph || opts?.catalogPlayback) {
         finalizedPolicy = enforceAmySpeechPolicyInvariants(speechPolicy);
+        if (opts?.lessonParagraph && opts.audioIdentity) {
+          assertVerbatimLessonText(finalizedPolicy.normalizedText, opts.audioIdentity.text);
+          assertVerbatimLessonText(finalizedPolicy.originalText, opts.audioIdentity.text);
+        }
       } else {
         replayCount = recordAmyVoicePhraseReplay(
           speechPolicy.normalizedText,

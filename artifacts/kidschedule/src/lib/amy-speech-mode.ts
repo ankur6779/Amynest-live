@@ -682,16 +682,12 @@ export function logAmyModeDiagnosis(
  */
 export function prepareAmyLessonParagraphSpeech(raw: string): AmySpeechPolicy {
   const originalText = (raw ?? "").trim();
-  const speechMode: AmySpeechMode = "sentence";
-  const baseNormalized = normalizeSentenceNumbers(originalText);
-  const prosody = getProsodyProfile(speechMode, baseNormalized, 1);
-  const phrase = formatProsodyForTts(baseNormalized, speechMode, prosody);
-  const policy = buildPolicy(originalText, phrase, speechMode, [phrase]);
+  // Verbatim catalog text — static map + server pregenerate both key on raw paragraphs.
+  const policy = buildPolicy(originalText, originalText, "sentence", [originalText]);
   policy.useSemanticSplit = false;
   policy.allowSpeechCoachSplit = false;
   policy.allowPhonicsSequence = false;
-  // Pregenerated lesson MP3s live in server TTS cache — dynamic layer first, long timeout.
-  policy.preferDynamicTts = true;
+  policy.preferDynamicTts = false;
   policy.retryDynamicTts = true;
   policy.preferSpeechSynthesisFallback = true;
   policy.dynamicTimeoutMs = getTtsRequestTimeoutMs();

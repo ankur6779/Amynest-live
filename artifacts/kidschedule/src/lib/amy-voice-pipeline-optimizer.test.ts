@@ -10,6 +10,7 @@ import {
   runStagedPregenRace,
   waitUntilEndWithCap,
 } from "@/lib/amy-voice-pipeline-optimizer";
+import { createAudioIdentity } from "@/lib/lesson-audio-identity";
 import {
   _resetPipelineLearningForTests,
   recordLayerOutcome,
@@ -57,6 +58,22 @@ describe("amy-voice-pipeline-optimizer", () => {
     const a = pipelineCacheKey("Hello world", "default");
     const b = pipelineCacheKey("hello world", "default");
     expect(a).toBe(b);
+  });
+
+  it("lesson pipelineCacheKey scopes by lesson id and paragraph index", () => {
+    const text = "Same paragraph text for testing.";
+    const id0 = createAudioIdentity("lesson-a", 0, text);
+    const id1 = createAudioIdentity("lesson-a", 1, text);
+
+    const a = pipelineCacheKey(text, "default", {
+      lessonParagraph: true,
+      audioIdentity: id0,
+    });
+    const b = pipelineCacheKey(text, "default", {
+      lessonParagraph: true,
+      audioIdentity: id1,
+    });
+    expect(a).not.toBe(b);
   });
 
   it("learning-backed strategy picks static_first when static dominates", () => {

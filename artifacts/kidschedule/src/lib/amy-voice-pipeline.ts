@@ -11,6 +11,11 @@
  * Layer 3–6: Phonics → word split → emergency → synthesis → visual
  */
 
+import {
+  assertVerbatimLessonText,
+  lessonLocalCacheKey,
+  logLessonAudioIdentity,
+} from "@/lib/lesson-audio-identity";
 import type { AuthFetchFn } from "@/lib/poll-result";
 import { audioManager, AUDIO_ERROR } from "@/lib/audio-manager";
 import { runWithControlledAudioStop } from "@/lib/amy-voice-safety";
@@ -484,40 +489,85 @@ async function attemptCachePlay(
   ctx: AmyVoicePipelineContext,
   waitUntilEnd: boolean,
   phonicsOnly = false,
+  fallbackTexts: string[] = [],
+  opts?: SpeakOptions,
 ): Promise<PlayAttemptResult> {
-  for (const tryMode of staticModesToTry(mode, phonicsOnly)) {
-    if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
-    const key = localCacheKeyForPhrase(text, tryMode);
-    const objectUrl = await getLocalCachedAudioUrl(key);
-    if (!objectUrl) continue;
+  if (opts?.audioIdentity) {
+    assertVerbatimLessonText(text, opts.audioIdentity.text);
+    for (const tryMode of staticModesToTry(mode, phonicsOnly)) {
+      if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+      const identityKey = lessonLocalCacheKey(opts.audioIdentity, tryMode);
+      const objectUrl = await getLocalCachedAudioUrl(identityKey);
+      if (!objectUrl) continue;
 
-    const audio = playAudio(objectUrl);
-    if (!audio) {
+      const audio = playAudio(objectUrl);
+      if (!audio) {
+        URL.revokeObjectURL(objectUrl);
+        continue;
+      }
+
+      const play = await playElementWithNeverSilentWatchdog(audio, ctx, {
+        proxyUrl: objectUrl,
+        phrase: opts.audioIdentity.text,
+        mode: tryMode,
+        source: "cache",
+        waitUntilEnd,
+      });
       URL.revokeObjectURL(objectUrl);
-      continue;
+      if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+      if (play.ok) {
+        recordAmyVoiceLayerSuccess("cache_success", { mode: tryMode });
+        return {
+          ok: true,
+          layer: "cache",
+          playedDuration: play.playedDuration,
+          expectedDuration: play.expectedDuration,
+          stopPlayback: () => {
+            audio.pause();
+            audio.currentTime = 0;
+          },
+        };
+      }
     }
+  }
 
-    const play = await playElementWithNeverSilentWatchdog(audio, ctx, {
-      proxyUrl: objectUrl,
-      phrase: text,
-      mode: tryMode,
-      source: "cache",
-      waitUntilEnd,
-    });
-    URL.revokeObjectURL(objectUrl);
-    if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
-    if (play.ok) {
-      recordAmyVoiceLayerSuccess("cache_success", { mode: tryMode });
-      return {
-        ok: true,
-        layer: "cache",
-        playedDuration: play.playedDuration,
-        expectedDuration: play.expectedDuration,
-        stopPlayback: () => {
-          audio.pause();
-          audio.currentTime = 0;
-        },
-      };
+  const candidates = uniqueStaticCandidates(text, fallbackTexts);
+
+  for (const candidate of candidates) {
+    for (const tryMode of staticModesToTry(mode, phonicsOnly)) {
+      if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+      const key = localCacheKeyForPhrase(candidate, tryMode);
+      const objectUrl = await getLocalCachedAudioUrl(key);
+      if (!objectUrl) continue;
+
+      const audio = playAudio(objectUrl);
+      if (!audio) {
+        URL.revokeObjectURL(objectUrl);
+        continue;
+      }
+
+      const play = await playElementWithNeverSilentWatchdog(audio, ctx, {
+        proxyUrl: objectUrl,
+        phrase: candidate,
+        mode: tryMode,
+        source: "cache",
+        waitUntilEnd,
+      });
+      URL.revokeObjectURL(objectUrl);
+      if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+      if (play.ok) {
+        recordAmyVoiceLayerSuccess("cache_success", { mode: tryMode });
+        return {
+          ok: true,
+          layer: "cache",
+          playedDuration: play.playedDuration,
+          expectedDuration: play.expectedDuration,
+          stopPlayback: () => {
+            audio.pause();
+            audio.currentTime = 0;
+          },
+        };
+      }
     }
   }
   recordAmyVoiceLayerFailed("cache", "cache_miss");
@@ -534,6 +584,7 @@ async function tryPregeneratedParallelLayer(
   fallbackTexts: string[] = [],
   cacheKey?: string,
   pregenPrimary: "static" | "cache" = "static",
+  opts?: SpeakOptions,
 ): Promise<PlayAttemptResult> {
   const order = getPregenLayerOrder();
   logAmyVoiceDiag("layer1_staged", {
@@ -549,7 +600,7 @@ async function tryPregeneratedParallelLayer(
       run: () =>
         kind === "static"
           ? attemptStaticPlay(text, mode, ctx, waitUntilEnd, phonicsOnly, fallbackTexts)
-          : attemptCachePlay(text, mode, ctx, waitUntilEnd, phonicsOnly),
+          : attemptCachePlay(text, mode, ctx, waitUntilEnd, phonicsOnly, fallbackTexts, opts),
     }));
     const sorted = [...runners].sort((a, b) => b.quality - a.quality);
     for (const runner of sorted) {
@@ -574,7 +625,7 @@ async function tryPregeneratedParallelLayer(
     if (isLayerRecentlyFailed("cache", cacheKey)) {
       return Promise.resolve({ ok: false, error: "cache_skipped" });
     }
-    return attemptCachePlay(text, mode, ctx, waitUntilEnd, phonicsOnly);
+    return attemptCachePlay(text, mode, ctx, waitUntilEnd, phonicsOnly, fallbackTexts, opts);
   };
 
   const result = await runStagedPregenRace(
@@ -1331,7 +1382,7 @@ async function tryLearnableLayerPlay(
     case "static":
       return attemptStaticPlay(text, mode, ctx, waitUntilEnd, phonicsOnly, fallbackTexts);
     case "cache":
-      return attemptCachePlay(text, mode, ctx, waitUntilEnd, phonicsOnly);
+      return attemptCachePlay(text, mode, ctx, waitUntilEnd, phonicsOnly, fallbackTexts, opts);
     case "api":
     case "elevenlabs":
       if (isSlowNetwork() || shouldSkipLiveTtsApi()) return null;
@@ -1417,6 +1468,11 @@ export async function speakAmyVoice(
 
   const text = policy.normalizedText.trim();
   if (!text) return { success: false, error: "tts_empty_text" };
+
+  if (opts?.lessonParagraph && opts.audioIdentity) {
+    assertVerbatimLessonText(text, opts.audioIdentity.text);
+    logLessonAudioIdentity(opts.audioIdentity, { phase: "pipeline_entry" });
+  }
 
   const speakGeneration = depth === 0 ? ++activeSpeakGeneration : activeSpeakGeneration;
   const pipelineCtx: AmyVoicePipelineContext = {
@@ -1590,6 +1646,7 @@ export async function speakAmyVoice(
       staticFallbackTexts,
       cacheKey,
       pregenPrimary,
+      opts,
     );
     telemetry?.recordTry("pregen", result.ok);
     return result;
