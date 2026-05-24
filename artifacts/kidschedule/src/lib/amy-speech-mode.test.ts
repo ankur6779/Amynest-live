@@ -91,9 +91,10 @@ describe("amy-speech-mode", () => {
     expect(policy.preferSpeechSynthesisFallback).toBe(true);
   });
 
-  it("uses phoneme training lines not letter names", () => {
-    expect(getPhonicsTrainingAudioText("b")).toBe("b says buh");
-    expect(getPhonicsTrainingAudioText("a")).toBe("a says ah");
+  it("uses phoneme audio keys not letter names", () => {
+    expect(getPhonicsTrainingAudioText("b")).toBe("b");
+    expect(getPhonicsTrainingAudioText("a")).toBe("a");
+    expect(getPhonicsTrainingAudioText("sh")).toBe("sh");
   });
 
   it("reads numbers as words", () => {

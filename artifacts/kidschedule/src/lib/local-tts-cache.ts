@@ -50,6 +50,11 @@ export function localCacheKeyForTts(cacheKey: string): string {
   return `tts:${cacheKey}`;
 }
 
+/** Curated phonics clip cache — phonics:{audioKey}. */
+export function localCacheKeyForPhonics(audioKey: string): string {
+  return `phonics:${audioKey.trim().toLowerCase()}`;
+}
+
 export async function deleteLocalCachedAudio(key: string): Promise<void> {
   const db = await openDb();
   if (!db) return;

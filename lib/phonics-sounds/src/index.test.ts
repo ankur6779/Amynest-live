@@ -23,8 +23,8 @@ describe("phonics-sounds", () => {
     assert.equal(getPhonicsAudioText("ih"), "i as in igloo");
   });
 
-  it("fixes legacy buh phoneme", () => {
-    assert.equal(getPhonicsAudioText("buh"), "b as in bat");
+  it("fixes legacy buh phoneme to audio key b", () => {
+    assert.equal(getPhonicsAudioText("buh"), "b");
   });
 
   it("passes through existing as-in lines", () => {
@@ -36,15 +36,15 @@ describe("phonics-sounds", () => {
     assert.equal(getPhonicsCacheFileName("b"), "phonics_b_bat");
   });
 
-  it("normalizes digraph sh", () => {
+  it("normalizes digraph sh to audio key", () => {
     assert.equal(normalizePhonicsLetterKey("sh"), "sh");
-    assert.equal(getPhonicsAudioText("sh"), "sh as in ship");
+    assert.equal(getPhonicsAudioText("sh"), "sh");
   });
 });
 
 describe("cvc blending", () => {
-  it("maps IPA phonemes to instructional TTS (not letter names)", () => {
-    assert.equal(getPhonemeAudioText("k"), "k sound");
+  it("maps IPA phonemes to instructional TTS (legacy GCS catalog)", () => {
+    assert.equal(getPhonemeAudioText("k"), "k");
     assert.equal(getPhonemeAudioText("æ"), "a as in apple");
     assert.equal(getPhonemeAudioText("ɪ"), "i as in igloo");
   });
@@ -61,16 +61,16 @@ describe("cvc blending", () => {
     assert.equal(getCvcWordCacheFileName("cat"), "word_cat");
   });
 
-  it("playCvcBlend runs slow, fast, then word", async () => {
+  it("playCvcBlend runs slow and fast phoneme passes (no whole-word finale)", async () => {
     const cat = CVC_WORDS.find((w) => w.word === "cat")!;
     const log: string[] = [];
-    await playCvcBlend(cat, async (text, meta) => {
-      log.push(`${meta?.phase}:${text}`);
+    await playCvcBlend(cat, async (audioKey, meta) => {
+      log.push(`${meta?.phase}:${audioKey}`);
       return { success: true };
     });
-    assert.ok(log.some((l) => l.startsWith("slow:k sound")));
-    assert.ok(log.some((l) => l.startsWith("fast:k sound")));
-    assert.equal(log[log.length - 1], "word:cat");
+    assert.ok(log.some((l) => l.startsWith("slow:k")));
+    assert.ok(log.some((l) => l.startsWith("fast:a")));
+    assert.ok(!log.some((l) => l.startsWith("word:")));
   });
 
   it("resolvePhonicsPlaybackText from symbol + phoneme", () => {

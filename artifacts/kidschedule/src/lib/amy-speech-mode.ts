@@ -5,6 +5,7 @@
 import {
   normalizePhonicsLetterKey,
   PHONICS_DIGRAPH_SOUNDS,
+  resolveGraphemeToAudioKey,
 } from "@workspace/phonics-sounds";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import { getTtsRequestTimeoutMs } from "@/lib/tts-guard";
@@ -23,46 +24,6 @@ export type AmySpeechMode =
   | "number"
   | "mixed"
   | "speech_coach";
-
-/** Static phonics training lines (never alphabet letter names). */
-const LETTER_SAYS: Record<string, string> = {
-  a: "a says ah",
-  b: "b says buh",
-  c: "c says kuh",
-  d: "d says duh",
-  e: "e says eh",
-  f: "f says fff",
-  g: "g says guh",
-  h: "h says huh",
-  i: "i says ih",
-  j: "j says juh",
-  k: "k says kuh",
-  l: "l says lll",
-  m: "m says mmm",
-  n: "n says nnn",
-  o: "o says oh",
-  p: "p says puh",
-  q: "q says kwuh",
-  r: "r says rrr",
-  s: "s says sss",
-  t: "t says tuh",
-  u: "u says uh",
-  v: "v says vvv",
-  w: "w says wuh",
-  x: "x says ks",
-  y: "y says yuh",
-  z: "z says zzz",
-};
-
-const DIGRAPH_SAYS: Record<string, string> = {
-  sh: "sh says shuh, like in ship.",
-  ch: "ch says chuh, like in chop.",
-  th: "th says thhh, like in thumb.",
-  wh: "wh says wuh, like in whale.",
-  ph: "ph says fff, like in phone.",
-  ng: "ng says ng, like in ring.",
-  ck: "ck says kuh, like in duck.",
-};
 
 /** Common short words — helps disambiguate word vs phonics. */
 const COMMON_WORDS = new Set([
@@ -483,18 +444,20 @@ export function splitSemanticPhrases(
   return rawParts.map(format);
 }
 
-/** Phonics chunk line for static catalog — phoneme sounds, not letter names. */
+/** Static phonics audio key for a letter/digraph — not TTS text. */
 export function getPhonicsTrainingAudioText(input: string): string {
   const trimmed = (input ?? "").trim().toLowerCase();
   if (!trimmed) return trimmed;
 
   const key = normalizePhonicsLetterKey(trimmed);
-  if (key && LETTER_SAYS[key]) return LETTER_SAYS[key];
-  if (key && DIGRAPH_SAYS[key]) return DIGRAPH_SAYS[key];
-  if (key && PHONICS_DIGRAPH_SOUNDS[key]) {
-    return DIGRAPH_SAYS[key] ?? PHONICS_DIGRAPH_SOUNDS[key].audioText;
+  if (key) {
+    const audioKey = resolveGraphemeToAudioKey(key);
+    if (audioKey) return audioKey;
   }
-  if (LETTER_SAYS[trimmed]) return LETTER_SAYS[trimmed];
+
+  const direct = resolveGraphemeToAudioKey(trimmed);
+  if (direct) return direct;
+
   return trimmed;
 }
 
@@ -723,6 +686,20 @@ export function prepareAmyCatalogSpeech(raw: string): AmySpeechPolicy {
   return enforceAmySpeechPolicyInvariants(policy);
 }
 
+/** Phonics playback — verbatim input, no prosody / semantic splitting / TTS normalization. */
+export function preparePhonicsSpeech(raw: string, opts?: SpeakOptions): AmySpeechPolicy {
+  const originalText = (raw ?? "").trim();
+  const policy = buildPolicy(originalText, originalText, "phonics", [originalText]);
+  policy.useSemanticSplit = false;
+  policy.allowSpeechCoachSplit = false;
+  policy.forcePhonicsOnly = true;
+  policy.allowPhonicsFallback = true;
+  policy.allowPhonicsSequence = !opts?.word;
+  policy.preferDynamicTts = false;
+  policy.prosody = getProsodyProfile("phonics", originalText, 1);
+  return enforceAmySpeechPolicyInvariants(policy);
+}
+
 /** Guard: normalize + classify before any pipeline layer runs. */
 export function prepareAmySpeechInput(raw: string, opts?: SpeakOptions): AmySpeechPolicy {
   if (opts?.catalogPlayback) {
@@ -733,6 +710,9 @@ export function prepareAmySpeechInput(raw: string, opts?: SpeakOptions): AmySpee
   }
   if (opts?.lessonParagraph) {
     return prepareAmyLessonParagraphSpeech(raw);
+  }
+  if (opts?.mode === "phonics") {
+    return preparePhonicsSpeech(raw, opts);
   }
   const originalText = (raw ?? "").trim();
   const speechMode = detectSpeechMode(originalText, opts);
