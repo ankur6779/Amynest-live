@@ -15,3 +15,21 @@ export function reversedGoogleWebClientId(clientId: string): string {
   const id = clientId.slice(0, -suffix.length);
   return `com.googleusercontent.apps.${id}`;
 }
+
+/** Firebase OAuth handler — must be an authorized redirect URI on the Google Cloud Web client. */
+export function getFirebaseGoogleOAuthHandlerUrl(): string {
+  const authDomain =
+    (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined)?.trim() ||
+    firebaseWebDefaults.authDomain;
+  return `https://${authDomain}/__/auth/handler`;
+}
+
+/** Origins that must appear on the Google Cloud Web OAuth client. */
+export function getGoogleOAuthAuthorizedOrigins(): string[] {
+  return [
+    "https://www.amynest.in",
+    "https://amynest.in",
+    "http://localhost",
+    "http://127.0.0.1",
+  ];
+}

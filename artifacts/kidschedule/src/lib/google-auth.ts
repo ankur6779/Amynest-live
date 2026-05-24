@@ -115,17 +115,11 @@ async function signInFirebaseWithGoogleIdToken(idToken: string): Promise<User> {
   return completeGoogleIdTokenSignIn(idToken);
 }
 
-/** Hard navigation on Android WebView so route guards see persisted auth. */
+/** Hard navigation after OAuth so route guards see persisted Firebase auth. */
 export function navigateAfterOAuthSignIn(destination: string): void {
   if (typeof window === "undefined") return;
   const path = destination.startsWith("/") ? destination : `/${destination}`;
-  if (shouldUseAndroidWebViewGoogleAuth()) {
-    const url = `${window.location.origin}${path}`;
-    window.location.assign(url);
-    return;
-  }
-  window.history.pushState({}, "", path);
-  window.dispatchEvent(new PopStateEvent("popstate"));
+  window.location.assign(`${window.location.origin}${path}`);
 }
 
 async function finishGoogleLoginFlow(): Promise<string> {
