@@ -11,10 +11,12 @@ import {
   hasPendingFirebaseOAuthRedirect,
   resolveFirebaseAuthRedirectResult,
 } from "@/lib/firebase-oauth-redirect";
+import { getFirebaseAuth } from "@/lib/firebase";
 import { refreshFirebaseAuthSnapshot } from "@/lib/firebase-auth-listener";
 import { navigateAfterOAuthSignIn } from "@/lib/google-auth";
 import { resolvePostOAuthDestination } from "@/lib/post-verify-destination";
 import { waitForAuthContextAuthenticated } from "@/lib/wait-for-auth-context";
+import { waitForFirebaseUser } from "@/lib/wait-for-firebase-user";
 
 /**
  * Completes Firebase OAuth redirect (Apple / Google) after the user returns from
@@ -33,18 +35,43 @@ export function OAuthRedirectHandler() {
     let cancelled = false;
 
     const run = async () => {
-      if (!hasPendingFirebaseOAuthRedirect() && !isFirebaseAuthReady()) {
+      const pendingOAuth = hasPendingFirebaseOAuthRedirect();
+      if (!pendingOAuth && !isFirebaseAuthReady()) {
         await new Promise((r) => window.setTimeout(r, 300));
       }
       if (cancelled) return;
 
       try {
         const result = await resolveFirebaseAuthRedirectResult();
-        if (cancelled || !result?.user) return;
+        const user =
+          result?.user ??
+          (pendingOAuth
+            ? (await waitForFirebaseUser(8_000)) ??
+              getFirebaseAuth().currentUser
+            : null);
+        if (cancelled || !user) {
+          if (pendingOAuth) {
+            toast({
+              variant: "destructive",
+              title: "Sign-in failed",
+              description:
+                "Google sign-in could not be completed. Please try again.",
+            });
+          }
+          return;
+        }
 
-        await result.user.getIdToken(true);
+        await user.getIdToken(true);
         refreshFirebaseAuthSnapshot();
-        await waitForAuthContextAuthenticated(12_000);
+        await waitForAuthContextAuthenticated(12_000).catch(() => {
+          refreshFirebaseAuthSnapshot();
+        });
+        if (!getFirebaseAuth().currentUser) {
+          throw Object.assign(
+            new Error("Sign-in session could not be established."),
+            { code: "app/auth-session-lost" },
+          );
+        }
         const destination = await resolvePostOAuthDestination();
         navigateAfterOAuthSignIn(destination);
       } catch (err) {
@@ -57,7 +84,9 @@ export function OAuthRedirectHandler() {
             description: message,
           });
         }
-        setLocation("/sign-in");
+        if (pendingOAuth) {
+          setLocation("/sign-in");
+        }
       }
     };
 

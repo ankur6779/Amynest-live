@@ -53,11 +53,12 @@ export function shouldUseAndroidWebViewGoogleAuth(): boolean {
   return isNativeAmyNestShell() && !isCapacitorNative();
 }
 
-export function loginWithGoogleRedirect(): Promise<void> {
+export async function loginWithGoogleRedirect(): Promise<void> {
+  await ensureFirebaseAuthPersistence();
   const auth = getFirebaseAuth();
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
-  return signInWithRedirect(auth, provider);
+  await signInWithRedirect(auth, provider);
 }
 
 let nativeGoogleInitDone = false;
