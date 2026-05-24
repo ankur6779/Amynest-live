@@ -119,9 +119,16 @@ export function clearAbacus(state: AbacusState): AbacusState {
 
 // ─── Levels & progression ────────────────────────────────────────────────
 
-export type LevelId = 1 | 2 | 3 | 4 | 5;
+export type LevelId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
-export type LevelMode = "numbers" | "addition" | "subtraction" | "multidigit" | "mental";
+export type LevelMode =
+  | "numbers"
+  | "addition"
+  | "subtraction"
+  | "multidigit"
+  | "mental"
+  | "multiplication"
+  | "division";
 
 export interface LevelDefinition {
   id: LevelId;
@@ -190,6 +197,26 @@ export const LEVELS: readonly LevelDefinition[] = [
     challengeCount: 5,
     unlockAccuracyPct: 60,
     challengeSecondsPerQ: 25,
+    fastBonusFraction: 0.5,
+  },
+  {
+    id: 6,
+    slug: "multiplication",
+    rods: 2,
+    operandRange: [2, 9],
+    challengeCount: 5,
+    unlockAccuracyPct: 60,
+    challengeSecondsPerQ: 30,
+    fastBonusFraction: 0.5,
+  },
+  {
+    id: 7,
+    slug: "division",
+    rods: 2,
+    operandRange: [2, 81],
+    challengeCount: 5,
+    unlockAccuracyPct: 60,
+    challengeSecondsPerQ: 30,
     fastBonusFraction: 0.5,
   },
 ] as const;
@@ -329,6 +356,31 @@ export function generateProblem(
         answer: a - b,
         rods: 2,
         hint: `Picture the abacus in your head — take ${b} away from ${a}.`,
+      };
+    }
+    case "multiplication": {
+      const a = pickInt(rand, def.operandRange[0], def.operandRange[1]);
+      const b = pickInt(rand, def.operandRange[0], def.operandRange[1]);
+      const answer = a * b;
+      const rods = answer >= 100 ? 3 : 2;
+      return {
+        prompt: `${a} × ${b}`,
+        answer,
+        rods,
+        hint: `Think of ${a} × ${b} as adding ${a}, ${b} times.`,
+        initialState: emptyAbacus(rods),
+      };
+    }
+    case "division": {
+      const b = pickInt(rand, 2, 9);
+      const quotient = pickInt(rand, 2, 9);
+      const a = b * quotient;
+      return {
+        prompt: `${a} ÷ ${b}`,
+        answer: quotient,
+        rods: 2,
+        hint: `How many groups of ${b} fit into ${a}?`,
+        initialState: abacusFromValue(a, 2),
       };
     }
   }
@@ -491,10 +543,32 @@ export function buildLessonScript(level: LevelId): LessonScript {
         level,
         title: "Mental math — see it in your head",
         steps: [
-          { text: "Now close your eyes and picture the abacus in your mind.", state: emptyAbacus(2) },
-          { text: "Imagine pushing 6 beads up. Now add 3 more — what do you see?", state: emptyAbacus(2) },
-          { text: "If you ran out of lower beads, picture the top bead going down to make 5.", state: emptyAbacus(2) },
-          { text: "The more you practise, the faster the picture forms — that is mental math!", state: emptyAbacus(2) },
+          { text: "Now close your eyes and picture the abacus in your mind.", state: abacusFromValue(6, 2) },
+          { text: "Imagine pushing 6 beads up. Now add 3 more — what do you see?", state: abacusFromValue(9, 2), highlightRod: 1 },
+          { text: "If you ran out of lower beads, picture the top bead going down to make 5.", state: abacusFromValue(5, 2), highlightRod: 1 },
+          { text: "The more you practise, the faster the picture forms — that is mental math!", state: abacusFromValue(9, 2), highlightRod: 1 },
+        ],
+      };
+    case 6:
+      return {
+        level,
+        title: "Multiplication on the abacus",
+        steps: [
+          { text: "Multiplication is repeated addition. 3 × 4 means add 3 four times.", state: emptyAbacus(2) },
+          { text: "Start at zero. Add 3 once — push three lower beads up.", state: abacusFromValue(3, 2), highlightRod: 1 },
+          { text: "Add 3 again — now you have 6.", state: abacusFromValue(6, 2), highlightRod: 1 },
+          { text: "Keep going until you have added 3 four times — the answer is 12!", state: abacusFromValue(12, 2), highlightRod: 1 },
+        ],
+      };
+    case 7:
+      return {
+        level,
+        title: "Division on the abacus",
+        steps: [
+          { text: "Division asks: how many equal groups fit? 12 ÷ 3 means groups of 3 in 12.", state: abacusFromValue(12, 2) },
+          { text: "Show 12 on the abacus first.", state: abacusFromValue(12, 2), highlightRod: 1 },
+          { text: "Take away 3 at a time — each time counts as one group.", state: abacusFromValue(9, 2), highlightRod: 1 },
+          { text: "After four take-aways you reach zero — so 12 ÷ 3 = 4!", state: abacusFromValue(0, 2) },
         ],
       };
   }
@@ -515,6 +589,10 @@ export function minAgeForLevel(level: LevelId): number {
       return 7;
     case 5:
       return 8;
+    case 6:
+      return 9;
+    case 7:
+      return 10;
   }
 }
 
@@ -525,7 +603,8 @@ export function isAbacusEligible(ageYears: number): boolean {
 
 // ─── Server-side AI Tutor prompt builder ────────────────────────────────
 
-export type AbacusLang = "en";
+export type { AbacusLang } from "./language.ts";
+export { resolveAbacusLanguage } from "./language.ts";
 
 /**
  * Build the system prompt + user message for Amy's AI Tutor mode. Pure
@@ -535,11 +614,14 @@ export type AbacusLang = "en";
 export function buildAbacusTutorPrompt(input: {
   level: LevelId;
   ageYears: number;
-  language: AbacusLang;
+  language: import("./language.ts").AbacusLang;
   question: string;
 }): { system: string; user: string } {
   const def = getLevel(input.level);
-  const langLine = "Reply in clear, simple English a child age " + input.ageYears + " can follow.";
+  const langLine =
+    input.language === "hi"
+      ? `Reply in clear, simple Hindi (Devanagari) that a child age ${input.ageYears} can follow. Keep number digits as Arabic numerals (0-9).`
+      : `Reply in clear, simple English a child age ${input.ageYears} can follow.`;
 
   const system = [
     "You are Amy, a warm, patient Indian-style abacus tutor for kids age 4–10.",
@@ -554,3 +636,6 @@ export function buildAbacusTutorPrompt(input: {
   const user = (input.question || "").trim().slice(0, 500);
   return { system, user };
 }
+
+export * from "./badges.ts";
+export * from "./tutor-visual.ts";

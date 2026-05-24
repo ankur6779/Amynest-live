@@ -10,6 +10,6 @@
     "./i18n": "./src/i18n.ts"
   },
   "scripts": {
-    "test": "node --test --experimental-strip-types src/abacus.test.ts src/i18n.test.ts"
+    "test": "node --test --experimental-strip-types src/abacus.test.ts src/i18n.test.ts src/phase34.test.ts"
   }
 }

@@ -2,8 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAbacusTranslation } from "@/hooks/use-abacus-translation";
 import { abacusLevelLabelDefault, isAbacusLevelSlug } from "@workspace/abacus/i18n";
-import { Volume2, VolumeX, Sparkles, Lock, RotateCw, Trophy } from "lucide-react";
+import { Volume2, VolumeX, Sparkles, Lock, RotateCw, Trophy, Zap, Medal, Home } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 import {
+  inferTutorAbacusVisual,
+  resolveAbacusLanguage,
   abacusValue,
   buildLessonScript,
   emptyAbacus,
@@ -23,6 +27,11 @@ import {
 } from "@workspace/abacus";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import {
+  AbacusHomeDashboard,
+  AbacusParentPanel,
+  AbacusViewToggle,
+} from "@/components/abacus-dashboard";
 
 // ─── Tiny WebAudio bleeps for bead taps + correct/wrong/unlock cues ────
 // Uses a single shared AudioContext lazily; no-ops in SSR or browsers
@@ -86,6 +95,91 @@ function writeCachedProgress(childId: number, value: unknown): void {
     window.localStorage.setItem(PROGRESS_LS_KEY(childId), JSON.stringify(value));
   } catch { /* noop (quota / privacy mode) */ }
 }
+
+const DAILY_PRACTICE_LS_KEY = (childId: number) => `abacus.daily.v1.${childId}`;
+const DAILY_PRACTICE_GOAL = 5;
+
+function todayDateKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+interface DailyPracticeShape {
+  date: string;
+  correct: number;
+  attempts: number;
+}
+
+function readDailyPractice(childId: number): DailyPracticeShape {
+  const empty = { date: todayDateKey(), correct: 0, attempts: 0 };
+  try {
+    if (typeof window === "undefined") return empty;
+    const raw = window.localStorage.getItem(DAILY_PRACTICE_LS_KEY(childId));
+    if (!raw) return empty;
+    const parsed = JSON.parse(raw) as DailyPracticeShape;
+    if (parsed.date !== todayDateKey()) return empty;
+    return parsed;
+  } catch {
+    return empty;
+  }
+}
+
+function writeDailyPractice(childId: number, value: DailyPracticeShape): void {
+  try {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(DAILY_PRACTICE_LS_KEY(childId), JSON.stringify(value));
+  } catch { /* noop */ }
+}
+
+const STREAK_LS_KEY = (childId: number) => `abacus.streak.v1.${childId}`;
+
+interface StreakShape {
+  lastDate: string;
+  days: number;
+}
+
+function yesterdayDateKey(): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+function readStreak(childId: number): StreakShape {
+  const empty = { lastDate: "", days: 0 };
+  try {
+    if (typeof window === "undefined") return empty;
+    const raw = window.localStorage.getItem(STREAK_LS_KEY(childId));
+    return raw ? (JSON.parse(raw) as StreakShape) : empty;
+  } catch {
+    return empty;
+  }
+}
+
+function writeStreak(childId: number, value: StreakShape): void {
+  try {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(STREAK_LS_KEY(childId), JSON.stringify(value));
+  } catch { /* noop */ }
+}
+
+function bumpStreak(childId: number): StreakShape {
+  const today = todayDateKey();
+  const prev = readStreak(childId);
+  if (prev.lastDate === today) return prev;
+  const days = prev.lastDate === yesterdayDateKey() ? prev.days + 1 : 1;
+  const next = { lastDate: today, days };
+  writeStreak(childId, next);
+  return next;
+}
+
+type ZoneScreen = "home" | "play";
+type ViewMode = "child" | "parent";
+
+type BoardFeedback = "none" | "correct" | "wrong";
+
+const BEAD_ACTIVE =
+  "bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 shadow-[0_0_12px_rgba(245,158,11,0.55)] ring-2 ring-amber-300/70";
+const BEAD_IDLE =
+  "bg-gradient-to-br from-stone-200 to-stone-300 dark:from-stone-600 dark:to-stone-700 ring-1 ring-stone-400/30 shadow-sm";
 
 // ─── Confetti burst (lightweight, no extra deps) ───────────────────────
 function ConfettiBurst({ show }: { show: boolean }) {
@@ -162,6 +256,7 @@ function BeadColumn({
   onSetLower,
   highlight,
   disabled,
+  learnMode,
 }: {
   rod: { upper: 0 | 1; lower: 0 | 1 | 2 | 3 | 4 };
   rodIndex: number;
@@ -169,42 +264,107 @@ function BeadColumn({
   onSetLower: (i: number, n: 0 | 1 | 2 | 3 | 4) => void;
   highlight?: boolean;
   disabled?: boolean;
+  learnMode?: boolean;
 }) {
+  const spring = learnMode
+    ? { type: "spring" as const, stiffness: 180, damping: 20 }
+    : { type: "spring" as const, stiffness: 380, damping: 24 };
+  const lowerTrackRef = useRef<HTMLDivElement>(null);
+  const upperStartY = useRef(0);
+
+  const setLowerFromPointer = (clientY: number) => {
+    const track = lowerTrackRef.current;
+    if (!track || disabled) return;
+    const rect = track.getBoundingClientRect();
+    const rel = 1 - (clientY - rect.top) / rect.height;
+    const count = Math.min(4, Math.max(0, Math.round(rel * 4))) as 0 | 1 | 2 | 3 | 4;
+    if (count !== rod.lower) {
+      onSetLower(rodIndex, count);
+      sfx.bead();
+    }
+  };
+
+  const handleLowerPointerDown = (e: React.PointerEvent) => {
+    if (disabled) return;
+    e.preventDefault();
+    const track = lowerTrackRef.current;
+    if (!track) return;
+    track.setPointerCapture(e.pointerId);
+    setLowerFromPointer(e.clientY);
+    const onMove = (ev: PointerEvent) => setLowerFromPointer(ev.clientY);
+    const onUp = () => {
+      track.removeEventListener("pointermove", onMove);
+      track.removeEventListener("pointerup", onUp);
+      track.removeEventListener("pointercancel", onUp);
+    };
+    track.addEventListener("pointermove", onMove);
+    track.addEventListener("pointerup", onUp);
+    track.addEventListener("pointercancel", onUp);
+  };
+
+  const handleUpperPointerDown = (e: React.PointerEvent) => {
+    if (disabled) return;
+    e.preventDefault();
+    upperStartY.current = e.clientY;
+    const target = e.currentTarget;
+    target.setPointerCapture(e.pointerId);
+    const onMove = (ev: PointerEvent) => {
+      const delta = ev.clientY - upperStartY.current;
+      if (delta > 18 && rod.upper === 0) {
+        onToggleUpper(rodIndex);
+        sfx.bead();
+        upperStartY.current = ev.clientY;
+      } else if (delta < -18 && rod.upper === 1) {
+        onToggleUpper(rodIndex);
+        sfx.bead();
+        upperStartY.current = ev.clientY;
+      }
+    };
+    const onUp = () => {
+      target.removeEventListener("pointermove", onMove);
+      target.removeEventListener("pointerup", onUp);
+      target.removeEventListener("pointercancel", onUp);
+    };
+    target.addEventListener("pointermove", onMove);
+    target.addEventListener("pointerup", onUp);
+    target.addEventListener("pointercancel", onUp);
+  };
+
   return (
     <div
-      className={[
-        "relative flex flex-col items-center gap-1 px-2 py-3 rounded-xl",
-        "bg-muted border-2",
-        highlight
-          ? "border-primary shadow-[0_0_0_3px_rgba(245,158,11,0.25)]"
-          : "border-border",
-      ].join(" ")}
+      className={cn(
+        "relative flex flex-col items-center gap-1 px-1.5 sm:px-2 py-3 rounded-xl",
+        "bg-gradient-to-b from-amber-950/10 to-amber-900/5 border border-amber-900/15",
+        highlight && "border-teal-400/70 shadow-[0_0_0_3px_rgba(45,212,191,0.25)] animate-pulse",
+      )}
       data-testid={`abacus-rod-${rodIndex}`}
     >
-      {/* Upper bead (worth 5) */}
       <button
         type="button"
         disabled={disabled}
         onClick={() => onToggleUpper(rodIndex)}
+        onPointerDown={handleUpperPointerDown}
         aria-label={`rod ${rodIndex + 1} upper bead`}
         data-testid={`abacus-upper-${rodIndex}`}
-        className="relative h-12 w-full flex items-start justify-center"
+        className="relative h-14 w-full flex items-start justify-center touch-none"
       >
         <motion.span
-          animate={{ y: rod.upper === 1 ? 18 : 0 }}
-          transition={{ type: "spring", stiffness: 380, damping: 24 }}
-          className={[
-            "block h-7 w-12 rounded-full",
-            "bg-card shadow-md ring-1 ring-primary",
-          ].join(" ")}
+          animate={{ y: rod.upper === 1 ? 22 : 0 }}
+          transition={spring}
+          className={cn(
+            "block h-8 w-14 rounded-full",
+            rod.upper === 1 ? BEAD_ACTIVE : BEAD_IDLE,
+          )}
         />
       </button>
 
-      {/* Crossbar */}
-      <div className="h-[3px] w-full rounded-full bg-primary" />
+      <div className="h-1 w-full rounded-full bg-gradient-to-r from-amber-950/80 via-stone-800 to-amber-950/80 shadow-inner" />
 
-      {/* Lower beads (worth 1 each) */}
-      <div className="relative h-28 w-full flex flex-col items-center justify-end gap-1 pb-1">
+      <div
+        ref={lowerTrackRef}
+        onPointerDown={handleLowerPointerDown}
+        className="relative h-32 w-full flex flex-col items-center justify-end gap-0.5 pb-1 touch-none"
+      >
         {[0, 1, 2, 3].map((i) => {
           const beadIndexFromBottom = 3 - i;
           const isUp = rod.lower > beadIndexFromBottom;
@@ -214,26 +374,27 @@ function BeadColumn({
               type="button"
               disabled={disabled}
               onClick={() => {
-                // Tapping a bead pushes it (and beads beyond it) up to make
-                // the lower-bead count match this position.
                 const target = (isUp ? beadIndexFromBottom : beadIndexFromBottom + 1) as 0 | 1 | 2 | 3 | 4;
                 onSetLower(rodIndex, target);
               }}
               aria-label={`rod ${rodIndex + 1} lower bead ${i + 1}`}
               data-testid={`abacus-lower-${rodIndex}-${i}`}
-              className="block h-6 w-12"
+              className="block h-7 w-14"
             >
               <motion.span
-                animate={{ y: isUp ? -8 : 0 }}
-                transition={{ type: "spring", stiffness: 380, damping: 24 }}
-                className="block h-6 w-12 rounded-full bg-card shadow ring-1 ring-primary"
+                animate={{ y: isUp ? -10 : 0 }}
+                transition={spring}
+                className={cn(
+                  "block h-7 w-14 rounded-full",
+                  isUp ? BEAD_ACTIVE : BEAD_IDLE,
+                )}
               />
             </button>
           );
         })}
       </div>
 
-      <span className="text-[10px] font-mono text-muted-foreground">
+      <span className="text-[10px] font-mono font-bold text-amber-900/70 dark:text-amber-200/80">
         {rod.upper * 5 + rod.lower}
       </span>
     </div>
@@ -245,16 +406,37 @@ function AbacusBoard({
   onChange,
   highlightRod,
   disabled,
+  feedback = "none",
+  learnMode,
+  valueSize = "md",
 }: {
   state: AbacusState;
   onChange: (next: AbacusState) => void;
   highlightRod?: number;
   disabled?: boolean;
+  feedback?: BoardFeedback;
+  learnMode?: boolean;
+  valueSize?: "md" | "lg";
 }) {
   const value = abacusValue(state);
   return (
-    <div className="rounded-2xl bg-muted border-2 border-border p-3">
-      <div className="flex justify-center gap-2">
+    <motion.div
+      animate={
+        feedback === "wrong"
+          ? { x: [0, -6, 6, -4, 4, 0] }
+          : { x: 0 }
+      }
+      transition={{ duration: 0.45 }}
+      className={cn(
+        "rounded-3xl p-3 sm:p-4 border-2 shadow-inner",
+        "bg-gradient-to-b from-amber-100/80 via-amber-50/50 to-amber-200/40",
+        "dark:from-amber-950/40 dark:via-stone-900/60 dark:to-amber-950/30",
+        feedback === "correct" && "border-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.25)]",
+        feedback === "wrong" && "border-rose-400 shadow-[0_0_0_3px_rgba(251,113,133,0.25)]",
+        feedback === "none" && "border-amber-900/20 dark:border-amber-700/30",
+      )}
+    >
+      <div className="flex justify-center gap-1.5 sm:gap-2">
         {state.map((rod, i) => (
           <BeadColumn
             key={i}
@@ -262,14 +444,100 @@ function AbacusBoard({
             rodIndex={i}
             highlight={highlightRod === i}
             disabled={disabled}
+            learnMode={learnMode}
             onToggleUpper={(idx) => onChange(toggleUpper(state, idx))}
             onSetLower={(idx, n) => onChange(setLowerCount(state, idx, n))}
           />
         ))}
       </div>
-      <p className="mt-2 text-center text-sm font-bold text-foreground" data-testid="abacus-value">
+      <p
+        className={cn(
+          "mt-3 text-center font-black text-foreground font-quicksand",
+          valueSize === "lg" ? "text-3xl sm:text-4xl" : "text-xl sm:text-2xl",
+        )}
+        data-testid="abacus-value"
+      >
         = {value}
       </p>
+    </motion.div>
+  );
+}
+
+function ProgressHeader({
+  childName,
+  progress,
+  completedCount,
+  totalLevels,
+  dailyCorrect,
+  streakDays,
+  t,
+}: {
+  childName: string;
+  progress: ProgressShape;
+  completedCount: number;
+  totalLevels: number;
+  dailyCorrect: number;
+  streakDays: number;
+  t: ReturnType<typeof useAbacusTranslation>["t"];
+}) {
+  const pct = totalLevels === 0 ? 0 : Math.round((completedCount / totalLevels) * 100);
+  return (
+    <div
+      className="rounded-2xl border border-teal-500/20 bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-background px-3 py-3 space-y-2"
+      data-testid="abacus-progress-header"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
+            🧮 {childName}
+          </p>
+          <p className="text-xs text-muted-foreground truncate">
+            {t("abacus.practice_today", { correct: dailyCorrect, goal: DAILY_PRACTICE_GOAL })}
+            {streakDays > 0 && (
+              <span className="ml-1.5 text-orange-600 dark:text-orange-400">🔥 {streakDays}</span>
+            )}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-bold text-foreground">
+            <Medal className="h-3.5 w-3.5 text-amber-600" />
+            {progress.totalPoints} {t("abacus.points")}
+          </span>
+        </div>
+      </div>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground">
+          <span>{t("abacus.level_progress")}</span>
+          <span>
+            {completedCount} / {totalLevels} {t("abacus.levels")}
+          </span>
+        </div>
+        <Progress value={pct} className="h-2 bg-muted/80" />
+      </div>
+    </div>
+  );
+}
+
+function ChallengeQuestionDots({
+  total,
+  currentIdx,
+  results,
+}: {
+  total: number;
+  currentIdx: number;
+  results: { correct: boolean }[];
+}) {
+  return (
+    <div className="flex items-center justify-center gap-1.5" data-testid="abacus-challenge-dots">
+      {Array.from({ length: total }).map((_, i) => {
+        const done = results[i];
+        const isCurrent = i === currentIdx && done === undefined;
+        return (
+          <span key={i} className="text-base leading-none" aria-hidden>
+            {done?.correct ? "⭐" : done ? "💔" : isCurrent ? "👉" : "○"}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -290,24 +558,63 @@ function LearnMode({
   const { t } = useAbacusTranslation();
   const script = useMemo(() => buildLessonScript(level), [level]);
   const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    setStep(0);
+  }, [level]);
+
   const cur = script.steps[step];
+  const stepValue = abacusValue(cur.state);
+  const stepPct = script.steps.length <= 1 ? 100 : Math.round(((step + 1) / script.steps.length) * 100);
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h4 className="font-semibold text-sm">{script.title}</h4>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs text-muted-foreground shrink-0">
           {t("abacus.step")} {step + 1} / {script.steps.length}
         </span>
       </div>
-      <AbacusBoard state={cur.state} onChange={() => {}} highlightRod={cur.highlightRod} disabled />
-      <p className="text-sm leading-relaxed text-foreground bg-muted rounded-xl p-3">
-        {cur.text}
-      </p>
+      <Progress value={stepPct} className="h-1.5" />
+      <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-3 items-center">
+        <div className="hidden sm:flex flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border border-teal-500/20 px-6 py-4 min-w-[5.5rem]">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Value</span>
+          <motion.span
+            key={`learn-val-${step}-${stepValue}`}
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 18 }}
+            className="text-5xl font-black text-foreground font-quicksand leading-none"
+          >
+            {stepValue}
+          </motion.span>
+        </div>
+        <AbacusBoard
+          state={cur.state}
+          onChange={() => {}}
+          highlightRod={cur.highlightRod}
+          disabled
+          learnMode
+          valueSize="md"
+        />
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={step}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.25 }}
+          className="text-sm leading-relaxed text-foreground bg-gradient-to-br from-muted to-muted/60 rounded-xl p-3 border border-border/60"
+        >
+          {cur.text}
+        </motion.p>
+      </AnimatePresence>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => (speaking ? onStop() : onSpeak(cur.text))}
-          className="inline-flex items-center gap-1 rounded-lg bg-primary hover:bg-primary text-primary-foreground text-xs font-semibold px-3 py-2"
+          className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 hover:opacity-90 text-white text-xs font-semibold px-3 py-2"
           data-testid="abacus-learn-tts"
         >
           {speaking ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
@@ -325,7 +632,7 @@ function LearnMode({
           type="button"
           disabled={step >= script.steps.length - 1}
           onClick={() => setStep((s) => Math.min(script.steps.length - 1, s + 1))}
-          className="rounded-lg bg-primary hover:bg-primary text-primary-foreground text-xs font-semibold px-3 py-2 disabled:opacity-40"
+          className="rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 hover:opacity-90 disabled:opacity-40 text-white text-xs font-semibold px-3 py-2"
           data-testid="abacus-learn-next"
         >
           {t("abacus.next")} →
@@ -335,12 +642,22 @@ function LearnMode({
   );
 }
 
-function PracticeMode({ level }: { level: LevelId }) {
+function PracticeMode({
+  level,
+  onAttempt,
+  childView,
+}: {
+  level: LevelId;
+  onAttempt: (correct: boolean) => void;
+  childView?: boolean;
+}) {
   const { t } = useAbacusTranslation();
   const [problem, setProblem] = useState<AbacusProblem>(() => generateProblem(level, rng(Date.now())));
   const [board, setBoard] = useState<AbacusState>(() => problem.initialState ?? emptyAbacus(problem.rods));
-  const [feedback, setFeedback] = useState<"none" | "correct" | "wrong">("none");
+  const [feedback, setFeedback] = useState<BoardFeedback>("none");
   const [showHint, setShowHint] = useState(false);
+  const [sessionCorrect, setSessionCorrect] = useState(0);
+  const [sessionAttempts, setSessionAttempts] = useState(0);
 
   const next = useCallback(() => {
     const p = generateProblem(level, rng(Date.now() + Math.floor(Math.random() * 1000)));
@@ -350,30 +667,53 @@ function PracticeMode({ level }: { level: LevelId }) {
     setShowHint(false);
   }, [level]);
 
-  // When the level prop changes, generate a fresh problem appropriate for it.
   useEffect(() => {
     next();
+    setSessionCorrect(0);
+    setSessionAttempts(0);
   }, [level, next]);
 
   const check = () => {
     const v = abacusValue(board);
     const ok = v === problem.answer;
     setFeedback(ok ? "correct" : "wrong");
-    if (ok) sfx.correct(); else sfx.wrong();
+    setSessionAttempts((n) => n + 1);
+    if (ok) {
+      setSessionCorrect((n) => n + 1);
+      sfx.correct();
+    } else {
+      sfx.wrong();
+    }
+    onAttempt(ok);
   };
 
   return (
     <div className="space-y-3">
-      <div className="rounded-xl bg-muted p-3 text-center">
-        <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("abacus.show_on_abacus")}</p>
-        <p className="text-3xl font-black text-foreground" data-testid="abacus-problem">
+      <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <span key={i} className="leading-none">
+            {i < sessionCorrect ? "⭐" : i < sessionAttempts ? "💔" : "○"}
+          </span>
+        ))}
+        <span className="ml-1 font-semibold">
+          {sessionCorrect}/{sessionAttempts || "—"}
+        </span>
+      </div>
+      <div className="rounded-2xl bg-gradient-to-br from-teal-500/10 to-cyan-500/5 border border-teal-500/15 p-4 text-center">
+        <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold">{t("abacus.show_on_abacus")}</p>
+        <p className="text-4xl sm:text-5xl font-black text-foreground font-quicksand" data-testid="abacus-problem">
           {problem.prompt}
         </p>
       </div>
       <div className="relative">
-        <AbacusBoard state={board} onChange={(s) => { sfx.bead(); setBoard(s); }} />
+        <AbacusBoard
+          state={board}
+          onChange={(s) => { sfx.bead(); setBoard(s); setFeedback("none"); }}
+          feedback={feedback}
+        />
         <ConfettiBurst show={feedback === "correct"} />
       </div>
+      <p className="text-[10px] text-center text-muted-foreground">{t("abacus.drag_hint")}</p>
       <AnimatePresence>
         {feedback !== "none" && (
           <motion.p
@@ -381,12 +721,12 @@ function PracticeMode({ level }: { level: LevelId }) {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className={[
-              "text-center font-bold text-sm rounded-lg p-2",
+            className={cn(
+              "text-center font-bold text-sm rounded-xl p-2.5 border",
               feedback === "correct"
-                ? "bg-muted text-foreground"
-                : "bg-muted text-foreground",
-            ].join(" ")}
+                ? "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 border-emerald-400/40"
+                : "bg-rose-500/10 text-rose-800 dark:text-rose-200 border-rose-400/40",
+            )}
             data-testid={`abacus-practice-feedback-${feedback}`}
           >
             {feedback === "correct" ? `🎉 ${t("abacus.correct")}` : `❌ ${t("abacus.try_again")} — ${t("abacus.answer_was", { n: problem.answer })}`}
@@ -397,7 +737,10 @@ function PracticeMode({ level }: { level: LevelId }) {
         <button
           type="button"
           onClick={check}
-          className="rounded-lg bg-primary hover:bg-primary text-primary-foreground text-xs font-semibold px-3 py-2"
+          className={cn(
+            "rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 hover:opacity-90 text-white font-semibold",
+            childView ? "text-sm py-3 px-4 min-h-[44px]" : "text-xs py-2 px-3",
+          )}
           data-testid="abacus-practice-check"
         >
           ✓ {t("abacus.check")}
@@ -405,7 +748,7 @@ function PracticeMode({ level }: { level: LevelId }) {
         <button
           type="button"
           onClick={next}
-          className="rounded-lg bg-primary hover:bg-primary text-primary-foreground text-xs font-semibold px-3 py-2 inline-flex items-center gap-1"
+          className="rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 hover:opacity-90 text-white text-xs font-semibold px-3 py-2 inline-flex items-center gap-1"
           data-testid="abacus-practice-next"
         >
           <RotateCw className="h-3.5 w-3.5" /> {t("abacus.new_problem")}
@@ -419,7 +762,10 @@ function PracticeMode({ level }: { level: LevelId }) {
         </button>
         <button
           type="button"
-          onClick={() => setBoard(problem.initialState ?? emptyAbacus(problem.rods))}
+          onClick={() => {
+            setBoard(problem.initialState ?? emptyAbacus(problem.rods));
+            setFeedback("none");
+          }}
           className="rounded-lg bg-muted text-xs font-semibold px-3 py-2"
         >
           ↺ {t("abacus.reset")}
@@ -521,24 +867,37 @@ function ChallengeMode({
   }
 
   const cur = problems[idx];
+  const challengePct = Math.round((idx / problems.length) * 100);
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between text-xs">
-        <span className="font-mono">
-          Q {idx + 1} / {problems.length}
-        </span>
-        <span className={`font-bold ${tLeft <= 5 ? "text-foreground" : "text-foreground"}`} data-testid="abacus-challenge-timer">
-          ⏱ {tLeft}s
-        </span>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-mono font-semibold">
+            Q {idx + 1} / {problems.length}
+          </span>
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 font-extrabold rounded-full px-2 py-0.5 border",
+              tLeft <= 5
+                ? "border-rose-500 text-rose-600 animate-pulse"
+                : "border-amber-500/60 text-amber-700 dark:text-amber-300",
+            )}
+            data-testid="abacus-challenge-timer"
+          >
+            <Zap className="h-3 w-3" /> {tLeft}s
+          </span>
+        </div>
+        <Progress value={challengePct} className="h-1.5" />
+        <ChallengeQuestionDots total={problems.length} currentIdx={idx} results={results} />
       </div>
-      <div className="rounded-xl bg-muted p-3 text-center">
-        <p className="text-3xl font-black text-foreground">{cur.prompt}</p>
+      <div className="rounded-2xl bg-gradient-to-br from-teal-500/10 to-cyan-500/5 border border-teal-500/15 p-4 text-center">
+        <p className="text-4xl sm:text-5xl font-black text-foreground font-quicksand">{cur.prompt}</p>
       </div>
-      <AbacusBoard state={board} onChange={setBoard} />
+      <AbacusBoard state={board} onChange={(s) => { sfx.bead(); setBoard(s); }} />
       <button
         type="button"
         onClick={() => advance(abacusValue(board) === cur.answer, Date.now() - startedAt.current)}
-        className="w-full rounded-lg bg-primary hover:bg-primary text-primary-foreground text-sm font-bold py-3"
+        className="w-full rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:opacity-90 text-white text-sm font-bold py-3 shadow-md active:scale-[0.99] transition-transform"
         data-testid="abacus-challenge-submit"
       >
         ✓ {t("abacus.submit")}
@@ -547,48 +906,122 @@ function ChallengeMode({
   );
 }
 
+function MentalNumberPad({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  disabled?: boolean;
+}) {
+  const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0", "C"] as const;
+  const press = (key: (typeof keys)[number]) => {
+    if (disabled) return;
+    if (key === "⌫") onChange(value.slice(0, -1));
+    else if (key === "C") onChange("");
+    else if (value.length < 4) onChange(value + key);
+  };
+  return (
+    <div className="grid grid-cols-3 gap-2" data-testid="abacus-mental-pad">
+      {keys.map((k) => (
+        <button
+          key={k}
+          type="button"
+          disabled={disabled}
+          onClick={() => press(k)}
+          className={cn(
+            "min-h-[52px] rounded-xl text-xl font-black transition-all active:scale-95",
+            k === "⌫" || k === "C"
+              ? "bg-muted text-muted-foreground text-base font-bold"
+              : "bg-gradient-to-br from-teal-500/15 to-cyan-500/10 border border-teal-500/20 text-foreground hover:from-teal-500/25",
+          )}
+          data-testid={k === "⌫" ? "abacus-mental-backspace" : k === "C" ? "abacus-mental-clear" : `abacus-mental-key-${k}`}
+        >
+          {k}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function MentalMode({ level }: { level: LevelId }) {
   const { t } = useAbacusTranslation();
   const [problem, setProblem] = useState<AbacusProblem>(() => generateProblem(level, rng(Date.now())));
   const [answer, setAnswer] = useState("");
-  const [feedback, setFeedback] = useState<"none" | "correct" | "wrong">("none");
-  const next = () => {
+  const [feedback, setFeedback] = useState<BoardFeedback>("none");
+
+  const next = useCallback(() => {
     setProblem(generateProblem(level, rng(Date.now() + Math.floor(Math.random() * 1000))));
     setAnswer("");
     setFeedback("none");
+  }, [level]);
+
+  useEffect(() => {
+    next();
+  }, [level, next]);
+
+  const check = () => {
+    const ok = Number(answer) === problem.answer;
+    setFeedback(ok ? "correct" : "wrong");
+    if (ok) sfx.correct();
+    else sfx.wrong();
   };
+
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground text-center">{t("abacus.mental_intro")}</p>
-      <div className="rounded-xl bg-muted p-4 text-center">
-        <p className="text-4xl font-black text-foreground">{problem.prompt}</p>
+      <div className="rounded-2xl bg-gradient-to-br from-teal-500/10 to-cyan-500/5 border border-teal-500/15 p-4 text-center">
+        <p className="text-4xl sm:text-5xl font-black text-foreground font-quicksand">{problem.prompt}</p>
       </div>
-      <input
-        type="number"
-        inputMode="numeric"
-        value={answer}
-        onChange={(e) => setAnswer(e.target.value)}
-        placeholder={t("abacus.your_answer")}
-        className="w-full rounded-lg border-2 border-border bg-background px-3 py-2 text-center text-xl font-bold"
+
+      <div
+        className={cn(
+          "rounded-2xl border-2 bg-background px-4 py-3 text-center min-h-[4rem] flex items-center justify-center",
+          feedback === "correct" && "border-emerald-400 bg-emerald-500/5",
+          feedback === "wrong" && "border-rose-400 bg-rose-500/5",
+          feedback === "none" && "border-border",
+        )}
         data-testid="abacus-mental-answer"
+        aria-live="polite"
+      >
+        <span className={cn("text-4xl font-black font-quicksand tabular-nums", !answer && "text-muted-foreground/40")}>
+          {answer || "?"}
+        </span>
+      </div>
+
+      <MentalNumberPad
+        value={answer}
+        onChange={(v) => { setAnswer(v); setFeedback("none"); }}
+        disabled={feedback === "correct"}
       />
-      {feedback !== "none" && (
-        <p
-          className={`text-center text-sm font-bold rounded-lg p-2 ${
-            feedback === "correct"
-              ? "bg-muted text-foreground"
-              : "bg-muted text-foreground"
-          }`}
-        >
-          {feedback === "correct" ? `🎉 ${t("abacus.correct")}` : `❌ ${problem.answer}`}
-        </p>
-      )}
+
+      <AnimatePresence>
+        {feedback !== "none" && (
+          <motion.p
+            key={feedback}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className={cn(
+              "text-center font-bold text-sm rounded-xl p-2.5 border",
+              feedback === "correct"
+                ? "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 border-emerald-400/40"
+                : "bg-rose-500/10 text-rose-800 dark:text-rose-200 border-rose-400/40",
+            )}
+            data-testid={`abacus-mental-feedback-${feedback}`}
+          >
+            {feedback === "correct" ? `🎉 ${t("abacus.correct")}` : `❌ ${t("abacus.try_again")} — ${t("abacus.answer_was", { n: problem.answer })}`}
+          </motion.p>
+        )}
+      </AnimatePresence>
+
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={() => setFeedback(Number(answer) === problem.answer ? "correct" : "wrong")}
+          onClick={check}
           disabled={!answer.trim()}
-          className="flex-1 rounded-lg bg-primary hover:bg-primary text-primary-foreground text-sm font-bold py-2 disabled:opacity-40"
+          className="flex-1 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:opacity-90 disabled:opacity-40 text-white text-sm font-bold py-3 min-h-[44px]"
           data-testid="abacus-mental-check"
         >
           {t("abacus.check")}
@@ -596,7 +1029,8 @@ function MentalMode({ level }: { level: LevelId }) {
         <button
           type="button"
           onClick={next}
-          className="rounded-lg bg-primary hover:bg-primary text-primary-foreground text-sm font-bold px-4 py-2"
+          className="rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:opacity-90 text-white text-sm font-bold px-4 py-3 min-h-[44px]"
+          data-testid="abacus-mental-next"
         >
           {t("abacus.new_problem")} →
         </button>
@@ -607,6 +1041,7 @@ function MentalMode({ level }: { level: LevelId }) {
 
 function TutorMode({ childId, level, ageYears }: { childId: number; level: LevelId; ageYears: number }) {
   const { t, i18n } = useAbacusTranslation();
+  void ageYears;
   const authFetch = useAuthFetch();
   const amy = useAmyVoice();
   const [question, setQuestion] = useState("");
@@ -614,7 +1049,10 @@ function TutorMode({ childId, level, ageYears }: { childId: number; level: Level
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  void ageYears; // included for API parity; server reads child's age from DB.
+  const tutorVisual = useMemo(
+    () => (reply ? inferTutorAbacusVisual(reply, level) : null),
+    [reply, level],
+  );
 
   const ask = async () => {
     if (!question.trim()) return;
@@ -628,7 +1066,7 @@ function TutorMode({ childId, level, ageYears }: { childId: number; level: Level
         body: JSON.stringify({
           childId,
           level,
-          language: "en",
+          language: resolveAbacusLanguage(i18n.language),
           question: question.trim(),
         }),
       });
@@ -671,6 +1109,21 @@ function TutorMode({ childId, level, ageYears }: { childId: number; level: Level
       {err && <p className="text-xs text-foreground text-center">⚠️ {err}</p>}
       {reply && (
         <div className="rounded-xl bg-muted p-3 space-y-2" data-testid="abacus-tutor-reply">
+          {tutorVisual && (
+            <div className="space-y-1.5" data-testid="abacus-tutor-visual">
+              <p className="text-[11px] font-semibold text-muted-foreground">
+                {t("abacus.tutor_visual_caption")}: {tutorVisual.caption}
+              </p>
+              <AbacusBoard
+                state={tutorVisual.state}
+                onChange={() => {}}
+                highlightRod={tutorVisual.highlightRod}
+                disabled
+                learnMode
+                valueSize="md"
+              />
+            </div>
+          )}
           <p className="text-sm leading-relaxed">{reply}</p>
           <button
             type="button"
@@ -697,6 +1150,15 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
   const [mode, setMode] = useState<Mode>("learn");
   const [level, setLevel] = useState<LevelId>(1);
   const [loading, setLoading] = useState(true);
+  const [dailyPractice, setDailyPractice] = useState(() => readDailyPractice(childId));
+  const [streak, setStreak] = useState(() => readStreak(childId));
+  const [zoneScreen, setZoneScreen] = useState<ZoneScreen>("home");
+  const [viewMode, setViewMode] = useState<ViewMode>("child");
+
+  const recordActivity = useCallback(() => {
+    const next = bumpStreak(childId);
+    setStreak(next);
+  }, [childId]);
 
   // Pull the friends/family leaderboard. Lightweight — re-fetched on
   // mount and after every challenge completion so the strip reflects
@@ -748,6 +1210,54 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
     };
   }, [authFetch, childId, refreshLeaderboard]);
 
+  useEffect(() => {
+    setDailyPractice(readDailyPractice(childId));
+    setStreak(readStreak(childId));
+    setZoneScreen("home");
+  }, [childId]);
+
+  const logPracticeAttempt = useCallback(
+    async (correct: boolean) => {
+      recordActivity();
+      setDailyPractice((prev) => {
+        const nextDaily: DailyPracticeShape = {
+          date: todayDateKey(),
+          correct: prev.correct + (correct ? 1 : 0),
+          attempts: prev.attempts + 1,
+        };
+        writeDailyPractice(childId, nextDaily);
+        return nextDaily;
+      });
+
+      setProgress((prev) => {
+        if (!prev) return prev;
+        const updated: ProgressShape = {
+          ...prev,
+          totalCorrect: prev.totalCorrect + (correct ? 1 : 0),
+          totalAttempts: prev.totalAttempts + 1,
+          totalPoints: prev.totalPoints + (correct ? 10 : 0),
+        };
+        writeCachedProgress(childId, updated);
+        return updated;
+      });
+
+      await authFetch("/api/abacus/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "log_session",
+          childId,
+          totalCorrect: correct ? 1 : 0,
+          totalAttempts: 1,
+          totalPoints: correct ? 10 : 0,
+        }),
+      }).catch(() => {});
+
+      if (correct) refreshLeaderboard();
+    },
+    [authFetch, childId, refreshLeaderboard, recordActivity],
+  );
+
   const persistMode = useCallback(
     (next: Mode, lvl: LevelId) => {
       void authFetch("/api/abacus/progress", {
@@ -761,6 +1271,7 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
 
   const onChallengeComplete = useCallback(
     async (accuracyPct: number, points: number) => {
+      recordActivity();
       const def = LEVELS.find((l) => l.id === level)!;
       if (accuracyPct >= def.unlockAccuracyPct) {
         const res = await authFetch("/api/abacus/progress", {
@@ -812,11 +1323,33 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
       // Refresh the leaderboard so the strip updates with the new score.
       refreshLeaderboard();
     },
-    [authFetch, childId, level, mode, progress, refreshLeaderboard],
+    [authFetch, childId, level, mode, progress, refreshLeaderboard, recordActivity],
+  );
+
+  const startPlay = useCallback(
+    (nextMode?: Mode) => {
+      if (nextMode) {
+        setMode(nextMode);
+        persistMode(nextMode, level);
+      }
+      setZoneScreen("play");
+    },
+    [level, persistMode],
   );
 
   if (loading) {
-    return <p className="text-xs text-muted-foreground">{t("abacus.loading")}</p>;
+    return (
+      <div className="space-y-3 animate-pulse" data-testid="abacus-zone-loading">
+        <div className="h-20 rounded-2xl bg-muted" />
+        <div className="h-10 rounded-xl bg-muted" />
+        <div className="flex gap-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-8 flex-1 rounded-full bg-muted" />
+          ))}
+        </div>
+        <div className="h-64 rounded-2xl bg-muted" />
+      </div>
+    );
   }
 
   if (ageYears < 4 || ageYears > 10) {
@@ -836,136 +1369,184 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
 
   return (
     <div className="space-y-3" data-testid="abacus-zone">
-      {/* Progress strip */}
+      <AbacusViewToggle viewMode={viewMode} onChange={setViewMode} t={t} />
+
       {progress && (
-        <div className="flex items-center justify-between text-xs bg-muted rounded-lg px-3 py-2">
-          <span>
-            🏅 <strong>{progress.totalPoints}</strong> {t("abacus.points")}
-          </span>
-          <span>
-            ✅ {completed.length} / {LEVELS.length} {t("abacus.levels")}
-          </span>
-        </div>
+        <ProgressHeader
+          childName={childName}
+          progress={progress}
+          completedCount={completed.length}
+          totalLevels={LEVELS.length}
+          dailyCorrect={dailyPractice.correct}
+          streakDays={streak.days}
+          t={t}
+        />
       )}
 
-      {/* Weekly friends/family leaderboard strip */}
-      {leaderboard && (
-        <div
-          className="rounded-xl border border-border bg-card px-3 py-2 space-y-1"
-          data-testid="abacus-leaderboard"
-        >
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              <Trophy className="h-3.5 w-3.5" />
-              {t("abacus.weekly_leaderboard")}
-            </span>
-            <span data-testid="abacus-leaderboard-rank">
-              {t("abacus.your_rank", {
-                rank: leaderboard.me.rank,
-                total: leaderboard.me.total,
-              })}
-            </span>
-          </div>
-          {leaderboard.top.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-1">
-              {t("abacus.no_scores_yet")}
-            </p>
-          ) : (
-            <ol className="space-y-0.5">
-              {leaderboard.top.map((row) => (
-                <li
-                  key={row.childId}
-                  className={[
-                    "flex items-center justify-between text-xs rounded px-2 py-1",
-                    row.isMe ? "bg-primary/10 font-bold text-foreground" : "text-foreground",
-                  ].join(" ")}
-                  data-testid={`abacus-leaderboard-row-${row.rank}`}
-                >
-                  <span>
-                    <span className="inline-block w-5 text-muted-foreground">#{row.rank}</span>
-                    {row.isMe ? `${row.name} (${t("abacus.you")})` : row.name}
-                  </span>
-                  <span>{row.points} {t("abacus.pts")}</span>
-                </li>
-              ))}
-            </ol>
-          )}
-        </div>
-      )}
-
-      {/* Level chips */}
-      <div className="flex flex-wrap gap-1.5">
-        {LEVELS.map((l) => {
-          const unlocked = isLevelUnlocked(l.id, completed);
-          const active = l.id === level;
-          return (
-            <button
-              key={l.id}
-              type="button"
-              disabled={!unlocked}
-              onClick={() => {
-                setLevel(l.id);
-                persistMode(mode, l.id);
-              }}
-              className={[
-                "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold border-2",
-                active
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : unlocked
-                    ? "bg-background text-foreground border-border hover:bg-muted"
-                    : "bg-muted text-muted-foreground border-muted opacity-60",
-              ].join(" ")}
-              data-testid={`abacus-level-${l.id}`}
-            >
-              {!unlocked && <Lock className="h-3 w-3" />}
-              L{l.id} •{" "}
-              {isAbacusLevelSlug(l.slug)
-                ? t(`abacus.level_${l.slug}`, abacusLevelLabelDefault(l.slug))
-                : l.slug}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Mode tabs */}
-      <div className="grid grid-cols-5 gap-1">
-        {MODES.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            onClick={() => {
-              setMode(m.id);
-              persistMode(m.id, level);
-            }}
-            className={[
-              "rounded-lg text-xs font-semibold py-2 px-1 border",
-              mode === m.id
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-background text-foreground border-border hover:bg-muted",
-            ].join(" ")}
-            data-testid={`abacus-mode-${m.id}`}
-          >
-            <span className="block text-base leading-none">{m.emoji}</span>
-            <span className="block mt-0.5 text-[10px] leading-tight">{m.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Mode body */}
-      <div className="rounded-xl border border-border bg-card p-3">
-        {mode === "learn" && (
-          <LearnMode
-            level={level}
-            speaking={amy.speaking || amy.loading}
-            onSpeak={(text) => amy.speak(text)}
-            onStop={() => amy.pause()}
+      {viewMode === "parent" && progress && (
+        <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+          <AbacusParentPanel
+            progress={progress}
+            streakDays={streak.days}
+            dailyCorrect={dailyPractice.correct}
+            dailyGoal={DAILY_PRACTICE_GOAL}
+            t={t}
           />
-        )}
-        {mode === "practice" && <PracticeMode level={level} />}
-        {mode === "challenge" && <ChallengeMode level={level} onComplete={onChallengeComplete} />}
-        {mode === "mental" && <MentalMode level={level} />}
-        {mode === "tutor" && <TutorMode childId={childId} level={level} ageYears={ageYears} />}
-      </div>
+        </div>
+      )}
+
+      {viewMode === "child" && zoneScreen === "home" && progress && (
+        <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+          <AbacusHomeDashboard
+            childName={childName}
+            progress={progress}
+            level={level}
+            mode={mode}
+            streakDays={streak.days}
+            dailyCorrect={dailyPractice.correct}
+            dailyGoal={DAILY_PRACTICE_GOAL}
+            leaderboard={leaderboard}
+            onContinue={() => startPlay()}
+            onQuickStart={(m) => startPlay(m)}
+            t={t}
+          />
+        </div>
+      )}
+
+      {viewMode === "child" && zoneScreen === "play" && (
+        <>
+          <button
+            type="button"
+            onClick={() => setZoneScreen("home")}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 dark:text-teal-300"
+            data-testid="abacus-back-home"
+          >
+            <Home className="h-3.5 w-3.5" />
+            {t("abacus.back_home")}
+          </button>
+
+          {leaderboard && (
+            <div
+              className="rounded-xl border border-border bg-card px-3 py-2 space-y-1"
+              data-testid="abacus-leaderboard"
+            >
+              <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="inline-flex items-center gap-1">
+                  <Trophy className="h-3.5 w-3.5" />
+                  {t("abacus.weekly_leaderboard")}
+                </span>
+                <span data-testid="abacus-leaderboard-rank">
+                  {t("abacus.your_rank", {
+                    rank: leaderboard.me.rank,
+                    total: leaderboard.me.total,
+                  })}
+                </span>
+              </div>
+              {leaderboard.top.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-1">
+                  {t("abacus.no_scores_yet")}
+                </p>
+              ) : (
+                <ol className="space-y-0.5">
+                  {leaderboard.top.map((row) => (
+                    <li
+                      key={row.childId}
+                      className={cn(
+                        "flex items-center justify-between text-xs rounded px-2 py-1",
+                        row.isMe ? "bg-primary/10 font-bold text-foreground" : "text-foreground",
+                      )}
+                      data-testid={`abacus-leaderboard-row-${row.rank}`}
+                    >
+                      <span>
+                        <span className="inline-block w-5 text-muted-foreground">#{row.rank}</span>
+                        {row.isMe ? `${row.name} (${t("abacus.you")})` : row.name}
+                      </span>
+                      <span>{row.points} {t("abacus.pts")}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-1.5">
+            {LEVELS.map((l) => {
+              const unlocked = isLevelUnlocked(l.id, completed);
+              const active = l.id === level;
+              return (
+                <button
+                  key={l.id}
+                  type="button"
+                  disabled={!unlocked}
+                  onClick={() => {
+                    setLevel(l.id);
+                    persistMode(mode, l.id);
+                  }}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold border-2 transition-colors",
+                    active
+                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-transparent shadow-sm"
+                      : unlocked
+                        ? "bg-background text-foreground border-border hover:bg-muted"
+                        : "bg-muted text-muted-foreground border-muted opacity-60",
+                  )}
+                  data-testid={`abacus-level-${l.id}`}
+                >
+                  {!unlocked && <Lock className="h-3 w-3" />}
+                  L{l.id} •{" "}
+                  {isAbacusLevelSlug(l.slug)
+                    ? t(`abacus.level_${l.slug}`, abacusLevelLabelDefault(l.slug))
+                    : l.slug}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-0.5 px-0.5 scrollbar-none">
+            {MODES.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => {
+                  setMode(m.id);
+                  persistMode(m.id, level);
+                }}
+                className={cn(
+                  "shrink-0 min-w-[4.5rem] rounded-xl text-xs font-semibold py-2 px-2 border transition-all",
+                  mode === m.id
+                    ? "bg-gradient-to-br from-teal-500 to-cyan-500 text-white border-transparent shadow-md scale-[1.02]"
+                    : "bg-background text-foreground border-border hover:bg-muted",
+                )}
+                data-testid={`abacus-mode-${m.id}`}
+              >
+                <span className="block text-base leading-none">{m.emoji}</span>
+                <span className="block mt-0.5 text-[10px] leading-tight">{m.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+            {mode === "learn" && (
+              <LearnMode
+                level={level}
+                speaking={amy.speaking || amy.loading}
+                onSpeak={(text) => amy.speak(text)}
+                onStop={() => amy.pause()}
+              />
+            )}
+            {mode === "practice" && (
+              <PracticeMode level={level} onAttempt={logPracticeAttempt} childView />
+            )}
+            {mode === "challenge" && (
+              <ChallengeMode level={level} onComplete={onChallengeComplete} />
+            )}
+            {mode === "mental" && <MentalMode level={level} />}
+            {mode === "tutor" && (
+              <TutorMode childId={childId} level={level} ageYears={ageYears} />
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
