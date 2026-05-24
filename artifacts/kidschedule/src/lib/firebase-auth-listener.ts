@@ -4,6 +4,7 @@ import type { AuthResolutionStatus, ShimUser } from "./firebase-auth-context";
 import { recordBootError } from "@/lib/boot-store";
 import { isEmailVerificationBypassEmail } from "./email-verification-bypass";
 import { devLog } from "@/lib/dev-log";
+import { isFirebaseOAuthRedirectResolving } from "@/lib/firebase-oauth-redirect";
 
 const AUTH_TAG = "[amynest:firebase-auth]";
 const AUTH_RACE_TIMEOUT_MS = 10_000;
@@ -113,7 +114,12 @@ function applyFirebaseUser(fbUser: FbUser | null): void {
     raceTimeoutId = null;
   }
   const shim = buildShimFromFirebaseUser(fbUser);
-  const authStatus: AuthResolutionStatus = shim ? "authenticated" : "unauthenticated";
+  let authStatus: AuthResolutionStatus = shim
+    ? "authenticated"
+    : "unauthenticated";
+  if (!shim && isFirebaseOAuthRedirectResolving()) {
+    authStatus = "loading";
+  }
   const uid = shim?.id ?? null;
   const prevUid = latestSnapshot.shim?.id ?? null;
   if (
@@ -135,6 +141,10 @@ function applyFirebaseUser(fbUser: FbUser | null): void {
 
 function notifyTimeout(): void {
   if (firstAuthEventReceived) return;
+  if (isFirebaseOAuthRedirectResolving()) {
+    raceTimeoutId = setTimeout(notifyTimeout, 2_000);
+    return;
+  }
   firstAuthEventReceived = true;
   console.warn(`${AUTH_TAG} auth race timeout (${AUTH_RACE_TIMEOUT_MS}ms)`);
   latestSnapshot = { shim: null, authStatus: "timeout" };

@@ -82,29 +82,17 @@ export function ensureFirebaseAuthPersistence(): Promise<void> {
 
 function createFirebaseAuth(app: FirebaseApp): Auth {
   const wantsIndexedDbPersistence = useFirebaseIndexedDbPersistence();
+  const persistence = wantsIndexedDbPersistence
+    ? indexedDBLocalPersistence
+    : browserLocalPersistence;
 
-  if (wantsIndexedDbPersistence) {
-    try {
-      return initializeAuth(app, {
-        persistence: indexedDBLocalPersistence,
-      });
-    } catch {
-      /* Auth may already be initialized */
-    }
+  try {
+    return initializeAuth(app, { persistence });
+  } catch {
+    /* Auth may already be initialized (HMR / double boot) */
   }
 
-  const auth = getAuth(app);
-
-  if (typeof window !== "undefined") {
-    void setPersistence(
-      auth,
-      wantsIndexedDbPersistence
-        ? indexedDBLocalPersistence
-        : browserLocalPersistence,
-    ).catch(() => {});
-  }
-
-  return auth;
+  return getAuth(app);
 }
 
 /** Call once before any getFirebaseAuth() — never throws. */

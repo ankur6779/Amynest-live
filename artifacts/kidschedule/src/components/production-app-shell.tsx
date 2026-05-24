@@ -4,6 +4,7 @@ import { AuthBootShell } from "@/components/auth-boot-shell";
 import { AppFallbackUi } from "@/components/app-fallback-ui";
 import { enforceProductionDomain } from "@/lib/domain-gate";
 import { initializeFirebase, type FirebaseInitResult } from "@/lib/firebase";
+import { beginFirebaseOAuthRedirectResolution } from "@/lib/firebase-oauth-redirect";
 import { patchBootDiagnostics } from "@/lib/boot-store";
 
 type Props = { children: ReactNode };
@@ -29,7 +30,11 @@ function FirebaseInitGate({ children }: Props) {
   const [init, setInit] = useState<FirebaseInitResult | null>(null);
 
   useEffect(() => {
-    setInit(initializeFirebase());
+    const init = initializeFirebase();
+    if (init.status === "ok") {
+      beginFirebaseOAuthRedirectResolution();
+    }
+    setInit(init);
   }, []);
 
   if (!init || init.status === "pending") {
