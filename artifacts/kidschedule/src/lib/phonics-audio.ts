@@ -17,6 +17,9 @@ import {
   playPhonicsSequence,
   prefetchPhonicsAudioKeys,
 } from "@/lib/phonics-static-audio";
+import { audioManager } from "@/lib/audio-manager";
+import { lookupStaticAudioUrl } from "@/lib/static-audio";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
 import type { SpeakOptions, SpeakResult } from "@/hooks/use-amy-voice";
 
 export type PhonicsSpeakFn = (
@@ -37,11 +40,47 @@ export function resolvePhonicsPlaybackText(input: {
 
 async function playStaticKey(
   audioKey: string,
-  meta?: { phoneme?: string; word?: string },
+  meta?: { phoneme?: string; word?: string; phase?: CvcBlendPhase },
 ): Promise<SpeakResult> {
+  if (meta?.phase === "word" && meta?.word) {
+    return playCvcWordFinale(meta.word);
+  }
   const res = await playPhonicsStaticAudio(audioKey, { waitUntilEnd: true });
   if (res.ok) return { success: true };
   return { success: false, error: res.error };
+}
+
+/** Whole-word clip from static catalog (word_cat in GCS), not /phonics-audio/{letter}.mp3. */
+async function playCvcWordFinale(word: string): Promise<SpeakResult> {
+  const w = word.trim().toLowerCase();
+  if (!w) return { success: false, error: "empty_word" };
+
+  recordTtsUserGesture();
+  audioManager.stop();
+
+  const url =
+    lookupStaticAudioUrl(w, "phonics") ??
+    lookupStaticAudioUrl(getCvcWordAudioText(w), "phonics") ??
+    lookupStaticAudioUrl(w, "default");
+  if (url) {
+    const audio = audioManager.create(url);
+    const started = await audioManager.play(
+      audio,
+      { proxyUrl: url, source: "cvc-word-finale", phrase: w },
+      { channel: "ui", interrupt: true },
+    );
+    if (!started) return { success: false, error: "word_finale_play_failed" };
+    const ended = await audioManager.waitUntilEnd(audio, () => false);
+    return ended.ok ? { success: true } : { success: false, error: ended.error };
+  }
+
+  const entry = getCvcWordEntry(w);
+  if (entry) {
+    const res = await playPhonicsSequence(w, { waitUntilEnd: true, gapMs: 60 });
+    return res.ok ? { success: true } : { success: false, error: res.error };
+  }
+
+  return { success: false, error: "word_finale_unresolved" };
 }
 
 async function playGraphemeBlend(
@@ -131,7 +170,11 @@ export async function playCvcBlendWithSpeak(
       const res = await playStaticKey(audioKey, meta);
       return { success: res.success };
     },
-    { includeWordFinale: false, ...options },
+    {
+      includeWordFinale: true,
+      skipFastPass: true,
+      ...options,
+    },
   );
 }
 

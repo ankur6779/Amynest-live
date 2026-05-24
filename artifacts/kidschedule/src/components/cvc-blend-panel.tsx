@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { playCvcBlendWithSpeak } from "@/lib/phonics-audio";
+import { audioManager } from "@/lib/audio-manager";
 import {
   getCvcDisplayLetters,
   getCvcWordEntry,
@@ -58,8 +59,11 @@ export function CvcBlendPanel({
 
   const runBlend = useCallback(
     async (opts?: { skipSlow?: boolean }) => {
+      audioManager.stop();
       setBlending(true);
       setShowWord(false);
+      setActiveIndex(null);
+      setPhase(null);
       try {
         await playCvcBlendWithSpeak(current, {
           skipSlowPass: opts?.skipSlow,

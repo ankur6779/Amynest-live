@@ -9,7 +9,7 @@ export type CvcBlendPhase = "slow" | "fast" | "word";
 
 export type CvcBlendSpeakFn = (
   audioKey: string,
-  meta?: { phoneme?: string; word?: string; phase?: CvcBlendPhase },
+  meta?: { phoneme?: string; word?: string; phase?: CvcBlendPhase; index?: number },
 ) => Promise<{ success: boolean }>;
 
 export type PlayCvcBlendOptions = {
@@ -18,6 +18,8 @@ export type PlayCvcBlendOptions = {
   fastGapMs?: number;
   /** Skip the slow first pass (e.g. repeat only). */
   skipSlowPass?: boolean;
+  /** Skip the fast second pass (default false — both passes run). */
+  skipFastPass?: boolean;
   /** Play whole word after phoneme sequence (default false — phoneme-only blending). */
   includeWordFinale?: boolean;
 };
@@ -44,22 +46,24 @@ export async function playCvcBlend(
       const p = phonemes[i]!;
       const audioKey = phonemeToAudioKey(p);
       options?.onPhoneme?.(i, "slow");
-      await speak(audioKey, { phoneme: p, phase: "slow" });
+      await speak(audioKey, { phoneme: p, phase: "slow", index: i });
       await delay(slowGap);
     }
   }
 
-  for (let i = 0; i < phonemes.length; i++) {
-    const p = phonemes[i]!;
-    const audioKey = phonemeToAudioKey(p);
-    options?.onPhoneme?.(i, "fast");
-    await speak(audioKey, { phoneme: p, phase: "fast" });
-    await delay(fastGap);
+  if (!options?.skipFastPass) {
+    for (let i = 0; i < phonemes.length; i++) {
+      const p = phonemes[i]!;
+      const audioKey = phonemeToAudioKey(p);
+      options?.onPhoneme?.(i, "fast");
+      await speak(audioKey, { phoneme: p, phase: "fast", index: i });
+      await delay(fastGap);
+    }
   }
 
   if (options?.includeWordFinale) {
     await delay(150);
     options?.onPhoneme?.(-1, "word");
-    await speak(word.trim().toLowerCase(), { word, phase: "word" });
+    await speak(word.trim().toLowerCase(), { word, phase: "word", index: -1 });
   }
 }

@@ -26,6 +26,20 @@ describe("playCvcBlend", () => {
     assert.ok(!calls.includes("cat"));
   });
 
+  it("can skip fast pass for a single teaching pass", async () => {
+    const cat = CVC_WORDS.find((w) => w.word === "cat")!;
+    const calls: string[] = [];
+    await playCvcBlend(
+      cat,
+      async (audioKey, meta) => {
+        calls.push(`${meta?.phase}:${audioKey}`);
+        return { success: true };
+      },
+      { skipFastPass: true },
+    );
+    assert.deepEqual(calls, ["slow:k", "slow:a", "slow:t"]);
+  });
+
   it("can include whole word when explicitly requested", async () => {
     const cat = CVC_WORDS.find((w) => w.word === "cat")!;
     const calls: string[] = [];

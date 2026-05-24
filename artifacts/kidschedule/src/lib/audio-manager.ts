@@ -994,6 +994,9 @@ class AudioManagerImpl {
     if (interrupt && channel === "speech") {
       this.releaseChannel("speech", false);
     }
+    if (interrupt && channel === "ui") {
+      this.releaseChannel("ui", false);
+    }
 
     const state = this.channelState(channel);
     const token = state.playToken + 1;
