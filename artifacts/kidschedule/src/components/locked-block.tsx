@@ -1,3 +1,4 @@
+import React from "react";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Lock } from "lucide-react";
@@ -6,6 +7,13 @@ import type { PaywallReason } from "@/contexts/paywall-context";
 interface LockedBlockProps {
   /** True after the user has consumed their one free use of this feature. */
   locked: boolean;
+  /**
+   * Journey soft lock — tile stays openable; content shows blurred preview + CTA.
+   * Used after the 3-day free journey ends (replaces hard overlay).
+   */
+  journeySoft?: boolean;
+  /** Child name for journey soft-lock CTA copy. */
+  childName?: string;
   /**
    * Legacy prop — kept for backwards compatibility with existing call sites.
    * The locked overlay no longer opens the paywall modal; it navigates to
@@ -19,21 +27,32 @@ interface LockedBlockProps {
 /**
  * Wraps a Parent Hub section.
  *
- * locked=false  → children rendered fully interactive (free first-use OR premium)
- * locked=true   → children visible but NON-interactive; a transparent overlay
- *                 intercepts every tap and routes to /pricing. A "Premium feature"
- *                 lock pill floats top-right (above the overlay).
+ * locked=false       → children rendered fully interactive
+ * locked + journeySoft → children interactive; HubSection shows blurred preview when expanded
+ * locked (hard)      → children visible but NON-interactive; overlay routes to /pricing
  */
 export function LockedBlock({
   locked,
+  journeySoft = false,
+  childName,
   rounded = "rounded-3xl",
   children,
 }: LockedBlockProps) {
   const [, setLocation] = useLocation();
   const { t } = useTranslation();
-  const goPricing = () => setLocation("/pricing");
+  const goPricing = () => setLocation("/pricing?reason=hub_journey");
 
   if (!locked) return <>{children}</>;
+
+  if (journeySoft) {
+    if (React.isValidElement(children)) {
+      return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
+        previewLocked: true,
+        childName,
+      });
+    }
+    return <>{children}</>;
+  }
 
   const ariaLabel = t("parent_hub.badges.premium_feature_aria");
 
@@ -42,12 +61,10 @@ export function LockedBlock({
       className={`relative ${rounded}`}
       data-testid="locked-block"
     >
-      {/* Section renders visually in collapsed state, but not interactive */}
       <div style={{ pointerEvents: "none" }}>
         {children}
       </div>
 
-      {/* Transparent full-cover overlay — intercepts every tap, routes to /pricing */}
       <div
         className="absolute inset-0 z-10 cursor-pointer rounded-2xl"
         onClick={goPricing}
@@ -60,7 +77,6 @@ export function LockedBlock({
         }}
       />
 
-      {/* Lock pill — sits above the overlay so it is always tappable */}
       <div className="pointer-events-none absolute right-12 top-3.5 z-20">
         <div className="pointer-events-auto">
           <button

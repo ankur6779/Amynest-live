@@ -123,6 +123,7 @@
     "@workspace/infant-hub": "workspace:*",
     "@workspace/infant-problems": "workspace:*",
     "@workspace/life-skills": "workspace:*",
+    "@workspace/parent-hub-journey": "workspace:*",
     "@workspace/load-forecast": "workspace:*",
     "@workspace/math-tricks": "workspace:*",
     "@workspace/morning-flow": "workspace:*",

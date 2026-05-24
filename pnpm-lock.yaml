@@ -268,6 +268,12 @@ importers:
       '@workspace/olympiad':
         specifier: workspace:*
         version: link:../../lib/olympiad
+      '@workspace/parent-hub-journey':
+        specifier: workspace:*
+        version: link:../../lib/parent-hub-journey
+      '@workspace/parenting-articles':
+        specifier: workspace:*
+        version: link:../../lib/parenting-articles
       '@workspace/phonics-curriculum':
         specifier: workspace:*
         version: link:../../lib/phonics-curriculum
@@ -461,6 +467,9 @@ importers:
       '@workspace/olympiad':
         specifier: workspace:*
         version: link:../../lib/olympiad
+      '@workspace/parent-hub-journey':
+        specifier: workspace:*
+        version: link:../../lib/parent-hub-journey
       '@workspace/parent-hub-speak':
         specifier: workspace:*
         version: link:../../lib/parent-hub-speak
@@ -1234,6 +1243,8 @@ importers:
   lib/morning-flow: {}
 
   lib/olympiad: {}
+
+  lib/parent-hub-journey: {}
 
   lib/parent-hub-speak: {}
 

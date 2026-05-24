@@ -11,6 +11,7 @@ export type PaywallReason =
   | "routines_limit"
   | "coach_locked"
   | "hub_locked"
+  | "hub_journey"
   | "behavior_locked"
   | "child_locked"
   | "phonics_workbook"

@@ -5,6 +5,7 @@ import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LockedBlock } from "@/components/locked-block";
+import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
@@ -34,7 +35,7 @@ export function HubModulePageShell({
   children: (ctx: { child: HubChild; totalAgeMonths: number }) => ReactNode;
 }) {
   const [, setLocation] = useLocation();
-  const { locked, onEngage } = useHubModuleGate(featureId);
+  const { locked, journeySoft, onEngage } = useHubModuleGate(featureId);
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
     const saved = Number(window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY));
@@ -162,16 +163,29 @@ export function HubModulePageShell({
 
       <main className="scroll-safe min-h-0 flex-1 px-4 py-4">
         <div className="mx-auto max-w-4xl">
-          <LockedBlock locked={locked} rounded="rounded-2xl">
-            <div
-              onPointerDownCapture={() => onEngage()}
-              onKeyDownCapture={(e) => {
-                if (e.key === "Enter" || e.key === " ") onEngage();
-              }}
-            >
-              {children({ child: activeChild, totalAgeMonths })}
-            </div>
-          </LockedBlock>
+          {journeySoft ? (
+            <JourneyPreviewContent childName={activeChild.name}>
+              <div
+                onPointerDownCapture={() => onEngage()}
+                onKeyDownCapture={(e) => {
+                  if (e.key === "Enter" || e.key === " ") onEngage();
+                }}
+              >
+                {children({ child: activeChild, totalAgeMonths })}
+              </div>
+            </JourneyPreviewContent>
+          ) : (
+            <LockedBlock locked={locked} rounded="rounded-2xl">
+              <div
+                onPointerDownCapture={() => onEngage()}
+                onKeyDownCapture={(e) => {
+                  if (e.key === "Enter" || e.key === " ") onEngage();
+                }}
+              >
+                {children({ child: activeChild, totalAgeMonths })}
+              </div>
+            </LockedBlock>
+          )}
         </div>
       </main>
     </div>
