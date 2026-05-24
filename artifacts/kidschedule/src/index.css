@@ -618,7 +618,7 @@ html[data-theme="dark"] {
 }
 
 .scroll-safe--audio {
-  padding-bottom: 120px;
+  padding-bottom: calc(120px + var(--app-bottom-clearance));
 }
 
 /* Fixed bottom controls — sit above system nav / home indicator */
@@ -1050,8 +1050,9 @@ html[data-theme="dark"] {
  * so scroll content and fixed footers clear the system navigation bar.
  */
 @media (max-width: 767px) {
-  html.amynest-android-shell {
-    --app-bottom-safe-base: 48px;
+  html.amynest-android-shell,
+  html.amynest-native-shell {
+    --app-bottom-safe-base: 56px;
     --app-bottom-clearance: max(
       var(--app-bottom-safe-base),
       env(safe-area-inset-bottom, 0px),

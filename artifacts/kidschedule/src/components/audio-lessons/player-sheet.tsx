@@ -121,7 +121,7 @@ export function PlayerSheet({
           background: "linear-gradient(180deg, #1a1040 0%, #0f0c29 100%)",
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
-          padding: "16px 20px 28px",
+          padding: "16px 20px calc(12px + var(--app-bottom-clearance, 48px))",
           color: "#fff",
           boxShadow: "0 -10px 40px rgba(0,0,0,0.6)",
           maxHeight: "92vh",

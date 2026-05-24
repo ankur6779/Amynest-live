@@ -179,7 +179,7 @@ export function StoryFlowPlayer({
         </div>}
 
       {/* Bottom bar: title + controls */}
-      <div className="flex items-end justify-between gap-4 bg-gradient-to-t from-black to-black/0 px-4 pb-4 pt-8">
+      <div className="flex items-end justify-between gap-4 bg-gradient-to-t from-black to-black/0 px-4 pb-safe pt-8">
         <div className="min-w-0">
           <p className="truncate text-base font-semibold text-white">{story.title}</p>
           <p className="mt-0.5 text-xs capitalize text-white/50">{story.category}</p>
