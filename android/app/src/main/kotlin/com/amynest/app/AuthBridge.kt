@@ -2,6 +2,7 @@ package com.amynest.app
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
@@ -88,6 +89,11 @@ class AuthBridge(
             "isAvailable" -> resolve(replyProxy, cbId, JSONObject().put("available", isReady()))
             "signInWithGoogle" -> signInWithGoogle(replyProxy, cbId)
             "signOutGoogle" -> signOutGoogle(replyProxy, cbId)
+            "clearPendingGoogleAuth" -> {
+                val ctx = activityRef.get() ?: webViewRef.get()?.context
+                clearPendingGoogleAuth(ctx)
+                resolve(replyProxy, cbId, JSONObject().put("cleared", true))
+            }
             else -> resolveError(replyProxy, cbId, "unknown_action:$action")
         }
     }
@@ -173,6 +179,7 @@ class AuthBridge(
             resolveError(replyProxy, cbId, "no_id_token")
             return
         }
+        activityRef.get()?.let { persistPendingGoogleIdToken(it, idToken) }
         resolve(
             replyProxy,
             cbId,
@@ -194,13 +201,31 @@ class AuthBridge(
 
     private fun sendRaw(replyProxy: JavaScriptReplyProxy, cbId: String, payload: JSONObject) {
         if (!payload.has("cbId")) payload.put("cbId", cbId)
-        val webView = webViewRef.get() ?: return
-        webView.post {
+        val message = payload.toString()
+        val webView = webViewRef.get()
+        webView?.post {
             try {
-                replyProxy.postMessage(payload.toString())
+                replyProxy.postMessage(message)
             } catch (t: Throwable) {
-                Log.w(TAG, "postMessage failed", t)
+                Log.w(TAG, "replyProxy.postMessage failed — using JS inject", t)
             }
+            postAuthReply(webView, message)
+        } ?: Log.w(TAG, "sendRaw skipped — WebView unavailable (cbId=$cbId)")
+    }
+
+    /** Inject a pending Google ID token after WebView reload / resume. */
+    fun deliverPendingGoogleAuthIfAny() {
+        val webView = webViewRef.get() ?: return
+        val activity = activityRef.get() ?: return
+        val token = readPendingGoogleIdToken(activity) ?: return
+        webView.post {
+            val js =
+                "(function(){try{" +
+                    "window.__AMYNEST_PENDING_GOOGLE_ID_TOKEN=${JSONObject.quote(token)};" +
+                    "window.dispatchEvent(new Event('amynest-google-auth-pending'));" +
+                    "}catch(e){}})();"
+            webView.evaluateJavascript(js, null)
+            Log.d(TAG, "Delivered pending Google ID token to WebView")
         }
     }
 
@@ -235,7 +260,9 @@ class AuthBridge(
                         "var p=JSON.parse(${JSONObject.quote(message)});" +
                         "if(window.AmyNestAuthNative&&window.AmyNestAuthNative.onmessage){" +
                         "window.AmyNestAuthNative.onmessage({data:JSON.stringify(p)});" +
-                        "}}catch(e){}})();"
+                        "}" +
+                        "window.dispatchEvent(new CustomEvent('amynest-google-auth-bridge-reply',{detail:p}));" +
+                        "}catch(e){}})();"
                 webView.evaluateJavascript(js, null)
             } catch (t: Throwable) {
                 Log.w(TAG, "postAuthReply failed", t)
@@ -245,11 +272,33 @@ class AuthBridge(
 
     companion object {
         private const val TAG = "AuthBridge"
+        private const val PREFS = "amynest_auth_bridge"
+        private const val KEY_PENDING_GOOGLE_ID_TOKEN = "pending_google_id_token"
         const val JS_OBJECT_NAME = "AmyNestAuthNative"
         const val JS_INJECT_NAME = "AmyNestAuthInject"
         const val BRIDGE_VERSION = "1.0.0"
 
         private val ALLOWED_ORIGINS: Set<String> = WebViewOrigins.productionOriginRules()
+
+        fun persistPendingGoogleIdToken(context: Context, idToken: String) {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .putString(KEY_PENDING_GOOGLE_ID_TOKEN, idToken)
+                .apply()
+        }
+
+        fun readPendingGoogleIdToken(context: Context): String? =
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getString(KEY_PENDING_GOOGLE_ID_TOKEN, null)
+                ?.takeIf { it.isNotBlank() }
+
+        fun clearPendingGoogleAuth(context: Context?) {
+            if (context == null) return
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .remove(KEY_PENDING_GOOGLE_ID_TOKEN)
+                .apply()
+        }
 
         fun installOn(activity: Activity, webView: WebView): AuthBridge {
             val bridge = AuthBridge(activity, webView)

@@ -194,6 +194,7 @@ class MainActivity : AppCompatActivity() {
             ) == PackageManager.PERMISSION_GRANTED
         }
         pushBridge.setPermission(granted)
+        authBridge?.deliverPendingGoogleAuthIfAny()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -321,6 +322,7 @@ class MainActivity : AppCompatActivity() {
                         "window.dispatchEvent(new Event('amynest-auth-bridge-ready'));",
                     null,
                 )
+                authBridge?.deliverPendingGoogleAuthIfAny()
 
                 val dl = pendingNotifDeepLink
                 val cat = pendingNotifCategory ?: "routine"

@@ -12,6 +12,7 @@ declare global {
   interface Window {
     AmyNestAuthNative?: WebMessageListenerObject;
     __AMYNEST_AUTH?: string;
+    __AMYNEST_PENDING_GOOGLE_ID_TOKEN?: string;
   }
 }
 
@@ -23,15 +24,13 @@ type Pending = { resolve: (v: unknown) => void };
 
 const pending = new Map<string, Pending>();
 let cbCounter = 0;
-let listenerInstalled = false;
 
 function installListener(bridge: WebMessageListenerObject) {
-  if (listenerInstalled) return;
-  listenerInstalled = true;
+  // Re-bind every call — WebView reloads recreate AmyNestAuthNative.
   bridge.onmessage = (event) => {
-    let payload: { cbId?: string };
+    let payload: BridgeReply;
     try {
-      payload = JSON.parse(event.data);
+      payload = JSON.parse(event.data) as BridgeReply;
     } catch {
       return;
     }
@@ -41,6 +40,21 @@ function installListener(bridge: WebMessageListenerObject) {
     pending.delete(payload.cbId);
     p.resolve(payload);
   };
+}
+
+function handleBridgePayload(payload: BridgeReply) {
+  if (!payload.cbId) return;
+  const p = pending.get(payload.cbId);
+  if (!p) return;
+  pending.delete(payload.cbId);
+  p.resolve(payload);
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("amynest-google-auth-bridge-reply", (event) => {
+    const detail = (event as CustomEvent<BridgeReply>).detail;
+    if (detail) handleBridgePayload(detail);
+  });
 }
 
 function callAsync<T>(
@@ -165,4 +179,17 @@ export async function signOutGoogleViaNativeBridge(): Promise<void> {
   const bridge = await waitForAuthBridge(5_000);
   if (!bridge) return;
   await callAsync(bridge, { action: "signOutGoogle" }, 10_000);
+}
+
+export async function clearPendingNativeGoogleAuth(): Promise<void> {
+  const bridge = await waitForAuthBridge(3_000);
+  if (!bridge) return;
+  await callAsync(bridge, { action: "clearPendingGoogleAuth" }, 5_000);
+}
+
+export function readPendingNativeGoogleIdToken(): string | null {
+  const token = window.__AMYNEST_PENDING_GOOGLE_ID_TOKEN?.trim();
+  if (!token) return null;
+  delete window.__AMYNEST_PENDING_GOOGLE_ID_TOKEN;
+  return token;
 }
