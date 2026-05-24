@@ -12,7 +12,10 @@ import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.webkit.CookieManager
+import android.webkit.GeolocationPermissions
+import android.webkit.PermissionRequest
 import android.webkit.ServiceWorkerController
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -44,7 +47,9 @@ private const val BASE_URL = "https://www.amynest.in"
  *         loads so the web layer can show a "Opened from notification" toast
  *         and fire analytics.
  *
- *  4. Requests POST_NOTIFICATIONS permission on Android 13+ on cold start.
+ *  4. Requests POST_NOTIFICATIONS, location, and microphone on cold start
+ *     (Android system dialogs), and re-requests when the web page calls
+ *     geolocation / getUserMedia via [WebChromeClient].
  */
 class MainActivity : AppCompatActivity() {
 
@@ -57,12 +62,44 @@ class MainActivity : AppCompatActivity() {
     private var pendingNotifDeepLink: String? = null
     private var pendingNotifCategory: String? = null
 
-    // ── Notification permission launcher (Android 13+) ───────────────────────
+    /** Pending WebView permission callbacks (mic / geolocation). */
+    private var pendingPermissionRequest: PermissionRequest? = null
+    private var pendingGeoOrigin: String? = null
+    private var pendingGeoCallback: GeolocationPermissions.Callback? = null
+
+    // ── Permission launchers ─────────────────────────────────────────────────
 
     private val notifPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             Log.d(TAG, "Notification permission result: $granted")
             pushBridge.setPermission(granted)
+        }
+
+    /** Reactive mic / geolocation prompts from WebChromeClient. */
+    private val webPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
+            val req = pendingPermissionRequest
+            val geoCb = pendingGeoCallback
+            val geoOrigin = pendingGeoOrigin
+            pendingPermissionRequest = null
+            pendingGeoCallback = null
+            pendingGeoOrigin = null
+
+            if (req != null) {
+                val allGranted = granted.values.all { it }
+                if (allGranted) req.grant(req.resources) else req.deny()
+            }
+            if (geoCb != null && geoOrigin != null) {
+                val allowed = granted[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                    granted[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+                geoCb.invoke(geoOrigin, allowed, false)
+            }
+        }
+
+    /** Proactive startup location + microphone (system dialog on first install). */
+    private val startupPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { _ ->
+            /* WebChromeClient handles follow-up when web features run. */
         }
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
@@ -118,6 +155,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         askNotificationPermission()
+        askLocationAndMicPermission()
 
         val launchUrl = buildLaunchUrl(intent)
         webView.loadUrl(launchUrl)
@@ -201,6 +239,7 @@ class MainActivity : AppCompatActivity() {
             builtInZoomControls = false
             setSupportZoom(false)
             textZoom = 100
+            setGeolocationEnabled(true)
             
             // Performance
             @Suppress("DEPRECATION")
@@ -262,6 +301,59 @@ class MainActivity : AppCompatActivity() {
                 val js = buildNotifTapJs(dl, cat)
                 view.evaluateJavascript(js, null)
                 Log.d(TAG, "Delivered onNotificationTap → deepLink=$dl category=$cat")
+            }
+        }
+
+        wv.webChromeClient = object : WebChromeClient() {
+            override fun onPermissionRequest(request: PermissionRequest) {
+                val androidPerms = mutableListOf<String>()
+                for (resource in request.resources) {
+                    when (resource) {
+                        PermissionRequest.RESOURCE_VIDEO_CAPTURE ->
+                            androidPerms.add(Manifest.permission.CAMERA)
+                        PermissionRequest.RESOURCE_AUDIO_CAPTURE ->
+                            androidPerms.add(Manifest.permission.RECORD_AUDIO)
+                    }
+                }
+                if (androidPerms.isEmpty()) {
+                    request.grant(request.resources)
+                    return
+                }
+                val missing = androidPerms.filter {
+                    ContextCompat.checkSelfPermission(
+                        this@MainActivity,
+                        it,
+                    ) != PackageManager.PERMISSION_GRANTED
+                }
+                if (missing.isEmpty()) {
+                    request.grant(request.resources)
+                } else {
+                    pendingPermissionRequest = request
+                    webPermissionLauncher.launch(missing.toTypedArray())
+                }
+            }
+
+            override fun onGeolocationPermissionsShowPrompt(
+                origin: String,
+                callback: GeolocationPermissions.Callback,
+            ) {
+                val needed = arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                )
+                val missing = needed.filter {
+                    ContextCompat.checkSelfPermission(
+                        this@MainActivity,
+                        it,
+                    ) != PackageManager.PERMISSION_GRANTED
+                }
+                if (missing.isEmpty()) {
+                    callback.invoke(origin, true, false)
+                } else {
+                    pendingGeoOrigin = origin
+                    pendingGeoCallback = callback
+                    webPermissionLauncher.launch(missing.toTypedArray())
+                }
             }
         }
 
@@ -339,5 +431,28 @@ class MainActivity : AppCompatActivity() {
             return
         }
         notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    /** Request location + microphone on cold start (system dialogs). */
+    private fun askLocationAndMicPermission() {
+        val needed = buildList {
+            if (ContextCompat.checkSelfPermission(
+                    this@MainActivity,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                add(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+            if (ContextCompat.checkSelfPermission(
+                    this@MainActivity,
+                    Manifest.permission.RECORD_AUDIO,
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                add(Manifest.permission.RECORD_AUDIO)
+            }
+        }
+        if (needed.isNotEmpty()) {
+            startupPermissionLauncher.launch(needed.toTypedArray())
+        }
     }
 }
