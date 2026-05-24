@@ -61,7 +61,9 @@ Output JSON only: {"questions":[{"subject":"math|science|reasoning|gk","question
 
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-5-nano",
+      model: "gpt-4o-mini",
+      temperature: 0.7,
+      max_completion_tokens: 2500,
       messages: [
         {
           role: "system",
@@ -72,7 +74,7 @@ Output JSON only: {"questions":[{"subject":"math|science|reasoning|gk","question
       ],
       response_format: { type: "json_object" },
     },
-    5000,
+    20_000,
   );
   if (!outcome.content) return null;
 

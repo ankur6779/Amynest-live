@@ -40,7 +40,9 @@ Output JSON: {"questions":[{"question":"...","options":["..."],"answer":"..."}]}
 
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-5-nano",
+      model: "gpt-4o-mini",
+      temperature: 0.7,
+      max_completion_tokens: 2000,
       messages: [
         {
           role: "system",
@@ -50,7 +52,7 @@ Output JSON: {"questions":[{"question":"...","options":["..."],"answer":"..."}]}
       ],
       response_format: { type: "json_object" },
     },
-    4500,
+    20_000,
   );
   if (!outcome.content) return null;
   const parsed = AiResponseSchema.safeParse(JSON.parse(outcome.content));

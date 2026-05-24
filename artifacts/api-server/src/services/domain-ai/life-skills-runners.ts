@@ -68,7 +68,9 @@ Output JSON only: {"tasks":[{"category":"...","difficulty":"easy|medium|hard","t
 
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-5-nano",
+      model: "gpt-4o-mini",
+      temperature: 0.7,
+      max_completion_tokens: 2500,
       messages: [
         {
           role: "system",
@@ -79,7 +81,7 @@ Output JSON only: {"tasks":[{"category":"...","difficulty":"easy|medium|hard","t
       ],
       response_format: { type: "json_object" },
     },
-    6000,
+    20_000,
   );
   if (!outcome.content) return null;
 
