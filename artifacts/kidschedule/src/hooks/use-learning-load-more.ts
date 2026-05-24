@@ -1,0 +1,124 @@
+import { useCallback, useEffect, useState } from "react";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useSubscription } from "@/hooks/use-subscription";
+
+export type LearningLoadMoreSection =
+  | "smart_study"
+  | "olympiad"
+  | "spelling"
+  | "phonics"
+  | "life_skills";
+
+export interface LoadMoreUsage {
+  isPremium: boolean;
+  used: number;
+  limit: number;
+  remaining: number;
+  charged?: boolean;
+}
+
+export interface LoadMoreResponse {
+  ok: true;
+  section: LearningLoadMoreSection;
+  source: "cache" | "ai";
+  fromCache: boolean;
+  charged: boolean;
+  usage: LoadMoreUsage;
+  items: {
+    questions?: unknown[];
+    words?: unknown[];
+    tasks?: unknown[];
+  };
+}
+
+export function useLearningLoadMore(section: LearningLoadMoreSection) {
+  const authFetch = useAuthFetch();
+  const { refresh } = useSubscription();
+  const [usage, setUsage] = useState<LoadMoreUsage | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refreshStatus = useCallback(async () => {
+    try {
+      const res = await authFetch(
+        `/api/learning/load-more/status?section=${encodeURIComponent(section)}`,
+      );
+      if (!res.ok) return;
+      const data = (await res.json()) as LoadMoreUsage & { ok?: boolean };
+      setUsage({
+        isPremium: data.isPremium,
+        used: data.used,
+        limit: data.limit,
+        remaining: data.remaining,
+      });
+    } catch {
+      /* best-effort */
+    }
+  }, [authFetch, section]);
+
+  useEffect(() => {
+    void refreshStatus();
+  }, [refreshStatus]);
+
+  const loadMore = useCallback(
+    async (body: {
+      childId?: number;
+      count?: number;
+      excludeIds?: string[];
+      params?: Record<string, unknown>;
+    }): Promise<LoadMoreResponse | null> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await authFetch("/api/learning/load-more", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            section,
+            childId: body.childId,
+            count: body.count,
+            excludeIds: body.excludeIds,
+            params: body.params ?? {},
+          }),
+        });
+
+        if (res.status === 402) {
+          window.dispatchEvent(
+            new CustomEvent("amynest:open-paywall", {
+              detail: { reason: "learning_load_more", section },
+            }),
+          );
+          setError("locked");
+          return null;
+        }
+
+        if (!res.ok) {
+          const err = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(err.error ?? `load_more_${res.status}`);
+        }
+
+        const data = (await res.json()) as LoadMoreResponse;
+        setUsage(data.usage);
+        if (data.charged) {
+          refresh();
+        }
+        return data;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "load_more_failed");
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [authFetch, section, refresh],
+  );
+
+  return {
+    usage,
+    loading,
+    error,
+    loadMore,
+    refreshStatus,
+    canLoadMore: usage ? usage.remaining > 0 || usage.isPremium : true,
+  };
+}

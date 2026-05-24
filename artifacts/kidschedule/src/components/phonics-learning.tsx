@@ -9,6 +9,7 @@ import { preloadStaticPhrases } from "@/lib/static-audio";
 import { getStaticAudioPrefetchLimit } from "@/lib/static-audio-edge";
 import { PhonicsTest } from "@/components/phonics-test";
 import { SubItemGate } from "@/components/sub-item-gate";
+import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useHubJourney } from "@/hooks/use-hub-journey";
@@ -191,6 +192,7 @@ function PhonicsLearningContent({
     null,
   );
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [extraCvcWords, setExtraCvcWords] = useState<string[]>([]);
   // Reset the override whenever the parent switches to a different child —
   // otherwise stage stickiness leaks across siblings (architect flag).
   useEffect(() => {
@@ -363,7 +365,46 @@ function PhonicsLearningContent({
           subtitleOverride={isPremium ? t("components.phonics_learning.todays_practice_subtitle") : undefined}
         />
         {showBlending && (
-          <CvcBlendingPracticeCard level={level} recordPlay={recordPlay} />
+          <>
+            <CvcBlendingPracticeCard level={level} recordPlay={recordPlay} />
+            <Card className="rounded-2xl border-dashed">
+              <CardContent className="p-3 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {t("components.learning_load_more.extra_words")}
+                </p>
+                {extraCvcWords.length > 0 && (
+                  <p className="text-sm font-medium flex flex-wrap gap-1.5">
+                    {extraCvcWords.map((w) => (
+                      <span
+                        key={w}
+                        className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold"
+                      >
+                        {w}
+                      </span>
+                    ))}
+                  </p>
+                )}
+                <LearningLoadMoreButton
+                  section="phonics"
+                  count={10}
+                  excludeIds={extraCvcWords}
+                  params={{
+                    level:
+                      { "12_24m": 1, "2_3y": 2, "3_4y": 3, "4_5y": 4, "5_6y": 5 }[
+                        level.ageGroup
+                      ] ?? 3,
+                    vowelFocus: "a",
+                  }}
+                  onLoaded={(items) => {
+                    const words = (items.words ?? []) as string[];
+                    if (words.length > 0) {
+                      setExtraCvcWords((prev) => [...prev, ...words]);
+                    }
+                  }}
+                />
+              </CardContent>
+            </Card>
+          </>
         )}
       </SubItemGate>
 

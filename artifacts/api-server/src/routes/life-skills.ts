@@ -159,7 +159,7 @@ router.post("/life-skills/progress", async (req, res): Promise<void> => {
   for (const band of ["toddler", "preschool", "kid", "teen"] as const) {
     for (const t of tasksFor(band)) validIds.add(t.id);
   }
-  if (!validIds.has(parsed.data.skillId)) {
+  if (!validIds.has(parsed.data.skillId) && !parsed.data.skillId.startsWith("ai-ls-")) {
     res.status(400).json({ error: "Unknown skillId" });
     return;
   }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SubItemGate } from "@/components/sub-item-gate";
+import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -739,6 +740,21 @@ function PracticeTab({
       <Button className="w-full" disabled={fetchPractice || qSet.loading} onClick={() => setFetchPractice(true)}>
         <BookOpen className="h-4 w-4 mr-1" /> {qSet.loading ? t("components.olympiad_zone.loading_questions") : t("components.olympiad_zone.start_practice")}
       </Button>
+      <LearningLoadMoreButton
+        section="olympiad"
+        childId={Number(childId)}
+        count={10}
+        excludeIds={session !== null ? session.map((q) => q.id) : []}
+        params={{ ageBand, difficulty, subject, country }}
+        onLoaded={(items) => {
+          const qs = (items.questions ?? []) as OlympiadQuestion[];
+          if (qs.length > 0) {
+            setSession(qs);
+            setFetchPractice(false);
+          }
+        }}
+        className="w-full"
+      />
       <p className="text-xs text-muted-foreground text-center">
         {t("components.olympiad_zone.practice_earns_5_points_per_correct_answer_vs_10_for_the_dai")}
       </p>

@@ -39,6 +39,7 @@ import {
   type LifeSkillsTodayResponse,
 } from "@workspace/api-client-react";
 import { SubItemGate } from "@/components/sub-item-gate";
+import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
 
 interface LifeSkillsZoneProps {
   child: { id: string | number; name: string; age: number };
@@ -83,6 +84,7 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
   );
 
   const [showRolePlay, setShowRolePlay] = useState(false);
+  const [bonusTasks, setBonusTasks] = useState<LifeSkillTask[]>([]);
 
   const setMutation = useSetLifeSkillProgress();
 
@@ -212,7 +214,12 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
     return pts;
   }, [data.tasks, completedSet]);
 
-  const remainingTasks = data.tasks.filter(
+  const allTasks = useMemo(
+    () => [...data.tasks, ...bonusTasks],
+    [data.tasks, bonusTasks],
+  );
+
+  const remainingTasks = allTasks.filter(
     (t) => !completedSet.has(t.id) && !skippedToday.has(t.id),
   );
 
@@ -258,7 +265,7 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
       {/* Today's tasks */}
       <div>
         <p className="font-quicksand font-bold text-sm mb-2">{uiLabel("todayTitle", lang)}</p>
-        {data.tasks.length > 0 && remainingTasks.length === 0 && (
+        {allTasks.length > 0 && remainingTasks.length === 0 && (
           <Card className="bg-[hsl(var(--brand-emerald-100)/0.8)] dark:bg-[hsl(var(--brand-emerald-800)/0.2)] border-[hsl(var(--brand-emerald-400))]">
             <CardContent className="p-3 text-sm text-center text-[hsl(var(--brand-emerald-800))] dark:text-[hsl(var(--brand-emerald-100))]">
               ✅ {uiLabel("noneToday", lang)}
@@ -266,7 +273,7 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
           </Card>
         )}
         <div className="space-y-2">
-          {data.tasks.map((task) => {
+          {allTasks.map((task) => {
             const isDone = completedSet.has(task.id);
             const isSkipped = skippedToday.has(task.id);
             const settled = isDone || isSkipped;
@@ -338,6 +345,20 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
             );
           })}
         </div>
+        <LearningLoadMoreButton
+          section="life_skills"
+          childId={childIdNum}
+          count={3}
+          excludeIds={allTasks.map((t) => t.id)}
+          params={{ ageBand }}
+          onLoaded={(items) => {
+            const tasks = (items.tasks ?? []) as LifeSkillTask[];
+            if (tasks.length > 0) {
+              setBonusTasks((prev) => [...prev, ...tasks]);
+            }
+          }}
+          className="mt-3"
+        />
       </div>
 
       {/* Role-play scenarios */}
