@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FileDown, Eye, Download, Loader2, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2, RefreshCw } from "lucide-react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { resolveApiMediaUrl } from "@/lib/api";
+import {
+  parseHubQuotaHeaders,
+  savePdfFromResponse,
+} from "@/lib/hub-pdf-download";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 import { useTranslation } from "react-i18next";
@@ -147,35 +150,42 @@ export function FunSheets({
           fileId: file.id
         })
       });
-      const body = (await res.json()) as DownloadResponse;
-      if (!res.ok) {
-        if (body.error === "daily_limit_reached") {
+      const contentType = res.headers.get("content-type") ?? "";
+      if (contentType.includes("json")) {
+        const body = (await res.json().catch(() => ({}))) as DownloadResponse;
+        if (body.error === "daily_limit_reached" || res.status === 429) {
           if (body.dailyQuota) setQuota(body.dailyQuota);
           setRowError({
             id: file.id,
             message: `Daily limit reached (${quota?.limit ?? 2}/day)`
           });
-        } else if (body.error === "lifetime_limit_reached") {
+        } else if (body.error === "lifetime_limit_reached" || res.status === 402) {
           if (body.lifetimeQuota) setLifetimeQuota(body.lifetimeQuota);
           setRowError({
             id: file.id,
             message: "Free lifetime limit reached. Upgrade for unlimited downloads."
           });
-        } else if (body.error === "already_downloaded") {
-          window.open(resolveApiMediaUrl(`/api/drive/download/${file.id}?name=${encodeURIComponent(file.name)}`), "_blank");
         } else {
           setRowError({
             id: file.id,
-            message: "Download failed. Please try again."
+            message: body.error === "stream_failed"
+              ? "Couldn't save the PDF. Please try again."
+              : "Download failed. Please try again."
           });
         }
         return;
       }
-      if (body.downloadUrl) {
-        window.open(resolveApiMediaUrl(body.downloadUrl), "_blank");
+      const saved = await savePdfFromResponse(res, file.name);
+      if (!saved) {
+        setRowError({
+          id: file.id,
+          message: "Couldn't save the PDF. Please try again."
+        });
+        return;
       }
-      if (body.dailyQuota) setQuota(body.dailyQuota);
-      if (body.lifetimeQuota) setLifetimeQuota(body.lifetimeQuota);
+      const quotaHeaders = parseHubQuotaHeaders(res);
+      if (quotaHeaders.dailyQuota) setQuota(quotaHeaders.dailyQuota);
+      if (quotaHeaders.lifetimeQuota) setLifetimeQuota(quotaHeaders.lifetimeQuota);
       // Mark as downloaded in local state
       setFiles(prev => prev.map(f => f.id === file.id ? {
         ...f,

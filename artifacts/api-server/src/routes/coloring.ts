@@ -7,7 +7,12 @@ import {
   coloringDownloadsTable,
 } from "@workspace/db";
 import { getAuth } from "../lib/auth";
-import { driveFilesListAll, driveProxyDownloadPath, getDriveApiKey } from "../lib/googleDrive";
+import { driveFilesListAll, getDriveApiKey } from "../lib/googleDrive";
+import {
+  setHubQuotaHeaders,
+  streamDrivePdfToExpress,
+  type HubQuotaHeaders,
+} from "../lib/hubPdfStream";
 import { logger } from "../lib/logger";
 import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
 import {
@@ -314,8 +319,26 @@ router.post("/coloring/download", async (req, res): Promise<void> => {
       return;
     }
 
-    // Has this child already downloaded this file? If so, refuse — the
-    // unique index would also catch it but a clean 409 is friendlier.
+    const sub = await getOrCreateSubscription(userId);
+    const premium = isPremiumNow(sub);
+    const dailyLimit = dailyLimitFor(premium);
+    const used = await getDailyDownloadCount(userId, childId);
+    const lifetimeUsed = await getLifetimeDownloadCount(userId, childId);
+
+    const buildQuotaHeaders = (
+      dailyUsed: number,
+      lifetimeUsedCount: number,
+    ): HubQuotaHeaders => ({
+      dailyLimit,
+      dailyUsed,
+      dailyRemaining: Math.max(0, dailyLimit - dailyUsed),
+      lifetimeLimit: premium ? null : LIFETIME_LIMIT,
+      lifetimeUsed: lifetimeUsedCount,
+      lifetimeRemaining: premium
+        ? null
+        : Math.max(0, LIFETIME_LIMIT - lifetimeUsedCount),
+    });
+
     const [existing] = await db
       .select({ id: coloringDownloadsTable.id })
       .from(coloringDownloadsTable)
@@ -327,29 +350,27 @@ router.post("/coloring/download", async (req, res): Promise<void> => {
         ),
       )
       .limit(1);
+
+    // Re-download: stream again without consuming quota.
     if (existing) {
-      res.status(409).json({ error: "already_downloaded" });
+      setHubQuotaHeaders(res, buildQuotaHeaders(used, lifetimeUsed));
+      const streamed = await streamDrivePdfToExpress(res, fileId, file.name);
+      if (!streamed && !res.headersSent) {
+        res.status(502).json({ error: "stream_failed" });
+      }
       return;
     }
 
-    const sub = await getOrCreateSubscription(userId);
-    const premium = isPremiumNow(sub);
-    const dailyLimit = dailyLimitFor(premium);
-    const used = await getDailyDownloadCount(userId, childId);
-
-    if (!premium) {
-      const lifetimeUsed = await getLifetimeDownloadCount(userId, childId);
-      if (lifetimeUsed >= LIFETIME_LIMIT) {
-        res.status(402).json({
-          error: "lifetime_limit_reached",
-          lifetimeQuota: {
-            limit: LIFETIME_LIMIT,
-            used: lifetimeUsed,
-            remaining: 0,
-          },
-        });
-        return;
-      }
+    if (!premium && lifetimeUsed >= LIFETIME_LIMIT) {
+      res.status(402).json({
+        error: "lifetime_limit_reached",
+        lifetimeQuota: {
+          limit: LIFETIME_LIMIT,
+          used: lifetimeUsed,
+          remaining: 0,
+        },
+      });
+      return;
     }
 
     if (used >= dailyLimit) {
@@ -360,45 +381,50 @@ router.post("/coloring/download", async (req, res): Promise<void> => {
       return;
     }
 
-    const usedBefore = used;
-
+    let insertedId: number | null = null;
     try {
-      await db.insert(coloringDownloadsTable).values({
-        userId,
-        childId,
-        fileId,
-        fileName: file.name,
-      });
+      const [row] = await db
+        .insert(coloringDownloadsTable)
+        .values({
+          userId,
+          childId,
+          fileId,
+          fileName: file.name,
+        })
+        .returning({ id: coloringDownloadsTable.id });
+      insertedId = row?.id ?? null;
     } catch (insertErr) {
-      // Concurrent duplicate request lost the race past the pre-check —
-      // the unique (child_id, file_id) index will throw Postgres 23505.
-      // Surface it as a clean 409 instead of a generic 500.
       const pgCode = (insertErr as { code?: string }).code;
       if (pgCode === "23505") {
-        res.status(409).json({ error: "already_downloaded" });
+        setHubQuotaHeaders(res, buildQuotaHeaders(used, lifetimeUsed));
+        const streamed = await streamDrivePdfToExpress(res, fileId, file.name);
+        if (!streamed && !res.headersSent) {
+          res.status(502).json({ error: "stream_failed" });
+        }
         return;
       }
       throw insertErr;
     }
 
-    const lifetimeUsedAfter = await getLifetimeDownloadCount(userId, childId);
+    const dailyUsedAfter = used + 1;
+    const lifetimeUsedAfter = lifetimeUsed + 1;
+    setHubQuotaHeaders(
+      res,
+      buildQuotaHeaders(dailyUsedAfter, lifetimeUsedAfter),
+    );
 
-    res.json({
-      ok: true,
-      downloadUrl: driveProxyDownloadPath(fileId, file.name),
-      dailyQuota: {
-        limit: dailyLimit,
-        used: usedBefore + 1,
-        remaining: Math.max(0, dailyLimit - (usedBefore + 1)),
-      },
-      lifetimeQuota: premium
-        ? { limit: null, used: lifetimeUsedAfter, remaining: null }
-        : {
-            limit: LIFETIME_LIMIT,
-            used: lifetimeUsedAfter,
-            remaining: Math.max(0, LIFETIME_LIMIT - lifetimeUsedAfter),
-          },
-    });
+    const streamed = await streamDrivePdfToExpress(res, fileId, file.name);
+    if (!streamed) {
+      if (insertedId != null) {
+        await db
+          .delete(coloringDownloadsTable)
+          .where(eq(coloringDownloadsTable.id, insertedId));
+      }
+      if (!res.headersSent) {
+        res.status(502).json({ error: "stream_failed" });
+      }
+      return;
+    }
   } catch (err) {
     logger.error(
       `coloring download failed: ${err instanceof Error ? err.message : String(err)}`,
