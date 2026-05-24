@@ -49,6 +49,17 @@ import {
 } from "@/lib/hub-visibility";
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
 import { applyParentingHubDeepLink } from "@/lib/hub-activity-cross-link";
+import {
+  getAdaptiveMood,
+  getLifeSkillPreviewText,
+  getPtmPreviewText,
+  isPtmSeason,
+  orderEmotionalCards,
+  sortSupportTileIds,
+  type EmotionalCardId,
+} from "@/lib/hub-support-utils";
+import { getArticlesForAgeMonths } from "@/lib/articles-data";
+import { NewParentTipsSection } from "@/components/new-parent-tips";
 
 // ── 5-section grouping for the "For You" content ────────────────────────────
 // Maps each premium section key to the tile IDs that live inside it.
@@ -57,7 +68,7 @@ const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
   learning:   ["smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad", "event-prep"],
   creativity: ["activities", "art-craft", "worksheets", "coloring-books", "fun-sheets"],
   stories:    ["story-hub", "speech-coach"],
-  support:    ["articles", "emotional", "life-skills", "ptm-prep"],
+  support:    ["articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
 };
 
 /** Explicit render order inside the "Today For You" group. */
@@ -70,7 +81,7 @@ const TODAY_TILE_ORDER = [
 ] as const;
 
 const HUB_EXPANDED_GROUPS_KEY = "amynest:hub:expandedGroups";
-const DEFAULT_EXPANDED_GROUPS = ["today", "learning"];
+const DEFAULT_EXPANDED_GROUPS = ["today", "learning", "support"];
 
 function loadExpandedGroups(): Set<string> {
   if (typeof window === "undefined") return new Set(DEFAULT_EXPANDED_GROUPS);
@@ -122,6 +133,8 @@ interface SectionProps {
   highlighted?: boolean;
   /** Show a small "Try Free" pill in the header (first-time-free features). */
   tryFree?: boolean;
+  /** One-line teaser shown while the tile is collapsed. */
+  preview?: string;
   children: React.ReactNode;
 }
 function HubSection({
@@ -134,6 +147,7 @@ function HubSection({
   defaultOpen = false,
   highlighted = false,
   tryFree = false,
+  preview,
   onOpen,
   children
 }: SectionProps & {
@@ -164,16 +178,24 @@ function HubSection({
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
-              <p className="font-quicksand font-bold text-[15px] leading-tight text-foreground truncate">{title}</p>
+              <p className="font-quicksand font-bold text-[15px] leading-tight text-foreground line-clamp-2">{title}</p>
               {tryFree && <TryFreeBadge />}
             </div>
-            <p className="text-[12px] text-muted-foreground/90 mt-0.5 truncate">{description}</p>
+            <p className="text-[12px] text-muted-foreground/90 mt-0.5 line-clamp-2">{description}</p>
           </div>
         </div>
         <span className={["shrink-0 w-7 h-7 rounded-full flex items-center justify-center", "border border-border/50 bg-white/50 dark:bg-white/5", "transition-transform duration-300", open ? "rotate-180 text-primary border-primary/40" : "text-muted-foreground"].join(" ")}>
           <ChevronDown className="h-4 w-4" />
         </span>
       </button>
+      {!open && preview ? (
+        <div className="px-4 pb-3 -mt-0.5">
+          <p className="text-[11px] font-medium text-primary/85 line-clamp-1 flex items-center gap-1">
+            <Sparkles className="h-3 w-3 shrink-0 opacity-80" />
+            {preview}
+          </p>
+        </div>
+      ) : null}
       {open && <div className="px-4 pb-5 pt-3 border-t border-white/40 dark:border-white/10 bg-white/30 dark:bg-white/[0.015] animate-in fade-in slide-in-from-top-1 duration-300">
           {children}
         </div>}
@@ -212,6 +234,8 @@ function RoutineLaunchCard({
 
 const HUB_QUICK_ACTIONS = [
   { id: "ask-amy",    group: "today",      tileId: "amy-ai",          emoji: "💜", i18n: "parent_hub.quick_actions.ask_amy" },
+  { id: "articles",   group: "support",    tileId: "articles",        emoji: "📚", i18n: "parent_hub.quick_actions.articles" },
+  { id: "emotional",  group: "support",    tileId: "emotional",       emoji: "❤️", i18n: "parent_hub.quick_actions.emotional" },
   { id: "story",      group: "stories",    tileId: "story-hub",       emoji: "📖", i18n: "parent_hub.quick_actions.story" },
   { id: "phonics",    group: "learning",   tileId: "phonics",         emoji: "🔤", i18n: "parent_hub.quick_actions.phonics" },
   { id: "routine",    group: "today",      tileId: "generate-routine", emoji: "📅", i18n: "parent_hub.quick_actions.routine" },
@@ -298,27 +322,44 @@ const EMOTIONAL_CARD_EMOJI: Record<typeof EMOTIONAL_CARD_IDS[number], string> = 
   break: "😮‍💨"
 };
 const EMOTIONAL_CARD_BG: Record<typeof EMOTIONAL_CARD_IDS[number], string> = {
-  overwhelmed: "bg-muted dark:bg-card border-border dark:border-border hover:border-border",
-  anxious: "bg-muted dark:bg-card border-border dark:border-border hover:border-border",
-  connect: "bg-muted dark:bg-card border-border dark:border-border hover:border-border",
-  break: "bg-muted dark:bg-card border-border dark:border-border hover:border-border"
+  overwhelmed: "bg-gradient-to-br from-rose-500/10 to-pink-500/5 border-rose-300/30 dark:border-rose-400/20 hover:border-rose-400/50",
+  anxious: "bg-gradient-to-br from-violet-500/10 to-purple-500/5 border-violet-300/30 dark:border-violet-400/20 hover:border-violet-400/50",
+  connect: "bg-gradient-to-br from-amber-500/10 to-orange-500/5 border-amber-300/30 dark:border-amber-400/20 hover:border-amber-400/50",
+  break: "bg-gradient-to-br from-sky-500/10 to-cyan-500/5 border-sky-300/30 dark:border-sky-400/20 hover:border-sky-400/50",
 };
-function EmotionalSupportSection() {
+function EmotionalSupportSection({
+  cardOrder,
+  moodHighlight = false,
+}: {
+  cardOrder?: readonly EmotionalCardId[];
+  moodHighlight?: boolean;
+}) {
   const {
     t
   } = useTranslation();
+  const orderedIds = cardOrder ?? EMOTIONAL_CARD_IDS;
   return <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
         {t("parent_hub.emotional_footer.lead")}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {EMOTIONAL_CARD_IDS.map(id => {
+        {orderedIds.map((id, idx) => {
         const title = t(`parent_hub.emotional_cards.${id}.title`);
         const subtitle = t(`parent_hub.emotional_cards.${id}.subtitle`);
         const prompt = t(`parent_hub.emotional_cards.${id}.prompt`);
+        const isHighlighted = moodHighlight && idx === 0;
         return <SubItemGate key={id} sectionId="hub_emotional" subItemId={id}>
               <Link href={`/assistant?q=${encodeURIComponent(prompt)}`}>
-                <button className={`w-full text-left rounded-2xl border-2 px-4 py-3 transition-all ${EMOTIONAL_CARD_BG[id]}`}>
+                <button className={[
+                  "w-full text-left rounded-2xl border-2 px-4 py-3 transition-all",
+                  EMOTIONAL_CARD_BG[id],
+                  isHighlighted ? "ring-2 ring-primary/45 shadow-[0_0_20px_-4px_rgba(168,85,247,0.45)]" : "",
+                ].join(" ")}>
+                  {isHighlighted ? (
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-primary mb-1 block">
+                      {t("parent_hub.emotional_footer.suggested_for_you")}
+                    </span>
+                  ) : null}
                   <span className="text-2xl block mb-1">{EMOTIONAL_CARD_EMOJI[id]}</span>
                   <p className="font-bold text-sm text-foreground leading-tight">{title}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
@@ -336,6 +377,14 @@ function EmotionalSupportSection() {
           </p>
         </div>
       </div>
+
+      <Link href="/assistant">
+        <Button variant="default" className="w-full rounded-xl gap-2 text-sm font-semibold">
+          <AmyIcon size={20} bounce />
+          {t("parent_hub.emotional_footer.talk_to_amy")}
+          <ArrowRight className="h-4 w-4 ml-auto" />
+        </Button>
+      </Link>
 
       {/* Feedback entry point */}
       <Link href="/feedback">
@@ -389,8 +438,8 @@ function SubSection({
             {icon}
           </div>
           <div className="min-w-0">
-            <p className="font-semibold text-[13px] leading-tight text-foreground truncate">{title}</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{description}</p>
+            <p className="font-semibold text-[13px] leading-tight text-foreground line-clamp-2">{title}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{description}</p>
           </div>
         </div>
         <span className={["shrink-0 w-6 h-6 rounded-full flex items-center justify-center", "border border-border/50 bg-white/60 dark:bg-white/5", "transition-transform duration-300", open ? "rotate-180 text-primary border-primary/40" : "text-muted-foreground"].join(" ")}>
@@ -741,6 +790,19 @@ function ParentingHubPage() {
   const showSection2 = shouldShowExploreSection(totalAgeMonths, currentBand, nextBand);
   const earlyAccessBypass = shouldBypassHubMonthGates(totalAgeMonths, currentBand, nextBand);
 
+  const ptmSeason = isPtmSeason();
+  const adaptiveMood = effectiveChild ? getAdaptiveMood(effectiveChild.id) : "neutral";
+  const emotionalCardOrder = orderEmotionalCards(adaptiveMood);
+  const moodHighlight = adaptiveMood === "low";
+  const lifeSkillPreview = effectiveChild
+    ? getLifeSkillPreviewText(effectiveChild.age, effectiveChild.id)
+    : null;
+  const ptmPreview = getPtmPreviewText();
+  const featuredArticle = getArticlesForAgeMonths(totalAgeMonths)[0];
+  const articlePreview = featuredArticle
+    ? t("parent_hub.support.article_preview", { title: featuredArticle.title })
+    : undefined;
+
   useEffect(() => {
     if (!effectiveChild || !currentBand) return;
     const frame = requestAnimationFrame(() => {
@@ -866,8 +928,8 @@ function ParentingHubPage() {
     alwaysCurrent: true,
     render: () => {
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_articles")}>
-          <HubSection id="articles" icon={<BookOpen className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.articles.title")} description={t("parent_hub.web_tiles.articles.description")} accentClass="bg-gradient-to-br from-blue-500 to-indigo-600" cardClass="linear-gradient(135deg,rgba(59,130,246,0.30)0%,rgba(99,102,241,0.14)100%)" tryFree={tryFreeFor("hub_articles")} onOpen={() => hubUsage.markFeatureUsed("hub_articles")}> {/* audit-ok: brand tile accent gradient */}
-            <ParentingArticles childAgeMonths={totalAgeMonths} />
+          <HubSection id="articles" icon={<BookOpen className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.articles.title")} description={t("parent_hub.web_tiles.articles.description")} accentClass="bg-gradient-to-br from-blue-500 to-indigo-600" cardClass="linear-gradient(135deg,rgba(59,130,246,0.30)0%,rgba(99,102,241,0.14)100%)" defaultOpen tryFree={tryFreeFor("hub_articles")} preview={articlePreview} onOpen={() => hubUsage.markFeatureUsed("hub_articles")}> {/* audit-ok: brand tile accent gradient */}
+            <ParentingArticles childAgeMonths={totalAgeMonths} compact />
           </HubSection>
         </LockedBlock>;
     }
@@ -887,10 +949,29 @@ function ParentingHubPage() {
     alwaysCurrent: true,
     render: () => {
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_emotional")}>
-          <HubSection id="emotional" icon={<Heart className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.emotional.title")} description={t("parent_hub.web_tiles.emotional.description")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardClass="linear-gradient(135deg,rgba(251,113,133,0.30)0%,rgba(236,72,153,0.14)100%)" tryFree={tryFreeFor("hub_emotional")} onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}> {/* audit-ok: brand tile accent gradient */}
-            <EmotionalSupportSection />
+          <HubSection id="emotional" icon={<Heart className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.emotional.title")} description={t("parent_hub.web_tiles.emotional.description")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardClass="linear-gradient(135deg,rgba(251,113,133,0.30)0%,rgba(236,72,153,0.14)100%)" defaultOpen tryFree={tryFreeFor("hub_emotional")} preview={moodHighlight ? t("parent_hub.support.emotional_mood_preview") : undefined} onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}> {/* audit-ok: brand tile accent gradient */}
+            <EmotionalSupportSection cardOrder={emotionalCardOrder} moodHighlight={moodHighlight} />
           </HubSection>
         </LockedBlock>;
+    }
+  }, {
+    id: "new-parent-tips",
+    alwaysCurrent: true,
+    render: () => {
+      if (!isInfant || !ageGroup) return null;
+      return (
+        <HubSection
+          id="new-parent-tips"
+          icon={<Baby className="h-5 w-5 text-white" />}
+          title={t("parent_hub.web_tiles.new-parent-tips.title")}
+          description={t("parent_hub.web_tiles.new-parent-tips.description")}
+          accentClass="bg-gradient-to-br from-rose-300 to-pink-400"
+          cardClass="linear-gradient(135deg,rgba(253,164,175,0.30)0%,rgba(244,114,182,0.14)100%)"
+          defaultOpen
+        >
+          <NewParentTipsSection ageGroup={ageGroup} />
+        </HubSection>
+      );
     }
   }, {
     id: "activities",
@@ -965,7 +1046,7 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("ptm-prep", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_ptm_prep")}>
-          <HubSection id="ptm-prep" icon={<ClipboardList className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} accentClass="bg-gradient-to-br from-slate-500 to-blue-600" cardClass="linear-gradient(135deg,rgba(100,116,139,0.30)0%,rgba(37,99,235,0.14)100%)" tryFree={tryFreeFor("hub_ptm_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}> {/* audit-ok: brand tile accent gradient */}
+          <HubSection id="ptm-prep" highlighted={ptmSeason} icon={<ClipboardList className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} accentClass="bg-gradient-to-br from-slate-500 to-blue-600" cardClass="linear-gradient(135deg,rgba(100,116,139,0.30)0%,rgba(37,99,235,0.14)100%)" defaultOpen tryFree={tryFreeFor("hub_ptm_prep")} preview={ptmPreview ?? (ptmSeason ? t("parent_hub.support.ptm_season_preview") : undefined)} onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}> {/* audit-ok: brand tile accent gradient */}
             <PtmPrepAssistant child={{
             id: effectiveChild.id,
             name: effectiveChild.name,
@@ -1045,7 +1126,7 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("life-skills", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_life_skills")}>
-          <HubSection id="life-skills" icon={<Compass className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.life-skills.title")} description={t("parent_hub.web_tiles.life-skills.description")} accentClass="bg-gradient-to-br from-emerald-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,211,238,0.14)100%)" tryFree={tryFreeFor("hub_life_skills")} onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}> {/* audit-ok: brand tile accent gradient */}
+          <HubSection id="life-skills" icon={<Compass className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.life-skills.title")} description={t("parent_hub.web_tiles.life-skills.description")} accentClass="bg-gradient-to-br from-emerald-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,211,238,0.14)100%)" defaultOpen tryFree={tryFreeFor("hub_life_skills")} preview={lifeSkillPreview ? t("parent_hub.support.life_skill_preview", { skill: lifeSkillPreview }) : undefined} onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}> {/* audit-ok: brand tile accent gradient */}
             <LifeSkillsZone child={{
             id: effectiveChild.id,
             name: effectiveChild.name,
@@ -1147,7 +1228,13 @@ function ParentingHubPage() {
             {WEB_HUB_GROUPS.map(group => {
               const tileIds = new Set(WEB_HUB_SECTION_TILE_IDS[group.key] ?? []);
               const isToday = group.key === "today";
-              const groupGrid = isToday ? [] : forYouGrid.filter(s => tileIds.has(s.id));
+              const isSupport = group.key === "support";
+              const rawGrid = isToday ? [] : forYouGrid.filter(s => tileIds.has(s.id));
+              const groupGrid = isSupport
+                ? sortSupportTileIds(rawGrid.map(s => s.id), { ptmSeason })
+                    .map(id => sectionById.get(id))
+                    .filter((s): s is SectionEntry => !!s)
+                : rawGrid;
               if (isToday) {
                 if (todayTiles.length === 0) return null;
               } else if (groupGrid.length === 0) {
@@ -1184,8 +1271,15 @@ function ParentingHubPage() {
                     ].join(" ")}>
                       {group.emoji}
                     </span>
-                    <span className={`flex-1 font-quicksand font-bold text-[15px] leading-tight tracking-wide ${isOpen ? "text-primary" : "text-foreground"}`}>
-                      {t(group.i18n)}
+                    <span className="flex-1 min-w-0">
+                      <span className={`block font-quicksand font-bold text-[15px] leading-tight tracking-wide ${isOpen ? "text-primary" : "text-foreground"}`}>
+                        {t(group.i18n)}
+                      </span>
+                      {isSupport && !isOpen ? (
+                        <span className="block text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+                          {t("parent_hub.support.group_subtitle", { count: groupGrid.length })}
+                        </span>
+                      ) : null}
                     </span>
                     <span className={[
                       "shrink-0 w-7 h-7 rounded-full flex items-center justify-center",
@@ -1197,6 +1291,11 @@ function ParentingHubPage() {
                   </button>
                   {isOpen && (
                     <div className="px-4 pb-5 pt-3 border-t border-white/25 dark:border-white/[0.07] bg-white/20 dark:bg-white/[0.01] animate-in fade-in slide-in-from-top-1 duration-300 space-y-3">
+                      {isSupport && ptmSeason ? (
+                        <div className="rounded-xl border border-blue-400/25 bg-blue-500/10 px-3 py-2.5 text-xs text-blue-100/90 leading-relaxed">
+                          {t("parent_hub.support.ptm_season_banner")}
+                        </div>
+                      ) : null}
                       {isToday ? (
                         todayTiles.map(s => {
                           const node = s.render();

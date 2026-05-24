@@ -385,9 +385,11 @@ const CATEGORIES: ArticleCategory[] = ["Sleep", "Behavior", "Nutrition", "Develo
 
 // ─── Main Component ────────────────────────────────────────────────────────
 export function ParentingArticles({
-  childAgeMonths
+  childAgeMonths,
+  compact = false,
 }: {
   childAgeMonths: number;
+  compact?: boolean;
 }) {
   const {
     t
@@ -410,7 +412,7 @@ export function ParentingArticles({
     setSavedIds(getSavedArticles());
   };
   return <section className="space-y-4">
-      {/* Section header */}
+      {!compact ? (
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-muted dark:bg-card flex items-center justify-center">
@@ -426,6 +428,14 @@ export function ParentingArticles({
           {filtered.length} {t("components.parenting_articles.articles")}
         </Badge>
       </div>
+      ) : (
+      <div className="flex justify-end">
+        <Badge variant="outline" className="text-xs rounded-full">
+          <Sparkles className="h-3 w-3 mr-1 text-primary" />
+          {filtered.length} {t("components.parenting_articles.articles")}
+        </Badge>
+      </div>
+      )}
 
       {/* Continue reading strip */}
       {continueArticle && !activeArticle && <button onClick={() => openArticle(continueArticle)} className="w-full flex items-center gap-3 bg-gradient-to-r from-muted dark:from-card to-muted dark:to-card border border-border dark:border-border rounded-2xl px-4 py-3 hover:border-border transition-all text-left">

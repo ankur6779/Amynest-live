@@ -2567,7 +2567,21 @@
     "emotional_footer": {
       "lead": "Parenting is hard. Amy is here to listen and help — no judgment.",
       "reassure_title": "You're doing better than you think 💜",
-      "reassure_body": "Research shows that the fact you're seeking information and support makes you an above-average parent. The worry itself is evidence of love."
+      "reassure_body": "Research shows that the fact you're seeking information and support makes you an above-average parent. The worry itself is evidence of love.",
+      "suggested_for_you": "Suggested for you",
+      "talk_to_amy": "Talk to Amy now"
+    },
+    "support": {
+      "group_subtitle": "{{count}} features for you",
+      "article_preview": "Today's pick: {{title}}",
+      "life_skill_preview": "Today: {{skill}}",
+      "emotional_mood_preview": "Support matched to how you're feeling today",
+      "ptm_season_preview": "PTM season — start preparing now",
+      "ptm_season_banner": "Parent-teacher meeting season is here. Use PTM Prep to walk in with the right questions and leave with a clear action plan."
+    },
+    "new_parent_tips": {
+      "lead": "Three gentle reminders picked for today — you're doing more than you realise.",
+      "ask_amy": "Ask Amy about newborn care"
     },
     "web_tiles": {
       "command-center": {
@@ -2600,7 +2614,7 @@
       },
       "emotional": {
         "title": "Emotional Support",
-        "description": "For the tough parenting days"
+        "description": "For tough parenting days"
       },
       "activities": {
         "title": "Activities & Learning",
@@ -2619,8 +2633,8 @@
         "description": "Sound awareness → blending → reading, paced for your child's age"
       },
       "ptm-prep": {
-        "title": "🧾 PTM Prep Assistant",
-        "description": "Prepare questions, take notes & turn them into action steps"
+        "title": "PTM Prep Assistant",
+        "description": "Prep questions, notes & action steps"
       },
       "smart-study": {
         "title": "📚 Smart Study Zone",
@@ -2635,8 +2649,12 @@
         "description": "Daily 5 MCQs, mock exams, leaderboards & olympiad prep tracks"
       },
       "life-skills": {
-        "title": "🧭 Life Skills Mode",
-        "description": "Daily real-life skills tailored to your child's age"
+        "title": "Life Skills Mode",
+        "description": "Daily real-life skills for your child's age"
+      },
+      "new-parent-tips": {
+        "title": "New Parent Tips",
+        "description": "Gentle guidance for baby's first months"
       },
       "coloring-books": {
         "title": "🎨 Coloring Books",
@@ -2851,6 +2869,8 @@
     },
     "quick_actions": {
       "ask_amy": "Ask Amy",
+      "articles": "Articles",
+      "emotional": "Support",
       "story": "Story Time",
       "phonics": "Phonics",
       "routine": "Routine",
