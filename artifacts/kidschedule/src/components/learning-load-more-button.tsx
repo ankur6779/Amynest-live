@@ -5,6 +5,8 @@ import {
   useLearningLoadMore,
   type LearningLoadMoreSection,
 } from "@/hooks/use-learning-load-more";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { prefetchLoadMoreAudio } from "@/lib/learning-load-more-audio";
 
 interface LearningLoadMoreButtonProps {
   section: LearningLoadMoreSection;
@@ -37,12 +39,15 @@ export function LearningLoadMoreButton({
   disabled = false,
 }: LearningLoadMoreButtonProps) {
   const { t } = useTranslation();
+  const authFetch = useAuthFetch();
   const { usage, loading, loadMore } = useLearningLoadMore(section);
 
   const handleClick = async () => {
     const result = await loadMore({ childId, count, excludeIds, params });
     if (result?.items) {
       onLoaded(result.items);
+      // Safe pattern: warm TTS only for items the user just loaded (max 8 texts).
+      prefetchLoadMoreAudio(authFetch, section, result.items);
     }
   };
 

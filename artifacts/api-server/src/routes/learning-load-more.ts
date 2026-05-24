@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { getAuth } from "../lib/auth";
+import { logger } from "../lib/logger";
 import {
   executeLearningLoadMore,
   getLoadMoreUsageInfo,
@@ -9,6 +10,46 @@ import {
 } from "../services/learningLoadMoreService.js";
 
 const router: IRouter = Router();
+
+/** Cron / scheduler — mounted before requireAuth. */
+export const learningSeedPublicRouter: IRouter = Router();
+
+learningSeedPublicRouter.post("/learning/seed-weekly/cron", async (req, res): Promise<void> => {
+  const expected =
+    process.env["LEARNING_SEED_CRON_SECRET"] ?? process.env["NOTIFICATION_CRON_SECRET"];
+  const provided = req.headers["x-cron-secret"];
+  if (!expected || provided !== expected) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+
+  const parsed = z
+    .object({
+      dryRun: z.coerce.boolean().optional(),
+      skipTts: z.coerce.boolean().optional(),
+      itemsPerKey: z.coerce.number().int().min(4).max(20).optional(),
+    })
+    .safeParse(req.body ?? {});
+
+  try {
+    const { runWeeklyLearningContentSeedSafe } = await import(
+      "../services/learningContentSeedService.js"
+    );
+    const stats = await runWeeklyLearningContentSeedSafe(
+      parsed.success
+        ? {
+            dryRun: parsed.data.dryRun,
+            skipTts: parsed.data.skipTts,
+            itemsPerKey: parsed.data.itemsPerKey,
+          }
+        : undefined,
+    );
+    res.json({ ok: true, stats });
+  } catch (err) {
+    logger.error({ err }, "Learning weekly seed cron failed");
+    res.status(500).json({ error: "cron_failed" });
+  }
+});
 
 const SectionSchema = z.enum([
   "smart_study",
