@@ -122,6 +122,8 @@ export type AudioPlayOptions = {
   maxRetries?: number;
   channel?: AudioChannel;
   interrupt?: boolean;
+  /** Skip force-restart fallback (CVC blend — one clip per step). */
+  skipForceRestart?: boolean;
   /** @internal Prevents infinite force-restart recursion */
   _internalRestart?: boolean;
 };
@@ -994,9 +996,6 @@ class AudioManagerImpl {
     if (interrupt && channel === "speech") {
       this.releaseChannel("speech", false);
     }
-    if (interrupt && channel === "ui") {
-      this.releaseChannel("ui", false);
-    }
 
     const state = this.channelState(channel);
     const token = state.playToken + 1;
@@ -1090,7 +1089,7 @@ class AudioManagerImpl {
         }
       }
 
-      if (proxyUrl && !opts._internalRestart) {
+      if (proxyUrl && !opts._internalRestart && !opts.skipForceRestart) {
         const restarted = await this.forceRestartPlayback(proxyUrl, meta, opts, channel);
         if (restarted) {
           this.pendingFocusReplay = null;
@@ -1128,9 +1127,23 @@ class AudioManagerImpl {
     }
   }
 
+  private channelForAudio(audio: HTMLAudioElement): AudioChannel {
+    if (this.channels.ui.current === audio) return "ui";
+    return "speech";
+  }
+
+  private clearChannelIfCurrent(channel: AudioChannel, audio: HTMLAudioElement): void {
+    const state = this.channelState(channel);
+    state.playing = false;
+    if (state.current === audio) {
+      state.current = null;
+    }
+  }
+
   waitUntilEnd(audio: HTMLAudioElement, isCancelled: () => boolean): Promise<AudioPlayResult> {
     return new Promise((resolve) => {
       let settled = false;
+      const channel = this.channelForAudio(audio);
 
       const done = (result: AudioPlayResult) => {
         if (settled) return;
@@ -1138,11 +1151,11 @@ class AudioManagerImpl {
         window.clearTimeout(fallbackTimer);
         audio.onended = null;
         audio.onerror = null;
-        if (!result.ok) {
-          this.channels.speech.playing = false;
-          if (this.channels.speech.current === audio) {
-            this.channels.speech.current = null;
-          }
+        if (result.ok) {
+          this.clearChannelIfCurrent(channel, audio);
+        } else {
+          this.clearChannelIfCurrent("speech", audio);
+          this.clearChannelIfCurrent("ui", audio);
         }
         resolve(result);
       };
@@ -1157,24 +1170,16 @@ class AudioManagerImpl {
           attempt: 0,
           srcType: inferSrcType(audio.src),
           fallbackMs,
+          channel,
         }, audio);
         if (audio.ended) {
-          this.channels.speech.playing = false;
           return done({ ok: true });
-        }
-        this.channels.speech.playing = false;
-        if (this.channels.speech.current === audio) {
-          this.channels.speech.current = null;
         }
         done({ ok: false, error: "wait_until_end_timeout" });
       }, fallbackMs);
 
       audio.onended = () => {
         if (isCancelled()) return done({ ok: false, error: "audio_cancelled" });
-        this.channels.speech.playing = false;
-        if (this.channels.speech.current === audio) {
-          this.channels.speech.current = null;
-        }
         done({ ok: true });
       };
 
@@ -1184,11 +1189,8 @@ class AudioManagerImpl {
         logStructured("waitUntilEnd media error", new Error(`media_error_${code}`), {
           attempt: 0,
           srcType: inferSrcType(audio.src),
+          channel,
         }, audio);
-        this.channels.speech.playing = false;
-        if (this.channels.speech.current === audio) {
-          this.channels.speech.current = null;
-        }
         done({ ok: false, error: `playback_failed_${code}` });
       };
     });

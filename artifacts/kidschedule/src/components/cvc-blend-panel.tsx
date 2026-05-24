@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { playCvcBlendWithSpeak } from "@/lib/phonics-audio";
@@ -39,6 +39,9 @@ export function CvcBlendPanel({
   const [phase, setPhase] = useState<CvcBlendPhase | null>(null);
   const [showWord, setShowWord] = useState(false);
   const [blending, setBlending] = useState(false);
+  const [completedIndices, setCompletedIndices] = useState<number[]>([]);
+  const [stepHint, setStepHint] = useState<string | null>(null);
+  const blendSessionRef = useRef(0);
 
   const [levelWords, setLevelWords] = useState<CvcWordEntry[]>(() => getCvcWordsByLevel(level));
   useEffect(() => {
@@ -59,33 +62,54 @@ export function CvcBlendPanel({
 
   const runBlend = useCallback(
     async (opts?: { skipSlow?: boolean }) => {
+      const session = ++blendSessionRef.current;
+      const isCancelled = () => blendSessionRef.current !== session;
+
       audioManager.stop();
       setBlending(true);
       setShowWord(false);
       setActiveIndex(null);
       setPhase(null);
+      setCompletedIndices([]);
+      setStepHint(opts?.skipSlow ? "Fast blend…" : "Listen to each sound…");
+
       try {
         await playCvcBlendWithSpeak(current, {
           skipSlowPass: opts?.skipSlow,
+          isCancelled,
           onPhoneme: (idx, p) => {
+            if (isCancelled()) return;
             setPhase(p);
             if (p === "word") {
               setActiveIndex(null);
+              setCompletedIndices(Array.from({ length: current.phonemes.length }, (_, i) => i));
               setShowWord(true);
-            } else {
-              setActiveIndex(idx >= 0 ? idx : null);
+              setStepHint("Say the whole word!");
+            } else if (idx >= 0) {
+              setActiveIndex(idx);
+              setCompletedIndices(Array.from({ length: idx }, (_, i) => i));
+              setStepHint(`Sound ${idx + 1} of ${current.phonemes.length}`);
             }
           },
         });
-        onComplete?.();
+        if (!isCancelled()) onComplete?.();
       } finally {
-        setBlending(false);
-        setPhase(null);
-        setActiveIndex(null);
+        if (!isCancelled()) {
+          setBlending(false);
+          setPhase(null);
+          setActiveIndex(null);
+          setStepHint(null);
+        }
       }
     },
     [current, onComplete],
   );
+
+  useEffect(() => {
+    return () => {
+      blendSessionRef.current += 1;
+    };
+  }, []);
 
   if (!entry && !levelWords.length) {
     return null;
@@ -168,29 +192,53 @@ export function CvcBlendPanel({
         )}
       </div>
 
+      {stepHint && (
+        <p
+          className="text-center text-xs font-medium text-primary dark:text-violet-300 mb-2 min-h-[1rem]"
+          aria-live="polite"
+        >
+          {stepHint}
+        </p>
+      )}
+
       {/* Progression: c → a → t → cat */}
       <div
         className="flex items-center justify-center gap-1 flex-wrap mb-4 py-2"
         data-testid="cvc-blend-progression"
       >
-        {displayLetters.map((grapheme, i) => (
-          <span key={`g-${i}`} className="flex items-center gap-1">
-            <span
-              className={cn(
-                "font-quicksand text-2xl font-bold rounded-xl px-3 py-2 border transition-all duration-200",
-                activeIndex === i && phase !== "word"
-                  ? "border-violet-500 bg-violet-500/15 ring-2 ring-violet-400/60 scale-110 animate-bounce"
-                  : "border-border dark:border-border bg-white dark:bg-white/[0.06]",
+        {displayLetters.map((grapheme, i) => {
+          const isActive = activeIndex === i && phase !== "word";
+          const isDone = completedIndices.includes(i) || showWord;
+          return (
+            <span key={`g-${i}`} className="flex items-center gap-1">
+              <span
+                className={cn(
+                  "font-quicksand text-2xl font-bold rounded-xl px-3 py-2 border transition-all duration-300 relative",
+                  isActive
+                    ? "border-violet-500 bg-violet-500/20 ring-4 ring-violet-400/40 scale-110 shadow-lg shadow-violet-500/20"
+                    : isDone
+                      ? "border-emerald-400/70 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                      : "border-border dark:border-border bg-white/80 dark:bg-white/[0.06] opacity-60",
+                )}
+                aria-current={isActive ? "step" : undefined}
+              >
+                {grapheme}
+                {isActive && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-1 w-6 rounded-full bg-violet-500 animate-pulse" />
+                )}
+              </span>
+              {i < displayLetters.length - 1 && (
+                <ChevronRight
+                  className={cn(
+                    "h-4 w-4 shrink-0 transition-colors",
+                    isDone ? "text-emerald-500" : "text-muted-foreground/50",
+                  )}
+                  aria-hidden
+                />
               )}
-              aria-current={activeIndex === i ? "step" : undefined}
-            >
-              {grapheme}
             </span>
-            {i < displayLetters.length - 1 && (
-              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />
-            )}
-          </span>
-        ))}
+          );
+        })}
         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mx-0.5" aria-hidden />
         <span
           className={cn(
