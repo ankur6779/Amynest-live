@@ -1,11 +1,17 @@
-import { getRedirectResult, type UserCredential } from "firebase/auth";
+import { getRedirectResult, type User, type UserCredential } from "firebase/auth";
 import { logFirebaseAuthError } from "@/lib/firebase-auth-error";
-import { getFirebaseAuth, isFirebaseAuthReady } from "@/lib/firebase";
+import {
+  ensureFirebaseAuthPersistence,
+  getFirebaseAuth,
+  isFirebaseAuthReady,
+} from "@/lib/firebase";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
+import { waitForFirebaseAuthReady } from "@/lib/wait-for-firebase-auth-ready";
+import { waitForFirebaseUser } from "@/lib/wait-for-firebase-user";
 
 const OAUTH_TAG = "[amynest:oauth-redirect]";
 
-let redirectResultConsumed = false;
+let redirectResultPromise: Promise<UserCredential | null> | null = null;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -38,55 +44,93 @@ export function hasPendingFirebaseOAuthRedirect(): boolean {
   );
 }
 
-async function readRedirectResultOnce(): Promise<UserCredential | null> {
-  if (!isFirebaseAuthReady()) return null;
-  const result = await getRedirectResult(getFirebaseAuth());
-  if (result?.user) {
-    console.info(`${OAUTH_TAG} redirect sign-in success`, {
-      uid: result.user.uid,
-      provider: result.providerId ?? result.user.providerData[0]?.providerId,
-    });
+async function waitForFirebaseInit(maxWaitMs: number): Promise<boolean> {
+  const deadline = Date.now() + maxWaitMs;
+  while (Date.now() < deadline) {
+    if (isFirebaseAuthReady()) return true;
+    await sleep(120);
   }
-  return result;
+  return isFirebaseAuthReady();
+}
+
+function userCredentialFromUser(user: User): UserCredential {
+  const providerId = user.providerData[0]?.providerId ?? null;
+  return {
+    user,
+    providerId,
+    operationType: "signIn",
+  };
+}
+
+async function completeFirebaseAuthRedirectResult(): Promise<UserCredential | null> {
+  const pending = hasPendingFirebaseOAuthRedirect();
+  const maxWaitMs = pending ? 15_000 : 3_000;
+
+  if (!(await waitForFirebaseInit(maxWaitMs))) {
+    if (pending) {
+      console.warn(`${OAUTH_TAG} Firebase not ready before redirect completion`);
+    }
+    return null;
+  }
+
+  const auth = getFirebaseAuth();
+  await ensureFirebaseAuthPersistence();
+  await waitForFirebaseAuthReady(auth);
+
+  if (pending) {
+    await sleep(150);
+  }
+
+  try {
+    const result = await getRedirectResult(auth);
+    if (result?.user) {
+      console.info(`${OAUTH_TAG} redirect sign-in success`, {
+        uid: result.user.uid,
+        provider: result.providerId ?? result.user.providerData[0]?.providerId,
+      });
+      return result;
+    }
+
+    if (!pending) return null;
+
+    console.warn(
+      `${OAUTH_TAG} getRedirectResult returned null — waiting for auth state`,
+    );
+    const user =
+      (await waitForFirebaseUser(8_000)) ?? auth.currentUser ?? null;
+    if (user) {
+      console.info(`${OAUTH_TAG} redirect recovered via auth state`, {
+        uid: user.uid,
+      });
+      return userCredentialFromUser(user);
+    }
+
+    console.warn(`${OAUTH_TAG} redirect pending but no Firebase user established`);
+    return null;
+  } catch (err) {
+    logFirebaseAuthError("oauth:redirect", err);
+    throw err;
+  }
 }
 
 /**
  * Completes Firebase `signInWithRedirect` for Apple, Google, or any OAuth provider.
- * Retries while Firebase init / redirect state catches up (browser only).
+ * Must call getRedirectResult exactly once after authStateReady (browser only).
  */
-export async function resolveFirebaseAuthRedirectResult(): Promise<UserCredential | null> {
-  if (typeof window === "undefined") return null;
-  if (isNativeAmyNestShell()) return null;
-  if (redirectResultConsumed) return null;
+export function resolveFirebaseAuthRedirectResult(): Promise<UserCredential | null> {
+  if (typeof window === "undefined") return Promise.resolve(null);
+  if (isNativeAmyNestShell()) return Promise.resolve(null);
 
-  const pending = hasPendingFirebaseOAuthRedirect();
-  const maxWaitMs = pending ? 12_000 : 2_000;
-  const deadline = Date.now() + maxWaitMs;
-
-  while (Date.now() < deadline) {
-    if (!isFirebaseAuthReady()) {
-      await sleep(120);
-      continue;
-    }
-    try {
-      const result = await readRedirectResultOnce();
-      redirectResultConsumed = true;
-      return result;
-    } catch (err) {
-      redirectResultConsumed = false;
-      logFirebaseAuthError("oauth:redirect", err);
+  if (!redirectResultPromise) {
+    redirectResultPromise = completeFirebaseAuthRedirectResult().catch((err) => {
+      redirectResultPromise = null;
       throw err;
-    }
+    });
   }
-
-  if (pending) {
-    console.warn(`${OAUTH_TAG} redirect pending but getRedirectResult returned null`);
-  }
-  redirectResultConsumed = true;
-  return null;
+  return redirectResultPromise;
 }
 
 /** Test-only reset */
 export function resetFirebaseAuthRedirectConsumedForTests(): void {
-  redirectResultConsumed = false;
+  redirectResultPromise = null;
 }
