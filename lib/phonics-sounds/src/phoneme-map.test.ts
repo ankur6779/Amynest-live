@@ -41,5 +41,7 @@ describe("phoneme-map", () => {
     assert.ok(keys.includes("sh"));
     assert.ok(keys.includes("th1"));
     assert.equal(resolvePhonicsAudioKey({ text: "b" }), "b");
+    assert.equal(resolvePhonicsAudioKey({ text: "a as in apple" }), "a");
+    assert.equal(resolvePhonicsAudioKey({ text: "a as in apple", phoneme: "æ" }), "a");
   });
 });

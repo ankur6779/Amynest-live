@@ -1558,6 +1558,7 @@ async function tryLearnableLayerPlay(
       return attemptCachePlay(text, mode, ctx, waitUntilEnd, phonicsOnly, fallbackTexts, opts);
     case "api":
     case "elevenlabs":
+      if (phonicsOnly || policy.forcePhonicsOnly) return null;
       if (isSlowNetwork() || shouldSkipLiveTtsApi()) return null;
       return tryDynamicSequentialLayer(
         text,

@@ -109,6 +109,13 @@ export function resolvePhonicsAudioKey(input: {
     return resolveGraphemeToAudioKey(text);
   }
 
+  // Instructional vowel lines ("a as in apple") → single static clip key.
+  const asIn = text.match(/^([a-z]{1,2})\s+as\s+in\s+/i);
+  if (asIn?.[1]) {
+    const fromAsIn = resolveGraphemeToAudioKey(asIn[1].toLowerCase());
+    if (fromAsIn) return fromAsIn;
+  }
+
   return null;
 }
 
