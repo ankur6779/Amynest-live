@@ -1,6 +1,7 @@
 import {
   GoogleAuthProvider,
   signInWithCredential,
+  signInWithPopup,
   signInWithRedirect,
   type User,
   type UserCredential,
@@ -55,6 +56,7 @@ export function shouldUseAndroidWebViewGoogleAuth(): boolean {
 
 export async function loginWithGoogleRedirect(): Promise<void> {
   await ensureFirebaseAuthPersistence();
+  clearStaleFirebaseRedirectState();
   const auth = getFirebaseAuth();
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
@@ -63,6 +65,47 @@ export async function loginWithGoogleRedirect(): Promise<void> {
     href: window.location.href,
   });
   await signInWithRedirect(auth, provider);
+}
+
+function clearStaleFirebaseRedirectState(): void {
+  if (typeof window === "undefined") return;
+  try {
+    for (let i = sessionStorage.length - 1; i >= 0; i -= 1) {
+      const key = sessionStorage.key(i) ?? "";
+      if (/firebase:.*(pendingRedirect|redirectEvent)/i.test(key)) {
+        sessionStorage.removeItem(key);
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function isGooglePopupBlockedOrClosed(err: unknown): boolean {
+  const code = (err as { code?: string })?.code ?? "";
+  return (
+    code === "auth/popup-blocked" ||
+    code === "auth/popup-closed-by-user" ||
+    code === "auth/cancelled-popup-request"
+  );
+}
+
+/** Web browser — popup avoids redirect state loss in SPA reloads. */
+export async function loginWithGooglePopup(): Promise<string> {
+  await ensureFirebaseAuthPersistence();
+  const auth = getFirebaseAuth();
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  console.info(`${GOOGLE_TAG} starting Google popup`, {
+    origin: window.location.origin,
+    href: window.location.href,
+  });
+  const result = await signInWithPopup(auth, provider);
+  await finalizeGoogleCredentialSignIn(result);
+  console.info(`${GOOGLE_TAG} google popup sign-in success`, {
+    uid: result.user.uid,
+  });
+  return finishGoogleLoginFlow();
 }
 
 let nativeGoogleInitDone = false;
@@ -188,7 +231,7 @@ export async function loginAndroidWebViewGoogle(): Promise<string> {
 }
 
 /**
- * Web/PWA: redirect (no return path). Native shells: sign in + return SPA route.
+ * Web/PWA: popup first, redirect fallback. Native shells use bridge/plugins.
  */
 export async function handleGoogleLogin(): Promise<string | void> {
   if (shouldUseNativeGoogleAuth()) {
@@ -197,7 +240,16 @@ export async function handleGoogleLogin(): Promise<string | void> {
   if (shouldUseAndroidWebViewGoogleAuth()) {
     return loginAndroidWebViewGoogle();
   }
-  return loginWithGoogleRedirect();
+  try {
+    return await loginWithGooglePopup();
+  } catch (err) {
+    if (isGooglePopupBlockedOrClosed(err)) {
+      console.info(`${GOOGLE_TAG} popup unavailable — falling back to redirect`);
+      await loginWithGoogleRedirect();
+      return;
+    }
+    throw err;
+  }
 }
 
 /**
