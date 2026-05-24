@@ -1,3 +1,5 @@
+import { firebaseWebDefaults } from "@/lib/firebase-web-defaults";
+
 /**
  * Public OAuth client IDs (safe in bundle). Override via Vite env on CI/Render.
  * Web client is used for Firebase redirect + Android serverClientId.
