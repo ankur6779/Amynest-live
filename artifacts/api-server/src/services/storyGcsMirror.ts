@@ -10,6 +10,7 @@ import { logger } from "../lib/logger";
 import {
   gcsObjectExists,
   legacyGcsConfigured,
+  pipeGcsObjectToResponse,
   uploadStreamToGcs,
 } from "./ttsAudioStore";
 import {
@@ -17,6 +18,7 @@ import {
   storyGcsObjectName,
   storyPublicGcsUrl,
 } from "./storyGcsPaths";
+import type { Request, Response } from "express";
 
 export { resolveStoryStreamUrl } from "./storyGcsPaths";
 
@@ -213,4 +215,84 @@ export function scheduleStoryGcsMirror(limit = 2): void {
       "Background story GCS mirror failed",
     );
   });
+}
+
+/** Stream a story video: GCS when mirrored, else Drive proxy. */
+export async function streamStoryVideo(
+  driveFileId: string,
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const storyRows = await db
+    .select()
+    .from(storyContentTable)
+    .where(and(eq(storyContentTable.driveFileId, driveFileId), eq(storyContentTable.active, true)))
+    .limit(1);
+  const story = storyRows[0];
+
+  if (story && legacyGcsConfigured()) {
+    const objectName = storyGcsObjectName(story.driveFileId, story.mimeType, story.originalName);
+    const mirrored =
+      isValidStoryGcsUrl(story.gcsUrl) || (await gcsObjectExists(objectName));
+    if (mirrored) {
+      const rangeHeader = req.headers.range;
+      const result = await pipeGcsObjectToResponse({
+        objectName,
+        rangeHeader: typeof rangeHeader === "string" ? rangeHeader : undefined,
+        res,
+        contentType: story.mimeType || "video/mp4",
+      });
+      if (result === "streamed") return;
+      if (result === "error" && res.headersSent) return;
+    }
+  }
+
+  const rangeHeader = req.headers.range;
+  const driveRes = await fetchDriveStream(
+    driveFileId,
+    typeof rangeHeader === "string" ? rangeHeader : undefined,
+  );
+
+  if (!driveRes.ok && driveRes.status !== 206) {
+    logger.warn({ driveFileId, status: driveRes.status }, "Story Drive stream failed");
+    if (!res.headersSent) {
+      res.status(driveRes.status === 404 ? 404 : 403).json({ error: "file_not_accessible" });
+    }
+    return;
+  }
+
+  const contentType = driveRes.headers.get("content-type") || "video/mp4";
+  const contentLength = driveRes.headers.get("content-length");
+  const contentRange = driveRes.headers.get("content-range");
+  const acceptRanges = driveRes.headers.get("accept-ranges");
+
+  res.status(driveRes.status);
+  res.set("Content-Type", contentType);
+  res.set("Accept-Ranges", acceptRanges || "bytes");
+  if (contentLength) res.set("Content-Length", contentLength);
+  if (contentRange) res.set("Content-Range", contentRange);
+  res.set("Cache-Control", "public, max-age=3600");
+
+  if (!driveRes.body) {
+    res.end();
+    return;
+  }
+
+  const reader = driveRes.body.getReader();
+  const pump = async () => {
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (!res.write(value)) {
+          await new Promise((resolve) => res.once("drain", resolve));
+        }
+      }
+      res.end();
+    } catch {
+      reader.cancel();
+      res.destroy();
+    }
+  };
+  await pump();
 }

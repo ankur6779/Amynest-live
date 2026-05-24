@@ -6,8 +6,8 @@
  *   POST /api/stories/progress         → write resume position + completion
  *   POST /api/stories/gcs-sync         → admin: mirror videos to GCS
  *
- * Playback prefers mirrored GCS URLs (CDN-fast); falls back to
- * /api/reels/stream/:driveFileId when not yet mirrored.
+ * Playback streams through /api/stories/stream/:driveFileId (GCS when mirrored,
+ * Drive proxy fallback). Raw GCS URLs are never sent to clients.
  */
 import { Router, type IRouter } from "express";
 import { z } from "zod";
@@ -18,6 +18,7 @@ import { logger } from "../lib/logger";
 import {
   resolveStoryStreamUrl,
   scheduleStoryGcsMirror,
+  streamStoryVideo,
   syncStoriesToGcs,
 } from "../services/storyGcsMirror";
 import {
@@ -41,6 +42,21 @@ function isAdminUser(userId: string | null | undefined): boolean {
 
 /** Cron / scheduler — mounted before requireAuth. */
 export const storiesPublicRouter: IRouter = Router();
+
+storiesPublicRouter.get("/stories/stream/:driveFileId", async (req, res): Promise<void> => {
+  const { driveFileId } = req.params;
+  if (!driveFileId || !/^[a-zA-Z0-9_-]+$/.test(driveFileId)) {
+    res.status(400).json({ error: "invalid_file_id" });
+    return;
+  }
+
+  try {
+    await streamStoryVideo(driveFileId, req, res);
+  } catch (err) {
+    logger.error({ err, driveFileId }, "Story stream error");
+    if (!res.headersSent) res.status(500).json({ error: "stream_failed" });
+  }
+});
 
 storiesPublicRouter.post("/stories/gcs-sync/cron", async (req, res): Promise<void> => {
   const expected =

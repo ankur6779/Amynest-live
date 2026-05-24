@@ -17,8 +17,8 @@ import { z } from "zod/v4";
  * One row per Drive file. Sync is idempotent — we upsert on driveFileId so
  * a re-sync just refreshes title/category/thumbnail.
  *
- * Streaming URL: prefer `gcsUrl` (CDN-fast) when mirrored; otherwise clients
- * fall back to /api/reels/stream/:driveFileId (Drive proxy).
+ * Streaming URL: `/api/stories/stream/:driveFileId` (GCS when mirrored,
+ * Drive proxy fallback). Raw GCS URLs are never sent to clients.
  */
 export const storyContentTable = pgTable(
   "story_content",
