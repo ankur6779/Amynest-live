@@ -4,6 +4,7 @@ import {
   initializeAuth,
   type Auth,
   browserLocalPersistence,
+  browserPopupRedirectResolver,
   indexedDBLocalPersistence,
   setPersistence,
 } from "firebase/auth";
@@ -62,6 +63,7 @@ let firebaseAppInstance: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
 let initResult: FirebaseInitResult = { status: "pending" };
 let persistenceReady: Promise<void> | null = null;
+let authPersistenceConfiguredViaInit = false;
 
 /** Await before OAuth sign-in so the session survives WebView resume on Android. */
 export function ensureFirebaseAuthPersistence(): Promise<void> {
@@ -69,6 +71,7 @@ export function ensureFirebaseAuthPersistence(): Promise<void> {
   persistenceReady = (async () => {
     if (typeof window === "undefined") return;
     if (useFirebaseIndexedDbPersistence()) return;
+    if (authPersistenceConfiguredViaInit) return;
     const init = initializeFirebase();
     if (init.status !== "ok") return;
     try {
@@ -87,7 +90,11 @@ function createFirebaseAuth(app: FirebaseApp): Auth {
     : browserLocalPersistence;
 
   try {
-    return initializeAuth(app, { persistence });
+    authPersistenceConfiguredViaInit = true;
+    return initializeAuth(app, {
+      persistence,
+      popupRedirectResolver: browserPopupRedirectResolver,
+    });
   } catch {
     /* Auth may already be initialized (HMR / double boot) */
   }

@@ -18,6 +18,10 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+function getFirebaseAuthErrorCode(err: unknown): string | undefined {
+  return (err as { code?: string })?.code;
+}
+
 function listFirebaseSessionKeys(): string[] {
   if (typeof window === "undefined") return [];
   const keys: string[] = [];
@@ -109,7 +113,11 @@ function userCredentialFromUser(user: User): UserCredential {
 
 async function completeFirebaseAuthRedirectResult(): Promise<UserCredential | null> {
   const pending = hasPendingFirebaseOAuthRedirect();
-  const maxWaitMs = pending ? 15_000 : 4_000;
+  if (!pending) {
+    return null;
+  }
+
+  const maxWaitMs = 15_000;
 
   console.info(`${OAUTH_TAG} resolving redirect`, {
     pending,
@@ -118,36 +126,40 @@ async function completeFirebaseAuthRedirectResult(): Promise<UserCredential | nu
     firebaseSessionKeys: listFirebaseSessionKeys(),
   });
 
-  redirectResolutionInFlight = pending;
+  redirectResolutionInFlight = true;
 
   try {
     if (!(await waitForFirebaseInit(maxWaitMs))) {
-      if (pending) {
-        console.warn(`${OAUTH_TAG} Firebase not ready before redirect completion`);
-      }
+      console.warn(`${OAUTH_TAG} Firebase not ready before redirect completion`);
       return null;
     }
 
     const auth = getFirebaseAuth();
     await ensureFirebaseAuthPersistence();
     await waitForFirebaseAuthReady(auth);
+    await sleep(200);
 
-    if (pending) {
-      await sleep(200);
+    let result: UserCredential | null = null;
+    try {
+      result = await getRedirectResult(auth);
+    } catch (err) {
+      const code = getFirebaseAuthErrorCode(err);
+      if (code === "auth/argument-error") {
+        console.warn(
+          `${OAUTH_TAG} getRedirectResult argument-error — retrying via auth state`,
+          err,
+        );
+      } else {
+        throw err;
+      }
     }
 
-    const result = await getRedirectResult(auth);
     if (result?.user) {
       console.info(`${OAUTH_TAG} redirect sign-in success`, {
         uid: result.user.uid,
         provider: result.providerId ?? result.user.providerData[0]?.providerId,
       });
       return result;
-    }
-
-    if (!pending) {
-      console.info(`${OAUTH_TAG} no pending redirect on this load`);
-      return null;
     }
 
     console.warn(
@@ -166,7 +178,7 @@ async function completeFirebaseAuthRedirectResult(): Promise<UserCredential | nu
     return null;
   } catch (err) {
     logFirebaseAuthError("oauth:redirect", err);
-    throw err;
+    return null;
   } finally {
     redirectResolutionInFlight = false;
   }
@@ -181,10 +193,7 @@ export function resolveFirebaseAuthRedirectResult(): Promise<UserCredential | nu
   if (isNativeAmyNestShell()) return Promise.resolve(null);
 
   if (!redirectResultPromise) {
-    redirectResultPromise = completeFirebaseAuthRedirectResult().catch((err) => {
-      redirectResultPromise = null;
-      throw err;
-    });
+    redirectResultPromise = completeFirebaseAuthRedirectResult();
   }
   return redirectResultPromise;
 }
@@ -193,7 +202,10 @@ export function resolveFirebaseAuthRedirectResult(): Promise<UserCredential | nu
 export function beginFirebaseOAuthRedirectResolution(): void {
   if (typeof window === "undefined") return;
   if (isNativeAmyNestShell()) return;
-  void resolveFirebaseAuthRedirectResult();
+  if (!hasPendingFirebaseOAuthRedirect()) return;
+  void resolveFirebaseAuthRedirectResult().catch((err) => {
+    console.warn(`${OAUTH_TAG} early redirect resolution failed`, err);
+  });
 }
 
 /** Test-only reset */
