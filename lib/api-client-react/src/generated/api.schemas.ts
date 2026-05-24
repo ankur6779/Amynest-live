@@ -1047,21 +1047,10 @@ export interface LifeSkillRolePlay {
   parentPrompt: LifeSkillLocalizedText;
 }
 
-export type SmartStudyNextQuestionsRequestSubject = typeof SmartStudyNextQuestionsRequestSubject[keyof typeof SmartStudyNextQuestionsRequestSubject];
-
-
-export const SmartStudyNextQuestionsRequestSubject = {
-  addition: 'addition',
-  subtraction: 'subtraction',
-  multiplication: 'multiplication',
-  division: 'division',
-  fractions: 'fractions',
-  'word-problems': 'word-problems',
-} as const;
-
 export interface SmartStudyNextQuestionsRequest {
   childId: number;
-  subject: SmartStudyNextQuestionsRequestSubject;
+  /** Practice topic id (math, science, or english topic — e.g. addition, plants, nouns) */
+  subject: string;
   /**
      * @minimum 1
      * @maximum 10
@@ -1402,10 +1391,31 @@ export type SmartStudyInsightsYesterday = {
   completionPct: number;
 } | null;
 
+export interface SmartStudyInsightsAdaptiveTopic {
+  topicId: string;
+  topicTitle: string;
+  subjectPack: string;
+  subjectEmoji: string;
+  /**
+     * @minimum 1
+     * @maximum 6
+     */
+  currentLevel: number;
+}
+
 export interface SmartStudyInsights {
   childId: number;
   childName: string;
   mode: SmartStudyInsightsMode;
+  /** Parent profile country used for localized study content */
+  country: string;
+  /**
+     * Age-derived baseline adaptive level (1–6)
+     * @minimum 1
+     * @maximum 6
+     */
+  baseLevel: number;
+  adaptiveTopics: SmartStudyInsightsAdaptiveTopic[];
   hasData: boolean;
   subjects: SmartStudyInsightsSubject[];
   yesterday?: SmartStudyInsightsYesterday;

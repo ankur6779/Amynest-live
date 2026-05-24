@@ -14,6 +14,7 @@ export type AiJobType =
   | "spelling.ai_generate"
   | "spelling.tts_prewarm"
   | "smart-study.next_questions"
+  | "olympiad.next_questions"
   | "abacus.tutor"
   | "phonics.sound"
   | "phonics.weekly_insight"

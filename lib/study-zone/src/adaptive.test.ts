@@ -7,7 +7,7 @@ import {
   buildDailyPlan,
   planCompletionPct,
 } from "./adaptive";
-import { BASIC_SUBJECTS, ADVANCED_SUBJECTS } from "./index";
+import { BASIC_SUBJECTS, ADVANCED_SUBJECTS, getBasicSubjectsForCountry } from "./index";
 
 describe("adaptive.difficultyForAccuracy", () => {
   it("starts easy when there's no history", () => {
@@ -179,9 +179,10 @@ describe("adaptive.buildDailyPlan", () => {
     });
     assert.ok(plan.items.length >= 3 && plan.items.length <= 5, `got ${plan.items.length}`);
     assert.equal(plan.mode, "basic");
-    // All items should map to real subjects/topics from BASIC_SUBJECTS.
+    // All items should map to real subjects/topics from the country-aware basic packs.
+    const basicPacks = getBasicSubjectsForCountry("US");
     for (const it of plan.items) {
-      const pack = BASIC_SUBJECTS.find((s) => s.id === it.subject);
+      const pack = basicPacks.find((s) => s.id === it.subject);
       assert.ok(pack, `unknown subject ${it.subject}`);
       assert.ok(pack!.topics.find((t) => t.id === it.topicId), `unknown topic ${it.topicId}`);
     }

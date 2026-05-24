@@ -118,7 +118,7 @@ export interface SmartQuestion {
 // ─── Deterministic RNG ───────────────────────────────────────────────────────
 
 /** Mulberry32 — small, fast, deterministic PRNG for stable per-seed output. */
-function rng(seed: number): () => number {
+export function rng(seed: number): () => number {
   let a = seed >>> 0;
   return function () {
     a = (a + 0x6d2b79f5) >>> 0;

@@ -5,18 +5,23 @@ import { Link } from "wouter";
 import { useAppNavigate } from "@/components/app-link";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import {
-  PLAY_CATEGORIES, BASIC_SUBJECTS, ADVANCED_SUBJECTS,
   resolveStudyMode, MODE_LABELS,
-  SMART_SUBJECTS,
+  getPracticePickerTopics,
+  lookupPracticeTitle,
+  practicePackForSubject,
+  getPlayCategoriesForChild,
+  getBasicSubjectsForChild,
+  getAdvancedSubjectsForChild,
+  isAdaptivePracticeTopic,
   getPlayItemCatalogSpeakOpts,
   getTopicNotesCatalogSpeakOpts,
   getTopicAmyCatalogSpeakOpts,
   type StudyMode, type PlayCategory, type PlayItem,
   type SubjectPack, type StudyTopic,
   type DailyPlan, type PlanItem,
-  type SmartSubjectId,
 } from "@workspace/study-zone";
 import { AdaptiveQuestionRunner } from "@/components/adaptive-question-runner";
+import { useStudyCountry } from "@/hooks/use-study-country";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,7 +58,7 @@ type View =
   | { kind: "study-subject"; childId: number; mode: "basic" | "advanced"; subjectId: string }
   | { kind: "study-topic"; childId: number; mode: "basic" | "advanced"; subjectId: string; topicId: string }
   | { kind: "smart-pick"; childId: number; mode: "basic" | "advanced" }
-  | { kind: "smart-run"; childId: number; mode: "basic" | "advanced"; subjectId: SmartSubjectId };
+  | { kind: "smart-run"; childId: number; mode: "basic" | "advanced"; subjectId: string };
 
 export default function StudyPage() {
   const { t } = useTranslation();
@@ -63,6 +68,7 @@ export default function StudyPage() {
   });
 
   const list = (children ?? []) as Child[];
+  const { country } = useStudyCountry();
   const [view, setView] = useState<View>({ kind: "child-pick" });
   const [progress, setProgress] = useState<StudyProgress | null>(null);
 
@@ -148,6 +154,8 @@ export default function StudyPage() {
         <>
           {progress && <EngagementStrip engagement={progress.engagement} />}
           <PlayHome
+            country={country}
+            childAge={child?.age}
             progress={progress}
             onOpen={(catId) => setView({ kind: "play-cat", childId: view.childId, categoryId: catId })}
           />
@@ -156,6 +164,8 @@ export default function StudyPage() {
         <PlayCategoryView
           childId={view.childId}
           categoryId={view.categoryId}
+          country={country}
+          childAge={child?.age}
           progress={progress}
           onItemDone={(p) => setProgress(p)}
         />
@@ -178,23 +188,30 @@ export default function StudyPage() {
           />
           <StudyHome
             mode={view.mode}
+            country={country}
+            childClass={child?.childClass}
+            childAge={child?.age}
             progress={progress}
             onOpen={(subjId) => setView({ kind: "study-subject", childId: view.childId, mode: view.mode, subjectId: subjId })}
           />
         </>
       ) : view.kind === "smart-pick" ? (
         <SmartSubjectPicker
+          mode={view.mode}
           onPick={(subjectId) => setView({
             kind: "smart-run", childId: view.childId, mode: view.mode, subjectId,
           })}
         />
       ) : view.kind === "smart-run" ? (
         (() => {
-          const meta = SMART_SUBJECTS.find((s) => s.id === view.subjectId);
+          const meta = lookupPracticeTitle(view.subjectId, view.mode);
           return (
             <AdaptiveQuestionRunner
               childId={view.childId}
-              subject={view.subjectId}
+              practiceSubject={view.subjectId}
+              progressPackId={meta?.packId ?? practicePackForSubject(view.subjectId)}
+              topicId={view.subjectId}
+              country={country}
               subjectTitle={meta?.title ?? view.subjectId}
               subjectEmoji={meta?.emoji ?? "✨"}
               onExit={() => setView({ kind: "smart-pick", childId: view.childId, mode: view.mode })}
@@ -205,6 +222,9 @@ export default function StudyPage() {
         <SubjectTopicList
           mode={view.mode}
           subjectId={view.subjectId}
+          country={country}
+          childClass={child?.childClass}
+          childAge={child?.age}
           progress={progress}
           onOpen={(topicId) => setView({
             kind: "study-topic", childId: view.childId, mode: view.mode, subjectId: view.subjectId, topicId,
@@ -216,6 +236,9 @@ export default function StudyPage() {
           mode={view.mode}
           subjectId={view.subjectId}
           topicId={view.topicId}
+          country={country}
+          childClass={child?.childClass}
+          childAge={child?.age}
           onScored={(p) => setProgress(p)}
         />
       )}
@@ -379,11 +402,12 @@ function ChildPicker({ children, onPick }: { children: Child[]; onPick: (c: Chil
   );
 }
 
-function PlayHome({ progress, onOpen }: { progress: StudyProgress | null; onOpen: (catId: string) => void }) {
+function PlayHome({ country, childAge, progress, onOpen }: { country: string; childAge?: number; progress: StudyProgress | null; onOpen: (catId: string) => void }) {
   const { t } = useTranslation();
+  const categories = useMemo(() => getPlayCategoriesForChild(country, childAge), [country, childAge]);
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-      {PLAY_CATEGORIES.map((cat) => {
+      {categories.map((cat) => {
         const pct = progress ? categoryPercent(progress, cat.id, cat.items.length) : 0;
         return (
           <Card key={cat.id} className="rounded-2xl hover-elevate cursor-pointer" onClick={() => onOpen(cat.id)}>
@@ -401,15 +425,18 @@ function PlayHome({ progress, onOpen }: { progress: StudyProgress | null; onOpen
 }
 
 function PlayCategoryView({
-  childId, categoryId, progress, onItemDone,
+  childId, categoryId, country, childAge, progress, onItemDone,
 }: {
   childId: number;
   categoryId: string;
+  country: string;
+  childAge?: number;
   progress: StudyProgress | null;
   onItemDone: (p: StudyProgress) => void;
 }) {
   const { t } = useTranslation();
-  const cat = PLAY_CATEGORIES.find((c) => c.id === (categoryId as PlayCategory["id"]));
+  const categories = useMemo(() => getPlayCategoriesForChild(country, childAge), [country, childAge]);
+  const cat = categories.find((c) => c.id === (categoryId as PlayCategory["id"]));
   const { speak, primeSpeakGesture } = useAmyVoice();
   const fx = useStudyFx();
   const { toast } = useToast();
@@ -497,14 +524,22 @@ function PlayCategoryView({
 }
 
 function StudyHome({
-  mode, progress, onOpen,
+  mode, country, childClass, childAge, progress, onOpen,
 }: {
   mode: "basic" | "advanced";
+  country: string;
+  childClass?: string | null;
+  childAge?: number;
   progress: StudyProgress | null;
   onOpen: (subjectId: string) => void;
 }) {
   const { t } = useTranslation();
-  const subjects: SubjectPack[] = mode === "basic" ? BASIC_SUBJECTS : ADVANCED_SUBJECTS;
+  const subjects: SubjectPack[] = useMemo(
+    () => (mode === "basic"
+      ? getBasicSubjectsForChild(country, childClass, childAge)
+      : getAdvancedSubjectsForChild(country, childClass, childAge)),
+    [mode, country, childClass, childAge],
+  );
   return (
     <div className="grid sm:grid-cols-2 gap-3">
       {subjects.map((s) => {
@@ -532,15 +567,23 @@ function StudyHome({
 }
 
 function SubjectTopicList({
-  mode, subjectId, progress, onOpen,
+  mode, subjectId, country, childClass, childAge, progress, onOpen,
 }: {
   mode: "basic" | "advanced";
   subjectId: string;
+  country: string;
+  childClass?: string | null;
+  childAge?: number;
   progress: StudyProgress | null;
   onOpen: (topicId: string) => void;
 }) {
   const { t: tr } = useTranslation();
-  const subjects: SubjectPack[] = mode === "basic" ? BASIC_SUBJECTS : ADVANCED_SUBJECTS;
+  const subjects: SubjectPack[] = useMemo(
+    () => (mode === "basic"
+      ? getBasicSubjectsForChild(country, childClass, childAge)
+      : getAdvancedSubjectsForChild(country, childClass, childAge)),
+    [mode, country, childClass, childAge],
+  );
   const subj = subjects.find((s) => s.id === subjectId);
   if (!subj) return <p className="text-sm text-muted-foreground">{tr("screens.study.subject_not_found")}</p>;
   return (
@@ -572,17 +615,26 @@ function SubjectTopicList({
 }
 
 function TopicDetail({
-  childId, mode, subjectId, topicId, onScored,
+  childId, mode, subjectId, topicId, country, childClass, childAge, onScored,
 }: {
   childId: number;
   mode: "basic" | "advanced";
   subjectId: string;
   topicId: string;
+  country: string;
+  childClass?: string | null;
+  childAge?: number;
   onScored: (p: StudyProgress) => void;
 }) {
-  const subjects: SubjectPack[] = mode === "basic" ? BASIC_SUBJECTS : ADVANCED_SUBJECTS;
+  const subjects: SubjectPack[] = useMemo(
+    () => (mode === "basic"
+      ? getBasicSubjectsForChild(country, childClass, childAge)
+      : getAdvancedSubjectsForChild(country, childClass, childAge)),
+    [mode, country, childClass, childAge],
+  );
   const subj = subjects.find((s) => s.id === subjectId);
   const topic: StudyTopic | undefined = subj?.topics.find((t) => t.id === topicId);
+  const useAdaptivePractice = isAdaptivePracticeTopic(topicId);
   const [practiceOpen, setPracticeOpen] = useState(false);
   const [picks, setPicks] = useState<number[]>(() => topic ? Array(topic.questions.length).fill(-1) : []);
   const [submitted, setSubmitted] = useState(false);
@@ -605,6 +657,21 @@ function TopicDetail({
   const { getToken } = useAuth();
   if (!subj || !topic || !notesSpeakOpts || !amySpeakOpts) {
     return <p className="text-sm text-muted-foreground">{t("screens.study.topic_not_found")}</p>;
+  }
+
+  if (practiceOpen && useAdaptivePractice) {
+    return (
+      <AdaptiveQuestionRunner
+        childId={childId}
+        practiceSubject={topicId}
+        progressPackId={subj.id}
+        topicId={topicId}
+        country={country}
+        subjectTitle={topic.title}
+        subjectEmoji={subj.emoji}
+        onExit={() => setPracticeOpen(false)}
+      />
+    );
   }
 
   const score = topic.questions.reduce((acc, q, i) => acc + (picks[i] === q.answer ? 1 : 0), 0);
@@ -731,10 +798,16 @@ function TopicDetail({
       <Card className="rounded-2xl">
         <CardContent className="p-5">
           <div className="flex items-center justify-between mb-3">
-            <div className="font-quicksand font-bold text-foreground">{t("screens.study.practice_label", { count: total })}</div>
+            <div className="font-quicksand font-bold text-foreground">
+              {useAdaptivePractice
+                ? t("screens.study.adaptive_practice_label", "Adaptive practice")
+                : t("screens.study.practice_label", { count: total })}
+            </div>
             {!practiceOpen && (
               <Button className="rounded-full bg-primary hover:bg-primary" onClick={() => setPracticeOpen(true)}>
-                {t("screens.study.try_now")}
+                {useAdaptivePractice
+                  ? t("screens.study.start_adaptive", "Start adaptive practice")
+                  : t("screens.study.try_now")}
               </Button>
             )}
           </div>
@@ -845,8 +918,9 @@ function SmartAdaptiveCta({ onOpen }: { onOpen: () => void }) {
   );
 }
 
-function SmartSubjectPicker({ onPick }: { onPick: (subjectId: SmartSubjectId) => void }) {
+function SmartSubjectPicker({ mode, onPick }: { mode: "basic" | "advanced"; onPick: (subjectId: string) => void }) {
   const { t } = useTranslation();
+  const topics = useMemo(() => getPracticePickerTopics(mode), [mode]);
   return (
     <div className="grid gap-3">
       <header>
@@ -858,10 +932,10 @@ function SmartSubjectPicker({ onPick }: { onPick: (subjectId: SmartSubjectId) =>
         </p>
       </header>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {SMART_SUBJECTS.map((s) => (
+        {topics.map((s) => (
           <Card
             key={s.id}
-            onClick={() => onPick(s.id as SmartSubjectId)}
+            onClick={() => onPick(s.id)}
             data-testid={`smart-subject-${s.id}`}
             className="rounded-2xl cursor-pointer hover-elevate"
           >

@@ -29,8 +29,10 @@ export const AMY_SPEAK_LINES: Record<string, string> = {
 
   // ── Basic GK ──
   "gk:india-basics": "Every country has a capital city and special symbols like a flag and national animal!",
+  "gk:country-basics": "Every country has a capital city and special symbols like a flag and national animal!",
   "gk:solar-system": "The Sun is at the center. Earth is our home planet, and the Moon goes around Earth!",
   "gk:indian-festivals": "People celebrate festivals with lights, colors, music, and food all around the world!",
+  "gk:local-festivals": "People celebrate festivals with lights, colors, music, and food all around the world!",
   "gk:transport": "We travel by land, water, or air — buses and trains on land, boats on water, planes in the sky!",
   "gk:community-helpers": "Doctors, teachers, farmers, and firefighters are helpers who keep our community strong!",
 

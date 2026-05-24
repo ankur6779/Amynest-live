@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { AppLink } from "@/components/app-link";
-import { smartBack } from "@/lib/safe-navigation";
+import { invokePageBackHandler } from "@/lib/page-back-handler";
+import { runSafeNavAction, smartBack } from "@/lib/safe-navigation";
 import { ArrowLeft, Home, Users, Calendar, Star, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, Trophy, MessageSquarePlus } from "lucide-react";
 import { useClerk, useUser } from "@/lib/firebase-auth-hooks";
 import { LayoutMobileMenu } from "@/components/layout-mobile-menu";
@@ -199,7 +200,10 @@ export function Layout({
     }
   };
   const handleBack = () => {
-    smartBack(setLocation, location, "layout-header-back");
+    runSafeNavAction(`back:${location}`, () => {
+      if (invokePageBackHandler()) return;
+      smartBack(setLocation, location, "layout-header-back");
+    });
   };
   return (
     <div className="app-shell main-container relative w-full max-w-full min-w-0 bg-background overflow-x-clip box-border">

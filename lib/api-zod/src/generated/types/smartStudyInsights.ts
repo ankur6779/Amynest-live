@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SmartStudyInsightsAdaptiveTopic } from './smartStudyInsightsAdaptiveTopic';
 import type { SmartStudyInsightsMode } from './smartStudyInsightsMode';
 import type { SmartStudyInsightsSubject } from './smartStudyInsightsSubject';
 import type { SmartStudyInsightsYesterday } from './smartStudyInsightsYesterday';
@@ -13,6 +14,15 @@ export interface SmartStudyInsights {
   childId: number;
   childName: string;
   mode: SmartStudyInsightsMode;
+  /** Parent profile country used for localized study content */
+  country: string;
+  /**
+     * Age-derived baseline adaptive level (1–6)
+     * @minimum 1
+     * @maximum 6
+     */
+  baseLevel: number;
+  adaptiveTopics: SmartStudyInsightsAdaptiveTopic[];
   hasData: boolean;
   subjects: SmartStudyInsightsSubject[];
   yesterday?: SmartStudyInsightsYesterday;

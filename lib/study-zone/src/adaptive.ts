@@ -2,10 +2,14 @@
 // Pure helpers used by the API server to build a 3–5 item plan that mixes
 // the child's weak topics with age-appropriate fresh material. No I/O here.
 
-import { BASIC_SUBJECTS } from "./content/basic";
-import { ADVANCED_SUBJECTS } from "./content/advanced";
 import { resolveStudyMode } from "./types";
 import type { StudyMode, SubjectPack, StudyTopic } from "./types";
+import {
+  getBasicSubjectsForCountry,
+  getAdvancedSubjectsForCountry,
+  parseChildClassNumber,
+  topicMatchesClass,
+} from "./resolve-content";
 
 export type Difficulty = "easy" | "medium" | "hard";
 
@@ -115,8 +119,12 @@ function pickFreshTopic(
   difficulty: Difficulty,
   exclude: Set<string>,
   seed: number,
+  classNum: number | null,
+  planMode: "basic" | "advanced",
 ): StudyTopic | null {
-  const candidates = pack.topics.filter((t) => !exclude.has(t.id));
+  const candidates = pack.topics.filter(
+    (t) => !exclude.has(t.id) && topicMatchesClass(t.id, pack.id, planMode, classNum),
+  );
   if (candidates.length === 0) return null;
   // Difficulty maps to position in the topic list — first third = easy,
   // middle = medium, last third = hard. Topic packs in @workspace/study-zone
@@ -134,6 +142,8 @@ function pickFreshTopic(
 export interface BuildPlanInput {
   childAge: number;
   childClass?: string | null;
+  /** Parent profile country — localizes GK topics in the daily plan. */
+  country?: string | null;
   /** YYYY-MM-DD, used as deterministic seed so the plan is stable per day. */
   dateIso: string;
   /** Per-subject summaries from `child_learning_progress`. */
@@ -166,9 +176,12 @@ export function buildDailyPlan(input: BuildPlanInput): DailyPlan {
     return { date: input.dateIso, mode: "basic", items: [] };
   }
   const planMode: "basic" | "advanced" = mode;
-  const packs: SubjectPack[] = planMode === "basic" ? BASIC_SUBJECTS : ADVANCED_SUBJECTS;
+  const packs: SubjectPack[] = planMode === "basic"
+    ? getBasicSubjectsForCountry(input.country)
+    : getAdvancedSubjectsForCountry(input.country);
+  const classNum = parseChildClassNumber(input.childClass, input.childAge);
   const target = Math.max(3, Math.min(5, input.size ?? 4));
-  const seedBase = hash(`${input.dateIso}:${input.childAge}:${input.childClass ?? ""}`);
+  const seedBase = hash(`${input.dateIso}:${input.childAge}:${input.childClass ?? ""}:${input.country ?? ""}`);
   const items: PlanItem[] = [];
   const used = new Set<string>(); // "subject:topicId"
 
@@ -221,7 +234,7 @@ export function buildDailyPlan(input: BuildPlanInput): DailyPlan {
       const exclude = new Set<string>();
       for (const it of items) if (it.subject === pack.id) exclude.add(it.topicId);
       const seed = hash(`${seedBase}:fresh:${pack.id}:${items.length}`);
-      const topic = pickFreshTopic(pack, diff, exclude, seed);
+      const topic = pickFreshTopic(pack, diff, exclude, seed, classNum, planMode);
       if (!topic) continue;
       const key = `${pack.id}:${topic.id}`;
       if (used.has(key)) continue;

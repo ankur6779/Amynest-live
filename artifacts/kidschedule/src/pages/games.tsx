@@ -15,6 +15,7 @@ import {
 import { useSubscription } from "@/hooks/use-subscription";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { useGamingWallet } from "@/hooks/use-gaming-wallet";
+import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { unlockGamingGame, recordGamingPlay } from "@/lib/gaming-wallet-api";
@@ -66,6 +67,18 @@ export default function GamesPage() {
 
   // Re-sync points whenever modals close
   useEffect(() => { setPoints(getTotalPoints()); }, [active, showRedeem, unlockedTick]);
+
+  usePageBackHandler(() => {
+    if (active) {
+      setActive(null);
+      return true;
+    }
+    if (showRedeem) {
+      setShowRedeem(false);
+      return true;
+    }
+    return false;
+  }, [active, showRedeem]);
 
   const playedToday = serverWallet?.gamesPlayedToday ?? gamesPlayedToday();
   const limit = serverWallet?.dailyLimit ?? dailyLimit(isPremium);
