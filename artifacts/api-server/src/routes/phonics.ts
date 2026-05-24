@@ -49,6 +49,15 @@ import {
   getOrCreateSubscription,
   isPremiumNow,
 } from "../services/subscriptionService.js";
+import { getHubJourneyStatus } from "../services/parentHubJourneyService.js";
+import {
+  buildPhonicsJourneyMeta,
+  buildPhonicsPremiumMeta,
+  capPhonicsCatalog,
+  capPhonicsPremiumCatalog,
+  computePhonicsDripDay,
+  pickPhonicsDailyItems,
+} from "@workspace/parent-hub-journey";
 
 const router: IRouter = Router();
 
@@ -218,9 +227,28 @@ router.get("/phonics", async (req, res): Promise<void> => {
 
     const totalMonths = (child.age ?? 0) * 12 + (child.ageMonths ?? 0);
     const childAgeGroup = ageGroupForMonths(totalMonths);
-    // Caller can override the stage to browse other levels; child's natural
-    // stage is still returned as `defaultAgeGroup` so the UI can highlight it.
-    const ageGroup = ageGroupOverride ?? childAgeGroup;
+
+    const sub = await getOrCreateSubscription(userId);
+    const premium = isPremiumNow(sub);
+    const hubStatus = await getHubJourneyStatus(userId, childId);
+    const journeyDay = hubStatus?.journeyDay ?? 1;
+    const access = hubStatus?.access ?? {
+      isPremium: premium,
+      isFreePeriod: !premium,
+      isLocked: false,
+      lockReason: "none" as const,
+      daysCompleted: 0,
+      daysTotal: 3,
+      currentDay: 1,
+      calendarDaysLeft: 7,
+      calendarDeadline: new Date().toISOString(),
+    };
+
+    // Free users stay on their child's natural stage during the 3-day journey.
+    const ageGroup =
+      !premium && ageGroupOverride && ageGroupOverride !== childAgeGroup
+        ? childAgeGroup
+        : ageGroupOverride ?? childAgeGroup;
     if (!ageGroup) {
       // Out of range (under 12m or 6+) — return empty session so client can
       // gracefully gate the UI without an error toast.
@@ -239,20 +267,13 @@ router.get("/phonics", async (req, res): Promise<void> => {
       )
       .orderBy(asc(phonicsContentTable.level));
 
-    // Deterministic daily window: rotate the start index by date so the same
-    // child sees the same DAILY_LIMIT items all day, then a new slice tomorrow.
     const today = new Date();
     const todaySeed =
       today.getUTCFullYear() * 10000 +
       (today.getUTCMonth() + 1) * 100 +
       today.getUTCDate();
-    const dailyItems =
-      allItems.length <= DAILY_LIMIT
-        ? allItems
-        : Array.from(
-            { length: DAILY_LIMIT },
-            (_, i) => allItems[(todaySeed + i) % allItems.length]!,
-          );
+
+    const totalCatalog = allItems.length;
 
     const progress = await db
       .select()
@@ -264,19 +285,53 @@ router.get("/phonics", async (req, res): Promise<void> => {
         ),
       );
 
-    const insights = buildInsights(ageGroup, allItems, progress);
+    const journeyMeta = buildPhonicsJourneyMeta({
+      isPremium: premium,
+      access,
+      journeyDay,
+      totalCatalog,
+    });
+
+    let visibleItems = allItems;
+    let premiumMeta = null;
+
+    if (premium) {
+      const { dripDay, activePracticeDays } = computePhonicsDripDay(progress);
+      premiumMeta = buildPhonicsPremiumMeta({
+        dripDay,
+        activePracticeDays,
+        totalCatalog,
+      });
+      visibleItems = capPhonicsPremiumCatalog(allItems, dripDay);
+      journeyMeta.itemLimit = premiumMeta.itemLimit;
+      journeyMeta.lockedCount = premiumMeta.lockedCount;
+      journeyMeta.unlocksTomorrow = premiumMeta.unlocksTomorrow;
+    } else if (access.isLocked) {
+      visibleItems = [];
+    } else if (access.isFreePeriod) {
+      visibleItems = capPhonicsCatalog(allItems, journeyDay);
+    }
+
+    const dailyItems = pickPhonicsDailyItems(visibleItems, todaySeed, DAILY_LIMIT);
+
+    const insights = buildInsights(ageGroup, visibleItems, progress);
 
     res.json({
       ageGroup,
       defaultAgeGroup: childAgeGroup,
+      stageOverrideIgnored:
+        !premium &&
+        !!ageGroupOverride &&
+        ageGroupOverride !== childAgeGroup,
       child: { id: child.id, name: child.name },
-      // All items in the age group (frontend uses this for the grid + tracker).
-      items: allItems,
-      // Today's deterministic 10-item slice for short, focused sessions.
+      items: visibleItems,
       dailyItems,
+      totalCatalog,
       progress,
       insights,
       dailyLimit: DAILY_LIMIT,
+      journeyMeta,
+      premiumMeta,
     });
   } catch (err) {
     logger.error(
