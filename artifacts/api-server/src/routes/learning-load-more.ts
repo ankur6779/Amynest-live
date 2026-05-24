@@ -12,6 +12,7 @@ const router: IRouter = Router();
 
 const SectionSchema = z.enum([
   "smart_study",
+  "smart_math_tricks",
   "olympiad",
   "spelling",
   "phonics",

@@ -88,6 +88,7 @@ export const FREE_FEATURE_LIMITS = {
   nutrition_family_ai: 1,    // one AI family-portion lookup per lifetime
   // ── Learning hub AI load-more (1 free lifetime per section; premium 20/day) ─
   learning_load_more_smart_study: 1,
+  learning_load_more_smart_math_tricks: 1,
   learning_load_more_olympiad: 1,
   learning_load_more_spelling: 1,
   learning_load_more_phonics: 1,
@@ -118,6 +119,7 @@ export const FEATURE_SCOPE: Record<FeatureKey, "daily" | "lifetime"> = {
   nutrition_week_plan: "lifetime",
   nutrition_family_ai: "lifetime",
   learning_load_more_smart_study: "lifetime",
+  learning_load_more_smart_math_tricks: "lifetime",
   learning_load_more_olympiad: "lifetime",
   learning_load_more_spelling: "lifetime",
   learning_load_more_phonics: "lifetime",

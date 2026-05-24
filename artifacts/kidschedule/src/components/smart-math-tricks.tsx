@@ -13,6 +13,7 @@ import {
   FingerGroupsVisual,
   NumberLineVisual,
 } from "@/components/math-trick-visuals";
+import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
 
 import { useTranslation } from "react-i18next";
 
@@ -413,18 +414,26 @@ function TrickCard({
 
 function TodayTab({
   pool,
+  bonusTricks,
   childName,
+  childId,
+  trickAge,
   starIds,
   mastery,
   onStar,
   onPracticeResult,
+  onBonusLoaded,
 }: {
   pool: MathTrick[];
+  bonusTricks: MathTrick[];
   childName: string;
+  childId?: number;
+  trickAge: TrickAge;
   starIds: string[];
   mastery: Record<string, TrickMastery>;
   onStar(id: string): void;
   onPracticeResult(id: string, correct: boolean): void;
+  onBonusLoaded(tricks: MathTrick[]): void;
 }) {
   const {
     t
@@ -447,40 +456,7 @@ function TodayTab({
           showPractice
         />
       ))}
-      <div className="text-center pt-1">
-        <p className="text-[11px] text-white/30">{t("components.smart_math_tricks.new_tricks_unlock_tomorrow")}</p>
-      </div>
-    </div>;
-}
-
-// ─── Tab: Learn All ───────────────────────────────────────────────────────────
-
-function LearnAllTab({
-  pool,
-  childName,
-  starIds,
-  onStar,
-  onPracticeResult,
-}: {
-  pool: MathTrick[];
-  childName: string;
-  starIds: string[];
-  onStar(id: string): void;
-  onPracticeResult(id: string, correct: boolean): void;
-}) {
-  const {
-    t
-  } = useTranslation();
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const mastered = pool.filter(t => starIds.includes(t.id)).length;
-  return <div className="space-y-2.5">
-      <div className="flex items-center justify-between px-1">
-        <p className="text-xs text-white/40">{pool.length} {t("components.smart_math_tricks.tricks_in_your_level")}</p>
-        <p className="text-xs font-bold" style={{
-        color: "hsl(var(--brand-amber-300))"
-      }}>⭐ {mastered}/{pool.length} {t("components.smart_math_tricks.mastered")}</p>
-      </div>
-      {pool.map((tr) => (
+      {bonusTricks.map((tr) => (
         <TrickCard
           key={tr.id}
           trick={tr}
@@ -493,6 +469,84 @@ function LearnAllTab({
           showPractice
         />
       ))}
+      <LearningLoadMoreButton
+        section="smart_math_tricks"
+        childId={childId}
+        count={2}
+        excludeIds={[...pool, ...bonusTricks].map((t) => t.id)}
+        params={{ age: trickAge }}
+        onLoaded={(items) => {
+          const tricks = (items.tricks ?? []) as MathTrick[];
+          if (tricks.length > 0) onBonusLoaded(tricks);
+        }}
+        className="pt-1"
+      />
+      <div className="text-center pt-1">
+        <p className="text-[11px] text-white/30">{t("components.smart_math_tricks.new_tricks_unlock_tomorrow")}</p>
+      </div>
+    </div>;
+}
+
+// ─── Tab: Learn All ───────────────────────────────────────────────────────────
+
+function LearnAllTab({
+  pool,
+  bonusTricks,
+  childName,
+  childId,
+  trickAge,
+  starIds,
+  onStar,
+  onPracticeResult,
+  onBonusLoaded,
+}: {
+  pool: MathTrick[];
+  bonusTricks: MathTrick[];
+  childName: string;
+  childId?: number;
+  trickAge: TrickAge;
+  starIds: string[];
+  onStar(id: string): void;
+  onPracticeResult(id: string, correct: boolean): void;
+  onBonusLoaded(tricks: MathTrick[]): void;
+}) {
+  const {
+    t
+  } = useTranslation();
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const mastered = [...pool, ...bonusTricks].filter((t) => starIds.includes(t.id)).length;
+  const allTricks = [...pool, ...bonusTricks];
+  return <div className="space-y-2.5">
+      <div className="flex items-center justify-between px-1">
+        <p className="text-xs text-white/40">{allTricks.length} {t("components.smart_math_tricks.tricks_in_your_level")}</p>
+        <p className="text-xs font-bold" style={{
+        color: "hsl(var(--brand-amber-300))"
+      }}>⭐ {mastered}/{allTricks.length} {t("components.smart_math_tricks.mastered")}</p>
+      </div>
+      {allTricks.map((tr) => (
+        <TrickCard
+          key={tr.id}
+          trick={tr}
+          childName={childName}
+          starred={starIds.includes(tr.id)}
+          onStar={() => onStar(tr.id)}
+          onPracticeResult={(correct) => onPracticeResult(tr.id, correct)}
+          expanded={expanded === tr.id}
+          onToggle={() => setExpanded((prev) => (prev === tr.id ? null : tr.id))}
+          showPractice
+        />
+      ))}
+      <LearningLoadMoreButton
+        section="smart_math_tricks"
+        childId={childId}
+        count={2}
+        excludeIds={allTricks.map((t) => t.id)}
+        params={{ age: trickAge }}
+        onLoaded={(items) => {
+          const tricks = (items.tricks ?? []) as MathTrick[];
+          if (tricks.length > 0) onBonusLoaded(tricks);
+        }}
+      />
     </div>;
 }
 
@@ -709,10 +763,12 @@ type Tab = "today" | "learn" | "practice";
 interface SmartMathTricksProps {
   childName: string;
   ageYears: number;
+  childId?: number;
 }
 export function SmartMathTricks({
   childName,
-  ageYears
+  ageYears,
+  childId,
 }: SmartMathTricksProps) {
   const {
     t
@@ -721,6 +777,8 @@ export function SmartMathTricks({
   if (ageYears < 2 || ageYears > 8) return null;
   const trickAge: TrickAge = ageYears <= 6 ? "4-6" : "6-8";
   const pool = TRICKS.filter(t => t.age === trickAge);
+  const [bonusTricks, setBonusTricks] = useState<MathTrick[]>([]);
+  const fullPool = useMemo(() => [...pool, ...bonusTricks], [pool, bonusTricks]);
   const [tab, setTab] = useState<Tab>("today");
   const [mathSt, setMathSt] = useState(() => loadMathState(childName));
   const persistState = useCallback(
@@ -760,6 +818,10 @@ export function SmartMathTricks({
   const handleSessionComplete = useCallback(() => {
     persistState((prev) => recordStreakDay(prev));
   }, [persistState]);
+
+  const handleBonusLoaded = useCallback((tricks: MathTrick[]) => {
+    setBonusTricks((prev) => [...prev, ...tricks]);
+  }, []);
 
   const tabs: { key: Tab; labelKey: string; icon: string }[] = [
     { key: "today", labelKey: "tab_today", icon: "📅" },
@@ -823,25 +885,33 @@ export function SmartMathTricks({
         {tab === "today" && (
           <TodayTab
             pool={pool}
+            bonusTricks={bonusTricks}
             childName={childName}
+            childId={childId}
+            trickAge={trickAge}
             starIds={mathSt.starIds}
             mastery={mathSt.mastery}
             onStar={handleStar}
             onPracticeResult={handlePracticeResult}
+            onBonusLoaded={handleBonusLoaded}
           />
         )}
         {tab === "learn" && (
           <LearnAllTab
             pool={pool}
+            bonusTricks={bonusTricks}
             childName={childName}
+            childId={childId}
+            trickAge={trickAge}
             starIds={mathSt.starIds}
             onStar={handleStar}
             onPracticeResult={handlePracticeResult}
+            onBonusLoaded={handleBonusLoaded}
           />
         )}
         {tab === "practice" && (
           <PracticeTab
-            pool={pool}
+            pool={fullPool}
             childName={childName}
             starIds={mathSt.starIds}
             mastery={mathSt.mastery}

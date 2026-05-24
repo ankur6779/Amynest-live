@@ -16,6 +16,7 @@ interface LearningLoadMoreButtonProps {
     questions?: unknown[];
     words?: unknown[];
     tasks?: unknown[];
+    tricks?: unknown[];
   }) => void;
   className?: string;
   variant?: "default" | "outline" | "ghost";
