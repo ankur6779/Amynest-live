@@ -115,8 +115,8 @@ test("Abacus tile: practice + challenge flow unlocks Level 2", async ({
   // Level 2 chip is rendered but disabled before the first unlock.
   await expect(page.getByTestId("abacus-level-2")).toBeDisabled();
 
-  // ─── 2. Practice flow — click Check, expect a feedback toast ──────────
-  await page.getByTestId("abacus-mode-practice").click();
+  // ─── 2. Practice flow — open play, then click Check ──────────
+  await page.getByTestId("abacus-quick-practice").click();
   await page.getByTestId("abacus-practice-check").click();
   // Either correct or wrong feedback satisfies the practice flow contract;
   // both share the `abacus-practice-feedback-` testid prefix.
@@ -125,7 +125,8 @@ test("Abacus tile: practice + challenge flow unlocks Level 2", async ({
   ).toBeVisible();
 
   // ─── 3. Challenge flow — submit the 5 questions ───────────────────────
-  await page.getByTestId("abacus-mode-challenge").click();
+  await page.getByTestId("abacus-back-home").click();
+  await page.getByTestId("abacus-quick-challenge").click();
   await expect(page.getByTestId("abacus-challenge-submit")).toBeVisible();
 
   // The fixture's challenge problems are produced by the real

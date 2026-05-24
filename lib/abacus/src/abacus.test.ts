@@ -101,9 +101,9 @@ describe("bead toggle helpers (immutable)", () => {
 });
 
 describe("level definitions", () => {
-  it("exposes 5 levels in canonical order", () => {
-    assert.equal(LEVELS.length, 5);
-    assert.deepEqual(LEVELS.map((l) => l.id), [1, 2, 3, 4, 5]);
+  it("exposes 7 levels in canonical order", () => {
+    assert.equal(LEVELS.length, 7);
+    assert.deepEqual(LEVELS.map((l) => l.id), [1, 2, 3, 4, 5, 6, 7]);
   });
 
   it("getLevel finds each level", () => {
