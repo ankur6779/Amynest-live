@@ -63,7 +63,12 @@ import {
   localCacheKeyForTts,
   warmLocalCacheFromUrl,
 } from "@/lib/local-tts-cache";
-import { playEmergencyPhrase, playNaturalSpeechSynthesis } from "@/lib/emergency-audio";
+import { playEmergencyPhrase, playNaturalSpeechSynthesis, forceEmergencyPlayback, playFallbackTone } from "@/lib/emergency-audio";
+import {
+  buildPipelineDecisionLog,
+  logPipelineDecision,
+  logTotalAudioFailure,
+} from "@/lib/amy-voice-pipeline-decision";
 import {
   getPhonicsTrainingAudioText,
   logAmyModeDiagnosis,
@@ -180,6 +185,8 @@ export type AmyVoicePipelineContext = {
   speakGeneration?: number;
   /** Guards against duplicate onFinished from finalizeSuccess. */
   completionFinalized?: boolean;
+  /** Pipeline-only: mark streaming layer as attempted for decision logs. */
+  trackStreamingAttempt?: () => void;
 };
 
 type PlayAttemptResult =
@@ -767,6 +774,7 @@ async function attemptOpenAiPlay(
     !isStreamingTemporarilyDisabled() &&
     !isStreamingLayerPenalized(cacheKeyHint)
   ) {
+    ctx.trackStreamingAttempt?.();
     const stream = await playStreamingTts(ctx.authFetch, streamBody, {
       signal,
       cacheKeyHint,
@@ -1299,6 +1307,69 @@ function tryTextVisualLayer(text: string, mode: StaticAudioMode): PlayAttemptRes
   return { ok: true, layer: "text_visual" };
 }
 
+type NeverSilentPipelineFlags = {
+  dynamicAttempted: boolean;
+  streamingAttempted: boolean;
+  emergencyAttempted: boolean;
+  synthesisAttempted: boolean;
+};
+
+/** Absolute last audio guarantee — visual highlight + forced local TTS/tone. */
+async function runNeverSilentFallback(
+  text: string,
+  mode: StaticAudioMode,
+  ctx: AmyVoicePipelineContext,
+  policy: AmySpeechPolicy,
+  depth: number,
+  cacheKey: string,
+  failureChain: FailureChainEntry[],
+  opts: SpeakOptions | undefined,
+  flags: NeverSilentPipelineFlags,
+  finishAttempt: (
+    result: PlayAttemptResult,
+    isFallback?: boolean,
+  ) => SpeakResult & { layer?: AmyVoiceLayer },
+  telemetry: ReturnType<typeof createPipelineTelemetry> | null,
+): Promise<SpeakResult & { layer?: AmyVoiceLayer }> {
+  if (isStale(ctx)) return { success: false, error: "tts_cancelled" };
+
+  const scoringContext = buildScoringContext(text, policy, opts);
+  logPipelineDecision(
+    buildPipelineDecisionLog(cacheKey, failureChain, {
+      module: scoringContext.module,
+      ...flags,
+    }),
+  );
+
+  tryTextVisualLayer(text, mode);
+  if (depth === 0) {
+    logAmyModeDiagnosis(policy, "text_visual");
+    maybeQueueAmyVoiceLearning(policy, "text_visual");
+  }
+
+  telemetry?.recordTry("forced_emergency");
+  const forced = await forceEmergencyPlayback(text);
+  if (forced.success) {
+    recordAmyVoiceLayerSuccess("emergency_local_success", { forced: true });
+    recordAmyVoiceFallbackUsed("text_visual", "emergency_local");
+    return finishAttempt({ ok: true, layer: "emergency_local" }, true);
+  }
+
+  logTotalAudioFailure({
+    cacheKey,
+    module: scoringContext.module,
+    reason: "all_layers_failed",
+  });
+
+  const tone = await playFallbackTone();
+  if (tone) {
+    recordAmyVoiceLayerSuccess("emergency_local_success", { forced: true, tone: true });
+    return finishAttempt({ ok: true, layer: "emergency_local" }, true);
+  }
+
+  return finishAttempt({ ok: true, layer: "emergency_local" }, true);
+}
+
 function pushFailure(
   chain: FailureChainEntry[],
   result: PlayAttemptResult,
@@ -1569,11 +1640,20 @@ export async function speakAmyVoice(
   }
 
   const speakGeneration = depth === 0 ? ++activeSpeakGeneration : activeSpeakGeneration;
+  const pipelineFlags: NeverSilentPipelineFlags = {
+    dynamicAttempted: false,
+    streamingAttempted: false,
+    emergencyAttempted: false,
+    synthesisAttempted: false,
+  };
   const pipelineCtx: AmyVoicePipelineContext = {
     ...ctx,
     speakGeneration,
     depth,
     playbackRate: ctx.playbackRate * policy.prosody.playbackRate,
+    trackStreamingAttempt: () => {
+      pipelineFlags.streamingAttempted = true;
+    },
   };
 
   recordTtsUserGesture();
@@ -1592,19 +1672,33 @@ export async function speakAmyVoice(
   }
 
   if (!isTtsPlaybackAllowed()) {
+    const blockedCacheKey = pipelineCacheKey(text, primaryMode, opts);
+    const blockedFlags: NeverSilentPipelineFlags = {
+      dynamicAttempted: false,
+      streamingAttempted: false,
+      emergencyAttempted: true,
+      synthesisAttempted: false,
+    };
     const emergency = await tryEmergencyLayer(text, pipelineCtx);
     if (emergency.ok) {
       return finishSpeak(emergency, opts?.waitUntilEnd ?? false, pipelineCtx, policy, depth);
     }
-    tryTextVisualLayer(text, primaryMode);
-    if (depth === 0) {
-      logAmyModeDiagnosis(policy, "text_visual");
-      maybeQueueAmyVoiceLearning(policy, "text_visual");
-    }
-    if (opts?.lessonParagraph || opts?.parentHub) {
-      return { success: false, error: "playback_blocked_tap_again", layer: "text_visual" };
-    }
-    return { success: true, layer: "text_visual" };
+    const blockedChain: FailureChainEntry[] = [
+      { layer: "emergency_local", error: emergency.error },
+    ];
+    return runNeverSilentFallback(
+      text,
+      primaryMode,
+      pipelineCtx,
+      policy,
+      depth,
+      blockedCacheKey,
+      blockedChain,
+      opts,
+      blockedFlags,
+      (result) => finishSpeak(result, opts?.waitUntilEnd ?? false, pipelineCtx, policy, depth),
+      null,
+    );
   }
 
   if (depth === 0 && isAdminEmergencyForced()) {
@@ -1710,6 +1804,7 @@ export async function speakAmyVoice(
     if (policy.forcePhonicsOnly || shallow) return null;
     if (isApiGloballyDegraded()) return null;
     if (isSlowNetwork() && strategy !== "dynamic_first") return null;
+    pipelineFlags.dynamicAttempted = true;
     beginLayerTry(telemetry, "dynamic");
     let result = await tryDynamicSequentialLayer(
       text,
@@ -1853,6 +1948,7 @@ export async function speakAmyVoice(
 
   telemetry?.recordTry("emergency");
   fallbackUsed = true;
+  pipelineFlags.emergencyAttempted = true;
   const layer5 = await tryEmergencyLayer(text, pipelineCtx);
   if (layer5.ok) return finishAttempt(layer5, true);
   pushFailure(failureChain, layer5, "emergency_local", cacheKey);
@@ -1861,6 +1957,7 @@ export async function speakAmyVoice(
     if (isStale(pipelineCtx)) return { success: false, error: "tts_cancelled" };
     telemetry?.recordTry("speech_synthesis");
     fallbackUsed = true;
+    pipelineFlags.synthesisAttempted = true;
     const synth = await trySpeechSynthesisLayer(text, pipelineCtx, policy);
     if (synth.ok) return finishAttempt(synth, true);
     pushFailure(failureChain, synth, "emergency_local", cacheKey);
@@ -1870,15 +1967,19 @@ export async function speakAmyVoice(
     mode,
     speechMode: policy.speechMode,
   });
-  tryTextVisualLayer(text, mode);
-  if (depth === 0) {
-    logAmyModeDiagnosis(policy, "text_visual");
-    maybeQueueAmyVoiceLearning(policy, "text_visual");
-  }
-  if (opts?.lessonParagraph || opts?.parentHub) {
-    return endPipeline({ success: false, error: "tts_no_audible_layer", layer: "text_visual" });
-  }
-  return endPipeline({ success: true, layer: "text_visual" }, "text_visual");
+  return runNeverSilentFallback(
+    text,
+    mode,
+    pipelineCtx,
+    policy,
+    depth,
+    cacheKey,
+    failureChain,
+    opts,
+    pipelineFlags,
+    finishAttempt,
+    telemetry,
+  );
 }
 
 export function mapPlayErrorToSpeakResult(err: unknown): SpeakResult {
