@@ -97,12 +97,11 @@ export function AudioPlayButton({
     onFinished?.();
     onSpeakingEnd?.();
   }, [onFinished, onSpeakingEnd]);
-  const { speak, pause, speaking, loading, error } = useAmyVoice({
+  const { speak, pause, speaking, loading, error, activePhrase } = useAmyVoice({
     onFinished: handleFinished,
     playbackRate,
   });
   const [visualFallback, setVisualFallback] = useState(false);
-  const busy = speaking || loading;
   const isMounted = useMountedRef();
   const { safeAsync } = useSafeAsync();
   const { run: runInFlight } = useInFlightGuard();
@@ -169,6 +168,19 @@ export function AudioPlayButton({
     return resolvedAudioKey || trimmed;
   }, [text, mode, resolvedAudioKey]);
 
+  const activeKeys = useMemo(() => {
+    const keys = new Set<string>();
+    const trimmed = (text ?? "").trim().toLowerCase();
+    if (trimmed) keys.add(trimmed);
+    if (resolvedAudioKey) keys.add(resolvedAudioKey.toLowerCase());
+    if (resolvedText) keys.add(resolvedText.toLowerCase());
+    return keys;
+  }, [text, resolvedAudioKey, resolvedText]);
+
+  const isThisClipActive =
+    activePhrase != null && activeKeys.has(activePhrase.toLowerCase());
+  const busy = isThisClipActive && (speaking || loading);
+
   const resolvedPrefetch = useMemo(() => {
     const next = (prefetchNextText ?? "").trim();
     if (!next) return "";
@@ -212,7 +224,7 @@ export function AudioPlayButton({
         const res = await speak(resolvedText, {
           mode,
           playbackMode: isSentenceRead ? "full-required" : "partial-ok",
-          waitUntilEnd: isSentenceRead,
+          waitUntilEnd: mode === "phonics" || !isSentenceRead,
           phoneme: phonemeKey,
           word: cvcWordKey,
         });
@@ -240,7 +252,7 @@ export function AudioPlayButton({
       onClick={handleClick}
       onPointerDown={handlePointerDown}
       onPointerEnter={handlePointerEnter}
-      disabled={busy}
+      disabled={false}
       aria-label={ariaLabel ?? `Play ${text}`}
       data-testid={`audio-play-${text.slice(0, 16).replace(/\s+/g, "-").toLowerCase()}`}
       className={cn(

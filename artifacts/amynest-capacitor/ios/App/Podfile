@@ -14,9 +14,9 @@ def capacitor_pods
   pod 'CapacitorGeolocation', :path => '../../../../node_modules/.pnpm/@capacitor+geolocation@6.1.1_@capacitor+core@6.2.1/node_modules/@capacitor/geolocation'
   pod 'CapacitorKeyboard', :path => '../../../../node_modules/.pnpm/@capacitor+keyboard@6.0.4_@capacitor+core@6.2.1/node_modules/@capacitor/keyboard'
   pod 'CapacitorPushNotifications', :path => '../../../../node_modules/.pnpm/@capacitor+push-notifications@6.0.5_@capacitor+core@6.2.1/node_modules/@capacitor/push-notifications'
-  pod 'RevenuecatPurchasesCapacitor', :path => '../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@13.1.1_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor'
-  pod 'RevenuecatPurchasesCapacitorUI', :path => '../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor-ui@13.1.1_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor-ui'
   pod 'CapgoCapacitorUpdater', :path => '../../../../node_modules/.pnpm/@capgo+capacitor-updater@6.45.10_@capacitor+core@6.2.1/node_modules/@capgo/capacitor-updater'
+  pod 'RevenuecatPurchasesCapacitor', :path => '../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@13.1.1_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor'
+  pod 'RevenuecatPurchasesCapacitorUi', :path => '../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor-ui@13.1.1_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor-ui'
 end
 
 target 'App' do
