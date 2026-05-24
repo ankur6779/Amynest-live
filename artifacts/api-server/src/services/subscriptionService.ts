@@ -54,14 +54,14 @@ export const FREE_LIMITS = {
 /**
  * Per-feature free-use cap. Global Paywall rule:
  *   - AI chat: 10 messages per day (daily reset).
- *   - Routine generation: TWO uses per lifetime, then locked.
+ *   - Routine generation: THREE uses during the 3-day free journey, then locked.
  *   - Behavior log: ONE use per lifetime, then locked.
  *
  * Keys MUST match the `feature` column in `usage_daily`.
  */
 export const FREE_FEATURE_LIMITS = {
   ai_query: 10,
-  routine_generate: 2,
+  routine_generate: 3,
   behavior_log: 1,
   // 1 free TTS audio lesson per day (resets UTC midnight). The web/mobile
   // audio-lesson screens call /api/features/audio_lesson/consume before
@@ -313,16 +313,34 @@ export async function incrementAiUsage(userId: string, by = 1): Promise<number> 
 
 export async function getEntitlements(userId: string): Promise<EntitlementSummary> {
   const featureKeys = Object.keys(FREE_FEATURE_LIMITS) as FeatureKey[];
-  const [sub, ...featureCounts] = await Promise.all([
-    getOrCreateSubscription(userId),
-    ...featureKeys.map((f) => getFeatureUsage(userId, f)),
-  ]);
+  const sub = await getOrCreateSubscription(userId);
   const isPremium = isPremiumNow(sub);
   const isTrialing = sub.status === "trialing" && !!sub.trialEndsAt && sub.trialEndsAt.getTime() > Date.now();
 
+  const otherKeys = featureKeys.filter((k) => k !== "routine_generate");
+  const { getRoutineGenerateEntitlement } = await import(
+    "./routineJourneyService.js"
+  );
+  const [routineEntitlement, ...featureCounts] = await Promise.all([
+    getRoutineGenerateEntitlement(userId, isPremium),
+    ...otherKeys.map((f) => getFeatureUsage(userId, f)),
+  ]);
+
   const features = {} as Record<FeatureKey, FeatureUsage>;
-  featureKeys.forEach((key, i) => {
-    const used = featureCounts[i] ?? 0;
+  let otherIdx = 0;
+  for (const key of featureKeys) {
+    if (key === "routine_generate") {
+      const { used, limit, locked } = routineEntitlement;
+      features[key] = {
+        used,
+        limit,
+        remaining: isPremium ? null : Math.max(0, limit - used),
+        locked: !isPremium && locked,
+      };
+      continue;
+    }
+    const used = featureCounts[otherIdx] ?? 0;
+    otherIdx += 1;
     const limit = FREE_FEATURE_LIMITS[key];
     features[key] = {
       used,
@@ -330,7 +348,7 @@ export async function getEntitlements(userId: string): Promise<EntitlementSummar
       remaining: isPremium ? null : Math.max(0, limit - used),
       locked: !isPremium && used >= limit,
     };
-  });
+  }
 
   return {
     plan: sub.plan as Plan,

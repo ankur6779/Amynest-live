@@ -276,11 +276,11 @@ function PlayButtons({
     t
   } = useTranslation();
   return <div className="flex items-center gap-2">
-      <Button size="sm" onClick={() => void tts.speak(text)} disabled={tts.loading} className="bg-primary hover:bg-primary text-white">
+      <Button size="sm" onPointerDown={() => tts.prime(text)} onClick={() => void tts.speak(text)} disabled={tts.loading} className="bg-primary hover:bg-primary text-white">
         {tts.loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : tts.speaking ? <VolumeX className="h-4 w-4 mr-1" /> : <Volume2 className="h-4 w-4 mr-1" />}
         {showLabel && (tts.speaking ? "Stop" : "Play")}
       </Button>
-      <Button size="sm" variant="outline" onClick={() => void tts.speak(text, {
+      <Button size="sm" variant="outline" onPointerDown={() => tts.prime(text)} onClick={() => void tts.speak(text, {
       slow: true
     })} disabled={tts.loading}>
         {t("components.spelling_mastery.slow")}
@@ -303,11 +303,11 @@ function PlayButtonsForUrl({
     t
   } = useTranslation();
   return <div className="flex items-center gap-2">
-      <Button size="sm" onClick={() => void tts.playUrl(url)} disabled={tts.loading || !url} className="bg-primary hover:bg-primary text-white">
+      <Button size="sm" onPointerDown={() => url && tts.primeUrl(url)} onClick={() => void tts.playUrl(url)} disabled={tts.loading || !url} className="bg-primary hover:bg-primary text-white">
         {tts.loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : tts.speaking ? <VolumeX className="h-4 w-4 mr-1" /> : <Volume2 className="h-4 w-4 mr-1" />}
         {tts.speaking ? "Stop" : "Play"}
       </Button>
-      <Button size="sm" variant="outline" onClick={() => void tts.playUrl(url, {
+      <Button size="sm" variant="outline" onPointerDown={() => url && tts.primeUrl(url)} onClick={() => void tts.playUrl(url, {
       slow: true
     })} disabled={tts.loading || !url}>
         {t("components.spelling_mastery.slow_2")}

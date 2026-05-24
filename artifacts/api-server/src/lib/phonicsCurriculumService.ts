@@ -52,7 +52,9 @@ export async function getOrCreateCurriculumProgress(
   userId: string,
   totalAgeMonths: number,
 ): Promise<ChildCurriculumProgress | null> {
-  return withSafeDb(async () => {
+  return withSafeDb(
+    "phonics.curriculum.getOrCreate",
+    async () => {
     const existing = await db
       .select()
       .from(phonicsCurriculumProgressTable)
@@ -80,7 +82,9 @@ export async function getOrCreateCurriculumProgress(
       })
       .returning();
     return rowToProgress(inserted[0]!);
-  }, null);
+  },
+    null,
+  );
 }
 
 export async function getDailyPlanForChild(
@@ -97,6 +101,7 @@ export async function getDailyPlanForChild(
   if (!progress) return null;
 
   const row = await withSafeDb(
+    "phonics.curriculum.loadRow",
     () =>
       db
         .select()
@@ -130,6 +135,7 @@ async function persistDailyPlan(
   plan: PhonicsDailyPlan,
 ): Promise<void> {
   await withSafeDb(
+    "phonics.curriculum.persistDailyPlan",
     async () => {
       await db
         .insert(phonicsDailyPlansTable)
@@ -157,7 +163,9 @@ export async function markPlanActivityComplete(
   activityId: string,
   dateIso = todayIsoUtc(),
 ): Promise<ChildCurriculumProgress | null> {
-  return withSafeDb(async () => {
+  return withSafeDb(
+    "phonics.curriculum.markActivityComplete",
+    async () => {
     const rows = await db
       .select()
       .from(phonicsCurriculumProgressTable)
@@ -194,7 +202,9 @@ export async function markPlanActivityComplete(
       .returning();
 
     return rowToProgress(updated[0]!);
-  }, null);
+  },
+    null,
+  );
 }
 
 export async function applyCurriculumTestResult(
@@ -205,7 +215,9 @@ export async function applyCurriculumTestResult(
   progress: ChildCurriculumProgress;
   outcome: ReturnType<typeof applyTestOutcome>;
 } | null> {
-  return withSafeDb(async () => {
+  return withSafeDb(
+    "phonics.curriculum.applyTestResult",
+    async () => {
     const rows = await db
       .select()
       .from(phonicsCurriculumProgressTable)
@@ -248,7 +260,9 @@ export async function applyCurriculumTestResult(
       progress: rowToProgress(updated[0]!),
       outcome,
     };
-  }, null);
+  },
+    null,
+  );
 }
 
 /** Generate plans for all children (cron). */
@@ -263,6 +277,7 @@ export async function runDailyPlanCronForAllChildren(): Promise<{
   let failed = 0;
 
   const rows = await withSafeDb(
+    "phonics.curriculum.cronAllRows",
     () => db.select().from(phonicsCurriculumProgressTable),
     [],
   );

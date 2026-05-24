@@ -1,12 +1,13 @@
 import { useTranslation } from "react-i18next";
 import type { HubJourneyAccess, ChildProgressSnapshot } from "@workspace/parent-hub-journey";
-import { calendarCountdownMessage } from "@/lib/hub-journey-ux";
+import { calendarCountdownMessage, hubJourneyMessageKey } from "@/lib/hub-journey-ux";
 
 interface HubJourneyStripProps {
   childName: string;
   access: HubJourneyAccess;
   progress?: ChildProgressSnapshot;
   isPremium: boolean;
+  isInfant?: boolean;
 }
 
 export function HubJourneyStrip({
@@ -14,8 +15,10 @@ export function HubJourneyStrip({
   access,
   progress,
   isPremium,
+  isInfant = false,
 }: HubJourneyStripProps) {
   const { t } = useTranslation();
+  const jk = (base: string) => hubJourneyMessageKey(base, isInfant);
 
   if (isPremium) {
     return (
@@ -61,8 +64,8 @@ export function HubJourneyStrip({
         <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-wide text-primary">
             {access.isLocked
-              ? t("parent_hub.journey.continue_journey_header", { name: childName })
-              : t("parent_hub.journey.day_of", {
+              ? t(jk("continue_journey_header"), { name: childName })
+              : t(jk("day_of"), {
                   current: Math.min(access.daysCompleted + 1, access.daysTotal),
                   total: access.daysTotal,
                   name: childName,
@@ -70,8 +73,8 @@ export function HubJourneyStrip({
           </p>
           <p className="text-sm text-muted-foreground mt-0.5 leading-snug">
             {access.isLocked
-              ? t("parent_hub.journey.unlock_to_continue_soft")
-              : t("parent_hub.journey.complete_path_hint")}
+              ? t(jk("unlock_to_continue_soft"))
+              : t(jk("complete_path_hint"))}
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">

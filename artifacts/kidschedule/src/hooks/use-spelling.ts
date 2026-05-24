@@ -8,12 +8,14 @@ import {
   generateTts,
   resolveClientPlaybackUrl,
 } from "@/lib/tts-playback";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
 import {
   lookupStaticAudioUrl,
   prepareRemotePlaybackAudio,
   prepareStaticPlaybackAudio,
   primeStaticAudioInUserGesture,
 } from "@/lib/static-audio";
+import { resetClientStaticAudioCircuit } from "@/lib/static-audio-telemetry";
 
 // ─── Shared types (mirror server shape — no codegen yet for /spelling/*) ─────
 
@@ -111,6 +113,8 @@ export interface UseSpellingTTSState {
   playUrl: (url: string, opts?: { slow?: boolean }) => Promise<void>;
   /** Prime static MP3 in a user gesture (mobile WebView autoplay). */
   prime: (text: string) => void;
+  /** Prime a session-scoped or remote URL inside pointerdown/click (Android). */
+  primeUrl: (url: string) => void;
   stop: () => void;
 }
 
@@ -185,11 +189,26 @@ export function useSpellingTTS(): UseSpellingTTSState {
     [],
   );
 
+  const beginSpeechGesture = useCallback((opts?: { text?: string; url?: string }) => {
+    recordTtsUserGesture();
+    audioManager.unlockFromUserGesture();
+    resetClientStaticAudioCircuit();
+    const text = opts?.text?.trim();
+    if (text) primeStaticAudioInUserGesture(text, "default");
+    const url = opts?.url?.trim();
+    if (url) audioManager.primeSpeechUrlInUserGesture(resolveApiMediaUrl(url));
+  }, []);
+
   const playSrc = useCallback(
     async (src: string, slow: boolean, reqId: number) => {
       const trimmed = (src ?? "").trim();
       if (!trimmed || trimmed.includes("undefined")) {
         console.warn("Invalid audio URL, skipping playback");
+        if (reqId === reqIdRef.current) {
+          setLoading(false);
+          setSpeaking(false);
+          setError("audio_error");
+        }
         return;
       }
       const proxyUrl = resolveApiMediaUrl(trimmed);
@@ -204,6 +223,7 @@ export function useSpellingTTS(): UseSpellingTTSState {
     async (text: string, opts: { slow?: boolean } = {}) => {
       const trimmed = text.trim();
       if (!trimmed) return;
+      beginSpeechGesture({ text: trimmed });
       abortRef.current?.abort();
       cleanup();
       const reqId = ++reqIdRef.current;
@@ -248,12 +268,13 @@ export function useSpellingTTS(): UseSpellingTTSState {
         setSpeaking(false);
       }
     },
-    [authFetch, cleanup, playElement, playSrc],
+    [authFetch, beginSpeechGesture, cleanup, playElement, playSrc],
   );
 
   const playUrl = useCallback(
     async (url: string, opts: { slow?: boolean } = {}) => {
       if (!url) return;
+      beginSpeechGesture({ url });
       abortRef.current?.abort();
       cleanup();
       const reqId = ++reqIdRef.current;
@@ -269,16 +290,18 @@ export function useSpellingTTS(): UseSpellingTTSState {
         setSpeaking(false);
       }
     },
-    [cleanup, playSrc],
+    [beginSpeechGesture, cleanup, playSrc],
   );
 
   const prime = useCallback((text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    primeStaticAudioInUserGesture(trimmed, "default");
-  }, []);
+    beginSpeechGesture({ text });
+  }, [beginSpeechGesture]);
 
-  return { speaking, loading, error, speak, playUrl, prime, stop };
+  const primeUrl = useCallback((url: string) => {
+    beginSpeechGesture({ url });
+  }, [beginSpeechGesture]);
+
+  return { speaking, loading, error, speak, playUrl, prime, primeUrl, stop };
 }
 
 // ─── useSpellingWords — fetches a fresh batch of words ──────────────────────

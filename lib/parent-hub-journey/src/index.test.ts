@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   buildPhonicsJourneyMeta,
+  bonusUnlockForDay,
   capPhonicsCatalog,
   computeHubJourneyAccess,
   HUB_JOURNEY_FREE_DAYS,
@@ -75,6 +76,11 @@ describe("parent-hub-journey", () => {
       isHubJourneyFeatureLocked("hub_activities", access, ["hub_activities"]),
       false,
     );
+  });
+
+  it("infant day 3 bonus unlocks infant hub instead of olympiad", () => {
+    assert.equal(bonusUnlockForDay(3, { isInfant: true }), "hub_infant_parenting");
+    assert.equal(bonusUnlockForDay(3, { isInfant: false }), "hub_olympiad");
   });
 
   it("premium never locks", () => {

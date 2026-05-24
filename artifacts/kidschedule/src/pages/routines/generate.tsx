@@ -1068,7 +1068,7 @@ export default function RoutineGenerate() {
       setLastFixedActivitiesResult(data.fixedActivitiesResult ?? null);
       return;
     }
-    const isFeatureLocked = status === 402 && (data?.error === "feature_locked" || data?.feature === "routine_generate");
+    const isFeatureLocked = status === 402 && (data?.error === "feature_locked" || data?.error === "routine_locked" || data?.feature === "routine_generate");
     const isLegacyLimit = status === 403 && data?.reason === "routine_limit_exceeded";
     if (isFeatureLocked || isLegacyLimit) {
       window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
@@ -1414,7 +1414,7 @@ export default function RoutineGenerate() {
             feature?: string;
           };
         })?.data;
-        const isFeatureLocked = status === 402 && (data?.error === "feature_locked" || data?.feature === "routine_generate");
+        const isFeatureLocked = status === 402 && (data?.error === "feature_locked" || data?.error === "routine_locked" || data?.feature === "routine_generate");
         const isLegacyLimit = status === 403 && data?.reason === "routine_limit_exceeded";
         if (isFeatureLocked || isLegacyLimit) {
           window.dispatchEvent(new CustomEvent("amynest:open-paywall", {

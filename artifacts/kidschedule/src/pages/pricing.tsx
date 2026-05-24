@@ -138,7 +138,16 @@ export default function PricingPage() {
   const hubJourney = useHubJourney(isHubJourneyReason ? hubChildId : null);
   const journeyChildName = hubJourney.status?.child.name ?? "your child";
   const journeyProgress = hubJourney.progress;
+  const journeyIsInfant = hubJourney.status
+    ? hubJourney.status.child.age * 12 + (hubJourney.status.child.ageMonths ?? 0) < 24
+    : false;
   const journeyCta = t("parent_hub.journey.continue_tomorrow_path");
+  const journeyPricingHeader = journeyIsInfant
+    ? "parent_hub.journey.infant.pricing_header"
+    : "parent_hub.journey.pricing_header";
+  const journeyPricingSubtitle = journeyIsInfant
+    ? "parent_hub.journey.infant.pricing_subtitle"
+    : "parent_hub.journey.pricing_subtitle";
 
   const isProcessing = submitting !== null || verifying || nativeBilling.purchasing;
 
@@ -174,13 +183,13 @@ export default function PricingPage() {
         <h1 className="relative z-10 mb-2 text-3xl font-black tracking-tight text-white">
           {/* audit-ok: white text on dark brand gradient */}
           {isHubJourneyReason && !isPremium
-            ? t("parent_hub.journey.pricing_header", { name: journeyChildName })
+            ? t(journeyPricingHeader, { name: journeyChildName })
             : t("pricing.title")}
         </h1>
         <p className="relative z-10 mx-auto max-w-md text-sm leading-relaxed text-white/65">
           {/* audit-ok: muted white on dark gradient */}
           {isHubJourneyReason && !isPremium
-            ? t("parent_hub.journey.pricing_subtitle", { name: journeyChildName })
+            ? t(journeyPricingSubtitle, { name: journeyChildName })
             : t("pricing.subtitle")}
         </p>
 

@@ -297,6 +297,10 @@ export async function getHubJourneyStatus(
 
   const progress = await loadProgressSnapshot(userId, childId, child.name, child.age);
 
+  if (band === "infant") {
+    progress.consistencyDays = Math.max(progress.consistencyDays, completedDays.length);
+  }
+
   const pathSteps = buildTodaysPath({
     journeyDay,
     dateIso,
@@ -321,11 +325,14 @@ export async function getHubJourneyStatus(
     !peekUsed.includes(journeyDay) &&
     journeyDay < HUB_JOURNEY_FREE_DAYS;
 
+  const isInfant = totalMonths < 24;
+
   const peekAhead = buildPeekAhead({
     nextJourneyDay: journeyDay + 1,
     dateIso,
     childName: child.name,
     childKey: childId,
+    isInfant,
   });
 
   return {
@@ -379,7 +386,13 @@ export async function completeHubJourneyPath(
   const now = new Date();
   const nextCompleted = [...completedDays, journeyDay].sort((a, b) => a - b);
   const journeyFinished = nextCompleted.length >= HUB_JOURNEY_FREE_DAYS;
-  const bonus = bonusUnlockForDay(journeyDay);
+  const childForBonus = await loadOwnedChild(userId, childId);
+  const bonusMonths = childForBonus
+    ? childForBonus.age * 12 + (childForBonus.ageMonths ?? 0)
+    : 999;
+  const bonus = bonusUnlockForDay(journeyDay, {
+    isInfant: bonusMonths < 24,
+  });
   const bonusUnlocks = [...(row.bonusUnlocks ?? [])];
   if (bonus && !bonusUnlocks.includes(bonus)) bonusUnlocks.push(bonus);
 

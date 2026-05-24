@@ -862,7 +862,32 @@ function generateMixedQuestions(opts: GenerateOptions): Question[] {
       });
     }
   }
-  return out;
+
+  // Top up with hear_tap questions when a rotation slot couldn't build one
+  // (e.g. missing_letter on animal-sound-only tiers).
+  if (out.length < count) {
+    const topUp = generateQuestions({
+      ageGroup,
+      contentRows,
+      count: count - out.length,
+      recentItemIds: [...recentItemIds, ...out.map((q) => q.conceptId)],
+      seed: (seed || 1) ^ 0xdeadbeef,
+      gameMode: "hear_tap",
+    });
+    for (const q of topUp) {
+      out.push({
+        ...q,
+        id: `q${out.length + 1}`,
+        prompt: {
+          ...q.prompt,
+          meta: { ...(q.prompt.meta ?? {}), uiGame: q.type },
+        },
+      });
+      if (out.length >= count) break;
+    }
+  }
+
+  return out.slice(0, count);
 }
 
 // ─── Public: scoring ─────────────────────────────────────────────────────────
