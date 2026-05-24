@@ -233,6 +233,49 @@ export type StaticGcsWriteResult =
   | { success: true; publicUrl: string }
   | { success: false; error: string };
 
+/** True when object exists in the primary GCS bucket. */
+export async function gcsObjectExists(objectName: string): Promise<boolean> {
+  if (!legacyGcsConfigured()) return false;
+  try {
+    const [exists] = await getBucket().file(objectName).exists();
+    return exists;
+  } catch {
+    return false;
+  }
+}
+
+/** Stream upload to primary GCS bucket (large video/PDF mirrors). */
+export async function uploadStreamToGcs(params: {
+  objectName: string;
+  stream: NodeJS.ReadableStream;
+  contentType: string;
+  cacheControl?: string;
+}): Promise<StaticGcsWriteResult> {
+  if (!legacyGcsConfigured()) return { success: false, error: "gcs_not_configured" };
+  const bucketName = getGcsBucketId();
+  if (!bucketName) return { success: false, error: "gcs_bucket_missing" };
+  const publicUrl = `https://storage.googleapis.com/${bucketName}/${params.objectName}`;
+  try {
+    const file = getBucket().file(params.objectName);
+    await new Promise<void>((resolve, reject) => {
+      const ws = file.createWriteStream({
+        resumable: true,
+        metadata: {
+          contentType: params.contentType,
+          cacheControl: params.cacheControl ?? "public, max-age=31536000, immutable",
+        },
+      });
+      params.stream.pipe(ws);
+      ws.on("error", reject);
+      ws.on("finish", () => resolve());
+    });
+    await file.makePublic().catch(() => {});
+    return { success: true, publicUrl };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 /** Upload static-audio/{hash}.mp3 to primary GCS bucket. */
 export async function writeStaticAudioToGcs(
   hash: string,

@@ -17,8 +17,8 @@ import { z } from "zod/v4";
  * One row per Drive file. Sync is idempotent — we upsert on driveFileId so
  * a re-sync just refreshes title/category/thumbnail.
  *
- * Streaming is not stored here; clients call /api/reels/stream/:driveFileId
- * (the existing Drive proxy with range-request + virus-scan-token support).
+ * Streaming URL: prefer `gcsUrl` (CDN-fast) when mirrored; otherwise clients
+ * fall back to /api/reels/stream/:driveFileId (Drive proxy).
  */
 export const storyContentTable = pgTable(
   "story_content",
@@ -42,6 +42,10 @@ export const storyContentTable = pgTable(
     durationSec: integer("duration_sec"),
     /** Soft-delete flag — clearing this hides a story from the hub. */
     active: boolean("active").notNull().default(true),
+    /** Public GCS URL when mirrored from Drive (fast CDN delivery). */
+    gcsUrl: text("gcs_url"),
+    /** When the Drive file was last copied to GCS. */
+    gcsSyncedAt: timestamp("gcs_synced_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
