@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import com.google.firebase.messaging.FirebaseMessaging
 import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallActivityLauncher
+import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallResult
 import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallResultHandler
 import org.json.JSONObject
 
@@ -92,8 +93,10 @@ class MainActivity : AppCompatActivity() {
         if (billingBridge != null) {
             paywallLauncher = PaywallActivityLauncher(
                 this,
-                PaywallResultHandler { result ->
-                    billingBridge?.onPaywallResult(result)
+                object : PaywallResultHandler {
+                    override fun onActivityResult(result: PaywallResult) {
+                        billingBridge?.onPaywallResult(result)
+                    }
                 },
             )
             billingBridge?.attachPaywallLauncher(paywallLauncher!!)

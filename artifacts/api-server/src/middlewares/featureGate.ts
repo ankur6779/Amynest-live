@@ -1,5 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
+import { and, eq } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
+import { db, routinesTable } from "@workspace/db";
 import {
   getOrCreateSubscription,
   isPremiumNow,
@@ -19,6 +21,49 @@ import {
  * to open the paywall modal:
  *   { error: "feature_locked", feature, message, limit, used }
  */
+/**
+ * Routine generation gate — premium bypass; regenerating a saved child+date
+ * does not burn a free slot; otherwise delegates to the lifetime counter.
+ */
+export function routineGenerateGate() {
+  return async function routineGenerateGateMw(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    const userId = getAuth(req).userId;
+    if (!userId) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    const sub = await getOrCreateSubscription(userId);
+    if (isPremiumNow(sub)) {
+      next();
+      return;
+    }
+
+    const body = req.body as { childId?: number; date?: string } | undefined;
+    if (typeof body?.childId === "number" && typeof body?.date === "string") {
+      const existing = await db
+        .select({ id: routinesTable.id })
+        .from(routinesTable)
+        .where(
+          and(
+            eq(routinesTable.childId, body.childId),
+            eq(routinesTable.date, body.date),
+          ),
+        )
+        .limit(1);
+      if (existing.length > 0) {
+        next();
+        return;
+      }
+    }
+
+    return featureGate("routine_generate")(req, res, next);
+  };
+}
+
 export function featureGate(feature: FeatureKey) {
   return async function featureGateMw(
     req: Request,

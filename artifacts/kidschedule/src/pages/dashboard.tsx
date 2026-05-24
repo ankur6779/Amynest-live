@@ -1330,9 +1330,8 @@ export default function Dashboard() {
   }
 
   const lastUpdated = Math.max(summaryUpdatedAt ?? 0, routinesUpdatedAt ?? 0, statsUpdatedAt ?? 0);
-  const routinesCount = allRoutinesSafe.length;
-  const routinesMax = entitlements?.limits?.routinesMax ?? 1;
-  const generateRoutineLocked = !isPremium && routinesCount >= routinesMax;
+  const generateRoutineLocked =
+    !isPremium && (entitlements?.usage?.features?.routine_generate?.locked ?? false);
   function handleGenerateRoutine() {
     if (generateRoutineLocked) {
       openPaywall("routines_limit");

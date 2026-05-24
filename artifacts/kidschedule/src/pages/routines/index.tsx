@@ -208,8 +208,9 @@ export default function RoutinesList() {
     openPaywall
   } = usePaywall();
   const allRoutines = (routines ?? []) as Routine[];
-  const routinesMax = entitlements?.limits.routinesMax ?? 1;
-  const generateLocked = !isPremium && allRoutines.length >= routinesMax;
+  const routinesMax = entitlements?.limits.routinesMax ?? 2;
+  const generateLocked =
+    !isPremium && (entitlements?.usage?.features?.routine_generate?.locked ?? false);
 
   // Quick Generate: premium users with saved last-used settings get a one-tap
   // shortcut that opens the generate wizard pre-filled and ready to confirm.

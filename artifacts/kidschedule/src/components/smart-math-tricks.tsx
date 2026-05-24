@@ -717,8 +717,8 @@ export function SmartMathTricks({
   const {
     t
   } = useTranslation();
-  // Only for ages 4–8
-  if (ageYears < 4 || ageYears > 8) return null;
+  // Ages 2–8 (2+ in months via page shell)
+  if (ageYears < 2 || ageYears > 8) return null;
   const trickAge: TrickAge = ageYears <= 6 ? "4-6" : "6-8";
   const pool = TRICKS.filter(t => t.age === trickAge);
   const [tab, setTab] = useState<Tab>("today");

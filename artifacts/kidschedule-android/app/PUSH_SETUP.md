@@ -1,6 +1,6 @@
 # KidSchedule Android — Push Notifications Setup
 
-**App version:** 1.1.0 (versionCode 2)
+**App version:** 1.4.2 (versionCode 45) — synced with Play Store; build from repo root `android/` for releases.
 **Package:** `com.amynest.app`
 **Bridge:** native FCM via `window.AmyNestPushNative` (the WebView itself
 has no Web Notification API).

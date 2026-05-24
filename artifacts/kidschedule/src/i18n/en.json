@@ -1838,7 +1838,7 @@
     },
     "abacus": {
       "loading": "Loading abacus…",
-      "age_not_eligible": "The Abacus PRO Zone is for kids age 4–10. {{name}} can come back later!",
+      "age_not_eligible": "The Abacus PRO Zone is for kids age 2–10. {{name}} can come back later!",
       "step": "Step",
       "back": "Back",
       "next": "Next",
@@ -2852,7 +2852,7 @@
       },
       "smart-math-tricks": {
         "title": "➕ Smart Maths Tricks",
-        "description": "Fun mental-maths shortcuts & tricks for ages 4–8"
+        "description": "Fun mental-maths shortcuts & tricks for ages 2–8"
       },
       "abacus": {
         "title": "🧮 Abacus PRO Zone",
@@ -4042,7 +4042,7 @@
       "lessons_available": "{{count}} lessons available",
       "explore": "Explore",
       "resume_title": "Resume where you left off",
-      "preview_note": "Preview free samples in every age group. Unlock full lessons for your child's age with Premium.",
+      "preview_note": "Preview one free lesson in each age group. Unlock full lessons for your child's age with Premium.",
       "unlock_banner": "Unlock full lessons for your child's age",
       "recommended_for_you": "Recommended for you",
       "recommended_for_you_subtitle": "Top picks to start with for this age.",

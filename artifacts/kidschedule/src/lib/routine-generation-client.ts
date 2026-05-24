@@ -204,6 +204,16 @@ async function runAmyAiRoutineInner(
   payload: RoutineGeneratePayload,
   options?: { onSlow?: () => void },
 ): Promise<RoutineGenerateResult> {
+  let slowFallbackTimer: ReturnType<typeof setTimeout> | null = null;
+  let settled = false;
+
+  const cancelSlowFallback = () => {
+    if (slowFallbackTimer !== null) {
+      clearTimeout(slowFallbackTimer);
+      slowFallbackTimer = null;
+    }
+  };
+
   const runAiWithRetries = async (): Promise<RoutineGenerateResult> => {
     let lastError: unknown;
     for (let attempt = 0; attempt < MAX_AI_ATTEMPTS; attempt++) {
@@ -231,18 +241,29 @@ async function runAmyAiRoutineInner(
   };
 
   const standardAfterDelay = new Promise<RoutineGenerateResult>((resolve, reject) => {
-    setTimeout(() => {
+    slowFallbackTimer = setTimeout(() => {
+      slowFallbackTimer = null;
+      if (settled) return;
       options?.onSlow?.();
       logRoutineGen("8s elapsed — starting standard routine fallback");
       postRoutineEndpoint(authFetch, "/api/routines/generate", payload)
-        .then(resolve)
-        .catch(reject);
+        .then((result) => {
+          if (!settled) resolve(result);
+        })
+        .catch((err) => {
+          if (!settled) reject(err);
+        });
     }, SLOW_FALLBACK_MS);
   });
 
   try {
-    return await Promise.race([runAiWithRetries(), standardAfterDelay]);
+    const result = await Promise.race([runAiWithRetries(), standardAfterDelay]);
+    settled = true;
+    cancelSlowFallback();
+    return result;
   } catch (raceErr) {
+    settled = true;
+    cancelSlowFallback();
     if (
       raceErr instanceof RoutineGenerationPaywallError ||
       raceErr instanceof RoutineGenerationFixedActivityError

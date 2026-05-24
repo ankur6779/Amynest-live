@@ -65,7 +65,7 @@ export type AbacusWeeklyChildSummary = {
 
 export type AbacusWeeklySummary = {
   generatedAt: string;
-  /** Children eligible for the abacus zone (age 4–10) with computed stats. */
+  /** Children eligible for the abacus zone (age 2–10) with computed stats. */
   children: AbacusWeeklyChildSummary[];
   /** Eligible children with no abacus_progress row yet — useful for
    *  empty-state UI without a second query. */

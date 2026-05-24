@@ -1380,7 +1380,7 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
     );
   }
 
-  if (ageYears < 4 || ageYears > 10) {
+  if (ageYears < 2 || ageYears > 10) {
     return (
       <p className="text-xs text-muted-foreground">{t("abacus.age_not_eligible", { name: childName })}</p>
     );

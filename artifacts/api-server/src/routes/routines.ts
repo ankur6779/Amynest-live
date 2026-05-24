@@ -8,7 +8,7 @@ import {
   isPremiumNow,
   FREE_LIMITS,
 } from "../services/subscriptionService";
-import { featureGate } from "../middlewares/featureGate.js";
+import { routineGenerateGate } from "../middlewares/featureGate.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 import { enqueueAiJob } from "../queue/ai-job-queue.js";
 import { enqueueForUser } from "../lib/per-user-queue.js";
@@ -1392,7 +1392,7 @@ async function isOverFreeRoutineLimit(
   return (n ?? 0) >= FREE_LIMITS.routinesMax;
 }
 
-router.post("/routines/generate", featureGate("routine_generate"), async (req, res): Promise<void> => {
+router.post("/routines/generate", routineGenerateGate(), async (req, res): Promise<void> => {
   const legacyError = rejectLegacyParentFields(req.body);
   if (legacyError) {
     res.status(400).json({ error: legacyError });
@@ -1636,7 +1636,7 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
 });
 
 // AI-powered routine generation — uses OpenAI; rate-limited on frontend
-router.post("/routines/generate-ai", featureGate("routine_generate"), async (req, res): Promise<void> => {
+router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Promise<void> => {
   const legacyError = rejectLegacyParentFields(req.body);
   if (legacyError) {
     res.status(400).json({ error: legacyError });
@@ -1692,9 +1692,8 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
   }
   const child = normalizeChildForRoutine(childRow);
 
-  // Defense-in-depth: also enforce the legacy "no more than 1 saved routine"
-  // cap in case a free user generated, deleted, then tries again — the lifetime
-  // counter already blocks this, but keep the guard for clarity.
+  // Defense-in-depth: also enforce the saved-routine cap in case a free user
+  // generated, deleted, then tries again — the lifetime counter already blocks
   if (await isOverFreeRoutineLimit(userId, parsed.data.childId, parsed.data.date)) {
     res.status(403).json({
       reason: "routine_limit_exceeded",

@@ -9,8 +9,8 @@ export default function AbacusPage() {
       title="Abacus PRO Zone"
       subtitle={(child) => `${child.name} · Learn the soroban`}
       icon={<Sparkles className="h-5 w-5" />}
-      filterChild={(_child, totalAgeMonths) => totalAgeMonths >= 48 && totalAgeMonths < 120}
-      emptyMessage="Abacus PRO Zone is designed for ages 4–10. Add or select a child in that range."
+      filterChild={(_child, totalAgeMonths) => totalAgeMonths >= 24 && totalAgeMonths < 120}
+      emptyMessage="Abacus PRO Zone is available from age 2+. Add or select an eligible child."
     >
       {({ child }) => (
         <AbacusZone childId={child.id} childName={child.name} ageYears={child.age} />
