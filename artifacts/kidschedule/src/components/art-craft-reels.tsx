@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
+import { SubItemGate } from "@/components/sub-item-gate";
 interface Video {
   id: string;
   name: string;
@@ -653,7 +654,16 @@ export function ArtCraftReels() {
       gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
       gap: 10
     }}>
-        {videos.map((v, i) => <ThumbnailCard key={v.id} video={v} onPlay={() => setOverlayIndex(i)} />)}
+        {videos.map((v, i) => (
+          <SubItemGate
+            key={v.id}
+            sectionId="hub_art_craft"
+            subItemId={v.id}
+            className="min-w-0"
+          >
+            <ThumbnailCard video={v} onPlay={() => setOverlayIndex(i)} />
+          </SubItemGate>
+        ))}
       </div>
 
       {/* Load more / end */}

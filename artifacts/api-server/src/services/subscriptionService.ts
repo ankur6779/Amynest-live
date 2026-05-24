@@ -7,6 +7,7 @@ import {
   type Subscription,
 } from "@workspace/db";
 import { and, asc, eq, sql } from "drizzle-orm";
+import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
 
 // Drizzle's transaction object exposes the same query API as `db`, so the
 // service helpers below accept either. We type it loosely to avoid leaking
@@ -68,21 +69,10 @@ export const FREE_FEATURE_LIMITS = {
   // playback to reserve the slot — premium users bypass entirely.
   audio_lesson: 1,
   // ── Amy Speech Coach (Parent Hub Module) ──────────────────────────────
-  // Each speech-coach sub-feature is "first time free, then paywall" — the
-  // hub UI calls /api/features/<key>/consume to reserve the slot and shows
-  // a Premium gate when the response is 402. Server-side, only the prompt-
-  // logging endpoint is gated (POST /api/speech/practice/log uses
-  // hub_speech_pronounce); the other keys exist purely for the hub UI to
-  // gate its own client-side actions. All lifetime: 1.
-  hub_speech_coach: 1,       // hub tile entry (mobile ParentHub tile)
-  hub_speech_dashboard: 1,   // section 1 — Dashboard
-  hub_speech_milestones: 1,  // section 2 — Milestone Checker
-  hub_speech_pronounce: 1,   // section 3 — AI Pronunciation Practice
-  hub_speech_read_aloud: 1,  // section 4 — Read Aloud & Repeat
-  hub_speech_games: 1,       // section 5 — Daily Speech Games
-  hub_speech_guidance: 1,    // section 6 — Parent Guidance
-  hub_speech_affirmations: 1,// section 7 — Emotion & Confidence Builder
-  hub_speech_reports: 1,     // section 8 — Speech Progress Reports
+  // Free users get three lifetime practice sessions across all Speech Coach
+  // sections (client + POST /speech/practice/log share hub_speech_session).
+  hub_speech_session: HUB_CONTENT_QUOTAS.speechCoachSessions,
+  hub_speech_coach: HUB_CONTENT_QUOTAS.speechCoachSessions,
   // ── Nutrition Hub (AI meal plan + family portions) ─────────────────────
   nutrition_week_plan: 1,    // one 7-day AI meal plan per lifetime
   nutrition_family_ai: 1,    // one AI family-portion lookup per lifetime
@@ -107,15 +97,8 @@ export const FEATURE_SCOPE: Record<FeatureKey, "daily" | "lifetime"> = {
   routine_generate: "lifetime",
   behavior_log: "lifetime",
   audio_lesson: "daily",
+  hub_speech_session: "lifetime",
   hub_speech_coach: "lifetime",
-  hub_speech_dashboard: "lifetime",
-  hub_speech_milestones: "lifetime",
-  hub_speech_pronounce: "lifetime",
-  hub_speech_read_aloud: "lifetime",
-  hub_speech_games: "lifetime",
-  hub_speech_guidance: "lifetime",
-  hub_speech_affirmations: "lifetime",
-  hub_speech_reports: "lifetime",
   nutrition_week_plan: "lifetime",
   nutrition_family_ai: "lifetime",
   learning_load_more_smart_study: "lifetime",

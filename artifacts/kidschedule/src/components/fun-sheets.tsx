@@ -19,9 +19,14 @@ interface FunsheetFile {
   downloaded: boolean;
 }
 interface DailyQuota {
-  limit: number;
+  limit: number | null;
   used: number;
-  remaining: number;
+  remaining: number | null;
+}
+interface LifetimeQuota {
+  limit: number | null;
+  used: number;
+  remaining: number | null;
 }
 interface Pagination {
   page: number;
@@ -36,11 +41,13 @@ interface ListResponse {
   files: FunsheetFile[];
   pagination: Pagination;
   dailyQuota: DailyQuota;
+  lifetimeQuota?: LifetimeQuota;
 }
 interface DownloadResponse {
   ok?: boolean;
   downloadUrl?: string;
   dailyQuota?: DailyQuota;
+  lifetimeQuota?: LifetimeQuota;
   error?: string;
 }
 
@@ -66,6 +73,7 @@ export function FunSheets({
   const [files, setFiles] = useState<FunsheetFile[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [quota, setQuota] = useState<DailyQuota | null>(null);
+  const [lifetimeQuota, setLifetimeQuota] = useState<LifetimeQuota | null>(null);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState<FunsheetFile | null>(null);
@@ -103,6 +111,7 @@ export function FunSheets({
       setFiles(data.files);
       setPagination(data.pagination);
       setQuota(data.dailyQuota);
+      setLifetimeQuota(data.lifetimeQuota ?? null);
       if (data.pagination.page !== targetPage) {
         setPage(data.pagination.page);
       }
@@ -141,10 +150,16 @@ export function FunSheets({
       const body = (await res.json()) as DownloadResponse;
       if (!res.ok) {
         if (body.error === "daily_limit_reached") {
-          setQuota(body.dailyQuota ?? null);
+          if (body.dailyQuota) setQuota(body.dailyQuota);
           setRowError({
             id: file.id,
             message: `Daily limit reached (${quota?.limit ?? 2}/day)`
+          });
+        } else if (body.error === "lifetime_limit_reached") {
+          if (body.lifetimeQuota) setLifetimeQuota(body.lifetimeQuota);
+          setRowError({
+            id: file.id,
+            message: "Free lifetime limit reached. Upgrade for unlimited downloads."
           });
         } else if (body.error === "already_downloaded") {
           window.open(resolveApiMediaUrl(`/api/drive/download/${file.id}?name=${encodeURIComponent(file.name)}`), "_blank");
@@ -160,6 +175,7 @@ export function FunSheets({
         window.open(resolveApiMediaUrl(body.downloadUrl), "_blank");
       }
       if (body.dailyQuota) setQuota(body.dailyQuota);
+      if (body.lifetimeQuota) setLifetimeQuota(body.lifetimeQuota);
       // Mark as downloaded in local state
       setFiles(prev => prev.map(f => f.id === file.id ? {
         ...f,
@@ -174,15 +190,25 @@ export function FunSheets({
       setDownloadingId(null);
     }
   }, [authFetch, numericChildId, quota]);
-  const quotaExhausted = quota !== null && quota.remaining <= 0;
+  const quotaExhausted =
+    (quota !== null && quota.remaining !== null && quota.remaining <= 0) ||
+    (lifetimeQuota !== null &&
+      lifetimeQuota.remaining !== null &&
+      lifetimeQuota.remaining <= 0);
   return <div className="space-y-4" data-testid="fun-sheets-section">
-      {/* Daily quota banner */}
-      {quota && <div data-testid="funsheet-quota-banner" className={["flex items-center justify-between rounded-2xl px-4 py-2.5 text-sm", quotaExhausted ? "bg-muted dark:bg-card border border-border dark:border-primary text-primary dark:text-muted-foreground" : "bg-muted dark:bg-card border border-border dark:border-primary text-primary dark:text-muted-foreground"].join(" ")}>
+      {/* Quota banner */}
+      {quota && quota.limit !== null && <div data-testid="funsheet-quota-banner" className={["flex items-center justify-between rounded-2xl px-4 py-2.5 text-sm", quotaExhausted ? "bg-muted dark:bg-card border border-border dark:border-primary text-primary dark:text-muted-foreground" : "bg-muted dark:bg-card border border-border dark:border-primary text-primary dark:text-muted-foreground"].join(" ")}>
           <span className="flex items-center gap-2 font-semibold">
             <FileDown className="h-4 w-4" />
-            {quotaExhausted ? `Daily limit reached for ${childName}` : `${quota.remaining} of ${quota.limit} downloads left today`}
+            {quotaExhausted
+              ? lifetimeQuota?.remaining === 0 && lifetimeQuota?.limit != null
+                ? `Lifetime free limit reached for ${childName}`
+                : `Daily limit reached for ${childName}`
+              : lifetimeQuota?.limit != null
+                ? `${quota.remaining} of ${quota.limit} today · ${lifetimeQuota.remaining} of ${lifetimeQuota.limit} lifetime left`
+                : `${quota.remaining} of ${quota.limit} downloads left today`}
           </span>
-          {quotaExhausted && <span className="text-xs opacity-80">{t("components.fun_sheets.resets_at_midnight_ist")}</span>}
+          {quotaExhausted && quota.remaining !== null && quota.remaining <= 0 && (lifetimeQuota?.limit == null || (lifetimeQuota.remaining ?? 0) > 0) && <span className="text-xs opacity-80">{t("components.fun_sheets.resets_at_midnight_ist")}</span>}
         </div>}
 
       {/* Loading */}

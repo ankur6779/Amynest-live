@@ -9,6 +9,11 @@ import {
 import { getAuth } from "../lib/auth";
 import { driveFilesListAll, driveProxyDownloadPath, getDriveApiKey } from "../lib/googleDrive";
 import { logger } from "../lib/logger";
+import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
+import {
+  getOrCreateSubscription,
+  isPremiumNow,
+} from "../services/subscriptionService.js";
 
 const router: IRouter = Router();
 
@@ -26,8 +31,14 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 /** UI shows this many PDFs per page. */
 const PAGE_SIZE = 4;
 
-/** Maximum downloads a single child may make per calendar day (IST). */
-const DAILY_LIMIT = 2;
+/** Maximum downloads per calendar day (IST). Free vs premium caps differ. */
+const FREE_DAILY_LIMIT = HUB_CONTENT_QUOTAS.funsheetDaily;
+const PREMIUM_DAILY_LIMIT = HUB_CONTENT_QUOTAS.premiumDownloadDaily;
+const LIFETIME_LIMIT = HUB_CONTENT_QUOTAS.funsheetLifetime;
+
+function dailyLimitFor(premium: boolean): number {
+  return premium ? PREMIUM_DAILY_LIMIT : FREE_DAILY_LIMIT;
+}
 
 /** Hard ceiling on recursion depth. */
 const MAX_RECURSION_DEPTH = 8;
@@ -149,6 +160,23 @@ async function getDailyDownloadCount(
   return row?.count ?? 0;
 }
 
+/** Total downloads for this child (lifetime). */
+async function getLifetimeDownloadCount(
+  userId: string,
+  childId: number,
+): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(funsheetDownloadsTable)
+    .where(
+      and(
+        eq(funsheetDownloadsTable.userId, userId),
+        eq(funsheetDownloadsTable.childId, childId),
+      ),
+    );
+  return row?.count ?? 0;
+}
+
 // ─── GET /api/funsheets/list ─────────────────────────────────────────────────
 
 const ListQuery = z.object({
@@ -213,6 +241,10 @@ router.get("/funsheets/list", async (req, res): Promise<void> => {
     }));
 
     const used = await getDailyDownloadCount(userId, childId);
+    const lifetimeUsed = await getLifetimeDownloadCount(userId, childId);
+    const sub = await getOrCreateSubscription(userId);
+    const premium = isPremiumNow(sub);
+    const dailyLimit = dailyLimitFor(premium);
 
     res.json({
       ok: true,
@@ -226,10 +258,17 @@ router.get("/funsheets/list", async (req, res): Promise<void> => {
         hasPrev: safePage > 0,
       },
       dailyQuota: {
-        limit: DAILY_LIMIT,
+        limit: dailyLimit,
         used,
-        remaining: Math.max(0, DAILY_LIMIT - used),
+        remaining: Math.max(0, dailyLimit - used),
       },
+      lifetimeQuota: premium
+        ? { limit: null, used: lifetimeUsed, remaining: null }
+        : {
+            limit: LIFETIME_LIMIT,
+            used: lifetimeUsed,
+            remaining: Math.max(0, LIFETIME_LIMIT - lifetimeUsed),
+          },
     });
   } catch (err) {
     logger.error(`funsheets list failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -283,15 +322,35 @@ router.post("/funsheets/download", async (req, res): Promise<void> => {
     // but a re-download is still allowed — we just record it again only if
     // within daily limit). The unique index prevents double-counting the same
     // file across days, so we skip the "already downloaded" 409 here.
-    // Daily quota check.
+    const sub = await getOrCreateSubscription(userId);
+    const premium = isPremiumNow(sub);
+    const dailyLimit = dailyLimitFor(premium);
     const used = await getDailyDownloadCount(userId, childId);
-    if (used >= DAILY_LIMIT) {
+
+    if (!premium) {
+      const lifetimeUsed = await getLifetimeDownloadCount(userId, childId);
+      if (lifetimeUsed >= LIFETIME_LIMIT) {
+        res.status(402).json({
+          error: "lifetime_limit_reached",
+          lifetimeQuota: {
+            limit: LIFETIME_LIMIT,
+            used: lifetimeUsed,
+            remaining: 0,
+          },
+        });
+        return;
+      }
+    }
+
+    if (used >= dailyLimit) {
       res.status(429).json({
         error: "daily_limit_reached",
-        dailyQuota: { limit: DAILY_LIMIT, used, remaining: 0 },
+        dailyQuota: { limit: dailyLimit, used, remaining: 0 },
       });
       return;
     }
+
+    const usedBefore = used;
 
     try {
       await db.insert(funsheetDownloadsTable).values({
@@ -307,14 +366,23 @@ router.post("/funsheets/download", async (req, res): Promise<void> => {
       if (pgCode !== "23505") throw insertErr;
     }
 
+    const lifetimeUsedAfter = await getLifetimeDownloadCount(userId, childId);
+
     res.json({
       ok: true,
       downloadUrl: driveProxyDownloadPath(fileId, file.name),
       dailyQuota: {
-        limit: DAILY_LIMIT,
-        used: used + 1,
-        remaining: Math.max(0, DAILY_LIMIT - (used + 1)),
+        limit: dailyLimit,
+        used: usedBefore + 1,
+        remaining: Math.max(0, dailyLimit - (usedBefore + 1)),
       },
+      lifetimeQuota: premium
+        ? { limit: null, used: lifetimeUsedAfter, remaining: null }
+        : {
+            limit: LIFETIME_LIMIT,
+            used: lifetimeUsedAfter,
+            remaining: Math.max(0, LIFETIME_LIMIT - lifetimeUsedAfter),
+          },
     });
   } catch (err) {
     logger.error(`funsheets download failed: ${err instanceof Error ? err.message : String(err)}`);

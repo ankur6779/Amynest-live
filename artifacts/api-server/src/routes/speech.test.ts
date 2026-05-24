@@ -200,7 +200,7 @@ describe("speech routes — smoke", () => {
     assert.equal(r2.status, 402);
     const body2 = (await r2.json()) as { error: string; feature: string };
     assert.equal(body2.error, "feature_locked");
-    assert.equal(body2.feature, "hub_speech_pronounce");
+    assert.equal(body2.feature, "hub_speech_session");
   });
 
   it("GET /speech/progress aggregates from the logged attempt", async () => {

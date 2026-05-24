@@ -1,13 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useSubscription } from "./use-subscription";
+import {
+  DEFAULT_SECTION_LIFETIME_LIMIT,
+  getSectionLifetimeLimit,
+} from "@workspace/parent-hub-journey";
 
 // Source the canonical Clerk userId directly — the subscription payload does
 // NOT include userId, so falling back to entitlements would silently bucket
 // every signed-in user into the "anon" key and leak usage across accounts.
 
-/** Free users may consume up to this many blocks per section (lifetime). */
-export const MAX_FREE_BLOCKS = 2;
+/** Default free blocks per section when no section-specific cap is set. */
+export const MAX_FREE_BLOCKS = DEFAULT_SECTION_LIFETIME_LIMIT;
 
 /**
  * Smart usage-based freemium tracking — per "section" (e.g. "amy_coach",
@@ -67,9 +71,13 @@ export function normalizeSectionUsage(raw: LegacySectionUsage | null): SectionUs
 }
 
 /** Pure lock check mirroring hook logic (premium bypass handled by caller). */
-export function isSectionBlockLocked(blockUsedIds: string[], blockId: string): boolean {
+export function isSectionBlockLocked(
+  blockUsedIds: string[],
+  blockId: string,
+  maxBlocks: number = MAX_FREE_BLOCKS,
+): boolean {
   if (blockUsedIds.includes(blockId)) return false;
-  if (blockUsedIds.length >= MAX_FREE_BLOCKS) return true;
+  if (blockUsedIds.length >= maxBlocks) return true;
   return false;
 }
 
@@ -97,6 +105,10 @@ export function useSectionUsage(sectionId: string) {
   const { isPremium } = useSubscription();
   const { userId: rawUserId } = useAuth();
   const userId: string | null = rawUserId ?? null;
+  const maxBlocks = useMemo(
+    () => getSectionLifetimeLimit(sectionId),
+    [sectionId],
+  );
 
   const [state, setState] = useState<SectionUsage | null>(() =>
     load(userId, sectionId),
@@ -115,7 +127,7 @@ export function useSectionUsage(sectionId: string) {
     (blockId: string) => {
       if (isPremium) return;
       if (blockUsedIds.includes(blockId)) return;
-      if (blockUsedIds.length >= MAX_FREE_BLOCKS) return;
+      if (blockUsedIds.length >= maxBlocks) return;
       const next: SectionUsage = {
         blockUsedIds: [...blockUsedIds, blockId],
         subBlockUsedId: null,
@@ -124,7 +136,7 @@ export function useSectionUsage(sectionId: string) {
       setState(next);
       save(userId, sectionId, next);
     },
-    [isPremium, blockUsedIds, userId, sectionId],
+    [isPremium, blockUsedIds, maxBlocks, userId, sectionId],
   );
 
   const markSubBlockUsed = useCallback(
@@ -147,9 +159,9 @@ export function useSectionUsage(sectionId: string) {
   const isBlockLocked = useCallback(
     (blockId: string): boolean => {
       if (isPremium) return false;
-      return isSectionBlockLocked(blockUsedIds, blockId);
+      return isSectionBlockLocked(blockUsedIds, blockId, maxBlocks);
     },
-    [isPremium, blockUsedIds],
+    [isPremium, blockUsedIds, maxBlocks],
   );
 
   const isSubBlockLocked = useCallback(
@@ -163,10 +175,11 @@ export function useSectionUsage(sectionId: string) {
   );
 
   /** True if user has consumed their free quota for this section. */
-  const fullyUsed = blockUsedIds.length >= MAX_FREE_BLOCKS;
+  const fullyUsed = blockUsedIds.length >= maxBlocks;
 
   return {
     isPremium,
+    maxBlocks,
     blockUsedIds,
     /** @deprecated Use blockUsedIds — kept for callers that only need the first slot. */
     blockUsedId: primaryBlockId,

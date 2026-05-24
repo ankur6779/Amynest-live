@@ -73,6 +73,7 @@ import { Badge } from "@/components/ui/badge";
 import { LockedBlock } from "@/components/locked-block";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
+import { SPEECH_COACH_SESSION_FEATURE } from "@/lib/feature-usage-limits";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 
 type AnyChild = {
@@ -109,18 +110,18 @@ function scrollToSection(id: string) {
  * (button click / tap). markFeatureUsed never fires on mount, so opening
  * the Speech Coach page does not consume the free trial for any section.
  */
-function useSpeechHubGate(featureId: string) {
+function useSpeechHubGate() {
   const usage = useFeatureUsage();
   const firedRef = useRef(false);
-  const locked = usage.isFeatureLocked(featureId);
-  const tryFree = usage.tryFreeFor(featureId);
+  const locked = usage.isFeatureLocked(SPEECH_COACH_SESSION_FEATURE);
+  const tryFree = usage.tryFreeFor(SPEECH_COACH_SESSION_FEATURE);
 
   const onAction = () => {
     if (firedRef.current) return;
     if (locked) return;
     if (tryFree) {
       firedRef.current = true;
-      usage.markFeatureUsed(featureId);
+      usage.markFeatureUsed(SPEECH_COACH_SESSION_FEATURE);
     }
   };
 
@@ -128,39 +129,19 @@ function useSpeechHubGate(featureId: string) {
 }
 
 function GatedSection({
-  featureId,
   title,
   description,
   icon,
   anchorId,
-  consumeOnView = false,
   children,
 }: {
-  featureId: string;
   title: string;
   description: string;
   icon: React.ReactNode;
   anchorId?: string;
-  /**
-   * Read-only sections (Dashboard, Reports, Affirmations) have no required
-   * user interaction — viewing them IS the value. For those, set this prop
-   * so the first-time-free is consumed once when the section actually
-   * renders unlocked, ensuring the second visit is correctly gated.
-   * Interactive sections leave this false and rely on `onAction`.
-   */
-  consumeOnView?: boolean;
   children: (gate: { onAction: () => void; locked: boolean }) => React.ReactNode;
 }) {
-  const { locked, tryFree, onAction } = useSpeechHubGate(featureId);
-
-  // Per the spec's "first-time-free, then locked" model: read-only
-  // sections still need to consume their free use, otherwise they'd
-  // remain unlocked forever. Fire once on mount when unlocked + tryFree.
-  useEffect(() => {
-    if (consumeOnView && !locked && tryFree) onAction();
-    // onAction is idempotent (guarded by firedRef inside the gate hook).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [consumeOnView, locked, tryFree]);
+  const { locked, tryFree, onAction } = useSpeechHubGate();
 
   return (
     <LockedBlock locked={locked} rounded="rounded-3xl">
@@ -249,12 +230,10 @@ function DashboardSection({ child, viewMode }: { child: AnyChild; viewMode: Spee
 
   return (
     <GatedSection
-      featureId="hub_speech_dashboard"
       anchorId="speech-section-dashboard"
       title={t("screens.speech_coach.dashboard.title")}
       description={t("screens.speech_coach.subtitle")}
       icon={<BarChart3 className="h-5 w-5" />}
-      consumeOnView
     >
       {() => (<>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -374,7 +353,6 @@ function MilestonesSection({ child }: { child: AnyChild }) {
 
   return (
     <GatedSection
-      featureId="hub_speech_milestones"
       anchorId="speech-section-milestones"
       title={t("screens.speech_coach.milestones.section_title")}
       description={t("screens.speech_coach.subtitle")}
@@ -605,7 +583,6 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
 
   return (
     <GatedSection
-      featureId="hub_speech_pronounce"
       anchorId="speech-section-practice"
       title={t("screens.speech_coach.pronounce.section_title")}
       description={t("screens.speech_coach.pronounce.intro")}
@@ -691,7 +668,6 @@ function ReadAloudSection({ child, viewMode }: { child: AnyChild; viewMode: Spee
 
   return (
     <GatedSection
-      featureId="hub_speech_read_aloud"
       anchorId="speech-section-read-aloud"
       title={t("screens.speech_coach.read_aloud.section_title")}
       description={t("screens.speech_coach.read_aloud.intro")}
@@ -819,7 +795,6 @@ function GamesSection({ child, viewMode }: { child: AnyChild; viewMode: SpeechVi
 
   return (
     <GatedSection
-      featureId="hub_speech_games"
       anchorId="speech-section-games"
       title={t("screens.speech_coach.games.section_title")}
       description={t("screens.speech_coach.subtitle")}
@@ -871,7 +846,6 @@ function GuidanceSection() {
   const { t } = useTranslation();
   return (
     <GatedSection
-      featureId="hub_speech_guidance"
       anchorId="speech-section-guidance"
       title={t("screens.speech_coach.guidance.section_title")}
       description={t("screens.speech_coach.subtitle")}
@@ -927,12 +901,10 @@ function AffirmationsSection() {
 
   return (
     <GatedSection
-      featureId="hub_speech_affirmations"
       anchorId="speech-section-affirmations"
       title={t("screens.speech_coach.affirmations.section_title")}
       description={t("screens.speech_coach.affirmations.intro")}
       icon={<Heart className="h-5 w-5" />}
-      consumeOnView
     >
       {({ onAction }) => (
       <div
@@ -1046,12 +1018,10 @@ function ReportsSection({ child }: { child: AnyChild }) {
 
   return (
     <GatedSection
-      featureId="hub_speech_reports"
       anchorId="speech-section-reports"
       title={t("screens.speech_coach.reports.section_title")}
       description={t("screens.speech_coach.reports.intro")}
       icon={<Sparkles className="h-5 w-5" />}
-      consumeOnView
     >
       {({ onAction }) => (<>
       <div className="grid grid-cols-2 gap-3">

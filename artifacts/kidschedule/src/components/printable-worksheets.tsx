@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import amyLogo from "@assets/ChatGPT_Image_Apr_19,_2026,_01_56_21_PM_1776587201948.png";
 import { useTranslation } from "react-i18next";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
+import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
+import { useSubscription } from "@/hooks/use-subscription";
 interface Worksheet {
   id: string;
   name: string;
@@ -11,7 +13,9 @@ interface Worksheet {
   downloadUrl: string;
   previewUrl: string;
 }
-const DAILY_LIMIT = 5;
+const FREE_DAILY_LIMIT = HUB_CONTENT_QUOTAS.worksheetDaily;
+const PREMIUM_DAILY_LIMIT = HUB_CONTENT_QUOTAS.premiumDownloadDaily;
+const LIFETIME_LIMIT = HUB_CONTENT_QUOTAS.worksheetLifetime;
 const PAGE_SIZE = 10;
 const STORAGE_KEYS = {
   downloaded: "ws_downloaded_ids",
@@ -67,6 +71,7 @@ export function PrintableWorksheets({
   const {
     t
   } = useTranslation();
+  const { isPremium } = useSubscription();
   const [all, setAll] = useState<Worksheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +103,9 @@ export function PrintableWorksheets({
     loadWorksheets();
   }, [loadWorksheets]);
   const handleDownload = useCallback((ws: Worksheet) => {
-    if (dailyRec.count >= DAILY_LIMIT) return;
+    const dailyLimit = isPremium ? PREMIUM_DAILY_LIMIT : FREE_DAILY_LIMIT;
+    if (!isPremium && downloadedIds.size >= LIFETIME_LIMIT) return;
+    if (dailyRec.count >= dailyLimit) return;
     const link = document.createElement("a");
     link.href = resolveApiMediaUrl(ws.downloadUrl);
     link.target = "_blank";
@@ -107,14 +114,21 @@ export function PrintableWorksheets({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    saveDownloadedId(ws.id);
+    if (!isPremium) saveDownloadedId(ws.id);
     const next = incrementDailyCount();
-    setDownloadedIds(getDownloadedIds());
+    if (!isPremium) setDownloadedIds(getDownloadedIds());
     setDailyRec(next);
-  }, [dailyRec]);
-  const isLimitReached = dailyRec.count >= DAILY_LIMIT;
-  const remaining = Math.max(0, DAILY_LIMIT - dailyRec.count);
-  const filtered = all.filter(w => !downloadedIds.has(w.id)).filter(w => !query || w.name.toLowerCase().includes(query.toLowerCase()));
+  }, [dailyRec, downloadedIds.size, isPremium]);
+  const dailyLimit = isPremium ? PREMIUM_DAILY_LIMIT : FREE_DAILY_LIMIT;
+  const lifetimeUsed = downloadedIds.size;
+  const isDailyLimitReached = dailyRec.count >= dailyLimit;
+  const isLifetimeLimitReached = !isPremium && lifetimeUsed >= LIFETIME_LIMIT;
+  const isLimitReached = isDailyLimitReached || isLifetimeLimitReached;
+  const dailyRemaining = Math.max(0, dailyLimit - dailyRec.count);
+  const lifetimeRemaining = Math.max(0, LIFETIME_LIMIT - lifetimeUsed);
+  const filtered = all
+    .filter(w => isPremium || !downloadedIds.has(w.id))
+    .filter(w => !query || w.name.toLowerCase().includes(query.toLowerCase()));
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const currentPage = Math.min(page, Math.max(1, totalPages));
   const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -160,7 +174,7 @@ export function PrintableWorksheets({
         .ws-dl-btn:active:not(:disabled) { transform: scale(0.97); }
       `}</style>
 
-      {/* Daily counter badge */}
+      {/* Download quota badge */}
       <div style={{
       display: "flex",
       alignItems: "center",
@@ -181,14 +195,26 @@ export function PrintableWorksheets({
           fontWeight: 700,
           color: isLimitReached ? "hsl(var(--brand-red-600))" : "hsl(var(--brand-green-600))"
         }}>
-            {isLimitReached ? "Daily limit reached" : `${remaining} download${remaining !== 1 ? "s" : ""} left today`}
+            {isLifetimeLimitReached
+              ? "Lifetime free limit reached"
+              : isDailyLimitReached
+                ? "Daily limit reached"
+                : isPremium
+                  ? `${dailyRemaining} download${dailyRemaining !== 1 ? "s" : ""} left today (Premium)`
+                  : `${dailyRemaining} download${dailyRemaining !== 1 ? "s" : ""} left today · ${lifetimeRemaining} lifetime left`}
           </p>
           <p style={{
           margin: 0,
           fontSize: 12,
           color: "#9ca3af"
         }}>
-            {isLimitReached ? "Come back tomorrow — limit resets at midnight" : `${dailyRec.count} of ${DAILY_LIMIT} used · Resets daily`}
+            {isLifetimeLimitReached
+              ? `You've used all ${LIFETIME_LIMIT} free worksheets — upgrade for more`
+              : isDailyLimitReached
+                ? "Come back tomorrow — daily limit resets at midnight"
+                : isPremium
+                  ? `${dailyRec.count}/${dailyLimit} used today · Resets daily`
+                  : `${dailyRec.count}/${dailyLimit} today · ${lifetimeUsed}/${LIFETIME_LIMIT} lifetime`}
           </p>
         </div>
       </div>

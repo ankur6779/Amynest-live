@@ -18,9 +18,14 @@ interface ColoringFile {
   previewUrl: string;
 }
 interface DailyQuota {
-  limit: number;
+  limit: number | null;
   used: number;
-  remaining: number;
+  remaining: number | null;
+}
+interface LifetimeQuota {
+  limit: number | null;
+  used: number;
+  remaining: number | null;
 }
 interface Pagination {
   page: number;
@@ -35,11 +40,13 @@ interface ListResponse {
   files: ColoringFile[];
   pagination: Pagination;
   dailyQuota: DailyQuota;
+  lifetimeQuota?: LifetimeQuota;
 }
 interface DownloadResponse {
   ok?: boolean;
   downloadUrl?: string;
   dailyQuota?: DailyQuota;
+  lifetimeQuota?: LifetimeQuota;
   error?: string;
 }
 
@@ -65,6 +72,7 @@ export function ColoringBooks({
   const [files, setFiles] = useState<ColoringFile[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [quota, setQuota] = useState<DailyQuota | null>(null);
+  const [lifetimeQuota, setLifetimeQuota] = useState<LifetimeQuota | null>(null);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState<ColoringFile | null>(null);
@@ -104,6 +112,7 @@ export function ColoringBooks({
       setFiles(data.files);
       setPagination(data.pagination);
       setQuota(data.dailyQuota);
+      setLifetimeQuota(data.lifetimeQuota ?? null);
       // Server may have clamped the page (e.g. on last-page after a download).
       if (data.pagination.page !== targetPage) {
         setPage(data.pagination.page);
@@ -132,10 +141,17 @@ export function ColoringBooks({
   };
   const handleDownload = async (file: ColoringFile) => {
     if (downloadingId !== null || numericChildId === null) return;
-    if (quota && quota.remaining <= 0) {
+    if (quota && quota.remaining !== null && quota.remaining <= 0) {
       setRowError({
         id: file.id,
         message: "Daily limit reached. Try again tomorrow."
+      });
+      return;
+    }
+    if (lifetimeQuota && lifetimeQuota.remaining !== null && lifetimeQuota.remaining <= 0) {
+      setRowError({
+        id: file.id,
+        message: "Free lifetime limit reached. Upgrade for unlimited downloads."
       });
       return;
     }
@@ -159,6 +175,12 @@ export function ColoringBooks({
           setRowError({
             id: file.id,
             message: "Daily limit reached. Try again tomorrow."
+          });
+        } else if (res.status === 402) {
+          if (data.lifetimeQuota) setLifetimeQuota(data.lifetimeQuota);
+          setRowError({
+            id: file.id,
+            message: "Free lifetime limit reached. Upgrade for unlimited downloads."
           });
         } else if (res.status === 409) {
           setRowError({
@@ -189,6 +211,7 @@ export function ColoringBooks({
 
       window.open(resolveApiMediaUrl(data.downloadUrl), "_blank", "noopener");
       if (data.dailyQuota) setQuota(data.dailyQuota);
+      if (data.lifetimeQuota) setLifetimeQuota(data.lifetimeQuota);
       // The downloaded file should disappear from the list. Refetching the
       // current page is the simplest way to keep server state authoritative.
       await fetchPage(page);
@@ -224,16 +247,26 @@ export function ColoringBooks({
         </CardContent>
       </Card>;
   }
-  const quotaExhausted = quota !== null && quota.remaining <= 0;
+  const quotaExhausted =
+    (quota !== null && quota.remaining !== null && quota.remaining <= 0) ||
+    (lifetimeQuota !== null &&
+      lifetimeQuota.remaining !== null &&
+      lifetimeQuota.remaining <= 0);
   const allDone = pagination !== null && pagination.total === 0;
   return <div className="space-y-4" data-testid="coloring-books-section">
       {/* Daily quota banner */}
-      {quota && <div data-testid="coloring-quota-banner" className={["flex items-center justify-between rounded-2xl px-4 py-2.5 text-sm", quotaExhausted ? "bg-muted dark:bg-card border border-border dark:border-primary text-primary dark:text-muted-foreground" : "bg-muted dark:bg-card border border-border dark:border-primary text-primary dark:text-muted-foreground"].join(" ")}>
+      {quota && quota.limit !== null && <div data-testid="coloring-quota-banner" className={["flex items-center justify-between rounded-2xl px-4 py-2.5 text-sm", quotaExhausted ? "bg-muted dark:bg-card border border-border dark:border-primary text-primary dark:text-muted-foreground" : "bg-muted dark:bg-card border border-border dark:border-primary text-primary dark:text-muted-foreground"].join(" ")}>
           <span className="flex items-center gap-2 font-semibold">
             <Palette className="h-4 w-4" />
-            {quotaExhausted ? `Daily limit reached for ${childName}` : `${quota.remaining} of ${quota.limit} downloads left today`}
+            {quotaExhausted
+              ? lifetimeQuota?.remaining === 0 && lifetimeQuota?.limit != null
+                ? `Lifetime free limit reached for ${childName}`
+                : `Daily limit reached for ${childName}`
+              : lifetimeQuota?.limit != null
+                ? `${quota.remaining} of ${quota.limit} today · ${lifetimeQuota.remaining} of ${lifetimeQuota.limit} lifetime left`
+                : `${quota.remaining} of ${quota.limit} downloads left today`}
           </span>
-          {quotaExhausted && <span className="text-xs opacity-80">{t("components.coloring_books.resets_at_midnight_ist")}</span>}
+          {quotaExhausted && quota.remaining !== null && quota.remaining <= 0 && (lifetimeQuota?.limit == null || (lifetimeQuota.remaining ?? 0) > 0) && <span className="text-xs opacity-80">{t("components.coloring_books.resets_at_midnight_ist")}</span>}
         </div>}
 
       {/* "All done" empty state */}

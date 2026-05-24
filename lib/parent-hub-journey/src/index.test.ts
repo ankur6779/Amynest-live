@@ -5,7 +5,8 @@ import {
   bonusUnlockForDay,
   capPhonicsCatalog,
   computeHubJourneyAccess,
-  HUB_JOURNEY_FREE_DAYS,
+  getSectionLifetimeLimit,
+  HUB_CONTENT_QUOTAS,
   isHubFeatureExempt,
   isHubJourneyFeatureLocked,
   isPhonicsSubItemUnlocked,
@@ -137,5 +138,14 @@ describe("parent-hub-journey", () => {
     const meta = buildPhonicsPremiumMeta({ dripDay: 2, activePracticeDays: 1, totalCatalog: 26 });
     assert.equal(meta.itemLimit, 10);
     assert.equal(meta.unlocksTomorrow, 5);
+  });
+
+  it("exposes hub content freemium quotas", () => {
+    assert.equal(getSectionLifetimeLimit("hub_story_hub"), HUB_CONTENT_QUOTAS.storyHubLifetimeVideos);
+    assert.equal(getSectionLifetimeLimit("hub_art_craft"), HUB_CONTENT_QUOTAS.artCraftLifetimeVideos);
+    assert.equal(HUB_CONTENT_QUOTAS.worksheetDaily, 2);
+    assert.equal(HUB_CONTENT_QUOTAS.coloringLifetime, 6);
+    assert.equal(HUB_CONTENT_QUOTAS.speechCoachSessions, 3);
+    assert.equal(HUB_CONTENT_QUOTAS.premiumDownloadDaily, 5);
   });
 });
