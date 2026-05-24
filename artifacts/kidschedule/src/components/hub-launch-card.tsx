@@ -37,12 +37,12 @@ export function HubLaunchCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <p className="truncate font-quicksand text-[15px] font-bold leading-tight text-foreground">
+            <p className="line-clamp-2 font-quicksand text-[15px] font-bold leading-tight text-foreground">
               {title}
             </p>
             {tryFree ? <TryFreeBadge /> : null}
           </div>
-          <p className="mt-0.5 truncate text-[11.5px] text-muted-foreground">{description}</p>
+          <p className="mt-0.5 line-clamp-2 text-[11.5px] text-muted-foreground">{description}</p>
         </div>
         <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-primary px-3 text-xs font-black text-primary-foreground transition-transform group-active:scale-95">
           Open
