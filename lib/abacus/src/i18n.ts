@@ -19,7 +19,7 @@ export const ABACUS_I18N_PREFIX = "screens.abacus";
 
 export const ABACUS_I18N_DEFAULTS: Record<string, string> = {
   loading: "Loading abacus…",
-  age_not_eligible: "The Abacus PRO Zone is for kids age 4–10. {{name}} can come back later!",
+  age_not_eligible: "The Abacus PRO Zone is for kids age 2–10. {{name}} can come back later!",
   step: "Step",
   back: "Back",
   next: "Next",

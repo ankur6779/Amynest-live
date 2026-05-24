@@ -265,9 +265,9 @@ describe("lesson scripts", () => {
 });
 
 describe("age + tutor helpers", () => {
-  it("isAbacusEligible: 4–10 inclusive", () => {
-    assert.equal(isAbacusEligible(3), false);
-    assert.equal(isAbacusEligible(4), true);
+  it("isAbacusEligible: 2–10 inclusive", () => {
+    assert.equal(isAbacusEligible(1), false);
+    assert.equal(isAbacusEligible(2), true);
     assert.equal(isAbacusEligible(10), true);
     assert.equal(isAbacusEligible(11), false);
   });

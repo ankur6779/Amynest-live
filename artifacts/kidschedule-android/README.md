@@ -1,4 +1,9 @@
-# KidSchedule — Android Wrapper
+# KidSchedule — Android Wrapper (deprecated)
+
+> **Do not ship Play Store builds from this folder.** Production Android lives at
+> **[`android/`](../../android/)** (Play Store: **1.4.2**, build **45**, API **35**).
+> This copy is kept for reference only; version fields are synced so the repo stays
+> consistent.
 
 A minimal Android app that wraps the live KidSchedule website inside a full-screen
 WebView, ready to be packaged as a signed AAB for Google Play.
@@ -18,7 +23,7 @@ the app can sell Premium subscriptions in a Play-policy-compliant way.
 
 - Android Studio Hedgehog (2023.1.1) or newer
 - JDK 17 (bundled with Android Studio)
-- Android SDK 34 (installed via Android Studio's SDK Manager)
+- Android SDK 35 (installed via Android Studio's SDK Manager)
 - A deployed, publicly reachable HTTPS URL of the KidSchedule site
 
 ## 2. First-time setup
@@ -56,7 +61,10 @@ Or in Android Studio: pick a device from the toolbar and click **Run ▶**.
 
 ## 5. Bump the version
 
-Before every Play Store release, bump both fields in `app/build.gradle.kts`:
+> **Production:** bump version in **[`android/app/build.gradle.kts`](../../android/app/build.gradle.kts)** only.
+> Keep this folder's `app/build.gradle.kts` in sync for reference — do not upload from here.
+
+Before every Play Store release, bump both fields in `android/app/build.gradle.kts`:
 
 - `versionCode` — integer, **must increase by at least 1** for every upload
 - `versionName` — human-readable string (e.g. `"1.0.1"`)

@@ -291,8 +291,8 @@ describe("GET /api/abacus/progress", () => {
     assert.equal(body.error, "child_not_found");
   });
 
-  it("returns eligible:false for an age outside 4–10", async () => {
-    state.children[0].age = 2;
+  it("returns eligible:false for an age outside 2–10", async () => {
+    state.children[0].age = 1;
     const res = await fetch(`${baseUrl}/api/abacus/progress?childId=7`);
     assert.equal(res.status, 200);
     const body = (await res.json()) as { eligible: boolean };

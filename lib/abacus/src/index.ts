@@ -598,7 +598,7 @@ export function minAgeForLevel(level: LevelId): number {
 
 /** True when this child is in the Abacus Zone's eligible age window. */
 export function isAbacusEligible(ageYears: number): boolean {
-  return ageYears >= 4 && ageYears <= 10;
+  return ageYears >= 2 && ageYears <= 10;
 }
 
 // ─── Server-side AI Tutor prompt builder ────────────────────────────────
@@ -624,7 +624,7 @@ export function buildAbacusTutorPrompt(input: {
       : `Reply in clear, simple English a child age ${input.ageYears} can follow.`;
 
   const system = [
-    "You are Amy, a warm, patient Indian-style abacus tutor for kids age 4–10.",
+    "You are Amy, a warm, patient Indian-style abacus tutor for kids age 2–10.",
     "You teach the soroban: 1 upper bead (worth 5) and 4 lower beads (worth 1) per rod.",
     "Keep answers SHORT — 2 to 4 sentences. Use bead-movement language: 'push 3 lower beads up', 'push 1 upper bead down', 'carry 1 to the next rod'.",
     "Never use jargon. Never give long lectures. Never write code or math symbols other than + − × ÷ =.",

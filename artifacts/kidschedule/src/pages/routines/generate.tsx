@@ -1152,17 +1152,7 @@ export default function RoutineGenerate() {
         return;
       }
       console.error("Routine generation error:", err);
-      try {
-        const fallback = await fetchStandardRoutine(authFetch, payload);
-        const simplified = simplifyForHandler(fallback.items as any, handlerType) as RoutineItem[];
-        toast({
-          title: t("toasts.routines_generate.ai_fallback_used"),
-        });
-        handlePostGenerate({ ...toGeneratedRoutine(fallback), items: simplified }, shouldOverride, wakeTime);
-      } catch (finalErr) {
-        console.error("Routine generation final fallback failed:", finalErr);
-        handleGenerationError(finalErr);
-      }
+      handleGenerationError(err);
     } finally {
       setIsAiGenerating(false);
       setAiGeneratingSlow(false);

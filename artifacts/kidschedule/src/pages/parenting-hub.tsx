@@ -857,10 +857,10 @@ function ParentingHubPage() {
         </HubSection>;
     }
   },
-  // ── Smart Math Tricks (age 4–8, full-screen route) ───────────────────
+  // ── Smart Math Tricks (age 2–8, full-screen route) ───────────────────
   {
     id: "smart-math-tricks",
-    bands: ["4-6", "6-8"] as AgeBand[],
+    bands: ["2-4", "4-6", "6-8"] as AgeBand[],
     render: () => {
       if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
       return (
@@ -880,10 +880,10 @@ function ParentingHubPage() {
       );
     }
   },
-  // ── Abacus PRO Zone (age 4–10, full-screen route) ────────────────────
+  // ── Abacus PRO Zone (age 2–10, full-screen route) ────────────────────
   {
     id: "abacus",
-    bands: ["4-6", "6-8", "8-10"] as AgeBand[],
+    bands: ["2-4", "4-6", "6-8", "8-10"] as AgeBand[],
     render: () => {
       if (!ageGroup && !isTwoPlus && !earlyAccessBypass) return null;
       return (

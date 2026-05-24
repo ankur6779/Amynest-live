@@ -23,6 +23,7 @@ import {
   findResumeTarget,
   lessonsForNavGroup,
   dataBucketForNav,
+  isFreeSampleLessonForGroup,
   navGroupForLesson,
   type AgeNavGroup,
 } from "@/lib/audio-lessons-nav";
@@ -164,9 +165,7 @@ export default function AudioLessonsPage() {
     (lesson: Lesson): LessonAccess => {
       if (isPremium) return "open";
       const group = selectedAge ?? navGroupForLesson(lesson);
-      const groupLessons = lessonsForNavGroup(group);
-      const idx = groupLessons.findIndex((l) => l.id === lesson.id);
-      return idx >= 0 && idx < 2 ? "free-sample" : "locked";
+      return isFreeSampleLessonForGroup(lesson, group) ? "free-sample" : "locked";
     },
     [isPremium, selectedAge],
   );

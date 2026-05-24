@@ -46,7 +46,7 @@ export const FREE_LIMITS = {
   // Daily cap for free Amy AI messages — resets every UTC day.
   aiQueriesPerDay: 10,
   childrenMax: 1,
-  routinesMax: 1,
+  routinesMax: 2,
   hubArticlesMax: 3,
   trialDays: 3,
 };
@@ -54,13 +54,14 @@ export const FREE_LIMITS = {
 /**
  * Per-feature free-use cap. Global Paywall rule:
  *   - AI chat: 10 messages per day (daily reset).
- *   - Routine generation + behavior log: ONE use per lifetime, then locked.
+ *   - Routine generation: TWO uses per lifetime, then locked.
+ *   - Behavior log: ONE use per lifetime, then locked.
  *
  * Keys MUST match the `feature` column in `usage_daily`.
  */
 export const FREE_FEATURE_LIMITS = {
   ai_query: 10,
-  routine_generate: 1,
+  routine_generate: 2,
   behavior_log: 1,
   // 1 free TTS audio lesson per day (resets UTC midnight). The web/mobile
   // audio-lesson screens call /api/features/audio_lesson/consume before

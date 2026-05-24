@@ -53,6 +53,15 @@ export function navGroupForLesson(lesson: Lesson): AgeNavGroup {
   return lesson.ageBucket as AgeNavGroup;
 }
 
+/** Free users may preview one lesson per age navigation group. */
+export const FREE_SAMPLE_LESSONS_PER_GROUP = 1;
+
+export function isFreeSampleLessonForGroup(lesson: Lesson, group: AgeNavGroup): boolean {
+  const groupLessons = lessonsForNavGroup(group);
+  const idx = groupLessons.findIndex((l) => l.id === lesson.id);
+  return idx >= 0 && idx < FREE_SAMPLE_LESSONS_PER_GROUP;
+}
+
 export function findResumeTarget(
   resumeMap: Record<string, number>,
   lastLessonId: string | null,

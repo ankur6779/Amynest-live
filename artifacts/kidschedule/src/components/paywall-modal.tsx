@@ -43,7 +43,7 @@ const REASON_COPY: Record<string, {
   },
   routines_limit: {
     title: "Generate unlimited routines",
-    subtitle: "Free plan includes 1 routine. Upgrade to plan every day, every child, your way.",
+    subtitle: "Free plan includes 2 routines. Upgrade to plan every day, every child, your way.",
     icon: CalendarDays
   },
   behavior_locked: {
