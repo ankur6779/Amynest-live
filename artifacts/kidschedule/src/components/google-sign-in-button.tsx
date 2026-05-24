@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "wouter";
 import { handleGoogleLogin } from "@/lib/google-auth";
 import { prettyAuthError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { ENABLE_GOOGLE_SIGN_IN } from "@/lib/auth-feature-flags";
@@ -34,6 +35,7 @@ function GoogleMark() {
 
 export function GoogleSignInButton({ onError, className }: Props) {
   const { t } = useTranslation();
+  const [, setLocation] = useLocation();
   const [busy, setBusy] = useState(false);
 
   if (!ENABLE_GOOGLE_SIGN_IN) return null;
@@ -42,7 +44,10 @@ export function GoogleSignInButton({ onError, className }: Props) {
     if (busy) return;
     setBusy(true);
     try {
-      await handleGoogleLogin();
+      const destination = await handleGoogleLogin();
+      if (typeof destination === "string" && destination) {
+        setLocation(destination);
+      }
     } catch (err: unknown) {
       logFirebaseAuthError("google:sign-in", err);
       const message = prettyAuthError(err);

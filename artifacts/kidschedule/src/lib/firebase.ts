@@ -61,6 +61,24 @@ export type FirebaseInitResult =
 let firebaseAppInstance: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
 let initResult: FirebaseInitResult = { status: "pending" };
+let persistenceReady: Promise<void> | null = null;
+
+/** Await before OAuth sign-in so the session survives WebView resume on Android. */
+export function ensureFirebaseAuthPersistence(): Promise<void> {
+  if (persistenceReady) return persistenceReady;
+  persistenceReady = (async () => {
+    if (typeof window === "undefined") return;
+    if (useFirebaseIndexedDbPersistence()) return;
+    const init = initializeFirebase();
+    if (init.status !== "ok") return;
+    try {
+      await setPersistence(getFirebaseAuth(), browserLocalPersistence);
+    } catch {
+      /* already configured */
+    }
+  })();
+  return persistenceReady;
+}
 
 function createFirebaseAuth(app: FirebaseApp): Auth {
   const wantsIndexedDbPersistence = useFirebaseIndexedDbPersistence();
