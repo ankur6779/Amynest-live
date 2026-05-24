@@ -1,8 +1,10 @@
 package com.amynest.app
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.net.Uri
 import android.util.Log
+import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.webkit.JavaScriptReplyProxy
 import androidx.webkit.WebMessageCompat
@@ -51,8 +53,7 @@ class BillingBridge(
     }
 
     fun handleMessage(rawMessage: String, sourceOrigin: Uri, replyProxy: JavaScriptReplyProxy) {
-        val src = sourceOrigin.toString().trimEnd('/')
-        if (ALLOWED_ORIGINS.none { src.equals(it.trimEnd('/'), ignoreCase = true) }) {
+        if (!WebViewOrigins.isTrustedAmyNestHost(sourceOrigin.host)) {
             Log.w(TAG, "rejected message from untrusted origin: $sourceOrigin")
             return
         }
@@ -285,24 +286,71 @@ class BillingBridge(
         }
     }
 
+    /** Fallback when [WebViewFeature.WEB_MESSAGE_LISTENER] is slow or unavailable. */
+    @SuppressLint("JavascriptInterface")
+    inner class BillingInjectInterface {
+        @JavascriptInterface
+        fun postMessage(rawMessage: String) {
+            val wv = webViewRef.get() ?: return
+            wv.post {
+                deliverJsReply(wv, rawMessage, Uri.parse(WebViewOrigins.CANONICAL_WRAPPER_URL))
+            }
+        }
+    }
+
+    private fun deliverJsReply(webView: WebView, rawMessage: String, sourceOrigin: Uri) {
+        handleMessage(rawMessage, sourceOrigin, object : JavaScriptReplyProxy() {
+            override fun postMessage(message: String) {
+                postBillingReply(webView, message)
+            }
+
+            override fun postMessage(message: ByteArray) {
+                postMessage(String(message, Charsets.UTF_8))
+            }
+        })
+    }
+
+    private fun postBillingReply(webView: WebView, message: String) {
+        webView.post {
+            try {
+                val js =
+                    "(function(){try{" +
+                        "var p=JSON.parse(${JSONObject.quote(message)});" +
+                        "if(window.AmyNestBillingNative&&window.AmyNestBillingNative.onmessage){" +
+                        "window.AmyNestBillingNative.onmessage({data:JSON.stringify(p)});" +
+                        "}}catch(e){}})();"
+                webView.evaluateJavascript(js, null)
+            } catch (t: Throwable) {
+                Log.w(TAG, "postBillingReply failed", t)
+            }
+        }
+    }
+
     companion object {
         private const val TAG = "BillingBridge"
         const val JS_OBJECT_NAME = "AmyNestBillingNative"
+        const val JS_INJECT_NAME = "AmyNestBillingInject"
+        const val BRIDGE_VERSION = "2.3.0"
         const val DEFAULT_ENTITLEMENT_ID = "premium"
 
         const val RC_API_KEY = "goog_wswrltSsrqhqrsQrVvOPavTIzMA"
 
-        private val ALLOWED_ORIGINS: Set<String> = setOf(
-            "https://amynest.in",
-            "https://www.amynest.in",
-        )
+        private val ALLOWED_ORIGINS: Set<String> = WebViewOrigins.productionOriginRules()
 
+        /**
+         * Installs billing bridge with WebMessageListener plus a JavascriptInterface
+         * fallback so `window.AmyNestBillingNative` is reachable on first paint.
+         */
         fun installOn(activity: Activity, webView: WebView): BillingBridge? {
-            if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
-                Log.w(TAG, "WebMessageListener unsupported — billing bridge disabled")
-                return null
-            }
             val bridge = BillingBridge(activity, webView)
+            installInjectBridge(webView, bridge)
+            installDocumentStartPolyfill(webView)
+
+            if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+                Log.w(TAG, "WebMessageListener unsupported — using inject bridge only")
+                return bridge
+            }
+
             return try {
                 WebViewCompat.addWebMessageListener(
                     webView,
@@ -314,11 +362,38 @@ class BillingBridge(
                     val data = message.data ?: return@addWebMessageListener
                     bridge.handleMessage(data, sourceOrigin, replyProxy)
                 }
-                Log.d(TAG, "Billing bridge installed (origins=$ALLOWED_ORIGINS)")
+                Log.d(TAG, "Billing bridge installed (origins=$ALLOWED_ORIGINS version=$BRIDGE_VERSION)")
                 bridge
             } catch (t: Throwable) {
-                Log.e(TAG, "addWebMessageListener failed", t)
-                null
+                Log.e(TAG, "addWebMessageListener failed — inject bridge remains active", t)
+                bridge
+            }
+        }
+
+        private fun installInjectBridge(webView: WebView, bridge: BillingBridge) {
+            webView.addJavascriptInterface(bridge.BillingInjectInterface(), JS_INJECT_NAME)
+            Log.d(TAG, "Billing inject interface installed")
+        }
+
+        private fun installDocumentStartPolyfill(webView: WebView) {
+            if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                Log.w(TAG, "DOCUMENT_START_SCRIPT unsupported — billing polyfill skipped")
+                return
+            }
+            val script =
+                "(function(){" +
+                    "if(typeof window.AmyNestBillingNative!=='undefined')return;" +
+                    "window.AmyNestBillingNative={" +
+                    "postMessage:function(d){if(window.$JS_INJECT_NAME)window.$JS_INJECT_NAME.postMessage(d);}," +
+                    "onmessage:null" +
+                    "};" +
+                    "window.__AMYNEST_BILLING='$BRIDGE_VERSION';" +
+                    "})();"
+            try {
+                WebViewCompat.addDocumentStartJavaScript(webView, script, ALLOWED_ORIGINS)
+                Log.d(TAG, "Billing polyfill installed at document_start")
+            } catch (t: Throwable) {
+                Log.e(TAG, "Billing polyfill install failed", t)
             }
         }
     }

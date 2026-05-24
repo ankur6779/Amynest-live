@@ -51,6 +51,7 @@ type WebMessageListenerObject = {
 declare global {
   interface Window {
     AmyNestBillingNative?: WebMessageListenerObject;
+    __AMYNEST_BILLING?: string;
   }
 }
 
@@ -129,10 +130,23 @@ export type NativeBilling = {
 export function isWrapperPresent(): boolean {
   if (typeof window === "undefined") return false;
   if (window.AmyNestBillingNative) return true;
+  if (typeof window.__AMYNEST_BILLING === "string") return true;
   // Billing bridge is origin-scoped; UA is the fallback when apex→www broke injection.
   return (
     typeof navigator !== "undefined" && /AmyNestAndroid/.test(navigator.userAgent)
   );
+}
+
+/** Wait until the native billing bridge object is injected (document_start polyfill or WebMessageListener). */
+export async function waitForBillingBridge(timeoutMs = 15_000): Promise<WebMessageListenerObject | null> {
+  if (typeof window === "undefined") return null;
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const bridge = window.AmyNestBillingNative;
+    if (bridge && typeof bridge.postMessage === "function") return bridge;
+    await new Promise((r) => window.setTimeout(r, 200));
+  }
+  return window.AmyNestBillingNative ?? null;
 }
 
 /**
@@ -143,12 +157,12 @@ export function isWrapperPresent(): boolean {
  */
 export async function probeBillingAvailability(): Promise<boolean | null> {
   if (!isWrapperPresent()) return null;
-  const bridge = typeof window !== "undefined" ? window.AmyNestBillingNative : undefined;
+  const bridge = await waitForBillingBridge();
   if (!bridge) return false;
   const result = await callAsync<{ ok: boolean; data?: { available: boolean } }>(
     bridge,
     { action: "isAvailable" },
-    5_000,
+    8_000,
   );
   return !!result?.data?.available;
 }
@@ -160,7 +174,7 @@ export async function probeBillingAvailability(): Promise<boolean | null> {
  */
 export function getNativeBilling(): NativeBilling | null {
   const bridge = typeof window !== "undefined" ? window.AmyNestBillingNative : undefined;
-  if (!bridge) return null;
+  if (!bridge || typeof bridge.postMessage !== "function") return null;
   return {
     setUserId: async (id) => {
       await callAsync(bridge, { action: "setUserId", userId: id }, 5_000);

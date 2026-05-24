@@ -73,6 +73,7 @@ class MainActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             Log.d(TAG, "Notification permission result: $granted")
             pushBridge.setPermission(granted)
+            askLocationAndMicPermission()
         }
 
     /** Reactive mic / geolocation prompts from WebChromeClient. */
@@ -155,7 +156,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         askNotificationPermission()
-        askLocationAndMicPermission()
 
         val launchUrl = buildLaunchUrl(intent)
         webView.loadUrl(launchUrl)
@@ -293,6 +293,11 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
 
+                view.evaluateJavascript(
+                    "window.dispatchEvent(new Event('amynest-billing-bridge-ready'));",
+                    null,
+                )
+
                 val dl = pendingNotifDeepLink ?: return
                 val cat = pendingNotifCategory ?: "routine"
                 // Clear so subsequent page loads don't re-fire.
@@ -420,6 +425,7 @@ class MainActivity : AppCompatActivity() {
     private fun askNotificationPermission() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             pushBridge.setPermission(true)
+            askLocationAndMicPermission()
             return
         }
         if (ContextCompat.checkSelfPermission(
@@ -428,6 +434,7 @@ class MainActivity : AppCompatActivity() {
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             pushBridge.setPermission(true)
+            askLocationAndMicPermission()
             return
         }
         notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -7,6 +7,7 @@ import {
   getNativeBilling,
   isWrapperPresent,
   probeBillingAvailability,
+  waitForBillingBridge,
   type NativeBilling,
   type NativePurchaseResult,
 } from "@/lib/native-billing";
@@ -92,11 +93,34 @@ export function useNativeBilling(): NativeBillingState {
     };
   }, []);
 
-  // Android bridge (null when not in Android wrapper)
-  const androidBridge = useMemo<NativeBilling | null>(
-    () => (androidWrapper ? getNativeBilling() : null),
-    [androidWrapper],
+  // Android bridge (refreshed when the inject polyfill / WebMessageListener attaches)
+  const [androidBridge, setAndroidBridge] = useState<NativeBilling | null>(() =>
+    androidWrapper ? getNativeBilling() : null,
   );
+
+  useEffect(() => {
+    if (!androidWrapper) {
+      setAndroidBridge(null);
+      return;
+    }
+    let cancelled = false;
+    const syncBridge = () => {
+      if (cancelled) return;
+      setAndroidBridge(getNativeBilling());
+    };
+    void waitForBillingBridge().then(() => {
+      if (!cancelled) syncBridge();
+    });
+    window.addEventListener("amynest-billing-bridge-ready", syncBridge);
+    window.addEventListener("focus", syncBridge);
+    window.addEventListener("pageshow", syncBridge);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("amynest-billing-bridge-ready", syncBridge);
+      window.removeEventListener("focus", syncBridge);
+      window.removeEventListener("pageshow", syncBridge);
+    };
+  }, [androidWrapper]);
 
   const { user } = useUser();
   const authFetch = useAuthFetch();
@@ -179,20 +203,41 @@ export function useNativeBilling(): NativeBillingState {
   useEffect(() => {
     if (!androidWrapper) return;
     let cancelled = false;
-    void probeBillingAvailability().then((ok) => {
+
+    const runProbe = async () => {
+      const ok = await probeBillingAvailability();
       if (cancelled) return;
       setAvailable(ok === true);
-      if (ok === false) {
-        const bridgeMissing =
-          typeof window !== "undefined" && !window.AmyNestBillingNative;
-        setUnavailableReason(
-          bridgeMissing
-            ? "Google Play billing did not connect to the app. Update from the Play Store, then fully close and reopen AmyNest."
-            : "In-app purchases aren't available right now. Please update the app from the Play Store, or contact support if this keeps happening.",
-        );
+      if (ok === true) {
+        setUnavailableReason(null);
+        return;
       }
-    });
-    return () => { cancelled = true; };
+      const bridgeMissing =
+        typeof window !== "undefined" &&
+        !window.AmyNestBillingNative &&
+        typeof window.__AMYNEST_BILLING !== "string";
+      setUnavailableReason(
+        ok === false
+          ? bridgeMissing
+            ? "Google Play billing did not connect to the app. Update from the Play Store, then fully close and reopen AmyNest."
+            : "In-app purchases aren't available right now. Please update the app from the Play Store, or contact support if this keeps happening."
+          : null,
+      );
+    };
+
+    void runProbe();
+    const onRetry = () => {
+      if (!cancelled) void runProbe();
+    };
+    window.addEventListener("amynest-billing-bridge-ready", onRetry);
+    window.addEventListener("focus", onRetry);
+    window.addEventListener("pageshow", onRetry);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("amynest-billing-bridge-ready", onRetry);
+      window.removeEventListener("focus", onRetry);
+      window.removeEventListener("pageshow", onRetry);
+    };
   }, [androidWrapper]);
 
   // ── Android: sync user id to RevenueCat once billing is ready ────────────
