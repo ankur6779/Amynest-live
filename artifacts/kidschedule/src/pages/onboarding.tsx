@@ -59,6 +59,7 @@ interface ParentData {
   mobileNumber: string;
   allergies: string;
   country: string;
+  dietType?: string;
   latitude?: number;
   longitude?: number;
   locationSource?: LocationSource;
@@ -78,6 +79,13 @@ interface ChatMessage {
   text: string;
 }
 
+type ParentGoalCode =
+  | "improve_sleep"
+  | "reduce_tantrums"
+  | "improve_focus"
+  | "reduce_screen_time"
+  | "increase_independence";
+
 type Step =
   | "intro"
   | "country-confirm"
@@ -88,7 +96,8 @@ type Step =
   | "child-wake" | "child-sleep"
   | "add-more"
   | "parent-name" | "parent-role" | "parent-work"
-  | "parent-region" | "parent-mobile" | "parent-allergies"
+  | "parent-region" | "parent-diet" | "parent-goals"
+  | "parent-mobile" | "parent-allergies"
   | "saving" | "done" | "notifications";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -127,19 +136,76 @@ const TRAVEL_OPTS = [
   { label: "🚶 Walking", value: "walk" },
   { label: "✏️ Other", value: "other" },
 ];
-// Religion / diet style options. Each maps to a backend foodType (veg/non_veg)
-// plus a free-text dietNote that gets stored in child.goals so Amy AI knows
-// the religious or cultural restriction when generating meals.
-const FOOD_OPTIONS = [
-  { label: "🥦 Vegetarian",        value: "veg",        foodType: "veg",     note: "" },
-  { label: "🌱 Vegan",             value: "vegan",      foodType: "veg",     note: "Vegan — strictly no animal products including dairy and eggs" },
-  { label: "🥚 Eggetarian",        value: "eggetarian", foodType: "veg",     note: "Eggetarian — eggs are OK, no meat or fish" },
-  { label: "🍗 Non-Vegetarian",    value: "non_veg",    foodType: "non_veg", note: "" },
-  { label: "🙏 Jain (Pure Veg)",   value: "jain",       foodType: "veg",     note: "Jain diet — strictly no onion, garlic, root vegetables (potato, carrot, radish, beetroot)" },
-  { label: "☪️ Halal",              value: "halal",      foodType: "non_veg", note: "Halal only — no pork, meat must be halal-certified" },
-  { label: "✡️ Kosher",             value: "kosher",     foodType: "non_veg", note: "Kosher only — no pork or shellfish, never mix meat & dairy" },
-  { label: "🕉️ Sattvik / Pure Veg", value: "sattvik",    foodType: "veg",     note: "Sattvik — pure vegetarian, no onion or garlic, freshly cooked" },
+const PARENT_GOAL_CODES: ParentGoalCode[] = [
+  "improve_sleep",
+  "reduce_tantrums",
+  "improve_focus",
+  "reduce_screen_time",
+  "increase_independence",
 ];
+
+/** Diet types aligned with parent-profile + child form + meals API. */
+const ONBOARDING_DIET_OPTIONS = [
+  { value: "vegetarian", emoji: "🥦", labelKey: "diet_vegetarian" },
+  { value: "vegan", emoji: "🌱", labelKey: "diet_vegan" },
+  { value: "eggetarian", emoji: "🥚", labelKey: "diet_eggetarian" },
+  { value: "non_veg", emoji: "🍗", labelKey: "diet_non_veg" },
+  { value: "jain", emoji: "🙏", labelKey: "diet_jain" },
+  { value: "halal", emoji: "☪️", labelKey: "diet_halal" },
+  { value: "kosher", emoji: "✡️", labelKey: "diet_kosher" },
+  { value: "sattvik", emoji: "🕉️", labelKey: "diet_sattvik" },
+] as const;
+
+function deriveFoodTypeFromDiet(dietType: string): "veg" | "non_veg" {
+  return ["vegetarian", "vegan", "eggetarian", "jain", "sattvik"].includes(dietType) ? "veg" : "non_veg";
+}
+
+function dietNoteForType(dietType: string): string {
+  const notes: Record<string, string> = {
+    vegan: "Vegan — strictly no animal products including dairy and eggs",
+    eggetarian: "Eggetarian — eggs are OK, no meat or fish",
+    jain: "Jain diet — strictly no onion, garlic, root vegetables (potato, carrot, radish, beetroot)",
+    halal: "Halal only — no pork, meat must be halal-certified",
+    kosher: "Kosher only — no pork or shellfish, never mix meat & dairy",
+    sattvik: "Sattvik — pure vegetarian, no onion or garlic, freshly cooked",
+  };
+  return notes[dietType] ?? "";
+}
+
+function deriveFoodStyleFromRegions(regions: string[]): { foodStyle: string; subCuisine: string } {
+  const indianSubs = ["north_indian", "south_indian", "gujarati", "maharashtrian", "punjabi", "bengali", "pan_indian"];
+  const sub = regions.find((r) => indianSubs.includes(r));
+  if (sub) return { foodStyle: "indian", subCuisine: sub === "pan_indian" ? "" : sub };
+  if (regions.includes("indian")) return { foodStyle: "indian", subCuisine: "" };
+  if (regions.includes("western")) return { foodStyle: "western", subCuisine: "" };
+  if (regions.includes("asian")) return { foodStyle: "asian", subCuisine: "" };
+  if (regions.includes("middle_eastern")) return { foodStyle: "middle_eastern", subCuisine: "" };
+  return { foodStyle: "mixed", subCuisine: "" };
+}
+
+/** Canonical allergy codes — aligned with meals API + child form. */
+const ONBOARDING_ALLERGY_CHIPS = [
+  { value: "dairy", emoji: "🥛", labelKey: "allergy_dairy" },
+  { value: "gluten", emoji: "🌾", labelKey: "allergy_gluten" },
+  { value: "eggs", emoji: "🥚", labelKey: "allergy_eggs" },
+  { value: "nuts", emoji: "🥜", labelKey: "allergy_nuts" },
+  { value: "peanuts", emoji: "🥜", labelKey: "allergy_peanuts" },
+  { value: "soy", emoji: "🫘", labelKey: "allergy_soy" },
+  { value: "shellfish", emoji: "🦐", labelKey: "allergy_shellfish" },
+  { value: "sesame", emoji: "🌰", labelKey: "allergy_sesame" },
+] as const;
+
+const ALLERGY_CHIP_VALUES = ONBOARDING_ALLERGY_CHIPS.map((c) => c.value);
+
+function buildAllergiesString(chips: string[], otherText: string): string {
+  const extra = otherText
+    .split(/[,;]/)
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+    .filter((s) => !ALLERGY_CHIP_VALUES.includes(s as typeof ALLERGY_CHIP_VALUES[number]));
+  const unique = [...new Set([...chips.map((c) => c.toLowerCase()), ...extra])];
+  return unique.join(", ");
+}
 const REGION_OPTS = [
   { label: "Pan-Indian (Mixed)", value: "pan_indian" },
   { label: "North Indian",       value: "north_indian" },
@@ -479,7 +545,8 @@ function ProgressBar({ step }: { step: Step }) {
     "country-confirm",
     "child-name", "child-dob", "infant-feeding", "infant-sleep",
     "add-more", "parent-name", "parent-role", "parent-work",
-    "parent-region", "parent-mobile", "parent-allergies",
+    "parent-region", "parent-diet", "parent-goals",
+    "parent-mobile", "parent-allergies",
   ];
   const standardOrder: Step[] = [
     "country-confirm",
@@ -487,7 +554,8 @@ function ProgressBar({ step }: { step: Step }) {
     "child-school-start", "child-school-end", "child-school-days",
     "child-wake", "child-sleep",
     "add-more", "parent-name", "parent-role", "parent-work",
-    "parent-region", "parent-mobile", "parent-allergies",
+    "parent-region", "parent-diet", "parent-goals",
+    "parent-mobile", "parent-allergies",
   ];
   const isInfant = (infantOrder as string[]).includes(step) && !(standardOrder.slice(2) as string[]).includes(step);
   const order = isInfant ? infantOrder : standardOrder;
@@ -540,6 +608,11 @@ export default function OnboardingPage() {
   const [dobInput, setDobInput] = useState("");
   const [regionDrillDown, setRegionDrillDown] = useState(false);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [selectedDietType, setSelectedDietType] = useState("");
+  const [selectedParentGoals, setSelectedParentGoals] = useState<ParentGoalCode[]>([]);
+  const [allergyChips, setAllergyChips] = useState<string[]>([]);
+  const [allergyOtherOpen, setAllergyOtherOpen] = useState(false);
+  const [allergyOtherText, setAllergyOtherText] = useState("");
   const [countryCode, setCountryCode] = useState("");
   const [countryName, setCountryName] = useState("");
   const [locationState, setLocationState] = useState<LocationDetectionState>({ status: "idle" });
@@ -576,6 +649,30 @@ export default function OnboardingPage() {
     }, nextAmyMsg ? delay + 700 : 400);
   }
 
+  function formatAllergySummary(chips: string[], otherText: string): string {
+    const chipLabels = chips.map((v) => {
+      const chip = ONBOARDING_ALLERGY_CHIPS.find((c) => c.value === v);
+      return chip ? `${chip.emoji} ${t(`screens.onboarding.${chip.labelKey}`)}` : v;
+    });
+    const otherParts = otherText
+      .split(/[,;]/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .filter((s) => !ALLERGY_CHIP_VALUES.includes(s.toLowerCase() as typeof ALLERGY_CHIP_VALUES[number]));
+    const all = [...chipLabels, ...otherParts];
+    return all.length > 0 ? all.join(", ") : t("screens.onboarding.no_allergies_reply");
+  }
+
+  function finishAllergies(none: boolean) {
+    const allergiesStr = none ? "" : buildAllergiesString(allergyChips, allergyOtherText);
+    setParent((p) => ({ ...p, allergies: allergiesStr }));
+    const summary = none
+      ? t("screens.onboarding.no_allergies_reply")
+      : formatAllergySummary(allergyChips, allergyOtherText);
+    userReplies(summary, "saving");
+    setTimeout(() => saveEverything(allergiesStr), 800);
+  }
+
   // Boot: Amy intro
   useEffect(() => {
     if (step === "intro") {
@@ -592,14 +689,48 @@ export default function OnboardingPage() {
   }, []);
 
   // ─── Save & finish ──────────────────────────────────────────────────────────
-  async function saveEverything() {
+  async function saveEverything(allergiesOverride?: string) {
     setStep("saving");
     setMessages((m) => [...m, { role: "amy", text: t("screens.onboarding.saving_message") }]);
 
-    // ── Step 1: Save each child independently — failures are logged, never abort ──
+    const dietType = selectedDietType || "vegetarian";
+    const foodType = deriveFoodTypeFromDiet(dietType);
+    const allRegions = selectedRegions.length > 0 ? selectedRegions : [parent.region ?? getDefaultRegion(countryCode)];
+    const { foodStyle: derivedFoodStyle, subCuisine: derivedSubCuisine } = deriveFoodStyleFromRegions(allRegions);
+    const dietNote = dietNoteForType(dietType);
+    const allergies = allergiesOverride ?? parent.allergies ?? "";
+
+    // ── Step 1: Save parent profile first so children can inherit food prefs ──
+    try {
+      const parentBody: Record<string, unknown> = {
+        name: parent.name || "",
+        role: (parent.role || "mother").toLowerCase(),
+        workType: parent.workType || "work_from_home",
+        region: parent.region || allRegions.join(",") || getDefaultRegion(countryCode),
+        country: parent.country || countryCode,
+        dietType,
+        foodType,
+        foodStyle: derivedFoodStyle,
+        subCuisine: derivedSubCuisine || null,
+      };
+      if (typeof parent.latitude === "number") parentBody.latitude = parent.latitude;
+      if (typeof parent.longitude === "number") parentBody.longitude = parent.longitude;
+      if (parent.locationSource) parentBody.locationSource = parent.locationSource;
+      if (parent.mobileNumber) parentBody.mobileNumber = parent.mobileNumber;
+      if (allergies) parentBody.allergies = allergies;
+      await authFetch("/api/parent-profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parentBody),
+      });
+    } catch (e) {
+      console.error("Failed to save parent profile:", e);
+    }
+
+    // ── Step 2: Save each child + optimization goals ──
     for (const child of children) {
       const goalsParts = ["balanced-routine"];
-      if (child.dietNote) goalsParts.unshift(child.dietNote);
+      if (dietNote) goalsParts.unshift(dietNote);
       try {
         const res = await authFetch("/api/children", {
           method: "POST",
@@ -617,68 +748,60 @@ export default function OnboardingPage() {
             schoolDays: child.isSchoolGoing ? (child.schoolDays ?? [1, 2, 3, 4, 5]) : null,
             wakeUpTime: child.wakeUpTime || "07:00",
             sleepTime: child.sleepTime || "21:00",
-            foodType: child.foodType || "veg",
+            foodType,
+            dietType,
+            foodStyle: derivedFoodStyle,
+            subCuisine: derivedSubCuisine || null,
+            allergies: allergies || null,
+            foodPrefInherited: true,
+            foodPrefCustomized: false,
+            feedingType: child.feedingType || null,
+            sleepPattern: child.sleepPattern || null,
             goals: goalsParts.join("|"),
           }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           console.error(`Failed to save child "${child.name}":`, err);
+          continue;
+        }
+        if (selectedParentGoals.length > 0) {
+          const saved = (await res.json()) as { id?: number };
+          if (saved?.id) {
+            try {
+              await authFetch(`/api/child-intelligence/${saved.id}/goals`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ parentGoals: selectedParentGoals }),
+              });
+            } catch (e) {
+              console.error(`Failed to save goals for child "${child.name}":`, e);
+            }
+          }
         }
       } catch (e) {
         console.error(`Network error saving child "${child.name}":`, e);
       }
     }
 
-    // ── Step 2: Save parent profile independently — failure doesn't abort ──
-    try {
-      // Derive structured food style + sub-cuisine from selectedRegions for
-      // the unified food-preference system (spec §1).
-      function deriveFoodStyleFromRegions(regions: string[]): { foodStyle: string; subCuisine: string } {
-        const indianSubs = ["north_indian", "south_indian", "gujarati", "maharashtrian", "punjabi", "bengali", "pan_indian"];
-        const sub = regions.find(r => indianSubs.includes(r));
-        if (sub) return { foodStyle: "indian", subCuisine: sub === "pan_indian" ? "" : sub };
-        if (regions.includes("indian")) return { foodStyle: "indian", subCuisine: "" };
-        if (regions.includes("western")) return { foodStyle: "western", subCuisine: "" };
-        if (regions.includes("asian")) return { foodStyle: "asian", subCuisine: "" };
-        if (regions.includes("middle_eastern")) return { foodStyle: "middle_eastern", subCuisine: "" };
-        return { foodStyle: "mixed", subCuisine: "" };
-      }
-      const allRegions = selectedRegions.length > 0 ? selectedRegions : [parent.region ?? getDefaultRegion(countryCode)];
-      const { foodStyle: derivedFoodStyle, subCuisine: derivedSubCuisine } = deriveFoodStyleFromRegions(allRegions);
-
-      const parentBody: Record<string, unknown> = {
-        name: parent.name || "",
-        role: (parent.role || "mother").toLowerCase(),
-        workType: parent.workType || "work_from_home",
-        region: parent.region || selectedRegions.join(",") || getDefaultRegion(countryCode),
-        country: parent.country || countryCode,
-        foodStyle: derivedFoodStyle,
-        subCuisine: derivedSubCuisine || null,
-      };
-      if (typeof parent.latitude === "number") parentBody.latitude = parent.latitude;
-      if (typeof parent.longitude === "number") parentBody.longitude = parent.longitude;
-      if (parent.locationSource) parentBody.locationSource = parent.locationSource;
-      if (parent.mobileNumber) parentBody.mobileNumber = parent.mobileNumber;
-      if (parent.allergies) parentBody.allergies = parent.allergies;
-      await authFetch("/api/parent-profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parentBody),
-      });
-    } catch (e) {
-      console.error("Failed to save parent profile:", e);
-    }
-
-    // ── Step 3: Mark onboarding complete — ALWAYS runs, ALWAYS sets local state ──
+    // ── Step 3: Mark onboarding complete ──
     try {
       await authFetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          children: children.map((c) => ({ name: c.name, ageGroup: `${c.age}`, problems: [] })),
-          parent: { caregiver: parent.role, concern: "", routineLevel: "medium" },
-          priorityGoal: "balanced-routine",
+          children: children.map((c) => ({
+            name: c.name,
+            ageGroup: `${c.age}`,
+            problems: selectedParentGoals,
+          })),
+          parent: {
+            caregiver: parent.role,
+            concern: "",
+            routineLevel: "medium",
+            dietType,
+          },
+          priorityGoal: selectedParentGoals[0] ?? "balanced-routine",
           onboardingComplete: true,
         }),
       });
@@ -1254,9 +1377,9 @@ export default function OnboardingPage() {
       // ── Infant path (age < 2) ──────────────────────────────────────────────
       case "infant-feeding": {
         const feedingOpts = [
-          t("screens.onboarding.feeding_breast"),
-          t("screens.onboarding.feeding_formula"),
-          t("screens.onboarding.feeding_both"),
+          { label: t("screens.onboarding.feeding_breast"), value: "breastfeeding" as const },
+          { label: t("screens.onboarding.feeding_formula"), value: "formula" as const },
+          { label: t("screens.onboarding.feeding_both"), value: "mixed" as const },
         ];
         const babyName = curr.name || t("screens.onboarding.default_baby_name");
         return (
@@ -1264,15 +1387,15 @@ export default function OnboardingPage() {
             <div className="flex flex-wrap gap-2">
               {feedingOpts.map((opt) => (
                 <button
-                  key={opt}
+                  key={opt.value}
                   onClick={() => {
-                    setCurr((c) => ({ ...c, feedingType: opt }));
-                    userReplies(opt, "infant-sleep", t("screens.onboarding.feeding_reply", { name: babyName }));
+                    setCurr((c) => ({ ...c, feedingType: opt.value }));
+                    userReplies(opt.label, "infant-sleep", t("screens.onboarding.feeding_reply", { name: babyName }));
                   }}
                   className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
                   style={CHIP_DARK}
                 >
-                  {opt}
+                  {opt.label}
                 </button>
               ))}
             </div>
@@ -1288,15 +1411,15 @@ export default function OnboardingPage() {
 
       case "infant-sleep": {
         const sleepOpts = [
-          t("screens.onboarding.sleep_flexible"),
-          t("screens.onboarding.sleep_irregular"),
-          t("screens.onboarding.sleep_short"),
+          { label: t("screens.onboarding.sleep_flexible"), value: "flexible" as const },
+          { label: t("screens.onboarding.sleep_irregular"), value: "irregular" as const },
+          { label: t("screens.onboarding.sleep_short"), value: "short_naps" as const },
         ];
         return (
           <div className="flex flex-col gap-2">
             {sleepOpts.map((opt) => (
               <button
-                key={opt}
+                key={opt.value}
                 onClick={() => {
                   const name = curr.name || t("screens.onboarding.default_baby_name");
                   const finalChild: ChildData = {
@@ -1315,13 +1438,13 @@ export default function OnboardingPage() {
                     foodType: "veg",
                     dietNote: "",
                     feedingType: curr.feedingType,
-                    sleepPattern: opt,
+                    sleepPattern: opt.value,
                   };
                   setChildren((prev) => [...prev, finalChild]);
                   setCurr({});
                   const childCount = children.length + 1;
                   userReplies(
-                    opt,
+                    opt.label,
                     "add-more",
                     childCount === 1
                       ? t("screens.onboarding.child_added_first", { name })
@@ -1331,7 +1454,7 @@ export default function OnboardingPage() {
                 className="w-full py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all text-left px-4"
                 style={CHIP_DARK}
               >
-                {opt}
+                {opt.label}
               </button>
             ))}
           </div>
@@ -1508,8 +1631,6 @@ export default function OnboardingPage() {
               const finalChild = {
                 ...curr,
                 sleepTime: to24h(v),
-                foodType: "veg",
-                dietNote: "",
                 ageGroup: curr.ageGroup ?? getAgeGroup(curr.age ?? 3),
               } as ChildData;
               setChildren((prev) => [...prev, finalChild]);
@@ -1770,8 +1891,8 @@ export default function OnboardingPage() {
                   .join(", ");
                 userReplies(
                   labels || regionStr,
-                  "parent-mobile",
-                  t("screens.onboarding.mobile_question"),
+                  "parent-diet",
+                  t("screens.onboarding.diet_question"),
                 );
               }}
               disabled={selectedRegions.length === 0}
@@ -1781,6 +1902,85 @@ export default function OnboardingPage() {
                 color: "#fff",
                 opacity: selectedRegions.length > 0 ? 1 : 0.5,
               }}
+            >
+              {t("screens.onboarding.continue")}
+            </button>
+          </div>
+        );
+      }
+
+      case "parent-diet":
+        return (
+          <div className="grid grid-cols-2 gap-2.5">
+            {ONBOARDING_DIET_OPTIONS.map((opt) => {
+              const isSelected = selectedDietType === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    setSelectedDietType(opt.value);
+                    setParent((p) => ({ ...p, dietType: opt.value }));
+                    const label = `${opt.emoji} ${t(`screens.onboarding.${opt.labelKey}`)}`;
+                    userReplies(label, "parent-goals", t("screens.onboarding.goals_question"));
+                  }}
+                  className="flex flex-col items-start p-3.5 rounded-2xl text-left border active:scale-95 transition-all"
+                  style={{
+                    background: isSelected ? GRAD : "rgba(255,255,255,0.06)",
+                    border: isSelected
+                      ? "1.5px solid transparent"
+                      : "1.5px solid rgba(255,255,255,0.12)",
+                    boxShadow: isSelected ? "0 0 18px rgba(168,85,247,0.35)" : undefined,
+                  }}
+                >
+                  <span className="text-xl mb-1 leading-none">{opt.emoji}</span>
+                  <span className="text-sm font-semibold text-white leading-tight">
+                    {t(`screens.onboarding.${opt.labelKey}`)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        );
+
+      case "parent-goals": {
+        const toggleGoal = (code: ParentGoalCode) => {
+          setSelectedParentGoals((prev) =>
+            prev.includes(code) ? prev.filter((g) => g !== code) : [...prev, code],
+          );
+        };
+        return (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap gap-2">
+              {PARENT_GOAL_CODES.map((code) => {
+                const on = selectedParentGoals.includes(code);
+                return (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => toggleGoal(code)}
+                    className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
+                    style={{
+                      background: on ? GRAD : GLASS_BG,
+                      color: "#fff",
+                      border: on ? "1px solid transparent" : "1px solid rgba(168,85,247,0.30)",
+                      boxShadow: on ? "0 4px 12px rgba(99,102,241,0.4)" : undefined,
+                    }}
+                  >
+                    {t(`intelligence.goals.options.${code}`)}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => {
+                const summary =
+                  selectedParentGoals.length > 0
+                    ? selectedParentGoals.map((g) => t(`intelligence.goals.options.${g}`)).join(", ")
+                    : t("screens.onboarding.goals_skip_summary");
+                userReplies(summary, "parent-mobile", t("screens.onboarding.mobile_question"));
+              }}
+              className="w-full py-3 rounded-2xl font-semibold transition-all duration-200 active:scale-95"
+              style={{ background: GRAD, color: "#fff" }}
             >
               {t("screens.onboarding.continue")}
             </button>
@@ -1829,49 +2029,81 @@ export default function OnboardingPage() {
           </div>
         );
 
-      case "parent-allergies":
+      case "parent-allergies": {
+        const toggleAllergy = (value: string) => {
+          setAllergyChips((prev) =>
+            prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
+          );
+        };
+        const hasSelection =
+          allergyChips.length > 0 || allergyOtherText.trim().length > 0;
         return (
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-2">
-              <input
-                className="flex-1 rounded-2xl px-4 py-3.5 text-sm outline-none border border-border focus:border-primary transition-colors"
-                style={INPUT_DARK}
-                placeholder={t("screens.onboarding.allergies_placeholder")}
-                value={textInput}
-                onChange={(e) => setTextInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && textInput.trim()) {
-                    const a = textInput.trim();
-                    setParent((p) => ({ ...p, allergies: a }));
-                    userReplies(a, "saving");
-                    setTimeout(() => saveEverything(), 800);
-                  }
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap gap-2">
+              {ONBOARDING_ALLERGY_CHIPS.map((chip) => {
+                const on = allergyChips.includes(chip.value);
+                return (
+                  <button
+                    key={chip.value}
+                    type="button"
+                    onClick={() => toggleAllergy(chip.value)}
+                    className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
+                    style={{
+                      background: on ? GRAD : GLASS_BG,
+                      color: "#fff",
+                      border: on ? "1px solid transparent" : "1px solid rgba(168,85,247,0.30)",
+                      boxShadow: on ? "0 4px 12px rgba(99,102,241,0.4)" : undefined,
+                    }}
+                  >
+                    {chip.emoji} {t(`screens.onboarding.${chip.labelKey}`)}
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => setAllergyOtherOpen((o) => !o)}
+                className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
+                style={{
+                  background: allergyOtherOpen ? GRAD : GLASS_BG,
+                  color: "#fff",
+                  border: allergyOtherOpen ? "1px solid transparent" : "1px solid rgba(168,85,247,0.30)",
+                  boxShadow: allergyOtherOpen ? "0 4px 12px rgba(99,102,241,0.4)" : undefined,
                 }}
+              >
+                ✏️ {t("screens.onboarding.allergy_other")}
+              </button>
+            </div>
+            {allergyOtherOpen && (
+              <input
+                className="w-full rounded-2xl px-4 py-3.5 text-sm outline-none border"
+                style={INPUT_DARK}
+                placeholder={t("screens.onboarding.allergies_other_placeholder")}
+                value={allergyOtherText}
+                onChange={(e) => setAllergyOtherText(e.target.value)}
                 autoFocus
               />
-              <button
-                onClick={() => {
-                  if (!textInput.trim()) return;
-                  const a = textInput.trim();
-                  setParent((p) => ({ ...p, allergies: a }));
-                  userReplies(a, "saving");
-                  setTimeout(() => saveEverything(), 800);
-                }}
-                className="w-12 h-12 rounded-2xl flex items-center justify-center text-primary-foreground shrink-0"
-                style={{ background: GRAD }}
-              >→</button>
-            </div>
+            )}
             <button
-              onClick={() => {
-                userReplies(t("screens.onboarding.no_allergies_reply"), "saving");
-                setTimeout(() => saveEverything(), 800);
-              }}
-              className="text-xs self-center mt-1" style={{ color: "rgba(255,255,255,0.55)" }}
+              onClick={() => finishAllergies(!hasSelection)}
+              className="w-full py-3 rounded-2xl font-semibold transition-all duration-200 active:scale-95"
+              style={{ background: GRAD, color: "#fff" }}
             >
-              {t("screens.onboarding.no_allergies_button")}
+              {hasSelection
+                ? t("screens.onboarding.continue")
+                : t("screens.onboarding.no_allergies_button")}
             </button>
+            {hasSelection && (
+              <button
+                onClick={() => finishAllergies(true)}
+                className="text-xs self-center"
+                style={{ color: "rgba(255,255,255,0.55)" }}
+              >
+                {t("screens.onboarding.allergy_none_option")}
+              </button>
+            )}
           </div>
         );
+      }
 
       default:
         return null;
