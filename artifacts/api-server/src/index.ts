@@ -103,6 +103,18 @@ async function startBackgroundTasks(): Promise<void> {
       const { startLearningContentSeedCron } = await import("./lib/learningContentSeedCron.js");
       startLearningContentSeedCron();
     });
+    if (process.env["LEARNING_SEED_BOOTSTRAP"] === "true") {
+      await runBackgroundPhase("learning_content_seed_bootstrap", async () => {
+        const { runWeeklyLearningContentSeedSafe } = await import(
+          "./services/learningContentSeedService.js"
+        );
+        const stats = await runWeeklyLearningContentSeedSafe();
+        logger.info(
+          { evt: "learning.seed.bootstrap_done", stats },
+          "one-shot learning content bootstrap finished",
+        );
+      });
+    }
   }
 
   if (!isBackgroundTasksEnabled()) {
