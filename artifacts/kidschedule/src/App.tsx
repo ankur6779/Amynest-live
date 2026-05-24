@@ -53,7 +53,6 @@ function App() {
       <div className="app-scroll page-content">
         <DebugOverlay />
         <StaticAudioTestButton />
-        {/* ErrorBoundary disabled temporarily while verifying QueryClientProvider fix */}
         <ReactInstanceRecovery>
           <Suspense fallback={<AuthBootShell />}>
             <AppCore />

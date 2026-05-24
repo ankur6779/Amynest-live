@@ -5,6 +5,10 @@
  */
 
 import {
+  shouldAttemptAutoRecovery,
+  tryAutoRecovery,
+} from "@/lib/auto-recovery";
+import {
   isBenignRuntimeError,
   shouldShowProductionCrashOverlay,
 } from "@/lib/runtime-crash-policy";
@@ -120,6 +124,9 @@ export function showProductionCrashOverlay(payload: ProductionCrashPayload | str
   const showOverlay = shouldShowProductionCrashOverlay(err, kind);
   if (!showOverlay) {
     persistLastCrash(payload);
+    if (shouldAttemptAutoRecovery(err)) {
+      tryAutoRecovery(kind);
+    }
     return;
   }
 
