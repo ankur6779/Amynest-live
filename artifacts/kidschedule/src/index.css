@@ -777,7 +777,7 @@ html[data-theme="dark"] {
   top: 0;
   z-index: 60;
   flex-shrink: 0;
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: max(env(safe-area-inset-top, 0px), var(--sat, 0px));
   background: hsl(var(--background) / 0.95);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -810,6 +810,29 @@ html[data-theme="dark"] {
   html.amynest-android-shell.amynest-pwa-standalone
     .app-screen-content:not(.app-screen-content--no-offset) {
     padding-top: calc(var(--app-header-height, 3.5rem) + var(--app-header-content-gap, 8px));
+  }
+}
+
+/*
+ * Ask Amy (/assistant): sticky header breaks inside overflow:hidden app-scroll on
+ * Android WebView — pin the global header and offset main so tabs/starters stay visible.
+ * Does not change .app-scroll overflow or pull-to-refresh behaviour on other routes.
+ */
+@media (max-width: 767px) {
+  html.amynest-native-shell .app-scroll:has(.assistant-chat-page) .app-header,
+  html.amynest-android-shell .app-scroll:has(.assistant-chat-page) .app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 60;
+  }
+
+  html.amynest-native-shell .app-scroll:has(.assistant-chat-page) .app-shell-main,
+  html.amynest-android-shell .app-scroll:has(.assistant-chat-page) .app-shell-main {
+    padding-top: calc(var(--app-header-height, 3.5rem) + var(--app-header-content-gap, 8px));
+    box-sizing: border-box;
   }
 }
 
