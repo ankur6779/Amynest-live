@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "generatedAt": "2026-05-24T09:53:59.183Z",
+  "previewKeys": [
+    "b",
+    "a",
+    "c",
+    "e",
+    "f",
+    "m",
+    "sh",
+    "t"
+  ],
+  "variants": [
+    {
+      "id": "production",
+      "label": "Current (live)",
+      "labelHi": "Abhi production wali",
+      "description": "Same MP3s kids hear today — may sound quiet or muffled on some phones.",
+      "hasFiles": true
+    },
+    {
+      "id": "bright",
+      "label": "Bright & clear",
+      "labelHi": "Tez aur saaf",
+      "description": "Louder target, no silence trim, slight high-mid boost — clearer on phone speakers.",
+      "hasFiles": true
+    },
+    {
+      "id": "minimal",
+      "label": "Minimal mastering",
+      "labelHi": "Halka processing",
+      "description": "Only loudness normalize + light limiter — keeps more natural ElevenLabs tone.",
+      "hasFiles": true
+    },
+    {
+      "id": "crisp",
+      "label": "Crisp (gentle trim)",
+      "labelHi": "Crisp / thoda zyada volume",
+      "description": "Softer silence trim (-50dB) with slightly louder norm — less squashed than current.",
+      "hasFiles": true
+    },
+    {
+      "id": "warm",
+      "label": "Warm & full",
+      "labelHi": "Garam / bhari awaaz",
+      "description": "Less treble cut, warmer body — good if bright sounds too sharp.",
+      "hasFiles": true
+    }
+  ]
+}

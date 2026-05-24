@@ -12,6 +12,7 @@
     "stability-load": "tsx ./src/stability-load-test.ts",
     "generate-static-audio": "tsx ./generate-static-audio.ts",
     "generate-phonics-audio": "tsx ./generate-phonics-audio.ts",
+    "generate-phonics-audio-demos": "tsx ./generate-phonics-audio-demos.ts",
     "normalize-phonics-audio": "tsx ./normalize-phonics-audio.ts",
     "approve-phonics-audio": "tsx ./approve-phonics-audio.ts",
     "check-static-audio": "tsx ./check-static-audio.ts",
