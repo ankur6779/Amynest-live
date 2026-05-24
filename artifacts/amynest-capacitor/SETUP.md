@@ -98,7 +98,7 @@ npx cap open ios
    - Minimum Deployments: **iOS 14.0**
 2. **Signing & Capabilities** tab
    - Select your Apple Developer Team
-   - Enable: **Push Notifications**, **Background Modes** (Audio, Remote notifications, Background fetch)
+   - Enable: **Push Notifications**, **Background Modes** (Remote notifications, Background fetch only — **not** Audio)
    - Add **Associated Domains**: `applinks:amynest.in`
 3. Open `ios/App/App/Info.plist`
    - Copy all keys from `ios-config/Info-permissions.plist` into this file

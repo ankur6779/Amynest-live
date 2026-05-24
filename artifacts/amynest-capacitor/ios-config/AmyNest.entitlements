@@ -8,7 +8,7 @@
   ║  In Xcode: select the App target → Signing & Capabilities tab.       ║
   ║  Add these capabilities using the "+ Capability" button:             ║
   ║    • Push Notifications                                               ║
-  ║    • Background Modes (Audio, Remote notifications, Background fetch) ║
+  ║    • Background Modes (Remote notifications, Background fetch only)     ║
   ║    • Associated Domains (for Apple App Site Association / App Links)  ║
   ║    • Access WiFi Information (optional)                               ║
   ║                                                                      ║

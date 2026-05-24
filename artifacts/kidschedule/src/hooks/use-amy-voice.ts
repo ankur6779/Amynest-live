@@ -27,6 +27,8 @@ export interface UseAmyVoiceState {
   speaking: boolean;
   loading: boolean;
   error: string | null;
+  /** Phrase currently loading/playing — for per-button UI state. */
+  activePhrase: string | null;
   speak: (text: string, opts?: SpeakOptions) => Promise<SpeakResult>;
   /** Android PWA/WebView: call from onPointerDown before onClick speak(). */
   primeSpeakGesture: (text: string, opts?: SpeakOptions) => void;
@@ -48,7 +50,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
     () => amyVoiceController.getSnapshot(),
   );
 
-  const { speaking, loading, error } = snapshotToHookState(snapshot);
+  const { speaking, loading, error, activePhrase } = snapshotToHookState(snapshot);
 
   const { voiceId, modelId, playbackRate, onFinished } = options;
   const playbackRateRef = useRef(playbackRate ?? 1);
@@ -106,5 +108,5 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
     primeStaticAudioInUserGesture(text, opts?.mode === "phonics" ? "phonics" : "default");
   }, []);
 
-  return { speaking, loading, error, speak, primeSpeakGesture, pause };
+  return { speaking, loading, error, activePhrase, speak, primeSpeakGesture, pause };
 }

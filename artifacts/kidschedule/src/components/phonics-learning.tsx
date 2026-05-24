@@ -771,6 +771,7 @@ function TodaysActivityCard({
           <AudioPlayButton
             text={practicePlaybackText(todaysItem)}
             mode={todaysItem.phoneme ? "phonics" : undefined}
+            phonemeKey={todaysItem.phoneme}
             size="lg"
             variant="violet"
             ariaLabel={`Play sound ${todaysItem.symbol}`}
@@ -897,6 +898,7 @@ function PracticeSoundsCard({
                       <AudioPlayButton
                         text={playbackText}
                         mode={it.phoneme ? "phonics" : undefined}
+                        phonemeKey={it.phoneme}
                         prefetchNextText={prefetchNextText}
                         size="sm"
                         variant="violet"
@@ -911,6 +913,7 @@ function PracticeSoundsCard({
                         <AudioPlayButton
                           text={playbackText}
                           mode="phonics"
+                          phonemeKey={it.phoneme}
                           slow
                           size="sm"
                           variant="outline"
@@ -956,6 +959,7 @@ function PracticeSoundsCard({
                   <AudioPlayButton
                     text={playbackText}
                     mode={it.phoneme ? "phonics" : undefined}
+                    phonemeKey={it.phoneme}
                     prefetchNextText={prefetchNextText}
                     size="sm"
                     variant="violet"

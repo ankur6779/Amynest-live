@@ -17,11 +17,18 @@ import {
   playPhonicsSequence,
   playBlendPhonemeClip,
   prefetchPhonicsAudioKeys,
+  resolvePhonicsAudioKey,
 } from "@/lib/phonics-static-audio";
 import { audioManager } from "@/lib/audio-manager";
-import { lookupStaticAudioUrl, prepareStaticPlaybackAudio } from "@/lib/static-audio";
+import {
+  lookupStaticAudioUrl,
+  prepareStaticPlaybackAudio,
+  safePlayAudio,
+} from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
+import { playPhonemeFallbackVoice } from "@/lib/phonics-playback-fallback";
 import type { SpeakOptions, SpeakResult } from "@/hooks/use-amy-voice";
+import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
 
 export type PhonicsSpeakFn = (
   text: string,
@@ -37,6 +44,89 @@ export function resolvePhonicsPlaybackText(input: {
   sound?: string;
 }): string {
   return resolvePhonicsPlaybackTextShared(input);
+}
+
+/** True for short hub clips (single words / phonemes) — skip heavy TTS pipeline. */
+export function isPhonicsHubFastClip(text: string, opts?: SpeakOptions): boolean {
+  if (opts?.lessonParagraph || opts?.parentHub || opts?.coach || opts?.narration) {
+    return false;
+  }
+  const t = (text ?? "").trim();
+  if (!t || t.length > 32) return false;
+  if (opts?.mode === "phonics") return true;
+  return !/\s/.test(t);
+}
+
+async function playStaticCatalogClip(
+  text: string,
+  opts?: { playbackRate?: number; isCancelled?: () => boolean },
+): Promise<boolean> {
+  recordTtsUserGesture();
+  for (const mode of ["default", "phonics"] as const) {
+    if (opts?.isCancelled?.()) return false;
+    const proxyUrl = lookupStaticAudioUrl(text, mode);
+    if (!proxyUrl) continue;
+    const audio = await prepareStaticPlaybackAudio(text, mode, { quiet: true });
+    if (!audio) continue;
+    if (opts?.playbackRate && opts.playbackRate !== 1) {
+      audio.playbackRate = opts.playbackRate;
+    }
+    const started = await safePlayAudio(audio, { proxyUrl, phrase: text, mode, quiet: true });
+    if (!started) continue;
+    const ended = await audioManager.waitUntilEnd(
+      audio,
+      () => opts?.isCancelled?.() ?? false,
+    );
+    if (ended.ok) return true;
+  }
+  return false;
+}
+
+/**
+ * Fast phonics hub playback — local MP3 → static catalog → speech synthesis.
+ * Bypasses the heavy adaptive TTS pipeline for reliable tap-to-hear.
+ */
+export async function speakPhonicsFastClip(
+  text: string,
+  opts?: {
+    phoneme?: string;
+    playbackRate?: number;
+    isCancelled?: () => boolean;
+  },
+): Promise<SpeakResult & { layer?: AmyVoiceLayer }> {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return { success: false, error: "tts_empty_text" };
+  if (opts?.isCancelled?.()) return { success: false, error: "tts_cancelled" };
+
+  recordTtsUserGesture();
+
+  const audioKey =
+    resolvePhonicsAudioKey({
+      text: trimmed,
+      phoneme: opts?.phoneme ?? null,
+      letter: trimmed,
+    }) ?? null;
+
+  if (audioKey) {
+    const local = await playPhonicsStaticAudio(audioKey, {
+      waitUntilEnd: true,
+      playbackRate: opts?.playbackRate,
+      isCancelled: opts?.isCancelled,
+    });
+    if (local.ok) return { success: true, layer: "static" };
+  }
+
+  if (await playStaticCatalogClip(trimmed, opts)) {
+    return { success: true, layer: "static" };
+  }
+
+  const fallbackKey = audioKey ?? trimmed.toLowerCase();
+  const voice = await playPhonemeFallbackVoice(fallbackKey);
+  if (voice.success) {
+    return { success: true, layer: "emergency" };
+  }
+
+  return { success: false, error: voice.error ?? "phonics_playback_exhausted" };
 }
 
 async function playStaticKey(

@@ -76,6 +76,10 @@ import {
   type AmyVoicePipelineContext,
 } from "@/lib/amy-voice-pipeline";
 import {
+  isPhonicsHubFastClip,
+  speakPhonicsFastClip,
+} from "@/lib/phonics-audio";
+import {
   playControllerEmergencyAudio,
   resetGuardFailures,
   shouldBypassAudioGuard,
@@ -137,6 +141,8 @@ export type AmyVoiceControllerSnapshot = {
   status: AmyVoiceStatus;
   error: string | null;
   requestId: number;
+  /** Normalized phrase for the clip currently loading/playing (per-button UI). */
+  activePhrase: string | null;
 };
 
 export interface AmyVoiceRuntime {
@@ -189,8 +195,9 @@ function snapshotFromStatus(
   status: AmyVoiceStatus,
   error: string | null,
   requestId: number,
+  activePhrase: string | null = null,
 ): AmyVoiceControllerSnapshot {
-  return { status, error, requestId };
+  return { status, error, requestId, activePhrase };
 }
 
 /** Frozen public API — UI and hooks may only use these methods. */
@@ -206,7 +213,7 @@ export interface AmyVoiceControllerPublic {
 }
 
 class AmyVoiceController implements AmyVoiceControllerPublic {
-  private snapshot: AmyVoiceControllerSnapshot = snapshotFromStatus("idle", null, 0);
+  private snapshot: AmyVoiceControllerSnapshot = snapshotFromStatus("idle", null, 0, null);
   private listeners = new Set<SnapshotListener>();
   private abortController: AbortController | null = null;
 
@@ -234,6 +241,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
     requestId: number,
     status: AmyVoiceStatus,
     error: string | null = this.snapshot.error,
+    activePhrase: string | null = status === "idle" ? null : this.snapshot.activePhrase,
   ): void {
     if (!isCurrentSpeakRequest(requestId)) {
       if (import.meta.env.DEV) {
@@ -243,7 +251,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       }
       return;
     }
-    this.publish(snapshotFromStatus(status, error, requestId));
+    this.publish(snapshotFromStatus(status, error, requestId, activePhrase));
   }
 
   private stopCurrentAudio(): void {
@@ -261,7 +269,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
     const requestId = invalidateSpeakRequests();
     logTts({ reason: "pause", requestId });
     this.stopCurrentAudio();
-    this.publish(snapshotFromStatus("idle", null, requestId));
+    this.publish(snapshotFromStatus("idle", null, requestId, null));
   }
 
   private async handleAudioFailure(
@@ -300,7 +308,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
           fallbackUsed: true,
         });
         if (!ctx.runtime.isMounted || ctx.runtime.isMounted()) {
-          this.transition(ctx.requestId, "idle", null);
+          this.transition(ctx.requestId, "idle", null, null);
         }
         return emergencyResult;
       }
@@ -319,7 +327,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         error,
         retry,
       });
-      this.transition(ctx.requestId, "idle", error);
+      this.transition(ctx.requestId, "idle", error, null);
     }
 
     logTts({ event: "final_guard", status: "error", error });
@@ -421,7 +429,41 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
     recordTtsUserGesture();
     this.stopCurrentAudio();
     this.abortController = new AbortController();
-    this.transition(requestId, "loading", null);
+    const activePhrase = text.toLowerCase();
+    this.transition(requestId, "loading", null, activePhrase);
+
+    if (isPhonicsHubFastClip(text, opts)) {
+      try {
+        this.transition(requestId, "playing", null, activePhrase);
+        const fast = await speakPhonicsFastClip(text, {
+          phoneme: opts?.phoneme,
+          playbackRate: runtime.playbackRate ?? 1,
+          isCancelled: () => !isCurrentSpeakRequest(requestId),
+        });
+        if (!isCurrentSpeakRequest(requestId)) {
+          return { success: false, error: "tts_stale" };
+        }
+        if (fast.success) {
+          resetGuardFailures();
+          logAudioHealthSuccess({
+            layer: mapAmyLayerToHealthLayer(fast.layer),
+            fallbackUsed: fast.layer === "emergency",
+          });
+          this.transition(requestId, "idle", null, null);
+          (opts?.onFinished ?? runtime.onFinished)?.();
+          return fast;
+        }
+        logTts({ reason: "phonics_fast_miss", requestId, error: fast.error });
+      } catch (err) {
+        logTts({
+          reason: "phonics_fast_error",
+          requestId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    this.transition(requestId, "loading", null, activePhrase);
 
     const pipelineCtx: AmyVoicePipelineContext = {
       authFetch: runtime.authFetch,
@@ -540,7 +582,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         return { success: false, error: "tts_stale" };
       }
 
-      this.transition(requestId, "playing", null);
+      this.transition(requestId, "playing", null, activePhrase);
 
       const pipelineMode = finalizedPolicy!.pipelineMode;
       const result = await speakAmyVoice(
@@ -621,13 +663,13 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
             prevEnded?.call(el, ev);
             if (!isCurrentSpeakRequest(requestId)) return;
             if (runtime.isMounted && !runtime.isMounted()) return;
-            this.transition(requestId, "idle", null);
+            this.transition(requestId, "idle", null, null);
             (opts?.onFinished ?? runtime.onFinished)?.();
           };
         }
       }
 
-      this.transition(requestId, "idle", null);
+      this.transition(requestId, "idle", null, null);
       return result;
     } catch (err) {
       if (!isCurrentSpeakRequest(requestId)) {
@@ -645,7 +687,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       });
     } finally {
       if (isCurrentSpeakRequest(requestId) && this.snapshot.status !== "idle") {
-        this.transition(requestId, "idle", this.snapshot.error);
+        this.transition(requestId, "idle", this.snapshot.error, null);
       }
       if (isCurrentSpeakRequest(requestId)) {
         this.abortController = null;
@@ -664,10 +706,12 @@ export function snapshotToHookState(snapshot: AmyVoiceControllerSnapshot): {
   speaking: boolean;
   loading: boolean;
   error: string | null;
+  activePhrase: string | null;
 } {
   return {
     speaking: snapshot.status === "playing",
     loading: snapshot.status === "loading",
     error: snapshot.error,
+    activePhrase: snapshot.activePhrase,
   };
 }

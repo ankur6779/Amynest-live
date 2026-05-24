@@ -2,6 +2,69 @@
 
 Use this text in App Store Connect Review Notes for the Capacitor iOS build.
 
+---
+
+## Resubmission steps (May 23, 2026 rejection — v3.0.4 build 12)
+
+Do these **in order**. Items 1–2 are in **App Store Connect** (no code). Item 3 is **Xcode** (new binary). Item 4 is **submit + reply**.
+
+### Step 1 — App Store Connect → App Privacy (Guideline 5.1.2)
+
+**Where:** [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → **My Apps** → **AmyNest** → left sidebar **App Privacy**
+
+1. Open **App Privacy** → **Edit** (Account Holder or Admin required).
+2. Question: *“Do you or your third-party partners use data for tracking?”* → **No**.
+3. For **every** collected data type (Name, Email, User ID, etc.):
+   - **Used for Tracking** = **unchecked**
+   - Purposes = **App Functionality** and/or **Analytics** only (as applicable)
+4. **Save** and **Publish** the privacy label.
+
+AmyNest does **not** cross-app advertise or share data with data brokers. Do **not** add App Tracking Transparency (ATT) — that is only for apps that actually track. Our `PrivacyInfo.xcprivacy` already has `NSPrivacyTracking = false`.
+
+### Step 2 — App Store Connect → Age Rating (Guideline 2.3.6)
+
+**Where:** **App Information** → **Age Rating** → **Edit**
+
+1. **Parental Controls** → **None**
+2. **Age Assurance** → **None**
+3. Save. Result should remain **4+**.
+
+The “Kids Control Center” screen is a coming-soon preview (interest survey), not Apple’s “In-App Controls.” Premium gating is a subscription paywall, not parental controls.
+
+### Step 3 — Xcode → new build (Guideline 2.5.4)
+
+**Where:** Mac → `artifacts/amynest-capacitor/` → Xcode
+
+1. Pull latest repo (build **13** is set in `project.pbxproj`; version stays **3.0.4**).
+2. Open `ios/App/App.xcworkspace` in Xcode.
+3. **App target → Signing & Capabilities → Background Modes**
+   - ✅ Remote notifications
+   - ✅ Background fetch
+   - ❌ **Audio** must be **unchecked**
+4. **App target → Info** (or open `Info.plist`) → **UIBackgroundModes** must be only:
+   - `remote-notification`
+   - `fetch`
+   - (no `audio` — already fixed in repo)
+5. Rebuild web + sync:
+   ```bash
+   cd artifacts/amynest-capacitor
+   pnpm run build:web
+   pnpm run sync:ios
+   ```
+6. **Product → Clean Build Folder**, then **Product → Archive**.
+7. **Distribute App → App Store Connect → Upload** (build **13**).
+
+### Step 4 — App Store Connect → submit + reply
+
+**Where:** **App Store Connect** → your **3.0.4** version
+
+1. **App Review Information → Notes** — paste the **Review Notes** block below (includes OTA disclosure).
+2. Attach the new build (**13**).
+3. **Resolution Center** — reply to rejection **f2e8ff55-18d8-44c0-8525-55b3650608f6** using the **Reply to App Review** block below.
+4. **Submit for Review**.
+
+---
+
 ## Reviewer Access
 
 AmyNest supports email/password, Google Sign-In, and Sign in with Apple. If a reviewer account is needed, provide a temporary test account with a seeded child profile before submission.
@@ -37,9 +100,24 @@ The iOS app uses Apple In-App Purchase through RevenueCat for all subscriptions.
 
 Normal web/PWA users in India may use Razorpay. Android native wrappers use the Google Play Billing bridge when available.
 
-## Over-The-Air (OTA) Web Updates
+## Over-The-Air (OTA) Web Updates — Apple Guideline 2.5.2
 
-The iOS build may download **small web-only patches** (JavaScript/CSS bug fixes) from our HTTPS API using the Capacitor Updater plugin. This does **not** install native code. **Major features, billing changes, and permission changes** still require a new App Store version. OTA updates are limited to **patch-level** semver bumps (e.g. 1.0.4 → 1.0.5).
+The iOS build may download **small web-only patches** (JavaScript/CSS bug fixes) from our HTTPS API using the Capacitor Updater plugin (`@capgo/capacitor-updater`). This:
+
+- Updates **only** the bundled WKWebView assets (HTML/JS/CSS)
+- Does **not** install native code, new SDKs, or change Info.plist permissions
+- Is limited to **patch-level** semver bumps (e.g. `1.0.4` → `1.0.5`)
+- **Minor/major** version changes and new native capabilities still require a new App Store binary
+
+Check endpoint: `POST https://amynest-backend-dykj.onrender.com/api/app/ota/check`
+
+**Paste into App Review Information → Notes:**
+
+```
+OTA: This app may apply small web-only bug-fix bundles at launch via HTTPS (Capacitor Updater). No native code is downloaded. Major features, billing, and permission changes require App Store updates. Patch-only (e.g. 1.0.x) updates only.
+```
+
+See also `artifacts/amynest-capacitor/SETUP.md` (OTA section) and `artifacts/api-server/ota/README.md`.
 
 ## Privacy And Safety
 
@@ -72,7 +150,7 @@ Sign in with email/password or Sign in with Apple. Email verification is skipped
 
 ### Before you archive the next build
 
-1. **App Store Connect → App Privacy** — “Do you or your third-party partners use data for tracking?” → **No**. For every data type, **Used for Tracking** must be **unchecked** (purposes: App Functionality and/or Analytics only).
-2. **App Store Connect → App Information → Age Rating** — **Parental Controls: None**, **Age Assurance: None**.
-3. **Xcode → Info.plist** — `UIBackgroundModes` must contain only `remote-notification` and `fetch` (no `audio`). Repo template: `ios-config/Info-permissions.plist`.
-4. **Increment build number** (e.g. 3.0.4 build **13**), archive, upload, attach to the version, submit with the notes above.
+1. **App Store Connect → App Privacy** — tracking question **No**; every data type **Used for Tracking** unchecked.
+2. **App Store Connect → Age Rating** — **Parental Controls: None**, **Age Assurance: None**.
+3. **Xcode → Background Modes** — Audio **off**; **Info.plist** `UIBackgroundModes` = `remote-notification` + `fetch` only.
+4. **Build number** — use **13** (or higher); archive, upload, attach, submit with notes above.

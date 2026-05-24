@@ -286,22 +286,22 @@ export function ColoringBooks({
             {files.map(file => {
           const isDownloading = downloadingId === file.id;
           const showRowError = rowError?.id === file.id;
-          return <Card key={file.id} data-testid={`coloring-card-${file.id}`} className="group relative overflow-hidden rounded-2xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-border hover:shadow-[0_0_0_1px_rgba(244,63,94,0.25),0_10px_36px_-10px_rgba(244,63,94,0.30)] transition-all">
-                  <CardContent className="p-3">
+          return <Card key={file.id} data-testid={`coloring-card-${file.id}`} className="group relative rounded-2xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-border hover:shadow-[0_0_0_1px_rgba(244,63,94,0.25),0_10px_36px_-10px_rgba(244,63,94,0.30)] transition-all">
+                  <CardContent className="p-3 min-w-0">
                     <div className="aspect-[3/4] w-full mb-3 overflow-hidden rounded-xl bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card ring-1 ring-primary dark:ring-primary flex items-center justify-center">
                       <ThumbnailWithFallback src={file.thumbnailUrl} alt={file.name} />
                     </div>
                     <p className="font-quicksand font-bold text-[13px] leading-tight text-foreground line-clamp-2 mb-2 min-h-[2.4em]" title={file.name}>
                       {file.name}
                     </p>
-                    <div className="flex gap-1.5">
-                      <Button size="sm" variant="outline" className="flex-1 h-8 px-2 text-[11px] gap-1 rounded-xl" onClick={() => setPreviewing(file)} data-testid={`coloring-preview-${file.id}`}>
-                        <Eye className="h-3.5 w-3.5" />
+                    <div className="flex flex-col gap-1.5">
+                      <Button size="sm" variant="outline" className="w-full h-8 px-2 text-[11px] gap-1 rounded-xl" onClick={() => setPreviewing(file)} data-testid={`coloring-preview-${file.id}`}>
+                        <Eye className="h-3.5 w-3.5 shrink-0" />
                         {t("components.coloring_books.preview")}
                       </Button>
-                      <Button size="sm" disabled={isDownloading || quotaExhausted} onClick={() => void handleDownload(file)} data-testid={`coloring-download-${file.id}`} className="flex-1 h-8 px-2 text-[11px] gap-1 rounded-xl bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white disabled:opacity-60">
-                        {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                        {isDownloading ? "Saving" : "Download"}
+                      <Button size="sm" disabled={isDownloading || quotaExhausted} onClick={() => void handleDownload(file)} data-testid={`coloring-download-${file.id}`} className="w-full h-8 px-2 text-[11px] gap-1 rounded-xl bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white disabled:opacity-60">
+                        {isDownloading ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" /> : <Download className="h-3.5 w-3.5 shrink-0" />}
+                        {isDownloading ? t("components.coloring_books.saving") : t("components.coloring_books.download")}
                       </Button>
                     </div>
                     {showRowError && <p className="text-[11px] text-primary dark:text-primary mt-2 flex items-start gap-1">
