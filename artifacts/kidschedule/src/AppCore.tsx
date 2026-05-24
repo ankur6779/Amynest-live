@@ -53,6 +53,7 @@ import { CapacitorIosAuthPreload } from "@/components/capacitor-ios-auth-preload
 import { CapacitorRoutePreload } from "@/components/capacitor-route-preload";
 import { NavigationHistoryGuard } from "@/components/navigation-history-guard";
 import { isCapacitorIosShell } from "@/lib/device-lite";
+import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { devLog } from "@/lib/dev-log";
 import { initCapacitorOta } from "@/lib/capacitor-ota";
 
@@ -160,7 +161,7 @@ function HomeRedirect() {
   if (authLoading) return <RouteLoadingShell />;
 
   if (!isSignedIn) {
-    if (isCapacitorIosShell()) {
+    if (isCapacitorIosShell() || isNativeAmyNestShell()) {
       return <Redirect to="/sign-in" />;
     }
     return <LandingPage />;

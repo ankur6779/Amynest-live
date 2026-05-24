@@ -2,10 +2,14 @@ import {
   GoogleAuthProvider,
   signInWithCredential,
   signInWithRedirect,
+  type User,
   type UserCredential,
 } from "firebase/auth";
 import { logFirebaseAuthError } from "@/lib/firebase-auth-error";
-import { getFirebaseAuth } from "@/lib/firebase";
+import { ensureFirebaseAuthPersistence, getFirebaseAuth } from "@/lib/firebase";
+import { refreshFirebaseAuthSnapshot } from "@/lib/firebase-auth-listener";
+import { resolvePostOAuthDestination } from "@/lib/post-verify-destination";
+import { waitForFirebaseUser } from "@/lib/wait-for-firebase-user";
 import { isCapacitorNative } from "@/lib/capacitor-native";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { resolveFirebaseAuthRedirectResult } from "@/lib/firebase-oauth-redirect";
@@ -75,7 +79,33 @@ export async function initNativeGoogleAuth(): Promise<void> {
   console.info(`${GOOGLE_TAG} native GoogleAuth initialized`);
 }
 
-export async function loginNativeGoogle(): Promise<void> {
+async function finalizeGoogleCredentialSignIn(
+  result: UserCredential,
+): Promise<User> {
+  await result.user.getIdToken(true);
+  refreshFirebaseAuthSnapshot();
+  const user = await waitForFirebaseUser(10_000);
+  if (!user) {
+    throw Object.assign(
+      new Error("Sign-in session could not be established. Please try again."),
+      { code: "app/auth-session-lost" },
+    );
+  }
+  return user;
+}
+
+async function signInFirebaseWithGoogleIdToken(idToken: string): Promise<User> {
+  await ensureFirebaseAuthPersistence();
+  const credential = GoogleAuthProvider.credential(idToken);
+  const result = await signInWithCredential(getFirebaseAuth(), credential);
+  const user = await finalizeGoogleCredentialSignIn(result);
+  console.info(`${GOOGLE_TAG} firebase credential sign-in success`, {
+    uid: user.uid,
+  });
+  return user;
+}
+
+export async function loginNativeGoogle(): Promise<string> {
   await initNativeGoogleAuth();
   const { GoogleAuth } = await import("@codetrix-studio/capacitor-google-auth");
   const result = await GoogleAuth.signIn();
@@ -85,21 +115,23 @@ export async function loginNativeGoogle(): Promise<void> {
       code: "app/google-no-id-token",
     });
   }
-  const credential = GoogleAuthProvider.credential(idToken);
-  await signInWithCredential(getFirebaseAuth(), credential);
+  await signInFirebaseWithGoogleIdToken(idToken);
+  return resolvePostOAuthDestination();
 }
 
 /** Android WebView APK — native account picker via AuthBridge.kt. */
-export async function loginAndroidWebViewGoogle(): Promise<void> {
+export async function loginAndroidWebViewGoogle(): Promise<string> {
   const { signInWithGoogleViaNativeBridge } = await import("@/lib/native-auth");
   const { idToken } = await signInWithGoogleViaNativeBridge();
-  const credential = GoogleAuthProvider.credential(idToken);
-  await signInWithCredential(getFirebaseAuth(), credential);
+  await signInFirebaseWithGoogleIdToken(idToken);
   console.info(`${GOOGLE_TAG} android webview google sign-in success`);
+  return resolvePostOAuthDestination();
 }
 
-/** Web/PWA: redirect. Capacitor / Android WebView: native idToken → Firebase. */
-export async function handleGoogleLogin(): Promise<void> {
+/**
+ * Web/PWA: redirect (no return path). Native shells: sign in + return SPA route.
+ */
+export async function handleGoogleLogin(): Promise<string | void> {
   if (shouldUseNativeGoogleAuth()) {
     return loginNativeGoogle();
   }

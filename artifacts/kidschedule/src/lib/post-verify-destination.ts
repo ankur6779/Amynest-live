@@ -4,21 +4,14 @@ import { waitForIdToken } from "@/lib/auth-token";
 import { shouldShowPermissionsSetupPromptAsync } from "@/lib/pwa-android-permissions";
 import { isSetupComplete, resolveSetupStatus } from "@/lib/setup-status";
 
-/**
- * Where to send the user after email is verified and they have a Firebase session.
- * Prefers onboarding for new accounts; otherwise dashboard or home redirect.
- */
-export async function resolvePostVerifyDestination(): Promise<string> {
+async function resolvePostAuthDestinationWithToken(
+  getToken: () => Promise<string | null>,
+): Promise<string> {
   if (await shouldShowPermissionsSetupPromptAsync()) {
     return "/notify-prompt?next=/";
   }
 
-  const user = getFirebaseAuth().currentUser;
-  if (!user?.emailVerified) {
-    return "/sign-in";
-  }
-
-  const token = await waitForIdToken(() => user.getIdToken(true));
+  const token = await waitForIdToken(getToken);
   if (!token) {
     return "/";
   }
@@ -45,4 +38,25 @@ export async function resolvePostVerifyDestination(): Promise<string> {
   } catch {
     return "/";
   }
+}
+
+/**
+ * Where to send the user after email is verified and they have a Firebase session.
+ * Prefers onboarding for new accounts; otherwise dashboard or home redirect.
+ */
+export async function resolvePostVerifyDestination(): Promise<string> {
+  const user = getFirebaseAuth().currentUser;
+  if (!user?.emailVerified) {
+    return "/sign-in";
+  }
+  return resolvePostAuthDestinationWithToken(() => user.getIdToken(true));
+}
+
+/** After Google / Apple / phone OAuth — skip email verification gate. */
+export async function resolvePostOAuthDestination(): Promise<string> {
+  const user = getFirebaseAuth().currentUser;
+  if (!user) {
+    return "/sign-in";
+  }
+  return resolvePostAuthDestinationWithToken(() => user.getIdToken(true));
 }
