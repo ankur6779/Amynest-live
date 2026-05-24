@@ -39,11 +39,22 @@ function listFirebaseSessionKeys(): string[] {
 function mayBeOAuthReturn(): boolean {
   if (typeof window === "undefined") return false;
   const ref = document.referrer || "";
-  if (/accounts\.google\.com|firebaseapp\.com|googleusercontent/i.test(ref)) {
+  if (!/accounts\.google\.com|firebaseapp\.com|googleusercontent/i.test(ref)) {
+    return false;
+  }
+  const hash = window.location.hash;
+  const search = window.location.search;
+  if (
+    hash.includes("apiKey=") ||
+    hash.includes("access_token=") ||
+    search.includes("apiKey=") ||
+    search.includes("authType=") ||
+    search.includes("code=")
+  ) {
     return true;
   }
   return listFirebaseSessionKeys().some((key) =>
-    /redirect|pending|authEvent|redirectEvent/i.test(key),
+    /pendingRedirect|redirectEvent/i.test(key),
   );
 }
 
@@ -54,7 +65,7 @@ export function hasPendingFirebaseOAuthRedirect(): boolean {
   const firebaseKeys = listFirebaseSessionKeys();
   if (
     firebaseKeys.some((key) =>
-      /redirect|pending|authEvent|redirectEvent/i.test(key),
+      /pendingRedirect|redirectEvent|authEvent/i.test(key),
     )
   ) {
     return true;
@@ -66,7 +77,8 @@ export function hasPendingFirebaseOAuthRedirect(): boolean {
       if (
         key.includes("redirectEvent") ||
         key.includes("authEvent") ||
-        key.startsWith("firebase:redirect")
+        key.startsWith("firebase:redirect") ||
+        key.includes("pendingRedirect")
       ) {
         return true;
       }
