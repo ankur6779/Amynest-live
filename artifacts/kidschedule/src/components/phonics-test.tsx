@@ -423,7 +423,7 @@ function QuestionCard({
       return;
     }
     if (cvcEntry) {
-      void playCvcBlendWithSpeak(cvcEntry, speak);
+      void playCvcBlendWithSpeak(cvcEntry, { skipSlowPass: true });
       return;
     }
     if (ttsText) void speak(getPhonicsAudioText(ttsText), { mode: "phonics" });
@@ -1077,7 +1077,11 @@ function PhonicsTestContent({
   }, [playOnly, setLocation]);
 
   if (!eligible) {
-    return <div className="text-sm text-muted-foreground">Loading phonics...</div>;
+    return (
+      <p className="text-sm text-muted-foreground">
+        Phonics tests are available for children 12 months and older.
+      </p>
+    );
   }
 
   // Immersive play route: centered picker, no page scroll (640–800px phones).
@@ -1104,6 +1108,35 @@ function PhonicsTestContent({
         <div className="flex items-center gap-2 text-sm text-white/80">
           <Loader2 className="h-5 w-5 animate-spin" /> Starting test…
         </div>
+      </div>
+    );
+  }
+
+  if (playOnly && phase.kind === "running") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <QuestionCard
+          question={phase.data.questions[phase.index]!}
+          index={phase.index}
+          total={phase.data.questions.length}
+          onAnswer={handleAnswer}
+          selectedIndex={phase.selectedIndex}
+          feedback={phase.feedback}
+          secondsLeft={
+            phase.gameMode === "speed_challenge" ||
+            (phase.data.questions[phase.index]?.prompt.meta?.timeLimitSec ?? 0) > 0
+              ? secondsLeft
+              : null
+          }
+        />
+      </div>
+    );
+  }
+
+  if (playOnly && phase.kind === "result") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2">
+        <ResultPanel data={phase.data} childName={displayName} onDone={handleDone} />
       </div>
     );
   }

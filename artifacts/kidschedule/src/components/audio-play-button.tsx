@@ -208,9 +208,11 @@ export function AudioPlayButton({
           return null;
         }
         if (!resolvedText) return null;
+        const isSentenceRead = mode !== "phonics" && resolvedText.includes(" ");
         const res = await speak(resolvedText, {
           mode,
-          playbackMode: "partial-ok",
+          playbackMode: isSentenceRead ? "full-required" : "partial-ok",
+          waitUntilEnd: isSentenceRead,
           phoneme: phonemeKey,
           word: cvcWordKey,
         });
