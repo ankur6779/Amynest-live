@@ -585,6 +585,23 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
   const { input, goal } = parsed;
 
   if (userId) {
+    const { assertCoachCanGenerate } = await import(
+      "../services/coachJourneyService.js"
+    );
+    const gate = await assertCoachCanGenerate(userId, goal);
+    if (!gate.ok) {
+      requestSpan.end({ status: "error", httpStatus: 402 });
+      res.status(402).json({
+        error: "coach_locked",
+        feature: "amy_coach",
+        message: "This Amy Coach topic is locked. Upgrade or complete your free journey.",
+        goalAccess: gate.goalAccess,
+      });
+      return;
+    }
+  }
+
+  if (userId) {
     const { fireJourneyTask } = await import("../services/journeyService.js");
     fireJourneyTask(userId, "amy_coach");
   }
@@ -615,7 +632,12 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
     requestSpan.end({ status: "complete", cached: true, source: "memory", userId, responseMs });
     startCoachPerfSpan("RESPONSE_SENT", { status: "complete", cached: true, responseMs }).end();
     res.json(memPayload);
-    if (userId) void saveCoachSession(userId, memPayload.sessionId, goal, mem.plan, input);
+    if (userId) {
+      void saveCoachSession(userId, memPayload.sessionId, goal, mem.plan, input);
+      void import("../services/coachJourneyService.js").then(({ recordCoachPlanCompleted }) =>
+        recordCoachPlanCompleted(userId, goal, memPayload.sessionId),
+      );
+    }
     return;
   }
 
@@ -632,7 +654,12 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
     requestSpan.end({ status: "complete", cached: true, source: "db", userId, responseMs: responseMsDb });
     startCoachPerfSpan("RESPONSE_SENT", { status: "complete", cached: true, responseMs: responseMsDb }).end();
     res.json(dbPayload);
-    if (userId) void saveCoachSession(userId, dbPayload.sessionId, goal, dbHit, input);
+    if (userId) {
+      void saveCoachSession(userId, dbPayload.sessionId, goal, dbHit, input);
+      void import("../services/coachJourneyService.js").then(({ recordCoachPlanCompleted }) =>
+        recordCoachPlanCompleted(userId, goal, dbPayload.sessionId),
+      );
+    }
     return;
   }
 
@@ -710,6 +737,9 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
 
   if (userId) {
     void saveCoachSession(userId, effectiveSessionId, goal, partialPlan as ServiceCoachPlan, input);
+    void import("../services/coachJourneyService.js").then(({ recordCoachPlanCompleted }) =>
+      recordCoachPlanCompleted(userId, goal, effectiveSessionId),
+    );
   }
 }
 
@@ -899,6 +929,20 @@ router.post("/ai-coach/stream", aiUsageGate, async (req, res): Promise<void> => 
     routine: clip(raw.routine, 200) || "Inconsistent",
     topicAnswers: parseTopicAnswers(raw.topicAnswers),
   };
+
+  if (userId) {
+    const { assertCoachCanGenerate } = await import("../services/coachJourneyService.js");
+    const gate = await assertCoachCanGenerate(userId, goal);
+    if (!gate.ok) {
+      res.status(402).json({
+        error: "coach_locked",
+        feature: "amy_coach",
+        message: "This Amy Coach topic is locked. Upgrade or complete your free journey.",
+        goalAccess: gate.goalAccess,
+      });
+      return;
+    }
+  }
 
   const cacheKey = buildCacheKey(input);
   const sessionId = randomUUID();
@@ -1093,6 +1137,11 @@ ${goalBrief}`;
   send("done", { plan, sessionId, planCacheKey: cacheKey, cached: false, source: "ai", fallback: !aiOk });
   finish();
   if (userId) void saveCoachSession(userId, sessionId, goal, plan, input);
+  if (userId) {
+    void import("../services/coachJourneyService.js").then(({ recordCoachPlanCompleted }) =>
+      recordCoachPlanCompleted(userId, goal, sessionId),
+    );
+  }
 });
 
 // ─── POST /ai-coach/extend ───────────────────────────────────────────────
@@ -1100,6 +1149,17 @@ ${goalBrief}`;
 router.post("/ai-coach/extend", aiUsageGate, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "unauthorized" }); return; }
+
+  const { assertCoachCanExtend } = await import("../services/coachJourneyService.js");
+  const extendGate = await assertCoachCanExtend(userId);
+  if (!extendGate.ok) {
+    res.status(402).json({
+      error: "coach_locked",
+      feature: "amy_coach_extend",
+      message: "Adaptive follow-up wins unlock on Day 2 of your free Amy Coach journey.",
+    });
+    return;
+  }
 
   const raw = req.body ?? {};
   const goal = clip(raw.goal, 64);

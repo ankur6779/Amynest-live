@@ -226,6 +226,9 @@ importers:
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
+      '@workspace/coach-journey':
+        specifier: workspace:*
+        version: link:../../lib/coach-journey
       '@workspace/conflict-resolution':
         specifier: workspace:*
         version: link:../../lib/conflict-resolution
@@ -428,6 +431,9 @@ importers:
       '@workspace/behavior-tracker':
         specifier: workspace:*
         version: link:../../lib/behavior-tracker
+      '@workspace/coach-journey':
+        specifier: workspace:*
+        version: link:../../lib/coach-journey
       '@workspace/coach-topic-questions':
         specifier: workspace:*
         version: link:../../lib/coach-topic-questions
@@ -1138,6 +1144,8 @@ importers:
   lib/audio-lessons: {}
 
   lib/behavior-tracker: {}
+
+  lib/coach-journey: {}
 
   lib/coach-topic-questions: {}
 
