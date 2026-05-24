@@ -2864,12 +2864,12 @@
     "source": "static_catalog"
   },
   {
-    "text": "A for Apple",
+    "text": "A for Alphonso",
     "mode": "default",
-    "normalizedKey": "a for apple",
-    "hash": "87322745e50641c0e71e727160e8791d",
-    "objectKey": "87322745e50641c0e71e727160e8791d",
-    "source": "study_zone_play"
+    "normalizedKey": "a for alphonso",
+    "hash": "39d42b8b51a93353800aed73a1d83516",
+    "objectKey": "39d42b8b51a93353800aed73a1d83516",
+    "source": "study_zone_play_IN"
   },
   {
     "text": "B for Ball",
@@ -2877,7 +2877,7 @@
     "normalizedKey": "b for ball",
     "hash": "f0ef9710531c7adbd571c81f32c34bac",
     "objectKey": "f0ef9710531c7adbd571c81f32c34bac",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "C for Cat",
@@ -2885,15 +2885,15 @@
     "normalizedKey": "c for cat",
     "hash": "e437d884ba0feaab507c2bbfd276e126",
     "objectKey": "e437d884ba0feaab507c2bbfd276e126",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
-    "text": "D for Dog",
+    "text": "D for Dosa",
     "mode": "default",
-    "normalizedKey": "d for dog",
-    "hash": "5673e8d172524a3a8b09e1576a1bcd23",
-    "objectKey": "5673e8d172524a3a8b09e1576a1bcd23",
-    "source": "study_zone_play"
+    "normalizedKey": "d for dosa",
+    "hash": "683c9d9af7e6132245d1f1c2fadf8baf",
+    "objectKey": "683c9d9af7e6132245d1f1c2fadf8baf",
+    "source": "study_zone_play_IN"
   },
   {
     "text": "E for Elephant",
@@ -2901,7 +2901,7 @@
     "normalizedKey": "e for elephant",
     "hash": "fd43231524c46d6d0817d4a9b8bc9762",
     "objectKey": "fd43231524c46d6d0817d4a9b8bc9762",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "F for Fish",
@@ -2909,7 +2909,7 @@
     "normalizedKey": "f for fish",
     "hash": "8db6a4b691bf5e3b0ea443cf5775abbf",
     "objectKey": "8db6a4b691bf5e3b0ea443cf5775abbf",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "G for Grapes",
@@ -2917,7 +2917,7 @@
     "normalizedKey": "g for grapes",
     "hash": "1a1c0476090f821fafc704e9198c4a87",
     "objectKey": "1a1c0476090f821fafc704e9198c4a87",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "H for Horse",
@@ -2925,7 +2925,7 @@
     "normalizedKey": "h for horse",
     "hash": "4a120731838d23debd12d27da1936753",
     "objectKey": "4a120731838d23debd12d27da1936753",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "I for Ice cream",
@@ -2933,7 +2933,7 @@
     "normalizedKey": "i for ice cream",
     "hash": "eb2f4514d1c74962c2b668e6f571e545",
     "objectKey": "eb2f4514d1c74962c2b668e6f571e545",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "J for Juice",
@@ -2941,7 +2941,7 @@
     "normalizedKey": "j for juice",
     "hash": "54bf9727a9ebc125d796121d748adcfc",
     "objectKey": "54bf9727a9ebc125d796121d748adcfc",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "K for Kite",
@@ -2949,7 +2949,7 @@
     "normalizedKey": "k for kite",
     "hash": "d47d3c7760cfdf42e28974d98645794e",
     "objectKey": "d47d3c7760cfdf42e28974d98645794e",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "L for Lion",
@@ -2957,7 +2957,7 @@
     "normalizedKey": "l for lion",
     "hash": "d4f6259275789b980a131dd90236ff54",
     "objectKey": "d4f6259275789b980a131dd90236ff54",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "M for Mango",
@@ -2965,7 +2965,7 @@
     "normalizedKey": "m for mango",
     "hash": "531da4eae70de306577beb1e16e8d3c9",
     "objectKey": "531da4eae70de306577beb1e16e8d3c9",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "N for Nest",
@@ -2973,7 +2973,7 @@
     "normalizedKey": "n for nest",
     "hash": "36a40ed098fa01caba0ae407be7950c6",
     "objectKey": "36a40ed098fa01caba0ae407be7950c6",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "O for Orange",
@@ -2981,7 +2981,7 @@
     "normalizedKey": "o for orange",
     "hash": "5b198bd92e9b52125a474c1289c99a8b",
     "objectKey": "5b198bd92e9b52125a474c1289c99a8b",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "P for Parrot",
@@ -2989,7 +2989,7 @@
     "normalizedKey": "p for parrot",
     "hash": "628399decb7a2c443ddd52da1c8c5a09",
     "objectKey": "628399decb7a2c443ddd52da1c8c5a09",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Q for Queen",
@@ -2997,15 +2997,15 @@
     "normalizedKey": "q for queen",
     "hash": "b64d10d0343fe9bcae1b78bd4ee07fcd",
     "objectKey": "b64d10d0343fe9bcae1b78bd4ee07fcd",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
-    "text": "R for Rabbit",
+    "text": "R for Rupee",
     "mode": "default",
-    "normalizedKey": "r for rabbit",
-    "hash": "e06086eb0e9ad2fa016909beb7686008",
-    "objectKey": "e06086eb0e9ad2fa016909beb7686008",
-    "source": "study_zone_play"
+    "normalizedKey": "r for rupee",
+    "hash": "23240fa34d9ba07e2cdfb0e24d0594b8",
+    "objectKey": "23240fa34d9ba07e2cdfb0e24d0594b8",
+    "source": "study_zone_play_IN"
   },
   {
     "text": "S for Sun",
@@ -3013,7 +3013,7 @@
     "normalizedKey": "s for sun",
     "hash": "e286a4bd6d72bfd8fd1ff121827cc087",
     "objectKey": "e286a4bd6d72bfd8fd1ff121827cc087",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "T for Tiger",
@@ -3021,7 +3021,7 @@
     "normalizedKey": "t for tiger",
     "hash": "d7fb5c7a7784fe27edc18905a3ef0c6c",
     "objectKey": "d7fb5c7a7784fe27edc18905a3ef0c6c",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "U for Umbrella",
@@ -3029,7 +3029,7 @@
     "normalizedKey": "u for umbrella",
     "hash": "3907f08cb8368679f96b2e99e39ea5fe",
     "objectKey": "3907f08cb8368679f96b2e99e39ea5fe",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "V for Van",
@@ -3037,7 +3037,7 @@
     "normalizedKey": "v for van",
     "hash": "40f91a7263e592205dba7abb245304e8",
     "objectKey": "40f91a7263e592205dba7abb245304e8",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "W for Watch",
@@ -3045,7 +3045,7 @@
     "normalizedKey": "w for watch",
     "hash": "6060ed5a2bb597c2bd91f2ba39bb61a3",
     "objectKey": "6060ed5a2bb597c2bd91f2ba39bb61a3",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "X for X-ray",
@@ -3053,7 +3053,7 @@
     "normalizedKey": "x for x-ray",
     "hash": "ef556d30bbafe8cafe7abbfde8291546",
     "objectKey": "ef556d30bbafe8cafe7abbfde8291546",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Y for Yo-yo",
@@ -3061,7 +3061,7 @@
     "normalizedKey": "y for yo-yo",
     "hash": "57e89d78057cc02f0bba399a526fbedf",
     "objectKey": "57e89d78057cc02f0bba399a526fbedf",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Z for Zebra",
@@ -3069,7 +3069,7 @@
     "normalizedKey": "z for zebra",
     "hash": "e1d8aa6ed4731a8d5dac3c6eb11ec691",
     "objectKey": "e1d8aa6ed4731a8d5dac3c6eb11ec691",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "One",
@@ -3077,7 +3077,7 @@
     "normalizedKey": "one",
     "hash": "8b89ca9d6fbb78f7193a48da8ab52d64",
     "objectKey": "8b89ca9d6fbb78f7193a48da8ab52d64",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Two",
@@ -3085,7 +3085,7 @@
     "normalizedKey": "two",
     "hash": "17927816a5950be6b34bfd676449893a",
     "objectKey": "17927816a5950be6b34bfd676449893a",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Four",
@@ -3093,7 +3093,7 @@
     "normalizedKey": "four",
     "hash": "457bc567bd35db88840eb8e156c4645d",
     "objectKey": "457bc567bd35db88840eb8e156c4645d",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Five",
@@ -3101,7 +3101,7 @@
     "normalizedKey": "five",
     "hash": "cc12f49b2a8a4399c2e4961f8d4f798d",
     "objectKey": "cc12f49b2a8a4399c2e4961f8d4f798d",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Six",
@@ -3109,7 +3109,7 @@
     "normalizedKey": "six",
     "hash": "d97b3809786aadede5cdc1f8b352aa04",
     "objectKey": "d97b3809786aadede5cdc1f8b352aa04",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Seven",
@@ -3117,7 +3117,7 @@
     "normalizedKey": "seven",
     "hash": "e291e3b5858b48133854c22cc648b921",
     "objectKey": "e291e3b5858b48133854c22cc648b921",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Eight",
@@ -3125,7 +3125,7 @@
     "normalizedKey": "eight",
     "hash": "13777042f17a5610aec9e08a8c2fd638",
     "objectKey": "13777042f17a5610aec9e08a8c2fd638",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Nine",
@@ -3133,7 +3133,7 @@
     "normalizedKey": "nine",
     "hash": "e168390a4a275a19a076a5229a97c55c",
     "objectKey": "e168390a4a275a19a076a5229a97c55c",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Ten",
@@ -3141,7 +3141,7 @@
     "normalizedKey": "ten",
     "hash": "316ab622369fb17cc07d806bbb2f0f08",
     "objectKey": "316ab622369fb17cc07d806bbb2f0f08",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Eleven",
@@ -3149,7 +3149,7 @@
     "normalizedKey": "eleven",
     "hash": "bcaa52c43923e23513efe84d5ddac634",
     "objectKey": "bcaa52c43923e23513efe84d5ddac634",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Twelve",
@@ -3157,7 +3157,7 @@
     "normalizedKey": "twelve",
     "hash": "cb9287175d01f5bd33df97726c726768",
     "objectKey": "cb9287175d01f5bd33df97726c726768",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Thirteen",
@@ -3165,7 +3165,7 @@
     "normalizedKey": "thirteen",
     "hash": "157149266218695b7723e1ced5611338",
     "objectKey": "157149266218695b7723e1ced5611338",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Fourteen",
@@ -3173,7 +3173,7 @@
     "normalizedKey": "fourteen",
     "hash": "9909807952ff4ec21c757497cb9b0b0b",
     "objectKey": "9909807952ff4ec21c757497cb9b0b0b",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Fifteen",
@@ -3181,7 +3181,7 @@
     "normalizedKey": "fifteen",
     "hash": "4dbe9031920acf5417f804e030a086d2",
     "objectKey": "4dbe9031920acf5417f804e030a086d2",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Sixteen",
@@ -3189,7 +3189,7 @@
     "normalizedKey": "sixteen",
     "hash": "2dd0708da4f8a3d06e8a9d398e935bef",
     "objectKey": "2dd0708da4f8a3d06e8a9d398e935bef",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Seventeen",
@@ -3197,7 +3197,7 @@
     "normalizedKey": "seventeen",
     "hash": "868d467cdc6a37070b2783216b7733dd",
     "objectKey": "868d467cdc6a37070b2783216b7733dd",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Eighteen",
@@ -3205,7 +3205,7 @@
     "normalizedKey": "eighteen",
     "hash": "b2f2713f71758adb8120d2aa42b73d30",
     "objectKey": "b2f2713f71758adb8120d2aa42b73d30",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Nineteen",
@@ -3213,7 +3213,7 @@
     "normalizedKey": "nineteen",
     "hash": "58fec439aaf9166250718bcd33e1a6e5",
     "objectKey": "58fec439aaf9166250718bcd33e1a6e5",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Twenty",
@@ -3221,7 +3221,7 @@
     "normalizedKey": "twenty",
     "hash": "deabfb9e698c8909111b7cee0ba96f7b",
     "objectKey": "deabfb9e698c8909111b7cee0ba96f7b",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Red",
@@ -3229,7 +3229,7 @@
     "normalizedKey": "red",
     "hash": "52314a0bfcaaf25f9dc31daa51c9e5ae",
     "objectKey": "52314a0bfcaaf25f9dc31daa51c9e5ae",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Blue",
@@ -3237,7 +3237,7 @@
     "normalizedKey": "blue",
     "hash": "89f59b882fc9a68c979a2e53a9e477ff",
     "objectKey": "89f59b882fc9a68c979a2e53a9e477ff",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Green",
@@ -3245,7 +3245,7 @@
     "normalizedKey": "green",
     "hash": "a0bd740120e6397fb6cbc09396dad731",
     "objectKey": "a0bd740120e6397fb6cbc09396dad731",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Yellow",
@@ -3253,7 +3253,7 @@
     "normalizedKey": "yellow",
     "hash": "cb6e4eab2ffbbb8503655b55d1579d47",
     "objectKey": "cb6e4eab2ffbbb8503655b55d1579d47",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Orange",
@@ -3261,7 +3261,7 @@
     "normalizedKey": "orange",
     "hash": "d849895c3b6dd88c6687018194f3bc20",
     "objectKey": "d849895c3b6dd88c6687018194f3bc20",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Purple",
@@ -3269,7 +3269,7 @@
     "normalizedKey": "purple",
     "hash": "a3efb62655cbbd1ca06d6aea771cb4ad",
     "objectKey": "a3efb62655cbbd1ca06d6aea771cb4ad",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Pink",
@@ -3277,7 +3277,7 @@
     "normalizedKey": "pink",
     "hash": "abc5d775b426f26e344456e79a99e948",
     "objectKey": "abc5d775b426f26e344456e79a99e948",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Brown",
@@ -3285,7 +3285,7 @@
     "normalizedKey": "brown",
     "hash": "fbf452d9dc3fcdec37b1720d65ad46f4",
     "objectKey": "fbf452d9dc3fcdec37b1720d65ad46f4",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "White",
@@ -3293,7 +3293,7 @@
     "normalizedKey": "white",
     "hash": "0154b02d934b7f99cbd1f0faf182021d",
     "objectKey": "0154b02d934b7f99cbd1f0faf182021d",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Circle",
@@ -3301,7 +3301,7 @@
     "normalizedKey": "circle",
     "hash": "4d033b3c51e91797acdad77164758cc2",
     "objectKey": "4d033b3c51e91797acdad77164758cc2",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Square",
@@ -3309,7 +3309,7 @@
     "normalizedKey": "square",
     "hash": "b275b3d03fc5e4ec47d52120d5a1c650",
     "objectKey": "b275b3d03fc5e4ec47d52120d5a1c650",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Triangle",
@@ -3317,7 +3317,7 @@
     "normalizedKey": "triangle",
     "hash": "f9e28a8ae1ed6eeed03f12d3e7ee63bf",
     "objectKey": "f9e28a8ae1ed6eeed03f12d3e7ee63bf",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Rectangle",
@@ -3325,7 +3325,7 @@
     "normalizedKey": "rectangle",
     "hash": "0feffe2ae654fa8ff5754535048caa75",
     "objectKey": "0feffe2ae654fa8ff5754535048caa75",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Heart",
@@ -3333,7 +3333,7 @@
     "normalizedKey": "heart",
     "hash": "0382c5bad53f4b401c9cfa1b5051b7a9",
     "objectKey": "0382c5bad53f4b401c9cfa1b5051b7a9",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Diamond",
@@ -3341,7 +3341,7 @@
     "normalizedKey": "diamond",
     "hash": "cda77fbee5b1478e37fbe16f7a44ea0a",
     "objectKey": "cda77fbee5b1478e37fbe16f7a44ea0a",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Oval",
@@ -3349,7 +3349,7 @@
     "normalizedKey": "oval",
     "hash": "05cd7f95149de60beb9247291af317cf",
     "objectKey": "05cd7f95149de60beb9247291af317cf",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Cow",
@@ -3357,7 +3357,7 @@
     "normalizedKey": "cow",
     "hash": "d9a67587790c02d0dfe347dfcdd942d7",
     "objectKey": "d9a67587790c02d0dfe347dfcdd942d7",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Horse",
@@ -3365,7 +3365,7 @@
     "normalizedKey": "horse",
     "hash": "95b62c255aded57fb7f1fbb54c5cd718",
     "objectKey": "95b62c255aded57fb7f1fbb54c5cd718",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Lion",
@@ -3373,7 +3373,7 @@
     "normalizedKey": "lion",
     "hash": "49c8c51ae35281062aa38247aaeb680a",
     "objectKey": "49c8c51ae35281062aa38247aaeb680a",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Tiger",
@@ -3381,7 +3381,7 @@
     "normalizedKey": "tiger",
     "hash": "f044553c6a029847ba6c568c4bac85c2",
     "objectKey": "f044553c6a029847ba6c568c4bac85c2",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Monkey",
@@ -3389,7 +3389,7 @@
     "normalizedKey": "monkey",
     "hash": "e20ee801c8046f18cb32537a3699da98",
     "objectKey": "e20ee801c8046f18cb32537a3699da98",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Bear",
@@ -3397,7 +3397,7 @@
     "normalizedKey": "bear",
     "hash": "16f1e33636a2bae661d10ad74c397be0",
     "objectKey": "16f1e33636a2bae661d10ad74c397be0",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Rabbit",
@@ -3405,7 +3405,7 @@
     "normalizedKey": "rabbit",
     "hash": "240df6001100820876b8a6fa980651b7",
     "objectKey": "240df6001100820876b8a6fa980651b7",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Apple",
@@ -3413,7 +3413,7 @@
     "normalizedKey": "apple",
     "hash": "9240aec5dcacd376af2f39604c9a9642",
     "objectKey": "9240aec5dcacd376af2f39604c9a9642",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Banana",
@@ -3421,7 +3421,7 @@
     "normalizedKey": "banana",
     "hash": "594d44cf7159acad6370dd51bd5892cc",
     "objectKey": "594d44cf7159acad6370dd51bd5892cc",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Mango",
@@ -3429,7 +3429,7 @@
     "normalizedKey": "mango",
     "hash": "ac5e9a0f20c7a225528816048e1609aa",
     "objectKey": "ac5e9a0f20c7a225528816048e1609aa",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Grapes",
@@ -3437,7 +3437,7 @@
     "normalizedKey": "grapes",
     "hash": "fcc34cd5fc1bc412790969a76790cb5a",
     "objectKey": "fcc34cd5fc1bc412790969a76790cb5a",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Strawberry",
@@ -3445,7 +3445,7 @@
     "normalizedKey": "strawberry",
     "hash": "b9c18d62133c06461c6d9525a3107523",
     "objectKey": "b9c18d62133c06461c6d9525a3107523",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Watermelon",
@@ -3453,7 +3453,7 @@
     "normalizedKey": "watermelon",
     "hash": "ba56de576844f6c0b8ff639842eaa216",
     "objectKey": "ba56de576844f6c0b8ff639842eaa216",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Pineapple",
@@ -3461,7 +3461,7 @@
     "normalizedKey": "pineapple",
     "hash": "175bc8adfd72cfb73305d02a8510f753",
     "objectKey": "175bc8adfd72cfb73305d02a8510f753",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Bread",
@@ -3469,7 +3469,7 @@
     "normalizedKey": "bread",
     "hash": "7135872aaaec0a1749c9f6cefdcd9b05",
     "objectKey": "7135872aaaec0a1749c9f6cefdcd9b05",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Rice",
@@ -3477,7 +3477,7 @@
     "normalizedKey": "rice",
     "hash": "813a134e54a3763e23a6d34f49127619",
     "objectKey": "813a134e54a3763e23a6d34f49127619",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Egg",
@@ -3485,7 +3485,7 @@
     "normalizedKey": "egg",
     "hash": "f9254f332441fdbb98d9fb2a2ee6fb2e",
     "objectKey": "f9254f332441fdbb98d9fb2a2ee6fb2e",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Twinkle, twinkle, little star, How I wonder what you are. Up above the world so high, Like a diamond in the sky.",
@@ -3493,7 +3493,7 @@
     "normalizedKey": "twinkle, twinkle, little star, how i wonder what you are. up above the world so high, like a diamond in the sky.",
     "hash": "b1c2f3265562683e144dbbc480910151",
     "objectKey": "b1c2f3265562683e144dbbc480910151",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Baa baa black sheep, have you any wool? Yes sir, yes sir, three bags full. One for the master, one for the dame, And one for the little boy who lives down the lane.",
@@ -3501,7 +3501,7 @@
     "normalizedKey": "baa baa black sheep, have you any wool? yes sir, yes sir, three bags full. one for the master, one for the dame, and one for the little boy who lives down the lane.",
     "hash": "620a9e30009284481559c58541b8b3f6",
     "objectKey": "620a9e30009284481559c58541b8b3f6",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Humpty Dumpty sat on a wall, Humpty Dumpty had a great fall. All the king's horses and all the king's men Couldn't put Humpty together again.",
@@ -3509,7 +3509,7 @@
     "normalizedKey": "humpty dumpty sat on a wall, humpty dumpty had a great fall. all the king's horses and all the king's men couldn't put humpty together again.",
     "hash": "564afbe308833a6728535686a7e8b900",
     "objectKey": "564afbe308833a6728535686a7e8b900",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Jack and Jill went up the hill To fetch a pail of water. Jack fell down and broke his crown, And Jill came tumbling after.",
@@ -3517,7 +3517,7 @@
     "normalizedKey": "jack and jill went up the hill to fetch a pail of water. jack fell down and broke his crown, and jill came tumbling after.",
     "hash": "5fa69903871a96427eee49bf43a9c902",
     "objectKey": "5fa69903871a96427eee49bf43a9c902",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "The wheels on the bus go round and round, Round and round, round and round. The wheels on the bus go round and round, All through the town.",
@@ -3525,7 +3525,7 @@
     "normalizedKey": "the wheels on the bus go round and round, round and round, round and round. the wheels on the bus go round and round, all through the town.",
     "hash": "cd623a96c1260a41f8a6e189aa12acff",
     "objectKey": "cd623a96c1260a41f8a6e189aa12acff",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Old MacDonald had a farm, E I E I O. And on his farm he had a cow, E I E I O. With a moo moo here and a moo moo there.",
@@ -3533,7 +3533,7 @@
     "normalizedKey": "old macdonald had a farm, e i e i o. and on his farm he had a cow, e i e i o. with a moo moo here and a moo moo there.",
     "hash": "852af783ca05e375afc8e05775a41215",
     "objectKey": "852af783ca05e375afc8e05775a41215",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Mary had a little lamb, Its fleece was white as snow. And everywhere that Mary went, The lamb was sure to go.",
@@ -3541,7 +3541,7 @@
     "normalizedKey": "mary had a little lamb, its fleece was white as snow. and everywhere that mary went, the lamb was sure to go.",
     "hash": "4298d22b5dc26cc62a83f669af20774a",
     "objectKey": "4298d22b5dc26cc62a83f669af20774a",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Incy wincy spider climbed up the water spout. Down came the rain and washed the spider out. Out came the sun and dried up all the rain, And incy wincy spider climbed up the spout again.",
@@ -3549,7 +3549,7 @@
     "normalizedKey": "incy wincy spider climbed up the water spout. down came the rain and washed the spider out. out came the sun and dried up all the rain, and incy wincy spider climbed up the spout again.",
     "hash": "7b35890ccc3015c8505885fcc61d2cf8",
     "objectKey": "7b35890ccc3015c8505885fcc61d2cf8",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Row, row, row your boat, Gently down the stream. Merrily, merrily, merrily, merrily, Life is but a dream.",
@@ -3557,7 +3557,7 @@
     "normalizedKey": "row, row, row your boat, gently down the stream. merrily, merrily, merrily, merrily, life is but a dream.",
     "hash": "252d0b07649a8be12a82bae1f954c53a",
     "objectKey": "252d0b07649a8be12a82bae1f954c53a",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Rain rain go away, Come again another day. Little Johnny wants to play, Rain rain go away.",
@@ -3565,7 +3565,7 @@
     "normalizedKey": "rain rain go away, come again another day. little johnny wants to play, rain rain go away.",
     "hash": "712fa34b9dec88976cd22ced5ea3fe98",
     "objectKey": "712fa34b9dec88976cd22ced5ea3fe98",
-    "source": "study_zone_play"
+    "source": "study_zone_play_IN"
   },
   {
     "text": "Addition means putting numbers together to find the total. When you add, you combine two groups: 2 + 3 means 2 things and 3 more. The '+' sign means add. The '=' sign shows the answer. Example: 2 + 3 = 5.",
@@ -3573,7 +3573,7 @@
     "normalizedKey": "addition means putting numbers together to find the total. when you add, you combine two groups: 2 + 3 means 2 things and 3 more. the '+' sign means add. the '=' sign shows the answer. example: 2 + 3 = 5.",
     "hash": "8f86b3db27329121429ea0e2e3dd91d4",
     "objectKey": "8f86b3db27329121429ea0e2e3dd91d4",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "Addition means putting numbers together. Two plus three equals five!",
@@ -3581,7 +3581,7 @@
     "normalizedKey": "addition means putting numbers together. two plus three equals five!",
     "hash": "7c335fd7c0f19597e782d133ccd08760",
     "objectKey": "7c335fd7c0f19597e782d133ccd08760",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "Subtraction means taking some away from a group to find what is left. The '−' sign means subtract (minus). Example: If you have 8 apples and eat 3, you have 8 − 3 = 5 left. The answer in subtraction is called the difference.",
@@ -3589,7 +3589,7 @@
     "normalizedKey": "subtraction means taking some away from a group to find what is left. the '−' sign means subtract (minus). example: if you have 8 apples and eat 3, you have 8 − 3 = 5 left. the answer in subtraction is called the difference.",
     "hash": "7525cc38cd2340901a2b587ddff505a1",
     "objectKey": "7525cc38cd2340901a2b587ddff505a1",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "Subtraction means taking some away. Eight minus three leaves five!",
@@ -3597,7 +3597,7 @@
     "normalizedKey": "subtraction means taking some away. eight minus three leaves five!",
     "hash": "213c0a50a344664d286d252006826be3",
     "objectKey": "213c0a50a344664d286d252006826be3",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "Multiplication is a quick way to add the same number many times. 3 × 4 means: add 3 four times = 3 + 3 + 3 + 3 = 12. The '×' sign means multiply. Learning times tables makes multiplication faster.",
@@ -3605,7 +3605,7 @@
     "normalizedKey": "multiplication is a quick way to add the same number many times. 3 × 4 means: add 3 four times = 3 + 3 + 3 + 3 = 12. the '×' sign means multiply. learning times tables makes multiplication faster.",
     "hash": "0591af5962776005ea7ebb63f93b7364",
     "objectKey": "0591af5962776005ea7ebb63f93b7364",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "Multiplication is adding the same number again and again. Three times four is twelve!",
@@ -3613,7 +3613,7 @@
     "normalizedKey": "multiplication is adding the same number again and again. three times four is twelve!",
     "hash": "8cf3dcba99d1a9a75de23aaf513aa80b",
     "objectKey": "8cf3dcba99d1a9a75de23aaf513aa80b",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "Division means sharing equally or splitting into equal groups. 12 ÷ 3 means: share 12 things into 3 equal groups → 4 in each group. The '÷' sign means divide. Division is the opposite of multiplication.",
@@ -3621,7 +3621,7 @@
     "normalizedKey": "division means sharing equally or splitting into equal groups. 12 ÷ 3 means: share 12 things into 3 equal groups → 4 in each group. the '÷' sign means divide. division is the opposite of multiplication.",
     "hash": "b7beb9f77ff4e4edd48cdc891e685986",
     "objectKey": "b7beb9f77ff4e4edd48cdc891e685986",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "Division means sharing equally. Twelve shared by three gives four in each group!",
@@ -3629,7 +3629,7 @@
     "normalizedKey": "division means sharing equally. twelve shared by three gives four in each group!",
     "hash": "7bffb3715974f9e8685cad51a5e6cd2d",
     "objectKey": "7bffb3715974f9e8685cad51a5e6cd2d",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "A fraction shows part of a whole. If a pizza is cut into 4 equal pieces and you eat 1, you ate 1/4 of it. The top number (numerator) = how many parts you have. The bottom number (denominator) = total equal parts the whole is divided into.",
@@ -3637,7 +3637,7 @@
     "normalizedKey": "a fraction shows part of a whole. if a pizza is cut into 4 equal pieces and you eat 1, you ate 1/4 of it. the top number (numerator) = how many parts you have. the bottom number (denominator) = total equal parts the whole is divided into.",
     "hash": "a3254f53eff0e3941a3ca2dd16a9f328",
     "objectKey": "a3254f53eff0e3941a3ca2dd16a9f328",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "A fraction is a part of a whole. One quarter means one piece out of four!",
@@ -3645,7 +3645,7 @@
     "normalizedKey": "a fraction is a part of a whole. one quarter means one piece out of four!",
     "hash": "fb308640559964f3266d04bf13525abd",
     "objectKey": "fb308640559964f3266d04bf13525abd",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "Shapes are everywhere around us. A circle has no corners — like a wheel. A square has 4 equal sides and 4 corners — like a dice face. A triangle has 3 sides and 3 corners. A rectangle has 4 sides — opposite sides are equal — like a book cover.",
@@ -3653,7 +3653,7 @@
     "normalizedKey": "shapes are everywhere around us. a circle has no corners — like a wheel. a square has 4 equal sides and 4 corners — like a dice face. a triangle has 3 sides and 3 corners. a rectangle has 4 sides — opposite sides are equal — like a book cover.",
     "hash": "9667eead56fb8efcbaa62c4ac496248a",
     "objectKey": "9667eead56fb8efcbaa62c4ac496248a",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "Shapes are all around us — circles, squares, triangles, and rectangles!",
@@ -3661,7 +3661,7 @@
     "normalizedKey": "shapes are all around us — circles, squares, triangles, and rectangles!",
     "hash": "e6d4a1141841cd234d81b255f9853ea8",
     "objectKey": "e6d4a1141841cd234d81b255f9853ea8",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "A clock shows us what time it is. The short hand shows the hour. The long hand shows the minutes. There are 24 hours in a day, 7 days in a week, and 12 months in a year. Months: January, February, March, April, May, June, July, August, September, October, November, December.",
@@ -3669,7 +3669,7 @@
     "normalizedKey": "a clock shows us what time it is. the short hand shows the hour. the long hand shows the minutes. there are 24 hours in a day, 7 days in a week, and 12 months in a year. months: january, february, march, april, may, june, july, august, september, october, november, december.",
     "hash": "3325d27408b7b3253a637f9f3847f6e9",
     "objectKey": "3325d27408b7b3253a637f9f3847f6e9",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "A clock tells the time. There are seven days in a week and twelve months in a year!",
@@ -3677,7 +3677,7 @@
     "normalizedKey": "a clock tells the time. there are seven days in a week and twelve months in a year!",
     "hash": "78a9dc876a1f05971bc19e3cf9c706f5",
     "objectKey": "78a9dc876a1f05971bc19e3cf9c706f5",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "Plants have several main parts: Roots — hold the plant in soil and drink up water. Stem — carries water from roots to leaves. Leaves — make food for the plant using sunlight (photosynthesis). Flower — makes seeds so new plants can grow.",
@@ -3685,7 +3685,7 @@
     "normalizedKey": "plants have several main parts: roots — hold the plant in soil and drink up water. stem — carries water from roots to leaves. leaves — make food for the plant using sunlight (photosynthesis). flower — makes seeds so new plants can grow.",
     "hash": "192b0d45f17cdd6dd827c5e7fbd9850f",
     "objectKey": "192b0d45f17cdd6dd827c5e7fbd9850f",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "Plants have roots, stems, leaves, and flowers. Leaves use sunlight to make food!",
@@ -3693,7 +3693,7 @@
     "normalizedKey": "plants have roots, stems, leaves, and flowers. leaves use sunlight to make food!",
     "hash": "4a7e13da5e1bd8dfd285202904364dfd",
     "objectKey": "4a7e13da5e1bd8dfd285202904364dfd",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "Animals live in different places called habitats. Pet animals (dog, cat) live with us at home. Wild animals (lion, elephant) live in forests or jungles. Farm animals (cow, hen) live on farms. Water animals (fish, dolphin) live in rivers, lakes or seas.",
@@ -3701,7 +3701,7 @@
     "normalizedKey": "animals live in different places called habitats. pet animals (dog, cat) live with us at home. wild animals (lion, elephant) live in forests or jungles. farm animals (cow, hen) live on farms. water animals (fish, dolphin) live in rivers, lakes or seas.",
     "hash": "b03b1d1e19c693ed8a38ffd80a7aa9f2",
     "objectKey": "b03b1d1e19c693ed8a38ffd80a7aa9f2",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "Animals live in different homes — pets at home, wild animals in forests, fish in water!",
@@ -3709,7 +3709,7 @@
     "normalizedKey": "animals live in different homes — pets at home, wild animals in forests, fish in water!",
     "hash": "15538ce7f1506614adc0e70e8ce037f8",
     "objectKey": "15538ce7f1506614adc0e70e8ce037f8",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "Everything around us is made of matter. Matter has three main states: solid, liquid, and gas. A solid (like a stone) keeps its own shape. A liquid (like water) takes the shape of its container. A gas (like air) spreads out and fills everywhere.",
@@ -3717,7 +3717,7 @@
     "normalizedKey": "everything around us is made of matter. matter has three main states: solid, liquid, and gas. a solid (like a stone) keeps its own shape. a liquid (like water) takes the shape of its container. a gas (like air) spreads out and fills everywhere.",
     "hash": "1f52548adc2442574b359a7b8264fac0",
     "objectKey": "1f52548adc2442574b359a7b8264fac0",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "Matter can be a solid, a liquid, or a gas. Ice is solid, water is liquid, air is gas!",
@@ -3725,7 +3725,7 @@
     "normalizedKey": "matter can be a solid, a liquid, or a gas. ice is solid, water is liquid, air is gas!",
     "hash": "a5f4fd8ba5e14d21fa6707743f058ba2",
     "objectKey": "a5f4fd8ba5e14d21fa6707743f058ba2",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "Our body has many important parts. Head — has brain, eyes, ears, nose and mouth. Arms and hands — used for holding, writing and eating. Legs and feet — used for walking, running and jumping. We must take care of our body by eating well, exercising and sleeping.",
@@ -3733,7 +3733,7 @@
     "normalizedKey": "our body has many important parts. head — has brain, eyes, ears, nose and mouth. arms and hands — used for holding, writing and eating. legs and feet — used for walking, running and jumping. we must take care of our body by eating well, exercising and sleeping.",
     "hash": "4c33d477f2fa805fceb21994e4b55bbd",
     "objectKey": "4c33d477f2fa805fceb21994e4b55bbd",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "Your body has a head, arms, legs, and a brain that helps you think and learn!",
@@ -3741,7 +3741,7 @@
     "normalizedKey": "your body has a head, arms, legs, and a brain that helps you think and learn!",
     "hash": "e591a365d9f9eb91f9573cea3385a0d0",
     "objectKey": "e591a365d9f9eb91f9573cea3385a0d0",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "Weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold. Seasons are longer changes: Spring, Summer, Autumn (Fall), and Winter. In many places, spring brings flowers, summer is warm, autumn has falling leaves, and winter is cold. We change our clothes and activities based on the weather.",
@@ -3749,7 +3749,7 @@
     "normalizedKey": "weather tells us what the sky and air are like each day — sunny, rainy, cloudy, windy or cold. seasons are longer changes: spring, summer, autumn (fall), and winter. in many places, spring brings flowers, summer is warm, autumn has falling leaves, and winter is cold. we change our clothes and activities based on the weather.",
     "hash": "5e273fd0ce961f1305344dfbab160eea",
     "objectKey": "5e273fd0ce961f1305344dfbab160eea",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "Weather changes day to day — sunny, rainy, cloudy, or snowy. Seasons last longer!",
@@ -3757,7 +3757,7 @@
     "normalizedKey": "weather changes day to day — sunny, rainy, cloudy, or snowy. seasons last longer!",
     "hash": "05871d6379c12954338b01018a447fa7",
     "objectKey": "05871d6379c12954338b01018a447fa7",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "We eat food to get energy and stay healthy. Food groups: vegetables (broccoli, carrot), fruits (apple, banana), grains (rice, bread), protein (egg, chicken, beans), dairy (milk, cheese). Eating all food groups is called a balanced diet. Junk food (chips, sugary drinks) has very little nutrition and should be eaten less.",
@@ -3765,7 +3765,7 @@
     "normalizedKey": "we eat food to get energy and stay healthy. food groups: vegetables (broccoli, carrot), fruits (apple, banana), grains (rice, bread), protein (egg, chicken, beans), dairy (milk, cheese). eating all food groups is called a balanced diet. junk food (chips, sugary drinks) has very little nutrition and should be eaten less.",
     "hash": "638b5bcfe24024bb2875531084fb9523",
     "objectKey": "638b5bcfe24024bb2875531084fb9523",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "Healthy food gives you energy. Eat fruits, vegetables, grains, and protein every day!",
@@ -3773,7 +3773,7 @@
     "normalizedKey": "healthy food gives you energy. eat fruits, vegetables, grains, and protein every day!",
     "hash": "f977dacf3c667cad71b61c9887e818cb",
     "objectKey": "f977dacf3c667cad71b61c9887e818cb",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "A noun is a naming word. It names a person (Emma), a place (school), an animal (dog) or a thing (book). Common nouns name general things (cat, city). Proper nouns name specific things and start with a capital letter (London, Emma).",
@@ -3781,7 +3781,7 @@
     "normalizedKey": "a noun is a naming word. it names a person (emma), a place (school), an animal (dog) or a thing (book). common nouns name general things (cat, city). proper nouns name specific things and start with a capital letter (london, emma).",
     "hash": "37c2c8f2dc6bbbcdfcaed4a7baa81ad2",
     "objectKey": "37c2c8f2dc6bbbcdfcaed4a7baa81ad2",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "A noun names a person, place, animal, or thing — like dog, school, or apple!",
@@ -3789,7 +3789,7 @@
     "normalizedKey": "a noun names a person, place, animal, or thing — like dog, school, or apple!",
     "hash": "c68a38cc285f372f986e7b7d928a8c5b",
     "objectKey": "c68a38cc285f372f986e7b7d928a8c5b",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "A verb is an action or doing word. Words like run, eat, jump, write and read are verbs. Verbs tell us what someone or something is doing. Every sentence must have a verb.",
@@ -3797,7 +3797,7 @@
     "normalizedKey": "a verb is an action or doing word. words like run, eat, jump, write and read are verbs. verbs tell us what someone or something is doing. every sentence must have a verb.",
     "hash": "e6df181eafb13285c9498f572e9d009e",
     "objectKey": "e6df181eafb13285c9498f572e9d009e",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "A verb is a doing word — run, jump, eat, and read are all verbs!",
@@ -3805,7 +3805,7 @@
     "normalizedKey": "a verb is a doing word — run, jump, eat, and read are all verbs!",
     "hash": "1ed44a98941ef24734b62274c22e965a",
     "objectKey": "1ed44a98941ef24734b62274c22e965a",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "An adjective is a describing word — it tells us more about a noun. It can describe size (big, small), colour (red, blue), shape (round, flat), taste (sweet, sour) or feel (hot, cold). Example: 'The big elephant' — 'big' is the adjective describing the elephant.",
@@ -3813,7 +3813,7 @@
     "normalizedKey": "an adjective is a describing word — it tells us more about a noun. it can describe size (big, small), colour (red, blue), shape (round, flat), taste (sweet, sour) or feel (hot, cold). example: 'the big elephant' — 'big' is the adjective describing the elephant.",
     "hash": "5fd4fd03803405ff7d455c1800c17c3f",
     "objectKey": "5fd4fd03803405ff7d455c1800c17c3f",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "An adjective describes a noun — like big, red, sweet, or cold!",
@@ -3821,7 +3821,7 @@
     "normalizedKey": "an adjective describes a noun — like big, red, sweet, or cold!",
     "hash": "c67960fe1cab32cfbb4b28511de6cd19",
     "objectKey": "c67960fe1cab32cfbb4b28511de6cd19",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "A pronoun is a word that replaces a noun to avoid repetition. Examples: I, you, he, she, it, we, they. 'Emma is happy. She is happy.' — 'She' replaces 'Emma'. Using pronouns makes sentences shorter and less repetitive.",
@@ -3829,7 +3829,7 @@
     "normalizedKey": "a pronoun is a word that replaces a noun to avoid repetition. examples: i, you, he, she, it, we, they. 'emma is happy. she is happy.' — 'she' replaces 'emma'. using pronouns makes sentences shorter and less repetitive.",
     "hash": "1f050c2c9527a1f4f7a4f479a27fd372",
     "objectKey": "1f050c2c9527a1f4f7a4f479a27fd372",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "A pronoun replaces a noun so we do not repeat it — I, you, he, she, and they!",
@@ -3837,7 +3837,7 @@
     "normalizedKey": "a pronoun replaces a noun so we do not repeat it — i, you, he, she, and they!",
     "hash": "4966454da00de94aedae343a4eb51756",
     "objectKey": "4966454da00de94aedae343a4eb51756",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "A sentence is a group of words that makes complete sense. Every sentence has a subject (who/what) and a verb (action). It starts with a capital letter and ends with a full stop, question mark or exclamation mark. Example: 'Emma reads books.' — Emma is the subject, reads is the verb.",
@@ -3845,7 +3845,7 @@
     "normalizedKey": "a sentence is a group of words that makes complete sense. every sentence has a subject (who/what) and a verb (action). it starts with a capital letter and ends with a full stop, question mark or exclamation mark. example: 'emma reads books.' — emma is the subject, reads is the verb.",
     "hash": "a152f346cbd204e82580977be9276942",
     "objectKey": "a152f346cbd204e82580977be9276942",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "A sentence is a group of words that makes sense and ends with a full stop!",
@@ -3853,15 +3853,15 @@
     "normalizedKey": "a sentence is a group of words that makes sense and ends with a full stop!",
     "hash": "5d1c8a02eb7a61035f772be6151a2c0a",
     "objectKey": "5d1c8a02eb7a61035f772be6151a2c0a",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
-    "text": "A country is a large area with its own government. Every country has a capital city where the government usually works. Examples: United States — Washington, D.C.; United Kingdom — London; France — Paris; Japan — Tokyo. Countries also have flags, anthems, and symbols like national animals or flowers.",
+    "text": "India is a large and beautiful country in South Asia. Capital: New Delhi. National flag: saffron, white, green with a blue Ashoka Chakra. National animal: tiger. National bird: peacock. National flower: lotus. National language (official): Hindi. National fruit: mango.",
     "mode": "default",
-    "normalizedKey": "a country is a large area with its own government. every country has a capital city where the government usually works. examples: united states — washington, d.c.; united kingdom — london; france — paris; japan — tokyo. countries also have flags, anthems, and symbols like national animals or flowers.",
-    "hash": "3733a0cff362f0c80e975ec3e6e630c5",
-    "objectKey": "3733a0cff362f0c80e975ec3e6e630c5",
-    "source": "study_zone_topic_notes"
+    "normalizedKey": "india is a large and beautiful country in south asia. capital: new delhi. national flag: saffron, white, green with a blue ashoka chakra. national animal: tiger. national bird: peacock. national flower: lotus. national language (official): hindi. national fruit: mango.",
+    "hash": "3cbe2ca1a2f82246702c0d7ef172c7d3",
+    "objectKey": "3cbe2ca1a2f82246702c0d7ef172c7d3",
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "Every country has a capital city and special symbols like a flag and national animal!",
@@ -3869,31 +3869,15 @@
     "normalizedKey": "every country has a capital city and special symbols like a flag and national animal!",
     "hash": "6f46f3f105f420cef3572fb66b80ae3a",
     "objectKey": "6f46f3f105f420cef3572fb66b80ae3a",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
-    "text": "The Sun is at the centre of our solar system. 8 planets orbit the Sun: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune. Earth is the only known planet with life. The Moon is Earth's natural satellite.",
+    "text": "Festivals bring families together in India. Diwali — festival of lights, celebrated with diyas and sweets. Holi — festival of colours, played with gulal and water. Eid — celebrated after Ramadan with feasts and charity. Pongal / Onam — harvest festivals in South India. Independence Day — 15 August, flag hoisting and patriotic songs.",
     "mode": "default",
-    "normalizedKey": "the sun is at the centre of our solar system. 8 planets orbit the sun: mercury, venus, earth, mars, jupiter, saturn, uranus, neptune. earth is the only known planet with life. the moon is earth's natural satellite.",
-    "hash": "e1c84a6160060469d78043f344d9aa5e",
-    "objectKey": "e1c84a6160060469d78043f344d9aa5e",
-    "source": "study_zone_topic_notes"
-  },
-  {
-    "text": "The Sun is at the center. Earth is our home planet, and the Moon goes around Earth!",
-    "mode": "default",
-    "normalizedKey": "the sun is at the center. earth is our home planet, and the moon goes around earth!",
-    "hash": "9e323cf2c88ab193a477e9d047febab8",
-    "objectKey": "9e323cf2c88ab193a477e9d047febab8",
-    "source": "study_zone_topic_prompt"
-  },
-  {
-    "text": "Festivals are special days when people celebrate with family and friends. Christmas — celebrated on 25 December with lights and gifts. Diwali — festival of lights in autumn. Eid — celebrated after Ramadan with feasts and charity. Chinese New Year — spring festival with dragons and red decorations. Thanksgiving — harvest celebration in the United States and Canada.",
-    "mode": "default",
-    "normalizedKey": "festivals are special days when people celebrate with family and friends. christmas — celebrated on 25 december with lights and gifts. diwali — festival of lights in autumn. eid — celebrated after ramadan with feasts and charity. chinese new year — spring festival with dragons and red decorations. thanksgiving — harvest celebration in the united states and canada.",
-    "hash": "f7d5e0a54ad77e1bde2a1fb238877993",
-    "objectKey": "f7d5e0a54ad77e1bde2a1fb238877993",
-    "source": "study_zone_topic_notes"
+    "normalizedKey": "festivals bring families together in india. diwali — festival of lights, celebrated with diyas and sweets. holi — festival of colours, played with gulal and water. eid — celebrated after ramadan with feasts and charity. pongal / onam — harvest festivals in south india. independence day — 15 august, flag hoisting and patriotic songs.",
+    "hash": "c5a09ec9e7b581a2328e4d780f94c07b",
+    "objectKey": "c5a09ec9e7b581a2328e4d780f94c07b",
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "People celebrate festivals with lights, colors, music, and food all around the world!",
@@ -3901,7 +3885,23 @@
     "normalizedKey": "people celebrate festivals with lights, colors, music, and food all around the world!",
     "hash": "7355e4523350343ea84eb60af7d995a8",
     "objectKey": "7355e4523350343ea84eb60af7d995a8",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
+  },
+  {
+    "text": "The Sun is at the centre of our solar system. 8 planets orbit the Sun: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune. Earth is the only known planet with life. The Moon is Earth's natural satellite.",
+    "mode": "default",
+    "normalizedKey": "the sun is at the centre of our solar system. 8 planets orbit the sun: mercury, venus, earth, mars, jupiter, saturn, uranus, neptune. earth is the only known planet with life. the moon is earth's natural satellite.",
+    "hash": "e1c84a6160060469d78043f344d9aa5e",
+    "objectKey": "e1c84a6160060469d78043f344d9aa5e",
+    "source": "study_zone_topic_notes_IN"
+  },
+  {
+    "text": "The Sun is at the center. Earth is our home planet, and the Moon goes around Earth!",
+    "mode": "default",
+    "normalizedKey": "the sun is at the center. earth is our home planet, and the moon goes around earth!",
+    "hash": "9e323cf2c88ab193a477e9d047febab8",
+    "objectKey": "9e323cf2c88ab193a477e9d047febab8",
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "Transport means ways of travelling from one place to another. Land transport: bus, car, train, bicycle, scooter. Water transport: boat, ship, ferry. Air transport: aeroplane, helicopter. Fastest transport: aeroplane. Slowest on land: walking.",
@@ -3909,7 +3909,7 @@
     "normalizedKey": "transport means ways of travelling from one place to another. land transport: bus, car, train, bicycle, scooter. water transport: boat, ship, ferry. air transport: aeroplane, helicopter. fastest transport: aeroplane. slowest on land: walking.",
     "hash": "774214c345b98fb1e42bfdf2075c9f16",
     "objectKey": "774214c345b98fb1e42bfdf2075c9f16",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "We travel by land, water, or air — buses and trains on land, boats on water, planes in the sky!",
@@ -3917,7 +3917,7 @@
     "normalizedKey": "we travel by land, water, or air — buses and trains on land, boats on water, planes in the sky!",
     "hash": "a130e7ed29618252e4bd2e47f9b1631d",
     "objectKey": "a130e7ed29618252e4bd2e47f9b1631d",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
   },
   {
     "text": "Community helpers are people who help others in our society. Doctor — treats sick people. Teacher — helps us learn. Police officer — keeps us safe. Farmer — grows food for everyone. Firefighter — puts out fires. Postman — delivers letters.",
@@ -3925,7 +3925,7 @@
     "normalizedKey": "community helpers are people who help others in our society. doctor — treats sick people. teacher — helps us learn. police officer — keeps us safe. farmer — grows food for everyone. firefighter — puts out fires. postman — delivers letters.",
     "hash": "cdd8e7a8f1264a7d5990e012f303ec0f",
     "objectKey": "cdd8e7a8f1264a7d5990e012f303ec0f",
-    "source": "study_zone_topic_notes"
+    "source": "study_zone_topic_notes_IN"
   },
   {
     "text": "Doctors, teachers, farmers, and firefighters are helpers who keep our community strong!",
@@ -3933,7 +3933,159 @@
     "normalizedKey": "doctors, teachers, farmers, and firefighters are helpers who keep our community strong!",
     "hash": "2571f09610d5f870556c2f3f24c9d73d",
     "objectKey": "2571f09610d5f870556c2f3f24c9d73d",
-    "source": "study_zone_topic_prompt"
+    "source": "study_zone_topic_prompt_IN"
+  },
+  {
+    "text": "A for Apple",
+    "mode": "default",
+    "normalizedKey": "a for apple",
+    "hash": "87322745e50641c0e71e727160e8791d",
+    "objectKey": "87322745e50641c0e71e727160e8791d",
+    "source": "study_zone_play_US"
+  },
+  {
+    "text": "B for Baseball",
+    "mode": "default",
+    "normalizedKey": "b for baseball",
+    "hash": "f49647bdfaac450acfba1e08f98b5887",
+    "objectKey": "f49647bdfaac450acfba1e08f98b5887",
+    "source": "study_zone_play_US"
+  },
+  {
+    "text": "D for Dog",
+    "mode": "default",
+    "normalizedKey": "d for dog",
+    "hash": "5673e8d172524a3a8b09e1576a1bcd23",
+    "objectKey": "5673e8d172524a3a8b09e1576a1bcd23",
+    "source": "study_zone_play_US"
+  },
+  {
+    "text": "E for Eagle",
+    "mode": "default",
+    "normalizedKey": "e for eagle",
+    "hash": "84351861c5bf45c3cb724de514294934",
+    "objectKey": "84351861c5bf45c3cb724de514294934",
+    "source": "study_zone_play_US"
+  },
+  {
+    "text": "L for Liberty",
+    "mode": "default",
+    "normalizedKey": "l for liberty",
+    "hash": "bb0ba2950d5a8a55327972f84730d980",
+    "objectKey": "bb0ba2950d5a8a55327972f84730d980",
+    "source": "study_zone_play_US"
+  },
+  {
+    "text": "R for Rabbit",
+    "mode": "default",
+    "normalizedKey": "r for rabbit",
+    "hash": "e06086eb0e9ad2fa016909beb7686008",
+    "objectKey": "e06086eb0e9ad2fa016909beb7686008",
+    "source": "study_zone_play_US"
+  },
+  {
+    "text": "The United States is a large country in North America. Capital: Washington, D.C. National flag: stars and stripes — 50 stars for 50 states. National bird: bald eagle. National animal: bison. Currency: dollar ($).",
+    "mode": "default",
+    "normalizedKey": "the united states is a large country in north america. capital: washington, d.c. national flag: stars and stripes — 50 stars for 50 states. national bird: bald eagle. national animal: bison. currency: dollar ($).",
+    "hash": "830441cbb854af2391bceffda144b3f9",
+    "objectKey": "830441cbb854af2391bceffda144b3f9",
+    "source": "study_zone_topic_notes_US"
+  },
+  {
+    "text": "Americans celebrate many special days. Thanksgiving — fourth Thursday of November, giving thanks for harvest and family. Independence Day — 4 July, fireworks and parades. Christmas — 25 December, lights, trees, and gifts. Halloween — 31 October, costumes and trick-or-treat. Martin Luther King Jr. Day — honours the civil rights leader.",
+    "mode": "default",
+    "normalizedKey": "americans celebrate many special days. thanksgiving — fourth thursday of november, giving thanks for harvest and family. independence day — 4 july, fireworks and parades. christmas — 25 december, lights, trees, and gifts. halloween — 31 october, costumes and trick-or-treat. martin luther king jr. day — honours the civil rights leader.",
+    "hash": "064df6837c23e1747b8f636e140a47f1",
+    "objectKey": "064df6837c23e1747b8f636e140a47f1",
+    "source": "study_zone_topic_notes_US"
+  },
+  {
+    "text": "B for Big Ben",
+    "mode": "default",
+    "normalizedKey": "b for big ben",
+    "hash": "52bb22e7866b04ba0e605799598fd5b4",
+    "objectKey": "52bb22e7866b04ba0e605799598fd5b4",
+    "source": "study_zone_play_UK"
+  },
+  {
+    "text": "T for Tea",
+    "mode": "default",
+    "normalizedKey": "t for tea",
+    "hash": "06f8b86db324a9b7fab188da923e9942",
+    "objectKey": "06f8b86db324a9b7fab188da923e9942",
+    "source": "study_zone_play_UK"
+  },
+  {
+    "text": "The United Kingdom is made up of England, Scotland, Wales, and Northern Ireland. Capital: London. Currency: pound (£). National symbols include the Union Jack flag and the lion. Famous landmarks: Big Ben, Buckingham Palace, and the Tower of London.",
+    "mode": "default",
+    "normalizedKey": "the united kingdom is made up of england, scotland, wales, and northern ireland. capital: london. currency: pound (£). national symbols include the union jack flag and the lion. famous landmarks: big ben, buckingham palace, and the tower of london.",
+    "hash": "62ca2c7e8e3421902e1d8fd0cba80af7",
+    "objectKey": "62ca2c7e8e3421902e1d8fd0cba80af7",
+    "source": "study_zone_topic_notes_UK"
+  },
+  {
+    "text": "Festivals are special days when people celebrate with family and friends. Christmas — celebrated on 25 December with lights and gifts. Diwali — festival of lights in autumn. Eid — celebrated after Ramadan with feasts and charity. Chinese New Year — spring festival with dragons and red decorations. Thanksgiving — harvest celebration in the United States and Canada.",
+    "mode": "default",
+    "normalizedKey": "festivals are special days when people celebrate with family and friends. christmas — celebrated on 25 december with lights and gifts. diwali — festival of lights in autumn. eid — celebrated after ramadan with feasts and charity. chinese new year — spring festival with dragons and red decorations. thanksgiving — harvest celebration in the united states and canada.",
+    "hash": "f7d5e0a54ad77e1bde2a1fb238877993",
+    "objectKey": "f7d5e0a54ad77e1bde2a1fb238877993",
+    "source": "study_zone_topic_notes_UK"
+  },
+  {
+    "text": "A country is a large area with its own government. Every country has a capital city where the government usually works. Examples: United States — Washington, D.C.; United Kingdom — London; France — Paris; Japan — Tokyo. Countries also have flags, anthems, and symbols like national animals or flowers.",
+    "mode": "default",
+    "normalizedKey": "a country is a large area with its own government. every country has a capital city where the government usually works. examples: united states — washington, d.c.; united kingdom — london; france — paris; japan — tokyo. countries also have flags, anthems, and symbols like national animals or flowers.",
+    "hash": "3733a0cff362f0c80e975ec3e6e630c5",
+    "objectKey": "3733a0cff362f0c80e975ec3e6e630c5",
+    "source": "study_zone_topic_notes_AU"
+  },
+  {
+    "text": "A for Arab",
+    "mode": "default",
+    "normalizedKey": "a for arab",
+    "hash": "f5bae58e298536a04f94682f1101324b",
+    "objectKey": "f5bae58e298536a04f94682f1101324b",
+    "source": "study_zone_play_AE"
+  },
+  {
+    "text": "D for Date",
+    "mode": "default",
+    "normalizedKey": "d for date",
+    "hash": "580a62feb8b61706c98a3cee673f4107",
+    "objectKey": "580a62feb8b61706c98a3cee673f4107",
+    "source": "study_zone_play_AE"
+  },
+  {
+    "text": "F for Falcon",
+    "mode": "default",
+    "normalizedKey": "f for falcon",
+    "hash": "808587fbf1edf34acaee0ce9d462973c",
+    "objectKey": "808587fbf1edf34acaee0ce9d462973c",
+    "source": "study_zone_play_AE"
+  },
+  {
+    "text": "M for Mall",
+    "mode": "default",
+    "normalizedKey": "m for mall",
+    "hash": "e53f13f64e1ad51413aff515e9771ca4",
+    "objectKey": "e53f13f64e1ad51413aff515e9771ca4",
+    "source": "study_zone_play_AE"
+  },
+  {
+    "text": "The UAE is a country in the Middle East on the Arabian Peninsula. Capital: Abu Dhabi. Largest city: Dubai. Currency: dirham (د.إ). National bird: falcon. Famous for dates, malls, and desert safaris. National day: 2 December.",
+    "mode": "default",
+    "normalizedKey": "the uae is a country in the middle east on the arabian peninsula. capital: abu dhabi. largest city: dubai. currency: dirham (د.إ). national bird: falcon. famous for dates, malls, and desert safaris. national day: 2 december.",
+    "hash": "39ee3170959ea16066d67c4150dcd225",
+    "objectKey": "39ee3170959ea16066d67c4150dcd225",
+    "source": "study_zone_topic_notes_AE"
+  },
+  {
+    "text": "The UAE celebrates both national and religious festivals. Eid al-Fitr — end of Ramadan, feasts and family visits. Eid al-Adha — festival of sacrifice and charity. National Day — 2 December, flag displays and fireworks. UAE Flag Day — 3 November. Dubai Shopping Festival — winter sales and entertainment.",
+    "mode": "default",
+    "normalizedKey": "the uae celebrates both national and religious festivals. eid al-fitr — end of ramadan, feasts and family visits. eid al-adha — festival of sacrifice and charity. national day — 2 december, flag displays and fireworks. uae flag day — 3 november. dubai shopping festival — winter sales and entertainment.",
+    "hash": "b1029ccd228fb3819498322f214552ee",
+    "objectKey": "b1029ccd228fb3819498322f214552ee",
+    "source": "study_zone_topic_notes_AE"
   },
   {
     "text": "Algebra uses letters (variables) in place of unknown numbers. An equation states two expressions are equal, e.g. x + 3 = 7. To solve, perform the same operation on both sides until the variable is alone. Example: x + 3 = 7 → x = 7 − 3 → x = 4. LIKE terms can be added; UNLIKE terms cannot.",
