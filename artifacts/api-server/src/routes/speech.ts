@@ -243,7 +243,7 @@ const logAttemptBodySchema = z.object({
 
 router.post(
   "/speech/practice/log",
-  featureGate("hub_speech_pronounce"),
+  featureGate("hub_speech_session"),
   async (req, res): Promise<void> => {
     const { userId } = getAuth(req);
     if (!userId) {

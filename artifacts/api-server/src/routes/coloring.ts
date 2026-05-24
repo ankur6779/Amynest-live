@@ -9,6 +9,11 @@ import {
 import { getAuth } from "../lib/auth";
 import { driveFilesListAll, driveProxyDownloadPath, getDriveApiKey } from "../lib/googleDrive";
 import { logger } from "../lib/logger";
+import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
+import {
+  getOrCreateSubscription,
+  isPremiumNow,
+} from "../services/subscriptionService.js";
 
 const router: IRouter = Router();
 
@@ -24,8 +29,14 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 /** UI shows this many PDFs per page; backend slices accordingly. */
 const PAGE_SIZE = 4;
 
-/** Maximum downloads a single child may make per calendar day (IST). */
-const DAILY_LIMIT = 2;
+/** Maximum downloads per calendar day (IST). Free vs premium caps differ. */
+const FREE_DAILY_LIMIT = HUB_CONTENT_QUOTAS.coloringDaily;
+const PREMIUM_DAILY_LIMIT = HUB_CONTENT_QUOTAS.premiumDownloadDaily;
+const LIFETIME_LIMIT = HUB_CONTENT_QUOTAS.coloringLifetime;
+
+function dailyLimitFor(premium: boolean): number {
+  return premium ? PREMIUM_DAILY_LIMIT : FREE_DAILY_LIMIT;
+}
 
 /** Hard ceiling on recursion depth so a malformed Drive folder can't loop. */
 const MAX_RECURSION_DEPTH = 8;
@@ -139,6 +150,23 @@ async function getDailyDownloadCount(
   return row?.count ?? 0;
 }
 
+/** Total distinct downloads for this child (lifetime). */
+async function getLifetimeDownloadCount(
+  userId: string,
+  childId: number,
+): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(coloringDownloadsTable)
+    .where(
+      and(
+        eq(coloringDownloadsTable.userId, userId),
+        eq(coloringDownloadsTable.childId, childId),
+      ),
+    );
+  return row?.count ?? 0;
+}
+
 // ─── GET /api/coloring/list ─────────────────────────────────────────────────
 //
 // Query: childId=N&page=K
@@ -202,6 +230,10 @@ router.get("/coloring/list", async (req, res): Promise<void> => {
     const slice = available.slice(start, start + PAGE_SIZE);
 
     const used = await getDailyDownloadCount(userId, childId);
+    const lifetimeUsed = await getLifetimeDownloadCount(userId, childId);
+    const sub = await getOrCreateSubscription(userId);
+    const premium = isPremiumNow(sub);
+    const dailyLimit = dailyLimitFor(premium);
 
     res.json({
       ok: true,
@@ -215,10 +247,17 @@ router.get("/coloring/list", async (req, res): Promise<void> => {
         hasPrev: safePage > 0,
       },
       dailyQuota: {
-        limit: DAILY_LIMIT,
+        limit: dailyLimit,
         used,
-        remaining: Math.max(0, DAILY_LIMIT - used),
+        remaining: Math.max(0, dailyLimit - used),
       },
+      lifetimeQuota: premium
+        ? { limit: null, used: lifetimeUsed, remaining: null }
+        : {
+            limit: LIFETIME_LIMIT,
+            used: lifetimeUsed,
+            remaining: Math.max(0, LIFETIME_LIMIT - lifetimeUsed),
+          },
     });
   } catch (err) {
     logger.error(
@@ -293,15 +332,35 @@ router.post("/coloring/download", async (req, res): Promise<void> => {
       return;
     }
 
-    // Daily quota check.
+    const sub = await getOrCreateSubscription(userId);
+    const premium = isPremiumNow(sub);
+    const dailyLimit = dailyLimitFor(premium);
     const used = await getDailyDownloadCount(userId, childId);
-    if (used >= DAILY_LIMIT) {
+
+    if (!premium) {
+      const lifetimeUsed = await getLifetimeDownloadCount(userId, childId);
+      if (lifetimeUsed >= LIFETIME_LIMIT) {
+        res.status(402).json({
+          error: "lifetime_limit_reached",
+          lifetimeQuota: {
+            limit: LIFETIME_LIMIT,
+            used: lifetimeUsed,
+            remaining: 0,
+          },
+        });
+        return;
+      }
+    }
+
+    if (used >= dailyLimit) {
       res.status(429).json({
         error: "daily_limit_reached",
-        dailyQuota: { limit: DAILY_LIMIT, used, remaining: 0 },
+        dailyQuota: { limit: dailyLimit, used, remaining: 0 },
       });
       return;
     }
+
+    const usedBefore = used;
 
     try {
       await db.insert(coloringDownloadsTable).values({
@@ -322,14 +381,23 @@ router.post("/coloring/download", async (req, res): Promise<void> => {
       throw insertErr;
     }
 
+    const lifetimeUsedAfter = await getLifetimeDownloadCount(userId, childId);
+
     res.json({
       ok: true,
       downloadUrl: driveProxyDownloadPath(fileId, file.name),
       dailyQuota: {
-        limit: DAILY_LIMIT,
-        used: used + 1,
-        remaining: Math.max(0, DAILY_LIMIT - (used + 1)),
+        limit: dailyLimit,
+        used: usedBefore + 1,
+        remaining: Math.max(0, dailyLimit - (usedBefore + 1)),
       },
+      lifetimeQuota: premium
+        ? { limit: null, used: lifetimeUsedAfter, remaining: null }
+        : {
+            limit: LIFETIME_LIMIT,
+            used: lifetimeUsedAfter,
+            remaining: Math.max(0, LIFETIME_LIMIT - lifetimeUsedAfter),
+          },
     });
   } catch (err) {
     logger.error(

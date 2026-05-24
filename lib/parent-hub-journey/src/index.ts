@@ -6,6 +6,33 @@
 export const HUB_JOURNEY_FREE_DAYS = 3;
 export const HUB_JOURNEY_CALENDAR_CAP_DAYS = 7;
 
+/** Free-user content quotas for Parent Hub modules (shared client + server). */
+export const HUB_CONTENT_QUOTAS = {
+  storyHubLifetimeVideos: 5,
+  artCraftLifetimeVideos: 10,
+  worksheetDaily: 2,
+  worksheetLifetime: 6,
+  coloringDaily: 2,
+  coloringLifetime: 6,
+  funsheetDaily: 2,
+  funsheetLifetime: 6,
+  speechCoachSessions: 3,
+  /** Daily download cap for premium users (worksheets, coloring, fun sheets). */
+  premiumDownloadDaily: 5,
+} as const;
+
+/** Per-section lifetime sub-item caps (Story Hub, Art & Craft reels). */
+export const SECTION_LIFETIME_LIMITS: Record<string, number> = {
+  hub_story_hub: HUB_CONTENT_QUOTAS.storyHubLifetimeVideos,
+  hub_art_craft: HUB_CONTENT_QUOTAS.artCraftLifetimeVideos,
+};
+
+export const DEFAULT_SECTION_LIFETIME_LIMIT = 2;
+
+export function getSectionLifetimeLimit(sectionId: string): number {
+  return SECTION_LIFETIME_LIMITS[sectionId] ?? DEFAULT_SECTION_LIFETIME_LIMIT;
+}
+
 /** Hub features that stay accessible after free journey ends. */
 export const HUB_JOURNEY_EXEMPT_FEATURES = [
   "hub_ptm_prep",

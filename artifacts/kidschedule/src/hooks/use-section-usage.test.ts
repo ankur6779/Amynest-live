@@ -4,6 +4,7 @@ import {
   isSectionBlockLocked,
   normalizeSectionUsage,
 } from "./use-section-usage";
+import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
 
 describe("normalizeSectionUsage", () => {
   it("migrates legacy blockUsedId to blockUsedIds array", () => {
@@ -43,7 +44,19 @@ describe("isSectionBlockLocked", () => {
     expect(isSectionBlockLocked(used, "new-goal")).toBe(true);
   });
 
-  it("uses MAX_FREE_BLOCKS of 2", () => {
+  it("uses MAX_FREE_BLOCKS of 2 by default", () => {
     expect(MAX_FREE_BLOCKS).toBe(2);
+  });
+
+  it("allows Story Hub up to five lifetime videos", () => {
+    const used = ["1", "2", "3", "4"];
+    expect(isSectionBlockLocked(used, "5", HUB_CONTENT_QUOTAS.storyHubLifetimeVideos)).toBe(false);
+    expect(isSectionBlockLocked(["1", "2", "3", "4", "5"], "6", HUB_CONTENT_QUOTAS.storyHubLifetimeVideos)).toBe(true);
+  });
+
+  it("allows Art & Craft up to ten lifetime videos", () => {
+    const nine = Array.from({ length: 9 }, (_, i) => String(i));
+    expect(isSectionBlockLocked(nine, "9", HUB_CONTENT_QUOTAS.artCraftLifetimeVideos)).toBe(false);
+    expect(isSectionBlockLocked([...nine, "9"], "10", HUB_CONTENT_QUOTAS.artCraftLifetimeVideos)).toBe(true);
   });
 });
