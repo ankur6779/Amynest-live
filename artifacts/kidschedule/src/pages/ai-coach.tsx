@@ -12,6 +12,21 @@ import { INFANT_PROBLEMS, isInfantProblemId, getInfantProblem, pickLang as pickI
 import { getTopicQuestions } from "@workspace/coach-topic-questions";
 import { COACH_AUDIO_GOAL_STORAGE_KEY } from "@/lib/audio-lessons";
 import { AGE_TILE_META } from "@/lib/audio-lessons-nav";
+import {
+  type CoachAgeBand,
+  COACH_AGE_BAND_OPTIONS,
+  childToCoachAgeBand,
+  coachBandToAgeAnswer,
+  coachAgeAnswerToApi,
+  getCategoryHint,
+  groupCategoriesForBand,
+  isCategoryVisibleForBand,
+  COACH_FOR_YOU_CATEGORY_ID,
+  resolveActiveChild,
+} from "@/lib/coach-age-nav";
+import { getGenericQuestionOptions } from "@/lib/coach-generic-questions";
+import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
+import { formatAge } from "@/lib/age-groups";
 
 /** Lazy win generation can take ~25s server-side; default fetch timeout is 8s. */
 const COACH_AI_FETCH_TIMEOUT_MS = 90_000;
@@ -187,7 +202,7 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   }]
 }, {
   id: "infant-problems",
-  title: "Infant Parent Problems (0–2 yrs)",
+  title: "Baby Care (0–2 yrs)",
   emoji: "👶",
   gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: INFANT_PROBLEMS.map(p => ({
@@ -396,7 +411,7 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
 // ─── For You (Parent Self-Care) — age question is skipped for this category ─
 {
   id: "for-you",
-  title: "For You (Parent Self-Care)",
+  title: "For You",
   emoji: "💖",
   gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: [{
@@ -554,16 +569,15 @@ interface Question {
   type: QuestionType;
   options: string[];
 }
-const COMMON_TRIGGERS = ["Hunger or tiredness", "Transitions or changes", "Being told 'no'", "Boredom", "Sibling conflict", "School/social stress", "Inconsistent rules", "Sensory overload"];
 // Generic fallback question set — used for topics that don't have a custom
-// schema in coachTopicQuestions.json. The first two questions (ageGroup,
-// severity) are ALSO prepended to every topic-specific flow so we always
-// collect those baseline signals.
+// schema in coachTopicQuestions.json. Options vary by category (see
+// coach-generic-questions.ts). ageGroup + severity are prepended for
+// topic-specific flows too.
 const AGE_QUESTION: Question = {
   id: "ageGroup",
   prompt: "What's your child's age?",
   type: "single",
-  options: ["2–4 years", "5–7 years", "8–10 years", "10+ years (tween/teen)"],
+  options: ["0–2 years", "2–4 years", "5–7 years", "8–10 years", "10+ years (tween/teen)"],
 };
 const SEVERITY_QUESTION: Question = {
   id: "severity",
@@ -571,22 +585,26 @@ const SEVERITY_QUESTION: Question = {
   type: "single",
   options: ["Mild – occasional", "Moderate – frequent", "Severe – daily struggle"],
 };
-const GENERIC_QUESTIONS: Question[] = [AGE_QUESTION, SEVERITY_QUESTION, {
-  id: "triggers",
-  prompt: "What triggers it most? (pick any)",
-  type: "multi",
-  options: COMMON_TRIGGERS
-}, {
-  id: "routine",
-  prompt: "What's your current approach?",
-  type: "single",
-  options: ["No clear routine yet", "I try but it's inconsistent", "Strict rules, lots of pushback", "Trying gentle parenting", "Just starting to figure it out"]
-}, {
-  id: "goalRefinement",
-  prompt: "What matters most to you?",
-  type: "single",
-  options: ["Reduce frequency", "Stay calm myself", "Build my child's skills", "Long-term healthy pattern"]
-}];
+
+function buildGenericQuestions(categoryId: string): Question[] {
+  const opts = getGenericQuestionOptions(categoryId);
+  return [AGE_QUESTION, SEVERITY_QUESTION, {
+    id: "triggers",
+    prompt: "What triggers it most? (pick any)",
+    type: "multi",
+    options: opts.triggers,
+  }, {
+    id: "routine",
+    prompt: "What's your current approach?",
+    type: "single",
+    options: opts.routine,
+  }, {
+    id: "goalRefinement",
+    prompt: "What matters most to you?",
+    type: "single",
+    options: opts.goalRefinement,
+  }];
+}
 
 // Reserved keys handled directly by the existing payload — never sent in
 // the freeform `topicAnswers` blob to the server.
@@ -635,6 +653,7 @@ export default function AICoachPage() {
   }, []);
   const [phase, setPhase] = useState<Phase>(resumeSessionId ? "resuming" : "goals");
   const [goalSearch, setGoalSearch] = useState("");
+  const [coachAgeBand, setCoachAgeBand] = useState<CoachAgeBand | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [goalId, setGoalId] = useState<string>("");
   const [qIndex, setQIndex] = useState(0);
@@ -683,13 +702,41 @@ export default function AICoachPage() {
     };
   }, []);
   const searchQuery = goalSearch.toLowerCase().trim();
+
+  const { data: childrenList } = useListChildren({
+    query: {
+      queryKey: getListChildrenQueryKey(),
+      staleTime: 60_000,
+    },
+  });
+  const activeChild = useMemo(
+    () => resolveActiveChild(childrenList as { id: number; age: number; ageMonths?: number | null; name?: string | null }[] | undefined),
+    [childrenList],
+  );
+
+  useEffect(() => {
+    if (coachAgeBand !== null || resumeSessionId || phase !== "goals") return;
+    if (!activeChild) return;
+    setCoachAgeBand(childToCoachAgeBand(activeChild.age, activeChild.ageMonths ?? 0));
+  }, [activeChild, coachAgeBand, phase, resumeSessionId]);
+
+  const ageFilteredCategories = useMemo(() => {
+    const childCategories = GOAL_CATEGORIES.filter((c) => c.id !== COACH_FOR_YOU_CATEGORY_ID);
+    const forYouCat = GOAL_CATEGORIES.find((c) => c.id === COACH_FOR_YOU_CATEGORY_ID);
+    if (!coachAgeBand) return GOAL_CATEGORIES;
+    const filtered = childCategories.filter((c) => isCategoryVisibleForBand(c.id, coachAgeBand));
+    if (searchQuery && forYouCat) return [...filtered, forYouCat];
+    return filtered;
+  }, [coachAgeBand, searchQuery]);
+
   const filteredCategories = useMemo(() => {
-    if (!searchQuery) return GOAL_CATEGORIES;
-    return GOAL_CATEGORIES.map(c => ({
+    const base = ageFilteredCategories;
+    if (!searchQuery) return base;
+    return base.map(c => ({
       ...c,
       items: c.items.filter(g => g.title.toLowerCase().includes(searchQuery))
     })).filter(c => c.items.length > 0);
-  }, [searchQuery]);
+  }, [searchQuery, ageFilteredCategories]);
   const totalMatches = useMemo(() => filteredCategories.reduce((n, c) => n + c.items.length, 0), [filteredCategories]);
   const selectedGoal = ALL_GOALS.find(g => g.id === goalId);
 
@@ -700,6 +747,25 @@ export default function AICoachPage() {
   const {
     openPaywall
   } = usePaywall();
+
+  const forYouCategory = useMemo(
+    () => GOAL_CATEGORIES.find((c) => c.id === COACH_FOR_YOU_CATEGORY_ID) ?? null,
+    [],
+  );
+
+  const openForYouCategory = useCallback(() => {
+    setSelectedCategoryId(COACH_FOR_YOU_CATEGORY_ID);
+  }, []);
+
+  const groupedCategories = useMemo(
+    () => (coachAgeBand ? groupCategoriesForBand(GOAL_CATEGORIES, coachAgeBand) : []),
+    [coachAgeBand],
+  );
+
+  const selectedAgeOption = useMemo(
+    () => COACH_AGE_BAND_OPTIONS.find((o) => o.id === coachAgeBand) ?? null,
+    [coachAgeBand],
+  );
 
   // Returns the access level for a given goal card.
   const getGoalAccess = useCallback((goalId: string): GoalAccess => {
@@ -828,10 +894,15 @@ export default function AICoachPage() {
       return;
     }
     const impliedAge = GOAL_IMPLIED_AGE[id];
+    const bandAge = coachAgeBand ? coachBandToAgeAnswer(coachAgeBand) : null;
     if (impliedAge) {
-      // Age is already implied by the goal category — pre-fill and skip the age question
       setAnswers({
         ageGroup: impliedAge
+      });
+      setQIndex(1);
+    } else if (bandAge) {
+      setAnswers({
+        ageGroup: bandAge
       });
       setQIndex(1);
     } else {
@@ -847,8 +918,10 @@ export default function AICoachPage() {
   // severity + topic-specific questions. For unmapped topics we fall
   // back to the original 5-generic-question flow.
   const QUESTIONS = useMemo<Question[]>(() => {
+    const categoryId = goalId ? coachGoalCategoryId(goalId) : "";
+    const generic = buildGenericQuestions(categoryId);
     const topicQs = goalId ? getTopicQuestions(goalId, i18n.language) : null;
-    if (!topicQs || topicQs.length === 0) return GENERIC_QUESTIONS;
+    if (!topicQs || topicQs.length === 0) return generic;
     return [AGE_QUESTION, SEVERITY_QUESTION, ...topicQs];
   }, [goalId, i18n.language]);
   const currentQ = QUESTIONS[qIndex];
@@ -878,10 +951,9 @@ export default function AICoachPage() {
     }
   };
   const handleBackQ = () => {
-    // If age was auto-skipped for this goal (qIndex 0 is hidden), going back from
-    // qIndex 1 should return to goals, not show the hidden age question.
     const ageImplied = goalId ? !!GOAL_IMPLIED_AGE[goalId] : false;
-    if (qIndex > 0 && !(qIndex === 1 && ageImplied)) setQIndex(i => i - 1);else setPhase("goals");
+    const ageFromBand = goalId ? !!coachAgeBand && !ageImplied : false;
+    if (qIndex > 0 && !(qIndex === 1 && (ageImplied || ageFromBand))) setQIndex(i => i - 1);else setPhase("goals");
   };
 
   // ─── Submit to API
@@ -899,6 +971,7 @@ export default function AICoachPage() {
     setPlan(null);
     setSessionId("");
     const ageMap: Record<string, string> = {
+      "0–2 years": "0-2",
       "2–4 years": "2-4",
       "5–7 years": "5-7",
       "8–10 years": "8-10",
@@ -921,7 +994,7 @@ export default function AICoachPage() {
     }
     const payload = {
       goal: goalId,
-      ageGroup: ageMap[answers.ageGroup as string] ?? answers.ageGroup as string ?? "5-7",
+      ageGroup: ageMap[answers.ageGroup as string] ?? coachAgeAnswerToApi(answers.ageGroup as string) ?? "5-7",
       severity: sevMap[answers.severity as string] ?? "moderate",
       triggers: answers.triggers as string[] ?? [],
       routine: answers.routine as string ?? "",
@@ -1291,9 +1364,13 @@ export default function AICoachPage() {
         setSelectedCategoryId(null);
         return true;
       }
+      if (coachAgeBand) {
+        setCoachAgeBand(null);
+        return true;
+      }
     }
     return false;
-  }, [phase, searchQuery, selectedCategoryId, qIndex, goalId]);
+  }, [phase, searchQuery, selectedCategoryId, coachAgeBand, qIndex, goalId]);
 
   // ═══════════════════════════════════════════════════════════════════════
   // RENDER PHASES
@@ -1355,10 +1432,12 @@ export default function AICoachPage() {
 
     // ── Sub-goal view: goals inside selected category ─────────────────
     if (activeCat) {
+      const categoryHint = coachAgeBand ? getCategoryHint(activeCat.id, coachAgeBand) : null;
+      const isForYouEntry = activeCat.id === COACH_FOR_YOU_CATEGORY_ID;
       return <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
           <div className="flex items-center justify-between">
             <button onClick={() => setSelectedCategoryId(null)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-              <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.categories")}
+              <ChevronLeft className="h-4 w-4" /> {isForYouEntry && !coachAgeBand ? t("pages.ai_coach.back_2") : t("pages.ai_coach.categories")}
             </button>
             <Link href="/amy-coach/progress">
               <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-muted dark:bg-card transition-all">
@@ -1366,6 +1445,16 @@ export default function AICoachPage() {
               </button>
             </Link>
           </div>
+
+          {selectedAgeOption && !isForYouEntry && <button type="button" onClick={() => setCoachAgeBand(null)} className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-muted-foreground hover:text-foreground w-fit">
+              <span>{selectedAgeOption.emoji}</span>
+              <span>{selectedAgeOption.label}</span>
+              <span className="text-primary">{t("pages.ai_coach.change_age")}</span>
+            </button>}
+
+          {categoryHint && <button type="button" onClick={() => setSelectedCategoryId(categoryHint.targetCategoryId)} className="w-full text-left rounded-2xl px-4 py-3 border border-primary/30 bg-primary/10 text-sm text-foreground hover:bg-primary/15 transition-colors">
+              <span className="font-semibold text-primary">{t("pages.ai_coach.try_instead")}</span> {categoryHint.message}
+            </button>}
 
           <div className="relative rounded-[18px] overflow-hidden backdrop-blur-md p-4" style={{
           background: coachCategoryGradient(activeCat.id),
@@ -1429,7 +1518,118 @@ export default function AICoachPage() {
         </div>;
     }
 
-    // ── Category grid: default view ───────────────────────────────────
+    // ── Age band picker (step 1) ──────────────────────────────────────
+    if (!coachAgeBand) {
+      return <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+          <div className="flex items-center justify-between">
+            <Link href="/dashboard" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+              <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back_2")}
+            </Link>
+            <Link href="/amy-coach/progress">
+              <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-muted dark:bg-card transition-all">
+                <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress_3")}
+              </button>
+            </Link>
+          </div>
+
+          <div data-on-dark className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-border p-5" style={{
+          background: "linear-gradient(135deg,rgba(76,29,149,0.92) 0%,rgba(124,58,237,0.85) 50%,rgba(190,24,93,0.82) 100%)",
+          boxShadow: "0 0 50px rgba(139,92,246,0.45), inset 0 1px 0 rgba(255,255,255,0.18)"
+        }}>
+            <div className="relative flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{
+              background: "linear-gradient(135deg,hsl(var(--brand-violet-400)),hsl(var(--brand-pink-400)))",
+              boxShadow: "0 0 20px rgba(139,92,246,0.7)"
+            }}>
+                <Sparkles className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="font-quicksand text-xl font-bold text-white">{t("pages.ai_coach.pick_child_age")}</h1>
+                <p className="text-xs text-white/85 mt-0.5">{t("pages.ai_coach.pick_child_age_sub")}</p>
+              </div>
+            </div>
+          </div>
+
+          {activeChild && <p className="text-xs text-muted-foreground px-1">
+              {t("pages.ai_coach.suggested_from_profile", {
+            name: activeChild.name ?? "Your child",
+            age: formatAge(activeChild.age, activeChild.ageMonths ?? 0),
+          })}
+            </p>}
+
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground px-1">
+            {t("pages.ai_coach.for_your_child")}
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {COACH_AGE_BAND_OPTIONS.map((band) => <button key={band.id} type="button" data-on-dark onClick={() => setCoachAgeBand(band.id)} className="relative rounded-[18px] p-4 text-left backdrop-blur-md hover:scale-[1.02] active:scale-[0.97] transition-all overflow-hidden flex items-center gap-4 min-h-[88px]" style={{
+            background: coachCategoryGradient(band.id === "0-2" ? "infant-problems" : band.id === "2-4" ? "toddler-behavior" : "learning"),
+            border: COACH_TILE_BORDER,
+            boxShadow: "0 0 20px rgba(139,92,246,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
+          }}>
+                <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(255,255,255,0.04)" }} />
+                <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-2xl relative" style={{ background: "rgba(255,255,255,0.12)" }}>
+                  {band.emoji}
+                </div>
+                <div className="relative flex-1 min-w-0">
+                  <p className="font-quicksand font-bold text-[15px] text-white leading-tight">{band.label}</p>
+                  <p className="text-[11px] mt-1" style={{ color: "rgba(199,192,232,0.9)" }}>{band.description}</p>
+                </div>
+                <ChevronRight size={18} color="rgba(255,255,255,0.5)" className="shrink-0 relative" />
+              </button>)}
+          </div>
+
+          <div className="relative py-1">
+            <div className="absolute inset-0 flex items-center" aria-hidden>
+              <div className="w-full border-t border-border" />
+            </div>
+            <p className="relative mx-auto w-fit px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground bg-background">
+              {t("pages.ai_coach.or_for_you")}
+            </p>
+          </div>
+
+          {forYouCategory && <button type="button" data-on-dark onClick={openForYouCategory} className="relative w-full rounded-[18px] p-4 text-left backdrop-blur-md hover:scale-[1.01] active:scale-[0.98] transition-all overflow-hidden flex items-center gap-4" style={{
+          background: coachCategoryGradient(COACH_FOR_YOU_CATEGORY_ID),
+          border: "1px solid rgba(236,72,153,0.35)",
+          boxShadow: "0 0 28px rgba(236,72,153,0.22), inset 0 1px 0 rgba(255,255,255,0.1)",
+        }}>
+              <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(255,255,255,0.05)" }} />
+              <div className="w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0 text-2xl relative" style={{ background: "rgba(255,255,255,0.15)" }}>
+                {forYouCategory.emoji}
+              </div>
+              <div className="flex-1 relative min-w-0">
+                <p className="font-quicksand font-bold text-[16px] text-white leading-tight">{t("pages.ai_coach.for_you_entry_title")}</p>
+                <p className="text-[12px] mt-1 leading-snug" style={{ color: "rgba(255,220,235,0.92)" }}>{t("pages.ai_coach.for_you_entry_sub")}</p>
+                <p className="text-[11px] mt-1.5 font-semibold" style={{ color: "rgba(255,255,255,0.75)" }}>
+                  {forYouCategory.items.length} {t("pages.ai_coach.goals_parent")}
+                </p>
+              </div>
+              <ChevronRight size={18} color="rgba(255,255,255,0.55)" className="shrink-0 relative" />
+            </button>}
+        </div>;
+    }
+
+    // ── Category grid: grouped by topic (step 2) ──────────────────────
+    const renderCategoryTile = (cat: GoalCategory) => <button key={cat.id} data-on-dark onClick={() => setSelectedCategoryId(cat.id)} className="relative rounded-[18px] p-4 text-left backdrop-blur-md hover:scale-[1.02] active:scale-[0.97] transition-all duration-200 overflow-hidden flex flex-col gap-3 min-h-[132px]" style={{
+      background: coachCategoryGradient(cat.id),
+      border: COACH_TILE_BORDER,
+      boxShadow: "0 0 20px rgba(139,92,246,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
+    }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(255,255,255,0.04)" }} />
+        <div className="flex items-start justify-between gap-2 relative">
+          <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-2xl" style={{ background: "rgba(255,255,255,0.12)" }}>
+            {cat.emoji}
+          </div>
+          <ChevronRight size={18} color="rgba(255,255,255,0.5)" className="shrink-0 mt-1" />
+        </div>
+        <div className="relative flex-1 flex flex-col">
+          <p className="font-quicksand font-bold text-[15px] text-white leading-tight">{cat.title}</p>
+          <p className="text-[11px] mt-1" style={{ color: "rgba(169,159,217,0.85)" }}>
+            {cat.items.length} {t("pages.ai_coach.goals")}
+          </p>
+        </div>
+      </button>;
+
     return <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
         <div className="flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -1442,17 +1642,10 @@ export default function AICoachPage() {
           </Link>
         </div>
 
-        {/* Premium hero panel */}
         <div data-on-dark className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-border p-5" style={{
         background: "linear-gradient(135deg,rgba(76,29,149,0.92) 0%,rgba(124,58,237,0.85) 50%,rgba(190,24,93,0.82) 100%)",
         boxShadow: "0 0 50px rgba(139,92,246,0.45), inset 0 1px 0 rgba(255,255,255,0.18)"
       }}>
-          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl pointer-events-none" style={{
-          background: "rgba(139,92,246,0.55)"
-        }} />
-          <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full blur-2xl pointer-events-none" style={{
-          background: "rgba(236,72,153,0.4)"
-        }} />
           <div className="relative flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{
             background: "linear-gradient(135deg,hsl(var(--brand-violet-400)),hsl(var(--brand-pink-400)))",
@@ -1471,12 +1664,17 @@ export default function AICoachPage() {
           </div>
         </div>
 
+        {selectedAgeOption && <button type="button" onClick={() => setCoachAgeBand(null)} className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-muted-foreground hover:text-foreground w-fit">
+            <span>{selectedAgeOption.emoji}</span>
+            <span>{selectedAgeOption.label}</span>
+            <span className="text-primary">{t("pages.ai_coach.change_age")}</span>
+          </button>}
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input type="text" value={goalSearch} onChange={e => setGoalSearch(e.target.value)} placeholder={t("pages.ai_coach.search_all_goals")} className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-border bg-card text-sm focus:outline-none focus:border-border" />
         </div>
 
-        {/* Audio Lessons entry card */}
         <button data-on-dark onClick={() => {
           const q = goalId ? `?goal=${encodeURIComponent(goalId)}` : "";
           setLocation(`/audio-lessons${q}`);
@@ -1485,13 +1683,8 @@ export default function AICoachPage() {
         border: COACH_TILE_BORDER,
         boxShadow: "0 0 24px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.08)"
       }}>
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: "rgba(255,255,255,0.04)" }}
-          />
-          <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-2xl relative" style={{
-          background: "rgba(255,255,255,0.12)"
-        }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(255,255,255,0.04)" }} />
+          <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-2xl relative" style={{ background: "rgba(255,255,255,0.12)" }}>
             🎙️
           </div>
           <div className="flex-1 relative min-w-0">
@@ -1501,51 +1694,50 @@ export default function AICoachPage() {
           <ChevronRight size={18} color="rgba(255,255,255,0.5)" className="shrink-0 relative" />
         </button>
 
-        <div className="grid grid-cols-2 gap-3">
-          {GOAL_CATEGORIES.map((cat) => {
-          return <button key={cat.id} data-on-dark onClick={() => setSelectedCategoryId(cat.id)} className="relative rounded-[18px] p-4 text-left backdrop-blur-md hover:scale-[1.02] active:scale-[0.97] transition-all duration-200 overflow-hidden flex flex-col gap-3 min-h-[148px]" style={{
-            background: coachCategoryGradient(cat.id),
-            border: COACH_TILE_BORDER,
-            boxShadow: "0 0 20px rgba(139,92,246,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
-          }}>
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{ background: "rgba(255,255,255,0.04)" }}
-              />
-              <div className="flex items-start justify-between gap-2 relative">
-                <div
-                  className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-2xl"
-                  style={{ background: "rgba(255,255,255,0.12)" }}
-                >
-                  {cat.emoji}
-                </div>
-                <ChevronRight size={18} color="rgba(255,255,255,0.5)" className="shrink-0 mt-1" />
+        {forYouCategory && <section>
+            <h2 className="font-quicksand font-bold text-xs uppercase tracking-wide text-muted-foreground mb-2 px-1">
+              {t("pages.ai_coach.for_you_section")}
+            </h2>
+            <button type="button" data-on-dark onClick={openForYouCategory} className="relative w-full rounded-[18px] p-4 text-left backdrop-blur-md hover:scale-[1.01] active:scale-[0.98] transition-all overflow-hidden flex items-center gap-4" style={{
+          background: coachCategoryGradient(COACH_FOR_YOU_CATEGORY_ID),
+          border: "1px solid rgba(236,72,153,0.35)",
+          boxShadow: "0 0 28px rgba(236,72,153,0.22), inset 0 1px 0 rgba(255,255,255,0.1)",
+        }}>
+              <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(255,255,255,0.05)" }} />
+              <div className="w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0 text-2xl relative" style={{ background: "rgba(255,255,255,0.15)" }}>
+                {forYouCategory.emoji}
               </div>
-              <div className="relative flex-1 flex flex-col">
-                <p className="font-quicksand font-bold text-[15px] text-white leading-tight">{cat.title}</p>
-                <p className="text-[11px] mt-1" style={{ color: "rgba(169,159,217,0.85)" }}>
-                  {cat.items.length} {t("pages.ai_coach.goals")}
+              <div className="flex-1 relative min-w-0">
+                <p className="font-quicksand font-bold text-[16px] text-white leading-tight">{t("pages.ai_coach.for_you_entry_title")}</p>
+                <p className="text-[12px] mt-1 leading-snug" style={{ color: "rgba(255,220,235,0.92)" }}>{t("pages.ai_coach.for_you_entry_sub")}</p>
+                <p className="text-[11px] mt-1.5 font-semibold" style={{ color: "rgba(255,255,255,0.75)" }}>
+                  {forYouCategory.items.length} {t("pages.ai_coach.goals_parent")}
                 </p>
-                <span
-                  className="mt-auto self-start pt-2 text-[12px] font-extrabold px-3 py-1.5 rounded-full"
-                  style={{
-                    background: "rgba(255,255,255,0.14)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    color: "#fff",
-                  }}
-                >
-                  {t("pages.audio_lessons.explore")}
-                </span>
               </div>
-            </button>;
-        })}
+              <ChevronRight size={18} color="rgba(255,255,255,0.55)" className="shrink-0 relative" />
+            </button>
+          </section>}
+
+        <div className="space-y-6">
+          {groupedCategories.length > 0 && <h2 className="font-quicksand font-bold text-xs uppercase tracking-wide text-muted-foreground px-1 -mb-3">
+              {t("pages.ai_coach.for_your_child")}
+            </h2>}
+          {groupedCategories.map(({ group, categories }) => <section key={group.id}>
+              <h2 className="font-quicksand font-bold text-xs uppercase tracking-wide text-muted-foreground mb-2 px-1">
+                {group.label}
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {categories.map((cat) => renderCategoryTile(cat))}
+              </div>
+            </section>)}
         </div>
       </div>;
   }
 
   // ── PHASE: QUESTIONS ────────────────────────────────────────────────
   if (phase === "questions" && currentQ) {
-    const ageSkipped = goalId ? !!GOAL_IMPLIED_AGE[goalId] : false;
+    const ageImplied = goalId ? !!GOAL_IMPLIED_AGE[goalId] : false;
+    const ageSkipped = ageImplied || !!coachAgeBand;
     const visibleTotal = ageSkipped ? QUESTIONS.length - 1 : QUESTIONS.length;
     const visibleNum = ageSkipped ? qIndex : qIndex + 1;
     const progressPct = visibleNum / visibleTotal * 100;
