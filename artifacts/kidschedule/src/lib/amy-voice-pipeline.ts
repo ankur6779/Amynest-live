@@ -83,7 +83,11 @@ import {
   recordAmyVoiceDeliverySuccess,
 } from "@/lib/amy-voice-difficulty";
 import { preloadAmyVoiceNextPhrase } from "@/lib/amy-voice-preload";
-import { normalizePhonicsLetterKey, resolveGraphemeToAudioKey } from "@workspace/phonics-sounds";
+import {
+  normalizePhonicsLetterKey,
+  PHONICS_DIGRAPH_SOUNDS,
+  resolveGraphemeToAudioKey,
+} from "@workspace/phonics-sounds";
 import {
   playPhonicsStaticAudio,
   resolvePhonicsAudioKey,
