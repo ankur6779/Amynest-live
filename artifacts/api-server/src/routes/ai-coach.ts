@@ -720,6 +720,14 @@ function fallbackExtensionWins(failedWinTitle: string, startNumber: number): Win
   return [w0, w1, w2];
 }
 
+/** Single adaptive win — rotates through the same strategy pool as the 3-win batches. */
+function fallbackExtensionWin(failedWinTitle: string, startNumber: number): Win {
+  const slotIndex = Math.max(0, (startNumber - 13) % 3);
+  const alignedStart = startNumber - slotIndex;
+  const batch = fallbackExtensionWins(failedWinTitle, alignedStart);
+  return { ...batch[slotIndex]!, win: startNumber };
+}
+
 // ─── DB cache helpers ────────────────────────────────────────────────────
 async function dbGet(cacheKey: string): Promise<CoachPlan | null> {
   try {
@@ -1310,7 +1318,7 @@ ${goalBrief}`;
 });
 
 // ─── POST /ai-coach/extend ───────────────────────────────────────────────
-// When a parent says "Not worked for me" — generate 3 adaptive wins to append
+// When a parent says "Not worked for me" or "Partially worked" — generate 1 adaptive win
 router.post("/ai-coach/extend", aiUsageGate, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "unauthorized" }); return; }
@@ -1340,33 +1348,36 @@ router.post("/ai-coach/extend", aiUsageGate, async (req, res): Promise<void> => 
 
   const goalLabel = GOAL_LABELS[goal] ?? goal;
   const start = Math.floor(startWinNumber);
+  const feedbackType = clip(raw.feedbackType, 16).toLowerCase();
+  const partialAttempt = feedbackType === "partial";
+  const outcomeLine = partialAttempt
+    ? `The step PARTIALLY worked: "${failedWinTitle}" (win #${Number.isFinite(failedWinNumber) ? failedWinNumber : "?"}) — refine and shrink it further.`
+    : `The step did NOT work: "${failedWinTitle}" (win #${Number.isFinite(failedWinNumber) ? failedWinNumber : "?"}) — try a different angle.`;
 
   const systemPrompt = `You are a child psychologist & behaviour-change expert.
-The parent has tried a step in their plan and it did NOT work for their child.
-You will write 3 ADAPTIVE follow-up wins that take a different angle: shrink the bar, check hidden blockers (sleep/hunger/sensory), and try the opposite approach (more structure or more autonomy).
+The parent has tried a step in their plan and it ${partialAttempt ? "only partially worked" : "did NOT work"} for their child.
+You will write 1 ADAPTIVE follow-up win that takes a fresh angle: shrink the bar, check hidden blockers (sleep/hunger/sensory), or flip the approach (more structure or more autonomy).
 Return ONLY valid JSON. No markdown.`;
 
   const userPrompt = `Parenting goal: ${goalLabel}
 Child age: ${ageGroup} years
 Severity: ${severity}
 Current routine: ${routine}
-The step that did NOT work: "${failedWinTitle}" (win #${Number.isFinite(failedWinNumber) ? failedWinNumber : "?"})
+${outcomeLine}
 Already tried (DO NOT repeat these titles): ${existingTitles.join(" | ") || "none"}
 
 Return ONLY this JSON shape:
 {
   "wins": [
-    { "win": ${start}, "title": "...", "objective": "...", "deep_explanation": "5-6 lines of science", "actions": ["...", "...", "...", "..."], "example": "real story", "mistake_to_avoid": "...", "micro_task": "5-min task today", "duration": "...", "science_reference": "concept/researcher" },
-    { "win": ${start + 1}, ... },
-    { "win": ${start + 2}, ... }
+    { "win": ${start}, "title": "...", "objective": "...", "deep_explanation": "5-6 lines of science", "actions": ["...", "...", "...", "..."], "example": "real story", "mistake_to_avoid": "...", "micro_task": "5-min task today", "duration": "...", "science_reference": "concept/researcher" }
   ]
 }
 
 STRICT:
-- EXACTLY 3 wins, numbered ${start}, ${start + 1}, ${start + 2}
-- Each takes a DIFFERENT angle from the failed step (shrink / blocker / opposite)
-- 3-5 actions each, substantive deep_explanation, real example with names
-- Every win MUST include "science_reference"
+- EXACTLY 1 win, numbered ${start}
+- Takes a DIFFERENT angle from the failed step (shrink / blocker / opposite)
+- 3-5 actions, substantive deep_explanation, real example with names
+- MUST include "science_reference"
 - Output ONLY the JSON object`;
 
   const { submitRouteAiJob } = await import("../lib/route-ai-queue.js");
@@ -1380,10 +1391,10 @@ STRICT:
       const body = result as { wins: Win[]; source: string; usedFallback: boolean };
       let wins = body.wins;
       let usedFallback = body.usedFallback;
-      if (wins?.length === 3 && wins.every(validateWin) && wins.every((w, i) => w.win === start + i)) {
+      if (wins?.length === 1 && wins.every(validateWin) && wins[0]?.win === start) {
         return { wins, source: usedFallback ? "fallback" : "ai" };
       }
-      wins = fallbackExtensionWins(failedWinTitle, start);
+      wins = [fallbackExtensionWin(failedWinTitle, start)];
       return { wins, source: "fallback" };
     },
     res,

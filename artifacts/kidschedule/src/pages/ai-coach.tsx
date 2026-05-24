@@ -1104,9 +1104,13 @@ export default function AICoachPage() {
   }, [phase, activeIdx]);
   const goToCard = (i: number) => {
     const el = scrollerRef.current;
-    if (!el) return;
+    const currentPlan = planRef.current;
+    if (!el || !currentPlan) return;
+    const maxIdx = Math.max(0, currentPlan.wins.length - 1);
+    const clamped = Math.max(0, Math.min(i, maxIdx));
+    setActiveIdx(clamped);
     el.scrollTo({
-      left: i * el.clientWidth,
+      left: clamped * el.clientWidth,
       behavior: "smooth"
     });
   };
@@ -1208,38 +1212,45 @@ export default function AICoachPage() {
       });
     } catch {/* silent */}
 
-    // Compute new progress inline using frozen denominator (never drops when extensions added)
+    // Progress: Worked = 1, Partially = 0.5, Not worked = 0 (denominator frozen at 12)
     const newSum = Object.values(newFeedbackByWin).reduce((acc, f) => acc + (f === "yes" ? 1 : f === "somewhat" ? 0.5 : 0), 0);
     const denom = originalWinCountRef.current || plan.wins.length;
     const newPct = Math.min(100, Math.round(newSum / denom * 100));
-    const isLastCard = activeIdx === plan.wins.length - 1;
-    const atPlanEnd = plan.wins.length >= (originalWinCountRef.current || 12);
 
-    const canExtend = !!lastPayloadRef.current;
-    if (canExtend && newPct < 100 && (feedback === "no" || (isLastCard && atPlanEnd))) {
-      await requestExtension(winNumber);
-    } else {
+    if (feedback === "yes") {
       toast({
-        title: feedback === "yes" ? "Win locked in 🎉" : "Progress noted 💜",
-        description:
-          feedback === "yes"
-            ? "Marked as complete. Moving to next step."
-            : "Partial progress counted. Keep going.",
+        title: "Win locked in 🎉",
+        description: "Marked as complete. Moving to next step.",
       });
       await advanceAfterFeedback(activeIdx + 1);
+      return;
     }
+
+    // Partial or not worked — one adaptive win until progress reaches 100%
+    if (newPct < 100 && lastPayloadRef.current) {
+      const ok = await requestExtension(winNumber, feedback);
+      if (!ok) await advanceAfterFeedback(activeIdx + 1);
+      return;
+    }
+
+    toast({
+      title: feedback === "somewhat" ? "Progress noted 💜" : "Noted",
+      description: feedback === "somewhat"
+        ? "Partial progress counted. Keep going."
+        : "Moving to the next step.",
+    });
+    await advanceAfterFeedback(activeIdx + 1);
   };
 
-  // ─── Adaptive: ask backend for 3 more wins when a step doesn't work
-  const requestExtension = async (failedWinNumber: number): Promise<boolean> => {
+  // ─── Adaptive: ask backend for 1 follow-up win when a step doesn't fully work
+  const requestExtension = async (failedWinNumber: number, feedback: Feedback = "no"): Promise<boolean> => {
     if (!plan || !lastPayloadRef.current || extending) return false;
     const failedWin = plan.wins.find(w => w.win === failedWinNumber);
     if (!failedWin) return false;
-    // Capture the card the user is currently on — we'll go one step forward from here
-    const nextIdx = activeIdx + 1;
+    const insertAt = activeIdx + 1;
+    const nextWinNum = Math.max(0, ...plan.wins.map(w => w.win)) + 1;
     setExtending(true);
     try {
-      const startWinNumber = plan.wins.length + 1;
       const {
         default: i18nInstanceX
       } = await import("@/i18n");
@@ -1252,7 +1263,8 @@ export default function AICoachPage() {
           ...lastPayloadRef.current,
           failedWinTitle: failedWin.title,
           failedWinNumber,
-          startWinNumber,
+          startWinNumber: nextWinNum,
+          feedbackType: feedback === "somewhat" ? "partial" : "failed",
           existingWinTitles: plan.wins.map(w => w.title),
           language: i18nInstanceX.language || "en"
         })
@@ -1272,16 +1284,18 @@ export default function AICoachPage() {
       const data = await readResolvedApiJson<{ wins?: Win[] }>(res, authFetch);
       const newWins = data?.wins;
       if (Array.isArray(newWins) && newWins.length > 0) {
-        setPlan(p => p ? {
-          ...p,
-          wins: [...p.wins, ...newWins]
-        } : p);
+        const newWin = { ...newWins[0]!, win: nextWinNum };
+        setPlan(p => {
+          if (!p) return p;
+          const wins = [...p.wins];
+          wins.splice(insertAt, 0, newWin);
+          return { ...p, wins };
+        });
         toast({
           title: t("toasts.ai_coach.extras_added_title"),
           description: t("toasts.ai_coach.extras_added_body")
         });
-        // Go to the very next card from where the user tapped — NOT the extension cards
-        setTimeout(() => goToCard(nextIdx), 80);
+        setTimeout(() => goToCard(insertAt), 80);
         return true;
       }
       return false;
@@ -2108,7 +2122,7 @@ export default function AICoachPage() {
             <Loader2 size={14} style={{
           animation: "spin 1s linear infinite"
         }} />
-            {t("pages.ai_coach.loading_3_new_strategies_for_you")}
+            {t("pages.ai_coach.loading_1_new_strategy_for_you")}
           </div>}
 
         {/* Bottom nav */}
@@ -2116,11 +2130,10 @@ export default function AICoachPage() {
         const currentWin = plan.wins[activeIdx];
         const hasFeedback = currentWin ? !!feedbackByWin[currentWin.win] : false;
         const atLastLoaded = activeIdx >= plan.wins.length - 1;
-        const totalPlan = originalWinCountRef.current || 12;
-        const canLoadMoreWins = plan.wins.length < totalPlan;
         const waitingForNext = atLastLoaded && loadingNextWin;
-        const atGenuineEnd = atLastLoaded && !canLoadMoreWins;
-        const nextDisabled = !hasFeedback || loadingNextWin || atGenuineEnd;
+        const progressComplete = progressPct >= 100;
+        const atGenuineEnd = atLastLoaded && progressComplete;
+        const nextDisabled = !hasFeedback || loadingNextWin || extending || atGenuineEnd;
         return <div className="app-bottom-action-bar" style={{
           flexShrink: 0,
           width: "100%",
@@ -2185,7 +2198,7 @@ export default function AICoachPage() {
             }}>
                   <ArrowLeft size={14} /> {t("pages.ai_coach.prev")}
                 </button>
-                <button data-on-dark onClick={() => void advanceAfterFeedback(activeIdx + 1)} disabled={nextDisabled || loadingNextWin} title={!hasFeedback ? "Mark how this win went before moving on" : waitingForNext ? "Generating next strategy…" : undefined} style={{
+                <button data-on-dark onClick={() => void advanceAfterFeedback(activeIdx + 1)} disabled={nextDisabled} title={!hasFeedback ? "Mark how this win went before moving on" : waitingForNext ? "Generating next strategy…" : undefined} style={{
               color: "#fff",
               background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
               boxShadow: "0 4px 12px rgba(139,92,246,0.3)",
@@ -2661,8 +2674,8 @@ function WinCard({
           </div>
         </div>
 
-        {/* "Not worked for me" → 3 new strategies are appended automatically */}
-        {currentFeedback === "no" && <div style={{
+        {/* "Not worked for me" / "Partially worked" → 1 new strategy inserted next */}
+        {(currentFeedback === "no" || currentFeedback === "somewhat") && <div style={{
         background: "rgba(254,243,199,0.7)",
         border: "1px solid rgba(245,158,11,0.4)",
         borderRadius: 14,
@@ -2683,7 +2696,9 @@ function WinCard({
           lineHeight: 1.55,
           color: "hsl(var(--brand-amber-900))"
         }}>
-              {t("pages.ai_coach.i_ve_added_3_fresh_strategies_at_the_end_of_your_plan_differ")} <strong>{t("pages.ai_coach.next_2")}</strong> {t("pages.ai_coach.to_reach_them")}
+              {currentFeedback === "no"
+                ? t("pages.ai_coach.added_1_fresh_strategy_not_worked")
+                : t("pages.ai_coach.added_1_fresh_strategy_partial")}
             </p>
           </div>}
 
