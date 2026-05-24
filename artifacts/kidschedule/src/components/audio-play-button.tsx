@@ -156,18 +156,17 @@ export function AudioPlayButton({
 
   const resolvedAudioKey = useMemo(() => {
     const trimmed = (text ?? "").trim();
-    if (!trimmed) return "";
-    if (mode !== "phonics") return "";
+    if (!trimmed || mode !== "phonics") return "";
     return (
-      resolvePhonicsAudioKey({ text: trimmed, phoneme: phonemeKey ?? trimmed }) ??
-      getPhonicsAudioText(trimmed)
+      resolvePhonicsAudioKey({ text: trimmed, phoneme: phonemeKey ?? null }) ?? ""
     );
   }, [text, mode, phonemeKey]);
 
   const resolvedText = useMemo(() => {
     const trimmed = (text ?? "").trim();
     if (!trimmed) return "";
-    return mode === "phonics" ? resolvedAudioKey || getPhonicsAudioText(trimmed) : trimmed;
+    if (mode !== "phonics") return trimmed;
+    return resolvedAudioKey || trimmed;
   }, [text, mode, resolvedAudioKey]);
 
   const resolvedPrefetch = useMemo(() => {

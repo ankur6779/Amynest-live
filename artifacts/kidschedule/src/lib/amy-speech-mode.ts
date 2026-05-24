@@ -6,6 +6,7 @@ import {
   normalizePhonicsLetterKey,
   PHONICS_DIGRAPH_SOUNDS,
   resolveGraphemeToAudioKey,
+  resolvePhonicsAudioKey,
 } from "@workspace/phonics-sounds";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import { getTtsRequestTimeoutMs } from "@/lib/tts-guard";
@@ -686,17 +687,40 @@ export function prepareAmyCatalogSpeech(raw: string): AmySpeechPolicy {
   return enforceAmySpeechPolicyInvariants(policy);
 }
 
+/** Resolve a phonics tap to one curated MP3 key (never a multi-part TTS phrase). */
+function resolvePhonicsPlaybackKey(raw: string, opts?: SpeakOptions): string {
+  const originalText = (raw ?? "").trim();
+  if (!originalText) return originalText;
+
+  const fromOpts =
+    resolvePhonicsAudioKey({
+      text: originalText,
+      phoneme: opts?.phoneme ?? null,
+    }) ?? null;
+  if (fromOpts) return fromOpts;
+
+  const letterKey = normalizePhonicsLetterKey(originalText);
+  if (letterKey) {
+    const fromLetter = resolveGraphemeToAudioKey(letterKey);
+    if (fromLetter) return fromLetter;
+  }
+
+  return originalText;
+}
+
 /** Phonics playback — verbatim input, no prosody / semantic splitting / TTS normalization. */
 export function preparePhonicsSpeech(raw: string, opts?: SpeakOptions): AmySpeechPolicy {
   const originalText = (raw ?? "").trim();
-  const policy = buildPolicy(originalText, originalText, "phonics", [originalText]);
+  const playbackKey = resolvePhonicsPlaybackKey(originalText, opts);
+  const policy = buildPolicy(originalText, playbackKey, "phonics", [playbackKey]);
   policy.useSemanticSplit = false;
   policy.allowSpeechCoachSplit = false;
   policy.forcePhonicsOnly = true;
   policy.allowPhonicsFallback = true;
-  policy.allowPhonicsSequence = !opts?.word;
+  /** Single tile = single sound; CVC blending uses playPhonicsBlend / opts.word finale. */
+  policy.allowPhonicsSequence = false;
   policy.preferDynamicTts = false;
-  policy.prosody = getProsodyProfile("phonics", originalText, 1);
+  policy.prosody = getProsodyProfile("phonics", playbackKey, 1);
   return enforceAmySpeechPolicyInvariants(policy);
 }
 

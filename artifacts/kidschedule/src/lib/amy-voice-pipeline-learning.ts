@@ -397,7 +397,11 @@ export function getRankedLearnableLayers(
   const bootstrap = bootstrapScores(stats, context);
   const streamingBoost = context.networkProfile === "fast" && !context.phonics;
   const rl = selectLayersWithRl(context, penalized, bootstrap, streamingBoost);
-  return rl.layers.length > 0 ? rl.layers : [...LEARNABLE_LAYERS];
+  const ranked = rl.layers.length > 0 ? rl.layers : [...LEARNABLE_LAYERS];
+  if (context.phonics) {
+    return ranked.filter((layer) => layer === "static" || layer === "cache");
+  }
+  return ranked;
 }
 
 export function buildRlTelemetryPayload(

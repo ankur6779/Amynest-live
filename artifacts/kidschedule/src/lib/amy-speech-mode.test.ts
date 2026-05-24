@@ -97,6 +97,17 @@ describe("amy-speech-mode", () => {
     expect(getPhonicsTrainingAudioText("sh")).toBe("sh");
   });
 
+  it("phonics mode plays one static clip key per tile", () => {
+    const letter = prepareAmySpeechInput("b", { mode: "phonics" });
+    expect(letter.normalizedText).toBe("b");
+    expect(letter.allowPhonicsSequence).toBe(false);
+    expect(letter.forcePhonicsOnly).toBe(true);
+
+    const vowel = prepareAmySpeechInput("a as in apple", { mode: "phonics" });
+    expect(vowel.normalizedText).toBe("a");
+    expect(vowel.allowPhonicsSequence).toBe(false);
+  });
+
   it("reads numbers as words", () => {
     expect(numberToWords(100)).toBe("one hundred");
     expect(prepareAmySpeechInput("45").normalizedText).toBe("Forty five");
