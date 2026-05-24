@@ -271,6 +271,9 @@ importers:
       '@workspace/phonics-sounds':
         specifier: workspace:*
         version: link:../../lib/phonics-sounds
+      '@workspace/routine-intelligence':
+        specifier: workspace:*
+        version: link:../../lib/routine-intelligence
       '@workspace/safety':
         specifier: workspace:*
         version: link:../../lib/safety
@@ -1251,6 +1254,8 @@ importers:
   lib/phonics-sounds: {}
 
   lib/ptm-prep: {}
+
+  lib/routine-intelligence: {}
 
   lib/safety: {}
 

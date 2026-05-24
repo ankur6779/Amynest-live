@@ -25,6 +25,10 @@ import {
 } from "../lib/routine-generation-cache.js";
 import { normalizeChildForRoutine } from "../lib/fallback-child-profile.js";
 import {
+  safeEnhanceActivities,
+  type ActivityEnhancerContext,
+} from "@workspace/routine-intelligence";
+import {
   CreateRoutineBody,
   CheckRoutineQueryParams,
   CheckRoutineResponse,
@@ -911,8 +915,18 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
       ? params.feedingType
       : undefined;
 
+  const enhancedItems = enrichItemsBeforePipeline(
+    curved.items as unknown as AiRoutineItem[],
+    buildActivityEnhancerContext({
+      age: params.age,
+      country: params.country,
+      goals: params.goals,
+      parentGoals: params.parentGoals,
+    }),
+  );
+
   const piped = runIntelligencePipelineOnItems({
-    items: curved.items as unknown as AiRoutineItem[],
+    items: enhancedItems,
     resolvedInputs: inputs,
     specialPlans,
     fixedActivities: params.fixedActivities,
@@ -1042,7 +1056,35 @@ type RoutineItem = {
   nutrition?: import("../lib/meal-recipes.js").MealNutrition | null;
   ageBand?: "2-5" | "6-10" | "10+";
   parentHubTopic?: string;
+  /** Semantic enrichment — optional, backward compatible. */
+  description?: string;
+  linkedModules?: string[];
 };
+
+function buildActivityEnhancerContext(input: {
+  age: number;
+  country?: string | null;
+  goals?: string | null;
+  parentGoals?: readonly string[];
+  interests?: readonly string[];
+}): ActivityEnhancerContext {
+  const goalTokens: string[] = [];
+  if (input.goals?.trim()) goalTokens.push(input.goals.trim());
+  if (input.parentGoals?.length) goalTokens.push(...input.parentGoals);
+  return {
+    age: input.age,
+    country: input.country,
+    interests: input.interests ?? [],
+    goals: goalTokens,
+  };
+}
+
+function enrichItemsBeforePipeline<T extends AiRoutineItem>(
+  items: T[],
+  ctx: ActivityEnhancerContext,
+): T[] {
+  return safeEnhanceActivities(items, ctx);
+}
 
 // Per-routine UI prefs that sync across web + mobile. The DB column defaults
 // to {} on legacy rows, so we normalise here before parsing the API response.
@@ -1480,8 +1522,18 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     { region: region as string | null | undefined },
   );
 
+  const ruleEnhancedItems = enrichItemsBeforePipeline(
+    ruleEnriched.items as unknown as AiRoutineItem[],
+    buildActivityEnhancerContext({
+      age: effectiveAge,
+      country: (rulePp as Record<string, unknown> | null)?.country as string | undefined,
+      goals: child.goals,
+      parentGoals: ruleChildIntel.parentGoals,
+    }),
+  );
+
   const rulePiped = runIntelligencePipelineOnItems({
-    items: ruleEnriched.items as unknown as AiRoutineItem[],
+    items: ruleEnhancedItems,
     resolvedInputs: ruleInputs,
     specialPlans: ruleInputs.specialPlans || specialPlans,
     fixedActivities,
@@ -1912,8 +1964,18 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       aiEnvContext,
       { region: region as string | null | undefined },
     );
+    const fallbackEnhancedItems = enrichItemsBeforePipeline(
+      fallbackEnriched.items as unknown as AiRoutineItem[],
+      buildActivityEnhancerContext({
+        age: effectiveAge,
+        country: (pp as Record<string, unknown> | null)?.country as string | undefined,
+        goals: child.goals,
+        parentGoals: childIntel.parentGoals,
+      }),
+    );
+
     const fallbackPiped = runIntelligencePipelineOnItems({
-      items: fallbackEnriched.items as unknown as AiRoutineItem[],
+      items: fallbackEnhancedItems,
       resolvedInputs: fallbackInputs,
       specialPlans: fallbackInputs.specialPlans || specialPlans,
       fixedActivities,

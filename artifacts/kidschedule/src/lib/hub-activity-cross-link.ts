@@ -61,6 +61,26 @@ export function buildParentingHubDeepLink(tileId = "activities"): string {
   return `/parenting-hub#tile-${tileId}`;
 }
 
+/** Map routine-intelligence module ids → in-app routes (optional enrichment layer). */
+const LINKED_MODULE_ROUTES: Record<string, string> = {
+  parent_focus_guide: "/parenting-hub#tile-activities",
+  amy_coach_study_tips: "/amy-coach",
+  benefits_of_play: "/parenting-hub#tile-activities",
+  activity_ideas: "/parenting-hub#tile-activities",
+  family_bonding_ideas: "/parenting-hub#tile-activities",
+  phonics_audio: "/parenting-hub#tile-phonics",
+  story_audio: "/parenting-hub#tile-story-hub",
+};
+
+export function resolveLinkedModuleHref(moduleId: string): string {
+  return LINKED_MODULE_ROUTES[moduleId] ?? buildParentingHubDeepLink();
+}
+
+export function primaryLinkedModuleHref(modules?: readonly string[] | null): string | null {
+  if (!modules?.length) return null;
+  return resolveLinkedModuleHref(modules[0]!);
+}
+
 export function parseParentingHubDeepLink(): HubDeepLinkTarget | null {
   if (typeof window === "undefined") return null;
   const raw = window.location.hash.replace(/^#/, "");

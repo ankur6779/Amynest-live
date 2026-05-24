@@ -28,6 +28,7 @@
     "@workspace/conflict-resolution": "workspace:*",
     "@workspace/load-forecast": "workspace:*",
     "@workspace/explainability": "workspace:*",
+    "@workspace/routine-intelligence": "workspace:*",
     "@workspace/safety": "workspace:*",
     "@workspace/speech-coach": "workspace:*",
     "@workspace/infant-hub": "workspace:*",
