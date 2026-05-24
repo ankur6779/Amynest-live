@@ -2,10 +2,10 @@ import { LESSONS } from "@workspace/audio-lessons";
 import { getPhonicsAudioTextsForStaticCatalog, getCvcPhonemeAudioTextsForStaticCatalog } from "@workspace/phonics-sounds";
 import { getPromptSpeakText, PRONUNCIATION_PROMPTS, getArticulationCue } from "@workspace/speech-coach";
 import {
-  PLAY_CATEGORIES,
-  BASIC_SUBJECTS,
   ADVANCED_SUBJECTS,
   collapseSpeakWhitespace,
+  getBasicSubjectsForCountry,
+  getPlayCategoriesForCountry,
   getPlayItemSpeakText,
   getTopicAmySpeakText,
   getTopicNotesSpeakText,
@@ -82,6 +82,9 @@ function fromEntries(entries: StaticTtsEntry[], source: string): SpeakablePhrase
     .filter((r): r is SpeakablePhraseRecord => r !== null);
 }
 
+/** Countries with localized play/GK copy — must match resolve-content SUPPORTED + DEFAULT. */
+const STUDY_ZONE_COUNTRIES = ["IN", "US", "UK", "AU", "NZ", "AE", "DEFAULT"] as const;
+
 function collectStudyZonePhrases(): SpeakablePhraseRecord[] {
   const out: SpeakablePhraseRecord[] = [];
   const pushLine = (line: string, source: string) => {
@@ -94,12 +97,25 @@ function collectStudyZonePhrases(): SpeakablePhraseRecord[] {
     }
   };
 
-  for (const cat of PLAY_CATEGORIES) {
-    for (const item of cat.items) {
-      pushLine(getPlayItemSpeakText(item, cat.id), "study_zone_play");
+  for (const country of STUDY_ZONE_COUNTRIES) {
+    const playSource = country === "DEFAULT" ? "study_zone_play" : `study_zone_play_${country}`;
+    for (const cat of getPlayCategoriesForCountry(country)) {
+      for (const item of cat.items) {
+        pushLine(getPlayItemSpeakText(item, cat.id), playSource);
+      }
+    }
+    const notesSource =
+      country === "DEFAULT" ? "study_zone_topic_notes" : `study_zone_topic_notes_${country}`;
+    const promptSource =
+      country === "DEFAULT" ? "study_zone_topic_prompt" : `study_zone_topic_prompt_${country}`;
+    for (const subject of getBasicSubjectsForCountry(country)) {
+      for (const topic of subject.topics) {
+        pushLine(getTopicNotesSpeakText(topic), notesSource);
+        pushLine(getTopicAmySpeakText(topic), promptSource);
+      }
     }
   }
-  for (const subject of [...BASIC_SUBJECTS, ...ADVANCED_SUBJECTS]) {
+  for (const subject of ADVANCED_SUBJECTS) {
     for (const topic of subject.topics) {
       pushLine(getTopicNotesSpeakText(topic), "study_zone_topic_notes");
       pushLine(getTopicAmySpeakText(topic), "study_zone_topic_prompt");
