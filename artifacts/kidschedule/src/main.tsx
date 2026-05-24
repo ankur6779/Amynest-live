@@ -6,6 +6,7 @@ import App from "./App";
 import "./index.css";
 import "./i18n";
 import "./lib/notification-deep-link";
+import { initCapacitorPushTapHandling } from "./lib/native-push-bridge";
 import { renderCriticalFallbackHtml } from "@/components/app-fallback-ui";
 import { showProductionCrashOverlay } from "@/lib/production-crash-overlay";
 import { initNativeShell } from "./lib/native-shell";
@@ -108,6 +109,7 @@ async function bootstrap(): Promise<void> {
       // Block mount until deploy-version sync finishes — prevents stale lazy chunks after release.
       await syncPwaCacheAndVersion();
       initNativeShell();
+      void initCapacitorPushTapHandling();
 
       const apiOrigin = getAppApiBaseOrigin();
       if (apiOrigin) setBaseUrl(apiOrigin);

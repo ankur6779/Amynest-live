@@ -28,23 +28,79 @@ const CATEGORY_ROUTES: Record<string, string> = {
   milestone:         "/progress",
 };
 
+/** Legacy / server shorthand paths → real SPA routes. */
+const PATH_ALIASES: Record<string, string> = {
+  "/hub":         "/dashboard",
+  "/routine":     "/routines",
+  "/meals":       "/nutrition",
+  "/study-zone":  "/study",
+  "/assistant":   "/amy-coach",
+};
+
+function normalizeDeepLinkInput(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    try {
+      const url = new URL(trimmed);
+      const fromHash = url.hash.startsWith("#/")
+        ? url.hash.slice(1)
+        : url.hash.startsWith("#")
+          ? url.hash.slice(1)
+          : "";
+      if (fromHash.startsWith("/")) return fromHash;
+      if (url.pathname && url.pathname !== "/") return url.pathname;
+    } catch {
+      /* ignore malformed URLs */
+    }
+  }
+  if (trimmed.startsWith("#/")) return trimmed.slice(1);
+  if (trimmed.startsWith("#")) return trimmed.slice(1).startsWith("/") ? trimmed.slice(1) : `/${trimmed.slice(1)}`;
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
 /**
  * Resolve a final navigation path from the raw deepLink string and optional
  * category hint. Priority:
  *   1. Explicit deepLink path from server (e.g. "/routines/42")
- *   2. Category-based fallback (e.g. "phonics" → "/parenting-hub/speech-coach")
- *   3. "/dashboard" as the safe fallback
+ *   2. Known path alias (e.g. "/hub" → "/dashboard")
+ *   3. Category-based fallback (e.g. "phonics" → "/speech-coach")
+ *   4. "/dashboard" as the safe fallback
  */
 export function resolveDeepLinkPath(
   rawPath: string | null | undefined,
   category?: string | null,
 ): string {
-  if (rawPath && rawPath.startsWith("/") && rawPath.length > 1) return rawPath;
+  const normalized = normalizeDeepLinkInput(rawPath);
+  if (normalized.length > 1) {
+    return PATH_ALIASES[normalized] ?? normalized;
+  }
   if (category) {
     const route = CATEGORY_ROUTES[category.toLowerCase().replace(/-/g, "_")];
     if (route) return route;
   }
   return "/dashboard";
+}
+
+/** Parse Capacitor pushNotificationActionPerformed / FCM data payloads. */
+export function parseNotifTapPayload(payload: unknown): {
+  deepLink: string;
+  category?: string;
+} {
+  const root = payload as {
+    notification?: { data?: Record<string, unknown> };
+    data?: Record<string, unknown>;
+  } | null;
+  const data = root?.notification?.data ?? root?.data ?? {};
+  const deepLink =
+    String(data.deepLink ?? data.url ?? data.deep_link ?? "").trim();
+  const categoryRaw = data.category;
+  const category =
+    typeof categoryRaw === "string" && categoryRaw.trim()
+      ? categoryRaw.trim()
+      : undefined;
+  return { deepLink, category };
 }
 
 // ── Pending tap buffer (for cold-start race with React mount) ────────────────

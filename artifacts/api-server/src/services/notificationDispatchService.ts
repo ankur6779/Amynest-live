@@ -299,21 +299,14 @@ async function sendFcmAndroidPush(
   token: string,
   input: DispatchInput,
 ): Promise<void> {
+  // Data-only so KidScheduleFcmService always builds the tray notification with
+  // a PendingIntent that carries deepLink + category (system-displayed FCM
+  // notification taps often open the app without those extras).
   await getMessaging(adminApp()).send({
     token,
-    notification: {
+    data: {
       title: input.title,
       body: input.body,
-    },
-    android: {
-      notification: {
-        icon: "ic_notification",
-        color: "#6C63FF",
-        channelId: "default",
-        clickAction: "android.intent.action.MAIN",
-      },
-    },
-    data: {
       category: input.category,
       deepLink: input.deepLink ?? "",
       url: input.deepLink ?? "",
@@ -322,6 +315,9 @@ async function sendFcmAndroidPush(
             Object.entries(input.data).map(([k, v]) => [k, String(v)]),
           )
         : {}),
+    },
+    android: {
+      priority: "high",
     },
   });
 }

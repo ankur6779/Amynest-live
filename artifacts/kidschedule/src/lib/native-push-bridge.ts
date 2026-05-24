@@ -152,6 +152,16 @@ export function isCapacitorIOS(): boolean {
   return !!(cap?.isNativePlatform?.() && cap.getPlatform?.() === "ios");
 }
 
+/** Capacitor iOS or Android shell (not legacy AmyNestAndroid WebView APK). */
+export function isCapacitorNativePlatform(): boolean {
+  try {
+    return Capacitor.isNativePlatform();
+  } catch {
+    if (typeof window === "undefined") return false;
+    return window.Capacitor?.isNativePlatform?.() === true;
+  }
+}
+
 /**
  * Capacitor: after notification **alert** permission is `granted`, you must still call
  * `PushNotifications.register()` so the OS runs `registerForRemoteNotifications` (iOS) /
@@ -184,6 +194,43 @@ let iosPermDeniedOnce = false;
 const iosPluginListenerRemovers: Array<() => void | Promise<void>> = [];
 /** Window listener that merges native-injected FCM token events into cache. */
 let iosWindowTokenListener: ((e: Event) => void) | null = null;
+/** True after pushNotificationActionPerformed listener is wired (iOS + Android Capacitor). */
+let capacitorTapListenerWired = false;
+
+function handleCapacitorPushTap(action: unknown): void {
+  import("@/lib/notification-deep-link")
+    .then(({ dispatchNotifDeepLink, parseNotifTapPayload }) => {
+      const { deepLink, category } = parseNotifTapPayload(action);
+      dispatchNotifDeepLink(deepLink, category);
+    })
+    .catch(() => { /* ignore */ });
+}
+
+/**
+ * Wire Capacitor push tap handling as early as possible (before sign-in / permission).
+ * Capacitor buffers the last tap until a listener is registered — without this,
+ * cold-start notification opens do nothing until initCapacitorIOSPush runs later.
+ */
+export async function initCapacitorPushTapHandling(): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (!isCapacitorNativePlatform()) return;
+  if (capacitorTapListenerWired) return;
+
+  const plugin = getCapacitorPlugin();
+  if (!plugin) return;
+
+  try {
+    const tap = await plugin.addListener("pushNotificationActionPerformed", (action) => {
+      try {
+        handleCapacitorPushTap(action);
+      } catch { /* ignore */ }
+    });
+    iosPluginListenerRemovers.push(() => { void tap.remove(); });
+    capacitorTapListenerWired = true;
+  } catch {
+    /* ignore */
+  }
+}
 
 /** Capacitor iOS `registration` is the raw APNs device token (64 hex). Server + FCM need the FCM registration token from native. */
 export function looksLikeApnsDeviceTokenHex(token: string): boolean {
@@ -258,6 +305,7 @@ export function resetCapacitorIOSPushState(): void {
   }
   iosWindowTokenListener = null;
 
+  capacitorTapListenerWired = false;
   iosInitialized = false;
   iosInitPromise = null;
   iosPerm = "default";
@@ -302,6 +350,7 @@ export async function initCapacitorIOSPush(): Promise<void> {
       if (!plugin) return;
 
       activeBridgeKind = "ios";
+      await initCapacitorPushTapHandling();
 
       // 1. Permission — check first so Settings → Allow does not re-prompt
       try {
@@ -375,19 +424,6 @@ export async function initCapacitorIOSPush(): Promise<void> {
         });
         iosPluginListenerRemovers.push(() => { void fg.remove(); });
 
-        const tap = await plugin.addListener("pushNotificationActionPerformed", (action) => {
-          try {
-            const a = action as {
-              notification?: { data?: { deepLink?: string; category?: string } };
-            };
-            const deepLink = a.notification?.data?.deepLink ?? "";
-            const category = a.notification?.data?.category;
-            import("@/lib/notification-deep-link").then(({ dispatchNotifDeepLink }) => {
-              dispatchNotifDeepLink(deepLink, category);
-            }).catch(() => { /* ignore */ });
-          } catch { /* ignore */ }
-        });
-        iosPluginListenerRemovers.push(() => { void tap.remove(); });
       } catch { /* ignore */ }
 
       try {
@@ -633,6 +669,10 @@ export async function ensureNativePushReady(): Promise<{
   permission: NativePushPermission;
   token: string | null;
 } | null> {
+  if (isCapacitorNativePlatform()) {
+    await initCapacitorPushTapHandling();
+  }
+
   // ── Capacitor iOS ────────────────────────────────────────────────────────
   if (isCapacitorIOS()) {
     activeBridgeKind = "ios";

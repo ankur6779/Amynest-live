@@ -40,14 +40,19 @@ export function useNotificationDeepLink(): void {
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    const pending = drainPendingNotifTap();
-    if (pending?.deepLink) {
+    function consumePendingTap(): void {
+      const pending = drainPendingNotifTap();
+      if (!pending?.deepLink) return;
       navigateFromNotification(navigate, pending.deepLink);
       toast({
         description: "Opened from notification",
         duration: 2500,
       });
     }
+
+    consumePendingTap();
+    // Native shells may inject the tap slightly after the WebView loads.
+    const retryTimer = window.setTimeout(consumePendingTap, 600);
 
     function handleDeepLink(e: Event) {
       const detail = (e as CustomEvent<NotifDeepLinkEvent>).detail;
@@ -61,6 +66,7 @@ export function useNotificationDeepLink(): void {
 
     window.addEventListener("amynest-notif-deeplink", handleDeepLink);
     return () => {
+      window.clearTimeout(retryTimer);
       window.removeEventListener("amynest-notif-deeplink", handleDeepLink);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

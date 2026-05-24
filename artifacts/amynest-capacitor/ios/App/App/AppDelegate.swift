@@ -22,6 +22,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         AmyNestFcmBridge.shared.setApnsDeviceToken(deviceToken)
         AmyNestFcmBridge.shared.refreshTokenToWebView()
+        NotificationCenter.default.post(name: Notification.Name("CapacitorDidRegisterForRemoteNotifications"), object: deviceToken)
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
