@@ -724,10 +724,27 @@ export function preparePhonicsSpeech(raw: string, opts?: SpeakOptions): AmySpeec
   return enforceAmySpeechPolicyInvariants(policy);
 }
 
+/** Amy Coach win read-aloud — verbatim long-form, no semantic split. */
+export function prepareAmyCoachSpeech(raw: string): AmySpeechPolicy {
+  const originalText = raw ?? "";
+  const policy = buildPolicy(originalText, originalText, "sentence", [originalText]);
+  policy.useSemanticSplit = false;
+  policy.allowSpeechCoachSplit = false;
+  policy.allowPhonicsSequence = false;
+  policy.preferDynamicTts = false;
+  policy.retryDynamicTts = true;
+  policy.preferSpeechSynthesisFallback = true;
+  policy.dynamicTimeoutMs = getTtsRequestTimeoutMs();
+  return enforceAmySpeechPolicyInvariants(policy);
+}
+
 /** Guard: normalize + classify before any pipeline layer runs. */
 export function prepareAmySpeechInput(raw: string, opts?: SpeakOptions): AmySpeechPolicy {
   if (opts?.catalogPlayback) {
     return prepareAmyCatalogSpeech(raw);
+  }
+  if (opts?.coach) {
+    return prepareAmyCoachSpeech(raw);
   }
   if (opts?.parentHub) {
     return prepareAmyParentHubSpeech(raw);

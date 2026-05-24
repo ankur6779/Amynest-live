@@ -55,6 +55,7 @@ function createSessionId(): string {
 export function resolveAudioHealthModule(opts?: SpeakOptions): AudioHealthModule {
   if (opts?.lessonParagraph) return "lesson";
   if (opts?.parentHub) return "parentHub";
+  if (opts?.coach) return "coach";
   if (opts?.mode === "phonics") return "phonics";
   return "coach";
 }

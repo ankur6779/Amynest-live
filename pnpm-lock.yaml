@@ -253,6 +253,9 @@ importers:
       '@workspace/infant-hub':
         specifier: workspace:*
         version: link:../../lib/infant-hub
+      '@workspace/infant-problems':
+        specifier: workspace:*
+        version: link:../../lib/infant-problems
       '@workspace/integrations-openai-ai-server':
         specifier: workspace:*
         version: link:../../lib/integrations-openai-ai-server

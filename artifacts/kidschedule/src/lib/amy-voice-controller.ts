@@ -31,6 +31,12 @@ import {
   logParentHubAudioIdentity,
   type ParentHubAudioIdentity,
 } from "@/lib/parent-hub-audio-identity";
+import {
+  assertVerbatimCoachText,
+  isCoachAudioIdentity,
+  logCoachAudioIdentity,
+  type CoachAudioIdentity,
+} from "@/lib/coach-audio-identity";
 import { buildAdaptiveDelivery } from "@/lib/amy-voice-emotion";
 import {
   assessAmyDifficulty,
@@ -109,8 +115,10 @@ export interface SpeakOptions {
   lessonParagraph?: boolean;
   /** Parent Hub read-aloud — implies verbatim identity + full-required by default. */
   parentHub?: boolean;
-  /** Canonical lesson paragraph or Parent Hub identity — required for guarded playback. */
-  audioIdentity?: AudioIdentity | ParentHubAudioIdentity;
+  /** Amy Coach win listen-aloud — plan-scoped shared cache. */
+  coach?: boolean;
+  /** Canonical lesson paragraph, Parent Hub, or Coach identity — required for guarded playback. */
+  audioIdentity?: AudioIdentity | ParentHubAudioIdentity | CoachAudioIdentity;
   /** @deprecated Use audioIdentity.lessonId */
   lessonId?: string;
   /** @deprecated Use audioIdentity.paragraphIdx */
@@ -344,9 +352,13 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       opts?.parentHub && isParentHubAudioIdentity(opts.audioIdentity)
         ? opts.audioIdentity
         : null;
+    const coachIdentity =
+      opts?.coach && isCoachAudioIdentity(opts.audioIdentity) ? opts.audioIdentity : null;
     const text = parentHubIdentity
       ? parentHubIdentity.text
-      : (rawText ?? "").trim();
+      : coachIdentity
+        ? coachIdentity.text
+        : (rawText ?? "").trim();
     if (!text) {
       return { success: false, error: "tts_empty_text" };
     }
@@ -367,7 +379,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
     if (opts?.lessonParagraph) {
       const identity = opts.audioIdentity;
-      if (!identity || isParentHubAudioIdentity(identity)) {
+      if (!identity || isParentHubAudioIdentity(identity) || isCoachAudioIdentity(identity)) {
         const msg = "Lesson playback requires audioIdentity";
         if (import.meta.env.DEV) throw new Error(msg);
         console.error("[LessonAudioIdentity]", msg);
@@ -390,6 +402,18 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         return { success: false, error: "lesson_identity_mismatch" };
       }
       logLessonAudioIdentity(identity, { phase: "speak_start", requestId });
+    }
+
+    if (opts?.coach) {
+      const identity = opts.audioIdentity;
+      if (!isCoachAudioIdentity(identity)) {
+        const msg = "Coach playback requires audioIdentity";
+        if (import.meta.env.DEV) throw new Error(msg);
+        console.error("[CoachAudioIdentity]", msg);
+        return { success: false, error: "coach_identity_missing" };
+      }
+      assertVerbatimCoachText(rawText, identity.text);
+      logCoachAudioIdentity(identity, { phase: "speak_start", requestId });
     }
     logTts({ reason: "speak_start", requestId, textPreview: text.slice(0, 80) });
 

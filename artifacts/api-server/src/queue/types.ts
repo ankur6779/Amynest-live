@@ -25,6 +25,8 @@ export type AiJobType =
   | "ai-coach.initial_wins"
   | "ai-coach.next_win"
   | "ai-coach.remaining_wins"
+  | "ai-coach.pregenerate_audio"
+  | "ai-coach.pregenerate_infant_audio"
   | "explain.narrative"
   | "speech.transcribe";
 

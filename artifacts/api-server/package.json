@@ -32,6 +32,7 @@
     "@workspace/safety": "workspace:*",
     "@workspace/speech-coach": "workspace:*",
     "@workspace/infant-hub": "workspace:*",
+    "@workspace/infant-problems": "workspace:*",
     "@workspace/life-skills": "workspace:*",
     "@workspace/integrations-openai-ai-server": "workspace:*",
     "@workspace/study-zone": "workspace:*",
