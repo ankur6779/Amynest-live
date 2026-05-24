@@ -47,6 +47,10 @@ import {
   validateMealActivityIntegration,
 } from "./routine-meal-integration.js";
 import {
+  sanitizeMealOptionsInRoutineItems,
+  type MealOptionsSanitizeCtx,
+} from "./routine-meal-options-safety.js";
+import {
   getAgeGroup,
   isExclusiveInfantPhase,
   shouldSkipCountryCulture,
@@ -121,6 +125,11 @@ export type IntelligencePipelineInput = {
   diet?: string | null;
   /** `mom | dad | both | grandparent | babysitter | self`. */
   caregiver?: string | null;
+  /** Comma-separated allergens — drives post-enrichment meal option sanitizer. */
+  allergies?: string | null;
+  goals?: string | null;
+  foodStyle?: string | null;
+  subCuisine?: string | null;
 };
 
 export type IntelligencePipelineResult = {
@@ -516,6 +525,20 @@ export function runRoutineIntelligencePipeline(
     ageInMonths,
     feedingType: flowOpts.feedingType,
   });
+  const mealSafetyCtx: MealOptionsSanitizeCtx = {
+    dietType: input.diet ?? "vegetarian",
+    allergies: input.allergies ?? null,
+    ageInMonths,
+    ageGroup: scheduleOpts.ageGroup,
+    foodStyle: input.foodStyle ?? null,
+    subCuisine: input.subCuisine ?? null,
+    goals: input.goals ?? null,
+  };
+  const sanitizedMeals = sanitizeMealOptionsInRoutineItems(items, mealSafetyCtx);
+  items = sanitizedMeals.items;
+  if (sanitizedMeals.corrections.length) {
+    pipelineDebug(debug, debugLog, "meal option safety corrections", sanitizedMeals.corrections);
+  }
   pipelineDebug(debug, debugLog, "enriched country meals with dishes + energyImpact");
 
   const softWarnings = [
@@ -564,6 +587,7 @@ export function runRoutineIntelligencePipeline(
       ageInMonths,
       feedingType: flowOpts.feedingType,
     });
+    fallback = sanitizeMealOptionsInRoutineItems(fallback, mealSafetyCtx).items;
     tiered = runTieredValidation(
       fallback,
       wake,

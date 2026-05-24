@@ -56,6 +56,7 @@ import {
   type ResolvedRoutineInputs,
 } from "../lib/routine-input-validation.js";
 import { runRoutineIntelligencePipeline } from "../lib/routine-intelligence-pipeline.js";
+import { sanitizeMealOptionsInRoutineItems } from "../lib/routine-meal-options-safety.js";
 import type { SpecialEventDebug } from "../lib/routine-special-event.js";
 import {
   finalizeFixedActivitiesSummary,
@@ -341,6 +342,7 @@ export type EnrichCtx = {
   subCuisine: string | null;
   region: string | null;
   ageGroup: AgeGroup;
+  goals?: string | null;
 };
 
 // Structural shape — accepts both the real OpenAI SDK and the test mock.
@@ -445,6 +447,17 @@ export async function enrichMealOptionsWithAi(
     return `${i + 1}. "${t.activity}" at ${t.time}${constraint}`;
   }).join("\n");
 
+  const highProteinLine = (() => {
+    const g = ctx.goals ?? "";
+    const ft = (ctx.foodType ?? "").toLowerCase();
+    if (/\bhigh[\s-]?protein\b/i.test(g) || ft.includes("high_protein")) {
+      return `
+HIGH-PROTEIN MODE — each option MUST lead with a primary protein (egg, paneer, chicken, fish, dal, rajma, chana, tofu, etc.).
+Avoid carb-dominant meals (plain rice + light dal only, curry + naan without a dense protein). One primary protein per option is enough — do not stack multiple heavy proteins.`;
+    }
+    return "";
+  })();
+
   const prompt = `You are a child nutrition expert generating PERSONALIZED meal options for a single child.
 
 CHILD PROFILE:
@@ -452,6 +465,7 @@ CHILD PROFILE:
 - Diet: ${dietLine}
 - Cuisine style: ${styleLine}
 ${allergyDetail}
+${highProteinLine}
 
 TASK: For EACH meal slot listed below, generate EXACTLY 4 unique, specific dish names that:
 1. Are AUTHENTIC ${styleLine} cuisine — DO NOT default to generic Indian food if a non-Indian style is specified.
@@ -486,7 +500,7 @@ The "slots" array MUST have exactly ${targets.length} entries in the same order 
   }
 
   const slots = Array.isArray(parsed.slots) ? parsed.slots : [];
-  return items.map((it, idx) => {
+  const enrichedItems = items.map((it, idx) => {
     const slotPos = targets.findIndex((t) => t.idx === idx);
     if (slotPos === -1) return it;
     const slot = slots[slotPos];
@@ -496,6 +510,16 @@ The "slots" array MUST have exactly ${targets.length} entries in the same order 
     if (opts.length < 4) return it;
     return { ...it, notes: `Options: ${opts.slice(0, 4).join(" | ")}` };
   });
+
+  const { items: sanitized } = sanitizeMealOptionsInRoutineItems(enrichedItems, {
+    dietType: ctx.foodType,
+    allergies: ctx.allergies,
+    ageGroup: ctx.ageGroup,
+    foodStyle: ctx.foodStyle,
+    subCuisine: ctx.subCuisine,
+    goals: ctx.goals ?? null,
+  });
+  return sanitized;
 }
 
 // ─── AI Routine Generation helper ──────────────────────────────────────────
@@ -885,6 +909,7 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
     subCuisine: params.subCuisine ?? null,
     region: params.region ?? null,
     ageGroup: params.ageGroup,
+    goals: params.goals ?? null,
   }, openai);
   const v2Items = attachMealRecipesAndMetadata(enriched, v2Opts);
 
@@ -945,6 +970,10 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
     schoolMealMode: params.schoolMealMode ?? null,
     diet: params.foodType,
     caregiver: params.caregiver,
+    allergies: params.allergies ?? null,
+    goals: params.goals ?? null,
+    foodStyle: params.foodStyle ?? null,
+    subCuisine: params.subCuisine ?? null,
   });
 
   const parentCtx: ParentExplanationContext = {
@@ -1226,6 +1255,10 @@ function runIntelligencePipelineOnItems(params: {
   schoolMealMode?: string | null;
   diet?: string | null;
   caregiver?: string | null;
+  allergies?: string | null;
+  goals?: string | null;
+  foodStyle?: string | null;
+  subCuisine?: string | null;
 }): {
   items: RoutineItem[];
   pipelineAdaptations: string[];
@@ -1301,6 +1334,10 @@ function runIntelligencePipelineOnItems(params: {
     schoolMealMode: params.schoolMealMode ?? null,
     diet: params.diet ?? null,
     caregiver: params.caregiver ?? null,
+    allergies: params.allergies ?? null,
+    goals: params.goals ?? null,
+    foodStyle: params.foodStyle ?? null,
+    subCuisine: params.subCuisine ?? null,
     debug: process.env.ROUTINE_SCHEDULER_DEBUG === "1",
   });
 
@@ -1438,6 +1475,13 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
       : Promise.resolve(null),
   ]);
 
+  const ruleEffAllergies =
+    [((child as any).allergies ?? "").trim(), (rulePp?.allergies ?? "").trim()]
+      .filter(Boolean)
+      .join(", ") || null;
+  const ruleEffFoodStyle = (child as any).foodStyle ?? rulePp?.foodStyle ?? null;
+  const ruleEffSubCuisine = (child as any).subCuisine ?? rulePp?.subCuisine ?? null;
+
   // Resolve real-time environmental context (timeout-protected, never throws).
   const ruleEnvContext = await resolveEnvironmentalContextSafe({
     ageGroup,
@@ -1551,6 +1595,10 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     schoolMealMode: schoolMealMode ?? null,
     diet: foodType,
     caregiver,
+    allergies: ruleEffAllergies,
+    goals: child.goals ?? null,
+    foodStyle: ruleEffFoodStyle,
+    subCuisine: ruleEffSubCuisine,
   });
 
   const ruleExplCtx = parentExplanationCtx(ruleInputs, ruleIsWeekendDay);
@@ -1994,6 +2042,10 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       schoolMealMode: schoolMealMode ?? null,
       diet: foodType,
       caregiver,
+      allergies: effAllergies,
+      goals: child.goals ?? null,
+      foodStyle: effFoodStyle,
+      subCuisine: effSubCuisine,
     });
     const fallbackExplCtx = parentExplanationCtx(fallbackInputs, isWeekendDay);
     const fallbackBody = GenerateRoutineResponse.parse({

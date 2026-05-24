@@ -254,6 +254,22 @@ function hasAllergyViolation(
   return { violated: false, allergen: "" };
 }
 
+/** Parse comma/semicolon-separated allergy tokens (exported for meal-option sanitizer). */
+export function parseAllergyList(allergies: string): string[] {
+  return allergyList(allergies);
+}
+
+/** Returns the first violated allergen token, or null when safe. */
+export function mealOptionViolatesAllergies(
+  text: string,
+  allergies: string,
+): string | null {
+  const list = allergyList(allergies);
+  if (!list.length) return null;
+  const check = hasAllergyViolation(text, list);
+  return check.violated ? check.allergen : null;
+}
+
 export function validateAndEnrichMeal(
   meal: { title: string; ingredients: string[]; tags: string[]; isVeg: boolean },
   ageMonths: number,
