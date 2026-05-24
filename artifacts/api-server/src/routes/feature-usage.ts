@@ -63,6 +63,8 @@ router.post("/feature-usage/track", async (req, res): Promise<void> => {
   }
   try {
     const result = await trackFeatureUsage(userId, featureId);
+    const { fireJourneyTask } = await import("../services/journeyService.js");
+    fireJourneyTask(userId, "hub_explore");
     res.json({ ok: true, featureId, ...result });
   } catch (err) {
     logger.error(

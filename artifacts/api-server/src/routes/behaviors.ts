@@ -158,6 +158,9 @@ router.post("/behaviors", featureGate("behavior_log"), async (req, res): Promise
     notes: parsed.data.notes ?? null,
   }).returning();
 
+  const { fireJourneyTask } = await import("../services/journeyService.js");
+  fireJourneyTask(userId, "behavior_log");
+
   res.status(201).json({
     ...behavior,
     childName: child.name,

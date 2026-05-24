@@ -2172,6 +2172,9 @@ router.post("/routines", async (req, res): Promise<void> => {
     phoneNumber: auth.phoneNumber,
   }).catch(() => {});
 
+  const { fireJourneyTask } = await import("../services/journeyService.js");
+  fireJourneyTask(userId, "routine_generate");
+
   res.status(201).json(
     GetRoutineResponse.parse({
       ...routine,
@@ -2252,6 +2255,13 @@ router.patch("/routines/:id/items", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Routine not found" });
     return;
   }
+
+  const hasCompleted = parsed.data.items.some((i) => i.status === "completed");
+  if (hasCompleted) {
+    const { fireJourneyTask } = await import("../services/journeyService.js");
+    fireJourneyTask(userId, "routine_task_complete");
+  }
+
   res.json(
     GetRoutineResponse.parse({
       ...routine,
