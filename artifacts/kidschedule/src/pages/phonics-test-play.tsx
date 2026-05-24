@@ -106,7 +106,7 @@ export default function PhonicsTestPlayPage() {
         </div>
       </header>
 
-      <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]">
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-[calc(var(--app-bottom-clearance)+0.5rem)]">
         <LockedBlock locked={locked} rounded="rounded-2xl">
           <div
             className="flex min-h-0 flex-1 flex-col overflow-hidden"

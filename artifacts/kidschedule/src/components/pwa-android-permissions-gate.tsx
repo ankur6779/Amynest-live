@@ -78,7 +78,7 @@ export function PwaAndroidPermissionsGate() {
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-[95] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]"
+      className="inset-bottom-safe z-[95] px-4 pb-4"
       role="dialog"
       aria-labelledby="pwa-perm-gate-title"
     >
