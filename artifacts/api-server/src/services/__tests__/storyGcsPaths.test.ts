@@ -25,18 +25,10 @@ describe("Story GCS paths", () => {
 });
 
 describe("resolveStoryStreamUrl", () => {
-  it("prefers GCS URL when mirrored", () => {
-    const gcs = "https://storage.googleapis.com/bucket/story-hub/file1.mp4";
+  it("returns API proxy URL for playback", () => {
     assert.equal(
-      resolveStoryStreamUrl({ driveFileId: "file1", gcsUrl: gcs }),
-      gcs,
-    );
-  });
-
-  it("falls back to Drive proxy when not mirrored", () => {
-    assert.equal(
-      resolveStoryStreamUrl({ driveFileId: "file1", gcsUrl: null }),
-      "/api/reels/stream/file1",
+      resolveStoryStreamUrl({ driveFileId: "file1" }),
+      "/api/stories/stream/file1",
     );
   });
 });

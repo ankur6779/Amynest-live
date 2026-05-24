@@ -244,6 +244,89 @@ export async function gcsObjectExists(objectName: string): Promise<boolean> {
   }
 }
 
+type ByteRange = { start: number; end: number };
+
+function parseGcsRangeHeader(rangeHeader: string | undefined, size: number): ByteRange | null {
+  if (!rangeHeader?.startsWith("bytes=")) return null;
+  const part = rangeHeader.slice(6).trim();
+  const dash = part.indexOf("-");
+  if (dash < 0) return null;
+
+  let start = part.slice(0, dash) ? Number.parseInt(part.slice(0, dash), 10) : 0;
+  let end = part.slice(dash + 1) ? Number.parseInt(part.slice(dash + 1), 10) : size - 1;
+
+  if (Number.isNaN(start) || Number.isNaN(end)) return null;
+  if (start < 0) start = 0;
+  if (end >= size) end = size - 1;
+  if (start > end || start >= size) return null;
+
+  return { start, end };
+}
+
+/** Stream a GCS object to an Express response with Range support. */
+export async function pipeGcsObjectToResponse(params: {
+  objectName: string;
+  rangeHeader?: string;
+  res: import("express").Response;
+  contentType?: string;
+  cacheControl?: string;
+}): Promise<"streamed" | "not_found" | "error"> {
+  if (!legacyGcsConfigured()) return "not_found";
+
+  try {
+    const file = getBucket().file(params.objectName);
+    const [exists] = await file.exists();
+    if (!exists) return "not_found";
+
+    const [metadata] = await file.getMetadata();
+    const totalSize = Number(metadata.size ?? 0);
+    if (!Number.isFinite(totalSize) || totalSize <= 0) return "error";
+
+    const range = parseGcsRangeHeader(params.rangeHeader, totalSize);
+    const contentType =
+      params.contentType ||
+      (typeof metadata.contentType === "string" ? metadata.contentType : "video/mp4");
+
+    params.res.set("Accept-Ranges", "bytes");
+    params.res.set("Content-Type", contentType);
+    params.res.set(
+      "Cache-Control",
+      params.cacheControl ?? "public, max-age=31536000, immutable",
+    );
+
+    const readOpts = range ? { start: range.start, end: range.end } : undefined;
+    const stream = file.createReadStream(readOpts);
+
+    if (range) {
+      params.res.status(206);
+      params.res.set("Content-Range", `bytes ${range.start}-${range.end}/${totalSize}`);
+      params.res.set("Content-Length", String(range.end - range.start + 1));
+    } else {
+      params.res.status(200);
+      params.res.set("Content-Length", String(totalSize));
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      stream.on("error", reject);
+      params.res.on("close", () => stream.destroy());
+      stream.pipe(params.res);
+      params.res.on("finish", resolve);
+    });
+
+    return "streamed";
+  } catch (err) {
+    logger.warn(
+      {
+        evt: "gcs.stream_failed",
+        objectName: params.objectName,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "GCS object stream failed",
+    );
+    return "error";
+  }
+}
+
 /** Stream upload to primary GCS bucket (large video/PDF mirrors). */
 export async function uploadStreamToGcs(params: {
   objectName: string;

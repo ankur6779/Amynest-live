@@ -41,11 +41,7 @@ export function isValidStoryGcsUrl(url: unknown): url is string {
   return trimmed.startsWith("https://storage.googleapis.com/") && trimmed.includes(`/${GCS_PREFIX}/`);
 }
 
-/** Resolve playback URL — GCS when mirrored, else Drive proxy. */
-export function resolveStoryStreamUrl(story: {
-  driveFileId: string;
-  gcsUrl?: string | null;
-}): string {
-  if (isValidStoryGcsUrl(story.gcsUrl)) return story.gcsUrl;
-  return `/api/reels/stream/${story.driveFileId}`;
+/** API-relative playback URL — never expose raw GCS (403/CORS on mobile/web). */
+export function resolveStoryStreamUrl(story: { driveFileId: string }): string {
+  return `/api/stories/stream/${story.driveFileId}`;
 }
