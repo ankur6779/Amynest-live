@@ -6,11 +6,16 @@ import {
   getCvcWordAudioText,
   getCvcWordEntry,
   playCvcBlend,
+  resolveGraphemeToAudioKey,
   resolvePhonicsPlaybackText as resolvePhonicsPlaybackTextShared,
   type CvcWordEntry,
   type CvcBlendPhase,
   type PlayCvcBlendOptions,
 } from "@workspace/phonics-sounds";
+import {
+  playPhonicsStaticAudio,
+  playPhonicsSequence,
+} from "@/lib/phonics-static-audio";
 import type { SpeakOptions, SpeakResult } from "@/hooks/use-amy-voice";
 
 export type PhonicsSpeakFn = (
@@ -29,45 +34,49 @@ export function resolvePhonicsPlaybackText(input: {
   return resolvePhonicsPlaybackTextShared(input);
 }
 
+async function playStaticKey(
+  audioKey: string,
+  meta?: { phoneme?: string; word?: string },
+): Promise<SpeakResult> {
+  const res = await playPhonicsStaticAudio(audioKey, { waitUntilEnd: true });
+  if (res.ok) return { success: true };
+  return { success: false, error: res.error };
+}
+
 async function playGraphemeBlend(
   word: string,
-  speak: PhonicsSpeakFn,
   options?: {
     slow?: boolean;
     onLetter?: (index: number, letter: string) => void;
   },
 ): Promise<void> {
-  const letters = word.split("").filter((ch) => /[a-z]/.test(ch));
-  if (letters.length === 0) return;
+  const w = word.trim().toLowerCase();
+  if (!w) return;
 
   const slowGap = options?.slow ? 650 : DEFAULT_SLOW_GAP_MS;
   const fastGap = DEFAULT_FAST_GAP_MS;
-  const rateOpts: SpeakOptions = { mode: "phonics", waitUntilEnd: true };
+
+  const runPass = async (gap: number) => {
+    const keys = w.split("").filter((ch) => /[a-z]/.test(ch));
+    for (let i = 0; i < keys.length; i++) {
+      const ch = keys[i]!;
+      const audioKey = resolveGraphemeToAudioKey(ch);
+      if (!audioKey) continue;
+      options?.onLetter?.(i, ch);
+      await playPhonicsStaticAudio(audioKey, { waitUntilEnd: true });
+      await delay(gap);
+    }
+  };
 
   if (options?.slow !== false) {
-    for (let i = 0; i < letters.length; i++) {
-      const ch = letters[i]!;
-      options?.onLetter?.(i, ch);
-      await speak(getPhonicsAudioText(ch), rateOpts);
-      await delay(slowGap);
-    }
+    await runPass(slowGap);
   }
-
-  for (let i = 0; i < letters.length; i++) {
-    const ch = letters[i]!;
-    options?.onLetter?.(i, ch);
-    await speak(getPhonicsAudioText(ch), rateOpts);
-    await delay(fastGap);
-  }
-
-  await delay(150);
-  options?.onLetter?.(-1, word);
-  await speak(getCvcWordAudioText(word), { ...rateOpts, word });
+  await runPass(fastGap);
 }
 
 export async function playPhonicsBlend(
   word: string,
-  speak: PhonicsSpeakFn,
+  _speak?: PhonicsSpeakFn,
   options?: {
     delayMs?: number;
     slow?: boolean;
@@ -79,7 +88,7 @@ export async function playPhonicsBlend(
 
   const entry = getCvcWordEntry(w);
   if (entry) {
-    await playCvcBlendWithSpeak(entry, speak, {
+    await playCvcBlendWithSpeak(entry, {
       skipSlowPass: options?.slow === false,
       slowGapMs: options?.slow ? 650 : (options?.delayMs ?? DEFAULT_SLOW_GAP_MS),
       fastGapMs: DEFAULT_FAST_GAP_MS,
@@ -97,28 +106,28 @@ export async function playPhonicsBlend(
     return;
   }
 
-  await playGraphemeBlend(w, speak, options);
+  await playPhonicsSequence(w, {
+    waitUntilEnd: true,
+    gapMs: options?.slow ? 650 : DEFAULT_FAST_GAP_MS,
+  });
+  if (options?.onLetter) {
+    w.split("").forEach((ch, i) => options.onLetter?.(i, ch));
+  }
 }
 
 export async function playCvcBlendWithSpeak(
   wordObj: CvcWordEntry,
-  speak: PhonicsSpeakFn,
   options?: PlayCvcBlendOptions & {
     onPhoneme?: (index: number, phase: CvcBlendPhase) => void;
   },
 ): Promise<void> {
   await playCvcBlend(
     wordObj,
-    async (text, meta) => {
-      const res = await speak(text, {
-        mode: "phonics",
-        waitUntilEnd: true,
-        phoneme: meta?.phoneme,
-        word: meta?.word,
-      });
+    async (audioKey, meta) => {
+      const res = await playStaticKey(audioKey, meta);
       return { success: res.success };
     },
-    options,
+    { includeWordFinale: false, ...options },
   );
 }
 

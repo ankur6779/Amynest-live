@@ -200,4 +200,9 @@ export function delay(ms: number): Promise<void> {
 
 export * from "./phonics-text.js";
 export * from "./cvc.js";
+export * from "./dataset.js";
+export * from "./phoneme-map.js";
+export * from "./phonics-generation.js";
+export * from "./phonics-quality.js";
+export * from "./phonics-audio-master.js";
 export { playCvcBlend, type CvcBlendPhase, type CvcBlendSpeakFn, type PlayCvcBlendOptions } from "./cvc-blend.js";

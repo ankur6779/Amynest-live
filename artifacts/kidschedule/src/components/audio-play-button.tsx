@@ -5,6 +5,10 @@ import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useToast } from "@/hooks/use-toast";
 import { useInFlightGuard, useMountedRef, useSafeAsync } from "@/hooks/use-safe-async";
 import {
+  prefetchPhonicsAudioKeys,
+  resolvePhonicsAudioKey,
+} from "@/lib/phonics-static-audio";
+import {
   onStaticAudioVisualFallback,
   preloadStaticPhrases,
   prefetchStaticAudioUrl,
@@ -150,11 +154,21 @@ export function AudioPlayButton({
     });
   }, [error, toast, isMounted]);
 
+  const resolvedAudioKey = useMemo(() => {
+    const trimmed = (text ?? "").trim();
+    if (!trimmed) return "";
+    if (mode !== "phonics") return "";
+    return (
+      resolvePhonicsAudioKey({ text: trimmed, phoneme: phonemeKey ?? trimmed }) ??
+      getPhonicsAudioText(trimmed)
+    );
+  }, [text, mode, phonemeKey]);
+
   const resolvedText = useMemo(() => {
     const trimmed = (text ?? "").trim();
     if (!trimmed) return "";
-    return mode === "phonics" ? getPhonicsAudioText(trimmed) : trimmed;
-  }, [text, mode]);
+    return mode === "phonics" ? resolvedAudioKey || getPhonicsAudioText(trimmed) : trimmed;
+  }, [text, mode, resolvedAudioKey]);
 
   const resolvedPrefetch = useMemo(() => {
     const next = (prefetchNextText ?? "").trim();
@@ -163,6 +177,10 @@ export function AudioPlayButton({
   }, [prefetchNextText, mode]);
 
   const handlePointerEnter = useCallback(() => {
+    if (mode === "phonics" && resolvedAudioKey) {
+      prefetchPhonicsAudioKeys([resolvedAudioKey]);
+      return;
+    }
     if (!resolvedText) return;
     const currentUrl = lookupStaticAudioUrl(resolvedText, mode ?? "default");
     if (currentUrl) prefetchStaticAudioUrl(currentUrl);
@@ -170,7 +188,7 @@ export function AudioPlayButton({
       const nextUrl = lookupStaticAudioUrl(resolvedPrefetch, mode ?? "phonics");
       if (nextUrl) prefetchStaticAudioUrl(nextUrl);
     }
-  }, [resolvedText, resolvedPrefetch, mode]);
+  }, [resolvedText, resolvedPrefetch, mode, resolvedAudioKey]);
 
   const handlePointerDown = useCallback(() => {
     audioManager.unlockFromUserGesture();

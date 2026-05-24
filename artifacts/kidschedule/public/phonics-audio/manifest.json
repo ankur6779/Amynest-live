@@ -1,0 +1,396 @@
+{
+  "version": 5,
+  "basePath": "/phonics-audio",
+  "provider": "elevenlabs",
+  "speakTextStyle": "minimal-phoneme-hint",
+  "voiceId": "QbQKfe9vgx5OsbZUvlFv",
+  "modelId": "eleven_turbo_v2_5",
+  "ffmpegTrim": true,
+  "mastering": {
+    "pipeline": [
+      "silenceremove",
+      "loudnorm_I-16",
+      "alimiter",
+      "afade_in_20ms",
+      "afade_out_30ms"
+    ],
+    "output": {
+      "sampleRate": 44100,
+      "channels": 1
+    }
+  },
+  "generatedAt": "2026-05-24T09:25:54.643Z",
+  "keys": [
+    "a",
+    "b",
+    "c",
+    "ch",
+    "d",
+    "e",
+    "f",
+    "g",
+    "h",
+    "i",
+    "j",
+    "k",
+    "l",
+    "m",
+    "n",
+    "ng",
+    "o",
+    "p",
+    "ph",
+    "q",
+    "r",
+    "s",
+    "sh",
+    "t",
+    "th1",
+    "th2",
+    "u",
+    "v",
+    "w",
+    "wh",
+    "x",
+    "y",
+    "z"
+  ],
+  "cvcSmokeKeys": [
+    "c",
+    "a",
+    "t"
+  ],
+  "fallbackCount": 0,
+  "clips": {
+    "a": {
+      "key": "a",
+      "durationMs": 354,
+      "size": 5660,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.630Z"
+    },
+    "b": {
+      "key": "b",
+      "durationMs": 380,
+      "size": 6078,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.630Z"
+    },
+    "c": {
+      "key": "c",
+      "durationMs": 328,
+      "size": 5242,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.631Z"
+    },
+    "ch": {
+      "key": "ch",
+      "durationMs": 328,
+      "size": 5242,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 2,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.631Z"
+    },
+    "d": {
+      "key": "d",
+      "durationMs": 288,
+      "size": 4615,
+      "source": "elevenlabs",
+      "quality": "needs_review",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.632Z"
+    },
+    "e": {
+      "key": "e",
+      "durationMs": 315,
+      "size": 5033,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.632Z"
+    },
+    "f": {
+      "key": "f",
+      "durationMs": 406,
+      "size": 6496,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.633Z"
+    },
+    "g": {
+      "key": "g",
+      "durationMs": 354,
+      "size": 5660,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.633Z"
+    },
+    "h": {
+      "key": "h",
+      "durationMs": 354,
+      "size": 5660,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.634Z"
+    },
+    "i": {
+      "key": "i",
+      "durationMs": 354,
+      "size": 5660,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.634Z"
+    },
+    "j": {
+      "key": "j",
+      "durationMs": 380,
+      "size": 6078,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 2,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.635Z"
+    },
+    "k": {
+      "key": "k",
+      "durationMs": 315,
+      "size": 5033,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.635Z"
+    },
+    "l": {
+      "key": "l",
+      "durationMs": 419,
+      "size": 6705,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.635Z"
+    },
+    "m": {
+      "key": "m",
+      "durationMs": 458,
+      "size": 7332,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 2,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.636Z"
+    },
+    "n": {
+      "key": "n",
+      "durationMs": 419,
+      "size": 6705,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.636Z"
+    },
+    "ng": {
+      "key": "ng",
+      "durationMs": 367,
+      "size": 5869,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.636Z"
+    },
+    "o": {
+      "key": "o",
+      "durationMs": 315,
+      "size": 5033,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.637Z"
+    },
+    "p": {
+      "key": "p",
+      "durationMs": 302,
+      "size": 4824,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 2,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.637Z"
+    },
+    "ph": {
+      "key": "ph",
+      "durationMs": 406,
+      "size": 6496,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.638Z"
+    },
+    "q": {
+      "key": "q",
+      "durationMs": 406,
+      "size": 6496,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.638Z"
+    },
+    "r": {
+      "key": "r",
+      "durationMs": 393,
+      "size": 6287,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.638Z"
+    },
+    "s": {
+      "key": "s",
+      "durationMs": 497,
+      "size": 7959,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.639Z"
+    },
+    "sh": {
+      "key": "sh",
+      "durationMs": 367,
+      "size": 5869,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 2,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.639Z"
+    },
+    "t": {
+      "key": "t",
+      "durationMs": 341,
+      "size": 5451,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.639Z"
+    },
+    "th1": {
+      "key": "th1",
+      "durationMs": 406,
+      "size": 6496,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 3,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.640Z"
+    },
+    "th2": {
+      "key": "th2",
+      "durationMs": 380,
+      "size": 6078,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 2,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.640Z"
+    },
+    "u": {
+      "key": "u",
+      "durationMs": 328,
+      "size": 5242,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 2,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.640Z"
+    },
+    "v": {
+      "key": "v",
+      "durationMs": 380,
+      "size": 6078,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 3,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.641Z"
+    },
+    "w": {
+      "key": "w",
+      "durationMs": 354,
+      "size": 5660,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.641Z"
+    },
+    "wh": {
+      "key": "wh",
+      "durationMs": 354,
+      "size": 5660,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 2,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.642Z"
+    },
+    "x": {
+      "key": "x",
+      "durationMs": 445,
+      "size": 7123,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 2,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.642Z"
+    },
+    "y": {
+      "key": "y",
+      "durationMs": 419,
+      "size": 6705,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 1,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.643Z"
+    },
+    "z": {
+      "key": "z",
+      "durationMs": 510,
+      "size": 8168,
+      "source": "elevenlabs",
+      "quality": "auto",
+      "version": 2,
+      "flag": null,
+      "updatedAt": "2026-05-24T09:25:54.643Z"
+    }
+  }
+}

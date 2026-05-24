@@ -1,55 +1,42 @@
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import { CVC_WORDS } from "./cvc.js";
 import { playCvcBlend } from "./cvc-blend.js";
-import { getCvcWordEntry, getPhonemeAudioText, getCvcWordAudioText } from "./cvc.js";
 
 describe("playCvcBlend", () => {
-  it("plays phonemes sequentially then the whole word (no overlap)", async () => {
-    const cat = getCvcWordEntry("cat");
-    assert.ok(cat);
-
+  it("plays phoneme audio keys sequentially (slow then fast)", async () => {
+    const cat = CVC_WORDS.find((w) => w.word === "cat")!;
     const calls: string[] = [];
-    const speak = async (text: string) => {
-      calls.push(text);
+    await playCvcBlend(cat, async (audioKey) => {
+      calls.push(audioKey);
       return { success: true };
-    };
-
-    await playCvcBlend(cat!, speak, { slowGapMs: 0, fastGapMs: 0 });
-
-    assert.deepEqual(calls, [
-      getPhonemeAudioText("k"),
-      getPhonemeAudioText("æ"),
-      getPhonemeAudioText("t"),
-      getPhonemeAudioText("k"),
-      getPhonemeAudioText("æ"),
-      getPhonemeAudioText("t"),
-      getCvcWordAudioText("cat"),
-    ]);
+    });
+    assert.deepEqual(calls, ["k", "a", "t", "k", "a", "t"]);
   });
 
-  it("uses phonics lines not letter names for consonants and vowels", () => {
-    assert.equal(getPhonemeAudioText("k"), "k");
-    assert.equal(getPhonemeAudioText("æ"), "a as in apple");
-    assert.equal(getPhonemeAudioText("t"), "t");
-  });
-
-  it("always attempts the whole word even when a phoneme speak fails", async () => {
-    const cat = getCvcWordEntry("cat");
-    assert.ok(cat);
-
+  it("uses phonics audio keys not letter names for consonants and vowels", async () => {
+    const cat = CVC_WORDS.find((w) => w.word === "cat")!;
     const calls: string[] = [];
-    let n = 0;
-    await playCvcBlend(
-      cat!,
-      async (text, meta) => {
-        calls.push(text);
-        n += 1;
-        return { success: n < 2 };
-      },
-      { slowGapMs: 0, fastGapMs: 0 },
-    );
+    await playCvcBlend(cat, async (audioKey) => {
+      calls.push(audioKey);
+      return { success: true };
+    }, { skipSlowPass: true });
+    assert.deepEqual(calls, ["k", "a", "t"]);
+    assert.ok(!calls.includes("c"));
+    assert.ok(!calls.includes("cat"));
+  });
 
-    assert.ok(calls.includes(getCvcWordAudioText("cat")));
-    assert.equal(calls[calls.length - 1], getCvcWordAudioText("cat"));
+  it("can include whole word when explicitly requested", async () => {
+    const cat = CVC_WORDS.find((w) => w.word === "cat")!;
+    const calls: string[] = [];
+    await playCvcBlend(
+      cat,
+      async (audioKey) => {
+        calls.push(audioKey);
+        return { success: true };
+      },
+      { skipSlowPass: true, includeWordFinale: true },
+    );
+    assert.equal(calls[calls.length - 1], "cat");
   });
 });

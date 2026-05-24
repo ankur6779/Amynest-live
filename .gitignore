@@ -51,6 +51,7 @@ Thumbs.db
 .env.production
 .env.*.local
 !.env*.example
+Amynest-backend-dykj.env
 
 # Replit
 .cache/

@@ -1,29 +1,30 @@
 import type { AuthFetchFn } from "@/lib/poll-result";
 import { getApiUrl } from "@/lib/api";
-import { resolvePhonicsPlaybackText } from "@workspace/phonics-sounds";
-import { getPhonicsAudioText } from "@workspace/phonics-sounds";
+import {
+  getAllPhonicsAudioKeys,
+  resolvePhonicsAudioKey,
+} from "@workspace/phonics-sounds";
+import { prefetchPhonicsAudioKeys } from "@/lib/phonics-static-audio";
 
 export type TtsPregenerateMode = "default" | "phonics";
 
-export function normalizeTtsTextForPregenerate(text: string, mode: TtsPregenerateMode): string {
-  const trimmed = (text ?? "").trim();
-  if (!trimmed) return "";
-  return mode === "phonics" ? getPhonicsAudioText(trimmed) : trimmed;
-}
-
-/** Background batch warm — does not block UI. */
+/** Phonics mode warms curated /phonics-audio/ clips — never OpenAI/ElevenLabs. */
 export function pregenerateTtsTexts(
   authFetch: AuthFetchFn,
   texts: string[],
   mode: TtsPregenerateMode = "default",
 ): void {
-  const normalized = [
-    ...new Set(
-      texts
-        .map((t) => normalizeTtsTextForPregenerate(t, mode))
-        .filter((t) => t.length > 0),
-    ),
-  ];
+  if (mode === "phonics") {
+    const keys = new Set<string>(getAllPhonicsAudioKeys());
+    for (const text of texts) {
+      const key = resolvePhonicsAudioKey({ text, phoneme: text });
+      if (key) keys.add(key);
+    }
+    prefetchPhonicsAudioKeys([...keys]);
+    return;
+  }
+
+  const normalized = [...new Set(texts.map((t) => (t ?? "").trim()).filter(Boolean))];
   if (normalized.length === 0) return;
 
   void authFetch(getApiUrl("/api/tts/pregenerate"), {
@@ -35,4 +36,4 @@ export function pregenerateTtsTexts(
   });
 }
 
-export { resolvePhonicsPlaybackText };
+export { resolvePhonicsPlaybackText } from "@workspace/phonics-sounds";

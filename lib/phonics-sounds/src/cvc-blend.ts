@@ -1,5 +1,5 @@
 import type { CvcWordEntry } from "./cvc.js";
-import { getCvcWordAudioText, getPhonemeAudioText } from "./cvc.js";
+import { resolveGraphemeToAudioKey } from "./phoneme-map.js";
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -8,7 +8,7 @@ function delay(ms: number): Promise<void> {
 export type CvcBlendPhase = "slow" | "fast" | "word";
 
 export type CvcBlendSpeakFn = (
-  text: string,
+  audioKey: string,
   meta?: { phoneme?: string; word?: string; phase?: CvcBlendPhase },
 ) => Promise<{ success: boolean }>;
 
@@ -18,11 +18,17 @@ export type PlayCvcBlendOptions = {
   fastGapMs?: number;
   /** Skip the slow first pass (e.g. repeat only). */
   skipSlowPass?: boolean;
+  /** Play whole word after phoneme sequence (default false — phoneme-only blending). */
+  includeWordFinale?: boolean;
 };
 
+function phonemeToAudioKey(phoneme: string): string {
+  return resolveGraphemeToAudioKey(phoneme) ?? phoneme.trim().toLowerCase();
+}
+
 /**
- * Three-step CVC blend: slow phonemes → fast phonemes → whole word.
- * Uses PHONEME_AUDIO lines (k sound, a as in apple), never letter names.
+ * CVC blend: slow phonemes → fast phonemes → optional whole word.
+ * Uses static phoneme audio keys — never letter names or runtime TTS.
  */
 export async function playCvcBlend(
   wordObj: CvcWordEntry,
@@ -36,20 +42,24 @@ export async function playCvcBlend(
   if (!options?.skipSlowPass) {
     for (let i = 0; i < phonemes.length; i++) {
       const p = phonemes[i]!;
+      const audioKey = phonemeToAudioKey(p);
       options?.onPhoneme?.(i, "slow");
-      await speak(getPhonemeAudioText(p), { phoneme: p, phase: "slow" });
+      await speak(audioKey, { phoneme: p, phase: "slow" });
       await delay(slowGap);
     }
   }
 
   for (let i = 0; i < phonemes.length; i++) {
     const p = phonemes[i]!;
+    const audioKey = phonemeToAudioKey(p);
     options?.onPhoneme?.(i, "fast");
-    await speak(getPhonemeAudioText(p), { phoneme: p, phase: "fast" });
+    await speak(audioKey, { phoneme: p, phase: "fast" });
     await delay(fastGap);
   }
 
-  await delay(150);
-  options?.onPhoneme?.(-1, "word");
-  await speak(getCvcWordAudioText(word), { word, phase: "word" });
+  if (options?.includeWordFinale) {
+    await delay(150);
+    options?.onPhoneme?.(-1, "word");
+    await speak(word.trim().toLowerCase(), { word, phase: "word" });
+  }
 }
