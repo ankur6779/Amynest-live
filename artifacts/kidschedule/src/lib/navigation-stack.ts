@@ -31,6 +31,7 @@ export const HUB_MODULE_PREFIXES = [
   "/abacus",
   "/spelling",
   "/olympiad",
+  "/event-prep",
 ];
 
 const PARENT_ROUTE: Record<string, string> = {
@@ -47,6 +48,7 @@ const PARENT_ROUTE: Record<string, string> = {
   "/abacus": "/parenting-hub",
   "/spelling": "/parenting-hub",
   "/olympiad": "/parenting-hub",
+  "/event-prep": "/parenting-hub",
 };
 
 const MAX_STACK = 8;

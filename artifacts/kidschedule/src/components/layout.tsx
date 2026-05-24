@@ -28,6 +28,7 @@ import { SpotlightTour } from "@/components/spotlight-tour";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAppHeaderHeight } from "@/hooks/use-app-header-height";
 import { prefetchRouteChunk } from "@/lib/route-chunk-preload";
+import { isLearningZoneRoute } from "@/lib/app-layout";
 function SmartParentBadge({
   className = ""
 }: {
@@ -169,7 +170,7 @@ export function Layout({
   const initials = getUserInitials(user);
   const avatarUrl = getUserAvatarUrl(user);
   const isImmersiveRoute =
-    safePathStartsWith(location, "/phonics") ||
+    isLearningZoneRoute(location) ||
     safePathStartsWith(location, "/speech-coach") ||
     safePathStartsWith(location, "/audio-lessons");
   const isAssistantRoute = safePathStartsWithSegment(location, "/assistant");
@@ -286,7 +287,9 @@ export function Layout({
             className={
               isImmersiveRoute || isAssistantRoute
                 ? `mx-auto w-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip p-0 md:p-0${isAssistantRoute ? " assistant-route-content h-full" : ""}`
-                : "mx-auto w-full max-w-5xl min-w-0 flex-1 overflow-x-clip px-3 py-4 sm:px-4 md:p-8"
+                : showDashboardChrome
+                  ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0 md:max-w-5xl md:p-8"
+                  : "mx-auto w-full max-w-5xl min-w-0 flex-1 overflow-x-clip px-3 py-4 sm:px-4 md:p-8"
             }
           >
             {!isImmersiveRoute &&
@@ -294,7 +297,7 @@ export function Layout({
               !["/sign-in", "/onboarding", "/notify-prompt"].some((p) =>
                 safePathStartsWith(location, p),
               ) && (
-                <div className="mb-4">
+                <div className={showDashboardChrome ? "mb-4 dashboard-inline-inset" : "mb-4"}>
                   <NotificationNudgeBanner />
                 </div>
               )}

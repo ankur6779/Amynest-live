@@ -364,7 +364,7 @@ export default function AmyAiTutorPage() {
       )}
 
       {/* Composer */}
-      <div className="sticky bottom-0 z-50 flex w-full shrink-0 gap-2 border-t border-border bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur md:px-0">
+      <div className="sticky bottom-0 z-50 flex w-full shrink-0 gap-2 border-t border-border bg-background/95 px-4 pb-[calc(var(--app-bottom-clearance)+0.75rem)] pt-3 backdrop-blur md:px-0">
         <Textarea
           ref={inputRef}
           value={input}

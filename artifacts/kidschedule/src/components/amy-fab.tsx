@@ -29,9 +29,9 @@ export function AmyFab() {
       id="amy-fab-floating"
       data-tour="amy-fab"
       data-amynest-fab="active"
+      className="amy-fab-floating"
       style={{
         position: "fixed",
-        bottom: "110px",
         right: "20px",
         left: "auto",
         transform: "none",
