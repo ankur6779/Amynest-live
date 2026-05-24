@@ -92,6 +92,7 @@ export const ABACUS_I18N_DEFAULTS: Record<string, string> = {
   badge_perfect: "Perfect challenge",
   badge_speed: "Speed star",
   badge_level_cleared: "Level cleared",
+  learn_try_beads: "Tap beads to try — then Next → for the next step",
 };
 
 const LEVEL_SLUGS: readonly AbacusLevelSlug[] = [

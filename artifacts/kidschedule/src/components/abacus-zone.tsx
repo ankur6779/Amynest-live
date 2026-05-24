@@ -177,9 +177,11 @@ type ViewMode = "child" | "parent";
 type BoardFeedback = "none" | "correct" | "wrong";
 
 const BEAD_ACTIVE =
-  "bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 shadow-[0_0_12px_rgba(245,158,11,0.55)] ring-2 ring-amber-300/70";
+  "bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 shadow-[0_0_14px_rgba(245,158,11,0.65)] ring-2 ring-amber-300/80";
 const BEAD_IDLE =
-  "bg-gradient-to-br from-stone-200 to-stone-300 dark:from-stone-600 dark:to-stone-700 ring-1 ring-stone-400/30 shadow-sm";
+  "bg-gradient-to-br from-stone-300 via-stone-200 to-stone-400 ring-2 ring-stone-500/50 shadow-md " +
+  "dark:from-amber-50 dark:via-amber-200 dark:to-amber-400 dark:ring-amber-300/70 " +
+  "dark:shadow-[0_0_10px_rgba(251,191,36,0.45)]";
 
 // ─── Confetti burst (lightweight, no extra deps) ───────────────────────
 function ConfettiBurst({ show }: { show: boolean }) {
@@ -286,7 +288,6 @@ function BeadColumn({
 
   const handleLowerPointerDown = (e: React.PointerEvent) => {
     if (disabled) return;
-    e.preventDefault();
     const track = lowerTrackRef.current;
     if (!track) return;
     track.setPointerCapture(e.pointerId);
@@ -304,7 +305,6 @@ function BeadColumn({
 
   const handleUpperPointerDown = (e: React.PointerEvent) => {
     if (disabled) return;
-    e.preventDefault();
     upperStartY.current = e.clientY;
     const target = e.currentTarget;
     target.setPointerCapture(e.pointerId);
@@ -334,7 +334,8 @@ function BeadColumn({
     <div
       className={cn(
         "relative flex flex-col items-center gap-1 px-1.5 sm:px-2 py-3 rounded-xl",
-        "bg-gradient-to-b from-amber-950/10 to-amber-900/5 border border-amber-900/15",
+        "bg-gradient-to-b from-amber-100/80 to-amber-200/40 border border-amber-800/20",
+        "dark:from-stone-800 dark:to-amber-950/80 dark:border-amber-500/35",
         highlight && "border-teal-400/70 shadow-[0_0_0_3px_rgba(45,212,191,0.25)] animate-pulse",
       )}
       data-testid={`abacus-rod-${rodIndex}`}
@@ -342,11 +343,15 @@ function BeadColumn({
       <button
         type="button"
         disabled={disabled}
-        onClick={() => onToggleUpper(rodIndex)}
+        onClick={() => {
+          if (disabled) return;
+          onToggleUpper(rodIndex);
+          sfx.bead();
+        }}
         onPointerDown={handleUpperPointerDown}
         aria-label={`rod ${rodIndex + 1} upper bead`}
         data-testid={`abacus-upper-${rodIndex}`}
-        className="relative h-14 w-full flex items-start justify-center touch-none"
+        className="relative h-14 w-full flex items-start justify-center touch-manipulation select-none"
       >
         <motion.span
           animate={{ y: rod.upper === 1 ? 22 : 0 }}
@@ -358,12 +363,12 @@ function BeadColumn({
         />
       </button>
 
-      <div className="h-1 w-full rounded-full bg-gradient-to-r from-amber-950/80 via-stone-800 to-amber-950/80 shadow-inner" />
+      <div className="h-1.5 w-full rounded-full bg-gradient-to-r from-amber-900 via-stone-700 to-amber-900 dark:from-amber-700 dark:via-amber-900 dark:to-amber-700 shadow-inner" />
 
       <div
         ref={lowerTrackRef}
         onPointerDown={handleLowerPointerDown}
-        className="relative h-32 w-full flex flex-col items-center justify-end gap-0.5 pb-1 touch-none"
+        className="relative h-32 w-full flex flex-col items-center justify-end gap-0.5 pb-1 touch-manipulation select-none"
       >
         {[0, 1, 2, 3].map((i) => {
           const beadIndexFromBottom = 3 - i;
@@ -374,12 +379,14 @@ function BeadColumn({
               type="button"
               disabled={disabled}
               onClick={() => {
+                if (disabled) return;
                 const target = (isUp ? beadIndexFromBottom : beadIndexFromBottom + 1) as 0 | 1 | 2 | 3 | 4;
                 onSetLower(rodIndex, target);
+                sfx.bead();
               }}
               aria-label={`rod ${rodIndex + 1} lower bead ${i + 1}`}
               data-testid={`abacus-lower-${rodIndex}-${i}`}
-              className="block h-7 w-14"
+              className="block h-7 w-14 touch-manipulation"
             >
               <motion.span
                 animate={{ y: isUp ? -10 : 0 }}
@@ -430,10 +437,10 @@ function AbacusBoard({
       className={cn(
         "rounded-3xl p-3 sm:p-4 border-2 shadow-inner",
         "bg-gradient-to-b from-amber-100/80 via-amber-50/50 to-amber-200/40",
-        "dark:from-amber-950/40 dark:via-stone-900/60 dark:to-amber-950/30",
+        "dark:from-stone-800 dark:via-stone-900 dark:to-amber-950/70",
         feedback === "correct" && "border-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.25)]",
         feedback === "wrong" && "border-rose-400 shadow-[0_0_0_3px_rgba(251,113,133,0.25)]",
-        feedback === "none" && "border-amber-900/20 dark:border-amber-700/30",
+        feedback === "none" && "border-amber-800/25 dark:border-amber-500/45",
       )}
     >
       <div className="flex justify-center gap-1.5 sm:gap-2">
@@ -566,6 +573,11 @@ function LearnMode({
   const cur = script.steps[step];
   const stepValue = abacusValue(cur.state);
   const stepPct = script.steps.length <= 1 ? 100 : Math.round(((step + 1) / script.steps.length) * 100);
+  const [boardState, setBoardState] = useState(cur.state);
+
+  useEffect(() => {
+    setBoardState(script.steps[step]?.state ?? emptyAbacus(1));
+  }, [step, level, script.steps]);
 
   return (
     <div className="space-y-3">
@@ -576,6 +588,15 @@ function LearnMode({
         </span>
       </div>
       <Progress value={stepPct} className="h-1.5" />
+      <p className="text-[11px] text-center text-teal-700 dark:text-teal-300 font-medium">
+        {t("abacus.learn_try_beads")}
+      </p>
+      <div className="sm:hidden flex justify-center">
+        <div className="rounded-2xl bg-gradient-to-br from-teal-500/15 to-cyan-500/10 border border-teal-500/25 px-8 py-3">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold text-center">Value</p>
+          <p className="text-5xl font-black text-foreground font-quicksand text-center leading-none">{stepValue}</p>
+        </div>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-3 items-center">
         <div className="hidden sm:flex flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border border-teal-500/20 px-6 py-4 min-w-[5.5rem]">
           <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Value</span>
@@ -590,10 +611,9 @@ function LearnMode({
           </motion.span>
         </div>
         <AbacusBoard
-          state={cur.state}
-          onChange={() => {}}
+          state={boardState}
+          onChange={(s) => { sfx.bead(); setBoardState(s); }}
           highlightRod={cur.highlightRod}
-          disabled
           learnMode
           valueSize="md"
         />
