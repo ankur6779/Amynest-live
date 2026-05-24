@@ -1354,9 +1354,9 @@ export default function Dashboard() {
   if (loadingSummary) {
     return (
       // audit-block-ignore-start
-      <div data-on-dark className="dashboard-page w-full min-w-0 max-w-full bg-[#0a1024]">
+      <div data-on-dark className="dashboard-page dashboard-content w-full min-w-0 max-w-full bg-[#0a1024]">
         {/* audit-block-ignore-end */}
-        <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-6 md:pb-8">
+        <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-0 md:pb-8">
           <Skeleton className="h-16 w-full rounded-2xl" />
           <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-5">
             <div className="flex flex-col gap-4">
@@ -1376,9 +1376,9 @@ export default function Dashboard() {
   }
   return (
     // audit-block-ignore-start
-    <div data-on-dark className="dashboard-page w-full min-w-0 max-w-full bg-[#0a1024]">
+    <div data-on-dark className="dashboard-page dashboard-content w-full min-w-0 max-w-full bg-[#0a1024]">
       {/* audit-block-ignore-end */}
-      <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-6 md:pb-8">
+      <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-0 md:pb-8">
 
           {/* ── Hero Greeting ───────────────────────────────────────── */}
           <SmartHeroSection
