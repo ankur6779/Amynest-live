@@ -101,7 +101,8 @@ async function bootstrap(): Promise<void> {
     if (typeof window !== "undefined") {
       await runBootCacheRecoveryIfNeeded();
       patchBootDiagnostics({ hostname: window.location.hostname });
-      void syncPwaCacheAndVersion();
+      // Block mount until deploy-version sync finishes — prevents stale lazy chunks after release.
+      await syncPwaCacheAndVersion();
       initNativeShell();
 
       const apiOrigin = getAppApiBaseOrigin();
