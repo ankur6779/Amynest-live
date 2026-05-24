@@ -2,12 +2,30 @@ import { z } from "zod";
 import { chatCompletionWithTimeout } from "../openai-chat.js";
 import { generateOpenAiTts } from "../ttsGenerate.js";
 
-const aiWordSchema = z.object({
-  word: z.string().min(1).max(40),
-  syllables: z.array(z.string().min(1).max(20)).min(1).max(10),
-  chunks: z.array(z.string().min(1).max(6)).min(1).max(15),
-  hint: z.string().min(3).max(160),
-});
+function normalizeStringList(value: unknown, fallback: string): string[] {
+  if (Array.isArray(value)) {
+    const out = value
+      .map((entry) => (typeof entry === "string" ? entry.trim() : String(entry ?? "").trim()))
+      .filter(Boolean);
+    if (out.length > 0) return out;
+  }
+  if (typeof value === "string" && value.trim()) return [value.trim()];
+  return [fallback];
+}
+
+const aiWordSchema = z
+  .object({
+    word: z.string().min(1).max(40),
+    syllables: z.unknown(),
+    chunks: z.unknown(),
+    hint: z.string().min(3).max(160),
+  })
+  .transform((w) => ({
+    word: w.word,
+    hint: w.hint,
+    syllables: normalizeStringList(w.syllables, w.word),
+    chunks: normalizeStringList(w.chunks, w.word),
+  }));
 const aiResponseSchema = z.object({
   words: z.array(aiWordSchema).min(1).max(15),
 });
@@ -39,7 +57,7 @@ export async function runSpellingAiGenerate(input: {
         },
         {
           role: "user",
-          content: `Generate ${input.count} ${input.difficulty} spelling words for ${ageDescriptor}. Return JSON: { "words": [{ "word", "syllables", "chunks", "hint" }] }`,
+          content: `Generate ${input.count} ${input.difficulty} spelling words for ${ageDescriptor}. Return JSON: { "words": [{ "word": "cat", "syllables": ["cat"], "chunks": ["c","at"], "hint": "..." }] }. syllables and chunks MUST be string arrays, never numbers.`,
         },
       ],
       response_format: { type: "json_object" },
