@@ -800,6 +800,11 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
   }
   const { input, goal } = parsed;
 
+  if (userId) {
+    const { fireJourneyTask } = await import("../services/journeyService.js");
+    fireJourneyTask(userId, "amy_coach");
+  }
+
   const cacheKey = buildCacheKey(input);
 
   const completePayload = (plan: CoachPlan, extra: Record<string, unknown>) => ({

@@ -29,6 +29,7 @@ import { safeFetch } from "@/lib/safe-fetch";
 import { cacheRoutineStreak } from "@/lib/routine-streak-cache";
 import { LockedBlock } from "@/components/locked-block";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
+import { SevenDayJourneyCard } from "@/components/seven-day-journey-card";
 
 const HeroAmbientLayer = lazyPage(() =>
   import("@/components/hero-ambient-layer").then((m) => ({
@@ -1361,6 +1362,8 @@ export default function Dashboard() {
             lastUpdated={lastUpdated}
             childProfiles={childrenSafe.map((c: any) => ({ id: c.id, name: c.name, age: c.age, ageMonths: c.ageMonths ?? 0 }))}
           />
+
+          <SevenDayJourneyCard />
 
           {/* ── Two-column layout (desktop) / stacked (mobile) ─────── */}
           <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 items-start">

@@ -179,6 +179,62 @@ export async function buildEngagement(
   if (!child) return null;
   const date = todayLocalDateString(timezone);
 
+  const { getJourneyStatus } = await import("./journeyService.js");
+  const journey = await getJourneyStatus(userId);
+  if (journey?.active && journey.todayTask && !journey.todayTask.completed) {
+    const day = journey.todayTask.day;
+    const journeyNudges: Record<
+      number,
+      { title: string; body: string; deepLink: string }
+    > = {
+      1: {
+        title: "Day 1: Create today's routine ✨",
+        body: `Kick off ${child.name}'s 7-day journey — generate a routine in one tap.`,
+        deepLink: "/routines/generate",
+      },
+      2: {
+        title: "Day 2: Mark a task done ✅",
+        body: `Complete one item on ${child.name}'s routine to keep your streak going.`,
+        deepLink: "/routines",
+      },
+      3: {
+        title: "Day 3: Explore Parent Hub 🧭",
+        body: "Discover activities, tips, and learning tools built for your family.",
+        deepLink: "/parenting-hub",
+      },
+      4: {
+        title: "Day 4: Log a win 📝",
+        body: `Note one thing about ${child.name} today — it helps Amy learn your patterns.`,
+        deepLink: "/behavior",
+      },
+      5: {
+        title: "Day 5: Fun learning time 🎮",
+        body: `Try a puzzle or game with ${child.name} — small wins build big habits.`,
+        deepLink: "/games",
+      },
+      6: {
+        title: "Day 6: Chat with Amy 💬",
+        body: "Get a personalised parenting tip from your AI coach.",
+        deepLink: "/amy-coach",
+      },
+      7: {
+        title: "Day 7: See your progress 📊",
+        body: "You've come far — review your weekly insights and celebrate!",
+        deepLink: "/insights",
+      },
+    };
+    const nudge = journeyNudges[day];
+    if (nudge) {
+      return {
+        title: nudge.title,
+        body: nudge.body,
+        deepLink: nudge.deepLink,
+        dedupKey: `journey:${day}:${date}`,
+        data: { childId: child.id, reason: "journey", journeyDay: day },
+      };
+    }
+  }
+
   const now = Date.now();
   const threeDaysAgo = new Date(now - 3 * 24 * 60 * 60 * 1000);
 

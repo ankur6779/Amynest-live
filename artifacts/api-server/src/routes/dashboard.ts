@@ -182,6 +182,10 @@ router.get("/dashboard/insights", async (req, res): Promise<void> => {
   try {
     const range = req.query.range === "month" ? "month" : "week";
     const insights = await buildInsights({ userId, range });
+    if (range === "week") {
+      const { fireJourneyTask } = await import("../services/journeyService.js");
+      fireJourneyTask(userId, "weekly_review");
+    }
     res.json(insights);
   } catch {
     res.status(200).json({ insights: [], fallback: true });

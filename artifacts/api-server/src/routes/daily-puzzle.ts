@@ -183,6 +183,9 @@ router.put("/daily-puzzle/progress", async (req, res): Promise<void> => {
     return row;
   });
 
+  const { fireJourneyTask } = await import("../services/journeyService.js");
+  fireJourneyTask(userId, "child_activity");
+
   res.json({
     ok: true,
     progress: {

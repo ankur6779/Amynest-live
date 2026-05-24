@@ -159,6 +159,8 @@ router.post("/gaming-rewards/play", async (req, res): Promise<void> => {
       });
       return;
     }
+    const { fireJourneyTask } = await import("../services/journeyService.js");
+    fireJourneyTask(userId, "child_activity");
     res.json({
       wallet: outcome.snapshot,
       pointsEarned: outcome.pointsEarned,
