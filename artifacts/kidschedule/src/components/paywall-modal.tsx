@@ -66,6 +66,11 @@ const REASON_COPY: Record<string, {
     subtitle: "All activities, Olympiad prep & life skills — unlocked on premium.",
     icon: LayoutGrid
   },
+  hub_journey: {
+    title: "Continue the learning journey",
+    subtitle: "Keep daily Paths, progress tracking, and full Parent Hub access.",
+    icon: LayoutGrid
+  },
   feature: {
     title: "Unlock Full Parenting Power",
     subtitle: "Get unlimited AI, smart coaching, and premium insights.",

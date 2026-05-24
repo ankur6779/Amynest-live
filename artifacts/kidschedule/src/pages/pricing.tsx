@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Check, AlertTriangle, X, Smartphone,
@@ -11,6 +11,9 @@ import { useNativeBilling } from "@/hooks/use-native-billing";
 import { isIndiaRegion, isAndroidDevice, PLAY_STORE_URL } from "@/lib/geo";
 import { resolvePlanPriceLabel } from "@/lib/plan-price";
 import { presentNativeRCPaywall } from "@/lib/native-rc-paywall";
+import { useHubJourney } from "@/hooks/use-hub-journey";
+
+const HUB_ACTIVE_CHILD_KEY = "amynest:hub:activeChildId";
 
 // Dates >= this year are sentinel "no real expiry" values from the DB
 const SENTINEL_YEAR = 2099;
@@ -120,6 +123,23 @@ export default function PricingPage() {
     }
   };
 
+  const isHubJourneyReason = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("reason") === "hub_journey";
+  }, []);
+
+  const hubChildId = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const raw = window.localStorage.getItem(HUB_ACTIVE_CHILD_KEY);
+    const n = raw ? Number(raw) : NaN;
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, []);
+
+  const hubJourney = useHubJourney(isHubJourneyReason ? hubChildId : null);
+  const journeyChildName = hubJourney.status?.child.name ?? "your child";
+  const journeyProgress = hubJourney.progress;
+  const journeyCta = t("parent_hub.journey.continue_tomorrow_path");
+
   const isProcessing = submitting !== null || verifying || nativeBilling.purchasing;
 
   return (
@@ -153,12 +173,39 @@ export default function PricingPage() {
 
         <h1 className="relative z-10 mb-2 text-3xl font-black tracking-tight text-white">
           {/* audit-ok: white text on dark brand gradient */}
-          {t("pricing.title")}
+          {isHubJourneyReason && !isPremium
+            ? t("parent_hub.journey.pricing_header", { name: journeyChildName })
+            : t("pricing.title")}
         </h1>
         <p className="relative z-10 mx-auto max-w-md text-sm leading-relaxed text-white/65">
           {/* audit-ok: muted white on dark gradient */}
-          {t("pricing.subtitle")}
+          {isHubJourneyReason && !isPremium
+            ? t("parent_hub.journey.pricing_subtitle", { name: journeyChildName })
+            : t("pricing.subtitle")}
         </p>
+
+        {isHubJourneyReason && !isPremium && journeyProgress && (
+          <div
+            className="relative z-10 mx-auto mt-4 flex max-w-md flex-wrap justify-center gap-2"
+            data-testid="pricing-journey-stats"
+          >
+            {journeyProgress.lifeSkillsDone > 0 && (
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 ring-1 ring-white/15">
+                {t("parent_hub.journey.stat_life_skills", { count: journeyProgress.lifeSkillsDone })}
+              </span>
+            )}
+            {journeyProgress.lifeSkillsStreak > 0 && (
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 ring-1 ring-white/15">
+                {t("parent_hub.journey.stat_streak", { count: journeyProgress.lifeSkillsStreak })}
+              </span>
+            )}
+            {journeyProgress.levelLabel && (
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 ring-1 ring-white/15">
+                {journeyProgress.levelLabel}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Patent-pending trust badge */}
         <div className="relative z-10 mt-3 flex items-center justify-center gap-1.5">
@@ -272,6 +319,10 @@ export default function PricingPage() {
 
       {/* ── CTAs ── */}
       <div className="mx-auto max-w-md space-y-3 px-4 pb-10">
+
+        {isHubJourneyReason && !isPremium && (
+          <p className="text-center text-sm font-bold text-white/85">{journeyCta}</p>
+        )}
 
         {/* iOS Capacitor → Apple IAP via RevenueCat (highest priority; Apple policy forbids other gateways) */}
         {isIOS && !isPremium && (
