@@ -3153,6 +3153,16 @@
       "read_these_stories_to": "📖 Read these stories to",
       "at_bedtime_for_a_meaningful_connection_moment": "at bedtime for a meaningful connection moment"
     },
+    "learning_load_more": {
+      "button": "Amy se aur generate karo",
+      "today": " left today",
+      "free_left": " free left",
+      "upgrade_hint": "Free AI generation used — upgrade for more, or try again if shared content is available.",
+      "daily_limit": "Daily AI limit reached — shared content may still be available. Resets at midnight UTC.",
+      "from_cache": "From Amy's library (no AI cost)",
+      "extra_words": "Extra practice words",
+      "extra_tasks": "Bonus life skills"
+    },
     "daily_tips": {
       "amy_ai": "Amy AI"
     },

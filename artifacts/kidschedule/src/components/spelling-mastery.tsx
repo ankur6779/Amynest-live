@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GraduationCap, BookOpen, Gamepad2, Headphones, Trophy, UserCheck, Sparkles, Volume2, VolumeX, RefreshCw, Star, CheckCircle2, XCircle, Loader2, Crown, Swords, Bot, User as UserIcon } from "lucide-react";
+import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -91,11 +92,19 @@ export function SpellingMastery({
   const wordsState = useSpellingWords(ageGroup, difficulty);
   const progressState = useSpellingProgress(childId, ageGroup);
   const tts = useSpellingTTS();
+  const [loadMoreWords, setLoadMoreWords] = useState<SpellingWord[]>([]);
+  const displayWords = useMemo(
+    () => [...wordsState.words, ...loadMoreWords],
+    [wordsState.words, loadMoreWords],
+  );
 
   // Re-sync age group if the child's stored age changes mid-session.
   useEffect(() => {
     setAgeGroup(spellingAgeGroupFor(ageMonths));
   }, [ageMonths]);
+  useEffect(() => {
+    setLoadMoreWords([]);
+  }, [ageGroup, difficulty]);
   return <div className="space-y-3">
       <SpellingHero progress={progressState.progress} childName={childName} />
 
@@ -120,14 +129,24 @@ export function SpellingMastery({
                 {wordsState.loading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
                 {t("components.spelling_mastery.new_words")}
               </Button>
-              <Button size="sm" onClick={() => void wordsState.generateWithAI(difficulty)} disabled={wordsState.loading} className="h-8 text-xs bg-gradient-to-r from-primary to-primary text-white hover:from-primary hover:to-primary">
-                <Sparkles className="h-3.5 w-3.5 mr-1" />
-                {t("components.spelling_mastery.ai_words")}
-              </Button>
+              <LearningLoadMoreButton
+                section="spelling"
+                count={10}
+                excludeIds={displayWords.map((w) => w.id)}
+                params={{ age: ageGroup, difficulty }}
+                size="sm"
+                variant="default"
+                onLoaded={(items) => {
+                  const w = (items.words ?? []) as SpellingWord[];
+                  if (w.length > 0) {
+                    setLoadMoreWords((prev) => [...prev, ...w]);
+                  }
+                }}
+              />
             </div>
           </div>
 
-          {wordsState.source === "ai" && <div className="text-[11px] text-primary dark:text-muted-foreground flex items-center gap-1">
+          {(wordsState.source === "ai" || loadMoreWords.length > 0) && <div className="text-[11px] text-primary dark:text-muted-foreground flex items-center gap-1">
               <Sparkles className="h-3 w-3" /> {t("components.spelling_mastery.showing_ai_generated_words")}
             </div>}
           {wordsState.error && <div className="text-[11px] text-primary dark:text-primary">
@@ -150,12 +169,12 @@ export function SpellingMastery({
 
       {/* Active mode panel */}
       <div>
-        {mode === "learn" && <LearnView words={wordsState.words} loading={wordsState.loading} tts={tts}
+        {mode === "learn" && <LearnView words={displayWords} loading={wordsState.loading} tts={tts}
       // Learn mode no longer writes to progress — the client-side
       // "I learned it" tap is trivially scriptable. Stars / level
       // come from server-graded modes + Parent Mode only.
       onCorrect={() => {}} />}
-        {mode === "practice" && <PracticeView words={wordsState.words} loading={wordsState.loading} tts={tts}
+        {mode === "practice" && <PracticeView words={displayWords} loading={wordsState.loading} tts={tts}
       // Practice mode no longer writes to progress — the
       // Missing-Letter / Jumbled-Letter games are client-graded
       // and were the easiest inflation surface. Practice is now
@@ -166,7 +185,7 @@ export function SpellingMastery({
         {mode === "competition" && <CompetitionView childId={childId} ageGroup={ageGroup} difficulty={difficulty} wordsSource={wordsState.source} tts={tts} onProgressUpdate={progressState.setProgress} />}
         {mode === "tournament" && <TournamentView childId={childId} ageGroup={ageGroup} tts={tts} onProgressUpdate={progressState.setProgress} />}
         {mode === "battle" && <BattleView childId={childId} ageGroup={ageGroup} difficulty={difficulty} wordsSource={wordsState.source} tts={tts} onProgressUpdate={progressState.setProgress} />}
-        {mode === "parent" && <ParentView words={wordsState.words} loading={wordsState.loading} tts={tts} onAttempt={c => void progressState.recordAttempt(c, "parent")} />}
+        {mode === "parent" && <ParentView words={displayWords} loading={wordsState.loading} tts={tts} onAttempt={c => void progressState.recordAttempt(c, "parent")} />}
       </div>
 
       {/* Always-visible leaderboard for the active age group */}

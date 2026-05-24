@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle2, XCircle, Sparkles, ArrowLeft, RefreshCw } from "lucide-react";
+import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { getApiUrl } from "@/lib/api";
 
@@ -382,6 +383,28 @@ export function AdaptiveQuestionRunner({
             </Card>
           </motion.div>
         </AnimatePresence>
+      )}
+
+      {!loading && questions.length > 0 && (
+        <LearningLoadMoreButton
+          section="smart_study"
+          childId={childId}
+          count={BATCH_SIZE}
+          excludeIds={questions.map((q) => q.id)}
+          params={{
+            subject: practiceSubject,
+            level,
+            country: resolvedCountry,
+          }}
+          onLoaded={(items) => {
+            const next = (items.questions ?? []) as AdaptiveQuestion[];
+            if (next.length > 0) {
+              setQuestions((prev) => [...prev, ...next]);
+              setSource("ai");
+            }
+          }}
+          className="flex justify-center pt-1"
+        />
       )}
     </div>
   );

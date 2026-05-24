@@ -86,6 +86,12 @@ export const FREE_FEATURE_LIMITS = {
   // ── Nutrition Hub (AI meal plan + family portions) ─────────────────────
   nutrition_week_plan: 1,    // one 7-day AI meal plan per lifetime
   nutrition_family_ai: 1,    // one AI family-portion lookup per lifetime
+  // ── Learning hub AI load-more (1 free lifetime per section; premium 20/day) ─
+  learning_load_more_smart_study: 1,
+  learning_load_more_olympiad: 1,
+  learning_load_more_spelling: 1,
+  learning_load_more_phonics: 1,
+  learning_load_more_life_skills: 1,
 } as const;
 
 export type FeatureKey = keyof typeof FREE_FEATURE_LIMITS;
@@ -111,6 +117,11 @@ export const FEATURE_SCOPE: Record<FeatureKey, "daily" | "lifetime"> = {
   hub_speech_reports: "lifetime",
   nutrition_week_plan: "lifetime",
   nutrition_family_ai: "lifetime",
+  learning_load_more_smart_study: "lifetime",
+  learning_load_more_olympiad: "lifetime",
+  learning_load_more_spelling: "lifetime",
+  learning_load_more_phonics: "lifetime",
+  learning_load_more_life_skills: "lifetime",
 };
 
 export type FeatureUsage = {
