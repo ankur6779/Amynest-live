@@ -85,11 +85,12 @@ function ReelCard({
   return <div style={{
     position: "relative",
     width: "100%",
-    height: "100%",
+    height: "100dvh",
     background: "#000",
-    scrollSnapAlign: "start",
     flexShrink: 0,
-    overflow: "hidden"
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column"
   }}>
       {/* Loading spinner */}
       {!loaded && !hasError && <div style={{
@@ -129,16 +130,17 @@ function ReelCard({
           </p>
         </div>}
 
-      <video ref={videoRef} src={resolveApiMediaUrl(video.streamUrl)} muted={muted} loop playsInline preload="metadata" onCanPlay={() => setLoaded(true)} onError={() => {
+      <video ref={videoRef} src={resolveApiMediaUrl(video.streamUrl)} muted={muted} loop playsInline autoPlay={isActive} preload="auto" onCanPlay={() => setLoaded(true)} onError={() => {
       setHasError(true);
       setLoaded(true);
     }} style={{
-      position: "absolute",
-      inset: 0,
+      flex: 1,
+      minHeight: 0,
       width: "100%",
-      height: "100%",
       objectFit: "contain",
-      display: hasError ? "none" : "block"
+      background: "#000",
+      display: hasError ? "none" : "block",
+      transform: "translateZ(0)"
     }} />
 
       {/* Bottom title + mute */}
@@ -316,7 +318,7 @@ function ReelOverlay({
         {videos.map((video, i) => <div key={video.id} data-index={i} ref={el => {
         reelRefs.current[i] = el;
       }} style={{
-        minHeight: "100dvh",
+        height: "100dvh",
         scrollSnapAlign: "start",
         flexShrink: 0
       }}>
