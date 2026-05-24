@@ -116,8 +116,9 @@ class MainActivity : AppCompatActivity() {
 
         // Capture notification tap extras BEFORE building the WebView so the
         // document-start JS injection and URL construction can use them.
-        pendingNotifDeepLink = intent?.getStringExtra("deepLink")
-        pendingNotifCategory = intent?.getStringExtra("notifCategory")
+        val (deepLink, category) = extractNotificationTapFromIntent(intent)
+        pendingNotifDeepLink = deepLink
+        pendingNotifCategory = category
 
         webView = WebView(this).also { wv ->
             wv.id = View.generateViewId()
@@ -195,15 +196,16 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val deepLink = intent.getStringExtra("deepLink") ?: return
-        if (deepLink.isBlank()) return
+        val (deepLink, category) = extractNotificationTapFromIntent(intent)
+        if (deepLink.isNullOrBlank() && category.isNullOrBlank()) return
 
-        val category = intent.getStringExtra("notifCategory") ?: "routine"
-        val url = deepLinkToUrl(deepLink)
-        Log.d(TAG, "Deep link navigation (onNewIntent) → $url category=$category")
+        val resolvedDeepLink = deepLink?.takeIf { it.isNotBlank() } ?: ""
+        val resolvedCategory = category?.takeIf { it.isNotBlank() } ?: "routine"
+        val url = deepLinkToUrl(resolvedDeepLink, resolvedCategory)
+        Log.d(TAG, "Deep link navigation (onNewIntent) → $url category=$resolvedCategory")
 
         // App is already running — call onNotificationTap directly
-        val js = buildNotifTapJs(deepLink, category)
+        val js = buildNotifTapJs(resolvedDeepLink, resolvedCategory)
         webView.post {
             // Navigate first, then signal the web page
             webView.loadUrl(url)
@@ -308,14 +310,15 @@ class MainActivity : AppCompatActivity() {
                     null,
                 )
 
-                val dl = pendingNotifDeepLink ?: return
+                val dl = pendingNotifDeepLink
                 val cat = pendingNotifCategory ?: "routine"
                 // Clear so subsequent page loads don't re-fire.
                 pendingNotifDeepLink = null
                 pendingNotifCategory = null
-                val js = buildNotifTapJs(dl, cat)
+                if (dl.isNullOrBlank() && cat.isBlank()) return
+                val js = buildNotifTapJs(dl ?: "", cat)
                 view.evaluateJavascript(js, null)
-                Log.d(TAG, "Delivered onNotificationTap → deepLink=$dl category=$cat")
+                Log.d(TAG, "Delivered onNotificationTap → deepLink=${dl ?: ""} category=$cat")
             }
         }
 
@@ -378,11 +381,36 @@ class MainActivity : AppCompatActivity() {
     // ── URL construction ─────────────────────────────────────────────────────
 
     private fun buildLaunchUrl(intent: Intent?): String {
-        val deepLink = intent?.getStringExtra("deepLink")
-        if (!deepLink.isNullOrBlank()) return deepLinkToUrl(deepLink)
+        val (deepLink, category) = extractNotificationTapFromIntent(intent)
+        if (!deepLink.isNullOrBlank() || !category.isNullOrBlank()) {
+            return deepLinkToUrl(
+                deepLink?.takeIf { it.isNotBlank() } ?: "",
+                category?.takeIf { it.isNotBlank() },
+            )
+        }
         val viewUrl = intentViewUrl(intent)
         if (viewUrl != null) return viewUrl
         return "$BASE_URL?v=${System.currentTimeMillis()}"
+    }
+
+    /**
+     * Read deep-link + category from our PendingIntent extras or from FCM data
+     * payload keys when the system tray notification was auto-displayed by FCM.
+     */
+    private fun extractNotificationTapFromIntent(intent: Intent?): Pair<String?, String?> {
+        if (intent == null) return null to null
+        var deepLink = intent.getStringExtra("deepLink")
+        var category = intent.getStringExtra("notifCategory") ?: intent.getStringExtra("category")
+        val extras = intent.extras
+        if (extras != null) {
+            if (deepLink.isNullOrBlank()) {
+                deepLink = extras.getString("deepLink") ?: extras.getString("url")
+            }
+            if (category.isNullOrBlank()) {
+                category = extras.getString("category") ?: extras.getString("notifCategory")
+            }
+        }
+        return deepLink to category
     }
 
     /** https://www.amynest.in/... or https://amynest.in/... from email / App Links. */
@@ -399,14 +427,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Convert a server-side deepLink path (e.g. "/routine/3", "/meals") to a
-     * full URL. Uses hash-fragment routing so the WebView doesn't make an HTTP
-     * request for the path — the SPA router handles it client-side.
+     * Convert a server-side deepLink path (e.g. "/routines/3", "/meals") to a
+     * full URL. Uses path-based routing so wouter handles navigation client-side.
      */
-    private fun deepLinkToUrl(path: String): String {
+    private fun deepLinkToUrl(path: String, category: String? = null): String {
         if (path.startsWith("http://") || path.startsWith("https://")) return path
-        val fragment = if (path.startsWith("/")) path else "/$path"
-        return "$BASE_URL/#$fragment"
+        val normalized = when {
+            path.startsWith("/") -> path
+            path.isNotBlank() -> "/$path"
+            else -> NotifCategory.from(category).fallbackDeepLink
+        }
+        return "$BASE_URL$normalized"
     }
 
     /**
