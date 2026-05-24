@@ -21,7 +21,29 @@ if (Number.isNaN(port) || port <= 0) {
 const basePath = process.env.BASE_PATH ?? "/";
 
 /** PWA / service-worker cache bucket — bump on deploy to purge stale shells. */
-const CACHE_VERSION = "amynest-v5";
+const CACHE_VERSION = "amynest-v6";
+
+function resolveDeployVersion(): string {
+  const sha =
+    process.env.RENDER_GIT_COMMIT?.slice(0, 7) ??
+    process.env.GITHUB_SHA?.slice(0, 7);
+  const date = new Date().toISOString().slice(0, 10);
+  return sha ? `${date}-${sha}` : `${date}-local`;
+}
+
+/** Unique per build — drives syncPwaCacheAndVersion() cache purge after deploy. */
+function injectDeployVersionPlugin(): import("vite").Plugin {
+  const deployVersion = resolveDeployVersion();
+  return {
+    name: "amynest-inject-deploy-version",
+    transformIndexHtml(html) {
+      return html.replace(
+        /(<meta name="amynest-deploy" content=")[^"]*(")/,
+        `$1${deployVersion}$2`,
+      );
+    },
+  };
+}
 
 function readFirebaseSwEnv() {
   const apiKey =
@@ -155,6 +177,7 @@ export default defineConfig({
   appType: "spa",
   plugins: [
     clearStaleCachesPlugin(artifactDir),
+    injectDeployVersionPlugin(),
     amynestServiceWorkerPlugin(),
     react(),
     tailwindcss(),

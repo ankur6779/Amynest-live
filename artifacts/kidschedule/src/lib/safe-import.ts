@@ -1,8 +1,22 @@
 import { type ComponentType, lazy, type LazyExoticComponent } from "react";
-import { isStaleChunkError, tryStaleChunkRecovery } from "@/lib/vite-chunk-recovery";
+import {
+  failedModuleUrl,
+  isStaleChunkError,
+  tryStaleChunkRecovery,
+} from "@/lib/vite-chunk-recovery";
+
+async function retryImportWithCacheBust<T>(err: unknown): Promise<T | null> {
+  const url = failedModuleUrl(err);
+  if (!url) return null;
+  try {
+    return (await import(/* @vite-ignore */ `${url}?stale=${Date.now()}`)) as T;
+  } catch {
+    return null;
+  }
+}
 
 /**
- * Wrap dynamic import() with one retry and stale-chunk recovery (cache clear + reload).
+ * Wrap dynamic import() with cache-bust retry and stale-chunk recovery (cache clear + reload).
  * Use with React.lazy: lazy(() => safeImport(() => import("./page"))).
  */
 export async function safeImport<T>(importFn: () => Promise<T>): Promise<T> {
@@ -11,7 +25,10 @@ export async function safeImport<T>(importFn: () => Promise<T>): Promise<T> {
   } catch (firstErr) {
     if (!isStaleChunkError(firstErr)) throw firstErr;
 
-    console.warn("[amynest:chunk] Dynamic import failed — retrying...");
+    console.warn("[amynest:chunk] Dynamic import failed — cache-bust retry...");
+
+    const busted = await retryImportWithCacheBust<T>(firstErr);
+    if (busted != null) return busted;
 
     try {
       return await importFn();

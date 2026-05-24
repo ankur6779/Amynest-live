@@ -4,6 +4,7 @@
 
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
 import { handleRecoveryReload } from "@/lib/clear-cache-reload";
+import { failedModuleUrl } from "@/lib/chunk-url";
 import { showProductionCrashOverlay } from "@/lib/production-crash-overlay";
 import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";
 
@@ -29,6 +30,8 @@ function messageFromUnknown(err: unknown, fallback = ""): string {
   if (typeof err === "string") return err;
   return fallback;
 }
+
+export { failedModuleUrl } from "@/lib/chunk-url";
 
 export function isStaleChunkError(err: unknown, fallbackMessage = ""): boolean {
   const message = messageFromUnknown(err, fallbackMessage);
