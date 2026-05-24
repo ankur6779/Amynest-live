@@ -5,8 +5,8 @@
 export const ENABLE_OAUTH_SIGN_IN = false;
 /** Apple Sign-In (native iOS Capacitor + web Services ID). */
 export const ENABLE_APPLE_SIGN_IN = true;
-/** Google Sign-In — Android WebView bridge + web redirect. */
-export const ENABLE_GOOGLE_SIGN_IN = true;
+/** Google Sign-In — hidden until OAuth redirect flow is stable in production. */
+export const ENABLE_GOOGLE_SIGN_IN = false;
 export const ENABLE_PHONE_OTP = true;
 
 /** Apple button must always show in Capacitor iOS (App Store review). */
