@@ -4,7 +4,8 @@ import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useLocation, Link } from "wouter";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToast } from "@/hooks/use-toast";
-import { useSectionUsage } from "@/hooks/use-section-usage";
+import { useCoachJourney } from "@/hooks/use-coach-journey";
+import { isFreeCoachGoal } from "@workspace/coach-journey";
 import { usePaywall } from "@/contexts/paywall-context";
 import { Sparkles, ArrowLeft, ArrowRight, Loader2, Search, Check, ChevronLeft, ChevronRight, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart, Printer, Volume2, VolumeX, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -506,32 +507,6 @@ function coachGoalCategoryId(goalId: string): string {
 // ─── Free vs Premium goal gating ──────────────────────────────────────────
 // Exactly ONE goal per category is offered as a free sample.
 // Every other goal requires a premium subscription.
-const FREE_GOAL_IDS = new Set<string>(["manage-tantrums",
-// Behavior
-"balance-screen-time",
-// Screen & Focus
-"navigate-fussy-eating",
-// Eating
-"improve-sleep-patterns",
-// Sleep
-"boost-concentration",
-// Learning
-"baby-not-sleeping",
-// Infant Problems (0–2 yrs)
-"manage-grandparents-interference",
-// Parenting Challenges
-"toddler-tantrums",
-// Toddler Behavior (2–4 yrs)
-"potty-training-readiness",
-// Daily Skills & Independence
-"sibling-rivalry",
-// Family Dynamics
-"travel-with-kids",
-// Special Situations
-"child-obesity-management",
-// Kids Health Concern
-"parent-burnout" // For You (Parent Self-Care)
-]);
 type GoalAccess = "open" | "try-free" | "locked";
 function GoalBadge({
   access
@@ -550,6 +525,49 @@ function GoalBadge({
   return <span data-on-dark className="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-bold bg-black/30 text-white/90 px-1.5 py-0.5 rounded-full border border-white/25 backdrop-blur-sm pointer-events-none select-none">
       <Lock className="h-2.5 w-2.5" /> {t("pages.ai_coach.premium")}
     </span>;
+}
+
+function CoachJourneyBanner({
+  journeyDay,
+  completedGoalIds,
+  maxNewGoalsToday,
+  calendarDaysLeft,
+  isJourneyLocked,
+  lockReason,
+}: {
+  journeyDay: number;
+  completedGoalIds: string[];
+  maxNewGoalsToday: number;
+  calendarDaysLeft: number;
+  isJourneyLocked: boolean;
+  lockReason?: string;
+}) {
+  const { t } = useTranslation();
+  if (isJourneyLocked) {
+    return <div data-on-dark className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+        <p className="font-semibold">{t("pages.ai_coach.journey_locked_title")}</p>
+        <p className="text-xs mt-1 text-amber-100/80">
+          {lockReason === "expired"
+            ? t("pages.ai_coach.journey_locked_expired")
+            : t("pages.ai_coach.journey_locked_completed")}
+        </p>
+      </div>;
+  }
+  const unlocked = Math.min(completedGoalIds.length + 1, maxNewGoalsToday);
+  return <div data-on-dark className="rounded-2xl border border-violet-400/25 px-4 py-3 text-sm" style={{
+    background: "linear-gradient(135deg,rgba(76,29,149,0.35) 0%,rgba(124,58,237,0.22) 100%)",
+  }}>
+      <p className="font-semibold text-white">{t("pages.ai_coach.journey_banner_title", { day: journeyDay })}</p>
+      <p className="text-xs mt-1 text-white/80">
+        {t("pages.ai_coach.journey_banner_body", {
+          unlocked,
+          total: maxNewGoalsToday,
+        })}
+        {calendarDaysLeft <= 3 && calendarDaysLeft > 0
+          ? ` ${t("pages.ai_coach.journey_calendar_warning", { days: calendarDaysLeft })}`
+          : ""}
+      </p>
+    </div>;
 }
 
 // Goals whose parent category already implies an age → skip the ageGroup question.
@@ -762,10 +780,21 @@ export default function AICoachPage() {
   // Free-tier gate: parents may COMPLETE up to TWO coach topics for free.
   // The free allowance is consumed only when a topic plan is successfully
   // shown. Picking a goal that is never finished does NOT burn it.
-  const coachUsage = useSectionUsage("amy_coach");
+  const coachJourney = useCoachJourney();
   const {
     openPaywall
   } = usePaywall();
+
+  const journeyBanner = !coachJourney.isPremium ? (
+    <CoachJourneyBanner
+      journeyDay={coachJourney.journeyDay}
+      completedGoalIds={coachJourney.completedGoalIds}
+      maxNewGoalsToday={coachJourney.maxNewGoalsToday}
+      calendarDaysLeft={coachJourney.access?.calendarDaysLeft ?? 7}
+      isJourneyLocked={coachJourney.isJourneyLocked}
+      lockReason={coachJourney.access?.lockReason}
+    />
+  ) : null;
 
   const forYouCategory = useMemo(
     () => GOAL_CATEGORIES.find((c) => c.id === COACH_FOR_YOU_CATEGORY_ID) ?? null,
@@ -788,12 +817,8 @@ export default function AICoachPage() {
 
   // Returns the access level for a given goal card.
   const getGoalAccess = useCallback((goalId: string): GoalAccess => {
-    if (coachUsage.isPremium) return "open";
-    if (!FREE_GOAL_IDS.has(goalId)) return "locked";
-    if (coachUsage.blockUsedIds.includes(goalId)) return "open";
-    if (coachUsage.fullyUsed) return "locked";
-    return "try-free";
-  }, [coachUsage.isPremium, coachUsage.blockUsedIds, coachUsage.fullyUsed]);
+    return coachJourney.getGoalAccess(goalId);
+  }, [coachJourney.getGoalAccess]);
 
   // ─── Resume session: detect ?resume=<sessionId>, load plan + feedback ────
   useEffect(() => {
@@ -869,17 +894,11 @@ export default function AICoachPage() {
 
   // ─── Goals → Questions (or → 12-card Result for the 0–2 yr topic)
   const handlePickGoal = (id: string) => {
-    // Non-free goal → paywall immediately for free users
-    if (!coachUsage.isPremium && !FREE_GOAL_IDS.has(id)) {
+    if (!coachJourney.isPremium && !isFreeCoachGoal(id)) {
       openPaywall("coach_locked");
       return;
     }
-    // Free goal but quota exhausted and not a previously completed topic → paywall
-    if (
-      !coachUsage.isPremium &&
-      coachUsage.fullyUsed &&
-      !coachUsage.blockUsedIds.includes(id)
-    ) {
+    if (coachJourney.getGoalAccess(id) === "locked") {
       openPaywall("coach_locked");
       return;
     }
@@ -905,12 +924,14 @@ export default function AICoachPage() {
           .then(setPlanCacheKey)
           .catch(() => setPlanCacheKey(""));
         originalWinCountRef.current = staticPlan.wins.length;
-        setSessionId(`infant-${id}-${Date.now()}`);
+        const infantSessionId = `infant-${id}-${Date.now()}`;
+        setSessionId(infantSessionId);
         setActiveIdx(0);
         setFeedbackByWin({});
         setPhase("result");
-        // Static infant plan renders immediately — counts as completion.
-        if (!coachUsage.isPremium) coachUsage.markBlockUsed(id);
+        if (!coachJourney.isPremium) {
+          void coachJourney.completePlan(id, infantSessionId);
+        }
         return;
       }
       // Fallback to the legacy 1-page view if the problem has no wins yet.
@@ -1051,7 +1072,9 @@ export default function AICoachPage() {
       setSessionId(data.sessionId);
       setProgressWinCount(data.plan.wins.length);
       setPhase("result");
-      if (!coachUsage.isPremium && goalId) coachUsage.markBlockUsed(goalId);
+      if (!coachJourney.isPremium && goalId) {
+        void coachJourney.completePlan(goalId, data.sessionId);
+      }
     };
 
     const buildViaProgressive = async (body: string): Promise<void> => {
@@ -1064,9 +1087,10 @@ export default function AICoachPage() {
         signal: ctrl.signal
       }, COACH_AI_FETCH_TIMEOUT_MS);
       if (res.status === 402) {
+        const errBody = await res.json().catch(() => ({})) as { error?: string };
         window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
           detail: {
-            reason: "ai_quota"
+            reason: errBody.error === "coach_locked" ? "coach_locked" : "ai_quota"
           }
         }));
         setPhase("questions");
@@ -1282,6 +1306,10 @@ export default function AICoachPage() {
   // ─── Adaptive: ask backend for 1 follow-up win when a step doesn't fully work
   const requestExtension = async (failedWinNumber: number, feedback: Feedback = "no"): Promise<boolean> => {
     if (!plan || !lastPayloadRef.current || extending) return false;
+    if (!coachJourney.extendUnlocked) {
+      openPaywall("coach_locked");
+      return false;
+    }
     const failedWin = plan.wins.find(w => w.win === failedWinNumber);
     if (!failedWin) return false;
     const insertAt = activeIdx + 1;
@@ -1307,10 +1335,11 @@ export default function AICoachPage() {
         })
       }, COACH_AI_FETCH_TIMEOUT_MS);
       if (res.status === 402) {
+        const errBody = await res.json().catch(() => ({})) as { error?: string };
         window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
         window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
           detail: {
-            reason: "ai_quota"
+            reason: errBody.error === "coach_locked" ? "coach_locked" : "ai_quota"
           }
         }));
         return false;
@@ -1445,6 +1474,7 @@ export default function AICoachPage() {
               </button>
             </Link>
           </div>
+          {journeyBanner}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input autoFocus type="text" value={goalSearch} onChange={e => setGoalSearch(e.target.value)} placeholder={t("pages.ai_coach.search_goals")} className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-border bg-card text-sm focus:outline-none focus:border-border" />
@@ -1507,6 +1537,8 @@ export default function AICoachPage() {
           {categoryHint && <button type="button" onClick={() => setSelectedCategoryId(categoryHint.targetCategoryId)} className="w-full text-left rounded-2xl px-4 py-3 border border-primary/30 bg-primary/10 text-sm text-foreground hover:bg-primary/15 transition-colors">
               <span className="font-semibold text-primary">{t("pages.ai_coach.try_instead")}</span> {categoryHint.message}
             </button>}
+
+          {journeyBanner}
 
           <div className="relative rounded-[18px] overflow-hidden backdrop-blur-md p-4" style={{
           background: coachCategoryGradient(activeCat.id),
@@ -1715,6 +1747,8 @@ export default function AICoachPage() {
             </div>
           </div>
         </div>
+
+        {journeyBanner}
 
         {selectedAgeOption && <button type="button" onClick={() => setCoachAgeBand(null)} className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-muted-foreground hover:text-foreground w-fit">
             <span>{selectedAgeOption.emoji}</span>

@@ -4024,6 +4024,12 @@
     "ai_coach": {
       "try_free": "✦ Try Free",
       "premium": "Premium",
+      "journey_banner_title": "Day {{day}} free trial · Amy Coach",
+      "journey_banner_body": "{{unlocked}} of {{total}} topics you can start today.",
+      "journey_calendar_warning": "· {{days}} days left to finish your free journey",
+      "journey_locked_title": "Free journey complete",
+      "journey_locked_completed": "You've used all 3 free Amy Coach days. Upgrade for unlimited personalized plans.",
+      "journey_locked_expired": "Your 7-day free window ended. Upgrade to continue with Amy Coach.",
       "back": "Back",
       "my_progress": "My Progress",
       "search_goals": "Search goals…",

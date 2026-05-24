@@ -40,6 +40,7 @@ export * from "./admin_premium_grants";
 export * from "./feature_usage";
 export * from "./user_activation_journey";
 export * from "./parent_hub_journey";
+export * from "./coach_journey";
 export * from "./tts_cache";
 export * from "./static_audio_registry";
 export * from "./gift_tokens";

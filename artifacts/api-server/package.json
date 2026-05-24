@@ -36,6 +36,7 @@
     "@workspace/infant-problems": "workspace:*",
     "@workspace/life-skills": "workspace:*",
     "@workspace/parent-hub-journey": "workspace:*",
+    "@workspace/coach-journey": "workspace:*",
     "@workspace/parenting-articles": "workspace:*",
     "@workspace/integrations-openai-ai-server": "workspace:*",
     "@workspace/study-zone": "workspace:*",
