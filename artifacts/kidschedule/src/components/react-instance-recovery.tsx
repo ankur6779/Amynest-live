@@ -1,89 +1,18 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AppFallbackUi } from "@/components/app-fallback-ui";
+import {
+  resetAutoRecoveryCounters,
+  shouldAttemptAutoRecovery,
+  tryAutoRecovery,
+} from "@/lib/auto-recovery";
 import { handleRecoveryReload } from "@/lib/clear-cache-reload";
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
 import { showProductionCrashOverlay, showReactCrashOverlay } from "@/lib/production-crash-overlay";
 import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";
 
-const RECOVERY_TS_KEY = "amynest:react-instance-recovery:ts";
-const RECOVERY_COUNT_KEY = "amynest:react-instance-recovery:count";
-
-const RECOVERY_WINDOW_MS = 30_000;
-const MAX_RECOVERIES_IN_WINDOW = 1;
-
 function errorMessage(err: unknown): string {
   if (err instanceof Error) return `${err.message}\n${err.stack ?? ""}`;
   return String(err ?? "");
-}
-
-function isReactInstanceCrash(err: unknown): boolean {
-  const message = errorMessage(err);
-  if (!message) return false;
-  return (
-    message.includes("Cannot read properties of null (reading 'useState')") ||
-    message.includes("Cannot read properties of null (reading 'useEffect')") ||
-    message.includes("Cannot read properties of null (reading 'useContext')") ||
-    message.includes("Cannot read properties of null (reading 'useReducer')") ||
-    message.includes("Cannot read property 'useState' of null") ||
-    message.includes("more than one copy of React in the same app") ||
-    message.includes("Invalid hook call")
-  );
-}
-
-function isStaleDeployAssetError(err: unknown): boolean {
-  const message = errorMessage(err);
-  if (!message) return false;
-  return (
-    message.includes("ChunkLoadError") ||
-    message.includes("Failed to fetch dynamically imported module") ||
-    message.includes("Importing a module script failed") ||
-    message.includes("error loading dynamically imported module") ||
-    message.includes("Failed to load module script") ||
-    message.includes("MIME type") ||
-    (message.includes("Loading chunk") && message.includes("failed"))
-  );
-}
-
-function isRecoverableError(err: unknown): boolean {
-  return isReactInstanceCrash(err) || isStaleDeployAssetError(err);
-}
-
-let reloadInFlight = false;
-
-function tryAutoRecover(): boolean {
-  if (typeof window === "undefined") return false;
-  if (reloadInFlight) return true;
-
-  const now = Date.now();
-  let lastTs = 0;
-  let count = 0;
-  try {
-    const lastTsRaw = window.sessionStorage.getItem(RECOVERY_TS_KEY);
-    lastTs = lastTsRaw ? Number(lastTsRaw) : 0;
-    const countRaw = window.sessionStorage.getItem(RECOVERY_COUNT_KEY);
-    count = countRaw ? Number(countRaw) : 0;
-  } catch {
-    /* sessionStorage may be blocked */
-  }
-
-  if (lastTs && now - lastTs < RECOVERY_WINDOW_MS) {
-    if (count >= MAX_RECOVERIES_IN_WINDOW) return false;
-    count += 1;
-  } else {
-    count = 1;
-  }
-
-  try {
-    window.sessionStorage.setItem(RECOVERY_TS_KEY, String(now));
-    window.sessionStorage.setItem(RECOVERY_COUNT_KEY, String(count));
-  } catch {
-    /* ignore */
-  }
-
-  reloadInFlight = true;
-  markCacheRecoveryPending();
-  void handleRecoveryReload();
-  return true;
 }
 
 let globalListenersInstalled = false;
@@ -94,28 +23,27 @@ function installGlobalRecoveryListeners(): void {
   globalListenersInstalled = true;
 
   window.addEventListener("error", (evt) => {
-    if (isRecoverableError(evt.error ?? evt.message)) {
-      if (isCrashDebugOverlayEnabled()) {
-        showProductionCrashOverlay({
-          kind: "recoverable.error",
-          message: errorMessage(evt.error ?? evt.message),
-        });
-        return;
-      }
-      tryAutoRecover();
+    if (!shouldAttemptAutoRecovery(evt.error ?? evt.message)) return;
+    if (isCrashDebugOverlayEnabled()) {
+      showProductionCrashOverlay({
+        kind: "recoverable.error",
+        message: errorMessage(evt.error ?? evt.message),
+      });
+      return;
     }
+    tryAutoRecovery("window.error");
   });
+
   window.addEventListener("unhandledrejection", (evt) => {
-    if (isRecoverableError(evt.reason)) {
-      if (isCrashDebugOverlayEnabled()) {
-        showProductionCrashOverlay({
-          kind: "recoverable.rejection",
-          message: errorMessage(evt.reason),
-        });
-        return;
-      }
-      tryAutoRecover();
+    if (!shouldAttemptAutoRecovery(evt.reason)) return;
+    if (isCrashDebugOverlayEnabled()) {
+      showProductionCrashOverlay({
+        kind: "recoverable.rejection",
+        message: errorMessage(evt.reason),
+      });
+      return;
     }
+    tryAutoRecovery("unhandledrejection");
   });
 }
 
@@ -142,13 +70,11 @@ export class ReactInstanceRecovery extends Component<
       markCacheRecoveryPending();
       return { fatal: true, message };
     }
-    if (isRecoverableError(err)) {
-      const willReload = tryAutoRecover();
+    if (shouldAttemptAutoRecovery(err)) {
+      const willReload = tryAutoRecovery("react.boundary");
       if (willReload) {
         return { reloading: true, message };
       }
-      markCacheRecoveryPending();
-      return { fatal: true, message };
     }
     markCacheRecoveryPending();
     return { fatal: true, message };
@@ -185,12 +111,7 @@ export class ReactInstanceRecovery extends Component<
           onReload={() => {
             this.setState({ reloading: true });
             void (async () => {
-              try {
-                window.sessionStorage.removeItem(RECOVERY_TS_KEY);
-                window.sessionStorage.removeItem(RECOVERY_COUNT_KEY);
-              } catch {
-                /* ignore */
-              }
+              resetAutoRecoveryCounters();
               markCacheRecoveryPending();
               await handleRecoveryReload();
             })();
@@ -215,8 +136,8 @@ function RecoveryFallback({
       onReload={onReload}
       message={
         reloading
-          ? "Clearing the cache and reloading the page."
-          : "Tap the button below to clear the cache and reload."
+          ? "AmyNest is fixing itself — clearing cache and reloading."
+          : "AmyNest could not recover automatically. Tap below to reload."
       }
     />
   );

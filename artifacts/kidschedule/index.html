@@ -451,6 +451,10 @@
             try {
               var r = window.__amynestDiag && window.__amynestDiag();
               if (!r || !r.phases || r.phases.indexOf("react-rendered") === -1) {
+                if (window.__amynestTryAutoRecovery &&
+                    window.__amynestTryAutoRecovery("boot-timeout", "App did not finish loading")) {
+                  return;
+                }
                 window.__amynestShowBootFailed(
                   "The app did not finish loading (no react-rendered). Check your connection and reload.",
                 );
@@ -470,20 +474,74 @@
             s.indexOf("ResizeObserver") >= 0 ||
             s.indexOf("AbortError") >= 0 ||
             s.indexOf("Failed to fetch") >= 0 ||
-            s.indexOf("ChunkLoadError") >= 0 ||
-            s.indexOf("Loading chunk") >= 0
+            s.indexOf("Load failed") >= 0 ||
+            s.indexOf("NetworkError") >= 0 ||
+            s.indexOf("Network request failed") >= 0 ||
+            s.indexOf("auth/unauthorized") >= 0 ||
+            s.indexOf("NotAllowedError") >= 0 ||
+            s.indexOf("play_failed_") >= 0 ||
+            s.indexOf("playback_blocked") >= 0 ||
+            s.indexOf("tts_") >= 0
           );
         }
+
+        /** Pre-React auto-recovery — cache purge + reload with rate limiting. */
+        window.__amynestTryAutoRecovery = function (kind, msg) {
+          if (window.__amynestDiagOnly) return false;
+          if (__amynestIsBenignMsg(msg || "")) return false;
+
+          var TS_KEY = "amynest:auto-recovery:ts";
+          var COUNT_KEY = "amynest:auto-recovery:count";
+          var WINDOW_MS = 60000;
+          var MAX = 2;
+          var now = Date.now();
+          var lastTs = 0;
+          var count = 0;
+          try {
+            lastTs = Number(sessionStorage.getItem(TS_KEY) || "0");
+            count = Number(sessionStorage.getItem(COUNT_KEY) || "0");
+          } catch (_e) { /* ignore */ }
+
+          if (lastTs && now - lastTs < WINDOW_MS) {
+            if (count >= MAX) return false;
+            count += 1;
+          } else {
+            count = 1;
+          }
+
+          try {
+            sessionStorage.setItem(TS_KEY, String(now));
+            sessionStorage.setItem(COUNT_KEY, String(count));
+            sessionStorage.setItem("amynest:cache-recovery-pending", "1");
+          } catch (_e) { /* ignore */ }
+
+          try {
+            console.warn("[amynest:boot] Auto-recovery triggered:", kind || "unknown");
+          } catch (_log) { /* ignore */ }
+
+          if (window.__amynestForceClearCaches) {
+            try { sessionStorage.setItem("amynest:cache-recovery-done", "1"); } catch (_eMark) { /* ignore */ }
+            var entry = document.getElementById("amynest-entry");
+            if (entry) entry.remove();
+            window.__amynestForceClearCaches()
+              .then(function () { location.reload(); })
+              .catch(function () { location.reload(); });
+            return true;
+          }
+          location.reload();
+          return true;
+        };
 
         // 5. Capture uncaught errors as breadcrumbs (for post-mortem on the
         //    next load — they survive a process kill via localStorage).
         window.addEventListener("error", function (e) {
-          if (__amynestIsBenignMsg((e && e.message) || "")) return;
+          var errMsg = String((e && e.message) || "");
+          if (__amynestIsBenignMsg(errMsg)) return;
           try {
             var r = JSON.parse(localStorage.getItem(KEY) || "null");
             if (!r) return;
             r.lastError = {
-              msg: String((e && e.message) || ""),
+              msg: errMsg,
               src: String((e && e.filename) || ""),
               line: (e && e.lineno) | 0,
               col: (e && e.colno) | 0,
@@ -491,10 +549,14 @@
             };
             localStorage.setItem(KEY, JSON.stringify(r));
           } catch (_e) {}
+          if (window.__amynestTryAutoRecovery &&
+              window.__amynestTryAutoRecovery("pre-react.error", errMsg)) {
+            return;
+          }
           try {
             window.__amynestShowCrashOverlay && window.__amynestShowCrashOverlay({
               kind: "pre-react.error",
-              message: String((e && e.message) || "Script error"),
+              message: errMsg || "Script error",
               source: String((e && e.filename) || ""),
               line: (e && e.lineno) | 0,
               col: (e && e.colno) | 0,
@@ -513,15 +575,19 @@
             var r = JSON.parse(localStorage.getItem(KEY) || "null");
             if (!r) return;
             r.lastReject = {
-              msg: String((reason && reason.message) || reason || ""),
+              msg: reasonMsg,
               t: Date.now() - r.ts,
             };
             localStorage.setItem(KEY, JSON.stringify(r));
           } catch (_e) {}
+          if (window.__amynestTryAutoRecovery &&
+              window.__amynestTryAutoRecovery("pre-react.rejection", reasonMsg)) {
+            return;
+          }
           try {
             window.__amynestShowCrashOverlay && window.__amynestShowCrashOverlay({
               kind: "pre-react.rejection",
-              message: String((reason && reason.message) || reason || "Unhandled promise rejection"),
+              message: reasonMsg || "Unhandled promise rejection",
               stack: reason && reason.stack ? String(reason.stack) : undefined,
             });
           } catch (_e2) {}

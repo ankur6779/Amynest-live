@@ -1,6 +1,15 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { AppFallbackUi } from "@/components/app-fallback-ui";
+import {
+  resetAutoRecoveryCounters,
+  shouldAttemptAutoRecovery,
+  tryAutoRecovery,
+} from "@/lib/auto-recovery";
+import { handleRecoveryReload } from "@/lib/clear-cache-reload";
+import { markCacheRecoveryPending } from "@/lib/boot-recovery";
 import { logClientError } from "@/lib/log-client-error";
 import { showReactCrashOverlay } from "@/lib/production-crash-overlay";
+import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";
 
 type Props = {
   children: ReactNode;
@@ -8,13 +17,22 @@ type Props = {
   /** Compact fallback (e.g. menu button) instead of full-screen UI. */
   fallback?: ReactNode;
 };
-type State = { error: Error | null };
+type State = { error: Error | null; recovering: boolean };
 
 export class AppErrorBoundary extends Component<Props, State> {
-  state: State = { error: null };
+  state: State = { error: null, recovering: false };
 
-  static getDerivedStateFromError(error: Error): State {
-    return { error };
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    if (isCrashDebugOverlayEnabled()) {
+      return { error, recovering: false };
+    }
+    if (shouldAttemptAutoRecovery(error)) {
+      const willReload = tryAutoRecovery(`boundary:${error.message.slice(0, 40)}`);
+      if (willReload) {
+        return { error, recovering: true };
+      }
+    }
+    return { error, recovering: false };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
@@ -33,29 +51,31 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   render(): ReactNode {
+    if (this.state.recovering) {
+      return (
+        <AppFallbackUi
+          reloading
+          message="AmyNest is fixing itself — clearing cache and reloading."
+        />
+      );
+    }
+
     if (this.state.error) {
       if (this.props.fallback) {
         return this.props.fallback;
       }
       return (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            background: "#000",
-            color: "#0f0",
-            zIndex: 999998,
-            padding: 20,
-            overflow: "auto",
-            fontSize: 12,
+        <AppFallbackUi
+          message="AmyNest could not recover automatically. Tap below to reload."
+          onReload={() => {
+            this.setState({ recovering: true });
+            void (async () => {
+              resetAutoRecoveryCounters();
+              markCacheRecoveryPending();
+              await handleRecoveryReload();
+            })();
           }}
-        >
-          <h2>🔥 React Crash ({this.props.label ?? "app"})</h2>
-          <pre>{this.state.error.stack ?? this.state.error.message}</pre>
-        </div>
+        />
       );
     }
     return this.props.children;

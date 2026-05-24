@@ -16,6 +16,10 @@ import {
 } from "@/lib/global-error-handlers";
 import { installViteChunkRecovery } from "@/lib/vite-chunk-recovery";
 import {
+  shouldAttemptAutoRecovery,
+  tryAutoRecovery,
+} from "@/lib/auto-recovery";
+import {
   clearCacheRecoveryPending,
   runBootCacheRecoveryIfNeeded,
 } from "@/lib/boot-recovery";
@@ -133,6 +137,9 @@ async function bootstrap(): Promise<void> {
         ? { kind: "bootstrap", message: err.message, stack: err.stack }
         : { kind: "bootstrap", message: String(err ?? "AmyNest could not start.") },
     );
+    if (shouldAttemptAutoRecovery(err) && tryAutoRecovery("bootstrap")) {
+      return;
+    }
     const rootEl = document.getElementById("root");
     if (rootEl) {
       renderCriticalFallbackHtml(
