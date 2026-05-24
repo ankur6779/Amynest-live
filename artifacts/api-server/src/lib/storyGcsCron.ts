@@ -6,6 +6,35 @@ let started = false;
 
 const TZ = process.env["STORY_GCS_CRON_TZ"] ?? process.env["NOTIFICATION_TZ"] ?? "Asia/Kolkata";
 const BATCH_LIMIT = Number(process.env["STORY_GCS_CRON_BATCH"] ?? "5");
+const BOOT_BATCH_LIMIT = Number(process.env["STORY_GCS_BOOT_BATCH"] ?? "5");
+const BOOT_MAX_BATCHES = Number(process.env["STORY_GCS_BOOT_MAX_BATCHES"] ?? "30");
+
+function resolveBatchLimit(raw: number, fallback: number): number {
+  return Number.isFinite(raw) && raw > 0 ? Math.min(raw, 20) : fallback;
+}
+
+/** Mirror pending stories in the background until caught up (server boot). */
+function runBootCatchUpMirror(): void {
+  void (async () => {
+    const batch = resolveBatchLimit(BOOT_BATCH_LIMIT, 5);
+    const maxBatches = Number.isFinite(BOOT_MAX_BATCHES) && BOOT_MAX_BATCHES > 0 ? BOOT_MAX_BATCHES : 30;
+
+    try {
+      for (let i = 0; i < maxBatches; i += 1) {
+        const result = await syncStoriesToGcs({ limit: batch });
+        logger.info(
+          { evt: "story.gcs_boot_batch", batch: i + 1, ...result },
+          "Story GCS boot mirror batch",
+        );
+        if (result.pending === 0) break;
+        if (result.synced === 0 && result.failed > 0) break;
+        await new Promise((resolve) => setTimeout(resolve, 8_000));
+      }
+    } catch (err) {
+      logger.error({ evt: "story.gcs_boot_error", err }, "Story GCS boot mirror failed");
+    }
+  })();
+}
 
 export function startStoryGcsMirrorCron(): void {
   if (started) return;
@@ -19,6 +48,8 @@ export function startStoryGcsMirrorCron(): void {
   }
 
   started = true;
+
+  runBootCatchUpMirror();
 
   // 03:30 IST — mirror pending story videos off-peak.
   cron.schedule(
