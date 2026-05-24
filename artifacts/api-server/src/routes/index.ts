@@ -41,7 +41,7 @@ import spellingRouter, { spellingPublicRouter } from "./spelling";
 import dailyPuzzleRouter from "./daily-puzzle";
 import coloringRouter from "./coloring";
 import funsheetsRouter from "./funsheets";
-import storiesRouter from "./stories";
+import storiesRouter, { storiesPublicRouter } from "./stories";
 import cryInsightRouter from "./cryInsight";
 import sleepPredictRouter from "./sleepPredict";
 import vaccinationsRouter from "./vaccinations";
@@ -101,6 +101,7 @@ router.use(phonicsPublicRouter);
 router.use(staticAudioPublicRouter);
 // Capacitor OTA (Capgo) — public POST, patch-only web bundles (Apple Guideline 2.5.2).
 router.use(otaRouter);
+router.use(storiesPublicRouter);
 router.use(requireAuth);
 router.use(clientLogsRouter);
 router.use(onboardingRouter);

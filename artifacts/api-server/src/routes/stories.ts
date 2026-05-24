@@ -4,16 +4,22 @@
  *   GET  /api/stories?childId=         → categorised rows for the hub
  *   POST /api/stories/sync             → re-fetch from Drive (idempotent)
  *   POST /api/stories/progress         → write resume position + completion
+ *   POST /api/stories/gcs-sync         → admin: mirror videos to GCS
  *
- * Streaming is handled by the existing /api/reels/stream/:fileId proxy —
- * no need to reimplement Drive's range-request + virus-scan-token plumbing.
+ * Playback prefers mirrored GCS URLs (CDN-fast); falls back to
+ * /api/reels/stream/:driveFileId when not yet mirrored.
  */
 import { Router, type IRouter } from "express";
 import { z } from "zod";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { driveFilesListAll, getDriveApiKey } from "../lib/googleDrive";
 import { logger } from "../lib/logger";
+import {
+  resolveStoryStreamUrl,
+  scheduleStoryGcsMirror,
+  syncStoriesToGcs,
+} from "../services/storyGcsMirror";
 import {
   db,
   childrenTable,
@@ -23,6 +29,47 @@ import {
 } from "@workspace/db";
 
 const router: IRouter = Router();
+
+function isAdminUser(userId: string | null | undefined): boolean {
+  if (!userId) return false;
+  const list = (process.env["ADMIN_USER_IDS"] ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return list.includes(userId);
+}
+
+/** Cron / scheduler — mounted before requireAuth. */
+export const storiesPublicRouter: IRouter = Router();
+
+storiesPublicRouter.post("/stories/gcs-sync/cron", async (req, res): Promise<void> => {
+  const expected =
+    process.env["STORY_GCS_CRON_SECRET"] ?? process.env["NOTIFICATION_CRON_SECRET"];
+  const provided = req.headers["x-cron-secret"];
+  if (!expected || provided !== expected) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+
+  const parsed = z
+    .object({
+      limit: z.coerce.number().int().min(1).max(20).optional(),
+      force: z.coerce.boolean().optional(),
+    })
+    .safeParse(req.body ?? {});
+
+  try {
+    const { runStoryGcsMirrorPing } = await import("../lib/storyGcsCron.js");
+    const result = await runStoryGcsMirrorPing({
+      limit: parsed.success ? parsed.data.limit : undefined,
+      force: parsed.success ? parsed.data.force : undefined,
+    });
+    res.json(result);
+  } catch (err) {
+    logger.error({ err }, "Story GCS cron ping failed");
+    res.status(500).json({ error: "cron_failed" });
+  }
+});
 
 // ─── Drive sync ──────────────────────────────────────────────────────────────
 
@@ -161,6 +208,19 @@ export async function syncStoriesFromDrive(force = false): Promise<{
       ? Math.round(Number(file.videoMediaMetadata.durationMillis) / 1000)
       : null;
 
+    const existingRows = await db
+      .select({
+        originalName: storyContentTable.originalName,
+        mimeType: storyContentTable.mimeType,
+      })
+      .from(storyContentTable)
+      .where(eq(storyContentTable.driveFileId, file.id))
+      .limit(1);
+    const existing = existingRows[0];
+    const metadataChanged =
+      !!existing &&
+      (existing.originalName !== file.name || existing.mimeType !== file.mimeType);
+
     const result = await db
       .insert(storyContentTable)
       .values({
@@ -186,6 +246,7 @@ export async function syncStoriesFromDrive(force = false): Promise<{
           durationSec,
           active: true,
           updatedAt: sql`now()`,
+          ...(metadataChanged ? { gcsUrl: null, gcsSyncedAt: null } : {}),
         },
       })
       .returning({ id: storyContentTable.id });
@@ -194,6 +255,7 @@ export async function syncStoriesFromDrive(force = false): Promise<{
 
   lastSyncAt = Date.now();
   logger.info({ inserted, folders: FOLDER_IDS.length }, "Stories synced");
+  scheduleStoryGcsMirror(3);
   return { inserted, total: allFiles.length };
 }
 
@@ -238,7 +300,7 @@ function toDto(
     category: s.category,
     thumbnailUrl: s.thumbnailUrl,
     durationSec: s.durationSec,
-    streamUrl: `/api/reels/stream/${s.driveFileId}`,
+    streamUrl: resolveStoryStreamUrl(s),
     ...(progress
       ? {
           positionSec: progress.positionSec,
@@ -429,6 +491,35 @@ router.post("/sync", async (req, res) => {
   } catch (err) {
     logger.error({ err }, "Story sync failed");
     res.status(500).json({ error: "sync_failed" });
+  }
+});
+
+// ─── POST /api/stories/gcs-sync ─────────────────────────────────────────────
+
+const gcsSyncBody = z.object({
+  limit: z.number().int().min(1).max(20).optional(),
+  force: z.boolean().optional(),
+});
+
+router.post("/gcs-sync", async (req, res): Promise<void> => {
+  const auth = getAuth(req);
+  if (!auth.userId || !isAdminUser(auth.userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+
+  const parsed = gcsSyncBody.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
+    return;
+  }
+
+  try {
+    const result = await syncStoriesToGcs(parsed.data);
+    res.json(result);
+  } catch (err) {
+    logger.error({ err }, "Story GCS sync failed");
+    res.status(500).json({ error: "gcs_sync_failed" });
   }
 });
 

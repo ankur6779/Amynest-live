@@ -91,6 +91,10 @@ async function startBackgroundTasks(): Promise<void> {
       const { startPhonicsCurriculumCron } = await import("./lib/phonicsCurriculumCron.js");
       startPhonicsCurriculumCron();
     });
+    await runBackgroundPhase("story_gcs_mirror_cron", async () => {
+      const { startStoryGcsMirrorCron } = await import("./lib/storyGcsCron.js");
+      startStoryGcsMirrorCron();
+    });
   }
 
   if (!isBackgroundTasksEnabled()) {
