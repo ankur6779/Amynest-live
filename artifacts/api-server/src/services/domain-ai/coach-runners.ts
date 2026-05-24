@@ -1,31 +1,52 @@
 import { chatCompletionWithTimeout } from "../openai-chat.js";
+import { fallbackExtensionWin } from "../coachExtensionFallback.js";
+import { validateWin, type CoachWin } from "../coachWinGenerationService.js";
 
 export async function runCoachExtend(input: {
   systemPrompt: string;
   userPrompt: string;
   startWinNumber: number;
-}): Promise<{ wins: unknown[]; source: "ai" | "fallback"; usedFallback: boolean }> {
-  const outcome = await chatCompletionWithTimeout(
-    {
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: input.systemPrompt },
-        { role: "user", content: input.userPrompt },
-      ],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 3000,
-    },
-    30_000,
-  );
-  if (!outcome.content) {
-    return { wins: [], source: "fallback", usedFallback: true };
+  failedWinTitle?: string;
+}): Promise<{ wins: CoachWin[]; source: "ai" | "fallback"; usedFallback: boolean }> {
+  const start = input.startWinNumber;
+  const failedTitle = input.failedWinTitle ?? "the previous step";
+
+  try {
+    const outcome = await chatCompletionWithTimeout(
+      {
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: input.systemPrompt },
+          { role: "user", content: input.userPrompt },
+        ],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 3000,
+      },
+      30_000,
+    );
+    if (outcome.content) {
+      const parsed = JSON.parse(outcome.content) as { wins?: unknown[] };
+      const arr = parsed.wins;
+      if (Array.isArray(arr) && arr.length >= 1) {
+        const candidate = arr[0];
+        if (validateWin(candidate)) {
+          return {
+            wins: [{ ...(candidate as CoachWin), win: start }],
+            source: "ai",
+            usedFallback: false,
+          };
+        }
+      }
+    }
+  } catch {
+    /* fall through to static fallback */
   }
-  const parsed = JSON.parse(outcome.content) as { wins?: unknown[] };
-  const arr = parsed.wins;
-  if (Array.isArray(arr) && arr.length === 3) {
-    return { wins: arr, source: "ai", usedFallback: false };
-  }
-  return { wins: [], source: "fallback", usedFallback: true };
+
+  return {
+    wins: [fallbackExtensionWin(failedTitle, start)],
+    source: "fallback",
+    usedFallback: true,
+  };
 }
 
 export async function runCoachStreamPlan(input: {
