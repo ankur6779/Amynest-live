@@ -37,15 +37,15 @@ export {
   isTopicPracticeSubject,
   isMathPracticeSubject,
   isBasicMathPracticeSubject,
-  isAdvancedMathPracticeSubject,
   practicePackForSubject,
   lookupPracticeTitle,
-  getPracticePickerTopics,
   TOPIC_PRACTICE_SUBJECTS,
   MATH_PRACTICE_SUBJECTS,
 } from "./topic-practice";
 export {
   pickAdvancedMathQuestions,
+  isAdvancedMathPracticeSubject,
+  getPracticePickerTopics,
   ADVANCED_MATH_PRACTICE_SUBJECTS,
   ADVANCED_MATH_PRACTICE_TOPICS,
 } from "./advanced-math-practice";
