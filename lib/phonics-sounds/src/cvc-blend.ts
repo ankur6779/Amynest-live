@@ -22,6 +22,8 @@ export type PlayCvcBlendOptions = {
   skipFastPass?: boolean;
   /** Play whole word after phoneme sequence (default false — phoneme-only blending). */
   includeWordFinale?: boolean;
+  /** Abort between steps (new blend started / panel closed). */
+  isCancelled?: () => boolean;
 };
 
 function phonemeToAudioKey(phoneme: string): string {
@@ -43,25 +45,30 @@ export async function playCvcBlend(
 
   if (!options?.skipSlowPass) {
     for (let i = 0; i < phonemes.length; i++) {
+      if (options?.isCancelled?.()) return;
       const p = phonemes[i]!;
       const audioKey = phonemeToAudioKey(p);
       options?.onPhoneme?.(i, "slow");
       await speak(audioKey, { phoneme: p, phase: "slow", index: i });
+      if (options?.isCancelled?.()) return;
       await delay(slowGap);
     }
   }
 
   if (!options?.skipFastPass) {
     for (let i = 0; i < phonemes.length; i++) {
+      if (options?.isCancelled?.()) return;
       const p = phonemes[i]!;
       const audioKey = phonemeToAudioKey(p);
       options?.onPhoneme?.(i, "fast");
       await speak(audioKey, { phoneme: p, phase: "fast", index: i });
+      if (options?.isCancelled?.()) return;
       await delay(fastGap);
     }
   }
 
   if (options?.includeWordFinale) {
+    if (options?.isCancelled?.()) return;
     await delay(150);
     options?.onPhoneme?.(-1, "word");
     await speak(word.trim().toLowerCase(), { word, phase: "word", index: -1 });

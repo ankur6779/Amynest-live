@@ -42,6 +42,8 @@ export type PlayPhonicsStaticOptions = {
   waitUntilEnd?: boolean;
   playbackRate?: number;
   isCancelled?: () => boolean;
+  /** CVC blend — single play attempt, no cache-bust / manager retries. */
+  blendSequence?: boolean;
 };
 
 export type PlayPhonicsStaticResult =
@@ -50,6 +52,98 @@ export type PlayPhonicsStaticResult =
 
 function resolvePlayableUrl(audioKey: string): string {
   return getPhonicsStaticAudioUrl(audioKey);
+}
+
+function blendEndTimeoutMs(audio: HTMLAudioElement): number {
+  const durationSec =
+    Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
+  return durationSec > 0 ? Math.ceil((durationSec + 0.35) * 1000) : 8_000;
+}
+
+function waitForClipEnd(
+  audio: HTMLAudioElement,
+  isCancelled: () => boolean,
+  timeoutMs: number,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (audio.ended) {
+      resolve(true);
+      return;
+    }
+    let settled = false;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("error", onError);
+      resolve(ok);
+    };
+    const onEnded = () => finish(true);
+    const onError = () => finish(false);
+    audio.addEventListener("ended", onEnded);
+    audio.addEventListener("error", onError);
+    const timer = window.setTimeout(() => {
+      if (isCancelled()) return finish(false);
+      if (audio.ended) return finish(true);
+      finish(false);
+    }, timeoutMs);
+  });
+}
+
+/** One phoneme clip for CVC blend — no retry storms on the same letter. */
+export async function playBlendPhonemeClip(
+  audioKey: string,
+  options?: Pick<PlayPhonicsStaticOptions, "isCancelled" | "playbackRate">,
+): Promise<PlayPhonicsStaticResult> {
+  const key = (audioKey ?? "").trim().toLowerCase();
+  if (!key) return { ok: false, audioKey: key, error: "phonics_empty_key" };
+  if (options?.isCancelled?.()) {
+    return { ok: false, audioKey: key, error: "phonics_cancelled" };
+  }
+
+  recordTtsUserGesture();
+  const url = resolvePlayableUrl(key);
+  const audio = audioManager.create(url);
+  if (options?.playbackRate && options.playbackRate !== 1) {
+    audio.playbackRate = options.playbackRate;
+  }
+
+  const started = await audioManager.play(
+    audio,
+    {
+      proxyUrl: url,
+      source: "cvc-blend-phoneme",
+      phrase: key,
+      channel: "ui",
+      interrupt: true,
+    },
+    {
+      channel: "ui",
+      interrupt: true,
+      maxRetries: 0,
+      skipForceRestart: true,
+    },
+  );
+
+  if (!started || options?.isCancelled?.()) {
+    return { ok: false, audioKey: key, error: "phonics_playback_failed" };
+  }
+
+  const ended = await waitForClipEnd(
+    audio,
+    () => options?.isCancelled?.() ?? false,
+    blendEndTimeoutMs(audio),
+  );
+
+  if (ended) {
+    void warmLocalCacheFromUrl(getPhonicsLetterCacheKey(key), url);
+    logAudioHealthSuccess({ layer: "static", fallbackUsed: false });
+    return { ok: true, audioKey: key, url };
+  }
+
+  logPhonicsPlaybackFailure(key, "blend_clip_end_failed");
+  return { ok: false, audioKey: key, error: "blend_clip_end_failed" };
 }
 
 async function playStaticMp3(
@@ -67,13 +161,29 @@ async function playStaticMp3(
       if (options.playbackRate && options.playbackRate !== 1) {
         audio.playbackRate = options.playbackRate;
       }
+      const playOpts = options.blendSequence
+        ? { channel: "ui" as const, interrupt: true, maxRetries: 0, skipForceRestart: true }
+        : { channel: "ui" as const, interrupt: true };
       const started = await audioManager.play(
         audio,
-        { proxyUrl: playUrl, source: "phonics-static", phrase: key },
-        { channel: "ui", interrupt: true },
+        {
+          proxyUrl: playUrl,
+          source: options.blendSequence ? "cvc-blend-phoneme" : "phonics-static",
+          phrase: key,
+          channel: "ui",
+          interrupt: true,
+        },
+        playOpts,
       );
       if (!started) return false;
       if (options.isCancelled?.()) return false;
+      if (options.blendSequence) {
+        return waitForClipEnd(
+          audio,
+          () => options.isCancelled?.() ?? false,
+          blendEndTimeoutMs(audio),
+        );
+      }
       const ended = await audioManager.waitUntilEnd(
         audio,
         () => options.isCancelled?.() ?? false,
@@ -92,6 +202,10 @@ async function playStaticMp3(
     void warmLocalCacheFromUrl(getPhonicsLetterCacheKey(key), url);
     logAudioHealthSuccess({ layer: "static", fallbackUsed: false });
     return { ok: true };
+  }
+
+  if (options?.blendSequence) {
+    return { ok: false, error: "phonics_playback_failed" };
   }
 
   const bust = `${url}${url.includes("?") ? "&" : "?"}cb=1`;

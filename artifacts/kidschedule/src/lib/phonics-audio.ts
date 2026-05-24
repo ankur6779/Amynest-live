@@ -15,10 +15,11 @@ import {
 import {
   playPhonicsStaticAudio,
   playPhonicsSequence,
+  playBlendPhonemeClip,
   prefetchPhonicsAudioKeys,
 } from "@/lib/phonics-static-audio";
 import { audioManager } from "@/lib/audio-manager";
-import { lookupStaticAudioUrl } from "@/lib/static-audio";
+import { lookupStaticAudioUrl, prepareStaticPlaybackAudio } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import type { SpeakOptions, SpeakResult } from "@/hooks/use-amy-voice";
 
@@ -41,43 +42,63 @@ export function resolvePhonicsPlaybackText(input: {
 async function playStaticKey(
   audioKey: string,
   meta?: { phoneme?: string; word?: string; phase?: CvcBlendPhase },
+  opts?: { isCancelled?: () => boolean; playbackRate?: number },
 ): Promise<SpeakResult> {
+  if (opts?.isCancelled?.()) return { success: false, error: "cancelled" };
   if (meta?.phase === "word" && meta?.word) {
-    return playCvcWordFinale(meta.word);
+    return playCvcWordFinale(meta.word, opts);
   }
-  const res = await playPhonicsStaticAudio(audioKey, { waitUntilEnd: true });
+  const res = await playBlendPhonemeClip(audioKey, {
+    isCancelled: opts?.isCancelled,
+    playbackRate: opts?.playbackRate,
+  });
   if (res.ok) return { success: true };
   return { success: false, error: res.error };
 }
 
-/** Whole-word clip from static catalog (word_cat in GCS), not /phonics-audio/{letter}.mp3. */
-async function playCvcWordFinale(word: string): Promise<SpeakResult> {
+/** Whole-word clip from static catalog — uses speech pipeline (blob-safe on Android). */
+async function playCvcWordFinale(
+  word: string,
+  opts?: { isCancelled?: () => boolean },
+): Promise<SpeakResult> {
   const w = word.trim().toLowerCase();
   if (!w) return { success: false, error: "empty_word" };
+  if (opts?.isCancelled?.()) return { success: false, error: "cancelled" };
 
   recordTtsUserGesture();
-  audioManager.stop();
 
-  const url =
-    lookupStaticAudioUrl(w, "phonics") ??
-    lookupStaticAudioUrl(getCvcWordAudioText(w), "phonics") ??
-    lookupStaticAudioUrl(w, "default");
-  if (url) {
-    const audio = audioManager.create(url);
+  for (const mode of ["phonics", "default"] as const) {
+    if (opts?.isCancelled?.()) return { success: false, error: "cancelled" };
+    const proxyUrl = lookupStaticAudioUrl(w, mode);
+    if (!proxyUrl) continue;
+    const audio = await prepareStaticPlaybackAudio(w, mode, { quiet: true });
+    if (!audio) continue;
     const started = await audioManager.play(
       audio,
-      { proxyUrl: url, source: "cvc-word-finale", phrase: w },
-      { channel: "ui", interrupt: true },
+      {
+        proxyUrl,
+        source: "cvc-word-finale",
+        phrase: w,
+        channel: "speech",
+        interrupt: true,
+      },
+      { channel: "speech", interrupt: true, maxRetries: 0, skipForceRestart: true },
     );
-    if (!started) return { success: false, error: "word_finale_play_failed" };
-    const ended = await audioManager.waitUntilEnd(audio, () => false);
-    return ended.ok ? { success: true } : { success: false, error: ended.error };
+    if (!started) continue;
+    const ended = await audioManager.waitUntilEnd(audio, () => opts?.isCancelled?.() ?? false);
+    if (ended.ok) return { success: true };
   }
 
   const entry = getCvcWordEntry(w);
   if (entry) {
-    const res = await playPhonicsSequence(w, { waitUntilEnd: true, gapMs: 60 });
-    return res.ok ? { success: true } : { success: false, error: res.error };
+    for (let i = 0; i < entry.phonemes.length; i++) {
+      if (opts?.isCancelled?.()) return { success: false, error: "cancelled" };
+      const key = resolveGraphemeToAudioKey(entry.phonemes[i]!) ?? entry.phonemes[i]!.trim().toLowerCase();
+      const res = await playBlendPhonemeClip(key, { isCancelled: opts?.isCancelled });
+      if (!res.ok) return { success: false, error: res.error };
+      if (i < entry.phonemes.length - 1) await delay(70);
+    }
+    return { success: true };
   }
 
   return { success: false, error: "word_finale_unresolved" };
@@ -159,21 +180,31 @@ export async function playCvcBlendWithSpeak(
   wordObj: CvcWordEntry,
   options?: PlayCvcBlendOptions & {
     onPhoneme?: (index: number, phase: CvcBlendPhase) => void;
+    isCancelled?: () => boolean;
+    /** Playback rate for fast repeat pass (default 1.12). */
+    fastPlaybackRate?: number;
   },
 ): Promise<void> {
   const keys = wordObj.phonemes.map((p) => resolveGraphemeToAudioKey(p) ?? p.trim().toLowerCase());
   prefetchPhonicsAudioKeys(keys);
 
+  const skipSlow = options?.skipSlowPass ?? false;
+  const fastRate = options?.fastPlaybackRate ?? 1.12;
+
   await playCvcBlend(
     wordObj,
     async (audioKey, meta) => {
-      const res = await playStaticKey(audioKey, meta);
+      const res = await playStaticKey(audioKey, meta, {
+        isCancelled: options?.isCancelled,
+        playbackRate: meta?.phase === "fast" ? fastRate : 1,
+      });
       return { success: res.success };
     },
     {
-      includeWordFinale: true,
-      skipFastPass: true,
+      includeWordFinale: options?.includeWordFinale ?? true,
       ...options,
+      skipFastPass: options?.skipFastPass ?? !skipSlow,
+      isCancelled: options?.isCancelled,
     },
   );
 }
