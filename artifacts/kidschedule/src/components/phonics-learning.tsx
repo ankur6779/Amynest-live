@@ -3,7 +3,7 @@ import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Target, Lightbulb, ChevronDown, ChevronUp, CheckCircle2, RefreshCw, BookOpen, Trophy, AlertCircle, Loader2, Download, FileText } from "lucide-react";
+import { Sparkles, Target, Lightbulb, ChevronDown, ChevronUp, CheckCircle2, RefreshCw, BookOpen, Trophy, AlertCircle, Loader2, Download, FileText, Lock, Library } from "lucide-react";
 import { AudioPlayButton } from "@/components/audio-play-button";
 import { preloadStaticPhrases } from "@/lib/static-audio";
 import { getStaticAudioPrefetchLimit } from "@/lib/static-audio-edge";
@@ -11,8 +11,11 @@ import { PhonicsTest } from "@/components/phonics-test";
 import { SubItemGate } from "@/components/sub-item-gate";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
+import { useHubJourney } from "@/hooks/use-hub-journey";
 import { usePaywall } from "@/contexts/paywall-context";
 import { useMountedRef } from "@/hooks/use-safe-async";
+import { applyPhonicsJourneyCap, premiumPracticeItems, type PhonicsPremiumMeta } from "@/lib/phonics-journey-access";
+import { Link } from "wouter";
 import {
   usePhonicsData,
   type DisplayPhonicsItem,
@@ -173,12 +176,21 @@ function PhonicsLearningContent({
   const {
     t
   } = useTranslation();
+  const { isPremium } = useSubscription();
+  const numericChildId = typeof childId === "number" ? childId : Number(childId);
+  const hubJourney = useHubJourney(Number.isFinite(numericChildId) ? numericChildId : null);
+  const journeyDay = hubJourney.journeyDay;
+  const isFreeJourneyPeriod = hubJourney.isFreeJourneyPeriod;
+  const journeyGated = !isPremium && !!hubJourney.access;
+
   // Stage selector — parents asked to browse ALL 5 stages, not just the
   // child's age-derived default. `null` means "use my child's natural stage";
   // any other value is a manual override the API + hook respect.
+  // Free journey users stay on their child's natural stage only.
   const [stageOverride, setStageOverride] = useState<PhonicsAgeGroup | null>(
     null,
   );
+  const [libraryOpen, setLibraryOpen] = useState(false);
   // Reset the override whenever the parent switches to a different child —
   // otherwise stage stickiness leaks across siblings (architect flag).
   useEffect(() => {
@@ -192,16 +204,65 @@ function PhonicsLearningContent({
     loading,
     items,
     dailyItems,
+    totalCatalog,
+    journeyMeta,
+    premiumMeta,
     progress,
     insights,
     recordPlay,
     toggleMastered,
   } = phonicsData;
 
-  const safeItems = items ?? [];
-  const safeDailyItems = dailyItems ?? [];
+  const journeyApplied = useMemo(
+    () =>
+      applyPhonicsJourneyCap(items ?? [], dailyItems ?? [], {
+        isPremium,
+        journeyDay,
+        isFreePeriod: isFreeJourneyPeriod,
+        isJourneyLocked: hubJourney.isJourneyLocked,
+        apiMeta: journeyMeta,
+        premiumMeta,
+        totalCatalog: totalCatalog || (items?.length ?? 0),
+      }),
+    [
+      items,
+      dailyItems,
+      isPremium,
+      journeyDay,
+      isFreeJourneyPeriod,
+      hubJourney.isJourneyLocked,
+      journeyMeta,
+      premiumMeta,
+      totalCatalog,
+    ],
+  );
+
+  const safeItems = journeyApplied.items;
+  const safeDailyItems = journeyApplied.dailyItems;
+  const activeJourneyMeta = journeyApplied.journeyMeta;
+  const activePremiumMeta = journeyApplied.premiumMeta;
+  const practiceItems = useMemo(
+    () =>
+      isPremium
+        ? premiumPracticeItems(safeDailyItems, safeItems)
+        : safeItems,
+    [isPremium, safeDailyItems, safeItems],
+  );
   const safeProgress = progress ?? { practiced: {}, mastered: {} };
   const safeInsights = insights ?? [];
+  const showBlending =
+    !!level?.features.blending &&
+    (isPremium || !journeyGated || journeyDay >= 2);
+  const showCurriculum =
+    typeof childId === "number" &&
+    (isPremium || !journeyGated || journeyDay >= 3);
+  const lockStageSelector = journeyGated && isFreeJourneyPeriod && !isPremium;
+
+  const gateProps = {
+    journeyDay,
+    journeyGated,
+    journeyFreePeriod: isFreeJourneyPeriod,
+  };
 
   const preloadKeyRef = useRef<string>("");
   useEffect(() => {
@@ -267,17 +328,60 @@ function PhonicsLearningContent({
   }
   return <div id="phonics-learning" className="space-y-4 scroll-mt-24">
       <PersonalizationBadge level={level} childName={childName} />
+      {isPremium && activePremiumMeta && activePremiumMeta.lockedCount > 0 && (
+        <PhonicsPremiumBanner meta={activePremiumMeta} childName={childName} />
+      )}
+      {!isPremium && activeJourneyMeta.isFreePeriod && (
+        <PhonicsJourneyBanner meta={activeJourneyMeta} childName={childName} />
+      )}
       <StageSelector
         active={level.ageGroup}
         defaultStage={defaultLevel?.ageGroup ?? null}
+        lockOtherStages={lockStageSelector}
         onSelect={(g) => {
-          // Tapping the child's natural stage clears the override so the URL
-          // (and any future deep-link) behaves predictably.
+          if (lockStageSelector && g !== defaultLevel?.ageGroup) return;
           setStageOverride(g === defaultLevel?.ageGroup ? null : g);
         }}
       />
+
+      {showCurriculum && (
+        <PhonicsCurriculumDashboard childId={childId as number} childQuery={childQuery} />
+      )}
+
+      <SubItemGate sectionId="hub_phonics" subItemId="phonics_todays_activity" {...gateProps}>
+        <TodaysActivityCard level={level} dailyItems={safeDailyItems.length > 0 ? safeDailyItems : safeItems} progress={safeProgress} recordPlay={recordPlay} toggleMastered={toggleMastered} />
+      </SubItemGate>
+
+      <SubItemGate sectionId="hub_phonics" subItemId="phonics_practice_sounds" {...gateProps}>
+        <PracticeSoundsCard
+          level={level}
+          items={practiceItems}
+          progress={safeProgress}
+          recordPlay={recordPlay}
+          lockedCount={isPremium ? 0 : activeJourneyMeta.lockedCount}
+          titleOverride={isPremium ? t("components.phonics_learning.todays_practice_sounds") : undefined}
+          subtitleOverride={isPremium ? t("components.phonics_learning.todays_practice_subtitle") : undefined}
+        />
+        {showBlending && (
+          <CvcBlendingPracticeCard level={level} recordPlay={recordPlay} />
+        )}
+      </SubItemGate>
+
+      {isPremium && (
+        <FullLibrarySection
+          open={libraryOpen}
+          onToggle={() => setLibraryOpen((o) => !o)}
+          items={safeItems}
+          totalCatalog={activePremiumMeta?.totalCatalog ?? activeJourneyMeta.totalCatalog}
+          lockedCount={activePremiumMeta?.lockedCount ?? 0}
+          level={level}
+          progress={safeProgress}
+          recordPlay={recordPlay}
+        />
+      )}
+
       <div id="phonics-test" className="scroll-mt-24">
-        <SubItemGate sectionId="hub_phonics" subItemId="phonics_test">
+        <SubItemGate sectionId="hub_phonics" subItemId="phonics_test" {...gateProps}>
           <PhonicsTest
             childId={childId}
             childName={childName}
@@ -286,27 +390,15 @@ function PhonicsLearningContent({
           />
         </SubItemGate>
       </div>
-      <SubItemGate sectionId="hub_phonics" subItemId="phonics_download">
+      <SubItemGate sectionId="hub_phonics" subItemId="phonics_download" {...gateProps}>
         <PhonicsDownloadCard childId={childId} />
       </SubItemGate>
-      {typeof childId === "number" && (
-        <PhonicsCurriculumDashboard childId={childId} childQuery={childQuery} />
-      )}
-      <SubItemGate sectionId="hub_phonics" subItemId="phonics_todays_activity">
-        <TodaysActivityCard level={level} dailyItems={safeDailyItems.length > 0 ? safeDailyItems : safeItems} progress={safeProgress} recordPlay={recordPlay} toggleMastered={toggleMastered} />
-      </SubItemGate>
-      <SubItemGate sectionId="hub_phonics" subItemId="phonics_practice_sounds">
-        <PracticeSoundsCard level={level} items={safeItems} progress={safeProgress} recordPlay={recordPlay} />
-        {level.features.blending && (
-          <CvcBlendingPracticeCard level={level} recordPlay={recordPlay} />
-        )}
-      </SubItemGate>
       <div id="phonics-progress" className="scroll-mt-24">
-        <SubItemGate sectionId="hub_phonics" subItemId="phonics_progress">
-          <ProgressTrackerCard level={level} items={safeItems} progress={safeProgress} sourceLabel={phonicsData.source === "api" ? "synced to your account" : "saved on this device"} />
+        <SubItemGate sectionId="hub_phonics" subItemId="phonics_progress" {...gateProps}>
+          <ProgressTrackerCard level={level} items={safeItems} progress={safeProgress} totalCatalog={activeJourneyMeta.totalCatalog} lockedCount={activeJourneyMeta.lockedCount} sourceLabel={phonicsData.source === "api" ? "synced to your account" : "saved on this device"} />
         </SubItemGate>
       </div>
-      <SubItemGate sectionId="hub_phonics" subItemId="phonics_parent_tips">
+      <SubItemGate sectionId="hub_phonics" subItemId="phonics_parent_tips" {...gateProps}>
         <ParentTipsCard level={level} items={safeItems} progress={safeProgress} insights={safeInsights} />
       </SubItemGate>
     </div>;
@@ -322,10 +414,12 @@ function PhonicsLearningContent({
 function StageSelector({
   active,
   defaultStage,
+  lockOtherStages = false,
   onSelect,
 }: {
   active: PhonicsAgeGroup;
   defaultStage: PhonicsAgeGroup | null;
+  lockOtherStages?: boolean;
   onSelect: (g: PhonicsAgeGroup) => void;
 }) {
   const { t } = useTranslation();
@@ -347,23 +441,28 @@ function StageSelector({
         }
         const isActive = g === active;
         const isDefault = g === defaultStage;
+        const isLocked = lockOtherStages && !isDefault;
         return (
           <button
             key={g}
             type="button"
             role="tab"
             aria-selected={isActive}
+            aria-disabled={isLocked}
             data-testid={`phonics-stage-pill-${g}`}
-            onClick={() => onSelect(g)}
+            onClick={() => !isLocked && onSelect(g)}
             className={cn(
               "shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors",
               isActive
                 ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                : "bg-card text-foreground/80 border-border hover:border-primary/40 hover:bg-primary/5",
+                : isLocked
+                  ? "bg-muted/50 text-muted-foreground border-border opacity-60 cursor-not-allowed"
+                  : "bg-card text-foreground/80 border-border hover:border-primary/40 hover:bg-primary/5",
             )}
           >
             <span aria-hidden="true">{lvl.emoji}</span>
             <span>{lvl.shortLabel}</span>
+            {isLocked && <Lock className="h-3 w-3 opacity-70" aria-hidden />}
             {isDefault && (
               <span
                 className={cn(
@@ -380,6 +479,159 @@ function StageSelector({
         );
       })}
     </div>
+  );
+}
+
+function PhonicsPremiumBanner({
+  meta,
+  childName,
+}: {
+  meta: PhonicsPremiumMeta;
+  childName: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Card
+      data-testid="phonics-premium-banner"
+      className="rounded-2xl border-amber-300/30 bg-gradient-to-br from-amber-500/10 via-card to-card"
+    >
+      <CardContent className="p-4">
+        <p className="text-sm font-bold text-foreground">
+          {t("components.phonics_learning.premium_banner_title", {
+            day: meta.dripDay,
+            name: childName,
+          })}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {t("components.phonics_learning.premium_banner_body", {
+            unlocked: meta.itemLimit,
+            total: meta.totalCatalog,
+          })}
+          {meta.unlocksTomorrow > 0
+            ? ` ${t("components.phonics_learning.premium_banner_tomorrow", {
+                count: meta.unlocksTomorrow,
+              })}`
+            : ""}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function FullLibrarySection({
+  open,
+  onToggle,
+  items,
+  totalCatalog,
+  lockedCount,
+  level,
+  progress,
+  recordPlay,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  items: DisplayPhonicsItem[];
+  totalCatalog: number;
+  lockedCount: number;
+  level: PhonicsLevel;
+  progress: PhonicsProgressMap;
+  recordPlay: (id: string, contentId?: number) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Card
+      data-testid="phonics-full-library"
+      className="rounded-3xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10"
+    >
+      <CardContent className="p-5">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="w-full flex items-center gap-3 text-left"
+          aria-expanded={open}
+        >
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-card">
+            <Library className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-quicksand text-base font-bold text-foreground">
+              {t("components.phonics_learning.full_library_title")}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {t("components.phonics_learning.full_library_subtitle", {
+                unlocked: items.length,
+                total: totalCatalog,
+              })}
+            </p>
+          </div>
+          {open ? (
+            <ChevronUp className="h-5 w-5 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronDown className="h-5 w-5 text-muted-foreground shrink-0" />
+          )}
+        </button>
+        {open && (
+          <div className="mt-4 space-y-3">
+            <PracticeSoundsCard
+              level={level}
+              items={items}
+              progress={progress}
+              recordPlay={recordPlay}
+              lockedCount={lockedCount}
+              compact
+            />
+            {lockedCount > 0 && (
+              <p className="text-[11px] text-center text-muted-foreground">
+                {t("components.phonics_learning.full_library_locked", { count: lockedCount })}
+              </p>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function PhonicsJourneyBanner({
+  meta,
+  childName,
+}: {
+  meta: import("@/lib/phonics-journey-access").PhonicsJourneyMeta;
+  childName: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Card
+      data-testid="phonics-journey-banner"
+      className="rounded-2xl border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card"
+    >
+      <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-foreground">
+            {t("components.phonics_learning.journey_banner_title", {
+              day: meta.journeyDay,
+              name: childName,
+            })}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {t("components.phonics_learning.journey_banner_body", {
+              unlocked: meta.itemLimit,
+              total: meta.totalCatalog,
+            })}
+            {meta.unlocksTomorrow > 0
+              ? ` ${t("components.phonics_learning.journey_banner_tomorrow", {
+                  count: meta.unlocksTomorrow,
+                })}`
+              : ""}
+          </p>
+        </div>
+        <Link href="/parenting-hub">
+          <Button type="button" size="sm" variant="outline" className="rounded-full shrink-0">
+            {t("components.phonics_learning.journey_banner_cta")}
+          </Button>
+        </Link>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -511,12 +763,20 @@ function PracticeSoundsCard({
   level,
   items,
   progress,
-  recordPlay
+  recordPlay,
+  lockedCount = 0,
+  titleOverride,
+  subtitleOverride,
+  compact = false,
 }: {
   level: PhonicsLevel;
   items: DisplayPhonicsItem[];
   progress: PhonicsProgressMap;
   recordPlay: (id: string, contentId?: number) => void;
+  lockedCount?: number;
+  titleOverride?: string;
+  subtitleOverride?: string;
+  compact?: boolean;
 }) {
   const {
     t
@@ -544,20 +804,32 @@ function PracticeSoundsCard({
   // list layout with full-width text; everything else uses the tile grid.
   const hasLongForm = safeItems.some(i => i.type === "sentence" || i.type === "story");
   const useGrid = !hasLongForm && !level.features.sentenceReading;
-  return <Card data-testid="phonics-practice-sounds" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
-      <CardContent className="p-5">
+  const cardCls = compact
+    ? "rounded-2xl border border-border/60 bg-transparent shadow-none"
+    : "group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]";
+  return <Card data-testid="phonics-practice-sounds" className={cardCls}>
+      <CardContent className={compact ? "p-0 pt-1" : "p-5"}>
+        {!compact && (
         <div className="flex items-center gap-3 mb-4">
           <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
             <BookOpen className="h-5 w-5 text-primary dark:text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-quicksand text-base font-bold text-foreground">{t("components.phonics_learning.practice_sounds")}</h3>
-            <p className="text-xs text-muted-foreground">{t("components.phonics_learning.tap_any_tile_to_hear_the_sound")}</p>
+            <h3 className="font-quicksand text-base font-bold text-foreground">{titleOverride ?? t("components.phonics_learning.practice_sounds")}</h3>
+            <p className="text-xs text-muted-foreground">{subtitleOverride ?? t("components.phonics_learning.tap_any_tile_to_hear_the_sound")}</p>
           </div>
           <Badge className="bg-muted dark:bg-card text-primary dark:text-muted-foreground border-0 text-[10px] font-bold">
             {safeItems.length} {safeItems.length === 1 ? "sound" : "sounds"}
+            {lockedCount > 0 ? ` · +${lockedCount} 🔒` : ""}
           </Badge>
         </div>
+        )}
+
+        {!compact && lockedCount > 0 && (
+          <p className="text-[11px] text-muted-foreground mb-3">
+            {t("components.phonics_learning.journey_locked_sounds", { count: lockedCount })}
+          </p>
+        )}
 
         {useGrid ? <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             {safeItems.map((it, idx) => {
@@ -783,16 +1055,21 @@ function ProgressTrackerCard({
   level,
   items,
   progress,
-  sourceLabel
+  sourceLabel,
+  totalCatalog,
+  lockedCount = 0,
 }: {
   level: PhonicsLevel;
   items: DisplayPhonicsItem[];
   progress: PhonicsProgressMap;
   sourceLabel: string;
+  totalCatalog?: number;
+  lockedCount?: number;
 }) {
   const {
     t
   } = useTranslation();
+  const catalogTotal = totalCatalog ?? items.length;
   const totalItems = Math.max(items.length, 1);
   const validIds = new Set(items.map(i => i.id));
   const practicedCount = Object.keys(progress.practiced).filter(id => validIds.has(id)).length;
@@ -818,6 +1095,15 @@ function ProgressTrackerCard({
           <Stat label="Accuracy" value={`${accuracyPct}%`} sub={practicedCount === 0 ? "no data" : undefined} />
           <Stat label="Total plays" value={`${totalPlays}`} />
         </div>
+
+        {lockedCount > 0 && (
+          <p className="text-[11px] text-muted-foreground mb-3">
+            {t("components.phonics_learning.journey_progress_locked", {
+              unlocked: items.length,
+              total: catalogTotal,
+            })}
+          </p>
+        )}
 
         <div>
           <div className="flex items-center justify-between mb-1.5">

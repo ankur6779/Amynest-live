@@ -272,3 +272,229 @@ export function isHubJourneyFeatureLocked(
   if (!featureId.startsWith("hub_")) return false;
   return access.isLocked;
 }
+
+// ─── Phonics ↔ 3-day journey alignment ───────────────────────────────────────
+
+/** Max catalog items visible per hub journey day (free users). */
+export const PHONICS_JOURNEY_ITEM_LIMITS: Record<1 | 2 | 3, number> = {
+  1: 4,
+  2: 8,
+  3: 10,
+};
+
+export interface PhonicsJourneyMeta {
+  journeyDay: number;
+  itemLimit: number;
+  totalCatalog: number;
+  lockedCount: number;
+  /** Extra sounds unlocked when the user completes the next journey day. */
+  unlocksTomorrow: number;
+  isPremium: boolean;
+  isFreePeriod: boolean;
+  isLocked: boolean;
+  /** Sub-item IDs unlocked for the current journey day. */
+  unlockedSubItems: string[];
+}
+
+/** Phonics sub-sections unlocked cumulatively by journey day. */
+export const PHONICS_SUBITEMS_BY_JOURNEY_DAY: Record<1 | 2 | 3, readonly string[]> = {
+  1: ["phonics_todays_activity", "phonics_practice_sounds"],
+  2: [
+    "phonics_todays_activity",
+    "phonics_practice_sounds",
+    "phonics_progress",
+  ],
+  3: [
+    "phonics_todays_activity",
+    "phonics_practice_sounds",
+    "phonics_progress",
+    "phonics_test",
+    "phonics_parent_tips",
+    "phonics_download",
+  ],
+};
+
+export function phonicsItemLimitForJourneyDay(journeyDay: number): number {
+  if (journeyDay <= 1) return PHONICS_JOURNEY_ITEM_LIMITS[1];
+  if (journeyDay <= 2) return PHONICS_JOURNEY_ITEM_LIMITS[2];
+  return PHONICS_JOURNEY_ITEM_LIMITS[3];
+}
+
+export function phonicsUnlocksTomorrow(journeyDay: number): number {
+  if (journeyDay >= 3) return 0;
+  const next = phonicsItemLimitForJourneyDay(journeyDay + 1);
+  const cur = phonicsItemLimitForJourneyDay(journeyDay);
+  return Math.max(0, next - cur);
+}
+
+export function phonicsUnlockedSubItems(journeyDay: number): string[] {
+  const day = Math.min(Math.max(1, journeyDay), 3) as 1 | 2 | 3;
+  return [...PHONICS_SUBITEMS_BY_JOURNEY_DAY[day]];
+}
+
+export function isPhonicsSubItemUnlocked(
+  subItemId: string,
+  journeyDay: number,
+): boolean {
+  return phonicsUnlockedSubItems(journeyDay).includes(subItemId);
+}
+
+/** First journey day when a sub-item becomes available (for lock messaging). */
+export function phonicsSubItemUnlockDay(subItemId: string): number | null {
+  for (const day of [1, 2, 3] as const) {
+    if (PHONICS_SUBITEMS_BY_JOURNEY_DAY[day].includes(subItemId)) return day;
+  }
+  return null;
+}
+
+export function capPhonicsCatalog<T>(allItems: T[], journeyDay: number): T[] {
+  const limit = phonicsItemLimitForJourneyDay(journeyDay);
+  return allItems.slice(0, limit);
+}
+
+/** Deterministic daily slice from a capped pool (matches api-server phonics route). */
+export function pickPhonicsDailyItems<T>(
+  pool: T[],
+  todaySeed: number,
+  dailyLimit = 10,
+): T[] {
+  if (pool.length === 0) return [];
+  if (pool.length <= dailyLimit) return pool;
+  return Array.from(
+    { length: dailyLimit },
+    (_, i) => pool[(todaySeed + i) % pool.length]!,
+  );
+}
+
+export function buildPhonicsJourneyMeta(opts: {
+  isPremium: boolean;
+  access: HubJourneyAccess;
+  journeyDay: number;
+  totalCatalog: number;
+}): PhonicsJourneyMeta {
+  const { isPremium, access, journeyDay, totalCatalog } = opts;
+  if (isPremium) {
+    return {
+      journeyDay,
+      itemLimit: totalCatalog,
+      totalCatalog,
+      lockedCount: 0,
+      unlocksTomorrow: 0,
+      isPremium: true,
+      isFreePeriod: false,
+      isLocked: false,
+      unlockedSubItems: [...PHONICS_SUBITEMS_BY_JOURNEY_DAY[3]],
+    };
+  }
+  const itemLimit = access.isFreePeriod
+    ? phonicsItemLimitForJourneyDay(journeyDay)
+    : 0;
+  return {
+    journeyDay,
+    itemLimit,
+    totalCatalog,
+    lockedCount: Math.max(0, totalCatalog - itemLimit),
+    unlocksTomorrow: access.isFreePeriod ? phonicsUnlocksTomorrow(journeyDay) : 0,
+    isPremium: false,
+    isFreePeriod: access.isFreePeriod,
+    isLocked: access.isLocked,
+    unlockedSubItems: access.isFreePeriod
+      ? phonicsUnlockedSubItems(journeyDay)
+      : [],
+  };
+}
+
+// ─── Premium drip — progressive catalog unlock ───────────────────────────────
+
+/** Per-day unlock increments (cumulative). Day 1=6, day 2=+4, day 3=+5, then +4. */
+export const PHONICS_PREMIUM_DRIP_INCREMENTS = [6, 4, 5] as const;
+export const PHONICS_PREMIUM_DRIP_DEFAULT_INCREMENT = 4;
+
+export interface PhonicsPremiumMeta {
+  dripDay: number;
+  itemLimit: number;
+  totalCatalog: number;
+  lockedCount: number;
+  unlocksTomorrow: number;
+  /** Distinct calendar days with at least one play recorded. */
+  activePracticeDays: number;
+}
+
+export function phonicsPremiumItemLimit(
+  dripDay: number,
+  totalCatalog: number,
+): number {
+  const d = Math.max(1, dripDay);
+  let cap = 0;
+  for (let day = 1; day <= d; day++) {
+    if (day === 1) cap += PHONICS_PREMIUM_DRIP_INCREMENTS[0];
+    else if (day === 3) cap += PHONICS_PREMIUM_DRIP_INCREMENTS[2];
+    else cap += PHONICS_PREMIUM_DRIP_INCREMENTS[1] ?? PHONICS_PREMIUM_DRIP_DEFAULT_INCREMENT;
+  }
+  return Math.min(totalCatalog, cap);
+}
+
+export function phonicsPremiumUnlocksTomorrow(
+  dripDay: number,
+  totalCatalog: number,
+): number {
+  const cur = phonicsPremiumItemLimit(dripDay, totalCatalog);
+  const next = phonicsPremiumItemLimit(dripDay + 1, totalCatalog);
+  return Math.max(0, next - cur);
+}
+
+/** Count practice-active calendar days; opening on a new day advances the drip tier. */
+export function computePhonicsDripDay(
+  progressRows: Array<{
+    playCount: number;
+    firstPlayedAt?: Date | string | null;
+    lastPlayedAt?: Date | string | null;
+  }>,
+  now: Date = new Date(),
+): { dripDay: number; activePracticeDays: number } {
+  const activeDates = new Set<string>();
+  for (const p of progressRows) {
+    if (p.playCount <= 0) continue;
+    if (p.firstPlayedAt) {
+      const d = new Date(p.firstPlayedAt);
+      if (Number.isFinite(d.getTime())) activeDates.add(formatDateIso(d));
+    }
+    if (p.lastPlayedAt) {
+      const d = new Date(p.lastPlayedAt);
+      if (Number.isFinite(d.getTime())) activeDates.add(formatDateIso(d));
+    }
+  }
+  const today = formatDateIso(now);
+  const activePracticeDays = activeDates.size;
+  if (activePracticeDays === 0) {
+    return { dripDay: 1, activePracticeDays: 0 };
+  }
+  if (activeDates.has(today)) {
+    return { dripDay: activePracticeDays, activePracticeDays };
+  }
+  return { dripDay: activePracticeDays + 1, activePracticeDays };
+}
+
+export function capPhonicsPremiumCatalog<T>(
+  allItems: T[],
+  dripDay: number,
+): T[] {
+  const limit = phonicsPremiumItemLimit(dripDay, allItems.length);
+  return allItems.slice(0, limit);
+}
+
+export function buildPhonicsPremiumMeta(opts: {
+  dripDay: number;
+  activePracticeDays: number;
+  totalCatalog: number;
+}): PhonicsPremiumMeta {
+  const itemLimit = phonicsPremiumItemLimit(opts.dripDay, opts.totalCatalog);
+  return {
+    dripDay: opts.dripDay,
+    itemLimit,
+    totalCatalog: opts.totalCatalog,
+    lockedCount: Math.max(0, opts.totalCatalog - itemLimit),
+    unlocksTomorrow: phonicsPremiumUnlocksTomorrow(opts.dripDay, opts.totalCatalog),
+    activePracticeDays: opts.activePracticeDays,
+  };
+}

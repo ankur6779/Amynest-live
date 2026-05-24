@@ -10,6 +10,7 @@ import {
   type PhonicsAgeGroup,
   type PhonicsLevel,
 } from "@/lib/phonics-content";
+import type { PhonicsJourneyMeta, PhonicsPremiumMeta } from "@/lib/phonics-journey-access";
 
 // ─── Types mirrored from the API ─────────────────────────────────────────────
 
@@ -185,6 +186,12 @@ export interface UsePhonicsDataResult {
   loading: boolean;
   items: DisplayPhonicsItem[];
   dailyItems: DisplayPhonicsItem[];
+  /** Full catalog size before journey cap (API) or static level size (fallback). */
+  totalCatalog: number;
+  /** Hub journey alignment from API — null until loaded or on pure fallback. */
+  journeyMeta: PhonicsJourneyMeta | null;
+  /** Premium progressive unlock — null for free users. */
+  premiumMeta: PhonicsPremiumMeta | null;
   progress: PhonicsProgressMap;
   insights: PhonicsInsight[] | null;
   recordPlay: (itemId: string, contentId?: number) => void;
@@ -213,6 +220,9 @@ export function usePhonicsData(
   const [loading, setLoading] = useState<boolean>(true);
   const [apiItems, setApiItems] = useState<DisplayPhonicsItem[]>([]);
   const [apiDaily, setApiDaily] = useState<DisplayPhonicsItem[]>([]);
+  const [totalCatalog, setTotalCatalog] = useState(0);
+  const [journeyMeta, setJourneyMeta] = useState<PhonicsJourneyMeta | null>(null);
+  const [premiumMeta, setPremiumMeta] = useState<PhonicsPremiumMeta | null>(null);
   const [insights, setInsights] = useState<PhonicsInsight[] | null>(null);
   // Always seed from this child's local key so a quick child-switch never
   // shows the previous child's data, even before the API fetch lands.
@@ -254,6 +264,9 @@ export function usePhonicsData(
       setLoading(true);
       setApiItems([]);
       setApiDaily([]);
+      setTotalCatalog(0);
+      setJourneyMeta(null);
+      setPremiumMeta(null);
       setInsights(null);
       setProgress(loadLocalProgress(childId, level.ageGroup));
     }
@@ -266,6 +279,9 @@ export function usePhonicsData(
           ageGroup: string | null;
           items?: PhonicsApiItem[] | null;
           dailyItems?: PhonicsApiItem[] | null;
+          totalCatalog?: number;
+          journeyMeta?: PhonicsJourneyMeta | null;
+          premiumMeta?: PhonicsPremiumMeta | null;
           progress?: PhonicsApiProgressRow[] | null;
           insights?: PhonicsInsight[] | null;
         }>(authFetch, `/api/phonics?${qs.toString()}`, { signal: controller.signal });
@@ -305,6 +321,9 @@ export function usePhonicsData(
 
         setApiItems(apiItemsMapped);
         setApiDaily(apiDailyMapped);
+        setTotalCatalog(data?.totalCatalog ?? apiItemsMapped.length);
+        setJourneyMeta(data?.journeyMeta ?? null);
+        setPremiumMeta(data?.premiumMeta ?? null);
         setInsights(data?.insights ?? []);
         setProgress(merged);
         setSource("api");
@@ -461,6 +480,9 @@ export function usePhonicsData(
     loading,
     items,
     dailyItems,
+    totalCatalog: source === "api" && totalCatalog > 0 ? totalCatalog : items.length,
+    journeyMeta,
+    premiumMeta,
     progress,
     insights,
     recordPlay,
