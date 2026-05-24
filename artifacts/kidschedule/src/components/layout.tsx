@@ -125,7 +125,8 @@ const NAV_ITEMS: NavItem[] = [{
   labelKey: "nav.feedback",
   icon: MessageSquarePlus
 }];
-const NAV_ITEMS: NavItem[] = [{  children
+export function Layout({
+  children
 }: {
   children: React.ReactNode;
 }) {
