@@ -3,12 +3,6 @@
  *
  * Usage:
  *   pnpm --filter @workspace/api-server seed:learning-weekly
- *
- * Env:
- *   LEARNING_SEED_ITEMS_PER_KEY=14   (default: 14 ≈ 2/day for a week)
- *   LEARNING_SEED_SECTIONS=spelling,smart_math_tricks  (optional filter)
- *   LEARNING_SEED_DRY_RUN=true       (generate only, no DB/TTS writes)
- *   LEARNING_SEED_SKIP_TTS=true      (skip TTS warm)
  */
 import { config } from "dotenv";
 import { resolve, dirname } from "node:path";
@@ -18,9 +12,10 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 config({ path: resolve(repoRoot, ".env") });
 config({ path: resolve(repoRoot, "Amynest-backend-dykj.env"), override: true });
 
-import { runWeeklyLearningContentSeed } from "../src/services/learningContentSeedService.js";
-
 async function main() {
+  const { runWeeklyLearningContentSeed } = await import(
+    "../src/services/learningContentSeedService.js"
+  );
   console.log("=== Weekly Learning Content Seed ===\n");
   const stats = await runWeeklyLearningContentSeed();
   console.log(JSON.stringify(stats, null, 2));
