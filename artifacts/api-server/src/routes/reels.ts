@@ -95,6 +95,14 @@ router.get("/videos", async (req, res) => {
   }
 });
 
+function normalizeVideoContentType(raw: string | null, fallbackMime?: string): string {
+  const ct = (raw ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
+  if (ct.startsWith("video/")) return ct;
+  const fallback = (fallbackMime ?? "").trim().toLowerCase();
+  if (fallback.startsWith("video/")) return fallback;
+  return "video/mp4";
+}
+
 router.get("/stream/:fileId", async (req, res) => {
   const { fileId } = req.params;
   if (!fileId || !/^[a-zA-Z0-9_-]+$/.test(fileId)) {
@@ -112,7 +120,11 @@ router.get("/stream/:fileId", async (req, res) => {
       return;
     }
 
-    const contentType = driveRes.headers.get("content-type") || "video/mp4";
+    const fileMeta = cachedVideoIds.find((f) => f.id === fileId);
+    const contentType = normalizeVideoContentType(
+      driveRes.headers.get("content-type"),
+      fileMeta?.mimeType,
+    );
     const contentLength = driveRes.headers.get("content-length");
     const contentRange = driveRes.headers.get("content-range");
     const acceptRanges = driveRes.headers.get("accept-ranges");
