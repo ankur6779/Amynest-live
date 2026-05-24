@@ -262,6 +262,9 @@ importers:
       '@workspace/load-forecast':
         specifier: workspace:*
         version: link:../../lib/load-forecast
+      '@workspace/olympiad':
+        specifier: workspace:*
+        version: link:../../lib/olympiad
       '@workspace/phonics-curriculum':
         specifier: workspace:*
         version: link:../../lib/phonics-curriculum

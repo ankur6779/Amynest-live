@@ -757,22 +757,53 @@ function LearningInsightsSection({ childId }: { childId: number }) {
     (s) => s.sampleSize > 0 || s.weakTopics.length > 0,
   );
   const yesterday = data.yesterday;
+  const adaptiveTopics = data.adaptiveTopics ?? [];
 
   return (
     <section data-testid="learning-insights" className="rounded-3xl border border-border bg-primary/[0.04] p-4 sm:p-5 space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-sm font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <BookOpen className="h-3.5 w-3.5" /> Learning insights
         </h3>
-        {yesterday && yesterday.planSize > 0 && (
-          <span
-            data-testid="learning-insights-yesterday"
-            className="text-[11px] text-white/80 font-bold rounded-full px-2.5 py-1 bg-white/5 border border-white/10"
-          >
-            Yesterday: {yesterday.doneCount}/{yesterday.planSize} ({yesterday.completionPct}%)
-          </span>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {data.country && (
+            <span
+              data-testid="learning-insights-country"
+              className="text-[11px] text-white/80 font-bold rounded-full px-2.5 py-1 bg-white/5 border border-white/10"
+            >
+              {data.country} · Base L{data.baseLevel ?? 1}
+            </span>
+          )}
+          {yesterday && yesterday.planSize > 0 && (
+            <span
+              data-testid="learning-insights-yesterday"
+              className="text-[11px] text-white/80 font-bold rounded-full px-2.5 py-1 bg-white/5 border border-white/10"
+            >
+              Yesterday: {yesterday.doneCount}/{yesterday.planSize} ({yesterday.completionPct}%)
+            </span>
+          )}
+        </div>
       </div>
+
+      {adaptiveTopics.length > 0 && (
+        <div data-testid="learning-insights-adaptive" className="rounded-2xl border border-white/10 bg-white/5 p-3">
+          <p className="text-[10px] font-black uppercase tracking-wider text-white/50 mb-2">
+            Adaptive levels
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {adaptiveTopics.map((at) => (
+              <span
+                key={at.topicId}
+                data-testid={`learning-insights-level-${at.topicId}`}
+                className="text-[10.5px] font-bold rounded-full px-2 py-0.5 bg-[hsl(var(--brand-indigo-500)/0.15)] text-[hsl(var(--brand-indigo-300))] border border-[hsl(var(--brand-indigo-400)/0.2)]"
+                title={at.subjectPack}
+              >
+                {at.subjectEmoji} {at.topicTitle} · L{at.currentLevel}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       {subjectsWithSignal.length === 0 ? (
         <p className="text-[12.5px] text-white/70 leading-snug">
           Not enough activity yet to spot weak topics. Encourage a couple of

@@ -5,11 +5,11 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { SmartStudyNextQuestionsRequestSubject } from './smartStudyNextQuestionsRequestSubject';
 
 export interface SmartStudyNextQuestionsRequest {
   childId: number;
-  subject: SmartStudyNextQuestionsRequestSubject;
+  /** Practice topic id (math, science, or english topic — e.g. addition, plants, nouns) */
+  subject: string;
   /**
      * @minimum 1
      * @maximum 10

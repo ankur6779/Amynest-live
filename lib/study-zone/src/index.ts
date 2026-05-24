@@ -15,6 +15,46 @@ export {
 } from "./play-speak";
 export { BASIC_SUBJECTS } from "./content/basic";
 export { ADVANCED_SUBJECTS } from "./content/advanced";
+export {
+  normalizeStudyCountry,
+  parseChildClassNumber,
+  topicMatchesClass,
+  filterTopicsForClass,
+  getBasicSubjectsForCountry,
+  getAdvancedSubjectsForCountry,
+  getBasicSubjectsForChild,
+  getAdvancedSubjectsForChild,
+  getSubjectPacksForChild,
+  getPlayCategoriesForCountry,
+  getPlayCategoriesForChild,
+  isAdaptivePracticeTopic,
+  isAdaptiveMathTopic,
+  ADAPTIVE_MATH_TOPIC_IDS,
+} from "./resolve-content";
+export {
+  pickPracticeQuestions,
+  pickTopicPracticeQuestions,
+  isTopicPracticeSubject,
+  isMathPracticeSubject,
+  isBasicMathPracticeSubject,
+  isAdvancedMathPracticeSubject,
+  practicePackForSubject,
+  lookupPracticeTitle,
+  getPracticePickerTopics,
+  TOPIC_PRACTICE_SUBJECTS,
+  MATH_PRACTICE_SUBJECTS,
+} from "./topic-practice";
+export {
+  pickAdvancedMathQuestions,
+  ADVANCED_MATH_PRACTICE_SUBJECTS,
+  ADVANCED_MATH_PRACTICE_TOPICS,
+} from "./advanced-math-practice";
+export {
+  pickBasicMathExtraQuestions,
+  isBasicMathExtraPracticeSubject,
+  BASIC_MATH_EXTRA_PRACTICE_SUBJECTS,
+  BASIC_MATH_EXTRA_PRACTICE_TOPICS,
+} from "./basic-math-extra-practice";
 
 import type { PlayCategory, SubjectPack, StudyTopic, PlayItem, PlayCategoryId } from "./types";
 import { PLAY_CATEGORIES } from "./content/play";

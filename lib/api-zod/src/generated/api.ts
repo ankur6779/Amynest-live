@@ -1747,7 +1747,7 @@ export const getSmartStudyNextQuestionsBodyCountMax = 10;
 
 export const GetSmartStudyNextQuestionsBody = zod.object({
   "childId": zod.number(),
-  "subject": zod.enum(['addition', 'subtraction', 'multiplication', 'division', 'fractions', 'word-problems']),
+  "subject": zod.string().describe('Practice topic id (math, science, or english topic — e.g. addition, plants, nouns)'),
   "count": zod.number().min(1).max(getSmartStudyNextQuestionsBodyCountMax).optional(),
   "country": zod.string().optional().describe('ISO-2 country override (IN, US, UK, AU, NZ, AE). Defaults to DEFAULT.')
 })
@@ -1777,10 +1777,25 @@ export const GetSmartStudyInsightsQueryParams = zod.object({
   "childId": zod.coerce.number()
 })
 
+export const getSmartStudyInsightsResponseBaseLevelMax = 6;
+
+export const getSmartStudyInsightsResponseAdaptiveTopicsItemCurrentLevelMax = 6;
+
+
+
 export const GetSmartStudyInsightsResponse = zod.object({
   "childId": zod.number(),
   "childName": zod.string(),
   "mode": zod.enum(['play', 'basic', 'advanced']),
+  "country": zod.string().describe('Parent profile country used for localized study content'),
+  "baseLevel": zod.number().min(1).max(getSmartStudyInsightsResponseBaseLevelMax).describe('Age-derived baseline adaptive level (1–6)'),
+  "adaptiveTopics": zod.array(zod.object({
+  "topicId": zod.string(),
+  "topicTitle": zod.string(),
+  "subjectPack": zod.string(),
+  "subjectEmoji": zod.string(),
+  "currentLevel": zod.number().min(1).max(getSmartStudyInsightsResponseAdaptiveTopicsItemCurrentLevelMax)
+})),
   "hasData": zod.boolean(),
   "subjects": zod.array(zod.object({
   "subject": zod.string(),

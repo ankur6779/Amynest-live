@@ -2603,7 +2603,7 @@
       },
       "olympiad": {
         "title": "Smart Olympiad Zone",
-        "description": "Daily 5 MCQs, weekly tests, badges & insights"
+        "description": "Daily 5 MCQs, mock exams, leaderboards & olympiad prep tracks"
       },
       "life-skills": {
         "title": "🧭 Life Skills Mode",
@@ -2627,7 +2627,7 @@
       },
       "olympiad-preview": {
         "title": "🏆 Smart Olympiad Zone",
-        "description": "Daily 5 MCQs, weekly tests, badges & insights"
+        "description": "Daily 5 MCQs, mock exams, leaderboards & olympiad prep tracks"
       },
       "ptm-prep-preview": {
         "title": "🧾 PTM Prep Assistance",
@@ -2743,7 +2743,7 @@
       },
       "olympiad": {
         "title": "🏆 Smart Olympiad Zone",
-        "description": "Daily 5 MCQs, weekly tests, badges & insights"
+        "description": "Daily 5 MCQs, mock exams, leaderboards & olympiad prep tracks"
       },
       "event-prep": {
         "title": "🎉 Event Prep (School Ready)",
@@ -3369,7 +3369,24 @@
       "pts": "pts",
       "daily": "Daily",
       "practice": "Practice",
-      "progress": "Progress"
+      "prep": "Prep",
+      "progress": "Progress",
+      "syllabus_tracks": "Syllabus tracks",
+      "start_track": "Start track practice",
+      "mock_exam": "Mock Olympiad Exam",
+      "start_mock": "Start mock exam",
+      "mock_done_this_week": "Mock exam completed this week. Next one on Monday.",
+      "family_leaderboard": "Family leaderboard (this week)",
+      "global_leaderboard": "AmyNest Champions (this week)",
+      "your_rank": "Your rank",
+      "weak_area_title": "Needs extra practice",
+      "weak_area_body": "could use more practice in {{subject}}. Smart Study Zone has guided lessons.",
+      "open_study_zone": "Open Smart Study Zone",
+      "ai_fresh": "AI Fresh",
+      "localized_for": "Localized for {{country}}",
+      "premium_ai_hint": "Upgrade for AI-generated fresh questions",
+      "premium_ai": "AI enabled",
+      "loading_questions": "Loading questions…"
     },
     "parent_command_center": {
       "s_command_center": "'s Command Center",

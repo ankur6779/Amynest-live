@@ -56,6 +56,13 @@ export async function dispatchAiJob(type: string, payload: unknown): Promise<unk
       );
     }
 
+    case "olympiad.next_questions": {
+      const { runOlympiadNextQuestions } = await import("../domain-ai/olympiad-runners.js");
+      return runOlympiadNextQuestions(
+        input as Parameters<typeof runOlympiadNextQuestions>[0],
+      );
+    }
+
     case "abacus.tutor": {
       const { runAbacusTutor } = await import("../domain-ai/abacus-runners.js");
       return runAbacusTutor(input as Parameters<typeof runAbacusTutor>[0]);

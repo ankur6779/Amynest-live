@@ -9,6 +9,7 @@ import {
   db,
   childrenTable,
   childLearningProgressTable,
+  parentProfilesTable,
   type ChildLearningProgressRow,
   type LearningAttempt,
 } from "@workspace/db";
@@ -26,8 +27,16 @@ import {
   SMART_SUBJECTS,
   bumpLevel,
   levelForAge,
-  pickAdaptiveQuestions,
+  pickPracticeQuestions,
   profileFor,
+  normalizeStudyCountry,
+  getBasicSubjectsForCountry,
+  getAdvancedSubjectsForCountry,
+  lookupPracticeTitle,
+  isTopicPracticeSubject,
+  isBasicMathPracticeSubject,
+  practicePackForSubject,
+  TOPIC_PRACTICE_SUBJECTS,
   type Level,
   type SmartQuestion,
   type SmartSubjectId,
@@ -38,10 +47,10 @@ const router: IRouter = Router();
 const VALID_SUBJECTS = new Set<string>([
   ...BASIC_SUBJECTS.map((s) => s.id),
   ...ADVANCED_SUBJECTS.map((s) => s.id),
-  // Smart Study v2 subjects — each gets its own per-(child, subject) row so
-  // levels and seenQuestionIds stay isolated per topic.
-  ...SMART_SUBJECTS.map((s) => s.id),
+  ...TOPIC_PRACTICE_SUBJECTS,
 ]);
+
+const PRACTICE_SUBJECT_IDS = TOPIC_PRACTICE_SUBJECTS;
 
 // Zod shapes for the JSONB columns on `child_learning_progress`. We parse
 // untrusted DB jsonb (which could in theory be empty/legacy/garbled) instead
@@ -65,7 +74,7 @@ function parseSeenIds(raw: unknown): string[] {
   return StoredSeenIdsSchema.parse(Array.isArray(raw) ? raw : []);
 }
 
-const SMART_SUBJECT_IDS = new Set<string>(SMART_SUBJECTS.map((s) => s.id));
+const SMART_SUBJECT_IDS = PRACTICE_SUBJECT_IDS;
 /** Cap so the seen-set never balloons past ~200 ids (~6 KB) per row. */
 const SEEN_ID_CAP = 200;
 
@@ -85,6 +94,16 @@ async function loadOwnedChild(childId: number, userId: string) {
 
 function todayIsoUtc(d = new Date()): string {
   return d.toISOString().slice(0, 10);
+}
+
+async function resolveUserCountry(userId: string, override?: string): Promise<string> {
+  if (override) return normalizeStudyCountry(override);
+  const rows = await db
+    .select({ country: parentProfilesTable.country })
+    .from(parentProfilesTable)
+    .where(eq(parentProfilesTable.userId, userId))
+    .limit(1);
+  return normalizeStudyCountry(rows[0]?.country);
 }
 
 // ─── POST /api/smart-study/daily-plan ────────────────────────────────────────
@@ -115,6 +134,7 @@ router.post("/smart-study/daily-plan", async (req, res): Promise<void> => {
       return;
     }
     const mode = resolveStudyMode(child.age ?? 0, child.childClass);
+    const country = await resolveUserCountry(userId);
 
     const rows = await db
       .select()
@@ -136,6 +156,7 @@ router.post("/smart-study/daily-plan", async (req, res): Promise<void> => {
     const plan = buildDailyPlan({
       childAge: child.age ?? 0,
       childClass: child.childClass,
+      country,
       dateIso,
       subjects,
     });
@@ -152,6 +173,7 @@ router.post("/smart-study/daily-plan", async (req, res): Promise<void> => {
 
     res.json({
       child: { id: child.id, name: child.name, age: child.age, mode },
+      country,
       plan,
       completionPct,
       doneTopicIds: Array.from(doneTopicIds),
@@ -370,6 +392,7 @@ router.get("/smart-study/insights", async (req, res): Promise<void> => {
       return;
     }
     const mode = resolveStudyMode(child.age ?? 0, child.childClass);
+    const country = await resolveUserCountry(userId);
 
     const rows = await db
       .select()
@@ -389,12 +412,13 @@ router.get("/smart-study/insights", async (req, res): Promise<void> => {
 
     // Per-subject summaries (only for subjects valid in the child's mode so
     // the UI doesn't render stale rows for a subject the child outgrew).
-    const packs = mode === "advanced" ? ADVANCED_SUBJECTS : BASIC_SUBJECTS;
+    const planMode = mode === "advanced" ? "advanced" : "basic";
+    const packs = planMode === "advanced"
+      ? getAdvancedSubjectsForCountry(country)
+      : getBasicSubjectsForCountry(country);
     const lookupTopicTitle = (subjectId: string, topicId: string): string => {
-      const pack =
-        mode === "advanced"
-          ? getAdvancedSubject(subjectId)
-          : getBasicSubject(subjectId);
+      const pack = packs.find((p) => p.id === subjectId)
+        ?? (planMode === "advanced" ? getAdvancedSubject(subjectId) : getBasicSubject(subjectId));
       return pack?.topics.find((t) => t.id === topicId)?.title ?? topicId;
     };
 
@@ -432,6 +456,7 @@ router.get("/smart-study/insights", async (req, res): Promise<void> => {
       const yPlan = buildDailyPlan({
         childAge: child.age ?? 0,
         childClass: child.childClass,
+        country,
         dateIso: yIso,
         subjects: subjectsForPlan,
       });
@@ -450,12 +475,30 @@ router.get("/smart-study/insights", async (req, res): Promise<void> => {
       };
     }
 
+    const baseLevel = levelForAge(child.age ?? 0);
+    const adaptiveTopics = rows
+      .filter((r) => isTopicPracticeSubject(r.subject))
+      .map((r) => {
+        const meta = lookupPracticeTitle(r.subject, planMode);
+        return {
+          topicId: r.subject,
+          topicTitle: meta?.title ?? r.subject,
+          subjectPack: meta?.packId ?? practicePackForSubject(r.subject),
+          subjectEmoji: meta?.emoji ?? "✨",
+          currentLevel: (r.currentLevel ?? baseLevel) as Level,
+        };
+      })
+      .sort((a, b) => a.topicTitle.localeCompare(b.topicTitle));
+
     const hasData = rows.length > 0;
 
     res.json({
       childId: child.id,
       childName: child.name,
       mode,
+      country,
+      baseLevel,
+      adaptiveTopics,
       hasData,
       subjects,
       yesterday,
@@ -478,11 +521,11 @@ router.get("/smart-study/insights", async (req, res): Promise<void> => {
 
 const NextQuestionsBody = z.object({
   childId: z.number().int().positive(),
-  subject: z.enum([
-    "addition", "subtraction", "multiplication", "division", "fractions", "word-problems",
-  ]),
+  subject: z.string().min(1).max(40).refine(
+    (s) => isTopicPracticeSubject(s),
+    { message: "unknown_practice_subject" },
+  ),
   count: z.number().int().min(1).max(10).optional(),
-  /** Optional country override; falls back to "DEFAULT" (India-leaning). */
   country: z.string().min(2).max(8).optional(),
 });
 
@@ -508,13 +551,14 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 
 async function generateWithAi(
   level: Level,
-  subject: SmartSubjectId,
+  subject: string,
   country: string,
   ageYears: number,
   count: number,
   excludeIds: Set<string>,
   userId: string,
 ): Promise<SmartQuestion[] | null> {
+  if (!isBasicMathPracticeSubject(subject)) return null;
   try {
     const { wrapJobInput } = await import("../queue/ai-job-payload.js");
     const enqueued = await enqueueAiJob(
@@ -534,8 +578,8 @@ async function generateWithAi(
     const { isBullMqActive } = await import("../queue/ai-job-queue.js");
     const { waitForJob } = await import("../queue/ai-job-store.js");
     const finished = isBullMqActive()
-      ? await waitForJobResult(enqueued.jobId, 5000)
-      : await waitForJob(enqueued.jobId, 5000);
+      ? await waitForJobResult(enqueued.jobId, 8000)
+      : await waitForJob(enqueued.jobId, 8000);
     if (finished?.status !== "completed" || !finished.result) return null;
     const body = finished.result as { questions: SmartQuestion[] };
     return body.questions?.length ? body.questions : null;
@@ -559,8 +603,8 @@ router.post("/smart-study/next-questions", async (req, res): Promise<void> => {
     return;
   }
   const { childId, subject } = parsed.data;
-  const count = parsed.data.count ?? 5;
-  const country = parsed.data.country ?? "DEFAULT";
+  const count = parsed.data.count ?? 10;
+  const country = await resolveUserCountry(userId, parsed.data.country);
 
   try {
     const child = await loadOwnedChild(childId, userId);
@@ -595,7 +639,7 @@ router.post("/smart-study/next-questions", async (req, res): Promise<void> => {
     if (questions.length < count) {
       // Top up with dataset — guarantees we always return `count` items.
       const need = count - questions.length;
-      const fill = pickAdaptiveQuestions({
+      const fill = pickPracticeQuestions({
         level, subject, country, count: need, exclude: seenIds, seed: Date.now(),
       });
       questions = [...questions, ...fill];

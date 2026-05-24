@@ -49,7 +49,13 @@ const PARENT_ROUTE: Record<string, string> = {
   "/spelling": "/parenting-hub",
   "/olympiad": "/parenting-hub",
   "/event-prep": "/parenting-hub",
+  "/amy-coach/progress": "/amy-coach",
 };
+
+const NESTED_PARENT_PREFIXES: Array<{ prefix: string; parent: string }> = [
+  { prefix: "/routines/", parent: "/routines" },
+  { prefix: "/children/", parent: "/children" },
+];
 
 const MAX_STACK = 8;
 const recentRoutes: string[] = [];
@@ -89,6 +95,9 @@ export function isTabRootRoute(path: string): boolean {
 export function getParentRoute(path: string): string | null {
   const normalized = normalizeRoutePath(path);
   if (PARENT_ROUTE[normalized]) return PARENT_ROUTE[normalized]!;
+  for (const { prefix, parent } of NESTED_PARENT_PREFIXES) {
+    if (normalized.startsWith(prefix)) return parent;
+  }
   for (const prefix of HUB_MODULE_PREFIXES) {
     if (normalized.startsWith(`${prefix}/`)) {
       return PARENT_ROUTE[prefix] ?? "/parenting-hub";

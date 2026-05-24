@@ -1,21 +1,46 @@
-// ─── Smart Olympiad Zone — static question bank ──────────────────────────────
-// Curated MCQs across 4 subjects × 3 age bands × 3 difficulties.
-// Keep questions short, age-appropriate, and unambiguous.
+// ─── Smart Olympiad Zone — question bank + pickers ───────────────────────────
 
-export type OlympiadSubject = "math" | "science" | "reasoning" | "gk";
-export type OlympiadAgeBand = "tiny" | "junior" | "senior";
-export type OlympiadDifficulty = "easy" | "medium" | "hard";
+export type {
+  OlympiadSubject,
+  OlympiadAgeBand,
+  OlympiadDifficulty,
+  OlympiadTrackId,
+  OlympiadRunType,
+  OlympiadQuestion,
+  OlympiadTrack,
+} from "./types.js";
 
-export interface OlympiadQuestion {
-  id: string;
-  subject: OlympiadSubject;
-  ageBand: OlympiadAgeBand;
-  difficulty: OlympiadDifficulty;
-  question: string;
-  options: [string, string, string, string];
-  correct: 0 | 1 | 2 | 3;
-  explanation: string;
-}
+export { OLYMPIAD_TRACKS, TRACK_BY_ID } from "./tracks.js";
+export { computeOlympiadScore } from "./score.js";
+export {
+  normalizeOlympiadCountry,
+  countryProfile,
+  countryLabel,
+  countryGkQuestions,
+  localizeOlympiadQuestion,
+  COUNTRY_PROFILES,
+} from "./country-localization.js";
+export {
+  applyCountryLocalization,
+  finalizeLocalizedSet,
+  aiQuestionsToOlympiad,
+  filterExcluded,
+  injectCountryGk,
+} from "./pick-localized.js";
+export type { AiOlympiadQuestionInput } from "./pick-localized.js";
+
+import type {
+  OlympiadSubject,
+  OlympiadAgeBand,
+  OlympiadDifficulty,
+  OlympiadQuestion,
+  OlympiadTrackId,
+} from "./types.js";
+import { buildGeneratedQuestions } from "./generated-questions.js";
+
+export const DAILY_TIME_LIMIT_SEC = 600;
+export const MOCK_EXAM_TIME_LIMIT_SEC = 2700;
+export const MOCK_EXAM_QUESTION_COUNT = 30;
 
 export const SUBJECT_LABELS: Record<OlympiadSubject, string> = {
   math: "Math",
@@ -60,7 +85,7 @@ const Q = (
   explanation: string,
 ): OlympiadQuestion => ({ id, subject, ageBand, difficulty, question, options, correct, explanation });
 
-export const OLYMPIAD_QUESTIONS: OlympiadQuestion[] = [
+const CURATED_OLYMPIAD_QUESTIONS: OlympiadQuestion[] = [
   // ── MATH · TINY (3–5) ─────────────────────────────────────────────────────
   Q("m-t-e-1", "math", "tiny", "easy", "How many fingers are on one hand?", ["3", "4", "5", "6"], 2, "One hand has 5 fingers — count: thumb, index, middle, ring, pinky."),
   Q("m-t-e-2", "math", "tiny", "easy", "Which is the biggest number?", ["1", "3", "2", "0"], 1, "3 is bigger than 0, 1 and 2."),
@@ -201,6 +226,14 @@ export const OLYMPIAD_QUESTIONS: OlympiadQuestion[] = [
   Q("g-s-h-3", "gk", "senior", "hard", "Who discovered penicillin?", ["Pasteur", "Fleming", "Edison", "Curie"], 1, "Alexander Fleming discovered penicillin in 1928."),
 ];
 
+const GENERATED_QUESTIONS = buildGeneratedQuestions();
+
+/** Curated + generated bank (500+ questions). */
+export const OLYMPIAD_QUESTIONS: OlympiadQuestion[] = [
+  ...CURATED_OLYMPIAD_QUESTIONS,
+  ...GENERATED_QUESTIONS,
+];
+
 // ─── Picking Helpers ──────────────────────────────────────────────────────────
 
 export function questionsFor(
@@ -306,4 +339,51 @@ export function pickPracticeQuestions(
   const pool = questionsFor(ageBand, subject, difficulty);
   const fallback = pool.length >= count ? pool : questionsFor(ageBand, subject);
   return shuffled(fallback, Date.now()).slice(0, Math.min(count, fallback.length));
+}
+
+function questionsForTrack(
+  ageBand: OlympiadAgeBand,
+  trackId: OlympiadTrackId,
+  difficulty?: OlympiadDifficulty,
+): OlympiadQuestion[] {
+  return OLYMPIAD_QUESTIONS.filter(
+    (q) =>
+      q.ageBand === ageBand &&
+      (!difficulty || q.difficulty === difficulty) &&
+      (q.tracks?.includes(trackId) ||
+        (trackId === "nso" && q.subject === "science") ||
+        (trackId === "math_olympiad" && q.subject === "math") ||
+        (trackId === "gk_olympiad" && q.subject === "gk")),
+  );
+}
+
+/** Syllabus track practice — 10 questions from track pool. */
+export function pickTrackQuestions(
+  ageBand: OlympiadAgeBand,
+  trackId: OlympiadTrackId,
+  difficulty: OlympiadDifficulty,
+  childKey: string | number,
+  count: number = 10,
+): OlympiadQuestion[] {
+  const seed = dateSeed(todayIso(), `${childKey}|${trackId}`);
+  const pool = questionsForTrack(ageBand, trackId, difficulty);
+  const fallback = pool.length >= count ? pool : questionsForTrack(ageBand, trackId);
+  return shuffled(fallback, seed).slice(0, Math.min(count, fallback.length));
+}
+
+/** Full mock exam — 30 mixed-subject questions, mixed difficulty. */
+export function pickMockExamQuestions(
+  ageBand: OlympiadAgeBand,
+  weekStartDate: string,
+  childKey: string | number,
+  count: number = MOCK_EXAM_QUESTION_COUNT,
+): OlympiadQuestion[] {
+  const seed = dateSeed(weekStartDate, `${childKey}|mock`);
+  const pool = OLYMPIAD_QUESTIONS.filter((q) => q.ageBand === ageBand);
+  return shuffled(pool, seed).slice(0, Math.min(count, pool.length));
+}
+
+function todayIso(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }

@@ -2745,7 +2745,7 @@ components:
           type: integer
         subject:
           type: string
-          enum: [addition, subtraction, multiplication, division, fractions, word-problems]
+          description: Practice topic id (math, science, or english topic — e.g. addition, plants, nouns)
         count:
           type: integer
           minimum: 1
@@ -3218,6 +3218,18 @@ components:
         mode:
           type: string
           enum: [play, basic, advanced]
+        country:
+          type: string
+          description: Parent profile country used for localized study content
+        baseLevel:
+          type: integer
+          minimum: 1
+          maximum: 6
+          description: Age-derived baseline adaptive level (1–6)
+        adaptiveTopics:
+          type: array
+          items:
+            $ref: "#/components/schemas/SmartStudyInsightsAdaptiveTopic"
         hasData:
           type: boolean
         subjects:
@@ -3245,8 +3257,33 @@ components:
         - childId
         - childName
         - mode
+        - country
+        - baseLevel
+        - adaptiveTopics
         - hasData
         - subjects
+
+    SmartStudyInsightsAdaptiveTopic:
+      type: object
+      properties:
+        topicId:
+          type: string
+        topicTitle:
+          type: string
+        subjectPack:
+          type: string
+        subjectEmoji:
+          type: string
+        currentLevel:
+          type: integer
+          minimum: 1
+          maximum: 6
+      required:
+        - topicId
+        - topicTitle
+        - subjectPack
+        - subjectEmoji
+        - currentLevel
 
     ExplanationDecisionFactor:
       type: object

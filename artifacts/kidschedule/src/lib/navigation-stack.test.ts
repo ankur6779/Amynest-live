@@ -60,4 +60,10 @@ describe("navigation-stack", () => {
     markTabRootEntry("/parenting-hub");
     expect(getRecentRoutes()).toEqual(["/parenting-hub"]);
   });
+
+  it("maps nested routine and child routes to their list parents", () => {
+    expect(getParentRoute("/routines/abc-123")).toBe("/routines");
+    expect(getParentRoute("/children/new")).toBe("/children");
+    expect(getParentRoute("/amy-coach/progress")).toBe("/amy-coach");
+  });
 });

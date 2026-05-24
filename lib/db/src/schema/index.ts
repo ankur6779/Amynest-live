@@ -59,6 +59,7 @@ export * from "./spelling_progress";
 export * from "./spelling_competition_scores";
 export * from "./spelling_sessions";
 export * from "./spelling_tournaments";
+export * from "./olympiad_scores";
 export * from "./vaccination_logs";
 export * from "./infant_milestone_progress";
 export * from "./parent_task_completions";

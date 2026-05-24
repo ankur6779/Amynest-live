@@ -131,12 +131,26 @@ export function smartBack(
     return;
   }
 
-  if (!isTabRootRoute(currentNorm)) {
-    appNavigate(navigate, currentNorm, "/dashboard", { replace: true, source });
+  const stackPrevious = getPreviousRoute();
+  if (
+    stackPrevious &&
+    !isSameRoute(stackPrevious, currentNorm) &&
+    !wouldCreateCycle(currentNorm, stackPrevious)
+  ) {
+    appNavigate(navigate, currentNorm, stackPrevious, { replace: true, source });
     return;
   }
 
-  logNavEvent("nav-back-at-root", { route: currentNorm, source });
+  if (isTabRootRoute(currentNorm)) {
+    if (!isSameRoute(currentNorm, "/dashboard")) {
+      appNavigate(navigate, currentNorm, "/dashboard", { replace: true, source });
+      return;
+    }
+    logNavEvent("nav-back-at-root", { route: currentNorm, source });
+    return;
+  }
+
+  appNavigate(navigate, currentNorm, "/dashboard", { replace: true, source });
 }
 
 export function useAppNavigate() {

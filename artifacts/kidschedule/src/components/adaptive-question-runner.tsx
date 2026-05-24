@@ -1,13 +1,8 @@
 /**
  * Smart Study Zone v2 — Adaptive Question Runner
  *
- * Fetches a batch of country-localized, anti-repetition, age-adaptive
- * questions from /api/smart-study/next-questions, renders one question at
- * a time with option buttons, instant feedback, and auto-advances. Wrong
- * answers reveal a hint and nudge the next question down a level (handled
- * server-side via the /attempt endpoint's bumpLevel logic). When the
- * batch is exhausted the runner refetches automatically — to the user it
- * feels like an endless adaptive practice stream.
+ * Preloads 10 questions per batch, caches the next batch in sessionStorage,
+ * and prefetches when the child is near the end of the current batch.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -21,13 +16,8 @@ import { CheckCircle2, XCircle, Sparkles, ArrowLeft, RefreshCw } from "lucide-re
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { getApiUrl } from "@/lib/api";
 
-export type SmartSubjectId =
-  | "addition"
-  | "subtraction"
-  | "multiplication"
-  | "division"
-  | "fractions"
-  | "word-problems";
+const BATCH_SIZE = 10;
+const PREFETCH_AT = 3;
 
 interface AdaptiveQuestion {
   id: string;
@@ -46,14 +36,46 @@ interface NextResponse {
 
 interface Props {
   childId: number;
-  subject: SmartSubjectId;
+  /** Practice subject id sent to /next-questions (e.g. "plants", "addition"). */
+  practiceSubject: string;
+  /** Subject pack id for weak-topic tracking (e.g. "science", "math"). */
+  progressPackId: string;
+  topicId: string;
+  country?: string;
   subjectTitle: string;
   subjectEmoji: string;
   onExit: () => void;
 }
 
+function cacheKey(childId: number, subject: string, country?: string): string {
+  return `amynest:study:batch:${childId}:${subject}:${country ?? "auto"}`;
+}
+
+function readCache(key: string): NextResponse | null {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as NextResponse;
+    if (parsed?.questions?.length) return parsed;
+  } catch { /* ignore */ }
+  return null;
+}
+
+function writeCache(key: string, data: NextResponse): void {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(data));
+  } catch { /* quota */ }
+}
+
 export function AdaptiveQuestionRunner({
-  childId, subject, subjectTitle, subjectEmoji, onExit,
+  childId,
+  practiceSubject,
+  progressPackId,
+  topicId,
+  country,
+  subjectTitle,
+  subjectEmoji,
+  onExit,
 }: Props) {
   const { t } = useTranslation();
   const { getToken } = useAuth();
@@ -63,67 +85,112 @@ export function AdaptiveQuestionRunner({
   const [reveal, setReveal] = useState(false);
   const [level, setLevel] = useState<number>(1);
   const [source, setSource] = useState<"ai" | "dataset">("dataset");
+  const [resolvedCountry, setResolvedCountry] = useState<string>(country ?? "US");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Session counters — drive the progress bar and the "X correct in a row" feel.
   const [totalAttempted, setTotalAttempted] = useState(0);
   const [totalCorrect, setTotalCorrect] = useState(0);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Lifecycle guard — `loadBatch` is async and could resolve after the
-  // user navigates away from the runner. Without this, React would warn
-  // about state updates on an unmounted component (and we'd briefly
-  // render stale data).
   const mounted = useRef(true);
+  const prefetching = useRef(false);
+  const prefetchPromise = useRef<Promise<NextResponse | null> | null>(null);
+  const storageKey = cacheKey(childId, practiceSubject, country);
 
-  const loadBatch = useCallback(async () => {
+  const fetchBatch = useCallback(async (): Promise<NextResponse | null> => {
+    const token = await getToken();
+    if (!token) return null;
+    const res = await fetch(getApiUrl("/api/smart-study/next-questions"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ childId, subject: practiceSubject, count: BATCH_SIZE, country }),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as NextResponse;
+  }, [childId, practiceSubject, country, getToken]);
+
+  const applyBatch = useCallback((data: NextResponse, fromCache: boolean) => {
+    setQuestions(data.questions ?? []);
+    setLevel(data.level);
+    setSource(data.source);
+    setResolvedCountry(data.country);
+    setIdx(0);
+    setPickedIdx(null);
+    setReveal(false);
+    if (!fromCache) writeCache(storageKey, data);
+  }, [storageKey]);
+
+  const prefetchNext = useCallback(async () => {
+    if (prefetching.current) return;
+    prefetching.current = true;
+    prefetchPromise.current = fetchBatch().then((data) => {
+      if (data?.questions?.length) writeCache(storageKey, data);
+      prefetching.current = false;
+      return data;
+    }).catch(() => {
+      prefetching.current = false;
+      return null;
+    });
+  }, [fetchBatch, storageKey]);
+
+  const loadBatch = useCallback(async (preferCache = true) => {
     if (!mounted.current) return;
     setLoading(true);
     setError(null);
     try {
-      const token = await getToken();
-      if (!mounted.current) return;
-      if (!token) {
-        setError("auth");
-        setLoading(false);
-        return;
+      if (preferCache) {
+        const cached = readCache(storageKey);
+        if (cached?.questions?.length) {
+          applyBatch(cached, true);
+          sessionStorage.removeItem(storageKey);
+          setLoading(false);
+          void prefetchNext();
+          return;
+        }
       }
-      const res = await fetch(getApiUrl("/api/smart-study/next-questions"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ childId, subject, count: 5 }),
-      });
+      if (prefetchPromise.current) {
+        const prefetched = await prefetchPromise.current;
+        prefetchPromise.current = null;
+        if (prefetched?.questions?.length && mounted.current) {
+          applyBatch(prefetched, false);
+          setLoading(false);
+          void prefetchNext();
+          return;
+        }
+      }
+      const data = await fetchBatch();
       if (!mounted.current) return;
-      if (!res.ok) {
+      if (!data?.questions?.length) {
         setError("fetch");
         setLoading(false);
         return;
       }
-      const data = (await res.json()) as NextResponse;
-      if (!mounted.current) return;
-      setQuestions(data.questions ?? []);
-      setLevel(data.level);
-      setSource(data.source);
-      setIdx(0);
-      setPickedIdx(null);
-      setReveal(false);
+      applyBatch(data, false);
+      void prefetchNext();
     } catch {
       if (mounted.current) setError("network");
     } finally {
       if (mounted.current) setLoading(false);
     }
-  }, [childId, subject, getToken]);
+  }, [applyBatch, fetchBatch, prefetchNext, storageKey]);
 
   useEffect(() => {
     mounted.current = true;
-    loadBatch();
+    void loadBatch(true);
     return () => {
       mounted.current = false;
       if (advanceTimer.current) clearTimeout(advanceTimer.current);
     };
   }, [loadBatch]);
+
+  useEffect(() => {
+    const remaining = questions.length - idx;
+    if (remaining > 0 && remaining <= PREFETCH_AT && !prefetching.current && !loading) {
+      void prefetchNext();
+    }
+  }, [idx, questions.length, loading, prefetchNext]);
 
   const current = questions[idx];
 
@@ -132,29 +199,37 @@ export function AdaptiveQuestionRunner({
       try {
         const token = await getToken();
         if (!token) return;
-        // Smart Study v2: include questionId so the server can dedupe
-        // (anti-repetition). topicId mirrors the subject for compatibility
-        // with the legacy attempt-tracking schema.
+        const ts = new Date().toISOString();
+        // Dual write: pack row for weak-topic detection, practice row for level + seen ids.
         await fetch(getApiUrl("/api/smart-study/attempt"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            childId,
-            subject,
-            topicId: subject,
-            correct,
-            questionId: q.id,
-            ts: new Date().toISOString(),
-          }),
+          body: JSON.stringify([
+            {
+              childId,
+              subject: progressPackId,
+              topicId,
+              correct,
+              ts,
+            },
+            {
+              childId,
+              subject: practiceSubject,
+              topicId: practiceSubject,
+              correct,
+              questionId: q.id,
+              ts,
+            },
+          ]),
         });
       } catch {
-        /* best-effort — don't block the UI on telemetry */
+        /* best-effort */
       }
     },
-    [childId, subject, getToken],
+    [childId, practiceSubject, progressPackId, topicId, getToken],
   );
 
   const onPick = (oi: number) => {
@@ -164,24 +239,15 @@ export function AdaptiveQuestionRunner({
     const correct = current.options[oi] === current.answer;
     setTotalAttempted((n) => n + 1);
     if (correct) setTotalCorrect((n) => n + 1);
-    // Fire the persistence call now so the server has time to update
-    // seenQuestionIds before the next /next-questions request — without
-    // this, a fresh batch could re-serve the question we just answered.
     const persistP = reportAttempt(current, correct);
 
-    // Auto-advance: 900ms for correct (snappy), 1700ms for wrong (so the
-    // hint registers before it disappears).
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     advanceTimer.current = setTimeout(async () => {
       const nextIdx = idx + 1;
       if (nextIdx >= questions.length) {
-        // Wait for persistence so the next batch sees this question id in
-        // seenQuestionIds. Best-effort: even if the await rejects, we
-        // still load the next batch (anti-repetition is a UX nicety, not
-        // a correctness guarantee).
         try { await persistP; } catch { /* swallow */ }
         if (!mounted.current) return;
-        loadBatch();
+        void loadBatch(true);
         return;
       }
       if (!mounted.current) return;
@@ -222,6 +288,9 @@ export function AdaptiveQuestionRunner({
               })}
             </div>
             <div className="text-[11px] text-muted-foreground inline-flex items-center gap-2">
+              <span className="px-1.5 py-0.5 rounded bg-muted text-foreground/80">
+                {resolvedCountry}
+              </span>
               <span className="px-1.5 py-0.5 rounded bg-[hsl(var(--brand-amber-100))] dark:bg-[hsl(var(--brand-amber-900))] text-[hsl(var(--brand-amber-700))] dark:text-[hsl(var(--brand-amber-300))]">
                 {source === "ai" ? "AI" : t("screens.study.adaptive_source_dataset", "Practice set")}
               </span>
@@ -251,7 +320,7 @@ export function AdaptiveQuestionRunner({
             <p className="text-sm text-foreground mb-3">
               {t("screens.study.adaptive_error", "Couldn't load questions just now.")}
             </p>
-            <Button onClick={loadBatch} className="rounded-full" variant="outline">
+            <Button onClick={() => void loadBatch(false)} className="rounded-full" variant="outline">
               <RefreshCw className="h-4 w-4 mr-1" />
               {t("screens.study.adaptive_retry", "Try again")}
             </Button>

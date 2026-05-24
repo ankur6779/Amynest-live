@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useLocation, Link } from "wouter";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToast } from "@/hooks/use-toast";
@@ -1267,6 +1268,32 @@ export default function AICoachPage() {
     fetchingNextRef.current = false;
     setLoadingNextWin(false);
   };
+
+  usePageBackHandler(() => {
+    if (phase === "questions") {
+      handleBackQ();
+      return true;
+    }
+    if (phase === "infantProblem") {
+      setPhase("goals");
+      return true;
+    }
+    if (phase === "result" || phase === "loading" || phase === "resuming") {
+      handleStartOver();
+      return true;
+    }
+    if (phase === "goals") {
+      if (searchQuery) {
+        setGoalSearch("");
+        return true;
+      }
+      if (selectedCategoryId) {
+        setSelectedCategoryId(null);
+        return true;
+      }
+    }
+    return false;
+  }, [phase, searchQuery, selectedCategoryId, qIndex, goalId]);
 
   // ═══════════════════════════════════════════════════════════════════════
   // RENDER PHASES
