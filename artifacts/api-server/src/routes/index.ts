@@ -52,7 +52,9 @@ import parentTasksRouter from "./parent-tasks";
 import smartStudyRouter from "./smart-study";
 import olympiadRouter from "./olympiad";
 import lifeSkillsRouter from "./life-skills";
-import learningLoadMoreRouter from "./learning-load-more";
+import learningLoadMoreRouter, {
+  learningSeedPublicRouter,
+} from "./learning-load-more";
 import childIntelligenceRouter from "./child-intelligence";
 import householdRouter from "./household";
 import explainRouter from "./explain";
@@ -105,6 +107,7 @@ router.use(staticAudioPublicRouter);
 // Capacitor OTA (Capgo) — public POST, patch-only web bundles (Apple Guideline 2.5.2).
 router.use(otaRouter);
 router.use(storiesPublicRouter);
+router.use(learningSeedPublicRouter);
 router.use(requireAuth);
 router.use(clientLogsRouter);
 router.use(onboardingRouter);
