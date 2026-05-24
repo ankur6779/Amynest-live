@@ -1,5 +1,5 @@
 import type { AiContentNamespace } from "./aiContentCacheService.js";
-import { saveCachedItems } from "./aiContentCacheService.js";
+import { saveCachedItems, contentItemId } from "./aiContentCacheService.js";
 import { runLifeSkillsAiGenerate, runPhonicsLoadMoreWords } from "./domain-ai/life-skills-runners.js";
 import { runSmartMathTricksAiGenerate } from "./domain-ai/smart-math-tricks-runners.js";
 import { runSmartStudyNextQuestions } from "./domain-ai/smart-study-runners.js";
@@ -30,6 +30,7 @@ export {
 
 const TTS_BATCH_SIZE = 50;
 const KEY_DELAY_MS = 400;
+const AI_BATCH_SIZE = 5;
 
 export type WeeklySeedStats = {
   weekId: string;
@@ -80,18 +81,20 @@ const OLYMPIAD_AGE_YEARS: Record<OlympiadAgeBand, number> = {
   senior: 11,
 };
 
-async function generateItemsForJob(
+async function generateBatchForJob(
   job: SeedSectionJob,
   count: number,
   weekId: string,
+  excludeIds: string[],
+  excludeWords: string[],
 ): Promise<unknown[]> {
   switch (job.section) {
     case "smart_math_tricks": {
       const age = String(job.params.age ?? "4-6") as "4-6" | "6-8";
       const result = await runSmartMathTricksAiGenerate({
         age,
-        count,
-        excludeIds: [],
+        count: Math.min(count, AI_BATCH_SIZE),
+        excludeIds,
       });
       return result?.tricks ?? [];
     }
@@ -102,7 +105,7 @@ async function generateItemsForJob(
           | "easy"
           | "medium"
           | "hard",
-        count,
+        count: Math.min(count, AI_BATCH_SIZE),
       });
       return result.words ?? [];
     }
@@ -110,16 +113,16 @@ async function generateItemsForJob(
       const result = await runPhonicsLoadMoreWords({
         level: Number(job.params.level ?? 1),
         vowelFocus: String(job.params.vowelFocus ?? "a"),
-        count,
-        excludeWords: [],
+        count: Math.min(count, AI_BATCH_SIZE),
+        excludeWords,
       });
       return result?.words ?? [];
     }
     case "life_skills": {
       const result = await runLifeSkillsAiGenerate({
         ageBand: String(job.params.ageBand ?? "kid") as LifeSkillAgeBand,
-        count,
-        excludeIds: [],
+        count: Math.min(count, AI_BATCH_SIZE),
+        excludeIds,
       });
       return result?.tasks ?? [];
     }
@@ -133,8 +136,8 @@ async function generateItemsForJob(
         subject,
         country,
         ageYears,
-        count,
-        excludeIds: [],
+        count: Math.min(count, AI_BATCH_SIZE),
+        excludeIds,
       });
       return result?.questions ?? [];
     }
@@ -150,8 +153,8 @@ async function generateItemsForJob(
         subject,
         country,
         ageYears,
-        count,
-        excludeIds: [],
+        count: Math.min(count, AI_BATCH_SIZE),
+        excludeIds,
       });
       return (aiRaw?.questions ?? []).flatMap((row, i) =>
         aiQuestionsToOlympiad(
@@ -160,13 +163,51 @@ async function generateItemsForJob(
           ageBand,
           difficulty,
           country,
-          `seed-${weekId}-${job.label}-${i}`,
+          `seed-${weekId}-${job.label}-${Date.now()}-${i}`,
         ),
       );
     }
     default:
       return [];
   }
+}
+
+async function generateItemsForJob(
+  job: SeedSectionJob,
+  count: number,
+  weekId: string,
+): Promise<unknown[]> {
+  const out: unknown[] = [];
+  const excludeIds: string[] = [];
+  const excludeWords: string[] = [];
+  let stagnant = 0;
+
+  while (out.length < count && stagnant < 2) {
+    const need = Math.min(AI_BATCH_SIZE, count - out.length);
+    const batch = await generateBatchForJob(
+      job,
+      need,
+      weekId,
+      excludeIds,
+      excludeWords,
+    );
+    if (batch.length === 0) {
+      stagnant += 1;
+      continue;
+    }
+    stagnant = 0;
+    for (const item of batch) {
+      const id = contentItemId(item);
+      if (id) excludeIds.push(id);
+      if (job.section === "phonics" && typeof item === "string") {
+        excludeWords.push(item.toLowerCase());
+      }
+    }
+    out.push(...batch);
+    await sleep(150);
+  }
+
+  return out.slice(0, count);
 }
 
 async function pregenerateTtsBatched(texts: string[]): Promise<{
