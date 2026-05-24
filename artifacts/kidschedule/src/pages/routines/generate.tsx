@@ -547,6 +547,10 @@ export default function RoutineGenerate() {
     return "normal" as const;
   })();
   const [mood, setMood] = useState<"happy" | "angry" | "lazy" | "normal">(initialMood);
+  const [moodTouched, setMoodTouched] = useState(() => {
+    const m = urlParams.mood;
+    return m === "happy" || m === "angry" || m === "lazy" || m === "normal";
+  });
 
   // Caregiver — who is handling the child today (sent as `caregiver` field).
   const VALID_HANDLERS: HandlerKey[] = ["mom", "dad", "both", "grandparent", "babysitter"];
@@ -681,8 +685,10 @@ export default function RoutineGenerate() {
   }, [authFetch]);
   const generateMutation = useGenerateRoutine();
   const createMutation = useCreateRoutine();
+  const [isStandardGenerating, setIsStandardGenerating] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [aiGeneratingSlow, setAiGeneratingSlow] = useState(false);
+  const fixedReviewRef = useRef<HTMLDivElement>(null);
 
   // Single-child auto-select — when the parent only has one child registered,
   // skip the picker step and preselect that child so the wizard doesn't show
@@ -828,7 +834,7 @@ export default function RoutineGenerate() {
     }
   }, [children, parentRegion]);
 
-  const isGenerating = generateMutation.isPending || createMutation.isPending;
+  const isGenerating = isStandardGenerating || generateMutation.isPending || createMutation.isPending;
   const selectedChildData = children?.find(c => c.id === selectedChild) as ChildType | undefined;
   const profileFixedActivities = React.useMemo(
     () => normalizeFixedActivities(selectedChildData?.fixedActivities),
@@ -982,110 +988,142 @@ export default function RoutineGenerate() {
     if (needsFixedReview) {
       setFixedReviewState({ routine: generatedData, shouldOverride, wakeTime });
       setBlockingSaveConfirmed(false);
+      toast({
+        title: t("pages.routines.fixed.review_ready", {
+          defaultValue: "Routine ready — review and save",
+        }),
+      });
+      requestAnimationFrame(() => {
+        fixedReviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
       return;
     }
     commitGeneratedRoutine(generatedData, shouldOverride, wakeTime);
-  }, [serializedFixedActivities, commitGeneratedRoutine]);
+  }, [serializedFixedActivities, commitGeneratedRoutine, toast, t]);
+
+  const buildGeneratePayload = React.useCallback((
+    wakeTime: string | null,
+    weatherForCall?: WeatherOutdoorChoice,
+  ) => enrichRoutinePayload(
+    {
+      childId: selectedChild!,
+      date,
+      hasSchool: hasSchool ?? undefined,
+      schoolMealMode: hasSchool ? schoolMealMode : undefined,
+      specialPlans: appendHandlerToPlans(specialPlans, handlerType),
+      fixedActivities:
+        serializedFixedActivities.length > 0 ? serializedFixedActivities : undefined,
+      confirmBlockingFixedActivities: blockingSaveConfirmed || undefined,
+      fridgeItems: fridgeItems.trim() || undefined,
+      mood,
+      age: selectedChildData?.age,
+      wakeTime: wakeTime ?? selectedChildData?.wakeUpTime,
+      schoolStart: selectedChildData?.schoolStartTime,
+      schoolEnd: selectedChildData?.schoolEndTime,
+      region: parentRegion,
+      caregiver: handlerType,
+      weatherOutdoor: weatherForCall ?? weatherOutdoor,
+    },
+    userId,
+  ), [
+    selectedChild,
+    date,
+    hasSchool,
+    schoolMealMode,
+    specialPlans,
+    handlerType,
+    serializedFixedActivities,
+    blockingSaveConfirmed,
+    fridgeItems,
+    mood,
+    selectedChildData,
+    parentRegion,
+    weatherOutdoor,
+    userId,
+  ]);
+
+  const handleGenerationError = React.useCallback((err: unknown) => {
+    if (err instanceof RoutineGenerationFixedActivityError) {
+      setInlineFixedBlocking(err.fixedActivitiesResult as FixedActivitiesResult | null);
+      setLastFixedActivitiesResult(err.fixedActivitiesResult as FixedActivitiesResult | null);
+      return;
+    }
+    if (err instanceof RoutineGenerationPaywallError) {
+      window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
+        detail: { reason: "routines_limit" },
+      }));
+      return;
+    }
+    const status = (err as { status?: number })?.status;
+    const data = (err as {
+      data?: {
+        reason?: string;
+        error?: string;
+        feature?: string;
+        fixedActivitiesResult?: FixedActivitiesResult;
+      };
+    })?.data;
+    if (status === 422 && data?.error === "fixed_activity_blocking") {
+      setInlineFixedBlocking(data.fixedActivitiesResult ?? null);
+      setLastFixedActivitiesResult(data.fixedActivitiesResult ?? null);
+      return;
+    }
+    const isFeatureLocked = status === 402 && (data?.error === "feature_locked" || data?.feature === "routine_generate");
+    const isLegacyLimit = status === 403 && data?.reason === "routine_limit_exceeded";
+    if (isFeatureLocked || isLegacyLimit) {
+      window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
+        detail: { reason: "routines_limit" },
+      }));
+      return;
+    }
+    toast({
+      title: t("toasts.routines_generate.generate_failed"),
+      description: err instanceof Error ? err.message : undefined,
+      variant: "destructive",
+    });
+  }, [toast, t]);
 
   // ── Core generate (rule-based) ─────────────────────────────────────────────
-  const proceedGenerate = React.useCallback((forceOverride: boolean, wakeTime: string | null, weatherForCall?: WeatherOutdoorChoice) => {
+  const proceedGenerate = React.useCallback(async (
+    forceOverride: boolean,
+    wakeTime: string | null,
+    weatherForCall?: WeatherOutdoorChoice,
+  ) => {
     const shouldOverride = forceOverride || overrideMode || !!existingRoutine?.exists;
-    const effectiveWeather = weatherForCall ?? weatherOutdoor;
-    generateMutation.mutate({
-      data: {
-        childId: selectedChild!,
-        date,
-        hasSchool: hasSchool ?? undefined,
-        schoolMealMode: hasSchool ? schoolMealMode : undefined,
-        specialPlans: appendHandlerToPlans(specialPlans, handlerType),
-        fixedActivities:
-          serializedFixedActivities.length > 0 ? serializedFixedActivities : undefined,
-        confirmBlockingFixedActivities: blockingSaveConfirmed || undefined,
-        fridgeItems: fridgeItems.trim() || undefined,
-        mood: mood !== "normal" ? mood : undefined,
-        // School-aware generation context (server falls back to child profile when omitted).
-        age: selectedChildData?.age,
-        wakeTime: wakeTime ?? selectedChildData?.wakeUpTime,
-        schoolStart: selectedChildData?.schoolStartTime,
-        schoolEnd: selectedChildData?.schoolEndTime,
-        region: parentRegion,
-        caregiver: handlerType,
-        weatherOutdoor: effectiveWeather
-      }
-    }, {
-      onSuccess: generatedData => {
-        const data = generatedData as GeneratedRoutine;
-        const items = simplifyForHandler(data.items as any, handlerType) as RoutineItem[];
-        handlePostGenerate({
-          ...data,
-          items,
-        }, shouldOverride, wakeTime);
-      },
-      onError: (err: unknown) => {
-        const status = (err as { status?: number })?.status;
-        const data = (err as {
-          data?: {
-            reason?: string;
-            error?: string;
-            feature?: string;
-            fixedActivitiesResult?: FixedActivitiesResult;
-            message?: string;
-          };
-        })?.data;
-        if (status === 422 && data?.error === "fixed_activity_blocking") {
-          setInlineFixedBlocking(data.fixedActivitiesResult ?? null);
-          setLastFixedActivitiesResult(data.fixedActivitiesResult ?? null);
-          return;
-        }
-        const isFeatureLocked = status === 402 && (data?.error === "feature_locked" || data?.feature === "routine_generate");
-        const isLegacyLimit = status === 403 && data?.reason === "routine_limit_exceeded";
-        if (isFeatureLocked || isLegacyLimit) {
-          window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
-            detail: {
-              reason: "routines_limit"
-            }
-          }));
-          return;
-        }
-        toast({
-          title: t("toasts.routines_generate.generate_failed"),
-          variant: "destructive"
-        });
-      }
-    });
-  }, [generateMutation, overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, specialPlans, serializedFixedActivities, blockingSaveConfirmed, fridgeItems, mood, handlerType, weatherOutdoor, parentRegion, handlePostGenerate, toast, t]);
+    setIsStandardGenerating(true);
+    try {
+      const generatedData = await fetchStandardRoutine(
+        authFetch,
+        buildGeneratePayload(wakeTime, weatherForCall),
+      );
+      const simplified = simplifyForHandler(generatedData.items as any, handlerType) as RoutineItem[];
+      handlePostGenerate({
+        ...toGeneratedRoutine(generatedData),
+        items: simplified,
+      }, shouldOverride, wakeTime);
+    } catch (err) {
+      handleGenerationError(err);
+    } finally {
+      setIsStandardGenerating(false);
+    }
+  }, [
+    overrideMode,
+    existingRoutine,
+    authFetch,
+    buildGeneratePayload,
+    handlerType,
+    handlePostGenerate,
+    handleGenerationError,
+  ]);
 
   // ── Core generate (AI) ─────────────────────────────────────────────────────
   const proceedAiGenerate = React.useCallback(async (forceOverride: boolean, wakeTime: string | null, weatherForCall?: WeatherOutdoorChoice) => {
     const shouldOverride = forceOverride || overrideMode || !!existingRoutine?.exists;
-    const effectiveWeather = weatherForCall ?? weatherOutdoor;
     setIsAiGenerating(true);
     setAiGeneratingSlow(false);
-    const buildPayload = () =>
-      enrichRoutinePayload(
-        {
-          childId: selectedChild!,
-          date,
-          hasSchool: hasSchool ?? undefined,
-          schoolMealMode: hasSchool ? schoolMealMode : undefined,
-          specialPlans: appendHandlerToPlans(specialPlans, handlerType),
-          fixedActivities:
-            serializedFixedActivities.length > 0 ? serializedFixedActivities : undefined,
-          confirmBlockingFixedActivities: blockingSaveConfirmed || undefined,
-          fridgeItems: fridgeItems.trim() || undefined,
-          mood: mood !== "normal" ? mood : undefined,
-          age: selectedChildData?.age,
-          wakeTime: wakeTime ?? selectedChildData?.wakeUpTime,
-          schoolStart: selectedChildData?.schoolStartTime,
-          schoolEnd: selectedChildData?.schoolEndTime,
-          region: parentRegion,
-          caregiver: handlerType,
-          weatherOutdoor: effectiveWeather,
-        },
-        userId,
-      );
+    const payload = buildGeneratePayload(wakeTime, weatherForCall);
     try {
-      const generatedData = await fetchAmyAiRoutine(authFetch, buildPayload(), {
+      const generatedData = await fetchAmyAiRoutine(authFetch, payload, {
         onSlow: () => setAiGeneratingSlow(true),
         userId,
       });
@@ -1115,17 +1153,21 @@ export default function RoutineGenerate() {
       }
       console.error("Routine generation error:", err);
       try {
-        const fallback = await fetchStandardRoutine(authFetch, buildPayload());
+        const fallback = await fetchStandardRoutine(authFetch, payload);
         const simplified = simplifyForHandler(fallback.items as any, handlerType) as RoutineItem[];
+        toast({
+          title: t("toasts.routines_generate.ai_fallback_used"),
+        });
         handlePostGenerate({ ...toGeneratedRoutine(fallback), items: simplified }, shouldOverride, wakeTime);
       } catch (finalErr) {
         console.error("Routine generation final fallback failed:", finalErr);
+        handleGenerationError(finalErr);
       }
     } finally {
       setIsAiGenerating(false);
       setAiGeneratingSlow(false);
     }
-  }, [overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, schoolMealMode, specialPlans, serializedFixedActivities, blockingSaveConfirmed, fridgeItems, mood, handlerType, weatherOutdoor, parentRegion, userId, authFetch, handlePostGenerate, toast, t]);
+  }, [overrideMode, existingRoutine, buildGeneratePayload, handlerType, userId, authFetch, handlePostGenerate, handleGenerationError, toast, t]);
 
   // ── Wake-up confirmation gate ──────────────────────────────────────────────
   const triggerWithWakeCheck = React.useCallback((type: "standard" | "ai", forceOverride: boolean, weatherForCall?: WeatherOutdoorChoice) => {
@@ -1232,7 +1274,7 @@ export default function RoutineGenerate() {
     if (!fridgeItems.trim()) {
       missing.push(t("pages.routines.generate.optional_fridge", { defaultValue: "fridge" }));
     }
-    if (mood === "normal") {
+    if (mood === "normal" && !moodTouched) {
       missing.push(t("pages.routines.generate.optional_mood", { defaultValue: "mood" }));
     }
     if (!specialPlans.trim()) {
@@ -1248,10 +1290,24 @@ export default function RoutineGenerate() {
     return d === 0 || d === 6;
   })();
 
+  const notifyExistingRoutineBlock = () => {
+    toast({
+      title: t("pages.routines.generate.existing_routine_block_title", {
+        defaultValue: "Routine already exists for this date",
+      }),
+      description: t("pages.routines.generate.existing_routine_block_desc", {
+        defaultValue: "Tap Override & Regenerate above, or view the existing routine.",
+      }),
+    });
+  };
+
   // Single mode generate — now goes through wake-time gate
   const handleGenerate = async (forceOverride = false) => {
     if (!isFormValid) return;
-    if (existingRoutine?.exists && !forceOverride && !overrideMode) return;
+    if (existingRoutine?.exists && !forceOverride && !overrideMode) {
+      notifyExistingRoutineBlock();
+      return;
+    }
     const weatherForCall = await ensureWeatherDetected();
     triggerWithWakeCheck("standard", forceOverride, weatherForCall);
   };
@@ -1259,7 +1315,10 @@ export default function RoutineGenerate() {
   // AI generate — also goes through wake-time gate
   const handleAiGenerate = async (forceOverride = false) => {
     if (!isFormValid || isAiGenerating) return;
-    if (existingRoutine?.exists && !forceOverride && !overrideMode) return;
+    if (existingRoutine?.exists && !forceOverride && !overrideMode) {
+      notifyExistingRoutineBlock();
+      return;
+    }
     const weatherForCall = await ensureWeatherDetected();
     triggerWithWakeCheck("ai", forceOverride, weatherForCall);
   };
@@ -1818,6 +1877,7 @@ export default function RoutineGenerate() {
                 )}
 
                 {fixedReviewState && (
+                  <div ref={fixedReviewRef}>
                   <FixedActivitiesReviewPanel
                     date={date}
                     childName={selectedChildData?.name}
@@ -1838,6 +1898,7 @@ export default function RoutineGenerate() {
                     isRegenerating={isGenerating || isAiGenerating}
                     isSaving={createMutation.isPending}
                   />
+                  </div>
                 )}
 
                 <InputSection
@@ -1860,7 +1921,7 @@ export default function RoutineGenerate() {
                   <div className="space-y-3 pt-2 border-t border-border/50">
                     <Label className="text-base font-bold">{t("pages.routines.generate.how_is_your_child_feeling_today")}</Label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {MOOD_OPTIONS.map(opt => <button key={opt.value} type="button" onClick={() => setMood(opt.value)} className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${mood === opt.value ? `${opt.color} border-2 shadow-sm scale-105` : "bg-card border-border hover:border-primary/40 hover:bg-muted"}`}>
+                    {MOOD_OPTIONS.map(opt => <button key={opt.value} type="button" onClick={() => { setMoodTouched(true); setMood(opt.value); }} className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${mood === opt.value ? `${opt.color} border-2 shadow-sm scale-105` : "bg-card border-border hover:border-primary/40 hover:bg-muted"}`}>
                         <span className="text-2xl">{opt.emoji}</span>
                         <span className="font-bold text-sm">{opt.label}</span>
                         <span className="text-[10px] text-center opacity-70 leading-tight">{opt.hint}</span>
@@ -1883,7 +1944,7 @@ export default function RoutineGenerate() {
                   {prefetchingLocation && <p className="text-center text-xs text-muted-foreground bg-muted/60 border border-border rounded-full py-2 px-4">📍 {t("pages.routines.generate.location_redetecting", { defaultValue: "Detecting your location for accurate meals & outdoor plan…" })}</p>}
                   {existingRoutine?.exists && !overrideMode ? <p className="text-center text-sm text-primary font-medium bg-muted border border-border rounded-2xl py-3 px-4">
                       {t("pages.routines.generate.choose")} <strong>{t("pages.routines.generate.view_existing_routine_2")}</strong> or <strong>{t("pages.routines.generate.override_regenerate_2")}</strong> {t("pages.routines.generate.above_to_continue")}
-                    </p> : fixedReviewState ? null : <>
+                    </p> : <>
                       {/* Standard rule-based routine */}
                       <Button onClick={() => handleGenerate(false)} disabled={!isFormValid || isGenerating || isAiGenerating || !!inlineFixedBlocking} size="lg" className={`w-full rounded-full h-14 text-lg font-bold shadow-sm transition-all ${overrideMode ? "bg-primary hover:bg-primary" : ""}`}>
                         {isGenerating ? <><Sparkles className="h-5 w-5 mr-2 animate-spin" />{t("pages.routines.generate.generating")}</> : overrideMode ? <><RefreshCw className="h-5 w-5 mr-2" />{t("pages.routines.generate.regenerate_override")}</> : <><Sparkles className="h-5 w-5 mr-2" />{t("pages.routines.generate.generate_smart_routine")}</>}
