@@ -324,6 +324,24 @@ function FirebaseAuthBootstrap() {
     }
   }, [isSignedIn, getToken]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let cancelled = false;
+    const resumePendingGoogleSignIn = () => {
+      void import("@/lib/google-auth").then(({ bootstrapPendingGoogleSignIn }) => {
+        if (!cancelled) void bootstrapPendingGoogleSignIn();
+      });
+    };
+    resumePendingGoogleSignIn();
+    window.addEventListener("amynest-google-auth-pending", resumePendingGoogleSignIn);
+    window.addEventListener("amynest-auth-bridge-ready", resumePendingGoogleSignIn);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("amynest-google-auth-pending", resumePendingGoogleSignIn);
+      window.removeEventListener("amynest-auth-bridge-ready", resumePendingGoogleSignIn);
+    };
+  }, []);
+
   return null;
 }
 
