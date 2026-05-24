@@ -288,27 +288,34 @@ function BeadColumn({
 
   const handleLowerPointerDown = (e: React.PointerEvent) => {
     if (disabled) return;
+    e.preventDefault();
     const track = lowerTrackRef.current;
     if (!track) return;
     track.setPointerCapture(e.pointerId);
     setLowerFromPointer(e.clientY);
-    const onMove = (ev: PointerEvent) => setLowerFromPointer(ev.clientY);
+    const onMove = (ev: PointerEvent) => {
+      ev.preventDefault();
+      setLowerFromPointer(ev.clientY);
+    };
     const onUp = () => {
       track.removeEventListener("pointermove", onMove);
       track.removeEventListener("pointerup", onUp);
       track.removeEventListener("pointercancel", onUp);
     };
-    track.addEventListener("pointermove", onMove);
+    const passiveOpts = { passive: false } as const;
+    track.addEventListener("pointermove", onMove, passiveOpts);
     track.addEventListener("pointerup", onUp);
     track.addEventListener("pointercancel", onUp);
   };
 
   const handleUpperPointerDown = (e: React.PointerEvent) => {
     if (disabled) return;
+    e.preventDefault();
     upperStartY.current = e.clientY;
     const target = e.currentTarget;
     target.setPointerCapture(e.pointerId);
     const onMove = (ev: PointerEvent) => {
+      ev.preventDefault();
       const delta = ev.clientY - upperStartY.current;
       if (delta > 18 && rod.upper === 0) {
         onToggleUpper(rodIndex);
@@ -325,7 +332,8 @@ function BeadColumn({
       target.removeEventListener("pointerup", onUp);
       target.removeEventListener("pointercancel", onUp);
     };
-    target.addEventListener("pointermove", onMove);
+    const passiveOpts = { passive: false } as const;
+    target.addEventListener("pointermove", onMove, passiveOpts);
     target.addEventListener("pointerup", onUp);
     target.addEventListener("pointercancel", onUp);
   };
@@ -333,7 +341,7 @@ function BeadColumn({
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center gap-1 px-1.5 sm:px-2 py-3 rounded-xl",
+        "relative flex flex-col items-center gap-1 px-1.5 sm:px-2 py-3 rounded-xl touch-none select-none",
         "bg-gradient-to-b from-amber-100/80 to-amber-200/40 border border-amber-800/20",
         "dark:from-stone-800 dark:to-amber-950/80 dark:border-amber-500/35",
         highlight && "border-teal-400/70 shadow-[0_0_0_3px_rgba(45,212,191,0.25)] animate-pulse",
@@ -351,7 +359,7 @@ function BeadColumn({
         onPointerDown={handleUpperPointerDown}
         aria-label={`rod ${rodIndex + 1} upper bead`}
         data-testid={`abacus-upper-${rodIndex}`}
-        className="relative h-14 w-full flex items-start justify-center touch-manipulation select-none"
+        className="relative h-14 w-full flex items-start justify-center touch-none select-none"
       >
         <motion.span
           animate={{ y: rod.upper === 1 ? 22 : 0 }}
@@ -368,7 +376,7 @@ function BeadColumn({
       <div
         ref={lowerTrackRef}
         onPointerDown={handleLowerPointerDown}
-        className="relative h-32 w-full flex flex-col items-center justify-end gap-0.5 pb-1 touch-manipulation select-none"
+        className="relative h-32 w-full flex flex-col items-center justify-end gap-0.5 pb-1 touch-none select-none"
       >
         {[0, 1, 2, 3].map((i) => {
           const beadIndexFromBottom = 3 - i;
@@ -386,7 +394,7 @@ function BeadColumn({
               }}
               aria-label={`rod ${rodIndex + 1} lower bead ${i + 1}`}
               data-testid={`abacus-lower-${rodIndex}-${i}`}
-              className="block h-7 w-14 touch-manipulation"
+              className="block h-7 w-14 touch-none select-none"
             >
               <motion.span
                 animate={{ y: isUp ? -10 : 0 }}
@@ -435,7 +443,7 @@ function AbacusBoard({
       }
       transition={{ duration: 0.45 }}
       className={cn(
-        "rounded-3xl p-3 sm:p-4 border-2 shadow-inner",
+        "rounded-3xl p-3 sm:p-4 border-2 shadow-inner touch-none select-none overscroll-none",
         "bg-gradient-to-b from-amber-100/80 via-amber-50/50 to-amber-200/40",
         "dark:from-stone-800 dark:via-stone-900 dark:to-amber-950/70",
         feedback === "correct" && "border-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.25)]",
