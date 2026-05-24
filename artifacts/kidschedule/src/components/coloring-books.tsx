@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Palette, Eye, Download, Loader2, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2, RefreshCw } from "lucide-react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { resolveApiMediaUrl } from "@/lib/api";
+import {
+  parseHubQuotaHeaders,
+  savePdfFromResponse,
+} from "@/lib/hub-pdf-download";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 import { useTranslation } from "react-i18next";
@@ -168,8 +171,9 @@ export function ColoringBooks({
           fileId: file.id
         })
       });
-      const data = (await res.json().catch(() => ({}))) as DownloadResponse;
-      if (!res.ok) {
+      const contentType = res.headers.get("content-type") ?? "";
+      if (contentType.includes("json")) {
+        const data = (await res.json().catch(() => ({}))) as DownloadResponse;
         if (res.status === 429) {
           if (data.dailyQuota) setQuota(data.dailyQuota);
           setRowError({
@@ -182,12 +186,6 @@ export function ColoringBooks({
             id: file.id,
             message: "Free lifetime limit reached. Upgrade for unlimited downloads."
           });
-        } else if (res.status === 409) {
-          setRowError({
-            id: file.id,
-            message: "Already downloaded — refreshing list."
-          });
-          await fetchPage(page);
         } else if (res.status === 401) {
           setRowError({
             id: file.id,
@@ -196,24 +194,24 @@ export function ColoringBooks({
         } else {
           setRowError({
             id: file.id,
-            message: "Download failed. Please try again."
+            message: data.error === "stream_failed"
+              ? "Couldn't save the PDF. Please try again."
+              : "Download failed. Please try again."
           });
         }
         return;
       }
-      if (!data.downloadUrl) {
+      const saved = await savePdfFromResponse(res, file.name);
+      if (!saved) {
         setRowError({
           id: file.id,
-          message: "Server didn't return a download link."
+          message: "Couldn't save the PDF. Please try again."
         });
         return;
       }
-
-      window.open(resolveApiMediaUrl(data.downloadUrl), "_blank", "noopener");
-      if (data.dailyQuota) setQuota(data.dailyQuota);
-      if (data.lifetimeQuota) setLifetimeQuota(data.lifetimeQuota);
-      // The downloaded file should disappear from the list. Refetching the
-      // current page is the simplest way to keep server state authoritative.
+      const quotaHeaders = parseHubQuotaHeaders(res);
+      if (quotaHeaders.dailyQuota) setQuota(quotaHeaders.dailyQuota);
+      if (quotaHeaders.lifetimeQuota) setLifetimeQuota(quotaHeaders.lifetimeQuota);
       await fetchPage(page);
     } catch {
       setRowError({

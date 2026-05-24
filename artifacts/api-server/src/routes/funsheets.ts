@@ -7,7 +7,12 @@ import {
   funsheetDownloadsTable,
 } from "@workspace/db";
 import { getAuth } from "../lib/auth";
-import { driveFilesListAll, driveProxyDownloadPath, getDriveApiKey } from "../lib/googleDrive";
+import { driveFilesListAll, getDriveApiKey } from "../lib/googleDrive";
+import {
+  setHubQuotaHeaders,
+  streamDrivePdfToExpress,
+  type HubQuotaHeaders,
+} from "../lib/hubPdfStream";
 import { logger } from "../lib/logger";
 import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
 import {
@@ -318,28 +323,58 @@ router.post("/funsheets/download", async (req, res): Promise<void> => {
       return;
     }
 
-    // Check if already downloaded (per spec: "downloaded files sort to bottom"
-    // but a re-download is still allowed — we just record it again only if
-    // within daily limit). The unique index prevents double-counting the same
-    // file across days, so we skip the "already downloaded" 409 here.
     const sub = await getOrCreateSubscription(userId);
     const premium = isPremiumNow(sub);
     const dailyLimit = dailyLimitFor(premium);
     const used = await getDailyDownloadCount(userId, childId);
+    const lifetimeUsed = await getLifetimeDownloadCount(userId, childId);
 
-    if (!premium) {
-      const lifetimeUsed = await getLifetimeDownloadCount(userId, childId);
-      if (lifetimeUsed >= LIFETIME_LIMIT) {
-        res.status(402).json({
-          error: "lifetime_limit_reached",
-          lifetimeQuota: {
-            limit: LIFETIME_LIMIT,
-            used: lifetimeUsed,
-            remaining: 0,
-          },
-        });
-        return;
+    const buildQuotaHeaders = (
+      dailyUsed: number,
+      lifetimeUsedCount: number,
+    ): HubQuotaHeaders => ({
+      dailyLimit,
+      dailyUsed,
+      dailyRemaining: Math.max(0, dailyLimit - dailyUsed),
+      lifetimeLimit: premium ? null : LIFETIME_LIMIT,
+      lifetimeUsed: lifetimeUsedCount,
+      lifetimeRemaining: premium
+        ? null
+        : Math.max(0, LIFETIME_LIMIT - lifetimeUsedCount),
+    });
+
+    const [existing] = await db
+      .select({ id: funsheetDownloadsTable.id })
+      .from(funsheetDownloadsTable)
+      .where(
+        and(
+          eq(funsheetDownloadsTable.userId, userId),
+          eq(funsheetDownloadsTable.childId, childId),
+          eq(funsheetDownloadsTable.fileId, fileId),
+        ),
+      )
+      .limit(1);
+
+    // Re-download: stream without consuming quota.
+    if (existing) {
+      setHubQuotaHeaders(res, buildQuotaHeaders(used, lifetimeUsed));
+      const streamed = await streamDrivePdfToExpress(res, fileId, file.name);
+      if (!streamed && !res.headersSent) {
+        res.status(502).json({ error: "stream_failed" });
       }
+      return;
+    }
+
+    if (!premium && lifetimeUsed >= LIFETIME_LIMIT) {
+      res.status(402).json({
+        error: "lifetime_limit_reached",
+        lifetimeQuota: {
+          limit: LIFETIME_LIMIT,
+          used: lifetimeUsed,
+          remaining: 0,
+        },
+      });
+      return;
     }
 
     if (used >= dailyLimit) {
@@ -350,40 +385,52 @@ router.post("/funsheets/download", async (req, res): Promise<void> => {
       return;
     }
 
-    const usedBefore = used;
-
+    let insertedId: number | null = null;
+    let insertedNew = false;
     try {
-      await db.insert(funsheetDownloadsTable).values({
-        userId,
-        childId,
-        fileId,
-        fileName: file.name,
-      });
+      const [row] = await db
+        .insert(funsheetDownloadsTable)
+        .values({
+          userId,
+          childId,
+          fileId,
+          fileName: file.name,
+        })
+        .returning({ id: funsheetDownloadsTable.id });
+      insertedId = row?.id ?? null;
+      insertedNew = true;
     } catch (insertErr) {
-      // Duplicate (child already downloaded this file) — unique index 23505.
-      // Still return the download URL so they can re-download.
       const pgCode = (insertErr as { code?: string }).code;
-      if (pgCode !== "23505") throw insertErr;
+      if (pgCode === "23505") {
+        setHubQuotaHeaders(res, buildQuotaHeaders(used, lifetimeUsed));
+        const streamed = await streamDrivePdfToExpress(res, fileId, file.name);
+        if (!streamed && !res.headersSent) {
+          res.status(502).json({ error: "stream_failed" });
+        }
+        return;
+      }
+      throw insertErr;
     }
 
-    const lifetimeUsedAfter = await getLifetimeDownloadCount(userId, childId);
+    const dailyUsedAfter = insertedNew ? used + 1 : used;
+    const lifetimeUsedAfter = insertedNew ? lifetimeUsed + 1 : lifetimeUsed;
+    setHubQuotaHeaders(
+      res,
+      buildQuotaHeaders(dailyUsedAfter, lifetimeUsedAfter),
+    );
 
-    res.json({
-      ok: true,
-      downloadUrl: driveProxyDownloadPath(fileId, file.name),
-      dailyQuota: {
-        limit: dailyLimit,
-        used: usedBefore + 1,
-        remaining: Math.max(0, dailyLimit - (usedBefore + 1)),
-      },
-      lifetimeQuota: premium
-        ? { limit: null, used: lifetimeUsedAfter, remaining: null }
-        : {
-            limit: LIFETIME_LIMIT,
-            used: lifetimeUsedAfter,
-            remaining: Math.max(0, LIFETIME_LIMIT - lifetimeUsedAfter),
-          },
-    });
+    const streamed = await streamDrivePdfToExpress(res, fileId, file.name);
+    if (!streamed) {
+      if (insertedId != null && insertedNew) {
+        await db
+          .delete(funsheetDownloadsTable)
+          .where(eq(funsheetDownloadsTable.id, insertedId));
+      }
+      if (!res.headersSent) {
+        res.status(502).json({ error: "stream_failed" });
+      }
+      return;
+    }
   } catch (err) {
     logger.error(`funsheets download failed: ${err instanceof Error ? err.message : String(err)}`);
     res.status(500).json({ error: "server_error" });

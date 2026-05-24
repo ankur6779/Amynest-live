@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
 import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
 import { useSubscription } from "@/hooks/use-subscription";
+import { useAuth } from "@/lib/firebase-auth-hooks";
+import { downloadPdfFromUrl, hubTodayIst } from "@/lib/hub-pdf-download";
 interface Worksheet {
   id: string;
   name: string;
@@ -17,50 +19,60 @@ const FREE_DAILY_LIMIT = HUB_CONTENT_QUOTAS.worksheetDaily;
 const PREMIUM_DAILY_LIMIT = HUB_CONTENT_QUOTAS.premiumDownloadDaily;
 const LIFETIME_LIMIT = HUB_CONTENT_QUOTAS.worksheetLifetime;
 const PAGE_SIZE = 10;
-const STORAGE_KEYS = {
+const LEGACY_STORAGE_KEYS = {
   downloaded: "ws_downloaded_ids",
   daily: "ws_daily"
 } as const;
+function storageKeys(userId: string) {
+  return {
+    downloaded: `ws_downloaded_ids_${userId}`,
+    daily: `ws_daily_${userId}`
+  } as const;
+}
 interface DailyRecord {
   date: string;
   count: number;
 }
-function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-function getDownloadedIds(): Set<string> {
+function getDownloadedIds(userId: string | null): Set<string> {
+  if (!userId) return new Set();
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.downloaded);
-    return new Set(raw ? JSON.parse(raw) : []);
+    const keys = storageKeys(userId);
+    const raw = localStorage.getItem(keys.downloaded);
+    if (raw) return new Set(JSON.parse(raw));
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEYS.downloaded);
+    return new Set(legacy ? JSON.parse(legacy) : []);
   } catch {
     return new Set();
   }
 }
-function saveDownloadedId(id: string): void {
-  const ids = getDownloadedIds();
+function saveDownloadedId(id: string, userId: string): void {
+  const ids = getDownloadedIds(userId);
   ids.add(id);
-  localStorage.setItem(STORAGE_KEYS.downloaded, JSON.stringify([...ids]));
+  localStorage.setItem(storageKeys(userId).downloaded, JSON.stringify([...ids]));
 }
-function getDailyCount(): DailyRecord {
+function getDailyCount(userId: string | null): DailyRecord {
+  const today = hubTodayIst();
+  if (!userId) return { date: today, count: 0 };
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.daily);
+    const keys = storageKeys(userId);
+    const raw = localStorage.getItem(keys.daily) ?? localStorage.getItem(LEGACY_STORAGE_KEYS.daily);
     if (raw) {
       const rec: DailyRecord = JSON.parse(raw);
-      if (rec.date === todayStr()) return rec;
+      if (rec.date === today) return rec;
     }
   } catch (e) { console.error("REAL ERROR:", e); }
   return {
-    date: todayStr(),
+    date: today,
     count: 0
   };
 }
-function incrementDailyCount(): DailyRecord {
-  const rec = getDailyCount();
+function incrementDailyCount(userId: string): DailyRecord {
+  const rec = getDailyCount(userId);
   const next = {
-    date: todayStr(),
+    date: hubTodayIst(),
     count: rec.count + 1
   };
-  localStorage.setItem(STORAGE_KEYS.daily, JSON.stringify(next));
+  localStorage.setItem(storageKeys(userId).daily, JSON.stringify(next));
   return next;
 }
 export function PrintableWorksheets({
@@ -72,21 +84,24 @@ export function PrintableWorksheets({
     t
   } = useTranslation();
   const { isPremium } = useSubscription();
+  const { userId } = useAuth();
   const [all, setAll] = useState<Worksheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [downloadedIds, setDownloadedIds] = useState<Set<string>>(new Set());
   const [dailyRec, setDailyRec] = useState<DailyRecord>({
-    date: todayStr(),
+    date: hubTodayIst(),
     count: 0
   });
   const initRef = useRef(false);
   useEffect(() => {
-    setDownloadedIds(getDownloadedIds());
-    setDailyRec(getDailyCount());
-  }, []);
+    setDownloadedIds(getDownloadedIds(userId));
+    setDailyRec(getDailyCount(userId));
+  }, [userId]);
   const loadWorksheets = useCallback(() => {
     setLoading(true);
     setError(null);
@@ -102,23 +117,35 @@ export function PrintableWorksheets({
     initRef.current = true;
     loadWorksheets();
   }, [loadWorksheets]);
-  const handleDownload = useCallback((ws: Worksheet) => {
+  const handleDownload = useCallback(async (ws: Worksheet) => {
     const dailyLimit = isPremium ? PREMIUM_DAILY_LIMIT : FREE_DAILY_LIMIT;
     if (!isPremium && downloadedIds.size >= LIFETIME_LIMIT) return;
     if (dailyRec.count >= dailyLimit) return;
-    const link = document.createElement("a");
-    link.href = resolveApiMediaUrl(ws.downloadUrl);
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.download = ws.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    if (!isPremium) saveDownloadedId(ws.id);
-    const next = incrementDailyCount();
-    if (!isPremium) setDownloadedIds(getDownloadedIds());
-    setDailyRec(next);
-  }, [dailyRec, downloadedIds.size, isPremium]);
+    if (downloadingId !== null) return;
+
+    setDownloadingId(ws.id);
+    setDownloadError(null);
+    try {
+      const saved = await downloadPdfFromUrl(
+        resolveApiMediaUrl(ws.downloadUrl),
+        ws.name,
+      );
+      if (!saved) {
+        setDownloadError("Couldn't save the PDF. Please try again.");
+        return;
+      }
+      if (!isPremium && userId) saveDownloadedId(ws.id, userId);
+      if (userId) {
+        const next = incrementDailyCount(userId);
+        if (!isPremium) setDownloadedIds(getDownloadedIds(userId));
+        setDailyRec(next);
+      }
+    } catch {
+      setDownloadError("Network error — please check your connection.");
+    } finally {
+      setDownloadingId(null);
+    }
+  }, [dailyRec, downloadedIds.size, downloadingId, isPremium, userId]);
   const dailyLimit = isPremium ? PREMIUM_DAILY_LIMIT : FREE_DAILY_LIMIT;
   const lifetimeUsed = downloadedIds.size;
   const isDailyLimitReached = dailyRec.count >= dailyLimit;
@@ -218,6 +245,12 @@ export function PrintableWorksheets({
           </p>
         </div>
       </div>
+
+      {downloadError && <p style={{
+      margin: "0 0 14px",
+      fontSize: 13,
+      color: "hsl(var(--brand-red-600))"
+    }}>{downloadError}</p>}
 
       {/* Search */}
       <div style={{
@@ -321,7 +354,7 @@ export function PrintableWorksheets({
         gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))",
         gap: 12
       }}>
-            {paginated.map(ws => <WorksheetCard key={ws.id} worksheet={ws} isLimitReached={isLimitReached} onDownload={() => handleDownload(ws)} />)}
+            {paginated.map(ws => <WorksheetCard key={ws.id} worksheet={ws} isLimitReached={isLimitReached} isDownloading={downloadingId === ws.id} onDownload={() => void handleDownload(ws)} />)}
           </div>
 
           {/* Pagination */}
@@ -359,10 +392,12 @@ export function PrintableWorksheets({
 function WorksheetCard({
   worksheet,
   isLimitReached,
+  isDownloading,
   onDownload
 }: {
   worksheet: Worksheet;
   isLimitReached: boolean;
+  isDownloading: boolean;
   onDownload: () => void;
 }) {
   const {
@@ -452,7 +487,7 @@ function WorksheetCard({
           {displayName}
         </p>
 
-        <button className="ws-dl-btn" disabled={isLimitReached} onClick={onDownload} style={{
+        <button className="ws-dl-btn" disabled={isLimitReached || isDownloading} onClick={onDownload} style={{
         width: "100%",
         background: isLimitReached ? "#94a3b8" : "#1e293b",
         color: "#fff",
@@ -461,15 +496,15 @@ function WorksheetCard({
         padding: "10px 12px",
         fontSize: 13,
         fontWeight: 600,
-        cursor: isLimitReached ? "not-allowed" : "pointer",
+        cursor: isLimitReached || isDownloading ? "not-allowed" : "pointer",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: 6,
-        opacity: isLimitReached ? 0.65 : 1,
+        opacity: isLimitReached || isDownloading ? 0.65 : 1,
         transition: "opacity 0.15s"
       }}>
-          {isLimitReached ? <>{t("components.printable_worksheets.limit_reached")}</> : <>
+          {isLimitReached ? <>{t("components.printable_worksheets.limit_reached")}</> : isDownloading ? <>Saving…</> : <>
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" strokeLinecap="round" strokeLinejoin="round" />
                 <polyline points="7 10 12 15 17 10" strokeLinecap="round" strokeLinejoin="round" />
