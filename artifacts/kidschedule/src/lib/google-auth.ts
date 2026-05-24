@@ -38,9 +38,14 @@ export function getGoogleReversedClientId(): string {
 
 export { isCapacitorNative } from "@/lib/capacitor-native";
 
-/** Native Google plugin path — avoids Firebase redirect/popup in WKWebView. */
+/** Capacitor native shell — uses @codetrix-studio/capacitor-google-auth plugin. */
 export function shouldUseNativeGoogleAuth(): boolean {
   return isNativeAmyNestShell() && isCapacitorNative();
+}
+
+/** Android WebView wrapper (Play Store APK) — uses AmyNestAuthNative bridge. */
+export function shouldUseAndroidWebViewGoogleAuth(): boolean {
+  return isNativeAmyNestShell() && !isCapacitorNative();
 }
 
 export function loginWithGoogleRedirect(): Promise<void> {
@@ -84,10 +89,22 @@ export async function loginNativeGoogle(): Promise<void> {
   await signInWithCredential(getFirebaseAuth(), credential);
 }
 
-/** Web/PWA: redirect. Capacitor: native Google SDK + Firebase credential. */
+/** Android WebView APK — native account picker via AuthBridge.kt. */
+export async function loginAndroidWebViewGoogle(): Promise<void> {
+  const { signInWithGoogleViaNativeBridge } = await import("@/lib/native-auth");
+  const { idToken } = await signInWithGoogleViaNativeBridge();
+  const credential = GoogleAuthProvider.credential(idToken);
+  await signInWithCredential(getFirebaseAuth(), credential);
+  console.info(`${GOOGLE_TAG} android webview google sign-in success`);
+}
+
+/** Web/PWA: redirect. Capacitor / Android WebView: native idToken → Firebase. */
 export async function handleGoogleLogin(): Promise<void> {
   if (shouldUseNativeGoogleAuth()) {
     return loginNativeGoogle();
+  }
+  if (shouldUseAndroidWebViewGoogleAuth()) {
+    return loginAndroidWebViewGoogle();
   }
   return loginWithGoogleRedirect();
 }

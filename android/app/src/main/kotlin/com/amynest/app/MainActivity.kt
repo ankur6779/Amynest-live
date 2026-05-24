@@ -58,6 +58,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private lateinit var pushBridge: PushBridge
     private var billingBridge: BillingBridge? = null
+    private var authBridge: AuthBridge? = null
     private var paywallLauncher: PaywallActivityLauncher? = null
 
     /** Notification tap payload waiting for onPageFinished to deliver to the web page. */
@@ -105,6 +106,12 @@ class MainActivity : AppCompatActivity() {
             /* WebChromeClient handles follow-up when web features run. */
         }
 
+    /** Native Google account picker — result forwarded to [AuthBridge]. */
+    private val googleSignInLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            authBridge?.onGoogleSignInResult(result.resultCode, result.data)
+        }
+
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -149,6 +156,10 @@ class MainActivity : AppCompatActivity() {
             billingBridge?.attachPaywallLauncher(paywallLauncher!!)
         } else {
             Log.w(TAG, "Billing bridge not installed — in-app purchases unavailable")
+        }
+
+        authBridge = AuthBridge.installOn(this, webView).also { bridge ->
+            bridge.attachSignInLauncher { intent -> googleSignInLauncher.launch(intent) }
         }
 
         pushBridge = PushBridge(
@@ -306,7 +317,8 @@ class MainActivity : AppCompatActivity() {
                 ViewCompat.getRootWindowInsets(view)?.let { applyWebSafeAreaInsets(it) }
 
                 view.evaluateJavascript(
-                    "window.dispatchEvent(new Event('amynest-billing-bridge-ready'));",
+                    "window.dispatchEvent(new Event('amynest-billing-bridge-ready'));" +
+                        "window.dispatchEvent(new Event('amynest-auth-bridge-ready'));",
                     null,
                 )
 

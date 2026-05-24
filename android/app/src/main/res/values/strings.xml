@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AmyNest AI</string>
+    <!-- Firebase Web OAuth client — serverClientId for AuthBridge Google Sign-In. -->
+    <string name="amynest_google_web_client_id">573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com</string>
     <string name="notification_channel_name">AmyNest</string>
     <string name="notification_channel_description">Routine reminders, meal suggestions, and parenting insights</string>
 
