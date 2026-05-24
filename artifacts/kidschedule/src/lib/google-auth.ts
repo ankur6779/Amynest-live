@@ -58,6 +58,10 @@ export async function loginWithGoogleRedirect(): Promise<void> {
   const auth = getFirebaseAuth();
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
+  console.info(`${GOOGLE_TAG} starting Google redirect`, {
+    origin: window.location.origin,
+    href: window.location.href,
+  });
   await signInWithRedirect(auth, provider);
 }
 

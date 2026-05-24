@@ -12,14 +12,50 @@ import { waitForFirebaseUser } from "@/lib/wait-for-firebase-user";
 const OAUTH_TAG = "[amynest:oauth-redirect]";
 
 let redirectResultPromise: Promise<UserCredential | null> | null = null;
+let redirectResolutionInFlight = false;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+function listFirebaseSessionKeys(): string[] {
+  if (typeof window === "undefined") return [];
+  const keys: string[] = [];
+  try {
+    for (let i = 0; i < sessionStorage.length; i += 1) {
+      const key = sessionStorage.key(i) ?? "";
+      if (key.startsWith("firebase:")) keys.push(key);
+    }
+  } catch {
+    /* ignore */
+  }
+  return keys;
+}
+
+function mayBeOAuthReturn(): boolean {
+  if (typeof window === "undefined") return false;
+  const ref = document.referrer || "";
+  if (/accounts\.google\.com|firebaseapp\.com|googleusercontent/i.test(ref)) {
+    return true;
+  }
+  return listFirebaseSessionKeys().some((key) =>
+    /redirect|pending|authEvent|redirectEvent/i.test(key),
+  );
+}
+
 /** Firebase stores redirect state in sessionStorage while the OAuth round-trip is in flight. */
 export function hasPendingFirebaseOAuthRedirect(): boolean {
   if (typeof window === "undefined") return false;
+
+  const firebaseKeys = listFirebaseSessionKeys();
+  if (
+    firebaseKeys.some((key) =>
+      /redirect|pending|authEvent|redirectEvent/i.test(key),
+    )
+  ) {
+    return true;
+  }
+
   try {
     for (let i = 0; i < sessionStorage.length; i += 1) {
       const key = sessionStorage.key(i) ?? "";
@@ -34,14 +70,23 @@ export function hasPendingFirebaseOAuthRedirect(): boolean {
   } catch {
     /* ignore */
   }
+
   const hash = window.location.hash;
   const search = window.location.search;
-  return (
+  if (
     hash.includes("apiKey=") ||
     hash.includes("access_token=") ||
     search.includes("apiKey=") ||
     search.includes("authType=")
-  );
+  ) {
+    return true;
+  }
+
+  return mayBeOAuthReturn();
+}
+
+export function isFirebaseOAuthRedirectResolving(): boolean {
+  return redirectResolutionInFlight;
 }
 
 async function waitForFirebaseInit(maxWaitMs: number): Promise<boolean> {
@@ -64,24 +109,33 @@ function userCredentialFromUser(user: User): UserCredential {
 
 async function completeFirebaseAuthRedirectResult(): Promise<UserCredential | null> {
   const pending = hasPendingFirebaseOAuthRedirect();
-  const maxWaitMs = pending ? 15_000 : 3_000;
+  const maxWaitMs = pending ? 15_000 : 4_000;
 
-  if (!(await waitForFirebaseInit(maxWaitMs))) {
-    if (pending) {
-      console.warn(`${OAUTH_TAG} Firebase not ready before redirect completion`);
-    }
-    return null;
-  }
+  console.info(`${OAUTH_TAG} resolving redirect`, {
+    pending,
+    href: window.location.href,
+    referrer: typeof document !== "undefined" ? document.referrer : "",
+    firebaseSessionKeys: listFirebaseSessionKeys(),
+  });
 
-  const auth = getFirebaseAuth();
-  await ensureFirebaseAuthPersistence();
-  await waitForFirebaseAuthReady(auth);
-
-  if (pending) {
-    await sleep(150);
-  }
+  redirectResolutionInFlight = pending;
 
   try {
+    if (!(await waitForFirebaseInit(maxWaitMs))) {
+      if (pending) {
+        console.warn(`${OAUTH_TAG} Firebase not ready before redirect completion`);
+      }
+      return null;
+    }
+
+    const auth = getFirebaseAuth();
+    await ensureFirebaseAuthPersistence();
+    await waitForFirebaseAuthReady(auth);
+
+    if (pending) {
+      await sleep(200);
+    }
+
     const result = await getRedirectResult(auth);
     if (result?.user) {
       console.info(`${OAUTH_TAG} redirect sign-in success`, {
@@ -91,7 +145,10 @@ async function completeFirebaseAuthRedirectResult(): Promise<UserCredential | nu
       return result;
     }
 
-    if (!pending) return null;
+    if (!pending) {
+      console.info(`${OAUTH_TAG} no pending redirect on this load`);
+      return null;
+    }
 
     console.warn(
       `${OAUTH_TAG} getRedirectResult returned null — waiting for auth state`,
@@ -110,6 +167,8 @@ async function completeFirebaseAuthRedirectResult(): Promise<UserCredential | nu
   } catch (err) {
     logFirebaseAuthError("oauth:redirect", err);
     throw err;
+  } finally {
+    redirectResolutionInFlight = false;
   }
 }
 
@@ -130,7 +189,15 @@ export function resolveFirebaseAuthRedirectResult(): Promise<UserCredential | nu
   return redirectResultPromise;
 }
 
+/** Start redirect resolution as early as possible — right after Firebase init. */
+export function beginFirebaseOAuthRedirectResolution(): void {
+  if (typeof window === "undefined") return;
+  if (isNativeAmyNestShell()) return;
+  void resolveFirebaseAuthRedirectResult();
+}
+
 /** Test-only reset */
 export function resetFirebaseAuthRedirectConsumedForTests(): void {
   redirectResultPromise = null;
+  redirectResolutionInFlight = false;
 }
