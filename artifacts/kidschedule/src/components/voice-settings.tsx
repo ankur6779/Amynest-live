@@ -6,15 +6,17 @@ import { getVoiceSettings, saveVoiceSettings, setVoiceEnabled, type VoiceLang, t
 import { useToast } from "@/hooks/use-toast";
 interface VoiceSettingsPanelProps {
   onToggle?: (enabled: boolean) => void;
+  onSettingsChange?: (settings: ReturnType<typeof getVoiceSettings>) => void;
 }
-const ELEVENLABS_VOICES: Record<VoiceLang, Record<VoiceGender, string>> = {
+const OPENAI_VOICES: Record<VoiceLang, Record<VoiceGender, string>> = {
   en: {
-    female: "Ananya K (Indian English)",
-    male: "Karthik (Indian English)"
+    female: "Coral (warm, Indian English)",
+    male: "Onyx (warm male)",
   },
 };
 export function VoiceSettingsPanel({
-  onToggle
+  onToggle,
+  onSettingsChange,
 }: VoiceSettingsPanelProps) {
   const {
     toast
@@ -31,6 +33,7 @@ export function VoiceSettingsPanel({
     };
     setSettings(next);
     saveVoiceSettings(patch);
+    onSettingsChange?.(next);
     if (patch.enabled !== undefined) {
       onToggle?.(patch.enabled);
     }
@@ -46,7 +49,7 @@ export function VoiceSettingsPanel({
     });
     if (!next) setOpen(false);
   };
-  const currentVoiceName = ELEVENLABS_VOICES[settings.lang]?.[settings.gender] ?? "ElevenLabs Indian";
+  const currentVoiceName = OPENAI_VOICES[settings.lang]?.[settings.gender] ?? "OpenAI TTS";
   return <div className="relative flex items-center gap-1">
       <Button variant="outline" size="sm" onClick={handleToggle} className={`rounded-full gap-2 ${settings.enabled ? "bg-muted dark:bg-card border-border text-primary dark:text-muted-foreground" : ""}`}>
         {settings.enabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
@@ -87,7 +90,7 @@ export function VoiceSettingsPanel({
                 {t("components.voice_settings.active_voice")}
               </p>
               <p className="text-xs font-bold text-primary dark:text-muted-foreground">{currentVoiceName}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{t("components.voice_settings.powered_by_elevenlabs_ai")}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{t("components.voice_settings.powered_by_openai_tts")}</p>
             </div>
 
             <p className="text-[10px] text-muted-foreground text-center border-t border-border pt-2">

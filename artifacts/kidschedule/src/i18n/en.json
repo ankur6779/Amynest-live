@@ -3916,6 +3916,7 @@
       "language": "Language",
       "voice_gender": "Voice Gender",
       "active_voice": "Active Voice",
+      "powered_by_openai_tts": "Powered by OpenAI TTS",
       "powered_by_elevenlabs_ai": "Powered by ElevenLabs AI",
       "preferences_saved_automatically": "Preferences saved automatically 💾"
     }

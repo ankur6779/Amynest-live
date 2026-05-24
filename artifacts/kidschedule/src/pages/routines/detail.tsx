@@ -20,8 +20,9 @@ import { earnGamingPoints } from "@/lib/gaming-wallet-api";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { routineDateKey } from "@/lib/routines";
 import { MealRecipeCard } from "@/components/MealRecipeCard";
-import { announceCurrentTask, isVoiceEnabled, getVoiceSettings } from "@/lib/voice";
+import { isVoiceEnabled, getVoiceSettings, openAiVoiceForGender, ROUTINE_TASK_ANNOUNCE_MSGS, type VoiceSettings } from "@/lib/voice";
 import { VoiceSettingsPanel } from "@/components/voice-settings";
+import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { runAdaptiveEngine, type AdaptiveMood, type AdaptiveSleepQuality } from "@workspace/family-routine";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { RoutineAdaptationsCard } from "@/components/intelligence/routine-adaptations-card";
@@ -474,7 +475,9 @@ export default function RoutineDetail() {
   const [localItems, setLocalItems] = useState<RoutineItem[] | null>(null);
   const notifSupported = typeof window !== "undefined" && "Notification" in window;
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>(() => getVoiceSettings());
   const [voiceOn, setVoiceOn] = useState(() => isVoiceEnabled());
+  const { speak, pause } = useAmyVoice({ voiceId: openAiVoiceForGender(voiceSettings.gender) });
   const announcedTaskRef = useRef<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [babysitterInfo, setBabysitterInfo] = useState<{
@@ -685,9 +688,12 @@ export default function RoutineDetail() {
     }
   }, [routine]);
 
-  // Voice announcement for current task
+  // Voice announcement for current task (OpenAI TTS via shared Amy voice pipeline)
   useEffect(() => {
-    if (!voiceOn) return;
+    if (!voiceOn) {
+      pause();
+      return;
+    }
     const items = localItems ?? routine?.items as RoutineItem[] ?? [];
     const childName = (childData as any)?.name ?? routine?.childName ?? "buddy";
     const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
@@ -699,9 +705,12 @@ export default function RoutineDetail() {
     });
     if (currentTask && announcedTaskRef.current !== currentTask.activity) {
       announcedTaskRef.current = currentTask.activity;
-      announceCurrentTask(childName, currentTask.activity);
+      const msg = ROUTINE_TASK_ANNOUNCE_MSGS[
+        Math.floor(Math.random() * ROUTINE_TASK_ANNOUNCE_MSGS.length)
+      ](childName, currentTask.activity);
+      void speak(msg, { narration: true });
     }
-  });
+  }, [voiceOn, localItems, routine, childData, speak, pause]);
   // Returns only activities that haven't started yet (for today's routine).
   // Past/future date routines show the full schedule unchanged.
   const getRemainingItems = () => {
@@ -1405,7 +1414,10 @@ export default function RoutineDetail() {
                 {notificationsEnabled ? <><BellOff className="h-4 w-4" /> {t("pages.routines.detail.notifications_on")}</> : <><Bell className="h-4 w-4" /> {t("pages.routines.detail.notify_me")}</>}
               </Button>}
 
-            <VoiceSettingsPanel onToggle={enabled => setVoiceOn(enabled)} />
+            <VoiceSettingsPanel
+              onToggle={enabled => setVoiceOn(enabled)}
+              onSettingsChange={setVoiceSettings}
+            />
 
             <Link href="/parenting-hub">
               <Button variant="outline" size="sm" className="rounded-full gap-2 border-border text-primary hover:bg-muted">

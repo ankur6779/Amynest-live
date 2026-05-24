@@ -1,20 +1,6 @@
 // ─────────────────────────────────────────────────────────────
-// AmyNest Voice System — English, Female / Male
-// Powered by ElevenLabs Indian voices (no browser TTS)
+// Routine voice preferences — playback uses useAmyVoice (OpenAI TTS).
 // ─────────────────────────────────────────────────────────────
-
-import { getAuth } from "firebase/auth";
-import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
-import { resetTtsApiCircuit } from "@/lib/amy-voice-circuit";
-import { audioManager } from "@/lib/audio-manager";
-import {
-  mustUseStaticOnly,
-  prepareStaticPlaybackAudio,
-  safePlayAudio,
-} from "@/lib/static-audio";
-import { resetClientStaticAudioCircuit } from "@/lib/static-audio-telemetry";
-import { recordTtsUserGesture } from "@/lib/tts-guard";
-import { resolveAiApiData, type AuthFetchFn } from "@/lib/poll-result";
 
 const KEY_ENABLED = "amynest_voice_enabled";
 const KEY_GENDER  = "amynest_voice_gender"; // "female" | "male"
@@ -29,13 +15,10 @@ export interface VoiceSettings {
   voiceName: string | null;
 }
 
-// ─── ElevenLabs Indian Voice IDs ──────────────────────────────
-// English Indian Female — Ananya K (Clear & Polished)
-const VOICE_EN_FEMALE = "QbQKfe9vgx5OsbZUvlFv";
-// English Indian Male — Karthik (Indian AI Voice)
-const VOICE_EN_MALE   = "oaz5NvoRIhcJystOASAA";
-
-const MODEL_EN = "eleven_turbo_v2_5";
+/** OpenAI TTS voice for routine narration (server applies Indian-English instructions). */
+export function openAiVoiceForGender(gender: VoiceGender): string | undefined {
+  return gender === "male" ? "onyx" : undefined;
+}
 
 // ─── Settings ────────────────────────────────────────────────
 
@@ -58,131 +41,9 @@ export function setVoiceEnabled(val: boolean): void { saveVoiceSettings({ enable
 export function getSavedVoiceName(): string | null  { return null; }
 export function saveVoiceName(_name: string): void  { /* no-op */ }
 
-// ─── Voice resolution ─────────────────────────────────────────
-
-function resolveVoice(_lang: VoiceLang, gender: VoiceGender): { voiceId: string; modelId: string } {
-  return { voiceId: gender === "male" ? VOICE_EN_MALE : VOICE_EN_FEMALE, modelId: MODEL_EN };
-}
-
-// ─── Legacy browser-voice stubs (removed, kept for import compat) ─────────
-export interface LabeledVoice {
-  voice: { name: string; lang: string; localService: boolean };
-  label: string;
-}
-export async function getVoicesForLang(_lang: VoiceLang): Promise<LabeledVoice[]> { return []; }
-export async function getEnglishVoices(): Promise<unknown[]>                       { return []; }
-export function loadVoices(): Promise<unknown[]>                                   { return Promise.resolve([]); }
-
-function stopCurrentAudio() {
-  audioManager.stop();
-}
-
-// ─── Core speak via ElevenLabs ────────────────────────────────
-
-export async function speak(text: string): Promise<void> {
-  const settings = getVoiceSettings();
-  if (!settings.enabled) return;
-  const trimmed = text.trim();
-  if (!trimmed) return;
-
-  recordTtsUserGesture();
-  resetClientStaticAudioCircuit();
-  resetTtsApiCircuit();
-  stopCurrentAudio();
-
-  const staticAudio = await prepareStaticPlaybackAudio(trimmed);
-  if (staticAudio) {
-    staticAudio.onended = stopCurrentAudio;
-    staticAudio.onerror = stopCurrentAudio;
-    const played = await safePlayAudio(staticAudio, {
-      proxyUrl: staticAudio.src,
-      phrase: trimmed,
-    });
-    if (!played) console.error("[Voice] Static playback failed", trimmed);
-    return;
-  }
-
-  if (mustUseStaticOnly(trimmed)) return;
-
-  try {
-    const token = await getAuth().currentUser?.getIdToken().catch(() => undefined);
-    const { voiceId, modelId } = resolveVoice(settings.lang, settings.gender);
-
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
-    const authFetch: AuthFetchFn = async (input, init) => {
-      const url = typeof input === "string" ? getApiUrl(input) : input;
-      return fetch(url, {
-        ...init,
-        headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
-      });
-    };
-    const synthRes = await fetch(getApiUrl("/api/tts/synthesize"), {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ text: trimmed, voiceId, modelId }),
-    });
-    if (!synthRes.ok) {
-      const errBody = await synthRes.json().catch(() => ({}));
-      console.error("[ElevenLabs] Synthesize failed", synthRes.status, errBody);
-      return;
-    }
-    const raw = (await synthRes.json()) as { audioUrl?: string; jobId?: string };
-    const data = await resolveAiApiData<{ audioUrl: string }>(raw, authFetch);
-    const audioUrl = data?.audioUrl?.trim() ?? "";
-    if (!audioUrl || audioUrl.includes("undefined")) {
-      console.warn("Invalid audio URL, skipping playback");
-      return;
-    }
-    const audioHeaders: Record<string, string> = {};
-    if (token) audioHeaders["Authorization"] = `Bearer ${token}`;
-
-    const playbackUrl = resolveApiMediaUrl(audioUrl);
-    const audioRes = await fetch(playbackUrl, { headers: audioHeaders });
-    if (!audioRes.ok) {
-      console.error("[ElevenLabs] Audio fetch failed", audioRes.status, playbackUrl);
-      return;
-    }
-
-    const blob = await audioRes.blob();
-    if (blob.size === 0) {
-      console.error("[ElevenLabs] Empty audio blob");
-      return;
-    }
-    const url = URL.createObjectURL(blob);
-    audioManager.trackObjectUrl(url);
-
-    const audio = audioManager.create(url);
-    audio.onended = stopCurrentAudio;
-    audio.onerror = () => {
-      console.error("[ElevenLabs] HTMLAudioElement error", audio.error?.code);
-      stopCurrentAudio();
-    };
-    const played = await audioManager.play(
-      audio,
-      { proxyUrl: url, phrase: trimmed, source: "voice", channel: "speech", interrupt: true, srcType: "blob" },
-      { channel: "speech", interrupt: true },
-    );
-    if (!played) console.error("[Voice] Playback failed after retries", trimmed);
-  } catch (err) {
-    console.error("[ElevenLabs] Error:", err instanceof Error ? err.message : err);
-    stopCurrentAudio();
-  }
-}
-
-// ─── Task announcements ───────────────────────────────────────
-
-const ENGLISH_MSGS = [
+/** Copy for routine task announcements (OpenAI TTS via useAmyVoice). */
+export const ROUTINE_TASK_ANNOUNCE_MSGS = [
   (n: string, t: string) => `Hey ${n}! Time for ${t}. You've got this!`,
   (n: string, t: string) => `${n}, it's ${t} time! Let's go!`,
   (n: string, t: string) => `Hi ${n}! Your next activity is ${t}. Ready?`,
-];
-
-export async function announceCurrentTask(childName: string, activity: string): Promise<void> {
-  const settings = getVoiceSettings();
-  if (!settings.enabled) return;
-  const msgs = ENGLISH_MSGS;
-  const msg   = msgs[Math.floor(Math.random() * msgs.length)](childName, activity);
-  await speak(msg);
-}
+] as const;
