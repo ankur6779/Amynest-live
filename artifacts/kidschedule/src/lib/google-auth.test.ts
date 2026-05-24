@@ -3,6 +3,7 @@ import { reversedGoogleWebClientId } from "./google-auth-defaults";
 import {
   getGoogleWebClientId,
   isCapacitorNative,
+  shouldUseAndroidWebViewGoogleAuth,
   shouldUseNativeGoogleAuth,
 } from "./google-auth";
 
@@ -43,6 +44,7 @@ describe("google-auth", () => {
 
   it("uses native path only in Capacitor native shell", () => {
     expect(shouldUseNativeGoogleAuth()).toBe(false);
+    expect(shouldUseAndroidWebViewGoogleAuth()).toBe(false);
 
     setCapacitorNative(true);
     Object.defineProperty(window, "location", {
@@ -52,5 +54,17 @@ describe("google-auth", () => {
 
     expect(isCapacitorNative()).toBe(true);
     expect(shouldUseNativeGoogleAuth()).toBe(true);
+    expect(shouldUseAndroidWebViewGoogleAuth()).toBe(false);
+  });
+
+  it("uses android webview path in AmyNestAndroid shell without Capacitor", () => {
+    vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 AmyNestAndroid/1.0" });
+    Object.defineProperty(window, "location", {
+      value: { protocol: "https:", hostname: "www.amynest.in" },
+      configurable: true,
+    });
+
+    expect(shouldUseNativeGoogleAuth()).toBe(false);
+    expect(shouldUseAndroidWebViewGoogleAuth()).toBe(true);
   });
 });

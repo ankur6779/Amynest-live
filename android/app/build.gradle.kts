@@ -95,6 +95,9 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
     implementation("com.google.firebase:firebase-messaging-ktx")
 
+    // Native Google Sign-In (AuthBridge → Firebase idToken on web layer)
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
+
     // JSON parsing for the message bus
     implementation("org.json:json:20240303")
 }
