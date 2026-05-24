@@ -23,6 +23,16 @@ import {
   logParentHubAudioIdentity,
   parentHubLocalCacheKey,
 } from "@/lib/parent-hub-audio-identity";
+import {
+  assertVerbatimCoachText,
+  isCoachAudioIdentity,
+  logCoachAudioIdentity,
+  coachLocalCacheKey,
+} from "@/lib/coach-audio-identity";
+import {
+  generateCoachWinAudio,
+  resolveCoachPlaybackUrl,
+} from "@/lib/coach-audio-playback";
 import type { AuthFetchFn } from "@/lib/poll-result";
 import { audioManager, AUDIO_ERROR } from "@/lib/audio-manager";
 import { runWithControlledAudioStop } from "@/lib/amy-voice-safety";
@@ -622,12 +632,50 @@ async function attemptCachePlay(
   } else if (
     opts?.lessonParagraph &&
     opts.audioIdentity &&
-    !isParentHubAudioIdentity(opts.audioIdentity)
+    !isParentHubAudioIdentity(opts.audioIdentity) &&
+    !isCoachAudioIdentity(opts.audioIdentity)
   ) {
     assertVerbatimLessonText(text, opts.audioIdentity.text);
     for (const tryMode of staticModesToTry(mode, phonicsOnly)) {
       if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
       const identityKey = lessonLocalCacheKey(opts.audioIdentity as AudioIdentity, tryMode);
+      const objectUrl = await getLocalCachedAudioUrl(identityKey);
+      if (!objectUrl) continue;
+
+      const audio = playAudio(objectUrl);
+      if (!audio) {
+        URL.revokeObjectURL(objectUrl);
+        continue;
+      }
+
+      const play = await playElementWithNeverSilentWatchdog(audio, ctx, {
+        proxyUrl: objectUrl,
+        phrase: opts.audioIdentity.text,
+        mode: tryMode,
+        source: "cache",
+        waitUntilEnd,
+      });
+      URL.revokeObjectURL(objectUrl);
+      if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+      if (play.ok) {
+        recordAmyVoiceLayerSuccess("cache_success", { mode: tryMode });
+        return {
+          ok: true,
+          layer: "cache",
+          playedDuration: play.playedDuration,
+          expectedDuration: play.expectedDuration,
+          stopPlayback: () => {
+            audio.pause();
+            audio.currentTime = 0;
+          },
+        };
+      }
+    }
+  } else if (opts?.coach && isCoachAudioIdentity(opts.audioIdentity)) {
+    assertVerbatimCoachText(text, opts.audioIdentity.text);
+    for (const tryMode of staticModesToTry(mode, phonicsOnly)) {
+      if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+      const identityKey = coachLocalCacheKey(opts.audioIdentity);
       const objectUrl = await getLocalCachedAudioUrl(identityKey);
       if (!objectUrl) continue;
 
@@ -792,6 +840,51 @@ async function attemptOpenAiPlay(
 ): Promise<PlayAttemptResult> {
   if (shouldSkipLiveTtsApi() || isApiGloballyDegraded()) {
     return { ok: false, error: isAmyVoiceOffline() ? "offline" : "api_circuit_open" };
+  }
+
+  if (opts?.coach && isCoachAudioIdentity(opts.audioIdentity)) {
+    const identity = opts.audioIdentity;
+    const data = await generateCoachWinAudio(
+      ctx.authFetch,
+      { planCacheKey: identity.planCacheKey, identity },
+      { signal },
+    );
+    if (!data?.ok || !data.audioUrl) {
+      recordTtsApiFailure();
+      return { ok: false, error: data?.error ?? "coach_audio_failed" };
+    }
+    const playbackUrl = resolveCoachPlaybackUrl(data.audioUrl, data.cacheKey);
+    if (!playbackUrl) return { ok: false, error: "tts_invalid_audio_url" };
+
+    const audio = playAudio(playbackUrl);
+    if (!audio) return { ok: false, error: "tts_invalid_audio_url" };
+
+    const play = await playElementWithNeverSilentWatchdog(audio, ctx, {
+      proxyUrl: playbackUrl,
+      phrase: identity.text,
+      mode: "default",
+      source: "api",
+      waitUntilEnd,
+    });
+    if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
+    if (play.ok) {
+      recordTtsApiSuccess();
+      if (data.cacheKey) {
+        void warmLocalCacheFromUrl(coachLocalCacheKey(identity), playbackUrl);
+      }
+      recordAmyVoiceLayerSuccess("api_success", { cacheKey: data.cacheKey, coach: true });
+      return {
+        ok: true,
+        layer: "api",
+        playedDuration: play.playedDuration,
+        expectedDuration: play.expectedDuration,
+        stopPlayback: () => {
+          audio.pause();
+          audio.currentTime = 0;
+        },
+      };
+    }
+    return { ok: false, error: "play_failed_or_silent" };
   }
 
   const mode = opts?.mode === "phonics" ? "phonics" : "default";
@@ -1646,10 +1739,14 @@ export async function speakAmyVoice(
   if (opts?.parentHub && isParentHubAudioIdentity(opts.audioIdentity)) {
     assertVerbatimParentHubText(text, opts.audioIdentity.text);
     logParentHubAudioIdentity(opts.audioIdentity, { phase: "pipeline_entry" });
+  } else if (opts?.coach && isCoachAudioIdentity(opts.audioIdentity)) {
+    assertVerbatimCoachText(text, opts.audioIdentity.text);
+    logCoachAudioIdentity(opts.audioIdentity, { phase: "pipeline_entry" });
   } else if (
     opts?.lessonParagraph &&
     opts.audioIdentity &&
-    !isParentHubAudioIdentity(opts.audioIdentity)
+    !isParentHubAudioIdentity(opts.audioIdentity) &&
+    !isCoachAudioIdentity(opts.audioIdentity)
   ) {
     assertVerbatimLessonText(text, opts.audioIdentity.text);
     logLessonAudioIdentity(opts.audioIdentity, { phase: "pipeline_entry" });

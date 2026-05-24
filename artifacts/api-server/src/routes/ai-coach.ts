@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { createHash, randomUUID } from "crypto";
+import { randomUUID } from "crypto";
 import { eq, desc, and, inArray } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { db, aiCacheTable, userProgressTable, userCoachSessionsTable } from "@workspace/db";
@@ -26,6 +26,13 @@ import {
 } from "../services/coachWinGenerationService.js";
 import { startCoachPerfSpan } from "../lib/coach-performance.js";
 import { fallbackExtensionWin } from "../services/coachExtensionFallback.js";
+import { buildCoachPlanCacheKey } from "../services/coachPlanCacheKey.js";
+import {
+  generateAndCacheCoachWinAudio,
+  pregenerateCoachPlanAudio,
+} from "../services/coachAudioCacheService.js";
+import { submitRouteAiJob } from "../lib/route-ai-queue.js";
+import { TTS_MAX_INPUT_CHARS } from "../services/ttsCacheService.js";
 
 const router: IRouter = Router();
 
@@ -63,7 +70,6 @@ interface CoachInput {
 }
 
 // ─── Config ──────────────────────────────────────────────────────────────
-const NAMESPACE = "ai_coach_v4";
 const DB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const MEMORY_TTL_MS = 10 * 60 * 1000;
 const MEMORY_MAX = 200;
@@ -104,12 +110,7 @@ function normTopicAnswers(ta?: Record<string, string | string[]>): string {
 }
 
 function buildCacheKey(input: CoachInput): string {
-  const triggers = (input.triggers ?? []).map(norm).filter(Boolean).sort().join("-");
-  // Namespace is part of the raw key so a version bump (v2 → v3) produces a
-  // completely different cacheKey — old rows can never be served to the new schema.
-  const ta = normTopicAnswers(input.topicAnswers);
-  const raw = `${NAMESPACE}_en_${norm(input.goal)}_${norm(input.ageGroup)}_${norm(input.severity)}_${triggers}_${norm(input.routine)}_${ta}`;
-  return createHash("sha1").update(raw).digest("hex");
+  return buildCoachPlanCacheKey(input);
 }
 
 /**
@@ -590,12 +591,13 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
 
   const cacheKey = buildCacheKey(input);
 
-  const completePayload = (plan: CoachPlan, extra: Record<string, unknown>) => ({
+  const completePayload = (plan: CoachPlan, planCacheKey: string, extra: Record<string, unknown>) => ({
     plan,
     wins: plan.wins,
     status: "complete" as const,
     totalWins: COACH_TOTAL_WINS,
     sessionId: randomUUID(),
+    planCacheKey,
     ...extra,
   });
 
@@ -607,7 +609,7 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
     cacheSpan.end({ hit: "memory" });
     memStats.hits++;
     logger.info({ cacheKey: cacheKey.slice(0, 8), source: "memory", stats: memStats }, "ai-coach cache hit");
-    const memPayload = completePayload(mem.plan, { cached: true, source: "memory" });
+    const memPayload = completePayload(mem.plan, cacheKey, { cached: true, source: "memory" });
     const responseMs = Date.now() - requestStart;
     console.log({ step: "RESPONSE_SENT", time: responseMs, status: "complete", cached: true });
     requestSpan.end({ status: "complete", cached: true, source: "memory", userId, responseMs });
@@ -624,7 +626,7 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
     memCache.set(cacheKey, { plan: dbHit, ts: Date.now() });
     memStats.dbHits++;
     logger.info({ cacheKey: cacheKey.slice(0, 8), source: "db", stats: memStats }, "ai-coach cache hit");
-    const dbPayload = completePayload(dbHit, { cached: true, source: "db" });
+    const dbPayload = completePayload(dbHit, cacheKey, { cached: true, source: "db" });
     const responseMsDb = Date.now() - requestStart;
     console.log({ step: "RESPONSE_SENT", time: responseMsDb, status: "complete", cached: true });
     requestSpan.end({ status: "complete", cached: true, source: "db", userId, responseMs: responseMsDb });
@@ -699,6 +701,7 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
     totalWins: COACH_TOTAL_WINS,
     initialWins: COACH_INITIAL_WINS,
     sessionId: effectiveSessionId,
+    planCacheKey: cacheKey,
     cached: false,
     source: aiOk ? "ai" : "fallback",
     fallback: !aiOk,
@@ -948,7 +951,7 @@ router.post("/ai-coach/stream", aiUsageGate, async (req, res): Promise<void> => 
     memStats.hits++;
     logger.info({ cacheKey: cacheKey.slice(0, 8), source: "memory", stats: memStats }, "ai-coach (stream) cache hit");
     planDelivered = true;
-    send("done", { plan: mem.plan, sessionId, cached: true, source: "memory", fallback: false });
+    send("done", { plan: mem.plan, sessionId, planCacheKey: cacheKey, cached: true, source: "memory", fallback: false });
     finish();
     if (userId) void saveCoachSession(userId, sessionId, goal, mem.plan, input);
     return;
@@ -960,7 +963,7 @@ router.post("/ai-coach/stream", aiUsageGate, async (req, res): Promise<void> => 
     memStats.dbHits++;
     logger.info({ cacheKey: cacheKey.slice(0, 8), source: "db", stats: memStats }, "ai-coach (stream) cache hit");
     planDelivered = true;
-    send("done", { plan: dbHit, sessionId, cached: true, source: "db", fallback: false });
+    send("done", { plan: dbHit, sessionId, planCacheKey: cacheKey, cached: true, source: "db", fallback: false });
     finish();
     if (userId) void saveCoachSession(userId, sessionId, goal, dbHit, input);
     return;
@@ -1087,7 +1090,7 @@ ${goalBrief}`;
   if (aiOk) await dbSet(cacheKey, input, plan);
 
   planDelivered = true;
-  send("done", { plan, sessionId, cached: false, source: "ai", fallback: !aiOk });
+  send("done", { plan, sessionId, planCacheKey: cacheKey, cached: false, source: "ai", fallback: !aiOk });
   finish();
   if (userId) void saveCoachSession(userId, sessionId, goal, plan, input);
 });
@@ -1244,6 +1247,7 @@ router.get("/ai-coach/session/:sessionId", async (req, res): Promise<void> => {
       sessionId: row.sessionId,
       goalId: row.goalId,
       plan: row.planJson,
+      planCacheKey: buildCacheKey(row.inputs as CoachInput),
       inputs: row.inputs,
       feedbacks,
     });
@@ -1332,6 +1336,120 @@ router.get("/ai-coach/progress", async (req, res): Promise<void> => {
     logger.error({ err }, "ai-coach progress query failed");
     res.status(500).json({ error: "failed to load progress" });
   }
+});
+
+// ─── POST /ai-coach/pregenerate-audio ────────────────────────────────────
+// Pre-synthesizes listen-aloud MP3s for coach wins into coach_audio_cache + tts_cache.
+router.post("/ai-coach/pregenerate-audio", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const planCacheKey = clip(req.body?.planCacheKey, 64);
+  const rawWins = req.body?.wins;
+  if (!planCacheKey || !/^[a-f0-9]{40}$/.test(planCacheKey)) {
+    res.status(400).json({ error: "invalid_plan_cache_key" });
+    return;
+  }
+  if (!Array.isArray(rawWins) || rawWins.length === 0) {
+    res.status(400).json({ error: "invalid_wins" });
+    return;
+  }
+  if (rawWins.length > 20) {
+    res.status(400).json({ error: "too_many_wins" });
+    return;
+  }
+
+  const wins = rawWins
+    .filter((w): w is Win => w && typeof w === "object" && typeof (w as Win).win === "number")
+    .slice(0, 20);
+
+  await submitRouteAiJob({
+    routeName: "ai-coach/pregenerate-audio",
+    type: "ai-coach.pregenerate_audio",
+    userId,
+    input: { planCacheKey, wins },
+    waitMs: 120_000,
+    buildSyncBody: (result) => result as Record<string, unknown>,
+    res,
+  });
+});
+
+// ─── POST /ai-coach/audio/generate ───────────────────────────────────────
+// Cache-first coach win audio — dedicated layer then shared TTS store.
+router.post("/ai-coach/audio/generate", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const planCacheKey = clip(req.body?.planCacheKey, 64);
+  const winIndex = Number(req.body?.winIndex);
+  const rawWin = req.body?.win as Win | undefined;
+  const text = clip(req.body?.text, TTS_MAX_INPUT_CHARS);
+
+  if (!planCacheKey || !/^[a-f0-9]{40}$/.test(planCacheKey)) {
+    res.status(400).json({ error: "invalid_plan_cache_key" });
+    return;
+  }
+  if (!Number.isFinite(winIndex) || winIndex < 1 || winIndex > 20) {
+    res.status(400).json({ error: "invalid_win_index" });
+    return;
+  }
+
+  try {
+    const result = await generateAndCacheCoachWinAudio({
+      planCacheKey,
+      winIndex,
+      text: text || undefined,
+      win: rawWin,
+    });
+    if (!result) {
+      res.status(502).json({ ok: false, error: "tts_failed" });
+      return;
+    }
+    res.json({
+      ok: true,
+      url: result.audioUrl,
+      audioUrl: result.audioUrl,
+      cacheKey: result.ttsCacheKey,
+      planCacheKey: result.planCacheKey,
+      winIndex: result.winIndex,
+      cached: result.cached,
+    });
+  } catch (err) {
+    logger.error(
+      {
+        evt: "coach_audio.generate_failed",
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "coach audio generate failed",
+    );
+    res.status(502).json({ ok: false, error: "tts_failed" });
+  }
+});
+
+// ─── POST /ai-coach/pregenerate-infant-audio ─────────────────────────────
+// One-shot warm of all static 0–2 yr infant problem listen-aloud clips (shared cache).
+router.post("/ai-coach/pregenerate-infant-audio", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  await submitRouteAiJob({
+    routeName: "ai-coach/pregenerate-infant-audio",
+    type: "ai-coach.pregenerate_infant_audio",
+    userId,
+    input: {},
+    waitMs: 300_000,
+    buildSyncBody: (result) => result as Record<string, unknown>,
+    res,
+  });
 });
 
 export default router;

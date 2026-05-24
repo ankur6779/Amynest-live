@@ -114,6 +114,18 @@ export async function dispatchAiJob(type: string, payload: unknown): Promise<unk
       );
     }
 
+    case "ai-coach.pregenerate_audio": {
+      const { runCoachAudioPregenerate } = await import("../domain-ai/coach-audio-pregenerate-runner.js");
+      return runCoachAudioPregenerate(
+        input as Parameters<typeof runCoachAudioPregenerate>[0],
+      );
+    }
+
+    case "ai-coach.pregenerate_infant_audio": {
+      const { runInfantCoachAudioPregenerate } = await import("../domain-ai/coach-audio-pregenerate-runner.js");
+      return runInfantCoachAudioPregenerate();
+    }
+
     case "explain.narrative": {
       const { runExplainNarrative } = await import("../domain-ai/explain-runners.js");
       return runExplainNarrative(input as Parameters<typeof runExplainNarrative>[0]);

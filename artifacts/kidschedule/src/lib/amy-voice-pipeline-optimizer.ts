@@ -10,6 +10,14 @@ import type { AmySpeechPolicy } from "@/lib/amy-speech-mode";
 import type { SpeakOptions } from "@/hooks/use-amy-voice";
 import type { AuthFetchFn } from "@/lib/poll-result";
 import {
+  generateCoachWinAudio,
+  resolveCoachPlaybackUrl,
+} from "@/lib/coach-audio-playback";
+import {
+  generateTts,
+  resolveClientPlaybackUrl,
+} from "@/lib/tts-playback";
+import {
   generateTts,
   resolveClientPlaybackUrl,
 } from "@/lib/tts-playback";
@@ -60,6 +68,14 @@ import {
   parentHubPipelineCacheKey,
   type ParentHubAudioIdentity,
 } from "@/lib/parent-hub-audio-identity";
+import {
+  assertVerbatimCoachText,
+  isCoachAudioIdentity,
+  logCoachAudioIdentity,
+  coachLocalCacheKey,
+  coachPipelineCacheKey,
+  type CoachAudioIdentity,
+} from "@/lib/coach-audio-identity";
 
 export type { DeviceClass, LearnableLayer, LayerScoringContext, NetworkProfile, PipelineStrategy };
 
@@ -93,11 +109,25 @@ export function pipelineCacheKey(
 ): string {
   const kind = opts?.lessonParagraph
     ? "lesson"
-    : opts?.parentHub
-      ? "parent"
-      : opts?.catalogPlayback
-        ? "catalog"
-        : "default";
+    : opts?.coach
+      ? "coach"
+      : opts?.parentHub
+        ? "parent"
+        : opts?.catalogPlayback
+          ? "catalog"
+          : "default";
+
+  if (opts?.coach) {
+    if (!isCoachAudioIdentity(opts.audioIdentity)) {
+      const msg = "Coach pipelineCacheKey requires audioIdentity";
+      if (import.meta.env.DEV) throw new Error(msg);
+      console.error("[CoachAudioIdentity]", msg);
+      const trimmed = text.trim();
+      return `${kind}:${mode}:${hashCacheKeySync(trimmed)}`;
+    }
+    assertVerbatimCoachText(text, opts.audioIdentity.text);
+    return coachPipelineCacheKey(opts.audioIdentity);
+  }
 
   if (opts?.parentHub) {
     if (!isParentHubAudioIdentity(opts.audioIdentity)) {
@@ -112,7 +142,11 @@ export function pipelineCacheKey(
   }
 
   if (opts?.lessonParagraph) {
-    if (!opts.audioIdentity || isParentHubAudioIdentity(opts.audioIdentity)) {
+    if (
+      !opts.audioIdentity ||
+      isParentHubAudioIdentity(opts.audioIdentity) ||
+      isCoachAudioIdentity(opts.audioIdentity)
+    ) {
       const msg = "Lesson pipelineCacheKey requires audioIdentity";
       if (import.meta.env.DEV) throw new Error(msg);
       console.error("[LessonAudioIdentity]", msg);
@@ -542,6 +576,47 @@ export function prefetchParentHubItem(
         const playbackUrl = resolveClientPlaybackUrl(data.audioUrl, data.cacheKey);
         if (playbackUrl) {
           void warmLocalCacheFromUrl(parentHubLocalCacheKey(identity), playbackUrl);
+        }
+      }
+    } catch {
+      /* best-effort prefetch */
+    } finally {
+      prefetchInFlight.delete(cacheKey);
+    }
+  })();
+}
+
+/** Predictive prefetch for Amy Coach win listen-aloud (plan-scoped shared cache). */
+export function prefetchCoachWin(
+  identity: CoachAudioIdentity,
+  authFetch: AuthFetchFn,
+): void {
+  const playbackKey = coachPipelineCacheKey(identity);
+  const cacheKey = playbackKey;
+
+  logCoachAudioIdentity(identity, { phase: "prefetch_start" });
+
+  if (prefetchInFlight.has(cacheKey)) return;
+  prefetchInFlight.add(cacheKey);
+
+  void (async () => {
+    try {
+      if (shouldSkipLiveTtsApi() || isSafeModeActive() || isCacheDisabled() || isSlowNetwork()) {
+        return;
+      }
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 12_000);
+      const data = await generateCoachWinAudio(
+        authFetch,
+        { planCacheKey: identity.planCacheKey, identity },
+        { signal: controller.signal },
+      ).finally(() => clearTimeout(timer));
+
+      if (data?.ok && data.cacheKey && data.audioUrl) {
+        const playbackUrl = resolveCoachPlaybackUrl(data.audioUrl, data.cacheKey);
+        if (playbackUrl) {
+          void warmLocalCacheFromUrl(coachLocalCacheKey(identity), playbackUrl);
         }
       }
     } catch {

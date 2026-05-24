@@ -27,6 +27,13 @@ import {
 import { getGenericQuestionOptions } from "@/lib/coach-generic-questions";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { formatAge } from "@/lib/age-groups";
+import { pregenerateCoachPlanAudio } from "@/lib/coach-audio-playback";
+import {
+  createCoachAudioIdentity,
+  buildCoachWinListenText,
+  buildInfantCoachPlanCacheKey,
+} from "@/lib/coach-audio-identity";
+import { prefetchCoachWin } from "@/lib/amy-voice-pipeline-optimizer";
 
 /** Lazy win generation can take ~25s server-side; default fetch timeout is 8s. */
 const COACH_AI_FETCH_TIMEOUT_MS = 90_000;
@@ -659,6 +666,7 @@ export default function AICoachPage() {
   const [qIndex, setQIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [plan, setPlan] = useState<Plan | null>(null);
+  const [planCacheKey, setPlanCacheKey] = useState<string>("");
   const [sessionId, setSessionId] = useState<string>("");
   const [activeIdx, setActiveIdx] = useState(0);
   const [feedbackByWin, setFeedbackByWin] = useState<Record<number, Feedback>>({});
@@ -679,6 +687,17 @@ export default function AICoachPage() {
 
   const planRef = useRef(plan);
   planRef.current = plan;
+
+  // Warm shared coach audio cache when a plan loads (all wins, global reuse).
+  useEffect(() => {
+    const key = planCacheKey.trim();
+    if (!key || !plan?.wins?.length) return;
+    pregenerateCoachPlanAudio(authFetch, key, plan.wins);
+    const first = plan.wins[0];
+    if (first) {
+      prefetchCoachWin(createCoachAudioIdentity({ planCacheKey: key, win: first }), authFetch);
+    }
+  }, [authFetch, plan, planCacheKey]);
 
   // Freeze the denominator at the original plan size (12).
   // Extension cards are bonus — adding them must never drop the progress %.
@@ -789,6 +808,7 @@ export default function AICoachPage() {
           sessionId: string;
           goalId: string;
           plan: Plan;
+          planCacheKey?: string;
           inputs: {
             goal: string;
             ageGroup: string;
@@ -808,6 +828,7 @@ export default function AICoachPage() {
           restoredFeedbacks[Number(k)] = v as Feedback;
         }
         setPlan(data.plan);
+        setPlanCacheKey(data.planCacheKey ?? "");
         setSessionId(data.sessionId);
         setGoalId(data.goalId);
         setFeedbackByWin(restoredFeedbacks);
@@ -880,6 +901,9 @@ export default function AICoachPage() {
           wins: problem.wins
         };
         setPlan(staticPlan);
+        void buildInfantCoachPlanCacheKey(id)
+          .then(setPlanCacheKey)
+          .catch(() => setPlanCacheKey(""));
         originalWinCountRef.current = staticPlan.wins.length;
         setSessionId(`infant-${id}-${Date.now()}`);
         setActiveIdx(0);
@@ -969,6 +993,7 @@ export default function AICoachPage() {
     setLoadingNextWin(false);
     fetchingNextRef.current = false;
     setPlan(null);
+    setPlanCacheKey("");
     setSessionId("");
     const ageMap: Record<string, string> = {
       "0–2 years": "0-2",
@@ -1012,6 +1037,7 @@ export default function AICoachPage() {
     const applyCoachResponse = (data: {
       plan: Plan;
       sessionId: string;
+      planCacheKey?: string;
       status?: "partial" | "complete";
       totalWins?: number;
     }): void => {
@@ -1020,6 +1046,7 @@ export default function AICoachPage() {
       }
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
       setPlan(data.plan);
+      setPlanCacheKey(data.planCacheKey ?? "");
       originalWinCountRef.current = data.totalWins ?? 12;
       setSessionId(data.sessionId);
       setProgressWinCount(data.plan.wins.length);
@@ -1055,6 +1082,7 @@ export default function AICoachPage() {
       const data = (await res.json()) as {
         plan: Plan;
         sessionId: string;
+        planCacheKey?: string;
         status?: "partial" | "complete";
         totalWins?: number;
       };
@@ -1356,6 +1384,7 @@ export default function AICoachPage() {
     setGoalId("");
     setAnswers({});
     setPlan(null);
+    setPlanCacheKey("");
     originalWinCountRef.current = 0;
     setSessionId("");
     setActiveIdx(0);
@@ -2107,7 +2136,7 @@ export default function AICoachPage() {
         minHeight: 0,
         scrollbarWidth: "none"
       }} className="ws-no-scrollbar">
-          {plan.wins.map((w, i) => <WinCard key={`${w.win}-${i}`} win={w} total={plan.wins.length} isFirst={i === 0} planTitle={i === 0 ? plan.title : undefined} planSummary={i === 0 ? plan.summary : undefined} planRootCause={i === 0 ? plan.root_cause : undefined} currentFeedback={feedbackByWin[w.win]} extending={extending} onFeedback={f => submitFeedback(w.win, f)} />)}
+          {plan.wins.map((w, i) => <WinCard key={`${w.win}-${i}`} win={w} total={plan.wins.length} isFirst={i === 0} planCacheKey={planCacheKey} planTitle={i === 0 ? plan.title : undefined} planSummary={i === 0 ? plan.summary : undefined} planRootCause={i === 0 ? plan.root_cause : undefined} currentFeedback={feedbackByWin[w.win]} extending={extending} onFeedback={f => submitFeedback(w.win, f)} />)}
         </div>
 
         {/* Extending banner */}
@@ -2239,6 +2268,7 @@ function WinCard({
   win,
   total,
   isFirst,
+  planCacheKey,
   planTitle,
   planSummary,
   planRootCause,
@@ -2249,6 +2279,7 @@ function WinCard({
   win: Win;
   total: number;
   isFirst: boolean;
+  planCacheKey?: string;
   planTitle?: string;
   planSummary?: string;
   planRootCause?: string;
@@ -2447,7 +2478,7 @@ function WinCard({
             <Volume2 size={13} />
             {t("pages.ai_coach.read_this_win_aloud")}
           </span>
-          <ListenButton win={win} />
+          <ListenButton win={win} planCacheKey={planCacheKey} />
         </div>
 
         {/* WHY THIS WORKS */}
@@ -2738,65 +2769,42 @@ function WinCard({
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// LISTEN BUTTON — speaks the win aloud using Amy's ElevenLabs voice.
-//
-// Hindi + English read-aloud. The audio is generated server-side via
-// ElevenLabs and content-addressed cached in GCS (SHA256(text|voice|model)),
-// so the FIRST parent to listen pays the synth cost and EVERY subsequent
-// parent worldwide reads from the shared cache for free.
-//
-// Voice IDs mirror artifacts/api-server/src/services/elevenLabsService.ts —
-// keep these in sync if either side changes.
-// ═══════════════════════════════════════════════════════════════════════════
-const COACH_VOICE_EN_FEMALE = "QbQKfe9vgx5OsbZUvlFv"; // Ananya K (Indian English)
-const COACH_MODEL_EN = "eleven_turbo_v2_5";
-type CoachLang = "en";
+// LISTEN BUTTON — Amy Coach win read-aloud via dedicated shared cache layer.
 export function ListenButton({
-  win
+  win,
+  planCacheKey,
 }: {
   win: Win;
+  planCacheKey?: string;
 }) {
-  const { t, i18n } = useTranslation();
-  // Default the listen language to the parent's UI language. They can
-  // override per-win via the EN | HI chips next to the Listen button.
-  const initialLang: CoachLang = "en";
-  const [lang, setLang] = useState<CoachLang>(initialLang);
-  const voiceOpts = useMemo(() => ({
-    voiceId: COACH_VOICE_EN_FEMALE,
-    modelId: COACH_MODEL_EN
-  }), []);
-  const {
-    speak,
-    pause,
-    speaking,
-    loading
-  } = useAmyVoice(voiceOpts);
-  const buildText = useCallback(() => {
-    // The win text itself is whatever language the AI generated it in
-    // (mirrors the parent's profile language). The multilingual model
-    // pronounces both Hindi and English text naturally, so a parent
-    // who flips to HI on an English win still gets a clean Indian-
-    // accented read instead of a broken switch.
-    return [`${win.win}. ${win.title}.`, win.objective, win.deep_explanation, win.actions?.length ? `${win.actions.join(". ")}` : "", win.example ? `${win.example}` : "", win.mistake_to_avoid ? `${win.mistake_to_avoid}.` : "", win.micro_task ? `${win.micro_task}.` : ""].filter(Boolean).join(" ");
-  }, [win]);
+  const { speak, pause, speaking, loading } = useAmyVoice();
+  const audioIdentity = useMemo(() => {
+    const key = (planCacheKey ?? "").trim();
+    if (!key) return null;
+    try {
+      return createCoachAudioIdentity({ planCacheKey: key, win });
+    } catch {
+      return null;
+    }
+  }, [planCacheKey, win]);
+  const buildText = useCallback(() => buildCoachWinListenText(win), [win]);
   const handleClick = () => {
     if (speaking || loading) {
       pause();
       return;
     }
-    speak(buildText(), { playbackMode: "partial-ok" });
+    const text = buildText();
+    if (audioIdentity) {
+      speak(text, {
+        coach: true,
+        audioIdentity,
+        playbackMode: "partial-ok",
+      });
+      return;
+    }
+    speak(text, { playbackMode: "partial-ok" });
   };
   const isActive = speaking || loading;
-  const langChipBase: React.CSSProperties = {
-    fontSize: 10,
-    fontWeight: 800,
-    letterSpacing: 0.4,
-    padding: "3px 7px",
-    borderRadius: 6,
-    cursor: "pointer",
-    border: "1px solid transparent",
-    lineHeight: 1
-  };
   return <span style={{
     display: "inline-flex",
     alignItems: "center",

@@ -30,6 +30,7 @@ export * from "./razorpay_webhook_events";
 export * from "./referrals";
 export * from "./user_coach_sessions";
 export * from "./coach_win_generations";
+export * from "./coach_audio_cache";
 export * from "./user_ai_messages";
 export * from "./push_tokens";
 export * from "./feature_feedback";
