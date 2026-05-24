@@ -4,6 +4,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 
 export type LearningLoadMoreSection =
   | "smart_study"
+  | "smart_math_tricks"
   | "olympiad"
   | "spelling"
   | "phonics"
@@ -28,6 +29,7 @@ export interface LoadMoreResponse {
     questions?: unknown[];
     words?: unknown[];
     tasks?: unknown[];
+    tricks?: unknown[];
   };
 }
 

@@ -22,6 +22,7 @@ import { waitForJobResult } from "../queue/index.js";
 import { isBullMqActive } from "../queue/ai-job-queue.js";
 import { waitForJob } from "../queue/ai-job-store.js";
 import { runLifeSkillsAiGenerate, runPhonicsLoadMoreWords } from "./domain-ai/life-skills-runners.js";
+import { runSmartMathTricksAiGenerate } from "./domain-ai/smart-math-tricks-runners.js";
 import { runSmartStudyNextQuestions } from "./domain-ai/smart-study-runners.js";
 import { runOlympiadNextQuestions } from "./domain-ai/olympiad-runners.js";
 import { runSpellingAiGenerate } from "./domain-ai/spelling-runners.js";
@@ -47,6 +48,7 @@ export const LEARNING_LOAD_MORE_FEATURES: Record<
   FeatureKey
 > = {
   smart_study: "learning_load_more_smart_study",
+  smart_math_tricks: "learning_load_more_smart_math_tricks",
   olympiad: "learning_load_more_olympiad",
   spelling: "learning_load_more_spelling",
   phonics: "learning_load_more_phonics",
@@ -280,6 +282,31 @@ export async function executeLearningLoadMore(opts: {
       cachedItems = hit.items;
       break;
     }
+    case "smart_math_tricks": {
+      const age = String(opts.params.age ?? "4-6");
+      lookupKey = buildAiContentLookupKey("smart_math_tricks", { age });
+      const hit = await fetchCachedItems<{ id: string }>({
+        namespace: "smart_math_tricks",
+        lookupKey,
+        excludeIds,
+        count,
+        getId: (item) => item.id,
+      });
+      if (hit.items.length >= count) {
+        const usage = await getLoadMoreUsageInfo(opts.userId, section);
+        return {
+          ok: true,
+          section,
+          source: "cache",
+          fromCache: true,
+          charged: false,
+          usage,
+          items: { tricks: hit.items },
+        };
+      }
+      cachedItems = hit.items;
+      break;
+    }
     case "olympiad": {
       const ageBand = String(opts.params.ageBand ?? "6-8");
       const difficulty = String(opts.params.difficulty ?? "medium");
@@ -401,9 +428,11 @@ export async function executeLearningLoadMore(opts: {
       const partialKey =
         section === "smart_study" || section === "olympiad"
           ? "questions"
-          : section === "spelling" || section === "phonics"
-            ? "words"
-            : "tasks";
+          : section === "smart_math_tricks"
+            ? "tricks"
+            : section === "spelling" || section === "phonics"
+              ? "words"
+              : "tasks";
       return {
         ok: true,
         section,
@@ -475,6 +504,21 @@ export async function executeLearningLoadMore(opts: {
         freshItems = (result?.questions ?? []) as unknown[];
         itemsPayload = {
           questions: [...cachedItems, ...freshItems].slice(0, count),
+        };
+        break;
+      }
+      case "smart_math_tricks": {
+        const age = String(opts.params.age ?? "4-6") as "4-6" | "6-8";
+        lookupKey = buildAiContentLookupKey("smart_math_tricks", { age });
+
+        const result = await runSmartMathTricksAiGenerate({
+          age,
+          count: need,
+          excludeIds: [...excludeIds],
+        });
+        freshItems = result?.tricks ?? [];
+        itemsPayload = {
+          tricks: [...cachedItems, ...freshItems].slice(0, count),
         };
         break;
       }

@@ -4,6 +4,7 @@ import { db, aiContentCacheTable } from "@workspace/db";
 
 export type AiContentNamespace =
   | "smart_study"
+  | "smart_math_tricks"
   | "olympiad"
   | "spelling"
   | "phonics"

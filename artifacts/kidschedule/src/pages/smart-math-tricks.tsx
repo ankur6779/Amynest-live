@@ -16,7 +16,7 @@ export default function SmartMathTricksPage() {
       emptyMessage="Smart Math Tricks is available from age 2+. Add or select an eligible child."
     >
       {({ child }) => (
-        <SmartMathTricks childName={child.name} ageYears={child.age} />
+        <SmartMathTricks childName={child.name} ageYears={child.age} childId={child.id} />
       )}
     </HubModulePageShell>
   );
