@@ -1229,7 +1229,16 @@ export default function AICoachPage() {
     // Partial or not worked — one adaptive win until progress reaches 100%
     if (newPct < 100 && lastPayloadRef.current) {
       const ok = await requestExtension(winNumber, feedback);
-      if (!ok) await advanceAfterFeedback(activeIdx + 1);
+      if (!ok) {
+        const currentPlan = planRef.current;
+        const atLast = currentPlan ? activeIdx >= currentPlan.wins.length - 1 : true;
+        const canFetchMore = currentPlan
+          ? currentPlan.wins.length < (originalWinCountRef.current || 12)
+          : false;
+        if (!atLast || canFetchMore) {
+          await advanceAfterFeedback(activeIdx + 1);
+        }
+      }
       return;
     }
 
@@ -1281,8 +1290,8 @@ export default function AICoachPage() {
       if (!res.ok) throw new Error(`Server ${res.status}`);
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
       const { readResolvedApiJson } = await import("@/lib/poll-result");
-      const data = await readResolvedApiJson<{ wins?: Win[] }>(res, authFetch);
-      const newWins = data?.wins;
+      const data = await readResolvedApiJson<{ wins?: Win[]; result?: { wins?: Win[] } }>(res, authFetch);
+      const newWins = data?.wins ?? data?.result?.wins;
       if (Array.isArray(newWins) && newWins.length > 0) {
         const newWin = { ...newWins[0]!, win: nextWinNum };
         setPlan(p => {
