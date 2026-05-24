@@ -23,7 +23,9 @@ import android.webkit.WebViewClient
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.messaging.FirebaseMessaging
 import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallActivityLauncher
 import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallResult
@@ -126,6 +128,12 @@ class MainActivity : AppCompatActivity() {
             configureWebView(wv)
         }
         setContentView(webView)
+
+        ViewCompat.setOnApplyWindowInsetsListener(webView) { _, insets ->
+            applyWebSafeAreaInsets(insets)
+            insets
+        }
+        ViewCompat.requestApplyInsets(webView)
 
         billingBridge = BillingBridge.installOn(this, webView)
         if (billingBridge != null) {
@@ -293,6 +301,8 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
 
+                ViewCompat.getRootWindowInsets(view)?.let { applyWebSafeAreaInsets(it) }
+
                 view.evaluateJavascript(
                     "window.dispatchEvent(new Event('amynest-billing-bridge-ready'));",
                     null,
@@ -409,6 +419,30 @@ class MainActivity : AppCompatActivity() {
         "}"
 
     // ── System chrome ────────────────────────────────────────────────────────
+
+    /**
+     * Edge-to-edge WebView: env(safe-area-inset-*) is usually 0. Push real
+     * system-bar insets into CSS variables so fixed footers / story controls
+     * clear the 3-button navigation bar.
+     */
+    private fun applyWebSafeAreaInsets(insets: WindowInsetsCompat) {
+        if (!::webView.isInitialized) return
+        val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+        val bottomPx = bars.bottom.coerceAtLeast(0)
+        val topPx = bars.top.coerceAtLeast(0)
+        // Some WebViews report 0 until rotation; reserve typical 3-button nav height.
+        val effectiveBottom = if (bottomPx > 0) bottomPx else 48
+        val clearance = maxOf(effectiveBottom, 12)
+        val js =
+            "(function(){" +
+                "var r=document.documentElement;" +
+                "r.style.setProperty('--app-bottom-safe-base','${effectiveBottom}px');" +
+                "r.style.setProperty('--app-bottom-clearance','${clearance}px');" +
+                "r.style.setProperty('--sat','${topPx}px');" +
+                "r.classList.add('amynest-android-shell','amynest-native-shell');" +
+            "})();"
+        webView.post { webView.evaluateJavascript(js, null) }
+    }
 
     private fun hideSystemChrome() {
         supportActionBar?.hide()
