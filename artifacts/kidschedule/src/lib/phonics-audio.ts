@@ -15,6 +15,7 @@ import {
 import {
   playPhonicsStaticAudio,
   playPhonicsSequence,
+  prefetchPhonicsAudioKeys,
 } from "@/lib/phonics-static-audio";
 import type { SpeakOptions, SpeakResult } from "@/hooks/use-amy-voice";
 
@@ -121,6 +122,9 @@ export async function playCvcBlendWithSpeak(
     onPhoneme?: (index: number, phase: CvcBlendPhase) => void;
   },
 ): Promise<void> {
+  const keys = wordObj.phonemes.map((p) => resolveGraphemeToAudioKey(p) ?? p.trim().toLowerCase());
+  prefetchPhonicsAudioKeys(keys);
+
   await playCvcBlend(
     wordObj,
     async (audioKey, meta) => {

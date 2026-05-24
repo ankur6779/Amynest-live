@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { playCvcBlendWithSpeak } from "@/lib/phonics-audio";
 import {
   getCvcDisplayLetters,
@@ -32,7 +31,6 @@ export function CvcBlendPanel({
   onComplete,
   practiceLevel = 1,
 }: CvcBlendPanelProps) {
-  const { speak } = useAmyVoice();
   const entry = useMemo(() => getCvcWordEntry(word), [word]);
 
   const [level, setLevel] = useState<1 | 2 | 3>(practiceLevel);
@@ -63,7 +61,7 @@ export function CvcBlendPanel({
       setBlending(true);
       setShowWord(false);
       try {
-        await playCvcBlendWithSpeak(current, speak, {
+        await playCvcBlendWithSpeak(current, {
           skipSlowPass: opts?.skipSlow,
           onPhoneme: (idx, p) => {
             setPhase(p);
@@ -82,7 +80,7 @@ export function CvcBlendPanel({
         setActiveIndex(null);
       }
     },
-    [current, speak, onComplete],
+    [current, onComplete],
   );
 
   if (!entry && !levelWords.length) {

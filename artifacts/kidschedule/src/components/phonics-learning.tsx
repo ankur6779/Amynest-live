@@ -24,12 +24,11 @@ import {
   type PhonicsAgeGroup,
   type PhonicsLevel,
 } from "@/lib/phonics-content";
-import { getPhonicsAudioText, getPhonicsWordAudioText } from "@workspace/phonics-sounds";
+import { getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { playPhonicsBlend, playCvcBlendWithSpeak, resolvePhonicsPlaybackText } from "@/lib/phonics-audio";
 import { CvcBlendPanel, CvcBlendingPracticeCard } from "@/components/cvc-blend-panel";
 import { PhonicsCurriculumDashboard } from "@/components/phonics-curriculum-dashboard";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
-import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { cn } from "@/lib/utils";
 
 const PHONICS_STAGE_ORDER: PhonicsAgeGroup[] = [
@@ -477,7 +476,7 @@ function TodaysActivityCard({
             {todaysItem.examples && todaysItem.examples.length > 0 ? <ExampleChips words={todaysItem.examples} size="md" /> : todaysItem.example ? <p className="text-xs text-muted-foreground">{todaysItem.example}</p> : null}
           </div>
           <AudioPlayButton
-            text={resolvePhonicsPlaybackText(todaysItem)}
+            text={practicePlaybackText(todaysItem)}
             mode={todaysItem.phoneme ? "phonics" : undefined}
             size="lg"
             variant="violet"
@@ -497,6 +496,13 @@ function TodaysActivityCard({
         </div>
       </CardContent>
     </Card>;
+}
+
+function practicePlaybackText(it: DisplayPhonicsItem): string {
+  if (it.type === "sentence" || it.type === "story" || it.type === "word") {
+    return (it.sound || it.symbol).trim();
+  }
+  return resolvePhonicsPlaybackText(it);
 }
 
 // ─── Card 2: Practice Sounds ─────────────────────────────────────────────────
@@ -560,9 +566,9 @@ function PracticeSoundsCard({
           const showBlend = level.features.blending && it.example?.includes("–");
           const nextItem = safeItems[idx + 1];
           const prefetchNextText = nextItem
-            ? resolvePhonicsPlaybackText(nextItem)
+            ? practicePlaybackText(nextItem)
             : undefined;
-          const playbackText = resolvePhonicsPlaybackText(it);
+          const playbackText = practicePlaybackText(it);
           const isActive = highlightId === it.id;
           return <div key={it.id} data-testid={`phonics-tile-${it.id}`} className={cn("relative rounded-2xl p-3 border bg-white/70 dark:bg-white/[0.05] transition-all hover:scale-[1.02] hover:shadow-md active:scale-95", mastered ? "border-border dark:border-border ring-1 ring-primary animate-pulse-slow" : "border-white/60 dark:border-white/10 hover:border-primary/30", isActive && "ring-2 ring-violet-500 border-violet-400/60 scale-[1.02]")}>
                   {mastered && <CheckCircle2 className="absolute top-1.5 right-1.5 h-3.5 w-3.5 text-primary fill-muted" />}
@@ -615,9 +621,9 @@ function PracticeSoundsCard({
           const isLong = it.type === "sentence" || it.type === "story";
           const nextItem = safeItems[idx + 1];
           const prefetchNextText = nextItem
-            ? resolvePhonicsPlaybackText(nextItem)
+            ? practicePlaybackText(nextItem)
             : undefined;
-          const playbackText = resolvePhonicsPlaybackText(it);
+          const playbackText = practicePlaybackText(it);
           const isActive = highlightId === it.id;
           return <div key={it.id} data-testid={`phonics-tile-${it.id}`} className={cn("flex items-start gap-3 rounded-2xl p-3 border bg-white/70 dark:bg-white/[0.05] transition-all", mastered ? "border-border dark:border-border" : "border-white/60 dark:border-white/10 hover:border-primary/30", isActive && "ring-2 ring-violet-500")}>
                   {it.emoji && <span className="text-xl shrink-0">{it.emoji}</span>}
@@ -685,7 +691,6 @@ function BlendPanel({
   const {
     t
   } = useTranslation();
-  const { speak } = useAmyVoice();
   const [activeLetter, setActiveLetter] = useState<number | null>(null);
   const [blending, setBlending] = useState(false);
   const sounds = (item.example ?? item.symbol).split("–").map(s => s.trim()).filter(Boolean);
@@ -696,7 +701,7 @@ function BlendPanel({
     setBlending(true);
     try {
       if (cvcEntry) {
-        await playCvcBlendWithSpeak(cvcEntry, speak, {
+        await playCvcBlendWithSpeak(cvcEntry, {
           skipSlowPass: !slow,
           onPhoneme: (idx, phase) => {
             if (phase === "word") setActiveLetter(null);
@@ -704,7 +709,7 @@ function BlendPanel({
           },
         });
       } else {
-        await playPhonicsBlend(word, speak, {
+        await playPhonicsBlend(word, undefined, {
           slow,
           onLetter: (idx) => setActiveLetter(idx >= 0 ? idx : null),
         });
@@ -762,8 +767,7 @@ function BlendPanel({
           <span className="font-quicksand text-2xl font-bold text-foreground">{item.symbol}</span>
         </div>
         <AudioPlayButton
-          text={getPhonicsWordAudioText(word)}
-          mode="phonics"
+          text={word}
           size="md"
           variant="violet"
           ariaLabel={`Play whole word ${item.symbol}`}
