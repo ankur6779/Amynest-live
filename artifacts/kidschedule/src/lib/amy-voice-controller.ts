@@ -70,11 +70,11 @@ import {
   type AmyVoicePipelineContext,
 } from "@/lib/amy-voice-pipeline";
 import {
-  isSilentSpeakLayer,
   playControllerEmergencyAudio,
   resetGuardFailures,
   shouldBypassAudioGuard,
   trackGuardFailure,
+  CONTROLLER_EMERGENCY_PHRASE,
   type PlaybackFailureFeedback,
 } from "@/lib/amy-voice-audio-guard";
 import { audioManager } from "@/lib/audio-manager";
@@ -276,32 +276,31 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
     logTts({ event: "audio_failure", error, layer: result.layer });
     logAudioHealthFailure(error, mapAmyLayerToHealthLayer(layer));
 
-    if (isCurrentSpeakRequest(ctx.requestId)) {
-      try {
-        const emergencyResult = await playControllerEmergencyAudio();
-        if (emergencyResult.success) {
-          resetGuardFailures();
-          logTts({ event: "emergency_success" });
-          logTts({ event: "final_guard", status: "fallback", error });
-          logAudioHealthFallback(
-            mapAmyLayerToHealthLayer(layer) ?? "api",
-            "emergency",
-          );
-          logAudioHealthSuccess({
-            layer: "emergency",
-            fallbackUsed: true,
-          });
-          if (!ctx.runtime.isMounted || ctx.runtime.isMounted()) {
-            this.transition(ctx.requestId, "idle", null);
-          }
-          return emergencyResult;
-        }
-      } catch (err) {
-        logTts({
-          event: "emergency_failed",
-          error: err instanceof Error ? err.message : String(err),
+    const emergencyText = (ctx.rawText ?? "").trim() || CONTROLLER_EMERGENCY_PHRASE;
+    try {
+      const emergencyResult = await playControllerEmergencyAudio(emergencyText);
+      if (emergencyResult.success) {
+        resetGuardFailures();
+        logTts({ event: "emergency_success", forced: true });
+        logTts({ event: "final_guard", status: "fallback", error });
+        logAudioHealthFallback(
+          mapAmyLayerToHealthLayer(layer) ?? "api",
+          "emergency",
+        );
+        logAudioHealthSuccess({
+          layer: "emergency",
+          fallbackUsed: true,
         });
+        if (!ctx.runtime.isMounted || ctx.runtime.isMounted()) {
+          this.transition(ctx.requestId, "idle", null);
+        }
+        return emergencyResult;
       }
+    } catch (err) {
+      logTts({
+        event: "emergency_failed",
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
 
     const retry = () => this.runSpeak(ctx.rawText, ctx.opts, ctx.runtime);
@@ -574,14 +573,6 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
           opts,
           runtime,
         });
-      }
-
-      if (isSilentSpeakLayer(result.layer)) {
-        logTts({ reason: "silent_layer", requestId, layer: result.layer });
-        return this.handleAudioFailure(
-          { success: false, error: "silent_layer", layer: result.layer },
-          { requestId, rawText, opts, runtime },
-        );
       }
 
       resetGuardFailures();

@@ -6,6 +6,7 @@
 import { forceOpenTtsApiCircuit } from "@/lib/amy-voice-circuit";
 import { isAdminStreamingDisabled } from "@/lib/admin-audio-ops";
 import {
+  forceEmergencyPlayback,
   playNaturalSpeechSynthesis,
   playPhonicsPlaceholderTone,
 } from "@/lib/emergency-audio";
@@ -16,7 +17,8 @@ export const GUARD_STREAMING_DISABLE_MS = 60_000;
 export const GUARD_API_DISABLE_MS = 60_000;
 export const CONTROLLER_EMERGENCY_PHRASE = "Sorry, audio could not be played.";
 
-const SILENT_LAYERS = new Set<AmyVoiceLayer>(["text_visual"]);
+/** No layer is treated as intentionally silent — forced TTS covers text_visual. */
+const SILENT_LAYERS = new Set<AmyVoiceLayer>();
 
 let guardFailureCount = 0;
 let streamingDisabledUntil = 0;
@@ -64,11 +66,18 @@ export function shouldBypassAudioGuard(error: string): boolean {
   );
 }
 
-/** Instant local fallback — speech synthesis, then tone. No network. */
-export async function playControllerEmergencyAudio(): Promise<
+/** Instant local fallback — forced synthesis/tone with no validation. No network. */
+export async function playControllerEmergencyAudio(
+  text = CONTROLLER_EMERGENCY_PHRASE,
+): Promise<
   | { success: true; layer: "emergency_local" }
   | { success: false; error: string; layer: "emergency_local" }
 > {
+  const forced = await forceEmergencyPlayback(text);
+  if (forced.success) {
+    return { success: true, layer: "emergency_local" };
+  }
+
   const spoke = await playNaturalSpeechSynthesis(CONTROLLER_EMERGENCY_PHRASE);
   if (spoke) {
     return { success: true, layer: "emergency_local" };

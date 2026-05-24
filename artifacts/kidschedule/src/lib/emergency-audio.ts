@@ -173,6 +173,53 @@ export async function playEmergencyPhrase(rawText: string): Promise<boolean> {
   return playPhonicsPlaceholderTone(Number.isFinite(idx) ? idx : 0);
 }
 
+export type ForceEmergencyPlaybackResult =
+  | { success: true; forced: true; layer: "emergency_local" }
+  | { success: false; error: string };
+
+/** Last-resort audible output — no blob/src/ownership validation. */
+export async function playFallbackTone(): Promise<boolean> {
+  return playPhonicsPlaceholderTone(0);
+}
+
+/**
+ * Absolute last audio guarantee — speak raw text via synthesis with no validation,
+ * then a placeholder tone if synthesis is unavailable.
+ */
+export async function forceEmergencyPlayback(
+  text: string,
+): Promise<ForceEmergencyPlaybackResult> {
+  const speakText = (text ?? "").trim() || " ";
+
+  try {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(speakText);
+      const voice = getCachedSpeechSynthesisVoice();
+      if (voice) u.voice = voice;
+      u.lang = voice?.lang ?? "en-US";
+      u.rate = 0.92;
+      u.pitch = 1.05;
+      u.volume = 1;
+      window.speechSynthesis.speak(u);
+      return { success: true, forced: true, layer: "emergency_local" };
+    }
+  } catch {
+    /* fall through to tone */
+  }
+
+  try {
+    const tone = await playFallbackTone();
+    if (tone) {
+      return { success: true, forced: true, layer: "emergency_local" };
+    }
+  } catch {
+    /* fall through */
+  }
+
+  return { success: false, error: "total_audio_failure" };
+}
+
 export async function playEmergencyViaAudioElement(objectUrl: string): Promise<boolean> {
   try {
     const audio = audioManager.create(objectUrl);

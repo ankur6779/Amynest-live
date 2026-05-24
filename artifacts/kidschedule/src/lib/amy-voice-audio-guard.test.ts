@@ -23,8 +23,8 @@ describe("amy-voice-audio-guard", () => {
     vi.useRealTimers();
   });
 
-  it("isSilentSpeakLayer flags text_visual", () => {
-    expect(isSilentSpeakLayer("text_visual")).toBe(true);
+  it("isSilentSpeakLayer never treats layers as intentionally silent", () => {
+    expect(isSilentSpeakLayer("text_visual")).toBe(false);
     expect(isSilentSpeakLayer("static")).toBe(false);
   });
 
