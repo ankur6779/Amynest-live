@@ -2,9 +2,13 @@ package com.amynest.app
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
+import android.Manifest
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import androidx.core.content.ContextCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import org.json.JSONObject
@@ -39,6 +43,7 @@ private val ALLOWED_ORIGINS: Set<String> = setOf(
  *
  *   window.AndroidPush.getPushToken()        → cached FCM token or null
  *   window.AndroidPush.getPermissionStatus() → "granted" | "denied" | "default"
+ *   window.AndroidPush.requestPermission()   → triggers OS dialog if needed; returns status
  *   window.onAndroidToken(token)             → called when a fresh token arrives
  *
  * The web page defines `window.onAndroidToken` in index.html's inline script
@@ -87,6 +92,32 @@ class PushBridge(
         /** Synchronous read of the current notification permission state. */
         @JavascriptInterface
         fun getPermissionStatus(): String = getPermission()
+
+        /**
+         * Request notification permission from the OS when still undecided.
+         * Returns the current cached status; the web layer listens for
+         * `"amynest-push-permission"` when the async dialog completes.
+         */
+        @JavascriptInterface
+        fun requestPermission(): String {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                setPermission(true)
+                return "granted"
+            }
+            val osGranted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+            if (osGranted) {
+                setPermission(true)
+                return "granted"
+            }
+            val cached = getPermission()
+            if (cached == "default") {
+                permissionRequester()
+            }
+            return getPermission()
+        }
     }
 
     // ── Companion: active WebView reference shared across instances ───────
@@ -97,7 +128,7 @@ class PushBridge(
          * MainActivity permission flow, or KidScheduleFcmService channel
          * handling changes so `adb logcat -s MainActivity` shows the version.
          */
-        const val WRAPPER_VERSION = "2.1.0"
+        const val WRAPPER_VERSION = "2.2.0"
 
         /**
          * WeakReference to the active WebView. Updated by [install]; cleared
@@ -128,6 +159,19 @@ class PushBridge(
                     wv.evaluateJavascript(js, null)
                 } catch (e: Exception) {
                     Log.w(TAG, "broadcastToken failed: ${e.message}")
+                }
+            }
+        }
+
+        fun broadcastPermission(status: String) {
+            val wv = activeWebViewRef?.get() ?: return
+            val js = "window.dispatchEvent(new CustomEvent('amynest-push-permission'," +
+                "{detail:{permission:${JSONObject.quote(status)}}}));"
+            wv.post {
+                try {
+                    wv.evaluateJavascript(js, null)
+                } catch (e: Exception) {
+                    Log.w(TAG, "broadcastPermission failed: ${e.message}")
                 }
             }
         }
@@ -211,12 +255,23 @@ class PushBridge(
     fun setPermission(granted: Boolean) {
         val value = if (granted) "granted" else "denied"
         prefs().edit().putString(KEY_PERMISSION, value).apply()
+        broadcastPermission(value)
         if (granted) {
             val tok = getToken()
             if (tok != null) broadcastToken(tok)
         }
     }
 
-    private fun getPermission(): String =
-        prefs().getString(KEY_PERMISSION, "default") ?: "default"
+    private fun getPermission(): String {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val osGranted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+            if (osGranted) return "granted"
+        } else {
+            return "granted"
+        }
+        return prefs().getString(KEY_PERMISSION, "default") ?: "default"
+    }
 }

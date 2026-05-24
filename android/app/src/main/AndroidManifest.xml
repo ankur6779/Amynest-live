@@ -7,6 +7,11 @@
         The app requests this at runtime in MainActivity.
     -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Location for weather-aware routines and onboarding country detection. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Microphone for Speech Coach, Cry Insight, and voice features. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Required for Google Play Billing (in-app purchases / subscriptions). -->
     <uses-permission android:name="com.android.vending.BILLING" />
 
