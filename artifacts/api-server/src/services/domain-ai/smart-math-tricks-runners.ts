@@ -59,7 +59,8 @@ export async function runSmartMathTricksAiGenerate(input: {
       ? ` Avoid repeating themes from ids: ${input.excludeIds.slice(0, 12).join(", ")}.`
       : "";
 
-  const prompt = `Generate ${input.count} fun mental-math tricks for children ${ageLabel}.
+  const batchCount = Math.min(Math.max(input.count, 1), 5);
+  const prompt = `Generate ${batchCount} fun mental-math tricks for children ${ageLabel}.
 Each trick must be easy to explain aloud, with one worked example and one multiple-choice practice question (4 options, exactly one correct).
 Keep language simple and encouraging.${excludeNote}
 Output JSON only:
@@ -67,7 +68,9 @@ Output JSON only:
 
   const outcome = await chatCompletionWithTimeout(
     {
-      model: "gpt-5-nano",
+      model: "gpt-4o-mini",
+      temperature: 0.7,
+      max_completion_tokens: 2500,
       messages: [
         {
           role: "system",
@@ -78,7 +81,7 @@ Output JSON only:
       ],
       response_format: { type: "json_object" },
     },
-    8000,
+    20_000,
   );
   if (!outcome.content) return null;
 
@@ -94,7 +97,12 @@ Output JSON only:
 
   const ts = Date.now();
   const tricks = parsed.data.tricks.slice(0, input.count).flatMap((t, i) => {
-    if (!t.practiceQ.options.includes(t.practiceQ.answer)) return [];
+    const opts = t.practiceQ.options;
+    const idx = opts.findIndex(
+      (o) => o.trim().toLowerCase() === t.practiceQ.answer.trim().toLowerCase(),
+    );
+    if (idx < 0) return [];
+    const answer = opts[idx]!;
     return [
       {
         id: `ai-mt-${input.age}-${ts}-${i}`,
@@ -105,7 +113,7 @@ Output JSON only:
         emoji: TRICK_EMOJIS[i % TRICK_EMOJIS.length]!,
         color: TRICK_COLORS[i % TRICK_COLORS.length]!,
         audioText: t.audioText,
-        practiceQ: t.practiceQ,
+        practiceQ: { ...t.practiceQ, answer },
       },
     ];
   });
