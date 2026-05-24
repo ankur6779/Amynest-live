@@ -144,7 +144,7 @@ export function SevenDayJourneyCard() {
         <button
           type="button"
           className="w-full h-10 rounded-xl bg-violet-500 hover:bg-violet-400 text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors"
-          data-testid="journey-cta"
+          data-testid={task.taskId === "routine_generate" ? "dashboard-generate-routine-btn" : "journey-cta"}
         >
           {t(task.ctaKey)}
           <ArrowRight className="h-4 w-4" />

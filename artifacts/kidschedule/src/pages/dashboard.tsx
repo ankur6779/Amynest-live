@@ -30,6 +30,7 @@ import { cacheRoutineStreak } from "@/lib/routine-streak-cache";
 import { LockedBlock } from "@/components/locked-block";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { SevenDayJourneyCard } from "@/components/seven-day-journey-card";
+import { useJourney } from "@/hooks/use-journey";
 
 const HeroAmbientLayer = lazyPage(() =>
   import("@/components/hero-ambient-layer").then((m) => ({
@@ -645,10 +646,12 @@ function NowNextTimeline({
   routines,
   selectedChildName,
   onGenerate,
+  journeyHandlesGenerate,
 }: {
   routines: Routine[];
   selectedChildName?: string | null;
   onGenerate?: () => void;
+  journeyHandlesGenerate?: boolean;
 }) {
   const { t } = useTranslation();
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -663,27 +666,22 @@ function NowNextTimeline({
               ? t("dashboard.no_plan_for_child", { name: selectedChildName })
               : t("pages.dashboard.no_plan_for_today_yet")}
           </p>
-          <p className="text-xs text-muted-foreground">{t("dashboard.no_plan_subtitle")}</p>
-          {onGenerate ? (
+          <p className="text-xs text-muted-foreground">
+            {journeyHandlesGenerate
+              ? t("dashboard.no_plan_journey_hint")
+              : t("dashboard.no_plan_subtitle")}
+          </p>
+          {!journeyHandlesGenerate && onGenerate ? (
             <button
               type="button"
               onClick={onGenerate}
+              data-testid="dashboard-generate-routine-btn"
               className="mt-1 inline-flex items-center gap-2 rounded-full bg-primary hover:bg-primary/90 text-white font-bold text-sm px-5 py-2.5 transition-colors"
             >
               <Sparkles className="h-4 w-4" />
               {t("dashboard.generate_today")}
             </button>
-          ) : (
-            <Link href="/routines/generate">
-              <button
-                type="button"
-                className="mt-1 inline-flex items-center gap-2 rounded-full bg-primary hover:bg-primary/90 text-white font-bold text-sm px-5 py-2.5 transition-colors"
-              >
-                <Sparkles className="h-4 w-4" />
-                {t("dashboard.generate_today")}
-              </button>
-            </Link>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     );
@@ -778,10 +776,14 @@ function AmySuggestionCard({
   routines,
   streak,
   onGenerate,
+  suppressGenerate,
+  generatePrimarySource,
 }: {
   routines: Routine[];
   streak: number;
   onGenerate: () => void;
+  suppressGenerate?: boolean;
+  generatePrimarySource?: "journey" | "timeline";
 }) {
   const { t } = useTranslation();
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -793,12 +795,21 @@ function AmySuggestionCard({
   const hour = new Date().getHours();
   const suggestions: AmyTip[] = [];
 
-  if (total === 0) {
+  if (total === 0 && !suppressGenerate) {
     suggestions.push({
       emoji: "📅",
       text: "No routine for today yet. Generate one to get started!",
       actionLabel: t("dashboard.amy_generate_routine"),
       onAction: onGenerate,
+    });
+  } else if (total === 0 && suppressGenerate && generatePrimarySource) {
+    suggestions.push({
+      emoji: "📅",
+      text: t(
+        generatePrimarySource === "journey"
+          ? "dashboard.amy_no_routine_journey_hint"
+          : "dashboard.amy_no_routine_timeline_hint",
+      ),
     });
   } else if (pct < 30 && hour >= 14) {
     suggestions.push({
@@ -830,7 +841,7 @@ function AmySuggestionCard({
       actionLabel: t("dashboard.amy_view_progress"),
       href: "/progress",
     });
-  } else if (streak === 0 && hour < 10) {
+  } else if (streak === 0 && hour < 10 && !suppressGenerate) {
     suggestions.push({
       emoji: "☀️",
       text: "Fresh start today! Generate a routine to set a positive tone for the day.",
@@ -1208,6 +1219,21 @@ export default function Dashboard() {
   );
   const streak = useMemo(() => computeStreak(allRoutinesSafe), [allRoutines]);
   const hubUsage = useFeatureUsage();
+  const { status: journeyStatus } = useJourney();
+  const hasTodayRoutine = useMemo(
+    () => allRoutinesSafe.some((r) => routineDateKey(r) === todayKey),
+    [allRoutinesSafe, todayKey],
+  );
+  const journeyHandlesGenerate =
+    journeyStatus?.active === true &&
+    journeyStatus.todayTask?.taskId === "routine_generate";
+  const showTimelineGenerate = !hasTodayRoutine && !journeyHandlesGenerate;
+  const suppressAmyGenerate = !hasTodayRoutine;
+  const generatePrimarySource = journeyHandlesGenerate
+    ? ("journey" as const)
+    : showTimelineGenerate
+      ? ("timeline" as const)
+      : undefined;
 
   useEffect(() => {
     cacheRoutineStreak(streak);
@@ -1381,7 +1407,8 @@ export default function Dashboard() {
                 <NowNextTimeline
                   routines={filteredRoutines}
                   selectedChildName={selectedChild?.name ?? null}
-                  onGenerate={handleGenerateRoutine}
+                  onGenerate={showTimelineGenerate ? handleGenerateRoutine : undefined}
+                  journeyHandlesGenerate={journeyHandlesGenerate}
                 />
               </div>
             </div>
@@ -1408,6 +1435,8 @@ export default function Dashboard() {
                   routines={filteredRoutines}
                   streak={streak}
                   onGenerate={handleGenerateRoutine}
+                  suppressGenerate={suppressAmyGenerate}
+                  generatePrimarySource={generatePrimarySource}
                 />
                 <ParentScoreCard routines={allRoutinesSafe} streak={streak} />
                 <DashboardWeeklyInsightsCard selectedChildId={selectedChildId} />
@@ -1448,14 +1477,6 @@ export default function Dashboard() {
             </Link>
           </LockedBlock>
 
-          {/* ── Primary CTA ──────────────────────────────────────────── */}
-          <button type="button" onClick={handleGenerateRoutine} data-testid="dashboard-generate-routine-btn" className="w-full h-14 rounded-2xl bg-primary hover:bg-primary text-white font-black text-base shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            {t("pages.dashboard.generate_today_s_routine")}
-          </button>
-          <p className="text-center text-[10px] font-medium text-muted-foreground/60 mt-1.5 tracking-wide">
-            {t("patent_pending.microcopy_routine")}
-          </p>
       </div>
     </div>
   );
