@@ -167,11 +167,21 @@ const START_ERROR_COPY: Record<string, string> = {
   session_misconfigured:
     "We could not start the test securely. Please refresh the app and try again.",
   unauthorized: "Please sign in again to start the test.",
+  Unauthorized: "Please sign in again to start the test.",
+  server_error: "Our servers had trouble starting the test. Please try again in a moment.",
   invalid_body: "Something went wrong starting the test. Please try again.",
 };
 
 function friendlyStartError(raw: string): string {
-  return START_ERROR_COPY[raw] ?? "Something went wrong starting the test. Please try again.";
+  const key = raw.trim();
+  const normalized = key.toLowerCase();
+  return (
+    START_ERROR_COPY[key] ??
+    START_ERROR_COPY[normalized] ??
+    (normalized.startsWith("http")
+      ? "Could not reach the server. Check your connection and try again."
+      : "Something went wrong starting the test. Please try again.")
+  );
 }
 
 const TYPE_LABEL: Record<QuestionType, string> = {
@@ -915,6 +925,19 @@ function PhonicsTestContent({
   const startInFlightRef = useRef(false);
   const handleStartWithMode = useCallback(async (testType: TestType, gameMode: GameMode) => {
     if (startInFlightRef.current) return;
+    if (!Number.isFinite(numericChildId) || numericChildId <= 0) {
+      setStartError("We couldn't find this child profile. Please refresh and try again.");
+      return;
+    }
+    if (testConfig && testConfig.hasContent === false) {
+      setStartError(friendlyStartError("no_content_for_age_group"));
+      return;
+    }
+    const slot = availability?.[testType];
+    if (slot && !slot.available) {
+      setStartError(friendlyStartError("cooldown_active"));
+      return;
+    }
     startInFlightRef.current = true;
     setStartError(null);
     try {
@@ -957,7 +980,7 @@ function PhonicsTestContent({
     } finally {
       startInFlightRef.current = false;
     }
-  }, [authFetch, numericChildId, isMounted, setLocation, clearResume, persistResume]);
+  }, [authFetch, numericChildId, isMounted, setLocation, clearResume, persistResume, availability, testConfig]);
 
   // Common submit-answer flow used by both timer expiry and tap.
   const submitAnswer = useCallback((selectedIndex: number, currentPhase: Extract<Phase, { kind: "running" }>) => {
@@ -1094,7 +1117,7 @@ function PhonicsTestContent({
             startError={startError}
             onBack={handleModePickBack}
             onSelectMode={(mode) => void handleStartWithMode(phase.testType, mode)}
-            onSelectMixed={() => void handleStartWithMode("daily", "mixed")}
+            onSelectMixed={() => void handleStartWithMode(phase.testType, "mixed")}
           />
         </div>
       </div>
@@ -1213,6 +1236,7 @@ function PhonicsTestContent({
               const label = tt === "daily" ? "Daily Test" : "Weekly Test";
               const dailyCount = testConfig?.daily.questionCount ?? 5;
               const weeklyCount = testConfig?.weekly.questionCount ?? 20;
+              const noContent = testConfig?.hasContent === false;
               const sub =
                 tt === "daily"
                   ? `${dailyCount} questions • once a day`
@@ -1221,7 +1245,7 @@ function PhonicsTestContent({
                 <Button
                   key={tt}
                   type="button"
-                  disabled={!info.available}
+                  disabled={!info.available || noContent}
                   onClick={() => handlePickTest(tt)}
                   data-testid={`phonics-test-start-${tt}`}
                   className={cn(
@@ -1256,7 +1280,7 @@ function PhonicsTestContent({
             startError={startError}
             onBack={handleModePickBack}
             onSelectMode={(mode) => void handleStartWithMode(phase.testType, mode)}
-            onSelectMixed={() => void handleStartWithMode("daily", "mixed")}
+            onSelectMixed={() => void handleStartWithMode(phase.testType, "mixed")}
           />
         )}
 

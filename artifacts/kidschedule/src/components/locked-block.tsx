@@ -14,6 +14,8 @@ interface LockedBlockProps {
   journeySoft?: boolean;
   /** Child name for journey soft-lock CTA copy. */
   childName?: string;
+  /** Infant child (0–24 months) — uses care-focused journey copy. */
+  isInfant?: boolean;
   /**
    * Legacy prop — kept for backwards compatibility with existing call sites.
    * The locked overlay no longer opens the paywall modal; it navigates to
@@ -35,6 +37,7 @@ export function LockedBlock({
   locked,
   journeySoft = false,
   childName,
+  isInfant = false,
   rounded = "rounded-3xl",
   children,
 }: LockedBlockProps) {
@@ -49,6 +52,7 @@ export function LockedBlock({
       return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
         previewLocked: true,
         childName,
+        isInfant,
       });
     }
     return <>{children}</>;

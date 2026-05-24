@@ -87,6 +87,7 @@ export async function generatePhonicsWordsCached(
   const key = cacheKey(level, vowelFocus);
 
   const cached = await withSafeDb(
+    "phonics.contentAi.cacheLookup",
     () =>
       db
         .select()
@@ -109,6 +110,7 @@ export async function generatePhonicsWordsCached(
   }
 
   await withSafeDb(
+    "phonics.contentAi.cacheWrite",
     async () => {
       await db
         .insert(phonicsContentCacheTable)

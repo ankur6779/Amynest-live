@@ -132,5 +132,5 @@ export async function runPhonicsContentDripBatch(): Promise<PhonicsContentDripSt
 
 /** Manual / cron entry — safe when DB unavailable. */
 export async function runPhonicsContentDripSafe(): Promise<PhonicsContentDripStats[]> {
-  return withSafeDb(() => runPhonicsContentDripBatch(), []);
+  return withSafeDb("phonics.contentDrip.batch", () => runPhonicsContentDripBatch(), []);
 }

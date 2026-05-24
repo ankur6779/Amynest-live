@@ -12,6 +12,7 @@ import {
   buildDay3Insights,
   dayCompletionMessage,
   bonusUnlockMessage,
+  hubJourneyMessageKey,
 } from "@/lib/hub-journey-ux";
 
 interface TodaysPathProps {
@@ -23,6 +24,7 @@ interface TodaysPathProps {
   peekAvailable: boolean;
   isJourneyLocked: boolean;
   isPremium: boolean;
+  isInfant?: boolean;
   progress: ChildProgressSnapshot;
   progressSummary?: string;
   onComplete: (stepIds: string[]) => Promise<void>;
@@ -35,11 +37,13 @@ function DayCompleteCelebration({
   childName,
   bonusLine,
   onDismiss,
+  isInfant = false,
 }: {
   day: number;
   childName: string;
   bonusLine: string | null;
   onDismiss: () => void;
+  isInfant?: boolean;
 }) {
   const { t } = useTranslation();
   return (
@@ -52,7 +56,7 @@ function DayCompleteCelebration({
           ✨
         </span>
         <p className="font-bold text-foreground leading-snug">
-          {dayCompletionMessage(day, childName, t)}
+          {dayCompletionMessage(day, childName, t, isInfant)}
         </p>
         {bonusLine && (
           <p className="text-sm text-primary font-semibold">{bonusLine}</p>
@@ -82,9 +86,11 @@ export function TodaysPath({
   onComplete,
   onPeekAhead,
   isCompleting,
+  isInfant = false,
 }: TodaysPathProps) {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
+  const jk = (base: string) => hubJourneyMessageKey(base, isInfant);
   const [stepIdx, setStepIdx] = useState(0);
   const [doneSteps, setDoneSteps] = useState<Set<string>>(new Set());
   const [showDay3Insight, setShowDay3Insight] = useState(false);
@@ -93,7 +99,14 @@ export function TodaysPath({
 
   const current = pathSteps[stepIdx];
   const allStepsDone = pathSteps.every((s) => doneSteps.has(s.id));
-  const day3Insights = buildDay3Insights(childName, progress, pathSteps, peekAhead, t);
+  const day3Insights = buildDay3Insights(
+    childName,
+    progress,
+    pathSteps,
+    peekAhead,
+    t,
+    isInfant,
+  );
 
   const markStepDone = useCallback(() => {
     if (!current) return;
@@ -124,8 +137,9 @@ export function TodaysPath({
       <DayCompleteCelebration
         day={celebrationDay}
         childName={childName}
-        bonusLine={bonusUnlockMessage(celebrationDay, t)}
+        bonusLine={bonusUnlockMessage(celebrationDay, t, isInfant)}
         onDismiss={() => setCelebrationDay(null)}
+        isInfant={isInfant}
       />
     );
   }
@@ -142,7 +156,7 @@ export function TodaysPath({
               {t("parent_hub.journey.todays_path")}
             </p>
             <h3 className="font-quicksand font-bold text-lg text-foreground">
-              {t("parent_hub.journey.path_locked_preview_title", { name: childName })}
+              {t(jk("path_locked_preview_title"), { name: childName })}
             </h3>
           </div>
           <div className="relative px-5 pb-4 pointer-events-none select-none" aria-hidden>
@@ -164,7 +178,7 @@ export function TodaysPath({
             {progressSummary && (
               <p className="text-xs text-muted-foreground mb-3 text-center">{progressSummary}</p>
             )}
-            <JourneyUnlockCta childName={childName} />
+            <JourneyUnlockCta childName={childName} isInfant={isInfant} />
           </div>
         </CardContent>
       </Card>
@@ -180,7 +194,7 @@ export function TodaysPath({
         <CardContent className="p-5 space-y-2 text-center">
           <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto" />
           <p className="font-bold text-foreground">
-            {dayCompletionMessage(journeyDay, childName, t)}
+            {dayCompletionMessage(journeyDay, childName, t, isInfant)}
           </p>
           <p className="text-sm text-muted-foreground">
             {journeyDay >= 3
@@ -205,7 +219,7 @@ export function TodaysPath({
                 {t("parent_hub.journey.todays_path")}
               </p>
               <h3 className="font-quicksand font-bold text-lg text-foreground">
-                {t("parent_hub.journey.path_for", { name: childName })}
+                {t(jk("path_for"), { name: childName })}
               </h3>
             </div>
             <span className="text-xs font-bold text-muted-foreground">
@@ -301,6 +315,7 @@ export function TodaysPath({
         <Day3InsightModal
           childName={childName}
           insights={day3Insights}
+          isInfant={isInfant}
           onContinue={() => setLocation("/pricing?reason=hub_journey")}
           onClose={() => setShowDay3Insight(false)}
         />
@@ -317,9 +332,13 @@ export function TodaysPathFromStatus(props: {
   onPeekAhead: () => Promise<void>;
   isCompleting: boolean;
 }) {
+  const child = props.status.child;
+  const totalMonths = child.age * 12 + (child.ageMonths ?? 0);
+  const isInfant = totalMonths < 24;
+
   return (
     <TodaysPath
-      childName={props.status.child.name}
+      childName={child.name}
       journeyDay={props.status.journeyDay}
       pathSteps={props.status.pathSteps}
       pathCompleted={props.status.pathCompleted}
@@ -327,6 +346,7 @@ export function TodaysPathFromStatus(props: {
       peekAvailable={props.status.peekAvailable}
       isJourneyLocked={props.isJourneyLocked}
       isPremium={props.isPremium}
+      isInfant={isInfant}
       progress={props.status.progress}
       progressSummary={props.status.progress.summaryLine}
       onComplete={props.onComplete}

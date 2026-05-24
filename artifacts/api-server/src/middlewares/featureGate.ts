@@ -23,7 +23,7 @@ import {
  */
 /**
  * Routine generation gate — premium bypass; regenerating a saved child+date
- * does not burn a free slot; otherwise delegates to the lifetime counter.
+ * does not burn a free slot; otherwise uses the 3-day journey quota.
  */
 export function routineGenerateGate() {
   return async function routineGenerateGateMw(
@@ -60,7 +60,43 @@ export function routineGenerateGate() {
       }
     }
 
-    return featureGate("routine_generate")(req, res, next);
+    const { assertRoutineCanGenerate, recordRoutineGeneration } = await import(
+      "../services/routineJourneyService.js"
+    );
+    const gate = await assertRoutineCanGenerate(userId);
+    if (!gate.ok) {
+      res.status(402).json({
+        error: "routine_locked",
+        feature: "routine_generate",
+        message:
+          "You've used all 3 free routine generations. Upgrade for unlimited routines.",
+        limit: gate.status.access.generationsTotal,
+        used: gate.status.access.generationsUsed,
+        access: gate.status.access,
+      });
+      return;
+    }
+
+    const origEnd = res.end.bind(res);
+    let settled = false;
+    res.end = function (...args: unknown[]) {
+      if (!settled) {
+        settled = true;
+        if (
+          res.statusCode >= 200 &&
+          res.statusCode < 300 &&
+          typeof body?.childId === "number" &&
+          typeof body?.date === "string"
+        ) {
+          void recordRoutineGeneration(userId, body.childId, body.date).catch(
+            () => undefined,
+          );
+        }
+      }
+      // @ts-expect-error - express.end has multiple overloads
+      return origEnd(...args);
+    };
+    next();
   };
 }
 

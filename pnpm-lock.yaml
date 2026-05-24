@@ -286,6 +286,9 @@ importers:
       '@workspace/routine-intelligence':
         specifier: workspace:*
         version: link:../../lib/routine-intelligence
+      '@workspace/routine-journey':
+        specifier: workspace:*
+        version: link:../../lib/routine-journey
       '@workspace/safety':
         specifier: workspace:*
         version: link:../../lib/safety
@@ -494,6 +497,9 @@ importers:
       '@workspace/ptm-prep':
         specifier: workspace:*
         version: link:../../lib/ptm-prep
+      '@workspace/routine-journey':
+        specifier: workspace:*
+        version: link:../../lib/routine-journey
       '@workspace/speech-coach':
         specifier: workspace:*
         version: link:../../lib/speech-coach
@@ -1278,6 +1284,8 @@ importers:
   lib/ptm-prep: {}
 
   lib/routine-intelligence: {}
+
+  lib/routine-journey: {}
 
   lib/safety: {}
 

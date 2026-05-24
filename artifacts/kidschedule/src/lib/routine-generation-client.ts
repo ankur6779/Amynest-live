@@ -162,7 +162,9 @@ async function postRoutineEndpoint(
     const errBody = body as { reason?: string; error?: string; feature?: string } | null;
     const isFeatureLocked =
       res.status === 402 &&
-      (errBody?.error === "feature_locked" || errBody?.feature === "routine_generate");
+      (errBody?.error === "feature_locked" ||
+        errBody?.error === "routine_locked" ||
+        errBody?.feature === "routine_generate");
     const isLegacyLimit = res.status === 403 && errBody?.reason === "routine_limit_exceeded";
     if (isFeatureLocked || isLegacyLimit) {
       throw new RoutineGenerationPaywallError();

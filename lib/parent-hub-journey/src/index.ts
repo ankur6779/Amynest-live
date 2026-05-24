@@ -136,10 +136,18 @@ export function isHubFeatureExempt(featureId: string): boolean {
   return (HUB_JOURNEY_EXEMPT_FEATURES as readonly string[]).includes(featureId);
 }
 
-export function bonusUnlockForDay(day: number): string | null {
+/** True when child is in the 0–24 month infant window. */
+export function isInfantAgeMonths(totalMonths: number): boolean {
+  return totalMonths < 24;
+}
+
+export function bonusUnlockForDay(
+  day: number,
+  opts?: { isInfant?: boolean },
+): string | null {
   if (day === 1) return "hub_activities";
   if (day === 2) return "hub_articles";
-  if (day === 3) return "hub_olympiad";
+  if (day === 3) return opts?.isInfant ? "hub_infant_parenting" : "hub_olympiad";
   return null;
 }
 
@@ -224,18 +232,66 @@ export function buildPeekAhead(input: {
   dateIso: string;
   childName: string;
   childKey: string | number;
+  isInfant?: boolean;
 }): PeekAheadItem[] {
   const tomorrow = new Date(input.dateIso);
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowIso = formatDateIso(tomorrow);
   const seed = `${tomorrowIso}:${input.childKey}:${input.nextJourneyDay}`;
 
-  const pool: PeekAheadItem[] = [
-    { emoji: "🧩", title: "New daily puzzle", body: `Fresh brain teaser for ${input.childName}`, locked: true },
-    { emoji: "🌟", title: "New life skill", body: "Tomorrow's habit-building task", locked: true },
-    { emoji: "📖", title: "New story", body: "Age-matched story time pick", locked: true },
-    { emoji: "🔤", title: "Phonics practice", body: "New sounds to explore", locked: true },
-  ];
+  const pool: PeekAheadItem[] = input.isInfant
+    ? [
+        {
+          emoji: "💤",
+          title: "Sleep window tip",
+          body: `Tomorrow's nap timing guidance for ${input.childName}`,
+          locked: true,
+        },
+        {
+          emoji: "🍼",
+          title: "Feeding guide",
+          body: "Age-matched feeding intervals and tips",
+          locked: true,
+        },
+        {
+          emoji: "👶",
+          title: "Baby cue insight",
+          body: "Understand cries and comfort signals",
+          locked: true,
+        },
+        {
+          emoji: "📈",
+          title: "Milestone check",
+          body: "What to watch for this month",
+          locked: true,
+        },
+      ]
+    : [
+        {
+          emoji: "🧩",
+          title: "New daily puzzle",
+          body: `Fresh brain teaser for ${input.childName}`,
+          locked: true,
+        },
+        {
+          emoji: "🌟",
+          title: "New life skill",
+          body: "Tomorrow's habit-building task",
+          locked: true,
+        },
+        {
+          emoji: "📖",
+          title: "New story",
+          body: "Age-matched story time pick",
+          locked: true,
+        },
+        {
+          emoji: "🔤",
+          title: "Phonics practice",
+          body: "New sounds to explore",
+          locked: true,
+        },
+      ];
 
   const pick = seededPick(pool, seed);
   return pick ? [pick] : pool.slice(0, 2);

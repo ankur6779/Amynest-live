@@ -125,6 +125,7 @@
     "@workspace/life-skills": "workspace:*",
     "@workspace/parent-hub-journey": "workspace:*",
     "@workspace/coach-journey": "workspace:*",
+    "@workspace/routine-journey": "workspace:*",
     "@workspace/load-forecast": "workspace:*",
     "@workspace/math-tricks": "workspace:*",
     "@workspace/morning-flow": "workspace:*",

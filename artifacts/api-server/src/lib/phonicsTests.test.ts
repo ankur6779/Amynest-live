@@ -298,6 +298,19 @@ describe("generateQuestions", () => {
     }
   });
 
+  it("mixed mode fills the requested count for every age tier", () => {
+    for (const ageGroup of ["12_24m", "2_3y", "3_4y", "4_5y", "5_6y"] as AgeGroup[]) {
+      const qs = generateQuestions({
+        ageGroup,
+        contentRows: fixtureFor(ageGroup, 5),
+        count: 5,
+        seed: 42,
+        gameMode: "mixed",
+      });
+      assert.equal(qs.length, 5, `mixed should fill 5 for ${ageGroup}`);
+    }
+  });
+
   it("strips correctIndex when sending to client", () => {
     const qs = generateQuestions({ ageGroup: "2_3y", contentRows: LETTERS_2_3Y, count: 3, seed: 1 });
     const client = toClientQuestions(qs);

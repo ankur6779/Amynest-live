@@ -4,9 +4,17 @@ import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /** CTA banner shown inside soft-locked hub tiles. */
-export function JourneyUnlockCta({ childName }: { childName: string }) {
+export function JourneyUnlockCta({
+  childName,
+  isInfant = false,
+}: {
+  childName: string;
+  isInfant?: boolean;
+}) {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
+  const jk = (base: string) =>
+    isInfant ? `parent_hub.journey.infant.${base}` : `parent_hub.journey.${base}`;
 
   return (
     <div
@@ -14,7 +22,7 @@ export function JourneyUnlockCta({ childName }: { childName: string }) {
       data-testid="journey-unlock-cta"
     >
       <p className="text-sm font-semibold text-foreground leading-snug">
-        {t("parent_hub.journey.soft_lock_cta", { name: childName })}
+        {t(jk("soft_lock_cta"), { name: childName })}
       </p>
       <Button
         size="sm"
@@ -31,9 +39,11 @@ export function JourneyUnlockCta({ childName }: { childName: string }) {
 /** Blurred preview wrapper for hub section content when journey is locked. */
 export function JourneyPreviewContent({
   childName,
+  isInfant = false,
   children,
 }: {
   childName: string;
+  isInfant?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -47,7 +57,7 @@ export function JourneyPreviewContent({
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/30 to-background/95" />
       </div>
-      <JourneyUnlockCta childName={childName} />
+      <JourneyUnlockCta childName={childName} isInfant={isInfant} />
     </div>
   );
 }

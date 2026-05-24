@@ -2,19 +2,23 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import type { Day3InsightLines } from "@/lib/hub-journey-ux";
+import { hubJourneyMessageKey } from "@/lib/hub-journey-ux";
 
 export function Day3InsightModal({
   childName,
   insights,
+  isInfant = false,
   onContinue,
   onClose,
 }: {
   childName: string;
   insights: Day3InsightLines;
+  isInfant?: boolean;
   onContinue: () => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const jk = (base: string) => hubJourneyMessageKey(base, isInfant);
 
   return (
     <div
@@ -29,7 +33,7 @@ export function Day3InsightModal({
             ✨
           </span>
           <h2 className="font-quicksand font-bold text-xl mt-3 text-foreground">
-            {t("parent_hub.journey.insight_title", { name: childName })}
+            {t(jk("insight_title"), { name: childName })}
           </h2>
         </div>
 
@@ -67,7 +71,7 @@ export function Day3InsightModal({
             onClick={onContinue}
           >
             <Sparkles className="h-4 w-4" />
-            {t("parent_hub.journey.continue_journey_cta", { name: childName })}
+            {t(jk("continue_journey_header"), { name: childName })}
           </Button>
           <button
             type="button"

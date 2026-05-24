@@ -920,8 +920,11 @@ router.post("/phonics/tests/start", async (req, res): Promise<void> => {
       res.status(409).json({ error: "no_content_for_age_group" });
       return;
     }
-    // Avoid repeating concepts seen in the most recent same-type test.
-    const recentItemIds = (last?.weakConcepts as number[] | null) ?? [];
+    // De-duplication across back-to-back tests is handled inside the
+    // generator (it falls back when the recency filter would starve the pool).
+    // Do not pass weakConcepts here — those are wrong answers, not recently
+    // asked items, and excluding them can block question generation.
+    const recentItemIds: number[] = [];
     const count = testType === "daily" ? DAILY_COUNT : WEEKLY_COUNT;
     const seed = Date.now() ^ (childId * 2654435761);
     const curriculum = await getOrCreateCurriculumProgress(
