@@ -597,7 +597,7 @@ html[data-theme="dark"] {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   padding-top: 0;
-  padding-bottom: calc(64px + var(--sab, 0px));
+  padding-bottom: 80px;
 }
 
 /* Dashboard bottom nav — fixed to viewport; safe-area only on the nav bar. */
@@ -607,7 +607,7 @@ html[data-theme="dark"] {
   right: 0;
   bottom: 0;
   height: 64px;
-  padding-bottom: var(--sab, env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom);
   z-index: 1000;
   pointer-events: none;
 }
@@ -627,7 +627,7 @@ html[data-theme="dark"] {
 
   .floating-button,
   #amy-fab-floating.amy-fab-floating.floating-button {
-    bottom: calc(64px + var(--sab, 0px) + 12px);
+    bottom: 90px;
   }
 }
 

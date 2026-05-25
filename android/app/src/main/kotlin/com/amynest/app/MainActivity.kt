@@ -476,9 +476,12 @@ class MainActivity : AppCompatActivity() {
         val bottomPx = navBars.bottom.coerceIn(0, 72)
         val topPx = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top.coerceAtLeast(0)
         val effectiveBottom = if (bottomPx > 0) bottomPx else 48
+        val clearance = effectiveBottom
         val js =
             "(function(){" +
                 "var r=document.documentElement;" +
+                "r.style.setProperty('--app-bottom-safe-base','${effectiveBottom}px');" +
+                "r.style.setProperty('--app-bottom-clearance','${clearance}px');" +
                 "r.style.setProperty('--sat','${topPx}px');" +
                 "r.style.setProperty('--sab','${effectiveBottom}px');" +
                 "r.classList.add('amynest-android-shell','amynest-native-shell');" +
