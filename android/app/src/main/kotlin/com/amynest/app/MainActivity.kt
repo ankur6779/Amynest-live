@@ -485,6 +485,9 @@ class MainActivity : AppCompatActivity() {
                 "r.style.setProperty('--sat','${topPx}px');" +
                 "r.style.setProperty('--sab','${effectiveBottom}px');" +
                 "r.classList.add('amynest-android-shell','amynest-native-shell');" +
+                "if(typeof window.__amynestApplyShellInsets==='function'){" +
+                    "window.__amynestApplyShellInsets({top:${topPx},bottom:${effectiveBottom}});" +
+                "}" +
             "})();"
         webView.post { webView.evaluateJavascript(js, null) }
     }
