@@ -476,12 +476,14 @@ class MainActivity : AppCompatActivity() {
         val density = resources.displayMetrics.density
         val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
         val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+        val headerBreathePx = (6 * density).toInt()
+        val footerLiftPx = (16 * density).toInt()
         val topPx = statusBars.top.coerceAtLeast(0).let { reported ->
             if (reported > 0) reported else (24 * density).toInt()
-        }
+        } + headerBreathePx
         val bottomPx = navBars.bottom.coerceIn(0, 72).let { reported ->
             if (reported > 0) reported else (48 * density).toInt()
-        }
+        } + footerLiftPx
 
         webView.updatePadding(top = topPx, bottom = bottomPx)
 
@@ -496,6 +498,7 @@ class MainActivity : AppCompatActivity() {
                 "if(typeof window.__amynestApplyShellInsets==='function'){" +
                     "window.__amynestApplyShellInsets({top:${topPx},bottom:${bottomPx},viewportInset:true});" +
                 "}" +
+                "if(typeof window.__amynestShellLayoutApply==='function'){window.__amynestShellLayoutApply();}" +
             "})();"
         webView.post { webView.evaluateJavascript(js, null) }
     }
