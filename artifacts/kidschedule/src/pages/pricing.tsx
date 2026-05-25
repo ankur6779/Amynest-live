@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Check, AlertTriangle, X, Smartphone,
   Sparkles, Crown, Zap, Shield, Loader2,
@@ -11,6 +12,9 @@ import { useNativeBilling } from "@/hooks/use-native-billing";
 import { isIndiaRegion, isAndroidDevice, PLAY_STORE_URL } from "@/lib/geo";
 import { resolvePlanPriceLabel } from "@/lib/plan-price";
 import { presentNativeRCPaywall } from "@/lib/native-rc-paywall";
+import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useToast } from "@/hooks/use-toast";
 import { useHubJourney } from "@/hooks/use-hub-journey";
 
 const HUB_ACTIVE_CHILD_KEY = "amynest:hub:activeChildId";
@@ -62,6 +66,11 @@ export default function PricingPage() {
   const [cancelling, setCancelling] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+
+  const authFetch = useAuthFetch();
+  const qc = useQueryClient();
+  const { toast } = useToast();
 
   const isIndia = isIndiaRegion();
   const cancelAtPeriodEnd = entitlements?.cancelAtPeriodEnd ?? false;
@@ -110,16 +119,37 @@ export default function PricingPage() {
 
   const onUpgradeNativeStore = async () => {
     setNotice(null);
-    const rc = await presentNativeRCPaywall({ userId: user?.id });
-    if (rc.handled) {
-      if (rc.purchased || rc.restored) {
-        window.dispatchEvent(new Event("amynest:refresh-subscription"));
+    setPaymentSuccess(false);
+    try {
+      const rc = await presentNativeRCPaywall({ userId: user?.id });
+      if (rc.handled) {
+        if (rc.purchased || rc.restored) {
+          setVerifying(true);
+          const finalized = await finalizeNativePurchase(authFetch, qc);
+          if (finalized.isPremium) {
+            setPaymentSuccess(true);
+            toast({
+              title: t("pricing.payment_success_title"),
+              description: t("pricing.payment_success_body"),
+            });
+          } else {
+            setNotice(t("pricing.payment_pending"));
+          }
+        }
+        return;
       }
-      return;
-    }
-    const res = await nativeBilling.purchase(selected);
-    if (!res.ok && !res.userCancelled) {
-      setNotice(res.reason ?? t("pricing.checkout_unavailable"));
+      const res = await nativeBilling.purchase(selected);
+      if (res.ok) {
+        setPaymentSuccess(true);
+        toast({
+          title: t("pricing.payment_success_title"),
+          description: t("pricing.payment_success_body"),
+        });
+      } else if (!res.userCancelled) {
+        setNotice(res.reason ?? t("pricing.checkout_unavailable"));
+      }
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -319,6 +349,12 @@ export default function PricingPage() {
       </div>
 
       {/* ── Notice ── */}
+      {paymentSuccess && (
+        <div className="mx-4 mb-4 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-center text-sm font-semibold text-green-300">
+          <Check className="inline h-4 w-4 mr-1.5 -mt-0.5" />
+          {t("pricing.payment_success_title")}
+        </div>
+      )}
       {notice && (
         <div className="mx-4 mb-4 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-center text-sm text-white/80">
           {/* audit-ok: white text on dark semi-transparent surface */}

@@ -471,7 +471,10 @@
     "apple_unavailable": "Apple billing is not available right now. Make sure you are signed in to the App Store and try again.",
     "google_play_unavailable": "Google Play billing is not available right now. Update the app from the Play Store and try again.",
     "google_play_processing": "Opening Google Play…",
-    "restore_purchases": "Restore Purchases"
+    "restore_purchases": "Restore Purchases",
+    "payment_success_title": "Premium unlocked!",
+    "payment_success_body": "Your full AmyNest features are now active.",
+    "payment_pending": "Payment received — premium is activating. Wait a few seconds or tap Restore Purchases."
   },
   "profile": {
     "title": "Parent Profile",

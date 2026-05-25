@@ -158,6 +158,29 @@ router.get("/subscription/rc-config", requireAuth, async (req, res): Promise<voi
 });
 
 /**
+ * POST /subscription/rc-sync — after a native RevenueCat purchase, pull the
+ * subscriber record from RevenueCat and activate premium immediately instead
+ * of waiting for the webhook (which can lag several seconds).
+ */
+router.post("/subscription/rc-sync", requireAuth, async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  const { syncRevenueCatSubscription } = await import("../services/rcCustomerService.js");
+  const result = await syncRevenueCatSubscription(userId);
+  const ent = await getEntitlements(userId);
+  res.json({
+    ok: result.synced,
+    isPremium: ent.isPremium,
+    plan: result.plan ?? ent.plan,
+    reason: result.reason,
+    entitlements: ent,
+  });
+});
+
+/**
  * Legacy endpoint — kept for the web client which still posts here. Returns
  * 200 with rc-config payload so the web client can hand-off to RevenueCat.
  * Mobile clients should call /subscription/rc-config directly.

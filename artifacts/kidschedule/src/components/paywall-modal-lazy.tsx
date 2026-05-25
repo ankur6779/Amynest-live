@@ -1,11 +1,15 @@
 import { Suspense, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePaywall } from "@/contexts/paywall-context";
 import { useUser } from "@/lib/firebase-auth-hooks";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useToast } from "@/hooks/use-toast";
 import { lazyPage } from "@/lib/safe-import";
 import {
   canPresentNativeRCPaywall,
   presentNativeRCPaywall,
 } from "@/lib/native-rc-paywall";
+import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
 
 const PaywallModal = lazyPage(() =>
   import("@/components/paywall-modal").then((m) => ({
@@ -21,6 +25,9 @@ const PaywallModal = lazyPage(() =>
 export function PaywallModalLazy() {
   const { state, closePaywall } = usePaywall();
   const { user } = useUser();
+  const authFetch = useAuthFetch();
+  const qc = useQueryClient();
+  const { toast } = useToast();
   const [showCustom, setShowCustom] = useState(false);
 
   useEffect(() => {
@@ -44,9 +51,22 @@ export function PaywallModalLazy() {
       if (cancelled) return;
 
       if (outcome.handled) {
-        closePaywall();
         if (outcome.purchased || outcome.restored) {
-          window.dispatchEvent(new Event("amynest:refresh-subscription"));
+          const finalized = await finalizeNativePurchase(authFetch, qc);
+          closePaywall();
+          if (finalized.isPremium) {
+            toast({
+              title: "Premium unlocked!",
+              description: "Your full AmyNest features are now active.",
+            });
+          } else {
+            toast({
+              title: "Payment received",
+              description: "Premium is activating — it may take a few seconds.",
+            });
+          }
+        } else {
+          closePaywall();
         }
         return;
       }
@@ -57,7 +77,7 @@ export function PaywallModalLazy() {
     return () => {
       cancelled = true;
     };
-  }, [state.open, user?.id, closePaywall]);
+  }, [state.open, user?.id, closePaywall, authFetch, qc, toast]);
 
   if (!state.open || !showCustom) return null;
 
