@@ -504,13 +504,10 @@
 }
 
 html,
-body,
-#root {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  max-width: 100%;
+body {
   height: 100%;
+  margin: 0;
+  overflow: hidden;
   touch-action: manipulation;
 }
 
@@ -561,13 +558,24 @@ html[data-theme="dark"] {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  min-height: 100dvh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
 }
 
 #app-root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.app-root {
+  height: 100%;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -578,13 +586,6 @@ html[data-theme="dark"] {
   box-sizing: border-box;
 }
 
-.app-root {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 100dvh;
-}
-
 /* Primary scroll surface — .page-content is the documented alias */
 .app-scroll,
 .page-content {
@@ -592,40 +593,20 @@ html[data-theme="dark"] {
   min-height: 0;
   min-width: 0;
   max-width: 100%;
-  overflow-x: clip;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-  padding-bottom: calc(16px + var(--app-bottom-clearance));
 }
 
-/* Tab bar clearance only when the bottom nav is visible (dashboard). */
 @media (max-width: 767px) {
   body.has-tabbar .app-scroll,
   body.has-tabbar .page-content {
-    padding-bottom: calc(78px + 16px);
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px) + 16px);
   }
 
   #amy-fab-floating.amy-fab-floating.floating-button,
   .floating-button {
-    bottom: calc(78px + 12px);
-  }
-
-  /*
-   * Play Store WebView: system inset only on the portaled tab bar, not scroll padding.
-   */
-  html.amynest-android-shell body.has-tabbar .app-scroll,
-  html.amynest-android-shell body.has-tabbar .page-content,
-  html.amynest-native-shell body.has-tabbar .app-scroll,
-  html.amynest-native-shell body.has-tabbar .page-content {
-    padding-bottom: calc(78px + 16px);
-  }
-
-  html.amynest-android-shell #amy-fab-floating.amy-fab-floating.floating-button,
-  html.amynest-android-shell .floating-button,
-  html.amynest-native-shell #amy-fab-floating.amy-fab-floating.floating-button,
-  html.amynest-native-shell .floating-button {
-    bottom: calc(78px + var(--app-bottom-clearance, 48px) + 12px);
+    bottom: calc(78px + env(safe-area-inset-bottom, 0px) + 12px);
   }
 }
 
@@ -790,11 +771,9 @@ html[data-theme="dark"] {
 }
 
 .app-header {
-  position: sticky;
-  top: 0;
-  z-index: 60;
+  position: relative;
+  z-index: 50;
   flex-shrink: 0;
-  padding-top: max(env(safe-area-inset-top, 0px), var(--sat, 0px));
   background: hsl(var(--background) / 0.95);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -810,44 +789,6 @@ html[data-theme="dark"] {
   padding: 0 0.75rem;
 }
 
-/*
- * Android WebView / installed PWA: pin header to viewport; offset main once below it.
- */
-@media (max-width: 767px) {
-  html.amynest-android-shell .app-header,
-  html.amynest-native-shell .app-header,
-  html.amynest-android-shell.amynest-pwa-standalone .app-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    z-index: 1000;
-    margin: 0;
-  }
-
-  html.amynest-android-shell .main-container:has(> .app-header) > .app-shell-main,
-  html.amynest-native-shell .main-container:has(> .app-header) > .app-shell-main {
-    padding-top: var(--app-header-height, calc(var(--sat, 0px) + 3.5rem));
-    box-sizing: border-box;
-  }
-
-  html.amynest-android-shell.amynest-pwa-standalone
-    .app-screen-content:not(.app-screen-content--no-offset) {
-    padding-top: calc(var(--app-header-height, 3.5rem) + var(--app-header-content-gap, 8px));
-  }
-
-  html.amynest-android-shell .app-footer.tabbar .app-footer__nav,
-  html.amynest-native-shell .app-footer.tabbar .app-footer__nav {
-    padding-bottom: var(--app-bottom-clearance, env(safe-area-inset-bottom, 0px));
-    box-sizing: content-box;
-  }
-}
-
-/*
- * Play Store WebView often reports width >= 768px — Tailwind `md:` hides the burger
- * and shows the desktop sidebar. Force mobile chrome at any viewport width.
- */
 html.amynest-android-shell .main-container > aside,
 html.amynest-native-shell .main-container > aside {
   display: none !important;
@@ -856,20 +797,6 @@ html.amynest-native-shell .main-container > aside {
 html.amynest-android-shell .app-header,
 html.amynest-native-shell .app-header {
   display: block !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  width: 100% !important;
-  z-index: 1000 !important;
-  margin: 0 !important;
-  padding-top: var(--sat, env(safe-area-inset-top, 0px));
-}
-
-html.amynest-android-shell .main-container:has(> .app-header) > .app-shell-main,
-html.amynest-native-shell .main-container:has(> .app-header) > .app-shell-main {
-  padding-top: var(--app-header-height, calc(var(--sat, 0px) + 3.5rem));
-  box-sizing: border-box;
 }
 
 html.amynest-android-shell [data-testid="button-mobile-menu"],
@@ -892,43 +819,30 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
   flex-direction: column !important;
 }
 
-/*
- * Ask Amy (/assistant): sticky header breaks inside overflow:hidden app-scroll on
- * Android WebView — pin the global header and offset main so tabs/starters stay visible.
- * Does not change .app-scroll overflow or pull-to-refresh behaviour on other routes.
- */
-@media (max-width: 767px) {
-  html.amynest-native-shell .app-scroll:has(.assistant-chat-page) .app-header,
-  html.amynest-android-shell .app-scroll:has(.assistant-chat-page) .app-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    z-index: 60;
-  }
-
-  html.amynest-native-shell .app-scroll:has(.assistant-chat-page) .app-shell-main,
-  html.amynest-android-shell .app-scroll:has(.assistant-chat-page) .app-shell-main {
-    padding-top: calc(var(--app-header-height, 3.5rem) + var(--app-header-content-gap, 8px));
-    box-sizing: border-box;
-  }
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
 }
 
-/* Full-viewport overlays that must sit below the mobile app header (Amy Coach plan view). */
-@media (max-width: 767px) {
-  .app-fixed-below-header {
-    top: var(--app-header-height, 3.5rem) !important;
-  }
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 80%;
+  max-width: 350px;
+  z-index: 200;
 }
 
 .app-footer {
   position: fixed;
+  bottom: 0;
   left: 0;
   right: 0;
-  bottom: 0;
-  width: 100%;
-  z-index: 1000;
+  height: 78px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 100;
   box-sizing: border-box;
   pointer-events: none;
 }
@@ -936,17 +850,15 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
 .app-footer__nav {
   pointer-events: auto;
   box-sizing: border-box;
-  padding-bottom: var(--app-bottom-clearance);
+  height: 100%;
 }
 
 .pb-app-safe {
-  padding-bottom: calc(16px + var(--app-bottom-clearance));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
-@media (max-width: 767px) {
-  html.amynest-android-shell .mobile-menu-sheet-footer {
-    padding-bottom: var(--app-bottom-clearance, calc(16px + env(safe-area-inset-bottom, 0px)));
-  }
+.mobile-menu-sheet-footer {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .app-footer.tabbar.hidden {
@@ -1128,61 +1040,26 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
 }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-/* ─── iOS / Capacitor Safe Area (notch · Dynamic Island · home bar) ─────────
- * viewport-fit=cover is set in index.html so the WKWebView fills the whole
- * screen including the safe area. We then push content BACK inside those
- * insets with env() variables.
- *
- * CSS custom properties are exposed so JS can read them if needed:
- *   getComputedStyle(document.documentElement).getPropertyValue('--sat')
- * ─────────────────────────────────────────────────────────────────────────── */
 :root {
-  --sat: env(safe-area-inset-top,    0px);
-  --sar: env(safe-area-inset-right,  0px);
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
-  --sal: env(safe-area-inset-left,   0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
   --app-header-height: 3.5rem;
   --app-header-content-gap: 8px;
-  --app-bottom-safe-base: 0px;
-  --app-bottom-clearance: max(
-    var(--app-bottom-safe-base),
+  --app-bottom-clearance: env(safe-area-inset-bottom, 0px);
+}
+
+html.amynest-android-shell .app-footer,
+html.amynest-native-shell .app-footer {
+  padding-bottom: max(
     env(safe-area-inset-bottom, 0px),
-    12px
+    var(--app-bottom-clearance, 0px)
   );
-}
-
-/*
- * Android 3-button nav: env(safe-area-inset-bottom) is usually 0 — reserve 48px
- * so scroll content and fixed footers clear the system navigation bar.
- */
-@media (max-width: 767px) {
-  html.amynest-android-shell,
-  html.amynest-native-shell {
-    --app-bottom-safe-base: 48px;
-    --app-bottom-clearance: max(
-      var(--app-bottom-safe-base),
-      env(safe-area-inset-bottom, 0px),
-      12px
-    );
-  }
-}
-
-/* When running as a standalone PWA or inside Capacitor, avoid notch overlap */
-@media all and (display-mode: standalone) {
-  #app-root {
-    padding-top:    env(safe-area-inset-top,    0px);
-    padding-right:  env(safe-area-inset-right,  0px);
-    padding-left:   env(safe-area-inset-left,   0px);
-  }
 }
 
 .amynest-native-shell #app-root,
 .amynest-android-shell #app-root {
-  /* Top inset lives on .app-header (--sat) — avoid double status-bar gap. */
-  padding-top: 0;
-  padding-right:  env(safe-area-inset-right,  0px);
-  padding-left:   env(safe-area-inset-left,   0px);
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;

@@ -2,28 +2,7 @@
 <html lang="en" class="dark" data-theme="dark" style="color-scheme: dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-
-    <script>
-      (function () {
-        function setRealHeight() {
-          var vv = window.visualViewport;
-          var height = vv ? vv.height : window.innerHeight;
-          var offsetTop = vv ? vv.offsetTop : 0;
-          document.documentElement.style.setProperty('--vh', height * 0.01 + 'px');
-          document.documentElement.style.setProperty('--vv-height', height + 'px');
-          document.documentElement.style.setProperty('--vv-offset-top', offsetTop + 'px');
-        }
-
-        window.addEventListener('resize', setRealHeight);
-        window.addEventListener('load', setRealHeight);
-        if (window.visualViewport) {
-          window.visualViewport.addEventListener('resize', setRealHeight);
-          window.visualViewport.addEventListener('scroll', setRealHeight);
-        }
-        setRealHeight();
-      })();
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AmyNest AI — Where Smart Parenting Begins</title>
     <meta name="description" content="AI-powered parenting coach with patent-pending adaptive scheduling technology. Personalized routines, meal plans, and contextual child-development intelligence for your child." />
 
@@ -694,67 +673,16 @@
       html, body {
         background: var(--bg-primary);
         color: var(--text-primary);
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        max-width: 100%;
         height: 100%;
+        margin: 0;
+        overflow: hidden;
         touch-action: manipulation;
-        overscroll-behavior-y: auto;
       }
       #root, .main-container {
         width: 100%;
         max-width: 100%;
         min-width: 0;
         box-sizing: border-box;
-      }
-
-      /* Play Store Android WebView — mobile chrome at any width (md: breakpoint bypass) */
-      html.amynest-android-shell #app-root,
-      html.amynest-native-shell #app-root {
-        padding-top: 0 !important;
-      }
-      html.amynest-android-shell .main-container > aside,
-      html.amynest-native-shell .main-container > aside {
-        display: none !important;
-      }
-      html.amynest-android-shell .app-header,
-      html.amynest-native-shell .app-header {
-        display: block !important;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-        z-index: 1000 !important;
-        padding-top: var(--sat, env(safe-area-inset-top, 0px)) !important;
-      }
-      html.amynest-android-shell .main-container:has(> .app-header) > .app-shell-main,
-      html.amynest-native-shell .main-container:has(> .app-header) > .app-shell-main {
-        padding-top: var(--app-header-height, calc(var(--sat, 0px) + 3.5rem)) !important;
-      }
-      html.amynest-android-shell [data-testid="button-mobile-menu"],
-      html.amynest-native-shell [data-testid="button-mobile-menu"] {
-        display: inline-flex !important;
-        visibility: visible !important;
-      }
-      html.amynest-android-shell .app-footer.tabbar,
-      html.amynest-native-shell .app-footer.tabbar {
-        display: block !important;
-        position: fixed !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        z-index: 1000 !important;
-      }
-      html.amynest-android-shell .app-footer.tabbar .app-footer__nav,
-      html.amynest-native-shell .app-footer.tabbar .app-footer__nav {
-        padding-bottom: var(--app-bottom-clearance, env(safe-area-inset-bottom, 0px)) !important;
-        box-sizing: content-box !important;
-      }
-      html.amynest-android-shell body.has-tabbar .app-scroll,
-      html.amynest-native-shell body.has-tabbar .app-scroll {
-        padding-bottom: calc(78px + 16px) !important;
       }
 
       #root.amynest-boot-failed {
