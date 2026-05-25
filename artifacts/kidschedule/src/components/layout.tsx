@@ -185,7 +185,7 @@ export function Layout({
     });
   };
   return (
-    <div className="app-shell main-container main-layout relative w-full max-w-full min-w-0 bg-background overflow-x-clip box-border">
+    <div className="app-shell main-container relative w-full max-w-full min-w-0 bg-background overflow-x-clip box-border">
       {showMobileHeader ? (
         <header
           ref={headerRef}
