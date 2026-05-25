@@ -478,9 +478,8 @@ class MainActivity : AppCompatActivity() {
         val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
         val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
         val topPx = statusBars.top.coerceAtLeast(0)
-        val bottomPx = navBars.bottom.coerceIn(0, 72).let { reported ->
-            if (reported > 0) reported else (48 * density).toInt()
-        }
+        // Immersive mode hides system bars — do not invent 48dp bottom inset when reported is 0.
+        val bottomPx = navBars.bottom.coerceIn(0, 96)
         val js =
             "(function(){" +
                 "var r=document.documentElement;" +
