@@ -596,37 +596,38 @@ html[data-theme="dark"] {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-  padding-bottom: calc(16px + var(--app-bottom-clearance));
+  padding-top: 0;
+  padding-bottom: 80px;
 }
 
-/* Dashboard bottom nav — flush to viewport bottom; pad above system nav bar. */
+/* Dashboard bottom nav — fixed to viewport; safe-area only on the nav bar. */
 .bottom-nav {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
+  height: 64px;
+  padding-bottom: env(safe-area-inset-bottom);
   z-index: 1000;
-  box-sizing: border-box;
   pointer-events: none;
 }
 
 .bottom-nav .app-footer__nav {
   min-height: 64px;
   height: 64px;
-  padding-bottom: var(--app-bottom-clearance, env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
   pointer-events: auto;
 }
 
-/* Dashboard scroll content — clearance for fixed bottom nav (mobile only). */
+/* Dashboard scroll content — page-content already reserves bottom nav space. */
 @media (max-width: 767px) {
   .dashboard-content {
-    padding-bottom: calc(64px + var(--app-bottom-clearance, env(safe-area-inset-bottom, 0px)));
+    padding-bottom: 0;
   }
 
   .floating-button,
   #amy-fab-floating.amy-fab-floating.floating-button {
-    bottom: calc(64px + var(--app-bottom-clearance, env(safe-area-inset-bottom, 0px)) + 12px);
+    bottom: 90px;
   }
 }
 
@@ -704,13 +705,14 @@ html[data-theme="dark"] {
 }
 
 .app-shell,
-.main-container {
+.main-container,
+.main-layout {
   display: flex;
   flex-direction: column;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  min-height: 100%;
+  min-height: 100vh;
   box-sizing: border-box;
 }
 
@@ -793,9 +795,10 @@ html[data-theme="dark"] {
 .app-header {
   position: sticky;
   top: 0;
-  z-index: 60;
+  z-index: 100;
+  margin: 0;
   flex-shrink: 0;
-  /* Native WebView injects --sat; Capacitor/iOS use env(). Never stack both. */
+  /* Top safe-area lives on the header only (--sat is injected on Android WebView). */
   padding-top: var(--sat, env(safe-area-inset-top, 0px));
   background: hsl(var(--background) / 0.95);
   backdrop-filter: blur(10px);
@@ -812,27 +815,7 @@ html[data-theme="dark"] {
   padding: 0 0.75rem;
 }
 
-/*
- * Native Android / Capacitor mobile: pin header to the top edge and offset
- * scroll content below the measured header (includes status-bar inset once).
- */
 @media (max-width: 767px) {
-  html.amynest-android-shell .app-header,
-  html.amynest-native-shell .app-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    z-index: 60;
-  }
-
-  html.amynest-android-shell .main-container:has(> .app-header) > .app-shell-main,
-  html.amynest-native-shell .main-container:has(> .app-header) > .app-shell-main {
-    padding-top: calc(var(--app-header-height, 3.5rem) + var(--app-header-content-gap, 8px));
-    box-sizing: border-box;
-  }
-
   html.amynest-android-shell.amynest-pwa-standalone
     .app-screen-content:not(.app-screen-content--no-offset) {
     padding-top: 0;
@@ -1121,7 +1104,7 @@ html[data-theme="dark"] {
 /* When running as a standalone PWA or inside Capacitor, avoid notch overlap */
 @media all and (display-mode: standalone) {
   #app-root {
-    padding-top:    env(safe-area-inset-top,    0px);
+    padding-top: 0;
     padding-right:  env(safe-area-inset-right,  0px);
     padding-left:   env(safe-area-inset-left,   0px);
   }
