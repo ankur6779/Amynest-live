@@ -347,7 +347,7 @@ class BillingBridge(
         private const val TAG = "BillingBridge"
         const val JS_OBJECT_NAME = "AmyNestBillingNative"
         const val JS_INJECT_NAME = "AmyNestBillingInject"
-        const val BRIDGE_VERSION = "2.3.0"
+        const val BRIDGE_VERSION = "2.4.0"
         const val DEFAULT_ENTITLEMENT_ID = "premium"
 
         const val RC_API_KEY = "goog_wswrltSsrqhqrsQrVvOPavTIzMA"
