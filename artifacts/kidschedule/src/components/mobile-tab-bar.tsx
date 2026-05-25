@@ -34,7 +34,7 @@ export function MobileTabBar({ visible }: MobileTabBarProps) {
 
   return createPortal(
     <footer
-      className="app-footer tabbar md:hidden"
+      className="app-footer tabbar bottom-nav md:hidden"
       data-testid="mobile-tab-bar"
       aria-hidden={false}
     >
