@@ -26,6 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.google.firebase.messaging.FirebaseMessaging
 import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallActivityLauncher
 import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallResult
@@ -466,24 +467,34 @@ class MainActivity : AppCompatActivity() {
     // ── System chrome ────────────────────────────────────────────────────────
 
     /**
-     * Edge-to-edge WebView: env(safe-area-inset-*) is usually 0. Push real
-     * system-bar insets into CSS variables so fixed footers / story controls
-     * clear the 3-button navigation bar.
+     * Edge-to-edge WebView: env(safe-area-inset-*) is usually 0 in Android WebView.
+     * Apply system-bar padding on the WebView itself (single inset) and tell the
+     * web layer via `amynest-viewport-inset` — do not also pad the fixed header/footer.
      */
     private fun applyWebSafeAreaInsets(insets: WindowInsetsCompat) {
         if (!::webView.isInitialized) return
+        val density = resources.displayMetrics.density
+        val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
         val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-        val bottomPx = navBars.bottom.coerceIn(0, 72)
-        val topPx = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top.coerceAtLeast(0)
-        val effectiveBottom = bottomPx
+        val topPx = statusBars.top.coerceAtLeast(0).let { reported ->
+            if (reported > 0) reported else (24 * density).toInt()
+        }
+        val bottomPx = navBars.bottom.coerceIn(0, 72).let { reported ->
+            if (reported > 0) reported else (48 * density).toInt()
+        }
+
+        webView.updatePadding(top = topPx, bottom = bottomPx)
+
         val js =
             "(function(){" +
                 "var r=document.documentElement;" +
-                "r.style.setProperty('--sat','${topPx}px');" +
-                "r.style.setProperty('--sab','${effectiveBottom}px');" +
-                "r.classList.add('amynest-android-shell','amynest-native-shell');" +
+                "r.classList.add('amynest-android-shell','amynest-native-shell','amynest-viewport-inset');" +
+                "r.style.setProperty('--sat','0px');" +
+                "r.style.setProperty('--sab','0px');" +
+                "r.style.setProperty('--native-inset-top','${topPx}px');" +
+                "r.style.setProperty('--native-inset-bottom','${bottomPx}px');" +
                 "if(typeof window.__amynestApplyShellInsets==='function'){" +
-                    "window.__amynestApplyShellInsets({top:${topPx},bottom:${effectiveBottom}});" +
+                    "window.__amynestApplyShellInsets({top:${topPx},bottom:${bottomPx},viewportInset:true});" +
                 "}" +
             "})();"
         webView.post { webView.evaluateJavascript(js, null) }

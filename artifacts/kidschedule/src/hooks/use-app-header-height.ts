@@ -29,7 +29,13 @@ export function useAppHeaderHeight(enabled: boolean) {
     if (!headerEl) return;
 
     const apply = () => {
-      const height = Math.ceil(headerEl.getBoundingClientRect().height);
+      const useBarOnly = document.documentElement.classList.contains(
+        "amynest-viewport-inset",
+      );
+      const barEl = headerEl.querySelector<HTMLElement>(".app-header__bar");
+      const measureEl =
+        useBarOnly && barEl ? barEl : headerEl;
+      const height = Math.ceil(measureEl.getBoundingClientRect().height);
       if (height > 0) {
         document.documentElement.style.setProperty(
           APP_HEADER_HEIGHT_CSS_VAR,

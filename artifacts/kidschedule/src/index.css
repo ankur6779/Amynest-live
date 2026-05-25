@@ -600,12 +600,13 @@ html[data-theme="dark"] {
   padding-bottom: 16px;
 }
 
-/* Dashboard bottom nav — fixed to viewport; system inset on inner bar only. */
+/* Dashboard bottom nav — fixed to viewport; clears system nav via --safe-bottom or WebView padding. */
 .bottom-nav {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
+  width: 100%;
   z-index: 1000;
   pointer-events: none;
 }
@@ -613,21 +614,40 @@ html[data-theme="dark"] {
 .bottom-nav .app-footer__nav {
   min-height: 64px;
   height: 64px;
-  padding-bottom: var(--sab, env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 10px);
   box-sizing: content-box;
   pointer-events: auto;
+  background: rgba(10, 10, 30, 0.95);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
-/* Dashboard scroll — reserve tab bar height only; --sab is on .app-footer__nav. */
+/* Native WebView applies system-bar padding — footer only needs a small inner gap. */
+html.amynest-viewport-inset .bottom-nav .app-footer__nav {
+  padding-bottom: 10px;
+}
+
+/* Dashboard scroll — reserve tab bar + safe bottom so content is not hidden. */
 @media (max-width: 767px) {
   body.has-tabbar .app-scroll,
   body.has-tabbar .page-content {
-    padding-bottom: 64px;
+    padding-bottom: calc(64px + var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 10px);
+  }
+
+  html.amynest-viewport-inset body.has-tabbar .app-scroll,
+  html.amynest-viewport-inset body.has-tabbar .page-content {
+    padding-bottom: calc(64px + 10px);
   }
 
   .floating-button,
   #amy-fab-floating.amy-fab-floating.floating-button {
-    bottom: calc(64px + var(--sab, 0px) + 12px);
+    bottom: calc(64px + var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 10px + 12px);
+  }
+
+  html.amynest-viewport-inset .floating-button,
+  html.amynest-viewport-inset #amy-fab-floating.amy-fab-floating.floating-button {
+    bottom: calc(64px + 10px + 12px);
   }
 }
 
@@ -796,14 +816,19 @@ html[data-theme="dark"] {
 .app-header {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
   margin: 0;
   flex-shrink: 0;
-  /* Top safe-area lives on the header only (--sat is injected on Android WebView). */
-  padding-top: var(--sat, env(safe-area-inset-top, 0px));
+  /* Top safe-area on header unless native WebView already inset the viewport. */
+  padding-top: var(--safe-top, env(safe-area-inset-top, 0px));
   background: hsl(var(--background) / 0.95);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+}
+
+html.amynest-viewport-inset .app-header {
+  padding-top: 0;
 }
 
 .app-header__bar {
@@ -833,15 +858,19 @@ html[data-theme="dark"] {
     left: 0;
     right: 0;
     width: 100%;
-    z-index: 100;
+    z-index: 1000;
     margin: 0;
   }
 
   html.amynest-android-shell .main-container:has(> .app-header) > .app-shell-main,
   html.amynest-native-shell .main-container:has(> .app-header) > .app-shell-main {
-    /* --app-header-height already includes status bar (--sat) from ResizeObserver */
-    padding-top: var(--app-header-height, calc(var(--sat, 0px) + 3.5rem));
+    /* Bar height only when amynest-viewport-inset; else ResizeObserver includes --safe-top */
+    padding-top: var(--app-header-height, calc(var(--safe-top, 0px) + 3.5rem));
     box-sizing: border-box;
+  }
+
+  html.amynest-viewport-inset .main-container:has(> .app-header) > .app-shell-main {
+    padding-top: var(--app-header-height, 3.5rem);
   }
 
   html.amynest-android-shell,
@@ -1106,15 +1135,23 @@ html[data-theme="dark"] {
   --sar: env(safe-area-inset-right,  0px);
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left,   0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: max(env(safe-area-inset-top, 0px), var(--sat, 0px));
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--sab, 0px));
   --app-header-height: 3.5rem;
   --app-header-content-gap: 8px;
   --app-bottom-safe-base: 0px;
   --app-bottom-clearance: max(
     var(--app-bottom-safe-base),
-    env(safe-area-inset-bottom, 0px),
+    var(--safe-bottom),
     12px
   );
+}
+
+html.amynest-viewport-inset {
+  --sat: 0px;
+  --sab: 0px;
+  --safe-top: 0px;
+  --safe-bottom: 0px;
 }
 
 /*
@@ -1125,11 +1162,11 @@ html[data-theme="dark"] {
   html.amynest-android-shell,
   html.amynest-native-shell {
     --app-bottom-safe-base: 0px;
-    --app-bottom-clearance: max(
-      env(safe-area-inset-bottom, 0px),
-      var(--sab, 0px),
-      12px
-    );
+    --app-bottom-clearance: max(var(--safe-bottom), 12px);
+  }
+
+  html.amynest-viewport-inset {
+    --app-bottom-clearance: 12px;
   }
 }
 
