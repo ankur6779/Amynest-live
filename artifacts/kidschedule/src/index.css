@@ -597,7 +597,7 @@ html[data-theme="dark"] {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   padding-top: 0;
-  padding-bottom: 16px;
+  padding-bottom: calc(64px + var(--sab, 0px));
 }
 
 /* Dashboard bottom nav — fixed to viewport; system inset on inner bar only. */
@@ -618,11 +618,10 @@ html[data-theme="dark"] {
   pointer-events: auto;
 }
 
-/* Dashboard scroll — reserve tab bar height only; --sab is on .app-footer__nav. */
+/* Dashboard scroll content — page-content already reserves bottom nav space. */
 @media (max-width: 767px) {
-  body.has-tabbar .app-scroll,
-  body.has-tabbar .page-content {
-    padding-bottom: 64px;
+  .dashboard-content {
+    padding-bottom: 0;
   }
 
   .floating-button,
@@ -839,8 +838,7 @@ html[data-theme="dark"] {
 
   html.amynest-android-shell .main-container:has(> .app-header) > .app-shell-main,
   html.amynest-native-shell .main-container:has(> .app-header) > .app-shell-main {
-    /* --app-header-height already includes status bar (--sat) from ResizeObserver */
-    padding-top: var(--app-header-height, calc(var(--sat, 0px) + 3.5rem));
+    padding-top: calc(var(--sat, 0px) + var(--app-header-height, 3.5rem));
     box-sizing: border-box;
   }
 
@@ -1124,10 +1122,10 @@ html[data-theme="dark"] {
 @media (max-width: 767px) {
   html.amynest-android-shell,
   html.amynest-native-shell {
-    --app-bottom-safe-base: 0px;
+    --app-bottom-safe-base: 48px;
     --app-bottom-clearance: max(
+      var(--app-bottom-safe-base),
       env(safe-area-inset-bottom, 0px),
-      var(--sab, 0px),
       12px
     );
   }

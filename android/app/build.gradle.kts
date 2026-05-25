@@ -15,8 +15,8 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 54
-        versionName = "1.4.11"
+        versionCode = 53
+        versionName = "1.4.10"
     }
 
     signingConfigs {
