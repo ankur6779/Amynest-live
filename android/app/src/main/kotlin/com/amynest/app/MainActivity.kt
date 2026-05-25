@@ -486,12 +486,10 @@ class MainActivity : AppCompatActivity() {
                 "var r=document.documentElement;" +
                 "r.style.setProperty('--sat','${topPx}px');" +
                 "r.style.setProperty('--sab','${bottomPx}px');" +
+                "r.style.setProperty('--safe-bottom','${bottomPx}px');" +
                 "r.style.setProperty('--app-bottom-safe-base','${bottomPx}px');" +
                 "r.style.setProperty('--app-bottom-clearance','${bottomPx}px');" +
                 "r.classList.add('amynest-android-shell','amynest-native-shell');" +
-                "if(typeof window.__amynestApplyShellInsets==='function'){" +
-                    "window.__amynestApplyShellInsets({top:${topPx},bottom:${bottomPx}});" +
-                "}" +
             "})();"
         webView.post { webView.evaluateJavascript(js, null) }
     }

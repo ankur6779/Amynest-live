@@ -12,8 +12,8 @@
     <meta name="author" content="AmyNest AI" />
     <meta name="keywords" content="parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting, child development, daily routine, kids schedule, parenting coach, AI coach for parents, child behavior tracker, kids meal planner India, speech coach for kids, spelling practice app" />
     <meta name="application-name" content="AmyNest AI" />
-    <meta name="app-build-version" content="v1.0.13" />
-    <meta name="amynest-deploy" content="2026-05-25-c419464c-billing-fix" />
+    <meta name="app-build-version" content="v1.0.14" />
+    <meta name="amynest-deploy" content="2026-05-25-footer-fab-safe-area-1.4.16" />
     <meta name="rating" content="general" />
     <meta name="revisit-after" content="7 days" />
     <meta name="msapplication-TileColor" content="#A855F7" />
@@ -239,17 +239,6 @@
         if (/AmyNestAndroid/i.test(ua) || typeof window.__AMYNEST_WRAPPER === "string") {
           document.documentElement.classList.add("amynest-native-shell");
         }
-        window.__amynestApplyShellInsets = function (opts) {
-          try {
-            var r = document.documentElement;
-            if (opts && opts.top != null) r.style.setProperty("--sat", opts.top + "px");
-            if (opts && opts.bottom != null) {
-              r.style.setProperty("--sab", opts.bottom + "px");
-              r.style.setProperty("--app-bottom-clearance", opts.bottom + "px");
-            }
-          } catch (_e) { /* ignore */ }
-        };
-
         if (isStandalonePwa) {
           document.documentElement.classList.add("amynest-pwa-standalone");
         }

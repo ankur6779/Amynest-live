@@ -30,13 +30,6 @@ export function AmyFab() {
       data-tour="amy-fab"
       data-amynest-fab="active"
       className="amy-fab-floating"
-      style={{
-        position: "fixed",
-        right: "20px",
-        left: "auto",
-        transform: "none",
-        zIndex: 1100,
-      }}
     >
       <div className="amy-fade-in">
         <Link
