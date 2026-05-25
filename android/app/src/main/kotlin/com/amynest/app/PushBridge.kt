@@ -128,7 +128,7 @@ class PushBridge(
          * MainActivity permission flow, or KidScheduleFcmService channel
          * handling changes so `adb logcat -s MainActivity` shows the version.
          */
-        const val WRAPPER_VERSION = "2.5.4"
+        const val WRAPPER_VERSION = "2.5.3"
 
         /**
          * WeakReference to the active WebView. Updated by [install]; cleared
@@ -197,8 +197,6 @@ class PushBridge(
     fun install(webView: WebView) {
         // Layer 1: synchronous wrapper marker.
         installWrapperMarker(webView)
-        // Layer 1b: shell layout CSS (production web may lag behind git).
-        installShellLayoutScript(webView)
 
         // Layer 2: JavascriptInterface as window.AndroidPush.
         webView.addJavascriptInterface(AndroidPushInterface(), JS_OBJECT_NAME)
@@ -227,26 +225,6 @@ class PushBridge(
             Log.d(TAG, "Wrapper marker installed (version=$WRAPPER_VERSION)")
         } catch (t: Throwable) {
             Log.e(TAG, "addDocumentStartJavaScript failed — marker NOT installed", t)
-        }
-    }
-
-    /**
-     * Inject mobile shell layout fixes at document_start so Play Store WebView
-     * gets correct header/footer spacing even when www.amynest.in is on an older build.
-     */
-    private fun installShellLayoutScript(webView: WebView) {
-        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-            Log.w(TAG, "DOCUMENT_START_SCRIPT not supported — shell layout NOT injected")
-            return
-        }
-        try {
-            val script = context.resources.openRawResource(R.raw.amynest_shell_layout)
-                .bufferedReader()
-                .use { it.readText() }
-            WebViewCompat.addDocumentStartJavaScript(webView, script, ALLOWED_ORIGINS)
-            Log.d(TAG, "Shell layout document_start script installed")
-        } catch (t: Throwable) {
-            Log.e(TAG, "Shell layout inject failed", t)
         }
     }
 
