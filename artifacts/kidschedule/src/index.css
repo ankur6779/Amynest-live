@@ -599,34 +599,16 @@ html[data-theme="dark"] {
   padding-bottom: calc(16px + var(--app-bottom-clearance));
 }
 
-/* Dashboard bottom nav — flush to viewport bottom; safe area via padding only. */
-.bottom-nav {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 64px;
-  padding-bottom: env(safe-area-inset-bottom);
-  z-index: 1000;
-  box-sizing: border-box;
-  pointer-events: none;
-}
-
-.bottom-nav .app-footer__nav {
-  height: 100%;
-  padding-bottom: 0;
-  pointer-events: auto;
-}
-
-/* Dashboard scroll content — clearance for fixed bottom nav (mobile only). */
+/* Tab bar clearance only when the bottom nav is visible (dashboard). */
 @media (max-width: 767px) {
-  .dashboard-content {
-    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  body.has-tabbar .app-scroll,
+  body.has-tabbar .page-content {
+    padding-bottom: calc(78px + var(--app-bottom-clearance) + 16px);
   }
 
-  .floating-button,
-  #amy-fab-floating.amy-fab-floating.floating-button {
-    bottom: calc(64px + env(safe-area-inset-bottom) + 12px);
+  html.amynest-android-shell #amy-fab-floating,
+  #amy-fab-floating.amy-fab-floating {
+    bottom: calc(78px + var(--app-bottom-clearance) + 12px);
   }
 }
 
@@ -875,9 +857,6 @@ html[data-theme="dark"] {
 .app-footer__nav {
   pointer-events: auto;
   box-sizing: border-box;
-}
-
-.app-footer:not(.bottom-nav) .app-footer__nav {
   padding-bottom: var(--app-bottom-clearance);
 }
 

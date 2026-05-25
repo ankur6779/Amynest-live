@@ -29,7 +29,7 @@ export function AmyFab() {
       id="amy-fab-floating"
       data-tour="amy-fab"
       data-amynest-fab="active"
-      className="amy-fab-floating floating-button"
+      className="amy-fab-floating"
       style={{
         position: "fixed",
         right: "20px",
