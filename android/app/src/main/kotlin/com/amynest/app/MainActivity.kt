@@ -483,7 +483,6 @@ class MainActivity : AppCompatActivity() {
                 "r.style.setProperty('--app-bottom-safe-base','${effectiveBottom}px');" +
                 "r.style.setProperty('--app-bottom-clearance','${clearance}px');" +
                 "r.style.setProperty('--sat','${topPx}px');" +
-                "r.style.setProperty('--sab','${effectiveBottom}px');" +
                 "r.classList.add('amynest-android-shell','amynest-native-shell');" +
             "})();"
         webView.post { webView.evaluateJavascript(js, null) }
