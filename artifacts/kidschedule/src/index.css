@@ -623,6 +623,11 @@ html[data-theme="dark"] {
   -webkit-backdrop-filter: blur(20px);
 }
 
+/* Native WebView applies system-bar padding — footer only needs a small inner gap. */
+html.amynest-viewport-inset .bottom-nav .app-footer__nav {
+  padding-bottom: 10px;
+}
+
 /* Dashboard scroll — reserve tab bar + safe bottom so content is not hidden. */
 @media (max-width: 767px) {
   body.has-tabbar .app-scroll,
@@ -630,76 +635,19 @@ html[data-theme="dark"] {
     padding-bottom: calc(64px + var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 10px);
   }
 
+  html.amynest-viewport-inset body.has-tabbar .app-scroll,
+  html.amynest-viewport-inset body.has-tabbar .page-content {
+    padding-bottom: calc(64px + 10px);
+  }
+
   .floating-button,
   #amy-fab-floating.amy-fab-floating.floating-button {
     bottom: calc(64px + var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 10px + 12px);
   }
 
-  /*
-   * Play Store shell — micro offsets only (no layout restructure).
-   * Header breathes below status bar; footer lifts above system nav.
-   */
-  html.amynest-android-shell,
-  html.amynest-native-shell {
-    --shell-header-breathe: 6px;
-    --shell-footer-lift: 8px;
-    --shell-footer-inner-pad: 8px;
-    --shell-content-bottom-gap: 12px;
-  }
-
-  html.amynest-android-shell .bottom-nav,
-  html.amynest-native-shell .bottom-nav {
-    bottom: var(--shell-footer-lift, 8px);
-  }
-
-  html.amynest-android-shell .bottom-nav .app-footer__nav,
-  html.amynest-native-shell .bottom-nav .app-footer__nav {
-    padding-bottom: calc(
-      var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 10px + var(--shell-footer-inner-pad, 8px)
-    );
-    border-radius: 16px 16px 0 0;
-  }
-
-  html.amynest-viewport-inset .bottom-nav .app-footer__nav {
-    padding-bottom: calc(10px + var(--shell-footer-inner-pad, 8px));
-  }
-
-  html.amynest-android-shell body.has-tabbar .app-scroll,
-  html.amynest-android-shell body.has-tabbar .page-content,
-  html.amynest-native-shell body.has-tabbar .app-scroll,
-  html.amynest-native-shell body.has-tabbar .page-content {
-    padding-bottom: calc(
-      64px + var(--safe-bottom, env(safe-area-inset-bottom, 0px)) +
-      var(--shell-footer-lift, 8px) + var(--shell-footer-inner-pad, 8px) + 10px +
-      var(--shell-content-bottom-gap, 12px)
-    );
-  }
-
-  html.amynest-viewport-inset body.has-tabbar .app-scroll,
-  html.amynest-viewport-inset body.has-tabbar .page-content {
-    padding-bottom: calc(
-      64px + var(--shell-footer-lift, 8px) + var(--shell-footer-inner-pad, 8px) + 10px +
-      var(--shell-content-bottom-gap, 12px)
-    );
-  }
-
-  html.amynest-android-shell .floating-button,
-  html.amynest-android-shell #amy-fab-floating.amy-fab-floating.floating-button,
-  html.amynest-native-shell .floating-button,
-  html.amynest-native-shell #amy-fab-floating.amy-fab-floating.floating-button {
-    bottom: calc(
-      64px + var(--safe-bottom, env(safe-area-inset-bottom, 0px)) +
-      var(--shell-footer-lift, 8px) + 10px + var(--shell-footer-inner-pad, 8px) +
-      var(--shell-content-bottom-gap, 12px)
-    );
-  }
-
   html.amynest-viewport-inset .floating-button,
   html.amynest-viewport-inset #amy-fab-floating.amy-fab-floating.floating-button {
-    bottom: calc(
-      64px + var(--shell-footer-lift, 8px) + 10px + var(--shell-footer-inner-pad, 8px) +
-      var(--shell-content-bottom-gap, 12px)
-    );
+    bottom: calc(64px + 10px + 12px);
   }
 }
 
@@ -879,6 +827,10 @@ html[data-theme="dark"] {
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
 }
 
+html.amynest-viewport-inset .app-header {
+  padding-top: 0;
+}
+
 .app-header__bar {
   display: flex;
   height: 3.5rem;
@@ -908,25 +860,17 @@ html[data-theme="dark"] {
     width: 100%;
     z-index: 1000;
     margin: 0;
-    padding-top: calc(var(--safe-top, env(safe-area-inset-top, 0px)) + var(--shell-header-breathe, 6px));
-  }
-
-  html.amynest-viewport-inset.amynest-android-shell .app-header,
-  html.amynest-viewport-inset.amynest-native-shell .app-header {
-    padding-top: var(--shell-header-breathe, 6px);
   }
 
   html.amynest-android-shell .main-container:has(> .app-header) > .app-shell-main,
   html.amynest-native-shell .main-container:has(> .app-header) > .app-shell-main {
     /* Bar height only when amynest-viewport-inset; else ResizeObserver includes --safe-top */
-    padding-top: calc(
-      var(--app-header-height, calc(var(--safe-top, 0px) + 3.5rem)) + var(--shell-header-breathe, 6px)
-    );
+    padding-top: var(--app-header-height, calc(var(--safe-top, 0px) + 3.5rem));
     box-sizing: border-box;
   }
 
   html.amynest-viewport-inset .main-container:has(> .app-header) > .app-shell-main {
-    padding-top: calc(var(--app-header-height, 3.5rem) + var(--shell-header-breathe, 6px));
+    padding-top: var(--app-header-height, 3.5rem);
   }
 
   html.amynest-android-shell,
@@ -957,10 +901,7 @@ html[data-theme="dark"] {
 
   html.amynest-native-shell .app-scroll:has(.assistant-chat-page) .app-shell-main,
   html.amynest-android-shell .app-scroll:has(.assistant-chat-page) .app-shell-main {
-    padding-top: calc(
-      var(--app-header-height, 3.5rem) + var(--app-header-content-gap, 8px) +
-      var(--shell-header-breathe, 6px)
-    );
+    padding-top: calc(var(--app-header-height, 3.5rem) + var(--app-header-content-gap, 8px));
     box-sizing: border-box;
   }
 }
