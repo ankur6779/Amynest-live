@@ -603,12 +603,29 @@ html[data-theme="dark"] {
 @media (max-width: 767px) {
   body.has-tabbar .app-scroll,
   body.has-tabbar .page-content {
-    padding-bottom: calc(78px + var(--app-bottom-clearance) + 16px);
+    padding-bottom: calc(78px + 16px);
   }
 
-  html.amynest-android-shell #amy-fab-floating,
-  #amy-fab-floating.amy-fab-floating {
-    bottom: calc(78px + var(--app-bottom-clearance) + 12px);
+  #amy-fab-floating.amy-fab-floating.floating-button,
+  .floating-button {
+    bottom: calc(78px + 12px);
+  }
+
+  /*
+   * Play Store WebView: system inset only on the portaled tab bar, not scroll padding.
+   */
+  html.amynest-android-shell body.has-tabbar .app-scroll,
+  html.amynest-android-shell body.has-tabbar .page-content,
+  html.amynest-native-shell body.has-tabbar .app-scroll,
+  html.amynest-native-shell body.has-tabbar .page-content {
+    padding-bottom: calc(78px + 16px);
+  }
+
+  html.amynest-android-shell #amy-fab-floating.amy-fab-floating.floating-button,
+  html.amynest-android-shell .floating-button,
+  html.amynest-native-shell #amy-fab-floating.amy-fab-floating.floating-button,
+  html.amynest-native-shell .floating-button {
+    bottom: calc(78px + var(--app-bottom-clearance, 48px) + 12px);
   }
 }
 
@@ -794,22 +811,36 @@ html[data-theme="dark"] {
 }
 
 /*
- * Installed Android PWA: keep the header fixed so Chrome pull-to-refresh stays
- * on the scroll container; offset page content with padding-top (not margin).
+ * Android WebView / installed PWA: pin header to viewport; offset main once below it.
  */
 @media (max-width: 767px) {
+  html.amynest-android-shell .app-header,
+  html.amynest-native-shell .app-header,
   html.amynest-android-shell.amynest-pwa-standalone .app-header {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     width: 100%;
-    z-index: 60;
+    z-index: 1000;
+    margin: 0;
+  }
+
+  html.amynest-android-shell .main-container:has(> .app-header) > .app-shell-main,
+  html.amynest-native-shell .main-container:has(> .app-header) > .app-shell-main {
+    padding-top: var(--app-header-height, calc(var(--sat, 0px) + 3.5rem));
+    box-sizing: border-box;
   }
 
   html.amynest-android-shell.amynest-pwa-standalone
     .app-screen-content:not(.app-screen-content--no-offset) {
     padding-top: calc(var(--app-header-height, 3.5rem) + var(--app-header-content-gap, 8px));
+  }
+
+  html.amynest-android-shell .app-footer.tabbar .app-footer__nav,
+  html.amynest-native-shell .app-footer.tabbar .app-footer__nav {
+    padding-bottom: var(--app-bottom-clearance, env(safe-area-inset-bottom, 0px));
+    box-sizing: content-box;
   }
 }
 
@@ -1100,7 +1131,8 @@ html[data-theme="dark"] {
 
 .amynest-native-shell #app-root,
 .amynest-android-shell #app-root {
-  padding-top:    env(safe-area-inset-top,    0px);
+  /* Top inset lives on .app-header (--sat) — avoid double status-bar gap. */
+  padding-top: 0;
   padding-right:  env(safe-area-inset-right,  0px);
   padding-left:   env(safe-area-inset-left,   0px);
   width: 100%;

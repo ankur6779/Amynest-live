@@ -472,18 +472,24 @@ class MainActivity : AppCompatActivity() {
      */
     private fun applyWebSafeAreaInsets(insets: WindowInsetsCompat) {
         if (!::webView.isInitialized) return
+        val density = resources.displayMetrics.density
+        val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
         val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-        val bottomPx = navBars.bottom.coerceIn(0, 72)
-        val topPx = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top.coerceAtLeast(0)
-        val effectiveBottom = if (bottomPx > 0) bottomPx else 48
-        val clearance = effectiveBottom
+        val topPx = statusBars.top.coerceAtLeast(0)
+        val bottomPx = navBars.bottom.coerceIn(0, 72).let { reported ->
+            if (reported > 0) reported else (48 * density).toInt()
+        }
         val js =
             "(function(){" +
                 "var r=document.documentElement;" +
-                "r.style.setProperty('--app-bottom-safe-base','${effectiveBottom}px');" +
-                "r.style.setProperty('--app-bottom-clearance','${clearance}px');" +
                 "r.style.setProperty('--sat','${topPx}px');" +
+                "r.style.setProperty('--sab','${bottomPx}px');" +
+                "r.style.setProperty('--app-bottom-safe-base','${bottomPx}px');" +
+                "r.style.setProperty('--app-bottom-clearance','${bottomPx}px');" +
                 "r.classList.add('amynest-android-shell','amynest-native-shell');" +
+                "if(typeof window.__amynestApplyShellInsets==='function'){" +
+                    "window.__amynestApplyShellInsets({top:${topPx},bottom:${bottomPx}});" +
+                "}" +
             "})();"
         webView.post { webView.evaluateJavascript(js, null) }
     }
