@@ -254,9 +254,9 @@ class MainActivity : AppCompatActivity() {
             cacheMode = WebSettings.LOAD_NO_CACHE
             userAgentString = (userAgentString ?: "") + " AmyNestAndroid/1.0"
 
-            // Fit width at 1:1 scale — overview mode zooms the page out and letterboxes UI.
+            // Optimal PWA scroll settings
             useWideViewPort = true
-            loadWithOverviewMode = false
+            loadWithOverviewMode = true
             displayZoomControls = false
             builtInZoomControls = false
             setSupportZoom(false)
