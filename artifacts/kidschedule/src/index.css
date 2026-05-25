@@ -597,17 +597,22 @@ html[data-theme="dark"] {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-  padding-bottom: calc(100px + var(--safe-bottom, env(safe-area-inset-bottom, 0px)));
+  padding-bottom: calc(
+    120px + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom, 0px))
+  );
 }
 
 .main-content {
-  padding-bottom: calc(100px + var(--safe-bottom, env(safe-area-inset-bottom, 0px)));
+  padding-bottom: calc(
+    120px + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom, 0px))
+  );
 }
 
-/* Scroll clearance when bottom tab bar is shown — pure CSS (no JS layout). */
 body.has-tabbar .app-scroll,
 body.has-tabbar .page-content {
-  padding-bottom: calc(100px + var(--safe-bottom, 0px));
+  padding-bottom: calc(
+    120px + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom, 0px))
+  );
 }
 
 /* Reserve space above fixed bottom controls (audio player, sticky bars). */
@@ -808,8 +813,15 @@ html.amynest-native-shell .layout-mobile-menu-btn {
   opacity: 1 !important;
 }
 
+html.amynest-android-shell .app-footer,
+html.amynest-native-shell .app-footer,
 html.amynest-android-shell .app-footer.tabbar,
 html.amynest-native-shell .app-footer.tabbar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  transform: none !important;
   display: block !important;
   visibility: visible !important;
 }
@@ -835,22 +847,28 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
   z-index: 200;
 }
 
+/* Bottom tab bar — pinned to viewport bottom; safe area via padding only. */
 .app-footer {
-  position: fixed;
+  position: fixed !important;
   left: 0;
   right: 0;
-  bottom: max(var(--safe-bottom, env(safe-area-inset-bottom, 0px)), 0px);
+  bottom: 0 !important;
   height: 78px;
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding-bottom: max(var(--safe-bottom, env(safe-area-inset-bottom, 0px)), 8px);
-  background: rgba(10, 15, 30, 0.95);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  z-index: 100;
+  padding-bottom: max(
+    env(safe-area-inset-bottom, 0px),
+    var(--safe-bottom, 0px)
+  );
+  background: rgba(10, 15, 30, 0.98);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 1000;
   box-sizing: border-box;
   pointer-events: auto;
+  transform: none !important;
+  margin: 0 !important;
 }
 
 .app-footer__nav {
@@ -858,17 +876,30 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
   width: 100%;
   height: 100%;
   pointer-events: auto;
+  transform: none !important;
 }
 
-/* Ask Amy FAB — always above fixed footer + system nav (immersive WebView). */
+/* Ask Amy FAB — right side, above footer (no center translate). */
 #amy-fab-floating,
 #amy-fab-floating.amy-fab-floating {
   position: fixed !important;
-  bottom: calc(78px + max(var(--safe-bottom, env(safe-area-inset-bottom, 0px)), 0px) + 12px) !important;
-  right: 20px;
-  left: auto;
-  transform: none;
-  z-index: 9999;
+  right: 16px !important;
+  left: auto !important;
+  bottom: calc(
+    78px + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom, 0px)) + 16px
+  ) !important;
+  transform: none !important;
+  z-index: 2000;
+  margin: 0 !important;
+}
+
+/* Dashboard tab bar: keep FAB on the right but clear Parenting Hub label. */
+body.has-tabbar #amy-fab-floating,
+body.has-tabbar #amy-fab-floating.amy-fab-floating {
+  right: 72px !important;
+  bottom: calc(
+    88px + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom, 0px)) + 16px
+  ) !important;
 }
 
 .pb-app-safe {
@@ -1291,7 +1322,9 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
   touch-action: pan-y;
   overscroll-behavior-y: contain;
   padding: 12px;
-  padding-bottom: calc(100px + var(--safe-bottom, var(--app-bottom-clearance)));
+  padding-bottom: calc(
+    120px + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom, 0px))
+  );
 }
 
 /* ── Event Prep Phase 3 — card lift + countdown pulse ───────────── */
