@@ -128,7 +128,7 @@ class PushBridge(
          * MainActivity permission flow, or KidScheduleFcmService channel
          * handling changes so `adb logcat -s MainActivity` shows the version.
          */
-        const val WRAPPER_VERSION = "2.5.2"
+        const val WRAPPER_VERSION = "2.5.1"
 
         /**
          * WeakReference to the active WebView. Updated by [install]; cleared

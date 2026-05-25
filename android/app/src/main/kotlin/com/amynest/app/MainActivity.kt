@@ -475,7 +475,7 @@ class MainActivity : AppCompatActivity() {
         val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
         val bottomPx = navBars.bottom.coerceIn(0, 72)
         val topPx = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top.coerceAtLeast(0)
-        val effectiveBottom = bottomPx
+        val effectiveBottom = if (bottomPx > 0) bottomPx else 48
         val js =
             "(function(){" +
                 "var r=document.documentElement;" +
