@@ -472,11 +472,12 @@ class MainActivity : AppCompatActivity() {
      */
     private fun applyWebSafeAreaInsets(insets: WindowInsetsCompat) {
         if (!::webView.isInitialized) return
-        val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-        val bottomPx = navBars.bottom.coerceIn(0, 72)
-        val topPx = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top.coerceAtLeast(0)
+        val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+        val bottomPx = bars.bottom.coerceAtLeast(0)
+        val topPx = bars.top.coerceAtLeast(0)
+        // Some WebViews report 0 until rotation; reserve typical 3-button nav height.
         val effectiveBottom = if (bottomPx > 0) bottomPx else 48
-        val clearance = effectiveBottom
+        val clearance = maxOf(effectiveBottom, 12)
         val js =
             "(function(){" +
                 "var r=document.documentElement;" +

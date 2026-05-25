@@ -849,15 +849,11 @@ html[data-theme="dark"] {
   right: 0;
   bottom: 0;
   width: 100%;
+  height: auto;
+  min-height: 78px;
   z-index: 1000;
-  box-sizing: border-box;
-  pointer-events: none;
-}
-
-.app-footer__nav {
-  pointer-events: auto;
-  box-sizing: border-box;
   padding-bottom: var(--app-bottom-clearance);
+  box-sizing: border-box;
 }
 
 .pb-app-safe {
