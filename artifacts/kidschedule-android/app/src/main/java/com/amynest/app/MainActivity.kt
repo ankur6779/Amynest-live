@@ -18,7 +18,8 @@ import android.util.Log
 import android.os.Bundle
 import android.os.Environment
 import android.view.View
-import android.view.WindowManager
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
@@ -35,7 +36,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import com.amynest.app.databinding.ActivityMainBinding
 
 private const val TAG = "MainActivity"
@@ -107,20 +110,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setTheme(R.style.Theme_KidSchedule)
 
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-        )
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        @Suppress("DEPRECATION")
-        window.decorView.systemUiVisibility = (
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        )
+        applyImmersiveSystemUi()
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -133,6 +124,12 @@ class MainActivity : AppCompatActivity() {
         webView = binding.webView
         webView.overScrollMode = View.OVER_SCROLL_NEVER
         webView.isNestedScrollingEnabled = false
+
+        ViewCompat.setOnApplyWindowInsetsListener(webView) { _, insets ->
+            applyWebSafeAreaInsets(insets)
+            insets
+        }
+        ViewCompat.requestApplyInsets(webView)
 
         // Stash any deep-link from the notification tap that launched us so
         // we can route the WebView to it after the initial page loads.
@@ -218,6 +215,52 @@ class MainActivity : AppCompatActivity() {
             ) == PackageManager.PERMISSION_GRANTED
         }
         bridge.onPermissionResult(granted)
+    }
+
+
+    /** Hide status + navigation bars; swipe from edge to show transiently. */
+    private fun applyImmersiveSystemUi() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.insetsController?.hide(
+                WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars(),
+            )
+            window.insetsController?.systemBarsBehavior =
+                WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    or View.SYSTEM_UI_FLAG_FULLSCREEN
+                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            )
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) applyImmersiveSystemUi()
+    }
+
+    private fun applyWebSafeAreaInsets(insets: WindowInsetsCompat) {
+        if (!::webView.isInitialized) return
+        val density = resources.displayMetrics.density
+        val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+        val bottomPx = navBars.bottom.coerceIn(0, 72).let { reported ->
+            if (reported > 0) reported else (48 * density).toInt()
+        }
+        val js =
+            "(function(){" +
+                "var r=document.documentElement;" +
+                "r.style.setProperty('--sab','${bottomPx}px');" +
+                "r.style.setProperty('--app-bottom-clearance','${bottomPx}px');" +
+                "r.classList.add('amynest-android-shell','amynest-native-shell');" +
+                "if(typeof window.__amynestApplyShellInsets==='function'){" +
+                    "window.__amynestApplyShellInsets({bottom:${bottomPx}});" +
+                "}" +
+            "})();"
+        webView.post { webView.evaluateJavascript(js, null) }
     }
 
     private fun loadInitialUrl() {
