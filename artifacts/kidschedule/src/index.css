@@ -600,12 +600,14 @@ html[data-theme="dark"] {
   padding-bottom: calc(64px + var(--sab, 0px));
 }
 
-/* Dashboard bottom nav — fixed to viewport; system inset on inner bar only. */
+/* Dashboard bottom nav — fixed to viewport; safe-area only on the nav bar. */
 .bottom-nav {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
+  height: 64px;
+  padding-bottom: var(--sab, env(safe-area-inset-bottom, 0px));
   z-index: 1000;
   pointer-events: none;
 }
@@ -613,8 +615,7 @@ html[data-theme="dark"] {
 .bottom-nav .app-footer__nav {
   min-height: 64px;
   height: 64px;
-  padding-bottom: var(--sab, env(safe-area-inset-bottom, 0px));
-  box-sizing: content-box;
+  box-sizing: border-box;
   pointer-events: auto;
 }
 
@@ -711,8 +712,7 @@ html[data-theme="dark"] {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  min-height: 0;
-  flex: 1;
+  min-height: 100vh;
   box-sizing: border-box;
 }
 
@@ -819,36 +819,6 @@ html[data-theme="dark"] {
   html.amynest-android-shell.amynest-pwa-standalone
     .app-screen-content:not(.app-screen-content--no-offset) {
     padding-top: 0;
-  }
-
-  /*
-   * Android WebView: sticky header fails inside overflow scroll — pin header and
-   * offset main once (status bar via --sat on header, not on #app-root).
-   */
-  html.amynest-android-shell .app-header,
-  html.amynest-native-shell .app-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    z-index: 100;
-    margin: 0;
-  }
-
-  html.amynest-android-shell .main-container:has(> .app-header) > .app-shell-main,
-  html.amynest-native-shell .main-container:has(> .app-header) > .app-shell-main {
-    padding-top: calc(var(--sat, 0px) + var(--app-header-height, 3.5rem));
-    box-sizing: border-box;
-  }
-
-  html.amynest-android-shell,
-  html.amynest-android-shell body,
-  html.amynest-android-shell #root,
-  html.amynest-android-shell #app-root,
-  html.amynest-android-shell .app-scroll {
-    min-height: 100dvh;
-    height: 100%;
   }
 }
 
