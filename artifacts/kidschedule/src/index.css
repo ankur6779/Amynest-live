@@ -3,7 +3,7 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --sab: env(safe-area-inset-bottom, 16px);
+  --sab: env(safe-area-inset-bottom, 0px);
 }
 
 /* ── Amy Mascot Logo — header animated icon ─────────────────────── */
@@ -513,6 +513,7 @@ body,
   margin: 0;
   padding: 0;
   height: 100%;
+  min-height: 100dvh;
 }
 
 html,
@@ -804,8 +805,13 @@ html.amynest-native-shell .layout-mobile-menu-btn {
   opacity: 1 !important;
 }
 
+html.amynest-android-shell .app-footer,
+html.amynest-native-shell .app-footer,
 html.amynest-android-shell .app-footer.tabbar,
 html.amynest-native-shell .app-footer.tabbar {
+  bottom: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
   display: flex !important;
   visibility: visible !important;
 }
@@ -836,41 +842,53 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
   position: fixed !important;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: 0 !important;
   padding-bottom: var(--sab);
-  height: 72px;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
   margin: 0 !important;
   box-sizing: border-box;
   background: rgba(10, 15, 30, 0.98);
   z-index: 1000;
   pointer-events: auto;
   transform: none !important;
+  overflow: visible;
 }
 
 .app-footer__nav {
-  box-sizing: border-box;
+  display: flex;
   width: 100%;
-  height: 100%;
+  min-height: 72px;
+  align-items: flex-end;
+  box-sizing: border-box;
   pointer-events: auto;
   transform: none !important;
 }
 
-#amy-fab-floating {
-  position: fixed !important;
-  right: 16px;
+/* Ask Amy — anchored to footer top (immune to inflated --sab on viewport bottom). */
+.app-footer #amy-fab-floating,
+#amy-fab-floating.amy-fab-in-footer {
+  position: absolute !important;
+  right: max(10px, env(safe-area-inset-right, 0px)) !important;
   left: auto !important;
-  bottom: calc(72px + var(--sab) + 8px);
+  top: auto !important;
+  bottom: calc(100% + 8px) !important;
+  width: auto !important;
+  max-width: none !important;
+  transform: none !important;
+  z-index: 2001;
+  margin: 0 !important;
+  pointer-events: auto;
+}
+
+/* Fallback when not embedded (non-dashboard routes). */
+#amy-fab-floating:not(.amy-fab-in-footer) {
+  position: fixed !important;
+  right: max(10px, env(safe-area-inset-right, 0px)) !important;
+  left: auto !important;
+  top: auto !important;
+  bottom: calc(72px + var(--sab) + 8px) !important;
   transform: none !important;
   z-index: 2000;
   margin: 0 !important;
-}
-
-/* Dashboard: FAB stays right but clears Parenting Hub tab label. */
-body.has-tabbar #amy-fab-floating {
-  right: 72px !important;
 }
 
 .pb-app-safe {

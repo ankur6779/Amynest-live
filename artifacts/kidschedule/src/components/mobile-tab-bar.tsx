@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Brain, BookOpen, Calendar, Home } from "lucide-react";
+import { AmyFab } from "@/components/amy-fab";
 import { AppLink } from "@/components/app-link";
 import { safePathStartsWithSegment } from "@/lib/safe-route";
 
@@ -38,6 +39,7 @@ export function MobileTabBar({ visible }: MobileTabBarProps) {
       data-testid="mobile-tab-bar"
       aria-hidden={false}
     >
+      <AmyFab embedded />
       <nav
         className="app-footer__nav w-full border-t border-border bg-card/95 shadow-[0_-8px_28px_var(--shadow-color)] backdrop-blur-xl"
         aria-label={t("nav.dashboard")}

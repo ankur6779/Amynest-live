@@ -5,8 +5,13 @@ import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useTranslation } from "react-i18next";
 import { safePathStartsWith } from "@/lib/safe-route";
 
+type AmyFabProps = {
+  /** Render inside `.app-footer` (anchored above tab bar). */
+  embedded?: boolean;
+};
+
 /** Only floating Ask Amy control — portaled to body for Android WebView. */
-export function AmyFab() {
+export function AmyFab({ embedded = false }: AmyFabProps) {
   const { t } = useTranslation();
   const [location] = useLocation();
   const [mounted, setMounted] = useState(false);
@@ -24,12 +29,12 @@ export function AmyFab() {
     return null;
   }
 
-  return createPortal(
+  const fab = (
     <div
       id="amy-fab-floating"
       data-tour="amy-fab"
       data-amynest-fab="active"
-      className="amy-fab-floating"
+      className={embedded ? "amy-fab-floating amy-fab-in-footer" : "amy-fab-floating"}
     >
       <div className="amy-fade-in">
         <Link
@@ -43,7 +48,9 @@ export function AmyFab() {
           </span>
         </Link>
       </div>
-    </div>,
-    document.body,
+    </div>
   );
+
+  if (embedded) return fab;
+  return createPortal(fab, document.body);
 }

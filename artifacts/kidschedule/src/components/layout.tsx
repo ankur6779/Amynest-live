@@ -16,7 +16,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandLogo } from "@/components/brand-logo";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
-import { AmyFab } from "@/components/amy-fab";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useTranslation } from "react-i18next";
@@ -296,8 +295,6 @@ export function Layout({
         !["/sign-in", "/onboarding"].some((p) => safePathStartsWith(location, p)) && (
           <NotificationPromptModal />
         )}
-
-      {showDashboardChrome ? <AmyFab /> : null}
 
       <SpotlightTour />
     </div>
