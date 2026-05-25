@@ -33,8 +33,8 @@
     <meta name="author" content="AmyNest AI" />
     <meta name="keywords" content="parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting, child development, daily routine, kids schedule, parenting coach, AI coach for parents, child behavior tracker, kids meal planner India, speech coach for kids, spelling practice app" />
     <meta name="application-name" content="AmyNest AI" />
-    <meta name="app-build-version" content="v1.0.15" />
-    <meta name="amynest-deploy" content="2026-05-25-shell-inset-double-count-fix-v1.4.11" />
+    <meta name="app-build-version" content="v1.0.16" />
+    <meta name="amynest-deploy" content="2026-05-20-viewport-inset-safe-area-v1.4.12" />
     <meta name="rating" content="general" />
     <meta name="revisit-after" content="7 days" />
     <meta name="msapplication-TileColor" content="#A855F7" />
@@ -269,6 +269,14 @@
         window.__amynestApplyShellInsets = function (opts) {
           try {
             var r = document.documentElement;
+            if (opts && opts.viewportInset) {
+              r.classList.add("amynest-viewport-inset");
+              r.style.setProperty("--sat", "0px");
+              r.style.setProperty("--sab", "0px");
+              if (opts.top != null) r.style.setProperty("--native-inset-top", opts.top + "px");
+              if (opts.bottom != null) r.style.setProperty("--native-inset-bottom", opts.bottom + "px");
+              return;
+            }
             if (opts && opts.top != null) r.style.setProperty("--sat", opts.top + "px");
             if (opts && opts.bottom != null) r.style.setProperty("--sab", opts.bottom + "px");
           } catch (_insets) { /* ignore */ }
@@ -716,7 +724,7 @@
 
       /*
        * Play Store Android WebView (loads www.amynest.in remotely).
-       * Pin header/footer to viewport edges; native injects --sat/--sab.
+       * Native applies WebView padding + amynest-viewport-inset (no CSS double-inset).
        */
       @media (max-width: 767px) {
         html.amynest-android-shell,
@@ -751,12 +759,22 @@
           right: 0 !important;
           width: 100% !important;
           margin: 0 !important;
-          z-index: 100 !important;
+          z-index: 1000 !important;
+          box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4) !important;
+          backdrop-filter: blur(20px) !important;
+          -webkit-backdrop-filter: blur(20px) !important;
+        }
+        html.amynest-viewport-inset .app-header,
+        html.amynest-viewport-inset.amynest-native-shell .app-header {
+          padding-top: 0 !important;
+        }
+        html.amynest-android-shell:not(.amynest-viewport-inset) .app-header,
+        html.amynest-native-shell:not(.amynest-viewport-inset) .app-header {
           padding-top: var(--sat, env(safe-area-inset-top, 0px)) !important;
         }
         html.amynest-android-shell .main-container:has(> .app-header) > .app-shell-main,
         html.amynest-native-shell .main-container:has(> .app-header) > .app-shell-main {
-          padding-top: var(--app-header-height, calc(var(--sat, 0px) + 56px)) !important;
+          padding-top: var(--app-header-height, 56px) !important;
           box-sizing: border-box !important;
         }
         html.amynest-android-shell .app-scroll,
@@ -765,11 +783,15 @@
         html.amynest-native-shell .page-content {
           padding-top: 0 !important;
         }
-        html.amynest-android-shell body.has-tabbar .app-scroll,
-        html.amynest-android-shell body.has-tabbar .page-content,
-        html.amynest-native-shell body.has-tabbar .app-scroll,
-        html.amynest-native-shell body.has-tabbar .page-content {
-          padding-bottom: 64px !important;
+        html.amynest-viewport-inset body.has-tabbar .app-scroll,
+        html.amynest-viewport-inset body.has-tabbar .page-content {
+          padding-bottom: calc(64px + 10px) !important;
+        }
+        html.amynest-android-shell:not(.amynest-viewport-inset) body.has-tabbar .app-scroll,
+        html.amynest-android-shell:not(.amynest-viewport-inset) body.has-tabbar .page-content,
+        html.amynest-native-shell:not(.amynest-viewport-inset) body.has-tabbar .app-scroll,
+        html.amynest-native-shell:not(.amynest-viewport-inset) body.has-tabbar .page-content {
+          padding-bottom: calc(64px + var(--sab, env(safe-area-inset-bottom, 0px)) + 10px) !important;
         }
         html.amynest-android-shell .bottom-nav,
         html.amynest-native-shell .bottom-nav {
@@ -783,18 +805,32 @@
         html.amynest-native-shell .bottom-nav .app-footer__nav {
           min-height: 64px !important;
           height: 64px !important;
-          padding-bottom: var(--sab, env(safe-area-inset-bottom, 0px)) !important;
           box-sizing: content-box !important;
+          background: rgba(10, 10, 30, 0.95) !important;
+          box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4) !important;
+          backdrop-filter: blur(20px) !important;
+          -webkit-backdrop-filter: blur(20px) !important;
+        }
+        html.amynest-viewport-inset .bottom-nav .app-footer__nav {
+          padding-bottom: 10px !important;
+        }
+        html.amynest-android-shell:not(.amynest-viewport-inset) .bottom-nav .app-footer__nav,
+        html.amynest-native-shell:not(.amynest-viewport-inset) .bottom-nav .app-footer__nav {
+          padding-bottom: calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 10px) !important;
         }
         html.amynest-android-shell .dashboard-content,
         html.amynest-native-shell .dashboard-content {
           padding-bottom: 0 !important;
         }
-        html.amynest-android-shell .floating-button,
-        html.amynest-android-shell #amy-fab-floating.amy-fab-floating.floating-button,
-        html.amynest-native-shell .floating-button,
-        html.amynest-native-shell #amy-fab-floating.amy-fab-floating.floating-button {
-          bottom: calc(64px + var(--sab, 0px) + 12px) !important;
+        html.amynest-viewport-inset .floating-button,
+        html.amynest-viewport-inset #amy-fab-floating.amy-fab-floating.floating-button {
+          bottom: calc(64px + 10px + 12px) !important;
+        }
+        html.amynest-android-shell:not(.amynest-viewport-inset) .floating-button,
+        html.amynest-android-shell:not(.amynest-viewport-inset) #amy-fab-floating.amy-fab-floating.floating-button,
+        html.amynest-native-shell:not(.amynest-viewport-inset) .floating-button,
+        html.amynest-native-shell:not(.amynest-viewport-inset) #amy-fab-floating.amy-fab-floating.floating-button {
+          bottom: calc(64px + var(--sab, 0px) + 10px + 12px) !important;
         }
       }
 
