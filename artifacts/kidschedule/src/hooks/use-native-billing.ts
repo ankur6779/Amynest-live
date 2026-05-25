@@ -19,6 +19,7 @@ import {
   restoreIOSPurchases,
 } from "@/lib/native-billing-ios";
 import type { Plan } from "@/hooks/use-subscription";
+import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
 
 type RcConfig = {
   provider: "revenuecat";
@@ -244,8 +245,16 @@ export function useNativeBilling(): NativeBillingState {
   useEffect(() => {
     if (!androidBridge || !available || !user?.id) return;
     if (userIdSyncedRef.current === user.id) return;
-    void androidBridge.setUserId(user.id);
-    userIdSyncedRef.current = user.id;
+    let cancelled = false;
+    void (async () => {
+      const res = await androidBridge.setUserId(user.id);
+      if (!cancelled && (res == null || res.ok !== false)) {
+        userIdSyncedRef.current = user.id;
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [androidBridge, available, user?.id]);
 
   // ── Android: load plan → RC package mapping from backend ─────────────────
@@ -301,14 +310,8 @@ export function useNativeBilling(): NativeBillingState {
           }
           const result = await purchaseIOSPackage(pkg);
           if (result.ok) {
-            // Invalidate subscription cache (webhook may take a moment)
-            await qc.invalidateQueries({ queryKey: ["subscription"] });
-            await qc.invalidateQueries({ queryKey: ["feature-usage"] });
-            for (const delay of [1500, 3500, 6000]) {
-              await new Promise((r) => setTimeout(r, delay));
-              await qc.invalidateQueries({ queryKey: ["subscription"] });
-            }
-            window.dispatchEvent(new Event("amynest:refresh-subscription"));
+            const finalized = await finalizeNativePurchase(authFetch, qc);
+            return { ok: finalized.isPremium, reason: finalized.isPremium ? undefined : "Premium is activating — please wait a moment and try Restore Purchases." };
           }
           return result;
         }
@@ -316,6 +319,12 @@ export function useNativeBilling(): NativeBillingState {
         // ── Android Google Play ───────────────────────────────────────────
         if (!androidBridge) {
           return { ok: false, reason: "Google Play Billing is not available." };
+        }
+        if (user?.id) {
+          const login = await androidBridge.setUserId(user.id);
+          if (login?.ok === false) {
+            return { ok: false, reason: "Could not link your account to Google Play billing." };
+          }
         }
         const map = packageMap;
         if (!map) return { ok: false, reason: "Loading plans — please retry in a moment." };
@@ -330,14 +339,11 @@ export function useNativeBilling(): NativeBillingState {
             reason: result.userCancelled ? undefined : result.error || "Google Play purchase failed.",
           };
         }
-        await qc.invalidateQueries({ queryKey: ["subscription"] });
-        await qc.invalidateQueries({ queryKey: ["feature-usage"] });
-        for (const delay of [1500, 3500, 6000]) {
-          await new Promise((r) => setTimeout(r, delay));
-          await qc.invalidateQueries({ queryKey: ["subscription"] });
-        }
-        window.dispatchEvent(new Event("amynest:refresh-subscription"));
-        return { ok: true };
+        const finalized = await finalizeNativePurchase(authFetch, qc);
+        return {
+          ok: finalized.isPremium,
+          reason: finalized.isPremium ? undefined : "Payment received — premium is activating. Wait a few seconds or tap Restore Purchases.",
+        };
       } catch (err) {
         return {
           ok: false,
@@ -347,7 +353,7 @@ export function useNativeBilling(): NativeBillingState {
         setPurchasing(false);
       }
     },
-    [iosShell, androidBridge, available, packageMap, qc, unavailableReason],
+    [iosShell, androidBridge, available, packageMap, qc, authFetch, unavailableReason, user?.id],
   );
 
   // ── restore ───────────────────────────────────────────────────────────────
@@ -357,10 +363,8 @@ export function useNativeBilling(): NativeBillingState {
     if (iosShell) {
       const result = await restoreIOSPurchases();
       if (result.ok) {
-        await qc.invalidateQueries({ queryKey: ["subscription"] });
-        await qc.invalidateQueries({ queryKey: ["feature-usage"] });
-        window.dispatchEvent(new Event("amynest:refresh-subscription"));
-        return result.isPremium;
+        const finalized = await finalizeNativePurchase(authFetch, qc);
+        return finalized.isPremium;
       }
       return false;
     }
@@ -368,13 +372,11 @@ export function useNativeBilling(): NativeBillingState {
     if (!androidBridge) return false;
     const res = await androidBridge.restore();
     if (res.ok) {
-      await qc.invalidateQueries({ queryKey: ["subscription"] });
-      await qc.invalidateQueries({ queryKey: ["feature-usage"] });
-      window.dispatchEvent(new Event("amynest:refresh-subscription"));
-      return true;
+      const finalized = await finalizeNativePurchase(authFetch, qc);
+      return finalized.isPremium;
     }
     return false;
-  }, [iosShell, androidBridge, available, qc]);
+  }, [iosShell, androidBridge, available, qc, authFetch]);
 
   return {
     platform,

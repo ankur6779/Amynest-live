@@ -112,7 +112,7 @@ function callAsync<T>(
 }
 
 export type NativeBilling = {
-  setUserId: (userId: string) => Promise<void>;
+  setUserId: (userId: string) => Promise<{ ok?: boolean; error?: string } | void>;
   getOfferings: () => Promise<{ ok: true; data: NativeOfferings } | { ok: false; error: string }>;
   purchase: (packageId: string) => Promise<NativePurchaseResult>;
   presentPaywall: (options?: {
@@ -177,7 +177,11 @@ export function getNativeBilling(): NativeBilling | null {
   if (!bridge || typeof bridge.postMessage !== "function") return null;
   return {
     setUserId: async (id) => {
-      await callAsync(bridge, { action: "setUserId", userId: id }, 5_000);
+      return callAsync<{ ok?: boolean; error?: string }>(
+        bridge,
+        { action: "setUserId", userId: id },
+        10_000,
+      );
     },
     getOfferings: () => callAsync(bridge, { action: "getOfferings" }),
     purchase: (pkg) => callAsync(bridge, { action: "purchase", packageId: pkg }),

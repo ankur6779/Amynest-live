@@ -126,7 +126,17 @@ export async function presentNativeRCPaywall(options?: {
       return { handled: false, purchased: false, restored: false, cancelled: false };
     }
     if (options?.userId) {
-      await billing.setUserId(options.userId);
+      const login = await billing.setUserId(options.userId);
+      if (login && typeof login === "object" && "ok" in login && login.ok === false) {
+        return {
+          handled: false,
+          purchased: false,
+          restored: false,
+          cancelled: false,
+          error: true,
+          reason: "Could not link your account to Google Play billing.",
+        };
+      }
     }
     const res = await billing.presentPaywall({ ifNeeded, entitlementId });
     if (!res.ok) {

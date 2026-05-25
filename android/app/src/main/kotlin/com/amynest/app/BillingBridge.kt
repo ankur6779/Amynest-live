@@ -71,8 +71,20 @@ class BillingBridge(
             "isAvailable" -> resolve(replyProxy, cbId, JSONObject().put("available", isReady()))
             "setUserId" -> {
                 val userId = msg.optString("userId")
-                if (isReady() && userId.isNotBlank()) syncUserId(userId)
-                resolve(replyProxy, cbId, JSONObject().put("ok", true))
+                if (!isReady() || userId.isBlank()) {
+                    resolve(replyProxy, cbId, JSONObject().put("ok", true))
+                    return@handleMessage
+                }
+                Purchases.sharedInstance.logInWith(
+                    userId,
+                    onError = { err ->
+                        Log.w(TAG, "logIn error: ${err.message}")
+                        resolveError(replyProxy, cbId, err.message ?: "login_failed")
+                    },
+                    onSuccess = { _, _ ->
+                        resolve(replyProxy, cbId, JSONObject().put("ok", true))
+                    },
+                )
             }
             "getOfferings" -> getOfferings(replyProxy, cbId)
             "purchase" -> purchase(replyProxy, cbId, msg.optString("packageId"))
@@ -148,7 +160,9 @@ class BillingBridge(
                     onSuccess = { _, customerInfo ->
                         sendRaw(
                             replyProxy, cbId,
-                            JSONObject().put("ok", true).put("customerInfo", customerInfoToJson(customerInfo)),
+                            JSONObject()
+                                .put("ok", true)
+                                .put("customerInfo", customerInfoToJson(customerInfo)),
                         )
                     },
                 )
@@ -210,11 +224,14 @@ class BillingBridge(
     }
 
     private fun findPackage(offerings: Offerings, identifier: String): Package? {
+        fun matches(pkg: Package): Boolean =
+            pkg.identifier == identifier || pkg.product.id == identifier
+
         offerings.current?.availablePackages
-            ?.firstOrNull { it.identifier == identifier }
+            ?.firstOrNull(::matches)
             ?.let { return it }
         for ((_, off) in offerings.all) {
-            off.availablePackages.firstOrNull { it.identifier == identifier }
+            off.availablePackages.firstOrNull(::matches)
                 ?.let { return it }
         }
         return null

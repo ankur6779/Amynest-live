@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { usePaywall } from "@/contexts/paywall-context";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
 import { useNativeBilling } from "@/hooks/use-native-billing";
+import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { resolvePlanPriceLabel } from "@/lib/plan-price";
 
@@ -100,6 +101,7 @@ export function PaywallModal() {
   const { user } = useUser();
   const [, setLocation] = useLocation();
   const nativeBilling = useNativeBilling();
+  const { toast } = useToast();
   const [selected, setSelected] = useState<Exclude<Plan, "free">>("six_month");
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -141,6 +143,10 @@ export function PaywallModal() {
     const res = await nativeBilling.purchase(selected);
     setSubmitting(false);
     if (res.ok) {
+      toast({
+        title: "Premium unlocked!",
+        description: "Your full AmyNest features are now active.",
+      });
       closePaywall();
     } else if (!res.userCancelled) {
       const fallback = nativeBilling.platform === "ios"
