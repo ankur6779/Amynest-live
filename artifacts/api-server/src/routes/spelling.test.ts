@@ -38,6 +38,9 @@ import {
   spellingTournamentsTable,
 } from "@workspace/db";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { isDbIntegrationAvailable } from "../test/db-integration.js";
+
+const dbIntegrationOk = await isDbIntegrationAvailable();
 
 describe("normaliseSpellingGuess", () => {
   it("treats trailing whitespace as equal", () => {
@@ -420,7 +423,7 @@ describe("computeAiScore", () => {
 //
 // All tests use a randomly generated userId per test and clean up after
 // themselves to avoid polluting the dev DB.
-describe("spelling sessions — DB integration (trust + concurrency)", () => {
+describe("spelling sessions — DB integration (trust + concurrency)", { skip: !dbIntegrationOk }, () => {
   // Helper: build a minimally-valid session row for inserts. Uses a
   // throwaway userId per test so cleanup is easy.
   function freshSessionRow(opts: {
@@ -1075,7 +1078,7 @@ describe("spelling sessions — DB integration (trust + concurrency)", () => {
 // We deliberately DON'T test the success path here — that requires a
 // matching ttsCache row + GCS object, which the test rig can't produce.
 // The handler-internal logic is covered by the route's branch tests above.
-describe("spellingPublicRouter mount (integration)", () => {
+describe("spellingPublicRouter mount (integration)", { skip: !dbIntegrationOk }, () => {
   it("serves /api/spelling/sessions/:token/audio/:idx.mp3 publicly through the app", async () => {
     const http = await import("node:http");
     const { createApp } = await import("../app.js");

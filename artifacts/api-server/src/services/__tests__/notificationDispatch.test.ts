@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { db, pushTokensTable, notificationLogTable, notificationPreferencesTable } from "@workspace/db";
+import { isDbIntegrationAvailable } from "../../test/db-integration.js";
 import { eq } from "drizzle-orm";
 import {
   pruneInvalidToken,
@@ -12,10 +13,35 @@ import {
 
 const userId = `test-user-${Date.now()}`;
 
+const dbIntegrationOk = await isDbIntegrationAvailable();
+
 async function cleanup(uid: string): Promise<void> {
-  await db.delete(notificationLogTable).where(eq(notificationLogTable.userId, uid));
-  await db.delete(pushTokensTable).where(eq(pushTokensTable.userId, uid));
-  await db.delete(notificationPreferencesTable).where(eq(notificationPreferencesTable.userId, uid));
+  if (!dbIntegrationOk) return;
+  try {
+    await db.delete(notificationLogTable).where(eq(notificationLogTable.userId, uid));
+    await db.delete(pushTokensTable).where(eq(pushTokensTable.userId, uid));
+    await db.delete(notificationPreferencesTable).where(eq(notificationPreferencesTable.userId, uid));
+  } catch {
+    // Postgres unavailable in this environment — DB tests are skipped.
+  }
+}
+
+function dbTest(
+  name: string,
+  fn: Parameters<typeof test>[1],
+  options?: Parameters<typeof test>[2],
+): void {
+  test(
+    name,
+    { ...options, skip: options?.skip ?? !dbIntegrationOk },
+    async (t, done) => {
+      if (!dbIntegrationOk) {
+        t.skip("Postgres not available — set DATABASE_URL to run notification DB tests");
+        return;
+      }
+      return fn(t, done);
+    },
+  );
 }
 
 test("isFcmInvalidTokenError flags only per-device unregistered errors", () => {
@@ -43,7 +69,7 @@ test("isFcmInvalidTokenError flags only per-device unregistered errors", () => {
   assert.equal(isFcmInvalidTokenError(undefined), false);
 });
 
-test("pruneInvalidToken removes the matching token row", async () => {
+dbTest("pruneInvalidToken removes the matching token row", async () => {
   await cleanup(userId);
   const fakeToken = `tok_${Math.random().toString(36).slice(2)}`;
   await db.insert(pushTokensTable).values({ userId, token: fakeToken, platform: "web" });
@@ -53,7 +79,7 @@ test("pruneInvalidToken removes the matching token row", async () => {
   await cleanup(userId);
 });
 
-test("pruneStaleTokens removes tokens past the cutoff", async () => {
+dbTest("pruneStaleTokens removes tokens past the cutoff", async () => {
   const uid = `stale-${Date.now()}`;
   await cleanup(uid);
   const oldDate = new Date(Date.now() - 100 * 24 * 60 * 60 * 1000);
@@ -69,7 +95,7 @@ test("pruneStaleTokens removes tokens past the cutoff", async () => {
   await cleanup(uid);
 });
 
-test("dispatchNotification with no tokens returns no_tokens", async () => {
+dbTest("dispatchNotification with no tokens returns no_tokens", async () => {
   await cleanup(userId);
   await getOrCreatePreferences(userId);
   const result = await dispatchNotification({
@@ -83,7 +109,7 @@ test("dispatchNotification with no tokens returns no_tokens", async () => {
   await cleanup(userId);
 });
 
-test("quiet hours block per-item dispatch with throttled status", async () => {
+dbTest("quiet hours block per-item dispatch with throttled status", async () => {
   const uid = `quiet-${Date.now()}`;
   await cleanup(uid);
   await getOrCreatePreferences(uid);
@@ -123,7 +149,7 @@ test("quiet hours block per-item dispatch with throttled status", async () => {
   await cleanup(uid);
 });
 
-test("restrictToPlatforms excludes non-matching tokens (no_tokens)", async () => {
+dbTest("restrictToPlatforms excludes non-matching tokens (no_tokens)", async () => {
   const uid = `restrict-${Date.now()}`;
   await cleanup(uid);
   await getOrCreatePreferences(uid);
@@ -147,7 +173,7 @@ test("restrictToPlatforms excludes non-matching tokens (no_tokens)", async () =>
   await cleanup(uid);
 });
 
-test("daily cap blocks non-timebound dispatch once reached", async () => {
+dbTest("daily cap blocks non-timebound dispatch once reached", async () => {
   const uid = `cap-${Date.now()}`;
   await cleanup(uid);
   await getOrCreatePreferences(uid);
@@ -185,7 +211,7 @@ test("daily cap blocks non-timebound dispatch once reached", async () => {
   await cleanup(uid);
 });
 
-test("routine_item bypasses daily cap — time-sensitive task reminders always deliver", async () => {
+dbTest("routine_item bypasses daily cap — time-sensitive task reminders always deliver", async () => {
   const uid = `cap-item-${Date.now()}`;
   await cleanup(uid);
   await getOrCreatePreferences(uid);
@@ -228,7 +254,7 @@ test("routine_item bypasses daily cap — time-sensitive task reminders always d
   await cleanup(uid);
 });
 
-test("category disabled blocks dispatch with throttled status", async () => {
+dbTest("category disabled blocks dispatch with throttled status", async () => {
   await cleanup(userId);
   await getOrCreatePreferences(userId);
   await db

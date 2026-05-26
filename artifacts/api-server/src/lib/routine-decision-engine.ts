@@ -59,6 +59,7 @@ import {
   type RoutineScheduleItem,
   type ScheduleOpts,
 } from "./routine-scheduler.js";
+import { windowMidpoint } from "./routine-country-profile.js";
 
 export type ScheduleDecisionMeta = {
   reason: string;
@@ -68,6 +69,20 @@ export type ScheduleDecisionMeta = {
 
 export type { DecisionTraceEntry, RoutineScheduleItemWithDecision } from "./routine-priority-engine.js";
 export { allocatePrioritySlots, injectCulturalBlocks } from "./routine-priority-engine.js";
+
+/** Default 09:00–15:00 school window when callers set hasSchool but omit clock bounds. */
+export function withDefaultSchoolScheduleOpts(
+  opts: ScheduleOpts,
+  state?: InterpretedBehavioralState,
+): ScheduleOpts {
+  if (!opts.hasSchool) return opts;
+  if (opts.schoolStartMins != null && opts.schoolEndMins != null) return opts;
+  const schoolEnd =
+    opts.schoolEndMins ??
+    (state ? windowMidpoint(state.countryProfile.schoolEndTimeRange) : 15 * 60);
+  const schoolStart = opts.schoolStartMins ?? 9 * 60;
+  return { ...opts, schoolStartMins: schoolStart, schoolEndMins: schoolEnd };
+}
 
 const EXTRACURRICULAR_RE =
   /\b(soccer|football club|sports practice|music|club|tuition|hobby)\b/i;
@@ -138,6 +153,37 @@ function withDecision(
 
 function hasMatching(items: RoutineScheduleItem[], re: RegExp): boolean {
   return items.some((i) => re.test(i.activity));
+}
+
+/** Re-attach priority-injected cultural blocks dropped during timeline placement. */
+function restoreInjectedCulturalBlocks(
+  scheduled: RoutineScheduleItemWithDecision[],
+  preSchedule: RoutineScheduleItemWithDecision[],
+): RoutineScheduleItemWithDecision[] {
+  const out = [...scheduled];
+  for (const inj of preSchedule) {
+    const tag = inj.culturalTag ?? "";
+    const isExtracurricular =
+      tag.includes("extracurricular") || EXTRACURRICULAR_RE.test(inj.activity);
+    const isOutdoorCultural = tag.includes("outdoor");
+    const isStudyCultural = tag.includes("academic_") || /\btuition\b/i.test(inj.activity);
+    if (!isExtracurricular && !isOutdoorCultural && !isStudyCultural) continue;
+
+    const already = out.some(
+      (i) =>
+        (inj.culturalTag && i.culturalTag === inj.culturalTag) ||
+        (isExtracurricular &&
+          (EXTRACURRICULAR_RE.test(i.activity) || i.culturalTag?.includes("extracurricular"))) ||
+        (isOutdoorCultural &&
+          (i.culturalTag?.includes("outdoor") || i.category === "outdoor")) ||
+        (isStudyCultural && /\b(tuition|study time)\b/i.test(i.activity)),
+    );
+    if (already) continue;
+    out.push({ ...inj });
+  }
+  return out.sort(
+    (a, b) => parseTimeToMins(a.time) - parseTimeToMins(b.time),
+  );
 }
 
 function localizeActivityLabels(
@@ -496,14 +542,15 @@ export function generateRoutineFromState(
     };
   }
 
+  const scheduleOpts = withDefaultSchoolScheduleOpts(opts, interpretedContext);
   const transformed = reshapeItemsForContext(input, interpretedContext, { decisionTrace });
   const ordered = orderForCountryPlacement(transformed, interpretedContext.country);
 
-  const bounds = computeDayBounds(opts.wakeUpTime, opts.sleepTime);
+  const bounds = computeDayBounds(scheduleOpts.wakeUpTime, scheduleOpts.sleepTime);
   const mealWindows = mealWindowsForState(interpretedContext);
 
   let slots = buildPriorityTimeline(ordered, bounds, {
-    ...opts,
+    ...scheduleOpts,
     mealWindows,
     country: interpretedContext.country,
   });
@@ -524,17 +571,19 @@ export function generateRoutineFromState(
     };
   });
 
+  items = restoreInjectedCulturalBlocks(items, transformed);
+
   const wakeMins = parseTimeToMins(normalizeTo24h(opts.wakeUpTime));
   const sleepMins = parseTimeToMins(normalizeTo24h(opts.sleepTime));
 
   const mealFlow = applyMealAwareScheduling(items, interpretedContext, {
-    hasSchool: opts.hasSchool,
-    schoolEndMins: opts.schoolEndMins,
-    schoolStartMins: opts.schoolStartMins,
+    hasSchool: scheduleOpts.hasSchool,
+    schoolEndMins: scheduleOpts.schoolEndMins,
+    schoolStartMins: scheduleOpts.schoolStartMins,
     sleepMins,
     wakeMins,
-    ageInMonths: opts.ageInMonths,
-    feedingType: opts.feedingType,
+    ageInMonths: scheduleOpts.ageInMonths,
+    feedingType: scheduleOpts.feedingType,
   });
   items = mealFlow.items as RoutineScheduleItemWithDecision[];
   validationWarnings.push(...mealFlow.adjustments);
@@ -547,11 +596,12 @@ export function generateRoutineFromState(
   }) as RoutineScheduleItemWithDecision[];
 
   const resolved = resolveRoutineSchedule(items, {
-    ...opts,
+    ...scheduleOpts,
     mealWindows,
     country: interpretedContext.country,
   });
   items = resolved.items as RoutineScheduleItemWithDecision[];
+  items = restoreInjectedCulturalBlocks(items, transformed);
 
   items = applyWeatherToScheduledItems(items, interpretedContext, decisionTrace);
   items = enforceSleepIsLast(items, decisionTrace) as RoutineScheduleItemWithDecision[];
@@ -560,10 +610,10 @@ export function generateRoutineFromState(
   const cultural = validateAgainstCountryProfile(items, interpretedContext);
   const ordering = validateActivityOrdering(items, interpretedContext);
   const mealIntegration = validateMealActivityIntegration(items, interpretedContext.country, {
-    hasSchool: opts.hasSchool,
-    schoolEndMins: opts.schoolEndMins,
-    ageInMonths: opts.ageInMonths,
-    feedingType: opts.feedingType,
+    hasSchool: scheduleOpts.hasSchool,
+    schoolEndMins: scheduleOpts.schoolEndMins,
+    ageInMonths: scheduleOpts.ageInMonths,
+    feedingType: scheduleOpts.feedingType,
     sleepMins,
   });
   validationWarnings.push(...alignment, ...cultural, ...ordering, ...mealIntegration);
