@@ -5,6 +5,7 @@ import { safeAuthFetchJson } from "@/lib/safe-auth-fetch-json";
 import type { PhonicsDailyPlan, ChildCurriculumProgress } from "@workspace/phonics-curriculum";
 
 export interface CurriculumApiResponse {
+  [key: string]: unknown;
   plan: PhonicsDailyPlan;
   completionPct: number;
   progress: ChildCurriculumProgress;
@@ -32,7 +33,7 @@ export function usePhonicsCurriculum(childId: number | null) {
           body: JSON.stringify({ childId }),
         },
       );
-      if (isMounted.current) setData(res);
+      if (isMounted.current && !("fallback" in res)) setData(res);
     } catch (e) {
       if (isMounted.current) {
         setError(e instanceof Error ? e.message : "curriculum_load_failed");

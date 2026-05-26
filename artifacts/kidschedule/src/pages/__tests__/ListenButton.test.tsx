@@ -3,11 +3,11 @@
  *
  * The button must:
  *   1. Render the Listen button.
- *   2. Speak the full win text when Listen is tapped.
+ *   2. Speak the full win text when Listen is tapped (coach cache identity when available).
  *   3. Stop in-flight playback when tapped again.
  *
- * Voice identity is now driven by audioIdentity / coach opts passed to
- * speak(), not by hook-level voiceId/modelId.
+ * Voice identity is driven by audioIdentity / coach opts passed to speak(),
+ * not by hook-level voiceId/modelId.
  */
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -19,23 +19,20 @@ const pauseMock = vi.fn();
 let mockState = { speaking: false, loading: false };
 
 vi.mock("@/hooks/use-amy-voice", () => ({
-  useAmyVoice: () => {
-    return {
-      speak: speakMock,
-      primeSpeakGesture: vi.fn(),
-      pause: pauseMock,
-      speaking: mockState.speaking,
-      loading: mockState.loading,
-      error: null,
-    };
-  },
+  useAmyVoice: () => ({
+    speak: speakMock,
+    primeSpeakGesture: vi.fn(),
+    pause: pauseMock,
+    speaking: mockState.speaking,
+    loading: mockState.loading,
+    error: null,
+  }),
 }));
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ i18n: { language: "en" }, t: (k: string) => k }),
 }));
 
-// Pull in the component AFTER the mocks are hoisted.
 import { ListenButton, type Win } from "../ai-coach";
 
 const sampleWin: Win = {
@@ -60,25 +57,27 @@ beforeEach(() => {
 
 describe("ListenButton (Coach)", () => {
   it("renders the Listen button", () => {
-    render(<ListenButton win={sampleWin} />);
+    render(<ListenButton win={sampleWin} planCacheKey="plan-test-key" />);
     expect(screen.getByTestId("coach-listen-btn")).toBeInTheDocument();
   });
 
   it("speaks the full win text when Listen is tapped", async () => {
     const user = userEvent.setup();
-    render(<ListenButton win={sampleWin} />);
+    render(<ListenButton win={sampleWin} planCacheKey="plan-test-key" />);
 
     await user.click(screen.getByTestId("coach-listen-btn"));
     expect(speakMock).toHaveBeenCalledTimes(1);
-    const spoken = speakMock.mock.calls[0]?.[0] as string;
+    const [spoken, opts] = speakMock.mock.calls[0] as [string, { coach?: boolean; playbackMode?: string }];
     expect(spoken).toContain("Co-regulate before correcting");
     expect(spoken).toContain("Sit at eye level");
+    expect(opts?.coach).toBe(true);
+    expect(opts?.playbackMode).toBe("partial-ok");
   });
 
   it("stops in-flight playback when tapped during playback", async () => {
     mockState.speaking = true;
     const user = userEvent.setup();
-    render(<ListenButton win={sampleWin} />);
+    render(<ListenButton win={sampleWin} planCacheKey="plan-test-key" />);
 
     await user.click(screen.getByTestId("coach-listen-btn"));
     expect(pauseMock).toHaveBeenCalled();

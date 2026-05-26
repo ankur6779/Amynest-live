@@ -447,7 +447,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
           resetGuardFailures();
           logAudioHealthSuccess({
             layer: mapAmyLayerToHealthLayer(fast.layer),
-            fallbackUsed: fast.layer === "emergency",
+            fallbackUsed: fast.layer === "emergency_local",
           });
           this.transition(requestId, "idle", null, null);
           (opts?.onFinished ?? runtime.onFinished)?.();
@@ -471,7 +471,10 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       modelId: runtime.modelId,
       playbackRate: runtime.playbackRate ?? 1,
       playbackMode: resolvePlaybackMode(opts),
-      paragraphIdx: opts?.audioIdentity?.paragraphIdx,
+      paragraphIdx:
+        opts?.audioIdentity && "paragraphIdx" in opts.audioIdentity
+          ? opts.audioIdentity.paragraphIdx
+          : undefined,
       isCancelled: () => !isCurrentSpeakRequest(requestId),
       onFinished: () => {
         if (!isCurrentSpeakRequest(requestId)) return;

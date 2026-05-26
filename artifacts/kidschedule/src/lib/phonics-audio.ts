@@ -123,7 +123,7 @@ export async function speakPhonicsFastClip(
   const fallbackKey = audioKey ?? trimmed.toLowerCase();
   const voice = await playPhonemeFallbackVoice(fallbackKey);
   if (voice.success) {
-    return { success: true, layer: "emergency" };
+    return { success: true, layer: "emergency_local" };
   }
 
   return { success: false, error: voice.error ?? "phonics_playback_exhausted" };

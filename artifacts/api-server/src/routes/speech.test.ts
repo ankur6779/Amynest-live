@@ -30,13 +30,16 @@ import {
   SPEECH_MILESTONES,
 } from "@workspace/speech-coach";
 import speechRouter from "./speech";
+import { isDbIntegrationAvailable } from "../test/db-integration.js";
 
+const dbIntegrationOk = await isDbIntegrationAvailable();
 const TEST_USER = `speech-test-${randomUUID()}`;
 let server: ReturnType<Express["listen"]>;
 let baseUrl: string;
 let childId: number;
 
 before(async () => {
+  if (!dbIntegrationOk) return;
   // 3-year-old so we get the "3y" milestone band + matching prompts.
   const inserted = await db
     .insert(childrenTable)
@@ -84,6 +87,7 @@ before(async () => {
 });
 
 after(async () => {
+  if (!dbIntegrationOk) return;
   await db
     .delete(speechProgressTable)
     .where(eq(speechProgressTable.userId, TEST_USER));
@@ -103,7 +107,7 @@ after(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));
 });
 
-describe("speech routes — smoke", () => {
+describe("speech routes — smoke", { skip: !dbIntegrationOk }, () => {
   it("GET /speech/milestones returns the 3y band defaulted to on_track", async () => {
     const r = await fetch(`${baseUrl}/speech/milestones?childId=${childId}`);
     assert.equal(r.status, 200);

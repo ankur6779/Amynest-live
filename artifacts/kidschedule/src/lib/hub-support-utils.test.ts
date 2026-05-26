@@ -1,5 +1,4 @@
-import { describe, it } from "node:test";
-import assert from "node:assert/strict";
+import { describe, it, expect } from "vitest";
 import {
   isPtmSeason,
   orderEmotionalCards,
@@ -8,17 +7,17 @@ import {
 
 describe("hub-support-utils", () => {
   it("detects PTM season Sep–Nov", () => {
-    assert.equal(isPtmSeason(new Date("2026-10-15")), true);
-    assert.equal(isPtmSeason(new Date("2026-01-15")), false);
+    expect(isPtmSeason(new Date("2026-10-15"))).toBe(true);
+    expect(isPtmSeason(new Date("2026-01-15"))).toBe(false);
   });
 
   it("prioritises overwhelmed when mood is low", () => {
-    assert.equal(orderEmotionalCards("low")[0], "overwhelmed");
+    expect(orderEmotionalCards("low")[0]).toBe("overwhelmed");
   });
 
   it("sorts support tiles with PTM first during season", () => {
     const ids = ["life-skills", "articles", "ptm-prep", "emotional"];
     const sorted = sortSupportTileIds(ids, { ptmSeason: true });
-    assert.deepEqual(sorted.slice(0, 3), ["articles", "emotional", "ptm-prep"]);
+    expect(sorted.slice(0, 3)).toEqual(["articles", "emotional", "ptm-prep"]);
   });
 });

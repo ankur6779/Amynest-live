@@ -1,4 +1,4 @@
-import { abacusFromValue, emptyAbacus, getLevel, type AbacusState, type LevelId } from "./index.ts";
+import { abacusFromValue, emptyAbacus, getLevel, type AbacusState, type LevelId } from "./index.js";
 
 export interface TutorVisualHint {
   state: AbacusState;

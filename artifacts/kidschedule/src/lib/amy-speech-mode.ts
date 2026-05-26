@@ -107,6 +107,8 @@ export type AmySpeechPolicy = {
   retryDynamicTts: boolean;
   preferSpeechSynthesisFallback: boolean;
   dynamicTimeoutMs: number;
+  /** Per-phrase pause before speak (ms), aligned with `phrases` length. */
+  phraseAttentionSilenceMs?: number[];
 };
 
 const MATH_RE = /[\d].*[+\-×÷=]|[+\-×÷=].*[\d]|^\s*\d+\s*[+\-×÷]\s*\d+/;

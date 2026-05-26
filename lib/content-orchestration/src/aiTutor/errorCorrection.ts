@@ -9,7 +9,7 @@ export type CorrectionResult = {
   message: string;
   mode: TeachingMode;
   step: CorrectionStep;
-  nextExpectedResponse: "answer" | "repeat";
+  nextExpectedResponse: "answer" | "repeat" | "listen" | "continue";
 };
 
 /**
