@@ -745,6 +745,20 @@ html[data-theme="dark"] {
   }
 }
 
+/* Dashboard-only bottom nav — footer is portaled to body, so scope via :has(.dashboard-page) */
+body:has(.dashboard-page) .app-footer {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0;
+  right: 0;
+  height: 72px;
+  z-index: 1000;
+}
+
+.app-scroll:has(.dashboard-page) {
+  padding-bottom: 90px !important;
+}
+
 .dashboard-inline-inset {
   padding-left: max(12px, env(safe-area-inset-left, 0px));
   padding-right: max(12px, env(safe-area-inset-right, 0px));
