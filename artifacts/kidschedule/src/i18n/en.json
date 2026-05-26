@@ -502,7 +502,16 @@
     "allergies": "Allergies / Dietary Restrictions",
     "profile_picture": "Profile Picture",
     "change_picture": "Change Picture",
-    "uploading": "Uploading…"
+    "uploading": "Uploading…",
+    "delete_account": "Delete Account",
+    "delete_account_title": "Delete your account?",
+    "delete_account_body": "This permanently deletes your account, children, routines, behaviors, and all AmyNest data. This cannot be undone.",
+    "delete_account_confirm_title": "Final confirmation",
+    "delete_account_confirm_body": "Tap \"Yes, delete everything\" to permanently erase your AmyNest account.",
+    "delete_account_confirm_button": "Yes, delete everything",
+    "delete_account_deleting": "Deleting…",
+    "delete_account_section_title": "Account",
+    "delete_account_section_body": "Permanently remove your account and all associated data from AmyNest."
   },
   "progress": {
     "title": "Progress",
@@ -922,7 +931,11 @@
       "profile_saved_title": "Profile saved!",
       "profile_saved_body": "Your schedule will now inform Amy AI's routine generation.",
       "save_error_title": "Error",
-      "save_error_body": "Could not save profile."
+      "save_error_body": "Could not save profile.",
+      "delete_success_title": "Account deleted",
+      "delete_success_body": "Your AmyNest account and data have been permanently removed.",
+      "delete_error_title": "Could not delete account",
+      "delete_error_body": "Please try again, or email support@amynest.in for help."
     },
     "notification_settings_page": {
       "cat_routine_item_title": "Per-task reminders",
@@ -1130,12 +1143,12 @@
           "description": "Launch the AmyNest app on your Android or iOS device."
         },
         {
-          "title": "Go to Settings",
-          "description": "Tap on your profile picture or the menu icon, then select \"Settings\"."
+          "title": "Open Parent Profile",
+          "description": "Tap the menu icon, then select \"My Profile\" (or go to Parent Profile from the sidebar)."
         },
         {
           "title": "Tap \"Delete Account\"",
-          "description": "Scroll to the bottom and tap \"Delete Account\". Confirm when prompted."
+          "description": "Scroll to the bottom of Parent Profile and tap \"Delete Account\". Confirm when prompted."
         },
         {
           "title": "Account Deleted",
@@ -1812,9 +1825,9 @@
       "country_detected_ip": "We estimate you're in",
       "country_confirm_yes": "Yes, that's right ✓",
       "country_change": "Change country",
-      "country_location_prompt_title": "Allow location to personalize your child's routine",
+      "country_location_prompt_title": "Personalize your child's routine for your area",
       "country_location_prompt_body": "Amy uses your location to suggest local meal times, school routines, and weather-aware activities. Your exact address is never stored.",
-      "country_allow_location": "Allow Location",
+      "country_allow_location": "Continue",
       "country_select_manually": "Select country manually",
       "country_manual_required_title": "Select your country",
       "country_permission_denied": "Location access was denied. Please choose your country so Amy can personalize routines and meals.",
@@ -4430,7 +4443,7 @@
       "sign_up": "Sign Up",
       "sign_in": "Sign In",
       "privacy_policy": "Privacy Policy",
-      "terms_of_service": "Terms of Service",
+      "terms_of_service": "Terms of Use (EULA)",
       "2026_amynest_ai_all_rights_reserved": "© 2026 AmyNest AI. All rights reserved."
     },
     "notification_settings": {

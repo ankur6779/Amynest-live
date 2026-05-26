@@ -4,6 +4,60 @@ Use this text in App Store Connect Review Notes for the Capacitor iOS build.
 
 ---
 
+## Resubmission steps (May 25, 2026 rejection — v3.0.6 build 14)
+
+Do these **in order**. Items 1–2 are in **App Store Connect** (no code). Item 3 is **Xcode** (new binary). Item 4 is **submit + reply**.
+
+### Step 1 — App Store Connect → App Description / EULA (Guideline 3.1.2(c))
+
+**Where:** [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → **My Apps** → **AmyNest** → **App Information** or the version’s **Description**
+
+Add a **functional Terms of Use (EULA) link** to the App Description (required when using Apple’s standard EULA):
+
+```
+Terms of Use (EULA): https://amynest.in/terms
+Privacy Policy: https://amynest.in/privacy
+```
+
+Also confirm **App Information → Privacy Policy URL** = `https://amynest.in/privacy`.
+
+Optional: upload a custom EULA under **App Information → EULA** instead of linking in the description.
+
+### Step 2 — App Store Connect → App Review Information (Guideline 5.1.1(v))
+
+**Where:** **App Review Information → Notes**
+
+Paste the updated **Review Notes** block below. Attach a **screen recording** (physical device) showing:
+
+1. Sign in (demo account below)
+2. Menu → **My Profile** → scroll to **Delete Account**
+3. Complete the two-step confirmation through success
+
+### Step 3 — Xcode → new build (Guideline 5.1.1(iv) + in-app fixes)
+
+**Where:** Mac → `artifacts/amynest-capacitor/` → Xcode
+
+1. Pull latest repo (includes location button fix, account deletion, iOS paywall legal links).
+2. Rebuild web + sync:
+   ```bash
+   cd artifacts/amynest-capacitor
+   pnpm run build:web
+   pnpm run sync:ios
+   ```
+3. Bump **build number** (e.g. 15), **Product → Archive**, upload to App Store Connect.
+
+**Code changes in this submission:**
+
+- Onboarding location pre-prompt button text changed from “Allow Location” to **“Continue”** (Apple 5.1.1(iv)).
+- **Delete Account** added to **Parent Profile** (`/parent-profile`) with two-step confirmation; calls `DELETE /api/account`.
+- iOS uses the **custom paywall / Pricing** screen (plan title, duration, price, Privacy Policy + Terms of Use links) instead of RevenueCat’s fullscreen UI.
+
+### Step 4 — App Store Connect → submit + reply
+
+**Where:** Resolution Center — reply to rejection **f2e8ff55-18d8-44c0-8525-55b3650608f6** using the **Reply to App Review** block below.
+
+---
+
 ## Resubmission steps (May 23, 2026 rejection — v3.0.4 build 12)
 
 Do these **in order**. Items 1–2 are in **App Store Connect** (no code). Item 3 is **Xcode** (new binary). Item 4 is **submit + reply**.
@@ -84,6 +138,7 @@ Suggested test account (paste into App Store Connect → App Review Information)
 4. Open Notifications settings and send a test notification.
 5. Open any premium feature or Pricing, select a plan, and verify Apple In-App Purchase opens through RevenueCat.
 6. Tap Restore Purchases from the paywall.
+7. Open **My Profile** → scroll to **Delete Account** to verify account deletion is available.
 
 ## Permissions Explanation
 
@@ -122,6 +177,31 @@ See also `artifacts/amynest-capacitor/SETUP.md` (OTA section) and `artifacts/api
 ## Privacy And Safety
 
 The app is a parenting assistant for routines, learning, behavior logs, and child development guidance. It does not track users across third-party apps or websites for advertising. The Privacy Manifest is included at `ios/App/App/PrivacyInfo.xcprivacy` with `NSPrivacyTracking` set to `false`.
+
+---
+
+## Responding to rejection (May 25, 2026 — v3.0.6 build 14)
+
+Paste the block below into **App Store Connect → Resolution Center** when you resubmit. Apply App Store Connect metadata fixes in Step 1 above.
+
+### Reply to App Review (copy/paste)
+
+```
+Thank you for the detailed feedback. We have addressed all three items:
+
+1) Guideline 5.1.1(iv) — Location permission pre-prompt
+The onboarding location screen now uses a neutral “Continue” button instead of “Allow Location.” The explanatory text remains on the pre-prompt; the system location dialog appears only after the user taps Continue.
+
+2) Guideline 3.1.2(c) — Subscription disclosures
+We updated App Store metadata to include functional links to our Terms of Use (EULA) at https://amynest.in/terms and Privacy Policy at https://amynest.in/privacy. In the app, the Pricing page and premium paywall show subscription title, duration, price, and the same Privacy Policy and Terms of Use (EULA) links before purchase. iOS purchases use Apple In-App Purchase via RevenueCat/StoreKit.
+
+3) Guideline 5.1.1(v) — Account deletion
+Account deletion is available in-app: Menu → My Profile → Delete Account (two-step confirmation). This permanently deletes the account and associated data via our API. A screen recording of the full flow is attached in App Review Information → Notes.
+
+Test account (unchanged):
+- apple.review@amynest.in / AmyNestReview2025!
+Sign in with email/password or Sign in with Apple. Email verification is skipped for this inbox.
+```
 
 ---
 
