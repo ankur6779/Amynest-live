@@ -19,6 +19,7 @@ import {
   warnIfPhoneAuthDomainMissingFromFirebase,
   type PhoneCountry,
 } from "@workspace/phone-auth";
+import { AuthTimeoutError, withAuthTimeout } from "@/lib/auth-timeout";
 
 const SEND_OTP_DEBOUNCE_MS = 1500;
 
@@ -289,7 +290,10 @@ export default function PhoneAuthFlow({ onError }: Props) {
     setBrowserOtpUrl(null);
 
     try {
-      const res = await sendPhoneOtpSafely(firebaseAuth, phoneFull);
+      const res = await withAuthTimeout(
+        sendPhoneOtpSafely(firebaseAuth, phoneFull),
+        "sendPhoneOtpSafely",
+      );
 
       if (!res.success) {
         logFirebaseAuthError("phone-auth-flow:sendOtp", new Error(res.error));
@@ -313,7 +317,8 @@ export default function PhoneAuthFlow({ onError }: Props) {
       startResendTimer();
     } catch (err: unknown) {
       console.error("[phone-auth-flow] OTP unexpected:", err);
-      const uiMsg = formatAuthErrorForUi(err);
+      const uiMsg =
+        err instanceof AuthTimeoutError ? err.message : formatAuthErrorForUi(err);
       setPhoneError(uiMsg);
       onError?.(uiMsg);
       if (!forceResend) {
@@ -330,11 +335,20 @@ export default function PhoneAuthFlow({ onError }: Props) {
     if (!confirmRef.current) { onError?.("Session expired. Please resend OTP."); setStep("phone"); return; }
     setStep("verifying");
     try {
-      const result = await confirmRef.current.confirm(otp);
+      const result = await withAuthTimeout(
+        confirmRef.current.confirm(otp),
+        "phoneConfirmationResult.confirm",
+      );
       await finalizeOAuthCredentialSignIn(result);
       await finishOAuthLoginFlow();
     } catch (err: unknown) {
-      onError?.(err instanceof Error ? err.message : "Invalid OTP. Please try again.");
+      const uiMsg =
+        err instanceof AuthTimeoutError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Invalid OTP. Please try again.";
+      onError?.(uiMsg);
       setStep("otp");
     }
   }

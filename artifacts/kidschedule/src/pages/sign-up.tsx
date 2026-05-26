@@ -23,6 +23,7 @@ import {
   AUTH_INPUT_CLASS,
   useNativeAuthKeyboard,
 } from "@/hooks/use-native-auth-keyboard";
+import { withAuthTimeout } from "@/lib/auth-timeout";
 
 // ── Animation keyframes (same classes as sign-in — CSS idempotent in SPA) ────
 const SIGN_UP_CSS = `
@@ -365,7 +366,10 @@ export default function SignUpPage() {
     setError(null);
     setBusy(true);
     try {
-      const cred = await createUserWithEmailAndPassword(firebaseAuth, email.trim(), password);
+      const cred = await withAuthTimeout(
+        createUserWithEmailAndPassword(firebaseAuth, email.trim(), password),
+        "createUserWithEmailAndPassword",
+      );
       if (name.trim()) {
         try {
           await updateProfile(cred.user, { displayName: name.trim() });

@@ -29,6 +29,7 @@ import {
   AUTH_INPUT_CLASS,
   useNativeAuthKeyboard,
 } from "@/hooks/use-native-auth-keyboard";
+import { withAuthTimeout } from "@/lib/auth-timeout";
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
 const SIGN_IN_CSS = `
   @keyframes siRingRotate {
@@ -102,7 +103,7 @@ function SignInAppleButton({ onError }: { onError?: (message: string) => void })
     if (busy) return;
     setBusy(true);
     try {
-      await handleAppleLogin();
+      await withAuthTimeout(handleAppleLogin(), "handleAppleLogin", 45_000);
     } catch (err: unknown) {
       logFirebaseAuthError("apple:sign-in", err);
       const message = prettyAuthError(err);
@@ -466,7 +467,10 @@ export default function SignInPage() {
     setError(null);
     setBusy(true);
     try {
-      const cred = await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+      const cred = await withAuthTimeout(
+        signInWithEmailAndPassword(firebaseAuth, email.trim(), password),
+        "signInWithEmailAndPassword",
+      );
       const user = await syncUserEmailVerificationFromServer(cred.user);
       const loginEmail = (user.email ?? email.trim()).toLowerCase().trim();
       const isBypass = isEmailVerificationBypassEmail(loginEmail);

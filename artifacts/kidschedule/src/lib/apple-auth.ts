@@ -130,13 +130,34 @@ export async function loginNativeApple(): Promise<void> {
     "@capacitor-community/apple-sign-in"
   );
 
-  const appleResult = await SignInWithApple.authorize({
-    clientId: getAppleIosClientId(),
-    redirectURI: getAppleRedirectUri(),
-    scopes: "email name",
-    state: rawNonce,
-    nonce: hashedNonce,
-  });
+  let appleResult;
+  try {
+    appleResult = await SignInWithApple.authorize({
+      clientId: getAppleIosClientId(),
+      redirectURI: getAppleRedirectUri(),
+      scopes: "email name",
+      state: rawNonce,
+      nonce: hashedNonce,
+    });
+  } catch (err: unknown) {
+    // Translate Apple's raw native errors into stable app/* codes the UI
+    // layer can show as friendly messages (see prettyAuthError).
+    const msg = (err as { message?: string })?.message ?? "";
+    if (/error\s+1001/i.test(msg)) {
+      throw Object.assign(new Error("Apple sign-in canceled."), {
+        code: "app/apple-canceled",
+      });
+    }
+    if (/error\s+1000/i.test(msg)) {
+      throw Object.assign(
+        new Error(
+          "Sign in with Apple is not supported on the iOS Simulator. Please use email + password, or test on a real device with iCloud signed in.",
+        ),
+        { code: "app/apple-simulator-unsupported" },
+      );
+    }
+    throw err;
+  }
 
   const idToken = appleResult.response?.identityToken;
   if (!idToken) {

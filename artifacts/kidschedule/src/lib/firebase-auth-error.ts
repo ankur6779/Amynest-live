@@ -120,6 +120,10 @@ export function prettyAuthError(err: unknown): string {
       return "Apple sign-in session expired. Please try again.";
     case "app/apple-sign-in-failed":
       return "Apple sign-in failed. Please try again.";
+    case "app/apple-simulator-unsupported":
+      return "Sign in with Apple doesn't work in the iOS Simulator. Please use email + password here, or test Apple Sign-In on a real device.";
+    case "app/apple-canceled":
+      return "";
     case "auth/captcha-check-failed": {
       const host = typeof window !== "undefined" ? window.location.hostname : "";
       if (host === "amynest.in") {
@@ -148,6 +152,27 @@ export function prettyAuthError(err: unknown): string {
       return "You are not signed in. Go back to Sign in and try again.";
     default: {
       const message = (err as { message?: string })?.message?.trim();
+      // Apple's native AuthorizationError has no `code` field — it just
+      // throws with a message containing
+      // "com.apple.AuthenticationServices.AuthorizationError error <N>".
+      // Codes we surface as clear UX:
+      //   1000 → "unknown" — most commonly the iOS Simulator (Apple Sign-In
+      //          is not supported there) or no signed-in iCloud account.
+      //   1001 → canceled by user (silent).
+      //   1004 → "failed" — usually transient network issue.
+      if (
+        message &&
+        /AuthenticationServices\.AuthorizationError|ASAuthorizationError/i.test(message)
+      ) {
+        if (/error\s+1001/i.test(message)) return "";
+        if (/error\s+1000/i.test(message)) {
+          return "Sign in with Apple doesn't work in the iOS Simulator (or no iCloud account is signed in). Please use email + password here, or test Apple Sign-In on a real device with iCloud signed in.";
+        }
+        if (/error\s+1004/i.test(message)) {
+          return "Apple Sign-In failed (network). Check your connection and try again.";
+        }
+        return "Apple Sign-In could not be completed. Please try again or use email + password.";
+      }
       if (
         message &&
         /invalid.request|invalid_request|invalid web redirect/i.test(message)
