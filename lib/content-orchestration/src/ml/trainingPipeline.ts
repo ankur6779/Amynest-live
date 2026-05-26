@@ -89,10 +89,10 @@ function profileFromFeatureSkills(
     childId: "",
     version: 1,
     skills: {
-      phonics: { level: Math.round(f.skillLevels.phonics * 5), confidence: 0.5 },
-      motor_skills: { level: Math.round(f.skillLevels.motor_skills * 5), confidence: 0.5 },
-      cognitive: { level: Math.round(f.skillLevels.cognitive * 5), confidence: 0.5 },
-      social: { level: Math.round(f.skillLevels.social * 5), confidence: 0.5 },
+      phonics: { level: Math.round(f.skillLevels.phonics * 5), confidence: 0.5, lastUpdated: now },
+      motor_skills: { level: Math.round(f.skillLevels.motor_skills * 5), confidence: 0.5, lastUpdated: now },
+      cognitive: { level: Math.round(f.skillLevels.cognitive * 5), confidence: 0.5, lastUpdated: now },
+      social: { level: Math.round(f.skillLevels.social * 5), confidence: 0.5, lastUpdated: now },
     },
     behavior: {
       engagementScore: Math.round(f.engagementScore * 100),

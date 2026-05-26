@@ -4,6 +4,7 @@ export type CoachPerfStep =
   | "REQUEST_TOTAL"
   | "CACHE_LOOKUP"
   | "AI_CALL_INITIAL"
+  | "AI_CALL_NEXT_WIN"
   | "DB_WRITE_PARTIAL"
   | "RESPONSE_SENT"
   | "AI_CALL_BACKGROUND"

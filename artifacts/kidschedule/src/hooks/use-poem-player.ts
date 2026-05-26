@@ -195,7 +195,7 @@ export function useInfantPoemPlayer(): PoemPlayer {
             { signal: controller.signal },
           );
           if (myId !== reqIdRef.current) return; // user moved on
-          if (!data?.success || data.background || !data.audioUrl) {
+          if (!data?.success || !data.audioUrl) {
             console.warn("No audio, skip");
             setIsLoading(false);
             return;

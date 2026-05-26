@@ -92,7 +92,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
               ToastAction,
               { altText: "Retry audio playback", onClick: () => void retry() },
               "Retry",
-            ),
+            ) as unknown as import("@/components/ui/toast").ToastActionElement,
           });
         },
       });

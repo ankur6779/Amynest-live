@@ -406,7 +406,7 @@ async function playElementWithNeverSilentWatchdog(
     proxyUrl: string;
     phrase: string;
     mode?: StaticAudioMode;
-    source: "static" | "tts" | "cache" | "elevenlabs";
+    source: "static" | "tts" | "cache" | "elevenlabs" | "api";
     waitUntilEnd: boolean;
   },
 ): Promise<{ ok: boolean; playedDuration?: number; expectedDuration?: number; error?: string }> {
@@ -1378,7 +1378,7 @@ async function trySpeechSynthesisLayer(
   if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
   if (ok) {
     recordAmyVoiceLayerSuccess("emergency_local_success", { source: "speechSynthesis" });
-    recordAmyVoiceFallbackUsed("api", "speech_synthesis");
+    recordAmyVoiceFallbackUsed("api", "emergency_local");
     return { ok: true, layer: "emergency_local" };
   }
   recordAmyVoiceLayerFailed("emergency_local", "synthesis_failed");
@@ -1930,7 +1930,7 @@ export async function speakAmyVoice(
       telemetry?.recordTry("dynamic", result.ok);
       return result;
     }
-    recordAmyVoiceFallbackUsed("api", "api_retry");
+    recordAmyVoiceFallbackUsed("api", "api");
     await delay(SPEECH_COACH_RETRY_DELAY_MS);
     if (isStale(pipelineCtx)) return { ok: false, error: "tts_cancelled" };
     result = await tryDynamicSequentialLayer(
