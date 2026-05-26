@@ -2,21 +2,19 @@
  * Temporary auth UI toggles — flip when OAuth console setup is complete.
  * Code for Google/Apple/phone stays in the repo; only visibility changes.
  */
-export const ENABLE_OAUTH_SIGN_IN = false;
+export const ENABLE_OAUTH_SIGN_IN = true;
 /** Apple Sign-In (native iOS Capacitor + web Services ID). */
 export const ENABLE_APPLE_SIGN_IN = true;
-/** Google Sign-In — hidden until OAuth redirect flow is stable in production. */
-export const ENABLE_GOOGLE_SIGN_IN = false;
+/** Google Sign-In master switch — actual visibility is platform-gated via shouldShowGoogleSignIn(). */
+export const ENABLE_GOOGLE_SIGN_IN = true;
 export const ENABLE_PHONE_OTP = true;
 
 export function shouldShowPhoneOtp(): boolean {
   return ENABLE_PHONE_OTP;
 }
 
-/** Apple button must always show in Capacitor iOS (App Store review). */
-export function shouldShowAppleSignIn(): boolean {
-  if (ENABLE_APPLE_SIGN_IN) return true;
-  if (typeof window === "undefined") return ENABLE_APPLE_SIGN_IN;
+function isCapacitorIos(): boolean {
+  if (typeof window === "undefined") return false;
   try {
     const cap = (
       window as Window & {
@@ -27,4 +25,19 @@ export function shouldShowAppleSignIn(): boolean {
   } catch {
     return false;
   }
+}
+
+/** Apple button must always show in Capacitor iOS (App Store review). */
+export function shouldShowAppleSignIn(): boolean {
+  if (ENABLE_APPLE_SIGN_IN) return true;
+  return isCapacitorIos();
+}
+
+/**
+ * Google Sign-In — show on Android (Capacitor + WebView) and web/PWA.
+ * Hidden on iOS Capacitor where Apple Sign-In is the primary OAuth provider.
+ */
+export function shouldShowGoogleSignIn(): boolean {
+  if (!ENABLE_GOOGLE_SIGN_IN) return false;
+  return !isCapacitorIos();
 }

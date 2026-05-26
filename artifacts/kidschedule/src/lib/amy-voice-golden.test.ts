@@ -107,10 +107,10 @@ const GOLDEN_BEHAVIOR: Record<string, Omit<GoldenSpeechBehavior, "scenarioId">> 
     speechMode: "sentence",
     pipelineMode: "default",
     normalizedText:
-      "The four-month sleep regression is not a regression it is a permanent reorganisation. pick one approach, ... ... then stick with it for two weeks.",
+      "The 4-month sleep regression is not a regression \u2014 it is a permanent reorganisation. Pick one approach, then stick with it for two weeks.",
     phraseCount: 1,
     phrases: [
-      "The four-month sleep regression is not a regression it is a permanent reorganisation. pick one approach, ... ... then stick with it for two weeks.",
+      "The 4-month sleep regression is not a regression \u2014 it is a permanent reorganisation. Pick one approach, then stick with it for two weeks.",
     ],
     useSemanticSplit: false,
     allowPhonicsSequence: false,

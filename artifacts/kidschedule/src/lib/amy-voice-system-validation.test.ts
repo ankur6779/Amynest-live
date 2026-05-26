@@ -82,7 +82,8 @@ describe("TTS system validation", () => {
         networkProfile: "fast",
         module: "phonics",
       });
-      expect(ranked.indexOf("static")).toBeLessThan(ranked.indexOf("api"));
+      expect(ranked).toContain("static");
+      expect(ranked).not.toContain("api");
     });
   });
 
