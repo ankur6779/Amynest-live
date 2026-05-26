@@ -22,8 +22,8 @@ type Template = {
   options: string[];
   answer: string;
   hint?: string;
-  minLevel?: Level;
-  maxLevel?: Level;
+  minLevel?: number;
+  maxLevel?: number;
 };
 
 function shuffleInPlace<T>(arr: T[], r: () => number): T[] {
