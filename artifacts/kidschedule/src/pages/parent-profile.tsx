@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useAuth } from "@/lib/firebase-auth-hooks";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +11,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { UserCircle, Save, Plus, Trash2, Clock, Utensils, Camera, Loader2, Bell } from "lucide-react";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -104,10 +117,15 @@ export default function ParentProfilePage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const { user } = useUser();
-  const { getToken } = useAuth();
+  const { getToken, signOut } = useAuth();
+  const authFetch = useAuthFetch();
+  const qc = useQueryClient();
   const [, navigate] = useLocation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<0 | 1>(0);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [uploadingPic, setUploadingPic] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -272,6 +290,29 @@ export default function ParentProfilePage() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const resetDeleteDialog = () => {
+    setDeleteStep(0);
+    setDeleteDialogOpen(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const res = await authFetch("/api/account", { method: "DELETE" });
+      if (!res.ok) throw new Error("delete failed");
+      qc.clear();
+      await signOut({ redirectUrl: "/" });
+    } catch {
+      setDeleting(false);
+      resetDeleteDialog();
+      toast({
+        title: t("toasts.parent_profile.delete_error_title"),
+        description: t("toasts.parent_profile.delete_error_body"),
+        variant: "destructive",
+      });
     }
   };
 
@@ -677,6 +718,89 @@ export default function ParentProfilePage() {
         <Save className="h-4 w-4 mr-2" />
         {saving ? t("common.saving") : t("profile.save")}
       </Button>
+
+      <Card className="rounded-2xl border-destructive/30 shadow-sm">
+        <CardHeader>
+          <CardTitle className="font-quicksand text-lg text-destructive">
+            {t("profile.delete_account_section_title")}
+          </CardTitle>
+          <CardDescription>{t("profile.delete_account_section_body")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AlertDialog
+            open={deleteDialogOpen}
+            onOpenChange={(open) => {
+              if (!open) resetDeleteDialog();
+              else setDeleteDialogOpen(true);
+            }}
+          >
+            <AlertDialogTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={deleting}
+                data-testid="delete-account-button"
+                className="w-full rounded-xl h-11 border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {t("profile.delete_account_deleting")}
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {t("profile.delete_account")}
+                  </>
+                )}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {deleteStep === 0
+                    ? t("profile.delete_account_title")
+                    : t("profile.delete_account_confirm_title")}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {deleteStep === 0
+                    ? t("profile.delete_account_body")
+                    : t("profile.delete_account_confirm_body")}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleting}>
+                  {t("pages.children.form.cancel")}
+                </AlertDialogCancel>
+                {deleteStep === 0 ? (
+                  <AlertDialogAction
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setDeleteStep(1);
+                    }}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {t("profile.delete_account")}
+                  </AlertDialogAction>
+                ) : (
+                  <AlertDialogAction
+                    onClick={(e) => {
+                      e.preventDefault();
+                      void handleDeleteAccount();
+                    }}
+                    disabled={deleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deleting
+                      ? t("profile.delete_account_deleting")
+                      : t("profile.delete_account_confirm_button")}
+                  </AlertDialogAction>
+                )}
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardContent>
+      </Card>
     </div>
   );
 }

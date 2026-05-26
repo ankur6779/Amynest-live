@@ -8,7 +8,6 @@
 
 import { isCapacitorIOS } from "@/lib/native-push-bridge";
 import { getNativeBilling, isWrapperPresent, probeBillingAvailability } from "@/lib/native-billing";
-import { initIOSBilling } from "@/lib/native-billing-ios";
 
 export const RC_ENTITLEMENT_ID = "premium";
 
@@ -24,21 +23,6 @@ export type NativeRCPaywallOutcome = {
 
 type PaywallResultPayload = { result?: string; error?: string };
 
-type RevenueCatUIPlugin = {
-  presentPaywall: (options?: {
-    presentationConfiguration?: { ios?: string; android?: string };
-  }) => Promise<PaywallResultPayload>;
-  presentPaywallIfNeeded: (options: {
-    requiredEntitlementIdentifier: string;
-    presentationConfiguration?: { ios?: string; android?: string };
-  }) => Promise<PaywallResultPayload>;
-};
-
-function getCapacitorRevenueCatUI(): RevenueCatUIPlugin | null {
-  if (typeof window === "undefined") return null;
-  return (window.Capacitor?.Plugins?.RevenueCatUI as RevenueCatUIPlugin | undefined) ?? null;
-}
-
 function mapPaywallResult(payload: PaywallResultPayload | null | undefined): NativeRCPaywallOutcome {
   const result = payload?.result ?? "";
   return {
@@ -53,7 +37,9 @@ function mapPaywallResult(payload: PaywallResultPayload | null | undefined): Nat
 
 /** True when the current shell can show RevenueCat's native paywall UI. */
 export async function canPresentNativeRCPaywall(): Promise<boolean> {
-  if (isCapacitorIOS()) return getCapacitorRevenueCatUI() != null;
+  // iOS App Review (3.1.2): use the custom paywall / pricing screen so subscription
+  // title, duration, price, Privacy Policy, and Terms of Use links are always visible.
+  if (isCapacitorIOS()) return false;
   if (isWrapperPresent()) {
     const billing = await probeBillingAvailability();
     return billing === true;
@@ -72,47 +58,10 @@ export async function presentNativeRCPaywall(options?: {
 }): Promise<NativeRCPaywallOutcome> {
   const entitlementId = options?.entitlementId ?? RC_ENTITLEMENT_ID;
   const ifNeeded = options?.ifNeeded ?? false;
-  const fullscreen = {
-    presentationConfiguration: { ios: "FULL_SCREEN", android: "FULL_SCREEN" },
-  };
 
   // ── iOS Capacitor ───────────────────────────────────────────────────────
   if (isCapacitorIOS()) {
-    const ui = getCapacitorRevenueCatUI();
-    if (!ui) {
-      return { handled: false, purchased: false, restored: false, cancelled: false };
-    }
-    if (options?.userId) {
-      const init = await initIOSBilling(options.userId);
-      if (!init.ok) {
-        return {
-          handled: false,
-          purchased: false,
-          restored: false,
-          cancelled: false,
-          error: true,
-          reason: init.reason,
-        };
-      }
-    }
-    try {
-      const payload = ifNeeded
-        ? await ui.presentPaywallIfNeeded({
-            requiredEntitlementIdentifier: entitlementId,
-            ...fullscreen,
-          })
-        : await ui.presentPaywall(fullscreen);
-      return mapPaywallResult(payload);
-    } catch (err) {
-      return {
-        handled: true,
-        purchased: false,
-        restored: false,
-        cancelled: false,
-        error: true,
-        reason: err instanceof Error ? err.message : "RevenueCat paywall failed",
-      };
-    }
+    return { handled: false, purchased: false, restored: false, cancelled: false };
   }
 
   // ── Android WebView wrapper ─────────────────────────────────────────────
