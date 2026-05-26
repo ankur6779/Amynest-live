@@ -1211,15 +1211,51 @@ html.amynest-android-shell.amynest-auth-active #root {
 }
 
 .amynest-auth-shell {
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* KeyboardAvoidingView — iOS uses padding; Android uses height shrink */
+html.amynest-native-shell:not(.amynest-android-shell) .amynest-auth-kav {
   height: var(--vv-height, 100dvh);
   max-height: var(--vv-height, 100dvh);
   min-height: var(--vv-height, 100dvh);
+  padding-bottom: calc(
+    var(--auth-keyboard-inset, 0px) + var(--auth-kav-offset, 0px)
+  );
+}
+
+html.amynest-android-shell .amynest-auth-kav {
+  height: var(--vv-height, 100dvh);
+  max-height: var(--vv-height, 100dvh);
+  min-height: var(--vv-height, 100dvh);
+}
+
+.amynest-auth-kav-backdrop {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.amynest-auth-scroll {
+  flex: 1;
+  min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   box-sizing: border-box;
   padding-bottom: calc(32px + var(--auth-keyboard-inset, 0px));
+}
+
+.amynest-auth-scroll-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .amynest-auth-shell--keyboard .amynest-auth-hero {

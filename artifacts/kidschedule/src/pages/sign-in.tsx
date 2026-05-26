@@ -29,6 +29,7 @@ import {
   AUTH_INPUT_CLASS,
   useNativeAuthKeyboard,
 } from "@/hooks/use-native-auth-keyboard";
+import { AuthKeyboardShell } from "@/components/auth-keyboard-shell";
 import { withAuthTimeout } from "@/lib/auth-timeout";
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
 const SIGN_IN_CSS = `
@@ -354,23 +355,33 @@ function AuthShell({
     t
   } = useTranslation();
   const nativeShell = isNativeAmyNestShell();
-  const { shellRef, keyboardOpen } = useNativeAuthKeyboard(nativeShell);
-  return <div
-    ref={nativeShell ? shellRef : undefined}
-    className={nativeShell ? `amynest-auth-shell${keyboardOpen ? " amynest-auth-shell--keyboard" : ""}` : undefined}
-    style={{
-    minHeight: nativeShell ? undefined : "100dvh",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: nativeShell ? "flex-start" : "center",
-    padding: nativeShell ? "max(16px, env(safe-area-inset-top)) 16px 0" : "40px 16px",
-    background: ["radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)", "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)"].join(", "),
-    position: "relative",
-    overflowX: "hidden",
-    overflowY: nativeShell ? undefined : "hidden",
-    WebkitOverflowScrolling: nativeShell ? "touch" : undefined,
-  }}>
+  const { kavRef, scrollRef, keyboardOpen, handleBackgroundTap } =
+    useNativeAuthKeyboard(nativeShell);
+  return (
+    <AuthKeyboardShell
+      kavRef={nativeShell ? kavRef : undefined}
+      scrollRef={nativeShell ? scrollRef : undefined}
+      keyboardOpen={keyboardOpen}
+      onBackgroundTap={nativeShell ? handleBackgroundTap : undefined}
+      style={{
+        minHeight: nativeShell ? undefined : "100dvh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: nativeShell ? "flex-start" : "center",
+        padding: nativeShell
+          ? "max(16px, env(safe-area-inset-top)) 16px 0"
+          : "40px 16px",
+        background: [
+          "radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)",
+          "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)",
+        ].join(", "),
+        position: "relative",
+        overflowX: "hidden",
+        overflowY: nativeShell ? undefined : "hidden",
+        WebkitOverflowScrolling: nativeShell ? "touch" : undefined,
+      }}
+    >
       {/* Inject keyframes + hover classes */}
       <style>{SIGN_IN_CSS}</style>
 
@@ -428,7 +439,8 @@ function AuthShell({
           {t("screens.sign_in.tagline")}
         </p>
       </div>
-    </div>;
+    </AuthKeyboardShell>
+  );
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────

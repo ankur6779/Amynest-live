@@ -13,6 +13,7 @@ import {
   AUTH_INPUT_CLASS,
   useNativeAuthKeyboard,
 } from "@/hooks/use-native-auth-keyboard";
+import { AuthKeyboardShell } from "@/components/auth-keyboard-shell";
 
 type PageState = "loading" | "invalid" | "form" | "success";
 
@@ -120,12 +121,15 @@ export default function ResetPasswordPage() {
     password.length >= 6 && confirm.length >= 6 && password === confirm && !busy;
 
   const nativeShell = isNativeAmyNestShell();
-  const { shellRef } = useNativeAuthKeyboard(nativeShell);
+  const { kavRef, scrollRef, keyboardOpen, handleBackgroundTap } =
+    useNativeAuthKeyboard(nativeShell);
 
   return (
-    <div
-      ref={nativeShell ? shellRef : undefined}
-      className={nativeShell ? "amynest-auth-shell" : undefined}
+    <AuthKeyboardShell
+      kavRef={nativeShell ? kavRef : undefined}
+      scrollRef={nativeShell ? scrollRef : undefined}
+      keyboardOpen={keyboardOpen}
+      onBackgroundTap={nativeShell ? handleBackgroundTap : undefined}
       style={{
         minHeight: nativeShell ? undefined : "100dvh",
         display: "flex",
@@ -384,6 +388,6 @@ export default function ResetPasswordPage() {
           </>
         )}
       </div>
-    </div>
+    </AuthKeyboardShell>
   );
 }
