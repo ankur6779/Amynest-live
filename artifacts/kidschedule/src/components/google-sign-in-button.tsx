@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { handleGoogleLogin, shouldUseAndroidWebViewGoogleAuth } from "@/lib/google-auth";
 import { prettyAuthError, logFirebaseAuthError } from "@/lib/auth-errors";
-import { ENABLE_GOOGLE_SIGN_IN } from "@/lib/auth-feature-flags";
+import { shouldShowGoogleSignIn } from "@/lib/auth-feature-flags";
 
 type Props = {
   onError?: (message: string) => void;
@@ -38,7 +38,7 @@ export function GoogleSignInButton({ onError, className }: Props) {
   const [, setLocation] = useLocation();
   const [busy, setBusy] = useState(false);
 
-  if (!ENABLE_GOOGLE_SIGN_IN) return null;
+  if (!shouldShowGoogleSignIn()) return null;
 
   const onClick = async () => {
     if (busy) return;
