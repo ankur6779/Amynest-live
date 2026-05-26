@@ -2,11 +2,11 @@
  * Temporary auth UI toggles — flip when OAuth console setup is complete.
  * Code for Google/Apple/phone stays in the repo; only visibility changes.
  */
-export const ENABLE_OAUTH_SIGN_IN = false;
+export const ENABLE_OAUTH_SIGN_IN = true;
 /** Apple Sign-In (native iOS Capacitor + web Services ID). */
 export const ENABLE_APPLE_SIGN_IN = true;
-/** Google Sign-In — hidden until OAuth redirect flow is stable in production. */
-export const ENABLE_GOOGLE_SIGN_IN = false;
+/** Google Sign-In — enabled for Android Play Store users. */
+export const ENABLE_GOOGLE_SIGN_IN = true;
 export const ENABLE_PHONE_OTP = true;
 
 export function shouldShowPhoneOtp(): boolean {
