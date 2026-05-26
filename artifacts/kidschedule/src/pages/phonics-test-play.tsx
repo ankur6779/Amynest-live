@@ -39,7 +39,10 @@ export default function PhonicsTestPlayPage() {
     const months = child ? child.age * 12 + (child.ageMonths ?? 0) : 48;
     return {
       childId: id,
-      testType: type === "daily" || type === "weekly" ? type : undefined,
+      testType:
+        type === "daily" || type === "weekly"
+          ? (type as "daily" | "weekly")
+          : undefined,
       childName: child?.name ?? "",
       totalAgeMonths: months,
     };

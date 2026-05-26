@@ -1,4 +1,4 @@
-import { CVC_WORDS } from "@workspace/phonics-sounds";
+import { CVC_WORDS, getCvcWordEntry } from "@workspace/phonics-sounds";
 import type { CurriculumLevel } from "./types.js";
 import { getCurriculumLevelDef } from "./levels.js";
 

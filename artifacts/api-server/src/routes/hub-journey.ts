@@ -75,7 +75,7 @@ router.post("/hub-journey/complete-path", async (req, res): Promise<void> => {
       return;
     }
     const status = await getHubJourneyStatus(userId, parsed.data.childId);
-    res.json({ ok: true, ...result, status });
+    res.json({ ...result, status });
   } catch (err) {
     logger.error(
       `hub-journey complete failed: ${err instanceof Error ? err.message : String(err)}`,

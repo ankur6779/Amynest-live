@@ -10,6 +10,8 @@ import {
 import {
   SPEECH_MILESTONES,
   PRONUNCIATION_PROMPTS,
+  aggregateDailyTrend,
+  aggregateWeakSounds,
   computeWeeklyProgressScore,
   getMilestonesForAgeMonths,
   getPromptsForAgeMonths,

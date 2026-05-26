@@ -19,11 +19,6 @@ const TARGETS = [
     dir    : path.join(ROOT, "artifacts/kidschedule/src/i18n"),
     locales: ["en", "hi", "hinglish"],
   },
-  {
-    name   : "amynest-mobile",
-    dir    : path.join(ROOT, "artifacts/amynest-mobile/i18n"),
-    locales: ["en", "hi", "hinglish"],
-  },
 ];
 
 function flatten(obj, prefix = "", out = new Set()) {

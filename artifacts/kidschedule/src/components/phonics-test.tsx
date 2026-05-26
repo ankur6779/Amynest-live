@@ -413,7 +413,7 @@ function QuestionCard({
   const rawTts = question.prompt.ttsText ?? question.prompt.text ?? "";
   const blendWord =
     question.type === "blending"
-      ? (question.options[question.correctIndex]?.label ?? rawTts).trim().toLowerCase()
+      ? (question.options[question._localCheck]?.label ?? rawTts).trim().toLowerCase()
       : "";
   const cvcEntry = blendWord ? getCvcWordEntry(blendWord) : undefined;
   const ttsText = rawTts && question.type !== "blending" ? getPhonicsAudioText(rawTts) : rawTts;

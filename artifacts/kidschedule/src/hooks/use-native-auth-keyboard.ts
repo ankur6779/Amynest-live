@@ -64,10 +64,10 @@ export function scrollAuthInputIntoView(
 export function useNativeAuthKeyboard(
   enabled: boolean = isNativeAmyNestShell(),
 ): {
-  shellRef: RefObject<HTMLDivElement>;
+  shellRef: RefObject<HTMLDivElement | null>;
   keyboardOpen: boolean;
 } {
-  const shellRef = useRef<HTMLDivElement>(null);
+  const shellRef = useRef<HTMLDivElement | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   const scrollFocused = useCallback((behavior: ScrollBehavior = "smooth") => {

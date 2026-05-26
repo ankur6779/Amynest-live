@@ -744,7 +744,7 @@ function PracticeTab({
         section="olympiad"
         childId={Number(childId)}
         count={10}
-        excludeIds={session !== null ? session.map((q) => q.id) : []}
+        excludeIds={[]}
         params={{ ageBand, difficulty, subject, country }}
         onLoaded={(items) => {
           const qs = (items.questions ?? []) as OlympiadQuestion[];
@@ -1333,7 +1333,7 @@ export function OlympiadZone({
         <span>{stats.totalPoints} {t("components.olympiad_zone.pts")}</span>
         <span>·</span>
         <span>{countryLabel(country)}</span>
-        {entitlements.isPremium && (
+        {entitlements?.isPremium && (
           <>
             <span>·</span>
             <span className="text-primary font-semibold">{t("components.olympiad_zone.premium_ai")}</span>

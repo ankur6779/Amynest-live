@@ -454,7 +454,10 @@ export async function ttsAudioExists(
   const buffer = await ttsAudioRead(cacheKey, row?.audioData, row?.contentSha256);
   if (isValidTtsBuffer(buffer)) return true;
 
-  const byteLen = buffer?.byteLength ?? 0;
+  const byteLen =
+    buffer != null && typeof buffer === "object" && "byteLength" in buffer
+      ? Number((buffer as Buffer).byteLength)
+      : 0;
   logger.warn(
     {
       evt: "tts.cache_ghost_row",
@@ -476,10 +479,11 @@ export async function ttsAudioRead(
   if (isValidTtsBufferWithChecksum(audioData, expectedSha256)) return audioData;
   if (isTtsCacheGcsEnabled() && (resolveBackend() === "gcs" || legacyGcsConfigured())) {
     const fromGcs = await tryLegacyGcsRead(cacheKey);
+    const gcsByteLength = fromGcs?.byteLength ?? 0;
     if (isValidTtsBufferWithChecksum(fromGcs, expectedSha256)) return fromGcs;
-    if (fromGcs !== null && expectedSha256 && !isBufferChecksumValid(fromGcs, expectedSha256)) {
+    if (isValidTtsBuffer(fromGcs) && expectedSha256 && !isBufferChecksumValid(fromGcs, expectedSha256)) {
       logger.warn(
-        { evt: "tts.checksum_mismatch", cacheKey, bytes: fromGcs.byteLength },
+        { evt: "tts.checksum_mismatch", cacheKey, bytes: gcsByteLength },
         "TTS GCS bytes failed checksum — treating as miss",
       );
     }
