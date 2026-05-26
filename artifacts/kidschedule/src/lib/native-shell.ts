@@ -65,16 +65,17 @@ export function isCapacitorNativeShell(): boolean {
 }
 
 /**
- * Firebase IndexedDB auth persistence is reliable on Capacitor iOS only.
- * Android WebView + Capacitor Android often hang or throw during cold start.
+ * Firebase IndexedDB auth persistence on Capacitor WKWebView (iOS + Simulator)
+ * often hangs `onAuthStateChanged` and breaks sign-in. Use localStorage instead.
  */
 export function useFirebaseIndexedDbPersistence(): boolean {
-  if (!isCapacitorNativeShell()) return false;
-  try {
-    return (window as AmyNestWindow).Capacitor?.getPlatform?.() === "ios";
-  } catch {
-    return false;
-  }
+  return false;
+}
+
+/** iOS Simulator — Sign in with Apple is unreliable; prefer email for testing. */
+export function isIosSimulator(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Simulator/i.test(navigator.userAgent);
 }
 
 /** Browser PWA service workers — disabled inside native WebViews. */

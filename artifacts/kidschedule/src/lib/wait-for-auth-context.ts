@@ -21,6 +21,11 @@ export function waitForAuthContextAuthenticated(
       unsub();
       if (getFirebaseAuth().currentUser) {
         refreshFirebaseAuthSnapshot();
+        const retry = getLatestAuthSnapshot();
+        if (retry.authStatus === "authenticated" && retry.shim) {
+          resolve();
+          return;
+        }
       }
       reject(
         Object.assign(new Error("Sign-in session could not be established."), {

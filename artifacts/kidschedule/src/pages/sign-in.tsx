@@ -24,6 +24,10 @@ import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { finishOAuthLoginFlow } from "@/lib/oauth-session-finalize";
 import { resolvePostOAuthDestination } from "@/lib/post-verify-destination";
 import { isCapacitorIosShell, isLowMemoryIosClient } from "@/lib/device-lite";
+import {
+  AUTH_INPUT_CLASS,
+  useNativeAuthKeyboard,
+} from "@/hooks/use-native-auth-keyboard";
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
 const SIGN_IN_CSS = `
   @keyframes siRingRotate {
@@ -348,17 +352,21 @@ function AuthShell({
     t
   } = useTranslation();
   const nativeShell = isNativeAmyNestShell();
-  return <div style={{
-    minHeight: "100dvh",
+  const { shellRef, keyboardOpen } = useNativeAuthKeyboard(nativeShell);
+  return <div
+    ref={nativeShell ? shellRef : undefined}
+    className={nativeShell ? `amynest-auth-shell${keyboardOpen ? " amynest-auth-shell--keyboard" : ""}` : undefined}
+    style={{
+    minHeight: nativeShell ? undefined : "100dvh",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: nativeShell ? "flex-start" : "center",
-    padding: nativeShell ? "max(16px, env(safe-area-inset-top)) 16px 32px" : "40px 16px",
+    padding: nativeShell ? "max(16px, env(safe-area-inset-top)) 16px 0" : "40px 16px",
     background: ["radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)", "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)"].join(", "),
     position: "relative",
     overflowX: "hidden",
-    overflowY: nativeShell ? "auto" : "hidden",
+    overflowY: nativeShell ? undefined : "hidden",
     WebkitOverflowScrolling: nativeShell ? "touch" : undefined,
   }}>
       {/* Inject keyframes + hover classes */}
@@ -384,10 +392,9 @@ function AuthShell({
       zIndex: 1
     }}>
 
-        {/* Neon ring hero */}
+        {/* Neon ring hero — hidden on native while keyboard is open */}
+        <div className={nativeShell ? "amynest-auth-hero" : undefined}>
         <NeonRingHero />
-
-        {/* Floating platform glow under ring */}
         <div style={{
         width: 130,
         height: 22,
@@ -396,6 +403,7 @@ function AuthShell({
         filter: "blur(12px)",
         pointerEvents: "none"
       }} />
+        </div>
 
         {/* Card */}
         <div style={{
@@ -609,7 +617,7 @@ export default function SignInPage() {
           }}>
               {t("screens.sign_in.email_label")}
             </label>
-            <input type="email" required value={resetEmail} onChange={e => setResetEmail(e.target.value)} placeholder={t("screens.sign_in.email_placeholder")} style={{
+            <input type="email" required className={AUTH_INPUT_CLASS} value={resetEmail} onChange={e => setResetEmail(e.target.value)} placeholder={t("screens.sign_in.email_placeholder")} style={{
             ...INPUT_STYLE
           }} onFocus={glowFocus} onBlur={glowBlur} autoFocus />
           </div>
@@ -743,7 +751,7 @@ export default function SignInPage() {
         }}>
             {t("screens.sign_in.email_label")}
           </label>
-          <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={t("screens.sign_in.email_placeholder")} style={{
+          <input type="email" required className={AUTH_INPUT_CLASS} value={email} onChange={e => setEmail(e.target.value)} placeholder={t("screens.sign_in.email_placeholder")} style={{
           ...INPUT_STYLE
         }} onFocus={glowFocus} onBlur={glowBlur} />
         </div>
@@ -776,7 +784,7 @@ export default function SignInPage() {
           <div style={{
           position: "relative"
         }}>
-            <input type={showPass ? "text" : "password"} required minLength={6} value={password} onChange={e => setPassword(e.target.value)} placeholder={t("screens.sign_in.password_placeholder")} style={{
+            <input type={showPass ? "text" : "password"} required className={AUTH_INPUT_CLASS} minLength={6} value={password} onChange={e => setPassword(e.target.value)} placeholder={t("screens.sign_in.password_placeholder")} style={{
             ...INPUT_STYLE,
             paddingRight: "44px"
           }} onFocus={glowFocus} onBlur={glowBlur} />

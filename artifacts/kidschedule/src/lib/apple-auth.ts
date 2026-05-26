@@ -21,6 +21,7 @@ import {
   getAppleRedirectUri,
   getAppleWebClientId,
 } from "@/lib/apple-auth-defaults";
+import { isIosSimulator } from "@/lib/native-shell";
 import {
   loginWithAppleWebSdkPopup,
   waitForAppleWebRedirectResult,
@@ -209,6 +210,14 @@ export async function resolveAppleWebCallback(): Promise<UserCredential | null> 
 /** Web/PWA: Apple JS SDK or Firebase redirect. Capacitor iOS: native plugin. */
 export async function handleAppleLogin(): Promise<void> {
   if (shouldUseNativeAppleAuth()) {
+    if (isIosSimulator()) {
+      throw Object.assign(
+        new Error(
+          "Sign in with Apple is unreliable on the iOS Simulator. Use email (e.g. apple.review@amynest.in) or test on a real device.",
+        ),
+        { code: "app/apple-simulator-unsupported" },
+      );
+    }
     return loginNativeApple();
   }
   return loginWithAppleWeb();

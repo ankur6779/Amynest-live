@@ -5,9 +5,10 @@ import { recordBootError } from "@/lib/boot-store";
 import { isEmailVerificationBypassEmail } from "./email-verification-bypass";
 import { devLog } from "@/lib/dev-log";
 import { isFirebaseOAuthRedirectResolving } from "@/lib/firebase-oauth-redirect";
+import { isNativeAmyNestShell } from "@/lib/native-shell";
 
 const AUTH_TAG = "[amynest:firebase-auth]";
-const AUTH_RACE_TIMEOUT_MS = 10_000;
+const AUTH_RACE_TIMEOUT_MS = isNativeAmyNestShell() ? 25_000 : 10_000;
 
 export type AuthSnapshot = {
   shim: ShimUser | null;
@@ -144,6 +145,15 @@ function notifyTimeout(): void {
   if (isFirebaseOAuthRedirectResolving()) {
     raceTimeoutId = setTimeout(notifyTimeout, 2_000);
     return;
+  }
+  try {
+    const pendingUser = getFirebaseAuth().currentUser;
+    if (pendingUser) {
+      applyFirebaseUser(pendingUser);
+      return;
+    }
+  } catch {
+    /* ignore */
   }
   firstAuthEventReceived = true;
   console.warn(`${AUTH_TAG} auth race timeout (${AUTH_RACE_TIMEOUT_MS}ms)`);

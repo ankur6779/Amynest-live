@@ -1157,6 +1157,53 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
   min-height: 50px;
 }
 
+/* Auth screens — keyboard open: scroll root + visible typed text on iOS/Android WebView */
+html.amynest-native-shell.amynest-auth-active,
+html.amynest-native-shell.amynest-auth-active body,
+html.amynest-android-shell.amynest-auth-active,
+html.amynest-android-shell.amynest-auth-active body {
+  height: var(--vv-height, 100dvh);
+  max-height: var(--vv-height, 100dvh);
+  overflow: hidden;
+}
+
+html.amynest-native-shell.amynest-auth-active #root,
+html.amynest-android-shell.amynest-auth-active #root {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.amynest-auth-shell {
+  height: var(--vv-height, 100dvh);
+  max-height: var(--vv-height, 100dvh);
+  min-height: var(--vv-height, 100dvh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  box-sizing: border-box;
+  padding-bottom: calc(32px + var(--auth-keyboard-inset, 0px));
+}
+
+.amynest-auth-shell--keyboard .amynest-auth-hero {
+  display: none;
+}
+
+.amynest-auth-input,
+.amynest-auth-input:-webkit-autofill,
+.amynest-auth-input:-webkit-autofill:hover,
+.amynest-auth-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f0e8ff !important;
+  color: #f0e8ff !important;
+  caret-color: #f0e8ff;
+}
+
+html.amynest-native-shell .amynest-auth-input,
+html.amynest-android-shell .amynest-auth-input {
+  font-size: 16px;
+}
+
 html.amynest-native-shell,
 html.amynest-native-shell body,
 html.amynest-android-shell,
