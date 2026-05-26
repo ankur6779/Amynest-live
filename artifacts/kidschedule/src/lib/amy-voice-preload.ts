@@ -4,6 +4,7 @@
 
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import type { AmySpeechPolicy } from "@/lib/amy-speech-mode";
+import { warmSpeechCoach } from "@/lib/global-audio-warmup";
 import { preloadStaticPhrases } from "@/lib/static-audio";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
 
@@ -77,6 +78,7 @@ export function preloadAmyVoiceAnticipatory(policy: AmySpeechPolicy): void {
 
   if (policy.speechMode === "speech_coach" && policy.phrases.length <= 1) {
     preloadStaticPhrases(COACH_FOLLOW_UPS, mode, 3);
+    warmSpeechCoach([...COACH_FOLLOW_UPS, ...likely]);
   }
 }
 

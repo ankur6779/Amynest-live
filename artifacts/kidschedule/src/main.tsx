@@ -38,6 +38,10 @@ import {
   injectStaticAudioPreloadHints,
   installStaticAudioGestureWarmup,
 } from "@/lib/static-audio-edge";
+import {
+  initGlobalAudioWarmup,
+  installGlobalAudioWarmupOnGesture,
+} from "@/lib/global-audio-warmup";
 
 declare global {
   interface Window {
@@ -80,7 +84,9 @@ installGlobalErrorHandlers();
 installStaticAudioGuards();
 installStaticAudioDevTools();
 installStaticAudioGestureWarmup();
+installGlobalAudioWarmupOnGesture();
 injectStaticAudioPreloadHints();
+initGlobalAudioWarmup();
 preloadSpeechSynthesisVoices();
 installAmyVoiceAudioDiagnostics();
 void checkStaticAudioHealthOnBoot();
