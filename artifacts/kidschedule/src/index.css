@@ -1231,6 +1231,12 @@ html.amynest-android-shell .amynest-auth-kav {
   min-height: var(--vv-height, 100dvh);
 }
 
+html.amynest-android-shell .amynest-auth-kav.amynest-auth-shell--keyboard {
+  padding-bottom: calc(
+    var(--auth-keyboard-inset, 0px) + var(--auth-kav-offset, 0px)
+  );
+}
+
 .amynest-auth-kav-backdrop {
   flex: 1;
   min-height: 0;
