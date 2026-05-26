@@ -6,6 +6,11 @@
   --sab: env(safe-area-inset-bottom, 0px);
 }
 
+html.android-fullscreen,
+body.android-fullscreen {
+  --sab: 0px !important;
+}
+
 /* ── Amy Mascot Logo — header animated icon ─────────────────────── */
 @keyframes amyMascotFloat {
   0%, 100% { transform: translateY(0px);  }
@@ -600,11 +605,11 @@ html[data-theme="dark"] {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-  padding-bottom: 100px;
+  padding-bottom: 80px !important;
 }
 
 .main-content {
-  padding-bottom: 100px;
+  padding-bottom: 80px !important;
 }
 
 /* Reserve space above fixed bottom controls (audio player, sticky bars). */
@@ -756,7 +761,7 @@ body:has(.dashboard-page) .app-footer {
 }
 
 .app-scroll:has(.dashboard-page) {
-  padding-bottom: 90px !important;
+  padding-bottom: 80px !important;
 }
 
 .dashboard-inline-inset {
@@ -857,7 +862,7 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
   left: 0;
   right: 0;
   bottom: 0 !important;
-  padding-bottom: var(--sab);
+  padding-bottom: max(var(--sab), 0px);
   margin: 0 !important;
   box-sizing: border-box;
   background: rgba(10, 15, 30, 0.98);
