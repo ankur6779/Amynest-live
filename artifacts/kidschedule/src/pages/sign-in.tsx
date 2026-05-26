@@ -21,6 +21,8 @@ import {
 import { getApiUrl } from "@/lib/api";
 import { shouldShowPermissionsSetupPromptAsync } from "@/lib/pwa-android-permissions";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
+import { finishOAuthLoginFlow } from "@/lib/oauth-session-finalize";
+import { resolvePostOAuthDestination } from "@/lib/post-verify-destination";
 import { isCapacitorIosShell, isLowMemoryIosClient } from "@/lib/device-lite";
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
 const SIGN_IN_CSS = `
@@ -483,6 +485,13 @@ export default function SignInPage() {
         }
       }
       const showPerms = await shouldShowPermissionsSetupPromptAsync();
+      if (isNativeAmyNestShell()) {
+        const dest = showPerms
+          ? "/notify-prompt?next=/"
+          : await resolvePostOAuthDestination();
+        await finishOAuthLoginFlow(dest);
+        return;
+      }
       setLocation(showPerms ? "/notify-prompt?next=/" : "/");
     } catch (err: any) {
       setError(prettyAuthError(err));

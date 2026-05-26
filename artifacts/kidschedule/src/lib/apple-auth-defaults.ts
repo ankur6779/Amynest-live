@@ -6,6 +6,7 @@
  */
 import { CANONICAL_PRODUCTION_ORIGIN } from "@workspace/phone-auth";
 import { firebaseWebDefaults } from "@/lib/firebase-web-defaults";
+import { isCapacitorNativeShell } from "@/lib/native-shell";
 
 export const appleAuthDefaults = {
   /** e.g. in.amynest.web — set VITE_APPLE_WEB_CLIENT_ID in production */
@@ -33,6 +34,10 @@ export function getAppleRedirectUri(): string {
     import.meta.env.VITE_APPLE_REDIRECT_URI as string | undefined
   )?.trim();
   if (fromEnv) return fromEnv;
+
+  if (typeof window !== "undefined" && isCapacitorNativeShell()) {
+    return `${CANONICAL_PRODUCTION_ORIGIN}${appleAuthDefaults.redirectPath}`;
+  }
 
   if (typeof window === "undefined") {
     return `${CANONICAL_PRODUCTION_ORIGIN}${appleAuthDefaults.redirectPath}`;

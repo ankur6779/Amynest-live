@@ -3,6 +3,7 @@ import type { ConfirmationResult } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { useTranslation } from "react-i18next";
 import { formatAuthErrorForUi, logFirebaseAuthError } from "@/lib/firebase-auth-error";
+import { finalizeOAuthCredentialSignIn, finishOAuthLoginFlow } from "@/lib/oauth-session-finalize";
 import {
   buildPhoneOtpBrowserUrl,
   detectDefaultCountry,
@@ -292,7 +293,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
         logFirebaseAuthError("phone-auth-flow:sendOtp", new Error(res.error));
         setPhoneError(res.error);
         onError?.(res.error);
-        if (res.suggestBrowser && chromeOtpRequired) {
+        if (res.suggestBrowser) {
           setBrowserOtpUrl(buildPhoneOtpBrowserUrl(phoneFull));
         }
         if (res.needsRefresh) {
@@ -327,7 +328,9 @@ export default function PhoneAuthFlow({ onError }: Props) {
     if (!confirmRef.current) { onError?.("Session expired. Please resend OTP."); setStep("phone"); return; }
     setStep("verifying");
     try {
-      await confirmRef.current.confirm(otp);
+      const result = await confirmRef.current.confirm(otp);
+      await finalizeOAuthCredentialSignIn(result);
+      await finishOAuthLoginFlow();
     } catch (err: unknown) {
       onError?.(err instanceof Error ? err.message : "Invalid OTP. Please try again.");
       setStep("otp");
@@ -353,7 +356,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
           </p>
           <button
             type="button"
-            onClick={() => openPhoneOtpInExternalBrowser("")}
+            onClick={() => void openPhoneOtpInExternalBrowser("")}
             style={{
               width: "100%",
               height: "46px",
@@ -484,7 +487,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
           {browserOtpUrl && (
             <button
               type="button"
-              onClick={() => openPhoneOtpInExternalBrowser(phoneFull)}
+              onClick={() => void openPhoneOtpInExternalBrowser(phoneFull)}
               style={{
                 width: "100%",
                 padding: "10px 14px",
