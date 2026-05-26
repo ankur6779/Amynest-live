@@ -54,6 +54,7 @@ services:
     # DO NOT DEFINE PLAN IN BLUEPRINT — dashboard controls RAM/CPU
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
+    autoDeployTrigger: commit
     buildCommand: >-
       corepack enable &&
       corepack prepare pnpm@9.15.0 --activate &&
@@ -138,6 +139,7 @@ services:
     # DO NOT DEFINE PLAN IN BLUEPRINT — dashboard controls RAM/CPU
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
+    autoDeployTrigger: commit
     buildCommand: bash scripts/render-ai-worker-build.sh
     startCommand: bash scripts/render-ai-worker-start.sh
     envVars:
@@ -190,6 +192,7 @@ services:
     runtime: static
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
+    autoDeployTrigger: commit
     buildCommand: >-
       corepack enable &&
       corepack prepare pnpm@9.15.0 --activate &&

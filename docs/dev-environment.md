@@ -115,6 +115,10 @@ Default workflow: use **local** API + Vite (`pnpm run dev`, `pnpm run dev:web`).
 - **Amynest-backend** — `AMYNEST_ENV=production`, prod `DATABASE_URL`
 - **Amynest-live-1** — `VITE_APP_API_ORIGIN=https://amynest-backend-dykj.onrender.com`
 
+**Auto-deploy:** `render.yaml` sets `autoDeployTrigger: commit` on all prod services. After changing deploy settings, run **Blueprint → Sync** in the [Render Dashboard](https://dashboard.render.com) once if pushes still do not deploy.
+
+Optional backup: add `RENDER_API_KEY` to GitHub Actions secrets — `.github/workflows/deploy-render.yml` triggers deploys on every `main` push.
+
 ---
 
 ## 6. Scripts reference
