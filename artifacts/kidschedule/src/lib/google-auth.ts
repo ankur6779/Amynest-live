@@ -8,13 +8,14 @@ import {
 } from "firebase/auth";
 import { logFirebaseAuthError } from "@/lib/firebase-auth-error";
 import { ensureFirebaseAuthPersistence, getFirebaseAuth } from "@/lib/firebase";
-import { refreshFirebaseAuthSnapshot } from "@/lib/firebase-auth-listener";
-import { resolvePostOAuthDestination } from "@/lib/post-verify-destination";
-import { waitForAuthContextAuthenticated } from "@/lib/wait-for-auth-context";
-import { waitForFirebaseUser } from "@/lib/wait-for-firebase-user";
 import { isCapacitorNative } from "@/lib/capacitor-native";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { resolveFirebaseAuthRedirectResult } from "@/lib/firebase-oauth-redirect";
+import {
+  finalizeOAuthCredentialSignIn,
+  finishOAuthLoginFlow,
+  navigateAfterOAuthSignIn,
+} from "@/lib/oauth-session-finalize";
 import {
   googleAuthDefaults,
   reversedGoogleWebClientId,
@@ -131,20 +132,7 @@ export async function initNativeGoogleAuth(): Promise<void> {
 async function finalizeGoogleCredentialSignIn(
   result: UserCredential,
 ): Promise<User> {
-  await result.user.getIdToken(true);
-  refreshFirebaseAuthSnapshot();
-  const user =
-    (await waitForFirebaseUser(10_000)) ?? result.user;
-  await waitForAuthContextAuthenticated(10_000).catch(() => {
-    refreshFirebaseAuthSnapshot();
-  });
-  if (!getFirebaseAuth().currentUser) {
-    throw Object.assign(
-      new Error("Sign-in session could not be established. Please try again."),
-      { code: "app/auth-session-lost" },
-    );
-  }
-  return user;
+  return finalizeOAuthCredentialSignIn(result);
 }
 
 /** Exchange a Google ID token for a Firebase session (native bridge + recovery). */
@@ -164,20 +152,12 @@ async function signInFirebaseWithGoogleIdToken(idToken: string): Promise<User> {
 }
 
 /** Hard navigation after OAuth so route guards see persisted Firebase auth. */
-export function navigateAfterOAuthSignIn(destination: string): void {
-  if (typeof window === "undefined") return;
-  const path = destination.startsWith("/") ? destination : `/${destination}`;
-  window.location.assign(`${window.location.origin}${path}`);
-}
+export { navigateAfterOAuthSignIn } from "@/lib/oauth-session-finalize";
 
 async function finishGoogleLoginFlow(): Promise<string> {
-  await waitForAuthContextAuthenticated(10_000);
-  const destination = await resolvePostOAuthDestination();
-  navigateAfterOAuthSignIn(destination);
+  const destination = await finishOAuthLoginFlow();
   if (shouldUseAndroidWebViewGoogleAuth()) {
-    const {
-      clearPendingNativeGoogleAuth,
-    } = await import("@/lib/native-auth");
+    const { clearPendingNativeGoogleAuth } = await import("@/lib/native-auth");
     void clearPendingNativeGoogleAuth();
   }
   return destination;

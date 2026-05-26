@@ -9,8 +9,12 @@ import {
   type UserCredential,
 } from "firebase/auth";
 import { logFirebaseAuthError } from "@/lib/firebase-auth-error";
-import { getFirebaseAuth } from "@/lib/firebase";
+import { ensureFirebaseAuthPersistence, getFirebaseAuth } from "@/lib/firebase";
 import { generateRawNonce, sha256Hex } from "@/lib/auth-nonce";
+import {
+  finalizeOAuthCredentialSignIn,
+  finishOAuthLoginFlow,
+} from "@/lib/oauth-session-finalize";
 import {
   appleAuthDefaults,
   getAppleIosClientId,
@@ -117,6 +121,7 @@ export function loginWithAppleFirebaseRedirect(): Promise<void> {
 }
 
 export async function loginNativeApple(): Promise<void> {
+  await ensureFirebaseAuthPersistence();
   const rawNonce = generateRawNonce();
   const hashedNonce = await sha256Hex(rawNonce);
 
@@ -124,7 +129,7 @@ export async function loginNativeApple(): Promise<void> {
     "@capacitor-community/apple-sign-in"
   );
 
-  const result = await SignInWithApple.authorize({
+  const appleResult = await SignInWithApple.authorize({
     clientId: getAppleIosClientId(),
     redirectURI: getAppleRedirectUri(),
     scopes: "email name",
@@ -132,7 +137,7 @@ export async function loginNativeApple(): Promise<void> {
     nonce: hashedNonce,
   });
 
-  const idToken = result.response?.identityToken;
+  const idToken = appleResult.response?.identityToken;
   if (!idToken) {
     throw Object.assign(
       new Error("Apple sign-in did not return an identity token."),
@@ -140,12 +145,18 @@ export async function loginNativeApple(): Promise<void> {
     );
   }
 
-  const given = result.response.givenName ?? "";
-  const family = result.response.familyName ?? "";
+  const given = appleResult.response.givenName ?? "";
+  const family = appleResult.response.familyName ?? "";
   const fullName = [given, family].filter(Boolean).join(" ").trim() || null;
 
-  await signInFirebaseWithAppleToken(idToken, rawNonce, fullName);
+  const credential = await signInFirebaseWithAppleToken(idToken, rawNonce, fullName);
+  await finalizeOAuthCredentialSignIn(credential);
   console.info(`${APPLE_TAG} native sign-in success`);
+  await finishAppleLoginFlow();
+}
+
+async function finishAppleLoginFlow(): Promise<void> {
+  await finishOAuthLoginFlow();
 }
 
 /**
@@ -155,16 +166,20 @@ export async function loginNativeApple(): Promise<void> {
 export async function loginWithAppleWeb(): Promise<void> {
   if (getAppleWebClientId()) {
     const { idToken, rawNonce, fullName } = await loginWithAppleWebSdkPopup();
-    await signInFirebaseWithAppleToken(idToken, rawNonce, fullName);
+    const result = await signInFirebaseWithAppleToken(idToken, rawNonce, fullName);
+    await finalizeOAuthCredentialSignIn(result);
     console.info(`${APPLE_TAG} web popup sign-in success`);
+    await finishAppleLoginFlow();
     return;
   }
 
   const result = await loginWithAppleFirebasePopup();
   if (result?.user) {
+    await finalizeOAuthCredentialSignIn(result);
     console.info(`${APPLE_TAG} firebase popup sign-in success`, {
       uid: result.user.uid,
     });
+    await finishAppleLoginFlow();
   }
 }
 
@@ -186,6 +201,8 @@ export async function resolveAppleWebCallback(): Promise<UserCredential | null> 
   console.info(`${APPLE_TAG} web redirect sign-in success`, {
     uid: result.user.uid,
   });
+  await finalizeOAuthCredentialSignIn(result);
+  await finishAppleLoginFlow();
   return result;
 }
 

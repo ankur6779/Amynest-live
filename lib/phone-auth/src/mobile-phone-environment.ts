@@ -1,11 +1,23 @@
 import { getCanonicalWebOrigin } from "./site-domain";
 
 type AmyNestWindow = Window & {
-  Capacitor?: { isNativePlatform?: () => boolean };
+  Capacitor?: {
+    isNativePlatform?: () => boolean;
+    getPlatform?: () => string;
+  };
   __AMYNEST_WRAPPER?: string;
   AndroidPush?: unknown;
   AmyNestPushNative?: unknown;
 };
+
+function isCapacitorIosShell(): boolean {
+  if (typeof window === "undefined") return false;
+  const win = window as AmyNestWindow;
+  return (
+    win.Capacitor?.isNativePlatform?.() === true &&
+    win.Capacitor?.getPlatform?.() === "ios"
+  );
+}
 
 /** AmyNest Android/iOS WebView or Capacitor shell — OTP must run in-app, not external browser. */
 export function isAmyNestNativeWrapper(): boolean {
@@ -99,11 +111,31 @@ export function buildPhoneOtpBrowserUrl(phoneE164: string, returnPath = "/sign-i
   return url.toString();
 }
 
-export function openPhoneOtpInExternalBrowser(
+export async function openPhoneOtpInExternalBrowser(
   phoneE164: string,
   returnPath = "/sign-in",
-): void {
+): Promise<void> {
   const url = buildPhoneOtpBrowserUrl(phoneE164, returnPath);
-  console.info("[phone-otp] Opening system browser for OTP (standalone PWA)", url);
+  console.info("[phone-otp] Opening system browser for OTP", url);
+
+  if (isAmyNestNativeWrapper() && typeof window !== "undefined") {
+    const cap = window as AmyNestWindow & {
+      Capacitor?: {
+        Plugins?: {
+          App?: { openUrl?: (opts: { url: string }) => Promise<void> };
+        };
+      };
+    };
+    const openUrl = cap.Capacitor?.Plugins?.App?.openUrl;
+    if (openUrl) {
+      try {
+        await openUrl({ url });
+        return;
+      } catch (err) {
+        console.warn("[phone-otp] Capacitor App.openUrl failed", err);
+      }
+    }
+  }
+
   window.location.assign(url);
 }

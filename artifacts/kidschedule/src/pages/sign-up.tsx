@@ -17,6 +17,7 @@ import {
   ENABLE_PHONE_OTP,
 } from "@/lib/auth-feature-flags";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
+import { finishOAuthLoginFlow } from "@/lib/oauth-session-finalize";
 
 // ── Animation keyframes (same classes as sign-in — CSS idempotent in SPA) ────
 const SIGN_UP_CSS = `
@@ -370,6 +371,10 @@ export default function SignUpPage() {
           await cred.user.getIdToken(true);
         } catch {
           /* non-fatal */
+        }
+        if (isNativeAmyNestShell()) {
+          await finishOAuthLoginFlow("/");
+          return;
         }
         setLocation("/");
         return;

@@ -7,16 +7,24 @@
  * URL matches what you should set in Firebase so preview + SDK sends stay aligned.
  * The `mode` query param (verifyEmail | resetPassword) routes to the right page.
  */
+import { isCapacitorNativeShell } from "@/lib/native-shell";
+
 export const CANONICAL_FIREBASE_ACTION_URL = "https://www.amynest.in/auth/action";
 
 export function getFirebaseActionUrlForLocalDev(): string {
-  if (typeof window !== "undefined" && window.location?.hostname) {
-    const { hostname, origin } = window.location;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return `${origin}/auth/action`;
-    }
-    if (hostname === "amynest.in" || hostname === "www.amynest.in") {
+  if (typeof window !== "undefined") {
+    // Capacitor iOS/Android use capacitor://localhost — never embed that in emails.
+    if (isCapacitorNativeShell()) {
       return CANONICAL_FIREBASE_ACTION_URL;
+    }
+    if (window.location?.hostname) {
+      const { hostname, origin } = window.location;
+      if (hostname === "localhost" || hostname === "127.0.0.1") {
+        return `${origin}/auth/action`;
+      }
+      if (hostname === "amynest.in" || hostname === "www.amynest.in") {
+        return CANONICAL_FIREBASE_ACTION_URL;
+      }
     }
   }
   return CANONICAL_FIREBASE_ACTION_URL;
