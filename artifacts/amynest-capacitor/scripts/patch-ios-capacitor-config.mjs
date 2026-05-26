@@ -20,6 +20,15 @@ const config = JSON.parse(readFileSync(configPath, "utf8"));
 const list = Array.isArray(config.packageClassList) ? [...config.packageClassList] : [];
 let changed = false;
 
+// StatusBarPlugin lets us call StatusBar.setOverlaysWebView({ overlay: false })
+// from native-shell.ts so iOS reserves the status-bar strip OUTSIDE the WKWebView.
+// Without it the iOS clock floats on top of the header and steals taps.
+const STATUS_BAR_CLASS = "StatusBarPlugin";
+if (!list.includes(STATUS_BAR_CLASS)) {
+  list.push(STATUS_BAR_CLASS);
+  changed = true;
+}
+
 // Capacitor iOS must ship bundled www — remote server.url hides stale-cache issues
 // and breaks offline review; App Store build reads ios/App/App/public directly.
 if (config.server?.url) {

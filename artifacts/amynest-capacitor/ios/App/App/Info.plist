@@ -63,9 +63,20 @@
 	<string>AmyNest can use Face ID to securely unlock your parenting data.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>AmyNest accesses your contacts only when you choose to share a routine via the Share Routine feature.</string>
+	<!--
+	  App Transport Security (ATS)
+	  ────────────────────────────
+	  Firebase Auth in the Capacitor WKWebView fetches from googleapis.com.
+	  Without explicit NSExceptionDomains entries below, iOS WKWebView has been
+	  observed to hang those fetches on some networks/devices, leaving the
+	  sign-in spinner spinning forever. Each excepted domain still requires
+	  TLS 1.2+ and forward secrecy (default), so this is App Store-friendly.
+	-->
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<false/>
+		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 		<key>NSExceptionDomains</key>
 		<dict>
@@ -78,25 +89,84 @@
 				<key>NSExceptionRequiresForwardSecrecy</key>
 				<true/>
 			</dict>
+			<key>googleapis.com</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<true/>
+			</dict>
+			<key>firebaseapp.com</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<true/>
+			</dict>
+			<key>firebaseio.com</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<true/>
+			</dict>
+			<key>gstatic.com</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<true/>
+			</dict>
+			<key>recaptcha.net</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<true/>
+			</dict>
+			<key>apple.com</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<true/>
+			</dict>
 		</dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<false/>
 	</dict>
+	<!--
+	  WKAppBoundDomains
+	  ─────────────────
+	  Apple imposes a HARD CAP of 10 domains on this list. If exceeded, iOS
+	  ignores the entire list and (more dangerously) some WKWebView features
+	  silently regress (cookies, postMessage, localStorage in third-party
+	  iframes). Because the Capacitor config sets
+	    "limitsNavigationsToAppBoundDomains": false
+	  the WebView is NOT restricted to these domains for navigation, so the
+	  list is only needed to opt the listed domains into the privileged
+	  "app-bound" feature set. We keep <= 10 of the auth-critical domains.
+	-->
 	<key>WKAppBoundDomains</key>
 	<array>
 		<string>amynest.in</string>
-		<string>www.amynest.in</string>
-		<string>clerk.amynest.in</string>
 		<string>googleapis.com</string>
 		<string>gstatic.com</string>
 		<string>google.com</string>
 		<string>firebaseapp.com</string>
 		<string>securetoken.googleapis.com</string>
 		<string>identitytoolkit.googleapis.com</string>
-		<string>www.gstatic.com</string>
-		<string>www.google.com</string>
 		<string>recaptcha.net</string>
-		<string>www.recaptcha.net</string>
 		<string>appleid.apple.com</string>
 		<string>appleid.cdn-apple.com</string>
 	</array>

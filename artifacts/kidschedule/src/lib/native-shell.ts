@@ -72,10 +72,51 @@ export function useFirebaseIndexedDbPersistence(): boolean {
   return false;
 }
 
-/** iOS Simulator — Sign in with Apple is unreliable; prefer email for testing. */
+/**
+ * iOS Simulator — Sign in with Apple is unreliable; prefer email for testing.
+ *
+ * Detection: the WKWebView UA does NOT contain "Simulator" on iOS Simulator
+ * builds (Apple intentionally hides this so sites can't gate features). We
+ * combine three signals:
+ *   1. Explicit override: `localStorage.amynest_ios_simulator = "1"` for QA.
+ *   2. UA contains "Simulator" (rare but possible on some xcrun configs).
+ *   3. We're in Capacitor iOS AND there's NO touchscreen behaviour that a
+ *      real iPhone would expose. iOS Simulator on a desktop reports
+ *      `navigator.maxTouchPoints === 0` whereas every real iPhone reports >0.
+ *      This is the most reliable runtime signal.
+ */
 export function isIosSimulator(): boolean {
   if (typeof navigator === "undefined") return false;
-  return /Simulator/i.test(navigator.userAgent);
+  try {
+    const override =
+      typeof window !== "undefined"
+        ? window.localStorage?.getItem("amynest_ios_simulator")
+        : null;
+    if (override === "1") return true;
+  } catch {
+    /* ignore */
+  }
+  const ua = navigator.userAgent || "";
+  if (/Simulator/i.test(ua)) return true;
+  if (isCapacitorNativeShell()) {
+    try {
+      const cap = (
+        window as Window & {
+          Capacitor?: { getPlatform?: () => string };
+        }
+      ).Capacitor;
+      if (cap?.getPlatform?.() === "ios") {
+        const mtp =
+          typeof navigator.maxTouchPoints === "number"
+            ? navigator.maxTouchPoints
+            : -1;
+        if (mtp === 0) return true;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return false;
 }
 
 /** Browser PWA service workers — disabled inside native WebViews. */
@@ -89,9 +130,28 @@ function configureNativeViewport(): void {
   if (!isCapacitorNativeShell()) return;
 
   void import("@capacitor/status-bar")
-    .then(({ StatusBar }) =>
-      StatusBar.setOverlaysWebView({ overlay: false }),
-    )
+    .then(async ({ StatusBar, Style }) => {
+      // iOS / Android: keep the status bar OUTSIDE the WebView so the OS clock
+      // never lands on top of our header (and steals taps from the back / burger
+      // buttons). Failing silently is fine — the CSS fallback in index.css adds
+      // safe-area-inset-top padding so the layout still avoids the overlap.
+      try {
+        await StatusBar.setOverlaysWebView({ overlay: false });
+      } catch {
+        /* plugin missing on this platform */
+      }
+      try {
+        // App theme is dark — match the status bar so the OS clock stays light.
+        await StatusBar.setStyle({ style: Style.Dark });
+      } catch {
+        /* setStyle is iOS+Android, but tolerate older shells */
+      }
+      try {
+        await StatusBar.setBackgroundColor({ color: "#0a061a" });
+      } catch {
+        /* Android-only API; iOS rejects, that's fine */
+      }
+    })
     .catch(() => {
       /* Optional native plugin; web/PWA startup must never depend on it. */
     });

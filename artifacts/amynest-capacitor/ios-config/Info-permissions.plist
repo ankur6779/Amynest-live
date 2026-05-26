@@ -46,10 +46,18 @@
   <key>NSContactsUsageDescription</key>
   <string>AmyNest accesses your contacts only when you choose to share a routine via the Share Routine feature.</string>
 
-  <!-- ── App Transport Security: allow Firebase + Clerk domains ── -->
+  <!--
+    ── App Transport Security ───────────────────────────────────────────
+    Firebase Auth from inside WKWebView fetches identitytoolkit.googleapis.com
+    and securetoken.googleapis.com. Explicit NSExceptionDomains entries
+    prevent iOS from hanging the sign-in spinner forever on flaky networks.
+    Each domain still requires TLS 1.2+ and forward secrecy (App Store-safe).
+  -->
   <key>NSAppTransportSecurity</key>
   <dict>
     <key>NSAllowsArbitraryLoadsInWebContent</key>
+    <false/>
+    <key>NSAllowsArbitraryLoads</key>
     <false/>
     <key>NSExceptionDomains</key>
     <dict>
@@ -62,19 +70,71 @@
         <key>NSExceptionRequiresForwardSecrecy</key>
         <true/>
       </dict>
+      <key>googleapis.com</key>
+      <dict>
+        <key>NSIncludesSubdomains</key>
+        <true/>
+        <key>NSExceptionRequiresForwardSecrecy</key>
+        <true/>
+      </dict>
+      <key>firebaseapp.com</key>
+      <dict>
+        <key>NSIncludesSubdomains</key>
+        <true/>
+        <key>NSExceptionRequiresForwardSecrecy</key>
+        <true/>
+      </dict>
+      <key>firebaseio.com</key>
+      <dict>
+        <key>NSIncludesSubdomains</key>
+        <true/>
+        <key>NSExceptionRequiresForwardSecrecy</key>
+        <true/>
+      </dict>
+      <key>gstatic.com</key>
+      <dict>
+        <key>NSIncludesSubdomains</key>
+        <true/>
+        <key>NSExceptionRequiresForwardSecrecy</key>
+        <true/>
+      </dict>
+      <key>recaptcha.net</key>
+      <dict>
+        <key>NSIncludesSubdomains</key>
+        <true/>
+        <key>NSExceptionRequiresForwardSecrecy</key>
+        <true/>
+      </dict>
+      <key>apple.com</key>
+      <dict>
+        <key>NSIncludesSubdomains</key>
+        <true/>
+        <key>NSExceptionRequiresForwardSecrecy</key>
+        <true/>
+      </dict>
     </dict>
   </dict>
 
-  <!-- ── Capacitor WKWebView: domains the embedded app may contact (must cover API + Firebase) ── -->
+  <!--
+    ── WKAppBoundDomains (HARD CAP: 10 domains) ─────────────────────────
+    Apple silently invalidates the entire array if it exceeds 10 entries.
+    The Capacitor config sets `limitsNavigationsToAppBoundDomains: false`,
+    so this list only opts the named domains into privileged WKWebView
+    features (cookies / postMessage / localStorage in third-party iframes).
+    Keep this list ≤ 10 and prioritise the auth-critical hosts.
+  -->
   <key>WKAppBoundDomains</key>
   <array>
     <string>amynest.in</string>
-    <string>www.amynest.in</string>
-    <string>clerk.amynest.in</string>
     <string>googleapis.com</string>
     <string>gstatic.com</string>
     <string>google.com</string>
     <string>firebaseapp.com</string>
+    <string>securetoken.googleapis.com</string>
+    <string>identitytoolkit.googleapis.com</string>
+    <string>recaptcha.net</string>
+    <string>appleid.apple.com</string>
+    <string>appleid.cdn-apple.com</string>
   </array>
 
   <!-- ── URL Schemes (Google Sign-In redirect) ── -->
