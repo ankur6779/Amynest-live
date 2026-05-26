@@ -478,14 +478,34 @@ class MainActivity : AppCompatActivity() {
         if (!::webView.isInitialized) return
         val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
         val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+        val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
         val topPx = statusBars.top.coerceAtLeast(0)
         val bottomPx = if (systemBarsVisible) navBars.bottom.coerceAtLeast(0) else 0
+        val imeBottomPx = ime.bottom.coerceAtLeast(0)
+        val webViewHeight = webView.height.coerceAtLeast(0)
+        val visibleHeightPx =
+            if (imeBottomPx > 0 && webViewHeight > imeBottomPx) {
+                webViewHeight - imeBottomPx
+            } else if (webViewHeight > 0) {
+                webViewHeight
+            } else {
+                0
+            }
         val js =
             "(function(){" +
                 "var r=document.documentElement;" +
                 "r.style.setProperty('--sat','${topPx}px');" +
                 (if (bottomPx > 0) "r.style.setProperty('--sab','${bottomPx}px');" else "r.style.removeProperty('--sab');") +
+                "r.style.setProperty('--auth-keyboard-inset-native','${imeBottomPx}px');" +
+                (if (imeBottomPx > 0) {
+                    "r.style.setProperty('--auth-keyboard-inset','${imeBottomPx}px');" +
+                        (if (visibleHeightPx > 0) "r.style.setProperty('--vv-height','${visibleHeightPx}px');" else "")
+                } else {
+                    "r.style.removeProperty('--auth-keyboard-inset');"
+                }) +
                 "r.classList.add('amynest-android-shell','amynest-native-shell');" +
+                "window.dispatchEvent(new CustomEvent('amynest-keyboard-inset'," +
+                "{detail:{inset:${imeBottomPx},visibleHeight:${visibleHeightPx}}}));" +
             "})();"
         webView.post { webView.evaluateJavascript(js, null) }
     }
