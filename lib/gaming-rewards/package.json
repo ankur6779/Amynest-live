@@ -9,7 +9,10 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "node --test --experimental-strip-types src/policy.test.ts",
-    "test:run": "node --test --experimental-strip-types ./src/policy.test.ts ./src/catalog.ts"
+    "test": "node --import tsx/esm --test src/policy.test.ts",
+    "test:run": "node --import tsx/esm --test src/policy.test.ts"
+  },
+  "devDependencies": {
+    "tsx": "catalog:"
   }
 }

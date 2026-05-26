@@ -11,6 +11,9 @@
     "./tts-cache-key": "./src/tts-cache-key.ts"
   },
   "scripts": {
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "node --import tsx/esm --test src/index.test.ts src/phonics-quality.test.ts src/phonics-generation.test.ts src/tts-cache-key.test.ts src/cvc-blend.test.ts src/phoneme-map.test.ts"
+  },
+  "devDependencies": {
+    "tsx": "catalog:"
   }
 }

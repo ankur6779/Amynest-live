@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "tsx --test src/__tests__/*.test.ts"
+    "test": "node --import tsx/esm --test src/__tests__/speech-coach.test.ts"
   },
   "devDependencies": {
     "tsx": "catalog:"
