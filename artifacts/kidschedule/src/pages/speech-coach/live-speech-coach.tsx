@@ -31,6 +31,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { usePrimeIosMicrophone } from "@/hooks/use-prime-ios-microphone";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { warmSpeechCoach } from "@/lib/global-audio-warmup";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import { clampClarityScore, weakSoundsToHistory } from "./speech-coach-utils";
 
@@ -316,6 +317,10 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    warmSpeechCoach(tasks.slice(0, 3).map((task) => speakPromptText(task, mode)));
+  }, [tasks, mode]);
 
   useEffect(() => {
     setTasks(buildTasks(ageMonths, practiceHistory));
