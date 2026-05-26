@@ -45,6 +45,7 @@ const TARGET_FILES: readonly string[] = [
   "artifacts/kidschedule/src/components/amy-icon.tsx",
   "artifacts/kidschedule/src/pages/parenting-hub.tsx",
   "artifacts/kidschedule/src/components/premium-badge.tsx",
+  // Mobile ships via Capacitor (same kidschedule web bundle); no separate Expo tree.
 ];
 
 /**

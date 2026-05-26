@@ -26,7 +26,7 @@ import {
 } from "../services/coachWinGenerationService.js";
 import { startCoachPerfSpan } from "../lib/coach-performance.js";
 import { fallbackExtensionWin } from "../services/coachExtensionFallback.js";
-import { buildCoachPlanCacheKey } from "../services/coachPlanCacheKey.js";
+import { buildCoachPlanCacheKey, COACH_PLAN_NAMESPACE } from "../services/coachPlanCacheKey.js";
 import {
   generateAndCacheCoachWinAudio,
   pregenerateCoachPlanAudio,
@@ -522,7 +522,7 @@ async function dbSet(cacheKey: string, input: CoachInput, plan: CoachPlan): Prom
   try {
     await db
       .insert(aiCacheTable)
-      .values({ cacheKey, namespace: NAMESPACE, input, response: plan })
+      .values({ cacheKey, namespace: COACH_PLAN_NAMESPACE, input, response: plan })
       .onConflictDoUpdate({
         target: aiCacheTable.cacheKey,
         set: { input, response: plan, createdAt: new Date() },

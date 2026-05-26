@@ -32,6 +32,9 @@ import {
   childLearningProgressTable,
 } from "@workspace/db";
 import smartStudyRouter from "./smart-study.js";
+import { isDbIntegrationAvailable } from "../test/db-integration.js";
+
+const dbIntegrationOk = await isDbIntegrationAvailable();
 
 type AuthedApp = {
   server: http.Server;
@@ -66,12 +69,13 @@ async function stopApp(app: AuthedApp): Promise<void> {
   );
 }
 
-describe("smart-study route — daily-plan + attempt round-trip", () => {
+describe("smart-study route — daily-plan + attempt round-trip", { skip: !dbIntegrationOk }, () => {
   const userId = `smart-study-test-${randomUUID()}`;
   let app: AuthedApp;
   let childId: number;
 
   before(async () => {
+    if (!dbIntegrationOk) return;
     // Age 8 → resolves to "basic" study mode (school-age) so the engine
     // emits a non-empty plan with weak/fresh items.
     const inserted = await db
@@ -91,6 +95,7 @@ describe("smart-study route — daily-plan + attempt round-trip", () => {
   });
 
   after(async () => {
+    if (!dbIntegrationOk) return;
     await db
       .delete(childLearningProgressTable)
       .where(eq(childLearningProgressTable.userId, userId));

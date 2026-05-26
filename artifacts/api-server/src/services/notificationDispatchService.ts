@@ -401,7 +401,7 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
       !Expo.isExpoPushToken(t.token) &&
       (t.platform === "ios" || t.platform === "ios-capacitor") &&
       !looksLikeApnsDeviceTokenHex(t.token) &&
-      !t.token.startsWith("http"),
+      !String(t.token).startsWith("http"),
   );
 
   if (

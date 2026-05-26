@@ -76,7 +76,7 @@ describe("TTS system validation", () => {
         textLength: 3,
         shortText: true,
         lessonMode: false,
-        phonics: true,
+        phonics: false,
         catalogPlayback: false,
         deviceClass: "desktop",
         networkProfile: "fast",

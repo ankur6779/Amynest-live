@@ -603,8 +603,8 @@ export function isAbacusEligible(ageYears: number): boolean {
 
 // ─── Server-side AI Tutor prompt builder ────────────────────────────────
 
-export type { AbacusLang } from "./language.ts";
-export { resolveAbacusLanguage } from "./language.ts";
+export type { AbacusLang } from "./language.js";
+export { resolveAbacusLanguage } from "./language.js";
 
 /**
  * Build the system prompt + user message for Amy's AI Tutor mode. Pure
@@ -614,7 +614,7 @@ export { resolveAbacusLanguage } from "./language.ts";
 export function buildAbacusTutorPrompt(input: {
   level: LevelId;
   ageYears: number;
-  language: import("./language.ts").AbacusLang;
+  language: import("./language.js").AbacusLang;
   question: string;
 }): { system: string; user: string } {
   const def = getLevel(input.level);
@@ -637,5 +637,5 @@ export function buildAbacusTutorPrompt(input: {
   return { system, user };
 }
 
-export * from "./badges.ts";
-export * from "./tutor-visual.ts";
+export * from "./badges.js";
+export * from "./tutor-visual.js";

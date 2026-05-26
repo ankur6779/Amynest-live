@@ -147,14 +147,15 @@ export function useLessonPlayback({
       LESSON_AUDIBLE_LAYERS.has(res.layer);
 
     if (!heard) {
+      const errMsg = res && !res.success ? res.error : "playback_failed";
       console.warn("[LessonPlayback] paragraph failed — staying on paragraph", {
-        error: res?.error,
+        error: errMsg,
         layer: res?.layer,
       });
       intentRef.current = "idle";
       setIntent("idle");
       pauseVoice();
-      setPlaybackError(res?.error ?? "playback_failed");
+      setPlaybackError(errMsg);
       return;
     }
     setPlaybackError(null);
