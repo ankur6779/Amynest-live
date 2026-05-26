@@ -10,8 +10,6 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.view.WindowInsets
-import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
@@ -28,6 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.google.firebase.messaging.FirebaseMessaging
 import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallActivityLauncher
 import com.revenuecat.purchases.ui.revenuecatui.activity.PaywallResult
@@ -71,6 +70,9 @@ class MainActivity : AppCompatActivity() {
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingGeoOrigin: String? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
+
+    /** When true, Android navigation/status bars are shown (dashboard). */
+    private var systemBarsVisible = false
 
     // ── Permission launchers ─────────────────────────────────────────────────
 
@@ -121,7 +123,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-        applyImmersiveSystemUi()
+        setSystemBarsVisible(false)
 
         // Capture notification tap extras BEFORE building the WebView so the
         // document-start JS injection and URL construction can use them.
@@ -169,6 +171,7 @@ class MainActivity : AppCompatActivity() {
             permissionRequester = { askNotificationPermission() },
         )
         pushBridge.install(webView)
+        webView.addJavascriptInterface(SystemUiBridge(this), "Android")
 
         FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
             if (token != null && pushBridge.getToken() == null) {
@@ -468,51 +471,65 @@ class MainActivity : AppCompatActivity() {
     // ── System chrome ────────────────────────────────────────────────────────
 
     /**
-     * Edge-to-edge WebView: env(safe-area-inset-*) is usually 0. Push real
-     * system-bar insets into CSS variables so fixed footers / story controls
-     * clear the 3-button navigation bar.
+     * Edge-to-edge WebView: push status-bar inset into CSS; bottom inset follows
+     * [systemBarsVisible] (dashboard shows nav bar, other routes stay immersive).
      */
     private fun applyWebSafeAreaInsets(insets: WindowInsetsCompat) {
         if (!::webView.isInitialized) return
-        val density = resources.displayMetrics.density
         val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+        val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
         val topPx = statusBars.top.coerceAtLeast(0)
-        // Sticky immersive hides system nav — do not reserve bottom inset.
-        val bottomPx = 0
+        val bottomPx = if (systemBarsVisible) navBars.bottom.coerceAtLeast(0) else 0
         val js =
             "(function(){" +
-                "var r=document.documentElement,b=document.body;" +
+                "var r=document.documentElement;" +
                 "r.style.setProperty('--sat','${topPx}px');" +
-                "r.style.setProperty('--sab','0px');" +
-                "r.classList.add('amynest-android-shell','amynest-native-shell','android-fullscreen');" +
-                "b.classList.add('android-fullscreen');" +
+                (if (bottomPx > 0) "r.style.setProperty('--sab','${bottomPx}px');" else "r.style.removeProperty('--sab');") +
+                "r.classList.add('amynest-android-shell','amynest-native-shell');" +
             "})();"
         webView.post { webView.evaluateJavascript(js, null) }
     }
 
-    private fun applyImmersiveSystemUi() {
+    /** Called from [SystemUiBridge] when the web route toggles dashboard chrome. */
+    fun setSystemBarsVisible(visible: Boolean) {
+        if (systemBarsVisible == visible) return
+        systemBarsVisible = visible
+        applySystemUiVisibility(visible)
+    }
+
+    private fun applySystemUiVisibility(showBars: Boolean) {
         supportActionBar?.hide()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.insetsController?.hide(
-                WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars(),
-            )
-            window.insetsController?.systemBarsBehavior =
-                WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            val controller = WindowInsetsControllerCompat(window, window.decorView)
+            if (showBars) {
+                controller.show(WindowInsetsCompat.Type.systemBars())
+            } else {
+                controller.hide(WindowInsetsCompat.Type.systemBars())
+                controller.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
         } else {
             @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    or View.SYSTEM_UI_FLAG_FULLSCREEN
-                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            )
+            window.decorView.systemUiVisibility = if (showBars) {
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            } else {
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            }
+        }
+        if (::webView.isInitialized) {
+            ViewCompat.requestApplyInsets(webView)
         }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) applyImmersiveSystemUi()
+        if (hasFocus) applySystemUiVisibility(systemBarsVisible)
     }
 
     // ── Notification permission ──────────────────────────────────────────────

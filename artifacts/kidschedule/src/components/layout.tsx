@@ -29,6 +29,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useAppHeaderHeight } from "@/hooks/use-app-header-height";
 import { prefetchRouteChunk } from "@/lib/route-chunk-preload";
 import { isLearningZoneRoute } from "@/lib/app-layout";
+import { syncAndroidSystemUi } from "@/lib/native-android-system-ui";
 function SmartParentBadge({
   className = ""
 }: {
@@ -153,6 +154,7 @@ export function Layout({
     safePathStartsWith(location, "/speech-coach") ||
     safePathStartsWith(location, "/audio-lessons");
   const isAssistantRoute = safePathStartsWithSegment(location, "/assistant");
+  const isDashboard = location === "/" || location === "/dashboard";
   const showDashboardChrome = location === "/dashboard";
   const canShowBack = !showDashboardChrome && location !== "/";
   const showMobileHeader = !isImmersiveRoute;
@@ -169,6 +171,15 @@ export function Layout({
       document.body.classList.remove("has-tabbar", "no-tabbar");
     };
   }, [showDashboardChrome]);
+
+  useEffect(() => {
+    document.body.classList.toggle("show-system-ui", isDashboard);
+    syncAndroidSystemUi(isDashboard);
+    return () => {
+      document.body.classList.remove("show-system-ui");
+      syncAndroidSystemUi(false);
+    };
+  }, [isDashboard]);
 
   const handleSignOut = () => {
     try {
