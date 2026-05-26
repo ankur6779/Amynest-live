@@ -24,8 +24,13 @@ if (!existsSync(configPath)) {
 
 const config = JSON.parse(readFileSync(configPath, "utf8"));
 config.plugins = config.plugins ?? {};
+// Default OFF for local/Xcode builds: production OTA manifest (e.g. 1.0.1) can
+// overwrite a fresh www/ bundle from Xcode and revert auth fixes. Enable only
+// in release CI: CAPACITOR_OTA_AUTO_UPDATE=true
+const otaAutoUpdate = process.env.CAPACITOR_OTA_AUTO_UPDATE === "true";
+
 config.plugins.CapacitorUpdater = {
-  autoUpdate: true,
+  autoUpdate: otaAutoUpdate,
   autoDeletePrevious: true,
   resetWhenUpdate: true,
   directUpdate: false,
@@ -41,4 +46,6 @@ if (config.server?.url) {
 }
 
 writeFileSync(configPath, `${JSON.stringify(config, null, "\t")}\n`, "utf8");
-console.log(`✅  CapacitorUpdater → ${config.plugins.CapacitorUpdater.updateUrl} (builtin ${bundleVersion})`);
+console.log(
+  `✅  CapacitorUpdater → ${config.plugins.CapacitorUpdater.updateUrl} (builtin ${bundleVersion}, autoUpdate=${otaAutoUpdate})`,
+);

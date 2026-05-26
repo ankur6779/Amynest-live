@@ -50,6 +50,7 @@ import { OnboardingStatusProvider, useOnboardingStatus } from "@/contexts/onboar
 import { AmyVoiceProvider } from "@/contexts/amy-voice-provider";
 import { AppInitGate } from "@/components/app-init-gate";
 import { CapacitorIosAuthPreload } from "@/components/capacitor-ios-auth-preload";
+import { AuthNavigationBridge } from "@/components/auth-navigation-bridge";
 import { CapacitorRoutePreload } from "@/components/capacitor-route-preload";
 import { NavigationHistoryGuard } from "@/components/navigation-history-guard";
 import { isCapacitorIosShell } from "@/lib/device-lite";
@@ -325,6 +326,24 @@ function FirebaseAuthBootstrap() {
   }, [isSignedIn, getToken]);
 
   useEffect(() => {
+    if (!isNativeAmyNestShell() || typeof window === "undefined") return;
+    const sync = () => {
+      void import("@/lib/firebase-auth-listener").then(
+        ({ forceSyncAuthFromCurrentUser, hasUsableAuthSession }) => {
+          if (hasUsableAuthSession()) forceSyncAuthFromCurrentUser();
+        },
+      );
+    };
+    sync();
+    window.addEventListener("focus", sync);
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      window.removeEventListener("focus", sync);
+      document.removeEventListener("visibilitychange", sync);
+    };
+  }, []);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     let cancelled = false;
     const resumePendingGoogleSignIn = () => {
@@ -445,6 +464,7 @@ function AppRoutes() {
             <ClientTelemetryBootstrap />
             <OAuthRedirectHandler />
             <CapacitorIosAuthPreload />
+            <AuthNavigationBridge />
             <CapacitorRoutePreload />
             <QueryClientCacheInvalidator />
             <ReferralAttributionBridge />
@@ -569,6 +589,9 @@ function AppCoreMountMarker() {
     appCoreInitDone = true;
     devLog("APPCORE MOUNTED (init once)");
     void initCapacitorOta();
+    void import("@/lib/firebase-native-probe").then(({ probeFirebaseOnNativeShell }) => {
+      void probeFirebaseOnNativeShell();
+    });
     installTtsGestureListener();
     void import("@/lib/admin-audio-ops").then(({ startAdminAudioOpsPolling }) => {
       startAdminAudioOpsPolling();

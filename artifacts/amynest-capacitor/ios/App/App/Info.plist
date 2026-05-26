@@ -91,6 +91,8 @@
 		<string>gstatic.com</string>
 		<string>google.com</string>
 		<string>firebaseapp.com</string>
+		<string>securetoken.googleapis.com</string>
+		<string>identitytoolkit.googleapis.com</string>
 		<string>www.gstatic.com</string>
 		<string>www.google.com</string>
 		<string>recaptcha.net</string>

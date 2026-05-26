@@ -23,6 +23,9 @@ export function isAllowedAppHostname(hostname: string): boolean {
 export function enforceProductionDomain(): "ok" | "redirecting" {
   if (typeof window === "undefined") return "ok";
 
+  const proto = (window.location.protocol || "").toLowerCase();
+  if (proto === "capacitor:" || proto === "ionic:") return "ok";
+
   if (redirectApexToCanonicalWww()) return "redirecting";
 
   const { hostname, pathname, search, hash } = window.location;

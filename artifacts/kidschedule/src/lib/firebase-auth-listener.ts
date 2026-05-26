@@ -205,7 +205,18 @@ export function refreshFirebaseAuthSnapshot(): void {
 export async function syncUserEmailVerificationFromServer(
   user: FbUser,
 ): Promise<FbUser> {
-  await user.reload();
+  try {
+    await user.reload();
+  } catch (err) {
+    if (isNativeAmyNestShell()) {
+      console.warn(
+        `${AUTH_TAG} reload skipped on native (using existing session)`,
+        err,
+      );
+    } else {
+      throw err;
+    }
+  }
   await user.getIdToken(true).catch(() => {});
   refreshFirebaseAuthSnapshot();
   return user;
@@ -222,4 +233,32 @@ export function subscribeAuthSnapshot(listener: SnapshotListener): () => void {
 
 export function getLatestAuthSnapshot(): AuthSnapshot {
   return latestSnapshot;
+}
+
+/** True when Firebase has a user the app can treat as signed in (OAuth / verified / bypass). */
+export function hasUsableAuthSession(): boolean {
+  try {
+    const snap = getLatestAuthSnapshot();
+    if (snap.authStatus === "authenticated" && snap.shim) return true;
+    return buildShimFromFirebaseUser(getFirebaseAuth().currentUser) !== null;
+  } catch {
+    return false;
+  }
+}
+
+/** Push currentUser into the global auth snapshot (clears boot timeout stuck state). */
+export function forceSyncAuthFromCurrentUser(): boolean {
+  try {
+    if (raceTimeoutId !== null) {
+      clearTimeout(raceTimeoutId);
+      raceTimeoutId = null;
+    }
+    firstAuthEventReceived = true;
+    const user = getFirebaseAuth().currentUser;
+    applyFirebaseUser(user);
+    const snap = getLatestAuthSnapshot();
+    return snap.authStatus === "authenticated" && snap.shim !== null;
+  } catch {
+    return false;
+  }
 }

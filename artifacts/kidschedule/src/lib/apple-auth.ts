@@ -213,7 +213,7 @@ export async function handleAppleLogin(): Promise<void> {
     if (isIosSimulator()) {
       throw Object.assign(
         new Error(
-          "Sign in with Apple is unreliable on the iOS Simulator. Use email (e.g. apple.review@amynest.in) or test on a real device.",
+          "Sign in with Apple often fails on the iOS Simulator. Use email (apple.review@amynest.in) or test Apple on a real device.",
         ),
         { code: "app/apple-simulator-unsupported" },
       );

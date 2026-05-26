@@ -9,6 +9,10 @@ export const ENABLE_APPLE_SIGN_IN = true;
 export const ENABLE_GOOGLE_SIGN_IN = false;
 export const ENABLE_PHONE_OTP = true;
 
+export function shouldShowPhoneOtp(): boolean {
+  return ENABLE_PHONE_OTP;
+}
+
 /** Apple button must always show in Capacitor iOS (App Store review). */
 export function shouldShowAppleSignIn(): boolean {
   if (ENABLE_APPLE_SIGN_IN) return true;

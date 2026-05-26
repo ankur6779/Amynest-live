@@ -10,6 +10,7 @@ import {
 } from "firebase/auth";
 import {
   canUseBrowserServiceWorkers,
+  isNativeAmyNestShell,
   useFirebaseIndexedDbPersistence,
 } from "@/lib/native-shell";
 import { firebaseWebDefaults } from "@/lib/firebase-web-defaults";
@@ -89,12 +90,14 @@ function createFirebaseAuth(app: FirebaseApp): Auth {
     ? indexedDBLocalPersistence
     : browserLocalPersistence;
 
+  const initOptions: Parameters<typeof initializeAuth>[1] = { persistence };
+  if (!isNativeAmyNestShell()) {
+    initOptions.popupRedirectResolver = browserPopupRedirectResolver;
+  }
+
   try {
     authPersistenceConfiguredViaInit = true;
-    return initializeAuth(app, {
-      persistence,
-      popupRedirectResolver: browserPopupRedirectResolver,
-    });
+    return initializeAuth(app, initOptions);
   } catch {
     /* Auth may already be initialized (HMR / double boot) */
   }
