@@ -1,9 +1,18 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { isCapacitorNative } from "@/lib/capacitor-native";
+import { isCapacitorIosShell } from "@/lib/device-lite";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 
 /** Applied to email/password/phone inputs on auth screens (native WebView text visibility). */
 export const AUTH_INPUT_CLASS = "amynest-auth-input";
+
+const AUTH_INPUT_SCROLL_MARGIN = 28;
 
 interface ViewportMetrics {
   height: number;
@@ -24,31 +33,71 @@ function readViewportMetrics(): ViewportMetrics {
   return { height, offsetTop, keyboardInset };
 }
 
+/** Extra clearance so focused fields sit above the keyboard (iOS safe-area / status bar). */
+function readKeyboardVerticalOffset(): number {
+  if (!isCapacitorIosShell()) return 0;
+  return 12;
+}
+
 function applyAuthViewportCssVars(metrics: ViewportMetrics) {
   const root = document.documentElement;
   root.style.setProperty("--vv-height", `${metrics.height}px`);
   root.style.setProperty("--vv-offset-top", `${metrics.offsetTop}px`);
   root.style.setProperty("--vh", `${metrics.height * 0.01}px`);
   root.style.setProperty("--auth-keyboard-inset", `${metrics.keyboardInset}px`);
+  root.style.setProperty(
+    "--auth-kav-offset",
+    `${readKeyboardVerticalOffset()}px`,
+  );
+}
+
+function isAuthField(el: EventTarget | null): el is HTMLInputElement | HTMLTextAreaElement {
+  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
+}
+
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(
+    target.closest(
+      'input, textarea, select, button, a, [role="button"], label, [contenteditable="true"]',
+    ),
+  );
 }
 
 /** Scroll a focused field into the visible area above the software keyboard. */
 export function scrollAuthInputIntoView(
   el: HTMLElement,
+  scrollContainer?: HTMLElement | null,
   behavior: ScrollBehavior = "smooth",
+  margin: number = AUTH_INPUT_SCROLL_MARGIN,
 ) {
   const run = () => {
     const vv = window.visualViewport;
-    const margin = 28;
-    if (vv) {
-      const rect = el.getBoundingClientRect();
-      const visibleTop = vv.offsetTop + margin;
-      const visibleBottom = vv.offsetTop + vv.height - margin;
-      if (rect.bottom > visibleBottom || rect.top < visibleTop) {
-        el.scrollIntoView({ behavior, block: "center", inline: "nearest" });
+    const visibleTop = (vv?.offsetTop ?? 0) + margin;
+    const visibleBottom =
+      (vv?.offsetTop ?? 0) + (vv?.height ?? window.innerHeight) - margin;
+    const rect = el.getBoundingClientRect();
+
+    if (rect.top >= visibleTop && rect.bottom <= visibleBottom) {
+      return;
+    }
+
+    if (scrollContainer) {
+      let delta = 0;
+      if (rect.bottom > visibleBottom) {
+        delta = rect.bottom - visibleBottom;
+      } else if (rect.top < visibleTop) {
+        delta = rect.top - visibleTop;
+      }
+      if (delta !== 0) {
+        scrollContainer.scrollTo({
+          top: scrollContainer.scrollTop + delta,
+          behavior,
+        });
       }
       return;
     }
+
     el.scrollIntoView({ behavior, block: "center", inline: "nearest" });
   };
 
@@ -64,21 +113,44 @@ export function scrollAuthInputIntoView(
 export function useNativeAuthKeyboard(
   enabled: boolean = isNativeAmyNestShell(),
 ): {
-  shellRef: RefObject<HTMLDivElement>;
+  kavRef: RefObject<HTMLDivElement>;
+  scrollRef: RefObject<HTMLDivElement>;
   keyboardOpen: boolean;
+  dismissKeyboard: () => void;
+  handleBackgroundTap: (event: React.MouseEvent | React.TouchEvent) => void;
 } {
-  const shellRef = useRef<HTMLDivElement>(null);
+  const kavRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   const scrollFocused = useCallback((behavior: ScrollBehavior = "smooth") => {
     const active = document.activeElement;
-    if (
-      active instanceof HTMLInputElement ||
-      active instanceof HTMLTextAreaElement
-    ) {
-      scrollAuthInputIntoView(active, behavior);
+    if (isAuthField(active)) {
+      scrollAuthInputIntoView(active, scrollRef.current, behavior);
     }
   }, []);
+
+  const dismissKeyboard = useCallback(() => {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement) {
+      active.blur();
+    }
+    if (isCapacitorNative()) {
+      void import("@capacitor/keyboard")
+        .then(({ Keyboard }) => Keyboard.hide())
+        .catch(() => {
+          /* optional native plugin */
+        });
+    }
+  }, []);
+
+  const handleBackgroundTap = useCallback(
+    (event: React.MouseEvent | React.TouchEvent) => {
+      if (isInteractiveTarget(event.target)) return;
+      dismissKeyboard();
+    },
+    [dismissKeyboard],
+  );
 
   const syncViewport = useCallback(() => {
     const metrics = readViewportMetrics();
@@ -106,7 +178,10 @@ export function useNativeAuthKeyboard(
       void import("@capacitor/keyboard")
         .then(({ Keyboard, KeyboardResize }) => {
           if (cancelled) return;
-          void Keyboard.setResizeMode({ mode: KeyboardResize.Body });
+          const mode = isCapacitorIosShell()
+            ? KeyboardResize.Body
+            : KeyboardResize.Native;
+          void Keyboard.setResizeMode({ mode });
           void Keyboard.addListener("keyboardDidShow", () => {
             syncViewport();
             scrollFocused("smooth");
@@ -125,34 +200,39 @@ export function useNativeAuthKeyboard(
         });
     }
 
-    const shell = shellRef.current;
     const onFocusIn = (event: FocusEvent) => {
       const target = event.target;
-      if (
-        !(target instanceof HTMLInputElement) &&
-        !(target instanceof HTMLTextAreaElement)
-      ) {
-        return;
-      }
+      if (!isAuthField(target)) return;
+      if (kavRef.current && !kavRef.current.contains(target)) return;
       syncViewport();
-      scrollAuthInputIntoView(target, "instant");
-      window.setTimeout(() => scrollAuthInputIntoView(target, "smooth"), 280);
+      scrollAuthInputIntoView(target, scrollRef.current, "instant");
+      window.setTimeout(
+        () => scrollAuthInputIntoView(target, scrollRef.current, "smooth"),
+        280,
+      );
     };
 
-    shell?.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusin", onFocusIn);
 
     return () => {
       cancelled = true;
       root.classList.remove("amynest-auth-active");
       root.style.removeProperty("--auth-keyboard-inset");
+      root.style.removeProperty("--auth-kav-offset");
       vv?.removeEventListener("resize", syncViewport);
       vv?.removeEventListener("scroll", syncViewport);
       window.removeEventListener("resize", syncViewport);
-      shell?.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusin", onFocusIn);
       removeKeyboardShow?.();
       removeKeyboardHide?.();
     };
   }, [enabled, scrollFocused, syncViewport]);
 
-  return { shellRef, keyboardOpen };
+  return {
+    kavRef,
+    scrollRef,
+    keyboardOpen,
+    dismissKeyboard,
+    handleBackgroundTap,
+  };
 }
