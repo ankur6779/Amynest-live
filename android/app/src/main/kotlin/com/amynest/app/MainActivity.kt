@@ -476,16 +476,16 @@ class MainActivity : AppCompatActivity() {
         if (!::webView.isInitialized) return
         val density = resources.displayMetrics.density
         val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-        val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
         val topPx = statusBars.top.coerceAtLeast(0)
-        // Immersive mode hides system bars — do not invent 48dp bottom inset when reported is 0.
-        val bottomPx = navBars.bottom.coerceIn(0, 96)
+        // Sticky immersive hides system nav — do not reserve bottom inset.
+        val bottomPx = 0
         val js =
             "(function(){" +
-                "var r=document.documentElement;" +
+                "var r=document.documentElement,b=document.body;" +
                 "r.style.setProperty('--sat','${topPx}px');" +
-                "r.style.setProperty('--sab','${bottomPx}px');" +
-                "r.classList.add('amynest-android-shell','amynest-native-shell');" +
+                "r.style.setProperty('--sab','0px');" +
+                "r.classList.add('amynest-android-shell','amynest-native-shell','android-fullscreen');" +
+                "b.classList.add('android-fullscreen');" +
             "})();"
         webView.post { webView.evaluateJavascript(js, null) }
     }
