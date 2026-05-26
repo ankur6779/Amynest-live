@@ -14,14 +14,15 @@ import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
 import {
   ENABLE_APPLE_SIGN_IN,
   ENABLE_GOOGLE_SIGN_IN,
-  ENABLE_PHONE_OTP,
+  shouldShowPhoneOtp,
 } from "@/lib/auth-feature-flags";
+import { navigateAfterAuth } from "@/lib/auth-navigation";
+import { ensureAuthContextSynced } from "@/lib/auth-session-sync";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import {
   AUTH_INPUT_CLASS,
   useNativeAuthKeyboard,
 } from "@/hooks/use-native-auth-keyboard";
-import { finishOAuthLoginFlow } from "@/lib/oauth-session-finalize";
 
 // ── Animation keyframes (same classes as sign-in — CSS idempotent in SPA) ────
 const SIGN_UP_CSS = `
@@ -380,7 +381,8 @@ export default function SignUpPage() {
           /* non-fatal */
         }
         if (isNativeAmyNestShell()) {
-          await finishOAuthLoginFlow("/");
+          await ensureAuthContextSynced();
+          navigateAfterAuth("/");
           return;
         }
         setLocation("/");
@@ -431,14 +433,14 @@ export default function SignUpPage() {
         <AppleSignInButton onError={msg => setError(msg)} />
       ) : null}
 
-      {ENABLE_PHONE_OTP ? (
+      {shouldShowPhoneOtp() ? (
         <div className="su-phone-wrapper">
           <PhoneRecaptchaPreload />
           <PhoneAuthFlow onError={msg => setError(msg)} />
         </div>
       ) : null}
 
-      {(ENABLE_GOOGLE_SIGN_IN || ENABLE_APPLE_SIGN_IN || ENABLE_PHONE_OTP) && (
+      {(ENABLE_GOOGLE_SIGN_IN || ENABLE_APPLE_SIGN_IN || shouldShowPhoneOtp()) && (
       <div style={{
       display: "flex",
       alignItems: "center",

@@ -15,13 +15,14 @@ import PhoneAuthFlow from "@/components/phone-auth-flow";
 import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
 import {
   ENABLE_GOOGLE_SIGN_IN,
-  ENABLE_PHONE_OTP,
   shouldShowAppleSignIn,
+  shouldShowPhoneOtp,
 } from "@/lib/auth-feature-flags";
+import { navigateAfterAuth } from "@/lib/auth-navigation";
+import { ensureAuthContextSynced } from "@/lib/auth-session-sync";
 import { getApiUrl } from "@/lib/api";
 import { shouldShowPermissionsSetupPromptAsync } from "@/lib/pwa-android-permissions";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
-import { finishOAuthLoginFlow } from "@/lib/oauth-session-finalize";
 import { resolvePostOAuthDestination } from "@/lib/post-verify-destination";
 import { isCapacitorIosShell, isLowMemoryIosClient } from "@/lib/device-lite";
 import {
@@ -492,15 +493,26 @@ export default function SignInPage() {
           /* non-fatal — auth listener will still pick up the session */
         }
       }
+      await ensureAuthContextSynced();
       const showPerms = await shouldShowPermissionsSetupPromptAsync();
+      let dest = showPerms ? "/notify-prompt?next=/" : "/";
+      if (!showPerms) {
+        try {
+          dest = await Promise.race([
+            resolvePostOAuthDestination(),
+            new Promise<string>((resolve) => {
+              window.setTimeout(() => resolve("/dashboard"), 4_000);
+            }),
+          ]);
+        } catch {
+          dest = "/dashboard";
+        }
+      }
       if (isNativeAmyNestShell()) {
-        const dest = showPerms
-          ? "/notify-prompt?next=/"
-          : await resolvePostOAuthDestination();
-        await finishOAuthLoginFlow(dest);
+        navigateAfterAuth(dest);
         return;
       }
-      setLocation(showPerms ? "/notify-prompt?next=/" : "/");
+      setLocation(dest);
     } catch (err: any) {
       setError(prettyAuthError(err));
     } finally {
@@ -701,7 +713,7 @@ export default function SignInPage() {
           <GoogleSignInButton onError={msg => setError(msg)} />
         ) : null}
 
-        {ENABLE_PHONE_OTP ? (
+        {shouldShowPhoneOtp() ? (
           <div className="si-phone-wrapper">
             <PhoneRecaptchaPreload />
             <PhoneAuthFlow onError={msg => setError(msg)} />
@@ -709,7 +721,7 @@ export default function SignInPage() {
         ) : null}
       </div>
 
-      {(ENABLE_GOOGLE_SIGN_IN || shouldShowAppleSignIn() || ENABLE_PHONE_OTP) && (
+      {(ENABLE_GOOGLE_SIGN_IN || shouldShowAppleSignIn() || shouldShowPhoneOtp()) && (
       <div style={{
       display: "flex",
       alignItems: "center",

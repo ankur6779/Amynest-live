@@ -7,6 +7,10 @@ import {
   useOnboardingStatus,
 } from "@/contexts/onboarding-status-context";
 import { devLog } from "@/lib/dev-log";
+import {
+  forceSyncAuthFromCurrentUser,
+  hasUsableAuthSession,
+} from "@/lib/firebase-auth-listener";
 
 // Hard ceiling: even if the onboarding query is still retrying after this
 // many ms, we let the app render. The page-level guards (HomeRedirect,
@@ -40,8 +44,14 @@ export function AppInitGate({ children }: { children: ReactNode }) {
   // Note: no state read inside the effect that depends on `isAppReady` itself
   // (would cause the BAD pattern called out in the bug report).
   useEffect(() => {
+    if (authStatus === "timeout" && hasUsableAuthSession()) {
+      forceSyncAuthFromCurrentUser();
+    }
+  }, [authStatus]);
+
+  useEffect(() => {
     if (isAppReady) return;
-    if (authStatus === "timeout") return;
+    if (authStatus === "timeout" && !hasUsableAuthSession()) return;
     if (authLoading) return;
     if (setupBootLoading) return;
     setIsAppReady(true);
@@ -75,7 +85,7 @@ export function AppInitGate({ children }: { children: ReactNode }) {
     );
   }, [authLoading, authStatus, user?.id, ready, setupBootLoading, forcedReady]);
 
-  if (authStatus === "timeout" && !forcedReady) {
+  if (authStatus === "timeout" && !forcedReady && !hasUsableAuthSession()) {
     return (
       <AppFallbackUi
         title="Sign-in check timed out"

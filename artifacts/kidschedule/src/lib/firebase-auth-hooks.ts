@@ -1,5 +1,10 @@
-import { useContext } from "react";
+import { useContext, useSyncExternalStore } from "react";
 import { AuthContext, type AuthContextValue, type ShimUser } from "./firebase-auth-context";
+import {
+  getLatestAuthSnapshot,
+  hasUsableAuthSession,
+  subscribeAuthSnapshot,
+} from "./firebase-auth-listener";
 
 function useCtx(): AuthContextValue {
   const ctx = useContext(AuthContext);
@@ -23,10 +28,21 @@ export function useAuth(): {
   signOut: AuthContextValue["signOut"];
 } {
   const c = useCtx();
+  const snapshotSignedIn = useSyncExternalStore(
+    subscribeAuthSnapshot,
+    () => {
+      const snap = getLatestAuthSnapshot();
+      return snap.authStatus === "authenticated" && snap.shim !== null;
+    },
+    () => false,
+  );
+  const isSignedIn =
+    !!c.user || (c.isLoaded && (snapshotSignedIn || hasUsableAuthSession()));
+
   return {
     isLoaded: c.isLoaded,
     authStatus: c.authStatus,
-    isSignedIn: !!c.user,
+    isSignedIn,
     userId: c.user?.id ?? null,
     sessionId: c.user?.id ?? null,
     getToken: c.getToken,

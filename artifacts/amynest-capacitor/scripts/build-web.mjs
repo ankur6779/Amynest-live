@@ -1,7 +1,20 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+function loadEnvFile(path) {
+  if (!existsSync(path)) return {};
+  const out = {};
+  for (const line of readFileSync(path, "utf8").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq <= 0) continue;
+    out[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1).trim();
+  }
+  return out;
+}
 
 function readReplitRevenueCatIosKey(root) {
   try {
@@ -17,6 +30,10 @@ function readReplitRevenueCatIosKey(root) {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "../../..");
+const capacitorEnv = {
+  ...loadEnvFile(resolve(repoRoot, ".env")),
+  ...loadEnvFile(resolve(__dirname, "..", ".env")),
+};
 
 const run = (command, args, options = {}) => {
   const result = spawnSync(command, args, {
@@ -58,6 +75,11 @@ run("pnpm", ["run", "build:web"], {
     PORT: "3000",
     VITE_AMYNEST_ENV: "production",
     VITE_AMYNEST_CAPACITOR_IOS_BUILD: "true",
+    VITE_FIREBASE_API_KEY: capacitorEnv.VITE_FIREBASE_API_KEY,
+    VITE_FIREBASE_AUTH_DOMAIN: capacitorEnv.VITE_FIREBASE_AUTH_DOMAIN,
+    VITE_FIREBASE_PROJECT_ID: capacitorEnv.VITE_FIREBASE_PROJECT_ID,
+    VITE_FIREBASE_APP_ID: capacitorEnv.VITE_FIREBASE_APP_ID,
+    VITE_FIREBASE_MESSAGING_SENDER_ID: capacitorEnv.VITE_FIREBASE_MESSAGING_SENDER_ID,
     ...(revenueCatIosKey ? { VITE_REVENUECAT_IOS_API_KEY: revenueCatIosKey } : {}),
   },
 });

@@ -1,27 +1,20 @@
-import { spaNavigateAfterSignIn } from "@/lib/auth-native-navigation";
+import { navigateAfterAuth } from "@/lib/auth-navigation";
+import { ensureAuthContextSynced } from "@/lib/auth-session-sync";
 import {
   ensureFirebaseAuthPersistence,
   getFirebaseAuth,
 } from "@/lib/firebase";
 import { refreshFirebaseAuthSnapshot } from "@/lib/firebase-auth-listener";
 import { resolvePostOAuthDestination } from "@/lib/post-verify-destination";
-import { waitForAuthContextAuthenticated } from "@/lib/wait-for-auth-context";
-import { waitForFirebaseUser } from "@/lib/wait-for-firebase-user";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import type { User, UserCredential } from "firebase/auth";
 
-const NATIVE_AUTH_CONTEXT_WAIT_MS = 8_000;
-const WEB_AUTH_CONTEXT_WAIT_MS = 10_000;
+const NATIVE_SYNC_TIMEOUT_MS = 15_000;
+const WEB_SYNC_TIMEOUT_MS = 10_000;
 
-/** Navigate after OAuth — SPA on Capacitor, full load on web when needed. */
+/** @deprecated Use navigateAfterAuth */
 export function navigateAfterOAuthSignIn(destination: string): void {
-  if (typeof window === "undefined") return;
-  const path = destination.startsWith("/") ? destination : `/${destination}`;
-  if (isNativeAmyNestShell()) {
-    spaNavigateAfterSignIn(path);
-    return;
-  }
-  window.location.assign(`${window.location.origin}${path}`);
+  navigateAfterAuth(destination);
 }
 
 export async function finalizeOAuthCredentialSignIn(
@@ -30,53 +23,39 @@ export async function finalizeOAuthCredentialSignIn(
   await ensureFirebaseAuthPersistence();
   await result.user.getIdToken(true);
   refreshFirebaseAuthSnapshot();
-  const user = (await waitForFirebaseUser(10_000)) ?? result.user;
-  await waitForAuthContextAuthenticated(10_000).catch(() => {
-    refreshFirebaseAuthSnapshot();
-  });
+  await ensureAuthContextSynced(
+    isNativeAmyNestShell() ? NATIVE_SYNC_TIMEOUT_MS : WEB_SYNC_TIMEOUT_MS,
+  );
   if (!getFirebaseAuth().currentUser) {
     throw Object.assign(
       new Error("Sign-in session could not be established. Please try again."),
       { code: "app/auth-session-lost" },
     );
   }
-  return user;
-}
-
-function assertFirebaseSessionOrThrow(): void {
-  refreshFirebaseAuthSnapshot();
-  if (!getFirebaseAuth().currentUser) {
-    throw Object.assign(
-      new Error("Sign-in session could not be established. Please try again."),
-      { code: "app/auth-session-lost" },
-    );
-  }
+  return result.user;
 }
 
 export async function finishOAuthLoginFlow(
   destination?: string,
 ): Promise<string> {
-  const waitMs = isNativeAmyNestShell()
-    ? NATIVE_AUTH_CONTEXT_WAIT_MS
-    : WEB_AUTH_CONTEXT_WAIT_MS;
-
-  refreshFirebaseAuthSnapshot();
-  await waitForAuthContextAuthenticated(waitMs).catch(() => {
-    refreshFirebaseAuthSnapshot();
-  });
-  assertFirebaseSessionOrThrow();
+  await ensureAuthContextSynced(
+    isNativeAmyNestShell() ? NATIVE_SYNC_TIMEOUT_MS : WEB_SYNC_TIMEOUT_MS,
+  );
 
   let dest = destination;
   if (!dest) {
     try {
-      dest = await resolvePostOAuthDestination();
+      dest = await Promise.race([
+        resolvePostOAuthDestination(),
+        new Promise<string>((resolve) => {
+          window.setTimeout(() => resolve("/dashboard"), 5_000);
+        }),
+      ]);
     } catch {
       dest = "/dashboard";
     }
   }
 
-  if (isNativeAmyNestShell()) {
-    navigateAfterOAuthSignIn(dest);
-  }
+  navigateAfterAuth(dest);
   return dest;
 }
