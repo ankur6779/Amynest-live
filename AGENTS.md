@@ -35,5 +35,6 @@ DATABASE_URL=postgresql://amynest:amynest@localhost:5432/amynest_dev pnpm db:pus
 - The `assertCriticalEnvAtBoot()` in the API server will `process.exit(1)` if `DATABASE_URL` is missing. Always ensure it is set before starting the API.
 - Vite cache can become stale after `pnpm install`. If you see "splash then blank screen", run `pnpm clean:vite` or `pnpm reset`.
 - Redis is optional in dev — BullMQ falls back to in-memory processing. The AI worker (`pnpm --filter @workspace/api-server run worker:start`) is also optional.
-- Some API and web test failures are pre-existing (routine generation tests, golden voice tests). These are not caused by environment setup.
-- The `typecheck` for api-server and kidschedule both reference `lib/study-zone/src/topic-practice.ts` which has a pre-existing type error (`Level` type missing values 9, 10).
+- `abacus.test.ts` and `speech.test.ts` use `--experimental-test-module-mocks` which has issues on Node 20 (tests cancelled by parent). This is a known Node compatibility issue.
+- 3 kidschedule vitest files (`hub-support-utils`, `routine-timeline-ui`, `safe-import`) fail with Vite module resolution errors (0 test assertions fail). These are import setup issues, not test logic failures.
+- The full `pnpm run typecheck` may show pre-existing errors in `lib/content-orchestration` and `lib/phonics-curriculum`. The lib-level typecheck (`pnpm run typecheck:libs`) and scripts typecheck pass clean.
