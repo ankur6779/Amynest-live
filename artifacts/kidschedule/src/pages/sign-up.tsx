@@ -17,6 +17,10 @@ import {
   ENABLE_PHONE_OTP,
 } from "@/lib/auth-feature-flags";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
+import {
+  AUTH_INPUT_CLASS,
+  useNativeAuthKeyboard,
+} from "@/hooks/use-native-auth-keyboard";
 import { finishOAuthLoginFlow } from "@/lib/oauth-session-finalize";
 
 // ── Animation keyframes (same classes as sign-in — CSS idempotent in SPA) ────
@@ -243,17 +247,21 @@ function AuthShell({
     t
   } = useTranslation();
   const nativeShell = isNativeAmyNestShell();
-  return <div style={{
-    minHeight: "100dvh",
+  const { shellRef, keyboardOpen } = useNativeAuthKeyboard(nativeShell);
+  return <div
+    ref={nativeShell ? shellRef : undefined}
+    className={nativeShell ? `amynest-auth-shell${keyboardOpen ? " amynest-auth-shell--keyboard" : ""}` : undefined}
+    style={{
+    minHeight: nativeShell ? undefined : "100dvh",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: nativeShell ? "flex-start" : "center",
-    padding: nativeShell ? "max(16px, env(safe-area-inset-top)) 16px 32px" : "40px 16px",
+    padding: nativeShell ? "max(16px, env(safe-area-inset-top)) 16px 0" : "40px 16px",
     background: ["radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)", "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)"].join(", "),
     position: "relative",
     overflowX: "hidden",
-    overflowY: nativeShell ? "auto" : "hidden",
+    overflowY: nativeShell ? undefined : "hidden",
     WebkitOverflowScrolling: nativeShell ? "touch" : undefined,
   }}>
       <style>{SIGN_UP_CSS}</style>
@@ -278,10 +286,8 @@ function AuthShell({
       zIndex: 1
     }}>
 
-        {/* Neon ring hero */}
+        <div className={nativeShell ? "amynest-auth-hero" : undefined}>
         <NeonRingHero />
-
-        {/* Floating platform glow */}
         <div style={{
         width: 110,
         height: 18,
@@ -290,6 +296,7 @@ function AuthShell({
         filter: "blur(10px)",
         pointerEvents: "none"
       }} />
+        </div>
 
         {/* Card */}
         <div style={{
@@ -471,7 +478,7 @@ export default function SignUpPage() {
         }}>
             {t("screens.sign_up.name_label")}
           </label>
-          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={t("screens.sign_up.name_placeholder")} style={INPUT_STYLE} onFocus={glowFocus} onBlur={glowBlur} />
+          <input type="text" className={AUTH_INPUT_CLASS} value={name} onChange={e => setName(e.target.value)} placeholder={t("screens.sign_up.name_placeholder")} style={INPUT_STYLE} onFocus={glowFocus} onBlur={glowBlur} />
         </div>
 
         <div>
@@ -484,7 +491,7 @@ export default function SignUpPage() {
         }}>
             {t("screens.sign_up.email_label")}
           </label>
-          <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={t("screens.sign_up.email_placeholder")} style={INPUT_STYLE} onFocus={glowFocus} onBlur={glowBlur} />
+          <input type="email" required className={AUTH_INPUT_CLASS} value={email} onChange={e => setEmail(e.target.value)} placeholder={t("screens.sign_up.email_placeholder")} style={INPUT_STYLE} onFocus={glowFocus} onBlur={glowBlur} />
         </div>
 
         <div>
@@ -500,7 +507,7 @@ export default function SignUpPage() {
           <div style={{
           position: "relative"
         }}>
-            <input type={showPass ? "text" : "password"} required minLength={6} value={password} onChange={e => setPassword(e.target.value)} placeholder={t("screens.sign_up.password_placeholder")} style={{
+            <input type={showPass ? "text" : "password"} required className={AUTH_INPUT_CLASS} minLength={6} value={password} onChange={e => setPassword(e.target.value)} placeholder={t("screens.sign_up.password_placeholder")} style={{
             ...INPUT_STYLE,
             paddingRight: "44px"
           }} onFocus={glowFocus} onBlur={glowBlur} />

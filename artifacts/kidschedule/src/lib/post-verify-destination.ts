@@ -36,7 +36,7 @@ async function resolvePostAuthDestinationWithToken(
     }
     return "/dashboard";
   } catch {
-    return "/";
+    return getFirebaseAuth().currentUser ? "/dashboard" : "/";
   }
 }
 

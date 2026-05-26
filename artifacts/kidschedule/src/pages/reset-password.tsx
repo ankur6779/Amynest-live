@@ -8,6 +8,11 @@ import {
 import { firebaseAuth } from "@/lib/firebase";
 import { formatAuthErrorForUi, logFirebaseAuthError } from "@/lib/firebase-auth-error";
 import { parseFirebaseActionParams } from "@/lib/firebase-action-params";
+import { isNativeAmyNestShell } from "@/lib/native-shell";
+import {
+  AUTH_INPUT_CLASS,
+  useNativeAuthKeyboard,
+} from "@/hooks/use-native-auth-keyboard";
 
 type PageState = "loading" | "invalid" | "form" | "success";
 
@@ -114,15 +119,22 @@ export default function ResetPasswordPage() {
   const canSubmit =
     password.length >= 6 && confirm.length >= 6 && password === confirm && !busy;
 
+  const nativeShell = isNativeAmyNestShell();
+  const { shellRef } = useNativeAuthKeyboard(nativeShell);
+
   return (
     <div
+      ref={nativeShell ? shellRef : undefined}
+      className={nativeShell ? "amynest-auth-shell" : undefined}
       style={{
-        minHeight: "100dvh",
+        minHeight: nativeShell ? undefined : "100dvh",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
-        padding: "40px 16px",
+        justifyContent: nativeShell ? "flex-start" : "center",
+        padding: nativeShell
+          ? "max(16px, env(safe-area-inset-top)) 16px 0"
+          : "40px 16px",
         background: [
           "radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)",
           "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)",
@@ -291,6 +303,7 @@ export default function ResetPasswordPage() {
               <div style={{ position: "relative", marginBottom: 14 }}>
                 <input
                   type={showPass ? "text" : "password"}
+                  className={AUTH_INPUT_CLASS}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="new-password"
@@ -330,6 +343,7 @@ export default function ResetPasswordPage() {
               </label>
               <input
                 type={showPass ? "text" : "password"}
+                className={AUTH_INPUT_CLASS}
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 autoComplete="new-password"

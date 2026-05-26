@@ -4,6 +4,7 @@ import { firebaseAuth } from "@/lib/firebase";
 import { useTranslation } from "react-i18next";
 import { formatAuthErrorForUi, logFirebaseAuthError } from "@/lib/firebase-auth-error";
 import { finalizeOAuthCredentialSignIn, finishOAuthLoginFlow } from "@/lib/oauth-session-finalize";
+import { AUTH_INPUT_CLASS } from "@/hooks/use-native-auth-keyboard";
 import {
   buildPhoneOtpBrowserUrl,
   detectDefaultCountry,
@@ -130,6 +131,7 @@ function CountryPicker({
           <input
             ref={inputRef}
             type="text"
+            className={AUTH_INPUT_CLASS}
             placeholder={t("components.phone_auth_flow.country_picker_search_placeholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -463,6 +465,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
             <input
               type="tel"
+              className={AUTH_INPUT_CLASS}
               value={phone}
               onChange={(e) => {
                 setPhone(e.target.value.replace(/\D/g, "").slice(0, 15));
@@ -558,6 +561,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
         <input
           type="tel"
+          className={AUTH_INPUT_CLASS}
           value={otp}
           onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
           placeholder="• • • • • •"
