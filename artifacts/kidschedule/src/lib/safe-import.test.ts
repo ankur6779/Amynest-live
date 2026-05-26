@@ -1,5 +1,4 @@
-import { describe, it } from "node:test";
-import assert from "node:assert/strict";
+import { describe, it, expect } from "vitest";
 import { failedModuleUrl } from "./chunk-url.js";
 
 describe("failedModuleUrl", () => {
@@ -7,8 +6,7 @@ describe("failedModuleUrl", () => {
     const err = new TypeError(
       "Failed to fetch dynamically imported module: https://www.amynest.in/assets/dashboard-Ct3TCpJH.js",
     );
-    assert.equal(
-      failedModuleUrl(err),
+    expect(failedModuleUrl(err)).toBe(
       "https://www.amynest.in/assets/dashboard-Ct3TCpJH.js",
     );
   });
