@@ -117,6 +117,9 @@ cd android
 Output:
 - APK: `app/build/outputs/apk/release/app-release.apk`
 - AAB: `app/build/outputs/bundle/release/app-release.aab`
+- Convenience copies: `releases/amynest-<version>-<versionCode>.{aab,apk}` after a local release build
+
+Signing keystore (not in git): copy `Amynest` from `artifacts/kidschedule-android/` backup into `android/keystore/Amynest`, then create `android/keystore.properties` (see `artifacts/kidschedule-android/keystore.properties` for field names).
 
 ---
 

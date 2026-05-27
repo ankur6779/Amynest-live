@@ -12,3 +12,10 @@ local.properties
 # google-services.json is REQUIRED at build time but contains project
 # secrets (API keys). Add it manually after cloning — see README.md.
 app/google-services.json
+
+# Release signing — never commit
+keystore.properties
+keystore/
+releases/
+*.jks
+Amynest
