@@ -9,7 +9,6 @@ import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.webkit.JavaScriptReplyProxy
-import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -44,29 +43,39 @@ class AuthBridge(
 
     /** Called from MainActivity's ActivityResultLauncher after the account picker closes. */
     fun onGoogleSignInResult(resultCode: Int, data: Intent?) {
-        val pending = pendingSignInReply ?: return
+        val pending = pendingSignInReply
         pendingSignInReply = null
-        val (replyProxy, cbId) = pending
+        val replyProxy = pending?.first
+        val cbId = pending?.second?.takeIf { it.isNotBlank() }
+            ?: readPendingSignInCbId(activityRef.get())
+        clearPendingSignInCbId(activityRef.get())
 
         if (resultCode != Activity.RESULT_OK || data == null) {
-            resolveError(replyProxy, cbId, "user_cancelled")
+            if (replyProxy != null && !cbId.isNullOrBlank()) {
+                resolveError(replyProxy, cbId, "user_cancelled")
+            }
             return
         }
 
         try {
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             val account = task.getResult(ApiException::class.java)
-            resolveGoogleAccount(replyProxy, cbId, account)
+            deliverGoogleSignInSuccess(replyProxy, cbId, account)
         } catch (e: ApiException) {
             Log.w(TAG, "Google sign-in ApiException status=${e.statusCode}", e)
-            when (e.statusCode) {
-                12501 -> resolveError(replyProxy, cbId, "user_cancelled")
-                10 -> resolveError(replyProxy, cbId, "developer_error")
-                else -> resolveError(replyProxy, cbId, e.message ?: "google_sign_in_failed")
+            val error = when (e.statusCode) {
+                12501 -> "user_cancelled"
+                10 -> "developer_error"
+                else -> e.message ?: "google_sign_in_failed"
+            }
+            if (replyProxy != null && !cbId.isNullOrBlank()) {
+                resolveError(replyProxy, cbId, error)
             }
         } catch (t: Throwable) {
             Log.e(TAG, "Google sign-in failed", t)
-            resolveError(replyProxy, cbId, t.message ?: "google_sign_in_failed")
+            if (replyProxy != null && !cbId.isNullOrBlank()) {
+                resolveError(replyProxy, cbId, t.message ?: "google_sign_in_failed")
+            }
         }
     }
 
@@ -141,6 +150,7 @@ class AuthBridge(
         try {
             val client = ensureGoogleClient(activity)
             pendingSignInReply = replyProxy to cbId
+            persistPendingSignInCbId(activity, cbId)
             launcher.invoke(client.signInIntent)
         } catch (t: Throwable) {
             pendingSignInReply = null
@@ -165,30 +175,56 @@ class AuthBridge(
         }
     }
 
-    private fun resolveGoogleAccount(
-        replyProxy: JavaScriptReplyProxy,
-        cbId: String,
+    /**
+     * After the Google account picker closes, always push the ID token into the WebView.
+     * [JavaScriptReplyProxy] from WebMessageListener is often invalid after the sign-in
+     * Activity finishes — inject + pending token recovery must still run.
+     */
+    private fun deliverGoogleSignInSuccess(
+        replyProxy: JavaScriptReplyProxy?,
+        cbId: String?,
         account: GoogleSignInAccount?,
     ) {
         if (account == null) {
-            resolveError(replyProxy, cbId, "google_account_missing")
+            if (replyProxy != null && !cbId.isNullOrBlank()) {
+                resolveError(replyProxy, cbId, "google_account_missing")
+            }
             return
         }
         val idToken = account.idToken
         if (idToken.isNullOrBlank()) {
-            resolveError(replyProxy, cbId, "no_id_token")
+            if (replyProxy != null && !cbId.isNullOrBlank()) {
+                resolveError(replyProxy, cbId, "no_id_token")
+            }
             return
         }
+
         activityRef.get()?.let { persistPendingGoogleIdToken(it, idToken) }
-        resolve(
-            replyProxy,
-            cbId,
-            JSONObject()
-                .put("idToken", idToken)
-                .put("email", account.email ?: JSONObject.NULL)
-                .put("displayName", account.displayName ?: JSONObject.NULL)
-                .put("photoUrl", account.photoUrl?.toString() ?: JSONObject.NULL),
-        )
+        deliverPendingGoogleAuthIfAny()
+
+        val data = JSONObject()
+            .put("idToken", idToken)
+            .put("email", account.email ?: JSONObject.NULL)
+            .put("displayName", account.displayName ?: JSONObject.NULL)
+            .put("photoUrl", account.photoUrl?.toString() ?: JSONObject.NULL)
+
+        if (replyProxy != null && !cbId.isNullOrBlank()) {
+            resolve(replyProxy, cbId, data)
+        } else if (!cbId.isNullOrBlank()) {
+            val webView = webViewRef.get()
+            if (webView != null) {
+                val message = JSONObject()
+                    .put("ok", true)
+                    .put("cbId", cbId)
+                    .put("data", data)
+                    .toString()
+                webView.post { postAuthReply(webView, message) }
+            } else {
+                Log.w(TAG, "Google sign-in ok but WebView missing — pending token only")
+            }
+        } else {
+            Log.w(TAG, "Google sign-in ok but cbId missing — pending token only")
+        }
     }
 
     private fun resolve(replyProxy: JavaScriptReplyProxy, cbId: String, data: JSONObject) {
@@ -204,11 +240,7 @@ class AuthBridge(
         val message = payload.toString()
         val webView = webViewRef.get()
         webView?.post {
-            try {
-                replyProxy.postMessage(message)
-            } catch (t: Throwable) {
-                Log.w(TAG, "replyProxy.postMessage failed — using JS inject", t)
-            }
+            // Always inject — replyProxy is unreliable after Google Sign-In Activity returns.
             postAuthReply(webView, message)
         } ?: Log.w(TAG, "sendRaw skipped — WebView unavailable (cbId=$cbId)")
     }
@@ -274,6 +306,7 @@ class AuthBridge(
         private const val TAG = "AuthBridge"
         private const val PREFS = "amynest_auth_bridge"
         private const val KEY_PENDING_GOOGLE_ID_TOKEN = "pending_google_id_token"
+        private const val KEY_PENDING_SIGN_IN_CB_ID = "pending_google_sign_in_cb_id"
         const val JS_OBJECT_NAME = "AmyNestAuthNative"
         const val JS_INJECT_NAME = "AmyNestAuthInject"
         const val BRIDGE_VERSION = "1.0.0"
@@ -297,6 +330,28 @@ class AuthBridge(
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .edit()
                 .remove(KEY_PENDING_GOOGLE_ID_TOKEN)
+                .remove(KEY_PENDING_SIGN_IN_CB_ID)
+                .apply()
+        }
+
+        private fun persistPendingSignInCbId(context: Context?, cbId: String) {
+            if (context == null || cbId.isBlank()) return
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .putString(KEY_PENDING_SIGN_IN_CB_ID, cbId)
+                .apply()
+        }
+
+        private fun readPendingSignInCbId(context: Context?): String? =
+            context?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                ?.getString(KEY_PENDING_SIGN_IN_CB_ID, null)
+                ?.takeIf { it.isNotBlank() }
+
+        private fun clearPendingSignInCbId(context: Context?) {
+            if (context == null) return
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .remove(KEY_PENDING_SIGN_IN_CB_ID)
                 .apply()
         }
 
@@ -304,27 +359,8 @@ class AuthBridge(
             val bridge = AuthBridge(activity, webView)
             installInjectBridge(webView, bridge)
             installDocumentStartPolyfill(webView)
-
-            if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
-                Log.w(TAG, "WebMessageListener unsupported — using inject bridge only")
-                return bridge
-            }
-
-            try {
-                WebViewCompat.addWebMessageListener(
-                    webView,
-                    JS_OBJECT_NAME,
-                    ALLOWED_ORIGINS,
-                ) { _: WebView, message: WebMessageCompat,
-                    sourceOrigin: Uri, _: Boolean,
-                    replyProxy: JavaScriptReplyProxy ->
-                    val data = message.data ?: return@addWebMessageListener
-                    bridge.handleMessage(data, sourceOrigin, replyProxy)
-                }
-                Log.d(TAG, "Auth bridge installed (origins=$ALLOWED_ORIGINS version=$BRIDGE_VERSION)")
-            } catch (t: Throwable) {
-                Log.e(TAG, "addWebMessageListener failed — inject bridge remains active", t)
-            }
+            // Inject-only: WebMessageListener replyProxy breaks after Google account picker Activity.
+            Log.d(TAG, "Auth bridge installed (inject-only version=$BRIDGE_VERSION)")
             return bridge
         }
 

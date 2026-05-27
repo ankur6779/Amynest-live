@@ -116,6 +116,8 @@ export function prettyAuthError(err: unknown): string {
       return "Google Sign-In is not ready. Close and reopen the app, then try again.";
     case "app/google-native-required":
       return "Google Sign-In must use the in-app account picker. Update the app from the Play Store.";
+    case "app/google-sign-in-incomplete":
+      return "Google sign-in did not finish after choosing an account. Close and reopen the app, then try again.";
     case "app/google-no-id-token":
       return "Google sign-in did not complete. Please try again.";
     case "app/apple-not-configured":
