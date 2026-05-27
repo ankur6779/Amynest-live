@@ -4,6 +4,8 @@ import { useLocation } from "wouter";
 import { handleGoogleLogin } from "@/lib/google-auth";
 import { prettyAuthError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { shouldShowGoogleSignIn } from "@/lib/auth-feature-flags";
+import { navigateAfterAuth } from "@/lib/auth-navigation";
+import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 
 type Props = {
   onError?: (message: string) => void;
@@ -46,13 +48,17 @@ export function GoogleSignInButton({ onError, className }: Props) {
     try {
       const destination = await handleGoogleLogin();
       if (typeof destination === "string" && destination) {
+        console.info("[amynest:google-sign-in-button] navigating", { destination });
         setLocation(destination);
-        setTimeout(() => {
-          const current = window.location.pathname;
-          if (current.includes("/sign-in") || current.includes("/sign-up")) {
-            window.location.assign(`${window.location.origin}${destination}`);
-          }
-        }, 2500);
+        navigateAfterAuth(destination);
+        if (isNativeAmyNestAndroidWrapper()) {
+          window.setTimeout(() => {
+            const path = window.location.pathname;
+            if (path.includes("/sign-in") || path.includes("/sign-up")) {
+              window.location.assign(`${window.location.origin}${destination}`);
+            }
+          }, 600);
+        }
       }
     } catch (err: unknown) {
       logFirebaseAuthError("google:sign-in", err);

@@ -197,7 +197,9 @@ class AuthBridge(
         }
 
         activityRef.get()?.let { persistPendingGoogleIdToken(it, idToken) }
+        // Inject token + bridge reply (retries — evaluateJavascript can fail right after picker).
         deliverPendingGoogleAuthIfAny()
+        schedulePendingGoogleAuthRetries()
 
         val data = JSONObject()
             .put("idToken", idToken)
@@ -258,14 +260,30 @@ class AuthBridge(
         val webView = webViewRef.get() ?: return
         val activity = activityRef.get() ?: return
         val token = readPendingGoogleIdToken(activity) ?: return
-        webView.post {
-            val js =
-                "(function(){try{" +
-                    "window.__AMYNEST_PENDING_GOOGLE_ID_TOKEN=${JSONObject.quote(token)};" +
-                    "window.dispatchEvent(new Event('amynest-google-auth-pending'));" +
-                    "}catch(e){}})();"
-            webView.evaluateJavascript(js, null)
-            Log.d(TAG, "Delivered pending Google ID token to WebView")
+        injectPendingGoogleIdTokenJs(webView, token)
+    }
+
+    /** Re-post token injection — picker Activity often breaks the first evaluateJavascript. */
+    private fun schedulePendingGoogleAuthRetries() {
+        val webView = webViewRef.get() ?: return
+        val delaysMs = longArrayOf(150L, 400L, 900L)
+        for (delay in delaysMs) {
+            webView.postDelayed({
+                val activity = activityRef.get() ?: return@postDelayed
+                val token = readPendingGoogleIdToken(activity) ?: return@postDelayed
+                injectPendingGoogleIdTokenJs(webView, token)
+            }, delay)
+        }
+    }
+
+    private fun injectPendingGoogleIdTokenJs(webView: WebView, token: String) {
+        val js =
+            "(function(){try{" +
+                "window.__AMYNEST_PENDING_GOOGLE_ID_TOKEN=${JSONObject.quote(token)};" +
+                "window.dispatchEvent(new Event('amynest-google-auth-pending'));" +
+                "}catch(e){console.error('[AuthBridge] pending token inject failed',e);}})();"
+        webView.evaluateJavascript(js) { result ->
+            Log.d(TAG, "Pending Google ID token inject result=$result")
         }
     }
 
@@ -299,21 +317,28 @@ class AuthBridge(
     }
 
     private fun postAuthReply(webView: WebView, message: String) {
+        val js =
+            "(function(){try{" +
+                "var p=JSON.parse(${JSONObject.quote(message)});" +
+                "if(window.AmyNestAuthNative&&window.AmyNestAuthNative.onmessage){" +
+                "window.AmyNestAuthNative.onmessage({data:JSON.stringify(p)});" +
+                "}" +
+                "window.dispatchEvent(new CustomEvent('amynest-google-auth-bridge-reply',{detail:p}));" +
+                "}catch(e){console.error('[AuthBridge] bridge reply failed',e);}})();"
         webView.post {
             try {
-                val js =
-                    "(function(){try{" +
-                        "var p=JSON.parse(${JSONObject.quote(message)});" +
-                        "if(window.AmyNestAuthNative&&window.AmyNestAuthNative.onmessage){" +
-                        "window.AmyNestAuthNative.onmessage({data:JSON.stringify(p)});" +
-                        "}" +
-                        "window.dispatchEvent(new CustomEvent('amynest-google-auth-bridge-reply',{detail:p}));" +
-                        "}catch(e){}})();"
-                webView.evaluateJavascript(js, null)
+                webView.evaluateJavascript(js) { result ->
+                    Log.d(TAG, "postAuthReply evaluateJavascript result=$result")
+                }
             } catch (t: Throwable) {
                 Log.w(TAG, "postAuthReply failed", t)
             }
         }
+        webView.postDelayed({
+            try {
+                webView.evaluateJavascript(js, null)
+            } catch (_: Throwable) { /* retry */ }
+        }, 250L)
     }
 
     companion object {
@@ -331,7 +356,7 @@ class AuthBridge(
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .edit()
                 .putString(KEY_PENDING_GOOGLE_ID_TOKEN, idToken)
-                .apply()
+                .commit()
         }
 
         fun readPendingGoogleIdToken(context: Context): String? =

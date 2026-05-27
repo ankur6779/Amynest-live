@@ -11,10 +11,14 @@ type WebMessageListenerObject = {
 declare global {
   interface Window {
     AmyNestAuthNative?: WebMessageListenerObject;
+    AmyNestAuthInject?: { getPendingGoogleIdToken?: () => string; postMessage?: (d: string) => void };
     __AMYNEST_AUTH?: string;
     __AMYNEST_PENDING_GOOGLE_ID_TOKEN?: string;
+    __AMYNEST_GOOGLE_SIGN_IN_IN_FLIGHT?: boolean;
   }
 }
+
+const NATIVE_AUTH_TAG = "[amynest:native-auth]";
 
 type BridgeReply<T = unknown> =
   | { ok: true; cbId?: string; data: T }
@@ -47,6 +51,11 @@ function handleBridgePayload(payload: BridgeReply) {
   const p = pending.get(payload.cbId);
   if (!p) return;
   pending.delete(payload.cbId);
+  console.info(NATIVE_AUTH_TAG, "bridge reply", {
+    cbId: payload.cbId,
+    ok: payload.ok,
+    error: !payload.ok ? payload.error : undefined,
+  });
   p.resolve(payload);
 }
 
@@ -161,7 +170,10 @@ function waitForInjectedGoogleIdToken(maxMs: number): Promise<NativeGoogleSignIn
     };
     const tryRecover = () => {
       const recovered = pendingTokenSignInResult();
-      if (recovered) finish(recovered);
+      if (recovered) {
+        console.info(NATIVE_AUTH_TAG, "pending id token recovered");
+        finish(recovered);
+      }
     };
     const onPending = () => tryRecover();
     const cleanup = () => {
@@ -205,6 +217,10 @@ function mapBridgeGoogleSignInError(reason: string): Error {
  * Waits for inject bridge reply OR native token injected after account picker
  * (Android delivers __AMYNEST_PENDING_GOOGLE_ID_TOKEN when WebMessage reply is lost).
  */
+export function isGoogleSignInInFlight(): boolean {
+  return window.__AMYNEST_GOOGLE_SIGN_IN_IN_FLIGHT === true;
+}
+
 export async function signInWithGoogleViaNativeBridge(): Promise<NativeGoogleSignInResult> {
   const bridge = await waitForAuthBridge();
   if (!bridge) {
@@ -212,6 +228,9 @@ export async function signInWithGoogleViaNativeBridge(): Promise<NativeGoogleSig
       code: "app/auth-bridge-unavailable",
     });
   }
+
+  window.__AMYNEST_GOOGLE_SIGN_IN_IN_FLIGHT = true;
+  console.info(NATIVE_AUTH_TAG, "signInWithGoogle start");
 
   const pendingRecovery = waitForInjectedGoogleIdToken(
     GOOGLE_SIGN_IN_BRIDGE_TIMEOUT_MS + 5_000,
@@ -224,18 +243,25 @@ export async function signInWithGoogleViaNativeBridge(): Promise<NativeGoogleSig
   ).then((result) => {
     if (!result.ok) {
       const recovered = pendingTokenSignInResult();
-      if (recovered) return recovered;
+      if (recovered) {
+        console.info(NATIVE_AUTH_TAG, "recovered id token after bridge error");
+        return recovered;
+      }
       const reason = result.error || "google_sign_in_failed";
       throw mapBridgeGoogleSignInError(reason);
     }
     const idToken = result.data?.idToken?.trim();
     if (!idToken) {
       const recovered = pendingTokenSignInResult();
-      if (recovered) return recovered;
+      if (recovered) {
+        console.info(NATIVE_AUTH_TAG, "recovered id token after empty bridge data");
+        return recovered;
+      }
       throw Object.assign(new Error("Google sign-in did not return an ID token."), {
         code: "app/google-no-id-token",
       });
     }
+    console.info(NATIVE_AUTH_TAG, "bridge returned id token");
     return {
       idToken,
       email: result.data?.email ?? null,
@@ -245,11 +271,19 @@ export async function signInWithGoogleViaNativeBridge(): Promise<NativeGoogleSig
   });
 
   try {
-    return await Promise.race([bridgeCall, pendingRecovery]);
+    const out = await Promise.race([bridgeCall, pendingRecovery]);
+    console.info(NATIVE_AUTH_TAG, "signInWithGoogle complete");
+    return out;
   } catch (err) {
     const recovered = pendingTokenSignInResult();
-    if (recovered) return recovered;
+    if (recovered) {
+      console.info(NATIVE_AUTH_TAG, "recovered id token after exception", err);
+      return recovered;
+    }
+    console.warn(NATIVE_AUTH_TAG, "signInWithGoogle failed", err);
     throw err;
+  } finally {
+    window.__AMYNEST_GOOGLE_SIGN_IN_IN_FLIGHT = false;
   }
 }
 
