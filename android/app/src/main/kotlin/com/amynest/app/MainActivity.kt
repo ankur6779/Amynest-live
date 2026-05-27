@@ -202,6 +202,8 @@ class MainActivity : AppCompatActivity() {
         }
         pushBridge.setPermission(granted)
         authBridge?.deliverPendingGoogleAuthIfAny()
+        webView.postDelayed({ authBridge?.deliverPendingGoogleAuthIfAny() }, 200)
+        webView.postDelayed({ authBridge?.deliverPendingGoogleAuthIfAny() }, 600)
     }
 
     override fun onNewIntent(intent: Intent) {

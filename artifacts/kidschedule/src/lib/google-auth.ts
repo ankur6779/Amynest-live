@@ -210,18 +210,21 @@ export async function bootstrapPendingGoogleSignIn(): Promise<boolean> {
   if (!shouldUseAndroidWebViewGoogleAuth() || pendingBootstrapInFlight) {
     return false;
   }
-  const { readPendingNativeGoogleIdToken } = await import("@/lib/native-auth");
+  const { readPendingNativeGoogleIdToken, isGoogleSignInInFlight } =
+    await import("@/lib/native-auth");
+  if (isGoogleSignInInFlight()) {
+    console.info(`${GOOGLE_TAG} bootstrap skipped — sign-in in flight`);
+    return false;
+  }
   const idToken = readPendingNativeGoogleIdToken();
   if (!idToken) return false;
 
+  console.info(`${GOOGLE_TAG} bootstrap pending google token`);
   pendingBootstrapInFlight = true;
   try {
     await completeGoogleIdTokenSignIn(idToken);
-    const dest = await finishGoogleLoginFlow({ skipNavigation: true });
-    if (dest) {
-      const { navigateAfterAuth } = await import("@/lib/auth-navigation");
-      navigateAfterAuth(dest);
-    }
+    const dest = await finishGoogleLoginFlow();
+    console.info(`${GOOGLE_TAG} bootstrap navigate`, { dest });
     return true;
   } catch (err) {
     logFirebaseAuthError("google:bootstrap-pending", err);
@@ -247,6 +250,9 @@ export async function loginNativeGoogle(): Promise<string> {
 
 /** Android WebView APK — native account picker via AuthBridge.kt. */
 export async function loginAndroidWebViewGoogle(): Promise<string> {
+  console.info(`${GOOGLE_TAG} android webview flow start`, {
+    href: typeof window !== "undefined" ? window.location.href : "",
+  });
   const { probeAuthBridgeAvailability, signInWithGoogleViaNativeBridge } =
     await import("@/lib/native-auth");
   const bridgeReady = await probeAuthBridgeAvailability();
@@ -258,10 +264,14 @@ export async function loginAndroidWebViewGoogle(): Promise<string> {
       { code: "app/auth-bridge-unavailable" },
     );
   }
+  console.info(`${GOOGLE_TAG} opening native account picker`);
   const { idToken } = await signInWithGoogleViaNativeBridge();
+  console.info(`${GOOGLE_TAG} id token received, signing into Firebase`);
   await signInFirebaseWithGoogleIdToken(idToken);
-  console.info(`${GOOGLE_TAG} android webview google sign-in success`);
-  return finishGoogleLoginFlow({ skipNavigation: true });
+  console.info(`${GOOGLE_TAG} firebase session ok, resolving destination`);
+  const dest = await finishGoogleLoginFlow();
+  console.info(`${GOOGLE_TAG} android webview google sign-in success`, { dest });
+  return dest;
 }
 
 /** Web/PWA only — popup first, redirect fallback. */
