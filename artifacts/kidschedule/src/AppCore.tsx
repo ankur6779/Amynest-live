@@ -347,9 +347,13 @@ function FirebaseAuthBootstrap() {
     if (typeof window === "undefined") return;
     let cancelled = false;
     const resumePendingGoogleSignIn = () => {
-      void import("@/lib/google-auth").then(({ bootstrapPendingGoogleSignIn }) => {
-        if (!cancelled) void bootstrapPendingGoogleSignIn();
-      });
+      void import("@/lib/google-auth").then(
+        ({ bootstrapPendingGoogleSignIn, initNativeGoogleAuth, shouldUseNativeGoogleAuth }) => {
+          if (cancelled) return;
+          if (shouldUseNativeGoogleAuth()) void initNativeGoogleAuth();
+          void bootstrapPendingGoogleSignIn();
+        },
+      );
     };
     resumePendingGoogleSignIn();
     window.addEventListener("amynest-google-auth-pending", resumePendingGoogleSignIn);
