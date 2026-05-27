@@ -100,6 +100,15 @@ type Step =
   | "parent-mobile" | "parent-allergies"
   | "saving" | "done" | "notifications";
 
+const ONBOARDING_TEXT_INPUT_STEPS = new Set<Step>([
+  "country-confirm",
+  "child-name",
+  "child-dob",
+  "parent-name",
+  "parent-mobile",
+  "parent-allergies",
+]);
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 function dobToAge(dob: string): { years: number; months: number } {
   const born = new Date(dob);
@@ -687,6 +696,15 @@ export default function OnboardingPage() {
       }, 600);
     }
   }, []);
+
+  // Dismiss a lingering keyboard when moving to chip/button-only steps (Android WebView).
+  useEffect(() => {
+    if (ONBOARDING_TEXT_INPUT_STEPS.has(step)) return;
+    const active = document.activeElement;
+    if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
+      active.blur();
+    }
+  }, [step]);
 
   // ─── Save & finish ──────────────────────────────────────────────────────────
   async function saveEverything(allergiesOverride?: string) {
