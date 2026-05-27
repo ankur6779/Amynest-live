@@ -71,9 +71,6 @@ class MainActivity : AppCompatActivity() {
     private var pendingGeoOrigin: String? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
 
-    /** When true, Android navigation/status bars are shown (dashboard). */
-    private var systemBarsVisible = false
-
     // ── Permission launchers ─────────────────────────────────────────────────
 
     private val notifPermissionLauncher =
@@ -121,9 +118,15 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-        setSystemBarsVisible(false)
 
         // Capture notification tap extras BEFORE building the WebView so the
         // document-start JS injection and URL construction can use them.
@@ -171,7 +174,6 @@ class MainActivity : AppCompatActivity() {
             permissionRequester = { askNotificationPermission() },
         )
         pushBridge.install(webView)
-        webView.addJavascriptInterface(SystemUiBridge(this), "Android")
 
         FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
             if (token != null && pushBridge.getToken() == null) {
@@ -470,17 +472,10 @@ class MainActivity : AppCompatActivity() {
 
     // ── System chrome ────────────────────────────────────────────────────────
 
-    /**
-     * Edge-to-edge WebView: push status-bar inset into CSS; bottom inset follows
-     * [systemBarsVisible] (dashboard shows nav bar, other routes stay immersive).
-     */
+    /** Keyboard inset + shell class only (no status/nav safe-area padding). */
     private fun applyWebSafeAreaInsets(insets: WindowInsetsCompat) {
         if (!::webView.isInitialized) return
-        val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-        val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
         val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-        val topPx = statusBars.top.coerceAtLeast(0)
-        val bottomPx = if (systemBarsVisible) navBars.bottom.coerceAtLeast(0) else 0
         val imeBottomPx = ime.bottom.coerceAtLeast(0)
         val webViewHeight = webView.height.coerceAtLeast(0)
         val visibleHeightPx =
@@ -494,8 +489,6 @@ class MainActivity : AppCompatActivity() {
         val js =
             "(function(){" +
                 "var r=document.documentElement;" +
-                "r.style.setProperty('--sat','${topPx}px');" +
-                (if (bottomPx > 0) "r.style.setProperty('--sab','${bottomPx}px');" else "r.style.removeProperty('--sab');") +
                 "r.style.setProperty('--auth-keyboard-inset-native','${imeBottomPx}px');" +
                 (if (imeBottomPx > 0) {
                     "r.style.setProperty('--auth-keyboard-inset','${imeBottomPx}px');" +
@@ -512,46 +505,17 @@ class MainActivity : AppCompatActivity() {
         webView.post { webView.evaluateJavascript(js, null) }
     }
 
-    /** Called from [SystemUiBridge] when the web route toggles dashboard chrome. */
-    fun setSystemBarsVisible(visible: Boolean) {
-        if (systemBarsVisible == visible) return
-        systemBarsVisible = visible
-        applySystemUiVisibility(visible)
-    }
-
-    private fun applySystemUiVisibility(showBars: Boolean) {
+    private fun applyImmersiveFullscreen() {
         supportActionBar?.hide()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val controller = WindowInsetsControllerCompat(window, window.decorView)
-            if (showBars) {
-                controller.show(WindowInsetsCompat.Type.systemBars())
-            } else {
-                controller.hide(WindowInsetsCompat.Type.systemBars())
-                controller.systemBarsBehavior =
-                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            }
-        } else {
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = if (showBars) {
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            } else {
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-                    View.SYSTEM_UI_FLAG_FULLSCREEN or
-                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            }
-        }
-        if (::webView.isInitialized) {
-            ViewCompat.requestApplyInsets(webView)
-        }
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) applySystemUiVisibility(systemBarsVisible)
+        if (hasFocus) applyImmersiveFullscreen()
     }
 
     // ── Notification permission ──────────────────────────────────────────────
