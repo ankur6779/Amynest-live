@@ -35,6 +35,16 @@ export function AuthKeyboardShell({
     const scroll = scrollRef?.current;
     if (!kav || !scroll) return;
 
+    const clearPinnedHeight = () => {
+      scroll.style.removeProperty("height");
+      scroll.style.removeProperty("maxHeight");
+    };
+
+    if (!keyboardOpen) {
+      clearPinnedHeight();
+      return;
+    }
+
     const syncScrollHeight = () => {
       const height = kav.clientHeight;
       if (height <= 0) return;
@@ -47,10 +57,9 @@ export function AuthKeyboardShell({
     observer.observe(kav);
     return () => {
       observer.disconnect();
-      scroll.style.removeProperty("height");
-      scroll.style.removeProperty("maxHeight");
+      clearPinnedHeight();
     };
-  }, [kavRef, nativeShell, scrollRef]);
+  }, [kavRef, keyboardOpen, nativeShell, scrollRef]);
 
   if (!nativeShell) {
     return <div style={style}>{children}</div>;
@@ -62,10 +71,15 @@ export function AuthKeyboardShell({
       className={`amynest-auth-kav amynest-auth-shell${keyboardOpen ? " amynest-auth-shell--keyboard" : ""}`}
       style={{
         ...style,
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
         minHeight: undefined,
         overflowY: undefined,
+        overflowX: "hidden",
         WebkitOverflowScrolling: undefined,
       }}
     >
