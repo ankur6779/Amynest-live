@@ -28,10 +28,12 @@ import {
 import { AmyIcon } from "@/components/amy-icon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { usePrimeIosMicrophone } from "@/hooks/use-prime-ios-microphone";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
+import { openAndroidMicrophoneSettings } from "@/lib/microphone-permission";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import { clampClarityScore, weakSoundsToHistory } from "./speech-coach-utils";
 
@@ -284,9 +286,12 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
   const [status, setStatus] = useState("Tap Start and Amy will begin.");
   const [hasStarted, setHasStarted] = useState(false);
   const [successFlash, setSuccessFlash] = useState(false);
+  const [micSettingsOpen, setMicSettingsOpen] = useState(false);
+  const [startingMic, setStartingMic] = useState(false);
   const stateRef = useRef<CoachState>("idle");
   const ttsPurposeRef = useRef<"prompt" | "feedback" | "complete" | null>(null);
   const listenStartedRef = useRef(false);
+  const startingMicRef = useRef(false);
   const logAttempt = useLogSpeechPracticeAttempt();
 
   const getAuthToken = useCallback(async () => {
@@ -346,6 +351,23 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, stt.listening, stt.transcribing, stt.transcript, stt.error]);
 
+  useEffect(() => {
+    if (stt.error === "microphone_blocked") {
+      listenStartedRef.current = false;
+      setStartingMic(false);
+      startingMicRef.current = false;
+      setState("idle");
+      setStatus("Microphone access is required for Speech Coach.");
+      setMicSettingsOpen(true);
+    } else if (stt.error === "microphone_denied") {
+      listenStartedRef.current = false;
+      setStartingMic(false);
+      startingMicRef.current = false;
+      setState("idle");
+      setStatus("Microphone permission was not allowed. Tap the mic to try again.");
+    }
+  }, [stt.error]);
+
   const speak = useCallback(
     async (text: string, purpose: "prompt" | "feedback" | "complete") => {
       ttsPurposeRef.current = purpose;
@@ -373,18 +395,30 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
     void speak(speakPromptText(current, mode), "prompt");
   }, [current, mode, speak]);
 
-  const startListening = useCallback(() => {
+  const startListening = useCallback(async () => {
     if (!canRecord || state !== "idle") {
       if (state === "listening") stt.stop();
       return;
     }
-    listenStartedRef.current = true;
+    if (startingMicRef.current) return;
+    startingMicRef.current = true;
+    setStartingMic(true);
     stt.reset();
     voice.pause();
     setLastResult(null);
+    setStatus("Checking microphone...");
+    const started = await stt.start();
+    startingMicRef.current = false;
+    setStartingMic(false);
+    if (!started) {
+      listenStartedRef.current = false;
+      setState("idle");
+      if (!stt.error) setStatus("Could not start the microphone. Please try again.");
+      return;
+    }
+    listenStartedRef.current = true;
     setState("listening");
     setStatus("Listening...");
-    stt.start();
   }, [canRecord, state, stt, voice]);
 
   const processResponse = useCallback(async () => {
@@ -538,7 +572,13 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
           )}
 
           <p className="min-h-6 text-center text-sm font-bold text-white/75" aria-live="polite">
-            {stt.error ? "I could not access the microphone. Please try again." : status}
+            {stt.error === "microphone_blocked"
+              ? "Microphone access is required for Speech Coach."
+              : stt.error === "microphone_denied"
+                ? "Microphone permission was not allowed. Tap the mic to try again."
+                : stt.error
+                  ? "I could not access the microphone. Please try again."
+                  : status}
           </p>
 
           {state !== "complete" ? (
@@ -557,18 +597,18 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
               ) : (
                 <button
                   type="button"
-                  disabled={!canRecord && state !== "listening"}
-                  onClick={startListening}
+                  disabled={startingMic || (!canRecord && state !== "listening")}
+                  onClick={() => void startListening()}
                   className={[
                     "grid h-20 w-20 place-items-center rounded-full border text-white transition-all",
                     state === "listening"
                       ? "animate-pulse border-cyan-200 bg-cyan-400/30 shadow-[0_0_45px_rgba(34,211,238,0.65)]"
                       : "border-fuchsia-200/70 bg-fuchsia-500/30 shadow-[0_0_40px_rgba(217,70,239,0.45)]",
-                    !canRecord && state !== "listening" ? "opacity-50" : "active:scale-95",
+                    startingMic || (!canRecord && state !== "listening") ? "opacity-50" : "active:scale-95",
                   ].join(" ")}
                   aria-label={state === "listening" ? "Stop listening" : "Start listening"}
                 >
-                  {state === "processing" ? <Loader2 className="h-8 w-8 animate-spin" /> : <Mic className="h-9 w-9" />}
+                  {state === "processing" || startingMic ? <Loader2 className="h-8 w-8 animate-spin" /> : <Mic className="h-9 w-9" />}
                 </button>
               )}
               {state === "next_task" && (
@@ -592,6 +632,21 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
           )}
         </section>
       </div>
+      <Dialog open={micSettingsOpen} onOpenChange={setMicSettingsOpen}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Microphone access is required for Speech Coach.</DialogTitle>
+            <DialogDescription>
+              Android is no longer showing the microphone permission popup. Open app settings and allow Microphone, then return here and tap the mic again.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" className="rounded-full" onClick={() => openAndroidMicrophoneSettings()}>
+              Open Settings
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

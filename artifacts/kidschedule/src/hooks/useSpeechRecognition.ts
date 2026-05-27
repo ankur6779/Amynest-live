@@ -13,6 +13,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { getApiUrl } from "@/lib/api";
+import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 import { isCapacitorIosNative, prepareIosAudioSessionForRecording } from "@/lib/mic-permission-capacitor";
 import {
   openMicrophoneStream,
@@ -89,6 +90,10 @@ function canUseMediaRecorder(): boolean {
 function resolveRecognitionMode(
   nativeCls: (new () => SpeechRecognitionInstance) | null,
 ): RecognitionMode {
+  // Android Play Store WebView can expose Web Speech but still emit "not-allowed"
+  // after native RECORD_AUDIO is granted. MediaRecorder keeps permission truth in
+  // the Android bridge + WebChromeClient path.
+  if (isNativeAmyNestAndroidWrapper() && canUseMediaRecorder()) return "whisper";
   if (isIOSWebKit() && canUseMediaRecorder()) return "whisper";
   if (nativeCls !== null) return "native";
   if (canUseMediaRecorder()) return "whisper";
@@ -141,7 +146,7 @@ export interface SpeechRecognitionState {
   transcribing: boolean;
   mode: RecognitionMode;
   error: string | null;
-  start: () => void;
+  start: () => Promise<boolean>;
   stop: () => void;
   reset: () => void;
 }
@@ -158,6 +163,20 @@ function normaliseSpeechError(code: string): string {
 export interface UseSpeechRecognitionOptions {
   /** For Capacitor iOS (and other cookie-less shells): Bearer token for `/api/speech/transcribe`. */
   getAuthToken?: () => Promise<string | null>;
+}
+
+function micAccessError(reason: "denied" | "blocked" | "unavailable"): string {
+  if (reason === "blocked") return "microphone_blocked";
+  return reason === "unavailable" ? "recognition_start_failed" : "microphone_denied";
+}
+
+function logSpeechRecognition(message: string, detail?: unknown): void {
+  try {
+    if (detail === undefined) console.debug(`[amynest:speech-recognition] ${message}`);
+    else console.debug(`[amynest:speech-recognition] ${message}`, detail);
+  } catch {
+    /* logging must not affect recording */
+  }
 }
 
 export function useSpeechRecognition(
@@ -206,16 +225,17 @@ export function useSpeechRecognition(
   }, []);
 
   // ── Native Web Speech API path ──────────────────────────────────────────────
-  const startNative = useCallback(async () => {
-    if (!Cls) return;
+  const startNative = useCallback(async (): Promise<boolean> => {
+    if (!Cls) return false;
     setTranscript("");
     setInterimTranscript("");
     setError(null);
 
     const access = await requestMicrophoneAccess({ forFeature: true });
+    logSpeechRecognition("native speech microphone access result", access);
     if (!access.granted) {
-      setError(access.reason === "unavailable" ? "recognition_start_failed" : "microphone_denied");
-      return;
+      setError(micAccessError(access.reason));
+      return false;
     }
 
     const rec = new Cls();
@@ -226,13 +246,18 @@ export function useSpeechRecognition(
     rec.interimResults = !isIOSWebKit();
     rec.maxAlternatives = 1;
 
-    rec.onstart = () => setListening(true);
+    rec.onstart = () => {
+      logSpeechRecognition("native speech recognition started");
+      setListening(true);
+    };
     rec.onend = () => {
+      logSpeechRecognition("native speech recognition ended");
       setListening(false);
       setInterimTranscript("");
     };
     rec.onerror = (e: SpeechRecognitionErrorEvent) => {
       const code = normaliseSpeechError(e.error);
+      logSpeechRecognition("native speech recognition error", { error: e.error, message: e.message, code });
       if (code !== "aborted") setError(code);
       // Reset cached permission if user revoked it mid-session
       if (code === "microphone_denied") resetMicrophonePermissionCache();
@@ -258,8 +283,12 @@ export function useSpeechRecognition(
 
     try {
       rec.start();
-    } catch {
+      logSpeechRecognition("native speech recognition start called");
+      return true;
+    } catch (err) {
+      logSpeechRecognition("native speech recognition start failed", err);
       setError("recognition_start_failed");
+      return false;
     }
   }, [Cls, lang]);
 
@@ -269,7 +298,7 @@ export function useSpeechRecognition(
   }, []);
 
   // ── Whisper fallback path (MediaRecorder → /api/speech/transcribe) ──────────
-  const startWhisper = useCallback(async () => {
+  const startWhisper = useCallback(async (): Promise<boolean> => {
     setError(null);
     setTranscript("");
     setInterimTranscript("");
@@ -286,9 +315,10 @@ export function useSpeechRecognition(
       },
       { forFeature: true },
     );
+    logSpeechRecognition("whisper microphone stream result", opened.ok ? { ok: true } : opened);
     if (!opened.ok) {
-      setError(opened.reason === "unavailable" ? "recognition_start_failed" : "microphone_denied");
-      return;
+      setError(micAccessError(opened.reason));
+      return false;
     }
     const stream = opened.stream;
     streamRef.current = stream;
@@ -297,10 +327,11 @@ export function useSpeechRecognition(
     let mimeType: string;
     try {
       ({ rec, mimeType } = createMediaRecorder(stream));
-    } catch {
+    } catch (err) {
+      logSpeechRecognition("media recorder initialization failed", err);
       stream.getTracks().forEach((t) => t.stop());
       setError("recognition_start_failed");
-      return;
+      return false;
     }
     mediaRecRef.current = rec;
     chunksRef.current = [];
@@ -310,11 +341,13 @@ export function useSpeechRecognition(
     };
 
     rec.onerror = () => {
+      logSpeechRecognition("media recorder error");
       setListening(false);
       setError("recognition_start_failed");
     };
 
     rec.onstop = async () => {
+      logSpeechRecognition("media recorder stopped", { chunks: chunksRef.current.length });
       streamRef.current?.getTracks().forEach((t) => t.stop());
       setListening(false);
       if (chunksRef.current.length === 0) {
@@ -360,7 +393,8 @@ export function useSpeechRecognition(
         const { resolveAiApiData } = await import("@/lib/poll-result");
         const j = await resolveAiApiData<{ transcript?: string }>(raw, authFetch);
         setTranscript(j?.transcript ?? "");
-      } catch {
+      } catch (err) {
+        logSpeechRecognition("transcription failed", err);
         setError("transcription_failed");
       } finally {
         setTranscribing(false);
@@ -369,7 +403,9 @@ export function useSpeechRecognition(
 
     // Timeslice keeps memory bounded during long Live Coach listens (up to 8s).
     rec.start(400);
+    logSpeechRecognition("media recorder started", { mimeType });
     setListening(true);
+    return true;
   }, []);
 
   const stopWhisper = useCallback(() => {
@@ -383,10 +419,11 @@ export function useSpeechRecognition(
     rec.stop();
   }, []);
 
-  const start = useCallback(() => {
-    if (mode === "native") void startNative();
-    else if (mode === "whisper") void startWhisper();
-    else setError("unsupported");
+  const start = useCallback(async () => {
+    if (mode === "native") return startNative();
+    if (mode === "whisper") return startWhisper();
+    setError("unsupported");
+    return false;
   }, [mode, startNative, startWhisper]);
 
   const stop = useCallback(() => {
