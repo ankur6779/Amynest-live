@@ -10,11 +10,13 @@ import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError, stashVerificationSendError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
+import { FacebookSignInButton } from "@/components/facebook-sign-in-button";
 import { handleAppleLogin } from "@/lib/apple-auth";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
 import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
 import {
   shouldShowGoogleSignIn,
+  shouldShowFacebookSignIn,
   shouldShowAppleSignIn,
   shouldShowPhoneOtp,
 } from "@/lib/auth-feature-flags";
@@ -727,6 +729,10 @@ export default function SignInPage() {
           <GoogleSignInButton onError={msg => setError(msg)} />
         ) : null}
 
+        {shouldShowFacebookSignIn() ? (
+          <FacebookSignInButton onError={msg => setError(msg)} />
+        ) : null}
+
         {shouldShowPhoneOtp() ? (
           <div className="si-phone-wrapper">
             <PhoneRecaptchaPreload />
@@ -735,7 +741,7 @@ export default function SignInPage() {
         ) : null}
       </div>
 
-      {(shouldShowGoogleSignIn() || shouldShowAppleSignIn() || shouldShowPhoneOtp()) && (
+      {(shouldShowGoogleSignIn() || shouldShowFacebookSignIn() || shouldShowAppleSignIn() || shouldShowPhoneOtp()) && (
       <div style={{
       display: "flex",
       alignItems: "center",

@@ -1,0 +1,100 @@
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useLocation } from "wouter";
+import { handleFacebookLogin } from "@/lib/facebook-auth";
+import { prettyAuthError, logFirebaseAuthError } from "@/lib/auth-errors";
+import { shouldShowFacebookSignIn } from "@/lib/auth-feature-flags";
+import { navigateAfterAuth } from "@/lib/auth-navigation";
+import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+
+type Props = {
+  onError?: (message: string) => void;
+  className?: string;
+};
+
+function FacebookMark() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden fill="#FFFFFF">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+    </svg>
+  );
+}
+
+export function FacebookSignInButton({ onError, className }: Props) {
+  const { t } = useTranslation();
+  const [, setLocation] = useLocation();
+  const [busy, setBusy] = useState(false);
+
+  if (!shouldShowFacebookSignIn()) return null;
+
+  const onClick = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const destination = await handleFacebookLogin();
+      if (typeof destination === "string" && destination) {
+        setLocation(destination);
+        navigateAfterAuth(destination);
+        if (isNativeAmyNestAndroidWrapper()) {
+          window.setTimeout(() => {
+            const path = window.location.pathname;
+            if (path.includes("/sign-in") || path.includes("/sign-up")) {
+              window.location.assign(`${window.location.origin}${destination}`);
+            }
+          }, 600);
+        }
+      }
+    } catch (err: unknown) {
+      logFirebaseAuthError("facebook:sign-in", err);
+      const code = (err as { code?: string })?.code ?? "";
+      const message = prettyAuthError(err);
+      if (message) {
+        onError?.(message);
+      } else if (code !== "auth/popup-closed-by-user") {
+        onError?.(
+          t("auth.facebook_sign_in_failed", {
+            defaultValue:
+              "Facebook sign-in did not complete. Close and reopen the app, then try again.",
+          }),
+        );
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => void onClick()}
+      disabled={busy}
+      className={className ?? "si-facebook-btn"}
+      data-testid="button-facebook-sign-in"
+      style={{
+        width: "100%",
+        height: "50px",
+        borderRadius: "999px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "10px",
+        background: busy ? "rgba(24,119,242,0.55)" : "#1877F2",
+        border: "1px solid rgba(255,255,255,0.12)",
+        color: "#FFFFFF",
+        fontSize: "15px",
+        fontWeight: 600,
+        cursor: busy ? "not-allowed" : "pointer",
+        fontFamily: "inherit",
+        boxShadow: busy
+          ? "none"
+          : "0 2px 12px rgba(24,119,242,0.35), 0 0 0 1px rgba(255,255,255,0.06) inset",
+        transition: "transform 0.18s ease, box-shadow 0.18s ease",
+      }}
+    >
+      <FacebookMark />
+      {busy
+        ? t("auth.connecting")
+        : t("auth.continue_with_facebook")}
+    </button>
+  );
+}

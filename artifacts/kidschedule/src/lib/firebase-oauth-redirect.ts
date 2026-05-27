@@ -39,7 +39,11 @@ function listFirebaseSessionKeys(): string[] {
 function mayBeOAuthReturn(): boolean {
   if (typeof window === "undefined") return false;
   const ref = document.referrer || "";
-  if (!/accounts\.google\.com|firebaseapp\.com|googleusercontent/i.test(ref)) {
+  if (
+    !/accounts\.google\.com|firebaseapp\.com|googleusercontent|facebook\.com/i.test(
+      ref,
+    )
+  ) {
     return false;
   }
   const hash = window.location.hash;

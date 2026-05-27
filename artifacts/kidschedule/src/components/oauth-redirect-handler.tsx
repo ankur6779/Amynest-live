@@ -5,6 +5,7 @@ import { prettyAuthError } from "@/lib/auth-errors";
 import { useToast } from "@/hooks/use-toast";
 import {
   ENABLE_APPLE_SIGN_IN,
+  ENABLE_FACEBOOK_SIGN_IN,
   ENABLE_GOOGLE_SIGN_IN,
 } from "@/lib/auth-feature-flags";
 import {
@@ -28,7 +29,9 @@ export function OAuthRedirectHandler() {
   const startedRef = useRef(false);
 
   useEffect(() => {
-    if (!ENABLE_APPLE_SIGN_IN && !ENABLE_GOOGLE_SIGN_IN) return;
+    if (!ENABLE_APPLE_SIGN_IN && !ENABLE_GOOGLE_SIGN_IN && !ENABLE_FACEBOOK_SIGN_IN) {
+      return;
+    }
     if (startedRef.current) return;
     startedRef.current = true;
 
@@ -55,7 +58,7 @@ export function OAuthRedirectHandler() {
               variant: "destructive",
               title: "Sign-in failed",
               description:
-                "Google sign-in could not be completed. Please try again.",
+                "Sign-in could not be completed. Please try again.",
             });
           }
           return;

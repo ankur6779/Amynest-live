@@ -7,6 +7,8 @@ export const ENABLE_OAUTH_SIGN_IN = true;
 export const ENABLE_APPLE_SIGN_IN = true;
 /** Google Sign-In master switch — actual visibility is platform-gated via shouldShowGoogleSignIn(). */
 export const ENABLE_GOOGLE_SIGN_IN = true;
+/** Facebook Sign-In (Firebase OAuth — web + Play WebView). */
+export const ENABLE_FACEBOOK_SIGN_IN = true;
 export const ENABLE_PHONE_OTP = true;
 
 export function shouldShowPhoneOtp(): boolean {
@@ -39,5 +41,11 @@ export function shouldShowAppleSignIn(): boolean {
  */
 export function shouldShowGoogleSignIn(): boolean {
   if (!ENABLE_GOOGLE_SIGN_IN) return false;
+  return !isCapacitorIos();
+}
+
+/** Facebook Sign-In — web, PWA, and Play WebView Android. Hidden on Capacitor iOS. */
+export function shouldShowFacebookSignIn(): boolean {
+  if (!ENABLE_FACEBOOK_SIGN_IN) return false;
   return !isCapacitorIos();
 }
