@@ -120,6 +120,16 @@ export function prettyAuthError(err: unknown): string {
       return "Google sign-in did not finish after choosing an account. Close and reopen the app, then try again.";
     case "app/google-no-id-token":
       return "Google sign-in did not complete. Please try again.";
+    case "app/developer_error":
+      return "Google Sign-In is not configured for this app build. Install the latest version from the Play Store, or try email sign-in.";
+    case "app/user_cancelled":
+      return "";
+    case "app/google_sign_in_failed":
+    case "app/google_sign_in_no_data":
+    case "app/bridge_timeout":
+      return "Google sign-in did not finish. Close and reopen the app, then try again.";
+    case "app/no_id_token":
+      return "Google did not return a sign-in token. Try another Google account or use email sign-in.";
     case "app/apple-not-configured":
       return "Apple Sign-In is not configured for this build.";
     case "app/apple-no-id-token":
