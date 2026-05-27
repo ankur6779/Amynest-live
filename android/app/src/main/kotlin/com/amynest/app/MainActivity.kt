@@ -68,6 +68,9 @@ class MainActivity : AppCompatActivity() {
     private var pendingNotifDeepLink: String? = null
     private var pendingNotifCategory: String? = null
 
+    /** After a wrapper upgrade, purge web caches once the first page loads. */
+    private var pendingWebCachePurge = false
+
     /** Pending WebView permission callbacks (mic / geolocation). */
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingGeoOrigin: String? = null
@@ -217,6 +220,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         askNotificationPermission()
+
+        clearStaleWebCacheIfNeeded(webView)
 
         val launchUrl = buildLaunchUrl(intent)
         webView.loadUrl(launchUrl)
@@ -382,6 +387,10 @@ class MainActivity : AppCompatActivity() {
                         "window.dispatchEvent(new Event('amynest-auth-bridge-ready'));",
                     null,
                 )
+                if (pendingWebCachePurge) {
+                    pendingWebCachePurge = false
+                    purgeWebCachesInPage(view)
+                }
                 authBridge?.deliverPendingGoogleAuthIfAny()
                 authBridge?.deliverPendingFacebookAuthIfAny()
 
@@ -472,7 +481,48 @@ class MainActivity : AppCompatActivity() {
         }
         val viewUrl = intentViewUrl(intent)
         if (viewUrl != null) return viewUrl
-        return "$BASE_URL?v=${System.currentTimeMillis()}"
+        return "$BASE_URL?v=${PushBridge.WRAPPER_VERSION}-${System.currentTimeMillis()}"
+    }
+
+    /**
+     * Play Store WebView loads live https://www.amynest.in — not bundled JS.
+     * After a wrapper upgrade, clear native + in-page caches so users pick up
+     * the latest onboarding and other web deploys instead of stale chunks.
+     */
+    private fun clearStaleWebCacheIfNeeded(wv: WebView) {
+        val prefs = getSharedPreferences("amynest_webview", MODE_PRIVATE)
+        val lastVersion = prefs.getString("wrapper_version", null)
+        if (lastVersion == PushBridge.WRAPPER_VERSION) return
+
+        wv.clearCache(true)
+        wv.clearHistory()
+        CookieManager.getInstance().removeAllCookies(null)
+        CookieManager.getInstance().flush()
+        prefs.edit().putString("wrapper_version", PushBridge.WRAPPER_VERSION).apply()
+        pendingWebCachePurge = true
+        Log.d(
+            TAG,
+            "Cleared WebView cache for wrapper upgrade ($lastVersion → ${PushBridge.WRAPPER_VERSION})",
+        )
+    }
+
+    private fun purgeWebCachesInPage(view: WebView) {
+        view.evaluateJavascript(
+            "(function(){" +
+                "try{" +
+                "if('serviceWorker'in navigator){" +
+                "navigator.serviceWorker.getRegistrations().then(function(r){" +
+                "r.forEach(function(x){x.unregister();});" +
+                "});" +
+                "}" +
+                "if(window.caches){" +
+                "caches.keys().then(function(k){k.forEach(function(n){caches.delete(n);});});" +
+                "}" +
+                "}catch(e){}" +
+            "})();",
+            null,
+        )
+        Log.d(TAG, "Requested in-page SW/cache purge after wrapper upgrade")
     }
 
     /**
