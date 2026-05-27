@@ -11,6 +11,7 @@ import {
 import {
   hasPendingFirebaseOAuthRedirect,
   resolveFirebaseAuthRedirectResult,
+  resetFirebaseOAuthRedirectForRetry,
 } from "@/lib/firebase-oauth-redirect";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { refreshFirebaseAuthSnapshot } from "@/lib/firebase-auth-listener";
@@ -32,13 +33,19 @@ export function OAuthRedirectHandler() {
     if (!ENABLE_APPLE_SIGN_IN && !ENABLE_GOOGLE_SIGN_IN && !ENABLE_FACEBOOK_SIGN_IN) {
       return;
     }
-    if (startedRef.current) return;
-    startedRef.current = true;
 
     let cancelled = false;
 
-    const run = async () => {
+    const completeRedirect = async (retry = false, quiet = false) => {
       const pendingOAuth = hasPendingFirebaseOAuthRedirect();
+      if (!pendingOAuth && startedRef.current) return;
+      if (retry) {
+        resetFirebaseOAuthRedirectForRetry();
+        startedRef.current = false;
+      }
+      if (startedRef.current) return;
+      startedRef.current = true;
+
       if (!pendingOAuth && !isFirebaseAuthReady()) {
         await new Promise((r) => window.setTimeout(r, 300));
       }
@@ -53,7 +60,7 @@ export function OAuthRedirectHandler() {
               getFirebaseAuth().currentUser
             : null);
         if (cancelled || !user) {
-          if (pendingOAuth) {
+          if (pendingOAuth && !quiet) {
             toast({
               variant: "destructive",
               title: "Sign-in failed",
@@ -93,10 +100,16 @@ export function OAuthRedirectHandler() {
       }
     };
 
-    void run();
+    void completeRedirect();
+
+    const onOAuthResume = () => {
+      void completeRedirect(true, true);
+    };
+    window.addEventListener("amynest-oauth-resume", onOAuthResume);
 
     return () => {
       cancelled = true;
+      window.removeEventListener("amynest-oauth-resume", onOAuthResume);
     };
   }, [setLocation, toast]);
 

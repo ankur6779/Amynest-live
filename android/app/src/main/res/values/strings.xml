@@ -3,6 +3,10 @@
     <string name="app_name">AmyNest AI</string>
     <!-- Firebase Web OAuth client — serverClientId for AuthBridge Google Sign-In. -->
     <string name="amynest_google_web_client_id">573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com</string>
+    <!-- Meta App ID + Client Token (Settings → Advanced) for native Facebook Login. -->
+    <string name="facebook_app_id">2514850758945614</string>
+    <string name="fb_login_protocol_scheme">fb2514850758945614</string>
+    <string name="facebook_client_token">REPLACE_WITH_META_CLIENT_TOKEN</string>
     <string name="notification_channel_name">AmyNest</string>
     <string name="notification_channel_description">Routine reminders, meal suggestions, and parenting insights</string>
 

@@ -5,11 +5,17 @@ import {
   getFirebaseAuth,
   isFirebaseAuthReady,
 } from "@/lib/firebase";
-import { isNativeAmyNestShell } from "@/lib/native-shell";
+import { isCapacitorNativeShell } from "@/lib/native-shell";
 import { waitForFirebaseAuthReady } from "@/lib/wait-for-firebase-auth-ready";
 import { waitForFirebaseUser } from "@/lib/wait-for-firebase-user";
 
 const OAUTH_TAG = "[amynest:oauth-redirect]";
+
+/** Capacitor WKWebView redirect completion is unreliable; Play WebView + browsers OK. */
+function supportsFirebaseOAuthRedirectResolution(): boolean {
+  if (typeof window === "undefined") return false;
+  return !isCapacitorNativeShell();
+}
 
 let redirectResultPromise: Promise<UserCredential | null> | null = null;
 let redirectResolutionInFlight = false;
@@ -206,7 +212,7 @@ async function completeFirebaseAuthRedirectResult(): Promise<UserCredential | nu
  */
 export function resolveFirebaseAuthRedirectResult(): Promise<UserCredential | null> {
   if (typeof window === "undefined") return Promise.resolve(null);
-  if (isNativeAmyNestShell()) return Promise.resolve(null);
+  if (!supportsFirebaseOAuthRedirectResolution()) return Promise.resolve(null);
 
   if (!redirectResultPromise) {
     redirectResultPromise = completeFirebaseAuthRedirectResult();
@@ -217,11 +223,17 @@ export function resolveFirebaseAuthRedirectResult(): Promise<UserCredential | nu
 /** Start redirect resolution as early as possible — right after Firebase init. */
 export function beginFirebaseOAuthRedirectResolution(): void {
   if (typeof window === "undefined") return;
-  if (isNativeAmyNestShell()) return;
+  if (!supportsFirebaseOAuthRedirectResolution()) return;
   if (!hasPendingFirebaseOAuthRedirect()) return;
   void resolveFirebaseAuthRedirectResult().catch((err) => {
     console.warn(`${OAUTH_TAG} early redirect resolution failed`, err);
   });
+}
+
+/** After OAuth in Chrome Custom Tab, allow getRedirectResult to run again. */
+export function resetFirebaseOAuthRedirectForRetry(): void {
+  redirectResultPromise = null;
+  redirectResolutionInFlight = false;
 }
 
 /** Test-only reset */

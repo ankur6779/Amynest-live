@@ -15,8 +15,8 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 68
-        versionName = "1.4.25"
+        versionCode = 70
+        versionName = "1.4.27"
     }
 
     signingConfigs {
@@ -133,6 +133,9 @@ dependencies {
 
     // Native Google Sign-In (AuthBridge → Firebase idToken on web layer)
     implementation("com.google.android.gms:play-services-auth:21.2.0")
+
+    // Native Facebook Login (AuthBridge → Firebase access token on web layer)
+    implementation("com.facebook.android:facebook-login:17.0.2")
 
     // JSON parsing for the message bus
     implementation("org.json:json:20240303")
