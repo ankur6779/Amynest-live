@@ -50,8 +50,18 @@ export function GoogleSignInButton({ onError, className }: Props) {
       }
     } catch (err: unknown) {
       logFirebaseAuthError("google:sign-in", err);
+      const code = (err as { code?: string })?.code ?? "";
       const message = prettyAuthError(err);
-      if (message) onError?.(message);
+      if (message) {
+        onError?.(message);
+      } else if (code !== "auth/popup-closed-by-user" && code !== "app/user_cancelled") {
+        onError?.(
+          t("auth.google_sign_in_failed", {
+            defaultValue:
+              "Google sign-in did not complete. Close and reopen the app, then try again.",
+          }),
+        );
+      }
     } finally {
       setBusy(false);
     }

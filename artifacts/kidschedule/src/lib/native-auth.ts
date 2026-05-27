@@ -143,6 +143,64 @@ function pendingTokenSignInResult(): NativeGoogleSignInResult | null {
   return { idToken, email: null, displayName: null, photoUrl: null };
 }
 
+const GOOGLE_SIGN_IN_BRIDGE_TIMEOUT_MS = 60_000;
+const GOOGLE_PENDING_POLL_MS = 200;
+
+/**
+ * Polls for a native-injected ID token after the account picker closes.
+ * Resolves only when a token appears (never rejects).
+ */
+function waitForInjectedGoogleIdToken(maxMs: number): Promise<NativeGoogleSignInResult> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (result: NativeGoogleSignInResult) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(result);
+    };
+    const tryRecover = () => {
+      const recovered = pendingTokenSignInResult();
+      if (recovered) finish(recovered);
+    };
+    const onPending = () => tryRecover();
+    const cleanup = () => {
+      window.removeEventListener("amynest-google-auth-pending", onPending);
+      clearInterval(interval);
+    };
+    window.addEventListener("amynest-google-auth-pending", onPending);
+    tryRecover();
+    const started = Date.now();
+    const interval = window.setInterval(() => {
+      tryRecover();
+      if (!settled && Date.now() - started >= maxMs) cleanup();
+    }, GOOGLE_PENDING_POLL_MS);
+  });
+}
+
+function mapBridgeGoogleSignInError(reason: string): Error {
+  if (reason === "user_cancelled") {
+    return Object.assign(new Error("Google sign-in was cancelled."), {
+      code: "auth/popup-closed-by-user",
+    });
+  }
+  if (reason === "developer_error") {
+    return Object.assign(
+      new Error(
+        "Google Sign-In is misconfigured for this app build (OAuth client / SHA-1). Update from Play Store or contact support.",
+      ),
+      { code: "app/developer_error" },
+    );
+  }
+  if (reason === "bridge_timeout") {
+    return Object.assign(
+      new Error("Google sign-in timed out after choosing an account. Please try again."),
+      { code: "app/google-sign-in-incomplete" },
+    );
+  }
+  return Object.assign(new Error(reason), { code: `app/${reason}` });
+}
+
 /**
  * Waits for inject bridge reply OR native token injected after account picker
  * (Android delivers __AMYNEST_PENDING_GOOGLE_ID_TOKEN when WebMessage reply is lost).
@@ -155,30 +213,20 @@ export async function signInWithGoogleViaNativeBridge(): Promise<NativeGoogleSig
     });
   }
 
-  const pendingFromEvent = new Promise<NativeGoogleSignInResult>((resolve) => {
-    const onPending = () => {
-      const recovered = pendingTokenSignInResult();
-      if (!recovered) return;
-      window.removeEventListener("amynest-google-auth-pending", onPending);
-      resolve(recovered);
-    };
-    window.addEventListener("amynest-google-auth-pending", onPending);
-  });
+  const pendingRecovery = waitForInjectedGoogleIdToken(
+    GOOGLE_SIGN_IN_BRIDGE_TIMEOUT_MS + 5_000,
+  );
 
   const bridgeCall = callAsync<BridgeReply<NativeGoogleSignInResult>>(
     bridge,
     { action: "signInWithGoogle" },
+    GOOGLE_SIGN_IN_BRIDGE_TIMEOUT_MS,
   ).then((result) => {
     if (!result.ok) {
       const recovered = pendingTokenSignInResult();
       if (recovered) return recovered;
       const reason = result.error || "google_sign_in_failed";
-      if (reason === "user_cancelled") {
-        throw Object.assign(new Error("Google sign-in was cancelled."), {
-          code: "auth/popup-closed-by-user",
-        });
-      }
-      throw Object.assign(new Error(reason), { code: `app/${reason}` });
+      throw mapBridgeGoogleSignInError(reason);
     }
     const idToken = result.data?.idToken?.trim();
     if (!idToken) {
@@ -197,7 +245,7 @@ export async function signInWithGoogleViaNativeBridge(): Promise<NativeGoogleSig
   });
 
   try {
-    return await Promise.race([bridgeCall, pendingFromEvent]);
+    return await Promise.race([bridgeCall, pendingRecovery]);
   } catch (err) {
     const recovered = pendingTokenSignInResult();
     if (recovered) return recovered;
