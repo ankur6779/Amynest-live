@@ -13,6 +13,7 @@ import android.view.View
 import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
+import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.ServiceWorkerController
 import android.webkit.WebChromeClient
@@ -22,6 +23,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -70,6 +72,11 @@ class MainActivity : AppCompatActivity() {
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingGeoOrigin: String? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
+    private var pendingMicPermissionCallbackId: String? = null
+
+    private val micPermissionPrefs by lazy {
+        getSharedPreferences("amynest_permissions", MODE_PRIVATE)
+    }
 
     // ── Permission launchers ─────────────────────────────────────────────────
 
@@ -90,8 +97,15 @@ class MainActivity : AppCompatActivity() {
             pendingGeoCallback = null
             pendingGeoOrigin = null
 
+            recordMicrophonePermissionResultIfPresent(granted)
             if (req != null) {
-                val allGranted = granted.values.all { it }
+                val requiredPerms = androidPermissionsForWebResources(req.resources)
+                val allGranted = requiredPerms.all { isPermissionGranted(it) }
+                Log.d(
+                    TAG,
+                    "Web permission result resources=${req.resources.joinToString()} " +
+                        "requested=${requiredPerms.joinToString()} result=$granted realAllGranted=$allGranted",
+                )
                 if (allGranted) req.grant(req.resources) else req.deny()
             }
             if (geoCb != null && geoOrigin != null) {
@@ -103,8 +117,26 @@ class MainActivity : AppCompatActivity() {
 
     /** Proactive startup location + microphone (system dialog on first install). */
     private val startupPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { _ ->
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
             /* WebChromeClient handles follow-up when web features run. */
+            recordMicrophonePermissionResultIfPresent(granted)
+            Log.d(TAG, "Startup permission result mic=${microphonePermissionStatus()}")
+            broadcastMicrophonePermissionStatus("startup")
+        }
+
+    /** Explicit microphone requests from the web app before Speech Coach starts recording. */
+    private val micPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            recordMicrophonePermissionResult(granted)
+            val callbackId = pendingMicPermissionCallbackId
+            pendingMicPermissionCallbackId = null
+            val realGranted = hasRecordAudioPermission()
+            val status = microphonePermissionStatus()
+            Log.d(
+                TAG,
+                "Native mic permission callback granted=$granted realGranted=$realGranted status=$status callbackId=$callbackId",
+            )
+            dispatchMicrophonePermissionResult(callbackId, status, "native-request")
         }
 
     /** Native Google account picker — result forwarded to [AuthBridge]. */
@@ -175,6 +207,7 @@ class MainActivity : AppCompatActivity() {
             permissionRequester = { askNotificationPermission() },
         )
         pushBridge.install(webView)
+        installMicrophoneBridge(webView)
 
         FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
             if (token != null && pushBridge.getToken() == null) {
@@ -202,6 +235,9 @@ class MainActivity : AppCompatActivity() {
             ) == PackageManager.PERMISSION_GRANTED
         }
         pushBridge.setPermission(granted)
+        val micStatus = microphonePermissionStatus()
+        Log.d(TAG, "onResume permission sync notifications=$granted microphone=$micStatus")
+        broadcastMicrophonePermissionStatus("resume")
         authBridge?.deliverPendingGoogleAuthIfAny()
         authBridge?.deliverPendingFacebookAuthIfAny()
         webView.postDelayed({ authBridge?.deliverPendingGoogleAuthIfAny() }, 200)
@@ -363,31 +399,38 @@ class MainActivity : AppCompatActivity() {
 
         wv.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest) {
-                val androidPerms = mutableListOf<String>()
-                for (resource in request.resources) {
-                    when (resource) {
-                        PermissionRequest.RESOURCE_VIDEO_CAPTURE ->
-                            androidPerms.add(Manifest.permission.CAMERA)
-                        PermissionRequest.RESOURCE_AUDIO_CAPTURE ->
-                            androidPerms.add(Manifest.permission.RECORD_AUDIO)
-                    }
-                }
+                val androidPerms = androidPermissionsForWebResources(request.resources)
+                Log.d(
+                    TAG,
+                    "WebView permission request resources=${request.resources.joinToString()} " +
+                        "androidPerms=${androidPerms.joinToString()} mic=${microphonePermissionStatus()}",
+                )
                 if (androidPerms.isEmpty()) {
                     request.grant(request.resources)
                     return
                 }
                 val missing = androidPerms.filter {
-                    ContextCompat.checkSelfPermission(
-                        this@MainActivity,
-                        it,
-                    ) != PackageManager.PERMISSION_GRANTED
+                    !isPermissionGranted(it)
                 }
                 if (missing.isEmpty()) {
+                    Log.d(TAG, "WebView permission request granted immediately from real runtime state")
                     request.grant(request.resources)
                 } else {
+                    if (pendingPermissionRequest != null || pendingGeoCallback != null) {
+                        Log.w(TAG, "Denying overlapping WebView permission request; another request is pending")
+                        request.deny()
+                        return
+                    }
                     pendingPermissionRequest = request
+                    Log.d(TAG, "Launching WebView runtime permission request missing=${missing.joinToString()}")
                     webPermissionLauncher.launch(missing.toTypedArray())
                 }
+            }
+
+            override fun onPermissionRequestCanceled(request: PermissionRequest) {
+                if (pendingPermissionRequest === request) pendingPermissionRequest = null
+                Log.d(TAG, "WebView permission request canceled resources=${request.resources.joinToString()}")
+                request.deny()
             }
 
             override fun onGeolocationPermissionsShowPrompt(
@@ -488,6 +531,155 @@ class MainActivity : AppCompatActivity() {
             "window.onNotificationTap(${JSONObject.quote(deepLink)},${JSONObject.quote(category)});" +
         "}"
 
+    // ── Microphone permission bridge ─────────────────────────────────────────
+
+    @SuppressLint("JavascriptInterface")
+    private fun installMicrophoneBridge(wv: WebView) {
+        wv.addJavascriptInterface(AndroidMicrophoneInterface(), MIC_JS_OBJECT_NAME)
+        wv.evaluateJavascript(
+            "window.__AMYNEST_WRAPPER='android';" +
+                "window.dispatchEvent(new Event('amynest-microphone-bridge-ready'));",
+            null,
+        )
+        Log.d(TAG, "Android microphone permission bridge installed")
+    }
+
+    inner class AndroidMicrophoneInterface {
+        @JavascriptInterface
+        fun getPermissionStatus(): String {
+            val status = microphonePermissionStatus()
+            Log.d(TAG, "JS getPermissionStatus microphone=$status")
+            return status
+        }
+
+        @JavascriptInterface
+        fun requestPermission(callbackId: String?): String {
+            val status = microphonePermissionStatus()
+            Log.d(TAG, "JS requestPermission callbackId=$callbackId current=$status")
+            if (status == MIC_STATUS_GRANTED || status == MIC_STATUS_BLOCKED) {
+                return status
+            }
+            if (pendingMicPermissionCallbackId != null) {
+                Log.w(TAG, "JS requestPermission ignored because request is already pending")
+                return MIC_STATUS_BUSY
+            }
+            pendingMicPermissionCallbackId = callbackId?.takeIf { it.isNotBlank() }
+            runOnUiThread {
+                Log.d(TAG, "Launching native RECORD_AUDIO permission request")
+                micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            }
+            return MIC_STATUS_REQUESTED
+        }
+
+        @JavascriptInterface
+        fun openSettings() {
+            Log.d(TAG, "JS openSettings for microphone")
+            runOnUiThread { openAppSettings() }
+        }
+    }
+
+    private fun androidPermissionsForWebResources(resources: Array<String>): List<String> {
+        val perms = linkedSetOf<String>()
+        for (resource in resources) {
+            when (resource) {
+                PermissionRequest.RESOURCE_VIDEO_CAPTURE -> perms.add(Manifest.permission.CAMERA)
+                PermissionRequest.RESOURCE_AUDIO_CAPTURE -> perms.add(Manifest.permission.RECORD_AUDIO)
+            }
+        }
+        return perms.toList()
+    }
+
+    private fun isPermissionGranted(permission: String): Boolean =
+        ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+
+    private fun hasRecordAudioPermission(): Boolean = isPermissionGranted(Manifest.permission.RECORD_AUDIO)
+
+    private fun microphonePermissionStatus(): String {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || hasRecordAudioPermission()) {
+            clearMicrophoneDeniedState()
+            return MIC_STATUS_GRANTED
+        }
+        if (micPermissionPrefs.getBoolean(MIC_PERMISSION_BLOCKED_KEY, false)) {
+            return MIC_STATUS_BLOCKED
+        }
+        val requestedBefore = micPermissionPrefs.getBoolean(MIC_PERMISSION_REQUESTED_KEY, false)
+        val shouldShowRationale = ActivityCompat.shouldShowRequestPermissionRationale(
+            this,
+            Manifest.permission.RECORD_AUDIO,
+        )
+        return when {
+            shouldShowRationale -> MIC_STATUS_DENIED
+            requestedBefore -> MIC_STATUS_DENIED
+            else -> MIC_STATUS_PROMPT
+        }
+    }
+
+    private fun recordMicrophonePermissionResultIfPresent(granted: Map<String, Boolean>) {
+        if (!granted.containsKey(Manifest.permission.RECORD_AUDIO)) return
+        recordMicrophonePermissionResult(hasRecordAudioPermission())
+    }
+
+    private fun recordMicrophonePermissionResult(granted: Boolean) {
+        if (granted || hasRecordAudioPermission()) {
+            clearMicrophoneDeniedState()
+            return
+        }
+        val previousDenials = micPermissionPrefs.getInt(MIC_PERMISSION_DENIAL_COUNT_KEY, 0)
+        val denialCount = previousDenials + 1
+        val shouldShowRationale = ActivityCompat.shouldShowRequestPermissionRationale(
+            this,
+            Manifest.permission.RECORD_AUDIO,
+        )
+        val blocked = denialCount >= 2 && !shouldShowRationale
+        micPermissionPrefs.edit()
+            .putBoolean(MIC_PERMISSION_REQUESTED_KEY, true)
+            .putInt(MIC_PERMISSION_DENIAL_COUNT_KEY, denialCount)
+            .putBoolean(MIC_PERMISSION_BLOCKED_KEY, blocked)
+            .apply()
+        Log.d(
+            TAG,
+            "Recorded mic denial count=$denialCount shouldShowRationale=$shouldShowRationale blocked=$blocked",
+        )
+    }
+
+    private fun clearMicrophoneDeniedState() {
+        micPermissionPrefs.edit()
+            .putBoolean(MIC_PERMISSION_REQUESTED_KEY, true)
+            .putInt(MIC_PERMISSION_DENIAL_COUNT_KEY, 0)
+            .putBoolean(MIC_PERMISSION_BLOCKED_KEY, false)
+            .apply()
+    }
+
+    private fun dispatchMicrophonePermissionResult(
+        callbackId: String?,
+        status: String,
+        source: String,
+    ) {
+        val js =
+            "(function(){" +
+                "var detail={callbackId:${JSONObject.quote(callbackId ?: "")}," +
+                "status:${JSONObject.quote(status)},source:${JSONObject.quote(source)}};" +
+                "window.dispatchEvent(new CustomEvent('amynest-microphone-permission-result',{detail:detail}));" +
+                "window.dispatchEvent(new CustomEvent('amynest-microphone-permission-changed',{detail:detail}));" +
+            "})();"
+        webView.post { webView.evaluateJavascript(js, null) }
+    }
+
+    private fun broadcastMicrophonePermissionStatus(source: String) {
+        if (!::webView.isInitialized) return
+        dispatchMicrophonePermissionResult(null, microphonePermissionStatus(), source)
+    }
+
+    private fun openAppSettings() {
+        val uri = Uri.fromParts("package", packageName, null)
+        val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, uri)
+        try {
+            startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            Log.w(TAG, "Unable to open app settings: ${e.message}")
+        }
+    }
+
     // ── System chrome ────────────────────────────────────────────────────────
 
     /** Keyboard inset + shell class only (no status/nav safe-area padding). */
@@ -575,7 +767,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
         if (needed.isNotEmpty()) {
+            if (needed.contains(Manifest.permission.RECORD_AUDIO)) {
+                micPermissionPrefs.edit().putBoolean(MIC_PERMISSION_REQUESTED_KEY, true).apply()
+            }
+            Log.d(TAG, "Launching startup permissions: ${needed.joinToString()}")
             startupPermissionLauncher.launch(needed.toTypedArray())
         }
+    }
+
+    companion object {
+        private const val MIC_JS_OBJECT_NAME = "AndroidMicrophone"
+        private const val MIC_PERMISSION_REQUESTED_KEY = "record_audio_requested"
+        private const val MIC_PERMISSION_DENIAL_COUNT_KEY = "record_audio_denial_count"
+        private const val MIC_PERMISSION_BLOCKED_KEY = "record_audio_blocked"
+        private const val MIC_STATUS_GRANTED = "granted"
+        private const val MIC_STATUS_PROMPT = "prompt"
+        private const val MIC_STATUS_DENIED = "denied"
+        private const val MIC_STATUS_BLOCKED = "blocked"
+        private const val MIC_STATUS_BUSY = "busy"
+        private const val MIC_STATUS_REQUESTED = "requested"
     }
 }

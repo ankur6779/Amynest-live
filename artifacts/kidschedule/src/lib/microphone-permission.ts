@@ -14,22 +14,132 @@ import {
 
 export type MicrophoneAccessResult =
   | { granted: true }
-  | { granted: false; reason: "denied" | "unavailable" };
+  | { granted: false; reason: "denied" | "blocked" | "unavailable" };
 
 export type MicrophoneStreamResult =
   | { ok: true; stream: MediaStream }
-  | { ok: false; reason: "denied" | "unavailable" };
+  | { ok: false; reason: "denied" | "blocked" | "unavailable" };
+
+type AndroidMicrophoneStatus = "granted" | "prompt" | "denied" | "blocked" | "busy" | "requested" | "unavailable";
+
+type AndroidMicrophoneBridge = {
+  getPermissionStatus?: () => AndroidMicrophoneStatus | string;
+  requestPermission?: (callbackId: string) => AndroidMicrophoneStatus | string;
+  openSettings?: () => void;
+};
+
+declare global {
+  interface Window {
+    AndroidMicrophone?: AndroidMicrophoneBridge;
+  }
+}
 
 let cache: "unknown" | "granted" | "denied" = "unknown";
 let inFlight: Promise<MicrophoneAccessResult> | null = null;
 let visibilityWired = false;
+let nativeMicRequest: Promise<MicrophoneAccessResult> | null = null;
 
 function isAndroidWebViewWrapper(): boolean {
   try {
-    return /AmyNestAndroid/.test(navigator.userAgent);
+    return /AmyNestAndroid/.test(navigator.userAgent) || typeof window.AndroidMicrophone !== "undefined";
   } catch {
     return false;
   }
+}
+
+function getAndroidMicrophoneBridge(): AndroidMicrophoneBridge | null {
+  if (typeof window === "undefined" || !isAndroidWebViewWrapper()) return null;
+  return window.AndroidMicrophone ?? null;
+}
+
+function normalizeAndroidMicrophoneStatus(status: string | undefined | null): AndroidMicrophoneStatus {
+  if (
+    status === "granted" ||
+    status === "prompt" ||
+    status === "denied" ||
+    status === "blocked" ||
+    status === "busy" ||
+    status === "requested" ||
+    status === "unavailable"
+  ) {
+    return status;
+  }
+  return "unavailable";
+}
+
+function logMicrophonePermission(message: string, detail?: unknown): void {
+  try {
+    if (detail === undefined) console.debug(`[amynest:mic] ${message}`);
+    else console.debug(`[amynest:mic] ${message}`, detail);
+  } catch {
+    /* logging must not affect recording */
+  }
+}
+
+function statusToAccessResult(status: AndroidMicrophoneStatus): MicrophoneAccessResult {
+  if (status === "granted") return { granted: true };
+  if (status === "blocked") return { granted: false, reason: "blocked" };
+  if (status === "unavailable") return { granted: false, reason: "unavailable" };
+  return { granted: false, reason: "denied" };
+}
+
+async function requestAndroidNativeMicrophoneAccess(): Promise<MicrophoneAccessResult | null> {
+  const bridge = getAndroidMicrophoneBridge();
+  if (!bridge?.getPermissionStatus || !bridge.requestPermission) return null;
+
+  if (nativeMicRequest) return nativeMicRequest;
+  if (typeof window === "undefined") return { granted: false, reason: "unavailable" };
+
+  nativeMicRequest = new Promise<MicrophoneAccessResult>((resolve) => {
+    const before = normalizeAndroidMicrophoneStatus(bridge.getPermissionStatus?.());
+    logMicrophonePermission("android native status before request", before);
+    if (before === "granted" || before === "blocked" || before === "unavailable") {
+      resolve(statusToAccessResult(before));
+      return;
+    }
+
+    const callbackId = `mic_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    let timeoutId: number | null = null;
+    const finish = (status: AndroidMicrophoneStatus) => {
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+      window.removeEventListener("amynest-microphone-permission-result", onResult);
+      logMicrophonePermission("android native request result", status);
+      resolve(statusToAccessResult(status));
+    };
+    const onResult = (event: Event) => {
+      const detail = (event as CustomEvent<{ callbackId?: string; status?: string }>).detail;
+      if (!detail || detail.callbackId !== callbackId) return;
+      finish(normalizeAndroidMicrophoneStatus(detail.status));
+    };
+
+    window.addEventListener("amynest-microphone-permission-result", onResult);
+    const launched = normalizeAndroidMicrophoneStatus(bridge.requestPermission?.(callbackId));
+    logMicrophonePermission("android native request launch", { callbackId, launched });
+
+    if (launched !== "requested") {
+      window.removeEventListener("amynest-microphone-permission-result", onResult);
+      resolve(statusToAccessResult(launched === "busy" ? before : launched));
+      return;
+    }
+
+    timeoutId = window.setTimeout(() => {
+      const latest = normalizeAndroidMicrophoneStatus(bridge.getPermissionStatus?.());
+      logMicrophonePermission("android native request timeout; using latest status", latest);
+      finish(latest);
+    }, 30_000);
+  }).finally(() => {
+    nativeMicRequest = null;
+  });
+
+  return nativeMicRequest;
+}
+
+export function openAndroidMicrophoneSettings(): boolean {
+  const bridge = getAndroidMicrophoneBridge();
+  if (!bridge?.openSettings) return false;
+  logMicrophonePermission("opening android app settings");
+  bridge.openSettings();
+  return true;
 }
 
 function prefersGetUserMediaTruth(forFeature: boolean): boolean {
@@ -46,6 +156,7 @@ function prefersGetUserMediaTruth(forFeature: boolean): boolean {
 export function resetMicrophonePermissionCache(): void {
   cache = "unknown";
   inFlight = null;
+  nativeMicRequest = null;
 }
 
 function wireCacheResetOnForeground(): void {
@@ -93,6 +204,15 @@ export async function requestMicrophoneAccess(options?: {
       return { granted: false, reason: "unavailable" };
     }
 
+    if (isAndroidWebViewWrapper()) {
+      const native = await requestAndroidNativeMicrophoneAccess();
+      if (native) {
+        if (native.granted) cache = "granted";
+        else cache = "unknown";
+        return native;
+      }
+    }
+
     if (isCapacitorIosNative()) {
       await prepareIosAudioSessionForRecording();
       const ios = await requestIosMicrophoneAccess();
@@ -129,11 +249,14 @@ export async function requestMicrophoneAccess(options?: {
     }
 
     try {
+      logMicrophonePermission("requesting getUserMedia permission probe", { forFeature });
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach((t) => t.stop());
       cache = "granted";
+      logMicrophonePermission("getUserMedia permission probe granted");
       return { granted: true };
-    } catch {
+    } catch (err) {
+      logMicrophonePermission("getUserMedia permission probe failed", err);
       if (isCapacitorIosNative()) {
         try {
           const { status } = await MicPermissionCapacitor.getMicrophoneStatus();
@@ -180,14 +303,20 @@ export async function openMicrophoneStream(
 
   const access = await requestMicrophoneAccess({ forFeature });
   if (!access.granted) {
+    logMicrophonePermission("openMicrophoneStream blocked before stream open", access.reason);
     return { ok: false, reason: access.reason };
   }
 
   try {
+    logMicrophonePermission("opening microphone stream");
     const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
     cache = "granted";
+    logMicrophonePermission("microphone stream opened", {
+      tracks: stream.getAudioTracks().length,
+    });
     return { ok: true, stream };
-  } catch {
+  } catch (err) {
+    logMicrophonePermission("microphone stream open failed", err);
     resetMicrophonePermissionCache();
     return { ok: false, reason: "denied" };
   }
