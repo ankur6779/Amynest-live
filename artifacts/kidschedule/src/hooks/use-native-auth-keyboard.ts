@@ -10,15 +10,15 @@ import {
   isCapacitorIosShell,
   isNativeAmyNestAndroidWrapper,
 } from "@/lib/device-lite";
-import { syncAndroidSystemUi } from "@/lib/native-android-system-ui";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 
 /** Applied to email/password/phone inputs on auth screens (native WebView text visibility). */
 export const AUTH_INPUT_CLASS = "amynest-auth-input";
 
-const AUTH_INPUT_SCROLL_MARGIN = 36;
+const AUTH_BOTTOM_CLEARANCE = 16;
 const KEYBOARD_OPEN_THRESHOLD = 72;
 const KEYBOARD_RESET_DELAY_MS = 320;
+const AUTH_SCROLL_SETTLE_MS = 360;
 
 interface ViewportMetrics {
   height: number;
@@ -106,67 +106,59 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
   );
 }
 
-function readVisibleBounds(margin: number = AUTH_INPUT_SCROLL_MARGIN): {
-  top: number;
-  bottom: number;
-} {
+function readVisibleBottom(margin: number = AUTH_BOTTOM_CLEARANCE): number {
   const metrics = readViewportMetrics();
   const vv = window.visualViewport;
   const keyboardInset = metrics.keyboardInset;
 
   if (keyboardInset > KEYBOARD_OPEN_THRESHOLD) {
-    return {
-      top: margin,
-      bottom: window.innerHeight - keyboardInset - margin,
-    };
+    return window.innerHeight - keyboardInset - margin;
   }
 
-  return {
-    top: (vv?.offsetTop ?? 0) + margin,
-    bottom:
-      (vv?.offsetTop ?? 0) +
-      (vv?.height ?? window.innerHeight) -
-      margin,
-  };
+  return (
+    (vv?.offsetTop ?? 0) +
+    (vv?.height ?? window.innerHeight) -
+    margin
+  );
 }
 
-/** Scroll a focused field into the visible area above the software keyboard. */
+/** True when the input bottom edge sits behind the keyboard / visible viewport. */
+function isAuthInputObscured(
+  el: HTMLElement,
+  margin: number = AUTH_BOTTOM_CLEARANCE,
+): boolean {
+  const rect = el.getBoundingClientRect();
+  return rect.bottom > readVisibleBottom(margin);
+}
+
+/**
+ * Minimal scroll — only when the input bottom is hidden. Never centers the field.
+ */
 export function scrollAuthInputIntoView(
   el: HTMLElement,
   scrollContainer?: HTMLElement | null,
   behavior: ScrollBehavior = "smooth",
-  margin: number = AUTH_INPUT_SCROLL_MARGIN,
+  margin: number = AUTH_BOTTOM_CLEARANCE,
 ) {
-  const run = () => {
-    const { top: visibleTop, bottom: visibleBottom } = readVisibleBounds(margin);
-    const rect = el.getBoundingClientRect();
+  const visibleBottom = readVisibleBottom(margin);
+  const rect = el.getBoundingClientRect();
 
-    if (rect.top >= visibleTop && rect.bottom <= visibleBottom) {
-      return;
-    }
+  if (rect.bottom <= visibleBottom) {
+    return;
+  }
 
-    if (scrollContainer) {
-      let delta = 0;
-      if (rect.bottom > visibleBottom) {
-        delta = rect.bottom - visibleBottom + 12;
-      } else if (rect.top < visibleTop) {
-        delta = rect.top - visibleTop;
-      }
-      if (delta !== 0) {
-        scrollContainer.scrollTo({
-          top: scrollContainer.scrollTop + delta,
-          behavior,
-        });
-      }
-      return;
-    }
+  const delta = rect.bottom - visibleBottom;
+  if (delta <= 0) return;
 
-    el.scrollIntoView({ behavior, block: "center", inline: "nearest" });
-  };
+  if (scrollContainer) {
+    scrollContainer.scrollTo({
+      top: scrollContainer.scrollTop + delta,
+      behavior,
+    });
+    return;
+  }
 
-  requestAnimationFrame(run);
-  window.setTimeout(run, 120);
-  window.setTimeout(run, 280);
+  el.scrollIntoView({ behavior, block: "nearest", inline: "nearest" });
 }
 
 function resetAuthScrollPosition(scroll: HTMLElement | null) {
@@ -202,13 +194,28 @@ export function useNativeAuthKeyboard(
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const fallbackInsetRef = useRef(0);
   const resetTimerRef = useRef<number | null>(null);
+  const scrollTimerRef = useRef<number | null>(null);
+  const lastScrolledFieldRef = useRef<HTMLElement | null>(null);
 
-  const scrollFocused = useCallback((behavior: ScrollBehavior = "smooth") => {
-    const active = document.activeElement;
-    if (isAuthField(active)) {
-      scrollAuthInputIntoView(active, scrollRef.current, behavior);
-    }
-  }, []);
+  const scrollFocusedIfNeeded = useCallback(
+    (behavior: ScrollBehavior = "smooth", delay = AUTH_SCROLL_SETTLE_MS) => {
+      if (scrollTimerRef.current != null) {
+        window.clearTimeout(scrollTimerRef.current);
+      }
+
+      scrollTimerRef.current = window.setTimeout(() => {
+        scrollTimerRef.current = null;
+        const active = document.activeElement;
+        if (!isAuthField(active)) return;
+        if (!isAuthInputObscured(active)) return;
+        if (lastScrolledFieldRef.current === active) return;
+
+        scrollAuthInputIntoView(active, scrollRef.current, behavior);
+        lastScrolledFieldRef.current = active;
+      }, delay);
+    },
+    [],
+  );
 
   const dismissKeyboard = useCallback(() => {
     const active = document.activeElement;
@@ -239,6 +246,11 @@ export function useNativeAuthKeyboard(
     }
 
     fallbackInsetRef.current = 0;
+    lastScrolledFieldRef.current = null;
+    if (scrollTimerRef.current != null) {
+      window.clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = null;
+    }
     clearAuthViewportCssVars();
     document.documentElement.classList.remove("amynest-auth-keyboard-open");
     setKeyboardOpen(false);
@@ -304,8 +316,7 @@ export function useNativeAuthKeyboard(
       keyboardInset: estimated,
       height: Math.max(0, window.innerHeight - estimated - metrics.offsetTop),
     });
-    scrollFocused("smooth");
-  }, [openKeyboardLayout, scrollFocused]);
+  }, [openKeyboardLayout]);
 
   useEffect(() => {
     if (!enabled || typeof window === "undefined") return;
@@ -314,10 +325,6 @@ export function useNativeAuthKeyboard(
     root.classList.add("amynest-auth-active");
     clearAuthViewportCssVars();
     resetAuthScrollPosition(scrollRef.current);
-
-    if (isNativeAmyNestAndroidWrapper()) {
-      syncAndroidSystemUi(true);
-    }
 
     const vv = window.visualViewport;
     vv?.addEventListener("resize", syncViewport);
@@ -338,7 +345,7 @@ export function useNativeAuthKeyboard(
           offsetTop: vv?.offsetTop ?? 0,
           keyboardInset: inset,
         });
-        scrollFocused("smooth");
+        scrollFocusedIfNeeded("smooth");
         return;
       }
       scheduleResetAfterKeyboard();
@@ -359,7 +366,7 @@ export function useNativeAuthKeyboard(
           void Keyboard.setResizeMode({ mode });
           void Keyboard.addListener("keyboardDidShow", () => {
             syncViewport();
-            scrollFocused("smooth");
+            scrollFocusedIfNeeded("smooth");
           }).then((handle) => {
             if (!cancelled) removeKeyboardShow = () => void handle.remove();
           });
@@ -384,11 +391,9 @@ export function useNativeAuthKeyboard(
         resetTimerRef.current = null;
       }
 
+      lastScrolledFieldRef.current = null;
       window.setTimeout(() => syncViewport(), 80);
-      window.setTimeout(
-        () => scrollAuthInputIntoView(target, scrollRef.current, "smooth"),
-        280,
-      );
+      scrollFocusedIfNeeded("smooth");
       window.setTimeout(() => applyAndroidKeyboardFallback(), 350);
     };
 
@@ -404,6 +409,10 @@ export function useNativeAuthKeyboard(
       if (resetTimerRef.current != null) {
         window.clearTimeout(resetTimerRef.current);
         resetTimerRef.current = null;
+      }
+      if (scrollTimerRef.current != null) {
+        window.clearTimeout(scrollTimerRef.current);
+        scrollTimerRef.current = null;
       }
       root.classList.remove("amynest-auth-active");
       root.classList.remove("amynest-auth-keyboard-open");
@@ -421,9 +430,6 @@ export function useNativeAuthKeyboard(
       document.removeEventListener("focusout", onFocusOut);
       removeKeyboardShow?.();
       removeKeyboardHide?.();
-      if (isNativeAmyNestAndroidWrapper()) {
-        syncAndroidSystemUi(false);
-      }
     };
   }, [
     applyAndroidKeyboardFallback,
@@ -431,7 +437,7 @@ export function useNativeAuthKeyboard(
     openKeyboardLayout,
     resetAfterKeyboard,
     scheduleResetAfterKeyboard,
-    scrollFocused,
+    scrollFocusedIfNeeded,
     syncViewport,
   ]);
 
