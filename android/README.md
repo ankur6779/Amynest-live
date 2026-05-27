@@ -156,7 +156,11 @@ After changing `AuthBridge` or the web client ID, rebuild the APK. After changin
 Facebook Login uses the same **`AuthBridge.kt`** / `window.AmyNestAuthNative` pattern as Google:
 
 1. Meta App ID → `res/values/strings.xml` → `facebook_app_id` (already set)
-2. **Client token** → Meta → App Settings → Advanced → **Client token** → paste into `facebook_client_token` in `strings.xml`
+2. **Client token** → Meta → App Settings → Advanced → **Client token** → add to `android/local.properties`:
+   ```properties
+   facebook.clientToken=YOUR_META_CLIENT_TOKEN
+   ```
+   (gitignored — never commit this file)
 3. Meta → Facebook Login → Android → package `com.amynest.app`, class `com.amynest.app.MainActivity`, **key hashes** (release + debug)
 4. Firebase Console → Authentication → Sign-in method → **Facebook** enabled with same App ID + App Secret
 5. Rebuild APK (`versionCode` bump) and deploy web (`handleFacebookLogin()` → `loginAndroidWebViewFacebook()`)

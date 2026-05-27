@@ -113,7 +113,9 @@ export function prettyAuthError(err: unknown): string {
     case "auth/argument-error":
       return "Sign-in could not complete in the app browser. Update the app from the Play Store, or try email sign-in.";
     case "app/auth-bridge-unavailable":
-      return "Google Sign-In is not ready. Close and reopen the app, then try again.";
+      return "Sign-in is not ready in this app. Close and reopen the app, then try again.";
+    case "app/facebook-bridge-unavailable":
+      return "Facebook Sign-In is not ready in this app. Update from the Play Store, then try again.";
     case "app/google-native-required":
       return "Google Sign-In must use the in-app account picker. Update the app from the Play Store.";
     case "app/google-sign-in-incomplete":

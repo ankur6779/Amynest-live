@@ -1,0 +1,6 @@
+# Android SDK location (Android Studio default on macOS)
+sdk.dir=/Users/macbook/Library/Android/sdk
+
+# Meta client token for native Facebook Login (required for release builds).
+# Meta Developer Console → App Settings → Advanced → Client token
+# facebook.clientToken=YOUR_META_CLIENT_TOKEN
