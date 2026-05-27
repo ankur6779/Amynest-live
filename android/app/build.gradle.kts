@@ -15,8 +15,8 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 67
-        versionName = "1.4.24"
+        versionCode = 68
+        versionName = "1.4.25"
     }
 
     signingConfigs {
@@ -95,6 +95,20 @@ tasks.register<Zip>("packageReleaseNativeDebugSymbols") {
 afterEvaluate {
     tasks.named("bundleRelease") {
         finalizedBy("packageReleaseNativeDebugSymbols")
+        dependsOn("validateGoogleSignInConfig")
+    }
+}
+
+// Fail release bundles when google-services.json lacks Android OAuth SHA-1 for com.amynest.app.
+tasks.register<Exec>("validateGoogleSignInConfig") {
+    group = "verification"
+    description =
+        "Ensure google-services.json includes Android OAuth client (SHA-1) for native Google Sign-In"
+    workingDir = rootProject.projectDir
+    commandLine("node", "scripts/validate-google-services.mjs", "--strict")
+    onlyIf { file("app/google-services.json").exists() }
+    doFirst {
+        logger.lifecycle("Validating google-services.json for native Google Sign-In (com.amynest.app SHA-1)")
     }
 }
 

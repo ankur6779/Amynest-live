@@ -8,12 +8,14 @@ import { sendUserEmailVerification } from "@/lib/email-verification";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError, stashVerificationSendError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
+import { FacebookSignInButton } from "@/components/facebook-sign-in-button";
 import { AppleSignInButton } from "@/components/apple-sign-in-button";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
 import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
 import {
   ENABLE_APPLE_SIGN_IN,
   shouldShowGoogleSignIn,
+  shouldShowFacebookSignIn,
   shouldShowPhoneOtp,
 } from "@/lib/auth-feature-flags";
 import { navigateAfterAuth } from "@/lib/auth-navigation";
@@ -443,6 +445,10 @@ export default function SignUpPage() {
         <GoogleSignInButton onError={msg => setError(msg)} />
       ) : null}
 
+      {shouldShowFacebookSignIn() ? (
+        <FacebookSignInButton onError={msg => setError(msg)} />
+      ) : null}
+
       {ENABLE_APPLE_SIGN_IN ? (
         <AppleSignInButton onError={msg => setError(msg)} />
       ) : null}
@@ -454,7 +460,7 @@ export default function SignUpPage() {
         </div>
       ) : null}
 
-      {(shouldShowGoogleSignIn() || ENABLE_APPLE_SIGN_IN || shouldShowPhoneOtp()) && (
+      {(shouldShowGoogleSignIn() || shouldShowFacebookSignIn() || ENABLE_APPLE_SIGN_IN || shouldShowPhoneOtp()) && (
       <div style={{
       display: "flex",
       alignItems: "center",

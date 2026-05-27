@@ -358,6 +358,10 @@ function FirebaseAuthBootstrap() {
           void bootstrapPendingGoogleSignIn();
         },
       );
+      void import("@/lib/native-auth").then(({ logNativeAuthDiagnostics, isAndroidAuthBridgePresent }) => {
+        if (cancelled || !isAndroidAuthBridgePresent()) return;
+        void logNativeAuthDiagnostics();
+      });
     };
     resumePendingGoogleSignIn();
     window.addEventListener("amynest-google-auth-pending", resumePendingGoogleSignIn);
