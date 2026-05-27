@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { handleAppleLogin } from "@/lib/apple-auth";
 import { prettyAuthError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { ENABLE_APPLE_SIGN_IN, shouldShowAppleSignIn } from "@/lib/auth-feature-flags";
+import { AUTH_OAUTH_BTN_STYLE } from "@/lib/auth-screen-layout";
 
 type Props = {
   onError?: (message: string) => void;
@@ -47,21 +48,17 @@ export function AppleSignInButton({ onError, className }: Props) {
       className={className ?? "si-apple-btn"}
       data-testid="button-apple-sign-in"
       style={{
-        width: "100%",
-        height: "50px",
-        borderRadius: "14px",
+        ...AUTH_OAUTH_BTN_STYLE,
+        borderRadius: "12px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "10px",
+        gap: "8px",
         /* White Apple button — required contrast on dark auth card */
         background: busy ? "rgba(255,255,255,0.82)" : "#FFFFFF",
         border: "1px solid rgba(255,255,255,0.90)",
         color: "#000000",
-        fontSize: "15px",
-        fontWeight: 600,
         cursor: busy ? "not-allowed" : "pointer",
-        fontFamily: "inherit",
         boxShadow: busy
           ? "none"
           : "0 2px 16px rgba(0,0,0,0.35), 0 0 0 1px rgba(168,85,247,0.25)",

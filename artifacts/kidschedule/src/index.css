@@ -1167,7 +1167,7 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
 }
 
 .amynest-native-shell .si-apple-btn {
-  min-height: 50px;
+  min-height: 46px;
 }
 
 /* Auth screens — full-width; constrain height only while keyboard is open */
@@ -1260,11 +1260,11 @@ html.amynest-android-shell .amynest-auth-kav.amynest-auth-shell--keyboard {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   box-sizing: border-box;
-  padding-bottom: 32px;
+  padding-bottom: 18px;
 }
 
 html.amynest-native-shell:not(.amynest-android-shell) .amynest-auth-scroll {
-  padding-bottom: max(32px, env(safe-area-inset-bottom, 0px));
+  padding-bottom: max(18px, env(safe-area-inset-bottom, 0px));
 }
 
 .amynest-auth-shell--keyboard .amynest-auth-scroll {
@@ -1272,14 +1272,14 @@ html.amynest-native-shell:not(.amynest-android-shell) .amynest-auth-scroll {
   flex: 1;
   height: 100%;
   max-height: 100%;
-  padding-bottom: calc(32px + var(--auth-keyboard-inset, 0px));
+  padding-bottom: calc(18px + var(--auth-keyboard-inset, 0px));
 }
 
 html.amynest-native-shell:not(.amynest-android-shell)
   .amynest-auth-shell--keyboard
   .amynest-auth-scroll {
   padding-bottom: calc(
-    32px + var(--auth-keyboard-inset, 0px) + env(safe-area-inset-bottom, 0px)
+    18px + var(--auth-keyboard-inset, 0px) + env(safe-area-inset-bottom, 0px)
   );
 }
 
@@ -1295,6 +1295,30 @@ html.amynest-native-shell:not(.amynest-android-shell)
 
 .amynest-auth-shell--keyboard .amynest-auth-hero {
   display: none;
+}
+
+/* Compact auth layout — fit more content on one mobile screen */
+.amynest-auth-page .si-oauth-stack,
+.amynest-auth-page .su-oauth-stack {
+  gap: 8px;
+}
+
+@media (max-height: 740px) {
+  .amynest-auth-page .amynest-auth-hero {
+    transform: scale(0.9);
+    transform-origin: top center;
+    margin-bottom: -4px;
+  }
+}
+
+@media (max-height: 680px) {
+  .amynest-auth-page .amynest-auth-hero {
+    display: none;
+  }
+
+  .amynest-auth-page .amynest-auth-card {
+    margin-top: 0 !important;
+  }
 }
 
 .amynest-auth-input,

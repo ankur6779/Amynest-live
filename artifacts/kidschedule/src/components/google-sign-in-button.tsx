@@ -6,6 +6,7 @@ import { prettyAuthError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { shouldShowGoogleSignIn } from "@/lib/auth-feature-flags";
 import { navigateAfterAuth } from "@/lib/auth-navigation";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+import { AUTH_OAUTH_BTN_STYLE } from "@/lib/auth-screen-layout";
 
 type Props = {
   onError?: (message: string) => void;
@@ -87,20 +88,15 @@ export function GoogleSignInButton({ onError, className }: Props) {
       className={className ?? "si-google-btn"}
       data-testid="button-google-sign-in"
       style={{
-        width: "100%",
-        height: "50px",
-        borderRadius: "999px",
+        ...AUTH_OAUTH_BTN_STYLE,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "10px",
+        gap: "8px",
         background: busy ? "rgba(40,35,60,0.85)" : "rgba(255,255,255,0.96)",
         border: "1px solid rgba(168,85,247,0.22)",
         color: "#1f1f1f",
-        fontSize: "15px",
-        fontWeight: 600,
         cursor: busy ? "not-allowed" : "pointer",
-        fontFamily: "inherit",
         boxShadow: busy
           ? "none"
           : "0 2px 12px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.06) inset",

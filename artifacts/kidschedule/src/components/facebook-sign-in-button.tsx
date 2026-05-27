@@ -6,6 +6,7 @@ import { prettyAuthError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { shouldShowFacebookSignIn } from "@/lib/auth-feature-flags";
 import { navigateAfterAuth } from "@/lib/auth-navigation";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+import { AUTH_OAUTH_BTN_STYLE } from "@/lib/auth-screen-layout";
 
 type Props = {
   onError?: (message: string) => void;
@@ -71,20 +72,15 @@ export function FacebookSignInButton({ onError, className }: Props) {
       className={className ?? "si-facebook-btn"}
       data-testid="button-facebook-sign-in"
       style={{
-        width: "100%",
-        height: "50px",
-        borderRadius: "999px",
+        ...AUTH_OAUTH_BTN_STYLE,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "10px",
+        gap: "8px",
         background: busy ? "rgba(24,119,242,0.55)" : "#1877F2",
         border: "1px solid rgba(255,255,255,0.12)",
         color: "#FFFFFF",
-        fontSize: "15px",
-        fontWeight: 600,
         cursor: busy ? "not-allowed" : "pointer",
-        fontFamily: "inherit",
         boxShadow: busy
           ? "none"
           : "0 2px 12px rgba(24,119,242,0.35), 0 0 0 1px rgba(255,255,255,0.06) inset",

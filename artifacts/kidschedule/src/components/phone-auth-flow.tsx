@@ -32,9 +32,9 @@ declare global {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const baseInput: React.CSSProperties = {
-  height: "48px",
-  padding: "0 16px",
-  borderRadius: "14px",
+  height: "44px",
+  padding: "0 14px",
+  borderRadius: "12px",
   outline: "none",
   fontSize: "15px",
   background: "rgba(255,255,255,0.06)",
@@ -399,17 +399,17 @@ export default function PhoneAuthFlow({ onError }: Props) {
           onClick={() => setStep("phone")}
           style={{
             width: "100%",
-            height: "50px",
-            borderRadius: "14px",
+            height: "46px",
+            borderRadius: "12px",
             background: "rgba(123,63,242,0.15)",
             border: "1px solid rgba(123,63,242,0.45)",
             color: "hsl(var(--brand-violet-300))",
-            fontSize: "15px",
+            fontSize: "14px",
             fontWeight: 600,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: "10px",
+            gap: "8px",
             cursor: "pointer",
             fontFamily: "inherit",
           }}
