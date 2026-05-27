@@ -55,8 +55,8 @@ describe("google-auth", () => {
     });
 
     expect(isCapacitorNative()).toBe(true);
-    expect(shouldUseCapacitorGoogleAuth()).toBe(true);
-    expect(shouldUseNativeGoogleAuth()).toBe(true);
+    expect(shouldUseCapacitorGoogleAuth()).toBe(false);
+    expect(shouldUseNativeGoogleAuth()).toBe(false);
     expect(shouldUseAndroidWebViewGoogleAuth()).toBe(false);
   });
 

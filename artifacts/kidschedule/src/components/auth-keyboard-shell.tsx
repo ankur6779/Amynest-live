@@ -3,8 +3,8 @@ import { isNativeAmyNestShell } from "@/lib/native-shell";
 
 type AuthKeyboardShellProps = {
   children: ReactNode;
-  kavRef?: RefObject<HTMLDivElement>;
-  scrollRef?: RefObject<HTMLDivElement>;
+  kavRef?: RefObject<HTMLDivElement | null>;
+  scrollRef?: RefObject<HTMLDivElement | null>;
   keyboardOpen?: boolean;
   style?: CSSProperties;
   className?: string;

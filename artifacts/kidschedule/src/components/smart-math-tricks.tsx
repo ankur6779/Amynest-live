@@ -14,6 +14,8 @@ import {
   NumberLineVisual,
 } from "@/components/math-trick-visuals";
 import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
+import { audioManager } from "@/lib/audio-manager";
+import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
 
 import { useTranslation } from "react-i18next";
 
@@ -196,30 +198,45 @@ function TrickCard({
     pause,
     speaking,
     loading,
+    activePhrase,
     primeSpeakGesture,
   } = useAmyVoice();
+  const trickSpeakText = useMemo(() => trick.audioText.trim(), [trick.audioText]);
   const trickSpeakOpts = useMemo(
     () => ({
       catalogPlayback: true as const,
-      staticCatalogTexts: [trick.audioText],
+      staticCatalogTexts: [trickSpeakText],
     }),
-    [trick.audioText],
+    [trickSpeakText],
   );
+  const trickActiveKeys = useMemo(() => {
+    const keys = new Set<string>();
+    if (trickSpeakText) keys.add(trickSpeakText.toLowerCase());
+    return keys;
+  }, [trickSpeakText]);
+  const isThisTrickActive =
+    activePhrase != null && trickActiveKeys.has(activePhrase.toLowerCase());
+  const hearTrickBusy = isThisTrickActive && (speaking || loading);
   const [practiceMode, setPracticeMode] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [floatKey, setFloatKey] = useState(0);
   const meta = getMathTrickMeta(trick.id);
   const handleSpeak = useCallback(() => {
-    if (speaking || loading) {
+    audioManager.unlockFromUserGesture();
+    if (hearTrickBusy) {
       pause();
       return;
     }
-    void speak(trick.audioText, trickSpeakOpts);
-  }, [speaking, loading, speak, pause, trick.audioText, trickSpeakOpts]);
+    void speak(trickSpeakText, trickSpeakOpts);
+  }, [hearTrickBusy, speak, pause, trickSpeakText, trickSpeakOpts]);
   const handlePrimeSpeak = useCallback(() => {
-    primeSpeakGesture(trick.audioText, trickSpeakOpts);
-  }, [primeSpeakGesture, trick.audioText, trickSpeakOpts]);
+    audioManager.unlockFromUserGesture();
+    if (trickSpeakText) {
+      primeStaticAudioInUserGesture(trickSpeakText, "default");
+    }
+    primeSpeakGesture(trickSpeakText, trickSpeakOpts);
+  }, [primeSpeakGesture, trickSpeakText, trickSpeakOpts]);
   const handleSubmit = useCallback(() => {
     if (!selected) return;
     setSubmitted(true);
@@ -326,12 +343,12 @@ function TrickCard({
                 onClick={handleSpeak}
                 className="flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
                 style={{
-          background: speaking || loading ? `${trick.color}33` : "rgba(255,255,255,0.1)",
-          border: `1.5px solid ${speaking || loading ? trick.color : "rgba(255,255,255,0.15)"}`,
-          color: speaking || loading ? trick.color : "rgba(255,255,255,0.7)"
+          background: hearTrickBusy ? `${trick.color}33` : "rgba(255,255,255,0.1)",
+          border: `1.5px solid ${hearTrickBusy ? trick.color : "rgba(255,255,255,0.15)"}`,
+          color: hearTrickBusy ? trick.color : "rgba(255,255,255,0.7)"
         }}>
-                {loading ? "⏳" : speaking ? "🔊" : "🔈"}{" "}
-                {speaking ? t("components.smart_math_tricks.playing") : t("components.smart_math_tricks.hear_trick")}
+                {hearTrickBusy && loading ? "⏳" : hearTrickBusy ? "🔊" : "🔈"}{" "}
+                {hearTrickBusy ? t("components.smart_math_tricks.playing") : t("components.smart_math_tricks.hear_trick")}
               </button>
               {showPractice && <button onClick={() => setPracticeMode(true)} className="flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95" style={{
           background: `${trick.color}22`,
