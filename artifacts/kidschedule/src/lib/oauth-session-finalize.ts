@@ -37,6 +37,7 @@ export async function finalizeOAuthCredentialSignIn(
 
 export async function finishOAuthLoginFlow(
   destination?: string,
+  opts?: { skipNavigation?: boolean },
 ): Promise<string> {
   await ensureAuthContextSynced(
     isNativeAmyNestShell() ? NATIVE_SYNC_TIMEOUT_MS : WEB_SYNC_TIMEOUT_MS,
@@ -56,6 +57,8 @@ export async function finishOAuthLoginFlow(
     }
   }
 
-  navigateAfterAuth(dest);
+  if (!opts?.skipNavigation) {
+    navigateAfterAuth(dest);
+  }
   return dest;
 }
