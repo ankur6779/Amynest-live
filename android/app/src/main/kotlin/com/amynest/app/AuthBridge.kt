@@ -8,6 +8,7 @@ import android.net.Uri
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import androidx.activity.result.ActivityResultRegistryOwner
 import androidx.webkit.JavaScriptReplyProxy
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
@@ -293,7 +294,7 @@ class AuthBridge(
             persistPendingFacebookSignInCbId(activity, cbId)
             Log.i(TAG, "Launching native Facebook login cbId=$cbId")
             LoginManager.getInstance().logInWithReadPermissions(
-                activity,
+                activity as ActivityResultRegistryOwner,
                 facebookCallbackManager,
                 listOf("email", "public_profile"),
             )
