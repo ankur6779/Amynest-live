@@ -13,11 +13,13 @@ class SystemUiBridge(activity: MainActivity) {
 
     @JavascriptInterface
     fun showSystemUI() {
-        activityRef.get()?.runOnUiThread { it.setSystemBarsVisible(true) }
+        val activity = activityRef.get() ?: return
+        activity.runOnUiThread { activity.setSystemBarsVisible(true) }
     }
 
     @JavascriptInterface
     fun hideSystemUI() {
-        activityRef.get()?.runOnUiThread { it.setSystemBarsVisible(false) }
+        val activity = activityRef.get() ?: return
+        activity.runOnUiThread { activity.setSystemBarsVisible(false) }
     }
 }
