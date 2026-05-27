@@ -54,7 +54,7 @@ export function FacebookSignInButton({ onError, className }: Props) {
         onError?.(
           t("auth.facebook_sign_in_failed", {
             defaultValue:
-              "Facebook sign-in did not complete. Close and reopen the app, then try again.",
+              "Facebook sign-in did not complete. Finish login in the browser tab, then return to the app.",
           }),
         );
       }

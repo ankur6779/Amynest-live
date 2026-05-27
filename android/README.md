@@ -151,6 +151,18 @@ Play Store Android does **not** use Capacitor. Google Sign-In runs in **`AuthBri
 
 After changing `AuthBridge` or the web client ID, rebuild the APK. After changing web auth logic, deploy **www.amynest.in** (Render) — the app loads the live site.
 
+## Facebook Sign-In (native, same bridge as Google)
+
+Facebook Login uses the same **`AuthBridge.kt`** / `window.AmyNestAuthNative` pattern as Google:
+
+1. Meta App ID → `res/values/strings.xml` → `facebook_app_id` (already set)
+2. **Client token** → Meta → App Settings → Advanced → **Client token** → paste into `facebook_client_token` in `strings.xml`
+3. Meta → Facebook Login → Android → package `com.amynest.app`, class `com.amynest.app.MainActivity`, **key hashes** (release + debug)
+4. Firebase Console → Authentication → Sign-in method → **Facebook** enabled with same App ID + App Secret
+5. Rebuild APK (`versionCode` bump) and deploy web (`handleFacebookLogin()` → `loginAndroidWebViewFacebook()`)
+
+Web exchanges the native **access token** with Firebase via `FacebookAuthProvider.credential()`.
+
 ### Fix "Google Sign-In is not configured for this app build"
 
 This message maps to Google Sign-In **`DEVELOPER_ERROR` (status 10)** — almost always a **Firebase / OAuth SHA-1 mismatch**, not a WebView bug.

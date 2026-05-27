@@ -14,7 +14,9 @@ declare global {
     AmyNestAuthInject?: { getPendingGoogleIdToken?: () => string; postMessage?: (d: string) => void };
     __AMYNEST_AUTH?: string;
     __AMYNEST_PENDING_GOOGLE_ID_TOKEN?: string;
+    __AMYNEST_PENDING_FACEBOOK_ACCESS_TOKEN?: string;
     __AMYNEST_GOOGLE_SIGN_IN_IN_FLIGHT?: boolean;
+    __AMYNEST_FACEBOOK_SIGN_IN_IN_FLIGHT?: boolean;
   }
 }
 
@@ -351,4 +353,173 @@ export function readPendingNativeGoogleIdToken(): string | null {
     /* older app builds without getPendingGoogleIdToken */
   }
   return null;
+}
+
+export type NativeFacebookSignInResult = {
+  accessToken: string;
+};
+
+function readPendingNativeFacebookAccessToken(): string | null {
+  const token = window.__AMYNEST_PENDING_FACEBOOK_ACCESS_TOKEN?.trim();
+  if (token) {
+    delete window.__AMYNEST_PENDING_FACEBOOK_ACCESS_TOKEN;
+    return token;
+  }
+  try {
+    const inject = (
+      window as Window & {
+        AmyNestAuthInject?: { getPendingFacebookAccessToken?: () => string };
+      }
+    ).AmyNestAuthInject;
+    const nativeToken = inject?.getPendingFacebookAccessToken?.()?.trim();
+    if (nativeToken) return nativeToken;
+  } catch {
+    /* older app builds without getPendingFacebookAccessToken */
+  }
+  return null;
+}
+
+function pendingFacebookTokenSignInResult(): NativeFacebookSignInResult | null {
+  const accessToken = readPendingNativeFacebookAccessToken();
+  if (!accessToken) return null;
+  return { accessToken };
+}
+
+const FACEBOOK_SIGN_IN_BRIDGE_TIMEOUT_MS = 30_000;
+
+function waitForInjectedFacebookAccessToken(maxMs: number): Promise<NativeFacebookSignInResult> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (result: NativeFacebookSignInResult) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(result);
+    };
+    const tryRecover = () => {
+      const recovered = pendingFacebookTokenSignInResult();
+      if (recovered) {
+        console.info(NATIVE_AUTH_TAG, "pending Facebook access token recovered");
+        finish(recovered);
+      }
+    };
+    const onPending = () => tryRecover();
+    const cleanup = () => {
+      window.removeEventListener("amynest-facebook-auth-pending", onPending);
+      clearInterval(interval);
+    };
+    window.addEventListener("amynest-facebook-auth-pending", onPending);
+    tryRecover();
+    const started = Date.now();
+    const interval = window.setInterval(() => {
+      tryRecover();
+      if (!settled && Date.now() - started >= maxMs) cleanup();
+    }, GOOGLE_PENDING_POLL_MS);
+  });
+}
+
+function mapBridgeFacebookSignInError(reason: string): Error {
+  if (reason === "user_cancelled") {
+    return Object.assign(new Error("Facebook sign-in was cancelled."), {
+      code: "auth/popup-closed-by-user",
+    });
+  }
+  if (reason === "facebook_not_configured") {
+    return Object.assign(
+      new Error(
+        "Facebook Sign-In is not configured in this app build. Update from the Play Store or contact support.",
+      ),
+      { code: "app/facebook-not-configured" },
+    );
+  }
+  if (reason === "bridge_timeout") {
+    return Object.assign(
+      new Error("Facebook sign-in timed out. Please try again."),
+      { code: "app/facebook-sign-in-incomplete" },
+    );
+  }
+  return Object.assign(new Error(reason), { code: `app/${reason}` });
+}
+
+export async function probeFacebookBridgeAvailability(): Promise<boolean | null> {
+  if (!isAndroidAuthBridgePresent()) return null;
+  const bridge = await waitForAuthBridge();
+  if (!bridge) return false;
+  const result = await callAsync<BridgeReply<{ available: boolean }>>(
+    bridge,
+    { action: "isFacebookAvailable" },
+    8_000,
+  );
+  return result.ok ? !!result.data?.available : false;
+}
+
+/** Opens native Facebook login and returns an access token for Firebase. */
+export async function signInWithFacebookViaNativeBridge(): Promise<NativeFacebookSignInResult> {
+  const bridge = await waitForAuthBridge();
+  if (!bridge) {
+    throw Object.assign(new Error("Facebook sign-in bridge is not available."), {
+      code: "app/auth-bridge-unavailable",
+    });
+  }
+
+  window.__AMYNEST_FACEBOOK_SIGN_IN_IN_FLIGHT = true;
+  console.info(NATIVE_AUTH_TAG, "signInWithFacebook start", {
+    href: window.location.href,
+    bridgeVersion: window.__AMYNEST_AUTH,
+  });
+
+  const pendingRecovery = waitForInjectedFacebookAccessToken(
+    FACEBOOK_SIGN_IN_BRIDGE_TIMEOUT_MS + 5_000,
+  );
+
+  const bridgeCall = callAsync<BridgeReply<NativeFacebookSignInResult>>(
+    bridge,
+    { action: "signInWithFacebook" },
+    FACEBOOK_SIGN_IN_BRIDGE_TIMEOUT_MS,
+  ).then((result) => {
+    if (!result.ok) {
+      const recovered = pendingFacebookTokenSignInResult();
+      if (recovered) {
+        console.info(NATIVE_AUTH_TAG, "recovered Facebook token after bridge error");
+        return recovered;
+      }
+      throw mapBridgeFacebookSignInError(result.error || "facebook_sign_in_failed");
+    }
+    const accessToken = result.data?.accessToken?.trim();
+    if (!accessToken) {
+      const recovered = pendingFacebookTokenSignInResult();
+      if (recovered) return recovered;
+      throw Object.assign(new Error("Facebook sign-in did not return an access token."), {
+        code: "app/facebook-no-access-token",
+      });
+    }
+    console.info(NATIVE_AUTH_TAG, "bridge returned Facebook access token", {
+      tokenLen: accessToken.length,
+    });
+    return { accessToken };
+  });
+
+  try {
+    const out = await Promise.race([bridgeCall, pendingRecovery]);
+    console.info(NATIVE_AUTH_TAG, "signInWithFacebook complete", {
+      tokenLen: out.accessToken.length,
+    });
+    return out;
+  } catch (err) {
+    const recovered = pendingFacebookTokenSignInResult();
+    if (recovered) {
+      console.info(NATIVE_AUTH_TAG, "recovered Facebook token after exception", err);
+      return recovered;
+    }
+    console.warn(NATIVE_AUTH_TAG, "signInWithFacebook failed", err);
+    throw err;
+  } finally {
+    window.__AMYNEST_FACEBOOK_SIGN_IN_IN_FLIGHT = false;
+  }
+}
+
+export async function clearPendingNativeFacebookAuth(): Promise<void> {
+  const bridge = await waitForAuthBridge(3_000);
+  if (!bridge) return;
+  await callAsync(bridge, { action: "clearPendingFacebookAuth" }, 5_000);
 }

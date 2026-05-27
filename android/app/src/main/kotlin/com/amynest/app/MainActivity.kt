@@ -203,8 +203,23 @@ class MainActivity : AppCompatActivity() {
         }
         pushBridge.setPermission(granted)
         authBridge?.deliverPendingGoogleAuthIfAny()
+        authBridge?.deliverPendingFacebookAuthIfAny()
         webView.postDelayed({ authBridge?.deliverPendingGoogleAuthIfAny() }, 200)
+        webView.postDelayed({ authBridge?.deliverPendingFacebookAuthIfAny() }, 200)
         webView.postDelayed({ authBridge?.deliverPendingGoogleAuthIfAny() }, 600)
+        webView.postDelayed({ authBridge?.deliverPendingFacebookAuthIfAny() }, 600)
+        webView.post {
+            webView.evaluateJavascript(
+                "window.dispatchEvent(new Event('amynest-oauth-resume'));",
+                null,
+            )
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        authBridge?.onFacebookActivityResult(requestCode, resultCode, data)
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -299,7 +314,6 @@ class MainActivity : AppCompatActivity() {
             ): Boolean {
                 val url = request.url ?: return false
                 val scheme = url.scheme?.lowercase() ?: return false
-                // Pure WebView — keep all http(s) navigation inside the app.
                 if (scheme == "http" || scheme == "https") {
                     view.loadUrl(url.toString())
                     return true
@@ -333,6 +347,7 @@ class MainActivity : AppCompatActivity() {
                     null,
                 )
                 authBridge?.deliverPendingGoogleAuthIfAny()
+                authBridge?.deliverPendingFacebookAuthIfAny()
 
                 val dl = pendingNotifDeepLink
                 val cat = pendingNotifCategory ?: "routine"

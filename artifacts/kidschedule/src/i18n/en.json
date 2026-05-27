@@ -183,7 +183,7 @@
     "continue_with_facebook": "Continue with Facebook",
     "continue_with_apple": "Continue with Apple",
     "apple_sign_in_failed": "Apple sign-in failed. Please try again.",
-    "facebook_sign_in_failed": "Facebook sign-in failed. Please try again.",
+    "facebook_sign_in_failed": "Facebook sign-in did not complete. Finish login in the browser tab, then return to the app.",
     "connecting": "Connecting…",
     "or_email": "or sign in with email",
     "or_email_signup": "or sign up with email",
