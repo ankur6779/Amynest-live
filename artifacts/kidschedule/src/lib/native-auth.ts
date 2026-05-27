@@ -432,6 +432,14 @@ function mapBridgeFacebookSignInError(reason: string): Error {
       { code: "app/facebook-not-configured" },
     );
   }
+  if (reason.startsWith("unknown_action")) {
+    return Object.assign(
+      new Error(
+        "Facebook native sign-in is not available in this app version. Update from the Play Store.",
+      ),
+      { code: "app/facebook-bridge-unavailable" },
+    );
+  }
   if (reason === "bridge_timeout") {
     return Object.assign(
       new Error("Facebook sign-in timed out. Please try again."),
@@ -458,7 +466,7 @@ export async function signInWithFacebookViaNativeBridge(): Promise<NativeFaceboo
   const bridge = await waitForAuthBridge();
   if (!bridge) {
     throw Object.assign(new Error("Facebook sign-in bridge is not available."), {
-      code: "app/auth-bridge-unavailable",
+      code: "app/facebook-bridge-unavailable",
     });
   }
 

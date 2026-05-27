@@ -83,26 +83,31 @@ export async function loginAndroidWebViewFacebook(): Promise<string> {
   console.info(`${FACEBOOK_TAG} android webview flow start`, {
     href: typeof window !== "undefined" ? window.location.href : "",
   });
-  const { probeFacebookBridgeAvailability, signInWithFacebookViaNativeBridge, logNativeAuthDiagnostics } =
+  const { signInWithFacebookViaNativeBridge, logNativeAuthDiagnostics } =
     await import("@/lib/native-auth");
-  const bridgeReady = await probeFacebookBridgeAvailability();
-  if (bridgeReady === false) {
-    throw Object.assign(
-      new Error(
-        "Sign-in native bridge is not ready. Close and reopen the app, then try again.",
-      ),
-      { code: "app/auth-bridge-unavailable" },
-    );
-  }
   void logNativeAuthDiagnostics();
-  const { accessToken } = await signInWithFacebookViaNativeBridge();
-  console.info(`${FACEBOOK_TAG} access token received, signing into Firebase`, {
-    tokenLen: accessToken.length,
-  });
-  await signInFirebaseWithFacebookAccessToken(accessToken);
-  const dest = await finishOAuthLoginFlow(undefined, { skipNavigation: true });
-  console.info(`${FACEBOOK_TAG} android webview facebook sign-in success`, { dest });
-  return dest;
+  try {
+    const { accessToken } = await signInWithFacebookViaNativeBridge();
+    console.info(`${FACEBOOK_TAG} access token received, signing into Firebase`, {
+      tokenLen: accessToken.length,
+    });
+    await signInFirebaseWithFacebookAccessToken(accessToken);
+    const dest = await finishOAuthLoginFlow(undefined, { skipNavigation: true });
+    console.info(`${FACEBOOK_TAG} android webview facebook sign-in success`, { dest });
+    return dest;
+  } catch (err) {
+    const code = (err as { code?: string })?.code ?? "";
+    const nativeUnavailable =
+      code === "app/facebook-not-configured" ||
+      code === "app/facebook-bridge-unavailable" ||
+      code.startsWith("app/unknown_action");
+    if (nativeUnavailable) {
+      console.warn(`${FACEBOOK_TAG} native bridge unavailable (${code}) — falling back to redirect`);
+      await loginWithFacebookRedirect();
+      return;
+    }
+    throw err;
+  }
 }
 
 /** Native Android bridge first; web/PWA uses popup+redirect. */

@@ -7,6 +7,28 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+fun readGradleProperties(vararg paths: java.io.File): Map<String, String> {
+    val merged = linkedMapOf<String, String>()
+    for (path in paths) {
+        if (!path.exists()) continue
+        val props = Properties()
+        path.inputStream().use { props.load(it) }
+        for (key in props.stringPropertyNames()) {
+            merged[key] = props.getProperty(key)?.trim().orEmpty()
+        }
+    }
+    return merged
+}
+
+val localGradleProps = readGradleProperties(
+    rootProject.file("local.properties"),
+    rootProject.file("keystore.properties"),
+)
+val facebookClientToken =
+    System.getenv("FACEBOOK_CLIENT_TOKEN")?.trim().orEmpty().ifBlank {
+        localGradleProps["facebook.clientToken"].orEmpty()
+    }
+
 android {
     namespace = "com.amynest.app"
     compileSdk = 35
@@ -15,8 +37,13 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 70
-        versionName = "1.4.27"
+        versionCode = 71
+        versionName = "1.4.28"
+        resValue(
+            "string",
+            "facebook_client_token",
+            facebookClientToken.ifBlank { "REPLACE_WITH_META_CLIENT_TOKEN" },
+        )
     }
 
     signingConfigs {
@@ -95,7 +122,7 @@ tasks.register<Zip>("packageReleaseNativeDebugSymbols") {
 afterEvaluate {
     tasks.named("bundleRelease") {
         finalizedBy("packageReleaseNativeDebugSymbols")
-        dependsOn("validateGoogleSignInConfig")
+        dependsOn("validateGoogleSignInConfig", "validateFacebookLoginConfig")
     }
 }
 
@@ -109,6 +136,16 @@ tasks.register<Exec>("validateGoogleSignInConfig") {
     onlyIf { file("app/google-services.json").exists() }
     doFirst {
         logger.lifecycle("Validating google-services.json for native Google Sign-In (com.amynest.app SHA-1)")
+    }
+}
+
+tasks.register<Exec>("validateFacebookLoginConfig") {
+    group = "verification"
+    description = "Ensure Meta client token is set for native Facebook Login"
+    workingDir = rootProject.projectDir
+    commandLine("node", "scripts/validate-facebook-config.mjs", "--strict")
+    doFirst {
+        logger.lifecycle("Validating Meta client token for native Facebook Login")
     }
 }
 
