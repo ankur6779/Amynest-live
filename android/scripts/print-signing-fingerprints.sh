@@ -39,9 +39,16 @@ keytool -list -v -keystore "$KEYSTORE" -alias "$ALIAS" 2>/dev/null | grep -E "SH
 }
 
 echo
-echo "--- Play Store (production) ---"
-echo "Also add SHA-1 from Play Console → Your app → Setup → App signing → App signing key certificate."
-echo "Play re-signs the AAB; that certificate SHA-1 is required for production Google Sign-In."
+echo "--- Meta Facebook Login (Android key hash) ---"
+echo "Add to Meta Developer Console → Facebook Login → Android → Key Hashes."
+SHA1_LINE=$(keytool -list -v -keystore "$KEYSTORE" -alias "$ALIAS" 2>/dev/null | grep "SHA1:" | head -1 | sed 's/.*SHA1: //; s/://g' | tr '[:upper:]' '[:lower:]')
+if [[ -n "$SHA1_LINE" ]]; then
+  FB_HASH=$(echo -n "$SHA1_LINE" | xxd -r -p | openssl base64 2>/dev/null || true)
+  if [[ -n "$FB_HASH" ]]; then
+    echo "Release key hash: $FB_HASH"
+  fi
+fi
+echo "Also add Play App Signing certificate key hash from Play Console (Setup → App signing)."
 echo
 echo "After adding fingerprints, re-download google-services.json and run:"
 echo "  node android/scripts/validate-google-services.mjs --strict"

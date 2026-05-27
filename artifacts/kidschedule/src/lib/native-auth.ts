@@ -144,6 +144,8 @@ export type NativeAuthDiagnostics = {
   signingSha1?: string | null;
   signingSha256?: string | null;
   bridgeVersion?: string;
+  facebookConfigured?: boolean;
+  facebookAppIdSuffix?: string;
 };
 
 /** Logs native OAuth configuration (package, signing SHA-1) for Play Store debugging. */

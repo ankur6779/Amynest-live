@@ -2,6 +2,8 @@ package com.amynest.app
 
 import android.app.Application
 import android.util.Log
+import com.facebook.FacebookSdk
+import com.facebook.appevents.AppEventsLogger
 import com.revenuecat.purchases.LogLevel
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
@@ -23,8 +25,19 @@ class AmyNestApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        initFacebookSdk()
         initRevenueCat()
         NotifCategory.createAll(this)
+    }
+
+    private fun initFacebookSdk() {
+        try {
+            FacebookSdk.fullyInitialize()
+            AppEventsLogger.activateApp(this)
+            Log.d(TAG, "Facebook SDK initialised appId=${FacebookSdk.getApplicationId()}")
+        } catch (t: Throwable) {
+            Log.e(TAG, "Facebook SDK init failed", t)
+        }
     }
 
     private fun initRevenueCat() {
