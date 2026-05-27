@@ -299,9 +299,11 @@ class AuthBridge(
         try {
             pendingFacebookSignInReply = replyProxy to cbId
             persistPendingFacebookSignInCbId(activity, cbId)
-            Log.i(TAG, "Launching native Facebook login cbId=$cbId")
+            Log.i(TAG, "Launching in-app Facebook login dialog cbId=$cbId")
             LoginManager.getInstance().apply {
-                setLoginBehavior(LoginBehavior.NATIVE_WITH_FALLBACK)
+                // DIALOG_ONLY keeps login inside AmyNest (Google picker style).
+                // NATIVE_WITH_FALLBACK opens the Facebook app / Chrome and switches away.
+                setLoginBehavior(LoginBehavior.DIALOG_ONLY)
                 logInWithReadPermissions(
                     activity as ActivityResultRegistryOwner,
                     facebookCallbackManager,
@@ -559,7 +561,7 @@ class AuthBridge(
         private const val KEY_PENDING_SIGN_IN_CB_ID = "pending_google_sign_in_cb_id"
         const val JS_OBJECT_NAME = "AmyNestAuthNative"
         const val JS_INJECT_NAME = "AmyNestAuthInject"
-        const val BRIDGE_VERSION = "1.1.1"
+        const val BRIDGE_VERSION = "1.1.2"
 
         private const val KEY_PENDING_FACEBOOK_ACCESS_TOKEN = "pending_facebook_access_token"
         private const val KEY_PENDING_FACEBOOK_SIGN_IN_CB_ID = "pending_facebook_sign_in_cb_id"
