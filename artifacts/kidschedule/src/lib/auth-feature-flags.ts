@@ -9,13 +9,14 @@ export const ENABLE_APPLE_SIGN_IN = true;
 export const ENABLE_GOOGLE_SIGN_IN = true;
 /** Facebook Sign-In (Firebase OAuth — web + Play WebView). */
 export const ENABLE_FACEBOOK_SIGN_IN = true;
-/** Temporary — Capacitor iOS Google Sign-In (@codetrix-studio/capacitor-google-auth). */
-export const ENABLE_CAPACITOR_IOS_GOOGLE_SIGN_IN = false;
-/** Temporary — Capacitor iOS Facebook Sign-In (not shipped natively today). */
-export const ENABLE_CAPACITOR_IOS_FACEBOOK_SIGN_IN = false;
+/** Capacitor iOS Google Sign-In (@codetrix-studio/capacitor-google-auth). */
+export const ENABLE_CAPACITOR_IOS_GOOGLE_SIGN_IN = true;
+/** Capacitor iOS Facebook Sign-In (Firebase OAuth). */
+export const ENABLE_CAPACITOR_IOS_FACEBOOK_SIGN_IN = true;
 export const ENABLE_PHONE_OTP = true;
 
 export function shouldShowPhoneOtp(): boolean {
+  if (isCapacitorIos()) return false;
   return ENABLE_PHONE_OTP;
 }
 
@@ -40,8 +41,8 @@ export function shouldShowAppleSignIn(): boolean {
 }
 
 /**
- * Google Sign-In — show on Play Store WebView Android, mobile web, and PWA.
- * Capacitor iOS is gated by ENABLE_CAPACITOR_IOS_GOOGLE_SIGN_IN (off by default).
+ * Google Sign-In — show on Play Store WebView Android, mobile web, PWA, and
+ * Capacitor iOS when its native plugin flag is enabled.
  */
 export function shouldShowGoogleSignIn(): boolean {
   if (!ENABLE_GOOGLE_SIGN_IN) return false;
@@ -49,7 +50,7 @@ export function shouldShowGoogleSignIn(): boolean {
   return true;
 }
 
-/** Facebook Sign-In — web, PWA, and Play WebView Android. Capacitor iOS gated separately. */
+/** Facebook Sign-In — web, PWA, Play WebView Android, and gated Capacitor iOS. */
 export function shouldShowFacebookSignIn(): boolean {
   if (!ENABLE_FACEBOOK_SIGN_IN) return false;
   if (isCapacitorIos()) return ENABLE_CAPACITOR_IOS_FACEBOOK_SIGN_IN;

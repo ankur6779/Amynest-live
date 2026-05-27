@@ -184,7 +184,7 @@ npx cap sync ios
 ```
 Then in your auth code, open the Google sign-in URL via `Browser.open()` instead of a popup/redirect. Capacitor's SFSafariViewController handles it natively.
 
-Native Google Sign-In (`@codetrix-studio/capacitor-google-auth`) is **not** bundled — auth is phone OTP (`ENABLE_OAUTH_SIGN_IN = false`). `GoogleService-Info.plist` stays for **FCM push** only.
+Native Google Sign-In (`@codetrix-studio/capacitor-google-auth`) is bundled for Capacitor iOS. `GoogleService-Info.plist` provides the iOS client ID and reversed URL scheme used by the native Google callback.
 
 ---
 
