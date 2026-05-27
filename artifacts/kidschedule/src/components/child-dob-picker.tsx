@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 function parseIsoDate(iso: string): { year: number; month: number; day: number } | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
@@ -65,6 +65,7 @@ export function ChildDobPicker({
   const [day, setDay] = useState(initial.day);
   const [month, setMonth] = useState(initial.month);
   const [year, setYear] = useState(initial.year);
+  const userInteractedRef = useRef(Boolean(value));
 
   useEffect(() => {
     const parsed = parseIsoDate(value);
@@ -72,6 +73,7 @@ export function ChildDobPicker({
     setDay(parsed.day);
     setMonth(parsed.month);
     setYear(parsed.year);
+    userInteractedRef.current = true;
   }, [value]);
 
   const years = useMemo(() => {
@@ -86,6 +88,8 @@ export function ChildDobPicker({
   }, [day, maxDay]);
 
   useEffect(() => {
+    if (!userInteractedRef.current && !value) return;
+
     const candidate = toIso(year, month, day);
     if (candidate > maxIso) {
       onChange(maxIso);
@@ -95,8 +99,8 @@ export function ChildDobPicker({
       setDay(clamped.day);
       return;
     }
-    onChange(candidate);
-  }, [year, month, day, maxIso, onChange]);
+    if (candidate !== value) onChange(candidate);
+  }, [year, month, day, maxIso, onChange, value]);
 
   const selectClass =
     "min-w-0 flex-1 rounded-2xl px-3 py-3.5 text-sm outline-none border border-border focus:border-primary transition-colors appearance-none";
@@ -109,7 +113,10 @@ export function ChildDobPicker({
           className={selectClass}
           style={selectStyle}
           value={month}
-          onChange={(e) => setMonth(Number(e.target.value))}
+          onChange={(e) => {
+            userInteractedRef.current = true;
+            setMonth(Number(e.target.value));
+          }}
         >
           {MONTH_LABELS.map((label, i) => (
             <option key={label} value={i + 1}>
@@ -122,7 +129,10 @@ export function ChildDobPicker({
           className={selectClass}
           style={selectStyle}
           value={day}
-          onChange={(e) => setDay(Number(e.target.value))}
+          onChange={(e) => {
+            userInteractedRef.current = true;
+            setDay(Number(e.target.value));
+          }}
         >
           {Array.from({ length: maxDay }, (_, i) => i + 1).map((d) => (
             <option key={d} value={d}>
@@ -135,7 +145,10 @@ export function ChildDobPicker({
           className={selectClass}
           style={selectStyle}
           value={year}
-          onChange={(e) => setYear(Number(e.target.value))}
+          onChange={(e) => {
+            userInteractedRef.current = true;
+            setYear(Number(e.target.value));
+          }}
         >
           {years.map((y) => (
             <option key={y} value={y}>
