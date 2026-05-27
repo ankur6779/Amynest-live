@@ -47,6 +47,12 @@ export function GoogleSignInButton({ onError, className }: Props) {
       const destination = await handleGoogleLogin();
       if (typeof destination === "string" && destination) {
         setLocation(destination);
+        setTimeout(() => {
+          const current = window.location.pathname;
+          if (current.includes("/sign-in") || current.includes("/sign-up")) {
+            window.location.assign(`${window.location.origin}${destination}`);
+          }
+        }, 2500);
       }
     } catch (err: unknown) {
       logFirebaseAuthError("google:sign-in", err);
