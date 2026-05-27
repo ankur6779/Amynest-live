@@ -257,7 +257,7 @@ export async function loginAndroidWebViewGoogle(): Promise<string> {
   const { idToken } = await signInWithGoogleViaNativeBridge();
   await signInFirebaseWithGoogleIdToken(idToken);
   console.info(`${GOOGLE_TAG} android webview google sign-in success`);
-  return finishGoogleLoginFlow();
+  return finishGoogleLoginFlow({ skipNavigation: true });
 }
 
 /** Web/PWA only — popup first, redirect fallback. */
