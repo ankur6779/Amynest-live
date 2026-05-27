@@ -46,15 +46,38 @@ export function getGoogleReversedClientId(): string {
 
 export { isCapacitorNative } from "@/lib/capacitor-native";
 
-/** Capacitor native shell — uses @codetrix-studio/capacitor-google-auth plugin. */
-export function shouldUseNativeGoogleAuth(): boolean {
-  return isNativeAmyNestShell() && isCapacitorNative();
+function isCapacitorIos(): boolean {
+  if (!isCapacitorNative()) return false;
+  try {
+    return (
+      window as Window & {
+        Capacitor?: { getPlatform?: () => string };
+      }
+    ).Capacitor?.getPlatform?.() === "ios";
+  } catch {
+    return false;
+  }
 }
 
-/** Android WebView wrapper (Play Store APK) — uses AmyNestAuthNative bridge. */
+/**
+ * Capacitor iOS only (@codetrix-studio/capacitor-google-auth).
+ * Play Store Android is NOT Capacitor — use [shouldUseAndroidWebViewGoogleAuth].
+ */
+export function shouldUseCapacitorGoogleAuth(): boolean {
+  return isCapacitorIos();
+}
+
+/** @deprecated Use shouldUseCapacitorGoogleAuth — kept for call-site compatibility. */
+export function shouldUseNativeGoogleAuth(): boolean {
+  return shouldUseCapacitorGoogleAuth();
+}
+
+/**
+ * Play Store Android WebView wrapper (`android/` + AuthBridge.kt).
+ * Loads www.amynest.in — no Capacitor runtime.
+ */
 export function shouldUseAndroidWebViewGoogleAuth(): boolean {
-  if (!isNativeAmyNestAndroidWrapper()) return false;
-  return !isCapacitorNative();
+  return isNativeAmyNestAndroidWrapper();
 }
 
 function assertGoogleIdToken(idToken: string): string {
@@ -129,13 +152,12 @@ export async function loginWithGooglePopup(): Promise<string> {
 let nativeGoogleInitDone = false;
 
 export async function initNativeGoogleAuth(): Promise<void> {
-  if (!shouldUseNativeGoogleAuth() || nativeGoogleInitDone) return;
+  if (!shouldUseCapacitorGoogleAuth() || nativeGoogleInitDone) return;
 
   const { GoogleAuth } = await import("@codetrix-studio/capacitor-google-auth");
   const webClientId = getGoogleWebClientId();
   const iosClientId = getGoogleIosClientId();
 
-  // Android: requestIdToken must use the Firebase *web* OAuth client (server client id).
   GoogleAuth.initialize({
     clientId: webClientId,
     ...(iosClientId ? { iosClientId } : {}),
@@ -253,15 +275,15 @@ async function loginWithWebFallback(): Promise<string | void> {
 }
 
 /**
- * Native shells use bridge/plugins only (no web OAuth — WebView breaks with auth/argument-error).
- * Web/PWA uses popup/redirect fallback.
+ * Play Android → AuthBridge. Capacitor iOS → GoogleAuth plugin (if enabled in UI).
+ * Web/PWA → popup/redirect. Web OAuth in Play WebView causes auth/argument-error.
  */
 export async function handleGoogleLogin(): Promise<string | void> {
-  if (shouldUseNativeGoogleAuth()) {
-    return loginNativeGoogle();
-  }
   if (shouldUseAndroidWebViewGoogleAuth()) {
     return loginAndroidWebViewGoogle();
+  }
+  if (shouldUseCapacitorGoogleAuth()) {
+    return loginNativeGoogle();
   }
   if (isNativeAmyNestShell()) {
     throw Object.assign(

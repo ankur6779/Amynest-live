@@ -34,8 +34,8 @@ export function shouldShowAppleSignIn(): boolean {
 }
 
 /**
- * Google Sign-In — show on Android (Capacitor + WebView) and web/PWA.
- * Hidden on iOS Capacitor where Apple Sign-In is the primary OAuth provider.
+ * Google Sign-In — show on Play Store WebView Android, mobile web, and PWA.
+ * Hidden on Capacitor iOS (Apple Sign-In is primary there).
  */
 export function shouldShowGoogleSignIn(): boolean {
   if (!ENABLE_GOOGLE_SIGN_IN) return false;

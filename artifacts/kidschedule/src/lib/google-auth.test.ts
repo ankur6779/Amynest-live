@@ -4,15 +4,17 @@ import {
   getGoogleWebClientId,
   isCapacitorNative,
   shouldUseAndroidWebViewGoogleAuth,
+  shouldUseCapacitorGoogleAuth,
   shouldUseNativeGoogleAuth,
 } from "./google-auth";
 
-function setCapacitorNative(native: boolean) {
+function setCapacitorIos(native: boolean) {
   (globalThis as { __capNative?: boolean }).__capNative = native;
   Object.defineProperty(window, "Capacitor", {
     value: {
       isNativePlatform: () =>
         (globalThis as { __capNative?: boolean }).__capNative === true,
+      getPlatform: () => "ios",
     },
     configurable: true,
   });
@@ -42,22 +44,23 @@ describe("google-auth", () => {
     ).toBe("com.googleusercontent.apps.573340015027-abc");
   });
 
-  it("uses native path only in Capacitor native shell", () => {
-    expect(shouldUseNativeGoogleAuth()).toBe(false);
+  it("uses Capacitor Google plugin path on iOS only", () => {
+    expect(shouldUseCapacitorGoogleAuth()).toBe(false);
     expect(shouldUseAndroidWebViewGoogleAuth()).toBe(false);
 
-    setCapacitorNative(true);
+    setCapacitorIos(true);
     Object.defineProperty(window, "location", {
       value: { protocol: "capacitor:", hostname: "localhost" },
       configurable: true,
     });
 
     expect(isCapacitorNative()).toBe(true);
+    expect(shouldUseCapacitorGoogleAuth()).toBe(true);
     expect(shouldUseNativeGoogleAuth()).toBe(true);
     expect(shouldUseAndroidWebViewGoogleAuth()).toBe(false);
   });
 
-  it("uses android webview path in AmyNestAndroid shell without Capacitor", () => {
+  it("uses Play Store WebView path for AmyNestAndroid (not Capacitor)", () => {
     vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 AmyNestAndroid/1.0" });
     Object.defineProperty(window, "location", {
       value: { protocol: "https:", hostname: "www.amynest.in" },

@@ -348,9 +348,13 @@ function FirebaseAuthBootstrap() {
     let cancelled = false;
     const resumePendingGoogleSignIn = () => {
       void import("@/lib/google-auth").then(
-        ({ bootstrapPendingGoogleSignIn, initNativeGoogleAuth, shouldUseNativeGoogleAuth }) => {
+        ({
+          bootstrapPendingGoogleSignIn,
+          initNativeGoogleAuth,
+          shouldUseCapacitorGoogleAuth,
+        }) => {
           if (cancelled) return;
-          if (shouldUseNativeGoogleAuth()) void initNativeGoogleAuth();
+          if (shouldUseCapacitorGoogleAuth()) void initNativeGoogleAuth();
           void bootstrapPendingGoogleSignIn();
         },
       );
