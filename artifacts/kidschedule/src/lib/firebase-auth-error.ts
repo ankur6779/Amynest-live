@@ -116,6 +116,8 @@ export function prettyAuthError(err: unknown): string {
       return "Sign-in is not ready in this app. Close and reopen the app, then try again.";
     case "app/facebook-bridge-unavailable":
       return "Facebook Sign-In is not ready in this app. Update from the Play Store, then try again.";
+    case "app/facebook-firebase-credential-failed":
+      return "Facebook sign-in could not be verified. Check that Facebook is enabled in Firebase Authentication, then try again.";
     case "app/google-native-required":
       return "Google Sign-In must use the in-app account picker. Update the app from the Play Store.";
     case "app/google-sign-in-incomplete":
@@ -123,7 +125,7 @@ export function prettyAuthError(err: unknown): string {
     case "app/google-no-id-token":
       return "Google sign-in did not complete. Please try again.";
     case "app/facebook-not-configured":
-      return "Facebook Sign-In is not configured for this app build. Install the latest version from the Play Store, or try email sign-in.";
+      return "Facebook Sign-In is not configured in this app. Install AmyNest v1.4.29 or newer from the Play Store, then try again.";
     case "app/facebook-no-access-token":
     case "app/facebook_sign_in_failed":
     case "app/facebook-sign-in-incomplete":

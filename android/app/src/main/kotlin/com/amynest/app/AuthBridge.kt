@@ -20,6 +20,7 @@ import com.google.android.gms.common.api.ApiException
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
 import com.facebook.FacebookException
+import com.facebook.login.LoginBehavior
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
 import org.json.JSONException
@@ -163,7 +164,13 @@ class AuthBridge(
                     resolveError(replyProxy, cbId, "activity_unavailable")
                 } else {
                     val webClientId = resolveWebClientId(activity)
-                    resolve(replyProxy, cbId, GoogleSignInDiagnostics.buildDiagnosticsJson(activity, webClientId))
+                    val diag = GoogleSignInDiagnostics.buildDiagnosticsJson(activity, webClientId)
+                    diag.put("facebookConfigured", isFacebookReady())
+                    diag.put(
+                        "facebookAppIdSuffix",
+                        activity.getString(R.string.facebook_app_id)?.takeLast(6) ?: JSONObject.NULL,
+                    )
+                    resolve(replyProxy, cbId, diag)
                 }
             }
             "signInWithGoogle" -> signInWithGoogle(replyProxy, cbId)
@@ -269,7 +276,7 @@ class AuthBridge(
         if (appId.isBlank() || clientToken.isBlank() ||
             clientToken.startsWith("REPLACE_WITH", ignoreCase = true)
         ) {
-            Log.w(TAG, "Facebook Login not configured — set facebook_client_token in strings.xml")
+            Log.w(TAG, "Facebook Login not configured — set facebook.clientToken in local.properties")
             return false
         }
         return true
@@ -293,11 +300,14 @@ class AuthBridge(
             pendingFacebookSignInReply = replyProxy to cbId
             persistPendingFacebookSignInCbId(activity, cbId)
             Log.i(TAG, "Launching native Facebook login cbId=$cbId")
-            LoginManager.getInstance().logInWithReadPermissions(
-                activity as ActivityResultRegistryOwner,
-                facebookCallbackManager,
-                listOf("email", "public_profile"),
-            )
+            LoginManager.getInstance().apply {
+                setLoginBehavior(LoginBehavior.NATIVE_WITH_FALLBACK)
+                logInWithReadPermissions(
+                    activity as ActivityResultRegistryOwner,
+                    facebookCallbackManager,
+                    listOf("email", "public_profile"),
+                )
+            }
         } catch (t: Throwable) {
             pendingFacebookSignInReply = null
             Log.e(TAG, "Failed to launch Facebook sign-in", t)
@@ -549,7 +559,7 @@ class AuthBridge(
         private const val KEY_PENDING_SIGN_IN_CB_ID = "pending_google_sign_in_cb_id"
         const val JS_OBJECT_NAME = "AmyNestAuthNative"
         const val JS_INJECT_NAME = "AmyNestAuthInject"
-        const val BRIDGE_VERSION = "1.1.0"
+        const val BRIDGE_VERSION = "1.1.1"
 
         private const val KEY_PENDING_FACEBOOK_ACCESS_TOKEN = "pending_facebook_access_token"
         private const val KEY_PENDING_FACEBOOK_SIGN_IN_CB_ID = "pending_facebook_sign_in_cb_id"
