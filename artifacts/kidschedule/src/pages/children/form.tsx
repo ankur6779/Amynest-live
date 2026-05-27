@@ -141,6 +141,16 @@ const ALLERGY_CHIPS = [
   { value: "shellfish", label: "Shellfish" },
   { value: "sesame", label: "Sesame" },
 ];
+const FEEDING_TYPES = [
+  { value: "breastfeeding", label: "Breastfeeding", emoji: "🤱" },
+  { value: "formula", label: "Formula", emoji: "🍼" },
+  { value: "mixed", label: "Both breast & formula", emoji: "🤱🍼" },
+];
+const INFANT_SLEEP_PATTERNS = [
+  { value: "flexible", label: "Flexible naps", emoji: "😴" },
+  { value: "irregular", label: "Irregular sleep", emoji: "🌙" },
+  { value: "short_naps", label: "Short cat-naps", emoji: "💤" },
+];
 function deriveFoodType(dt: string): "veg" | "non_veg" {
   return ["vegetarian", "vegan", "eggetarian", "jain", "sattvik"].includes(dt) ? "veg" : "non_veg";
 }
@@ -168,6 +178,8 @@ export default function ChildForm() {
   const [foodPrefInherited, setFoodPrefInherited] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [fixedActivities, setFixedActivities] = useState<FixedActivityDraft[]>([]);
+  const [feedingType, setFeedingType] = useState<string | null>(null);
+  const [sleepPattern, setSleepPattern] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEditing = !!params.id && params.id !== "new";
   const childId = isEditing ? parseInt(params.id as string) : 0;
@@ -219,10 +231,17 @@ export default function ChildForm() {
   const watchDob = form.watch("dob");
   const watchIsSchoolGoing = form.watch("isSchoolGoing");
   const travelMode = form.watch("travelMode");
+  const hasDob = Boolean(watchDob);
   const calculatedAge = watchDob ? calculateAge(watchDob) : null;
   const totalMonths = calculatedAge ? calculatedAge.years * 12 + calculatedAge.months : 0;
-  const isInfant = totalMonths < 12;
+  const isInfant = hasDob && totalMonths < 12;
   const ageGroupInfo = calculatedAge ? getAgeGroupInfo(totalMonths) : null;
+
+  useEffect(() => {
+    if (!isInfant) return;
+    form.setValue("isSchoolGoing", false);
+    setFixedActivities([]);
+  }, [form, isInfant, watchDob]);
   useEffect(() => {
     authFetch("/api/babysitters").then(r => r.ok ? r.json() : []).then((data: Babysitter[]) => setBabysitters(data)).catch(() => {});
   }, []);
@@ -261,6 +280,8 @@ export default function ChildForm() {
       setFoodPrefInherited(!!(child as any).foodPrefInherited);
       setCustomizeOpen(!!(child as any).foodPrefCustomized);
       setFixedActivities(normalizeFixedActivities((child as any).fixedActivities));
+      setFeedingType((child as any).feedingType ?? null);
+      setSleepPattern((child as any).sleepPattern ?? null);
     }
   }, [child, form, isEditing]);
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -312,17 +333,20 @@ export default function ChildForm() {
       schoolDays: schoolGoing ? data.schoolDays && data.schoolDays.length > 0 ? data.schoolDays : [1, 2, 3, 4, 5] : null,
       travelMode: schoolGoing ? data.travelMode ?? "car" : "car",
       travelModeOther: schoolGoing && data.travelMode === "other" ? data.travelModeOther : undefined,
-      foodType: deriveFoodType(dietType),
-      dietType: dietType || null,
-      foodStyle: foodStyle || null,
-      subCuisine: subCuisine || null,
-      allergies: [...allergyChips, allergyText].filter(Boolean).join(", ") || null,
-      foodPrefInherited: !customizeOpen && foodPrefInherited,
-      foodPrefCustomized: customizeOpen,
-      goals: data.goals?.trim() || "General daily routine",
+      foodType: isInfant ? "veg" : deriveFoodType(dietType),
+      dietType: isInfant ? null : dietType || null,
+      foodStyle: isInfant ? null : foodStyle || null,
+      subCuisine: isInfant ? null : subCuisine || null,
+      allergies: isInfant ? null : [...allergyChips, allergyText].filter(Boolean).join(", ") || null,
+      foodPrefInherited: isInfant ? false : !customizeOpen && foodPrefInherited,
+      foodPrefCustomized: isInfant ? false : customizeOpen,
+      feedingType: isInfant ? feedingType : null,
+      sleepPattern: isInfant ? sleepPattern : null,
+      goals: data.goals?.trim() || (isInfant ? "Infant care & development" : "General daily routine"),
       babysitterId: data.babysitterId || undefined,
       photoUrl: photoPreview || undefined,
       fixedActivities:
+        !isInfant &&
         fixedActivities.filter(
           (e) => e.activity.trim() && e.days.length > 0 && e.start && e.end,
         ).length > 0
@@ -567,7 +591,7 @@ export default function ChildForm() {
                 </div>}
 
               {/* ── STEP 3: School Question (non-infant only) ── */}
-              {calculatedAge && !isInfant && <div>
+              {hasDob && !isInfant && <div>
                   <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide flex items-center gap-2">
                     <School className="h-3.5 w-3.5" />
                     {t("pages.children.form.step_3_school")}
@@ -590,7 +614,7 @@ export default function ChildForm() {
                 </div>}
 
               {/* ── SCHOOL DETAILS (only if school = YES) ── */}
-              {calculatedAge && !isInfant && watchIsSchoolGoing === true && <>
+              {hasDob && !isInfant && watchIsSchoolGoing === true && <>
                   {/* Class */}
                   <div>
                     <FormField control={form.control} name="childClass" render={({
@@ -732,8 +756,55 @@ export default function ChildForm() {
                   </div>
                 </>}
 
+              {/* ── INFANT CARE (infants only) ── */}
+              {hasDob && isInfant && <div className="space-y-5">
+                  <div>
+                    <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.infant_feeding", { defaultValue: "Infant feeding" })}</p>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      {t("pages.children.form.infant_feeding_hint", { defaultValue: "Helps AmyNest plan feeding sessions in daily routines." })}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {FEEDING_TYPES.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setFeedingType((prev) => (prev === opt.value ? null : opt.value))}
+                          className={cn(
+                            "px-3 py-2 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
+                            feedingType === opt.value
+                              ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                              : "border-border text-foreground hover:border-primary/50 bg-background",
+                          )}
+                        >
+                          <span>{opt.emoji}</span>{opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.infant_sleep_pattern", { defaultValue: "Sleep pattern" })}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {INFANT_SLEEP_PATTERNS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setSleepPattern((prev) => (prev === opt.value ? null : opt.value))}
+                          className={cn(
+                            "px-3 py-2 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
+                            sleepPattern === opt.value
+                              ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                              : "border-border text-foreground hover:border-primary/50 bg-background",
+                          )}
+                        >
+                          <span>{opt.emoji}</span>{opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>}
+
               {/* ── WAKE / SLEEP ── */}
-              <div>
+              {hasDob && <div>
                 <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.daily_schedule")}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField control={form.control} name="wakeUpTime" render={({
@@ -755,10 +826,10 @@ export default function ChildForm() {
                     </FormItem>;
                 }} />
                 </div>
-              </div>
+              </div>}
 
-              {/* ── FOOD PREFERENCE ── */}
-              <div>
+              {/* ── FOOD PREFERENCE (non-infant only) ── */}
+              {hasDob && !isInfant && <div>
                 <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.food_preference")}</p>
                 {foodPrefInherited && !customizeOpen ? (
                   <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl p-3 gap-3">
@@ -850,10 +921,10 @@ export default function ChildForm() {
                     )}
                   </div>
                 )}
-              </div>
+              </div>}
 
               {/* ── BABYSITTER ── */}
-              {babysitters.length > 0 && <div>
+              {hasDob && babysitters.length > 0 && <div>
                   <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">
                     <Baby className="h-3.5 w-3.5 inline mr-1" />{t("pages.children.form.babysitter")}
                   </p>
@@ -881,8 +952,8 @@ export default function ChildForm() {
               }} />
                 </div>}
 
-              {/* ── RECURRING ACTIVITIES ── */}
-              <div className="space-y-3">
+              {/* ── RECURRING ACTIVITIES (non-infant only) ── */}
+              {hasDob && !isInfant && <div className="space-y-3">
                 <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
                   {t("pages.routines.fixed.profile_section", {
                     defaultValue: "Weekly activities (tuition, sports, classes)",
@@ -903,10 +974,10 @@ export default function ChildForm() {
                   />
                 )}
                 <FixedActivitiesEditor value={fixedActivities} onChange={setFixedActivities} />
-              </div>
+              </div>}
 
               {/* ── GOALS ── */}
-              <FormField control={form.control} name="goals" render={({
+              {hasDob && <FormField control={form.control} name="goals" render={({
               field
             }) => {
               return <FormItem>
@@ -919,7 +990,7 @@ export default function ChildForm() {
                   </FormControl>
                   <FormMessage />
                 </FormItem>;
-            }} />
+            }} />}
 
               {/* ── ACTION BUTTONS ── */}
               <div className="flex gap-3 pt-2">
