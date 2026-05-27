@@ -45,9 +45,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // Embed native debug symbols so Play Console crash reports are readable.
+            // FULL → Play Console native-debug-symbols.zip + crash deobfuscation.
             ndk {
-                debugSymbolLevel = "SYMBOL_TABLE"
+                debugSymbolLevel = "FULL"
             }
         }
         debug {
@@ -73,6 +73,28 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+}
+
+// Play Console: upload outputs/native-debug-symbols/release/native-debug-symbols.zip
+// (App bundle explorer → version → Downloads → Native debug symbols)
+tasks.register<Zip>("packageReleaseNativeDebugSymbols") {
+    group = "release"
+    description = "Zip merged .so libs for Play Console native debug symbols upload"
+    dependsOn("mergeReleaseNativeLibs")
+    archiveFileName.set("native-debug-symbols.zip")
+    val outDir = layout.buildDirectory.dir("outputs/native-debug-symbols/release")
+    destinationDirectory.set(outDir)
+    from(
+        layout.buildDirectory.dir(
+            "intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib",
+        ),
+    )
+}
+
+afterEvaluate {
+    tasks.named("bundleRelease") {
+        finalizedBy("packageReleaseNativeDebugSymbols")
     }
 }
 
