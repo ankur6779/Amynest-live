@@ -145,11 +145,55 @@ Use **Android Studio → Image Asset Studio** (File → New → Image Asset) to 
 
 Play Store Android does **not** use Capacitor. Google Sign-In runs in **`AuthBridge.kt`**:
 
-- Web client ID: `res/values/strings.xml` → `amynest_google_web_client_id`
+- Web client ID: `res/values/strings.xml` → `amynest_google_web_client_id` (also auto-read from `google-services.json` → `default_web_client_id` when present)
 - JS bridge: `window.AmyNestAuthNative` (see `artifacts/kidschedule/src/lib/native-auth.ts`)
 - Web route: `handleGoogleLogin()` → `loginAndroidWebViewGoogle()` when UA contains `AmyNestAndroid/1.0`
 
 After changing `AuthBridge` or the web client ID, rebuild the APK. After changing web auth logic, deploy **www.amynest.in** (Render) — the app loads the live site.
+
+### Fix "Google Sign-In is not configured for this app build"
+
+This message maps to Google Sign-In **`DEVELOPER_ERROR` (status 10)** — almost always a **Firebase / OAuth SHA-1 mismatch**, not a WebView bug.
+
+Native sign-in requires an **Android OAuth client** (`client_type: 1` with `certificate_hash`) for package **`com.amynest.app`** in `google-services.json`. The web-only client (`client_type: 3`) is not enough.
+
+#### 1. Add SHA-1 fingerprints in Firebase Console
+
+Firebase Console → Project Settings → Your apps → Android **`com.amynest.app`** → Add fingerprint:
+
+| Certificate | Where to get SHA-1 |
+|---|---|
+| **Upload / release keystore** | `./android/scripts/print-signing-fingerprints.sh` |
+| **Play App Signing key** | Play Console → Your app → Setup → App signing → **App signing key certificate** |
+
+Play Store builds are re-signed by Google — you **must** add the **Play App Signing** SHA-1 for production users, not only your upload keystore.
+
+For local debug APKs (`com.amynest.app.debug`), add a separate Firebase Android app or fingerprint for the debug keystore (`~/.android/debug.keystore`).
+
+#### 2. Re-download `google-services.json`
+
+After adding SHA-1 fingerprints, download an updated `google-services.json` and copy to `android/app/google-services.json`.
+
+Validate before uploading to Play Store:
+
+```bash
+node android/scripts/validate-google-services.mjs --strict
+```
+
+Release AAB builds run this automatically via Gradle (`validateGoogleSignInConfig`).
+
+#### 3. Keep web client ID in sync
+
+These must match the Firebase **Web client** ID:
+
+- `android/app/src/main/res/values/strings.xml` → `amynest_google_web_client_id`
+- `artifacts/kidschedule/src/lib/google-auth-defaults.ts` → `webClientId`
+
+#### 4. Debugging in the app
+
+Filter logcat for tags **`AuthBridge`**, **`GoogleSignInConfig`**, and web console **`[amynest:native-auth]`** / **`[amynest:google-auth]`**.
+
+On app load the web layer calls `getDiagnostics` on the native bridge and logs package name + signing SHA-1. Compare `signingSha1` with the fingerprints registered in Firebase.
 
 ---
 

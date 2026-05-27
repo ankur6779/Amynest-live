@@ -66,7 +66,19 @@ class AuthBridge(
             deliverGoogleSignInSuccess(cbId, account)
             return
         } catch (e: ApiException) {
-            Log.w(TAG, "Google sign-in ApiException status=${e.statusCode}", e)
+            Log.w(TAG, "Google sign-in ApiException status=${e.statusCode} message=${e.message}", e)
+            if (e.statusCode == 10) {
+                val activity = activityRef.get()
+                if (activity != null) {
+                    val sha1 = GoogleSignInDiagnostics.getSigningSha1(activity)
+                    Log.e(
+                        TAG,
+                        "DEVELOPER_ERROR — add signing SHA-1 to Firebase for package=${activity.packageName} " +
+                            "signingSha1=${sha1 ?: "unknown"}. " +
+                            "Play Store builds need Play Console App Signing certificate SHA-1.",
+                    )
+                }
+            }
             val error = when (e.statusCode) {
                 12501 -> "user_cancelled"
                 10 -> "developer_error"
@@ -96,8 +108,18 @@ class AuthBridge(
 
         val action = msg.optString("action")
         val cbId = msg.optString("cbId", "")
+        Log.d(TAG, "bridge message action=$action cbId=${cbId.take(24)} origin=$sourceOrigin")
         when (action) {
             "isAvailable" -> resolve(replyProxy, cbId, JSONObject().put("available", isReady()))
+            "getDiagnostics" -> {
+                val activity = activityRef.get()
+                if (activity == null) {
+                    resolveError(replyProxy, cbId, "activity_unavailable")
+                } else {
+                    val webClientId = resolveWebClientId(activity)
+                    resolve(replyProxy, cbId, GoogleSignInDiagnostics.buildDiagnosticsJson(activity, webClientId))
+                }
+            }
             "signInWithGoogle" -> signInWithGoogle(replyProxy, cbId)
             "signOutGoogle" -> signOutGoogle(replyProxy, cbId)
             "clearPendingGoogleAuth" -> {
@@ -120,9 +142,13 @@ class AuthBridge(
         }
     }
 
+    private fun resolveWebClientId(activity: Activity): String =
+        GoogleSignInDiagnostics.resolveWebClientId(activity)
+
     private fun ensureGoogleClient(activity: Activity): GoogleSignInClient {
         googleSignInClient?.let { return it }
-        val webClientId = activity.getString(R.string.amynest_google_web_client_id)
+        val webClientId = resolveWebClientId(activity)
+        GoogleSignInDiagnostics.logStartupDiagnostics(activity, webClientId)
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(webClientId)
             .requestEmail()
@@ -153,6 +179,7 @@ class AuthBridge(
             val client = ensureGoogleClient(activity)
             pendingSignInReply = replyProxy to cbId
             persistPendingSignInCbId(activity, cbId)
+            Log.i(TAG, "Launching native Google account picker package=${activity.packageName} cbId=$cbId")
             launcher.invoke(client.signInIntent)
         } catch (t: Throwable) {
             pendingSignInReply = null
@@ -192,10 +219,15 @@ class AuthBridge(
         }
         val idToken = account.idToken
         if (idToken.isNullOrBlank()) {
+            Log.e(TAG, "Google account selected but idToken is empty email=${account.email}")
             deliverBridgeError(cbId, "no_id_token")
             return
         }
 
+        Log.i(
+            TAG,
+            "Google sign-in success email=${account.email} idTokenLen=${idToken.length} cbId=${cbId ?: "none"}",
+        )
         activityRef.get()?.let { persistPendingGoogleIdToken(it, idToken) }
         // Inject token + bridge reply (retries — evaluateJavascript can fail right after picker).
         deliverPendingGoogleAuthIfAny()

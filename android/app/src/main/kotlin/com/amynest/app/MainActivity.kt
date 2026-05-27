@@ -168,6 +168,7 @@ class MainActivity : AppCompatActivity() {
         authBridge = AuthBridge.installOn(this, webView).also { bridge ->
             bridge.attachSignInLauncher { intent -> googleSignInLauncher.launch(intent) }
         }
+        Log.d(TAG, "AuthBridge installed for Google Sign-In (see logcat GoogleSignInConfig on first sign-in)")
 
         pushBridge = PushBridge(
             context = this,

@@ -252,10 +252,12 @@ export async function loginNativeGoogle(): Promise<string> {
 export async function loginAndroidWebViewGoogle(): Promise<string> {
   console.info(`${GOOGLE_TAG} android webview flow start`, {
     href: typeof window !== "undefined" ? window.location.href : "",
+    ua: typeof navigator !== "undefined" ? navigator.userAgent : "",
   });
-  const { probeAuthBridgeAvailability, signInWithGoogleViaNativeBridge } =
+  const { probeAuthBridgeAvailability, signInWithGoogleViaNativeBridge, logNativeAuthDiagnostics } =
     await import("@/lib/native-auth");
   const bridgeReady = await probeAuthBridgeAvailability();
+  console.info(`${GOOGLE_TAG} auth bridge probe`, { bridgeReady });
   if (bridgeReady === false) {
     throw Object.assign(
       new Error(
@@ -264,9 +266,12 @@ export async function loginAndroidWebViewGoogle(): Promise<string> {
       { code: "app/auth-bridge-unavailable" },
     );
   }
+  void logNativeAuthDiagnostics();
   console.info(`${GOOGLE_TAG} opening native account picker`);
   const { idToken } = await signInWithGoogleViaNativeBridge();
-  console.info(`${GOOGLE_TAG} id token received, signing into Firebase`);
+  console.info(`${GOOGLE_TAG} id token received, signing into Firebase`, {
+    tokenLen: idToken.length,
+  });
   await signInFirebaseWithGoogleIdToken(idToken);
   console.info(`${GOOGLE_TAG} firebase session ok, resolving destination`);
   const dest = await finishGoogleLoginFlow();
