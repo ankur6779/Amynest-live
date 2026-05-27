@@ -143,8 +143,8 @@ function pendingTokenSignInResult(): NativeGoogleSignInResult | null {
   return { idToken, email: null, displayName: null, photoUrl: null };
 }
 
-const GOOGLE_SIGN_IN_BRIDGE_TIMEOUT_MS = 60_000;
-const GOOGLE_PENDING_POLL_MS = 200;
+const GOOGLE_SIGN_IN_BRIDGE_TIMEOUT_MS = 30_000;
+const GOOGLE_PENDING_POLL_MS = 150;
 
 /**
  * Polls for a native-injected ID token after the account picker closes.
@@ -267,7 +267,16 @@ export async function clearPendingNativeGoogleAuth(): Promise<void> {
 
 export function readPendingNativeGoogleIdToken(): string | null {
   const token = window.__AMYNEST_PENDING_GOOGLE_ID_TOKEN?.trim();
-  if (!token) return null;
-  delete window.__AMYNEST_PENDING_GOOGLE_ID_TOKEN;
-  return token;
+  if (token) {
+    delete window.__AMYNEST_PENDING_GOOGLE_ID_TOKEN;
+    return token;
+  }
+  try {
+    const inject = (window as Window & { AmyNestAuthInject?: { getPendingGoogleIdToken?: () => string } }).AmyNestAuthInject;
+    const nativeToken = inject?.getPendingGoogleIdToken?.()?.trim();
+    if (nativeToken) return nativeToken;
+  } catch {
+    /* older app builds without getPendingGoogleIdToken */
+  }
+  return null;
 }

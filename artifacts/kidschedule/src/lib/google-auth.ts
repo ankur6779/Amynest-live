@@ -217,7 +217,11 @@ export async function bootstrapPendingGoogleSignIn(): Promise<boolean> {
   pendingBootstrapInFlight = true;
   try {
     await completeGoogleIdTokenSignIn(idToken);
-    await finishGoogleLoginFlow();
+    const dest = await finishGoogleLoginFlow({ skipNavigation: true });
+    if (dest) {
+      const { navigateAfterAuth } = await import("@/lib/auth-navigation");
+      navigateAfterAuth(dest);
+    }
     return true;
   } catch (err) {
     logFirebaseAuthError("google:bootstrap-pending", err);

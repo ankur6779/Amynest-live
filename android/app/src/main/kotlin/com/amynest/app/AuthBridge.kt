@@ -278,6 +278,12 @@ class AuthBridge(
                 deliverJsReply(wv, rawMessage, Uri.parse(WebViewOrigins.CANONICAL_WRAPPER_URL))
             }
         }
+
+        @JavascriptInterface
+        fun getPendingGoogleIdToken(): String {
+            val ctx = activityRef.get() ?: webViewRef.get()?.context ?: return ""
+            return readPendingGoogleIdToken(ctx) ?: ""
+        }
     }
 
     private fun deliverJsReply(webView: WebView, rawMessage: String, sourceOrigin: Uri) {
