@@ -501,7 +501,9 @@ class MainActivity : AppCompatActivity() {
                     "r.style.setProperty('--auth-keyboard-inset','${imeBottomPx}px');" +
                         (if (visibleHeightPx > 0) "r.style.setProperty('--vv-height','${visibleHeightPx}px');" else "")
                 } else {
-                    "r.style.removeProperty('--auth-keyboard-inset');"
+                    "r.style.removeProperty('--auth-keyboard-inset');" +
+                        "r.style.removeProperty('--auth-keyboard-inset-native');" +
+                        "r.style.removeProperty('--vv-height');"
                 }) +
                 "r.classList.add('amynest-android-shell','amynest-native-shell');" +
                 "window.dispatchEvent(new CustomEvent('amynest-keyboard-inset'," +
