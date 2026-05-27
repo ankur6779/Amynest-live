@@ -13,7 +13,7 @@ import PhoneAuthFlow from "@/components/phone-auth-flow";
 import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
 import {
   ENABLE_APPLE_SIGN_IN,
-  ENABLE_GOOGLE_SIGN_IN,
+  shouldShowGoogleSignIn,
   shouldShowPhoneOtp,
 } from "@/lib/auth-feature-flags";
 import { navigateAfterAuth } from "@/lib/auth-navigation";
@@ -441,7 +441,7 @@ export default function SignUpPage() {
         {t("screens.sign_up.subtitle")}
       </p>
 
-      {ENABLE_GOOGLE_SIGN_IN ? (
+      {shouldShowGoogleSignIn() ? (
         <GoogleSignInButton onError={msg => setError(msg)} />
       ) : null}
 
@@ -456,7 +456,7 @@ export default function SignUpPage() {
         </div>
       ) : null}
 
-      {(ENABLE_GOOGLE_SIGN_IN || ENABLE_APPLE_SIGN_IN || shouldShowPhoneOtp()) && (
+      {(shouldShowGoogleSignIn() || ENABLE_APPLE_SIGN_IN || shouldShowPhoneOtp()) && (
       <div style={{
       display: "flex",
       alignItems: "center",

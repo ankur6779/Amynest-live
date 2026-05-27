@@ -67,4 +67,11 @@ describe("google-auth", () => {
     expect(shouldUseNativeGoogleAuth()).toBe(false);
     expect(shouldUseAndroidWebViewGoogleAuth()).toBe(true);
   });
+
+  it("rejects malformed id tokens before Firebase credential", async () => {
+    const { completeGoogleIdTokenSignIn } = await import("./google-auth");
+    await expect(completeGoogleIdTokenSignIn("not-a-jwt")).rejects.toMatchObject({
+      code: "auth/argument-error",
+    });
+  });
 });

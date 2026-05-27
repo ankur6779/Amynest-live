@@ -9,6 +9,7 @@ import {
 import { logFirebaseAuthError } from "@/lib/firebase-auth-error";
 import { ensureFirebaseAuthPersistence, getFirebaseAuth } from "@/lib/firebase";
 import { isCapacitorNative } from "@/lib/capacitor-native";
+import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { resolveFirebaseAuthRedirectResult } from "@/lib/firebase-oauth-redirect";
 import {
@@ -52,7 +53,23 @@ export function shouldUseNativeGoogleAuth(): boolean {
 
 /** Android WebView wrapper (Play Store APK) — uses AmyNestAuthNative bridge. */
 export function shouldUseAndroidWebViewGoogleAuth(): boolean {
-  return isNativeAmyNestShell() && !isCapacitorNative();
+  if (!isNativeAmyNestAndroidWrapper()) return false;
+  return !isCapacitorNative();
+}
+
+function assertGoogleIdToken(idToken: string): string {
+  const trimmed = idToken.trim();
+  if (!trimmed || trimmed.length < 20) {
+    throw Object.assign(new Error("Google sign-in did not return a valid ID token."), {
+      code: "auth/argument-error",
+    });
+  }
+  if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(trimmed)) {
+    throw Object.assign(new Error("Google sign-in returned a malformed ID token."), {
+      code: "auth/argument-error",
+    });
+  }
+  return trimmed;
 }
 
 export async function loginWithGoogleRedirect(): Promise<void> {
@@ -118,6 +135,7 @@ export async function initNativeGoogleAuth(): Promise<void> {
   const webClientId = getGoogleWebClientId();
   const iosClientId = getGoogleIosClientId();
 
+  // Android: requestIdToken must use the Firebase *web* OAuth client (server client id).
   GoogleAuth.initialize({
     clientId: webClientId,
     ...(iosClientId ? { iosClientId } : {}),
@@ -138,7 +156,7 @@ async function finalizeGoogleCredentialSignIn(
 /** Exchange a Google ID token for a Firebase session (native bridge + recovery). */
 export async function completeGoogleIdTokenSignIn(idToken: string): Promise<User> {
   await ensureFirebaseAuthPersistence();
-  const credential = GoogleAuthProvider.credential(idToken);
+  const credential = GoogleAuthProvider.credential(assertGoogleIdToken(idToken));
   const result = await signInWithCredential(getFirebaseAuth(), credential);
   const user = await finalizeGoogleCredentialSignIn(result);
   console.info(`${GOOGLE_TAG} firebase credential sign-in success`, {
@@ -203,7 +221,17 @@ export async function loginNativeGoogle(): Promise<string> {
 
 /** Android WebView APK — native account picker via AuthBridge.kt. */
 export async function loginAndroidWebViewGoogle(): Promise<string> {
-  const { signInWithGoogleViaNativeBridge } = await import("@/lib/native-auth");
+  const { probeAuthBridgeAvailability, signInWithGoogleViaNativeBridge } =
+    await import("@/lib/native-auth");
+  const bridgeReady = await probeAuthBridgeAvailability();
+  if (bridgeReady === false) {
+    throw Object.assign(
+      new Error(
+        "Google Sign-In native bridge is not ready. Close and reopen the app, then try again.",
+      ),
+      { code: "app/auth-bridge-unavailable" },
+    );
+  }
   const { idToken } = await signInWithGoogleViaNativeBridge();
   await signInFirebaseWithGoogleIdToken(idToken);
   console.info(`${GOOGLE_TAG} android webview google sign-in success`);
@@ -211,7 +239,7 @@ export async function loginAndroidWebViewGoogle(): Promise<string> {
 }
 
 /**
- * Web/PWA: popup first, redirect fallback. Native shells use bridge/plugins.
+ * Web/PWA: popup first, redirect fallback. Native shells use bridge/plugins only.
  */
 export async function handleGoogleLogin(): Promise<string | void> {
   if (shouldUseNativeGoogleAuth()) {
@@ -219,6 +247,14 @@ export async function handleGoogleLogin(): Promise<string | void> {
   }
   if (shouldUseAndroidWebViewGoogleAuth()) {
     return loginAndroidWebViewGoogle();
+  }
+  if (isNativeAmyNestShell()) {
+    throw Object.assign(
+      new Error(
+        "Google Sign-In must use the native account picker in the app. Update the app from the Play Store and try again.",
+      ),
+      { code: "app/google-native-required" },
+    );
   }
   try {
     return await loginWithGooglePopup();
