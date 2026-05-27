@@ -135,6 +135,36 @@ export async function probeAuthBridgeAvailability(): Promise<boolean | null> {
   return result.ok ? !!result.data?.available : false;
 }
 
+export type NativeAuthDiagnostics = {
+  packageName?: string;
+  webClientIdSource?: string;
+  webClientIdSuffix?: string;
+  signingSha1?: string | null;
+  signingSha256?: string | null;
+  bridgeVersion?: string;
+};
+
+/** Logs native OAuth configuration (package, signing SHA-1) for Play Store debugging. */
+export async function logNativeAuthDiagnostics(): Promise<NativeAuthDiagnostics | null> {
+  if (!isAndroidAuthBridgePresent()) return null;
+  const bridge = await waitForAuthBridge(5_000);
+  if (!bridge) {
+    console.warn(NATIVE_AUTH_TAG, "diagnostics skipped — bridge unavailable");
+    return null;
+  }
+  const result = await callAsync<BridgeReply<NativeAuthDiagnostics>>(
+    bridge,
+    { action: "getDiagnostics" },
+    8_000,
+  );
+  if (!result.ok || !result.data) {
+    console.warn(NATIVE_AUTH_TAG, "diagnostics request failed", result);
+    return null;
+  }
+  console.info(NATIVE_AUTH_TAG, "native auth diagnostics", result.data);
+  return result.data;
+}
+
 export type NativeGoogleSignInResult = {
   idToken: string;
   email?: string | null;
@@ -230,7 +260,10 @@ export async function signInWithGoogleViaNativeBridge(): Promise<NativeGoogleSig
   }
 
   window.__AMYNEST_GOOGLE_SIGN_IN_IN_FLIGHT = true;
-  console.info(NATIVE_AUTH_TAG, "signInWithGoogle start");
+  console.info(NATIVE_AUTH_TAG, "signInWithGoogle start", {
+    href: window.location.href,
+    bridgeVersion: window.__AMYNEST_AUTH,
+  });
 
   const pendingRecovery = waitForInjectedGoogleIdToken(
     GOOGLE_SIGN_IN_BRIDGE_TIMEOUT_MS + 5_000,
@@ -261,7 +294,10 @@ export async function signInWithGoogleViaNativeBridge(): Promise<NativeGoogleSig
         code: "app/google-no-id-token",
       });
     }
-    console.info(NATIVE_AUTH_TAG, "bridge returned id token");
+    console.info(NATIVE_AUTH_TAG, "bridge returned id token", {
+      email: result.data?.email ?? null,
+      tokenLen: idToken.length,
+    });
     return {
       idToken,
       email: result.data?.email ?? null,
@@ -272,7 +308,9 @@ export async function signInWithGoogleViaNativeBridge(): Promise<NativeGoogleSig
 
   try {
     const out = await Promise.race([bridgeCall, pendingRecovery]);
-    console.info(NATIVE_AUTH_TAG, "signInWithGoogle complete");
+    console.info(NATIVE_AUTH_TAG, "signInWithGoogle complete", {
+      tokenLen: out.idToken.length,
+    });
     return out;
   } catch (err) {
     const recovered = pendingTokenSignInResult();
