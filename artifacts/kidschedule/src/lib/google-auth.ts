@@ -146,7 +146,7 @@ export async function loginWithGooglePopup(): Promise<string> {
   console.info(`${GOOGLE_TAG} google popup sign-in success`, {
     uid: result.user.uid,
   });
-  return finishGoogleLoginFlow();
+  return finishGoogleLoginFlow({ skipNavigation: true });
 }
 
 let nativeGoogleInitDone = false;
@@ -194,8 +194,8 @@ async function signInFirebaseWithGoogleIdToken(idToken: string): Promise<User> {
 /** Hard navigation after OAuth so route guards see persisted Firebase auth. */
 export { navigateAfterOAuthSignIn } from "@/lib/oauth-session-finalize";
 
-async function finishGoogleLoginFlow(): Promise<string> {
-  const destination = await finishOAuthLoginFlow();
+async function finishGoogleLoginFlow(opts?: { skipNavigation?: boolean }): Promise<string> {
+  const destination = await finishOAuthLoginFlow(undefined, { skipNavigation: opts?.skipNavigation });
   if (shouldUseAndroidWebViewGoogleAuth()) {
     const { clearPendingNativeGoogleAuth } = await import("@/lib/native-auth");
     void clearPendingNativeGoogleAuth();
