@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
-import { handleGoogleLogin, shouldUseAndroidWebViewGoogleAuth } from "@/lib/google-auth";
+import { handleGoogleLogin } from "@/lib/google-auth";
 import { prettyAuthError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { shouldShowGoogleSignIn } from "@/lib/auth-feature-flags";
 
@@ -45,12 +45,7 @@ export function GoogleSignInButton({ onError, className }: Props) {
     setBusy(true);
     try {
       const destination = await handleGoogleLogin();
-      // Android WebView uses full-page navigation inside handleGoogleLogin.
-      if (
-        typeof destination === "string" &&
-        destination &&
-        !shouldUseAndroidWebViewGoogleAuth()
-      ) {
+      if (typeof destination === "string" && destination) {
         setLocation(destination);
       }
     } catch (err: unknown) {

@@ -137,6 +137,16 @@ export type NativeGoogleSignInResult = {
  * Opens the native Google account picker and returns an ID token for Firebase.
  * Throws with `.code` set for user cancel / developer misconfiguration.
  */
+function pendingTokenSignInResult(): NativeGoogleSignInResult | null {
+  const idToken = readPendingNativeGoogleIdToken();
+  if (!idToken) return null;
+  return { idToken, email: null, displayName: null, photoUrl: null };
+}
+
+/**
+ * Waits for inject bridge reply OR native token injected after account picker
+ * (Android delivers __AMYNEST_PENDING_GOOGLE_ID_TOKEN when WebMessage reply is lost).
+ */
 export async function signInWithGoogleViaNativeBridge(): Promise<NativeGoogleSignInResult> {
   const bridge = await waitForAuthBridge();
   if (!bridge) {
@@ -145,34 +155,54 @@ export async function signInWithGoogleViaNativeBridge(): Promise<NativeGoogleSig
     });
   }
 
-  const result = await callAsync<BridgeReply<NativeGoogleSignInResult>>(
+  const pendingFromEvent = new Promise<NativeGoogleSignInResult>((resolve) => {
+    const onPending = () => {
+      const recovered = pendingTokenSignInResult();
+      if (!recovered) return;
+      window.removeEventListener("amynest-google-auth-pending", onPending);
+      resolve(recovered);
+    };
+    window.addEventListener("amynest-google-auth-pending", onPending);
+  });
+
+  const bridgeCall = callAsync<BridgeReply<NativeGoogleSignInResult>>(
     bridge,
     { action: "signInWithGoogle" },
-  );
-
-  if (!result.ok) {
-    const reason = result.error || "google_sign_in_failed";
-    if (reason === "user_cancelled") {
-      throw Object.assign(new Error("Google sign-in was cancelled."), {
-        code: "auth/popup-closed-by-user",
+  ).then((result) => {
+    if (!result.ok) {
+      const recovered = pendingTokenSignInResult();
+      if (recovered) return recovered;
+      const reason = result.error || "google_sign_in_failed";
+      if (reason === "user_cancelled") {
+        throw Object.assign(new Error("Google sign-in was cancelled."), {
+          code: "auth/popup-closed-by-user",
+        });
+      }
+      throw Object.assign(new Error(reason), { code: `app/${reason}` });
+    }
+    const idToken = result.data?.idToken?.trim();
+    if (!idToken) {
+      const recovered = pendingTokenSignInResult();
+      if (recovered) return recovered;
+      throw Object.assign(new Error("Google sign-in did not return an ID token."), {
+        code: "app/google-no-id-token",
       });
     }
-    throw Object.assign(new Error(reason), { code: `app/${reason}` });
-  }
+    return {
+      idToken,
+      email: result.data?.email ?? null,
+      displayName: result.data?.displayName ?? null,
+      photoUrl: result.data?.photoUrl ?? null,
+    };
+  });
 
-  const idToken = result.data?.idToken?.trim();
-  if (!idToken) {
-    throw Object.assign(new Error("Google sign-in did not return an ID token."), {
-      code: "app/google-no-id-token",
-    });
+  try {
+    return await Promise.race([bridgeCall, pendingFromEvent]);
+  } catch (err) {
+    const recovered = pendingTokenSignInResult();
+    if (recovered) return recovered;
+    throw err;
   }
-
-  return {
-    idToken,
-    email: result.data.email ?? null,
-    displayName: result.data.displayName ?? null,
-    photoUrl: result.data.photoUrl ?? null,
-  };
 }
 
 export async function signOutGoogleViaNativeBridge(): Promise<void> {
