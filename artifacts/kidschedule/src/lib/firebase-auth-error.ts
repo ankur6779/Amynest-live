@@ -111,7 +111,7 @@ export function prettyAuthError(err: unknown): string {
     case "auth/credential-already-in-use":
       return "This Google account is already linked to another user.";
     case "auth/argument-error":
-      return "Sign-in could not complete in the app browser. Update the app from the Play Store, or try email sign-in.";
+      return "Sign-in could not complete in the app browser. Update AmyNest, or try email sign-in.";
     case "app/auth-bridge-unavailable":
       return "Sign-in is not ready in this app. Close and reopen the app, then try again.";
     case "app/facebook-bridge-unavailable":
@@ -120,6 +120,8 @@ export function prettyAuthError(err: unknown): string {
       return "Facebook sign-in could not be verified. Check that Facebook is enabled in Firebase Authentication, then try again.";
     case "app/google-native-required":
       return "Google Sign-In must use the in-app account picker. Update the app from the Play Store.";
+    case "app/google-ios-plugin-unavailable":
+      return "Google Sign-In needs the latest AmyNest iOS app build. Update the app, then try again.";
     case "app/google-sign-in-incomplete":
       return "Google sign-in did not finish after choosing an account. Close and reopen the app, then try again.";
     case "app/google-no-id-token":

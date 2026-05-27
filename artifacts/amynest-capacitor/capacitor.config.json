@@ -20,7 +20,10 @@
 			"*.firebaseapp.com",
 			"*.firebaseio.com",
 			"*.firebase.com",
-			"securetoken.googleapis.com"
+			"securetoken.googleapis.com",
+			"facebook.com",
+			"*.facebook.com",
+			"*.facebook.net"
 		]
 	},
 	"ios": {

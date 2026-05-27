@@ -7,7 +7,7 @@ import {
   type User,
 } from "firebase/auth";
 import { ensureFirebaseAuthPersistence, getFirebaseAuth } from "@/lib/firebase";
-import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+import { isCapacitorIosShell, isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 import {
   finalizeOAuthCredentialSignIn,
   finishOAuthLoginFlow,
@@ -98,6 +98,10 @@ export async function loginWithFacebookRedirect(): Promise<void> {
   await signInWithRedirect(auth, provider);
 }
 
+async function loginCapacitorIosFacebook(): Promise<void> {
+  await loginWithFacebookRedirect();
+}
+
 async function loginWithWebFallback(): Promise<string | void> {
   try {
     return await loginWithFacebookPopup();
@@ -136,10 +140,13 @@ export async function loginAndroidWebViewFacebook(): Promise<string> {
   return dest;
 }
 
-/** Native Android bridge first; web/PWA uses popup+redirect. */
+/** Native Android bridge first; Capacitor iOS uses redirect; web/PWA uses popup+redirect. */
 export async function handleFacebookLogin(): Promise<string | void> {
   if (isNativeAmyNestAndroidWrapper()) {
     return loginAndroidWebViewFacebook();
+  }
+  if (isCapacitorIosShell()) {
+    return loginCapacitorIosFacebook();
   }
   return loginWithWebFallback();
 }
