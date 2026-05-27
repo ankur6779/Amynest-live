@@ -65,6 +65,12 @@
 			"clientId": "com.amynest.app",
 			"redirectURI": "https://www.amynest.in/auth/apple/callback"
 		},
+		"GoogleAuth": {
+			"scopes": ["profile", "email"],
+			"serverClientId": "573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com",
+			"clientId": "573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com",
+			"forceCodeForRefreshToken": false
+		},
 		"CapacitorUpdater": {
 			"autoUpdate": false,
 			"autoDeletePrevious": true,
@@ -84,6 +90,7 @@
 		"PushNotificationsPlugin",
 		"PurchasesPlugin",
 		"MicPermissionPlugin",
-		"SignInWithApple"
+		"SignInWithApple",
+		"GoogleAuth"
 	]
 }

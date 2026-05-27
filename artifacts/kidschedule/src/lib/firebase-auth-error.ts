@@ -110,6 +110,12 @@ export function prettyAuthError(err: unknown): string {
       return "An account already exists with this email using a different sign-in method. Try email and password or the method you used originally.";
     case "auth/credential-already-in-use":
       return "This Google account is already linked to another user.";
+    case "auth/argument-error":
+      return "Google sign-in could not complete in the app. Use the in-app Google button (not the browser), or update the app from the Play Store.";
+    case "app/auth-bridge-unavailable":
+      return "Google Sign-In is not ready. Close and reopen the app, then try again.";
+    case "app/google-native-required":
+      return "Google Sign-In must use the in-app account picker. Update the app from the Play Store.";
     case "app/google-no-id-token":
       return "Google sign-in did not complete. Please try again.";
     case "app/apple-not-configured":
