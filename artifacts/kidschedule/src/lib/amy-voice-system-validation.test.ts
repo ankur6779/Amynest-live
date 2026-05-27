@@ -76,13 +76,14 @@ describe("TTS system validation", () => {
         textLength: 3,
         shortText: true,
         lessonMode: false,
-        phonics: true,
+        phonics: false,
         catalogPlayback: false,
         deviceClass: "desktop",
         networkProfile: "fast",
         module: "phonics",
       });
-      expect(ranked.indexOf("static")).toBeLessThan(ranked.indexOf("api"));
+      expect(ranked).toContain("static");
+      expect(ranked).not.toContain("api");
     });
   });
 

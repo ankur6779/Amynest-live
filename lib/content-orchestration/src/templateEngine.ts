@@ -1,4 +1,4 @@
-import type { DifficultyLevel, ModuleId, PoolContentItem } from "./types.js";
+import type { ContentPool, DifficultyLevel, ModuleId, PoolContentItem } from "./types.js";
 import type { ContentTemplate, GeneratedTemplateVariant } from "./types-v2.js";
 import { dateSeed } from "./utils/seededShuffle.js";
 
@@ -89,11 +89,11 @@ export function expandPoolWithTemplates(
 }
 
 export function enrichPoolsFromTemplates(
-  pools: { contentVariants: PoolContentItem[]; moduleId: ModuleId }[],
+  pools: ContentPool[],
   childId: string,
   dateIso: string,
   perModule = 5,
-): typeof pools {
+): ContentPool[] {
   const seed = dateSeed(dateIso, childId);
   return pools.map((pool, idx) => ({
     ...pool,

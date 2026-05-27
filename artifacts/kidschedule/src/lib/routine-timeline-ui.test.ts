@@ -1,5 +1,4 @@
-import { describe, it } from "node:test";
-import assert from "node:assert/strict";
+import { describe, it, expect } from "vitest";
 import {
   formatCategoryLabel,
   parseRoutineTimeToMinutes,
@@ -8,24 +7,24 @@ import {
 
 describe("parseRoutineTimeToMinutes", () => {
   it("parses 24h times", () => {
-    assert.equal(parseRoutineTimeToMinutes("19:50"), 19 * 60 + 50);
-    assert.equal(parseRoutineTimeToMinutes("21:00"), 21 * 60);
+    expect(parseRoutineTimeToMinutes("19:50")).toBe(19 * 60 + 50);
+    expect(parseRoutineTimeToMinutes("21:00")).toBe(21 * 60);
   });
 
   it("parses 12h times", () => {
-    assert.equal(parseRoutineTimeToMinutes("7:30 PM"), 19 * 60 + 30);
+    expect(parseRoutineTimeToMinutes("7:30 PM")).toBe(19 * 60 + 30);
   });
 });
 
 describe("formatCategoryLabel", () => {
   it("humanizes snake_case categories", () => {
-    assert.equal(formatCategoryLabel("self_care"), "Self care");
+    expect(formatCategoryLabel("self_care")).toBe("Self care");
   });
 });
 
 describe("resolveTimelinePhase", () => {
   it("marks upcoming tasks after now", () => {
-    assert.equal(
+    expect(
       resolveTimelinePhase({
         dateMode: "today",
         status: "pending",
@@ -34,7 +33,6 @@ describe("resolveTimelinePhase", () => {
         nowMins: 19 * 60 + 30,
         isCurrentIndex: false,
       }),
-      "upcoming",
-    );
+    ).toBe("upcoming");
   });
 });

@@ -1193,7 +1193,7 @@ export default function Dashboard() {
     authReady && isSignedIn && (loadingSummary || subLoading);
 
   const childrenSafe = Array.isArray(childrenList) ? childrenList : [];
-  const recentRoutinesSafe = Array.isArray(routines) ? routines : [];
+  const recentRoutinesSafe = asRoutineList<Routine>(routines);
   const statsSafe = Array.isArray(stats) ? stats : [];
   const allRoutinesSafe = asRoutineList<Routine>(allRoutines);
   const todayKey = new Date().toISOString().slice(0, 10);

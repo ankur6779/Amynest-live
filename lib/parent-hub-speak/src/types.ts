@@ -40,8 +40,22 @@ export type HubPuzzle = {
   audioQ?: string;
 };
 
+export type HubOrigamiFold =
+  | "start"
+  | "halfH"
+  | "halfV"
+  | "diagFold"
+  | "diamond"
+  | "kite"
+  | "blintz"
+  | "foldUp"
+  | "foldDown"
+  | "pullOpen"
+  | "crease"
+  | "done";
+
 export type HubOrigamiStep = {
-  fold: string;
+  fold: HubOrigamiFold;
   instruction: string;
 };
 

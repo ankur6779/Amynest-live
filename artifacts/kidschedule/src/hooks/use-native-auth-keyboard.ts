@@ -6,18 +6,38 @@ import {
   type RefObject,
 } from "react";
 import { isCapacitorNative } from "@/lib/capacitor-native";
-import { isCapacitorIosShell } from "@/lib/device-lite";
+import {
+  isCapacitorIosShell,
+  isNativeAmyNestAndroidWrapper,
+} from "@/lib/device-lite";
+import { syncAndroidSystemUi } from "@/lib/native-android-system-ui";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 
 /** Applied to email/password/phone inputs on auth screens (native WebView text visibility). */
 export const AUTH_INPUT_CLASS = "amynest-auth-input";
 
-const AUTH_INPUT_SCROLL_MARGIN = 28;
+const AUTH_INPUT_SCROLL_MARGIN = 36;
+const KEYBOARD_OPEN_THRESHOLD = 72;
 
 interface ViewportMetrics {
   height: number;
   offsetTop: number;
   keyboardInset: number;
+}
+
+function readNativeImeInsetPx(): number {
+  if (typeof document === "undefined") return 0;
+  const root = document.documentElement;
+  const raw =
+    root.style.getPropertyValue("--auth-keyboard-inset-native").trim() ||
+    root.style.getPropertyValue("--auth-keyboard-inset").trim();
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function estimateAndroidKeyboardInset(): number {
+  if (typeof window === "undefined") return 0;
+  return Math.round(Math.min(window.innerHeight * 0.42, 420));
 }
 
 function readViewportMetrics(): ViewportMetrics {
@@ -26,17 +46,24 @@ function readViewportMetrics(): ViewportMetrics {
   }
 
   const vv = window.visualViewport;
-  const height = vv?.height ?? window.innerHeight;
   const offsetTop = vv?.offsetTop ?? 0;
-  const keyboardInset = Math.max(0, window.innerHeight - height - offsetTop);
+  const layoutHeight = window.innerHeight;
+  let height = vv?.height ?? layoutHeight;
+  let keyboardInset = Math.max(0, layoutHeight - height - offsetTop);
+
+  const nativeImeInset = readNativeImeInsetPx();
+  if (nativeImeInset > keyboardInset) {
+    keyboardInset = nativeImeInset;
+    height = Math.max(0, layoutHeight - nativeImeInset - offsetTop);
+  }
 
   return { height, offsetTop, keyboardInset };
 }
 
-/** Extra clearance so focused fields sit above the keyboard (iOS safe-area / status bar). */
 function readKeyboardVerticalOffset(): number {
-  if (!isCapacitorIosShell()) return 0;
-  return 12;
+  if (isCapacitorIosShell()) return 12;
+  if (isNativeAmyNestAndroidWrapper()) return 8;
+  return 0;
 }
 
 function applyAuthViewportCssVars(metrics: ViewportMetrics) {
@@ -51,7 +78,22 @@ function applyAuthViewportCssVars(metrics: ViewportMetrics) {
   );
 }
 
-function isAuthField(el: EventTarget | null): el is HTMLInputElement | HTMLTextAreaElement {
+/** Restore full viewport after keyboard dismiss — prevents black gap at bottom. */
+export function clearAuthViewportCssVars() {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  const layoutHeight = window.innerHeight;
+  root.style.removeProperty("--auth-keyboard-inset");
+  root.style.removeProperty("--auth-keyboard-inset-native");
+  root.style.removeProperty("--auth-kav-offset");
+  root.style.setProperty("--vv-height", `${layoutHeight}px`);
+  root.style.setProperty("--vv-offset-top", "0px");
+  root.style.setProperty("--vh", `${layoutHeight * 0.01}px`);
+}
+
+function isAuthField(
+  el: EventTarget | null,
+): el is HTMLInputElement | HTMLTextAreaElement {
   return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
 }
 
@@ -64,6 +106,30 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
   );
 }
 
+function readVisibleBounds(margin: number = AUTH_INPUT_SCROLL_MARGIN): {
+  top: number;
+  bottom: number;
+} {
+  const metrics = readViewportMetrics();
+  const vv = window.visualViewport;
+  const keyboardInset = metrics.keyboardInset;
+
+  if (keyboardInset > KEYBOARD_OPEN_THRESHOLD) {
+    return {
+      top: margin,
+      bottom: window.innerHeight - keyboardInset - margin,
+    };
+  }
+
+  return {
+    top: (vv?.offsetTop ?? 0) + margin,
+    bottom:
+      (vv?.offsetTop ?? 0) +
+      (vv?.height ?? window.innerHeight) -
+      margin,
+  };
+}
+
 /** Scroll a focused field into the visible area above the software keyboard. */
 export function scrollAuthInputIntoView(
   el: HTMLElement,
@@ -72,10 +138,7 @@ export function scrollAuthInputIntoView(
   margin: number = AUTH_INPUT_SCROLL_MARGIN,
 ) {
   const run = () => {
-    const vv = window.visualViewport;
-    const visibleTop = (vv?.offsetTop ?? 0) + margin;
-    const visibleBottom =
-      (vv?.offsetTop ?? 0) + (vv?.height ?? window.innerHeight) - margin;
+    const { top: visibleTop, bottom: visibleBottom } = readVisibleBounds(margin);
     const rect = el.getBoundingClientRect();
 
     if (rect.top >= visibleTop && rect.bottom <= visibleBottom) {
@@ -85,7 +148,7 @@ export function scrollAuthInputIntoView(
     if (scrollContainer) {
       let delta = 0;
       if (rect.bottom > visibleBottom) {
-        delta = rect.bottom - visibleBottom;
+        delta = rect.bottom - visibleBottom + 12;
       } else if (rect.top < visibleTop) {
         delta = rect.top - visibleTop;
       }
@@ -122,6 +185,7 @@ export function useNativeAuthKeyboard(
   const kavRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const fallbackInsetRef = useRef(0);
 
   const scrollFocused = useCallback((behavior: ScrollBehavior = "smooth") => {
     const active = document.activeElement;
@@ -152,23 +216,101 @@ export function useNativeAuthKeyboard(
     [dismissKeyboard],
   );
 
+  const resetAfterKeyboard = useCallback(() => {
+    fallbackInsetRef.current = 0;
+    clearAuthViewportCssVars();
+    document.documentElement.classList.remove("amynest-auth-keyboard-open");
+    setKeyboardOpen(false);
+    const scroll = scrollRef.current;
+    if (scroll) {
+      scroll.style.removeProperty("height");
+      scroll.style.removeProperty("maxHeight");
+    }
+  }, []);
+
   const syncViewport = useCallback(() => {
     const metrics = readViewportMetrics();
-    applyAuthViewportCssVars(metrics);
-    setKeyboardOpen(metrics.keyboardInset > 72);
-  }, []);
+    const effectiveInset = Math.max(
+      metrics.keyboardInset,
+      fallbackInsetRef.current,
+    );
+
+    if (effectiveInset <= KEYBOARD_OPEN_THRESHOLD) {
+      if (isAuthField(document.activeElement)) {
+        return;
+      }
+      resetAfterKeyboard();
+      return;
+    }
+
+    const effectiveMetrics = {
+      height: Math.max(
+        0,
+        window.innerHeight - effectiveInset - metrics.offsetTop,
+      ),
+      offsetTop: metrics.offsetTop,
+      keyboardInset: effectiveInset,
+    };
+    applyAuthViewportCssVars(effectiveMetrics);
+    document.documentElement.classList.add("amynest-auth-keyboard-open");
+    setKeyboardOpen(true);
+  }, [resetAfterKeyboard]);
+
+  const applyAndroidKeyboardFallback = useCallback(() => {
+    if (!isNativeAmyNestAndroidWrapper() || isCapacitorNative()) return;
+    const metrics = readViewportMetrics();
+    if (metrics.keyboardInset >= KEYBOARD_OPEN_THRESHOLD) return;
+
+    const estimated = estimateAndroidKeyboardInset();
+    fallbackInsetRef.current = estimated;
+    applyAuthViewportCssVars({
+      ...metrics,
+      keyboardInset: estimated,
+      height: Math.max(0, window.innerHeight - estimated - metrics.offsetTop),
+    });
+    document.documentElement.classList.add("amynest-auth-keyboard-open");
+    setKeyboardOpen(true);
+    scrollFocused("smooth");
+  }, [scrollFocused]);
 
   useEffect(() => {
     if (!enabled || typeof window === "undefined") return;
 
     const root = document.documentElement;
     root.classList.add("amynest-auth-active");
-    syncViewport();
+    clearAuthViewportCssVars();
+
+    if (isNativeAmyNestAndroidWrapper()) {
+      syncAndroidSystemUi(true);
+    }
 
     const vv = window.visualViewport;
     vv?.addEventListener("resize", syncViewport);
     vv?.addEventListener("scroll", syncViewport);
     window.addEventListener("resize", syncViewport);
+
+    const onNativeKeyboardInset = (event: Event) => {
+      const detail = (event as CustomEvent<{ inset?: number; visibleHeight?: number }>)
+        .detail;
+      const inset = detail?.inset ?? 0;
+      fallbackInsetRef.current = 0;
+      if (inset > KEYBOARD_OPEN_THRESHOLD) {
+        const visibleHeight =
+          detail?.visibleHeight ??
+          Math.max(0, window.innerHeight - inset);
+        applyAuthViewportCssVars({
+          height: visibleHeight,
+          offsetTop: vv?.offsetTop ?? 0,
+          keyboardInset: inset,
+        });
+        document.documentElement.classList.add("amynest-auth-keyboard-open");
+        setKeyboardOpen(true);
+        scrollFocused("smooth");
+        return;
+      }
+      resetAfterKeyboard();
+    };
+    window.addEventListener("amynest-keyboard-inset", onNativeKeyboardInset);
 
     let cancelled = false;
     let removeKeyboardShow: (() => void) | undefined;
@@ -189,8 +331,7 @@ export function useNativeAuthKeyboard(
             if (!cancelled) removeKeyboardShow = () => void handle.remove();
           });
           void Keyboard.addListener("keyboardDidHide", () => {
-            syncViewport();
-            setKeyboardOpen(false);
+            resetAfterKeyboard();
           }).then((handle) => {
             if (!cancelled) removeKeyboardHide = () => void handle.remove();
           });
@@ -204,29 +345,54 @@ export function useNativeAuthKeyboard(
       const target = event.target;
       if (!isAuthField(target)) return;
       if (kavRef.current && !kavRef.current.contains(target)) return;
-      syncViewport();
+
       scrollAuthInputIntoView(target, scrollRef.current, "instant");
+      window.setTimeout(() => syncViewport(), 80);
       window.setTimeout(
         () => scrollAuthInputIntoView(target, scrollRef.current, "smooth"),
         280,
       );
+      window.setTimeout(() => applyAndroidKeyboardFallback(), 350);
+    };
+
+    const onFocusOut = () => {
+      window.setTimeout(() => {
+        if (isAuthField(document.activeElement)) return;
+        resetAfterKeyboard();
+      }, 150);
     };
 
     document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
 
     return () => {
       cancelled = true;
       root.classList.remove("amynest-auth-active");
+      root.classList.remove("amynest-auth-keyboard-open");
       root.style.removeProperty("--auth-keyboard-inset");
+      root.style.removeProperty("--auth-keyboard-inset-native");
       root.style.removeProperty("--auth-kav-offset");
+      root.style.removeProperty("--vv-height");
+      root.style.removeProperty("--vv-offset-top");
       vv?.removeEventListener("resize", syncViewport);
       vv?.removeEventListener("scroll", syncViewport);
       window.removeEventListener("resize", syncViewport);
+      window.removeEventListener("amynest-keyboard-inset", onNativeKeyboardInset);
       document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
       removeKeyboardShow?.();
       removeKeyboardHide?.();
+      if (isNativeAmyNestAndroidWrapper()) {
+        syncAndroidSystemUi(false);
+      }
     };
-  }, [enabled, scrollFocused, syncViewport]);
+  }, [
+    applyAndroidKeyboardFallback,
+    enabled,
+    resetAfterKeyboard,
+    scrollFocused,
+    syncViewport,
+  ]);
 
   return {
     kavRef,

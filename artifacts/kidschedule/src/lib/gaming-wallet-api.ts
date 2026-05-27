@@ -24,7 +24,7 @@ async function parseWalletResponse(res: Response): Promise<ServerWalletSnapshot>
 export async function fetchGamingWallet(
   authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
 ): Promise<ServerWalletSnapshot | null> {
-  const res = await authFetch(`${getApiUrl()}/api/gaming-rewards/wallet`);
+  const res = await authFetch(getApiUrl("/api/gaming-rewards/wallet"));
   if (res.status === 401) return null;
   if (!res.ok) throw new Error(`gaming wallet ${res.status}`);
   return parseWalletResponse(res);
@@ -34,7 +34,7 @@ export async function syncGamingWallet(
   authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
 ): Promise<ServerWalletSnapshot> {
   const local = readLocalWalletPartial();
-  const res = await authFetch(`${getApiUrl()}/api/gaming-rewards/sync`, {
+  const res = await authFetch(getApiUrl("/api/gaming-rewards/sync"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(local),
@@ -53,7 +53,7 @@ export async function earnGamingPoints(
     idempotencyKey?: string;
   },
 ): Promise<ServerWalletSnapshot> {
-  const res = await authFetch(`${getApiUrl()}/api/gaming-rewards/earn`, {
+  const res = await authFetch(getApiUrl("/api/gaming-rewards/earn"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -66,7 +66,7 @@ export async function unlockGamingGame(
   authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
   gameId: string,
 ): Promise<{ wallet: ServerWalletSnapshot; via?: string }> {
-  const res = await authFetch(`${getApiUrl()}/api/gaming-rewards/unlock`, {
+  const res = await authFetch(getApiUrl("/api/gaming-rewards/unlock"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ gameId }),
@@ -84,7 +84,7 @@ export async function recordGamingPlay(
   authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
   body: { gameId: string; score: number; total: number },
 ): Promise<{ wallet: ServerWalletSnapshot; pointsEarned: number; perfect: boolean }> {
-  const res = await authFetch(`${getApiUrl()}/api/gaming-rewards/play`, {
+  const res = await authFetch(getApiUrl("/api/gaming-rewards/play"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

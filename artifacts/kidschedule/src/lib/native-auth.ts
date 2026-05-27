@@ -123,7 +123,7 @@ export async function probeAuthBridgeAvailability(): Promise<boolean | null> {
     { action: "isAvailable" },
     8_000,
   );
-  return !!result?.data?.available;
+  return result.ok ? !!result.data?.available : false;
 }
 
 export type NativeGoogleSignInResult = {

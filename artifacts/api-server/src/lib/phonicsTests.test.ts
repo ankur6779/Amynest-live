@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { isDbIntegrationAvailable } from "../test/db-integration.js";
 import {
   generateQuestions,
   scoreAnswers,
@@ -537,7 +538,11 @@ describe("isAvailable", () => {
 // pair is wired up correctly.
 
 describe("phonics_test_results — replay protection (DB integration)", () => {
-  it("rejects a second insert with the same (userId, sessionJti) via unique index", async () => {
+  it("rejects a second insert with the same (userId, sessionJti) via unique index", async (t) => {
+    if (!(await isDbIntegrationAvailable())) {
+      t.skip("Postgres not available — set DATABASE_URL to run DB integration tests");
+      return;
+    }
     const userId = `replay-test-${randomUUID()}`;
     const jti = randomUUID();
     const baseRow = {
@@ -595,7 +600,11 @@ describe("phonics_test_results — replay protection (DB integration)", () => {
     }
   });
 
-  it("allows two rows for the SAME user when JTIs differ", async () => {
+  it("allows two rows for the SAME user when JTIs differ", async (t) => {
+    if (!(await isDbIntegrationAvailable())) {
+      t.skip("Postgres not available — set DATABASE_URL to run DB integration tests");
+      return;
+    }
     const userId = `replay-test-${randomUUID()}`;
     const baseRow = {
       childId: 999_999,
@@ -631,7 +640,11 @@ describe("phonics_test_results — replay protection (DB integration)", () => {
     }
   });
 
-  it("allows two DIFFERENT users to share the same JTI string", async () => {
+  it("allows two DIFFERENT users to share the same JTI string", async (t) => {
+    if (!(await isDbIntegrationAvailable())) {
+      t.skip("Postgres not available — set DATABASE_URL to run DB integration tests");
+      return;
+    }
     // Sanity: the unique index is scoped per user, not global.
     const sharedJti = randomUUID();
     const userA = `replay-test-A-${randomUUID()}`;

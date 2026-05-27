@@ -137,7 +137,7 @@ export function winningExperimentFlags(): ExperimentFlags | null {
         DEFAULT_EXPERIMENT_FLAGS.explorationRate[0]!,
         DEFAULT_EXPERIMENT_FLAGS.explorationRate[1]!,
       ] as [number, number],
-      difficultyRampSpeed: [ramp, ramp] as ["slow" | "fast", "slow" | "fast"],
+      difficultyRampSpeed: [ramp, ramp] as readonly ["slow", "fast"],
     };
   }
   return null;

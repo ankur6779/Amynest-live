@@ -21,6 +21,8 @@ const LEVEL_LABELS: Record<LevelId, string> = {
   3: "subtraction",
   4: "multi-digit addition",
   5: "mental maths",
+  6: "multiplication",
+  7: "division",
 };
 
 export type AbacusWeeklyChildSummary = {

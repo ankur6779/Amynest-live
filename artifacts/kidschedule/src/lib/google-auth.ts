@@ -238,8 +238,23 @@ export async function loginAndroidWebViewGoogle(): Promise<string> {
   return finishGoogleLoginFlow();
 }
 
+/** Web/PWA only — popup first, redirect fallback. */
+async function loginWithWebFallback(): Promise<string | void> {
+  try {
+    return await loginWithGooglePopup();
+  } catch (err) {
+    if (isGooglePopupBlockedOrClosed(err)) {
+      console.info(`${GOOGLE_TAG} popup unavailable — falling back to redirect`);
+      await loginWithGoogleRedirect();
+      return;
+    }
+    throw err;
+  }
+}
+
 /**
- * Web/PWA: popup first, redirect fallback. Native shells use bridge/plugins only.
+ * Native shells use bridge/plugins only (no web OAuth — WebView breaks with auth/argument-error).
+ * Web/PWA uses popup/redirect fallback.
  */
 export async function handleGoogleLogin(): Promise<string | void> {
   if (shouldUseNativeGoogleAuth()) {
@@ -256,16 +271,7 @@ export async function handleGoogleLogin(): Promise<string | void> {
       { code: "app/google-native-required" },
     );
   }
-  try {
-    return await loginWithGooglePopup();
-  } catch (err) {
-    if (isGooglePopupBlockedOrClosed(err)) {
-      console.info(`${GOOGLE_TAG} popup unavailable — falling back to redirect`);
-      await loginWithGoogleRedirect();
-      return;
-    }
-    throw err;
-  }
+  return loginWithWebFallback();
 }
 
 /**

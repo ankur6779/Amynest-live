@@ -172,7 +172,11 @@ function evaluateAutoActions(metrics: SystemMetrics): void {
   const ops = getAdminOpsState();
   if (!ops.selfHealEnabled) return;
 
-  const latches = updateHealthLatches(metrics);
+  const latches = updateHealthLatches({
+    apiErrorRate: metrics.apiErrorRate,
+    streamingStallRate: metrics.streamingStallRate,
+    failureRate: metrics.audioFailureRate,
+  });
 
   if (!latches.apiHealthy && shouldDisableApi(metrics.apiErrorRate)) {
     openApiCircuit(metrics);
