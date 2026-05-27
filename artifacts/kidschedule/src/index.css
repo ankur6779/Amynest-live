@@ -1193,7 +1193,7 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
   min-height: 50px;
 }
 
-/* Auth screens — keyboard: constrain layout only while keyboard is open */
+/* Auth screens — full-width; constrain height only while keyboard is open */
 html.amynest-native-shell.amynest-auth-active,
 html.amynest-native-shell.amynest-auth-active body,
 html.amynest-android-shell.amynest-auth-active,
@@ -1236,7 +1236,7 @@ html.amynest-android-shell.amynest-auth-active.amynest-auth-keyboard-open #root 
   min-width: 0;
 }
 
-/* Full height when keyboard closed; shrink only while typing */
+/* Keyboard closed: natural full-screen scroll so bottom links stay reachable */
 html.amynest-native-shell .amynest-auth-kav,
 html.amynest-android-shell .amynest-auth-kav {
   width: 100%;
@@ -1253,40 +1253,50 @@ html.amynest-android-shell .amynest-auth-kav.amynest-auth-shell--keyboard {
   height: var(--vv-height, 100dvh);
   max-height: var(--vv-height, 100dvh);
   min-height: 0;
+  overflow: hidden;
   padding-bottom: calc(
     var(--auth-keyboard-inset, 0px) + var(--auth-kav-offset, 0px)
   );
 }
 
 .amynest-auth-kav-backdrop {
-  flex: 1;
-  min-height: 0;
-  min-width: 0;
   width: 100%;
+  min-width: 0;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
 
-.amynest-auth-scroll {
-  flex: 1;
+.amynest-auth-shell--keyboard .amynest-auth-kav-backdrop {
   min-height: 0;
-  min-width: 0;
+  flex: 1;
+  height: 100%;
+}
+
+.amynest-auth-scroll {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
+  min-height: 100dvh;
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   box-sizing: border-box;
-  padding-bottom: 32px;
+  padding-bottom: max(32px, env(safe-area-inset-bottom, 0px));
 }
 
 .amynest-auth-shell--keyboard .amynest-auth-scroll {
-  padding-bottom: calc(32px + var(--auth-keyboard-inset, 0px));
+  min-height: 0;
+  flex: 1;
+  height: 100%;
+  max-height: 100%;
+  padding-bottom: calc(
+    32px + var(--auth-keyboard-inset, 0px) + env(safe-area-inset-bottom, 0px)
+  );
 }
 
 .amynest-auth-scroll-content {
-  flex-grow: 1;
   display: flex;
   flex-direction: column;
   align-items: center;

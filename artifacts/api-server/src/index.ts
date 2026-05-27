@@ -219,10 +219,12 @@ async function startBackgroundTasks(): Promise<void> {
     try {
       const { startRazorpayWebhookCleanup } = await import("./lib/razorpayWebhookCleanup.js");
       const { startWeeklyRecapCron } = await import("./lib/weeklyRecapCron.js");
+      const { startAdminHealthDigestCron } = await import("./lib/adminHealthDigestCron.js");
       const { startRenderKeepWarm } = await import("./lib/render-keep-warm.js");
 
       startRazorpayWebhookCleanup();
       startWeeklyRecapCron();
+      startAdminHealthDigestCron();
       startRenderKeepWarm(port);
       console.log("[bg:ok]", "crons");
       endBootPhase("crons");
