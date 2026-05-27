@@ -39,7 +39,7 @@ export function preloadAmyVoice(
 interface AudioPlayButtonProps {
   text: string;
   size?: "sm" | "md" | "lg";
-  variant?: "primary" | "ghost" | "violet" | "amber";
+  variant?: "primary" | "ghost" | "violet" | "amber" | "outline";
   ariaLabel?: string;
   onFinished?: () => void;
   onPlay?: () => void;
@@ -74,6 +74,7 @@ const VARIANT_CLASSES: Record<NonNullable<AudioPlayButtonProps["variant"]>, stri
   violet:  "bg-primary text-primary-foreground hover:bg-primary",
   amber:   "bg-primary text-primary-foreground hover:bg-primary",
   ghost:   "bg-card text-foreground hover:bg-card",
+  outline: "bg-card text-foreground border border-border hover:bg-muted",
 };
 
 export function AudioPlayButton({

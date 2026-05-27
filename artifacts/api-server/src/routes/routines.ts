@@ -953,6 +953,7 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
   const piped = runIntelligencePipelineOnItems({
     items: enhancedItems,
     resolvedInputs: inputs,
+    childClass: params.childClass,
     specialPlans,
     fixedActivities: params.fixedActivities,
     ageGroup: params.ageGroup,
@@ -982,9 +983,19 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
     mood: params.mood,
   };
 
+  const mergedItems = mergePipelineWithV2Meals(
+    piped.items as unknown as RoutineItem[],
+    v2Items as ScheduleItem[],
+    params.childClass,
+  );
+  const weatherAdjustedItems = applyWeatherAdjustment(
+    mergedItems as RoutineItem[],
+    weatherOutdoor,
+  );
+
   return {
     title: parsed.title,
-    items: piped.items,
+    items: weatherAdjustedItems,
     specialEvent: piped.specialEvent,
     fixedActivities: piped.fixedActivities,
     adaptations: finalizeParentAdaptations(
@@ -1229,9 +1240,43 @@ function resolveFixedActivitiesForGenerate(
   return fromProfile && fromProfile.length > 0 ? fromProfile : undefined;
 }
 
+function isMealOrTiffinSlot(item: ScheduleItem): boolean {
+  const cat = (item.category ?? "").toLowerCase();
+  return cat === "meal" || cat === "tiffin";
+}
+
+/** Keep intelligence scheduling for activities; preserve v2 meal contract from pre-pipeline pass. */
+function mergePipelineWithV2Meals(
+  piped: RoutineItem[],
+  v2Meals: ScheduleItem[],
+  childClass?: string,
+): RoutineItem[] {
+  const nonMeals = piped.filter((it) => !isMealOrTiffinSlot(it));
+  let merged = [...nonMeals, ...v2Meals].sort(
+    (a, b) => timeToMins(a.time) - timeToMins(b.time),
+  );
+  let schoolSeen = false;
+  merged = merged.filter((it) => {
+    if ((it.category ?? "").toLowerCase() !== "school") return true;
+    if (schoolSeen) return false;
+    schoolSeen = true;
+    return true;
+  });
+  const cls = childClass?.trim();
+  if (cls) {
+    for (const it of merged) {
+      if ((it.category ?? "").toLowerCase() === "school") {
+        it.activity = `${cls} — at school`;
+      }
+    }
+  }
+  return merged;
+}
+
 function runIntelligencePipelineOnItems(params: {
   items: AiRoutineItem[];
   resolvedInputs: ResolvedRoutineInputs;
+  childClass?: string;
   specialPlans?: string;
   fixedActivities?: FixedActivityInput[];
   ageGroup: AgeGroup;
@@ -1313,6 +1358,7 @@ function runIntelligencePipelineOnItems(params: {
       hasSchool: hasSchool && params.totalAgeMonths >= 36,
       schoolStartMins: timeToMins(schoolStartTime),
       schoolEndMins: timeToMins(schoolEndTime),
+      childClass: params.childClass,
       ageInMonths: params.totalAgeMonths,
       feedingType: params.feedingType,
     },

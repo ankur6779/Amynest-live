@@ -39,7 +39,7 @@ const BATCH_MAX = 20;
 const FLUSH_INTERVAL_MS = 30_000;
 
 const queue: AudioHealthEvent[] = [];
-let flushTimer: ReturnType<typeof setTimeout> | null = null;
+let flushTimer: number | null = null;
 let sessionId = createSessionId();
 let activeSpeak: { module: AudioHealthModule; startedAt: number } | null = null;
 let lastEvent: AudioHealthEvent | null = null;
@@ -109,21 +109,21 @@ function notifyOverlay(event: AudioHealthEvent): void {
 }
 
 function baseEvent(
-  partial: Omit<AudioHealthEvent, "device" | "network" | "timestamp" | "sessionId"> &
+  partial: Omit<AudioHealthEvent, "device" | "network" | "timestamp" | "sessionId" | "module"> &
     Partial<Pick<AudioHealthEvent, "module">>,
 ): AudioHealthEvent {
   return {
+    ...partial,
     module: partial.module ?? activeSpeak?.module ?? "coach",
     device: getDeviceClass(),
     network: getNetworkProfile(),
     timestamp: Date.now(),
     sessionId,
-    ...partial,
   };
 }
 
 export function logAudioHealth(
-  partial: Omit<AudioHealthEvent, "device" | "network" | "timestamp" | "sessionId"> &
+  partial: Omit<AudioHealthEvent, "device" | "network" | "timestamp" | "sessionId" | "module"> &
     Partial<Pick<AudioHealthEvent, "module">>,
 ): void {
   if (typeof window === "undefined") return;

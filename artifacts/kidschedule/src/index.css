@@ -1193,11 +1193,21 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
   min-height: 50px;
 }
 
-/* Auth screens — keyboard open: scroll root + visible typed text on iOS/Android WebView */
+/* Auth screens — keyboard: constrain layout only while keyboard is open */
 html.amynest-native-shell.amynest-auth-active,
 html.amynest-native-shell.amynest-auth-active body,
 html.amynest-android-shell.amynest-auth-active,
 html.amynest-android-shell.amynest-auth-active body {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+html.amynest-native-shell.amynest-auth-active.amynest-auth-keyboard-open,
+html.amynest-native-shell.amynest-auth-active.amynest-auth-keyboard-open body,
+html.amynest-android-shell.amynest-auth-active.amynest-auth-keyboard-open,
+html.amynest-android-shell.amynest-auth-active.amynest-auth-keyboard-open body {
   height: var(--vv-height, 100dvh);
   max-height: var(--vv-height, 100dvh);
   overflow: hidden;
@@ -1205,6 +1215,14 @@ html.amynest-android-shell.amynest-auth-active body {
 
 html.amynest-native-shell.amynest-auth-active #root,
 html.amynest-android-shell.amynest-auth-active #root {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+html.amynest-native-shell.amynest-auth-active.amynest-auth-keyboard-open #root,
+html.amynest-android-shell.amynest-auth-active.amynest-auth-keyboard-open #root {
   height: 100%;
   max-height: 100%;
   overflow: hidden;
@@ -1213,27 +1231,38 @@ html.amynest-android-shell.amynest-auth-active #root {
 .amynest-auth-shell {
   position: relative;
   box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
-/* KeyboardAvoidingView — iOS uses padding; Android uses height shrink */
-html.amynest-native-shell:not(.amynest-android-shell) .amynest-auth-kav {
+/* Full height when keyboard closed; shrink only while typing */
+html.amynest-native-shell .amynest-auth-kav,
+html.amynest-android-shell .amynest-auth-kav {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 100dvh;
+  height: auto;
+  max-height: none;
+  box-sizing: border-box;
+}
+
+html.amynest-native-shell .amynest-auth-kav.amynest-auth-shell--keyboard,
+html.amynest-android-shell .amynest-auth-kav.amynest-auth-shell--keyboard {
   height: var(--vv-height, 100dvh);
   max-height: var(--vv-height, 100dvh);
-  min-height: var(--vv-height, 100dvh);
+  min-height: 0;
   padding-bottom: calc(
     var(--auth-keyboard-inset, 0px) + var(--auth-kav-offset, 0px)
   );
 }
 
-html.amynest-android-shell .amynest-auth-kav {
-  height: var(--vv-height, 100dvh);
-  max-height: var(--vv-height, 100dvh);
-  min-height: var(--vv-height, 100dvh);
-}
-
 .amynest-auth-kav-backdrop {
   flex: 1;
   min-height: 0;
+  min-width: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -1241,11 +1270,18 @@ html.amynest-android-shell .amynest-auth-kav {
 .amynest-auth-scroll {
   flex: 1;
   min-height: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   box-sizing: border-box;
+  padding-bottom: 32px;
+}
+
+.amynest-auth-shell--keyboard .amynest-auth-scroll {
   padding-bottom: calc(32px + var(--auth-keyboard-inset, 0px));
 }
 
@@ -1255,6 +1291,8 @@ html.amynest-android-shell .amynest-auth-kav {
   flex-direction: column;
   align-items: center;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
 }
 

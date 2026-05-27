@@ -81,6 +81,8 @@ export type ScheduleOpts = {
   schoolStartMins?: number;
   schoolEndMins?: number;
   hasSchool?: boolean;
+  /** When set, school block label becomes "{childClass} — at school". */
+  childClass?: string;
   /** Launch market — drives structure ordering and heat-aware placement. */
   country?: LaunchCountry | string;
   /** When set, overrides static meal windows (from context interpretation layer). */
@@ -659,10 +661,13 @@ export function buildPriorityTimeline(
 
   // 3. School (fixed)
   if (schoolStart >= 0 && schoolEnd > schoolStart) {
+    const schoolLabel = opts.childClass?.trim()
+      ? `${opts.childClass.trim()} — at school`
+      : "At school";
     addSlot(
       {
         time: "",
-        activity: "At school",
+        activity: schoolLabel,
         duration: schoolEnd - schoolStart,
         category: "school",
         status: "pending",

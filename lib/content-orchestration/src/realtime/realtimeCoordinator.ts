@@ -42,6 +42,7 @@ import type {
   ClientSubscribeMessage,
   FallbackMode,
   LiveDifficultyState,
+  RealtimeDecision,
   RealtimeEvent,
   RealtimeExperimentFlags,
   RealtimeSessionState,

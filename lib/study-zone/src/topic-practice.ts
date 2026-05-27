@@ -17,13 +17,16 @@ import {
   BASIC_MATH_EXTRA_PRACTICE_SUBJECTS,
 } from "./basic-math-extra-practice";
 
+/** Topic templates can target advanced bands beyond core study levels 1–6. */
+export type TopicLevelBand = Level | 7 | 8 | 9 | 10;
+
 type Template = {
   q: string;
   options: string[];
   answer: string;
   hint?: string;
-  minLevel?: Level;
-  maxLevel?: Level;
+  minLevel?: TopicLevelBand;
+  maxLevel?: TopicLevelBand;
 };
 
 function shuffleInPlace<T>(arr: T[], r: () => number): T[] {

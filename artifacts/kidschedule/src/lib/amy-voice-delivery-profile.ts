@@ -44,7 +44,7 @@ export type AmyVoiceDeliveryModifiers = {
 
 export type AmyVoiceDeliveryProfile = {
   cohortId: string;
-  experimentVariants: Record<string, string>;
+  experimentVariants: AmyVoiceExperimentAssignment;
   modifiers: AmyVoiceDeliveryModifiers;
   guidanceTier: AmyVoiceCohortAdjustments["guidanceTier"];
   supportLevel: AmyVoiceCohortAdjustments["supportLevel"];

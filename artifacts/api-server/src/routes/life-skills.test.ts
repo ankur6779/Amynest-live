@@ -22,7 +22,9 @@ import {
   formatLifeSkillDate,
 } from "@workspace/life-skills";
 import lifeSkillsRouter from "./life-skills";
+import { isDbIntegrationAvailable } from "../test/db-integration.js";
 
+const dbIntegrationOk = await isDbIntegrationAvailable();
 const TEST_USER = `life-skills-test-${randomUUID()}`;
 const TEST_AGE = 8;
 
@@ -31,6 +33,7 @@ let baseUrl: string;
 let childId: number;
 
 before(async () => {
+  if (!dbIntegrationOk) return;
   const inserted = await db
     .insert(childrenTable)
     .values({
@@ -67,6 +70,7 @@ before(async () => {
 });
 
 after(async () => {
+  if (!dbIntegrationOk) return;
   await db
     .delete(lifeSkillsProgressTable)
     .where(eq(lifeSkillsProgressTable.userId, TEST_USER));
@@ -74,7 +78,7 @@ after(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));
 });
 
-describe("life-skills routes — smoke", () => {
+describe("life-skills routes — smoke", { skip: !dbIntegrationOk }, () => {
   it("GET /life-skills/today returns tasks + empty streak for a fresh child", async () => {
     const r = await fetch(`${baseUrl}/life-skills/today?childId=${childId}`);
     assert.equal(r.status, 200);

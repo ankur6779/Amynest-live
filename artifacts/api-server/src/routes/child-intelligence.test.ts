@@ -14,7 +14,9 @@ import { db, childrenTable, childDailySignalsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import childIntelligenceRouter from "./child-intelligence";
 import { deriveEnergyProfile } from "../services/childIntelligenceService";
+import { isDbIntegrationAvailable } from "../test/db-integration.js";
 
+const dbIntegrationOk = await isDbIntegrationAvailable();
 const TEST_USER = `child-intel-test-${randomUUID()}`;
 
 let server: ReturnType<express.Express["listen"]>;
@@ -23,6 +25,7 @@ let childId: number;
 let otherChildId: number;
 
 before(async () => {
+  if (!dbIntegrationOk) return;
   const inserted = await db
     .insert(childrenTable)
     .values({
@@ -73,6 +76,7 @@ before(async () => {
 });
 
 after(async () => {
+  if (!dbIntegrationOk) return;
   await db.delete(childDailySignalsTable).where(eq(childDailySignalsTable.childId, childId));
   await db.delete(childrenTable).where(eq(childrenTable.id, childId));
   await db.delete(childrenTable).where(eq(childrenTable.id, otherChildId));
@@ -81,7 +85,7 @@ after(async () => {
   });
 });
 
-describe("child-intelligence routes — smoke", () => {
+describe("child-intelligence routes — smoke", { skip: !dbIntegrationOk }, () => {
   it("GET returns an empty snapshot for a fresh child", async () => {
     const res = await fetch(`${baseUrl}/child-intelligence/${childId}`);
     assert.equal(res.status, 200);

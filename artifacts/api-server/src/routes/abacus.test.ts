@@ -187,6 +187,7 @@ mock.module("@workspace/db", {
       referrerUserId: "referrer_user_id",
       referredUserId: "referred_user_id",
     },
+    ttsCacheTable: { cacheKey: "cache_key" },
   },
 });
 
@@ -246,7 +247,12 @@ before(async () => {
   baseUrl = `http://127.0.0.1:${addr.port}`;
 });
 
-after(() => new Promise<void>((resolve) => server.close(() => resolve())));
+after(() =>
+  new Promise<void>((resolve) => {
+    if (server) server.close(() => resolve());
+    else resolve();
+  }),
+);
 
 beforeEach(() => {
   state.authUserId = "user_test_123";

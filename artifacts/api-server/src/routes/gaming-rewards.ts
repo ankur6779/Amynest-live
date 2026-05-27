@@ -64,7 +64,18 @@ router.post("/gaming-rewards/sync", async (req, res): Promise<void> => {
     return;
   }
   try {
-    const wallet = await syncWalletFromClient(userId, parsed.data);
+    const local = parsed.data;
+    const wallet = await syncWalletFromClient(userId, {
+      ...local,
+      skills: local.skills
+        ? Object.fromEntries(
+            Object.entries(local.skills).map(([k, v]) => [
+              k,
+              { attempts: v.attempts, correct: v.correct, plays: v.plays ?? 0 },
+            ]),
+          )
+        : undefined,
+    });
     res.json({ wallet });
   } catch (err) {
     logger.error(`gaming-rewards sync: ${err instanceof Error ? err.message : String(err)}`);
