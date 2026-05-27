@@ -25,10 +25,27 @@ function isCapacitorIos(): boolean {
   try {
     const cap = (
       window as Window & {
-        Capacitor?: { isNativePlatform?: () => boolean; getPlatform?: () => string };
+        Capacitor?: {
+          isNativePlatform?: () => boolean;
+          getPlatform?: () => string;
+          isPluginAvailable?: (pluginName: string) => boolean;
+        };
       }
     ).Capacitor;
     return cap?.isNativePlatform?.() === true && cap.getPlatform?.() === "ios";
+  } catch {
+    return false;
+  }
+}
+
+function isCapacitorPluginAvailable(pluginName: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return (
+      window as Window & {
+        Capacitor?: { isPluginAvailable?: (name: string) => boolean };
+      }
+    ).Capacitor?.isPluginAvailable?.(pluginName) === true;
   } catch {
     return false;
   }
@@ -42,11 +59,13 @@ export function shouldShowAppleSignIn(): boolean {
 
 /**
  * Google Sign-In — show on Play Store WebView Android, mobile web, PWA, and
- * Capacitor iOS when its native plugin flag is enabled.
+ * Capacitor iOS only when the native GoogleAuth plugin is actually registered.
  */
 export function shouldShowGoogleSignIn(): boolean {
   if (!ENABLE_GOOGLE_SIGN_IN) return false;
-  if (isCapacitorIos()) return ENABLE_CAPACITOR_IOS_GOOGLE_SIGN_IN;
+  if (isCapacitorIos()) {
+    return ENABLE_CAPACITOR_IOS_GOOGLE_SIGN_IN && isCapacitorPluginAvailable("GoogleAuth");
+  }
   return true;
 }
 
@@ -59,5 +78,9 @@ export function shouldShowFacebookSignIn(): boolean {
 
 /** Native GoogleAuth plugin — Capacitor iOS only, when explicitly enabled. */
 export function shouldUseCapacitorIosGoogleAuth(): boolean {
-  return isCapacitorIos() && ENABLE_CAPACITOR_IOS_GOOGLE_SIGN_IN;
+  return (
+    isCapacitorIos() &&
+    ENABLE_CAPACITOR_IOS_GOOGLE_SIGN_IN &&
+    isCapacitorPluginAvailable("GoogleAuth")
+  );
 }

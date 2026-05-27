@@ -15,6 +15,7 @@ function setCapacitorIos(native: boolean) {
       isNativePlatform: () =>
         (globalThis as { __capNative?: boolean }).__capNative === true,
       getPlatform: () => "ios",
+      isPluginAvailable: (name: string) => name === "GoogleAuth",
     },
     configurable: true,
   });

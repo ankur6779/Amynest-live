@@ -5,12 +5,16 @@ import {
   shouldShowPhoneOtp,
 } from "./auth-feature-flags";
 
-function setCapacitorPlatform(platform: "ios" | "android" | undefined) {
+function setCapacitorPlatform(
+  platform: "ios" | "android" | undefined,
+  plugins: string[] = [],
+) {
   Object.defineProperty(window, "Capacitor", {
     value: platform
       ? {
           isNativePlatform: () => true,
           getPlatform: () => platform,
+          isPluginAvailable: (name: string) => plugins.includes(name),
         }
       : undefined,
     configurable: true,
@@ -27,9 +31,17 @@ describe("auth-feature-flags", () => {
   });
 
   it("shows OAuth providers and hides phone OTP in Capacitor iOS", () => {
-    setCapacitorPlatform("ios");
+    setCapacitorPlatform("ios", ["GoogleAuth"]);
 
     expect(shouldShowGoogleSignIn()).toBe(true);
+    expect(shouldShowFacebookSignIn()).toBe(true);
+    expect(shouldShowPhoneOtp()).toBe(false);
+  });
+
+  it("hides Google in Capacitor iOS until the native plugin is registered", () => {
+    setCapacitorPlatform("ios");
+
+    expect(shouldShowGoogleSignIn()).toBe(false);
     expect(shouldShowFacebookSignIn()).toBe(true);
     expect(shouldShowPhoneOtp()).toBe(false);
   });

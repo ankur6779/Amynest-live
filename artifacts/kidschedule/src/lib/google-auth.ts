@@ -9,7 +9,7 @@ import {
 import { logFirebaseAuthError } from "@/lib/firebase-auth-error";
 import { ensureFirebaseAuthPersistence, getFirebaseAuth } from "@/lib/firebase";
 import { isCapacitorNative } from "@/lib/capacitor-native";
-import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+import { isCapacitorIosShell, isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { resolveFirebaseAuthRedirectResult } from "@/lib/firebase-oauth-redirect";
 import {
@@ -291,6 +291,14 @@ export async function handleGoogleLogin(): Promise<string | void> {
   }
   if (shouldUseCapacitorGoogleAuth()) {
     return loginNativeGoogle();
+  }
+  if (isCapacitorIosShell()) {
+    throw Object.assign(
+      new Error(
+        "Google Sign-In requires the latest AmyNest iOS app build. Update the app, then try again.",
+      ),
+      { code: "app/google-ios-plugin-unavailable" },
+    );
   }
   if (isNativeAmyNestShell()) {
     throw Object.assign(
