@@ -111,7 +111,7 @@ export function prettyAuthError(err: unknown): string {
     case "auth/credential-already-in-use":
       return "This Google account is already linked to another user.";
     case "auth/argument-error":
-      return "Google sign-in could not complete in the app. Use the in-app Google button (not the browser), or update the app from the Play Store.";
+      return "Sign-in could not complete in the app browser. Update the app from the Play Store, or try email sign-in.";
     case "app/auth-bridge-unavailable":
       return "Google Sign-In is not ready. Close and reopen the app, then try again.";
     case "app/google-native-required":
@@ -120,6 +120,12 @@ export function prettyAuthError(err: unknown): string {
       return "Google sign-in did not finish after choosing an account. Close and reopen the app, then try again.";
     case "app/google-no-id-token":
       return "Google sign-in did not complete. Please try again.";
+    case "app/facebook-not-configured":
+      return "Facebook Sign-In is not configured for this app build. Install the latest version from the Play Store, or try email sign-in.";
+    case "app/facebook-no-access-token":
+    case "app/facebook_sign_in_failed":
+    case "app/facebook-sign-in-incomplete":
+      return "Facebook sign-in did not finish. Close and reopen the app, then try again.";
     case "app/developer_error":
       return "Google Sign-In is not configured for this app build. Install the latest version from the Play Store, or try email sign-in.";
     case "app/user_cancelled":

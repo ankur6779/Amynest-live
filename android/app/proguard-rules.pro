@@ -12,3 +12,7 @@
 -keep class com.google.android.gms.auth.** { *; }
 -keep class com.google.android.gms.common.** { *; }
 -dontwarn com.google.android.gms.**
+
+# Facebook Login
+-keep class com.facebook.** { *; }
+-dontwarn com.facebook.**
