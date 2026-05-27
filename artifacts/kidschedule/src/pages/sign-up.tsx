@@ -27,6 +27,15 @@ import {
 } from "@/hooks/use-native-auth-keyboard";
 import { AuthKeyboardShell, NATIVE_AUTH_SHELL_PADDING } from "@/components/auth-keyboard-shell";
 import { withAuthTimeout } from "@/lib/auth-timeout";
+import {
+  AUTH_INPUT_STYLE,
+  AUTH_SPACING,
+  AUTH_SUBMIT_BTN_STYLE,
+  authCardStyle,
+  authHeroRingSize,
+  authInputGlowBlur,
+  authInputGlowFocus,
+} from "@/lib/auth-screen-layout";
 
 // ── Animation keyframes (same classes as sign-in — CSS idempotent in SPA) ────
 const SIGN_UP_CSS = `
@@ -63,6 +72,13 @@ const SIGN_UP_CSS = `
     background: rgba(168,85,247,0.18) !important;
     box-shadow: 0 0 0 1px rgba(168,85,247,0.70), 0 0 22px rgba(168,85,247,0.45) !important;
   }
+  .su-oauth-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    z-index: 2;
+  }
   .su-submit-btn {
     transition: transform 0.18s ease, box-shadow 0.18s ease !important;
   }
@@ -73,46 +89,17 @@ const SIGN_UP_CSS = `
 `;
 
 // ── Input focus / blur ────────────────────────────────────────────────────────
-function glowFocus(e: React.FocusEvent<HTMLInputElement>) {
-  e.currentTarget.style.borderColor = "rgba(168,85,247,0.75)";
-  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(168,85,247,0.18), 0 0 14px rgba(168,85,247,0.22)";
-}
-function glowBlur(e: React.FocusEvent<HTMLInputElement>) {
-  e.currentTarget.style.borderColor = "rgba(168,85,247,0.25)";
-  e.currentTarget.style.boxShadow = "none";
-}
-
-// ── Shared style constants ────────────────────────────────────────────────────
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  height: "48px",
-  padding: "0 16px",
-  borderRadius: "14px",
-  outline: "none",
-  fontSize: "15px",
-  background: "rgba(10,6,26,0.72)",
-  border: "1px solid rgba(168,85,247,0.25)",
-  color: "#F0E8FF",
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-  transition: "border-color 0.18s, box-shadow 0.18s"
-};
-const CARD: React.CSSProperties = {
-  background: "rgba(12,6,30,0.78)",
-  backdropFilter: "blur(28px)",
-  WebkitBackdropFilter: "blur(28px)",
-  borderRadius: "28px",
-  border: "1px solid rgba(168,85,247,0.28)",
-  boxShadow: ["0 0 0 1px rgba(255,255,255,0.04) inset", "0 0 60px rgba(168,85,247,0.12)", "0 32px 80px rgba(0,0,0,0.62)"].join(", ")
-};
+const glowFocus = authInputGlowFocus;
+const glowBlur = authInputGlowBlur;
+const INPUT_STYLE = AUTH_INPUT_STYLE;
 
 // ── Neon ring hero — 140 px, "Meet" + "AMY" inside glass ─────────────────────
 function NeonRingHero() {
   const {
     t
   } = useTranslation();
-  const R = 140;
-  const INNER = 112;
+  const R = authHeroRingSize();
+  const INNER = Math.round(R * 0.8);
   const OFF = (R - INNER) / 2;
   const MASK_IN = R / 2 - 6;
   const MASK_OUT = R / 2 - 2;
@@ -215,7 +202,7 @@ function NeonRingHero() {
           fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
           fontSize: 10,
           fontWeight: 300,
-          letterSpacing: "3.5px",
+          letterSpacing: "3px",
           textTransform: "uppercase",
           color: "rgba(255,255,255,0.78)",
           lineHeight: 1.3,
@@ -224,9 +211,9 @@ function NeonRingHero() {
           <span style={{
           display: "block",
           fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
-          fontSize: 26,
+          fontSize: 24,
           fontWeight: 700,
-          letterSpacing: "3px",
+          letterSpacing: "2.5px",
           textTransform: "uppercase",
           background: "linear-gradient(92deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
           WebkitBackgroundClip: "text",
@@ -260,13 +247,14 @@ function AuthShell({
       scrollRef={nativeShell ? scrollRef : undefined}
       keyboardOpen={keyboardOpen}
       onBackgroundTap={nativeShell ? handleBackgroundTap : undefined}
+      className="amynest-auth-page"
       style={{
         minHeight: nativeShell ? undefined : "100dvh",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: nativeShell ? "flex-start" : "center",
-        padding: nativeShell ? NATIVE_AUTH_SHELL_PADDING : "40px 16px",
+        padding: nativeShell ? NATIVE_AUTH_SHELL_PADDING : AUTH_SPACING.shellPaddingWeb,
         background: [
           "radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)",
           "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)",
@@ -299,34 +287,33 @@ function AuthShell({
       zIndex: 1
     }}>
 
-        <div className={nativeShell ? "amynest-auth-hero" : undefined}>
+        <div className="amynest-auth-hero">
         <NeonRingHero />
         <div style={{
-        width: 110,
-        height: 18,
-        margin: "-4px auto 0",
+        width: AUTH_SPACING.heroGlowWidth,
+        height: AUTH_SPACING.heroGlowHeight,
+        margin: "-2px auto 0",
         background: "radial-gradient(ellipse at center, rgba(168,85,247,0.50) 0%, rgba(236,72,153,0.28) 45%, transparent 70%)",
         filter: "blur(10px)",
         pointerEvents: "none"
       }} />
         </div>
 
-        {/* Card */}
-        <div style={{
-        ...CARD,
-        marginTop: "8px"
+        <div className="amynest-auth-card" style={{
+        ...authCardStyle(),
+        marginTop: AUTH_SPACING.cardMarginTop
       }}>
           <div style={{
-          padding: "28px 32px 28px"
+          padding: AUTH_SPACING.cardPadding
         }}>
             {children}
           </div>
         </div>
 
-        <p style={{
-        marginTop: "20px",
+        <p className="amynest-auth-tagline" style={{
+        marginTop: AUTH_SPACING.taglineMarginTop,
         textAlign: "center",
-        fontSize: "12px",
+        fontSize: "11px",
         color: "rgba(255,255,255,0.22)"
       }}>
           {t("screens.sign_up.tagline")}
@@ -347,8 +334,8 @@ function ErrorBanner({
     color: "hsl(var(--brand-red-400))",
     background: "rgba(255,60,60,0.10)",
     border: "1px solid rgba(255,60,60,0.22)",
-    borderRadius: "12px",
-    padding: "10px 14px"
+    borderRadius: "10px",
+    padding: "8px 12px"
   }}>
       {children}
     </div>;
@@ -425,8 +412,8 @@ export default function SignUpPage() {
   const canSubmit = email.trim() && password.length >= 6;
   return <AuthShell>
       <h1 style={{
-      margin: "0 0 5px",
-      fontSize: "26px",
+      margin: "0 0 4px",
+      fontSize: `${AUTH_SPACING.titleSize}px`,
       fontWeight: 800,
       color: "#FFFFFF",
       letterSpacing: "-0.4px"
@@ -434,13 +421,14 @@ export default function SignUpPage() {
         {t("screens.sign_up.title")}
       </h1>
       <p style={{
-      margin: "0 0 26px",
+      margin: `0 0 ${AUTH_SPACING.subtitleMarginBottom}px`,
       fontSize: "14px",
       color: "rgba(200,180,255,0.65)"
     }}>
         {t("screens.sign_up.subtitle")}
       </p>
 
+      <div className="su-oauth-stack">
       {shouldShowGoogleSignIn() ? (
         <GoogleSignInButton onError={msg => setError(msg)} />
       ) : null}
@@ -459,13 +447,14 @@ export default function SignUpPage() {
           <PhoneAuthFlow onError={msg => setError(msg)} />
         </div>
       ) : null}
+      </div>
 
       {(shouldShowGoogleSignIn() || shouldShowFacebookSignIn() || ENABLE_APPLE_SIGN_IN || shouldShowPhoneOtp()) && (
       <div style={{
       display: "flex",
       alignItems: "center",
-      gap: "12px",
-      margin: "20px 0"
+      gap: "10px",
+      margin: AUTH_SPACING.dividerMargin
     }}>
         <div style={{
         flex: 1,
@@ -487,7 +476,7 @@ export default function SignUpPage() {
       <form onSubmit={onEmail} style={{
       display: "flex",
       flexDirection: "column",
-      gap: "14px",
+      gap: `${AUTH_SPACING.formGap}px`,
       textAlign: "left"
     }}>
         <div>
@@ -496,7 +485,7 @@ export default function SignUpPage() {
           fontSize: "12px",
           fontWeight: 600,
           color: "rgba(200,180,255,0.80)",
-          marginBottom: "7px"
+          marginBottom: `${AUTH_SPACING.labelMarginBottom}px`
         }}>
             {t("screens.sign_up.name_label")}
           </label>
@@ -509,7 +498,7 @@ export default function SignUpPage() {
           fontSize: "12px",
           fontWeight: 600,
           color: "rgba(200,180,255,0.80)",
-          marginBottom: "7px"
+          marginBottom: `${AUTH_SPACING.labelMarginBottom}px`
         }}>
             {t("screens.sign_up.email_label")}
           </label>
@@ -522,7 +511,7 @@ export default function SignUpPage() {
           fontSize: "12px",
           fontWeight: 600,
           color: "rgba(200,180,255,0.80)",
-          marginBottom: "7px"
+          marginBottom: `${AUTH_SPACING.labelMarginBottom}px`
         }}>
             {t("screens.sign_up.password_label")}
           </label>
@@ -553,25 +542,20 @@ export default function SignUpPage() {
         {error && <ErrorBanner>{error}</ErrorBanner>}
 
         <button type="submit" disabled={busy || !canSubmit} className="su-submit-btn" style={{
-        width: "100%",
-        height: "50px",
-        borderRadius: "999px",
+        ...AUTH_SUBMIT_BTN_STYLE,
         background: busy || !canSubmit ? "rgba(75,65,110,0.7)" : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
         border: "none",
         color: "#FFFFFF",
-        fontSize: "16px",
-        fontWeight: 700,
         cursor: busy || !canSubmit ? "not-allowed" : "pointer",
         boxShadow: busy || !canSubmit ? "none" : "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)",
-        fontFamily: "inherit",
-        marginTop: "4px"
+        marginTop: "2px"
       }}>
           {busy ? t("screens.sign_up.creating") : t("screens.sign_up.create_button")}
         </button>
       </form>
 
-      <p style={{
-      marginTop: "20px",
+      <p className="amynest-auth-footer" style={{
+      marginTop: `${AUTH_SPACING.footerMarginTop}px`,
       fontSize: "14px",
       color: "rgba(200,180,255,0.50)",
       textAlign: "center"

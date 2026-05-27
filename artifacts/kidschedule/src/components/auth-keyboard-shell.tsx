@@ -7,6 +7,7 @@ type AuthKeyboardShellProps = {
   scrollRef?: RefObject<HTMLDivElement>;
   keyboardOpen?: boolean;
   style?: CSSProperties;
+  className?: string;
   onBackgroundTap?: (event: React.MouseEvent | React.TouchEvent) => void;
 };
 
@@ -20,18 +21,19 @@ export function AuthKeyboardShell({
   scrollRef,
   keyboardOpen = false,
   style,
+  className,
   onBackgroundTap,
 }: AuthKeyboardShellProps) {
   const nativeShell = isNativeAmyNestShell();
 
   if (!nativeShell) {
-    return <div style={style}>{children}</div>;
+    return <div className={className} style={style}>{children}</div>;
   }
 
   return (
     <div
       ref={kavRef}
-      className={`amynest-auth-kav amynest-auth-shell${keyboardOpen ? " amynest-auth-shell--keyboard" : ""}`}
+      className={`amynest-auth-kav amynest-auth-shell${keyboardOpen ? " amynest-auth-shell--keyboard" : ""}${className ? ` ${className}` : ""}`}
       style={{
         ...style,
         width: "100%",
@@ -63,4 +65,4 @@ export function AuthKeyboardShell({
 
 /** Native auth shell padding — safe areas top + bottom so footer links stay visible. */
 export const NATIVE_AUTH_SHELL_PADDING =
-  "max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom))";
+  "max(10px, env(safe-area-inset-top)) 16px max(14px, env(safe-area-inset-bottom))";

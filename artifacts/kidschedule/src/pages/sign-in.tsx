@@ -33,6 +33,16 @@ import {
 } from "@/hooks/use-native-auth-keyboard";
 import { AuthKeyboardShell, NATIVE_AUTH_SHELL_PADDING } from "@/components/auth-keyboard-shell";
 import { withAuthTimeout } from "@/lib/auth-timeout";
+import {
+  AUTH_INPUT_STYLE,
+  AUTH_SPACING,
+  AUTH_SUBMIT_BTN_STYLE,
+  AUTH_OAUTH_BTN_STYLE,
+  authCardStyle,
+  authHeroRingSize,
+  authInputGlowBlur,
+  authInputGlowFocus,
+} from "@/lib/auth-screen-layout";
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
 const SIGN_IN_CSS = `
   @keyframes siRingRotate {
@@ -71,7 +81,7 @@ const SIGN_IN_CSS = `
   .si-oauth-stack {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     position: relative;
     z-index: 2;
   }
@@ -124,14 +134,12 @@ function SignInAppleButton({ onError }: { onError?: (message: string) => void })
       className="si-apple-btn"
       data-testid="button-apple-sign-in"
       style={{
-        width: "100%",
-        height: "50px",
-        minHeight: "50px",
-        borderRadius: "14px",
+        ...AUTH_OAUTH_BTN_STYLE,
+        borderRadius: "12px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "10px",
+        gap: "8px",
         background: busy
           ? nativeIos
             ? "rgba(0,0,0,0.72)"
@@ -143,10 +151,7 @@ function SignInAppleButton({ onError }: { onError?: (message: string) => void })
           ? "1px solid rgba(255,255,255,0.35)"
           : "1px solid rgba(255,255,255,0.90)",
         color: nativeIos ? "#FFFFFF" : "#000000",
-        fontSize: "15px",
-        fontWeight: 600,
         cursor: busy ? "not-allowed" : "pointer",
-        fontFamily: "inherit",
         boxShadow: busy
           ? "none"
           : nativeIos
@@ -164,48 +169,9 @@ function SignInAppleButton({ onError }: { onError?: (message: string) => void })
 }
 
 // ── Input focus / blur handlers ───────────────────────────────────────────────
-function glowFocus(e: React.FocusEvent<HTMLInputElement>) {
-  e.currentTarget.style.borderColor = "rgba(168,85,247,0.75)";
-  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(168,85,247,0.18), 0 0 14px rgba(168,85,247,0.22)";
-}
-function glowBlur(e: React.FocusEvent<HTMLInputElement>) {
-  e.currentTarget.style.borderColor = "rgba(168,85,247,0.25)";
-  e.currentTarget.style.boxShadow = "none";
-}
-
-// ── Shared style constants ────────────────────────────────────────────────────
-const INPUT_STYLE: React.CSSProperties = {
-  width: "100%",
-  height: "48px",
-  padding: "0 16px",
-  borderRadius: "14px",
-  outline: "none",
-  fontSize: "15px",
-  background: "rgba(10,6,26,0.72)",
-  border: "1px solid rgba(168,85,247,0.25)",
-  color: "#F0E8FF",
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-  transition: "border-color 0.18s, box-shadow 0.18s"
-};
-const CARD: React.CSSProperties = {
-  background: "rgba(12,6,30,0.78)",
-  backdropFilter: "blur(28px)",
-  WebkitBackdropFilter: "blur(28px)",
-  borderRadius: "28px",
-  border: "1px solid rgba(168,85,247,0.28)",
-  boxShadow: ["0 0 0 1px rgba(255,255,255,0.04) inset", "0 0 60px rgba(168,85,247,0.12)", "0 32px 80px rgba(0,0,0,0.62)"].join(", ")
-};
-
-function authCardStyle(): React.CSSProperties {
-  if (!isLowMemoryIosClient()) return CARD;
-  return {
-    background: "rgba(12,6,30,0.94)",
-    borderRadius: "28px",
-    border: "1px solid rgba(168,85,247,0.28)",
-    boxShadow: "0 16px 48px rgba(0,0,0,0.55)",
-  };
-}
+const glowFocus = authInputGlowFocus;
+const glowBlur = authInputGlowBlur;
+const INPUT_STYLE = AUTH_INPUT_STYLE;
 
 // ── Neon ring hero (sits above the card) ─────────────────────────────────────
 function NeonRingHero() {
@@ -213,8 +179,8 @@ function NeonRingHero() {
     t
   } = useTranslation();
   const lite = isLowMemoryIosClient();
-  const R = lite ? 140 : 170; // outer ring diameter
-  const INNER = lite ? 112 : 136; // inner glass diameter
+  const R = authHeroRingSize();
+  const INNER = Math.round(R * 0.8);
   const OFF = (R - INNER) / 2; // offset to centre inner inside ring
   const MASK_IN = R / 2 - 7; // transparent up to here (px)
   const MASK_OUT = R / 2 - 3; // ring starts here
@@ -318,9 +284,9 @@ function NeonRingHero() {
           <span style={{
           display: "block",
           fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: 300,
-          letterSpacing: "4px",
+          letterSpacing: "3px",
           textTransform: "uppercase",
           color: "rgba(255,255,255,0.80)",
           lineHeight: 1.3,
@@ -329,9 +295,9 @@ function NeonRingHero() {
           <span style={{
           display: "block",
           fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
-          fontSize: 32,
+          fontSize: 26,
           fontWeight: 700,
-          letterSpacing: "4px",
+          letterSpacing: "3px",
           textTransform: "uppercase",
           background: "linear-gradient(92deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
           WebkitBackgroundClip: "text",
@@ -365,13 +331,14 @@ function AuthShell({
       scrollRef={nativeShell ? scrollRef : undefined}
       keyboardOpen={keyboardOpen}
       onBackgroundTap={nativeShell ? handleBackgroundTap : undefined}
+      className="amynest-auth-page"
       style={{
         minHeight: nativeShell ? undefined : "100dvh",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: nativeShell ? "flex-start" : "center",
-        padding: nativeShell ? NATIVE_AUTH_SHELL_PADDING : "40px 16px",
+        padding: nativeShell ? NATIVE_AUTH_SHELL_PADDING : AUTH_SPACING.shellPaddingWeb,
         background: [
           "radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)",
           "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)",
@@ -406,12 +373,12 @@ function AuthShell({
     }}>
 
         {/* Neon ring hero — hidden on native while keyboard is open */}
-        <div className={nativeShell ? "amynest-auth-hero" : undefined}>
+        <div className={`amynest-auth-hero${nativeShell ? "" : " amynest-auth-hero--web"}`}>
         <NeonRingHero />
         <div style={{
-        width: 130,
-        height: 22,
-        margin: "-4px auto 0",
+        width: AUTH_SPACING.heroGlowWidth,
+        height: AUTH_SPACING.heroGlowHeight,
+        margin: "-2px auto 0",
         background: "radial-gradient(ellipse at center, rgba(168,85,247,0.55) 0%, rgba(236,72,153,0.30) 45%, transparent 70%)",
         filter: "blur(12px)",
         pointerEvents: "none"
@@ -419,21 +386,21 @@ function AuthShell({
         </div>
 
         {/* Card */}
-        <div style={{
+        <div className="amynest-auth-card" style={{
         ...authCardStyle(),
-        marginTop: "8px"
+        marginTop: AUTH_SPACING.cardMarginTop
       }}>
           <div style={{
-          padding: "28px 32px 28px"
+          padding: AUTH_SPACING.cardPadding
         }}>
             {children}
           </div>
         </div>
 
-        <p style={{
-        marginTop: "20px",
+        <p className="amynest-auth-tagline" style={{
+        marginTop: AUTH_SPACING.taglineMarginTop,
         textAlign: "center",
-        fontSize: "12px",
+        fontSize: "11px",
         color: "rgba(255,255,255,0.22)"
       }}>
           {t("screens.sign_in.tagline")}
@@ -593,17 +560,12 @@ export default function SignInPage() {
           {t("screens.sign_in.inbox_body_after")}
         </p>
         <button type="button" onClick={() => setMode("signin")} className="si-submit-btn" style={{
-        width: "100%",
-        height: "50px",
-        borderRadius: "999px",
+        ...AUTH_SUBMIT_BTN_STYLE,
         background: "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
         border: "none",
         color: "#FFFFFF",
-        fontSize: "16px",
-        fontWeight: 700,
         cursor: "pointer",
         boxShadow: "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)",
-        fontFamily: "inherit"
       }}>
           {t("screens.sign_in.back_to_sign_in_button")}
         </button>
@@ -632,7 +594,7 @@ export default function SignInPage() {
         <form onSubmit={onSendReset} style={{
         display: "flex",
         flexDirection: "column",
-        gap: "14px",
+        gap: `${AUTH_SPACING.formGap}px`,
         textAlign: "left"
       }}>
           <div>
@@ -641,7 +603,7 @@ export default function SignInPage() {
             fontSize: "12px",
             fontWeight: 600,
             color: "rgba(200,180,255,0.80)",
-            marginBottom: "7px"
+            marginBottom: `${AUTH_SPACING.labelMarginBottom}px`
           }}>
               {t("screens.sign_in.email_label")}
             </label>
@@ -653,18 +615,13 @@ export default function SignInPage() {
           {resetError && <ErrorBanner>{resetError}</ErrorBanner>}
 
           <button type="submit" disabled={resetBusy} className="si-submit-btn" style={{
-          width: "100%",
-          height: "50px",
-          borderRadius: "999px",
+          ...AUTH_SUBMIT_BTN_STYLE,
           background: resetBusy ? "rgba(75,65,110,0.7)" : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
           border: "none",
           color: "#FFFFFF",
-          fontSize: "16px",
-          fontWeight: 700,
           cursor: resetBusy ? "not-allowed" : "pointer",
           boxShadow: resetBusy ? "none" : "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)",
-          fontFamily: "inherit",
-          marginTop: "4px"
+          marginTop: "2px"
         }}>
             {resetBusy ? t("screens.sign_in.sending") : t("screens.sign_in.send_reset")}
           </button>
@@ -688,8 +645,8 @@ export default function SignInPage() {
   // ── Main sign-in view ────────────────────────────────────────────────────
   return <AuthShell>
       <h1 style={{
-      margin: "0 0 5px",
-      fontSize: "26px",
+      margin: "0 0 4px",
+      fontSize: `${AUTH_SPACING.titleSize}px`,
       fontWeight: 800,
       color: "#FFFFFF",
       letterSpacing: "-0.4px"
@@ -697,7 +654,7 @@ export default function SignInPage() {
         {t("screens.sign_in.title")}
       </h1>
       <p style={{
-      margin: "0 0 26px",
+      margin: `0 0 ${AUTH_SPACING.subtitleMarginBottom}px`,
       fontSize: "14px",
       color: "rgba(200,180,255,0.65)"
     }}>
@@ -707,7 +664,7 @@ export default function SignInPage() {
       {shouldShowAppleSignIn() ? (
         <div
           data-testid="native-apple-sign-in-slot"
-          style={{ marginBottom: 14, width: "100%", flexShrink: 0 }}
+          style={{ marginBottom: 10, width: "100%", flexShrink: 0 }}
         >
           <SignInAppleButton onError={msg => setError(msg)} />
         </div>
@@ -745,8 +702,8 @@ export default function SignInPage() {
       <div style={{
       display: "flex",
       alignItems: "center",
-      gap: "12px",
-      margin: "20px 0"
+      gap: "10px",
+      margin: AUTH_SPACING.dividerMargin
     }}>
         <div style={{
         flex: 1,
@@ -770,7 +727,7 @@ export default function SignInPage() {
       <form onSubmit={onEmail} style={{
       display: "flex",
       flexDirection: "column",
-      gap: "14px",
+      gap: `${AUTH_SPACING.formGap}px`,
       textAlign: "left"
     }}>
         <div>
@@ -779,7 +736,7 @@ export default function SignInPage() {
           fontSize: "12px",
           fontWeight: 600,
           color: "rgba(200,180,255,0.80)",
-          marginBottom: "7px"
+          marginBottom: `${AUTH_SPACING.labelMarginBottom}px`
         }}>
             {t("screens.sign_in.email_label")}
           </label>
@@ -793,7 +750,7 @@ export default function SignInPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: "7px"
+          marginBottom: `${AUTH_SPACING.labelMarginBottom}px`
         }}>
             <label style={{
             fontSize: "12px",
@@ -840,25 +797,20 @@ export default function SignInPage() {
         {error && <ErrorBanner>{error}</ErrorBanner>}
 
         <button type="submit" disabled={busy} className="si-submit-btn" style={{
-        width: "100%",
-        height: "50px",
-        borderRadius: "999px",
+        ...AUTH_SUBMIT_BTN_STYLE,
         background: busy ? "rgba(75,65,110,0.7)" : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
         border: "none",
         color: "#FFFFFF",
-        fontSize: "16px",
-        fontWeight: 700,
         cursor: busy ? "not-allowed" : "pointer",
         boxShadow: busy ? "none" : "0 0 28px rgba(236,72,153,0.50), 0 4px 18px rgba(0,0,0,0.30)",
-        fontFamily: "inherit",
-        marginTop: "4px"
+        marginTop: "2px"
       }}>
           {busy ? t("screens.sign_in.signing_in") : t("screens.sign_in.sign_in_button")}
         </button>
       </form>
 
-      <p style={{
-      marginTop: "20px",
+      <p className="amynest-auth-footer" style={{
+      marginTop: `${AUTH_SPACING.footerMarginTop}px`,
       fontSize: "14px",
       color: "rgba(200,180,255,0.50)",
       textAlign: "center"
@@ -886,8 +838,8 @@ function ErrorBanner({
     color: "hsl(var(--brand-red-400))",
     background: "rgba(255,60,60,0.10)",
     border: "1px solid rgba(255,60,60,0.22)",
-    borderRadius: "12px",
-    padding: "10px 14px"
+    borderRadius: "10px",
+    padding: "8px 12px"
   }}>
       {children}
     </div>;
