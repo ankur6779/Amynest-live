@@ -2,7 +2,7 @@
   "name": "@workspace/amynest-capacitor",
   "version": "0.0.0",
   "private": true,
-  "description": "Capacitor wrapper for AmyNest — builds iOS (Xcode) + Android from the kidschedule PWA",
+  "description": "Capacitor wrapper for AmyNest iOS (Xcode). Play Store Android uses android/ WebView wrapper, not this project.",
   "scripts": {
     "build:web": "node scripts/build-web.mjs",
     "sync": "npx cap sync",

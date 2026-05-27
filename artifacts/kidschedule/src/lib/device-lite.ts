@@ -64,7 +64,7 @@ function isCapacitorAndroid(): boolean {
 }
 
 /**
- * Android Chrome, installed PWA, Play Store WebView wrapper, or Capacitor Android.
+ * Android Chrome, installed PWA, or Play Store WebView wrapper (not Capacitor).
  * All Android clients use the same scroll containment path because Chrome's
  * native pull-to-refresh can fight document-level scrolling.
  */

@@ -1,5 +1,5 @@
 ---
-description: Active mobile targets are Capacitor iOS + Android PWA only; Expo app is archived
+description: iOS is Capacitor; Play Store Android is a WebView wrapper (not Capacitor)
 alwaysApply: true
 ---
 
@@ -7,28 +7,32 @@ alwaysApply: true
 
 ## Active platforms
 
-Ship and implement mobile features only for:
+1. **iOS (App Store)** — Capacitor (`artifacts/amynest-capacitor/ios/`)
+   - Bundled web: `artifacts/kidschedule/` → `artifacts/amynest-capacitor/www/`
+   - Native plugins: Apple Sign-In, push, RevenueCat, optional Google Auth plugin
 
-1. **iOS** — Capacitor (`artifacts/amynest-capacitor/ios/`)
-2. **Android (Play Store)** — Capacitor (`artifacts/amynest-capacitor/android/`)
+2. **Android (Play Store)** — **WebView wrapper** (`android/`), **not Capacitor**
+   - Loads production site: `https://www.amynest.in` in a full-screen WebView
+   - Native bridges: `AuthBridge.kt` (Google Sign-In), `PushBridge`, `BillingBridge`
+   - Web detects shell via `AmyNestAndroid/1.0` UA + `window.AmyNestAuthNative`
+   - OAuth client ID: `android/app/src/main/res/values/strings.xml` → `amynest_google_web_client_id`
 
-Both run the **same web codebase**: `artifacts/kidschedule/` → built into `artifacts/amynest-capacitor/www/`.
+Do **not** implement Play Store Android features in `artifacts/amynest-capacitor/android/` — that tree is not the shipped Android app.
 
 ## Archived (do not edit for production)
 
 - **`archive/amynest-mobile-expo/`** — legacy Expo / React Native. Read-only reference.
 - Pointer: `artifacts/amynest-mobile-ARCHIVED.md`
 
-Do **not** add features or fix production bugs in the archive unless explicitly asked.
-
 ## Where to change code
 
 | Concern | Location |
 |--------|----------|
-| UI, gaming rewards, hub, routines | `artifacts/kidschedule/src/` |
-| Native shell, OTA, iOS/Android | `artifacts/amynest-capacitor/` |
+| UI, auth flows, hub, routines | `artifacts/kidschedule/src/` |
+| iOS native shell, OTA, Xcode | `artifacts/amynest-capacitor/ios/` |
+| **Android WebView shell, FCM, Google Auth bridge** | **`android/`** |
 | API, subscriptions, feature gates | `artifacts/api-server/` |
 
-Use Capacitor + existing kidschedule hooks (`use-native-billing`, `device-lite`, `capacitor-ota`) — not Expo.
+When the user says **"Android app"** or **"Play Store"**, mean **`android/` WebView wrapper** + kidschedule web hooks (`native-auth.ts`, `device-lite.ts`).
 
-When the user says "mobile", "iOS", or "Android", mean **Capacitor-wrapped kidschedule**.
+When the user says **"iOS"** or **"Capacitor"**, mean **`artifacts/amynest-capacitor/`**.

@@ -138,6 +138,18 @@ Use **Android Studio → Image Asset Studio** (File → New → Image Asset) to 
 
 ---
 
+## Google Sign-In (native, not browser OAuth)
+
+Play Store Android does **not** use Capacitor. Google Sign-In runs in **`AuthBridge.kt`**:
+
+- Web client ID: `res/values/strings.xml` → `amynest_google_web_client_id`
+- JS bridge: `window.AmyNestAuthNative` (see `artifacts/kidschedule/src/lib/native-auth.ts`)
+- Web route: `handleGoogleLogin()` → `loginAndroidWebViewGoogle()` when UA contains `AmyNestAndroid/1.0`
+
+After changing `AuthBridge` or the web client ID, rebuild the APK. After changing web auth logic, deploy **www.amynest.in** (Render) — the app loads the live site.
+
+---
+
 ## UserAgent detection
 
 The WebView appends `AmyNestAndroid/1.0` to the Chrome UA string. Your web code can use:
