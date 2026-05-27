@@ -183,8 +183,8 @@ function resetAuthScrollPosition(scroll: HTMLElement | null) {
 export function useNativeAuthKeyboard(
   enabled: boolean = isNativeAmyNestShell(),
 ): {
-  kavRef: RefObject<HTMLDivElement>;
-  scrollRef: RefObject<HTMLDivElement>;
+  kavRef: RefObject<HTMLDivElement | null>;
+  scrollRef: RefObject<HTMLDivElement | null>;
   keyboardOpen: boolean;
   dismissKeyboard: () => void;
   handleBackgroundTap: (event: React.MouseEvent | React.TouchEvent) => void;

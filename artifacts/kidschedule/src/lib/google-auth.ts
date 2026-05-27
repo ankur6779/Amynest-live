@@ -17,6 +17,7 @@ import {
   finishOAuthLoginFlow,
   navigateAfterOAuthSignIn,
 } from "@/lib/oauth-session-finalize";
+import { shouldUseCapacitorIosGoogleAuth } from "@/lib/auth-feature-flags";
 import {
   googleAuthDefaults,
   reversedGoogleWebClientId,
@@ -46,25 +47,12 @@ export function getGoogleReversedClientId(): string {
 
 export { isCapacitorNative } from "@/lib/capacitor-native";
 
-function isCapacitorIos(): boolean {
-  if (!isCapacitorNative()) return false;
-  try {
-    return (
-      window as Window & {
-        Capacitor?: { getPlatform?: () => string };
-      }
-    ).Capacitor?.getPlatform?.() === "ios";
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Capacitor iOS only (@codetrix-studio/capacitor-google-auth).
  * Play Store Android is NOT Capacitor — use [shouldUseAndroidWebViewGoogleAuth].
  */
 export function shouldUseCapacitorGoogleAuth(): boolean {
-  return isCapacitorIos();
+  return shouldUseCapacitorIosGoogleAuth();
 }
 
 /** @deprecated Use shouldUseCapacitorGoogleAuth — kept for call-site compatibility. */
