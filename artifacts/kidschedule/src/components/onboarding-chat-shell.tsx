@@ -27,12 +27,13 @@ export function OnboardingChatShell({
     viewportHeight,
     viewportOffsetTop,
     inputBarHeight,
+    keyboardOpen,
   } = useKeyboardChatLayout(scrollDeps);
 
   return (
     <div
       ref={containerRef}
-      className={`onboarding-chat-page flex w-full flex-col overflow-hidden ${className ?? ""}`}
+      className={`onboarding-chat-page flex w-full flex-col overflow-hidden${keyboardOpen ? " onboarding-chat-page--keyboard-open" : ""}${className ? ` ${className}` : ""}`}
       style={{
         position: "fixed",
         top: viewportOffsetTop,

@@ -1464,6 +1464,15 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
   box-sizing: border-box;
 }
 
+.onboarding-chat-page--keyboard-open .onboarding-chat-messages {
+  scroll-behavior: smooth;
+}
+
+.onboarding-chat-page--keyboard-open .onboarding-chat-input {
+  position: relative;
+  z-index: 2;
+}
+
 .assistant-chat-header {
   padding: 12px 16px;
 }
