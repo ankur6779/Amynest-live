@@ -18,6 +18,7 @@ export const AUTH_INPUT_CLASS = "amynest-auth-input";
 
 const AUTH_INPUT_SCROLL_MARGIN = 36;
 const KEYBOARD_OPEN_THRESHOLD = 72;
+const KEYBOARD_RESET_DELAY_MS = 320;
 
 interface ViewportMetrics {
   height: number;
@@ -78,17 +79,16 @@ function applyAuthViewportCssVars(metrics: ViewportMetrics) {
   );
 }
 
-/** Restore full viewport after keyboard dismiss — prevents black gap at bottom. */
+/** Remove keyboard overrides so layout returns to natural full-screen flow. */
 export function clearAuthViewportCssVars() {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  const layoutHeight = window.innerHeight;
   root.style.removeProperty("--auth-keyboard-inset");
   root.style.removeProperty("--auth-keyboard-inset-native");
   root.style.removeProperty("--auth-kav-offset");
-  root.style.setProperty("--vv-height", `${layoutHeight}px`);
-  root.style.setProperty("--vv-offset-top", "0px");
-  root.style.setProperty("--vh", `${layoutHeight * 0.01}px`);
+  root.style.removeProperty("--vv-height");
+  root.style.removeProperty("--vv-offset-top");
+  root.style.removeProperty("--vh");
 }
 
 function isAuthField(
@@ -166,7 +166,22 @@ export function scrollAuthInputIntoView(
 
   requestAnimationFrame(run);
   window.setTimeout(run, 120);
-  window.setTimeout(run, 320);
+  window.setTimeout(run, 280);
+}
+
+function resetAuthScrollPosition(scroll: HTMLElement | null) {
+  if (!scroll) return;
+  scroll.style.removeProperty("height");
+  scroll.style.removeProperty("maxHeight");
+  requestAnimationFrame(() => {
+    scroll.scrollTop = 0;
+    requestAnimationFrame(() => {
+      scroll.scrollTop = 0;
+      if (typeof window !== "undefined") {
+        window.scrollTo(0, 0);
+      }
+    });
+  });
 }
 
 /**
@@ -186,6 +201,7 @@ export function useNativeAuthKeyboard(
   const scrollRef = useRef<HTMLDivElement>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const fallbackInsetRef = useRef(0);
+  const resetTimerRef = useRef<number | null>(null);
 
   const scrollFocused = useCallback((behavior: ScrollBehavior = "smooth") => {
     const active = document.activeElement;
@@ -217,16 +233,41 @@ export function useNativeAuthKeyboard(
   );
 
   const resetAfterKeyboard = useCallback(() => {
+    if (resetTimerRef.current != null) {
+      window.clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
+    }
+
     fallbackInsetRef.current = 0;
     clearAuthViewportCssVars();
     document.documentElement.classList.remove("amynest-auth-keyboard-open");
     setKeyboardOpen(false);
-    const scroll = scrollRef.current;
-    if (scroll) {
-      scroll.style.removeProperty("height");
-      scroll.style.removeProperty("maxHeight");
-    }
+    resetAuthScrollPosition(scrollRef.current);
   }, []);
+
+  const scheduleResetAfterKeyboard = useCallback(() => {
+    if (resetTimerRef.current != null) {
+      window.clearTimeout(resetTimerRef.current);
+    }
+    resetTimerRef.current = window.setTimeout(() => {
+      resetTimerRef.current = null;
+      if (isAuthField(document.activeElement)) return;
+      resetAfterKeyboard();
+    }, KEYBOARD_RESET_DELAY_MS);
+  }, [resetAfterKeyboard]);
+
+  const openKeyboardLayout = useCallback(
+    (metrics: ViewportMetrics) => {
+      if (resetTimerRef.current != null) {
+        window.clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = null;
+      }
+      applyAuthViewportCssVars(metrics);
+      document.documentElement.classList.add("amynest-auth-keyboard-open");
+      setKeyboardOpen(true);
+    },
+    [],
+  );
 
   const syncViewport = useCallback(() => {
     const metrics = readViewportMetrics();
@@ -236,25 +277,20 @@ export function useNativeAuthKeyboard(
     );
 
     if (effectiveInset <= KEYBOARD_OPEN_THRESHOLD) {
-      if (isAuthField(document.activeElement)) {
-        return;
-      }
+      if (isAuthField(document.activeElement)) return;
       resetAfterKeyboard();
       return;
     }
 
-    const effectiveMetrics = {
+    openKeyboardLayout({
       height: Math.max(
         0,
         window.innerHeight - effectiveInset - metrics.offsetTop,
       ),
       offsetTop: metrics.offsetTop,
       keyboardInset: effectiveInset,
-    };
-    applyAuthViewportCssVars(effectiveMetrics);
-    document.documentElement.classList.add("amynest-auth-keyboard-open");
-    setKeyboardOpen(true);
-  }, [resetAfterKeyboard]);
+    });
+  }, [openKeyboardLayout, resetAfterKeyboard]);
 
   const applyAndroidKeyboardFallback = useCallback(() => {
     if (!isNativeAmyNestAndroidWrapper() || isCapacitorNative()) return;
@@ -263,15 +299,13 @@ export function useNativeAuthKeyboard(
 
     const estimated = estimateAndroidKeyboardInset();
     fallbackInsetRef.current = estimated;
-    applyAuthViewportCssVars({
+    openKeyboardLayout({
       ...metrics,
       keyboardInset: estimated,
       height: Math.max(0, window.innerHeight - estimated - metrics.offsetTop),
     });
-    document.documentElement.classList.add("amynest-auth-keyboard-open");
-    setKeyboardOpen(true);
     scrollFocused("smooth");
-  }, [scrollFocused]);
+  }, [openKeyboardLayout, scrollFocused]);
 
   useEffect(() => {
     if (!enabled || typeof window === "undefined") return;
@@ -279,6 +313,7 @@ export function useNativeAuthKeyboard(
     const root = document.documentElement;
     root.classList.add("amynest-auth-active");
     clearAuthViewportCssVars();
+    resetAuthScrollPosition(scrollRef.current);
 
     if (isNativeAmyNestAndroidWrapper()) {
       syncAndroidSystemUi(true);
@@ -298,17 +333,15 @@ export function useNativeAuthKeyboard(
         const visibleHeight =
           detail?.visibleHeight ??
           Math.max(0, window.innerHeight - inset);
-        applyAuthViewportCssVars({
+        openKeyboardLayout({
           height: visibleHeight,
           offsetTop: vv?.offsetTop ?? 0,
           keyboardInset: inset,
         });
-        document.documentElement.classList.add("amynest-auth-keyboard-open");
-        setKeyboardOpen(true);
         scrollFocused("smooth");
         return;
       }
-      resetAfterKeyboard();
+      scheduleResetAfterKeyboard();
     };
     window.addEventListener("amynest-keyboard-inset", onNativeKeyboardInset);
 
@@ -331,7 +364,7 @@ export function useNativeAuthKeyboard(
             if (!cancelled) removeKeyboardShow = () => void handle.remove();
           });
           void Keyboard.addListener("keyboardDidHide", () => {
-            resetAfterKeyboard();
+            scheduleResetAfterKeyboard();
           }).then((handle) => {
             if (!cancelled) removeKeyboardHide = () => void handle.remove();
           });
@@ -346,7 +379,11 @@ export function useNativeAuthKeyboard(
       if (!isAuthField(target)) return;
       if (kavRef.current && !kavRef.current.contains(target)) return;
 
-      scrollAuthInputIntoView(target, scrollRef.current, "instant");
+      if (resetTimerRef.current != null) {
+        window.clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = null;
+      }
+
       window.setTimeout(() => syncViewport(), 80);
       window.setTimeout(
         () => scrollAuthInputIntoView(target, scrollRef.current, "smooth"),
@@ -356,10 +393,7 @@ export function useNativeAuthKeyboard(
     };
 
     const onFocusOut = () => {
-      window.setTimeout(() => {
-        if (isAuthField(document.activeElement)) return;
-        resetAfterKeyboard();
-      }, 150);
+      scheduleResetAfterKeyboard();
     };
 
     document.addEventListener("focusin", onFocusIn);
@@ -367,6 +401,10 @@ export function useNativeAuthKeyboard(
 
     return () => {
       cancelled = true;
+      if (resetTimerRef.current != null) {
+        window.clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = null;
+      }
       root.classList.remove("amynest-auth-active");
       root.classList.remove("amynest-auth-keyboard-open");
       root.style.removeProperty("--auth-keyboard-inset");
@@ -374,6 +412,7 @@ export function useNativeAuthKeyboard(
       root.style.removeProperty("--auth-kav-offset");
       root.style.removeProperty("--vv-height");
       root.style.removeProperty("--vv-offset-top");
+      root.style.removeProperty("--vh");
       vv?.removeEventListener("resize", syncViewport);
       vv?.removeEventListener("scroll", syncViewport);
       window.removeEventListener("resize", syncViewport);
@@ -389,7 +428,9 @@ export function useNativeAuthKeyboard(
   }, [
     applyAndroidKeyboardFallback,
     enabled,
+    openKeyboardLayout,
     resetAfterKeyboard,
+    scheduleResetAfterKeyboard,
     scrollFocused,
     syncViewport,
   ]);

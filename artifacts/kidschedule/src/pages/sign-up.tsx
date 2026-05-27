@@ -23,7 +23,7 @@ import {
   AUTH_INPUT_CLASS,
   useNativeAuthKeyboard,
 } from "@/hooks/use-native-auth-keyboard";
-import { AuthKeyboardShell } from "@/components/auth-keyboard-shell";
+import { AuthKeyboardShell, NATIVE_AUTH_SHELL_PADDING } from "@/components/auth-keyboard-shell";
 import { withAuthTimeout } from "@/lib/auth-timeout";
 
 // ── Animation keyframes (same classes as sign-in — CSS idempotent in SPA) ────
@@ -264,9 +264,7 @@ function AuthShell({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: nativeShell ? "flex-start" : "center",
-        padding: nativeShell
-          ? "max(16px, env(safe-area-inset-top)) 16px 0"
-          : "40px 16px",
+        padding: nativeShell ? NATIVE_AUTH_SHELL_PADDING : "40px 16px",
         background: [
           "radial-gradient(circle at 50% 42%, rgba(100,40,200,0.20) 0%, transparent 58%)",
           "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)",
