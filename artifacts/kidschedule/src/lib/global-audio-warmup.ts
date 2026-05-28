@@ -5,13 +5,22 @@
 
 import { getPhonicsLetterCacheKey } from "@workspace/phonics-sounds";
 import { audioManager } from "@/lib/audio-manager";
+import {
+  deleteGlobalAudioCacheEntry,
+  getGlobalAudioCacheEntry,
+  getGlobalCachedAudioForPlayback,
+  globalAudioCacheKeys,
+  globalAudioCacheSize,
+  hasGlobalAudioCacheEntry,
+  setGlobalAudioCacheEntry,
+} from "@/lib/global-audio-cache";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import { warmLocalCacheFromUrl, localCacheKeyForPhrase } from "@/lib/local-tts-cache";
 import { getPhonicsStaticAudioUrl } from "@/lib/phonics-static-audio";
 import { lookupStaticAudioUrl, prefetchStaticAudioUrl } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
-const globalAudioCache = new Map<string, HTMLAudioElement>();
+export { getGlobalCachedAudioForPlayback };
 
 const BATCH_SIZE = 5;
 const BATCH_GAP_MS = 50;
@@ -42,8 +51,6 @@ const LOW_PRIORITY = [
   "ng",
   "wh",
 ] as const;
-
-const SKIP_PRELOAD_KEYS = new Set(["q", "x", "z"]);
 
 const SPELLING_COMMON_WORDS = [
   "cat",
@@ -103,15 +110,15 @@ function installUserGestureUnlock(): void {
   window.addEventListener("click", unlock, { capture: true, passive: true, once: true });
 }
 
-function shouldPreload(key: string): boolean {
-  return !SKIP_PRELOAD_KEYS.has(key.trim().toLowerCase());
+function shouldPreload(_key: string): boolean {
+  return true;
 }
 
 function enforceCacheLimit(): void {
-  while (globalAudioCache.size > MAX_AUDIO_CACHE) {
-    const firstKey = globalAudioCache.keys().next().value;
+  while (globalAudioCacheSize() > MAX_AUDIO_CACHE) {
+    const firstKey = globalAudioCacheKeys().next().value;
     if (!firstKey) break;
-    const audio = globalAudioCache.get(firstKey);
+    const audio = getGlobalAudioCacheEntry(firstKey);
     if (audio) {
       if (currentAudio === audio) currentAudio = null;
       try {
@@ -122,15 +129,15 @@ function enforceCacheLimit(): void {
         /* ignore */
       }
     }
-    globalAudioCache.delete(firstKey);
+    deleteGlobalAudioCacheEntry(firstKey);
   }
 }
 
 function getReusableAudio(cacheKey: string, url: string): HTMLAudioElement {
-  const existing = globalAudioCache.get(cacheKey);
+  const existing = getGlobalAudioCacheEntry(cacheKey);
   if (existing) return existing;
 
-  const audio = audioManager.create(url);
+  const audio = audioManager.getCached(url, { forceReload: false });
   audio.preload = "auto";
   return audio;
 }
@@ -173,12 +180,12 @@ async function safePrimeAudio(audio: HTMLAudioElement): Promise<void> {
 async function primeGlobalAudioCache(): Promise<void> {
   if (!userGestureUnlocked) return;
 
-  const keys = [...globalAudioCache.keys()];
+  const keys = [...globalAudioCacheKeys()];
   for (let i = 0; i < keys.length; i += BATCH_SIZE) {
     const batch = keys.slice(i, i + BATCH_SIZE);
     await Promise.all(
       batch.map(async (cacheKey) => {
-        const audio = globalAudioCache.get(cacheKey);
+        const audio = getGlobalAudioCacheEntry(cacheKey);
         if (audio) await safePrimeAudio(audio);
       }),
     );
@@ -221,7 +228,7 @@ async function warmBatchItems(items: AudioWarmItem[]): Promise<void> {
 }
 
 async function loadAudio(cacheKey: string, url: string, localKey?: string): Promise<void> {
-  if (globalAudioCache.has(cacheKey)) return;
+  if (hasGlobalAudioCacheEntry(cacheKey)) return;
   if (!url) return;
 
   void warmLocalCacheFromUrl(localKey ?? cacheKey, url);
@@ -233,7 +240,7 @@ async function loadAudio(cacheKey: string, url: string, localKey?: string): Prom
     audio.load();
     await loadAudioReady(audio);
     await safePrimeAudio(audio);
-    globalAudioCache.set(cacheKey, audio);
+    setGlobalAudioCacheEntry(cacheKey, audio);
     enforceCacheLimit();
     audioManager.getCached(url, { forceReload: false });
   } catch {
@@ -313,7 +320,7 @@ function playSafe(audio: HTMLAudioElement): void {
 }
 
 export function playAudioInstant(key: string, fallbackUrl?: string): void {
-  const audio = globalAudioCache.get(key);
+  const audio = getGlobalAudioCacheEntry(key);
   if (audio) {
     playSafe(audio);
     return;
@@ -321,14 +328,14 @@ export function playAudioInstant(key: string, fallbackUrl?: string): void {
 
   if (fallbackUrl) {
     void loadAudio(key, fallbackUrl).then(() => {
-      const cached = globalAudioCache.get(key);
+      const cached = getGlobalAudioCacheEntry(key);
       if (cached) playSafe(cached);
     });
   }
 }
 
 export function isGlobalAudioCached(key: string): boolean {
-  return globalAudioCache.has(key);
+  return hasGlobalAudioCacheEntry(key);
 }
 
 export function initGlobalAudioWarmup(): void {

@@ -8,24 +8,26 @@ vi.mock("@/lib/tts-guard", () => ({
   recordTtsUserGesture: vi.fn(),
 }));
 
+function makeMockAudio(src = "") {
+  return {
+    preload: "auto",
+    readyState: 4,
+    currentTime: 0,
+    volume: 1,
+    src,
+    load: vi.fn(),
+    pause: vi.fn(),
+    play: vi.fn().mockResolvedValue(undefined),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    removeAttribute: vi.fn(),
+  } as unknown as HTMLAudioElement;
+}
+
 vi.mock("@/lib/audio-manager", () => ({
   audioManager: {
-    create: vi.fn(() => {
-      const audio = {
-        preload: "auto",
-        readyState: 4,
-        currentTime: 0,
-        volume: 1,
-        load: vi.fn(),
-        pause: vi.fn(),
-        play: vi.fn().mockResolvedValue(undefined),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        removeAttribute: vi.fn(),
-      } as unknown as HTMLAudioElement;
-      return audio;
-    }),
-    getCached: vi.fn((url: string) => ({ src: url })),
+    create: vi.fn((url?: string) => makeMockAudio(url ?? "")),
+    getCached: vi.fn((url: string) => makeMockAudio(url)),
   },
 }));
 
@@ -88,14 +90,14 @@ describe("global-audio-warmup", () => {
     expect(mod.isGlobalAudioCached("speech:cat")).toBe(true);
   });
 
-  it("skips rarely-used phonics keys in low-priority tier", async () => {
+  it("preloads all phonics keys including q, x, z in low-priority tier", async () => {
     const mod = await import("@/lib/global-audio-warmup");
     mod.initGlobalAudioWarmup();
     await vi.runAllTimersAsync();
     await flushAsync();
-    expect(mod.isGlobalAudioCached("phonics:q")).toBe(false);
-    expect(mod.isGlobalAudioCached("phonics:x")).toBe(false);
-    expect(mod.isGlobalAudioCached("phonics:z")).toBe(false);
+    expect(mod.isGlobalAudioCached("phonics:q")).toBe(true);
+    expect(mod.isGlobalAudioCached("phonics:x")).toBe(true);
+    expect(mod.isGlobalAudioCached("phonics:z")).toBe(true);
   });
 
   it("does not prime audio before user gesture", async () => {
@@ -103,8 +105,8 @@ describe("global-audio-warmup", () => {
     const mod = await import("@/lib/global-audio-warmup");
     mod.initGlobalAudioWarmup();
     await flushAsync();
-    expect(vi.mocked(audioManager.create)).toHaveBeenCalled();
-    const audio = vi.mocked(audioManager.create).mock.results[0]?.value as HTMLAudioElement;
+    expect(vi.mocked(audioManager.getCached)).toHaveBeenCalled();
+    const audio = vi.mocked(audioManager.getCached).mock.results[0]?.value as HTMLAudioElement;
     expect(audio.play).not.toHaveBeenCalled();
   });
 
@@ -117,7 +119,7 @@ describe("global-audio-warmup", () => {
     await flushAsync();
     await flushAsync();
 
-    vi.mocked(audioManager.create).mock.results.forEach((result) => {
+    vi.mocked(audioManager.getCached).mock.results.forEach((result) => {
       vi.mocked((result.value as HTMLAudioElement).play).mockClear();
     });
 
@@ -129,7 +131,7 @@ describe("global-audio-warmup", () => {
     await flushAsync();
 
     const played = vi
-      .mocked(audioManager.create)
+      .mocked(audioManager.getCached)
       .mock.results.some((result) =>
         vi.mocked((result.value as HTMLAudioElement).play).mock.calls.length > 0,
       );
@@ -145,7 +147,7 @@ describe("global-audio-warmup", () => {
     await flushAsync();
     await flushAsync();
 
-    vi.mocked(audioManager.create).mock.results.forEach((result) => {
+    vi.mocked(audioManager.getCached).mock.results.forEach((result) => {
       vi.mocked((result.value as HTMLAudioElement).play).mockClear();
     });
 
@@ -158,7 +160,7 @@ describe("global-audio-warmup", () => {
     document.dispatchEvent(new Event("visibilitychange"));
     await flushAsync();
 
-    vi.mocked(audioManager.create).mock.results.forEach((result) => {
+    vi.mocked(audioManager.getCached).mock.results.forEach((result) => {
       vi.mocked((result.value as HTMLAudioElement).play).mockClear();
     });
 
@@ -167,7 +169,7 @@ describe("global-audio-warmup", () => {
     await flushAsync();
 
     const played = vi
-      .mocked(audioManager.create)
+      .mocked(audioManager.getCached)
       .mock.results.some((result) =>
         vi.mocked((result.value as HTMLAudioElement).play).mock.calls.length > 0,
       );
