@@ -1944,8 +1944,38 @@
         "title": "Amy Speech Coach",
         "description": "Daily 5-minute speech sessions, milestones, and confidence-building games."
       },
+      "home": {
+        "welcome_title": "Welcome to Amy Speech Coach",
+        "welcome_sub": "Your child's complete speech & confidence ecosystem. Multiple fun modes, daily challenges, progress tracking, and personalized guidance — all in one magical place.",
+        "hero_live_title": "Start Live Session",
+        "hero_live_sub": "Real-time AI coaching • Instant feedback • Amy cheers you on",
+        "hero_practice_title": "Practice with Amy",
+        "hero_practice_sub": "Guided repetition • Conversational play • Gentle corrections",
+        "session_types_title": "Pick a Session Type",
+        "session_types": {
+          "quick": { "title": "Quick 2-Minute Practice", "desc": "Fast warm-up for busy days", "mins": "2 min" },
+          "bedtime": { "title": "Bedtime Calm Voice", "desc": "Soft, soothing speech practice", "mins": "5 min" },
+          "school": { "title": "School Confidence", "desc": "Clear speaking for classroom", "mins": "6 min" },
+          "pronounce": { "title": "Pronunciation Builder", "desc": "Focus on tricky sounds", "mins": "4 min" },
+          "warmup": { "title": "Speech Warmup", "desc": "Get your mouth ready", "mins": "3 min" },
+          "emotion": { "title": "Emotional Expression", "desc": "Practice feelings & tone", "mins": "5 min" }
+        },
+        "discover_title": "Discover More Ways to Grow",
+        "discover": {
+          "sounds": "Sounds & Phonics",
+          "daily": "Daily Speaking Challenge",
+          "whisper": "Whisper Mode",
+          "loud": "Loud & Clear Mode",
+          "mirror": "Mirror Practice",
+          "confidence": "Confidence Builder Games",
+          "parent": "Parent Tools & Insights",
+          "progress": "Progress Journey",
+          "recent": "Recently Practiced",
+          "recommended": "Recommended for Today"
+        }
+      },
       "cta": {
-        "start_practice": "Start Speech Practice",
+        "start_practice": "Explore Amy Speech Coach",
         "start_with_amy": "Start with Amy",
         "check_milestones": "Check Milestones",
         "daily_session": "Daily 5-Minute Session",

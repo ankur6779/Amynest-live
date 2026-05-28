@@ -22,6 +22,7 @@ describe("navigation-stack", () => {
       "/speech-coach",
     );
     expect(normalizeRoutePath("/speech-coach/live")).toBe("/speech-coach");
+    expect(normalizeRoutePath("/speech-coach/live-session")).toBe("/speech-coach/live-session");
   });
 
   it("detects duplicate routes", () => {
@@ -46,6 +47,13 @@ describe("navigation-stack", () => {
       shouldReplaceNavigation("/speech-coach/live", "/speech-coach"),
     ).toBe(true);
     expect(getParentRoute("/speech-coach/live")).toBe("/parenting-hub");
+  });
+
+  it("treats live-session as child of speech-coach home for nav", () => {
+    expect(getParentRoute("/speech-coach/live-session")).toBe("/speech-coach");
+    expect(
+      shouldReplaceNavigation("/speech-coach/live-session", "/speech-coach"),
+    ).toBe(true);
   });
 
   it("detects A-B-A oscillation cycles", () => {

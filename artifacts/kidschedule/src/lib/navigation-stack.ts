@@ -39,6 +39,7 @@ export const HUB_MODULE_PREFIXES = [
 
 const PARENT_ROUTE: Record<string, string> = {
   "/speech-coach": "/parenting-hub",
+  "/speech-coach/live-session": "/speech-coach",
   "/phonics/test/play": "/phonics",
   "/phonics/test": "/phonics",
   "/phonics": "/parenting-hub",

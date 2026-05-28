@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -16,6 +16,7 @@ import {
   Zap,
   Check,
   X,
+  User,
 } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
 import { useToast } from "@/hooks/use-toast";
@@ -88,18 +89,43 @@ export default function AmyAiTutorPage() {
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const threadRef = useRef<HTMLDivElement>(null);
+  const chatWrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [showScrollLatest, setShowScrollLatest] = useState(false);
 
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
-    requestAnimationFrame(() => {
-      bottomRef.current?.scrollIntoView({ behavior, block: "end" });
-    });
+    bottomRef.current?.scrollIntoView({ behavior, block: "end" });
+    const thread = threadRef.current;
+    if (thread) {
+      thread.scrollTo({ top: thread.scrollHeight, behavior });
+    }
   };
 
   useEffect(() => {
     scrollToBottom("smooth");
   }, [turns, loading]);
+
+  useLayoutEffect(() => {
+    const wrapper = chatWrapperRef.current;
+    const body = threadRef.current;
+    if (!wrapper || !body) return;
+
+    const syncScrollArea = () => {
+      const height = wrapper.clientHeight;
+      if (height <= 0) return;
+      body.style.height = `${height}px`;
+      body.style.maxHeight = `${height}px`;
+    };
+
+    syncScrollArea();
+    const observer = new ResizeObserver(syncScrollArea);
+    observer.observe(wrapper);
+    window.addEventListener("resize", syncScrollArea);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", syncScrollArea);
+    };
+  }, [turns]);
 
   const handleThreadScroll = () => {
     const thread = threadRef.current;
@@ -110,9 +136,8 @@ export default function AmyAiTutorPage() {
 
   const handleInputFocus = () => {
     setTimeout(() => {
-      inputRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
       scrollToBottom("smooth");
-    }, 80);
+    }, 300);
   };
 
   // Pull primary child for context — best-effort.
@@ -223,7 +248,7 @@ export default function AmyAiTutorPage() {
 
   return (
     <div
-      className="relative mx-auto flex min-h-screen w-full max-w-3xl flex-col bg-background"
+      className="assistant-chat-page chat-container relative mx-auto flex min-h-0 w-full max-w-3xl flex-col bg-background"
       data-testid="amy-tutor-page"
     >
       {/* Header */}
@@ -250,13 +275,13 @@ export default function AmyAiTutorPage() {
       </div>
 
       {primaryChild?.id != null && (
-        <div className="mx-4 mb-3 md:mx-0">
+        <div className="mx-4 mb-3 md:mx-0 shrink-0">
           <AmyPresenceStrip surface="tutor" childId={primaryChild.id} />
         </div>
       )}
 
       {learningProgress.phase3 && learningProgress.phase3.tutorLines.length > 0 && (
-        <div className="mx-4 mb-3 md:mx-0">
+        <div className="mx-4 mb-3 md:mx-0 shrink-0">
           <TutorProactiveLines lines={learningProgress.phase3.tutorLines} />
         </div>
       )}
@@ -294,7 +319,7 @@ export default function AmyAiTutorPage() {
 
       {/* Mode + subject + topic strip */}
       <div className="shrink-0 space-y-2 px-4 pb-3 md:px-0">
-        <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={t("pages.amy_ai_tutor.tutor_mode")}>
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label={t("pages.amy_ai_tutor.tutor_mode")}>
           {(Object.keys(MODE_META) as Mode[]).map((m) => {
             const meta = MODE_META[m];
             const Icon = meta.icon;
@@ -321,7 +346,7 @@ export default function AmyAiTutorPage() {
             );
           })}
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={t("pages.amy_ai_tutor.subject")}>
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label={t("pages.amy_ai_tutor.subject")}>
           {SUBJECTS.map((s) => {
             const active = subject === s.key;
             return (
@@ -356,73 +381,90 @@ export default function AmyAiTutorPage() {
       </div>
 
       {/* Chat area */}
-      <div
-        ref={threadRef}
-        onScroll={handleThreadScroll}
-        className="min-h-0 flex-1 space-y-3 px-4 pb-24 pr-5"
-        data-testid="amy-tutor-thread"
-      >
-        {isEmpty ? (
-          <div className="flex flex-col items-center justify-center h-full gap-4 text-center py-8">
-            <AmyIcon size={88} bounce ring />
-            <div>
-              <h2 className="font-quicksand text-xl font-bold text-foreground mb-1">
-                Hi {primaryChild?.name ?? "there"} — what should we learn today?
-              </h2>
-              <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                Pick a mode above, then type a question. Try "Teach me the letter B" or "Quiz me
-                on addition".
-              </p>
+      <div className="chat-wrapper relative flex-1 min-h-0" ref={chatWrapperRef}>
+        <div
+          ref={threadRef}
+          onScroll={handleThreadScroll}
+          className="chat-body chat-messages space-y-3 px-4 md:px-0"
+          data-testid="amy-tutor-thread"
+        >
+          {isEmpty ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4 text-center py-8">
+              <AmyIcon size={88} bounce ring />
+              <div>
+                <h2 className="font-quicksand text-xl font-bold text-foreground mb-1">
+                  Hi {primaryChild?.name ?? "there"} — what should we learn today?
+                </h2>
+                <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+                  Pick a mode above, then type a question. Try "Teach me the letter B" or "Quiz me
+                  on addition".
+                </p>
+              </div>
             </div>
-          </div>
-        ) : (
-          turns.map((turn) => (
-            <TurnView key={turn.id} turn={turn} onPickOption={pickOption} />
-          ))
+          ) : (
+            turns.map((turn) => (
+              <TurnView key={turn.id} turn={turn} onPickOption={pickOption} />
+            ))
+          )}
+          {loading && (
+            <div className="flex gap-2.5 flex-row">
+              <div className="shrink-0">
+                <AmyIcon size={32} ring />
+              </div>
+              <div className="max-w-[85%] items-start flex flex-col gap-1">
+                <Card className="rounded-2xl shadow-sm bg-card border-border rounded-tl-sm">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm" data-testid="amy-tutor-thinking">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>{t("pages.amy_ai_tutor.amy_is_thinking")}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {showScrollLatest && (
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => scrollToBottom("smooth")}
+            className="absolute bottom-36 right-4 z-40 rounded-full shadow-lg"
+          >
+            Latest
+          </Button>
         )}
-        {loading && (
-          <div className="flex items-center gap-2 text-muted-foreground text-sm" data-testid="amy-tutor-thinking">
-            <AmyIcon size={28} bounce ring />
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>{t("pages.amy_ai_tutor.amy_is_thinking")}</span>
-          </div>
-        )}
-        <div ref={bottomRef} />
       </div>
 
-      {showScrollLatest && (
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => scrollToBottom("smooth")}
-          className="absolute bottom-28 right-4 z-40 rounded-full shadow-lg"
-        >
-          Latest
-        </Button>
-      )}
-
       {/* Composer */}
-      <div className="sticky bottom-0 z-50 flex w-full shrink-0 gap-2 border-t border-border bg-background/95 px-4 pb-[calc(var(--app-bottom-clearance)+0.75rem)] pt-3 backdrop-blur md:px-0">
-        <Textarea
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          onFocus={handleInputFocus}
-          placeholder={limitReached ? "Daily limit reached — upgrade to keep going." : "Ask Amy anything…"}
-          disabled={limitReached}
-          className="resize-none min-h-[44px] max-h-32 rounded-2xl"
-          rows={1}
-          data-testid="amy-tutor-input"
-        />
-        <Button
-          onClick={() => send()}
-          disabled={!input.trim() || loading || limitReached}
-          className="rounded-full px-4"
-          data-testid="amy-tutor-send"
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        </Button>
+      <div className="chat-input border-t border-border/50">
+        <div className="mx-auto w-full max-w-3xl">
+          <div className="flex gap-3 items-end bg-card rounded-2xl border border-border p-3 shadow-sm focus-within:border-primary transition-colors">
+            <Textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              onFocus={handleInputFocus}
+              placeholder={limitReached ? "Daily limit reached — upgrade to keep going." : "Ask Amy anything…"}
+              disabled={limitReached}
+              className="flex-1 border-none shadow-none resize-none focus-visible:ring-0 min-h-[40px] max-h-[120px] bg-transparent p-0 text-sm placeholder:text-muted-foreground disabled:opacity-60"
+              rows={1}
+              data-testid="amy-tutor-input"
+            />
+            <Button
+              onClick={() => send()}
+              disabled={!input.trim() || loading || limitReached}
+              size="icon"
+              className="rounded-xl h-9 w-9 shrink-0"
+              data-testid="amy-tutor-send"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -439,12 +481,18 @@ function TurnView({
 }) {
   if (turn.role === "user") {
     return (
-      <div className="flex justify-end">
-        <div
-          className="max-w-[80%] rounded-2xl rounded-tr-sm bg-primary text-primary-foreground px-4 py-2 text-sm"
-          data-testid="amy-tutor-user-bubble"
-        >
-          {turn.text}
+      <div className="flex gap-2.5 flex-row-reverse">
+        <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-secondary/20 text-secondary-foreground">
+          <User className="h-3.5 w-3.5" />
+        </div>
+        <div className="max-w-[85%] items-end flex flex-col gap-1">
+          <Card className="rounded-2xl shadow-sm bg-primary text-primary-foreground border-primary rounded-tr-sm">
+            <CardContent className="p-3">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap text-primary-foreground" data-testid="amy-tutor-user-bubble">
+                {turn.text}
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -454,12 +502,18 @@ function TurnView({
   // the whole thread — render a neutral placeholder instead (architect flag).
   if (!turn.reply) {
     return (
-      <div className="flex gap-2">
-        <div className="shrink-0 mt-1">
-          <AmyIcon size={28} ring />
+      <div className="flex gap-2.5 flex-row">
+        <div className="shrink-0">
+          <AmyIcon size={32} ring />
         </div>
-        <div className="flex-1 rounded-2xl rounded-tl-sm bg-card border border-border p-3 text-sm text-muted-foreground">
-          Amy's reply got lost in the post — try asking again.
+        <div className="max-w-[85%] items-start flex flex-col gap-1">
+          <Card className="rounded-2xl shadow-sm bg-card border-border rounded-tl-sm">
+            <CardContent className="p-3">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                Amy's reply got lost in the post — try asking again.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -472,79 +526,81 @@ function TurnView({
   const picked = turn.pickedIndex;
 
   return (
-    <div className="flex gap-2">
-      <div className="shrink-0 mt-1">
-        <AmyIcon size={28} ring />
+    <div className="flex gap-2.5 flex-row animate-in fade-in duration-200">
+      <div className="shrink-0">
+        <AmyIcon size={32} ring />
       </div>
-      <Card
-        className="flex-1 rounded-2xl rounded-tl-sm bg-card border border-border"
-        data-testid="amy-tutor-tutor-bubble"
-      >
-        <CardContent className="p-3 space-y-2">
-          {reply.content && (
-            <p className="text-sm text-foreground whitespace-pre-wrap">{reply.content}</p>
-          )}
+      <div className="max-w-[85%] items-start flex flex-col gap-1">
+        <Card
+          className="rounded-2xl shadow-sm bg-card border-border rounded-tl-sm"
+          data-testid="amy-tutor-tutor-bubble"
+        >
+          <CardContent className="p-3 space-y-2">
+            {reply.content && (
+              <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">{reply.content}</p>
+            )}
 
-          {reply.examples.length > 0 && (
-            <div className="flex flex-wrap gap-1.5" data-testid="amy-tutor-examples">
-              {reply.examples.map((ex, i) => (
-                <span
-                  key={i}
-                  className="inline-block rounded-full bg-muted text-foreground text-xs font-semibold px-2.5 py-0.5"
-                >
-                  {ex}
-                </span>
-              ))}
-            </div>
-          )}
+            {reply.examples.length > 0 && (
+              <div className="flex flex-wrap gap-1.5" data-testid="amy-tutor-examples">
+                {reply.examples.map((ex, i) => (
+                  <span
+                    key={i}
+                    className="inline-block rounded-full bg-muted text-foreground text-xs font-semibold px-2.5 py-0.5"
+                  >
+                    {ex}
+                  </span>
+                ))}
+              </div>
+            )}
 
-          {reply.question && (
-            <div className="mt-2 rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2" data-testid="amy-tutor-question">
-              <p className="text-sm font-bold text-foreground">{reply.question}</p>
-              {reply.options.length > 0 && (
-                <div className="grid gap-1.5">
-                  {reply.options.map((opt, i) => {
-                    const isPicked = picked === i;
-                    const isCorrect = correctIdx === i;
-                    const showVerdict = picked !== undefined;
-                    const stateClass = !showVerdict
-                      ? "border-border hover:border-primary/40 hover:bg-primary/10"
-                      : isPicked && isCorrect
-                        ? "border-primary bg-muted text-foreground"
-                        : isPicked && !isCorrect
+            {reply.question && (
+              <div className="mt-2 rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2" data-testid="amy-tutor-question">
+                <p className="text-sm font-bold text-foreground">{reply.question}</p>
+                {reply.options.length > 0 && (
+                  <div className="grid gap-1.5">
+                    {reply.options.map((opt, i) => {
+                      const isPicked = picked === i;
+                      const isCorrect = correctIdx === i;
+                      const showVerdict = picked !== undefined;
+                      const stateClass = !showVerdict
+                        ? "border-border bg-card hover:border-primary/40 hover:bg-primary/10"
+                        : isPicked && isCorrect
                           ? "border-primary bg-muted text-foreground"
-                          : isCorrect
-                            ? "border-border bg-muted text-foreground"
-                            : "border-border opacity-70";
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => picked === undefined && onPickOption(turn.id, i)}
-                        disabled={picked !== undefined}
-                        data-testid={`amy-tutor-option-${i}`}
-                        className={cn(
-                          "text-left text-sm rounded-lg border px-3 py-2 transition-colors flex items-center gap-2",
-                          stateClass,
-                        )}
-                      >
-                        <span className="flex-1">{opt}</span>
-                        {showVerdict && isPicked && isCorrect && <Check className="h-4 w-4" />}
-                        {showVerdict && isPicked && !isCorrect && <X className="h-4 w-4" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              {picked !== undefined && correctIdx !== null && (
-                <p className="text-xs font-semibold mt-1">
-                  {picked === correctIdx ? "🎉 Right on!" : `The answer is: ${reply.options[correctIdx]}`}
-                </p>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                          : isPicked && !isCorrect
+                            ? "border-primary bg-muted text-foreground"
+                            : isCorrect
+                              ? "border-border bg-muted text-foreground"
+                              : "border-border opacity-70";
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => picked === undefined && onPickOption(turn.id, i)}
+                          disabled={picked !== undefined}
+                          data-testid={`amy-tutor-option-${i}`}
+                          className={cn(
+                            "text-left text-sm rounded-lg border px-3 py-2 transition-colors flex items-center gap-2 w-full",
+                            stateClass,
+                          )}
+                        >
+                          <span className="flex-1">{opt}</span>
+                          {showVerdict && isPicked && isCorrect && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                          {showVerdict && isPicked && !isCorrect && <X className="h-4 w-4 shrink-0 text-destructive" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {picked !== undefined && correctIdx !== null && (
+                  <p className="text-xs font-semibold mt-1">
+                    {picked === correctIdx ? "🎉 Right on!" : `The answer is: ${reply.options[correctIdx]}`}
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

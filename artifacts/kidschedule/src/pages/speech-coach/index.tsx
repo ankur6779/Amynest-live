@@ -56,24 +56,20 @@ import {
   PronunciationCompanion,
 } from "./pronunciation-companion";
 import { SpeechGameFlow, SpeechGameRewardsBar } from "./speech-game-flow";
-import { LiveSpeechCoach } from "./live-speech-coach";
 import { loadSpeechGameRewards } from "./speech-game-rewards";
 import { SPEECH_GAME_THEMES } from "./speech-game-theme";
 import {
   clampClarityScore,
-  getSpeechCoachPageTab,
   getSpeechViewMode,
   isToddlerMonths,
-  parseSpeechCoachPageTab,
-  setSpeechCoachPageTab,
   setSpeechViewMode,
   weakSoundsToHistory,
-  type SpeechCoachPageTab,
   type SpeechViewMode,
 } from "./speech-coach-utils";
 import { usePrimeIosMicrophone } from "@/hooks/use-prime-ios-microphone";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -106,59 +102,6 @@ function scrollToSection(id: string) {
   if (typeof document === "undefined") return;
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function readInitialSpeechCoachTab(): SpeechCoachPageTab {
-  if (typeof window === "undefined") return "practice";
-  const fromUrl = parseSpeechCoachPageTab(
-    new URLSearchParams(window.location.search).get("tab"),
-  );
-  if (new URLSearchParams(window.location.search).has("tab")) return fromUrl;
-  return getSpeechCoachPageTab();
-}
-
-function SpeechCoachTabSwitcher({
-  tab,
-  onChange,
-}: {
-  tab: SpeechCoachPageTab;
-  onChange: (tab: SpeechCoachPageTab) => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <div
-      className="flex rounded-2xl border border-border bg-muted/40 p-1 gap-1"
-      data-testid="speech-coach-tab-switcher"
-      role="tablist"
-    >
-      <Button
-        type="button"
-        size="sm"
-        variant={tab === "practice" ? "default" : "ghost"}
-        className="flex-1 rounded-xl gap-1.5"
-        role="tab"
-        aria-selected={tab === "practice"}
-        data-testid="speech-tab-practice"
-        onClick={() => onChange("practice")}
-      >
-        <Sparkles className="h-4 w-4" />
-        {t("screens.speech_coach.tabs.practice_with_amy")}
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant={tab === "hub" ? "default" : "ghost"}
-        className="flex-1 rounded-xl gap-1.5"
-        role="tab"
-        aria-selected={tab === "hub"}
-        data-testid="speech-tab-hub"
-        onClick={() => onChange("hub")}
-      >
-        <BarChart3 className="h-4 w-4" />
-        {t("screens.speech_coach.tabs.parent_tools")}
-      </Button>
-    </div>
-  );
 }
 
 /**
@@ -1267,9 +1210,6 @@ export default function SpeechCoachPage() {
   const [viewMode, setViewMode] = useState<SpeechViewMode>(() =>
     getSpeechViewMode(),
   );
-  const [pageTab, setPageTab] = useState<SpeechCoachPageTab>(() =>
-    readInitialSpeechCoachTab(),
-  );
   const childrenQuery = useListChildren();
   const childList = (childrenQuery.data ?? []) as AnyChild[];
   const eligible = childList.filter((c) =>
@@ -1278,50 +1218,6 @@ export default function SpeechCoachPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const child =
     eligible.find((c) => c.id === selectedId) ?? eligible[0] ?? null;
-
-  const switchTab = useCallback(
-    (tab: SpeechCoachPageTab) => {
-      setPageTab(tab);
-      setSpeechCoachPageTab(tab);
-      if (typeof window === "undefined") return;
-      const params = new URLSearchParams(window.location.search);
-      if (tab === "hub") params.set("tab", "hub");
-      else params.delete("tab");
-      const qs = params.toString();
-      setLocation(`/speech-coach${qs ? `?${qs}` : ""}`, { replace: true });
-    },
-    [setLocation],
-  );
-
-  if (child && pageTab === "practice") {
-    return (
-      <>
-        {eligible.length > 1 ? (
-          <div className="fixed left-1/2 top-16 z-30 flex -translate-x-1/2 gap-2 rounded-full border border-white/10 bg-black/40 p-1 backdrop-blur-xl">
-            {eligible.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setSelectedId(c.id)}
-                className={[
-                  "rounded-full px-3 py-1 text-xs font-black transition-colors",
-                  child.id === c.id
-                    ? "bg-white text-slate-950"
-                    : "text-white/70 hover:bg-white/10",
-                ].join(" ")}
-              >
-                {c.name}
-              </button>
-            ))}
-          </div>
-        ) : null}
-        <LiveSpeechCoach
-          child={child}
-          onOpenParentTools={() => switchTab("hub")}
-        />
-      </>
-    );
-  }
 
   return (
     <div
@@ -1344,57 +1240,136 @@ export default function SpeechCoachPage() {
         {t("screens.speech_coach.subtitle")}
       </p>
 
-      {child ? (
-        <SpeechCoachTabSwitcher tab={pageTab} onChange={switchTab} />
-      ) : null}
+      {/* === NEW SPEECH COACH HOME / EXPLORE HUB (entry flow fix) === */}
+      {child && (
+        <div className="space-y-6 pt-2" data-testid="speech-coach-home">
+          {/* Welcome banner */}
+          <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-primary/5 p-5">
+            <div className="flex items-start gap-4">
+              <div className="text-4xl leading-none mt-0.5">🎤</div>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-bold text-xl text-foreground tracking-tight">
+                  {t("screens.speech_coach.home.welcome_title")}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                  {t("screens.speech_coach.home.welcome_sub")}
+                </p>
+                <div className="mt-2 text-[10px] uppercase tracking-widest text-primary/70 font-bold">
+                  Personalized for {child.name} • Ages {totalMonths(child)}m speech journey
+                </div>
+              </div>
+            </div>
+          </div>
 
-      <div
-        className="flex flex-wrap gap-2"
-        data-testid="speech-coach-cta-row"
-      >
-        {child ? (
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => switchTab("practice")}
-            data-testid="cta-start-practice"
-          >
-            <Sparkles className="h-4 w-4" />
-            {t("screens.speech_coach.cta.start_with_amy")}
-          </Button>
-        ) : null}
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          onClick={() => scrollToSection("speech-section-milestones")}
-          data-testid="cta-check-milestones"
-        >
-          <CheckCircle2 className="h-4 w-4" />
-          {t("screens.speech_coach.cta.check_milestones")}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => scrollToSection("speech-section-reports")}
-          data-testid="cta-view-progress"
-        >
-          <BarChart3 className="h-4 w-4" />
-          {t("screens.speech_coach.cta.view_progress")}
-        </Button>
-        <AppLink href="/parenting-hub" replace source="speech-coach-ask-amy">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            data-testid="cta-ask-amy-coach"
-          >
-            <Heart className="h-4 w-4" />
-            {t("screens.speech_coach.cta.ask_amy_coach")}
-          </Button>
-        </AppLink>
-      </div>
+          {/* HERO CTAs - Primary Live + Secondary Practice with Amy */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* BIG PRIMARY: Start Live Session - hero sized, glowing pulse */}
+            <AppLink href="/speech-coach/live-session" source="speech-home-hero-live" replace>
+              <motion.div
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.985 }}
+                className="group relative overflow-hidden rounded-3xl p-6 text-white shadow-2xl bg-gradient-to-br from-primary via-fuchsia-500 to-violet-600 border border-white/20"
+              >
+                {/* animated glow layers */}
+                <div className="absolute inset-0 bg-[radial-gradient(white_0.8px,transparent_1px)] bg-[length:3px_3px] opacity-10" />
+                <motion.div
+                  animate={{ opacity: [0.6, 1, 0.6] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute -inset-[2px] rounded-[20px] bg-gradient-to-r from-white/30 via-white/10 to-white/30 blur-xl"
+                />
+                <div className="relative flex items-center gap-4">
+                  <div className="shrink-0 rounded-2xl bg-white/20 p-3.5 ring-1 ring-white/30">
+                    <Mic className="h-8 w-8" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-black uppercase tracking-[2.5px] text-white/70">REAL-TIME • IMMERSIVE</div>
+                    <div className="text-2xl font-black leading-none mt-1 tracking-[-0.5px]">{t("screens.speech_coach.home.hero_live_title")}</div>
+                    <div className="text-sm mt-2 text-white/85 line-clamp-2 pr-2">{t("screens.speech_coach.home.hero_live_sub")}</div>
+                  </div>
+                  <div className="text-3xl opacity-70 group-hover:translate-x-0.5 transition">→</div>
+                </div>
+              </motion.div>
+            </AppLink>
+
+            {/* SECONDARY LARGE CTA: Practice with Amy */}
+            <button
+              type="button"
+              onClick={() => scrollToSection("speech-section-practice")}
+              className="group rounded-3xl border-2 border-primary/30 bg-card hover:border-primary/60 p-6 text-left transition-all active:scale-[0.985] flex flex-col justify-between"
+            >
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-0.5 text-[10px] font-black uppercase tracking-widest text-primary mb-3">
+                  <Sparkles className="h-3.5 w-3.5" /> GUIDED
+                </div>
+                <div className="text-2xl font-black tracking-tight text-foreground">{t("screens.speech_coach.home.hero_practice_title")}</div>
+                <p className="text-sm text-muted-foreground mt-2 leading-snug pr-4">{t("screens.speech_coach.home.hero_practice_sub")}</p>
+              </div>
+              <div className="mt-5 flex items-center text-sm font-bold text-primary group-hover:gap-2 gap-1.5 transition-all">
+                Open pronunciation lab <span aria-hidden>↘︎</span>
+              </div>
+            </button>
+          </div>
+
+          {/* Session Types - quick pathways for perceived depth */}
+          <div>
+            <div className="flex items-center justify-between mb-2.5 px-0.5">
+              <div className="font-bold text-sm flex items-center gap-2 text-foreground">
+                <Star className="h-4 w-4 text-amber-500" /> {t("screens.speech_coach.home.session_types_title")}
+              </div>
+              <div className="text-[10px] text-muted-foreground">Tap any to begin</div>
+            </div>
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-3 -mx-1 px-1 scrollbar-thin">
+              {[
+                { key: "quick", emoji: "⚡", ...t("screens.speech_coach.home.session_types.quick", { returnObjects: true }) as any },
+                { key: "bedtime", emoji: "🌙", ...t("screens.speech_coach.home.session_types.bedtime", { returnObjects: true }) as any },
+                { key: "school", emoji: "🎒", ...t("screens.speech_coach.home.session_types.school", { returnObjects: true }) as any },
+                { key: "pronounce", emoji: "🔤", ...t("screens.speech_coach.home.session_types.pronounce", { returnObjects: true }) as any },
+                { key: "warmup", emoji: "🗣️", ...t("screens.speech_coach.home.session_types.warmup", { returnObjects: true }) as any },
+                { key: "emotion", emoji: "💖", ...t("screens.speech_coach.home.session_types.emotion", { returnObjects: true }) as any },
+              ].map((s, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setLocation("/speech-coach/live-session", { replace: false })}
+                  className="snap-start min-w-[148px] flex-shrink-0 rounded-2xl border border-border bg-card p-4 text-left hover:border-primary/50 hover:shadow-md active:scale-[0.985] transition-all"
+                  data-testid={`session-type-${s.key}`}
+                >
+                  <div className="text-3xl mb-2">{s.emoji}</div>
+                  <div className="font-bold text-sm leading-tight text-foreground pr-1">{s.title}</div>
+                  <div className="text-[11px] text-muted-foreground mt-1 leading-snug">{s.desc}</div>
+                  <div className="mt-3 inline-block text-[10px] font-black uppercase tracking-wider rounded-full bg-muted px-2 py-px text-muted-foreground">{s.mins}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Discoverability horizontal sections */}
+          <div className="space-y-1.5">
+            <div className="font-bold text-sm px-0.5 flex items-center gap-2">
+              <Sparkles className="h-4 w-4" /> {t("screens.speech_coach.home.discover_title")}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: t("screens.speech_coach.home.discover.sounds"), anchor: "speech-section-practice" },
+                { label: t("screens.speech_coach.home.discover.daily"), anchor: "speech-section-games" },
+                { label: t("screens.speech_coach.home.discover.confidence"), anchor: "speech-section-affirmations" },
+                { label: t("screens.speech_coach.home.discover.parent"), anchor: "speech-section-guidance" },
+                { label: t("screens.speech_coach.home.discover.progress"), anchor: "speech-section-reports" },
+                { label: t("screens.speech_coach.home.discover.mirror"), anchor: "speech-section-practice" },
+              ].map((d, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => scrollToSection(d.anchor)}
+                  className="text-xs font-medium rounded-full border border-border bg-muted/40 hover:bg-primary/5 hover:border-primary/40 px-3.5 py-1.5 transition-colors"
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {childrenQuery.isLoading && (
         <Card>
