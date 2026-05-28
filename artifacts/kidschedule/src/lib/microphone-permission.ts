@@ -46,6 +46,10 @@ type AndroidMicrophoneBridge = {
   getPermissionStatus?: () => AndroidMicrophoneStatus | string;
   requestPermission?: (callbackId: string) => AndroidMicrophoneStatus | string;
   openSettings?: () => void;
+  /** Native Android shell — release audio focus after TTS playback. */
+  releaseAudioFocus?: () => void;
+  /** Native Android shell — set MODE_IN_COMMUNICATION before getUserMedia. */
+  prepareForRecording?: () => void;
 };
 
 declare global {

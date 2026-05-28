@@ -14,6 +14,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { getApiUrl } from "@/lib/api";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+import { prepareForMicrophoneAcquisition } from "@/lib/audio-session-coordinator";
 import { requestMicrophoneAccess, resetMicrophonePermissionCache, queryOsMicrophonePermissionState, isOsMicrophonePermissionDenied, classifyMicrophoneFailure, type MicrophoneRuntimeErrorCode } from "@/lib/microphone-permission";
 import { microphoneSessionManager, MicrophoneSessionState } from "@/lib/microphone-session-manager";
 
@@ -239,6 +240,8 @@ export function useSpeechRecognition(
     setInterimTranscript("");
     setError(null);
     setStatus("preparing");
+
+    await prepareForMicrophoneAcquisition();
 
     // Single mic owner: stop any active Whisper session completely to free hardware
     microphoneSessionManager.cleanup();

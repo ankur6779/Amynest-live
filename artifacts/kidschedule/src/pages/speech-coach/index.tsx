@@ -541,10 +541,11 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
 
   const handleRecord = () => {
     if (!currentItem) return;
+    voice.pause();
     stt.reset();
     setCurrentResult(null);
     setPromptPhase("recording");
-    stt.start();
+    void stt.start();
   };
 
   const handleStop = () => {

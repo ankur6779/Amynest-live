@@ -123,7 +123,7 @@ export function getSpeechCoachMicStatusMessage(options: {
     case "microphone_blocked":
       return "Microphone access is required for Speech Coach.";
     case "microphone_busy":
-      return "Another app may be using the microphone. Close it and tap the mic to try again.";
+      return "Microphone unavailable. Tap the mic to try again.";
     case "stale_stream":
       return "Reconnecting microphone...";
     case "recognition_start_failed":

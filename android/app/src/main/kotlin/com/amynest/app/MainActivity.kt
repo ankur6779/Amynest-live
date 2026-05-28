@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.media.AudioManager
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
@@ -76,6 +77,8 @@ class MainActivity : AppCompatActivity() {
     private var pendingGeoOrigin: String? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
     private var pendingMicPermissionCallbackId: String? = null
+
+    private var systemAudioManager: AudioManager? = null
 
     private val micPermissionPrefs by lazy {
         getSharedPreferences("amynest_permissions", MODE_PRIVATE)
@@ -177,6 +180,7 @@ class MainActivity : AppCompatActivity() {
 
             configureWebView(wv)
         }
+        systemAudioManager = getSystemService(AUDIO_SERVICE) as AudioManager
         setContentView(webView)
 
         ViewCompat.setOnApplyWindowInsetsListener(webView) { _, insets ->
@@ -255,6 +259,19 @@ class MainActivity : AppCompatActivity() {
                 null,
             )
         }
+        broadcastAppLifecycle("resume")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        abandonPlaybackAudioFocus("onPause")
+        broadcastAppLifecycle("pause")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        abandonPlaybackAudioFocus("onStop")
+        broadcastAppLifecycle("stop")
     }
 
     @Deprecated("Deprecated in Java")
@@ -312,6 +329,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        abandonPlaybackAudioFocus("onDestroy")
         super.onDestroy()
     }
 
@@ -645,6 +663,60 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "JS openSettings for microphone")
             runOnUiThread { openAppSettings() }
         }
+
+        /** Release native audio focus after TTS — WebView may deny mic while focus is held. */
+        @JavascriptInterface
+        fun releaseAudioFocus() {
+            Log.d(TAG, "JS releaseAudioFocus")
+            runOnUiThread { abandonPlaybackAudioFocus("js-release") }
+        }
+
+        /** Switch AV mode before getUserMedia — mirrors iOS playAndRecord prep. */
+        @JavascriptInterface
+        fun prepareForRecording() {
+            Log.d(TAG, "JS prepareForRecording")
+            runOnUiThread {
+                abandonPlaybackAudioFocus("js-prepare-recording")
+                prepareRecordingAudioMode()
+            }
+        }
+    }
+
+    private fun broadcastAppLifecycle(state: String) {
+        if (!::webView.isInitialized) return
+        val js =
+            "(function(){" +
+                "window.dispatchEvent(new CustomEvent('amynest-app-lifecycle'," +
+                "{detail:{state:${JSONObject.quote(state)}}}));" +
+            "})();"
+        webView.post { webView.evaluateJavascript(js, null) }
+        Log.d(TAG, "Broadcast app lifecycle state=$state")
+    }
+
+    private fun prepareRecordingAudioMode() {
+        val am = systemAudioManager ?: return
+        try {
+            am.mode = AudioManager.MODE_IN_COMMUNICATION
+            am.isSpeakerphoneOn = true
+            Log.d(TAG, "Audio mode set to MODE_IN_COMMUNICATION for recording")
+        } catch (e: Exception) {
+            Log.w(TAG, "prepareRecordingAudioMode failed: ${e.message}")
+        }
+    }
+
+    private fun resetNormalAudioMode() {
+        val am = systemAudioManager ?: return
+        try {
+            am.mode = AudioManager.MODE_NORMAL
+            Log.d(TAG, "Audio mode reset to MODE_NORMAL")
+        } catch (e: Exception) {
+            Log.w(TAG, "resetNormalAudioMode failed: ${e.message}")
+        }
+    }
+
+    private fun abandonPlaybackAudioFocus(source: String) {
+        Log.d(TAG, "Releasing audio session for recording source=$source")
+        resetNormalAudioMode()
     }
 
     private fun androidPermissionsForWebResources(resources: Array<String>): List<String> {
