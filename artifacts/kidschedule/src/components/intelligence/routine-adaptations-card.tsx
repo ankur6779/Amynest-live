@@ -7,8 +7,12 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, Heart, Lightbulb, ShieldCheck } from "lucide-react";
-import { buildFamilyIntelligenceSurface, type FamilyTrustSignalId } from "@/lib/family-intelligence-surface";
+import { Lightbulb, ShieldCheck } from "lucide-react";
+import {
+  buildFamilyIntelligenceSurface,
+  type FamilyIntelligenceContext,
+} from "@/lib/family-intelligence-surface";
+import { FamilyTrustStrip } from "@/components/intelligence/family-trust-strip";
 
 const GROUP_LABELS = {
   context: "Today's context",
@@ -17,22 +21,20 @@ const GROUP_LABELS = {
   adjustments: "Gentle changes",
 } as const;
 
-const TRUST_ICONS: Record<FamilyTrustSignalId, typeof Brain> = {
-  remembers: Brain,
-  adapts: Lightbulb,
-  supports: Heart,
-};
-
 export function RoutineAdaptationsCard({
   adaptations,
   hasSchool,
   isWeekendDay,
   mood,
+  energyProfile,
+  compact = false,
 }: {
   adaptations: readonly string[] | null | undefined;
   hasSchool?: boolean;
   isWeekendDay?: boolean;
   mood?: string;
+  energyProfile?: FamilyIntelligenceContext["energyProfile"];
+  compact?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -41,12 +43,28 @@ export function RoutineAdaptationsCard({
       hasSchool,
       isWeekendDay,
       mood,
+      energyProfile,
     });
-  }, [adaptations, hasSchool, isWeekendDay, mood]);
+  }, [adaptations, hasSchool, isWeekendDay, mood, energyProfile]);
 
   const explanation = surface?.explanation;
 
   if (!explanation || explanation.bullets.length === 0) return null;
+
+  if (compact && surface) {
+    return (
+      <Card className="rounded-2xl border border-primary/15 shadow-sm bg-primary/5">
+        <CardContent className="p-4 flex flex-col gap-2">
+          <p className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Lightbulb className="h-4 w-4 text-primary shrink-0" aria-hidden />
+            {t("intelligence.adaptations.title", { defaultValue: "Why this routine?" })}
+          </p>
+          <FamilyTrustStrip surface={surface} compact />
+          <p className="text-[11px] leading-snug text-muted-foreground">{surface.reassurance}</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const sections = (
     ["context", "environment", "behavior", "adjustments"] as const
@@ -70,27 +88,7 @@ export function RoutineAdaptationsCard({
           </div>
         </div>
 
-        {surface?.signals.length ? (
-          <div className="grid gap-2 sm:grid-cols-3">
-            {surface.signals.map((signal) => {
-              const Icon = TRUST_ICONS[signal.id];
-              return (
-                <div
-                  key={signal.id}
-                  className="rounded-2xl border border-border/70 bg-background/65 px-3 py-3"
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-                    <p className="text-xs font-bold text-foreground">{signal.label}</p>
-                  </div>
-                  <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-                    {signal.detail}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        ) : null}
+        {surface ? <FamilyTrustStrip surface={surface} compact={compact} /> : null}
 
         {sections.length > 1 ? (
           <div className="space-y-3">

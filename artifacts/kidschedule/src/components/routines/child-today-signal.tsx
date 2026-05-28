@@ -129,6 +129,19 @@ export function ChildTodaySignal() {
           </div>
         )}
 
+        {(snap?.energyProfile?.sampleCount ?? 0) >= 3 &&
+        snap?.energyProfile?.peakFocusStart &&
+        snap?.energyProfile?.peakFocusEnd ? (
+          <p className="rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs leading-snug text-muted-foreground">
+            {t("intelligence.signal.energy_profile", {
+              defaultValue:
+                "Amy noticed focus tends to peak around {{start}}–{{end}} — learning blocks follow that rhythm when possible.",
+              start: snap.energyProfile.peakFocusStart,
+              end: snap.energyProfile.peakFocusEnd,
+            })}
+          </p>
+        ) : null}
+
         <div className="grid grid-cols-2 gap-2">
           {OPTIONS.map((opt) => {
             const active = selected === opt.value;
