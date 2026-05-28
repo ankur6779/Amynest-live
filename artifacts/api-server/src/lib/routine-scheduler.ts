@@ -3,6 +3,7 @@
  * HH:MM strings only at output boundaries.
  */
 import { type AgeGroup } from "./routine-templates.js";
+import type { ActivityMetadata } from "./routine-activity-metadata.js";
 import type { LaunchCountry } from "./routine-country-profile.js";
 import {
   clampOutdoorToEveningWindow,
@@ -11,6 +12,7 @@ import {
   orderItemsByCountryStructure,
   type StructureBlockKind,
 } from "./routine-country-structure.js";
+import { validateAndNormalizeTime } from "./routine-time-validation.js";
 
 export type ScheduleDecisionMeta = {
   reason: string;
@@ -62,6 +64,8 @@ export type RoutineScheduleItem = {
   locked?: boolean;
   /** `fixed` = recurring parent-set activity; `special` = one-off plan. */
   activitySource?: "fixed" | "special" | "generated";
+  /** Adaptive intelligence metadata — prefer over regex on activity text. */
+  activityMeta?: ActivityMetadata;
 };
 
 export type TimePeriod = "morning" | "afternoon" | "evening" | "night";
@@ -182,26 +186,9 @@ export function parseTimeToMins(t: string): number {
   return h! * 60 + m!;
 }
 
-/** "7:00 AM" | "07:00" → "07:00" (output helper only). */
-export function normalizeTo24h(t: string): string {
-  if (!t) return "07:00";
-  const cleaned = t.replace(/\s+/g, " ").trim();
-  const m12 = cleaned.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (m12) {
-    let h = parseInt(m12[1]!, 10);
-    const min = parseInt(m12[2]!, 10);
-    const ap = m12[3]!.toUpperCase();
-    if (ap === "PM" && h !== 12) h += 12;
-    if (ap === "AM" && h === 12) h = 0;
-    return `${h.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`;
-  }
-  const m24 = cleaned.match(/^(\d{1,2}):(\d{2})$/);
-  if (m24) {
-    const h = parseInt(m24[1]!, 10);
-    const min = parseInt(m24[2]!, 10);
-    return `${h.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`;
-  }
-  return "07:00";
+/** "7:00 AM" | "07:00" → "07:00" — invalid clocks fall back to `fallback`. */
+export function normalizeTo24h(t: string, fallback = "07:00"): string {
+  return validateAndNormalizeTime(t, { fallback }).time;
 }
 
 export function minsToTime24(total: number): string {
@@ -1140,7 +1127,25 @@ export function scheduleRoutineItems(
 ): RoutineScheduleItem[] {
   if (!items.length) return items;
   if (opts.ageGroup === "infant") {
-    return items.map((it) => ({ ...it, time: normalizeTo24h(it.time) }));
+    const normalized = items.map((it) => ({
+      ...it,
+      time: normalizeTo24h(it.time, opts.wakeUpTime),
+    }));
+    const sleepMins = parseTimeToMins(normalizeTo24h(opts.sleepTime, "21:00"));
+    const wakeMins = parseTimeToMins(normalizeTo24h(opts.wakeUpTime, "07:00"));
+    const sleepIdx = normalized.findIndex((it) => isSleepItem(it));
+    if (sleepIdx >= 0) {
+      normalized[sleepIdx] = {
+        ...normalized[sleepIdx]!,
+        time: minsToTime24(sleepMins),
+      };
+    }
+    return normalized
+      .filter((it) => {
+        if (isSleepItem(it)) return true;
+        return parseTimeToMins(it.time) < sleepMins;
+      })
+      .sort((a, b) => parseTimeToMins(a.time) - parseTimeToMins(b.time));
   }
 
   const bounds = computeDayBounds(opts.wakeUpTime, opts.sleepTime);

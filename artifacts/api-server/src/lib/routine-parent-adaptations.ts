@@ -3,6 +3,7 @@
  */
 import {
   formatParentRoutineExplanation,
+  isInternalAdaptationToken,
   type ParentExplanationContext,
 } from "@workspace/explainability";
 import type { DifficultyAdjustment } from "./routine-adaptive-difficulty.js";
@@ -53,7 +54,8 @@ export function parentFriendlyFixedActivityLines(
     lines.push(debug.summaryMessage.trim());
   }
   for (const adj of debug.adjustmentsMade) {
-    if (adj.trim()) lines.push(adj.trim());
+    const t = adj.trim();
+    if (t && !isInternalAdaptationToken(t)) lines.push(t);
   }
   for (const shift of debug.shiftsApplied) {
     const detail = `${shift.activity}: ${shift.reason}`.trim();

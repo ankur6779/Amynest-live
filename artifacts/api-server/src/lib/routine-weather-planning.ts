@@ -32,12 +32,24 @@ import {
 } from "./routine-health-copy.js";
 import { dropUnderMinOutdoorSport } from "./routine-output-polish.js";
 import {
+  attachActivityMetadata,
+  getActivityMetadata,
+  isCalmAfternoonSuitable,
+  isHotAfternoonActiveBlock,
+  isOutdoorActivity,
+  isWeatherSensitiveActivity,
+  metadataForPresetId,
+  pickCalmHotAfternoonPreset,
+} from "./routine-activity-metadata.js";
+import {
   clampDurationForCategory,
   parseTimeToMins,
   minsToTime24,
   isSleepItem,
   type RoutineScheduleItem,
 } from "./routine-scheduler.js";
+
+export { isHotAfternoonActiveBlock } from "./routine-activity-metadata.js";
 
 export type DayPlanningMode =
   | "normal"
@@ -61,6 +73,34 @@ export function weatherAdjustmentReason(detail: string): string {
 export function isHotAfternoon(clockMins: number): boolean {
   const [start, end] = HOT_AFTERNOON_BLOCK_WINDOW;
   return clockMins >= start && clockMins < end;
+}
+
+function calmHotAfternoonReplacement(
+  item: RoutineScheduleItem,
+  _state: InterpretedBehavioralState,
+  seed: number,
+): RoutineScheduleItemWithDecision {
+  const calm = pickCalmHotAfternoonPreset(seed);
+  const base = attachActivityMetadata(
+    {
+      ...item,
+      activity: calm.activity,
+      category: calm.category,
+      notes: [item.notes, heatAfternoonBlockNote()].filter(Boolean).join(" "),
+      duration: clampDurationForCategory(
+        calm.category,
+        Math.min(item.duration ?? 30, 30),
+      ),
+      structureKind: "indoor_rest",
+    },
+    calm.meta,
+  );
+  return withWeatherDecision(
+    base,
+    heatAfternoonBlockNote(),
+    item.activity,
+    "indoor_rest",
+  );
 }
 
 function isRainyOrIndoorOnly(ctx: RoutineRawContext): boolean {
@@ -152,29 +192,14 @@ const COZY_RE = /\b(cozy|warm-up indoors|indoor warm)\b/i;
 const AIR_SAFE_RE = /\b(air-safe|breathing-safe)\b/i;
 const BOARD_GAMES_RE = /\b(board games|indoor exercise circuit)\b/i;
 
-function isOutdoorItem(item: RoutineScheduleItem): boolean {
-  const cat = (item.category ?? "").toLowerCase();
-  if (OUTDOOR_CATS.has(cat)) return true;
-  return OUTDOOR_RE.test(item.activity);
-}
-
-function isWeatherSensitive(item: RoutineScheduleItem): boolean {
-  if (isOutdoorItem(item)) return true;
-  const cat = (item.category ?? "").toLowerCase();
-  return cat === "exercise" && EXTRACURRICULAR_RE.test(item.activity);
-}
-
 /** Hot-day reposition — outdoor play and afternoon sports/clubs. */
 function isHotRepositionCandidate(
   item: RoutineScheduleItem,
-  state: InterpretedBehavioralState,
+  _state: InterpretedBehavioralState,
 ): boolean {
-  if (isOutdoorItem(item)) return true;
-  if (!state.blockAfternoonOutdoor) return false;
-  const cat = (item.category ?? "").toLowerCase();
-  if (cat === "exercise" && EXTRACURRICULAR_RE.test(item.activity)) return true;
-  if (!PLAY_CATS.has(cat)) return false;
-  return OUTDOOR_RE.test(item.activity) || /outdoor play|backyard|park/i.test(item.activity);
+  if (isOutdoorActivity(item)) return true;
+  const meta = getActivityMetadata(item);
+  return meta.category === "movement" && meta.intensity === "high";
 }
 
 function withWeatherDecision(
@@ -317,54 +342,73 @@ export function applyWeatherFirstPlanning(
 
   for (const item of items) {
     const mustReplaceIndoor =
-      isWeatherSensitive(item) &&
+      isWeatherSensitiveActivity(item) &&
       (state.replaceOutdoorNotShorten || state.outdoorBlockedByAqi);
 
     if (mustReplaceIndoor) {
-      const swap = state.outdoorBlockedByAqi
-        ? state.preferIndoorHighEnergy
-          ? {
-              activity: "Indoor exercise circuit",
-              category: "exercise",
-              notes: indoorPlayAirNote(),
-            }
-          : {
-              activity: "Indoor air-safe play",
-              category: "creative",
-              notes: indoorPlayAirNote(),
-            }
-        : state.preferIndoorCreative
-          ? {
-              activity: state.labels.indoorCreative,
-              category: "creative",
-              notes: rainSnowIndoorNote(),
-            }
-          : {
-              activity: "Cozy indoor play",
-              category: "creative",
-              notes: rainSnowIndoorNote(),
-            };
+      const inHotAfternoon =
+        state.blockAfternoonOutdoor && isHotAfternoon(parseTimeToMins(item.time));
+      let swapActivity: string;
+      let swapCategory: string;
+      let swapNotes: string;
+      let swapMeta: ReturnType<typeof metadataForPresetId> | undefined;
+
+      if (inHotAfternoon) {
+        const calm = pickCalmHotAfternoonPreset(parseTimeToMins(item.time));
+        swapActivity = calm.activity;
+        swapCategory = calm.category;
+        swapNotes = heatAfternoonBlockNote();
+        swapMeta = calm.meta;
+      } else if (state.outdoorBlockedByAqi) {
+        if (state.preferIndoorHighEnergy) {
+          swapActivity = "Indoor exercise circuit";
+          swapCategory = "exercise";
+          swapMeta = metadataForPresetId("indoor_obstacle") ?? undefined;
+        } else {
+          swapActivity = "Indoor air-safe play";
+          swapCategory = "creative";
+          swapMeta = metadataForPresetId("cozy_indoor") ?? undefined;
+        }
+        swapNotes = indoorPlayAirNote();
+      } else if (state.preferIndoorCreative) {
+        swapActivity = state.labels.indoorCreative;
+        swapCategory = "creative";
+        swapNotes = rainSnowIndoorNote();
+        swapMeta = metadataForPresetId("indoor_creative_play") ?? undefined;
+      } else {
+        swapActivity = "Cozy indoor play";
+        swapCategory = "creative";
+        swapNotes = rainSnowIndoorNote();
+        swapMeta = metadataForPresetId("cozy_indoor") ?? undefined;
+      }
+
       const reasonLabel = state.outdoorBlockedByAqi ? "aqi" : "weather";
       const detail = state.outdoorBlockedByAqi
         ? indoorPlayAirNote()
         : rainSnowIndoorNote();
+      const swapped = attachActivityMetadata(
+        {
+          ...item,
+          activity: swapActivity,
+          category: swapCategory,
+          notes: swapNotes,
+          duration: clampDurationForCategory(
+            swapCategory,
+            item.duration ?? 30,
+          ),
+          structureKind:
+            inHotAfternoon || swapCategory === "exercise"
+              ? "indoor_rest"
+              : "indoor_creative",
+        },
+        swapMeta,
+      );
       out.push(
         withWeatherDecision(
-          {
-            ...item,
-            activity: swap.activity,
-            category: swap.category,
-            notes: swap.notes,
-            duration: clampDurationForCategory(
-              swap.category,
-              item.duration ?? 30,
-            ),
-            structureKind:
-              swap.category === "exercise" ? "indoor_rest" : "indoor_creative",
-          },
-          detail,
+          swapped,
+          inHotAfternoon ? heatAfternoonBlockNote() : detail,
           item.activity,
-          swap.category === "exercise" ? "indoor_rest" : "indoor_creative",
+          inHotAfternoon || swapCategory === "exercise" ? "indoor_rest" : "indoor_creative",
           reasonLabel,
         ),
       );
@@ -372,7 +416,7 @@ export function applyWeatherFirstPlanning(
     }
 
     if (
-      isOutdoorItem(item) &&
+      isOutdoorActivity(item) &&
       state.maxOutdoorDurationFromAqi != null &&
       state.maxOutdoorDurationFromAqi > 0
     ) {
@@ -466,7 +510,7 @@ export function applyWeatherFirstPlanning(
     }
 
     if (
-      isOutdoorItem(item) &&
+      isOutdoorActivity(item) &&
       state.limitOutdoorShortenOnly &&
       state.preferSaferOutdoorActivity
     ) {
@@ -592,7 +636,145 @@ export function applyWeatherFirstPlanning(
     });
   }
 
-  return dropUnderMinOutdoorSport(hydratedOut, state, trace).items;
+  let finalOut = dropUnderMinOutdoorSport(hydratedOut, state, trace).items;
+  finalOut = enforceHotAfternoonActivityPolicy(finalOut, state, trace);
+  return finalOut;
+}
+
+/**
+ * Post-schedule pass: no high-energy play/creative blocks during peak heat (12:00–17:30).
+ * Repositions up to two sessions to morning/evening; remaining afternoon slots become calm rest.
+ */
+export function enforceHotAfternoonActivityPolicy(
+  items: RoutineScheduleItemWithDecision[],
+  state: InterpretedBehavioralState,
+  trace: DecisionTraceEntry[] = [],
+): RoutineScheduleItemWithDecision[] {
+  if (!state.blockAfternoonOutdoor) return items;
+
+  const afternoonActive: RoutineScheduleItemWithDecision[] = [];
+  const kept: RoutineScheduleItemWithDecision[] = [];
+
+  for (const item of items) {
+    const start = parseTimeToMins(item.time);
+    if (isHotAfternoon(start) && isHotAfternoonActiveBlock(item)) {
+      afternoonActive.push(item);
+    } else {
+      kept.push(item);
+    }
+  }
+
+  if (!afternoonActive.length) return items;
+
+  let morningUsed = kept.some((i) => {
+    const start = parseTimeToMins(i.time);
+    return start < HOT_AFTERNOON_BLOCK_WINDOW[0] && isHotAfternoonActiveBlock(i);
+  });
+  let eveningUsed = kept.some((i) => {
+    const start = parseTimeToMins(i.time);
+    return start >= HOT_AFTERNOON_BLOCK_WINDOW[1] && isHotAfternoonActiveBlock(i);
+  });
+
+  const [hotStart] = HOT_AFTERNOON_BLOCK_WINDOW;
+  let calmInserted = kept.some(
+    (i) =>
+      isHotAfternoon(parseTimeToMins(i.time)) &&
+      isCalmAfternoonSuitable(getActivityMetadata(i)),
+  );
+
+  for (let idx = 0; idx < afternoonActive.length; idx++) {
+    const item = afternoonActive[idx]!;
+    if (
+      state.repositionOutdoorToMorningEvening &&
+      !morningUsed &&
+      !/\(morning|evening/i.test(item.activity)
+    ) {
+      const morningClock = morningOutdoorHint(state);
+      const base = item.activity.replace(/\s*\([^)]*\)$/, "").trim();
+      kept.push(
+        withWeatherDecision(
+          attachActivityMetadata(
+            {
+              ...item,
+              time: minsToTime24(morningClock),
+              activity: formatSplitSessionName(base, morningClock),
+              structureKind: "outdoor",
+              notes: [item.notes, heatAfternoonBlockNote()].filter(Boolean).join(" "),
+            },
+            { environment: "outdoor", heatRestricted: false },
+          ),
+          heatAfternoonBlockNote(),
+          item.activity,
+          "outdoor",
+        ),
+      );
+      morningUsed = true;
+      trace.push({
+        kind: "weather",
+        message: weatherAdjustmentReason(
+          `hot afternoon — moved "${item.activity}" to morning`,
+        ),
+        detail: { from: item.time, to: minsToTime24(morningClock) },
+      });
+      continue;
+    }
+
+    if (
+      state.repositionOutdoorToMorningEvening &&
+      !eveningUsed &&
+      !/\(morning|evening/i.test(item.activity)
+    ) {
+      const eveningClock = eveningOutdoorHint(state);
+      const base = item.activity.replace(/\s*\([^)]*\)$/, "").trim();
+      kept.push(
+        withWeatherDecision(
+          attachActivityMetadata(
+            {
+              ...item,
+              time: minsToTime24(eveningClock),
+              activity: formatSplitSessionName(base, eveningClock),
+              structureKind: "outdoor_evening",
+              notes: [item.notes, heatEveningOnlyNote()].filter(Boolean).join(" "),
+            },
+            { environment: "outdoor", heatRestricted: false },
+          ),
+          heatEveningOnlyNote(),
+          item.activity,
+          "outdoor_evening",
+        ),
+      );
+      eveningUsed = true;
+      trace.push({
+        kind: "weather",
+        message: weatherAdjustmentReason(
+          `hot afternoon — moved "${item.activity}" to evening`,
+        ),
+        detail: { from: item.time, to: minsToTime24(eveningClock) },
+      });
+      continue;
+    }
+
+    if (!calmInserted) {
+      kept.push(
+        calmHotAfternoonReplacement(
+          { ...item, time: minsToTime24(hotStart + 60) },
+          state,
+          idx,
+        ),
+      );
+      calmInserted = true;
+      trace.push({
+        kind: "weather",
+        message: weatherAdjustmentReason(
+          `hot afternoon — replaced "${item.activity}" with calm indoor rest`,
+        ),
+      });
+    }
+  }
+
+  return [...kept].sort(
+    (a, b) => parseTimeToMins(a.time) - parseTimeToMins(b.time),
+  );
 }
 
 /**
@@ -605,7 +787,7 @@ export function repositionOutdoorSessions(
   if (!state.repositionOutdoorToMorningEvening) return items;
 
   const result: RoutineScheduleItemWithDecision[] = [];
-  let splitDone = items.some((i) => /\(morning\)|\(evening\)/i.test(i.activity));
+  let splitDone = items.some((i) => /\(morning|evening/i.test(i.activity));
 
   for (const item of items) {
     if (
@@ -640,7 +822,7 @@ export function enforceOutdoorTimeGuards(
 ): RoutineScheduleItem[] {
   return items.map((it) => {
     const needsGuard =
-      isOutdoorItem(it) ||
+      isOutdoorActivity(it) ||
       (state.blockAfternoonOutdoor &&
         (it.category ?? "").toLowerCase() === "exercise" &&
         EXTRACURRICULAR_RE.test(it.activity));

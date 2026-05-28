@@ -28,6 +28,11 @@ describe("normalizeTo24h / parseTimeToMins", () => {
     assert.equal(parseTimeToMins("07:30"), 450);
     assert.equal(parseTimeToMins("22:15"), 1335);
   });
+
+  it("rejects invalid clocks via fallback", () => {
+    assert.equal(normalizeTo24h("25:99"), "07:00");
+    assert.equal(normalizeTo24h("abc", "21:00"), "21:00");
+  });
 });
 
 describe("computeDayBounds cross-midnight", () => {

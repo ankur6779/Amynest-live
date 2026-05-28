@@ -27,6 +27,7 @@ import {
   WIND_DOWN_SLEEP_GAP_MIN,
 } from "./routine-realism-polish.js";
 import { enforceSleepIsLast } from "./routine-weather-planning.js";
+import { resolveScheduleConflicts } from "./routine-schedule-conflicts.js";
 import {
   clampDurationForCategory,
   isLockedScheduleItem,
@@ -1307,6 +1308,18 @@ export function enforceFinalTimelineIntegrity(
   const sleepBoundary = enforceSleepBoundary(working, opts.sleepMins, opts.wakeMins);
   working = sleepBoundary.items;
   allAdjustments.push(...sleepBoundary.adjustments);
+
+  const conflictPass = resolveScheduleConflicts(working, {
+    wakeMins: opts.wakeMins,
+    sleepMins: opts.sleepMins,
+    country: opts.country,
+    eventStartMins: opts.eventStartMins,
+  });
+  working = conflictPass.items;
+  allAdjustments.push(...conflictPass.resolutions);
+  if (conflictPass.warnings.length) {
+    warnings.push(...conflictPass.warnings.filter((w) => w.startsWith("unresolved:")));
+  }
 
   const overlapPass = resolveOverlapsByPriority(working, opts.sleepMins);
   working = overlapPass.items;

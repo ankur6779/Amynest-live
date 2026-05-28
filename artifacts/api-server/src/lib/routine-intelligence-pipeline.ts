@@ -21,8 +21,26 @@ import {
   totalDurationDriftPct,
   type DifficultyAdjustment,
 } from "./routine-adaptive-difficulty.js";
+import { enrichItemsWithActivityMetadata } from "./routine-activity-metadata.js";
 import { applyCulturalModeling, type CulturalModelingChange } from "./routine-cultural-modeling.js";
-import { attachExplainabilityMetadata } from "./routine-explainability.js";
+import {
+  attachExplainabilityMetadata,
+  refreshExplainabilityMetadata,
+} from "./routine-explainability.js";
+import {
+  buildRoutineProductionDiagnostics,
+  persistRoutinePersonalizationMemory,
+  runAdaptiveCompletionPass,
+  type AdaptiveCompletionSummary,
+  type RoutineProductionDiagnostics,
+} from "./routine-adaptive-completion.js";
+import {
+  finalizeFamilyIntelligenceMoat,
+  prepareFamilyIntelligenceInput,
+  type FamilyIntelligenceMoatResult,
+} from "./routine-family-intelligence-moat.js";
+import { weekRotationSeed } from "./routine-deterministic-seed.js";
+import { deriveIntelligenceTier } from "./routine-parent-intelligence.js";
 import {
   applyWeatherToScheduledItems,
   reshapeItemsForContext,
@@ -36,8 +54,13 @@ import { polishRoutineOutput } from "./routine-output-polish.js";
 import { enforceSleepIsLast } from "./routine-weather-planning.js";
 import { applyRoutineRealismPolish } from "./routine-realism-polish.js";
 import { applyRoutineOptimizationEngine, applyDecisionEnforcedFinalPass } from "./routine-optimization-engine.js";
+import { adaptRoutineForEmotion } from "./routine-emotional-pacing.js";
+import { applyDailyLoadBalancing } from "./routine-daily-load.js";
 import { enforceEnergyCurve } from "./routine-category-taxonomy.js";
-import { enforceFinalTimelineIntegrity } from "./routine-final-integrity.js";
+import {
+  enforceFinalTimelineIntegrity,
+  enforceSleepBoundary,
+} from "./routine-final-integrity.js";
 import { runTieredValidation } from "./routine-validation-tiers.js";
 import { finalizeMealStructure } from "./routine-meal-day-type.js";
 import { resolveIsSchoolDay } from "./routine-meal-day-type.js";
@@ -132,10 +155,14 @@ export type IntelligencePipelineInput = {
   subCuisine?: string | null;
 };
 
+export type IntelligenceTier = "full" | "simplified" | "baseline";
+
 export type IntelligencePipelineResult = {
   items: RoutineScheduleItem[];
   validated: boolean;
   reverted: boolean;
+  /** How much multi-day personalization was applied (parent-facing). */
+  intelligenceTier: IntelligenceTier;
   behaviorSignature: ChildBehaviorSignature;
   state: InterpretedBehavioralState;
   difficultyAdjustments: DifficultyAdjustment[];
@@ -150,6 +177,12 @@ export type IntelligencePipelineResult = {
   parsedSpecialEvents: ParsedSpecialEvent[];
   fixedActivities: FixedActivitiesDebug;
   parsedFixedActivities: ReturnType<typeof parseFixedActivitiesForDate>["activities"];
+  /** Multi-day continuity + freshness + autonomy summary. */
+  adaptiveCompletion?: AdaptiveCompletionSummary;
+  /** Production readiness signals for QA and observability. */
+  productionDiagnostics?: RoutineProductionDiagnostics;
+  /** Long-horizon family intelligence moat (trajectory + insights). */
+  familyIntelligence?: FamilyIntelligenceMoatResult;
 };
 
 function pipelineDebug(enabled: boolean | undefined, log: string[], msg: string, data?: unknown): void {
@@ -207,16 +240,45 @@ export function runRoutineIntelligencePipeline(
 ): IntelligencePipelineResult {
   const debugLog: string[] = [];
   const decisionTrace: DecisionTraceEntry[] = [];
-  const { scheduleOpts, builtContext, childProfile, debug } = input;
+  const { scheduleOpts, childProfile, debug } = input;
+
+  const routineDate =
+    input.routineDate ??
+    input.builtContext.referenceDate?.toISOString().slice(0, 10) ??
+    new Date().toISOString().slice(0, 10);
+
+  const historyForMoat =
+    input.behaviorHistory ??
+    buildHistoryFromOutcomeStore(
+      input.childId,
+      input.builtContext.previousDayContext,
+    );
+
+  const moatPrep = prepareFamilyIntelligenceInput({
+    childId: input.childId,
+    routineDate,
+    builtContext: input.builtContext,
+    history: historyForMoat,
+  });
+  const builtContext = moatPrep.enrichedContext;
 
   const history =
     input.behaviorHistory ??
     buildHistoryFromOutcomeStore(input.childId, builtContext.previousDayContext);
+  if (moatPrep.applied) {
+    pipelineDebug(debug, debugLog, "familyIntelligencePrepare", {
+      trustScore: moatPrep.profile?.trustScore,
+      hints: moatPrep.profile?.predictiveHints,
+    });
+  }
 
   const behaviorSignature = deriveChildBehaviorSignature(childProfile, history);
   pipelineDebug(debug, debugLog, "behaviorSignature", behaviorSignature);
 
-  const state = deriveBehavioralState(builtContext, childProfile);
+  let state = deriveBehavioralState(builtContext, childProfile);
+  if (moatPrep.profile?.predictiveHints.suggestReduceStudy) {
+    state = { ...state, reduceStudyBlocks: true };
+  }
   pipelineDebug(debug, debugLog, "interpretedState", {
     country: state.country,
     dayType: state.dayType,
@@ -233,10 +295,6 @@ export function runRoutineIntelligencePipeline(
     sleepMins: sleepMinsEarly,
   });
 
-  const routineDate =
-    input.routineDate ??
-    builtContext.referenceDate?.toISOString().slice(0, 10) ??
-    new Date().toISOString().slice(0, 10);
   const fixedParse = parseFixedActivitiesForDate(input.fixedActivities, routineDate);
 
   if (isExclusiveInfantPhase(ageInMonthsEarly)) {
@@ -270,6 +328,7 @@ export function runRoutineIntelligencePipeline(
       difficultyAdjustments: [],
       culturalChanges: [],
     });
+    infantItems = enforceSleepBoundary(infantItems, sleepMins, wakeMins).items;
     const hard = hardValidateSchedule(infantItems, wake, sleep);
     const ageWarnings = validateAgeFeedingIntegration(infantItems, "infant_0_6");
     pipelineDebug(debug, debugLog, "infant_0_6_exclusive_path", {
@@ -280,6 +339,7 @@ export function runRoutineIntelligencePipeline(
       items: infantItems,
       validated: hard.valid && ageWarnings.length === 0,
       reverted: false,
+      intelligenceTier: "baseline",
       behaviorSignature,
       state,
       difficultyAdjustments: [],
@@ -326,7 +386,12 @@ export function runRoutineIntelligencePipeline(
           ? { count: 2, severity: "moderate" }
           : undefined,
     });
-    const infantItems = validated.result.items;
+    let infantItems = validated.result.items;
+    infantItems = enforceSleepBoundary(
+      infantItems,
+      parseTimeToMins(sleep),
+      parseTimeToMins(wake),
+    ).items;
     const hard = hardValidateSchedule(infantItems, wake, sleep);
     const auditPassed = validated.finalAudit.allPassed;
     pipelineDebug(debug, debugLog, "infant_adaptive_validated_path", {
@@ -339,6 +404,7 @@ export function runRoutineIntelligencePipeline(
       items: infantItems,
       validated: auditPassed,
       reverted: false,
+      intelligenceTier: "baseline",
       behaviorSignature,
       state,
       difficultyAdjustments: [],
@@ -361,10 +427,12 @@ export function runRoutineIntelligencePipeline(
     };
   }
 
-  let items = cloneItems(input.items).map((it) => ({
-    ...it,
-    time: normalizeTo24h(it.time),
-  }));
+  let items = enrichItemsWithActivityMetadata(
+    cloneItems(input.items).map((it) => ({
+      ...it,
+      time: normalizeTo24h(it.time),
+    })),
+  );
 
   if (specialParse.events.length > 0) {
     items = injectSpecialEventBlocks(items, specialParse.events, {
@@ -714,6 +782,123 @@ export function runRoutineIntelligencePipeline(
       input.builtContext.environment?.condition ?? "",
     ) || input.builtContext.weatherOutdoor === "no";
 
+  const weekSeed = weekRotationSeed(routineDate);
+  const completionSeed =
+    (input.childId?.length ?? 0) +
+    (input.mealSeed ?? 0) +
+    wakeMinsEarly +
+    weekSeed +
+    17;
+
+  const emotionPass = adaptRoutineForEmotion(polished, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+    mood: builtContext.mood,
+    moodScore: history.previousDayContext?.moodScore,
+    previousMoodScore: builtContext.previousDayContext?.moodScore,
+    sleepQuality:
+      builtContext.previousDayContext?.sleepQuality ??
+      history.previousDayContext?.sleepQuality,
+    ageGroup: scheduleOpts.ageGroup,
+    energyLevel: state.energyLevel,
+    dayType: state.dayType,
+    rainMode,
+    seed:
+      (input.childId?.length ?? 0) +
+      (input.mealSeed ?? 0) +
+      sleepMinsEarly +
+      weekSeed +
+      17,
+  });
+  polished = emotionPass.items;
+  if (emotionPass.adjustments.length) {
+    pipelineDebug(debug, debugLog, "emotionalPacing", {
+      state: emotionPass.profile.state,
+      flow: emotionPass.profile.flowPattern,
+      guidance: emotionPass.profile.parentGuidance,
+      adjustments: emotionPass.adjustments,
+    });
+    fixedParse.debug.adjustmentsMade.push(
+      ...emotionPass.adjustments.slice(0, 8).map(
+        (a) => `emotion(${a.state}): ${a.change}`,
+      ),
+    );
+    polished = resolveTimelineOverlaps(
+      polished,
+      wakeMinsEarly,
+      sleepMinsEarly,
+    );
+  }
+
+  const completionPass = runAdaptiveCompletionPass(polished, {
+    childId: input.childId,
+    routineDate,
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+    ageGroup: scheduleOpts.ageGroup,
+    state,
+    history,
+    schoolEndMins: scheduleOpts.schoolEndMins,
+    hasSchool: scheduleOpts.hasSchool,
+    seed: completionSeed + 203,
+  });
+  polished = completionPass.items;
+  const adaptiveCompletion = completionPass.summary;
+  const completionAdjustments =
+    adaptiveCompletion.continuityAdjustments.length +
+    adaptiveCompletion.freshnessAdjustments.length +
+    adaptiveCompletion.autonomyAdjustments.length;
+  if (completionAdjustments > 0) {
+    pipelineDebug(debug, debugLog, "adaptiveCompletion", adaptiveCompletion);
+    fixedParse.debug.adjustmentsMade.push(
+      ...[
+        ...adaptiveCompletion.continuityAdjustments,
+        ...adaptiveCompletion.freshnessAdjustments,
+        ...adaptiveCompletion.autonomyAdjustments,
+      ].slice(0, 8),
+    );
+    polished = resolveTimelineOverlaps(
+      polished,
+      wakeMinsEarly,
+      sleepMinsEarly,
+    );
+  }
+
+  const loadBalance = applyDailyLoadBalancing(polished, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+    ageGroup: scheduleOpts.ageGroup,
+    energyLevel: state.energyLevel,
+    dayType: state.dayType,
+    sleepQuality:
+      builtContext.previousDayContext?.sleepQuality ??
+      history.previousDayContext?.sleepQuality,
+    mood: builtContext.mood,
+    reduceStudyBlocks: state.reduceStudyBlocks,
+    rainMode,
+    seed:
+      (input.childId?.length ?? 0) +
+      (input.mealSeed ?? 0) +
+      wakeMinsEarly,
+  });
+  polished = loadBalance.items;
+  if (loadBalance.adjustments.length) {
+    pipelineDebug(debug, debugLog, "dailyLoadBalancing", {
+      before: loadBalance.profile.balanceScore,
+      after: loadBalance.profileAfter.balanceScore,
+      issues: loadBalance.profile.issues.map((i) => i.message),
+      adjustments: loadBalance.adjustments,
+    });
+    fixedParse.debug.adjustmentsMade.push(
+      ...loadBalance.adjustments.slice(0, 8),
+    );
+    polished = resolveTimelineOverlaps(
+      polished,
+      wakeMinsEarly,
+      sleepMinsEarly,
+    );
+  }
+
   const energyCurve = enforceEnergyCurve(polished, { rainMode });
   polished = energyCurve.items;
   if (energyCurve.adjustments.length) {
@@ -838,10 +1023,72 @@ export function runRoutineIntelligencePipeline(
     pipelineDebug(debug, debugLog, "decisionEnforcedFinal", finalEnforcement.adaptations);
   }
 
+  polished = refreshExplainabilityMetadata(polished, {
+    signature: behaviorSignature,
+    state,
+    difficultyAdjustments,
+    culturalChanges,
+  });
+
+  if (input.childId) {
+    persistRoutinePersonalizationMemory({
+      childId: input.childId,
+      routineDate,
+      items: polished,
+    });
+  }
+
+  const adjustmentCount = fixedParse.debug.adjustmentsMade.length;
+  const warningCount =
+    validated.errors.length +
+    specialEvent.validationWarnings.length +
+    fixedActivities.validationWarnings.length;
+
+  const productionDiagnostics = buildRoutineProductionDiagnostics({
+    itemCount: polished.length,
+    validated: validated.valid,
+    reverted,
+    confidence,
+    emotionalProfile: emotionPass.profile,
+    loadProfileBefore: loadBalance.profile,
+    loadProfileAfter: loadBalance.profileAfter,
+    completion: adaptiveCompletion,
+    adjustmentCount,
+    warningCount,
+    country: state.country,
+    dayType: state.dayType,
+  });
+  pipelineDebug(debug, debugLog, "productionDiagnostics", productionDiagnostics);
+
+  const intelligenceTier = deriveIntelligenceTier({
+    reverted,
+    childId: input.childId,
+    snapshotCount: moatPrep.profile?.memory.snapshotCount ?? 0,
+    infantExclusive: isExclusiveInfantPhase(ageInMonthsEarly),
+  });
+
+  let familyIntelligence: FamilyIntelligenceMoatResult | undefined;
+  if (input.childId && moatPrep.profile) {
+    familyIntelligence = finalizeFamilyIntelligenceMoat({
+      childId: input.childId,
+      routineDate,
+      profile: moatPrep.profile,
+      items: polished,
+      productionDiagnostics,
+      adaptiveCompletion,
+      emotionalProfile: emotionPass.profile,
+    });
+    pipelineDebug(debug, debugLog, "familyIntelligenceFinalize", {
+      trustScore: familyIntelligence.profile.trustScore,
+      insightCount: familyIntelligence.insights.length,
+    });
+  }
+
   return {
     items: polished,
     validated: validated.valid,
     reverted,
+    intelligenceTier,
     behaviorSignature,
     state,
     difficultyAdjustments,
@@ -859,5 +1106,8 @@ export function runRoutineIntelligencePipeline(
     parsedSpecialEvents: specialParse.events,
     fixedActivities,
     parsedFixedActivities: fixedParse.activities,
+    adaptiveCompletion,
+    productionDiagnostics,
+    familyIntelligence,
   };
 }

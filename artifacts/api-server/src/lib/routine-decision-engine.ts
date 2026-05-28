@@ -32,9 +32,16 @@ import {
   aqiOutdoorLimitNote,
   MIN_OUTDOOR_SPORT_MINS,
 } from "./routine-health-copy.js";
+import {
+  attachActivityMetadata,
+  isOutdoorActivity,
+  isWeatherSensitiveActivity,
+  metadataForPresetId,
+} from "./routine-activity-metadata.js";
 import { polishRoutineOutput } from "./routine-output-polish.js";
 import {
   applyWeatherFirstPlanning,
+  enforceHotAfternoonActivityPolicy,
   enforceOutdoorTimeGuards,
   enforceSleepIsLast,
   repositionOutdoorSessions,
@@ -69,6 +76,16 @@ export type ScheduleDecisionMeta = {
 
 export type { DecisionTraceEntry, RoutineScheduleItemWithDecision } from "./routine-priority-engine.js";
 export { allocatePrioritySlots, injectCulturalBlocks } from "./routine-priority-engine.js";
+export {
+  type ActivityMetadata,
+  attachActivityMetadata,
+  enrichItemsWithActivityMetadata,
+  getActivityMetadata,
+  inferActivityMetadata,
+  isHotAfternoonActiveBlock,
+  isOutdoorActivity,
+  isWeatherSensitiveActivity,
+} from "./routine-activity-metadata.js";
 
 /** Default 09:00–15:00 school window when callers set hasSchool but omit clock bounds. */
 export function withDefaultSchoolScheduleOpts(
@@ -121,19 +138,6 @@ const INDOOR_CALM: Array<{ activity: string; category: string; notes: string }> 
     notes: "Calm indoor option — drawing, puzzles, or building blocks.",
   },
 ];
-
-function isOutdoorItem(item: RoutineScheduleItem): boolean {
-  const cat = (item.category ?? "").toLowerCase();
-  if (OUTDOOR_CATS.has(cat)) return true;
-  return OUTDOOR_RE.test(item.activity);
-}
-
-/** Outdoor blocks plus sports/clubs that cannot run in rain/snow. */
-function isWeatherSensitiveActivity(item: RoutineScheduleItem): boolean {
-  if (isOutdoorItem(item)) return true;
-  const cat = (item.category ?? "").toLowerCase();
-  return cat === "exercise" && EXTRACURRICULAR_RE.test(item.activity);
-}
 
 function withDecision(
   item: RoutineScheduleItem,
@@ -278,18 +282,26 @@ function transformActivitiesForState(
             }
           : INDOOR_CALM[0]!;
       const useCreative = state.preferIndoorCreative && !state.preferIndoorHighEnergy;
+      const swapMeta = state.preferIndoorHighEnergy
+        ? metadataForPresetId("indoor_obstacle")
+        : useCreative
+          ? metadataForPresetId("indoor_creative_play")
+          : metadataForPresetId("quiet_puzzles");
       next = withDecision(
-        {
-          ...item,
-          activity: swap.activity,
-          category: swap.category,
-          notes: swap.notes,
-          duration: clampDurationForCategory(
-            swap.category,
-            Math.round((item.duration ?? 30) * state.playDurationFactor),
-          ),
-          structureKind: useCreative ? "indoor_creative" : "indoor_rest",
-        },
+        attachActivityMetadata(
+          {
+            ...item,
+            activity: swap.activity,
+            category: swap.category,
+            notes: swap.notes,
+            duration: clampDurationForCategory(
+              swap.category,
+              Math.round((item.duration ?? 30) * state.playDurationFactor),
+            ),
+            structureKind: useCreative ? "indoor_creative" : "indoor_rest",
+          },
+          swapMeta ?? undefined,
+        ),
         state.preferIndoorHighEnergy
           ? weatherAdjustmentReason("indoor high-energy swap — outdoor blocked")
           : useCreative
@@ -317,7 +329,7 @@ function transformActivitiesForState(
     } else if (
       state.maxOutdoorDurationFromAqi != null &&
       state.maxOutdoorDurationFromAqi > 0 &&
-      isOutdoorItem(item)
+      isOutdoorActivity(item)
     ) {
       if (
         state.maxOutdoorDurationFromAqi < MIN_OUTDOOR_SPORT_MINS &&
@@ -346,7 +358,7 @@ function transformActivitiesForState(
       !state.replaceOutdoorNotShorten &&
       !state.outdoorBlockedByAqi &&
       state.environmentConstraintLevel === "medium" &&
-      isOutdoorItem(item) &&
+      isOutdoorActivity(item) &&
       !state.preferSaferOutdoorActivity
     ) {
       const dur = clampDurationForCategory(
@@ -370,7 +382,7 @@ function transformActivitiesForState(
     } else if (
       state.allowOutdoor &&
       state.preferSaferOutdoorActivity &&
-      isOutdoorItem(item) &&
+      isOutdoorActivity(item) &&
       !/\bwind-safe|sheltered\b/i.test(item.activity)
     ) {
       next = withDecision(
@@ -461,6 +473,7 @@ export function applyWeatherToScheduledItems(
     items.map((it) => ({ ...it })) as RoutineScheduleItemWithDecision[],
     state,
   );
+  next = enforceHotAfternoonActivityPolicy(next, state, trace);
   next = enforceOutdoorTimeGuards(next, state, trace) as RoutineScheduleItemWithDecision[];
   next = enforceSleepIsLast(next, trace) as RoutineScheduleItemWithDecision[];
   next = polishRoutineOutput(next, state, trace) as RoutineScheduleItemWithDecision[];
@@ -704,7 +717,7 @@ export function validateActivityOrdering(
 
   if (preDinnerActive.has(state.country)) {
     for (const it of items) {
-      if (!EXTRACURRICULAR_RE.test(it.activity) && !isOutdoorItem(it)) continue;
+      if (!EXTRACURRICULAR_RE.test(it.activity) && !isOutdoorActivity(it)) continue;
       const end = parseTimeToMins(it.time) + (it.duration ?? 30);
       if (end > dinnerStart + 5) {
         warnings.push(
@@ -716,7 +729,7 @@ export function validateActivityOrdering(
 
   if (state.country === "AE") {
     for (const it of items) {
-      if (!isOutdoorItem(it)) continue;
+      if (!isOutdoorActivity(it)) continue;
       const start = parseTimeToMins(it.time);
       if (isOutdoorBlockedByHeat(start, "AE")) {
         warnings.push(
@@ -741,7 +754,7 @@ export function validateAgainstCountryProfile(
   const [, sleepEnd] = profile.sleepWindow;
 
   const playAfterSleep = items.filter((it) => {
-    if (!PLAY_CATS.has((it.category ?? "").toLowerCase()) && !isOutdoorItem(it)) {
+    if (!PLAY_CATS.has((it.category ?? "").toLowerCase()) && !isOutdoorActivity(it)) {
       return false;
     }
     const start = parseTimeToMins(it.time);
@@ -760,7 +773,7 @@ export function validateAgainstCountryProfile(
   }
 
   if (state.requireOutdoorBlock && state.allowOutdoor) {
-    const outdoor = items.filter((i) => isOutdoorItem(i) || i.category === "outdoor");
+    const outdoor = items.filter((i) => isOutdoorActivity(i) || i.category === "outdoor");
     if (outdoor.length === 0) {
       warnings.push(
         `cultural: no outdoor block despite ${profile.country} outdoor preference`,
@@ -781,7 +794,7 @@ export function validateAgainstCountryProfile(
     (i) =>
       i.culturalTag != null ||
       EXTRACURRICULAR_RE.test(i.activity) ||
-      (state.allowOutdoor && isOutdoorItem(i)) ||
+      (state.allowOutdoor && isOutdoorActivity(i)) ||
       hasMatching([i], INDEPENDENCE_RE),
   );
   if (!hasCulturalBlock) {

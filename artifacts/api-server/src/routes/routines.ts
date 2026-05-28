@@ -72,6 +72,7 @@ import {
   parentFriendlyFixedActivityLines,
   parentFriendlySpecialEventLines,
 } from "../lib/routine-parent-adaptations.js";
+import { buildParentIntelligenceAdaptations } from "../lib/routine-parent-intelligence.js";
 import type { ParentExplanationContext } from "@workspace/explainability";
 import { normalizeTo24h } from "../lib/routine-scheduler.js";
 import { type CaregiverKey, type WeatherOutdoor, applyWeatherAdjustment } from "@workspace/family-routine";
@@ -1392,12 +1393,16 @@ function runIntelligencePipelineOnItems(params: {
   const explCtx = parentExplanationCtx(params.resolvedInputs, params.isWeekendDay);
   const pipelineAdaptations = finalizeParentAdaptations(
     [
+      ...buildParentIntelligenceAdaptations({
+        familyIntelligence: intelligenceResult.familyIntelligence,
+        adaptiveCompletion: intelligenceResult.adaptiveCompletion,
+        reverted: intelligenceResult.reverted,
+        childId: params.childId,
+        intelligenceTier: intelligenceResult.intelligenceTier,
+      }),
       ...parentFriendlyDifficultyLines(intelligenceResult.difficultyAdjustments),
       ...parentFriendlySpecialEventLines(specialEvent),
       ...parentFriendlyFixedActivityLines(fixedActivities, params.childName),
-      ...(intelligenceResult.reverted
-        ? ["Schedule was simplified to keep today's plan safe and realistic."]
-        : []),
     ],
     explCtx,
   );

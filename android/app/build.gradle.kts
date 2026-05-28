@@ -37,8 +37,8 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 74
-        versionName = "1.4.31"
+        versionCode = 75
+        versionName = "1.4.32"
         resValue(
             "string",
             "facebook_client_token",
@@ -97,6 +97,10 @@ android {
     }
 
     packaging {
+        jniLibs {
+            // AGP 8.5.1+ zip-aligns uncompressed .so at 16 KB for Play 16 KB page-size devices.
+            useLegacyPackaging = false
+        }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
@@ -119,9 +123,20 @@ tasks.register<Zip>("packageReleaseNativeDebugSymbols") {
     )
 }
 
+tasks.register<Copy>("copyReleaseArtifacts") {
+    group = "release"
+    description = "Copy signed AAB to android/releases/ for Play upload"
+    dependsOn("bundleRelease")
+    val versionCode = android.defaultConfig.versionCode
+    val versionName = android.defaultConfig.versionName
+    from(layout.buildDirectory.file("outputs/bundle/release/app-release.aab"))
+    into(rootProject.layout.projectDirectory.dir("releases"))
+    rename { "amynest-$versionName-$versionCode.aab" }
+}
+
 afterEvaluate {
     tasks.named("bundleRelease") {
-        finalizedBy("packageReleaseNativeDebugSymbols")
+        finalizedBy("packageReleaseNativeDebugSymbols", "copyReleaseArtifacts")
         dependsOn("validateGoogleSignInConfig", "validateFacebookLoginConfig")
     }
 }
@@ -161,18 +176,18 @@ dependencies {
 
     // Google Play Billing via RevenueCat. Handles purchase verification and
     // subscription state through the backend RevenueCat webhook.
-    implementation("com.revenuecat.purchases:purchases:8.19.2")
-    implementation("com.revenuecat.purchases:purchases-ui:8.19.2")
+    implementation("com.revenuecat.purchases:purchases:8.20.0")
+    implementation("com.revenuecat.purchases:purchases-ui:8.20.0")
 
     // Firebase BOM — keeps all Firebase versions aligned
-    implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-messaging-ktx")
 
     // Native Google Sign-In (AuthBridge → Firebase idToken on web layer)
     implementation("com.google.android.gms:play-services-auth:21.2.0")
 
     // Native Facebook Login (AuthBridge → Firebase access token on web layer)
-    implementation("com.facebook.android:facebook-login:17.0.2")
+    implementation("com.facebook.android:facebook-login:18.0.3")
 
     // JSON parsing for the message bus
     implementation("org.json:json:20240303")
