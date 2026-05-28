@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -15,9 +15,14 @@ import {
   Sparkles,
 } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
+import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { audioManager } from "@/lib/audio-manager";
+import { scheduleLearningZoneAudioPrewarm } from "@/lib/learning-zone-audio-prewarm";
 import { readResolvedApiJson } from "@/lib/poll-result";
+import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
 import { cn } from "@/lib/utils";
 
 type TutorAction = "start" | "answer" | "repeat" | "next_content";
@@ -61,10 +66,28 @@ const MODE_LABEL: Record<TeachingMode, string> = {
   correct: "Guide",
 };
 
+const TUTOR_WARM_PHRASES = [
+  "Great job!",
+  "Let's try again.",
+  "Correct! Well done!",
+  "Well done!",
+  "Let's learn together!",
+];
+
+function tutorSpeakOpts(text: string) {
+  const trimmed = text.trim();
+  return {
+    catalogPlayback: true as const,
+    staticCatalogTexts: trimmed ? [trimmed] : [],
+  };
+}
+
 export default function AmyLearningTutorPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const authFetch = useAuthFetch();
+  const { speak, pause, primeSpeakGesture, speaking, loading: voiceLoading, activePhrase } =
+    useAmyVoice();
 
   const [sessionStarted, setSessionStarted] = useState(false);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
@@ -76,7 +99,6 @@ export default function AmyLearningTutorPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const { data: childrenData } = useQuery<ChildRow[]>({
     queryKey: ["children-for-amy-learning-tutor"],
@@ -89,27 +111,60 @@ export default function AmyLearningTutorPage() {
   const primaryChild =
     Array.isArray(childrenData) && childrenData.length > 0 ? childrenData[0] : null;
 
+  const tutorPrewarmStateKey = useMemo(
+    () => (primaryChild?.id ? `learn_with_amy:${primaryChild.id}` : undefined),
+    [primaryChild?.id],
+  );
+
+  const scheduleTutorAudioPrewarm = useCallback(
+    (texts: string[]) => {
+      if (!tutorPrewarmStateKey || texts.length === 0) return;
+      scheduleLearningZoneAudioPrewarm(authFetch, {
+        module: "learn_with_amy",
+        texts,
+        stateKey: tutorPrewarmStateKey,
+        ageGroup: primaryChild?.age ?? undefined,
+      });
+    },
+    [authFetch, primaryChild?.age, tutorPrewarmStateKey],
+  );
+
+  useEffect(() => {
+    scheduleTutorAudioPrewarm(TUTOR_WARM_PHRASES);
+  }, [scheduleTutorAudioPrewarm]);
+
   useEffect(() => {
     requestAnimationFrame(() => {
       bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     });
   }, [turns, loading, pending]);
 
-  const playVoice = (url?: string) => {
-    if (!url || typeof window === "undefined") return;
-    try {
-      if (audioRef.current) {
-        audioRef.current.pause();
+  const playTutorMessage = useCallback(
+    (message: string) => {
+      const text = message.trim();
+      if (!text) return;
+      const opts = tutorSpeakOpts(text);
+      if (activePhrase === text.toLowerCase() && (speaking || voiceLoading)) {
+        pause();
+        return;
       }
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      void audio.play().catch(() => {
-        /* autoplay blocked — user can tap again */
-      });
-    } catch {
-      /* ignore playback errors */
-    }
-  };
+      void speak(text, opts);
+    },
+    [activePhrase, pause, speak, speaking, voiceLoading],
+  );
+
+  const primeTutorAudioGesture = useCallback(
+    (message?: string) => {
+      audioManager.unlockFromUserGesture();
+      recordTtsUserGesture();
+      const warmText = (message ?? TUTOR_WARM_PHRASES[0] ?? "Let's learn together!").trim();
+      if (warmText) {
+        primeStaticAudioInUserGesture(warmText, "default");
+        primeSpeakGesture(warmText, tutorSpeakOpts(warmText));
+      }
+    },
+    [primeSpeakGesture],
+  );
 
   const applyTutorResponse = (data: TutorTurnResponse) => {
     const tutor = data.tutor;
@@ -118,9 +173,8 @@ export default function AmyLearningTutorPage() {
     }
     setPending(tutor);
     setGoalMet(Boolean(data.goalMet));
-    if (tutor.voiceUrl) {
-      playVoice(tutor.voiceUrl);
-    }
+    scheduleTutorAudioPrewarm([tutor.message, ...TUTOR_WARM_PHRASES]);
+    playTutorMessage(tutor.message);
   };
 
   const callTutor = async (action: TutorAction, childAnswer?: string) => {
@@ -177,6 +231,7 @@ export default function AmyLearningTutorPage() {
   };
 
   const startSession = async () => {
+    primeTutorAudioGesture();
     setTurns([]);
     setGoalMet(false);
     setPending(null);
@@ -201,6 +256,7 @@ export default function AmyLearningTutorPage() {
   };
 
   const onRepeat = async () => {
+    primeTutorAudioGesture(pending?.message);
     await callTutor("repeat");
   };
 
@@ -272,6 +328,7 @@ export default function AmyLearningTutorPage() {
               size="lg"
               className="rounded-full px-8"
               disabled={!primaryChild?.id || loading}
+              onPointerDown={() => primeTutorAudioGesture()}
               onClick={() => void startSession()}
               data-testid="amy-learning-tutor-start"
             >
@@ -281,11 +338,16 @@ export default function AmyLearningTutorPage() {
         ) : null}
 
         {turns.map((turn) => (
-          <TurnBubble key={turn.id} turn={turn} onPlayVoice={playVoice} />
+          <TurnBubble key={turn.id} turn={turn} onPlayMessage={playTutorMessage} />
         ))}
 
         {pending ? (
-          <AmyPendingBubble pending={pending} goalMet={goalMet} onPlayVoice={playVoice} />
+          <AmyPendingBubble
+            pending={pending}
+            goalMet={goalMet}
+            onPlayMessage={playTutorMessage}
+            onPrimePlay={primeTutorAudioGesture}
+          />
         ) : null}
 
         {loading ? (
@@ -333,6 +395,7 @@ export default function AmyLearningTutorPage() {
               variant="outline"
               className="rounded-full"
               disabled={loading}
+              onPointerDown={() => primeTutorAudioGesture(pending.message)}
               onClick={() => void onRepeat()}
               data-testid="amy-learning-tutor-repeat"
             >
@@ -359,10 +422,10 @@ export default function AmyLearningTutorPage() {
 
 function TurnBubble({
   turn,
-  onPlayVoice,
+  onPlayMessage,
 }: {
   turn: ChatTurn;
-  onPlayVoice: (url?: string) => void;
+  onPlayMessage: (message: string) => void;
 }) {
   if (turn.role === "child") {
     return (
@@ -378,8 +441,7 @@ function TurnBubble({
     <AmyMessageCard
       message={turn.text}
       mode={turn.mode}
-      voiceUrl={turn.voiceUrl}
-      onPlayVoice={onPlayVoice}
+      onPlayMessage={onPlayMessage}
     />
   );
 }
@@ -387,19 +449,21 @@ function TurnBubble({
 function AmyPendingBubble({
   pending,
   goalMet,
-  onPlayVoice,
+  onPlayMessage,
+  onPrimePlay,
 }: {
   pending: TutorPayload;
   goalMet: boolean;
-  onPlayVoice: (url?: string) => void;
+  onPlayMessage: (message: string) => void;
+  onPrimePlay: (message?: string) => void;
 }) {
   return (
     <div className="space-y-2" data-testid="amy-learning-tutor-pending">
       <AmyMessageCard
         message={pending.message}
         mode={pending.mode}
-        voiceUrl={pending.voiceUrl}
-        onPlayVoice={onPlayVoice}
+        onPlayMessage={onPlayMessage}
+        onPrimePlay={() => onPrimePlay(pending.message)}
         highlight
       />
       {goalMet ? (
@@ -414,14 +478,14 @@ function AmyPendingBubble({
 function AmyMessageCard({
   message,
   mode,
-  voiceUrl,
-  onPlayVoice,
+  onPlayMessage,
+  onPrimePlay,
   highlight = false,
 }: {
   message: string;
   mode?: TeachingMode;
-  voiceUrl?: string;
-  onPlayVoice: (url?: string) => void;
+  onPlayMessage: (message: string) => void;
+  onPrimePlay?: () => void;
   highlight?: boolean;
 }) {
   return (
@@ -442,13 +506,14 @@ function AmyMessageCard({
             </Badge>
           ) : null}
           <p className="whitespace-pre-wrap text-sm text-foreground">{message}</p>
-          {voiceUrl ? (
+          {message.trim() ? (
             <Button
               type="button"
               variant="outline"
               size="sm"
               className="rounded-full text-xs"
-              onClick={() => onPlayVoice(voiceUrl)}
+              onPointerDown={() => onPrimePlay?.()}
+              onClick={() => onPlayMessage(message)}
             >
               <Volume2 className="mr-1.5 h-3.5 w-3.5" />
               Listen
