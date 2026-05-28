@@ -72,7 +72,7 @@ import { useHubJourney } from "@/hooks/use-hub-journey";
 // Maps each premium section key to the tile IDs that live inside it.
 const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
   today:      ["amy-ai", "daily-tips", "generate-routine", "tomorrow-forecast", "command-center"],
-  learning:   ["smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad", "event-prep"],
+  learning:   ["amy-learning-tutor", "amy-quick-tutor", "smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad", "event-prep"],
   creativity: ["activities", "gaming-rewards", "art-craft", "worksheets", "coloring-books", "fun-sheets"],
   stories:    ["story-hub", "speech-coach"],
   support:    ["articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
@@ -251,7 +251,9 @@ function RoutineLaunchCard({
 }
 
 const HUB_QUICK_ACTIONS = [
-  { id: "ask-amy",    group: "today",      tileId: "amy-ai",          emoji: "💜", i18n: "parent_hub.quick_actions.ask_amy" },
+  { id: "ask-amy",    group: "today",      tileId: "amy-ai",              emoji: "💜", i18n: "parent_hub.quick_actions.ask_amy" },
+  { id: "learn-amy",  group: "learning",   tileId: "amy-learning-tutor",  emoji: "🎓", i18n: "parent_hub.quick_actions.learn_with_amy" },
+  { id: "quick-tutor", group: "learning",  tileId: "amy-quick-tutor",     emoji: "✨", i18n: "parent_hub.quick_actions.quick_tutor" },
   { id: "articles",   group: "support",    tileId: "articles",        emoji: "📚", i18n: "parent_hub.quick_actions.articles" },
   { id: "emotional",  group: "support",    tileId: "emotional",       emoji: "❤️", i18n: "parent_hub.quick_actions.emotional" },
   { id: "story",      group: "stories",    tileId: "story-hub",       emoji: "📖", i18n: "parent_hub.quick_actions.story" },
@@ -329,6 +331,32 @@ function AmyAISuggestionsSection() {
           <ArrowRight className="h-4 w-4 ml-auto" />
         </Button>
       </Link>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+        <Link href="/learn-with-amy">
+          <Button className="w-full rounded-xl gap-2 text-sm font-semibold h-auto py-3">
+            <GraduationCap className="h-4 w-4 shrink-0" />
+            <span className="text-left leading-tight">
+              {t("parent_hub.amy.learn_cta")}
+              <span className="block text-[10px] font-normal opacity-80">
+                {t("parent_hub.amy.learn_cta_hint")}
+              </span>
+            </span>
+            <ArrowRight className="h-4 w-4 ml-auto shrink-0" />
+          </Button>
+        </Link>
+        <Link href="/amy-ai-tutor">
+          <Button variant="secondary" className="w-full rounded-xl gap-2 text-sm font-semibold h-auto py-3">
+            <Sparkles className="h-4 w-4 shrink-0" />
+            <span className="text-left leading-tight">
+              {t("parent_hub.amy.quick_tutor_cta")}
+              <span className="block text-[10px] font-normal opacity-80">
+                {t("parent_hub.amy.quick_tutor_cta_hint")}
+              </span>
+            </span>
+            <ArrowRight className="h-4 w-4 ml-auto shrink-0" />
+          </Button>
+        </Link>
+      </div>
     </div>;
 }
 
@@ -927,6 +955,39 @@ function ParentingHubPage() {
           <FuturePredictor childId={effectiveChild.id} />
         </HubSection>;
     }
+  },
+  // ── Amy tutors (learning routes) ─────────────────────────────────────
+  {
+    id: "amy-learning-tutor",
+    alwaysCurrent: true,
+    render: () => (
+      <HubLaunchCard
+        href="/learn-with-amy"
+        title={t("parent_hub.web_tiles.amy-learning-tutor.title")}
+        description={t("parent_hub.web_tiles.amy-learning-tutor.description")}
+        icon={<GraduationCap className="h-5 w-5 text-white" />}
+        accentClass="bg-gradient-to-br from-violet-500 to-indigo-600"
+        cardClass="bg-gradient-to-br from-violet-500/30 to-indigo-600/15 hover:shadow-[0_10px_36px_-10px_rgba(99,102,241,0.45)]"
+        testId="amy-learning-tutor-launch-card"
+        sectionId="amy-learning-tutor"
+      />
+    ),
+  },
+  {
+    id: "amy-quick-tutor",
+    alwaysCurrent: true,
+    render: () => (
+      <HubLaunchCard
+        href="/amy-ai-tutor"
+        title={t("parent_hub.web_tiles.amy-quick-tutor.title")}
+        description={t("parent_hub.web_tiles.amy-quick-tutor.description")}
+        icon={<Sparkles className="h-5 w-5 text-white" />}
+        accentClass="bg-gradient-to-br from-fuchsia-500 to-purple-600"
+        cardClass="bg-gradient-to-br from-fuchsia-500/30 to-purple-600/15 hover:shadow-[0_10px_36px_-10px_rgba(192,38,211,0.45)]"
+        testId="amy-quick-tutor-launch-card"
+        sectionId="amy-quick-tutor"
+      />
+    ),
   },
   // ── Smart Math Tricks (age 2–8, full-screen route) ───────────────────
   {
