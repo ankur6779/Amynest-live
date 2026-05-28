@@ -33,43 +33,93 @@ function isFacebookPopupBlockedOrClosed(err: unknown): boolean {
   );
 }
 
-function assertFacebookAccessToken(accessToken: string): string {
-  const trimmed = accessToken.trim();
+function assertFacebookToken(token: string, label: "access token" | "ID token"): string {
+  const trimmed = token.trim();
   if (!trimmed || trimmed.length < 20) {
-    throw Object.assign(new Error("Facebook sign-in did not return a valid access token."), {
-      code: "app/facebook-no-access-token",
-    });
+    throw Object.assign(
+      new Error(`Facebook sign-in did not return a valid ${label}.`),
+      { code: "app/facebook-no-access-token" },
+    );
   }
   return trimmed;
 }
 
+function throwFacebookFirebaseCredentialFailed(
+  err: unknown,
+  context: { credentialKind: "access" | "idToken"; tokenLen: number },
+): never {
+  const code = (err as { code?: string })?.code ?? "";
+  console.error(`${FACEBOOK_TAG} Firebase credential sign-in failed`, {
+    ...context,
+    code,
+    err,
+  });
+  if (
+    code === "auth/invalid-credential" ||
+    code === "auth/argument-error" ||
+    code === "auth/operation-not-allowed"
+  ) {
+    throw Object.assign(
+      new Error(
+        "Facebook sign-in could not be verified with Firebase. Confirm Facebook is enabled in Firebase Authentication, then try again.",
+      ),
+      { code: "app/facebook-firebase-credential-failed" },
+    );
+  }
+  throw err;
+}
+
+/** Raw nonce for Facebook Limited Login (plugin hashes before sending to the SDK). */
+export function generateFacebookLoginNonce(length = 32): string {
+  const charset =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => charset[b % charset.length]).join("");
+}
+
+/** Classic Graph API access token (Android WebView native bridge). */
 async function signInFirebaseWithFacebookAccessToken(accessToken: string): Promise<User> {
   await ensureFirebaseAuthPersistence();
-  const token = assertFacebookAccessToken(accessToken);
+  const token = assertFacebookToken(accessToken, "access token");
   const credential = FacebookAuthProvider.credential(token);
   try {
     const result = await signInWithCredential(getFirebaseAuth(), credential);
     return finalizeOAuthCredentialSignIn(result);
   } catch (err) {
-    const code = (err as { code?: string })?.code ?? "";
-    console.error(`${FACEBOOK_TAG} Firebase credential sign-in failed`, {
-      code,
+    throwFacebookFirebaseCredentialFailed(err, {
+      credentialKind: "access",
       tokenLen: token.length,
-      err,
     });
-    if (
-      code === "auth/invalid-credential" ||
-      code === "auth/argument-error" ||
-      code === "auth/operation-not-allowed"
-    ) {
-      throw Object.assign(
-        new Error(
-          "Facebook sign-in could not be verified with Firebase. Confirm Facebook is enabled in Firebase Authentication, then try again.",
-        ),
-        { code: "app/facebook-firebase-credential-failed" },
-      );
-    }
-    throw err;
+  }
+}
+
+/**
+ * Facebook Limited Login OIDC token from iOS native SDK.
+ * @capacitor-community/facebook-login iOS plugin returns AuthenticationToken.tokenString.
+ */
+async function signInFirebaseWithFacebookIdToken(
+  idToken: string,
+  rawNonce: string,
+): Promise<User> {
+  await ensureFirebaseAuthPersistence();
+  const token = assertFacebookToken(idToken, "ID token");
+  const nonce = rawNonce.trim();
+  if (!nonce) {
+    throw Object.assign(new Error("Facebook sign-in nonce is missing."), {
+      code: "app/facebook-no-access-token",
+    });
+  }
+  const provider = new OAuthProvider("facebook.com");
+  const credential = provider.credential({ idToken: token, rawNonce: nonce });
+  try {
+    const result = await signInWithCredential(getFirebaseAuth(), credential);
+    return finalizeOAuthCredentialSignIn(result);
+  } catch (err) {
+    throwFacebookFirebaseCredentialFailed(err, {
+      credentialKind: "idToken",
+      tokenLen: token.length,
+    });
   }
 }
 
@@ -112,17 +162,24 @@ async function initNativeFacebookLogin(): Promise<void> {
 async function loginCapacitorIosFacebook(): Promise<string> {
   await initNativeFacebookLogin();
   const { FacebookLogin } = await import("@capacitor-community/facebook-login");
+  const rawNonce = generateFacebookLoginNonce();
   const result = await FacebookLogin.login({
     permissions: ["email", "public_profile"],
-    tracking: "enabled",
+    // iOS plugin returns AuthenticationToken (OIDC), not AccessToken — use Limited Login + nonce.
+    tracking: "limited",
+    nonce: rawNonce,
   });
-  const accessToken = result.accessToken?.token?.trim();
-  if (!accessToken) {
+  const idToken = result.accessToken?.token?.trim();
+  if (!idToken) {
     throw Object.assign(new Error("Facebook sign-in did not return an access token."), {
       code: "app/facebook-no-access-token",
     });
   }
-  await signInFirebaseWithFacebookAccessToken(accessToken);
+  console.info(`${FACEBOOK_TAG} capacitor iOS facebook token received`, {
+    tokenLen: idToken.length,
+    credentialKind: "idToken",
+  });
+  await signInFirebaseWithFacebookIdToken(idToken, rawNonce);
   const dest = await finishOAuthLoginFlow(undefined, { skipNavigation: true });
   console.info(`${FACEBOOK_TAG} capacitor iOS facebook sign-in success`, { dest });
   return dest;

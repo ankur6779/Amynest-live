@@ -170,6 +170,8 @@
 		<string>appleid.apple.com</string>
 		<string>appleid.cdn-apple.com</string>
 	</array>
+	<key>GIDClientID</key>
+	<string>573340015027-nhb24qka9h7gr06ri2muu9a7mrpf2c54.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -178,6 +180,7 @@
 				<string>com.amynest.app</string>
 				<string>capacitor</string>
 				<string>com.googleusercontent.apps.573340015027-nhb24qka9h7gr06ri2muu9a7mrpf2c54</string>
+				<string>com.googleusercontent.apps.573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j</string>
 				<string>fb2514850758945614</string>
 			</array>
 		</dict>

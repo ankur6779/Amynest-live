@@ -1,5 +1,8 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { reversedGoogleWebClientId } from "./google-auth-defaults";
+import {
+  getGoogleIosUrlSchemes,
+  reversedGoogleWebClientId,
+} from "./google-auth-defaults";
 import {
   getGoogleWebClientId,
   isCapacitorNative,
@@ -43,6 +46,13 @@ describe("google-auth", () => {
         "573340015027-abc.apps.googleusercontent.com",
       ),
     ).toBe("com.googleusercontent.apps.573340015027-abc");
+  });
+
+  it("lists iOS and web reversed URL schemes for native Google Sign-In", () => {
+    expect(getGoogleIosUrlSchemes()).toEqual([
+      "com.googleusercontent.apps.573340015027-nhb24qka9h7gr06ri2muu9a7mrpf2c54",
+      "com.googleusercontent.apps.573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j",
+    ]);
   });
 
   it("uses Capacitor Google plugin path on iOS only", () => {
