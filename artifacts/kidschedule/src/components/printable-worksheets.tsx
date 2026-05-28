@@ -6,14 +6,10 @@ import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { downloadPdfFromUrl, hubTodayIst } from "@/lib/hub-pdf-download";
-import { useLearningProgress } from "@/hooks/use-learning-progress";
 import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
+import { worksheetProgressSummary } from "@workspace/learning-progress-engine";
 import {
-  pickDailyWorksheets,
-  worksheetProgressSummary,
-} from "@workspace/learning-progress-engine";
-import {
-  WorksheetDailyPath,
+  WorksheetAmyTips,
   WorksheetProgressReport,
 } from "@/components/learning-progress";
 interface Worksheet {
@@ -97,9 +93,7 @@ export function PrintableWorksheets({
   } = useTranslation();
   const { isPremium } = useSubscription();
   const { userId } = useAuth();
-  const { unlocks } = useLearningProgress(childId ?? null);
   const { recordActivity } = useRecordLearningActivity(childId ?? null);
-  const [highlightId, setHighlightId] = useState<string | null>(null);
   const [all, setAll] = useState<Worksheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -171,11 +165,6 @@ export function PrintableWorksheets({
     }
   }, [childId, dailyRec, downloadedIds.size, downloadingId, isPremium, recordActivity, userId]);
 
-  const dailyPicks = useMemo(() => {
-    if (!unlocks || all.length === 0 || !childId) return [];
-    return pickDailyWorksheets(all, unlocks, { childId, count: 3 });
-  }, [all, childId, unlocks]);
-
   const printableProgress = useMemo(
     () => worksheetProgressSummary([...downloadedIds], all.length),
     [downloadedIds, all.length],
@@ -235,22 +224,9 @@ export function PrintableWorksheets({
         .ws-dl-btn:active:not(:disabled) { transform: scale(0.97); }
       `}</style>
 
-      {childId && unlocks && dailyPicks.length > 0 && (
+      {childId && (
         <div style={{ marginBottom: 14 }}>
-          <WorksheetDailyPath
-            picks={dailyPicks}
-            difficulty={unlocks.worksheetDifficulty}
-            onSelect={(id) => {
-              setHighlightId(id);
-              setQuery("");
-              setPage(1);
-              window.setTimeout(() => {
-                document
-                  .querySelector(`[data-worksheet-id="${id}"]`)
-                  ?.scrollIntoView({ behavior: "smooth", block: "center" });
-              }, 100);
-            }}
-          />
+          <WorksheetAmyTips childId={childId} />
         </div>
       )}
 
@@ -422,7 +398,6 @@ export function PrintableWorksheets({
               <WorksheetCard
                 key={ws.id}
                 worksheet={ws}
-                highlighted={highlightId === ws.id}
                 isLimitReached={isLimitReached}
                 isDownloading={downloadingId === ws.id}
                 onDownload={() => void handleDownload(ws)}
@@ -464,13 +439,11 @@ export function PrintableWorksheets({
 }
 function WorksheetCard({
   worksheet,
-  highlighted = false,
   isLimitReached,
   isDownloading,
   onDownload
 }: {
   worksheet: Worksheet;
-  highlighted?: boolean;
   isLimitReached: boolean;
   isDownloading: boolean;
   onDownload: () => void;
@@ -489,12 +462,10 @@ function WorksheetCard({
     background: "hsl(var(--card))",
     borderRadius: 16,
     overflow: "hidden",
-    boxShadow: highlighted
-      ? "0 0 0 2px hsl(var(--primary)), 0 4px 12px rgba(0,0,0,0.08)"
-      : "0 4px 12px rgba(0,0,0,0.08)",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
     display: "flex",
     flexDirection: "column",
-    border: highlighted ? "2px solid hsl(var(--primary))" : "1px solid hsl(var(--border))"
+    border: "1px solid hsl(var(--border))"
   }}>
       {/* Preview */}
       <div style={{

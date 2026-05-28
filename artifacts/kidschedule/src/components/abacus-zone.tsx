@@ -26,6 +26,10 @@ import {
   type LevelId,
 } from "@workspace/abacus";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import {
+  scheduleLearningZoneAudioPrewarm,
+  buildLearningZoneAudioStateKey,
+} from "@/lib/learning-zone-audio-prewarm";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import {
   AbacusHomeDashboard,
@@ -571,6 +575,7 @@ function LearnMode({
   speaking: boolean;
 }) {
   const { t } = useAbacusTranslation();
+  const authFetch = useAuthFetch();
   const script = useMemo(() => buildLessonScript(level), [level]);
   const [step, setStep] = useState(0);
 
@@ -582,6 +587,22 @@ function LearnMode({
   const stepValue = abacusValue(cur.state);
   const stepPct = script.steps.length <= 1 ? 100 : Math.round(((step + 1) / script.steps.length) * 100);
   const [boardState, setBoardState] = useState(cur.state);
+
+  useEffect(() => {
+    const texts = script.steps.map((s) => s.text);
+    scheduleLearningZoneAudioPrewarm(authFetch, {
+      module: "abacus",
+      texts,
+      sequenceTexts: texts,
+      ageGroup: level,
+      currentIndex: step,
+      stateKey: buildLearningZoneAudioStateKey({
+        module: "abacus",
+        ageGroup: level,
+        revision: script.title,
+      }),
+    });
+  }, [authFetch, level, script, step]);
 
   useEffect(() => {
     setBoardState(script.steps[step]?.state ?? emptyAbacus(1));

@@ -4,7 +4,7 @@ export { NextSessionUnlocks } from "./next-session-unlocks";
 export { DailyFreshnessCard } from "./daily-freshness-card";
 export { ProgressionStrip } from "./progression-strip";
 export { WeeklyParentReportCard } from "./weekly-parent-report-card";
-export { WorksheetDailyPath } from "./worksheet-daily-path";
+export { WorksheetAmyTips } from "./worksheet-amy-tips";
 export { WorksheetProgressReport } from "./worksheet-progress-report";
 export { RewardCelebrationModal } from "./reward-celebration-modal";
 export { RewardWalletStrip } from "./reward-wallet-strip";

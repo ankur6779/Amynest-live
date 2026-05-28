@@ -37,6 +37,7 @@
     "@workspace/life-skills": "workspace:*",
     "@workspace/parent-hub-journey": "workspace:*",
     "@workspace/learning-progress-engine": "workspace:*",
+    "@workspace/learning-zone-english": "workspace:*",
     "@workspace/coach-journey": "workspace:*",
     "@workspace/routine-journey": "workspace:*",
     "@workspace/parenting-articles": "workspace:*",

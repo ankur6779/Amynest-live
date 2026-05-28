@@ -1,5 +1,6 @@
 import { chatCompletionWithTimeout } from "../openai-chat.js";
 import { buildAbacusTutorPrompt, type LevelId } from "@workspace/abacus";
+import { appendLearningZoneEnglishRule } from "../../lib/learning-zone-english.js";
 
 export async function runAbacusTutor(input: {
   level: LevelId;
@@ -17,7 +18,7 @@ export async function runAbacusTutor(input: {
     {
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: system },
+        { role: "system", content: appendLearningZoneEnglishRule(system) },
         { role: "user", content: user },
       ],
       temperature: 0.6,

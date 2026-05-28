@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
+import {
+  sanitizeLearningZoneAiObject,
+  validateLearningZonePayload,
+} from "@/lib/learning-zone-ai-text";
 
 export type LearningLoadMoreSection =
   | "smart_study"
@@ -100,11 +104,31 @@ export function useLearningLoadMore(section: LearningLoadMoreSection) {
         }
 
         const data = (await res.json()) as LoadMoreResponse;
+        let items = data.items;
+        const check = validateLearningZonePayload(items);
+        if (!check.valid && data.source === "ai") {
+          const retry = await authFetch("/api/learning/load-more", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              section,
+              childId: body.childId,
+              count: body.count,
+              excludeIds: body.excludeIds,
+              params: body.params ?? {},
+            }),
+          });
+          if (retry.ok) {
+            const retryData = (await retry.json()) as LoadMoreResponse;
+            items = retryData.items;
+          }
+        }
+        items = sanitizeLearningZoneAiObject(items);
         setUsage(data.usage);
         if (data.charged) {
           refresh();
         }
-        return data;
+        return { ...data, items };
       } catch (err) {
         setError(err instanceof Error ? err.message : "load_more_failed");
         return null;

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { chatCompletionWithTimeout } from "../openai-chat.js";
 import { generateOpenAiTts } from "../ttsGenerate.js";
+import { appendLearningZoneEnglishRule } from "../../lib/learning-zone-english.js";
 
 function normalizeStringList(value: unknown, fallback: string): string[] {
   if (Array.isArray(value)) {
@@ -52,8 +53,9 @@ export async function runSpellingAiGenerate(input: {
       messages: [
         {
           role: "system",
-          content:
+          content: appendLearningZoneEnglishRule(
             "You generate kid-friendly spelling word lists. Always return strict JSON.",
+          ),
         },
         {
           role: "user",

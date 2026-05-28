@@ -1,3 +1,5 @@
+import { hasNotificationTapPayload } from "@/lib/notification-navigation-guard";
+
 /**
  * notification-deep-link.ts — Smart deep-link routing for AmyNest notifications.
  *
@@ -108,6 +110,10 @@ export function parseNotifTapPayload(payload: unknown): {
 interface NotifTap {
   deepLink: string;
   category?: string;
+  userInteraction?: boolean;
+  notificationId?: string;
+  tappedAt?: number;
+  source?: string;
 }
 
 let _pending: NotifTap | null = null;
@@ -121,18 +127,45 @@ export function drainPendingNotifTap(): NotifTap | null {
 
 // ── Event dispatcher ─────────────────────────────────────────────────────────
 
+export interface NotifDeepLinkMeta {
+  /** Required for navigation — native tap / action performed only. */
+  userInteraction?: boolean;
+  notificationId?: string | null;
+  tappedAt?: number;
+  source?: "android-tap" | "capacitor-tap" | "pending-buffer";
+}
+
 /**
  * Dispatch the "amynest-notif-deeplink" CustomEvent so any mounted
  * useNotificationDeepLink hook can react immediately.
  */
-export function dispatchNotifDeepLink(rawPath: string, category?: string | null): void {
+export function dispatchNotifDeepLink(
+  rawPath: string,
+  category?: string | null,
+  meta?: NotifDeepLinkMeta,
+): void {
+  if (!hasNotificationTapPayload(rawPath, category)) {
+    return;
+  }
+
   const deepLink = resolveDeepLinkPath(rawPath, category);
-  _pending = { deepLink, category: category ?? undefined };
+  const detail = {
+    deepLink,
+    category: category ?? undefined,
+    userInteraction: meta?.userInteraction === true,
+    notificationId: meta?.notificationId ?? undefined,
+    tappedAt: meta?.tappedAt ?? Date.now(),
+    source: meta?.source,
+  };
+
+  _pending = {
+    deepLink,
+    category: category ?? undefined,
+    ...detail,
+  };
   try {
     window.dispatchEvent(
-      new CustomEvent("amynest-notif-deeplink", {
-        detail: { deepLink, category: category ?? undefined },
-      }),
+      new CustomEvent("amynest-notif-deeplink", { detail }),
     );
   } catch {
     /* ignore */
@@ -150,6 +183,10 @@ declare global {
 
 if (typeof window !== "undefined") {
   window.onNotificationTap = (deepLink: string, category?: string) => {
-    dispatchNotifDeepLink(deepLink, category);
+    dispatchNotifDeepLink(deepLink, category, {
+      userInteraction: true,
+      tappedAt: Date.now(),
+      source: "android-tap",
+    });
   };
 }

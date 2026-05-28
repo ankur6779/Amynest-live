@@ -7,6 +7,7 @@ import {
   useOnboardingStatus,
 } from "@/contexts/onboarding-status-context";
 import { devLog } from "@/lib/dev-log";
+import { setNavigationBootstrapComplete } from "@/lib/navigation-orchestrator";
 import {
   forceSyncAuthFromCurrentUser,
   hasUsableAuthSession,
@@ -71,6 +72,11 @@ export function AppInitGate({ children }: { children: ReactNode }) {
   }, []);
 
   const ready = isAppReady || forcedReady;
+
+  useEffect(() => {
+    setNavigationBootstrapComplete(ready);
+    return () => setNavigationBootstrapComplete(false);
+  }, [ready]);
 
   useEffect(() => {
     devLog("[boot] Auth loading:", authLoading, "authStatus:", authStatus);

@@ -6,9 +6,9 @@ import {
   endPopstateSkip,
   getRecentRoutes,
   normalizeRoutePath,
-  recordRouteTransition,
   shouldSkipPopstateRoute,
 } from "@/lib/navigation-stack";
+import { recordSanitizedTransition } from "@/lib/route-history-manager";
 
 /**
  * Tracks SPA route transitions and guards Android PWA hardware-back against
@@ -40,7 +40,7 @@ export function NavigationHistoryGuard() {
         return;
       }
 
-      recordRouteTransition(from, path, "pop");
+      recordSanitizedTransition(from, path, "pop");
       prevLocationRef.current = path;
       logNavEvent("popstate", { path, from });
     };
@@ -58,9 +58,9 @@ export function NavigationHistoryGuard() {
     }
     const prev = prevLocationRef.current;
     if (prev && prev !== normalized) {
-      recordRouteTransition(prev, normalized, "push");
+      recordSanitizedTransition(prev, normalized, "push");
     } else if (!prev) {
-      recordRouteTransition(normalized, normalized, "replace");
+      recordSanitizedTransition(normalized, normalized, "replace");
     }
     prevLocationRef.current = normalized;
   }, [location]);

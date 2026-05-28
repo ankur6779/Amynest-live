@@ -125,6 +125,7 @@
     "@workspace/infant-hub": "workspace:*",
     "@workspace/infant-problems": "workspace:*",
     "@workspace/learning-progress-engine": "workspace:*",
+    "@workspace/learning-zone-english": "workspace:*",
     "@workspace/life-skills": "workspace:*",
     "@workspace/load-forecast": "workspace:*",
     "@workspace/math-tricks": "workspace:*",

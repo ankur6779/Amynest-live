@@ -274,6 +274,9 @@ importers:
       '@workspace/learning-progress-engine':
         specifier: workspace:*
         version: link:../../lib/learning-progress-engine
+      '@workspace/learning-zone-english':
+        specifier: workspace:*
+        version: link:../../lib/learning-zone-english
       '@workspace/life-skills':
         specifier: workspace:*
         version: link:../../lib/life-skills
@@ -479,6 +482,9 @@ importers:
       '@workspace/learning-progress-engine':
         specifier: workspace:*
         version: link:../../lib/learning-progress-engine
+      '@workspace/learning-zone-english':
+        specifier: workspace:*
+        version: link:../../lib/learning-zone-english
       '@workspace/life-skills':
         specifier: workspace:*
         version: link:../../lib/life-skills
@@ -1275,6 +1281,8 @@ importers:
       '@workspace/study-zone':
         specifier: workspace:*
         version: link:../study-zone
+
+  lib/learning-zone-english: {}
 
   lib/life-skills: {}
 
