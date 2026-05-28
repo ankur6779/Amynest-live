@@ -271,6 +271,9 @@ importers:
       '@workspace/integrations-openai-ai-server':
         specifier: workspace:*
         version: link:../../lib/integrations-openai-ai-server
+      '@workspace/learning-progress-engine':
+        specifier: workspace:*
+        version: link:../../lib/learning-progress-engine
       '@workspace/life-skills':
         specifier: workspace:*
         version: link:../../lib/life-skills
@@ -473,6 +476,9 @@ importers:
       '@workspace/infant-problems':
         specifier: workspace:*
         version: link:../../lib/infant-problems
+      '@workspace/learning-progress-engine':
+        specifier: workspace:*
+        version: link:../../lib/learning-progress-engine
       '@workspace/life-skills':
         specifier: workspace:*
         version: link:../../lib/life-skills
@@ -1260,6 +1266,15 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 25.7.0
+
+  lib/learning-progress-engine:
+    dependencies:
+      '@workspace/parent-hub-journey':
+        specifier: workspace:*
+        version: link:../parent-hub-journey
+      '@workspace/study-zone':
+        specifier: workspace:*
+        version: link:../study-zone
 
   lib/life-skills: {}
 

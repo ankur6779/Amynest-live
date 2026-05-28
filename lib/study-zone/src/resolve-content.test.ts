@@ -36,12 +36,25 @@ describe("resolve-content — country", () => {
     assert.match(a!.speak, /Alphonso/i);
   });
 
-  it("limits play content for toddlers (age 3)", () => {
-    const cats = getPlayCategoriesForChild("US", 3);
+  it("limits play content for toddlers (age 3) on journey day 1", () => {
+    const cats = getPlayCategoriesForChild("US", 3, 1);
     const alpha = cats.find((c) => c.id === "alphabets");
     assert.equal(alpha!.items.length, 5);
     const nums = cats.find((c) => c.id === "numbers");
     assert.equal(nums!.items.length, 5);
+  });
+
+  it("expands play numbers on journey day 2", () => {
+    const day1 = getPlayCategoriesForChild("US", 3, 1);
+    const day2 = getPlayCategoriesForChild("US", 3, 2);
+    assert.equal(day1.find((c) => c.id === "numbers")!.items.length, 5);
+    assert.equal(day2.find((c) => c.id === "numbers")!.items.length, 10);
+  });
+
+  it("unlocks full toddler play catalog on journey day 3", () => {
+    const cats = getPlayCategoriesForChild("US", 3, 3);
+    assert.equal(cats.find((c) => c.id === "numbers")!.items.length, 20);
+    assert.equal(cats.find((c) => c.id === "alphabets")!.items.length, 26);
   });
 });
 

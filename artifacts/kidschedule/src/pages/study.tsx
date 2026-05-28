@@ -10,6 +10,8 @@ import {
   lookupPracticeTitle,
   practicePackForSubject,
   getPlayCategoriesForChild,
+  playUnlocksTomorrowForCategory,
+  todayIso,
   getBasicSubjectsForChild,
   getAdvancedSubjectsForChild,
   isAdaptivePracticeTopic,
@@ -33,6 +35,20 @@ import {
   GraduationCap, ArrowLeft, Volume2, VolumeX, CheckCircle2, XCircle,
   Sparkles, RotateCcw, ChevronRight, Trophy,
 } from "lucide-react";
+import { useHubJourney } from "@/hooks/use-hub-journey";
+import { useLearningProgress } from "@/hooks/use-learning-progress";
+import {
+  useRecordLearningActivity,
+  playCategoryToSection,
+  studySubjectToSection,
+} from "@/hooks/use-record-learning-activity";
+import { getPlayCategoriesWithProgress } from "@workspace/learning-progress-engine";
+import {
+  DailyFreshnessCard,
+  NextSessionUnlocks,
+  ProgressionStrip,
+  AmyPresenceStrip,
+} from "@/components/learning-progress";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import {
   loadProgress, markPlayItem, markTopicResult,
@@ -71,6 +87,11 @@ export default function StudyPage() {
   const { country } = useStudyCountry();
   const [view, setView] = useState<View>({ kind: "child-pick" });
   const [progress, setProgress] = useState<StudyProgress | null>(null);
+  const activeChildId = "childId" in view ? view.childId : null;
+  const hubJourney = useHubJourney(activeChildId);
+  const journeyDay = hubJourney.journeyDay;
+  const learningProgress = useLearningProgress(activeChildId);
+  const { recordActivity, trackNextSessionOpened } = useRecordLearningActivity(activeChildId);
 
   // Auto-pick when there's only one child.
   useEffect(() => {
@@ -152,11 +173,34 @@ export default function StudyPage() {
         }} />
       ) : view.kind === "play-home" ? (
         <>
+          {activeChildId && (
+            <div className="mb-3">
+              <AmyPresenceStrip surface="study" childId={activeChildId} />
+            </div>
+          )}
+          {learningProgress.profile && (
+            <ProgressionStrip profile={learningProgress.profile} className="mb-3" />
+          )}
+          {learningProgress.unlocks && (
+            <div className="grid gap-3 sm:grid-cols-2 mb-3">
+              <DailyFreshnessCard
+                items={learningProgress.unlocks.todaysUnlocks}
+                isRevisionDay={learningProgress.unlocks.isRevisionDay}
+              />
+              <NextSessionUnlocks
+                items={learningProgress.unlocks.nextSessionUnlocks}
+                onVisible={trackNextSessionOpened}
+              />
+            </div>
+          )}
           {progress && <EngagementStrip engagement={progress.engagement} />}
           <PlayHome
             country={country}
             childAge={child?.age}
+            journeyDay={journeyDay}
+            unlocks={learningProgress.unlocks}
             progress={progress}
+            recordActivity={recordActivity}
             onOpen={(catId) => setView({ kind: "play-cat", childId: view.childId, categoryId: catId })}
           />
         </>
@@ -166,6 +210,9 @@ export default function StudyPage() {
           categoryId={view.categoryId}
           country={country}
           childAge={child?.age}
+          journeyDay={journeyDay}
+          unlocks={learningProgress.unlocks}
+          recordActivity={recordActivity}
           progress={progress}
           onItemDone={(p) => setProgress(p)}
         />
@@ -261,6 +308,20 @@ function TodaysPlanSection({
   const [completionPct, setCompletionPct] = useState(0);
   const [doneTopicIds, setDoneTopicIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [planDate, setPlanDate] = useState(() => todayIso());
+
+  useEffect(() => {
+    const syncDate = () => {
+      const next = todayIso();
+      setPlanDate((prev) => (prev === next ? prev : next));
+    };
+    window.addEventListener("focus", syncDate);
+    document.addEventListener("visibilitychange", syncDate);
+    return () => {
+      window.removeEventListener("focus", syncDate);
+      document.removeEventListener("visibilitychange", syncDate);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -275,7 +336,7 @@ function TodaysPlanSection({
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ childId }),
+          body: JSON.stringify({ childId, date: planDate }),
         });
         if (!res.ok) { if (!cancelled) setLoading(false); return; }
         const data = (await res.json()) as {
@@ -294,7 +355,7 @@ function TodaysPlanSection({
       }
     })();
     return () => { cancelled = true; };
-  }, [childId, getToken]);
+  }, [childId, getToken, planDate]);
 
   if (loading || !plan) return <div>Loading...</div>;
 
@@ -402,11 +463,43 @@ function ChildPicker({ children, onPick }: { children: Child[]; onPick: (c: Chil
   );
 }
 
-function PlayHome({ country, childAge, progress, onOpen }: { country: string; childAge?: number; progress: StudyProgress | null; onOpen: (catId: string) => void }) {
+function PlayHome({
+  country,
+  childAge,
+  journeyDay,
+  unlocks,
+  progress,
+  recordActivity: _recordActivity,
+  onOpen,
+}: {
+  country: string;
+  childAge?: number;
+  journeyDay: number;
+  unlocks?: import("@workspace/learning-progress-engine").UnlockResult;
+  progress: StudyProgress | null;
+  recordActivity?: ReturnType<typeof useRecordLearningActivity>["recordActivity"];
+  onOpen: (catId: string) => void;
+}) {
   const { t } = useTranslation();
-  const categories = useMemo(() => getPlayCategoriesForChild(country, childAge), [country, childAge]);
+  const categories = useMemo(() => {
+    if (unlocks) {
+      return getPlayCategoriesWithProgress(country, childAge, journeyDay, unlocks);
+    }
+    return getPlayCategoriesForChild(country, childAge, journeyDay);
+  }, [country, childAge, journeyDay, unlocks]);
+  const numbersTomorrow = playUnlocksTomorrowForCategory("numbers", journeyDay);
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    <>
+      {numbersTomorrow > 0 && (
+        <p className="text-xs text-muted-foreground mb-3 rounded-xl border border-dashed px-3 py-2">
+          {t("screens.study.journey_unlock_hint", {
+            count: numbersTomorrow,
+            day: Math.min(journeyDay + 1, 3),
+            defaultValue: "{{count}} more numbers unlock on journey day {{day}} — complete Today's Path in Parent Hub.",
+          })}
+        </p>
+      )}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
       {categories.map((cat) => {
         const pct = progress ? categoryPercent(progress, cat.id, cat.items.length) : 0;
         return (
@@ -420,22 +513,31 @@ function PlayHome({ country, childAge, progress, onOpen }: { country: string; ch
           </Card>
         );
       })}
-    </div>
+      </div>
+    </>
   );
 }
 
 function PlayCategoryView({
-  childId, categoryId, country, childAge, progress, onItemDone,
+  childId, categoryId, country, childAge, journeyDay, unlocks, recordActivity, progress, onItemDone,
 }: {
   childId: number;
   categoryId: string;
   country: string;
   childAge?: number;
+  journeyDay: number;
+  unlocks?: import("@workspace/learning-progress-engine").UnlockResult;
+  recordActivity?: ReturnType<typeof useRecordLearningActivity>["recordActivity"];
   progress: StudyProgress | null;
   onItemDone: (p: StudyProgress) => void;
 }) {
   const { t } = useTranslation();
-  const categories = useMemo(() => getPlayCategoriesForChild(country, childAge), [country, childAge]);
+  const categories = useMemo(() => {
+    if (unlocks) {
+      return getPlayCategoriesWithProgress(country, childAge, journeyDay, unlocks);
+    }
+    return getPlayCategoriesForChild(country, childAge, journeyDay);
+  }, [country, childAge, journeyDay, unlocks]);
   const cat = categories.find((c) => c.id === (categoryId as PlayCategory["id"]));
   const { speak, primeSpeakGesture } = useAmyVoice();
   const fx = useStudyFx();
@@ -453,6 +555,11 @@ function PlayCategoryView({
     window.setTimeout(() => setPoppedId((v) => (v === item.id ? null : v)), 350);
     const { progress: nextP, engagement: result } = markPlayItem(childId, cat.id, item.id);
     onItemDone(nextP);
+    void recordActivity?.({
+      activityId: `play_${cat.id}_${item.id}`,
+      section: playCategoryToSection(cat.id),
+      correct: true,
+    });
     if (result.xpDelta > 0) {
       setXpAmount(result.xpDelta);
       setXpTrigger((t) => t + 1);
@@ -655,6 +762,7 @@ function TopicDetail({
     [topic],
   );
   const { getToken } = useAuth();
+  const { recordActivity } = useRecordLearningActivity(childId);
   if (!subj || !topic || !notesSpeakOpts || !amySpeakOpts) {
     return <p className="text-sm text-muted-foreground">{t("screens.study.topic_not_found")}</p>;
   }
@@ -685,6 +793,14 @@ function TopicDetail({
     );
     onScored(nextP);
 
+    const passed = score >= Math.ceil(total * 0.6);
+    void recordActivity({
+      activityId: `topic_${subj.id}_${topic.id}`,
+      section: studySubjectToSection(subj.id),
+      correct: passed,
+      metadata: { score, total },
+    });
+
     // Fire-and-forget: tell the server about every question attempted so
     // the rolling 20-attempt window fills quickly and weak-topic
     // detection reacts within the same session, not across sessions.
@@ -710,7 +826,6 @@ function TopicDetail({
     })();
 
     const perfect = score === total && total > 0;
-    const passed = score >= Math.ceil(total * 0.6);
     if (perfect) {
       fx.play("perfect");
       setConfettiTrigger((t) => t + 1);

@@ -34,6 +34,7 @@ import { warmSpeechCoach } from "@/lib/global-audio-warmup";
 import { openAndroidMicrophoneSettings } from "@/lib/microphone-permission";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import { clampClarityScore, playSpeechCue, weakSoundsToHistory } from "./speech-coach-utils";
+import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
 
 type AnyChild = {
   id: number;
@@ -249,6 +250,7 @@ export function LiveSpeechCoach({
   const ageMonths = totalMonths(child);
   const mode = useMemo(() => getAgeMode(ageMonths), [ageMonths]);
   const progress = useGetSpeechProgress({ childId: child.id, range: "week" });
+  const { recordActivity } = useRecordLearningActivity(child.id);
   const practiceHistory = useMemo(() => weakSoundsToHistory(progress.data?.weakSounds ?? []), [progress.data?.weakSounds]);
   const [tasks, setTasks] = useState<PronouncePrompt[]>(() => buildTasks(ageMonths, practiceHistory));
   const [idx, setIdx] = useState(0);
@@ -433,13 +435,20 @@ export function LiveSpeechCoach({
     if (idx >= tasks.length - 1) {
       const message = `You did amazing! You scored ${score} points with a streak of ${streak}.`;
       void speak(message, "complete");
+      void recordActivity({
+        activityId: `speech_session_${Date.now()}`,
+        section: "speech",
+        correct: score > 0,
+        analyticsEvent: "speech_improved",
+        metadata: { score, streak, tasks: tasks.length },
+      });
       return;
     }
     const nextIdx = idx + 1;
     setIdx(nextIdx);
     const next = tasks[nextIdx];
     if (next) void speak(speakPromptText(next, mode), "prompt");
-  }, [idx, mode, score, speak, streak, stt, tasks]);
+  }, [idx, mode, recordActivity, score, speak, streak, stt, tasks]);
 
   const retryTask = useCallback(() => {
     stt.reset();

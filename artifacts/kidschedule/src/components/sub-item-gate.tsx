@@ -5,6 +5,7 @@ import { Lock } from "lucide-react";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { useSectionUsage } from "@/hooks/use-section-usage";
 import { useSubscription } from "@/hooks/use-subscription";
+import { useLearningProgress } from "@/hooks/use-learning-progress";
 import {
   isPhonicsSubItemUnlocked,
   phonicsSubItemUnlockDay,
@@ -31,6 +32,8 @@ interface SubItemGateProps {
   journeyGated?: boolean;
   /** True while the user is still in the 3-day free journey window. */
   journeyFreePeriod?: boolean;
+  /** When set, journey day / free period come from LearningProgressEngine. */
+  childId?: number;
   /**
    * Optional className for the wrapper div. Use this when the parent
    * relies on a specific layout (grid item, full-width, etc).
@@ -54,12 +57,18 @@ export function SubItemGate({
   journeyDay,
   journeyGated = false,
   journeyFreePeriod = false,
+  childId,
   className,
   children,
 }: SubItemGateProps) {
   const [, setLocation] = useLocation();
   const { t } = useTranslation();
   const { isPremium: subPremium } = useSubscription();
+  const learningProgress = useLearningProgress(childId ?? null);
+  const engineJourneyDay = learningProgress.journeyDay;
+  const engineFreePeriod = learningProgress.status?.hubAccess?.isFreePeriod ?? false;
+  const effectiveJourneyDay = childId ? engineJourneyDay : (journeyDay ?? 1);
+  const effectiveFreePeriod = childId ? engineFreePeriod : journeyFreePeriod;
   const { isPremium, blockUsedIds, isBlockLocked, markBlockUsed } =
     useSectionUsage(sectionId);
 
@@ -75,8 +84,8 @@ export function SubItemGate({
   }
 
   // Phonics ↔ 3-day journey: day-based cumulative unlock during free period.
-  if (sectionId === "hub_phonics" && journeyGated && journeyFreePeriod) {
-    const day = journeyDay ?? 1;
+  if (sectionId === "hub_phonics" && journeyGated && effectiveFreePeriod) {
+    const day = effectiveJourneyDay;
     if (isPhonicsSubItemUnlocked(subItemId, day)) {
       return wrap(children);
     }
