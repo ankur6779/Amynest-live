@@ -20,6 +20,26 @@ export type MicrophoneStreamResult =
   | { ok: true; stream: MediaStream }
   | { ok: false; reason: "denied" | "blocked" | "unavailable" };
 
+/** OS / browser permission state — distinct from runtime mic usability. */
+export type OsMicrophonePermissionState = "granted" | "denied" | "prompt" | "blocked" | "unknown";
+
+export type MicrophoneRuntimeErrorCode =
+  | "microphone_denied"
+  | "microphone_blocked"
+  | "microphone_busy"
+  | "stale_stream"
+  | "dead_recorder"
+  | "security_error"
+  | "recognition_start_failed";
+
+export interface MicrophoneFailureClassification {
+  osPermissionState: OsMicrophonePermissionState;
+  errorName: string;
+  errorMessage: string;
+  isTruePermissionDenial: boolean;
+  mappedCode: MicrophoneRuntimeErrorCode;
+}
+
 type AndroidMicrophoneStatus = "granted" | "prompt" | "denied" | "blocked" | "busy" | "requested" | "unavailable";
 
 type AndroidMicrophoneBridge = {
@@ -74,6 +94,132 @@ function logMicrophonePermission(message: string, detail?: unknown): void {
   } catch {
     /* logging must not affect recording */
   }
+}
+
+function domErrorName(err: unknown): string {
+  if (err instanceof DOMException) return err.name;
+  if (err && typeof err === "object" && "name" in err && typeof (err as { name: unknown }).name === "string") {
+    return (err as { name: string }).name;
+  }
+  return "UnknownError";
+}
+
+function domErrorMessage(err: unknown): string {
+  if (err instanceof DOMException) return err.message;
+  if (err && typeof err === "object" && "message" in err && typeof (err as { message: unknown }).message === "string") {
+    return (err as { message: string }).message;
+  }
+  return "";
+}
+
+export function isOsMicrophonePermissionDenied(state: OsMicrophonePermissionState): boolean {
+  return state === "denied" || state === "blocked";
+}
+
+/**
+ * Query OS / browser microphone permission without opening a stream.
+ * Never infer permission state from getUserMedia failure alone.
+ */
+export async function queryOsMicrophonePermissionState(): Promise<OsMicrophonePermissionState> {
+  const bridge = getAndroidMicrophoneBridge();
+  if (bridge?.getPermissionStatus) {
+    const status = normalizeAndroidMicrophoneStatus(bridge.getPermissionStatus());
+    logMicrophonePermission("OS permission query (android native)", status);
+    if (status === "granted") return "granted";
+    if (status === "blocked") return "blocked";
+    if (status === "denied") return "denied";
+    if (status === "prompt") return "prompt";
+  }
+
+  if (isCapacitorIosNative()) {
+    try {
+      const { status } = await MicPermissionCapacitor.getMicrophoneStatus();
+      logMicrophonePermission("OS permission query (capacitor ios)", status);
+      if (status === "granted") return "granted";
+      if (status === "denied") return "denied";
+    } catch {
+      /* plugin missing */
+    }
+  }
+
+  if (typeof navigator !== "undefined" && navigator.permissions) {
+    try {
+      const status = await navigator.permissions.query({
+        name: "microphone" as PermissionName,
+      });
+      logMicrophonePermission("OS permission query (permissions API)", status.state);
+      if (status.state === "granted") return "granted";
+      if (status.state === "denied") return "denied";
+      if (status.state === "prompt") return "prompt";
+    } catch {
+      /* Permissions API unsupported */
+    }
+  }
+
+  return "unknown";
+}
+
+function mapRuntimeFailureCode(errorName: string, errorMessage: string): MicrophoneRuntimeErrorCode {
+  const lower = errorMessage.toLowerCase();
+  if (
+    errorName === "NotReadableError" ||
+    lower.includes("could not start audio source") ||
+    lower.includes("busy")
+  ) {
+    return "microphone_busy";
+  }
+  if (errorName === "AbortError" || lower.includes("aborted")) {
+    return "stale_stream";
+  }
+  if (errorName === "InvalidStateError" || lower.includes("state")) {
+    return "dead_recorder";
+  }
+  if (errorName === "SecurityError") {
+    return "security_error";
+  }
+  return "recognition_start_failed";
+}
+
+/**
+ * Classify a getUserMedia / recording failure using OS permission truth first.
+ * getUserMedia failure alone must never imply permission denied.
+ */
+export async function classifyMicrophoneFailure(err: unknown): Promise<MicrophoneFailureClassification> {
+  const errorName = domErrorName(err);
+  const errorMessage = domErrorMessage(err);
+  const osPermissionState = await queryOsMicrophonePermissionState();
+
+  const looksLikePermissionError =
+    errorName === "NotAllowedError" ||
+    errorName === "PermissionDeniedError" ||
+    errorMessage.toLowerCase().includes("permission denied");
+
+  let mappedCode: MicrophoneRuntimeErrorCode;
+  let isTruePermissionDenial = false;
+
+  if (looksLikePermissionError) {
+    if (isOsMicrophonePermissionDenied(osPermissionState)) {
+      mappedCode = osPermissionState === "blocked" ? "microphone_blocked" : "microphone_denied";
+      isTruePermissionDenial = true;
+    } else if (osPermissionState === "granted") {
+      mappedCode = mapRuntimeFailureCode(errorName, errorMessage);
+      if (mappedCode === "recognition_start_failed") mappedCode = "microphone_busy";
+    } else {
+      mappedCode = "recognition_start_failed";
+    }
+  } else {
+    mappedCode = mapRuntimeFailureCode(errorName, errorMessage);
+  }
+
+  logMicrophonePermission("classified microphone failure", {
+    osPermissionState,
+    errorName,
+    errorMessage,
+    isTruePermissionDenial,
+    mappedCode,
+  });
+
+  return { osPermissionState, errorName, errorMessage, isTruePermissionDenial, mappedCode };
 }
 
 function statusToAccessResult(status: AndroidMicrophoneStatus): MicrophoneAccessResult {
@@ -256,7 +402,19 @@ export async function requestMicrophoneAccess(options?: {
       logMicrophonePermission("getUserMedia permission probe granted");
       return { granted: true };
     } catch (err) {
-      logMicrophonePermission("getUserMedia permission probe failed", err);
+      const errorName = domErrorName(err);
+      const osPermissionState = await queryOsMicrophonePermissionState();
+      logMicrophonePermission("getUserMedia permission probe failed", {
+        errorName,
+        osPermissionState,
+        err,
+      });
+
+      if (osPermissionState === "granted") {
+        cache = "granted";
+        return { granted: true };
+      }
+
       if (isCapacitorIosNative()) {
         try {
           const { status } = await MicPermissionCapacitor.getMicrophoneStatus();
@@ -270,6 +428,7 @@ export async function requestMicrophoneAccess(options?: {
       }
       // Feature taps should retry on next tap (user may allow in settings).
       if (!forFeature) cache = "denied";
+      if (osPermissionState === "blocked") return { granted: false, reason: "blocked" };
       return { granted: false, reason: "denied" };
     }
   };
@@ -316,8 +475,17 @@ export async function openMicrophoneStream(
     });
     return { ok: true, stream };
   } catch (err) {
-    logMicrophonePermission("microphone stream open failed", err);
+    const errorName = domErrorName(err);
+    const osPermissionState = await queryOsMicrophonePermissionState();
+    logMicrophonePermission("microphone stream open failed", {
+      errorName,
+      osPermissionState,
+      err,
+    });
     resetMicrophonePermissionCache();
-    return { ok: false, reason: "denied" };
+    if (isOsMicrophonePermissionDenied(osPermissionState)) {
+      return { ok: false, reason: osPermissionState === "blocked" ? "blocked" : "denied" };
+    }
+    return { ok: false, reason: "unavailable" };
   }
 }

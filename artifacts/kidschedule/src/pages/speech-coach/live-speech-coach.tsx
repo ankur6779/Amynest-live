@@ -32,7 +32,7 @@ import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
 import { openAndroidMicrophoneSettings } from "@/lib/microphone-permission";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
-import { clampClarityScore, playSpeechCue, weakSoundsToHistory } from "./speech-coach-utils";
+import { clampClarityScore, getSpeechCoachMicStatusMessage, playSpeechCue, weakSoundsToHistory } from "./speech-coach-utils";
 import { isSpeechCoachEligibleAgeMonths } from "@workspace/speech-coach";
 import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
 import { useListChildren } from "@workspace/api-client-react";
@@ -342,9 +342,23 @@ export function LiveSpeechCoach({
       setStartingMic(false);
       startingMicRef.current = false;
       setState("idle");
-      setStatus("Microphone permission was not allowed. Tap the mic to try again.");
+      setStatus(getSpeechCoachMicStatusMessage({
+        error: stt.error,
+        sessionStatus: stt.status,
+        fallbackStatus: status,
+      }));
+    } else if (stt.error && stt.error !== "transcription_failed" && stt.error !== "transcription_auth_failed") {
+      listenStartedRef.current = false;
+      setStartingMic(false);
+      startingMicRef.current = false;
+      setState("idle");
+      setStatus(getSpeechCoachMicStatusMessage({
+        error: stt.error,
+        sessionStatus: stt.status,
+        fallbackStatus: status,
+      }));
     }
-  }, [stt.error]);
+  }, [stt.error, stt.status, status]);
 
   const speak = useCallback(
     async (text: string, purpose: "prompt" | "feedback" | "complete") => {
@@ -569,19 +583,11 @@ export function LiveSpeechCoach({
           )}
 
           <p className="min-h-6 text-center text-sm font-bold text-white/75" aria-live="polite">
-            {stt.error === "microphone_blocked"
-              ? "Microphone access is required for Speech Coach."
-              : stt.error === "microphone_denied"
-                ? "Microphone permission was not allowed. Tap the mic to try again."
-                : stt.error
-                  ? "I could not access the microphone. Please try again."
-                  : stt.status === "preparing"
-                    ? "Preparing microphone..."
-                    : stt.status === "reconnecting"
-                      ? "Reconnecting microphone..."
-                      : stt.status === "refreshing"
-                        ? "Refreshing microphone..."
-                        : status}
+            {getSpeechCoachMicStatusMessage({
+              error: stt.error,
+              sessionStatus: stt.status,
+              fallbackStatus: status,
+            })}
           </p>
 
           {state !== "complete" ? (

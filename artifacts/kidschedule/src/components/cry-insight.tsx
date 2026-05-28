@@ -283,12 +283,13 @@ export function CryInsight({
       noiseSuppression: true,
       autoGainControl: true,
       onError: (err, mappedCode) => {
+        const isPermissionIssue =
+          mappedCode === "microphone_denied" || mappedCode === "microphone_blocked";
         toast({
           title: t("toasts.cry_insight.mic_denied_title"),
-          description:
-            mappedCode === "unavailable"
-              ? t("toasts.cry_insight.mic_unavailable_body")
-              : t("toasts.cry_insight.mic_denied_body"),
+          description: isPermissionIssue
+            ? t("toasts.cry_insight.mic_denied_body")
+            : t("toasts.cry_insight.mic_unavailable_body"),
           variant: "destructive",
         });
         setRecording(false);

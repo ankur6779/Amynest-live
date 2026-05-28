@@ -1,5 +1,12 @@
 import { isCapacitorIosNative, prepareIosAudioSessionForRecording } from "@/lib/mic-permission-capacitor";
-import { requestMicrophoneAccess, resetMicrophonePermissionCache } from "@/lib/microphone-permission";
+import {
+  classifyMicrophoneFailure,
+  isOsMicrophonePermissionDenied,
+  queryOsMicrophonePermissionState,
+  requestMicrophoneAccess,
+  resetMicrophonePermissionCache,
+  type MicrophoneRuntimeErrorCode,
+} from "@/lib/microphone-permission";
 
 export interface RecordingSessionConfig {
   echoCancellation?: boolean;
@@ -8,7 +15,7 @@ export interface RecordingSessionConfig {
   timeslice?: number;
   onDataAvailable?: (blob: Blob) => void;
   onStop?: (chunks: Blob[]) => void;
-  onError?: (err: Error, mappedCode: string) => void;
+  onError?: (err: Error, mappedCode: MicrophoneRuntimeErrorCode) => void;
   onStateChange?: (state: MicrophoneSessionState) => void;
 }
 
@@ -206,14 +213,7 @@ export class MicrophoneSessionManager {
       }
     } catch (err: any) {
       this.log("Automatic recovery retry failed", err);
-      
-      // Determine if this is a "fake permission error" (granted native permission but getUserMedia fails)
-      const errorName = err?.name || "UnknownError";
-      if (errorName !== "NotAllowedError" && errorName !== "PermissionDeniedError") {
-        this.stats.fakePermissionErrors++;
-      }
-
-      this.handleError(err, config);
+      await this.handleError(err, config);
     }
 
     return false;
@@ -226,8 +226,9 @@ export class MicrophoneSessionManager {
     // A. Perform permission/native check. Since config.forFeature is true on user action,
     // we bypass cache to ensure real permission dialog triggers if needed.
     const access = await requestMicrophoneAccess({ forFeature: true });
-    this.log("Microphone access permission check result", access);
-    if (!access.granted) {
+    const osPermissionState = await queryOsMicrophonePermissionState();
+    this.log("Microphone access permission check result", { access, osPermissionState });
+    if (!access.granted && isOsMicrophonePermissionDenied(osPermissionState)) {
       throw new DOMException("Permission denied by user or OS", "NotAllowedError");
     }
 
@@ -241,7 +242,19 @@ export class MicrophoneSessionManager {
     };
 
     this.log("Calling getUserMedia with fresh constraints", constraints);
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
+    } catch (getUserMediaErr) {
+      const classification = await classifyMicrophoneFailure(getUserMediaErr);
+      this.log("getUserMedia failed", {
+        osPermissionState: classification.osPermissionState,
+        errorName: classification.errorName,
+        mappedCode: classification.mappedCode,
+        isTruePermissionDenial: classification.isTruePermissionDenial,
+      });
+      throw getUserMediaErr;
+    }
 
     if (this.activeSessionToken !== sessionToken) {
       this.log("Session changed while calling getUserMedia; stopping new stream immediately");
@@ -290,7 +303,7 @@ export class MicrophoneSessionManager {
     recorder.onerror = (e: any) => {
       if (this.activeSessionToken !== sessionToken) return;
       this.log("MediaRecorder runtime error", e);
-      this.handleError(new DOMException("MediaRecorder runtime error", "InvalidStateError"), config);
+      void this.handleError(new DOMException("MediaRecorder runtime error", "InvalidStateError"), config);
     };
 
     recorder.onstop = () => {
@@ -312,7 +325,7 @@ export class MicrophoneSessionManager {
         this.log("Watchdog triggered: MediaRecorder failed to start recording within 4 seconds");
         this.stats.watchdogTimeouts++;
         this.cleanup();
-        this.handleError(new DOMException("Microphone start timed out", "NotReadableError"), config);
+        void this.handleError(new DOMException("Microphone start timed out", "NotReadableError"), config);
       }
     }, 4000);
 
@@ -473,40 +486,40 @@ export class MicrophoneSessionManager {
   }
 
   /**
-   * Centralized error mapping and recovery state conversion
+   * Centralized error mapping and recovery state conversion.
+   * Uses OS permission truth — never maps getUserMedia failure alone to permission denied.
    */
-  private handleError(err: any, config: RecordingSessionConfig): void {
-    const errorName = err?.name || "UnknownError";
-    const errorMessage = err?.message || "";
-    this.log(`Recording session failure occurred: errorName=${errorName}, message=${errorMessage}`);
+  private async handleError(err: any, config: RecordingSessionConfig): Promise<void> {
+    const classification = await classifyMicrophoneFailure(err);
+    const { errorName, errorMessage, osPermissionState, mappedCode, isTruePermissionDenial } = classification;
 
-    let mappedCode = "recognition_start_failed";
+    const trackStates = this.stream?.getAudioTracks().map((t) => ({
+      label: t.label,
+      readyState: t.readyState,
+    }));
 
-    if (
-      errorName === "NotAllowedError" || 
-      errorName === "PermissionDeniedError" || 
+    this.log("Recording session failure occurred", {
+      errorName,
+      errorMessage,
+      osPermissionState,
+      isTruePermissionDenial,
+      mappedCode,
+      streamActive: this.stream?.active ?? null,
+      trackStates,
+      retryStats: this.stats,
+    });
+
+    if (isTruePermissionDenial) {
+      /* true OS denial */
+    } else if (
+      errorName === "NotAllowedError" ||
+      errorName === "PermissionDeniedError" ||
       errorMessage.toLowerCase().includes("permission denied")
     ) {
-      mappedCode = "microphone_denied"; // True permission denied
-    } else if (
-      errorName === "NotReadableError" || 
-      errorMessage.toLowerCase().includes("could not start audio source") || 
-      errorMessage.toLowerCase().includes("busy")
-    ) {
-      mappedCode = "microphone_busy"; // Mic busy / Android lock-up
-      this.stats.androidSpecificFailures++;
-    } else if (
-      errorName === "AbortError" || 
-      errorMessage.toLowerCase().includes("aborted")
-    ) {
-      mappedCode = "stale_stream"; // Stale stream
-    } else if (
-      errorName === "InvalidStateError" || 
-      errorMessage.toLowerCase().includes("state")
-    ) {
-      mappedCode = "dead_recorder"; // Dead recorder
-    } else if (errorName === "SecurityError") {
-      mappedCode = "security_error"; // WebView browser lock-up
+      this.stats.fakePermissionErrors++;
+    }
+
+    if (mappedCode === "microphone_busy" || mappedCode === "security_error") {
       this.stats.androidSpecificFailures++;
     }
 

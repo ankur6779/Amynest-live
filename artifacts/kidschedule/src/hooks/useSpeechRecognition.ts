@@ -14,7 +14,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { getApiUrl } from "@/lib/api";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
-import { requestMicrophoneAccess, resetMicrophonePermissionCache } from "@/lib/microphone-permission";
+import { requestMicrophoneAccess, resetMicrophonePermissionCache, queryOsMicrophonePermissionState, isOsMicrophonePermissionDenied, classifyMicrophoneFailure, type MicrophoneRuntimeErrorCode } from "@/lib/microphone-permission";
 import { microphoneSessionManager, MicrophoneSessionState } from "@/lib/microphone-session-manager";
 
 // ── Web Speech API ambient declarations ─────────────────────────────────────
@@ -147,9 +147,20 @@ export interface UseSpeechRecognitionOptions {
   getAuthToken?: () => Promise<string | null>;
 }
 
-function micAccessError(reason: "denied" | "blocked" | "unavailable"): string {
+function micAccessError(reason: "denied" | "blocked" | "unavailable"): MicrophoneRuntimeErrorCode {
   if (reason === "blocked") return "microphone_blocked";
   return reason === "unavailable" ? "recognition_start_failed" : "microphone_denied";
+}
+
+async function resolveMicAccessError(
+  access: { granted: false; reason: "denied" | "blocked" | "unavailable" },
+): Promise<MicrophoneRuntimeErrorCode> {
+  const osState = await queryOsMicrophonePermissionState();
+  logSpeechRecognition("microphone access denied; verifying OS permission state", { access, osState });
+  if (!isOsMicrophonePermissionDenied(osState)) {
+    return "recognition_start_failed";
+  }
+  return micAccessError(access.reason);
 }
 
 function logSpeechRecognition(message: string, detail?: unknown): void {
@@ -235,7 +246,7 @@ export function useSpeechRecognition(
     const access = await requestMicrophoneAccess({ forFeature: true });
     logSpeechRecognition("native speech microphone access result", access);
     if (!access.granted) {
-      setError(micAccessError(access.reason));
+      setError(await resolveMicAccessError(access));
       setStatus("error");
       return false;
     }
@@ -259,17 +270,23 @@ export function useSpeechRecognition(
       setStatus("idle");
       setInterimTranscript("");
     };
-    rec.onerror = (e: SpeechRecognitionErrorEvent) => {
-      const code = normaliseSpeechError(e.error);
+    rec.onerror = async (e: SpeechRecognitionErrorEvent) => {
+      let code = normaliseSpeechError(e.error);
       logSpeechRecognition("native speech recognition error", { error: e.error, message: e.message, code });
+      if (code === "microphone_denied") {
+        const classification = await classifyMicrophoneFailure(
+          new DOMException(e.message || e.error, "NotAllowedError"),
+        );
+        code = classification.mappedCode;
+        logSpeechRecognition("native speech error reclassified using OS permission", classification);
+      }
       if (code !== "aborted") {
         setError(code);
         setStatus("error");
       } else {
         setStatus("idle");
       }
-      // Reset cached permission if user revoked it mid-session
-      if (code === "microphone_denied") resetMicrophonePermissionCache();
+      if (code === "microphone_denied" || code === "microphone_blocked") resetMicrophonePermissionCache();
       setListening(false);
     };
     rec.onresult = (e: SpeechRecognitionEvent) => {
@@ -320,15 +337,12 @@ export function useSpeechRecognition(
       autoGainControl: true,
       timeslice: 400,
       onError: (err, mappedCode) => {
-        logSpeechRecognition("Whisper recording session error callback", { message: err.message, mappedCode });
-        
-        // Exact translation mapping:
-        if (mappedCode === "microphone_denied") {
-          setError("microphone_denied");
-        } else {
-          // Map other non-permission errors to start failure
-          setError("recognition_start_failed");
-        }
+        logSpeechRecognition("Whisper recording session error callback", {
+          message: err.message,
+          mappedCode,
+          sessionStats: microphoneSessionManager.getStatistics(),
+        });
+        setError(mappedCode);
       },
       onStop: async (chunks) => {
         logSpeechRecognition("Whisper recording onStop callback triggered", { chunks: chunks.length });
