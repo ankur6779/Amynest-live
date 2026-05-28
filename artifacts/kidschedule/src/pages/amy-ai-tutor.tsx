@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,6 +22,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { readResolvedApiJson } from "@/lib/poll-result";
 import { useSubscription } from "@/hooks/use-subscription";
+import { useLearningProgress } from "@/hooks/use-learning-progress";
+import { TutorProactiveLines, AmyPresenceStrip } from "@/components/learning-progress";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -124,6 +125,7 @@ export default function AmyAiTutorPage() {
     staleTime: 60_000,
   });
   const primaryChild = Array.isArray(childrenData) && childrenData.length > 0 ? childrenData[0] : null;
+  const learningProgress = useLearningProgress(primaryChild?.id ?? null);
 
   // Server-driven daily AI gate (shared with /assistant).
   const dailyLimit = entitlements?.limits.aiQueriesPerDay ?? 10;
@@ -154,6 +156,24 @@ export default function AmyAiTutorPage() {
           subject,
           topic: topic.trim() || undefined,
           message: text,
+          learningContext: learningProgress.aiTutorContext
+            ? {
+                weakSkills: [
+                  ...learningProgress.aiTutorContext.weakSkills,
+                  ...(learningProgress.phase3?.memory.strugglingSkills ?? []),
+                ].slice(0, 20),
+                recentMistakes: learningProgress.aiTutorContext.recentMistakes,
+                learningLevel: learningProgress.aiTutorContext.learningLevel,
+                unlockedSkills: [
+                  ...learningProgress.aiTutorContext.unlockedSkills,
+                  ...(learningProgress.phase3?.memory.masteredSkills ?? []),
+                ].slice(0, 30),
+                masteryScore: learningProgress.aiTutorContext.masteryScore,
+                currentPhase: learningProgress.aiTutorContext.currentPhase,
+                journeyDay: learningProgress.aiTutorContext.journeyDay,
+                proactiveInsights: learningProgress.phase3?.tutorLines.map((l) => l.text),
+              }
+            : undefined,
         }),
       });
       if (res.status === 402) {
@@ -217,9 +237,8 @@ export default function AmyAiTutorPage() {
               Quick Tutor
             </Badge>
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Ask Amy to teach a topic, run a practice, or explain a doubt — answers come with
-            examples and a quick check.
+          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+            A warm, playful tutor — ask for a lesson, practice, or help with a doubt.
           </p>
         </div>
         <Link href="/learn-with-amy">
@@ -229,6 +248,18 @@ export default function AmyAiTutorPage() {
           </Button>
         </Link>
       </div>
+
+      {primaryChild?.id != null && (
+        <div className="mx-4 mb-3 md:mx-0">
+          <AmyPresenceStrip surface="tutor" childId={primaryChild.id} />
+        </div>
+      )}
+
+      {learningProgress.phase3 && learningProgress.phase3.tutorLines.length > 0 && (
+        <div className="mx-4 mb-3 md:mx-0">
+          <TutorProactiveLines lines={learningProgress.phase3.tutorLines} />
+        </div>
+      )}
 
       {/* Daily limit bar */}
       <div

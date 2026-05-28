@@ -67,6 +67,22 @@ import { HubJourneyStrip } from "@/components/hub-journey-strip";
 import { TodaysPathFromStatus } from "@/components/todays-path";
 import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
 import { useHubJourney } from "@/hooks/use-hub-journey";
+import { useLearningProgress } from "@/hooks/use-learning-progress";
+import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
+import {
+  ProgressionStrip,
+  DailyFreshnessCard,
+  NextSessionUnlocks,
+  WeeklyParentReportCard,
+  RewardCelebrationModal,
+  RewardWalletStrip,
+  DailyLearningSessionCard,
+  SessionCompleteScreen,
+  ComebackMissionCard,
+  AdaptiveRecommendationsCard,
+  AmyPresenceStrip,
+} from "@/components/learning-progress";
+import { useRewardCelebrations } from "@/hooks/use-reward-celebrations";
 
 // ── 5-section grouping for the "For You" content ────────────────────────────
 // Maps each premium section key to the tile IDs that live inside it.
@@ -784,6 +800,22 @@ function ParentingHubPage() {
 
   // Hub Journey: 3 guided free days → paywall (replaces per-tile quota for hub features).
   const hubJourney = useHubJourney(effectiveChild?.id);
+  const learningProgress = useLearningProgress(effectiveChild?.id);
+  const rewardCelebrations = useRewardCelebrations();
+  const { trackNextSessionOpened } = useRecordLearningActivity(effectiveChild?.id, {
+    onRewards: rewardCelebrations.celebrate,
+  });
+  const [showSessionComplete, setShowSessionComplete] = useState(false);
+
+  const handleSessionStep = async (stepId: string) => {
+    const result = await learningProgress.completeSessionStep(stepId);
+    if (result.rewardEvents?.length) {
+      rewardCelebrations.celebrate(result.rewardEvents);
+    }
+    if (result.sessionComplete) {
+      setShowSessionComplete(true);
+    }
+  };
   const hubUsage = useFeatureUsage();
 
   const isHubLocked = useCallback(
@@ -1159,7 +1191,7 @@ function ParentingHubPage() {
     render: () => {
       return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_worksheets")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
           <HubSection id="worksheets" icon={<FileDown className="h-5 w-5 text-white" />} title={t("parent_hub.tiles.worksheets.title")} description={t("parent_hub.tiles.worksheets.desc")} accentClass="bg-gradient-to-br from-sky-400 to-indigo-500" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(99,102,241,0.14)100%)" tryFree={tryFreeFor("hub_worksheets")} onOpen={() => markHubUsed("hub_worksheets")}> {/* audit-ok: brand tile accent gradient */}
-            <PrintableWorksheets childAgeMonths={totalAgeMonths} />
+            <PrintableWorksheets childAgeMonths={totalAgeMonths} childId={effectiveChild.id} />
           </HubSection>
         </LockedBlock>;
     }
@@ -1397,6 +1429,90 @@ function ParentingHubPage() {
           onPeekAhead={hubJourney.peekAheadUnlock}
           isCompleting={hubJourney.isCompleting}
         />
+      )}
+
+      {effectiveChild && (
+        <AmyPresenceStrip surface="parent-hub" childId={effectiveChild.id} />
+      )}
+
+      {effectiveChild && learningProgress.profile && (
+        <ProgressionStrip profile={learningProgress.profile} />
+      )}
+
+      {effectiveChild && learningProgress.phase3 && (
+        <RewardWalletStrip wallet={learningProgress.phase3.wallet} />
+      )}
+
+      {effectiveChild && learningProgress.phase3?.comeback && (
+        <ComebackMissionCard mission={learningProgress.phase3.comeback} />
+      )}
+
+      {effectiveChild && learningProgress.phase3 && !showSessionComplete && (
+        <DailyLearningSessionCard
+          session={learningProgress.phase3.dailySession}
+          childId={effectiveChild.id}
+          childName={effectiveChild.name}
+          onStepComplete={handleSessionStep}
+          completing={learningProgress.isCompleting}
+        />
+      )}
+
+      {effectiveChild && showSessionComplete && learningProgress.phase3 && learningProgress.unlocks && (
+        <SessionCompleteScreen
+          xpEarned={
+            rewardCelebrations.events.reduce((sum, e) => sum + (e.amount ?? 0), 0) ||
+            25
+          }
+          rewardEvents={rewardCelebrations.events.length > 0 ? rewardCelebrations.events : []}
+          tomorrowPreview={learningProgress.unlocks.nextSessionUnlocks}
+          childName={effectiveChild.name}
+          activitiesCompleted={learningProgress.phase3.dailySession.completedCount}
+          activitiesTotal={learningProgress.phase3.dailySession.totalCount}
+          streakDays={learningProgress.phase3.wallet.streakDays}
+          skillHighlight={
+            learningProgress.phase3.recommendations[0]?.title ?? null
+          }
+          onClose={() => setShowSessionComplete(false)}
+        />
+      )}
+
+      {effectiveChild && learningProgress.phase3 && (
+        <AdaptiveRecommendationsCard items={learningProgress.phase3.recommendations} />
+      )}
+
+      {effectiveChild && hubUsage.isPremium && learningProgress.phase3 && (
+        <div className="flex justify-end">
+          <Link href="/parent-growth">
+            <Button variant="outline" size="sm" className="rounded-full gap-1.5">
+              <Trophy className="h-4 w-4" />
+              See growth journey
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      <RewardCelebrationModal
+        events={rewardCelebrations.events}
+        open={rewardCelebrations.open}
+        onClose={rewardCelebrations.close}
+      />
+
+      {effectiveChild && learningProgress.unlocks && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <DailyFreshnessCard
+            items={learningProgress.unlocks.todaysUnlocks}
+            isRevisionDay={learningProgress.unlocks.isRevisionDay}
+          />
+          <NextSessionUnlocks
+            items={learningProgress.unlocks.nextSessionUnlocks}
+            childName={effectiveChild.name}
+            onVisible={trackNextSessionOpened}
+          />
+        </div>
+      )}
+
+      {effectiveChild && learningProgress.weeklyReport && hubUsage.isPremium && (
+        <WeeklyParentReportCard report={learningProgress.weeklyReport} />
       )}
 
       {effectiveChild && currentBand && <>

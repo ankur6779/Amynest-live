@@ -13,6 +13,7 @@ import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useHubJourney } from "@/hooks/use-hub-journey";
+import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
 import { usePaywall } from "@/contexts/paywall-context";
 import { useMountedRef } from "@/hooks/use-safe-async";
 import { applyPhonicsJourneyCap, premiumPracticeItems, type PhonicsPremiumMeta } from "@/lib/phonics-journey-access";
@@ -199,6 +200,9 @@ function PhonicsLearningContent({
     setStageOverride(null);
   }, [childId]);
   const phonicsData = usePhonicsData(childId, totalAgeMonths, stageOverride);
+  const { recordActivity } = useRecordLearningActivity(
+    Number.isFinite(numericChildId) ? numericChildId : null,
+  );
 
   const {
     level,
@@ -211,9 +215,20 @@ function PhonicsLearningContent({
     premiumMeta,
     progress,
     insights,
-    recordPlay,
+    recordPlay: recordPlayBase,
     toggleMastered,
   } = phonicsData;
+
+  const recordPlay = (id: string, contentId?: number) => {
+    recordPlayBase(id, contentId);
+    if (Number.isFinite(numericChildId)) {
+      void recordActivity({
+        activityId: `phonics_${id}`,
+        section: "phonics",
+        correct: true,
+      });
+    }
+  };
 
   const journeyApplied = useMemo(
     () =>
@@ -261,6 +276,7 @@ function PhonicsLearningContent({
   const lockStageSelector = journeyGated && isFreeJourneyPeriod && !isPremium;
 
   const gateProps = {
+    childId: Number.isFinite(numericChildId) ? numericChildId : undefined,
     journeyDay,
     journeyGated,
     journeyFreePeriod: isFreeJourneyPeriod,

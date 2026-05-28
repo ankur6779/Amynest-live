@@ -7,6 +7,7 @@ import { FirebaseAuthProvider, Show } from "@/lib/firebase-auth";
 import { OAuthRedirectHandler } from "@/components/oauth-redirect-handler";
 import { useAuth, useClerk } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useLearningSyncBootstrap } from "@/hooks/use-learning-sync";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/theme-context";
@@ -78,6 +79,8 @@ const AmyAiTutorPage = lazyPage(() => import("@/pages/amy-ai-tutor"));
 const AmyLearningTutorPage = lazyPage(() => import("@/pages/amy-learning-tutor"));
 const ProgressPage = lazyPage(() => import("@/pages/progress"));
 const ParentingHub = lazyPage(() => import("@/pages/parenting-hub"));
+const ParentGrowthPage = lazyPage(() => import("@/pages/parent-growth"));
+const DebugLearningPage = lazyPage(() => import("@/pages/debug-learning"));
 const PhonicsPage = lazyPage(() => import("@/pages/phonics"));
 const PhonicsTestPlayPage = lazyPage(() => import("@/pages/phonics-test-play"));
 const LifeSkillsPage = lazyPage(() => import("@/pages/life-skills"));
@@ -284,6 +287,8 @@ const AmyAiTutorRoute = makeProtectedRoute(AmyAiTutorPage);
 const AmyLearningTutorRoute = makeProtectedRoute(AmyLearningTutorPage);
 const ProgressRoute = makeProtectedRoute(ProgressPage);
 const ParentingHubRoute = makeProtectedRoute(ParentingHub);
+const ParentGrowthRoute = makeProtectedRoute(ParentGrowthPage);
+const DebugLearningRoute = makeProtectedRoute(DebugLearningPage);
 const PhonicsRoute = makeProtectedRoute(PhonicsPage);
 const PhonicsTestPlayRoute = makeProtectedRoute(PhonicsTestPlayPage);
 const LifeSkillsRoute = makeProtectedRoute(LifeSkillsPage);
@@ -445,6 +450,11 @@ function QueryClientCacheInvalidator() {
   return null;
 }
 
+function LearningSyncBootstrap() {
+  useLearningSyncBootstrap();
+  return null;
+}
+
 function NotificationDeepLinkBridge() {
   useNotificationDeepLink();
   return null;
@@ -479,6 +489,7 @@ function AppRoutes() {
             <AuthNavigationBridge />
             <CapacitorRoutePreload />
             <QueryClientCacheInvalidator />
+            <LearningSyncBootstrap />
             <ReferralAttributionBridge />
             <GiftAttributionBridge />
             <FcmForegroundHandler />
@@ -530,6 +541,8 @@ function AppRoutes() {
           <Route path="/learn-with-amy" component={AmyLearningTutorRoute} />
           <Route path="/progress" component={ProgressRoute} />
           <Route path="/parenting-hub" component={ParentingHubRoute} />
+          <Route path="/parent-growth" component={ParentGrowthRoute} />
+          <Route path="/debug/learning" component={DebugLearningRoute} />
           <Route path="/phonics/test/play" component={PhonicsTestPlayRoute} />
           <Route path="/phonics/test" component={PhonicsRoute} />
           <Route path="/phonics" component={PhonicsRoute} />

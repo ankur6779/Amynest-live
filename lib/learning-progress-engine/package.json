@@ -1,0 +1,13 @@
+{
+  "name": "@workspace/learning-progress-engine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@workspace/parent-hub-journey": "workspace:*",
+    "@workspace/study-zone": "workspace:*"
+  }
+}

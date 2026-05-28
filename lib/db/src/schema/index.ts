@@ -72,6 +72,8 @@ export * from "./parent_task_completions";
 export * from "./daily_puzzle_progress";
 export * from "./life_skills_progress";
 export * from "./child_learning_progress";
+export * from "./learning_progress";
+export * from "./skill_graph_progress";
 export * from "./child_content_learning_profiles";
 export * from "./child_personality_profiles";
 export * from "./child_prediction_snapshots";

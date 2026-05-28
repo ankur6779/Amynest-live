@@ -14,6 +14,8 @@ import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
 import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
 import { incrementFeatureUsage } from "../services/subscriptionService.js";
+import { getLearningProgressStatus } from "../services/learningProgressService.js";
+import { applyAiGuardrails } from "@workspace/learning-progress-engine";
 
 /**
  * Amy AI Tutor — /api/ai-tutor/chat
@@ -86,6 +88,19 @@ const ChatBody = z.object({
     )
     .max(10)
     .optional(),
+  /** Adaptive context from LearningProgressEngine (client or server). */
+  learningContext: z
+    .object({
+      weakSkills: z.array(z.string()).max(20).optional(),
+      recentMistakes: z.array(z.string()).max(20).optional(),
+      learningLevel: z.number().int().min(1).max(50).optional(),
+      unlockedSkills: z.array(z.string()).max(30).optional(),
+      masteryScore: z.number().int().min(0).max(100).optional(),
+      currentPhase: z.string().max(32).optional(),
+      journeyDay: z.number().int().min(1).max(30).optional(),
+      proactiveInsights: z.array(z.string().max(300)).max(8).optional(),
+    })
+    .optional(),
 });
 
 const TutorJsonSchema = z.object({
@@ -130,6 +145,7 @@ function buildSystemPrompt(args: {
   subject: string;
   topic: string;
   childName: string | null;
+  learningContext?: z.infer<typeof ChatBody>["learningContext"];
 }): string {
   const toneByBand: Record<AgeBand, string> = {
     "2-4":
@@ -170,6 +186,34 @@ function buildSystemPrompt(args: {
     '    "answer": <option index | short string | null>',
     "  }",
     'Set "type" equal to the requested mode. Do NOT include any text outside the JSON object.',
+    args.learningContext
+      ? [
+          "Adaptive learning profile (personalize difficulty and focus):",
+          args.learningContext.weakSkills?.length
+            ? `Weak skills to reinforce: ${args.learningContext.weakSkills.join(", ")}.`
+            : "",
+          args.learningContext.recentMistakes?.length
+            ? `Recent mistakes: ${args.learningContext.recentMistakes.join(", ")}.`
+            : "",
+          args.learningContext.learningLevel != null
+            ? `Learning level: ${args.learningContext.learningLevel}.`
+            : "",
+          args.learningContext.masteryScore != null
+            ? `Mastery score: ${args.learningContext.masteryScore}/100.`
+            : "",
+          args.learningContext.unlockedSkills?.length
+            ? `Unlocked skills: ${args.learningContext.unlockedSkills.join(", ")}.`
+            : "",
+          args.learningContext.currentPhase
+            ? `Phase: ${args.learningContext.currentPhase}.`
+            : "",
+          args.learningContext.proactiveInsights?.length
+            ? `Proactive insights to weave in naturally when relevant:\n${args.learningContext.proactiveInsights.map((l) => `- ${l}`).join("\n")}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -177,6 +221,33 @@ function buildSystemPrompt(args: {
 
 function isStrictJson(value: unknown): value is TutorJson {
   return TutorJsonSchema.safeParse(value).success;
+}
+
+/**
+ * Phase 7 — run AI guardrails over Amy's reply. Strips diagnostic /
+ * anxiety / guilt language and logs violation counts. Never throws.
+ */
+function guardTutorReply(reply: TutorJson, meta: { mode: TutorMode; ageBand: AgeBand }): TutorJson {
+  let violationCount = 0;
+  const guard = (text: string): string => {
+    const result = applyAiGuardrails(text);
+    violationCount += result.violations.length;
+    return result.text;
+  };
+  const guarded: TutorJson = {
+    type: reply.type,
+    content: guard(reply.content),
+    examples: reply.examples.map(guard),
+    question: reply.question == null ? null : guard(reply.question),
+    options: reply.options.map(guard),
+    answer: reply.answer,
+  };
+  if (violationCount > 0) {
+    logger.warn(
+      `ai-tutor guardrails: stripped ${violationCount} violation(s) mode=${meta.mode} ageBand=${meta.ageBand}`,
+    );
+  }
+  return guarded;
 }
 
 /** Cheap rule-based fallback so Amy always replies — even if OpenAI is down. */
@@ -242,6 +313,26 @@ router.post("/ai-tutor/chat", aiUsageGate, async (req, res): Promise<void> => {
   const ageBand: AgeBand = body.ageBand ?? derivedAgeBand ?? "5-7";
   const topic = body.topic ?? "";
 
+  let learningContext = body.learningContext;
+  if (!learningContext && body.childId != null) {
+    try {
+      const lp = await getLearningProgressStatus(userId, body.childId);
+      if (lp?.aiTutorContext) {
+        learningContext = {
+          weakSkills: lp.aiTutorContext.weakSkills,
+          recentMistakes: lp.aiTutorContext.recentMistakes,
+          learningLevel: lp.aiTutorContext.learningLevel,
+          unlockedSkills: lp.aiTutorContext.unlockedSkills,
+          masteryScore: lp.aiTutorContext.masteryScore,
+          currentPhase: lp.aiTutorContext.currentPhase,
+          journeyDay: lp.aiTutorContext.journeyDay,
+        };
+      }
+    } catch {
+      /* best-effort — tutor works without adaptive context */
+    }
+  }
+
   const key = cacheKey({
     mode: body.mode,
     ageBand,
@@ -259,7 +350,7 @@ router.post("/ai-tutor/chat", aiUsageGate, async (req, res): Promise<void> => {
       .limit(1);
     if (cached[0] && isStrictJson(cached[0].response)) {
       res.json({
-        reply: cached[0].response as TutorJson,
+        reply: guardTutorReply(cached[0].response as TutorJson, { mode: body.mode, ageBand }),
         cached: true,
         ageBand,
         mode: body.mode,
@@ -289,6 +380,7 @@ router.post("/ai-tutor/chat", aiUsageGate, async (req, res): Promise<void> => {
           subject: body.subject,
           topic,
           childName,
+          learningContext,
         }),
       },
       ...historyMessages,
@@ -323,6 +415,8 @@ router.post("/ai-tutor/chat", aiUsageGate, async (req, res): Promise<void> => {
         reply.type = body.mode;
       }
     }
+
+    reply = guardTutorReply(reply, { mode: body.mode, ageBand });
 
     if (usedFallback) {
       void incrementFeatureUsage(userId, "ai_query", -1).catch((err) => {

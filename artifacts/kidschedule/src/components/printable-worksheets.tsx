@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import amyLogo from "@assets/ChatGPT_Image_Apr_19,_2026,_01_56_21_PM_1776587201948.png";
 import { useTranslation } from "react-i18next";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
@@ -6,6 +6,16 @@ import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { downloadPdfFromUrl, hubTodayIst } from "@/lib/hub-pdf-download";
+import { useLearningProgress } from "@/hooks/use-learning-progress";
+import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
+import {
+  pickDailyWorksheets,
+  worksheetProgressSummary,
+} from "@workspace/learning-progress-engine";
+import {
+  WorksheetDailyPath,
+  WorksheetProgressReport,
+} from "@/components/learning-progress";
 interface Worksheet {
   id: string;
   name: string;
@@ -76,15 +86,20 @@ function incrementDailyCount(userId: string): DailyRecord {
   return next;
 }
 export function PrintableWorksheets({
-  childAgeMonths
+  childAgeMonths,
+  childId,
 }: {
   childAgeMonths?: number;
+  childId?: number;
 }) {
   const {
     t
   } = useTranslation();
   const { isPremium } = useSubscription();
   const { userId } = useAuth();
+  const { unlocks } = useLearningProgress(childId ?? null);
+  const { recordActivity } = useRecordLearningActivity(childId ?? null);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const [all, setAll] = useState<Worksheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -140,12 +155,31 @@ export function PrintableWorksheets({
         if (!isPremium) setDownloadedIds(getDownloadedIds(userId));
         setDailyRec(next);
       }
+      if (childId) {
+        void recordActivity({
+          activityId: `worksheet_${ws.id}`,
+          section: "worksheets",
+          correct: true,
+          analyticsEvent: "worksheet_completed",
+          metadata: { category: ws.category },
+        });
+      }
     } catch {
       setDownloadError("Network error — please check your connection.");
     } finally {
       setDownloadingId(null);
     }
-  }, [dailyRec, downloadedIds.size, downloadingId, isPremium, userId]);
+  }, [childId, dailyRec, downloadedIds.size, downloadingId, isPremium, recordActivity, userId]);
+
+  const dailyPicks = useMemo(() => {
+    if (!unlocks || all.length === 0 || !childId) return [];
+    return pickDailyWorksheets(all, unlocks, { childId, count: 3 });
+  }, [all, childId, unlocks]);
+
+  const printableProgress = useMemo(
+    () => worksheetProgressSummary([...downloadedIds], all.length),
+    [downloadedIds, all.length],
+  );
   const dailyLimit = isPremium ? PREMIUM_DAILY_LIMIT : FREE_DAILY_LIMIT;
   const lifetimeUsed = downloadedIds.size;
   const isDailyLimitReached = dailyRec.count >= dailyLimit;
@@ -200,6 +234,36 @@ export function PrintableWorksheets({
         .ws-dl-btn:hover:not(:disabled) { opacity: 0.85 !important; }
         .ws-dl-btn:active:not(:disabled) { transform: scale(0.97); }
       `}</style>
+
+      {childId && unlocks && dailyPicks.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <WorksheetDailyPath
+            picks={dailyPicks}
+            difficulty={unlocks.worksheetDifficulty}
+            onSelect={(id) => {
+              setHighlightId(id);
+              setQuery("");
+              setPage(1);
+              window.setTimeout(() => {
+                document
+                  .querySelector(`[data-worksheet-id="${id}"]`)
+                  ?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }, 100);
+            }}
+          />
+        </div>
+      )}
+
+      {childId && (
+        <div style={{ marginBottom: 14 }}>
+          <WorksheetProgressReport
+            completed={printableProgress.completed}
+            percent={printableProgress.percent}
+            label={printableProgress.label}
+            dailyRemaining={dailyRemaining}
+          />
+        </div>
+      )}
 
       {/* Download quota badge */}
       <div style={{
@@ -354,7 +418,16 @@ export function PrintableWorksheets({
         gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))",
         gap: 12
       }}>
-            {paginated.map(ws => <WorksheetCard key={ws.id} worksheet={ws} isLimitReached={isLimitReached} isDownloading={downloadingId === ws.id} onDownload={() => void handleDownload(ws)} />)}
+            {paginated.map(ws => (
+              <WorksheetCard
+                key={ws.id}
+                worksheet={ws}
+                highlighted={highlightId === ws.id}
+                isLimitReached={isLimitReached}
+                isDownloading={downloadingId === ws.id}
+                onDownload={() => void handleDownload(ws)}
+              />
+            ))}
           </div>
 
           {/* Pagination */}
@@ -391,11 +464,13 @@ export function PrintableWorksheets({
 }
 function WorksheetCard({
   worksheet,
+  highlighted = false,
   isLimitReached,
   isDownloading,
   onDownload
 }: {
   worksheet: Worksheet;
+  highlighted?: boolean;
   isLimitReached: boolean;
   isDownloading: boolean;
   onDownload: () => void;
@@ -407,14 +482,19 @@ function WorksheetCard({
   const isPdf = worksheet.fileType === "pdf";
   const ext = isPdf ? "PDF" : worksheet.mimeType === "image/png" ? "PNG" : "JPG";
   const pdfEmbedUrl = `https://drive.google.com/file/d/${worksheet.id}/preview`;
-  return <div className="ws-card" style={{
+  return <div
+    className="ws-card"
+    data-worksheet-id={worksheet.id}
+    style={{
     background: "hsl(var(--card))",
     borderRadius: 16,
     overflow: "hidden",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+    boxShadow: highlighted
+      ? "0 0 0 2px hsl(var(--primary)), 0 4px 12px rgba(0,0,0,0.08)"
+      : "0 4px 12px rgba(0,0,0,0.08)",
     display: "flex",
     flexDirection: "column",
-    border: "1px solid hsl(var(--border))"
+    border: highlighted ? "2px solid hsl(var(--primary))" : "1px solid hsl(var(--border))"
   }}>
       {/* Preview */}
       <div style={{

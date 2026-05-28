@@ -259,6 +259,15 @@ export const playFx = {
   tap() {
     tone(660, 0.06, "sine", 0.08);
   },
+  /** Soft reward chime — learning progress celebrations */
+  reward() {
+    tone(523, 0.14, "sine", 0.1);
+    setTimeout(() => tone(784, 0.2, "sine", 0.08), 120);
+  },
+  complete() {
+    tone(440, 0.1, "triangle", 0.09);
+    setTimeout(() => tone(659, 0.16, "triangle", 0.07), 100);
+  },
 };
 
 // Hook: respects a "muted" flag persisted in localStorage so parents can
