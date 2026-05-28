@@ -14,6 +14,7 @@
     "clean:web": "pnpm --filter @workspace/kidschedule run clean",
     "reset": "node scripts/clean-vite-cache.mjs --dist && pnpm install",
     "reset:hard": "rm -rf node_modules artifacts/kidschedule/node_modules artifacts/amynest-splash/node_modules && node scripts/clean-vite-cache.mjs --dist && pnpm install",
+    "sync:main": "bash scripts/sync-local-main.sh",
     "dev": "pnpm run dev:api",
     "dev:api": "pnpm --filter @workspace/api-server dev",
     "dev:web": "pnpm --filter @workspace/kidschedule dev",
