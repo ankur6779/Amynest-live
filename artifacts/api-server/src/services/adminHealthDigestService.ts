@@ -178,12 +178,17 @@ async function sendSlackSummary(text: string): Promise<boolean> {
   }
 }
 
-export async function dispatchAdminHealthDigest(now = Date.now()): Promise<AdminHealthDigestResult> {
+export async function dispatchAdminHealthDigest(
+  now = Date.now(),
+  opts: { force?: boolean } = {},
+): Promise<AdminHealthDigestResult> {
   if (!isAdminHealthDigestEnabled()) {
     return { sent: false, reason: "disabled" };
   }
 
-  if (lastDigestSentAt != null && now - lastDigestSentAt < MIN_INTERVAL_MS) {
+  // `force` (manual admin trigger) bypasses the min-interval throttle so an
+  // operator can fire a report on demand to verify Slack/email delivery.
+  if (!opts.force && lastDigestSentAt != null && now - lastDigestSentAt < MIN_INTERVAL_MS) {
     return { sent: false, reason: "recently_sent" };
   }
 
