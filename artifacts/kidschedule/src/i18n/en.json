@@ -2777,6 +2777,10 @@
         "title": "Activities & Learning",
         "description": "Age-based games, stories & skills"
       },
+      "gaming-rewards": {
+        "title": "🎮 Gaming Reward",
+        "description": "15 educational mini-games · earn points & unlock rewards"
+      },
       "art-craft": {
         "title": "🎨 Art & Craft Videos",
         "description": "Creative video tutorials — tap to watch, swipe to browse"
@@ -3035,6 +3039,7 @@
       "phonics": "Phonics",
       "routine": "Routine",
       "activities": "Activities",
+      "gaming_reward": "Games",
       "worksheets": "Worksheets"
     }
   },

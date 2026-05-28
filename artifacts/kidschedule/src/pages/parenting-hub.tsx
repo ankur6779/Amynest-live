@@ -73,7 +73,7 @@ import { useHubJourney } from "@/hooks/use-hub-journey";
 const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
   today:      ["amy-ai", "daily-tips", "generate-routine", "tomorrow-forecast", "command-center"],
   learning:   ["smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad", "event-prep"],
-  creativity: ["activities", "art-craft", "worksheets", "coloring-books", "fun-sheets"],
+  creativity: ["activities", "gaming-rewards", "art-craft", "worksheets", "coloring-books", "fun-sheets"],
   stories:    ["story-hub", "speech-coach"],
   support:    ["articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
 };
@@ -258,6 +258,7 @@ const HUB_QUICK_ACTIONS = [
   { id: "phonics",    group: "learning",   tileId: "phonics",         emoji: "🔤", i18n: "parent_hub.quick_actions.phonics" },
   { id: "routine",    group: "today",      tileId: "generate-routine", emoji: "📅", i18n: "parent_hub.quick_actions.routine" },
   { id: "activities", group: "creativity", tileId: "activities",      emoji: "🎨", i18n: "parent_hub.quick_actions.activities" },
+  { id: "gaming",     group: "creativity", tileId: "gaming-rewards", emoji: "🎮", i18n: "parent_hub.quick_actions.gaming_reward" },
   { id: "worksheets", group: "creativity", tileId: "worksheets",      emoji: "📄", i18n: "parent_hub.quick_actions.worksheets" },
 ] as const;
 
@@ -524,28 +525,6 @@ function ActivitiesSection({
           </Button>
         </AppLink>
       </SubSection>
-
-      <LockedBlock locked={isHubLocked("hub_gaming_rewards")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-        <SubSection
-          gateSection="hub_activities"
-          icon={<Gamepad2 className="h-4 w-4 text-white" />}
-          title={t("parent_hub.tiles_activity.gaming_reward.title")}
-          description={t("parent_hub.tiles_activity.gaming_reward.desc")}
-          accentClass="bg-gradient-to-br from-violet-500 to-purple-600"
-          cardClass="linear-gradient(135deg,rgba(139,92,246,0.28)0%,rgba(168,85,247,0.12)100%)"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            {tryFreeFor("hub_gaming_rewards") ? <TryFreeBadge /> : null}
-          </div>
-          <p className="text-sm text-muted-foreground mb-3">{t("screens.games.hub_teaser")}</p>
-          <Link href="/games" onClick={() => markHubUsed("hub_gaming_rewards")}>
-            <Button className="w-full rounded-xl gap-2 text-sm font-semibold" data-testid="open-gaming-rewards">
-              {t("screens.games.title")}
-              <ArrowRight className="h-4 w-4 ml-auto" />
-            </Button>
-          </Link>
-        </SubSection>
-      </LockedBlock>
 
       <LockedBlock locked={isHubLocked("hub_rewards_shop")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
         <SubSection
@@ -1076,6 +1055,29 @@ function ParentingHubPage() {
             <ActivitiesSection ageGroup={ageGroup!} effectiveChild={effectiveChild} totalAgeMonths={totalAgeMonths} />
           </HubSection>
         </LockedBlock>;
+    }
+  },
+  {
+    id: "gaming-rewards",
+    alwaysCurrent: true,
+    render: () => {
+      if (!ageGroup && !isTwoPlus) return null;
+      return (
+        <LockedBlock reason="hub_locked" locked={isHubLocked("hub_gaming_rewards")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+          <HubLaunchCard
+            href="/games"
+            title={t("parent_hub.web_tiles.gaming-rewards.title")}
+            description={t("parent_hub.web_tiles.gaming-rewards.description")}
+            icon={<Gamepad2 className="h-5 w-5 text-white" />}
+            accentClass="bg-gradient-to-br from-violet-500 to-purple-600"
+            cardClass="bg-gradient-to-br from-violet-500/30 to-purple-600/15 hover:shadow-[0_10px_36px_-10px_rgba(139,92,246,0.45)]"
+            tryFree={tryFreeFor("hub_gaming_rewards")}
+            testId="gaming-rewards-launch-card"
+            sectionId="gaming-rewards"
+            onNavigate={() => markHubUsed("hub_gaming_rewards")}
+          />
+        </LockedBlock>
+      );
     }
   },
   // ── Art & Craft Videos (always-current, standalone tile) ─────────────

@@ -7,6 +7,7 @@ export type HubDeepLinkTarget = {
 
 const TILE_NAV: Record<string, HubDeepLinkTarget> = {
   activities: { group: "creativity", tileId: "activities" },
+  "gaming-rewards": { group: "creativity", tileId: "gaming-rewards" },
   worksheets: { group: "creativity", tileId: "worksheets" },
   "art-craft": { group: "creativity", tileId: "art-craft" },
   "fun-sheets": { group: "creativity", tileId: "fun-sheets" },
