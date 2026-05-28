@@ -32,7 +32,8 @@ export type LearningZoneAudioModule =
   | "smart_math_tricks"
   | "abacus"
   | "phonics"
-  | "spelling";
+  | "spelling"
+  | "learn_with_amy";
 
 export type LearningZonePrewarmContext = {
   module: LearningZoneAudioModule;
@@ -189,6 +190,15 @@ function predictLikelyTexts(ctx: LearningZonePrewarmContext): string[] {
   }
   if (ctx.module === "smart_math_tricks" || ctx.module === "abacus") {
     predicted.push("Correct! Well done!");
+  }
+  if (ctx.module === "learn_with_amy") {
+    predicted.push(
+      "Great job!",
+      "Let's try again.",
+      "Correct! Well done!",
+      "Well done!",
+      "Let's learn together!",
+    );
   }
 
   const seen = new Set<string>();
