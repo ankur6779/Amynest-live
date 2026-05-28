@@ -15,6 +15,10 @@ import { getSystemHealthSnapshot } from "../services/system-health-store";
 import { getPredictiveOpsState, getPredictedIncidents } from "../services/predictive-ops-store";
 import { getMetricsHistory } from "../services/predictive-trend-store";
 import { getAdminAlerts } from "../services/admin-alert-system";
+import {
+  dispatchAdminHealthDigest,
+  isAdminHealthDigestEnabled,
+} from "../services/adminHealthDigestService";
 
 const router: IRouter = Router();
 
@@ -186,6 +190,31 @@ router.post("/admin/dashboard/actions", async (req, res): Promise<void> => {
 
   const ops = applyAdminOpsAction(parsed.data.action as AdminOpsAction, userId!);
   res.json({ ok: true, ops });
+});
+
+/**
+ * POST /api/admin/health-digest/send — manually dispatch the health report now.
+ * Bypasses the periodic-cron throttle so admins can verify Slack/email delivery
+ * without waiting for the next scheduled run.
+ */
+router.post("/admin/health-digest/send", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+
+  if (!isAdminHealthDigestEnabled()) {
+    res.status(409).json({
+      ok: false,
+      error: "digest_disabled",
+      hint: "Set ADMIN_HEALTH_DIGEST_ENABLED=true to enable the health report.",
+    });
+    return;
+  }
+
+  const result = await dispatchAdminHealthDigest(Date.now(), { force: true });
+  res.status(result.sent ? 200 : 422).json({ ok: result.sent, result });
 });
 
 export default router;
