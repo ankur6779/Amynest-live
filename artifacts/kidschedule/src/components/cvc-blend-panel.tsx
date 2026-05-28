@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { playCvcBlendWithSpeak } from "@/lib/phonics-audio";
+import { stopPhonicsPlayback } from "@/lib/phonics-player";
 import { audioManager } from "@/lib/audio-manager";
+import { runWithControlledAudioStop } from "@/lib/amy-voice-ownership";
 import {
   getCvcDisplayLetters,
   getCvcWordEntry,
@@ -12,7 +14,7 @@ import {
   type CvcWordEntry,
 } from "@workspace/phonics-sounds";
 import { AudioPlayButton } from "@/components/audio-play-button";
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight, Sparkles, Square } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { PhonicsLevel } from "@/lib/phonics-content";
 
@@ -65,7 +67,7 @@ export function CvcBlendPanel({
       const session = ++blendSessionRef.current;
       const isCancelled = () => blendSessionRef.current !== session;
 
-      audioManager.stop();
+      stopPhonicsPlayback("cvc_blend_restart");
       setBlending(true);
       setShowWord(false);
       setActiveIndex(null);
@@ -105,11 +107,31 @@ export function CvcBlendPanel({
     [current, onComplete],
   );
 
+  const stopBlend = useCallback(() => {
+    blendSessionRef.current += 1;
+    stopPhonicsPlayback("cvc_blend_stop");
+    // The whole-word finale plays through audioManager — stop it too.
+    runWithControlledAudioStop(() => audioManager.stopAll());
+    setBlending(false);
+    setPhase(null);
+    setActiveIndex(null);
+    setShowWord(false);
+    setStepHint(null);
+  }, []);
+
+  // Leaving / closing the panel must never leave audio hanging.
   useEffect(() => {
     return () => {
       blendSessionRef.current += 1;
+      stopPhonicsPlayback("cvc_blend_unmount");
+      runWithControlledAudioStop(() => audioManager.stopAll());
     };
   }, []);
+
+  const handleClose = useCallback(() => {
+    stopBlend();
+    onClose();
+  }, [stopBlend, onClose]);
 
   if (!entry && !levelWords.length) {
     return null;
@@ -128,7 +150,7 @@ export function CvcBlendPanel({
           type="button"
           variant="ghost"
           size="sm"
-          onClick={onClose}
+          onClick={handleClose}
           className="h-7 w-7 p-0 rounded-full"
           aria-label="Close blend panel"
         >
@@ -178,6 +200,19 @@ export function CvcBlendPanel({
         >
           Fast repeat
         </Button>
+        {blending && (
+          <Button
+            type="button"
+            size="sm"
+            variant="destructive"
+            onClick={stopBlend}
+            className="rounded-full text-xs font-bold"
+            aria-label="Stop sound"
+          >
+            <Square className="h-3.5 w-3.5 fill-current mr-1" />
+            Stop
+          </Button>
+        )}
         {level === 3 && (
           <Button
             type="button"

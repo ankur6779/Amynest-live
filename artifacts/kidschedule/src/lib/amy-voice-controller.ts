@@ -79,6 +79,7 @@ import {
   isPhonicsHubFastClip,
   speakPhonicsFastClip,
 } from "@/lib/phonics-audio";
+import { stopPhonicsPlayback } from "@/lib/phonics-player";
 import {
   playControllerEmergencyAudio,
   resetGuardFailures,
@@ -255,6 +256,9 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
   }
 
   private stopCurrentAudio(): void {
+    // Phonics player is a separate single owner — stop it too so a new tap can
+    // never overlap a still-playing phoneme/blend.
+    stopPhonicsPlayback("controller_stop");
     runWithControlledAudioStop(() => {
       if (this.abortController) {
         this.abortController.abort();
