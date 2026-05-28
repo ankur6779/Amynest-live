@@ -3,6 +3,11 @@
 These rules apply to **every contributor** (humans and AI assistants) touching
 the AmyNest learning surfaces. They are intentionally short.
 
+> **Stewardship Era (canon).** The platform is mature. From here forward, the
+> primary responsibility is *stewardship* — keeping AmyNest coherent, humane,
+> trustworthy, calm, and emotionally healthy as it grows. Every change must
+> pass `reviewStewardship()` (see `stewardship.ts`).
+
 ## Single source of truth
 
 - **All** progression, mastery, unlocks, rewards, daily sessions, learning
@@ -40,6 +45,16 @@ the AmyNest learning surfaces. They are intentionally short.
 | 20 | **Performance tier respects device class.** Heavy visual surfaces consult `visualBudget()` / `tierTransition()`. |
 | 21 | **Telemetry is non-blocking.** All metrics go through `telemetry-engine.ts` (batched, idle-flushed, no PII). |
 | 22 | **Sync queue self-heals.** Apps call `startResilienceWatcher()` once — no manual queue mutation elsewhere. |
+| 23 | **No new engines.** The Continuous Optimization Era adds modules — not engines. Every new file is a pure derivation from existing state. |
+| 24 | **No new progression systems.** If you need a new signal, derive it from `profile` + `memory` + `skillGraph` + `phase3`. Persistence stays in `learning_progress` + `skill_graph_progress`. |
+| 25 | **No new dashboards.** Optimization output renders inside `/debug/learning` only. Parents never see optimizer internals. |
+| 26 | **No parallel personalization.** All personalization flows through `behavior-optimizer`, `developmental-pacing`, and `adaptive-routing`. |
+| 27 | **All onboarding goes through `buildAdaptiveOnboardingPlan()`.** No ad-hoc first-run flows. |
+| 28 | **Premium prompts go through `evaluatePremiumPrompt()`** with the 7-day cooldown honored. No scarcity / urgency / countdown copy. |
+| 29 | **All recommendation reasons are warm.** Use `explainRecommendations()`; the raw `reason` from `adaptive-routing` is for internal use only. |
+| 30 | **All recommendation sets are audited.** Use `auditRecommendations()` before render — never ship recs flagged as `overload` / `emotional_inconsistency`. |
+| 31 | **All AI-facing copy passes through `human-review.ts` snapshots** when staged for release. |
+| 32 | **All behavior changes obtain a `ship` verdict** from `buildOptimizationReport()` before wider rollout. `watch` and `hold` block scale-up. |
 
 ## File responsibilities (engine)
 
@@ -72,6 +87,18 @@ the AmyNest learning surfaces. They are intentionally short.
 - `retention-cohorts.ts` — D1/D7/D30 + comeback success rate.
 - `data-lifecycle.ts` — archival/aggregation policy + profile compaction.
 - `learning-simulator.ts` — deterministic 30/180-day usage simulator.
+- `adaptive-onboarding.ts` — first-3-minute plan (quick / calm / five-min).
+- `first-session-flow.ts` — trimmed, success-shaped first session.
+- `premium-conversion.ts` — milestone-based, cooldown-aware premium prompts.
+- `parent-confidence.ts` — short warm reassurance lines for parents.
+- `learning-effectiveness.ts` — retention, recovery, stability from skill snapshots.
+- `developmental-pacing.ts` — when to push / reinforce / simplify / slow down.
+- `recommendation-explanations.ts` — warm parent-readable why-strings.
+- `recommendation-audits.ts` — overload / inconsistency / fatigue drift checks.
+- `human-review.ts` — internal QA snapshots for AI + emotional copy.
+- `family-journey.ts` — yearly summary + learning memories.
+- `optimization-pipeline.ts` — master composer + ship/watch/hold verdict.
+- `stewardship.ts` — final principled reviewer; every proposed feature/flag/copy/animation passes through this before shipping.
 
 ## Client responsibilities
 
@@ -110,21 +137,95 @@ the AmyNest learning surfaces. They are intentionally short.
 
 AmyNest optimizes for:
 
-- healthy learning
 - calm consistency
 - family trust
+- healthy learning
 - emotional safety
+- long-term growth
 
 NEVER for:
 
-- addictive loops
-- guilt retention
-- pressure engagement
+- addictive engagement
+- urgency pressure
+- manipulative retention
 - compulsive streak behavior
+- feature bloat
 
-Tuning lives in `behavior-optimizer.ts` and is bounded by these principles —
-never tighten reward frequency or shorten comeback windows past the ceilings
-in that file.
+Tuning lives in `behavior-optimizer.ts` and `developmental-pacing.ts` and is
+bounded by these principles — never tighten reward frequency, shorten comeback
+windows, or surface premium prompts past the ceilings in those files.
+
+## Product philosophy (immutable)
+
+AmyNest operates like:
+
+> "A calm, adaptive, emotionally intelligent developmental companion for families."
+
+NOT:
+
+- a worksheet app
+- a gamified kids app
+- a content platform
+- an AI chatbot
+- a feature-heavy educational app
+
+The Continuous Optimization Era prepares the platform to:
+
+- **measure real learning effectiveness**, not engagement minutes
+- **convert premium through earned moments**, never urgency
+- **build parent confidence** through warm acknowledgment
+- **explain every recommendation** in one human sentence
+- **audit itself** so AI + recommendations + copy never drift
+- **continuously tune** through real-world behavior — `optimization-pipeline.ts`
+  outputs `ship` / `watch` / `hold` verdicts that gate broader rollouts
+
+## The Stewardship Era — final principles
+
+The platform is mature. The hardest challenge now is **not** making it more
+powerful. The hardest challenge is keeping it coherent, humane, trustworthy,
+calm, and emotionally healthy as it grows. These 13 principles are part of
+the architecture. They are enforced in code by `stewardship.ts` and reviewed
+by `reviewStewardship()`.
+
+| # | Principle | Doctrine |
+|---|-----------|----------|
+| 1 | **Protect simplicity** | As intelligence grows, simplicity must increase. If a change reduces clarity, do not ship it. |
+| 2 | **Preserve one coherent system** | No local unlock / reward / motion / emotional / personalization / onboarding logic — everything derives from the shared platform. |
+| 3 | **Optimize for trust** | Reliability, honesty, explainability, calmness, restraint, safety, and consistency always over engagement spikes. |
+| 4 | **Amy is human-calm, not human-dependent** | Amy is warm, observant, supportive — not needy, guilt-inducing, dependency-forming, or overly humanized. Amy supports the family; Amy does not replace the family. |
+| 5 | **Respect quietness** | Silence is part of premium UX. Not every session, milestone, return, or recommendation needs copy, glow, or sound. |
+| 6 | **Long-term growth** | Never optimize for daily addiction or compulsive streaks. Optimize for sustainable, multi-year family growth. |
+| 7 | **Feature discipline — depth over breadth** | Prefer refinement, polish, recommendation quality, and onboarding quality over new modules, dashboards, gamification, or AI surfaces. |
+| 8 | **Emotional safety** | Never ship guilt copy, fear copy, shame loops, comparison pressure, anxiety amplification, or developmental diagnosis language. |
+| 9 | **Explainability** | Every recommendation and behavior remains understandable, reviewable, debuggable, and auditable. No black-box behavioral systems. |
+| 10 | **Performance as a feature** | Smoothness is part of trust — protect battery, low-end Android, reduced motion, accessibility, and sync resilience. Never sacrifice stability for visual novelty. |
+| 11 | **Philosophy protection** | The product philosophy is part of the architecture. A feature that conflicts with the philosophy is wrong. |
+| 12 | **Measure what matters** | Parent confidence, healthy retention, skill stability, recommendation usefulness, emotional trust, long-term family value — never compulsive engagement, session inflation, or artificial streak pressure. |
+| 13 | **True product identity** | AmyNest is a calm, adaptive, emotionally intelligent developmental companion for families. Every future decision must reinforce this identity. |
+
+### How stewardship is enforced
+
+- **Code path.** New features, flags, experiments, copy, animations,
+  notifications, metrics, dashboards, and personalization paths pass through
+  `reviewStewardship(proposal)`. The reviewer returns one of:
+  - `ship` — respects the platform; safe to roll out behind a flag.
+  - `revise` — fixable; must address the listed flags first.
+  - `reject` — violates a core principle; the proposal is wrong as stated.
+- **Doctrine constant.** `STEWARDSHIP_DOCTRINE` ships the 13 principles as
+  immutable strings — UI / docs / PR bots can read them rather than restate.
+- **Block conditions** (auto-`reject`): new engines, new dashboards, local
+  unlock/reward/motion/personalization logic, compulsion mechanics,
+  unexplainable behavior, guardrail-violating copy, urgency/comparison copy.
+- **Revise conditions**: missing feature flag, missing performance budget,
+  opaque algorithmic copy, missing shared-system wiring.
+
+### The final stewardship rule
+
+> The platform is already sophisticated enough. The hardest challenge now is
+> not making it more powerful — it is keeping it coherent, humane,
+> trustworthy, calm, and emotionally healthy as it grows.
+>
+> That responsibility is now part of the product itself.
 
 ## Scale readiness
 
