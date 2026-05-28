@@ -121,7 +121,29 @@ Optional backup: add `RENDER_API_KEY` to GitHub Actions secrets — `.github/wor
 
 ---
 
-## 6. Scripts reference
+## 6. Sync local `main` with GitHub (diverged branches)
+
+If `git pull` fails with *"have diverged"* after cloud agent merges, reset local `main` to match GitHub (creates a backup branch first):
+
+```bash
+cd ~/path/to/AmyNest-AI
+pnpm run sync:main
+```
+
+Or manually:
+
+```bash
+git fetch origin main
+git branch backup/local-main-$(date +%Y%m%d-%H%M%S) main
+git reset --hard origin/main
+pnpm install
+```
+
+Latest tutor routes after sync: `/learn-with-amy`, `/amy-ai-tutor`, Parent Hub tiles.
+
+---
+
+## 7. Scripts reference
 
 | Command | Description |
 |---------|-------------|
@@ -132,3 +154,4 @@ Optional backup: add `RENDER_API_KEY` to GitHub Actions secrets — `.github/wor
 | `pnpm run build:api` | Build API for production start |
 | `pnpm run start:api` | Run built API (`AMYNEST_ENV` defaults to production) |
 | `pnpm run build:web` | Production web build |
+| `pnpm run sync:main` | Reset local `main` to `origin/main` (backup branch created) |
