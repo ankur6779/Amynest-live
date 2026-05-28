@@ -350,7 +350,7 @@ export const STEWARDSHIP_DOCTRINE: Readonly<Record<StewardshipPrinciple, string>
   feature_discipline_depth_over_breadth:
     "Depth beats breadth. Prefer refinement, polish, recommendation quality, and onboarding quality over new modules.",
   emotional_safety:
-    "Never ship guilt copy, fear copy, shame loops, comparison pressure, or developmental diagnosis language.",
+    "Never ship guilt copy, fear copy, shame loops, comparison pressure, or developmental labeling language.",
   explainability:
     "Every recommendation and behavior remains understandable, reviewable, debuggable, and auditable. No black boxes.",
   performance_as_a_feature:
