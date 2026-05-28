@@ -8,6 +8,8 @@ import { firebaseWebDefaults } from "@/lib/firebase-web-defaults";
 export const googleAuthDefaults = {
   webClientId:
     "573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com",
+  iosClientId:
+    "573340015027-nhb24qka9h7gr06ri2muu9a7mrpf2c54.apps.googleusercontent.com",
 } as const;
 
 /** Reversed web client ID for iOS URL scheme (Google Sign-In callback). */

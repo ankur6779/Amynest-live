@@ -69,9 +69,13 @@
 			"redirectURI": "https://www.amynest.in/auth/apple/callback"
 		},
 		"GoogleAuth": {
-			"scopes": ["profile", "email"],
+			"scopes": [
+				"profile",
+				"email"
+			],
 			"serverClientId": "573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com",
-			"clientId": "573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com",
+			"clientId": "573340015027-nhb24qka9h7gr06ri2muu9a7mrpf2c54.apps.googleusercontent.com",
+			"iosClientId": "573340015027-nhb24qka9h7gr06ri2muu9a7mrpf2c54.apps.googleusercontent.com",
 			"forceCodeForRefreshToken": false
 		},
 		"CapacitorUpdater": {
@@ -94,6 +98,7 @@
 		"PurchasesPlugin",
 		"MicPermissionPlugin",
 		"SignInWithApple",
-		"GoogleAuth"
+		"GoogleAuth",
+		"FacebookLoginPlugin"
 	]
 }

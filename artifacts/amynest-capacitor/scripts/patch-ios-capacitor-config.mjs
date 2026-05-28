@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const configPath = resolve(root, "ios/App/App/capacitor.config.json");
-const REQUIRED_LOCAL_PLUGINS = ["MicPermissionPlugin"];
+const REQUIRED_LOCAL_PLUGINS = ["MicPermissionPlugin", "FacebookLoginPlugin"];
 
 if (!existsSync(configPath)) {
   console.warn("⚠️  Skip patch-ios-capacitor-config — no ios/App/App/capacitor.config.json");

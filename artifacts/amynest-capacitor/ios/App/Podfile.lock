@@ -1,5 +1,11 @@
 PODS:
   - Alamofire (5.10.2)
+  - AppAuth (1.7.6):
+    - AppAuth/Core (= 1.7.6)
+    - AppAuth/ExternalUserAgent (= 1.7.6)
+  - AppAuth/Core (1.7.6)
+  - AppAuth/ExternalUserAgent (1.7.6):
+    - AppAuth/Core
   - BigInt (5.2.0)
   - Capacitor (6.2.1):
     - CapacitorCordova
@@ -7,6 +13,10 @@ PODS:
     - Capacitor
   - CapacitorCommunityAppleSignIn (6.0.0):
     - Capacitor
+  - CapacitorCommunityFacebookLogin (6.1.2):
+    - Capacitor
+    - FBSDKCoreKit (= 17.4.0)
+    - FBSDKLoginKit (= 17.4.0)
   - CapacitorCordova (6.2.1)
   - CapacitorGeolocation (6.1.1):
     - Capacitor
@@ -22,6 +32,17 @@ PODS:
     - Capacitor
     - Version (= 0.8.0)
     - ZIPFoundation (~> 0.9)
+  - CodetrixStudioCapacitorGoogleAuth (0.0.1):
+    - Capacitor
+    - GoogleSignIn (~> 6.2.4)
+  - FBAEMKit (17.4.0):
+    - FBSDKCoreKit_Basics (= 17.4.0)
+  - FBSDKCoreKit (17.4.0):
+    - FBAEMKit (= 17.4.0)
+    - FBSDKCoreKit_Basics (= 17.4.0)
+  - FBSDKCoreKit_Basics (17.4.0)
+  - FBSDKLoginKit (17.4.0):
+    - FBSDKCoreKit (= 17.4.0)
   - Firebase/CoreOnly (12.13.0):
     - FirebaseCore (~> 12.13.0)
   - Firebase/Messaging (12.13.0):
@@ -50,6 +71,10 @@ PODS:
   - GoogleDataTransport (10.1.0):
     - nanopb (~> 3.30910.0)
     - PromisesObjC (~> 2.4)
+  - GoogleSignIn (6.2.4):
+    - AppAuth (~> 1.5)
+    - GTMAppAuth (~> 1.3)
+    - GTMSessionFetcher/Core (< 3.0, >= 1.1)
   - GoogleUtilities/AppDelegateSwizzler (8.1.0):
     - GoogleUtilities/Environment
     - GoogleUtilities/Logger
@@ -74,6 +99,10 @@ PODS:
   - GoogleUtilities/UserDefaults (8.1.0):
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
+  - GTMAppAuth (1.3.1):
+    - AppAuth/Core (~> 1.6)
+    - GTMSessionFetcher/Core (< 3.0, >= 1.5)
+  - GTMSessionFetcher/Core (2.3.0)
   - nanopb (3.30910.0):
     - nanopb/decode (= 3.30910.0)
     - nanopb/encode (= 3.30910.0)
@@ -101,12 +130,14 @@ DEPENDENCIES:
   - "Capacitor (from `../../../../node_modules/.pnpm/@capacitor+ios@6.2.1_@capacitor+core@6.2.1/node_modules/@capacitor/ios`)"
   - "CapacitorApp (from `../../../../node_modules/.pnpm/@capacitor+app@6.0.3_@capacitor+core@6.2.1/node_modules/@capacitor/app`)"
   - "CapacitorCommunityAppleSignIn (from `../../../../node_modules/.pnpm/@capacitor-community+apple-sign-in@6.0.0_@capacitor+core@6.2.1/node_modules/@capacitor-community/apple-sign-in`)"
+  - "CapacitorCommunityFacebookLogin (from `../../../../node_modules/.pnpm/@capacitor-community+facebook-login@6.1.2/node_modules/@capacitor-community/facebook-login`)"
   - "CapacitorCordova (from `../../../../node_modules/.pnpm/@capacitor+ios@6.2.1_@capacitor+core@6.2.1/node_modules/@capacitor/ios`)"
   - "CapacitorGeolocation (from `../../../../node_modules/.pnpm/@capacitor+geolocation@6.1.1_@capacitor+core@6.2.1/node_modules/@capacitor/geolocation`)"
   - "CapacitorKeyboard (from `../../../../node_modules/.pnpm/@capacitor+keyboard@6.0.4_@capacitor+core@6.2.1/node_modules/@capacitor/keyboard`)"
   - "CapacitorPushNotifications (from `../../../../node_modules/.pnpm/@capacitor+push-notifications@6.0.5_@capacitor+core@6.2.1/node_modules/@capacitor/push-notifications`)"
   - "CapacitorStatusBar (from `../../../../node_modules/.pnpm/@capacitor+status-bar@6.0.3_@capacitor+core@6.2.1/node_modules/@capacitor/status-bar`)"
   - "CapgoCapacitorUpdater (from `../../../../node_modules/.pnpm/@capgo+capacitor-updater@6.45.10_@capacitor+core@6.2.1/node_modules/@capgo/capacitor-updater`)"
+  - "CodetrixStudioCapacitorGoogleAuth (from `../../../../node_modules/.pnpm/@codetrix-studio+capacitor-google-auth@3.4.0-rc.4_@capacitor+core@6.2.1/node_modules/@codetrix-studio/capacitor-google-auth`)"
   - Firebase/CoreOnly
   - Firebase/Messaging
   - "RevenuecatPurchasesCapacitor (from `../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@13.1.1_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor`)"
@@ -115,14 +146,22 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - Alamofire
+    - AppAuth
     - BigInt
+    - FBAEMKit
+    - FBSDKCoreKit
+    - FBSDKCoreKit_Basics
+    - FBSDKLoginKit
     - Firebase
     - FirebaseCore
     - FirebaseCoreInternal
     - FirebaseInstallations
     - FirebaseMessaging
     - GoogleDataTransport
+    - GoogleSignIn
     - GoogleUtilities
+    - GTMAppAuth
+    - GTMSessionFetcher
     - nanopb
     - PromisesObjC
     - PurchasesHybridCommon
@@ -139,6 +178,8 @@ EXTERNAL SOURCES:
     :path: "../../../../node_modules/.pnpm/@capacitor+app@6.0.3_@capacitor+core@6.2.1/node_modules/@capacitor/app"
   CapacitorCommunityAppleSignIn:
     :path: "../../../../node_modules/.pnpm/@capacitor-community+apple-sign-in@6.0.0_@capacitor+core@6.2.1/node_modules/@capacitor-community/apple-sign-in"
+  CapacitorCommunityFacebookLogin:
+    :path: "../../../../node_modules/.pnpm/@capacitor-community+facebook-login@6.1.2/node_modules/@capacitor-community/facebook-login"
   CapacitorCordova:
     :path: "../../../../node_modules/.pnpm/@capacitor+ios@6.2.1_@capacitor+core@6.2.1/node_modules/@capacitor/ios"
   CapacitorGeolocation:
@@ -151,6 +192,8 @@ EXTERNAL SOURCES:
     :path: "../../../../node_modules/.pnpm/@capacitor+status-bar@6.0.3_@capacitor+core@6.2.1/node_modules/@capacitor/status-bar"
   CapgoCapacitorUpdater:
     :path: "../../../../node_modules/.pnpm/@capgo+capacitor-updater@6.45.10_@capacitor+core@6.2.1/node_modules/@capgo/capacitor-updater"
+  CodetrixStudioCapacitorGoogleAuth:
+    :path: "../../../../node_modules/.pnpm/@codetrix-studio+capacitor-google-auth@3.4.0-rc.4_@capacitor+core@6.2.1/node_modules/@codetrix-studio/capacitor-google-auth"
   RevenuecatPurchasesCapacitor:
     :path: "../../../../node_modules/.pnpm/@revenuecat+purchases-capacitor@13.1.1_@capacitor+core@6.2.1/node_modules/@revenuecat/purchases-capacitor"
   RevenuecatPurchasesCapacitorUi:
@@ -158,23 +201,33 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Alamofire: 7193b3b92c74a07f85569e1a6c4f4237291e7496
+  AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
   BigInt: f668a80089607f521586bbe29513d708491ef2f7
   Capacitor: c95400d761e376be9da6be5a05f226c0e865cebf
   CapacitorApp: a19ccb4f5f32d2534be5c6f524d5a9b614a1e8a7
   CapacitorCommunityAppleSignIn: c9c2541ee7580618055a91b3516c3f0313fe2544
+  CapacitorCommunityFacebookLogin: 2d45aeda8711740bbd6831a962b00a3af67e854f
   CapacitorCordova: 8d93e14982f440181be7304aa9559ca631d77fff
   CapacitorGeolocation: ef657a46a125be74010f4ce57caae173c23204d2
   CapacitorKeyboard: e8cd50fd5cbdd023a5947a5c0f5cca6e5aa5a253
   CapacitorPushNotifications: 35abece14371c57172e8321c9ccc8b6fa35fabfe
   CapacitorStatusBar: 149cde8f1328ec3aa6cbdd872a55137ae3f98b16
   CapgoCapacitorUpdater: 0e22d269f9ec515eff85a61ea292b8e048830646
+  CodetrixStudioCapacitorGoogleAuth: 9dcfabfb7dd804ad6231a1513bc6e81e620cbec6
+  FBAEMKit: 58cb5f302cdd715a56d4c1d0dfdd2e423ac1421a
+  FBSDKCoreKit: 94d7461d0cecf441b1ba7c41acfff41daa8ccd41
+  FBSDKCoreKit_Basics: 151b43db8b834d3f0e02f95d36a44ffd36265e45
+  FBSDKLoginKit: 5c1cd53c91a2282b3a4fe6e6d3dcf2b8b0d33d55
   Firebase: 7d62445aeabdaea36f7d372f33052fed9a72514f
   FirebaseCore: 58905958aa00a061397a0fd759ae4b55bddb3576
   FirebaseCoreInternal: 37bee58388fc6d183f0ab1b32d69ae44f2cf8aad
   FirebaseInstallations: 134bde50e477628ded76070efdb12d515d53f948
   FirebaseMessaging: 30564b85d2f81a96f9d312bd23acf8186ff092ae
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
+  GoogleSignIn: 5651ce3a61e56ca864160e79b484cd9ed3f49b7a
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
+  GTMAppAuth: 0ff230db599948a9ad7470ca667337803b3fc4dd
+  GTMSessionFetcher: 3a63d75eecd6aa32c2fc79f578064e1214dfdec2
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   PurchasesHybridCommon: 89a3ddba365c20457a4712bc3d6377b0ea3c9b4f
@@ -186,6 +239,6 @@ SPEC CHECKSUMS:
   Version: de5907f2c5d0f3cf21708db7801d1d5401139486
   ZIPFoundation: dfd3d681c4053ff7e2f7350bc4e53b5dba3f5351
 
-PODFILE CHECKSUM: 467416543a8de43edbc5f3d49c06614d12340e61
+PODFILE CHECKSUM: dc3bec082694f15af16b916975166285e10fa4be
 
 COCOAPODS: 1.16.2
