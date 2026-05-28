@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import {
-  ArrowLeft, Lock, Sparkles, Gamepad2, Trophy, X, Coins, Gift, Plus, Trash2, Check,
+  ArrowLeft, Lock, Gamepad2, Trophy, X, Coins, Gift, Plus, Trash2, Check,
 } from "lucide-react";
 import {
   GAMES, CATEGORY_LABEL, CATEGORY_EMOJI, unlockGame, recordPlay,
@@ -10,8 +10,11 @@ import {
   canPlayGame, isGameUnlockedForPlay, ensureStarterUnlocks, getWeeklyGameSummary,
   getCachedRoutineStreak, canUnlockGameWithStreak, STREAK_UNLOCK_DAYS,
   requiresPremiumToPlay, isFreeStarter, DAILY_LIMIT_FREE,
+  getPerfectStreak, hasPerfectComboBadge, recordPerfectStreak, recordLeaderboardEntry,
+  PERFECT_COMBO_BADGE_AT,
   type GameDef, type GameCategory,
 } from "@/lib/games";
+import { gameTheme } from "@/lib/game-theme";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { useGamingWallet } from "@/hooks/use-gaming-wallet";
@@ -39,6 +42,20 @@ import { ShapeMatchingGame } from "@/components/games/ShapeMatching";
 import { ColorFillGame } from "@/components/games/ColorFill";
 import { HiddenObjectsGame } from "@/components/games/HiddenObjects";
 import { SpotTheDifferenceGame } from "@/components/games/SpotTheDifference";
+import { AmySuggestionPanel } from "@/components/games/AmySuggestionPanel";
+import { GamesLeaderboard } from "@/components/games/GamesLeaderboard";
+import { GamePreviewTile } from "@/components/games/GamePreviewTile";
+
+const CATEGORY_ACCENT: Record<GameCategory, string> = {
+  brain: "rgba(167,139,250,0.45)",
+  memory: "rgba(96,165,250,0.45)",
+  math: "rgba(251,191,36,0.45)",
+  focus: "rgba(52,211,153,0.45)",
+  creativity: "rgba(244,114,182,0.45)",
+  behavior: "rgba(74,222,128,0.45)",
+  action: "rgba(251,146,60,0.45)",
+  puzzle: "rgba(129,140,248,0.45)",
+};
 
 type ActiveGame =
   | { kind: "play"; game: GameDef }
@@ -58,6 +75,7 @@ export default function GamesPage() {
   const [active, setActive] = useState<ActiveGame>(null);
   const [showRedeem, setShowRedeem] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hoveredGame, setHoveredGame] = useState<string | null>(null);
 
   useEffect(() => {
     ensureStarterUnlocks();
@@ -140,6 +158,8 @@ export default function GamesPage() {
   const finishGame = async (g: GameDef, score: number, total: number) => {
     const ratio = total === 0 ? 0 : score / total;
     const perfect = ratio >= 0.95;
+    recordPerfectStreak(perfect);
+    recordLeaderboardEntry(g.id, score, total);
     let earned = perfect
       ? g.rewardMax
       : Math.max(g.rewardMin, Math.round(g.rewardMin + (g.rewardMax - g.rewardMin) * ratio));
@@ -177,21 +197,30 @@ export default function GamesPage() {
   // Skills (re-read on every render via tick)
   const skillCats: GameCategory[] = ["brain", "memory", "math", "focus", "behavior", "action"];
   const skills = skillCats.map((c) => ({ cat: c, pct: getSkillPercent(c) }));
+  const dailyPct = limit > 0 ? Math.min(100, (playedToday / limit) * 100) : 0;
+  const perfectStreak = getPerfectStreak();
+  const showComboBadge = hasPerfectComboBadge();
 
   return (
     <div style={{
       minHeight: "100dvh",
-      background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 55%, #0c1220 100%)",
-      color: "#fff",
+      background: gameTheme.pageGradient,
+      color: gameTheme.text,
       paddingBottom: 80,
     }}>
+      <style>{`
+        @keyframes gamesCardFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-2px); }
+        }
+      `}</style>
       {/* Top bar */}
       <div style={{
         position: "sticky", top: 0, zIndex: 20,
         padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: "linear-gradient(180deg, rgba(15,12,41,0.95) 0%, rgba(15,12,41,0.7) 100%)",
+        background: gameTheme.glass,
         backdropFilter: "blur(8px)",
-        borderBottom: "1px solid rgba(139,92,246,0.2)",
+        borderBottom: `1px solid ${gameTheme.glassBorder}`,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button
@@ -229,6 +258,19 @@ export default function GamesPage() {
           }}>
             <Coins size={14} /> {points}
           </div>
+          {showComboBadge && (
+            <div
+              title={`${perfectStreak} perfect scores in a row`}
+              style={{
+                display: "flex", alignItems: "center", gap: 4,
+                background: "linear-gradient(135deg, hsl(var(--brand-green-500)), hsl(var(--brand-green-400)))",
+                padding: "6px 10px", borderRadius: 999, color: "#fff", fontWeight: 800, fontSize: 11,
+                boxShadow: "0 4px 12px rgba(34,197,94,0.35)",
+              }}
+            >
+              🔥 {perfectStreak}× Perfect
+            </div>
+          )}
           <button
             onClick={() => setShowRedeem(true)}
             style={{ color: "#fff", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(139,92,246,0.3)", padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
@@ -248,49 +290,49 @@ export default function GamesPage() {
 
       {/* Daily limit + Amy suggestion */}
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 16px 4px" }}>
-        <div style={{
-          background: "linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(236,72,153,0.12) 100%)",
-          border: "1px solid rgba(139,92,246,0.35)",
-          borderRadius: 14, padding: 14,
-          display: "flex", flexDirection: "column", gap: 10,
-        }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-            <Sparkles size={20} color="hsl(var(--brand-amber-300))" style={{ flexShrink: 0, marginTop: 2 }} />
-            <div style={{ flex: 1, color: "#e6e1f5", fontSize: 13.5, lineHeight: 1.45, fontWeight: 600 }}>{suggestion.line}</div>
-          </div>
-          {suggestedGame && canPlayGame(suggestedGame, isPremium) && !limitHit && (
-            <button
-              type="button"
-              onClick={onPlaySuggested}
-              style={{
-                alignSelf: "flex-start",
-                background: "linear-gradient(135deg, hsl(var(--brand-amber-500)), hsl(var(--brand-orange-500)))",
-                color: "#fff", border: "none", borderRadius: 999,
-                padding: "8px 16px", fontSize: 12.5, fontWeight: 800, cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 6,
-              }}
-            >
-              {suggestedGame.emoji} {t("screens.games.amy_play_now")}
-            </button>
-          )}
-        </div>
+        <AmySuggestionPanel
+          line={suggestion.line}
+          suggestedGame={suggestedGame}
+          canPlay={!!(suggestedGame && canPlayGame(suggestedGame, isPremium) && !limitHit)}
+          onPlay={onPlaySuggested}
+        />
+        {!showComboBadge && perfectStreak > 0 && (
+          <p style={{ marginTop: 8, fontSize: 11.5, color: gameTheme.textMuted, lineHeight: 1.4 }}>
+            {perfectStreak} perfect in a row — {PERFECT_COMBO_BADGE_AT - perfectStreak} more for a combo badge!
+          </p>
+        )}
         {!isPremium && (
-          <p style={{ marginTop: 8, fontSize: 11.5, color: "#a99fd9", lineHeight: 1.4 }}>
+          <p style={{ marginTop: 8, fontSize: 11.5, color: gameTheme.textMuted, lineHeight: 1.4 }}>
             {t("screens.games.free_tier_hint", { limit: DAILY_LIMIT_FREE })}
           </p>
         )}
-        <p style={{ marginTop: 6, fontSize: 11.5, color: "#8b7ec8", lineHeight: 1.4 }}>
+        <p style={{ marginTop: 6, fontSize: 11.5, color: gameTheme.textMuted, lineHeight: 1.4 }}>
           {t("screens.games.streak_unlock_hint", { days: STREAK_UNLOCK_DAYS, current: routineStreak })}
         </p>
         <div style={{
           marginTop: 10,
           display: "flex", justifyContent: "space-between", alignItems: "center",
-          fontSize: 12, color: "#a99fd9",
+          fontSize: 12, color: gameTheme.textMuted,
         }}>
-          <span>{t("screens.games.played_today_label")} <strong style={{ color: limitHit ? "hsl(var(--brand-red-300))" : "#fff" }}>{playedToday} / {limit}</strong></span>
+          <span>{t("screens.games.played_today_label")} <strong style={{ color: limitHit ? gameTheme.error : gameTheme.text }}>{playedToday} / {limit}</strong></span>
           <span>{t("screens.games.earn_to_unlock")}</span>
         </div>
+        <div style={{ marginTop: 8, height: 6, borderRadius: 999, background: gameTheme.progressTrack, overflow: "hidden" }}>
+          <div style={{
+            width: `${dailyPct}%`, height: "100%",
+            background: limitHit
+              ? "linear-gradient(90deg, hsl(var(--brand-red-500)), hsl(var(--brand-red-300)))"
+              : "linear-gradient(90deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-400)))",
+            transition: "width 0.35s ease",
+          }} />
+        </div>
       </div>
+
+      {isPremium && (
+        <div style={{ maxWidth: 720, margin: "12px auto 0", padding: "0 16px" }}>
+          <GamesLeaderboard />
+        </div>
+      )}
 
       {isPremium && weekly.playsLast7Days > 0 && (
         <div style={{ maxWidth: 720, margin: "12px auto 0", padding: "0 16px" }}>
@@ -332,8 +374,8 @@ export default function GamesPage() {
       {/* Skill Progress strip */}
       <div style={{ maxWidth: 720, margin: "12px auto 0", padding: "0 16px" }}>
         <div style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(139,92,246,0.22)",
+          background: "hsl(var(--card))",
+          border: `1px solid ${gameTheme.glassBorder}`,
           borderRadius: 14, padding: "12px 14px",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -382,17 +424,25 @@ export default function GamesPage() {
                 const soon = g.status === "soon";
                 const premiumOnly = requiresPremiumToPlay(g) && !isPremium;
                 const showLock = !unlocked && !soon && !premiumOnly;
+                const isHovered = hoveredGame === g.id;
                 return (
                   <div
                     key={g.id}
+                    onMouseEnter={() => setHoveredGame(g.id)}
+                    onMouseLeave={() => setHoveredGame(null)}
                     style={{
                       position: "relative",
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(139,92,246,0.25)",
+                      background: isHovered && playable && !soon
+                        ? "linear-gradient(160deg, rgba(255,255,255,0.09), rgba(139,92,246,0.12))"
+                        : "rgba(255,255,255,0.05)",
+                      border: `1px solid ${isHovered && playable && !soon ? CATEGORY_ACCENT[g.category] : "rgba(139,92,246,0.25)"}`,
                       borderRadius: 16, padding: 14,
                       display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
                       opacity: soon ? 0.6 : 1,
                       filter: showLock ? "blur(0.4px)" : "none",
+                      transform: isHovered && playable && !soon ? "translateY(-3px)" : "none",
+                      boxShadow: isHovered && playable && !soon ? "0 10px 28px rgba(139,92,246,0.22)" : "none",
+                      transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease",
                     }}
                   >
                     {g.premiumOnly && (
@@ -416,12 +466,19 @@ export default function GamesPage() {
                         padding: "2px 7px", fontSize: 9, fontWeight: 800, color: "#fff",
                       }}>FREE</div>
                     )}
-                    <div style={{
-                      fontSize: 36, lineHeight: 1, width: 56, height: 56,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      background: "rgba(139,92,246,0.15)", borderRadius: 14,
-                      filter: showLock ? "grayscale(0.6)" : "none",
-                    }}>{g.emoji}</div>
+                    {(showLock || premiumOnly) ? (
+                      <div style={{ filter: showLock ? "grayscale(0.5)" : "none" }}>
+                        <GamePreviewTile gameId={g.id} emoji={g.emoji} active />
+                      </div>
+                    ) : (
+                      <div style={{
+                        fontSize: 36, lineHeight: 1, width: 56, height: 56,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        background: `linear-gradient(145deg, ${CATEGORY_ACCENT[g.category]}, hsl(var(--card)))`,
+                        borderRadius: 14,
+                        animation: isHovered && playable && !soon ? "gamesCardFloat 1.6s ease-in-out infinite" : "none",
+                      }}>{g.emoji}</div>
+                    )}
                     <div style={{ fontSize: 13.5, fontWeight: 800, fontFamily: "Quicksand, sans-serif", textAlign: "center", lineHeight: 1.2 }}>
                       {g.title}
                     </div>
@@ -511,16 +568,16 @@ function GameModal({
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 60,
-      background: "rgba(8,5,25,0.85)", backdropFilter: "blur(8px)",
+      background: gameTheme.overlay, backdropFilter: "blur(8px)",
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: 16,
     }} onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%", maxWidth: 440,
-          background: "linear-gradient(180deg, #1a1040 0%, #0f0c29 100%)",
+          background: gameTheme.modalBg,
           borderRadius: 24, padding: "16px 18px 22px",
-          color: "#fff", boxShadow: "0 -10px 40px rgba(0,0,0,0.6)",
+          color: gameTheme.text, boxShadow: "0 -10px 40px rgba(0,0,0,0.6)",
           maxHeight: "92vh", overflowY: "auto",
         }}
       >
@@ -645,16 +702,16 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 70,
-      background: "rgba(8,5,25,0.85)", backdropFilter: "blur(8px)",
+      background: gameTheme.overlay, backdropFilter: "blur(8px)",
       display: "flex", alignItems: "flex-end", justifyContent: "center",
     }} onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%", maxWidth: 560,
-          background: "linear-gradient(180deg, #1a1040 0%, #0f0c29 100%)",
+          background: gameTheme.modalBg,
           borderTopLeftRadius: 24, borderTopRightRadius: 24,
           padding: "16px 20px 28px",
-          color: "#fff", maxHeight: "92vh", overflowY: "auto",
+          color: gameTheme.text, maxHeight: "92vh", overflowY: "auto",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>

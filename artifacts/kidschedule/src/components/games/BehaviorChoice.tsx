@@ -1,4 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { GameShell } from "@/components/games/GameShell";
+import { feedbackCorrect, feedbackWrong } from "@/lib/game-feedback";
+import { gameTheme } from "@/lib/game-theme";
 
 interface Scenario {
   emoji: string;
@@ -59,22 +62,56 @@ export function BehaviorChoiceGame({ onFinish }: { onFinish: (score: number, tot
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
+  const finishedRef = useRef(false);
 
-  if (idx >= rounds.length) { onFinish(score, rounds.length); return null; }
+  useEffect(() => {
+    if (idx >= rounds.length && !finishedRef.current) {
+      finishedRef.current = true;
+      onFinish(score, rounds.length);
+    }
+  }, [idx, score, rounds.length, onFinish]);
+
+  if (idx >= rounds.length) return null;
+
   const r = rounds[idx];
+  const feedback =
+    picked !== null ? (r.options[picked].correct ? "correct" : "wrong") : null;
 
   const onPick = (i: number) => {
     if (picked !== null) return;
     setPicked(i);
-    if (r.options[i].correct) setScore((s) => s + 1);
-    setTimeout(() => { setPicked(null); setIdx((n) => n + 1); }, 1300);
+    if (r.options[i].correct) {
+      setScore((s) => s + 1);
+      void feedbackCorrect();
+    } else {
+      void feedbackWrong();
+    }
+    setTimeout(() => {
+      setPicked(null);
+      setIdx((n) => n + 1);
+    }, 1300);
   };
 
   return (
-    <div style={{ textAlign: "center" }}>
-      <div style={{ color: "#a99fd9", fontSize: 12, marginBottom: 8 }}>Round {idx + 1} of {rounds.length}</div>
+    <GameShell
+      round={idx + 1}
+      totalRounds={rounds.length}
+      score={score}
+      feedback={feedback}
+      feedbackText={feedback === "correct" ? "Great choice!" : feedback === "wrong" ? "Think about it…" : undefined}
+    >
       <div style={{ fontSize: 44, marginBottom: 6 }}>{r.emoji}</div>
-      <h3 style={{ margin: "0 0 18px", color: "#fff", fontSize: 15, fontFamily: "Quicksand, sans-serif", lineHeight: 1.4 }}>{r.question}</h3>
+      <h3
+        style={{
+          margin: "0 0 18px",
+          color: gameTheme.text,
+          fontSize: 15,
+          fontFamily: gameTheme.fontDisplay,
+          lineHeight: 1.4,
+        }}
+      >
+        {r.question}
+      </h3>
       <div style={{ display: "grid", gap: 10, maxWidth: 320, margin: "0 auto" }}>
         {r.options.map((o, i) => {
           const isPicked = picked === i;
@@ -82,28 +119,40 @@ export function BehaviorChoiceGame({ onFinish }: { onFinish: (score: number, tot
           return (
             <button
               key={i}
+              type="button"
               onClick={() => onPick(i)}
               disabled={reveal}
               style={{
-                textAlign: "left", padding: "11px 14px", borderRadius: 12,
-                background: reveal && o.correct ? "rgba(34,197,94,0.22)"
-                          : reveal && isPicked ? "rgba(239,68,68,0.18)"
-                                                : "rgba(255,255,255,0.08)",
-                border: "1px solid" + (reveal && o.correct ? "rgba(34,197,94,0.6)"
-                                       : reveal && isPicked ? "rgba(239,68,68,0.5)"
-                                                            : "rgba(139,92,246,0.3)"),
-                color: "#fff", fontSize: 13.5, lineHeight: 1.4,
+                textAlign: "left",
+                padding: "11px 14px",
+                borderRadius: 12,
+                background:
+                  reveal && o.correct
+                    ? gameTheme.successBg
+                    : reveal && isPicked
+                      ? gameTheme.errorBg
+                      : "rgba(255,255,255,0.08)",
+                border:
+                  "1px solid" +
+                  (reveal && o.correct
+                    ? "rgba(34,197,94,0.6)"
+                    : reveal && isPicked
+                      ? "rgba(239,68,68,0.5)"
+                      : gameTheme.glassBorder),
+                color: gameTheme.text,
+                fontSize: 13.5,
+                lineHeight: 1.4,
                 cursor: reveal ? "default" : "pointer",
               }}
             >
               {o.text}
               {reveal && (o.correct || isPicked) && (
-                <div style={{ marginTop: 6, fontSize: 11.5, color: "#c7c0e8" }}>{o.why}</div>
+                <div style={{ marginTop: 6, fontSize: 11.5, color: gameTheme.textSoft }}>{o.why}</div>
               )}
             </button>
           );
         })}
       </div>
-    </div>
+    </GameShell>
   );
 }

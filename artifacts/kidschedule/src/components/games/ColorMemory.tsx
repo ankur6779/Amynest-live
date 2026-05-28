@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { GameShell } from "@/components/games/GameShell";
+import {
+  getGameDifficulty,
+  setGameDifficulty,
+  COLOR_MEMORY_CONFIG,
+  type GameDifficulty,
+} from "@/lib/game-difficulty";
+import { feedbackCorrect, feedbackWrong, feedbackTap } from "@/lib/game-feedback";
 
 const COLORS = [
-  { id: "r", name: "Red",    bg: "hsl(var(--brand-red-500))" },
-  { id: "b", name: "Blue",   bg: "hsl(var(--brand-blue-500))" },
-  { id: "g", name: "Green",  bg: "hsl(var(--brand-green-500))" },
+  { id: "r", name: "Red", bg: "hsl(var(--brand-red-500))" },
+  { id: "b", name: "Blue", bg: "hsl(var(--brand-blue-500))" },
+  { id: "g", name: "Green", bg: "hsl(var(--brand-green-500))" },
   { id: "y", name: "Yellow", bg: "hsl(var(--brand-amber-400))" },
   { id: "p", name: "Purple", bg: "hsl(var(--brand-purple-500))" },
   { id: "o", name: "Orange", bg: "hsl(var(--brand-orange-400))" },
@@ -14,21 +22,34 @@ function buildSequence(len: number): string[] {
 }
 
 export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
-  const ROUNDS = [3, 4, 5, 5];
-  const sequences = useMemo(() => ROUNDS.map(buildSequence), []);
+  const [difficulty, setDifficulty] = useState<GameDifficulty>(() => getGameDifficulty());
+  const roundLens = COLOR_MEMORY_CONFIG[difficulty].rounds;
+  const sequences = useMemo(() => roundLens.map(buildSequence), [roundLens]);
   const [round, setRound] = useState(0);
   const [phase, setPhase] = useState<"show" | "input" | "feedback">("show");
   const [showIdx, setShowIdx] = useState(0);
   const [input, setInput] = useState<string[]>([]);
   const [score, setScore] = useState(0);
   const [correctRound, setCorrectRound] = useState(false);
+  const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const timerRef = useRef<number | null>(null);
 
-  const seq = sequences[round];
+  const resetDifficulty = (level: GameDifficulty) => {
+    setGameDifficulty(level);
+    setDifficulty(level);
+    setRound(0);
+    setPhase("show");
+    setShowIdx(0);
+    setInput([]);
+    setScore(0);
+    setCorrectRound(false);
+    setFeedback(null);
+  };
 
-  // Show phase: flash colors
+  const seq = sequences[round] ?? [];
+
   useEffect(() => {
-    if (phase !== "show") return;
+    if (phase !== "show" || seq.length === 0) return;
     setShowIdx(0);
     let i = 0;
     timerRef.current = window.setInterval(() => {
@@ -41,44 +62,57 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
       }
     }, 700);
     return () => { if (timerRef.current) window.clearInterval(timerRef.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [round, phase]);
+  }, [round, phase, seq.length]);
 
   if (round >= sequences.length) return null;
 
   const onPick = (id: string) => {
     if (phase !== "input") return;
+    void feedbackTap();
     const next = [...input, id];
     setInput(next);
     if (next.length === seq.length) {
       const ok = next.every((c, i) => c === seq[i]);
       setCorrectRound(ok);
       setPhase("feedback");
+      setFeedback(ok ? "correct" : "wrong");
+      void (ok ? feedbackCorrect() : feedbackWrong());
       if (ok) setScore((s) => s + 1);
       setTimeout(() => {
         if (round + 1 >= sequences.length) onFinish(ok ? score + 1 : score, sequences.length);
-        else { setRound((r) => r + 1); setPhase("show"); }
+        else { setRound((r) => r + 1); setPhase("show"); setFeedback(null); }
       }, 1100);
     }
   };
 
   return (
-    <div style={{ textAlign: "center" }}>
-      <div style={{ color: "#a99fd9", fontSize: 12, marginBottom: 6 }}>Round {round + 1} of {sequences.length} · Length {seq.length}</div>
-      <div style={{
-        height: 86, display: "flex", alignItems: "center", justifyContent: "center",
-        marginBottom: 16,
-      }}>
+    <GameShell
+      round={round + 1}
+      totalRounds={sequences.length}
+      score={score}
+      subtitle={`Length ${seq.length} colours`}
+      feedback={feedback}
+      showDifficulty
+      difficulty={difficulty}
+      onDifficultyChange={resetDifficulty}
+    >
+      <div style={{ height: 86, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
         {phase === "show" && (
-          <div style={{
-            width: 64, height: 64, borderRadius: 16,
-            background: COLORS.find((c) => c.id === seq[showIdx])?.bg ?? "#fff",
-            boxShadow: "0 0 30px" + (COLORS.find((c) => c.id === seq[showIdx])?.bg ?? "#fff") + "55",
-            transition: "background 0.15s",
-          }} />
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 16,
+              background: COLORS.find((c) => c.id === seq[showIdx])?.bg ?? "#fff",
+              boxShadow: `0 0 30px ${COLORS.find((c) => c.id === seq[showIdx])?.bg ?? "#fff"}55`,
+              transition: "background 0.15s",
+            }}
+          />
         )}
         {phase === "input" && (
-          <div style={{ color: "#c7c0e8", fontSize: 13 }}>Now tap the colours in order ({input.length}/{seq.length})</div>
+          <div style={{ color: "hsl(var(--muted-foreground))", fontSize: 13 }}>
+            Tap the colours in order ({input.length}/{seq.length})
+          </div>
         )}
         {phase === "feedback" && (
           <div style={{ fontSize: 32, color: correctRound ? "hsl(var(--brand-green-500))" : "hsl(var(--brand-red-500))", fontWeight: 800 }}>
@@ -88,18 +122,28 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, maxWidth: 260, margin: "0 auto" }}>
         {COLORS.map((c) => (
-          <button key={c.id} disabled={phase !== "input"} onClick={() => onPick(c.id)}
+          <button
+            key={c.id}
+            type="button"
+            disabled={phase !== "input"}
+            onClick={() => onPick(c.id)}
             style={{
-              background: c.bg, color: "#fff", border: "none", borderRadius: 12,
-              padding: "20px 0", fontSize: 12, fontWeight: 800,
+              background: c.bg,
+              color: "#fff",
+              border: "none",
+              borderRadius: 12,
+              padding: "20px 0",
+              fontSize: 12,
+              fontWeight: 800,
               fontFamily: "Quicksand, sans-serif",
               cursor: phase === "input" ? "pointer" : "default",
               opacity: phase === "input" ? 1 : 0.5,
             }}
-          >{c.name}</button>
+          >
+            {c.name}
+          </button>
         ))}
       </div>
-      <div style={{ marginTop: 14, color: "hsl(var(--brand-violet-300))", fontSize: 12, fontWeight: 700 }}>Score: {score}</div>
-    </div>
+    </GameShell>
   );
 }
