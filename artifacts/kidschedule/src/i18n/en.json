@@ -3911,7 +3911,29 @@
       "tab_practice": "Practice",
       "perfect_score": "🌟 Perfect! You're a math genius!",
       "good_score": "👍 Great work! Keep practising!",
-      "keep_going": "💪 Keep going — you'll nail it!"
+      "keep_going": "💪 Keep going — you'll nail it!",
+      "watch_it": "👀 Watch it",
+      "play_with_it": "🖐 Try it",
+      "quiz": "✏️ Quiz",
+      "see_it_animate": "See the math come alive",
+      "parent_insights_title": "What your child is learning",
+      "parent_insights_subtitle": "Based on how they think, not screen time."
+    },
+    "math_animation": {
+      "play": "Play",
+      "pause": "Pause",
+      "replay": "Replay",
+      "show_thinking": "Show the thinking",
+      "voice_on": "Amy on",
+      "voice_off": "Amy off",
+      "build_goal": "Make",
+      "tap_to_add": "Tap + to add",
+      "count": "count",
+      "you_made_it": "You made",
+      "share_goal": "Tap a candy to share it fairly",
+      "pile_empty": "All shared!",
+      "in_each_basket": "in each basket!",
+      "reset": "Start over"
     },
     "smart_meal_suggestions": {
       "amy_ai_meal_generator": "Amy AI Meal Generator",

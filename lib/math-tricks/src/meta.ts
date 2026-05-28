@@ -1,4 +1,5 @@
 import type { MathTrickVisual } from "./types.js";
+import type { VisualSequenceSpec } from "./visual-engine.js";
 
 export type MathTrickMeta = {
   exampleSteps: string[];
@@ -6,6 +7,13 @@ export type MathTrickMeta = {
   visual: MathTrickVisual;
   /** For number-line tricks: show ticks from `from` to `to` and optional jump highlight. */
   numberLine?: { from: number; to: number; jumps?: Array<{ at: number; label: string }> };
+  /**
+   * Declarative spec for the animated visual-math scene. When present, the
+   * renderer plays a step-by-step object animation instead of the static
+   * visual. Kept small (≤ MAX_SCENE_OBJECTS) so younger children aren't
+   * overwhelmed.
+   */
+  visualSequence?: VisualSequenceSpec;
 };
 
 const DEFAULT: MathTrickMeta = {
@@ -31,11 +39,13 @@ export const MATH_TRICK_META: Record<string, MathTrickMeta> = {
     exampleSteps: ["Pick 6", "6 + 6", "= 12 (double!)"],
     parentTip: "Hold up fingers on both hands — same number each side.",
     visual: "fingers",
+    visualSequence: { kind: "double", n: 6, object: "dot" },
   },
   t04: {
     exampleSteps: ["Numbers 6 and 7", "Double the smaller: 6+6=12", "Add 1 → 13"],
     parentTip: "When numbers are neighbors, double-then-plus-one works every time.",
     visual: "fingers",
+    visualSequence: { kind: "near_double", small: 6, object: "dot" },
   },
   t05: {
     exampleSteps: ["12 + 5", "Add 10 → 22", "Subtract 5 → 17"],
@@ -67,6 +77,7 @@ export const MATH_TRICK_META: Record<string, MathTrickMeta> = {
     exampleSteps: ["6 × 4", "Double → 12", "Double again → 24"],
     parentTip: "Doubling twice is easier than counting by fours.",
     visual: "fingers",
+    visualSequence: { kind: "multiplication", rows: 4, per: 6, object: "star" },
   },
   m06: {
     exampleSteps: ["8 × 25", "8 ÷ 4 = 2", "2 × 100 = 200"],
@@ -93,16 +104,19 @@ export const MATH_TRICK_META: Record<string, MathTrickMeta> = {
     exampleSteps: ["9 × 2", "Double 9", "= 18"],
     parentTip: "Easiest multiply — always start here.",
     visual: "fingers",
+    visualSequence: { kind: "double", n: 9, object: "block" },
   },
   m11: {
     exampleSteps: ["7 × 3", "Double 7 = 14", "14 + 7 = 21"],
     parentTip: "Triple = double plus one more group.",
     visual: "fingers",
+    visualSequence: { kind: "multiplication", rows: 3, per: 7, object: "star" },
   },
   m12: {
-    exampleSteps: ["36 ÷ 2", "Half of 36", "= 18"],
+    exampleSteps: ["20 ÷ 2", "Share into 2", "= 10 each"],
     parentTip: "Share snacks in two equal piles — instant half.",
     visual: "none",
+    visualSequence: { kind: "division", total: 20, groups: 2, object: "candy" },
   },
   m13: {
     exampleSteps: ["7 × 10", "Add a zero", "= 70"],
