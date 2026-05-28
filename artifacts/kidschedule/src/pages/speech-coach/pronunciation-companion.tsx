@@ -956,7 +956,13 @@ export function PronunciationCompanion({
                         className="h-2 w-2 rounded-full animate-pulse"
                         style={{ background: C.purple }}
                       />
-                      {t("screens.speech_coach.stt.listening")}
+                      {stt.status === "preparing"
+                        ? t("screens.speech_coach.stt.preparing")
+                        : stt.status === "reconnecting"
+                          ? t("screens.speech_coach.stt.reconnecting")
+                          : stt.status === "refreshing"
+                            ? t("screens.speech_coach.stt.refreshing")
+                            : t("screens.speech_coach.stt.listening")}
                     </p>
                   )}
 

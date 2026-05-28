@@ -572,7 +572,13 @@ export function LiveSpeechCoach({
                 ? "Microphone permission was not allowed. Tap the mic to try again."
                 : stt.error
                   ? "I could not access the microphone. Please try again."
-                  : status}
+                  : stt.status === "preparing"
+                    ? "Preparing microphone..."
+                    : stt.status === "reconnecting"
+                      ? "Reconnecting microphone..."
+                      : stt.status === "refreshing"
+                        ? "Refreshing microphone..."
+                        : status}
           </p>
 
           {state !== "complete" ? (

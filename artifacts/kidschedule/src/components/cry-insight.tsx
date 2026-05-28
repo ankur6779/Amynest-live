@@ -21,7 +21,7 @@ import { Mic, Square, Activity, Baby, AlertTriangle, ShieldAlert, Loader2, Refre
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { getApiUrl } from "@/lib/api";
-import { openMicrophoneStream } from "@/lib/microphone-permission";
+import { microphoneSessionManager } from "@/lib/microphone-session-manager";
 interface CryInsightProps {
   childId: number;
   childName: string;
@@ -182,9 +182,6 @@ export function CryInsight({
   const [recording, setRecording] = useState<boolean>(false);
   const [analysing, setAnalysing] = useState<boolean>(false);
   const [elapsedMs, setElapsedMs] = useState<number>(0);
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
   const startedAtRef = useRef<number>(0);
   const tickRef = useRef<number | null>(null);
 
@@ -226,10 +223,7 @@ export function CryInsight({
       window.clearInterval(tickRef.current);
       tickRef.current = null;
     }
-    if (streamRef.current) {
-      for (const t of streamRef.current.getTracks()) t.stop();
-      streamRef.current = null;
-    }
+    microphoneSessionManager.cleanup();
   }
 
   // ─── Submit context + (optional) audio stats ────────────────────────────────
@@ -279,34 +273,41 @@ export function CryInsight({
   // ─── Start recording ────────────────────────────────────────────────────────
   const startRecording = useCallback(async () => {
     if (recording || analysing) return;
-    const opened = await openMicrophoneStream(true, { forFeature: true });
-    if (!opened.ok) {
-      toast({
-        title: t("toasts.cry_insight.mic_denied_title"),
-        description:
-          opened.reason === "unavailable"
-            ? t("toasts.cry_insight.mic_unavailable_body")
-            : t("toasts.cry_insight.mic_denied_body"),
-        variant: "destructive",
-      });
-      return;
-    }
-    try {
-      const stream = opened.stream;
-      streamRef.current = stream;
-      const rec = new MediaRecorder(stream);
-      chunksRef.current = [];
-      rec.ondataavailable = e => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
-      rec.onstop = async () => {
+
+    setRecording(true);
+    setElapsedMs(0);
+    startedAtRef.current = Date.now();
+
+    const success = await microphoneSessionManager.startRecording({
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+      onError: (err, mappedCode) => {
+        toast({
+          title: t("toasts.cry_insight.mic_denied_title"),
+          description:
+            mappedCode === "unavailable"
+              ? t("toasts.cry_insight.mic_unavailable_body")
+              : t("toasts.cry_insight.mic_denied_body"),
+          variant: "destructive",
+        });
+        setRecording(false);
+        if (tickRef.current) {
+          clearInterval(tickRef.current);
+          tickRef.current = null;
+        }
+      },
+      onStop: async (chunks) => {
         setRecording(false);
         setAnalysing(true);
+        if (tickRef.current) {
+          clearInterval(tickRef.current);
+          tickRef.current = null;
+        }
+
         const elapsed = Date.now() - startedAtRef.current;
-        const blob = new Blob(chunksRef.current, {
-          type: rec.mimeType || "audio/webm"
-        });
-        stopStreamAndTimer();
+        const blob = new Blob(chunks, { type: "audio/webm" });
+
         try {
           const stats = elapsed >= RECORD_MIN_MS ? await analyseRecording(blob) : {
             durationMs: 0
@@ -316,37 +317,25 @@ export function CryInsight({
           setAnalysing(false);
           setElapsedMs(0);
         }
-      };
-      recorderRef.current = rec;
-      startedAtRef.current = Date.now();
-      setElapsedMs(0);
-      rec.start();
-      setRecording(true);
-      tickRef.current = window.setInterval(() => {
-        const e = Date.now() - startedAtRef.current;
-        setElapsedMs(e);
-        if (e >= RECORD_LIMIT_MS) {
-          try {
-            rec.stop();
-          } catch {/* already stopped */}
-        }
-      }, 100);
-    } catch (err) {
-      toast({
-        title: t("toasts.cry_insight.mic_denied_title"),
-        description: t("toasts.cry_insight.mic_denied_body"),
-        variant: "destructive"
-      });
-      stopStreamAndTimer();
+      }
+    });
+
+    if (!success) {
+      setRecording(false);
+      return;
     }
+
+    tickRef.current = window.setInterval(() => {
+      const e = Date.now() - startedAtRef.current;
+      setElapsedMs(e);
+      if (e >= RECORD_LIMIT_MS) {
+        void microphoneSessionManager.stopRecording();
+      }
+    }, 100);
   }, [analysing, recording, submit, toast]);
+
   const stopRecording = useCallback(() => {
-    const rec = recorderRef.current;
-    if (rec && rec.state !== "inactive") {
-      try {
-        rec.stop();
-      } catch {/* ignore */}
-    }
+    void microphoneSessionManager.stopRecording();
   }, []);
   const analyseWithoutAudio = useCallback(async () => {
     if (recording || analysing) return;
