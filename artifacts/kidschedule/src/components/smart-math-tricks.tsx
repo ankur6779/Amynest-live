@@ -4,15 +4,32 @@ import {
   MATH_TRICKS,
   getMathTrickMeta,
   pickTricksSpaced,
+  buildVisualSequence,
+  specIsRenderable,
+  createLearningSignals,
+  applyLearningSignal,
+  deriveAdaptationProfile,
+  buildParentInsights,
   type MathTrick,
   type MathTrickAge as TrickAge,
   type TrickMastery,
+  type AdaptationProfile,
+  type ChildLearningSignals,
+  type LearningSignalEvent,
+  type LearningSessionEvent,
+  type ParentInsight,
 } from "@workspace/math-tricks";
 import {
   ExampleStepsVisual,
   FingerGroupsVisual,
   NumberLineVisual,
 } from "@/components/math-trick-visuals";
+import {
+  AnimatedMathScene,
+  TryItInteractionLayer,
+  ParentInsightCard,
+  type SceneCompletionSummary,
+} from "@/components/math-animation";
 import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
 import { audioManager } from "@/lib/audio-manager";
 import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
@@ -86,6 +103,8 @@ type MathState = {
   mastery: Record<string, TrickMastery>;
   streakDays: number;
   lastStreakDate: string;
+  /** Cognition events for the Parent Insight Layer (Phase 8). */
+  cognition: LearningSessionEvent[];
 };
 
 function defaultMathState(): MathState {
@@ -98,7 +117,16 @@ function defaultMathState(): MathState {
     mastery: {},
     streakDays: 0,
     lastStreakDate: "",
+    cognition: [],
   };
+}
+
+/** Resolve a trick's taught strategy + operation for cognition logging. */
+function trickStrategy(trickId: string): { operation: string; strategy?: LearningSessionEvent["strategy"] } {
+  const spec = getMathTrickMeta(trickId).visualSequence;
+  if (!spec || !specIsRenderable(spec)) return { operation: "quiz" };
+  const seq = buildVisualSequence(spec);
+  return { operation: seq.operation, strategy: seq.meta?.strategy };
 }
 
 function loadMathState(childName: string): MathState {
@@ -174,18 +202,26 @@ function FloatStars({
 function TrickCard({
   trick,
   childName,
+  ageYears,
+  adaptationProfile,
   starred,
   onStar,
   onPracticeResult,
+  onSignal,
+  onSceneComplete,
   expanded,
   onToggle,
   showPractice = false,
 }: {
   trick: MathTrick;
   childName: string;
+  ageYears: number;
+  adaptationProfile?: AdaptationProfile;
   starred: boolean;
   onStar(): void;
   onPracticeResult?(correct: boolean): void;
+  onSignal?(event: LearningSignalEvent): void;
+  onSceneComplete?(trickId: string, summary: SceneCompletionSummary): void;
   expanded: boolean;
   onToggle(): void;
   showPractice?: boolean;
@@ -218,10 +254,16 @@ function TrickCard({
     activePhrase != null && trickActiveKeys.has(activePhrase.toLowerCase());
   const hearTrickBusy = isThisTrickActive && (speaking || loading);
   const [practiceMode, setPracticeMode] = useState(false);
+  const [interactiveMode, setInteractiveMode] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [floatKey, setFloatKey] = useState(0);
   const meta = getMathTrickMeta(trick.id);
+  const animatedSequence = useMemo(() => {
+    const spec = meta.visualSequence;
+    if (!spec || !specIsRenderable(spec)) return null;
+    return buildVisualSequence(spec);
+  }, [meta.visualSequence]);
   const handleSpeak = useCallback(() => {
     audioManager.unlockFromUserGesture();
     if (hearTrickBusy) {
@@ -304,6 +346,35 @@ function TrickCard({
         }}>{t("components.smart_math_tricks.how_it_works")}</p>
             <p className="font-black text-white text-base leading-snug">{trick.trick}</p>
           </div>
+          {animatedSequence && !interactiveMode && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-bold text-white/40 px-0.5">
+                {t("components.smart_math_tricks.see_it_animate")}
+              </p>
+              <AnimatedMathScene
+                sequence={animatedSequence}
+                ageYears={ageYears}
+                accentColor={trick.color}
+                adaptationProfile={adaptationProfile}
+                onSignal={onSignal}
+                onComplete={(summary) => onSceneComplete?.(trick.id, summary)}
+              />
+            </div>
+          )}
+
+          {animatedSequence && interactiveMode && (
+            <div
+              className="rounded-2xl px-3 py-4"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+            >
+              <TryItInteractionLayer
+                sequence={animatedSequence}
+                ageYears={ageYears}
+                accentColor={trick.color}
+              />
+            </div>
+          )}
+
           {meta.exampleSteps.length > 0 && (
             <div className="space-y-1.5">
               <p className="text-xs font-bold text-white/40 px-0.5">{t("components.smart_math_tricks.steps")}</p>
@@ -311,9 +382,9 @@ function TrickCard({
             </div>
           )}
 
-          {meta.visual === "fingers" && <FingerGroupsVisual count={6} />}
+          {!animatedSequence && meta.visual === "fingers" && <FingerGroupsVisual count={6} />}
 
-          {meta.visual === "numberline" && <NumberLineVisual meta={meta} />}
+          {!animatedSequence && meta.visual === "numberline" && <NumberLineVisual meta={meta} />}
 
           <div className="rounded-xl px-4 py-3 text-center font-mono" style={{
         background: "rgba(255,255,255,0.07)",
@@ -336,12 +407,23 @@ function TrickCard({
             <p className="text-[11px] text-white/70 leading-snug">{meta.parentTip}</p>
           </div>
 
+          {/* Interactive Try-It exit */}
+          {interactiveMode && (
+            <button
+              onClick={() => setInteractiveMode(false)}
+              className="w-full py-2 rounded-xl font-bold text-xs text-white/60 hover:text-white/80 transition-colors"
+              style={{ background: "rgba(255,255,255,0.06)" }}
+            >
+              {t("components.smart_math_tricks.back_to_trick")}
+            </button>
+          )}
+
           {/* Actions row */}
-          {!practiceMode && <div className="flex gap-2">
+          {!practiceMode && !interactiveMode && <div className="flex gap-2 flex-wrap">
               <button
                 onPointerDown={handlePrimeSpeak}
                 onClick={handleSpeak}
-                className="flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                className="flex-1 min-w-[96px] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
                 style={{
           background: hearTrickBusy ? `${trick.color}33` : "rgba(255,255,255,0.1)",
           border: `1.5px solid ${hearTrickBusy ? trick.color : "rgba(255,255,255,0.15)"}`,
@@ -350,12 +432,19 @@ function TrickCard({
                 {hearTrickBusy && loading ? "⏳" : hearTrickBusy ? "🔊" : "🔈"}{" "}
                 {hearTrickBusy ? t("components.smart_math_tricks.playing") : t("components.smart_math_tricks.hear_trick")}
               </button>
-              {showPractice && <button onClick={() => setPracticeMode(true)} className="flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95" style={{
+              {animatedSequence && <button onClick={() => setInteractiveMode(true)} className="flex-1 min-w-[88px] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95" style={{
           background: `${trick.color}22`,
           border: `1.5px solid ${trick.color}55`,
           color: trick.color
         }}>
-                  {t("components.smart_math_tricks.try_it")}
+                  {t("components.smart_math_tricks.play_with_it")}
+                </button>}
+              {showPractice && <button onClick={() => setPracticeMode(true)} className="flex-1 min-w-[88px] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95" style={{
+          background: "rgba(255,255,255,0.08)",
+          border: "1.5px solid rgba(255,255,255,0.15)",
+          color: "rgba(255,255,255,0.7)"
+        }}>
+                  {animatedSequence ? t("components.smart_math_tricks.quiz") : t("components.smart_math_tricks.try_it")}
                 </button>}
               <button onClick={() => {
           onStar();
@@ -433,23 +522,33 @@ function TodayTab({
   pool,
   bonusTricks,
   childName,
+  ageYears,
   childId,
   trickAge,
   starIds,
   mastery,
+  adaptationProfile,
+  parentInsights,
   onStar,
   onPracticeResult,
+  onSignal,
+  onSceneComplete,
   onBonusLoaded,
 }: {
   pool: MathTrick[];
   bonusTricks: MathTrick[];
   childName: string;
+  ageYears: number;
   childId?: number;
   trickAge: TrickAge;
   starIds: string[];
   mastery: Record<string, TrickMastery>;
+  adaptationProfile: AdaptationProfile;
+  parentInsights: ParentInsight[];
   onStar(id: string): void;
   onPracticeResult(id: string, correct: boolean): void;
+  onSignal(event: LearningSignalEvent): void;
+  onSceneComplete(trickId: string, summary: SceneCompletionSummary): void;
   onBonusLoaded(tricks: MathTrick[]): void;
 }) {
   const {
@@ -460,14 +559,25 @@ function TodayTab({
   const [expanded, setExpanded] = useState<string | null>(todayTricks[0]?.id ?? null);
   return <div className="space-y-3">
       <p className="text-xs text-white/40 text-center">{t("components.smart_math_tricks.2_new_tricks_every_day")}</p>
+      {parentInsights.length > 0 && (
+        <ParentInsightCard
+          insights={parentInsights}
+          title={t("components.smart_math_tricks.parent_insights_title", "What your child is learning")}
+          subtitle={t("components.smart_math_tricks.parent_insights_subtitle", "Based on how they think, not screen time.")}
+        />
+      )}
       {todayTricks.map((tr) => (
         <TrickCard
           key={tr.id}
           trick={tr}
           childName={childName}
+          ageYears={ageYears}
+          adaptationProfile={adaptationProfile}
           starred={starIds.includes(tr.id)}
           onStar={() => onStar(tr.id)}
           onPracticeResult={(correct) => onPracticeResult(tr.id, correct)}
+          onSignal={onSignal}
+          onSceneComplete={onSceneComplete}
           expanded={expanded === tr.id}
           onToggle={() => setExpanded((prev) => (prev === tr.id ? null : tr.id))}
           showPractice
@@ -478,9 +588,13 @@ function TodayTab({
           key={tr.id}
           trick={tr}
           childName={childName}
+          ageYears={ageYears}
+          adaptationProfile={adaptationProfile}
           starred={starIds.includes(tr.id)}
           onStar={() => onStar(tr.id)}
           onPracticeResult={(correct) => onPracticeResult(tr.id, correct)}
+          onSignal={onSignal}
+          onSceneComplete={onSceneComplete}
           expanded={expanded === tr.id}
           onToggle={() => setExpanded((prev) => (prev === tr.id ? null : tr.id))}
           showPractice
@@ -510,21 +624,29 @@ function LearnAllTab({
   pool,
   bonusTricks,
   childName,
+  ageYears,
   childId,
   trickAge,
   starIds,
+  adaptationProfile,
   onStar,
   onPracticeResult,
+  onSignal,
+  onSceneComplete,
   onBonusLoaded,
 }: {
   pool: MathTrick[];
   bonusTricks: MathTrick[];
   childName: string;
+  ageYears: number;
   childId?: number;
   trickAge: TrickAge;
   starIds: string[];
+  adaptationProfile: AdaptationProfile;
   onStar(id: string): void;
   onPracticeResult(id: string, correct: boolean): void;
+  onSignal(event: LearningSignalEvent): void;
+  onSceneComplete(trickId: string, summary: SceneCompletionSummary): void;
   onBonusLoaded(tricks: MathTrick[]): void;
 }) {
   const {
@@ -545,9 +667,13 @@ function LearnAllTab({
           key={tr.id}
           trick={tr}
           childName={childName}
+          ageYears={ageYears}
+          adaptationProfile={adaptationProfile}
           starred={starIds.includes(tr.id)}
           onStar={() => onStar(tr.id)}
           onPracticeResult={(correct) => onPracticeResult(tr.id, correct)}
+          onSignal={onSignal}
+          onSceneComplete={onSceneComplete}
           expanded={expanded === tr.id}
           onToggle={() => setExpanded((prev) => (prev === tr.id ? null : tr.id))}
           showPractice
@@ -809,6 +935,33 @@ export function SmartMathTricks({
     [childName],
   );
 
+  // ── Adaptive learning intelligence (Phase 4) ───────────────────────────────
+  const [signals, setSignals] = useState<ChildLearningSignals>(() =>
+    createLearningSignals(ageYears),
+  );
+  const adaptationProfile: AdaptationProfile = useMemo(
+    () => deriveAdaptationProfile(signals, ageYears),
+    [signals, ageYears],
+  );
+  const recordSignal = useCallback((event: LearningSignalEvent) => {
+    setSignals((prev) => applyLearningSignal(prev, event));
+  }, []);
+  const recordCognition = useCallback(
+    (event: LearningSessionEvent) => {
+      persistState((prev) => ({
+        ...prev,
+        cognition: [...(prev.cognition ?? []), event].slice(-40),
+      }));
+    },
+    [persistState],
+  );
+
+  // ── Parent cognition insights (Phase 8) ─────────────────────────────────────
+  const parentInsights: ParentInsight[] = useMemo(
+    () => buildParentInsights(mathSt.cognition ?? [], childName),
+    [mathSt.cognition, childName],
+  );
+
   const handleStar = useCallback(
     (id: string) => {
       persistState((prev) => {
@@ -828,8 +981,36 @@ export function SmartMathTricks({
         ...prev,
         mastery: bumpMastery(prev.mastery, id, correct),
       }));
+      recordSignal({ type: correct ? "correct" : "incorrect" });
+      const { operation, strategy } = trickStrategy(id);
+      recordCognition({
+        trickId: id,
+        operation,
+        strategy,
+        solvedVisually: false,
+        usedThinkingReplay: false,
+        abstractionLevel: adaptationProfile.abstractionLevel,
+        correct,
+        at: Date.now(),
+      });
     },
-    [persistState],
+    [persistState, recordSignal, recordCognition, adaptationProfile.abstractionLevel],
+  );
+
+  /** A visual scene finished — log the cognitive milestone (Phase 8). */
+  const handleSceneComplete = useCallback(
+    (trickId: string, summary: SceneCompletionSummary) => {
+      recordCognition({
+        trickId,
+        operation: trickStrategy(trickId).operation,
+        strategy: summary.strategy,
+        solvedVisually: true,
+        usedThinkingReplay: summary.usedThinkingReplay,
+        abstractionLevel: summary.abstractionLevel,
+        at: Date.now(),
+      });
+    },
+    [recordCognition],
   );
 
   const handleSessionComplete = useCallback(() => {
@@ -904,12 +1085,17 @@ export function SmartMathTricks({
             pool={pool}
             bonusTricks={bonusTricks}
             childName={childName}
+            ageYears={ageYears}
             childId={childId}
             trickAge={trickAge}
             starIds={mathSt.starIds}
             mastery={mathSt.mastery}
+            adaptationProfile={adaptationProfile}
+            parentInsights={parentInsights}
             onStar={handleStar}
             onPracticeResult={handlePracticeResult}
+            onSignal={recordSignal}
+            onSceneComplete={handleSceneComplete}
             onBonusLoaded={handleBonusLoaded}
           />
         )}
@@ -918,11 +1104,15 @@ export function SmartMathTricks({
             pool={pool}
             bonusTricks={bonusTricks}
             childName={childName}
+            ageYears={ageYears}
             childId={childId}
             trickAge={trickAge}
             starIds={mathSt.starIds}
+            adaptationProfile={adaptationProfile}
             onStar={handleStar}
             onPracticeResult={handlePracticeResult}
+            onSignal={recordSignal}
+            onSceneComplete={handleSceneComplete}
             onBonusLoaded={handleBonusLoaded}
           />
         )}
