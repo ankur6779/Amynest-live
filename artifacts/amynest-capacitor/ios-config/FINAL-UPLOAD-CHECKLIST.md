@@ -6,12 +6,12 @@ Use this **right before** Archive → Upload. Code in repo is aligned for review
 
 ## A. Xcode (Mac) — binary
 
-1. Pull latest `main` and rebuild:
+1. Pull latest `main` and rebuild (includes GoogleSignIn **7.1** privacy-manifest patch):
    ```bash
    cd artifacts/amynest-capacitor
    pnpm run build:ios
-   cd ios/App && pod install
    ```
+   `build:ios` runs `patch:google-auth-ios` then `pod install` automatically.
 2. Open `ios/App/App.xcworkspace` (not `.xcodeproj`).
 3. **App target → Signing & Capabilities** — confirm:
    - **Sign in with Apple** capability present
