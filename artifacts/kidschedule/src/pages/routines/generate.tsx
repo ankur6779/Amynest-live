@@ -51,6 +51,7 @@ import {
 } from "@/lib/safety-routine-validation";
 import { FixedActivitiesInlineCard } from "@/components/routines/fixed-activities-inline-card";
 import { FixedActivitiesReviewPanel } from "@/components/routines/fixed-activities-review-panel";
+import { RoutineAdaptationsCard } from "@/components/intelligence/routine-adaptations-card";
 import {
   normalizeFixedActivities,
   type FixedActivityDraft,
@@ -453,9 +454,13 @@ function CombinedTimeline({
     </div>;
 }
 function IndividualRoutineSection({
-  result
+  result,
+  mood,
+  isWeekendDay,
 }: {
   result: FamilyResult;
+  mood?: string;
+  isWeekendDay?: boolean;
 }) {
   const {
     t
@@ -474,7 +479,15 @@ function IndividualRoutineSection({
         </div>
         {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </button>
-      {expanded && <div className="p-3 space-y-2 max-h-96 overflow-y-auto">
+      {expanded && <div className="p-3 space-y-3 max-h-96 overflow-y-auto">
+          {(result.routine.adaptations?.length ?? 0) > 0 ? (
+            <RoutineAdaptationsCard
+              adaptations={result.routine.adaptations}
+              mood={mood}
+              isWeekendDay={isWeekendDay}
+              compact
+            />
+          ) : null}
           {result.routine.items.map((item, i) => <div key={i} className="flex items-start gap-3 p-2 rounded-xl hover:bg-muted/30">
               <div className="text-xs font-bold text-muted-foreground w-14 shrink-0 text-right pt-0.5">{item.time}</div>
               <div className="flex-1">
@@ -1867,7 +1880,20 @@ export default function RoutineGenerate() {
                 )}
 
                 {fixedReviewState && (
-                  <div ref={fixedReviewRef}>
+                  <div ref={fixedReviewRef} className="space-y-4">
+                  {(fixedReviewState.routine.adaptations?.length ?? 0) > 0 ? (
+                    <RoutineAdaptationsCard
+                      adaptations={fixedReviewState.routine.adaptations}
+                      mood={mood}
+                      isWeekendDay={(() => {
+                        const d = new Date(`${date}T12:00:00`);
+                        const dow = d.getDay();
+                        return dow === 0 || dow === 6;
+                      })()}
+                      hasSchool={hasSchool ?? undefined}
+                      compact
+                    />
+                  ) : null}
                   <FixedActivitiesReviewPanel
                     date={date}
                     childName={selectedChildData?.name}
@@ -2127,7 +2153,18 @@ export default function RoutineGenerate() {
                     {t("pages.routines.generate.individual_routines")}
                   </h3>
                   <div className="space-y-3">
-                    {familyResults.map(result => <IndividualRoutineSection key={result.child.id} result={result} />)}
+                    {familyResults.map(result => (
+                      <IndividualRoutineSection
+                        key={result.child.id}
+                        result={result}
+                        mood={mood}
+                        isWeekendDay={(() => {
+                          const d = new Date(`${familyDate}T12:00:00`);
+                          const dow = d.getDay();
+                          return dow === 0 || dow === 6;
+                        })()}
+                      />
+                    ))}
                   </div>
                 </CardContent>
               </Card>
