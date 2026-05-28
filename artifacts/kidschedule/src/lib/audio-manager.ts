@@ -432,6 +432,9 @@ class AudioManagerImpl {
   /** Halt all active playback before starting a fallback TTS layer. */
   stopAll(): void {
     this.stop();
+    void import("@/lib/audio-session-coordinator").then(({ notifyPlaybackEnded }) => {
+      notifyPlaybackEnded("stopAll");
+    });
   }
 
   /**
@@ -923,6 +926,9 @@ class AudioManagerImpl {
       if (blobUrl && this.ownedObjectUrl === blobUrl) {
         this.revokeOwnedBlob();
       }
+      void import("@/lib/audio-session-coordinator").then(({ notifyPlaybackEnded }) => {
+        notifyPlaybackEnded(meta.source ?? channel);
+      });
     };
 
     audio.onerror = () => {
@@ -1035,6 +1041,10 @@ class AudioManagerImpl {
             this.softResetPipeline();
           }
           this.pendingFocusReplay = null;
+
+          void import("@/lib/audio-session-coordinator").then(({ notifyPlaybackStarted }) => {
+            notifyPlaybackStarted(meta.source ?? channel);
+          });
 
           if (import.meta.env.DEV) {
             console.info(LOG, "play success", {

@@ -78,6 +78,10 @@ function setPlaying(next: boolean, label: string | null): void {
   if (playing === next && activeLabel === label) return;
   playing = next;
   activeLabel = label;
+  void import("@/lib/audio-session-coordinator").then(({ notifyPlaybackStarted, notifyPlaybackEnded }) => {
+    if (next) notifyPlaybackStarted(`phonics:${label ?? "unknown"}`);
+    else notifyPlaybackEnded(`phonics:${label ?? "unknown"}`);
+  });
   notify();
 }
 

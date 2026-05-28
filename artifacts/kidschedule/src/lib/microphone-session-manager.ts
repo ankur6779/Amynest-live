@@ -1,4 +1,10 @@
-import { isCapacitorIosNative, prepareIosAudioSessionForRecording } from "@/lib/mic-permission-capacitor";
+import {
+  closeAudioContext,
+  getAudioSessionDiagnostics,
+  prepareForMicrophoneAcquisition,
+  resetAudioFocusForMicRetry,
+  trackAudioContext,
+} from "@/lib/audio-session-coordinator";
 import {
   classifyMicrophoneFailure,
   isOsMicrophonePermissionDenied,
@@ -67,28 +73,36 @@ export class MicrophoneSessionManager {
    * Lazily acquires/resumes the AudioContext.
    * Crucial for Android where Web Audio gets silently suspended on lock/background.
    */
-  private async ensureAudioContext(): Promise<AudioContext | null> {
+  private async destroyAudioContext(): Promise<void> {
+    if (!this.audioContext) return;
+    const state = this.audioContext.state;
+    this.log("Destroying AudioContext before mic acquire", { state });
+    await closeAudioContext(this.audioContext);
+    this.audioContext = null;
+  }
+
+  private async ensureAudioContext(forceFresh = false): Promise<AudioContext | null> {
     if (typeof window === "undefined") return null;
 
-    if (!this.audioContext) {
+    if (forceFresh || !this.audioContext || this.audioContext.state === "closed") {
+      await this.destroyAudioContext();
       const AudioContextClass = window.AudioContext ?? (window as any).webkitAudioContext;
       if (AudioContextClass) {
         try {
           this.audioContext = new AudioContextClass();
+          trackAudioContext(this.audioContext);
           this.log("Created fresh AudioContext instance", { state: this.audioContext.state });
         } catch (e) {
           this.log("Failed to create AudioContext", e);
         }
       }
-    }
-
-    if (this.audioContext && this.audioContext.state === "suspended") {
+    } else if (this.audioContext.state === "suspended") {
       try {
-        this.log("AudioContext is suspended, attempting to resume...");
-        await this.audioContext.resume();
-        this.log("AudioContext resumed successfully", { state: this.audioContext.state });
+        this.log("AudioContext is suspended — recreating instead of resuming (WebView zombie guard)");
+        await this.destroyAudioContext();
+        return this.ensureAudioContext(true);
       } catch (e) {
-        this.log("Failed to resume AudioContext", e);
+        this.log("Failed to recreate suspended AudioContext", e);
       }
     }
 
@@ -122,9 +136,9 @@ export class MicrophoneSessionManager {
           }
         }
       } else if (visibilityState === "visible") {
-        this.log("App returned to foreground; resetting permission cache and recovering audio context");
+        this.log("App returned to foreground; invalidating stale mic session after lifecycle change");
         resetMicrophonePermissionCache();
-        await this.ensureAudioContext();
+        this.reset();
       }
     };
 
@@ -160,14 +174,12 @@ export class MicrophoneSessionManager {
     this.updateState("preparing");
     this.error = null;
 
-    // 2. Audio context recovery
-    await this.ensureAudioContext();
-
-    if (isCapacitorIosNative()) {
-      await prepareIosAudioSessionForRecording();
-    }
+    // 2. Global playback release + post-TTS cooldown + native session prep
+    await prepareForMicrophoneAcquisition();
+    await this.ensureAudioContext(true);
 
     const startTimer = performance.now();
+    this.log("Mic acquire timeline", getAudioSessionDiagnostics());
     try {
       const success = await this.attemptStartRecording(config, sessionToken);
       if (success) {
@@ -185,18 +197,17 @@ export class MicrophoneSessionManager {
       return false;
     }
 
-    // 3. AUTOMATIC MICROPHONE RECOVERY FLOW
+    // 3. AUTOMATIC MICROPHONE RECOVERY FLOW (NotReadableError / stale native focus)
     this.stats.recoveryAttempts++;
-    this.log("First attempt failed. Initiating automatic microphone recovery...");
+    this.log("First attempt failed. Initiating automatic microphone recovery with audio focus reset...");
     this.updateState("reconnecting");
-    
-    // Fully destroy stale stream tracks & MediaRecorder, wait 300ms
+
     this.cleanup();
-    this.activeSessionToken = sessionToken; // Restore active session token after cleanup
+    this.activeSessionToken = sessionToken;
     this.currentConfig = config;
 
-    // Settle delay of 300ms is perfectly safely above the 100-150ms requirement for slow Android audio hardware release
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await resetAudioFocusForMicRetry();
+    await this.ensureAudioContext(true);
 
     if (this.activeSessionToken !== sessionToken) {
       this.log("Session was cancelled or superseded during recovery delay; aborting start");
@@ -420,6 +431,18 @@ export class MicrophoneSessionManager {
   }
 
   /**
+   * Hard reset after native lifecycle changes — never reuse streams/contexts after pause/resume.
+   */
+  public reset(): void {
+    this.log("reset() — invalidating mic session after native lifecycle change");
+    this.cleanup();
+    void this.destroyAudioContext();
+    this.currentConfig = null;
+    this.error = null;
+    this.updateState("idle");
+  }
+
+  /**
    * Deep cleanup of old tracks, event listeners, and media objects
    */
   public cleanup(): void {
@@ -507,6 +530,7 @@ export class MicrophoneSessionManager {
       streamActive: this.stream?.active ?? null,
       trackStates,
       retryStats: this.stats,
+      diagnostics: getAudioSessionDiagnostics(),
     });
 
     if (isTruePermissionDenial) {

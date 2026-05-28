@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- Microphone for Speech Coach, Cry Insight, and voice features. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Audio routing / focus for TTS ↔ mic handoff in WebView. -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- Required for Google Play Billing (in-app purchases / subscriptions). -->
     <uses-permission android:name="com.android.vending.BILLING" />
 
