@@ -1,19 +1,17 @@
 import { useMemo, useState } from "react";
-
-// Paint-by-numbers on a 4×4 grid. Each cell has a target color index.
-// The player picks a color from a palette then taps cells to fill them.
+import { GameShell } from "@/components/games/GameShell";
+import { feedbackCorrect, feedbackTap } from "@/lib/game-feedback";
+import { gameTheme } from "@/lib/game-theme";
 
 const PALETTE = [
-  { id: 0, color: "hsl(var(--brand-red-500))", label: "Red"    },
-  { id: 1, color: "hsl(var(--brand-blue-500))", label: "Blue"   },
-  { id: 2, color: "hsl(var(--brand-green-500))", label: "Green"  },
+  { id: 0, color: "hsl(var(--brand-red-500))", label: "Red" },
+  { id: 1, color: "hsl(var(--brand-blue-500))", label: "Blue" },
+  { id: 2, color: "hsl(var(--brand-green-500))", label: "Green" },
   { id: 3, color: "hsl(var(--brand-amber-500))", label: "Yellow" },
   { id: 4, color: "hsl(var(--brand-purple-500))", label: "Purple" },
   { id: 5, color: "hsl(var(--brand-orange-500))", label: "Orange" },
 ];
 
-// Each picture uses a subset of palette indices arranged on a 4×4 grid.
-// Values map to PALETTE indices; -1 = white (background, auto-filled).
 const PICTURES = [
   {
     label: "Rainbow Stripe",
@@ -67,23 +65,21 @@ const PICTURES = [
   },
 ];
 
-const TOTAL = 4; // total rounds
+const TOTAL = 4;
 
 export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: number) => void }) {
-  const picOrder = useMemo(() =>
-    [...PICTURES].sort(() => Math.random() - 0.5).slice(0, TOTAL),
-  []);
+  const picOrder = useMemo(() => [...PICTURES].sort(() => Math.random() - 0.5).slice(0, TOTAL), []);
 
   const [roundIdx, setRoundIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [activePalette, setActivePalette] = useState<number>(0);
-  // Filled state: Map from "r-c" → palette index
   const [filled, setFilled] = useState<Map<string, number>>(new Map());
   const [feedback, setFeedback] = useState<"correct" | null>(null);
 
   const pic = picOrder[roundIdx];
 
   const fill = (r: number, c: number) => {
+    void feedbackTap();
     const key = `${r}-${c}`;
     setFilled((prev) => {
       const next = new Map(prev);
@@ -98,17 +94,19 @@ export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: n
       for (let c = 0; c < 4; c++) {
         const target = pic.grid[r][c];
         const actual = filled.get(`${r}-${c}`);
-        if (actual !== target) { allCorrect = false; break; }
+        if (actual !== target) {
+          allCorrect = false;
+          break;
+        }
       }
       if (!allCorrect) break;
     }
-    if (!allCorrect) {
-      // Let them keep trying — highlight errors briefly
-      return;
-    }
+    if (!allCorrect) return;
+
     const newScore = score + 1;
     setScore(newScore);
     setFeedback("correct");
+    void feedbackCorrect();
     setTimeout(() => {
       if (roundIdx + 1 >= TOTAL) {
         onFinish(newScore, TOTAL);
@@ -121,7 +119,6 @@ export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: n
     }, 800);
   };
 
-  // Check if all cells are filled (even if wrong)
   const allFilled = (() => {
     for (let r = 0; r < 4; r++) {
       for (let c = 0; c < 4; c++) {
@@ -134,23 +131,35 @@ export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: n
   const usedPalette = PALETTE.filter((p) => pic.usedColors.includes(p.id));
 
   return (
-    <div style={{ textAlign: "center" }}>
-      <div style={{ color: "#a99fd9", fontSize: 12, marginBottom: 4 }}>
-        Round {roundIdx + 1} of {TOTAL} — "<strong style={{ color:"#fff"}}>{pic.label}</strong>"
-      </div>
-      <div style={{ color: "#7c6fb8", fontSize: 11, marginBottom: 10 }}>
-        Pick a colour then tap cells to fill them.
-      </div>
-
-      {/* Color palette */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+    <GameShell
+      round={roundIdx + 1}
+      totalRounds={TOTAL}
+      score={score}
+      feedback={feedback}
+      feedbackText={feedback === "correct" ? "Perfect colours! 🎨" : undefined}
+      subtitle={`Picture: ${pic.label}`}
+      title="Pick a colour, then tap cells to fill them"
+      footer="Hint: small dot in each cell shows the target colour."
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: 8,
+          flexWrap: "wrap",
+          marginBottom: 14,
+        }}
+      >
         {usedPalette.map((p) => (
           <button
             key={p.id}
+            type="button"
             onClick={() => setActivePalette(p.id)}
             title={p.label}
             style={{
-              width: 36, height: 36, borderRadius: "50%",
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
               background: p.color,
               border: activePalette === p.id ? "3px solid #fff" : "2px solid transparent",
               cursor: "pointer",
@@ -161,19 +170,20 @@ export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: n
         ))}
       </div>
 
-      {/* 4×4 grid */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(4, 60px)",
-        gridTemplateRows: "repeat(4, 60px)",
-        gap: 4,
-        margin: "0 auto 14px",
-        width: "fit-content",
-        background: "rgba(255,255,255,0.05)",
-        padding: 6,
-        borderRadius: 14,
-        border: "1px solid rgba(139,92,246,0.3)",
-      }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 60px)",
+          gridTemplateRows: "repeat(4, 60px)",
+          gap: 4,
+          margin: "0 auto 14px",
+          width: "fit-content",
+          background: "rgba(255,255,255,0.05)",
+          padding: 6,
+          borderRadius: 14,
+          border: `1px solid ${gameTheme.glassBorder}`,
+        }}
+      >
         {pic.grid.map((row, r) =>
           row.map((targetIdx, c) => {
             const key = `${r}-${c}`;
@@ -185,61 +195,64 @@ export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: n
             return (
               <button
                 key={key}
+                type="button"
                 onClick={() => fill(r, c)}
                 style={{
-                  width: 60, height: 60, borderRadius: 10,
-                  background: painted
-                    ? PALETTE[paintedIdx!]?.color ?? "#fff"
-                    : "rgba(255,255,255,0.08)",
+                  width: 60,
+                  height: 60,
+                  borderRadius: 10,
+                  background: painted ? (PALETTE[paintedIdx!]?.color ?? "#fff") : "rgba(255,255,255,0.08)",
                   border: wrong
                     ? "2px solid rgba(239,68,68,0.8)"
                     : correct
-                    ? "2px solid rgba(34,197,94,0.7)"
-                    : "1px solid rgba(139,92,246,0.25)",
+                      ? "2px solid rgba(34,197,94,0.7)"
+                      : `1px solid ${gameTheme.glassBorder}`,
                   cursor: "pointer",
                   position: "relative",
                   transition: "background 0.12s",
                 }}
                 title={`Target: ${PALETTE[targetIdx]?.label}`}
               >
-                {/* Tiny hint dot in corner */}
                 {!painted && (
-                  <span style={{
-                    position: "absolute", bottom: 4, right: 4,
-                    width: 10, height: 10, borderRadius: "50%",
-                    background: hintColor,
-                    opacity: 0.4,
-                  }} />
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: 4,
+                      right: 4,
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: hintColor,
+                      opacity: 0.4,
+                    }}
+                  />
                 )}
               </button>
             );
-          })
+          }),
         )}
       </div>
 
       {allFilled && !feedback && (
         <button
+          type="button"
           onClick={checkAndAdvance}
           style={{
-            background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
-            color: "#fff", border: "none", borderRadius: 999,
-            padding: "10px 24px", fontSize: 14, fontWeight: 700, cursor: "pointer",
+            background:
+              "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
+            color: gameTheme.text,
+            border: "none",
+            borderRadius: 999,
+            padding: "10px 24px",
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: "pointer",
             marginBottom: 8,
           }}
         >
           Check! ✓
         </button>
       )}
-
-      {feedback === "correct" && (
-        <div style={{ fontSize: 14, fontWeight: 700, color: "hsl(var(--brand-green-300))" }}>
-          Perfect colours! 🎨
-        </div>
-      )}
-
-      <div style={{ color: "#7c6fb8", fontSize: 11, marginTop: 6 }}>
-        Hint: small dot in each cell shows the target colour.
-      </div>
-    </div>
+    </GameShell>
   );
 }

@@ -7,6 +7,12 @@ import {
   dailyLimitReached,
   ensureStarterUnlocks,
   GAMES,
+  getPerfectStreak,
+  recordPerfectStreak,
+  hasPerfectComboBadge,
+  getWeeklyLeaderboard,
+  PERFECT_COMBO_BADGE_AT,
+  recordLeaderboardEntry,
 } from "./games";
 import { cacheRoutineStreak, STREAK_UNLOCK_DAYS } from "./routine-streak-cache";
 
@@ -65,5 +71,29 @@ describe("daily limits", () => {
     expect(dailyLimit(false)).toBe(3);
     expect(dailyLimit(true)).toBe(12);
     expect(dailyLimitReached(false)).toBe(false);
+  });
+});
+
+describe("perfect streak combo", () => {
+  it("tracks consecutive perfect scores and badge threshold", () => {
+    expect(getPerfectStreak()).toBe(0);
+    expect(recordPerfectStreak(true)).toBe(1);
+    expect(recordPerfectStreak(true)).toBe(2);
+    expect(hasPerfectComboBadge()).toBe(false);
+    expect(recordPerfectStreak(true)).toBe(PERFECT_COMBO_BADGE_AT);
+    expect(hasPerfectComboBadge()).toBe(true);
+    expect(recordPerfectStreak(false)).toBe(0);
+    expect(hasPerfectComboBadge()).toBe(false);
+  });
+});
+
+describe("weekly leaderboard", () => {
+  it("records best ratio per game from plays", () => {
+    recordLeaderboardEntry("pattern-match", 4, 5);
+    recordLeaderboardEntry("pattern-match", 5, 5);
+    const rows = getWeeklyLeaderboard();
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows[0]?.gameId).toBe("pattern-match");
+    expect(rows[0]?.bestRatio).toBe(100);
   });
 });

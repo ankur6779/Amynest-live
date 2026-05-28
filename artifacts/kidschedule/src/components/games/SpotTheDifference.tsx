@@ -1,69 +1,137 @@
 import { useMemo, useState } from "react";
+import { GameShell } from "@/components/games/GameShell";
+import { feedbackCorrect, feedbackTap, feedbackWrong } from "@/lib/game-feedback";
+import { gameTheme } from "@/lib/game-theme";
 
-// ── Scene definitions ─────────────────────────────────────────────────────────
-// Two 4×4 emoji grids side-by-side. A handful of cells differ.
-// The player must tap the different cells in the RIGHT (changed) grid.
-import { useTranslation } from "react-i18next";
 interface SDScene {
   name: string;
-  base: string[][]; // 4×4 original
-  diffs: [number, number][]; // [row, col] cells that are changed in the right grid
-  changed: string[][]; // replacement emojis for those diff positions
+  base: string[][];
+  diffs: [number, number][];
+  changed: string[][];
 }
-const ALL_SCENES: SDScene[] = [{
-  name: "Farm Friends",
-  base: [["🐄", "🐑", "🐔", "🐷"], ["🌽", "🥕", "🌻", "🍎"], ["🚜", "🌾", "🏡", "🌳"], ["☀️", "🐝", "🦋", "🌸"]],
-  diffs: [[0, 1], [1, 2], [2, 0], [3, 3]],
-  changed: [["🐄", "🐐", "🐔", "🐷"], ["🌽", "🥕", "🍀", "🍎"], ["🚗", "🌾", "🏡", "🌳"], ["☀️", "🐝", "🦋", "🌹"]]
-}, {
-  name: "Space Station",
-  base: [["🚀", "🌍", "🌟", "🛸"], ["🌙", "👾", "☄️", "🪐"], ["🔭", "🛰️", "🌠", "🌌"], ["👨‍🚀", "🤖", "🪨", "💫"]],
-  diffs: [[0, 2], [1, 0], [2, 3], [3, 1]],
-  changed: [["🚀", "🌍", "⭐", "🛸"], ["⚡", "👾", "☄️", "🪐"], ["🔭", "🛰️", "🌠", "🎆"], ["👨‍🚀", "🦾", "🪨", "💫"]]
-}, {
-  name: "Birthday Party",
-  base: [["🎂", "🎈", "🎁", "🎉"], ["🍭", "🎊", "🎀", "🧁"], ["🥳", "🎵", "🍾", "🕯️"], ["👑", "🎯", "🎠", "🌈"]],
-  diffs: [[0, 1], [1, 3], [2, 2], [3, 0]],
-  changed: [["🎂", "🎏", "🎁", "🎉"], ["🍭", "🎊", "🎀", "🍰"], ["🥳", "🎵", "🍻", "🕯️"], ["💎", "🎯", "🎠", "🌈"]]
-}, {
-  name: "Jungle Trek",
-  base: [["🦁", "🐘", "🦒", "🦓"], ["🌿", "🐦", "🦜", "🌴"], ["🐊", "🦋", "🐸", "🍃"], ["🌺", "🦧", "🐆", "💧"]],
-  diffs: [[0, 0], [1, 2], [2, 1], [3, 3]],
-  changed: [["🐯", "🐘", "🦒", "🦓"], ["🌿", "🐦", "🦚", "🌴"], ["🐊", "🦅", "🐸", "🍃"], ["🌺", "🦧", "🐆", "🌊"]]
-}];
+
+const ALL_SCENES: SDScene[] = [
+  {
+    name: "Farm Friends",
+    base: [
+      ["🐄", "🐑", "🐔", "🐷"],
+      ["🌽", "🥕", "🌻", "🍎"],
+      ["🚜", "🌾", "🏡", "🌳"],
+      ["☀️", "🐝", "🦋", "🌸"],
+    ],
+    diffs: [
+      [0, 1],
+      [1, 2],
+      [2, 0],
+      [3, 3],
+    ],
+    changed: [
+      ["🐄", "🐐", "🐔", "🐷"],
+      ["🌽", "🥕", "🍀", "🍎"],
+      ["🚗", "🌾", "🏡", "🌳"],
+      ["☀️", "🐝", "🦋", "🌹"],
+    ],
+  },
+  {
+    name: "Space Station",
+    base: [
+      ["🚀", "🌍", "🌟", "🛸"],
+      ["🌙", "👾", "☄️", "🪐"],
+      ["🔭", "🛰️", "🌠", "🌌"],
+      ["👨‍🚀", "🤖", "🪨", "💫"],
+    ],
+    diffs: [
+      [0, 2],
+      [1, 0],
+      [2, 3],
+      [3, 1],
+    ],
+    changed: [
+      ["🚀", "🌍", "⭐", "🛸"],
+      ["⚡", "👾", "☄️", "🪐"],
+      ["🔭", "🛰️", "🌠", "🎆"],
+      ["👨‍🚀", "🦾", "🪨", "💫"],
+    ],
+  },
+  {
+    name: "Birthday Party",
+    base: [
+      ["🎂", "🎈", "🎁", "🎉"],
+      ["🍭", "🎊", "🎀", "🧁"],
+      ["🥳", "🎵", "🍾", "🕯️"],
+      ["👑", "🎯", "🎠", "🌈"],
+    ],
+    diffs: [
+      [0, 1],
+      [1, 3],
+      [2, 2],
+      [3, 0],
+    ],
+    changed: [
+      ["🎂", "🎏", "🎁", "🎉"],
+      ["🍭", "🎊", "🎀", "🍰"],
+      ["🥳", "🎵", "🍻", "🕯️"],
+      ["💎", "🎯", "🎠", "🌈"],
+    ],
+  },
+  {
+    name: "Jungle Trek",
+    base: [
+      ["🦁", "🐘", "🦒", "🦓"],
+      ["🌿", "🐦", "🦜", "🌴"],
+      ["🐊", "🦋", "🐸", "🍃"],
+      ["🌺", "🦧", "🐆", "💧"],
+    ],
+    diffs: [
+      [0, 0],
+      [1, 2],
+      [2, 1],
+      [3, 3],
+    ],
+    changed: [
+      ["🐯", "🐘", "🦒", "🦓"],
+      ["🌿", "🐦", "🦚", "🌴"],
+      ["🐊", "🦅", "🐸", "🍃"],
+      ["🌺", "🦧", "🐆", "🌊"],
+    ],
+  },
+];
+
 const ROUNDS = 3;
+
 export function SpotTheDifferenceGame({
-  onFinish
+  onFinish,
 }: {
   onFinish: (score: number, total: number) => void;
 }) {
-  const {
-    t
-  } = useTranslation();
   const scenes = useMemo(() => [...ALL_SCENES].sort(() => Math.random() - 0.5).slice(0, ROUNDS), []);
   const [roundIdx, setRoundIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [foundDiffs, setFoundDiffs] = useState<Set<string>>(new Set());
   const [wrongCell, setWrongCell] = useState<string | null>(null);
   const [roundDone, setRoundDone] = useState(false);
+
   const scene = scenes[roundIdx];
   const total = scene.diffs.length;
   const diffSet = useMemo(() => new Set(scene.diffs.map(([r, c]) => `${r}-${c}`)), [scene]);
+
   const tapRight = (r: number, c: number) => {
     const key = `${r}-${c}`;
     if (foundDiffs.has(key) || roundDone) return;
     if (diffSet.has(key)) {
+      void feedbackTap();
       const next = new Set(foundDiffs).add(key);
       setFoundDiffs(next);
       if (next.size === total) {
         const newScore = score + 1;
         setScore(newScore);
         setRoundDone(true);
+        void feedbackCorrect();
         setTimeout(() => {
           if (roundIdx + 1 >= ROUNDS) {
             onFinish(newScore, ROUNDS);
           } else {
-            setRoundIdx(i => i + 1);
+            setRoundIdx((i) => i + 1);
             setFoundDiffs(new Set());
             setWrongCell(null);
             setRoundDone(false);
@@ -71,108 +139,130 @@ export function SpotTheDifferenceGame({
         }, 800);
       }
     } else {
+      void feedbackWrong();
       setWrongCell(key);
       setTimeout(() => setWrongCell(null), 500);
     }
   };
-  const CELL_SIZE = 52;
-  const renderGrid = (grid: string[][], isRight: boolean) => <div style={{
-    display: "grid",
-    gridTemplateColumns: `repeat(4, ${CELL_SIZE}px)`,
-    gap: 3,
-    background: "rgba(255,255,255,0.04)",
-    padding: 6,
-    borderRadius: 12,
-    border: "1px solid rgba(139,92,246,0.25)"
-  }}>
-      {grid.map((row, r) => row.map((emoji, c) => {
-      const key = `${r}-${c}`;
-      const isDiff = diffSet.has(key);
-      const isFound = foundDiffs.has(key);
-      const isWrong = wrongCell === key && isRight;
-      return <button key={key} onClick={() => isRight && tapRight(r, c)} style={{
-        width: CELL_SIZE,
-        height: CELL_SIZE,
-        fontSize: 24,
-        borderRadius: 8,
-        background: isFound ? "rgba(34,197,94,0.25)" : isWrong ? "rgba(239,68,68,0.25)" : "rgba(255,255,255,0.05)",
-        border: `1.5px solid ${isFound ? "rgba(34,197,94,0.65)" : isWrong ? "rgba(239,68,68,0.65)" : "rgba(139,92,246,0.2)"}`,
-        cursor: isRight && !isFound ? "pointer" : "default",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        transition: "all 0.12s",
-        position: "relative"
-      }}>
-              {emoji}
-              {isRight && isFound && <span style={{
-          position: "absolute",
-          top: 2,
-          right: 3,
-          fontSize: 11,
-          color: "hsl(var(--brand-green-300))"
-        }}>✓</span>}
-            </button>;
-    }))}
-    </div>;
-  return <div style={{
-    textAlign: "center"
-  }}>
-      <div style={{
-      color: "#a99fd9",
-      fontSize: 12,
-      marginBottom: 4
-    }}>
-        {t("components.games.spot_the_difference.round")} {roundIdx + 1} of {ROUNDS} — <strong style={{
-        color: "#fff"
-      }}>"{scene.name}"</strong>
-      </div>
-      <div style={{
-      color: "#7c6fb8",
-      fontSize: 11,
-      marginBottom: 10
-    }}>
-        {t("components.games.spot_the_difference.tap_the")} <strong style={{
-        color: "hsl(var(--brand-violet-300))"
-      }}>{t("components.games.spot_the_difference.differences")}</strong> {t("components.games.spot_the_difference.in_the_right_picture_found")} {foundDiffs.size} / {total}
-      </div>
 
-      <div style={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "flex-start",
-      gap: 12
-    }}>
+  const CELL_SIZE = 52;
+
+  const renderGrid = (grid: string[][], isRight: boolean) => (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(4, ${CELL_SIZE}px)`,
+        gap: 3,
+        background: "rgba(255,255,255,0.04)",
+        padding: 6,
+        borderRadius: 12,
+        border: `1px solid ${gameTheme.glassBorder}`,
+      }}
+    >
+      {grid.map((row, r) =>
+        row.map((emoji, c) => {
+          const key = `${r}-${c}`;
+          const isFound = foundDiffs.has(key);
+          const isWrong = wrongCell === key && isRight;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => isRight && tapRight(r, c)}
+              style={{
+                width: CELL_SIZE,
+                height: CELL_SIZE,
+                fontSize: 24,
+                borderRadius: 8,
+                background: isFound
+                  ? gameTheme.successBg
+                  : isWrong
+                    ? gameTheme.errorBg
+                    : "rgba(255,255,255,0.05)",
+                border: `1.5px solid ${
+                  isFound
+                    ? "rgba(34,197,94,0.65)"
+                    : isWrong
+                      ? "rgba(239,68,68,0.65)"
+                      : gameTheme.glassBorder
+                }`,
+                cursor: isRight && !isFound ? "pointer" : "default",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.12s",
+                position: "relative",
+              }}
+            >
+              {emoji}
+              {isRight && isFound && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: 2,
+                    right: 3,
+                    fontSize: 11,
+                    color: gameTheme.success,
+                  }}
+                >
+                  ✓
+                </span>
+              )}
+            </button>
+          );
+        }),
+      )}
+    </div>
+  );
+
+  return (
+    <GameShell
+      round={roundIdx + 1}
+      totalRounds={ROUNDS}
+      score={score}
+      subtitle={`${scene.name} — found ${foundDiffs.size} / ${total}`}
+      title="Tap the differences in the right picture"
+      feedback={roundDone ? "correct" : null}
+      feedbackText={roundDone ? `All ${total} differences found!` : undefined}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "flex-start",
+          gap: 12,
+        }}
+      >
         <div>
-          <div style={{
-          color: "#7c6fb8",
-          fontSize: 10,
-          marginBottom: 4,
-          textTransform: "uppercase",
-          letterSpacing: 0.5
-        }}>{t("components.games.spot_the_difference.original")}</div>
+          <div
+            style={{
+              color: gameTheme.textMuted,
+              fontSize: 10,
+              marginBottom: 4,
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+            }}
+          >
+            Original
+          </div>
           {renderGrid(scene.base, false)}
         </div>
         <div>
-          <div style={{
-          color: "hsl(var(--brand-violet-300))",
-          fontSize: 10,
-          marginBottom: 4,
-          textTransform: "uppercase",
-          letterSpacing: 0.5,
-          fontWeight: 700
-        }}>{t("components.games.spot_the_difference.changed_tap_here")}</div>
+          <div
+            style={{
+              color: gameTheme.accentSoft,
+              fontSize: 10,
+              marginBottom: 4,
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+              fontWeight: 700,
+            }}
+          >
+            Changed — tap here
+          </div>
           {renderGrid(scene.changed, true)}
         </div>
       </div>
-
-      {roundDone && <div style={{
-      marginTop: 12,
-      fontSize: 13,
-      fontWeight: 700,
-      color: "hsl(var(--brand-green-300))"
-    }}>
-          {t("components.games.spot_the_difference.all")} {total} {t("components.games.spot_the_difference.differences_found")}
-        </div>}
-    </div>;
+    </GameShell>
+  );
 }

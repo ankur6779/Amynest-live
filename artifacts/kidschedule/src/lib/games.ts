@@ -63,6 +63,10 @@ export const CATEGORY_EMOJI: Record<GameCategory, string> = {
 const UNLOCKED_KEY  = "amynest_unlocked_games_v1";
 const PLAY_LOG_KEY  = "amynest_game_play_log_v1";
 const SKILLS_KEY    = "amynest_skill_progress_v1";
+const PERFECT_STREAK_KEY = "amynest_perfect_streak_v1";
+const LEADERBOARD_KEY = "amynest_game_leaderboard_v1";
+
+export const PERFECT_COMBO_BADGE_AT = 3;
 
 export function isFreeStarter(id: string): boolean {
   return (FREE_STARTER_GAME_IDS as readonly string[]).includes(id);
@@ -326,6 +330,113 @@ export function amySuggestion(isPremium = false): { gameId: string | null; line:
     puzzle:     `Build problem-solving with '${pick.title}'.`,
   };
   return { gameId: pick.id, line: `Amy suggests: ${lines[pick.category]}` };
+}
+
+// ── Perfect streak combo ──────────────────────────────────────────────────────
+
+export function getPerfectStreak(): number {
+  try {
+    return Math.max(0, parseInt(localStorage.getItem(PERFECT_STREAK_KEY) ?? "0", 10));
+  } catch {
+    return 0;
+  }
+}
+
+export function recordPerfectStreak(perfect: boolean): number {
+  const next = perfect ? getPerfectStreak() + 1 : 0;
+  localStorage.setItem(PERFECT_STREAK_KEY, String(next));
+  return next;
+}
+
+export function hasPerfectComboBadge(): boolean {
+  return getPerfectStreak() >= PERFECT_COMBO_BADGE_AT;
+}
+
+// ── Weekly leaderboard (local, premium-gated in UI) ───────────────────────────
+
+export interface LeaderboardEntry {
+  gameId: string;
+  score: number;
+  total: number;
+  ratio: number;
+  date: string;
+}
+
+export function getLeaderboardLog(): LeaderboardEntry[] {
+  try {
+    return JSON.parse(localStorage.getItem(LEADERBOARD_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function recordLeaderboardEntry(gameId: string, score: number, total: number): void {
+  const safeTotal = Math.max(1, total);
+  const safeScore = Math.max(0, Math.min(safeTotal, score));
+  const ratio = safeScore / safeTotal;
+  const log = getLeaderboardLog();
+  log.unshift({
+    gameId,
+    score: safeScore,
+    total: safeTotal,
+    ratio,
+    date: new Date().toISOString(),
+  });
+  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(log.slice(0, 400)));
+}
+
+export interface WeeklyLeaderboardRow {
+  gameId: string;
+  game: GameDef;
+  bestRatio: number;
+  bestScore: number;
+  bestTotal: number;
+  plays: number;
+}
+
+export function getWeeklyLeaderboard(): WeeklyLeaderboardRow[] {
+  const since = daysAgoISO(6);
+  const log = getLeaderboardLog().filter((e) => e.date.slice(0, 10) >= since);
+  const byGame = new Map<string, LeaderboardEntry[]>();
+  for (const e of log) {
+    if (!byGame.has(e.gameId)) byGame.set(e.gameId, []);
+    byGame.get(e.gameId)!.push(e);
+  }
+  const rows: WeeklyLeaderboardRow[] = [];
+  for (const [gameId, entries] of byGame) {
+    const game = GAMES.find((g) => g.id === gameId);
+    if (!game) continue;
+    const best = entries.reduce((a, b) => (b.ratio > a.ratio ? b : a));
+    rows.push({
+      gameId,
+      game,
+      bestRatio: Math.round(best.ratio * 100),
+      bestScore: best.score,
+      bestTotal: best.total,
+      plays: entries.length,
+    });
+  }
+  return rows.sort((a, b) => b.bestRatio - a.bestRatio || b.plays - a.plays).slice(0, 8);
+}
+
+export interface SkillGapRow {
+  cat: GameCategory;
+  pct: number;
+  label: string;
+  emoji: string;
+}
+
+export function getSkillGaps(limit = 4): SkillGapRow[] {
+  const skillCats: GameCategory[] = ["behavior", "memory", "math", "brain", "focus", "action", "creativity"];
+  return skillCats
+    .map((cat) => ({
+      cat,
+      pct: getSkillPercent(cat),
+      label: CATEGORY_LABEL[cat].split("&")[0].trim(),
+      emoji: CATEGORY_EMOJI[cat],
+    }))
+    .sort((a, b) => a.pct - b.pct)
+    .slice(0, limit);
 }
 
 export { STREAK_UNLOCK_DAYS, getCachedRoutineStreak, canUnlockGameWithStreak };
