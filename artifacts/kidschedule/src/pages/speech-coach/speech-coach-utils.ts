@@ -1,4 +1,5 @@
 import type { PromptScoreHistory } from "@workspace/speech-coach";
+import type { MicrophoneSessionState } from "@/lib/microphone-session-manager";
 
 export type SpeechViewMode = "parent" | "child";
 export type SpeechCoachPageTab = "practice" | "hub";
@@ -102,4 +103,35 @@ export function weakSoundsToHistory(
 export function clampClarityScore(score: number): number {
   if (!Number.isFinite(score)) return 0;
   return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+/** User-facing mic status for Live Speech Coach — never conflate runtime failure with permission denial. */
+export function getSpeechCoachMicStatusMessage(options: {
+  error: string | null;
+  sessionStatus: MicrophoneSessionState;
+  fallbackStatus: string;
+}): string {
+  const { error, sessionStatus, fallbackStatus } = options;
+
+  if (sessionStatus === "preparing") return "Preparing microphone...";
+  if (sessionStatus === "reconnecting") return "Reconnecting microphone...";
+  if (sessionStatus === "refreshing") return "Refreshing microphone...";
+
+  switch (error) {
+    case "microphone_denied":
+      return "Please allow microphone access in your device settings, then tap the mic to try again.";
+    case "microphone_blocked":
+      return "Microphone access is required for Speech Coach.";
+    case "microphone_busy":
+      return "Another app may be using the microphone. Close it and tap the mic to try again.";
+    case "stale_stream":
+      return "Reconnecting microphone...";
+    case "recognition_start_failed":
+    case "dead_recorder":
+    case "security_error":
+      return "Could not start the microphone. Tap the mic to try again.";
+    default:
+      if (error) return "I could not access the microphone. Please try again.";
+      return fallbackStatus;
+  }
 }
