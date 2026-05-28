@@ -1287,7 +1287,11 @@ importers:
         specifier: workspace:*
         version: link:../family-routine
 
-  lib/math-tricks: {}
+  lib/math-tricks:
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
 
   lib/morning-flow: {}
 
