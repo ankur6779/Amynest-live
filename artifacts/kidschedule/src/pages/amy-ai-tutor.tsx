@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -213,7 +214,7 @@ export default function AmyAiTutorPage() {
             Amy AI Tutor
             <Badge className="bg-card text-white text-xs font-bold border-0 ml-1">
               <Zap className="h-3 w-3 mr-1" />
-              Tutor v1
+              Quick Tutor
             </Badge>
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
@@ -221,6 +222,12 @@ export default function AmyAiTutorPage() {
             examples and a quick check.
           </p>
         </div>
+        <Link href="/learn-with-amy">
+          <Button variant="outline" size="sm" className="shrink-0 rounded-full text-xs gap-1.5">
+            <GraduationCap className="h-3.5 w-3.5" />
+            Adaptive Tutor
+          </Button>
+        </Link>
       </div>
 
       {/* Daily limit bar */}

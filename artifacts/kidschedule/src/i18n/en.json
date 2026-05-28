@@ -161,6 +161,8 @@
     "rewards": "Rewards",
     "behavior": "Behavior",
     "amy_ai": "Amy AI",
+    "amy_learning_tutor": "Learn with Amy",
+    "amy_quick_tutor": "Quick Tutor",
     "games": "Gaming Reward",
     "my_recipes": "My Recipes",
     "nutrition_hub": "Nutrition Hub",
@@ -2466,7 +2468,11 @@
           "prompt": "How much screen time is appropriate for my child's age?"
         }
       },
-      "cta": "Ask Amy anything"
+      "cta": "Ask Amy anything",
+      "learn_cta": "Learn with Amy",
+      "learn_cta_hint": "Adaptive tutor — adapts to your child",
+      "quick_tutor_cta": "Quick Tutor",
+      "quick_tutor_cta_hint": "Teach, quiz & doubt modes"
     },
     "emotional": {
       "title": "Emotional Support",
@@ -2757,6 +2763,14 @@
         "title": "Ask Amy AI",
         "description": "Get warm, practical parenting advice"
       },
+      "amy-learning-tutor": {
+        "title": "Learn with Amy",
+        "description": "Adaptive AI tutor — explains, asks & adapts to your child's level"
+      },
+      "amy-quick-tutor": {
+        "title": "Amy Quick Tutor",
+        "description": "Teach a topic, run a quiz, or clear a doubt in chat"
+      },
       "articles": {
         "title": "Parenting Articles",
         "description": "Research-based, age-matched reading"
@@ -3033,6 +3047,8 @@
     },
     "quick_actions": {
       "ask_amy": "Ask Amy",
+      "learn_with_amy": "Learn with Amy",
+      "quick_tutor": "Quick Tutor",
       "articles": "Articles",
       "emotional": "Support",
       "story": "Story Time",
@@ -5020,6 +5036,25 @@
       "subject": "Subject",
       "topic_placeholder": "Topic (optional) — e.g. addition, phonics letter B, water cycle",
       "amy_is_thinking": "Amy is thinking…"
+    },
+    "amy_learning_tutor": {
+      "title": "Learn with Amy",
+      "subtitle": "Amy adapts explanations, questions and encouragement to your child's learning profile.",
+      "quick_tutor_link": "Quick Tutor",
+      "ready_title": "Hi {{name}} — ready to learn?",
+      "ready_body": "Amy will explain a topic, ask a question, and adapt based on your child's answers.",
+      "default_child_name": "there",
+      "start_learning": "Start Learning",
+      "thinking": "Amy is thinking…",
+      "answer_placeholder": "Type your answer…",
+      "continue": "Continue",
+      "goal_met_continue": "Great job — keep going",
+      "repeat": "Repeat",
+      "no_child_title": "Add a child first",
+      "no_child_body": "Add a child profile so Amy can adapt to their age and level.",
+      "add_child": "Add a child",
+      "error_title": "Amy couldn't reply",
+      "error_body": "Try again in a moment."
     },
     "life_skills_page": {
       "back": "Back",

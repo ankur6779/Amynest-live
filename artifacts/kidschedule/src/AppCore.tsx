@@ -75,6 +75,7 @@ const BehaviorTracker = lazyPage(() => import("@/pages/behavior/index"));
 const ParentProfile = lazyPage(() => import("@/pages/parent-profile"));
 const AssistantPage = lazyPage(() => import("@/pages/assistant"));
 const AmyAiTutorPage = lazyPage(() => import("@/pages/amy-ai-tutor"));
+const AmyLearningTutorPage = lazyPage(() => import("@/pages/amy-learning-tutor"));
 const ProgressPage = lazyPage(() => import("@/pages/progress"));
 const ParentingHub = lazyPage(() => import("@/pages/parenting-hub"));
 const PhonicsPage = lazyPage(() => import("@/pages/phonics"));
@@ -281,6 +282,7 @@ const NotificationSettingsRoute = makeProtectedRoute(NotificationSettingsPage);
 const NotificationDiagnosticsRoute = makeProtectedRoute(NotificationDiagnosticsPage);
 const AssistantRoute = makeProtectedRoute(AssistantPage);
 const AmyAiTutorRoute = makeProtectedRoute(AmyAiTutorPage);
+const AmyLearningTutorRoute = makeProtectedRoute(AmyLearningTutorPage);
 const ProgressRoute = makeProtectedRoute(ProgressPage);
 const ParentingHubRoute = makeProtectedRoute(ParentingHub);
 const PhonicsRoute = makeProtectedRoute(PhonicsPage);
@@ -527,6 +529,7 @@ function AppRoutes() {
           </Route>
           <Route path="/assistant" component={AssistantRoute} />
           <Route path="/amy-ai-tutor" component={AmyAiTutorRoute} />
+          <Route path="/learn-with-amy" component={AmyLearningTutorRoute} />
           <Route path="/progress" component={ProgressRoute} />
           <Route path="/parenting-hub" component={ParentingHubRoute} />
           <Route path="/phonics/test/play" component={PhonicsTestPlayRoute} />

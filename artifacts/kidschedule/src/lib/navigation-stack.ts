@@ -32,6 +32,8 @@ export const HUB_MODULE_PREFIXES = [
   "/spelling",
   "/olympiad",
   "/event-prep",
+  "/learn-with-amy",
+  "/amy-ai-tutor",
 ];
 
 const PARENT_ROUTE: Record<string, string> = {
@@ -49,10 +51,11 @@ const PARENT_ROUTE: Record<string, string> = {
   "/spelling": "/parenting-hub",
   "/olympiad": "/parenting-hub",
   "/event-prep": "/parenting-hub",
+  "/amy-ai-tutor": "/parenting-hub",
+  "/learn-with-amy": "/parenting-hub",
+  "/assistant": "/parenting-hub",
   "/amy-coach/progress": "/amy-coach",
 };
-
-const NESTED_PARENT_PREFIXES: Array<{ prefix: string; parent: string }> = [
   { prefix: "/routines/", parent: "/routines" },
   { prefix: "/children/", parent: "/children" },
 ];
