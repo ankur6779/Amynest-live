@@ -141,6 +141,16 @@ export async function createApp(): Promise<Express> {
   if (ROUTES_ENABLED) {
     const { default: router } = await import("./routes/index.js");
     app.use("/api", router);
+
+    // Register real OpenAI TTS provider for content orchestration tutor
+    try {
+      const { setTtsProvider } = await import("@workspace/content-orchestration");
+      const { OpenAiTtsProvider } = await import("./services/tutorTtsProvider.js");
+      setTtsProvider(new OpenAiTtsProvider());
+      logger.info({ evt: "tts.provider_registered" }, "OpenAI TTS Provider registered for Amy Tutor");
+    } catch (err) {
+      logger.error({ err }, "Failed to register OpenAI TTS Provider for Amy Tutor");
+    }
   } else {
     logger.warn(
       { evt: "boot.routes_disabled" },

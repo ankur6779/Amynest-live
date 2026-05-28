@@ -1,6 +1,5 @@
 // audit-block-ignore-start -- immersive Speech Coach uses intentional neon dark UI accents.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Redirect } from "wouter";
 import { AppLink } from "@/components/app-link";
 import { getAuth } from "firebase/auth";
 import {
@@ -33,8 +32,11 @@ import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
 import { openAndroidMicrophoneSettings } from "@/lib/microphone-permission";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
-import { clampClarityScore, playSpeechCue, weakSoundsToHistory } from "./speech-coach-utils";
+import { clampClarityScore, isSpeechCoachEligibleAgeMonths, playSpeechCue, weakSoundsToHistory } from "./speech-coach-utils";
 import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
+import { useListChildren } from "@workspace/api-client-react";
+import { useLocation } from "wouter";
+import { usePrimeIosMicrophone } from "@/hooks/use-prime-ios-microphone";
 
 type AnyChild = {
   id: number;
@@ -482,7 +484,7 @@ export function LiveSpeechCoach({
       <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
       <div className="relative mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-4">
         <header className="flex items-center gap-3">
-          <AppLink href="/parenting-hub" replace source="live-speech-coach-back">
+          <AppLink href="/speech-coach" replace source="live-speech-coach-back">
             <Button variant="ghost" size="icon" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -633,7 +635,7 @@ export function LiveSpeechCoach({
                   Parent Tools
                 </Button>
               ) : (
-                <AppLink href="/speech-coach?tab=hub" replace source="live-speech-coach-complete">
+                <AppLink href="/speech-coach" replace source="live-speech-coach-complete">
                   <Button type="button" variant="ghost" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
                     Parent Tools
                   </Button>
@@ -679,8 +681,8 @@ function EmptyFullScreen({ title, body }: { title: string; body: string }) {
           <AmyIcon size={56} ring bounce />
           <h1 className="font-quicksand text-xl font-black">{title}</h1>
           <p className="text-sm text-white/65">{body}</p>
-          <AppLink href="/parenting-hub" replace source="live-speech-coach-empty">
-            <Button className="rounded-full">Back to Parent Hub</Button>
+          <AppLink href="/speech-coach" replace source="live-speech-coach-empty">
+            <Button className="rounded-full">Back to Amy Speech Coach</Button>
           </AppLink>
         </CardContent>
       </Card>
@@ -689,5 +691,70 @@ function EmptyFullScreen({ title, body }: { title: string; body: string }) {
 }
 
 export default function LiveSpeechCoachPage() {
-  return <Redirect to="/speech-coach" replace />;
+  usePrimeIosMicrophone();
+  const [, setLocation] = useLocation();
+  const childrenQuery = useListChildren();
+  const childList = (childrenQuery.data ?? []) as AnyChild[];
+  const eligible = childList.filter((c) =>
+    isSpeechCoachEligibleAgeMonths(totalMonths(c)),
+  );
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const child =
+    eligible.find((c) => c.id === selectedId) ?? eligible[0] ?? null;
+
+  if (childrenQuery.isLoading) {
+    return (
+      <main className="min-h-dvh grid place-items-center bg-[#070812] text-white">
+        <div className="text-white/70">Loading your speech coach...</div>
+      </main>
+    );
+  }
+
+  if (!child) {
+    return (
+      <main className="min-h-dvh grid place-items-center bg-[#070812] p-4 text-white">
+        <Card className="max-w-sm rounded-3xl border-white/10 bg-white/[0.06] text-white">
+          <CardContent className="space-y-4 p-6 text-center">
+            <AmyIcon size={56} ring bounce />
+            <h1 className="font-quicksand text-xl font-black">Amy Speech Coach</h1>
+            <p className="text-sm text-white/65">Add a child profile to start live speech practice sessions.</p>
+            <AppLink href="/children/new" replace source="live-speech-no-child">
+              <Button className="rounded-full">Add Child Profile</Button>
+            </AppLink>
+            <AppLink href="/speech-coach" replace source="live-speech-back-home">
+              <Button variant="ghost" className="rounded-full text-white/70">Back to Speech Coach</Button>
+            </AppLink>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
+  return (
+    <>
+      {eligible.length > 1 ? (
+        <div className="fixed left-1/2 top-16 z-30 flex -translate-x-1/2 gap-2 rounded-full border border-white/10 bg-black/40 p-1 backdrop-blur-xl">
+          {eligible.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setSelectedId(c.id)}
+              className={[
+                "rounded-full px-3 py-1 text-xs font-black transition-colors",
+                child.id === c.id
+                  ? "bg-white text-slate-950"
+                  : "text-white/70 hover:bg-white/10",
+              ].join(" ")}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <LiveSpeechCoach
+        child={child}
+        onOpenParentTools={() => setLocation("/speech-coach")}
+      />
+    </>
+  );
 }
