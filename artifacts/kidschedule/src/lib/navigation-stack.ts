@@ -56,6 +56,8 @@ const PARENT_ROUTE: Record<string, string> = {
   "/assistant": "/parenting-hub",
   "/amy-coach/progress": "/amy-coach",
 };
+
+const NESTED_PARENT_PREFIXES: Array<{ prefix: string; parent: string }> = [
   { prefix: "/routines/", parent: "/routines" },
   { prefix: "/children/", parent: "/children" },
 ];

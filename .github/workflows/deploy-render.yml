@@ -12,6 +12,7 @@ name: Deploy Render (production)
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: deploy-render-main
