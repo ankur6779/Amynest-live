@@ -15,6 +15,8 @@ import {
   TOUCH_FEEDBACK,
   TRANSITION,
   TYPE,
+  EASE_SOFT,
+  DURATION,
   fadeUp,
   fadeIn,
   softScale,
@@ -325,7 +327,7 @@ export function SoftCelebrationBurst({ trigger }: { trigger: number }) {
           key={`${trigger}-${i}`}
           initial={{ opacity: 0, scale: 0.5, x: 0, y: 0 }}
           animate={{ opacity: [0, 0.9, 0], scale: 1, x: p.x, y: p.y }}
-          transition={{ duration: 1.6, delay: p.delay, ease: "easeOut" }}
+          transition={{ duration: DURATION.celebration, delay: p.delay, ease: EASE_SOFT }}
           className="absolute text-xl opacity-80"
         >
           {p.emoji}
@@ -343,7 +345,7 @@ export function StarBurst({ active }: { active: boolean }) {
       className="pointer-events-none absolute -inset-4 flex items-center justify-center"
       initial={{ opacity: 0, scale: 0.6 }}
       animate={{ opacity: [0, 1, 0], scale: [0.6, 1.2, 1.4] }}
-      transition={{ duration: 1.2, ease: "easeOut" }}
+      transition={{ duration: DURATION.reward, ease: EASE_SOFT }}
     >
       <span className="text-3xl" aria-hidden>
         ✨
