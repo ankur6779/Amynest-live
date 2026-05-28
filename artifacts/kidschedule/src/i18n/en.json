@@ -2307,6 +2307,8 @@
       "premium_feature_aria": "Premium feature — tap to upgrade",
       "early_access_pill": "✨ Try Early Access (2+ Modules)",
       "early_access_tooltip": "Early access — unlocks fully at {{range}}",
+      "infant_stage_pill": "0–2 Years",
+      "infant_stage_tooltip": "Infant stage features — from when your child was 0–24 months",
       "new": "New"
     },
     "journey": {
@@ -2925,6 +2927,9 @@
       "personalised": "Personalised content tuned to where {{name}} is right now.",
       "explore_next": "Explore the next stage for {{name}}",
       "explore_blurb": "Try every 2+ module once for free — upgrade for unlimited access as {{name}} grows.",
+      "previous_stage_section": "Previous stage",
+      "previous_stage_title": "Previous Stage Features",
+      "previous_stage_blurb": "Infant-stage tools from {{name}}'s early months — still available for reference or your next baby.",
       "current_child": "Current Child",
       "select_child": "Select Child",
       "add_child": "Add child",

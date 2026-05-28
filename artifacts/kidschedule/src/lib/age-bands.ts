@@ -50,6 +50,12 @@ export function getNextAgeBand(band: AgeBand): AgeBand | null {
   return AGE_BANDS[i + 1];
 }
 
+export function getPreviousAgeBand(band: AgeBand): AgeBand | null {
+  const i = AGE_BANDS.indexOf(band);
+  if (i <= 0) return null;
+  return AGE_BANDS[i - 1];
+}
+
 /** "Age 4-6" — used in Coming Next badges. */
 export function bandLabel(band: AgeBand): string {
   return `Age ${band.replace("-", "–")}`;
