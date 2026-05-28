@@ -12,7 +12,15 @@ export const googleAuthDefaults = {
     "573340015027-nhb24qka9h7gr06ri2muu9a7mrpf2c54.apps.googleusercontent.com",
 } as const;
 
-/** Reversed web client ID for iOS URL scheme (Google Sign-In callback). */
+/** All reversed URL schemes required in iOS CFBundleURLTypes for native Google Sign-In. */
+export function getGoogleIosUrlSchemes(): string[] {
+  return [
+    reversedGoogleWebClientId(googleAuthDefaults.iosClientId),
+    reversedGoogleWebClientId(googleAuthDefaults.webClientId),
+  ];
+}
+
+/** Reversed client ID for iOS URL scheme (Google Sign-In callback). */
 export function reversedGoogleWebClientId(clientId: string): string {
   const suffix = ".apps.googleusercontent.com";
   if (!clientId.endsWith(suffix)) return clientId;
