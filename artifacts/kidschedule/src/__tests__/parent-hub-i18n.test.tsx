@@ -66,6 +66,8 @@ describe("parent_hub copy roundtrips through English", () => {
     "parent_hub.tiles.articles.title",
     "parent_hub.tiles.tips.title",
     "parent_hub.tiles_activity.gaming_reward.title",
+    "parent_hub.web_tiles.gaming-rewards.title",
+    "parent_hub.web_tiles.gaming-rewards.description",
     "parent_hub.web_tiles.command-center.title",
     "parent_hub.web_tiles.smart-study.description",
     "parent_hub.web_tiles_preview.life-skills.title",

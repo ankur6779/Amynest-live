@@ -11,6 +11,7 @@ export function HubLaunchCard({
   tryFree,
   testId,
   sectionId,
+  onNavigate,
 }: {
   href: string;
   title: string;
@@ -21,10 +22,12 @@ export function HubLaunchCard({
   tryFree?: boolean;
   testId: string;
   sectionId?: string;
+  onNavigate?: () => void;
 }) {
   return (
     <Link
       href={href}
+      onClick={() => onNavigate?.()}
       className={`group block rounded-2xl border border-white/20 p-4 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all hover:border-white/40 ${cardClass}`}
       data-testid={testId}
       data-section-id={sectionId}
