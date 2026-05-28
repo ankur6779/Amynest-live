@@ -39,15 +39,18 @@ import { SubItemGate } from "@/components/sub-item-gate";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import type { AgeGroup } from "@/lib/age-groups";
 import type { AgeBand } from "@/lib/age-bands";
-import { getAgeBand, getNextAgeBand, bandLabel } from "@/lib/age-bands";
+import { getAgeBand, getNextAgeBand, getPreviousAgeBand, bandLabel } from "@/lib/age-bands";
 import {
   isHubSectionVisible,
   shouldRenderHubTileContent,
   shouldShowExploreSection,
   shouldBypassHubMonthGates,
+  shouldShowPreviousStageSection,
+  getPreviousStageTileIds,
   SECTION_2_EARLY_ACCESS_TILE_IDS,
 } from "@/lib/hub-visibility";
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
+import { PreviousStageWrapper } from "@/components/previous-stage-wrapper";
 import { applyParentingHubDeepLink } from "@/lib/hub-activity-cross-link";
 import {
   getAdaptiveMood,
@@ -84,8 +87,8 @@ const TODAY_TILE_ORDER = [
   "command-center",
 ] as const;
 
-const HUB_EXPANDED_GROUPS_KEY = "amynest:hub:expandedGroups";
-const DEFAULT_EXPANDED_GROUPS = ["today", "learning", "support"];
+const HUB_EXPANDED_GROUPS_KEY = "amynest:hub:expandedGroups:v2";
+const DEFAULT_EXPANDED_GROUPS: string[] = [];
 
 function loadExpandedGroups(): Set<string> {
   if (typeof window === "undefined") return new Set(DEFAULT_EXPANDED_GROUPS);
@@ -804,7 +807,7 @@ function ParentingHubPage() {
 
   const journeySoftLock = hubJourney.isJourneyLocked;
 
-  // Section-group expand/collapse — Today + Learning open by default; persisted.
+  // Section-group expand/collapse — all groups collapsed by default; persisted.
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(loadExpandedGroups);
   const toggleGroup = (key: string) => {
     setExpandedGroups(prev => {
@@ -869,7 +872,12 @@ function ParentingHubPage() {
   const currentBand: AgeBand | null = effectiveChild ? getAgeBand(effectiveChild.age, (effectiveChild as any).ageMonths ?? 0) : null;
   const nextBand: AgeBand | null = currentBand ? getNextAgeBand(currentBand) : null;
   const showSection2 = shouldShowExploreSection(totalAgeMonths, currentBand, nextBand);
+  const previousBand: AgeBand | null = currentBand ? getPreviousAgeBand(currentBand) : null;
+  const showPreviousStage = shouldShowPreviousStageSection(totalAgeMonths, currentBand);
   const earlyAccessBypass = shouldBypassHubMonthGates(totalAgeMonths, currentBand, nextBand);
+
+  /** Which hub surface is calling section.render() — drives infant-only tiles in Previous Stage. */
+  const hubSurface = { current: "main" as "main" | "previous" | "early" };
 
   const ptmSeason = isPtmSeason();
   const adaptiveMood = effectiveChild ? getAdaptiveMood(effectiveChild.id) : "neutral";
@@ -926,8 +934,11 @@ function ParentingHubPage() {
     bands: ["0-2"],
     featured: true,
     render: () => {
-      if (!isInfant) return null;
-      return <InfantHub childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={totalAgeMonths} />;
+      if (!isInfant && hubSurface.current !== "previous") return null;
+      const infantMonths = hubSurface.current === "previous"
+        ? Math.min(totalAgeMonths, 23)
+        : totalAgeMonths;
+      return <InfantHub childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={infantMonths} />;
     }
   }, {
     id: "tomorrow-forecast",
@@ -989,7 +1000,7 @@ function ParentingHubPage() {
     id: "amy-ai",
     alwaysCurrent: true,
     render: () => {
-      return <HubSection id="amy-ai" highlighted icon={<AmyIcon size={22} bounce />} title={t("parent_hub.web_tiles.amy-ai.title")} description={t("parent_hub.web_tiles.amy-ai.description")} accentClass="bg-gradient-to-br from-violet-500 to-purple-600" cardClass="linear-gradient(135deg,rgba(139,92,246,0.30)0%,rgba(217,70,239,0.14)100%)" defaultOpen={true}> {/* audit-ok: brand tile accent gradient */}
+      return <HubSection id="amy-ai" highlighted icon={<AmyIcon size={22} bounce />} title={t("parent_hub.web_tiles.amy-ai.title")} description={t("parent_hub.web_tiles.amy-ai.description")} accentClass="bg-gradient-to-br from-violet-500 to-purple-600" cardClass="linear-gradient(135deg,rgba(139,92,246,0.30)0%,rgba(217,70,239,0.14)100%)" defaultOpen={false}> {/* audit-ok: brand tile accent gradient */}
           <AmyAISuggestionsSection />
         </HubSection>;
     }
@@ -1009,7 +1020,7 @@ function ParentingHubPage() {
     alwaysCurrent: true,
     render: () => {
       return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_articles")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="articles" icon={<BookOpen className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.articles.title")} description={t("parent_hub.web_tiles.articles.description")} accentClass="bg-gradient-to-br from-blue-500 to-indigo-600" cardClass="linear-gradient(135deg,rgba(59,130,246,0.30)0%,rgba(99,102,241,0.14)100%)" defaultOpen tryFree={tryFreeFor("hub_articles")} preview={articlePreview} onOpen={() => markHubUsed("hub_articles")}> {/* audit-ok: brand tile accent gradient */}
+          <HubSection id="articles" icon={<BookOpen className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.articles.title")} description={t("parent_hub.web_tiles.articles.description")} accentClass="bg-gradient-to-br from-blue-500 to-indigo-600" cardClass="linear-gradient(135deg,rgba(59,130,246,0.30)0%,rgba(99,102,241,0.14)100%)" tryFree={tryFreeFor("hub_articles")} preview={articlePreview} onOpen={() => markHubUsed("hub_articles")}> {/* audit-ok: brand tile accent gradient */}
             <ParentingArticles childAgeMonths={totalAgeMonths} compact />
           </HubSection>
         </LockedBlock>;
@@ -1030,7 +1041,7 @@ function ParentingHubPage() {
     alwaysCurrent: true,
     render: () => {
       return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_emotional")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="emotional" icon={<Heart className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.emotional.title")} description={t("parent_hub.web_tiles.emotional.description")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardClass="linear-gradient(135deg,rgba(251,113,133,0.30)0%,rgba(236,72,153,0.14)100%)" defaultOpen tryFree={tryFreeFor("hub_emotional")} preview={moodHighlight ? t("parent_hub.support.emotional_mood_preview") : undefined} onOpen={() => markHubUsed("hub_emotional")}> {/* audit-ok: brand tile accent gradient */}
+          <HubSection id="emotional" icon={<Heart className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.emotional.title")} description={t("parent_hub.web_tiles.emotional.description")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardClass="linear-gradient(135deg,rgba(251,113,133,0.30)0%,rgba(236,72,153,0.14)100%)" tryFree={tryFreeFor("hub_emotional")} preview={moodHighlight ? t("parent_hub.support.emotional_mood_preview") : undefined} onOpen={() => markHubUsed("hub_emotional")}> {/* audit-ok: brand tile accent gradient */}
             <EmotionalSupportSection cardOrder={emotionalCardOrder} moodHighlight={moodHighlight} />
           </HubSection>
         </LockedBlock>;
@@ -1039,7 +1050,9 @@ function ParentingHubPage() {
     id: "new-parent-tips",
     alwaysCurrent: true,
     render: () => {
-      if (!isInfant || !ageGroup) return null;
+      const showTips = isInfant || hubSurface.current === "previous";
+      if (!showTips) return null;
+      const tipsAgeGroup: AgeGroup = hubSurface.current === "previous" ? "infant" : ageGroup!;
       return (
         <HubSection
           id="new-parent-tips"
@@ -1048,9 +1061,8 @@ function ParentingHubPage() {
           description={t("parent_hub.web_tiles.new-parent-tips.description")}
           accentClass="bg-gradient-to-br from-rose-300 to-pink-400"
           cardClass="linear-gradient(135deg,rgba(253,164,175,0.30)0%,rgba(244,114,182,0.14)100%)"
-          defaultOpen
         >
-          <NewParentTipsSection ageGroup={ageGroup} />
+          <NewParentTipsSection ageGroup={tipsAgeGroup} />
         </HubSection>
       );
     }
@@ -1127,7 +1139,7 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("ptm-prep", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_ptm_prep")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="ptm-prep" highlighted={ptmSeason} icon={<ClipboardList className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} accentClass="bg-gradient-to-br from-slate-500 to-blue-600" cardClass="linear-gradient(135deg,rgba(100,116,139,0.30)0%,rgba(37,99,235,0.14)100%)" defaultOpen tryFree={tryFreeFor("hub_ptm_prep")} preview={ptmPreview ?? (ptmSeason ? t("parent_hub.support.ptm_season_preview") : undefined)} onOpen={() => markHubUsed("hub_ptm_prep")}> {/* audit-ok: brand tile accent gradient */}
+          <HubSection id="ptm-prep" highlighted={ptmSeason} icon={<ClipboardList className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} accentClass="bg-gradient-to-br from-slate-500 to-blue-600" cardClass="linear-gradient(135deg,rgba(100,116,139,0.30)0%,rgba(37,99,235,0.14)100%)" tryFree={tryFreeFor("hub_ptm_prep")} preview={ptmPreview ?? (ptmSeason ? t("parent_hub.support.ptm_season_preview") : undefined)} onOpen={() => markHubUsed("hub_ptm_prep")}> {/* audit-ok: brand tile accent gradient */}
             <PtmPrepAssistant child={{
             id: effectiveChild.id,
             name: effectiveChild.name,
@@ -1207,7 +1219,7 @@ function ParentingHubPage() {
     render: () => {
       if (!shouldRenderHubTileContent("life-skills", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_life_skills")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="life-skills" icon={<Compass className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.life-skills.title")} description={t("parent_hub.web_tiles.life-skills.description")} accentClass="bg-gradient-to-br from-emerald-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,211,238,0.14)100%)" defaultOpen tryFree={tryFreeFor("hub_life_skills")} preview={lifeSkillPreview ? t("parent_hub.support.life_skill_preview", { skill: lifeSkillPreview }) : undefined} onOpen={() => markHubUsed("hub_life_skills")}> {/* audit-ok: brand tile accent gradient */}
+          <HubSection id="life-skills" icon={<Compass className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.life-skills.title")} description={t("parent_hub.web_tiles.life-skills.description")} accentClass="bg-gradient-to-br from-emerald-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,211,238,0.14)100%)" tryFree={tryFreeFor("hub_life_skills")} preview={lifeSkillPreview ? t("parent_hub.support.life_skill_preview", { skill: lifeSkillPreview }) : undefined} onOpen={() => markHubUsed("hub_life_skills")}> {/* audit-ok: brand tile accent gradient */}
             <LifeSkillsZone child={{
             id: effectiveChild.id,
             name: effectiveChild.name,
@@ -1284,6 +1296,15 @@ function ParentingHubPage() {
     .map(id => sectionById.get(id))
     .filter((s): s is SectionEntry => !!s && isHubSectionVisible(s, currentBand!, totalAgeMonths));
 
+  const renderHubSection = (s: SectionEntry, surface: "main" | "previous" | "early" = "main") => {
+    hubSurface.current = surface;
+    const node = s.render();
+    hubSurface.current = "main";
+    return node;
+  };
+
+  const previousStageTileIds = getPreviousStageTileIds(sections, currentBand, totalAgeMonths);
+
   return <div className="max-w-6xl mx-auto space-y-6 pb-12">
       <PageHeader />
 
@@ -1324,7 +1345,7 @@ function ParentingHubPage() {
           {/* Infant Hub gets its own parent-level tile for 0-24 month children. */}
           {forYouStandaloneFeatured.length > 0 && <div className="space-y-3">
               {forYouStandaloneFeatured.map(s => {
-                const node = s.render();
+                const node = renderHubSection(s);
                 return node ? <div key={s.id}>{node}</div> : null;
               })}
             </div>}
@@ -1404,13 +1425,13 @@ function ParentingHubPage() {
                       ) : null}
                       {isToday ? (
                         todayTiles.map(s => {
-                          const node = s.render();
+                          const node = renderHubSection(s);
                           return node ? <div key={s.id}>{node}</div> : null;
                         })
                       ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
                           {groupGrid.map(s => {
-                            const node = s.render();
+                            const node = renderHubSection(s);
                             return node ? <div key={s.id}>{node}</div> : null;
                           })}
                         </div>
@@ -1429,11 +1450,28 @@ function ParentingHubPage() {
                 {SECTION_2_EARLY_ACCESS_TILE_IDS.map(tileId => {
                   const section = sectionById.get(tileId);
                   if (!section) return null;
-                  const node = section.render();
+                  const node = renderHubSection(section, "early");
                   return node ? (
                     <ComingNextWrapper key={tileId} band={nextBand}>
                       {node}
                     </ComingNextWrapper>
+                  ) : null;
+                })}
+              </div>
+            </>}
+
+          {/* ── Previous Stage Features — 2+ year parents ── */}
+          {showPreviousStage && previousBand && previousStageTileIds.length > 0 && <>
+              <PreviousStageHeader childName={effectiveChild.name} band={previousBand} />
+              <div data-testid="section-previous-stage" className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start pt-2">
+                {previousStageTileIds.map(tileId => {
+                  const section = sectionById.get(tileId);
+                  if (!section) return null;
+                  const node = renderHubSection(section, "previous");
+                  return node ? (
+                    <PreviousStageWrapper key={tileId}>
+                      {node}
+                    </PreviousStageWrapper>
                   ) : null;
                 })}
               </div>
@@ -1485,6 +1523,31 @@ function ForYouHeader({
         {t("parent_hub.headers.personalised", {
         name: childName
       })}
+      </p>
+    </div>;
+}
+
+// ─── Previous Stage header ───────────────────────────────────────────────────
+function PreviousStageHeader({
+  childName,
+  band,
+}: {
+  childName: string;
+  band: AgeBand;
+}) {
+  const { t } = useTranslation();
+  return <div className="pt-6">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/80">{t("parent_hub.headers.previous_stage_section")}</span>
+        <Badge variant="outline" className="rounded-full px-2.5 py-0 h-5 font-semibold text-[10px] gap-1 border-muted-foreground/30 text-muted-foreground">
+          {bandLabel(band)}
+        </Badge>
+      </div>
+      <h2 className="font-quicksand text-xl font-bold text-foreground mt-1.5">
+        {t("parent_hub.headers.previous_stage_title")}
+      </h2>
+      <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl">
+        {t("parent_hub.headers.previous_stage_blurb", { name: childName })}
       </p>
     </div>;
 }

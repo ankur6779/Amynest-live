@@ -731,7 +731,7 @@ export function InfantHub({
 
             {isParentingOpen && <div className="space-y-3">
                 {/* 1. This Week's Focus */}
-                <IHSection icon={<Star className="h-4 w-4" />} title={t("components.infant_hub.weekly_focus")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500" cardColor="linear-gradient(135deg,rgba(251,191,36,0.28)0%,rgba(234,179,8,0.13)100%)" badge={t("components.infant_hub.badge_weekly")} defaultOpen>
+                <IHSection icon={<Star className="h-4 w-4" />} title={t("components.infant_hub.weekly_focus")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500" cardColor="linear-gradient(135deg,rgba(251,191,36,0.28)0%,rgba(234,179,8,0.13)100%)" badge={t("components.infant_hub.badge_weekly")}>
                   <WeeklyFocus childId={childId} childName={childName} ageMonths={ageMonths} />
                 </IHSection>
 

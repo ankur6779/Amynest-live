@@ -5,6 +5,9 @@ import {
   isHubSectionVisible,
   shouldShowExploreSection,
   shouldBypassHubMonthGates,
+  shouldShowPreviousStageSection,
+  getPreviousStageTileIds,
+  PREVIOUS_STAGE_INFANT_TILE_IDS,
 } from "./hub-visibility";
 
 describe("isHubSectionVisible", () => {
@@ -85,5 +88,43 @@ describe("checkBandMatch", () => {
     expect(checkBandMatch({ id: "amy-ai", alwaysCurrent: true }, "12-15")).toBe(
       true,
     );
+  });
+});
+
+describe("shouldShowPreviousStageSection", () => {
+  it("is on for 2+ parents outside band 0-2", () => {
+    expect(shouldShowPreviousStageSection(30, "2-4")).toBe(true);
+    expect(shouldShowPreviousStageSection(48, "4-6")).toBe(true);
+  });
+
+  it("is off for infants and band 0-2", () => {
+    expect(shouldShowPreviousStageSection(12, "0-2")).toBe(false);
+    expect(shouldShowPreviousStageSection(24, "0-2")).toBe(false);
+  });
+});
+
+describe("getPreviousStageTileIds", () => {
+  const mockSections = [
+    { id: "infant-hub", bands: ["0-2"] as const },
+    { id: "new-parent-tips", alwaysCurrent: true },
+    { id: "story-hub", bands: ["0-2", "2-4", "4-6", "6-8"] as const },
+    { id: "phonics", bands: ["2-4", "4-6"] as const },
+  ];
+
+  it("includes infant-only tiles for a 2-4 band child", () => {
+    const ids = getPreviousStageTileIds(mockSections, "2-4", 30);
+    expect(ids).toContain("infant-hub");
+    expect(ids).toContain("new-parent-tips");
+    expect(ids).not.toContain("story-hub");
+    expect(ids).not.toContain("phonics");
+  });
+
+  it("returns empty below 24 months", () => {
+    expect(getPreviousStageTileIds(mockSections, "0-2", 12)).toEqual([]);
+  });
+
+  it("lists curated infant tile ids", () => {
+    expect(PREVIOUS_STAGE_INFANT_TILE_IDS).toContain("infant-hub");
+    expect(PREVIOUS_STAGE_INFANT_TILE_IDS).toContain("new-parent-tips");
   });
 });
