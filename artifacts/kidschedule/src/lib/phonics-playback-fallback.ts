@@ -3,10 +3,7 @@
  * Final order: static MP3 → speech fallback → tone (rare).
  */
 
-import {
-  getElevenLabsPhonemeSpeakText,
-  getPhonicsGenerationPhonemeLabel,
-} from "@workspace/phonics-sounds";
+import { getPhonemeSynthesisText } from "@workspace/phonics-sounds";
 import { playFallbackTone, playPhonicsPlaceholderTone } from "@/lib/emergency-audio";
 import {
   logAudioHealthFailure,
@@ -48,7 +45,8 @@ function synthesisSpeak(text: string, rate = 0.8): Promise<boolean> {
 }
 
 function fallbackSpeakText(audioKey: string): string {
-  return getElevenLabsPhonemeSpeakText(audioKey) || getPhonicsGenerationPhonemeLabel(audioKey);
+  // Browser TTS reads bare letters as alphabet names; use phoneme-forcing spellings.
+  return getPhonemeSynthesisText(audioKey);
 }
 
 /** Speech synthesis phoneme — learning-safe vs tone beep. */

@@ -95,6 +95,86 @@ export function getElevenLabsPhonemeSpeakText(audioKey: string): string {
   return getPhonicsGenerationPhonemeLabel(key);
 }
 
+/**
+ * Phoneme spellings for the BROWSER speechSynthesis fallback only.
+ *
+ * Browser TTS reads a bare letter (e.g. "b", "w", "y") and even "b." as the
+ * ALPHABET NAME ("bee", "double-you", "why"). These spellings force the browser
+ * to produce a phoneme-ish sound instead: continuants are elongated (sss, mmm)
+ * and stops use the standard early-phonics approximation (buh, kuh) — never a
+ * letter name. The high-quality static MP3 is always preferred; this is the
+ * rare "MP3 unavailable" safety net before the tone beep.
+ */
+export const SPEECH_SYNTH_PHONEME_TEXT: Record<string, string> = {
+  a: "ah",
+  b: "buh",
+  c: "kuh",
+  d: "duh",
+  e: "eh",
+  f: "ffff",
+  g: "guh",
+  h: "huh",
+  i: "ih",
+  j: "juh",
+  k: "kuh",
+  l: "llll",
+  m: "mmmm",
+  n: "nnnn",
+  o: "ah",
+  p: "puh",
+  q: "kwuh",
+  r: "rrrr",
+  s: "ssss",
+  t: "tuh",
+  u: "uh",
+  v: "vvvv",
+  w: "wuh",
+  x: "kss",
+  y: "yuh",
+  z: "zzzz",
+
+  sh: "shhh",
+  ch: "chuh",
+  th1: "thhh",
+  th2: "thhh",
+  ph: "ffff",
+  ng: "nng",
+  wh: "wuh",
+};
+
+/** Alphabet-name spellings that must NEVER reach the learner. */
+const FORBIDDEN_LETTER_NAMES = new Set([
+  "ay", "bee", "cee", "see", "dee", "ee", "ef", "gee", "aitch", "eye",
+  "jay", "kay", "el", "em", "en", "oh", "pee", "cue", "queue", "ar",
+  "ess", "tee", "you", "vee", "doubleyou", "double-u", "ex", "eks", "why", "zee", "zed",
+]);
+
+/** Browser speechSynthesis text for a phoneme — guaranteed not an alphabet name. */
+export function getPhonemeSynthesisText(audioKey: string): string {
+  const key = audioKey.trim().toLowerCase();
+  return SPEECH_SYNTH_PHONEME_TEXT[key] ?? getElevenLabsPhonemeSpeakText(key);
+}
+
+/**
+ * Validate that every catalog phoneme maps to a synthesis spelling and that none
+ * of those spellings are alphabet names (bee/cee/dee/pee/tee/…).
+ */
+export function assertSpeechSynthPhonemeTextSafe(): void {
+  const keys = getPhonicsCatalogAudioKeys();
+  const missing = keys.filter((k) => !SPEECH_SYNTH_PHONEME_TEXT[k]?.trim());
+  if (missing.length > 0) {
+    throw new Error(`SPEECH_SYNTH_PHONEME_TEXT missing keys: ${missing.join(", ")}`);
+  }
+  for (const [key, text] of Object.entries(SPEECH_SYNTH_PHONEME_TEXT)) {
+    const norm = text.trim().toLowerCase().replace(/[.\s]/g, "");
+    if (FORBIDDEN_LETTER_NAMES.has(norm)) {
+      throw new Error(
+        `SPEECH_SYNTH_PHONEME_TEXT[${key}] is an alphabet name: "${text}"`,
+      );
+    }
+  }
+}
+
 /** QA brief for human review — never sent to ElevenLabs. */
 export function buildPhonicsElevenLabsPrompt(phoneme: string): string {
   return `

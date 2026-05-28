@@ -40,8 +40,11 @@ export async function playCvcBlend(
   options?: PlayCvcBlendOptions,
 ): Promise<void> {
   const { phonemes, word } = wordObj;
-  const slowGap = options?.slowGapMs ?? 350;
-  const fastGap = options?.fastGapMs ?? 120;
+  // Minimum controlled spacing so each phoneme fully settles before the next
+  // begins — preserves a natural blend without overlapping clips.
+  const MIN_PHONEME_GAP_MS = 70;
+  const slowGap = Math.max(MIN_PHONEME_GAP_MS, options?.slowGapMs ?? 350);
+  const fastGap = Math.max(MIN_PHONEME_GAP_MS, options?.fastGapMs ?? 120);
 
   if (!options?.skipSlowPass) {
     for (let i = 0; i < phonemes.length; i++) {

@@ -2,16 +2,20 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   assertElevenLabsSpeakTextComplete,
+  assertSpeechSynthPhonemeTextSafe,
   buildPhonicsElevenLabsPrompt,
   ELEVENLABS_SPEAK_TEXT,
   getElevenLabsPhonemeSpeakText,
+  getPhonemeSynthesisText,
   isPhonicsStopSoundKey,
   PHONICS_ELEVENLABS_VOICE_ID_DEFAULT,
   PHONICS_MAX_REJECT_DURATION_MS,
   PHONICS_MIN_REJECT_DURATION_MS,
   PHONICS_STOP_SOUND_MAX_DURATION_MS,
+  SPEECH_SYNTH_PHONEME_TEXT,
   validatePhonicsMp3Buffer,
 } from "./phonics-generation.js";
+import { getPhonicsCatalogAudioKeys } from "./phonics-generation.js";
 
 describe("phonics-generation", () => {
   it("uses minimal pure phoneme hints (no sound, no instructions)", () => {
@@ -78,5 +82,40 @@ describe("phonics-generation", () => {
     assert.equal(result.ok, true);
     assert.ok(result.estimatedDurationMs >= PHONICS_MIN_REJECT_DURATION_MS);
     assert.ok(result.estimatedDurationMs <= PHONICS_MAX_REJECT_DURATION_MS);
+  });
+});
+
+describe("speech-synthesis phoneme text (letter-name-proof fallback)", () => {
+  const LETTER_NAMES = new Set([
+    "bee", "cee", "see", "dee", "ee", "ef", "gee", "aitch", "jay", "kay",
+    "el", "em", "en", "oh", "pee", "cue", "ar", "ess", "tee", "you",
+    "vee", "double-u", "doubleyou", "ex", "eks", "why", "zee", "zed", "ay",
+  ]);
+
+  it("covers every catalog audioKey", () => {
+    assertSpeechSynthPhonemeTextSafe();
+    for (const key of getPhonicsCatalogAudioKeys()) {
+      assert.ok(
+        SPEECH_SYNTH_PHONEME_TEXT[key]?.trim(),
+        `missing synthesis text for ${key}`,
+      );
+    }
+  });
+
+  it("never produces an alphabet name (no bee/cee/dee/pee/tee)", () => {
+    for (const [key, text] of Object.entries(SPEECH_SYNTH_PHONEME_TEXT)) {
+      const norm = text.trim().toLowerCase().replace(/[.\s]/g, "");
+      assert.ok(!LETTER_NAMES.has(norm), `${key} → "${text}" is an alphabet name`);
+    }
+  });
+
+  it("uses pure-sound spellings for vowels and continuants", () => {
+    assert.equal(getPhonemeSynthesisText("a"), "ah");
+    assert.equal(getPhonemeSynthesisText("s"), "ssss");
+    assert.equal(getPhonemeSynthesisText("m"), "mmmm");
+    // Single-letter consonants must not be bare letters (browser says letter name).
+    assert.notEqual(getPhonemeSynthesisText("b"), "b");
+    assert.notEqual(getPhonemeSynthesisText("w"), "w");
+    assert.notEqual(getPhonemeSynthesisText("y"), "y");
   });
 });

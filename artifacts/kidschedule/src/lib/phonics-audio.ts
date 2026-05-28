@@ -27,6 +27,7 @@ import {
 } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import { playPhonemeFallbackVoice } from "@/lib/phonics-playback-fallback";
+import { recordPhonicsFallback } from "@/lib/phonics-telemetry";
 import type { SpeakOptions, SpeakResult } from "@/hooks/use-amy-voice";
 import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
 
@@ -114,15 +115,23 @@ export async function speakPhonicsFastClip(
       isCancelled: opts?.isCancelled,
     });
     if (local.ok) return { success: true, layer: "static" };
+    // A superseded/cancelled tap must not trigger stale fallback audio.
+    if (local.error === "phonics_cancelled" || opts?.isCancelled?.()) {
+      return { success: false, error: "tts_cancelled" };
+    }
   }
 
+  if (opts?.isCancelled?.()) return { success: false, error: "tts_cancelled" };
   if (await playStaticCatalogClip(trimmed, opts)) {
+    recordPhonicsFallback("static_catalog");
     return { success: true, layer: "static" };
   }
 
+  if (opts?.isCancelled?.()) return { success: false, error: "tts_cancelled" };
   const fallbackKey = audioKey ?? trimmed.toLowerCase();
   const voice = await playPhonemeFallbackVoice(fallbackKey);
   if (voice.success) {
+    recordPhonicsFallback(voice.fallback === "tone" ? "tone" : "synthesis");
     return { success: true, layer: "emergency_local" };
   }
 

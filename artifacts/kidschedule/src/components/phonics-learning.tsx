@@ -32,6 +32,8 @@ import {
 import { getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { playPhonicsBlend, playCvcBlendWithSpeak, resolvePhonicsPlaybackText } from "@/lib/phonics-audio";
 import { CvcBlendPanel, CvcBlendingPracticeCard } from "@/components/cvc-blend-panel";
+import { PhonicsStopButton } from "@/components/phonics-stop-button";
+import { stopPhonicsPlayback } from "@/lib/phonics-player";
 import { PhonicsCurriculumDashboard } from "@/components/phonics-curriculum-dashboard";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
 import { cn } from "@/lib/utils";
@@ -164,6 +166,7 @@ export function PhonicsLearning(props: PhonicsLearningProps) {
   return (
     <AppErrorBoundary label="Phonics">
       <PhonicsLearningContent {...props} />
+      <PhonicsStopButton />
     </AppErrorBoundary>
   );
 }
@@ -199,6 +202,11 @@ function PhonicsLearningContent({
   useEffect(() => {
     setStageOverride(null);
   }, [childId]);
+
+  // Leaving the phonics module must stop any lingering phoneme/blend audio.
+  useEffect(() => {
+    return () => stopPhonicsPlayback("leave_phonics");
+  }, []);
   const phonicsData = usePhonicsData(childId, totalAgeMonths, stageOverride);
   const { recordActivity } = useRecordLearningActivity(
     Number.isFinite(numericChildId) ? numericChildId : null,
