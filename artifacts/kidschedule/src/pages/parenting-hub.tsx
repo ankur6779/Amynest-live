@@ -88,7 +88,7 @@ import { useRewardCelebrations } from "@/hooks/use-reward-celebrations";
 // Maps each premium section key to the tile IDs that live inside it.
 const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
   today:      ["amy-ai", "daily-tips", "generate-routine", "tomorrow-forecast", "command-center"],
-  learning:   ["amy-learning-tutor", "amy-quick-tutor", "smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad", "event-prep"],
+  learning:   ["smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad", "event-prep"],
   creativity: ["activities", "gaming-rewards", "art-craft", "worksheets", "coloring-books", "fun-sheets"],
   stories:    ["story-hub", "speech-coach"],
   support:    ["articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
@@ -268,8 +268,6 @@ function RoutineLaunchCard({
 
 const HUB_QUICK_ACTIONS = [
   { id: "ask-amy",    group: "today",      tileId: "amy-ai",              emoji: "💜", i18n: "parent_hub.quick_actions.ask_amy" },
-  { id: "learn-amy",  group: "learning",   tileId: "amy-learning-tutor",  emoji: "🎓", i18n: "parent_hub.quick_actions.learn_with_amy" },
-  { id: "quick-tutor", group: "learning",  tileId: "amy-quick-tutor",     emoji: "✨", i18n: "parent_hub.quick_actions.quick_tutor" },
   { id: "articles",   group: "support",    tileId: "articles",        emoji: "📚", i18n: "parent_hub.quick_actions.articles" },
   { id: "emotional",  group: "support",    tileId: "emotional",       emoji: "❤️", i18n: "parent_hub.quick_actions.emotional" },
   { id: "story",      group: "stories",    tileId: "story-hub",       emoji: "📖", i18n: "parent_hub.quick_actions.story" },

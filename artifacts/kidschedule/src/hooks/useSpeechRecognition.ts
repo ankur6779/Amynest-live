@@ -14,12 +14,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { getApiUrl } from "@/lib/api";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
-import { isCapacitorIosNative, prepareIosAudioSessionForRecording } from "@/lib/mic-permission-capacitor";
-import {
-  openMicrophoneStream,
-  requestMicrophoneAccess,
-  resetMicrophonePermissionCache,
-} from "@/lib/microphone-permission";
+import { requestMicrophoneAccess, resetMicrophonePermissionCache } from "@/lib/microphone-permission";
+import { microphoneSessionManager, MicrophoneSessionState } from "@/lib/microphone-session-manager";
 
 // ── Web Speech API ambient declarations ─────────────────────────────────────
 // These types are part of the WICG Speech API spec but are not yet included
@@ -122,21 +118,6 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-function createMediaRecorder(stream: MediaStream): { rec: MediaRecorder; mimeType: string } {
-  const mimeType = pickRecorderMimeType();
-  if (
-    typeof MediaRecorder !== "undefined" &&
-    MediaRecorder.isTypeSupported(mimeType)
-  ) {
-    try {
-      return { rec: new MediaRecorder(stream, { mimeType }), mimeType };
-    } catch {
-      /* iOS can reject constructor even when isTypeSupported is true */
-    }
-  }
-  return { rec: new MediaRecorder(stream), mimeType };
-}
-
 export type RecognitionMode = "native" | "whisper" | "unsupported";
 
 export interface SpeechRecognitionState {
@@ -149,6 +130,7 @@ export interface SpeechRecognitionState {
   start: () => Promise<boolean>;
   stop: () => void;
   reset: () => void;
+  status: MicrophoneSessionState;
 }
 
 // Normalise SpeechRecognition error codes → our own error keys
@@ -188,17 +170,33 @@ export function useSpeechRecognition(
   const [listening, setListening] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<MicrophoneSessionState>("idle");
 
   const recRef = useRef<SpeechRecognitionInstance | null>(null);
-  const mediaRecRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
   const getAuthTokenRef = useRef(options?.getAuthToken);
   getAuthTokenRef.current = options?.getAuthToken;
 
   const Cls = getNativeSpeechRecognition();
   const mode = resolveRecognitionMode(Cls);
   const resultRafRef = useRef<number | null>(null);
+
+  // Sync state from microphoneSessionManager state changes (whisper fallback)
+  useEffect(() => {
+    if (mode !== "whisper") {
+      return () => {};
+    }
+    const unsub = microphoneSessionManager.subscribeStateChange((s) => {
+      setStatus(s);
+      if (s === "recording") {
+        setListening(true);
+      } else if (s === "preparing" || s === "reconnecting") {
+        setListening(true); // Treat preparation / reconnect as active/listening to keep UI spin
+      } else {
+        setListening(false);
+      }
+    });
+    return unsub;
+  }, [mode]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -208,20 +206,19 @@ export function useSpeechRecognition(
         resultRafRef.current = null;
       }
       recRef.current?.abort();
-      mediaRecRef.current?.stop();
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+      microphoneSessionManager.cleanup();
     };
   }, []);
 
   const reset = useCallback(() => {
     recRef.current?.abort();
-    mediaRecRef.current?.stop();
-    streamRef.current?.getTracks().forEach((t) => t.stop());
+    microphoneSessionManager.cleanup();
     setTranscript("");
     setInterimTranscript("");
     setListening(false);
     setTranscribing(false);
     setError(null);
+    setStatus("idle");
   }, []);
 
   // ── Native Web Speech API path ──────────────────────────────────────────────
@@ -230,11 +227,16 @@ export function useSpeechRecognition(
     setTranscript("");
     setInterimTranscript("");
     setError(null);
+    setStatus("preparing");
+
+    // Single mic owner: stop any active Whisper session completely to free hardware
+    microphoneSessionManager.cleanup();
 
     const access = await requestMicrophoneAccess({ forFeature: true });
     logSpeechRecognition("native speech microphone access result", access);
     if (!access.granted) {
       setError(micAccessError(access.reason));
+      setStatus("error");
       return false;
     }
 
@@ -249,16 +251,23 @@ export function useSpeechRecognition(
     rec.onstart = () => {
       logSpeechRecognition("native speech recognition started");
       setListening(true);
+      setStatus("recording");
     };
     rec.onend = () => {
       logSpeechRecognition("native speech recognition ended");
       setListening(false);
+      setStatus("idle");
       setInterimTranscript("");
     };
     rec.onerror = (e: SpeechRecognitionErrorEvent) => {
       const code = normaliseSpeechError(e.error);
       logSpeechRecognition("native speech recognition error", { error: e.error, message: e.message, code });
-      if (code !== "aborted") setError(code);
+      if (code !== "aborted") {
+        setError(code);
+        setStatus("error");
+      } else {
+        setStatus("idle");
+      }
       // Reset cached permission if user revoked it mid-session
       if (code === "microphone_denied") resetMicrophonePermissionCache();
       setListening(false);
@@ -288,6 +297,7 @@ export function useSpeechRecognition(
     } catch (err) {
       logSpeechRecognition("native speech recognition start failed", err);
       setError("recognition_start_failed");
+      setStatus("error");
       return false;
     }
   }, [Cls, lang]);
@@ -295,6 +305,7 @@ export function useSpeechRecognition(
   const stopNative = useCallback(() => {
     recRef.current?.stop();
     setListening(false);
+    setStatus("idle");
   }, []);
 
   // ── Whisper fallback path (MediaRecorder → /api/speech/transcribe) ──────────
@@ -303,126 +314,90 @@ export function useSpeechRecognition(
     setTranscript("");
     setInterimTranscript("");
 
-    if (isCapacitorIosNative()) {
-      await prepareIosAudioSessionForRecording();
-    }
-
-    const opened = await openMicrophoneStream(
-      {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-      { forFeature: true },
-    );
-    logSpeechRecognition("whisper microphone stream result", opened.ok ? { ok: true } : opened);
-    if (!opened.ok) {
-      setError(micAccessError(opened.reason));
-      return false;
-    }
-    const stream = opened.stream;
-    streamRef.current = stream;
-
-    let rec: MediaRecorder;
-    let mimeType: string;
-    try {
-      ({ rec, mimeType } = createMediaRecorder(stream));
-    } catch (err) {
-      logSpeechRecognition("media recorder initialization failed", err);
-      stream.getTracks().forEach((t) => t.stop());
-      setError("recognition_start_failed");
-      return false;
-    }
-    mediaRecRef.current = rec;
-    chunksRef.current = [];
-
-    rec.ondataavailable = (e) => {
-      if (e.data.size > 0) chunksRef.current.push(e.data);
-    };
-
-    rec.onerror = () => {
-      logSpeechRecognition("media recorder error");
-      setListening(false);
-      setError("recognition_start_failed");
-    };
-
-    rec.onstop = async () => {
-      logSpeechRecognition("media recorder stopped", { chunks: chunksRef.current.length });
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      setListening(false);
-      if (chunksRef.current.length === 0) {
-        setError("recognition_start_failed");
-        return;
-      }
-
-      const blob = new Blob(chunksRef.current, { type: mimeType });
-      const arrayBuffer = await blob.arrayBuffer();
-      const base64 = arrayBufferToBase64(arrayBuffer);
-
-      setTranscribing(true);
-      try {
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-        };
-        try {
-          const tok = await getAuthTokenRef.current?.();
-          if (tok) headers.Authorization = `Bearer ${tok}`;
-        } catch {
-          /* ignore — Whisper may still work with cookies on web */
+    const success = await microphoneSessionManager.startRecording({
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+      timeslice: 400,
+      onError: (err, mappedCode) => {
+        logSpeechRecognition("Whisper recording session error callback", { message: err.message, mappedCode });
+        
+        // Exact translation mapping:
+        if (mappedCode === "microphone_denied") {
+          setError("microphone_denied");
+        } else {
+          // Map other non-permission errors to start failure
+          setError("recognition_start_failed");
         }
-        const r = await fetch(getApiUrl("/api/speech/transcribe"), {
-          method: "POST",
-          headers,
-          credentials: "include",
-          body: JSON.stringify({ audioBase64: base64 }),
-        });
-        if (!r.ok) {
-          if (r.status === 401) setError("transcription_auth_failed");
-          else setError("transcription_failed");
+      },
+      onStop: async (chunks) => {
+        logSpeechRecognition("Whisper recording onStop callback triggered", { chunks: chunks.length });
+        
+        if (chunks.length === 0) {
+          setError("recognition_start_failed");
           return;
         }
-        const raw = await r.json();
-        const authFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-          const url = typeof input === "string" ? getApiUrl(input) : input;
-          return fetch(url, {
-            ...init,
-            headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
-            credentials: "include",
-          });
-        };
-        const { resolveAiApiData } = await import("@/lib/poll-result");
-        const j = await resolveAiApiData<{ transcript?: string }>(raw, authFetch);
-        setTranscript(j?.transcript ?? "");
-      } catch (err) {
-        logSpeechRecognition("transcription failed", err);
-        setError("transcription_failed");
-      } finally {
-        setTranscribing(false);
-      }
-    };
 
-    // Timeslice keeps memory bounded during long Live Coach listens (up to 8s).
-    rec.start(400);
-    logSpeechRecognition("media recorder started", { mimeType });
-    setListening(true);
-    return true;
+        const mimeType = pickRecorderMimeType();
+        const blob = new Blob(chunks, { type: mimeType });
+        const arrayBuffer = await blob.arrayBuffer();
+        const base64 = arrayBufferToBase64(arrayBuffer);
+
+        setTranscribing(true);
+        try {
+          const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+          };
+          try {
+            const tok = await getAuthTokenRef.current?.();
+            if (tok) headers.Authorization = `Bearer ${tok}`;
+          } catch {
+            /* ignore — Whisper may still work with cookies on web */
+          }
+          const r = await fetch(getApiUrl("/api/speech/transcribe"), {
+            method: "POST",
+            headers,
+            credentials: "include",
+            body: JSON.stringify({ audioBase64: base64 }),
+          });
+          if (!r.ok) {
+            if (r.status === 401) setError("transcription_auth_failed");
+            else setError("transcription_failed");
+            return;
+          }
+          const raw = await r.json();
+          const authFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+            const url = typeof input === "string" ? getApiUrl(input) : input;
+            return fetch(url, {
+              ...init,
+              headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
+              credentials: "include",
+            });
+          };
+          const { resolveAiApiData } = await import("@/lib/poll-result");
+          const j = await resolveAiApiData<{ transcript?: string }>(raw, authFetch);
+          setTranscript(j?.transcript ?? "");
+        } catch (err) {
+          logSpeechRecognition("transcription failed", err);
+          setError("transcription_failed");
+        } finally {
+          setTranscribing(false);
+        }
+      }
+    });
+
+    return success;
   }, []);
 
   const stopWhisper = useCallback(() => {
-    const rec = mediaRecRef.current;
-    if (!rec || rec.state === "inactive") return;
-    try {
-      if (rec.state === "recording") rec.requestData();
-    } catch {
-      /* ignore — not all platforms support requestData */
-    }
-    rec.stop();
+    void microphoneSessionManager.stopRecording();
   }, []);
 
   const start = useCallback(async () => {
     if (mode === "native") return startNative();
     if (mode === "whisper") return startWhisper();
     setError("unsupported");
+    setStatus("error");
     return false;
   }, [mode, startNative, startWhisper]);
 
@@ -441,5 +416,6 @@ export function useSpeechRecognition(
     start,
     stop,
     reset,
+    status,
   };
 }
