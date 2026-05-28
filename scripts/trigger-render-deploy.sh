@@ -17,6 +17,8 @@ SERVICES=(
   "srv-d85k8jbtqb8s7382mjog" # amynest-ai-worker
 )
 
+failed=0
+
 for service_id in "${SERVICES[@]}"; do
   body='{}'
   if [[ -n "$COMMIT_ID" ]]; then
@@ -24,11 +26,29 @@ for service_id in "${SERVICES[@]}"; do
   fi
 
   echo "Triggering deploy for ${service_id}…"
-  curl -sf -X POST "https://api.render.com/v1/services/${service_id}/deploys" \
-    -H "Authorization: Bearer ${RENDER_API_KEY}" \
-    -H "Content-Type: application/json" \
-    -d "$body"
-  echo
+  response_file="$(mktemp)"
+  http_code="$(
+    curl -sS -o "$response_file" -w "%{http_code}" \
+      -X POST "https://api.render.com/v1/services/${service_id}/deploys" \
+      -H "Authorization: Bearer ${RENDER_API_KEY}" \
+      -H "Content-Type: application/json" \
+      -d "$body"
+  )"
+
+  if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
+    echo "ERROR: Render deploy request failed for ${service_id} (HTTP ${http_code})"
+    cat "$response_file"
+    echo
+    failed=1
+  else
+    echo "OK (${http_code}): $(cat "$response_file")"
+  fi
+  rm -f "$response_file"
 done
+
+if [[ "$failed" -ne 0 ]]; then
+  echo "One or more Render deploy requests failed."
+  exit 1
+fi
 
 echo "All deploy requests queued."
