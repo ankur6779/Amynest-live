@@ -1,6 +1,6 @@
 // audit-block-ignore-start -- immersive Speech Coach uses intentional neon dark UI accents.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "wouter";
+import { Redirect } from "wouter";
 import { AppLink } from "@/components/app-link";
 import { getAuth } from "firebase/auth";
 import {
@@ -14,13 +14,12 @@ import {
   Trophy,
   Volume2,
 } from "lucide-react";
-import { useGetSpeechProgress, useListChildren, useLogSpeechPracticeAttempt } from "@workspace/api-client-react";
+import { useGetSpeechProgress, useLogSpeechPracticeAttempt } from "@workspace/api-client-react";
 import {
   buildPracticeSession,
   compareTranscript,
   getPromptSpeakText,
   getPromptsPool,
-  isSpeechCoachEligibleAgeMonths,
   type PronouncePrompt,
   type PronouncePromptDifficulty,
   type PronouncePromptKind,
@@ -30,12 +29,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
-import { usePrimeIosMicrophone } from "@/hooks/use-prime-ios-microphone";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
 import { openAndroidMicrophoneSettings } from "@/lib/microphone-permission";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
-import { clampClarityScore, weakSoundsToHistory } from "./speech-coach-utils";
+import { clampClarityScore, playSpeechCue, weakSoundsToHistory } from "./speech-coach-utils";
 
 type AnyChild = {
   id: number;
@@ -152,37 +150,6 @@ function correctionFor(task: PronouncePrompt, mode: AgeMode): string {
   return `Good try. Say it like this: ${task.text.split("").join("-")}.`;
 }
 
-function playCue(type: "success" | "retry") {
-  if (typeof window === "undefined") return;
-  try {
-    const AudioCtx = window.AudioContext ?? window.webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = type === "success" ? 740 : 260;
-    gain.gain.setValueAtTime(0.001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.onended = () => {
-      void ctx.close().catch(() => undefined);
-    };
-    osc.start();
-    osc.stop(ctx.currentTime + 0.24);
-  } catch {
-    /* sound effects are best-effort */
-  }
-}
-
-declare global {
-  interface Window {
-    webkitAudioContext?: typeof AudioContext;
-  }
-}
-
 function evaluate(task: PronouncePrompt, transcript: string, mode: AgeMode, ageMonths: number): Result {
   const trimmed = transcript.trim();
   if (!trimmed) {
@@ -272,7 +239,13 @@ function AmyHero({ state, success }: { state: CoachState; success: boolean }) {
   );
 }
 
-function LiveSpeechCoach({ child }: { child: AnyChild }) {
+export function LiveSpeechCoach({
+  child,
+  onOpenParentTools,
+}: {
+  child: AnyChild;
+  onOpenParentTools?: () => void;
+}) {
   const ageMonths = totalMonths(child);
   const mode = useMemo(() => getAgeMode(ageMonths), [ageMonths]);
   const progress = useGetSpeechProgress({ childId: child.id, range: "week" });
@@ -431,7 +404,7 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
     setLastResult(result);
     setScore((n) => n + result.points);
     setStreak((n) => (result.correct ? n + 1 : 0));
-    playCue(result.correct ? "success" : "retry");
+    playSpeechCue(result.correct ? "success" : "retry");
     setSuccessFlash(result.correct);
     window.setTimeout(() => setSuccessFlash(false), 900);
     logAttempt.mutate({ data: { childId: child.id, promptId: current.id, clarityScore: clampClarityScore(Math.round(result.confidence * 100)) } });
@@ -500,7 +473,7 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
       <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
       <div className="relative mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-4">
         <header className="flex items-center gap-3">
-          <AppLink href="/speech-coach" replace source="live-speech-coach-back">
+          <AppLink href="/parenting-hub" replace source="live-speech-coach-back">
             <Button variant="ghost" size="icon" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -509,6 +482,18 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200/80">Live AI Speech Coach</p>
             <h1 className="truncate font-quicksand text-xl font-black">{child.name}'s voice session</h1>
           </div>
+          {onOpenParentTools ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15"
+              onClick={onOpenParentTools}
+              data-testid="speech-open-parent-tools"
+            >
+              Parent Tools
+            </Button>
+          ) : null}
           <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-black">
             Step {Math.min(idx + 1, tasks.length)}/{tasks.length}
           </div>
@@ -623,11 +608,22 @@ function LiveSpeechCoach({ child }: { child: AnyChild }) {
                 <RotateCcw className="h-4 w-4" />
                 New Session
               </Button>
-              <AppLink href="/speech-coach" replace source="live-speech-coach-complete">
-                <Button type="button" variant="ghost" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
-                  Back to Speech Coach
+              {onOpenParentTools ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15"
+                  onClick={onOpenParentTools}
+                >
+                  Parent Tools
                 </Button>
-              </AppLink>
+              ) : (
+                <AppLink href="/speech-coach?tab=hub" replace source="live-speech-coach-complete">
+                  <Button type="button" variant="ghost" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">
+                    Parent Tools
+                  </Button>
+                </AppLink>
+              )}
             </div>
           )}
         </section>
@@ -678,63 +674,5 @@ function EmptyFullScreen({ title, body }: { title: string; body: string }) {
 }
 
 export default function LiveSpeechCoachPage() {
-  usePrimeIosMicrophone();
-  const childrenQuery = useListChildren();
-  const childList = (childrenQuery.data ?? []) as AnyChild[];
-  const eligible = childList.filter((c) =>
-    isSpeechCoachEligibleAgeMonths(totalMonths(c)),
-  );
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const child = eligible.find((c) => c.id === selectedId) ?? eligible[0] ?? null;
-
-  if (childrenQuery.isLoading) {
-    return <EmptyFullScreen title="Loading Speech Coach" body="Getting Amy ready for a live voice session." />;
-  }
-
-  if (!child) {
-    return (
-      <main className="grid min-h-dvh place-items-center bg-[#070812] p-4 text-white">
-        <Card className="max-w-sm rounded-3xl border-white/10 bg-white/[0.06] text-white">
-          <CardContent className="space-y-4 p-6 text-center">
-            <AmyIcon size={64} ring bounce />
-            <div>
-              <h1 className="font-quicksand text-xl font-black">Speech Coach is for ages 1-10</h1>
-              <p className="mt-2 text-sm text-white/65">Add or select a child between 1 and 10 years old to start a live session.</p>
-            </div>
-            <div className="flex justify-center gap-2">
-              <Link href="/children/new">
-                <Button className="rounded-full">Add Child</Button>
-              </Link>
-              <AppLink href="/speech-coach" replace source="live-speech-coach-ineligible">
-                <Button variant="ghost" className="rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15">Back</Button>
-              </AppLink>
-            </div>
-          </CardContent>
-        </Card>
-      </main>
-    );
-  }
-
-  return (
-    <>
-      {eligible.length > 1 && (
-        <div className="fixed left-1/2 top-16 z-20 flex -translate-x-1/2 gap-2 rounded-full border border-white/10 bg-black/40 p-1 backdrop-blur-xl">
-          {eligible.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setSelectedId(c.id)}
-              className={[
-                "rounded-full px-3 py-1 text-xs font-black transition-colors",
-                child.id === c.id ? "bg-white text-slate-950" : "text-white/70 hover:bg-white/10",
-              ].join(" ")}
-            >
-              {c.name}
-            </button>
-          ))}
-        </div>
-      )}
-      <LiveSpeechCoach child={child} />
-    </>
-  );
+  return <Redirect to="/speech-coach" replace />;
 }
