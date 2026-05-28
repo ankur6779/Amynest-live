@@ -197,7 +197,11 @@
     "check_email": "Check your email",
     "verify_subtitle": "Enter the verification code sent to",
     "verification_code": "Verification Code",
-    "verify_email": "Verify Email"
+    "verify_email": "Verify Email",
+    "legal_notice": "By continuing, you agree to our",
+    "terms_link": "Terms of Service",
+    "legal_and": "and",
+    "privacy_link": "Privacy Policy"
   },
   "dashboard": {
     "good_morning": "Good Morning",

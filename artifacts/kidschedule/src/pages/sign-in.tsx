@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError, stashVerificationSendError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { FacebookSignInButton } from "@/components/facebook-sign-in-button";
+import { AuthLegalFooter } from "@/components/auth-legal-footer";
 import { handleAppleLogin } from "@/lib/apple-auth";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
 import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
@@ -824,6 +825,7 @@ export default function SignInPage() {
           {t("screens.sign_in.sign_up_link")}
         </Link>
       </p>
+      <AuthLegalFooter />
     </AuthShell>;
 }
 

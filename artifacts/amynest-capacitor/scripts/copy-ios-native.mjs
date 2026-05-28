@@ -9,6 +9,7 @@ const appDir = resolve(root, "ios/App/App");
 const copies = [
   ["AmyNestFcmBridge.swift", "AmyNestFcmBridge.swift"],
   ["GoogleService-Info.plist", "GoogleService-Info.plist"],
+  ["AmyNest.entitlements", "App.entitlements"],
   ["BounceDisable.swift", "BounceDisable.swift"],
   ["MicPermissionPlugin.swift", "MicPermissionPlugin.swift"],
 ];
