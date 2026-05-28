@@ -39,6 +39,18 @@ export * from "./platform-health";
 export * from "./retention-cohorts";
 export * from "./data-lifecycle";
 export * from "./learning-simulator";
+export * from "./adaptive-onboarding";
+export * from "./first-session-flow";
+export * from "./premium-conversion";
+export * from "./parent-confidence";
+export * from "./learning-effectiveness";
+export * from "./developmental-pacing";
+export * from "./recommendation-explanations";
+export * from "./recommendation-audits";
+export * from "./human-review";
+export * from "./family-journey";
+export * from "./optimization-pipeline";
+export * from "./stewardship";
 
 import {
   computeHubJourneyAccess,
