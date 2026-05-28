@@ -19,8 +19,9 @@ describe("navigation-stack", () => {
   it("canonicalizes legacy speech coach aliases", () => {
     expect(normalizeRoutePath("/parenting-hub/speech-coach")).toBe("/speech-coach");
     expect(normalizeRoutePath("/parenting-hub/speech-coach/live")).toBe(
-      "/speech-coach/live",
+      "/speech-coach",
     );
+    expect(normalizeRoutePath("/speech-coach/live")).toBe("/speech-coach");
   });
 
   it("detects duplicate routes", () => {
@@ -40,11 +41,11 @@ describe("navigation-stack", () => {
     ).toBe(false);
   });
 
-  it("replaces when returning to a parent module route", () => {
+  it("replaces when returning to speech coach from legacy live alias", () => {
     expect(
       shouldReplaceNavigation("/speech-coach/live", "/speech-coach"),
     ).toBe(true);
-    expect(getParentRoute("/speech-coach/live")).toBe("/speech-coach");
+    expect(getParentRoute("/speech-coach/live")).toBe("/parenting-hub");
   });
 
   it("detects A-B-A oscillation cycles", () => {

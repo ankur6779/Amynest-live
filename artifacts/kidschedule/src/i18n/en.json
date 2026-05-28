@@ -1946,10 +1946,15 @@
       },
       "cta": {
         "start_practice": "Start Speech Practice",
+        "start_with_amy": "Start with Amy",
         "check_milestones": "Check Milestones",
         "daily_session": "Daily 5-Minute Session",
         "view_progress": "View Progress",
         "ask_amy_coach": "Ask Amy Coach"
+      },
+      "tabs": {
+        "practice_with_amy": "Practice with Amy",
+        "parent_tools": "Parent Tools"
       },
       "view_mode": {
         "child": "Child view",
@@ -2164,7 +2169,26 @@
       },
       "games": {
         "section_title": "Daily Speech Games",
+        "section_subtitle": "Play fun speech games, earn coins, and unlock badges.",
         "rewards_label": "Rewards",
+        "session_title": "{{game}} session",
+        "play_now": "Play now",
+        "play_again": "Play again",
+        "exit": "Exit",
+        "round_progress": "Round {{current}} of {{total}}",
+        "coins_earned": "+{{count}} coins",
+        "total_coins": "{{count}} coins",
+        "badges_count": "{{count}} badges",
+        "badge_unlocked": "Badge unlocked!",
+        "badge_earned": "Badge earned",
+        "new_best": "New best score!",
+        "complete_title": "{{game}} complete!",
+        "complete_score": "Average clarity: {{score}}%",
+        "played_count_one": "Played {{count}} time",
+        "played_count_other": "Played {{count}} times",
+        "played_count": "Played {{count}} times",
+        "best_score": "Best: {{score}}%",
+        "earn_up_to": "Earn up to {{count}} coins per round",
         "stars_one": "{{count}} star",
         "stars_other": "{{count}} stars",
         "unlock_badge": "Unlock badge",

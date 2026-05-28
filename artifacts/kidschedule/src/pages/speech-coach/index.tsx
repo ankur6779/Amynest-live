@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { AppLink } from "@/components/app-link";
 import { useTranslation } from "react-i18next";
 import { getAuth } from "firebase/auth";
@@ -55,13 +55,20 @@ import {
   type SessionDifficulty,
   PronunciationCompanion,
 } from "./pronunciation-companion";
-import { SpeechGameFlow } from "./speech-game-flow";
+import { SpeechGameFlow, SpeechGameRewardsBar } from "./speech-game-flow";
+import { LiveSpeechCoach } from "./live-speech-coach";
+import { loadSpeechGameRewards } from "./speech-game-rewards";
+import { SPEECH_GAME_THEMES } from "./speech-game-theme";
 import {
   clampClarityScore,
+  getSpeechCoachPageTab,
   getSpeechViewMode,
   isToddlerMonths,
+  parseSpeechCoachPageTab,
+  setSpeechCoachPageTab,
   setSpeechViewMode,
   weakSoundsToHistory,
+  type SpeechCoachPageTab,
   type SpeechViewMode,
 } from "./speech-coach-utils";
 import { usePrimeIosMicrophone } from "@/hooks/use-prime-ios-microphone";
@@ -99,6 +106,59 @@ function scrollToSection(id: string) {
   if (typeof document === "undefined") return;
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function readInitialSpeechCoachTab(): SpeechCoachPageTab {
+  if (typeof window === "undefined") return "practice";
+  const fromUrl = parseSpeechCoachPageTab(
+    new URLSearchParams(window.location.search).get("tab"),
+  );
+  if (new URLSearchParams(window.location.search).has("tab")) return fromUrl;
+  return getSpeechCoachPageTab();
+}
+
+function SpeechCoachTabSwitcher({
+  tab,
+  onChange,
+}: {
+  tab: SpeechCoachPageTab;
+  onChange: (tab: SpeechCoachPageTab) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div
+      className="flex rounded-2xl border border-border bg-muted/40 p-1 gap-1"
+      data-testid="speech-coach-tab-switcher"
+      role="tablist"
+    >
+      <Button
+        type="button"
+        size="sm"
+        variant={tab === "practice" ? "default" : "ghost"}
+        className="flex-1 rounded-xl gap-1.5"
+        role="tab"
+        aria-selected={tab === "practice"}
+        data-testid="speech-tab-practice"
+        onClick={() => onChange("practice")}
+      >
+        <Sparkles className="h-4 w-4" />
+        {t("screens.speech_coach.tabs.practice_with_amy")}
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant={tab === "hub" ? "default" : "ghost"}
+        className="flex-1 rounded-xl gap-1.5"
+        role="tab"
+        aria-selected={tab === "hub"}
+        data-testid="speech-tab-hub"
+        onClick={() => onChange("hub")}
+      >
+        <BarChart3 className="h-4 w-4" />
+        {t("screens.speech_coach.tabs.parent_tools")}
+      </Button>
+    </div>
+  );
 }
 
 /**
@@ -789,6 +849,11 @@ function GamesSection({ child, viewMode }: { child: AnyChild; viewMode: SpeechVi
   const { t } = useTranslation();
   const ageBand = monthsToBand(totalMonths(child));
   const [activeGame, setActiveGame] = useState<SpeechGameId | null>(null);
+  const [rewardsTick, setRewardsTick] = useState(0);
+  const rewards = useMemo(
+    () => loadSpeechGameRewards(child.id),
+    [child.id, rewardsTick],
+  );
   const games = SPEECH_GAMES.filter(
     (g) => !ageBand || g.ageBands.includes(ageBand),
   );
@@ -797,45 +862,92 @@ function GamesSection({ child, viewMode }: { child: AnyChild; viewMode: SpeechVi
     <GatedSection
       anchorId="speech-section-games"
       title={t("screens.speech_coach.games.section_title")}
-      description={t("screens.speech_coach.subtitle")}
+      description={t("screens.speech_coach.games.section_subtitle")}
       icon={<Gamepad2 className="h-5 w-5" />}
     >
       {({ onAction }) => (
-        activeGame ? (
-          <SpeechGameFlow child={child} gameId={activeGame} gameTitle={t(SPEECH_GAMES.find((g) => g.id === activeGame)!.i18nKeyTitle)} viewMode={viewMode} onClose={() => setActiveGame(null)} onAction={onAction} />
-        ) : (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {games.map((g) => (
-          <button
-            key={g.id}
-            type="button"
-            onClick={() => { onAction(); setActiveGame(g.id); }}
-            className="rounded-2xl border border-border bg-card p-3 text-left hover:border-primary/50 transition-colors"
-            data-testid={`speech-game-${g.id}`}
-          >
-            <p className="font-bold text-sm text-foreground">
-              {t(g.i18nKeyTitle)}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-              {t(g.i18nKeyDescription)}
-            </p>
-            <div className="flex items-center gap-1 mt-2 text-amber-600 dark:text-amber-400">{/* audit-ok: amber star = reward affordance, not brand color */}
-              {Array.from({ length: g.rewardStars }).map((_, i) => (
-                <Star key={i} className="h-3.5 w-3.5 fill-current" />
-              ))}
-              <span className="text-[11px] text-muted-foreground ml-1">
-                {t(
-                  g.rewardStars === 1
-                    ? "screens.speech_coach.games.stars_one"
-                    : "screens.speech_coach.games.stars_other",
-                  { count: g.rewardStars },
-                )}
-              </span>
+        <>
+          <SpeechGameRewardsBar key={rewardsTick} childId={child.id} />
+          {activeGame ? (
+            <SpeechGameFlow
+              child={child}
+              gameId={activeGame}
+              gameTitle={t(
+                SPEECH_GAMES.find((g) => g.id === activeGame)!.i18nKeyTitle,
+              )}
+              viewMode={viewMode}
+              onClose={() => setActiveGame(null)}
+              onAction={onAction}
+              onRewardsChange={() => setRewardsTick((n) => n + 1)}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {games.map((g) => {
+                const theme = SPEECH_GAME_THEMES[g.id];
+                const plays = rewards.plays[g.id] ?? 0;
+                const best = rewards.bestScores[g.id];
+                const earnedBadge = rewards.badges.includes(g.badgeId);
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => {
+                      onAction();
+                      setActiveGame(g.id);
+                    }}
+                    className={[
+                      "rounded-2xl border p-3 text-left transition-all hover:scale-[1.01] hover:shadow-md",
+                      theme.cardClass,
+                      earnedBadge ? "ring-2 ring-amber-400/50" : "",
+                    ].join(" ")}
+                    data-testid={`speech-game-${g.id}`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className="text-2xl shrink-0">{theme.emoji}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-sm text-foreground">
+                          {t(g.i18nKeyTitle)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
+                          {t(g.i18nKeyDescription)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <div className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400">
+                        {Array.from({ length: g.rewardStars }).map((_, i) => (
+                          <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                        ))}
+                      </div>
+                      {plays > 0 ? (
+                        <span className="text-[10px] font-bold text-muted-foreground">
+                          {t("screens.speech_coach.games.played_count", {
+                            count: plays,
+                          })}
+                        </span>
+                      ) : null}
+                      {best !== undefined ? (
+                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                          {t("screens.speech_coach.games.best_score", {
+                            score: best,
+                          })}
+                        </span>
+                      ) : null}
+                      {earnedBadge ? (
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] rounded-full"
+                        >
+                          {t("screens.speech_coach.games.badge_earned")}
+                        </Badge>
+                      ) : null}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-          </button>
-        ))}
-      </div>
-        )
+          )}
+        </>
       )}
     </GatedSection>
   );
@@ -1151,7 +1263,13 @@ function ExpertSection({ child }: { child: AnyChild | null }) {
 export default function SpeechCoachPage() {
   usePrimeIosMicrophone();
   const { t } = useTranslation();
-  const [viewMode, setViewMode] = useState<SpeechViewMode>(() => getSpeechViewMode());
+  const [, setLocation] = useLocation();
+  const [viewMode, setViewMode] = useState<SpeechViewMode>(() =>
+    getSpeechViewMode(),
+  );
+  const [pageTab, setPageTab] = useState<SpeechCoachPageTab>(() =>
+    readInitialSpeechCoachTab(),
+  );
   const childrenQuery = useListChildren();
   const childList = (childrenQuery.data ?? []) as AnyChild[];
   const eligible = childList.filter((c) =>
@@ -1160,6 +1278,50 @@ export default function SpeechCoachPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const child =
     eligible.find((c) => c.id === selectedId) ?? eligible[0] ?? null;
+
+  const switchTab = useCallback(
+    (tab: SpeechCoachPageTab) => {
+      setPageTab(tab);
+      setSpeechCoachPageTab(tab);
+      if (typeof window === "undefined") return;
+      const params = new URLSearchParams(window.location.search);
+      if (tab === "hub") params.set("tab", "hub");
+      else params.delete("tab");
+      const qs = params.toString();
+      setLocation(`/speech-coach${qs ? `?${qs}` : ""}`, { replace: true });
+    },
+    [setLocation],
+  );
+
+  if (child && pageTab === "practice") {
+    return (
+      <>
+        {eligible.length > 1 ? (
+          <div className="fixed left-1/2 top-16 z-30 flex -translate-x-1/2 gap-2 rounded-full border border-white/10 bg-black/40 p-1 backdrop-blur-xl">
+            {eligible.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setSelectedId(c.id)}
+                className={[
+                  "rounded-full px-3 py-1 text-xs font-black transition-colors",
+                  child.id === c.id
+                    ? "bg-white text-slate-950"
+                    : "text-white/70 hover:bg-white/10",
+                ].join(" ")}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        <LiveSpeechCoach
+          child={child}
+          onOpenParentTools={() => switchTab("hub")}
+        />
+      </>
+    );
+  }
 
   return (
     <div
@@ -1182,19 +1344,25 @@ export default function SpeechCoachPage() {
         {t("screens.speech_coach.subtitle")}
       </p>
 
+      {child ? (
+        <SpeechCoachTabSwitcher tab={pageTab} onChange={switchTab} />
+      ) : null}
+
       <div
         className="flex flex-wrap gap-2"
         data-testid="speech-coach-cta-row"
       >
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => scrollToSection("speech-section-practice")}
-          data-testid="cta-start-practice"
-        >
-          <Mic className="h-4 w-4" />
-          {t("screens.speech_coach.cta.start_practice")}
-        </Button>
+        {child ? (
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => switchTab("practice")}
+            data-testid="cta-start-practice"
+          >
+            <Sparkles className="h-4 w-4" />
+            {t("screens.speech_coach.cta.start_with_amy")}
+          </Button>
+        ) : null}
         <Button
           type="button"
           size="sm"
@@ -1205,17 +1373,6 @@ export default function SpeechCoachPage() {
           <CheckCircle2 className="h-4 w-4" />
           {t("screens.speech_coach.cta.check_milestones")}
         </Button>
-        <AppLink href="/speech-coach/live" source="speech-coach-live">
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            data-testid="cta-daily-session"
-          >
-            <Mic className="h-4 w-4" />
-            {t("screens.speech_coach.cta.daily_session")}
-          </Button>
-        </AppLink>
         <Button
           type="button"
           size="sm"

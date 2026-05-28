@@ -7,8 +7,9 @@ import { logNavEvent } from "@/lib/navigation-log";
 export type NavMethod = "push" | "replace" | "pop" | "back" | "redirect";
 
 const ROUTE_ALIASES: Record<string, string> = {
-  "/parenting-hub/speech-coach/live": "/speech-coach/live",
+  "/parenting-hub/speech-coach/live": "/speech-coach",
   "/parenting-hub/speech-coach": "/speech-coach",
+  "/speech-coach/live": "/speech-coach",
 };
 
 /** Bottom-tab roots — entering via tab should replace, not stack. */
@@ -37,7 +38,6 @@ export const HUB_MODULE_PREFIXES = [
 ];
 
 const PARENT_ROUTE: Record<string, string> = {
-  "/speech-coach/live": "/speech-coach",
   "/speech-coach": "/parenting-hub",
   "/phonics/test/play": "/phonics",
   "/phonics/test": "/phonics",
