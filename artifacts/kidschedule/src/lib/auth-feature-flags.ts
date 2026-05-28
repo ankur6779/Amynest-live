@@ -72,7 +72,9 @@ export function shouldShowGoogleSignIn(): boolean {
 /** Facebook Sign-In — web, PWA, Play WebView Android, and gated Capacitor iOS. */
 export function shouldShowFacebookSignIn(): boolean {
   if (!ENABLE_FACEBOOK_SIGN_IN) return false;
-  if (isCapacitorIos()) return ENABLE_CAPACITOR_IOS_FACEBOOK_SIGN_IN;
+  if (isCapacitorIos()) {
+    return ENABLE_CAPACITOR_IOS_FACEBOOK_SIGN_IN && isCapacitorPluginAvailable("FacebookLogin");
+  }
   return true;
 }
 
@@ -82,5 +84,14 @@ export function shouldUseCapacitorIosGoogleAuth(): boolean {
     isCapacitorIos() &&
     ENABLE_CAPACITOR_IOS_GOOGLE_SIGN_IN &&
     isCapacitorPluginAvailable("GoogleAuth")
+  );
+}
+
+/** Native FacebookLogin plugin — Capacitor iOS only, when explicitly enabled. */
+export function shouldUseCapacitorIosFacebookAuth(): boolean {
+  return (
+    isCapacitorIos() &&
+    ENABLE_CAPACITOR_IOS_FACEBOOK_SIGN_IN &&
+    isCapacitorPluginAvailable("FacebookLogin")
   );
 }

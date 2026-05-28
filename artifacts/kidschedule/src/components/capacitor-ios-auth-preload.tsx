@@ -8,6 +8,7 @@ export function CapacitorIosAuthPreload() {
     void import("@/pages/sign-in");
     void import("@/lib/apple-auth");
     void import("@capacitor-community/apple-sign-in");
+    void import("@capacitor-community/facebook-login");
   }, []);
   return null;
 }

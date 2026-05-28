@@ -31,19 +31,23 @@ describe("auth-feature-flags", () => {
   });
 
   it("shows OAuth providers and hides phone OTP in Capacitor iOS", () => {
-    setCapacitorPlatform("ios", ["GoogleAuth"]);
+    setCapacitorPlatform("ios", ["GoogleAuth", "FacebookLogin"]);
 
     expect(shouldShowGoogleSignIn()).toBe(true);
     expect(shouldShowFacebookSignIn()).toBe(true);
     expect(shouldShowPhoneOtp()).toBe(false);
   });
 
-  it("hides Google in Capacitor iOS until the native plugin is registered", () => {
-    setCapacitorPlatform("ios");
+  it("hides iOS native providers until their plugins are registered", () => {
+    setCapacitorPlatform("ios", ["FacebookLogin"]);
 
     expect(shouldShowGoogleSignIn()).toBe(false);
     expect(shouldShowFacebookSignIn()).toBe(true);
     expect(shouldShowPhoneOtp()).toBe(false);
+
+    setCapacitorPlatform("ios", ["GoogleAuth"]);
+    expect(shouldShowGoogleSignIn()).toBe(true);
+    expect(shouldShowFacebookSignIn()).toBe(false);
   });
 
   it("keeps phone OTP visible outside Capacitor iOS", () => {

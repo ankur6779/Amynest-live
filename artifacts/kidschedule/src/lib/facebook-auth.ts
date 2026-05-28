@@ -8,12 +8,14 @@ import {
 } from "firebase/auth";
 import { ensureFirebaseAuthPersistence, getFirebaseAuth } from "@/lib/firebase";
 import { isCapacitorIosShell, isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+import { shouldUseCapacitorIosFacebookAuth } from "@/lib/auth-feature-flags";
 import {
   finalizeOAuthCredentialSignIn,
   finishOAuthLoginFlow,
 } from "@/lib/oauth-session-finalize";
 
 const FACEBOOK_TAG = "[amynest:facebook-auth]";
+const FACEBOOK_APP_ID = "2514850758945614";
 
 function buildFacebookOAuthProvider(): OAuthProvider {
   const provider = new OAuthProvider("facebook.com");
@@ -98,8 +100,32 @@ export async function loginWithFacebookRedirect(): Promise<void> {
   await signInWithRedirect(auth, provider);
 }
 
-async function loginCapacitorIosFacebook(): Promise<void> {
-  await loginWithFacebookRedirect();
+let nativeFacebookInitDone = false;
+
+async function initNativeFacebookLogin(): Promise<void> {
+  if (nativeFacebookInitDone) return;
+  const { FacebookLogin } = await import("@capacitor-community/facebook-login");
+  await FacebookLogin.initialize({ appId: FACEBOOK_APP_ID });
+  nativeFacebookInitDone = true;
+}
+
+async function loginCapacitorIosFacebook(): Promise<string> {
+  await initNativeFacebookLogin();
+  const { FacebookLogin } = await import("@capacitor-community/facebook-login");
+  const result = await FacebookLogin.login({
+    permissions: ["email", "public_profile"],
+    tracking: "enabled",
+  });
+  const accessToken = result.accessToken?.token?.trim();
+  if (!accessToken) {
+    throw Object.assign(new Error("Facebook sign-in did not return an access token."), {
+      code: "app/facebook-no-access-token",
+    });
+  }
+  await signInFirebaseWithFacebookAccessToken(accessToken);
+  const dest = await finishOAuthLoginFlow(undefined, { skipNavigation: true });
+  console.info(`${FACEBOOK_TAG} capacitor iOS facebook sign-in success`, { dest });
+  return dest;
 }
 
 async function loginWithWebFallback(): Promise<string | void> {
@@ -145,8 +171,16 @@ export async function handleFacebookLogin(): Promise<string | void> {
   if (isNativeAmyNestAndroidWrapper()) {
     return loginAndroidWebViewFacebook();
   }
-  if (isCapacitorIosShell()) {
+  if (shouldUseCapacitorIosFacebookAuth()) {
     return loginCapacitorIosFacebook();
+  }
+  if (isCapacitorIosShell()) {
+    throw Object.assign(
+      new Error(
+        "Facebook Sign-In requires the latest AmyNest iOS app build. Update the app, then try again.",
+      ),
+      { code: "app/facebook-ios-plugin-unavailable" },
+    );
   }
   return loginWithWebFallback();
 }

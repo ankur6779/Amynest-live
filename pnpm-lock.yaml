@@ -108,6 +108,9 @@ importers:
       '@capacitor-community/apple-sign-in':
         specifier: ^6.0.0
         version: 6.0.0(@capacitor/core@6.2.1)
+      '@capacitor-community/facebook-login':
+        specifier: ^6.1.2
+        version: 6.1.2
       '@capacitor/android':
         specifier: ^6.2.0
         version: 6.2.1(@capacitor/core@6.2.1)
@@ -401,6 +404,9 @@ importers:
       '@capacitor-community/apple-sign-in':
         specifier: ^6.0.0
         version: 6.0.0(@capacitor/core@6.2.1)
+      '@capacitor-community/facebook-login':
+        specifier: ^6.1.2
+        version: 6.1.2
       '@capacitor/app':
         specifier: ^6.0.0
         version: 6.0.3(@capacitor/core@6.2.1)
@@ -1926,6 +1932,10 @@ packages:
     resolution: {integrity: sha512-NDySxo/cn7SMezV3LiKaGrgxmYFsbrBFsRyVFXlew2E9fe9CmdeVdGkNFdpJJztVENe4DromWmL/rWpSh42FsA==}
     peerDependencies:
       '@capacitor/core': ^6.0.0
+
+  '@capacitor-community/facebook-login@6.1.2':
+    resolution: {integrity: sha512-isqT0wXeREUQGhbMgLBWVQdVbiolCfxzeEk1IO+In74Y3kflIqWlUtA46MymW2ryGXsnWYTDJkY9VM2nuqNFjg==}
+    engines: {node: '>=18.0.0'}
 
   '@capacitor/android@6.2.1':
     resolution: {integrity: sha512-8gd4CIiQO5LAIlPIfd5mCuodBRxMMdZZEdj8qG8m+dQ1sQ2xyemVpzHmRK8qSCHorsBUCg3D62j2cp6bEBAkdw==}
@@ -9452,6 +9462,10 @@ snapshots:
       '@capacitor/core': 6.2.1
       '@types/scriptjs': 0.0.2
       scriptjs: 2.5.9
+
+  '@capacitor-community/facebook-login@6.1.2':
+    dependencies:
+      '@capacitor/core': 6.2.1
 
   '@capacitor/android@6.2.1(@capacitor/core@6.2.1)':
     dependencies:

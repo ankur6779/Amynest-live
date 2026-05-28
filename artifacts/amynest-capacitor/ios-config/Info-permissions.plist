@@ -146,8 +146,35 @@
         <string>com.amynest.app</string>
         <string>capacitor</string>
         <string>com.googleusercontent.apps.573340015027-nhb24qka9h7gr06ri2muu9a7mrpf2c54</string>
+        <string>fb2514850758945614</string>
       </array>
     </dict>
+  </array>
+
+  <!-- ── Facebook native login ── -->
+  <key>FacebookAppID</key>
+  <string>2514850758945614</string>
+  <key>FacebookClientToken</key>
+  <string>e4e7c6cb97ae9949b50f349257baff51</string>
+  <key>FacebookDisplayName</key>
+  <string>AmyNest</string>
+  <key>LSApplicationQueriesSchemes</key>
+  <array>
+    <string>fbapi</string>
+    <string>fbapi20130214</string>
+    <string>fbapi20130410</string>
+    <string>fbapi20130702</string>
+    <string>fbapi20131010</string>
+    <string>fbapi20131219</string>
+    <string>fbapi20140410</string>
+    <string>fbapi20140116</string>
+    <string>fbapi20150313</string>
+    <string>fbapi20150629</string>
+    <string>fbapi20160328</string>
+    <string>fbauth</string>
+    <string>fb-messenger-share-api</string>
+    <string>fbauth2</string>
+    <string>fbshareextension</string>
   </array>
 
   <!-- ── Status bar ── -->

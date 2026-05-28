@@ -116,6 +116,8 @@ export function prettyAuthError(err: unknown): string {
       return "Sign-in is not ready in this app. Close and reopen the app, then try again.";
     case "app/facebook-bridge-unavailable":
       return "Facebook Sign-In is not ready in this app. Update from the Play Store, then try again.";
+    case "app/facebook-ios-plugin-unavailable":
+      return "Facebook Sign-In needs the latest AmyNest iOS app build. Update the app, then try again.";
     case "app/facebook-firebase-credential-failed":
       return "Facebook sign-in could not be verified. Check that Facebook is enabled in Firebase Authentication, then try again.";
     case "app/google-native-required":

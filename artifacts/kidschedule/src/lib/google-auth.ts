@@ -36,7 +36,7 @@ export function getGoogleIosClientId(): string | undefined {
   const fromEnv = (
     import.meta.env.VITE_GOOGLE_IOS_CLIENT_ID as string | undefined
   )?.trim();
-  return fromEnv || undefined;
+  return fromEnv || googleAuthDefaults.iosClientId;
 }
 
 export function getGoogleReversedClientId(): string {
@@ -138,23 +138,32 @@ export async function loginWithGooglePopup(): Promise<string> {
 }
 
 let nativeGoogleInitDone = false;
+let nativeGoogleInitPromise: Promise<void> | null = null;
 
 export async function initNativeGoogleAuth(): Promise<void> {
   if (!shouldUseCapacitorGoogleAuth() || nativeGoogleInitDone) return;
+  if (nativeGoogleInitPromise) return nativeGoogleInitPromise;
 
-  const { GoogleAuth } = await import("@codetrix-studio/capacitor-google-auth");
-  const webClientId = getGoogleWebClientId();
-  const iosClientId = getGoogleIosClientId();
+  nativeGoogleInitPromise = (async () => {
+    const { GoogleAuth } = await import("@codetrix-studio/capacitor-google-auth");
+    const webClientId = getGoogleWebClientId();
+    const iosClientId = getGoogleIosClientId();
 
-  GoogleAuth.initialize({
-    clientId: webClientId,
-    ...(iosClientId ? { iosClientId } : {}),
-    scopes: ["profile", "email"],
-    grantOfflineAccess: false,
+    await GoogleAuth.initialize({
+      clientId: iosClientId || webClientId,
+      ...(iosClientId ? { iosClientId } : {}),
+      scopes: ["profile", "email"],
+      grantOfflineAccess: false,
+    });
+
+    nativeGoogleInitDone = true;
+    console.info(`${GOOGLE_TAG} native GoogleAuth initialized`);
+  })().catch((err) => {
+    nativeGoogleInitPromise = null;
+    throw err;
   });
 
-  nativeGoogleInitDone = true;
-  console.info(`${GOOGLE_TAG} native GoogleAuth initialized`);
+  return nativeGoogleInitPromise;
 }
 
 async function finalizeGoogleCredentialSignIn(
