@@ -11,7 +11,8 @@ import {
   resolvePhonicsSequenceKeys,
 } from "@workspace/phonics-sounds";
 import { audioManager } from "@/lib/audio-manager";
-import { warmLocalCacheFromUrl } from "@/lib/local-tts-cache";
+import { getGlobalCachedAudioForPlayback } from "@/lib/global-audio-cache";
+import { getLocalCachedAudioUrl, warmLocalCacheFromUrl } from "@/lib/local-tts-cache";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import { logAudioHealthSuccess } from "@/lib/audio-health";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
@@ -52,6 +53,37 @@ export type PlayPhonicsStaticResult =
 
 function resolvePlayableUrl(audioKey: string): string {
   return getPhonicsStaticAudioUrl(audioKey);
+}
+
+type ResolvedPlayUrl = { url: string; cleanup?: () => void; prewarmed?: HTMLAudioElement };
+
+/** Prefer global warm cache → IndexedDB blob → HTTP URL. */
+async function resolveBestPlayUrl(audioKey: string): Promise<ResolvedPlayUrl> {
+  const key = (audioKey ?? "").trim().toLowerCase();
+  const cacheKey = getPhonicsLetterCacheKey(key);
+
+  const warmed = getGlobalCachedAudioForPlayback(cacheKey);
+  if (warmed?.src) {
+    return { url: warmed.src, prewarmed: warmed };
+  }
+
+  const blobUrl = await getLocalCachedAudioUrl(cacheKey);
+  if (blobUrl) {
+    return {
+      url: blobUrl,
+      cleanup: () => URL.revokeObjectURL(blobUrl),
+    };
+  }
+
+  return { url: resolvePlayableUrl(key) };
+}
+
+function getPlayableAudio(resolved: ResolvedPlayUrl, playUrl: string): HTMLAudioElement {
+  if (resolved.prewarmed) {
+    resolved.prewarmed.currentTime = 0;
+    return resolved.prewarmed;
+  }
+  return audioManager.getCached(playUrl, { forceReload: false });
 }
 
 function blendEndTimeoutMs(audio: HTMLAudioElement): number {
@@ -103,47 +135,52 @@ export async function playBlendPhonemeClip(
   }
 
   recordTtsUserGesture();
-  const url = resolvePlayableUrl(key);
-  const audio = audioManager.create(url);
+  const resolved = await resolveBestPlayUrl(key);
+  const url = resolved.url;
+  const audio = getPlayableAudio(resolved, url);
   if (options?.playbackRate && options.playbackRate !== 1) {
     audio.playbackRate = options.playbackRate;
   }
 
-  const started = await audioManager.play(
-    audio,
-    {
-      proxyUrl: url,
-      source: "cvc-blend-phoneme",
-      phrase: key,
-      channel: "ui",
-      interrupt: true,
-    },
-    {
-      channel: "ui",
-      interrupt: true,
-      maxRetries: 0,
-      skipForceRestart: true,
-    },
-  );
+  try {
+    const started = await audioManager.play(
+      audio,
+      {
+        proxyUrl: url,
+        source: "cvc-blend-phoneme",
+        phrase: key,
+        channel: "ui",
+        interrupt: true,
+      },
+      {
+        channel: "ui",
+        interrupt: true,
+        maxRetries: 0,
+        skipForceRestart: true,
+      },
+    );
 
-  if (!started || options?.isCancelled?.()) {
-    return { ok: false, audioKey: key, error: "phonics_playback_failed" };
+    if (!started || options?.isCancelled?.()) {
+      return { ok: false, audioKey: key, error: "phonics_playback_failed" };
+    }
+
+    const ended = await waitForClipEnd(
+      audio,
+      () => options?.isCancelled?.() ?? false,
+      blendEndTimeoutMs(audio),
+    );
+
+    if (ended) {
+      void warmLocalCacheFromUrl(getPhonicsLetterCacheKey(key), resolvePlayableUrl(key));
+      logAudioHealthSuccess({ layer: "static", fallbackUsed: false });
+      return { ok: true, audioKey: key, url };
+    }
+
+    logPhonicsPlaybackFailure(key, "blend_clip_end_failed");
+    return { ok: false, audioKey: key, error: "blend_clip_end_failed" };
+  } finally {
+    resolved.cleanup?.();
   }
-
-  const ended = await waitForClipEnd(
-    audio,
-    () => options?.isCancelled?.() ?? false,
-    blendEndTimeoutMs(audio),
-  );
-
-  if (ended) {
-    void warmLocalCacheFromUrl(getPhonicsLetterCacheKey(key), url);
-    logAudioHealthSuccess({ layer: "static", fallbackUsed: false });
-    return { ok: true, audioKey: key, url };
-  }
-
-  logPhonicsPlaybackFailure(key, "blend_clip_end_failed");
-  return { ok: false, audioKey: key, error: "blend_clip_end_failed" };
 }
 
 async function playStaticMp3(
@@ -153,11 +190,14 @@ async function playStaticMp3(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   recordTtsUserGesture();
 
-  const tryPlay = async (playUrl: string): Promise<boolean> => {
+  const resolved = await resolveBestPlayUrl(key);
+  const primaryUrl = resolved.url || url;
+
+  const tryPlay = async (playUrl: string, useResolved: ResolvedPlayUrl): Promise<boolean> => {
     if (options?.isCancelled?.()) return false;
 
     if (options?.waitUntilEnd) {
-      const audio = audioManager.create(playUrl);
+      const audio = getPlayableAudio(useResolved, playUrl);
       if (options.playbackRate && options.playbackRate !== 1) {
         audio.playbackRate = options.playbackRate;
       }
@@ -191,30 +231,36 @@ async function playStaticMp3(
       return ended.ok;
     }
 
-    return audioManager.playUrl(
-      playUrl,
-      { source: "phonics-static", phrase: key },
+    const audio = getPlayableAudio(useResolved, playUrl);
+    return audioManager.play(
+      audio,
+      { proxyUrl: playUrl, source: "phonics-static", phrase: key, channel: "ui", interrupt: true },
       { channel: "ui", interrupt: true },
     );
   };
 
-  if (await tryPlay(url)) {
-    void warmLocalCacheFromUrl(getPhonicsLetterCacheKey(key), url);
-    logAudioHealthSuccess({ layer: "static", fallbackUsed: false });
-    return { ok: true };
-  }
+  try {
+    if (await tryPlay(primaryUrl, resolved)) {
+      void warmLocalCacheFromUrl(getPhonicsLetterCacheKey(key), resolvePlayableUrl(key));
+      logAudioHealthSuccess({ layer: "static", fallbackUsed: false });
+      return { ok: true };
+    }
 
-  if (options?.blendSequence) {
+    if (options?.blendSequence) {
+      return { ok: false, error: "phonics_playback_failed" };
+    }
+
+    const httpUrl = resolvePlayableUrl(key);
+    const bust = `${httpUrl}${httpUrl.includes("?") ? "&" : "?"}cb=1`;
+    if (await tryPlay(bust, { url: bust })) {
+      logAudioHealthSuccess({ layer: "static", fallbackUsed: false });
+      return { ok: true };
+    }
+
     return { ok: false, error: "phonics_playback_failed" };
+  } finally {
+    resolved.cleanup?.();
   }
-
-  const bust = `${url}${url.includes("?") ? "&" : "?"}cb=1`;
-  if (await tryPlay(bust)) {
-    logAudioHealthSuccess({ layer: "static", fallbackUsed: false });
-    return { ok: true };
-  }
-
-  return { ok: false, error: "phonics_playback_failed" };
 }
 
 export async function playPhonicsStaticAudio(
