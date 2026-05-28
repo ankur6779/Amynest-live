@@ -3289,7 +3289,7 @@
       "at_bedtime_for_a_meaningful_connection_moment": "at bedtime for a meaningful connection moment"
     },
     "learning_load_more": {
-      "button": "Amy se aur generate karo",
+      "button": "Generate More with Amy",
       "today": " left today",
       "free_left": " free left",
       "upgrade_hint": "Free AI generation used — upgrade for more, or try again if shared content is available.",
@@ -3815,6 +3815,13 @@
       "try_again": "Try again",
       "search_worksheets": "Search worksheets…",
       "worksheet": "worksheet",
+      "amy_tips_title": "Amy's tips for today",
+      "amy_tip_label": "Amy says",
+      "tip_print_together": "Download a worksheet, print it on A4 paper, and sit with your child for 10–15 minutes. Let them pick crayons or pencils — praise their effort, not perfection!",
+      "tip_short_session": "Print one sheet at a time. Keep it short and fun — when they're done, celebrate together and come back tomorrow for a fresh one.",
+      "tip_praise_effort": "Choose a quiet spot with good light. Help only when they ask — letting them try on their own builds real confidence.",
+      "tip_choose_sheet": "After downloading, ask your child which worksheet they want first. A small choice makes practice feel like play, not homework.",
+      "tip_keep_fun": "Keep sessions to about 10–15 minutes. If they lose interest, stop early — a happy finish today means they'll want to try again tomorrow.",
       "amynest": "AmyNest",
       "all_worksheets_downloaded": "All worksheets downloaded 🎉",
       "you_ve_gone_through_the_whole_collection_new_worksheets_adde": "You've gone through the whole collection. New worksheets added regularly!",

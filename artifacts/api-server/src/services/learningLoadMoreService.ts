@@ -40,6 +40,7 @@ import type {
 } from "@workspace/olympiad";
 import { ageBandForLifeSkills } from "@workspace/life-skills";
 import { logger } from "../lib/logger.js";
+import { assertLearningZoneEnglishItems } from "../lib/learning-zone-english.js";
 
 export type LearningLoadMoreSection = AiContentNamespace;
 
@@ -681,6 +682,31 @@ export async function executeLearningLoadMore(opts: {
   const allNew = freshItems.filter(Boolean);
   if (allNew.length === 0) {
     return { ok: false, status: 502, error: "ai_empty" };
+  }
+
+  if (!assertLearningZoneEnglishItems(itemsPayload)) {
+    logger.warn(`learning load-more rejected non-English payload for ${section}`);
+    if (cachedItems.length > 0) {
+      const usage = await getLoadMoreUsageInfo(opts.userId, section);
+      const partialKey =
+        section === "smart_study" || section === "olympiad"
+          ? "questions"
+          : section === "smart_math_tricks"
+            ? "tricks"
+            : section === "spelling" || section === "phonics"
+              ? "words"
+              : "tasks";
+      return {
+        ok: true,
+        section,
+        source: "cache",
+        fromCache: true,
+        charged: false,
+        usage,
+        items: { [partialKey]: cachedItems },
+      };
+    }
+    return { ok: false, status: 502, error: "ai_non_english" };
   }
 
   await saveCachedItems({

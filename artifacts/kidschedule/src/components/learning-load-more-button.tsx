@@ -47,7 +47,7 @@ export function LearningLoadMoreButton({
     if (result?.items) {
       onLoaded(result.items);
       // Safe pattern: warm TTS only for items the user just loaded (max 8 texts).
-      prefetchLoadMoreAudio(authFetch, section, result.items);
+      prefetchLoadMoreAudio(authFetch, section, result.items, params);
     }
   };
 

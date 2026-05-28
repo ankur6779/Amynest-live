@@ -275,15 +275,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         val (deepLink, category) = extractNotificationTapFromIntent(intent)
-        if (deepLink.isNullOrBlank() && category.isNullOrBlank()) return
+        if (!hasNotificationTapPayload(deepLink, category)) return
 
         val resolvedDeepLink = deepLink?.takeIf { it.isNotBlank() } ?: ""
-        val resolvedCategory = category?.takeIf { it.isNotBlank() } ?: "routine"
+        val resolvedCategory = category?.takeIf { it.isNotBlank() }
         val url = deepLinkToUrl(resolvedDeepLink, resolvedCategory)
         Log.d(TAG, "Deep link navigation (onNewIntent) → $url category=$resolvedCategory")
 
         // App is already running — call onNotificationTap directly
-        val js = buildNotifTapJs(resolvedDeepLink, resolvedCategory)
+        val js = buildNotifTapJs(resolvedDeepLink, resolvedCategory ?: "")
         webView.post {
             // Navigate first, then signal the web page
             webView.loadUrl(url)
@@ -291,11 +291,23 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack()
-        } else {
+        if (!::webView.isInitialized) {
             super.onBackPressed()
+            return
+        }
+        webView.evaluateJavascript(
+            "(function(){try{return typeof window.__amynestGoBack==='function'&&" +
+                "window.__amynestGoBack()?'true':'false';}catch(e){return 'false';}})();",
+        ) { result ->
+            val handled = result == "\"true\"" || result == "true"
+            if (handled) return@evaluateJavascript
+            if (webView.canGoBack()) {
+                webView.goBack()
+            } else {
+                super.onBackPressed()
+            }
         }
     }
 
@@ -395,14 +407,14 @@ class MainActivity : AppCompatActivity() {
                 authBridge?.deliverPendingFacebookAuthIfAny()
 
                 val dl = pendingNotifDeepLink
-                val cat = pendingNotifCategory ?: "routine"
+                val cat = pendingNotifCategory
                 // Clear so subsequent page loads don't re-fire.
                 pendingNotifDeepLink = null
                 pendingNotifCategory = null
-                if (dl.isNullOrBlank() && cat.isBlank()) return
-                val js = buildNotifTapJs(dl ?: "", cat)
+                if (!hasNotificationTapPayload(dl, cat)) return
+                val js = buildNotifTapJs(dl ?: "", cat ?: "")
                 view.evaluateJavascript(js, null)
-                Log.d(TAG, "Delivered onNotificationTap → deepLink=${dl ?: ""} category=$cat")
+                Log.d(TAG, "Delivered onNotificationTap → deepLink=${dl ?: ""} category=${cat ?: ""}")
             }
         }
 
@@ -471,9 +483,16 @@ class MainActivity : AppCompatActivity() {
 
     // ── URL construction ─────────────────────────────────────────────────────
 
+    /** True only when the launch intent carries notification tap extras. */
+    private fun hasNotificationTapPayload(
+        deepLink: String?,
+        category: String?,
+    ): Boolean =
+        !deepLink.isNullOrBlank() || !category.isNullOrBlank()
+
     private fun buildLaunchUrl(intent: Intent?): String {
         val (deepLink, category) = extractNotificationTapFromIntent(intent)
-        if (!deepLink.isNullOrBlank() || !category.isNullOrBlank()) {
+        if (hasNotificationTapPayload(deepLink, category)) {
             return deepLinkToUrl(
                 deepLink?.takeIf { it.isNotBlank() } ?: "",
                 category?.takeIf { it.isNotBlank() },

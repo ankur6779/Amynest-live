@@ -10,6 +10,7 @@ import { initCapacitorPushTapHandling } from "./lib/native-push-bridge";
 import { renderCriticalFallbackHtml } from "@/components/app-fallback-ui";
 import { showProductionCrashOverlay } from "@/lib/production-crash-overlay";
 import { initNativeShell } from "./lib/native-shell";
+import { installNativeHardwareBackHandler } from "@/lib/navigation-orchestrator";
 import { getAppApiBaseOrigin } from "./lib/api";
 import {
   installGlobalErrorHandlers,
@@ -115,6 +116,7 @@ async function bootstrap(): Promise<void> {
       // Block mount until deploy-version sync finishes — prevents stale lazy chunks after release.
       await syncPwaCacheAndVersion();
       initNativeShell();
+      installNativeHardwareBackHandler();
       void initCapacitorPushTapHandling();
 
       const apiOrigin = getAppApiBaseOrigin();

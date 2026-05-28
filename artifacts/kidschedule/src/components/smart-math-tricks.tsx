@@ -31,6 +31,11 @@ import {
   type SceneCompletionSummary,
 } from "@/components/math-animation";
 import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import {
+  scheduleLearningZoneAudioPrewarm,
+  buildLearningZoneAudioStateKey,
+} from "@/lib/learning-zone-audio-prewarm";
 import { audioManager } from "@/lib/audio-manager";
 import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
 
@@ -916,12 +921,34 @@ export function SmartMathTricks({
   const {
     t
   } = useTranslation();
+  const authFetch = useAuthFetch();
   // Ages 2–8 (2+ in months via page shell)
   if (ageYears < 2 || ageYears > 8) return null;
   const trickAge: TrickAge = ageYears <= 6 ? "4-6" : "6-8";
   const pool = TRICKS.filter(t => t.age === trickAge);
   const [bonusTricks, setBonusTricks] = useState<MathTrick[]>([]);
   const fullPool = useMemo(() => [...pool, ...bonusTricks], [pool, bonusTricks]);
+
+  useEffect(() => {
+    const texts = fullPool.flatMap((trick) => [
+      trick.audioText,
+      trick.trick,
+      trick.practiceQ.question,
+      trick.practiceQ.hint,
+    ]);
+    scheduleLearningZoneAudioPrewarm(authFetch, {
+      module: "smart_math_tricks",
+      texts,
+      sequenceTexts: fullPool.map((t) => t.audioText),
+      ageGroup: trickAge,
+      stateKey: buildLearningZoneAudioStateKey({
+        module: "smart_math_tricks",
+        ageGroup: trickAge,
+        revision: fullPool.length,
+      }),
+    });
+  }, [authFetch, fullPool, trickAge]);
+
   const [tab, setTab] = useState<Tab>("today");
   const [mathSt, setMathSt] = useState(() => loadMathState(childName));
   const persistState = useCallback(
@@ -1019,7 +1046,19 @@ export function SmartMathTricks({
 
   const handleBonusLoaded = useCallback((tricks: MathTrick[]) => {
     setBonusTricks((prev) => [...prev, ...tricks]);
-  }, []);
+    const texts = tricks.flatMap((trick) => [trick.audioText, trick.trick, trick.practiceQ.question]);
+    scheduleLearningZoneAudioPrewarm(authFetch, {
+      module: "smart_math_tricks",
+      texts,
+      sequenceTexts: texts,
+      ageGroup: trickAge,
+      stateKey: buildLearningZoneAudioStateKey({
+        module: "smart_math_tricks",
+        ageGroup: trickAge,
+        revision: `bonus-${Date.now()}`,
+      }),
+    });
+  }, [authFetch, trickAge]);
 
   const tabs: { key: Tab; labelKey: string; icon: string }[] = [
     { key: "today", labelKey: "tab_today", icon: "📅" },

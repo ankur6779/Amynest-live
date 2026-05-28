@@ -3,6 +3,10 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useMountedRef } from "@/hooks/use-safe-async";
 import { safeAuthFetchJson } from "@/lib/safe-auth-fetch-json";
 import { pregenerateTtsTexts } from "@/lib/pregenerate-tts";
+import {
+  scheduleLearningZoneAudioPrewarm,
+  buildLearningZoneAudioStateKey,
+} from "@/lib/learning-zone-audio-prewarm";
 import { resolvePhonicsPlaybackText } from "@/lib/phonics-audio";
 import {
   PHONICS_LEVELS,
@@ -336,6 +340,17 @@ export function usePhonicsData(
           }),
         );
         pregenerateTtsTexts(authFetch, pregenTexts, "phonics");
+        scheduleLearningZoneAudioPrewarm(authFetch, {
+          module: "phonics",
+          texts: pregenTexts,
+          sequenceTexts: pregenTexts,
+          mode: "phonics",
+          stateKey: buildLearningZoneAudioStateKey({
+            module: "phonics",
+            ageGroup: String(childId ?? ""),
+            revision: data?.journeyMeta?.journeyDay ?? "catalog",
+          }),
+        });
 
         // Best-effort replay: for any item where local is *ahead* of the
         // server, fire the missing writes. We don't await — failures are

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { chatCompletionWithTimeout } from "../openai-chat.js";
+import { appendLearningZoneEnglishRule } from "../../lib/learning-zone-english.js";
 import type {
   LifeSkillAgeBand,
   LifeSkillCategory,
@@ -131,8 +132,9 @@ Output JSON: {"words":["cat","map",...]}`;
       messages: [
         {
           role: "system",
-          content:
+          content: appendLearningZoneEnglishRule(
             "You generate decodable CVC words for phonics practice. Reply with JSON only.",
+          ),
         },
         { role: "user", content: prompt },
       ],

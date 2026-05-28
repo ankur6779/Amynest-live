@@ -15,6 +15,7 @@ const TILE_NAV: Record<string, HubDeepLinkTarget> = {
   "daily-puzzle": { group: "creativity", tileId: "activities" },
   "daily-story": { group: "creativity", tileId: "activities" },
   phonics: { group: "learning", tileId: "phonics" },
+  "event-prep": { group: "creativity", tileId: "event-prep" },
   "story-hub": { group: "stories", tileId: "story-hub" },
 };
 

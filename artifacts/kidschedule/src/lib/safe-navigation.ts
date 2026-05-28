@@ -6,15 +6,17 @@ import { useLocation } from "wouter";
 import { logNavError, logNavEvent } from "@/lib/navigation-log";
 import {
   getParentRoute,
-  getPreviousRoute,
   isSameRoute,
   isTabRootRoute,
   normalizeRoutePath,
-  recordRouteTransition,
   shouldReplaceNavigation,
   wouldCreateCycle,
   type NavMethod,
 } from "@/lib/navigation-stack";
+import {
+  getSanitizedPreviousRoute,
+  recordSanitizedTransition,
+} from "@/lib/route-history-manager";
 
 const DEFAULT_DEBOUNCE_MS = 300;
 const navInFlight = new Map<string, number>();
@@ -97,7 +99,7 @@ export function appNavigate(
     source: options?.source,
   });
 
-  recordRouteTransition(current, target, replace ? "replace" : "push");
+  recordSanitizedTransition(current, target, replace ? "replace" : "push");
   navigate(target, { replace });
   return true;
 }
@@ -108,7 +110,7 @@ export function smartBack(
   source = "smart-back",
 ): void {
   const currentNorm = normalizeRoutePath(current);
-  const previous = getPreviousRoute();
+  const previous = getSanitizedPreviousRoute();
 
   logNavEvent("nav-back", { from: currentNorm, previous, source });
 
@@ -131,7 +133,7 @@ export function smartBack(
     return;
   }
 
-  const stackPrevious = getPreviousRoute();
+  const stackPrevious = getSanitizedPreviousRoute();
   if (
     stackPrevious &&
     !isSameRoute(stackPrevious, currentNorm) &&

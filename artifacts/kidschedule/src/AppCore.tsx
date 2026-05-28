@@ -54,6 +54,7 @@ import { CapacitorIosAuthPreload } from "@/components/capacitor-ios-auth-preload
 import { AuthNavigationBridge } from "@/components/auth-navigation-bridge";
 import { CapacitorRoutePreload } from "@/components/capacitor-route-preload";
 import { NavigationHistoryGuard } from "@/components/navigation-history-guard";
+import { NavigationOrchestratorBridge } from "@/components/navigation-orchestrator-bridge";
 import { isCapacitorIosShell } from "@/lib/device-lite";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { devLog } from "@/lib/dev-log";
@@ -489,6 +490,7 @@ function AppRoutes() {
             <OAuthRedirectHandler />
             <CapacitorIosAuthPreload />
             <AuthNavigationBridge />
+            <NavigationOrchestratorBridge />
             <CapacitorRoutePreload />
             <QueryClientCacheInvalidator />
             <LearningSyncBootstrap />

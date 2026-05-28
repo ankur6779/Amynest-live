@@ -201,7 +201,23 @@ function handleCapacitorPushTap(action: unknown): void {
   import("@/lib/notification-deep-link")
     .then(({ dispatchNotifDeepLink, parseNotifTapPayload }) => {
       const { deepLink, category } = parseNotifTapPayload(action);
-      dispatchNotifDeepLink(deepLink, category);
+      const root = action as {
+        notification?: { id?: string };
+        data?: Record<string, unknown>;
+      } | null;
+      const data = root?.notification?.data ?? root?.data ?? {};
+      const notificationId =
+        typeof data.notificationId === "string"
+          ? data.notificationId
+          : typeof data.messageId === "string"
+            ? data.messageId
+            : undefined;
+      dispatchNotifDeepLink(deepLink, category, {
+        userInteraction: true,
+        tappedAt: Date.now(),
+        source: "capacitor-tap",
+        notificationId,
+      });
     })
     .catch(() => { /* ignore */ });
 }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { chatCompletionWithTimeout } from "../openai-chat.js";
+import { appendLearningZoneEnglishRule } from "../../lib/learning-zone-english.js";
 
 const TRICK_COLORS = [
   "hsl(var(--brand-amber-500))",
@@ -74,8 +75,9 @@ Output JSON only:
       messages: [
         {
           role: "system",
-          content:
+          content: appendLearningZoneEnglishRule(
             "You create kid-friendly mental math tricks. Reply with valid JSON only. Every practiceQ.answer must match one option exactly.",
+          ),
         },
         { role: "user", content: prompt },
       ],

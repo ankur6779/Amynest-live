@@ -5,6 +5,10 @@ import { resolveApiMediaUrl } from "@/lib/api";
 import { resolveAiApiData } from "@/lib/poll-result";
 import { pregenerateTtsTexts } from "@/lib/pregenerate-tts";
 import {
+  scheduleLearningZoneAudioPrewarm,
+  buildLearningZoneAudioStateKey,
+} from "@/lib/learning-zone-audio-prewarm";
+import {
   generateTts,
   resolveClientPlaybackUrl,
 } from "@/lib/tts-playback";
@@ -341,6 +345,19 @@ export function useSpellingWords(
         ...w.chunks.filter((c) => c.trim().length >= 2),
       ]);
       pregenerateTtsTexts(authFetch, speakLines, "default");
+      scheduleLearningZoneAudioPrewarm(authFetch, {
+        module: "spelling",
+        texts: speakLines,
+        sequenceTexts: data.words.map((w) => w.word),
+        difficulty,
+        ageGroup: ageGroup,
+        stateKey: buildLearningZoneAudioStateKey({
+          module: "spelling",
+          ageGroup,
+          difficulty,
+          revision: data.source,
+        }),
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "words_failed");
     } finally {
@@ -366,6 +383,24 @@ export function useSpellingWords(
         );
         setWords(data?.words ?? []);
         setSource(data?.source ?? "ai");
+        const speakLines = (data?.words ?? []).flatMap((w) => [
+          w.word,
+          ...w.chunks.filter((c) => c.trim().length >= 2),
+        ]);
+        pregenerateTtsTexts(authFetch, speakLines, "default");
+        scheduleLearningZoneAudioPrewarm(authFetch, {
+          module: "spelling",
+          texts: speakLines,
+          sequenceTexts: (data?.words ?? []).map((w) => w.word),
+          difficulty: diff,
+          ageGroup,
+          stateKey: buildLearningZoneAudioStateKey({
+            module: "spelling",
+            ageGroup,
+            difficulty: diff,
+            revision: "ai",
+          }),
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : "ai_failed");
       } finally {
