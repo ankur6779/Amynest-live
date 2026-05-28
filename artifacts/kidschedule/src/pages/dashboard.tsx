@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useGetDashboardSummary, getGetDashboardSummaryQueryKey, useGetRecentRoutines, getGetRecentRoutinesQueryKey, useGetBehaviorStats, getGetBehaviorStatsQueryKey, useListRoutines, getListRoutinesQueryKey, useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link, Redirect, useLocation } from "wouter";
-import { Calendar, Users, Star, ArrowRight, Activity, TrendingUp, Clock, CheckCircle2, Sparkles, Bot, Brain, Heart, Target, ChevronRight, MapPin, Ribbon } from "lucide-react";
+import { Calendar, Users, Star, ArrowRight, Activity, TrendingUp, Clock, CheckCircle2, Sparkles, Bot, Brain, Heart, Target, ChevronRight, MapPin, Ribbon, ShieldCheck } from "lucide-react";
 import { DashboardSectionHeader } from "@/components/dashboard-section-header";
 import {
   BehaviorHighlightsSection,
@@ -27,6 +27,7 @@ import { usePaywall } from "@/contexts/paywall-context";
 import { asRoutineList, routineDateKey, routineItems } from "@/lib/routines";
 import { safeFetch } from "@/lib/safe-fetch";
 import { cacheRoutineStreak } from "@/lib/routine-streak-cache";
+import { buildFamilyIntelligenceSurface } from "@/lib/family-intelligence-surface";
 import { LockedBlock } from "@/components/locked-block";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { SevenDayJourneyCard } from "@/components/seven-day-journey-card";
@@ -54,6 +55,7 @@ type Routine = {
   date: string;
   title: string;
   items: RoutineItem[];
+  adaptations?: string[] | null;
 };
 function getGreetingKey(): string {
   const hour = new Date().getHours();
@@ -974,6 +976,59 @@ function ParentScoreCard({
     </div>;
 }
 
+function AmyMemoryCard({ routines }: { routines: Routine[] }) {
+  const latestRoutine = routines.find((routine) => (routine.adaptations?.length ?? 0) > 0);
+  const surface = latestRoutine
+    ? buildFamilyIntelligenceSurface(latestRoutine.adaptations, {})
+    : null;
+
+  if (!latestRoutine || !surface) return null;
+
+  const primarySignal = surface.signals[0];
+  const supportSignal = surface.signals.find((signal) => signal.id === "supports");
+
+  return (
+    <Link href={`/routines/${latestRoutine.id}`} className="block">
+      <div className="rounded-2xl border border-primary/20 bg-card overflow-hidden hover:border-primary/35 hover:shadow-sm transition-all">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+          <Brain className="h-4 w-4 text-primary" />
+          <div className="min-w-0">
+            <span className="font-quicksand font-bold text-sm text-foreground block">Amy remembers</span>
+            <span className="text-[11px] text-muted-foreground truncate block">
+              Latest family intelligence from {latestRoutine.childName}
+            </span>
+          </div>
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <ShieldCheck className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-foreground">{primarySignal?.label}</p>
+              <p className="mt-1 text-xs leading-snug text-muted-foreground">
+                {primarySignal?.detail}
+              </p>
+            </div>
+          </div>
+
+          {supportSignal ? (
+            <p className="rounded-xl border border-border bg-muted/45 px-3 py-2 text-xs leading-snug text-muted-foreground">
+              <Heart className="h-3.5 w-3.5 mr-1 inline align-text-bottom text-primary" />
+              {supportSignal.detail}
+            </p>
+          ) : null}
+
+          <div className="flex items-center justify-between gap-2 text-[11px] font-bold text-primary">
+            <span>See why Amy planned it this way</span>
+            <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 // ─── Onboarding Screen ────────────────────────────────────────────────────
 function OnboardingScreen({
   displayName
@@ -1437,6 +1492,7 @@ export default function Dashboard() {
                   suppressGenerate={suppressAmyGenerate}
                   generatePrimarySource={generatePrimarySource}
                 />
+                <AmyMemoryCard routines={filteredRoutines} />
                 <ParentScoreCard routines={allRoutinesSafe} streak={streak} />
                 <DashboardWeeklyInsightsCard selectedChildId={selectedChildId} />
               </div>
