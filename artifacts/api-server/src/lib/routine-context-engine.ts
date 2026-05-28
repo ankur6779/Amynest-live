@@ -598,10 +598,14 @@ export function deriveBehavioralState(
 ): InterpretedBehavioralState {
   const enriched: RoutineRawContext = {
     ...context,
-    country: context.country ?? context.countryProfile?.country ?? "IN",
+    country: normalizeCountryCode(
+      context.country ?? context.countryProfile?.country ?? null,
+    ),
     countryProfile:
       context.countryProfile ??
-      getCountryRoutineProfile(context.country ?? "IN"),
+      getCountryRoutineProfile(
+        normalizeCountryCode(context.country ?? context.countryProfile?.country ?? null),
+      ),
   };
   const decisions: ContextDecisionTrace[] = [];
   const resolved = resolveContextPriorities(enriched, childProfile, decisions);

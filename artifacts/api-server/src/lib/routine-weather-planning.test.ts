@@ -6,7 +6,9 @@ import {
   applyWeatherFirstPlanning,
   deriveDayPlanningMode,
   enforceOutdoorTimeGuards,
+  enforceHotAfternoonActivityPolicy,
   enforceSleepIsLast,
+  isHotAfternoonActiveBlock,
   HOT_AFTERNOON_BLOCK_WINDOW,
   isHotAfternoon,
   weatherAdjustmentReason,
@@ -150,6 +152,49 @@ describe("enforceOutdoorTimeGuards", () => {
     );
     const start = parseTimeToMins(out[0]!.time);
     assert.ok(start < HOT_AFTERNOON_BLOCK_WINDOW[0] || start >= HOT_AFTERNOON_BLOCK_WINDOW[1]);
+  });
+});
+
+describe("enforceHotAfternoonActivityPolicy", () => {
+  it("removes high-energy play from hot afternoon window", () => {
+    const state = deriveBehavioralState(
+      buildRoutineContext({
+        country: "US",
+        weatherOutdoor: "yes",
+        temperatureC: 36,
+        hasSchool: false,
+      }),
+      { ageGroup: "early_school" },
+    );
+    const out = enforceHotAfternoonActivityPolicy(
+      [
+        {
+          time: "15:00",
+          activity: "Indoor creative play",
+          duration: 45,
+          category: "play",
+        },
+        {
+          time: "16:00",
+          activity: "Outdoor play",
+          duration: 50,
+          category: "play",
+        },
+      ],
+      state,
+      [],
+    );
+    const afternoonPlay = out.filter((i) => {
+      const start = parseTimeToMins(i.time);
+      if (start < 12 * 60 || start >= 17 * 60 + 30) return false;
+      return isHotAfternoonActiveBlock(i);
+    });
+    assert.equal(afternoonPlay.length, 0, afternoonPlay.map((i) => i.activity).join(", "));
+    assert.ok(
+      out.some((i) => /\(morning|evening/i.test(i.activity)) ||
+        out.some((i) => i.category === "rest"),
+      out.map((i) => `${i.time} ${i.activity}`).join(" | "),
+    );
   });
 });
 

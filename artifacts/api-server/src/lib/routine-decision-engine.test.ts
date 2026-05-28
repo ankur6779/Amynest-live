@@ -71,8 +71,19 @@ describe("generateRoutineFromState", () => {
       baseItems[baseItems.length - 1]!,
     ];
     const { items } = generateRoutineFromState(hotItems, state, scheduleOpts);
-    const repositioned = items.filter((i) => /\(morning\)|\(evening\)/i.test(i.activity));
-    assert.ok(repositioned.length >= 1, `expected repositioned play, got ${repositioned.length}`);
+    const repositioned = items.filter((i) => /\(morning|evening/i.test(i.activity));
+    const afternoonCalm = items.filter((i) => {
+      const start = parseTimeToMins(i.time);
+      return (
+        start >= 12 * 60 &&
+        start < 17 * 60 + 30 &&
+        (i.category ?? "").toLowerCase() === "rest"
+      );
+    });
+    assert.ok(
+      repositioned.length >= 1 || afternoonCalm.length >= 1,
+      `expected hot-day morning/evening play or calm afternoon rest, got repositioned=${repositioned.length} calm=${afternoonCalm.length}`,
+    );
     const afternoonActive = items.filter((i) => {
       const start = parseTimeToMins(i.time);
       if (start < 12 * 60 || start >= 17 * 60 + 30) return false;

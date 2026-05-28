@@ -94,7 +94,7 @@ describe("mealWindowsForState", () => {
 
   it("late-dinner profile allows later dinner", () => {
     const state = deriveBehavioralState(
-      { weatherOutdoor: "yes", isWeekendDay: true },
+      { country: "IN", weatherOutdoor: "yes", isWeekendDay: true },
       { ageGroup: "pre_teen" },
     );
     const windows = mealWindowsForState(state);

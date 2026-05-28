@@ -24,7 +24,10 @@ export type ParentRoutineExplanation = {
 const MAX_BULLETS = 6;
 
 const INTERNAL_PREFIX =
-  /^(behavior|schedule|learning|decision|inputs|difficulty|aqi-validation|meal-flow|meal-day|meal-overlap|meal-timing|special-event|fixed-activities|fixed-activity|fixed-conflict|fixed-shift|fixed-adjust|hydration):/i;
+  /^(behavior|schedule|learning|decision|inputs|difficulty|aqi-validation|meal-flow|meal-day|meal-overlap|meal-timing|special-event|fixed-activities|fixed-activity|fixed-conflict|fixed-shift|fixed-adjust|hydration|emotion|continuity|freshness|autonomy|memory|optimize|dailyload|daily load|load balance|production):/i;
+
+const ENGINE_REASON_LINE =
+  /^(emotion|continuity|freshness|autonomy|memory)(?:\([^)]*\))?:\s*/i;
 
 type ScoredBullet = { text: string; group: ParentExplanationGroup; score: number };
 
@@ -47,6 +50,18 @@ function isInternalToken(line: string): boolean {
 function humanizeLine(raw: string): string | null {
   const line = raw.trim();
   if (!line || isInternalToken(line)) return null;
+
+  const engineMatch = line.match(ENGINE_REASON_LINE);
+  if (engineMatch) {
+    const body = line.slice(engineMatch[0].length).trim();
+    if (!body) return null;
+    const capped = body.charAt(0).toUpperCase() + body.slice(1);
+    return /[.!?]$/.test(capped) ? capped : `${capped}.`;
+  }
+
+  if (/^Amy /i.test(line) || /building on \d+ recent/i.test(line)) {
+    return line;
+  }
 
   if (line.startsWith("hydration:")) {
     const body = line.slice("hydration:".length).trim();
@@ -126,7 +141,7 @@ function classifyGroup(text: string): ParentExplanationGroup {
     return "environment";
   }
   if (
-    /mood|sleep|energy|focus|calm|gentler|rested|cranky|tired|happy|compliance|learning window|peak focus|low-energy/.test(
+    /mood|sleep|energy|focus|calm|gentler|rested|cranky|tired|happy|compliance|learning window|peak focus|low-energy|amy |building on|learning your rhythm|refreshed/.test(
       l,
     )
   ) {
@@ -141,6 +156,7 @@ function scoreBullet(text: string, ctx: ParentExplanationContext): number {
   if (/weekend|school day/.test(l)) score = Math.max(score, 100);
   if (/aqi|air quality|weather|outdoor|indoor/.test(l)) score = Math.max(score, 92);
   if (/mood|sleep|energy|focus|calm/.test(l)) score = Math.max(score, 88);
+  if (/^amy |building on|learning your rhythm/i.test(l)) score = Math.max(score, 94);
   if (/special (plan|event)|birthday|party|appointment/.test(l))
     score = Math.max(score, 82);
   if (/fixed activit|tuition|weekly activit/.test(l)) score = Math.max(score, 78);

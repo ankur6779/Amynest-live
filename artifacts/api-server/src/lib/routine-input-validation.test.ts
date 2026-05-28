@@ -18,6 +18,17 @@ describe("resolveRoutineGenerationInputs", () => {
     assert.ok(debug.defaultsApplied.includes("weatherOutdoor"));
   });
 
+  it("sanitizes invalid wake and sleep times to safe fallbacks", () => {
+    const { resolved, debug } = resolveRoutineGenerationInputs({
+      wakeUpTime: "25:99",
+      sleepTime: "abc",
+    });
+    assert.equal(resolved.wakeUpTime, "07:00");
+    assert.equal(resolved.sleepTime, "21:00");
+    assert.ok(debug.timesSanitized.includes("wakeUpTime"));
+    assert.ok(debug.timesSanitized.includes("sleepTime"));
+  });
+
   it("preserves explicit special plans and normalizes times", () => {
     const { resolved } = resolveRoutineGenerationInputs({
       wakeUpTime: "7:30 AM",

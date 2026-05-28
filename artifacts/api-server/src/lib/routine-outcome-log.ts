@@ -21,18 +21,60 @@ export interface RoutineOutcomeStore {
   clear(): void;
 }
 
-class InMemoryRoutineOutcomeStore implements RoutineOutcomeStore {
+const MAX_OUTCOMES_PER_CHILD = 200;
+const MAX_OUTCOMES_GLOBAL = 5_000;
+
+function normalizeOutcomeKey(activity: string): string {
+  return activity.toLowerCase().replace(/[^a-z0-9]+/g, "_").slice(0, 48);
+}
+
+function outcomeRecordId(
+  record: Omit<RoutineOutcomeRecord, "id" | "recordedAt">,
+): string {
+  const child = record.childId ?? "anon";
+  const date = record.routineDate ?? "nodate";
+  const key = normalizeOutcomeKey(record.activity);
+  const flags = `${record.completed ? 1 : 0}${record.skipped ? 1 : 0}`;
+  return `out_${child}_${date}_${key}_${flags}`;
+}
+
+export class InMemoryRoutineOutcomeStore implements RoutineOutcomeStore {
   private records: RoutineOutcomeRecord[] = [];
+
+  private trim(): void {
+    if (this.records.length <= MAX_OUTCOMES_GLOBAL) return;
+    this.records.splice(0, this.records.length - MAX_OUTCOMES_GLOBAL);
+  }
+
+  private trimChild(childId: string): void {
+    const indices: number[] = [];
+    for (let i = 0; i < this.records.length; i++) {
+      if (this.records[i]!.childId === childId) indices.push(i);
+    }
+    if (indices.length <= MAX_OUTCOMES_PER_CHILD) return;
+    const drop = indices.length - MAX_OUTCOMES_PER_CHILD;
+    for (let d = 0; d < drop; d++) {
+      const idx = indices[d]!;
+      this.records[idx] = undefined as unknown as RoutineOutcomeRecord;
+    }
+    this.records = this.records.filter(Boolean);
+  }
 
   append(
     record: Omit<RoutineOutcomeRecord, "id" | "recordedAt">,
   ): RoutineOutcomeRecord {
+    const id = outcomeRecordId(record);
+    const existing = this.records.find((r) => r.id === id);
+    if (existing) return existing;
+
     const entry: RoutineOutcomeRecord = {
       ...record,
-      id: `out_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+      id,
       recordedAt: new Date().toISOString(),
     };
     this.records.push(entry);
+    if (record.childId) this.trimChild(record.childId);
+    this.trim();
     return entry;
   }
 

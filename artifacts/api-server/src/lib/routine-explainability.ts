@@ -2,6 +2,7 @@
  * Explainable routine metadata — UI/debug only; does not affect scheduling.
  */
 import type { DifficultyAdjustment } from "./routine-adaptive-difficulty.js";
+import { toParentScheduleReason } from "./routine-parent-intelligence.js";
 import type { ChildBehaviorSignature } from "./routine-behavior-signature.js";
 import type { CulturalModelingChange } from "./routine-cultural-modeling.js";
 import type { InterpretedBehavioralState } from "./routine-context-engine.js";
@@ -17,7 +18,9 @@ export type ExplainabilitySource =
   | "weather"
   | "culture"
   | "difficulty"
-  | "energy";
+  | "energy"
+  | "emotion"
+  | "personalization";
 
 export type RoutineExplanation = {
   reason: string;
@@ -61,10 +64,24 @@ export function attachExplainabilityMetadata(
     let source: ExplainabilitySource = "culture";
 
     if (item.scheduleDecision?.reason) {
-      reason = item.scheduleDecision.reason;
-      if (item.scheduleDecision.source === "safety") source = "weather";
-      else if (item.scheduleDecision.source === "preference") source = "culture";
-      else source = "culture";
+      reason = toParentScheduleReason(item.scheduleDecision.reason);
+      const r = item.scheduleDecision.reason;
+      if (/^emotion:/i.test(r)) {
+        source = "emotion";
+      } else if (
+        /^(continuity|freshness|autonomy|memory):/i.test(r) ||
+        /\bcontinuity:|freshness:|autonomy:/i.test(r)
+      ) {
+        source = "personalization";
+      } else if (item.scheduleDecision.source === "development") {
+        source = "personalization";
+      } else if (item.scheduleDecision.source === "safety") {
+        source = "weather";
+      } else if (item.scheduleDecision.source === "preference") {
+        source = "culture";
+      } else {
+        source = "culture";
+      }
     }
 
     const diffAdj = difficultyAdjustments.find(
@@ -105,4 +122,12 @@ export function attachExplainabilityMetadata(
       routineExplanation: { reason, source },
     };
   });
+}
+
+/** Re-apply explainability after completion passes (emotion, load, continuity). */
+export function refreshExplainabilityMetadata(
+  items: RoutineScheduleItem[],
+  input: ExplainabilityInput,
+): ExplainableRoutineItem[] {
+  return attachExplainabilityMetadata(items, input);
 }

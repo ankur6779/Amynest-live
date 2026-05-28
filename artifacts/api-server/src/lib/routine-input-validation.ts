@@ -2,7 +2,10 @@
  * Resolve routine generation inputs with safe defaults when fields are missing.
  */
 import type { WeatherOutdoor } from "@workspace/family-routine";
-import { normalizeTo24h } from "./routine-scheduler.js";
+import {
+  validateAndNormalizeTime,
+  type TimeValidationResult,
+} from "./routine-time-validation.js";
 
 export type RoutineGenerationInputs = {
   wakeUpTime?: string | null;
@@ -30,6 +33,8 @@ export type ResolvedRoutineInputs = {
 
 export type InputResolutionDebug = {
   defaultsApplied: string[];
+  /** Fields where invalid clock input was replaced with a safe fallback. */
+  timesSanitized: string[];
 };
 
 const DEFAULT_WAKE = "07:00";
@@ -37,32 +42,76 @@ const DEFAULT_SLEEP = "21:00";
 const DEFAULT_SCHOOL_START = "09:00";
 const DEFAULT_SCHOOL_END = "15:00";
 
+function resolveTimeField(
+  key: keyof Pick<
+    RoutineGenerationInputs,
+    "wakeUpTime" | "sleepTime" | "schoolStartTime" | "schoolEndTime"
+  >,
+  input: RoutineGenerationInputs,
+  childDefaults: Partial<RoutineGenerationInputs> | undefined,
+  fallback: string,
+  defaultsApplied: string[],
+  timesSanitized: string[],
+): string {
+  const raw = input[key] ?? childDefaults?.[key];
+  if (raw == null || String(raw).trim() === "") {
+    defaultsApplied.push(String(key));
+  }
+  const childFallback =
+    childDefaults?.[key] != null && String(childDefaults[key]).trim() !== ""
+      ? String(childDefaults[key])
+      : fallback;
+  const result: TimeValidationResult = validateAndNormalizeTime(raw, {
+    fallback: childFallback,
+    field: String(key),
+  });
+  if (result.sanitized) {
+    timesSanitized.push(String(key));
+    if (raw != null && String(raw).trim() !== "") {
+      defaultsApplied.push(`${String(key)}_invalid`);
+    }
+  }
+  return result.time;
+}
+
 export function resolveRoutineGenerationInputs(
   input: RoutineGenerationInputs,
   childDefaults?: Partial<RoutineGenerationInputs>,
 ): { resolved: ResolvedRoutineInputs; debug: InputResolutionDebug } {
   const defaultsApplied: string[] = [];
+  const timesSanitized: string[] = [];
 
-  const pick = <T>(key: keyof RoutineGenerationInputs, fallback: T): T => {
-    const v = input[key] ?? childDefaults?.[key];
-    if (v == null || v === "") {
-      defaultsApplied.push(String(key));
-      return fallback;
-    }
-    return v as T;
-  };
-
-  const wakeUpTime = normalizeTo24h(
-    pick("wakeUpTime", childDefaults?.wakeUpTime ?? DEFAULT_WAKE),
+  const wakeUpTime = resolveTimeField(
+    "wakeUpTime",
+    input,
+    childDefaults,
+    DEFAULT_WAKE,
+    defaultsApplied,
+    timesSanitized,
   );
-  const sleepTime = normalizeTo24h(
-    pick("sleepTime", childDefaults?.sleepTime ?? DEFAULT_SLEEP),
+  const sleepTime = resolveTimeField(
+    "sleepTime",
+    input,
+    childDefaults,
+    DEFAULT_SLEEP,
+    defaultsApplied,
+    timesSanitized,
   );
-  const schoolStartTime = normalizeTo24h(
-    pick("schoolStartTime", childDefaults?.schoolStartTime ?? DEFAULT_SCHOOL_START),
+  const schoolStartTime = resolveTimeField(
+    "schoolStartTime",
+    input,
+    childDefaults,
+    DEFAULT_SCHOOL_START,
+    defaultsApplied,
+    timesSanitized,
   );
-  const schoolEndTime = normalizeTo24h(
-    pick("schoolEndTime", childDefaults?.schoolEndTime ?? DEFAULT_SCHOOL_END),
+  const schoolEndTime = resolveTimeField(
+    "schoolEndTime",
+    input,
+    childDefaults,
+    DEFAULT_SCHOOL_END,
+    defaultsApplied,
+    timesSanitized,
   );
 
   const hasSchool =
@@ -91,6 +140,9 @@ export function resolveRoutineGenerationInputs(
       specialPlans: (input.specialPlans ?? childDefaults?.specialPlans ?? "").trim(),
       fridgeItems: (input.fridgeItems ?? childDefaults?.fridgeItems ?? "").trim(),
     },
-    debug: { defaultsApplied },
+    debug: { defaultsApplied, timesSanitized },
   };
 }
+
+/** Re-export for route layers that validate a single client override. */
+export { validateAndNormalizeTime } from "./routine-time-validation.js";

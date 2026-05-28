@@ -51,7 +51,7 @@ export const FALLBACK_ENV_REASON =
 export function maxOutdoorMinutesFromAqi(aqi: number): number | null {
   if (aqi > 300) return 0;
   if (aqi >= 200) return 15;
-  if (aqi >= 150) return 30;
+  if (aqi >= 150) return 20;
   return null;
 }
 
