@@ -121,7 +121,7 @@ The “Kids Control Center” screen is a coming-soon preview (interest survey),
 
 ## Reviewer Access
 
-AmyNest supports email/password, Google Sign-In, and Sign in with Apple. If a reviewer account is needed, provide a temporary test account with a seeded child profile before submission.
+AmyNest supports email/password, **Sign in with Apple** (shown first), Google Sign-In, and Facebook Login on iOS. Phone OTP is not offered on iOS. Auth screens include links to our Terms of Service and Privacy Policy. If a reviewer account is needed, provide a temporary test account with a seeded child profile before submission.
 
 Suggested test account (paste into App Store Connect → App Review Information):
 

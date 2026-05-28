@@ -32,7 +32,9 @@
   <key>com.apple.developer.associated-domains</key>
   <array>
     <string>applinks:amynest.in</string>
+    <string>applinks:www.amynest.in</string>
     <string>webcredentials:amynest.in</string>
+    <string>webcredentials:www.amynest.in</string>
   </array>
 
   <!-- Keychain sharing (session persistence across app updates) -->

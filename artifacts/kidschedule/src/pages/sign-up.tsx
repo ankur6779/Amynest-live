@@ -10,10 +10,11 @@ import { prettyAuthError, stashVerificationSendError, logFirebaseAuthError } fro
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { FacebookSignInButton } from "@/components/facebook-sign-in-button";
 import { AppleSignInButton } from "@/components/apple-sign-in-button";
+import { AuthLegalFooter } from "@/components/auth-legal-footer";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
 import { PhoneRecaptchaPreload } from "@/components/phone-recaptcha-preload";
 import {
-  ENABLE_APPLE_SIGN_IN,
+  shouldShowAppleSignIn,
   shouldShowGoogleSignIn,
   shouldShowFacebookSignIn,
   shouldShowPhoneOtp,
@@ -429,16 +430,16 @@ export default function SignUpPage() {
       </p>
 
       <div className="su-oauth-stack">
+      {shouldShowAppleSignIn() ? (
+        <AppleSignInButton onError={msg => setError(msg)} />
+      ) : null}
+
       {shouldShowGoogleSignIn() ? (
         <GoogleSignInButton onError={msg => setError(msg)} />
       ) : null}
 
       {shouldShowFacebookSignIn() ? (
         <FacebookSignInButton onError={msg => setError(msg)} />
-      ) : null}
-
-      {ENABLE_APPLE_SIGN_IN ? (
-        <AppleSignInButton onError={msg => setError(msg)} />
       ) : null}
 
       {shouldShowPhoneOtp() ? (
@@ -449,7 +450,7 @@ export default function SignUpPage() {
       ) : null}
       </div>
 
-      {(shouldShowGoogleSignIn() || shouldShowFacebookSignIn() || ENABLE_APPLE_SIGN_IN || shouldShowPhoneOtp()) && (
+      {(shouldShowGoogleSignIn() || shouldShowFacebookSignIn() || shouldShowAppleSignIn() || shouldShowPhoneOtp()) && (
       <div style={{
       display: "flex",
       alignItems: "center",
@@ -569,5 +570,6 @@ export default function SignUpPage() {
           {t("screens.sign_up.sign_in_link")}
         </Link>
       </p>
+      <AuthLegalFooter />
     </AuthShell>;
 }

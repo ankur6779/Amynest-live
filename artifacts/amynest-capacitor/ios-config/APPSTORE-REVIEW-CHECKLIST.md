@@ -12,9 +12,10 @@ Complete ALL items before submitting. Missing items = **rejection**.
 - [ ] Template: `ios-config/PrivacyInfo.xcprivacy` in this repo ✅
 
 ### 2. Privacy Policy URL
-- [ ] You have a publicly accessible Privacy Policy URL
-  (e.g. `https://amynest.in/privacy`)
+- [x] Public URLs: `https://amynest.in/privacy`, `https://amynest.in/terms`
+- [x] In-app links on sign-in, sign-up, and pricing (`/privacy`, `/terms`)
 - [ ] Entered in App Store Connect → App Information → Privacy Policy URL
+- [ ] App Description includes functional Terms (EULA) link (see `APPSTORE-REVIEW-NOTES.md`)
 - [ ] The policy mentions: data collected, children's data handling, deletion rights
 
 ### 3. App Icons — all sizes
@@ -68,12 +69,14 @@ Complete ALL items before submitting. Missing items = **rejection**.
   - **Age Assurance: None** (no age-verification gate in the app)
   - **Result: 4+** (suitable for all ages)
 
-### 9. Sign-In with Apple (if using Google Sign-In)
-- [ ] **IMPORTANT**: If the app offers any third-party login (Google), Apple
-  requires you to ALSO offer "Sign in with Apple" as an option.
-  - Add Sign in with Apple capability in Xcode → Signing & Capabilities
-  - Add the Apple sign-in button in your auth flow
-  - OR: Remove Google Sign-In entirely and use email/password only
+### 9. Sign-In with Apple (required — Google + Facebook are enabled)
+- [x] Sign in with Apple capability in `App.entitlements` (`com.apple.developer.applesignin`)
+- [x] Apple button shown **first** on sign-in and sign-up (Guideline 4.8)
+- [x] Capacitor `SignInWithApple` plugin + `apple-auth.ts` native flow
+- [ ] Xcode → App target → **Signing & Capabilities** → confirm **Sign in with Apple** toggle is on
+- [ ] Apple Developer → App ID `com.amynest.app` → Sign In with Apple enabled
+- [ ] Firebase Console → Authentication → Apple provider configured
+- [ ] Test on a **real iPhone** (Simulator often fails Apple Sign-In)
 
 ### 10. In-App Purchases
 - [x] iOS app uses RevenueCat + Apple In-App Purchase only; Razorpay is blocked inside iOS
