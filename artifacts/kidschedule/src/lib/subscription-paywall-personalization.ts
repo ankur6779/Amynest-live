@@ -1,5 +1,8 @@
 import type { PaywallReason } from "@/contexts/paywall-context";
-import { PAYWALL_REASON_COPY } from "@workspace/subscription-marketing";
+import {
+  PAYWALL_REASON_COPY,
+  PRODUCT_AGE_RANGE,
+} from "@workspace/subscription-marketing";
 
 const CHILD_NAME_PLACEHOLDER = /\{childName\}/g;
 
@@ -23,7 +26,7 @@ const PERSONALIZED_TEMPLATES: Partial<
   hub_locked: (name) => ({
     title: `Open the full Hub for ${name}`,
     subtitle:
-      "Life skills, communication practice, and age-right activities—curated for ages 2–12.",
+      `Life skills, communication practice, and age-right activities—curated for ages ${PRODUCT_AGE_RANGE}.`,
     cta: "Open full Hub",
   }),
   hub_journey: (name) => ({

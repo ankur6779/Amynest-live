@@ -2,7 +2,7 @@
 
 ## Headline
 
-The growth system for ages 2–12
+The growth system for ages 0–12
 
 ## Subheadline
 
@@ -52,7 +52,7 @@ Most savings—tap Growth Year
 
 - Lowest cost per month—protect the budget while maximizing support
 - Unbroken coaching, speech practice, and learning through the full year
-- Routines and Hub content that mature with your child ages 2–12
+- Routines and Hub content that mature with your child ages 0–12
 - Never re-decide mid-year when life gets busy—growth stays on
 
 ---

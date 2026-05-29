@@ -1,13 +1,19 @@
 /**
  * Subscription marketing copy v2 — conversion, annual bias, ecosystem differentiation.
- * Ages 2–12 · family growth system · not a single-feature AI app.
+ * Ages 0–12 · family growth system · not a single-feature AI app.
  */
+
+/** Canonical age span for paywall/pricing copy (matches infant 0–2 + hub bands through 12). */
+export const PRODUCT_AGE_MIN = 0;
+export const PRODUCT_AGE_MAX = 12;
+export const PRODUCT_AGE_RANGE = `${PRODUCT_AGE_MIN}–${PRODUCT_AGE_MAX}` as const;
+export const PRODUCT_AGE_LABEL = `Ages ${PRODUCT_AGE_RANGE}` as const;
 
 export type PaidPlanId = "monthly" | "six_month" | "yearly";
 
 export const DIFFERENTIATION = {
   oneLiner:
-    "Not parenting tips. Not one AI chat. The full growth system for children 2–12—connected in one place.",
+    "Not parenting tips. Not one AI chat. The full growth system for children 0–12—connected in one place.",
   vsOrdinaryApps:
     "Ordinary apps give advice. AmyNest runs your child's routines, learning, speech practice, coaching, and progress—together.",
 } as const;
@@ -15,7 +21,7 @@ export const DIFFERENTIATION = {
 // ─── Hero headlines (10) — primary: 0 ───────────────────────────────────────
 
 export const HERO_HEADLINE_ALTERNATIVES = [
-  "The growth system for children 2–12—not another parenting app",
+  "The growth system for children 0–12—not another parenting app",
   "One home for learning, speech, routines, and calm parenting",
   "Help your child grow. Parent with a plan—not guesswork.",
   "Routines, learning, and speech—finally in one place",
@@ -23,7 +29,7 @@ export const HERO_HEADLINE_ALTERNATIVES = [
   "From morning chaos to confident evenings—built for your child",
   "Your child's coach, tutor, and routine partner—in one subscription",
   "Less stress at home. More progress you can see.",
-  "The family platform that grows with them ages 2–12",
+  "The family platform that grows with them ages 0–12",
   "Subscribe once. Support their whole childhood year.",
 ] as const;
 
@@ -32,7 +38,7 @@ export const HERO_SUBHEADLINE_ALTERNATIVES = [
   "Parents use AmyNest when they want steadier days, clearer communication, and learning that actually sticks—without adding another job to their plate.",
   "Replace five disconnected tools with one warm system: guidance when you're stuck, structure when you need it, and activities that build confidence week by week.",
   "See routines hold, speech practice pay off, and learning move forward—while you parent with more calm and less second-guessing.",
-  "Built for ages 2–12: coaching for real moments, Speech Coach for expression, adaptive activities, behavior insight, and family routines that reduce daily friction.",
+  "Built for ages 0–12: coaching for real moments, Speech Coach for expression, adaptive activities, behavior insight, and family routines that reduce daily friction.",
   "Most apps send articles. AmyNest helps you act—personalized plans, practice, progress tracking, and AI support in the moments that matter.",
   "One subscription covers Amy AI, Coach, Speech Coach, Hub, routines, and insights—so your child's growth isn't split across apps that don't talk to each other.",
   "Families choose AmyNest for transformation at home: better routines, stronger communication, measurable learning—not feature checklists.",
@@ -86,7 +92,7 @@ export const PLAN_MARKETING: Record<
     positioning:
       "Six months is the sweet spot: long enough for routines, speech, and learning to compound—short enough to feel deliberate. The plan parents pick when they want measurable change without overthinking.",
     description:
-      "Habit formation window for ages 2–12—coaching and content adapt as your child moves through the year.",
+      "Habit formation window for ages 0–12—coaching and content adapt as your child moves through the year.",
     features: [
       "Enough time for routines to stick and communication to open up",
       "Track learning, behavior, and speech progress across months—not days",
@@ -106,7 +112,7 @@ export const PLAN_MARKETING: Record<
     features: [
       "Lowest cost per month—protect the budget while maximizing support",
       "Unbroken coaching, speech practice, and learning through the full year",
-      "Routines and Hub content that mature with your child ages 2–12",
+      "Routines and Hub content that mature with your child ages 0–12",
       "Never re-decide mid-year when life gets busy—growth stays on",
     ],
     cta: "Choose Growth Year",
@@ -126,7 +132,7 @@ export const PURCHASE_CTAS = {
   successBody:
     "Amy AI, Coach, Speech Coach, learning, routines, and Hub—active for your child. Start with today's routine or ask Amy anything.",
   restorePurchases: "Restore Purchases",
-  trustLine: "Cancel anytime · Billed clearly · Ages 2–12",
+  trustLine: `Cancel anytime · Billed clearly · ${PRODUCT_AGE_LABEL}`,
 } as const;
 
 export const PURCHASE_SCREEN = PURCHASE_CTAS;
@@ -148,7 +154,7 @@ export const FEATURE_SHOWCASE = {
 } as const;
 
 export const REVENUECAT_PAYWALL = {
-  headline: "The growth system for ages 2–12",
+  headline: "The growth system for ages 0–12",
   subheadline:
     "Amy AI · Coach · Speech Coach · Learning · Routines · Hub—one subscription. Not scattered apps.",
   defaultPackageHighlight: "six_month" as PaidPlanId,
@@ -171,7 +177,7 @@ export const TRUST_SECTION = {
   title: "Straightforward for parents",
   items: [
     { label: "Cancel anytime", detail: "Manage in App Store, Play Store, or your account." },
-    { label: "Ages 2–12", detail: "Content and coaching calibrated to childhood—not adults." },
+    { label: PRODUCT_AGE_LABEL, detail: "Content and coaching calibrated to childhood—not adults." },
     { label: "Secure checkout", detail: "App Store · Google Play · Razorpay" },
     { label: "Your data, your family", detail: "Profiles and progress stay tied to your household." },
   ],
@@ -210,7 +216,7 @@ export const PAYWALL_LEARNING = {
 export const PAYWALL_HUB = {
   title: "The Hub is where skills become habits",
   subtitle:
-    "Life skills, communication games, and age-right activities—curated for 2–12, not the open internet.",
+    "Life skills, communication games, and age-right activities—curated for 0–12, not the open internet.",
   cta: "Open full Hub",
 } as const;
 
@@ -270,12 +276,12 @@ export const ANNUAL_POSITIONING_CONCEPTS = [
   "Lock the year before routines slip—annual members report steadier mornings by week 3.",
   "Invest once in the platform that replaces tutor + routine app + parenting tips.",
   "Growth Year for families who are done trying one-off apps that don't connect.",
-  "Best for siblings ages 2–12—one system, every profile, all year.",
+  "Best for siblings ages 0–12—one system, every profile, all year.",
   "Annual is for parents playing long-term: confidence, speech, learning—not monthly resets.",
 ] as const;
 
 export const REVENUECAT_HEADLINE_CONCEPTS = [
-  "The growth system for ages 2–12",
+  "The growth system for ages 0–12",
   "Eight tools. One subscription.",
   "Not tips. A full family system.",
   "Routines + learning + speech—connected",
@@ -283,7 +289,7 @@ export const REVENUECAT_HEADLINE_CONCEPTS = [
   "Replace five apps with AmyNest",
   "Help them grow. Stress less.",
   "Coach · Speech · Learning · Routines",
-  "Built for busy parents ages 2–12",
+  "Built for busy parents ages 0–12",
   "Unlock the full ecosystem",
 ] as const;
 
@@ -295,7 +301,7 @@ export const AI_PAYWALL_CONCEPTS = [
   "What to say when they won't listen",
   "From overwhelm to one clear next step",
   "Parenting clarity in under a minute",
-  "Your on-call guide for ages 2–12",
+  "Your on-call guide for ages 0–12",
   "Less Googling. More confidence.",
   "The reply you'd give if you weren't exhausted",
 ] as const;
