@@ -1,7 +1,9 @@
 import { Link } from "wouter";
 import { ArrowRight, Sparkles, Brain, Calendar, LayoutGrid, MessageCircle, Zap, CheckCircle2, Flame, Smartphone, Moon, EarOff, Utensils, Target, ListChecks, HelpCircle, ShieldCheck, BookOpen, Microscope, TrendingUp, Video, Star, Users, Lightbulb, Puzzle, Palette, FileText, Baby, GraduationCap, Activity, Heart, Award, Gamepad2, BarChart3, FlaskConical, Calculator, Mic, Headphones } from "lucide-react";
+import QRCode from "react-qr-code";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
 import { useTranslation } from "react-i18next";
 const COACH_HIGHLIGHT_KEYS = ["landing.highlight_1", "landing.highlight_2", "landing.highlight_3", "landing.highlight_4"];
 const LEARNING_SPOTLIGHT = [{
@@ -1180,48 +1182,82 @@ export default function LandingPage() {
 
                 {/* Store buttons */}
                 <div className="flex flex-col sm:flex-row items-center md:items-start gap-4">
-                  {/* App Store — coming soon */}
-                  <div aria-label={t("pages.landing.app_store_coming_soon")} className="relative flex items-center gap-3 px-6 py-3.5 rounded-2xl cursor-default select-none" style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  opacity: 0.85
-                }}>
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0 fill-white/70" aria-hidden>
+                  <a
+                    href={APP_STORE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t("pages.landing.app_store_download")}
+                    className="flex items-center gap-3 px-6 py-3.5 rounded-2xl transition-colors hover:bg-white/10"
+                    style={{
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.18)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0 fill-white" aria-hidden>
                       <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                     </svg>
                     <div className="text-left leading-tight">
-                      <p className="text-white/40 text-[10px] font-medium">{t("pages.landing.download_on_the")}</p>
-                      <p className="text-white/70 font-bold text-base">{t("pages.landing.app_store")}</p>
+                      <p className="text-white/50 text-[10px] font-medium">{t("pages.landing.download_on_the")}</p>
+                      <p className="text-white font-bold text-base">{t("pages.landing.app_store")}</p>
                     </div>
-                    <span className="absolute -top-2.5 -right-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide text-white" style={{
-                    background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))"
-                  }}>
-                      {t("pages.landing.soon")}
-                    </span>
-                  </div>
+                  </a>
 
-                  {/* Google Play — coming soon */}
-                  <div aria-label={t("pages.landing.google_play_coming_soon")} className="relative flex items-center gap-3 px-6 py-3.5 rounded-2xl cursor-default select-none" style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  opacity: 0.85
-                }}>
-                    <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0 opacity-70" aria-hidden>
+                  <a
+                    href={PLAY_STORE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t("pages.landing.google_play_download")}
+                    className="flex items-center gap-3 px-6 py-3.5 rounded-2xl transition-colors hover:bg-white/10"
+                    style={{
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.18)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0" aria-hidden>
                       <path d="M3.18 23.76c.3.17.65.19.97.06l12.14-7.01-2.66-2.67-10.45 9.62z" fill="#EA4335" />
                       <path d="M22.47 10.3L19.7 8.72l-3.03 2.96 3.03 3.04 2.79-1.61c.8-.46.8-1.75-.02-2.81z" fill="hsl(var(--brand-yellow-400))" />
                       <path d="M3.18.24C2.88.4 2.69.72 2.69 1.12v21.76l10.7-10.7L3.18.24z" fill="hsl(var(--brand-blue-500))" />
                       <path d="M16.29 8.28L3.18.24C2.86.07 2.51.09 2.18.26l10.99 10.82 3.12-2.8z" fill="#34A853" />
                     </svg>
                     <div className="text-left leading-tight">
-                      <p className="text-white/40 text-[10px] font-medium">{t("pages.landing.get_it_on")}</p>
-                      <p className="text-white/70 font-bold text-base">{t("pages.landing.google_play")}</p>
+                      <p className="text-white/50 text-[10px] font-medium">{t("pages.landing.get_it_on")}</p>
+                      <p className="text-white font-bold text-base">{t("pages.landing.google_play")}</p>
                     </div>
-                    <span className="absolute -top-2.5 -right-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide text-white" style={{
-                    background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))"
-                  }}>
-                      {t("pages.landing.soon_2")}
-                    </span>
-                  </div>
+                  </a>
+                </div>
+
+                {/* QR codes — scan to download */}
+                <div className="mt-8 flex flex-wrap items-start justify-center md:justify-start gap-6">
+                  <a
+                    href={APP_STORE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-2.5 group"
+                    aria-label={t("pages.landing.scan_for_app_store")}
+                  >
+                    <div className="rounded-2xl bg-white p-3 shadow-lg transition-transform group-hover:scale-[1.02]">
+                      <QRCode value={APP_STORE_URL} size={96} bgColor="#FFFFFF" fgColor="#1a1a2e" />
+                    </div>
+                    <p className="text-white/60 text-xs font-medium text-center max-w-[120px]">
+                      {t("pages.landing.scan_for_app_store")}
+                    </p>
+                  </a>
+                  <a
+                    href={PLAY_STORE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-2.5 group"
+                    aria-label={t("pages.landing.scan_for_google_play")}
+                  >
+                    <div className="rounded-2xl bg-white p-3 shadow-lg transition-transform group-hover:scale-[1.02]">
+                      <QRCode value={PLAY_STORE_URL} size={96} bgColor="#FFFFFF" fgColor="#1a1a2e" />
+                    </div>
+                    <p className="text-white/60 text-xs font-medium text-center max-w-[120px]">
+                      {t("pages.landing.scan_for_google_play")}
+                    </p>
+                  </a>
                 </div>
 
               </div>

@@ -65,6 +65,10 @@ import learningLoadMoreRouter, {
   learningSeedPublicRouter,
 } from "./learning-load-more";
 import childIntelligenceRouter from "./child-intelligence";
+import familyIntelligenceRouter from "./family-intelligence";
+import amyOperatingRouter from "./amy-operating";
+import intentRecoveryRouter from "./intent-recovery";
+import realityValidationRouter from "./reality-validation";
 import householdRouter from "./household";
 import explainRouter from "./explain";
 import safetyRouter from "./safety";
@@ -173,6 +177,10 @@ router.use(olympiadRouter);
 router.use(lifeSkillsRouter);
 router.use(learningLoadMoreRouter);
 router.use(childIntelligenceRouter);
+router.use(familyIntelligenceRouter);
+router.use(amyOperatingRouter);
+router.use(intentRecoveryRouter);
+router.use(realityValidationRouter);
 router.use(householdRouter);
 router.use(explainRouter);
 router.use(safetyRouter);

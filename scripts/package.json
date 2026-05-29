@@ -26,12 +26,14 @@
     "check-chat-platform": "tsx ./check-chat-platform.ts",
     "check-chat-platform-certification": "tsx ./check-chat-platform-certification.ts",
     "check-chat-platform-telemetry": "tsx ./check-chat-platform-telemetry.ts",
+    "check-action-routing": "tsx ./check-action-routing.ts",
     "validate:amy-voice-field": "tsx ./src/amy-voice-field-validation.ts",
     "review:amy-voice-weekly": "tsx ./src/amy-voice-weekly-review.ts",
     "typecheck": "pnpm run audit:parent-hub-i18n && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.19.0",
+    "@workspace/action-routing": "workspace:*",
     "@workspace/static-audio": "workspace:*",
     "@workspace/speech-coach": "workspace:*",
     "@workspace/learning-zone-english": "workspace:*",

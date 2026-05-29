@@ -81,6 +81,18 @@ export const notificationPreferencesTable = pgTable("notification_preferences", 
    */
   engagementScore: integer("engagement_score").notNull().default(50),
 
+  /** BCP 47 locale for notification copy (en-US, hi, ja, …). */
+  locale: text("locale").notNull().default("en-US"),
+  /** ISO 3166-1 alpha-2 country for cultural + compliance context. */
+  countryCode: text("country_code"),
+  /** Explicit push consent timestamp (GDPR / COPPA / PIPEDA regions). */
+  pushConsentAt: timestamp("push_consent_at", { withTimezone: true }),
+  pushConsentVersion: text("push_consent_version"),
+  marketingOptIn: boolean("marketing_opt_in").notNull().default(false),
+  /** Learned preferred open hour 0–23 for smart delivery windows. */
+  preferredEngagementHour: integer("preferred_engagement_hour"),
+  smartDeliveryEnabled: boolean("smart_delivery_enabled").notNull().default(true),
+
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

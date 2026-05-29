@@ -1,0 +1,12 @@
+{
+  "name": "@workspace/action-routing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --import tsx/esm --test src/action-routing.test.ts"
+  }
+}

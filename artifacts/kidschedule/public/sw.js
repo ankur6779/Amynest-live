@@ -90,19 +90,25 @@ messaging.onBackgroundMessage(function (payload) {
 });
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
-  var deepLink = event.notification.data && event.notification.data.deepLink
-    ? event.notification.data.deepLink
-    : '/';
+  var data = event.notification.data || {};
+  var deepLink = data.deepLink ? data.deepLink : '/';
+  var category = data.category ? data.category : '';
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
       for (var i = 0; i < clientList.length; i++) {
         var client = clientList[i];
         if (client.url.indexOf(self.location.origin) === 0 && 'focus' in client) {
-          client.navigate(deepLink);
+          client.postMessage({
+            type: 'amynest-notif-deeplink',
+            deepLink: deepLink,
+            category: category,
+            data: data,
+          });
           return client.focus();
         }
       }
-      return self.clients.openWindow(deepLink);
+      var target = deepLink.indexOf('/') === 0 ? self.location.origin + deepLink : deepLink;
+      return self.clients.openWindow(target);
     })
   );
 });

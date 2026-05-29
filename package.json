@@ -49,6 +49,7 @@
     "check:chat-platform": "pnpm --filter @workspace/scripts run check-chat-platform && pnpm --filter @workspace/kidschedule exec vitest run src/lib/chat-platform-visibility.test.ts",
     "check:chat-platform-certification": "pnpm --filter @workspace/scripts run check-chat-platform-certification",
     "check:chat-platform-telemetry": "pnpm --filter @workspace/scripts run check-chat-platform-telemetry",
+    "check:action-routing": "pnpm --filter @workspace/scripts run check-action-routing",
     "validate:amy-voice-field": "pnpm --filter @workspace/scripts run validate:amy-voice-field",
     "review:amy-voice-weekly": "pnpm --filter @workspace/scripts run review:amy-voice-weekly",
     "stability:api-unit": "pnpm --filter @workspace/api-server exec node --import tsx/esm --test src/lib/production-load.test.ts",

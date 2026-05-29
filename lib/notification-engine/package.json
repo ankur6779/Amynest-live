@@ -1,0 +1,15 @@
+{
+  "name": "@workspace/notification-engine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --import tsx/esm --test src/engine.test.ts"
+  },
+  "dependencies": {
+    "@workspace/db": "workspace:*"
+  }
+}

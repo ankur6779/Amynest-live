@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Send, Loader2, User, RefreshCw, Zap, RotateCcw, Heart, GraduationCap, CheckSquare, Lightbulb, HelpCircle } from "lucide-react";
+import { Send, Loader2, User, RefreshCw, Zap, RotateCcw, Heart, GraduationCap, CheckSquare, Lightbulb, HelpCircle, Sparkles } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -45,6 +45,12 @@ export default function AssistantPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollApiRef = useRef<{ scrollToEnd: (behavior?: ScrollBehavior) => void } | null>(null);
   const [showScrollLatest, setShowScrollLatest] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) setInput(q);
+  }, []);
 
   // Load saved chat history on mount so parents can pick up where they left off
   useEffect(() => {
@@ -91,6 +97,30 @@ export default function AssistantPage() {
     staleTime: 60_000,
   });
   const primaryChild = Array.isArray(childrenData) && childrenData.length > 0 ? childrenData[0] : null;
+
+  interface DailyBriefing {
+    greeting?: string;
+    wins?: string[];
+    risks?: string[];
+    recommendedActions?: Array<{ title: string; why: string }>;
+    suggestedQuestions?: string[];
+    healthScore?: number;
+    healthTrend?: string;
+    continuationLine?: string;
+  }
+
+  const { data: dailyBriefing } = useQuery<DailyBriefing>({
+    queryKey: ["amy-daily-briefing"],
+    queryFn: async () => {
+      const r = await authFetch("/api/amy/daily-briefing");
+      return r.ok ? r.json() : {};
+    },
+    staleTime: 300_000,
+  });
+
+  const askOperatingQuestion = (q: string) => {
+    void sendMessage(q);
+  };
 
   const sendMessage = async (question?: string) => {
     const text = (question ?? input).trim();
@@ -329,7 +359,58 @@ export default function AssistantPage() {
 
         {isEmpty ? (
           <div className="flex flex-col gap-3 py-2">
-            <p className="text-center text-sm text-muted-foreground">{t("ai.empty_short")}</p>
+            {dailyBriefing?.greeting ? (
+              <Card className="border-primary/20 bg-primary/5">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <p className="text-sm font-semibold text-foreground">{dailyBriefing.greeting}</p>
+                  </div>
+                  {dailyBriefing.continuationLine ? (
+                    <p className="text-xs text-primary/90 italic border-l-2 border-primary/40 pl-2">
+                      {dailyBriefing.continuationLine}
+                    </p>
+                  ) : null}
+                  {dailyBriefing.healthScore != null ? (
+                    <p className="text-xs text-muted-foreground">
+                      Family health: {dailyBriefing.healthScore}/100
+                      {dailyBriefing.healthTrend ? ` · ${dailyBriefing.healthTrend}` : ""}
+                    </p>
+                  ) : null}
+                  {dailyBriefing.wins && dailyBriefing.wins.length > 0 ? (
+                    <ul className="text-xs text-foreground/80 space-y-1">
+                      {dailyBriefing.wins.slice(0, 2).map((w) => (
+                        <li key={w}>✓ {w}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {dailyBriefing.risks && dailyBriefing.risks.length > 0 ? (
+                    <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1">
+                      {dailyBriefing.risks.slice(0, 1).map((r) => (
+                        <li key={r}>⚠ {r}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {dailyBriefing.suggestedQuestions && dailyBriefing.suggestedQuestions.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {dailyBriefing.suggestedQuestions.slice(0, 3).map((q) => (
+                        <button
+                          key={q}
+                          type="button"
+                          onClick={() => askOperatingQuestion(q)}
+                          disabled={limitReached}
+                          className="rounded-full border border-primary/30 bg-background px-2.5 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-40"
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </CardContent>
+              </Card>
+            ) : (
+              <p className="text-center text-sm text-muted-foreground">{t("ai.empty_short")}</p>
+            )}
             {tabTopics.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground">{t("ai.no_tab_topics")}</p>
             ) : (

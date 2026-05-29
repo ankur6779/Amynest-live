@@ -11,6 +11,7 @@ import {
   computeProductiveNudgesForChild,
   renderNudgeBodyForPush,
 } from "./productiveNudges.js";
+import { buildAdaptiveCategoryNotification } from "./notificationAdaptiveBridge.js";
 
 export interface BuiltNotification {
   title: string;
@@ -18,6 +19,33 @@ export interface BuiltNotification {
   deepLink: string;
   dedupKey: string;
   data?: Record<string, unknown>;
+  contentMeta?: {
+    contentHash?: string;
+    topicKey?: string;
+    recommendationKey?: string;
+    theme?: string;
+    contentType?: string;
+    noveltyScore?: number;
+    relevanceScore?: number;
+    recencyScore?: number;
+    engagementPredictionScore?: number;
+    qualityScore?: number;
+    businessImpactScore?: number;
+    routineCompletionProb?: number;
+    learningCompletionProb?: number;
+    retentionProb?: number;
+    subscriptionProb?: number;
+    engagementProb?: number;
+  };
+  outcomeMeta?: {
+    goal?: string;
+    childLifecycleStage?: string;
+    parentMilestone?: string | null;
+    campaignId?: string | null;
+    campaignStep?: number | null;
+    experimentId?: string | null;
+    experimentVariant?: string | null;
+  };
 }
 
 interface ChildSummary {
@@ -60,13 +88,6 @@ function todayLocalDateString(timezone: string): string {
   }).format(new Date());
 }
 
-function isWeekend(timezone: string): boolean {
-  const day = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    weekday: "short",
-  }).format(new Date());
-  return day === "Sat" || day === "Sun";
-}
 
 /* ─────────────────────────────  Routine  ─────────────────────────────── */
 
@@ -98,15 +119,12 @@ export async function buildSnackTime(
 ): Promise<BuiltNotification | null> {
   const child = await getPrimaryChild(userId);
   if (!child) return null;
+  const adaptive = await buildAdaptiveCategoryNotification(userId, timezone, "nutrition", child);
+  if (adaptive) return adaptive;
   const date = todayLocalDateString(timezone);
-  const isVeg = child.foodType === "veg";
-  const ideas = isVeg
-    ? ["fruit chaat", "roasted makhana", "yogurt with berries", "boiled corn"]
-    : ["boiled egg", "paneer cubes", "fruit chaat", "roasted chickpeas"];
-  const pick = ideas[Math.floor(Math.random() * ideas.length)];
   return {
     title: "Snack time idea 🍎",
-    body: `Try ${pick} for ${child.name} this afternoon.`,
+    body: `See fresh meal ideas for ${child.name} in AmyNest.`,
     deepLink: "/meals",
     dedupKey: `snack:${date}`,
     data: { childId: child.id },
@@ -119,14 +137,7 @@ export async function buildDinnerSuggestion(
 ): Promise<BuiltNotification | null> {
   const child = await getPrimaryChild(userId);
   if (!child) return null;
-  const date = todayLocalDateString(timezone);
-  return {
-    title: `Dinner ideas for ${child.name} 🍲`,
-    body: "Need inspiration? See balanced dinners that match today's plan.",
-    deepLink: "/meals",
-    dedupKey: `dinner:${date}`,
-    data: { childId: child.id },
-  };
+  return buildAdaptiveCategoryNotification(userId, timezone, "nutrition", child);
 }
 
 export async function buildGoodNight(
@@ -300,7 +311,10 @@ export async function buildEngagement(
     };
   }
 
-  // Rotation motivation message for active users
+  // Rotation motivation message for active users — adaptive engine
+  const adaptive = await buildAdaptiveCategoryNotification(userId, timezone, "engagement", child);
+  if (adaptive) return adaptive;
+
   return {
     title: "You've got this 💪",
     body: motivationPick ?? `Keep going — parenting gets easier with every step forward 🌟`,
@@ -316,39 +330,7 @@ export async function buildNutritionInsight(
 ): Promise<BuiltNotification | null> {
   const child = await getPrimaryChild(userId);
   if (!child) return null;
-  const date = todayLocalDateString(timezone);
-
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const recentRoutines = await db
-    .select({ id: routinesTable.id })
-    .from(routinesTable)
-    .where(
-      and(
-        eq(routinesTable.childId, child.id),
-        gte(routinesTable.createdAt, sevenDaysAgo),
-      ),
-    )
-    .limit(5);
-
-  const tips: Record<ReturnType<typeof ageGroup>, string> = {
-    toddler: "Toddlers do best with small, frequent meals and a finger-food snack.",
-    preschool: "Preschoolers love colourful plates — aim for two colours at every meal.",
-    child: "School-age kids need protein at breakfast to focus through morning class.",
-    tween: "Tweens have growing appetites — pair carbs with protein at every meal.",
-  };
-
-  const body =
-    recentRoutines.length === 0
-      ? `${tips[ageGroup(child.age)]} Tap for a tailored plan.`
-      : `Based on this week, here are 3 fresh meal ideas for ${child.name}.`;
-
-  return {
-    title: "Nutrition tip 🥗",
-    body,
-    deepLink: "/meals",
-    dedupKey: `nutrition:${date}`,
-    data: { childId: child.id },
-  };
+  return buildAdaptiveCategoryNotification(userId, timezone, "nutrition", child);
 }
 
 export async function buildAmyInsight(
@@ -527,46 +509,7 @@ export async function buildParentingTip(
 ): Promise<BuiltNotification | null> {
   const child = await getPrimaryChild(userId);
   if (!child) return null;
-  const date = todayLocalDateString(timezone);
-
-  const tipsByGroup: Record<ReturnType<typeof ageGroup>, string[]> = {
-    toddler: [
-      `Let ${child.name} make one tiny choice today — red cup or blue cup — it builds autonomy.`,
-      `Narrate what you're doing aloud. ${child.name}'s vocabulary grows through listening.`,
-      `10 minutes of unstructured play is more valuable than any structured lesson at this age.`,
-      `When ${child.name} is upset, crouch to eye level before speaking — it de-escalates instantly.`,
-    ],
-    preschool: [
-      `Ask "${child.name}, what made you happy today?" — it builds emotional awareness.`,
-      `Let ${child.name} help with a small chore. Contribution builds self-worth.`,
-      `Praise the effort, not the result: "You tried so hard!" shapes a growth mindset.`,
-      `Reading 15 minutes together daily builds ${child.name}'s reading readiness by 40%.`,
-    ],
-    child: [
-      `Give ${child.name} a weekly "responsibility" — it builds accountability.`,
-      `Limit advice; ask questions instead. ${child.name} learns more by figuring it out.`,
-      `Celebrate one small win today — it rewires ${child.name}'s brain for positivity.`,
-      `Family dinners 3x/week are linked to better grades and emotional health.`,
-    ],
-    tween: [
-      `Notice one thing ${child.name} does well today and mention it specifically.`,
-      `Let ${child.name} disagree with you respectfully — it's healthy boundary-testing.`,
-      `Ask about their friends by name — it shows you're interested in their world.`,
-      `Screen time is fine if balanced. Co-watch something they love this weekend.`,
-    ],
-  };
-
-  const tips = tipsByGroup[ageGroup(child.age)];
-  const dayIndex = Math.floor(Date.now() / 86400000) % tips.length;
-  const body = tips[dayIndex] ?? tips[0]!;
-
-  return {
-    title: "Parenting tip of the day 🌱",
-    body,
-    deepLink: "/hub",
-    dedupKey: `parenting_tip:${date}`,
-    data: { childId: child.id },
-  };
+  return buildAdaptiveCategoryNotification(userId, timezone, "parenting_tips", child);
 }
 
 /**
@@ -579,22 +522,7 @@ export async function buildStoryTime(
 ): Promise<BuiltNotification | null> {
   const child = await getPrimaryChild(userId);
   if (!child) return null;
-  const date = todayLocalDateString(timezone);
-
-  const prompts: Record<ReturnType<typeof ageGroup>, string> = {
-    toddler: `It's almost story time for ${child.name} 📖 A short picture book helps them wind down.`,
-    preschool: `Ready for tonight's story with ${child.name}? Pick one together for extra magic ✨`,
-    child: `Bedtime story time 🌙 ${child.name} will sleep better after 10 minutes of reading together.`,
-    tween: `Tonight's a good night to share a chapter with ${child.name} — reading together builds bonds.`,
-  };
-
-  return {
-    title: "Story time tonight 📚",
-    body: prompts[ageGroup(child.age)],
-    deepLink: "/hub",
-    dedupKey: `story_time:${date}`,
-    data: { childId: child.id },
-  };
+  return buildAdaptiveCategoryNotification(userId, timezone, "story_time", child);
 }
 
 /**
@@ -639,65 +567,7 @@ export async function buildLearningActivity(
 ): Promise<BuiltNotification | null> {
   const child = await getPrimaryChild(userId);
   if (!child) return null;
-  const date = todayLocalDateString(timezone);
-  const weekend = isWeekend(timezone);
-
-  const weekdayActivities: Record<ReturnType<typeof ageGroup>, string[]> = {
-    toddler: [
-      `Try colour sorting with household objects — ${child.name} will love it 🎨`,
-      `Stack and knock: building towers teaches ${child.name} cause-and-effect 🏗️`,
-      `Sing the alphabet slowly together — 3 rounds beats any flashcard.`,
-    ],
-    preschool: [
-      `5-minute counting game: count steps from room to room with ${child.name} 🔢`,
-      `Tracing letters in a tray of rice — sensory + literacy for ${child.name} ✏️`,
-      `Ask ${child.name} to sort toys by colour, size, or shape — math brain activated!`,
-    ],
-    child: [
-      `Try a 5-minute math challenge with ${child.name} — who can solve it fastest? 🧮`,
-      `Read one paragraph aloud together and ask ${child.name} to summarise it 📖`,
-      `Play 20 Questions — secretly great for ${child.name}'s critical thinking 🤔`,
-    ],
-    tween: [
-      `Brain challenge: ask ${child.name} to explain a school topic to you — teaching = learning 🎓`,
-      `10-minute journaling: ${child.name} writes 3 things they want to learn this week ✍️`,
-      `Watch a 5-minute documentary clip together and discuss — curiosity booster 🌍`,
-    ],
-  };
-
-  const weekendActivities: Record<ReturnType<typeof ageGroup>, string[]> = {
-    toddler: [
-      `Outdoor morning: let ${child.name} explore nature for 20 minutes 🌿`,
-      `Water play in a bowl — toddlers learn through touch and pour 💧`,
-    ],
-    preschool: [
-      `Family art time: ${child.name} draws, you guess — great for creativity 🎨`,
-      `Bake something simple together — math, science, and joy all in one 🍪`,
-    ],
-    child: [
-      `Weekend science: mix baking soda + vinegar with ${child.name} — instant wow 🧪`,
-      `Board game morning — builds strategy and family bonds 🎲`,
-    ],
-    tween: [
-      `Family walk or bike ride — screen-free bonding for the whole family 🚴`,
-      `Cook a new recipe together — life skill + quality time ☺️`,
-    ],
-  };
-
-  const activities = weekend
-    ? weekendActivities[ageGroup(child.age)]
-    : weekdayActivities[ageGroup(child.age)];
-
-  const idx = Math.floor(Date.now() / 86400000) % activities.length;
-  const body = activities[idx] ?? `Try a short activity with ${child.name} today!`;
-
-  return {
-    title: weekend ? "Weekend activity idea 🌟" : "Learning activity idea 🧠",
-    body,
-    deepLink: "/hub",
-    dedupKey: `learning_activity:${date}`,
-    data: { childId: child.id },
-  };
+  return buildAdaptiveCategoryNotification(userId, timezone, "learning_activity", child);
 }
 
 /**

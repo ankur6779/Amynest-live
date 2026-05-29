@@ -32,7 +32,9 @@ import { DailyTips } from "@/components/daily-tips";
 import { ParentingArticles } from "@/components/parenting-articles";
 import { AmyIcon } from "@/components/amy-icon";
 import { FuturePredictor } from "@/components/future-predictor";
-import { ParentCommandCenter } from "@/components/parent-command-center";
+import { FamilyExecutiveDashboard } from "@/components/family-executive-dashboard";
+import { ContinueJourneyCard } from "@/components/continue-journey-card";
+import { RealityDashboardPanel } from "@/components/reality-dashboard/reality-dashboard-panel";
 import { LockedBlock } from "@/components/locked-block";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { SubItemGate } from "@/components/sub-item-gate";
@@ -954,12 +956,13 @@ function ParentingHubPage() {
     alwaysCurrent: true,
     render: () => {
       return (
-        <div data-section-id="command-center">
-          <ParentCommandCenter child={{
-            id: effectiveChild.id,
-            name: effectiveChild.name,
-            age: effectiveChild.age,
-          }} />
+        <div data-section-id="command-center" className="space-y-4">
+          <ContinueJourneyCard />
+          <RealityDashboardPanel />
+          <FamilyExecutiveDashboard
+            childId={effectiveChild.id}
+            childName={effectiveChild.name}
+          />
         </div>
       );
     }

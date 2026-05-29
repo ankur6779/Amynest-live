@@ -1,0 +1,16 @@
+{
+  "name": "@workspace/intent-recovery",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --import tsx/esm --test src/intent-recovery.test.ts"
+  },
+  "dependencies": {
+    "@workspace/action-routing": "workspace:*",
+    "@workspace/notification-engine": "workspace:*"
+  }
+}

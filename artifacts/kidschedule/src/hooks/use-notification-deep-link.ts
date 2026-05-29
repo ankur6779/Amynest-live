@@ -23,10 +23,15 @@ import {
   unregisterNavigationListener,
 } from "@/lib/navigation-orchestrator";
 import { logNavEvent } from "@/lib/navigation-log";
+import { recordNotificationOpened } from "@/lib/notification-engagement";
+import { trackNotificationClicked, trackDeepLinkEvent } from "@/lib/deep-link-analytics";
+import { createNotificationIntent } from "@/lib/intent-recovery-client";
 
 interface NotifDeepLinkEvent {
   deepLink: string;
   category?: string;
+  actionTarget?: string;
+  entityId?: string;
   userInteraction?: boolean;
   notificationId?: string;
   tappedAt?: number;
@@ -61,6 +66,9 @@ function handleNotificationTap(
       req.userInteraction === true
     ) {
       consumeNotificationNavigation(req);
+      if (req.userInteraction === true) {
+        recordNotificationOpened();
+      }
       toast({
         description: "Opened from notification",
         duration: 2500,
@@ -78,6 +86,20 @@ function handleNotificationTap(
   if (!navigated) return;
 
   consumeNotificationNavigation(req);
+  if (req.userInteraction === true) {
+    recordNotificationOpened();
+    trackNotificationClicked({
+      category: payload.category,
+      path: decision.resolvedPath,
+      source: "notification",
+    });
+    trackDeepLinkEvent("deep_link_opened", {
+      category: payload.category,
+      path: decision.resolvedPath,
+      source: "notification",
+    });
+    void createNotificationIntent(decision.resolvedPath, payload);
+  }
   toast({
     description: "Opened from notification",
     duration: 2500,
