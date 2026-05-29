@@ -215,7 +215,7 @@ export async function initIOSBilling(userId: string): Promise<IOSBillingInitResu
     lastInitFailure = {
       ok: false,
       code: "configure_failed",
-      reason: `Apple billing setup failed: ${message}. Make sure you are signed in to the App Store on this device and subscription products are live in App Store Connect.`,
+      reason: `App Store subscription setup failed: ${message}. Make sure you are signed in to the App Store on this device and subscription products are live in App Store Connect.`,
     };
     console.warn("[IOSBilling] init failed:", e);
     configuredForUser = null;

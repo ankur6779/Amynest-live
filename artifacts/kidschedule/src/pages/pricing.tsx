@@ -551,31 +551,28 @@ export default function PricingPage() {
                 type="button"
                 onClick={onUpgradeNativeStore}
                 disabled={isProcessing || !nativeBilling.available || plans.length === 0}
-                data-testid="button-upgrade-apple"
+                data-testid="button-upgrade-app-store"
                 data-on-dark
-                className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-black shadow-[0_4px_18px_rgba(0,0,0,0.5)] transition-opacity hover:opacity-80 disabled:opacity-50"
+                className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-primary to-primary shadow-[0_10px_24px_rgba(255,78,205,0.5)] transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {nativeBilling.purchasing ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin text-white" />
-                    {/* audit-ok: white text on black Apple button */}
-                    <span className="text-sm font-bold text-white">{t("pricing.apple_processing")}</span>
+                    <span className="text-sm font-bold text-white">{t("pricing.app_store_processing")}</span>
                   </>
                 ) : (
                   <>
-                    {/* audit-block-ignore-start — Apple Inc. logo (required by Apple HIG for Pay-with-Apple buttons) */}
-                    <svg viewBox="0 0 384 512" width="18" height="22" fill="white" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                      <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
-                    </svg>
-                    {/* audit-block-ignore-end */}
-                    {/* audit-ok: white text on black Apple button */}
+                    <Zap className="h-5 w-5 text-white" />
                     <span className="text-sm font-bold text-white">
-                      {t("pricing.pay_with_apple", { defaultValue: planCta(selected) })}
+                      {t("pricing.subscribe_app_store", { defaultValue: planCta(selected) })}
                     </span>
                   </>
                 )}
               </button>
             )}
+            <p className="text-center text-[10px] text-white/30">
+              {t("pricing.app_store_subtitle")}
+            </p>
             <button
               type="button"
               onClick={() => void nativeBilling.restore()}
@@ -831,6 +828,16 @@ export default function PricingPage() {
             className="text-white/45 underline underline-offset-2 hover:text-white/70 transition-colors"
           >
             {t("pages.landing.terms_of_service")}
+          </a>
+          <span className="text-white/25">·</span>
+          <a
+            href="https://amynest.in/support"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="pricing-link-support"
+            className="text-white/45 underline underline-offset-2 hover:text-white/70 transition-colors"
+          >
+            {t("pages.landing.support")}
           </a>
         </div>
       </div>

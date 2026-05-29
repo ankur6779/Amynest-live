@@ -485,9 +485,10 @@
     "subscribe_google_play": "Continue with Google Play",
     "google_play_subtitle": "Billed securely through Google Play. Cancel anytime in Subscriptions.",
     "open_google_play": "Open Google Play",
-    "pay_with_apple": "Continue with Apple",
-    "apple_processing": "Opening App Store…",
-    "apple_unavailable": "Apple billing isn't available right now. Sign in to the App Store and try again.",
+    "subscribe_app_store": "Subscribe in App Store",
+    "app_store_subtitle": "In-App Purchase billed through the App Store. Cancel anytime in Settings → Apple ID → Subscriptions.",
+    "app_store_processing": "Preparing subscription…",
+    "apple_unavailable": "App Store purchases aren't available right now. Sign in to the App Store and try again.",
     "google_play_unavailable": "Google Play billing isn't available right now. Update the app from the Play Store and try again.",
     "google_play_processing": "Opening Google Play…",
     "restore_purchases": "Restore Purchases",
@@ -3756,7 +3757,7 @@
       "upgrade_title": "Keep building what you've started",
       "upgrade_subtitle": "You've seen what AmyNest can do. Subscribe to keep coaching, routines, learning, and progress connected for your child.",
       "cancel_anytime_renews_automatically_until_canceled": "Cancel anytime. Your billing period stays clear in your account.",
-      "ios_billing_note": "Payment processed by Apple · Subscription renews until cancelled in Settings",
+      "ios_billing_note": "In-App Purchase via App Store · Renews until cancelled in Settings → Apple ID → Subscriptions",
       "android_billing_note": "Payment processed by Google Play · Subscription renews until cancelled in Play Store"
     },
     "phone_auth_flow": {
@@ -4578,6 +4579,7 @@
       "sign_in": "Sign In",
       "privacy_policy": "Privacy Policy",
       "terms_of_service": "Terms of Use (EULA)",
+      "support": "Support",
       "2026_amynest_ai_all_rights_reserved": "© 2026 AmyNest AI. All rights reserved."
     },
     "notification_settings": {
@@ -5134,6 +5136,26 @@
       "amynest_ai_2": "AmyNest AI",
       "amynest_ai_3": "AmyNest AI",
       "amynest_in": "amynest.in"
+    },
+    "support": {
+      "amynest_ai": "AmyNest AI",
+      "amynest_ai_2": "AmyNest AI",
+      "title": "Support",
+      "subtitle": "We're here to help with your account, subscription, and anything in the AmyNest app.",
+      "contact_heading": "Contact us",
+      "contact_subtitle": "Email our support team and we'll get back to you.",
+      "response_time": "We typically respond within 2 business days. Include your registered email and a short description of the issue.",
+      "topics_heading": "What we can help with",
+      "send_feedback": "Send feedback from inside the app",
+      "billing_dispute": "Billing dispute & refund policy",
+      "delete_account": "Delete your account",
+      "self_service_heading": "Helpful links",
+      "subscription_heading": "Manage your subscription",
+      "subscription_body": "Premium subscriptions are handled by the store where you subscribed:",
+      "subscription_ios": "iOS: Settings → Apple ID → Subscriptions → AmyNest AI",
+      "subscription_android": "Android: Google Play → Payments & subscriptions → Subscriptions → AmyNest AI",
+      "subscription_web": "Web (India): contact support@amynest.in with your registered email and transaction details.",
+      "footer": "AmyNest AI · support@amynest.in · https://amynest.in/support"
     },
     "amy_ai_tutor": {
       "daily_amy_ai_limit_reached": "Daily Amy AI limit reached — upgrade for unlimited.",
