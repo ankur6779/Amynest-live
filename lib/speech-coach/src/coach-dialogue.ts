@@ -19,6 +19,10 @@ import {
 } from "./coach-memory";
 import { compareTranscript, type TranscriptFeedback, type TranscriptResult } from "./transcript";
 import type { PronouncePrompt, PronouncePromptKind } from "./types";
+import {
+  buildCoachDialogueAudioTexts,
+  getCoachDialogueExtraAudioTexts,
+} from "./coach-audio-corpus";
 
 export type { CoachSessionMemory, CoachMemoryTone, CoachProgressInput } from "./coach-memory";
 export type {
@@ -851,3 +855,47 @@ export function coachActivityIntroHint(kind: PronouncePromptKind): string {
   const lines = ACTIVITY_INTROS[activityKind(kind)];
   return lines.join(" ");
 }
+
+function flattenCoachTemplates(...groups: readonly (readonly string[])[]): string[] {
+  const out: string[] = [];
+  for (const group of groups) {
+    for (const line of group) out.push(line);
+  }
+  return out;
+}
+
+/** Coach dialogue lines for static TTS pre-generation and static-audio-map. */
+export function getCoachDialogueAudioTextsForStaticCatalog(): string[] {
+  const templates = [
+    ...flattenCoachTemplates(...SESSION_GREETINGS, ...SESSION_CLOSINGS),
+    ...RETURNING_WELCOME,
+    ...ACTIVITY_INTROS.phoneme,
+    ...ACTIVITY_INTROS.word,
+    ...ACTIVITY_INTROS.sentence,
+    ...ITEM_INVITES,
+    ...LISTENING_ENCOURAGEMENTS,
+    ...PRAISE_GREAT,
+    ...PRAISE_CLOSE,
+    ...PRAISE_TRY_AGAIN,
+    ...STREAK_AT_3,
+    ...STREAK_AT_5,
+    ...STREAK_LONG,
+    ...PROGRESS_HALFWAY,
+    ...PROGRESS_NEAR_END,
+    ...EMPTY_TRANSCRIPT_LINES,
+    ...SUPPORTIVE_EXTRA,
+    ...CHALLENGING_EXTRA,
+    ...GROWTH_PRAISE,
+    ...EFFORT_PRAISE,
+    ...SKILL_CELEBRATIONS,
+    ...GROWTH_CLOSINGS,
+  ];
+
+  return buildCoachDialogueAudioTexts([...templates, ...getCoachDialogueExtraAudioTexts()]);
+}
+
+export {
+  getCoachDialogueWarmupPhrases,
+  COACH_DIALOGUE_WARMUP_PHRASES,
+  substituteCoachNameForStatic,
+} from "./coach-audio-corpus";

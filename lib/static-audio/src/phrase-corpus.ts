@@ -1,6 +1,6 @@
 import { LESSONS } from "@workspace/audio-lessons";
 import { getPhonicsAudioTextsForStaticCatalog, getCvcPhonemeAudioTextsForStaticCatalog } from "@workspace/phonics-sounds";
-import { getPromptSpeakText, PRONUNCIATION_PROMPTS, getArticulationCue } from "@workspace/speech-coach";
+import { getPromptSpeakText, PRONUNCIATION_PROMPTS, getArticulationCue, getCoachDialogueAudioTextsForStaticCatalog } from "@workspace/speech-coach";
 import {
   ADVANCED_SUBJECTS,
   collapseSpeakWhitespace,
@@ -127,6 +127,12 @@ function collectStudyZonePhrases(): SpeakablePhraseRecord[] {
   return out;
 }
 
+function collectCoachDialoguePhrases(): SpeakablePhraseRecord[] {
+  return getCoachDialogueAudioTextsForStaticCatalog()
+    .map((t) => toRecord(t, "default", "coach_dialogue"))
+    .filter((r): r is SpeakablePhraseRecord => r !== null);
+}
+
 function collectSpeechCoachPhrases(): SpeakablePhraseRecord[] {
   const out: SpeakablePhraseRecord[] = [];
   for (const p of PRONUNCIATION_PROMPTS) {
@@ -198,6 +204,7 @@ export function collectAllSpeakablePhrases(): SpeakablePhraseRecord[] {
     ...fromEntries(getStaticTtsEntries(), "static_catalog"),
     ...collectStudyZonePhrases(),
     ...collectSpeechCoachPhrases(),
+    ...collectCoachDialoguePhrases(),
     ...collectAudioLessonPhrases(),
     ...collectPhonicsExtras(),
     ...collectMathTrickPhrases(),
