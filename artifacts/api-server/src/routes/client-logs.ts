@@ -2,6 +2,8 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { z } from "zod/v4";
 import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
+import { recordChatPlatformPromptHiddenFailure } from "../services/chatPlatformRemoteConfig";
+import { ingestChatPlatformHealthEvent } from "../services/chatPlatformHealthStore";
 
 const router: IRouter = Router();
 
@@ -72,6 +74,31 @@ async function ingestClientLog(req: Request, res: Response): Promise<void> {
   if (recentLogs.length > MAX_BUFFER) recentLogs.shift();
 
   const logType = parsed.data.type;
+  const message = parsed.data.message;
+  const chatPlatformFailure =
+    message === "chat_prompt_hidden_after_keyboard_open" ||
+    message === "keyboard_visibility_failures" ||
+    message === "android_keyboard_layout_conflicts";
+  const chatPlatformRecovery = message === "chat_prompt_recovery_triggered";
+
+  if (message === "chat_prompt_hidden_after_keyboard_open") {
+    recordChatPlatformPromptHiddenFailure();
+  }
+
+  if (
+    chatPlatformFailure ||
+    chatPlatformRecovery ||
+    message === "chat_prompt_recovery_triggered"
+  ) {
+    ingestChatPlatformHealthEvent({
+      ts: entry.ts,
+      event: message,
+      surface: parsed.data.context?.replace(/^chat_platform:/, ""),
+      route: entry.route,
+      meta,
+      userId: entry.userId,
+    });
+  }
   const staticAudioError =
     logType === "static_audio_play_failed" || logType === "static_audio_proxy_failed";
   const staticAudioWarn = logType === "static_audio_missing_url";
@@ -83,11 +110,13 @@ async function ingestClientLog(req: Request, res: Response): Promise<void> {
   const logFn =
     logType === "crash" ||
     logType === "failed_routine" ||
+    chatPlatformFailure ||
     staticAudioError ||
     amyVoiceError
       ? logger.error.bind(logger)
       : logType === "slow_api" ||
           logType === "warning" ||
+          chatPlatformRecovery ||
           staticAudioWarn ||
           amyVoiceWarn
         ? logger.warn.bind(logger)

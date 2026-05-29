@@ -109,6 +109,45 @@ interface DashboardData {
   };
 }
 
+type ChatPlatformHealthData = {
+  windowMs: number;
+  generatedAt: number;
+  status: DashboardStatus;
+  totals: {
+    chat_prompt_hidden_after_keyboard_open: number;
+    chat_prompt_recovery_triggered: number;
+    keyboard_visibility_failures: number;
+    android_keyboard_layout_conflicts: number;
+  };
+  failureGroups: Array<{
+    groupKey: string;
+    label: string;
+    deviceManufacturer: string;
+    androidVersion: string;
+    osSkin: string;
+    keyboardApp: string;
+    appVersion: string;
+    chat_prompt_hidden_after_keyboard_open: number;
+    chat_prompt_recovery_triggered: number;
+    keyboard_visibility_failures: number;
+    android_keyboard_layout_conflicts: number;
+    totalFailures: number;
+  }>;
+  recentEvents: Array<{
+    ts: number;
+    event: string;
+    label: string;
+    surface?: string;
+  }>;
+  trends24h: Array<{
+    hour: string;
+    hidden: number;
+    recovery: number;
+    failures: number;
+    conflicts: number;
+  }>;
+};
+
 type SystemHealthData = {
   health: {
     apiHealthy: boolean;
@@ -269,6 +308,16 @@ export default function AdminDashboardPage() {
     refetchInterval: 30_000,
   });
 
+  const { data: chatPlatformHealth } = useQuery({
+    queryKey: ["admin-chat-platform-health"],
+    queryFn: async (): Promise<ChatPlatformHealthData> => {
+      const res = await authFetch("/api/admin/chat-platform-health");
+      if (!res.ok) throw new Error(`http_${res.status}`);
+      return res.json();
+    },
+    refetchInterval: 30_000,
+  });
+
   const { data: systemHealth } = useQuery({
     queryKey: ["admin-system-health"],
     queryFn: async (): Promise<SystemHealthData> => {
@@ -420,6 +469,103 @@ export default function AdminDashboardPage() {
                   Samples: {startupStats.sampleCount} · beacon /api/startup-events
                 </p>
               </div>
+            )}
+
+            {chatPlatformHealth && (
+              <Section title="Android Chat Visibility Health">
+                <div className="flex flex-wrap items-center gap-3 mb-4">
+                  <StatusBadge status={chatPlatformHealth.status} />
+                  <p className="text-xs text-muted-foreground">
+                    Last 24h · updated {new Date(chatPlatformHealth.generatedAt).toLocaleTimeString()}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                  <MiniStat
+                    label="Prompt hidden"
+                    value={String(chatPlatformHealth.totals.chat_prompt_hidden_after_keyboard_open)}
+                  />
+                  <MiniStat
+                    label="Recovery"
+                    value={String(chatPlatformHealth.totals.chat_prompt_recovery_triggered)}
+                  />
+                  <MiniStat
+                    label="Visibility fail"
+                    value={String(chatPlatformHealth.totals.keyboard_visibility_failures)}
+                  />
+                  <MiniStat
+                    label="Layout conflicts"
+                    value={String(chatPlatformHealth.totals.android_keyboard_layout_conflicts)}
+                  />
+                </div>
+                <DataTable
+                  headers={[
+                    "Device group",
+                    "Hidden",
+                    "Recovery",
+                    "Vis fail",
+                    "Conflicts",
+                    "Total fail",
+                  ]}
+                  rows={
+                    chatPlatformHealth.failureGroups.length > 0
+                      ? chatPlatformHealth.failureGroups.map((row) => [
+                          row.label,
+                          String(row.chat_prompt_hidden_after_keyboard_open),
+                          String(row.chat_prompt_recovery_triggered),
+                          String(row.keyboard_visibility_failures),
+                          String(row.android_keyboard_layout_conflicts),
+                          String(row.totalFailures),
+                        ])
+                      : [["No Android chat visibility events in window", "—", "—", "—", "—", "—"]]
+                  }
+                  rowAlert={(idx) => (chatPlatformHealth.failureGroups[idx]?.totalFailures ?? 0) > 0}
+                />
+                {chatPlatformHealth.recentEvents.length > 0 && (
+                  <div className="mt-4 space-y-1 max-h-40 overflow-y-auto">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60 mb-2">
+                      Recent events
+                    </p>
+                    {chatPlatformHealth.recentEvents.slice(0, 12).map((event, idx) => (
+                      <p key={`${event.ts}-${idx}`} className="text-xs text-muted-foreground">
+                        {new Date(event.ts).toLocaleTimeString()} · {event.event} · {event.label}
+                        {event.surface ? ` · ${event.surface}` : ""}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                {chatPlatformHealth.trends24h.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60 mb-2">
+                      24h failure trend (hidden + conflicts)
+                    </p>
+                    <div className="flex items-end gap-0.5 h-16">
+                      {chatPlatformHealth.trends24h.map((bucket) => {
+                        const total = bucket.hidden + bucket.conflicts;
+                        const maxTrend = Math.max(
+                          1,
+                          ...chatPlatformHealth.trends24h.map((b) => b.hidden + b.conflicts),
+                        );
+                        return (
+                          <div
+                            key={bucket.hour}
+                            className="flex-1 min-w-0"
+                            title={`${new Date(bucket.hour).toLocaleTimeString()} · hidden ${bucket.hidden} · recovery ${bucket.recovery}`}
+                          >
+                            <div
+                              className="w-full bg-red-500/60 rounded-t-sm min-h-[2px]"
+                              style={{ height: `${Math.max(4, (total / maxTrend) * 100)}%` }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground mt-3">
+                  Grouped by manufacturer · Android version · keyboard · app version ·{" "}
+                  <code className="bg-white/10 px-1 rounded">/api/admin/chat-platform-health</code>
+                </p>
+              </Section>
             )}
 
             {/* 9. Alerts */}

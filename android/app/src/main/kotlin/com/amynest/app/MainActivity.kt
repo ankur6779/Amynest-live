@@ -2,16 +2,19 @@ package com.amynest.app
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.media.AudioManager
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
 import android.webkit.JavascriptInterface
@@ -824,34 +827,40 @@ class MainActivity : AppCompatActivity() {
     // ── System chrome ────────────────────────────────────────────────────────
 
     /** Keyboard inset + shell class only (no status/nav safe-area padding). */
+    private fun resolveActiveKeyboardPackage(): String {
+        return try {
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.currentInputMethodPackageName
+                ?: Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+                    ?.substringBefore("/")
+                ?: ""
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
     private fun applyWebSafeAreaInsets(insets: WindowInsetsCompat) {
         if (!::webView.isInitialized) return
         val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
         val imeBottomPx = ime.bottom.coerceAtLeast(0)
         val webViewHeight = webView.height.coerceAtLeast(0)
-        val visibleHeightPx =
-            if (imeBottomPx > 0 && webViewHeight > imeBottomPx) {
-                webViewHeight - imeBottomPx
-            } else if (webViewHeight > 0) {
-                webViewHeight
-            } else {
-                0
-            }
+        // adjustResize already shrinks the WebView — do not subtract IME height again.
+        val visibleHeightPx = if (webViewHeight > 0) webViewHeight else 0
+        val keyboardPackage = if (imeBottomPx > 0) resolveActiveKeyboardPackage() else ""
         val js =
             "(function(){" +
                 "var r=document.documentElement;" +
                 "r.style.setProperty('--auth-keyboard-inset-native','${imeBottomPx}px');" +
                 (if (imeBottomPx > 0) {
-                    "r.style.setProperty('--auth-keyboard-inset','${imeBottomPx}px');" +
-                        (if (visibleHeightPx > 0) "r.style.setProperty('--vv-height','${visibleHeightPx}px');" else "")
+                    "r.style.setProperty('--auth-keyboard-inset','${imeBottomPx}px');"
                 } else {
                     "r.style.removeProperty('--auth-keyboard-inset');" +
-                        "r.style.removeProperty('--auth-keyboard-inset-native');" +
-                        "r.style.removeProperty('--vv-height');"
+                        "r.style.removeProperty('--auth-keyboard-inset-native');"
                 }) +
                 "r.classList.add('amynest-android-shell','amynest-native-shell');" +
                 "window.dispatchEvent(new CustomEvent('amynest-keyboard-inset'," +
-                "{detail:{inset:${imeBottomPx},visibleHeight:${visibleHeightPx}}}));" +
+                "{detail:{inset:${imeBottomPx},visibleHeight:${visibleHeightPx}," +
+                "keyboardPackage:${JSONObject.quote(keyboardPackage)}}}));" +
             "})();"
         webView.post { webView.evaluateJavascript(js, null) }
     }

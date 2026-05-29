@@ -1,5 +1,5 @@
 import type { Plan, PlanCard } from "@/hooks/use-subscription";
-import { FF_ANNUAL_PRICE_EQUIV } from "@/lib/subscription-feature-flags";
+import { FF_MONTHLY_PRIMARY_PRICE } from "@/lib/subscription-feature-flags";
 
 export type StorePlanPrice = {
   amount: number;
@@ -7,33 +7,45 @@ export type StorePlanPrice = {
   priceString?: string;
 };
 
+export type PlanPriceHierarchy = "monthly_primary" | "billed_primary";
+
+export type PlanBillingLabels = {
+  billedAnnuallyAt: (formattedAmount: string) => string;
+  billedEverySixMonthsAt: (formattedAmount: string) => string;
+  billedMonthly: string;
+};
+
+export const DEFAULT_PLAN_BILLING_LABELS: PlanBillingLabels = {
+  billedAnnuallyAt: (amount) => `Billed annually at ${amount}`,
+  billedEverySixMonthsAt: (amount) => `Billed every 6 months at ${amount}`,
+  billedMonthly: "Billed monthly",
+};
+
 export type PlanPricePresentation = {
-  /** Full billed amount first, e.g. ₹1,499/year or $39.99/year */
+  /** Largest price line (monthly-equivalent for multi-month, or /month for monthly). */
   primaryLine: string;
-  /** Per-month equivalent, e.g. ≈ ₹125/month */
+  /** Store-compliant actual charge, e.g. "Billed annually at $39.99". */
+  secondaryBillingLine: string;
+  /** For cancel flows / legacy consumers — same monthly amount without "≈". */
   monthlyEquivalentLine: string | null;
+  /** @deprecated Use secondaryBillingLine — kept for gradual migration. */
   billingCadenceLine: string;
   tierHintLine: string | null;
   numericAmount: number;
   currency: string;
-};
-
-const BILLING_CADENCE: Record<Exclude<Plan, "free">, string> = {
-  yearly: "Billed annually",
-  six_month: "Billed every 6 months",
-  monthly: "Billed monthly",
-};
-
-const TIER_HINT: Record<Exclude<Plan, "free">, string | null> = {
-  yearly: "Best value",
-  six_month: "Lower commitment",
-  monthly: "Most flexible",
+  hierarchy: PlanPriceHierarchy;
 };
 
 const PERIOD_SUFFIX: Record<Exclude<Plan, "free">, string> = {
   yearly: "/year",
   six_month: " / 6 months",
   monthly: "/month",
+};
+
+const TIER_HINT: Record<Exclude<Plan, "free">, string | null> = {
+  yearly: "Best value",
+  six_month: "Lower commitment",
+  monthly: "Most flexible",
 };
 
 function localeForCurrency(currency: string): string {
@@ -159,12 +171,14 @@ export function formatMonthlyEquivalentLine(
   planId: Exclude<Plan, "free">,
   billedAmount: number,
   currency: string,
+  options?: { prefixApprox?: boolean },
 ): string | null {
-  if (!FF_ANNUAL_PRICE_EQUIV) return null;
   const monthly = getMonthlyEquivalent(planId, billedAmount);
   if (monthly == null) return null;
   const rounded = roundMonthlyEquivalent(monthly, currency);
-  return `≈ ${formatCurrencyAmount(rounded, currency)}/month`;
+  const formatted = formatCurrencyAmount(rounded, currency);
+  const prefix = options?.prefixApprox === false ? "" : "≈ ";
+  return `${prefix}${formatted}/month`;
 }
 
 /** Display price label: store string → API formattedPrice → derived. */
@@ -184,11 +198,85 @@ export function resolvePlanPriceLabel(
   return displayPlanPrice(plan);
 }
 
+function buildBilledPrimaryPresentation(
+  plan: PlanCard,
+  amount: number,
+  currency: string,
+  billedLabel: string,
+): PlanPricePresentation {
+  const primaryLine = `${billedLabel}${PERIOD_SUFFIX[plan.id]}`;
+  const monthlyEquivalentLine = formatMonthlyEquivalentLine(plan.id, amount, currency, {
+    prefixApprox: true,
+  });
+
+  return {
+    primaryLine,
+    secondaryBillingLine:
+      plan.id === "monthly" ? DEFAULT_PLAN_BILLING_LABELS.billedMonthly : primaryLine,
+    monthlyEquivalentLine,
+    billingCadenceLine:
+      plan.id === "yearly"
+        ? "Billed annually"
+        : plan.id === "six_month"
+          ? "Billed every 6 months"
+          : "Billed monthly",
+    tierHintLine: TIER_HINT[plan.id],
+    numericAmount: amount,
+    currency,
+    hierarchy: "billed_primary",
+  };
+}
+
+function buildMonthlyPrimaryPresentation(
+  plan: PlanCard,
+  amount: number,
+  currency: string,
+  billedLabel: string,
+  labels: PlanBillingLabels,
+): PlanPricePresentation {
+  if (plan.id === "monthly") {
+    const primaryLine = `${billedLabel}/month`;
+    return {
+      primaryLine,
+      secondaryBillingLine: labels.billedMonthly,
+      monthlyEquivalentLine: null,
+      billingCadenceLine: labels.billedMonthly,
+      tierHintLine: TIER_HINT.monthly,
+      numericAmount: amount,
+      currency,
+      hierarchy: "monthly_primary",
+    };
+  }
+
+  const monthly = getMonthlyEquivalent(plan.id, amount);
+  const rounded =
+    monthly != null ? roundMonthlyEquivalent(monthly, currency) : amount;
+  const primaryLine = `${formatCurrencyAmount(rounded, currency)}/month`;
+  const formattedBilled = formatCurrencyAmount(amount, currency);
+  const secondaryBillingLine =
+    plan.id === "yearly"
+      ? labels.billedAnnuallyAt(formattedBilled)
+      : labels.billedEverySixMonthsAt(formattedBilled);
+
+  return {
+    primaryLine,
+    secondaryBillingLine,
+    monthlyEquivalentLine: `${formatCurrencyAmount(rounded, currency)}/month`,
+    billingCadenceLine: secondaryBillingLine,
+    tierHintLine: TIER_HINT[plan.id],
+    numericAmount: amount,
+    currency,
+    hierarchy: "monthly_primary",
+  };
+}
+
 export function buildPlanPricePresentation(
   plan: PlanCard,
   options?: {
     storePriceLabel?: string;
     store?: StorePlanPrice | null;
+    labels?: PlanBillingLabels;
+    hierarchy?: PlanPriceHierarchy;
   },
 ): PlanPricePresentation {
   const storeLabel = options?.storePriceLabel ?? options?.store?.priceString;
@@ -199,14 +287,23 @@ export function buildPlanPricePresentation(
   );
   const billedLabel =
     storeLabel ?? formatCurrencyAmount(amount, currency);
-  const primaryLine = `${billedLabel}${PERIOD_SUFFIX[plan.id]}`;
+  const labels = options?.labels ?? DEFAULT_PLAN_BILLING_LABELS;
+  const useMonthlyPrimary =
+    (options?.hierarchy ?? (FF_MONTHLY_PRIMARY_PRICE ? "monthly_primary" : "billed_primary")) ===
+    "monthly_primary";
 
-  return {
-    primaryLine,
-    monthlyEquivalentLine: formatMonthlyEquivalentLine(plan.id, amount, currency),
-    billingCadenceLine: BILLING_CADENCE[plan.id],
-    tierHintLine: TIER_HINT[plan.id],
-    numericAmount: amount,
-    currency,
-  };
+  if (useMonthlyPrimary) {
+    return buildMonthlyPrimaryPresentation(plan, amount, currency, billedLabel, labels);
+  }
+  return buildBilledPrimaryPresentation(plan, amount, currency, billedLabel);
+}
+
+/** Monthly-equivalent line for cancel-save / upsell (no ≈ prefix). */
+export function monthlyEquivalentForPlan(
+  planId: Exclude<Plan, "free">,
+  presentation: PlanPricePresentation,
+): string | null {
+  if (planId === "monthly") return null;
+  if (presentation.hierarchy === "monthly_primary") return presentation.primaryLine;
+  return presentation.monthlyEquivalentLine;
 }

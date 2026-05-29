@@ -1,0 +1,100 @@
+{
+  "$schema": "./chat-platform-device-certification.schema.json",
+  "certifiedBy": "",
+  "certifiedAt": "",
+  "appVersion": "",
+  "webDeploySha": "",
+  "notes": "Fill after REAL device testing. Uncut screen recordings required — no emulator, no dev server.",
+  "devices": [
+    {
+      "id": "samsung-gboard",
+      "label": "Samsung + Gboard",
+      "videoUrl": "",
+      "status": "pending",
+      "scenarios": {
+        "freshInstall": "pending",
+        "existingUser": "pending",
+        "onboarding": "pending",
+        "longChatHistory": "pending",
+        "textInput": "pending",
+        "timePicker": "pending",
+        "datePicker": "pending",
+        "dropdownAnswer": "pending",
+        "orientationChange": "pending",
+        "backgroundForeground": "pending"
+      }
+    },
+    {
+      "id": "samsung-samsung-keyboard",
+      "label": "Samsung + Samsung Keyboard",
+      "videoUrl": "",
+      "status": "pending",
+      "scenarios": {
+        "freshInstall": "pending",
+        "existingUser": "pending",
+        "onboarding": "pending",
+        "longChatHistory": "pending",
+        "textInput": "pending",
+        "timePicker": "pending",
+        "datePicker": "pending",
+        "dropdownAnswer": "pending",
+        "orientationChange": "pending",
+        "backgroundForeground": "pending"
+      }
+    },
+    {
+      "id": "xiaomi-gboard",
+      "label": "Xiaomi + Gboard",
+      "videoUrl": "",
+      "status": "pending",
+      "scenarios": {
+        "freshInstall": "pending",
+        "existingUser": "pending",
+        "onboarding": "pending",
+        "longChatHistory": "pending",
+        "textInput": "pending",
+        "timePicker": "pending",
+        "datePicker": "pending",
+        "dropdownAnswer": "pending",
+        "orientationChange": "pending",
+        "backgroundForeground": "pending"
+      }
+    },
+    {
+      "id": "oppo-gboard",
+      "label": "Oppo + Gboard",
+      "videoUrl": "",
+      "status": "pending",
+      "scenarios": {
+        "freshInstall": "pending",
+        "existingUser": "pending",
+        "onboarding": "pending",
+        "longChatHistory": "pending",
+        "textInput": "pending",
+        "timePicker": "pending",
+        "datePicker": "pending",
+        "dropdownAnswer": "pending",
+        "orientationChange": "pending",
+        "backgroundForeground": "pending"
+      }
+    },
+    {
+      "id": "vivo-gboard",
+      "label": "Vivo + Gboard",
+      "videoUrl": "",
+      "status": "pending",
+      "scenarios": {
+        "freshInstall": "pending",
+        "existingUser": "pending",
+        "onboarding": "pending",
+        "longChatHistory": "pending",
+        "textInput": "pending",
+        "timePicker": "pending",
+        "datePicker": "pending",
+        "dropdownAnswer": "pending",
+        "orientationChange": "pending",
+        "backgroundForeground": "pending"
+      }
+    }
+  ]
+}

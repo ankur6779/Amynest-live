@@ -8,6 +8,7 @@ import type { Plan } from "@/hooks/use-subscription";
 export type SubscriptionAnalyticsEvent =
   | "paywall_opened"
   | "paywall_reason"
+  | "plan_card_viewed"
   | "plan_selected"
   | "annual_default_shown"
   | "annual_selected"

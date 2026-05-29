@@ -2,6 +2,7 @@ import type { Plan, PlanCard } from "@/hooks/use-subscription";
 import {
   buildPlanPricePresentation,
   getMonthlyEquivalent,
+  type PlanBillingLabels,
   type StorePlanPrice,
 } from "@/lib/plan-price";
 import {
@@ -65,12 +66,13 @@ export function resolveDefaultPlanId(
   return "six_month";
 }
 
-/** Build full price presentation (primary → equivalent → cadence) from live/API amounts. */
+/** Build full price presentation from live/API amounts. */
 export function planPricePresentation(
   plan: PlanCard,
   options?: {
     storePriceLabel?: string;
     store?: StorePlanPrice | null;
+    labels?: PlanBillingLabels;
   },
 ) {
   return buildPlanPricePresentation(plan, options);
@@ -79,9 +81,23 @@ export function planPricePresentation(
 export function annualSavingsLabel(plan: PlanCard): string | null {
   if (plan.id !== "yearly") return null;
   if (typeof plan.savingsPercent === "number" && plan.savingsPercent > 0) {
-    return `Save ~${plan.savingsPercent}%`;
+    return `Save ${plan.savingsPercent}%`;
   }
-  return "Save ~33%";
+  return "Save 33%";
+}
+
+export function sixMonthSavingsLabel(plan: PlanCard): string | null {
+  if (plan.id !== "six_month") return null;
+  if (typeof plan.savingsPercent === "number" && plan.savingsPercent > 0) {
+    return `Save ${plan.savingsPercent}%`;
+  }
+  return "Save 17%";
+}
+
+export function planSavingsLabel(plan: PlanCard): string | null {
+  if (plan.id === "yearly") return annualSavingsLabel(plan);
+  if (plan.id === "six_month") return sixMonthSavingsLabel(plan);
+  return null;
 }
 
 export function isAnnualHighlightedPlan(planId: Exclude<Plan, "free">): boolean {
@@ -102,4 +118,18 @@ export function trackPlanSelected(
   if (plan === "yearly") {
     trackSubscriptionEvent({ event: "annual_selected", plan, source, reason });
   }
+}
+
+/** Once per plan per mount — pricing hierarchy experiment instrumentation. */
+export function trackPlanCardViewed(
+  plan: Exclude<Plan, "free">,
+  source: string,
+  extra?: Record<string, string | number | boolean>,
+): void {
+  trackSubscriptionEvent({
+    event: "plan_card_viewed",
+    plan,
+    source,
+    extra,
+  });
 }

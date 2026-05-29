@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { planCta } from "@workspace/subscription-marketing";
 import type { Plan, PlanCard } from "@/hooks/use-subscription";
 import { formatStickyPriceSummary } from "@/lib/pricing-plan-card-ui";
-import type { StorePlanPrice } from "@/lib/plan-price";
+import type { PlanBillingLabels, StorePlanPrice } from "@/lib/plan-price";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 
 type Props = {
@@ -11,6 +11,7 @@ type Props = {
   selectedPlan: PlanCard | undefined;
   storePriceLabel?: string;
   store?: StorePlanPrice | null;
+  billingLabels?: PlanBillingLabels;
   disabled?: boolean;
   busy?: boolean;
   onCheckout: () => void;
@@ -21,16 +22,18 @@ export function SubscriptionPricingStickyCta({
   selectedPlan,
   storePriceLabel,
   store,
+  billingLabels,
   disabled = false,
   busy = false,
   onCheckout,
 }: Props) {
   if (!selectedPlan) return null;
 
-  const { title, priceLine } = formatStickyPriceSummary(
+  const { title, priceLine, billingLine } = formatStickyPriceSummary(
     selectedPlan,
     storePriceLabel,
     store,
+    billingLabels,
   );
   const cta = planCta(selected);
 
@@ -42,7 +45,8 @@ export function SubscriptionPricingStickyCta({
       <div className="mx-auto flex max-w-md items-center gap-3">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-extrabold text-white">{title}</p>
-          <p className="text-xs font-semibold text-white/60">{priceLine}</p>
+          <p className="text-lg font-black text-white leading-tight">{priceLine}</p>
+          <p className="text-[10px] text-white/55 leading-snug">{billingLine}</p>
         </div>
         <Button
           type="button"

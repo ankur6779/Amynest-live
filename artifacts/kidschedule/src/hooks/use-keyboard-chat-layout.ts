@@ -1,153 +1,176 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { resolveChatScrollBehavior } from "@/lib/chat-scroll-behavior";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  applyChatViewportCssVars,
+  clearChatViewportCssVars,
+  ensureChatPromptVisible,
+  getChatPlatformRemoteConfig,
+  isAndroidAdjustResizeChatShell,
+  isChatAnswerTarget,
+  isForcePromptVisibilityModeActive,
+  isKeyboardOpen,
+  metricsForChatLayout,
+  readChatViewportMetrics,
+  readNativeImeInsetPx,
+  scheduleSelfHealingVisibility,
+  startChatPlatformRemoteConfigPolling,
+  subscribeChatPlatformRemoteConfig,
+  trackChatPlatformEvent,
+  usesCapacitorBodyKeyboardResize,
+  validateActivePromptVisibility,
+  type SelfHealingVisibilityHandle,
+} from "@/lib/chat-platform";
+import { setChatPlatformKeyboardAppFromNative } from "@/lib/chat-platform/device-context";
 import { isCapacitorNative } from "@/lib/capacitor-native";
-import { isCapacitorIosShell, isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+import { isCapacitorIosShell } from "@/lib/device-lite";
 
 export type ChatLayoutMode = "fullscreen" | "embedded";
 
-interface ViewportMetrics {
-  height: number;
-  offsetTop: number;
-  keyboardInset: number;
-}
-
 export interface UseKeyboardChatLayoutOptions {
   layout?: ChatLayoutMode;
+  activePromptId?: string | null;
+  /** Required telemetry / dev-guard surface id (e.g. onboarding, assistant). */
+  surface: string;
+  route?: string;
 }
 
-const KEYBOARD_OPEN_THRESHOLD = 72;
 const KEYBOARD_RESET_DELAY_MS = 320;
-const CHAT_SCROLL_SETTLE_MS = 360;
-
-function usesCapacitorBodyKeyboardResize(): boolean {
-  return isCapacitorNative() && isCapacitorIosShell();
-}
-
-function readNativeImeInsetPx(): number {
-  if (typeof document === "undefined") return 0;
-  const root = document.documentElement;
-  const raw =
-    root.style.getPropertyValue("--auth-keyboard-inset-native").trim() ||
-    root.style.getPropertyValue("--auth-keyboard-inset").trim();
-  const parsed = Number.parseFloat(raw);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-}
-
-function estimateAndroidKeyboardInset(): number {
-  if (typeof window === "undefined") return 0;
-  return Math.round(Math.min(window.innerHeight * 0.42, 420));
-}
-
-function readViewportMetrics(): ViewportMetrics {
-  if (typeof window === "undefined") {
-    return { height: 0, offsetTop: 0, keyboardInset: 0 };
-  }
-
-  const vv = window.visualViewport;
-  const offsetTop = vv?.offsetTop ?? 0;
-  const layoutHeight = window.innerHeight;
-  let height = vv?.height ?? layoutHeight;
-  let keyboardInset = Math.max(0, layoutHeight - height - offsetTop);
-
-  const nativeImeInset = readNativeImeInsetPx();
-  if (nativeImeInset > keyboardInset) {
-    keyboardInset = nativeImeInset;
-    height = Math.max(0, layoutHeight - nativeImeInset - offsetTop);
-  }
-
-  return { height, offsetTop, keyboardInset };
-}
-
-/** iOS Capacitor Body resize already shrinks layout — avoid subtracting inset twice. */
-function metricsForChatLayout(metrics: ViewportMetrics, keyboardOpen: boolean): ViewportMetrics {
-  if (!usesCapacitorBodyKeyboardResize()) return metrics;
-
-  if (keyboardOpen) {
-    return {
-      height: window.innerHeight,
-      offsetTop: 0,
-      keyboardInset: metrics.keyboardInset,
-    };
-  }
-
-  return {
-    height: window.innerHeight,
-    offsetTop: 0,
-    keyboardInset: 0,
-  };
-}
-
-function applyViewportCssVars(metrics: Pick<ViewportMetrics, "height" | "offsetTop">) {
-  const root = document.documentElement;
-  root.style.setProperty("--vv-height", `${metrics.height}px`);
-  root.style.setProperty("--vv-offset-top", `${metrics.offsetTop}px`);
-  root.style.setProperty("--vh", `${metrics.height * 0.01}px`);
-}
-
-function clearChatViewportCssVars() {
-  if (typeof document === "undefined") return;
-  const root = document.documentElement;
-  root.style.removeProperty("--vv-height");
-  root.style.removeProperty("--vv-offset-top");
-  root.style.removeProperty("--vh");
-}
 
 function isTextField(el: EventTarget | null): el is HTMLInputElement | HTMLTextAreaElement {
   return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
 }
 
+function guardAndroidLayoutOwnership() {
+  if (!isAndroidAdjustResizeChatShell() || typeof document === "undefined") return;
+  const root = document.documentElement;
+  const nativeVv = root.style.getPropertyValue("--vv-height").trim();
+  const nativeInset = readNativeImeInsetPx();
+  if (nativeVv && nativeInset > 0) {
+    trackChatPlatformEvent("android_keyboard_layout_conflicts", {
+      surface: "chat_platform",
+      nativeVvHeight: nativeVv,
+      nativeInset,
+    });
+    root.style.removeProperty("--vv-height");
+  }
+}
+
 export function useKeyboardChatLayout(
   scrollDeps: unknown[],
-  options: UseKeyboardChatLayoutOptions = {},
+  options: UseKeyboardChatLayoutOptions,
 ) {
   const layoutMode = options.layout ?? "fullscreen";
+  const activePromptId = options.activePromptId ?? null;
+  const surface = options.surface;
+  const route = options.route;
   const containerRef = useRef<HTMLDivElement>(null);
   const messagesWrapperRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   const inputBarRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
-  const fallbackInsetRef = useRef(0);
+  const activePromptIdRef = useRef(activePromptId);
+  const surfaceRef = useRef(surface);
+  const routeRef = useRef(route);
   const resetTimerRef = useRef<number | null>(null);
-  const scrollTimerRef = useRef<number | null>(null);
+  const healRef = useRef<SelfHealingVisibilityHandle | null>(null);
   const [inputBarHeight, setInputBarHeight] = useState(0);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const [viewport, setViewport] = useState<ViewportMetrics>(() => readViewportMetrics());
+  const [viewport, setViewport] = useState(() =>
+    metricsForChatLayout(readChatViewportMetrics(), false),
+  );
 
-  const clearPendingScrolls = useCallback(() => {
-    if (scrollTimerRef.current != null) {
-      window.clearTimeout(scrollTimerRef.current);
-      scrollTimerRef.current = null;
-    }
-  }, []);
+  activePromptIdRef.current = activePromptId;
+  surfaceRef.current = surface;
+  routeRef.current = route;
 
-  const scrollToEnd = useCallback((behavior: ScrollBehavior = "smooth") => {
-    const resolved = resolveChatScrollBehavior(behavior);
-    const run = () => {
-      const thread = messagesRef.current;
-      if (!thread) return;
-      const top = thread.scrollHeight;
-      thread.scrollTo({ top, behavior: resolved });
+  const remoteConfig = useSyncExternalStore(
+    subscribeChatPlatformRemoteConfig,
+    getChatPlatformRemoteConfig,
+    getChatPlatformRemoteConfig,
+  );
+  const forcePromptVisibilityMode = isForcePromptVisibilityModeActive(remoteConfig);
+
+  const buildVisibilityContext = useCallback(() => {
+    const messagesEl = messagesRef.current;
+    if (!messagesEl) return null;
+    return {
+      messagesEl,
+      inputBarEl: inputBarRef.current,
+      promptId: activePromptIdRef.current,
+      surface: surfaceRef.current,
+      route: routeRef.current,
     };
-
-    requestAnimationFrame(() => {
-      run();
-      requestAnimationFrame(run);
-    });
   }, []);
 
-  const scheduleScrollToEnd = useCallback(
-    (behavior: ScrollBehavior = "smooth", delay = CHAT_SCROLL_SETTLE_MS) => {
-      clearPendingScrolls();
-      scrollTimerRef.current = window.setTimeout(() => {
-        scrollTimerRef.current = null;
-        scrollToEnd(behavior);
-      }, delay);
+  const runVisibilityPass = useCallback(
+    (behavior: ScrollBehavior = "instant") => {
+      if (!remoteConfig.chatPlatformVisibilityProtection) return { adjusted: false, snapshot: null };
+
+      guardAndroidLayoutOwnership();
+      const ctx = buildVisibilityContext();
+      if (!ctx) return { adjusted: false, snapshot: null };
+
+      const scrollBehavior = forcePromptVisibilityMode ? "instant" : behavior;
+      const result = ensureChatPromptVisible(ctx, {
+        behavior: scrollBehavior,
+        forcePromptVisibilityMode,
+      });
+      validateActivePromptVisibility(ctx);
+      return result;
     },
-    [clearPendingScrolls, scrollToEnd],
+    [buildVisibilityContext, remoteConfig.chatPlatformVisibilityProtection, forcePromptVisibilityMode],
+  );
+
+  const runSelfHealingVisibility = useCallback(
+    (behavior: ScrollBehavior = "instant") => {
+      if (!remoteConfig.chatPlatformVisibilityProtection) return;
+
+      healRef.current?.cancel();
+      const ctx = buildVisibilityContext();
+      if (!ctx) return;
+
+      const scrollBehavior = forcePromptVisibilityMode ? "instant" : behavior;
+      healRef.current = scheduleSelfHealingVisibility(
+        ctx,
+        () => {
+          guardAndroidLayoutOwnership();
+          const fresh = buildVisibilityContext();
+          if (!fresh) {
+            return { adjusted: false, snapshot: measureFallbackSnapshot() };
+          }
+          const result = ensureChatPromptVisible(fresh, {
+            behavior: scrollBehavior,
+            forcePromptVisibilityMode,
+          });
+          validateActivePromptVisibility(fresh);
+          return result;
+        },
+        { forcePromptVisibilityMode },
+      );
+    },
+    [buildVisibilityContext, remoteConfig.chatPlatformVisibilityProtection, forcePromptVisibilityMode],
+  );
+
+  function measureFallbackSnapshot() {
+    return {
+      promptVisible: true,
+      answerVisible: true,
+      promptOverlapsKeyboard: false,
+      answerOverlapsKeyboard: false,
+      scrollLostActivePrompt: false,
+      keyboardOpen: false,
+    };
+  }
+
+  const scrollToEnd = useCallback(
+    (behavior: ScrollBehavior = "smooth") => {
+      const scrollBehavior = forcePromptVisibilityMode ? "instant" : behavior;
+      runSelfHealingVisibility(scrollBehavior);
+    },
+    [forcePromptVisibilityMode, runSelfHealingVisibility],
   );
 
   const applyOpenLayout = useCallback(
-    (rawMetrics: ViewportMetrics) => {
+    (rawMetrics: ReturnType<typeof readChatViewportMetrics>) => {
       if (resetTimerRef.current != null) {
         window.clearTimeout(resetTimerRef.current);
         resetTimerRef.current = null;
@@ -155,12 +178,10 @@ export function useKeyboardChatLayout(
       const metrics = metricsForChatLayout(rawMetrics, true);
       setViewport(metrics);
       setKeyboardOpen(true);
-      applyViewportCssVars(metrics);
-      scrollToEnd("instant");
-      scheduleScrollToEnd("smooth", 120);
-      scheduleScrollToEnd("smooth", CHAT_SCROLL_SETTLE_MS);
+      applyChatViewportCssVars(metrics);
+      runSelfHealingVisibility("instant");
     },
-    [scheduleScrollToEnd, scrollToEnd],
+    [runSelfHealingVisibility],
   );
 
   const resetKeyboardLayout = useCallback(() => {
@@ -168,10 +189,9 @@ export function useKeyboardChatLayout(
       window.clearTimeout(resetTimerRef.current);
       resetTimerRef.current = null;
     }
-    clearPendingScrolls();
+    healRef.current?.cancel();
 
-    fallbackInsetRef.current = 0;
-    const next = readViewportMetrics();
+    const next = readChatViewportMetrics();
     const restored = metricsForChatLayout(
       {
         height: window.innerHeight,
@@ -182,9 +202,9 @@ export function useKeyboardChatLayout(
     );
     setViewport(restored);
     setKeyboardOpen(false);
-    applyViewportCssVars(restored);
-    scrollToEnd("instant");
-  }, [clearPendingScrolls, scrollToEnd]);
+    applyChatViewportCssVars(restored);
+    runVisibilityPass("instant");
+  }, [runVisibilityPass]);
 
   const scheduleResetAfterKeyboard = useCallback(() => {
     if (resetTimerRef.current != null) {
@@ -192,73 +212,65 @@ export function useKeyboardChatLayout(
     }
     resetTimerRef.current = window.setTimeout(() => {
       resetTimerRef.current = null;
-      if (isTextField(document.activeElement)) return;
+      if (isTextField(document.activeElement) || isChatAnswerTarget(document.activeElement)) {
+        return;
+      }
       resetKeyboardLayout();
     }, KEYBOARD_RESET_DELAY_MS);
   }, [resetKeyboardLayout]);
 
   const syncViewport = useCallback(() => {
-    const metrics = readViewportMetrics();
-    const effectiveInset = Math.max(metrics.keyboardInset, fallbackInsetRef.current);
+    guardAndroidLayoutOwnership();
+    const metrics = readChatViewportMetrics();
 
-    if (effectiveInset <= KEYBOARD_OPEN_THRESHOLD) {
-      if (isTextField(document.activeElement)) return;
+    if (!isKeyboardOpen(metrics)) {
+      if (isTextField(document.activeElement) || isChatAnswerTarget(document.activeElement)) {
+        return;
+      }
       resetKeyboardLayout();
       return;
     }
 
-    applyOpenLayout({
-      height: Math.max(0, window.innerHeight - effectiveInset - metrics.offsetTop),
-      offsetTop: metrics.offsetTop,
-      keyboardInset: effectiveInset,
-    });
+    applyOpenLayout(metrics);
   }, [applyOpenLayout, resetKeyboardLayout]);
-
-  const applyAndroidKeyboardFallback = useCallback(() => {
-    if (!isNativeAmyNestAndroidWrapper() || isCapacitorNative()) return;
-    const metrics = readViewportMetrics();
-    if (metrics.keyboardInset >= KEYBOARD_OPEN_THRESHOLD) return;
-
-    const estimated = estimateAndroidKeyboardInset();
-    fallbackInsetRef.current = estimated;
-    applyOpenLayout({
-      ...metrics,
-      keyboardInset: estimated,
-      height: Math.max(0, window.innerHeight - estimated - metrics.offsetTop),
-    });
-  }, [applyOpenLayout]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const initial = metricsForChatLayout(readViewportMetrics(), false);
+    const stopRemoteConfigPolling = startChatPlatformRemoteConfigPolling();
+    const initial = metricsForChatLayout(readChatViewportMetrics(), false);
     setViewport(initial);
-    applyViewportCssVars(initial);
+    applyChatViewportCssVars(initial);
 
     const vv = window.visualViewport;
     const onOrientationChange = () => {
       window.setTimeout(() => {
         syncViewport();
-        scrollToEnd("instant");
-        scheduleScrollToEnd("smooth", 180);
-      }, 100);
+        runSelfHealingVisibility("instant");
+      }, 0);
     };
 
-    vv?.addEventListener("resize", syncViewport);
-    vv?.addEventListener("scroll", syncViewport);
-    window.addEventListener("resize", syncViewport);
+    const onVisibilityTrigger = () => {
+      syncViewport();
+      runSelfHealingVisibility("instant");
+    };
+
+    vv?.addEventListener("resize", onVisibilityTrigger);
+    vv?.addEventListener("scroll", onVisibilityTrigger);
+    window.addEventListener("resize", onVisibilityTrigger);
     window.addEventListener("orientationchange", onOrientationChange);
 
     const onNativeKeyboardInset = (event: Event) => {
-      const detail = (event as CustomEvent<{ inset?: number; visibleHeight?: number }>).detail;
+      const detail = (event as CustomEvent<{ inset?: number; keyboardPackage?: string }>).detail;
       const inset = detail?.inset ?? 0;
-      fallbackInsetRef.current = 0;
+      if (detail?.keyboardPackage) {
+        setChatPlatformKeyboardAppFromNative(detail.keyboardPackage);
+      }
+      guardAndroidLayoutOwnership();
 
-      if (inset > KEYBOARD_OPEN_THRESHOLD) {
-        const visibleHeight =
-          detail?.visibleHeight ?? Math.max(0, window.innerHeight - inset);
+      if (isKeyboardOpen({ keyboardInset: inset })) {
         applyOpenLayout({
-          height: visibleHeight,
+          height: window.innerHeight,
           offsetTop: vv?.offsetTop ?? 0,
           keyboardInset: inset,
         });
@@ -281,10 +293,7 @@ export function useKeyboardChatLayout(
             ? KeyboardResize.Body
             : KeyboardResize.Native;
           void Keyboard.setResizeMode({ mode });
-          void Keyboard.addListener("keyboardDidShow", () => {
-            syncViewport();
-            scheduleScrollToEnd("smooth", 120);
-          }).then((handle) => {
+          void Keyboard.addListener("keyboardDidShow", onVisibilityTrigger).then((handle) => {
             if (!cancelled) removeKeyboardShow = () => void handle.remove();
           });
           void Keyboard.addListener("keyboardDidHide", () => {
@@ -300,30 +309,25 @@ export function useKeyboardChatLayout(
 
     return () => {
       cancelled = true;
+      stopRemoteConfigPolling();
+      healRef.current?.cancel();
       if (resetTimerRef.current != null) {
         window.clearTimeout(resetTimerRef.current);
         resetTimerRef.current = null;
       }
-      if (scrollTimerRef.current != null) {
-        window.clearTimeout(scrollTimerRef.current);
-        scrollTimerRef.current = null;
-      }
-      vv?.removeEventListener("resize", syncViewport);
-      vv?.removeEventListener("scroll", syncViewport);
-      window.removeEventListener("resize", syncViewport);
+      vv?.removeEventListener("resize", onVisibilityTrigger);
+      vv?.removeEventListener("scroll", onVisibilityTrigger);
+      window.removeEventListener("resize", onVisibilityTrigger);
       window.removeEventListener("orientationchange", onOrientationChange);
       window.removeEventListener("amynest-keyboard-inset", onNativeKeyboardInset);
-      clearPendingScrolls();
       removeKeyboardShow?.();
       removeKeyboardHide?.();
       clearChatViewportCssVars();
     };
   }, [
     applyOpenLayout,
-    clearPendingScrolls,
+    runSelfHealingVisibility,
     scheduleResetAfterKeyboard,
-    scheduleScrollToEnd,
-    scrollToEnd,
     syncViewport,
   ]);
 
@@ -337,13 +341,14 @@ export function useKeyboardChatLayout(
       if (height <= 0) return;
       body.style.height = `${height}px`;
       body.style.maxHeight = `${height}px`;
+      runSelfHealingVisibility("instant");
     };
 
     syncScrollArea();
     const observer = new ResizeObserver(syncScrollArea);
     observer.observe(wrapper);
     return () => observer.disconnect();
-  }, [viewport.height, inputBarHeight, keyboardOpen]);
+  }, [viewport.height, inputBarHeight, keyboardOpen, runSelfHealingVisibility]);
 
   useLayoutEffect(() => {
     const bar = inputBarRef.current;
@@ -357,17 +362,19 @@ export function useKeyboardChatLayout(
   }, [scrollDeps]);
 
   useEffect(() => {
-    clearPendingScrolls();
-    scrollToEnd("instant");
-    scheduleScrollToEnd("smooth", 120);
+    runSelfHealingVisibility("instant");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, scrollDeps);
 
   useEffect(() => {
-    scrollToEnd("instant");
-    scheduleScrollToEnd("smooth", 120);
-    scheduleScrollToEnd("smooth", CHAT_SCROLL_SETTLE_MS);
-  }, [viewport.height, viewport.offsetTop, keyboardOpen, scheduleScrollToEnd, scrollToEnd]);
+    runSelfHealingVisibility("instant");
+  }, [activePromptId, viewport.height, viewport.offsetTop, keyboardOpen, route, runSelfHealingVisibility]);
+
+  useEffect(() => {
+    if (forcePromptVisibilityMode) {
+      runSelfHealingVisibility("instant");
+    }
+  }, [forcePromptVisibilityMode, runSelfHealingVisibility]);
 
   useEffect(() => {
     const root = containerRef.current;
@@ -375,7 +382,7 @@ export function useKeyboardChatLayout(
 
     const onFocusIn = (event: FocusEvent) => {
       const target = event.target;
-      if (!isTextField(target)) return;
+      if (!isTextField(target) && !isChatAnswerTarget(target)) return;
       if (!root.contains(target)) return;
 
       if (resetTimerRef.current != null) {
@@ -383,10 +390,8 @@ export function useKeyboardChatLayout(
         resetTimerRef.current = null;
       }
 
-      window.setTimeout(() => syncViewport(), 80);
-      scrollToEnd("instant");
-      scheduleScrollToEnd("smooth", 120);
-      window.setTimeout(() => applyAndroidKeyboardFallback(), 350);
+      syncViewport();
+      runSelfHealingVisibility("instant");
     };
 
     const onFocusOut = () => {
@@ -399,30 +404,37 @@ export function useKeyboardChatLayout(
       root.removeEventListener("focusin", onFocusIn);
       root.removeEventListener("focusout", onFocusOut);
     };
-  }, [
-    applyAndroidKeyboardFallback,
-    scheduleResetAfterKeyboard,
-    scheduleScrollToEnd,
-    scrollToEnd,
-    syncViewport,
-  ]);
+  }, [runSelfHealingVisibility, scheduleResetAfterKeyboard, syncViewport]);
+
+  const androidAdjustResize = isAndroidAdjustResizeChatShell();
 
   const containerStyle =
     layoutMode === "fullscreen"
-      ? {
-          position: "fixed" as const,
-          top: usesCapacitorBodyKeyboardResize() ? 0 : viewport.offsetTop,
-          left: 0,
-          right: 0,
-          height:
-            viewport.height > 0
-              ? `${viewport.height}px`
-              : "var(--vv-height, 100%)",
-          maxHeight:
-            viewport.height > 0
-              ? `${viewport.height}px`
-              : "var(--vv-height, 100%)",
-        }
+      ? androidAdjustResize
+        ? {
+            position: "fixed" as const,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: "100%",
+            height: "100%",
+            maxHeight: "100%",
+          }
+        : {
+            position: "fixed" as const,
+            top: usesCapacitorBodyKeyboardResize() ? 0 : viewport.offsetTop,
+            left: 0,
+            right: 0,
+            height:
+              viewport.height > 0
+                ? `${viewport.height}px`
+                : "var(--vv-height, 100%)",
+            maxHeight:
+              viewport.height > 0
+                ? `${viewport.height}px`
+                : "var(--vv-height, 100%)",
+          }
       : {
           height: "100%",
           maxHeight: "100%",

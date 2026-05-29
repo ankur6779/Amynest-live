@@ -46,3 +46,11 @@ Core Speech Coach infrastructure (audio playback, microphone session, dialogue, 
 - **Regression gate:** `pnpm run check:speech-coach-engines` (required before merging PRs that touch these engines)
 - **Extend, don't rewrite:** UI consumes `useAmyVoice`, `useSpeechRecognition`, and `@workspace/speech-coach` APIs
 - **Core engine changes** require root cause, reproduction, justification, risk assessment, and a regression test in the PR description
+
+### ChatPlatform (Android chat keyboard)
+
+All conversational text UI must use `ChatPlatform` — no custom keyboard offsets, viewport shrinking, or chat scroll logic in feature code. See `.cursor/rules/chat-platform-ownership.mdc`.
+
+- **PR gate:** `pnpm run check:chat-platform` (CI: `.github/workflows/chat-platform.yml`)
+- **Release gate:** `pnpm run check:chat-platform-certification` — requires real-device uncut videos in `scripts/chat-platform-device-certification.json` (emulator/dev/unit tests do not satisfy)
+- **Post-release watchdog (7 days):** pipe production logs through `pnpm run check:chat-platform-telemetry` — zero `chat_prompt_hidden_after_keyboard_open` / `keyboard_visibility_failures` / `android_keyboard_layout_conflicts`

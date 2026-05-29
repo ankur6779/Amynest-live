@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { ChatThreadShell } from "@/components/chat-thread-shell";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { ChatPlatform } from "@/components/chat-platform";
 import { ChatTypingBubble } from "@/components/chat-bubbles";
+import { CHAT_PROMPT_ATTR, resolveActiveChatPromptId } from "@/lib/chat-platform";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -204,6 +205,10 @@ export default function AmyAiTutorPage() {
   };
 
   const isEmpty = turns.length === 0;
+  const activePromptId = useMemo(
+    () => resolveActiveChatPromptId(turns, { awaitingAnswer: !loading }),
+    [turns, loading],
+  );
 
   return (
     <div
@@ -276,9 +281,11 @@ export default function AmyAiTutorPage() {
         )}
       </div>
 
-      <ChatThreadShell
+      <ChatPlatform
+        surface="amy-ai-tutor"
         layout="embedded"
         scrollDeps={[turns, loading, input, mode, subject, topic]}
+        activePromptId={activePromptId}
         scrollApiRef={scrollApiRef}
         onMessagesScroll={handleThreadScroll}
         className="min-h-0 flex-1 bg-background"
@@ -390,12 +397,17 @@ export default function AmyAiTutorPage() {
             </div>
           ) : (
             turns.map((turn) => (
-              <TurnView key={turn.id} turn={turn} onPickOption={pickOption} />
+              <TurnView
+                key={turn.id}
+                turn={turn}
+                onPickOption={pickOption}
+                activePromptId={activePromptId}
+              />
             ))
           )}
           {loading ? <ChatTypingBubble /> : null}
         </div>
-      </ChatThreadShell>
+      </ChatPlatform>
 
       {showScrollLatest && (
         <Button
@@ -416,10 +428,17 @@ export default function AmyAiTutorPage() {
 function TurnView({
   turn,
   onPickOption,
+  activePromptId,
 }: {
   turn: ChatTurn;
   onPickOption: (turnId: string, optIdx: number) => void;
+  activePromptId?: string | null;
 }) {
+  const promptProps =
+    turn.role === "tutor" && turn.id === activePromptId
+      ? { [CHAT_PROMPT_ATTR]: turn.id }
+      : undefined;
+
   if (turn.role === "user") {
     return (
       <div className="flex gap-2.5 flex-row-reverse">
@@ -467,7 +486,7 @@ function TurnView({
   const picked = turn.pickedIndex;
 
   return (
-    <div className="flex gap-2.5 flex-row animate-in fade-in duration-200">
+    <div className="flex gap-2.5 flex-row animate-in fade-in duration-200" {...promptProps}>
       <div className="shrink-0">
         <AmyIcon size={32} ring />
       </div>
