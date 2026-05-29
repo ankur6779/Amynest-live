@@ -189,7 +189,7 @@ export function PaywallModal() {
 
   const nativeButtonLabel = isIOS
     ? (submitting || nativeBilling.purchasing
-        ? t("pricing.apple_processing")
+        ? t("pricing.app_store_processing")
         : selectedCta)
     : (submitting || nativeBilling.purchasing
         ? t("pricing.google_play_processing")

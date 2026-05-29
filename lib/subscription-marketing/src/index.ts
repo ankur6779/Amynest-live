@@ -172,7 +172,7 @@ export const TRUST_SECTION = {
   items: [
     { label: "Cancel anytime", detail: "Manage in App Store, Play Store, or your account." },
     { label: "Ages 2–12", detail: "Content and coaching calibrated to childhood—not adults." },
-    { label: "Secure checkout", detail: "Apple · Google Play · Razorpay" },
+    { label: "Secure checkout", detail: "App Store · Google Play · Razorpay" },
     { label: "Your data, your family", detail: "Profiles and progress stay tied to your household." },
   ],
   closing: "Trusted when the goal is real change at home—not another download you'll delete in a week.",

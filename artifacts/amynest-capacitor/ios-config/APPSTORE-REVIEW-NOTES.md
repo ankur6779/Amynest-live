@@ -4,6 +4,42 @@ Use this text in App Store Connect Review Notes for the Capacitor iOS build.
 
 ---
 
+## Resubmission steps (May 29, 2026 rejection — v3.0.10 build 20)
+
+Do these **in order**. Items 1–2 are in **App Store Connect** (no code). Item 3 is **Xcode** (new binary). Item 4 is **submit + reply**.
+
+### Step 1 — App Store Connect → Support URL (Guideline 1.5)
+
+**Where:** **App Information → Support URL**
+
+Change Support URL from `https://amynest.in/` to:
+
+```
+https://amynest.in/support
+```
+
+This page includes support@amynest.in, response-time expectations, subscription help, and links to billing dispute / account deletion.
+
+### Step 2 — App Store Connect → App Review Information (Guideline 1.1.6)
+
+**Where:** **App Review Information → Notes**
+
+Paste this in your reply / review notes:
+
+```
+Guideline 1.1.6 — We removed Apple Pay-style labeling from In-App Purchase flows. iOS subscriptions now use "Subscribe in App Store" copy and standard AmyNest styling (not Apple Pay branding). AmyNest does not use Apple Pay; all digital subscriptions are In-App Purchases via the App Store.
+
+Guideline 1.5 — Support URL updated to https://amynest.in/support with contact email support@amynest.in and self-service help links.
+```
+
+### Step 3 — Xcode → new build
+
+1. Pull latest repo (includes IAP label fixes + /support page).
+2. Build and upload a new iOS binary (increment build number).
+3. Submit for review.
+
+---
+
 ## Resubmission steps (May 25, 2026 rejection — v3.0.6 build 14)
 
 Do these **in order**. Items 1–2 are in **App Store Connect** (no code). Item 3 is **Xcode** (new binary). Item 4 is **submit + reply**.

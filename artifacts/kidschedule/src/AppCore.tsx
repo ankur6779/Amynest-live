@@ -68,6 +68,7 @@ const PrivacyPolicyPage = lazyPage(() => import("@/pages/privacy"));
 const TermsOfServicePage = lazyPage(() => import("@/pages/terms"));
 const DeleteAccountPage = lazyPage(() => import("@/pages/delete-account"));
 const BillingDisputePage = lazyPage(() => import("@/pages/billing-dispute"));
+const SupportPage = lazyPage(() => import("@/pages/support"));
 const Dashboard = lazyPage(() => import("@/pages/dashboard"));
 const ChildrenList = lazyPage(() => import("@/pages/children/index"));
 const ChildForm = lazyPage(() => import("@/pages/children/form"));
@@ -512,6 +513,7 @@ function AppRoutes() {
           <Route path="/terms" component={TermsOfServicePage} />
           <Route path="/delete-account" component={DeleteAccountPage} />
           <Route path="/billing-dispute" component={BillingDisputePage} />
+          <Route path="/support" component={SupportPage} />
           <Route path="/login">
             <Redirect to="/sign-in" />
           </Route>
