@@ -10,6 +10,107 @@ import { safeRoute } from "../lib/safe-route-handler.js";
 
 const router: IRouter = Router();
 
+async function readOnboardingState(userId: string) {
+  const [profile] = await db
+    .select()
+    .from(onboardingProfilesTable)
+    .where(eq(onboardingProfilesTable.userId, userId));
+
+  const [childRow] = await db
+    .select({ id: childrenTable.id })
+    .from(childrenTable)
+    .where(eq(childrenTable.userId, userId))
+    .limit(1);
+
+  const [parentRow] = await db
+    .select({ id: parentProfilesTable.id })
+    .from(parentProfilesTable)
+    .where(eq(parentProfilesTable.userId, userId))
+    .limit(1);
+
+  const hasChild = !!childRow;
+  const hasParent = !!parentRow;
+  const profileComplete = hasChild;
+  let onboardingComplete = !!profile?.onboardingComplete || hasChild;
+
+  if (!onboardingComplete && hasChild && hasParent) {
+    const now = new Date();
+    if (profile) {
+      await db
+        .update(onboardingProfilesTable)
+        .set({ onboardingComplete: true, updatedAt: now })
+        .where(eq(onboardingProfilesTable.userId, userId));
+    } else {
+      await db.insert(onboardingProfilesTable).values({
+        userId,
+        children: [],
+        parent: {},
+        priorityGoal: null,
+        onboardingComplete: true,
+        updatedAt: now,
+      });
+    }
+    onboardingComplete = true;
+  }
+
+  return {
+    profile,
+    hasChild,
+    hasParent,
+    profileComplete,
+    onboardingComplete,
+  };
+}
+
+async function upsertOnboardingCompletion(
+  userId: string,
+  body: {
+    children?: unknown;
+    parent?: unknown;
+    priorityGoal?: unknown;
+    onboardingComplete?: boolean;
+  },
+): Promise<{ onboardingComplete: boolean; alreadyCompleted: boolean }> {
+  const { children, parent, priorityGoal, onboardingComplete } = body;
+  const [existing] = await db
+    .select()
+    .from(onboardingProfilesTable)
+    .where(eq(onboardingProfilesTable.userId, userId));
+
+  if (existing?.onboardingComplete) {
+    return { onboardingComplete: true, alreadyCompleted: true };
+  }
+
+  const now = new Date();
+  const nextComplete = onboardingComplete !== false;
+
+  let profile;
+  if (existing) {
+    [profile] = await db
+      .update(onboardingProfilesTable)
+      .set({ children, parent, priorityGoal, onboardingComplete: nextComplete, updatedAt: now })
+      .where(eq(onboardingProfilesTable.userId, userId))
+      .returning();
+  } else {
+    [profile] = await db
+      .insert(onboardingProfilesTable)
+      .values({
+        userId,
+        children,
+        parent,
+        priorityGoal,
+        onboardingComplete: nextComplete,
+        updatedAt: now,
+      })
+      .returning();
+  }
+
+  return {
+    onboardingComplete: !!profile?.onboardingComplete,
+    alreadyCompleted: false,
+  };
+}
+
 router.get(
   "/onboarding",
   safeRoute(
@@ -21,34 +122,14 @@ router.get(
         return;
       }
 
-      const [profile] = await db
-        .select()
-        .from(onboardingProfilesTable)
-        .where(eq(onboardingProfilesTable.userId, userId));
-
-      const [childRow] = await db
-        .select({ id: childrenTable.id })
-        .from(childrenTable)
-        .where(eq(childrenTable.userId, userId))
-        .limit(1);
-
-      const [parentRow] = await db
-        .select({ id: parentProfilesTable.id })
-        .from(parentProfilesTable)
-        .where(eq(parentProfilesTable.userId, userId))
-        .limit(1);
-
-      const hasChild = !!childRow;
-      const hasParent = !!parentRow;
-      const profileComplete = hasChild;
-      const onboardingComplete = !!profile?.onboardingComplete || hasChild;
+      const state = await readOnboardingState(userId);
 
       res.json({
-        onboardingComplete,
-        profileComplete,
-        children: profile?.children ?? [],
-        parent: profile?.parent ?? {},
-        priorityGoal: profile?.priorityGoal ?? null,
+        onboardingComplete: state.onboardingComplete,
+        profileComplete: state.profileComplete,
+        children: state.profile?.children ?? [],
+        parent: state.profile?.parent ?? {},
+        priorityGoal: state.profile?.priorityGoal ?? null,
       });
     },
     (_req, res) => {
@@ -68,29 +149,39 @@ router.post(
         return;
       }
 
-      const { children, parent, priorityGoal, onboardingComplete } = req.body;
-      const now = new Date();
+      const result = await upsertOnboardingCompletion(userId, req.body);
+      res.json({
+        success: true,
+        onboardingComplete: result.onboardingComplete,
+        alreadyCompleted: result.alreadyCompleted,
+      });
+    },
+    (_req, res) => {
+      res.status(200).json({ ...ONBOARDING_SAVE_FALLBACK });
+    },
+  ),
+);
 
-      const [existing] = await db
-        .select()
-        .from(onboardingProfilesTable)
-        .where(eq(onboardingProfilesTable.userId, userId));
-
-      let profile;
-      if (existing) {
-        [profile] = await db
-          .update(onboardingProfilesTable)
-          .set({ children, parent, priorityGoal, onboardingComplete, updatedAt: now })
-          .where(eq(onboardingProfilesTable.userId, userId))
-          .returning();
-      } else {
-        [profile] = await db
-          .insert(onboardingProfilesTable)
-          .values({ userId, children, parent, priorityGoal, onboardingComplete, updatedAt: now })
-          .returning();
+router.post(
+  "/onboarding/complete",
+  safeRoute(
+    "POST /onboarding/complete",
+    async (req, res): Promise<void> => {
+      const { userId } = getAuth(req);
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
       }
 
-      res.json({ success: true, onboardingComplete: profile.onboardingComplete });
+      const result = await upsertOnboardingCompletion(userId, {
+        ...req.body,
+        onboardingComplete: true,
+      });
+      res.json({
+        success: true,
+        onboardingComplete: result.onboardingComplete,
+        alreadyCompleted: result.alreadyCompleted,
+      });
     },
     (_req, res) => {
       res.status(200).json({ ...ONBOARDING_SAVE_FALLBACK });

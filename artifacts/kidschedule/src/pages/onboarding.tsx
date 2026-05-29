@@ -29,7 +29,18 @@ import {
 import { logOnboardingState } from "@/lib/onboarding-debug";
 import { resolveActiveChatPromptId } from "@/lib/chat-platform";
 import {
+  OnboardingFinishError,
+  runOnboardingFinishTransaction,
+} from "@/lib/onboarding-completion";
+import {
+  createOnboardingRunId,
+  clearOnboardingRunId,
+} from "@/lib/onboarding-telemetry";
+import {
+  applySetupStatusUpdate,
+  isSetupComplete,
   persistOnboardingCache,
+  readOnboardingCache,
   resolveSetupStatus,
 } from "@/lib/setup-status";
 import {
@@ -589,21 +600,32 @@ export default function OnboardingPage() {
     }
   };
 
-  const restoredSession = loadOnboardingChatSession();
+  const restoredSession = useMemo(() => {
+    if (isSetupComplete(readOnboardingCache())) {
+      clearOnboardingChatSession();
+      return null;
+    }
+    return loadOnboardingChatSession();
+  }, []);
+  const restoredData = restoredSession?.data;
   const [sessionRestored] = useState(
-    () => Boolean(restoredSession?.messages?.length && restoredSession.step !== "intro"),
+    () => Boolean(restoredData?.messages?.length && restoredSession?.step !== "intro"),
   );
+  const [finishError, setFinishError] = useState<string | null>(null);
+  const [isFinishing, setIsFinishing] = useState(false);
+  const onboardingRunIdRef = useRef<string | null>(null);
+  const completionOnceRef = useRef(false);
 
   const [step, setStep] = useState<Step>(() => restoredSession?.step ?? "intro");
   const [notifLoading, setNotifLoading] = useState(false);
   const [typing, setTyping] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(() =>
-    (restoredSession?.messages ?? []).map((m, i) => ({
+    (restoredData?.messages ?? []).map((m, i) => ({
       ...m,
       id: m.id ?? `legacy-${i}-${m.role}`,
     })),
   );
-  const [textInput, setTextInput] = useState(() => restoredSession?.textInput ?? "");
+  const [textInput, setTextInput] = useState(() => restoredData?.textInput ?? "");
   const [selected, setSelected] = useState("");
   const [dobInput, setDobInput] = useState("");
   const [regionDrillDown, setRegionDrillDown] = useState(false);
@@ -613,8 +635,8 @@ export default function OnboardingPage() {
   const [allergyChips, setAllergyChips] = useState<string[]>([]);
   const [allergyOtherOpen, setAllergyOtherOpen] = useState(false);
   const [allergyOtherText, setAllergyOtherText] = useState("");
-  const [countryCode, setCountryCode] = useState(() => restoredSession?.countryCode ?? "");
-  const [countryName, setCountryName] = useState(() => restoredSession?.countryName ?? "");
+  const [countryCode, setCountryCode] = useState(() => restoredData?.countryCode ?? "");
+  const [countryName, setCountryName] = useState(() => restoredData?.countryName ?? "");
   const [locationState, setLocationState] = useState<LocationDetectionState>({ status: "idle" });
   const [detectedCoords, setDetectedCoords] = useState<GeoCoords | null>(null);
   const [locationSource, setLocationSource] = useState<LocationSource | null>(null);
@@ -624,13 +646,13 @@ export default function OnboardingPage() {
   const [locationRequesting, setLocationRequesting] = useState(false);
 
   const [children, setChildren] = useState<ChildData[]>(
-    () => (restoredSession?.children as ChildData[] | undefined) ?? [],
+    () => (restoredData?.children as ChildData[] | undefined) ?? [],
   );
   const [curr, setCurr] = useState<Partial<ChildData>>(
-    () => (restoredSession?.curr as Partial<ChildData> | undefined) ?? {},
+    () => (restoredData?.curr as Partial<ChildData> | undefined) ?? {},
   );
   const [parent, setParent] = useState<Partial<ParentData>>(
-    () => (restoredSession?.parent as Partial<ParentData> | undefined) ?? {},
+    () => (restoredData?.parent as Partial<ParentData> | undefined) ?? {},
   );
 
   const pendingTimersRef = useRef<number[]>([]);
@@ -688,19 +710,57 @@ export default function OnboardingPage() {
     return all.length > 0 ? all.join(", ") : t("screens.onboarding.no_allergies_reply");
   }
 
+  function persistOnboardingSessionSnapshot(currentStep: Step = step) {
+    if (isFinishing || !ONBOARDING_CHAT_STEPS.has(currentStep)) return;
+    saveOnboardingChatSession({
+      step: currentStep,
+      messages,
+      textInput,
+      countryCode,
+      countryName,
+      curr: curr as Record<string, unknown>,
+      parent: parent as Record<string, unknown>,
+      children: children as unknown as Record<string, unknown>[],
+    });
+  }
+
   function finishAllergies(none: boolean) {
+    if (isFinishing) return;
+    setIsFinishing(true);
+    onboardingRunIdRef.current = createOnboardingRunId();
     const allergiesStr = none ? "" : buildAllergiesString(allergyChips, allergyOtherText);
     setParent((p) => ({ ...p, allergies: allergiesStr }));
     const summary = none
       ? t("screens.onboarding.no_allergies_reply")
       : formatAllergySummary(allergyChips, allergyOtherText);
     userReplies(summary, "saving");
-    scheduleOnboardingTimeout(() => saveEverything(allergiesStr), 800);
+    scheduleOnboardingTimeout(() => void saveEverything(allergiesStr), 800);
   }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    (window as Window & { __amynestOnboardingStep?: string }).__amynestOnboardingStep = step;
+  }, [step]);
+
+  // If the server already has a complete profile (e.g. prior partial save), skip onboarding.
+  useEffect(() => {
+    if (!isSignedIn || isFinishing) return;
+    let cancelled = false;
+    void resolveSetupStatus(authFetch).then((status) => {
+      if (cancelled || !isSetupComplete(status)) return;
+      persistOnboardingCache(status);
+      queryClient.setQueryData(["onboarding-status"], status);
+      clearOnboardingChatSession();
+      setLocation("/dashboard");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [authFetch, isFinishing, isSignedIn, queryClient, setLocation]);
 
   // Persist chat transcript + step for resume after app restart (debounced).
   useEffect(() => {
-    if (!ONBOARDING_CHAT_STEPS.has(step)) return;
+    if (isFinishing || !ONBOARDING_CHAT_STEPS.has(step)) return;
     const persistTimer = window.setTimeout(() => {
       saveOnboardingChatSession({
         messages,
@@ -744,6 +804,13 @@ export default function OnboardingPage() {
 
   // ─── Save & finish ──────────────────────────────────────────────────────────
   async function saveEverything(allergiesOverride?: string) {
+    if (completionOnceRef.current) return;
+    completionOnceRef.current = true;
+    setIsFinishing(true);
+    if (!onboardingRunIdRef.current) {
+      onboardingRunIdRef.current = createOnboardingRunId();
+    }
+    setFinishError(null);
     setStep("saving");
     setMessages((m) => [...m, chatMessage("amy", t("screens.onboarding.saving_message"))]);
 
@@ -754,96 +821,60 @@ export default function OnboardingPage() {
     const dietNote = dietNoteForType(dietType);
     const allergies = allergiesOverride ?? parent.allergies ?? "";
 
-    // ── Step 1: Save parent profile first so children can inherit food prefs ──
-    try {
-      const parentBody: Record<string, unknown> = {
-        name: parent.name || "",
-        role: (parent.role || "mother").toLowerCase(),
-        workType: parent.workType || "work_from_home",
-        region: parent.region || allRegions.join(",") || getDefaultRegion(countryCode),
-        country: parent.country || countryCode,
-        dietType,
-        foodType,
-        foodStyle: derivedFoodStyle,
-        subCuisine: derivedSubCuisine || null,
-      };
-      if (typeof parent.latitude === "number") parentBody.latitude = parent.latitude;
-      if (typeof parent.longitude === "number") parentBody.longitude = parent.longitude;
-      if (parent.locationSource) parentBody.locationSource = parent.locationSource;
-      if (parent.mobileNumber) parentBody.mobileNumber = parent.mobileNumber;
-      if (allergies) parentBody.allergies = allergies;
-      await authFetch("/api/parent-profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parentBody),
-      });
-    } catch (e) {
-      console.error("Failed to save parent profile:", e);
-    }
+    const parentBody: Record<string, unknown> = {
+      name: parent.name || "",
+      role: (parent.role || "mother").toLowerCase(),
+      workType: parent.workType || "work_from_home",
+      region: parent.region || allRegions.join(",") || getDefaultRegion(countryCode),
+      country: parent.country || countryCode,
+      dietType,
+      foodType,
+      foodStyle: derivedFoodStyle,
+      subCuisine: derivedSubCuisine || null,
+    };
+    if (typeof parent.latitude === "number") parentBody.latitude = parent.latitude;
+    if (typeof parent.longitude === "number") parentBody.longitude = parent.longitude;
+    if (parent.locationSource) parentBody.locationSource = parent.locationSource;
+    if (parent.mobileNumber) parentBody.mobileNumber = parent.mobileNumber;
+    if (allergies) parentBody.allergies = allergies;
 
-    // ── Step 2: Save each child + optimization goals ──
-    for (const child of children) {
+    const childPayloads = children.map((child) => {
       const goalsParts = ["balanced-routine"];
       if (dietNote) goalsParts.unshift(dietNote);
-      try {
-        const res = await authFetch("/api/children", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            isOnboarding: true,
-            name: child.name,
-            dob: child.dob || "",
-            age: child.age || 0,
-            ageMonths: child.ageMonths || 0,
-            isSchoolGoing: child.isSchoolGoing ?? false,
-            childClass: child.childClass || "",
-            schoolStartTime: child.schoolStartTime || "09:00",
-            schoolEndTime: child.schoolEndTime || "15:00",
-            schoolDays: child.isSchoolGoing ? (child.schoolDays ?? [1, 2, 3, 4, 5]) : null,
-            wakeUpTime: child.wakeUpTime || "07:00",
-            sleepTime: child.sleepTime || "21:00",
-            foodType,
-            dietType,
-            foodStyle: derivedFoodStyle,
-            subCuisine: derivedSubCuisine || null,
-            allergies: allergies || null,
-            foodPrefInherited: true,
-            foodPrefCustomized: false,
-            feedingType: child.feedingType || null,
-            sleepPattern: child.sleepPattern || null,
-            goals: goalsParts.join("|"),
-          }),
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          console.error(`Failed to save child "${child.name}":`, err);
-          continue;
-        }
-        if (selectedParentGoals.length > 0) {
-          const saved = (await res.json()) as { id?: number };
-          if (saved?.id) {
-            try {
-              await authFetch(`/api/child-intelligence/${saved.id}/goals`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ parentGoals: selectedParentGoals }),
-              });
-            } catch (e) {
-              console.error(`Failed to save goals for child "${child.name}":`, e);
-            }
-          }
-        }
-      } catch (e) {
-        console.error(`Network error saving child "${child.name}":`, e);
-      }
-    }
+      return {
+        isOnboarding: true,
+        name: child.name,
+        dob: child.dob || "",
+        age: child.age || 0,
+        ageMonths: child.ageMonths || 0,
+        isSchoolGoing: child.isSchoolGoing ?? false,
+        childClass: child.childClass || "",
+        schoolStartTime: child.schoolStartTime || "09:00",
+        schoolEndTime: child.schoolEndTime || "15:00",
+        schoolDays: child.isSchoolGoing ? (child.schoolDays ?? [1, 2, 3, 4, 5]) : null,
+        wakeUpTime: child.wakeUpTime || "07:00",
+        sleepTime: child.sleepTime || "21:00",
+        foodType,
+        dietType,
+        foodStyle: derivedFoodStyle,
+        subCuisine: derivedSubCuisine || null,
+        allergies: allergies || null,
+        foodPrefInherited: true,
+        foodPrefCustomized: false,
+        feedingType: child.feedingType || null,
+        sleepPattern: child.sleepPattern || null,
+        goals: goalsParts.join("|"),
+      };
+    });
 
-    // ── Step 3: Mark onboarding complete ──
     try {
-      await authFetch("/api/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await runOnboardingFinishTransaction(authFetch, {
+        parent: parentBody,
+        children: childPayloads,
+        selectedParentGoals,
+        userId: user?.id ?? null,
+        onboardingRunId: onboardingRunIdRef.current ?? undefined,
+        onboardingMeta: {
           children: children.map((c) => ({
             name: c.name,
             ageGroup: `${c.age}`,
@@ -856,39 +887,61 @@ export default function OnboardingPage() {
             dietType,
           },
           priorityGoal: selectedParentGoals[0] ?? "balanced-routine",
-          onboardingComplete: true,
-        }),
+        },
       });
+
+      const completeStatus = { onboardingComplete: true, profileComplete: true };
+      persistOnboardingCache(completeStatus);
+      queryClient.setQueryData(["onboarding-status"], completeStatus);
+      clearOnboardingChatSession();
+      clearOnboardingRunId();
+      onboardingRunIdRef.current = null;
+
+      logOnboardingState("save-complete", user, {
+        entitlements,
+        isLoaded: authLoaded,
+        isSignedIn,
+      });
+
+      scheduleOnboardingTimeout(() => setStep("done"), 600);
     } catch (e) {
-      console.error("Failed to post onboarding completion:", e);
+      const message =
+        e instanceof OnboardingFinishError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : t("screens.onboarding.save_failed");
+      console.error("[onboarding] finish transaction failed", e);
+      setFinishError(message);
+      setStep("parent-allergies");
+      setMessages((m) => [
+        ...m,
+        chatMessage("amy", t("screens.onboarding.save_failed")),
+      ]);
+      persistOnboardingSessionSnapshot("parent-allergies");
+      completionOnceRef.current = false;
+    } finally {
+      setIsFinishing(false);
     }
-
-    // Always mark complete locally — regardless of any individual API failure.
-    // AppCore also uses this cache entry so the redirect guard sees it immediately.
-    localStorage.setItem("onboardingComplete", "true");
-    clearOnboardingChatSession();
-    const completeStatus = { onboardingComplete: true, profileComplete: true };
-    queryClient.setQueryData(["onboarding-status"], completeStatus);
-    persistOnboardingCache(completeStatus);
-
-    logOnboardingState("save-complete", user, {
-      entitlements,
-      isLoaded: authLoaded,
-      isSignedIn,
-    });
-
-    scheduleOnboardingTimeout(() => setStep("done"), 600);
   }
 
   async function refreshBeforeDashboard(): Promise<void> {
     try {
       await queryClient.invalidateQueries({ queryKey: ["children"] });
       await queryClient.invalidateQueries({ queryKey: ["subscription"] });
+      const cached = readOnboardingCache();
       const status = await resolveSetupStatus(authFetch);
-      persistOnboardingCache(status);
-      queryClient.setQueryData(["onboarding-status"], status);
+      const merged = applySetupStatusUpdate(cached, status);
+      if (isSetupComplete(merged)) {
+        persistOnboardingCache(merged);
+      }
+      queryClient.setQueryData(["onboarding-status"], merged);
     } catch (e) {
       console.error("[onboarding] refresh before dashboard failed", e);
+      const cached = readOnboardingCache();
+      if (isSetupComplete(cached)) {
+        queryClient.setQueryData(["onboarding-status"], cached);
+      }
     }
   }
 
@@ -911,6 +964,17 @@ export default function OnboardingPage() {
       return;
     }
     await refreshBeforeDashboard();
+    const status =
+      queryClient.getQueryData<{ onboardingComplete?: boolean; profileComplete?: boolean }>([
+        "onboarding-status",
+      ]) ?? readOnboardingCache();
+    if (!isSetupComplete(status)) {
+      console.warn("[onboarding] setup still incomplete after refresh — staying on onboarding");
+      setNavigatingToDashboard(false);
+      setFinishError(t("screens.onboarding.save_failed"));
+      setStep("parent-allergies");
+      return;
+    }
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     if (
       FF_POST_ONBOARDING_TRIAL &&
@@ -1312,7 +1376,9 @@ export default function OnboardingPage() {
             </div>
             <div className="text-center max-w-sm">
               <p className="text-xl font-bold leading-snug" style={{ color: "#fff" }}>
-                {t("screens.onboarding.saving_title")}
+                {isFinishing
+                  ? t("screens.onboarding.finalizing_setup")
+                  : t("screens.onboarding.saving_title")}
               </p>
               <p className="text-sm mt-2 leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>
                 {t("screens.onboarding.saving_subtitle")}
@@ -2108,6 +2174,11 @@ export default function OnboardingPage() {
           allergyChips.length > 0 || allergyOtherText.trim().length > 0;
         return (
           <div className="flex flex-col gap-3">
+            {finishError ? (
+              <p className="text-xs text-center px-2" style={{ color: "#fca5a5" }}>
+                {finishError}
+              </p>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               {ONBOARDING_ALLERGY_CHIPS.map((chip) => {
                 const on = allergyChips.includes(chip.value);
@@ -2115,6 +2186,7 @@ export default function OnboardingPage() {
                   <button
                     key={chip.value}
                     type="button"
+                    disabled={isFinishing}
                     onClick={() => toggleAllergy(chip.value)}
                     className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
                     style={{
@@ -2130,6 +2202,7 @@ export default function OnboardingPage() {
               })}
               <button
                 type="button"
+                disabled={isFinishing}
                 onClick={() => setAllergyOtherOpen((o) => !o)}
                 className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
                 style={{
@@ -2149,20 +2222,25 @@ export default function OnboardingPage() {
                 placeholder={t("screens.onboarding.allergies_other_placeholder")}
                 value={allergyOtherText}
                 onChange={(e) => setAllergyOtherText(e.target.value)}
+                disabled={isFinishing}
                 autoFocus
               />
             )}
             <button
+              disabled={isFinishing}
               onClick={() => finishAllergies(!hasSelection)}
-              className="w-full py-3 rounded-2xl font-semibold transition-all duration-200 active:scale-95"
+              className="w-full py-3 rounded-2xl font-semibold transition-all duration-200 active:scale-95 disabled:opacity-50"
               style={{ background: GRAD, color: "#fff" }}
             >
-              {hasSelection
-                ? t("screens.onboarding.continue")
-                : t("screens.onboarding.no_allergies_button")}
+              {isFinishing
+                ? t("screens.onboarding.finalizing_setup")
+                : hasSelection
+                  ? t("screens.onboarding.continue")
+                  : t("screens.onboarding.no_allergies_button")}
             </button>
             {hasSelection && (
               <button
+                disabled={isFinishing}
                 onClick={() => finishAllergies(true)}
                 className="text-xs self-center"
                 style={{ color: "rgba(255,255,255,0.55)" }}
@@ -2182,7 +2260,8 @@ export default function OnboardingPage() {
   const showChatFooter =
     step !== "intro" &&
     ONBOARDING_CHAT_STEPS.has(step) &&
-    !showCountryPicker;
+    !showCountryPicker &&
+    !isFinishing;
 
   const activePromptId = useMemo(
     () =>
@@ -2194,6 +2273,19 @@ export default function OnboardingPage() {
 
   return (
     <div className="relative h-full w-full">
+      {isFinishing ? (
+        <div
+          className="absolute inset-0 z-20 flex items-end justify-center pb-8 pointer-events-auto"
+          aria-live="polite"
+        >
+          <p
+            className="px-4 py-2 rounded-full text-sm font-semibold"
+            style={{ background: "rgba(0,0,0,0.55)", color: "#fff" }}
+          >
+            {t("screens.onboarding.finalizing_setup")}
+          </p>
+        </div>
+      ) : null}
       <ChatPlatform
         surface="onboarding"
         scrollDeps={[messages, typing, step, textInput]}

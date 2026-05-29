@@ -60,6 +60,22 @@ router.post(
 
       const isOnboarding = req.body?.isOnboarding === true;
 
+      if (isOnboarding) {
+        const existingChildren = await listChildrenForUser(userId);
+        const byName = existingChildren.find(
+          (c) => c.name.toLowerCase() === parsed.data.name.toLowerCase(),
+        );
+        if (byName) {
+          res.status(200).json(
+            GetChildResponse.parse({
+              ...byName,
+              createdAt: byName.createdAt.toISOString(),
+            }),
+          );
+          return;
+        }
+      }
+
       if (!isOnboarding) {
         try {
           const sub = await getOrCreateSubscription(userId);

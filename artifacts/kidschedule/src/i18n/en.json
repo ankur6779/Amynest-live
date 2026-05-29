@@ -1777,6 +1777,8 @@
       "allergy_sesame": "Sesame",
       "no_allergies_button": "No allergies — finish setup",
       "no_allergies_reply": "No allergies",
+      "save_failed": "Something went wrong saving your setup. Please tap finish again — your answers are still here.",
+      "finalizing_setup": "Finalizing your setup…",
       "saving_title": "Amy is preparing a personalized experience for your child",
       "saving_subtitle": "Setting up routines, meals, and smart recommendations…",
       "done_title": "Profile ready!",

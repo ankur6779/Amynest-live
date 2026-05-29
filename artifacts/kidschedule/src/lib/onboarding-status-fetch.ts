@@ -1,6 +1,8 @@
 import { waitForIdToken } from "@/lib/auth-token";
 import {
   persistOnboardingCache,
+  readOnboardingCache,
+  repairLocalFromServerComplete,
   resolveSetupStatus,
   type SetupStatus,
 } from "@/lib/setup-status";
@@ -30,8 +32,10 @@ export async function fetchOnboardingStatusOnce(
       throw new Error("auth-token-pending");
     }
     const data = await resolveSetupStatus(authFetch);
-    persistOnboardingCache(data);
-    return data;
+    const cached = readOnboardingCache();
+    const repaired = repairLocalFromServerComplete(data, cached);
+    persistOnboardingCache(repaired);
+    return repaired;
   })();
 
   try {
