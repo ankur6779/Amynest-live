@@ -241,6 +241,9 @@ importers:
       '@workspace/conflict-resolution':
         specifier: workspace:*
         version: link:../../lib/conflict-resolution
+      '@workspace/content-bank':
+        specifier: workspace:*
+        version: link:../../lib/content-bank
       '@workspace/content-orchestration':
         specifier: workspace:*
         version: link:../../lib/content-orchestration
@@ -464,6 +467,9 @@ importers:
       '@workspace/conflict-resolution':
         specifier: workspace:*
         version: link:../../lib/conflict-resolution
+      '@workspace/content-bank':
+        specifier: workspace:*
+        version: link:../../lib/content-bank
       '@workspace/event-prep':
         specifier: workspace:*
         version: link:../../lib/event-prep
@@ -1195,6 +1201,16 @@ importers:
         specifier: workspace:*
         version: link:../family-routine
 
+  lib/content-bank:
+    dependencies:
+      '@workspace/learning-progress-engine':
+        specifier: workspace:*
+        version: link:../learning-progress-engine
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.7.0
+
   lib/content-orchestration: {}
 
   lib/db:
@@ -1359,6 +1375,9 @@ importers:
       '@workspace/audio-lessons':
         specifier: workspace:*
         version: link:../audio-lessons
+      '@workspace/content-bank':
+        specifier: workspace:*
+        version: link:../content-bank
       '@workspace/math-tricks':
         specifier: workspace:*
         version: link:../math-tricks
@@ -1395,6 +1414,9 @@ importers:
       '@workspace/db':
         specifier: workspace:*
         version: link:../lib/db
+      '@workspace/learning-zone-english':
+        specifier: workspace:*
+        version: link:../lib/learning-zone-english
       '@workspace/phonics-sounds':
         specifier: workspace:*
         version: link:../lib/phonics-sounds

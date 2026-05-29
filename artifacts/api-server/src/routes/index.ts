@@ -77,6 +77,7 @@ import audioHealthRouter from "./audio-health";
 import otaRouter from "./ota";
 import contentOrchestrationRouter from "./content-orchestration";
 import eventPrepRouter from "./event-prep";
+import contentBankRouter from "./content-bank";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -182,5 +183,6 @@ router.use(userFeedbackRouter);
 router.use(audioHealthRouter);
 router.use(contentOrchestrationRouter);
 router.use(eventPrepRouter);
+router.use(contentBankRouter);
 
 export default router;

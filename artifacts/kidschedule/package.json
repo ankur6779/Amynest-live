@@ -118,6 +118,7 @@
     "@workspace/behavior-tracker": "workspace:*",
     "@workspace/coach-journey": "workspace:*",
     "@workspace/coach-topic-questions": "workspace:*",
+    "@workspace/content-bank": "workspace:*",
     "@workspace/conflict-resolution": "workspace:*",
     "@workspace/event-prep": "workspace:*",
     "@workspace/explainability": "workspace:*",

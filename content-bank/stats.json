@@ -1,0 +1,41 @@
+{
+  "totalContentCount": 1100,
+  "categoryCounts": {
+    "smartStudy": 500,
+    "lifeSkills": 300,
+    "eventPrep": 200,
+    "mathProgression": 100
+  },
+  "ageBandDistribution": {
+    "2-4": 213,
+    "4-6": 227,
+    "6-8": 216,
+    "8-10": 230,
+    "10-12": 214
+  },
+  "difficultyDistribution": {
+    "starter": 127,
+    "easy": 122,
+    "medium": 119,
+    "challenging": 116,
+    "advanced": 116,
+    "gentle": 70,
+    "building": 70,
+    "ready": 60
+  },
+  "estimatedBytesUncompressed": 811199,
+  "estimatedBytesGzip": 62237,
+  "gcsFolderLayout": [
+    "gs://{bucket}/content-bank/manifest.json",
+    "gs://{bucket}/content-bank/manifest.json.gz",
+    "gs://{bucket}/content-bank/smart-study/items.json",
+    "gs://{bucket}/content-bank/smart-study/items.json.gz",
+    "gs://{bucket}/content-bank/life-skills/items.json",
+    "gs://{bucket}/content-bank/life-skills/items.json.gz",
+    "gs://{bucket}/content-bank/event-prep/items.json",
+    "gs://{bucket}/content-bank/event-prep/items.json.gz",
+    "gs://{bucket}/content-bank/math-progression/items.json",
+    "gs://{bucket}/content-bank/math-progression/items.json.gz",
+    "gs://{bucket}/content-bank/stats.json"
+  ]
+}

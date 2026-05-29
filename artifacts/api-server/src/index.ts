@@ -136,6 +136,11 @@ async function startBackgroundTasks(): Promise<void> {
     startStaticAudioMonitor();
   });
 
+  await runBackgroundPhase("content_bank_warm", async () => {
+    const { warmContentBankCache } = await import("./services/contentBankStore.js");
+    await warmContentBankCache();
+  });
+
   await runBackgroundPhase("self_healing_controller", async () => {
     const { startSelfHealingController } = await import("./services/self-healing-controller.js");
     startSelfHealingController();
