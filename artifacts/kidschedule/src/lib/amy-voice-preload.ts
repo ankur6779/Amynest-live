@@ -2,6 +2,7 @@
  * Anticipatory Amy voice preloading — predict and warm next likely audio.
  */
 
+import { getCoachDialogueWarmupPhrases } from "@workspace/speech-coach";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import type { AmySpeechPolicy } from "@/lib/amy-speech-mode";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
@@ -11,13 +12,7 @@ import type { StaticAudioMode } from "@workspace/static-audio/browser";
 const SESSION_HISTORY_MAX = 14;
 const sessionPhraseHistory: string[] = [];
 
-const COACH_FOLLOW_UPS = [
-  "good job",
-  "try again",
-  "well done",
-  "listen carefully",
-  "great work",
-];
+const COACH_FOLLOW_UPS = [...getCoachDialogueWarmupPhrases()];
 
 /** Track recent phrases for lightweight next-phrase prediction. */
 export function recordAmyVoiceSessionPhrase(text: string): void {

@@ -3,6 +3,7 @@
  * Controlled batching + priority tiers to avoid CPU/memory spikes on low-end devices.
  */
 
+import { getCoachDialogueWarmupPhrases } from "@workspace/speech-coach";
 import { getPhonicsLetterCacheKey } from "@workspace/phonics-sounds";
 import { audioManager } from "@/lib/audio-manager";
 import {
@@ -63,13 +64,10 @@ const SPELLING_COMMON_WORDS = [
   "run",
 ] as const;
 
-const SPEECH_COACH_DEFAULT_PHRASES = [
-  "good job",
-  "try again",
-  "well done",
-  "listen carefully",
-  "great work",
-] as const;
+const SPEECH_COACH_DEFAULT_PHRASES = getCoachDialogueWarmupPhrases();
+
+const SPEECH_COACH_WARMUP_MERGE_LIMIT = 12;
+const SPEECH_COACH_WARMUP_CACHE_LIMIT = 8;
 
 type AudioWarmItem = { cacheKey: string; url: string; localKey?: string };
 
@@ -287,9 +285,9 @@ export function warmSpeechCoach(texts: string[]): void {
   const merged = [...new Set([...texts, ...SPEECH_COACH_DEFAULT_PHRASES])]
     .map((text) => text.trim())
     .filter(Boolean)
-    .slice(0, 6);
+    .slice(0, SPEECH_COACH_WARMUP_MERGE_LIMIT);
 
-  lastSpeechTexts = merged.slice(0, 3);
+  lastSpeechTexts = merged.slice(0, SPEECH_COACH_WARMUP_CACHE_LIMIT);
 
   runIdle(() => {
     const items: AudioWarmItem[] = [];
