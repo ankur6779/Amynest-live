@@ -124,6 +124,11 @@ function resolvePhraseScope(): {
     const phrases = ALL_CORPUS_PHRASES.filter((e) => e.source === "parent_hub");
     return { phrases, label: "parent_hub", audioLessonsOnly: false };
   }
+  const contentBankOnly = process.argv.includes("--content-bank-only");
+  if (contentBankOnly) {
+    const phrases = ALL_CORPUS_PHRASES.filter((e) => e.source === "content_bank");
+    return { phrases, label: "content_bank", audioLessonsOnly: false };
+  }
   return { phrases: ALL_CORPUS_PHRASES, label: "full_corpus", audioLessonsOnly: false };
 }
 

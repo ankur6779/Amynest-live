@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-05-29T16:09:54.526Z",
+  "totalItems": 1100,
+  "categories": {
+    "smartStudy": 500,
+    "lifeSkills": 300,
+    "eventPrep": 200,
+    "mathProgression": 100
+  },
+  "shards": {
+    "smartStudy": "smart-study/items.json",
+    "lifeSkills": "life-skills/items.json",
+    "eventPrep": "event-prep/items.json",
+    "mathProgression": "math-progression/items.json"
+  }
+}

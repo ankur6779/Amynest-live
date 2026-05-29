@@ -18,6 +18,7 @@ import {
 } from "@workspace/math-tricks";
 import { getSpellingAudioTextsForStaticCatalog } from "@workspace/spelling-catalog";
 import { getParentHubAudioTextsForStaticCatalog } from "@workspace/parent-hub-speak";
+import { getContentBankAudioTextsForStaticCatalog } from "@workspace/content-bank";
 import { getStaticTtsEntries } from "./phrases.js";
 import type { StaticAudioMode, StaticTtsEntry } from "./types.js";
 
@@ -185,6 +186,12 @@ function collectParentHubPhrases(): SpeakablePhraseRecord[] {
     .filter((r): r is SpeakablePhraseRecord => r !== null);
 }
 
+function collectContentBankPhrases(): SpeakablePhraseRecord[] {
+  return getContentBankAudioTextsForStaticCatalog()
+    .map((t) => toRecord(t, "default", "content_bank"))
+    .filter((r): r is SpeakablePhraseRecord => r !== null);
+}
+
 function collectPhonicsExtras(): SpeakablePhraseRecord[] {
   const lines = [
     ...getPhonicsAudioTextsForStaticCatalog(),
@@ -210,6 +217,7 @@ export function collectAllSpeakablePhrases(): SpeakablePhraseRecord[] {
     ...collectMathTrickPhrases(),
     ...collectSpellingPhrases(),
     ...collectParentHubPhrases(),
+    ...collectContentBankPhrases(),
     ...EXTRA_DEFAULT_PHRASES.map((t) => toRecord(t, "default", "extra_default")).filter(
       (r): r is SpeakablePhraseRecord => r !== null,
     ),

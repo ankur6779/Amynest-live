@@ -40,6 +40,7 @@ import {
 } from "@workspace/api-client-react";
 import { SubItemGate } from "@/components/sub-item-gate";
 import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
+import { ContentBankScenarios } from "@/components/content-bank-scenarios";
 
 interface LifeSkillsZoneProps {
   child: { id: string | number; name: string; age: number };
@@ -261,6 +262,10 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
           </div>
         </CardContent>
       </Card>
+
+      {Number.isFinite(childIdNum) && childIdNum > 0 && (
+        <ContentBankScenarios childId={childIdNum} />
+      )}
 
       {/* Today's tasks */}
       <div>
