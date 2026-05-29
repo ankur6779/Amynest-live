@@ -1,10 +1,11 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte } from "drizzle-orm";
 import { z } from "zod";
 import { getAuth } from "../lib/auth";
 import {
   childrenTable,
   db,
+  notificationLogTable,
   notificationPreferencesTable,
   pushTokensTable,
   routinesTable,
@@ -56,6 +57,11 @@ router.get("/notifications/categories", async (req, res): Promise<void> => {
     dailyCap: effectiveDailyCap(prefs),
     notificationIntensity: prefs.notificationIntensity,
     engagementScore: prefs.engagementScore,
+    locale: prefs.locale,
+    countryCode: prefs.countryCode,
+    preferredEngagementHour: prefs.preferredEngagementHour,
+    smartDeliveryEnabled: prefs.smartDeliveryEnabled,
+    pushConsentAt: prefs.pushConsentAt?.toISOString() ?? null,
   });
 });
 
@@ -98,6 +104,10 @@ const PatchSchema = z.object({
   quietHoursEnd: z.string().regex(HHMM_REGEX).optional(),
   dailyCap: z.number().int().min(1).max(20).optional(),
   notificationIntensity: z.enum(INTENSITY_VALUES).optional(),
+  locale: z.string().min(2).max(16).optional(),
+  countryCode: z.string().length(2).optional(),
+  smartDeliveryEnabled: z.boolean().optional(),
+  marketingOptIn: z.boolean().optional(),
 });
 
 router.patch("/notifications/categories", async (req, res): Promise<void> => {
@@ -147,6 +157,11 @@ router.patch("/notifications/categories", async (req, res): Promise<void> => {
     dailyCap: effectiveDailyCap(updated),
     notificationIntensity: updated.notificationIntensity,
     engagementScore: updated.engagementScore,
+    locale: updated.locale,
+    countryCode: updated.countryCode,
+    preferredEngagementHour: updated.preferredEngagementHour,
+    smartDeliveryEnabled: updated.smartDeliveryEnabled,
+    pushConsentAt: updated.pushConsentAt?.toISOString() ?? null,
   });
 });
 
@@ -347,9 +362,32 @@ router.post("/notifications/test", async (req, res): Promise<void> => {
 });
 
 /**
+ * POST /api/notifications/consent
+ * Record explicit push consent (GDPR / COPPA / PIPEDA regions).
+ */
+router.post("/notifications/consent", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const { CURRENT_CONSENT_VERSION } = await import("@workspace/notification-engine");
+  const now = new Date();
+  await getOrCreatePreferences(userId);
+  await db
+    .update(notificationPreferencesTable)
+    .set({
+      pushConsentAt: now,
+      pushConsentVersion: CURRENT_CONSENT_VERSION,
+      updatedAt: now,
+    })
+    .where(eq(notificationPreferencesTable.userId, userId));
+  res.json({ ok: true, pushConsentAt: now.toISOString(), version: CURRENT_CONSENT_VERSION });
+});
+
+/**
  * POST /api/notifications/opened
- * Called by client when a push notification is tapped/opened, to update
- * the engagement score for smarter adaptive frequency.
+ * Called by client when a push notification is tapped/opened.
  */
 router.post("/notifications/opened", async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
@@ -357,15 +395,296 @@ router.post("/notifications/opened", async (req, res): Promise<void> => {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  // Best-effort score update — no strict schema needed
-  const { opened = true } = (req.body ?? {}) as { opened?: boolean };
   try {
-    const { updateEngagementScore } = await import("../services/notificationDispatchService.js");
-    await updateEngagementScore(userId, opened);
+    const { recordNotificationOpened } = await import("../services/notificationContentHistoryService.js");
+    await recordNotificationOpened(userId);
   } catch (err) {
-    logger.warn({ err, userId }, "Failed to update engagement score via route");
+    logger.warn({ err, userId }, "Failed to record notification opened");
   }
   res.json({ ok: true });
+});
+
+/**
+ * POST /api/notifications/dismissed
+ * Called when user dismisses without opening (where platform supports it).
+ */
+router.post("/notifications/dismissed", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  try {
+    const { recordNotificationDismissed } = await import("../services/notificationContentHistoryService.js");
+    await recordNotificationDismissed(userId);
+  } catch (err) {
+    logger.warn({ err, userId }, "Failed to record notification dismissed");
+  }
+  res.json({ ok: true });
+});
+
+/**
+ * GET /api/notifications/analytics
+ * Engagement analytics for adaptive engine tuning.
+ */
+router.get("/notifications/analytics", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const prefs = await getOrCreatePreferences(userId);
+  const { loadUserContentHistory } = await import("../services/notificationContentHistoryService.js");
+  const { computeAnalytics, computeRegionalAnalytics } = await import("@workspace/notification-engine");
+  const history = await loadUserContentHistory(userId, prefs.timezone);
+  const windowDays = Math.min(Number(req.query["days"]) || 30, 90);
+  const summary = computeAnalytics(history.entries, history.fatigue, windowDays);
+
+  const logRows = await db
+    .select()
+    .from(notificationLogTable)
+    .where(eq(notificationLogTable.userId, userId))
+    .orderBy(desc(notificationLogTable.sentAt))
+    .limit(200);
+
+  const regionalEntries = logRows.map((r) => ({
+    category: r.category,
+    title: r.title,
+    body: r.body,
+    contentHash: r.contentHash,
+    topicKey: r.topicKey,
+    recommendationKey: r.recommendationKey,
+    theme: r.theme,
+    contentType: r.contentType,
+    sentAt: r.sentAt,
+    openedAt: r.openedAt,
+    dismissedAt: r.dismissedAt,
+    countryCode: r.countryCode,
+    locale: r.locale,
+    timezone: r.timezoneAtSend,
+    culturalRegion: r.culturalRegion,
+  }));
+
+  const regional = computeRegionalAnalytics(regionalEntries, windowDays);
+
+  const { computeDestinationMetrics } = await import("@workspace/action-routing");
+  const { notificationOutcomeEventsTable } = await import("@workspace/db");
+  const outcomeRows = await db
+    .select({
+      notificationLogId: notificationOutcomeEventsTable.notificationLogId,
+      outcomeAt: notificationOutcomeEventsTable.outcomeAt,
+    })
+    .from(notificationOutcomeEventsTable)
+    .where(eq(notificationOutcomeEventsTable.userId, userId))
+    .limit(500);
+  const outcomeByLog = new Map(outcomeRows.map((r) => [r.notificationLogId, r.outcomeAt]));
+
+  const destinationMetrics = computeDestinationMetrics(
+    logRows.map((r) => ({
+      category: r.category,
+      sentAt: r.sentAt,
+      openedAt: r.openedAt,
+      outcomeAt: outcomeByLog.get(r.id) ?? null,
+    })),
+  );
+
+  res.json({ windowDays, ...summary, regional, destinationMetrics });
+});
+
+/**
+ * POST /api/notifications/deep-link-event
+ * Funnel analytics: notification_clicked → deep_link_opened → destination_loaded → action_completed
+ */
+router.post("/notifications/deep-link-event", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const event = String(req.body?.event ?? "");
+  const valid = new Set([
+    "notification_clicked",
+    "deep_link_opened",
+    "destination_loaded",
+    "action_completed",
+    "deep_link_fallback",
+  ]);
+  if (!valid.has(event)) {
+    res.status(400).json({ error: "invalid_event" });
+    return;
+  }
+  logger.info(
+    {
+      userId,
+      event,
+      actionTarget: req.body?.actionTarget,
+      category: req.body?.category,
+      path: req.body?.path,
+      usedFallback: req.body?.usedFallback,
+      source: req.body?.source,
+    },
+    "deep_link_event",
+  );
+  res.json({ ok: true });
+});
+
+/**
+ * POST /api/notifications/outcome
+ * Record a downstream business outcome for causal attribution.
+ */
+router.post("/notifications/outcome", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const outcomeEvent = String(req.body?.outcomeEvent ?? "");
+  const notificationLogId = req.body?.notificationLogId
+    ? Number(req.body.notificationLogId)
+    : undefined;
+  const validEvents = new Set([
+    "routine_completed",
+    "routine_started",
+    "lesson_completed",
+    "lesson_started",
+    "subscription_started",
+    "subscription_trial_started",
+    "session_returned",
+    "streak_restored",
+    "campaign_step_completed",
+    "challenge_completed",
+  ]);
+  if (!validEvents.has(outcomeEvent)) {
+    res.status(400).json({ error: "invalid_outcome_event" });
+    return;
+  }
+  try {
+    const { recordNotificationOutcome } = await import(
+      "../services/notificationOutcomeAttributionService.js"
+    );
+    const result = await recordNotificationOutcome(
+      userId,
+      outcomeEvent as import("@workspace/notification-engine").OutcomeEventType,
+      { notificationLogId },
+    );
+    res.json(result);
+  } catch (err) {
+    logger.warn({ err, userId }, "Failed to record notification outcome");
+    res.status(500).json({ error: "outcome_record_failed" });
+  }
+});
+
+/**
+ * GET /api/notifications/analytics/outcomes
+ * Outcome-based analytics (routine/learning/retention/conversion uplift).
+ */
+router.get("/notifications/analytics/outcomes", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const windowDays = Math.min(Number(req.query["days"]) || 30, 90);
+  const { computeOutcomeAnalytics } = await import("@workspace/notification-engine");
+  const { notificationOutcomeEventsTable } = await import("@workspace/db");
+
+  const logRows = await db
+    .select()
+    .from(notificationLogTable)
+    .where(eq(notificationLogTable.userId, userId))
+    .orderBy(desc(notificationLogTable.sentAt))
+    .limit(500);
+
+  const outcomeRows = await db
+    .select()
+    .from(notificationOutcomeEventsTable)
+    .where(eq(notificationOutcomeEventsTable.userId, userId));
+
+  const outcomeByLog = new Map(outcomeRows.map((o) => [o.notificationLogId, o]));
+
+  const analyticsRows = logRows.map((r) => {
+    const o = outcomeByLog.get(r.id);
+    return {
+      notificationLogId: r.id,
+      category: r.category,
+      goal: r.goal as import("@workspace/notification-engine").NotificationGoal | null,
+      sentAt: r.sentAt,
+      openedAt: r.openedAt,
+      outcomeEvent: (o?.outcomeEvent ?? null) as import("@workspace/notification-engine").OutcomeEventType | null,
+      outcomeAt: o?.outcomeAt ?? null,
+    };
+  });
+
+  const summary = computeOutcomeAnalytics(analyticsRows, windowDays);
+  res.json({ windowDays, ...summary });
+});
+
+function isAdminUser(userId: string | null | undefined): boolean {
+  if (!userId) return false;
+  const list = (process.env["ADMIN_USER_IDS"] ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return list.includes(userId);
+}
+
+/**
+ * GET /api/notifications/analytics/executive
+ * Admin executive dashboard — ROI by category and goal.
+ */
+router.get("/notifications/analytics/executive", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+  const windowDays = Math.min(Number(req.query["days"]) || 30, 90);
+  const cutoff = new Date(Date.now() - windowDays * 86400000);
+
+  const {
+    computeOutcomeAnalytics,
+    computeExecutiveDashboard,
+    aggregateExperimentResults,
+  } = await import("@workspace/notification-engine");
+  const { notificationOutcomeEventsTable } = await import("@workspace/db");
+
+  const logRows = await db
+    .select()
+    .from(notificationLogTable)
+    .where(gte(notificationLogTable.sentAt, cutoff))
+    .limit(5000);
+
+  const outcomeRows = await db
+    .select()
+    .from(notificationOutcomeEventsTable)
+    .where(gte(notificationOutcomeEventsTable.outcomeAt, cutoff));
+
+  const outcomeByLog = new Map(outcomeRows.map((o) => [o.notificationLogId, o]));
+
+  const analyticsRows = logRows.map((r) => {
+    const o = outcomeByLog.get(r.id);
+    return {
+      notificationLogId: r.id,
+      category: r.category,
+      goal: r.goal as import("@workspace/notification-engine").NotificationGoal | null,
+      sentAt: r.sentAt,
+      openedAt: r.openedAt,
+      outcomeEvent: (o?.outcomeEvent ?? null) as import("@workspace/notification-engine").OutcomeEventType | null,
+      outcomeAt: o?.outcomeAt ?? null,
+    };
+  });
+
+  const outcomeAnalytics = computeOutcomeAnalytics(analyticsRows, windowDays);
+  const experiments = aggregateExperimentResults(
+    logRows.map((r) => ({
+      experimentId: r.experimentId,
+      experimentVariant: r.experimentVariant,
+      openedAt: r.openedAt,
+      outcomeAt: outcomeByLog.get(r.id)?.outcomeAt ?? null,
+    })),
+  );
+  const dashboard = computeExecutiveDashboard(outcomeAnalytics, experiments, windowDays);
+  res.json(dashboard);
 });
 
 /**

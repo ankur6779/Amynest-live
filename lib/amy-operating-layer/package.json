@@ -1,0 +1,16 @@
+{
+  "name": "@workspace/amy-operating-layer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --import tsx/esm --test src/amy-operating.test.ts"
+  },
+  "dependencies": {
+    "@workspace/action-routing": "workspace:*",
+    "@workspace/family-intelligence": "workspace:*"
+  }
+}

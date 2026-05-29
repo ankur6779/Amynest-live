@@ -21,6 +21,7 @@
     "check:parent-hub-audio-identity": "node scripts/check-parent-hub-audio-identity.mjs",
     "generate:ipad-screenshots": "node scripts/generate-ipad-appstore-screenshots.mjs",
     "generate:appstore-preview": "node scripts/generate-appstore-preview-video.mjs",
+    "generate:store-tap-image": "node scripts/generate-store-tap-image.mjs",
     "test:e2e": "playwright test --config playwright.config.ts",
     "test:e2e:startup": "playwright test --config playwright.config.startup.ts",
     "test:stress": "playwright test --config playwright.config.stress.ts"
@@ -71,6 +72,8 @@
     "@vitejs/plugin-react": "catalog:",
     "@vitest/coverage-v8": "^4.1.5",
     "@workspace/abacus": "workspace:*",
+    "@workspace/intent-recovery": "workspace:*",
+    "@workspace/action-routing": "workspace:*",
     "@workspace/api-client-react": "workspace:*",
     "@workspace/api-zod": "workspace:*",
     "class-variance-authority": "catalog:",
@@ -118,8 +121,8 @@
     "@workspace/behavior-tracker": "workspace:*",
     "@workspace/coach-journey": "workspace:*",
     "@workspace/coach-topic-questions": "workspace:*",
-    "@workspace/content-bank": "workspace:*",
     "@workspace/conflict-resolution": "workspace:*",
+    "@workspace/content-bank": "workspace:*",
     "@workspace/event-prep": "workspace:*",
     "@workspace/explainability": "workspace:*",
     "@workspace/family-routine": "workspace:*",
@@ -143,12 +146,13 @@
     "@workspace/routine-journey": "workspace:*",
     "@workspace/speech-coach": "workspace:*",
     "@workspace/static-audio": "workspace:*",
-    "@workspace/subscription-marketing": "workspace:*",
     "@workspace/study-zone": "workspace:*",
+    "@workspace/subscription-marketing": "workspace:*",
     "@workspace/tiffin-feedback": "workspace:*",
     "firebase": "^12.12.1",
     "i18next": "^26.0.5",
     "i18next-browser-languagedetector": "^8.2.1",
-    "react-i18next": "^17.0.4"
+    "react-i18next": "^17.0.4",
+    "react-qr-code": "^2.0.21"
   }
 }

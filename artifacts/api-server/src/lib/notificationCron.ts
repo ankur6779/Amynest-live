@@ -139,6 +139,7 @@ async function dispatchToAll(
         deepLink: built.deepLink,
         dedupKey: built.dedupKey,
         data: built.data,
+        contentMeta: built.contentMeta,
       });
       if (result.status === "sent") sent++;
       else if (result.status === "failed") failed++;
@@ -273,6 +274,7 @@ async function dispatchPerItemReminders(): Promise<{
             deepLink: built.deepLink,
             dedupKey: built.dedupKey,
             data: built.data,
+            contentMeta: built.contentMeta,
           });
           if (result.status === "sent") sent++;
           else if (result.status === "failed") failed++;
@@ -295,6 +297,10 @@ export function startNotificationCron(): void {
   if (started) return;
   started = true;
 
+  void import("@workspace/notification-engine").then(({ warmContentPools }) => {
+    warmContentPools();
+  });
+
   if (!notificationsEnabled()) {
     logger.info("Notification cron disabled via NOTIFICATIONS_ENABLED=false");
     return;
@@ -305,81 +311,16 @@ export function startNotificationCron(): void {
     return;
   }
 
-  // ── Core category schedule ─────────────────────────────────────────────
-  // Morning routine reminder — 07:30 local.
-  schedule("morning_routine", "30 7 * * *", async () => {
-    const r = await dispatchToAll("routine", buildMorningRoutine);
-    logger.info({ ...r, job: "morning_routine" }, "Cron summary");
+  // ── Global per-user timezone schedule — runs every minute (UTC clock; DST-safe local eval) ──
+  schedule("global_notification_tick", "* * * * *", async () => {
+    const { runGlobalScheduleTick } = await import("../services/notificationGlobalScheduler.js");
+    const r = await runGlobalScheduleTick();
+    if (r.sent > 0 || r.attempted > 10) {
+      logger.info({ ...r, job: "global_notification_tick" }, "Global schedule summary");
+    }
   });
 
-  // Amy AI insight — 12:30 local (lunchtime browse).
-  schedule("amy_insight", "30 12 * * *", async () => {
-    const r = await dispatchToAll("insights", buildAmyInsight);
-    logger.info({ ...r, job: "amy_insight" }, "Cron summary");
-  });
-
-  // Afternoon snack suggestion — 15:30 local.
-  schedule("snack_time", "30 15 * * *", async () => {
-    const r = await dispatchToAll("nutrition", buildSnackTime);
-    logger.info({ ...r, job: "snack_time" }, "Cron summary");
-  });
-
-  // Dinner suggestion — 18:30 local.
-  schedule("dinner_suggestion", "30 18 * * *", async () => {
-    const r = await dispatchToAll("nutrition", buildDinnerSuggestion);
-    logger.info({ ...r, job: "dinner_suggestion" }, "Cron summary");
-  });
-
-  // Engagement sweep — 19:00 local. Picks the best applicable nudge per user.
-  schedule("engagement_sweep", "0 19 * * *", async () => {
-    const r = await dispatchToAll("engagement", buildEngagement);
-    logger.info({ ...r, job: "engagement_sweep" }, "Cron summary");
-  });
-
-  // Good night — 21:00 local.
-  schedule("good_night", "0 21 * * *", async () => {
-    const r = await dispatchToAll("good_night", buildGoodNight);
-    logger.info({ ...r, job: "good_night" }, "Cron summary");
-  });
-
-  // Weekly report — Sunday 10:00 local. (Email recap fires Sun 09:00.)
-  schedule("weekly_report", "0 10 * * 0", async () => {
-    const r = await dispatchToAll("weekly", buildWeeklyReport);
-    logger.info({ ...r, job: "weekly_report" }, "Cron summary");
-  });
-
-  // ── Smart engine: new categories ──────────────────────────────────────
-  // Parenting tip — 09:00 local (after morning routine, before commute).
-  schedule("parenting_tip", "0 9 * * *", async () => {
-    const r = await dispatchToAll("parenting_tips", buildParentingTip);
-    logger.info({ ...r, job: "parenting_tip" }, "Cron summary");
-  });
-
-  // Learning activity — 10:30 local (mid-morning energy peak).
-  schedule("learning_activity", "30 10 * * *", async () => {
-    const r = await dispatchToAll("learning_activity", buildLearningActivity);
-    logger.info({ ...r, job: "learning_activity" }, "Cron summary");
-  });
-
-  // Milestone alert — 11:00 local (daily check, deduped monthly per user).
-  schedule("milestone_alert", "0 11 * * *", async () => {
-    const r = await dispatchToAll("milestone", buildMilestoneAlert);
-    logger.info({ ...r, job: "milestone_alert" }, "Cron summary");
-  });
-
-  // Phonics practice — 16:00 local (after-school slot, skips tweens).
-  schedule("phonics_reminder", "0 16 * * *", async () => {
-    const r = await dispatchToAll("phonics", buildPhonicsReminder);
-    logger.info({ ...r, job: "phonics_reminder" }, "Cron summary");
-  });
-
-  // Story time — 20:00 local (pre-bedtime wind-down).
-  schedule("story_time", "0 20 * * *", async () => {
-    const r = await dispatchToAll("story_time", buildStoryTime);
-    logger.info({ ...r, job: "story_time" }, "Cron summary");
-  });
-
-  // ── Per-task routine reminders — every minute ──────────────────────────
+  // ── Per-task routine reminders — every minute (already user-TZ aware) ──
   schedule("routine_item_sweep", "* * * * *", async () => {
     const r = await dispatchPerItemReminders();
     if (r.scheduled > 0) {
@@ -387,7 +328,7 @@ export function startNotificationCron(): void {
     }
   });
 
-  // Token health sweep — daily at 03:00 local.
+  // Token health sweep — daily at 03:00 UTC (global maintenance window).
   schedule("token_sweep", "0 3 * * *", async () => {
     const removed = await withSafeDb(
       "notification.token_sweep",
@@ -397,8 +338,9 @@ export function startNotificationCron(): void {
     logger.info({ removed, job: "token_sweep" }, "Token sweep summary");
   });
 
-  // Suppress unused import warnings
+  // Legacy category crons replaced by global_notification_tick (per-user TZ).
   void buildNutritionInsight;
+  void dispatchToAll;
 
 }
 

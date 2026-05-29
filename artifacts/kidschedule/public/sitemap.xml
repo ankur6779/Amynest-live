@@ -20,6 +20,14 @@
     </image:image>
   </url>
 
+  <!-- Social / influencer download landing -->
+  <url>
+    <loc>https://amynest.in/get-app</loc>
+    <lastmod>2026-05-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- Sign-up — primary conversion page -->
   <url>
     <loc>https://amynest.in/sign-up</loc>

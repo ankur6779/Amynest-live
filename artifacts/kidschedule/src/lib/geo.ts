@@ -16,6 +16,10 @@
 
 const INDIA_TIMEZONES = new Set(["Asia/Kolkata", "Asia/Calcutta"]);
 
+/** Apple App Store listing for AmyNest. */
+export const APP_STORE_URL =
+  "https://apps.apple.com/us/app/amynest-ai-smart-parenting/id6767664343";
+
 /** Google Play Store listing for AmyNest. */
 export const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.amynest.app";

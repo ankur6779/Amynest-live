@@ -22,6 +22,8 @@ import { Layout } from "@/components/layout";
 // iOS Jetsam mid-mount on iPhones opened from in-app browsers.
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
+import SocialLandingPage from "@/pages/social-landing";
+import StoreTapPage from "@/pages/store-tap";
 import SignInPageEager from "@/pages/sign-in";
 const SignInPageLazy = lazyPage(() => import("@/pages/sign-in"));
 const SignInPage =
@@ -133,6 +135,7 @@ import { DebugPanel } from "@/components/debug-panel";
 import { AudioHealthOverlay } from "@/components/audio-health-overlay";
 import { FcmForegroundHandler } from "@/components/fcm-foreground-handler";
 import { useNotificationDeepLink } from "@/hooks/use-notification-deep-link";
+import { useIntentInterruptionTracker } from "@/hooks/use-intent-interruption-tracker";
 import { PaywallProvider } from "@/contexts/paywall-context";
 import { PaywallModalLazy } from "@/components/paywall-modal-lazy";
 import { SubscriptionEventBridge } from "@/components/subscription-event-bridge";
@@ -467,6 +470,11 @@ function NotificationDeepLinkBridge() {
   return null;
 }
 
+function IntentInterruptionBridge() {
+  useIntentInterruptionTracker();
+  return null;
+}
+
 function ReactMountMarker() {
   // Confirms React's reconciliation actually completed and effects are
   // running — not just that `root.render()` returned synchronously (which
@@ -502,6 +510,7 @@ function AppRoutes() {
             <GiftAttributionBridge />
             <FcmForegroundHandler />
             <NotificationDeepLinkBridge />
+            <IntentInterruptionBridge />
             <NavigationHistoryGuard />
             <Suspense fallback={<RouteLoadingShell />}>
             <Switch>
@@ -514,6 +523,11 @@ function AppRoutes() {
           <Route path="/delete-account" component={DeleteAccountPage} />
           <Route path="/billing-dispute" component={BillingDisputePage} />
           <Route path="/support" component={SupportPage} />
+          <Route path="/get-app" component={SocialLandingPage} />
+          <Route path="/app" component={StoreTapPage} />
+          <Route path="/download">
+            <Redirect to="/get-app" />
+          </Route>
           <Route path="/login">
             <Redirect to="/sign-in" />
           </Route>

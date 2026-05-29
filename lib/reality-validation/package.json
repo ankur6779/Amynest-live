@@ -1,0 +1,19 @@
+{
+  "name": "@workspace/reality-validation",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --import tsx/esm --test src/reality-validation.test.ts"
+  },
+  "dependencies": {
+    "@workspace/family-intelligence": "workspace:*",
+    "@workspace/notification-engine": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "catalog:"
+  }
+}

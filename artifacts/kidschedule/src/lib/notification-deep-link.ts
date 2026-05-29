@@ -1,144 +1,72 @@
+/**
+ * notification-deep-link.ts — routes notification taps through @workspace/action-routing.
+ */
+import { resolveDeepLinkPath as resolveActionRoute } from "@workspace/action-routing";
 import { hasNotificationTapPayload } from "@/lib/notification-navigation-guard";
 
-/**
- * notification-deep-link.ts — Smart deep-link routing for AmyNest notifications.
- *
- * Handles three notification tap scenarios:
- *   1. Android cold start   — deepLink baked into initial URL hash by MainActivity
- *   2. Android warm start   — MainActivity calls window.onNotificationTap()
- *   3. iOS Capacitor tap    — native-push-bridge.ts fires "amynest-notif-deeplink" event
- *
- * The module installs window.onNotificationTap() early (at import time) so it
- * is available when the Android WebView calls it via evaluateJavascript after
- * page load, even if React has not yet mounted.
- */
-
-// ── Category → route mapping ─────────────────────────────────────────────────
-
-const CATEGORY_ROUTES: Record<string, string> = {
-  routine:           "/routines",
-  routine_item:      "/routines",
-  nutrition:         "/nutrition",
-  insights:          "/assistant",
-  weekly:            "/progress",
-  engagement:        "/dashboard",
-  good_night:        "/routines",
-  parenting_tips:    "/parenting-hub",
-  story_time:        "/parenting-hub",
-  phonics:           "/speech-coach",
-  learning_activity: "/study",
-  milestone:         "/progress",
-};
-
-/** Legacy / server shorthand paths → real SPA routes. */
-const PATH_ALIASES: Record<string, string> = {
-  "/hub":         "/dashboard",
-  "/routine":     "/routines",
-  "/meals":       "/nutrition",
-  "/study-zone":  "/study",
-  "/assistant":   "/amy-coach",
-};
-
-function normalizeDeepLinkInput(raw: string | null | undefined): string {
-  if (!raw) return "";
-  const trimmed = raw.trim();
-  if (!trimmed) return "";
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-    try {
-      const url = new URL(trimmed);
-      const fromHash = url.hash.startsWith("#/")
-        ? url.hash.slice(1)
-        : url.hash.startsWith("#")
-          ? url.hash.slice(1)
-          : "";
-      if (fromHash.startsWith("/")) return fromHash;
-      if (url.pathname && url.pathname !== "/") return url.pathname;
-    } catch {
-      /* ignore malformed URLs */
-    }
-  }
-  if (trimmed.startsWith("#/")) return trimmed.slice(1);
-  if (trimmed.startsWith("#")) return trimmed.slice(1).startsWith("/") ? trimmed.slice(1) : `/${trimmed.slice(1)}`;
-  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-}
-
-/**
- * Resolve a final navigation path from the raw deepLink string and optional
- * category hint. Priority:
- *   1. Explicit deepLink path from server (e.g. "/routines/42")
- *   2. Known path alias (e.g. "/hub" → "/dashboard")
- *   3. Category-based fallback (e.g. "phonics" → "/speech-coach")
- *   4. "/dashboard" as the safe fallback
- */
 export function resolveDeepLinkPath(
   rawPath: string | null | undefined,
   category?: string | null,
+  data?: Record<string, unknown>,
 ): string {
-  const normalized = normalizeDeepLinkInput(rawPath);
-  if (normalized.length > 1) {
-    return PATH_ALIASES[normalized] ?? normalized;
-  }
-  if (category) {
-    const route = CATEGORY_ROUTES[category.toLowerCase().replace(/-/g, "_")];
-    if (route) return route;
-  }
-  return "/dashboard";
+  return resolveActionRoute(rawPath, category, data).path;
 }
 
-/** Parse Capacitor pushNotificationActionPerformed / FCM data payloads. */
 export function parseNotifTapPayload(payload: unknown): {
   deepLink: string;
   category?: string;
+  actionTarget?: string;
+  entityId?: string;
+  data: Record<string, string>;
 } {
   const root = payload as {
     notification?: { data?: Record<string, unknown> };
     data?: Record<string, unknown>;
   } | null;
-  const data = root?.notification?.data ?? root?.data ?? {};
-  const deepLink =
-    String(data.deepLink ?? data.url ?? data.deep_link ?? "").trim();
-  const categoryRaw = data.category;
+  const raw = root?.notification?.data ?? root?.data ?? {};
+  const data: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (v != null && typeof v !== "object") data[k] = String(v);
+  }
+  const deepLink = String(raw.deepLink ?? raw.url ?? raw.deep_link ?? "").trim();
   const category =
-    typeof categoryRaw === "string" && categoryRaw.trim()
-      ? categoryRaw.trim()
+    typeof raw.category === "string" && raw.category.trim()
+      ? raw.category.trim()
       : undefined;
-  return { deepLink, category };
+  const actionTarget =
+    typeof raw.actionTarget === "string" ? raw.actionTarget : undefined;
+  const entityId = raw.entityId != null ? String(raw.entityId) : undefined;
+  return { deepLink, category, actionTarget, entityId, data };
 }
-
-// ── Pending tap buffer (for cold-start race with React mount) ────────────────
 
 interface NotifTap {
   deepLink: string;
   category?: string;
+  actionTarget?: string;
+  entityId?: string;
   userInteraction?: boolean;
   notificationId?: string;
   tappedAt?: number;
   source?: string;
+  usedFallback?: boolean;
 }
 
 let _pending: NotifTap | null = null;
 
-/** Returns and clears any buffered notification tap that arrived before React mounted. */
 export function drainPendingNotifTap(): NotifTap | null {
   const t = _pending;
   _pending = null;
   return t;
 }
 
-// ── Event dispatcher ─────────────────────────────────────────────────────────
-
 export interface NotifDeepLinkMeta {
-  /** Required for navigation — native tap / action performed only. */
   userInteraction?: boolean;
   notificationId?: string | null;
   tappedAt?: number;
-  source?: "android-tap" | "capacitor-tap" | "pending-buffer";
+  source?: "android-tap" | "capacitor-tap" | "pending-buffer" | "pwa-sw";
+  data?: Record<string, string>;
 }
 
-/**
- * Dispatch the "amynest-notif-deeplink" CustomEvent so any mounted
- * useNotificationDeepLink hook can react immediately.
- */
 export function dispatchNotifDeepLink(
   rawPath: string,
   category?: string | null,
@@ -148,21 +76,23 @@ export function dispatchNotifDeepLink(
     return;
   }
 
-  const deepLink = resolveDeepLinkPath(rawPath, category);
+  const parsed = meta?.data ?? {};
+  const resolved = resolveActionRoute(rawPath, category, parsed);
+  const deepLink = resolved.path;
+
   const detail = {
     deepLink,
     category: category ?? undefined,
+    actionTarget: resolved.actionTarget,
+    entityId: resolved.entityId != null ? String(resolved.entityId) : undefined,
+    usedFallback: resolved.usedFallback,
     userInteraction: meta?.userInteraction === true,
     notificationId: meta?.notificationId ?? undefined,
     tappedAt: meta?.tappedAt ?? Date.now(),
     source: meta?.source,
   };
 
-  _pending = {
-    deepLink,
-    category: category ?? undefined,
-    ...detail,
-  };
+  _pending = { ...detail };
   try {
     window.dispatchEvent(
       new CustomEvent("amynest-notif-deeplink", { detail }),
@@ -172,11 +102,8 @@ export function dispatchNotifDeepLink(
   }
 }
 
-// ── window.onNotificationTap — installed eagerly at module import ─────────────
-
 declare global {
   interface Window {
-    /** Called by Android MainActivity via evaluateJavascript when app opens from a notification tap. */
     onNotificationTap?: (deepLink: string, category?: string) => void;
   }
 }
@@ -189,4 +116,15 @@ if (typeof window !== "undefined") {
       source: "android-tap",
     });
   };
+
+  window.addEventListener("message", (event) => {
+    const msg = event.data as { type?: string; deepLink?: string; category?: string; data?: Record<string, string> } | null;
+    if (msg?.type !== "amynest-notif-deeplink") return;
+    dispatchNotifDeepLink(msg.deepLink ?? "", msg.category, {
+      userInteraction: true,
+      tappedAt: Date.now(),
+      source: "pwa-sw",
+      data: msg.data,
+    });
+  });
 }

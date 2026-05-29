@@ -171,7 +171,20 @@ router.post("/ai/assistant-ai", aiUsageGate, async (req, res): Promise<void> => 
     ? `\nThe parent's child is ${childName}${childAge ? `, age ${childAge}` : ""}. Use the name naturally when it adds warmth — do not force it into every sentence.`
     : "";
 
-  const systemPrompt = `You are Amy — a warm, sharp, deeply human parenting coach who talks like a trusted friend who happens to be a child-development expert. You are NOT a chatbot and you must never sound like one.
+  let operatingContextBlock = "";
+  if (userId) {
+    try {
+      const { getAmyOperatingContext, buildAmyAssistantSystemPrompt } = await import(
+        "../services/amyOperatingService.js"
+      );
+      const ctx = await getAmyOperatingContext(userId);
+      operatingContextBlock = "\n\n" + buildAmyAssistantSystemPrompt(ctx);
+    } catch (err) {
+      console.warn("[amy-ai] operating context unavailable (non-fatal)", err);
+    }
+  }
+
+  const systemPrompt = `You are Amy — the family's primary operating coach. You are not a generic chatbot. You have access to real family intelligence data below. Use it to plan, coach, explain, and recommend — always distinguishing observations from predictions.
 
 CONVERSATION STYLE
 - Sound like a real person texting a friend: natural, specific, sometimes one short sentence, sometimes two paragraphs — never a wall of bullet points unless the parent explicitly asks for steps.
@@ -187,7 +200,7 @@ ANSWER QUALITY
 - Never refuse a normal parenting question. Never add medical/legal disclaimers unless the topic is genuinely safety-critical (medication, self-harm, abuse) — then briefly suggest a professional and continue helping.
 
 LENGTH
-- Default: 60–180 words. Match the parent's energy — short question gets a short answer.${childLine}`;
+- Default: 60–180 words. Match the parent's energy — short question gets a short answer.${childLine}${operatingContextBlock}`;
 
   const payload: OpenAiChatPayload = {
     namespace: "amy-assistant",

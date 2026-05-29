@@ -10,7 +10,8 @@ import {
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
 import { getMessaging } from "firebase-admin/messaging";
 import { adminApp } from "../lib/firebase-admin";
-import { logger } from "../lib/logger";
+import { logger } from "../lib/logger.js";
+import { buildNotificationActionPayload } from "@workspace/action-routing";
 
 const expo = new Expo();
 
@@ -45,6 +46,42 @@ export interface DispatchInput {
    * so Android stays silent). Cron / normal sends omit this.
    */
   restrictToPlatforms?: readonly string[];
+  /** Adaptive engine metadata for analytics and anti-repetition. */
+  contentMeta?: {
+    contentHash?: string;
+    topicKey?: string;
+    recommendationKey?: string;
+    theme?: string;
+    contentType?: string;
+    noveltyScore?: number;
+    relevanceScore?: number;
+    recencyScore?: number;
+    engagementPredictionScore?: number;
+    qualityScore?: number;
+    businessImpactScore?: number;
+    routineCompletionProb?: number;
+    learningCompletionProb?: number;
+    retentionProb?: number;
+    subscriptionProb?: number;
+    engagementProb?: number;
+  };
+  /** Outcome optimization metadata. */
+  outcomeMeta?: {
+    goal?: string;
+    childLifecycleStage?: string;
+    parentMilestone?: string | null;
+    campaignId?: string | null;
+    campaignStep?: number | null;
+    experimentId?: string | null;
+    experimentVariant?: string | null;
+  };
+  /** Global delivery dimensions for regional analytics. */
+  globalMeta?: {
+    countryCode?: string | null;
+    locale?: string | null;
+    timezoneAtSend?: string | null;
+    culturalRegion?: string | null;
+  };
 }
 
 export type DispatchStatus = "sent" | "throttled" | "failed" | "duplicate" | "no_tokens";
@@ -227,6 +264,9 @@ async function logEvent(
   errorMessage?: string,
   platform?: string,
 ): Promise<void> {
+  const meta = input.contentMeta;
+  const global = input.globalMeta;
+  const outcome = input.outcomeMeta;
   await db.insert(notificationLogTable).values({
     userId: input.userId,
     category: input.category,
@@ -237,6 +277,33 @@ async function logEvent(
     status,
     platform: platform ?? null,
     errorMessage: errorMessage ?? null,
+    contentHash: meta?.contentHash ?? null,
+    topicKey: meta?.topicKey ?? null,
+    recommendationKey: meta?.recommendationKey ?? null,
+    theme: meta?.theme ?? null,
+    contentType: meta?.contentType ?? null,
+    noveltyScore: meta?.noveltyScore ?? null,
+    relevanceScore: meta?.relevanceScore ?? null,
+    recencyScore: meta?.recencyScore ?? null,
+    engagementPredictionScore: meta?.engagementPredictionScore ?? null,
+    qualityScore: meta?.businessImpactScore ?? meta?.qualityScore ?? null,
+    businessImpactScore: meta?.businessImpactScore ?? meta?.qualityScore ?? null,
+    routineCompletionProb: meta?.routineCompletionProb ?? null,
+    learningCompletionProb: meta?.learningCompletionProb ?? null,
+    retentionProb: meta?.retentionProb ?? null,
+    subscriptionProb: meta?.subscriptionProb ?? null,
+    engagementProb: meta?.engagementProb ?? null,
+    goal: outcome?.goal ?? null,
+    childLifecycleStage: outcome?.childLifecycleStage ?? null,
+    parentMilestone: outcome?.parentMilestone ?? null,
+    campaignId: outcome?.campaignId ?? null,
+    campaignStep: outcome?.campaignStep ?? null,
+    experimentId: outcome?.experimentId ?? null,
+    experimentVariant: outcome?.experimentVariant ?? null,
+    countryCode: global?.countryCode ?? null,
+    locale: global?.locale ?? null,
+    timezoneAtSend: global?.timezoneAtSend ?? null,
+    culturalRegion: global?.culturalRegion ?? null,
   });
 }
 
@@ -372,6 +439,14 @@ async function sendFcmIosPush(
  * Daily cap is now driven by the user's intensity mode setting.
  */
 export async function dispatchNotification(input: DispatchInput): Promise<DispatchResult> {
+  const actionPayload = buildNotificationActionPayload({
+    category: input.category,
+    deepLink: input.deepLink,
+    data: input.data,
+  });
+  input.deepLink = actionPayload.deepLink;
+  input.data = { ...input.data, ...actionPayload.data };
+
   const prefs = await getOrCreatePreferences(input.userId);
 
   if (!input.bypassCategoryCheck && !categoryEnabled(prefs, input.category)) {
@@ -609,6 +684,12 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   }
 
   await logEvent(input, "sent", undefined, platform);
+  try {
+    const { touchFatigueLastSent } = await import("./notificationContentHistoryService.js");
+    await touchFatigueLastSent(input.userId);
+  } catch {
+    /* best-effort */
+  }
   logger.info(
     {
       userId: input.userId,
