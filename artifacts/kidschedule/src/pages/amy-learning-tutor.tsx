@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChatThreadShell } from "@/components/chat-thread-shell";
+import { ChatPlatform } from "@/components/chat-platform";
 import { ChatTypingBubble } from "@/components/chat-bubbles";
+import { CHAT_PROMPT_ATTR, resolveActiveChatPromptId } from "@/lib/chat-platform";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -328,6 +329,12 @@ export default function AmyLearningTutorPage() {
     return null;
   }
 
+  const activePromptId = useMemo(() => {
+    if (loading) return null;
+    if (pending?.message) return "amy-learning-pending";
+    return resolveActiveChatPromptId(turns, { awaitingAnswer: sessionStarted });
+  }, [loading, pending, turns, sessionStarted]);
+
   return (
     <div
       className="relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col bg-background"
@@ -364,9 +371,11 @@ export default function AmyLearningTutorPage() {
       ) : null}
 
       {primaryChild?.id ? (
-        <ChatThreadShell
+        <ChatPlatform
+          surface="amy-learning-tutor"
           layout="embedded"
           scrollDeps={[turns, loading, pending, sessionStarted, input, goalMet]}
+          activePromptId={activePromptId}
           className="min-h-0 flex-1"
           messagesClassName="space-y-3 pr-5 md:px-0"
           footerClassName="border-t border-border/50 bg-background/95 backdrop-blur"
@@ -401,7 +410,12 @@ export default function AmyLearningTutorPage() {
             ) : null}
 
             {turns.map((turn) => (
-              <TurnBubble key={turn.id} turn={turn} onPlayMessage={playTutorMessage} />
+              <TurnBubble
+                key={turn.id}
+                turn={turn}
+                onPlayMessage={playTutorMessage}
+                activePromptId={activePromptId}
+              />
             ))}
 
             {pending ? (
@@ -410,6 +424,7 @@ export default function AmyLearningTutorPage() {
                 goalMet={goalMet}
                 onPlayMessage={playTutorMessage}
                 onPrimePlay={primeTutorAudioGesture}
+                activePromptId={activePromptId}
               />
             ) : null}
 
@@ -419,7 +434,7 @@ export default function AmyLearningTutorPage() {
               </div>
             ) : null}
           </div>
-        </ChatThreadShell>
+        </ChatPlatform>
       ) : null}
     </div>
   );
@@ -428,9 +443,11 @@ export default function AmyLearningTutorPage() {
 function TurnBubble({
   turn,
   onPlayMessage,
+  activePromptId,
 }: {
   turn: ChatTurn;
   onPlayMessage: (message: string) => void;
+  activePromptId?: string | null;
 }) {
   if (turn.role === "child") {
     return (
@@ -447,6 +464,7 @@ function TurnBubble({
       message={turn.text}
       mode={turn.mode}
       onPlayMessage={onPlayMessage}
+      promptId={turn.id === activePromptId ? turn.id : undefined}
     />
   );
 }
@@ -456,14 +474,22 @@ function AmyPendingBubble({
   goalMet,
   onPlayMessage,
   onPrimePlay,
+  activePromptId,
 }: {
   pending: TutorPayload;
   goalMet: boolean;
   onPlayMessage: (message: string) => void;
   onPrimePlay: (message?: string) => void;
+  activePromptId?: string | null;
 }) {
   return (
-    <div className="space-y-2" data-testid="amy-learning-tutor-pending">
+    <div
+      className="space-y-2"
+      data-testid="amy-learning-tutor-pending"
+      {...(activePromptId === "amy-learning-pending"
+        ? { [CHAT_PROMPT_ATTR]: activePromptId }
+        : undefined)}
+    >
       <AmyMessageCard
         message={pending.message}
         mode={pending.mode}
@@ -486,15 +512,22 @@ function AmyMessageCard({
   onPlayMessage,
   onPrimePlay,
   highlight = false,
+  promptId,
 }: {
   message: string;
   mode?: TeachingMode;
   onPlayMessage: (message: string) => void;
   onPrimePlay?: () => void;
   highlight?: boolean;
+  promptId?: string | null;
 }) {
+  const promptProps =
+    promptId != null && promptId !== ""
+      ? { [CHAT_PROMPT_ATTR]: promptId }
+      : undefined;
+
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2" {...promptProps}>
       <div className="mt-1 shrink-0">
         <AmyIcon size={28} ring />
       </div>

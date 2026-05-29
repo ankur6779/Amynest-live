@@ -1,5 +1,6 @@
 import type { Plan, PlanCard } from "@/hooks/use-subscription";
-import { annualSavingsLabel, planPricePresentation } from "@/lib/subscription-plans";
+import { planPricePresentation, planSavingsLabel } from "@/lib/subscription-plans";
+import type { PlanBillingLabels } from "@/lib/plan-price";
 import type { StorePlanPrice } from "@/lib/plan-price";
 
 export function planStorePriceOptions(
@@ -25,11 +26,12 @@ export function planCardPricePresentation(
   plan: PlanCard,
   storePriceLabel?: string,
   store?: StorePlanPrice | null,
+  labels?: PlanBillingLabels,
 ) {
-  const presentation = planPricePresentation(plan, { storePriceLabel, store });
+  const presentation = planPricePresentation(plan, { storePriceLabel, store, labels });
   return {
     presentation,
-    savings: plan.id === "yearly" ? annualSavingsLabel(plan) : null,
+    savings: planSavingsLabel(plan),
   };
 }
 
@@ -83,10 +85,12 @@ export function formatStickyPriceSummary(
   plan: PlanCard,
   storePriceLabel?: string,
   store?: StorePlanPrice | null,
-): { title: string; priceLine: string } {
-  const { primaryLine } = planPricePresentation(plan, { storePriceLabel, store });
+  labels?: PlanBillingLabels,
+): { title: string; priceLine: string; billingLine: string } {
+  const presentation = planPricePresentation(plan, { storePriceLabel, store, labels });
   return {
     title: plan.title,
-    priceLine: primaryLine,
+    priceLine: presentation.primaryLine,
+    billingLine: presentation.secondaryBillingLine,
   };
 }

@@ -45,6 +45,9 @@ import {
 } from "@/lib/pricing-plan-card-ui";
 import { PlanPriceLines } from "@/components/plan-price-lines";
 import { SubscriptionPricingStickyCta } from "@/components/subscription-pricing-sticky-cta";
+import { usePlanCardViewAnalytics } from "@/hooks/use-plan-card-view-analytics";
+import type { PlanBillingLabels } from "@/lib/plan-price";
+import { monthlyEquivalentForPlan } from "@/lib/plan-price";
 import { wasPostPurchaseUpsellDismissed } from "@/lib/subscription-funnel-storage";
 import {
   SUBSCRIPTION_HERO,
@@ -97,6 +100,22 @@ export default function PricingPage() {
   const { user } = useUser();
 
   const sortedPlans = useMemo(() => sortPlanCards(plans), [plans]);
+
+  const planBillingLabels = useMemo<PlanBillingLabels>(
+    () => ({
+      billedAnnuallyAt: (amount) =>
+        t("pricing.billed_annually_at", { amount, defaultValue: `Billed annually at ${amount}` }),
+      billedEverySixMonthsAt: (amount) =>
+        t("pricing.billed_every_six_months_at", {
+          amount,
+          defaultValue: `Billed every 6 months at ${amount}`,
+        }),
+      billedMonthly: t("pricing.billed_monthly", { defaultValue: "Billed monthly" }),
+    }),
+    [t],
+  );
+
+  usePlanCardViewAnalytics(sortedPlans, "pricing_page", !loading && sortedPlans.length > 0);
   const [selected, setSelected] = useState<Exclude<Plan, "free">>(() => {
     if (typeof window === "undefined") return resolveDefaultPlanId(0);
     const params = new URLSearchParams(window.location.search);
@@ -416,6 +435,7 @@ export default function PricingPage() {
                 p,
                 storeOpts.storePriceLabel,
                 storeOpts.store,
+                planBillingLabels,
               );
               const badgeText = planBadgeLabel(p.id, p.badge);
               const featureLimit =
@@ -466,14 +486,7 @@ export default function PricingPage() {
 
                   <PlanPriceLines
                     presentation={presentation}
-                    savings={
-                      savings ??
-                      (p.id !== "yearly" &&
-                      typeof p.savingsPercent === "number" &&
-                      p.savingsPercent > 0
-                        ? t("pricing.save_percent", { percent: p.savingsPercent })
-                        : null)
-                    }
+                    savings={savings}
                     priceClassName={pricingPlanPriceClasses(p.id)}
                   />
 
@@ -888,15 +901,17 @@ export default function PricingPage() {
         onClose={() => setShowConfirm(false)}
         periodEnd={periodEnd}
         cancelling={cancelling}
-        annualMonthlyEquivalent={
-          sortedPlans.find((p) => p.id === "yearly")
-            ? planCardPricePresentation(
-                sortedPlans.find((p) => p.id === "yearly")!,
-                nativeBilling.priceByPlan.yearly,
-                nativeBilling.storePricesByPlan.yearly,
-              ).presentation.monthlyEquivalentLine
-            : null
-        }
+        annualMonthlyEquivalent={(() => {
+          const yearly = sortedPlans.find((p) => p.id === "yearly");
+          if (!yearly) return null;
+          const { presentation } = planCardPricePresentation(
+            yearly,
+            nativeBilling.priceByPlan.yearly,
+            nativeBilling.storePricesByPlan.yearly,
+            planBillingLabels,
+          );
+          return monthlyEquivalentForPlan("yearly", presentation);
+        })()}
         onSwitchToAnnual={() => {
           setSelected("yearly");
           void onUpgradeNativeStore();
@@ -917,6 +932,7 @@ export default function PricingPage() {
           selectedPlan={selectedPlanCard}
           storePriceLabel={selectedStoreOpts?.storePriceLabel}
           store={selectedStoreOpts?.store}
+          billingLabels={planBillingLabels}
           disabled={plans.length === 0 || !stickyCheckoutAvailable}
           busy={isProcessing}
           onCheckout={handleStickyCheckout}

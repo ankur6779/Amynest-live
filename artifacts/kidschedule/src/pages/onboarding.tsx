@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
-import { ChatThreadShell } from "@/components/chat-thread-shell";
+import { ChatPlatform } from "@/components/chat-platform";
 import { ChatAmyBubble, ChatTypingBubble, ChatUserBubble } from "@/components/chat-bubbles";
 import {
   chatMessage,
@@ -27,6 +27,7 @@ import {
   wasOnboardingTrialSeen,
 } from "@/lib/subscription-funnel-storage";
 import { logOnboardingState } from "@/lib/onboarding-debug";
+import { resolveActiveChatPromptId } from "@/lib/chat-platform";
 import {
   persistOnboardingCache,
   resolveSetupStatus,
@@ -2183,10 +2184,20 @@ export default function OnboardingPage() {
     ONBOARDING_CHAT_STEPS.has(step) &&
     !showCountryPicker;
 
+  const activePromptId = useMemo(
+    () =>
+      resolveActiveChatPromptId(messages, {
+        awaitingAnswer: showChatFooter && !typing,
+      }),
+    [messages, showChatFooter, typing],
+  );
+
   return (
     <div className="relative h-full w-full">
-      <ChatThreadShell
+      <ChatPlatform
+        surface="onboarding"
         scrollDeps={[messages, typing, step, textInput]}
+        activePromptId={activePromptId}
         style={{ background: BG }}
         messagesClassName="max-w-lg"
         header={(
@@ -2222,13 +2233,18 @@ export default function OnboardingPage() {
       >
         {messages.map((msg) =>
           msg.role === "amy" ? (
-            <ChatAmyBubble key={msg.id} text={msg.text} theme="onboarding" />
+            <ChatAmyBubble
+              key={msg.id}
+              text={msg.text}
+              theme="onboarding"
+              promptId={msg.id === activePromptId ? msg.id : undefined}
+            />
           ) : (
             <ChatUserBubble key={msg.id} text={msg.text} theme="onboarding" />
           ),
         )}
         {typing ? <ChatTypingBubble theme="onboarding" /> : null}
-      </ChatThreadShell>
+      </ChatPlatform>
       {renderCountryPickerOverlay()}
     </div>
   );

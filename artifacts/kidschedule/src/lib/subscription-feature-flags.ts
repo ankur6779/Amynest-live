@@ -54,3 +54,9 @@ export const FF_NATIVE_RC_PAYWALL_FIRST = envFlag(
   "VITE_FF_SUB_NATIVE_RC_PAYWALL",
   false,
 );
+
+/** Multi-month plans show per-month price as primary (billed amount secondary). */
+export const FF_MONTHLY_PRIMARY_PRICE = envFlag(
+  "VITE_FF_SUB_MONTHLY_PRIMARY_PRICE",
+  true,
+);

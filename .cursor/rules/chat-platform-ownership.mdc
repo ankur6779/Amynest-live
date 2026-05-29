@@ -1,0 +1,43 @@
+---
+description: ChatPlatform owns all Android chat keyboard + scroll visibility — no bypasses
+alwaysApply: true
+---
+
+# ChatPlatform ownership (mandatory)
+
+Full gate: `pnpm run check:chat-platform`
+
+## Single owner
+
+| Concern | Owner |
+|---------|--------|
+| Chat layout shell | `components/chat-platform.tsx` |
+| Keyboard viewport read | `lib/chat-platform/viewport.ts` |
+| Active prompt visibility | `lib/chat-platform/visibility.ts` |
+| Telemetry | `lib/chat-platform/telemetry.ts` |
+| Internal hook | `hooks/use-keyboard-chat-layout.ts` (ChatPlatform only) |
+
+## Native vs web (Android)
+
+- **Native (`android/MainActivity.kt`):** resize only (`adjustResize` + IME inset events). Never inject `--vv-height` for chat.
+- **Web (`ChatPlatform`):** visibility + scroll only. Never subtract keyboard inset from container height on Android WebView.
+
+## Do NOT (outside ChatPlatform)
+
+- Add keyboard offsets, padding hacks, or spacer views for chat
+- Add `keyboardHeight`, `keyboardInset` calculations in pages/components
+- Add viewport shrinking (`innerHeight - inset`, `--vv-height` overrides) in feature code
+- Add `scrollToEnd`, `scrollIntoView`, or custom chat scroll logic in pages
+- Import `use-keyboard-chat-layout` from feature code
+- Import deprecated `chat-thread-shell` in pages
+
+## DO
+
+- Use `<ChatPlatform surface="…" activePromptId={…} />` for every conversational text UI
+- Tag active Amy bubbles with `promptId` / `data-chat-prompt-id`
+- Run `pnpm run check:chat-platform` before merging chat/layout PRs
+- Real-device certification required before release: `pnpm run check:chat-platform-certification`
+
+## PRs touching chat keyboard
+
+Must pass `check:chat-platform` and must not expand forbidden patterns in `scripts/check-chat-platform.ts`.

@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
-import { ChatThreadShell } from "@/components/chat-thread-shell";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { ChatPlatform } from "@/components/chat-platform";
 import { ChatTypingBubble } from "@/components/chat-bubbles";
+import { CHAT_PROMPT_ATTR } from "@/lib/chat-platform";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
@@ -156,6 +157,14 @@ export default function AssistantPage() {
   const isEmpty = historyLoaded && messages.length === 0;
   const tabTopics = TAB_TOPICS[mode] ?? [];
 
+  const activePromptId = useMemo(() => {
+    if (loading) return null;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "assistant") return `assistant-msg-${i}`;
+    }
+    return null;
+  }, [messages, loading]);
+
   const handleTopicClick = (topicKey: string) => {
     const text = t(topicKey);
     setInput(text);
@@ -178,6 +187,12 @@ export default function AssistantPage() {
   );
 
   const renderMessageBubble = (msg: Message, i: number) => {
+    const promptKey = `assistant-msg-${i}`;
+    const promptProps =
+      msg.role === "assistant" && activePromptId === promptKey
+        ? { [CHAT_PROMPT_ATTR]: activePromptId }
+        : undefined;
+
     if (msg.role === "system") {
       return (
         <div key={`system-${i}`} className="flex justify-center">
@@ -189,7 +204,11 @@ export default function AssistantPage() {
     }
 
     return (
-      <div key={i} className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+      <div
+        key={i}
+        className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
+        {...promptProps}
+      >
         <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
           msg.role !== "assistant" ? "bg-secondary/20 text-secondary-foreground" : ""
         }`}>
@@ -233,9 +252,11 @@ export default function AssistantPage() {
 
   return (
     <div className="assistant-chat-page relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col bg-background">
-      <ChatThreadShell
+      <ChatPlatform
+        surface="assistant"
         layout="embedded"
         scrollDeps={[messages, loading, historyLoaded, mode, input]}
+        activePromptId={activePromptId}
         scrollApiRef={scrollApiRef}
         onMessagesScroll={handleThreadScroll}
         className="bg-background"
@@ -333,7 +354,7 @@ export default function AssistantPage() {
             {loading ? <ChatTypingBubble /> : null}
           </>
         )}
-      </ChatThreadShell>
+      </ChatPlatform>
 
       {showScrollLatest && (
         <Button

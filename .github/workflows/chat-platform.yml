@@ -1,0 +1,40 @@
+name: ChatPlatform gates
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/kidschedule/**"
+      - "scripts/check-chat-platform*.ts"
+      - "android/**"
+  push:
+    branches: [main]
+    paths:
+      - "artifacts/kidschedule/**"
+      - "scripts/check-chat-platform*.ts"
+      - "android/**"
+
+jobs:
+  chat-platform:
+    name: ChatPlatform enforcement + visibility tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Static ChatPlatform ownership gate
+        run: pnpm run check:chat-platform
+
+      - name: Device certification gate (release only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: pnpm run check:chat-platform-certification
+        continue-on-error: false

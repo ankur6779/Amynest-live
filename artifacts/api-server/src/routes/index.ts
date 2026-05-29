@@ -4,6 +4,8 @@ import {
   startupTelemetryAdminRouter,
   startupTelemetryPublicRouter,
 } from "./startup-telemetry";
+import remoteConfigRouter from "./remote-config";
+import chatPlatformHealthRouter from "./chat-platform-health";
 import clientLogsRouter from "./client-logs";
 import childrenRouter from "./children";
 import routinesRouter from "./routines";
@@ -116,7 +118,9 @@ router.use(otaRouter);
 router.use(storiesPublicRouter);
 router.use(learningSeedPublicRouter);
 router.use(startupTelemetryPublicRouter);
+router.use(remoteConfigRouter);
 router.use(requireAuth);
+router.use(chatPlatformHealthRouter);
 router.use(startupTelemetryAdminRouter);
 router.use(clientLogsRouter);
 router.use(onboardingRouter);

@@ -1,5 +1,6 @@
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { AmyIcon } from "@/components/amy-icon";
+import { CHAT_PROMPT_ATTR } from "@/lib/chat-platform";
 import { cn } from "@/lib/utils";
 
 const ONBOARDING_GRAD =
@@ -66,17 +67,26 @@ export function ChatAmyBubble({
   text,
   theme = "app",
   className,
+  promptId,
 }: {
   text: string;
   theme?: ChatBubbleTheme;
   className?: string;
+  /** Marks the active question for keyboard visibility (data-chat-prompt-id). */
+  promptId?: string | null;
 }) {
+  const promptProps =
+    promptId != null && promptId !== ""
+      ? { [CHAT_PROMPT_ATTR]: promptId }
+      : undefined;
+
   if (theme === "onboarding") {
     return (
       <div
         className={cn("chat-amy-bubble flex items-end gap-2", className)}
         role="article"
         aria-label={`Amy: ${text}`}
+        {...promptProps}
       >
         <AmyAvatarMark theme={theme} size={32} />
         <div
@@ -95,7 +105,12 @@ export function ChatAmyBubble({
   }
 
   return (
-    <div className={cn("chat-amy-bubble flex gap-2.5", className)} role="article" aria-label={`Amy: ${text}`}>
+    <div
+      className={cn("chat-amy-bubble flex gap-2.5", className)}
+      role="article"
+      aria-label={`Amy: ${text}`}
+      {...promptProps}
+    >
       <div className="shrink-0" aria-hidden="true">
         <AmyAvatarMark theme={theme} size={32} />
       </div>

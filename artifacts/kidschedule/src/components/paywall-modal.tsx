@@ -19,10 +19,11 @@ import {
   resolveDefaultPlanId,
   trackHubJourneyAnnualSelected,
   isHubJourneyReason,
-  annualSavingsLabel,
   isAnnualHighlightedPlan,
   trackPlanSelected,
 } from "@/lib/subscription-plans";
+import { usePlanCardViewAnalytics } from "@/hooks/use-plan-card-view-analytics";
+import type { PlanBillingLabels } from "@/lib/plan-price";
 import {
   planCardPricePresentation,
   planStorePriceOptions,
@@ -74,6 +75,23 @@ export function PaywallModal() {
   const nativeBilling = useNativeBilling();
   const { toast } = useToast();
   const sortedPlans = useMemo(() => sortPlanCards(plans), [plans]);
+
+  const planBillingLabels = useMemo<PlanBillingLabels>(
+    () => ({
+      billedAnnuallyAt: (amount) =>
+        t("pricing.billed_annually_at", { amount, defaultValue: `Billed annually at ${amount}` }),
+      billedEverySixMonthsAt: (amount) =>
+        t("pricing.billed_every_six_months_at", {
+          amount,
+          defaultValue: `Billed every 6 months at ${amount}`,
+        }),
+      billedMonthly: t("pricing.billed_monthly", { defaultValue: "Billed monthly" }),
+    }),
+    [t],
+  );
+
+  usePlanCardViewAnalytics(sortedPlans, "paywall_modal", state.open && sortedPlans.length > 0);
+
   const [selected, setSelected] = useState<Exclude<Plan, "free">>(() =>
     resolveDefaultPlanId(),
   );
@@ -244,6 +262,7 @@ export function PaywallModal() {
                 p,
                 storeOpts.storePriceLabel,
                 storeOpts.store,
+                planBillingLabels,
               );
               const annualHighlight = isAnnualHighlightedPlan(p.id);
               return (
@@ -273,13 +292,14 @@ export function PaywallModal() {
                   <div className="mb-2">
                     <PlanPriceLines
                       presentation={presentation}
-                      savings={
-                        savings ??
-                        (typeof p.savingsPercent === "number" && p.savingsPercent > 0
-                          ? `${t("components.paywall_modal.save")} ${p.savingsPercent}%`
-                          : null)
+                      savings={savings}
+                      priceClassName={
+                        p.id === "yearly"
+                          ? "text-2xl sm:text-3xl font-black leading-tight"
+                          : p.id === "six_month"
+                            ? "text-xl sm:text-2xl font-black leading-tight"
+                            : "text-lg sm:text-xl font-bold leading-tight"
                       }
-                      priceClassName="text-2xl font-black leading-tight"
                       compact
                     />
                   </div>
