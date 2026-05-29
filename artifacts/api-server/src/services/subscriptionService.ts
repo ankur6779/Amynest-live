@@ -433,7 +433,7 @@ function isEnvGranted(userId: string, email: string | null, phoneNumber?: string
  * first via env-var allowlists (ADMIN_PREMIUM_UIDS / ADMIN_PREMIUM_EMAILS /
  * ADMIN_PREMIUM_PHONES, works even in production without a DB migration),
  * then via the admin_premium_grants DB table (keyed by email or phone).
- * If granted and the subscription is not yet active, upgrades it to
+ * If granted and the user does not already have premium entitlement, upgrades to
  * active/yearly with a far-future period end. Idempotent.
  */
 export async function maybeAutoGrantPremium(
@@ -467,7 +467,9 @@ export async function maybeAutoGrantPremium(
   }
 
   const sub = await getOrCreateSubscription(userId, db, phoneNumber);
-  if (sub.status === "active") return;
+  // Use entitlement check, not bare status — stale `active` rows from the
+  // pre-gate bug lack currentPeriodEnd and must be repaired for allowlisted users.
+  if (isPremiumNow(sub)) return;
   await db
     .update(subscriptionsTable)
     .set({

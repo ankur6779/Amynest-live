@@ -78,3 +78,12 @@ test("isPremiumNow accepts manual grant with far-future period end", () => {
     true,
   );
 });
+
+test("stale active without period end is not premium (auto-grant must repair)", () => {
+  const staleActive = sub({
+    status: "active",
+    plan: "yearly",
+    provider: "revenuecat",
+  });
+  assert.equal(isPremiumNow(staleActive), false);
+});
