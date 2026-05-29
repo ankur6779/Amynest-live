@@ -10,7 +10,6 @@ import { useSubscription, type Plan } from "@/hooks/use-subscription";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { useNativeBilling } from "@/hooks/use-native-billing";
 import { isIndiaRegion, isAndroidDevice, PLAY_STORE_URL } from "@/lib/geo";
-import { presentNativeRCPaywall } from "@/lib/native-rc-paywall";
 import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToast } from "@/hooks/use-toast";
@@ -179,36 +178,32 @@ export default function PricingPage() {
   const onUpgradeNativeStore = async () => {
     setNotice(null);
     setPaymentSuccess(false);
+    setVerifying(true);
+    trackSubscriptionEvent({
+      event: "checkout_started",
+      plan: selected,
+      source: "pricing",
+    });
     try {
-      const rc = await presentNativeRCPaywall({ userId: user?.id });
-      if (rc.handled) {
-        if (rc.purchased || rc.restored) {
-          setVerifying(true);
-          const finalized = await finalizeNativePurchase(authFetch, qc);
-          if (finalized.isPremium) {
-            setPaymentSuccess(true);
-            onPurchaseSuccess(selected);
-            toast({
-              title: t("pricing.payment_success_title"),
-              description: t("pricing.payment_success_body"),
-            });
-          } else {
-            setNotice(t("pricing.payment_pending"));
-          }
+      const res = await nativeBilling.purchase(selected);
+      if (!res.ok) {
+        if (!res.userCancelled) {
+          trackSubscriptionEvent({ event: "purchase_failed", plan: selected, source: "pricing" });
+          setNotice(res.reason ?? t("pricing.checkout_unavailable"));
         }
         return;
       }
-      const res = await nativeBilling.purchase(selected);
-      if (res.ok) {
+      const finalized = await finalizeNativePurchase(authFetch, qc);
+      if (finalized.isPremium) {
         setPaymentSuccess(true);
         onPurchaseSuccess(selected);
+        trackSubscriptionEvent({ event: "purchase_success", plan: selected, source: "pricing" });
         toast({
           title: t("pricing.payment_success_title"),
           description: t("pricing.payment_success_body"),
         });
-      } else if (!res.userCancelled) {
-        trackSubscriptionEvent({ event: "purchase_failed", plan: selected, source: "pricing" });
-        setNotice(res.reason ?? t("pricing.checkout_unavailable"));
+      } else {
+        setNotice(t("pricing.payment_pending"));
       }
     } finally {
       setVerifying(false);
