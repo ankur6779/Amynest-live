@@ -121,7 +121,7 @@ Set `false` or `0` in env to disable without deploy.
 |------|------------|
 | Double trial start | Server eligibility + `canStartTrial` guard |
 | Paywall visit inflation | Count only on `openPaywall`, not pricing |
-| iOS RC paywall bypasses custom modal | Lazy layer tracks native purchase events |
+| iOS/Android RC paywall bypasses custom modal | Default off (`VITE_FF_SUB_NATIVE_RC_PAYWALL`); custom paywall + `purchase()` |
 | Cancel-save triggers checkout while user wanted cancel | Step 2 still required for final cancel |
 | Trial converted false positive | Requires `getTrialStartedLocally()` marker |
 

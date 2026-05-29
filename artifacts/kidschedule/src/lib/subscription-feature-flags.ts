@@ -45,3 +45,12 @@ export const FF_PRICING_STICKY_CTA =
 /** Show $/mo equivalent on annual card. */
 export const FF_ANNUAL_PRICE_EQUIV =
   envFlag("VITE_FF_SUB_ANNUAL_PRICE_EQUIV", true);
+
+/**
+ * When true, Android wrapper shows RevenueCat dashboard paywall before the custom
+ * React paywall. Default false — custom paywall first (Play policy + branding).
+ */
+export const FF_NATIVE_RC_PAYWALL_FIRST = envFlag(
+  "VITE_FF_SUB_NATIVE_RC_PAYWALL",
+  false,
+);

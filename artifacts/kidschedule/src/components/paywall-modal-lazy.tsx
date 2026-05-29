@@ -21,8 +21,8 @@ const PaywallModal = lazyPage(() =>
 
 /**
  * Loads billing / paywall code only when needed.
- * Native iOS/Android shells get RevenueCat's dashboard paywall first;
- * web and failed native attempts fall back to the custom React modal.
+ * Default: custom React paywall on all shells (iOS + Android Play).
+ * Optional VITE_FF_SUB_NATIVE_RC_PAYWALL=true shows RevenueCat UI first on Android.
  */
 export function PaywallModalLazy() {
   const { state, closePaywall } = usePaywall();
