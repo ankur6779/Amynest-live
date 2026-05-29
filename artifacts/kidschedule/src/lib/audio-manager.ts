@@ -20,9 +20,26 @@ import {
   emitStaticAudioVisualFallback,
 } from "@/lib/static-audio-telemetry";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
+import {
+  emitAudioPlaybackEvent,
+  type AudioPlaybackSource,
+} from "@/lib/audio-playback-events";
 
 const LOG = "[AudioManager]";
 const DEFAULT_MAX_RETRIES = 2;
+
+function mapPlaybackSource(meta: AudioPlayMeta): AudioPlaybackSource {
+  const raw = (meta.source ?? "").toLowerCase();
+  if (raw.includes("phonics") || raw.includes("cvc")) return "phonics";
+  if (raw.includes("spelling")) return "spelling";
+  if (raw.includes("poem")) return "poem_player";
+  if (raw.includes("event")) return "event_prep";
+  if (raw.includes("study")) return "study";
+  if (meta.srcType === "static") return "static";
+  if (meta.srcType === "tts") return "tts";
+  if (raw.includes("emergency")) return "emergency";
+  return "unknown";
+}
 /** Allow slow CDN / mobile decode before treating start as failed */
 const PLAYBACK_WATCHDOG_MS = 4500;
 const ANDROID_WEBVIEW_WATCHDOG_MS = 9000;
@@ -1046,6 +1063,13 @@ class AudioManagerImpl {
             notifyPlaybackStarted(meta.source ?? channel);
           });
 
+          emitAudioPlaybackEvent("audio_started", {
+            source: mapPlaybackSource(meta),
+            layer: srcType,
+            phrase: meta.phrase,
+            proxyUrl: proxyUrl?.slice(0, 120),
+          });
+
           if (import.meta.env.DEV) {
             console.info(LOG, "play success", {
               srcType,
@@ -1110,6 +1134,12 @@ class AudioManagerImpl {
       this.consecutiveFailures += 1;
       this.setLastError(AUDIO_ERROR.PLAYBACK_FAILED);
       this.clearChannelOnFailure(channel);
+      emitAudioPlaybackEvent("audio_failed", {
+        source: mapPlaybackSource(meta),
+        layer: srcType,
+        phrase: meta.phrase,
+        error: AUDIO_ERROR.PLAYBACK_FAILED,
+      });
       this.triggerRecovery();
       this.surfaceFallback(meta);
       return false;

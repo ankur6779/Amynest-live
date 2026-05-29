@@ -4,6 +4,15 @@ import type { SynthesizeMode } from "./ttsCacheService.js";
 import { readCachedAudio } from "./ttsCacheService.js";
 import { fetchOpenAiTtsStream } from "./openaiTtsService.js";
 import { persistOpenAiTtsCache } from "./openaiTtsPersist.js";
+import type { TtsGenerationContext } from "./ttsGenerate.js";
+import {
+  assertTtsCacheMissAllowed,
+  refundTtsDailyMiss,
+  recordTtsCacheHit,
+  recordTtsCacheMissAndGenerated,
+  TtsRateLimitedError,
+  ttsRateLimitResponseBody,
+} from "./ttsCostGuardService.js";
 
 export interface OpenAiLiveTtsParams {
   text: string;
@@ -101,6 +110,8 @@ async function streamBufferToClient(
 function startOpenAiGeneration(
   res: ExpressResponse,
   params: OpenAiLiveTtsParams,
+  ctx?: TtsGenerationContext,
+  guardPremium?: boolean,
 ): Promise<Buffer> {
   const existing = openAiInflight.get(params.cacheKey);
   if (existing) return existing;
@@ -130,6 +141,9 @@ function startOpenAiGeneration(
       mode: params.mode,
       buffer,
     });
+    if (ctx) {
+      recordTtsCacheMissAndGenerated(ctx.userId, ctx.route, guardPremium);
+    }
     return buffer;
   })();
 
@@ -151,11 +165,27 @@ function startOpenAiGeneration(
 export async function streamOpenAiTtsWithCache(
   res: ExpressResponse,
   params: OpenAiLiveTtsParams,
+  ctx?: TtsGenerationContext,
 ): Promise<boolean> {
   const cached = await readCachedBuffer(params.cacheKey);
   if (cached) {
+    if (ctx) {
+      recordTtsCacheHit(ctx.userId, ctx.route);
+    }
     serveCachedBuffer(res, cached, true);
     return true;
+  }
+
+  let guardPremium: boolean | undefined;
+  if (ctx) {
+    const guard = await assertTtsCacheMissAllowed(ctx.userId, ctx.route);
+    if (!guard.ok) {
+      if (!res.headersSent) {
+        res.status(429).json(ttsRateLimitResponseBody(new TtsRateLimitedError(guard)));
+      }
+      return false;
+    }
+    guardPremium = guard.isPremium;
   }
 
   const inflight = openAiInflight.get(params.cacheKey);
@@ -171,9 +201,12 @@ export async function streamOpenAiTtsWithCache(
   }
 
   try {
-    await startOpenAiGeneration(res, params);
+    await startOpenAiGeneration(res, params, ctx, guardPremium);
     return true;
   } catch (err) {
+    if (ctx && !(err instanceof TtsRateLimitedError)) {
+      await refundTtsDailyMiss(ctx.userId, 1);
+    }
     failPlayback(res, params.cacheKey, err instanceof Error ? err.message : String(err));
     return false;
   }

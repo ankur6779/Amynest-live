@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Compass, ChevronLeft } from "lucide-react";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
+import { HubModuleGateWrap } from "@/components/hub-module-gate-wrap";
 
 export default function LifeSkillsPage() {
   const { t } = useTranslation();
@@ -52,28 +53,36 @@ export default function LifeSkillsPage() {
         </Card>
       )}
 
-      {children.length > 1 && (
-        <div className="flex gap-2 flex-wrap">
-          {children.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setSelectedId(c.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold border ${
-                effective?.id === c.id
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-muted-foreground border-muted"
-              }`}
-            >
-              {c.name} · {ageBandLabel(ageBandForLifeSkills(c.age), lang)}
-            </button>
-          ))}
-        </div>
-      )}
+      {!childrenQuery.isLoading && children.length > 0 && (
+        <HubModuleGateWrap
+          featureId="hub_life_skills"
+          childId={effective?.id ?? null}
+          childName={effective?.name ?? children[0]?.name ?? "your child"}
+        >
+          {children.length > 1 && (
+            <div className="flex gap-2 flex-wrap mb-4">
+              {children.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedId(c.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold border ${
+                    effective?.id === c.id
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-muted"
+                  }`}
+                >
+                  {c.name} · {ageBandLabel(ageBandForLifeSkills(c.age), lang)}
+                </button>
+              ))}
+            </div>
+          )}
 
-      {effective && (
-        <LifeSkillsZone
-          child={{ id: effective.id, name: effective.name, age: effective.age }}
-        />
+          {effective && (
+            <LifeSkillsZone
+              child={{ id: effective.id, name: effective.name, age: effective.age }}
+            />
+          )}
+        </HubModuleGateWrap>
       )}
     </div>
   );

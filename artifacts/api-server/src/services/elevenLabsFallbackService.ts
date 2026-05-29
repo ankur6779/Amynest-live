@@ -11,13 +11,20 @@ import { fetchWithTimeout } from "../utils/fetch-with-timeout.js";
 import {
   isValidTtsPublicUrl,
   resolveTtsPlaybackUrl,
-  ttsAudioBackfillPostgres,
   ttsAudioExists,
   ttsAudioPath,
   ttsGcsUpload,
   ttsStorageBackend,
   computeTtsContentSha256,
 } from "./ttsAudioStore";
+import type { TtsGenerationContext } from "./ttsGenerate.js";
+import {
+  assertTtsCacheMissAllowed,
+  refundTtsDailyMiss,
+  recordTtsCacheHit,
+  recordTtsCacheMissAndGenerated,
+  TtsRateLimitedError,
+} from "./ttsCostGuardService.js";
 
 // ─── Indian ElevenLabs Voice IDs ────────────────────────────────────────────
 // English Indian Female — Ananya K (Clear & Polished Indian Reel Voice)
@@ -161,10 +168,15 @@ export async function trySynthesizeFromCache(
   };
 }
 
+function emitCacheHit(ctx: TtsGenerationContext | undefined): void {
+  if (ctx) recordTtsCacheHit(ctx.userId, ctx.route);
+}
+
 /** Amy voice fallback — cache-first, then live ElevenLabs when API key is set. */
 export async function synthesizeElevenLabsFallback(
   rawText: string,
   options: SynthesizeOptions = {},
+  ctx?: TtsGenerationContext,
 ): Promise<SynthesizeResult> {
   if (!isElevenLabsFallbackEnabled()) {
     throw new Error("tts_elevenlabs_fallback_disabled");
@@ -180,7 +192,10 @@ export async function synthesizeElevenLabsFallback(
   const audioPath = ttsAudioPath(cacheKey);
 
   const cachedOnly = await trySynthesizeFromCache(text, options);
-  if (cachedOnly) return cachedOnly;
+  if (cachedOnly) {
+    emitCacheHit(ctx);
+    return cachedOnly;
+  }
 
   const existing = await db
     .select()
@@ -207,6 +222,7 @@ export async function synthesizeElevenLabsFallback(
       "TTS: cache hit",
     );
 
+    emitCacheHit(ctx);
     return {
       cacheKey,
       audioPath: row.audioPath,
@@ -224,6 +240,15 @@ export async function synthesizeElevenLabsFallback(
     );
   }
 
+  let guardPremium: boolean | undefined;
+  if (ctx) {
+    const guard = await assertTtsCacheMissAllowed(ctx.userId, ctx.route);
+    if (!guard.ok) {
+      throw new TtsRateLimitedError(guard);
+    }
+    guardPremium = guard.isPremium;
+  }
+
   const pending = inFlight.get(cacheKey);
   if (pending) {
     logger.info({ evt: "tts.in_flight_wait", cacheKey, charCount: text.length }, "TTS: waiting on in-flight generation");
@@ -231,7 +256,21 @@ export async function synthesizeElevenLabsFallback(
     return { ...result, cached: true };
   }
 
-  const generation = generateAndStore({ text, voiceId, modelId, mode, cacheKey, audioPath });
+  const generation = (async (): Promise<SynthesizeResult> => {
+    try {
+      const result = await generateAndStore({ text, voiceId, modelId, mode, cacheKey, audioPath });
+      if (ctx) {
+        recordTtsCacheMissAndGenerated(ctx.userId, ctx.route, guardPremium);
+      }
+      return result;
+    } catch (err) {
+      if (ctx && !(err instanceof TtsRateLimitedError)) {
+        await refundTtsDailyMiss(ctx.userId, 1);
+      }
+      throw err;
+    }
+  })();
+
   inFlight.set(cacheKey, generation);
   try {
     return await generation;

@@ -8,6 +8,18 @@ import {
   LEARNING_LOAD_MORE_FEATURES,
   type LearningLoadMoreSection,
 } from "../services/learningLoadMoreService.js";
+import {
+  assertHubModuleAccess,
+  hubModuleGateFailureBody,
+} from "../services/hubModuleGateService.js";
+import type { ParentHubFeatureId } from "../services/featureUsageService.js";
+
+const LOAD_MORE_HUB_FEATURE: Partial<
+  Record<LearningLoadMoreSection, ParentHubFeatureId>
+> = {
+  smart_study: "hub_smart_study",
+  life_skills: "hub_life_skills",
+};
 
 const router: IRouter = Router();
 
@@ -104,6 +116,19 @@ router.post("/learning/load-more", async (req, res): Promise<void> => {
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
     return;
+  }
+
+  const hubFeature = LOAD_MORE_HUB_FEATURE[parsed.data.section];
+  if (hubFeature) {
+    const hubGate = await assertHubModuleAccess(
+      userId,
+      hubFeature,
+      parsed.data.childId,
+    );
+    if (!hubGate.ok) {
+      res.status(402).json(hubModuleGateFailureBody(hubGate));
+      return;
+    }
   }
 
   const result = await executeLearningLoadMore({

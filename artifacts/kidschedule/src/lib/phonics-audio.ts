@@ -20,14 +20,15 @@ import {
   resolvePhonicsAudioKey,
 } from "@/lib/phonics-static-audio";
 import { audioManager } from "@/lib/audio-manager";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
+import { playPhonemeFallbackVoice } from "@/lib/phonics-playback-fallback";
+import { recordPhonicsFallback } from "@/lib/phonics-telemetry";
+import { amyVoiceController } from "@/lib/amy-voice-controller";
 import {
   lookupStaticAudioUrl,
   prepareStaticPlaybackAudio,
   safePlayAudio,
 } from "@/lib/static-audio";
-import { recordTtsUserGesture } from "@/lib/tts-guard";
-import { playPhonemeFallbackVoice } from "@/lib/phonics-playback-fallback";
-import { recordPhonicsFallback } from "@/lib/phonics-telemetry";
 import type { SpeakOptions, SpeakResult } from "@/hooks/use-amy-voice";
 import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
 
@@ -155,7 +156,7 @@ async function playStaticKey(
   return { success: false, error: res.error };
 }
 
-/** Whole-word clip from static catalog — uses speech pipeline (blob-safe on Android). */
+/** Whole-word clip from static catalog — canonical controller prepared URL playback. */
 async function playCvcWordFinale(
   word: string,
   opts?: { isCancelled?: () => boolean },
@@ -170,22 +171,14 @@ async function playCvcWordFinale(
     if (opts?.isCancelled?.()) return { success: false, error: "cancelled" };
     const proxyUrl = lookupStaticAudioUrl(w, mode);
     if (!proxyUrl) continue;
-    const audio = await prepareStaticPlaybackAudio(w, mode, { quiet: true });
-    if (!audio) continue;
-    const started = await audioManager.play(
-      audio,
-      {
-        proxyUrl,
-        source: "cvc-word-finale",
-        phrase: w,
-        channel: "speech",
-        interrupt: true,
-      },
-      { channel: "speech", interrupt: true, maxRetries: 0, skipForceRestart: true },
-    );
-    if (!started) continue;
-    const ended = await audioManager.waitUntilEnd(audio, () => opts?.isCancelled?.() ?? false);
-    if (ended.ok) return { success: true };
+    const result = await amyVoiceController.playPreparedUrl(proxyUrl, {
+      source: "phonics",
+      phrase: w,
+      srcType: "static",
+      isCancelled: opts?.isCancelled,
+      waitUntilEnd: true,
+    });
+    if (result.success) return result;
   }
 
   const entry = getCvcWordEntry(w);

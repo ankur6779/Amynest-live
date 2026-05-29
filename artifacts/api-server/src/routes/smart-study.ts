@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { and, eq, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
+import { hubModuleGate } from "../middlewares/hubModuleGate.js";
 import { logger } from "../lib/logger";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
 import { enqueueAiJob } from "../queue/ai-job-queue.js";
@@ -113,7 +114,10 @@ const PlanBody = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
-router.post("/smart-study/daily-plan", async (req, res): Promise<void> => {
+router.post(
+  "/smart-study/daily-plan",
+  hubModuleGate("hub_smart_study"),
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -207,7 +211,10 @@ const SingleAttempt = z.object({
 // ~20 questions, so 50 leaves headroom without inviting abuse.
 const AttemptBody = z.union([SingleAttempt, z.array(SingleAttempt).min(1).max(50)]);
 
-router.post("/smart-study/attempt", async (req, res): Promise<void> => {
+router.post(
+  "/smart-study/attempt",
+  hubModuleGate("hub_smart_study"),
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -372,7 +379,10 @@ const InsightsQuery = z.object({
   childId: z.coerce.number().int().positive(),
 });
 
-router.get("/smart-study/insights", async (req, res): Promise<void> => {
+router.get(
+  "/smart-study/insights",
+  hubModuleGate("hub_smart_study"),
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
@@ -591,7 +601,10 @@ async function generateWithAi(
   }
 }
 
-router.post("/smart-study/next-questions", async (req, res): Promise<void> => {
+router.post(
+  "/smart-study/next-questions",
+  hubModuleGate("hub_smart_study"),
+  async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });

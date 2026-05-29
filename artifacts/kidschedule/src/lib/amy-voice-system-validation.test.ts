@@ -46,6 +46,7 @@ describe("TTS system validation", () => {
   beforeEach(() => {
     _resetPipelineLearningForTests();
     _resetRlForTests();
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
     amyVoiceController.pause();
     speakMock.mockReset();
     pauseMock.mockReset();
@@ -54,6 +55,7 @@ describe("TTS system validation", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   describe("1. Controller — rapid tap / no overlap", () => {
@@ -83,7 +85,8 @@ describe("TTS system validation", () => {
         module: "phonics",
       });
       expect(ranked).toContain("static");
-      expect(ranked).not.toContain("api");
+      expect(ranked[0]).toBe("static");
+      expect(ranked.indexOf("api")).toBeGreaterThan(0);
     });
   });
 

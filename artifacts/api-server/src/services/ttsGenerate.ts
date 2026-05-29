@@ -16,8 +16,20 @@ import {
   getBlendCacheFileName,
 } from "@workspace/phonics-sounds";
 import { logger } from "../lib/logger.js";
+import {
+  assertTtsCacheMissAllowed,
+  refundTtsDailyMiss,
+  recordTtsCacheHit,
+  recordTtsCacheMissAndGenerated,
+  TtsRateLimitedError,
+} from "./ttsCostGuardService.js";
 
 export type TtsGenerateCategory = "words" | "sentences" | "phonics";
+
+export interface TtsGenerationContext {
+  userId: string;
+  route: string;
+}
 
 function slugifyTtsText(text: string): string {
   const slug = text
@@ -62,6 +74,7 @@ export interface TtsGenerateResult {
  */
 export async function generateOpenAiTts(
   input: TtsGenerateInput,
+  ctx?: TtsGenerationContext,
 ): Promise<TtsGenerateResult | null> {
   const text = input.text.trim();
   if (!text) return null;
@@ -73,57 +86,86 @@ export async function generateOpenAiTts(
   const cacheHit = await trySynthesizeFromCache(text, { voiceId, modelId, mode });
   if (cacheHit && isValidTtsPublicUrl(cacheHit.audioUrl)) {
     const url = resolveTtsPlaybackUrl(cacheHit.cacheKey) ?? cacheHit.audioUrl;
+    if (ctx) {
+      recordTtsCacheHit(ctx.userId, ctx.route);
+    }
     return { url, cached: true, cacheKey: cacheHit.cacheKey };
   }
 
-  const cacheKey = computeTtsCacheKey(text, voiceId, modelId, mode);
-  const upstream = await fetchOpenAiTtsStream(text, { mode });
-  if (!upstream.ok || !upstream.body) return null;
-
-  const reader = upstream.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  const max = 8 * 1024 * 1024;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) {
-      total += value.byteLength;
-      if (total > max) throw new Error("tts_audio_too_large");
-      chunks.push(value);
+  let guardPremium: boolean | undefined;
+  if (ctx) {
+    const guard = await assertTtsCacheMissAllowed(ctx.userId, ctx.route);
+    if (!guard.ok) {
+      throw new TtsRateLimitedError(guard);
     }
+    guardPremium = guard.isPremium;
   }
-  const buffer = Buffer.concat(chunks.map((c) => Buffer.from(c)));
-  if (!buffer.byteLength) return null;
 
-  await persistOpenAiTtsCache({
-    cacheKey,
-    text,
-    voiceId,
-    modelId,
-    mode,
-    buffer,
-  });
+  const cacheKey = computeTtsCacheKey(text, voiceId, modelId, mode);
+  try {
+    const upstream = await fetchOpenAiTtsStream(text, { mode });
+    if (!upstream.ok || !upstream.body) {
+      if (ctx) await refundTtsDailyMiss(ctx.userId, 1);
+      return null;
+    }
 
-  const url = resolveTtsPlaybackUrl(cacheKey);
-  logger.info(
-    {
-      evt: "tts.generate",
+    const reader = upstream.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    const max = 8 * 1024 * 1024;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        total += value.byteLength;
+        if (total > max) throw new Error("tts_audio_too_large");
+        chunks.push(value);
+      }
+    }
+    const buffer = Buffer.concat(chunks.map((c) => Buffer.from(c)));
+    if (!buffer.byteLength) {
+      if (ctx) await refundTtsDailyMiss(ctx.userId, 1);
+      return null;
+    }
+
+    await persistOpenAiTtsCache({
       cacheKey,
-      category: input.category ?? "words",
-      objectName: input.phonemeKey
-        ? `tts/phonics/${getPhonemeCacheFileName(input.phonemeKey)}.mp3`
-        : input.blendWord
-          ? `tts/phonics/${getBlendCacheFileName(input.blendWord)}.mp3`
-          : input.cvcWord
-            ? `tts/phonics/${getCvcWordCacheFileName(input.cvcWord)}.mp3`
-            : input.letterKey
-              ? `tts/phonics/${getPhonicsCacheFileName(input.letterKey)}.mp3`
-              : ttsCategoryObjectName(input.category ?? "words", text),
-      cached: false,
-    },
-    "OpenAI TTS generated and cached",
-  );
+      text,
+      voiceId,
+      modelId,
+      mode,
+      buffer,
+    });
 
-  return { url, cached: false, cacheKey };
+    const url = resolveTtsPlaybackUrl(cacheKey);
+    if (ctx) {
+      recordTtsCacheMissAndGenerated(ctx.userId, ctx.route, guardPremium);
+    }
+    logger.info(
+      {
+        evt: "tts.generate",
+        cacheKey,
+        category: input.category ?? "words",
+        objectName: input.phonemeKey
+          ? `tts/phonics/${getPhonemeCacheFileName(input.phonemeKey)}.mp3`
+          : input.blendWord
+            ? `tts/phonics/${getBlendCacheFileName(input.blendWord)}.mp3`
+            : input.cvcWord
+              ? `tts/phonics/${getCvcWordCacheFileName(input.cvcWord)}.mp3`
+              : input.letterKey
+                ? `tts/phonics/${getPhonicsCacheFileName(input.letterKey)}.mp3`
+                : ttsCategoryObjectName(input.category ?? "words", text),
+        cached: false,
+        userId: ctx?.userId,
+      },
+      "OpenAI TTS generated and cached",
+    );
+
+    return { url, cached: false, cacheKey };
+  } catch (err) {
+    if (ctx && !(err instanceof TtsRateLimitedError)) {
+      await refundTtsDailyMiss(ctx.userId, 1);
+    }
+    throw err;
+  }
 }

@@ -15,12 +15,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft, Volume2, VolumeX, Clock, Filter, ChevronRight,
 } from "lucide-react";
-import { speak, stopSpeaking, ttsAvailable } from "@/lib/study-tts";
+import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { EventPrepGenerator } from "@/components/event-prep-generator";
 import { EventPrepHomeView, EventDetailView, CharacterCardView } from "@/components/event-prep-views";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useEventPrepQuickAction } from "@/hooks/use-event-prep-ai";
 import type { QuickActionType } from "@workspace/event-prep";
+import { HubModuleGateWrap } from "@/components/hub-module-gate-wrap";
+import type { ReactNode } from "react";
 
 type Child = { id: number; name: string; age: number; ageMonths?: number };
 
@@ -63,6 +65,11 @@ export default function EventPrepPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
   const [customTheme, setCustomTheme] = useState("");
+  const {
+    speak: amySpeak,
+    pause: amyPause,
+    speaking: amySpeaking,
+  } = useAmyVoice();
 
   const country = useMemo(
     () => detectEventPrepCountry(countryOverride),
@@ -95,6 +102,18 @@ export default function EventPrepPage() {
     return list.find((c) => c.id === (view as { childId: number }).childId) ?? null;
   }, [view, list]);
 
+  const gateChildId = view.kind === "child-pick" ? null : (view as { childId: number }).childId;
+  const gateChildName = child?.name ?? list[0]?.name ?? "your child";
+  const withGate = (node: ReactNode) => (
+    <HubModuleGateWrap
+      featureId="hub_event_prep"
+      childId={gateChildId}
+      childName={gateChildName}
+    >
+      {node}
+    </HubModuleGateWrap>
+  );
+
   const handleQuickAction = (type: QuickActionType) => {
     if (view.kind !== "event-detail" || !child) return;
     const ev = findSchoolEvent(view.eventId);
@@ -110,16 +129,15 @@ export default function EventPrepPage() {
   };
 
   const handleSpeak = (id: string, text: string) => {
-    if (!ttsAvailable()) return;
-    if (speaking === id) {
-      stopSpeaking();
+    if (speaking === id && amySpeaking) {
+      amyPause();
       setSpeaking(null);
       return;
     }
-    speak(text, { lang: "en-IN" });
     setSpeaking(id);
-    // Best-effort timeout — speech ends silently if user navigates away.
-    setTimeout(() => setSpeaking((s) => (s === id ? null : s)), 12000);
+    void amySpeak(text, { narration: true }).finally(() => {
+      setSpeaking((s) => (s === id ? null : s));
+    });
   };
 
   if (isLoading) {
@@ -147,7 +165,7 @@ export default function EventPrepPage() {
 
   // ─── child-pick ───────────────────────────────────────────────────────────
   if (view.kind === "child-pick") {
-    return (
+    return withGate(
       <div className="container mx-auto p-6 max-w-3xl">
         <Header title={t("screens.event_prep.header_title")} subtitle={t("screens.event_prep.pick_child")} />
         <div className="grid sm:grid-cols-2 gap-3 mt-4">
@@ -168,13 +186,13 @@ export default function EventPrepPage() {
             </Card>
           ))}
         </div>
-      </div>
+      </div>,
     );
   }
 
   // ─── home ───────────────────────────────────────────────────────────────────
   if (view.kind === "home" && child) {
-    return (
+    return withGate(
       <EventPrepHomeView
         child={child}
         country={country}
@@ -201,7 +219,7 @@ export default function EventPrepPage() {
         onBack={() => list.length > 1 && setView({ kind: "child-pick" })}
         canBack={list.length > 1}
         t={t}
-      />
+      />,
     );
   }
 
@@ -209,13 +227,13 @@ export default function EventPrepPage() {
   if (view.kind === "event-detail" && child) {
     const ev = findSchoolEvent(view.eventId);
     if (!ev) {
-      return (
+      return withGate(
         <div className="container mx-auto p-6">
           <Card><CardContent className="p-6">{t("screens.event_prep.event_not_found")}</CardContent></Card>
-        </div>
+        </div>,
       );
     }
-    return (
+    return withGate(
       <EventDetailView
         ev={ev}
         child={child}
@@ -234,13 +252,13 @@ export default function EventPrepPage() {
         onClearQuickAction={clearQuickAction}
         customTheme={customTheme}
         onCustomThemeChange={setCustomTheme}
-      />
+      />,
     );
   }
 
   // ─── generator ─────────────────────────────────────────────────────────────
   if (view.kind === "generator" && child) {
-    return (
+    return withGate(
       <div className="container mx-auto p-6 max-w-2xl">
         <BackBar onBack={() => setView({ kind: "home", childId: child.id })} canBack>
           <Header
@@ -253,7 +271,7 @@ export default function EventPrepPage() {
             onOpenCharacter={(id) => setView({ kind: "detail", childId: child.id, characterId: id })}
           />
         </div>
-      </div>
+      </div>,
     );
   }
 
@@ -265,7 +283,7 @@ export default function EventPrepPage() {
       : charactersByCategory(view.categoryId);
     const filtered = applyFilters(allInCat, filter);
 
-    return (
+    return withGate(
       <div className="container mx-auto p-6 max-w-5xl">
         <BackBar onBack={() => setView({ kind: "home", childId: child.id })} canBack>
           <Header
@@ -292,7 +310,7 @@ export default function EventPrepPage() {
             ))}
           </div>
         )}
-      </div>
+      </div>,
     );
   }
 
@@ -300,14 +318,14 @@ export default function EventPrepPage() {
   if (view.kind === "detail" && child) {
     const ch = EVENT_CHARACTERS.find((c) => c.id === view.characterId);
     if (!ch) {
-      return (
+      return withGate(
         <div className="container mx-auto p-6">
           <Card><CardContent className="p-6">{t("screens.event_prep.character_not_found")}</CardContent></Card>
-        </div>
+        </div>,
       );
     }
     const speech = speechForAge(ch, child.age);
-    return (
+    return withGate(
       <div className="container mx-auto p-6 max-w-3xl">
         <BackBar onBack={() => setView({ kind: "home", childId: child.id })} canBack>
           <Header title={`${ch.emoji} ${ch.character}`} subtitle={ch.tagline} />
@@ -351,8 +369,7 @@ export default function EventPrepPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-bold">{t("screens.event_prep.your_speech")}</h3>
-              {ttsAvailable() && (
-                <Button
+              <Button
                   size="sm"
                   variant={speaking === ch.id ? "default" : "outline"}
                   onClick={() => handleSpeak(ch.id, speech)}
@@ -361,7 +378,6 @@ export default function EventPrepPage() {
                   {speaking === ch.id ? <VolumeX className="h-4 w-4 mr-1" /> : <Volume2 className="h-4 w-4 mr-1" />}
                   {speaking === ch.id ? t("screens.event_prep.stop") : t("screens.event_prep.read_aloud")}
                 </Button>
-              )}
             </div>
             <p className="text-base italic leading-relaxed">"{speech}"</p>
             {ch.speechShort && ch.speechShort !== speech && (
@@ -371,7 +387,7 @@ export default function EventPrepPage() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </div>,
     );
   }
 
