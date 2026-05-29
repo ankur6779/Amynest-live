@@ -141,6 +141,7 @@
     "@workspace/routine-journey": "workspace:*",
     "@workspace/speech-coach": "workspace:*",
     "@workspace/static-audio": "workspace:*",
+    "@workspace/subscription-marketing": "workspace:*",
     "@workspace/study-zone": "workspace:*",
     "@workspace/tiffin-feedback": "workspace:*",
     "firebase": "^12.12.1",

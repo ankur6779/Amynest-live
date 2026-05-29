@@ -10,6 +10,8 @@ import {
   presentNativeRCPaywall,
 } from "@/lib/native-rc-paywall";
 import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
+import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
+import { PURCHASE_SCREEN } from "@workspace/subscription-marketing";
 
 const PaywallModal = lazyPage(() =>
   import("@/components/paywall-modal").then((m) => ({
@@ -24,6 +26,7 @@ const PaywallModal = lazyPage(() =>
  */
 export function PaywallModalLazy() {
   const { state, closePaywall } = usePaywall();
+  const paywallReason = state.reason;
   const { user } = useUser();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
@@ -54,15 +57,20 @@ export function PaywallModalLazy() {
         if (outcome.purchased || outcome.restored) {
           const finalized = await finalizeNativePurchase(authFetch, qc);
           closePaywall();
+          trackSubscriptionEvent({
+            event: "purchase_success",
+            reason: paywallReason,
+            source: "native_rc_paywall",
+          });
           if (finalized.isPremium) {
             toast({
-              title: "Premium unlocked!",
-              description: "Your full AmyNest features are now active.",
+              title: PURCHASE_SCREEN.successTitle,
+              description: PURCHASE_SCREEN.successBody,
             });
           } else {
             toast({
-              title: "Payment received",
-              description: "Premium is activating — it may take a few seconds.",
+              title: PURCHASE_SCREEN.verifyTitle,
+              description: PURCHASE_SCREEN.verifySubtitle,
             });
           }
         } else {

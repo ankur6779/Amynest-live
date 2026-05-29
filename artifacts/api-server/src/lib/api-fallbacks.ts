@@ -5,6 +5,7 @@ import {
   type EntitlementSummary,
   type Plan,
 } from "../services/subscriptionService.js";
+import { buildPlanCardsForApi } from "@workspace/subscription-marketing";
 
 /** Free-tier entitlements when DB / RC / subscription handler fails. */
 export function buildFreeEntitlements(): EntitlementSummary {
@@ -28,31 +29,22 @@ export function buildFreeEntitlements(): EntitlementSummary {
 
 function planCard(
   id: Exclude<Plan, "free">,
-  title: string,
-  badge: string | null,
   savingsPercent?: number,
 ) {
+  const marketing = buildPlanCardsForApi().find((m) => m.id === id)!;
   const p = PLAN_PRICES[id];
   return {
     id,
-    title,
+    title: marketing.title,
+    tagline: marketing.tagline,
+    description: marketing.description,
     price: p.amount,
     currency: p.currency,
     period: p.period,
     formattedPrice: formatPlanPrice(p.amount, p.currency),
-    badge,
+    badge: marketing.badge,
+    features: marketing.features,
     ...(savingsPercent != null ? { savingsPercent } : {}),
-    features:
-      id === "monthly"
-        ? [
-            "Unlimited Amy AI",
-            "Personalized Amy Coach",
-            "Unlimited routines & children",
-            "Full Parenting Hub",
-          ]
-        : id === "six_month"
-          ? ["Everything in Monthly", "Behavior insights & trends", "Save vs monthly billing"]
-          : ["Everything in 6 Months", "Adaptive learning", "Priority support"],
   };
 }
 
@@ -60,9 +52,9 @@ export function buildSubscriptionFallbackResponse() {
   return {
     entitlements: buildFreeEntitlements(),
     plans: [
-      planCard("monthly", "Monthly", null),
-      planCard("six_month", "6 Months", "Most Popular", 17),
-      planCard("yearly", "Yearly", "Best Value", 33),
+      planCard("yearly", 33),
+      planCard("six_month", 17),
+      planCard("monthly"),
     ],
     fallback: true,
   };

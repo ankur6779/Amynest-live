@@ -91,7 +91,7 @@ export function useLearningLoadMore(section: LearningLoadMoreSection) {
         if (res.status === 402) {
           window.dispatchEvent(
             new CustomEvent("amynest:open-paywall", {
-              detail: { reason: "learning_load_more", section },
+              detail: { reason: "learning_locked", section },
             }),
           );
           setError("locked");

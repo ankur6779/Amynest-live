@@ -20,6 +20,7 @@ import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useTranslation } from "react-i18next";
 import { useSubscription } from "@/hooks/use-subscription";
+import { SubscriptionTrialChip } from "@/components/subscription-trial-chip";
 import { usePushRegistration } from "@/hooks/use-push-registration";
 import { useCapacitorPushRegistrationSync } from "@/hooks/use-capacitor-push-registration-sync";
 import { NotificationNudgeBanner } from "@/components/notification-nudge-banner";
@@ -207,6 +208,7 @@ export function Layout({
               <AmyMascotLogo size={26} />
             </div>
             <div className="flex shrink-0 items-center">
+              <SubscriptionTrialChip />
               <LayoutMobileMenu />
             </div>
           </div>

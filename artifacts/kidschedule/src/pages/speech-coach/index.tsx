@@ -89,6 +89,7 @@ import { TryFreeBadge } from "@/components/try-free-badge";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { SPEECH_COACH_SESSION_FEATURE } from "@/lib/feature-usage-limits";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { handleSubscriptionMutationGateError } from "@/lib/subscription-mutation-gate";
 
 type AnyChild = {
   id: number;
@@ -158,7 +159,7 @@ function GatedSection({
   const { locked, tryFree, onAction } = useSpeechHubGate();
 
   return (
-    <LockedBlock locked={locked} rounded="rounded-3xl">
+    <LockedBlock locked={locked} reason="speech_coach" rounded="rounded-3xl">
       <Card
         className="rounded-3xl border border-border bg-card"
         id={anchorId}
@@ -670,7 +671,10 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
 
   const handleNext = useCallback(() => {
     if (!currentItem || !currentResult) return;
-    log.mutate({ data: { childId: child.id, promptId: currentItem.id, clarityScore: clampClarityScore(currentResult.score) } });
+    log.mutate(
+      { data: { childId: child.id, promptId: currentItem.id, clarityScore: clampClarityScore(currentResult.score) } },
+      { onError: (err) => handleSubscriptionMutationGateError(err, "speech_coach_log") },
+    );
     const updated = [...sessionResults, { id: currentItem.id, feedback: currentResult.feedback, score: currentResult.score }];
     setSessionResults(updated);
     if (isLastItem) {

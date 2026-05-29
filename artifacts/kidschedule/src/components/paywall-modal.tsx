@@ -1,173 +1,196 @@
-import { useEffect, useState } from "react";
-import { Sparkles, Check, X, Smartphone, Zap, Gift, ArrowLeft, Headphones, CalendarDays, Brain, Users, MessageCircle, BarChart3, LayoutGrid, FileText, type LucideIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Sparkles, Check, X, Smartphone, Zap, Gift, ArrowLeft,
+  Headphones, CalendarDays, Brain, Users, MessageCircle, BarChart3,
+  LayoutGrid, FileText, type LucideIcon,
+} from "lucide-react";
 import { isIndiaRegion } from "@/lib/geo";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { usePaywall } from "@/contexts/paywall-context";
+import { usePaywall, type PaywallReason as AppPaywallReason } from "@/contexts/paywall-context";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
+import { usePrimaryChild } from "@/hooks/use-primary-child";
+import { SubscriptionTrialOffer } from "@/components/subscription-trial-offer";
+import { resolvePaywallCopy } from "@/lib/subscription-paywall-personalization";
+import {
+  sortPlanCards,
+  resolveDefaultPlanId,
+  trackHubJourneyAnnualSelected,
+  isHubJourneyReason,
+  annualPriceEquivalent,
+  annualSavingsLabel,
+  isAnnualHighlightedPlan,
+  trackPlanSelected,
+} from "@/lib/subscription-plans";
+import {
+  trackSubscriptionEvent,
+  syncRevenueCatSubscriptionAttributes,
+} from "@/lib/subscription-analytics";
 import { useNativeBilling } from "@/hooks/use-native-billing";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { resolvePlanPriceLabel } from "@/lib/plan-price";
+import {
+  PAYWALL_REASON_COPY,
+  PURCHASE_SCREEN,
+  UPGRADE_MODAL,
+  planCta,
+} from "@workspace/subscription-marketing";
 
-const REASON_COPY: Record<string, {
-  title: string;
-  subtitle: string;
-  icon: LucideIcon;
-}> = {
-  ai_quota: {
-    title: "Unlock unlimited Amy AI",
-    subtitle: "You've used today's free queries. Go premium for unlimited support.",
-    icon: MessageCircle
-  },
-  personalized_coaching: {
-    title: "Unlock Personalized Coaching",
-    subtitle: "Amy adapts to your child and gives you smart, tailored next steps.",
-    icon: Brain
-  },
-  premium_insight: {
-    title: "Unlock Premium Insights",
-    subtitle: "Behavior analysis and trend insights — only on premium.",
-    icon: BarChart3
-  },
-  child_limit: {
-    title: "Add unlimited children",
-    subtitle: "Free includes 1 child profile. Upgrade for unlimited.",
-    icon: Users
-  },
-  audio_lessons: {
-    title: "Unlock Audio Lessons",
-    subtitle: "Calming bedtime stories, focus tracks & guided meditations — anytime, ad-free.",
-    icon: Headphones
-  },
-  routines_limit: {
-    title: "Generate unlimited routines",
-    subtitle: "Free plan includes 2 routines. Upgrade to plan every day, every child, your way.",
-    icon: CalendarDays
-  },
-  behavior_locked: {
-    title: "Unlock unlimited Behavior Logs",
-    subtitle: "Free plan includes 1 log. Upgrade to track every win, tantrum & pattern Amy spots.",
-    icon: BarChart3
-  },
-  child_locked: {
-    title: "Upgrade to track all your children",
-    subtitle: "Free plan covers your first child only. Upgrade to log and view behavior data for every child.",
-    icon: Users
-  },
-  coach_locked: {
-    title: "Unlock Amy Coach",
-    subtitle: "Get personalized 10–12 step plans for tantrums, screen time, focus & more.",
-    icon: Brain
-  },
-  hub_locked: {
-    title: "Unlock the full Parenting Hub",
-    subtitle: "All activities, Olympiad prep & life skills — unlocked on premium.",
-    icon: LayoutGrid
-  },
-  hub_journey: {
-    title: "Continue the learning journey",
-    subtitle: "Keep daily Paths, progress tracking, and full Parent Hub access.",
-    icon: LayoutGrid
-  },
-  feature: {
-    title: "Unlock Full Parenting Power",
-    subtitle: "Get unlimited AI, smart coaching, and premium insights.",
-    icon: Sparkles
-  },
-  section_locked: {
-    title: "Unlock Full Parenting Power 🚀",
-    subtitle: "You've explored 1 feature. Unlock unlimited routines, full AI personalization, all activities & smart insights.",
-    icon: Sparkles
-  },
-  phonics_workbook: {
-    title: "Unlock Phonics Workbook",
-    subtitle: "Get full access to printable worksheets and practice material",
-    icon: FileText
-  },
-  hub_nutrition: {
-    title: "Unlock Nutrition Coach",
-    subtitle: "Unlimited AI meal plans, allergy-aware family portions & personalized nutrition tips.",
-    icon: Sparkles
-  }
+const DEFAULT_PAYWALL = UPGRADE_MODAL;
+
+const REASON_ICONS: Record<AppPaywallReason, LucideIcon> = {
+  ai_quota: MessageCircle,
+  personalized_coaching: Brain,
+  premium_insight: BarChart3,
+  child_limit: Users,
+  audio_lessons: Headphones,
+  routines_limit: CalendarDays,
+  behavior_locked: BarChart3,
+  child_locked: Users,
+  coach_locked: Brain,
+  hub_locked: LayoutGrid,
+  hub_journey: LayoutGrid,
+  feature: Sparkles,
+  section_locked: Sparkles,
+  phonics_workbook: FileText,
+  hub_nutrition: Sparkles,
+  speech_coach: MessageCircle,
+  learning_locked: FileText,
 };
 
 export function PaywallModal() {
   const { t } = useTranslation();
   const { state, closePaywall } = usePaywall();
   const { plans, checkoutRazorpay } = useSubscription();
+  const { childName } = usePrimaryChild();
   const { user } = useUser();
   const [, setLocation] = useLocation();
   const nativeBilling = useNativeBilling();
   const { toast } = useToast();
-  const [selected, setSelected] = useState<Exclude<Plan, "free">>("six_month");
+  const sortedPlans = useMemo(() => sortPlanCards(plans), [plans]);
+  const [selected, setSelected] = useState<Exclude<Plan, "free">>(() =>
+    resolveDefaultPlanId(),
+  );
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    if (state.open) setNotice(null);
-  }, [state.open]);
+    if (!state.open) return;
+    setNotice(null);
+    if (isHubJourneyReason(state.reason)) {
+      setSelected("yearly");
+      trackHubJourneyAnnualSelected("paywall_modal");
+      return;
+    }
+    setSelected(resolveDefaultPlanId());
+  }, [state.open, state.reason]);
 
-  const copy = REASON_COPY[state.reason] ?? REASON_COPY.feature;
-  const HeroIcon = copy.icon;
-  const upgradeCtaLabel =
-    state.reason === "phonics_workbook"
-      ? "Upgrade to Premium"
-      : null;
+  const reason = (state.reason in PAYWALL_REASON_COPY
+    ? state.reason
+    : "feature") as AppPaywallReason;
+  const copy = resolvePaywallCopy(reason, childName);
+  const HeroIcon = REASON_ICONS[reason] ?? Sparkles;
+  const selectedCta = planCta(selected);
 
-  // ── Payment handlers ──────────────────────────────────────────────────────
+  const selectPlan = (plan: Exclude<Plan, "free">) => {
+    setSelected(plan);
+    trackPlanSelected(plan, "paywall_modal", reason);
+  };
 
   const onPayWithRazorpay = async () => {
+    trackSubscriptionEvent({
+      event: "checkout_started",
+      plan: selected,
+      reason,
+      source: "paywall_modal",
+    });
     setSubmitting(true);
     setNotice(null);
     const prefill = {
       name: user?.fullName ?? undefined,
       email: user?.primaryEmailAddress?.emailAddress,
-      contact: user?.primaryPhoneNumber?.phoneNumber
+      contact: user?.primaryPhoneNumber?.phoneNumber,
     };
     const res = await checkoutRazorpay(selected, prefill);
     setSubmitting(false);
     if (res.ok) {
+      trackSubscriptionEvent({
+        event: "purchase_success",
+        plan: selected,
+        reason,
+        source: "paywall_modal",
+      });
+      void syncRevenueCatSubscriptionAttributes({
+        last_plan: selected,
+        last_paywall_reason: reason,
+      });
       closePaywall();
     } else if (!res.userCancelled) {
-      setNotice(res.reason ?? "Checkout is not yet available.");
+      trackSubscriptionEvent({
+        event: "purchase_failed",
+        plan: selected,
+        reason,
+        source: "paywall_modal",
+      });
+      setNotice(res.reason ?? t("pricing.checkout_unavailable"));
     }
   };
 
-  // Handles both iOS Apple IAP and Android Google Play
   const onPayWithNative = async () => {
+    trackSubscriptionEvent({
+      event: "checkout_started",
+      plan: selected,
+      reason,
+      source: "paywall_modal",
+    });
     setSubmitting(true);
     setNotice(null);
     const res = await nativeBilling.purchase(selected);
     setSubmitting(false);
     if (res.ok) {
+      trackSubscriptionEvent({
+        event: "purchase_success",
+        plan: selected,
+        reason,
+        source: "paywall_modal",
+      });
+      void syncRevenueCatSubscriptionAttributes({
+        last_plan: selected,
+        last_paywall_reason: reason,
+      });
       toast({
-        title: "Premium unlocked!",
-        description: "Your full AmyNest features are now active.",
+        title: PURCHASE_SCREEN.successTitle,
+        description: PURCHASE_SCREEN.successBody,
       });
       closePaywall();
     } else if (!res.userCancelled) {
+      trackSubscriptionEvent({
+        event: "purchase_failed",
+        plan: selected,
+        reason,
+        source: "paywall_modal",
+      });
       const fallback = nativeBilling.platform === "ios"
-        ? "Apple purchase failed. Please try again."
-        : "Google Play purchase failed. Please try again.";
+        ? t("pricing.apple_unavailable")
+        : t("pricing.google_play_unavailable");
       setNotice(res.reason ?? fallback);
     }
   };
 
-  // ── Billing decision tree ─────────────────────────────────────────────────
-  // iOS Capacitor → Apple IAP (Razorpay NOT allowed by Apple policy)
-  // Android wrapper → Google Play (Razorpay NOT allowed by Play policy)
-  // Web / PWA + India timezone → Razorpay
-  // Web / PWA + non-India → "download the app" message
   const isNativeShell = nativeBilling.wrapperPresent;
   const isIOS = nativeBilling.platform === "ios";
   const isAndroid = nativeBilling.platform === "android";
 
   const nativeButtonLabel = isIOS
-    ? (submitting || nativeBilling.purchasing ? "Opening App Store…" : "Continue with Apple")
-    : (submitting || nativeBilling.purchasing ? "Opening Google Play…" : "Continue with Google Play");
+    ? (submitting || nativeBilling.purchasing
+        ? t("pricing.apple_processing")
+        : selectedCta)
+    : (submitting || nativeBilling.purchasing
+        ? t("pricing.google_play_processing")
+        : selectedCta);
 
   return (
     <Dialog open={state.open} onOpenChange={o => !o && closePaywall()}>
@@ -191,32 +214,41 @@ export function PaywallModal() {
         </div>
 
         <div className="overflow-y-auto px-5 sm:px-8 pt-4 pb-8">
-          {/* Hero */}
           <div className="text-center mb-6">
-            <div
-              className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary mb-3 shadow-[0_8px_32px_rgba(255,78,205,0.5)]"
-            >
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary mb-3 shadow-[0_8px_32px_rgba(255,78,205,0.5)]">
               <HeroIcon className="h-7 w-7 text-white" />
             </div>
             <h2 className="text-2xl font-extrabold mb-2">{copy.title}</h2>
             <p className="text-white/70 text-sm max-w-md mx-auto">{copy.subtitle}</p>
           </div>
 
-          {/* Plan cards */}
-          <div className="grid sm:grid-cols-3 gap-3 mb-5">
-            {plans.map(p => {
+          <div className="mb-4">
+            <SubscriptionTrialOffer
+              source="paywall_modal"
+              onActivated={closePaywall}
+            />
+          </div>
+
+          <div className="grid gap-3 mb-5 grid-cols-1 sm:grid-cols-3 sm:items-end">
+            {sortedPlans.map(p => {
               const isSelected = p.id === selected;
               const priceLabel = resolvePlanPriceLabel(p, nativeBilling.priceByPlan);
+              const annualHighlight = isAnnualHighlightedPlan(p.id);
+              const savings = annualSavingsLabel(p);
+              const equiv = annualPriceEquivalent(p);
               return (
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => setSelected(p.id)}
+                  onClick={() => selectPlan(p.id)}
+                  data-testid={`paywall-plan-${p.id}`}
                   className={[
                     "relative text-left rounded-2xl p-4 border-2 transition-all",
+                    annualHighlight ? "order-first sm:order-none sm:scale-[1.03] sm:z-10" : "",
                     isSelected
                       ? "border-border bg-primary shadow-[0_8px_24px_rgba(255,78,205,0.35)]"
                       : "border-white/10 bg-white/5 hover:border-white/30",
+                    annualHighlight && !isSelected ? "border-primary/40 bg-primary/5" : "",
                   ].join(" ")}
                 >
                   {p.badge && (
@@ -224,18 +256,25 @@ export function PaywallModal() {
                       {p.badge}
                     </span>
                   )}
-                  <div className="font-bold text-sm mb-1">{p.title}</div>
+                  <div className="font-bold text-sm mb-0.5">{p.title}</div>
+                  {p.tagline && (
+                    <p className="text-[10px] text-white/55 mb-2 leading-snug">{p.tagline}</p>
+                  )}
                   <div className="flex items-baseline gap-1 mb-2">
                     <span className="text-2xl font-black">{priceLabel}</span>
                     <span className="text-xs text-white/60">/ {p.period}</span>
                   </div>
-                  {typeof p.savingsPercent === "number" && p.savingsPercent > 0 && (
-                    <div className="text-xs font-extrabold text-primary mb-2">
-                      {t("components.paywall_modal.save")} {p.savingsPercent}%
+                  {(savings || (typeof p.savingsPercent === "number" && p.savingsPercent > 0)) && (
+                    <div className="text-xs font-extrabold text-primary mb-1">
+                      {savings ??
+                        `${t("components.paywall_modal.save")} ${p.savingsPercent}%`}
                     </div>
                   )}
+                  {equiv && (
+                    <p className="text-[10px] font-bold text-white/70 mb-2">{equiv}</p>
+                  )}
                   <ul className="space-y-1">
-                    {p.features.slice(0, 3).map((f, i) => (
+                    {p.features.map((f, i) => (
                       <li key={i} className="flex items-start gap-1.5 text-xs text-white/85">
                         <Check className={["h-3 w-3 mt-0.5 shrink-0", isSelected ? "text-primary" : "text-white/50"].join(" ")} />
                         <span>{f}</span>
@@ -254,9 +293,6 @@ export function PaywallModal() {
             </div>
           )}
 
-          {/* ── Payment CTA ── */}
-
-          {/* Native shell (iOS or Android) — billing available */}
           {isNativeShell && nativeBilling.available && (
             <>
               <Button
@@ -272,32 +308,30 @@ export function PaywallModal() {
                 onClick={() => void nativeBilling.restore()}
                 className="w-full mt-2 text-white/60 text-xs font-semibold py-2 hover:text-white/85"
               >
-                {t("components.paywall_modal.restore_purchases")}
+                {PURCHASE_SCREEN.restorePurchases}
               </button>
               {isIOS && (
                 <p className="text-center text-[10px] text-white/30 mt-1">
-                  Payment processed by Apple · Subscription auto-renews until cancelled
+                  {t("components.paywall_modal.ios_billing_note")}
                 </p>
               )}
               {isAndroid && (
                 <p className="text-center text-[10px] text-white/30 mt-1">
-                  Payment processed by Google Play · Subscription auto-renews until cancelled
+                  {t("components.paywall_modal.android_billing_note")}
                 </p>
               )}
             </>
           )}
 
-          {/* Native shell — billing NOT available (never fall back to Razorpay) */}
           {isNativeShell && !nativeBilling.available && (
             <div className="w-full rounded-xl border border-border bg-muted px-4 py-3 text-muted-foreground text-xs font-semibold leading-relaxed">
               {nativeBilling.unavailableReason ??
                 (isIOS
-                  ? "Apple In-App Purchases aren't available right now. Please check your App Store account and try again."
-                  : "In-app purchases aren't available right now. Please update the app from the Play Store.")}
+                  ? t("pricing.apple_unavailable")
+                  : t("pricing.google_play_unavailable"))}
             </div>
           )}
 
-          {/* Web / PWA — India → Razorpay */}
           {!isNativeShell && isIndiaRegion() && (
             <Button
               onClick={onPayWithRazorpay}
@@ -305,13 +339,10 @@ export function PaywallModal() {
               className="w-full h-12 text-base font-extrabold bg-gradient-to-r from-primary to-primary hover:opacity-90 border-0 shadow-[0_10px_24px_rgba(255,78,205,0.5)]"
             >
               <Zap className="h-4 w-4 mr-2" />
-              {submitting
-                ? "Opening Razorpay…"
-                : (upgradeCtaLabel ?? "Pay with UPI / Card")}
+              {submitting ? t("pricing.processing_payment") : selectedCta}
             </Button>
           )}
 
-          {/* Web / PWA — non-India → prompt to use the app */}
           {!isNativeShell && !isIndiaRegion() && (
             <div className="w-full rounded-xl border border-white/15 bg-white/8 px-4 py-4 text-center space-y-2">
               <Smartphone className="h-5 w-5 mx-auto text-muted-foreground" />
@@ -341,11 +372,11 @@ export function PaywallModal() {
             onClick={closePaywall}
             className="w-full text-center mt-1 text-white/55 text-sm py-2 hover:text-white/80"
           >
-            {t("components.paywall_modal.maybe_later")}
+            {t("components.paywall_modal.maybe_later", { defaultValue: DEFAULT_PAYWALL.dismiss })}
           </button>
 
           <p className="text-center text-[11px] text-white/35 mt-2">
-            {t("components.paywall_modal.cancel_anytime_renews_automatically_until_canceled")}
+            {PURCHASE_SCREEN.trustLine}
           </p>
 
           <div className="flex items-center justify-center gap-3 mt-3 text-[11px]">

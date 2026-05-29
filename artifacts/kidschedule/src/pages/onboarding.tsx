@@ -19,6 +19,13 @@ import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
+import { useTrialState } from "@/hooks/use-trial-state";
+import {
+  FF_POST_ONBOARDING_TRIAL,
+} from "@/lib/subscription-feature-flags";
+import {
+  wasOnboardingTrialSeen,
+} from "@/lib/subscription-funnel-storage";
 import { logOnboardingState } from "@/lib/onboarding-debug";
 import {
   persistOnboardingCache,
@@ -562,6 +569,7 @@ export default function OnboardingPage() {
   const { user } = useUser();
   const { isLoaded: authLoaded, isSignedIn } = useAuth();
   const { entitlements } = useSubscription();
+  const { canStartTrial } = useTrialState();
   const authFetch = useAuthFetch();
   const queryClient = useQueryClient();
   const [navigatingToDashboard, setNavigatingToDashboard] = useState(false);
@@ -903,6 +911,14 @@ export default function OnboardingPage() {
     }
     await refreshBeforeDashboard();
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    if (
+      FF_POST_ONBOARDING_TRIAL &&
+      canStartTrial &&
+      !wasOnboardingTrialSeen()
+    ) {
+      window.location.assign(`${base}/subscription-trial`);
+      return;
+    }
     window.location.assign(`${base}/dashboard`);
   }
 

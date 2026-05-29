@@ -21,6 +21,8 @@ const ClientLogBody = z.object({
     z.string().regex(/^amy_voice_[a-z0-9_]+$/),
     /** LearningProgressEngine retention events (client mirror). */
     z.string().regex(/^learning_progress_[a-z0-9_]+$/),
+    /** Subscription funnel events (`subscription-analytics.ts`). */
+    z.literal("subscription_funnel"),
   ]),
   message: z.string().min(1).max(4000),
   context: z.string().max(256).optional(),

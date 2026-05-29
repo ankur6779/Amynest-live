@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { incrementPaywallVisitCount } from "@/lib/subscription-funnel-storage";
+import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 
 export type PaywallReason =
   | "ai_quota"
@@ -15,7 +17,9 @@ export type PaywallReason =
   | "behavior_locked"
   | "child_locked"
   | "phonics_workbook"
-  | "hub_nutrition";
+  | "hub_nutrition"
+  | "speech_coach"
+  | "learning_locked";
 
 type PaywallState = {
   open: boolean;
@@ -34,6 +38,12 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PaywallState>({ open: false, reason: "feature" });
 
   const openPaywall = useCallback((reason: PaywallReason = "feature") => {
+    incrementPaywallVisitCount();
+    trackSubscriptionEvent({
+      event: "paywall_opened",
+      reason,
+      source: "open_paywall",
+    });
     setState({ open: true, reason });
   }, []);
   const closePaywall = useCallback(() => {

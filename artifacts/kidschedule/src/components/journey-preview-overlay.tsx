@@ -1,7 +1,7 @@
-import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { openSubscriptionGate } from "@/lib/subscription-gate";
 
 /** CTA banner shown inside soft-locked hub tiles. */
 export function JourneyUnlockCta({
@@ -12,7 +12,6 @@ export function JourneyUnlockCta({
   isInfant?: boolean;
 }) {
   const { t } = useTranslation();
-  const [, setLocation] = useLocation();
   const jk = (base: string) =>
     isInfant ? `parent_hub.journey.infant.${base}` : `parent_hub.journey.${base}`;
 
@@ -27,7 +26,9 @@ export function JourneyUnlockCta({
       <Button
         size="sm"
         className="rounded-full gap-1.5"
-        onClick={() => setLocation("/pricing?reason=hub_journey")}
+        onClick={() =>
+          openSubscriptionGate({ reason: "hub_journey", source: "journey_unlock_cta" })
+        }
       >
         <Sparkles className="h-3.5 w-3.5" />
         {t("parent_hub.journey.continue_tomorrow_path")}

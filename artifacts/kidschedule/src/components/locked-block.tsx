@@ -1,8 +1,8 @@
 import React from "react";
-import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Lock } from "lucide-react";
 import type { PaywallReason } from "@/contexts/paywall-context";
+import { openSubscriptionGate } from "@/lib/subscription-gate";
 
 interface LockedBlockProps {
   /** True after the user has consumed their one free use of this feature. */
@@ -16,11 +16,7 @@ interface LockedBlockProps {
   childName?: string;
   /** Infant child (0–24 months) — uses care-focused journey copy. */
   isInfant?: boolean;
-  /**
-   * Legacy prop — kept for backwards compatibility with existing call sites.
-   * The locked overlay no longer opens the paywall modal; it navigates to
-   * the dedicated /pricing page so users see a complete plan comparison.
-   */
+  /** Paywall reason passed to openPaywall (defaults to hub_journey). */
   reason?: PaywallReason;
   rounded?: string;
   children: React.ReactNode;
@@ -31,19 +27,20 @@ interface LockedBlockProps {
  *
  * locked=false       → children rendered fully interactive
  * locked + journeySoft → children interactive; HubSection shows blurred preview when expanded
- * locked (hard)      → children visible but NON-interactive; overlay routes to /pricing
+ * locked (hard)      → children visible but NON-interactive; overlay opens paywall
  */
 export function LockedBlock({
   locked,
   journeySoft = false,
   childName,
   isInfant = false,
+  reason = "hub_journey",
   rounded = "rounded-3xl",
   children,
 }: LockedBlockProps) {
-  const [, setLocation] = useLocation();
   const { t } = useTranslation();
-  const goPricing = () => setLocation("/pricing?reason=hub_journey");
+  const openGate = () =>
+    openSubscriptionGate({ reason, source: "locked_block" });
 
   if (!locked) return <>{children}</>;
 
@@ -71,13 +68,13 @@ export function LockedBlock({
 
       <div
         className="absolute inset-0 z-10 cursor-pointer rounded-2xl"
-        onClick={goPricing}
+        onClick={openGate}
         role="button"
         tabIndex={0}
         aria-label={ariaLabel}
         data-testid="locked-block-overlay"
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") goPricing();
+          if (e.key === "Enter" || e.key === " ") openGate();
         }}
       />
 
@@ -85,7 +82,7 @@ export function LockedBlock({
         <div className="pointer-events-auto">
           <button
             type="button"
-            onClick={goPricing}
+            onClick={openGate}
             data-testid="premium-feature-lock"
             aria-label={ariaLabel}
             className="inline-flex items-center gap-1 rounded-full bg-card text-primary-foreground shadow-md shadow px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide cursor-pointer hover:brightness-110 transition"

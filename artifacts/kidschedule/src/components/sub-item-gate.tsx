@@ -1,5 +1,6 @@
 import { useCallback, type ReactNode } from "react";
 import { useLocation } from "wouter";
+import { openSubscriptionGate } from "@/lib/subscription-gate";
 import { useTranslation } from "react-i18next";
 import { Lock } from "lucide-react";
 import { TryFreeBadge } from "@/components/try-free-badge";
@@ -72,7 +73,10 @@ export function SubItemGate({
   const { isPremium, blockUsedIds, isBlockLocked, markBlockUsed } =
     useSectionUsage(sectionId);
 
-  const goPricing = useCallback(() => setLocation("/pricing"), [setLocation]);
+  const openPaywall = useCallback(
+    () => openSubscriptionGate({ reason: "hub_locked", source: "sub_item_gate" }),
+    [],
+  );
   const goHub = useCallback(() => setLocation("/parenting-hub"), [setLocation]);
 
   const wrap = (node: ReactNode) =>
@@ -123,7 +127,7 @@ export function SubItemGate({
 
   const locked = isBlockLocked(subItemId);
 
-  // Locked variant — visually rendered, fully non-interactive, tap → /pricing.
+  // Locked variant — visually rendered, fully non-interactive, tap → paywall.
   if (locked) {
     return (
       <div
@@ -135,7 +139,7 @@ export function SubItemGate({
         </div>
         <button
           type="button"
-          onClick={goPricing}
+          onClick={openPaywall}
           aria-label={t("parent_hub.badges.premium_feature_aria")}
           data-testid="sub-item-lock-overlay"
           className="absolute inset-0 z-10 cursor-pointer rounded-2xl bg-background/30 backdrop-blur-[1px] hover:bg-background/40 transition-colors flex items-center justify-center"
