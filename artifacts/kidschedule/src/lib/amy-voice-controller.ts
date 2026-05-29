@@ -88,7 +88,14 @@ import {
   CONTROLLER_EMERGENCY_PHRASE,
   type PlaybackFailureFeedback,
 } from "@/lib/amy-voice-audio-guard";
-import { audioManager } from "@/lib/audio-manager";
+import { resolveApiMediaUrl } from "@/lib/api";
+import { audioManager, type AudioSrcType } from "@/lib/audio-manager";
+import { emitAudioPlaybackEvent } from "@/lib/audio-playback-events";
+import {
+  generateTts,
+  resolveClientPlaybackUrl,
+} from "@/lib/tts-playback";
+import { prepareRemotePlaybackAudio } from "@/lib/static-audio";
 import {
   logAudioHealthFailure,
   logAudioHealthFallback,
@@ -132,7 +139,18 @@ export interface SpeakOptions {
   staticCatalogTexts?: string[];
   speechPolicy?: AmySpeechPolicy;
   onFinished?: () => void;
+  /** Per-speak playback rate override (e.g. spelling slow mode 0.65). */
+  playbackRate?: number;
 }
+
+export type PlayPreparedUrlOptions = {
+  playbackRate?: number;
+  source?: string;
+  phrase?: string;
+  srcType?: AudioSrcType;
+  isCancelled?: () => boolean;
+  waitUntilEnd?: boolean;
+};
 
 export type SpeakResult =
   | { success: true; layer?: AmyVoiceLayer }
@@ -208,6 +226,17 @@ export interface AmyVoiceControllerPublic {
     opts: SpeakOptions | undefined,
     runtime: AmyVoiceRuntime,
   ): Promise<SpeakResult>;
+  /** Play a pre-generated URL through the speech channel (session audio, cached TTS). */
+  playPreparedUrl(
+    url: string,
+    opts?: PlayPreparedUrlOptions,
+  ): Promise<SpeakResult>;
+  /** Resolve narration URL via the standard TTS API (no playback). */
+  fetchNarrationUrl(
+    authFetch: AuthFetchFn,
+    text: string,
+    init?: { signal?: AbortSignal; category?: string },
+  ): Promise<{ url: string; cacheKey?: string } | null>;
   pause(): void;
   subscribe(listener: SnapshotListener): () => void;
   getSnapshot(): Readonly<AmyVoiceControllerSnapshot>;
@@ -441,7 +470,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         this.transition(requestId, "playing", null, activePhrase);
         const fast = await speakPhonicsFastClip(text, {
           phoneme: opts?.phoneme,
-          playbackRate: runtime.playbackRate ?? 1,
+          playbackRate: opts?.playbackRate ?? runtime.playbackRate ?? 1,
           isCancelled: () => !isCurrentSpeakRequest(requestId),
         });
         if (!isCurrentSpeakRequest(requestId)) {
@@ -473,7 +502,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       authFetch: runtime.authFetch,
       voiceId: runtime.voiceId,
       modelId: runtime.modelId,
-      playbackRate: runtime.playbackRate ?? 1,
+      playbackRate: opts?.playbackRate ?? runtime.playbackRate ?? 1,
       playbackMode: resolvePlaybackMode(opts),
       paragraphIdx:
         opts?.audioIdentity && "paragraphIdx" in opts.audioIdentity
@@ -699,6 +728,125 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       if (isCurrentSpeakRequest(requestId)) {
         this.abortController = null;
       }
+    }
+  }
+
+  async fetchNarrationUrl(
+    authFetch: AuthFetchFn,
+    text: string,
+    init?: { signal?: AbortSignal; category?: string },
+  ): Promise<{ url: string; cacheKey?: string } | null> {
+    const trimmed = (text ?? "").trim();
+    if (!trimmed) return null;
+    const data = await generateTts(
+      authFetch,
+      { text: trimmed, category: init?.category ?? "words" },
+      { signal: init?.signal },
+    );
+    if (!data?.success || !data.audioUrl) {
+      emitAudioPlaybackEvent("audio_failed", {
+        source: "amy_voice",
+        phrase: trimmed.slice(0, 80),
+        error: data?.error ?? "tts_failed",
+      });
+      return null;
+    }
+    const url =
+      resolveClientPlaybackUrl(data.audioUrl, data.cacheKey) ?? data.audioUrl;
+    emitAudioPlaybackEvent("source_selected", {
+      source: "tts",
+      phrase: trimmed.slice(0, 80),
+      proxyUrl: url.slice(0, 120),
+      layer: data.cached ? "cache" : "api",
+    });
+    return { url, cacheKey: data.cacheKey };
+  }
+
+  async playPreparedUrl(
+    url: string,
+    opts: PlayPreparedUrlOptions = {},
+  ): Promise<SpeakResult> {
+    const trimmed = (url ?? "").trim();
+    if (!trimmed || trimmed.includes("undefined")) {
+      emitAudioPlaybackEvent("audio_failed", {
+        source: (opts.source as "spelling" | "poem_player" | "unknown") ?? "unknown",
+        error: "invalid_audio_url",
+      });
+      return { success: false, error: "invalid_audio_url" };
+    }
+
+    recordTtsUserGesture();
+    this.stopCurrentAudio();
+
+    const proxyUrl = resolveApiMediaUrl(trimmed);
+    const source = opts.source ?? "amy_voice";
+    emitAudioPlaybackEvent("source_selected", {
+      source: source as "spelling" | "poem_player" | "amy_voice",
+      proxyUrl: proxyUrl.slice(0, 120),
+      phrase: opts.phrase,
+    });
+
+    try {
+      const prepared = await prepareRemotePlaybackAudio(proxyUrl);
+      const audio = prepared ?? audioManager.create(proxyUrl);
+      const rate = opts.playbackRate ?? 1;
+      if (rate !== 1) audio.playbackRate = rate;
+
+      emitAudioPlaybackEvent("audio_started", {
+        source: source as "spelling" | "poem_player" | "amy_voice",
+        proxyUrl: proxyUrl.slice(0, 120),
+        phrase: opts.phrase,
+      });
+
+      const played = await audioManager.play(
+        audio,
+        {
+          proxyUrl,
+          phrase: opts.phrase,
+          source,
+          channel: "speech",
+          interrupt: true,
+          srcType: opts.srcType ?? "tts",
+        },
+        { channel: "speech", interrupt: true },
+      );
+
+      if (!played) {
+        emitAudioPlaybackEvent("audio_failed", {
+          source: source as "spelling" | "poem_player" | "amy_voice",
+          error: "play_failed",
+          phrase: opts.phrase,
+        });
+        return { success: false, error: "play_failed" };
+      }
+
+      if (opts.waitUntilEnd !== false) {
+        const ended = await audioManager.waitUntilEnd(
+          audio,
+          opts.isCancelled ?? (() => false),
+        );
+        if (!ended.ok) {
+          emitAudioPlaybackEvent("audio_interrupted", {
+            source: source as "spelling" | "poem_player" | "amy_voice",
+            error: ended.error ?? "interrupted",
+          });
+          return { success: false, error: ended.error ?? "interrupted" };
+        }
+      }
+
+      emitAudioPlaybackEvent("audio_completed", {
+        source: source as "spelling" | "poem_player" | "amy_voice",
+        phrase: opts.phrase,
+      });
+      return { success: true, layer: "static" };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      emitAudioPlaybackEvent("audio_failed", {
+        source: source as "spelling" | "poem_player" | "amy_voice",
+        error: message,
+        phrase: opts.phrase,
+      });
+      return { success: false, error: message };
     }
   }
 }

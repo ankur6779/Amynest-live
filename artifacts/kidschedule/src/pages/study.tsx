@@ -57,6 +57,7 @@ import {
 import {
   EngagementStrip, XpPopup, ConfettiBurst, useStudyFx,
 } from "@/components/study-engagement";
+import { HubModuleGateWrap } from "@/components/hub-module-gate-wrap";
 
 type Child = {
   id: number;
@@ -111,6 +112,7 @@ export default function StudyPage() {
 
   const child = "childId" in view ? list.find((c) => c.id === view.childId) : undefined;
   const mode: StudyMode | undefined = child ? resolveStudyMode(child.age, child.childClass) : undefined;
+  const gateChildName = child?.name ?? list[0]?.name ?? "your child";
 
   const goBack = () => {
     if (view.kind === "play-home" || view.kind === "study-home") {
@@ -160,6 +162,11 @@ export default function StudyPage() {
         </div>
       </header>
 
+      <HubModuleGateWrap
+        featureId="hub_smart_study"
+        childId={activeChildId}
+        childName={gateChildName}
+      >
       {isLoading ? (
         <Skeleton className="h-40 w-full rounded-2xl" />
       ) : list.length === 0 ? (
@@ -289,11 +296,10 @@ export default function StudyPage() {
           onScored={(p) => setProgress(p)}
         />
       )}
+      </HubModuleGateWrap>
     </div>
   );
 }
-
-// ─── Today's Plan ────────────────────────────────────────────────────────────
 
 function TodaysPlanSection({
   childId, childName, onOpen,

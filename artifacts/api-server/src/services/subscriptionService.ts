@@ -74,6 +74,8 @@ export const FREE_FEATURE_LIMITS = {
   // audio-lesson screens call /api/features/audio_lesson/consume before
   // playback to reserve the slot — premium users bypass entirely.
   audio_lesson: 1,
+  /** OpenAI TTS cache misses per UTC day (free tier). Premium uses TTS_DAILY_MISS_LIMIT_PREMIUM. */
+  tts_generation: 50,
   // ── Amy Speech Coach (Parent Hub Module) ──────────────────────────────
   // Free users get three lifetime practice sessions across all Speech Coach
   // sections (client + POST /speech/practice/log share hub_speech_session).
@@ -103,6 +105,7 @@ export const FEATURE_SCOPE: Record<FeatureKey, "daily" | "lifetime"> = {
   routine_generate: "lifetime",
   behavior_log: "lifetime",
   audio_lesson: "daily",
+  tts_generation: "daily",
   hub_speech_session: "lifetime",
   hub_speech_coach: "lifetime",
   nutrition_week_plan: "lifetime",

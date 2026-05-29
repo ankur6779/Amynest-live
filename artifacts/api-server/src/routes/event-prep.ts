@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger.js";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
+import { hubModuleGate } from "../middlewares/hubModuleGate.js";
 import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
 import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
 import {
@@ -69,7 +70,11 @@ function buildUserPrompt(
   });
 }
 
-router.post("/event-prep/generate", aiUsageGate, async (req, res): Promise<void> => {
+router.post(
+  "/event-prep/generate",
+  hubModuleGate("hub_event_prep"),
+  aiUsageGate,
+  async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });

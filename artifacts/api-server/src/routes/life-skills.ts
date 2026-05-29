@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
+import { hubModuleGate } from "../middlewares/hubModuleGate.js";
 import {
   db,
   childrenTable,
@@ -57,7 +58,10 @@ function yesterdayISO(today: Date = new Date()): string {
   return formatLifeSkillDate(d);
 }
 
-router.get("/life-skills/today", async (req, res): Promise<void> => {
+router.get(
+  "/life-skills/today",
+  hubModuleGate("hub_life_skills"),
+  async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
@@ -127,7 +131,10 @@ router.get("/life-skills/today", async (req, res): Promise<void> => {
   );
 });
 
-router.post("/life-skills/progress", async (req, res): Promise<void> => {
+router.post(
+  "/life-skills/progress",
+  hubModuleGate("hub_life_skills"),
+  async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
@@ -234,7 +241,10 @@ router.post("/life-skills/progress", async (req, res): Promise<void> => {
   );
 });
 
-router.get("/life-skills/role-plays", async (req, res): Promise<void> => {
+router.get(
+  "/life-skills/role-plays",
+  hubModuleGate("hub_life_skills"),
+  async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });

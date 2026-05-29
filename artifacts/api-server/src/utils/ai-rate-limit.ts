@@ -3,21 +3,30 @@ const MAX_PER_WINDOW = Number(process.env.AI_RATE_LIMIT_MAX ?? "30");
 
 const buckets = new Map<string, { count: number; resetAt: number }>();
 
+export interface RateLimitOptions {
+  windowMs?: number;
+  maxPerWindow?: number;
+}
+
 export interface RateLimitResult {
   allowed: boolean;
   retryAfterMs: number;
   remaining: number;
 }
 
-export function checkAiRateLimit(key: string): RateLimitResult {
-  const id = key.trim() || "anonymous";
+export function checkAiRateLimit(key: string, options?: RateLimitOptions): RateLimitResult {
+  const windowMs = options?.windowMs ?? WINDOW_MS;
+  const maxPerWindow = options?.maxPerWindow ?? MAX_PER_WINDOW;
+  const id = options
+    ? `${key.trim() || "anonymous"}|w=${windowMs}|m=${maxPerWindow}`
+    : key.trim() || "anonymous";
   const now = Date.now();
   let row = buckets.get(id);
   if (!row || row.resetAt <= now) {
-    row = { count: 0, resetAt: now + WINDOW_MS };
+    row = { count: 0, resetAt: now + windowMs };
     buckets.set(id, row);
   }
-  if (row.count >= MAX_PER_WINDOW) {
+  if (row.count >= maxPerWindow) {
     return {
       allowed: false,
       retryAfterMs: Math.max(0, row.resetAt - now),
@@ -28,7 +37,7 @@ export function checkAiRateLimit(key: string): RateLimitResult {
   return {
     allowed: true,
     retryAfterMs: 0,
-    remaining: MAX_PER_WINDOW - row.count,
+    remaining: maxPerWindow - row.count,
   };
 }
 

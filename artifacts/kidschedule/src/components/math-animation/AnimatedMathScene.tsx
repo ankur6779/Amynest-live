@@ -11,6 +11,7 @@ import {
   type VisualMathSequence,
 } from "@workspace/math-tricks";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { amyVoiceController } from "@/lib/amy-voice-controller";
 import { useReducedMotion } from "@/lib/reduced-motion";
 import { useVisualBudget } from "@/lib/performance-tier";
 import { audioManager } from "@/lib/audio-manager";
@@ -161,7 +162,12 @@ export function AnimatedMathScene({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, voiceEnabled, thinkingMode]);
 
-  useEffect(() => () => pause(), [pause]);
+  // Stop narration when the scene unmounts (controller singleton — not useEffect pause hook).
+  useEffect(() => {
+    return () => {
+      amyVoiceController.pause();
+    };
+  }, []);
 
   const handlePlayPause = useCallback(() => {
     audioManager.unlockFromUserGesture();

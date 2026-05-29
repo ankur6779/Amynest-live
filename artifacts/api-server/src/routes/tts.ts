@@ -4,8 +4,6 @@ import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { TTS_MAX_INPUT_CHARS, readCachedAudio } from "../services/ttsCacheService";
 import { isValidTtsPublicUrl, MIN_TTS_BYTES } from "../services/ttsAudioStore";
-import { takeTtsPending } from "../services/ttsPendingRegistry.js";
-import { streamLiveTtsToClient } from "../services/ttsLiveStream.js";
 import { generateOpenAiTts } from "../services/ttsGenerate.js";
 import {
   AMY_MODEL_ID_DEFAULT as ELEVEN_MODEL_DEFAULT,
@@ -34,6 +32,10 @@ import { recordApiHealthSample } from "../services/api-health-store.js";
 import { getOpenAiTtsModel } from "../lib/openai-tts-config.js";
 import { streamOpenAiTtsWithCache } from "../services/openaiTtsStreamCache.js";
 import { ingestRlTelemetry, resolveRlStrategy } from "../services/ttsRlService.js";
+import {
+  isTtsRateLimitedError,
+  ttsRateLimitResponseBody,
+} from "../services/ttsCostGuardService.js";
 
 export const ttsPublicRouter: IRouter = Router();
 
@@ -79,18 +81,6 @@ ttsPublicRouter.get("/tts/audio/:key.mp3", async (req, res): Promise<void> => {
   try {
     const served = await streamCached(0);
     if (served) return;
-
-    const pending = takeTtsPending(key);
-    if (pending) {
-      await streamLiveTtsToClient(res, {
-        cacheKey: key,
-        text: pending.text,
-        voiceId: pending.voiceId,
-        modelId: pending.modelId,
-        mode: pending.mode,
-      });
-      return;
-    }
 
     res.status(404).json({ error: "not_found" });
   } catch (err) {
@@ -186,7 +176,7 @@ router.post("/tts/generate", async (req, res): Promise<void> => {
       phonemeKey: phonemeKey || undefined,
       cvcWord: cvcWord || undefined,
       blendWord: blendWord || undefined,
-    });
+    }, { userId, route: "tts/generate" });
     if (!result || !isValidTtsPublicUrl(result.url)) {
       recordApiHealthSample({
         route: "generate",
@@ -210,6 +200,10 @@ router.post("/tts/generate", async (req, res): Promise<void> => {
       cached: result.cached,
     });
   } catch (err) {
+    if (isTtsRateLimitedError(err)) {
+      res.status(429).json(ttsRateLimitResponseBody(err));
+      return;
+    }
     recordApiHealthSample({
       route: "generate",
       success: false,
@@ -260,11 +254,15 @@ router.post("/tts/elevenlabs-fallback", async (req, res): Promise<void> => {
   const mode = parsed.data.mode ?? "default";
 
   try {
-    const result = await synthesizeElevenLabsFallback(text, {
-      voiceId: parsed.data.voiceId ?? ELEVEN_VOICE_DEFAULT,
-      modelId: parsed.data.modelId ?? ELEVEN_MODEL_DEFAULT,
-      mode,
-    });
+    const result = await synthesizeElevenLabsFallback(
+      text,
+      {
+        voiceId: parsed.data.voiceId ?? ELEVEN_VOICE_DEFAULT,
+        modelId: parsed.data.modelId ?? ELEVEN_MODEL_DEFAULT,
+        mode,
+      },
+      { userId, route: "tts/elevenlabs-fallback" },
+    );
     if (!result || !isValidTtsPublicUrl(result.audioUrl)) {
       res.status(502).json({ ok: false, error: "tts_failed" });
       return;
@@ -279,6 +277,10 @@ router.post("/tts/elevenlabs-fallback", async (req, res): Promise<void> => {
       provider: "elevenlabs",
     });
   } catch (err) {
+    if (isTtsRateLimitedError(err)) {
+      res.status(429).json(ttsRateLimitResponseBody(err));
+      return;
+    }
     const code = err instanceof Error ? err.message : "tts_failed";
     logger.error(
       { evt: "tts.elevenlabs_fallback_failed", userId, code },
@@ -335,7 +337,7 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
       phonemeKey: parsed.data.phoneme,
       cvcWord: parsed.data.word,
       blendWord: parsed.data.blend,
-    });
+    }, { userId, route: "tts/synthesize" });
     if (!result || !isValidTtsPublicUrl(result.url)) {
       recordApiHealthSample({
         route: "synthesize",
@@ -361,6 +363,10 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
       contentType: "audio/mpeg",
     });
   } catch (err) {
+    if (isTtsRateLimitedError(err)) {
+      res.status(429).json(ttsRateLimitResponseBody(err));
+      return;
+    }
     const code = err instanceof Error ? err.message : "tts_failed";
     recordApiHealthSample({
       route: "synthesize",
@@ -418,7 +424,7 @@ router.post("/tts/pregenerate", async (req, res): Promise<void> => {
     routeName: "tts/pregenerate",
     type: "tts.pregenerate",
     userId,
-    input: { texts: validTexts, mode },
+    input: { texts: validTexts, mode, userId },
     waitMs: 120_000,
     buildSyncBody: (result) => {
       const body = result as {
@@ -428,6 +434,7 @@ router.post("/tts/pregenerate", async (req, res): Promise<void> => {
         failed: number;
         cached: number;
         skipped: number;
+        rateLimited?: number;
       };
       logger.info(
         {
@@ -437,11 +444,21 @@ router.post("/tts/pregenerate", async (req, res): Promise<void> => {
           succeeded: body.succeeded,
           failed: body.failed,
           cached: body.cached,
+          rateLimited: body.rateLimited ?? 0,
           skipped,
           mode,
         },
         "tts pregenerate complete",
       );
+      if ((body.rateLimited ?? 0) > 0 && body.succeeded === 0) {
+        res.status(429);
+        return {
+          error: "tts_rate_limited",
+          ok: false,
+          ...body,
+          skipped,
+        };
+      }
       return { ...body, skipped };
     },
     res,
@@ -545,13 +562,17 @@ router.post("/tts/stream", async (req, res): Promise<void> => {
 
   const startedAt = Date.now();
   try {
-    const ok = await streamOpenAiTtsWithCache(res, {
-      text: phrase,
-      voiceId,
-      modelId,
-      mode,
-      cacheKey,
-    });
+    const ok = await streamOpenAiTtsWithCache(
+      res,
+      {
+        text: phrase,
+        voiceId,
+        modelId,
+        mode,
+        cacheKey,
+      },
+      { userId, route: "tts/stream" },
+    );
     recordApiHealthSample({
       route: "stream",
       success: ok,

@@ -19,9 +19,11 @@ const AUDIO_MANAGER_ALLOWLIST = new Set([
   "lib/emergency-audio.ts",
   "lib/static-audio.ts",
   "lib/tts-guard.ts",
-  "lib/study-tts.ts",
+  "lib/phonics-player.ts",
+  "lib/phonics-static-audio.ts",
+  "lib/phonics-audio.ts",
   "lib/voice.ts",
-  "hooks/use-spelling.ts",
+  "lib/audio-session-coordinator.ts",
   "hooks/use-poem-player.ts",
   "contexts/amy-voice-provider.tsx",
 ]);

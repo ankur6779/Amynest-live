@@ -1,25 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { audioManager } from "@/lib/audio-manager";
+import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { amyVoiceController } from "@/lib/amy-voice-controller";
 import { resolveApiMediaUrl } from "@/lib/api";
+import { audioManager } from "@/lib/audio-manager";
 import { resolveAiApiData } from "@/lib/poll-result";
 import { pregenerateTtsTexts } from "@/lib/pregenerate-tts";
 import {
   scheduleLearningZoneAudioPrewarm,
   buildLearningZoneAudioStateKey,
 } from "@/lib/learning-zone-audio-prewarm";
-import {
-  generateTts,
-  resolveClientPlaybackUrl,
-} from "@/lib/tts-playback";
-import { recordTtsUserGesture } from "@/lib/tts-guard";
-import {
-  lookupStaticAudioUrl,
-  prepareRemotePlaybackAudio,
-  prepareStaticPlaybackAudio,
-  primeStaticAudioInUserGesture,
-} from "@/lib/static-audio";
-import { resetClientStaticAudioCircuit } from "@/lib/static-audio-telemetry";
 
 // ─── Shared types (mirror server shape — no codegen yet for /spelling/*) ─────
 
@@ -88,20 +78,7 @@ export function spellingAgeGroupFor(ageMonths: number): SpellingAgeGroup {
   return "8-10+";
 }
 
-// ─── useSpellingTTS — static-audio-first word playback ─────────────────────
-//
-// Curated spelling words/chunks are pre-generated in the static catalog
-// (see @workspace/spelling-catalog). AI-generated words fall back to
-// /api/tts/generate. Slow mode uses playbackRate 0.65 on the same MP3.
-
-interface SynthesizeResponse {
-  ok: true;
-  cacheKey: string;
-  audioUrl: string;
-  cached: boolean;
-  charCount: number;
-  contentType: string;
-}
+// ─── useSpellingTTS — thin wrapper over canonical Amy voice pipeline ─────────
 
 export interface UseSpellingTTSState {
   speaking: boolean;
@@ -123,189 +100,76 @@ export interface UseSpellingTTSState {
 }
 
 export function useSpellingTTS(): UseSpellingTTSState {
-  const authFetch = useAuthFetch();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  const reqIdRef = useRef(0);
-  const [speaking, setSpeaking] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const cleanup = useCallback(() => {
-    const a = audioRef.current;
-    if (a) {
-      a.onended = null;
-      a.onerror = null;
-      a.pause();
-      a.removeAttribute("src");
-      a.load();
-    }
-    audioRef.current = null;
-  }, []);
-
-  const stop = useCallback(() => {
-    abortRef.current?.abort();
-    abortRef.current = null;
-    cleanup();
-    setSpeaking(false);
-    setLoading(false);
-  }, [cleanup]);
-
-  useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-      cleanup();
-    };
-  }, [cleanup]);
-
-  const playElement = useCallback(
-    async (audio: HTMLAudioElement, slow: boolean, reqId: number, proxyUrl: string) => {
-      audio.playbackRate = slow ? 0.65 : 1;
-      audio.onended = () => {
-        if (reqId !== reqIdRef.current) return;
-        setSpeaking(false);
-      };
-      audio.onerror = () => {
-        if (reqId !== reqIdRef.current) return;
-        setError("audio_error");
-        setSpeaking(false);
-      };
-      audioRef.current = audio;
-      setLoading(false);
-      setSpeaking(true);
-      const played = await audioManager.play(
-        audio,
-        {
-          proxyUrl,
-          source: "spelling",
-          channel: "speech",
-          interrupt: true,
-          srcType: "tts",
-        },
-        { channel: "speech", interrupt: true },
-      );
-      if (!played && reqId === reqIdRef.current) {
-        console.error("[Spelling] Audio playback failed after retries", proxyUrl);
-        setError("audio_playback_failed");
-        setSpeaking(false);
-      }
-    },
-    [],
-  );
-
-  const beginSpeechGesture = useCallback((opts?: { text?: string; url?: string }) => {
-    recordTtsUserGesture();
-    audioManager.unlockFromUserGesture();
-    resetClientStaticAudioCircuit();
-    const text = opts?.text?.trim();
-    if (text) primeStaticAudioInUserGesture(text, "default");
-    const url = opts?.url?.trim();
-    if (url) audioManager.primeSpeechUrlInUserGesture(resolveApiMediaUrl(url));
-  }, []);
-
-  const playSrc = useCallback(
-    async (src: string, slow: boolean, reqId: number) => {
-      const trimmed = (src ?? "").trim();
-      if (!trimmed || trimmed.includes("undefined")) {
-        console.warn("Invalid audio URL, skipping playback");
-        if (reqId === reqIdRef.current) {
-          setLoading(false);
-          setSpeaking(false);
-          setError("audio_error");
-        }
-        return;
-      }
-      const proxyUrl = resolveApiMediaUrl(trimmed);
-      const prepared = await prepareRemotePlaybackAudio(proxyUrl);
-      const audio = prepared ?? audioManager.create(proxyUrl);
-      await playElement(audio, slow, reqId, proxyUrl);
-    },
-    [playElement],
-  );
+  const {
+    speak: amySpeak,
+    pause,
+    speaking,
+    loading,
+    error,
+    primeSpeakGesture,
+  } = useAmyVoice();
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const speak = useCallback(
     async (text: string, opts: { slow?: boolean } = {}) => {
       const trimmed = text.trim();
       if (!trimmed) return;
-      beginSpeechGesture({ text: trimmed });
-      abortRef.current?.abort();
-      cleanup();
-      const reqId = ++reqIdRef.current;
-      const ac = new AbortController();
-      abortRef.current = ac;
-      setLoading(true);
-      setError(null);
-      setSpeaking(false);
-      try {
-        const staticAudio = await prepareStaticPlaybackAudio(trimmed, "default");
-        if (reqId !== reqIdRef.current) return;
-        if (staticAudio) {
-          const proxyUrl =
-            lookupStaticAudioUrl(trimmed, "default") ??
-            resolveApiMediaUrl(staticAudio.src);
-          await playElement(staticAudio, !!opts.slow, reqId, proxyUrl);
-          return;
-        }
-
-        const data = await generateTts(
-          authFetch,
-          { text: trimmed, category: "words" },
-          { signal: ac.signal },
-        );
-        if (reqId !== reqIdRef.current) return;
-        if (!data?.success || !data.audioUrl) {
-          console.warn("[Spelling] No audio for phrase", trimmed);
-          setLoading(false);
-          setSpeaking(false);
-          setError(data?.error ?? "tts_failed");
-          return;
-        }
-        const playbackUrl =
-          resolveClientPlaybackUrl(data.audioUrl, data.cacheKey) ?? data.audioUrl;
-        await playSrc(playbackUrl, !!opts.slow, reqId);
-      } catch (err) {
-        if ((err as DOMException)?.name === "AbortError") return;
-        if (reqId !== reqIdRef.current) return;
-        console.error("TTS failed", err);
-        setError(err instanceof Error ? err.message : "tts_failed");
-        setLoading(false);
-        setSpeaking(false);
+      primeSpeakGesture(trimmed);
+      setLocalError(null);
+      const result = await amySpeak(trimmed, {
+        playbackRate: opts.slow ? 0.65 : 1,
+        catalogPlayback: true,
+      });
+      if (!result.success) {
+        setLocalError(result.error ?? "tts_failed");
+        console.warn("[Spelling] Amy voice speak failed", trimmed, result.error);
       }
     },
-    [authFetch, beginSpeechGesture, cleanup, playElement, playSrc],
+    [amySpeak, primeSpeakGesture],
   );
 
-  const playUrl = useCallback(
-    async (url: string, opts: { slow?: boolean } = {}) => {
-      if (!url) return;
-      beginSpeechGesture({ url });
-      abortRef.current?.abort();
-      cleanup();
-      const reqId = ++reqIdRef.current;
-      setError(null);
-      setLoading(true);
-      setSpeaking(false);
-      try {
-        await playSrc(url, !!opts.slow, reqId);
-      } catch (err) {
-        if (reqId !== reqIdRef.current) return;
-        setError(err instanceof Error ? err.message : "audio_error");
-        setLoading(false);
-        setSpeaking(false);
-      }
+  const playUrl = useCallback(async (url: string, opts: { slow?: boolean } = {}) => {
+    if (!url) return;
+    recordTtsUserGesture();
+    audioManager.unlockFromUserGesture();
+    audioManager.primeSpeechUrlInUserGesture(resolveApiMediaUrl(url));
+    setLocalError(null);
+    const result = await amyVoiceController.playPreparedUrl(url, {
+      playbackRate: opts.slow ? 0.65 : 1,
+      source: "spelling",
+      waitUntilEnd: true,
+    });
+    if (!result.success) {
+      setLocalError(result.error ?? "audio_playback_failed");
+    }
+  }, []);
+
+  const prime = useCallback(
+    (text: string) => {
+      primeSpeakGesture(text);
     },
-    [beginSpeechGesture, cleanup, playSrc],
+    [primeSpeakGesture],
   );
-
-  const prime = useCallback((text: string) => {
-    beginSpeechGesture({ text });
-  }, [beginSpeechGesture]);
 
   const primeUrl = useCallback((url: string) => {
-    beginSpeechGesture({ url });
-  }, [beginSpeechGesture]);
+    recordTtsUserGesture();
+    audioManager.unlockFromUserGesture();
+    const trimmed = (url ?? "").trim();
+    if (trimmed) {
+      audioManager.primeSpeechUrlInUserGesture(resolveApiMediaUrl(trimmed));
+    }
+  }, []);
 
-  return { speaking, loading, error, speak, playUrl, prime, primeUrl, stop };
+  return {
+    speaking,
+    loading,
+    error: localError ?? error,
+    speak,
+    playUrl,
+    prime,
+    primeUrl,
+    stop: pause,
+  };
 }
 
 // ─── useSpellingWords — fetches a fresh batch of words ──────────────────────

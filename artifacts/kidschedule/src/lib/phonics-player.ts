@@ -29,6 +29,7 @@ import {
   recordPhonicsStartLatency,
   recordPhonicsZombieCleanup,
 } from "@/lib/phonics-telemetry";
+import { emitAudioPlaybackEvent } from "@/lib/audio-playback-events";
 
 export type PhonicsPlayResult =
   | { ok: true }
@@ -234,6 +235,11 @@ export async function playPhonicsUrl(
     teardownElement(previous);
     log("phonics_interrupt", { label });
     recordPhonicsInterruption(label);
+    emitAudioPlaybackEvent("audio_interrupted", {
+      source: "phonics",
+      phrase: label,
+      interruptedBy: "phonics_new_play",
+    });
   }
 
   lastUrl = trimmed;
@@ -252,6 +258,7 @@ export async function playPhonicsUrl(
   setPlaying(true, label);
   log("phonics_play", { label, token });
   recordPhonicsPlayStart(label);
+  emitAudioPlaybackEvent("audio_started", { source: "phonics", phrase: label, layer: "static" });
 
   let settled = false;
   const settle = (result: PhonicsPlayResult): PhonicsPlayResult => {
@@ -296,6 +303,11 @@ export async function playPhonicsUrl(
     } else {
       recordPhonicsFailure("phonics_play_failed");
     }
+    emitAudioPlaybackEvent("audio_failed", {
+      source: "phonics",
+      phrase: label,
+      error: gesture ? "phonics_gesture_required" : "phonics_play_failed",
+    });
     return settle({
       ok: false,
       error: gesture ? "phonics_gesture_required" : "phonics_play_failed",
@@ -308,6 +320,9 @@ export async function playPhonicsUrl(
   }
 
   const ended = await waitForClipEnd(el, token, options.isCancelled);
+  if (ended.ok) {
+    emitAudioPlaybackEvent("audio_completed", { source: "phonics", phrase: label });
+  }
   if (ended.ok || ended.error === "phonics_superseded" || ended.error === "phonics_cancelled") {
     return settle(ended);
   }

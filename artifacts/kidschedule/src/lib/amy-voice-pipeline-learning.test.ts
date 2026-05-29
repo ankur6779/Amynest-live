@@ -13,6 +13,7 @@ import {
   resolveStrategyFromLayers,
   type LayerScoringContext,
 } from "@/lib/amy-voice-pipeline-learning";
+import { _resetRlForTests } from "@/lib/amy-voice-rl-learning";
 
 function baseContext(overrides: Partial<LayerScoringContext> = {}): LayerScoringContext {
   return {
@@ -31,11 +32,14 @@ function baseContext(overrides: Partial<LayerScoringContext> = {}): LayerScoring
 describe("amy-voice-pipeline-learning", () => {
   beforeEach(() => {
     _resetPipelineLearningForTests();
+    _resetRlForTests();
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
     vi.useFakeTimers();
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("ranks static above api when static has better success history", () => {

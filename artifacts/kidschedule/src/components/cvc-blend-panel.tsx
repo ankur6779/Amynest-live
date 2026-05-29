@@ -2,9 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { playCvcBlendWithSpeak } from "@/lib/phonics-audio";
+import { amyVoiceController } from "@/lib/amy-voice-controller";
 import { stopPhonicsPlayback } from "@/lib/phonics-player";
-import { audioManager } from "@/lib/audio-manager";
-import { runWithControlledAudioStop } from "@/lib/amy-voice-ownership";
 import {
   getCvcDisplayLetters,
   getCvcWordEntry,
@@ -68,6 +67,7 @@ export function CvcBlendPanel({
       const isCancelled = () => blendSessionRef.current !== session;
 
       stopPhonicsPlayback("cvc_blend_restart");
+      amyVoiceController.pause();
       setBlending(true);
       setShowWord(false);
       setActiveIndex(null);
@@ -110,8 +110,7 @@ export function CvcBlendPanel({
   const stopBlend = useCallback(() => {
     blendSessionRef.current += 1;
     stopPhonicsPlayback("cvc_blend_stop");
-    // The whole-word finale plays through audioManager — stop it too.
-    runWithControlledAudioStop(() => audioManager.stopAll());
+    amyVoiceController.pause();
     setBlending(false);
     setPhase(null);
     setActiveIndex(null);
@@ -124,7 +123,7 @@ export function CvcBlendPanel({
     return () => {
       blendSessionRef.current += 1;
       stopPhonicsPlayback("cvc_blend_unmount");
-      runWithControlledAudioStop(() => audioManager.stopAll());
+      amyVoiceController.pause();
     };
   }, []);
 
