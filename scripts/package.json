@@ -19,6 +19,7 @@
     "check-phonics-audio": "tsx ./check-phonics-audio.ts",
     "scan-speakable-phrases": "tsx ./scan-speakable-phrases.ts",
     "check-amy-voice-usage": "tsx ./check-amy-voice-usage.ts",
+    "check-speech-coach-engine-freeze": "tsx ./check-speech-coach-engine-freeze.ts",
     "validate:amy-voice-field": "tsx ./src/amy-voice-field-validation.ts",
     "review:amy-voice-weekly": "tsx ./src/amy-voice-weekly-review.ts",
     "typecheck": "pnpm run audit:parent-hub-i18n && tsc -p tsconfig.json --noEmit"

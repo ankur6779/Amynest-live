@@ -2,6 +2,8 @@
 
 TTS playback is owned by `amy-voice-controller.ts`. UI must never bypass it.
 
+**Speech Coach engines are frozen.** See `docs/speech-coach-engine-freeze.md` and `.cursor/rules/speech-coach-engine-freeze.mdc`. Regression gate: `pnpm run check:speech-coach-engines`.
+
 ## Allowed (UI / components)
 
 - `useAmyVoice().speak(text, opts?)` — start playback

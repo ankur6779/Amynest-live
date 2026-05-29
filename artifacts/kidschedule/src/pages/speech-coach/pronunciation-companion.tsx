@@ -26,6 +26,7 @@ import type {
   PronouncePrompt,
   PronouncePromptDifficulty,
 } from "@workspace/speech-coach";
+import { coachActivityIntroHint, pickCoachDisplayFeedback, createCoachDialogueContext } from "@workspace/speech-coach";
 import type { SpeechPromptKind } from "@workspace/api-client-react";
 import type { SpeechViewMode } from "./speech-coach-utils";
 
@@ -66,36 +67,7 @@ function deriveAmyState(
   return "idle";
 }
 
-// ── Conversational messages (JS arrays, not i18n keys — same as ENCOURAGEMENT) ─
-const AMY_REPLIES: Record<TranscriptFeedback, string[]> = {
-  great: [
-    "WOW! That was amazing! Amy is so proud of you!",
-    "You said it perfectly! You're a speech superstar!",
-    "Incredible! Your sound is so strong and clear!",
-    "Fantastic speaking! Keep up the amazing work!",
-    "Wonderful — that was crystal clear! High five!",
-  ],
-  close: [
-    "Great try! Let's slow down the word a little.",
-    "So close! Say each sound one at a time — you've got this!",
-    "Almost there — one more try and you'll nail it!",
-    "Lovely try! Your tongue almost got it — keep going!",
-  ],
-  try_again: [
-    "Oops! Amy didn't hear that clearly. Let's try together again!",
-    "Keep going — every try makes you stronger! One more!",
-    "Practice makes perfect — give it another amazing go!",
-    "You can do this! Amy believes in you!",
-  ],
-};
-
-const AMY_INTRO_TEXT: Record<string, string> = {
-  letter: "Let's practise this letter! Tap to hear Amy — then copy me.",
-  phonic: "Let's practise this sound! Tap Hear Amy — then repeat after me.",
-  word: "Let's practise this word! Tap to hear Amy — then say it yourself.",
-  sentence:
-    "Let's practise this sentence! Listen carefully, then repeat after Amy.",
-};
+// ── Conversational messages powered by @workspace/speech-coach coach-dialogue ─
 
 const AMY_STATE_LABEL: Record<AmyAvatarState, string> = {
   idle: "Amy is ready!",
@@ -106,9 +78,28 @@ const AMY_STATE_LABEL: Record<AmyAvatarState, string> = {
   encouraging: "You can do it!",
 };
 
-function pickReply(feedback: TranscriptFeedback, score: number): string {
-  const list = AMY_REPLIES[feedback];
-  return list[Math.floor((score / 101) * list.length)] ?? list[0];
+function buildAmyReply(
+  feedback: TranscriptFeedback,
+  score: number,
+  childName: string,
+  kind: SpeechPromptKind,
+  sessionIdx: number,
+  sessionTotal: number,
+  streak: number,
+  sessionSeed: number,
+  ageMonths: number,
+): string {
+  const ctx = createCoachDialogueContext({
+    childName,
+    ageMonths,
+    promptKind: kind,
+    sessionIndex: sessionIdx,
+    sessionTotal: sessionTotal,
+    streak,
+    sessionSeed,
+    turnIndex: sessionIdx,
+  });
+  return pickCoachDisplayFeedback(feedback, score, ctx);
 }
 
 // ─── Neon colour tokens ───────────────────────────────────────────────────────
@@ -566,6 +557,10 @@ export interface PronunciationCompanionProps {
   compactMode?: boolean;
   articulationCue?: ArticulationCue | null;
   holdToSpeak?: boolean;
+  childName?: string;
+  sessionSeed?: number;
+  streak?: number;
+  ageMonths?: number;
 }
 
 export function PronunciationCompanion({
@@ -595,6 +590,10 @@ export function PronunciationCompanion({
   compactMode = false,
   articulationCue = null,
   holdToSpeak = false,
+  childName = "friend",
+  sessionSeed = 1,
+  streak = 0,
+  ageMonths = 48,
 }: PronunciationCompanionProps) {
   const { t } = useTranslation();
   const capIos = isCapacitorIOS();
@@ -614,10 +613,19 @@ export function PronunciationCompanion({
 
   const isLastItem = sessionIdx === sessionItems.length - 1;
   const amyStateLabel = AMY_STATE_LABEL[amyState];
-  const amyIntro =
-    AMY_INTRO_TEXT[currentItem?.kind ?? kind] ?? AMY_INTRO_TEXT.word;
+  const amyIntro = coachActivityIntroHint(currentItem?.kind ?? kind);
   const amyReply = currentResult
-    ? pickReply(currentResult.feedback, currentResult.score)
+    ? buildAmyReply(
+        currentResult.feedback,
+        currentResult.score,
+        childName,
+        currentItem?.kind ?? kind,
+        sessionIdx,
+        sessionItems.length,
+        streak,
+        sessionSeed,
+        ageMonths,
+      )
     : null;
 
   // Confetti burst on "great" result

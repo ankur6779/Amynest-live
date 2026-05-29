@@ -1,4 +1,10 @@
-import type { PromptScoreHistory } from "@workspace/speech-coach";
+import {
+  mergeCoachJourneySnapshot,
+  type CoachLocalSnapshot,
+  type PromptScoreHistory,
+  type SessionAttemptInput,
+  type SessionJourneyInput,
+} from "@workspace/speech-coach";
 import type { MicrophoneSessionState } from "@/lib/microphone-session-manager";
 
 export type SpeechViewMode = "parent" | "child";
@@ -103,6 +109,59 @@ export function weakSoundsToHistory(
 export function clampClarityScore(score: number): number {
   if (!Number.isFinite(score)) return 0;
   return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+const COACH_SNAPSHOT_KEY = "speech_coach_local_snapshot_v1";
+
+export type { CoachLocalSnapshot };
+
+export function loadCoachLocalSnapshot(childId: number): CoachLocalSnapshot | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(COACH_SNAPSHOT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CoachLocalSnapshot;
+    if (parsed?.childId !== childId) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function saveCoachLocalSnapshot(snapshot: CoachLocalSnapshot): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(COACH_SNAPSHOT_KEY, JSON.stringify(snapshot));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+export type { CoachLocalSnapshot, SessionAttemptInput, SessionJourneyInput };
+
+export function saveCoachJourneySnapshot(input: SessionJourneyInput, previous: CoachLocalSnapshot | null): CoachLocalSnapshot {
+  const snapshot = mergeCoachJourneySnapshot(previous, input);
+  saveCoachLocalSnapshot(snapshot);
+  return snapshot;
+}
+
+/** @deprecated Use saveCoachJourneySnapshot with attempt details. */
+export function buildCoachLocalSnapshot(
+  childId: number,
+  score: number,
+  bestStreak: number,
+  itemsCompleted: number,
+  previous: CoachLocalSnapshot | null,
+  activity: SessionJourneyInput["activity"] = "live",
+): CoachLocalSnapshot {
+  return mergeCoachJourneySnapshot(previous, {
+    childId,
+    score,
+    bestStreak,
+    itemsCompleted,
+    attempts: [],
+    activity,
+  });
 }
 
 /** User-facing mic status for Live Speech Coach — never conflate runtime failure with permission denial. */

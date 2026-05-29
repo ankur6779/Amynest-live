@@ -15,10 +15,20 @@ import {
 } from "lucide-react";
 import { useGetSpeechProgress, useLogSpeechPracticeAttempt } from "@workspace/api-client-react";
 import {
+  buildActivityIntro,
+  buildCoachSessionMemory,
+  buildItemPromptLines,
+  buildListeningEncouragement,
   buildPracticeSession,
-  compareTranscript,
-  getPromptSpeakText,
+  buildProgressNote,
+  buildSessionClosing,
+  buildSessionGreeting,
+  countMemoryReferences,
+  createCoachDialogueContext,
+  evaluateCoachResponse,
   getPromptsPool,
+  isSpeechCoachEligibleAgeMonths,
+  type CoachEvaluationResult,
   type PronouncePrompt,
   type PronouncePromptDifficulty,
   type PronouncePromptKind,
@@ -32,8 +42,16 @@ import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
 import { openAndroidMicrophoneSettings } from "@/lib/microphone-permission";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
-import { clampClarityScore, getSpeechCoachMicStatusMessage, playSpeechCue, weakSoundsToHistory } from "./speech-coach-utils";
-import { isSpeechCoachEligibleAgeMonths } from "@workspace/speech-coach";
+import {
+  buildCoachLocalSnapshot,
+  clampClarityScore,
+  getSpeechCoachMicStatusMessage,
+  loadCoachLocalSnapshot,
+  playSpeechCue,
+  saveCoachJourneySnapshot,
+  weakSoundsToHistory,
+  type SessionAttemptInput,
+} from "./speech-coach-utils";
 import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
 import { useListChildren } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
@@ -64,14 +82,7 @@ type AgeMode = {
   toddler?: boolean;
 };
 
-type Result = {
-  correct: boolean;
-  confidence: number;
-  feedback: string;
-  improvement: string | null;
-  transcript: string;
-  points: number;
-};
+type Result = CoachEvaluationResult;
 
 const DEFAULT_TASKS: PronouncePrompt[] = [
   { id: "live_cat", kind: "word", text: "cat", ageBands: ["3y"], i18nKeyHint: "", difficulty: "easy" },
@@ -145,56 +156,6 @@ function buildTasks(months: number, history: ReturnType<typeof weakSoundsToHisto
   return seededShuffle(unique, Date.now()).slice(0, Math.min(mode.sessionSize, unique.length));
 }
 
-function speakPromptText(task: PronouncePrompt, mode: AgeMode): string {
-  return getPromptSpeakText(task);
-}
-
-function correctionFor(task: PronouncePrompt, mode: AgeMode): string {
-  if (mode.kind === "sentence") return `Good try. Slow down and say: ${task.text}`;
-  return `Good try. Say it like this: ${task.text.split("").join("-")}.`;
-}
-
-function evaluate(task: PronouncePrompt, transcript: string, mode: AgeMode, ageMonths: number): Result {
-  const trimmed = transcript.trim();
-  if (!trimmed) {
-    return {
-      correct: false,
-      confidence: 0,
-      feedback: "I did not hear you. Try again.",
-      improvement: "Come closer to the microphone and say it one more time.",
-      transcript: "",
-      points: 0,
-    };
-  }
-
-  const result = compareTranscript(task.text, trimmed, { kind: task.kind, ageMonths });
-  const passAt = mode.toddler ? 70 : 80;
-  const closeAt = mode.toddler ? 45 : 50;
-  const correct = result.score >= passAt;
-  const close = result.score >= closeAt;
-  const confidence = Math.round(result.score) / 100;
-
-  if (correct) {
-    return {
-      correct: true,
-      confidence,
-      feedback: mode.kind === "sentence" ? "Awesome! That was clear and fluent." : "Awesome! That sounded great!",
-      improvement: null,
-      transcript: trimmed,
-      points: 10,
-    };
-  }
-
-  return {
-    correct: false,
-    confidence,
-    feedback: close ? "So close. Let's make it clearer." : "Let's try that one more time.",
-    improvement: correctionFor(task, mode),
-    transcript: trimmed,
-    points: close ? 4 : 0,
-  };
-}
-
 function StarsBurst({ show }: { show: boolean }) {
   if (!show) return null;
   return (
@@ -266,11 +227,70 @@ export function LiveSpeechCoach({
   const [successFlash, setSuccessFlash] = useState(false);
   const [micSettingsOpen, setMicSettingsOpen] = useState(false);
   const [startingMic, setStartingMic] = useState(false);
+  const [sessionSeed, setSessionSeed] = useState(() => Date.now());
+  const [turnIndex, setTurnIndex] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [memoryRefsUsed, setMemoryRefsUsed] = useState(0);
+  const localSnapshot = useMemo(
+    () => loadCoachLocalSnapshot(child.id),
+    [child.id],
+  );
+  const coachMemory = useMemo(() => {
+    const p = progress.data;
+    if (!p) return undefined;
+    return buildCoachSessionMemory(
+      {
+        promptsAttempted: p.promptsAttempted,
+        promptsClear: p.promptsClear,
+        pronunciationPct: p.pronunciationPct,
+        streakDays: p.streakDays,
+        daysActive: p.daysActive,
+        dailyTrend: p.dailyTrend,
+        weakSounds: p.weakSounds,
+      },
+      localSnapshot,
+    );
+  }, [localSnapshot, progress.data]);
   const stateRef = useRef<CoachState>("idle");
-  const ttsPurposeRef = useRef<"prompt" | "feedback" | "complete" | null>(null);
+  const ttsPurposeRef = useRef<"prompt" | "feedback" | "complete" | "encouragement" | null>(null);
+  const inSequenceRef = useRef(false);
   const listenStartedRef = useRef(false);
   const startingMicRef = useRef(false);
+  const listeningEncouragedRef = useRef(false);
+  const sessionAttemptsRef = useRef<SessionAttemptInput[]>([]);
   const logAttempt = useLogSpeechPracticeAttempt();
+
+  const dialogueContext = useCallback(
+    (sessionIndex: number, currentStreak: number) =>
+      createCoachDialogueContext({
+        childName: child.name,
+        ageMonths,
+        promptKind: mode.kind,
+        sessionIndex,
+        sessionTotal: tasks.length,
+        streak: currentStreak,
+        sessionSeed,
+        turnIndex,
+        toddler: mode.toddler,
+        memory: coachMemory,
+        memoryRefsUsed,
+        sessionBestStreak: bestStreak,
+        sessionScore: score,
+      }),
+    [
+      ageMonths,
+      bestStreak,
+      child.name,
+      coachMemory,
+      memoryRefsUsed,
+      mode.kind,
+      mode.toddler,
+      score,
+      sessionSeed,
+      tasks.length,
+      turnIndex,
+    ],
+  );
 
   const getAuthToken = useCallback(async () => {
     try {
@@ -282,6 +302,7 @@ export function LiveSpeechCoach({
   const stt = useSpeechRecognition("en-US", { getAuthToken });
   const voice = useAmyVoice({
     onFinished: () => {
+      if (inSequenceRef.current) return;
       if (ttsPurposeRef.current === "prompt") {
         setState("idle");
         setStatus("Tap the mic and say it back.");
@@ -302,8 +323,13 @@ export function LiveSpeechCoach({
   }, [state]);
 
   useEffect(() => {
-    warmSpeechCoach(tasks.slice(0, 3).map((task) => speakPromptText(task, mode)));
-  }, [tasks, mode]);
+    const ctx = dialogueContext(0, 0);
+    const warmLines = [
+      ...buildSessionGreeting(ctx).slice(0, 2),
+      ...tasks.slice(0, 3).flatMap((task) => buildItemPromptLines(ctx, task)),
+    ];
+    warmSpeechCoach(warmLines);
+  }, [dialogueContext, tasks]);
 
   useEffect(() => {
     setTasks(buildTasks(ageMonths, practiceHistory));
@@ -312,7 +338,12 @@ export function LiveSpeechCoach({
     setLastResult(null);
     setScore(0);
     setStreak(0);
-    setStatus("Tap Start and Amy will begin.");
+    setBestStreak(0);
+    setMemoryRefsUsed(0);
+    sessionAttemptsRef.current = [];
+    setTurnIndex(0);
+    setSessionSeed(Date.now());
+    setStatus("Tap Start and Amy will greet you.");
     setHasStarted(false);
     stt.reset();
     voice.pause();
@@ -360,14 +391,26 @@ export function LiveSpeechCoach({
     }
   }, [stt.error, stt.status, status]);
 
+  const finishSpeakPurpose = useCallback((purpose: "prompt" | "feedback" | "complete") => {
+    if (purpose === "prompt") {
+      setState("idle");
+      setStatus("Tap the mic and say it back.");
+    } else if (purpose === "feedback") {
+      setState("next_task");
+    }
+    ttsPurposeRef.current = null;
+  }, []);
+
   const speak = useCallback(
-    async (text: string, purpose: "prompt" | "feedback" | "complete") => {
+    async (text: string, purpose: "prompt" | "feedback" | "complete" | "encouragement") => {
       ttsPurposeRef.current = purpose;
-      setState(purpose === "prompt" ? "ai_speaking" : purpose === "complete" ? "complete" : "feedback");
-      setStatus(purpose === "prompt" ? "Amy is speaking..." : text);
-      const result = await voice.speak(text);
-      if (!result.success) {
-        if (purpose === "prompt") {
+      if (purpose !== "encouragement") {
+        setState(purpose === "prompt" ? "ai_speaking" : purpose === "complete" ? "complete" : "feedback");
+      }
+      setStatus(purpose === "prompt" ? "Amy is teaching..." : text);
+      const result = await voice.speak(text, { mode: purpose === "encouragement" ? "default" : undefined });
+      if (!result.success && !inSequenceRef.current) {
+        if (purpose === "prompt" || purpose === "encouragement") {
           setState("idle");
           setStatus("Tap the mic and say it back.");
         } else if (purpose === "feedback") {
@@ -379,13 +422,61 @@ export function LiveSpeechCoach({
     [voice],
   );
 
+  const speakSequence = useCallback(
+    async (lines: string[], purpose: "prompt" | "feedback" | "complete") => {
+      const spoken = lines.map((l) => l.trim()).filter(Boolean);
+      if (spoken.length === 0) {
+        finishSpeakPurpose(purpose);
+        return;
+      }
+      inSequenceRef.current = true;
+      ttsPurposeRef.current = purpose;
+      setState(purpose === "prompt" ? "ai_speaking" : purpose === "complete" ? "complete" : "feedback");
+      setStatus("Amy is teaching...");
+      for (const line of spoken) {
+        const result = await voice.speak(line);
+        if (!result.success) break;
+      }
+      inSequenceRef.current = false;
+      finishSpeakPurpose(purpose);
+    },
+    [finishSpeakPurpose, voice],
+  );
+
   const startSession = useCallback(() => {
     recordTtsUserGesture();
+    const seed = Date.now();
+    setSessionSeed(seed);
+    setTurnIndex(0);
+    setMemoryRefsUsed(0);
     setHasStarted(true);
     setLastResult(null);
+    sessionAttemptsRef.current = [];
     if (!current) return;
-    void speak(speakPromptText(current, mode), "prompt");
-  }, [current, mode, speak]);
+    const ctx = createCoachDialogueContext({
+      childName: child.name,
+      ageMonths,
+      promptKind: mode.kind,
+      sessionIndex: 0,
+      sessionTotal: tasks.length,
+      streak: 0,
+      sessionSeed: seed,
+      turnIndex: 0,
+      toddler: mode.toddler,
+      memory: coachMemory,
+      memoryRefsUsed: 0,
+      sessionBestStreak: 0,
+      sessionScore: 0,
+    });
+    const greeting = buildSessionGreeting(ctx);
+    const opening = [
+      ...greeting,
+      ...buildActivityIntro(ctx),
+      ...buildItemPromptLines(ctx, current),
+    ];
+    setMemoryRefsUsed(countMemoryReferences(greeting));
+    void speakSequence(opening, "prompt");
+  }, [ageMonths, child.name, coachMemory, current, mode.kind, mode.toddler, speakSequence, tasks.length]);
 
   const startListening = useCallback(async () => {
     if (!canRecord || state !== "idle") {
@@ -409,30 +500,51 @@ export function LiveSpeechCoach({
       return;
     }
     listenStartedRef.current = true;
+    listeningEncouragedRef.current = false;
     setState("listening");
-    setStatus("Listening...");
+    setStatus("Amy is listening...");
   }, [canRecord, state, stt, voice]);
 
   const processResponse = useCallback(async () => {
     if (!current) return;
     listenStartedRef.current = false;
     setState("processing");
-    setStatus("Checking your voice...");
+    setStatus("Amy is thinking...");
     await new Promise((resolve) => window.setTimeout(resolve, 450));
-    const result = evaluate(current, stt.transcript, mode, ageMonths);
+    const ctx = dialogueContext(idx, streak);
+    const result = evaluateCoachResponse(current, stt.transcript, ctx);
     setLastResult(result);
     setScore((n) => n + result.points);
-    setStreak((n) => (result.correct ? n + 1 : 0));
+    setStreak((n) => {
+      const next = result.correct ? n + 1 : 0;
+      if (next > bestStreak) setBestStreak(next);
+      return next;
+    });
+    setTurnIndex((n) => n + 1);
     playSpeechCue(result.correct ? "success" : "retry");
     setSuccessFlash(result.correct);
     window.setTimeout(() => setSuccessFlash(false), 900);
     logAttempt.mutate({ data: { childId: child.id, promptId: current.id, clarityScore: clampClarityScore(Math.round(result.confidence * 100)) } });
+    sessionAttemptsRef.current.push({
+      promptId: current.id,
+      promptText: current.text,
+      kind: current.kind,
+      score: Math.round(result.confidence * 100),
+    });
+    await speakSequence(result.spokenLines, "feedback");
+  }, [bestStreak, child.id, current, dialogueContext, idx, logAttempt, speakSequence, streak, stt.transcript]);
 
-    const feedbackText = result.correct
-      ? result.feedback
-      : `${result.feedback} ${result.improvement ?? ""}`;
-    await speak(feedbackText, "feedback");
-  }, [ageMonths, child.id, current, logAttempt, mode, speak, stt.transcript]);
+  useEffect(() => {
+    if (state !== "listening") return;
+    const id = window.setTimeout(() => {
+      if (stateRef.current !== "listening" || listeningEncouragedRef.current) return;
+      const line = buildListeningEncouragement(dialogueContext(idx, streak));
+      if (!line) return;
+      listeningEncouragedRef.current = true;
+      void speak(line, "encouragement");
+    }, 3500);
+    return () => window.clearTimeout(id);
+  }, [dialogueContext, idx, speak, state, streak]);
 
   useEffect(() => {
     if (state !== "listening") return;
@@ -450,28 +562,65 @@ export function LiveSpeechCoach({
     stt.reset();
     setLastResult(null);
     if (idx >= tasks.length - 1) {
-      const message = `You did amazing! You scored ${score} points with a streak of ${streak}.`;
-      void speak(message, "complete");
+      const ctx = dialogueContext(idx, streak);
+      const closing = buildSessionClosing(ctx, score, bestStreak);
+      const attempts = sessionAttemptsRef.current;
+      saveCoachJourneySnapshot(
+        {
+          childId: child.id,
+          score,
+          bestStreak,
+          itemsCompleted: tasks.length,
+          attempts,
+          activity: "live",
+          perfectSession:
+            attempts.length > 0 && attempts.every((a) => a.score >= 80),
+        },
+        localSnapshot,
+      );
+      void speakSequence(closing, "complete");
       void recordActivity({
         activityId: `speech_session_${Date.now()}`,
         section: "speech",
         correct: score > 0,
         analyticsEvent: "speech_improved",
-        metadata: { score, streak, tasks: tasks.length },
+        metadata: { score, streak: bestStreak, tasks: tasks.length },
       });
       return;
     }
     const nextIdx = idx + 1;
     setIdx(nextIdx);
     const next = tasks[nextIdx];
-    if (next) void speak(speakPromptText(next, mode), "prompt");
-  }, [idx, mode, recordActivity, score, speak, streak, stt, tasks]);
+    if (!next) return;
+    const ctx = dialogueContext(nextIdx, streak);
+    const progressLines = buildProgressNote(ctx);
+    if (progressLines.some((l) => /last time|remember|mastered|worked hard|tricky|noticed the|improving/i.test(l))) {
+      setMemoryRefsUsed((n) => n + 1);
+    }
+    const lines = [...progressLines, ...buildItemPromptLines(ctx, next)];
+    void speakSequence(lines, "prompt");
+  }, [
+    bestStreak,
+    child.id,
+    dialogueContext,
+    idx,
+    localSnapshot,
+    recordActivity,
+    score,
+    speakSequence,
+    streak,
+    stt,
+    tasks,
+  ]);
 
   const retryTask = useCallback(() => {
     stt.reset();
     setLastResult(null);
-    if (current) void speak(speakPromptText(current, mode), "prompt");
-  }, [current, mode, speak, stt]);
+    if (current) {
+      const ctx = dialogueContext(idx, streak);
+      void speakSequence(buildItemPromptLines(ctx, current), "prompt");
+    }
+  }, [current, dialogueContext, idx, speakSequence, streak, stt]);
 
   const restart = useCallback(() => {
     const fresh = buildTasks(ageMonths, practiceHistory);
@@ -479,9 +628,14 @@ export function LiveSpeechCoach({
     setIdx(0);
     setScore(0);
     setStreak(0);
+    setBestStreak(0);
+    setMemoryRefsUsed(0);
+    sessionAttemptsRef.current = [];
+    setTurnIndex(0);
+    setSessionSeed(Date.now());
     setLastResult(null);
     setState("idle");
-    setStatus("Tap Start and Amy will begin.");
+    setStatus("Tap Start and Amy will greet you.");
     setHasStarted(false);
     stt.reset();
     voice.pause();
@@ -550,8 +704,8 @@ export function LiveSpeechCoach({
             {state === "complete" && (
               <div className="space-y-2">
                 <Trophy className="mx-auto h-12 w-12 fill-yellow-300 text-yellow-300" />
-                <p className="font-quicksand text-3xl font-black">You did amazing!</p>
-                <p className="text-white/70">Score: {score} points</p>
+                <p className="font-quicksand text-3xl font-black">Amazing work today!</p>
+                <p className="text-white/70">Score: {score} points · Best streak: {bestStreak}</p>
               </div>
             )}
           </div>
@@ -571,7 +725,7 @@ export function LiveSpeechCoach({
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-bold">{lastResult.feedback}</p>
+                  <p className="font-bold">{lastResult.displayFeedback}</p>
                   {lastResult.improvement && <p className="mt-1 text-sm text-white/65">{lastResult.improvement}</p>}
                   <p className="mt-2 text-xs text-white/45">
                     Accuracy {Math.round(lastResult.confidence * 100)}%
