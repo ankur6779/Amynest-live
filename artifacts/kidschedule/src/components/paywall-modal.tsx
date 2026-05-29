@@ -19,11 +19,15 @@ import {
   resolveDefaultPlanId,
   trackHubJourneyAnnualSelected,
   isHubJourneyReason,
-  annualPriceEquivalent,
   annualSavingsLabel,
   isAnnualHighlightedPlan,
   trackPlanSelected,
 } from "@/lib/subscription-plans";
+import {
+  planCardPricePresentation,
+  planStorePriceOptions,
+} from "@/lib/pricing-plan-card-ui";
+import { PlanPriceLines } from "@/components/plan-price-lines";
 import {
   trackSubscriptionEvent,
   syncRevenueCatSubscriptionAttributes,
@@ -31,7 +35,6 @@ import {
 import { useNativeBilling } from "@/hooks/use-native-billing";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { resolvePlanPriceLabel } from "@/lib/plan-price";
 import {
   PAYWALL_REASON_COPY,
   PURCHASE_SCREEN,
@@ -232,10 +235,17 @@ export function PaywallModal() {
           <div className="grid gap-3 mb-5 grid-cols-1 sm:grid-cols-3 sm:items-end">
             {sortedPlans.map(p => {
               const isSelected = p.id === selected;
-              const priceLabel = resolvePlanPriceLabel(p, nativeBilling.priceByPlan);
+              const storeOpts = planStorePriceOptions(
+                p.id,
+                nativeBilling.priceByPlan,
+                nativeBilling.storePricesByPlan,
+              );
+              const { presentation, savings } = planCardPricePresentation(
+                p,
+                storeOpts.storePriceLabel,
+                storeOpts.store,
+              );
               const annualHighlight = isAnnualHighlightedPlan(p.id);
-              const savings = annualSavingsLabel(p);
-              const equiv = annualPriceEquivalent(p);
               return (
                 <button
                   key={p.id}
@@ -260,19 +270,19 @@ export function PaywallModal() {
                   {p.tagline && (
                     <p className="text-[10px] text-white/55 mb-2 leading-snug">{p.tagline}</p>
                   )}
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className="text-2xl font-black">{priceLabel}</span>
-                    <span className="text-xs text-white/60">/ {p.period}</span>
+                  <div className="mb-2">
+                    <PlanPriceLines
+                      presentation={presentation}
+                      savings={
+                        savings ??
+                        (typeof p.savingsPercent === "number" && p.savingsPercent > 0
+                          ? `${t("components.paywall_modal.save")} ${p.savingsPercent}%`
+                          : null)
+                      }
+                      priceClassName="text-2xl font-black leading-tight"
+                      compact
+                    />
                   </div>
-                  {(savings || (typeof p.savingsPercent === "number" && p.savingsPercent > 0)) && (
-                    <div className="text-xs font-extrabold text-primary mb-1">
-                      {savings ??
-                        `${t("components.paywall_modal.save")} ${p.savingsPercent}%`}
-                    </div>
-                  )}
-                  {equiv && (
-                    <p className="text-[10px] font-bold text-white/70 mb-2">{equiv}</p>
-                  )}
                   <ul className="space-y-1">
                     {p.features.map((f, i) => (
                       <li key={i} className="flex items-start gap-1.5 text-xs text-white/85">

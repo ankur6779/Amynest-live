@@ -1,10 +1,16 @@
 import type { Plan, PlanCard } from "@/hooks/use-subscription";
-import { isIndiaRegion } from "@/lib/geo";
+import {
+  buildPlanPricePresentation,
+  getMonthlyEquivalent,
+  type StorePlanPrice,
+} from "@/lib/plan-price";
 import {
   FF_ANNUAL_DEFAULT_REPEAT,
   FF_ANNUAL_FIRST_PLAN_ORDER,
-  FF_ANNUAL_PRICE_EQUIV,
 } from "@/lib/subscription-feature-flags";
+
+export { getMonthlyEquivalent } from "@/lib/plan-price";
+export type { StorePlanPrice, PlanPricePresentation } from "@/lib/plan-price";
 import { getPaywallVisitCount } from "@/lib/subscription-funnel-storage";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 
@@ -59,13 +65,15 @@ export function resolveDefaultPlanId(
   return "six_month";
 }
 
-export function annualPriceEquivalent(plan: PlanCard): string | null {
-  if (plan.id !== "yearly" || !FF_ANNUAL_PRICE_EQUIV) return null;
-  if (isIndiaRegion()) {
-    return "≈ ₹125/month";
-  }
-  const perMonth = plan.price / 12;
-  return `≈ $${perMonth.toFixed(2)}/month`;
+/** Build full price presentation (primary → equivalent → cadence) from live/API amounts. */
+export function planPricePresentation(
+  plan: PlanCard,
+  options?: {
+    storePriceLabel?: string;
+    store?: StorePlanPrice | null;
+  },
+) {
+  return buildPlanPricePresentation(plan, options);
 }
 
 export function annualSavingsLabel(plan: PlanCard): string | null {

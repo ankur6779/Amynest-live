@@ -22,11 +22,11 @@ export function SubscriptionWinBackBanner({ entitlements, onCta }: Props) {
 
   return (
     <div
-      className="mx-4 mb-4 rounded-2xl border border-primary/25 bg-primary/10 px-4 py-4 text-center"
+      className="mx-4 mb-2 rounded-xl border border-primary/25 bg-primary/10 px-3 py-2.5 text-center sm:mb-3 sm:rounded-2xl sm:px-4 sm:py-3"
       data-testid="subscription-win-back"
     >
-      <Heart className="mx-auto mb-2 h-5 w-5 text-primary" aria-hidden />
-      <h2 className="text-base font-extrabold text-white">
+      <Heart className="mx-auto mb-1 h-4 w-4 text-primary sm:mb-2 sm:h-5 sm:w-5" aria-hidden />
+      <h2 className="text-sm font-extrabold text-white sm:text-base">
         {t("pages.pricing.win_back_headline", { defaultValue: WIN_BACK.headline })}
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-white/70">
