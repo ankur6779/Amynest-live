@@ -7,8 +7,10 @@
  * Phase 4: optional_services (push, audio telemetry, …)
  */
 
+import { migrateLegacyDeployVersionStorage } from "@/lib/deploy-version";
 import { queueClientLog } from "@/lib/client-logs";
 import { patchBootDiagnostics } from "@/lib/boot-store";
+import { postStartupBeacon } from "@/lib/startup-telemetry-beacon";
 
 export type StartupPhase =
   | "idle"
@@ -147,6 +149,7 @@ export function resetStartupStateForTests(): void {
 
 /** Call once before Phase 1 (sync). */
 export function initStartupOrchestrator(): void {
+  migrateLegacyDeployVersionStorage();
   state = initialState();
   state = { ...state, phase: "initializing" };
   touchProgress();
@@ -268,22 +271,37 @@ export function trackStartupEvent(
   event: StartupTelemetryEvent,
   extra?: Record<string, string | number | boolean>,
 ): void {
+  const meta = {
+    event,
+    phase: state.phase,
+    app_version: state.appVersion,
+    previous_version: state.previousVersion ?? "",
+    platform: state.platform,
+    browser: state.browser,
+    react_rendered: state.reactRendered,
+    app_core_ready: state.appCoreReady,
+    ...extra,
+  };
+
+  postStartupBeacon({
+    event,
+    phase: state.phase,
+    app_version: state.appVersion,
+    previous_version: state.previousVersion ?? undefined,
+    platform: state.platform,
+    browser: state.browser,
+    route: state.route,
+    react_rendered: state.reactRendered,
+    app_core_ready: state.appCoreReady,
+    meta: extra,
+  });
+
   queueClientLog({
     type: "info",
     message: event,
     context: "startup",
     route: state.route,
-    meta: {
-      event,
-      phase: state.phase,
-      app_version: state.appVersion,
-      previous_version: state.previousVersion ?? "",
-      platform: state.platform,
-      browser: state.browser,
-      react_rendered: state.reactRendered,
-      app_core_ready: state.appCoreReady,
-      ...extra,
-    },
+    meta,
   });
 }
 

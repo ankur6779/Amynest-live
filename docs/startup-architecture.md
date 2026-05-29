@@ -73,6 +73,11 @@ flowchart TD
 | `src/AppCore.tsx` | `markAppCoreReady()` (splash only) |
 | `index.html` | Progress-aware boot watchdog + diag startup timeline |
 | `src/lib/startup-orchestrator.test.ts` | Regression tests |
+| `src/lib/deploy-version.ts` | Single deploy version source (`amynest-deploy` + sessionStorage) |
+| `src/lib/startup-api-guard.ts` | Blocks deprecated `syncPwaCacheAndVersion` before `reactRendered` |
+| `src/lib/startup-telemetry-beacon.ts` | Anonymous `POST /api/startup-events` (pre-auth) |
+| `src/lib/boot-watchdog.ts` + `public/boot-watchdog.js` | Pure watchdog decision logic (TS + ES5 sync) |
+| `playwright/specs/startup-reliability.spec.ts` | Degraded-path E2E (React + no boot-timeout) |
 | `docs/startup-architecture.md` | This document |
 
 ---
@@ -163,3 +168,29 @@ Run: `pnpm --filter @workspace/kidschedule test src/lib/startup-orchestrator.tes
 | `boot_timeout` | Phase 1 mount failure only |
 
 Payload includes: `app_version`, `previous_version`, `platform`, `browser`, `route`.
+
+Delivery: `trackStartupEvent()` → `postStartupBeacon()` (`POST /api/startup-events`, no auth) + `queueClientLog` when session exists.
+
+---
+
+## 9. Deploy version consolidation (reliability hardening)
+
+| Before | After |
+|--------|-------|
+| `app_build_version` (localStorage) + inline `localStorage.clear()` | Removed |
+| `amynest:deploy-version` (sessionStorage) + inline script | `deploy-version.ts` + `migrateLegacyDeployVersionStorage()` |
+| Duplicate meta keys | `vite.config.ts` injects same value into `amynest-deploy` (and legacy meta if present) |
+
+**Migration:** On first boot after upgrade, legacy `app_build_version` is copied to session key once, then deleted from localStorage. No full storage wipe.
+
+**Backward compatibility:** Users with only legacy key get one-time migration; fresh installs use session key only.
+
+---
+
+## 10. Deprecated API guard
+
+`syncPwaCacheAndVersion()` remains exported for compatibility but:
+
+- Throws in `import.meta.env.DEV` if `!getStartupState().reactRendered`
+- Production: telemetry `deprecated_startup_api_blocked` + no-op
+- Correct path: `schedulePostRenderStartup()` → `runPwaCacheSyncBackground()`
