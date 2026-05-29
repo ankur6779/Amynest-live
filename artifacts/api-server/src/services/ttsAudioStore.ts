@@ -136,6 +136,28 @@ export function legacyGcsConfigured(): boolean {
   return getGcsDiagnostics().legacyGcsConfigured;
 }
 
+/** Download a raw object from the primary GCS bucket (e.g. content-bank/*.json). */
+export async function readGcsObjectBytes(objectName: string): Promise<Buffer | null> {
+  if (!legacyGcsConfigured()) return null;
+  try {
+    const file = getBucket().file(objectName);
+    const [exists] = await file.exists();
+    if (!exists) return null;
+    const [buffer] = await file.download();
+    return buffer?.byteLength ? buffer : null;
+  } catch (err) {
+    logger.warn(
+      {
+        evt: "gcs.object_read_failed",
+        objectName,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "GCS object read failed",
+    );
+    return null;
+  }
+}
+
 async function tryLegacyGcsRead(cacheKey: string, attempt = 0): Promise<Buffer | null> {
   if (!isTtsCacheGcsEnabled() || !legacyGcsConfigured()) return null;
   try {
