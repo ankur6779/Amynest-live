@@ -7,7 +7,8 @@ import {
 } from "@/lib/auto-recovery";
 import { handleRecoveryReload } from "@/lib/clear-cache-reload";
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
-import { logClientError } from "@/lib/log-client-error";
+import { logOnboardingFinish } from "@/lib/onboarding-completion";
+import { getOnboardingRunId } from "@/lib/onboarding-telemetry";
 import { showReactCrashOverlay } from "@/lib/production-crash-overlay";
 import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";
 
@@ -43,10 +44,26 @@ export class AppErrorBoundary extends Component<Props, State> {
       info.componentStack,
     );
     showReactCrashOverlay(error, this.props.label ?? "app", info.componentStack ?? undefined);
+    const crashMeta = {
+      boundary: this.props.label ?? "app",
+      route: typeof window !== "undefined" ? window.location.pathname : undefined,
+      onboardingStep:
+        typeof window !== "undefined"
+          ? (window as Window & { __amynestOnboardingStep?: string }).__amynestOnboardingStep
+          : undefined,
+      onboardingRunId: getOnboardingRunId(),
+    };
+    logOnboardingFinish("APP_CRASH", {
+      message: error.message,
+      stack: error.stack,
+      componentStack: info.componentStack,
+      ...crashMeta,
+    });
     void logClientError({
       label: this.props.label ?? "app",
       message: error.message,
       stack: [error.stack, info.componentStack].filter(Boolean).join("\n"),
+      meta: crashMeta,
     });
   }
 

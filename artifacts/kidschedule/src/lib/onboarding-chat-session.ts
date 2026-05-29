@@ -5,9 +5,13 @@ import {
   type OnboardingStep,
 } from "@/lib/onboarding-chat-types";
 
-/** Bump when persisted shape changes; loaders accept older versions via migrate. */
-export const ONBOARDING_CHAT_SESSION_VERSION = 1 as const;
-const STORAGE_KEY = "amynest_onboarding_chat_v1";
+/** Bump when persisted shape changes — mismatched versions are cleared on restore. */
+export const CURRENT_ONBOARDING_SESSION_VERSION = 2 as const;
+
+const STORAGE_KEY = "amynest_onboarding_session";
+/** Legacy key — migrated once, then removed. */
+const LEGACY_STORAGE_KEY = "amynest_onboarding_chat_v1";
+
 const MAX_MESSAGES = 120;
 const MAX_SESSION_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -36,11 +40,8 @@ const RESUMABLE_STEPS = new Set<OnboardingStep>([
   "parent-allergies",
 ]);
 
-export interface OnboardingChatSession {
-  version: typeof ONBOARDING_CHAT_SESSION_VERSION;
-  savedAt: number;
+export interface OnboardingSessionData {
   messages: ChatMessage[];
-  step: OnboardingStep;
   textInput: string;
   countryCode: string;
   countryName: string;
@@ -48,6 +49,16 @@ export interface OnboardingChatSession {
   parent: Record<string, unknown>;
   children: Record<string, unknown>[];
 }
+
+export interface OnboardingChatSession {
+  version: typeof CURRENT_ONBOARDING_SESSION_VERSION;
+  timestamp: number;
+  step: OnboardingStep;
+  data: OnboardingSessionData;
+}
+
+/** @deprecated use CURRENT_ONBOARDING_SESSION_VERSION */
+export const ONBOARDING_CHAT_SESSION_VERSION = CURRENT_ONBOARDING_SESSION_VERSION;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -58,7 +69,7 @@ function sanitizeText(value: unknown, maxLen: number): string {
   return value.slice(0, maxLen);
 }
 
-function sanitizeMessage(raw: unknown, index: number): ChatMessage | null {
+function sanitizeMessage(raw: unknown): ChatMessage | null {
   if (!isRecord(raw)) return null;
   const role = raw.role === "amy" || raw.role === "user" ? raw.role : null;
   const text = sanitizeText(raw.text, 4000);
@@ -77,27 +88,15 @@ function sanitizeStep(raw: unknown): OnboardingStep {
   return raw as OnboardingStep;
 }
 
-function migrateRawSession(parsed: Record<string, unknown>): OnboardingChatSession | null {
-  const version = parsed.version;
-  if (version !== 1 && version !== "1") return null;
-
-  const savedAt =
-    typeof parsed.savedAt === "number" && Number.isFinite(parsed.savedAt)
-      ? parsed.savedAt
-      : Date.now();
-
-  if (Date.now() - savedAt > MAX_SESSION_AGE_MS) return null;
-
+function sanitizeSessionData(raw: unknown): OnboardingSessionData {
+  const parsed = isRecord(raw) ? raw : {};
   const messages = (Array.isArray(parsed.messages) ? parsed.messages : [])
     .map(sanitizeMessage)
     .filter((m): m is ChatMessage => m != null)
     .slice(-MAX_MESSAGES);
 
   return {
-    version: ONBOARDING_CHAT_SESSION_VERSION,
-    savedAt,
     messages,
-    step: sanitizeStep(parsed.step),
     textInput: sanitizeText(parsed.textInput, 500),
     countryCode: sanitizeText(parsed.countryCode, 8),
     countryName: sanitizeText(parsed.countryName, 120),
@@ -109,43 +108,101 @@ function migrateRawSession(parsed: Record<string, unknown>): OnboardingChatSessi
   };
 }
 
+function parseV2Session(parsed: Record<string, unknown>): OnboardingChatSession | null {
+  if (parsed.version !== CURRENT_ONBOARDING_SESSION_VERSION) return null;
+
+  const timestamp =
+    typeof parsed.timestamp === "number" && Number.isFinite(parsed.timestamp)
+      ? parsed.timestamp
+      : Date.now();
+
+  if (Date.now() - timestamp > MAX_SESSION_AGE_MS) return null;
+
+  const dataSource = isRecord(parsed.data) ? parsed.data : parsed;
+
+  return {
+    version: CURRENT_ONBOARDING_SESSION_VERSION,
+    timestamp,
+    step: sanitizeStep(parsed.step),
+    data: sanitizeSessionData(dataSource),
+  };
+}
+
+function migrateLegacyV1(parsed: Record<string, unknown>): OnboardingChatSession | null {
+  const version = parsed.version;
+  if (version !== 1 && version !== "1") return null;
+
+  const savedAt =
+    typeof parsed.savedAt === "number" && Number.isFinite(parsed.savedAt)
+      ? parsed.savedAt
+      : Date.now();
+
+  if (Date.now() - savedAt > MAX_SESSION_AGE_MS) return null;
+
+  return {
+    version: CURRENT_ONBOARDING_SESSION_VERSION,
+    timestamp: savedAt,
+    step: sanitizeStep(parsed.step),
+    data: sanitizeSessionData(parsed),
+  };
+}
+
 export function loadOnboardingChatSession(): OnboardingChatSession | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as unknown;
-    if (!isRecord(parsed)) return null;
-    const session = migrateRawSession(parsed);
-    if (!session) {
+    if (localStorage.getItem("onboardingComplete") === "true") {
       clearOnboardingChatSession();
       return null;
     }
-    return session;
+
+    const rawCurrent = localStorage.getItem(STORAGE_KEY);
+    if (rawCurrent) {
+      const parsed = JSON.parse(rawCurrent) as unknown;
+      if (isRecord(parsed)) {
+        const session = parseV2Session(parsed);
+        if (session) return session;
+        clearOnboardingChatSession();
+        return null;
+      }
+    }
+
+    const rawLegacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (rawLegacy) {
+      const parsed = JSON.parse(rawLegacy) as unknown;
+      if (isRecord(parsed)) {
+        const migrated = migrateLegacyV1(parsed);
+        localStorage.removeItem(LEGACY_STORAGE_KEY);
+        if (migrated) {
+          saveOnboardingChatSession({
+            step: migrated.step,
+            ...migrated.data,
+          });
+          return migrated;
+        }
+      }
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+    }
+
+    return null;
   } catch {
     clearOnboardingChatSession();
     return null;
   }
 }
 
-export function saveOnboardingChatSession(session: Omit<OnboardingChatSession, "version" | "savedAt">): void {
+export function saveOnboardingChatSession(
+  session: OnboardingSessionData & { step: OnboardingStep },
+): void {
   if (typeof window === "undefined") return;
   try {
     const payload: OnboardingChatSession = {
-      version: ONBOARDING_CHAT_SESSION_VERSION,
-      savedAt: Date.now(),
-      messages: session.messages.slice(-MAX_MESSAGES),
+      version: CURRENT_ONBOARDING_SESSION_VERSION,
+      timestamp: Date.now(),
       step: sanitizeStep(session.step),
-      textInput: sanitizeText(session.textInput, 500),
-      countryCode: sanitizeText(session.countryCode, 8),
-      countryName: sanitizeText(session.countryName, 120),
-      curr: isRecord(session.curr) ? session.curr : {},
-      parent: isRecord(session.parent) ? session.parent : {},
-      children: Array.isArray(session.children)
-        ? session.children.filter(isRecord).slice(0, 12)
-        : [],
+      data: sanitizeSessionData(session),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
   } catch {
     /* quota / private mode */
   }
@@ -155,7 +212,17 @@ export function clearOnboardingChatSession(): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
   } catch {
     /* ignore */
   }
+}
+
+/** Test helper — simulate an incompatible future session version. */
+export function saveIncompatibleOnboardingSessionForTests(): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ version: 999, timestamp: Date.now(), step: "intro", data: {} }),
+  );
 }
