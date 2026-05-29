@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { handleSubscriptionMutationGateError } from "@/lib/subscription-mutation-gate";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import {
   PronunciationCompanion,
@@ -353,13 +354,16 @@ export function SpeechGameFlow({
 
   const handleNext = () => {
     if (!currentItem || !currentResult) return;
-    log.mutate({
-      data: {
-        childId: child.id,
-        promptId: currentItem.id,
-        clarityScore: clampClarityScore(currentResult.score),
+    log.mutate(
+      {
+        data: {
+          childId: child.id,
+          promptId: currentItem.id,
+          clarityScore: clampClarityScore(currentResult.score),
+        },
       },
-    });
+      { onError: (err) => handleSubscriptionMutationGateError(err, "speech_coach_game_log") },
+    );
     const updated = [
       ...sessionResults,
       {

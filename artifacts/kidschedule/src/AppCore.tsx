@@ -103,6 +103,7 @@ const AudioLessonsPage = lazyPage(() => import("@/pages/audio-lessons"));
 const GamesPage = lazyPage(() => import("@/pages/games"));
 const OnboardingPage = lazyPage(() => import("@/pages/onboarding"));
 const PricingPage = lazyPage(() => import("@/pages/pricing"));
+const SubscriptionTrialPage = lazyPage(() => import("@/pages/subscription-trial"));
 const ReferralsPage = lazyPage(() => import("@/pages/referrals"));
 const ReferralDeepLinkPage = lazyPage(() => import("@/pages/referral-deep-link"));
 const InsightsPage = lazyPage(() => import("@/pages/insights"));
@@ -133,6 +134,7 @@ import { useNotificationDeepLink } from "@/hooks/use-notification-deep-link";
 import { PaywallProvider } from "@/contexts/paywall-context";
 import { PaywallModalLazy } from "@/components/paywall-modal-lazy";
 import { SubscriptionEventBridge } from "@/components/subscription-event-bridge";
+import { SubscriptionFunnelOrchestrator } from "@/components/subscription-funnel-orchestrator";
 // ReactInstanceRecovery is rendered by the parent App.tsx (the eager
 // shell), so it is NOT imported here — keeping it out of this lazy chunk
 // shrinks the initial bundle further and ensures the recovery boundary
@@ -522,6 +524,7 @@ function AppRoutes() {
           <Route path="/auth/action" component={AuthCallbackPage} />
           <Route path="/auth/apple/callback" component={AppleAuthCallbackPage} />
           <Route path="/onboarding" component={OnboardingRouteGuard} />
+          <Route path="/subscription-trial" component={SubscriptionTrialPage} />
           <Route path="/dashboard" component={DashboardRoute} />
           <Route path="/children" component={ChildrenListRoute} />
           <Route path="/children/new" component={ChildFormRoute} />
@@ -593,6 +596,7 @@ function AppRoutes() {
             </Suspense>
             <PaywallModalLazy />
             <SubscriptionEventBridge />
+            <SubscriptionFunnelOrchestrator />
             <Toaster />
             <DebugPanel />
             <AudioHealthOverlay />

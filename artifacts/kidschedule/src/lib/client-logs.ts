@@ -1,7 +1,15 @@
 import { getApiUrl } from "@/lib/api";
 import { getCrashLog } from "@/lib/crash-logger";
 
-export type ClientLogType = "crash" | "slow_api" | "failed_routine" | "warning" | "info";
+export type ClientLogType =
+  | "crash"
+  | "slow_api"
+  | "failed_routine"
+  | "warning"
+  | "info"
+  | "subscription_funnel"
+  | `amy_voice_${string}`
+  | `learning_progress_${string}`;
 
 type LogPayload = {
   type: ClientLogType;

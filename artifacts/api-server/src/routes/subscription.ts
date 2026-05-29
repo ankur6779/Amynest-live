@@ -14,6 +14,7 @@ import {
 import { getLivePlanPrices } from "../services/rcPricingService";
 import { requireAuth } from "../middlewares/requireAuth";
 import { buildSubscriptionFallbackResponse } from "../lib/api-fallbacks.js";
+import { buildPlanCardsForApi } from "@workspace/subscription-marketing";
 import { safeRoute } from "../lib/safe-route-handler.js";
 import { heavyRouteGuard } from "../middlewares/heavy-route-guard.js";
 import {
@@ -61,59 +62,34 @@ router.get(
         getEntitlements(userId),
         getLivePlanPrices(),
       ]);
+      const marketing = buildPlanCardsForApi();
       res.json({
         entitlements: ent,
-        plans: [
-          {
-            id: "monthly" as Plan,
-            title: "Monthly",
-            price: prices.monthly.amount,
-            currency: prices.monthly.currency,
-            period: prices.monthly.period,
-            formattedPrice: prices.monthly.formattedPrice,
-            badge: null,
-            features: [
-              "Unlimited Amy AI",
-              "Personalized Amy Coach",
-              "Unlimited routines & children",
-              "Full Parenting Hub",
-            ],
-          },
-          {
-            id: "six_month" as Plan,
-            title: "6 Months",
-            price: prices.six_month.amount,
-            currency: prices.six_month.currency,
-            period: prices.six_month.period,
-            formattedPrice: prices.six_month.formattedPrice,
-            badge: "Most Popular",
-            savingsPercent: Math.round(
-              (1 - prices.six_month.amount / (prices.monthly.amount * 6)) * 100,
-            ),
-            features: [
-              "Everything in Monthly",
-              "Behavior insights & trends",
-              "Save vs monthly billing",
-            ],
-          },
-          {
-            id: "yearly" as Plan,
-            title: "Yearly",
-            price: prices.yearly.amount,
-            currency: prices.yearly.currency,
-            period: prices.yearly.period,
-            formattedPrice: prices.yearly.formattedPrice,
-            badge: "Best Value",
-            savingsPercent: Math.round(
-              (1 - prices.yearly.amount / (prices.monthly.amount * 12)) * 100,
-            ),
-            features: [
-              "Everything in 6 Months",
-              "Adaptive learning",
-              "Priority support",
-            ],
-          },
-        ],
+        plans: marketing.map((m) => {
+          const p = prices[m.id];
+          const savingsPercent =
+            m.id === "six_month"
+              ? Math.round((1 - p.amount / (prices.monthly.amount * 6)) * 100)
+              : m.id === "yearly"
+                ? Math.round((1 - p.amount / (prices.monthly.amount * 12)) * 100)
+                : undefined;
+          return {
+            id: m.id as Plan,
+            title: m.title,
+            tagline: m.tagline,
+            description: m.description,
+            price: p.amount,
+            currency: p.currency,
+            period: p.period,
+            formattedPrice: p.formattedPrice,
+            badge: m.badge,
+            features: m.features,
+            valueAnchor: m.valueAnchor,
+            ...(savingsPercent != null && savingsPercent > 0
+              ? { savingsPercent }
+              : {}),
+          };
+        }),
       });
     },
     (_req, res) => {

@@ -56,6 +56,10 @@ import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity"
 import { useListChildren } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { usePrimeIosMicrophone } from "@/hooks/use-prime-ios-microphone";
+import { useFeatureUsage } from "@/hooks/use-feature-usage";
+import { SPEECH_COACH_SESSION_FEATURE } from "@/lib/feature-usage-limits";
+import { openSubscriptionGate } from "@/lib/subscription-gate";
+import { handleSubscriptionMutationGateError } from "@/lib/subscription-mutation-gate";
 
 type AnyChild = {
   id: number;
@@ -214,6 +218,8 @@ export function LiveSpeechCoach({
   const ageMonths = totalMonths(child);
   const mode = useMemo(() => getAgeMode(ageMonths), [ageMonths]);
   const progress = useGetSpeechProgress({ childId: child.id, range: "week" });
+  const featureUsage = useFeatureUsage();
+  const speechLocked = featureUsage.isFeatureLocked(SPEECH_COACH_SESSION_FEATURE);
   const { recordActivity } = useRecordLearningActivity(child.id);
   const practiceHistory = useMemo(() => weakSoundsToHistory(progress.data?.weakSounds ?? []), [progress.data?.weakSounds]);
   const [tasks, setTasks] = useState<PronouncePrompt[]>(() => buildTasks(ageMonths, practiceHistory));
@@ -444,6 +450,13 @@ export function LiveSpeechCoach({
   );
 
   const startSession = useCallback(() => {
+    if (speechLocked) {
+      openSubscriptionGate({ reason: "speech_coach", source: "live_speech_coach" });
+      return;
+    }
+    if (featureUsage.tryFreeFor(SPEECH_COACH_SESSION_FEATURE)) {
+      featureUsage.markFeatureUsed(SPEECH_COACH_SESSION_FEATURE);
+    }
     recordTtsUserGesture();
     const seed = Date.now();
     setSessionSeed(seed);
@@ -476,7 +489,18 @@ export function LiveSpeechCoach({
     ];
     setMemoryRefsUsed(countMemoryReferences(greeting));
     void speakSequence(opening, "prompt");
-  }, [ageMonths, child.name, coachMemory, current, mode.kind, mode.toddler, speakSequence, tasks.length]);
+  }, [
+    ageMonths,
+    child.name,
+    coachMemory,
+    current,
+    featureUsage,
+    mode.kind,
+    mode.toddler,
+    speakSequence,
+    speechLocked,
+    tasks.length,
+  ]);
 
   const startListening = useCallback(async () => {
     if (!canRecord || state !== "idle") {
@@ -524,7 +548,16 @@ export function LiveSpeechCoach({
     playSpeechCue(result.correct ? "success" : "retry");
     setSuccessFlash(result.correct);
     window.setTimeout(() => setSuccessFlash(false), 900);
-    logAttempt.mutate({ data: { childId: child.id, promptId: current.id, clarityScore: clampClarityScore(Math.round(result.confidence * 100)) } });
+    logAttempt.mutate(
+      {
+        data: {
+          childId: child.id,
+          promptId: current.id,
+          clarityScore: clampClarityScore(Math.round(result.confidence * 100)),
+        },
+      },
+      { onError: (err) => handleSubscriptionMutationGateError(err, "speech_coach_live_log") },
+    );
     sessionAttemptsRef.current.push({
       promptId: current.id,
       promptText: current.text,

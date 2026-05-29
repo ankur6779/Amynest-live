@@ -43,6 +43,7 @@
     "@workspace/parenting-articles": "workspace:*",
     "@workspace/integrations-openai-ai-server": "workspace:*",
     "@workspace/study-zone": "workspace:*",
+    "@workspace/subscription-marketing": "workspace:*",
     "@workspace/content-orchestration": "workspace:*",
     "@workspace/event-prep": "workspace:*",
     "@workspace/spelling-catalog": "workspace:*",

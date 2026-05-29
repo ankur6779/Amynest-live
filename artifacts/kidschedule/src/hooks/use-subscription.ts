@@ -41,6 +41,9 @@ export type Entitlements = {
 export type PlanCard = {
   id: Exclude<Plan, "free">;
   title: string;
+  tagline?: string;
+  description?: string;
+  valueAnchor?: string;
   price: number;
   currency: string;
   period: string;

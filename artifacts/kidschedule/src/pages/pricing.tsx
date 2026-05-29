@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Check, AlertTriangle, X, Smartphone,
+  Check, X, Smartphone,
   Sparkles, Crown, Zap, Shield, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,34 @@ import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { useHubJourney } from "@/hooks/use-hub-journey";
+import { SubscriptionWinBackBanner } from "@/components/subscription-win-back-banner";
+import { SubscriptionEcosystemSection } from "@/components/subscription-ecosystem-section";
+import { SubscriptionTrustSection } from "@/components/subscription-trust-section";
+import { SubscriptionAnnualUpsell } from "@/components/subscription-annual-upsell";
+import { SubscriptionTrialOffer } from "@/components/subscription-trial-offer";
+import { SubscriptionCancelDialog } from "@/components/subscription-cancel-dialog";
+import {
+  PostPurchaseUpsellModal,
+  shouldShowPostPurchaseUpsell,
+} from "@/components/post-purchase-upsell-modal";
+import {
+  sortPlanCards,
+  resolveDefaultPlanId,
+  trackHubJourneyAnnualSelected,
+  annualPriceEquivalent,
+  annualSavingsLabel,
+  isAnnualHighlightedPlan,
+  trackPlanSelected,
+} from "@/lib/subscription-plans";
+import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
+import { FF_POST_PURCHASE_ANNUAL_UPSELL } from "@/lib/subscription-feature-flags";
+import { wasPostPurchaseUpsellDismissed } from "@/lib/subscription-funnel-storage";
+import {
+  SUBSCRIPTION_HERO,
+  PURCHASE_SCREEN,
+  CANCELLATION_RETENTION,
+  planCta,
+} from "@workspace/subscription-marketing";
 
 const HUB_ACTIVE_CHILD_KEY = "amynest:hub:activeChildId";
 
@@ -60,7 +88,14 @@ export default function PricingPage() {
   } = useSubscription();
   const { user } = useUser();
 
-  const [selected, setSelected] = useState<Exclude<Plan, "free">>("six_month");
+  const sortedPlans = useMemo(() => sortPlanCards(plans), [plans]);
+  const [selected, setSelected] = useState<Exclude<Plan, "free">>(() => {
+    if (typeof window === "undefined") return resolveDefaultPlanId(0);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reason") === "hub_journey") return "yearly";
+    return resolveDefaultPlanId(0);
+  });
+  const [upsellPlan, setUpsellPlan] = useState<Exclude<Plan, "free"> | null>(null);
   const [submitting, setSubmitting] = useState<"googlepay" | "razorpay" | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -95,15 +130,30 @@ export default function PricingPage() {
   const isAndroidNative = nativeBilling.platform === "android";
   const isNativeShell = nativeBilling.wrapperPresent;
 
+  const onPurchaseSuccess = (plan: Exclude<Plan, "free">) => {
+    if (
+      FF_POST_PURCHASE_ANNUAL_UPSELL &&
+      shouldShowPostPurchaseUpsell(plan) &&
+      !wasPostPurchaseUpsellDismissed()
+    ) {
+      trackSubscriptionEvent({ event: "post_purchase_upsell_shown", plan });
+      setUpsellPlan(plan);
+    }
+  };
+
   const onUpgrade = async (method?: "upi") => {
     const key = method === "upi" ? "googlepay" : "razorpay";
     setSubmitting(key);
     setNotice(null);
+    trackSubscriptionEvent({ event: "checkout_started", plan: selected, source: "pricing" });
     const res = await checkoutRazorpay(selected, undefined, method);
-    if (res.ok) setVerifying(true);
     setSubmitting(null);
-    setVerifying(false);
-    if (!res.ok && !res.userCancelled) {
+    if (res.ok) {
+      setPaymentSuccess(true);
+      onPurchaseSuccess(selected);
+      trackSubscriptionEvent({ event: "purchase_success", plan: selected, source: "pricing" });
+    } else if (!res.userCancelled) {
+      trackSubscriptionEvent({ event: "purchase_failed", plan: selected, source: "pricing" });
       setNotice(res.reason ?? t("pricing.checkout_unavailable"));
     }
   };
@@ -128,6 +178,7 @@ export default function PricingPage() {
           const finalized = await finalizeNativePurchase(authFetch, qc);
           if (finalized.isPremium) {
             setPaymentSuccess(true);
+            onPurchaseSuccess(selected);
             toast({
               title: t("pricing.payment_success_title"),
               description: t("pricing.payment_success_body"),
@@ -141,11 +192,13 @@ export default function PricingPage() {
       const res = await nativeBilling.purchase(selected);
       if (res.ok) {
         setPaymentSuccess(true);
+        onPurchaseSuccess(selected);
         toast({
           title: t("pricing.payment_success_title"),
           description: t("pricing.payment_success_body"),
         });
       } else if (!res.userCancelled) {
+        trackSubscriptionEvent({ event: "purchase_failed", plan: selected, source: "pricing" });
         setNotice(res.reason ?? t("pricing.checkout_unavailable"));
       }
     } finally {
@@ -181,6 +234,20 @@ export default function PricingPage() {
 
   const isProcessing = submitting !== null || verifying || nativeBilling.purchasing;
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reason") === "hub_journey") {
+      setSelected("yearly");
+      trackHubJourneyAnnualSelected("pricing_page");
+      return;
+    }
+    const plan = params.get("plan");
+    if (plan === "yearly" || plan === "six_month" || plan === "monthly") {
+      setSelected(plan);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1A] via-[#1A0B2E] to-[#0B0B1A]"> {/* audit-ok: intentional dark brand gradient background */}
 
@@ -214,13 +281,13 @@ export default function PricingPage() {
           {/* audit-ok: white text on dark brand gradient */}
           {isHubJourneyReason && !isPremium
             ? t(journeyPricingHeader, { name: journeyChildName })
-            : t("pricing.title")}
+            : t("pricing.title", { defaultValue: SUBSCRIPTION_HERO.headline })}
         </h1>
         <p className="relative z-10 mx-auto max-w-md text-sm leading-relaxed text-white/65">
           {/* audit-ok: muted white on dark gradient */}
           {isHubJourneyReason && !isPremium
             ? t(journeyPricingSubtitle, { name: journeyChildName })
-            : t("pricing.subtitle")}
+            : t("pricing.subtitle", { defaultValue: SUBSCRIPTION_HERO.subheadline })}
         </p>
 
         {isHubJourneyReason && !isPremium && journeyProgress && (
@@ -274,27 +341,48 @@ export default function PricingPage() {
         )}
       </div>
 
+      <SubscriptionWinBackBanner entitlements={entitlements} />
+
+      <SubscriptionAnnualUpsell
+        entitlements={entitlements}
+        selected={selected}
+        onSelectAnnual={() => setSelected("yearly")}
+      />
+
       {/* ── Plan cards ── */}
       <div className="px-4 pb-4">
         {loading ? (
           <p className="py-8 text-center text-sm text-white/50">{t("pricing.loading_plans")}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-3">
-            {plans.map((p) => {
+          <>
+          <div className="mb-4">
+            <SubscriptionTrialOffer source="pricing_page" />
+          </div>
+
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3 sm:items-end">
+            {sortedPlans.map((p) => {
               const isSel = p.id === selected;
               const priceLabel = resolvePlanPriceLabel(p, nativeBilling.priceByPlan);
+              const annualHighlight = isAnnualHighlightedPlan(p.id);
+              const savings = annualSavingsLabel(p);
+              const equiv = annualPriceEquivalent(p);
               return (
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => setSelected(p.id)}
+                  onClick={() => {
+                    setSelected(p.id);
+                    trackPlanSelected(p.id, "pricing_page");
+                  }}
                   data-testid={`plan-card-${p.id}`}
                   data-on-dark
                   className={[
                     "relative w-full rounded-2xl border-2 p-4 text-left transition-all",
+                    annualHighlight ? "order-first sm:order-none sm:scale-[1.03]" : "",
                     isSel
                       ? "border-primary bg-primary/10 shadow-[0_8px_24px_rgba(255,78,205,0.35)]"
                       : "border-white/10 bg-white/5 hover:border-white/25",
+                    annualHighlight && !isSel ? "border-primary/30" : "",
                   ].join(" ")}
                 >
                   {p.badge && (
@@ -314,17 +402,25 @@ export default function PricingPage() {
                     </span>
                     <span className="text-sm font-bold text-white">{p.title}</span>
                   </div>
+                  {p.tagline && (
+                    <p className="mb-1 text-[11px] leading-snug text-white/55">{p.tagline}</p>
+                  )}
+                  {"valueAnchor" in p && p.valueAnchor && (
+                    <p className="mb-2 text-[10px] font-semibold text-primary/90">{p.valueAnchor}</p>
+                  )}
 
                   <div className="mb-1 flex items-baseline gap-1">
                     <span className="text-3xl font-black text-white">{priceLabel}</span>
                     <span className="text-xs text-white/50">/ {p.period}</span>
                   </div>
 
-                  {typeof p.savingsPercent === "number" && p.savingsPercent > 0 && (
-                    <div className="mb-3 text-xs font-extrabold text-primary">
-                      {/* audit-ok: primary color token on dark card */}
-                      {t("pricing.save_percent", { percent: p.savingsPercent })}
+                  {(savings || (typeof p.savingsPercent === "number" && p.savingsPercent > 0)) && (
+                    <div className="mb-1 text-xs font-extrabold text-primary">
+                      {savings ?? t("pricing.save_percent", { percent: p.savingsPercent })}
                     </div>
+                  )}
+                  {equiv && (
+                    <p className="mb-3 text-[10px] font-bold text-white/70">{equiv}</p>
                   )}
 
                   <ul className="mt-3 space-y-1.5">
@@ -345,14 +441,17 @@ export default function PricingPage() {
               );
             })}
           </div>
+          </>
         )}
       </div>
+
+      {!isPremium && <SubscriptionEcosystemSection />}
 
       {/* ── Notice ── */}
       {paymentSuccess && (
         <div className="mx-4 mb-4 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-center text-sm font-semibold text-green-300">
           <Check className="inline h-4 w-4 mr-1.5 -mt-0.5" />
-          {t("pricing.payment_success_title")}
+          {t("pricing.payment_success_title", { defaultValue: PURCHASE_SCREEN.successTitle })}
         </div>
       )}
       {notice && (
@@ -405,7 +504,9 @@ export default function PricingPage() {
                     </svg>
                     {/* audit-block-ignore-end */}
                     {/* audit-ok: white text on black Apple button */}
-                    <span className="text-sm font-bold text-white">{t("pricing.pay_with_apple")}</span>
+                    <span className="text-sm font-bold text-white">
+                      {t("pricing.pay_with_apple", { defaultValue: planCta(selected) })}
+                    </span>
                   </>
                 )}
               </button>
@@ -457,7 +558,7 @@ export default function PricingPage() {
                       <path d="M24 10L14.5 14L24 18L26 14L24 10Z" fill="#00AEFF" stroke="#00AEFF" strokeWidth="0.5"/>
                     </svg>
                     <span className="text-sm font-bold" style={{ color: "#202124" }}>
-                      {t("pricing.subscribe_google_play")}
+                      {t("pricing.subscribe_google_play", { defaultValue: planCta(selected) })}
                     </span>
                   </>
                 )}
@@ -581,7 +682,10 @@ export default function PricingPage() {
         {canCancelHere && (
           <Button
             variant="outline"
-            onClick={() => setShowConfirm(true)}
+            onClick={() => {
+              trackSubscriptionEvent({ event: "cancel_started", source: "pricing" });
+              setShowConfirm(true);
+            }}
             disabled={cancelling}
             data-testid="button-cancel-subscription"
             data-on-dark
@@ -634,11 +738,11 @@ export default function PricingPage() {
           </div>
         )}
 
-        {/* Trust line */}
+        {!isPremium && <SubscriptionTrustSection />}
+
         <div className="flex items-center justify-center gap-4 pt-2">
           <span className="flex items-center gap-1 text-xs text-white/35">
             <Shield className="h-3 w-3" />
-            {/* audit-ok: muted white on dark background — trust badge */}
             {t("pricing.cancel_anytime")}
           </span>
         </div>
@@ -684,8 +788,12 @@ export default function PricingPage() {
                 >
                   <Loader2 className="h-7 w-7 animate-spin text-white" /> {/* audit-ok: white spinner on gradient */}
                 </div>
-                <p className="text-base font-black text-white">{t("pricing.verifying_payment")}</p>
-                <p className="text-xs text-white/55">{t("patent_pending.loading_2")}</p>
+                <p className="text-base font-black text-white">
+                  {t("pricing.verifying_payment", { defaultValue: PURCHASE_SCREEN.verifyTitle })}
+                </p>
+                <p className="text-xs text-white/55">
+                  {t("pricing.verifying_subtitle", { defaultValue: PURCHASE_SCREEN.verifySubtitle })}
+                </p>
               </>
             ) : (
               <>
@@ -696,58 +804,35 @@ export default function PricingPage() {
                 >
                   <Loader2 className="h-7 w-7 animate-spin text-white" /> {/* audit-ok: white spinner on gradient */}
                 </div>
-                <p className="text-base font-black text-white">{t("pricing.processing_payment")}</p>
-                <p className="text-xs text-white/55">{t("patent_pending.trust_line")}</p>
+                <p className="text-base font-black text-white">
+                  {t("pricing.processing_payment", { defaultValue: PURCHASE_SCREEN.processingTitle })}
+                </p>
+                <p className="text-xs text-white/55">
+                  {t("pricing.processing_subtitle", { defaultValue: PURCHASE_SCREEN.processingSubtitle })}
+                </p>
               </>
             )}
           </div>
         </div>
       )}
 
-      {/* ── Cancel Confirmation Dialog ── */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
-            <button
-              onClick={() => setShowConfirm(false)}
-              className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <div className="flex flex-col items-center gap-3 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-                <AlertTriangle className="h-6 w-6 text-destructive" />
-              </div>
-              <h2 className="text-lg font-extrabold text-foreground">
-                {t("pages.pricing.cancel_subscription")}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {t("pages.pricing.you_ll_lose_access_to_all_premium_features")}
-                {/* Show real date only — never the sentinel 2100 date */}
-                {periodEnd
-                  ? ` on ${periodEnd}`
-                  : " at the end of your current billing period"} {/* i18n-ok: fallback with no date */}
-                {t("pages.pricing.this_action_cannot_be_undone")}
-              </p>
-              <div className="mt-2 flex w-full gap-3">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setShowConfirm(false)}
-                >
-                  {t("pages.pricing.keep_premium")}
-                </Button>
-                <Button
-                  onClick={onCancel}
-                  className="flex-1 bg-destructive text-white hover:bg-destructive/90"
-                  data-testid="button-confirm-cancel"
-                >
-                  {t("pages.pricing.yes_cancel")}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+      <SubscriptionCancelDialog
+        open={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        periodEnd={periodEnd}
+        cancelling={cancelling}
+        onSwitchToAnnual={() => {
+          setSelected("yearly");
+          void onUpgradeNativeStore();
+        }}
+        onConfirmCancel={() => void onCancel()}
+      />
+
+      {upsellPlan && (
+        <PostPurchaseUpsellModal
+          purchasedPlan={upsellPlan}
+          onDone={() => setUpsellPlan(null)}
+        />
       )}
     </div>
   );

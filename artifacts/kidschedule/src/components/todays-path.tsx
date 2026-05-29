@@ -8,6 +8,7 @@ import type { PathStep, PeekAheadItem, ChildProgressSnapshot } from "@workspace/
 import type { HubJourneyStatus } from "@/hooks/use-hub-journey";
 import { Day3InsightModal } from "@/components/day3-insight-modal";
 import { JourneyUnlockCta } from "@/components/journey-preview-overlay";
+import { openSubscriptionGate } from "@/lib/subscription-gate";
 import {
   buildDay3Insights,
   dayCompletionMessage,
@@ -316,7 +317,9 @@ export function TodaysPath({
           childName={childName}
           insights={day3Insights}
           isInfant={isInfant}
-          onContinue={() => setLocation("/pricing?reason=hub_journey")}
+          onContinue={() =>
+            openSubscriptionGate({ reason: "hub_journey", source: "todays_path" })
+          }
           onClose={() => setShowDay3Insight(false)}
         />
       )}

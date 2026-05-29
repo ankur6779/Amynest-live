@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { usePaywall } from "@/contexts/paywall-context";
+import { usePaywall, type PaywallReason } from "@/contexts/paywall-context";
 import { useSubscription } from "@/hooks/use-subscription";
+import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
 
 /**
  * Bridges global window events ("amynest:open-paywall",
@@ -16,8 +17,15 @@ export function SubscriptionEventBridge() {
   useEffect(() => {
     const onOpen = (e: Event) => {
       const detail = (e as CustomEvent).detail as { reason?: string } | undefined;
-      const reason = detail?.reason as Parameters<typeof openPaywall>[0];
-      openPaywall(reason ?? "feature");
+      const raw = detail?.reason ?? "feature";
+      const reason: PaywallReason =
+        raw === "learning_load_more" ? "learning_locked" : (raw as PaywallReason);
+      trackSubscriptionEvent({
+        event: "paywall_reason",
+        reason,
+        source: "event_bridge",
+      });
+      openPaywall(reason);
     };
     const onRefresh = () => {
       refresh();

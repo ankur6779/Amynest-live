@@ -319,6 +319,9 @@ importers:
       '@workspace/study-zone':
         specifier: workspace:*
         version: link:../../lib/study-zone
+      '@workspace/subscription-marketing':
+        specifier: workspace:*
+        version: link:../../lib/subscription-marketing
       bullmq:
         specifier: ^5.40.0
         version: 5.76.10
@@ -533,6 +536,9 @@ importers:
       '@workspace/study-zone':
         specifier: workspace:*
         version: link:../../lib/study-zone
+      '@workspace/subscription-marketing':
+        specifier: workspace:*
+        version: link:../../lib/subscription-marketing
       '@workspace/tiffin-feedback':
         specifier: workspace:*
         version: link:../../lib/tiffin-feedback
@@ -1373,6 +1379,8 @@ importers:
         version: link:../study-zone
 
   lib/study-zone: {}
+
+  lib/subscription-marketing: {}
 
   lib/tiffin-feedback: {}
 
