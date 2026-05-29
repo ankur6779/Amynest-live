@@ -1,17 +1,12 @@
 import { Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { setBaseUrl } from "@workspace/api-client-react";
 import App from "./App";
 import "./index.css";
 import "./i18n";
 import "./lib/notification-deep-link";
-import { initCapacitorPushTapHandling } from "./lib/native-push-bridge";
 import { renderCriticalFallbackHtml } from "@/components/app-fallback-ui";
 import { showProductionCrashOverlay } from "@/lib/production-crash-overlay";
-import { initNativeShell } from "./lib/native-shell";
-import { installNativeHardwareBackHandler } from "@/lib/navigation-orchestrator";
-import { getAppApiBaseOrigin } from "./lib/api";
 import {
   installGlobalErrorHandlers,
   logBootContext,
@@ -21,16 +16,10 @@ import {
   shouldAttemptAutoRecovery,
   tryAutoRecovery,
 } from "@/lib/auto-recovery";
-import {
-  clearCacheRecoveryPending,
-  runBootCacheRecoveryIfNeeded,
-} from "@/lib/boot-recovery";
-import { syncPwaCacheAndVersion } from "@/lib/pwa-cache-sync";
 import { patchBootDiagnostics } from "@/lib/boot-store";
 import { redirectApexToCanonicalWww } from "@/lib/canonical-domain";
 import { installStaticAudioGuards } from "@/lib/static-audio-guard";
 import {
-  checkStaticAudioHealthOnBoot,
   installStaticAudioDevTools,
 } from "@/lib/static-audio-telemetry";
 import { preloadSpeechSynthesisVoices } from "@/lib/emergency-audio";
@@ -43,6 +32,12 @@ import {
   initGlobalAudioWarmup,
   installGlobalAudioWarmupOnGesture,
 } from "@/lib/global-audio-warmup";
+import {
+  initStartupOrchestrator,
+  markReactRendered,
+  trackStartupEvent,
+} from "@/lib/startup-orchestrator";
+import { schedulePostRenderStartup } from "@/lib/startup-background";
 
 declare global {
   interface Window {
@@ -80,6 +75,7 @@ window.addEventListener("unhandledrejection", (e) => {
 /** Single app-wide React Query client — must wrap all useQuery / useMutation hooks. */
 const queryClient = new QueryClient();
 
+/* Sync guards only — must not await network, cache, Firebase, or AppCore. */
 installViteChunkRecovery();
 installGlobalErrorHandlers();
 installStaticAudioGuards();
@@ -90,7 +86,6 @@ injectStaticAudioPreloadHints();
 initGlobalAudioWarmup();
 preloadSpeechSynthesisVoices();
 installAmyVoiceAudioDiagnostics();
-void checkStaticAudioHealthOnBoot();
 logBootContext();
 
 if (import.meta.env.DEV) {
@@ -108,21 +103,14 @@ const mark = (p: string) => {
   }
 };
 
-async function bootstrap(): Promise<void> {
+/**
+ * Phase 1: mount React immediately.
+ * Phase 3+4: background (cache, PWA, native, optional services).
+ */
+function bootstrap(): void {
+  initStartupOrchestrator();
+
   try {
-    if (typeof window !== "undefined") {
-      await runBootCacheRecoveryIfNeeded();
-      patchBootDiagnostics({ hostname: window.location.hostname });
-      // Block mount until deploy-version sync finishes — prevents stale lazy chunks after release.
-      await syncPwaCacheAndVersion();
-      initNativeShell();
-      installNativeHardwareBackHandler();
-      void initCapacitorPushTapHandling();
-
-      const apiOrigin = getAppApiBaseOrigin();
-      if (apiOrigin) setBaseUrl(apiOrigin);
-    }
-
     mark("bundle-loaded");
 
     const rootEl = document.getElementById("root");
@@ -137,11 +125,20 @@ async function bootstrap(): Promise<void> {
         </Suspense>
       </QueryClientProvider>,
     );
+
     mark("react-rendered");
-    clearCacheRecoveryPending();
+    markReactRendered();
+    patchBootDiagnostics({ hostname: window.location.hostname });
+
+    /* Never await — failures must not block the shell. */
+    schedulePostRenderStartup();
   } catch (err) {
     console.error("[amynest:bootstrap] Failed to start app", err);
     mark("bootstrap-failed");
+    trackStartupEvent("boot_timeout", {
+      stage: "phase1_mount",
+      message: err instanceof Error ? err.message : String(err),
+    });
     showProductionCrashOverlay(
       err instanceof Error
         ? { kind: "bootstrap", message: err.message, stack: err.stack }
@@ -233,6 +230,6 @@ function startSplashDismissal(): void {
   });
 }
 
-void bootstrap();
+bootstrap();
 
 }

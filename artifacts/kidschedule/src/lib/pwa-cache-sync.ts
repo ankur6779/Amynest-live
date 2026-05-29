@@ -1,58 +1,77 @@
 import { forceClearAllCaches } from "@/lib/force-clear-caches";
 import { getDeployVersion } from "@/lib/pwa-version";
+import {
+  markCacheSyncComplete,
+  markDeployReloadScheduled,
+  trackStartupEvent,
+  waitWithTimeout,
+} from "@/lib/startup-orchestrator";
 
 const VERSION_KEY = "amynest:deploy-version";
+const CACHE_SYNC_TIMEOUT_MS = 10_000;
 
-/** Wait for AppCore mount so deploy reload does not look like a post-splash crash. */
-function waitForAppCoreReady(maxMs = 20_000): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  const win = window as Window & { __amynestAppCoreReady?: boolean };
-  if (win.__amynestAppCoreReady) return Promise.resolve();
+export type DeployVersionCheck = {
+  mismatch: boolean;
+  previous: string | null;
+  current: string | null;
+};
 
-  return new Promise((resolve) => {
-    const started = Date.now();
-    const tick = () => {
-      if (win.__amynestAppCoreReady || Date.now() - started >= maxMs) {
-        clearInterval(id);
-        resolve();
-      }
-    };
-    const id = setInterval(tick, 120);
-    tick();
-  });
+/** Synchronous read — safe before React mount. */
+export function checkDeployVersionMismatch(): DeployVersionCheck {
+  if (typeof window === "undefined") {
+    return { mismatch: false, previous: null, current: null };
+  }
+  const current = getDeployVersion();
+  let previous: string | null = null;
+  try {
+    previous = sessionStorage.getItem(VERSION_KEY);
+  } catch {
+    /* ignore */
+  }
+  const mismatch = Boolean(previous && current && previous !== current);
+  return { mismatch, previous, current };
 }
 
 /**
- * Track deploy meta changes and reload once when the shell version changes.
+ * Phase 3 background task — never blocks React mount.
+ * RULE: never wait for AppCore.
  */
-export async function syncPwaCacheAndVersion(): Promise<void> {
+export async function runPwaCacheSyncBackground(): Promise<void> {
   if (typeof window === "undefined") return;
 
   const deployMeta = getDeployVersion();
+  const { mismatch, previous, current } = checkDeployVersionMismatch();
 
   try {
-    const previous = sessionStorage.getItem(VERSION_KEY);
-    if (previous && deployMeta && previous !== deployMeta) {
-      console.info("[amynest:pwa] Deploy version changed — clearing caches and reloading", {
+    if (mismatch && previous && current) {
+      console.info("[amynest:pwa] Deploy version changed — scheduling cache purge + reload", {
         from: previous,
-        to: deployMeta,
+        to: current,
       });
-      sessionStorage.setItem(VERSION_KEY, deployMeta);
+      markDeployReloadScheduled(previous, current);
+      sessionStorage.setItem(VERSION_KEY, current);
       try {
-        sessionStorage.setItem("amynest:deploy-reload-done", deployMeta);
+        sessionStorage.setItem("amynest:deploy-reload-done", current);
       } catch {
         /* ignore */
       }
-      // Cold boot: bootstrap awaits this before React mounts — never block on AppCore
-      // (would deadlock and trigger index.html boot-timeout at 14s).
-      const win = window as Window & { __amynestAppCoreReady?: boolean };
-      if (win.__amynestAppCoreReady) {
-        await waitForAppCoreReady();
-      }
-      await forceClearAllCaches();
+
+      await waitWithTimeout({
+        label: "pwa_cache_clear",
+        waitingFor: "cache_storage",
+        timeoutMs: CACHE_SYNC_TIMEOUT_MS,
+        fn: () => forceClearAllCaches(),
+        fallback: undefined,
+        onTimeout: () => {
+          trackStartupEvent("startup_timeout", { task: "pwa_cache_clear" });
+        },
+      });
+
+      markCacheSyncComplete(null);
       window.location.reload();
       return;
     }
+
     try {
       if (
         deployMeta &&
@@ -64,7 +83,14 @@ export async function syncPwaCacheAndVersion(): Promise<void> {
       /* ignore */
     }
     if (deployMeta) sessionStorage.setItem(VERSION_KEY, deployMeta);
-  } catch {
-    /* ignore */
+    markCacheSyncComplete(null);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err ?? "pwa_sync");
+    markCacheSyncComplete(message);
   }
+}
+
+/** @deprecated Use runPwaCacheSyncBackground — must not be awaited before React mount. */
+export async function syncPwaCacheAndVersion(): Promise<void> {
+  await runPwaCacheSyncBackground();
 }

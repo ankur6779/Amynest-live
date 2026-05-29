@@ -418,7 +418,14 @@
           }
           text += "── CURRENT BOOT ──\n";
           text += JSON.stringify(current, null, 2) + "\n\n";
-          text += "── PREVIOUS BOOT (page load start) ──\n";
+          var startupState = null;
+          try {
+            startupState = window.__amynestStartupState ||
+              JSON.parse(localStorage.getItem("__amynest_startup_v1") || "null");
+          } catch (_ss) {}
+          text += "── STARTUP TIMELINE (__amynestStartupState) ──\n";
+          text += startupState ? JSON.stringify(startupState, null, 2) : "(not available — bundle not loaded yet)\n";
+          text += "\n\n── PREVIOUS BOOT (page load start) ──\n";
           text += prev ? JSON.stringify(prev, null, 2) : "(none)";
           if (recent && recent.length) {
             text += "\n\n── RECENT ERRORS (this session) ──\n";
@@ -428,20 +435,57 @@
         };
 
         if (!diagForced) {
-          setTimeout(function () {
+          function __amynestRunBootWatchdog() {
             try {
               var r = window.__amynestDiag && window.__amynestDiag();
-              if (!r || !r.phases || r.phases.indexOf("react-rendered") === -1) {
-                if (window.__amynestTryAutoRecovery &&
-                    window.__amynestTryAutoRecovery("boot-timeout", "App did not finish loading")) {
-                  return;
-                }
-                window.__amynestShowBootFailed(
-                  "The app did not finish loading (no react-rendered). Check your connection and reload.",
-                );
+              var phases = r && r.phases ? r.phases : [];
+              var startup = window.__amynestStartupState;
+
+              if (phases.indexOf("react-rendered") !== -1) return;
+              if (startup && startup.reactRendered) return;
+
+              var hasBundle = phases.indexOf("bundle-loaded") !== -1;
+              var recentProgress =
+                startup &&
+                startup.lastProgressAt &&
+                Date.now() - startup.lastProgressAt < 6000;
+
+              if ((hasBundle || recentProgress) && !window.__amynestBootWatchdogExtended) {
+                window.__amynestBootWatchdogExtended = true;
+                setTimeout(__amynestRunBootWatchdog, 16000);
+                return;
               }
+
+              var rootMeta = null;
+              if (window.__amynestInferBootTimeoutRootCause) {
+                try { rootMeta = window.__amynestInferBootTimeoutRootCause(); } catch (_rc) {}
+              }
+
+              if (window.__amynestTryAutoRecovery &&
+                  window.__amynestTryAutoRecovery("boot-timeout", "App did not finish loading")) {
+                return;
+              }
+
+              var msg =
+                "The app did not finish loading (no react-rendered). Check your connection and reload.";
+              if (rootMeta && rootMeta.rootCause) {
+                msg += " Root cause: " + rootMeta.rootCause + ".";
+              }
+              if (window.__amynestShowCrashOverlay) {
+                window.__amynestShowCrashOverlay({
+                  kind: "boot-timeout",
+                  message: msg,
+                  rootCause: rootMeta && rootMeta.rootCause,
+                  recoveryPath: rootMeta && rootMeta.recoveryPath,
+                  phases: phases,
+                  startup: startup,
+                });
+                return;
+              }
+              window.__amynestShowBootFailed(msg);
             } catch (_e4) {}
-          }, 14000);
+          }
+          setTimeout(__amynestRunBootWatchdog, 14000);
         }
         window.__amynestDiag = function () {
           try { return JSON.parse(localStorage.getItem(KEY) || "null"); }

@@ -194,7 +194,7 @@ function listenForServiceWorkerUpdates(
         navigator.serviceWorker.controller
       ) {
         // Do not auto-reload here — mid-boot reloads on Android PWA look like a crash.
-        // Deploy bumps are handled in syncPwaCacheAndVersion (main.tsx).
+        // Deploy bumps are handled in runPwaCacheSyncBackground (startup-background.ts).
         navigator.serviceWorker.addEventListener(
           "controllerchange",
           () => {

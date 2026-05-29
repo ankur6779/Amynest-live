@@ -58,6 +58,7 @@ import { NavigationOrchestratorBridge } from "@/components/navigation-orchestrat
 import { isCapacitorIosShell } from "@/lib/device-lite";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { devLog } from "@/lib/dev-log";
+import { markAppCoreReady } from "@/lib/startup-orchestrator";
 import { initCapacitorOta } from "@/lib/capacitor-ota";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
@@ -633,7 +634,7 @@ function AppCoreMountMarker() {
     void import("@/lib/admin-audio-ops").then(({ startAdminAudioOpsPolling }) => {
       startAdminAudioOpsPolling();
     });
-    try { (window as Window & { __amynestAppCoreReady?: boolean }).__amynestAppCoreReady = true; } catch (_e) { /* best-effort */ }
+    markAppCoreReady();
     bootMark("appcore-mounted");
   }, []);
   return null;
