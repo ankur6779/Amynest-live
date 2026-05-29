@@ -8,6 +8,12 @@ import {
 } from "@workspace/db";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { HUB_CONTENT_QUOTAS } from "@workspace/parent-hub-journey";
+import {
+  hasValidPaidPeriodEnd,
+  isPremiumNow,
+} from "./subscription-premium-gate.js";
+
+export { hasValidPaidPeriodEnd, isPremiumNow } from "./subscription-premium-gate.js";
 
 // Drizzle's transaction object exposes the same query API as `db`, so the
 // service helpers below accept either. We type it loosely to avoid leaking
@@ -204,22 +210,6 @@ export async function getFirstChildId(userId: string): Promise<number | null> {
   return rows[0]?.id ?? null;
 }
 
-export function isPremiumNow(s: Subscription): boolean {
-  // Referral bonus time grants premium independently of the paid status.
-  if (s.bonusExpiresAt && s.bonusExpiresAt.getTime() > Date.now()) return true;
-  if (s.status === "active") return true;
-  if (s.status === "trialing" && s.trialEndsAt && s.trialEndsAt.getTime() > Date.now()) return true;
-  // Cancelled / past_due subscriptions retain premium until the paid period ends.
-  if (
-    (s.status === "canceled" || s.status === "past_due") &&
-    s.currentPeriodEnd &&
-    s.currentPeriodEnd.getTime() > Date.now()
-  ) {
-    return true;
-  }
-  return false;
-}
-
 /**
  * Extends the user's bonus premium expiry by `days`. The bonus expiry is
  * tracked separately from the paid currentPeriodEnd so a paid renewal webhook
@@ -294,9 +284,51 @@ export async function incrementAiUsage(userId: string, by = 1): Promise<number> 
   return incrementFeatureUsage(userId, "ai_query", by);
 }
 
+/**
+ * Downgrade DB rows that say active/trialing but fail isPremiumNow (e.g. missing
+ * or expired currentPeriodEnd). Runs on every entitlement read so bad state self-heals.
+ */
+export async function healStaleSubscriptionRecord(
+  sub: Subscription,
+  dbExec: DbExec = db,
+): Promise<Subscription> {
+  if (isPremiumNow(sub)) return sub;
+  if (sub.status === "free") return sub;
+
+  if (sub.provider === "manual" && sub.status === "active" && !hasValidPaidPeriodEnd(sub)) {
+    const farFuture = new Date("2099-12-31T23:59:59.000Z");
+    const [fixed] = await dbExec
+      .update(subscriptionsTable)
+      .set({ currentPeriodEnd: farFuture, updatedAt: new Date() })
+      .where(eq(subscriptionsTable.userId, sub.userId))
+      .returning();
+    return fixed[0] ?? sub;
+  }
+
+  if (!["revenuecat", "razorpay", "none"].includes(sub.provider ?? "none")) {
+    return sub;
+  }
+
+  const [updated] = await dbExec
+    .update(subscriptionsTable)
+    .set({
+      status: "free",
+      plan: "free",
+      provider: "none",
+      trialEndsAt: null,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: 0,
+      updatedAt: new Date(),
+    })
+    .where(eq(subscriptionsTable.userId, sub.userId))
+    .returning();
+  return updated[0] ?? sub;
+}
+
 export async function getEntitlements(userId: string): Promise<EntitlementSummary> {
   const featureKeys = Object.keys(FREE_FEATURE_LIMITS) as FeatureKey[];
-  const sub = await getOrCreateSubscription(userId);
+  let sub = await getOrCreateSubscription(userId);
+  sub = await healStaleSubscriptionRecord(sub);
   const isPremium = isPremiumNow(sub);
   const isTrialing = sub.status === "trialing" && !!sub.trialEndsAt && sub.trialEndsAt.getTime() > Date.now();
 
@@ -517,12 +549,27 @@ export async function activateSubscription(
     }
     return existing;
   }
+  const provider = opts.provider ?? "none";
+  // Paid providers must include a future period end — prevents permanent premium
+  // when webhooks/sync omit expiration_at_ms or expires_date.
+  if (
+    (provider === "revenuecat" || provider === "razorpay") &&
+    (!opts.periodEnd || opts.periodEnd.getTime() <= Date.now())
+  ) {
+    const { logger } = await import("../lib/logger.js");
+    logger.warn(
+      { userId, plan, provider, periodEnd: opts.periodEnd?.toISOString() ?? null },
+      "[subscription] refused activateSubscription without valid periodEnd",
+    );
+    return existing;
+  }
+
   const [updated] = await dbExec
     .update(subscriptionsTable)
     .set({
       plan,
       status: "active",
-      provider: opts.provider ?? "none",
+      provider,
       providerCustomerId: opts.providerCustomerId ?? null,
       providerSubscriptionId: opts.providerSubscriptionId ?? null,
       currentPeriodEnd: opts.periodEnd ?? null,

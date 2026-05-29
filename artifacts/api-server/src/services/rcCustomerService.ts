@@ -39,7 +39,8 @@ function productIdToPlan(productId: string | undefined | null): Exclude<Plan, "f
 function isEntitlementActive(ent: RcEntitlement | undefined): boolean {
   if (!ent) return false;
   const expires = ent.expires_date ?? ent.grace_period_expires_date;
-  if (!expires) return true;
+  // Missing expiry must not grant premium — sync requires a bounded period end.
+  if (!expires) return false;
   return new Date(expires).getTime() > Date.now();
 }
 
@@ -103,7 +104,7 @@ export async function syncRevenueCatSubscription(userId: string): Promise<{
         { productId: activeEnt.product_identifier, userId },
         "[rcSync] active entitlement with unknown product",
       );
-      return { synced: false, isPremium: true, reason: "unknown_product" };
+      return { synced: false, isPremium: false, reason: "unknown_product" };
     }
 
     const expiresRaw = activeEnt.expires_date ?? activeEnt.grace_period_expires_date;
