@@ -1,9 +1,8 @@
 import { readFileSync, existsSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
 import { resolve } from "node:path";
-import { getGcsBucketId } from "../lib/env.js";
 import { logger } from "../lib/logger.js";
-import { legacyGcsConfigured, getGcsClient } from "./ttsAudioStore.js";
+import { legacyGcsConfigured, readGcsObjectBytes } from "./ttsAudioStore.js";
 import type {
   ContentBankCategory,
   ContentBankManifest,
@@ -55,13 +54,6 @@ function readLocalJson(relativePath: string): unknown {
   throw new Error(`content_bank_local_missing:${relativePath}`);
 }
 
-async function downloadGcsBytes(objectPath: string): Promise<Buffer> {
-  const bucketId = getGcsBucketId();
-  if (!bucketId) throw new Error("DEFAULT_OBJECT_STORAGE_BUCKET_ID not set");
-  const [buf] = await getGcsClient().bucket(bucketId).file(objectPath).download();
-  return buf;
-}
-
 async function readShard(relativePath: string): Promise<unknown> {
   const preferGz = !relativePath.endsWith(".gz");
   const gcsCandidates = preferGz
@@ -71,7 +63,8 @@ async function readShard(relativePath: string): Promise<unknown> {
   if (legacyGcsConfigured()) {
     for (const objectPath of gcsCandidates) {
       try {
-        const buf = await downloadGcsBytes(objectPath);
+        const buf = await readGcsObjectBytes(objectPath);
+        if (!buf) continue;
         if (objectPath.endsWith(".gz")) {
           return JSON.parse(gunzipSync(buf).toString("utf8"));
         }
