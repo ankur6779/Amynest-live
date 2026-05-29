@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
+import { markAppShellReady } from "@/lib/startup-orchestrator";
 import { devLog } from "@/lib/dev-log";
 import { initAudioUnlock } from "@/lib/tts-guard";
 import { AuthBootShell } from "@/components/auth-boot-shell";
@@ -39,6 +40,7 @@ declare global {
 function App() {
   useEffect(() => {
     devLog("APP MOUNTED");
+    markAppShellReady();
     initAudioUnlock();
   }, []);
 
