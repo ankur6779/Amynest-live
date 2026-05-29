@@ -1,0 +1,40 @@
+---
+description: Speech Coach engine freeze — frozen infrastructure; extend, do not rewrite
+alwaysApply: true
+---
+
+# Speech Coach engine freeze (mandatory)
+
+Full protocol: `docs/speech-coach-engine-freeze.md`
+
+## Frozen infrastructure (single owner each)
+
+| Concern | Owner module |
+|---------|----------------|
+| Audio playback | `amy-voice-controller.ts` + `useAmyVoice()` |
+| Microphone | `microphone-session-manager.ts` + `useSpeechRecognition()` |
+| Dialogue | `lib/speech-coach/src/coach-dialogue.ts` |
+| Memory | `lib/speech-coach/src/coach-memory.ts` |
+| Learning journey | `lib/speech-coach/src/coach-journey.ts` |
+| Audio warmup | `global-audio-warmup.ts` |
+| Phonics playback | `phonics-player.ts` |
+
+## Do NOT
+
+- Rewrite architecture or replace ownership models
+- Add alternate playback paths or duplicate session managers
+- Call `new Audio()`, `audio.play()`, `MediaRecorder`, `getUserMedia`, `speechSynthesis`, or `AudioContext` from feature/UI code
+- Put dialogue templates (`AMY_REPLIES`, scoring logic) in `pages/speech-coach/` — use `@workspace/speech-coach`
+- Change mic/playback lifecycle, retry architecture, or session coordination from features
+
+## DO
+
+- Consume engine APIs from UI (`useAmyVoice`, `useSpeechRecognition`, `evaluateCoachResponse`, `mergeCoachJourneySnapshot`)
+- Add coaching phrases, celebrations, dashboards, analytics **above** the engine
+- Run `pnpm run check:speech-coach-engines` before merging PRs that touch these areas
+
+## Core engine changes
+
+Require in PR: root cause, reproduction, why extension fails, risk assessment, regression test. See `docs/speech-coach-engine-freeze.md`.
+
+Also follow: `.cursor/rules/amy-voice-ownership.mdc`

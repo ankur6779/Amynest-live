@@ -38,3 +38,11 @@ DATABASE_URL=postgresql://amynest:amynest@localhost:5432/amynest_dev pnpm db:pus
 - `abacus.test.ts` and `speech.test.ts` use `--experimental-test-module-mocks` which has issues on Node 20 (tests cancelled by parent). This is a known Node compatibility issue.
 - 3 kidschedule vitest files (`hub-support-utils`, `routine-timeline-ui`, `safe-import`) fail with Vite module resolution errors (0 test assertions fail). These are import setup issues, not test logic failures.
 - The full `pnpm run typecheck` may show pre-existing errors in `lib/content-orchestration` and `lib/phonics-curriculum`. The lib-level typecheck (`pnpm run typecheck:libs`) and scripts typecheck pass clean.
+
+### Speech Coach engine freeze
+
+Core Speech Coach infrastructure (audio playback, microphone session, dialogue, memory, learning journey, audio warmup, phonics playback) is **frozen**. See `docs/speech-coach-engine-freeze.md` and `.cursor/rules/speech-coach-engine-freeze.mdc`.
+
+- **Regression gate:** `pnpm run check:speech-coach-engines` (required before merging PRs that touch these engines)
+- **Extend, don't rewrite:** UI consumes `useAmyVoice`, `useSpeechRecognition`, and `@workspace/speech-coach` APIs
+- **Core engine changes** require root cause, reproduction, justification, risk assessment, and a regression test in the PR description
