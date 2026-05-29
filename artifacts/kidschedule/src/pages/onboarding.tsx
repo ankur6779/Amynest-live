@@ -1,8 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
-import { OnboardingChatShell } from "@/components/onboarding-chat-shell";
+import { ChatThreadShell } from "@/components/chat-thread-shell";
+import { ChatAmyBubble, ChatTypingBubble, ChatUserBubble } from "@/components/chat-bubbles";
+import {
+  chatMessage,
+  type ChatMessage,
+  type OnboardingStep,
+} from "@/lib/onboarding-chat-types";
+import {
+  clearOnboardingChatSession,
+  loadOnboardingChatSession,
+  saveOnboardingChatSession,
+} from "@/lib/onboarding-chat-session";
 import { ChildDobPicker } from "@/components/child-dob-picker";
 import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { useQueryClient } from "@tanstack/react-query";
@@ -74,11 +85,6 @@ type LocationDetectionState =
   | { status: "fallback" }
   | { status: "denied" }
 
-interface ChatMessage {
-  role: "amy" | "user";
-  text: string;
-}
-
 type ParentGoalCode =
   | "improve_sleep"
   | "reduce_tantrums"
@@ -86,19 +92,32 @@ type ParentGoalCode =
   | "reduce_screen_time"
   | "increase_independence";
 
-type Step =
-  | "intro"
-  | "country-confirm"
-  | "child-name" | "child-dob"
-  | "infant-feeding" | "infant-sleep"               // infant path (age < 2)
-  | "child-school" | "child-class"                  // standard path (age >= 2)
-  | "child-school-start" | "child-school-end" | "child-school-days"
-  | "child-wake" | "child-sleep"
-  | "add-more"
-  | "parent-name" | "parent-role" | "parent-work"
-  | "parent-region" | "parent-diet" | "parent-goals"
-  | "parent-mobile" | "parent-allergies"
-  | "saving" | "done" | "notifications";
+type Step = OnboardingStep;
+
+const ONBOARDING_CHAT_STEPS = new Set<Step>([
+  "intro",
+  "country-confirm",
+  "child-name",
+  "child-dob",
+  "infant-feeding",
+  "infant-sleep",
+  "child-school",
+  "child-class",
+  "child-school-start",
+  "child-school-end",
+  "child-school-days",
+  "child-wake",
+  "child-sleep",
+  "add-more",
+  "parent-name",
+  "parent-role",
+  "parent-work",
+  "parent-region",
+  "parent-diet",
+  "parent-goals",
+  "parent-mobile",
+  "parent-allergies",
+]);
 
 const ONBOARDING_TEXT_INPUT_STEPS = new Set<Step>([
   "country-confirm",
@@ -408,53 +427,6 @@ function AmyAvatar({ size = 8 }: { size?: number }) {
   return <AmyMascotLogo size={size * 4} />;
 }
 
-function TypingBubble() {
-  return (
-    <div className="flex gap-2 items-end">
-      <AmyAvatar size={8} />
-      <div
-        className="px-4 py-3 rounded-2xl rounded-bl-sm flex gap-1 items-center"
-        style={{ background: GLASS_BG, backdropFilter: "blur(12px)", border: GLASS_BORDER }}
-      >
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="w-2 h-2 rounded-full inline-block"
-            style={{ background: "hsl(var(--brand-indigo-500))", animation: `typing-dot 1.2s ease-in-out ${i * 0.2}s infinite` }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function AmyBubble({ text }: { text: string }) {
-  return (
-    <div className="flex gap-2 items-end" style={{ animation: "chat-pop 0.3s ease-out" }}>
-      <AmyAvatar size={8} />
-      <div
-        className="max-w-xs px-4 py-3 rounded-2xl rounded-bl-sm text-sm leading-relaxed"
-        style={{ background: GLASS_BG, backdropFilter: "blur(12px)", border: GLASS_BORDER, color: "#fff" }}
-      >
-        {text}
-      </div>
-    </div>
-  );
-}
-
-function UserBubble({ text }: { text: string }) {
-  return (
-    <div className="flex justify-end" style={{ animation: "chat-pop 0.25s ease-out" }}>
-      <div
-        className="max-w-xs px-4 py-3 rounded-2xl rounded-br-sm text-sm text-primary-foreground leading-relaxed"
-        style={{ background: GRAD }}
-      >
-        {text}
-      </div>
-    </div>
-  );
-}
-
 function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
   return (
     <button
@@ -608,11 +580,21 @@ export default function OnboardingPage() {
     }
   };
 
-  const [step, setStep] = useState<Step>("intro");
+  const restoredSession = loadOnboardingChatSession();
+  const [sessionRestored] = useState(
+    () => Boolean(restoredSession?.messages?.length && restoredSession.step !== "intro"),
+  );
+
+  const [step, setStep] = useState<Step>(() => restoredSession?.step ?? "intro");
   const [notifLoading, setNotifLoading] = useState(false);
   const [typing, setTyping] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [textInput, setTextInput] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>(() =>
+    (restoredSession?.messages ?? []).map((m, i) => ({
+      ...m,
+      id: m.id ?? `legacy-${i}-${m.role}`,
+    })),
+  );
+  const [textInput, setTextInput] = useState(() => restoredSession?.textInput ?? "");
   const [selected, setSelected] = useState("");
   const [dobInput, setDobInput] = useState("");
   const [regionDrillDown, setRegionDrillDown] = useState(false);
@@ -622,8 +604,8 @@ export default function OnboardingPage() {
   const [allergyChips, setAllergyChips] = useState<string[]>([]);
   const [allergyOtherOpen, setAllergyOtherOpen] = useState(false);
   const [allergyOtherText, setAllergyOtherText] = useState("");
-  const [countryCode, setCountryCode] = useState("");
-  const [countryName, setCountryName] = useState("");
+  const [countryCode, setCountryCode] = useState(() => restoredSession?.countryCode ?? "");
+  const [countryName, setCountryName] = useState(() => restoredSession?.countryName ?? "");
   const [locationState, setLocationState] = useState<LocationDetectionState>({ status: "idle" });
   const [detectedCoords, setDetectedCoords] = useState<GeoCoords | null>(null);
   const [locationSource, setLocationSource] = useState<LocationSource | null>(null);
@@ -632,28 +614,53 @@ export default function OnboardingPage() {
   const [countrySearch, setCountrySearch] = useState("");
   const [locationRequesting, setLocationRequesting] = useState(false);
 
-  const [children, setChildren] = useState<ChildData[]>([]);
-  const [curr, setCurr] = useState<Partial<ChildData>>({});
-  const [parent, setParent] = useState<Partial<ParentData>>({});
+  const [children, setChildren] = useState<ChildData[]>(
+    () => (restoredSession?.children as ChildData[] | undefined) ?? [],
+  );
+  const [curr, setCurr] = useState<Partial<ChildData>>(
+    () => (restoredSession?.curr as Partial<ChildData> | undefined) ?? {},
+  );
+  const [parent, setParent] = useState<Partial<ParentData>>(
+    () => (restoredSession?.parent as Partial<ParentData> | undefined) ?? {},
+  );
+
+  const pendingTimersRef = useRef<number[]>([]);
+
+  const scheduleOnboardingTimeout = useCallback((fn: () => void, delayMs: number) => {
+    const id = window.setTimeout(() => {
+      pendingTimersRef.current = pendingTimersRef.current.filter((t) => t !== id);
+      fn();
+    }, delayMs);
+    pendingTimersRef.current.push(id);
+    return id;
+  }, []);
+
+  useEffect(
+    () => () => {
+      pendingTimersRef.current.forEach((id) => window.clearTimeout(id));
+      pendingTimersRef.current = [];
+    },
+    [],
+  );
 
   // Amy sends a message after a typing delay
   function amySays(text: string, delay = 700) {
     setTyping(true);
-    setTimeout(() => {
+    scheduleOnboardingTimeout(() => {
       setTyping(false);
-      setMessages((m) => [...m, { role: "amy", text }]);
+      setMessages((m) => [...m, chatMessage("amy", text)]);
     }, delay);
   }
 
   // User replies, adds to history, then advances
   function userReplies(text: string, nextStep: Step, nextAmyMsg?: string, delay = 900) {
-    setMessages((m) => [...m, { role: "user", text }]);
+    setMessages((m) => [...m, chatMessage("user", text)]);
     setSelected("");
     setTextInput("");
     if (nextAmyMsg) {
-      setTimeout(() => amySays(nextAmyMsg, delay), 300);
+      scheduleOnboardingTimeout(() => amySays(nextAmyMsg, delay), 300);
     }
-    setTimeout(() => {
+    scheduleOnboardingTimeout(() => {
       setStep(nextStep);
     }, nextAmyMsg ? delay + 700 : 400);
   }
@@ -679,23 +686,43 @@ export default function OnboardingPage() {
       ? t("screens.onboarding.no_allergies_reply")
       : formatAllergySummary(allergyChips, allergyOtherText);
     userReplies(summary, "saving");
-    setTimeout(() => saveEverything(allergiesStr), 800);
+    scheduleOnboardingTimeout(() => saveEverything(allergiesStr), 800);
   }
 
-  // Boot: Amy intro
+  // Persist chat transcript + step for resume after app restart (debounced).
   useEffect(() => {
-    if (step === "intro") {
-      const firstName = user?.firstName || t("screens.onboarding.intro_default_name");
-      setTimeout(() => {
-        setMessages([{
-          role: "amy",
-          text: t("screens.onboarding.intro_greeting", { name: firstName }),
-        }]);
-        setTimeout(() => amySays(t("screens.onboarding.country_transition_msg"), 800), 900);
-        setTimeout(() => setStep("country-confirm"), 2600);
-      }, 600);
-    }
-  }, []);
+    if (!ONBOARDING_CHAT_STEPS.has(step)) return;
+    const persistTimer = window.setTimeout(() => {
+      saveOnboardingChatSession({
+        messages,
+        step,
+        textInput,
+        countryCode,
+        countryName,
+        curr: curr as Record<string, unknown>,
+        parent: parent as Record<string, unknown>,
+        children: children as unknown as Record<string, unknown>[],
+      });
+    }, 400);
+    return () => window.clearTimeout(persistTimer);
+  }, [messages, step, textInput, countryCode, countryName, curr, parent, children]);
+
+  // Boot: Amy intro (skip when restoring a saved session)
+  useEffect(() => {
+    if (sessionRestored) return;
+    if (step !== "intro") return;
+    const firstName = user?.firstName || t("screens.onboarding.intro_default_name");
+    scheduleOnboardingTimeout(() => {
+      setMessages([
+        chatMessage("amy", t("screens.onboarding.intro_greeting", { name: firstName })),
+      ]);
+      scheduleOnboardingTimeout(
+        () => amySays(t("screens.onboarding.country_transition_msg"), 800),
+        900,
+      );
+      scheduleOnboardingTimeout(() => setStep("country-confirm"), 2600);
+    }, 600);
+  }, [scheduleOnboardingTimeout, sessionRestored, step, t, user?.firstName]);
 
   // Dismiss a lingering keyboard when moving to chip/button-only steps (Android WebView).
   useEffect(() => {
@@ -709,7 +736,7 @@ export default function OnboardingPage() {
   // ─── Save & finish ──────────────────────────────────────────────────────────
   async function saveEverything(allergiesOverride?: string) {
     setStep("saving");
-    setMessages((m) => [...m, { role: "amy", text: t("screens.onboarding.saving_message") }]);
+    setMessages((m) => [...m, chatMessage("amy", t("screens.onboarding.saving_message"))]);
 
     const dietType = selectedDietType || "vegetarian";
     const foodType = deriveFoodTypeFromDiet(dietType);
@@ -830,6 +857,7 @@ export default function OnboardingPage() {
     // Always mark complete locally — regardless of any individual API failure.
     // AppCore also uses this cache entry so the redirect guard sees it immediately.
     localStorage.setItem("onboardingComplete", "true");
+    clearOnboardingChatSession();
     const completeStatus = { onboardingComplete: true, profileComplete: true };
     queryClient.setQueryData(["onboarding-status"], completeStatus);
     persistOnboardingCache(completeStatus);
@@ -840,7 +868,7 @@ export default function OnboardingPage() {
       isSignedIn,
     });
 
-    setTimeout(() => setStep("done"), 600);
+    scheduleOnboardingTimeout(() => setStep("done"), 600);
   }
 
   async function refreshBeforeDashboard(): Promise<void> {
@@ -965,214 +993,220 @@ export default function OnboardingPage() {
       locationSource: source,
     }));
     amySays(t("screens.onboarding.child_name_after_country"), 300);
-    setTimeout(() => setStep("child-name"), 1300);
+    scheduleOnboardingTimeout(() => setStep("child-name"), 1300);
   }
 
-  // ─── Country-confirm step ────────────────────────────────────────────────────
-  if (step === "country-confirm") {
+  function renderCountryFooter() {
     const isLocating =
       locationState.status === "fetching" ||
       locationState.status === "fallback";
     const needsPermission = locationState.status === "needs-permission";
     const showDetected = locationState.status === "detected" && countryCode;
     const flag = countryCode ? flagEmoji(countryCode) : "";
-    const searchResults = countrySearch.trim().length > 0
-      ? ALL_COUNTRIES.filter((c) =>
-          c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
-          c.code.toLowerCase().includes(countrySearch.toLowerCase())
-        )
-      : [];
 
-    if (showCountryPicker) {
-      const pickerTitle = countryPickerRequired
-        ? t("screens.onboarding.country_manual_required_title")
-        : t("screens.onboarding.country_pick_popular");
-      const pickerHint =
-        locationState.status === "denied"
-          ? t("screens.onboarding.country_permission_denied")
-          : null;
-
+    if (isLocating) {
       return (
-        <div className="min-h-dvh flex flex-col" style={{ background: BG }}>
+        <div className="flex flex-col items-center gap-3 py-2">
           <div
-            className="sticky top-0 z-10 px-4 py-4 flex items-center gap-3"
-            style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderBottom: "1px solid rgba(168,85,247,0.15)" }}
-          >
-            {!countryPickerRequired ? (
-              <button
-                onClick={() => { setShowCountryPicker(false); setCountrySearch(""); }}
-                className="w-8 h-8 flex items-center justify-center rounded-full"
-                style={{ background: GLASS_BG, color: "#fff" }}
-              >
-                ←
-              </button>
-            ) : (
-              <div className="w-8 h-8" aria-hidden="true" />
-            )}
-            <h2 className="text-base font-bold" style={{ color: "#fff" }}>
-              {pickerTitle}
-            </h2>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4 max-w-lg mx-auto w-full">
-            {pickerHint ? (
-              <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>
-                {pickerHint}
-              </p>
-            ) : null}
-
-            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.5)" }}>
-              {t("screens.onboarding.country_pick_popular")}
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {TOP_COUNTRIES.map((c) => (
-                <button
-                  key={c.code}
-                  onClick={() => confirmCountry(c.code, c.name, { source: "manual" })}
-                  className="flex items-center gap-2.5 px-4 py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all text-left"
-                  style={CHIP_DARK}
-                >
-                  <span style={{ fontSize: 22 }}>{c.flag}</span>
-                  <span style={{ color: "#fff" }}>{c.name}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="relative">
-              <input
-                type="text"
-                placeholder={t("screens.onboarding.country_search_placeholder")}
-                value={countrySearch}
-                onChange={(e) => setCountrySearch(e.target.value)}
-                autoFocus
-                className="w-full rounded-2xl px-4 py-3.5 text-sm outline-none border"
-                style={{ ...INPUT_DARK, paddingLeft: "2.75rem" }}
-              />
-              <span className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.4)", fontSize: 16 }}>🔍</span>
-            </div>
-
-            {countrySearch.trim().length > 0 && (
-              searchResults.length === 0 ? (
-                <p className="text-sm text-center py-4" style={{ color: "rgba(255,255,255,0.5)" }}>
-                  {t("screens.onboarding.country_not_found")}
-                </p>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {searchResults.map((c) => (
-                    <button
-                      key={c.code}
-                      onClick={() => confirmCountry(c.code, c.name, { source: "manual" })}
-                      className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all text-left"
-                      style={CHIP_DARK}
-                    >
-                      <span style={{ fontSize: 22 }}>{c.flag}</span>
-                      <span style={{ color: "#fff" }}>{c.name}</span>
-                    </button>
-                  ))}
-                </div>
-              )
-            )}
-          </div>
+            className="h-10 w-10 rounded-full border-2"
+            style={{
+              borderColor: "rgba(255,255,255,0.15)",
+              borderTopColor: "hsl(var(--brand-indigo-500))",
+              animation: "spin 0.9s linear infinite",
+            }}
+          />
+          <p className="text-center text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
+            {t("screens.onboarding.country_detecting")}
+          </p>
         </div>
       );
     }
 
-    return (
-      <div
-        className="min-h-dvh flex flex-col items-center justify-center gap-6 px-5"
-        style={{ background: BG }}
-      >
-        <AmyMascotLogo size={56} />
+    if (needsPermission) {
+      return (
+        <div className="flex flex-col gap-3">
+          <p className="text-center text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
+            {t("screens.onboarding.country_location_prompt_body")}
+          </p>
+          <button
+            disabled={locationRequesting}
+            onClick={() => void handleAllowLocation()}
+            className="w-full rounded-2xl py-4 text-base font-bold active:scale-95 transition-all disabled:opacity-60"
+            style={{ background: GRAD, color: "#fff", boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
+          >
+            {locationRequesting
+              ? t("screens.onboarding.country_detecting")
+              : t("screens.onboarding.country_allow_location")}
+          </button>
+          <button
+            onClick={() => {
+              setCountryPickerRequired(true);
+              setShowCountryPicker(true);
+            }}
+            className="w-full py-2 text-sm font-semibold"
+            style={{ color: "rgba(255,255,255,0.65)", background: "none", border: "none" }}
+          >
+            {t("screens.onboarding.country_select_manually")}
+          </button>
+        </div>
+      );
+    }
 
-        {isLocating ? (
-          <div className="flex flex-col items-center gap-4">
-            <div
-              className="w-10 h-10 rounded-full border-2"
-              style={{
-                borderColor: "rgba(255,255,255,0.15)",
-                borderTopColor: "hsl(var(--brand-indigo-500))",
-                animation: "spin 0.9s linear infinite",
-              }}
-            />
-            <p className="text-sm text-center" style={{ color: "rgba(255,255,255,0.65)" }}>
-              {t("screens.onboarding.country_detecting")}
-            </p>
-          </div>
-        ) : needsPermission ? (
-          <>
-            <div className="text-center max-w-sm">
-              <h2 className="text-xl font-extrabold mb-3" style={{ color: "#fff" }}>
-                {t("screens.onboarding.country_location_prompt_title")}
-              </h2>
-              <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
-                {t("screens.onboarding.country_location_prompt_body")}
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3 w-full max-w-sm">
-              <button
-                disabled={locationRequesting}
-                onClick={() => void handleAllowLocation()}
-                className="w-full py-4 rounded-2xl font-bold text-base active:scale-95 transition-all disabled:opacity-60"
-                style={{ background: GRAD, color: "#fff", boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
-              >
-                {locationRequesting
-                  ? t("screens.onboarding.country_detecting")
-                  : t("screens.onboarding.country_allow_location")}
-              </button>
-              <button
-                onClick={() => {
-                  setCountryPickerRequired(true);
-                  setShowCountryPicker(true);
-                }}
-                className="w-full py-3 text-sm font-semibold"
-                style={{ color: "rgba(255,255,255,0.65)", background: "none", border: "none" }}
-              >
-                {t("screens.onboarding.country_select_manually")}
-              </button>
-            </div>
-          </>
-        ) : showDetected ? (
-          <>
-            <div
-              className="w-full max-w-sm rounded-3xl p-6 flex flex-col items-center gap-3"
-              style={{ background: GLASS_BG, border: GLASS_BORDER }}
-            >
-              <p className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.65)" }}>
+    if (showDetected) {
+      return (
+        <div className="flex flex-col gap-3">
+          <div
+            className="flex items-center gap-3 rounded-2xl p-4"
+            style={{ background: GLASS_BG, border: GLASS_BORDER }}
+          >
+            <span style={{ fontSize: 36, lineHeight: 1 }}>{flag}</span>
+            <div>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
                 {locationSource === "ip"
                   ? t("screens.onboarding.country_detected_ip")
                   : t("screens.onboarding.country_detected_in")}
               </p>
-              <span style={{ fontSize: 56, lineHeight: 1 }}>{flag}</span>
-              <h2 className="text-2xl font-extrabold text-center" style={{ color: "#fff" }}>
-                {countryName}
-              </h2>
+              <p className="text-lg font-bold" style={{ color: "#fff" }}>{countryName}</p>
             </div>
+          </div>
+          <button
+            onClick={() =>
+              confirmCountry(countryCode, countryName, {
+                coords: detectedCoords,
+                source: locationSource ?? "manual",
+              })
+            }
+            className="w-full rounded-2xl py-4 text-base font-bold active:scale-95 transition-all"
+            style={{ background: GRAD, color: "#fff", boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
+          >
+            {t("screens.onboarding.country_confirm_yes")}
+          </button>
+          <button
+            onClick={() => {
+              setCountryPickerRequired(false);
+              setShowCountryPicker(true);
+            }}
+            className="w-full py-2 text-sm font-semibold"
+            style={{ color: "rgba(255,255,255,0.65)", background: "none", border: "none" }}
+          >
+            {t("screens.onboarding.country_change")}
+          </button>
+        </div>
+      );
+    }
 
-            <div className="flex flex-col gap-3 w-full max-w-sm">
+    return null;
+  }
+
+  function renderCountryPickerOverlay() {
+    if (!showCountryPicker) return null;
+
+    const pickerTitle = countryPickerRequired
+      ? t("screens.onboarding.country_manual_required_title")
+      : t("screens.onboarding.country_pick_popular");
+    const pickerHint =
+      locationState.status === "denied"
+        ? t("screens.onboarding.country_permission_denied")
+        : null;
+    const searchResults = countrySearch.trim().length > 0
+      ? ALL_COUNTRIES.filter(
+          (c) =>
+            c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+            c.code.toLowerCase().includes(countrySearch.toLowerCase()),
+        )
+      : [];
+
+    return (
+      <div
+        className="absolute inset-0 z-50 flex flex-col"
+        style={{ background: BG }}
+      >
+        <div
+          className="flex shrink-0 items-center gap-3 px-4 py-4"
+          style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderBottom: "1px solid rgba(168,85,247,0.15)" }}
+        >
+          {!countryPickerRequired ? (
+            <button
+              onClick={() => {
+                setShowCountryPicker(false);
+                setCountrySearch("");
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-full"
+              style={{ background: GLASS_BG, color: "#fff" }}
+            >
+              ←
+            </button>
+          ) : (
+            <div className="h-8 w-8" aria-hidden="true" />
+          )}
+          <h2 className="text-base font-bold" style={{ color: "#fff" }}>
+            {pickerTitle}
+          </h2>
+        </div>
+
+        <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+          {pickerHint ? (
+            <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>
+              {pickerHint}
+            </p>
+          ) : null}
+
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.5)" }}>
+            {t("screens.onboarding.country_pick_popular")}
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {TOP_COUNTRIES.map((c) => (
               <button
-                onClick={() => confirmCountry(countryCode, countryName, {
-                  coords: detectedCoords,
-                  source: locationSource ?? "manual",
-                })}
-                className="w-full py-4 rounded-2xl font-bold text-base active:scale-95 transition-all"
-                style={{ background: GRAD, color: "#fff", boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
+                key={c.code}
+                onClick={() => confirmCountry(c.code, c.name, { source: "manual" })}
+                className="flex items-center gap-2.5 rounded-2xl border px-4 py-3.5 text-left text-sm font-semibold transition-all active:scale-95"
+                style={CHIP_DARK}
               >
-                {t("screens.onboarding.country_confirm_yes")}
+                <span style={{ fontSize: 22 }}>{c.flag}</span>
+                <span style={{ color: "#fff" }}>{c.name}</span>
               </button>
-              <button
-                onClick={() => {
-                  setCountryPickerRequired(false);
-                  setShowCountryPicker(true);
-                }}
-                className="w-full py-3 text-sm font-semibold"
-                style={{ color: "rgba(255,255,255,0.65)", background: "none", border: "none" }}
-              >
-                {t("screens.onboarding.country_change")}
-              </button>
-            </div>
-          </>
-        ) : null}
+            ))}
+          </div>
+
+          <div className="relative">
+            <input
+              type="text"
+              placeholder={t("screens.onboarding.country_search_placeholder")}
+              value={countrySearch}
+              onChange={(e) => setCountrySearch(e.target.value)}
+              autoFocus
+              className="w-full rounded-2xl border px-4 py-3.5 text-sm outline-none"
+              style={{ ...INPUT_DARK, paddingLeft: "2.75rem" }}
+            />
+            <span
+              className="absolute left-4 top-1/2 -translate-y-1/2"
+              style={{ color: "rgba(255,255,255,0.4)", fontSize: 16 }}
+            >
+              🔍
+            </span>
+          </div>
+
+          {countrySearch.trim().length > 0 &&
+            (searchResults.length === 0 ? (
+              <p className="py-4 text-center text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>
+                {t("screens.onboarding.country_not_found")}
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {searchResults.map((c) => (
+                  <button
+                    key={c.code}
+                    onClick={() => confirmCountry(c.code, c.name, { source: "manual" })}
+                    className="flex items-center gap-3 rounded-2xl border px-4 py-3.5 text-left text-sm font-semibold transition-all active:scale-95"
+                    style={CHIP_DARK}
+                  >
+                    <span style={{ fontSize: 22 }}>{c.flag}</span>
+                    <span style={{ color: "#fff" }}>{c.name}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+        </div>
       </div>
     );
   }
@@ -2128,47 +2162,58 @@ export default function OnboardingPage() {
     }
   }
 
+  const showChatFooter =
+    step !== "intro" &&
+    ONBOARDING_CHAT_STEPS.has(step) &&
+    !showCountryPicker;
+
   return (
-    <OnboardingChatShell
-      scrollDeps={[messages, typing, step]}
-      style={{ background: BG }}
-      header={(
-        <div
-          className="z-10"
-          style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderBottom: "1px solid rgba(168,85,247,0.15)" }}
-        >
-          <div className="flex items-center justify-between px-4 pt-3 pb-1">
-            <div className="flex items-center gap-2.5">
-              <AmyAvatar size={8} />
-              <div>
-                <p className="text-xs font-bold" style={{ color: "#fff" }}>{t("screens.onboarding.amy_coach")}</p>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{t("screens.onboarding.setting_up")}</p>
+    <div className="relative h-full w-full">
+      <ChatThreadShell
+        scrollDeps={[messages, typing, step, textInput]}
+        style={{ background: BG }}
+        messagesClassName="max-w-lg"
+        header={(
+          <div
+            className="z-10"
+            style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderBottom: "1px solid rgba(168,85,247,0.15)" }}
+          >
+            <div className="flex items-center justify-between px-4 pt-3 pb-1">
+              <div className="flex items-center gap-2.5">
+                <AmyAvatar size={8} />
+                <div>
+                  <p className="text-xs font-bold" style={{ color: "#fff" }}>{t("screens.onboarding.amy_coach")}</p>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{t("screens.onboarding.setting_up")}</p>
+                </div>
               </div>
+              <span className="px-3 py-1.5 text-[11px] font-semibold" style={{ color: "rgba(255,255,255,0.7)" }}>
+                {t("screens.onboarding.setup_required")}
+              </span>
             </div>
-            <span className="text-[11px] font-semibold px-3 py-1.5" style={{ color: "rgba(255,255,255,0.7)" }}>
-              {t("screens.onboarding.setup_required")}
-            </span>
+            <ProgressBar step={step} />
           </div>
-          <ProgressBar step={step} />
-        </div>
-      )}
-      footer={!typing && step !== "intro" ? (
-        <div
-          style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderTop: "1px solid rgba(168,85,247,0.15)" }}
-        >
-          {renderInput()}
-          <p className="text-center text-[9px] font-bold tracking-widest uppercase mt-3" style={{ color: "rgba(168,85,247,0.35)" }}>
-            {t("patent_pending.powered_by")}
-          </p>
-        </div>
-      ) : null}
-    >
-      {messages.map((msg, i) =>
-        msg.role === "amy"
-          ? <AmyBubble key={i} text={msg.text} />
-          : <UserBubble key={i} text={msg.text} />
-      )}
-      {typing && <TypingBubble />}
-    </OnboardingChatShell>
+        )}
+        footer={showChatFooter ? (
+          <div
+            style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderTop: "1px solid rgba(168,85,247,0.15)" }}
+          >
+            {step === "country-confirm" ? renderCountryFooter() : renderInput()}
+            <p className="mt-3 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(168,85,247,0.35)" }}>
+              {t("patent_pending.powered_by")}
+            </p>
+          </div>
+        ) : null}
+      >
+        {messages.map((msg) =>
+          msg.role === "amy" ? (
+            <ChatAmyBubble key={msg.id} text={msg.text} theme="onboarding" />
+          ) : (
+            <ChatUserBubble key={msg.id} text={msg.text} theme="onboarding" />
+          ),
+        )}
+        {typing ? <ChatTypingBubble theme="onboarding" /> : null}
+      </ChatThreadShell>
+      {renderCountryPickerOverlay()}
+    </div>
   );
 }

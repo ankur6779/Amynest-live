@@ -152,6 +152,24 @@
   from { opacity: 0; transform: scale(0.88) translateY(8px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
+
+.chat-amy-bubble,
+.chat-user-bubble {
+  animation: chat-pop 0.3s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-amy-bubble,
+  .chat-user-bubble {
+    animation: none;
+  }
+  .chat-typing-bubble span {
+    animation: none !important;
+  }
+  .chat-thread-page--keyboard-open .chat-thread-messages {
+    scroll-behavior: auto;
+  }
+}
 @keyframes modalIn {
   from { opacity: 0; transform: scale(0.92) translateY(16px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
@@ -1433,6 +1451,7 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
   max-height: var(--vv-height, calc(var(--vh, 1vh) * 100));
 }
 
+.chat-thread-page,
 .onboarding-chat-page {
   display: flex;
   flex-direction: column;
@@ -1441,6 +1460,7 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
   box-sizing: border-box;
 }
 
+.chat-thread-messages-wrapper,
 .onboarding-chat-messages-wrapper {
   display: flex;
   flex-direction: column;
@@ -1449,6 +1469,7 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
   overflow: hidden;
 }
 
+.chat-thread-messages,
 .onboarding-chat-messages {
   flex: 1 1 0;
   min-height: 0;
@@ -1459,15 +1480,18 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
   overscroll-behavior-y: contain;
 }
 
+.chat-thread-input,
 .onboarding-chat-input {
   flex-shrink: 0;
   box-sizing: border-box;
 }
 
+.chat-thread-page--keyboard-open .chat-thread-messages,
 .onboarding-chat-page--keyboard-open .onboarding-chat-messages {
   scroll-behavior: smooth;
 }
 
+.chat-thread-page--keyboard-open .chat-thread-input,
 .onboarding-chat-page--keyboard-open .onboarding-chat-input {
   position: relative;
   z-index: 2;
