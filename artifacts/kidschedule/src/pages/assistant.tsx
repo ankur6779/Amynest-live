@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useState, useRef, useEffect } from "react";
+import { ChatThreadShell } from "@/components/chat-thread-shell";
+import { ChatTypingBubble } from "@/components/chat-bubbles";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
@@ -39,19 +41,9 @@ export default function AssistantPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
-  const threadRef = useRef<HTMLDivElement>(null);
-  const chatWrapperRef = useRef<HTMLDivElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const scrollApiRef = useRef<{ scrollToEnd: (behavior?: ScrollBehavior) => void } | null>(null);
   const [showScrollLatest, setShowScrollLatest] = useState(false);
-
-  const scrollToChatEnd = (behavior: ScrollBehavior = "smooth") => {
-    messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
-    const thread = threadRef.current;
-    if (thread) {
-      thread.scrollTo({ top: thread.scrollHeight, behavior });
-    }
-  };
 
   // Load saved chat history on mount so parents can pick up where they left off
   useEffect(() => {
@@ -76,42 +68,10 @@ export default function AssistantPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    scrollToChatEnd("smooth");
-  }, [messages]);
-
-  // Android WebView: flex height chain often fails — pin scroll area to wrapper height.
-  useLayoutEffect(() => {
-    const wrapper = chatWrapperRef.current;
-    const body = threadRef.current;
-    if (!wrapper || !body) return;
-
-    const syncScrollArea = () => {
-      const height = wrapper.clientHeight;
-      if (height <= 0) return;
-      body.style.height = `${height}px`;
-      body.style.maxHeight = `${height}px`;
-    };
-
-    syncScrollArea();
-    const observer = new ResizeObserver(syncScrollArea);
-    observer.observe(wrapper);
-    window.addEventListener("resize", syncScrollArea);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", syncScrollArea);
-    };
-  }, [historyLoaded]);
-
-  const handleThreadScroll = () => {
-    const thread = threadRef.current;
-    if (!thread) return;
+  const handleThreadScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const thread = event.currentTarget;
     const distanceFromBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight;
     setShowScrollLatest(distanceFromBottom > 160);
-  };
-
-  const handleInputFocus = () => {
-    setTimeout(() => scrollToChatEnd("smooth"), 300);
   };
 
   // Server-driven gating — no local quota counter. Premium users have no limit.
@@ -272,45 +232,77 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="assistant-chat-page chat-container relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col bg-background">
-      <header className="assistant-chat-header shrink-0">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <AmyIcon size={28} ring />
-            <h1 className="truncate font-quicksand text-lg font-bold text-foreground">
-              {t("ai.page_title")}
-            </h1>
+    <div className="assistant-chat-page relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col bg-background">
+      <ChatThreadShell
+        layout="embedded"
+        scrollDeps={[messages, loading, historyLoaded, mode, input]}
+        scrollApiRef={scrollApiRef}
+        onMessagesScroll={handleThreadScroll}
+        className="bg-background"
+        messagesClassName="max-w-3xl space-y-3"
+        footerClassName="border-t border-border/50 bg-background px-0 py-3"
+        header={(
+          <header className="assistant-chat-header">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <AmyIcon size={28} ring />
+                <h1 className="truncate font-quicksand text-lg font-bold text-foreground">
+                  {t("ai.page_title")}
+                </h1>
+              </div>
+              {!isEmpty && (
+                <Button variant="ghost" size="sm" onClick={clearChat} className="h-8 shrink-0 rounded-full px-2 text-muted-foreground">
+                  <RefreshCw className="h-4 w-4" />
+                  <span className="sr-only">{t("ai.clear_chat")}</span>
+                </Button>
+              )}
+            </div>
+            <div className="assistant-chat-tabs mt-2 flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+              {WEB_MODES.map(({ id, labelKey, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setMode(id)}
+                  className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition-all ${
+                    mode === id
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-muted-foreground hover:border-primary/40"
+                  }`}
+                >
+                  <Icon className="h-3 w-3 shrink-0" />
+                  {t(labelKey)}
+                </button>
+              ))}
+            </div>
+          </header>
+        )}
+        footer={(
+          <div className="mx-auto w-full max-w-3xl px-4">
+            <div className="flex items-end gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm transition-colors focus-within:border-primary">
+              <Textarea
+                ref={textareaRef}
+                placeholder={
+                  limitReached
+                    ? t("ai.input_limit_placeholder")
+                    : t(WEB_MODES.find((m) => m.id === mode)!.placeholderKey)
+                }
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={limitReached}
+                className="max-h-[120px] min-h-[40px] flex-1 resize-none border-none bg-transparent p-0 text-sm shadow-none focus-visible:ring-0 placeholder:text-muted-foreground disabled:opacity-60"
+                rows={1}
+              />
+              <Button
+                onClick={() => sendMessage()}
+                disabled={!input.trim() || loading || limitReached}
+                size="icon"
+                className="h-9 w-9 shrink-0 rounded-xl"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
-          {!isEmpty && (
-            <Button variant="ghost" size="sm" onClick={clearChat} className="h-8 shrink-0 rounded-full px-2 text-muted-foreground">
-              <RefreshCw className="h-4 w-4" />
-              <span className="sr-only">{t("ai.clear_chat")}</span>
-            </Button>
-          )}
-        </div>
-        <div className="assistant-chat-tabs mt-2 flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-          {WEB_MODES.map(({ id, labelKey, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setMode(id)}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
-                mode === id
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-muted-foreground border-border hover:border-primary/40"
-              }`}
-            >
-              <Icon className="h-3 w-3 shrink-0" />
-              {t(labelKey)}
-            </button>
-          ))}
-        </div>
-      </header>
-
-      <div className="chat-wrapper relative" ref={chatWrapperRef}>
-      <div
-        ref={threadRef}
-        onScroll={handleThreadScroll}
-        className="chat-body chat-messages space-y-3"
+        )}
       >
         {limitReached ? renderSystemLimitMessage() : null}
 
@@ -327,7 +319,7 @@ export default function AssistantPage() {
                     type="button"
                     onClick={() => handleTopicClick(topicKey)}
                     disabled={limitReached}
-                    className="text-left text-sm p-2.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all text-foreground/80 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="rounded-xl border border-border bg-card p-2.5 text-left text-sm font-medium text-foreground/80 transition-all hover:border-primary/50 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {t(topicKey)}
                   </button>
@@ -338,69 +330,21 @@ export default function AssistantPage() {
         ) : (
           <>
             {messages.map((msg, i) => renderMessageBubble(msg, i))}
-
-            {loading && (
-              <div className="flex gap-2.5">
-                <div className="shrink-0">
-                  <AmyIcon size={32} ring />
-                </div>
-                <Card className="rounded-2xl rounded-tl-sm border-border shadow-sm">
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {t("ai.thinking")}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+            {loading ? <ChatTypingBubble /> : null}
           </>
         )}
-        <div id="chat-end" ref={messagesEndRef} />
-      </div>
+      </ChatThreadShell>
 
       {showScrollLatest && (
         <Button
           type="button"
           size="sm"
-          onClick={() => scrollToChatEnd("smooth")}
+          onClick={() => scrollApiRef.current?.scrollToEnd("smooth")}
           className="absolute bottom-36 right-4 z-40 rounded-full shadow-lg"
         >
           {t("ai.scroll_latest", { defaultValue: "Latest" })}
         </Button>
       )}
-      </div>
-
-      {/* Input — fixed above keyboard / system nav */}
-      <div className="chat-input border-t border-border/50">
-        <div className="mx-auto w-full max-w-3xl">
-          <div className="flex gap-3 items-end bg-card rounded-2xl border border-border p-3 shadow-sm focus-within:border-primary transition-colors">
-            <Textarea
-              ref={textareaRef}
-              placeholder={
-                limitReached
-                  ? t("ai.input_limit_placeholder")
-                  : t(WEB_MODES.find((m) => m.id === mode)!.placeholderKey)
-              }
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onFocus={handleInputFocus}
-              disabled={limitReached}
-              className="flex-1 border-none shadow-none resize-none focus-visible:ring-0 min-h-[40px] max-h-[120px] bg-transparent p-0 text-sm placeholder:text-muted-foreground disabled:opacity-60"
-              rows={1}
-            />
-            <Button
-              onClick={() => sendMessage()}
-              disabled={!input.trim() || loading || limitReached}
-              size="icon"
-              className="rounded-xl h-9 w-9 shrink-0"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

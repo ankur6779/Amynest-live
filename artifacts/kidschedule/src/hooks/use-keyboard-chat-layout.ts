@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { resolveChatScrollBehavior } from "@/lib/chat-scroll-behavior";
 import { isCapacitorNative } from "@/lib/capacitor-native";
-import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+import { isCapacitorIosShell, isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+
+export type ChatLayoutMode = "fullscreen" | "embedded";
 
 interface ViewportMetrics {
   height: number;
@@ -8,9 +11,17 @@ interface ViewportMetrics {
   keyboardInset: number;
 }
 
+export interface UseKeyboardChatLayoutOptions {
+  layout?: ChatLayoutMode;
+}
+
 const KEYBOARD_OPEN_THRESHOLD = 72;
 const KEYBOARD_RESET_DELAY_MS = 320;
 const CHAT_SCROLL_SETTLE_MS = 360;
+
+function usesCapacitorBodyKeyboardResize(): boolean {
+  return isCapacitorNative() && isCapacitorIosShell();
+}
 
 function readNativeImeInsetPx(): number {
   if (typeof document === "undefined") return 0;
@@ -47,6 +58,25 @@ function readViewportMetrics(): ViewportMetrics {
   return { height, offsetTop, keyboardInset };
 }
 
+/** iOS Capacitor Body resize already shrinks layout — avoid subtracting inset twice. */
+function metricsForChatLayout(metrics: ViewportMetrics, keyboardOpen: boolean): ViewportMetrics {
+  if (!usesCapacitorBodyKeyboardResize()) return metrics;
+
+  if (keyboardOpen) {
+    return {
+      height: window.innerHeight,
+      offsetTop: 0,
+      keyboardInset: metrics.keyboardInset,
+    };
+  }
+
+  return {
+    height: window.innerHeight,
+    offsetTop: 0,
+    keyboardInset: 0,
+  };
+}
+
 function applyViewportCssVars(metrics: Pick<ViewportMetrics, "height" | "offsetTop">) {
   const root = document.documentElement;
   root.style.setProperty("--vv-height", `${metrics.height}px`);
@@ -66,7 +96,11 @@ function isTextField(el: EventTarget | null): el is HTMLInputElement | HTMLTextA
   return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
 }
 
-export function useKeyboardChatLayout(scrollDeps: unknown[]) {
+export function useKeyboardChatLayout(
+  scrollDeps: unknown[],
+  options: UseKeyboardChatLayoutOptions = {},
+) {
+  const layoutMode = options.layout ?? "fullscreen";
   const containerRef = useRef<HTMLDivElement>(null);
   const messagesWrapperRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
@@ -79,13 +113,20 @@ export function useKeyboardChatLayout(scrollDeps: unknown[]) {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [viewport, setViewport] = useState<ViewportMetrics>(() => readViewportMetrics());
 
+  const clearPendingScrolls = useCallback(() => {
+    if (scrollTimerRef.current != null) {
+      window.clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = null;
+    }
+  }, []);
+
   const scrollToEnd = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const resolved = resolveChatScrollBehavior(behavior);
     const run = () => {
       const thread = messagesRef.current;
-      if (thread) {
-        thread.scrollTo({ top: thread.scrollHeight, behavior });
-      }
-      endRef.current?.scrollIntoView({ behavior, block: "end" });
+      if (!thread) return;
+      const top = thread.scrollHeight;
+      thread.scrollTo({ top, behavior: resolved });
     };
 
     requestAnimationFrame(() => {
@@ -96,23 +137,22 @@ export function useKeyboardChatLayout(scrollDeps: unknown[]) {
 
   const scheduleScrollToEnd = useCallback(
     (behavior: ScrollBehavior = "smooth", delay = CHAT_SCROLL_SETTLE_MS) => {
-      if (scrollTimerRef.current != null) {
-        window.clearTimeout(scrollTimerRef.current);
-      }
+      clearPendingScrolls();
       scrollTimerRef.current = window.setTimeout(() => {
         scrollTimerRef.current = null;
         scrollToEnd(behavior);
       }, delay);
     },
-    [scrollToEnd],
+    [clearPendingScrolls, scrollToEnd],
   );
 
   const applyOpenLayout = useCallback(
-    (metrics: ViewportMetrics) => {
+    (rawMetrics: ViewportMetrics) => {
       if (resetTimerRef.current != null) {
         window.clearTimeout(resetTimerRef.current);
         resetTimerRef.current = null;
       }
+      const metrics = metricsForChatLayout(rawMetrics, true);
       setViewport(metrics);
       setKeyboardOpen(true);
       applyViewportCssVars(metrics);
@@ -128,23 +168,23 @@ export function useKeyboardChatLayout(scrollDeps: unknown[]) {
       window.clearTimeout(resetTimerRef.current);
       resetTimerRef.current = null;
     }
-    if (scrollTimerRef.current != null) {
-      window.clearTimeout(scrollTimerRef.current);
-      scrollTimerRef.current = null;
-    }
+    clearPendingScrolls();
 
     fallbackInsetRef.current = 0;
     const next = readViewportMetrics();
-    const restored: ViewportMetrics = {
-      height: window.innerHeight,
-      offsetTop: next.offsetTop,
-      keyboardInset: 0,
-    };
+    const restored = metricsForChatLayout(
+      {
+        height: window.innerHeight,
+        offsetTop: next.offsetTop,
+        keyboardInset: 0,
+      },
+      false,
+    );
     setViewport(restored);
     setKeyboardOpen(false);
     applyViewportCssVars(restored);
     scrollToEnd("instant");
-  }, [scrollToEnd]);
+  }, [clearPendingScrolls, scrollToEnd]);
 
   const scheduleResetAfterKeyboard = useCallback(() => {
     if (resetTimerRef.current != null) {
@@ -191,12 +231,23 @@ export function useKeyboardChatLayout(scrollDeps: unknown[]) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    syncViewport();
+    const initial = metricsForChatLayout(readViewportMetrics(), false);
+    setViewport(initial);
+    applyViewportCssVars(initial);
 
     const vv = window.visualViewport;
+    const onOrientationChange = () => {
+      window.setTimeout(() => {
+        syncViewport();
+        scrollToEnd("instant");
+        scheduleScrollToEnd("smooth", 180);
+      }, 100);
+    };
+
     vv?.addEventListener("resize", syncViewport);
     vv?.addEventListener("scroll", syncViewport);
     window.addEventListener("resize", syncViewport);
+    window.addEventListener("orientationchange", onOrientationChange);
 
     const onNativeKeyboardInset = (event: Event) => {
       const detail = (event as CustomEvent<{ inset?: number; visibleHeight?: number }>).detail;
@@ -226,10 +277,13 @@ export function useKeyboardChatLayout(scrollDeps: unknown[]) {
       void import("@capacitor/keyboard")
         .then(({ Keyboard, KeyboardResize }) => {
           if (cancelled) return;
-          void Keyboard.setResizeMode({ mode: KeyboardResize.Body });
+          const mode = isCapacitorIosShell()
+            ? KeyboardResize.Body
+            : KeyboardResize.Native;
+          void Keyboard.setResizeMode({ mode });
           void Keyboard.addListener("keyboardDidShow", () => {
             syncViewport();
-            scheduleScrollToEnd("smooth");
+            scheduleScrollToEnd("smooth", 120);
           }).then((handle) => {
             if (!cancelled) removeKeyboardShow = () => void handle.remove();
           });
@@ -257,14 +311,22 @@ export function useKeyboardChatLayout(scrollDeps: unknown[]) {
       vv?.removeEventListener("resize", syncViewport);
       vv?.removeEventListener("scroll", syncViewport);
       window.removeEventListener("resize", syncViewport);
+      window.removeEventListener("orientationchange", onOrientationChange);
       window.removeEventListener("amynest-keyboard-inset", onNativeKeyboardInset);
+      clearPendingScrolls();
       removeKeyboardShow?.();
       removeKeyboardHide?.();
       clearChatViewportCssVars();
     };
-  }, [applyOpenLayout, scheduleResetAfterKeyboard, scheduleScrollToEnd, syncViewport]);
+  }, [
+    applyOpenLayout,
+    clearPendingScrolls,
+    scheduleResetAfterKeyboard,
+    scheduleScrollToEnd,
+    scrollToEnd,
+    syncViewport,
+  ]);
 
-  // Android WebView: flex height chain often fails — pin scroll area to wrapper height.
   useLayoutEffect(() => {
     const wrapper = messagesWrapperRef.current;
     const body = messagesRef.current;
@@ -292,10 +354,12 @@ export function useKeyboardChatLayout(scrollDeps: unknown[]) {
     const observer = new ResizeObserver(measure);
     observer.observe(bar);
     return () => observer.disconnect();
-  }, []);
+  }, [scrollDeps]);
 
   useEffect(() => {
-    scrollToEnd("smooth");
+    clearPendingScrolls();
+    scrollToEnd("instant");
+    scheduleScrollToEnd("smooth", 120);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, scrollDeps);
 
@@ -321,7 +385,7 @@ export function useKeyboardChatLayout(scrollDeps: unknown[]) {
 
       window.setTimeout(() => syncViewport(), 80);
       scrollToEnd("instant");
-      scheduleScrollToEnd("smooth");
+      scheduleScrollToEnd("smooth", 120);
       window.setTimeout(() => applyAndroidKeyboardFallback(), 350);
     };
 
@@ -343,6 +407,28 @@ export function useKeyboardChatLayout(scrollDeps: unknown[]) {
     syncViewport,
   ]);
 
+  const containerStyle =
+    layoutMode === "fullscreen"
+      ? {
+          position: "fixed" as const,
+          top: usesCapacitorBodyKeyboardResize() ? 0 : viewport.offsetTop,
+          left: 0,
+          right: 0,
+          height:
+            viewport.height > 0
+              ? `${viewport.height}px`
+              : "var(--vv-height, 100%)",
+          maxHeight:
+            viewport.height > 0
+              ? `${viewport.height}px`
+              : "var(--vv-height, 100%)",
+        }
+      : {
+          height: "100%",
+          maxHeight: "100%",
+          minHeight: 0,
+        };
+
   return {
     containerRef,
     messagesWrapperRef,
@@ -354,5 +440,7 @@ export function useKeyboardChatLayout(scrollDeps: unknown[]) {
     inputBarHeight,
     keyboardOpen,
     scrollToEnd,
+    containerStyle,
+    layoutMode,
   };
 }

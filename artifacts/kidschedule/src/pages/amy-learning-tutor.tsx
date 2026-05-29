@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChatThreadShell } from "@/components/chat-thread-shell";
+import { ChatTypingBubble } from "@/components/chat-bubbles";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -96,8 +98,6 @@ export default function AmyLearningTutorPage() {
   const [loading, setLoading] = useState(false);
   const [goalMet, setGoalMet] = useState(false);
 
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: childrenData } = useQuery<ChildRow[]>({
@@ -132,12 +132,6 @@ export default function AmyLearningTutorPage() {
   useEffect(() => {
     scheduleTutorAudioPrewarm(TUTOR_WARM_PHRASES);
   }, [scheduleTutorAudioPrewarm]);
-
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    });
-  }, [turns, loading, pending]);
 
   const playTutorMessage = useCallback(
     (message: string) => {
@@ -271,9 +265,72 @@ export default function AmyLearningTutorPage() {
   const expectsListen = pending?.nextExpectedResponse === "listen";
   const expectsContinue = pending?.nextExpectedResponse === "continue";
 
+  function renderLearningFooter() {
+    if (!sessionStarted) return null;
+
+    if (expectsAnswer) {
+      return (
+        <div className="flex w-full gap-2 px-4 md:px-0">
+          <Textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder={t("pages.amy_learning_tutor.answer_placeholder")}
+            disabled={loading}
+            className="max-h-32 min-h-[44px] resize-none rounded-2xl"
+            rows={1}
+            data-testid="amy-learning-tutor-input"
+          />
+          <Button
+            onClick={() => void submitAnswer()}
+            disabled={!input.trim() || loading}
+            className="rounded-full px-4"
+            data-testid="amy-learning-tutor-send"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          </Button>
+        </div>
+      );
+    }
+
+    if (pending && (expectsListen || expectsContinue) && !expectsAnswer) {
+      return (
+        <div className="flex w-full gap-2 px-4 md:px-0">
+          {(expectsListen || pending.nextExpectedResponse === "repeat") && (
+            <Button
+              variant="outline"
+              className="rounded-full"
+              disabled={loading}
+              onPointerDown={() => primeTutorAudioGesture(pending.message)}
+              onClick={() => void onRepeat()}
+              data-testid="amy-learning-tutor-repeat"
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              {t("pages.amy_learning_tutor.repeat")}
+            </Button>
+          )}
+          <Button
+            className="flex-1 rounded-full"
+            disabled={loading}
+            onClick={() => void onContinue()}
+            data-testid="amy-learning-tutor-continue"
+          >
+            {goalMet
+              ? t("pages.amy_learning_tutor.goal_met_continue")
+              : t("pages.amy_learning_tutor.continue")}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      );
+    }
+
+    return null;
+  }
+
   return (
     <div
-      className="relative mx-auto flex min-h-screen w-full max-w-3xl flex-col bg-background"
+      className="relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col bg-background"
       data-testid="amy-learning-tutor-page"
     >
       <div className="flex shrink-0 items-start justify-between gap-3 px-4 pb-3 pt-4 md:px-0 md:pt-0">
@@ -306,115 +363,63 @@ export default function AmyLearningTutorPage() {
         </div>
       ) : null}
 
-      <div
-        ref={threadRef}
-        className="min-h-0 flex-1 space-y-3 px-4 pb-28 pr-5 md:px-0"
-        data-testid="amy-learning-tutor-thread"
-      >
-        {!sessionStarted && !loading ? (
-          <div className="flex flex-col items-center justify-center gap-4 py-10 text-center">
-            <AmyIcon size={88} bounce ring />
-            <div className="max-w-sm space-y-2">
-              <h2 className="font-quicksand text-xl font-bold text-foreground">
-                {t("pages.amy_learning_tutor.ready_title", {
-                  name: primaryChild?.name ?? t("pages.amy_learning_tutor.default_child_name"),
-                })}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {t("pages.amy_learning_tutor.ready_body")}
-              </p>
-            </div>
-            <Button
-              size="lg"
-              className="rounded-full px-8"
-              disabled={!primaryChild?.id || loading}
-              onPointerDown={() => primeTutorAudioGesture()}
-              onClick={() => void startSession()}
-              data-testid="amy-learning-tutor-start"
-            >
-              {t("pages.amy_learning_tutor.start_learning")}
-            </Button>
+      {primaryChild?.id ? (
+        <ChatThreadShell
+          layout="embedded"
+          scrollDeps={[turns, loading, pending, sessionStarted, input, goalMet]}
+          className="min-h-0 flex-1"
+          messagesClassName="space-y-3 pr-5 md:px-0"
+          footerClassName="border-t border-border/50 bg-background/95 backdrop-blur"
+          header={null}
+          footer={renderLearningFooter()}
+        >
+          <div data-testid="amy-learning-tutor-thread">
+            {!sessionStarted && !loading ? (
+              <div className="flex flex-col items-center justify-center gap-4 py-10 text-center">
+                <AmyIcon size={88} bounce ring />
+                <div className="max-w-sm space-y-2">
+                  <h2 className="font-quicksand text-xl font-bold text-foreground">
+                    {t("pages.amy_learning_tutor.ready_title", {
+                      name: primaryChild?.name ?? t("pages.amy_learning_tutor.default_child_name"),
+                    })}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {t("pages.amy_learning_tutor.ready_body")}
+                  </p>
+                </div>
+                <Button
+                  size="lg"
+                  className="rounded-full px-8"
+                  disabled={loading}
+                  onPointerDown={() => primeTutorAudioGesture()}
+                  onClick={() => void startSession()}
+                  data-testid="amy-learning-tutor-start"
+                >
+                  {t("pages.amy_learning_tutor.start_learning")}
+                </Button>
+              </div>
+            ) : null}
+
+            {turns.map((turn) => (
+              <TurnBubble key={turn.id} turn={turn} onPlayMessage={playTutorMessage} />
+            ))}
+
+            {pending ? (
+              <AmyPendingBubble
+                pending={pending}
+                goalMet={goalMet}
+                onPlayMessage={playTutorMessage}
+                onPrimePlay={primeTutorAudioGesture}
+              />
+            ) : null}
+
+            {loading ? (
+              <div data-testid="amy-learning-tutor-thinking">
+                <ChatTypingBubble />
+              </div>
+            ) : null}
           </div>
-        ) : null}
-
-        {turns.map((turn) => (
-          <TurnBubble key={turn.id} turn={turn} onPlayMessage={playTutorMessage} />
-        ))}
-
-        {pending ? (
-          <AmyPendingBubble
-            pending={pending}
-            goalMet={goalMet}
-            onPlayMessage={playTutorMessage}
-            onPrimePlay={primeTutorAudioGesture}
-          />
-        ) : null}
-
-        {loading ? (
-          <div
-            className="flex items-center gap-2 text-sm text-muted-foreground"
-            data-testid="amy-learning-tutor-thinking"
-          >
-            <AmyIcon size={28} bounce ring />
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>{t("pages.amy_learning_tutor.thinking")}</span>
-          </div>
-        ) : null}
-
-        <div ref={bottomRef} />
-      </div>
-
-      {sessionStarted && expectsAnswer ? (
-        <div className="sticky bottom-0 z-50 flex w-full shrink-0 gap-2 border-t border-border bg-background/95 px-4 pb-[calc(var(--app-bottom-clearance)+0.75rem)] pt-3 backdrop-blur md:px-0">
-          <Textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder={t("pages.amy_learning_tutor.answer_placeholder")}
-            disabled={loading}
-            className="max-h-32 min-h-[44px] resize-none rounded-2xl"
-            rows={1}
-            data-testid="amy-learning-tutor-input"
-          />
-          <Button
-            onClick={() => void submitAnswer()}
-            disabled={!input.trim() || loading}
-            className="rounded-full px-4"
-            data-testid="amy-learning-tutor-send"
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
-        </div>
-      ) : null}
-
-      {sessionStarted && pending && (expectsListen || expectsContinue) && !expectsAnswer ? (
-        <div className="sticky bottom-0 z-50 flex w-full shrink-0 gap-2 border-t border-border bg-background/95 px-4 pb-[calc(var(--app-bottom-clearance)+0.75rem)] pt-3 backdrop-blur md:px-0">
-          {(expectsListen || pending.nextExpectedResponse === "repeat") && (
-            <Button
-              variant="outline"
-              className="rounded-full"
-              disabled={loading}
-              onPointerDown={() => primeTutorAudioGesture(pending.message)}
-              onClick={() => void onRepeat()}
-              data-testid="amy-learning-tutor-repeat"
-            >
-              <RotateCcw className="mr-2 h-4 w-4" />
-              {t("pages.amy_learning_tutor.repeat")}
-            </Button>
-          )}
-          <Button
-            className="flex-1 rounded-full"
-            disabled={loading}
-            onClick={() => void onContinue()}
-            data-testid="amy-learning-tutor-continue"
-          >
-            {goalMet
-              ? t("pages.amy_learning_tutor.goal_met_continue")
-              : t("pages.amy_learning_tutor.continue")}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
+        </ChatThreadShell>
       ) : null}
     </div>
   );

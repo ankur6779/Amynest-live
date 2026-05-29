@@ -1,4 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ChatThreadShell } from "@/components/chat-thread-shell";
+import { ChatTypingBubble } from "@/components/chat-bubbles";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -87,57 +89,14 @@ export default function AmyAiTutorPage() {
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const threadRef = useRef<HTMLDivElement>(null);
-  const chatWrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const scrollApiRef = useRef<{ scrollToEnd: (behavior?: ScrollBehavior) => void } | null>(null);
   const [showScrollLatest, setShowScrollLatest] = useState(false);
 
-  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
-    bottomRef.current?.scrollIntoView({ behavior, block: "end" });
-    const thread = threadRef.current;
-    if (thread) {
-      thread.scrollTo({ top: thread.scrollHeight, behavior });
-    }
-  };
-
-  useEffect(() => {
-    scrollToBottom("smooth");
-  }, [turns, loading]);
-
-  useLayoutEffect(() => {
-    const wrapper = chatWrapperRef.current;
-    const body = threadRef.current;
-    if (!wrapper || !body) return;
-
-    const syncScrollArea = () => {
-      const height = wrapper.clientHeight;
-      if (height <= 0) return;
-      body.style.height = `${height}px`;
-      body.style.maxHeight = `${height}px`;
-    };
-
-    syncScrollArea();
-    const observer = new ResizeObserver(syncScrollArea);
-    observer.observe(wrapper);
-    window.addEventListener("resize", syncScrollArea);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", syncScrollArea);
-    };
-  }, [turns]);
-
-  const handleThreadScroll = () => {
-    const thread = threadRef.current;
-    if (!thread) return;
+  const handleThreadScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const thread = event.currentTarget;
     const distanceFromBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight;
     setShowScrollLatest(distanceFromBottom > 160);
-  };
-
-  const handleInputFocus = () => {
-    setTimeout(() => {
-      scrollToBottom("smooth");
-    }, 300);
   };
 
   // Pull primary child for context — best-effort.
@@ -317,85 +276,113 @@ export default function AmyAiTutorPage() {
         )}
       </div>
 
-      {/* Mode + subject + topic strip */}
-      <div className="shrink-0 space-y-2 px-4 pb-3 md:px-0">
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label={t("pages.amy_ai_tutor.tutor_mode")}>
-          {(Object.keys(MODE_META) as Mode[]).map((m) => {
-            const meta = MODE_META[m];
-            const Icon = meta.icon;
-            const active = mode === m;
-            return (
-              <button
-                key={m}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                data-testid={`amy-tutor-mode-${m}`}
-                onClick={() => setMode(m)}
-                className={cn(
-                  "shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors",
-                  active
-                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                    : "bg-card text-foreground/80 border-border hover:border-primary/40 hover:bg-primary/5",
-                )}
-                title={meta.hint}
+      <ChatThreadShell
+        layout="embedded"
+        scrollDeps={[turns, loading, input, mode, subject, topic]}
+        scrollApiRef={scrollApiRef}
+        onMessagesScroll={handleThreadScroll}
+        className="min-h-0 flex-1 bg-background"
+        messagesClassName="space-y-3 md:px-0"
+        footerClassName="border-t border-border/50 bg-background px-0 py-3"
+        header={(
+          <div className="space-y-2 px-4 pb-3 md:px-0">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label={t("pages.amy_ai_tutor.tutor_mode")}>
+              {(Object.keys(MODE_META) as Mode[]).map((m) => {
+                const meta = MODE_META[m];
+                const Icon = meta.icon;
+                const active = mode === m;
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    data-testid={`amy-tutor-mode-${m}`}
+                    onClick={() => setMode(m)}
+                    className={cn(
+                      "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors",
+                      active
+                        ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                        : "border-border bg-card text-foreground/80 hover:border-primary/40 hover:bg-primary/5",
+                    )}
+                    title={meta.hint}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {meta.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label={t("pages.amy_ai_tutor.subject")}>
+              {SUBJECTS.map((s) => {
+                const active = subject === s.key;
+                return (
+                  <button
+                    key={s.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    data-testid={`amy-tutor-subject-${s.key}`}
+                    onClick={() => setSubject(s.key)}
+                    className={cn(
+                      "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold whitespace-nowrap transition-colors",
+                      active
+                        ? "border-primary bg-primary text-white"
+                        : "border-border bg-card text-foreground/70 hover:border-primary hover:bg-muted",
+                    )}
+                  >
+                    <span aria-hidden>{s.emoji}</span>
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
+            <input
+              type="text"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value.slice(0, 120))}
+              placeholder={t("pages.amy_ai_tutor.topic_placeholder")}
+              className="w-full rounded-full border border-border bg-card px-3 py-2 text-xs focus:border-primary focus:outline-none"
+              data-testid="amy-tutor-topic"
+            />
+          </div>
+        )}
+        footer={(
+          <div className="mx-auto w-full max-w-3xl px-4">
+            <div className="flex items-end gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm transition-colors focus-within:border-primary">
+              <Textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={onKeyDown}
+                placeholder={limitReached ? "Daily limit reached — upgrade to keep going." : "Ask Amy anything…"}
+                disabled={limitReached}
+                className="max-h-[120px] min-h-[40px] flex-1 resize-none border-none bg-transparent p-0 text-sm shadow-none focus-visible:ring-0 placeholder:text-muted-foreground disabled:opacity-60"
+                rows={1}
+                data-testid="amy-tutor-input"
+              />
+              <Button
+                onClick={() => send()}
+                disabled={!input.trim() || loading || limitReached}
+                size="icon"
+                className="h-9 w-9 shrink-0 rounded-xl"
+                data-testid="amy-tutor-send"
               >
-                <Icon className="h-3.5 w-3.5" />
-                {meta.label}
-              </button>
-            );
-          })}
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label={t("pages.amy_ai_tutor.subject")}>
-          {SUBJECTS.map((s) => {
-            const active = subject === s.key;
-            return (
-              <button
-                key={s.key}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                data-testid={`amy-tutor-subject-${s.key}`}
-                onClick={() => setSubject(s.key)}
-                className={cn(
-                  "shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold whitespace-nowrap transition-colors",
-                  active
-                    ? "bg-primary text-white border-primary"
-                    : "bg-card text-foreground/70 border-border hover:border-primary hover:bg-muted",
-                )}
-              >
-                <span aria-hidden>{s.emoji}</span>
-                {s.label}
-              </button>
-            );
-          })}
-        </div>
-        <input
-          type="text"
-          value={topic}
-          onChange={(e) => setTopic(e.target.value.slice(0, 120))}
-          placeholder={t("pages.amy_ai_tutor.topic_placeholder")}
-          className="w-full text-xs px-3 py-2 rounded-full border border-border bg-card focus:outline-none focus:border-primary"
-          data-testid="amy-tutor-topic"
-        />
-      </div>
-
-      {/* Chat area */}
-      <div className="chat-wrapper relative flex-1 min-h-0" ref={chatWrapperRef}>
-        <div
-          ref={threadRef}
-          onScroll={handleThreadScroll}
-          className="chat-body chat-messages space-y-3 px-4 md:px-0"
-          data-testid="amy-tutor-thread"
-        >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+        )}
+      >
+        <div data-testid="amy-tutor-thread">
           {isEmpty ? (
-            <div className="flex flex-col items-center justify-center h-full gap-4 text-center py-8">
+            <div className="flex h-full flex-col items-center justify-center gap-4 py-8 text-center">
               <AmyIcon size={88} bounce ring />
               <div>
-                <h2 className="font-quicksand text-xl font-bold text-foreground mb-1">
+                <h2 className="mb-1 font-quicksand text-xl font-bold text-foreground">
                   Hi {primaryChild?.name ?? "there"} — what should we learn today?
                 </h2>
-                <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+                <p className="mx-auto max-w-xs text-sm text-muted-foreground">
                   Pick a mode above, then type a question. Try "Teach me the letter B" or "Quiz me
                   on addition".
                 </p>
@@ -406,66 +393,20 @@ export default function AmyAiTutorPage() {
               <TurnView key={turn.id} turn={turn} onPickOption={pickOption} />
             ))
           )}
-          {loading && (
-            <div className="flex gap-2.5 flex-row">
-              <div className="shrink-0">
-                <AmyIcon size={32} ring />
-              </div>
-              <div className="max-w-[85%] items-start flex flex-col gap-1">
-                <Card className="rounded-2xl shadow-sm bg-card border-border rounded-tl-sm">
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm" data-testid="amy-tutor-thinking">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>{t("pages.amy_ai_tutor.amy_is_thinking")}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          )}
-          <div ref={bottomRef} />
+          {loading ? <ChatTypingBubble /> : null}
         </div>
+      </ChatThreadShell>
 
-        {showScrollLatest && (
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => scrollToBottom("smooth")}
-            className="absolute bottom-36 right-4 z-40 rounded-full shadow-lg"
-          >
-            Latest
-          </Button>
-        )}
-      </div>
-
-      {/* Composer */}
-      <div className="chat-input border-t border-border/50">
-        <div className="mx-auto w-full max-w-3xl">
-          <div className="flex gap-3 items-end bg-card rounded-2xl border border-border p-3 shadow-sm focus-within:border-primary transition-colors">
-            <Textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={onKeyDown}
-              onFocus={handleInputFocus}
-              placeholder={limitReached ? "Daily limit reached — upgrade to keep going." : "Ask Amy anything…"}
-              disabled={limitReached}
-              className="flex-1 border-none shadow-none resize-none focus-visible:ring-0 min-h-[40px] max-h-[120px] bg-transparent p-0 text-sm placeholder:text-muted-foreground disabled:opacity-60"
-              rows={1}
-              data-testid="amy-tutor-input"
-            />
-            <Button
-              onClick={() => send()}
-              disabled={!input.trim() || loading || limitReached}
-              size="icon"
-              className="rounded-xl h-9 w-9 shrink-0"
-              data-testid="amy-tutor-send"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
-      </div>
+      {showScrollLatest && (
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => scrollApiRef.current?.scrollToEnd("smooth")}
+          className="absolute bottom-36 right-4 z-40 rounded-full shadow-lg"
+        >
+          Latest
+        </Button>
+      )}
     </div>
   );
 }
