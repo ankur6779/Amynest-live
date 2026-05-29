@@ -43,7 +43,12 @@ export async function syncPwaCacheAndVersion(): Promise<void> {
       } catch {
         /* ignore */
       }
-      await waitForAppCoreReady();
+      // Cold boot: bootstrap awaits this before React mounts — never block on AppCore
+      // (would deadlock and trigger index.html boot-timeout at 14s).
+      const win = window as Window & { __amynestAppCoreReady?: boolean };
+      if (win.__amynestAppCoreReady) {
+        await waitForAppCoreReady();
+      }
       await forceClearAllCaches();
       window.location.reload();
       return;
