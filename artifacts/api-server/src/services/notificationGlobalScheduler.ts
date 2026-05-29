@@ -112,8 +112,6 @@ export async function runGlobalScheduleTick(now = new Date()): Promise<{
   let failed = 0;
 
   const users = await loadUserScheduleRows();
-
-  const users = await loadUserScheduleRows();
   const signalsCache = new Map<string, Awaited<ReturnType<typeof loadOutcomeSignals>>>();
   const campaignCache = new Map<string, Awaited<ReturnType<typeof loadCampaignProgress>>>();
   const familyIntelCache = new Map<string, Awaited<ReturnType<typeof refreshFamilyIntelligence>>>();
