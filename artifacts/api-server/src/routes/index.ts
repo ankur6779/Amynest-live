@@ -1,5 +1,9 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import {
+  startupTelemetryAdminRouter,
+  startupTelemetryPublicRouter,
+} from "./startup-telemetry";
 import clientLogsRouter from "./client-logs";
 import childrenRouter from "./children";
 import routinesRouter from "./routines";
@@ -111,7 +115,9 @@ router.use(staticAudioPublicRouter);
 router.use(otaRouter);
 router.use(storiesPublicRouter);
 router.use(learningSeedPublicRouter);
+router.use(startupTelemetryPublicRouter);
 router.use(requireAuth);
+router.use(startupTelemetryAdminRouter);
 router.use(clientLogsRouter);
 router.use(onboardingRouter);
 router.use(childrenRouter);

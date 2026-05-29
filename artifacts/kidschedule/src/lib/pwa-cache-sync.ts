@@ -1,5 +1,10 @@
 import { forceClearAllCaches } from "@/lib/force-clear-caches";
-import { getDeployVersion } from "@/lib/pwa-version";
+import {
+  checkDeployVersionMismatch,
+  getDeployVersion,
+  writeStoredDeployVersion,
+} from "@/lib/deploy-version";
+import { guardDeprecatedSyncPwaCache } from "@/lib/startup-api-guard";
 import {
   markCacheSyncComplete,
   markDeployReloadScheduled,
@@ -7,7 +12,6 @@ import {
   waitWithTimeout,
 } from "@/lib/startup-orchestrator";
 
-const VERSION_KEY = "amynest:deploy-version";
 const CACHE_SYNC_TIMEOUT_MS = 10_000;
 
 export type DeployVersionCheck = {
@@ -16,21 +20,7 @@ export type DeployVersionCheck = {
   current: string | null;
 };
 
-/** Synchronous read — safe before React mount. */
-export function checkDeployVersionMismatch(): DeployVersionCheck {
-  if (typeof window === "undefined") {
-    return { mismatch: false, previous: null, current: null };
-  }
-  const current = getDeployVersion();
-  let previous: string | null = null;
-  try {
-    previous = sessionStorage.getItem(VERSION_KEY);
-  } catch {
-    /* ignore */
-  }
-  const mismatch = Boolean(previous && current && previous !== current);
-  return { mismatch, previous, current };
-}
+export { checkDeployVersionMismatch } from "@/lib/deploy-version";
 
 /**
  * Phase 3 background task — never blocks React mount.
@@ -49,7 +39,7 @@ export async function runPwaCacheSyncBackground(): Promise<void> {
         to: current,
       });
       markDeployReloadScheduled(previous, current);
-      sessionStorage.setItem(VERSION_KEY, current);
+      writeStoredDeployVersion(current);
       try {
         sessionStorage.setItem("amynest:deploy-reload-done", current);
       } catch {
@@ -82,7 +72,7 @@ export async function runPwaCacheSyncBackground(): Promise<void> {
     } catch {
       /* ignore */
     }
-    if (deployMeta) sessionStorage.setItem(VERSION_KEY, deployMeta);
+    if (deployMeta) writeStoredDeployVersion(deployMeta);
     markCacheSyncComplete(null);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err ?? "pwa_sync");
@@ -90,7 +80,11 @@ export async function runPwaCacheSyncBackground(): Promise<void> {
   }
 }
 
-/** @deprecated Use runPwaCacheSyncBackground — must not be awaited before React mount. */
+/**
+ * @deprecated Use runPwaCacheSyncBackground via schedulePostRenderStartup.
+ * Blocked before reactRendered — throws in DEV, telemetry + no-op in production.
+ */
 export async function syncPwaCacheAndVersion(): Promise<void> {
+  if (!guardDeprecatedSyncPwaCache()) return;
   await runPwaCacheSyncBackground();
 }

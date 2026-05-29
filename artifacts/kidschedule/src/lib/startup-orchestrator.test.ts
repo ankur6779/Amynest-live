@@ -85,7 +85,7 @@ describe("startup-orchestrator", () => {
   });
 
   it("stale deploy version detected without blocking (sync check only)", () => {
-    sessionStorage.setItem("amynest:deploy-version", "build-old");
+    sessionStorage.setItem("amynest:deploy-version", "build-old"); // DEPLOY_VERSION_SESSION_KEY
     vi.stubGlobal("document", {
       querySelector: () => ({ getAttribute: () => "build-new" }),
     });

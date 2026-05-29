@@ -1,11 +1,12 @@
-/** Deploy id from index.html — bump on every production release. */
-export function getDeployVersion(): string {
-  if (typeof document === "undefined") return "";
-  return (
-    document.querySelector('meta[name="amynest-deploy"]')?.getAttribute("content") ??
-    ""
-  );
-}
+export {
+  DEPLOY_VERSION_SESSION_KEY,
+  LEGACY_DEPLOY_VERSION_LS_KEY,
+  checkDeployVersionMismatch,
+  getDeployVersion,
+  migrateLegacyDeployVersionStorage,
+  readStoredDeployVersion,
+  writeStoredDeployVersion,
+} from "@/lib/deploy-version";
 
 /** Cache-bust service worker URL so browsers fetch the latest sw.js after deploy. */
 export function serviceWorkerScriptUrl(basePath: string): string {

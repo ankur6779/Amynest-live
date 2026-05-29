@@ -252,6 +252,23 @@ export default function AdminDashboardPage() {
     refetchInterval: 15_000,
   });
 
+  const { data: startupStats } = useQuery({
+    queryKey: ["admin-startup-stats"],
+    queryFn: async () => {
+      const res = await authFetch("/api/admin/startup-stats");
+      if (!res.ok) throw new Error(`http_${res.status}`);
+      return res.json() as {
+        sampleCount: number;
+        timeoutRate: number;
+        deadlockRate: number;
+        bootTimeoutRate: number;
+        reactRenderMs: { p50: number; p95: number; p99: number };
+        appCoreReadyMs: { p50: number; p95: number; p99: number };
+      };
+    },
+    refetchInterval: 30_000,
+  });
+
   const { data: systemHealth } = useQuery({
     queryKey: ["admin-system-health"],
     queryFn: async (): Promise<SystemHealthData> => {
@@ -366,6 +383,44 @@ export default function AdminDashboardPage() {
                 sub={`${data.totalRequests} events`}
               />
             </div>
+
+            {startupStats && (
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+                <p className="text-sm font-semibold text-foreground">Startup reliability</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <p className="text-muted-foreground">React P50/P95/P99</p>
+                    <p className="font-mono text-foreground">
+                      {startupStats.reactRenderMs.p50}/{startupStats.reactRenderMs.p95}/
+                      {startupStats.reactRenderMs.p99}ms
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">AppCore P50/P95/P99</p>
+                    <p className="font-mono text-foreground">
+                      {startupStats.appCoreReadyMs.p50}/{startupStats.appCoreReadyMs.p95}/
+                      {startupStats.appCoreReadyMs.p99}ms
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Timeout rate</p>
+                    <p className="font-mono text-foreground">
+                      {(startupStats.timeoutRate * 100).toFixed(2)}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Deadlock / boot-timeout</p>
+                    <p className="font-mono text-foreground">
+                      {(startupStats.deadlockRate * 100).toFixed(2)}% /{" "}
+                      {(startupStats.bootTimeoutRate * 100).toFixed(2)}%
+                    </p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Samples: {startupStats.sampleCount} · beacon /api/startup-events
+                </p>
+              </div>
+            )}
 
             {/* 9. Alerts */}
             {data.alerts.length > 0 && (

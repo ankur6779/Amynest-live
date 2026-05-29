@@ -440,19 +440,21 @@
               var r = window.__amynestDiag && window.__amynestDiag();
               var phases = r && r.phases ? r.phases : [];
               var startup = window.__amynestStartupState;
+              var evaluate = window.__amynestEvaluateBootWatchdog;
+              if (!evaluate) return;
 
-              if (phases.indexOf("react-rendered") !== -1) return;
-              if (startup && startup.reactRendered) return;
+              var decision = evaluate({
+                phases: phases,
+                startup: startup,
+                bootWatchdogExtended: !!window.__amynestBootWatchdogExtended,
+                now: Date.now(),
+                progressWindowMs: 6000,
+              });
 
-              var hasBundle = phases.indexOf("bundle-loaded") !== -1;
-              var recentProgress =
-                startup &&
-                startup.lastProgressAt &&
-                Date.now() - startup.lastProgressAt < 6000;
-
-              if ((hasBundle || recentProgress) && !window.__amynestBootWatchdogExtended) {
+              if (decision.action === "ok") return;
+              if (decision.action === "extend") {
                 window.__amynestBootWatchdogExtended = true;
-                setTimeout(__amynestRunBootWatchdog, 16000);
+                setTimeout(__amynestRunBootWatchdog, decision.extendMs || 16000);
                 return;
               }
 
@@ -1434,37 +1436,8 @@
           .catch(function () { location.reload(); });
       })();
     </script>
-    <script>
-      (function () {
-        try {
-          var currentVersion = document
-            .querySelector('meta[name="app-build-version"]')
-            ?.getAttribute("content");
-
-          var storedVersion = localStorage.getItem("app_build_version");
-
-          if (storedVersion && storedVersion !== currentVersion) {
-            if (window.caches && caches.keys) {
-              caches.keys().then(function (keys) {
-                keys.forEach(function (k) {
-                  caches.delete(k);
-                });
-              });
-            }
-
-            localStorage.clear();
-
-            setTimeout(function () {
-              location.reload();
-            }, 300);
-          }
-
-          if (currentVersion) {
-            localStorage.setItem("app_build_version", currentVersion);
-          }
-        } catch (e) { /* ignore */ }
-      })();
-    </script>
+    <!-- Deploy version: single source amynest-deploy + sessionStorage (see deploy-version.ts). -->
+    <script src="/boot-watchdog.js"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", function () {

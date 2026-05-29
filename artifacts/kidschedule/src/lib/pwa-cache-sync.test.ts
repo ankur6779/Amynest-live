@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DEPLOY_VERSION_SESSION_KEY } from "@/lib/deploy-version";
 import {
   checkDeployVersionMismatch,
   runPwaCacheSyncBackground,
@@ -13,7 +14,7 @@ describe("pwa-cache-sync (background)", () => {
   beforeEach(() => {
     resetStartupStateForTests();
     vi.stubGlobal("sessionStorage", {
-      store: { "amynest:deploy-version": "v1" } as Record<string, string>,
+      store: { [DEPLOY_VERSION_SESSION_KEY]: "v1" } as Record<string, string>,
       getItem(key: string) {
         return this.store[key] ?? null;
       },
@@ -52,7 +53,7 @@ describe("pwa-cache-sync (background)", () => {
     const { forceClearAllCaches } = await import("@/lib/force-clear-caches");
     vi.mocked(forceClearAllCaches).mockRejectedValueOnce(new Error("cache blocked"));
 
-    sessionStorage.removeItem("amynest:deploy-version");
+    sessionStorage.removeItem(DEPLOY_VERSION_SESSION_KEY);
     vi.stubGlobal("document", {
       querySelector: () => ({ getAttribute: () => "v2" }),
     });

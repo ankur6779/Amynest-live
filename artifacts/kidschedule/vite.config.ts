@@ -37,10 +37,15 @@ function injectDeployVersionPlugin(): import("vite").Plugin {
   return {
     name: "amynest-inject-deploy-version",
     transformIndexHtml(html) {
-      return html.replace(
-        /(<meta name="amynest-deploy" content=")[^"]*(")/,
-        `$1${deployVersion}$2`,
-      );
+      return html
+        .replace(
+          /(<meta name="amynest-deploy" content=")[^"]*(")/,
+          `$1${deployVersion}$2`,
+        )
+        .replace(
+          /(<meta name="app-build-version" content=")[^"]*(")/,
+          `$1${deployVersion}$2`,
+        );
     },
   };
 }

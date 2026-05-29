@@ -22,6 +22,7 @@
     "generate:ipad-screenshots": "node scripts/generate-ipad-appstore-screenshots.mjs",
     "generate:appstore-preview": "node scripts/generate-appstore-preview-video.mjs",
     "test:e2e": "playwright test --config playwright.config.ts",
+    "test:e2e:startup": "playwright test --config playwright.config.startup.ts",
     "test:stress": "playwright test --config playwright.config.stress.ts"
   },
   "devDependencies": {
