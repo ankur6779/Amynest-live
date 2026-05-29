@@ -19,6 +19,7 @@ import {
   restoreIOSPurchases,
 } from "@/lib/native-billing-ios";
 import type { Plan } from "@/hooks/use-subscription";
+import type { StorePlanPrice } from "@/lib/plan-price";
 import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
 
 type RcConfig = {
@@ -51,6 +52,8 @@ export type NativeBillingState = {
    */
   unavailableReason: string | null;
   priceByPlan: Partial<Record<Exclude<Plan, "free">, string>>;
+  /** Numeric store prices for monthly-equivalent math (RevenueCat / Play / App Store). */
+  storePricesByPlan: Partial<Record<Exclude<Plan, "free">, StorePlanPrice>>;
   purchase: (
     plan: Exclude<Plan, "free">,
   ) => Promise<{ ok: boolean; reason?: string; userCancelled?: boolean }>;
@@ -131,6 +134,9 @@ export function useNativeBilling(): NativeBillingState {
   const [unavailableReason, setUnavailableReason] = useState<string | null>(null);
   const [packageMap, setPackageMap] = useState<RcConfig["packageMap"] | null>(null);
   const [priceByPlan, setPriceByPlan] = useState<Partial<Record<Exclude<Plan, "free">, string>>>({});
+  const [storePricesByPlan, setStorePricesByPlan] = useState<
+    Partial<Record<Exclude<Plan, "free">, StorePlanPrice>>
+  >({});
   const [purchasing, setPurchasing] = useState(false);
   const userIdSyncedRef = useRef<string | null>(null);
 
@@ -139,6 +145,7 @@ export function useNativeBilling(): NativeBillingState {
     setUnavailableReason(null);
     setPackageMap(null);
     setPriceByPlan({});
+    setStorePricesByPlan({});
     userIdSyncedRef.current = null;
   }, [platform]);
 
@@ -148,6 +155,7 @@ export function useNativeBilling(): NativeBillingState {
     if (!result.ok) {
       setAvailable(false);
       setPriceByPlan({});
+      setStorePricesByPlan({});
       setUnavailableReason(result.reason);
       return;
     }
@@ -172,10 +180,33 @@ export function useNativeBilling(): NativeBillingState {
         ? null
         : "Subscription plans are not loaded from the App Store yet. Confirm products are live in App Store Connect and linked in RevenueCat, then reopen the app.",
     );
+    const nextStore: Partial<Record<Exclude<Plan, "free">, StorePlanPrice>> = {};
+    if (monthly?.product.priceString) {
+      nextStore.monthly = {
+        amount: monthly.product.price,
+        currency: monthly.product.currencyCode,
+        priceString: monthly.product.priceString,
+      };
+    }
+    if (sixMonth?.product.priceString) {
+      nextStore.six_month = {
+        amount: sixMonth.product.price,
+        currency: sixMonth.product.currencyCode,
+        priceString: sixMonth.product.priceString,
+      };
+    }
+    if (yearly?.product.priceString) {
+      nextStore.yearly = {
+        amount: yearly.product.price,
+        currency: yearly.product.currencyCode,
+        priceString: yearly.product.priceString,
+      };
+    }
+    setStorePricesByPlan(nextStore);
     setPriceByPlan({
-      ...(monthly?.product.priceString ? { monthly: monthly.product.priceString } : {}),
-      ...(sixMonth?.product.priceString ? { six_month: sixMonth.product.priceString } : {}),
-      ...(yearly?.product.priceString ? { yearly: yearly.product.priceString } : {}),
+      ...(nextStore.monthly?.priceString ? { monthly: nextStore.monthly.priceString } : {}),
+      ...(nextStore.six_month?.priceString ? { six_month: nextStore.six_month.priceString } : {}),
+      ...(nextStore.yearly?.priceString ? { yearly: nextStore.yearly.priceString } : {}),
     });
   }, [iosShell, user?.id]);
 
@@ -271,14 +302,30 @@ export function useNativeBilling(): NativeBillingState {
         const offerings = await androidBridge?.getOfferings();
         if (!offerings?.ok) return;
         const nextPrices: Partial<Record<Exclude<Plan, "free">, string>> = {};
+        const nextStore: Partial<Record<Exclude<Plan, "free">, StorePlanPrice>> = {};
         for (const plan of ["monthly", "six_month", "yearly"] as const) {
           const nativePackageId = cfg.packageMap[plan];
           const pkg = offerings.data.packages.find(
             (p) => p.identifier === nativePackageId || p.productId === nativePackageId,
           );
-          if (pkg?.priceString) nextPrices[plan] = pkg.priceString;
+          if (!pkg?.priceString) continue;
+          nextPrices[plan] = pkg.priceString;
+          const amount =
+            pkg.priceAmountMicros > 0
+              ? pkg.priceAmountMicros / 1_000_000
+              : pkg.priceString
+                ? Number.NaN
+                : 0;
+          nextStore[plan] = {
+            amount: Number.isFinite(amount) && amount > 0 ? amount : 0,
+            currency: pkg.currencyCode || "USD",
+            priceString: pkg.priceString,
+          };
         }
-        if (!cancelled) setPriceByPlan(nextPrices);
+        if (!cancelled) {
+          setPriceByPlan(nextPrices);
+          setStorePricesByPlan(nextStore);
+        }
       } catch {
         /* ignore — paywall shows error when user taps Buy */
       }
@@ -385,6 +432,7 @@ export function useNativeBilling(): NativeBillingState {
     purchasing,
     unavailableReason,
     priceByPlan,
+    storePricesByPlan,
     purchase,
     restore,
   };

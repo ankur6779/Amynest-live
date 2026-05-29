@@ -10,7 +10,6 @@ import { useSubscription, type Plan } from "@/hooks/use-subscription";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { useNativeBilling } from "@/hooks/use-native-billing";
 import { isIndiaRegion, isAndroidDevice, PLAY_STORE_URL } from "@/lib/geo";
-import { resolvePlanPriceLabel } from "@/lib/plan-price";
 import { presentNativeRCPaywall } from "@/lib/native-rc-paywall";
 import { finalizeNativePurchase } from "@/lib/native-purchase-finalize";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -30,13 +29,23 @@ import {
   sortPlanCards,
   resolveDefaultPlanId,
   trackHubJourneyAnnualSelected,
-  annualPriceEquivalent,
-  annualSavingsLabel,
-  isAnnualHighlightedPlan,
   trackPlanSelected,
 } from "@/lib/subscription-plans";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
-import { FF_POST_PURCHASE_ANNUAL_UPSELL } from "@/lib/subscription-feature-flags";
+import {
+  FF_POST_PURCHASE_ANNUAL_UPSELL,
+  FF_PRICING_STICKY_CTA,
+} from "@/lib/subscription-feature-flags";
+import {
+  planBadgeLabel,
+  planCardPricePresentation,
+  planStorePriceOptions,
+  pricingPlanCardClasses,
+  pricingPlanPriceClasses,
+  shouldHideValueAnchor,
+} from "@/lib/pricing-plan-card-ui";
+import { PlanPriceLines } from "@/components/plan-price-lines";
+import { SubscriptionPricingStickyCta } from "@/components/subscription-pricing-sticky-cta";
 import { wasPostPurchaseUpsellDismissed } from "@/lib/subscription-funnel-storage";
 import {
   SUBSCRIPTION_HERO,
@@ -248,42 +257,83 @@ export default function PricingPage() {
     }
   }, []);
 
+  const selectedPlanCard = useMemo(
+    () => sortedPlans.find((p) => p.id === selected),
+    [sortedPlans, selected],
+  );
+  const selectedStoreOpts = selectedPlanCard
+    ? planStorePriceOptions(
+        selectedPlanCard.id,
+        nativeBilling.priceByPlan,
+        nativeBilling.storePricesByPlan,
+      )
+    : null;
+
+  const handleStickyCheckout = () => {
+    if (isPremium) return;
+    if (isIOS || isAndroidNative) {
+      void onUpgradeNativeStore();
+      return;
+    }
+    if (!isNativeShell && isIndia) {
+      void onUpgrade("upi");
+      return;
+    }
+    if (!isNativeShell && isAndroid) {
+      window.open(PLAY_STORE_URL, "_blank", "noopener,noreferrer");
+    }
+  };
+
+  const stickyCheckoutAvailable =
+    isIOS ||
+    isAndroidNative ||
+    (!isNativeShell && isIndia) ||
+    (!isNativeShell && isAndroid);
+
+  const showStickyCta =
+    FF_PRICING_STICKY_CTA && !isPremium && !loading && !!selectedPlanCard;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0B0B1A] via-[#1A0B2E] to-[#0B0B1A]"> {/* audit-ok: intentional dark brand gradient background */}
+    <div
+      className={[
+        "min-h-screen bg-gradient-to-br from-[#0B0B1A] via-[#1A0B2E] to-[#0B0B1A]",
+        showStickyCta ? "pb-28" : "",
+      ].join(" ")}
+    >
 
       {/* ── Hero banner ── */}
       <div // audit-ok: intentional dark brand gradient header
-        className="relative overflow-hidden px-4 pb-10 pt-12 text-center"
+        className="relative overflow-hidden px-4 pb-4 pt-7 text-center sm:pb-5 sm:pt-8"
         data-on-dark
       >
         {/* Glow blobs */}
         <div
-          className="pointer-events-none absolute -top-16 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full opacity-25 blur-3xl"
+          className="pointer-events-none absolute -top-12 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full opacity-20 blur-3xl"
           // audit-ok: brand violet glow decoration
           style={{ background: "radial-gradient(circle, #7b3ff2 0%, transparent 70%)" }}
         />
         <div
-          className="pointer-events-none absolute -right-12 top-8 h-48 w-48 rounded-full opacity-20 blur-2xl"
+          className="pointer-events-none absolute -right-8 top-6 h-32 w-32 rounded-full opacity-15 blur-2xl"
           // audit-ok: brand pink glow decoration
           style={{ background: "radial-gradient(circle, #ff4ecd 0%, transparent 70%)" }}
         />
 
         {/* Crown icon */}
         <div
-          className="relative z-10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl shadow-[0_8px_32px_rgba(255,78,205,0.5)]"
+          className="relative z-10 mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-xl shadow-[0_6px_24px_rgba(255,78,205,0.45)] sm:mb-3 sm:h-12 sm:w-12 sm:rounded-2xl"
           // audit-ok: brand violet→pink gradient on icon badge
           style={{ background: "linear-gradient(135deg,#7b3ff2,#ff4ecd)" }}
         >
-          <Crown className="h-7 w-7 text-white" /> {/* audit-ok: white icon on brand gradient */}
+          <Crown className="h-5 w-5 text-white sm:h-6 sm:w-6" />
         </div>
 
-        <h1 className="relative z-10 mb-2 text-3xl font-black tracking-tight text-white">
+        <h1 className="relative z-10 mb-1 text-xl font-black tracking-tight text-white sm:text-2xl">
           {/* audit-ok: white text on dark brand gradient */}
           {isHubJourneyReason && !isPremium
             ? t(journeyPricingHeader, { name: journeyChildName })
             : t("pricing.title", { defaultValue: SUBSCRIPTION_HERO.headline })}
         </h1>
-        <p className="relative z-10 mx-auto max-w-md text-sm leading-relaxed text-white/65">
+        <p className="relative z-10 mx-auto max-w-md text-xs leading-snug text-white/65 sm:text-sm sm:leading-relaxed">
           {/* audit-ok: muted white on dark gradient */}
           {isHubJourneyReason && !isPremium
             ? t(journeyPricingSubtitle, { name: journeyChildName })
@@ -292,21 +342,21 @@ export default function PricingPage() {
 
         {isHubJourneyReason && !isPremium && journeyProgress && (
           <div
-            className="relative z-10 mx-auto mt-4 flex max-w-md flex-wrap justify-center gap-2"
+            className="relative z-10 mx-auto mt-2 flex max-w-md flex-wrap justify-center gap-1.5"
             data-testid="pricing-journey-stats"
           >
             {journeyProgress.lifeSkillsDone > 0 && (
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 ring-1 ring-white/15">
+              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/90 ring-1 ring-white/15">
                 {t("parent_hub.journey.stat_life_skills", { count: journeyProgress.lifeSkillsDone })}
               </span>
             )}
             {journeyProgress.lifeSkillsStreak > 0 && (
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 ring-1 ring-white/15">
+              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/90 ring-1 ring-white/15">
                 {t("parent_hub.journey.stat_streak", { count: journeyProgress.lifeSkillsStreak })}
               </span>
             )}
             {journeyProgress.levelLabel && (
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 ring-1 ring-white/15">
+              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/90 ring-1 ring-white/15">
                 {journeyProgress.levelLabel}
               </span>
             )}
@@ -314,9 +364,9 @@ export default function PricingPage() {
         )}
 
         {/* Patent-pending trust badge */}
-        <div className="relative z-10 mt-3 flex items-center justify-center gap-1.5">
+        <div className="relative z-10 mt-1.5 flex items-center justify-center gap-1.5 sm:mt-2">
           <span
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold text-white/90 ring-1 ring-white/15"
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold text-white/90 ring-1 ring-white/15"
             // audit-ok: semi-transparent dark pill on dark gradient
             style={{ background: "rgba(123,63,242,0.22)" }}
           >
@@ -350,22 +400,31 @@ export default function PricingPage() {
       />
 
       {/* ── Plan cards ── */}
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-2">
         {loading ? (
           <p className="py-8 text-center text-sm text-white/50">{t("pricing.loading_plans")}</p>
         ) : (
           <>
-          <div className="mb-4">
+          <div className="mb-2">
             <SubscriptionTrialOffer source="pricing_page" />
           </div>
 
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3 sm:items-end">
+          <div className="grid gap-2 grid-cols-1 sm:grid-cols-3 sm:items-end sm:gap-3">
             {sortedPlans.map((p) => {
               const isSel = p.id === selected;
-              const priceLabel = resolvePlanPriceLabel(p, nativeBilling.priceByPlan);
-              const annualHighlight = isAnnualHighlightedPlan(p.id);
-              const savings = annualSavingsLabel(p);
-              const equiv = annualPriceEquivalent(p);
+              const storeOpts = planStorePriceOptions(
+                p.id,
+                nativeBilling.priceByPlan,
+                nativeBilling.storePricesByPlan,
+              );
+              const { presentation, savings } = planCardPricePresentation(
+                p,
+                storeOpts.storePriceLabel,
+                storeOpts.store,
+              );
+              const badgeText = planBadgeLabel(p.id, p.badge);
+              const featureLimit =
+                p.id === "yearly" ? 2 : p.id === "six_month" ? 2 : 1;
               return (
                 <button
                   key={p.id}
@@ -376,56 +435,62 @@ export default function PricingPage() {
                   }}
                   data-testid={`plan-card-${p.id}`}
                   data-on-dark
-                  className={[
-                    "relative w-full rounded-2xl border-2 p-4 text-left transition-all",
-                    annualHighlight ? "order-first sm:order-none sm:scale-[1.03]" : "",
-                    isSel
-                      ? "border-primary bg-primary/10 shadow-[0_8px_24px_rgba(255,78,205,0.35)]"
-                      : "border-white/10 bg-white/5 hover:border-white/25",
-                    annualHighlight && !isSel ? "border-primary/30" : "",
-                  ].join(" ")}
+                  className={pricingPlanCardClasses(p.id, isSel)}
                 >
-                  {p.badge && (
+                  {badgeText && (
                     <span
-                      className="absolute -top-2.5 right-3 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white"
-                      // audit-ok: white text on brand gradient badge
+                      className="absolute -top-2 right-3 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white sm:text-[10px]"
                       style={{ background: "linear-gradient(90deg,#7b3ff2,#ff4ecd)" }}
                     >
-                      {p.badge}
+                      {badgeText}
                     </span>
                   )}
 
-                  <div className="mb-2 flex items-center gap-2">
+                  <div className="mb-1 flex items-center gap-2">
                     <span className={isSel ? "text-primary" : "text-white/50"}>
-                      {/* audit-ok: icon inherits color token on dark surface */}
                       {PLAN_ICONS[p.id] ?? <Sparkles className="h-4 w-4" />}
                     </span>
-                    <span className="text-sm font-bold text-white">{p.title}</span>
+                    <span
+                      className={[
+                        "font-bold text-white",
+                        p.id === "yearly" ? "text-sm sm:text-base" : "text-sm",
+                        p.id === "monthly" ? "font-semibold" : "",
+                      ].join(" ")}
+                    >
+                      {p.title}
+                    </span>
                   </div>
-                  {p.tagline && (
-                    <p className="mb-1 text-[11px] leading-snug text-white/55">{p.tagline}</p>
+                  {p.tagline && p.id !== "monthly" && (
+                    <p className="mb-1 text-[10px] leading-snug text-white/55 sm:text-[11px]">
+                      {p.tagline}
+                    </p>
                   )}
-                  {"valueAnchor" in p && p.valueAnchor && (
-                    <p className="mb-2 text-[10px] font-semibold text-primary/90">{p.valueAnchor}</p>
-                  )}
-
-                  <div className="mb-1 flex items-baseline gap-1">
-                    <span className="text-3xl font-black text-white">{priceLabel}</span>
-                    <span className="text-xs text-white/50">/ {p.period}</span>
-                  </div>
-
-                  {(savings || (typeof p.savingsPercent === "number" && p.savingsPercent > 0)) && (
-                    <div className="mb-1 text-xs font-extrabold text-primary">
-                      {savings ?? t("pricing.save_percent", { percent: p.savingsPercent })}
-                    </div>
-                  )}
-                  {equiv && (
-                    <p className="mb-3 text-[10px] font-bold text-white/70">{equiv}</p>
+                  {"valueAnchor" in p && p.valueAnchor && !shouldHideValueAnchor(p.id) && (
+                    <p className="mb-1 text-[10px] font-semibold text-primary/90">{p.valueAnchor}</p>
                   )}
 
-                  <ul className="mt-3 space-y-1.5">
+                  <PlanPriceLines
+                    presentation={presentation}
+                    savings={
+                      savings ??
+                      (p.id !== "yearly" &&
+                      typeof p.savingsPercent === "number" &&
+                      p.savingsPercent > 0
+                        ? t("pricing.save_percent", { percent: p.savingsPercent })
+                        : null)
+                    }
+                    priceClassName={pricingPlanPriceClasses(p.id)}
+                  />
+
+                  <ul className="mt-2 space-y-1 sm:mt-3 sm:space-y-1.5">
                     {p.features.map((f, i) => (
-                      <li key={i} className="flex items-start gap-1.5 text-xs text-white/80">
+                      <li
+                        key={i}
+                        className={[
+                          "flex items-start gap-1.5 text-xs text-white/80",
+                          i >= featureLimit ? "hidden sm:flex" : "",
+                        ].join(" ")}
+                      >
                         {/* audit-ok: check icon on dark surface */}
                         <Check
                           className={[
@@ -821,6 +886,15 @@ export default function PricingPage() {
         onClose={() => setShowConfirm(false)}
         periodEnd={periodEnd}
         cancelling={cancelling}
+        annualMonthlyEquivalent={
+          sortedPlans.find((p) => p.id === "yearly")
+            ? planCardPricePresentation(
+                sortedPlans.find((p) => p.id === "yearly")!,
+                nativeBilling.priceByPlan.yearly,
+                nativeBilling.storePricesByPlan.yearly,
+              ).presentation.monthlyEquivalentLine
+            : null
+        }
         onSwitchToAnnual={() => {
           setSelected("yearly");
           void onUpgradeNativeStore();
@@ -832,6 +906,18 @@ export default function PricingPage() {
         <PostPurchaseUpsellModal
           purchasedPlan={upsellPlan}
           onDone={() => setUpsellPlan(null)}
+        />
+      )}
+
+      {showStickyCta && (
+        <SubscriptionPricingStickyCta
+          selected={selected}
+          selectedPlan={selectedPlanCard}
+          storePriceLabel={selectedStoreOpts?.storePriceLabel}
+          store={selectedStoreOpts?.store}
+          disabled={plans.length === 0 || !stickyCheckoutAvailable}
+          busy={isProcessing}
+          onCheckout={handleStickyCheckout}
         />
       )}
     </div>

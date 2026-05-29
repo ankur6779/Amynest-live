@@ -18,7 +18,7 @@ export function SubscriptionAnnualUpsell({ entitlements, selected, onSelectAnnua
 
   return (
     <div
-      className="mx-4 mb-4 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/15 to-transparent px-4 py-4"
+      className="mx-4 mb-2 rounded-xl border border-primary/30 bg-gradient-to-r from-primary/15 to-transparent px-3 py-2.5 sm:mb-3 sm:rounded-2xl sm:px-4 sm:py-3"
       data-testid="subscription-annual-upsell"
     >
       <div className="flex items-start gap-3">

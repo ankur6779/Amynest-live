@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { CANCELLATION_RETENTION, ANNUAL_UPSELL } from "@workspace/subscription-marketing";
 import { FF_CANCEL_ANNUAL_SAVE } from "@/lib/subscription-feature-flags";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
-import { isIndiaRegion } from "@/lib/geo";
-
 type Props = {
   open: boolean;
   onClose: () => void;
   periodEnd: string | null;
+  /** Live annual monthly equivalent, e.g. ≈ ₹125/month */
+  annualMonthlyEquivalent?: string | null;
   onSwitchToAnnual: () => void;
   onConfirmCancel: () => void;
   cancelling: boolean;
@@ -19,6 +19,7 @@ export function SubscriptionCancelDialog({
   open,
   onClose,
   periodEnd,
+  annualMonthlyEquivalent,
   onSwitchToAnnual,
   onConfirmCancel,
   cancelling,
@@ -36,7 +37,7 @@ export function SubscriptionCancelDialog({
 
   if (!open) return null;
 
-  const priceHint = isIndiaRegion() ? "≈ ₹125/month" : "≈ $3.33/month";
+  const priceHint = annualMonthlyEquivalent ?? "a lower monthly rate";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
