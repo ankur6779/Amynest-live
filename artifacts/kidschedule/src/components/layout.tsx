@@ -154,7 +154,10 @@ export function Layout({
     isLearningZoneRoute(location) ||
     safePathStartsWith(location, "/speech-coach") ||
     safePathStartsWith(location, "/audio-lessons");
-  const isAssistantRoute = safePathStartsWithSegment(location, "/assistant");
+  const isAssistantRoute =
+    safePathStartsWithSegment(location, "/assistant") ||
+    safePathStartsWithSegment(location, "/amy-ai-tutor") ||
+    safePathStartsWithSegment(location, "/learn-with-amy");
   const isDashboard = location === "/" || location === "/dashboard";
   const showDashboardChrome = location === "/dashboard";
   const canShowBack = !showDashboardChrome && location !== "/";

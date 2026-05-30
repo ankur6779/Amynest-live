@@ -57,7 +57,20 @@ export function ChatThread({
     setShowScrollLatestInternal(distanceFromBottom > 160);
   };
 
-  const showScrollLatest = showScrollLatestProp ?? showScrollLatestInternal;
+  const hasConversation = useMemo(
+    () =>
+      messages.some(
+        (message) =>
+          message.kind === "user" ||
+          message.kind === "amy" ||
+          message.kind === "amy-rich" ||
+          message.kind === "interactive",
+      ),
+    [messages],
+  );
+
+  const showScrollLatest =
+    hasConversation && (showScrollLatestProp ?? showScrollLatestInternal);
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -113,7 +126,7 @@ export function ChatThread({
             onScrollLatest?.();
             scrollApiRef.current?.scrollToEnd("smooth");
           }}
-          className="absolute bottom-36 right-4 z-40 rounded-full shadow-lg"
+          className="absolute bottom-28 right-4 z-40 rounded-full px-4 shadow-lg md:bottom-24"
         >
           {scrollToLatestLabel}
         </Button>
