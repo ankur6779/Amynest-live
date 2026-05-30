@@ -8,7 +8,17 @@ import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { RefreshCw, Zap, Sparkles, Heart, GraduationCap, CheckSquare, Lightbulb, HelpCircle } from "lucide-react";
+import {
+  RefreshCw,
+  Zap,
+  Sparkles,
+  Heart,
+  GraduationCap,
+  CheckSquare,
+  Lightbulb,
+  HelpCircle,
+  Loader2,
+} from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -154,11 +164,25 @@ export default function AssistantPage() {
     }
   };
 
+  const historyPending = !historyLoaded;
   const isEmpty = historyLoaded && messages.length === 0;
   const tabTopics = TAB_TOPICS[mode] ?? [];
 
   const threadMessages = useMemo((): ThreadMessage[] => {
     const items: ThreadMessage[] = [];
+
+    if (historyPending) {
+      items.push({
+        kind: "system",
+        id: "history-loading",
+        content: (
+          <div className="flex justify-center py-10" role="status" aria-live="polite">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ),
+      });
+      return items;
+    }
 
     if (limitReached) {
       items.push({
@@ -273,7 +297,7 @@ export default function AssistantPage() {
     });
 
     return items;
-  }, [dailyBriefing, isEmpty, limitReached, loading, messages, sendMessage, tabTopics, t]);
+  }, [dailyBriefing, historyPending, isEmpty, limitReached, loading, messages, sendMessage, tabTopics, t]);
 
   return (
     <div className="assistant-chat-page relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col bg-background">
@@ -292,7 +316,7 @@ export default function AssistantPage() {
           }
         }}
         loading={loading}
-        composerDisabled={limitReached}
+        composerDisabled={limitReached || historyPending}
         composerPlaceholder={
           limitReached
             ? t("ai.input_limit_placeholder")

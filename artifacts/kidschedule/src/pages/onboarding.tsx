@@ -1174,6 +1174,13 @@ export default function OnboardingPage() {
         userReplies(text, "parent-allergies", t("screens.onboarding.allergies_question"));
         break;
       }
+      case "parent-allergies": {
+        if (allergyOtherOpen) {
+          setAllergyOtherText(text);
+          finishAllergies(false);
+        }
+        break;
+      }
       default:
         break;
     }
@@ -1364,7 +1371,163 @@ export default function OnboardingPage() {
     );
   }, [countrySearch]);
 
-  const composerEnabled = ONBOARDING_COMPOSER_STEPS.has(step) && !isFinishing && !typing;
+  if (step === "notifications") {
+    return (
+      <div
+        className="flex min-h-dvh flex-col items-center justify-center gap-5 px-5"
+        style={{ background: BG }}
+      >
+        <AmyMascotLogo size={64} />
+
+        <div
+          className="flex h-16 w-16 items-center justify-center rounded-full shadow-lg"
+          style={{ background: GRAD }}
+        >
+          <span style={{ fontSize: 30 }}>🔔</span>
+        </div>
+
+        <div className="text-center">
+          <h2 className="mb-2 text-xl font-extrabold" style={{ color: "#fff" }}>
+            {t("screens.onboarding.notif_title")}
+          </h2>
+          <p className="mx-auto max-w-xs text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
+            {t("screens.onboarding.notif_subtitle")}
+          </p>
+        </div>
+
+        <div
+          className="w-full max-w-sm rounded-2xl p-4"
+          style={{ background: GLASS_BG, border: GLASS_BORDER }}
+        >
+          {[
+            { emoji: "⏰", text: t("screens.onboarding.notif_benefit_routines") },
+            { emoji: "🌙", text: t("screens.onboarding.notif_benefit_bedtime") },
+            { emoji: "🍎", text: t("screens.onboarding.notif_benefit_meals") },
+          ].map(({ emoji, text }) => (
+            <div key={text} className="flex items-center gap-3 py-2">
+              <span style={{ fontSize: 18 }}>{emoji}</span>
+              <p className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.85)" }}>{text}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex w-full max-w-sm flex-col gap-3">
+          <button
+            disabled={notifLoading}
+            onClick={async () => {
+              setNotifLoading(true);
+              await enableNotif();
+              await goDashboard();
+            }}
+            className="w-full rounded-2xl py-4 text-base font-bold text-primary-foreground active:scale-95 transition-all"
+            style={{
+              background: GRAD,
+              boxShadow: "0 6px 24px rgba(99,102,241,0.4)",
+              opacity: notifLoading ? 0.7 : 1,
+            }}
+          >
+            {notifLoading ? t("screens.onboarding.notif_enabling") : t("screens.onboarding.notif_allow")}
+          </button>
+
+          <button
+            onClick={() => void goDashboard()}
+            disabled={navigatingToDashboard}
+            className="w-full py-3 text-sm font-semibold"
+            style={{ color: "hsl(var(--brand-indigo-500))", background: "none", border: "none", cursor: "pointer" }}
+          >
+            {t("screens.onboarding.notif_skip")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === "saving" || step === "done") {
+    const childName = children[0]?.name || t("screens.onboarding.default_child_name");
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-5" style={{ background: BG }}>
+        {step === "saving" ? (
+          <>
+            <div className="amy-setup-glow-ring">
+              <span className="amy-setup-glow-ring__label">Amy</span>
+            </div>
+            <div className="max-w-sm text-center">
+              <p className="text-xl font-bold leading-snug" style={{ color: "#fff" }}>
+                {isFinishing
+                  ? t("screens.onboarding.finalizing_setup")
+                  : t("screens.onboarding.saving_title")}
+              </p>
+              <p className="mt-2 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>
+                {t("screens.onboarding.saving_subtitle")}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="inline-block h-3 w-3 rounded-full"
+                  style={{
+                    background: "hsl(var(--brand-indigo-500))",
+                    animation: `typing-dot 1.2s ease-in-out ${i * 0.25}s infinite`,
+                  }}
+                />
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="flex w-full max-w-sm flex-col items-center gap-5" style={{ animation: "splash-in 0.5s ease-out" }}>
+            <div className="text-6xl">🎉</div>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold" style={{ color: "#fff" }}>{t("screens.onboarding.done_title")}</h2>
+              <p className="mt-1" style={{ color: "rgba(255,255,255,0.8)" }}>
+                {t("screens.onboarding.done_subtitle", { name: childName })}
+              </p>
+            </div>
+            <div
+              className="w-full rounded-3xl p-5 shadow-xl"
+              style={{ background: GLASS_BG, backdropFilter: "blur(12px)", border: GLASS_BORDER }}
+            >
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 text-2xl">✏️</span>
+                <div>
+                  <p className="text-sm font-bold" style={{ color: "#fff" }}>{t("screens.onboarding.edit_anytime_title")}</p>
+                  <p className="mt-1 text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
+                    {t("screens.onboarding.edit_anytime_body_before")}
+                    <strong>{t("screens.onboarding.edit_profile")}</strong>
+                    {t("screens.onboarding.edit_anytime_or")}
+                    <strong>{t("screens.onboarding.edit_children")}</strong>
+                    {t("screens.onboarding.edit_anytime_body_after")}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                if (navigatingToDashboard) return;
+                if (getBrowserNotificationPermission() === "default") {
+                  setStep("notifications");
+                } else {
+                  void goDashboard();
+                }
+              }}
+              disabled={navigatingToDashboard}
+              className="w-full rounded-2xl py-4 text-base font-bold text-primary-foreground active:scale-95 transition-all disabled:opacity-60"
+              style={{ background: GRAD, boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
+            >
+              {navigatingToDashboard
+                ? t("screens.onboarding.saving_title")
+                : t("screens.onboarding.go_dashboard")}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const composerEnabled =
+    (ONBOARDING_COMPOSER_STEPS.has(step) || (step === "parent-allergies" && allergyOtherOpen)) &&
+    !isFinishing &&
+    !typing;
 
   return (
     <div className="relative h-full w-full">
@@ -1398,6 +1561,16 @@ export default function OnboardingPage() {
         footerClassName="border-t border-transparent"
         footerExtra={(
           <>
+            {step === "parent-allergies" && finishError ? (
+              <p className="mb-2 text-center text-xs" style={{ color: "#fca5a5" }}>
+                {finishError}
+              </p>
+            ) : null}
+            {step === "parent-allergies" && allergyOtherOpen && composerEnabled ? (
+              <p className="mb-2 text-center text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
+                {t("screens.onboarding.allergies_other_placeholder")}
+              </p>
+            ) : null}
             {step === "parent-mobile" && composerEnabled ? (
               <button
                 type="button"

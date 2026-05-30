@@ -1,5 +1,7 @@
 /**
- * Enforce ChatThread as the sole conversational UI on chat surfaces.
+ * Enforce ChatThread on migrated conversational surfaces (phased rollout).
+ *
+ * Phase 2–8: assistant, tutors, onboarding chat migration.
  *
  *   pnpm --filter @workspace/scripts run check-chat-thread
  */
@@ -10,11 +12,12 @@ import { REPO_ROOT } from "./static-audio-paths.js";
 const KIDSCHEDULE_SRC = join(REPO_ROOT, "artifacts/kidschedule/src");
 const PAGES = join(KIDSCHEDULE_SRC, "pages");
 
+/** Pages that must use ChatThread in the current rollout phase. */
 const REQUIRED_CHAT_THREAD_PAGES = [
-  "onboarding.tsx",
   "assistant.tsx",
   "amy-ai-tutor.tsx",
   "amy-learning-tutor.tsx",
+  "onboarding.tsx",
 ] as const;
 
 const FORBIDDEN_WIZARD_PATTERNS = [
