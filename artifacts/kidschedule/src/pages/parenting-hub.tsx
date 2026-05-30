@@ -83,7 +83,6 @@ import { useRewardCelebrations } from "@/hooks/use-reward-celebrations";
 import { HubCollapsiblePanel, HubFamilyPulseSection, HubExploreAgesSection } from "@/components/hub-light-layout";
 import {
   PARENT_HUB_PAGE,
-  HUB_SECTION_SHELL,
   getHubGroupStyle,
   HUB_GLASS_CARD,
   HUB_SECTION_LABEL,
@@ -94,6 +93,9 @@ import {
   hubQuickChipTint,
   HUB_SEE_ALL_CHIP,
   HUB_BOTTOM_CTA,
+  getHubTileAccentBar,
+  getHubTileGlow,
+  HUB_TILE_SHELL_BASE,
 } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
 
@@ -196,46 +198,84 @@ function HubSection({
       return next;
     });
   };
-  return <div data-section-id={id}
-  className={cn(
-    "group relative overflow-hidden transition-all duration-[220ms] ease-[ease]",
-    HUB_SECTION_SHELL,
-    highlighted && !open ? "border-primary/30 shadow-[0_0_24px_rgba(168,85,247,0.18)]" : "",
-    open ? "" : "hover:shadow-[0_0_20px_rgba(168,85,247,0.12)]",
-  )}>
-      <button onClick={toggle} className={cn("w-full flex items-center justify-between gap-3 px-3 py-3 text-left transition-all duration-[220ms] ease-[ease]", open ? "bg-white/[0.04]" : "hover:bg-white/[0.03]")} aria-expanded={open}>
-        <div className="flex items-center gap-3 min-w-0">
-          <div className={["w-9 h-9 rounded-xl flex items-center justify-center shrink-0", accentClass, highlighted && !open ? "animate-[pulse_3s_ease-in-out_infinite]" : ""].join(" ")}>
-            {icon}
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <p className="font-quicksand font-bold text-[15px] leading-tight text-foreground line-clamp-2">{title}</p>
-              {tryFree && <TryFreeBadge />}
+  const tileBg = cardClass ?? "rgba(18,28,58,0.82)";
+  return (
+    <div
+      data-section-id={id}
+      className={cn(
+        "group",
+        HUB_TILE_SHELL_BASE,
+        "p-0 pl-0 active:scale-[1.015]",
+        getHubTileGlow(id),
+        highlighted && !open && "shadow-[0_0_28px_rgba(168,85,247,0.24)]",
+      )}
+      style={{ background: tileBg }}
+    >
+      <div className="flex min-w-0">
+        <div className={cn("w-1 shrink-0 self-stretch", getHubTileAccentBar(id))} aria-hidden />
+        <div className="min-w-0 flex-1">
+          <button
+            onClick={toggle}
+            className={cn(
+              "w-full flex items-center justify-between gap-3 px-3 py-3 text-left transition-all duration-[220ms] ease-[ease]",
+              open ? "bg-white/[0.04]" : "hover:bg-white/[0.03]",
+            )}
+            aria-expanded={open}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className={cn(
+                  "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_14px_rgba(255,255,255,0.08)]",
+                  accentClass,
+                  highlighted && !open ? "animate-[pulse_3s_ease-in-out_infinite]" : "",
+                )}
+              >
+                {icon}
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <p className="font-quicksand font-bold text-[15px] leading-tight text-foreground line-clamp-2">
+                    {title}
+                  </p>
+                  {tryFree && <TryFreeBadge />}
+                </div>
+                <p className="text-[12px] text-muted-foreground/80 mt-0.5 line-clamp-2 leading-relaxed">
+                  {description}
+                </p>
+              </div>
             </div>
-            <p className="text-[12px] text-muted-foreground/90 mt-0.5 line-clamp-2">{description}</p>
-          </div>
-        </div>
-        <span className={cn("shrink-0 w-6 h-6 rounded-full flex items-center justify-center border border-white/10 bg-white/[0.05] transition-transform duration-300", open ? "rotate-180 text-amber-300/90" : "text-muted-foreground")}>
-          <ChevronDown className="h-3.5 w-3.5" />
-        </span>
-      </button>
-      {!open && preview ? (
-        <div className="px-3 pb-2.5 -mt-0.5">
-          <p className="text-[11px] font-medium text-amber-200/80 line-clamp-1 flex items-center gap-1">
-            <Sparkles className="h-3 w-3 shrink-0 opacity-80 hub-sparkle-glow" />
-            {preview}
-          </p>
-        </div>
-      ) : null}
-      {open && <div className="px-3 pb-4 pt-2 border-t border-white/[0.08] animate-in fade-in slide-in-from-top-1 duration-200">
-          {previewLocked && childName ? (
-            <JourneyPreviewContent childName={childName} isInfant={isInfant}>{children}</JourneyPreviewContent>
-          ) : (
-            children
+            <span
+              className={cn(
+                "shrink-0 w-6 h-6 rounded-full flex items-center justify-center border border-white/10 bg-white/[0.05] transition-transform duration-300",
+                open ? "rotate-180 text-amber-300/90" : "text-muted-foreground",
+              )}
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+            </span>
+          </button>
+          {!open && preview ? (
+            <div className="px-3 pb-2.5 -mt-0.5">
+              <p className="text-[11px] font-medium text-amber-200/80 line-clamp-1 flex items-center gap-1">
+                <Sparkles className="h-3 w-3 shrink-0 opacity-80 hub-sparkle-glow" />
+                {preview}
+              </p>
+            </div>
+          ) : null}
+          {open && (
+            <div className="px-3 pb-4 pt-2 border-t border-white/[0.08] animate-in fade-in slide-in-from-top-1 duration-200">
+              {previewLocked && childName ? (
+                <JourneyPreviewContent childName={childName} isInfant={isInfant}>
+                  {children}
+                </JourneyPreviewContent>
+              ) : (
+                children
+              )}
+            </div>
           )}
-        </div>}
-    </div>;
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function RoutineLaunchCard({
@@ -735,19 +775,26 @@ function InfantTrialBanner({ childName }: { childName: string }) {
   return (
     <div
       data-testid="infant-trial-banner"
-      className="rounded-2xl border border-sky-400/30 bg-gradient-to-r from-sky-400/10 via-card to-cyan-400/5 px-4 py-3.5"
+      className={cn(
+        HUB_GLASS_CARD,
+        "overflow-hidden p-0 pl-0 active:scale-100",
+        "shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(56,189,248,0.14)]",
+      )}
     >
-      <div className="flex items-start gap-3">
-        <div className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center shadow-sm">
-          <Baby className="h-5 w-5 text-white" />
-        </div>
-        <div className="min-w-0 space-y-1">
-          <p className="text-sm font-semibold text-foreground leading-snug">
-            {t("parent_hub.journey.infant.trial_intro", { name: childName })}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {t("parent_hub.journey.infant.trial_intro_cta")}
-          </p>
+      <div className="flex min-w-0">
+        <div className="w-1.5 shrink-0 self-stretch bg-gradient-to-b from-sky-400 via-cyan-400 to-blue-500" aria-hidden />
+        <div className="px-4 py-3.5 flex-1 flex items-start gap-3">
+          <div className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center shadow-[0_0_14px_rgba(56,189,248,0.35)] ring-1 ring-white/20">
+            <Baby className="h-5 w-5 text-white" />
+          </div>
+          <div className="min-w-0 space-y-1">
+            <p className="text-sm font-semibold text-foreground leading-snug">
+              {t("parent_hub.journey.infant.trial_intro", { name: childName })}
+            </p>
+            <p className={cn(HUB_BODY, "mt-0")}>
+              {t("parent_hub.journey.infant.trial_intro_cta")}
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -1396,6 +1443,7 @@ function ParentingHubPage() {
           defaultOpen
           testId="hub-today-summary"
           parentHub
+          accentKey="today-summary"
         >
           {hubJourney.access ? (
             <HubJourneyStrip
@@ -1609,6 +1657,8 @@ function ParentingHubPage() {
               title={t("parent_hub.headers.explore_next", { name: effectiveChild.name })}
               subtitle={t("parent_hub.headers.explore_blurb", { name: effectiveChild.name })}
               testId="section-2-early-access"
+              accentKey="explore-next"
+              headerEmoji="🔭"
             >
               {SECTION_2_EARLY_ACCESS_TILE_IDS.map(tileId => {
                 const section = sectionById.get(tileId);
