@@ -665,6 +665,7 @@ export default function AICoachPage() {
   const [progressWinCount, setProgressWinCount] = useState(0);
   const [loadingNextWin, setLoadingNextWin] = useState(false);
   const fetchingNextRef = useRef(false);
+  const extendingRef = useRef(false);
 
   // Keep last submitted answers/payload around so lazy /next-win and /extend work
   const lastPayloadRef = useRef<{
@@ -1202,7 +1203,13 @@ export default function AICoachPage() {
       }
       if (!res.ok) throw new Error(`Server ${res.status}`);
       const { readResolvedApiJson } = await import("@/lib/poll-result");
-      const data = await readResolvedApiJson<{ win?: Win }>(res, authFetch);
+      const data = await readResolvedApiJson<{ win?: Win }>(res, authFetch, {
+        poll: {
+          maxAttempts: 45,
+          intervalMs: 2000,
+          requestTimeoutMs: 15_000,
+        },
+      });
       if (!data?.win) throw new Error("empty win");
       const newLen = currentPlan.wins.length + 1;
       setPlan((p) => (p ? { ...p, wins: [...p.wins, data.win!] } : p));
@@ -1222,17 +1229,18 @@ export default function AICoachPage() {
     }
   };
 
-  const advanceAfterFeedback = async (targetIdx: number) => {
+  const advanceAfterFeedback = async (targetIdx: number): Promise<boolean> => {
     const currentPlan = planRef.current;
-    if (!currentPlan) return;
+    if (!currentPlan) return false;
     const total = originalWinCountRef.current || 12;
     let deckLen = currentPlan.wins.length;
     if (targetIdx >= deckLen && deckLen < total && lastPayloadRef.current) {
       const fetched = await fetchNextWin();
-      if (!fetched) return;
+      if (!fetched) return false;
       deckLen = fetched;
     }
     setTimeout(() => goToCard(Math.min(deckLen - 1, targetIdx)), 300);
+    return true;
   };
 
   // ─── Feedback (yes / somewhat / no)
@@ -1280,17 +1288,29 @@ export default function AICoachPage() {
 
     // Partial or not worked — one adaptive win until progress reaches 100%
     if (newPct < 100 && lastPayloadRef.current) {
+      const winsBefore = planRef.current?.wins.length ?? 0;
       const ok = await requestExtension(winNumber, feedback);
-      if (!ok) {
-        const currentPlan = planRef.current;
-        const atLast = currentPlan ? activeIdx >= currentPlan.wins.length - 1 : true;
-        const canFetchMore = currentPlan
-          ? currentPlan.wins.length < (originalWinCountRef.current || 12)
-          : false;
-        if (!atLast || canFetchMore) {
-          await advanceAfterFeedback(activeIdx + 1);
-        }
+      if (ok || (planRef.current?.wins.length ?? 0) > winsBefore) {
+        return;
       }
+      const currentPlan = planRef.current;
+      const atLast = currentPlan ? activeIdx >= currentPlan.wins.length - 1 : true;
+      const canFetchMore = currentPlan
+        ? currentPlan.wins.length < (originalWinCountRef.current || 12)
+        : false;
+      if (!atLast) {
+        await advanceAfterFeedback(activeIdx + 1);
+        return;
+      }
+      if (canFetchMore) {
+        const advanced = await advanceAfterFeedback(activeIdx + 1);
+        if (advanced) return;
+      }
+      toast({
+        title: t("toasts.ai_coach.extras_failed_title"),
+        description: t("toasts.ai_coach.extras_failed_body"),
+        variant: "destructive",
+      });
       return;
     }
 
@@ -1305,7 +1325,7 @@ export default function AICoachPage() {
 
   // ─── Adaptive: ask backend for 1 follow-up win when a step doesn't fully work
   const requestExtension = async (failedWinNumber: number, feedback: Feedback = "no"): Promise<boolean> => {
-    if (!plan || !lastPayloadRef.current || extending) return false;
+    if (!plan || !lastPayloadRef.current || extendingRef.current) return false;
     if (!coachJourney.extendUnlocked) {
       openPaywall("coach_locked");
       return false;
@@ -1314,6 +1334,7 @@ export default function AICoachPage() {
     if (!failedWin) return false;
     const insertAt = activeIdx + 1;
     const nextWinNum = Math.max(0, ...plan.wins.map(w => w.win)) + 1;
+    extendingRef.current = true;
     setExtending(true);
     try {
       const {
@@ -1347,7 +1368,17 @@ export default function AICoachPage() {
       if (!res.ok) throw new Error(`Server ${res.status}`);
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
       const { readResolvedApiJson } = await import("@/lib/poll-result");
-      const data = await readResolvedApiJson<{ wins?: Win[]; result?: { wins?: Win[] } }>(res, authFetch);
+      const data = await readResolvedApiJson<{ wins?: Win[]; result?: { wins?: Win[] } }>(
+        res,
+        authFetch,
+        {
+          poll: {
+            maxAttempts: 45,
+            intervalMs: 2000,
+            requestTimeoutMs: 15_000,
+          },
+        },
+      );
       const newWins = data?.wins ?? data?.result?.wins;
       if (Array.isArray(newWins) && newWins.length > 0) {
         const newWin = { ...newWins[0]!, win: nextWinNum };
@@ -1367,13 +1398,9 @@ export default function AICoachPage() {
       return false;
     } catch (err) {
       console.error("[ai-coach] requestExtension failed:", err);
-      toast({
-        title: t("toasts.ai_coach.extras_failed_title"),
-        description: t("toasts.ai_coach.extras_failed_body"),
-        variant: "destructive"
-      });
       return false;
     } finally {
+      extendingRef.current = false;
       setExtending(false);
     }
   };
@@ -1420,6 +1447,7 @@ export default function AICoachPage() {
     setFeedbackByWin({});
     lastPayloadRef.current = null;
     fetchingNextRef.current = false;
+    extendingRef.current = false;
     setLoadingNextWin(false);
   };
 

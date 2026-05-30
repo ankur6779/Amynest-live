@@ -5,6 +5,12 @@ import {
   getHubFeatureTileAccent,
   hubAccentBarClasses,
   hubSectionCardClasses,
+  HUB_FEATURE_TILE_CHEVRON,
+  HUB_FEATURE_TILE_DESC,
+  HUB_FEATURE_TILE_ICON,
+  HUB_FEATURE_TILE_LAUNCH_ROW,
+  HUB_FEATURE_TILE_TEXT,
+  HUB_FEATURE_TILE_TITLE,
 } from "@/lib/parent-hub-premium";
 
 export function HubLaunchCard({
@@ -38,7 +44,7 @@ export function HubLaunchCard({
       href={href}
       onClick={() => onNavigate?.()}
       className={cn(
-        "group block overflow-hidden p-0 pl-0",
+        "group block h-full overflow-hidden p-0 pl-0",
         hubSectionCardClasses(theme),
         cardClass,
       )}
@@ -46,30 +52,20 @@ export function HubLaunchCard({
       data-section-id={sectionId}
       source="hub-launch-card"
     >
-      <div className="flex min-w-0">
+      <div className="flex h-full min-w-0">
         <div className={hubAccentBarClasses(theme)} aria-hidden />
-        <div className="flex min-w-0 flex-1 items-center gap-3 p-4">
-          <div
-            className={cn(
-              "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
-              theme.emojiShell,
-              accentClass,
-            )}
-          >
+        <div className={cn(HUB_FEATURE_TILE_LAUNCH_ROW, "flex-1")}>
+          <div className={cn(HUB_FEATURE_TILE_ICON, theme.emojiShell, accentClass)}>
             {icon}
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <p className="line-clamp-2 font-quicksand text-[15px] font-bold leading-tight text-foreground">
-                {title}
-              </p>
+          <div className={HUB_FEATURE_TILE_TEXT}>
+            <div className="flex items-start gap-1.5 min-w-0">
+              <p className={HUB_FEATURE_TILE_TITLE}>{title}</p>
               {tryFree ? <TryFreeBadge /> : null}
             </div>
-            <p className="mt-0.5 line-clamp-2 text-[11.5px] text-muted-foreground/80 leading-relaxed">
-              {description}
-            </p>
+            <p className={HUB_FEATURE_TILE_DESC}>{description}</p>
           </div>
-          <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 text-xs font-black text-white shadow-[0_0_14px_rgba(251,146,60,0.35)] transition-transform group-active:scale-95">
+          <span className="inline-flex h-8 shrink-0 items-center self-center rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 text-xs font-black text-white shadow-[0_0_14px_rgba(251,146,60,0.35)] transition-transform group-active:scale-95">
             Open
           </span>
         </div>

@@ -1,4 +1,4 @@
-import { Suspense, useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { AppLink } from "@/components/app-link";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
@@ -61,26 +61,24 @@ import {
 } from "@/lib/hub-support-utils";
 import { getArticlesForAgeMonths } from "@/lib/articles-data";
 import { NewParentTipsSection } from "@/components/new-parent-tips";
-import { HubJourneyStrip } from "@/components/hub-journey-strip";
+import { HubJourneyPulse } from "@/components/hub-journey-pulse";
+import { HubTodayLearningPanel } from "@/components/hub-today-learning-panel";
 import { TodaysPathFromStatus } from "@/components/todays-path";
 import { JourneyPreviewContent } from "@/components/journey-preview-overlay";
 import { useHubJourney } from "@/hooks/use-hub-journey";
 import { useLearningProgress } from "@/hooks/use-learning-progress";
 import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity";
 import {
-  ProgressionStrip,
   DailyFreshnessCard,
   NextSessionUnlocks,
-  WeeklyParentReportCard,
   RewardCelebrationModal,
-  RewardWalletStrip,
   DailyLearningSessionCard,
   SessionCompleteScreen,
   ComebackMissionCard,
-  AdaptiveRecommendationsCard,
+  AdaptiveRecommendationsChips,
 } from "@/components/learning-progress";
 import { useRewardCelebrations } from "@/hooks/use-reward-celebrations";
-import { HubCollapsiblePanel, HubFamilyPulseSection, HubExploreAgesSection } from "@/components/hub-light-layout";
+import { HubFamilyPulseSection, HubExploreAgesSection } from "@/components/hub-light-layout";
 import {
   PARENT_HUB_PAGE,
   getHubGroupStyle,
@@ -95,6 +93,14 @@ import {
   getHubFeatureTileAccent,
   hubSectionCardClasses,
   hubAccentBarClasses,
+  HUB_FEATURE_TILE_CHEVRON,
+  HUB_FEATURE_TILE_DESC,
+  HUB_FEATURE_TILE_HEADER,
+  HUB_FEATURE_TILE_ICON,
+  HUB_FEATURE_TILE_LAUNCH_ROW,
+  HUB_FEATURE_TILE_PREVIEW,
+  HUB_FEATURE_TILE_TEXT,
+  HUB_FEATURE_TILE_TITLE,
 } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
 
@@ -202,27 +208,27 @@ function HubSection({
     <div
       data-section-id={id}
       className={cn(
-        "group",
+        "group h-full",
         hubSectionCardClasses(tileTheme),
         cardClass,
         highlighted && !open && "shadow-[0_0_28px_rgba(168,85,247,0.24)]",
       )}
     >
-      <div className="flex min-w-0">
+      <div className="flex h-full min-w-0">
         <div className={hubAccentBarClasses(tileTheme)} aria-hidden />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 flex flex-col">
           <button
             onClick={toggle}
             className={cn(
-              "w-full flex items-center justify-between gap-3 px-3 py-3 text-left transition-all duration-[220ms] ease-[ease]",
+              HUB_FEATURE_TILE_HEADER,
               open ? "bg-white/[0.04]" : "hover:bg-white/[0.03]",
             )}
             aria-expanded={open}
           >
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <div
                 className={cn(
-                  "w-9 h-9 flex items-center justify-center",
+                  HUB_FEATURE_TILE_ICON,
                   tileTheme.emojiShell,
                   accentClass,
                   highlighted && !open ? "animate-[pulse_3s_ease-in-out_infinite]" : "",
@@ -230,33 +236,35 @@ function HubSection({
               >
                 {icon}
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <p className="font-quicksand font-bold text-[15px] leading-tight text-foreground line-clamp-2">
-                    {title}
-                  </p>
+              <div className={HUB_FEATURE_TILE_TEXT}>
+                <div className="flex items-start gap-1.5 min-w-0">
+                  <p className={HUB_FEATURE_TILE_TITLE}>{title}</p>
                   {tryFree && <TryFreeBadge />}
                 </div>
-                <p className="text-[12px] text-muted-foreground/80 mt-0.5 line-clamp-2 leading-relaxed">
-                  {description}
-                </p>
+                <p className={HUB_FEATURE_TILE_DESC}>{description}</p>
               </div>
             </div>
             <span
               className={cn(
-                "shrink-0 w-6 h-6 rounded-full flex items-center justify-center border border-white/10 bg-white/[0.05] transition-transform duration-300",
+                HUB_FEATURE_TILE_CHEVRON,
                 open ? "rotate-180 text-amber-300/90" : "text-muted-foreground",
               )}
             >
               <ChevronDown className="h-3.5 w-3.5" />
             </span>
           </button>
-          {!open && preview ? (
-            <div className="px-3 pb-2.5 -mt-0.5">
-              <p className="text-[11px] font-medium text-amber-200/80 line-clamp-1 flex items-center gap-1">
-                <Sparkles className="h-3 w-3 shrink-0 opacity-80 hub-sparkle-glow" />
-                {preview}
-              </p>
+          {!open ? (
+            <div className={HUB_FEATURE_TILE_PREVIEW}>
+              {preview ? (
+                <p className="text-[11px] font-medium text-amber-200/80 line-clamp-1 flex items-center gap-1 min-w-0">
+                  <Sparkles className="h-3 w-3 shrink-0 opacity-80 hub-sparkle-glow" />
+                  {preview}
+                </p>
+              ) : (
+                <span className="invisible text-[11px]" aria-hidden>
+                  .
+                </span>
+              )}
             </div>
           ) : null}
           {open && (
@@ -283,24 +291,28 @@ function RoutineLaunchCard({
   title: string;
   description: string;
 }) {
+  const theme = getHubFeatureTileAccent("generate-routine");
   return (
     <AppLink
       href="/routines/generate"
-      className="group block rounded-2xl border border-white/20 bg-gradient-to-br from-emerald-400/30 to-teal-500/15 p-4 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all hover:border-white/40 hover:shadow-[0_10px_36px_-10px_rgba(52,211,153,0.45)]"
+      className={cn("group block h-full overflow-hidden p-0 pl-0", hubSectionCardClasses(theme))}
       data-testid="routine-launch-card"
       data-section-id="generate-routine"
     >
-      <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40">
-          <Calendar className="h-5 w-5 text-white" />
+      <div className="flex min-w-0">
+        <div className={hubAccentBarClasses(theme)} aria-hidden />
+        <div className={HUB_FEATURE_TILE_LAUNCH_ROW}>
+          <div className={cn(HUB_FEATURE_TILE_ICON, theme.emojiShell, "bg-gradient-to-br from-emerald-400 to-teal-500")}>
+            <Calendar className="h-5 w-5 text-white" />
+          </div>
+          <div className={HUB_FEATURE_TILE_TEXT}>
+            <p className={HUB_FEATURE_TILE_TITLE}>{title}</p>
+            <p className={HUB_FEATURE_TILE_DESC}>{description}</p>
+          </div>
+          <span className="inline-flex h-8 shrink-0 items-center self-center rounded-full bg-primary px-3 text-xs font-black text-primary-foreground transition-transform group-active:scale-95">
+            Open
+          </span>
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-quicksand text-[15px] font-bold leading-tight text-foreground">{title}</p>
-          <p className="mt-0.5 truncate text-[12px] text-muted-foreground/90">{description}</p>
-        </div>
-        <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-primary px-3 text-xs font-black text-primary-foreground transition-transform group-active:scale-95">
-          Open
-        </span>
       </div>
     </AppLink>
   );
@@ -835,6 +847,15 @@ function ParentingHubPage() {
     onRewards: rewardCelebrations.celebrate,
   });
   const [showSessionComplete, setShowSessionComplete] = useState(false);
+  const [learningPanelOpen, setLearningPanelOpen] = useState(false);
+  const learningPanelRef = useRef<HTMLDivElement>(null);
+
+  const openLearningPanel = useCallback(() => {
+    setLearningPanelOpen(true);
+    window.setTimeout(() => {
+      learningPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+  }, []);
 
   const handleSessionStep = async (stepId: string) => {
     const result = await learningProgress.completeSessionStep(stepId);
@@ -843,6 +864,7 @@ function ParentingHubPage() {
     }
     if (result.sessionComplete) {
       setShowSessionComplete(true);
+      setLearningPanelOpen(true);
     }
   };
   const hubUsage = useFeatureUsage();
@@ -1435,107 +1457,94 @@ function ParentingHubPage() {
       )}
 
       {effectiveChild && (
-        <HubCollapsiblePanel
-          title={t("parent_hub.today_summary.title", { name: effectiveChild.name })}
-          subtitle={t("parent_hub.today_summary.subtitle")}
-          defaultOpen
-          testId="hub-today-summary"
-          parentHub
-          accentKey="today-summary"
-        >
-          {hubJourney.access ? (
-            <HubJourneyStrip
-              childName={effectiveChild.name}
-              access={hubJourney.access}
-              progress={hubJourney.progress}
-              isPremium={hubUsage.isPremium}
-              isInfant={isInfant}
-            />
-          ) : null}
-          {hubJourney.status ? (
-            <TodaysPathFromStatus
-              status={hubJourney.status}
-              isPremium={hubUsage.isPremium}
-              isJourneyLocked={hubJourney.isJourneyLocked}
-              onComplete={hubJourney.completePath}
-              onPeekAhead={hubJourney.peekAheadUnlock}
-              isCompleting={hubJourney.isCompleting}
-            />
-          ) : null}
-          {learningProgress.profile ? (
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="flex-1 min-w-0">
-                <ProgressionStrip profile={learningProgress.profile} parentHub />
-              </div>
-              {learningProgress.phase3 ? (
-                <div className="sm:w-48 shrink-0">
-                  <RewardWalletStrip wallet={learningProgress.phase3.wallet} parentHub />
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-          {learningProgress.phase3?.comeback ? (
-            <ComebackMissionCard mission={learningProgress.phase3.comeback} />
-          ) : null}
-          {learningProgress.phase3 && !showSessionComplete ? (
-            <DailyLearningSessionCard
-              session={learningProgress.phase3.dailySession}
-              childId={effectiveChild.id}
-              childName={effectiveChild.name}
-              onStepComplete={handleSessionStep}
-              completing={learningProgress.isCompleting}
-              parentHub
-            />
-          ) : null}
-          {showSessionComplete && learningProgress.phase3 && learningProgress.unlocks ? (
-            <SessionCompleteScreen
-              xpEarned={
-                rewardCelebrations.events.reduce((sum, e) => sum + (e.amount ?? 0), 0) ||
-                25
-              }
-              rewardEvents={rewardCelebrations.events.length > 0 ? rewardCelebrations.events : []}
-              tomorrowPreview={learningProgress.unlocks.nextSessionUnlocks}
-              childName={effectiveChild.name}
-              activitiesCompleted={learningProgress.phase3.dailySession.completedCount}
-              activitiesTotal={learningProgress.phase3.dailySession.totalCount}
-              streakDays={learningProgress.phase3.wallet.streakDays}
-              skillHighlight={
-                learningProgress.phase3.recommendations[0]?.title ?? null
-              }
-              onClose={() => setShowSessionComplete(false)}
-            />
-          ) : null}
-          {learningProgress.phase3 && (learningProgress.phase3.recommendations?.length ?? 0) > 0 ? (
-            <AdaptiveRecommendationsCard items={learningProgress.phase3.recommendations} parentHub />
-          ) : null}
-          {learningProgress.unlocks ? (
-            <div className="grid gap-2 md:grid-cols-2">
-              <DailyFreshnessCard
-                items={learningProgress.unlocks.todaysUnlocks}
-                isRevisionDay={learningProgress.unlocks.isRevisionDay}
+        <>
+          <HubJourneyPulse
+            childName={effectiveChild.name}
+            bandLabel={currentBand ? bandLabel(currentBand) : undefined}
+            isInfant={isInfant}
+            isPremium={hubUsage.isPremium}
+            access={hubJourney.access}
+            journeyProgress={hubJourney.progress}
+            pathSteps={hubJourney.status?.pathSteps}
+            pathCompleted={hubJourney.status?.pathCompleted}
+            isJourneyLocked={hubJourney.isJourneyLocked}
+            learningProfile={learningProgress.profile}
+            wallet={learningProgress.phase3?.wallet ?? null}
+            onOpenLearning={openLearningPanel}
+          />
+
+          <HubTodayLearningPanel
+            childName={effectiveChild.name}
+            open={learningPanelOpen}
+            onOpenChange={setLearningPanelOpen}
+            panelRef={learningPanelRef}
+            weeklyReport={hubUsage.isPremium ? learningProgress.weeklyReport ?? null : null}
+            showGrowthLink={hubUsage.isPremium && !!learningProgress.phase3}
+            growthLinkLabel={t("parent_hub.today_summary.growth_link")}
+          >
+            {hubJourney.status ? (
+              <TodaysPathFromStatus
+                status={hubJourney.status}
+                isPremium={hubUsage.isPremium}
+                isJourneyLocked={hubJourney.isJourneyLocked}
+                onComplete={hubJourney.completePath}
+                onPeekAhead={hubJourney.peekAheadUnlock}
+                isCompleting={hubJourney.isCompleting}
+              />
+            ) : null}
+            {learningProgress.phase3?.comeback ? (
+              <ComebackMissionCard mission={learningProgress.phase3.comeback} />
+            ) : null}
+            {learningProgress.phase3 && !showSessionComplete ? (
+              <DailyLearningSessionCard
+                session={learningProgress.phase3.dailySession}
+                childId={effectiveChild.id}
+                childName={effectiveChild.name}
+                onStepComplete={handleSessionStep}
+                completing={learningProgress.isCompleting}
                 parentHub
               />
-              <NextSessionUnlocks
-                items={learningProgress.unlocks.nextSessionUnlocks}
+            ) : null}
+            {showSessionComplete && learningProgress.phase3 && learningProgress.unlocks ? (
+              <SessionCompleteScreen
+                xpEarned={
+                  rewardCelebrations.events.reduce((sum, e) => sum + (e.amount ?? 0), 0) ||
+                  25
+                }
+                rewardEvents={rewardCelebrations.events.length > 0 ? rewardCelebrations.events : []}
+                tomorrowPreview={learningProgress.unlocks.nextSessionUnlocks}
                 childName={effectiveChild.name}
-                onVisible={trackNextSessionOpened}
+                activitiesCompleted={learningProgress.phase3.dailySession.completedCount}
+                activitiesTotal={learningProgress.phase3.dailySession.totalCount}
+                streakDays={learningProgress.phase3.wallet.streakDays}
+                skillHighlight={
+                  learningProgress.phase3.recommendations[0]?.title ?? null
+                }
+                onClose={() => setShowSessionComplete(false)}
               />
-            </div>
-          ) : null}
-          {hubUsage.isPremium && learningProgress.weeklyReport ? (
-            <WeeklyParentReportCard report={learningProgress.weeklyReport} />
-          ) : null}
-          {hubUsage.isPremium && learningProgress.phase3 ? (
-            <div className="flex justify-end">
-              <AppLink href="/parent-growth">
-                <Button variant="outline" size="sm" className="rounded-full gap-1.5">
-                  <Trophy className="h-4 w-4" />
-                  {t("parent_hub.today_summary.growth_link")}
-                </Button>
-              </AppLink>
-            </div>
-          ) : null}
-        </HubCollapsiblePanel>
+            ) : null}
+            {learningProgress.phase3 && (learningProgress.phase3.recommendations?.length ?? 0) > 0 ? (
+              <AdaptiveRecommendationsChips
+                items={learningProgress.phase3.recommendations}
+                parentHub
+              />
+            ) : null}
+            {learningProgress.unlocks ? (
+              <div className="grid gap-2 md:grid-cols-2">
+                <DailyFreshnessCard
+                  items={learningProgress.unlocks.todaysUnlocks}
+                  isRevisionDay={learningProgress.unlocks.isRevisionDay}
+                  parentHub
+                />
+                <NextSessionUnlocks
+                  items={learningProgress.unlocks.nextSessionUnlocks}
+                  childName={effectiveChild.name}
+                  onVisible={trackNextSessionOpened}
+                />
+              </div>
+            ) : null}
+          </HubTodayLearningPanel>
+        </>
       )}
 
       <RewardCelebrationModal
@@ -1629,10 +1638,10 @@ function ParentingHubPage() {
                           return node ? <div key={s.id}>{node}</div> : null;
                         })
                       ) : (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
                           {groupGrid.map(s => {
                             const node = renderHubSection(s);
-                            return node ? <div key={s.id}>{node}</div> : null;
+                            return node ? <div key={s.id} className="h-full [&>*]:h-full">{node}</div> : null;
                           })}
                         </div>
                       )}
@@ -1713,11 +1722,7 @@ function ForYouHeader({
   } = useTranslation();
   const groupInfo = ageGroup ? getAgeGroupInfo(ageGroup) : null;
   return <div className="pt-1 hub-page-enter">
-      <div className="flex items-center gap-2">
-        <span className={HUB_SECTION_LABEL}>{t("parent_hub.headers.section1_for")}</span>
-        <span className={HUB_AGE_BADGE}>{bandLabel(band)}</span>
-      </div>
-      <h2 className="font-quicksand text-[22px] font-bold text-foreground mt-2 flex items-center gap-2 flex-wrap">
+      <h2 className="font-quicksand text-[22px] font-bold text-foreground flex items-center gap-2 flex-wrap">
         <span>{t("parent_hub.headers.for_child", {
           name: childName
         })}</span>

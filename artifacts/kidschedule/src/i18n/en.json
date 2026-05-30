@@ -3143,6 +3143,12 @@
       "progress": "Level {{level}} · {{streak}}d streak",
       "growth_link": "See growth journey"
     },
+    "journey_pulse": {
+      "learning_momentum": "Learning momentum",
+      "expand_learning": "Today's learning",
+      "expand_subtitle": "Path, session, Amy picks & unlocks",
+      "this_week": "This week together"
+    },
     "family_pulse": {
       "title": "Family pulse",
       "preview": "Journey, insights, and executive dashboard"

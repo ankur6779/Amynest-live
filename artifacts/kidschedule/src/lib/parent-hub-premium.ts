@@ -194,6 +194,40 @@ export const HUB_TILE = cn(
   "hover:border-white/15 active:scale-[0.985]",
 );
 
+/** Collapsed Parent Hub feature tiles — shared header geometry for HubSection + HubLaunchCard. */
+export const HUB_FEATURE_TILE_HEADER = cn(
+  "w-full flex items-center justify-between gap-3 px-3 py-3 text-left",
+  "transition-all duration-[220ms] ease-[ease]",
+);
+
+export const HUB_FEATURE_TILE_ICON = cn(
+  "w-10 h-10 flex items-center justify-center shrink-0",
+);
+
+export const HUB_FEATURE_TILE_TEXT = "min-w-0 flex-1";
+
+export const HUB_FEATURE_TILE_TITLE = cn(
+  "font-quicksand font-bold text-[15px] leading-[1.25] text-foreground line-clamp-2 min-h-[2.5rem]",
+);
+
+export const HUB_FEATURE_TILE_DESC = cn(
+  "text-[12px] text-muted-foreground/80 mt-0.5 line-clamp-2 leading-[1.35] min-h-[2.125rem]",
+);
+
+export const HUB_FEATURE_TILE_PREVIEW = cn(
+  "px-3 pb-2.5 -mt-0.5 min-h-[1.625rem] flex items-center",
+);
+
+export const HUB_FEATURE_TILE_CHEVRON = cn(
+  "shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
+  "border border-white/10 bg-white/[0.05] transition-transform duration-300",
+);
+
+/** Launch / link tiles — same collapsed height as HubSection header + preview row. */
+export const HUB_FEATURE_TILE_LAUNCH_ROW = cn(
+  "flex min-w-0 flex-1 items-center gap-3 p-3 min-h-[6.75rem]",
+);
+
 export const HUB_XP_GOLD = "font-semibold text-[#FFD54F] tabular-nums";
 
 export const HUB_PROGRESS_TRACK =

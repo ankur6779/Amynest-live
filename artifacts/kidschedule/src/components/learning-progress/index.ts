@@ -12,7 +12,7 @@ export { SkillTreeView } from "./skill-tree-view";
 export { DailyLearningSessionCard } from "./daily-learning-session";
 export { SessionCompleteScreen } from "./session-complete-screen";
 export { ComebackMissionCard } from "./comeback-mission-card";
-export { AdaptiveRecommendationsCard } from "./adaptive-recommendations";
+export { AdaptiveRecommendationsCard, AdaptiveRecommendationsChips } from "./adaptive-recommendations";
 export { ParentGrowthDashboardView } from "./parent-growth-dashboard";
 export { TutorProactiveLines } from "./tutor-proactive-lines";
 export { TomorrowUnlocksCard } from "./tomorrow-unlocks";
