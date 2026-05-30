@@ -5,6 +5,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { HUB_GLASS_SURFACE } from "@/lib/parent-hub-premium";
+import { cn } from "@/lib/utils";
 
 export function CollapsibleRoutinesSection({
   title,
@@ -21,7 +23,13 @@ export function CollapsibleRoutinesSection({
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="w-full flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/30 px-4 py-3 text-left hover:bg-muted/50 transition-colors">
+      <CollapsibleTrigger
+        className={cn(
+          HUB_GLASS_SURFACE,
+          "w-full flex items-center justify-between gap-3 px-4 py-3 text-left",
+          "border border-white/[0.08] hover:border-white/15",
+        )}
+      >
         <div className="min-w-0">
           <p className="text-sm font-bold text-foreground">{title}</p>
           {subtitle && (

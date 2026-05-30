@@ -184,8 +184,9 @@ export function Layout({
     }
   };
   const handleBack = () => {
+    // Page handlers may call navigateBack (same debounce key) — invoke before locking.
+    if (invokePageBackHandler()) return;
     runSafeNavAction(`back:${location}`, () => {
-      if (invokePageBackHandler()) return;
       smartBack(setLocation, location, "layout-header-back");
     });
   };

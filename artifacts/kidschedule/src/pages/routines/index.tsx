@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { useListRoutines, getListRoutinesQueryKey } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Calendar, ChevronRight, Wand2, Sparkles, ChevronLeft, Zap, TrendingUp, Users, HelpCircle, ShieldCheck } from "lucide-react";
 import { getLastGenSettings } from "./generate";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LockedBlock } from "@/components/locked-block";
 import { SmartMealSuggestions } from "@/components/smart-meal-suggestions";
 import { WeeklyReportCard } from "@/components/intelligence/weekly-report-card";
 import { LearningWeightsCard } from "@/components/intelligence/learning-weights-card";
@@ -23,6 +21,18 @@ import ForecastPage from "@/pages/forecast";
 import HouseholdPage from "@/pages/household";
 import ExplainPage from "@/pages/explain";
 import { SafetyPanel } from "@/components/safety/safety-panel";
+import { cn } from "@/lib/utils";
+import {
+  PARENT_HUB_PAGE,
+  ROUTINES_HUB_ACCENT,
+  HUB_PAGE_CHIP_INACTIVE,
+  HUB_SECTION_TITLE,
+  HUB_BODY,
+  HUB_BOTTOM_CTA,
+  HUB_GLASS_SURFACE,
+  hubSectionCardClasses,
+  hubAccentBarClasses,
+} from "@/lib/parent-hub-premium";
 type RoutineItem = {
   time: string;
   activity: string;
@@ -158,18 +168,27 @@ function WeekCalendar({
           } else {
             onGatedNavigate(`/routines/generate?date=${dateStr}`);
           }
-        }} className={`flex flex-col items-center gap-1 p-1.5 rounded-2xl border-2 transition-all text-xs min-h-[72px] justify-between ${isToday ? "border-primary bg-primary text-primary-foreground" : dayRoutines.length > 0 ? "border-border bg-muted text-primary hover:border-border" : isWeekend ? "border-border/40 bg-muted/30 text-muted-foreground hover:border-border hover:bg-muted" : "border-border/50 bg-card text-foreground hover:border-primary/40 hover:bg-primary/5"}`}>
-              <span className={`font-bold text-[10px] ${isToday ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+        }} className={cn(
+          "flex flex-col items-center gap-1 p-1.5 rounded-2xl border-2 transition-all text-xs min-h-[72px] justify-between",
+          isToday
+            ? "border-[rgba(255,184,0,0.55)] bg-[rgba(255,184,0,0.22)] text-foreground shadow-[0_0_12px_rgba(255,184,0,0.25)]"
+            : dayRoutines.length > 0
+              ? "border-white/15 bg-white/[0.06] text-foreground hover:border-amber-400/30"
+              : isWeekend
+                ? "border-white/[0.06] bg-white/[0.03] text-muted-foreground hover:border-white/12"
+                : "border-white/[0.08] bg-[rgba(18,28,60,0.5)] text-foreground hover:border-amber-400/25",
+        )}>
+              <span className={cn("font-bold text-[10px]", isToday ? "text-amber-200/80" : "text-muted-foreground")}>
                 {DAY_NAMES[i]}
               </span>
               <span className="font-black text-base leading-none">{day.getDate()}</span>
               {dayRoutines.length > 0 ? <div className="flex flex-col items-center gap-0.5 w-full">
                   <div className="w-full h-1 rounded-full bg-current/20 overflow-hidden">
-                    <div className={`h-full rounded-full ${isToday ? "bg-white/60" : "bg-primary"}`} style={{
+                    <div className={cn("h-full rounded-full", isToday ? "bg-white/60" : "bg-amber-400")} style={{
                 width: `${dayPct}%`
               }} />
                   </div>
-                  <span className={`text-[9px] font-bold ${isToday ? "text-primary-foreground/70" : "text-primary"}`}>
+                  <span className={cn("text-[9px] font-bold", isToday ? "text-amber-100/80" : "text-amber-300/90")}>
                     {dayRoutines.length > 1 ? `${dayRoutines.length} routines` : `${dayPct}%`}
                   </span>
                 </div> : isWeekend ? <span className="text-[9px]">🏖️</span> : <span className="text-[9px] opacity-50">{t("pages.routines.index.add")}</span>}
@@ -178,10 +197,10 @@ function WeekCalendar({
       </div>
 
       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground px-1">
-        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-primary bg-primary" />{t("pages.routines.index.today")}</span>
-        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-border bg-muted" />{t("pages.routines.index.has_routine")}</span>
-        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-border/40 bg-muted/30" />{t("pages.routines.index.weekend_no_school")}</span>
-        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-border/50 bg-card" />{t("pages.routines.index.tap_to_generate")}</span>
+        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-[rgba(255,184,0,0.55)] bg-[rgba(255,184,0,0.22)]" />{t("pages.routines.index.today")}</span>
+        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-white/15 bg-white/[0.06]" />{t("pages.routines.index.has_routine")}</span>
+        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-white/[0.06] bg-white/[0.03]" />{t("pages.routines.index.weekend_no_school")}</span>
+        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-white/[0.08] bg-[rgba(18,28,60,0.5)]" />{t("pages.routines.index.tap_to_generate")}</span>
       </div>
 
     </div>;
@@ -249,12 +268,20 @@ export default function RoutinesList() {
   }
   const hasLastSettings = isPremium && !!getLastGenSettings();
 
+  const tabTriggerClass = cn(
+    HUB_PAGE_CHIP_INACTIVE,
+    "flex-1 min-w-[100px] flex items-center gap-1.5 rounded-xl",
+    "data-[state=active]:border-[rgba(255,184,0,0.55)] data-[state=active]:bg-[rgba(255,184,0,0.14)]",
+    "data-[state=active]:shadow-[0_0_16px_rgba(255,184,0,0.28)] data-[state=active]:text-foreground data-[state=active]:scale-[1.02]",
+    "data-[state=inactive]:shadow-none",
+  );
+
   const generateCta = (
     <div className="flex flex-col gap-2">
       <Button
         onClick={handleGenerateClick}
         size="lg"
-        className="w-full rounded-full h-14 text-base font-bold shadow-md ring-2 ring-primary/20"
+        className={cn(HUB_BOTTOM_CTA, "w-full h-14 text-base justify-center border-0 hover:opacity-95")}
         data-testid="routines-generate-btn"
       >
         <Sparkles className="mr-2 h-5 w-5" />
@@ -265,7 +292,7 @@ export default function RoutinesList() {
           onClick={handleQuickGenerate}
           size="lg"
           variant="outline"
-          className="w-full rounded-full h-12 text-sm font-semibold border-primary/40 text-primary hover:bg-primary/5"
+          className="w-full rounded-full h-12 text-sm font-semibold border-white/15 bg-white/[0.05] text-amber-200/95 hover:bg-white/[0.08]"
           data-testid="routines-quick-generate-btn"
         >
           <Zap className="mr-2 h-4 w-4" />
@@ -277,27 +304,27 @@ export default function RoutinesList() {
     </div>
   );
 
-  return <div className="flex flex-col gap-6 animate-in fade-in duration-500">
-      <header>
-        <h1 className="font-quicksand text-3xl font-bold text-foreground">{t("pages.routines.index.routines")}</h1>
-        <p className="text-muted-foreground mt-1">{t("pages.routines.index.daily_schedules_generated_by_ai")}</p>
+  return <div className={cn(PARENT_HUB_PAGE, "max-w-4xl mx-auto space-y-4 pb-12 animate-in fade-in duration-500")}>
+      <header className="hub-page-enter">
+        <h1 className={HUB_SECTION_TITLE}>{t("pages.routines.index.routines")}</h1>
+        <p className={HUB_BODY}>{t("pages.routines.index.daily_schedules_generated_by_ai")}</p>
       </header>
 
       <Tabs defaultValue="schedule" className="w-full">
-        <TabsList className="w-full flex flex-wrap gap-1 h-auto p-1 rounded-2xl bg-muted">
-          <TabsTrigger value="schedule" className="flex-1 min-w-[100px] flex items-center gap-1.5 rounded-xl">
+        <TabsList className="w-full flex flex-wrap gap-1.5 h-auto p-0 bg-transparent rounded-none">
+          <TabsTrigger value="schedule" className={tabTriggerClass}>
             <Calendar className="h-4 w-4" /> {t("routines.tabs.schedule", { defaultValue: "Schedule" })}
           </TabsTrigger>
-          <TabsTrigger value="forecast" className="flex-1 min-w-[100px] flex items-center gap-1.5 rounded-xl">
+          <TabsTrigger value="forecast" className={tabTriggerClass}>
             <TrendingUp className="h-4 w-4" /> {t("routines.tabs.forecast", { defaultValue: "Forecast" })}
           </TabsTrigger>
-          <TabsTrigger value="household" className="flex-1 min-w-[100px] flex items-center gap-1.5 rounded-xl">
+          <TabsTrigger value="household" className={tabTriggerClass}>
             <Users className="h-4 w-4" /> {t("routines.tabs.household", { defaultValue: "Household" })}
           </TabsTrigger>
-          <TabsTrigger value="explain" className="flex-1 min-w-[100px] flex items-center gap-1.5 rounded-xl">
+          <TabsTrigger value="explain" className={tabTriggerClass}>
             <HelpCircle className="h-4 w-4" /> {t("routines.tabs.explain", { defaultValue: "Why?" })}
           </TabsTrigger>
-          <TabsTrigger value="safety" className="flex-1 min-w-[100px] flex items-center gap-1.5 rounded-xl">
+          <TabsTrigger value="safety" className={tabTriggerClass}>
             <ShieldCheck className="h-4 w-4" /> {t("routines.tabs.safety", { defaultValue: "Safety" })}
           </TabsTrigger>
         </TabsList>
@@ -319,29 +346,32 @@ export default function RoutinesList() {
               <Skeleton className="h-48 w-full rounded-2xl" />
             </div>
           ) : allRoutines.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-border/50 rounded-3xl bg-muted/20">
-              <div className="h-14 w-14 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-3">
-                <Wand2 className="h-7 w-7" />
+            <div className={cn(HUB_GLASS_SURFACE, "flex flex-col items-center justify-center py-12 text-center border border-dashed border-amber-400/25")}>
+              <div className={cn(ROUTINES_HUB_ACCENT.emojiShell, "h-14 w-14 text-primary mb-3")}>
+                <Wand2 className="h-7 w-7 text-amber-300" />
               </div>
               <h3 className="font-quicksand text-lg font-bold text-foreground mb-1">
                 {t("pages.routines.index.no_routines_yet")}
               </h3>
-              <p className="text-sm text-muted-foreground max-w-sm">
+              <p className={cn(HUB_BODY, "max-w-sm opacity-100")}>
                 {t("pages.routines.index.let_the_ai_build_a_perfect_day_for_your_child_based_on_their")}
               </p>
             </div>
           ) : (
-            <Card className="rounded-3xl border-none shadow-sm bg-card">
-              <CardContent className="p-4 sm:p-6">
-                <WeekCalendar
-                  routines={allRoutines}
-                  isPremium={isPremium}
-                  routinesMax={routinesMax}
-                  onGatedNavigate={handleGatedNavigate}
-                  onLockedRoutineTap={() => openPaywall("routines_limit")}
-                />
-              </CardContent>
-            </Card>
+            <div className={cn(hubSectionCardClasses(ROUTINES_HUB_ACCENT), "hub-page-enter overflow-hidden")}>
+              <div className="flex">
+                <div className={hubAccentBarClasses(ROUTINES_HUB_ACCENT)} />
+                <div className="flex-1 p-4 sm:p-6">
+                  <WeekCalendar
+                    routines={allRoutines}
+                    isPremium={isPremium}
+                    routinesMax={routinesMax}
+                    onGatedNavigate={handleGatedNavigate}
+                    onLockedRoutineTap={() => openPaywall("routines_limit")}
+                  />
+                </div>
+              </div>
+            </div>
           )}
 
           <CollapsibleRoutinesSection

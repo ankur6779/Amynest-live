@@ -8,15 +8,16 @@ export function GamesLeaderboard() {
   return (
     <div
       style={{
-        background: "hsl(var(--card))",
-        border: `1px solid ${gameTheme.glassBorder}`,
+        background: gameTheme.cardBg,
+        border: `1.5px solid ${gameTheme.cardBorder}`,
+        backdropFilter: "blur(18px)",
         borderRadius: 16,
         padding: "12px 14px",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-        <Trophy size={16} color="hsl(var(--brand-amber-300))" />
-        <span style={{ fontSize: 12, fontWeight: 800, color: gameTheme.accentSoft, textTransform: "uppercase", letterSpacing: 0.5 }}>
+        <Trophy size={16} color="rgba(251,191,36,0.95)" />
+        <span style={{ fontSize: 12, fontWeight: 800, color: "rgba(251,191,36,0.9)", textTransform: "uppercase", letterSpacing: 0.5 }}>
           Weekly top scores
         </span>
         <span
@@ -26,7 +27,7 @@ export function GamesLeaderboard() {
             fontWeight: 800,
             padding: "2px 8px",
             borderRadius: 999,
-            background: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-orange-500)))",
+            background: gameTheme.ctaGradient,
             color: "#fff",
           }}
         >
@@ -49,8 +50,8 @@ export function GamesLeaderboard() {
                 gap: 10,
                 padding: "8px 10px",
                 borderRadius: 12,
-                background: i === 0 ? "rgba(245,158,11,0.1)" : "hsl(var(--muted) / 0.2)",
-                border: i === 0 ? "1px solid rgba(245,158,11,0.25)" : `1px solid ${gameTheme.glassBorder}`,
+                background: i === 0 ? "rgba(255,184,0,0.10)" : "rgba(255,255,255,0.04)",
+                border: i === 0 ? "1px solid rgba(255,184,0,0.25)" : `1px solid ${gameTheme.glassBorder}`,
               }}
             >
               <span style={{ width: 20, fontWeight: 800, color: gameTheme.textMuted, fontSize: 12 }}>
@@ -64,7 +65,7 @@ export function GamesLeaderboard() {
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "hsl(var(--brand-amber-300))" }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "rgba(251,191,36,0.95)" }}>
                   {row.bestRatio}%
                 </div>
                 <div style={{ fontSize: 10, color: gameTheme.textMuted }}>

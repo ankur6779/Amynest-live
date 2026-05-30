@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { Flame, CheckCircle2, Clock, SkipForward, TrendingUp, Sparkles, AlertTriangle, Lightbulb, Star, ArrowRight, BarChart2, Zap, RefreshCw } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getCachedInsights, saveCachedInsights, clearInsightsCache } from "@/lib/ai-limits";
@@ -55,6 +56,14 @@ function getInsightStyle(type: string) {
 function getInsightIcon(type: string, icon: string) {
   return icon || (type === "positive" ? "✅" : type === "warning" ? "⚠️" : "💡");
 }
+
+/** Orange accent border — matches Progress page streak / chart highlights. */
+const PROGRESS_BLOCK = cn(
+  "rounded-3xl border-[1.5px] border-orange-400/50",
+  "shadow-[0_0_0_1px_rgba(251,146,60,0.10),0_4px_18px_rgba(251,146,60,0.10)]",
+  "bg-card",
+);
+
 export default function ProgressPage() {
   const {
     t
@@ -194,7 +203,12 @@ export default function ProgressPage() {
       </header>
 
       {/* Streak Card */}
-      <Card className={`rounded-3xl border-none shadow-sm overflow-hidden ${streak >= 3 ? "bg-gradient-to-br from-primary to-primary" : "bg-gradient-to-br from-muted to-muted"}`}>
+      <Card className={cn(
+        "overflow-hidden",
+        streak >= 3
+          ? "rounded-3xl border-[1.5px] border-orange-300/60 bg-gradient-to-br from-primary to-primary shadow-[0_4px_24px_rgba(251,146,60,0.25)]"
+          : cn(PROGRESS_BLOCK, "bg-gradient-to-br from-muted to-muted"),
+      )}>
         <CardContent className="p-6 flex items-center gap-5">
           <div className={`text-5xl ${streak === 0 ? "grayscale opacity-40" : "animate-[bounce_2s_ease-in-out_infinite]"}`}>
             🔥
@@ -215,7 +229,7 @@ export default function ProgressPage() {
       </Card>
 
       {/* Summary Stats */}
-      {totalItems === 0 ? <Card className="rounded-3xl border-none shadow-sm bg-card">
+      {totalItems === 0 ? <Card className={PROGRESS_BLOCK}>
           <CardContent className="p-8 text-center">
             <BarChart2 className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
             <h3 className="font-quicksand text-lg font-bold text-foreground mb-2">{t("pages.progress.no_data_yet")}</h3>
@@ -226,7 +240,7 @@ export default function ProgressPage() {
           </CardContent>
         </Card> : <>
           {/* Overall Completion */}
-          <Card className="rounded-3xl border-none shadow-sm bg-card">
+          <Card className={PROGRESS_BLOCK}>
             <CardContent className="p-6">
               <h3 className="font-quicksand font-bold text-foreground text-lg mb-4 flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-primary" />
@@ -278,7 +292,7 @@ export default function ProgressPage() {
           </Card>
 
           {/* Last 7 Days Bar Chart */}
-          <Card className="rounded-3xl border-none shadow-sm bg-card">
+          <Card className={PROGRESS_BLOCK}>
             <CardContent className="p-6">
               <h3 className="font-quicksand font-bold text-foreground text-lg mb-4 flex items-center gap-2">
                 <BarChart2 className="h-5 w-5 text-primary" />
@@ -312,7 +326,7 @@ export default function ProgressPage() {
           </Card>
 
           {/* Per-Child Breakdown */}
-          {childMap.size > 0 && <Card className="rounded-3xl border-none shadow-sm bg-card">
+          {childMap.size > 0 && <Card className={PROGRESS_BLOCK}>
               <CardContent className="p-6">
                 <h3 className="font-quicksand font-bold text-foreground text-lg mb-4">{t("pages.progress.per_child_breakdown")}</h3>
                 <div className="space-y-4">
@@ -341,7 +355,7 @@ export default function ProgressPage() {
         </>}
 
       {/* AI Insights */}
-      <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden">
+      <Card className={cn(PROGRESS_BLOCK, "overflow-hidden")}>
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-quicksand font-bold text-foreground text-lg flex items-center gap-2">

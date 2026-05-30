@@ -45,6 +45,8 @@ import { SpotTheDifferenceGame } from "@/components/games/SpotTheDifference";
 import { AmySuggestionPanel } from "@/components/games/AmySuggestionPanel";
 import { GamesLeaderboard } from "@/components/games/GamesLeaderboard";
 import { GamePreviewTile } from "@/components/games/GamePreviewTile";
+import { cn } from "@/lib/utils";
+import { PARENT_HUB_PAGE } from "@/lib/parent-hub-premium";
 
 const CATEGORY_ACCENT: Record<GameCategory, string> = {
   brain: "rgba(167,139,250,0.45)",
@@ -203,9 +205,8 @@ export default function GamesPage() {
   const showComboBadge = hasPerfectComboBadge();
 
   return (
-    <div style={{
+    <div className={cn(PARENT_HUB_PAGE, "mx-auto max-w-[720px]")} style={{
       minHeight: "100dvh",
-      background: gameTheme.pageGradient,
       color: gameTheme.text,
       paddingBottom: 80,
     }}>
@@ -220,19 +221,19 @@ export default function GamesPage() {
         position: "sticky", top: 0, zIndex: 20,
         padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between",
         background: gameTheme.glass,
-        backdropFilter: "blur(8px)",
+        backdropFilter: "blur(18px)",
         borderBottom: `1px solid ${gameTheme.glassBorder}`,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button
             onClick={() => back("games-exit")}
-            style={{ color: "hsl(var(--brand-violet-300))", background: "rgba(167,139,250,0.15)", borderRadius: 999, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
+            style={{ color: gameTheme.textSoft, background: "rgba(122,92,255,0.15)", borderRadius: 999, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(122,92,255,0.25)", cursor: "pointer" }}
             aria-label={t("screens.games.back")}
           >
             <ArrowLeft size={18} />
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Gamepad2 size={20} color="hsl(var(--brand-violet-300))" />
+            <Gamepad2 size={20} color={gameTheme.textSoft} />
             <h1 style={{ fontFamily: "Quicksand, sans-serif", fontSize: 18, fontWeight: 800, margin: 0 }}>{t("screens.games.title")}</h1>
           </div>
         </div>
@@ -253,9 +254,9 @@ export default function GamesPage() {
           )}
           <div style={{
             display: "flex", alignItems: "center", gap: 6,
-            background: "linear-gradient(135deg, hsl(var(--brand-amber-500)), hsl(var(--brand-orange-500)))",
+            background: gameTheme.ctaGradient,
             padding: "6px 12px", borderRadius: 999, color: "#fff", fontWeight: 800, fontSize: 13,
-            boxShadow: "0 4px 12px rgba(245,158,11,0.35)",
+            boxShadow: gameTheme.playShadow,
           }}>
             <Coins size={14} /> {points}
           </div>
@@ -274,16 +275,16 @@ export default function GamesPage() {
           )}
           <button
             onClick={() => setShowRedeem(true)}
-            style={{ color: "#fff", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(139,92,246,0.3)", padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+            style={{ color: "#fff", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
           ><Gift size={13} /> {t("screens.games.redeem_button")}</button>
           <button
             onClick={() => setLocation("/rewards")}
-            style={{ color: "#fff", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(245,158,11,0.35)", padding: "6px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer" }}
+            style={{ color: "rgba(251,191,36,0.95)", background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.35)", padding: "6px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer" }}
           >{t("screens.games.rewards_shop_link")}</button>
           {!isPremium && (
             <button
               onClick={() => setLocation("/pricing")}
-              style={{ color: "#fff", background: "linear-gradient(135deg,hsl(var(--brand-violet-500)),hsl(var(--brand-pink-500)))", border: "none", padding: "6px 10px", borderRadius: 999, fontSize: 11, fontWeight: 800, cursor: "pointer" }}
+              style={{ color: "#fff", background: gameTheme.violetGradient, border: "none", padding: "6px 10px", borderRadius: 999, fontSize: 11, fontWeight: 800, cursor: "pointer", boxShadow: gameTheme.violetShadow }}
             >{t("screens.games.upgrade_premium")}</button>
           )}
         </div>
@@ -323,7 +324,7 @@ export default function GamesPage() {
             width: `${dailyPct}%`, height: "100%",
             background: limitHit
               ? "linear-gradient(90deg, hsl(var(--brand-red-500)), hsl(var(--brand-red-300)))"
-              : "linear-gradient(90deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-400)))",
+              : "linear-gradient(90deg, rgba(255,184,0,0.95), rgba(251,191,36,0.95))",
             transition: "width 0.35s ease",
           }} />
         </div>
@@ -338,14 +339,15 @@ export default function GamesPage() {
       {isPremium && weekly.playsLast7Days > 0 && (
         <div style={{ maxWidth: 720, margin: "12px auto 0", padding: "0 16px" }}>
           <div style={{
-            background: "rgba(16,185,129,0.1)",
-            border: "1px solid rgba(16,185,129,0.3)",
+            background: gameTheme.successBg,
+            border: "1px solid rgba(16,185,129,0.35)",
+            backdropFilter: "blur(18px)",
             borderRadius: 14, padding: "12px 14px",
           }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: "hsl(var(--brand-green-400))", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: gameTheme.success, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>
               {t("screens.games.weekly_summary_title")}
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", fontSize: 12, color: "#c7c0e8" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", fontSize: 12, color: gameTheme.textMuted }}>
               <span>{t("screens.games.weekly_plays", { count: weekly.playsLast7Days })}</span>
               <span>{t("screens.games.weekly_perfect", { count: weekly.perfectCount })}</span>
               <span>{t("screens.games.weekly_points", { count: weekly.pointsEarned })}</span>
@@ -375,27 +377,28 @@ export default function GamesPage() {
       {/* Skill Progress strip */}
       <div style={{ maxWidth: 720, margin: "12px auto 0", padding: "0 16px" }}>
         <div style={{
-          background: "hsl(var(--card))",
-          border: `1px solid ${gameTheme.glassBorder}`,
-          borderRadius: 14, padding: "12px 14px",
+          background: gameTheme.cardBg,
+          border: `1.5px solid ${gameTheme.cardBorder}`,
+          backdropFilter: "blur(18px)",
+          borderRadius: 16, padding: "12px 14px",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 800, color: "hsl(var(--brand-violet-300))", textTransform: "uppercase", letterSpacing: 0.6 }}>{t("screens.games.skill_progress")}</span>
-            <span style={{ fontSize: 11, color: "#7c6fb8" }}>{t("screens.games.skill_subtitle")}</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: "rgba(251,191,36,0.9)", textTransform: "uppercase", letterSpacing: 0.6 }}>{t("screens.games.skill_progress")}</span>
+            <span style={{ fontSize: 11, color: gameTheme.textMuted }}>{t("screens.games.skill_subtitle")}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 10 }}>
             {skills.map(({ cat, pct }) => (
               <div key={cat}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#e6e1f5", marginBottom: 4 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: gameTheme.text, marginBottom: 4 }}>
                   <span>{CATEGORY_EMOJI[cat]} {CATEGORY_LABEL[cat].split("&")[0]}</span>
-                  <span style={{ fontWeight: 800, color: pct >= 75 ? "hsl(var(--brand-green-400))" : pct >= 40 ? "hsl(var(--brand-amber-300))" : "#a99fd9" }}>{pct}%</span>
+                  <span style={{ fontWeight: 800, color: pct >= 75 ? gameTheme.success : pct >= 40 ? "rgba(251,191,36,0.95)" : gameTheme.textMuted }}>{pct}%</span>
                 </div>
-                <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                <div style={{ height: 6, borderRadius: 999, background: gameTheme.progressTrack, overflow: "hidden" }}>
                   <div style={{
                     width: `${pct}%`, height: "100%",
                     background: pct >= 75 ? "linear-gradient(90deg,hsl(var(--brand-green-500)),hsl(var(--brand-green-400)))"
-                      : pct >= 40 ? "linear-gradient(90deg,hsl(var(--brand-amber-500)),hsl(var(--brand-amber-300)))"
-                      : "linear-gradient(90deg,hsl(var(--brand-violet-500)),hsl(var(--brand-violet-400)))",
+                      : pct >= 40 ? gameTheme.playGradient
+                      : gameTheme.violetGradient,
                     transition: "width 0.4s",
                   }} />
                 </div>
@@ -413,10 +416,10 @@ export default function GamesPage() {
               display: "flex", alignItems: "baseline", gap: 8, marginBottom: 10,
             }}>
               <span style={{ fontSize: 18 }}>{CATEGORY_EMOJI[cat]}</span>
-              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "#e6e1f5", fontFamily: "Quicksand, sans-serif", textTransform: "uppercase", letterSpacing: 0.5 }}>
+              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: gameTheme.text, fontFamily: "Quicksand, sans-serif", textTransform: "uppercase", letterSpacing: 0.5 }}>
                 {CATEGORY_LABEL[cat]}
               </h3>
-              <span style={{ fontSize: 11, color: "#7c6fb8", marginLeft: "auto" }}>{t("screens.games.games_count", { count: list.length })}</span>
+              <span style={{ fontSize: 11, color: gameTheme.textMuted, marginLeft: "auto" }}>{t("screens.games.games_count", { count: list.length })}</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 }}>
               {list.map((g) => {
@@ -434,22 +437,23 @@ export default function GamesPage() {
                     style={{
                       position: "relative",
                       background: isHovered && playable && !soon
-                        ? "linear-gradient(160deg, rgba(255,255,255,0.09), rgba(139,92,246,0.12))"
-                        : "rgba(255,255,255,0.05)",
-                      border: `1px solid ${isHovered && playable && !soon ? CATEGORY_ACCENT[g.category] : "rgba(139,92,246,0.25)"}`,
+                        ? "rgba(255,255,255,0.08)"
+                        : gameTheme.cardBg,
+                      border: `1px solid ${isHovered && playable && !soon ? gameTheme.hubBorderActive : gameTheme.glassBorder}`,
+                      backdropFilter: "blur(18px)",
                       borderRadius: 16, padding: 14,
                       display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
                       opacity: soon ? 0.6 : 1,
                       filter: showLock ? "blur(0.4px)" : "none",
                       transform: isHovered && playable && !soon ? "translateY(-3px)" : "none",
-                      boxShadow: isHovered && playable && !soon ? "0 10px 28px rgba(139,92,246,0.22)" : "none",
+                      boxShadow: isHovered && playable && !soon ? "0 8px 32px rgba(122,92,255,0.12)" : "none",
                       transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease",
                     }}
                   >
                     {g.premiumOnly && (
                       <div style={{
                         position: "absolute", top: 8, left: 8,
-                        background: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-orange-500)))",
+                        background: gameTheme.ctaGradient,
                         borderRadius: 999, padding: "2px 8px", fontSize: 9, fontWeight: 800, color: "#fff",
                       }}>{t("screens.games.premium_game")}</div>
                     )}
@@ -475,7 +479,8 @@ export default function GamesPage() {
                       <div style={{
                         fontSize: 36, lineHeight: 1, width: 56, height: 56,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        background: `linear-gradient(145deg, ${CATEGORY_ACCENT[g.category]}, hsl(var(--card)))`,
+                        background: `linear-gradient(145deg, ${CATEGORY_ACCENT[g.category]}, rgba(18,28,60,0.85))`,
+                        border: `1px solid ${gameTheme.glassBorder}`,
                         borderRadius: 14,
                         animation: isHovered && playable && !soon ? "gamesCardFloat 1.6s ease-in-out infinite" : "none",
                       }}>{g.emoji}</div>
@@ -484,7 +489,7 @@ export default function GamesPage() {
                       {g.title}
                     </div>
                     {g.ageHint && (
-                      <div style={{ fontSize: 11, color: "#a99fd9" }}>{g.ageHint}</div>
+                      <div style={{ fontSize: 11, color: gameTheme.textMuted }}>{g.ageHint}</div>
                     )}
 
                     {soon ? (
@@ -495,7 +500,7 @@ export default function GamesPage() {
                         onClick={() => setLocation("/pricing")}
                         style={{
                           marginTop: 6, width: "100%",
-                          background: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-orange-500)))",
+                          background: gameTheme.ctaGradient,
                           color: "#fff", border: "none", borderRadius: 999,
                           padding: "7px 0", fontSize: 11.5, fontWeight: 700, cursor: "pointer",
                         }}
@@ -507,11 +512,11 @@ export default function GamesPage() {
                         disabled={limitHit}
                         style={{
                           marginTop: 6, width: "100%",
-                          background: limitHit ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
+                          background: limitHit ? "rgba(255,255,255,0.06)" : gameTheme.playGradient,
                           color: "#fff", border: "none", borderRadius: 999,
                           padding: "7px 0", fontSize: 12.5, fontWeight: 700,
                           cursor: limitHit ? "default" : "pointer",
-                          boxShadow: limitHit ? "none" : "0 4px 12px rgba(139,92,246,0.35)",
+                          boxShadow: limitHit ? "none" : gameTheme.playShadow,
                           opacity: limitHit ? 0.5 : 1,
                         }}
                       >{t("screens.games.play")}</button>
@@ -523,11 +528,11 @@ export default function GamesPage() {
                           marginTop: 6, width: "100%",
                           background: canUnlockGameWithStreak()
                             ? "rgba(16,185,129,0.2)"
-                            : "rgba(255,255,255,0.08)",
+                            : "rgba(255,255,255,0.06)",
                           color: "#fff",
                           border: canUnlockGameWithStreak()
                             ? "1px solid rgba(16,185,129,0.5)"
-                            : "1px solid rgba(139,92,246,0.4)",
+                            : `1px solid ${gameTheme.cardBorder}`,
                           borderRadius: 999,
                           padding: "7px 0", fontSize: 11, fontWeight: 700, cursor: "pointer",
                           display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -591,7 +596,7 @@ function GameModal({
             </div>
           </div>
           <button onClick={onClose} aria-label={t("screens.games.close")}
-            style={{ color: "hsl(var(--brand-violet-300))", background: "rgba(167,139,250,0.15)", borderRadius: 999, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
+            style={{ color: gameTheme.textSoft, background: "rgba(122,92,255,0.15)", borderRadius: 999, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(122,92,255,0.25)", cursor: "pointer" }}>
             <X size={16} />
           </button>
         </div>
@@ -627,10 +632,10 @@ function GameModal({
             </p>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 8,
-              background: "linear-gradient(135deg, hsl(var(--brand-amber-500)), hsl(var(--brand-orange-500)))",
+              background: gameTheme.ctaGradient,
               color: "#fff", padding: "10px 18px", borderRadius: 999,
               fontSize: 15, fontWeight: 800,
-              boxShadow: "0 4px 14px rgba(245,158,11,0.4)",
+              boxShadow: gameTheme.playShadow,
               marginBottom: 16,
             }}>
               <Coins size={16} /> {t("screens.games.points_earned", { count: state.pointsEarned })}
@@ -640,9 +645,10 @@ function GameModal({
               <button
                 onClick={onClose}
                 style={{
-                  background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
+                  background: gameTheme.playGradient,
                   color: "#fff", border: "none", borderRadius: 999,
                   padding: "10px 22px", fontSize: 14, fontWeight: 700, cursor: "pointer",
+                  boxShadow: gameTheme.playShadow,
                 }}
               >{t("screens.games.done")}</button>
             </div>
@@ -721,18 +727,19 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
             <h3 style={{ margin: 0, fontSize: 17, fontFamily: "Quicksand, sans-serif", fontWeight: 800 }}>{t("screens.games.reward_redemption")}</h3>
           </div>
           <button onClick={onClose} aria-label={t("screens.games.close")}
-            style={{ color: "hsl(var(--brand-violet-300))", background: "rgba(167,139,250,0.15)", borderRadius: 999, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
+            style={{ color: gameTheme.textSoft, background: "rgba(122,92,255,0.15)", borderRadius: 999, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(122,92,255,0.25)", cursor: "pointer" }}>
             <X size={16} />
           </button>
         </div>
 
         <div style={{
           display: "flex", justifyContent: "space-between", alignItems: "center",
-          background: "rgba(255,255,255,0.06)", borderRadius: 12, padding: "10px 12px", marginBottom: 12,
+          background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "10px 12px", marginBottom: 12,
+          border: `1px solid ${gameTheme.glassBorder}`,
         }}>
-          <span style={{ fontSize: 13, color: "#c7c0e8" }}>{t("screens.games.available_points")}</span>
+          <span style={{ fontSize: 13, color: gameTheme.textMuted }}>{t("screens.games.available_points")}</span>
           <span style={{ fontSize: 18, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <Coins size={16} color="hsl(var(--brand-amber-300))" /> {points}
+            <Coins size={16} color="rgba(251,191,36,0.95)" /> {points}
           </span>
         </div>
 
@@ -742,8 +749,8 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
           placeholder={t("screens.games.child_name_placeholder")}
           style={{
             width: "100%", padding: "9px 12px", borderRadius: 10,
-            background: "rgba(255,255,255,0.06)", color: "#fff",
-            border: "1px solid rgba(139,92,246,0.3)", marginBottom: 12, fontSize: 13,
+            background: "rgba(255,255,255,0.04)", color: gameTheme.text,
+            border: `1px solid ${gameTheme.glassBorder}`, marginBottom: 12, fontSize: 13,
           }}
         />
 
@@ -762,20 +769,20 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
             return (
               <div key={r.id} style={{
                 display: "flex", alignItems: "center", gap: 10,
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(139,92,246,0.25)",
+                background: "rgba(255,255,255,0.04)",
+                border: `1px solid ${gameTheme.glassBorder}`,
                 borderRadius: 12, padding: "10px 12px",
               }}>
                 <div style={{ fontSize: 24 }}>{r.emoji}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700 }}>{r.label}</div>
-                  <div style={{ fontSize: 11.5, color: "#a99fd9" }}>{t("screens.games.points_unit", { count: r.cost })}</div>
+                  <div style={{ fontSize: 11.5, color: gameTheme.textMuted }}>{t("screens.games.points_unit", { count: r.cost })}</div>
                 </div>
                 <button
                   onClick={() => onRedeem(r)}
                   disabled={!can}
                   style={{
-                    background: can ? "linear-gradient(135deg, hsl(var(--brand-amber-500)), hsl(var(--brand-orange-500)))" : "rgba(255,255,255,0.06)",
+                    background: can ? gameTheme.ctaGradient : "rgba(255,255,255,0.06)",
                     color: "#fff", border: "none", borderRadius: 999,
                     padding: "6px 14px", fontSize: 12, fontWeight: 700,
                     cursor: can ? "pointer" : "default", opacity: can ? 1 : 0.5,
@@ -796,28 +803,28 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
           <button onClick={() => setShowAdd(true)}
             style={{
               width: "100%", padding: "10px 0",
-              background: "rgba(255,255,255,0.06)", color: "hsl(var(--brand-violet-300))",
-              border: "1px dashed rgba(139,92,246,0.5)", borderRadius: 12,
+              background: "rgba(255,255,255,0.04)", color: gameTheme.textSoft,
+              border: `1px dashed ${gameTheme.cardBorder}`, borderRadius: 12,
               fontSize: 13, fontWeight: 700, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             }}>
             <Plus size={14} /> {t("screens.games.add_parent_reward")}
           </button>
         ) : (
-          <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 12, padding: 12 }}>
+          <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${gameTheme.glassBorder}`, borderRadius: 12, padding: 12 }}>
             <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
               <input value={newEmoji} onChange={(e) => setNewEmoji(e.target.value)} placeholder="🎁"
-                style={{ width: 50, padding: "8px", textAlign: "center", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(139,92,246,0.3)", color: "#fff", fontSize: 20 }} />
+                style={{ width: 50, padding: "8px", textAlign: "center", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: `1px solid ${gameTheme.glassBorder}`, color: gameTheme.text, fontSize: 20 }} />
               <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder={t("screens.games.label_placeholder")}
-                style={{ flex: 1, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(139,92,246,0.3)", color: "#fff", fontSize: 13 }} />
+                style={{ flex: 1, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: `1px solid ${gameTheme.glassBorder}`, color: gameTheme.text, fontSize: 13 }} />
               <input type="number" value={newCost} min={1}
                 onChange={(e) => setNewCost(parseInt(e.target.value || "0", 10))}
                 placeholder="50"
-                style={{ width: 70, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(139,92,246,0.3)", color: "#fff", fontSize: 13 }} />
+                style={{ width: 70, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: `1px solid ${gameTheme.glassBorder}`, color: gameTheme.text, fontSize: 13 }} />
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setShowAdd(false)} style={{ flex: 1, background: "transparent", color: "hsl(var(--brand-violet-300))", border: "1px solid rgba(139,92,246,0.3)", padding: "8px 0", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>{t("screens.games.cancel")}</button>
-              <button onClick={onAdd} style={{ flex: 1, background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))", color: "#fff", border: "none", padding: "8px 0", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <button onClick={() => setShowAdd(false)} style={{ flex: 1, background: "transparent", color: gameTheme.textSoft, border: `1px solid ${gameTheme.glassBorder}`, padding: "8px 0", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>{t("screens.games.cancel")}</button>
+              <button onClick={onAdd} style={{ flex: 1, background: gameTheme.violetGradient, color: "#fff", border: "none", padding: "8px 0", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <Check size={14} /> {t("screens.games.save")}
               </button>
             </div>
@@ -825,11 +832,11 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
         )}
 
         {redemptions.length > 0 && (
-          <details style={{ marginTop: 16, color: "#c7c0e8" }}>
-            <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 700, color: "hsl(var(--brand-violet-300))" }}>{t("screens.games.recent_redemptions", { count: redemptions.length })}</summary>
+          <details style={{ marginTop: 16, color: gameTheme.textMuted }}>
+            <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 700, color: gameTheme.textSoft }}>{t("screens.games.recent_redemptions", { count: redemptions.length })}</summary>
             <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
               {redemptions.slice(0, 8).map((r, i) => (
-                <div key={i} style={{ fontSize: 12, color: "#a99fd9", display: "flex", justifyContent: "space-between" }}>
+                <div key={i} style={{ fontSize: 12, color: gameTheme.textMuted, display: "flex", justifyContent: "space-between" }}>
                   <span>{r.rewardLabel} — {r.childName}</span>
                   <span>{t("screens.games.redemption_minus_pts", { cost: r.cost })}</span>
                 </div>

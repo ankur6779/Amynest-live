@@ -323,6 +323,40 @@ export const HUB_BOTTOM_CTA = cn(
   "transition-all duration-[220ms] ease-[ease] hover:shadow-[0_0_24px_rgba(251,146,60,0.28)] active:scale-[0.985]",
 );
 
+/** Nutrition Hub — emerald health accent on Parent Hub glass surfaces. */
+export const NUTRITION_HUB_ACCENT = makeTheme(
+  "border-[1.5px] border-[rgba(52,211,153,0.50)]",
+  "bg-gradient-to-b from-emerald-400 via-green-400 to-teal-500",
+  "shadow-[0_0_14px_rgba(52,211,153,0.45)]",
+  "border-[rgba(52,211,153,0.40)]",
+  "shadow-[0_0_14px_rgba(52,211,153,0.32)]",
+  52,
+  211,
+  153,
+);
+
+/** Active pill/chip on Nutrition Hub (matches Parent Hub today accent). */
+export const NUTRITION_HUB_CHIP_ACTIVE = cn(
+  HUB_QUICK_CHIP,
+  "border-[rgba(255,184,0,0.55)] bg-[rgba(255,184,0,0.14)]",
+  "shadow-[0_0_16px_rgba(255,184,0,0.28)] text-foreground scale-[1.02]",
+);
+
+export const NUTRITION_HUB_CHIP_INACTIVE = cn(
+  HUB_QUICK_CHIP,
+  "text-muted-foreground/85 border-white/[0.08] opacity-90",
+);
+
+/** Routines Hub — amber schedule accent on Parent Hub glass surfaces. */
+export const ROUTINES_HUB_ACCENT = HUB_GROUP_ACCENTS.today;
+
+/** Shared active/inactive chips for premium hub pages (Nutrition, Routines, …). */
+export const HUB_PAGE_CHIP_ACTIVE = NUTRITION_HUB_CHIP_ACTIVE;
+export const HUB_PAGE_CHIP_INACTIVE = NUTRITION_HUB_CHIP_INACTIVE;
+
+/** Gaming Reward — learning violet accent on Parent Hub glass surfaces. */
+export const GAMING_HUB_ACCENT = HUB_GROUP_ACCENTS.learning;
+
 const HUB_FEATURE_TILE_ACCENTS: Record<string, HubAccentTheme> = {
   "smart-study": makeTheme(
     "border-[1.5px] border-[rgba(192,38,211,0.55)]",
@@ -384,6 +418,8 @@ const HUB_FEATURE_TILE_ACCENTS: Record<string, HubAccentTheme> = {
   "event-prep": HUB_GROUP_ACCENTS.today,
   "command-center": HUB_GROUP_ACCENTS.creativity,
   "generate-routine": HUB_GROUP_ACCENTS.stories,
+  nutrition: NUTRITION_HUB_ACCENT,
+  routines: ROUTINES_HUB_ACCENT,
 };
 
 export function getHubFeatureTileAccent(tileId: string): HubAccentTheme {

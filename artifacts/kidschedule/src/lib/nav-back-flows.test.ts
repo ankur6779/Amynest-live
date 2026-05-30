@@ -9,7 +9,7 @@ import {
   consumeAuthoritativeTransition,
   resetRouteHistoryForTests,
 } from "./route-history-manager";
-import { appNavigate, smartBack } from "./safe-navigation";
+import { appNavigate, runSafeNavAction, smartBack } from "./safe-navigation";
 import { invokePageBackHandler, registerPageBackHandler, resetPageBackHandlerForTests } from "./page-back-handler";
 
 describe("navigation back flows", () => {
@@ -124,6 +124,41 @@ describe("navigation back flows", () => {
 
     expect(invokePageBackHandler()).toBe(true);
     expect(step).toBe("home");
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it("header back invokes page handler before debounce so exit navigation runs", () => {
+    const navigate = vi.fn();
+    registerPageBackHandler(() => {
+      runSafeNavAction("back:/amy-coach", () => {
+        smartBack(navigate, "/amy-coach", "ai-coach-exit");
+      });
+      return true;
+    });
+
+    if (invokePageBackHandler()) {
+      expect(navigate).toHaveBeenCalledWith("/dashboard", { replace: true });
+      return;
+    }
+    runSafeNavAction("back:/amy-coach", () => {
+      smartBack(navigate, "/amy-coach", "layout-header-back");
+    });
+  });
+
+  it("nested back debounce blocks page handler exit when outer lock runs first", () => {
+    const navigate = vi.fn();
+    registerPageBackHandler(() => {
+      runSafeNavAction("back:/amy-coach", () => {
+        smartBack(navigate, "/amy-coach", "ai-coach-exit");
+      });
+      return true;
+    });
+
+    runSafeNavAction("back:/amy-coach", () => {
+      if (invokePageBackHandler()) return;
+      smartBack(navigate, "/amy-coach", "layout-header-back");
+    });
+
     expect(navigate).not.toHaveBeenCalled();
   });
 

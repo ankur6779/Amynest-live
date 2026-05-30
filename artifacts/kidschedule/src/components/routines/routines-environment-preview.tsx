@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Cloud, Wind } from "lucide-react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
@@ -10,6 +9,13 @@ import {
   buildEnvContextDisplay,
   type OutdoorSuitability,
 } from "@/lib/environment-display";
+import { cn } from "@/lib/utils";
+import {
+  ROUTINES_HUB_ACCENT,
+  HUB_SECTION_LABEL,
+  hubSectionCardClasses,
+  hubAccentBarClasses,
+} from "@/lib/parent-hub-premium";
 
 type EnvApiContext = {
   location?: { label?: string };
@@ -134,42 +140,45 @@ export function RoutinesEnvironmentPreview() {
       : display?.temperature ?? "—";
 
   return (
-    <Card className="rounded-2xl border border-border/60 shadow-sm bg-card">
-      <CardContent className="p-4 flex flex-col gap-2.5">
-        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          {t("pages.routines.index.env_preview_title", { defaultValue: "Your environment" })}
-        </p>
-        {isLoading && geoReady ? (
-          <p className="text-sm text-muted-foreground animate-pulse">
-            {t("pages.routines.index.env_preview_loading", { defaultValue: "Loading…" })}
+    <div className={cn(hubSectionCardClasses(ROUTINES_HUB_ACCENT), "overflow-hidden")}>
+      <div className="flex">
+        <div className={hubAccentBarClasses(ROUTINES_HUB_ACCENT)} />
+        <div className="flex-1 p-4 flex flex-col gap-2.5">
+          <p className={HUB_SECTION_LABEL}>
+            {t("pages.routines.index.env_preview_title", { defaultValue: "Your environment" })}
           </p>
-        ) : display ? (
-          <div className="grid gap-2 text-sm">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-primary shrink-0" />
-              <span className="font-semibold text-foreground">{display.location}</span>
+          {isLoading && geoReady ? (
+            <p className="text-sm text-muted-foreground animate-pulse">
+              {t("pages.routines.index.env_preview_loading", { defaultValue: "Loading…" })}
+            </p>
+          ) : display ? (
+            <div className="grid gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-amber-300 shrink-0" />
+                <span className="font-semibold text-foreground">{display.location}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Cloud className="h-4 w-4 text-sky-400 shrink-0" />
+                <span className="text-foreground">{weatherLine}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Wind className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span
+                  className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-xs font-bold ${AQI_TONE_CLASSES[display.aqiTone]}`}
+                >
+                  {display.aqi}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Cloud className="h-4 w-4 text-sky-600 shrink-0" />
-              <span className="text-foreground">{weatherLine}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Wind className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span
-                className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-xs font-bold ${AQI_TONE_CLASSES[display.aqiTone]}`}
-              >
-                {display.aqi}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            {t("pages.routines.index.env_preview_unavailable", {
-              defaultValue: "Environment data will appear when location is available.",
-            })}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {t("pages.routines.index.env_preview_unavailable", {
+                defaultValue: "Environment data will appear when location is available.",
+              })}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

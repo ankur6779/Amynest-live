@@ -22,8 +22,9 @@ export function AmySuggestionPanel({
   return (
     <div
       style={{
-        background: `linear-gradient(135deg, hsl(var(--brand-violet-500) / 0.18) 0%, hsl(var(--brand-pink-500) / 0.1) 100%)`,
-        border: `1px solid hsl(var(--brand-violet-500) / 0.35)`,
+        background: gameTheme.cardBg,
+        border: `1.5px solid ${gameTheme.cardBorder}`,
+        backdropFilter: "blur(18px)",
         borderRadius: 16,
         padding: 14,
         display: "flex",
@@ -44,7 +45,8 @@ export function AmySuggestionPanel({
               alignItems: "center",
               justifyContent: "center",
               fontSize: 28,
-              background: "hsl(var(--muted) / 0.35)",
+              background: "rgba(122,92,255,0.12)",
+              border: `1px solid ${gameTheme.glassBorder}`,
             }}
           >
             ✨
@@ -52,14 +54,14 @@ export function AmySuggestionPanel({
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-            <Sparkles size={16} color="hsl(var(--brand-amber-300))" />
+            <Sparkles size={16} color="rgba(251,191,36,0.95)" />
             <span
               style={{
                 fontSize: 11,
                 fontWeight: 800,
                 textTransform: "uppercase",
                 letterSpacing: 0.5,
-                color: gameTheme.accentSoft,
+                color: "rgba(251,191,36,0.9)",
               }}
             >
               Amy&apos;s pick
@@ -85,7 +87,7 @@ export function AmySuggestionPanel({
             <div key={cat}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: gameTheme.text, marginBottom: 3 }}>
                 <span>{emoji} {label}</span>
-                <span style={{ fontWeight: 800, color: pct >= 75 ? gameTheme.success : pct >= 40 ? "hsl(var(--brand-amber-300))" : gameTheme.textMuted }}>
+                <span style={{ fontWeight: 800, color: pct >= 75 ? gameTheme.success : pct >= 40 ? "rgba(251,191,36,0.95)" : gameTheme.textMuted }}>
                   {pct}%
                 </span>
               </div>
@@ -97,8 +99,8 @@ export function AmySuggestionPanel({
                     background: pct >= 75
                       ? "linear-gradient(90deg,hsl(var(--brand-green-500)),hsl(var(--brand-green-400)))"
                       : pct >= 40
-                      ? "linear-gradient(90deg,hsl(var(--brand-amber-500)),hsl(var(--brand-amber-300)))"
-                      : "linear-gradient(90deg,hsl(var(--brand-violet-500)),hsl(var(--brand-violet-400)))",
+                      ? gameTheme.playGradient
+                      : gameTheme.violetGradient,
                   }}
                 />
               </div>
@@ -113,7 +115,7 @@ export function AmySuggestionPanel({
           onClick={onPlay}
           style={{
             alignSelf: "flex-start",
-            background: "linear-gradient(135deg, hsl(var(--brand-amber-500)), hsl(var(--brand-orange-500)))",
+            background: gameTheme.playGradient,
             color: "#fff",
             border: "none",
             borderRadius: 999,
@@ -124,6 +126,7 @@ export function AmySuggestionPanel({
             display: "flex",
             alignItems: "center",
             gap: 6,
+            boxShadow: gameTheme.playShadow,
           }}
         >
           {suggestedGame.emoji} Play now
