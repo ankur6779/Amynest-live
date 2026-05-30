@@ -16,6 +16,11 @@ import {
 } from "@/lib/onboarding-chat-session";
 import { ChildDobPicker } from "@/components/child-dob-picker";
 import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
+import { ensureAuthContextSynced } from "@/lib/auth-session-sync";
+import {
+  readFirebaseUserId,
+  readOAuthParentNameHint,
+} from "@/lib/oauth-profile-hints";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -655,6 +660,17 @@ export default function OnboardingPage() {
     () => (restoredData?.parent as Partial<ParentData> | undefined) ?? {},
   );
 
+  // Facebook / Google / Apple often supply displayName — seed parent name for profile save.
+  useEffect(() => {
+    if (!authLoaded || !isSignedIn) return;
+    const oauthName = readOAuthParentNameHint();
+    if (!oauthName) return;
+    setParent((p) => {
+      if (typeof p.name === "string" && p.name.trim().length > 0) return p;
+      return { ...p, name: oauthName };
+    });
+  }, [authLoaded, isSignedIn]);
+
   const pendingTimersRef = useRef<number[]>([]);
 
   const scheduleOnboardingTimeout = useCallback((fn: () => void, delayMs: number) => {
@@ -822,7 +838,7 @@ export default function OnboardingPage() {
     const allergies = allergiesOverride ?? parent.allergies ?? "";
 
     const parentBody: Record<string, unknown> = {
-      name: parent.name || "",
+      name: parent.name?.trim() || readOAuthParentNameHint() || "",
       role: (parent.role || "mother").toLowerCase(),
       workType: parent.workType || "work_from_home",
       region: parent.region || allRegions.join(",") || getDefaultRegion(countryCode),
@@ -868,11 +884,12 @@ export default function OnboardingPage() {
     });
 
     try {
+      await ensureAuthContextSynced();
       await runOnboardingFinishTransaction(authFetch, {
         parent: parentBody,
         children: childPayloads,
         selectedParentGoals,
-        userId: user?.id ?? null,
+        userId: user?.id ?? readFirebaseUserId(),
         onboardingRunId: onboardingRunIdRef.current ?? undefined,
         onboardingMeta: {
           children: children.map((c) => ({
@@ -964,10 +981,13 @@ export default function OnboardingPage() {
       return;
     }
     await refreshBeforeDashboard();
-    const status =
-      queryClient.getQueryData<{ onboardingComplete?: boolean; profileComplete?: boolean }>([
-        "onboarding-status",
-      ]) ?? readOnboardingCache();
+    const status = applySetupStatusUpdate(
+      readOnboardingCache(),
+      queryClient.getQueryData<{
+        onboardingComplete?: boolean;
+        profileComplete?: boolean;
+      }>(["onboarding-status"]),
+    );
     if (!isSetupComplete(status)) {
       console.warn("[onboarding] setup still incomplete after refresh — staying on onboarding");
       setNavigatingToDashboard(false);

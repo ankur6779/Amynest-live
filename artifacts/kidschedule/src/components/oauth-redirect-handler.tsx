@@ -16,7 +16,10 @@ import {
 import { getFirebaseAuth } from "@/lib/firebase";
 import { refreshFirebaseAuthSnapshot } from "@/lib/firebase-auth-listener";
 import { navigateAfterOAuthSignIn } from "@/lib/google-auth";
-import { resolvePostOAuthDestination } from "@/lib/post-verify-destination";
+import {
+  finalizeOAuthCredentialSignIn,
+  finishOAuthLoginFlow,
+} from "@/lib/oauth-session-finalize";
 import { waitForAuthContextAuthenticated } from "@/lib/wait-for-auth-context";
 import { waitForFirebaseUser } from "@/lib/wait-for-firebase-user";
 
@@ -71,18 +74,22 @@ export function OAuthRedirectHandler() {
           return;
         }
 
-        await user.getIdToken(true);
-        refreshFirebaseAuthSnapshot();
-        await waitForAuthContextAuthenticated(12_000).catch(() => {
+        if (result) {
+          await finalizeOAuthCredentialSignIn(result);
+        } else {
+          await user.getIdToken(true);
           refreshFirebaseAuthSnapshot();
-        });
+          await waitForAuthContextAuthenticated(12_000).catch(() => {
+            refreshFirebaseAuthSnapshot();
+          });
+        }
         if (!getFirebaseAuth().currentUser) {
           throw Object.assign(
             new Error("Sign-in session could not be established."),
             { code: "app/auth-session-lost" },
           );
         }
-        const destination = await resolvePostOAuthDestination();
+        const destination = await finishOAuthLoginFlow();
         navigateAfterOAuthSignIn(destination);
       } catch (err) {
         if (cancelled) return;
