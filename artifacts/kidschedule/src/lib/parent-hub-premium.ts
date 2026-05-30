@@ -84,3 +84,117 @@ export function hubChipTintFromEmoji(emoji: string): string {
   if (emoji.includes("📖") || emoji.includes("📚") || emoji.includes("📘")) return CHIP_TINTS.stories;
   return CHIP_TINTS.general;
 }
+
+/** Section 1 category group — glass card + colorful accent bar + glow. */
+export type HubGroupKey = "today" | "learning" | "creativity" | "stories" | "support";
+
+export interface HubGroupStyle {
+  accentBar: string;
+  emojiShell: string;
+  cardGlow: string;
+  openGlow: string;
+}
+
+export const HUB_GROUP_STYLES: Record<HubGroupKey, HubGroupStyle> = {
+  today: {
+    accentBar: "bg-gradient-to-b from-amber-300 via-orange-400 to-amber-500",
+    emojiShell:
+      "bg-gradient-to-br from-amber-400/35 to-orange-500/20 ring-1 ring-amber-300/30 shadow-[0_0_18px_rgba(251,146,60,0.4)]",
+    cardGlow: "shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(251,191,36,0.12)]",
+    openGlow: "shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_28px_rgba(251,146,60,0.22)]",
+  },
+  learning: {
+    accentBar: "bg-gradient-to-b from-indigo-400 via-violet-500 to-indigo-600",
+    emojiShell:
+      "bg-gradient-to-br from-indigo-400/35 to-violet-600/20 ring-1 ring-indigo-300/30 shadow-[0_0_18px_rgba(129,140,248,0.4)]",
+    cardGlow: "shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(129,140,248,0.14)]",
+    openGlow: "shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_28px_rgba(168,85,247,0.22)]",
+  },
+  creativity: {
+    accentBar: "bg-gradient-to-b from-pink-400 via-fuchsia-500 to-rose-500",
+    emojiShell:
+      "bg-gradient-to-br from-pink-400/35 to-fuchsia-600/20 ring-1 ring-pink-300/30 shadow-[0_0_18px_rgba(236,72,153,0.4)]",
+    cardGlow: "shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(236,72,153,0.14)]",
+    openGlow: "shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_28px_rgba(236,72,153,0.22)]",
+  },
+  stories: {
+    accentBar: "bg-gradient-to-b from-sky-400 via-cyan-400 to-blue-500",
+    emojiShell:
+      "bg-gradient-to-br from-sky-400/35 to-blue-500/20 ring-1 ring-sky-300/30 shadow-[0_0_18px_rgba(56,189,248,0.4)]",
+    cardGlow: "shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(56,189,248,0.14)]",
+    openGlow: "shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_28px_rgba(56,189,248,0.22)]",
+  },
+  support: {
+    accentBar: "bg-gradient-to-b from-rose-400 via-pink-500 to-rose-600",
+    emojiShell:
+      "bg-gradient-to-br from-rose-400/35 to-pink-600/20 ring-1 ring-rose-300/30 shadow-[0_0_18px_rgba(244,114,182,0.4)]",
+    cardGlow: "shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(244,114,182,0.14)]",
+    openGlow: "shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_28px_rgba(244,114,182,0.22)]",
+  },
+};
+
+export function getHubGroupStyle(key: string): HubGroupStyle {
+  return HUB_GROUP_STYLES[key as HubGroupKey] ?? HUB_GROUP_STYLES.today;
+}
+
+export const HUB_SECTION_LABEL =
+  "text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300/90";
+
+export const HUB_AGE_BADGE = cn(
+  "rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-0 h-5",
+  "font-semibold text-[10px] text-foreground/90",
+  "shadow-[0_0_12px_rgba(168,85,247,0.12)]",
+);
+
+export const HUB_QUICK_CHIP = cn(
+  "shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2",
+  "text-xs font-bold text-foreground",
+  "border border-white/[0.1] bg-[rgba(18,28,58,0.72)] backdrop-blur-[16px]",
+  "shadow-[0_4px_16px_rgba(0,0,0,0.2),inset_0_1px_rgba(255,255,255,0.06)]",
+  "transition-all duration-[220ms] ease-[ease] active:scale-[1.03]",
+  "hover:border-white/20 hover:shadow-[0_0_18px_rgba(168,85,247,0.18)]",
+);
+
+const QUICK_CHIP_TINTS: Record<string, string> = {
+  "ask-amy":
+    "hover:shadow-[0_0_20px_rgba(168,85,247,0.28)] border-violet-400/25 bg-violet-500/[0.08]",
+  story: "hover:shadow-[0_0_20px_rgba(56,189,248,0.25)] border-sky-400/25 bg-sky-500/[0.08]",
+  routine:
+    "hover:shadow-[0_0_20px_rgba(251,146,60,0.25)] border-amber-400/25 bg-amber-500/[0.08]",
+  articles:
+    "hover:shadow-[0_0_18px_rgba(244,114,182,0.2)] border-rose-400/20 bg-rose-500/[0.06]",
+  emotional:
+    "hover:shadow-[0_0_18px_rgba(244,114,182,0.2)] border-rose-400/20 bg-rose-500/[0.06]",
+  phonics:
+    "hover:shadow-[0_0_18px_rgba(129,140,248,0.2)] border-indigo-400/20 bg-indigo-500/[0.06]",
+  activities:
+    "hover:shadow-[0_0_18px_rgba(236,72,153,0.2)] border-pink-400/20 bg-pink-500/[0.06]",
+  gaming:
+    "hover:shadow-[0_0_18px_rgba(52,211,153,0.18)] border-emerald-400/20 bg-emerald-500/[0.06]",
+  worksheets:
+    "hover:shadow-[0_0_18px_rgba(251,191,36,0.18)] border-amber-400/20 bg-amber-500/[0.06]",
+};
+
+export function hubQuickChipTint(actionId: string): string {
+  return QUICK_CHIP_TINTS[actionId] ?? "";
+}
+
+export const HUB_SEE_ALL_CHIP = cn(
+  HUB_QUICK_CHIP,
+  "text-amber-200/95 border-amber-400/35 bg-amber-500/[0.08]",
+  "hover:shadow-[0_0_20px_rgba(251,191,36,0.28)]",
+);
+
+export const HUB_EXPLORE_CARD = cn(
+  HUB_GLASS_CARD,
+  "overflow-hidden p-0 active:scale-100",
+  "shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_18px_rgba(168,85,247,0.12)]",
+);
+
+export const HUB_BOTTOM_CTA = cn(
+  "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold",
+  "text-amber-200/95 border border-amber-400/30",
+  "bg-gradient-to-r from-amber-500/15 to-orange-500/10",
+  "shadow-[0_0_20px_rgba(251,146,60,0.15)]",
+  "transition-all duration-[220ms] ease-[ease] hover:shadow-[0_0_24px_rgba(251,146,60,0.28)] active:scale-[1.02]",
+);

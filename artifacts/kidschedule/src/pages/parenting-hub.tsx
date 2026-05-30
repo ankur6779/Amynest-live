@@ -81,7 +81,20 @@ import {
 } from "@/components/learning-progress";
 import { useRewardCelebrations } from "@/hooks/use-reward-celebrations";
 import { HubCollapsiblePanel, HubFamilyPulseSection, HubExploreAgesSection } from "@/components/hub-light-layout";
-import { PARENT_HUB_PAGE, HUB_SECTION_SHELL } from "@/lib/parent-hub-premium";
+import {
+  PARENT_HUB_PAGE,
+  HUB_SECTION_SHELL,
+  getHubGroupStyle,
+  HUB_GLASS_CARD,
+  HUB_SECTION_LABEL,
+  HUB_AGE_BADGE,
+  HUB_CARD_TITLE,
+  HUB_BODY,
+  HUB_QUICK_CHIP,
+  hubQuickChipTint,
+  HUB_SEE_ALL_CHIP,
+  HUB_BOTTOM_CTA,
+} from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
 
 // ── 5-section grouping for the "For You" content ────────────────────────────
@@ -133,14 +146,6 @@ const WEB_HUB_GROUPS = [
   { key: "stories",    emoji: "📖", i18n: "parent_hub.section_groups.stories"    },
   { key: "support",    emoji: "❤️", i18n: "parent_hub.section_groups.support"    },
 ] as const;
-
-const GROUP_GLASS: Record<string, { accent: string; emojiBg: string }> = {
-  today:      { accent: "border-l-amber-400",   emojiBg: "bg-amber-100 dark:bg-amber-950/40" },
-  learning:   { accent: "border-l-indigo-500",  emojiBg: "bg-indigo-100 dark:bg-indigo-950/40" },
-  creativity: { accent: "border-l-pink-400",    emojiBg: "bg-pink-100 dark:bg-pink-950/40" },
-  stories:    { accent: "border-l-sky-400",     emojiBg: "bg-sky-100 dark:bg-sky-950/40" },
-  support:    { accent: "border-l-rose-400",    emojiBg: "bg-rose-100 dark:bg-rose-950/40" },
-};
 
 // ─── Section Wrapper ─────────────────────────────────────────────────────────
 interface SectionProps {
@@ -198,7 +203,7 @@ function HubSection({
     highlighted && !open ? "border-primary/30 shadow-[0_0_24px_rgba(168,85,247,0.18)]" : "",
     open ? "" : "hover:shadow-[0_0_20px_rgba(168,85,247,0.12)]",
   )}>
-      <button onClick={toggle} className={["w-full flex items-center justify-between gap-3 px-3 py-3 text-left", "transition-colors duration-200", open ? "bg-muted/30" : "hover:bg-muted/20"].join(" ")} aria-expanded={open}>
+      <button onClick={toggle} className={cn("w-full flex items-center justify-between gap-3 px-3 py-3 text-left transition-all duration-[220ms] ease-[ease]", open ? "bg-white/[0.04]" : "hover:bg-white/[0.03]")} aria-expanded={open}>
         <div className="flex items-center gap-3 min-w-0">
           <div className={["w-9 h-9 rounded-xl flex items-center justify-center shrink-0", accentClass, highlighted && !open ? "animate-[pulse_3s_ease-in-out_infinite]" : ""].join(" ")}>
             {icon}
@@ -211,19 +216,19 @@ function HubSection({
             <p className="text-[12px] text-muted-foreground/90 mt-0.5 line-clamp-2">{description}</p>
           </div>
         </div>
-        <span className={["shrink-0 w-6 h-6 rounded-full flex items-center justify-center", "border border-border bg-muted/50", "transition-transform duration-300", open ? "rotate-180 text-primary" : "text-muted-foreground"].join(" ")}>
+        <span className={cn("shrink-0 w-6 h-6 rounded-full flex items-center justify-center border border-white/10 bg-white/[0.05] transition-transform duration-300", open ? "rotate-180 text-amber-300/90" : "text-muted-foreground")}>
           <ChevronDown className="h-3.5 w-3.5" />
         </span>
       </button>
       {!open && preview ? (
         <div className="px-3 pb-2.5 -mt-0.5">
-          <p className="text-[11px] font-medium text-primary/85 line-clamp-1 flex items-center gap-1">
-            <Sparkles className="h-3 w-3 shrink-0 opacity-80" />
+          <p className="text-[11px] font-medium text-amber-200/80 line-clamp-1 flex items-center gap-1">
+            <Sparkles className="h-3 w-3 shrink-0 opacity-80 hub-sparkle-glow" />
             {preview}
           </p>
         </div>
       ) : null}
-      {open && <div className="px-3 pb-4 pt-2 border-t border-border animate-in fade-in slide-in-from-top-1 duration-200">
+      {open && <div className="px-3 pb-4 pt-2 border-t border-white/[0.08] animate-in fade-in slide-in-from-top-1 duration-200">
           {previewLocked && childName ? (
             <JourneyPreviewContent childName={childName} isInfant={isInfant}>{children}</JourneyPreviewContent>
           ) : (
@@ -296,12 +301,7 @@ function HubQuickActions({
             key={action.id}
             type="button"
             onClick={() => onNavigate(action.group, action.tileId)}
-            className={[
-              "shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5",
-              "text-xs font-bold text-foreground",
-              "border border-border bg-card",
-              "hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95",
-            ].join(" ")}
+            className={cn(HUB_QUICK_CHIP, hubQuickChipTint(action.id))}
           >
             <span aria-hidden>{action.emoji}</span>
             {t(action.i18n)}
@@ -311,7 +311,7 @@ function HubQuickActions({
           <button
             type="button"
             onClick={() => setShowAll(true)}
-            className="shrink-0 inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold text-primary border border-primary/30 hover:bg-primary/5"
+            className={HUB_SEE_ALL_CHIP}
           >
             {t("parent_hub.quick_actions.see_all")}
           </button>
@@ -672,9 +672,9 @@ function ChildSelectorPanel({
     if (months > 0) return `${child.age}y ${months}m`;
     return `${child.age}y`;
   };
-  return <div className="rounded-xl border border-border bg-card overflow-hidden">
+  return <div className={cn(HUB_GLASS_CARD, "overflow-hidden p-0 active:scale-100")}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2">
+      <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-white/[0.06]">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-primary" />
           <span className="text-xs font-bold text-foreground uppercase tracking-wide">
@@ -698,7 +698,7 @@ function ChildSelectorPanel({
         const colorClass = AVATAR_COLORS[idx % AVATAR_COLORS.length];
         const initials = getInitials(child?.name ?? "Child");
         const ageLabel = getAge(child);
-        return <button key={child?.id ?? idx} onClick={() => onSelect(child.id)} className={["shrink-0 relative flex flex-col items-center gap-2 rounded-2xl px-4 py-3 min-w-[96px] transition-all duration-200", isSelected ? "bg-primary/10 dark:bg-primary/15 border-2 border-primary shadow-[0_0_0_1px_rgba(168,85,247,0.3),0_4px_16px_-4px_rgba(168,85,247,0.4)]" : "bg-white/50 dark:bg-white/[0.03] border-2 border-border hover:border-primary/50 hover:bg-primary/5"].join(" ")}>
+        return <button key={child?.id ?? idx} onClick={() => onSelect(child.id)} className={cn("shrink-0 relative flex flex-col items-center gap-2 rounded-2xl px-4 py-3 min-w-[96px] transition-all duration-[220ms] ease-[ease]", isSelected ? "border-2 border-violet-400/50 bg-violet-500/10 shadow-[0_0_24px_rgba(168,85,247,0.28)]" : "border border-white/10 bg-white/[0.04] hover:border-white/20 hover:shadow-[0_0_16px_rgba(168,85,247,0.12)]")}>
               {/* Selected check */}
               {isSelected && <span className="absolute top-2 right-2">
                   <CheckCircle2 className="h-4 w-4 text-primary fill-primary/20" />
@@ -1530,52 +1530,53 @@ function ParentingHubPage() {
                 return null;
               }
               const isOpen = expandedGroups.has(group.key);
-              const gs = GROUP_GLASS[group.key] ?? GROUP_GLASS.today;
+              const gs = getHubGroupStyle(group.key);
               return (
                 <div
                   key={group.key}
                   id={`hub-group-${group.key}`}
-                  className={[
-                    "relative rounded-xl overflow-hidden transition-all duration-200",
-                    "border border-border bg-card border-l-4",
-                    gs.accent,
-                  ].join(" ")}
+                  className={cn(
+                    HUB_GLASS_CARD,
+                    "relative overflow-hidden p-0 pl-0 hub-page-enter active:scale-100",
+                    isOpen ? gs.openGlow : gs.cardGlow,
+                    !isOpen && "hover:shadow-[0_0_22px_rgba(168,85,247,0.14)]",
+                  )}
                 >
+                  <div className="flex min-w-0">
+                    <div className={cn("w-1.5 shrink-0 self-stretch", gs.accentBar)} aria-hidden />
+                    <div className="min-w-0 flex-1">
                   <button
                     onClick={() => toggleGroup(group.key)}
-                    className={[
-                      "w-full flex items-center gap-3 text-left px-3 py-3",
-                      "transition-colors duration-200",
-                      isOpen ? "bg-muted/30" : "hover:bg-muted/20",
-                    ].join(" ")}
+                    className={cn(
+                      "w-full flex items-center gap-3 text-left px-3 py-3.5",
+                      "transition-all duration-[220ms] ease-[ease]",
+                      isOpen ? "bg-white/[0.04]" : "hover:bg-white/[0.03]",
+                    )}
                     aria-expanded={isOpen}
                   >
-                    <span className={[
-                      "flex items-center justify-center w-9 h-9 rounded-lg shrink-0 text-lg",
-                      gs.emojiBg,
-                    ].join(" ")}>
+                    <span className={cn("flex items-center justify-center w-10 h-10 rounded-xl shrink-0 text-lg", gs.emojiShell)}>
                       {group.emoji}
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className={`block font-quicksand font-bold text-sm leading-tight ${isOpen ? "text-primary" : "text-foreground"}`}>
+                      <span className={cn("block font-quicksand font-bold leading-tight", isOpen ? "text-lg text-amber-100/95" : HUB_CARD_TITLE)}>
                         {t(group.i18n)}
                       </span>
                       {isSupport && !isOpen ? (
-                        <span className="block text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+                        <span className={cn("block text-[11px] mt-0.5 line-clamp-1", HUB_BODY)}>
                           {t("parent_hub.support.group_subtitle", { count: groupGrid.length })}
                         </span>
                       ) : null}
                     </span>
-                    <span className={[
+                    <span className={cn(
                       "shrink-0 w-6 h-6 rounded-full flex items-center justify-center",
-                      "border border-border bg-muted/50 transition-transform duration-300",
-                      isOpen ? "rotate-180 text-primary" : "text-muted-foreground",
-                    ].join(" ")}>
+                      "border border-white/10 bg-white/[0.05] transition-transform duration-300",
+                      isOpen ? "rotate-180 text-amber-300/90" : "text-muted-foreground",
+                    )}>
                       <ChevronDown className="h-3.5 w-3.5" />
                     </span>
                   </button>
                   {isOpen && (
-                    <div className="px-3 pb-4 pt-2 border-t border-border animate-in fade-in slide-in-from-top-1 duration-200 space-y-3">
+                    <div className="px-3 pb-4 pt-2 border-t border-white/[0.08] animate-in fade-in slide-in-from-top-1 duration-200 space-y-3">
                       {isSupport && ptmSeason ? (
                         <div className="rounded-xl border border-blue-400/25 bg-blue-500/10 px-3 py-2.5 text-xs text-blue-100/90 leading-relaxed">
                           {t("parent_hub.support.ptm_season_banner")}
@@ -1596,6 +1597,8 @@ function ParentingHubPage() {
                       )}
                     </div>
                   )}
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -1643,7 +1646,7 @@ function ParentingHubPage() {
       {/* Bottom CTA */}
       <div className="text-center pt-2">
         <AppLink href="/routines/generate">
-          <button className="inline-flex items-center gap-2 text-sm text-primary font-semibold hover:underline">
+          <button type="button" className={HUB_BOTTOM_CTA}>
             <Calendar className="h-4 w-4" />
             {t("parent_hub.headers.bottom_cta")}
           </button>
@@ -1666,22 +1669,20 @@ function ForYouHeader({
     t
   } = useTranslation();
   const groupInfo = ageGroup ? getAgeGroupInfo(ageGroup) : null;
-  return <div className="pt-1">
+  return <div className="pt-1 hub-page-enter">
       <div className="flex items-center gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary/80">{t("parent_hub.headers.section1_for")}</span>
-        <Badge variant="outline" className="rounded-full px-2.5 py-0 h-5 font-semibold text-[10px] gap-1">
-          {bandLabel(band)}
-        </Badge>
+        <span className={HUB_SECTION_LABEL}>{t("parent_hub.headers.section1_for")}</span>
+        <span className={HUB_AGE_BADGE}>{bandLabel(band)}</span>
       </div>
-      <h2 className="font-quicksand text-xl font-bold text-foreground mt-1.5 flex items-center gap-2 flex-wrap">
+      <h2 className="font-quicksand text-[22px] font-bold text-foreground mt-2 flex items-center gap-2 flex-wrap">
         <span>{t("parent_hub.headers.for_child", {
           name: childName
         })}</span>
-        {groupInfo && <span className="text-base font-medium text-muted-foreground">
+        {groupInfo && <span className="text-base font-medium text-muted-foreground/80">
             {groupInfo.emoji} {groupInfo.label}
           </span>}
       </h2>
-      <p className="text-xs text-muted-foreground mt-0.5">
+      <p className={cn(HUB_BODY, "mt-1")}>
         {t("parent_hub.headers.personalised", {
         name: childName
       })}
