@@ -21,6 +21,8 @@ import { getApiUrl } from "@/lib/api";
 import { getRewards, getTotalPoints, type Reward } from "@/lib/rewards";
 import { routineDateKey, routineItems } from "@/lib/routines";
 import { DashboardSectionHeader } from "@/components/dashboard-section-header";
+import { DashboardGlassCard, DashboardGlassChip } from "@/components/dashboard-glass-card";
+import { DASHBOARD_SECTION_BODY, DASHBOARD_SECTION_HEADER, DASHBOARD_TINTS } from "@/lib/dashboard-premium";
 import type { LucideIcon } from "lucide-react";
 
 type Routine = {
@@ -235,48 +237,51 @@ export function DashboardWeeklyInsightsCard({
 
   if (isLoading) {
     return (
-      <div className="rounded-2xl border border-border bg-card/50 h-24 animate-pulse" />
+      <div className="rounded-2xl border border-white/10 bg-white/[0.04] h-24 animate-pulse" />
     );
   }
   if (!data || highlights.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-indigo-500/25 bg-indigo-500/5 overflow-hidden">
-      <DashboardSectionHeader
-        label={t("dashboard.weekly_insights")}
-        subtitle={t("dashboard.weekly_insights_sub")}
-        icon={Sparkles}
-        accentClassName="bg-indigo-500"
-        action={
-          <Link href="/insights" className="text-[11px] font-bold text-primary hover:underline">
-            {t("dashboard.view_insights")} →
-          </Link>
-        }
-      />
-      <div className="px-3 pb-3 space-y-2 -mt-1">
+    <DashboardGlassCard tintRgb={DASHBOARD_TINTS.weekly}>
+      <div className="px-3 pt-3">
+        <DashboardSectionHeader
+          label={t("dashboard.weekly_insights")}
+          subtitle={t("dashboard.weekly_insights_sub")}
+          icon={Sparkles}
+          accentClassName="bg-indigo-400"
+          onDark
+          action={
+            <Link href="/insights" className="text-[11px] font-bold text-violet-300 hover:underline">
+              {t("dashboard.view_insights")} →
+            </Link>
+          }
+        />
+      </div>
+      <div className={`${DASHBOARD_SECTION_BODY} space-y-2 -mt-1`}>
         {highlights.map((h, i) => {
           const IconComp = INSIGHT_ICONS[h.icon] ?? Sparkles;
+          const tint = h.accent.replace("#", "").match(/.{2}/g)?.map((x) => parseInt(x, 16)).join(",") ?? DASHBOARD_TINTS.weekly;
           return (
-            <div
-              key={`${h.childId}-${i}`}
-              className="flex items-start gap-2.5 p-2.5 rounded-xl bg-card border border-border"
-            >
-              <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: `${h.accent}22` }}
-              >
-                <IconComp className="h-4 w-4" style={{ color: h.accent }} />
+            <DashboardGlassChip key={`${h.childId}-${i}`} tintRgb={tint}>
+              <div className="flex items-start gap-2.5 p-2.5">
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-white/[0.08]"
+                  style={{ boxShadow: `inset 0 0 0 1px ${h.accent}44` }}
+                >
+                  <IconComp className="h-4 w-4" style={{ color: h.accent }} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-white/55 uppercase">{h.childName}</p>
+                  <p className="font-bold text-sm text-white leading-snug">{h.headline}</p>
+                  <p className="text-xs text-white/60 mt-0.5">{h.detail}</p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase">{h.childName}</p>
-                <p className="font-bold text-sm text-foreground leading-snug">{h.headline}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{h.detail}</p>
-              </div>
-            </div>
+            </DashboardGlassChip>
           );
         })}
       </div>
-    </div>
+    </DashboardGlassCard>
   );
 }
 
@@ -361,30 +366,28 @@ export function RecentRoutinesCollapsible({
   const hiddenCount = Math.max(0, routines.length - RECENT_INITIAL);
 
   return (
-    <Card className="rounded-2xl shadow-sm border-border/50 overflow-hidden flex flex-col">
-      <CardHeader className="bg-muted/30 pb-4 border-b border-border/50">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="font-quicksand text-lg flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              {t("dashboard.recent_routines")}
-            </CardTitle>
-            <CardDescription>{t("pages.dashboard.latest_generated_schedules")}</CardDescription>
+    <DashboardGlassCard tintRgb={DASHBOARD_TINTS.routines}>
+      <div className={`${DASHBOARD_SECTION_HEADER} justify-between`}>
+        <div>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-amber-300" />
+            <span className="font-quicksand font-bold text-sm text-white">{t("dashboard.recent_routines")}</span>
           </div>
-          <Link href="/routines" className="text-sm font-medium text-primary hover:underline flex items-center">
-            {t("dashboard.view_all")} <ArrowRight className="h-4 w-4 ml-1" />
-          </Link>
+          <p className="text-[11px] text-white/55 mt-0.5 ml-7">{t("pages.dashboard.latest_generated_schedules")}</p>
         </div>
-      </CardHeader>
-      <CardContent className="p-0 flex-1">
+        <Link href="/routines" className="text-sm font-medium text-amber-300 hover:underline flex items-center shrink-0">
+          {t("dashboard.view_all")} <ArrowRight className="h-4 w-4 ml-1" />
+        </Link>
+      </div>
+      <div className="flex-1">
         {loading ? (
           <div className="p-4 space-y-4">
-            <div className="h-16 w-full rounded-xl bg-muted animate-pulse" />
-            <div className="h-16 w-full rounded-xl bg-muted animate-pulse" />
+            <div className="h-16 w-full rounded-xl bg-white/[0.06] animate-pulse" />
+            <div className="h-16 w-full rounded-xl bg-white/[0.06] animate-pulse" />
           </div>
         ) : routines.length > 0 ? (
           <>
-            <div className="divide-y divide-border/50">
+            <div className="divide-y divide-white/[0.08]">
               {visible.map((routine) => {
                 const items = routineItems(routine) as RoutineItem[];
                 const done = items.filter((i) => i.status === "completed").length;
@@ -393,15 +396,15 @@ export function RecentRoutinesCollapsible({
                   <Link
                     key={routine.id}
                     href={`/routines/${routine.id}`}
-                    className="block hover:bg-muted/30 transition-colors p-4 group"
+                    className="block hover:bg-white/[0.05] transition-colors p-4 group"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                        <h4 className="font-bold text-white group-hover:text-amber-200 transition-colors truncate">
                           {routine.title}
                         </h4>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                          <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium border border-border">
+                        <div className="flex items-center gap-2 text-sm text-white/55 mt-1">
+                          <span className="inline-flex rounded-full bg-white/[0.08] px-2 py-0.5 text-xs font-medium border border-white/10">
                             {routine.childName}
                           </span>
                           <span>
@@ -416,16 +419,16 @@ export function RecentRoutinesCollapsible({
                       <div className="flex items-center gap-2 shrink-0 ml-2 min-w-[56px]">
                         {items.length > 0 ? (
                           <div className="text-right w-full">
-                            <div className="text-xs font-bold text-foreground">{pct}%</div>
-                            <div className="w-[52px] h-1 rounded-full bg-muted ml-auto mt-1 overflow-hidden">
-                              <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                            <div className="text-xs font-bold text-white">{pct}%</div>
+                            <div className="w-[52px] h-1 rounded-full bg-white/15 ml-auto mt-1 overflow-hidden">
+                              <div className="h-full rounded-full bg-gradient-to-r from-orange-400 to-amber-400" style={{ width: `${pct}%` }} />
                             </div>
-                            <div className="text-[10px] text-muted-foreground mt-0.5">
+                            <div className="text-[10px] text-white/50 mt-0.5">
                               {done}/{items.length}
                             </div>
                           </div>
                         ) : null}
-                        <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <ArrowRight className="h-4 w-4 text-white/40 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </div>
                   </Link>
@@ -436,7 +439,7 @@ export function RecentRoutinesCollapsible({
               <button
                 type="button"
                 onClick={() => setExpanded((e) => !e)}
-                className="w-full flex items-center justify-center gap-1 py-3 text-sm font-bold text-primary hover:bg-muted/30 border-t border-border/50"
+                className="w-full flex items-center justify-center gap-1 py-3 text-sm font-bold text-amber-300 hover:bg-white/[0.04] border-t border-white/[0.08]"
               >
                 {expanded
                   ? t("dashboard.show_fewer_routines")
@@ -446,16 +449,16 @@ export function RecentRoutinesCollapsible({
             ) : null}
           </>
         ) : (
-          <div className="p-8 text-center flex flex-col items-center text-muted-foreground min-h-[200px]">
-            <Calendar className="h-10 w-10 text-muted-foreground/30 mb-3" />
+          <div className="p-8 text-center flex flex-col items-center text-white/55 min-h-[200px]">
+            <Calendar className="h-10 w-10 text-white/25 mb-3" />
             <p>{t("pages.dashboard.no_routines_created_yet")}</p>
-            <Link href="/routines/generate" className="mt-4 text-primary font-medium hover:underline">
+            <Link href="/routines/generate" className="mt-4 text-amber-300 font-medium hover:underline">
               {t("pages.dashboard.create_your_first_routine")}
             </Link>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </DashboardGlassCard>
   );
 }
 
@@ -473,36 +476,30 @@ export function BehaviorHighlightsSection({
   const showProminentEmpty = !loading && totalToday === 0;
 
   return (
-    <Card
-      className={`rounded-2xl shadow-sm overflow-hidden flex flex-col ${
-        showProminentEmpty ? "border-primary/40 ring-1 ring-primary/20" : "border-border/50"
-      }`}
-    >
-      <CardHeader className="bg-muted/30 pb-4 border-b border-border/50">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="font-quicksand text-lg flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary" />
-              {t("dashboard.behavior_highlights")}
-            </CardTitle>
-            <CardDescription>{t("dashboard.behavior_today_subtitle")}</CardDescription>
+    <DashboardGlassCard tintRgb={DASHBOARD_TINTS.behavior}>
+      <div className={`${DASHBOARD_SECTION_HEADER} justify-between`}>
+        <div>
+          <div className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-rose-300" />
+            <span className="font-quicksand font-bold text-sm text-white">{t("dashboard.behavior_highlights")}</span>
           </div>
-          <Link href="/behavior" className="text-sm font-medium text-primary hover:underline flex items-center">
-            {t("dashboard.log_behavior")} <ArrowRight className="h-4 w-4 ml-1" />
-          </Link>
+          <p className="text-[11px] text-white/55 mt-0.5 ml-7">{t("dashboard.behavior_today_subtitle")}</p>
         </div>
-      </CardHeader>
-      <CardContent className="p-0 flex-1">
+        <Link href="/behavior" className="text-sm font-medium text-rose-300 hover:underline flex items-center shrink-0">
+          {t("dashboard.log_behavior")} <ArrowRight className="h-4 w-4 ml-1" />
+        </Link>
+      </div>
+      <div className="flex-1">
         {loading ? (
           <div className="p-4 space-y-4">
-            <div className="h-16 w-full rounded-xl bg-muted animate-pulse" />
+            <div className="h-16 w-full rounded-xl bg-white/[0.06] animate-pulse" />
           </div>
         ) : showProminentEmpty ? (
           <div className="p-8 text-center flex flex-col items-center gap-4 min-h-[200px] justify-center">
             <div className="text-4xl">💛</div>
             <div>
-              <p className="font-bold text-foreground text-base">{t("dashboard.behavior_empty_title")}</p>
-              <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
+              <p className="font-bold text-white text-base">{t("dashboard.behavior_empty_title")}</p>
+              <p className="text-sm text-white/60 mt-1 max-w-xs mx-auto">
                 {selectedChildName
                   ? t("dashboard.behavior_empty_sub_child", { name: selectedChildName })
                   : t("dashboard.behavior_empty_sub")}
@@ -511,7 +508,7 @@ export function BehaviorHighlightsSection({
             <Link href="/behavior">
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground font-bold text-sm px-6 py-2.5 hover:bg-primary/90"
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-rose-400 to-pink-500 text-white font-bold text-sm px-6 py-2.5 shadow-[0_4px_18px_rgba(251,113,133,0.35)] hover:from-rose-300 hover:to-pink-400"
               >
                 <Heart className="h-4 w-4" />
                 {t("dashboard.behavior_empty_cta")}
@@ -519,34 +516,34 @@ export function BehaviorHighlightsSection({
             </Link>
           </div>
         ) : stats.length > 0 ? (
-          <div className="divide-y divide-border/50">
+          <div className="divide-y divide-white/[0.08]">
             {stats.map((stat) => (
               <div key={stat.childId} className="p-4">
-                <h4 className="font-bold text-foreground mb-3">{stat.childName}</h4>
+                <h4 className="font-bold text-white mb-3">{stat.childName}</h4>
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2.5 py-2 border border-border">
-                    <TrendingUp className="h-3.5 w-3.5 text-primary" />
-                    <span className="text-[10px] text-muted-foreground">{t("dashboard.positive_label")}</span>
-                    <span className="font-bold text-primary">{stat.positive}</span>
+                  <div className="flex items-center gap-1.5 bg-emerald-500/15 rounded-lg px-2.5 py-2 border border-emerald-400/25">
+                    <TrendingUp className="h-3.5 w-3.5 text-emerald-300" />
+                    <span className="text-[10px] text-white/60">{t("dashboard.positive_label")}</span>
+                    <span className="font-bold text-emerald-300">{stat.positive}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 bg-destructive/10 rounded-lg px-2.5 py-2 border border-destructive/20">
-                    <Heart className="h-3.5 w-3.5 text-destructive" />
-                    <span className="text-[10px] text-muted-foreground">{t("dashboard.negative_label")}</span>
-                    <span className="font-bold text-destructive">{stat.negative}</span>
+                  <div className="flex items-center gap-1.5 bg-rose-500/15 rounded-lg px-2.5 py-2 border border-rose-400/25">
+                    <Heart className="h-3.5 w-3.5 text-rose-300" />
+                    <span className="text-[10px] text-white/60">{t("dashboard.negative_label")}</span>
+                    <span className="font-bold text-rose-300">{stat.negative}</span>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="p-8 text-center text-muted-foreground min-h-[160px] flex flex-col items-center justify-center">
+          <div className="p-8 text-center text-white/55 min-h-[160px] flex flex-col items-center justify-center">
             <p>{t("pages.dashboard.no_behavior_logged_yet")}</p>
-            <Link href="/behavior" className="mt-3 text-primary font-medium hover:underline">
+            <Link href="/behavior" className="mt-3 text-rose-300 font-medium hover:underline">
               {t("pages.dashboard.track_a_behavior")}
             </Link>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </DashboardGlassCard>
   );
 }

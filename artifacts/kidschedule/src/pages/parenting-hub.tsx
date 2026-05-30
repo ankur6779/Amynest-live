@@ -60,7 +60,7 @@ import {
 } from "@/lib/hub-support-utils";
 import { getArticlesForAgeMonths } from "@/lib/articles-data";
 import { NewParentTipsSection } from "@/components/new-parent-tips";
-import { HubSubTileChip, HubSubTileShell } from "@/components/hub-sub-tile-shell";
+import { HubCollapsibleSubTile, HubSubTileLink } from "@/components/hub-collapsible-sub-tile";
 import { HubJourneyPulse } from "@/components/hub-journey-pulse";
 import { HubTodayLearningPanel } from "@/components/hub-today-learning-panel";
 import { TodaysPathFromStatus } from "@/components/todays-path";
@@ -101,9 +101,6 @@ import {
   HUB_FEATURE_TILE_PREVIEW,
   HUB_FEATURE_TILE_TEXT,
   HUB_FEATURE_TILE_TITLE,
-  extractTintRgbFromCardClass,
-  getHubSubTileIconAccent,
-  HUB_SUB_TILE_ICON,
 } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
 
@@ -400,17 +397,16 @@ function AmyAISuggestionsSection() {
       <p className="text-sm text-muted-foreground">
         {t("parent_hub.amy.lead")}
       </p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {AMY_PROMPT_IDS.slice(0, 4).map(id => {
         const label = t(`parent_hub.amy.prompts.${id}.label`);
         const prompt = t(`parent_hub.amy.prompts.${id}.prompt`);
         return <AppLink key={id} href={`/assistant?q=${encodeURIComponent(prompt)}`}>
-              <HubSubTileChip tintRgb={AMY_PROMPT_TINT[id]}>
-                <button className="w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-all hover:bg-white/[0.04]">
-                  <span className="text-xl shrink-0">{AMY_PROMPT_EMOJI[id]}</span>
-                  <span className="text-sm font-semibold text-foreground">{label}</span>
-                </button>
-              </HubSubTileChip>
+              <HubSubTileLink
+                tintRgb={AMY_PROMPT_TINT[id]}
+                icon={<span className="text-xl leading-none">{AMY_PROMPT_EMOJI[id]}</span>}
+                title={label}
+              />
             </AppLink>;
       })}
       </div>
@@ -453,7 +449,7 @@ function EmotionalSupportSection({
       <p className="text-sm text-muted-foreground">
         {t("parent_hub.emotional_footer.lead")}
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {orderedIds.map((id, idx) => {
         const title = t(`parent_hub.emotional_cards.${id}.title`);
         const subtitle = t(`parent_hub.emotional_cards.${id}.subtitle`);
@@ -461,38 +457,32 @@ function EmotionalSupportSection({
         const isHighlighted = moodHighlight && idx === 0;
         return <SubItemGate key={id} sectionId="hub_emotional" subItemId={id}>
               <AppLink href={`/assistant?q=${encodeURIComponent(prompt)}`}>
-                <HubSubTileChip tintRgb={EMOTIONAL_CARD_TINT[id]}>
-                  <button
-                    className={cn(
-                      "w-full text-left px-4 py-3 transition-all hover:bg-white/[0.04]",
-                      isHighlighted
-                        ? "ring-2 ring-inset ring-primary/45 shadow-[0_0_20px_-4px_rgba(168,85,247,0.45)]"
-                        : "",
-                    )}
-                  >
-                  {isHighlighted ? (
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-primary mb-1 block">
-                      {t("parent_hub.emotional_footer.suggested_for_you")}
-                    </span>
-                  ) : null}
-                  <span className="text-2xl block mb-1">{EMOTIONAL_CARD_EMOJI[id]}</span>
-                  <p className="font-bold text-sm text-foreground leading-tight">{title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
-                </button>
-                </HubSubTileChip>
+                <HubSubTileLink
+                  tintRgb={EMOTIONAL_CARD_TINT[id]}
+                  highlighted={isHighlighted}
+                  icon={<span className="text-2xl leading-none">{EMOTIONAL_CARD_EMOJI[id]}</span>}
+                  title={
+                    <>
+                      {isHighlighted ? (
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-primary mb-1 block">
+                          {t("parent_hub.emotional_footer.suggested_for_you")}
+                        </span>
+                      ) : null}
+                      <span className="font-bold text-[15px] leading-snug text-foreground">{title}</span>
+                    </>
+                  }
+                  subtitle={subtitle}
+                />
               </AppLink>
             </SubItemGate>;
       })}
       </div>
-      <div className="bg-gradient-to-r from-muted dark:from-card to-muted dark:to-card border border-border dark:border-border rounded-2xl p-4 flex gap-3 items-start">
-        <AmyIcon size={36} />
-        <div>
-          <p className="font-bold text-sm text-foreground">{t("parent_hub.emotional_footer.reassure_title")}</p>
-          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-            {t("parent_hub.emotional_footer.reassure_body")}
-          </p>
-        </div>
-      </div>
+      <HubSubTileLink
+        tintRgb="167,139,250"
+        icon={<AmyIcon size={28} bounce />}
+        title={t("parent_hub.emotional_footer.reassure_title")}
+        subtitle={t("parent_hub.emotional_footer.reassure_body")}
+      />
 
       <AppLink href="/assistant">
         <Button variant="default" className="w-full rounded-xl gap-2 text-sm font-semibold">
@@ -504,14 +494,15 @@ function EmotionalSupportSection({
 
       {/* Feedback entry point */}
       <AppLink href="/feedback">
-        <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/35 transition-all px-4 py-3 cursor-pointer group">
-          <span className="text-xl">💡</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground">{t("parent_hub.feedback_cta.title", { defaultValue: "Share your ideas with us" })}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{t("parent_hub.feedback_cta.subtitle", { defaultValue: "Help shape AmyNest for every family ❤️" })}</p>
-          </div>
-          <span className="text-primary text-xs font-semibold shrink-0 group-hover:translate-x-0.5 transition-transform">→</span>
-        </div>
+        <HubSubTileLink
+          tintRgb="251,191,36"
+          icon={<span className="text-xl leading-none">💡</span>}
+          title={t("parent_hub.feedback_cta.title", { defaultValue: "Share your ideas with us" })}
+          subtitle={t("parent_hub.feedback_cta.subtitle", { defaultValue: "Help shape AmyNest for every family ❤️" })}
+          trailing={
+            <span className="text-primary text-xs font-semibold shrink-0">→</span>
+          }
+        />
       </AppLink>
     </div>;
 }
@@ -545,50 +536,17 @@ function SubSection({
   gateSection,
   children
 }: SubSectionProps) {
-  const [open, setOpen] = useState(false);
-  const resolvedTint =
-    tintRgb ?? extractTintRgbFromCardClass(cardClass) ?? "129,140,248";
-  const iconAccent = accentClass.includes("from-muted")
-    ? getHubSubTileIconAccent(resolvedTint)
-    : accentClass;
   const inner = (
-    <HubSubTileShell tintRgb={resolvedTint} open={open}>
-      <button
-        onClick={() => setOpen(v => !v)}
-        className={cn(
-          "w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left",
-          "transition-colors duration-200",
-          open ? "bg-white/[0.04]" : "hover:bg-white/[0.03]",
-        )}
-        aria-expanded={open}
-      >
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className={cn(HUB_SUB_TILE_ICON, iconAccent)}>
-            {icon}
-          </div>
-          <div className="min-w-0">
-            <p className="font-semibold text-[13px] leading-tight text-foreground line-clamp-2">{title}</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{description}</p>
-          </div>
-        </div>
-        <span
-          className={cn(
-            "shrink-0 w-6 h-6 rounded-full flex items-center justify-center",
-            "border border-white/15 bg-white/[0.06]",
-            "transition-transform duration-300",
-            open ? "rotate-180 text-amber-300/90 border-amber-300/35" : "text-muted-foreground",
-          )}
-        >
-          <ChevronDown className="h-3.5 w-3.5" />
-        </span>
-      </button>
-
-      {open ? (
-        <div className="px-3 pb-3 pt-2 border-t border-white/[0.08] animate-in fade-in slide-in-from-top-1 duration-200">
-          {children}
-        </div>
-      ) : null}
-    </HubSubTileShell>
+    <HubCollapsibleSubTile
+      icon={icon}
+      title={title}
+      description={description}
+      accentClass={accentClass}
+      tintRgb={tintRgb}
+      cardClass={cardClass}
+    >
+      {children}
+    </HubCollapsibleSubTile>
   );
   if (gateSection) {
     return <SubItemGate sectionId={gateSection} subItemId={title}>
@@ -633,7 +591,6 @@ function ActivitiesSection({
   const isToddlerOrPreschool = ageGroup === "toddler" || ageGroup === "preschool";
   const isOlder = !isInfant && !isToddlerOrPreschool;
   return <div className="space-y-2.5">
-
       <SubSection gateSection="hub_activities" icon={<AudioLines className="h-4 w-4 text-white" />} title={t("parent_hub.tiles_activity.audio_lessons.title")} description={t("parent_hub.tiles_activity.audio_lessons.desc")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(34,211,238,0.26)0%,rgba(6,182,212,0.12)100%)">
         <p className="text-sm text-muted-foreground mb-3">
           {t("parent_hub.tiles.activities.lead")}

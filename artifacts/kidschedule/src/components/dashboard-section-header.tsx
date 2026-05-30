@@ -17,17 +17,18 @@ export function DashboardSectionHeader({
   accentClassName = "bg-primary",
   action,
   rightSlot,
-}: Props) {
+  onDark = false,
+}: Props & { onDark?: boolean }) {
   return (
     <div className="flex items-start justify-between gap-3 mb-2">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className={`h-3.5 w-0.5 rounded-full shrink-0 ${accentClassName}`} />
-          {Icon ? <Icon className="h-4 w-4 text-primary shrink-0" /> : null}
-          <p className="font-quicksand font-bold text-sm text-foreground">{label}</p>
+          {Icon ? <Icon className={`h-4 w-4 shrink-0 ${onDark ? "text-violet-300" : "text-primary"}`} /> : null}
+          <p className={`font-quicksand font-bold text-sm ${onDark ? "text-white" : "text-foreground"}`}>{label}</p>
         </div>
         {subtitle ? (
-          <p className="text-[11px] text-muted-foreground mt-1 ml-[18px]">{subtitle}</p>
+          <p className={`text-[11px] mt-1 ml-[18px] ${onDark ? "text-white/55" : "text-muted-foreground"}`}>{subtitle}</p>
         ) : null}
       </div>
       <div className="flex items-center gap-2 shrink-0">

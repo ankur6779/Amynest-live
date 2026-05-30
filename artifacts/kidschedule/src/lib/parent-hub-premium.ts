@@ -456,6 +456,12 @@ export const HUB_SUB_TILE_ICON = cn(
   "shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] ring-1 ring-white/25",
 );
 
+/** Larger icon shell — matches Infant Parenting sub-tiles. */
+export const HUB_SUB_TILE_ICON_LG = cn(
+  "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
+  "shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ring-1 ring-white/30 dark:ring-white/10",
+);
+
 const HUB_SUB_TILE_ICON_ACCENTS: Record<string, string> = {
   "34,211,238": "bg-gradient-to-br from-cyan-400 to-teal-500",
   "251,191,36": "bg-gradient-to-br from-amber-400 to-yellow-500",

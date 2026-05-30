@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyFamilyMemoryCard } from "@/components/intelligence/amy-family-memory-card";
+import { DashboardGlassCard, DashboardGlassChip } from "@/components/dashboard-glass-card";
+import { DASHBOARD_SECTION_BODY, DASHBOARD_SECTION_HEADER, DASHBOARD_TINTS } from "@/lib/dashboard-premium";
 import {
   BehaviorHighlightsSection,
   DashboardWeeklyInsightsCard,
@@ -156,23 +158,23 @@ export function DashboardCoachingCard({
 
   return (
     <div className="space-y-2">
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-muted/20">
+      <DashboardGlassCard tintRgb={DASHBOARD_TINTS.amy}>
+        <div className={DASHBOARD_SECTION_HEADER}>
           <AmyIcon size={16} bounce />
-          <span className="font-quicksand font-bold text-sm text-foreground">
+          <span className="font-quicksand font-bold text-sm text-white">
             {t("pages.dashboard.amy_ai_suggests")}
           </span>
         </div>
-        <div className="p-3">
+        <div className={DASHBOARD_SECTION_BODY}>
           {tip ? (
             <div className="flex items-start gap-2 text-sm">
               <span className="text-base shrink-0">{tip.emoji}</span>
               <div className="flex-1 min-w-0 space-y-2">
-                <p className="leading-snug text-foreground/90">{tip.text}</p>
+                <p className="leading-snug text-white/90">{tip.text}</p>
                 {tip.actionLabel && tip.href ? (
                   <Link
                     href={tip.href}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 hover:underline"
                   >
                     {tip.actionLabel}
                     <ArrowRight className="h-3 w-3" />
@@ -182,7 +184,7 @@ export function DashboardCoachingCard({
                   <button
                     type="button"
                     onClick={tip.onAction}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 hover:underline"
                   >
                     {tip.actionLabel}
                     <ArrowRight className="h-3 w-3" />
@@ -191,10 +193,10 @@ export function DashboardCoachingCard({
               </div>
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">{t("pages.dashboard.all_looking_good_today")}</p>
+            <p className="text-xs text-white/60">{t("pages.dashboard.all_looking_good_today")}</p>
           )}
         </div>
-      </div>
+      </DashboardGlassCard>
       <AmyFamilyMemoryCard routines={routines} variant="dashboard" />
     </div>
   );
@@ -228,40 +230,41 @@ export function DashboardCompactStatsRow({
   const todayPct = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : null;
 
   return (
-    <Link
-      href="/progress"
-      className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 hover:bg-muted/30 transition-colors"
-    >
-      <div className="flex items-center gap-1.5 shrink-0">
-        <Flame className={`h-4 w-4 ${streak > 0 ? "text-orange-500" : "text-muted-foreground/40"}`} />
-        <span className="font-black text-lg text-foreground leading-none">{streak}</span>
-        <span className="text-[10px] font-bold text-muted-foreground uppercase">{t("dashboard.day_streak")}</span>
-      </div>
-      <div className="flex gap-0.5 shrink-0">
-        {last7Keys.map((key) => (
-          <span
-            key={key}
-            className={`h-1.5 w-1.5 rounded-full ${dateSet.has(key) ? "bg-orange-500" : "bg-muted"}`}
-          />
-        ))}
-      </div>
-      <div className="h-4 w-px bg-border shrink-0" />
-      {todayPct != null ? (
-        <div className="text-xs shrink-0">
-          <span className="text-muted-foreground">{t("dashboard.snapshot_today")} </span>
-          <span className="font-bold text-primary">{todayPct}%</span>
-        </div>
-      ) : null}
-      {(summary?.positiveBehaviorsToday ?? 0) > 0 ? (
-        <>
-          <div className="h-4 w-px bg-border shrink-0 hidden sm:block" />
-          <div className="text-xs shrink-0 hidden sm:block">
-            <span className="text-muted-foreground">{t("dashboard.stat_great_today")} </span>
-            <span className="font-bold text-foreground">{summary?.positiveBehaviorsToday}</span>
+    <Link href="/progress" className="block">
+      <DashboardGlassChip tintRgb={DASHBOARD_TINTS.stats}>
+        <div className="flex items-center gap-3 px-3 py-2.5">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Flame className={`h-4 w-4 ${streak > 0 ? "text-orange-400" : "text-white/35"}`} />
+            <span className="font-black text-lg text-white leading-none">{streak}</span>
+            <span className="text-[10px] font-bold text-white/55 uppercase">{t("dashboard.day_streak")}</span>
           </div>
-        </>
-      ) : null}
-      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground ml-auto shrink-0" />
+          <div className="flex gap-0.5 shrink-0">
+            {last7Keys.map((key) => (
+              <span
+                key={key}
+                className={`h-1.5 w-1.5 rounded-full ${dateSet.has(key) ? "bg-orange-400" : "bg-white/20"}`}
+              />
+            ))}
+          </div>
+          <div className="h-4 w-px bg-white/15 shrink-0" />
+          {todayPct != null ? (
+            <div className="text-xs shrink-0">
+              <span className="text-white/55">{t("dashboard.snapshot_today")} </span>
+              <span className="font-bold text-amber-300">{todayPct}%</span>
+            </div>
+          ) : null}
+          {(summary?.positiveBehaviorsToday ?? 0) > 0 ? (
+            <>
+              <div className="h-4 w-px bg-white/15 shrink-0 hidden sm:block" />
+              <div className="text-xs shrink-0 hidden sm:block">
+                <span className="text-white/55">{t("dashboard.stat_great_today")} </span>
+                <span className="font-bold text-white">{summary?.positiveBehaviorsToday}</span>
+              </div>
+            </>
+          ) : null}
+          <ArrowRight className="h-3.5 w-3.5 text-white/45 ml-auto shrink-0" />
+        </div>
+      </DashboardGlassChip>
     </Link>
   );
 }
@@ -278,18 +281,19 @@ function ParentScoreCompact({ routines, streak }: { routines: Routine[]; streak:
   const grade = score >= 80 ? "A" : score >= 60 ? "B" : score >= 40 ? "C" : "D";
 
   return (
-    <Link
-      href="/progress"
-      className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 hover:bg-muted/30 transition-colors"
-    >
-      <Ribbon className="h-4 w-4 text-primary shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-foreground">{t("dashboard.parent_score")}</p>
-        <p className="text-xs text-muted-foreground">
-          {grade} · {score}/100 · {completionRate}% {t("pages.dashboard.completion").toLowerCase()}
-        </p>
-      </div>
-      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+    <Link href="/progress" className="block">
+      <DashboardGlassChip tintRgb={DASHBOARD_TINTS.score}>
+        <div className="flex items-center gap-3 px-3 py-2.5">
+          <Ribbon className="h-4 w-4 text-amber-300 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-white">{t("dashboard.parent_score")}</p>
+            <p className="text-xs text-white/60">
+              {grade} · {score}/100 · {completionRate}% {t("pages.dashboard.completion").toLowerCase()}
+            </p>
+          </div>
+          <ArrowRight className="h-3.5 w-3.5 text-white/45 shrink-0" />
+        </div>
+      </DashboardGlassChip>
     </Link>
   );
 }
@@ -321,40 +325,43 @@ function RewardsGamingRow({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-      <Link
-        href="/rewards"
-        className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 hover:bg-muted/30 transition-colors"
-      >
-        <Medal className="h-4 w-4 text-primary shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-foreground truncate">{t("dashboard.rewards_points")}</p>
-          <p className="text-xs text-muted-foreground truncate">
-            {points} {t("pages.dashboard.pts")}
-            {nextReward ? ` · ${nextReward.emoji} ${nextReward.label}` : ""}
-          </p>
-        </div>
-        <div className="flex items-center gap-0.5 shrink-0">
-          <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-          <span className="font-black text-sm">{points}</span>
-        </div>
+      <Link href="/rewards" className="block">
+        <DashboardGlassChip tintRgb={DASHBOARD_TINTS.rewards}>
+          <div className="flex items-center gap-3 px-3 py-2.5">
+            <Medal className="h-4 w-4 text-amber-300 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white truncate">{t("dashboard.rewards_points")}</p>
+              <p className="text-xs text-white/60 truncate">
+                {points} {t("pages.dashboard.pts")}
+                {nextReward ? ` · ${nextReward.emoji} ${nextReward.label}` : ""}
+              </p>
+            </div>
+            <div className="flex items-center gap-0.5 shrink-0">
+              <Star className="h-3.5 w-3.5 fill-amber-300 text-amber-300" />
+              <span className="font-black text-sm text-white">{points}</span>
+            </div>
+          </div>
+        </DashboardGlassChip>
       </Link>
       {gamingLocked ? (
-        <div className="flex items-center gap-3 rounded-xl border border-dashed border-border bg-muted/20 px-3 py-2.5 opacity-70">
-          <Gamepad2 className="h-4 w-4 text-muted-foreground shrink-0" />
-          <p className="text-xs text-muted-foreground">{gamingLabel}</p>
-        </div>
-      ) : (
-        <Link
-          href="/games"
-          onClick={onGamingOpen}
-          className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 hover:bg-muted/30 transition-colors"
-        >
-          <span className="text-lg shrink-0">🎮</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-foreground truncate">{gamingLabel}</p>
-            <p className="text-xs text-muted-foreground line-clamp-1">{gamingSub}</p>
+        <DashboardGlassChip tintRgb={DASHBOARD_TINTS.gaming} className="opacity-70">
+          <div className="flex items-center gap-3 px-3 py-2.5">
+            <Gamepad2 className="h-4 w-4 text-emerald-300 shrink-0" />
+            <p className="text-xs text-white/60">{gamingLabel}</p>
           </div>
-          <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        </DashboardGlassChip>
+      ) : (
+        <Link href="/games" onClick={onGamingOpen} className="block">
+          <DashboardGlassChip tintRgb={DASHBOARD_TINTS.gaming}>
+            <div className="flex items-center gap-3 px-3 py-2.5">
+              <span className="text-lg shrink-0">🎮</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-white truncate">{gamingLabel}</p>
+                <p className="text-xs text-white/60 line-clamp-1">{gamingSub}</p>
+              </div>
+              <ArrowRight className="h-3.5 w-3.5 text-white/45 shrink-0" />
+            </div>
+          </DashboardGlassChip>
         </Link>
       )}
     </div>
@@ -393,23 +400,23 @@ export function DashboardMoreInsightsSection({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <DashboardGlassCard tintRgb={DASHBOARD_TINTS.insights}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left hover:bg-muted/30 transition-colors"
+        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left hover:bg-white/[0.04] transition-colors"
         aria-expanded={open}
       >
         <div className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-primary" />
-          <span className="font-quicksand font-bold text-sm text-foreground">
+          <Activity className="h-4 w-4 text-sky-300" />
+          <span className="font-quicksand font-bold text-sm text-white">
             {t("dashboard.more_insights")}
           </span>
         </div>
-        {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        {open ? <ChevronUp className="h-4 w-4 text-white/50" /> : <ChevronDown className="h-4 w-4 text-white/50" />}
       </button>
       {open ? (
-        <div className="px-3 pb-4 pt-1 space-y-3 border-t border-border animate-in fade-in duration-200">
+        <div className="px-3 pb-4 pt-1 space-y-3 border-t border-white/[0.08] animate-in fade-in duration-200">
           <ParentScoreCompact routines={allRoutines} streak={streak} />
           <DashboardWeeklyInsightsCard selectedChildId={selectedChildId} />
           <BehaviorHighlightsSection
@@ -426,6 +433,6 @@ export function DashboardMoreInsightsSection({
           />
         </div>
       ) : null}
-    </div>
+    </DashboardGlassCard>
   );
 }

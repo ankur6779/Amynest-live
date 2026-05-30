@@ -98,9 +98,11 @@ export function SevenDayJourneyCard() {
 
   return (
     <div
-      className="rounded-2xl border border-violet-500/25 bg-gradient-to-br from-violet-950/70 to-indigo-950/50 p-4 shadow-lg relative overflow-hidden"
+      className="rounded-2xl border border-violet-400/35 bg-gradient-to-br from-violet-900/80 via-indigo-950/70 to-purple-950/60 p-4 shadow-[0_8px_32px_rgba(139,92,246,0.22)] relative overflow-hidden"
       data-testid="journey-card"
     >
+      <div className="absolute -top-12 -right-8 h-32 w-32 rounded-full bg-violet-500/25 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-10 -left-6 h-28 w-28 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
       {celebrateDay != null ? (
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-black/20 animate-in fade-in duration-300">
           <div className="flex items-center gap-2 rounded-full bg-emerald-500/90 px-4 py-2 text-white text-sm font-bold shadow-lg animate-in zoom-in duration-300">
@@ -110,7 +112,7 @@ export function SevenDayJourneyCard() {
         </div>
       ) : null}
 
-      <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="relative flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-violet-500/25 flex items-center justify-center">
             <Sparkles className="h-4 w-4 text-violet-200" />
@@ -135,15 +137,15 @@ export function SevenDayJourneyCard() {
         currentDay={status.currentDay}
       />
 
-      <div className="mt-3 mb-3">
+      <div className="relative mt-3 mb-3">
         <p className="font-semibold text-sm text-white">{t(task.titleKey)}</p>
         <p className="text-xs text-white/65 mt-0.5 leading-snug">{t(task.descriptionKey)}</p>
       </div>
 
-      <Link href={task.ctaPath} onClick={() => refetch()}>
+      <Link href={task.ctaPath} onClick={() => refetch()} className="relative block">
         <button
           type="button"
-          className="w-full h-10 rounded-xl bg-violet-500 hover:bg-violet-400 text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+          className="w-full h-10 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-[0_4px_18px_rgba(139,92,246,0.40)] transition-all"
           data-testid={task.taskId === "routine_generate" ? "dashboard-generate-routine-btn" : "journey-cta"}
         >
           {t(task.ctaKey)}

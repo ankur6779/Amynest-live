@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { useGetDashboardSummary, getGetDashboardSummaryQueryKey, useGetRecentRoutines, getGetRecentRoutinesQueryKey, useGetBehaviorStats, getGetBehaviorStatsQueryKey, useListRoutines, getListRoutinesQueryKey, useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Redirect, useLocation } from "wouter";
 import { AppLink } from "@/components/app-link";
 import { Calendar, Users, Star, ArrowRight, TrendingUp, Clock, CheckCircle2, Sparkles, Brain, Heart, Target, ChevronRight, MapPin } from "lucide-react";
@@ -29,6 +28,15 @@ import { pickRoutineForIntelligence, resolveFamilyIntelligenceSurface } from "@/
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { SevenDayJourneyCard } from "@/components/seven-day-journey-card";
 import { useJourney } from "@/hooks/use-journey";
+import { DashboardGlassCard } from "@/components/dashboard-glass-card";
+import {
+  DASHBOARD_AMBIENT_TOP,
+  DASHBOARD_CONTENT_AREA,
+  DASHBOARD_CONTENT_GRADIENT,
+  DASHBOARD_CHIP_IDLE,
+  DASHBOARD_CHIP_SELECTED,
+  DASHBOARD_TINTS,
+} from "@/lib/dashboard-premium";
 
 const HeroAmbientLayer = lazyPage(() =>
   import("@/components/hero-ambient-layer").then((m) => ({
@@ -486,11 +494,7 @@ function ChildrenChipBar({
         <button
           type="button"
           onClick={() => onSelectChild(null)}
-          className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
-            selectedChildId == null
-              ? "bg-primary text-primary-foreground"
-              : "border border-border bg-card text-foreground hover:border-primary/40"
-          }`}
+          className={`shrink-0 ${selectedChildId == null ? DASHBOARD_CHIP_SELECTED : DASHBOARD_CHIP_IDLE}`}
         >
           {t("dashboard.all_children")}
         </button>
@@ -503,11 +507,7 @@ function ChildrenChipBar({
             key={c.id}
             type="button"
             onClick={() => onSelectChild(selected && showAll ? null : c.id)}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
-              selected
-                ? "bg-primary text-primary-foreground"
-                : "border border-border bg-card text-foreground hover:border-primary/40"
-            }`}
+            className={`shrink-0 ${selected ? DASHBOARD_CHIP_SELECTED : DASHBOARD_CHIP_IDLE}`}
           >
             {c.name}
             <span className="font-normal opacity-75 ml-1">{formatAge(c.age, ageMonths)}</span>
@@ -517,11 +517,11 @@ function ChildrenChipBar({
       <AppLink
         href="/children/new"
         source="dashboard-add-child"
-        className="shrink-0 rounded-full border border-dashed border-border px-3 py-1.5 text-xs font-bold text-muted-foreground hover:border-primary/40"
+        className="shrink-0 rounded-full border border-dashed border-white/20 px-3 py-1.5 text-xs font-bold text-white/60 hover:border-violet-400/40 hover:text-white/80 transition-colors"
       >
         + {t("dashboard.add_child")}
       </AppLink>
-      <AppLink href="/children" source="dashboard-manage-children" className="shrink-0 text-[11px] font-bold text-primary hover:underline ml-auto">
+      <AppLink href="/children" source="dashboard-manage-children" className="shrink-0 text-[11px] font-bold text-violet-300 hover:underline ml-auto">
         {t("dashboard.manage")}
       </AppLink>
     </div>
@@ -535,9 +535,9 @@ function TimelineProgressChip({ done, total }: { done: number; total: number }) 
   const pct = Math.min(100, Math.round((done / total) * 100));
   return (
     <div className="text-right shrink-0">
-      <p className="text-[11px] font-bold text-primary">{t("dashboard.timeline_progress", { done, total })}</p>
-      <div className="w-[72px] h-1 rounded-full bg-muted mt-1 ml-auto overflow-hidden">
-        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+      <p className="text-[11px] font-bold text-amber-300">{t("dashboard.timeline_progress", { done, total })}</p>
+      <div className="w-[72px] h-1 rounded-full bg-white/15 mt-1 ml-auto overflow-hidden">
+        <div className="h-full rounded-full bg-gradient-to-r from-orange-400 to-amber-400 transition-all" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -559,15 +559,15 @@ function NowNextTimeline({
   const todayRoutines = routines.filter((r) => routineDateKey(r) === todayStr);
   if (todayRoutines.length === 0) {
     return (
-      <Card className="rounded-2xl border-2 border-dashed border-border bg-card">
-        <CardContent className="p-6 text-center space-y-3">
+      <DashboardGlassCard tintRgb={DASHBOARD_TINTS.timeline}>
+        <div className="p-6 text-center space-y-3">
           <div className="text-4xl">🗓️</div>
-          <p className="font-bold text-foreground">
+          <p className="font-bold text-white">
             {selectedChildName
               ? t("dashboard.no_plan_for_child", { name: selectedChildName })
               : t("pages.dashboard.no_plan_for_today_yet")}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-white/65">
             {journeyHandlesGenerate
               ? t("dashboard.no_plan_journey_hint")
               : t("dashboard.no_plan_subtitle")}
@@ -577,14 +577,14 @@ function NowNextTimeline({
               type="button"
               onClick={onGenerate}
               data-testid="dashboard-generate-routine-btn"
-              className="mt-1 inline-flex items-center gap-2 rounded-full bg-primary hover:bg-primary/90 text-white font-bold text-sm px-5 py-2.5 transition-colors"
+              className="mt-1 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-300 hover:to-amber-400 text-white font-bold text-sm px-5 py-2.5 shadow-[0_4px_20px_rgba(251,146,60,0.35)] transition-all"
             >
               <Sparkles className="h-4 w-4" />
               {t("dashboard.generate_today")}
             </button>
           ) : null}
-        </CardContent>
-      </Card>
+        </div>
+      </DashboardGlassCard>
     );
   }
   const now = new Date();
@@ -605,13 +605,15 @@ function NowNextTimeline({
   }
   const displayItems = currentIdx >= 0 ? allItems.slice(currentIdx, currentIdx + 3) : allItems.filter(item => parseTimeToMinutes(item.time) > nowMinutes).slice(0, 3);
   if (displayItems.length === 0) {
-    return <Card className="rounded-2xl border border-border bg-card">
-        <CardContent className="p-5 text-center space-y-1">
+    return (
+      <DashboardGlassCard tintRgb={DASHBOARD_TINTS.timeline}>
+        <div className="p-5 text-center space-y-1">
           <div className="text-3xl">🌙</div>
-          <p className="font-bold text-foreground">{t("pages.dashboard.day_complete")}</p>
-          <p className="text-xs text-muted-foreground">{t("pages.dashboard.time_to_relax_and_recharge")}</p>
-        </CardContent>
-      </Card>;
+          <p className="font-bold text-white">{t("pages.dashboard.day_complete")}</p>
+          <p className="text-xs text-white/65">{t("pages.dashboard.time_to_relax_and_recharge")}</p>
+        </div>
+      </DashboardGlassCard>
+    );
   }
   const allTodayItems = todayRoutines.flatMap((r) => routineItems<RoutineItem>(r));
   const doneCount = allTodayItems.filter((i) => i.status === "completed").length;
@@ -622,27 +624,28 @@ function NowNextTimeline({
     adaptations: intelligenceRoutine?.adaptations,
   });
 
-  return <Card className="rounded-2xl border border-border bg-card overflow-hidden">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border">
+  return (
+    <DashboardGlassCard tintRgb={DASHBOARD_TINTS.timeline}>
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/[0.08]">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-primary shrink-0" />
-            <span className="font-quicksand font-bold text-sm text-foreground">{t("dashboard.todays_timeline")}</span>
+            <Clock className="h-4 w-4 text-amber-300 shrink-0" />
+            <span className="font-quicksand font-bold text-sm text-white">{t("dashboard.todays_timeline")}</span>
           </div>
           {nextItem ? (
-            <p className="text-[11px] text-muted-foreground mt-1 truncate">
+            <p className="text-[11px] text-white/60 mt-1 truncate">
               {t("dashboard.timeline_next_up", { task: nextItem.activity })}
             </p>
           ) : doneCount > 0 && doneCount >= allTodayItems.length ? (
-            <p className="text-[11px] text-muted-foreground mt-1">{t("dashboard.day_complete")}</p>
+            <p className="text-[11px] text-white/60 mt-1">{t("dashboard.day_complete")}</p>
           ) : null}
         </div>
         <TimelineProgressChip done={doneCount} total={allTodayItems.length} />
       </div>
       {todaySurface ? (
-        <div className="px-4 py-2 border-b border-border bg-primary/5">
-          <p className="text-[11px] leading-snug text-muted-foreground">
-            <Sparkles className="h-3 w-3 inline mr-1 align-text-bottom text-primary" />
+        <div className="px-4 py-2 border-b border-white/[0.08] bg-white/[0.04]">
+          <p className="text-[11px] leading-snug text-white/75">
+            <Sparkles className="h-3 w-3 inline mr-1 align-text-bottom text-amber-300" />
             {todaySurface.headline}
           </p>
         </div>
@@ -653,33 +656,34 @@ function NowNextTimeline({
         const isNext = idx === (currentIdx >= 0 ? 1 : 0);
         const completed = item.status === "completed";
         return <AppLink key={`${item.routineId}-${idx}`} href={`/routines/${item.routineId}`} source="dashboard-routine-timeline">
-              <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isCurrent ? "bg-primary text-white" : "bg-muted/50 hover:bg-muted"}`}>
-                <div className={`flex flex-col items-center w-14 shrink-0 ${isCurrent ? "text-white" : "text-muted-foreground"}`}>
+              <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isCurrent ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-[0_4px_16px_rgba(251,146,60,0.30)]" : "bg-white/[0.06] hover:bg-white/[0.10]"}`}>
+                <div className={`flex flex-col items-center w-14 shrink-0 ${isCurrent ? "text-white" : "text-white/55"}`}>
                   <div className="text-xs font-bold">{item.time}</div>
                   {isCurrent && <span className="mt-1 text-[9px] font-black uppercase bg-white/25 px-1.5 py-0.5 rounded-full">{t("pages.dashboard.now")}</span>}
-                  {!isCurrent && isNext && <span className="mt-1 text-[9px] font-black uppercase bg-muted dark:bg-card text-primary dark:text-muted-foreground px-1.5 py-0.5 rounded-full">{t("pages.dashboard.next")}</span>}
+                  {!isCurrent && isNext && <span className="mt-1 text-[9px] font-black uppercase bg-white/10 text-amber-200 px-1.5 py-0.5 rounded-full">{t("pages.dashboard.next")}</span>}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className={`font-bold text-sm ${isCurrent ? "text-white" : "text-foreground"} ${completed ? "line-through opacity-60" : ""}`} style={{
+                  <div className={`font-bold text-sm ${isCurrent ? "text-white" : "text-white/90"} ${completed ? "line-through opacity-60" : ""}`} style={{
                 wordBreak: "break-word",
                 whiteSpace: "normal"
               }}>
                     {item.activity}
                   </div>
-                  <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 flex-wrap ${isCurrent ? "text-muted-foreground" : "text-muted-foreground"}`}>
+                  <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 flex-wrap ${isCurrent ? "text-white/75" : "text-white/55"}`}>
                     <span>{item.childName} · {item.duration}m</span>
-                    {item.ageBand && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold rounded-full px-1.5 py-0.5 border ${isCurrent ? "bg-white/20 text-white border-white/30" : "text-primary bg-muted border-border"}`}>
+                    {item.ageBand && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold rounded-full px-1.5 py-0.5 border ${isCurrent ? "bg-white/20 text-white border-white/30" : "text-amber-200/90 bg-white/[0.06] border-white/10"}`}>
                         <Users className="h-2.5 w-2.5" />
                         {t("pages.dashboard.ages")} {item.ageBand.replace("-", "–")}
                       </span>}
                   </div>
                 </div>
-                {completed && !isCurrent && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
+                {completed && !isCurrent && <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />}
               </div>
             </AppLink>;
       })}
       </div>
-    </Card>;
+    </DashboardGlassCard>
+  );
 }
 
 // ─── Onboarding Screen ────────────────────────────────────────────────────
@@ -1088,7 +1092,12 @@ export default function Dashboard() {
             childProfiles={childrenSafe.map((c: any) => ({ id: c.id, name: c.name, age: c.age, ageMonths: c.ageMonths ?? 0 }))}
           />
 
-          <div className="rounded-t-3xl bg-background -mt-1 pt-5 flex flex-col gap-4">
+          <div
+            className={DASHBOARD_CONTENT_AREA}
+            style={{ background: DASHBOARD_CONTENT_GRADIENT }}
+          >
+            <div className={DASHBOARD_AMBIENT_TOP} aria-hidden />
+            <div className="relative z-10 flex flex-col gap-4">
             <SevenDayJourneyCard />
 
             <div className="order-1 md:order-none">
@@ -1140,6 +1149,7 @@ export default function Dashboard() {
               gamingLabel={t("pages.dashboard.gaming_reward")}
               gamingSub={t("pages.dashboard.earn_points_from_routines_unlock_mini_games_and_redeem_real_")}
             />
+            </div>
           </div>
       </div>
     </div>
