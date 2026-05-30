@@ -56,7 +56,17 @@ export function useUser(): {
   user: ShimUser | null;
 } {
   const c = useCtx();
-  return { isLoaded: c.isLoaded, isSignedIn: !!c.user, user: c.user };
+  const snapshotUser = useSyncExternalStore(
+    subscribeAuthSnapshot,
+    () => getLatestAuthSnapshot().shim,
+    () => null,
+  );
+  const user = c.user ?? snapshotUser;
+  const isSignedIn =
+    !!user ||
+    (c.isLoaded &&
+      (getLatestAuthSnapshot().authStatus === "authenticated" || hasUsableAuthSession()));
+  return { isLoaded: c.isLoaded, isSignedIn, user };
 }
 
 export function useClerk(): {
