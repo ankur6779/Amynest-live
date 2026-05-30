@@ -254,7 +254,7 @@ export async function playPhonicsUrl(
   const el = createSafeAudio(trimmed, { label });
   if (!el) {
     options.cleanup?.();
-    const error = trimmed.includes("storage.googleapis.com")
+    const error = trimmed.includes("storage.googleapis.com") || !trimmed
       ? "phonics_url_blocked"
       : "phonics_empty_url";
     recordPhonicsPlayFailed(label, error, { url: trimmed.slice(0, 200) });

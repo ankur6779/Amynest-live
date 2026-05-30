@@ -15,38 +15,18 @@ import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
 import {
   SPELLING_AGE_GROUPS,
-  SPELLING_WORDS,
+  getSpellingWordsByAge,
+  getBucketEntries,
+  catalogEntryToWord,
   type SpellingAgeGroup,
   type SpellingDifficulty,
   type SpellingWord,
-} from "../data/spelling-words";
+} from "@workspace/spelling-catalog";
 import { readCachedAudio } from "../services/ttsCacheService.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
-import { enqueueAiJob } from "../queue/ai-job-queue.js";
+import { resolveSpellingWordAudioProxyUrlWithFallback } from "../services/spelling-audio-manifest.js";
 
 const router: IRouter = Router();
-
-async function prewarmWordsTts(
-  userId: string,
-  words: string[],
-  timeoutMs = 60_000,
-): Promise<string[]> {
-  const { wrapJobInput } = await import("../queue/ai-job-payload.js");
-  const enqueued = await enqueueAiJob(
-    "spelling.tts_prewarm",
-    userId,
-    wrapJobInput("spelling/tts-prewarm", { words }),
-  );
-  if (!enqueued.jobId) throw new Error("tts_failed");
-  const { waitForJobResult } = await import("../queue/index.js");
-  const { waitForJob } = await import("../queue/ai-job-store.js");
-  const { isBullMqActive } = await import("../queue/ai-job-queue.js");
-  const finished = isBullMqActive()
-    ? await waitForJobResult(enqueued.jobId, timeoutMs)
-    : await waitForJob(enqueued.jobId, timeoutMs);
-  if (finished?.status !== "completed") throw new Error("tts_failed");
-  return (finished.result as { audioKeys: string[] }).audioKeys ?? [];
-}
 
 async function generateAiWords(
   ageGroup: SpellingAgeGroup,
@@ -505,10 +485,10 @@ router.get("/spelling/words", async (req, res): Promise<void> => {
   }
 
   const { age, difficulty, count = 10 } = parsed.data;
-  const pool = SPELLING_WORDS.filter(
-    (w) => w.ageGroup === age && (!difficulty || w.difficulty === difficulty),
-  );
-  res.json({ ok: true, words: sample(pool, count), source: "curated" as const });
+  const pool = difficulty
+    ? getBucketEntries(age, difficulty).map(catalogEntryToWord)
+    : getSpellingWordsByAge(age);
+  res.json({ ok: true, words: sample(pool, count), source: "catalog" as const });
 });
 
 // ─── POST /api/spelling/ai-generate { age, difficulty, count? } ──────────────
@@ -754,7 +734,7 @@ const sessionStartSchema = z
     mode: z.enum(["competition", "dictation", "battle"]),
     difficulty: difficultySchema.default("easy"),
     count: z.number().int().min(1).max(20).default(10),
-    source: z.enum(["curated", "ai"]).default("curated"),
+    source: z.enum(["catalog", "curated", "ai"]).default("catalog"),
     /** Required iff mode === "battle". Picks AI strength. */
     opponent: aiOpponentSchema.optional(),
   })
@@ -806,7 +786,7 @@ function safeWordFor(
     id: `w${index}`,
     ageGroup: word.ageGroup,
     difficulty: word.difficulty,
-    audioUrl: `/api/spelling/sessions/${sessionToken}/audio/${index}.mp3`,
+    audioUrl: resolveSpellingWordAudioProxyUrlWithFallback(word.word, word.id),
     letterCount: word.word.length,
   };
 }
@@ -834,7 +814,7 @@ async function createSpellingSession(args: {
   mode: "competition" | "dictation" | "tournament" | "battle";
   difficulty: SpellingDifficulty;
   count: number;
-  source: "curated" | "ai";
+  source: "catalog" | "curated" | "ai";
   parentTournamentToken?: string | null;
   aiOpponent?: AiOpponent | null;
 }): Promise<
@@ -863,30 +843,11 @@ async function createSpellingSession(args: {
     }
   }
   if (words.length === 0) {
-    const pool = SPELLING_WORDS.filter(
-      (w) => w.ageGroup === args.ageGroup && w.difficulty === args.difficulty,
-    );
+    const pool = getBucketEntries(args.ageGroup, args.difficulty).map(catalogEntryToWord);
     words = sample(pool, args.count);
   }
   if (words.length === 0) {
     return { ok: false, error: "no_words_available" };
-  }
-
-  // Pre-warm TTS so the first audio request is a cache hit. Sequential
-  // for backpressure against ElevenLabs quotas + a clear failure mode.
-  let audioKeys: string[] = [];
-  try {
-    audioKeys = await prewarmWordsTts(
-      args.userId,
-      words.map((w) => w.word),
-    );
-  } catch (err) {
-    const code = err instanceof Error ? err.message : "tts_failed";
-    logger.error(
-      { evt: "spelling.session_tts_failed", userId: args.userId, code },
-      "session start failed: tts prewarm error",
-    );
-    return { ok: false, error: "audio_unavailable" };
   }
 
   const sessionToken = crypto.randomUUID();
@@ -915,7 +876,7 @@ async function createSpellingSession(args: {
         chunks: w.chunks,
         hint: w.hint,
       })),
-      audioKeys,
+      audioKeys: [],
       attempts: {},
       parentTournamentToken: args.parentTournamentToken ?? null,
       aiOpponent: args.aiOpponent ?? null,
@@ -1507,11 +1468,6 @@ type AdvanceTxResult =
   | { kind: "not_found" }
   | { kind: "not_active"; tournament: SpellingTournamentRow }
   | { kind: "no_session" }
-  | {
-      kind: "audio_pending";
-      tournament: SpellingTournamentRow;
-      session: typeof spellingSessionsTable.$inferSelect;
-    }
   | { kind: "inconsistent_state" }
   | { kind: "no_words_available" }
   | { kind: "session_not_found" }
@@ -1645,13 +1601,10 @@ async function advanceTournamentTxImpl(
       eliminatedAtRound: tournament.eliminatedAtRound,
       passed: true,
     };
-  } else if (activeSession.audioKeys.length === 0) {
-    // Branch 2: audio_pending. Don't finalize — just hand the session
-    // back so the post-tx layer can re-prewarm and return it.
-    return { kind: "audio_pending", tournament, session: activeSession };
   } else {
-    // Branch 1: normal flow — finalize the just-played round, apply
-    // the result, update tournament state.
+    // Normal flow — finalize the just-played round, apply the result,
+    // update tournament state. Audio is served from the pre-generated
+    // spelling library manifest (no runtime TTS prewarm).
     const finalizeRes = await finalizeSpellingSession(
       userId,
       activeSession.sessionToken,
@@ -1703,11 +1656,10 @@ async function advanceTournamentTxImpl(
     : never = null;
   if (next.status === "active") {
     const cfg = getRoundConfig(next.currentRound);
-    const pool = SPELLING_WORDS.filter(
-      (w) =>
-        w.ageGroup === (tournament.ageGroup as SpellingAgeGroup) &&
-        w.difficulty === cfg.difficulty,
-    );
+    const pool = getBucketEntries(
+      tournament.ageGroup as SpellingAgeGroup,
+      cfg.difficulty,
+    ).map(catalogEntryToWord);
     const words = sample(pool, cfg.wordCount);
     if (words.length === 0) {
       return { kind: "no_words_available" };
@@ -1816,98 +1768,12 @@ router.post(
       return;
     }
 
-    // Audio-pending recovery. The latest session for this tournament
-    // is unfinalized with empty audioKeys — a previous /advance
-    // committed the row but post-tx TTS prewarm failed. Re-prewarm
-    // the SAME session and return it. Crucially, do NOT finalize the
-    // session here — it has no playable audio so no real attempts
-    // could have happened, and finalizing would erroneously apply a
-    // 0-attempt round and eliminate the kid.
-    if (txResult.kind === "audio_pending") {
-      const session = txResult.session;
-      let audioKeys: string[] = [];
-      try {
-        audioKeys = await prewarmWordsTts(userId, session.words.map((w) => w.word));
-        await db
-          .update(spellingSessionsTable)
-          .set({ audioKeys })
-          .where(
-            eq(
-              spellingSessionsTable.sessionToken,
-              session.sessionToken,
-            ),
-          );
-      } catch (err) {
-        const code = err instanceof Error ? err.message : "tts_failed";
-        logger.error(
-          {
-            evt: "spelling.tournament_audio_pending_reprewarm_failed",
-            userId,
-            tournamentToken,
-            sessionToken: session.sessionToken,
-            code,
-          },
-          "tournament audio-pending re-prewarm failed; client may retry",
-        );
-        res.status(502).json({ error: "audio_unavailable" });
-        return;
-      }
-
-      const cfg = getRoundConfig(txResult.tournament.currentRound);
-      const lastRound =
-        txResult.tournament.rounds[
-          txResult.tournament.rounds.length - 1
-        ] ?? null;
-      const refreshed = await db
-        .select()
-        .from(spellingTournamentsTable)
-        .where(eq(spellingTournamentsTable.tournamentToken, tournamentToken))
-        .limit(1);
-
-      logger.info(
-        {
-          evt: "spelling.tournament_advance_audio_recovery",
-          userId,
-          tournamentToken,
-          sessionToken: session.sessionToken,
-          round: txResult.tournament.currentRound,
-        },
-        "tournament audio-pending recovery: re-prewarmed existing session",
-      );
-
-      res.json({
-        ok: true,
-        tournament: refreshed[0]
-          ? serializeTournament(refreshed[0])
-          : serializeTournament(txResult.tournament),
-        lastRound: lastRound ? { ...lastRound, passed: lastRound.passed } : null,
-        nextSession: {
-          sessionToken: session.sessionToken,
-          mode: "tournament" as const,
-          ageGroup: txResult.tournament.ageGroup,
-          difficulty: cfg.difficulty,
-          round: txResult.tournament.currentRound,
-          passThreshold: cfg.passThreshold,
-          startedAt: session.startedAt,
-          words: session.words.map((w, i) =>
-            safeWordFor(session.sessionToken, i, w as SpellingWord),
-          ),
-        },
-      });
-      return;
-    }
-
     // kind === "ok" — normal flow OR legacy recovery (both produce a
-    // nextSessionData when tournament is still active and need
-    // post-commit TTS prewarm).
+    // nextSessionData when tournament is still active).
     const { tournament, currentRound, roundResult, next, nextSessionData, isRecovery } =
       txResult;
 
-    // TTS prewarm (POST-COMMIT, best-effort). The session row is
-    // already committed inside the tx; if prewarm fails we return 502
-    // but the tournament is consistent — a retry of /advance hits the
-    // audio_pending branch above and re-attempts prewarm against the
-    // same session row.
+    // Next-round session uses pre-generated spelling library audio.
     let nextSession: {
       sessionToken: string;
       mode: "tournament";
@@ -1919,36 +1785,6 @@ router.post(
       words: ReturnType<typeof safeWordFor>[];
     } | null = null;
     if (nextSessionData) {
-      let audioKeys: string[] = [];
-      try {
-        audioKeys = await prewarmWordsTts(
-          userId,
-          nextSessionData.words.map((w) => w.word),
-        );
-        await db
-          .update(spellingSessionsTable)
-          .set({ audioKeys })
-          .where(
-            eq(
-              spellingSessionsTable.sessionToken,
-              nextSessionData.sessionToken,
-            ),
-          );
-      } catch (err) {
-        const code = err instanceof Error ? err.message : "tts_failed";
-        logger.error(
-          {
-            evt: "spelling.tournament_prewarm_failed",
-            userId,
-            tournamentToken,
-            sessionToken: nextSessionData.sessionToken,
-            code,
-          },
-          "tournament next-round TTS prewarm failed; session row exists, retry will re-prewarm",
-        );
-        res.status(502).json({ error: "audio_unavailable" });
-        return;
-      }
       nextSession = {
         sessionToken: nextSessionData.sessionToken,
         mode: "tournament",

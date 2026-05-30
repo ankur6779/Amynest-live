@@ -2,14 +2,22 @@
 
 const STATIC_PROXY_PATH_RE = /^\/api\/static-audio\/[a-f0-9]{32}\.mp3$/i;
 
-/** Pre-generated phonics library objects live under phonics/ on GCS (not static-audio/). */
+/** Phonics library streams via API proxy (manifest gcsPath → /api/phonics-library/…). */
+const PHONICS_LIBRARY_PROXY_PATH_RE =
+  /^\/api\/phonics-library\/phonics\/(letters|digraphs|blends|cvc|sight_words|sentences|quizzes)\/[a-z0-9_-]+\.mp3$/i;
+
+/** Spelling library streams via API proxy (manifest gcsPath → /api/spelling-library/…). */
+const SPELLING_LIBRARY_PROXY_PATH_RE =
+  /^\/api\/spelling-library\/spelling\/v[0-9]+\/[a-z0-9_-]+\.mp3$/i;
+
+/** Legacy — detect direct GCS phonics paths (forbidden at playback time). */
 const PHONICS_GCS_PATH_RE = /\/phonics\/[a-z0-9_/-]+\.mp3(?:\?|$)/i;
 
 let audioGuardInstalled = false;
 
 /**
- * True for curated phonics library clips (letters, CVC, quizzes, …).
- * These are intentionally served from public GCS — not the static-audio proxy.
+ * True for curated phonics library clips stored on GCS (manifest reference only).
+ * Browser playback must use {@link isPhonicsLibraryProxyUrl} instead.
  */
 export function isPhonicsLibraryGcsUrl(url: string): boolean {
   const trimmed = (url ?? "").trim();
@@ -22,10 +30,21 @@ export function isPhonicsLibraryGcsUrl(url: string): boolean {
   }
 }
 
-/** Throws if a playback URL targets GCS directly (static catalog only — not phonics library). */
+/** True when URL is the phonics library API stream route. */
+export function isPhonicsLibraryProxyUrl(url: string): boolean {
+  const trimmed = (url ?? "").trim();
+  if (!trimmed) return false;
+  try {
+    const path = trimmed.startsWith("http") ? new URL(trimmed).pathname : trimmed;
+    return PHONICS_LIBRARY_PROXY_PATH_RE.test(path);
+  } catch {
+    return PHONICS_LIBRARY_PROXY_PATH_RE.test(trimmed);
+  }
+}
+
+/** Throws if a playback URL targets GCS directly (use API proxies). */
 export function forbidDirectGcsUrl(url: string): void {
   if (!url.includes("storage.googleapis.com")) return;
-  if (isPhonicsLibraryGcsUrl(url)) return;
   if (import.meta.env.DEV) {
     console.warn("DEV VIOLATION: GCS URL used instead of API proxy", url);
   }
@@ -58,6 +77,18 @@ export function assertStaticAudioUrl(url: string): boolean {
   return false;
 }
 
+/** True when URL is the spelling library API stream route. */
+export function isSpellingLibraryProxyUrl(url: string): boolean {
+  const trimmed = (url ?? "").trim();
+  if (!trimmed) return false;
+  try {
+    const path = trimmed.startsWith("http") ? new URL(trimmed).pathname : trimmed;
+    return SPELLING_LIBRARY_PROXY_PATH_RE.test(path);
+  } catch {
+    return SPELLING_LIBRARY_PROXY_PATH_RE.test(trimmed);
+  }
+}
+
 /** Assert proxy route + forbid GCS before creating HTMLAudioElement. */
 export function assertStaticPlaybackUrl(url: string): void {
   forbidDirectGcsUrl(url);
@@ -77,11 +108,7 @@ export function installStaticAudioConstructorGuard(): void {
   const OriginalAudio = window.Audio;
 
   function GuardedAudio(this: unknown, src?: string): HTMLAudioElement {
-    if (
-      typeof src === "string" &&
-      src.includes("storage.googleapis.com") &&
-      !isPhonicsLibraryGcsUrl(src)
-    ) {
+    if (typeof src === "string" && src.includes("storage.googleapis.com")) {
       console.error("BLOCKED: Direct GCS Audio usage", src);
       if (import.meta.env.DEV) {
         console.warn("DEV VIOLATION: GCS URL used instead of API proxy");

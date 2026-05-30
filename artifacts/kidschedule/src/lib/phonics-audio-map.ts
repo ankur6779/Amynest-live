@@ -1,11 +1,16 @@
 /**
  * Runtime lookup for pre-generated phonics library assets (GCS via manifest).
  * Playback NEVER calls ElevenLabs — missing assets are logged and fall back.
+ *
+ * Browser playback uses /api/phonics-library/* proxy URLs (not direct GCS).
  */
 import audioMap from "@/data/phonics-audio-map.json";
+import { getApiUrl } from "@/lib/api";
 import {
   getPhonicsCatalogKey,
   getPhonicsLetterCacheKey,
+  isValidPhonicsGcsObjectPath,
+  phonicsLibraryProxyPath,
   PHONICS_PREWARM_CVC,
   PHONICS_PREWARM_TIER_HIGH,
   resolveContentCatalogKey,
@@ -19,6 +24,15 @@ import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 const manifest = audioMap as PhonicsAudioLibraryManifest;
 
 const missingReported = new Set<string>();
+
+/** Resolve manifest gcsPath → API stream URL (same-origin / backend origin). */
+export function resolvePhonicsLibraryPlaybackUrl(
+  asset: PhonicsAudioManifestAsset | null | undefined,
+): string | null {
+  const gcsPath = asset?.gcsPath?.trim();
+  if (!gcsPath || !isValidPhonicsGcsObjectPath(gcsPath)) return null;
+  return getApiUrl(phonicsLibraryProxyPath(gcsPath));
+}
 
 export function getPhonicsLibraryManifest(): PhonicsAudioLibraryManifest {
   return manifest;
@@ -36,13 +50,14 @@ export function lookupPhonicsLibraryAsset(
     }
     return null;
   }
-  if (!asset.url?.startsWith("https://")) {
+  const playbackUrl = resolvePhonicsLibraryPlaybackUrl(asset);
+  if (!playbackUrl) {
     if (import.meta.env.DEV) {
-      console.warn("[phonics-library] asset has no HTTPS url", key);
+      console.warn("[phonics-library] asset has no playable proxy url", key);
     }
     return null;
   }
-  return asset;
+  return { ...asset, url: playbackUrl };
 }
 
 /** Resolve letter/digraph audioKey (a, sh, th1) → playable HTTPS URL. */
@@ -130,13 +145,14 @@ function memoryCacheKeyForAsset(type: PhonicsAssetType, id: string, catalogKey: 
 export function listPhonicsLibraryPrewarmItems(): PhonicsLibraryPrewarmItem[] {
   const items: PhonicsLibraryPrewarmItem[] = [];
   for (const [catalogKey, asset] of Object.entries(manifest.assets ?? {})) {
-    if (!asset?.url?.startsWith("https://")) continue;
+    const playbackUrl = resolvePhonicsLibraryPlaybackUrl(asset);
+    if (!playbackUrl) continue;
     const type = asset.type;
     const id = asset.id;
     const localCacheKey = memoryCacheKeyForAsset(type, id, catalogKey);
     items.push({
       catalogKey,
-      url: asset.url,
+      url: playbackUrl,
       memoryCacheKey: localCacheKey,
       localCacheKey,
       tier: resolvePrewarmTier(type, id),
@@ -152,12 +168,12 @@ export function countPhonicsLibraryPrewarmItems(): number {
 
 export function prefetchPhonicsLibraryUrls(urls: string[]): void {
   for (const url of urls) {
-    if (!url?.startsWith("https://")) continue;
+    if (!url?.startsWith("http") && !url?.startsWith("/")) continue;
     try {
       const link = document.createElement("link");
       link.rel = "prefetch";
       link.as = "audio";
-      link.href = url;
+      link.href = url.startsWith("/") ? getApiUrl(url) : url;
       document.head.appendChild(link);
     } catch {
       /* ignore */
@@ -168,5 +184,5 @@ export function prefetchPhonicsLibraryUrls(urls: string[]): void {
 export function listPhonicsLibraryPrewarmUrls(keys: string[]): string[] {
   return keys
     .map((k) => lookupPhonicsLibraryAsset(k)?.url)
-    .filter((u): u is string => Boolean(u?.startsWith("https://")));
+    .filter((u): u is string => Boolean(u));
 }

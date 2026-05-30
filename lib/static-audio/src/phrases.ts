@@ -1,5 +1,4 @@
 import { getMathTrickAudioTextsForStaticCatalog } from "@workspace/math-tricks";
-import { getSpellingAudioTextsForStaticCatalog } from "@workspace/spelling-catalog";
 import { getPhonicsAudioTextByLetter } from "@workspace/phonics-sounds";
 import { normalizeStaticAudioKey } from "./normalize.js";
 import type { StaticAudioMode, StaticTtsEntry } from "./types.js";
@@ -70,10 +69,6 @@ export function getStaticTtsEntries(): StaticTtsEntry[] {
   }
 
   for (const text of getMathTrickAudioTextsForStaticCatalog()) {
-    entries.push({ text, mode: "default" });
-  }
-
-  for (const text of getSpellingAudioTextsForStaticCatalog()) {
     entries.push({ text, mode: "default" });
   }
 

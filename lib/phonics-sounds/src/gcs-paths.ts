@@ -32,6 +32,23 @@ export function sanitizePhonicsAssetId(id: string): string {
     .replace(/^_|_$/g, "");
 }
 
+/** Bounded object paths under the phonics/ prefix (letters, cvc, quizzes, …). */
+export const PHONICS_GCS_OBJECT_PATH_RE =
+  /^phonics\/(letters|digraphs|blends|cvc|sight_words|sentences|quizzes)\/[a-z0-9_-]+\.mp3$/i;
+
+export function isValidPhonicsGcsObjectPath(objectPath: string): boolean {
+  return PHONICS_GCS_OBJECT_PATH_RE.test((objectPath ?? "").trim());
+}
+
+/** Same-origin API stream route — avoids browser CORS on public GCS objects. */
+export function phonicsLibraryProxyPath(gcsObjectPath: string): string {
+  const trimmed = (gcsObjectPath ?? "").trim();
+  if (!isValidPhonicsGcsObjectPath(trimmed)) {
+    throw new Error(`Invalid phonics GCS object path: ${gcsObjectPath}`);
+  }
+  return `/api/phonics-library/${trimmed}`;
+}
+
 /** GCS object path relative to bucket root, e.g. phonics/letters/a.mp3 */
 export function getPhonicsGcsObjectPath(type: PhonicsAssetType, id: string): string {
   const folder = TYPE_FOLDER[type];

@@ -54,6 +54,7 @@
     "@workspace/notification-engine": "workspace:*",
     "@workspace/event-prep": "workspace:*",
     "@workspace/spelling-catalog": "workspace:*",
+    "@workspace/spelling-audio": "workspace:*",
     "@workspace/static-audio": "workspace:*",
     "ws": "^8.18.1",
     "dotenv": "^16.6.1",

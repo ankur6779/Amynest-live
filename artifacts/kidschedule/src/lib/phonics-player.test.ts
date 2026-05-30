@@ -97,9 +97,12 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+const PROXY = (letter: string) =>
+  `/api/phonics-library/phonics/letters/${letter}.mp3`;
+
 describe("phonics-player — single audio owner", () => {
   it("plays exactly one clean instance per tap and resolves on end", async () => {
-    const p = playPhonicsUrl("/phonics-audio/k.mp3", { label: "k" });
+    const p = playPhonicsUrl(PROXY("k"), { label: "k" });
     await sleep(0);
     expect(FakeAudio.instances).toHaveLength(1);
     const el = FakeAudio.instances[0]!;
@@ -113,12 +116,12 @@ describe("phonics-player — single audio owner", () => {
   });
 
   it("interrupts the previous sound when a new clip starts (no overlap)", async () => {
-    const first = playPhonicsUrl("/phonics-audio/a.mp3", { label: "a" });
+    const first = playPhonicsUrl(PROXY("a"), { label: "a" });
     await sleep(0);
     const elA = FakeAudio.instances[0]!;
     expect(elA.paused).toBe(false);
 
-    const second = playPhonicsUrl("/phonics-audio/b.mp3", { label: "b" });
+    const second = playPhonicsUrl(PROXY("b"), { label: "b" });
     await sleep(0);
     expect(elA.paused).toBe(true); // previous immediately stopped
     const elB = FakeAudio.instances[1]!;
@@ -134,7 +137,7 @@ describe("phonics-player — single audio owner", () => {
   });
 
   it("stopPhonicsPlayback immediately stops and invalidates active playback", async () => {
-    const p = playPhonicsUrl("/phonics-audio/m.mp3", { label: "m" });
+    const p = playPhonicsUrl(PROXY("m"), { label: "m" });
     await sleep(0);
     const el = FakeAudio.instances[0]!;
     expect(isPhonicsPlaying()).toBe(true);
@@ -149,12 +152,12 @@ describe("phonics-player — single audio owner", () => {
   });
 
   it("debounces a duplicate tap of the same live clip (no restart loop)", async () => {
-    const first = playPhonicsUrl("/phonics-audio/s.mp3", { label: "s" });
+    const first = playPhonicsUrl(PROXY("s"), { label: "s" });
     await sleep(0);
     expect(FakeAudio.instances).toHaveLength(1);
 
     // Immediate duplicate of the same url while playing → no new element, no replay.
-    const dup = await playPhonicsUrl("/phonics-audio/s.mp3", { label: "s" });
+    const dup = await playPhonicsUrl(PROXY("s"), { label: "s" });
     expect(dup).toEqual({ ok: true });
     expect(FakeAudio.instances).toHaveLength(1);
     expect(FakeAudio.instances[0]!.playCount).toBe(1);
@@ -164,9 +167,9 @@ describe("phonics-player — single audio owner", () => {
   });
 
   it("rapid distinct taps: only the latest survives", async () => {
-    const a = playPhonicsUrl("/phonics-audio/a.mp3", { label: "a" });
-    const b = playPhonicsUrl("/phonics-audio/b.mp3", { label: "b" });
-    const c = playPhonicsUrl("/phonics-audio/c.mp3", { label: "c" });
+    const a = playPhonicsUrl(PROXY("a"), { label: "a" });
+    const b = playPhonicsUrl(PROXY("b"), { label: "b" });
+    const c = playPhonicsUrl(PROXY("c"), { label: "c" });
     await sleep(0);
 
     // Earlier instances are torn down; the last one is active.
@@ -182,7 +185,7 @@ describe("phonics-player — single audio owner", () => {
   });
 
   it("reports a clean failure when the clip errors", async () => {
-    const p = playPhonicsUrl("/phonics-audio/z.mp3", { label: "z" });
+    const p = playPhonicsUrl(PROXY("z"), { label: "z" });
     await sleep(0);
     FakeAudio.instances[0]!.fireError();
     const res = await p;
@@ -190,7 +193,7 @@ describe("phonics-player — single audio owner", () => {
   });
 
   it("honors isCancelled before starting", async () => {
-    const res = await playPhonicsUrl("/phonics-audio/t.mp3", {
+    const res = await playPhonicsUrl(PROXY("t"), {
       label: "t",
       isCancelled: () => true,
     });
@@ -200,7 +203,7 @@ describe("phonics-player — single audio owner", () => {
 
   it("force-cleans a zombie clip that never ends (3s watchdog)", async () => {
     vi.useFakeTimers();
-    const p = playPhonicsUrl("/phonics-audio/x.mp3", { label: "x" });
+    const p = playPhonicsUrl(PROXY("x"), { label: "x" });
     await vi.advanceTimersByTimeAsync(0); // resolve play()
     expect(isPhonicsPlaying()).toBe(true);
 
@@ -213,9 +216,9 @@ describe("phonics-player — single audio owner", () => {
   });
 
   it("records analytics for plays and overlap prevention", async () => {
-    const a = playPhonicsUrl("/phonics-audio/a.mp3", { label: "a" });
+    const a = playPhonicsUrl(PROXY("a"), { label: "a" });
     await sleep(0);
-    const b = playPhonicsUrl("/phonics-audio/b.mp3", { label: "b" });
+    const b = playPhonicsUrl(PROXY("b"), { label: "b" });
     await sleep(0);
     FakeAudio.instances[1]!.fireEnded();
     await b;

@@ -21,6 +21,7 @@ import {
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import { warmLocalCacheFromUrl, localCacheKeyForPhrase } from "@/lib/local-tts-cache";
 import { getPhonicsStaticAudioUrl, prefetchEntirePhonicsLibrary } from "@/lib/phonics-static-audio";
+import { lookupSpellingAudioUrl } from "@/lib/spelling-audio-map";
 import {
   countPhonicsLibraryPrewarmItems,
   listPhonicsLibraryPrewarmItems,
@@ -283,12 +284,12 @@ async function loadPhonicsKey(key: string): Promise<void> {
 function warmSpellingAudio(): Promise<void> {
   const items: AudioWarmItem[] = [];
   for (const word of SPELLING_COMMON_WORDS) {
-    const url = lookupStaticAudioUrl(word, "default");
+    const url = lookupSpellingAudioUrl(word);
     if (!url) continue;
     items.push({
       cacheKey: `spelling:${word}`,
       url,
-      localKey: localCacheKeyForPhrase(word, "default"),
+      localKey: `spelling:word:${word}`,
     });
   }
   return warmBatchItems(items);

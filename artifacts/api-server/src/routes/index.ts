@@ -46,6 +46,8 @@ import ttsRouter, { ttsPublicRouter } from "./tts";
 import { staticAudioPublicRouter } from "./static-audio";
 import audioLessonsRouter from "./audio-lessons";
 import phonicsRouter, { phonicsPublicRouter } from "./phonics";
+import { phonicsLibraryPublicRouter } from "./phonics-library";
+import { spellingLibraryPublicRouter } from "./spelling-library";
 import abacusRouter from "./abacus";
 import gamingRewardsRouter from "./gaming-rewards";
 import spellingRouter, { spellingPublicRouter } from "./spelling";
@@ -125,6 +127,10 @@ router.use(spellingPublicRouter);
 // public phoneme audio. Mounted BEFORE requireAuth so <audio>/expo-audio
 // can fetch without bearer tokens. See PHONEME_PROMPTS in phonics.ts.
 router.use(phonicsPublicRouter);
+// /api/phonics-library/phonics/{category}/{id}.mp3 — GCS phonics library stream.
+router.use(phonicsLibraryPublicRouter);
+// /api/spelling-library/spelling/v{n}/{slug}.mp3 — GCS spelling library stream.
+router.use(spellingLibraryPublicRouter);
 // /api/static-audio/:hash.mp3 — MD5-addressed catalog MP3 stream from GCS.
 router.use(staticAudioPublicRouter);
 // Capacitor OTA (Capgo) — public POST, patch-only web bundles (Apple Guideline 2.5.2).

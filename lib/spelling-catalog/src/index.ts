@@ -1,12 +1,38 @@
+/** @deprecated Import from ./types.js — re-export for backward compatibility. */
 export type {
   SpellingAgeGroup,
   SpellingDifficulty,
   SpellingWord,
-} from "./words.js";
+  SpellingCatalogEntry,
+} from "./types.js";
+
 export {
   SPELLING_WORDS,
   SPELLING_AGE_GROUPS,
   getSpellingWordsByAge,
   spellingAgeGroupFor,
-} from "./words.js";
+  getSpellingManifest,
+  getBucketEntries,
+  getBucketWordCount,
+  getAllCatalogWords,
+  getAllCatalogEntries,
+} from "./manifest.js";
+
+export {
+  selectSessionWords,
+  markSessionCompleted,
+  loadSessionHistory,
+  saveSessionHistory,
+  historyStorageKey,
+  emptySessionHistory,
+} from "./session.js";
+
+export {
+  filterByPlayerLevel,
+  levelFromStars,
+  MAX_PLAYER_LEVEL,
+  recommendedDifficulties,
+} from "./progression.js";
+
+export { catalogEntryToWord, bucketKey } from "./types.js";
 export { getSpellingAudioTextsForStaticCatalog } from "./catalog.js";

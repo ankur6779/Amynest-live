@@ -5,17 +5,22 @@ import { amyVoiceController } from "@/lib/amy-voice-controller";
 import { resolveApiMediaUrl } from "@/lib/api";
 import { audioManager } from "@/lib/audio-manager";
 import { resolveAiApiData } from "@/lib/poll-result";
-import { pregenerateTtsTexts } from "@/lib/pregenerate-tts";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
 import {
-  scheduleLearningZoneAudioPrewarm,
-  buildLearningZoneAudioStateKey,
-} from "@/lib/learning-zone-audio-prewarm";
+  buildSpellingSessionPrewarmItems,
+  lookupSpellingAudioUrl,
+  prefetchSpellingAudioUrls,
+  resolveSpellingAudioUrlWithFallback,
+} from "@/lib/spelling-audio-map";
+import { lookupPhonicsLetterUrl } from "@/lib/phonics-audio-map";
+import { trackSpellingAudioEvent } from "@/lib/spelling-audio-telemetry";
+import { useSpellingCatalogSession, levelFromStars } from "@/hooks/use-spelling-catalog-session";
 
 // ─── Shared types (mirror server shape — no codegen yet for /spelling/*) ─────
 
 export type SpellingAgeGroup = "2-4" | "4-6" | "6-8" | "8-10+";
 export type SpellingDifficulty = "easy" | "medium" | "hard";
-export type SpellingSource = "curated" | "ai";
+export type SpellingSource = "catalog" | "curated" | "ai";
 
 /**
  * Trust source for POST /spelling/progress. Narrowed to "parent" only
@@ -84,72 +89,102 @@ export interface UseSpellingTTSState {
   speaking: boolean;
   loading: boolean;
   error: string | null;
-  /** Static catalog first, then /api/tts/generate for AI words. */
-  speak: (text: string, opts?: { slow?: boolean }) => Promise<void>;
-  /**
-   * Play a pre-prepared audio URL directly (e.g. session-scoped audio for
-   * Competition / Dictation where the server hides the answer). Skips the
-   * synthesize step — the URL is the authoritative source.
-   */
-  playUrl: (url: string, opts?: { slow?: boolean }) => Promise<void>;
-  /** Prime static MP3 in a user gesture (mobile WebView autoplay). */
-  prime: (text: string) => void;
-  /** Prime a session-scoped or remote URL inside pointerdown/click (Android). */
+  /** Pre-generated catalog audio — never live TTS during gameplay. */
+  speak: (text: string, opts?: { slow?: boolean; catalogId?: string }) => Promise<void>;
+  playUrl: (url: string, opts?: { slow?: boolean; catalogId?: string; word?: string }) => Promise<void>;
+  prime: (text: string, catalogId?: string) => void;
   primeUrl: (url: string) => void;
   stop: () => void;
 }
 
 export function useSpellingTTS(): UseSpellingTTSState {
-  const {
-    speak: amySpeak,
-    pause,
-    speaking,
-    loading,
-    error,
-    primeSpeakGesture,
-  } = useAmyVoice();
+  const { pause, speaking, loading, error } = useAmyVoice();
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const speak = useCallback(
-    async (text: string, opts: { slow?: boolean } = {}) => {
-      const trimmed = text.trim();
-      if (!trimmed) return;
-      primeSpeakGesture(trimmed);
+  const playPrepared = useCallback(
+    async (
+      url: string,
+      opts: { slow?: boolean; catalogId?: string; word?: string } = {},
+    ) => {
+      if (!url) {
+        setLocalError("missing_audio");
+        trackSpellingAudioEvent("audio_error", {
+          reason: "missing_url",
+          catalogId: opts.catalogId,
+          word: opts.word,
+        });
+        return;
+      }
+      recordTtsUserGesture();
+      audioManager.unlockFromUserGesture();
+      audioManager.primeSpeechUrlInUserGesture(resolveApiMediaUrl(url));
       setLocalError(null);
-      const result = await amySpeak(trimmed, {
+      trackSpellingAudioEvent("audio_play", {
+        catalogId: opts.catalogId,
+        word: opts.word,
+        url,
+        slow: !!opts.slow,
+      });
+      const result = await amyVoiceController.playPreparedUrl(url, {
         playbackRate: opts.slow ? 0.65 : 1,
-        catalogPlayback: true,
+        source: "spelling",
+        waitUntilEnd: true,
       });
       if (!result.success) {
-        setLocalError(result.error ?? "tts_failed");
-        console.warn("[Spelling] Amy voice speak failed", trimmed, result.error);
+        setLocalError(result.error ?? "audio_playback_failed");
+        trackSpellingAudioEvent("audio_error", {
+          reason: result.error ?? "playback_failed",
+          catalogId: opts.catalogId,
+          word: opts.word,
+        });
+        return;
       }
+      trackSpellingAudioEvent("audio_complete", {
+        catalogId: opts.catalogId,
+        word: opts.word,
+      });
     },
-    [amySpeak, primeSpeakGesture],
+    [],
   );
 
-  const playUrl = useCallback(async (url: string, opts: { slow?: boolean } = {}) => {
-    if (!url) return;
-    recordTtsUserGesture();
-    audioManager.unlockFromUserGesture();
-    audioManager.primeSpeechUrlInUserGesture(resolveApiMediaUrl(url));
-    setLocalError(null);
-    const result = await amyVoiceController.playPreparedUrl(url, {
-      playbackRate: opts.slow ? 0.65 : 1,
-      source: "spelling",
-      waitUntilEnd: true,
-    });
-    if (!result.success) {
-      setLocalError(result.error ?? "audio_playback_failed");
+  const speak = useCallback(
+    async (text: string, opts: { slow?: boolean; catalogId?: string } = {}) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      if (speaking) pause();
+
+      let url = resolveSpellingAudioUrlWithFallback(trimmed, opts.catalogId);
+      if (!url && trimmed.length <= 2) {
+        url = lookupPhonicsLetterUrl(trimmed.toLowerCase());
+      }
+      if (!url) {
+        setLocalError("missing_audio");
+        trackSpellingAudioEvent("audio_error", { reason: "no_manifest_match", word: trimmed });
+        return;
+      }
+      await playPrepared(url, { ...opts, word: trimmed, catalogId: opts.catalogId });
+    },
+    [pause, playPrepared, speaking],
+  );
+
+  const playUrl = useCallback(
+    async (url: string, opts: { slow?: boolean; catalogId?: string; word?: string } = {}) => {
+      if (speaking) pause();
+      await playPrepared(url, opts);
+    },
+    [pause, playPrepared, speaking],
+  );
+
+  const prime = useCallback((text: string, catalogId?: string) => {
+    const url =
+      resolveSpellingAudioUrlWithFallback(text, catalogId) ??
+      lookupPhonicsLetterUrl(text.trim().toLowerCase());
+    if (url) {
+      recordTtsUserGesture();
+      audioManager.unlockFromUserGesture();
+      audioManager.primeSpeechUrlInUserGesture(resolveApiMediaUrl(url));
     }
   }, []);
-
-  const prime = useCallback(
-    (text: string) => {
-      primeSpeakGesture(text);
-    },
-    [primeSpeakGesture],
-  );
 
   const primeUrl = useCallback((url: string) => {
     recordTtsUserGesture();
@@ -172,115 +207,102 @@ export function useSpellingTTS(): UseSpellingTTSState {
   };
 }
 
-// ─── useSpellingWords — fetches a fresh batch of words ──────────────────────
+// ─── useSpellingWords — instant local catalog sessions ───────────────────────
 
 export interface UseSpellingWordsState {
   words: SpellingWord[];
   loading: boolean;
   error: string | null;
   source: SpellingSource;
-  refresh: () => Promise<void>;
-  /** One-shot AI generation — replaces the current word list. */
-  generateWithAI: (difficulty?: SpellingDifficulty) => Promise<void>;
+  bucketSize: number;
+  refresh: (opts?: { count?: number }) => SpellingWord[];
+  /** Premium AI — optional API path for custom themes / remediation. */
+  generateWithAI: (difficulty?: SpellingDifficulty, count?: number) => Promise<SpellingWord[]>;
+  markSessionCompleted: () => void;
 }
 
 export function useSpellingWords(
+  childId: number,
   ageGroup: SpellingAgeGroup,
   difficulty: SpellingDifficulty,
+  playerLevel: number,
 ): UseSpellingWordsState {
   const authFetch = useAuthFetch();
-  const [words, setWords] = useState<SpellingWord[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [source, setSource] = useState<SpellingSource>("curated");
+  const catalog = useSpellingCatalogSession({
+    childId,
+    ageGroup,
+    difficulty,
+    playerLevel,
+  });
+  const [aiWords, setAiWords] = useState<SpellingWord[] | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const url = `/api/spelling/words?age=${encodeURIComponent(ageGroup)}&difficulty=${difficulty}&count=10`;
-      const res = await authFetch(url);
-      if (!res.ok) throw new Error(`words_${res.status}`);
-      const data = (await res.json()) as { ok: true; words: SpellingWord[]; source: SpellingSource };
-      setWords(data.words);
-      setSource(data.source);
-      const speakLines = data.words.flatMap((w) => [
-        w.word,
-        ...w.chunks.filter((c) => c.trim().length >= 2),
-      ]);
-      pregenerateTtsTexts(authFetch, speakLines, "default");
-      scheduleLearningZoneAudioPrewarm(authFetch, {
-        module: "spelling",
-        texts: speakLines,
-        sequenceTexts: data.words.map((w) => w.word),
-        difficulty,
-        ageGroup: ageGroup,
-        stateKey: buildLearningZoneAudioStateKey({
-          module: "spelling",
-          ageGroup,
-          difficulty,
-          revision: data.source,
-        }),
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "words_failed");
-    } finally {
-      setLoading(false);
-    }
-  }, [authFetch, ageGroup, difficulty]);
+  const words = aiWords ?? catalog.words;
+  const source: SpellingSource = aiWords ? "ai" : "catalog";
+
+  useEffect(() => {
+    if (words.length === 0) return;
+    const items = buildSpellingSessionPrewarmItems(words, 0, 3);
+    prefetchSpellingAudioUrls(items.map((i) => i.url));
+  }, [words]);
+
+  const refresh = useCallback(
+    (opts?: { count?: number }) => {
+      setAiWords(null);
+      setAiError(null);
+      return catalog.refresh(opts);
+    },
+    [catalog],
+  );
 
   const generateWithAI = useCallback(
-    async (diff: SpellingDifficulty = difficulty) => {
-      setLoading(true);
-      setError(null);
+    async (diff: SpellingDifficulty = difficulty, count = 5) => {
+      setAiLoading(true);
+      setAiError(null);
       try {
         const res = await authFetch("/api/spelling/ai-generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ age: ageGroup, difficulty: diff, count: 10 }),
+          body: JSON.stringify({ age: ageGroup, difficulty: diff, count }),
         });
         if (!res.ok) throw new Error(`ai_${res.status}`);
         const raw = await res.json();
-        const data = await resolveAiApiData<{ ok?: boolean; words: SpellingWord[]; source: SpellingSource }>(
+        const data = await resolveAiApiData<{ ok?: boolean; words: SpellingWord[] }>(
           raw,
           authFetch,
         );
-        setWords(data?.words ?? []);
-        setSource(data?.source ?? "ai");
-        const speakLines = (data?.words ?? []).flatMap((w) => [
-          w.word,
-          ...w.chunks.filter((c) => c.trim().length >= 2),
-        ]);
-        pregenerateTtsTexts(authFetch, speakLines, "default");
-        scheduleLearningZoneAudioPrewarm(authFetch, {
-          module: "spelling",
-          texts: speakLines,
-          sequenceTexts: (data?.words ?? []).map((w) => w.word),
-          difficulty: diff,
-          ageGroup,
-          stateKey: buildLearningZoneAudioStateKey({
-            module: "spelling",
-            ageGroup,
-            difficulty: diff,
-            revision: "ai",
-          }),
-        });
+        const loaded = data?.words ?? [];
+        setAiWords(loaded);
+        prefetchSpellingAudioUrls(
+          loaded
+            .map((w) => lookupSpellingAudioUrl(w.word, w.id))
+            .filter((u): u is string => Boolean(u)),
+        );
+        return loaded;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "ai_failed");
+        setAiError(err instanceof Error ? err.message : "ai_failed");
+        return [];
       } finally {
-        setLoading(false);
+        setAiLoading(false);
       }
     },
     [authFetch, ageGroup, difficulty],
   );
 
-  // Auto-fetch on mount and whenever age/difficulty change.
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  return { words, loading, error, source, refresh, generateWithAI };
+  return {
+    words,
+    loading: aiLoading,
+    error: aiError,
+    source,
+    bucketSize: catalog.bucketSize,
+    refresh,
+    generateWithAI,
+    markSessionCompleted: catalog.markCompleted,
+  };
 }
+
+export { levelFromStars };
 
 // ─── useSpellingProgress — load + record helpers ────────────────────────────
 
@@ -536,7 +558,7 @@ export function useSpellingSession(
             mode: opts.mode,
             difficulty: opts.difficulty,
             count: opts.count ?? 10,
-            source: opts.source ?? "curated",
+            source: opts.source ?? "catalog",
             // Only include opponent for Battle Mode — server's refine()
             // will reject a stray opponent on competition/dictation.
             ...(opts.mode === "battle" && opts.opponent

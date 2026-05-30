@@ -1,7 +1,10 @@
 /**
  * Safe HTMLAudioElement factory for phonics playback — never throws.
  */
-import { isPhonicsLibraryGcsUrl } from "@/lib/static-audio-guard";
+import {
+  isPhonicsLibraryProxyUrl,
+  isStaticAudioProxyUrl,
+} from "@/lib/static-audio-guard";
 import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
 
 export type CreateSafeAudioMeta = {
@@ -11,19 +14,20 @@ export type CreateSafeAudioMeta = {
 
 function isAllowedPhonicsPlaybackUrl(url: string): boolean {
   if (url.startsWith("blob:")) return true;
-  if (url.startsWith("/")) return true;
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    if (url.includes("storage.googleapis.com") && !isPhonicsLibraryGcsUrl(url)) {
-      return false;
-    }
+  if (isPhonicsLibraryProxyUrl(url) || isStaticAudioProxyUrl(url)) return true;
+  if (url.startsWith("/api/phonics-library/") || url.startsWith("/api/static-audio/")) {
     return true;
+  }
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    if (url.includes("storage.googleapis.com")) return false;
+    return isPhonicsLibraryProxyUrl(url) || isStaticAudioProxyUrl(url);
   }
   return false;
 }
 
 /**
  * Create a playback element for phonics — returns null instead of throwing.
- * Blocks non-phonics GCS URLs (static catalog must use /api/static-audio/).
+ * Phonics library clips must use /api/phonics-library/* (never direct GCS).
  */
 export function createSafeAudio(
   url: string,

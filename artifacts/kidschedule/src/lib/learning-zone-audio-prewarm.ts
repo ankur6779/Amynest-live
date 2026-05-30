@@ -27,6 +27,7 @@ import {
   type TtsPregenerateMode,
 } from "@/lib/pregenerate-tts";
 import { lookupStaticAudioUrl, prefetchStaticAudioUrl } from "@/lib/static-audio";
+import { lookupSpellingAudioUrl, lookupSpellingAudioFallbackUrl } from "@/lib/spelling-audio-map";
 import { getPredictedNextKey, recordPhraseTransition } from "@/lib/amy-voice-pipeline-learning";
 
 export type LearningZoneAudioModule =
@@ -163,7 +164,14 @@ async function loadClipToMemory(cacheKey: string, url: string, localKey: string)
   enforceMemoryLimit();
 }
 
-function resolveAudioUrl(text: string, mode: TtsPregenerateMode): string | null {
+function resolveAudioUrl(
+  text: string,
+  mode: TtsPregenerateMode,
+  module?: LearningZoneAudioModule,
+): string | null {
+  if (module === "spelling") {
+    return lookupSpellingAudioUrl(text) ?? lookupSpellingAudioFallbackUrl();
+  }
   if (mode === "phonics") {
     const trimmed = text.trim();
     if (!trimmed) return null;
@@ -243,7 +251,7 @@ async function warmTextBatch(
     await Promise.all(
       batch.map(async (text) => {
         const cacheKey = buildLearningZoneAudioCacheKey(ctx, text);
-        const url = resolveAudioUrl(text, mode);
+        const url = resolveAudioUrl(text, mode, ctx.module);
         if (!url) return;
         const localKey =
           mode === "phonics"

@@ -331,6 +331,9 @@ importers:
       '@workspace/speech-coach':
         specifier: workspace:*
         version: link:../../lib/speech-coach
+      '@workspace/spelling-audio':
+        specifier: workspace:*
+        version: link:../../lib/spelling-audio
       '@workspace/spelling-catalog':
         specifier: workspace:*
         version: link:../../lib/spelling-catalog
@@ -554,6 +557,12 @@ importers:
       '@workspace/speech-coach':
         specifier: workspace:*
         version: link:../../lib/speech-coach
+      '@workspace/spelling-audio':
+        specifier: workspace:*
+        version: link:../../lib/spelling-audio
+      '@workspace/spelling-catalog':
+        specifier: workspace:*
+        version: link:../../lib/spelling-catalog
       '@workspace/static-audio':
         specifier: workspace:*
         version: link:../../lib/static-audio
@@ -1444,6 +1453,12 @@ importers:
         specifier: 'catalog:'
         version: 4.21.0
 
+  lib/spelling-audio:
+    dependencies:
+      '@workspace/spelling-catalog':
+        specifier: workspace:*
+        version: link:../spelling-catalog
+
   lib/spelling-catalog: {}
 
   lib/static-audio:
@@ -1502,6 +1517,12 @@ importers:
       '@workspace/speech-coach':
         specifier: workspace:*
         version: link:../lib/speech-coach
+      '@workspace/spelling-audio':
+        specifier: workspace:*
+        version: link:../lib/spelling-audio
+      '@workspace/spelling-catalog':
+        specifier: workspace:*
+        version: link:../lib/spelling-catalog
       '@workspace/static-audio':
         specifier: workspace:*
         version: link:../lib/static-audio

@@ -44,10 +44,10 @@ export function validatePhonicsManifest(
   let missingUrlCount = 0;
 
   for (const [catalogKey, asset] of entries) {
-    if (!asset?.url?.startsWith("https://")) {
+    if (!asset?.gcsPath?.startsWith("phonics/")) {
       missingUrlCount += 1;
       if (import.meta.env.DEV) {
-        console.warn("[phonics-library] asset missing HTTPS url", catalogKey);
+        console.warn("[phonics-library] asset missing gcsPath", catalogKey);
       }
     }
   }

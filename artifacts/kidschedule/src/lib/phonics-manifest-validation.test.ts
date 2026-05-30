@@ -14,7 +14,7 @@ describe("validatePhonicsManifest", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  it("fails when assets are missing URLs", () => {
+  it("fails when assets are missing gcsPath", () => {
     const bad: PhonicsAudioLibraryManifest = {
       version: 1,
       libraryVersion: 1,
@@ -29,8 +29,8 @@ describe("validatePhonicsManifest", () => {
           id: "a",
           type: "letter",
           text: "a",
-          gcsPath: "phonics/letters/a.mp3",
-          url: "",
+          gcsPath: "",
+          url: "https://storage.googleapis.com/b/phonics/letters/a.mp3",
           version: 1,
         },
       },
