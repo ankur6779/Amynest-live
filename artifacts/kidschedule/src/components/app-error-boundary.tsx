@@ -8,6 +8,7 @@ import {
 import { handleRecoveryReload } from "@/lib/clear-cache-reload";
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
 import { logOnboardingFinish } from "@/lib/onboarding-completion";
+import { logClientError } from "@/lib/log-client-error";
 import { getOnboardingRunId } from "@/lib/onboarding-telemetry";
 import { showReactCrashOverlay } from "@/lib/production-crash-overlay";
 import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";

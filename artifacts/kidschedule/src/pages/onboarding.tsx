@@ -1169,6 +1169,21 @@ export default function OnboardingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
+  // Hooks must run on every render — never place below step early-returns (React #300).
+  const showChatFooter =
+    step !== "intro" &&
+    ONBOARDING_CHAT_STEPS.has(step) &&
+    !showCountryPicker &&
+    !isFinishing;
+
+  const activePromptId = useMemo(
+    () =>
+      resolveActiveChatPromptId(messages, {
+        awaitingAnswer: showChatFooter && !typing,
+      }),
+    [messages, showChatFooter, typing],
+  );
+
   function confirmCountry(
     code: string,
     name: string,
@@ -2373,20 +2388,6 @@ export default function OnboardingPage() {
         return null;
     }
   }
-
-  const showChatFooter =
-    step !== "intro" &&
-    ONBOARDING_CHAT_STEPS.has(step) &&
-    !showCountryPicker &&
-    !isFinishing;
-
-  const activePromptId = useMemo(
-    () =>
-      resolveActiveChatPromptId(messages, {
-        awaitingAnswer: showChatFooter && !typing,
-      }),
-    [messages, showChatFooter, typing],
-  );
 
   return (
     <div className="relative h-full w-full">
