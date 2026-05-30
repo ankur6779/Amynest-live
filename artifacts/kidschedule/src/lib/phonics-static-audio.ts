@@ -7,7 +7,6 @@
 
 import {
   getAllPhonicsAudioKeys,
-  getPhonicsCatalogKey,
   getPhonicsLetterCacheKey,
   resolveLetterClipCatalogKey,
   resolvePhonicsAudioKey,
@@ -22,8 +21,11 @@ import { recordTtsUserGesture } from "@/lib/tts-guard";
 import { logPhonicsPlaybackFailure } from "@/lib/phonics-playback-fallback";
 import {
   getPhonicsLibraryFallbackUrl,
+  getPhonicsContentCacheKey,
+  listPhonicsLibraryPrewarmItems,
   lookupPhonicsContentUrl,
   lookupPhonicsLetterUrl,
+  prefetchPhonicsLibraryUrls,
   reportPhonicsLibraryMissing,
 } from "@/lib/phonics-audio-map";
 import {
@@ -78,15 +80,21 @@ export function prefetchPhonicsContentTexts(
   for (const text of texts) {
     const url = getPhonicsContentAudioUrl(text, preferredType);
     if (!url) continue;
-    const catalogKey =
-      resolveLetterClipCatalogKey(text) ??
-      getPhonicsCatalogKey(preferredType ?? "cvc", text.trim().toLowerCase());
-    void warmLocalCacheFromUrl(`phonics:content:${catalogKey}`, url);
+    void warmLocalCacheFromUrl(getPhonicsContentCacheKey(text, preferredType), url);
+  }
+}
+
+/** Prewarm entire GCS phonics library into IndexedDB (+ link prefetch for all assets). */
+export function prefetchEntirePhonicsLibrary(): void {
+  const items = listPhonicsLibraryPrewarmItems();
+  prefetchPhonicsLibraryUrls(items.map((item) => item.url));
+  for (const item of items) {
+    void warmLocalCacheFromUrl(item.localCacheKey, item.url);
   }
 }
 
 export function prefetchAllPhonicsAudio(): void {
-  prefetchPhonicsAudioKeys(getAllPhonicsAudioKeys());
+  prefetchEntirePhonicsLibrary();
 }
 
 export type PlayPhonicsStaticOptions = {
@@ -103,12 +111,9 @@ export type PlayPhonicsStaticResult =
 type ResolvedPlayUrl = { url: string; cleanup?: () => void };
 
 async function resolveBestPlayUrl(
-  audioKey: string,
+  cacheKey: string,
   networkUrl: string,
 ): Promise<ResolvedPlayUrl> {
-  const key = (audioKey ?? "").trim().toLowerCase();
-  const cacheKey = getPhonicsLetterCacheKey(key);
-
   const warmed = getGlobalCachedAudioForPlayback(cacheKey);
   if (warmed?.src) return { url: warmed.src };
 
@@ -140,7 +145,7 @@ async function playUrlClip(
   }
 
   recordTtsUserGesture();
-  const resolved = await resolveBestPlayUrl(label, networkUrl);
+  const resolved = await resolveBestPlayUrl(cacheKey, networkUrl);
   if (!resolved.url) {
     return { ok: false, audioKey: label, error: "phonics_library_missing" };
   }
@@ -185,7 +190,7 @@ export async function playPhonicsContentAudio(
 ): Promise<PlayPhonicsStaticResult> {
   const trimmed = (text ?? "").trim();
   const url = getPhonicsContentAudioUrl(trimmed, options?.contentType);
-  const cacheKey = `phonics:content:${options?.contentType ?? "auto"}:${trimmed.toLowerCase()}`;
+  const cacheKey = getPhonicsContentCacheKey(trimmed, options?.contentType);
   return playUrlClip(trimmed, url, cacheKey, "phonics-content", options);
 }
 

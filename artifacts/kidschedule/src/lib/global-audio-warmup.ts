@@ -6,10 +6,7 @@
 import { getCoachDialogueWarmupPhrases } from "@workspace/speech-coach";
 import {
   getPhonicsLetterCacheKey,
-  PHONICS_PREWARM_CVC,
   PHONICS_PREWARM_TIER_HIGH,
-  PHONICS_PREWARM_TIER_LOW,
-  PHONICS_PREWARM_TIER_MEDIUM,
 } from "@workspace/phonics-sounds";
 import { audioManager } from "@/lib/audio-manager";
 import {
@@ -23,7 +20,12 @@ import {
 } from "@/lib/global-audio-cache";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import { warmLocalCacheFromUrl, localCacheKeyForPhrase } from "@/lib/local-tts-cache";
-import { getPhonicsStaticAudioUrl } from "@/lib/phonics-static-audio";
+import { getPhonicsStaticAudioUrl, prefetchEntirePhonicsLibrary } from "@/lib/phonics-static-audio";
+import {
+  countPhonicsLibraryPrewarmItems,
+  listPhonicsLibraryPrewarmItems,
+  type PhonicsLibraryPrewarmItem,
+} from "@/lib/phonics-audio-map";
 import { lookupStaticAudioUrl, prefetchStaticAudioUrl } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
@@ -31,14 +33,12 @@ export { getGlobalCachedAudioForPlayback };
 
 const BATCH_SIZE = 5;
 const BATCH_GAP_MS = 50;
-const MAX_AUDIO_CACHE = 40;
+/** Hold decoded clips for all letter/digraph/blend + hot CVC (~65); tier-3 uses IndexedDB only. */
+const MAX_AUDIO_CACHE = 72;
 const REPRIME_DEBOUNCE_MS = 2_000;
 
 const HIGH_PRIORITY = [...PHONICS_PREWARM_TIER_HIGH] as const;
-const MEDIUM_PRIORITY = [...PHONICS_PREWARM_TIER_MEDIUM] as const;
-const LOW_PRIORITY = [...PHONICS_PREWARM_TIER_LOW] as const;
-
-const SPELLING_COMMON_WORDS = [...PHONICS_PREWARM_CVC] as const;
+const SPELLING_COMMON_WORDS = ["cat", "bat", "mat", "dog", "sun", "run"] as const;
 
 const SPEECH_COACH_DEFAULT_PHRASES = getCoachDialogueWarmupPhrases();
 
@@ -222,24 +222,62 @@ async function loadAudio(cacheKey: string, url: string, localKey?: string): Prom
   }
 }
 
-async function loadPhonicsKey(key: string): Promise<void> {
-  await loadAudio(
-    `phonics:${key}`,
-    getPhonicsStaticAudioUrl(key),
-    getPhonicsLetterCacheKey(key),
-  );
+async function loadAudioDiskOnly(localKey: string, url: string): Promise<void> {
+  if (!url) return;
+  void warmLocalCacheFromUrl(localKey, url);
+  prefetchStaticAudioUrl(url);
 }
 
-async function warmPhonicsSmart(): Promise<void> {
-  await warmBatchKeys(HIGH_PRIORITY, loadPhonicsKey);
+async function warmPhonicsPrewarmItems(
+  items: PhonicsLibraryPrewarmItem[],
+  includeMemory: boolean,
+): Promise<void> {
+  for (let i = 0; i < items.length; i += BATCH_SIZE) {
+    const batch = items.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map((item) =>
+        includeMemory
+          ? loadAudio(item.memoryCacheKey, item.url, item.localCacheKey)
+          : loadAudioDiskOnly(item.localCacheKey, item.url),
+      ),
+    );
+    if (i + BATCH_SIZE < items.length) {
+      await new Promise((res) => setTimeout(res, BATCH_GAP_MS));
+    }
+  }
+}
+
+async function warmPhonicsLibraryFull(): Promise<void> {
+  const libraryItems = listPhonicsLibraryPrewarmItems();
+  if (libraryItems.length === 0) {
+    await warmBatchKeys(HIGH_PRIORITY, loadPhonicsKey);
+    return;
+  }
+
+  // Every asset → IndexedDB + HTTP prefetch (instant playback from disk cache).
+  prefetchEntirePhonicsLibrary();
+
+  const tier1 = libraryItems.filter((item) => item.tier === 1);
+  const tier2 = libraryItems.filter((item) => item.tier === 2);
+  const tier3 = libraryItems.filter((item) => item.tier === 3);
+
+  await warmPhonicsPrewarmItems(tier1, true);
 
   window.setTimeout(() => {
-    void warmBatchKeys(MEDIUM_PRIORITY, loadPhonicsKey);
+    void warmPhonicsPrewarmItems(tier2, true);
   }, 200);
 
   runIdle(() => {
-    void warmBatchKeys(LOW_PRIORITY, loadPhonicsKey);
+    void warmPhonicsPrewarmItems(tier3, false);
   });
+}
+
+async function loadPhonicsKey(key: string): Promise<void> {
+  await loadAudio(
+    getPhonicsLetterCacheKey(key),
+    getPhonicsStaticAudioUrl(key),
+    getPhonicsLetterCacheKey(key),
+  );
 }
 
 function warmSpellingAudio(): Promise<void> {
@@ -316,7 +354,7 @@ export function initGlobalAudioWarmup(): void {
   if (initStarted || typeof window === "undefined") return;
   initStarted = true;
 
-  void warmPhonicsSmart();
+  void warmPhonicsLibraryFull();
 
   runIdle(() => {
     void warmSpellingAudio();
@@ -324,6 +362,7 @@ export function initGlobalAudioWarmup(): void {
   });
 
   logAmyVoiceDiag("global_audio_warmup_init", {
+    phonicsLibraryAssets: countPhonicsLibraryPrewarmItems(),
     criticalPhonics: HIGH_PRIORITY.length,
     spellingWords: SPELLING_COMMON_WORDS.length,
     batchSize: BATCH_SIZE,

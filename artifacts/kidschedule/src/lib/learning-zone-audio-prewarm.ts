@@ -19,7 +19,7 @@ import {
   localCacheKeyForPhrase,
   warmLocalCacheFromUrl,
 } from "@/lib/local-tts-cache";
-import { getPhonicsStaticAudioUrl } from "@/lib/phonics-static-audio";
+import { getPhonicsContentAudioUrl, getPhonicsStaticAudioUrl, prefetchEntirePhonicsLibrary } from "@/lib/phonics-static-audio";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import {
   pregenerateTtsTexts,
@@ -61,6 +61,7 @@ const invalidatedStateKeys = new Set<string>();
 const lastStateKeyByModule = new Map<LearningZoneAudioModule, string>();
 
 let lastFlowKey: string | null = null;
+let phonicsLibraryDiskPrewarmStarted = false;
 
 function runIdle(task: () => void): void {
   if (typeof window !== "undefined" && window.requestIdleCallback) {
@@ -163,7 +164,12 @@ async function loadClipToMemory(cacheKey: string, url: string, localKey: string)
 
 function resolveAudioUrl(text: string, mode: TtsPregenerateMode): string | null {
   if (mode === "phonics") {
-    return getPhonicsStaticAudioUrl(text);
+    const trimmed = text.trim();
+    if (!trimmed) return null;
+    if (trimmed.length <= 2 && !trimmed.includes(" ")) {
+      return getPhonicsStaticAudioUrl(trimmed.toLowerCase()) || null;
+    }
+    return getPhonicsContentAudioUrl(trimmed) || null;
   }
   return lookupStaticAudioUrl(text, "default");
 }
@@ -267,6 +273,11 @@ export function scheduleLearningZoneAudioPrewarm(
   if (typeof window === "undefined") return;
   if (!ctx.texts.length && !ctx.sequenceTexts?.length) return;
 
+  if (ctx.module === "phonics" && !phonicsLibraryDiskPrewarmStarted) {
+    phonicsLibraryDiskPrewarmStarted = true;
+    prefetchEntirePhonicsLibrary();
+  }
+
   const stateKey = ctx.stateKey ?? buildLearningZoneAudioStateKey({
     module: ctx.module,
     difficulty: ctx.difficulty,
@@ -321,4 +332,5 @@ export function _resetLearningZoneAudioPrewarmForTests(): void {
   invalidatedStateKeys.clear();
   lastStateKeyByModule.clear();
   lastFlowKey = null;
+  phonicsLibraryDiskPrewarmStarted = false;
 }

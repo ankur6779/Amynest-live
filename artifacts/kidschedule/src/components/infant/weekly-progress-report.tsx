@@ -1,13 +1,19 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Trophy, Sparkles } from "lucide-react";
+import { Trophy, Sparkles, Share2, Loader2 } from "lucide-react";
 import { getIsoWeekKey } from "@workspace/infant-hub";
 import { useInfantToday } from "@/hooks/use-infant-today";
-import { trackWeeklyReportViewed, trackWeeklyReportShared } from "@/lib/infant-hub-analytics";
+import { trackWeeklyReportViewed } from "@/lib/infant-hub-analytics";
 import type { InfantActivationStatus } from "@/lib/infant-activation-api";
-import { Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
+import { fetchDoctorReport } from "@/lib/infant-care-api";
+import {
+  buildWeeklyShareCardData,
+  getWeeklyAchievedMilestoneIds,
+} from "@/lib/infant-share-cards";
+import { InfantShareSheet } from "@/components/infant/infant-share-sheet";
+import { loadMilestoneProgress } from "@/lib/infant-milestone-progress";
+import { lookupMilestoneTitle } from "@/components/infant-milestones";
 
 type WeeklyProgressReportProps = {
   childId: number;
@@ -25,6 +31,16 @@ export function WeeklyProgressReport({
   const { t } = useTranslation();
   const { data } = useInfantToday(childId);
   const weekKey = getIsoWeekKey();
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [weeklyCardData, setWeeklyCardData] = useState<ReturnType<
+    typeof buildWeeklyShareCardData
+  > | null>(null);
+
+  const firstName = useMemo(
+    () => childName.trim().split(/\s+/)[0] ?? childName,
+    [childName],
+  );
 
   const tip = useMemo(() => {
     const tips = [
@@ -37,34 +53,28 @@ export function WeeklyProgressReport({
   }, [childName, ageMonths, weekKey]);
 
   useEffect(() => {
-    trackWeeklyReportViewed(childId, ageMonths, weekKey);
+    trackWeeklyReportViewed(childId, ageMonths, String(weekKey));
   }, [childId, ageMonths, weekKey]);
 
-  async function handleShare() {
-    const text = [
-      `This week for ${childName}`,
-      data ? `Sleep score: ${data.sleepScore}` : "",
-      data ? `Milestones: ${data.milestoneProgressPct}%` : "",
-      tip,
-    ]
-      .filter(Boolean)
-      .join("\n");
-
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title: `${childName} — weekly progress`, text });
-        trackWeeklyReportShared(childId, ageMonths, "system_share");
-        return;
-      } catch {
-        /* fall through */
-      }
-    }
-
+  async function handleShareThisWeek() {
+    setShareBusy(true);
     try {
-      await navigator.clipboard.writeText(text);
-      trackWeeklyReportShared(childId, ageMonths, "whatsapp");
-    } catch {
-      trackWeeklyReportShared(childId, ageMonths, "pdf");
+      const report = await fetchDoctorReport(childId);
+      const progress = loadMilestoneProgress(childName);
+      const milestoneTitles = getWeeklyAchievedMilestoneIds(
+        progress,
+        lookupMilestoneTitle,
+      );
+      const cardData = buildWeeklyShareCardData(
+        firstName,
+        report,
+        milestoneTitles,
+        weekKey,
+      );
+      setWeeklyCardData(cardData);
+      setShareOpen(true);
+    } finally {
+      setShareBusy(false);
     }
   }
 
@@ -73,47 +83,79 @@ export function WeeklyProgressReport({
     (activation.childAgeDays < 3 || activation.completedCount < 2);
 
   return (
-    <div
-      className="rounded-2xl border border-amber-400/25 bg-gradient-to-br from-amber-500/10 to-yellow-500/5 p-4 space-y-3"
-      data-testid="weekly-progress-report"
-    >
-      <div className="flex items-center gap-2">
-        <Trophy className="h-4 w-4 text-amber-500" />
-        <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-          {t("components.weekly_report.title", "This week's progress")}
-        </p>
-      </div>
-      {showPreview ? (
-        <div className="rounded-xl border border-dashed border-amber-400/30 bg-white/30 dark:bg-white/5 p-4 text-center space-y-2">
-          <p className="text-sm font-semibold text-foreground/90">
-            {t("components.weekly_report.preview_title", "Weekly Report Preview")}
-          </p>
-          <p className="text-[12px] text-muted-foreground leading-snug">
-            {t(
-              "components.weekly_report.preview_body",
-              "Available after 3 days of activity — keep logging feeds and sleep.",
-            )}
+    <>
+      <div
+        className="rounded-2xl border border-amber-400/25 bg-gradient-to-br from-amber-500/10 to-yellow-500/5 p-4 space-y-3"
+        data-testid="weekly-progress-report"
+      >
+        <div className="flex items-center gap-2">
+          <Trophy className="h-4 w-4 text-amber-500" />
+          <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+            {t("components.weekly_report.title", "This week's progress")}
           </p>
         </div>
-      ) : (
-        data && (
-          <ul className="text-sm space-y-1.5 text-foreground/90">
-            <li>• {t("components.weekly_report.sleep", "Sleep score")}: <strong>{data.sleepScore}</strong></li>
-            <li>• {t("components.weekly_report.milestones", "Milestone progress")}: <strong>{data.milestoneProgressPct}%</strong></li>
-            {data.activity && (
-              <li>• {t("components.weekly_report.activity", "Try again")}: {data.activity.emoji} {data.activity.title}</li>
-            )}
-          </ul>
-        )
-      )}
-      <div className="flex items-start gap-2 rounded-xl bg-white/40 dark:bg-white/5 p-3">
-        <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-        <p className="text-sm text-foreground/85 leading-snug">{tip}</p>
+        {showPreview ? (
+          <div className="rounded-xl border border-dashed border-amber-400/30 bg-white/30 dark:bg-white/5 p-4 text-center space-y-2">
+            <p className="text-sm font-semibold text-foreground/90">
+              {t("components.weekly_report.preview_title", "Weekly Report Preview")}
+            </p>
+            <p className="text-[12px] text-muted-foreground leading-snug">
+              {t(
+                "components.weekly_report.preview_body",
+                "Available after 3 days of activity — keep logging feeds and sleep.",
+              )}
+            </p>
+          </div>
+        ) : (
+          data && (
+            <ul className="text-sm space-y-1.5 text-foreground/90">
+              <li>
+                • {t("components.weekly_report.sleep", "Sleep score")}:{" "}
+                <strong>{data.sleepScore}</strong>
+              </li>
+              <li>
+                • {t("components.weekly_report.milestones", "Milestone progress")}:{" "}
+                <strong>{data.milestoneProgressPct}%</strong>
+              </li>
+              {data.activity && (
+                <li>
+                  • {t("components.weekly_report.activity", "Try again")}:{" "}
+                  {data.activity.emoji} {data.activity.title}
+                </li>
+              )}
+            </ul>
+          )
+        )}
+        <div className="flex items-start gap-2 rounded-xl bg-white/40 dark:bg-white/5 p-3">
+          <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+          <p className="text-sm text-foreground/85 leading-snug">{tip}</p>
+        </div>
+        <Button
+          type="button"
+          variant="default"
+          disabled={shareBusy || showPreview}
+          onClick={() => void handleShareThisWeek()}
+          className="w-full rounded-xl gap-2 text-xs font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white border-0"
+        >
+          {shareBusy ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Share2 className="h-3.5 w-3.5" />
+          )}
+          {t("components.weekly_report.share_this_week", "Share This Week")}
+        </Button>
       </div>
-      <Button type="button" variant="outline" onClick={() => void handleShare()} className="w-full rounded-xl gap-2 text-xs">
-        <Share2 className="h-3.5 w-3.5" />
-        {t("components.weekly_report.share", "Share weekly summary")}
-      </Button>
-    </div>
+
+      {weeklyCardData && (
+        <InfantShareSheet
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+          variant="weekly"
+          weeklyData={weeklyCardData}
+          childId={childId}
+          ageMonths={ageMonths}
+        />
+      )}
+    </>
   );
 }

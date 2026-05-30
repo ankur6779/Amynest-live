@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1242" />
+<title>AmyNest — Infant Parenting App Store</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:#000;width:1242px;}
+.slide{width:1242px;height:2688px;position:relative;overflow:hidden;display:none;flex-direction:column;align-items:center;justify-content:space-between;padding:120px 72px 100px;}
+.slide.active{display:flex;}
+.bg-amber{background:radial-gradient(ellipse 120% 70% at 50% 100%,#78350f 0%,#1a0f2e 45%,#0D0820 85%);}
+.bg-indigo{background:linear-gradient(170deg,#0B0B1A 0%,#1e1040 50%,#0B0B1A 100%);}
+.bg-emerald{background:linear-gradient(170deg,#0B0B1A 0%,#0c1f18 50%,#0B0B1A 100%);}
+.bg-rose{background:linear-gradient(170deg,#0B0B1A 0%,#2a0f1a 50%,#0B0B1A 100%);}
+.bg-purple{background:linear-gradient(170deg,#1a0f2e 0%,#3d2463 50%,#1a0f2e 100%);}
+:root{--p:#7B3FF2;--acc:#fbbf24;--pink:#f472b6;}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;}
+.top-badge{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.12);border-radius:60px;padding:16px 36px;color:rgba(255,255,255,0.7);font-size:30px;font-weight:600;backdrop-filter:blur(12px);}
+.top-badge .dot{width:12px;height:12px;border-radius:50%;background:var(--acc);}
+.headline{text-align:center;max-width:1060px;}
+.headline h1{font-size:96px;font-weight:900;line-height:1.06;letter-spacing:-2px;color:#fff;}
+.headline h1 .grad{background:linear-gradient(120deg,#fde68a,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.headline p{margin-top:28px;font-size:44px;font-weight:400;line-height:1.35;color:rgba(255,255,255,0.62);}
+.phone{width:564px;height:1164px;background:#0b0b1a;border-radius:72px;border:6px solid rgba(255,255,255,0.18);box-shadow:0 60px 160px rgba(0,0,0,0.9),0 0 80px rgba(251,191,36,0.2);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+.phone::before{content:'';position:absolute;top:14px;left:50%;transform:translateX(-50%);width:130px;height:36px;background:#000;border-radius:18px;z-index:20;}
+.screen{width:100%;flex:1;padding:64px 0 0;overflow:hidden;}
+.status-bar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;font-size:26px;font-weight:700;color:rgba(255,255,255,0.9);}
+.ui-title{padding:20px 28px 8px;font-size:30px;font-weight:800;color:#fff;}
+.ui-sub{padding:0 28px 16px;font-size:20px;color:rgba(255,255,255,0.45);}
+.card{margin:12px 28px;padding:22px;border-radius:24px;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.1);}
+.row{display:flex;justify-content:space-between;align-items:center;font-size:24px;color:rgba(255,255,255,0.85);padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.row:last-child{border-bottom:none;}
+.row strong{color:#fff;font-weight:800;}
+.rec-btn{margin:20px 28px;padding:28px;border-radius:28px;text-align:center;font-size:28px;font-weight:800;color:#fff;background:linear-gradient(135deg,#ec4899,#f97316);box-shadow:0 12px 40px rgba(236,72,153,0.4);}
+.pulse-ring{width:140px;height:140px;margin:30px auto;border-radius:50%;background:rgba(236,72,153,0.2);border:3px solid rgba(236,72,153,0.5);display:flex;align-items:center;justify-content:center;font-size:56px;}
+.vax-dot{width:14px;height:14px;border-radius:50%;background:var(--acc);margin-right:12px;flex-shrink:0;}
+.vax-row{display:flex;align-items:center;font-size:22px;color:rgba(255,255,255,0.85);padding:14px 0;}
+.chart-bars{display:flex;align-items:flex-end;gap:10px;height:120px;margin-top:16px;}
+.bar{flex:1;border-radius:8px 8px 0 0;background:linear-gradient(to top,#fbbf24,#f59e0b);}
+.share-card{margin:16px 28px;padding:32px 24px;border-radius:28px;background:linear-gradient(165deg,#1a0f2e,#4a2c6a);border:2px solid rgba(251,191,36,0.25);text-align:center;}
+.share-card h3{font-size:32px;font-weight:900;color:#fff;margin-bottom:16px;}
+.share-stat{font-size:22px;color:rgba(255,255,255,0.75);padding:8px 0;}
+.share-quote{margin-top:20px;font-size:24px;font-style:italic;color:rgba(255,255,255,0.55);}
+.bottom-cta{text-align:center;}
+.bottom-cta .tag{display:inline-flex;background:linear-gradient(120deg,#fbbf24,#f97316);color:#1a0f2e;font-size:34px;font-weight:800;padding:20px 48px;border-radius:60px;}
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1 · Cry Insight -->
+<div class="slide bg-rose active" id="s1">
+  <div class="orb" style="width:800px;height:800px;top:-100px;right:-200px;background:rgba(236,72,153,0.35);"></div>
+  <div class="top-badge"><div class="dot"></div>Infant Parenting Hub</div>
+  <div class="headline">
+    <h1>Why Is My Baby<br/><span class="grad">Crying?</span></h1>
+    <p>Get instant guidance on hunger, sleep, or discomfort.</p>
+  </div>
+  <div class="phone">
+    <div class="screen">
+      <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+      <div class="ui-title">Cry Insight</div>
+      <div class="ui-sub">Record a few seconds — Amy analyzes the cry</div>
+      <div class="pulse-ring">🎙️</div>
+      <div class="rec-btn">Tap to Record</div>
+      <div class="card">
+        <div class="row"><span>Likely cause</span><strong>Hunger</strong></div>
+        <div class="row"><span>Last feed</span><strong>2h ago</strong></div>
+        <div class="row"><span>Confidence</span><strong>87%</strong></div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-cta"><div class="tag">AmyNest · Free Download</div></div>
+</div>
+
+<!-- SLIDE 2 · Baby Today -->
+<div class="slide bg-indigo" id="s2">
+  <div class="orb" style="width:700px;height:700px;bottom:200px;left:-150px;background:rgba(129,140,248,0.3);"></div>
+  <div class="top-badge"><div class="dot"></div>Sleep & Daily Care</div>
+  <div class="headline">
+    <h1>Know The Next Nap<br/><span class="grad">Before It Happens</span></h1>
+    <p>Sleep predictions, feeds, activities, and vaccines.</p>
+  </div>
+  <div class="phone">
+    <div class="screen">
+      <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+      <div class="ui-title">Baby Today</div>
+      <div class="ui-sub">Emma · 4 months</div>
+      <div class="card"><div class="row"><span>😴 Next nap</span><strong>2:30 PM</strong></div></div>
+      <div class="card"><div class="row"><span>🍼 Next feed</span><strong>1:15 PM</strong></div></div>
+      <div class="card"><div class="row"><span>⭐ Sleep score</span><strong>Good</strong></div></div>
+      <div class="card"><div class="row"><span>💉 Vaccines</span><strong>Up to date</strong></div></div>
+      <div class="card"><div class="row"><span>🎯 Activity</span><strong>Tummy time</strong></div></div>
+    </div>
+  </div>
+  <div class="bottom-cta"><div class="tag">AmyNest · Free Download</div></div>
+</div>
+
+<!-- SLIDE 3 · Growth -->
+<div class="slide bg-amber" id="s3">
+  <div class="orb" style="width:600px;height:600px;top:-80px;left:50%;transform:translateX(-50%);background:rgba(251,191,36,0.35);"></div>
+  <div class="top-badge"><div class="dot"></div>Growth & Milestones</div>
+  <div class="headline">
+    <h1>Track Growth<br/><span class="grad">With Confidence</span></h1>
+    <p>Weight, height, milestones — all in one place.</p>
+  </div>
+  <div class="phone">
+    <div class="screen">
+      <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+      <div class="ui-title">Growth Tracker</div>
+      <div class="ui-sub">On track for 4 months</div>
+      <div class="card">
+        <div class="row"><span>Weight</span><strong>6.2 kg</strong></div>
+        <div class="row"><span>Height</span><strong>62 cm</strong></div>
+        <div class="chart-bars">
+          <div class="bar" style="height:45%"></div><div class="bar" style="height:58%"></div><div class="bar" style="height:52%"></div>
+          <div class="bar" style="height:68%"></div><div class="bar" style="height:75%"></div><div class="bar" style="height:82%"></div>
+        </div>
+      </div>
+      <div class="card"><div class="row"><span>🏆 Milestone</span><strong>Rolled over!</strong></div></div>
+    </div>
+  </div>
+  <div class="bottom-cta"><div class="tag">AmyNest · Free Download</div></div>
+</div>
+
+<!-- SLIDE 4 · Vaccines -->
+<div class="slide bg-emerald" id="s4">
+  <div class="orb" style="width:650px;height:650px;bottom:-100px;right:-100px;background:rgba(52,211,153,0.25);"></div>
+  <div class="top-badge"><div class="dot"></div>Health & Vaccines</div>
+  <div class="headline">
+    <h1>Never Miss<br/><span class="grad">A Vaccine</span></h1>
+    <p>Age-based schedule with reminders and status tracking.</p>
+  </div>
+  <div class="phone">
+    <div class="screen">
+      <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+      <div class="ui-title">Vaccine Timeline</div>
+      <div class="ui-sub">Emma · IAP schedule</div>
+      <div class="card">
+        <div class="vax-row"><div class="vax-dot"></div><span><strong>Birth</strong> · BCG, OPV — Done</span></div>
+        <div class="vax-row"><div class="vax-dot" style="background:#34d399"></div><span><strong>6 weeks</strong> · Pentavalent — Due soon</span></div>
+        <div class="vax-row"><div class="vax-dot" style="background:rgba(255,255,255,0.25)"></div><span><strong>10 weeks</strong> · Pentavalent — Upcoming</span></div>
+        <div class="vax-row"><div class="vax-dot" style="background:rgba(255,255,255,0.25)"></div><span><strong>14 weeks</strong> · IPV — Upcoming</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-cta"><div class="tag">AmyNest · Free Download</div></div>
+</div>
+
+<!-- SLIDE 5 · Weekly Share -->
+<div class="slide bg-purple" id="s5">
+  <div class="orb" style="width:750px;height:750px;top:-150px;left:-100px;background:rgba(168,85,247,0.3);"></div>
+  <div class="top-badge"><div class="dot"></div>Family Sharing</div>
+  <div class="headline">
+    <h1>Share Progress<br/><span class="grad">With Family</span></h1>
+    <p>Beautiful weekly cards grandparents will love.</p>
+  </div>
+  <div class="phone">
+    <div class="screen">
+      <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+      <div class="ui-title">Share This Week</div>
+      <div class="share-card">
+        <h3>Emma's Week</h3>
+        <div class="share-stat">Sleep Score: <strong>87</strong></div>
+        <div class="share-stat">Feeds Logged: <strong>32</strong></div>
+        <div class="share-stat">Growth: <strong>On Track</strong></div>
+        <div class="share-stat">Vaccines: <strong>Up To Date</strong></div>
+        <div class="share-stat" style="color:#fde68a;margin-top:12px;">New: Rolled Over 🏆</div>
+        <div class="share-quote">"Great progress this week."</div>
+        <div style="margin-top:16px;font-size:18px;color:rgba(255,255,255,0.4);">Powered by AmyNest</div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-cta"><div class="tag">AmyNest · Free Download</div></div>
+</div>
+
+<script>
+  const n = parseInt(new URLSearchParams(location.search).get('n') || '1', 10);
+  document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('s' + n);
+  if (target) target.classList.add('active');
+</script>
+</body>
+</html>

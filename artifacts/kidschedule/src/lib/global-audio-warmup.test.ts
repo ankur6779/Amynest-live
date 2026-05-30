@@ -41,12 +41,68 @@ vi.mock("@/lib/static-audio", () => ({
   prefetchStaticAudioUrl: vi.fn(),
 }));
 
+vi.mock("@/lib/phonics-audio-map", () => ({
+  listPhonicsLibraryPrewarmItems: vi.fn(() => [
+    {
+      catalogKey: "letter:a",
+      url: "https://example.com/phonics/letters/a.mp3",
+      memoryCacheKey: "phonics:a",
+      localCacheKey: "phonics:a",
+      tier: 1,
+      type: "letter",
+    },
+    {
+      catalogKey: "letter:b",
+      url: "https://example.com/phonics/letters/b.mp3",
+      memoryCacheKey: "phonics:b",
+      localCacheKey: "phonics:b",
+      tier: 1,
+      type: "letter",
+    },
+    {
+      catalogKey: "letter:e",
+      url: "https://example.com/phonics/letters/e.mp3",
+      memoryCacheKey: "phonics:e",
+      localCacheKey: "phonics:e",
+      tier: 1,
+      type: "letter",
+    },
+    {
+      catalogKey: "letter:q",
+      url: "https://example.com/phonics/letters/q.mp3",
+      memoryCacheKey: "phonics:q",
+      localCacheKey: "phonics:q",
+      tier: 2,
+      type: "letter",
+    },
+    {
+      catalogKey: "letter:x",
+      url: "https://example.com/phonics/letters/x.mp3",
+      memoryCacheKey: "phonics:x",
+      localCacheKey: "phonics:x",
+      tier: 2,
+      type: "letter",
+    },
+    {
+      catalogKey: "letter:z",
+      url: "https://example.com/phonics/letters/z.mp3",
+      memoryCacheKey: "phonics:z",
+      localCacheKey: "phonics:z",
+      tier: 2,
+      type: "letter",
+    },
+  ]),
+  countPhonicsLibraryPrewarmItems: vi.fn(() => 6),
+}));
+
 vi.mock("@/lib/phonics-static-audio", () => ({
   getPhonicsStaticAudioUrl: vi.fn((key: string) => `/phonics-audio/${key}.mp3`),
+  prefetchEntirePhonicsLibrary: vi.fn(),
 }));
 
 vi.mock("@workspace/phonics-sounds", () => ({
   getPhonicsLetterCacheKey: vi.fn((key: string) => `phonics:${key}`),
+  PHONICS_PREWARM_TIER_HIGH: ["a", "b", "c", "d", "e"],
 }));
 
 describe("global-audio-warmup", () => {

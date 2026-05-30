@@ -53,6 +53,10 @@ export type InfantAnalyticsEventName =
   | "growth_chart_viewed"
   | "milestone_viewed"
   | "milestone_completed"
+  | "weekly_share_card_generated"
+  | "weekly_share_card_shared"
+  | "milestone_card_generated"
+  | "milestone_card_shared"
   | "weekly_report_shared"
   | "doctor_report_generated"
   | "doctor_report_exported"
@@ -545,6 +549,41 @@ export function trackWeeklyReportShared(
   shareMethod: WeeklyReportShareMethod,
 ): void {
   trackEvent("weekly_report_shared", childId, ageMonths, { shareMethod });
+}
+
+export function trackWeeklyShareCardGenerated(
+  childId: number,
+  ageMonths: number,
+  props: { milestoneCount: number },
+): void {
+  trackEvent("weekly_share_card_generated", childId, ageMonths, props);
+}
+
+export function trackWeeklyShareCardShared(
+  childId: number,
+  ageMonths: number,
+  shareMethod: WeeklyReportShareMethod,
+  props: { milestoneCount: number },
+): void {
+  trackEvent("weekly_share_card_shared", childId, ageMonths, {
+    shareMethod,
+    milestoneCount: props.milestoneCount,
+  });
+}
+
+export function trackMilestoneShareCardGenerated(
+  childId: number,
+  ageMonths: number,
+): void {
+  trackEvent("milestone_card_generated", childId, ageMonths);
+}
+
+export function trackMilestoneShareCardShared(
+  childId: number,
+  ageMonths: number,
+  shareMethod: WeeklyReportShareMethod,
+): void {
+  trackEvent("milestone_card_shared", childId, ageMonths, { shareMethod });
 }
 
 // ─── Doctor report ─────────────────────────────────────────────────────────────

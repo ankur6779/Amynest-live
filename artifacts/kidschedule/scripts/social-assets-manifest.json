@@ -20,6 +20,11 @@
     "appstore-hub": "../../../screenshots/appstore-07-hub.jpg",
     "appstore-insights": "../../../screenshots/appstore-08-insights.jpg",
     "appstore-coach": "../../../screenshots/appstore-09-coach.jpg",
+    "infant-cry-insight": "../../../screenshots/infant-parenting/appstore-01-cry-insight.jpg",
+    "infant-baby-today": "../../../screenshots/infant-parenting/appstore-02-baby-today.jpg",
+    "infant-growth": "../../../screenshots/infant-parenting/appstore-03-growth.jpg",
+    "infant-vaccines": "../../../screenshots/infant-parenting/appstore-04-vaccines.jpg",
+    "infant-weekly-share": "../../../screenshots/infant-parenting/appstore-05-weekly-share.jpg",
     "review": "../../../screenshots/amynest-review-1242x2688.jpg"
   },
   "carouselPacks": [

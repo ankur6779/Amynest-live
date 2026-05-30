@@ -4,6 +4,7 @@ import { FileDown, Loader2 } from "lucide-react";
 import { fetchDoctorReport } from "@/lib/infant-care-api";
 import { trackDoctorReportGenerated, trackDoctorReportExported } from "@/lib/infant-hub-analytics";
 import { Button } from "@/components/ui/button";
+import { InfantReferralPrompt } from "@/components/infant/infant-referral-prompt";
 
 type DoctorVisitReportProps = {
   childId: number;
@@ -31,46 +32,58 @@ h1{font-size:20px}h2{font-size:14px;margin-top:20px;color:#444}ul{padding-left:1
 <p class="disclaimer">${(data as any).disclaimer ?? ""}</p>
 </body></html>`;
   const w = window.open("", "_blank");
-  if (!w) return;
+  if (!w) return false;
   w.document.write(html);
   w.document.close();
   w.focus();
   w.print();
+  return true;
 }
 
 export function DoctorVisitReport({ childId, childName, ageMonths }: DoctorVisitReportProps) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
+  const [referralOpen, setReferralOpen] = useState(false);
 
   async function handleExport() {
     setBusy(true);
     try {
       const data = await fetchDoctorReport(childId);
       trackDoctorReportGenerated(childId, ageMonths);
-      openPrintableReport(childName, data);
-      trackDoctorReportExported(childId, ageMonths, "print");
+      const ok = openPrintableReport(childName, data);
+      if (ok) {
+        trackDoctorReportExported(childId, ageMonths, "print");
+        setReferralOpen(true);
+      }
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="space-y-3" data-testid="doctor-visit-report" id="infant-doctor">
-      <p className="text-sm text-muted-foreground">
-        {t(
-          "components.doctor_report.lead",
-          "One-page summary of sleep, feeding, growth, vaccines, and milestones for your paediatrician.",
-        )}
-      </p>
-      <Button
-        type="button"
-        disabled={busy}
-        onClick={handleExport}
-        className="w-full rounded-xl gap-2 font-bold"
-      >
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-        {t("components.doctor_report.export", "Prepare Doctor Report")}
-      </Button>
-    </div>
+    <>
+      <div className="space-y-3" data-testid="doctor-visit-report" id="infant-doctor">
+        <p className="text-sm text-muted-foreground">
+          {t(
+            "components.doctor_report.lead",
+            "One-page summary of sleep, feeding, growth, vaccines, and milestones for your paediatrician.",
+          )}
+        </p>
+        <Button
+          type="button"
+          disabled={busy}
+          onClick={() => void handleExport()}
+          className="w-full rounded-xl gap-2 font-bold"
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+          {t("components.doctor_report.export", "Prepare Doctor Report")}
+        </Button>
+      </div>
+      <InfantReferralPrompt
+        open={referralOpen}
+        onOpenChange={setReferralOpen}
+        source="doctor_export"
+      />
+    </>
   );
 }

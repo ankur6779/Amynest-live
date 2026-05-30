@@ -5,6 +5,7 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
   Activity,
   AlertTriangle,
+  Baby,
   ChevronLeft,
   Lock,
   RefreshCw,
@@ -393,6 +394,15 @@ export default function AdminDashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/admin/infant-parenting">
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm font-semibold text-amber-200 hover:bg-amber-500/15"
+              >
+                <Baby className="h-4 w-4" />
+                Infant Analytics
+              </button>
+            </Link>
             {data && <StatusBadge status={data.status} />}
             <button
               type="button"

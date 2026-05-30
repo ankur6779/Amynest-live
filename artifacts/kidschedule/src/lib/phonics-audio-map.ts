@@ -5,6 +5,9 @@
 import audioMap from "@/data/phonics-audio-map.json";
 import {
   getPhonicsCatalogKey,
+  getPhonicsLetterCacheKey,
+  PHONICS_PREWARM_CVC,
+  PHONICS_PREWARM_TIER_HIGH,
   resolveContentCatalogKey,
   resolveLetterClipCatalogKey,
   type PhonicsAssetType,
@@ -66,6 +69,72 @@ export function reportPhonicsLibraryMissing(catalogKey: string, context?: string
 /** Fallback asset — neutral short tone when library entry absent. */
 export function getPhonicsLibraryFallbackUrl(): string | null {
   return lookupPhonicsLetterUrl("a") ?? lookupPhonicsLetterUrl("m");
+}
+
+/** IndexedDB + memory cache key for words, sentences, quizzes, blends, CVC. */
+export function getPhonicsContentCacheKey(
+  text: string,
+  preferredType?: PhonicsAssetType,
+): string {
+  const catalogKey = resolveContentCatalogKey(text, preferredType);
+  if (catalogKey) return `phonics:content:${catalogKey}`;
+  const slug = text.trim().toLowerCase();
+  return `phonics:content:${preferredType ?? "unknown"}:${slug}`;
+}
+
+export type PhonicsLibraryPrewarmItem = {
+  catalogKey: string;
+  url: string;
+  memoryCacheKey: string;
+  localCacheKey: string;
+  tier: 1 | 2 | 3;
+  type: PhonicsAssetType;
+};
+
+function resolvePrewarmTier(type: PhonicsAssetType, id: string): 1 | 2 | 3 {
+  if (type === "letter" && (PHONICS_PREWARM_TIER_HIGH as readonly string[]).includes(id)) {
+    return 1;
+  }
+  if (
+    type === "letter" ||
+    type === "digraph" ||
+    type === "blend" ||
+    (type === "cvc" && (PHONICS_PREWARM_CVC as readonly string[]).includes(id))
+  ) {
+    return 2;
+  }
+  return 3;
+}
+
+function memoryCacheKeyForAsset(type: PhonicsAssetType, id: string, catalogKey: string): string {
+  if (type === "letter" || type === "digraph") {
+    return getPhonicsLetterCacheKey(id);
+  }
+  return `phonics:content:${catalogKey}`;
+}
+
+/** Every manifest asset with tier + cache keys for full-library prewarm. */
+export function listPhonicsLibraryPrewarmItems(): PhonicsLibraryPrewarmItem[] {
+  const items: PhonicsLibraryPrewarmItem[] = [];
+  for (const [catalogKey, asset] of Object.entries(manifest.assets ?? {})) {
+    if (!asset?.url?.startsWith("https://")) continue;
+    const type = asset.type;
+    const id = asset.id;
+    const localCacheKey = memoryCacheKeyForAsset(type, id, catalogKey);
+    items.push({
+      catalogKey,
+      url: asset.url,
+      memoryCacheKey: localCacheKey,
+      localCacheKey,
+      tier: resolvePrewarmTier(type, id),
+      type,
+    });
+  }
+  return items.sort((a, b) => a.tier - b.tier || a.catalogKey.localeCompare(b.catalogKey));
+}
+
+export function countPhonicsLibraryPrewarmItems(): number {
+  return listPhonicsLibraryPrewarmItems().length;
 }
 
 export function prefetchPhonicsLibraryUrls(urls: string[]): void {

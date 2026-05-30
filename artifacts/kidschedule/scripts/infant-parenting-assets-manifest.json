@@ -1,0 +1,58 @@
+{
+  "title": "Infant Parenting Marketing Assets",
+  "template": "public/appstore-infant-parenting.html",
+  "generator": "scripts/generate-infant-parenting-assets.mjs",
+  "npmScript": "generate:infant-parenting-assets",
+  "dimensions": { "width": 1242, "height": 2688 },
+  "output": {
+    "appStore": "screenshots/infant-parenting/",
+    "webPromo": "public/promo/infant-parenting/"
+  },
+  "slides": [
+    {
+      "n": 1,
+      "slug": "cry-insight",
+      "assetId": "appstore_cry_insight",
+      "headline": "Why Is My Baby Crying?",
+      "subheadline": "Get instant guidance on hunger, sleep, or discomfort."
+    },
+    {
+      "n": 2,
+      "slug": "baby-today",
+      "assetId": "appstore_baby_today",
+      "headline": "Know The Next Nap Before It Happens",
+      "subheadline": "Sleep predictions, feeds, activities, and vaccines."
+    },
+    {
+      "n": 3,
+      "slug": "growth",
+      "assetId": "appstore_growth",
+      "headline": "Track Growth With Confidence",
+      "subheadline": "Weight, height, milestones — all in one place."
+    },
+    {
+      "n": 4,
+      "slug": "vaccines",
+      "assetId": "appstore_vaccines",
+      "headline": "Never Miss A Vaccine",
+      "subheadline": "Age-based schedule with reminders and status tracking."
+    },
+    {
+      "n": 5,
+      "slug": "weekly-share",
+      "assetId": "appstore_weekly_share",
+      "headline": "Share Progress With Family",
+      "subheadline": "Beautiful weekly cards grandparents will love."
+    }
+  ],
+  "landingSection": {
+    "component": "src/components/marketing/infant-parenting-section.tsx",
+    "pages": ["landing", "get-app"]
+  },
+  "referralPromptSources": ["weekly_share", "milestone_share", "doctor_export"],
+  "analyticsEvents": [
+    "marketing_asset_viewed",
+    "referral_prompt_viewed",
+    "referral_prompt_clicked"
+  ]
+}

@@ -4,6 +4,7 @@ import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { recordChatPlatformPromptHiddenFailure } from "../services/chatPlatformRemoteConfig";
 import { ingestChatPlatformHealthEvent } from "../services/chatPlatformHealthStore";
+import { persistInfantProductAnalyticsEvent } from "../services/infantAnalyticsIngestService";
 
 const router: IRouter = Router();
 
@@ -25,6 +26,8 @@ const ClientLogBody = z.object({
     z.string().regex(/^learning_progress_[a-z0-9_]+$/),
     /** Subscription funnel events (`subscription-analytics.ts`). */
     z.literal("subscription_funnel"),
+    /** Infant parenting product analytics (`infant-hub-analytics.ts`). */
+    z.literal("infant_parenting"),
   ]),
   message: z.string().min(1).max(4000),
   context: z.string().max(256).optional(),
@@ -123,6 +126,21 @@ async function ingestClientLog(req: Request, res: Response): Promise<void> {
         : logger.info.bind(logger);
 
   logFn({ kind: "client_log", ...entry }, `[client:${parsed.data.type}] ${parsed.data.message}`);
+
+  if (logType === "infant_parenting" && userId) {
+    const eventName =
+      typeof meta?.event === "string" ? meta.event : message.slice(0, 128);
+    void persistInfantProductAnalyticsEvent({
+      userId,
+      event: eventName,
+      properties: meta ?? {},
+    }).catch((err) => {
+      logger.warn(
+        { err, event: eventName, userId },
+        "infant_analytics_persist_failed",
+      );
+    });
+  }
 
   res.status(204).end();
 }

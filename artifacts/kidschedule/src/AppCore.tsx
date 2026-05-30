@@ -126,6 +126,7 @@ const FeedbackPage = lazyPage(() => import("@/pages/feedback"));
 const AdminFeedbackPage = lazyPage(() => import("@/pages/admin-feedback"));
 const AdminAudioHealthPage = lazyPage(() => import("@/pages/admin-audio-health"));
 const AdminDashboardPage = lazyPage(() => import("@/pages/admin-dashboard"));
+const AdminInfantParentingPage = lazyPage(() => import("@/pages/admin-infant-parenting"));
 
 import { NativeStartupPermissionsGateLazy } from "@/components/native-startup-permissions-gate-lazy";
 import { PwaAndroidPermissionsGateLazy } from "@/components/pwa-android-permissions-gate-lazy";
@@ -347,6 +348,7 @@ const FeedbackRoute = makeProtectedRoute(FeedbackPage);
 const AdminFeedbackRoute = makeProtectedRoute(AdminFeedbackPage);
 const AdminAudioHealthRoute = makeProtectedRoute(AdminAudioHealthPage);
 const AdminDashboardRoute = makeProtectedRoute(AdminDashboardPage);
+const AdminInfantParentingRoute = makeProtectedRoute(AdminInfantParentingPage);
 
 function FirebaseAuthBootstrap() {
   const { getToken, isSignedIn } = useAuth();
@@ -634,6 +636,7 @@ function AppRoutes() {
           <Route path="/feedback" component={FeedbackRoute} />
           <Route path="/admin/feedback" component={AdminFeedbackRoute} />
           <Route path="/admin/dashboard" component={AdminDashboardRoute} />
+          <Route path="/admin/infant-parenting" component={AdminInfantParentingRoute} />
           <Route path="/admin/audio-health" component={AdminAudioHealthRoute} />
           <Route component={RouteFailedPage} />
             </Switch>

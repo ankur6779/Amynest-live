@@ -870,6 +870,22 @@
     "whats_new_heading": "What's New in Parent Hub",
     "new_infant_title": "Infant Parenting Hub",
     "new_infant_desc": "Pediatrician-aligned guidance on sleep, feeding, milestones and daily care for babies under 12 months.",
+    "infant_parenting": {
+      "eyebrow": "0–24 months",
+      "heading": "Infant Parenting, Simplified",
+      "subheading": "From crying clues to sleep predictions, vaccines, growth charts, and shareable weekly reports — AmyNest supports you through the hardest months.",
+      "cry_title": "Cry Insight",
+      "cry_desc": "Record a few seconds — get instant guidance on hunger, sleep, or discomfort.",
+      "sleep_title": "Sleep Predictions",
+      "sleep_desc": "Know the next nap and feed before they happen with Baby Today.",
+      "vaccine_title": "Vaccine Timeline",
+      "vaccine_desc": "Never miss a dose with age-based schedules and reminders.",
+      "growth_title": "Growth Tracking",
+      "growth_desc": "Log weight and height, track milestones, and see progress charts.",
+      "weekly_title": "Weekly Reports",
+      "weekly_desc": "Share beautiful progress cards with family every week.",
+      "cta": "Start your infant journey free"
+    },
     "new_abacus_title": "Abacus Zone",
     "new_abacus_desc": "Step-by-step abacus lessons that build mental math and concentration — perfect for ages 5–12.",
     "new_funsheets_title": "Fun Sheets",
@@ -3576,6 +3592,40 @@
       "parent_coaching": "Parent Coaching",
       "baby_cues_engine": "Baby Cues Engine",
       "communication_coaching": "Communication Coaching"
+    },
+    "infant_share": {
+      "weekly_title": "Share This Week",
+      "milestone_title": "Share with Family",
+      "save_image": "Save Image",
+      "whatsapp": "WhatsApp",
+      "system_share": "Share",
+      "pdf": "PDF Export",
+      "hint": "A keepsake card your family will love — save or share in one tap.",
+      "celebration_aria": "Milestone celebration",
+      "new_milestone": "New Milestone",
+      "just_learned": "Just Learned To",
+      "celebration_body": "Capture this moment and share it with grandparents, aunts, and uncles.",
+      "share_with_family": "Share with Family",
+      "not_now": "Not now"
+    },
+    "infant_referral": {
+      "title": "Know another parent who would love this?",
+      "body": "Invite friends and earn premium days when they join AmyNest.",
+      "share_cta": "Share AmyNest",
+      "share_title": "Try AmyNest",
+      "share_text": "AmyNest helped us so much with our baby — try it free: {{link}}",
+      "copied": "Link copied!",
+      "view_referrals": "Get your referral code",
+      "not_now": "Not now"
+    },
+    "weekly_report": {
+      "title": "This week's progress",
+      "preview_title": "Weekly Report Preview",
+      "preview_body": "Available after 3 days of activity — keep logging feeds and sleep.",
+      "sleep": "Sleep score",
+      "milestones": "Milestone progress",
+      "activity": "Try again",
+      "share_this_week": "Share This Week"
     },
     "infant_milestones": {
       "weekly_summary": "Weekly Summary",

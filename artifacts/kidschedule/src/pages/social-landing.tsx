@@ -20,6 +20,7 @@ import {
   HeartHandshake,
   LineChart,
 } from "lucide-react";
+import { InfantParentingSection } from "@/components/marketing/infant-parenting-section";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
 import { useTranslation } from "react-i18next";
 
@@ -654,6 +655,8 @@ export default function SocialLandingPage() {
           </div>
         </div>
       </section>
+
+      <InfantParentingSection page="get-app" />
 
       <DemoVideo onPrimaryCta={openPrimaryStore} />
       <ScreenshotCarousel t={t} />

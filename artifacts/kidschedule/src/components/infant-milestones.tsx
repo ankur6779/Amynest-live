@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Trophy, Target, Heart, ChevronDown, ChevronUp, PlayCircle, CheckCircle2, RotateCcw, ArrowUp, Clock, TrendingUp, Lightbulb, Smile, Baby, BookOpen, Cloud, CloudOff } from "lucide-react";
 import { getApiUrl } from "@/lib/api";
 import { trackMilestoneViewed, trackMilestoneCompleted } from "@/lib/infant-hub-analytics";
+import { MilestoneCelebrationSheet } from "@/components/infant/milestone-celebration-sheet";
 
 // ─── Milestone Data Model ─────────────────────────────────────────────────────
 type MState = "not_started" | "in_progress" | "achieved";
@@ -375,6 +376,16 @@ const MILESTONES: BuddyMilestone[] = [
   toMonths: 22
 }];
 
+export function lookupMilestoneTitle(milestoneId: string): string {
+  const match = MILESTONES.find((m) => m.id === milestoneId);
+  if (match) return match.title;
+  return milestoneId
+    .replace(/^b\d+_/, "")
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 type Stored = Record<string, {
   state: MState;
@@ -585,6 +596,11 @@ export function BuddyMilestonePlanner({
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "synced" | "offline">("idle");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [tipIdx, setTipIdx] = useState(0);
+  const [celebration, setCelebration] = useState<{
+    title: string;
+    emoji: string;
+  } | null>(null);
+  const [celebrationShareOpen, setCelebrationShareOpen] = useState(false);
 
   // Load local + merge cloud on mount / child change
   useEffect(() => {
@@ -656,10 +672,17 @@ export function BuddyMilestonePlanner({
       setSyncState(ok ? "synced" : "offline");
     });
     if (state === "achieved") {
-      trackMilestoneCompleted(childId, ageMonths, { milestoneId: id, category: bandMilestones.find(m => m.id === id)?.category });
+      const milestone = bandMilestones.find((m) => m.id === id);
+      trackMilestoneCompleted(childId, ageMonths, {
+        milestoneId: id,
+        category: milestone?.category,
+      });
+      if (milestone) {
+        setCelebration({ title: milestone.title, emoji: milestone.emoji });
+      }
       const idx = Math.floor(Math.random() * 3) + 1;
       toast({
-        description: t(`toasts.infant_milestones.achieved_${idx}`)
+        description: t(`toasts.infant_milestones.achieved_${idx}`),
       });
     } else if (state === "in_progress") {
       const idx = Math.floor(Math.random() * 3) + 1;
@@ -684,7 +707,8 @@ export function BuddyMilestonePlanner({
       nextFocus
     };
   }, [bandMilestones, progress]);
-  return <div className="space-y-4">
+  return <>
+    <div className="space-y-4">
       {/* ── Weekly Summary Card ─────────────────────────────────────── */}
       <div className="rounded-2xl bg-gradient-to-br from-muted via-muted to-muted dark:from-card dark:via-card dark:to-card border border-border dark:border-border p-4 backdrop-blur-md">
         <div className="flex items-center justify-between gap-2 mb-3">
@@ -787,7 +811,21 @@ export function BuddyMilestonePlanner({
 
       {/* ── All milestones for this age band (collapsible) ─────────── */}
       <BandLibrary bandMilestones={bandMilestones} weeklyPlanIds={new Set(weeklyPlan.map(m => m.id))} progress={progress} setExpanded={id => setExpanded(id)} />
-    </div>;
+    </div>
+    <MilestoneCelebrationSheet
+      open={celebration != null}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) setCelebration(null);
+      }}
+      childId={childId}
+      childName={childName}
+      ageMonths={ageMonths}
+      milestoneTitle={celebration?.title ?? ""}
+      milestoneEmoji={celebration?.emoji ?? "🎉"}
+      shareOpen={celebrationShareOpen}
+      onShareOpenChange={setCelebrationShareOpen}
+    />
+  </>;
 }
 function SummaryStat({
   label,

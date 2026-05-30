@@ -3,6 +3,7 @@ import { ArrowRight, Sparkles, Brain, Calendar, LayoutGrid, MessageCircle, Zap, 
 import { StoreQrCode } from "@/components/store-qr-code";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
+import { InfantParentingSection } from "@/components/marketing/infant-parenting-section";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
 import { useTranslation } from "react-i18next";
 const COACH_HIGHLIGHT_KEYS = ["landing.highlight_1", "landing.highlight_2", "landing.highlight_3", "landing.highlight_4"];
@@ -612,6 +613,8 @@ export default function LandingPage() {
             </span>)}
         </div>
       </div>
+
+      <InfantParentingSection page="landing" />
 
       {/* LEARNING SPOTLIGHT — Speech Coach, Phonics, Audio Lessons */}
       <section className="relative z-10 px-5 pb-20">
