@@ -3,8 +3,7 @@ import { useListRoutines, getListRoutinesQueryKey } from "@workspace/api-client-
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Calendar, ChevronRight, Wand2, Sparkles, ChevronLeft, Zap, TrendingUp, Users, HelpCircle, ShieldCheck } from "lucide-react";
-import { getLastGenSettings } from "./generate";
+import { Calendar, ChevronRight, ChevronLeft, TrendingUp, Users, HelpCircle, ShieldCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SmartMealSuggestions } from "@/components/smart-meal-suggestions";
 import { WeeklyReportCard } from "@/components/intelligence/weekly-report-card";
@@ -14,6 +13,9 @@ import { ChildTodaySignal } from "@/components/routines/child-today-signal";
 import { RoutinesEnvironmentPreview } from "@/components/routines/routines-environment-preview";
 import { AmyTrustLayer } from "@/components/routines/amy-trust-layer";
 import { CollapsibleRoutinesSection } from "@/components/routines/collapsible-routines-section";
+import { RoutinePremiumCta } from "@/components/routines/routine-premium-cta";
+import { TodayRoutineSection } from "@/components/routines/today-routine-section";
+import { RoutineStickyPill } from "@/components/routines/routine-sticky-pill";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
 import { useTranslation } from "react-i18next";
@@ -22,14 +24,13 @@ import HouseholdPage from "@/pages/household";
 import ExplainPage from "@/pages/explain";
 import { SafetyPanel } from "@/components/safety/safety-panel";
 import { cn } from "@/lib/utils";
+import { formatRoutineDateKey } from "@/lib/routine-ux";
 import {
   PARENT_HUB_PAGE,
   ROUTINES_HUB_ACCENT,
   HUB_PAGE_CHIP_INACTIVE,
   HUB_SECTION_TITLE,
   HUB_BODY,
-  HUB_BOTTOM_CTA,
-  HUB_GLASS_SURFACE,
   hubSectionCardClasses,
   hubAccentBarClasses,
 } from "@/lib/parent-hub-premium";
@@ -169,38 +170,54 @@ function WeekCalendar({
             onGatedNavigate(`/routines/generate?date=${dateStr}`);
           }
         }} className={cn(
-          "flex flex-col items-center gap-1 p-1.5 rounded-2xl border-2 transition-all text-xs min-h-[72px] justify-between",
+          "relative flex flex-col items-center gap-1 p-1.5 rounded-2xl border-2 transition-all text-xs min-h-[76px] justify-between",
           isToday
-            ? "border-[rgba(255,184,0,0.55)] bg-[rgba(255,184,0,0.22)] text-foreground shadow-[0_0_12px_rgba(255,184,0,0.25)]"
+            ? "border-[rgba(255,184,0,0.65)] bg-[rgba(255,184,0,0.22)] text-foreground shadow-[0_0_14px_rgba(255,184,0,0.28)] ring-1 ring-amber-400/25"
             : dayRoutines.length > 0
-              ? "border-white/15 bg-white/[0.06] text-foreground hover:border-amber-400/30"
+              ? "border-white/15 bg-white/[0.06] text-foreground hover:border-emerald-400/35"
               : isWeekend
                 ? "border-white/[0.06] bg-white/[0.03] text-muted-foreground hover:border-white/12"
-                : "border-white/[0.08] bg-[rgba(18,28,60,0.5)] text-foreground hover:border-amber-400/25",
+                : "border-white/[0.06] bg-[rgba(18,28,60,0.45)] text-muted-foreground hover:border-white/12",
         )}>
-              <span className={cn("font-bold text-[10px]", isToday ? "text-amber-200/80" : "text-muted-foreground")}>
+              {dayRoutines.length > 0 && (
+                <span
+                  className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.65)]"
+                  title={t("pages.routines.index.has_routine")}
+                />
+              )}
+              {dayRoutines.length > 1 && (
+                <span className="absolute top-1 left-1 min-w-[15px] h-[15px] px-0.5 rounded-full bg-amber-500 text-[8px] font-black text-white flex items-center justify-center leading-none">
+                  {dayRoutines.length}
+                </span>
+              )}
+              <span className={cn("font-bold text-[10px]", isToday ? "text-amber-200/90" : "text-muted-foreground")}>
                 {DAY_NAMES[i]}
               </span>
-              <span className="font-black text-base leading-none">{day.getDate()}</span>
+              <span className={cn("font-black text-base leading-none", isToday && "text-amber-50")}>{day.getDate()}</span>
               {dayRoutines.length > 0 ? <div className="flex flex-col items-center gap-0.5 w-full">
                   <div className="w-full h-1 rounded-full bg-current/20 overflow-hidden">
-                    <div className={cn("h-full rounded-full", isToday ? "bg-white/60" : "bg-amber-400")} style={{
+                    <div className={cn("h-full rounded-full", isToday ? "bg-white/70" : "bg-emerald-400/90")} style={{
                 width: `${dayPct}%`
               }} />
                   </div>
-                  <span className={cn("text-[9px] font-bold", isToday ? "text-amber-100/80" : "text-amber-300/90")}>
-                    {dayRoutines.length > 1 ? `${dayRoutines.length} routines` : `${dayPct}%`}
+                  <span className={cn("text-[9px] font-bold leading-tight text-center", isToday ? "text-amber-100/85" : "text-emerald-300/90")}>
+                    {dayRoutines.length > 1
+                      ? t("pages.routines.index.routines_count_short", {
+                          count: dayRoutines.length,
+                          defaultValue: "{{count}} routines",
+                        })
+                      : `${dayPct}%`}
                   </span>
-                </div> : isWeekend ? <span className="text-[9px]">🏖️</span> : <span className="text-[9px] opacity-50">{t("pages.routines.index.add")}</span>}
+                </div> : isWeekend ? <span className="text-[9px]">🏖️</span> : <span className="text-[9px] opacity-40">{t("pages.routines.index.add")}</span>}
             </button>;
       })}
       </div>
 
       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground px-1">
-        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-[rgba(255,184,0,0.55)] bg-[rgba(255,184,0,0.22)]" />{t("pages.routines.index.today")}</span>
-        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-white/15 bg-white/[0.06]" />{t("pages.routines.index.has_routine")}</span>
+        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-[rgba(255,184,0,0.65)] bg-[rgba(255,184,0,0.22)]" />{t("pages.routines.index.today")}</span>
+        <span className="flex items-center gap-1"><span className="relative w-3 h-3 rounded border border-white/15 bg-white/[0.06]"><span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400" /></span>{t("pages.routines.index.has_routine")}</span>
         <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-white/[0.06] bg-white/[0.03]" />{t("pages.routines.index.weekend_no_school")}</span>
-        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-white/[0.08] bg-[rgba(18,28,60,0.5)]" />{t("pages.routines.index.tap_to_generate")}</span>
+        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-white/[0.06] bg-[rgba(18,28,60,0.45)]" />{t("pages.routines.index.tap_to_generate")}</span>
       </div>
 
     </div>;
@@ -221,7 +238,6 @@ export default function RoutinesList() {
   const {
     isPremium,
     entitlements,
-    loading: subLoading
   } = useSubscription();
   const {
     openPaywall
@@ -231,12 +247,33 @@ export default function RoutinesList() {
   const generateLocked =
     !isPremium && (entitlements?.usage?.features?.routine_generate?.locked ?? false);
 
-  // Quick Generate: premium users with saved last-used settings get a one-tap
-  // shortcut that opens the generate wizard pre-filled and ready to confirm.
-  function buildTodayStr() {
-    const n = new Date();
-    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+  const todayStr = formatRoutineDateKey(new Date());
+  const lockedRoutineIds = new Set<number>(
+    isPremium ? [] : allRoutines.slice(routinesMax).map((r) => r.id),
+  );
+  const isRoutineLocked = (id: number) => !isPremium && lockedRoutineIds.has(id);
+
+  const todayRoutines = allRoutines.filter((r) => r.date.slice(0, 10) === todayStr);
+  const primaryTodayRoutine =
+    todayRoutines.find((r) => !isRoutineLocked(r.id)) ?? todayRoutines[0] ?? null;
+  const hasTodayRoutine = todayRoutines.length > 0;
+
+  function openRoutineById(id: number) {
+    if (isRoutineLocked(id)) {
+      openPaywall("routines_limit");
+      return;
+    }
+    setLocation(`/routines/${id}`);
   }
+
+  function handlePrimaryCta() {
+    if (hasTodayRoutine && primaryTodayRoutine) {
+      openRoutineById(primaryTodayRoutine.id);
+      return;
+    }
+    handleGenerateClick();
+  }
+
   function handleGenerateClick() {
     if (generateLocked) {
       openPaywall("routines_limit");
@@ -244,21 +281,7 @@ export default function RoutinesList() {
       setLocation("/routines/generate");
     }
   }
-  function handleQuickGenerate() {
-    const s = getLastGenSettings();
-    if (!s) {
-      setLocation("/routines/generate");
-      return;
-    }
-    const p = new URLSearchParams({
-      childId:  String(s.childId),
-      mood:     s.mood,
-      weather:  s.weatherOutdoor,
-      caregiver: s.caregiver,
-      date:     buildTodayStr(),
-    });
-    setLocation(`/routines/generate?${p.toString()}`);
-  }
+
   function handleGatedNavigate(path: string) {
     if (generateLocked) {
       openPaywall("routines_limit");
@@ -266,7 +289,6 @@ export default function RoutinesList() {
       setLocation(path);
     }
   }
-  const hasLastSettings = isPremium && !!getLastGenSettings();
 
   const tabTriggerClass = cn(
     HUB_PAGE_CHIP_INACTIVE,
@@ -276,35 +298,7 @@ export default function RoutinesList() {
     "data-[state=inactive]:shadow-none",
   );
 
-  const generateCta = (
-    <div className="flex flex-col gap-2">
-      <Button
-        onClick={handleGenerateClick}
-        size="lg"
-        className={cn(HUB_BOTTOM_CTA, "w-full h-14 text-base justify-center border-0 hover:opacity-95")}
-        data-testid="routines-generate-btn"
-      >
-        <Sparkles className="mr-2 h-5 w-5" />
-        {t("pages.routines.index.generate_child_routine")}
-      </Button>
-      {hasLastSettings && (
-        <Button
-          onClick={handleQuickGenerate}
-          size="lg"
-          variant="outline"
-          className="w-full rounded-full h-12 text-sm font-semibold border-white/15 bg-white/[0.05] text-amber-200/95 hover:bg-white/[0.08]"
-          data-testid="routines-quick-generate-btn"
-        >
-          <Zap className="mr-2 h-4 w-4" />
-          {t("pages.routines.index.use_yesterday_pattern", {
-            defaultValue: "Use yesterday's pattern",
-          })}
-        </Button>
-      )}
-    </div>
-  );
-
-  return <div className={cn(PARENT_HUB_PAGE, "max-w-4xl mx-auto space-y-4 pb-12 animate-in fade-in duration-500")}>
+  return <div className={cn(PARENT_HUB_PAGE, "max-w-4xl mx-auto space-y-4 pb-28 animate-in fade-in duration-500")}>
       <header className="hub-page-enter">
         <h1 className={HUB_SECTION_TITLE}>{t("pages.routines.index.routines")}</h1>
         <p className={HUB_BODY}>{t("pages.routines.index.daily_schedules_generated_by_ai")}</p>
@@ -335,33 +329,79 @@ export default function RoutinesList() {
         <TabsContent value="safety" className="mt-4"><SafetyPanel /></TabsContent>
 
         <TabsContent value="schedule" className="mt-4 flex flex-col gap-5">
-          {generateCta}
+          {/* Primary CTA — single path: Smart Amy AI routine */}
+          <div className="space-y-2 hub-page-enter">
+            <RoutinePremiumCta
+              variant={hasTodayRoutine ? "view" : "generate"}
+              onClick={handlePrimaryCta}
+              testId="routines-primary-cta"
+              title={
+                hasTodayRoutine
+                  ? t("pages.routines.index.view_todays_routine", {
+                      defaultValue: "View today's routine",
+                    })
+                  : t("pages.routines.index.generate_smart_amy", {
+                      defaultValue: "Generate Smart Amy Routine",
+                    })
+              }
+              subtext={
+                hasTodayRoutine
+                  ? t("pages.routines.index.open_in_one_tap", {
+                      defaultValue: "Your schedule is ready — open in one tap",
+                    })
+                  : t("pages.routines.index.ai_powered_subtext", {
+                      defaultValue: "AI-powered personalized routine",
+                    })
+              }
+            />
+            {hasTodayRoutine && (
+              <button
+                type="button"
+                onClick={handleGenerateClick}
+                className="w-full text-center text-xs font-semibold text-muted-foreground hover:text-amber-200/90 py-1 transition-colors"
+              >
+                {t("pages.routines.index.regenerate_secondary", {
+                  defaultValue: "Regenerate routine",
+                })}
+              </button>
+            )}
+          </div>
 
+          {/* Today's generated routine preview */}
+          {primaryTodayRoutine && (
+            <TodayRoutineSection
+              childName={primaryTodayRoutine.childName}
+              title={primaryTodayRoutine.title}
+              createdAt={primaryTodayRoutine.createdAt}
+              items={primaryTodayRoutine.items}
+              onView={() => openRoutineById(primaryTodayRoutine.id)}
+              onRegenerate={handleGenerateClick}
+            />
+          )}
+
+          {/* AI insights & context */}
           <AmyTrustLayer />
           <RoutinesEnvironmentPreview />
           <ChildTodaySignal />
 
+          {/* Week calendar */}
           {isLoading ? (
             <div className="grid gap-4">
               <Skeleton className="h-48 w-full rounded-2xl" />
-            </div>
-          ) : allRoutines.length === 0 ? (
-            <div className={cn(HUB_GLASS_SURFACE, "flex flex-col items-center justify-center py-12 text-center border border-dashed border-amber-400/25")}>
-              <div className={cn(ROUTINES_HUB_ACCENT.emojiShell, "h-14 w-14 text-primary mb-3")}>
-                <Wand2 className="h-7 w-7 text-amber-300" />
-              </div>
-              <h3 className="font-quicksand text-lg font-bold text-foreground mb-1">
-                {t("pages.routines.index.no_routines_yet")}
-              </h3>
-              <p className={cn(HUB_BODY, "max-w-sm opacity-100")}>
-                {t("pages.routines.index.let_the_ai_build_a_perfect_day_for_your_child_based_on_their")}
-              </p>
             </div>
           ) : (
             <div className={cn(hubSectionCardClasses(ROUTINES_HUB_ACCENT), "hub-page-enter overflow-hidden")}>
               <div className="flex">
                 <div className={hubAccentBarClasses(ROUTINES_HUB_ACCENT)} />
                 <div className="flex-1 p-4 sm:p-6">
+                  {allRoutines.length === 0 && (
+                    <p className={cn(HUB_BODY, "mb-4 opacity-100 text-center")}>
+                      {t("pages.routines.index.calendar_empty_hint", {
+                        defaultValue:
+                          "Tap a day below to generate, or use the button above for today's Smart Amy routine.",
+                      })}
+                    </p>
+                  )}
                   <WeekCalendar
                     routines={allRoutines}
                     isPremium={isPremium}
@@ -397,13 +437,18 @@ export default function RoutinesList() {
             </div>
           </CollapsibleRoutinesSection>
 
-          {generateCta}
-
           <SmartMealSuggestions />
 
           <p className="text-center text-[10px] font-medium text-muted-foreground/60 tracking-wide">
             {t("patent_pending.microcopy_routine")}
           </p>
+
+          {primaryTodayRoutine && (
+            <RoutineStickyPill
+              childName={primaryTodayRoutine.childName}
+              onView={() => openRoutineById(primaryTodayRoutine.id)}
+            />
+          )}
 
         </TabsContent>
       </Tabs>

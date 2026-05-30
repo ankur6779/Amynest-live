@@ -3,6 +3,7 @@
  */
 import { useCallback } from "react";
 import { useLocation } from "wouter";
+import { pauseAmyVoiceOnAmyCoachLeave } from "@/lib/amy-voice-route-guard";
 import { logNavError, logNavEvent } from "@/lib/navigation-log";
 import {
   getParentRoute,
@@ -98,6 +99,8 @@ export function appNavigate(
     to: target,
     source: options?.source,
   });
+
+  pauseAmyVoiceOnAmyCoachLeave(current, target);
 
   recordSanitizedTransition(current, target, replace ? "replace" : "push");
   navigate(target, { replace });

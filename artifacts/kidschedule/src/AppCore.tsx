@@ -54,6 +54,7 @@ import { logOnboardingPipelineSnapshot } from "@/lib/onboarding-pipeline-log";
 import { installTtsGestureListener } from "@/lib/tts-guard";
 import { OnboardingStatusProvider, useOnboardingStatus } from "@/contexts/onboarding-status-context";
 import { AmyVoiceProvider } from "@/contexts/amy-voice-provider";
+import { AmyVoiceRouteGuard } from "@/components/amy-voice-route-guard";
 import { AppInitGate } from "@/components/app-init-gate";
 import { CapacitorIosAuthPreload } from "@/components/capacitor-ios-auth-preload";
 import { AuthNavigationBridge } from "@/components/auth-navigation-bridge";
@@ -703,6 +704,7 @@ export default function AppCore() {
           <AppInitGate>
             <WouterRouter base={basePath}>
               <FirebaseActionGate>
+                <AmyVoiceRouteGuard />
                 <AppCoreMountMarker />
                 <AppErrorBoundary label="AppRoutes">
                   <AppRoutes />

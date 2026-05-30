@@ -11,16 +11,21 @@
  */
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-const speakMock = vi.fn();
+const speakMock = vi.fn().mockResolvedValue({ success: true });
 const pauseMock = vi.fn();
 let mockState = { speaking: false, loading: false };
+let capturedOnFinished: (() => void) | undefined;
 
 vi.mock("@/hooks/use-amy-voice", () => ({
   useAmyVoice: () => ({
-    speak: speakMock,
+    speak: (...args: unknown[]) => {
+      const opts = args[1] as { onFinished?: () => void } | undefined;
+      capturedOnFinished = opts?.onFinished;
+      return speakMock(...args);
+    },
     primeSpeakGesture: vi.fn(),
     pause: pauseMock,
     speaking: mockState.speaking,
@@ -50,8 +55,10 @@ const sampleWin: Win = {
 
 beforeEach(() => {
   speakMock.mockReset();
+  speakMock.mockResolvedValue({ success: true });
   pauseMock.mockReset();
   mockState = { speaking: false, loading: false };
+  capturedOnFinished = undefined;
   cleanup();
 });
 
@@ -75,11 +82,36 @@ describe("ListenButton (Coach)", () => {
   });
 
   it("stops in-flight playback when tapped during playback", async () => {
-    mockState.speaking = true;
     const user = userEvent.setup();
     render(<ListenButton win={sampleWin} planCacheKey="plan-test-key" />);
 
     await user.click(screen.getByTestId("coach-listen-btn"));
+    expect(speakMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("coach-listen-btn")).toHaveTextContent("Stop");
+
+    await user.click(screen.getByTestId("coach-listen-btn"));
     expect(pauseMock).toHaveBeenCalled();
+  });
+
+  it("shows Stop while listen-aloud is active even when controller speaking is false", async () => {
+    mockState.speaking = false;
+    const user = userEvent.setup();
+    render(<ListenButton win={sampleWin} planCacheKey="plan-test-key" />);
+
+    await user.click(screen.getByTestId("coach-listen-btn"));
+    expect(screen.getByTestId("coach-listen-btn")).toHaveTextContent("Stop");
+  });
+
+  it("resets Stop state when playback finishes", async () => {
+    speakMock.mockResolvedValue({ success: true });
+    const user = userEvent.setup();
+    render(<ListenButton win={sampleWin} planCacheKey="plan-test-key" />);
+
+    await user.click(screen.getByTestId("coach-listen-btn"));
+    expect(screen.getByTestId("coach-listen-btn")).toHaveTextContent("Stop");
+    await act(async () => {
+      capturedOnFinished?.();
+    });
+    expect(screen.getByTestId("coach-listen-btn")).toHaveTextContent("Listen");
   });
 });

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, type SpeakOptions } from "react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useAppNavigate } from "@/components/app-link";
@@ -2848,7 +2848,8 @@ export function ListenButton({
   win: Win;
   planCacheKey?: string;
 }) {
-  const { speak, pause, speaking, loading } = useAmyVoice();
+  const { speak, pause, loading } = useAmyVoice();
+  const [isListening, setIsListening] = useState(false);
   const audioIdentity = useMemo(() => {
     const key = (planCacheKey ?? "").trim();
     if (!key) return null;
@@ -2860,22 +2861,30 @@ export function ListenButton({
   }, [planCacheKey, win]);
   const buildText = useCallback(() => buildCoachWinListenText(win), [win]);
   const handleClick = () => {
-    if (speaking || loading) {
+    if (isListening || loading) {
       pause();
+      setIsListening(false);
       return;
     }
     const text = buildText();
-    if (audioIdentity) {
-      speak(text, {
-        coach: true,
-        audioIdentity,
-        playbackMode: "partial-ok",
-      });
-      return;
-    }
-    speak(text, { playbackMode: "partial-ok" });
+    const onFinished = () => setIsListening(false);
+    setIsListening(true);
+    const opts = audioIdentity
+      ? {
+          coach: true as const,
+          audioIdentity,
+          playbackMode: "partial-ok" as const,
+          onFinished,
+        }
+      : {
+          playbackMode: "partial-ok" as const,
+          onFinished,
+        };
+    void speak(text, opts).then((res) => {
+      if (!res?.success) setIsListening(false);
+    });
   };
-  const isActive = speaking || loading;
+  const isActive = isListening || loading;
   return <span style={{
     display: "inline-flex",
     alignItems: "center",
@@ -2895,7 +2904,7 @@ export function ListenButton({
       cursor: "pointer"
     }} aria-label={isActive ? "Stop listening" : "Listen to this win"} title={isActive ? "Stop" : "Amy reads this aloud"}>
         {isActive ? <VolumeX size={12} /> : <Volume2 size={12} />}
-        {speaking ? "Stop" : loading ? "…" : "Listen"}
+        {isActive && !loading ? "Stop" : loading ? "…" : "Listen"}
       </button>
     </span>;
 }

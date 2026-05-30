@@ -1624,3 +1624,37 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
     animation: none !important;
   }
 }
+
+/* ── Routine premium CTA ──────────────────────────────────────────── */
+.routine-premium-cta--gradient {
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8a00 48%, #ffc83d 100%);
+}
+
+.routine-premium-cta-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 60%
+  );
+  transform: translateX(-100%);
+  animation: routineCtaShimmer 3.2s ease-in-out infinite;
+}
+
+@keyframes routineCtaShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  45%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .routine-premium-cta-shimmer {
+    animation: none !important;
+  }
+}

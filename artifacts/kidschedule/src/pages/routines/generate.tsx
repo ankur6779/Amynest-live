@@ -52,6 +52,14 @@ import {
 import { FixedActivitiesInlineCard } from "@/components/routines/fixed-activities-inline-card";
 import { FixedActivitiesReviewPanel } from "@/components/routines/fixed-activities-review-panel";
 import { RoutineAdaptationsCard } from "@/components/intelligence/routine-adaptations-card";
+import { RoutinePremiumCta } from "@/components/routines/routine-premium-cta";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
+import { PARENT_HUB_PAGE } from "@/lib/parent-hub-premium";
 import {
   normalizeFixedActivities,
   type FixedActivityDraft,
@@ -545,6 +553,7 @@ export default function RoutineGenerate() {
   const [blockingSaveConfirmed, setBlockingSaveConfirmed] = useState(false);
   const [inlineFixedBlocking, setInlineFixedBlocking] =
     useState<FixedActivitiesResult | null>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const serializedFixedActivities = React.useMemo(
     () =>
@@ -1512,7 +1521,7 @@ export default function RoutineGenerate() {
   const isGeneratingFamily = !!familyProgress;
   const familySelectedCount = Object.values(familyChildSettings).filter(s => s.selected).length;
   const familyReadyCount = Object.entries(familyChildSettings).filter(([, s]) => s.selected && s.hasSchool !== null).length;
-  return <div className="flex flex-col gap-6 animate-in fade-in duration-500 max-w-2xl mx-auto">
+  return <div className={cn(PARENT_HUB_PAGE, "flex flex-col gap-6 animate-in fade-in duration-500 max-w-2xl mx-auto pb-12")}>
       <header className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild className="rounded-full">
           <Link href="/routines"><ArrowLeft className="h-5 w-5" /></Link>
@@ -1697,8 +1706,6 @@ export default function RoutineGenerate() {
                 )}
 
                 <div className="space-y-6">
-                <GenerationGuidanceBanner />
-                <AutoDetectionToggle enabled={useAutoDetection} onChange={setUseAutoDetection} />
                 <InputSection
                   title={t("pages.routines.generate.section_essential", { defaultValue: "Essential inputs" })}
                   subtitle={t("pages.routines.generate.section_essential_hint", { defaultValue: "Required to build today's schedule" })}
@@ -1839,10 +1846,43 @@ export default function RoutineGenerate() {
                 </InputSection>
 
                 <InputSection
-                  title={t("pages.routines.generate.section_environment", { defaultValue: "Environment" })}
+                  title={t("pages.routines.generate.how_is_your_child_feeling_today")}
+                  subtitle={t("pages.routines.generate.section_mood_hint", {
+                    defaultValue: "Amy adapts energy and pacing to their mood",
+                  })}
+                >
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {MOOD_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => { setMoodTouched(true); setMood(opt.value); }}
+                        className={cn(
+                          "flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all",
+                          mood === opt.value
+                            ? "border-amber-400/55 bg-[rgba(255,184,0,0.12)] shadow-[0_0_12px_rgba(255,184,0,0.18)] scale-[1.02]"
+                            : "bg-card/50 border-white/10 hover:border-amber-400/30",
+                        )}
+                      >
+                        <span className="text-2xl">{opt.emoji}</span>
+                        <span className="font-bold text-sm">{opt.label}</span>
+                        <span className="text-[10px] text-center opacity-70 leading-tight">{opt.hint}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {mood !== "normal" && (
+                    <div className="bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2 text-xs text-foreground/70 mt-2">
+                      {t("pages.routines.generate.amy_ai_will_adapt_the_routine_for_a")}{" "}
+                      <strong>{mood}</strong> {t("pages.routines.generate.mood_day")}{" "}
+                      {MOOD_OPTIONS.find(o => o.value === mood)?.hint?.toLowerCase()}.
+                    </div>
+                  )}
+                </InputSection>
+
+                <InputSection
+                  title={t("pages.routines.generate.section_environment", { defaultValue: "Today's context" })}
                   subtitle={t("pages.routines.generate.section_environment_hint", {
-                    defaultValue:
-                      "Live location, weather, AQI, and outdoor allowance for today's routine",
+                    defaultValue: "Weather and outdoor allowance shape today's plan",
                   })}
                 >
                 <EnvironmentSection
@@ -1881,6 +1921,24 @@ export default function RoutineGenerate() {
 
                 {fixedReviewState && (
                   <div ref={fixedReviewRef} className="space-y-4">
+                  <div className="rounded-[20px] border border-emerald-400/35 bg-[rgba(16,185,129,0.08)] backdrop-blur-[18px] p-4">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+                      <div className="space-y-2">
+                        <p className="font-bold text-foreground">
+                          {t("pages.routines.generate.routine_ready_title", {
+                            defaultValue: "Routine ready",
+                          })}
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {t("pages.routines.generate.routine_ready_body", {
+                            defaultValue:
+                              "Amy created a personalized routine using weather, child age, family preferences, and energy level.",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                   {(fixedReviewState.routine.adaptations?.length ?? 0) > 0 ? (
                     <RoutineAdaptationsCard
                       adaptations={fixedReviewState.routine.adaptations}
@@ -1904,7 +1962,7 @@ export default function RoutineGenerate() {
                     onBlockingConfirmedChange={setBlockingSaveConfirmed}
                     onRegenerate={() => {
                       const { shouldOverride, wakeTime } = fixedReviewState;
-                      proceedGenerate(!!shouldOverride, wakeTime);
+                      proceedAiGenerate(!!shouldOverride, wakeTime);
                     }}
                     onSave={() => {
                       if (!fixedReviewState) return;
@@ -1917,37 +1975,48 @@ export default function RoutineGenerate() {
                   </div>
                 )}
 
-                <InputSection
-                  title={t("pages.routines.generate.section_important", { defaultValue: "Important" })}
-                  subtitle={t("pages.routines.generate.section_important_hint", {
-                    defaultValue: "One-off plans are scheduled first — Amy works around them",
-                  })}
-                  highlight
-                >
-                  <SpecialPlansField value={specialPlans} onChange={setSpecialPlans} />
-                </InputSection>
-
-                <InputSection
-                  title={t("pages.routines.generate.section_lifestyle", { defaultValue: "Lifestyle inputs" })}
-                  subtitle={t("pages.routines.generate.section_lifestyle_hint", {
-                    defaultValue: "Optional — improves meals and activity tone",
-                  })}
-                >
-                  <FridgeItemsField value={fridgeItems} onChange={setFridgeItems} />
-                  <div className="space-y-3 pt-2 border-t border-border/50">
-                    <Label className="text-base font-bold">{t("pages.routines.generate.how_is_your_child_feeling_today")}</Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {MOOD_OPTIONS.map(opt => <button key={opt.value} type="button" onClick={() => { setMoodTouched(true); setMood(opt.value); }} className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${mood === opt.value ? `${opt.color} border-2 shadow-sm scale-105` : "bg-card border-border hover:border-primary/40 hover:bg-muted"}`}>
-                        <span className="text-2xl">{opt.emoji}</span>
-                        <span className="font-bold text-sm">{opt.label}</span>
-                        <span className="text-[10px] text-center opacity-70 leading-tight">{opt.hint}</span>
-                      </button>)}
+                <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+                  <CollapsibleTrigger className="w-full flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-[18px] px-4 py-3 text-left hover:border-white/15 transition-colors">
+                    <div>
+                      <p className="text-sm font-bold text-foreground">
+                        {t("pages.routines.generate.advanced_options", {
+                          defaultValue: "Advanced options",
+                        })}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {t("pages.routines.generate.advanced_options_hint", {
+                          defaultValue: "Special plans, fridge items, auto-detection & more",
+                        })}
+                      </p>
                     </div>
-                    {mood !== "normal" && <div className="bg-muted/60 border border-border rounded-xl px-3 py-2 text-xs text-foreground/70">
-                      {t("pages.routines.generate.amy_ai_will_adapt_the_routine_for_a")} <strong>{mood}</strong> {t("pages.routines.generate.mood_day")} {MOOD_OPTIONS.find(o => o.value === mood)?.hint?.toLowerCase()}.
-                    </div>}
-                  </div>
-                </InputSection>
+                    {advancedOpen ? (
+                      <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    )}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-3 space-y-4">
+                    <GenerationGuidanceBanner />
+                    <AutoDetectionToggle enabled={useAutoDetection} onChange={setUseAutoDetection} />
+                    <InputSection
+                      title={t("pages.routines.generate.section_important", { defaultValue: "Important" })}
+                      subtitle={t("pages.routines.generate.section_important_hint", {
+                        defaultValue: "One-off plans are scheduled first — Amy works around them",
+                      })}
+                      highlight
+                    >
+                      <SpecialPlansField value={specialPlans} onChange={setSpecialPlans} />
+                    </InputSection>
+                    <InputSection
+                      title={t("pages.routines.generate.section_lifestyle", { defaultValue: "Lifestyle inputs" })}
+                      subtitle={t("pages.routines.generate.section_lifestyle_hint", {
+                        defaultValue: "Optional — improves meals and activity tone",
+                      })}
+                    >
+                      <FridgeItemsField value={fridgeItems} onChange={setFridgeItems} />
+                    </InputSection>
+                  </CollapsibleContent>
+                </Collapsible>
 
                 <CompletenessBar ready={!!isFormValid} missingOptional={missingOptionalLabels} />
                 <RoutineStylePreview
@@ -1961,24 +2030,25 @@ export default function RoutineGenerate() {
                   {existingRoutine?.exists && !overrideMode ? <p className="text-center text-sm text-primary font-medium bg-muted border border-border rounded-2xl py-3 px-4">
                       {t("pages.routines.generate.choose")} <strong>{t("pages.routines.generate.view_existing_routine_2")}</strong> or <strong>{t("pages.routines.generate.override_regenerate_2")}</strong> {t("pages.routines.generate.above_to_continue")}
                     </p> : <>
-                      {/* Standard rule-based routine */}
-                      <Button onClick={() => handleGenerate(false)} disabled={!isFormValid || isGenerating || isAiGenerating || !!inlineFixedBlocking} size="lg" className={`w-full rounded-full h-14 text-lg font-bold shadow-sm transition-all ${overrideMode ? "bg-primary hover:bg-primary" : ""}`}>
-                        {isGenerating ? <><Sparkles className="h-5 w-5 mr-2 animate-spin" />{t("pages.routines.generate.generating")}</> : overrideMode ? <><RefreshCw className="h-5 w-5 mr-2" />{t("pages.routines.generate.regenerate_override")}</> : <><Sparkles className="h-5 w-5 mr-2" />{t("pages.routines.generate.generate_smart_routine")}</>}
-                      </Button>
+                      <RoutinePremiumCta
+                        variant={isAiGenerating ? "loading" : "generate"}
+                        onClick={() => handleAiGenerate(overrideMode)}
+                        disabled={!isFormValid || isGenerating || !!inlineFixedBlocking || createMutation.isPending}
+                        testId="routines-generate-ai-btn"
+                        title={
+                          overrideMode
+                            ? t("pages.routines.generate.regenerate_override", {
+                                defaultValue: "Regenerate & replace routine",
+                              })
+                            : t("pages.routines.index.generate_smart_amy", {
+                                defaultValue: "Generate Smart Amy Routine",
+                              })
+                        }
+                        subtext={t("pages.routines.index.ai_powered_subtext", {
+                          defaultValue: "AI-powered personalized routine",
+                        })}
+                      />
 
-                      {/* Smart AI Routine button */}
-                      <div className="relative">
-                        <Button onClick={() => handleAiGenerate(false)} disabled={!isFormValid || isGenerating || isAiGenerating || createMutation.isPending || !!inlineFixedBlocking} size="lg" variant="outline" className="w-full rounded-full h-12 text-base font-bold border-2 border-border text-primary hover:bg-muted hover:border-border transition-all">
-                          {isAiGenerating ? <><Brain className="h-5 w-5 mr-2 animate-pulse" />{t("pages.routines.generate.amy_is_thinking")}</> : <><Zap className="h-5 w-5 mr-2" />{t("pages.routines.generate.smart_amy_ai_routine")}</>}
-                        </Button>
-                        <Badge className="absolute -top-2 -right-1 bg-gradient-to-r from-primary to-primary text-white text-[10px] font-bold border-0 px-1.5 py-0.5">
-                          {t("pages.routines.generate.amy_ai")}
-                        </Badge>
-                      </div>
-
-                      <p className="text-center text-xs text-muted-foreground">
-                        {t("pages.routines.generate.standard_routine_is_instant_free_amy_ai_routine_is_smarter_b")}
-                      </p>
                       <p className="text-center text-[9px] font-bold uppercase tracking-widest text-primary/40">
                         {t("patent_pending.microcopy_planning")}
                       </p>
