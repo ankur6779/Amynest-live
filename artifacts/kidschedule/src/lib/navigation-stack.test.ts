@@ -70,6 +70,12 @@ describe("navigation-stack", () => {
     expect(getRecentRoutes()).toEqual(["/parenting-hub"]);
   });
 
+  it("dedupes stack when replace navigates back to the previous frame", () => {
+    recordRouteTransition("/parenting-hub", "/study", "push");
+    recordRouteTransition("/study", "/parenting-hub", "replace");
+    expect(getRecentRoutes()).toEqual(["/parenting-hub"]);
+  });
+
   it("maps nested routine and child routes to their list parents", () => {
     expect(getParentRoute("/routines/abc-123")).toBe("/routines");
     expect(getParentRoute("/children/new")).toBe("/children");

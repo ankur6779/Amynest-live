@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
+import { AppLink } from "@/components/app-link";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { ChevronLeft, BarChart3, Sparkles, Trophy, ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -46,9 +47,9 @@ export default function AICoachProgressPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-      <Link href="/amy-coach" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <AppLink href="/amy-coach" source="ai-coach-progress-back" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ChevronLeft className="h-4 w-4" /> {t("screens.ai_coach_progress.back_to_coach")}
-      </Link>
+      </AppLink>
 
       <div>
         <h1 className="font-quicksand text-2xl font-bold flex items-center gap-2">

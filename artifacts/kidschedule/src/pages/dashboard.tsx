@@ -1,17 +1,15 @@
 import { useTranslation } from "react-i18next";
 import { useGetDashboardSummary, getGetDashboardSummaryQueryKey, useGetRecentRoutines, getGetRecentRoutinesQueryKey, useGetBehaviorStats, getGetBehaviorStatsQueryKey, useListRoutines, getListRoutinesQueryKey, useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Link, Redirect, useLocation } from "wouter";
-import { Calendar, Users, Star, ArrowRight, Activity, TrendingUp, Clock, CheckCircle2, Sparkles, Bot, Brain, Heart, Target, ChevronRight, MapPin, Ribbon } from "lucide-react";
-import { DashboardSectionHeader } from "@/components/dashboard-section-header";
+import { Redirect, useLocation } from "wouter";
+import { AppLink } from "@/components/app-link";
+import { Calendar, Users, Star, ArrowRight, TrendingUp, Clock, CheckCircle2, Sparkles, Brain, Heart, Target, ChevronRight, MapPin } from "lucide-react";
 import {
-  BehaviorHighlightsSection,
-  DashboardWeeklyInsightsCard,
-  RecentRoutinesCollapsible,
-  RewardsCompactCard,
-  TodaySnapshotCard,
-} from "@/components/dashboard-phase2-widgets";
-import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
+  DashboardCoachingCard,
+  DashboardCompactStatsRow,
+  DashboardMoreInsightsSection,
+} from "@/components/dashboard-light-widgets";
+import { formatAge } from "@/lib/age-groups";
 import { AmyIcon } from "@/components/amy-icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
@@ -28,8 +26,6 @@ import { asRoutineList, routineDateKey, routineItems } from "@/lib/routines";
 import { safeFetch } from "@/lib/safe-fetch";
 import { cacheRoutineStreak } from "@/lib/routine-streak-cache";
 import { pickRoutineForIntelligence, resolveFamilyIntelligenceSurface } from "@/lib/family-intelligence-surface";
-import { AmyFamilyMemoryCard } from "@/components/intelligence/amy-family-memory-card";
-import { LockedBlock } from "@/components/locked-block";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { SevenDayJourneyCard } from "@/components/seven-day-journey-card";
 import { useJourney } from "@/hooks/use-journey";
@@ -92,30 +88,6 @@ function computeStreak(routines: Routine[]): number {
 }
 
 type ChildRow = { id: number; name: string; age: number; ageMonths?: number };
-type ChildTodayProgress = { done: number; total: number };
-
-function computeChildProgressMap(
-  children: ChildRow[],
-  routines: Routine[],
-  todayKey: string,
-): Record<number, ChildTodayProgress> {
-  const map: Record<number, ChildTodayProgress> = {};
-  for (const child of children) {
-    const routine = routines.find(
-      (r) => routineDateKey(r) === todayKey && r.childId === child.id,
-    );
-    if (!routine) {
-      map[child.id] = { done: 0, total: 0 };
-      continue;
-    }
-    const items = routineItems<RoutineItem>(routine);
-    map[child.id] = {
-      done: items.filter((i) => i.status === "completed").length,
-      total: items.length,
-    };
-  }
-  return map;
-}
 
 function filterRoutinesByChild(routines: Routine[], childId: number | null): Routine[] {
   if (childId == null) return routines;
@@ -494,142 +466,69 @@ function SmartHeroSection({
 }
 // audit-block-ignore-end
 
-// Tiny section label used to chunk the dashboard into clear groups
-function SectionLabel({
-  children,
-  action
-}: {
-  children: React.ReactNode;
-  action?: React.ReactNode;
-}) {
-  return <div className="flex items-center justify-between mt-1 mb-0.5 px-0.5">
-      <p className="text-[10.5px] font-black uppercase tracking-[0.16em] text-white/60">{children}</p>
-      {action}
-    </div>;
-}
-
-// ─── Children Profile Strip (horizontal scroll) ────────────────────────────
-function ChildrenStrip({
+// ─── Compact child filter chips ────────────────────────────────────────────
+function ChildrenChipBar({
   children,
   selectedChildId,
   onSelectChild,
-  onOpenChild,
-  progressByChildId,
 }: {
   children: ChildRow[];
   selectedChildId: number | null;
   onSelectChild: (id: number | null) => void;
-  onOpenChild: (id: number) => void;
-  progressByChildId: Record<number, ChildTodayProgress>;
 }) {
   const { t } = useTranslation();
   if (!children || children.length === 0) return null;
   const showAll = children.length > 1;
 
   return (
-    <div>
-      <DashboardSectionHeader
-        label={t("dashboard.your_little_ones")}
-        icon={Users}
-        action={
-          <Link href="/children" className="text-[11px] font-bold text-primary hover:underline">
-            {t("dashboard.manage")} →
-          </Link>
-        }
-      />
-      <div className="flex gap-2.5 overflow-x-auto pb-1 snap-x snap-mandatory -mx-0.5 px-0.5 overscroll-x-contain">
-        {showAll ? (
-          <button
-            type="button"
-            onClick={() => onSelectChild(null)}
-            className={`relative shrink-0 snap-start min-w-[100px] rounded-2xl border p-3.5 text-left transition-all ${
-              selectedChildId == null
-                ? "border-primary bg-primary/10 shadow-sm"
-                : "border-border bg-card hover:border-primary/40"
-            }`}
-          >
-            <div className="text-xl mb-1">👨‍👩‍👧</div>
-            <p className="font-bold text-sm text-foreground">{t("dashboard.all_children")}</p>
-          </button>
-        ) : null}
-        {children.map((c, i) => {
-          const ageMonths = c.ageMonths ?? 0;
-          const group = getAgeGroup(c.age, ageMonths);
-          const info = getAgeGroupInfo(group);
-          const selected = selectedChildId === c.id;
-          const prog = progressByChildId[c.id];
-          return (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => {
-                if (selected) onOpenChild(c.id);
-                else onSelectChild(c.id);
-              }}
-              className={`relative shrink-0 snap-start min-w-[160px] sm:min-w-[175px] rounded-2xl border p-3.5 text-left transition-all hover:shadow-sm ${
-                selected
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-card hover:border-primary/40"
-              }`}
-              style={{ animationDelay: `${i * 80}ms` }}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="relative h-10 w-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-muted dark:bg-card border border-border">
-                  {info.emoji}
-                  {prog && prog.total > 0 ? (
-                    <span
-                      className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-card ${
-                        prog.done >= prog.total ? "bg-primary" : "bg-muted-foreground/40"
-                      }`}
-                    />
-                  ) : null}
-                </div>
-                <div className="min-w-0">
-                  <p className="font-bold text-sm leading-tight truncate text-foreground">{c.name}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{formatAge(c.age, ageMonths)}</p>
-                </div>
-              </div>
-              {prog && prog.total > 0 ? (
-                <p className="text-[10px] font-bold text-primary mt-2">
-                  {t("dashboard.tasks_today_short", { done: prog.done, total: prog.total })}
-                </p>
-              ) : null}
-            </button>
-          );
-        })}
-        <Link href="/children/new" className="shrink-0 snap-start min-w-[110px]">
-          <div className="rounded-2xl border border-dashed border-border p-3.5 flex items-center justify-center text-center h-full hover:border-primary/40 hover:bg-muted/50 transition-all">
-            <div>
-              <div className="text-xl mb-1">➕</div>
-              <p className="text-xs font-bold text-muted-foreground">{t("dashboard.add_child")}</p>
-            </div>
-          </div>
-        </Link>
-      </div>
-      {selectedChildId != null && children.length > 1 ? (
+    <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+      {showAll ? (
         <button
           type="button"
           onClick={() => onSelectChild(null)}
-          className="mt-2 text-[11px] font-bold text-primary hover:underline w-full text-center"
+          className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+            selectedChildId == null
+              ? "bg-primary text-primary-foreground"
+              : "border border-border bg-card text-foreground hover:border-primary/40"
+          }`}
         >
-          {t("dashboard.clear_filter")}
+          {t("dashboard.all_children")}
         </button>
       ) : null}
+      {children.map((c) => {
+        const ageMonths = c.ageMonths ?? 0;
+        const selected = selectedChildId === c.id;
+        return (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => onSelectChild(selected && showAll ? null : c.id)}
+            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+              selected
+                ? "bg-primary text-primary-foreground"
+                : "border border-border bg-card text-foreground hover:border-primary/40"
+            }`}
+          >
+            {c.name}
+            <span className="font-normal opacity-75 ml-1">{formatAge(c.age, ageMonths)}</span>
+          </button>
+        );
+      })}
+      <AppLink
+        href="/children/new"
+        source="dashboard-add-child"
+        className="shrink-0 rounded-full border border-dashed border-border px-3 py-1.5 text-xs font-bold text-muted-foreground hover:border-primary/40"
+      >
+        + {t("dashboard.add_child")}
+      </AppLink>
+      <AppLink href="/children" source="dashboard-manage-children" className="shrink-0 text-[11px] font-bold text-primary hover:underline ml-auto">
+        {t("dashboard.manage")}
+      </AppLink>
     </div>
   );
 }
 
-// ─── Live indicator dot ────────────────────────────────────────────────────
-function LiveDot() {
-  const {
-    t
-  } = useTranslation();
-  return <span className="relative inline-flex items-center h-2 w-2" aria-label={t("pages.dashboard.live_data")}>
-      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-muted opacity-75" />
-      <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-    </span>;
-}
-
+// ─── Now / Next Timeline ───────────────────────────────────────────────────
 function TimelineProgressChip({ done, total }: { done: number; total: number }) {
   const { t } = useTranslation();
   if (total <= 0) return null;
@@ -644,7 +543,6 @@ function TimelineProgressChip({ done, total }: { done: number; total: number }) 
   );
 }
 
-// ─── Now / Next Timeline ───────────────────────────────────────────────────
 function NowNextTimeline({
   routines,
   selectedChildName,
@@ -730,7 +628,6 @@ function NowNextTimeline({
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-primary shrink-0" />
             <span className="font-quicksand font-bold text-sm text-foreground">{t("dashboard.todays_timeline")}</span>
-            <LiveDot />
           </div>
           {nextItem ? (
             <p className="text-[11px] text-muted-foreground mt-1 truncate">
@@ -755,7 +652,7 @@ function NowNextTimeline({
         const isCurrent = currentIdx >= 0 && idx === 0;
         const isNext = idx === (currentIdx >= 0 ? 1 : 0);
         const completed = item.status === "completed";
-        return <Link key={`${item.routineId}-${idx}`} href={`/routines/${item.routineId}`}>
+        return <AppLink key={`${item.routineId}-${idx}`} href={`/routines/${item.routineId}`} source="dashboard-routine-timeline">
               <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isCurrent ? "bg-primary text-white" : "bg-muted/50 hover:bg-muted"}`}>
                 <div className={`flex flex-col items-center w-14 shrink-0 ${isCurrent ? "text-white" : "text-muted-foreground"}`}>
                   <div className="text-xs font-bold">{item.time}</div>
@@ -779,215 +676,10 @@ function NowNextTimeline({
                 </div>
                 {completed && !isCurrent && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
               </div>
-            </Link>;
+            </AppLink>;
       })}
       </div>
     </Card>;
-}
-
-type AmyTip = { emoji: string; text: string; actionLabel?: string; href?: string; onAction?: () => void };
-
-// ─── Amy AI Suggestion Card ───────────────────────────────────────────────
-function AmySuggestionCard({
-  routines,
-  streak,
-  onGenerate,
-  suppressGenerate,
-  generatePrimarySource,
-}: {
-  routines: Routine[];
-  streak: number;
-  onGenerate: () => void;
-  suppressGenerate?: boolean;
-  generatePrimarySource?: "journey" | "timeline";
-}) {
-  const { t } = useTranslation();
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const todayRoutines = routines.filter((r) => routineDateKey(r) === todayStr);
-  const allItems = todayRoutines.flatMap((r) => routineItems<RoutineItem>(r));
-  const total = allItems.length;
-  const completed = allItems.filter((i) => i.status === "completed").length;
-  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-  const hour = new Date().getHours();
-  const suggestions: AmyTip[] = [];
-
-  if (total === 0 && !suppressGenerate) {
-    suggestions.push({
-      emoji: "📅",
-      text: "No routine for today yet. Generate one to get started!",
-      actionLabel: t("dashboard.amy_generate_routine"),
-      onAction: onGenerate,
-    });
-  } else if (total === 0 && suppressGenerate && generatePrimarySource) {
-    suggestions.push({
-      emoji: "📅",
-      text: t(
-        generatePrimarySource === "journey"
-          ? "dashboard.amy_no_routine_journey_hint"
-          : "dashboard.amy_no_routine_timeline_hint",
-      ),
-    });
-  } else if (pct < 30 && hour >= 14) {
-    suggestions.push({
-      emoji: "⚡",
-      text: "Your child seems behind today — try shorter, easier tasks to build momentum.",
-      actionLabel: t("dashboard.amy_generate_routine"),
-      onAction: onGenerate,
-    });
-  } else if (pct >= 80) {
-    suggestions.push({
-      emoji: "🌟",
-      text: "Amazing progress today! Consider a small reward to celebrate.",
-      actionLabel: t("dashboard.amy_view_rewards"),
-      href: "/rewards",
-    });
-  }
-  if (hour >= 15 && hour <= 17) {
-    suggestions.push({
-      emoji: "❤️",
-      text: "Good time for a 15-min bonding activity — a quick walk or board game goes a long way.",
-      actionLabel: t("dashboard.amy_open_hub"),
-      href: "/parenting-hub",
-    });
-  }
-  if (streak >= 3) {
-    suggestions.push({
-      emoji: "🔥",
-      text: `You're on a ${streak}-day streak! Consistency builds habits.`,
-      actionLabel: t("dashboard.amy_view_progress"),
-      href: "/progress",
-    });
-  } else if (streak === 0 && hour < 10 && !suppressGenerate) {
-    suggestions.push({
-      emoji: "☀️",
-      text: "Fresh start today! Generate a routine to set a positive tone for the day.",
-      actionLabel: t("dashboard.amy_generate_routine"),
-      onAction: onGenerate,
-    });
-  }
-  if (hour >= 19) {
-    suggestions.push({
-      emoji: "🌙",
-      text: "Wind-down time! End screen time 30 min before sleep for better rest.",
-      actionLabel: t("dashboard.amy_open_hub"),
-      href: "/parenting-hub",
-    });
-  }
-
-  const display = suggestions.slice(0, 1);
-
-  return (
-    <div className="rounded-2xl border border-border bg-muted/30 dark:bg-card overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-        <AmyIcon size={18} bounce />
-        <span className="font-quicksand font-bold text-sm text-foreground">{t("pages.dashboard.amy_ai_suggests")}</span>
-      </div>
-      <div className="p-3 space-y-2">
-        {display.map((s, i) => (
-          <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-card border border-border text-sm">
-            <span className="text-base shrink-0 mt-0.5">{s.emoji}</span>
-            <div className="flex-1 min-w-0 space-y-2">
-              <p className="leading-snug text-foreground/85">{s.text}</p>
-              {s.actionLabel && s.href ? (
-                <Link
-                  href={s.href}
-                  className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-[11px] font-bold px-3 py-1.5 hover:bg-primary/90"
-                >
-                  {s.actionLabel}
-                  <ArrowRight className="h-3 w-3" />
-                </Link>
-              ) : null}
-              {s.actionLabel && s.onAction ? (
-                <button
-                  type="button"
-                  onClick={s.onAction}
-                  className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-[11px] font-bold px-3 py-1.5 hover:bg-primary/90"
-                >
-                  {s.actionLabel}
-                  <ArrowRight className="h-3 w-3" />
-                </button>
-              ) : null}
-            </div>
-          </div>
-        ))}
-        {display.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-2">{t("pages.dashboard.all_looking_good_today")}</p>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-// ─── Parent Score Card ────────────────────────────────────────────────────
-function ParentScoreCard({
-  routines,
-  streak
-}: {
-  routines: Routine[];
-  streak: number;
-}) {
-  const {
-    t
-  } = useTranslation();
-  const last7 = routines.slice(0, 7);
-  const totalItems = last7.flatMap(r => routineItems(r)).length;
-  const completedItems = last7.flatMap(r => routineItems(r)).filter(i => (i as RoutineItem).status === "completed").length;
-  const completionRate = totalItems > 0 ? Math.round(completedItems / totalItems * 100) : 0;
-  const daysActive = last7.length;
-  const streakBonus = Math.min(streak * 5, 30);
-  const score = Math.min(Math.round(completionRate * 0.5 + daysActive * 5 + streakBonus), 100);
-  const grade = score >= 80 ? "A" : score >= 60 ? "B" : score >= 40 ? "C" : "D";
-  const tasksNeeded = score < 60 ? Math.max(1, Math.ceil((60 - score) / 12)) : 0;
-  return <div className="rounded-2xl border border-border bg-card overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-        <Ribbon className="h-4 w-4 text-primary" />
-        <div>
-          <span className="font-quicksand font-bold text-sm text-foreground block">{t("dashboard.parent_score")}</span>
-          <span className="text-[11px] text-muted-foreground">{t("dashboard.parent_score_sub")}</span>
-        </div>
-      </div>
-      <div className="p-4 space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="h-14 w-14 rounded-2xl bg-muted dark:bg-card border border-border flex items-center justify-center shrink-0">
-            <span className="font-black text-2xl text-primary">{grade}</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-black text-2xl text-foreground">{score}</span>
-              <span className="text-xs text-muted-foreground font-bold">/100</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {t("pages.dashboard.completion")} {completionRate}% · {t("pages.dashboard.days_active")} {daysActive}/7
-            </p>
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">{t("pages.dashboard.completion")}</span>
-            <span className="font-bold text-foreground">{completionRate}%</span>
-          </div>
-          <div className="w-full bg-muted rounded-full h-1.5">
-            <div className="bg-primary h-1.5 rounded-full transition-all" style={{
-            width: `${completionRate}%`
-          }} />
-          </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">{t("pages.dashboard.days_active")}</span>
-            <span className="font-bold text-foreground">{daysActive}/7</span>
-          </div>
-          <div className="w-full bg-muted rounded-full h-1.5">
-            <div className="bg-muted h-1.5 rounded-full transition-all" style={{
-            width: `${daysActive / 7 * 100}%`
-          }} />
-          </div>
-        </div>
-        {score < 60 && tasksNeeded > 0 ? (
-          <p className="text-xs text-muted-foreground bg-muted rounded-xl p-2.5 border border-border">
-            {t("dashboard.score_boost_hint", { count: tasksNeeded })}
-          </p>
-        ) : null}
-      </div>
-    </div>;
 }
 
 // ─── Onboarding Screen ────────────────────────────────────────────────────
@@ -1091,23 +783,23 @@ function OnboardingScreen({
           </div>)}
       </div>
       <div className="w-full space-y-3">
-        <Link href="/amy-coach">
+        <AppLink href="/amy-coach" source="dashboard-experience-amy-coach">
           <button className="w-full h-14 rounded-2xl bg-primary hover:bg-primary text-white font-black text-base shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
             <Sparkles className="h-5 w-5" />
             {t("pages.dashboard.experience_now")}
           </button>
-        </Link>
-        <Link href="/parenting-hub">
+        </AppLink>
+        <AppLink href="/parenting-hub" source="dashboard-explore-parenting-hub">
           <button className="w-full h-12 rounded-2xl border-2 border-border bg-background text-foreground font-bold text-sm hover:bg-muted/50 hover:border-border active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
             <BookOpenIcon />
             {t("pages.dashboard.explore_parenting_hub")}
           </button>
-        </Link>
-        <Link href="/life-skills">
+        </AppLink>
+        <AppLink href="/life-skills" source="dashboard-life-skills">
           <button className="w-full h-12 rounded-2xl border-2 border-[hsl(var(--brand-emerald-400))] dark:border-[hsl(var(--brand-emerald-700))] bg-[hsl(var(--brand-emerald-100)/0.5)] dark:bg-[hsl(var(--brand-emerald-800)/0.2)] text-[hsl(var(--brand-emerald-800))] dark:text-[hsl(var(--brand-emerald-100))] font-bold text-sm hover:bg-[hsl(var(--brand-emerald-100)/0.7)] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
             🧭 Life Skills Mode
           </button>
-        </Link>
+        </AppLink>
       </div>
       <p className="text-xs text-muted-foreground text-center mt-6 pb-4">
         {t("pages.dashboard.works_for_ages_0_15_years_science_backed_parenting_plans")}
@@ -1213,10 +905,6 @@ export default function Dashboard() {
   const statsSafe = Array.isArray(stats) ? stats : [];
   const allRoutinesSafe = asRoutineList<Routine>(allRoutines);
   const todayKey = new Date().toISOString().slice(0, 10);
-  const progressByChildId = useMemo(
-    () => computeChildProgressMap(childrenSafe as ChildRow[], allRoutinesSafe, todayKey),
-    [childrenList, allRoutines, todayKey],
-  );
   const filteredRoutines = useMemo(
     () => filterRoutinesByChild(allRoutinesSafe, selectedChildId),
     [allRoutines, selectedChildId],
@@ -1391,12 +1079,8 @@ export default function Dashboard() {
     );
   }
   return (
-    // audit-block-ignore-start
     <div data-on-dark className="dashboard-page w-full min-w-0 max-w-full bg-[#0a1024]">
-      {/* audit-block-ignore-end */}
-      <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-6 md:pb-8">
-
-          {/* ── Hero Greeting ───────────────────────────────────────── */}
+      <div className="flex flex-col gap-4 animate-in fade-in duration-400 pb-6 md:pb-8">
           <SmartHeroSection
             displayName={displayName}
             hasChildren={childrenSafe.length > 0}
@@ -1404,95 +1088,59 @@ export default function Dashboard() {
             childProfiles={childrenSafe.map((c: any) => ({ id: c.id, name: c.name, age: c.age, ageMonths: c.ageMonths ?? 0 }))}
           />
 
-          <SevenDayJourneyCard />
+          <div className="rounded-t-3xl bg-background -mt-1 pt-5 flex flex-col gap-4">
+            <SevenDayJourneyCard />
 
-          {/* ── Two-column layout (desktop) / stacked (mobile) ─────── */}
-          <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 items-start">
-
-            {/* LEFT column: Children + Now/Next */}
-            <div className="flex flex-col gap-5">
-              <ChildrenStrip
-                children={childrenSafe as ChildRow[]}
-                selectedChildId={selectedChildId}
-                onSelectChild={setSelectedChildId}
-                onOpenChild={(id) => setLocation(`/children/${id}`)}
-                progressByChildId={progressByChildId}
+            <div className="order-1 md:order-none">
+              <NowNextTimeline
+                routines={filteredRoutines}
+                selectedChildName={selectedChild?.name ?? null}
+                onGenerate={showTimelineGenerate ? handleGenerateRoutine : undefined}
+                journeyHandlesGenerate={journeyHandlesGenerate}
               />
-              <div>
-                <NowNextTimeline
-                  routines={filteredRoutines}
-                  selectedChildName={selectedChild?.name ?? null}
-                  onGenerate={showTimelineGenerate ? handleGenerateRoutine : undefined}
-                  journeyHandlesGenerate={journeyHandlesGenerate}
-                />
-              </div>
             </div>
 
-            {/* RIGHT column: Snapshot + Amy + Score + Weekly insights */}
-            <div className="flex flex-col gap-4">
-              <DashboardSectionHeader label={t("dashboard.at_a_glance")} icon={Activity} />
-              <div className="-mt-2">
-                {loadingSummary ? (
-                  <Skeleton className="h-36 rounded-2xl" />
-                ) : (
-                  <TodaySnapshotCard
-                    streak={streak}
-                    routines={allRoutinesSafe}
-                    summary={summary}
-                    todayDone={todayProgress.done}
-                    todayTotal={todayProgress.total}
-                  />
-                )}
-              </div>
-              <DashboardSectionHeader label={t("dashboard.coaching")} icon={Sparkles} />
-              <div className="flex flex-col gap-3 -mt-2">
-                <AmySuggestionCard
-                  routines={filteredRoutines}
-                  streak={streak}
-                  onGenerate={handleGenerateRoutine}
-                  suppressGenerate={suppressAmyGenerate}
-                  generatePrimarySource={generatePrimarySource}
-                />
-                <AmyFamilyMemoryCard routines={filteredRoutines} />
-                <ParentScoreCard routines={allRoutinesSafe} streak={streak} />
-                <DashboardWeeklyInsightsCard selectedChildId={selectedChildId} />
-              </div>
-            </div>
-          </div>
-
-          {/* ── Below-fold: Behavior + Recent (shorter scroll) ────── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <BehaviorHighlightsSection
-              stats={filteredBehaviorStats}
-              loading={loadingStats}
-              selectedChildName={selectedChild?.name ?? null}
+            <ChildrenChipBar
+              children={childrenSafe as ChildRow[]}
+              selectedChildId={selectedChildId}
+              onSelectChild={setSelectedChildId}
             />
-            <RecentRoutinesCollapsible routines={filteredRecentRoutines} loading={loadingRoutines} />
+
+            {loadingSummary ? (
+              <Skeleton className="h-12 rounded-xl" />
+            ) : (
+              <DashboardCompactStatsRow
+                streak={streak}
+                routines={allRoutinesSafe}
+                summary={summary}
+                todayDone={todayProgress.done}
+                todayTotal={todayProgress.total}
+              />
+            )}
+
+            <DashboardCoachingCard
+              routines={filteredRoutines}
+              streak={streak}
+              onGenerate={handleGenerateRoutine}
+              suppressGenerate={suppressAmyGenerate}
+              generatePrimarySource={generatePrimarySource}
+            />
+
+            <DashboardMoreInsightsSection
+              allRoutines={allRoutinesSafe}
+              streak={streak}
+              selectedChildId={selectedChildId}
+              filteredBehaviorStats={filteredBehaviorStats}
+              loadingStats={loadingStats}
+              filteredRecentRoutines={filteredRecentRoutines}
+              loadingRoutines={loadingRoutines}
+              selectedChildName={selectedChild?.name ?? null}
+              gamingLocked={hubUsage.isFeatureLocked("hub_gaming_rewards")}
+              onGamingOpen={() => hubUsage.markFeatureUsed("hub_gaming_rewards")}
+              gamingLabel={t("pages.dashboard.gaming_reward")}
+              gamingSub={t("pages.dashboard.earn_points_from_routines_unlock_mini_games_and_redeem_real_")}
+            />
           </div>
-
-          <RewardsCompactCard />
-
-          {/* ── Gaming Reward ─────────────────────────────────────────── */}
-          <LockedBlock locked={hubUsage.isFeatureLocked("hub_gaming_rewards")}>
-            <Link
-              href="/games"
-              onClick={() => hubUsage.markFeatureUsed("hub_gaming_rewards")}
-            >
-              <button type="button" className="w-full text-left rounded-2xl p-4 border border-border hover:border-border dark:hover:border-border bg-card hover:bg-muted dark:hover:bg-card hover:shadow-sm transition-all flex items-center gap-4">
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 text-xl bg-muted dark:bg-card border border-border dark:border-border">
-                  🎮
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-quicksand font-bold text-sm leading-tight text-foreground">{t("pages.dashboard.gaming_reward")}</p>
-                  <p className="text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
-                    {t("pages.dashboard.earn_points_from_routines_unlock_mini_games_and_redeem_real_")}
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-              </button>
-            </Link>
-          </LockedBlock>
-
       </div>
     </div>
   );

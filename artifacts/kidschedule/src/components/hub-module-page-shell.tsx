@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { useLocation } from "wouter";
 import { ArrowLeft, Loader2, UserPlus } from "lucide-react";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
+import { useAppNavigate } from "@/components/app-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LockedBlock } from "@/components/locked-block";
@@ -34,7 +34,7 @@ export function HubModulePageShell({
   emptyMessage?: string;
   children: (ctx: { child: HubChild; totalAgeMonths: number }) => ReactNode;
 }) {
-  const [, setLocation] = useLocation();
+  const { navigate, back } = useAppNavigate();
   const { locked, journeySoft, onEngage } = useHubModuleGate(featureId);
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
@@ -71,11 +71,7 @@ export function HubModulePageShell({
   }, [activeChild]);
 
   const goBack = () => {
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-    setLocation("/parenting-hub");
+    back("hub-module-shell-back");
   };
 
   if (isLoading) {
@@ -108,7 +104,7 @@ export function HubModulePageShell({
               <p className="text-sm text-muted-foreground">
                 {emptyMessage ?? "Add a child profile to get started."}
               </p>
-              <Button className="w-full rounded-2xl" onClick={() => setLocation("/children/new")}>
+              <Button className="w-full rounded-2xl" onClick={() => navigate("/children/new", { source: "hub-module-add-child" })}>
                 Add Child
               </Button>
             </CardContent>
