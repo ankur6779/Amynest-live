@@ -1,26 +1,12 @@
-import { useEffect, useRef, useState, useMemo } from "react";
-import { ChatPlatform } from "@/components/chat-platform";
-import { ChatTypingBubble } from "@/components/chat-bubbles";
-import { CHAT_PROMPT_ATTR, resolveActiveChatPromptId } from "@/lib/chat-platform";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { ChatThread, type ThreadMessage } from "@/components/chat-thread";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Send,
-  Loader2,
-  GraduationCap,
-  HelpCircle,
-  ListChecks,
-  Sparkles,
-  Zap,
-  Check,
-  X,
-  User,
-} from "lucide-react";
+import { Loader2, GraduationCap, HelpCircle, ListChecks, Sparkles, Zap } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -30,15 +16,9 @@ import { useLearningProgress } from "@/hooks/use-learning-progress";
 import { TutorProactiveLines, AmyPresenceStrip } from "@/components/learning-progress";
 import { cn } from "@/lib/utils";
 
-// ─── Types ────────────────────────────────────────────────────────────────
-
 type Mode = "teach" | "practice" | "quiz" | "doubt";
 type Subject = "math" | "english" | "gk" | "logic" | "general";
 
-/**
- * Strict tutor reply contract — mirrors `TutorJsonSchema` on the server.
- * Keep them in sync; if the server adds a field, add it here too.
- */
 interface TutorReply {
   type: Mode;
   content: string;
@@ -51,14 +31,10 @@ interface TutorReply {
 interface ChatTurn {
   id: string;
   role: "user" | "tutor";
-  // For user turns: free text. For tutor turns: structured reply.
   text?: string;
   reply?: TutorReply;
-  /** Tutor turn only — locally tracked answer state (no server write yet). */
   pickedIndex?: number;
 }
-
-// ─── Constants ────────────────────────────────────────────────────────────
 
 const MODE_META: Record<Mode, { icon: typeof GraduationCap; label: string; hint: string }> = {
   teach: { icon: GraduationCap, label: "Teach", hint: "Explain a topic with examples" },
@@ -75,8 +51,6 @@ const SUBJECTS: Array<{ key: Subject; label: string; emoji: string }> = [
   { key: "logic", label: "Logic", emoji: "🧩" },
 ];
 
-// ─── Page ────────────────────────────────────────────────────────────────
-
 export default function AmyAiTutorPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -89,18 +63,8 @@ export default function AmyAiTutorPage() {
   const [input, setInput] = useState("");
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [loading, setLoading] = useState(false);
-
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const scrollApiRef = useRef<{ scrollToEnd: (behavior?: ScrollBehavior) => void } | null>(null);
-  const [showScrollLatest, setShowScrollLatest] = useState(false);
 
-  const handleThreadScroll = (event: React.UIEvent<HTMLDivElement>) => {
-    const thread = event.currentTarget;
-    const distanceFromBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight;
-    setShowScrollLatest(distanceFromBottom > 160);
-  };
-
-  // Pull primary child for context — best-effort.
   const { data: childrenData } = useQuery<Array<{ id?: number; name?: string; age?: number | null }>>({
     queryKey: ["children-for-amy-tutor"],
     queryFn: async () => {
@@ -112,22 +76,16 @@ export default function AmyAiTutorPage() {
   const primaryChild = Array.isArray(childrenData) && childrenData.length > 0 ? childrenData[0] : null;
   const learningProgress = useLearningProgress(primaryChild?.id ?? null);
 
-  // Server-driven daily AI gate (shared with /assistant).
   const dailyLimit = entitlements?.limits.aiQueriesPerDay ?? 10;
   const remainingRaw = entitlements?.usage.aiQueriesRemaining;
   const remaining = isPremium ? Infinity : Math.max(0, remainingRaw ?? dailyLimit);
   const limitReached = !isPremium && remaining <= 0;
 
-  const send = async () => {
+  const send = useCallback(async () => {
     const text = input.trim();
     if (!text || loading || limitReached) return;
 
-    const userTurn: ChatTurn = {
-      id: `u-${Date.now()}`,
-      role: "user",
-      text,
-    };
-    setTurns((t) => [...t, userTurn]);
+    setTurns((prev) => [...prev, { id: `u-${Date.now()}`, role: "user", text }]);
     setInput("");
     setLoading(true);
 
@@ -163,22 +121,13 @@ export default function AmyAiTutorPage() {
       });
       if (res.status === 402) {
         refreshSubscription();
-        window.dispatchEvent(
-          new CustomEvent("amynest:open-paywall", { detail: { reason: "ai_quota" } }),
-        );
+        window.dispatchEvent(new CustomEvent("amynest:open-paywall", { detail: { reason: "ai_quota" } }));
         return;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await readResolvedApiJson<{ reply: TutorReply }>(res, authFetch);
-      if (!data?.reply || typeof data.reply.content !== "string") {
-        throw new Error("invalid_reply_shape");
-      }
-      const tutorTurn: ChatTurn = {
-        id: `t-${Date.now()}`,
-        role: "tutor",
-        reply: data.reply,
-      };
-      setTurns((t) => [...t, tutorTurn]);
+      if (!data?.reply || typeof data.reply.content !== "string") throw new Error("invalid_reply_shape");
+      setTurns((prev) => [...prev, { id: `t-${Date.now()}`, role: "tutor", reply: data.reply }]);
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
     } catch (err) {
       toast({
@@ -189,76 +138,141 @@ export default function AmyAiTutorPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    authFetch,
+    input,
+    learningProgress,
+    limitReached,
+    loading,
+    mode,
+    primaryChild?.id,
+    refreshSubscription,
+    subject,
+    toast,
+    topic,
+  ]);
 
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      send();
+  const pickOption = useCallback((turnId: string, optIdx: number, optionText: string) => {
+    setTurns((all) => [
+      ...all.map((t) => (t.id === turnId ? { ...t, pickedIndex: optIdx } : t)),
+      { id: `u-pick-${Date.now()}`, role: "user" as const, text: optionText },
+    ]);
+  }, []);
+
+  const threadMessages = useMemo((): ThreadMessage[] => {
+    if (turns.length === 0) {
+      return [
+        {
+          kind: "system",
+          id: "empty",
+          content: (
+            <div className="flex h-full flex-col items-center justify-center gap-4 py-8 text-center">
+              <AmyIcon size={88} bounce ring />
+              <div>
+                <h2 className="mb-1 font-quicksand text-xl font-bold text-foreground">
+                  Hi {primaryChild?.name ?? "there"} — what should we learn today?
+                </h2>
+                <p className="mx-auto max-w-xs text-sm text-muted-foreground">
+                  Pick a mode above, then type a question.
+                </p>
+              </div>
+            </div>
+          ),
+        },
+      ];
     }
-  };
 
-  const pickOption = (turnId: string, optIdx: number) => {
-    setTurns((all) =>
-      all.map((t) => (t.id === turnId ? { ...t, pickedIndex: optIdx } : t)),
-    );
-  };
+    const items: ThreadMessage[] = [];
+    for (const turn of turns) {
+      if (turn.role === "user") {
+        items.push({ kind: "user", id: turn.id, text: turn.text ?? "" });
+        continue;
+      }
+      if (!turn.reply) {
+        items.push({
+          kind: "amy",
+          id: turn.id,
+          text: "Amy's reply got lost in the post — try asking again.",
+        });
+        continue;
+      }
+      const reply = turn.reply;
+      const correctIdx =
+        typeof reply.answer === "number" && reply.options[reply.answer] !== undefined
+          ? reply.answer
+          : null;
 
-  const isEmpty = turns.length === 0;
-  const activePromptId = useMemo(
-    () => resolveActiveChatPromptId(turns, { awaitingAnswer: !loading }),
-    [turns, loading],
-  );
+      if (reply.question && reply.options.length > 0) {
+        items.push({
+          kind: "interactive",
+          id: turn.id,
+          interaction: {
+            type: "mcq",
+            content: reply.content,
+            examples: reply.examples,
+            question: reply.question,
+            options: reply.options,
+            correctIndex: correctIdx,
+          },
+          state:
+            turn.pickedIndex !== undefined
+              ? { status: "resolved", pickedIndex: turn.pickedIndex }
+              : { status: "pending" },
+        });
+      } else {
+        items.push({
+          kind: "amy",
+          id: turn.id,
+          text: [reply.content, ...(reply.examples.length ? ["", ...reply.examples.map((e) => `• ${e}`)] : [])].join("\n"),
+        });
+      }
+    }
+    return items;
+  }, [primaryChild?.name, turns]);
 
   return (
     <div
       className="assistant-chat-page chat-container relative mx-auto flex min-h-0 w-full max-w-3xl flex-col bg-background"
       data-testid="amy-tutor-page"
     >
-      {/* Header */}
       <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-4 md:px-0 md:pt-0">
         <div>
-          <h1 className="font-quicksand text-3xl font-bold text-foreground flex items-center gap-2">
+          <h1 className="font-quicksand flex items-center gap-2 text-3xl font-bold text-foreground">
             <AmyIcon size={38} bounce ring />
             Amy AI Tutor
-            <Badge className="bg-card text-white text-xs font-bold border-0 ml-1">
-              <Zap className="h-3 w-3 mr-1" />
+            <Badge className="ml-1 border-0 bg-card text-xs font-bold text-white">
+              <Zap className="mr-1 h-3 w-3" />
               Quick Tutor
             </Badge>
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
             A warm, playful tutor — ask for a lesson, practice, or help with a doubt.
           </p>
         </div>
         <Link href="/learn-with-amy">
-          <Button variant="outline" size="sm" className="shrink-0 rounded-full text-xs gap-1.5">
+          <Button variant="outline" size="sm" className="shrink-0 gap-1.5 rounded-full text-xs">
             <GraduationCap className="h-3.5 w-3.5" />
             Adaptive Tutor
           </Button>
         </Link>
       </div>
 
-      {primaryChild?.id != null && (
-        <div className="mx-4 mb-3 md:mx-0 shrink-0">
+      {primaryChild?.id != null ? (
+        <div className="mx-4 mb-3 shrink-0 md:mx-0">
           <AmyPresenceStrip surface="tutor" childId={primaryChild.id} />
         </div>
-      )}
+      ) : null}
 
-      {learningProgress.phase3 && learningProgress.phase3.tutorLines.length > 0 && (
-        <div className="mx-4 mb-3 md:mx-0 shrink-0">
+      {learningProgress.phase3 && learningProgress.phase3.tutorLines.length > 0 ? (
+        <div className="mx-4 mb-3 shrink-0 md:mx-0">
           <TutorProactiveLines lines={learningProgress.phase3.tutorLines} />
         </div>
-      )}
+      ) : null}
 
-      {/* Daily limit bar */}
       <div
         className={cn(
           "mx-4 mb-3 flex shrink-0 items-center justify-between gap-3 rounded-2xl border px-4 py-2 text-sm md:mx-0",
-          limitReached
-            ? "bg-muted border-border text-foreground"
-            : remaining <= 2
-              ? "bg-muted border-border text-foreground"
-              : "bg-primary/5 border-primary/20 text-primary/80",
+          limitReached ? "border-border bg-muted text-foreground" : "border-primary/20 bg-primary/5 text-primary/80",
         )}
       >
         <div className="flex items-center gap-2">
@@ -271,29 +285,40 @@ export default function AmyAiTutorPage() {
             <span>{remaining} of {dailyLimit} Amy AI replies left today</span>
           )}
         </div>
-        {limitReached && (
+        {limitReached ? (
           <Link href="/pricing">
-            <Button size="sm" className="rounded-full gap-1.5 shrink-0 bg-primary hover:bg-primary text-white" data-testid="button-upgrade-amy-tutor">
+            <Button size="sm" className="shrink-0 gap-1.5 rounded-full bg-primary text-white hover:bg-primary">
               <Zap className="h-3.5 w-3.5" />
               Upgrade
             </Button>
           </Link>
-        )}
+        ) : null}
       </div>
 
-      <ChatPlatform
+      <ChatThread
         surface="amy-ai-tutor"
-        layout="embedded"
+        testId="amy-tutor-thread"
+        messages={threadMessages}
+        draft={input}
+        onDraftChange={setInput}
+        onSend={() => void send()}
+        onInteraction={(event) => {
+          if (event.type === "mcq" && event.pickedIndex != null && event.optionValue) {
+            const turnId = event.messageId;
+            pickOption(turnId, event.pickedIndex, event.optionValue);
+          }
+        }}
+        loading={loading}
+        composerDisabled={limitReached}
+        composerPlaceholder={limitReached ? "Daily limit reached — upgrade to keep going." : "Ask Amy anything…"}
         scrollDeps={[turns, loading, input, mode, subject, topic]}
-        activePromptId={activePromptId}
-        scrollApiRef={scrollApiRef}
-        onMessagesScroll={handleThreadScroll}
         className="min-h-0 flex-1 bg-background"
         messagesClassName="space-y-3 md:px-0"
         footerClassName="border-t border-border/50 bg-background px-0 py-3"
+        textareaRef={inputRef}
         header={(
           <div className="space-y-2 px-4 pb-3 md:px-0">
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label={t("pages.amy_ai_tutor.tutor_mode")}>
+            <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1" role="tablist">
               {(Object.keys(MODE_META) as Mode[]).map((m) => {
                 const meta = MODE_META[m];
                 const Icon = meta.icon;
@@ -312,7 +337,6 @@ export default function AmyAiTutorPage() {
                         ? "border-primary bg-primary text-primary-foreground shadow-sm"
                         : "border-border bg-card text-foreground/80 hover:border-primary/40 hover:bg-primary/5",
                     )}
-                    title={meta.hint}
                   >
                     <Icon className="h-3.5 w-3.5" />
                     {meta.label}
@@ -320,29 +344,26 @@ export default function AmyAiTutorPage() {
                 );
               })}
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label={t("pages.amy_ai_tutor.subject")}>
-              {SUBJECTS.map((s) => {
-                const active = subject === s.key;
-                return (
-                  <button
-                    key={s.key}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    data-testid={`amy-tutor-subject-${s.key}`}
-                    onClick={() => setSubject(s.key)}
-                    className={cn(
-                      "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold whitespace-nowrap transition-colors",
-                      active
-                        ? "border-primary bg-primary text-white"
-                        : "border-border bg-card text-foreground/70 hover:border-primary hover:bg-muted",
-                    )}
-                  >
-                    <span aria-hidden>{s.emoji}</span>
-                    {s.label}
-                  </button>
-                );
-              })}
+            <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1" role="tablist">
+              {SUBJECTS.map((s) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={subject === s.key}
+                  data-testid={`amy-tutor-subject-${s.key}`}
+                  onClick={() => setSubject(s.key)}
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold whitespace-nowrap transition-colors",
+                    subject === s.key
+                      ? "border-primary bg-primary text-white"
+                      : "border-border bg-card text-foreground/70 hover:border-primary hover:bg-muted",
+                  )}
+                >
+                  <span aria-hidden>{s.emoji}</span>
+                  {s.label}
+                </button>
+              ))}
             </div>
             <input
               type="text"
@@ -354,213 +375,7 @@ export default function AmyAiTutorPage() {
             />
           </div>
         )}
-        footer={(
-          <div className="mx-auto w-full max-w-3xl px-4">
-            <div className="flex items-end gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm transition-colors focus-within:border-primary">
-              <Textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={onKeyDown}
-                placeholder={limitReached ? "Daily limit reached — upgrade to keep going." : "Ask Amy anything…"}
-                disabled={limitReached}
-                className="max-h-[120px] min-h-[40px] flex-1 resize-none border-none bg-transparent p-0 text-sm shadow-none focus-visible:ring-0 placeholder:text-muted-foreground disabled:opacity-60"
-                rows={1}
-                data-testid="amy-tutor-input"
-              />
-              <Button
-                onClick={() => send()}
-                disabled={!input.trim() || loading || limitReached}
-                size="icon"
-                className="h-9 w-9 shrink-0 rounded-xl"
-                data-testid="amy-tutor-send"
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-        )}
-      >
-        <div data-testid="amy-tutor-thread">
-          {isEmpty ? (
-            <div className="flex h-full flex-col items-center justify-center gap-4 py-8 text-center">
-              <AmyIcon size={88} bounce ring />
-              <div>
-                <h2 className="mb-1 font-quicksand text-xl font-bold text-foreground">
-                  Hi {primaryChild?.name ?? "there"} — what should we learn today?
-                </h2>
-                <p className="mx-auto max-w-xs text-sm text-muted-foreground">
-                  Pick a mode above, then type a question. Try "Teach me the letter B" or "Quiz me
-                  on addition".
-                </p>
-              </div>
-            </div>
-          ) : (
-            turns.map((turn) => (
-              <TurnView
-                key={turn.id}
-                turn={turn}
-                onPickOption={pickOption}
-                activePromptId={activePromptId}
-              />
-            ))
-          )}
-          {loading ? <ChatTypingBubble /> : null}
-        </div>
-      </ChatPlatform>
-
-      {showScrollLatest && (
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => scrollApiRef.current?.scrollToEnd("smooth")}
-          className="absolute bottom-36 right-4 z-40 rounded-full shadow-lg"
-        >
-          Latest
-        </Button>
-      )}
-    </div>
-  );
-}
-
-// ─── Single-turn view ────────────────────────────────────────────────────
-
-function TurnView({
-  turn,
-  onPickOption,
-  activePromptId,
-}: {
-  turn: ChatTurn;
-  onPickOption: (turnId: string, optIdx: number) => void;
-  activePromptId?: string | null;
-}) {
-  const promptProps =
-    turn.role === "tutor" && turn.id === activePromptId
-      ? { [CHAT_PROMPT_ATTR]: turn.id }
-      : undefined;
-
-  if (turn.role === "user") {
-    return (
-      <div className="flex gap-2.5 flex-row-reverse">
-        <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-secondary/20 text-secondary-foreground">
-          <User className="h-3.5 w-3.5" />
-        </div>
-        <div className="max-w-[85%] items-end flex flex-col gap-1">
-          <Card className="rounded-2xl shadow-sm bg-primary text-primary-foreground border-primary rounded-tr-sm">
-            <CardContent className="p-3">
-              <p className="text-sm leading-relaxed whitespace-pre-wrap text-primary-foreground" data-testid="amy-tutor-user-bubble">
-                {turn.text}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // Defensive: a malformed tutor turn (no reply payload) should never crash
-  // the whole thread — render a neutral placeholder instead (architect flag).
-  if (!turn.reply) {
-    return (
-      <div className="flex gap-2.5 flex-row">
-        <div className="shrink-0">
-          <AmyIcon size={32} ring />
-        </div>
-        <div className="max-w-[85%] items-start flex flex-col gap-1">
-          <Card className="rounded-2xl shadow-sm bg-card border-border rounded-tl-sm">
-            <CardContent className="p-3">
-              <p className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
-                Amy's reply got lost in the post — try asking again.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-  const reply = turn.reply;
-  const correctIdx =
-    typeof reply.answer === "number" && reply.options[reply.answer] !== undefined
-      ? reply.answer
-      : null;
-  const picked = turn.pickedIndex;
-
-  return (
-    <div className="flex gap-2.5 flex-row animate-in fade-in duration-200" {...promptProps}>
-      <div className="shrink-0">
-        <AmyIcon size={32} ring />
-      </div>
-      <div className="max-w-[85%] items-start flex flex-col gap-1">
-        <Card
-          className="rounded-2xl shadow-sm bg-card border-border rounded-tl-sm"
-          data-testid="amy-tutor-tutor-bubble"
-        >
-          <CardContent className="p-3 space-y-2">
-            {reply.content && (
-              <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">{reply.content}</p>
-            )}
-
-            {reply.examples.length > 0 && (
-              <div className="flex flex-wrap gap-1.5" data-testid="amy-tutor-examples">
-                {reply.examples.map((ex, i) => (
-                  <span
-                    key={i}
-                    className="inline-block rounded-full bg-muted text-foreground text-xs font-semibold px-2.5 py-0.5"
-                  >
-                    {ex}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {reply.question && (
-              <div className="mt-2 rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2" data-testid="amy-tutor-question">
-                <p className="text-sm font-bold text-foreground">{reply.question}</p>
-                {reply.options.length > 0 && (
-                  <div className="grid gap-1.5">
-                    {reply.options.map((opt, i) => {
-                      const isPicked = picked === i;
-                      const isCorrect = correctIdx === i;
-                      const showVerdict = picked !== undefined;
-                      const stateClass = !showVerdict
-                        ? "border-border bg-card hover:border-primary/40 hover:bg-primary/10"
-                        : isPicked && isCorrect
-                          ? "border-primary bg-muted text-foreground"
-                          : isPicked && !isCorrect
-                            ? "border-primary bg-muted text-foreground"
-                            : isCorrect
-                              ? "border-border bg-muted text-foreground"
-                              : "border-border opacity-70";
-                      return (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => picked === undefined && onPickOption(turn.id, i)}
-                          disabled={picked !== undefined}
-                          data-testid={`amy-tutor-option-${i}`}
-                          className={cn(
-                            "text-left text-sm rounded-lg border px-3 py-2 transition-colors flex items-center gap-2 w-full",
-                            stateClass,
-                          )}
-                        >
-                          <span className="flex-1">{opt}</span>
-                          {showVerdict && isPicked && isCorrect && <Check className="h-4 w-4 shrink-0 text-primary" />}
-                          {showVerdict && isPicked && !isCorrect && <X className="h-4 w-4 shrink-0 text-destructive" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-                {picked !== undefined && correctIdx !== null && (
-                  <p className="text-xs font-semibold mt-1">
-                    {picked === correctIdx ? "🎉 Right on!" : `The answer is: ${reply.options[correctIdx]}`}
-                  </p>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      />
     </div>
   );
 }

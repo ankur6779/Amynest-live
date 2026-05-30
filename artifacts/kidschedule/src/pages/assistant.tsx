@@ -1,15 +1,14 @@
-import { useState, useRef, useEffect, useMemo } from "react";
-import { ChatPlatform } from "@/components/chat-platform";
-import { ChatTypingBubble } from "@/components/chat-bubbles";
-import { CHAT_PROMPT_ATTR } from "@/lib/chat-platform";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import {
+  ChatThread,
+  type ThreadMessage,
+} from "@/components/chat-thread";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Send, Loader2, User, RefreshCw, Zap, RotateCcw, Heart, GraduationCap, CheckSquare, Lightbulb, HelpCircle, Sparkles } from "lucide-react";
+import { RefreshCw, Zap, Sparkles, Heart, GraduationCap, CheckSquare, Lightbulb, HelpCircle } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -24,12 +23,12 @@ interface Message {
 
 type WebMode = AssistantTabId;
 
-const WEB_MODES: { id: WebMode; labelKey: string; hintKey: string; placeholderKey: string; icon: React.ElementType }[] = [
-  { id: "parenting", labelKey: "ai.mode_parenting", hintKey: "ai.mode_parenting_hint", placeholderKey: "ai.web_placeholder_parenting", icon: Heart },
-  { id: "teach",     labelKey: "ai.mode_teach",     hintKey: "ai.mode_teach_hint",     placeholderKey: "ai.web_placeholder_teach",     icon: GraduationCap },
-  { id: "practice",  labelKey: "ai.mode_practice",  hintKey: "ai.mode_practice_hint",  placeholderKey: "ai.web_placeholder_practice",  icon: CheckSquare },
-  { id: "quiz",      labelKey: "ai.mode_quiz",       hintKey: "ai.mode_quiz_hint",      placeholderKey: "ai.web_placeholder_quiz",       icon: Lightbulb },
-  { id: "doubt",     labelKey: "ai.mode_doubt",      hintKey: "ai.mode_doubt_hint",     placeholderKey: "ai.web_placeholder_doubt",      icon: HelpCircle },
+const WEB_MODES: { id: WebMode; labelKey: string; placeholderKey: string; icon: React.ElementType }[] = [
+  { id: "parenting", labelKey: "ai.mode_parenting", placeholderKey: "ai.web_placeholder_parenting", icon: Heart },
+  { id: "teach", labelKey: "ai.mode_teach", placeholderKey: "ai.web_placeholder_teach", icon: GraduationCap },
+  { id: "practice", labelKey: "ai.mode_practice", placeholderKey: "ai.web_placeholder_practice", icon: CheckSquare },
+  { id: "quiz", labelKey: "ai.mode_quiz", placeholderKey: "ai.web_placeholder_quiz", icon: Lightbulb },
+  { id: "doubt", labelKey: "ai.mode_doubt", placeholderKey: "ai.web_placeholder_doubt", icon: HelpCircle },
 ];
 
 export default function AssistantPage() {
@@ -43,8 +42,6 @@ export default function AssistantPage() {
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const scrollApiRef = useRef<{ scrollToEnd: (behavior?: ScrollBehavior) => void } | null>(null);
-  const [showScrollLatest, setShowScrollLatest] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -52,7 +49,6 @@ export default function AssistantPage() {
     if (q) setInput(q);
   }, []);
 
-  // Load saved chat history on mount so parents can pick up where they left off
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -66,7 +62,7 @@ export default function AssistantPage() {
           .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
         if (past.length > 0) setMessages(past);
       } catch {
-        // non-fatal — empty chat is fine
+        // non-fatal
       } finally {
         if (!cancelled) setHistoryLoaded(true);
       }
@@ -75,19 +71,11 @@ export default function AssistantPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleThreadScroll = (event: React.UIEvent<HTMLDivElement>) => {
-    const thread = event.currentTarget;
-    const distanceFromBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight;
-    setShowScrollLatest(distanceFromBottom > 160);
-  };
-
-  // Server-driven gating — no local quota counter. Premium users have no limit.
   const dailyLimit = entitlements?.limits.aiQueriesPerDay ?? 10;
-  const remainingRaw = entitlements?.usage.aiQueriesRemaining; // null for premium
+  const remainingRaw = entitlements?.usage.aiQueriesRemaining;
   const remaining = isPremium ? Infinity : Math.max(0, remainingRaw ?? dailyLimit);
   const limitReached = !isPremium && remaining <= 0;
 
-  // Pull primary child for richer Amy context (name + age) — best-effort, no error if empty
   const { data: childrenData } = useQuery<Array<{ name?: string; age?: number | null }>>({
     queryKey: ["children-for-assistant"],
     queryFn: async () => {
@@ -102,7 +90,6 @@ export default function AssistantPage() {
     greeting?: string;
     wins?: string[];
     risks?: string[];
-    recommendedActions?: Array<{ title: string; why: string }>;
     suggestedQuestions?: string[];
     healthScore?: number;
     healthTrend?: string;
@@ -118,23 +105,16 @@ export default function AssistantPage() {
     staleTime: 300_000,
   });
 
-  const askOperatingQuestion = (q: string) => {
-    void sendMessage(q);
-  };
-
-  const sendMessage = async (question?: string) => {
+  const sendMessage = useCallback(async (question?: string) => {
     const text = (question ?? input).trim();
     if (!text || loading) return;
 
-    const userMsg: Message = { role: "user", content: text };
-    const nextMessages = [...messages, userMsg];
-    setMessages(nextMessages);
+    setMessages((prev) => [...prev, { role: "user", content: text }]);
     setInput("");
     setLoading(true);
 
     try {
       const { default: i18nInstance } = await import("@/i18n");
-      // Send last 6 turns (excluding the new question, which goes as `question`) for context
       const history = messages.slice(-6).map((m) => ({ role: m.role, content: m.content }));
       const res = await authFetch("/api/ai/assistant-ai", {
         method: "POST",
@@ -149,28 +129,19 @@ export default function AssistantPage() {
       });
       if (res.status === 402) {
         refreshSubscription();
-        // Dispatched event is handled by SubscriptionEventBridge in App.tsx
         window.dispatchEvent(new CustomEvent("amynest:open-paywall", { detail: { reason: "ai_quota" } }));
         return;
       }
       if (!res.ok) throw new Error("api_error");
       const data = await readResolvedApiJson<{ answer?: string }>(res, authFetch);
-      const assistantMsg: Message = { role: "assistant", content: data?.answer ?? "" };
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev) => [...prev, { role: "assistant", content: data?.answer ?? "" }]);
       window.dispatchEvent(new CustomEvent("amynest:refresh-subscription"));
     } catch {
       toast({ title: t("ai.error_response"), variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
+  }, [authFetch, input, loading, messages, primaryChild?.age, primaryChild?.name, refreshSubscription, t, toast]);
 
   const clearChat = async () => {
     setMessages([]);
@@ -179,119 +150,160 @@ export default function AssistantPage() {
     try {
       await authFetch("/api/ai/messages", { method: "DELETE" });
     } catch {
-      // non-fatal — UI is already cleared
+      // non-fatal
     }
   };
 
-  // Suppress the empty-state flash while we're still loading saved history
   const isEmpty = historyLoaded && messages.length === 0;
   const tabTopics = TAB_TOPICS[mode] ?? [];
 
-  const activePromptId = useMemo(() => {
-    if (loading) return null;
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === "assistant") return `assistant-msg-${i}`;
-    }
-    return null;
-  }, [messages, loading]);
+  const threadMessages = useMemo((): ThreadMessage[] => {
+    const items: ThreadMessage[] = [];
 
-  const handleTopicClick = (topicKey: string) => {
-    const text = t(topicKey);
-    setInput(text);
-    textareaRef.current?.focus();
-    void sendMessage(text);
-  };
-
-  const renderSystemLimitMessage = () => (
-    <div className="flex justify-center px-1">
-      <div className="w-full max-w-md rounded-2xl border border-border/60 bg-muted/40 px-4 py-3 text-center text-sm text-foreground">
-        <p>{t("ai.system_limit_message")}</p>
-        <Link href="/pricing" className="mt-2 inline-block">
-          <Button size="sm" className="rounded-full gap-1.5" data-testid="button-upgrade-system">
-            <Zap className="h-3.5 w-3.5" />
-            {t("ai.upgrade_premium")}
-          </Button>
-        </Link>
-      </div>
-    </div>
-  );
-
-  const renderMessageBubble = (msg: Message, i: number) => {
-    const promptKey = `assistant-msg-${i}`;
-    const promptProps =
-      msg.role === "assistant" && activePromptId === promptKey
-        ? { [CHAT_PROMPT_ATTR]: activePromptId }
-        : undefined;
-
-    if (msg.role === "system") {
-      return (
-        <div key={`system-${i}`} className="flex justify-center">
-          <div className="max-w-[90%] rounded-2xl border border-dashed border-border bg-muted/30 px-4 py-2.5 text-center text-sm text-muted-foreground">
-            {msg.content}
+    if (limitReached) {
+      items.push({
+        kind: "system",
+        id: "limit",
+        content: (
+          <div className="flex justify-center px-1">
+            <div className="w-full max-w-md rounded-2xl border border-border/60 bg-muted/40 px-4 py-3 text-center text-sm text-foreground">
+              <p>{t("ai.system_limit_message")}</p>
+              <Link href="/pricing" className="mt-2 inline-block">
+                <Button size="sm" className="gap-1.5 rounded-full" data-testid="button-upgrade-system">
+                  <Zap className="h-3.5 w-3.5" />
+                  {t("ai.upgrade_premium")}
+                </Button>
+              </Link>
+            </div>
           </div>
-        </div>
-      );
+        ),
+      });
     }
 
-    return (
-      <div
-        key={i}
-        className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
-        {...promptProps}
-      >
-        <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-          msg.role !== "assistant" ? "bg-secondary/20 text-secondary-foreground" : ""
-        }`}>
-          {msg.role === "assistant" ? <AmyIcon size={32} ring /> : <User className="h-3.5 w-3.5" />}
-        </div>
-        <div className={`max-w-[85%] ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col gap-1`}>
-          <Card className={`rounded-2xl shadow-sm ${
-            msg.role === "user"
-              ? "bg-primary text-primary-foreground border-primary rounded-tr-sm"
-              : "bg-card border-border rounded-tl-sm"
-          }`}>
-            <CardContent className="p-3">
-              <p className={`text-sm leading-relaxed whitespace-pre-wrap ${
-                msg.role === "user" ? "text-primary-foreground" : "text-foreground"
-              }`}>
+    if (isEmpty) {
+      if (dailyBriefing?.greeting) {
+        items.push({
+          kind: "system",
+          id: "briefing",
+          content: (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="space-y-3 p-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-semibold text-foreground">{dailyBriefing.greeting}</p>
+                </div>
+                {dailyBriefing.continuationLine ? (
+                  <p className="border-l-2 border-primary/40 pl-2 text-xs italic text-primary/90">
+                    {dailyBriefing.continuationLine}
+                  </p>
+                ) : null}
+                {dailyBriefing.suggestedQuestions && dailyBriefing.suggestedQuestions.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {dailyBriefing.suggestedQuestions.slice(0, 3).map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => void sendMessage(q)}
+                        disabled={limitReached}
+                        className="rounded-full border border-primary/30 bg-background px-2.5 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-40"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          ),
+        });
+      } else {
+        items.push({
+          kind: "system",
+          id: "empty",
+          content: <p className="text-center text-sm text-muted-foreground">{t("ai.empty_short")}</p>,
+        });
+      }
+
+      if (tabTopics.length > 0) {
+        items.push({
+          kind: "interactive",
+          id: "topic-grid",
+          interaction: {
+            type: "topic-grid",
+            topics: tabTopics.map((key) => ({ id: key, label: t(key) })),
+          },
+          state: { status: "pending" },
+        });
+      }
+      return items;
+    }
+
+    messages.forEach((msg, i) => {
+      if (msg.role === "system") {
+        items.push({
+          kind: "system",
+          id: `system-${i}`,
+          content: (
+            <div className="flex justify-center">
+              <div className="max-w-[90%] rounded-2xl border border-dashed border-border bg-muted/30 px-4 py-2.5 text-center text-sm text-muted-foreground">
                 {msg.content}
-              </p>
-            </CardContent>
-          </Card>
-          {msg.role === "assistant" && (
-            <Badge variant="outline" className="text-[10px] text-muted-foreground border-none px-0 h-auto">
-              {t("ai.disclaimer")}
-            </Badge>
-          )}
-          {msg.role === "user" && !loading && !limitReached && (
-            <button
-              type="button"
-              onClick={() => sendMessage(msg.content)}
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors px-1"
-              data-testid={`ask-again-${i}`}
-              aria-label={t("ai.ask_again")}
-            >
-              <RotateCcw className="h-3 w-3" />
-              {t("ai.ask_again")}
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
+              </div>
+            </div>
+          ),
+        });
+        return;
+      }
+      if (msg.role === "user") {
+        items.push({
+          kind: "user",
+          id: `user-${i}`,
+          text: msg.content,
+          askAgain: !loading && !limitReached
+            ? { label: t("ai.ask_again"), onAskAgain: () => void sendMessage(msg.content) }
+            : undefined,
+        });
+        return;
+      }
+      items.push({
+        kind: "amy",
+        id: `assistant-msg-${i}`,
+        text: msg.content,
+        disclaimer: t("ai.disclaimer"),
+      });
+    });
+
+    return items;
+  }, [dailyBriefing, isEmpty, limitReached, loading, messages, sendMessage, tabTopics, t]);
 
   return (
     <div className="assistant-chat-page relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col bg-background">
-      <ChatPlatform
+      <ChatThread
         surface="assistant"
-        layout="embedded"
+        testId="assistant-chat-thread"
+        messages={threadMessages}
+        draft={input}
+        onDraftChange={setInput}
+        onSend={() => void sendMessage()}
+        onInteraction={(event) => {
+          if (event.type === "topic-grid" && event.optionValue) {
+            setInput(event.optionValue);
+            textareaRef.current?.focus();
+            void sendMessage(event.optionValue);
+          }
+        }}
+        loading={loading}
+        composerDisabled={limitReached}
+        composerPlaceholder={
+          limitReached
+            ? t("ai.input_limit_placeholder")
+            : t(WEB_MODES.find((m) => m.id === mode)!.placeholderKey)
+        }
         scrollDeps={[messages, loading, historyLoaded, mode, input]}
-        activePromptId={activePromptId}
-        scrollApiRef={scrollApiRef}
-        onMessagesScroll={handleThreadScroll}
+        scrollToLatestLabel={t("ai.scroll_latest", { defaultValue: "Latest" })}
         className="bg-background"
         messagesClassName="max-w-3xl space-y-3"
         footerClassName="border-t border-border/50 bg-background px-0 py-3"
+        textareaRef={textareaRef}
         header={(
           <header className="assistant-chat-header">
             <div className="flex items-center justify-between gap-2">
@@ -301,12 +313,12 @@ export default function AssistantPage() {
                   {t("ai.page_title")}
                 </h1>
               </div>
-              {!isEmpty && (
+              {!isEmpty ? (
                 <Button variant="ghost" size="sm" onClick={clearChat} className="h-8 shrink-0 rounded-full px-2 text-muted-foreground">
                   <RefreshCw className="h-4 w-4" />
                   <span className="sr-only">{t("ai.clear_chat")}</span>
                 </Button>
-              )}
+              ) : null}
             </div>
             <div className="assistant-chat-tabs mt-2 flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
               {WEB_MODES.map(({ id, labelKey, icon: Icon }) => (
@@ -326,127 +338,7 @@ export default function AssistantPage() {
             </div>
           </header>
         )}
-        footer={(
-          <div className="mx-auto w-full max-w-3xl px-4">
-            <div className="flex items-end gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm transition-colors focus-within:border-primary">
-              <Textarea
-                ref={textareaRef}
-                placeholder={
-                  limitReached
-                    ? t("ai.input_limit_placeholder")
-                    : t(WEB_MODES.find((m) => m.id === mode)!.placeholderKey)
-                }
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={limitReached}
-                className="max-h-[120px] min-h-[40px] flex-1 resize-none border-none bg-transparent p-0 text-sm shadow-none focus-visible:ring-0 placeholder:text-muted-foreground disabled:opacity-60"
-                rows={1}
-              />
-              <Button
-                onClick={() => sendMessage()}
-                disabled={!input.trim() || loading || limitReached}
-                size="icon"
-                className="h-9 w-9 shrink-0 rounded-xl"
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-        )}
-      >
-        {limitReached ? renderSystemLimitMessage() : null}
-
-        {isEmpty ? (
-          <div className="flex flex-col gap-3 py-2">
-            {dailyBriefing?.greeting ? (
-              <Card className="border-primary/20 bg-primary/5">
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <p className="text-sm font-semibold text-foreground">{dailyBriefing.greeting}</p>
-                  </div>
-                  {dailyBriefing.continuationLine ? (
-                    <p className="text-xs text-primary/90 italic border-l-2 border-primary/40 pl-2">
-                      {dailyBriefing.continuationLine}
-                    </p>
-                  ) : null}
-                  {dailyBriefing.healthScore != null ? (
-                    <p className="text-xs text-muted-foreground">
-                      Family health: {dailyBriefing.healthScore}/100
-                      {dailyBriefing.healthTrend ? ` · ${dailyBriefing.healthTrend}` : ""}
-                    </p>
-                  ) : null}
-                  {dailyBriefing.wins && dailyBriefing.wins.length > 0 ? (
-                    <ul className="text-xs text-foreground/80 space-y-1">
-                      {dailyBriefing.wins.slice(0, 2).map((w) => (
-                        <li key={w}>✓ {w}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  {dailyBriefing.risks && dailyBriefing.risks.length > 0 ? (
-                    <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1">
-                      {dailyBriefing.risks.slice(0, 1).map((r) => (
-                        <li key={r}>⚠ {r}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  {dailyBriefing.suggestedQuestions && dailyBriefing.suggestedQuestions.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {dailyBriefing.suggestedQuestions.slice(0, 3).map((q) => (
-                        <button
-                          key={q}
-                          type="button"
-                          onClick={() => askOperatingQuestion(q)}
-                          disabled={limitReached}
-                          className="rounded-full border border-primary/30 bg-background px-2.5 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-40"
-                        >
-                          {q}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                </CardContent>
-              </Card>
-            ) : (
-              <p className="text-center text-sm text-muted-foreground">{t("ai.empty_short")}</p>
-            )}
-            {tabTopics.length === 0 ? (
-              <p className="text-center text-sm text-muted-foreground">{t("ai.no_tab_topics")}</p>
-            ) : (
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {tabTopics.map((topicKey) => (
-                  <button
-                    key={topicKey}
-                    type="button"
-                    onClick={() => handleTopicClick(topicKey)}
-                    disabled={limitReached}
-                    className="rounded-xl border border-border bg-card p-2.5 text-left text-sm font-medium text-foreground/80 transition-all hover:border-primary/50 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    {t(topicKey)}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <>
-            {messages.map((msg, i) => renderMessageBubble(msg, i))}
-            {loading ? <ChatTypingBubble /> : null}
-          </>
-        )}
-      </ChatPlatform>
-
-      {showScrollLatest && (
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => scrollApiRef.current?.scrollToEnd("smooth")}
-          className="absolute bottom-36 right-4 z-40 rounded-full shadow-lg"
-        >
-          {t("ai.scroll_latest", { defaultValue: "Latest" })}
-        </Button>
-      )}
+      />
     </div>
   );
 }

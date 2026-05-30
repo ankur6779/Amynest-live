@@ -30,6 +30,10 @@ const REQUIRED_CHAT_PLATFORM_PAGES = [
   "amy-learning-tutor.tsx",
 ] as const;
 
+function pageUsesChatPlatformShell(content: string): boolean {
+  return /<ChatPlatform\b/.test(content) || /<ChatThread\b/.test(content);
+}
+
 /** Patterns that must never appear outside ChatPlatform internals. */
 const FORBIDDEN_OUTSIDE_PLATFORM = [
   { pattern: /useKeyboardChatLayout\s*\(/, label: "useKeyboardChatLayout()" },
@@ -103,8 +107,8 @@ for (const file of walk(KIDSCHEDULE_SRC)) {
 for (const page of REQUIRED_CHAT_PLATFORM_PAGES) {
   const path = join(PAGES, page);
   const content = readFileSync(path, "utf8");
-  if (!/<ChatPlatform\b/.test(content)) {
-    violations.push(`pages/${page}: must render ChatPlatform`);
+  if (!pageUsesChatPlatformShell(content)) {
+    violations.push(`pages/${page}: must render ChatPlatform or ChatThread`);
   }
   if (/from\s+["']@\/components\/chat-thread-shell["']/.test(content)) {
     violations.push(`pages/${page}: import ChatPlatform instead of deprecated chat-thread-shell`);

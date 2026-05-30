@@ -121,9 +121,21 @@ export function useKeyboardChatLayout(
     [buildVisibilityContext, remoteConfig.chatPlatformVisibilityProtection, forcePromptVisibilityMode],
   );
 
+  const scrollTimelineToEnd = useCallback((behavior: ScrollBehavior = "instant") => {
+    const end = endRef.current;
+    const messagesEl = messagesRef.current;
+    if (!end || !messagesEl) return;
+    end.scrollIntoView({ behavior: behavior === "smooth" ? "smooth" : "auto", block: "end" });
+  }, []);
+
   const runSelfHealingVisibility = useCallback(
     (behavior: ScrollBehavior = "instant") => {
       if (!remoteConfig.chatPlatformVisibilityProtection) return;
+
+      if (!activePromptIdRef.current) {
+        scrollTimelineToEnd(behavior);
+        return;
+      }
 
       healRef.current?.cancel();
       const ctx = buildVisibilityContext();
@@ -148,7 +160,7 @@ export function useKeyboardChatLayout(
         { forcePromptVisibilityMode },
       );
     },
-    [buildVisibilityContext, remoteConfig.chatPlatformVisibilityProtection, forcePromptVisibilityMode],
+    [buildVisibilityContext, remoteConfig.chatPlatformVisibilityProtection, forcePromptVisibilityMode, scrollTimelineToEnd],
   );
 
   function measureFallbackSnapshot() {
