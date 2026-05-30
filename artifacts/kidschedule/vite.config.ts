@@ -285,8 +285,6 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     assetsDir: "assets",
-    // Hidden source maps for production crash triage (not referenced in bundle).
-    sourcemap: "hidden",
     rollupOptions: {
       output: {
         // Hashed filenames under /assets — bust CDN/browser cache on every deploy.

@@ -826,7 +826,7 @@ class MainActivity : AppCompatActivity() {
 
     // ── System chrome ────────────────────────────────────────────────────────
 
-    /** Edge-to-edge inset bridge: status/nav cutouts + IME → CSS variables for the web shell. */
+    /** Keyboard inset + shell class only (no status/nav safe-area padding). */
     private fun resolveActiveKeyboardPackage(): String {
         return try {
             Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
@@ -839,33 +839,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyWebSafeAreaInsets(insets: WindowInsetsCompat) {
         if (!::webView.isInitialized) return
-        val density = resources.displayMetrics.density
-        val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-        val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-        val displayCutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
         val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-
-        val topPx = maxOf(statusBars.top, displayCutout.top).coerceAtLeast(0)
-        val leftPx = maxOf(statusBars.left, displayCutout.left, navBars.left).coerceAtLeast(0)
-        val rightPx = maxOf(statusBars.right, displayCutout.right, navBars.right).coerceAtLeast(0)
-        val bottomNavPx = navBars.bottom.coerceIn(0, 72).let { reported ->
-            if (reported > 0) reported else (48 * density).toInt()
-        }
-
         val imeBottomPx = ime.bottom.coerceAtLeast(0)
         val webViewHeight = webView.height.coerceAtLeast(0)
         // adjustResize already shrinks the WebView — do not subtract IME height again.
         val visibleHeightPx = if (webViewHeight > 0) webViewHeight else 0
         val keyboardPackage = if (imeBottomPx > 0) resolveActiveKeyboardPackage() else ""
-
         val js =
             "(function(){" +
                 "var r=document.documentElement;" +
-                "r.style.setProperty('--sat','${topPx}px');" +
-                "r.style.setProperty('--sal','${leftPx}px');" +
-                "r.style.setProperty('--sar','${rightPx}px');" +
-                "r.style.setProperty('--sab','${bottomNavPx}px');" +
-                "r.style.setProperty('--app-bottom-clearance','${bottomNavPx}px');" +
                 "r.style.setProperty('--auth-keyboard-inset-native','${imeBottomPx}px');" +
                 (if (imeBottomPx > 0) {
                     "r.style.setProperty('--auth-keyboard-inset','${imeBottomPx}px');"

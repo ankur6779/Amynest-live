@@ -183,7 +183,7 @@ export const TYPE = {
   cardTitle: "font-quicksand text-sm font-semibold",
   body: "text-sm leading-relaxed",
   micro: "text-xs text-muted-foreground leading-relaxed",
-  pill: "text-xs font-medium",
+  pill: "text-[11px] font-medium",
 } as const;
 
 // ─── Design QA checklist (developer reference) ─────────────────────────────

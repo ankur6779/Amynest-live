@@ -33,7 +33,6 @@ import { LockedBlock } from "@/components/locked-block";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { SevenDayJourneyCard } from "@/components/seven-day-journey-card";
 import { useJourney } from "@/hooks/use-journey";
-import { SCREEN_SPACING } from "@/lib/experience-system";
 
 const HeroAmbientLayer = lazyPage(() =>
   import("@/components/hero-ambient-layer").then((m) => ({
@@ -405,7 +404,7 @@ function SmartHeroSection({
       <div className="relative flex items-center justify-between gap-2">
         <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-white/70">{greeting}</p>
         {ctx && (
-          <div className="shrink-0 flex items-center gap-1.5 rounded-full px-2.5 py-1 border border-white/20 text-xs font-bold text-white/90" style={{ background: "rgba(0,0,0,0.25)" }}>
+          <div className="shrink-0 flex items-center gap-1.5 rounded-full px-2.5 py-1 border border-white/20 text-[11px] font-bold text-white/90" style={{ background: "rgba(0,0,0,0.25)" }}>
             <span>{weatherEmoji}</span>
             {snap.temperatureC != null && <span>{snap.temperatureC}°C</span>}
             <span className="text-white/50">·</span>
@@ -452,7 +451,7 @@ function SmartHeroSection({
             <div className="shrink-0 flex items-center gap-1 text-xs rounded-lg px-2 py-1 border border-white/15" style={{ background: "rgba(0,0,0,0.20)" }}>
               🌡️ <span className="font-bold text-white">{snap.temperatureC}°C</span>
               {snap.apparentC != null && snap.apparentC !== snap.temperatureC && (
-                <span className="text-white/55 text-xs ml-0.5">feels {snap.apparentC}°C</span>
+                <span className="text-white/55 text-[10px] ml-0.5">feels {snap.apparentC}°C</span>
               )}
             </div>
           )}
@@ -460,7 +459,7 @@ function SmartHeroSection({
             <div className="shrink-0 flex items-center gap-1.5 text-xs rounded-lg px-2 py-1 border border-white/15" style={{ background: "rgba(0,0,0,0.20)" }}>
               <span className="h-1.5 w-1.5 rounded-full animate-pulse shrink-0" style={{ background: aqiMeta.dotColor }} />
               <span className="font-bold text-white">AQI {snap.aqiUs}</span>
-              <span className="text-white/60 text-xs">{aqiMeta.label}</span>
+              <span className="text-white/60 text-[10px]">{aqiMeta.label}</span>
             </div>
           )}
           {snap.humidityPct != null && (
@@ -488,7 +487,7 @@ function SmartHeroSection({
             {ctx && snap.aqiUs != null && ` · AQI ${aqiMeta.label}`}
           </span>
         </span>
-        {!hasChildren && <span className="text-xs text-white/65">{t("dashboard.setup_first")}</span>}
+        {!hasChildren && <span className="text-[11px] text-white/65">{t("dashboard.setup_first")}</span>}
       </div>
     </div>
   );
@@ -533,7 +532,7 @@ function ChildrenStrip({
         label={t("dashboard.your_little_ones")}
         icon={Users}
         action={
-          <Link href="/children" className="text-xs font-bold text-primary hover:underline">
+          <Link href="/children" className="text-[11px] font-bold text-primary hover:underline">
             {t("dashboard.manage")} →
           </Link>
         }
@@ -587,11 +586,11 @@ function ChildrenStrip({
                 </div>
                 <div className="min-w-0">
                   <p className="font-bold text-sm leading-tight truncate text-foreground">{c.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{formatAge(c.age, ageMonths)}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{formatAge(c.age, ageMonths)}</p>
                 </div>
               </div>
               {prog && prog.total > 0 ? (
-                <p className="text-xs font-bold text-primary mt-2">
+                <p className="text-[10px] font-bold text-primary mt-2">
                   {t("dashboard.tasks_today_short", { done: prog.done, total: prog.total })}
                 </p>
               ) : null}
@@ -611,7 +610,7 @@ function ChildrenStrip({
         <button
           type="button"
           onClick={() => onSelectChild(null)}
-          className="mt-2 text-xs font-bold text-primary hover:underline w-full text-center"
+          className="mt-2 text-[11px] font-bold text-primary hover:underline w-full text-center"
         >
           {t("dashboard.clear_filter")}
         </button>
@@ -637,7 +636,7 @@ function TimelineProgressChip({ done, total }: { done: number; total: number }) 
   const pct = Math.min(100, Math.round((done / total) * 100));
   return (
     <div className="text-right shrink-0">
-      <p className="text-xs font-bold text-primary">{t("dashboard.timeline_progress", { done, total })}</p>
+      <p className="text-[11px] font-bold text-primary">{t("dashboard.timeline_progress", { done, total })}</p>
       <div className="w-[72px] h-1 rounded-full bg-muted mt-1 ml-auto overflow-hidden">
         <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
       </div>
@@ -734,18 +733,18 @@ function NowNextTimeline({
             <LiveDot />
           </div>
           {nextItem ? (
-            <p className="text-xs text-muted-foreground mt-1 truncate">
+            <p className="text-[11px] text-muted-foreground mt-1 truncate">
               {t("dashboard.timeline_next_up", { task: nextItem.activity })}
             </p>
           ) : doneCount > 0 && doneCount >= allTodayItems.length ? (
-            <p className="text-xs text-muted-foreground mt-1">{t("dashboard.day_complete")}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">{t("dashboard.day_complete")}</p>
           ) : null}
         </div>
         <TimelineProgressChip done={doneCount} total={allTodayItems.length} />
       </div>
       {todaySurface ? (
         <div className="px-4 py-2 border-b border-border bg-primary/5">
-          <p className="text-xs leading-snug text-muted-foreground">
+          <p className="text-[11px] leading-snug text-muted-foreground">
             <Sparkles className="h-3 w-3 inline mr-1 align-text-bottom text-primary" />
             {todaySurface.headline}
           </p>
@@ -760,8 +759,8 @@ function NowNextTimeline({
               <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isCurrent ? "bg-primary text-white" : "bg-muted/50 hover:bg-muted"}`}>
                 <div className={`flex flex-col items-center w-14 shrink-0 ${isCurrent ? "text-white" : "text-muted-foreground"}`}>
                   <div className="text-xs font-bold">{item.time}</div>
-                  {isCurrent && <span className="mt-1 text-xs font-black uppercase bg-white/25 px-1.5 py-0.5 rounded-full">{t("pages.dashboard.now")}</span>}
-                  {!isCurrent && isNext && <span className="mt-1 text-xs font-black uppercase bg-muted dark:bg-card text-primary dark:text-muted-foreground px-1.5 py-0.5 rounded-full">{t("pages.dashboard.next")}</span>}
+                  {isCurrent && <span className="mt-1 text-[9px] font-black uppercase bg-white/25 px-1.5 py-0.5 rounded-full">{t("pages.dashboard.now")}</span>}
+                  {!isCurrent && isNext && <span className="mt-1 text-[9px] font-black uppercase bg-muted dark:bg-card text-primary dark:text-muted-foreground px-1.5 py-0.5 rounded-full">{t("pages.dashboard.next")}</span>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className={`font-bold text-sm ${isCurrent ? "text-white" : "text-foreground"} ${completed ? "line-through opacity-60" : ""}`} style={{
@@ -770,9 +769,9 @@ function NowNextTimeline({
               }}>
                     {item.activity}
                   </div>
-                  <div className={`text-xs mt-0.5 flex items-center gap-1.5 flex-wrap ${isCurrent ? "text-muted-foreground" : "text-muted-foreground"}`}>
+                  <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 flex-wrap ${isCurrent ? "text-muted-foreground" : "text-muted-foreground"}`}>
                     <span>{item.childName} · {item.duration}m</span>
-                    {item.ageBand && <span className={`inline-flex items-center gap-0.5 text-xs font-bold rounded-full px-1.5 py-0.5 border ${isCurrent ? "bg-white/20 text-white border-white/30" : "text-primary bg-muted border-border"}`}>
+                    {item.ageBand && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold rounded-full px-1.5 py-0.5 border ${isCurrent ? "bg-white/20 text-white border-white/30" : "text-primary bg-muted border-border"}`}>
                         <Users className="h-2.5 w-2.5" />
                         {t("pages.dashboard.ages")} {item.ageBand.replace("-", "–")}
                       </span>}
@@ -892,7 +891,7 @@ function AmySuggestionCard({
               {s.actionLabel && s.href ? (
                 <Link
                   href={s.href}
-                  className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-xs font-bold px-3 py-1.5 hover:bg-primary/90"
+                  className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-[11px] font-bold px-3 py-1.5 hover:bg-primary/90"
                 >
                   {s.actionLabel}
                   <ArrowRight className="h-3 w-3" />
@@ -902,7 +901,7 @@ function AmySuggestionCard({
                 <button
                   type="button"
                   onClick={s.onAction}
-                  className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-xs font-bold px-3 py-1.5 hover:bg-primary/90"
+                  className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-[11px] font-bold px-3 py-1.5 hover:bg-primary/90"
                 >
                   {s.actionLabel}
                   <ArrowRight className="h-3 w-3" />
@@ -944,7 +943,7 @@ function ParentScoreCard({
         <Ribbon className="h-4 w-4 text-primary" />
         <div>
           <span className="font-quicksand font-bold text-sm text-foreground block">{t("dashboard.parent_score")}</span>
-          <span className="text-xs text-muted-foreground">{t("dashboard.parent_score_sub")}</span>
+          <span className="text-[11px] text-muted-foreground">{t("dashboard.parent_score_sub")}</span>
         </div>
       </div>
       <div className="p-4 space-y-3">
@@ -1371,9 +1370,9 @@ export default function Dashboard() {
   if (loadingSummary) {
     return (
       // audit-block-ignore-start
-      <div data-on-dark className={`dashboard-page w-full min-w-0 max-w-full bg-[#0a1024] ${SCREEN_SPACING.pageBottom}`}>
+      <div data-on-dark className="dashboard-page w-full min-w-0 max-w-full bg-[#0a1024]">
         {/* audit-block-ignore-end */}
-        <div className="flex flex-col gap-6 animate-in fade-in duration-400 pb-6 md:pb-8">
+        <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-6 md:pb-8">
           <Skeleton className="h-16 w-full rounded-2xl" />
           <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-5">
             <div className="flex flex-col gap-4">
@@ -1393,7 +1392,7 @@ export default function Dashboard() {
   }
   return (
     // audit-block-ignore-start
-    <div data-on-dark className={`dashboard-page w-full min-w-0 max-w-full bg-[#0a1024] ${SCREEN_SPACING.pageBottom}`}>
+    <div data-on-dark className="dashboard-page w-full min-w-0 max-w-full bg-[#0a1024]">
       {/* audit-block-ignore-end */}
       <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-6 md:pb-8">
 
@@ -1411,7 +1410,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 items-start">
 
             {/* LEFT column: Children + Now/Next */}
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-5">
               <ChildrenStrip
                 children={childrenSafe as ChildRow[]}
                 selectedChildId={selectedChildId}

@@ -9,11 +9,6 @@ import { handleRecoveryReload } from "@/lib/clear-cache-reload";
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
 import { showProductionCrashOverlay, showReactCrashOverlay } from "@/lib/production-crash-overlay";
 import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";
-import {
-  normalizeBoundaryError,
-  safeBoundaryMessage,
-  safeInvokeBoundaryHandler,
-} from "@/lib/safe-error-boundary-catch";
 
 function errorMessage(err: unknown): string {
   if (err instanceof Error) return `${err.message}\n${err.stack ?? ""}`;
@@ -86,28 +81,26 @@ export class ReactInstanceRecovery extends Component<
   }
 
   componentDidCatch(err: unknown, info: ErrorInfo): void {
-    safeInvokeBoundaryHandler("ReactInstanceRecovery", () => {
-      const error = normalizeBoundaryError(err);
-      const message = safeBoundaryMessage(err);
-      // eslint-disable-next-line no-console
-      console.error(
-        "[amynest-recovery] CAUGHT:",
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    // eslint-disable-next-line no-console
+    console.error(
+      "[amynest-recovery] CAUGHT:",
+      message,
+      "\nerror.stack:\n",
+      stack ?? "(no stack)",
+      "\nreact componentStack:\n",
+      info.componentStack ?? "(no component stack)",
+    );
+    if (err instanceof Error) {
+      showReactCrashOverlay(err, "ReactInstanceRecovery", info.componentStack ?? undefined);
+    } else {
+      showProductionCrashOverlay({
+        kind: "react.recovery",
         message,
-        "\nerror.stack:\n",
-        error.stack ?? "(no stack)",
-        "\nreact componentStack:\n",
-        info.componentStack ?? "(no component stack)",
-      );
-      if (err instanceof Error) {
-        showReactCrashOverlay(error, "ReactInstanceRecovery", info.componentStack ?? undefined);
-      } else {
-        showProductionCrashOverlay({
-          kind: "react.recovery",
-          message,
-          stack: info.componentStack ?? undefined,
-        });
-      }
-    });
+        stack: info.componentStack ?? undefined,
+      });
+    }
   }
 
   render(): ReactNode {

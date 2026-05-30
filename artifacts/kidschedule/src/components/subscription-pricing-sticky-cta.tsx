@@ -39,14 +39,14 @@ export function SubscriptionPricingStickyCta({
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0B0B1A]/95 px-4 pt-3 pb-[max(0.75rem,var(--sab,env(safe-area-inset-bottom,0px)))] backdrop-blur-md shadow-[0_-8px_32px_rgba(0,0,0,0.45)]"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0B0B1A]/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md shadow-[0_-8px_32px_rgba(0,0,0,0.45)]"
       data-testid="pricing-sticky-cta"
     >
       <div className="mx-auto flex max-w-md items-center gap-3">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-extrabold text-white">{title}</p>
           <p className="text-lg font-black text-white leading-tight">{priceLine}</p>
-          <p className="text-xs text-white/55 leading-snug">{billingLine}</p>
+          <p className="text-[10px] text-white/55 leading-snug">{billingLine}</p>
         </div>
         <Button
           type="button"

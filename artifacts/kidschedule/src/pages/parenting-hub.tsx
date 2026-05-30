@@ -85,7 +85,6 @@ import {
   AmyPresenceStrip,
 } from "@/components/learning-progress";
 import { useRewardCelebrations } from "@/hooks/use-reward-celebrations";
-import { SCREEN_SPACING } from "@/lib/experience-system";
 
 // ── 5-section grouping for the "For You" content ────────────────────────────
 // Maps each premium section key to the tile IDs that live inside it.
@@ -223,7 +222,7 @@ function HubSection({
       </button>
       {!open && preview ? (
         <div className="px-4 pb-3 -mt-0.5">
-          <p className="text-xs font-medium text-primary/85 line-clamp-1 flex items-center gap-1">
+          <p className="text-[11px] font-medium text-primary/85 line-clamp-1 flex items-center gap-1">
             <Sparkles className="h-3 w-3 shrink-0 opacity-80" />
             {preview}
           </p>
@@ -348,13 +347,13 @@ function AmyAISuggestionsSection() {
           <ArrowRight className="h-4 w-4 ml-auto" />
         </Button>
       </Link>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
         <Link href="/learn-with-amy">
           <Button className="w-full rounded-xl gap-2 text-sm font-semibold h-auto py-3">
             <GraduationCap className="h-4 w-4 shrink-0" />
             <span className="text-left leading-tight">
               {t("parent_hub.amy.learn_cta")}
-              <span className="block text-xs font-normal opacity-80">
+              <span className="block text-[10px] font-normal opacity-80">
                 {t("parent_hub.amy.learn_cta_hint")}
               </span>
             </span>
@@ -366,7 +365,7 @@ function AmyAISuggestionsSection() {
             <Sparkles className="h-4 w-4 shrink-0" />
             <span className="text-left leading-tight">
               {t("parent_hub.amy.quick_tutor_cta")}
-              <span className="block text-xs font-normal opacity-80">
+              <span className="block text-[10px] font-normal opacity-80">
                 {t("parent_hub.amy.quick_tutor_cta_hint")}
               </span>
             </span>
@@ -406,7 +405,7 @@ function EmotionalSupportSection({
       <p className="text-sm text-muted-foreground">
         {t("parent_hub.emotional_footer.lead")}
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {orderedIds.map((id, idx) => {
         const title = t(`parent_hub.emotional_cards.${id}.title`);
         const subtitle = t(`parent_hub.emotional_cards.${id}.subtitle`);
@@ -420,7 +419,7 @@ function EmotionalSupportSection({
                   isHighlighted ? "ring-2 ring-primary/45 shadow-[0_0_20px_-4px_rgba(168,85,247,0.45)]" : "",
                 ].join(" ")}>
                   {isHighlighted ? (
-                    <span className="text-xs font-bold uppercase tracking-wide text-primary mb-1 block">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-primary mb-1 block">
                       {t("parent_hub.emotional_footer.suggested_for_you")}
                     </span>
                   ) : null}
@@ -503,7 +502,7 @@ function SubSection({
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-[13px] leading-tight text-foreground line-clamp-2">{title}</p>
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{description}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{description}</p>
           </div>
         </div>
         <span className={["shrink-0 w-6 h-6 rounded-full flex items-center justify-center", "border border-border/50 bg-white/60 dark:bg-white/5", "transition-transform duration-300", open ? "rotate-180 text-primary border-primary/40" : "text-muted-foreground"].join(" ")}>
@@ -731,13 +730,13 @@ function ChildSelectorPanel({
                 <p className={`font-bold text-sm truncate ${isSelected ? "text-primary" : "text-foreground"}`}>
                   {child?.name ?? "Child"}
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-[10px] text-muted-foreground mt-0.5">
                   {info.emoji} {ageLabel}
                 </p>
               </div>
 
               {/* Active chip */}
-              {isSelected && <span className="text-xs font-bold uppercase tracking-wider text-primary/80 bg-primary/10 rounded-full px-2 py-0.5">
+              {isSelected && <span className="text-[9px] font-bold uppercase tracking-wider text-primary/80 bg-primary/10 rounded-full px-2 py-0.5">
                   {t("pages.parenting_hub.viewing")}
                 </span>}
             </button>;
@@ -1402,7 +1401,7 @@ function ParentingHubPage() {
 
   const previousStageTileIds = getPreviousStageTileIds(sections, currentBand, totalAgeMonths);
 
-  return <div className={`max-w-6xl mx-auto space-y-8 pb-12 ${SCREEN_SPACING.pageBottom}`}>
+  return <div className="max-w-6xl mx-auto space-y-6 pb-12">
       <PageHeader />
 
       {/* ── Child Selector Panel ────────────────────────────────────────── */}
@@ -1584,7 +1583,7 @@ function ParentingHubPage() {
                         {t(group.i18n)}
                       </span>
                       {isSupport && !isOpen ? (
-                        <span className="block text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                        <span className="block text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
                           {t("parent_hub.support.group_subtitle", { count: groupGrid.length })}
                         </span>
                       ) : null}
@@ -1687,8 +1686,8 @@ function ForYouHeader({
   const groupInfo = ageGroup ? getAgeGroupInfo(ageGroup) : null;
   return <div className="pt-1">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-bold uppercase tracking-[0.18em] text-primary/80">{t("parent_hub.headers.section1_for")}</span>
-        <Badge variant="outline" className="rounded-full px-2.5 py-0 h-5 font-semibold text-xs gap-1">
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary/80">{t("parent_hub.headers.section1_for")}</span>
+        <Badge variant="outline" className="rounded-full px-2.5 py-0 h-5 font-semibold text-[10px] gap-1">
           {bandLabel(band)}
         </Badge>
       </div>
@@ -1719,8 +1718,8 @@ function PreviousStageHeader({
   const { t } = useTranslation();
   return <div className="pt-6">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground/80">{t("parent_hub.headers.previous_stage_section")}</span>
-        <Badge variant="outline" className="rounded-full px-2.5 py-0 h-5 font-semibold text-xs gap-1 border-muted-foreground/30 text-muted-foreground">
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/80">{t("parent_hub.headers.previous_stage_section")}</span>
+        <Badge variant="outline" className="rounded-full px-2.5 py-0 h-5 font-semibold text-[10px] gap-1 border-muted-foreground/30 text-muted-foreground">
           {bandLabel(band)}
         </Badge>
       </div>
@@ -1746,8 +1745,8 @@ function ExploreNextHeader({
   } = useTranslation();
   return <div className="pt-6">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-bold uppercase tracking-[0.18em] text-primary/80">{t("parent_hub.headers.section2_next")}</span>
-        <Badge variant="outline" className="rounded-full px-2.5 py-0 h-5 font-semibold text-xs gap-1 border-border text-primary">
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary/80">{t("parent_hub.headers.section2_next")}</span>
+        <Badge variant="outline" className="rounded-full px-2.5 py-0 h-5 font-semibold text-[10px] gap-1 border-border text-primary">
           {bandLabel(band)}
         </Badge>
       </div>
@@ -1778,7 +1777,7 @@ function PageHeader() {
         <p className="text-sm text-muted-foreground mt-0.5">
           {t("hub.subtitle")}
         </p>
-        <p className="text-xs font-bold uppercase tracking-widest mt-1 text-primary/35">
+        <p className="text-[9px] font-bold uppercase tracking-widest mt-1 text-primary/35">
           {t("patent_pending.hub_trust")}
         </p>
       </div>
