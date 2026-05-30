@@ -56,17 +56,45 @@ add(
 // 4. Safe area CSS utilities
 const css = read("artifacts/kidschedule/src/index.css");
 add(
-  "CSS safe-area utilities",
-  /\.safe-area-bottom/.test(css) && /body\.has-tabbar/.test(css),
-  "index.css scroll + safe-area helpers",
+  "CSS tabbar total height token",
+  /--tabbar-total-height/.test(css) && /--tabbar-visual-height/.test(css),
+  "index.css layout tokens",
+);
+add(
+  "Scroll reserves FAB overhang",
+  /body\.has-tabbar[\s\S]*--fab-overhang/.test(css),
+  "has-tabbar scroll includes fab-overhang",
 );
 add(
   "Android header uses --sat",
   /amynest-android-shell \.app-header[\s\S]*--sat/.test(css),
   "Android header top inset",
 );
+add(
+  "Footer owns single --sab padding",
+  /\.app-footer[\s\S]*padding-bottom:\s*var\(--sab/.test(css),
+  ".app-footer is sole bottom inset owner",
+);
+add(
+  "Footer nav fixed visual height",
+  /\.app-footer__nav[\s\S]*--tabbar-visual-height/.test(css),
+  "Tab row height capped at visual 72px",
+);
 
-// 5. ChatPlatform message padding
+// 5. No double safe-area on tab bar inner row
+const tabBar = read("artifacts/kidschedule/src/components/mobile-tab-bar.tsx");
+add(
+  "Tab bar inner row has no safe-area-bottom",
+  !/safe-area-bottom/.test(tabBar),
+  "mobile-tab-bar.tsx must not duplicate --sab",
+);
+add(
+  "Tab bar nav aria-label",
+  /nav\.main_navigation|Main navigation/.test(tabBar),
+  "mobile-tab-bar.tsx",
+);
+
+// 6. ChatPlatform message padding
 const chat = read("artifacts/kidschedule/src/components/chat-platform.tsx");
 add(
   "Chat messages include --sab",
@@ -74,7 +102,7 @@ add(
   "chat-platform.tsx messages padding",
 );
 
-// 6. Composer accessibility
+// 7. Composer accessibility
 const composer = read("artifacts/kidschedule/src/components/chat-thread/persistent-composer.tsx");
 add(
   "Composer send labeled",
@@ -82,12 +110,19 @@ add(
   "persistent-composer.tsx",
 );
 
-// 7. Tab bar nav label
-const tabBar = read("artifacts/kidschedule/src/components/mobile-tab-bar.tsx");
+// 8. Dashboard no redundant pageBottom
+const dashboard = read("artifacts/kidschedule/src/pages/dashboard.tsx");
 add(
-  "Tab bar nav aria-label",
-  /nav\.main_navigation|Main navigation/.test(tabBar),
-  "mobile-tab-bar.tsx",
+  "Dashboard omits SCREEN_SPACING.pageBottom",
+  !/SCREEN_SPACING\.pageBottom/.test(dashboard) && !/pageBottom/.test(dashboard),
+  "dashboard.tsx scroll clearance via .app-scroll only",
+);
+
+// 9. FAB fallback uses tabbar-total-height
+add(
+  "FAB fallback uses tabbar-total-height",
+  /#amy-fab-floating:not\(\.amy-fab-in-footer\)[\s\S]*--tabbar-total-height/.test(css),
+  "index.css non-embedded FAB offset",
 );
 
 const failed = checks.filter((c) => !c.pass);

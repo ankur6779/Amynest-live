@@ -7,7 +7,13 @@
   --sat: 0px;
   --sal: 0px;
   --sar: 0px;
-  --tabbar-height: 72px;
+  /* Visual tab row height (pre-stabilization design). --sab extends below this in .app-footer only. */
+  --tabbar-visual-height: 72px;
+  --tabbar-height: var(--tabbar-visual-height);
+  --fab-overhang: 8px;
+  --tabbar-total-height: calc(
+    var(--tabbar-visual-height) + var(--sab, env(safe-area-inset-bottom, 0px))
+  );
   --app-bottom-clearance: 0px;
 }
 
@@ -634,7 +640,8 @@ body.has-tabbar .app-scroll,
 body.has-tabbar .page-content,
 body.has-tabbar .main-content {
   padding-bottom: calc(
-    var(--tabbar-height, 72px) + var(--sab, env(safe-area-inset-bottom, 0px))
+    var(--tabbar-total-height, calc(72px + var(--sab, env(safe-area-inset-bottom, 0px))))
+    + var(--fab-overhang, 8px)
   );
 }
 
@@ -876,7 +883,7 @@ html.amynest-native-shell .app-footer.tabbar {
   position: fixed;
   bottom: 0;
   height: auto;
-  min-height: var(--tabbar-height, 72px);
+  min-height: var(--tabbar-visual-height, 72px);
   padding-bottom: var(--sab, env(safe-area-inset-bottom, 0px));
   margin: 0 !important;
   transform: none !important;
@@ -913,7 +920,7 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
   right: 0;
   bottom: 0;
   height: auto;
-  min-height: var(--tabbar-height, 72px);
+  min-height: var(--tabbar-visual-height, 72px);
   padding-bottom: var(--sab, env(safe-area-inset-bottom, 0px));
   margin: 0 !important;
   box-sizing: border-box;
@@ -927,7 +934,9 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
 .app-footer__nav {
   display: flex;
   width: 100%;
-  min-height: 72px;
+  height: var(--tabbar-visual-height, 72px);
+  min-height: var(--tabbar-visual-height, 72px);
+  max-height: var(--tabbar-visual-height, 72px);
   align-items: flex-end;
   box-sizing: border-box;
   pointer-events: auto;
@@ -941,7 +950,7 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
   right: max(10px, env(safe-area-inset-right, 0px)) !important;
   left: auto !important;
   top: auto !important;
-  bottom: calc(100% + 8px) !important;
+  bottom: calc(100% + var(--fab-overhang, 8px)) !important;
   width: auto !important;
   max-width: none !important;
   transform: none !important;
@@ -956,7 +965,7 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
   right: max(10px, env(safe-area-inset-right, 0px)) !important;
   left: auto !important;
   top: auto !important;
-  bottom: calc(72px + 8px) !important;
+  bottom: calc(var(--tabbar-total-height, 72px) + var(--fab-overhang, 8px)) !important;
   transform: none !important;
   z-index: 2000;
   margin: 0 !important;

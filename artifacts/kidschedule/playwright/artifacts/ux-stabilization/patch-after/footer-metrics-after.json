@@ -1,0 +1,9 @@
+{
+  "navHeight": 72,
+  "footerHeight": 106,
+  "sabInsetBelowNav": 34,
+  "footerPaddingBottom": "34px",
+  "scrollPaddingBottom": "114px",
+  "scrollPaddingPx": 114,
+  "sab": "34px"
+}
