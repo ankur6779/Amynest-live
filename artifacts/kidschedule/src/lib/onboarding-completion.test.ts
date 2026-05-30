@@ -16,6 +16,7 @@ import {
 import { createOnboardingRunId, getOnboardingRunId } from "@/lib/onboarding-telemetry";
 import {
   applySetupStatusUpdate,
+  clearOnboardingCompletionCache,
   isSetupComplete,
   readOnboardingCache,
   repairLocalFromServerComplete,
@@ -75,6 +76,7 @@ describe("setup status merge", () => {
 describe("server complete repairs local incomplete", () => {
   beforeEach(() => {
     localStorage.clear();
+    clearOnboardingCompletionCache();
     saveOnboardingChatSession({
       step: "parent-allergies",
       messages: [],
@@ -190,6 +192,7 @@ describe("runOnboardingFinishTransaction", () => {
 describe("resolveSetupStatus bootstrap", () => {
   beforeEach(() => {
     localStorage.clear();
+    clearOnboardingCompletionCache();
   });
 
   it("Scenario B/E: server complete routes to dashboard state after reload", async () => {

@@ -20,10 +20,20 @@ export function isSetupComplete(data: SetupStatus | undefined): boolean {
   return data.onboardingComplete || data.profileComplete;
 }
 
+const ONBOARDING_COMPLETE_SESSION_KEY = "amynest_onboarding_complete_v1";
+
 export function readOnboardingCache(): SetupStatus {
-  const cached =
-    typeof localStorage !== "undefined" &&
-    localStorage.getItem("onboardingComplete") === "true";
+  let cached = false;
+  if (typeof localStorage !== "undefined") {
+    cached = localStorage.getItem("onboardingComplete") === "true";
+  }
+  if (!cached && typeof sessionStorage !== "undefined") {
+    try {
+      cached = sessionStorage.getItem(ONBOARDING_COMPLETE_SESSION_KEY) === "true";
+    } catch {
+      /* ignore */
+    }
+  }
   return { onboardingComplete: cached, profileComplete: cached };
 }
 
@@ -32,16 +42,31 @@ export function readOnboardingCache(): SetupStatus {
  * Use {@link clearOnboardingCompletionCache} for explicit server-driven resets only.
  */
 export function persistOnboardingCache(data: SetupStatus): void {
-  if (typeof localStorage === "undefined") return;
-  if (isSetupComplete(data)) {
+  if (!isSetupComplete(data)) return;
+  if (typeof localStorage !== "undefined") {
     localStorage.setItem("onboardingComplete", "true");
+  }
+  if (typeof sessionStorage !== "undefined") {
+    try {
+      sessionStorage.setItem(ONBOARDING_COMPLETE_SESSION_KEY, "true");
+    } catch {
+      /* ignore */
+    }
   }
 }
 
 /** Explicit reset — not used during bootstrap or refresh paths. */
 export function clearOnboardingCompletionCache(): void {
-  if (typeof localStorage === "undefined") return;
-  localStorage.removeItem("onboardingComplete");
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem("onboardingComplete");
+  }
+  if (typeof sessionStorage !== "undefined") {
+    try {
+      sessionStorage.removeItem(ONBOARDING_COMPLETE_SESSION_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 /**

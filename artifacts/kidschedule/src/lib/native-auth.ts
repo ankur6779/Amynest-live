@@ -361,7 +361,7 @@ export type NativeFacebookSignInResult = {
   accessToken: string;
 };
 
-function readPendingNativeFacebookAccessToken(): string | null {
+export function readPendingNativeFacebookAccessToken(): string | null {
   const token = window.__AMYNEST_PENDING_FACEBOOK_ACCESS_TOKEN?.trim();
   if (token) {
     delete window.__AMYNEST_PENDING_FACEBOOK_ACCESS_TOKEN;
@@ -388,6 +388,10 @@ function pendingFacebookTokenSignInResult(): NativeFacebookSignInResult | null {
 }
 
 const FACEBOOK_SIGN_IN_BRIDGE_TIMEOUT_MS = 30_000;
+
+export function isFacebookSignInInFlight(): boolean {
+  return window.__AMYNEST_FACEBOOK_SIGN_IN_IN_FLIGHT === true;
+}
 
 function waitForInjectedFacebookAccessToken(maxMs: number): Promise<NativeFacebookSignInResult> {
   return new Promise((resolve) => {

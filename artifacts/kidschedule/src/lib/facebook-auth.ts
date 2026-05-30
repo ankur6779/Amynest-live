@@ -4,10 +4,13 @@ import {
   signInWithCredential,
   signInWithPopup,
   signInWithRedirect,
+  updateProfile,
   type User,
 } from "firebase/auth";
+import { logFirebaseAuthError } from "@/lib/firebase-auth-error";
 import { ensureFirebaseAuthPersistence, getFirebaseAuth } from "@/lib/firebase";
 import { isCapacitorIosShell, isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { shouldUseCapacitorIosFacebookAuth } from "@/lib/auth-feature-flags";
 import {
   finalizeOAuthCredentialSignIn,
@@ -78,20 +81,54 @@ export function generateFacebookLoginNonce(length = 32): string {
   return Array.from(bytes, (b) => charset[b % charset.length]).join("");
 }
 
+type FacebookGraphProfile = {
+  name?: string;
+  email?: string;
+};
+
+/** Best-effort: pull name/email from Graph API so onboarding can save parent profile. */
+async function enrichFirebaseUserFromFacebookGraph(
+  accessToken: string,
+  user: User,
+): Promise<void> {
+  try {
+    const url = new URL("https://graph.facebook.com/v21.0/me");
+    url.searchParams.set("fields", "name,email");
+    url.searchParams.set("access_token", accessToken);
+    const res = await fetch(url.toString());
+    if (!res.ok) return;
+    const body = (await res.json()) as FacebookGraphProfile;
+    const displayName = body.name?.trim();
+    if (displayName && !user.displayName?.trim()) {
+      await updateProfile(user, { displayName });
+    }
+  } catch (err) {
+    console.warn(`${FACEBOOK_TAG} graph profile enrich skipped`, err);
+  }
+}
+
 /** Classic Graph API access token (Android WebView native bridge). */
-async function signInFirebaseWithFacebookAccessToken(accessToken: string): Promise<User> {
+export async function completeFacebookAccessTokenSignIn(
+  accessToken: string,
+): Promise<User> {
   await ensureFirebaseAuthPersistence();
   const token = assertFacebookToken(accessToken, "access token");
   const credential = FacebookAuthProvider.credential(token);
   try {
     const result = await signInWithCredential(getFirebaseAuth(), credential);
-    return finalizeOAuthCredentialSignIn(result);
+    const user = await finalizeOAuthCredentialSignIn(result);
+    await enrichFirebaseUserFromFacebookGraph(token, user);
+    return user;
   } catch (err) {
     throwFacebookFirebaseCredentialFailed(err, {
       credentialKind: "access",
       tokenLen: token.length,
     });
   }
+}
+
+async function signInFirebaseWithFacebookAccessToken(accessToken: string): Promise<User> {
+  return completeFacebookAccessTokenSignIn(accessToken);
 }
 
 /**
@@ -198,6 +235,55 @@ async function loginWithWebFallback(): Promise<string | void> {
   }
 }
 
+async function finishFacebookLoginFlow(opts?: {
+  skipNavigation?: boolean;
+}): Promise<string> {
+  const destination = await finishOAuthLoginFlow(undefined, {
+    skipNavigation: opts?.skipNavigation,
+  });
+  if (isNativeAmyNestAndroidWrapper()) {
+    const { clearPendingNativeFacebookAuth } = await import("@/lib/native-auth");
+    void clearPendingNativeFacebookAuth();
+  }
+  return destination;
+}
+
+let pendingFacebookBootstrapInFlight = false;
+
+/**
+ * Resume Facebook sign-in after WebView reload (native token injected on page load).
+ * Mirrors bootstrapPendingGoogleSignIn — fixes login completing outside the app tab.
+ */
+export async function bootstrapPendingFacebookSignIn(): Promise<boolean> {
+  if (!isNativeAmyNestAndroidWrapper() || pendingFacebookBootstrapInFlight) {
+    return false;
+  }
+  const {
+    readPendingNativeFacebookAccessToken,
+    isFacebookSignInInFlight,
+  } = await import("@/lib/native-auth");
+  if (isFacebookSignInInFlight()) {
+    console.info(`${FACEBOOK_TAG} bootstrap skipped — sign-in in flight`);
+    return false;
+  }
+  const accessToken = readPendingNativeFacebookAccessToken();
+  if (!accessToken) return false;
+
+  console.info(`${FACEBOOK_TAG} bootstrap pending facebook token`);
+  pendingFacebookBootstrapInFlight = true;
+  try {
+    await completeFacebookAccessTokenSignIn(accessToken);
+    const dest = await finishFacebookLoginFlow();
+    console.info(`${FACEBOOK_TAG} bootstrap navigate`, { dest });
+    return true;
+  } catch (err) {
+    logFirebaseAuthError("facebook:bootstrap-pending", err);
+    return false;
+  } finally {
+    pendingFacebookBootstrapInFlight = false;
+  }
+}
+
 /**
  * Play Store WebView — native Facebook SDK via AuthBridge.kt.
  * Never use popup/redirect OAuth here: Firebase Web OAuth in Play WebView causes auth/argument-error.
@@ -210,15 +296,28 @@ export async function loginAndroidWebViewFacebook(): Promise<string> {
         ? (window as Window & { __AMYNEST_AUTH?: string }).__AMYNEST_AUTH
         : undefined,
   });
-  const { signInWithFacebookViaNativeBridge, logNativeAuthDiagnostics } =
-    await import("@/lib/native-auth");
+  const {
+    probeFacebookBridgeAvailability,
+    signInWithFacebookViaNativeBridge,
+    logNativeAuthDiagnostics,
+  } = await import("@/lib/native-auth");
+  const bridgeReady = await probeFacebookBridgeAvailability();
+  console.info(`${FACEBOOK_TAG} facebook bridge probe`, { bridgeReady });
+  if (bridgeReady === false) {
+    throw Object.assign(
+      new Error(
+        "Facebook Sign-In native bridge is not ready. Close and reopen the app, then try again.",
+      ),
+      { code: "app/facebook-bridge-unavailable" },
+    );
+  }
   void logNativeAuthDiagnostics();
   const { accessToken } = await signInWithFacebookViaNativeBridge();
   console.info(`${FACEBOOK_TAG} access token received, signing into Firebase`, {
     tokenLen: accessToken.length,
   });
   await signInFirebaseWithFacebookAccessToken(accessToken);
-  const dest = await finishOAuthLoginFlow(undefined, { skipNavigation: true });
+  const dest = await finishFacebookLoginFlow({ skipNavigation: true });
   console.info(`${FACEBOOK_TAG} android webview facebook sign-in success`, { dest });
   return dest;
 }
@@ -237,6 +336,14 @@ export async function handleFacebookLogin(): Promise<string | void> {
         "Facebook Sign-In requires the latest AmyNest iOS app build. Update the app, then try again.",
       ),
       { code: "app/facebook-ios-plugin-unavailable" },
+    );
+  }
+  if (isNativeAmyNestShell()) {
+    throw Object.assign(
+      new Error(
+        "Facebook Sign-In must use the in-app login dialog. Update the app from the Play Store and try again.",
+      ),
+      { code: "app/facebook-native-required" },
     );
   }
   return loginWithWebFallback();

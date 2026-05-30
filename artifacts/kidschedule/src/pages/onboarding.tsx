@@ -17,6 +17,9 @@ import {
 import { ChildDobPicker } from "@/components/child-dob-picker";
 import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { ensureAuthContextSynced } from "@/lib/auth-session-sync";
+import { waitForIdToken } from "@/lib/auth-token";
+import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+import { navigateAfterOnboardingComplete } from "@/lib/onboarding-navigation";
 import {
   readFirebaseUserId,
   readOAuthParentNameHint,
@@ -584,7 +587,7 @@ export default function OnboardingPage() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { user } = useUser();
-  const { isLoaded: authLoaded, isSignedIn } = useAuth();
+  const { isLoaded: authLoaded, isSignedIn, getToken } = useAuth();
   const { entitlements } = useSubscription();
   const { canStartTrial } = useTrialState();
   const authFetch = useAuthFetch();
@@ -620,6 +623,7 @@ export default function OnboardingPage() {
   const [isFinishing, setIsFinishing] = useState(false);
   const onboardingRunIdRef = useRef<string | null>(null);
   const completionOnceRef = useRef(false);
+  const onboardingJustFinishedRef = useRef(false);
 
   const [step, setStep] = useState<Step>(() => restoredSession?.step ?? "intro");
   const [notifLoading, setNotifLoading] = useState(false);
@@ -885,6 +889,17 @@ export default function OnboardingPage() {
 
     try {
       await ensureAuthContextSynced();
+      const token = await waitForIdToken(getToken, {
+        skipCache: true,
+        maxAttempts: isNativeAmyNestAndroidWrapper() ? 24 : 12,
+        delayMs: 200,
+      });
+      if (!token) {
+        throw new OnboardingFinishError(
+          "auth-token",
+          "Sign-in session is not ready yet. Wait a moment and tap finish again.",
+        );
+      }
       await runOnboardingFinishTransaction(authFetch, {
         parent: parentBody,
         children: childPayloads,
@@ -908,6 +923,7 @@ export default function OnboardingPage() {
       });
 
       const completeStatus = { onboardingComplete: true, profileComplete: true };
+      onboardingJustFinishedRef.current = true;
       persistOnboardingCache(completeStatus);
       queryClient.setQueryData(["onboarding-status"], completeStatus);
       clearOnboardingChatSession();
@@ -980,7 +996,10 @@ export default function OnboardingPage() {
       setLocation("/sign-in");
       return;
     }
-    await refreshBeforeDashboard();
+    const cachedComplete = isSetupComplete(readOnboardingCache());
+    if (!onboardingJustFinishedRef.current && !cachedComplete) {
+      await refreshBeforeDashboard();
+    }
     const status = applySetupStatusUpdate(
       readOnboardingCache(),
       queryClient.getQueryData<{
@@ -988,23 +1007,24 @@ export default function OnboardingPage() {
         profileComplete?: boolean;
       }>(["onboarding-status"]),
     );
-    if (!isSetupComplete(status)) {
+    const canEnterApp =
+      onboardingJustFinishedRef.current ||
+      cachedComplete ||
+      isSetupComplete(status);
+    if (!canEnterApp) {
       console.warn("[onboarding] setup still incomplete after refresh — staying on onboarding");
       setNavigatingToDashboard(false);
       setFinishError(t("screens.onboarding.save_failed"));
       setStep("parent-allergies");
       return;
     }
-    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-    if (
-      FF_POST_ONBOARDING_TRIAL &&
-      canStartTrial &&
-      !wasOnboardingTrialSeen()
-    ) {
-      window.location.assign(`${base}/subscription-trial`);
-      return;
-    }
-    window.location.assign(`${base}/dashboard`);
+    onboardingJustFinishedRef.current = false;
+    const trialPath =
+      FF_POST_ONBOARDING_TRIAL && canStartTrial && !wasOnboardingTrialSeen()
+        ? "/subscription-trial"
+        : "/dashboard";
+    navigateAfterOnboardingComplete(trialPath);
+    setNavigatingToDashboard(false);
   }
 
   function applyResolvedLocation(resolved: ResolvedLocation) {
