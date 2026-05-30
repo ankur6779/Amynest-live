@@ -1,0 +1,70 @@
+name: Onboarding completion gate
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/kidschedule/**"
+      - "artifacts/api-server/src/routes/onboarding.ts"
+      - "artifacts/api-server/src/routes/parent-profile.ts"
+      - "artifacts/api-server/src/routes/children.ts"
+      - "scripts/check-onboarding*.ts"
+      - "android/app/src/main/kotlin/com/amynest/app/AuthBridge.kt"
+  push:
+    branches: [main]
+    paths:
+      - "artifacts/kidschedule/**"
+      - "artifacts/api-server/src/routes/onboarding.ts"
+      - "artifacts/api-server/src/routes/parent-profile.ts"
+      - "artifacts/api-server/src/routes/children.ts"
+      - "scripts/check-onboarding*.ts"
+      - "android/app/src/main/kotlin/com/amynest/app/AuthBridge.kt"
+  workflow_dispatch:
+
+jobs:
+  onboarding-gate:
+    name: Static gate + auth/onboarding regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Onboarding completion static gate
+        run: pnpm run check:onboarding-completion
+
+      - name: Auth + onboarding regression tests
+        run: pnpm run check:onboarding-regression
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @workspace/kidschedule exec playwright install chromium
+
+      - name: Onboarding auth entry smoke (no credentials)
+        run: pnpm --filter @workspace/kidschedule run test:e2e:onboarding
+
+  onboarding-api-health:
+    name: Post-deploy onboarding API health
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Probe production onboarding APIs
+        env:
+          ONBOARDING_HEALTH_API_URL: ${{ secrets.ONBOARDING_HEALTH_API_URL || 'https://amynest-backend-dykj.onrender.com' }}
+        run: pnpm run check:onboarding-health

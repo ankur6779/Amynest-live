@@ -216,7 +216,7 @@ export function PaywallModal() {
   return (
     <Dialog open={state.open} onOpenChange={o => !o && closePaywall()}>
       <DialogContent className="max-w-2xl w-[calc(100vw-1rem)] sm:w-full p-0 gap-0 overflow-hidden border-0 bg-gradient-to-br from-[#0B0B1A] via-[#1A0B2E] to-[#0B0B1A] text-white max-h-[95dvh] flex flex-col [&>button]:hidden">
-        <div className="sticky top-0 z-20 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-[#0B0B1A]/95 to-[#0B0B1A]/70 backdrop-blur-md border-b border-white/5">
+        <div className="sticky top-0 z-20 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-[#0B0B1A]/95 to-[#0B0B1A]/70 backdrop-blur-md border-b border-white/5 safe-area-top">
           <button
             onClick={closePaywall}
             className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-2 text-xs font-bold text-white/85 hover:bg-white/20 transition"

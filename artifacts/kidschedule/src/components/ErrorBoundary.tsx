@@ -1,5 +1,9 @@
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
 import { showReactCrashOverlay } from "@/lib/production-crash-overlay";
+import {
+  normalizeBoundaryError,
+  safeInvokeBoundaryHandler,
+} from "@/lib/safe-error-boundary-catch";
 
 type Props = { children: ReactNode; label?: string };
 type State = { error: Error | null };
@@ -12,8 +16,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error("React crash:", this.props.label ?? "root", error, info);
-    showReactCrashOverlay(error, this.props.label ?? "root", info.componentStack ?? undefined);
+    const err = normalizeBoundaryError(error);
+    safeInvokeBoundaryHandler(this.props.label ?? "root", () => {
+      console.error("React crash:", this.props.label ?? "root", err, info);
+      showReactCrashOverlay(err, this.props.label ?? "root", info.componentStack ?? undefined);
+    });
   }
 
   render(): ReactNode {

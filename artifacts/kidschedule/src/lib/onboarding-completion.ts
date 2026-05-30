@@ -16,7 +16,28 @@ export type OnboardingFinishLogEvent =
   | "COMPLETION_FLAG_WRITE_FAILED"
   | "SERVER_COMPLETE_LOCAL_INCOMPLETE_REPAIRED"
   | "BOOTSTRAP_ONBOARDING_DECISION"
-  | "APP_CRASH";
+  | "APP_CRASH"
+  | "ONBOARDING_TX_TRACE";
+
+export type OnboardingTransactionStep =
+  | "preflight-onboarding-get"
+  | "parent-profile-put"
+  | "children-list"
+  | "child-save"
+  | "child-goals"
+  | "onboarding-flag-post"
+  | "onboarding-verify-get"
+  | "children-verify-get"
+  | "finish-success"
+  | "finish-already-complete";
+
+export function traceOnboardingTransaction(
+  step: OnboardingTransactionStep,
+  payload: Record<string, unknown>,
+  opts?: { userId?: string | null; step?: string },
+): void {
+  logOnboardingFinish("ONBOARDING_TX_TRACE", { txStep: step, ...payload }, opts);
+}
 
 export function logOnboardingFinish(
   event: OnboardingFinishLogEvent,
@@ -231,6 +252,11 @@ export async function runOnboardingFinishTransaction(
   try {
     const statusRes = await authFetch("/api/onboarding");
     const statusBody = await readJsonBody(statusRes);
+    traceOnboardingTransaction(
+      "preflight-onboarding-get",
+      { status: statusRes.status, complete: isServerComplete(statusBody) },
+      telemetryOpts,
+    );
     if (
       statusRes.ok &&
       !isFallbackBody(statusBody) &&
@@ -241,6 +267,7 @@ export async function runOnboardingFinishTransaction(
         { alreadyCompleted: true, skippedWrites: true },
         telemetryOpts,
       );
+      traceOnboardingTransaction("finish-already-complete", {}, telemetryOpts);
       return { alreadyCompleted: true };
     }
 
@@ -250,6 +277,11 @@ export async function runOnboardingFinishTransaction(
       body: JSON.stringify(payload.parent),
     });
     const parentBody = await readJsonBody(parentRes);
+    traceOnboardingTransaction(
+      "parent-profile-put",
+      { status: parentRes.status, fallback: parentBody.fallback === true },
+      telemetryOpts,
+    );
     if (!parentRes.ok || isFallbackBody(parentBody)) {
       logOnboardingFinish(
         "PROFILE_SAVE_FAILED",
@@ -264,6 +296,11 @@ export async function runOnboardingFinishTransaction(
     logOnboardingFinish("PROFILE_SAVE_SUCCESS", { status: parentRes.status }, telemetryOpts);
 
     const existingChildren = await fetchExistingChildren(authFetch);
+    traceOnboardingTransaction(
+      "children-list",
+      { existingCount: existingChildren.length },
+      telemetryOpts,
+    );
     let savedChildCount = existingChildren.length;
 
     for (const child of payload.children) {
@@ -280,6 +317,11 @@ export async function runOnboardingFinishTransaction(
           body: JSON.stringify(child),
         });
         const body = await readJsonBody(res);
+        traceOnboardingTransaction(
+          "child-save",
+          { childName, status: res.status, created: res.ok },
+          telemetryOpts,
+        );
         if (!res.ok || isFallbackBody(body)) {
           logOnboardingFinish(
             "ONBOARDING_FINISH_FAILED",
@@ -303,6 +345,11 @@ export async function runOnboardingFinishTransaction(
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ parentGoals: payload.selectedParentGoals }),
         });
+        traceOnboardingTransaction(
+          "child-goals",
+          { childId, status: goalsRes.status },
+          telemetryOpts,
+        );
         if (!goalsRes.ok) {
           logOnboardingFinish(
             "ONBOARDING_FINISH_FAILED",
@@ -329,6 +376,17 @@ export async function runOnboardingFinishTransaction(
       }),
     });
     const onboardingBody = await readJsonBody(onboardingRes);
+    traceOnboardingTransaction(
+      "onboarding-flag-post",
+      {
+        status: onboardingRes.status,
+        flaggedComplete:
+          onboardingBody.onboardingComplete === true ||
+          onboardingBody.success === true ||
+          onboardingBody.alreadyCompleted === true,
+      },
+      telemetryOpts,
+    );
     const flaggedComplete =
       onboardingBody.onboardingComplete === true ||
       onboardingBody.success === true ||
@@ -352,6 +410,11 @@ export async function runOnboardingFinishTransaction(
 
     const verifyRes = await authFetch("/api/onboarding");
     const verifyBody = await readJsonBody(verifyRes);
+    traceOnboardingTransaction(
+      "onboarding-verify-get",
+      { status: verifyRes.status, verified: isServerComplete(verifyBody) },
+      telemetryOpts,
+    );
     const verified =
       verifyRes.ok &&
       !isFallbackBody(verifyBody) &&
@@ -360,6 +423,11 @@ export async function runOnboardingFinishTransaction(
     if (!verified) {
       const childrenRes = await authFetch("/api/children");
       const childrenBody = await readJsonBody(childrenRes);
+      traceOnboardingTransaction(
+        "children-verify-get",
+        { status: childrenRes.status, childCount: Array.isArray(childrenBody) ? childrenBody.length : 0 },
+        telemetryOpts,
+      );
       const children = Array.isArray(childrenBody) ? childrenBody : [];
       if (children.length === 0) {
         throw new OnboardingFinishError(
@@ -386,6 +454,11 @@ export async function runOnboardingFinishTransaction(
         savedChildCount,
         alreadyCompleted: onboardingBody.alreadyCompleted === true,
       },
+      telemetryOpts,
+    );
+    traceOnboardingTransaction(
+      "finish-success",
+      { savedChildCount, verified },
       telemetryOpts,
     );
     return {

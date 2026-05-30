@@ -42,10 +42,10 @@ export function StoryCarousel({
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-base font-semibold text-white">{title}</h3>
         <div className="hidden gap-1 sm:flex">
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-white/60 hover:bg-white/10 hover:text-white" onClick={() => scroll("left")} aria-label={t("components.story_carousel.scroll_left")}>
+          <Button type="button" variant="ghost" size="icon" className="text-white/60 hover:bg-white/10 hover:text-white" onClick={() => scroll("left")} aria-label={t("components.story_carousel.scroll_left")}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-white/60 hover:bg-white/10 hover:text-white" onClick={() => scroll("right")} aria-label={t("components.story_carousel.scroll_right")}>
+          <Button type="button" variant="ghost" size="icon" className="text-white/60 hover:bg-white/10 hover:text-white" onClick={() => scroll("right")} aria-label={t("components.story_carousel.scroll_right")}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>

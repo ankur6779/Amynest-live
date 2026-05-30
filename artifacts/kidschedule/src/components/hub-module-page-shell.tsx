@@ -90,11 +90,12 @@ export function HubModulePageShell({
   if (!activeChild) {
     return (
       <div className="flex min-h-dvh flex-col bg-background">
-        <header className="sticky top-0 z-50 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
+        <header className="sticky top-0 z-50 border-b border-border bg-background/95 px-4 py-3 backdrop-blur safe-area-top">
           <button
             type="button"
             onClick={goBack}
-            className="inline-flex items-center gap-2 text-sm font-bold text-foreground"
+            aria-label="Back"
+            className="inline-flex h-11 min-w-11 items-center gap-2 px-1 text-sm font-bold text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -122,12 +123,12 @@ export function HubModulePageShell({
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-background">
-      <header className="sticky top-0 z-50 shrink-0 border-b border-border bg-background/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] backdrop-blur">
+      <header className="sticky top-0 z-50 shrink-0 border-b border-border bg-background/95 px-4 pb-3 pt-[calc(var(--sat,env(safe-area-inset-top,0px))+0.75rem)] backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <button
             type="button"
             onClick={goBack}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground"
             aria-label="Back"
           >
             <ArrowLeft className="h-4 w-4" />

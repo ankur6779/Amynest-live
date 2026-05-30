@@ -52,6 +52,8 @@
     "check:onboarding-completion": "pnpm --filter @workspace/scripts run check-onboarding-completion",
     "check:onboarding-health": "pnpm --filter @workspace/scripts run check-onboarding-health",
     "check:onboarding-regression": "pnpm --filter @workspace/kidschedule exec vitest run src/lib/auth-onboarding-regression.test.ts src/lib/onboarding-completion.test.ts src/lib/production-audit-regression.test.ts src/lib/google-auth.test.ts src/lib/facebook-auth.test.ts",
+    "check:ux-stabilization": "pnpm --filter @workspace/scripts run ux-stabilization-audit && pnpm --filter @workspace/scripts run check-typography-floor",
+    "check:typography-floor": "pnpm --filter @workspace/scripts run check-typography-floor",
     "check:action-routing": "pnpm --filter @workspace/scripts run check-action-routing",
     "validate:amy-voice-field": "pnpm --filter @workspace/scripts run validate:amy-voice-field",
     "review:amy-voice-weekly": "pnpm --filter @workspace/scripts run review:amy-voice-weekly",

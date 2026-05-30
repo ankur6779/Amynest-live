@@ -352,7 +352,7 @@ function RoutineItemModal({
         <div data-on-dark className="relative h-52 overflow-hidden rounded-t-3xl sm:rounded-t-3xl bg-muted shrink-0">
           <img src={img.src} alt={item.activity} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-          <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors">
+          <button type="button" onClick={onClose} aria-label={t("common.close", { defaultValue: "Close" })} className="absolute top-3 right-3 h-11 w-11 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors">
             <X className="h-4 w-4" />
           </button>
           <div className="absolute bottom-3 left-4 right-4">
@@ -1447,7 +1447,7 @@ export default function RoutineDetail() {
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label={t("pages.routines.detail.delete_this_routine")}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </AlertDialogTrigger>

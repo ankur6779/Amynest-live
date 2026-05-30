@@ -30,6 +30,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useAppHeaderHeight } from "@/hooks/use-app-header-height";
 import { prefetchRouteChunk } from "@/lib/route-chunk-preload";
 import { isLearningZoneRoute } from "@/lib/app-layout";
+import { isTabRootRoute } from "@/lib/navigation-stack";
 function SmartParentBadge({
   className = ""
 }: {
@@ -38,7 +39,7 @@ function SmartParentBadge({
   const {
     t
   } = useTranslation();
-  return <span className={`inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-primary to-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm ${className}`} data-testid="badge-smart-parent">
+  return <span className={`inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-primary to-primary px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm ${className}`} data-testid="badge-smart-parent">
       <Sparkles className="h-2.5 w-2.5" />
       {t("components.layout.smart_parent")}
     </span>;
@@ -155,8 +156,8 @@ export function Layout({
     safePathStartsWith(location, "/audio-lessons");
   const isAssistantRoute = safePathStartsWithSegment(location, "/assistant");
   const isDashboard = location === "/" || location === "/dashboard";
-  const showDashboardChrome = location === "/dashboard";
-  const canShowBack = !showDashboardChrome && location !== "/";
+  const showTabBar = isTabRootRoute(location);
+  const canShowBack = !showTabBar && location !== "/";
   const showMobileHeader = !isImmersiveRoute;
   const headerRef = useAppHeaderHeight(showMobileHeader);
 
@@ -165,12 +166,12 @@ export function Layout({
   }, [location]);
 
   useEffect(() => {
-    document.body.classList.toggle("has-tabbar", showDashboardChrome);
-    document.body.classList.toggle("no-tabbar", !showDashboardChrome);
+    document.body.classList.toggle("has-tabbar", showTabBar);
+    document.body.classList.toggle("no-tabbar", !showTabBar);
     return () => {
       document.body.classList.remove("has-tabbar", "no-tabbar");
     };
-  }, [showDashboardChrome]);
+  }, [showTabBar]);
 
   const handleSignOut = () => {
     try {
@@ -199,7 +200,7 @@ export function Layout({
                   type="button"
                   onClick={handleBack}
                   aria-label="Back"
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm active:scale-95"
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm active:scale-95"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
@@ -231,7 +232,7 @@ export function Layout({
             return <Link key={item.href} href={item.href} data-tour={item.href === "/dashboard" ? "dashboard" : item.href === "/routines" ? "routines" : item.href === "/amy-coach" ? "amy-coach" : item.href === "/parenting-hub" ? "parenting-hub" : undefined} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                   <item.icon className="h-5 w-5 shrink-0" />
                   <span className="flex-1 truncate">{t(item.labelKey)}</span>
-                  {item.badge && <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-primary to-primary px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
+                  {item.badge && <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-primary to-primary px-1.5 py-0.5 text-xs font-bold text-white leading-none">
                       {item.badge}
                     </span>}
                 </Link>;
@@ -260,7 +261,7 @@ export function Layout({
               <LogOut className="h-4 w-4" />
               {t("nav.sign_out")}
             </button>
-            <p className="text-center text-[9px] font-bold tracking-widest uppercase mt-3 text-primary/25">
+            <p className="text-center text-xs font-bold tracking-widest uppercase mt-3 text-primary/25">
               {t("patent_pending.footer_label")}
             </p>
           </div>
@@ -272,7 +273,7 @@ export function Layout({
             className={
               isImmersiveRoute || isAssistantRoute
                 ? `mx-auto w-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip p-0 md:p-0${isAssistantRoute ? " assistant-route-content h-full" : ""}`
-                : showDashboardChrome
+                : isDashboard
                   ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0 md:max-w-5xl md:p-8"
                   : "mx-auto w-full max-w-5xl min-w-0 flex-1 overflow-x-clip px-3 py-4 sm:px-4 md:p-8"
             }
@@ -282,7 +283,7 @@ export function Layout({
               !["/sign-in", "/onboarding", "/notify-prompt"].some((p) =>
                 safePathStartsWith(location, p),
               ) && (
-                <div className={showDashboardChrome ? "mb-4 dashboard-inline-inset" : "mb-4"}>
+                <div className={isDashboard ? "mb-4 dashboard-inline-inset" : "mb-4"}>
                   <NotificationNudgeBanner />
                 </div>
               )}
@@ -292,7 +293,7 @@ export function Layout({
         </div>
       </main>
 
-      <MobileTabBar visible={showDashboardChrome} />
+      <MobileTabBar visible={showTabBar} />
 
       {!isImmersiveRoute &&
         !["/sign-in", "/onboarding"].some((p) => safePathStartsWith(location, p)) && (

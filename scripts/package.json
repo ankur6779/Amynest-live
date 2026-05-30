@@ -29,6 +29,8 @@
     "check-chat-thread": "tsx ./check-chat-thread.ts",
     "check-onboarding-completion": "tsx ./check-onboarding-completion.ts",
     "check-onboarding-health": "tsx ./check-onboarding-health.ts",
+    "check-typography-floor": "tsx ./check-typography-floor.ts",
+    "ux-stabilization-audit": "tsx ./ux-stabilization-audit.ts",
     "check-action-routing": "tsx ./check-action-routing.ts",
     "validate:amy-voice-field": "tsx ./src/amy-voice-field-validation.ts",
     "review:amy-voice-weekly": "tsx ./src/amy-voice-weekly-review.ts",
