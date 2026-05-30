@@ -2,22 +2,40 @@ import { Star, Flame } from "lucide-react";
 import type { RewardWallet } from "@workspace/learning-progress-engine";
 import { emptyRewardsCopy } from "@workspace/learning-progress-engine";
 import { PremiumCard, AnimatedCounter } from "./premium-polish";
+import { ParentHubInfoBanner } from "./parent-hub-info-banner";
+import { HUB_XP_GOLD } from "@/lib/parent-hub-premium";
 
-export function RewardWalletStrip({ wallet }: { wallet: RewardWallet }) {
+export function RewardWalletStrip({
+  wallet,
+  parentHub = false,
+}: {
+  wallet: RewardWallet;
+  parentHub?: boolean;
+}) {
   const hasActivity = wallet.xp > 0 || wallet.streakDays > 0 || wallet.coins > 0;
 
   if (!hasActivity) {
     return (
-      <PremiumCard testId="reward-wallet-strip">
-        <p className="text-xs text-muted-foreground text-center py-3 px-4 leading-relaxed">
-          {emptyRewardsCopy()}
-        </p>
+      <PremiumCard parentHub={parentHub} testId="reward-wallet-strip">
+        {parentHub ? (
+          <div className="p-3">
+            <ParentHubInfoBanner
+              icon="⭐"
+              title="Stars & Rewards"
+              message={emptyRewardsCopy()}
+            />
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground text-center py-3 px-4 leading-relaxed">
+            {emptyRewardsCopy()}
+          </p>
+        )}
       </PremiumCard>
     );
   }
 
   return (
-    <PremiumCard testId="reward-wallet-strip">
+    <PremiumCard parentHub={parentHub} testId="reward-wallet-strip">
       <div className="flex items-center gap-4 px-4 py-3.5">
         <div className="flex items-center gap-2 min-w-0">
           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-amber-400/20 flex items-center justify-center shadow-inner">
@@ -32,7 +50,7 @@ export function RewardWalletStrip({ wallet }: { wallet: RewardWallet }) {
         </div>
         <div className="flex-1 flex flex-wrap justify-end gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span>
-            <span className="font-semibold text-foreground tabular-nums">{wallet.xp}</span> XP
+            <span className={parentHub ? HUB_XP_GOLD : "font-semibold text-foreground tabular-nums"}>{wallet.xp}</span> XP
           </span>
           {wallet.coins > 0 && (
             <span>

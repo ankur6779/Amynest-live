@@ -86,9 +86,26 @@ export const COACH_CATEGORY_GROUPS: CoachCategoryGroup[] = [
   },
 ];
 
+/** All child-topic categories in browse order (excludes for-you). */
+export const ALL_CHILD_COACH_CATEGORY_IDS = [
+  "infant-problems",
+  "toddler-behavior",
+  "daily-skills",
+  "behavior",
+  "eating",
+  "sleep",
+  "screen-focus",
+  "learning",
+  "family-dynamics",
+  "parenting-challenges",
+  "special-situations",
+  "kids-health-concern",
+] as const;
+
 /** Child-topic category ids per age band (excludes for-you). */
-const CATEGORIES_BY_AGE_BAND: Record<CoachAgeBand, string[]> = {
-  "0-2": ["infant-problems", "eating", "sleep", "kids-health-concern"],
+const CATEGORIES_BY_AGE_BAND: Record<CoachAgeBand, readonly string[]> = {
+  /** Infant parents browse the full catalog — baby care plus every 2+ topic. */
+  "0-2": ALL_CHILD_COACH_CATEGORY_IDS,
   "2-4": [
     "toddler-behavior",
     "daily-skills",
@@ -217,6 +234,12 @@ export function getCategoryHint(
     return {
       targetCategoryId: "infant-problems",
       message: "For babies 0–2, Baby Care has dedicated sleep guides.",
+    };
+  }
+  if (categoryId === "behavior" && band === "0-2") {
+    return {
+      targetCategoryId: "infant-problems",
+      message: "For babies under 2, Baby Care has age-specific guides.",
     };
   }
   if (categoryId === "behavior" && (band === "5-7" || band === "8-10" || band === "10+")) {

@@ -1564,3 +1564,63 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
 .event-prep-card-lift:hover {
   transform: translateY(-2px) scale(1.01);
 }
+
+/* ── Parent Hub premium surface ─────────────────────────────────── */
+.parent-hub-premium {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(168, 85, 247, 0.15), transparent 35%),
+    radial-gradient(circle at 85% 10%, rgba(236, 72, 153, 0.12), transparent 35%),
+    linear-gradient(180deg, #071126, #0b1730, #091426);
+}
+
+@keyframes parentHubFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hubProgressFill {
+  from {
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  to {
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+}
+
+.parent-hub-premium .hub-page-enter {
+  animation: parentHubFadeUp 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.parent-hub-premium .hub-today-stack > *:nth-child(1) { animation-delay: 0.05s; }
+.parent-hub-premium .hub-today-stack > *:nth-child(2) { animation-delay: 0.1s; }
+.parent-hub-premium .hub-today-stack > *:nth-child(3) { animation-delay: 0.15s; }
+.parent-hub-premium .hub-today-stack > *:nth-child(4) { animation-delay: 0.2s; }
+.parent-hub-premium .hub-today-stack > *:nth-child(5) { animation-delay: 0.25s; }
+.parent-hub-premium .hub-today-stack > *:nth-child(6) { animation-delay: 0.3s; }
+.parent-hub-premium .hub-today-stack > * > .hub-page-enter,
+.parent-hub-premium .hub-today-stack > .hub-page-enter {
+  animation: parentHubFadeUp 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hub-progress-fill {
+  animation: hubProgressFill 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.parent-hub-premium .hub-sparkle-glow {
+  filter: drop-shadow(0 0 8px rgba(251, 146, 60, 0.45));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parent-hub-premium .hub-page-enter,
+  .hub-progress-fill {
+    animation: none !important;
+  }
+}

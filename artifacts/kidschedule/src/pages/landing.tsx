@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { ArrowRight, Sparkles, Brain, Calendar, LayoutGrid, MessageCircle, Zap, CheckCircle2, Flame, Smartphone, Moon, EarOff, Utensils, Target, ListChecks, HelpCircle, ShieldCheck, BookOpen, Microscope, TrendingUp, Video, Star, Users, Lightbulb, Puzzle, Palette, FileText, Baby, GraduationCap, Activity, Heart, Award, Gamepad2, BarChart3, FlaskConical, Calculator, Mic, Headphones } from "lucide-react";
-import QRCode from "react-qr-code";
+import { StoreQrCode } from "@/components/store-qr-code";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
@@ -1238,7 +1238,7 @@ export default function LandingPage() {
                     aria-label={t("pages.landing.scan_for_app_store")}
                   >
                     <div className="rounded-2xl bg-white p-3 shadow-lg transition-transform group-hover:scale-[1.02]">
-                      <QRCode value={APP_STORE_URL} size={96} bgColor="#FFFFFF" fgColor="#1a1a2e" />
+                      <StoreQrCode value={APP_STORE_URL} size={96} bgColor="#FFFFFF" fgColor="#1a1a2e" />
                     </div>
                     <p className="text-white/60 text-xs font-medium text-center max-w-[120px]">
                       {t("pages.landing.scan_for_app_store")}
@@ -1252,7 +1252,7 @@ export default function LandingPage() {
                     aria-label={t("pages.landing.scan_for_google_play")}
                   >
                     <div className="rounded-2xl bg-white p-3 shadow-lg transition-transform group-hover:scale-[1.02]">
-                      <QRCode value={PLAY_STORE_URL} size={96} bgColor="#FFFFFF" fgColor="#1a1a2e" />
+                      <StoreQrCode value={PLAY_STORE_URL} size={96} bgColor="#FFFFFF" fgColor="#1a1a2e" />
                     </div>
                     <p className="text-white/60 text-xs font-medium text-center max-w-[120px]">
                       {t("pages.landing.scan_for_google_play")}

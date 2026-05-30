@@ -1229,7 +1229,11 @@ importers:
 
   lib/behavior-tracker: {}
 
-  lib/coach-journey: {}
+  lib/coach-journey:
+    dependencies:
+      '@workspace/infant-problems':
+        specifier: workspace:*
+        version: link:../infant-problems
 
   lib/coach-topic-questions: {}
 

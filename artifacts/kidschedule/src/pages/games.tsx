@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
+import { useAppNavigate } from "@/components/app-link";
 import {
   ArrowLeft, Lock, Gamepad2, Trophy, X, Coins, Gift, Plus, Trash2, Check,
 } from "lucide-react";
@@ -64,7 +64,7 @@ type ActiveGame =
 
 export default function GamesPage() {
   const { t } = useTranslation();
-  const [, setLocation] = useLocation();
+  const { back } = useAppNavigate();
   const { isPremium } = useSubscription();
   const hubUsage = useFeatureUsage();
   const authFetch = useAuthFetch();
@@ -95,8 +95,9 @@ export default function GamesPage() {
       setShowRedeem(false);
       return true;
     }
-    return false;
-  }, [active, showRedeem]);
+    back("games-exit");
+    return true;
+  }, [active, showRedeem, back]);
 
   const playedToday = serverWallet?.gamesPlayedToday ?? gamesPlayedToday();
   const limit = serverWallet?.dailyLimit ?? dailyLimit(isPremium);
@@ -224,7 +225,7 @@ export default function GamesPage() {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button
-            onClick={() => setLocation("/dashboard")}
+            onClick={() => back("games-exit")}
             style={{ color: "hsl(var(--brand-violet-300))", background: "rgba(167,139,250,0.15)", borderRadius: 999, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
             aria-label={t("screens.games.back")}
           >

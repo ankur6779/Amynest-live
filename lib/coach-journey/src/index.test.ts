@@ -5,117 +5,88 @@ import {
   computeCoachJourneyAccess,
   getCoachGoalAccess,
   isCoachExtendUnlocked,
+  isFreeSampleCoachGoal,
   maxNewGoalsForJourneyDay,
   migrateLegacyCoachUsage,
+  coachCategoryGoalCount,
 } from "./index.ts";
 
 describe("coach-journey", () => {
-  it("grants free period for first 3 days", () => {
-    const access = computeCoachJourneyAccess({
-      isPremium: false,
-      completedDays: [1],
-      startedAt: new Date(),
-    });
-    assert.equal(access.isFreePeriod, true);
-    assert.equal(access.isLocked, false);
-    assert.equal(access.daysCompleted, 1);
-    assert.equal(access.currentDay, 2);
-  });
-
-  it("locks after 3 completed days", () => {
+  it("keeps free users in an always-browseable free period", () => {
     const access = computeCoachJourneyAccess({
       isPremium: false,
       completedDays: [1, 2, 3],
       startedAt: new Date(Date.now() - 86400000),
     });
-    assert.equal(access.isFreePeriod, false);
-    assert.equal(access.isLocked, true);
-    assert.equal(access.lockReason, "completed");
+    assert.equal(access.isFreePeriod, true);
+    assert.equal(access.isLocked, false);
+    assert.equal(access.lockReason, "none");
   });
 
-  it("locks after calendar cap expires", () => {
-    const access = computeCoachJourneyAccess({
-      isPremium: false,
-      completedDays: [1],
-      startedAt: new Date(Date.now() - 8 * 86400000),
-    });
-    assert.equal(access.isLocked, true);
-    assert.equal(access.lockReason, "expired");
-  });
-
-  it("unlocks goals progressively by journey day", () => {
-    const access = computeCoachJourneyAccess({
-      isPremium: false,
-      completedDays: [],
-      startedAt: new Date(),
-    });
-    assert.equal(maxNewGoalsForJourneyDay(access.currentDay), 1);
+  it("grants the first goal in each category as try-free", () => {
+    assert.equal(isFreeSampleCoachGoal("manage-tantrums"), true);
+    assert.equal(isFreeSampleCoachGoal("handle-aggression"), false);
+    assert.equal(isFreeSampleCoachGoal("baby-not-sleeping"), true);
+    assert.equal(isFreeSampleCoachGoal("excessive-crying"), false);
     assert.equal(
       getCoachGoalAccess({
         goalId: "manage-tantrums",
         isPremium: false,
-        access,
         completedGoalIds: [],
       }),
       "try-free",
     );
     assert.equal(
       getCoachGoalAccess({
-        goalId: "manage-tantrums",
+        goalId: "handle-aggression",
         isPremium: false,
-        access,
-        completedGoalIds: ["manage-tantrums"],
-      }),
-      "open",
-    );
-    assert.equal(
-      getCoachGoalAccess({
-        goalId: "balance-screen-time",
-        isPremium: false,
-        access,
-        completedGoalIds: ["manage-tantrums"],
+        completedGoalIds: [],
       }),
       "locked",
     );
   });
 
-  it("opens all free goals on day 3", () => {
-    const access = computeCoachJourneyAccess({
-      isPremium: false,
-      completedDays: [1, 2],
-      startedAt: new Date(),
-    });
-    assert.equal(access.currentDay, 3);
-    assert.equal(maxNewGoalsForJourneyDay(3), 13);
+  it("reopens completed free samples without premium", () => {
     assert.equal(
       getCoachGoalAccess({
-        goalId: "parent-burnout",
+        goalId: "manage-tantrums",
         isPremium: false,
-        access,
-        completedGoalIds: ["manage-tantrums", "balance-screen-time"],
+        completedGoalIds: ["manage-tantrums"],
       }),
-      "try-free",
+      "open",
     );
   });
 
-  it("unlocks extend from day 2", () => {
+  it("opens every goal for premium users", () => {
+    assert.equal(
+      getCoachGoalAccess({
+        goalId: "handle-aggression",
+        isPremium: true,
+        completedGoalIds: [],
+      }),
+      "open",
+    );
+  });
+
+  it("does not cap new goals by journey day", () => {
+    assert.equal(maxNewGoalsForJourneyDay(1), Number.MAX_SAFE_INTEGER);
+  });
+
+  it("locks extend wins to premium", () => {
     const access = computeCoachJourneyAccess({
       isPremium: false,
-      completedDays: [],
+      completedDays: [1],
       startedAt: new Date(),
     });
     assert.equal(
-      isCoachExtendUnlocked({ isPremium: false, access, completedDays: [] }),
+      isCoachExtendUnlocked({ isPremium: false, access, completedDays: [1] }),
       false,
     );
-    assert.equal(
-      isCoachExtendUnlocked({
-        isPremium: false,
-        access,
-        completedDays: [1],
-      }),
-      true,
-    );
+    assert.equal(isCoachExtendUnlocked({ isPremium: true, access }), true);
+  });
+
+  it("reports accurate infant category counts", () => {
+    assert.equal(coachCategoryGoalCount("infant-problems"), 10);
   });
 
   it("migrates legacy two-topic usage", () => {

@@ -187,9 +187,11 @@ export default function EventPrepPage() {
 
   if (list.length === 0) {
     return (
-      <div className="container mx-auto p-6">
-        <Card><CardContent className="p-6 text-center">
-          <h2 className="text-xl font-bold mb-2">{t("screens.event_prep.no_child_title")}</h2>
+      <div className="container mx-auto p-6 max-w-3xl">
+        <BackBar onBack={exitToParentHub} canBack>
+          <Header title={t("screens.event_prep.no_child_title")} subtitle={t("screens.event_prep.no_child_desc")} />
+        </BackBar>
+        <Card className="mt-4"><CardContent className="p-6 text-center">
           <p className="text-muted-foreground">
             {t("screens.event_prep.no_child_desc")}
           </p>

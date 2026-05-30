@@ -16,6 +16,12 @@ import {
   seriesForNavGroup,
   type AgeNavGroup,
 } from "@/lib/audio-lessons-nav";
+import { usePaginatedList } from "@/hooks/use-paginated-list";
+import {
+  trackAudioCategoryOpened,
+  trackAudioLockedClick,
+  trackAudioPremiumItemViewed,
+} from "@/lib/content-gating-analytics";
 import { LessonCard, type LessonAccess } from "@/components/audio-lessons/lesson-card";
 import { SeriesCard } from "@/components/audio-lessons/series-card";
 import { LessonsSkeleton } from "@/components/audio-lessons/lessons-skeleton";
@@ -112,6 +118,38 @@ export function AgeDetailScreen({
     [lessons, recommendedIds, ageSeries],
   );
 
+  const catalogLessons = useMemo(
+    () => [...quickLessons, ...standardLessons, ...deepLessons],
+    [quickLessons, standardLessons, deepLessons],
+  );
+
+  const paginatedCatalog = usePaginatedList(catalogLessons, 12);
+
+  useEffect(() => {
+    trackAudioCategoryOpened(ageGroup, lessons.length, isPremium);
+  }, [ageGroup, lessons.length, isPremium]);
+
+  useEffect(() => {
+    if (isPremium) return;
+    paginatedCatalog.visible.forEach((lesson, index) => {
+      if (getLessonAccess(lesson) !== "locked") return;
+      trackAudioPremiumItemViewed(ageGroup, lesson.id, index, false);
+    });
+  }, [paginatedCatalog.visible, ageGroup, isPremium, getLessonAccess]);
+
+  const paginatedQuick = useMemo(
+    () => paginatedCatalog.visible.filter((l) => l.tier === "quick"),
+    [paginatedCatalog.visible],
+  );
+  const paginatedStandard = useMemo(
+    () => paginatedCatalog.visible.filter((l) => l.tier === "standard"),
+    [paginatedCatalog.visible],
+  );
+  const paginatedDeep = useMemo(
+    () => paginatedCatalog.visible.filter((l) => l.tier === "deep"),
+    [paginatedCatalog.visible],
+  );
+
   useEffect(() => {
     if (!activeLessonId) return;
     const timer = window.setTimeout(() => {
@@ -120,22 +158,30 @@ export function AgeDetailScreen({
     return () => window.clearTimeout(timer);
   }, [activeLessonId, ageGroup]);
 
-  const renderLesson = (lesson: Lesson, highlight?: boolean) => {
+  const renderLesson = (lesson: Lesson, highlight?: boolean, itemIndex = 0) => {
     const completed = completedIds.has(lesson.id);
     const isActive = activeLessonId === lesson.id;
+    const access = getLessonAccess(lesson);
     return (
       <LessonCard
         key={lesson.id}
         lesson={lesson}
         lang={lang}
-        access={getLessonAccess(lesson)}
+        access={access}
         tierLabel={tierLabel}
         progressPercent={lessonProgressPercent(lesson, resumeMap, completed)}
         isCompleted={completed}
         highlight={highlight}
         disabled={unlocking}
         cta={lessonCta(lesson, resumeMap, completed)}
-        onPress={() => void onPickLesson(lesson)}
+        onPress={() => {
+          if (access === "locked") {
+            trackAudioLockedClick(ageGroup, lesson.id, itemIndex);
+            onUnlock();
+            return;
+          }
+          void onPickLesson(lesson);
+        }}
         cardRef={isActive ? activeRef : undefined}
       />
     );
@@ -252,25 +298,54 @@ export function AgeDetailScreen({
             </section>
           )}
 
-          {quickLessons.length > 0 && (
+          {paginatedQuick.length > 0 && (
             <section>
               {sectionTitle("pages.audio_lessons.quick_lessons")}
-              <div style={{ display: "grid", gap: 10 }}>{quickLessons.map((l) => renderLesson(l))}</div>
+              <div style={{ display: "grid", gap: 10 }}>
+                {paginatedQuick.map((l, i) => renderLesson(l, false, i))}
+              </div>
             </section>
           )}
 
-          {standardLessons.length > 0 && (
+          {paginatedStandard.length > 0 && (
             <section>
               {sectionTitle("pages.audio_lessons.all_lessons")}
-              <div style={{ display: "grid", gap: 10 }}>{standardLessons.map((l) => renderLesson(l))}</div>
+              <div style={{ display: "grid", gap: 10 }}>
+                {paginatedStandard.map((l, i) => renderLesson(l, false, i))}
+              </div>
             </section>
           )}
 
-          {deepLessons.length > 0 && (
+          {paginatedDeep.length > 0 && (
             <section>
               {sectionTitle("pages.audio_lessons.deep_dives")}
-              <div style={{ display: "grid", gap: 10 }}>{deepLessons.map((l) => renderLesson(l))}</div>
+              <div style={{ display: "grid", gap: 10 }}>
+                {paginatedDeep.map((l, i) => renderLesson(l, false, i))}
+              </div>
             </section>
+          )}
+
+          {paginatedCatalog.hasMore && (
+            <button
+              type="button"
+              onClick={paginatedCatalog.loadMore}
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                borderRadius: 14,
+                border: "1px solid rgba(139,92,246,0.35)",
+                background: "rgba(139,92,246,0.12)",
+                color: "#fff",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              {t("pages.audio_lessons.load_more", {
+                defaultValue: "Load more ({{shown}} of {{total}})",
+                shown: paginatedCatalog.visible.length,
+                total: paginatedCatalog.total,
+              })}
+            </button>
           )}
 
           {lessons.length === 0 && (

@@ -1,12 +1,19 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
+import { useAppNavigate } from "@/components/app-link";
 import { useLocation, Link } from "wouter";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { useCoachJourney } from "@/hooks/use-coach-journey";
-import { isFreeCoachGoal } from "@workspace/coach-journey";
+import { coachGoalCategoryId, coachCategoryGoalCount, goalIndexInCoachCategory } from "@workspace/coach-journey";
 import { usePaywall } from "@/contexts/paywall-context";
+import { usePaginatedList } from "@/hooks/use-paginated-list";
+import {
+  trackCoachCategoryOpened,
+  trackCoachLockedClick,
+  trackCoachPremiumItemViewed,
+} from "@/lib/content-gating-analytics";
 import { Sparkles, ArrowLeft, ArrowRight, Loader2, Search, Check, ChevronLeft, ChevronRight, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart, Printer, Volume2, VolumeX, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { INFANT_PROBLEMS, isInfantProblemId, getInfantProblem, pickLang as pickInfLang } from "@workspace/infant-problems";
@@ -493,15 +500,9 @@ function coachCategoryPanelBackground(categoryId: string): string {
   return `${coachCategoryGradient(categoryId)}, hsl(var(--card))`;
 }
 
-const GOAL_TO_CATEGORY: Record<string, string> = {};
-GOAL_CATEGORIES.forEach(cat => {
-  cat.items.forEach(g => {
-    GOAL_TO_CATEGORY[g.id] = cat.id;
-  });
-});
-
-function coachGoalCategoryId(goalId: string): string {
-  return GOAL_TO_CATEGORY[goalId] ?? "";
+function categoryGoalCount(categoryId: string, fallback: number): number {
+  const fromCatalog = coachCategoryGoalCount(categoryId);
+  return fromCatalog > 0 ? fromCatalog : fallback;
 }
 
 // ─── Free vs Premium goal gating ──────────────────────────────────────────
@@ -527,45 +528,16 @@ function GoalBadge({
     </span>;
 }
 
-function CoachJourneyBanner({
-  journeyDay,
-  completedGoalIds,
-  maxNewGoalsToday,
-  calendarDaysLeft,
-  isJourneyLocked,
-  lockReason,
-}: {
-  journeyDay: number;
-  completedGoalIds: string[];
-  maxNewGoalsToday: number;
-  calendarDaysLeft: number;
-  isJourneyLocked: boolean;
-  lockReason?: string;
-}) {
+function FreemiumCatalogBanner() {
   const { t } = useTranslation();
-  if (isJourneyLocked) {
-    return <div data-on-dark className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-        <p className="font-semibold">{t("pages.ai_coach.journey_locked_title")}</p>
-        <p className="text-xs mt-1 text-amber-100/80">
-          {lockReason === "expired"
-            ? t("pages.ai_coach.journey_locked_expired")
-            : t("pages.ai_coach.journey_locked_completed")}
-        </p>
-      </div>;
-  }
-  const unlocked = Math.min(completedGoalIds.length + 1, maxNewGoalsToday);
   return <div data-on-dark className="rounded-2xl border border-violet-400/25 px-4 py-3 text-sm" style={{
     background: "linear-gradient(135deg,rgba(76,29,149,0.35) 0%,rgba(124,58,237,0.22) 100%)",
   }}>
-      <p className="font-semibold text-white">{t("pages.ai_coach.journey_banner_title", { day: journeyDay })}</p>
+      <p className="font-semibold text-white">{t("pages.ai_coach.catalog_banner_title", { defaultValue: "Browse the full catalog" })}</p>
       <p className="text-xs mt-1 text-white/80">
-        {t("pages.ai_coach.journey_banner_body", {
-          unlocked,
-          total: maxNewGoalsToday,
+        {t("pages.ai_coach.catalog_banner_body", {
+          defaultValue: "Every topic is visible. The first goal in each category is free — upgrade for unlimited personalized plans.",
         })}
-        {calendarDaysLeft <= 3 && calendarDaysLeft > 0
-          ? ` ${t("pages.ai_coach.journey_calendar_warning", { days: calendarDaysLeft })}`
-          : ""}
       </p>
     </div>;
 }
@@ -662,6 +634,7 @@ type Feedback = "yes" | "somewhat" | "no";
 // ═══════════════════════════════════════════════════════════════════════════
 export default function AICoachPage() {
   const [, setLocation] = useLocation();
+  const { back: navigateBack } = useAppNavigate();
   const authFetch = useAuthFetch();
   const {
     toast
@@ -785,16 +758,45 @@ export default function AICoachPage() {
     openPaywall
   } = usePaywall();
 
-  const journeyBanner = !coachJourney.isPremium ? (
-    <CoachJourneyBanner
-      journeyDay={coachJourney.journeyDay}
-      completedGoalIds={coachJourney.completedGoalIds}
-      maxNewGoalsToday={coachJourney.maxNewGoalsToday}
-      calendarDaysLeft={coachJourney.access?.calendarDaysLeft ?? 7}
-      isJourneyLocked={coachJourney.isJourneyLocked}
-      lockReason={coachJourney.access?.lockReason}
-    />
-  ) : null;
+  const journeyBanner = !coachJourney.isPremium ? <FreemiumCatalogBanner /> : null;
+
+  const activeCategory = useMemo(
+    () => (selectedCategoryId ? GOAL_CATEGORIES.find((c) => c.id === selectedCategoryId) ?? null : null),
+    [selectedCategoryId],
+  );
+
+  const activeCategoryItems = useMemo(() => {
+    if (!activeCategory) return [];
+    if (!searchQuery) return activeCategory.items;
+    return activeCategory.items.filter((g) =>
+      g.title.toLowerCase().includes(searchQuery),
+    );
+  }, [activeCategory, searchQuery]);
+
+  const paginatedCategoryGoals = usePaginatedList(activeCategoryItems);
+
+  useEffect(() => {
+    if (!activeCategory) return;
+    trackCoachCategoryOpened(
+      activeCategory.id,
+      categoryGoalCount(activeCategory.id, activeCategory.items.length),
+      coachJourney.isPremium,
+    );
+  }, [activeCategory, coachJourney.isPremium]);
+
+  useEffect(() => {
+    if (coachJourney.isPremium || !activeCategory) return;
+    paginatedCategoryGoals.visible.forEach((g) => {
+      const access = coachJourney.getGoalAccess(g.id);
+      if (access !== "locked") return;
+      trackCoachPremiumItemViewed(
+        activeCategory.id,
+        g.id,
+        goalIndexInCoachCategory(g.id),
+        false,
+      );
+    });
+  }, [activeCategory, paginatedCategoryGoals.visible, coachJourney.isPremium, coachJourney.getGoalAccess]);
 
   const forYouCategory = useMemo(
     () => GOAL_CATEGORIES.find((c) => c.id === COACH_FOR_YOU_CATEGORY_ID) ?? null,
@@ -894,11 +896,9 @@ export default function AICoachPage() {
 
   // ─── Goals → Questions (or → 12-card Result for the 0–2 yr topic)
   const handlePickGoal = (id: string) => {
-    if (!coachJourney.isPremium && !isFreeCoachGoal(id)) {
-      openPaywall("coach_locked");
-      return;
-    }
-    if (coachJourney.getGoalAccess(id) === "locked") {
+    const access = getGoalAccess(id);
+    if (access === "locked") {
+      trackCoachLockedClick(coachGoalCategoryId(id), id, Math.max(0, goalIndexInCoachCategory(id)));
       openPaywall("coach_locked");
       return;
     }
@@ -1433,7 +1433,7 @@ export default function AICoachPage() {
       return true;
     }
     if (phase === "result" || phase === "loading" || phase === "resuming") {
-      handleStartOver();
+      navigateBack("ai-coach-exit");
       return true;
     }
     if (phase === "goals") {
@@ -1445,13 +1445,13 @@ export default function AICoachPage() {
         setSelectedCategoryId(null);
         return true;
       }
-      if (coachAgeBand) {
-        setCoachAgeBand(null);
-        return true;
-      }
+      // Age band is auto-inferred from the active child — clearing it re-applies via
+      // useEffect and makes the header back appear broken. Exit the screen instead.
+      navigateBack("ai-coach-exit");
+      return true;
     }
     return false;
-  }, [phase, searchQuery, selectedCategoryId, coachAgeBand, qIndex, goalId]);
+  }, [phase, searchQuery, selectedCategoryId, qIndex, goalId, navigateBack]);
 
   // ═══════════════════════════════════════════════════════════════════════
   // RENDER PHASES
@@ -1558,7 +1558,7 @@ export default function AICoachPage() {
               </div>
               <div>
                 <h1 className="font-quicksand text-xl font-bold text-white">{activeCat.title}</h1>
-                <p className="text-xs" style={{ color: "rgba(199,192,232,0.9)" }}>{activeCat.items.length} {t("pages.ai_coach.goals_pick_one_to_start")}</p>
+                <p className="text-xs" style={{ color: "rgba(199,192,232,0.9)" }}>{categoryGoalCount(activeCat.id, activeCat.items.length)} {t("pages.ai_coach.goals_pick_one_to_start")}</p>
               </div>
             </div>
           </div>
@@ -1569,7 +1569,7 @@ export default function AICoachPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {activeCat.items.map(g => {
+            {paginatedCategoryGoals.visible.map(g => {
             const access = getGoalAccess(g.id);
             return <button key={g.id} data-on-dark onClick={() => handlePickGoal(g.id)} className="relative rounded-[18px] p-5 text-left backdrop-blur-md hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center gap-4 overflow-hidden" style={{
               background: coachCategoryGradient(activeCat.id),
@@ -1599,6 +1599,15 @@ export default function AICoachPage() {
                 </button>;
           })}
           </div>
+          {paginatedCategoryGoals.hasMore && <div className="flex justify-center pt-2">
+              <button type="button" onClick={paginatedCategoryGoals.loadMore} className="text-sm font-semibold px-4 py-2 rounded-full bg-muted dark:bg-card text-primary">
+                {t("pages.ai_coach.load_more_goals", {
+                  defaultValue: "Load more ({{shown}} of {{total}})",
+                  shown: paginatedCategoryGoals.visible.length,
+                  total: paginatedCategoryGoals.total,
+                })}
+              </button>
+            </div>}
         </div>;
     }
 
@@ -1685,7 +1694,7 @@ export default function AICoachPage() {
                 <p className="font-quicksand font-bold text-[16px] text-white leading-tight">{t("pages.ai_coach.for_you_entry_title")}</p>
                 <p className="text-[12px] mt-1 leading-snug" style={{ color: "rgba(255,220,235,0.92)" }}>{t("pages.ai_coach.for_you_entry_sub")}</p>
                 <p className="text-[11px] mt-1.5 font-semibold" style={{ color: "rgba(255,255,255,0.75)" }}>
-                  {forYouCategory.items.length} {t("pages.ai_coach.goals_parent")}
+                  {categoryGoalCount(forYouCategory.id, forYouCategory.items.length)} {t("pages.ai_coach.goals_parent")}
                 </p>
               </div>
               <ChevronRight size={18} color="rgba(255,255,255,0.55)" className="shrink-0 relative" />
@@ -1709,7 +1718,7 @@ export default function AICoachPage() {
         <div className="relative flex-1 flex flex-col">
           <p className="font-quicksand font-bold text-[15px] text-white leading-tight">{cat.title}</p>
           <p className="text-[11px] mt-1" style={{ color: "rgba(169,159,217,0.85)" }}>
-            {cat.items.length} {t("pages.ai_coach.goals")}
+            {categoryGoalCount(cat.id, cat.items.length)} {t("pages.ai_coach.goals")}
           </p>
         </div>
       </button>;
@@ -1797,7 +1806,7 @@ export default function AICoachPage() {
                 <p className="font-quicksand font-bold text-[16px] text-white leading-tight">{t("pages.ai_coach.for_you_entry_title")}</p>
                 <p className="text-[12px] mt-1 leading-snug" style={{ color: "rgba(255,220,235,0.92)" }}>{t("pages.ai_coach.for_you_entry_sub")}</p>
                 <p className="text-[11px] mt-1.5 font-semibold" style={{ color: "rgba(255,255,255,0.75)" }}>
-                  {forYouCategory.items.length} {t("pages.ai_coach.goals_parent")}
+                  {categoryGoalCount(forYouCategory.id, forYouCategory.items.length)} {t("pages.ai_coach.goals_parent")}
                 </p>
               </div>
               <ChevronRight size={18} color="rgba(255,255,255,0.55)" className="shrink-0 relative" />

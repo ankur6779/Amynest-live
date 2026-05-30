@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { HUB_COLLAPSIBLE } from "@/lib/parent-hub-premium";
 import { ContinueJourneyCard } from "@/components/continue-journey-card";
 import { RealityDashboardPanel } from "@/components/reality-dashboard/reality-dashboard-panel";
 import { FamilyExecutiveDashboard } from "@/components/family-executive-dashboard";
@@ -12,6 +14,7 @@ export function HubCollapsiblePanel({
   children,
   testId,
   icon,
+  parentHub = false,
 }: {
   title: string;
   subtitle?: string;
@@ -19,21 +22,37 @@ export function HubCollapsiblePanel({
   children: ReactNode;
   testId?: string;
   icon?: ReactNode;
+  parentHub?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden" data-testid={testId}>
+    <div
+      className={cn(
+        parentHub ? HUB_COLLAPSIBLE : "rounded-xl border border-border bg-card overflow-hidden",
+      )}
+      data-testid={testId}
+    >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left hover:bg-muted/30 transition-colors"
+        className={cn(
+          "w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left transition-all duration-[220ms] ease-[ease]",
+          parentHub ? "hover:bg-white/[0.04]" : "hover:bg-muted/30",
+        )}
         aria-expanded={open}
       >
         <div className="flex items-center gap-2 min-w-0">
           {icon}
           <div className="min-w-0">
-            <p className="font-quicksand font-bold text-sm text-foreground">{title}</p>
+            <p
+              className={cn(
+                "font-quicksand font-bold text-foreground",
+                parentHub ? "text-lg" : "text-sm",
+              )}
+            >
+              {title}
+            </p>
             {!open && subtitle ? (
               <p className="text-xs text-muted-foreground truncate mt-0.5">{subtitle}</p>
             ) : null}
@@ -46,7 +65,12 @@ export function HubCollapsiblePanel({
         )}
       </button>
       {open ? (
-        <div className="px-3 pb-4 pt-1 space-y-3 border-t border-border animate-in fade-in duration-200">
+        <div
+          className={cn(
+            "px-3 pb-4 pt-1 space-y-3 animate-in fade-in duration-200",
+            parentHub ? "border-t border-white/[0.08] hub-today-stack" : "border-t border-border",
+          )}
+        >
           {children}
         </div>
       ) : null}

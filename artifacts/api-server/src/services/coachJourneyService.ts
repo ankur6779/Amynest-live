@@ -7,7 +7,6 @@ import {
   computeCoachJourneyAccess,
   getCoachGoalAccess,
   isCoachExtendUnlocked,
-  isFreeCoachGoal,
   maxNewGoalsForJourneyDay,
   migrateLegacyCoachUsage,
   normaliseCoachCompletedDays,
@@ -163,9 +162,6 @@ export async function assertCoachCanGenerate(
     completedGoalIds: status.completedGoalIds,
   })) {
     return { ok: false, status, goalAccess };
-  }
-  if (!isFreeCoachGoal(goalId) && !status.access.isPremium) {
-    return { ok: false, status, goalAccess: "locked" };
   }
   return { ok: true, status };
 }

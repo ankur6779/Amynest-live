@@ -278,6 +278,9 @@ export default defineConfig({
       "clsx",
       "tailwind-merge",
       "framer-motion",
+      // CJS-only; must pre-bundle (noDiscovery) or ESM import fails on every route
+      // because landing.tsx is eagerly imported from AppCore.
+      "react-qr-code",
     ],
   },
   root: path.resolve(import.meta.dirname),

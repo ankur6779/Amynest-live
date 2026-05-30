@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 import { useAppNavigate } from "@/components/app-link";
+import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useTranslation } from "react-i18next";
 import {
   AMY_ENCOURAGEMENT, AMY_NUDGE_BODY, AMY_NUDGE_TITLE,
@@ -22,9 +23,14 @@ const STEPS = DEFAULT_MORNING_STEPS;
 
 export default function SchoolMorningFlowPage() {
   const { t } = useTranslation();
-  const { navigate } = useAppNavigate();
+  const { navigate, back } = useAppNavigate();
   const [state, setState] = useState<MorningFlowDayState>(() => emptyDayState());
   const [tick, setTick] = useState(0);
+
+  usePageBackHandler(() => {
+    back("school-morning-flow-back");
+    return true;
+  }, [back]);
 
   // Hydrate on mount.
   useEffect(() => { setState(loadMorningFlow()); }, []);

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { Link } from "wouter";
-import { AppLink } from "@/components/app-link";
+import { AppLink, useAppNavigate } from "@/components/app-link";
+import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useTranslation } from "react-i18next";
 import { useListChildren } from "@workspace/api-client-react";
 import { ageBandForLifeSkills, ageBandLabel } from "@workspace/life-skills";
@@ -12,6 +12,7 @@ import { HubModuleGateWrap } from "@/components/hub-module-gate-wrap";
 
 export default function LifeSkillsPage() {
   const { t } = useTranslation();
+  const { back } = useAppNavigate();
   const lang: "en" = "en";
   const childrenQuery = useListChildren();
   const children = useMemo(
@@ -20,6 +21,11 @@ export default function LifeSkillsPage() {
   );
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const effective = children.find((c) => c.id === selectedId) ?? children[0] ?? null;
+
+  usePageBackHandler(() => {
+    back("life-skills-back");
+    return true;
+  }, [back]);
 
   return (
     <div className="container mx-auto max-w-2xl p-4 space-y-4">
@@ -45,9 +51,9 @@ export default function LifeSkillsPage() {
           <CardContent className="p-4 text-sm text-muted-foreground">
             {t("pages.life_skills_page.empty_message")}
             <div className="mt-3">
-              <Link href="/children/new">
+              <AppLink href="/children/new" source="life-skills-add-child">
                 <Button size="sm">{t("pages.life_skills_page.add_a_child")}</Button>
-              </Link>
+              </AppLink>
             </div>
           </CardContent>
         </Card>

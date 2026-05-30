@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Headphones, LifeBuoy, Lock, RotateCcw } from "lucide-react";
@@ -71,6 +71,7 @@ export default function AudioLessonsPage() {
   const [activeSeries, setActiveSeries] = useState<LessonSeries | null>(null);
   const [playerAutoPlay, setPlayerAutoPlay] = useState(false);
   const [emergencyOpen, setEmergencyOpen] = useState(false);
+  const skipCoachGoalAutoAgeRef = useRef(false);
   const { t } = useTranslation();
   const lang = "en";
   const authFetch = useAuthFetch();
@@ -113,7 +114,7 @@ export default function AudioLessonsPage() {
   );
 
   useEffect(() => {
-    if (!coachGoalId) return;
+    if (!coachGoalId || skipCoachGoalAutoAgeRef.current) return;
     const recommended = getRecommendedLessonsForCoachGoal(coachGoalId, 1);
     if (recommended[0]) {
       setSelectedAge(navGroupForLesson(recommended[0]));
@@ -134,21 +135,32 @@ export default function AudioLessonsPage() {
   }, []);
 
   const handleBack = useCallback(() => {
+    if (emergencyOpen) {
+      setEmergencyOpen(false);
+      return;
+    }
+    if (playerExpanded) {
+      setPlayerExpanded(false);
+      return;
+    }
+    if (open) {
+      setOpen(null);
+      setPlaybackControls(null);
+      setActiveSeries(null);
+      return;
+    }
     if (selectedAge) {
+      skipCoachGoalAutoAgeRef.current = true;
       setSelectedAge(null);
       return;
     }
     navigate("/parenting-hub", { replace: true, source: "audio-lessons-back" });
-  }, [selectedAge, navigate]);
+  }, [emergencyOpen, playerExpanded, open, selectedAge, navigate]);
 
   usePageBackHandler(() => {
-    if (selectedAge) {
-      setSelectedAge(null);
-      return true;
-    }
-    navigate("/parenting-hub", { replace: true, source: "audio-lessons-back" });
+    handleBack();
     return true;
-  }, [selectedAge, navigate]);
+  }, [handleBack]);
 
   useEffect(() => {
     if (!isPremium || !selectedAge) return;

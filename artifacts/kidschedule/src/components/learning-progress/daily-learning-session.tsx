@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import type { DailyLearningSession } from "@workspace/learning-progress-engine";
 import { consistencyLabel, emptySessionCopy } from "@workspace/learning-progress-engine";
 import { PremiumCard, PremiumProgressRing, PREMIUM_EASE } from "./premium-polish";
+import { ParentHubInfoBanner } from "./parent-hub-info-banner";
 
 interface DailyLearningSessionCardProps {
   session: DailyLearningSession;
@@ -13,6 +14,7 @@ interface DailyLearningSessionCardProps {
   childName?: string;
   onStepComplete?: (stepId: string) => void;
   completing?: boolean;
+  parentHub?: boolean;
 }
 
 export function DailyLearningSessionCard({
@@ -20,20 +22,38 @@ export function DailyLearningSessionCard({
   childName = "your child",
   onStepComplete,
   completing = false,
+  parentHub = false,
 }: DailyLearningSessionCardProps) {
   const pct = Math.round((session.completedCount / session.totalCount) * 100);
   if (session.completedCount === 0 && !session.isComplete) {
     return (
-      <PremiumCard testId="daily-learning-session">
-        <p className="text-sm text-muted-foreground text-center py-6 px-4 leading-relaxed">
-          {emptySessionCopy(childName)}
-        </p>
+      <PremiumCard
+        parentHub={parentHub}
+        testId="daily-learning-session"
+      >
+        {parentHub ? (
+          <div className="p-3">
+            <ParentHubInfoBanner
+              icon="🚀"
+              title="Daily Adventure"
+              message={emptySessionCopy(childName)}
+            />
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-6 px-4 leading-relaxed">
+            {emptySessionCopy(childName)}
+          </p>
+        )}
       </PremiumCard>
     );
   }
 
   return (
-    <PremiumCard glow={session.isComplete} testId="daily-learning-session">
+    <PremiumCard
+      parentHub={parentHub}
+      glow={session.isComplete && !parentHub}
+      testId="daily-learning-session"
+    >
       <div className="p-4 sm:p-5">
         <div className="flex items-start gap-4 mb-4">
           <PremiumProgressRing pct={pct} label={`${session.completedCount}/${session.totalCount}`} />

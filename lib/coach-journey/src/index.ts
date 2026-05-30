@@ -1,31 +1,42 @@
 /**
- * Amy Coach 3-day guided journey — shared constants + access rules.
- * Used by api-server and kidschedule.
+ * Amy Coach freemium access rules — shared by api-server and kidschedule.
+ * Show the full catalog; lock access (not visibility) after the first free
+ * sample per category.
  */
 
+import {
+  COACH_CATEGORY_GOAL_IDS,
+  coachGoalCategoryId,
+  isFreeSampleCoachGoal,
+  goalsInCoachCategory,
+} from "./catalog.js";
+
+export {
+  COACH_CATEGORY_GOAL_IDS,
+  coachGoalCategoryId,
+  goalsInCoachCategory,
+  coachCategoryGoalCount,
+  totalCoachGoalCount,
+  freeSampleCoachGoalId,
+  isFreeSampleCoachGoal,
+  goalIndexInCoachCategory,
+} from "./catalog.js";
+
+/** @deprecated Legacy journey window — kept for migration only. */
 export const COACH_JOURNEY_FREE_DAYS = 3;
 export const COACH_JOURNEY_CALENDAR_CAP_DAYS = 7;
 
-/** Goals free users may try during the 3-day journey (premium unlocks all). */
-export const FREE_COACH_GOAL_IDS = [
-  "manage-tantrums",
-  "balance-screen-time",
-  "navigate-fussy-eating",
-  "improve-sleep-patterns",
-  "boost-concentration",
-  "baby-not-sleeping",
-  "manage-grandparents-interference",
-  "toddler-tantrums",
-  "potty-training-readiness",
-  "sibling-rivalry",
-  "travel-with-kids",
-  "child-obesity-management",
-  "parent-burnout",
-] as const;
+/**
+ * @deprecated Use isFreeSampleCoachGoal — first goal per category is free.
+ * Retained for legacy localStorage migration.
+ */
+export const FREE_COACH_GOAL_IDS = Object.values(COACH_CATEGORY_GOAL_IDS)
+  .map((ids) => ids[0])
+  .filter(Boolean) as readonly string[];
 
-export type FreeCoachGoalId = (typeof FREE_COACH_GOAL_IDS)[number];
+export type FreeCoachGoalId = string;
 
-const FREE_GOAL_SET = new Set<string>(FREE_COACH_GOAL_IDS);
+const LEGACY_FREE_GOAL_SET = new Set<string>(FREE_COACH_GOAL_IDS);
 
 export interface CoachPlanRecord {
   goalId: string;
@@ -48,8 +59,9 @@ export interface CoachJourneyAccess {
 
 export type CoachGoalAccess = "open" | "try-free" | "locked";
 
+/** @deprecated Use isFreeSampleCoachGoal */
 export function isFreeCoachGoal(goalId: string): boolean {
-  return FREE_GOAL_SET.has(goalId);
+  return isFreeSampleCoachGoal(goalId);
 }
 
 export function formatDateIso(d: Date = new Date()): string {
@@ -89,10 +101,9 @@ export function completedGoalIdsFromPlans(plans: CoachPlanRecord[]): string[] {
   return out;
 }
 
-/** Max distinct new topics a free user may start on a given journey day. */
-export function maxNewGoalsForJourneyDay(journeyDay: number): number {
-  if (journeyDay >= COACH_JOURNEY_FREE_DAYS) return FREE_COACH_GOAL_IDS.length;
-  return Math.max(1, journeyDay);
+/** @deprecated Journey-day caps removed — catalog uses per-category free samples. */
+export function maxNewGoalsForJourneyDay(_journeyDay: number): number {
+  return Number.MAX_SAFE_INTEGER;
 }
 
 export function computeCoachJourneyAccess(opts: {
@@ -124,21 +135,15 @@ export function computeCoachJourneyAccess(opts: {
   );
   const msLeft = deadline.getTime() - now.getTime();
   const calendarDaysLeft = Math.max(0, Math.ceil(msLeft / 86400000));
-  const expired = msLeft <= 0 && completed.length < COACH_JOURNEY_FREE_DAYS;
-  const allDone = completed.length >= COACH_JOURNEY_FREE_DAYS;
-  const isLocked = allDone || expired;
-  const currentDay = allDone
-    ? COACH_JOURNEY_FREE_DAYS + 1
-    : Math.min(completed.length + 1, COACH_JOURNEY_FREE_DAYS);
 
   return {
     isPremium: false,
-    isFreePeriod: !isLocked,
-    isLocked,
-    lockReason: allDone ? "completed" : expired ? "expired" : "none",
+    isFreePeriod: true,
+    isLocked: false,
+    lockReason: "none",
     daysCompleted: completed.length,
     daysTotal: COACH_JOURNEY_FREE_DAYS,
-    currentDay,
+    currentDay: Math.min(completed.length + 1, COACH_JOURNEY_FREE_DAYS),
     calendarDaysLeft,
     calendarDeadline: deadline.toISOString(),
   };
@@ -147,45 +152,49 @@ export function computeCoachJourneyAccess(opts: {
 export function getCoachGoalAccess(opts: {
   goalId: string;
   isPremium: boolean;
-  access: CoachJourneyAccess;
+  access?: CoachJourneyAccess;
   completedGoalIds: string[];
 }): CoachGoalAccess {
   if (opts.isPremium) return "open";
-  if (!isFreeCoachGoal(opts.goalId)) return "locked";
-  if (opts.completedGoalIds.includes(opts.goalId)) return "open";
-  if (opts.access.isLocked || !opts.access.isFreePeriod) return "locked";
 
-  const maxNew = maxNewGoalsForJourneyDay(opts.access.currentDay);
-  if (opts.completedGoalIds.length >= maxNew) return "locked";
-  return "try-free";
+  const categoryId = coachGoalCategoryId(opts.goalId);
+  if (!categoryId) return "locked";
+
+  const freeSampleId = goalsInCoachCategory(categoryId)[0];
+  if (!freeSampleId) return "locked";
+
+  if (opts.goalId === freeSampleId) {
+    if (opts.completedGoalIds.includes(opts.goalId)) return "open";
+    return "try-free";
+  }
+
+  return "locked";
 }
 
 export function canGenerateCoachPlan(opts: {
   goalId: string;
   isPremium: boolean;
-  access: CoachJourneyAccess;
+  access?: CoachJourneyAccess;
   completedGoalIds: string[];
 }): boolean {
   return getCoachGoalAccess(opts) !== "locked";
 }
 
-/** Adaptive extend wins unlock from journey day 2 onward (or after day 1 complete). */
+/** Win extension beyond the initial plan is a premium feature. */
 export function isCoachExtendUnlocked(opts: {
   isPremium: boolean;
-  access: CoachJourneyAccess;
-  completedDays: number[];
+  access?: CoachJourneyAccess;
+  completedDays?: number[];
 }): boolean {
-  if (opts.isPremium) return true;
-  if (!opts.access.isFreePeriod) return false;
-  return opts.completedDays.length >= 1 || opts.access.currentDay >= 2;
+  return opts.isPremium;
 }
 
-/** Map legacy localStorage usage (2 lifetime topics) into journey state. */
+/** Map legacy localStorage usage into journey state. */
 export function migrateLegacyCoachUsage(blockUsedIds: string[]): {
   completedDays: number[];
   plansCompleted: CoachPlanRecord[];
 } {
-  const goals = blockUsedIds.filter(isFreeCoachGoal).slice(0, COACH_JOURNEY_FREE_DAYS);
+  const goals = blockUsedIds.filter((id) => LEGACY_FREE_GOAL_SET.has(id) || isFreeSampleCoachGoal(id)).slice(0, COACH_JOURNEY_FREE_DAYS);
   if (goals.length === 0) {
     return { completedDays: [], plansCompleted: [] };
   }

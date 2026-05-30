@@ -81,6 +81,8 @@ import {
 } from "@/components/learning-progress";
 import { useRewardCelebrations } from "@/hooks/use-reward-celebrations";
 import { HubCollapsiblePanel, HubFamilyPulseSection, HubExploreAgesSection } from "@/components/hub-light-layout";
+import { PARENT_HUB_PAGE, HUB_SECTION_SHELL } from "@/lib/parent-hub-premium";
+import { cn } from "@/lib/utils";
 
 // ── 5-section grouping for the "For You" content ────────────────────────────
 // Maps each premium section key to the tile IDs that live inside it.
@@ -190,12 +192,12 @@ function HubSection({
     });
   };
   return <div data-section-id={id}
-  className={[
-    "group relative rounded-xl overflow-hidden transition-all duration-200",
-    "border border-border bg-card",
-    highlighted && !open ? "border-primary/40 ring-1 ring-primary/20" : "",
-    open ? "shadow-sm" : "hover:border-border/80",
-  ].join(" ")}>
+  className={cn(
+    "group relative overflow-hidden transition-all duration-[220ms] ease-[ease]",
+    HUB_SECTION_SHELL,
+    highlighted && !open ? "border-primary/30 shadow-[0_0_24px_rgba(168,85,247,0.18)]" : "",
+    open ? "" : "hover:shadow-[0_0_20px_rgba(168,85,247,0.12)]",
+  )}>
       <button onClick={toggle} className={["w-full flex items-center justify-between gap-3 px-3 py-3 text-left", "transition-colors duration-200", open ? "bg-muted/30" : "hover:bg-muted/20"].join(" ")} aria-expanded={open}>
         <div className="flex items-center gap-3 min-w-0">
           <div className={["w-9 h-9 rounded-xl flex items-center justify-center shrink-0", accentClass, highlighted && !open ? "animate-[pulse_3s_ease-in-out_infinite]" : ""].join(" ")}>
@@ -1377,7 +1379,7 @@ function ParentingHubPage() {
 
   const previousStageTileIds = getPreviousStageTileIds(sections, currentBand, totalAgeMonths);
 
-  return <div className="max-w-6xl mx-auto space-y-4 pb-12">
+  return <div className={cn(PARENT_HUB_PAGE, "max-w-6xl mx-auto space-y-4 pb-12")}>
       <PageHeader />
 
       {/* ── Child Selector Panel ────────────────────────────────────────── */}
@@ -1393,6 +1395,7 @@ function ParentingHubPage() {
           subtitle={t("parent_hub.today_summary.subtitle")}
           defaultOpen
           testId="hub-today-summary"
+          parentHub
         >
           {hubJourney.access ? (
             <HubJourneyStrip
@@ -1416,11 +1419,11 @@ function ParentingHubPage() {
           {learningProgress.profile ? (
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1 min-w-0">
-                <ProgressionStrip profile={learningProgress.profile} />
+                <ProgressionStrip profile={learningProgress.profile} parentHub />
               </div>
               {learningProgress.phase3 ? (
                 <div className="sm:w-48 shrink-0">
-                  <RewardWalletStrip wallet={learningProgress.phase3.wallet} />
+                  <RewardWalletStrip wallet={learningProgress.phase3.wallet} parentHub />
                 </div>
               ) : null}
             </div>
@@ -1435,6 +1438,7 @@ function ParentingHubPage() {
               childName={effectiveChild.name}
               onStepComplete={handleSessionStep}
               completing={learningProgress.isCompleting}
+              parentHub
             />
           ) : null}
           {showSessionComplete && learningProgress.phase3 && learningProgress.unlocks ? (
@@ -1456,13 +1460,14 @@ function ParentingHubPage() {
             />
           ) : null}
           {learningProgress.phase3 && (learningProgress.phase3.recommendations?.length ?? 0) > 0 ? (
-            <AdaptiveRecommendationsCard items={learningProgress.phase3.recommendations} />
+            <AdaptiveRecommendationsCard items={learningProgress.phase3.recommendations} parentHub />
           ) : null}
           {learningProgress.unlocks ? (
             <div className="grid gap-2 md:grid-cols-2">
               <DailyFreshnessCard
                 items={learningProgress.unlocks.todaysUnlocks}
                 isRevisionDay={learningProgress.unlocks.isRevisionDay}
+                parentHub
               />
               <NextSessionUnlocks
                 items={learningProgress.unlocks.nextSessionUnlocks}

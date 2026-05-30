@@ -51,7 +51,6 @@ import {
   readOnboardingCache,
 } from "@/lib/setup-status";
 import { logOnboardingPipelineSnapshot } from "@/lib/onboarding-pipeline-log";
-import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { installTtsGestureListener } from "@/lib/tts-guard";
 import { OnboardingStatusProvider, useOnboardingStatus } from "@/contexts/onboarding-status-context";
 import { AmyVoiceProvider } from "@/contexts/amy-voice-provider";

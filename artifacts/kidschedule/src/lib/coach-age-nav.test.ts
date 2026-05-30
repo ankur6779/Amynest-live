@@ -26,6 +26,13 @@ describe("isCategoryVisibleForBand", () => {
     expect(isCategoryVisibleForBand("infant-problems", "5-7")).toBe(false);
   });
 
+  it("shows full child catalog for 0-2 infant parents", () => {
+    expect(isCategoryVisibleForBand("behavior", "0-2")).toBe(true);
+    expect(isCategoryVisibleForBand("learning", "0-2")).toBe(true);
+    expect(isCategoryVisibleForBand("toddler-behavior", "0-2")).toBe(true);
+    expect(isCategoryVisibleForBand("parenting-challenges", "0-2")).toBe(true);
+  });
+
   it("shows toddler behavior for 2-4", () => {
     expect(isCategoryVisibleForBand("toddler-behavior", "2-4")).toBe(true);
     expect(isCategoryVisibleForBand("toddler-behavior", "8-10")).toBe(false);
@@ -50,8 +57,8 @@ describe("groupCategoriesForBand", () => {
     const groups = groupCategoriesForBand(categories, "0-2");
     const ids = groups.flatMap((g) => g.categories.map((c) => c.id));
     expect(ids).toContain("infant-problems");
+    expect(ids).toContain("behavior");
     expect(ids).not.toContain("for-you");
-    expect(ids).not.toContain("behavior");
   });
 });
 

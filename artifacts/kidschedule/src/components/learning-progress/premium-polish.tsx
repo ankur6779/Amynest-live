@@ -29,6 +29,7 @@ import {
   type SoundCue,
   type RewardIntensity,
 } from "@/lib/experience-system";
+import { HUB_GLASS_CARD, HUB_HERO_GLOW } from "@/lib/parent-hub-premium";
 
 // ─── Re-exports for back-compat with Phase 4 callers ────────────────────────
 export const PREMIUM_EASE = TRANSITION.warm;
@@ -52,6 +53,10 @@ interface PremiumCardProps extends BaseCardProps {
   /** Legacy convenience — same as tier="glow". */
   glow?: boolean;
   interactive?: boolean;
+  /** Parent Hub glass surface — does not affect other routes. */
+  parentHub?: boolean;
+  /** Hero glow for Amy recommends section. */
+  hero?: boolean;
 }
 
 export function PremiumCard({
@@ -60,6 +65,8 @@ export function PremiumCard({
   tier,
   glow = false,
   interactive = false,
+  parentHub = false,
+  hero = false,
   testId,
   static: isStatic = false,
 }: PremiumCardProps) {
@@ -67,9 +74,10 @@ export function PremiumCard({
   const inner = (
     <div
       className={cn(
-        CARD_BASE,
-        CARD_VARIANTS[resolvedTier],
-        interactive && TOUCH_FEEDBACK,
+        parentHub
+          ? cn(HUB_GLASS_CARD, hero && HUB_HERO_GLOW, interactive && "cursor-pointer")
+          : cn(CARD_BASE, CARD_VARIANTS[resolvedTier]),
+        !parentHub && interactive && TOUCH_FEEDBACK,
         className,
       )}
       data-testid={testId}
@@ -78,6 +86,9 @@ export function PremiumCard({
     </div>
   );
   if (isStatic) return inner;
+  if (parentHub) {
+    return <div className="hub-page-enter">{inner}</div>;
+  }
   return (
     <motion.div
       variants={fadeUp}
