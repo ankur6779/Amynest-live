@@ -20,6 +20,7 @@
     "clean-phonics-audio-legacy": "tsx ./clean-phonics-audio-legacy.ts",
     "generate-phonics-library": "tsx ./generate-phonics-library.ts",
     "check-phonics-library": "tsx ./check-phonics-library.ts",
+    "check-phonics-release-gate": "tsx ./check-phonics-release-gate.ts",
     "generate:content-bank": "tsx ./generate-learning-zone-content-bank.ts",
     "upload:content-bank": "tsx ./upload-content-bank.ts",
     "build:content-bank-audio-map": "tsx ./build-content-bank-audio-map.ts",

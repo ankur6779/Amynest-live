@@ -27,8 +27,21 @@ export function getPhonicsLibraryManifest(): PhonicsAudioLibraryManifest {
 export function lookupPhonicsLibraryAsset(
   catalogKey: string,
 ): PhonicsAudioManifestAsset | null {
-  const asset = manifest.assets?.[catalogKey];
-  if (!asset?.url?.startsWith("https://")) return null;
+  const key = (catalogKey ?? "").trim();
+  if (!key) return null;
+  const asset = manifest.assets?.[key];
+  if (!asset) {
+    if (import.meta.env.DEV) {
+      console.warn("[phonics-library] missing asset", key);
+    }
+    return null;
+  }
+  if (!asset.url?.startsWith("https://")) {
+    if (import.meta.env.DEV) {
+      console.warn("[phonics-library] asset has no HTTPS url", key);
+    }
+    return null;
+  }
   return asset;
 }
 

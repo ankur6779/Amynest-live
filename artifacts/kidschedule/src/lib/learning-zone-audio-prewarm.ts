@@ -20,6 +20,7 @@ import {
   warmLocalCacheFromUrl,
 } from "@/lib/local-tts-cache";
 import { getPhonicsContentAudioUrl, getPhonicsStaticAudioUrl, prefetchEntirePhonicsLibrary } from "@/lib/phonics-static-audio";
+import { shouldPhonicsPrefetch } from "@/lib/phonics-circuit-breaker";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import {
   pregenerateTtsTexts,
@@ -275,7 +276,9 @@ export function scheduleLearningZoneAudioPrewarm(
 
   if (ctx.module === "phonics" && !phonicsLibraryDiskPrewarmStarted) {
     phonicsLibraryDiskPrewarmStarted = true;
-    prefetchEntirePhonicsLibrary();
+    if (shouldPhonicsPrefetch()) {
+      prefetchEntirePhonicsLibrary();
+    }
   }
 
   const stateKey = ctx.stateKey ?? buildLearningZoneAudioStateKey({

@@ -141,14 +141,64 @@ function checkLegacyRemoved(): CheckResult[] {
   ];
 }
 
-function main(): void {
-  if (process.env.PHONICS_LIBRARY_SKIP_CHECK === "1") {
-    console.log("[check:phonics-library] skipped (PHONICS_LIBRARY_SKIP_CHECK=1)");
-    return;
+const PHONICS_RELEASE_MIN_ASSETS = 100;
+
+function checkManifestIntegrity(manifest: PhonicsAudioLibraryManifest | null): CheckResult[] {
+  if (!manifest?.assets) {
+    return [
+      {
+        id: "min-count",
+        label: `Manifest has at least ${PHONICS_RELEASE_MIN_ASSETS} assets`,
+        ok: false,
+        detail: "manifest missing",
+      },
+      {
+        id: "https-urls",
+        label: "Every manifest asset has HTTPS url",
+        ok: false,
+        detail: "manifest missing",
+      },
+    ];
   }
 
+  const entries = Object.entries(manifest.assets);
+  let missingUrls = 0;
+  for (const [, asset] of entries) {
+    if (!asset?.url?.startsWith("https://")) missingUrls += 1;
+  }
+
+  return [
+    {
+      id: "min-count",
+      label: `Manifest has at least ${PHONICS_RELEASE_MIN_ASSETS} assets`,
+      ok: entries.length >= PHONICS_RELEASE_MIN_ASSETS,
+      detail: `${entries.length} assets`,
+    },
+    {
+      id: "https-urls",
+      label: "Every manifest asset has HTTPS url",
+      ok: missingUrls === 0,
+      detail: missingUrls ? `${missingUrls} missing/bad URLs` : "ok",
+    },
+  ];
+}
+
+export function runPhonicsLibraryChecks(): CheckResult[] {
+  if (process.env.PHONICS_LIBRARY_SKIP_CHECK === "1") {
+    console.log("[check:phonics-library] skipped (PHONICS_LIBRARY_SKIP_CHECK=1)");
+    return [];
+  }
   const manifest = loadManifest();
-  const results = [...checkCatalogCoverage(manifest), ...checkLegacyRemoved()];
+  return [
+    ...checkCatalogCoverage(manifest),
+    ...checkManifestIntegrity(manifest),
+    ...checkLegacyRemoved(),
+  ];
+}
+
+function main(): void {
+  const results = runPhonicsLibraryChecks();
+  if (results.length === 0) return;
 
   console.log("\n[check:phonics-library] PHONICS LIBRARY VALIDATION\n");
   for (const r of results) {
@@ -169,4 +219,10 @@ function main(): void {
   console.log("[check:phonics-library] PASS — library complete.\n");
 }
 
-main();
+const isDirectRun =
+  process.argv[1]?.includes("check-phonics-library.ts") &&
+  !process.argv[1]?.includes("check-phonics-release-gate");
+
+if (isDirectRun) {
+  main();
+}

@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LockedBlock } from "@/components/locked-block";
 import { PhonicsLearning } from "@/components/phonics-learning";
+import { PhonicsUnavailableFallback } from "@/components/phonics-unavailable-fallback";
 import { getPhonicsLevel } from "@/lib/phonics-content";
+import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
 import {
   resolvePrimaryCta,
@@ -179,6 +181,9 @@ export default function PhonicsPage() {
               </section>
             )}
 
+            {!isPhonicsModuleAvailable() ? (
+              <PhonicsUnavailableFallback childName={activeChild.name} />
+            ) : (
             <PhonicsLearning
               childQuery={search}
               childId={activeChild.id}
@@ -192,6 +197,7 @@ export default function PhonicsPage() {
                 })()
               }
             />
+            )}
           </div>
         </LockedBlock>
       </main>

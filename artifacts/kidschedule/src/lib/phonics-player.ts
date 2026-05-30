@@ -21,11 +21,16 @@ import {
 } from "@/lib/amy-voice-audio-start";
 import { audioManager } from "@/lib/audio-manager";
 import {
+  recordPhonicsCircuitOutcome,
+} from "@/lib/phonics-circuit-breaker";
+import { createSafeAudio } from "@/lib/phonics-safe-audio";
+import {
   recordPhonicsDebounceSkip,
-  recordPhonicsFailure,
   recordPhonicsGestureBlocked,
   recordPhonicsInterruption,
+  recordPhonicsPlayFailed,
   recordPhonicsPlayStart,
+  recordPhonicsPlaySuccess,
   recordPhonicsStartLatency,
   recordPhonicsZombieCleanup,
 } from "@/lib/phonics-telemetry";
@@ -246,7 +251,16 @@ export async function playPhonicsUrl(
   lastStartAt = now;
 
   // Always a CLEAN instance — never a primed/cached element.
-  const el = new Audio(trimmed);
+  const el = createSafeAudio(trimmed, { label });
+  if (!el) {
+    options.cleanup?.();
+    const error = trimmed.includes("storage.googleapis.com")
+      ? "phonics_url_blocked"
+      : "phonics_empty_url";
+    recordPhonicsPlayFailed(label, error, { url: trimmed.slice(0, 200) });
+    recordPhonicsCircuitOutcome(false, error);
+    return { ok: false, error };
+  }
   configureMobileAudioElement(el);
   el.preload = "auto";
   el.muted = false;
@@ -273,6 +287,12 @@ export async function playPhonicsUrl(
       if (activeElement === el) activeElement = null;
       setPlaying(false, null);
     }
+    if (result.ok) {
+      recordPhonicsPlaySuccess(label, { url: trimmed.slice(0, 200) });
+    } else {
+      recordPhonicsPlayFailed(label, result.error, { url: trimmed.slice(0, 200) });
+    }
+    recordPhonicsCircuitOutcome(result.ok, result.error);
     return result;
   };
 
@@ -300,8 +320,6 @@ export async function playPhonicsUrl(
     });
     if (gesture) {
       recordPhonicsGestureBlocked(label);
-    } else {
-      recordPhonicsFailure("phonics_play_failed");
     }
     emitAudioPlaybackEvent("audio_failed", {
       source: "phonics",
@@ -329,8 +347,6 @@ export async function playPhonicsUrl(
   log("phonics_clip_failed", { label, error: ended.error });
   if (ended.error === "phonics_zombie_timeout") {
     recordPhonicsZombieCleanup(label);
-  } else {
-    recordPhonicsFailure(ended.error);
   }
   return settle(ended);
 }

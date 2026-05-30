@@ -20,6 +20,11 @@ import { logAudioHealthSuccess } from "@/lib/audio-health";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import { logPhonicsPlaybackFailure } from "@/lib/phonics-playback-fallback";
 import {
+  shouldPhonicsPrefetch,
+  shouldPhonicsUseCache,
+} from "@/lib/phonics-circuit-breaker";
+import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
+import {
   getPhonicsLibraryFallbackUrl,
   getPhonicsContentCacheKey,
   listPhonicsLibraryPrewarmItems,
@@ -36,6 +41,11 @@ import {
 
 export { getAllPhonicsAudioKeys, resolvePhonicsAudioKey, resolvePhonicsSequenceKeys };
 export { stopPhonicsPlayback, isPhonicsPlaying };
+
+const PHONICS_PREWARM_BATCH_SIZE = 5;
+const PHONICS_PREWARM_BATCH_GAP_MS = 40;
+
+let libraryPrewarmStarted = false;
 
 /** HTTPS URL for a letter/digraph phoneme clip from the GCS library. */
 export function getPhonicsStaticAudioUrl(audioKey: string): string {
@@ -65,6 +75,7 @@ export function getPhonicsContentAudioUrl(
 }
 
 export function prefetchPhonicsAudioKeys(keys: string[]): void {
+  if (!shouldPhonicsPrefetch() || !isPhonicsModuleAvailable()) return;
   const unique = [...new Set(keys.map((k) => k.trim().toLowerCase()).filter(Boolean))];
   for (const key of unique) {
     const url = getPhonicsStaticAudioUrl(key);
@@ -77,6 +88,7 @@ export function prefetchPhonicsContentTexts(
   texts: string[],
   preferredType?: PhonicsAssetType,
 ): void {
+  if (!shouldPhonicsPrefetch() || !isPhonicsModuleAvailable()) return;
   for (const text of texts) {
     const url = getPhonicsContentAudioUrl(text, preferredType);
     if (!url) continue;
@@ -84,17 +96,49 @@ export function prefetchPhonicsContentTexts(
   }
 }
 
-/** Prewarm entire GCS phonics library into IndexedDB (+ link prefetch for all assets). */
-export function prefetchEntirePhonicsLibrary(): void {
-  const items = listPhonicsLibraryPrewarmItems();
+async function prewarmPhonicsLibraryBatched(items: ReturnType<typeof listPhonicsLibraryPrewarmItems>): Promise<void> {
   prefetchPhonicsLibraryUrls(items.map((item) => item.url));
-  for (const item of items) {
-    void warmLocalCacheFromUrl(item.localCacheKey, item.url);
+  for (let i = 0; i < items.length; i += PHONICS_PREWARM_BATCH_SIZE) {
+    if (!shouldPhonicsPrefetch()) break;
+    const batch = items.slice(i, i + PHONICS_PREWARM_BATCH_SIZE);
+    await Promise.all(
+      batch.map((item) => warmLocalCacheFromUrl(item.localCacheKey, item.url)),
+    );
+    if (i + PHONICS_PREWARM_BATCH_SIZE < items.length) {
+      await new Promise((r) => setTimeout(r, PHONICS_PREWARM_BATCH_GAP_MS));
+    }
+  }
+}
+
+/** Prewarm GCS phonics library into IndexedDB — batched to protect low-end devices. */
+export function prefetchEntirePhonicsLibrary(): void {
+  if (!shouldPhonicsPrefetch() || !isPhonicsModuleAvailable()) return;
+  if (libraryPrewarmStarted) return;
+  libraryPrewarmStarted = true;
+
+  const items = listPhonicsLibraryPrewarmItems();
+  if (items.length === 0) return;
+
+  const run = () => {
+    void prewarmPhonicsLibraryBatched(items).catch(() => undefined);
+  };
+
+  if (typeof window !== "undefined" && window.requestIdleCallback) {
+    window.requestIdleCallback(run, { timeout: 2000 });
+  } else if (typeof window !== "undefined") {
+    window.setTimeout(run, 120);
+  } else {
+    run();
   }
 }
 
 export function prefetchAllPhonicsAudio(): void {
   prefetchEntirePhonicsLibrary();
+}
+
+/** Test-only reset */
+export function _resetPhonicsStaticPrewarmForTests(): void {
+  libraryPrewarmStarted = false;
 }
 
 export type PlayPhonicsStaticOptions = {
@@ -114,12 +158,14 @@ async function resolveBestPlayUrl(
   cacheKey: string,
   networkUrl: string,
 ): Promise<ResolvedPlayUrl> {
-  const warmed = getGlobalCachedAudioForPlayback(cacheKey);
-  if (warmed?.src) return { url: warmed.src };
+  if (shouldPhonicsUseCache()) {
+    const warmed = getGlobalCachedAudioForPlayback(cacheKey);
+    if (warmed?.src) return { url: warmed.src };
 
-  const blobUrl = await getLocalCachedAudioUrl(cacheKey);
-  if (blobUrl) {
-    return { url: blobUrl, cleanup: () => URL.revokeObjectURL(blobUrl) };
+    const blobUrl = await getLocalCachedAudioUrl(cacheKey);
+    if (blobUrl) {
+      return { url: blobUrl, cleanup: () => URL.revokeObjectURL(blobUrl) };
+    }
   }
 
   if (!networkUrl) {
@@ -160,7 +206,9 @@ async function playUrlClip(
   });
 
   if (result.ok) {
-    void warmLocalCacheFromUrl(cacheKey, networkUrl || resolved.url);
+    if (shouldPhonicsUseCache()) {
+      void warmLocalCacheFromUrl(cacheKey, networkUrl || resolved.url);
+    }
     logAudioHealthSuccess({ layer: "static", fallbackUsed: false });
     return { ok: true, audioKey: label, url: resolved.url };
   }

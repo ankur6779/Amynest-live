@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AppErrorBoundary } from "@/components/app-error-boundary";
+import { PhonicsErrorBoundary } from "@/components/phonics-error-boundary";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -167,10 +167,10 @@ interface PhonicsLearningProps {
 }
 export function PhonicsLearning(props: PhonicsLearningProps) {
   return (
-    <AppErrorBoundary label="Phonics">
+    <PhonicsErrorBoundary childName={props.childName}>
       <PhonicsLearningContent {...props} />
       <PhonicsStopButton />
-    </AppErrorBoundary>
+    </PhonicsErrorBoundary>
   );
 }
 

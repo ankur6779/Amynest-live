@@ -1,33 +1,29 @@
 /**
- * Phonics playback analytics — lightweight in-memory counters.
- *
- * Tracks the metrics that matter for tap-to-hear quality: start latency, overlap
- * prevention (rapid-tap interruptions), fallback usage, failures, and zombie
- * cleanups. Pure counters + structured diagnostics — no playback control here.
+ * Phonics playback analytics — lightweight in-memory counters + production telemetry.
  */
 
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
+import { isAndroidInstalledAmyNestApp, isAndroidUa } from "@/lib/device-lite";
+
+export type PhonicsTelemetryEvent =
+  | "phonics_manifest_loaded"
+  | "phonics_manifest_missing"
+  | "phonics_audio_play_success"
+  | "phonics_audio_play_failed"
+  | "phonics_audio_url_blocked"
+  | "phonics_circuit_open"
+  | "phonics_render_crash";
 
 export type PhonicsPlaybackMetrics = {
-  /** Clips that began playing. */
   playStarts: number;
-  /** A new tap stopped a still-playing clip (overlap prevented / rapid tap). */
   interruptions: number;
-  /** Duplicate same-clip taps collapsed by the debounce. */
   debounceSkips: number;
-  /** Static MP3 missed → speech-synthesis / tone fallback used. */
   fallbacks: number;
-  /** Clips that failed to start or play. */
   failures: number;
-  /** Plays blocked awaiting a user gesture (autoplay policy). */
   gestureBlocked: number;
-  /** Clips that neither ended nor errored and were force-cleaned (zombie). */
   zombieCleanups: number;
-  /** Sum of start latency samples (ms). */
   startLatencyTotalMs: number;
-  /** Count of start latency samples. */
   startLatencySamples: number;
-  /** Worst observed start latency (ms). */
   startLatencyMaxMs: number;
 };
 
@@ -43,6 +39,33 @@ const metrics: PhonicsPlaybackMetrics = {
   startLatencySamples: 0,
   startLatencyMaxMs: 0,
 };
+
+function getPhonicsDeviceType(): string {
+  if (typeof navigator === "undefined") return "unknown";
+  try {
+    if (isAndroidInstalledAmyNestApp()) return "android_installed";
+    if (isAndroidUa()) return "android_browser";
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) return "ios";
+  } catch {
+    /* ignore */
+  }
+  return "web";
+}
+
+/** Structured phonics telemetry — never throws. */
+export function recordPhonicsTelemetry(
+  event: PhonicsTelemetryEvent,
+  detail: Record<string, unknown> = {},
+): void {
+  try {
+    logAmyVoiceDiag(event, {
+      deviceType: getPhonicsDeviceType(),
+      ...detail,
+    });
+  } catch {
+    /* telemetry must not crash playback */
+  }
+}
 
 export function recordPhonicsPlayStart(label: string): void {
   metrics.playStarts += 1;
@@ -89,6 +112,22 @@ export function recordPhonicsStartLatency(ms: number): void {
     avg: Math.round(metrics.startLatencyTotalMs / metrics.startLatencySamples),
     max: Math.round(metrics.startLatencyMaxMs),
   });
+}
+
+export function recordPhonicsPlaySuccess(
+  label: string,
+  detail: Record<string, unknown> = {},
+): void {
+  recordPhonicsTelemetry("phonics_audio_play_success", { label, ...detail });
+}
+
+export function recordPhonicsPlayFailed(
+  label: string,
+  reason: string,
+  detail: Record<string, unknown> = {},
+): void {
+  recordPhonicsFailure(reason);
+  recordPhonicsTelemetry("phonics_audio_play_failed", { label, reason, ...detail });
 }
 
 export function getPhonicsPlaybackMetrics(): PhonicsPlaybackMetrics & {

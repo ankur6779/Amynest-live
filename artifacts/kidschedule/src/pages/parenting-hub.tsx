@@ -12,6 +12,7 @@ import { PtmPrepAssistant } from "@/components/ptm-prep";
 import { EventPrepCard } from "@/components/event-prep-card";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
 import { HubLaunchCard } from "@/components/hub-launch-card";
+import { PhonicsUnavailableFallback } from "@/components/phonics-unavailable-fallback";
 import { ColoringBooks } from "@/components/coloring-books";
 import { FunSheets } from "@/components/fun-sheets";
 import { StoryHub } from "@/components/story-hub";
@@ -103,6 +104,7 @@ import {
   HUB_FEATURE_TILE_TITLE,
 } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
+import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
 
 // ── 5-section grouping for the "For You" content ────────────────────────────
 // Maps each premium section key to the tile IDs that live inside it.
@@ -1263,6 +1265,7 @@ function ParentingHubPage() {
       if (!shouldRenderHubTileContent("phonics", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
       return (
         <LockedBlock reason="hub_locked" locked={isHubLocked("hub_phonics")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+          {isPhonicsModuleAvailable() ? (
           <HubLaunchCard
             href="/phonics"
             title={t("parent_hub.web_tiles.phonics.title")}
@@ -1274,6 +1277,9 @@ function ParentingHubPage() {
             testId="phonics-launch-card"
             sectionId="phonics"
           />
+          ) : (
+            <PhonicsUnavailableFallback compact />
+          )}
         </LockedBlock>
       );
     }

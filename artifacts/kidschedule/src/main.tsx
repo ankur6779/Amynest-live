@@ -32,6 +32,7 @@ import {
   initGlobalAudioWarmup,
   installGlobalAudioWarmupOnGesture,
 } from "@/lib/global-audio-warmup";
+import { initPhonicsManifestValidation } from "@/lib/phonics-manifest-validation";
 import {
   initStartupOrchestrator,
   markReactRendered,
@@ -83,6 +84,7 @@ installStaticAudioDevTools();
 installStaticAudioGestureWarmup();
 installGlobalAudioWarmupOnGesture();
 injectStaticAudioPreloadHints();
+initPhonicsManifestValidation();
 initGlobalAudioWarmup();
 preloadSpeechSynthesisVoices();
 installAmyVoiceAudioDiagnostics();

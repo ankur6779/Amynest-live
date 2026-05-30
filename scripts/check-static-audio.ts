@@ -18,6 +18,7 @@ const KIDSCHEDULE_SRC = join(REPO_ROOT, "artifacts/kidschedule/src");
 const GCS_REFERENCE_ALLOWLIST = new Set([
   "lib/static-audio.ts",
   "lib/static-audio-guard.ts",
+  "lib/static-audio-guard.test.ts",
   "lib/static-audio-telemetry.ts",
   "lib/tts-playback.ts",
 ]);
