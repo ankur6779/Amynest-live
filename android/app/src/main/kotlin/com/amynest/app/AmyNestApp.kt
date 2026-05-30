@@ -4,6 +4,8 @@ import android.app.Application
 import android.util.Log
 import com.facebook.FacebookSdk
 import com.facebook.appevents.AppEventsLogger
+import com.facebook.login.LoginBehavior
+import com.facebook.login.LoginManager
 import com.revenuecat.purchases.LogLevel
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
@@ -33,8 +35,10 @@ class AmyNestApp : Application() {
     private fun initFacebookSdk() {
         try {
             FacebookSdk.fullyInitialize()
+            // In-app dialog only — never Custom Tab / external Chrome (matches Google picker UX).
+            LoginManager.getInstance().loginBehavior = LoginBehavior.DIALOG_ONLY
             AppEventsLogger.activateApp(this)
-            Log.d(TAG, "Facebook SDK initialised appId=${FacebookSdk.getApplicationId()}")
+            Log.d(TAG, "Facebook SDK initialised appId=${FacebookSdk.getApplicationId()} loginBehavior=DIALOG_ONLY")
         } catch (t: Throwable) {
             Log.e(TAG, "Facebook SDK init failed", t)
         }

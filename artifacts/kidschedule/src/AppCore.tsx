@@ -361,7 +361,7 @@ function FirebaseAuthBootstrap() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     let cancelled = false;
-    const resumePendingGoogleSignIn = () => {
+    const resumePendingNativeAuth = () => {
       void import("@/lib/google-auth").then(
         ({
           bootstrapPendingGoogleSignIn,
@@ -373,18 +373,26 @@ function FirebaseAuthBootstrap() {
           void bootstrapPendingGoogleSignIn();
         },
       );
+      void import("@/lib/facebook-auth").then(({ bootstrapPendingFacebookSignIn }) => {
+        if (cancelled) return;
+        void bootstrapPendingFacebookSignIn();
+      });
       void import("@/lib/native-auth").then(({ logNativeAuthDiagnostics, isAndroidAuthBridgePresent }) => {
         if (cancelled || !isAndroidAuthBridgePresent()) return;
         void logNativeAuthDiagnostics();
       });
     };
-    resumePendingGoogleSignIn();
-    window.addEventListener("amynest-google-auth-pending", resumePendingGoogleSignIn);
-    window.addEventListener("amynest-auth-bridge-ready", resumePendingGoogleSignIn);
+    resumePendingNativeAuth();
+    window.addEventListener("amynest-google-auth-pending", resumePendingNativeAuth);
+    window.addEventListener("amynest-facebook-auth-pending", resumePendingNativeAuth);
+    window.addEventListener("amynest-auth-bridge-ready", resumePendingNativeAuth);
+    window.addEventListener("amynest-oauth-resume", resumePendingNativeAuth);
     return () => {
       cancelled = true;
-      window.removeEventListener("amynest-google-auth-pending", resumePendingGoogleSignIn);
-      window.removeEventListener("amynest-auth-bridge-ready", resumePendingGoogleSignIn);
+      window.removeEventListener("amynest-google-auth-pending", resumePendingNativeAuth);
+      window.removeEventListener("amynest-facebook-auth-pending", resumePendingNativeAuth);
+      window.removeEventListener("amynest-auth-bridge-ready", resumePendingNativeAuth);
+      window.removeEventListener("amynest-oauth-resume", resumePendingNativeAuth);
     };
   }, []);
 

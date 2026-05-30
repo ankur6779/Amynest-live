@@ -5,7 +5,6 @@ import { handleGoogleLogin } from "@/lib/google-auth";
 import { prettyAuthError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { shouldShowGoogleSignIn } from "@/lib/auth-feature-flags";
 import { navigateAfterAuth } from "@/lib/auth-navigation";
-import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 import { AUTH_OAUTH_BTN_STYLE } from "@/lib/auth-screen-layout";
 
 type Props = {
@@ -52,14 +51,6 @@ export function GoogleSignInButton({ onError, className }: Props) {
         console.info("[amynest:google-sign-in-button] navigating", { destination });
         setLocation(destination);
         navigateAfterAuth(destination);
-        if (isNativeAmyNestAndroidWrapper()) {
-          window.setTimeout(() => {
-            const path = window.location.pathname;
-            if (path.includes("/sign-in") || path.includes("/sign-up")) {
-              window.location.assign(`${window.location.origin}${destination}`);
-            }
-          }, 600);
-        }
       }
     } catch (err: unknown) {
       logFirebaseAuthError("google:sign-in", err);
