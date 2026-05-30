@@ -3,11 +3,14 @@ import {
   CHAT_PROMPT_ATTR,
   ensureChatPromptVisible,
   measureChatVisibility,
+  metricsForChatLayout,
+  recordAndroidBaselineHeight,
   resolveActiveChatPromptId,
+  resetAndroidBaselineHeightForTests,
   scheduleSelfHealingVisibility,
+  setNativeWebViewVisibleHeightPx,
   validateActivePromptVisibility,
 } from "@/lib/chat-platform";
-import { metricsForChatLayout } from "@/lib/chat-platform/viewport";
 
 function mockScrollContainer(height: number, scrollHeight: number, scrollTop = 0) {
   const el = document.createElement("div");
@@ -49,22 +52,57 @@ describe("ChatPlatform visibility engine", () => {
   });
 
   describe("metricsForChatLayout", () => {
-    it("does not shrink height using keyboard inset on Android adjustResize shells", () => {
+    const ANDROID_UA = "Mozilla/5.0 (Linux; Android 14) AmyNestAndroid/1.0";
+
+    it("shrinks height by measured IME inset when adjustResize is broken on Android", () => {
       const originalInnerHeight = window.innerHeight;
-      Object.defineProperty(window, "innerHeight", { configurable: true, value: 520 });
+      resetAndroidBaselineHeightForTests();
+      Object.defineProperty(window, "innerHeight", { configurable: true, value: 900 });
       Object.defineProperty(navigator, "userAgent", {
         configurable: true,
-        value: "Mozilla/5.0 (Linux; Android 14) AmyNestAndroid/1.0",
+        value: ANDROID_UA,
       });
+      recordAndroidBaselineHeight();
+      document.documentElement.style.setProperty("--auth-keyboard-inset-native", "350px");
 
       const metrics = metricsForChatLayout(
-        { height: 520, offsetTop: 0, keyboardInset: 280 },
+        { height: 900, offsetTop: 0, keyboardInset: 350 },
         true,
       );
 
-      expect(metrics.height).toBe(520);
-      expect(metrics.keyboardInset).toBe(280);
+      expect(metrics.height).toBe(550);
+      expect(metrics.keyboardInset).toBe(350);
 
+      resetAndroidBaselineHeightForTests();
+      document.documentElement.style.removeProperty("--auth-keyboard-inset-native");
+      Object.defineProperty(window, "innerHeight", {
+        configurable: true,
+        value: originalInnerHeight,
+      });
+    });
+
+    it("keeps shrunk innerHeight when adjustResize already resized the WebView", () => {
+      const originalInnerHeight = window.innerHeight;
+      resetAndroidBaselineHeightForTests();
+      Object.defineProperty(window, "innerHeight", { configurable: true, value: 900 });
+      Object.defineProperty(navigator, "userAgent", {
+        configurable: true,
+        value: ANDROID_UA,
+      });
+      recordAndroidBaselineHeight();
+      Object.defineProperty(window, "innerHeight", { configurable: true, value: 550 });
+      document.documentElement.style.setProperty("--auth-keyboard-inset-native", "350px");
+
+      const metrics = metricsForChatLayout(
+        { height: 550, offsetTop: 0, keyboardInset: 350 },
+        true,
+      );
+
+      expect(metrics.height).toBe(550);
+      expect(metrics.keyboardInset).toBe(350);
+
+      resetAndroidBaselineHeightForTests();
+      document.documentElement.style.removeProperty("--auth-keyboard-inset-native");
       Object.defineProperty(window, "innerHeight", {
         configurable: true,
         value: originalInnerHeight,

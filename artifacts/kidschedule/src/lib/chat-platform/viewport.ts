@@ -35,12 +35,73 @@ export function resetAndroidBaselineHeightForTests(): void {
   _androidBaselineInnerHeight = null;
 }
 
+/** Shrunk WebView height reported by MainActivity when IME is visible. */
+let _nativeWebViewVisibleHeightPx: number | null = null;
+
+/** @internal Updated from `amynest-keyboard-inset` native bridge events. */
+export function setNativeWebViewVisibleHeightPx(px: number | null | undefined): void {
+  if (!isAndroidAdjustResizeChatShell()) return;
+  _nativeWebViewVisibleHeightPx =
+    typeof px === "number" && Number.isFinite(px) && px > 0 ? Math.round(px) : null;
+}
+
+export function readNativeWebViewVisibleHeightPx(): number | null {
+  return _nativeWebViewVisibleHeightPx;
+}
+
 /** Record full-screen innerHeight for keyboard diagnostics. */
 export function recordAndroidBaselineHeight(): void {
   if (!isAndroidAdjustResizeChatShell()) return;
   if (typeof window === "undefined") return;
   if (readNativeImeInsetPx() > 0) return;
   _androidBaselineInnerHeight = window.innerHeight;
+}
+
+/**
+ * Effective chat viewport height on Android WebView shells.
+ * When adjustResize works, innerHeight or native visibleHeight already shrank.
+ * On Samsung / Android 15 edge-to-edge, subtract measured IME inset once.
+ */
+export function resolveAndroidChatLayoutHeight(
+  keyboardInset: number,
+  nativeVisibleHeight: number | null = readNativeWebViewVisibleHeightPx(),
+): number {
+  if (typeof window === "undefined") return 0;
+  const innerH = window.innerHeight;
+
+  if (_androidBaselineInnerHeight != null && keyboardInset > 0) {
+    if (innerH < _androidBaselineInnerHeight - keyboardInset * 0.4) {
+      return innerH;
+    }
+  }
+
+  if (nativeVisibleHeight != null && nativeVisibleHeight > 0 && keyboardInset > 0) {
+    if (nativeVisibleHeight < innerH - keyboardInset * 0.35) {
+      return nativeVisibleHeight;
+    }
+  }
+
+  const vv = window.visualViewport;
+  if (vv && vv.height > 0 && keyboardInset > 0 && vv.height <= innerH - keyboardInset * 0.35) {
+    return Math.round(vv.height);
+  }
+
+  if (keyboardInset > 0) {
+    return Math.max(0, innerH - keyboardInset);
+  }
+
+  return innerH;
+}
+
+/** True when the web layer must lift the chat shell above the IME (adjustResize broken). */
+export function isAndroidWebKeyboardOffsetRequired(
+  keyboardInset: number = readNativeImeInsetPx(),
+): boolean {
+  if (!isAndroidAdjustResizeChatShell()) return false;
+  if (!isKeyboardOpen({ keyboardInset })) return false;
+  if (typeof window === "undefined") return false;
+  const resolved = resolveAndroidChatLayoutHeight(keyboardInset);
+  return resolved < window.innerHeight - 8;
 }
 
 /** Whether adjustResize appears to have shrunk the WebView (diagnostic only). */
@@ -142,11 +203,17 @@ export function readChatViewportMetrics(): ChatViewportMetrics {
   }
 
   if (isAndroidAdjustResizeChatShell()) {
-    return {
-      height: window.innerHeight,
-      offsetTop: 0,
-      keyboardInset: readNativeImeInsetPx(),
-    };
+    recordAndroidBaselineHeight();
+    const keyboardInset = readNativeImeInsetPx();
+    const height =
+      keyboardInset > 0
+        ? resolveAndroidChatLayoutHeight(keyboardInset)
+        : window.innerHeight;
+    const offsetTop =
+      keyboardInset > 0 && window.visualViewport
+        ? Math.max(0, Math.round(window.visualViewport.offsetTop))
+        : 0;
+    return { height, offsetTop, keyboardInset };
   }
 
   const vv = window.visualViewport;
@@ -169,7 +236,18 @@ export function metricsForChatLayout(
   metrics: ChatViewportMetrics,
   keyboardOpen: boolean,
 ): ChatViewportMetrics {
-  if (usesCapacitorBodyKeyboardResize() || isAndroidAdjustResizeChatShell()) {
+  if (isAndroidAdjustResizeChatShell()) {
+    recordAndroidBaselineHeight();
+    const inset = keyboardOpen ? metrics.keyboardInset : 0;
+    const height =
+      keyboardOpen && inset > 0 ? resolveAndroidChatLayoutHeight(inset) : window.innerHeight;
+    const offsetTop =
+      keyboardOpen && inset > 0 && window.visualViewport
+        ? Math.max(0, Math.round(window.visualViewport.offsetTop))
+        : 0;
+    return { height, offsetTop, keyboardInset: inset };
+  }
+  if (usesCapacitorBodyKeyboardResize()) {
     return {
       height: window.innerHeight,
       offsetTop: 0,
@@ -200,6 +278,12 @@ export function readMeasuredVisibleBottomPx(): number {
   const vv = window.visualViewport;
   const metrics = readChatViewportMetrics();
   if (isKeyboardOpen(metrics)) {
+    if (
+      isAndroidAdjustResizeChatShell() &&
+      isAndroidWebKeyboardOffsetRequired(metrics.keyboardInset)
+    ) {
+      return metrics.offsetTop + metrics.height;
+    }
     if (vv) return vv.offsetTop + vv.height;
     return window.innerHeight - metrics.keyboardInset;
   }
