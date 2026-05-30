@@ -1,7 +1,11 @@
 import { AppLink } from "@/components/app-link";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { cn } from "@/lib/utils";
-import { getHubTileAccentBar, getHubTileGlow, HUB_LAUNCH_CARD_BASE } from "@/lib/parent-hub-premium";
+import {
+  getHubFeatureTileAccent,
+  hubAccentBarClasses,
+  hubSectionCardClasses,
+} from "@/lib/parent-hub-premium";
 
 export function HubLaunchCard({
   href,
@@ -27,27 +31,28 @@ export function HubLaunchCard({
   onNavigate?: () => void;
 }) {
   const tileId = sectionId ?? testId.replace(/-launch-card$/, "");
+  const theme = getHubFeatureTileAccent(tileId);
 
   return (
     <AppLink
       href={href}
       onClick={() => onNavigate?.()}
       className={cn(
-        HUB_LAUNCH_CARD_BASE,
-        "block overflow-hidden p-0 pl-0",
+        "group block overflow-hidden p-0 pl-0",
+        hubSectionCardClasses(theme),
         cardClass,
-        getHubTileGlow(tileId),
       )}
       data-testid={testId}
       data-section-id={sectionId}
       source="hub-launch-card"
     >
       <div className="flex min-w-0">
-        <div className={cn("w-1 shrink-0 self-stretch", getHubTileAccentBar(tileId))} aria-hidden />
+        <div className={hubAccentBarClasses(theme)} aria-hidden />
         <div className="flex min-w-0 flex-1 items-center gap-3 p-4">
           <div
             className={cn(
-              "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40",
+              "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
+              theme.emojiShell,
               accentClass,
             )}
           >

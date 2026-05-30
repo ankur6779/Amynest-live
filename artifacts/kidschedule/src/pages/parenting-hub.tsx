@@ -87,15 +87,14 @@ import {
   HUB_GLASS_CARD,
   HUB_SECTION_LABEL,
   HUB_AGE_BADGE,
-  HUB_CARD_TITLE,
   HUB_BODY,
   HUB_QUICK_CHIP,
   hubQuickChipTint,
   HUB_SEE_ALL_CHIP,
   HUB_BOTTOM_CTA,
-  getHubTileAccentBar,
-  getHubTileGlow,
-  HUB_TILE_SHELL_BASE,
+  getHubFeatureTileAccent,
+  hubSectionCardClasses,
+  hubAccentBarClasses,
 } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
 
@@ -198,21 +197,19 @@ function HubSection({
       return next;
     });
   };
-  const tileBg = cardClass ?? "rgba(18,28,58,0.82)";
+  const tileTheme = getHubFeatureTileAccent(id);
   return (
     <div
       data-section-id={id}
       className={cn(
         "group",
-        HUB_TILE_SHELL_BASE,
-        "p-0 pl-0 active:scale-[1.015]",
-        getHubTileGlow(id),
+        hubSectionCardClasses(tileTheme),
+        cardClass,
         highlighted && !open && "shadow-[0_0_28px_rgba(168,85,247,0.24)]",
       )}
-      style={{ background: tileBg }}
     >
       <div className="flex min-w-0">
-        <div className={cn("w-1 shrink-0 self-stretch", getHubTileAccentBar(id))} aria-hidden />
+        <div className={hubAccentBarClasses(tileTheme)} aria-hidden />
         <div className="min-w-0 flex-1">
           <button
             onClick={toggle}
@@ -225,7 +222,8 @@ function HubSection({
             <div className="flex items-center gap-3 min-w-0">
               <div
                 className={cn(
-                  "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_14px_rgba(255,255,255,0.08)]",
+                  "w-9 h-9 flex items-center justify-center",
+                  tileTheme.emojiShell,
                   accentClass,
                   highlighted && !open ? "animate-[pulse_3s_ease-in-out_infinite]" : "",
                 )}
@@ -1583,15 +1581,10 @@ function ParentingHubPage() {
                 <div
                   key={group.key}
                   id={`hub-group-${group.key}`}
-                  className={cn(
-                    HUB_GLASS_CARD,
-                    "relative overflow-hidden p-0 pl-0 hub-page-enter active:scale-100",
-                    isOpen ? gs.openGlow : gs.cardGlow,
-                    !isOpen && "hover:shadow-[0_0_22px_rgba(168,85,247,0.14)]",
-                  )}
+                  className={cn(hubSectionCardClasses(gs), "hub-page-enter")}
                 >
                   <div className="flex min-w-0">
-                    <div className={cn("w-1.5 shrink-0 self-stretch", gs.accentBar)} aria-hidden />
+                    <div className={hubAccentBarClasses(gs)} aria-hidden />
                     <div className="min-w-0 flex-1">
                   <button
                     onClick={() => toggleGroup(group.key)}
@@ -1606,7 +1599,7 @@ function ParentingHubPage() {
                       {group.emoji}
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className={cn("block font-quicksand font-bold leading-tight", isOpen ? "text-lg text-amber-100/95" : HUB_CARD_TITLE)}>
+                      <span className={cn("block font-quicksand font-bold text-sm leading-tight", isOpen ? "text-amber-100/95" : "text-foreground")}>
                         {t(group.i18n)}
                       </span>
                       {isSupport && !isOpen ? (

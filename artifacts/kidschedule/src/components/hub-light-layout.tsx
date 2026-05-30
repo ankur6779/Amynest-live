@@ -7,7 +7,8 @@ import {
   HUB_CARD_TITLE,
   HUB_BODY,
   HUB_PANEL_ACCENTS,
-  HUB_GLASS_CARD,
+  hubSectionCardClasses,
+  hubAccentBarClasses,
   type HubPanelAccentKey,
 } from "@/lib/parent-hub-premium";
 import { ContinueJourneyCard } from "@/components/continue-journey-card";
@@ -98,11 +99,11 @@ export function HubCollapsiblePanel({
   if (panel) {
     return (
       <div
-        className={cn(HUB_GLASS_CARD, "overflow-hidden p-0 pl-0 hub-page-enter active:scale-100", panel.shell)}
+        className={cn(hubSectionCardClasses(panel), "hub-page-enter")}
         data-testid={testId}
       >
         <div className="flex min-w-0">
-          <div className={cn("w-1.5 shrink-0 self-stretch", panel.bar)} aria-hidden />
+          <div className={hubAccentBarClasses(panel)} aria-hidden />
           <div className="min-w-0 flex-1">{shell}</div>
         </div>
       </div>
@@ -165,11 +166,11 @@ export function HubExploreAgesSection({
 
   return (
     <div
-      className={cn(HUB_GLASS_CARD, "overflow-hidden p-0 pl-0 hub-page-enter active:scale-100", panel.shell)}
+      className={cn(hubSectionCardClasses(panel), "hub-page-enter")}
       data-testid={testId}
     >
       <div className="flex min-w-0">
-        <div className={cn("w-1.5 shrink-0 self-stretch", panel.bar)} aria-hidden />
+        <div className={hubAccentBarClasses(panel)} aria-hidden />
         <div className="min-w-0 flex-1">
           <button
             type="button"
