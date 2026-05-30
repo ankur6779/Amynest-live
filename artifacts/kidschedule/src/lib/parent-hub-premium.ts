@@ -324,7 +324,16 @@ export const HUB_BOTTOM_CTA = cn(
 );
 
 const HUB_FEATURE_TILE_ACCENTS: Record<string, HubAccentTheme> = {
-  "smart-study": HUB_GROUP_ACCENTS.learning,
+  "smart-study": makeTheme(
+    "border-[1.5px] border-[rgba(192,38,211,0.55)]",
+    "bg-gradient-to-b from-fuchsia-400 via-violet-500 to-purple-600",
+    "shadow-[0_0_14px_rgba(192,38,211,0.50)]",
+    "border-[rgba(192,38,211,0.45)]",
+    "shadow-[0_0_16px_rgba(192,38,211,0.38)]",
+    192,
+    38,
+    211,
+  ),
   "smart-math-tricks": HUB_GROUP_ACCENTS.today,
   abacus: HUB_GROUP_ACCENTS.stories,
   phonics: HUB_GROUP_ACCENTS.learning,
@@ -397,3 +406,73 @@ export const HUB_LAUNCH_CARD_BASE = cn(
   HUB_GLASS_SURFACE,
   "group block overflow-hidden p-0 pl-0",
 );
+
+// ─── Nested sub-tiles (lighter left→right shade inside expanded hub tiles) ─
+
+export function parseTintRgb(tintRgb: string): [number, number, number] {
+  const parts = tintRgb.split(",").map((s) => Number(s.trim()));
+  return [parts[0] ?? 129, parts[1] ?? 140, parts[2] ?? 248];
+}
+
+/** Horizontal fade — stronger at the left accent bar, softer toward the right. */
+export function hubSubTileShadeGradient(r: number, g: number, b: number): string {
+  return `linear-gradient(90deg, rgba(${r},${g},${b},0.20) 0%, rgba(${r},${g},${b},0.09) 40%, rgba(${r},${g},${b},0.025) 100%)`;
+}
+
+export function hubSubTileAccentBarGradient(r: number, g: number, b: number): string {
+  return `linear-gradient(180deg, rgba(${r},${g},${b},0.72) 0%, rgba(${r},${g},${b},0.24) 100%)`;
+}
+
+/** Pull RGB from legacy `cardClass="linear-gradient(...rgba(r,g,b..."` strings. */
+export function extractTintRgbFromCardClass(cardClass?: string): string | undefined {
+  if (!cardClass) return undefined;
+  const match = cardClass.match(/rgba\((\d+),(\d+),(\d+)/);
+  if (!match) return undefined;
+  return `${match[1]},${match[2]},${match[3]}`;
+}
+
+export const HUB_SUB_TILE_SHELL = cn(
+  "relative overflow-hidden rounded-xl",
+  "border border-white/[0.08] backdrop-blur-[12px]",
+  "transition-all duration-200",
+);
+
+export function hubSubTileShellClasses(
+  r: number,
+  g: number,
+  b: number,
+  open = false,
+): string {
+  return cn(
+    HUB_SUB_TILE_SHELL,
+    open
+      ? `shadow-[0_0_0_1px_rgba(${r},${g},${b},0.22),0_4px_16px_rgba(${r},${g},${b},0.10)]`
+      : `hover:shadow-[0_0_0_1px_rgba(${r},${g},${b},0.16),0_2px_10px_rgba(${r},${g},${b},0.06)]`,
+  );
+}
+
+export const HUB_SUB_TILE_ICON = cn(
+  "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+  "shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] ring-1 ring-white/25",
+);
+
+const HUB_SUB_TILE_ICON_ACCENTS: Record<string, string> = {
+  "34,211,238": "bg-gradient-to-br from-cyan-400 to-teal-500",
+  "251,191,36": "bg-gradient-to-br from-amber-400 to-yellow-500",
+  "244,114,182": "bg-gradient-to-br from-pink-400 to-rose-500",
+  "250,204,21": "bg-gradient-to-br from-yellow-400 to-orange-400",
+  "129,140,248": "bg-gradient-to-br from-indigo-400 to-violet-500",
+  "96,165,250": "bg-gradient-to-br from-blue-400 to-indigo-500",
+  "52,211,153": "bg-gradient-to-br from-emerald-400 to-green-500",
+  "45,212,191": "bg-gradient-to-br from-teal-400 to-cyan-500",
+  "56,189,248": "bg-gradient-to-br from-sky-400 to-blue-500",
+  "167,139,250": "bg-gradient-to-br from-violet-400 to-purple-500",
+  "139,92,246": "bg-gradient-to-br from-violet-500 to-purple-600",
+};
+
+export function getHubSubTileIconAccent(tintRgb: string): string {
+  return (
+    HUB_SUB_TILE_ICON_ACCENTS[tintRgb] ??
+    "bg-gradient-to-br from-indigo-400 to-violet-500"
+  );
+}

@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Moon, Gift } from "lucide-react";
-import { SmartStudyZone } from "@/components/smart-study-zone";
 import { PtmPrepAssistant } from "@/components/ptm-prep";
 import { EventPrepCard } from "@/components/event-prep-card";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
@@ -61,6 +60,7 @@ import {
 } from "@/lib/hub-support-utils";
 import { getArticlesForAgeMonths } from "@/lib/articles-data";
 import { NewParentTipsSection } from "@/components/new-parent-tips";
+import { HubSubTileChip, HubSubTileShell } from "@/components/hub-sub-tile-shell";
 import { HubJourneyPulse } from "@/components/hub-journey-pulse";
 import { HubTodayLearningPanel } from "@/components/hub-today-learning-panel";
 import { TodaysPathFromStatus } from "@/components/todays-path";
@@ -101,6 +101,9 @@ import {
   HUB_FEATURE_TILE_PREVIEW,
   HUB_FEATURE_TILE_TEXT,
   HUB_FEATURE_TILE_TITLE,
+  extractTintRgbFromCardClass,
+  getHubSubTileIconAccent,
+  HUB_SUB_TILE_ICON,
 } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
 
@@ -381,6 +384,14 @@ const AMY_PROMPT_EMOJI: Record<typeof AMY_PROMPT_IDS[number], string> = {
   screen: "📱",
   language: "💬"
 };
+const AMY_PROMPT_TINT: Record<typeof AMY_PROMPT_IDS[number], string> = {
+  sleep: "129,140,248",
+  tantrums: "244,114,182",
+  picky: "52,211,153",
+  school: "96,165,250",
+  screen: "251,191,36",
+  language: "167,139,250",
+};
 function AmyAISuggestionsSection() {
   const {
     t
@@ -394,10 +405,12 @@ function AmyAISuggestionsSection() {
         const label = t(`parent_hub.amy.prompts.${id}.label`);
         const prompt = t(`parent_hub.amy.prompts.${id}.prompt`);
         return <AppLink key={id} href={`/assistant?q=${encodeURIComponent(prompt)}`}>
-              <button className="w-full text-left flex items-center gap-2.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 px-3 py-2.5 transition-all">
-                <span className="text-xl shrink-0">{AMY_PROMPT_EMOJI[id]}</span>
-                <span className="text-sm font-semibold text-foreground">{label}</span>
-              </button>
+              <HubSubTileChip tintRgb={AMY_PROMPT_TINT[id]}>
+                <button className="w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-all hover:bg-white/[0.04]">
+                  <span className="text-xl shrink-0">{AMY_PROMPT_EMOJI[id]}</span>
+                  <span className="text-sm font-semibold text-foreground">{label}</span>
+                </button>
+              </HubSubTileChip>
             </AppLink>;
       })}
       </div>
@@ -419,11 +432,11 @@ const EMOTIONAL_CARD_EMOJI: Record<typeof EMOTIONAL_CARD_IDS[number], string> = 
   connect: "😔",
   break: "😮‍💨"
 };
-const EMOTIONAL_CARD_BG: Record<typeof EMOTIONAL_CARD_IDS[number], string> = {
-  overwhelmed: "bg-gradient-to-br from-rose-500/10 to-pink-500/5 border-rose-300/30 dark:border-rose-400/20 hover:border-rose-400/50",
-  anxious: "bg-gradient-to-br from-violet-500/10 to-purple-500/5 border-violet-300/30 dark:border-violet-400/20 hover:border-violet-400/50",
-  connect: "bg-gradient-to-br from-amber-500/10 to-orange-500/5 border-amber-300/30 dark:border-amber-400/20 hover:border-amber-400/50",
-  break: "bg-gradient-to-br from-sky-500/10 to-cyan-500/5 border-sky-300/30 dark:border-sky-400/20 hover:border-sky-400/50",
+const EMOTIONAL_CARD_TINT: Record<typeof EMOTIONAL_CARD_IDS[number], string> = {
+  overwhelmed: "244,114,182",
+  anxious: "167,139,250",
+  connect: "251,191,36",
+  break: "56,189,248",
 };
 function EmotionalSupportSection({
   cardOrder,
@@ -448,11 +461,15 @@ function EmotionalSupportSection({
         const isHighlighted = moodHighlight && idx === 0;
         return <SubItemGate key={id} sectionId="hub_emotional" subItemId={id}>
               <AppLink href={`/assistant?q=${encodeURIComponent(prompt)}`}>
-                <button className={[
-                  "w-full text-left rounded-2xl border-2 px-4 py-3 transition-all",
-                  EMOTIONAL_CARD_BG[id],
-                  isHighlighted ? "ring-2 ring-primary/45 shadow-[0_0_20px_-4px_rgba(168,85,247,0.45)]" : "",
-                ].join(" ")}>
+                <HubSubTileChip tintRgb={EMOTIONAL_CARD_TINT[id]}>
+                  <button
+                    className={cn(
+                      "w-full text-left px-4 py-3 transition-all hover:bg-white/[0.04]",
+                      isHighlighted
+                        ? "ring-2 ring-inset ring-primary/45 shadow-[0_0_20px_-4px_rgba(168,85,247,0.45)]"
+                        : "",
+                    )}
+                  >
                   {isHighlighted ? (
                     <span className="text-[10px] font-bold uppercase tracking-wide text-primary mb-1 block">
                       {t("parent_hub.emotional_footer.suggested_for_you")}
@@ -462,6 +479,7 @@ function EmotionalSupportSection({
                   <p className="font-bold text-sm text-foreground leading-tight">{title}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
                 </button>
+                </HubSubTileChip>
               </AppLink>
             </SubItemGate>;
       })}
@@ -504,7 +522,9 @@ interface SubSectionProps {
   title: string;
   description: string;
   accentClass: string;
-  /** Tailwind gradient classes for the card background */
+  /** RGB string "r,g,b" for left→right shade gradient */
+  tintRgb?: string;
+  /** @deprecated Prefer tintRgb — legacy linear-gradient cardClass still parsed for RGB */
   cardClass?: string;
   /**
    * Optional gating: when set, wraps the entire SubSection with a
@@ -520,18 +540,30 @@ function SubSection({
   title,
   description,
   accentClass,
+  tintRgb,
   cardClass,
   gateSection,
   children
 }: SubSectionProps) {
   const [open, setOpen] = useState(false);
-  const inner = <div
-  className={["relative rounded-xl overflow-hidden transition-all duration-200",
-  "border border-border bg-card",
-  open ? "shadow-sm" : "hover:border-border/80"].join(" ")}>
-      <button onClick={() => setOpen(v => !v)} className={["w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left", "transition-colors duration-200", open ? "bg-muted/30" : "hover:bg-muted/20"].join(" ")} aria-expanded={open}>
+  const resolvedTint =
+    tintRgb ?? extractTintRgbFromCardClass(cardClass) ?? "129,140,248";
+  const iconAccent = accentClass.includes("from-muted")
+    ? getHubSubTileIconAccent(resolvedTint)
+    : accentClass;
+  const inner = (
+    <HubSubTileShell tintRgb={resolvedTint} open={open}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className={cn(
+          "w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left",
+          "transition-colors duration-200",
+          open ? "bg-white/[0.04]" : "hover:bg-white/[0.03]",
+        )}
+        aria-expanded={open}
+      >
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className={["w-8 h-8 rounded-lg flex items-center justify-center shrink-0", accentClass].join(" ")}>
+          <div className={cn(HUB_SUB_TILE_ICON, iconAccent)}>
             {icon}
           </div>
           <div className="min-w-0">
@@ -539,15 +571,25 @@ function SubSection({
             <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{description}</p>
           </div>
         </div>
-        <span className={["shrink-0 w-6 h-6 rounded-full flex items-center justify-center", "border border-border/50 bg-white/60 dark:bg-white/5", "transition-transform duration-300", open ? "rotate-180 text-primary border-primary/40" : "text-muted-foreground"].join(" ")}>
+        <span
+          className={cn(
+            "shrink-0 w-6 h-6 rounded-full flex items-center justify-center",
+            "border border-white/15 bg-white/[0.06]",
+            "transition-transform duration-300",
+            open ? "rotate-180 text-amber-300/90 border-amber-300/35" : "text-muted-foreground",
+          )}
+        >
           <ChevronDown className="h-3.5 w-3.5" />
         </span>
       </button>
 
-      {open && <div className="px-3 pb-3 pt-2 border-t border-border animate-in fade-in slide-in-from-top-1 duration-200">
+      {open ? (
+        <div className="px-3 pb-3 pt-2 border-t border-white/[0.08] animate-in fade-in slide-in-from-top-1 duration-200">
           {children}
-        </div>}
-    </div>;
+        </div>
+      ) : null}
+    </HubSubTileShell>
+  );
   if (gateSection) {
     return <SubItemGate sectionId={gateSection} subItemId={title}>
         {inner}
@@ -1294,11 +1336,22 @@ function ParentingHubPage() {
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       if (!shouldRenderHubTileContent("smart-study", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
-      return <LockedBlock reason="hub_locked" locked={isHubLocked("hub_smart_study")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-          <HubSection id="smart-study" icon={<GraduationCap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.smart-study.title")} description={t("parent_hub.web_tiles.smart-study.description")} accentClass="bg-gradient-to-br from-indigo-400 to-blue-500" cardClass="linear-gradient(135deg,rgba(129,140,248,0.30)0%,rgba(59,130,246,0.14)100%)" tryFree={tryFreeFor("hub_smart_study")} onOpen={() => markHubUsed("hub_smart_study")}> {/* audit-ok: brand tile accent gradient */}
-            <SmartStudyZone />
-          </HubSection>
-        </LockedBlock>;
+      return (
+        <LockedBlock reason="hub_locked" locked={isHubLocked("hub_smart_study")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+          <HubLaunchCard
+            href="/study"
+            title={t("parent_hub.web_tiles.smart-study.title")}
+            description={t("parent_hub.web_tiles.smart-study.description")}
+            icon={<GraduationCap className="h-5 w-5 text-white" />}
+            accentClass="bg-gradient-to-br from-fuchsia-500 to-violet-600"
+            cardClass="bg-gradient-to-br from-fuchsia-500/30 to-violet-600/15 hover:shadow-[0_10px_36px_-10px_rgba(192,38,211,0.45)]"
+            tryFree={tryFreeFor("hub_smart_study")}
+            testId="smart-study-launch-card"
+            sectionId="smart-study"
+            onNavigate={() => markHubUsed("hub_smart_study")}
+          />
+        </LockedBlock>
+      );
     }
   }, {
     // ── Spelling Mastery — full-screen route ───────────────────────────

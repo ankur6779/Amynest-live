@@ -13,6 +13,9 @@ import { InfantFeedingTracker } from "@/components/infant-feeding-tracker";
 import { INFANT_CATEGORIES, type InfantCategory, type Lang, getTipsForAge, getAmyInsight, pickLang, VACCINATIONS, getUpcomingVaccinationsWithLog, getVaccinationSummary, type VaxStatus, type VaxLogMap, getIsoWeekKey } from "@workspace/infant-hub";
 import { formatAge } from "@/lib/age-groups";
 import { useToast } from "@/hooks/use-toast";
+import { HubSubTileShell } from "@/components/hub-sub-tile-shell";
+import { extractTintRgbFromCardClass } from "@/lib/parent-hub-premium";
+import { cn } from "@/lib/utils";
 interface InfantHubProps {
   childId: number;
   childName: string;
@@ -225,6 +228,7 @@ function IHSection({
   defaultOpen = false,
   accentClass = "bg-gradient-to-br from-primary to-primary",
   cardColor,
+  tintRgb,
   children
 }: {
   icon: React.ReactNode;
@@ -233,48 +237,100 @@ function IHSection({
   defaultOpen?: boolean;
   /** Tailwind gradient for the icon square — must be a static string at the call site */
   accentClass?: string;
-  /** CSS linear-gradient() string applied as inline background on the card tile */
+  /** @deprecated Prefer tintRgb — legacy linear-gradient cardColor still parsed for RGB */
   cardColor?: string;
+  /** RGB string "r,g,b" for left→right shade gradient */
+  tintRgb?: string;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const resolvedTint =
+    tintRgb ?? extractTintRgbFromCardClass(cardColor) ?? undefined;
+
+  if (resolvedTint) {
+    return (
+      <HubSubTileShell tintRgb={resolvedTint} open={open} className="rounded-2xl">
+        <button
+          onClick={() => setOpen(v => !v)}
+          className={cn(
+            "w-full flex items-center justify-between gap-3 px-4 py-4 text-left transition-colors duration-200",
+            open ? "bg-white/[0.04]" : "hover:bg-white/[0.03]",
+          )}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className={cn(
+                "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
+                "shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ring-1 ring-white/30 dark:ring-white/10",
+                accentClass,
+              )}
+            >
+              <span className="text-white [&>svg]:h-5 [&>svg]:w-5">{icon}</span>
+            </div>
+            <div className="min-w-0">
+              <span className="font-bold text-[15px] leading-snug text-foreground block truncate">{title}</span>
+              {badge ? (
+                <span className="inline-block mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 dark:bg-white/10 text-foreground/80 backdrop-blur-sm">
+                  {badge}
+                </span>
+              ) : null}
+            </div>
+          </div>
+          {open ? (
+            <ChevronUp className="h-5 w-5 text-foreground/50 shrink-0" />
+          ) : (
+            <ChevronDown className="h-5 w-5 text-foreground/50 shrink-0" />
+          )}
+        </button>
+        {open ? <div className="px-4 pb-4 pt-1 border-t border-white/[0.08]">{children}</div> : null}
+      </HubSubTileShell>
+    );
+  }
+
   return (
     <div
-      style={cardColor ? { background: cardColor } : undefined}
-      className={["rounded-2xl overflow-hidden transition-all duration-300",
-        cardColor ? "backdrop-blur-xl" : "bg-white/60 dark:bg-white/[0.04]",
+      className={cn(
+        "rounded-2xl overflow-hidden transition-all duration-300",
+        "bg-white/60 dark:bg-white/[0.04]",
         "border border-white/30 dark:border-white/10",
-        open ? "shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_10px_32px_-8px_rgba(0,0,0,0.35)]"
-             : "shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] hover:shadow-[0_4px_20px_-6px_rgba(0,0,0,0.25)]",
-      ].join(" ")}
+        open
+          ? "shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_10px_32px_-8px_rgba(0,0,0,0.35)]"
+          : "shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] hover:shadow-[0_4px_20px_-6px_rgba(0,0,0,0.25)]",
+      )}
     >
       <button
         onClick={() => setOpen(v => !v)}
-        className={["w-full flex items-center justify-between gap-3 px-4 py-4 text-left transition-colors duration-200",
+        className={cn(
+          "w-full flex items-center justify-between gap-3 px-4 py-4 text-left transition-colors duration-200",
           open ? "bg-black/[0.04] dark:bg-black/[0.08]" : "hover:bg-white/10 dark:hover:bg-white/[0.04]",
-        ].join(" ")}
+        )}
       >
         <div className="flex items-center gap-3 min-w-0">
-          {/* coloured icon square — audit-ok: intentional vibrant per-tile accent */}
-          <div className={["shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
-            "shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ring-1 ring-white/30 dark:ring-white/10",
-            accentClass].join(" ")}>
+          <div
+            className={cn(
+              "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
+              "shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ring-1 ring-white/30 dark:ring-white/10",
+              accentClass,
+            )}
+          >
             <span className="text-white [&>svg]:h-5 [&>svg]:w-5">{icon}</span>
           </div>
           <div className="min-w-0">
             <span className="font-bold text-[15px] leading-snug text-foreground block truncate">{title}</span>
-            {badge && (
+            {badge ? (
               <span className="inline-block mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 dark:bg-white/10 text-foreground/80 backdrop-blur-sm">
                 {badge}
               </span>
-            )}
+            ) : null}
           </div>
         </div>
-        {open
-          ? <ChevronUp className="h-5 w-5 text-foreground/50 shrink-0" />
-          : <ChevronDown className="h-5 w-5 text-foreground/50 shrink-0" />}
+        {open ? (
+          <ChevronUp className="h-5 w-5 text-foreground/50 shrink-0" />
+        ) : (
+          <ChevronDown className="h-5 w-5 text-foreground/50 shrink-0" />
+        )}
       </button>
-      {open && <div className="px-4 pb-4 pt-1">{children}</div>}
+      {open ? <div className="px-4 pb-4 pt-1">{children}</div> : null}
     </div>
   );
 }
