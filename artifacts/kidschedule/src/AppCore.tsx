@@ -46,6 +46,7 @@ import { ApiRetryShell } from "@/components/api-retry-shell";
 import { ProductionAppShell } from "@/components/production-app-shell";
 import { FetchTimeoutError } from "@/lib/fetch-with-timeout";
 import {
+  clearUserScopedClientCaches,
   effectiveSetupStatus,
   isSetupComplete,
   readOnboardingCache,
@@ -477,6 +478,7 @@ function QueryClientCacheInvalidator() {
         prevUserIdRef.current !== undefined &&
         prevUserIdRef.current !== userId
       ) {
+        clearUserScopedClientCaches();
         queryClient.clear();
       }
       prevUserIdRef.current = userId;

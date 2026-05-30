@@ -69,6 +69,12 @@ export function clearOnboardingCompletionCache(): void {
   }
 }
 
+/** Clear device-local onboarding state on sign-out / account switch. */
+export function clearUserScopedClientCaches(): void {
+  clearOnboardingCompletionCache();
+  clearOnboardingChatSession();
+}
+
 /**
  * Server COMPLETE + local INCOMPLETE → repair local cache and clear resume session.
  * Server is the single source of truth for completion.
