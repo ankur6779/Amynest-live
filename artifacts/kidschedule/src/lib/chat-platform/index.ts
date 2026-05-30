@@ -7,6 +7,7 @@ export {
   clearChatViewportCssVars,
   isAndroidAdjustResizeBroken,
   isAndroidAdjustResizeChatShell,
+  isAndroidWebKeyboardOffsetRequired,
   isChatAnswerTarget,
   isKeyboardOpen,
   logAndroidChatLayoutDiagnostics,
@@ -16,7 +17,11 @@ export {
   readKeyboardOpenThresholdPx,
   readMeasuredVisibleBottomPx,
   readNativeImeInsetPx,
+  readNativeWebViewVisibleHeightPx,
   recordAndroidBaselineHeight,
+  resetAndroidBaselineHeightForTests,
+  resolveAndroidChatLayoutHeight,
+  setNativeWebViewVisibleHeightPx,
   usesCapacitorBodyKeyboardResize,
 } from "./viewport";
 export type { AndroidChatLayoutDiagnostic } from "./viewport";

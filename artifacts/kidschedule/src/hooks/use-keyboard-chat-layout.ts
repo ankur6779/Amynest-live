@@ -5,6 +5,7 @@ import {
   ensureChatPromptVisible,
   getChatPlatformRemoteConfig,
   isAndroidAdjustResizeChatShell,
+  isAndroidWebKeyboardOffsetRequired,
   logAndroidChatLayoutDiagnostics,
   isChatAnswerTarget,
   isForcePromptVisibilityModeActive,
@@ -12,7 +13,9 @@ import {
   metricsForChatLayout,
   readChatViewportMetrics,
   readNativeImeInsetPx,
+  recordAndroidBaselineHeight,
   scheduleSelfHealingVisibility,
+  setNativeWebViewVisibleHeightPx,
   startChatPlatformRemoteConfigPolling,
   subscribeChatPlatformRemoteConfig,
   trackChatPlatformEvent,
@@ -215,7 +218,9 @@ export function useKeyboardChatLayout(
     );
     setViewport(restored);
     setKeyboardOpen(false);
+    setNativeWebViewVisibleHeightPx(null);
     applyChatViewportCssVars(restored);
+    recordAndroidBaselineHeight();
     runVisibilityPass("instant");
   }, [runVisibilityPass]);
 
@@ -251,6 +256,7 @@ export function useKeyboardChatLayout(
     if (typeof window === "undefined") return;
 
     const stopRemoteConfigPolling = startChatPlatformRemoteConfigPolling();
+    recordAndroidBaselineHeight();
     const initial = metricsForChatLayout(readChatViewportMetrics(), false);
     setViewport(initial);
     applyChatViewportCssVars(initial);
@@ -274,22 +280,24 @@ export function useKeyboardChatLayout(
     window.addEventListener("orientationchange", onOrientationChange);
 
     const onNativeKeyboardInset = (event: Event) => {
-      const detail = (event as CustomEvent<{ inset?: number; keyboardPackage?: string }>).detail;
+      const detail = (event as CustomEvent<{
+        inset?: number;
+        visibleHeight?: number;
+        keyboardPackage?: string;
+      }>).detail;
       const inset = detail?.inset ?? 0;
+      setNativeWebViewVisibleHeightPx(detail?.visibleHeight);
       if (detail?.keyboardPackage) {
         setChatPlatformKeyboardAppFromNative(detail.keyboardPackage);
       }
       guardAndroidLayoutOwnership();
 
       if (isKeyboardOpen({ keyboardInset: inset })) {
-        applyOpenLayout({
-          height: window.innerHeight,
-          offsetTop: vv?.offsetTop ?? 0,
-          keyboardInset: inset,
-        });
+        applyOpenLayout(readChatViewportMetrics());
         return;
       }
 
+      setNativeWebViewVisibleHeightPx(null);
       scheduleResetAfterKeyboard();
     };
     window.addEventListener("amynest-keyboard-inset", onNativeKeyboardInset);
@@ -420,26 +428,48 @@ export function useKeyboardChatLayout(
   }, [runSelfHealingVisibility, scheduleResetAfterKeyboard, syncViewport]);
 
   const androidAdjustResize = isAndroidAdjustResizeChatShell();
+  const androidWebKeyboardOffset =
+    androidAdjustResize && keyboardOpen && isAndroidWebKeyboardOffsetRequired(viewport.keyboardInset);
 
-  // Diagnostic only — native adjustResize owns resize; web must NOT subtract IME inset.
+  // Diagnostic only — logs when Samsung / Android 15 needs web-side IME lift.
   useEffect(() => {
     if (!androidAdjustResize || !keyboardOpen) return;
     logAndroidChatLayoutDiagnostics(surface, viewport.keyboardInset);
   }, [androidAdjustResize, keyboardOpen, surface, viewport.keyboardInset]);
 
+  const androidChatContainerStyle = androidWebKeyboardOffset
+    ? {
+        position: "fixed" as const,
+        top: viewport.offsetTop,
+        left: 0,
+        right: 0,
+        bottom: viewport.keyboardInset,
+        width: "100%",
+        height:
+          viewport.height > 0
+            ? `${viewport.height}px`
+            : `calc(100% - ${viewport.keyboardInset}px)`,
+        maxHeight:
+          viewport.height > 0
+            ? `${viewport.height}px`
+            : `calc(100% - ${viewport.keyboardInset}px)`,
+        zIndex: 50,
+      }
+    : {
+        position: "fixed" as const,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100%",
+        height: "100%",
+        maxHeight: "100%",
+      };
+
   const containerStyle =
     layoutMode === "fullscreen"
       ? androidAdjustResize
-        ? {
-            position: "fixed" as const,
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            width: "100%",
-            height: "100%",
-            maxHeight: "100%",
-          }
+        ? androidChatContainerStyle
         : {
             position: "fixed" as const,
             top: usesCapacitorBodyKeyboardResize() ? 0 : viewport.offsetTop,
@@ -454,11 +484,13 @@ export function useKeyboardChatLayout(
                 ? `${viewport.height}px`
                 : "var(--vv-height, 100%)",
           }
-      : {
-          height: "100%",
-          maxHeight: "100%",
-          minHeight: 0,
-        };
+      : androidWebKeyboardOffset
+        ? androidChatContainerStyle
+        : {
+            height: "100%",
+            maxHeight: "100%",
+            minHeight: 0,
+          };
 
   return {
     containerRef,
