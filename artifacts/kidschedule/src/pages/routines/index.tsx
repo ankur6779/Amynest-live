@@ -118,14 +118,14 @@ function WeekCalendar({
   const weekPct = weekTotal > 0 ? Math.round(weekCompleted / weekTotal * 100) : 0;
   return <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setWeekStart(addDays(weekStart, -7))}>
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setWeekStart(addDays(weekStart, -7))} aria-label={t("pages.routines.index.previous_week", { defaultValue: "Previous week" })}>
           <ChevronLeft className="h-5 w-5" />
         </Button>
         <div className="text-center">
           <p className="font-bold text-foreground text-sm">{weekLabel}</p>
           {weekTotal > 0 && <p className="text-xs text-muted-foreground">{weekCompleted}/{weekTotal} {t("pages.routines.index.tasks_done_this_week")} {weekPct}%</p>}
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setWeekStart(addDays(weekStart, 7))}>
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setWeekStart(addDays(weekStart, 7))} aria-label={t("pages.routines.index.next_week", { defaultValue: "Next week" })}>
           <ChevronRight className="h-5 w-5" />
         </Button>
       </div>

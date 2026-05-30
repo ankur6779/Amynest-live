@@ -40,10 +40,10 @@ export function AmyFab({ embedded = false }: AmyFabProps) {
         <Link
           href="/assistant"
           aria-label={t("components.amy_fab.ask_amy_ai")}
-          className="group relative flex items-center justify-center hover:scale-105 active:scale-95 transition-transform focus:outline-none"
+          className="group relative flex items-center justify-center hover:scale-105 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-full"
         >
           <AmyMascotLogo size={58} />
-          <span className="absolute -top-2 -right-1 bg-white text-[9px] font-black text-primary dark:text-muted-foreground px-1.5 py-0.5 rounded-full shadow border border-border dark:border-border pointer-events-none">
+          <span className="absolute -top-2 -right-1 bg-white text-xs font-black text-primary dark:text-muted-foreground px-1.5 py-0.5 rounded-full shadow border border-border dark:border-border pointer-events-none">
             {t("components.amy_fab.amy_ai")}
           </span>
         </Link>

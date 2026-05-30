@@ -75,6 +75,8 @@ export function ChatPlatform({
     };
   }, [scrollApiRef, scrollToEnd]);
 
+  const messagesPaddingBottom = `calc(${Math.max(inputBarHeight, 16) + 12}px + var(--sab, env(safe-area-inset-bottom, 0px)))`;
+
   return (
     <div
       ref={containerRef}
@@ -101,7 +103,7 @@ export function ChatPlatform({
             "chat-thread-messages mx-auto flex w-full flex-col gap-3 overflow-y-auto px-4 py-5",
             messagesClassName,
           )}
-          style={{ paddingBottom: Math.max(inputBarHeight, 16) + 12 }}
+          style={{ paddingBottom: messagesPaddingBottom }}
         >
           {children}
           <div ref={endRef} aria-hidden="true" />
