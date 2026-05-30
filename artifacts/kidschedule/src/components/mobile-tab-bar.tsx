@@ -44,7 +44,7 @@ export function MobileTabBar({ visible }: MobileTabBarProps) {
         className="app-footer__nav w-full border-t border-border bg-card/95 shadow-[0_-8px_28px_var(--shadow-color)] backdrop-blur-xl"
         aria-label={t("nav.main_navigation", { defaultValue: "Main navigation" })}
       >
-        <div className="relative flex h-[72px] w-full items-end justify-around px-2 pb-2">
+        <div className="relative flex min-h-[var(--tabbar-height,72px)] w-full items-end justify-around px-2 pb-2 safe-area-bottom">
           {BOTTOM_NAV_ITEMS.map((item) => {
             const isActive = safePathStartsWithSegment(location, item.href);
             if (item.center) {
