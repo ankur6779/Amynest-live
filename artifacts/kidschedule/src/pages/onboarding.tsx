@@ -2,8 +2,13 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
-import { ChatPlatform } from "@/components/chat-platform";
-import { ChatAmyBubble, ChatTypingBubble, ChatUserBubble } from "@/components/chat-bubbles";
+import { ChatThread, type InteractionEvent } from "@/components/chat-thread";
+import { OnboardingCountryModal } from "@/components/onboarding-country-modal";
+import {
+  buildOnboardingThreadMessages,
+  ONBOARDING_COMPOSER_STEPS,
+  onboardingComposerPlaceholder,
+} from "@/hooks/use-onboarding-thread";
 import {
   chatMessage,
   type ChatMessage,
@@ -14,7 +19,6 @@ import {
   loadOnboardingChatSession,
   saveOnboardingChatSession,
 } from "@/lib/onboarding-chat-session";
-import { ChildDobPicker } from "@/components/child-dob-picker";
 import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { ensureAuthContextSynced } from "@/lib/auth-session-sync";
 import {
@@ -40,7 +44,6 @@ import {
 } from "@/lib/subscription-funnel-storage";
 import { logOnboardingState } from "@/lib/onboarding-debug";
 import { logOnboardingPipelineSnapshot } from "@/lib/onboarding-pipeline-log";
-import { resolveActiveChatPromptId } from "@/lib/chat-platform";
 import {
   OnboardingFinishError,
   runOnboardingFinishTransaction,
@@ -450,105 +453,10 @@ const BG = "linear-gradient(160deg,#0f0a2e 0%,#1a0d40 55%,#0d0824 100%)"; // aud
 const GLASS_BG = "rgba(255,255,255,0.10)";
 const GLASS_BORDER = "1px solid rgba(168,85,247,0.30)";
 const BAR_BG = "rgba(15,10,46,0.92)";
-const CHIP_DARK = { background: GLASS_BG, color: "#fff", border: "1px solid rgba(168,85,247,0.30)" } as const;
-const INPUT_DARK = { background: "rgba(255,255,255,0.08)", color: "#fff", borderColor: "rgba(168,85,247,0.4)" } as const;
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
-// size prop is in Tailwind spacing units (×4px), matching the old convention.
 function AmyAvatar({ size = 8 }: { size?: number }) {
   return <AmyMascotLogo size={size * 4} />;
-}
-
-function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="px-4 py-2.5 rounded-2xl text-sm font-semibold border transition-all active:scale-95"
-      style={selected
-        ? { background: GRAD, color: "#fff", border: "transparent", boxShadow: "0 4px 12px rgba(99,102,241,0.4)" }
-        : { background: GLASS_BG, color: "#fff", border: "1px solid rgba(168,85,247,0.30)" }
-      }
-    >
-      {label}
-    </button>
-  );
-}
-
-function GridChips({ options, selected, onSelect }: { options: string[]; selected: string; onSelect: (v: string) => void }) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((o) => (
-        <Chip key={o} label={o} selected={selected === o} onClick={() => onSelect(o)} />
-      ))}
-    </div>
-  );
-}
-
-/** Convert 24-h "HH:MM" → display "H:MM AM/PM" */
-function from24h(v: string): string {
-  const [h, m] = (v || "07:00").split(":").map(Number);
-  const period = h >= 12 ? "PM" : "AM";
-  const hr = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return `${hr}:${String(m).padStart(2, "0")} ${period}`;
-}
-
-/**
- * TimeChipPicker — shows quick-select chips for common times + an
- * "⏰ Other time…" chip that reveals a native <input type="time"> so
- * users can pick any time they want (school at 10:30 AM, late sleepers, etc.)
- */
-function TimeChipPicker({
-  options,
-  selected,
-  onSelect,
-  defaultValue = "07:00",
-}: {
-  options: string[];
-  selected: string;
-  onSelect: (displayStr: string) => void;
-  defaultValue?: string;
-}) {
-  const [showCustom, setShowCustom] = useState(false);
-  const [customVal, setCustomVal] = useState(defaultValue);
-
-  if (showCustom) {
-    return (
-      <div className="space-y-3">
-        <input
-          type="time"
-          value={customVal}
-          onChange={(e) => setCustomVal(e.target.value)}
-          className="w-full rounded-2xl px-4 py-3.5 text-base outline-none border"
-          style={INPUT_DARK}
-        />
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowCustom(false)}
-            className="flex-1 py-3 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-            style={CHIP_DARK}
-          >
-            ← Back
-          </button>
-          <button
-            onClick={() => { onSelect(from24h(customVal)); setShowCustom(false); }}
-            className="flex-1 py-3 rounded-2xl text-sm font-semibold active:scale-95 transition-all"
-            style={{ background: GRAD, color: "#fff" }}
-          >
-            Confirm
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((o) => (
-        <Chip key={o} label={o} selected={selected === o} onClick={() => onSelect(o)} />
-      ))}
-      <Chip label="⏰ Other time…" selected={false} onClick={() => setShowCustom(true)} />
-    </div>
-  );
 }
 
 function ProgressBar({ step }: { step: Step }) {
@@ -1169,21 +1077,6 @@ export default function OnboardingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  // Hooks must run on every render — never place below step early-returns (React #300).
-  const showChatFooter =
-    step !== "intro" &&
-    ONBOARDING_CHAT_STEPS.has(step) &&
-    !showCountryPicker &&
-    !isFinishing;
-
-  const activePromptId = useMemo(
-    () =>
-      resolveActiveChatPromptId(messages, {
-        awaitingAnswer: showChatFooter && !typing,
-      }),
-    [messages, showChatFooter, typing],
-  );
-
   function confirmCountry(
     code: string,
     name: string,
@@ -1209,1185 +1102,269 @@ export default function OnboardingPage() {
     scheduleOnboardingTimeout(() => setStep("child-name"), 1300);
   }
 
-  function renderCountryFooter() {
-    const isLocating =
-      locationState.status === "fetching" ||
-      locationState.status === "fallback";
-    const needsPermission = locationState.status === "needs-permission";
-    const showDetected = locationState.status === "detected" && countryCode;
-    const flag = countryCode ? flagEmoji(countryCode) : "";
+  const threadMessages = useMemo(
+    () =>
+      buildOnboardingThreadMessages({
+        step,
+        messages,
+        typing,
+        isFinishing,
+        t,
+        countryCode,
+        countryName,
+        locationState,
+        locationSource,
+        locationRequesting,
+        regionDrillDown,
+        countryCodeForRegion: countryCode,
+        finishError,
+        handlers: {
+          onAllowLocation: () => void handleAllowLocation(),
+          onPickCountryManually: () => {
+            setCountryPickerRequired(true);
+            setShowCountryPicker(true);
+          },
+          onConfirmDetectedCountry: () => {
+            confirmCountry(countryCode, countryName, {
+              coords: detectedCoords,
+              source: locationSource ?? "manual",
+            });
+          },
+          onChangeCountry: () => {
+            setCountryPickerRequired(false);
+            setShowCountryPicker(true);
+          },
+        },
+      }),
+    [
+      step,
+      messages,
+      typing,
+      isFinishing,
+      t,
+      countryCode,
+      countryName,
+      locationState,
+      locationSource,
+      locationRequesting,
+      regionDrillDown,
+      finishError,
+      detectedCoords,
+    ],
+  );
 
-    if (isLocating) {
-      return (
-        <div className="flex flex-col items-center gap-3 py-2">
-          <div
-            className="h-10 w-10 rounded-full border-2"
-            style={{
-              borderColor: "rgba(255,255,255,0.15)",
-              borderTopColor: "hsl(var(--brand-indigo-500))",
-              animation: "spin 0.9s linear infinite",
-            }}
-          />
-          <p className="text-center text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
-            {t("screens.onboarding.country_detecting")}
-          </p>
-        </div>
-      );
-    }
-
-    if (needsPermission) {
-      return (
-        <div className="flex flex-col gap-3">
-          <p className="text-center text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
-            {t("screens.onboarding.country_location_prompt_body")}
-          </p>
-          <button
-            disabled={locationRequesting}
-            onClick={() => void handleAllowLocation()}
-            className="w-full rounded-2xl py-4 text-base font-bold active:scale-95 transition-all disabled:opacity-60"
-            style={{ background: GRAD, color: "#fff", boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
-          >
-            {locationRequesting
-              ? t("screens.onboarding.country_detecting")
-              : t("screens.onboarding.country_allow_location")}
-          </button>
-          <button
-            onClick={() => {
-              setCountryPickerRequired(true);
-              setShowCountryPicker(true);
-            }}
-            className="w-full py-2 text-sm font-semibold"
-            style={{ color: "rgba(255,255,255,0.65)", background: "none", border: "none" }}
-          >
-            {t("screens.onboarding.country_select_manually")}
-          </button>
-        </div>
-      );
-    }
-
-    if (showDetected) {
-      return (
-        <div className="flex flex-col gap-3">
-          <div
-            className="flex items-center gap-3 rounded-2xl p-4"
-            style={{ background: GLASS_BG, border: GLASS_BORDER }}
-          >
-            <span style={{ fontSize: 36, lineHeight: 1 }}>{flag}</span>
-            <div>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-                {locationSource === "ip"
-                  ? t("screens.onboarding.country_detected_ip")
-                  : t("screens.onboarding.country_detected_in")}
-              </p>
-              <p className="text-lg font-bold" style={{ color: "#fff" }}>{countryName}</p>
-            </div>
-          </div>
-          <button
-            onClick={() =>
-              confirmCountry(countryCode, countryName, {
-                coords: detectedCoords,
-                source: locationSource ?? "manual",
-              })
-            }
-            className="w-full rounded-2xl py-4 text-base font-bold active:scale-95 transition-all"
-            style={{ background: GRAD, color: "#fff", boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
-          >
-            {t("screens.onboarding.country_confirm_yes")}
-          </button>
-          <button
-            onClick={() => {
-              setCountryPickerRequired(false);
-              setShowCountryPicker(true);
-            }}
-            className="w-full py-2 text-sm font-semibold"
-            style={{ color: "rgba(255,255,255,0.65)", background: "none", border: "none" }}
-          >
-            {t("screens.onboarding.country_change")}
-          </button>
-        </div>
-      );
-    }
-
-    return null;
-  }
-
-  function renderCountryPickerOverlay() {
-    if (!showCountryPicker) return null;
-
-    const pickerTitle = countryPickerRequired
-      ? t("screens.onboarding.country_manual_required_title")
-      : t("screens.onboarding.country_pick_popular");
-    const pickerHint =
-      locationState.status === "denied"
-        ? t("screens.onboarding.country_permission_denied")
-        : null;
-    const searchResults = countrySearch.trim().length > 0
-      ? ALL_COUNTRIES.filter(
-          (c) =>
-            c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
-            c.code.toLowerCase().includes(countrySearch.toLowerCase()),
-        )
-      : [];
-
-    return (
-      <div
-        className="absolute inset-0 z-50 flex flex-col"
-        style={{ background: BG }}
-      >
-        <div
-          className="flex shrink-0 items-center gap-3 px-4 py-4"
-          style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderBottom: "1px solid rgba(168,85,247,0.15)" }}
-        >
-          {!countryPickerRequired ? (
-            <button
-              onClick={() => {
-                setShowCountryPicker(false);
-                setCountrySearch("");
-              }}
-              className="flex h-8 w-8 items-center justify-center rounded-full"
-              style={{ background: GLASS_BG, color: "#fff" }}
-            >
-              ←
-            </button>
-          ) : (
-            <div className="h-8 w-8" aria-hidden="true" />
-          )}
-          <h2 className="text-base font-bold" style={{ color: "#fff" }}>
-            {pickerTitle}
-          </h2>
-        </div>
-
-        <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
-          {pickerHint ? (
-            <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>
-              {pickerHint}
-            </p>
-          ) : null}
-
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.5)" }}>
-            {t("screens.onboarding.country_pick_popular")}
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {TOP_COUNTRIES.map((c) => (
-              <button
-                key={c.code}
-                onClick={() => confirmCountry(c.code, c.name, { source: "manual" })}
-                className="flex items-center gap-2.5 rounded-2xl border px-4 py-3.5 text-left text-sm font-semibold transition-all active:scale-95"
-                style={CHIP_DARK}
-              >
-                <span style={{ fontSize: 22 }}>{c.flag}</span>
-                <span style={{ color: "#fff" }}>{c.name}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="relative">
-            <input
-              type="text"
-              placeholder={t("screens.onboarding.country_search_placeholder")}
-              value={countrySearch}
-              onChange={(e) => setCountrySearch(e.target.value)}
-              autoFocus
-              className="w-full rounded-2xl border px-4 py-3.5 text-sm outline-none"
-              style={{ ...INPUT_DARK, paddingLeft: "2.75rem" }}
-            />
-            <span
-              className="absolute left-4 top-1/2 -translate-y-1/2"
-              style={{ color: "rgba(255,255,255,0.4)", fontSize: 16 }}
-            >
-              🔍
-            </span>
-          </div>
-
-          {countrySearch.trim().length > 0 &&
-            (searchResults.length === 0 ? (
-              <p className="py-4 text-center text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>
-                {t("screens.onboarding.country_not_found")}
-              </p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {searchResults.map((c) => (
-                  <button
-                    key={c.code}
-                    onClick={() => confirmCountry(c.code, c.name, { source: "manual" })}
-                    className="flex items-center gap-3 rounded-2xl border px-4 py-3.5 text-left text-sm font-semibold transition-all active:scale-95"
-                    style={CHIP_DARK}
-                  >
-                    <span style={{ fontSize: 22 }}>{c.flag}</span>
-                    <span style={{ color: "#fff" }}>{c.name}</span>
-                  </button>
-                ))}
-              </div>
-            ))}
-        </div>
-      </div>
-    );
-  }
-
-  // ─── Notifications step ─────────────────────────────────────────────────────
-  if (step === "notifications") {
-    return (
-      <div
-        className="min-h-dvh flex flex-col items-center justify-center gap-5 px-5"
-        style={{ background: BG }}
-      >
-        <AmyMascotLogo size={64} />
-
-        <div
-          className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg"
-          style={{ background: GRAD }}
-        >
-          <span style={{ fontSize: 30 }}>🔔</span>
-        </div>
-
-        <div className="text-center">
-          <h2 className="text-xl font-extrabold mb-2" style={{ color: "#fff" }}>
-            {t("screens.onboarding.notif_title")}
-          </h2>
-          <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: "rgba(255,255,255,0.75)" }}>
-            {t("screens.onboarding.notif_subtitle")}
-          </p>
-        </div>
-
-        <div
-          className="w-full max-w-sm rounded-2xl p-4"
-          style={{ background: GLASS_BG, border: GLASS_BORDER }}
-        >
-          {[
-            { emoji: "⏰", text: t("screens.onboarding.notif_benefit_routines") },
-            { emoji: "🌙", text: t("screens.onboarding.notif_benefit_bedtime") },
-            { emoji: "🍎", text: t("screens.onboarding.notif_benefit_meals") },
-          ].map(({ emoji, text }) => (
-            <div key={text} className="flex items-center gap-3 py-2">
-              <span style={{ fontSize: 18 }}>{emoji}</span>
-              <p className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.85)" }}>{text}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-col gap-3 w-full max-w-sm">
-          <button
-            disabled={notifLoading}
-            onClick={async () => {
-              setNotifLoading(true);
-              await enableNotif();
-              await goDashboard();
-            }}
-            className="w-full py-4 rounded-2xl text-primary-foreground font-bold text-base active:scale-95 transition-all"
-            style={{
-              background: GRAD,
-              boxShadow: "0 6px 24px rgba(99,102,241,0.4)",
-              opacity: notifLoading ? 0.7 : 1,
-            }}
-          >
-            {notifLoading ? t("screens.onboarding.notif_enabling") : t("screens.onboarding.notif_allow")}
-          </button>
-
-          <button
-            onClick={() => void goDashboard()}
-            disabled={navigatingToDashboard}
-            className="w-full py-3 text-sm font-semibold"
-            style={{ color: "hsl(var(--brand-indigo-500))", background: "none", border: "none", cursor: "pointer" }}
-          >
-            {t("screens.onboarding.notif_skip")}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── Render ─────────────────────────────────────────────────────────────────
-  if (step === "saving" || step === "done") {
-    const childName = children[0]?.name || t("screens.onboarding.default_child_name");
-    return (
-      <div className="min-h-dvh flex flex-col items-center justify-center gap-6 px-5" style={{ background: BG }}>
-        {step === "saving" ? (
-          <>
-            <div className="amy-setup-glow-ring">
-              <span className="amy-setup-glow-ring__label">Amy</span>
-            </div>
-            <div className="text-center max-w-sm">
-              <p className="text-xl font-bold leading-snug" style={{ color: "#fff" }}>
-                {isFinishing
-                  ? t("screens.onboarding.finalizing_setup")
-                  : t("screens.onboarding.saving_title")}
-              </p>
-              <p className="text-sm mt-2 leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>
-                {t("screens.onboarding.saving_subtitle")}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              {[0, 1, 2].map((i) => (
-                <span key={i} className="w-3 h-3 rounded-full" style={{ background: "hsl(var(--brand-indigo-500))", display: "inline-block", animation: `typing-dot 1.2s ease-in-out ${i * 0.25}s infinite` }} />
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-col items-center gap-5 w-full max-w-sm" style={{ animation: "splash-in 0.5s ease-out" }}>
-            <div className="text-6xl">🎉</div>
-            <div className="text-center">
-              <h2 className="text-2xl font-bold" style={{ color: "#fff" }}>{t("screens.onboarding.done_title")}</h2>
-              <p className="mt-1" style={{ color: "rgba(255,255,255,0.8)" }}>{t("screens.onboarding.done_subtitle", { name: childName })}</p>
-            </div>
-            <div
-              className="w-full rounded-3xl p-5 shadow-xl"
-              style={{ background: GLASS_BG, backdropFilter: "blur(12px)", border: GLASS_BORDER }}
-            >
-              <div className="flex items-start gap-3">
-                <span className="text-2xl mt-0.5">✏️</span>
-                <div>
-                  <p className="font-bold text-sm" style={{ color: "#fff" }}>{t("screens.onboarding.edit_anytime_title")}</p>
-                  <p className="text-xs mt-1 leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
-                    {t("screens.onboarding.edit_anytime_body_before")}<strong>{t("screens.onboarding.edit_profile")}</strong>{t("screens.onboarding.edit_anytime_or")}<strong>{t("screens.onboarding.edit_children")}</strong>{t("screens.onboarding.edit_anytime_body_after")}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                if (navigatingToDashboard) return;
-                if (getBrowserNotificationPermission() === "default") {
-                  setStep("notifications");
-                } else {
-                  void goDashboard();
-                }
-              }}
-              disabled={navigatingToDashboard}
-              className="w-full py-4 rounded-2xl text-primary-foreground font-bold text-base active:scale-95 transition-all disabled:opacity-60"
-              style={{ background: GRAD, boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
-            >
-              {navigatingToDashboard
-                ? t("screens.onboarding.saving_title")
-                : t("screens.onboarding.go_dashboard")}
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // ─── Current input component based on step ──────────────────────────────────
-  function renderInput() {
+  function handleOnboardingSend() {
+    const text = textInput.trim();
+    if (!text || isFinishing) return;
     switch (step) {
-      case "intro":
-        return null;
-
-      case "child-name":
-        return (
-          <div className="flex gap-2">
-            <input
-              className="flex-1 rounded-2xl px-4 py-3.5 text-sm outline-none border border-border focus:border-primary transition-colors"
-              style={INPUT_DARK}
-              placeholder={t("screens.onboarding.child_name_placeholder")}
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && textInput.trim()) {
-                  const name = textInput.trim();
-                  setCurr((c) => ({ ...c, name }));
-                  userReplies(name, "child-dob", t("screens.onboarding.child_name_reply", { name }));
-                }
-              }}
-              autoFocus
-            />
-            <button
-              onClick={() => {
-                if (!textInput.trim()) return;
-                const name = textInput.trim();
-                setCurr((c) => ({ ...c, name }));
-                userReplies(name, "child-dob", t("screens.onboarding.child_name_reply", { name }));
-              }}
-              className="w-12 h-12 rounded-2xl flex items-center justify-center text-primary-foreground shrink-0"
-              style={{ background: GRAD }}
-            >→</button>
-          </div>
-        );
-
-      case "child-dob": {
-        const maxDob = new Date().toISOString().split("T")[0];
-        return (
-          <div className="flex flex-col gap-3">
-            <ChildDobPicker
-              value={dobInput}
-              max={maxDob}
-              selectStyle={INPUT_DARK}
-              onChange={setDobInput}
-            />
-            <button
-              disabled={!dobInput}
-              onClick={() => {
-                const { years, months } = dobToAge(dobInput);
-                const ageGroup = getAgeGroup(years);
-                setCurr((c) => ({ ...c, dob: dobInput, age: years, ageMonths: months, ageGroup }));
-                const name = curr.name || t("screens.onboarding.default_child_name");
-                if (ageGroup === "infant") {
-                  userReplies(
-                    dobInput,
-                    "infant-feeding",
-                    t("screens.onboarding.infant_dob_reply", { name }),
-                    900,
-                  );
-                } else {
-                  userReplies(dobInput, "child-school", t("screens.onboarding.school_question", { name }), 900);
-                }
-                setDobInput("");
-              }}
-              className="w-full py-3.5 rounded-2xl text-primary-foreground font-semibold active:scale-95 transition-all disabled:opacity-40"
-              style={{ background: GRAD }}
-            >
-              {t("screens.onboarding.confirm_dob")}
-            </button>
-          </div>
-        );
+      case "child-name": {
+        const name = text;
+        setCurr((c) => ({ ...c, name }));
+        userReplies(name, "child-dob", t("screens.onboarding.child_name_reply", { name }));
+        break;
       }
-
-      // ── Infant path (age < 2) ──────────────────────────────────────────────
-      case "infant-feeding": {
-        const feedingOpts = [
-          { label: t("screens.onboarding.feeding_breast"), value: "breastfeeding" as const },
-          { label: t("screens.onboarding.feeding_formula"), value: "formula" as const },
-          { label: t("screens.onboarding.feeding_both"), value: "mixed" as const },
-        ];
-        const babyName = curr.name || t("screens.onboarding.default_baby_name");
-        return (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap gap-2">
-              {feedingOpts.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => {
-                    setCurr((c) => ({ ...c, feedingType: opt.value }));
-                    userReplies(opt.label, "infant-sleep", t("screens.onboarding.feeding_reply", { name: babyName }));
-                  }}
-                  className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                  style={CHIP_DARK}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => userReplies(t("screens.onboarding.skip_for_now"), "infant-sleep", t("screens.onboarding.skip_sleep_reply", { name: babyName }))}
-              className="text-xs self-center mt-1" style={{ color: "rgba(255,255,255,0.55)" }}
-            >
-              {t("screens.onboarding.skip_later")}
-            </button>
-          </div>
-        );
+      case "parent-name": {
+        const name = text;
+        setParent((p) => ({ ...p, name }));
+        userReplies(name, "parent-role", t("screens.onboarding.parent_name_reply", { name }));
+        break;
       }
-
-      case "infant-sleep": {
-        const sleepOpts = [
-          { label: t("screens.onboarding.sleep_flexible"), value: "flexible" as const },
-          { label: t("screens.onboarding.sleep_irregular"), value: "irregular" as const },
-          { label: t("screens.onboarding.sleep_short"), value: "short_naps" as const },
-        ];
-        return (
-          <div className="flex flex-col gap-2">
-            {sleepOpts.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => {
-                  const name = curr.name || t("screens.onboarding.default_baby_name");
-                  const finalChild: ChildData = {
-                    name: curr.name || "",
-                    dob: curr.dob || "",
-                    age: curr.age || 0,
-                    ageMonths: curr.ageMonths || 0,
-                    ageGroup: curr.ageGroup || "infant",
-                    isSchoolGoing: false,
-                    childClass: "",
-                    schoolStartTime: "09:00",
-                    schoolEndTime: "15:00",
-                    schoolDays: null,
-                    wakeUpTime: "07:00",
-                    sleepTime: "19:30",
-                    foodType: "veg",
-                    dietNote: "",
-                    feedingType: curr.feedingType,
-                    sleepPattern: opt.value,
-                  };
-                  setChildren((prev) => [...prev, finalChild]);
-                  setCurr({});
-                  const childCount = children.length + 1;
-                  userReplies(
-                    opt.label,
-                    "add-more",
-                    childCount === 1
-                      ? t("screens.onboarding.child_added_first", { name })
-                      : t("screens.onboarding.child_added_more"),
-                  );
-                }}
-                className="w-full py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all text-left px-4"
-                style={CHIP_DARK}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        );
+      case "parent-mobile": {
+        setParent((p) => ({ ...p, mobileNumber: text }));
+        userReplies(text, "parent-allergies", t("screens.onboarding.allergies_question"));
+        break;
       }
+      default:
+        break;
+    }
+  }
 
-      // ── Standard path (age >= 2) ───────────────────────────────────────────
-      case "child-school": {
-        const schoolOpts = [
-          { label: t("screens.onboarding.yes_school"), isYes: true },
-          { label: t("screens.onboarding.no_school"), isYes: false },
-        ];
-        return (
-          <div className="flex gap-3">
-            {schoolOpts.map((opt) => (
-              <button
-                key={opt.label}
-                onClick={() => {
-                  const isSchool = opt.isYes;
-                  setCurr((c) => ({ ...c, isSchoolGoing: isSchool }));
-                  const name = curr.name || t("screens.onboarding.default_child_name");
-                  if (isSchool) {
-                    userReplies(opt.label, "child-class", t("screens.onboarding.class_question", { name }));
-                  } else {
-                    setCurr((c) => ({ ...c, childClass: "", schoolStartTime: "09:00", schoolEndTime: "15:00", schoolDays: null }));
-                    userReplies(opt.label, "child-wake", t("screens.onboarding.wake_question", { name }));
-                  }
-                }}
-                className="flex-1 py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                style={CHIP_DARK}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        );
+  function handleOnboardingInteraction(event: InteractionEvent) {
+    if (isFinishing) return;
+
+    if (event.type === "date" && event.dateValue && step === "child-dob") {
+      const { years, months } = dobToAge(event.dateValue);
+      const ageGroup = getAgeGroup(years);
+      setCurr((c) => ({ ...c, dob: event.dateValue!, age: years, ageMonths: months, ageGroup }));
+      const name = curr.name || t("screens.onboarding.default_child_name");
+      if (ageGroup === "infant") {
+        userReplies(event.dateValue, "infant-feeding", t("screens.onboarding.infant_dob_reply", { name }), 900);
+      } else {
+        userReplies(event.dateValue, "child-school", t("screens.onboarding.school_question", { name }), 900);
       }
+      return;
+    }
 
-      case "child-class": {
-        const useSouthAsianSystem = ["IN", "PK", "BD", "LK", "NP"].includes(countryCode);
-        const classLabels = useSouthAsianSystem
-          ? CLASS_KEYS.map((k) => t(`screens.onboarding.${k}`))
-          : getClassSystem(countryCode).labels;
-        const classValues = useSouthAsianSystem ? CLASS_VALUES : getClassSystem(countryCode).values;
-        const selectedIdx = classValues.indexOf(selected);
-        const selectedLabel = selectedIdx >= 0 ? classLabels[selectedIdx] : selected;
-        return (
-          <GridChips
-            options={classLabels}
-            selected={selectedLabel}
-            onSelect={(label) => {
-              const idx = classLabels.indexOf(label);
-              const canonical = idx >= 0 ? classValues[idx] : label;
-              setSelected(canonical);
-              setCurr((c) => ({ ...c, childClass: canonical }));
-              const name = curr.name || t("screens.onboarding.default_child_name");
-              userReplies(canonical, "child-school-start", t("screens.onboarding.school_start_question", { name }));
-            }}
-          />
-        );
+    if (event.type === "time-quick" && event.timeValue) {
+      const v = event.timeValue;
+      const name = curr.name || t("screens.onboarding.default_child_name");
+      if (step === "child-school-start") {
+        setCurr((c) => ({ ...c, schoolStartTime: to24h(v) }));
+        userReplies(v, "child-school-end", t("screens.onboarding.school_end_question"));
+      } else if (step === "child-school-end") {
+        setCurr((c) => ({ ...c, schoolEndTime: to24h(v), schoolDays: c.schoolDays ?? [1, 2, 3, 4, 5] }));
+        userReplies(v, "child-school-days", t("screens.onboarding.school_days_question", { name }));
+      } else if (step === "child-wake") {
+        setCurr((c) => ({ ...c, wakeUpTime: to24h(v) }));
+        userReplies(v, "child-sleep", t("screens.onboarding.sleep_question", { name }));
+      } else if (step === "child-sleep") {
+        const finalChild = {
+          ...curr,
+          sleepTime: to24h(v),
+          ageGroup: curr.ageGroup ?? getAgeGroup(curr.age ?? 3),
+        } as ChildData;
+        setChildren((prev) => [...prev, finalChild]);
+        setCurr({});
+        userReplies(v, "add-more", children.length + 1 === 1
+          ? t("screens.onboarding.child_added_first_school")
+          : t("screens.onboarding.child_added_more"));
       }
+      return;
+    }
 
-      case "child-school-start":
-        return (
-          <TimeChipPicker
-            options={SCHOOL_START_OPTS}
-            selected={selected}
-            defaultValue={curr.schoolStartTime || "08:00"}
-            onSelect={(v) => {
-              setSelected(v);
-              setCurr((c) => ({ ...c, schoolStartTime: to24h(v) }));
-              userReplies(v, "child-school-end", t("screens.onboarding.school_end_question"));
-            }}
-          />
-        );
+    if (event.type === "single-select" && event.optionValue) {
+      const label = event.optionLabel ?? event.optionValue;
+      const value = event.optionValue;
+      switch (step) {
+        case "infant-feeding": {
+          setCurr((c) => ({ ...c, feedingType: value as ChildData["feedingType"] }));
+          const babyName = curr.name || t("screens.onboarding.default_baby_name");
+          userReplies(label, "infant-sleep", t("screens.onboarding.feeding_reply", { name: babyName }));
+          break;
+        }
+        case "infant-sleep": {
+          const name = curr.name || t("screens.onboarding.default_baby_name");
+          const finalChild: ChildData = {
+            name: curr.name || "",
+            dob: curr.dob || "",
+            age: curr.age || 0,
+            ageMonths: curr.ageMonths || 0,
+            ageGroup: curr.ageGroup || "infant",
+            isSchoolGoing: false,
+            childClass: "",
+            schoolStartTime: "09:00",
+            schoolEndTime: "15:00",
+            schoolDays: null,
+            wakeUpTime: "07:00",
+            sleepTime: "19:30",
+            foodType: "veg",
+            dietNote: "",
+            feedingType: curr.feedingType,
+            sleepPattern: value,
+          };
+          setChildren((prev) => [...prev, finalChild]);
+          setCurr({});
+          userReplies(label, "add-more", children.length + 1 === 1
+            ? t("screens.onboarding.child_added_first", { name })
+            : t("screens.onboarding.child_added_more"));
+          break;
+        }
+        case "child-school": {
+          const isSchool = value === "yes";
+          setCurr((c) => ({ ...c, isSchoolGoing: isSchool }));
+          const name = curr.name || t("screens.onboarding.default_child_name");
+          if (isSchool) {
+            userReplies(t("screens.onboarding.yes_school"), "child-class", t("screens.onboarding.class_question", { name }));
+          } else {
+            setCurr((c) => ({ ...c, childClass: "", schoolStartTime: "09:00", schoolEndTime: "15:00", schoolDays: null }));
+            userReplies(t("screens.onboarding.no_school"), "child-wake", t("screens.onboarding.wake_question", { name }));
+          }
+          break;
+        }
+        case "child-class": {
+          setCurr((c) => ({ ...c, childClass: value }));
+          const name = curr.name || t("screens.onboarding.default_child_name");
+          userReplies(label, "child-school-start", t("screens.onboarding.school_start_question", { name }));
+          break;
+        }
+        case "add-more":
+          if (value === "yes") {
+            userReplies(t("screens.onboarding.yes_add_another"), "child-name", t("screens.onboarding.next_child_name"));
+          } else {
+            userReplies(t("screens.onboarding.no_continue"), "parent-name", t("screens.onboarding.parent_intro"));
+          }
+          break;
+        case "parent-role": {
+          setParent((p) => ({ ...p, role: value }));
+          userReplies(label, "parent-work", t("screens.onboarding.work_question"));
+          break;
+        }
+        case "parent-work": {
+          setParent((p) => ({ ...p, workType: value }));
+          userReplies(label, "parent-region", t("screens.onboarding.region_question"));
+          break;
+        }
+        case "parent-diet": {
+          setSelectedDietType(value);
+          setParent((p) => ({ ...p, dietType: value }));
+          userReplies(label, "parent-goals", t("screens.onboarding.goals_question"));
+          break;
+        }
+        default:
+          break;
+      }
+      return;
+    }
 
-      case "child-school-end":
-        return (
-          <TimeChipPicker
-            options={SCHOOL_END_OPTS}
-            selected={selected}
-            defaultValue={curr.schoolEndTime || "15:00"}
-            onSelect={(v) => {
-              setSelected(v);
-              setCurr((c) => ({ ...c, schoolEndTime: to24h(v), schoolDays: c.schoolDays ?? [1, 2, 3, 4, 5] }));
-              const name = curr.name || t("screens.onboarding.default_child_name");
-              userReplies(v, "child-school-days", t("screens.onboarding.school_days_question", { name }));
-            }}
-          />
-        );
-
-      case "child-school-days": {
+    if (event.type === "multi-select") {
+      const ids = event.selectedIds ?? [];
+      if (step === "child-school-days") {
+        const dayNums = ids.map(Number).filter((n) => n >= 1 && n <= 7);
+        setCurr((c) => ({ ...c, schoolDays: dayNums.length ? dayNums : [1, 2, 3, 4, 5] }));
         const labels = [
-          t("screens.onboarding.day_mon"),
-          t("screens.onboarding.day_tue"),
-          t("screens.onboarding.day_wed"),
-          t("screens.onboarding.day_thu"),
-          t("screens.onboarding.day_fri"),
-          t("screens.onboarding.day_sat"),
+          t("screens.onboarding.day_mon"), t("screens.onboarding.day_tue"), t("screens.onboarding.day_wed"),
+          t("screens.onboarding.day_thu"), t("screens.onboarding.day_fri"), t("screens.onboarding.day_sat"),
           t("screens.onboarding.day_sun"),
         ];
-        const current = curr.schoolDays ?? [1, 2, 3, 4, 5];
-        const toggle = (d: number) => {
-          setCurr((c) => {
-            const cur = c.schoolDays ?? [1, 2, 3, 4, 5];
-            const next = cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d].sort((a, b) => a - b);
-            return { ...c, schoolDays: next };
-          });
-        };
-        return (
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              {labels.map((label, i) => {
-                const day = i + 1;
-                const on = current.includes(day);
-                return (
-                  <button
-                    key={day}
-                    onClick={() => toggle(day)}
-                    className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                    style={{
-                      background: on ? GRAD : GLASS_BG,
-                      color: "#fff",
-                      border: on ? "1px solid transparent" : "1px solid rgba(168,85,247,0.30)",
-                    }}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              onClick={() => {
-                const days = curr.schoolDays ?? [1, 2, 3, 4, 5];
-                const summary = days.length === 5 && days.every((d) => d <= 5) ? t("screens.onboarding.all_school_days")
-                  : days.length === 0 ? t("screens.onboarding.no_school_days")
-                  : days.map((d) => labels[d - 1]).join(",");
-                const name = curr.name || t("screens.onboarding.default_child_name");
-                userReplies(summary, "child-wake", t("screens.onboarding.wake_morning_question", { name }));
-              }}
-              className="w-full py-3 rounded-2xl text-primary-foreground font-semibold active:scale-95 transition-all"
-              style={{ background: GRAD }}
-            >
-              {t("screens.onboarding.continue")}
-            </button>
-          </div>
-        );
+        const days = dayNums.length ? dayNums : [1, 2, 3, 4, 5];
+        const summary = days.length === 5 && days.every((d) => d <= 5)
+          ? t("screens.onboarding.all_school_days")
+          : days.length === 0
+            ? t("screens.onboarding.no_school_days")
+            : days.map((d) => labels[d - 1]).join(",");
+        const name = curr.name || t("screens.onboarding.default_child_name");
+        userReplies(summary, "child-wake", t("screens.onboarding.wake_morning_question", { name }));
+      } else if (step === "parent-region") {
+        if (ids.includes("indian") && !regionDrillDown && !["IN", "PK", "BD", "LK", "NP"].includes(countryCode)) {
+          setRegionDrillDown(true);
+          setSelectedRegions([]);
+          return;
+        }
+        setSelectedRegions(ids);
+        setParent((p) => ({ ...p, region: ids.join(",") }));
+        const summary = ids.map((id) => t(`screens.onboarding.region_${id}`, { defaultValue: id })).join(", ");
+        userReplies(summary || ids.join(","), "parent-diet", t("screens.onboarding.diet_question"));
+      } else if (step === "parent-goals") {
+        setSelectedParentGoals(ids as ParentGoalCode[]);
+        const summary = ids.length
+          ? ids.map((g) => t(`intelligence.goals.options.${g}`)).join(", ")
+          : t("screens.onboarding.goals_skip_summary");
+        userReplies(summary, "parent-mobile", t("screens.onboarding.mobile_question"));
+      } else if (step === "parent-allergies") {
+        if (ids.length === 0) {
+          finishAllergies(true);
+        } else {
+          setAllergyChips(ids.filter((id) => id !== "other"));
+          if (ids.includes("other")) {
+            setAllergyOtherOpen(true);
+            return;
+          }
+          finishAllergies(false);
+        }
       }
-
-
-      case "child-wake":
-        return (
-          <TimeChipPicker
-            options={WAKE_OPTS}
-            selected={selected}
-            defaultValue={curr.wakeUpTime || "07:00"}
-            onSelect={(v) => {
-              setSelected(v);
-              setCurr((c) => ({ ...c, wakeUpTime: to24h(v) }));
-              const name = curr.name || t("screens.onboarding.default_child_name");
-              userReplies(v, "child-sleep", t("screens.onboarding.sleep_question", { name }));
-            }}
-          />
-        );
-
-      case "child-sleep":
-        return (
-          <TimeChipPicker
-            options={SLEEP_OPTS}
-            selected={selected}
-            defaultValue={curr.sleepTime || "21:00"}
-            onSelect={(v) => {
-              setSelected(v);
-              const finalChild = {
-                ...curr,
-                sleepTime: to24h(v),
-                ageGroup: curr.ageGroup ?? getAgeGroup(curr.age ?? 3),
-              } as ChildData;
-              setChildren((prev) => [...prev, finalChild]);
-              setCurr({});
-              const childCount = children.length + 1;
-              userReplies(v, "add-more",
-                childCount === 1
-                  ? t("screens.onboarding.child_added_first_school")
-                  : t("screens.onboarding.child_added_more"),
-              );
-            }}
-          />
-        );
-
-      case "add-more": {
-        const addMoreOpts = [
-          { label: t("screens.onboarding.yes_add_another"), isYes: true },
-          { label: t("screens.onboarding.no_continue"), isYes: false },
-        ];
-        return (
-          <div className="flex gap-3">
-            {addMoreOpts.map((opt) => (
-              <button
-                key={opt.label}
-                onClick={() => {
-                  if (opt.isYes) {
-                    userReplies(opt.label, "child-name", t("screens.onboarding.next_child_name"));
-                  } else {
-                    userReplies(opt.label, "parent-name", t("screens.onboarding.parent_intro"));
-                  }
-                }}
-                className="flex-1 py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                style={!opt.isYes
-                  ? { background: GRAD, color: "#fff", border: "transparent" }
-                  : CHIP_DARK
-                }
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        );
-      }
-
-      case "parent-name":
-        return (
-          <div className="flex gap-2">
-            <input
-              className="flex-1 rounded-2xl px-4 py-3.5 text-sm outline-none border border-border focus:border-primary transition-colors"
-              style={INPUT_DARK}
-              placeholder={t("screens.onboarding.parent_name_placeholder")}
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && textInput.trim()) {
-                  const name = textInput.trim();
-                  setParent((p) => ({ ...p, name }));
-                  userReplies(name, "parent-role", t("screens.onboarding.parent_name_reply", { name }));
-                }
-              }}
-              autoFocus
-            />
-            <button
-              onClick={() => {
-                if (!textInput.trim()) return;
-                const name = textInput.trim();
-                setParent((p) => ({ ...p, name }));
-                userReplies(name, "parent-role", t("screens.onboarding.parent_name_reply", { name }));
-              }}
-              className="w-12 h-12 rounded-2xl flex items-center justify-center text-primary-foreground shrink-0"
-              style={{ background: GRAD }}
-            >→</button>
-          </div>
-        );
-
-      case "parent-role": {
-        const roleOpts = [
-          { label: t("screens.onboarding.role_mother"), value: "Mother" },
-          { label: t("screens.onboarding.role_father"), value: "Father" },
-          { label: t("screens.onboarding.role_both"), value: "Both" },
-          { label: t("screens.onboarding.role_grandparent"), value: "Grandparent" },
-        ];
-        return (
-          <div className="grid grid-cols-2 gap-2">
-            {roleOpts.map((r) => (
-              <button
-                key={r.value}
-                onClick={() => {
-                  setParent((p) => ({ ...p, role: r.value }));
-                  userReplies(r.label, "parent-work", t("screens.onboarding.work_question"));
-                }}
-                className="py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                style={CHIP_DARK}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-        );
-      }
-
-      case "parent-work": {
-        const workOpts = [
-          { label: t("screens.onboarding.work_home"), value: "work_from_home" },
-          { label: t("screens.onboarding.work_office"), value: "office" },
-          { label: t("screens.onboarding.work_not_working"), value: "not_working" },
-        ];
-        return (
-          <div className="flex flex-col gap-2">
-            {workOpts.map(({ label, value }) => (
-              <button
-                key={value}
-                onClick={() => {
-                  setParent((p) => ({ ...p, workType: value }));
-                  userReplies(label, "parent-region", t("screens.onboarding.region_question"));
-                }}
-                className="w-full py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                style={CHIP_DARK}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        );
-      }
-
-      case "parent-region": {
-        // South Asian users (IN, PK, BD, LK, NP) skip the top-level "Indian" tile
-        // and land directly on the regional sub-cuisine list.  Everyone else sees
-        // GLOBAL_CUISINES first; tapping "Indian Cuisine" drills into the sub-list.
-        const isSouthAsianUser = ["IN", "PK", "BD", "LK", "NP"].includes(countryCode);
-        const showingIndianSubs = isSouthAsianUser || regionDrillDown;
-        const cuisines = showingIndianSubs ? INDIAN_SUBCUISINES : GLOBAL_CUISINES;
-        const recommended = getRecommendedCuisines(countryCode);
-        const maxReached = selectedRegions.length >= 3;
-        const toggleRegion = (value: string) => {
-          setSelectedRegions((prev) => {
-            if (prev.includes(value)) return prev.filter((v) => v !== value);
-            if (prev.length >= 3) return prev;
-            return [...prev, value];
-          });
-        };
-        return (
-          <div className="flex flex-col gap-3">
-            {/* Back link — only for non-South-Asian users who drilled in */}
-            {regionDrillDown && !isSouthAsianUser && (
-              <button
-                onClick={() => {
-                  setRegionDrillDown(false);
-                  setSelectedRegions([]);
-                }}
-                className="flex items-center gap-1 text-xs self-start mb-0.5 active:opacity-70"
-                style={{ color: "rgba(255,255,255,0.60)" }}
-              >
-                ← {t("screens.onboarding.region_back_to_cuisines")}
-              </button>
-            )}
-            {/* Sub-list heading */}
-            {showingIndianSubs && (
-              <p className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.65)" }}>
-                {t("screens.onboarding.region_indian_drilldown")}
-              </p>
-            )}
-            <div className="grid grid-cols-2 gap-2.5">
-              {cuisines.map((c) => {
-                const isSelected = selectedRegions.includes(c.value);
-                const isRec = recommended.includes(c.value);
-                const isIndianEntry = c.value === "indian";
-                return (
-                  <button
-                    key={c.value}
-                    onClick={() => {
-                      if (isIndianEntry) {
-                        // Drill into the Indian regional sub-cuisine list
-                        setRegionDrillDown(true);
-                        // Pre-seed the first recommended Indian sub-cuisine so
-                        // the user arrives with a sensible default highlighted.
-                        const indRecs = recommended.filter((v) =>
-                          INDIAN_SUBCUISINES.some((s) => s.value === v),
-                        );
-                        setSelectedRegions(indRecs.slice(0, 1));
-                        return;
-                      }
-                      toggleRegion(c.value);
-                    }}
-                    disabled={!isIndianEntry && maxReached && !isSelected}
-                    className="relative flex flex-col items-start p-3.5 rounded-2xl text-left border active:scale-95"
-                    style={{
-                      background: isSelected ? GRAD : "rgba(255,255,255,0.06)",
-                      border: isSelected
-                        ? "1.5px solid transparent"
-                        : isRec
-                        ? "1.5px solid rgba(168,85,247,0.50)"
-                        : "1.5px solid rgba(255,255,255,0.12)",
-                      opacity: !isIndianEntry && maxReached && !isSelected ? 0.45 : 1,
-                      boxShadow: isSelected ? "0 0 18px rgba(168,85,247,0.35)" : undefined,
-                      transition: "background 0.18s, box-shadow 0.18s, opacity 0.18s, transform 0.1s",
-                    }}
-                  >
-                    {isRec && (
-                      <span
-                        className="absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-tight"
-                        style={{
-                          background: isSelected ? "rgba(255,255,255,0.22)" : "rgba(168,85,247,0.18)",
-                          color: isSelected ? "#fff" : "#c084fc", // audit-ok: cuisine chip selected-state accent — matches brand-purple-400 inline style, not expressible via Tailwind class
-                          border: "1px solid rgba(168,85,247,0.38)",
-                        }}
-                      >
-                        ★ {t("screens.onboarding.region_recommended")}
-                      </span>
-                    )}
-                    {/* "Indian Cuisine" tile gets a drill-down indicator */}
-                    {isIndianEntry && (
-                      <span
-                        className="absolute top-2 right-2 text-base leading-none"
-                        style={{ color: "rgba(255,255,255,0.55)" }}
-                      >›</span>
-                    )}
-                    <span className="text-xl mb-1 leading-none">{c.emoji}</span>
-                    <span className="text-sm font-semibold text-white leading-tight pr-4">
-                      {t(`screens.onboarding.${c.labelKey}`)}
-                    </span>
-                    <span
-                      className="text-[11px] mt-0.5 leading-tight"
-                      style={{ color: "rgba(255,255,255,0.58)" }}
-                    >
-                      {t(`screens.onboarding.${c.subtextKey}`)}
-                    </span>
-                    {isSelected && (
-                      <span
-                        className="absolute bottom-2 right-2 text-xs font-bold"
-                        style={{ color: "rgba(255,255,255,0.85)" }}
-                      >
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            {maxReached && (
-              <p className="text-center text-xs" style={{ color: "rgba(255,255,255,0.48)" }}>
-                {t("screens.onboarding.region_max_reached")}
-              </p>
-            )}
-            <button
-              onClick={() => {
-                const regionStr =
-                  selectedRegions.length > 0
-                    ? selectedRegions.join(",")
-                    : getDefaultRegion(countryCode);
-                setParent((p) => ({ ...p, region: regionStr }));
-                const labels = selectedRegions
-                  .map((v) => {
-                    const found = ALL_CUISINE_MAP[v];
-                    return found ? t(`screens.onboarding.${found.labelKey}`) : v;
-                  })
-                  .join(", ");
-                userReplies(
-                  labels || regionStr,
-                  "parent-diet",
-                  t("screens.onboarding.diet_question"),
-                );
-              }}
-              disabled={selectedRegions.length === 0}
-              className="w-full py-3 rounded-2xl font-semibold transition-all duration-200 active:scale-95"
-              style={{
-                background: selectedRegions.length > 0 ? GRAD : "rgba(255,255,255,0.10)",
-                color: "#fff",
-                opacity: selectedRegions.length > 0 ? 1 : 0.5,
-              }}
-            >
-              {t("screens.onboarding.continue")}
-            </button>
-          </div>
-        );
-      }
-
-      case "parent-diet":
-        return (
-          <div className="grid grid-cols-2 gap-2.5">
-            {ONBOARDING_DIET_OPTIONS.map((opt) => {
-              const isSelected = selectedDietType === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() => {
-                    setSelectedDietType(opt.value);
-                    setParent((p) => ({ ...p, dietType: opt.value }));
-                    const label = `${opt.emoji} ${t(`screens.onboarding.${opt.labelKey}`)}`;
-                    userReplies(label, "parent-goals", t("screens.onboarding.goals_question"));
-                  }}
-                  className="flex flex-col items-start p-3.5 rounded-2xl text-left border active:scale-95 transition-all"
-                  style={{
-                    background: isSelected ? GRAD : "rgba(255,255,255,0.06)",
-                    border: isSelected
-                      ? "1.5px solid transparent"
-                      : "1.5px solid rgba(255,255,255,0.12)",
-                    boxShadow: isSelected ? "0 0 18px rgba(168,85,247,0.35)" : undefined,
-                  }}
-                >
-                  <span className="text-xl mb-1 leading-none">{opt.emoji}</span>
-                  <span className="text-sm font-semibold text-white leading-tight">
-                    {t(`screens.onboarding.${opt.labelKey}`)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        );
-
-      case "parent-goals": {
-        const toggleGoal = (code: ParentGoalCode) => {
-          setSelectedParentGoals((prev) =>
-            prev.includes(code) ? prev.filter((g) => g !== code) : [...prev, code],
-          );
-        };
-        return (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap gap-2">
-              {PARENT_GOAL_CODES.map((code) => {
-                const on = selectedParentGoals.includes(code);
-                return (
-                  <button
-                    key={code}
-                    type="button"
-                    onClick={() => toggleGoal(code)}
-                    className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                    style={{
-                      background: on ? GRAD : GLASS_BG,
-                      color: "#fff",
-                      border: on ? "1px solid transparent" : "1px solid rgba(168,85,247,0.30)",
-                      boxShadow: on ? "0 4px 12px rgba(99,102,241,0.4)" : undefined,
-                    }}
-                  >
-                    {t(`intelligence.goals.options.${code}`)}
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              onClick={() => {
-                const summary =
-                  selectedParentGoals.length > 0
-                    ? selectedParentGoals.map((g) => t(`intelligence.goals.options.${g}`)).join(", ")
-                    : t("screens.onboarding.goals_skip_summary");
-                userReplies(summary, "parent-mobile", t("screens.onboarding.mobile_question"));
-              }}
-              className="w-full py-3 rounded-2xl font-semibold transition-all duration-200 active:scale-95"
-              style={{ background: GRAD, color: "#fff" }}
-            >
-              {t("screens.onboarding.continue")}
-            </button>
-          </div>
-        );
-      }
-
-      case "parent-mobile":
-        return (
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-2">
-              <input
-                type="tel"
-                inputMode="tel"
-                className="flex-1 rounded-2xl px-4 py-3.5 text-sm outline-none border border-border focus:border-primary transition-colors"
-                style={INPUT_DARK}
-                placeholder={t("screens.onboarding.mobile_placeholder")}
-                value={textInput}
-                onChange={(e) => setTextInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && textInput.trim()) {
-                    const m = textInput.trim();
-                    setParent((p) => ({ ...p, mobileNumber: m }));
-                    userReplies(m, "parent-allergies", t("screens.onboarding.allergies_question"));
-                  }
-                }}
-                autoFocus
-              />
-              <button
-                onClick={() => {
-                  if (!textInput.trim()) return;
-                  const m = textInput.trim();
-                  setParent((p) => ({ ...p, mobileNumber: m }));
-                  userReplies(m, "parent-allergies", t("screens.onboarding.allergies_question"));
-                }}
-                className="w-12 h-12 rounded-2xl flex items-center justify-center text-primary-foreground shrink-0"
-                style={{ background: GRAD }}
-              >→</button>
-            </div>
-            <button
-              onClick={() => userReplies(t("screens.onboarding.skip_for_now"), "parent-allergies", t("screens.onboarding.allergies_skip"))}
-              className="text-xs self-center mt-1" style={{ color: "rgba(255,255,255,0.55)" }}
-            >
-              {t("screens.onboarding.skip_later")}
-            </button>
-          </div>
-        );
-
-      case "parent-allergies": {
-        const toggleAllergy = (value: string) => {
-          setAllergyChips((prev) =>
-            prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
-          );
-        };
-        const hasSelection =
-          allergyChips.length > 0 || allergyOtherText.trim().length > 0;
-        return (
-          <div className="flex flex-col gap-3">
-            {finishError ? (
-              <p className="text-xs text-center px-2" style={{ color: "#fca5a5" }}>
-                {finishError}
-              </p>
-            ) : null}
-            <div className="flex flex-wrap gap-2">
-              {ONBOARDING_ALLERGY_CHIPS.map((chip) => {
-                const on = allergyChips.includes(chip.value);
-                return (
-                  <button
-                    key={chip.value}
-                    type="button"
-                    disabled={isFinishing}
-                    onClick={() => toggleAllergy(chip.value)}
-                    className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                    style={{
-                      background: on ? GRAD : GLASS_BG,
-                      color: "#fff",
-                      border: on ? "1px solid transparent" : "1px solid rgba(168,85,247,0.30)",
-                      boxShadow: on ? "0 4px 12px rgba(99,102,241,0.4)" : undefined,
-                    }}
-                  >
-                    {chip.emoji} {t(`screens.onboarding.${chip.labelKey}`)}
-                  </button>
-                );
-              })}
-              <button
-                type="button"
-                disabled={isFinishing}
-                onClick={() => setAllergyOtherOpen((o) => !o)}
-                className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                style={{
-                  background: allergyOtherOpen ? GRAD : GLASS_BG,
-                  color: "#fff",
-                  border: allergyOtherOpen ? "1px solid transparent" : "1px solid rgba(168,85,247,0.30)",
-                  boxShadow: allergyOtherOpen ? "0 4px 12px rgba(99,102,241,0.4)" : undefined,
-                }}
-              >
-                ✏️ {t("screens.onboarding.allergy_other")}
-              </button>
-            </div>
-            {allergyOtherOpen && (
-              <input
-                className="w-full rounded-2xl px-4 py-3.5 text-sm outline-none border"
-                style={INPUT_DARK}
-                placeholder={t("screens.onboarding.allergies_other_placeholder")}
-                value={allergyOtherText}
-                onChange={(e) => setAllergyOtherText(e.target.value)}
-                disabled={isFinishing}
-                autoFocus
-              />
-            )}
-            <button
-              disabled={isFinishing}
-              onClick={() => finishAllergies(!hasSelection)}
-              className="w-full py-3 rounded-2xl font-semibold transition-all duration-200 active:scale-95 disabled:opacity-50"
-              style={{ background: GRAD, color: "#fff" }}
-            >
-              {isFinishing
-                ? t("screens.onboarding.finalizing_setup")
-                : hasSelection
-                  ? t("screens.onboarding.continue")
-                  : t("screens.onboarding.no_allergies_button")}
-            </button>
-            {hasSelection && (
-              <button
-                disabled={isFinishing}
-                onClick={() => finishAllergies(true)}
-                className="text-xs self-center"
-                style={{ color: "rgba(255,255,255,0.55)" }}
-              >
-                {t("screens.onboarding.allergy_none_option")}
-              </button>
-            )}
-          </div>
-        );
-      }
-
-      default:
-        return null;
     }
   }
+
+  const countrySearchResults = useMemo(() => {
+    if (!countrySearch.trim()) return [];
+    return ALL_COUNTRIES.filter(
+      (c) =>
+        c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+        c.code.toLowerCase().includes(countrySearch.toLowerCase()),
+    );
+  }, [countrySearch]);
+
+  const composerEnabled = ONBOARDING_COMPOSER_STEPS.has(step) && !isFinishing && !typing;
 
   return (
     <div className="relative h-full w-full">
@@ -2404,12 +1381,44 @@ export default function OnboardingPage() {
           </p>
         </div>
       ) : null}
-      <ChatPlatform
+      <ChatThread
         surface="onboarding"
-        scrollDeps={[messages, typing, step, textInput]}
-        activePromptId={activePromptId}
+        theme="onboarding"
+        testId="onboarding-chat-thread"
+        messages={threadMessages}
+        draft={textInput}
+        onDraftChange={setTextInput}
+        onSend={handleOnboardingSend}
+        onInteraction={handleOnboardingInteraction}
+        composerDisabled={!composerEnabled}
+        composerPlaceholder={onboardingComposerPlaceholder(step, t)}
+        scrollDeps={[messages, typing, step, textInput, locationState.status]}
         style={{ background: BG }}
         messagesClassName="max-w-lg"
+        footerClassName="border-t border-transparent"
+        footerExtra={(
+          <>
+            {step === "parent-mobile" && composerEnabled ? (
+              <button
+                type="button"
+                className="mb-2 w-full text-center text-xs"
+                style={{ color: "rgba(255,255,255,0.55)" }}
+                onClick={() =>
+                  userReplies(
+                    t("screens.onboarding.skip_for_now"),
+                    "parent-allergies",
+                    t("screens.onboarding.allergies_skip"),
+                  )
+                }
+              >
+                {t("screens.onboarding.skip_later")}
+              </button>
+            ) : null}
+            <p className="mt-3 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(168,85,247,0.35)" }}>
+              {t("patent_pending.powered_by")}
+            </p>
+          </>
+        )}
         header={(
           <div
             className="z-10"
@@ -2430,32 +1439,32 @@ export default function OnboardingPage() {
             <ProgressBar step={step} />
           </div>
         )}
-        footer={showChatFooter ? (
-          <div
-            style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderTop: "1px solid rgba(168,85,247,0.15)" }}
-          >
-            {step === "country-confirm" ? renderCountryFooter() : renderInput()}
-            <p className="mt-3 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(168,85,247,0.35)" }}>
-              {t("patent_pending.powered_by")}
-            </p>
-          </div>
-        ) : null}
-      >
-        {messages.map((msg) =>
-          msg.role === "amy" ? (
-            <ChatAmyBubble
-              key={msg.id}
-              text={msg.text}
-              theme="onboarding"
-              promptId={msg.id === activePromptId ? msg.id : undefined}
-            />
-          ) : (
-            <ChatUserBubble key={msg.id} text={msg.text} theme="onboarding" />
-          ),
-        )}
-        {typing ? <ChatTypingBubble theme="onboarding" /> : null}
-      </ChatPlatform>
-      {renderCountryPickerOverlay()}
+      />
+      <OnboardingCountryModal
+        open={showCountryPicker}
+        onOpenChange={(open) => {
+          if (!open && countryPickerRequired) return;
+          setShowCountryPicker(open);
+          if (!open) setCountrySearch("");
+        }}
+        title={
+          countryPickerRequired
+            ? t("screens.onboarding.country_manual_required_title")
+            : t("screens.onboarding.country_pick_popular")
+        }
+        hint={
+          locationState.status === "denied"
+            ? t("screens.onboarding.country_permission_denied")
+            : null
+        }
+        required={countryPickerRequired}
+        search={countrySearch}
+        onSearchChange={setCountrySearch}
+        topCountries={TOP_COUNTRIES}
+        searchResults={countrySearchResults}
+        onSelect={(code, name) => confirmCountry(code, name)}
+      />
     </div>
   );
 }
+
