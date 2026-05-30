@@ -104,6 +104,11 @@ export function applySetupStatusUpdate(
   );
 }
 
+/** Prefer local completion cache over stale API reads (Android WebView after onboarding save). */
+export function effectiveSetupStatus(remote?: SetupStatus): SetupStatus {
+  return applySetupStatusUpdate(readOnboardingCache(), remote);
+}
+
 /** Match AppCore / mobile: API flag, existing children, or profile-based heal. */
 export async function resolveSetupStatus(
   authFetch: AuthFetchFn,

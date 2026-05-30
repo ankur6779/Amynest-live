@@ -46,6 +46,7 @@ import { ApiRetryShell } from "@/components/api-retry-shell";
 import { ProductionAppShell } from "@/components/production-app-shell";
 import { FetchTimeoutError } from "@/lib/fetch-with-timeout";
 import {
+  effectiveSetupStatus,
   isSetupComplete,
 } from "@/lib/setup-status";
 import { installTtsGestureListener } from "@/lib/tts-guard";
@@ -201,7 +202,8 @@ function HomeRedirect() {
     return <RouteLoadingShell />;
   }
 
-  return isSetupComplete(data) ? <Redirect to="/dashboard" /> : <Redirect to="/onboarding" />;
+  const status = effectiveSetupStatus(data);
+  return isSetupComplete(status) ? <Redirect to="/dashboard" /> : <Redirect to="/onboarding" />;
 }
 
 /** If setup is already done, leave /onboarding (users often land here from an old redirect). */
@@ -222,7 +224,7 @@ function OnboardingRouteGuard() {
       />
     );
   }
-  if (isSetupComplete(data)) return <Redirect to="/dashboard" />;
+  if (isSetupComplete(effectiveSetupStatus(data))) return <Redirect to="/dashboard" />;
   return (
     <AppErrorBoundary label="Onboarding">
       <OnboardingPage />
@@ -262,7 +264,7 @@ function ProtectedRoute({ component: Component }: { component: ComponentType; re
   if (isError) {
     return <ApiRetryShell onRetry={() => void refetch()} />;
   }
-  if (!isSetupComplete(data)) return <Redirect to="/onboarding" />;
+  if (!isSetupComplete(effectiveSetupStatus(data))) return <Redirect to="/onboarding" />;
   return (
     <AppErrorBoundary label="Layout">
       <Layout>
