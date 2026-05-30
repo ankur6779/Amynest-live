@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChatThread, type ThreadMessage } from "@/components/chat-thread";
+import { ChatThread, type InteractionEvent, type ThreadMessage } from "@/components/chat-thread";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, RotateCcw, Sparkles } from "lucide-react";
+import { RotateCcw, ArrowRight, Sparkles } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +39,9 @@ interface ChatTurn {
   role: "amy" | "child";
   text: string;
   mode?: TeachingMode;
+  voiceUrl?: string;
+  nextExpected?: NextExpected;
+  goalMet?: boolean;
 }
 
 interface ChildRow {
@@ -74,7 +77,8 @@ export default function AmyLearningTutorPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const authFetch = useAuthFetch();
-  const { speak, pause, primeSpeakGesture, speaking, voiceLoading, activePhrase } = useAmyVoice();
+  const { speak, pause, primeSpeakGesture, speaking, loading: voiceLoading, activePhrase } =
+    useAmyVoice();
 
   const [sessionStarted, setSessionStarted] = useState(false);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
@@ -82,7 +86,8 @@ export default function AmyLearningTutorPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [goalMet, setGoalMet] = useState(false);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: childrenData } = useQuery<ChildRow[]>({
     queryKey: ["children-for-amy-learning-tutor"],
@@ -144,48 +149,60 @@ export default function AmyLearningTutorPage() {
     [primeSpeakGesture],
   );
 
-  const applyTutorResponse = (data: TutorTurnResponse) => {
-    const tutor = data.tutor;
-    if (!tutor?.message) throw new Error("invalid_tutor_reply");
-    setPending(tutor);
-    setGoalMet(Boolean(data.goalMet));
-    scheduleTutorAudioPrewarm([tutor.message, ...TUTOR_WARM_PHRASES]);
-    playTutorMessage(tutor.message);
-  };
+  const applyTutorResponse = useCallback(
+    (data: TutorTurnResponse) => {
+      const tutor = data.tutor;
+      if (!tutor?.message) {
+        throw new Error("invalid_tutor_reply");
+      }
+      setPending(tutor);
+      setGoalMet(Boolean(data.goalMet));
+      scheduleTutorAudioPrewarm([tutor.message, ...TUTOR_WARM_PHRASES]);
+      playTutorMessage(tutor.message);
+    },
+    [playTutorMessage, scheduleTutorAudioPrewarm],
+  );
 
-  const callTutor = async (action: TutorAction, childAnswer?: string) => {
-    if (!primaryChild?.id) {
-      toast({
-        title: t("pages.amy_learning_tutor.no_child_title"),
-        description: t("pages.amy_learning_tutor.no_child_body"),
-        variant: "destructive",
-      });
-      return;
-    }
+  const callTutor = useCallback(
+    async (action: TutorAction, childAnswer?: string) => {
+      if (!primaryChild?.id) {
+        toast({
+          title: t("pages.amy_learning_tutor.no_child_title"),
+          description: t("pages.amy_learning_tutor.no_child_body"),
+          variant: "destructive",
+        });
+        return;
+      }
 
-    setLoading(true);
-    try {
-      const res = await authFetch("/api/content/tutor/turn", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ childId: primaryChild.id, action, childAnswer }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await readResolvedApiJson<TutorTurnResponse>(res, authFetch);
-      applyTutorResponse(data);
-      setSessionStarted(true);
-    } catch (err) {
-      toast({
-        title: t("pages.amy_learning_tutor.error_title"),
-        description: err instanceof Error ? err.message : t("pages.amy_learning_tutor.error_body"),
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      setLoading(true);
+      try {
+        const res = await authFetch("/api/content/tutor/turn", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            childId: primaryChild.id,
+            action,
+            childAnswer,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await readResolvedApiJson<TutorTurnResponse>(res, authFetch);
+        applyTutorResponse(data);
+        setSessionStarted(true);
+      } catch (err) {
+        toast({
+          title: t("pages.amy_learning_tutor.error_title"),
+          description: err instanceof Error ? err.message : t("pages.amy_learning_tutor.error_body"),
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [applyTutorResponse, authFetch, primaryChild?.id, t, toast],
+  );
 
-  const commitPendingAsTurn = () => {
+  const commitPendingAsTurn = useCallback(() => {
     if (!pending) return;
     setTurns((prev) => [
       ...prev,
@@ -194,92 +211,92 @@ export default function AmyLearningTutorPage() {
         role: "amy",
         text: pending.message,
         mode: pending.mode,
+        voiceUrl: pending.voiceUrl,
+        nextExpected: pending.nextExpectedResponse,
+        goalMet,
       },
     ]);
     setPending(null);
-  };
+  }, [goalMet, pending]);
 
-  const startSession = async () => {
+  const startSession = useCallback(async () => {
     primeTutorAudioGesture();
     setTurns([]);
     setGoalMet(false);
     setPending(null);
     await callTutor("start");
-  };
+  }, [callTutor, primeTutorAudioGesture]);
 
-  const submitAnswer = async () => {
+  const submitAnswer = useCallback(async () => {
     const text = input.trim();
     if (!text || loading) return;
     setTurns((prev) => [...prev, { id: `c-${Date.now()}`, role: "child", text }]);
     setInput("");
     commitPendingAsTurn();
     await callTutor("answer", text);
-  };
+  }, [callTutor, commitPendingAsTurn, input, loading]);
 
-  const onContinue = async () => {
+  const onContinue = useCallback(async () => {
     commitPendingAsTurn();
     await callTutor("start");
-  };
+  }, [callTutor, commitPendingAsTurn]);
 
-  const onRepeat = async () => {
+  const onRepeat = useCallback(async () => {
     primeTutorAudioGesture(pending?.message);
     await callTutor("repeat");
-  };
+  }, [callTutor, pending?.message, primeTutorAudioGesture]);
+
+  const handleInteraction = useCallback(
+    (event: InteractionEvent) => {
+      if (event.type === "start-session" && event.actionId === "start") {
+        void startSession();
+      }
+    },
+    [startSession],
+  );
 
   const expectsAnswer = pending?.nextExpectedResponse === "answer";
+  const expectsListen = pending?.nextExpectedResponse === "listen";
+  const expectsContinue = pending?.nextExpectedResponse === "continue";
+  const showActionFooter =
+    sessionStarted && pending != null && !expectsAnswer && (expectsListen || expectsContinue);
 
   const threadMessages = useMemo((): ThreadMessage[] => {
     const items: ThreadMessage[] = [];
 
-    if (!sessionStarted && !loading) {
+    if (!sessionStarted && !loading && primaryChild?.id) {
       items.push({
         kind: "interactive",
         id: "start-session",
         interaction: {
           type: "start-session",
           title: t("pages.amy_learning_tutor.ready_title", {
-            name: primaryChild?.name ?? t("pages.amy_learning_tutor.default_child_name"),
+            name: primaryChild.name ?? t("pages.amy_learning_tutor.default_child_name"),
           }),
           body: t("pages.amy_learning_tutor.ready_body"),
           buttonLabel: t("pages.amy_learning_tutor.start_learning"),
         },
         state: { status: "pending" },
       });
+      return items;
     }
 
     for (const turn of turns) {
       if (turn.role === "child") {
         items.push({ kind: "user", id: turn.id, text: turn.text });
-      } else {
-        items.push({
-          kind: "amy-rich",
-          id: turn.id,
-          text: turn.text,
-          badge: turn.mode ? MODE_LABEL[turn.mode] : undefined,
-          onListen: () => playTutorMessage(turn.text),
-          onPrimeListen: () => primeTutorAudioGesture(turn.text),
-        });
+        continue;
       }
+      items.push({
+        kind: "amy-rich",
+        id: turn.id,
+        text: turn.text,
+        badge: turn.mode ? MODE_LABEL[turn.mode] : undefined,
+        onListen: () => playTutorMessage(turn.text),
+        onPrimeListen: () => primeTutorAudioGesture(turn.text),
+      });
     }
 
     if (pending) {
-      const actionButtons: Array<{ id: string; label: string; variant?: "default" | "outline" }> = [];
-      if (pending.nextExpectedResponse === "listen" || pending.nextExpectedResponse === "repeat") {
-        actionButtons.push({
-          id: "repeat",
-          label: t("pages.amy_learning_tutor.repeat"),
-          variant: "outline",
-        });
-      }
-      if (pending.nextExpectedResponse === "continue" || pending.nextExpectedResponse === "listen") {
-        actionButtons.push({
-          id: "continue",
-          label: goalMet
-            ? t("pages.amy_learning_tutor.goal_met_continue")
-            : t("pages.amy_learning_tutor.continue"),
-        });
-      }
-
       items.push({
         kind: "amy-rich",
         id: "amy-learning-pending",
@@ -289,7 +306,6 @@ export default function AmyLearningTutorPage() {
         onPrimeListen: () => primeTutorAudioGesture(pending.message),
         highlight: true,
       });
-
       if (goalMet) {
         items.push({
           kind: "system",
@@ -301,24 +317,15 @@ export default function AmyLearningTutorPage() {
           ),
         });
       }
-
-      if (actionButtons.length > 0 && !expectsAnswer) {
-        items.push({
-          kind: "interactive",
-          id: "pending-actions",
-          interaction: { type: "actions", buttons: actionButtons },
-          state: { status: "pending" },
-        });
-      }
     }
 
     return items;
   }, [
-    expectsAnswer,
     goalMet,
     loading,
     pending,
     playTutorMessage,
+    primaryChild?.id,
     primaryChild?.name,
     primeTutorAudioGesture,
     sessionStarted,
@@ -328,12 +335,12 @@ export default function AmyLearningTutorPage() {
 
   return (
     <div
-      className="relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col bg-background"
+      className="assistant-chat-page relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col bg-background"
       data-testid="amy-learning-tutor-page"
     >
       <div className="flex shrink-0 items-start justify-between gap-3 px-4 pb-3 pt-4 md:px-0 md:pt-0">
         <div>
-          <h1 className="font-quicksand flex items-center gap-2 text-3xl font-bold text-foreground">
+          <h1 className="flex items-center gap-2 font-quicksand text-3xl font-bold text-foreground">
             <AmyIcon size={38} bounce ring />
             {t("pages.amy_learning_tutor.title")}
             <Badge className="ml-1 border-0 bg-primary text-xs font-bold text-primary-foreground">
@@ -361,30 +368,52 @@ export default function AmyLearningTutorPage() {
         <ChatThread
           surface="amy-learning-tutor"
           testId="amy-learning-tutor-thread"
+          layout="embedded"
           messages={threadMessages}
           draft={input}
           onDraftChange={setInput}
           onSend={() => void submitAnswer()}
-          onInteraction={(event) => {
-            if (event.type === "start-session" && event.actionId === "start") {
-              primeTutorAudioGesture();
-              void startSession();
-            }
-            if (event.type === "actions") {
-              if (event.actionId === "repeat") void onRepeat();
-              if (event.actionId === "continue") void onContinue();
-            }
-          }}
+          onInteraction={handleInteraction}
           loading={loading}
-          composerDisabled={!sessionStarted || !expectsAnswer}
+          composerHidden={!sessionStarted || !expectsAnswer}
+          composerDisabled={loading}
           composerPlaceholder={t("pages.amy_learning_tutor.answer_placeholder")}
-          sendDisabled={!expectsAnswer}
           scrollDeps={[turns, loading, pending, sessionStarted, input, goalMet]}
           className="min-h-0 flex-1"
           messagesClassName="space-y-3 pr-5 md:px-0"
-          footerClassName="border-t border-border/50 bg-background/95 backdrop-blur"
-          textareaRef={inputRef}
+          footerClassName="border-t border-border/50 bg-background/95 backdrop-blur px-0 py-3"
+          textareaRef={textareaRef}
           header={null}
+          footerExtra={
+            showActionFooter ? (
+              <div className="mb-2 flex w-full gap-2">
+                {(expectsListen || pending?.nextExpectedResponse === "repeat") && (
+                  <Button
+                    variant="outline"
+                    className="rounded-full"
+                    disabled={loading}
+                    onPointerDown={() => primeTutorAudioGesture(pending?.message)}
+                    onClick={() => void onRepeat()}
+                    data-testid="amy-learning-tutor-repeat"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    {t("pages.amy_learning_tutor.repeat")}
+                  </Button>
+                )}
+                <Button
+                  className="flex-1 rounded-full"
+                  disabled={loading}
+                  onClick={() => void onContinue()}
+                  data-testid="amy-learning-tutor-continue"
+                >
+                  {goalMet
+                    ? t("pages.amy_learning_tutor.goal_met_continue")
+                    : t("pages.amy_learning_tutor.continue")}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            ) : undefined
+          }
         />
       )}
     </div>

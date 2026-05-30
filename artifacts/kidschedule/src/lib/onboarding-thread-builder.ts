@@ -304,11 +304,18 @@ export function buildOnboardingStepInteraction(ctx: OnboardingThreadContext): In
         min: 0,
         confirmLabel: t("screens.onboarding.continue"),
         skipLabel: t("screens.onboarding.no_allergies_button"),
-        options: ONBOARDING_ALLERGY_CHIPS.map((chip) => ({
-          id: chip.value,
-          label: `${chip.emoji} ${t(`screens.onboarding.${chip.labelKey}`)}`,
-          value: chip.value,
-        })),
+        options: [
+          ...ONBOARDING_ALLERGY_CHIPS.map((chip) => ({
+            id: chip.value,
+            label: `${chip.emoji} ${t(`screens.onboarding.${chip.labelKey}`)}`,
+            value: chip.value,
+          })),
+          {
+            id: "other",
+            label: `✏️ ${t("screens.onboarding.allergy_other")}`,
+            value: "other",
+          },
+        ],
       };
     default:
       return null;
@@ -321,6 +328,10 @@ export function buildOnboardingThreadMessages(ctx: OnboardingThreadContext): Thr
       ? { kind: "amy" as const, id: m.id, text: m.text }
       : { kind: "user" as const, id: m.id, text: m.text },
   );
+
+  if (ctx.step === "intro" && ctx.messages.length === 0 && !ctx.typing) {
+    items.push({ kind: "typing", id: "intro-boot" });
+  }
 
   if (ctx.typing) {
     items.push({ kind: "typing", id: "typing" });
