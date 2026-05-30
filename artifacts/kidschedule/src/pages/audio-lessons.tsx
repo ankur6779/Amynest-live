@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
-import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Headphones, LifeBuoy, Lock, RotateCcw } from "lucide-react";
+import { useAppNavigate } from "@/components/app-link";
+import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import {
   getLessonById,
   getLessonText,
@@ -58,7 +59,7 @@ import { PlayerSheet, type PlayerSheetPlayback } from "@/components/audio-lesson
 import type { LessonAccess } from "@/components/audio-lessons/lesson-card";
 
 export default function AudioLessonsPage() {
-  const [, setLocation] = useLocation();
+  const { navigate } = useAppNavigate();
   const [selectedAge, setSelectedAge] = useState<AgeNavGroup | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [open, setOpen] = useState<Lesson | null>(null);
@@ -131,6 +132,23 @@ export default function AudioLessonsPage() {
     saveLastAgeGroup(age);
     window.setTimeout(() => setDetailLoading(false), 320);
   }, []);
+
+  const handleBack = useCallback(() => {
+    if (selectedAge) {
+      setSelectedAge(null);
+      return;
+    }
+    navigate("/parenting-hub", { replace: true, source: "audio-lessons-back" });
+  }, [selectedAge, navigate]);
+
+  usePageBackHandler(() => {
+    if (selectedAge) {
+      setSelectedAge(null);
+      return true;
+    }
+    navigate("/parenting-hub", { replace: true, source: "audio-lessons-back" });
+    return true;
+  }, [selectedAge, navigate]);
 
   useEffect(() => {
     if (!isPremium || !selectedAge) return;
@@ -332,13 +350,7 @@ export default function AudioLessonsPage() {
           }}
         >
         <button
-          onClick={() => {
-            if (selectedAge) {
-              setSelectedAge(null);
-              return;
-            }
-            setLocation("/amy-coach");
-          }}
+          onClick={handleBack}
           style={{
             color: "hsl(var(--brand-violet-300))",
             background: "rgba(167,139,250,0.15)",

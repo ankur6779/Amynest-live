@@ -173,6 +173,12 @@ export function recordRouteTransition(
       recentRoutes.push(toNorm);
     } else {
       recentRoutes[recentRoutes.length - 1] = toNorm;
+      while (
+        recentRoutes.length >= 2 &&
+        recentRoutes[recentRoutes.length - 1] === recentRoutes[recentRoutes.length - 2]
+      ) {
+        recentRoutes.pop();
+      }
     }
   } else {
     if (recentRoutes[recentRoutes.length - 1] !== fromNorm && recentRoutes.length === 0) {

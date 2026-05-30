@@ -12,36 +12,30 @@ describe("smartBack", () => {
     vi.restoreAllMocks();
   });
 
-  it("returns to dashboard from a tab root when browser history is empty", () => {
+  it("returns to dashboard from a tab root when stack is empty", () => {
     const navigate = vi.fn();
+    const historyBack = vi.fn();
     Object.defineProperty(window, "history", {
-      value: { length: 1, back: vi.fn() },
+      value: { length: 99, back: historyBack },
       configurable: true,
     });
 
     smartBack(navigate, "/amy-coach", "test");
 
+    expect(historyBack).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith("/dashboard", { replace: true });
   });
 
   it("returns to parent hub module route before dashboard fallback", () => {
     const navigate = vi.fn();
-    Object.defineProperty(window, "history", {
-      value: { length: 1, back: vi.fn() },
-      configurable: true,
-    });
 
     smartBack(navigate, "/study", "test");
 
     expect(navigate).toHaveBeenCalledWith("/parenting-hub", { replace: true });
   });
 
-  it("uses the in-memory stack when browser history cannot go back", () => {
+  it("uses the in-memory stack when no parent route is defined", () => {
     const navigate = vi.fn();
-    Object.defineProperty(window, "history", {
-      value: { length: 1, back: vi.fn() },
-      configurable: true,
-    });
     recordRouteTransition("/dashboard", "/feedback", "push");
 
     smartBack(navigate, "/feedback", "test");

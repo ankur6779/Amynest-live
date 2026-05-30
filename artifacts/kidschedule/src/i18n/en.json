@@ -285,6 +285,7 @@
     "view_all_rewards": "View all rewards",
     "show_more_routines": "Show {{count}} more",
     "show_fewer_routines": "Show fewer",
+    "more_insights": "More insights",
     "behavior_empty_title": "Log a win today",
     "behavior_empty_sub": "A quick note helps you spot patterns and celebrate progress.",
     "behavior_empty_sub_child": "Log how {{name}} did today — even small wins count.",
@@ -3131,7 +3132,24 @@
       "routine": "Routine",
       "activities": "Activities",
       "gaming_reward": "Games",
-      "worksheets": "Worksheets"
+      "worksheets": "Worksheets",
+      "see_all": "See all"
+    },
+    "today_summary": {
+      "title": "Today for {{name}}",
+      "subtitle": "Journey, session, and progress",
+      "path": "Today's path",
+      "session": "Daily session",
+      "progress": "Level {{level}} · {{streak}}d streak",
+      "growth_link": "See growth journey"
+    },
+    "family_pulse": {
+      "title": "Family pulse",
+      "preview": "Journey, insights, and executive dashboard"
+    },
+    "explore_ages": {
+      "show": "Browse",
+      "hide": "Hide"
     }
   },
   "components": {

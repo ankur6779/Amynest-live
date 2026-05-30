@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
+import { useAppNavigate } from "@/components/app-link";
+import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import {
   EVENT_CATEGORIES, EVENT_CHARACTERS,
   charactersByCategory, applyFilters, speechForAge,
@@ -51,6 +53,7 @@ function checklistKey(eventId: string, childId: number) {
 
 export default function EventPrepPage() {
   const { t } = useTranslation();
+  const { navigate } = useAppNavigate();
   const authFetch = useAuthFetch();
   const { run: runQuickAction, loading: quickActionLoading, result: quickActionResult, clear: clearQuickAction } =
     useEventPrepQuickAction(authFetch);
@@ -140,6 +143,38 @@ export default function EventPrepPage() {
     });
   };
 
+  const exitToParentHub = useCallback(() => {
+    navigate("/parenting-hub", { replace: true, source: "event-prep-back" });
+  }, [navigate]);
+
+  const handleStepBack = useCallback((): boolean => {
+    if (view.kind === "child-pick") {
+      exitToParentHub();
+      return true;
+    }
+    if (view.kind === "home") {
+      if (list.length > 1) {
+        setView({ kind: "child-pick" });
+        return true;
+      }
+      exitToParentHub();
+      return true;
+    }
+    if (view.kind === "event-detail") {
+      clearQuickAction();
+      setView({ kind: "home", childId: view.childId });
+      return true;
+    }
+    if (view.kind === "generator" || view.kind === "category" || view.kind === "detail") {
+      setView({ kind: "home", childId: view.childId });
+      return true;
+    }
+    exitToParentHub();
+    return true;
+  }, [view, list.length, exitToParentHub, clearQuickAction]);
+
+  usePageBackHandler(handleStepBack, [view, list.length]);
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6 space-y-3">
@@ -167,7 +202,9 @@ export default function EventPrepPage() {
   if (view.kind === "child-pick") {
     return withGate(
       <div className="container mx-auto p-6 max-w-3xl">
-        <Header title={t("screens.event_prep.header_title")} subtitle={t("screens.event_prep.pick_child")} />
+        <BackBar onBack={exitToParentHub} canBack>
+          <Header title={t("screens.event_prep.header_title")} subtitle={t("screens.event_prep.pick_child")} />
+        </BackBar>
         <div className="grid sm:grid-cols-2 gap-3 mt-4">
           {list.map((c) => (
             <Card
@@ -216,8 +253,11 @@ export default function EventPrepPage() {
           setFilter({});
           setView({ kind: "category", childId: child.id, categoryId });
         }}
-        onBack={() => list.length > 1 && setView({ kind: "child-pick" })}
-        canBack={list.length > 1}
+        onBack={() => {
+          if (list.length > 1) setView({ kind: "child-pick" });
+          else exitToParentHub();
+        }}
+        canBack
         t={t}
       />,
     );

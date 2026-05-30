@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from "react";
-import { Link, useLocation, useSearch } from "wouter";
+import { useSearch } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
+import { AppLink, useAppNavigate } from "@/components/app-link";
 import { PhonicsTest } from "@/components/phonics-test";
 import { LockedBlock } from "@/components/locked-block";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
@@ -14,7 +15,7 @@ const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
  * Reads child + test type from query string; session state lives in PhonicsTest.
  */
 export default function PhonicsTestPlayPage() {
-  const [, setLocation] = useLocation();
+  const { back } = useAppNavigate();
   const search = useSearch();
   const { locked, onEngage } = useHubModuleGate("hub_phonics");
 
@@ -62,20 +63,16 @@ export default function PhonicsTestPlayPage() {
   }, []);
 
   const goBack = () => {
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-    setLocation("/phonics");
+    back("phonics-test-play-back");
   };
 
   if (!childId) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-6 text-center">
         <p className="text-sm text-muted-foreground">Choose a child on the Phonics screen first.</p>
-        <Link href="/phonics">
+        <AppLink href="/phonics" source="phonics-test-play-missing-child">
           <span className="text-sm font-bold text-primary">Back to Phonics</span>
-        </Link>
+        </AppLink>
       </div>
     );
   }

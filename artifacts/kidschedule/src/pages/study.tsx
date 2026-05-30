@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Link } from "wouter";
-import { useAppNavigate } from "@/components/app-link";
+import { AppLink, useAppNavigate } from "@/components/app-link";
+import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import {
   resolveStudyMode, MODE_LABELS,
@@ -114,7 +114,7 @@ export default function StudyPage() {
   const mode: StudyMode | undefined = child ? resolveStudyMode(child.age, child.childClass) : undefined;
   const gateChildName = child?.name ?? list[0]?.name ?? "your child";
 
-  const goBack = () => {
+  const goBack = useCallback(() => {
     if (view.kind === "play-home" || view.kind === "study-home") {
       if (list.length > 1) setView({ kind: "child-pick" });
       else navigate("/parenting-hub", { replace: true, source: "study-back" });
@@ -135,7 +135,12 @@ export default function StudyPage() {
       return;
     }
     navigate("/parenting-hub", { replace: true, source: "study-back" });
-  };
+  }, [view, list.length, mode, navigate]);
+
+  usePageBackHandler(() => {
+    goBack();
+    return true;
+  }, [goBack]);
 
   return (
     <div className="flex flex-col gap-5 animate-in fade-in duration-300">
@@ -434,7 +439,7 @@ function EmptyChildren() {
         <h3 className="font-quicksand text-xl font-bold text-foreground mb-2">{t("screens.study.no_children_title")}</h3>
         <p className="text-sm text-muted-foreground mb-4">{t("screens.study.no_children_body")}</p>
         <Button asChild className="rounded-full">
-          <Link href="/children/new">{t("screens.study.add_child")}</Link>
+          <AppLink href="/children/new" source="study-add-child">{t("screens.study.add_child")}</AppLink>
         </Button>
       </CardContent>
     </Card>
@@ -910,7 +915,7 @@ function TopicDetail({
               {t("screens.study.hear_amy_prompt")}
             </Button>
             <Button asChild variant="ghost" className="rounded-full">
-              <Link href="/assistant">{t("screens.study.ask_amy_more")}</Link>
+              <AppLink href="/assistant" source="study-ask-amy">{t("screens.study.ask_amy_more")}</AppLink>
             </Button>
           </div>
         </CardContent>

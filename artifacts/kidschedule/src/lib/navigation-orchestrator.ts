@@ -3,6 +3,7 @@
  * Queues actions until the navigator is registered and bootstrap completes.
  */
 import { logNavEvent, logNavError } from "@/lib/navigation-log";
+import { invokePageBackHandler } from "@/lib/page-back-handler";
 import {
   isSameRoute,
   isTabRootRoute,
@@ -46,7 +47,7 @@ type QueuedAction = {
   options?: OrchestratorNavigateOptions;
 };
 
-const DEFAULT_DEBOUNCE_MS = 300;
+const DEFAULT_DEBOUNCE_MS = 100;
 const navInFlight = new Map<string, number>();
 
 let registeredNavigate: NavigateFn | null = null;
@@ -313,6 +314,10 @@ export function installNativeHardwareBackHandler(): void {
       typeof window !== "undefined"
         ? normalizeRoutePath(window.location.pathname)
         : currentRoute;
+    if (invokePageBackHandler()) {
+      logNavEvent("nav-back-page-handler", { route: from, source: "android-hardware-back" });
+      return true;
+    }
     const previous = getSanitizedPreviousRoute();
     if (
       isTabRootRoute(from) &&

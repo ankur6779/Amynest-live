@@ -18,7 +18,7 @@ import {
   recordSanitizedTransition,
 } from "@/lib/route-history-manager";
 
-const DEFAULT_DEBOUNCE_MS = 300;
+const DEFAULT_DEBOUNCE_MS = 100;
 const navInFlight = new Map<string, number>();
 
 export type AppNavigateOptions = {
@@ -104,6 +104,10 @@ export function appNavigate(
   return true;
 }
 
+/**
+ * Stack-based back navigation — does not call browser history APIs.
+ * Prefers parent routes (hub modules → Parent Hub), then in-memory stack.
+ */
 export function smartBack(
   navigate: NavigateFn,
   current: string,
@@ -114,32 +118,18 @@ export function smartBack(
 
   logNavEvent("nav-back", { from: currentNorm, previous, source });
 
-  if (typeof window !== "undefined" && window.history.length > 1) {
-    const wouldCycle =
-      previous != null && wouldCreateCycle(currentNorm, previous);
-    if (!wouldCycle) {
-      try {
-        window.history.back();
-        return;
-      } catch (err) {
-        logNavError("history-back", err, { from: currentNorm, source });
-      }
-    }
-  }
-
   const parent = getParentRoute(currentNorm);
   if (parent) {
     appNavigate(navigate, currentNorm, parent, { replace: true, source });
     return;
   }
 
-  const stackPrevious = getSanitizedPreviousRoute();
   if (
-    stackPrevious &&
-    !isSameRoute(stackPrevious, currentNorm) &&
-    !wouldCreateCycle(currentNorm, stackPrevious)
+    previous &&
+    !isSameRoute(previous, currentNorm) &&
+    !wouldCreateCycle(currentNorm, previous)
   ) {
-    appNavigate(navigate, currentNorm, stackPrevious, { replace: true, source });
+    appNavigate(navigate, currentNorm, previous, { replace: true, source });
     return;
   }
 

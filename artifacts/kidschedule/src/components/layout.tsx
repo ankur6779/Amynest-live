@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
+import { AppLink } from "@/components/app-link";
 import { invokePageBackHandler } from "@/lib/page-back-handler";
 import { runSafeNavAction, smartBack } from "@/lib/safe-navigation";
 import { ArrowLeft, Home, Users, Calendar, Star, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, Trophy, MessageSquarePlus } from "lucide-react";
@@ -228,13 +229,13 @@ export function Layout({
           <nav className="flex flex-1 flex-col gap-1 p-4">
             {NAV_ITEMS.map(item => {
             const isActive = safePathStartsWith(location, item.href);
-            return <Link key={item.href} href={item.href} data-tour={item.href === "/dashboard" ? "dashboard" : item.href === "/routines" ? "routines" : item.href === "/amy-coach" ? "amy-coach" : item.href === "/parenting-hub" ? "parenting-hub" : undefined} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+            return <AppLink key={item.href} href={item.href} source="desktop-sidebar" data-tour={item.href === "/dashboard" ? "dashboard" : item.href === "/routines" ? "routines" : item.href === "/amy-coach" ? "amy-coach" : item.href === "/parenting-hub" ? "parenting-hub" : undefined} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                   <item.icon className="h-5 w-5 shrink-0" />
                   <span className="flex-1 truncate">{t(item.labelKey)}</span>
                   {item.badge && <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-primary to-primary px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
                       {item.badge}
                     </span>}
-                </Link>;
+                </AppLink>;
           })}
           </nav>
           {/* Desktop user / sign-out */}

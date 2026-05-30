@@ -6,9 +6,13 @@ import {
   endPopstateSkip,
   getRecentRoutes,
   normalizeRoutePath,
+  shouldReplaceNavigation,
   shouldSkipPopstateRoute,
 } from "@/lib/navigation-stack";
-import { recordSanitizedTransition } from "@/lib/route-history-manager";
+import {
+  consumeAuthoritativeTransition,
+  recordSanitizedTransition,
+} from "@/lib/route-history-manager";
 
 /**
  * Tracks SPA route transitions and guards Android PWA hardware-back against
@@ -58,9 +62,18 @@ export function NavigationHistoryGuard() {
     }
     const prev = prevLocationRef.current;
     if (prev && prev !== normalized) {
-      recordSanitizedTransition(prev, normalized, "push");
+      const authoritative = consumeAuthoritativeTransition(normalized);
+      const method =
+        authoritative ??
+        (shouldReplaceNavigation(prev, normalized) ? "replace" : "push");
+      recordSanitizedTransition(prev, normalized, method);
     } else if (!prev) {
-      recordSanitizedTransition(normalized, normalized, "replace");
+      const authoritative = consumeAuthoritativeTransition(normalized);
+      recordSanitizedTransition(
+        normalized,
+        normalized,
+        authoritative ?? "replace",
+      );
     }
     prevLocationRef.current = normalized;
   }, [location]);

@@ -1,6 +1,5 @@
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "wouter";
 import { AppLink } from "@/components/app-link";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
@@ -32,9 +31,6 @@ import { DailyTips } from "@/components/daily-tips";
 import { ParentingArticles } from "@/components/parenting-articles";
 import { AmyIcon } from "@/components/amy-icon";
 import { FuturePredictor } from "@/components/future-predictor";
-import { FamilyExecutiveDashboard } from "@/components/family-executive-dashboard";
-import { ContinueJourneyCard } from "@/components/continue-journey-card";
-import { RealityDashboardPanel } from "@/components/reality-dashboard/reality-dashboard-panel";
 import { LockedBlock } from "@/components/locked-block";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { SubItemGate } from "@/components/sub-item-gate";
@@ -82,9 +78,9 @@ import {
   SessionCompleteScreen,
   ComebackMissionCard,
   AdaptiveRecommendationsCard,
-  AmyPresenceStrip,
 } from "@/components/learning-progress";
 import { useRewardCelebrations } from "@/hooks/use-reward-celebrations";
+import { HubCollapsiblePanel, HubFamilyPulseSection, HubExploreAgesSection } from "@/components/hub-light-layout";
 
 // ── 5-section grouping for the "For You" content ────────────────────────────
 // Maps each premium section key to the tile IDs that live inside it.
@@ -136,12 +132,12 @@ const WEB_HUB_GROUPS = [
   { key: "support",    emoji: "❤️", i18n: "parent_hub.section_groups.support"    },
 ] as const;
 
-const GROUP_GLASS: Record<string, { base: string; glow: string; icon: string; border: string }> = {
-  today:      { base: "bg-amber-400/[0.07] dark:bg-amber-400/[0.05]",   glow: "shadow-[0_0_0_1px_rgba(251,191,36,0.22),0_16px_40px_-8px_rgba(251,191,36,0.28)]",  icon: "bg-gradient-to-br from-amber-300/50 to-yellow-400/30",   border: "border-amber-400/30 dark:border-amber-400/20" }, // audit-ok: intentional per-section accent tint for glass UI
-  learning:   { base: "bg-indigo-500/[0.07] dark:bg-indigo-500/[0.05]", glow: "shadow-[0_0_0_1px_rgba(99,102,241,0.22),0_16px_40px_-8px_rgba(99,102,241,0.28)]",  icon: "bg-gradient-to-br from-indigo-400/50 to-violet-500/30",  border: "border-indigo-400/30 dark:border-indigo-400/20" }, // audit-ok: intentional per-section accent tint for glass UI
-  creativity: { base: "bg-pink-400/[0.07] dark:bg-pink-400/[0.05]",     glow: "shadow-[0_0_0_1px_rgba(244,114,182,0.22),0_16px_40px_-8px_rgba(244,114,182,0.28)]", icon: "bg-gradient-to-br from-pink-400/50 to-rose-400/30",      border: "border-pink-400/30 dark:border-pink-400/20" }, // audit-ok: intentional per-section accent tint for glass UI
-  stories:    { base: "bg-sky-400/[0.07] dark:bg-sky-400/[0.05]",       glow: "shadow-[0_0_0_1px_rgba(56,189,248,0.22),0_16px_40px_-8px_rgba(56,189,248,0.28)]",   icon: "bg-gradient-to-br from-sky-400/50 to-blue-500/30",       border: "border-sky-400/30 dark:border-sky-400/20" }, // audit-ok: intentional per-section accent tint for glass UI
-  support:    { base: "bg-rose-400/[0.07] dark:bg-rose-400/[0.05]",     glow: "shadow-[0_0_0_1px_rgba(251,113,133,0.22),0_16px_40px_-8px_rgba(251,113,133,0.28)]", icon: "bg-gradient-to-br from-rose-400/50 to-red-400/30",       border: "border-rose-400/30 dark:border-rose-400/20" }, // audit-ok: intentional per-section accent tint for glass UI
+const GROUP_GLASS: Record<string, { accent: string; emojiBg: string }> = {
+  today:      { accent: "border-l-amber-400",   emojiBg: "bg-amber-100 dark:bg-amber-950/40" },
+  learning:   { accent: "border-l-indigo-500",  emojiBg: "bg-indigo-100 dark:bg-indigo-950/40" },
+  creativity: { accent: "border-l-pink-400",    emojiBg: "bg-pink-100 dark:bg-pink-950/40" },
+  stories:    { accent: "border-l-sky-400",     emojiBg: "bg-sky-100 dark:bg-sky-950/40" },
+  support:    { accent: "border-l-rose-400",    emojiBg: "bg-rose-100 dark:bg-rose-950/40" },
 };
 
 // ─── Section Wrapper ─────────────────────────────────────────────────────────
@@ -194,18 +190,15 @@ function HubSection({
     });
   };
   return <div data-section-id={id}
-  style={cardClass ? { background: cardClass } : undefined}
-  className={["group relative rounded-2xl overflow-hidden transition-all duration-300 ease-out",
-  cardClass ? "backdrop-blur-xl" : "bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl",
-  "border border-white/20 dark:border-white/10", "shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]",
-  highlighted && !open ? "border-primary/35 shadow-[0_0_0_1px_rgba(168,85,247,0.35),0_14px_44px_-10px_rgba(168,85,247,0.42)] ring-1 ring-primary/25" : "",
-  // Hover glow
-  "hover:border-white/40 dark:hover:border-white/20", "hover:shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_10px_36px_-10px_rgba(0,0,0,0.3)]",
-  // Active (expanded) glow — stronger
-  open ? "border-white/30 dark:border-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_18px_50px_-12px_rgba(0,0,0,0.4)]" : ""].join(" ")}>
-      <button onClick={toggle} className={["w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left", "transition-colors duration-200", open ? "bg-black/[0.06] dark:bg-black/[0.12]" : "hover:bg-white/10 dark:hover:bg-white/[0.04]"].join(" ")} aria-expanded={open}>
+  className={[
+    "group relative rounded-xl overflow-hidden transition-all duration-200",
+    "border border-border bg-card",
+    highlighted && !open ? "border-primary/40 ring-1 ring-primary/20" : "",
+    open ? "shadow-sm" : "hover:border-border/80",
+  ].join(" ")}>
+      <button onClick={toggle} className={["w-full flex items-center justify-between gap-3 px-3 py-3 text-left", "transition-colors duration-200", open ? "bg-muted/30" : "hover:bg-muted/20"].join(" ")} aria-expanded={open}>
         <div className="flex items-center gap-3 min-w-0">
-          <div className={["w-11 h-11 rounded-2xl flex items-center justify-center shrink-0", "shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]", "ring-1 ring-white/40 dark:ring-white/10", accentClass, highlighted && !open ? "animate-[pulse_3s_ease-in-out_infinite]" : ""].join(" ")}>
+          <div className={["w-9 h-9 rounded-xl flex items-center justify-center shrink-0", accentClass, highlighted && !open ? "animate-[pulse_3s_ease-in-out_infinite]" : ""].join(" ")}>
             {icon}
           </div>
           <div className="min-w-0">
@@ -216,19 +209,19 @@ function HubSection({
             <p className="text-[12px] text-muted-foreground/90 mt-0.5 line-clamp-2">{description}</p>
           </div>
         </div>
-        <span className={["shrink-0 w-7 h-7 rounded-full flex items-center justify-center", "border border-border/50 bg-white/50 dark:bg-white/5", "transition-transform duration-300", open ? "rotate-180 text-primary border-primary/40" : "text-muted-foreground"].join(" ")}>
-          <ChevronDown className="h-4 w-4" />
+        <span className={["shrink-0 w-6 h-6 rounded-full flex items-center justify-center", "border border-border bg-muted/50", "transition-transform duration-300", open ? "rotate-180 text-primary" : "text-muted-foreground"].join(" ")}>
+          <ChevronDown className="h-3.5 w-3.5" />
         </span>
       </button>
       {!open && preview ? (
-        <div className="px-4 pb-3 -mt-0.5">
+        <div className="px-3 pb-2.5 -mt-0.5">
           <p className="text-[11px] font-medium text-primary/85 line-clamp-1 flex items-center gap-1">
             <Sparkles className="h-3 w-3 shrink-0 opacity-80" />
             {preview}
           </p>
         </div>
       ) : null}
-      {open && <div className="px-4 pb-5 pt-3 border-t border-white/40 dark:border-white/10 bg-white/30 dark:bg-white/[0.015] animate-in fade-in slide-in-from-top-1 duration-300">
+      {open && <div className="px-3 pb-4 pt-2 border-t border-border animate-in fade-in slide-in-from-top-1 duration-200">
           {previewLocked && childName ? (
             <JourneyPreviewContent childName={childName} isInfant={isInfant}>{children}</JourneyPreviewContent>
           ) : (
@@ -246,7 +239,7 @@ function RoutineLaunchCard({
   description: string;
 }) {
   return (
-    <Link
+    <AppLink
       href="/routines/generate"
       className="group block rounded-2xl border border-white/20 bg-gradient-to-br from-emerald-400/30 to-teal-500/15 p-4 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all hover:border-white/40 hover:shadow-[0_10px_36px_-10px_rgba(52,211,153,0.45)]"
       data-testid="routine-launch-card"
@@ -264,7 +257,7 @@ function RoutineLaunchCard({
           Open
         </span>
       </div>
-    </Link>
+    </AppLink>
   );
 }
 
@@ -280,32 +273,48 @@ const HUB_QUICK_ACTIONS = [
   { id: "worksheets", group: "creativity", tileId: "worksheets",      emoji: "📄", i18n: "parent_hub.quick_actions.worksheets" },
 ] as const;
 
+const HUB_QUICK_PRIMARY_IDS = new Set(["ask-amy", "routine", "story"]);
+
 function HubQuickActions({
   onNavigate,
 }: {
   onNavigate: (group: string, tileId?: string) => void;
 }) {
   const { t } = useTranslation();
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll
+    ? HUB_QUICK_ACTIONS
+    : HUB_QUICK_ACTIONS.filter((a) => HUB_QUICK_PRIMARY_IDS.has(a.id));
+
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1" data-testid="hub-quick-actions">
-      {HUB_QUICK_ACTIONS.map(action => (
-        <button
-          key={action.id}
-          type="button"
-          onClick={() => onNavigate(action.group, action.tileId)}
-          className={[
-            "shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2",
-            "text-xs font-bold text-foreground",
-            "bg-white/60 dark:bg-white/[0.06] backdrop-blur-xl",
-            "border border-white/30 dark:border-white/10",
-            "shadow-[0_2px_12px_-4px_rgba(15,23,42,0.12)]",
-            "hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95",
-          ].join(" ")}
-        >
-          <span aria-hidden>{action.emoji}</span>
-          {t(action.i18n)}
-        </button>
-      ))}
+    <div className="space-y-2" data-testid="hub-quick-actions">
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+        {visible.map(action => (
+          <button
+            key={action.id}
+            type="button"
+            onClick={() => onNavigate(action.group, action.tileId)}
+            className={[
+              "shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5",
+              "text-xs font-bold text-foreground",
+              "border border-border bg-card",
+              "hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95",
+            ].join(" ")}
+          >
+            <span aria-hidden>{action.emoji}</span>
+            {t(action.i18n)}
+          </button>
+        ))}
+        {!showAll ? (
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="shrink-0 inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold text-primary border border-primary/30 hover:bg-primary/5"
+          >
+            {t("parent_hub.quick_actions.see_all")}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -329,50 +338,24 @@ function AmyAISuggestionsSection() {
         {t("parent_hub.amy.lead")}
       </p>
       <div className="grid grid-cols-2 gap-2">
-        {AMY_PROMPT_IDS.map(id => {
+        {AMY_PROMPT_IDS.slice(0, 4).map(id => {
         const label = t(`parent_hub.amy.prompts.${id}.label`);
         const prompt = t(`parent_hub.amy.prompts.${id}.prompt`);
-        return <Link key={id} href={`/assistant?q=${encodeURIComponent(prompt)}`}>
+        return <AppLink key={id} href={`/assistant?q=${encodeURIComponent(prompt)}`}>
               <button className="w-full text-left flex items-center gap-2.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 px-3 py-2.5 transition-all">
                 <span className="text-xl shrink-0">{AMY_PROMPT_EMOJI[id]}</span>
                 <span className="text-sm font-semibold text-foreground">{label}</span>
               </button>
-            </Link>;
+            </AppLink>;
       })}
       </div>
-      <Link href="/assistant">
+      <AppLink href="/assistant">
         <Button variant="outline" className="w-full rounded-xl gap-2 text-sm font-semibold">
           <AmyIcon size={20} bounce />
           {t("parent_hub.amy.cta")}
           <ArrowRight className="h-4 w-4 ml-auto" />
         </Button>
-      </Link>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-        <Link href="/learn-with-amy">
-          <Button className="w-full rounded-xl gap-2 text-sm font-semibold h-auto py-3">
-            <GraduationCap className="h-4 w-4 shrink-0" />
-            <span className="text-left leading-tight">
-              {t("parent_hub.amy.learn_cta")}
-              <span className="block text-[10px] font-normal opacity-80">
-                {t("parent_hub.amy.learn_cta_hint")}
-              </span>
-            </span>
-            <ArrowRight className="h-4 w-4 ml-auto shrink-0" />
-          </Button>
-        </Link>
-        <Link href="/amy-ai-tutor">
-          <Button variant="secondary" className="w-full rounded-xl gap-2 text-sm font-semibold h-auto py-3">
-            <Sparkles className="h-4 w-4 shrink-0" />
-            <span className="text-left leading-tight">
-              {t("parent_hub.amy.quick_tutor_cta")}
-              <span className="block text-[10px] font-normal opacity-80">
-                {t("parent_hub.amy.quick_tutor_cta_hint")}
-              </span>
-            </span>
-            <ArrowRight className="h-4 w-4 ml-auto shrink-0" />
-          </Button>
-        </Link>
-      </div>
+      </AppLink>
     </div>;
 }
 
@@ -412,7 +395,7 @@ function EmotionalSupportSection({
         const prompt = t(`parent_hub.emotional_cards.${id}.prompt`);
         const isHighlighted = moodHighlight && idx === 0;
         return <SubItemGate key={id} sectionId="hub_emotional" subItemId={id}>
-              <Link href={`/assistant?q=${encodeURIComponent(prompt)}`}>
+              <AppLink href={`/assistant?q=${encodeURIComponent(prompt)}`}>
                 <button className={[
                   "w-full text-left rounded-2xl border-2 px-4 py-3 transition-all",
                   EMOTIONAL_CARD_BG[id],
@@ -427,7 +410,7 @@ function EmotionalSupportSection({
                   <p className="font-bold text-sm text-foreground leading-tight">{title}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
                 </button>
-              </Link>
+              </AppLink>
             </SubItemGate>;
       })}
       </div>
@@ -441,16 +424,16 @@ function EmotionalSupportSection({
         </div>
       </div>
 
-      <Link href="/assistant">
+      <AppLink href="/assistant">
         <Button variant="default" className="w-full rounded-xl gap-2 text-sm font-semibold">
           <AmyIcon size={20} bounce />
           {t("parent_hub.emotional_footer.talk_to_amy")}
           <ArrowRight className="h-4 w-4 ml-auto" />
         </Button>
-      </Link>
+      </AppLink>
 
       {/* Feedback entry point */}
-      <Link href="/feedback">
+      <AppLink href="/feedback">
         <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/35 transition-all px-4 py-3 cursor-pointer group">
           <span className="text-xl">💡</span>
           <div className="flex-1 min-w-0">
@@ -459,7 +442,7 @@ function EmotionalSupportSection({
           </div>
           <span className="text-primary text-xs font-semibold shrink-0 group-hover:translate-x-0.5 transition-transform">→</span>
         </div>
-      </Link>
+      </AppLink>
     </div>;
 }
 
@@ -491,13 +474,12 @@ function SubSection({
 }: SubSectionProps) {
   const [open, setOpen] = useState(false);
   const inner = <div
-  style={cardClass ? { background: cardClass } : undefined}
-  className={["relative rounded-2xl overflow-hidden transition-all duration-300 ease-out",
-  cardClass ? "backdrop-blur-xl" : "bg-white/50 dark:bg-white/[0.035] backdrop-blur-xl",
-  "border border-white/20 dark:border-white/[0.08]", "shadow-[0_2px_12px_-4px_rgba(15,23,42,0.06)]", open ? "border-white/30 dark:border-white/20" : "hover:border-white/30 hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.2)]"].join(" ")}>
-      <button onClick={() => setOpen(v => !v)} className={["w-full flex items-center justify-between gap-3 px-3.5 py-3 text-left", "transition-colors duration-200", open ? "bg-black/[0.05] dark:bg-black/[0.10]" : "hover:bg-white/10 dark:hover:bg-white/[0.04]"].join(" ")} aria-expanded={open}>
+  className={["relative rounded-xl overflow-hidden transition-all duration-200",
+  "border border-border bg-card",
+  open ? "shadow-sm" : "hover:border-border/80"].join(" ")}>
+      <button onClick={() => setOpen(v => !v)} className={["w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left", "transition-colors duration-200", open ? "bg-muted/30" : "hover:bg-muted/20"].join(" ")} aria-expanded={open}>
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className={["w-9 h-9 rounded-xl flex items-center justify-center shrink-0", "shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] ring-1 ring-white/40 dark:ring-white/10", accentClass].join(" ")}>
+          <div className={["w-8 h-8 rounded-lg flex items-center justify-center shrink-0", accentClass].join(" ")}>
             {icon}
           </div>
           <div className="min-w-0">
@@ -510,7 +492,7 @@ function SubSection({
         </span>
       </button>
 
-      {open && <div className="px-3.5 pb-4 pt-3 border-t border-white/40 dark:border-white/[0.06] bg-white/20 dark:bg-white/[0.01] animate-in fade-in slide-in-from-top-1 duration-300">
+      {open && <div className="px-3 pb-3 pt-2 border-t border-border animate-in fade-in slide-in-from-top-1 duration-200">
           {children}
         </div>}
     </div>;
@@ -582,12 +564,12 @@ function ActivitiesSection({
           <div className="flex items-center gap-2 mb-2">
             {tryFreeFor("hub_rewards_shop") ? <TryFreeBadge /> : null}
           </div>
-          <Link href="/rewards" onClick={() => markHubUsed("hub_rewards_shop")}>
+          <AppLink href="/rewards" onClick={() => markHubUsed("hub_rewards_shop")}>
             <Button variant="outline" className="w-full rounded-xl gap-2 text-sm font-semibold" data-testid="open-rewards-shop">
               {t("parent_hub.tiles_activity.rewards_shop.title")}
               <ArrowRight className="h-4 w-4 ml-auto" />
             </Button>
-          </Link>
+          </AppLink>
         </SubSection>
       </LockedBlock>
 
@@ -688,7 +670,7 @@ function ChildSelectorPanel({
     if (months > 0) return `${child.age}y ${months}m`;
     return `${child.age}y`;
   };
-  return <div className="rounded-2xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] overflow-hidden">
+  return <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <div className="flex items-center gap-2">
@@ -697,12 +679,12 @@ function ChildSelectorPanel({
             {safeChildList.length === 1 ? t("parent_hub.headers.current_child") : t("parent_hub.headers.select_child")}
           </span>
         </div>
-        <Link href="/children/new">
+        <AppLink href="/children/new">
           <button className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
             <UserPlus className="h-3.5 w-3.5" />
             {t("parent_hub.headers.add_child")}
           </button>
-        </Link>
+        </AppLink>
       </div>
 
       {/* Child cards */}
@@ -897,11 +879,11 @@ function ParentingHubPage() {
             <p className="text-sm text-muted-foreground">
               {t("parent_hub.empty.body")}
             </p>
-            <Link href="/children/new">
+            <AppLink href="/children/new">
               <button className="mt-2 px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-bold text-sm">
                 {t("parent_hub.empty.cta")}
               </button>
-            </Link>
+            </AppLink>
           </CardContent>
         </Card>
       </div>;
@@ -954,18 +936,12 @@ function ParentingHubPage() {
   {
     id: "command-center",
     alwaysCurrent: true,
-    render: () => {
-      return (
-        <div data-section-id="command-center" className="space-y-4">
-          <ContinueJourneyCard />
-          <RealityDashboardPanel />
-          <FamilyExecutiveDashboard
-            childId={effectiveChild.id}
-            childName={effectiveChild.name}
-          />
-        </div>
-      );
-    }
+    render: () => (
+      <HubFamilyPulseSection
+        childId={effectiveChild.id}
+        childName={effectiveChild.name}
+      />
+    ),
   },
   // ── INFANT HUB (band-restricted, featured) ────────────────────────────
   // ONLY shown when the currently selected child is 0–24 months.
@@ -1401,7 +1377,7 @@ function ParentingHubPage() {
 
   const previousStageTileIds = getPreviousStageTileIds(sections, currentBand, totalAgeMonths);
 
-  return <div className="max-w-6xl mx-auto space-y-6 pb-12">
+  return <div className="max-w-6xl mx-auto space-y-4 pb-12">
       <PageHeader />
 
       {/* ── Child Selector Panel ────────────────────────────────────────── */}
@@ -1411,85 +1387,104 @@ function ParentingHubPage() {
         <InfantTrialBanner childName={effectiveChild.name} />
       )}
 
-      {effectiveChild && hubJourney.access && (
-        <HubJourneyStrip
-          childName={effectiveChild.name}
-          access={hubJourney.access}
-          progress={hubJourney.progress}
-          isPremium={hubUsage.isPremium}
-          isInfant={isInfant}
-        />
-      )}
-
-      {effectiveChild && hubJourney.status && (
-        <TodaysPathFromStatus
-          status={hubJourney.status}
-          isPremium={hubUsage.isPremium}
-          isJourneyLocked={hubJourney.isJourneyLocked}
-          onComplete={hubJourney.completePath}
-          onPeekAhead={hubJourney.peekAheadUnlock}
-          isCompleting={hubJourney.isCompleting}
-        />
-      )}
-
       {effectiveChild && (
-        <AmyPresenceStrip surface="parent-hub" childId={effectiveChild.id} />
-      )}
-
-      {effectiveChild && learningProgress.profile && (
-        <ProgressionStrip profile={learningProgress.profile} />
-      )}
-
-      {effectiveChild && learningProgress.phase3 && (
-        <RewardWalletStrip wallet={learningProgress.phase3.wallet} />
-      )}
-
-      {effectiveChild && learningProgress.phase3?.comeback && (
-        <ComebackMissionCard mission={learningProgress.phase3.comeback} />
-      )}
-
-      {effectiveChild && learningProgress.phase3 && !showSessionComplete && (
-        <DailyLearningSessionCard
-          session={learningProgress.phase3.dailySession}
-          childId={effectiveChild.id}
-          childName={effectiveChild.name}
-          onStepComplete={handleSessionStep}
-          completing={learningProgress.isCompleting}
-        />
-      )}
-
-      {effectiveChild && showSessionComplete && learningProgress.phase3 && learningProgress.unlocks && (
-        <SessionCompleteScreen
-          xpEarned={
-            rewardCelebrations.events.reduce((sum, e) => sum + (e.amount ?? 0), 0) ||
-            25
-          }
-          rewardEvents={rewardCelebrations.events.length > 0 ? rewardCelebrations.events : []}
-          tomorrowPreview={learningProgress.unlocks.nextSessionUnlocks}
-          childName={effectiveChild.name}
-          activitiesCompleted={learningProgress.phase3.dailySession.completedCount}
-          activitiesTotal={learningProgress.phase3.dailySession.totalCount}
-          streakDays={learningProgress.phase3.wallet.streakDays}
-          skillHighlight={
-            learningProgress.phase3.recommendations[0]?.title ?? null
-          }
-          onClose={() => setShowSessionComplete(false)}
-        />
-      )}
-
-      {effectiveChild && learningProgress.phase3 && (
-        <AdaptiveRecommendationsCard items={learningProgress.phase3.recommendations} />
-      )}
-
-      {effectiveChild && hubUsage.isPremium && learningProgress.phase3 && (
-        <div className="flex justify-end">
-          <Link href="/parent-growth">
-            <Button variant="outline" size="sm" className="rounded-full gap-1.5">
-              <Trophy className="h-4 w-4" />
-              See growth journey
-            </Button>
-          </Link>
-        </div>
+        <HubCollapsiblePanel
+          title={t("parent_hub.today_summary.title", { name: effectiveChild.name })}
+          subtitle={t("parent_hub.today_summary.subtitle")}
+          defaultOpen
+          testId="hub-today-summary"
+        >
+          {hubJourney.access ? (
+            <HubJourneyStrip
+              childName={effectiveChild.name}
+              access={hubJourney.access}
+              progress={hubJourney.progress}
+              isPremium={hubUsage.isPremium}
+              isInfant={isInfant}
+            />
+          ) : null}
+          {hubJourney.status ? (
+            <TodaysPathFromStatus
+              status={hubJourney.status}
+              isPremium={hubUsage.isPremium}
+              isJourneyLocked={hubJourney.isJourneyLocked}
+              onComplete={hubJourney.completePath}
+              onPeekAhead={hubJourney.peekAheadUnlock}
+              isCompleting={hubJourney.isCompleting}
+            />
+          ) : null}
+          {learningProgress.profile ? (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex-1 min-w-0">
+                <ProgressionStrip profile={learningProgress.profile} />
+              </div>
+              {learningProgress.phase3 ? (
+                <div className="sm:w-48 shrink-0">
+                  <RewardWalletStrip wallet={learningProgress.phase3.wallet} />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {learningProgress.phase3?.comeback ? (
+            <ComebackMissionCard mission={learningProgress.phase3.comeback} />
+          ) : null}
+          {learningProgress.phase3 && !showSessionComplete ? (
+            <DailyLearningSessionCard
+              session={learningProgress.phase3.dailySession}
+              childId={effectiveChild.id}
+              childName={effectiveChild.name}
+              onStepComplete={handleSessionStep}
+              completing={learningProgress.isCompleting}
+            />
+          ) : null}
+          {showSessionComplete && learningProgress.phase3 && learningProgress.unlocks ? (
+            <SessionCompleteScreen
+              xpEarned={
+                rewardCelebrations.events.reduce((sum, e) => sum + (e.amount ?? 0), 0) ||
+                25
+              }
+              rewardEvents={rewardCelebrations.events.length > 0 ? rewardCelebrations.events : []}
+              tomorrowPreview={learningProgress.unlocks.nextSessionUnlocks}
+              childName={effectiveChild.name}
+              activitiesCompleted={learningProgress.phase3.dailySession.completedCount}
+              activitiesTotal={learningProgress.phase3.dailySession.totalCount}
+              streakDays={learningProgress.phase3.wallet.streakDays}
+              skillHighlight={
+                learningProgress.phase3.recommendations[0]?.title ?? null
+              }
+              onClose={() => setShowSessionComplete(false)}
+            />
+          ) : null}
+          {learningProgress.phase3 && (learningProgress.phase3.recommendations?.length ?? 0) > 0 ? (
+            <AdaptiveRecommendationsCard items={learningProgress.phase3.recommendations} />
+          ) : null}
+          {learningProgress.unlocks ? (
+            <div className="grid gap-2 md:grid-cols-2">
+              <DailyFreshnessCard
+                items={learningProgress.unlocks.todaysUnlocks}
+                isRevisionDay={learningProgress.unlocks.isRevisionDay}
+              />
+              <NextSessionUnlocks
+                items={learningProgress.unlocks.nextSessionUnlocks}
+                childName={effectiveChild.name}
+                onVisible={trackNextSessionOpened}
+              />
+            </div>
+          ) : null}
+          {hubUsage.isPremium && learningProgress.weeklyReport ? (
+            <WeeklyParentReportCard report={learningProgress.weeklyReport} />
+          ) : null}
+          {hubUsage.isPremium && learningProgress.phase3 ? (
+            <div className="flex justify-end">
+              <AppLink href="/parent-growth">
+                <Button variant="outline" size="sm" className="rounded-full gap-1.5">
+                  <Trophy className="h-4 w-4" />
+                  {t("parent_hub.today_summary.growth_link")}
+                </Button>
+              </AppLink>
+            </div>
+          ) : null}
+        </HubCollapsiblePanel>
       )}
 
       <RewardCelebrationModal
@@ -1497,24 +1492,6 @@ function ParentingHubPage() {
         open={rewardCelebrations.open}
         onClose={rewardCelebrations.close}
       />
-
-      {effectiveChild && learningProgress.unlocks && (
-        <div className="grid gap-4 md:grid-cols-2">
-          <DailyFreshnessCard
-            items={learningProgress.unlocks.todaysUnlocks}
-            isRevisionDay={learningProgress.unlocks.isRevisionDay}
-          />
-          <NextSessionUnlocks
-            items={learningProgress.unlocks.nextSessionUnlocks}
-            childName={effectiveChild.name}
-            onVisible={trackNextSessionOpened}
-          />
-        </div>
-      )}
-
-      {effectiveChild && learningProgress.weeklyReport && hubUsage.isPremium && (
-        <WeeklyParentReportCard report={learningProgress.weeklyReport} />
-      )}
 
       {effectiveChild && currentBand && <>
           {/* ── SECTION 1: For {Child Name} ─────────────────────────────── */}
@@ -1554,32 +1531,28 @@ function ParentingHubPage() {
                   key={group.key}
                   id={`hub-group-${group.key}`}
                   className={[
-                    "relative rounded-2xl overflow-hidden transition-all duration-300",
-                    "backdrop-blur-xl border",
-                    gs.base, gs.border,
-                    isOpen
-                      ? gs.glow
-                      : "shadow-[0_4px_20px_-6px_rgba(15,23,42,0.10)] hover:shadow-[0_6px_28px_-6px_rgba(15,23,42,0.18)]",
+                    "relative rounded-xl overflow-hidden transition-all duration-200",
+                    "border border-border bg-card border-l-4",
+                    gs.accent,
                   ].join(" ")}
                 >
                   <button
                     onClick={() => toggleGroup(group.key)}
                     className={[
-                      "w-full flex items-center gap-3 text-left px-4 py-3.5",
+                      "w-full flex items-center gap-3 text-left px-3 py-3",
                       "transition-colors duration-200",
-                      isOpen ? "bg-black/[0.05] dark:bg-black/[0.10]" : "hover:bg-white/10 dark:hover:bg-white/[0.04]",
+                      isOpen ? "bg-muted/30" : "hover:bg-muted/20",
                     ].join(" ")}
                     aria-expanded={isOpen}
                   >
                     <span className={[
-                      "flex items-center justify-center w-10 h-10 rounded-2xl shrink-0 text-xl",
-                      "shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ring-1 ring-white/30 dark:ring-white/10",
-                      gs.icon,
+                      "flex items-center justify-center w-9 h-9 rounded-lg shrink-0 text-lg",
+                      gs.emojiBg,
                     ].join(" ")}>
                       {group.emoji}
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className={`block font-quicksand font-bold text-[15px] leading-tight tracking-wide ${isOpen ? "text-primary" : "text-foreground"}`}>
+                      <span className={`block font-quicksand font-bold text-sm leading-tight ${isOpen ? "text-primary" : "text-foreground"}`}>
                         {t(group.i18n)}
                       </span>
                       {isSupport && !isOpen ? (
@@ -1589,15 +1562,15 @@ function ParentingHubPage() {
                       ) : null}
                     </span>
                     <span className={[
-                      "shrink-0 w-7 h-7 rounded-full flex items-center justify-center",
-                      "border bg-white/50 dark:bg-white/[0.06] transition-transform duration-300",
-                      isOpen ? "rotate-180 border-primary/40 text-primary" : "border-border/50 text-muted-foreground",
+                      "shrink-0 w-6 h-6 rounded-full flex items-center justify-center",
+                      "border border-border bg-muted/50 transition-transform duration-300",
+                      isOpen ? "rotate-180 text-primary" : "text-muted-foreground",
                     ].join(" ")}>
-                      <ChevronDown className="h-4 w-4" />
+                      <ChevronDown className="h-3.5 w-3.5" />
                     </span>
                   </button>
                   {isOpen && (
-                    <div className="px-4 pb-5 pt-3 border-t border-white/25 dark:border-white/[0.07] bg-white/20 dark:bg-white/[0.01] animate-in fade-in slide-in-from-top-1 duration-300 space-y-3">
+                    <div className="px-3 pb-4 pt-2 border-t border-border animate-in fade-in slide-in-from-top-1 duration-200 space-y-3">
                       {isSupport && ptmSeason ? (
                         <div className="rounded-xl border border-blue-400/25 bg-blue-500/10 px-3 py-2.5 text-xs text-blue-100/90 leading-relaxed">
                           {t("parent_hub.support.ptm_season_banner")}
@@ -1623,49 +1596,53 @@ function ParentingHubPage() {
             })}
           </div>
 
-          {/* ── SECTION 2: Try Early Access (2+ modules) — infants 0–24 months ── */}
-          {showSection2 && nextBand && <>
-              <ExploreNextHeader childName={effectiveChild.name} band={nextBand} />
-              <div data-testid="section-2-early-access" className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start pt-2">
-                {SECTION_2_EARLY_ACCESS_TILE_IDS.map(tileId => {
-                  const section = sectionById.get(tileId);
-                  if (!section) return null;
-                  const node = renderHubSection(section, "early");
-                  return node ? (
-                    <ComingNextWrapper key={tileId} band={nextBand}>
-                      {node}
-                    </ComingNextWrapper>
-                  ) : null;
-                })}
-              </div>
-            </>}
+          {showSection2 && nextBand && (
+            <HubExploreAgesSection
+              title={t("parent_hub.headers.explore_next", { name: effectiveChild.name })}
+              subtitle={t("parent_hub.headers.explore_blurb", { name: effectiveChild.name })}
+              testId="section-2-early-access"
+            >
+              {SECTION_2_EARLY_ACCESS_TILE_IDS.map(tileId => {
+                const section = sectionById.get(tileId);
+                if (!section) return null;
+                const node = renderHubSection(section, "early");
+                return node ? (
+                  <ComingNextWrapper key={tileId} band={nextBand}>
+                    {node}
+                  </ComingNextWrapper>
+                ) : null;
+              })}
+            </HubExploreAgesSection>
+          )}
 
-          {/* ── Previous Stage Features — 2+ year parents ── */}
-          {showPreviousStage && previousBand && previousStageTileIds.length > 0 && <>
-              <PreviousStageHeader childName={effectiveChild.name} band={previousBand} />
-              <div data-testid="section-previous-stage" className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start pt-2">
-                {previousStageTileIds.map(tileId => {
-                  const section = sectionById.get(tileId);
-                  if (!section) return null;
-                  const node = renderHubSection(section, "previous");
-                  return node ? (
-                    <PreviousStageWrapper key={tileId}>
-                      {node}
-                    </PreviousStageWrapper>
-                  ) : null;
-                })}
-              </div>
-            </>}
+          {showPreviousStage && previousBand && previousStageTileIds.length > 0 && (
+            <HubExploreAgesSection
+              title={t("parent_hub.headers.previous_stage_title")}
+              subtitle={t("parent_hub.headers.previous_stage_blurb", { name: effectiveChild.name })}
+              testId="section-previous-stage"
+            >
+              {previousStageTileIds.map(tileId => {
+                const section = sectionById.get(tileId);
+                if (!section) return null;
+                const node = renderHubSection(section, "previous");
+                return node ? (
+                  <PreviousStageWrapper key={tileId}>
+                    {node}
+                  </PreviousStageWrapper>
+                ) : null;
+              })}
+            </HubExploreAgesSection>
+          )}
         </>}
 
       {/* Bottom CTA */}
       <div className="text-center pt-2">
-        <Link href="/routines/generate">
+        <AppLink href="/routines/generate">
           <button className="inline-flex items-center gap-2 text-sm text-primary font-semibold hover:underline">
             <Calendar className="h-4 w-4" />
             {t("parent_hub.headers.bottom_cta")}
           </button>
-        </Link>
+        </AppLink>
       </div>
     </div>;
 }
@@ -1781,13 +1758,13 @@ function PageHeader() {
           {t("patent_pending.hub_trust")}
         </p>
       </div>
-      <Link href="/assistant">
+      <AppLink href="/assistant">
         <button className="shrink-0 flex items-center gap-2 bg-gradient-to-br from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card rounded-2xl px-3 py-2 border border-border hover:border-primary/40 transition-all">
           <AmyIcon size={24} bounce />
           <span className="text-xs font-bold text-foreground">{t("ai.ask_amy")}</span>
           <MessageCircleHeart className="h-4 w-4 text-primary" />
         </button>
-      </Link>
+      </AppLink>
     </div>;
 }
 

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useSearch } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { ArrowLeft, BookOpen, ClipboardCheck, GraduationCap, Loader2, Play, TrendingUp, UserPlus } from "lucide-react";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
+import { AppLink, useAppNavigate } from "@/components/app-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LockedBlock } from "@/components/locked-block";
@@ -23,7 +24,8 @@ function scrollToSection(id: string) {
 }
 
 export default function PhonicsPage() {
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
+  const { navigate, back } = useAppNavigate();
   const search = useSearch();
   const { locked, onEngage } = useHubModuleGate("hub_phonics");
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
@@ -65,7 +67,7 @@ export default function PhonicsPage() {
     if (!activeChild) return;
     const params = new URLSearchParams({ childId: String(activeChild.id) });
     if (type) params.set("type", type);
-    setLocation(`/phonics/test?${params.toString()}`);
+    navigate(`/phonics/test?${params.toString()}`, { source: "phonics-go-to-test" });
   };
 
   useEffect(() => {
@@ -74,11 +76,7 @@ export default function PhonicsPage() {
   }, [location, search]);
 
   const goBack = () => {
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-    setLocation("/dashboard");
+    back("phonics-back");
   };
 
   if (isLoading) {
@@ -110,9 +108,9 @@ export default function PhonicsPage() {
                   ? "Phonics Learning supports ages 1–6. Select or add a child in that range."
                   : "Phonics Learning is personalised by age, so create a child profile first."}
               </p>
-              <Link href="/children/new">
+              <AppLink href="/children/new" source="phonics-add-child">
                 <Button className="w-full rounded-2xl">Add Child</Button>
-              </Link>
+              </AppLink>
             </CardContent>
           </Card>
         </main>

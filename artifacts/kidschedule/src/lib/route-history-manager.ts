@@ -13,6 +13,24 @@ import { logNavEvent } from "@/lib/navigation-log";
 
 export const MAX_ROUTE_HISTORY = 8;
 
+/** Set when appNavigate / orchestrator records a transition (guard consumes to avoid duplicate push). */
+let lastAuthoritativeTransition: { to: string; method: NavMethod } | null = null;
+
+export function markAuthoritativeTransition(to: string, method: NavMethod): void {
+  lastAuthoritativeTransition = { to: normalizeRoutePath(to), method };
+}
+
+/** Returns the method used by the last authoritative nav to `to`, then clears it. */
+export function consumeAuthoritativeTransition(to: string): NavMethod | null {
+  const normalized = normalizeRoutePath(to);
+  if (lastAuthoritativeTransition?.to === normalized) {
+    const method = lastAuthoritativeTransition.method;
+    lastAuthoritativeTransition = null;
+    return method;
+  }
+  return null;
+}
+
 /** Routes that should not appear in back-stack memory (auth gates, prompts). */
 const TRANSIENT_ROUTE_PREFIXES = [
   "/sign-in",
@@ -66,6 +84,7 @@ export function recordSanitizedTransition(
     return;
   }
   recordRouteTransition(from, to, method);
+  markAuthoritativeTransition(to, method);
   logNavEvent("route-history-snapshot", {
     stack: sanitizeRouteHistory(getRecentRoutes()),
     method,
@@ -84,6 +103,7 @@ export function getSanitizedRecentRoutes(): readonly string[] {
 
 export function resetRouteHistoryForTests(): void {
   resetNavigationStackForTests();
+  lastAuthoritativeTransition = null;
 }
 
 /** Re-export for callers that need raw stack access. */
