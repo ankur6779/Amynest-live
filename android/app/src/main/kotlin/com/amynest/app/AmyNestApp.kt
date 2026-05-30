@@ -36,7 +36,7 @@ class AmyNestApp : Application() {
         try {
             FacebookSdk.fullyInitialize()
             // In-app dialog only — never Custom Tab / external Chrome (matches Google picker UX).
-            LoginManager.getInstance().loginBehavior = LoginBehavior.DIALOG_ONLY
+            LoginManager.getInstance().setLoginBehavior(LoginBehavior.DIALOG_ONLY)
             AppEventsLogger.activateApp(this)
             Log.d(TAG, "Facebook SDK initialised appId=${FacebookSdk.getApplicationId()} loginBehavior=DIALOG_ONLY")
         } catch (t: Throwable) {

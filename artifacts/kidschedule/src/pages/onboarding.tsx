@@ -17,6 +17,10 @@ import {
 import { ChildDobPicker } from "@/components/child-dob-picker";
 import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { ensureAuthContextSynced } from "@/lib/auth-session-sync";
+import {
+  forceSyncAuthFromCurrentUser,
+  hasUsableAuthSession,
+} from "@/lib/firebase-auth-listener";
 import { waitForIdToken } from "@/lib/auth-token";
 import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
 import { navigateAfterOnboardingComplete } from "@/lib/onboarding-navigation";
@@ -990,11 +994,23 @@ export default function OnboardingPage() {
       console.warn("[onboarding] auth not loaded yet, waiting…");
       await new Promise((r) => setTimeout(r, 400));
     }
-    if (!isSignedIn) {
+    forceSyncAuthFromCurrentUser();
+    await ensureAuthContextSynced(
+      isNativeAmyNestAndroidWrapper() ? 20_000 : 12_000,
+    ).catch(() => {
+      forceSyncAuthFromCurrentUser();
+    });
+    const sessionOk = isSignedIn || hasUsableAuthSession();
+    if (!sessionOk) {
       console.warn("[onboarding] user missing, redirecting to sign-in");
       setNavigatingToDashboard(false);
       setLocation("/sign-in");
       return;
+    }
+    const completeStatus = { onboardingComplete: true, profileComplete: true };
+    if (onboardingJustFinishedRef.current) {
+      persistOnboardingCache(completeStatus);
+      queryClient.setQueryData(["onboarding-status"], completeStatus);
     }
     const cachedComplete = isSetupComplete(readOnboardingCache());
     if (!onboardingJustFinishedRef.current && !cachedComplete) {

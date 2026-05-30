@@ -829,10 +829,8 @@ class MainActivity : AppCompatActivity() {
     /** Keyboard inset + shell class only (no status/nav safe-area padding). */
     private fun resolveActiveKeyboardPackage(): String {
         return try {
-            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.currentInputMethodPackageName
-                ?: Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
-                    ?.substringBefore("/")
+            Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+                ?.substringBefore("/")
                 ?: ""
         } catch (_: Exception) {
             ""

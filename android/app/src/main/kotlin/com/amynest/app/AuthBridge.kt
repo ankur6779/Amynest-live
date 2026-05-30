@@ -561,7 +561,7 @@ class AuthBridge(
         private const val KEY_PENDING_SIGN_IN_CB_ID = "pending_google_sign_in_cb_id"
         const val JS_OBJECT_NAME = "AmyNestAuthNative"
         const val JS_INJECT_NAME = "AmyNestAuthInject"
-        const val BRIDGE_VERSION = "1.1.2"
+        const val BRIDGE_VERSION = "1.1.3"
 
         private const val KEY_PENDING_FACEBOOK_ACCESS_TOKEN = "pending_facebook_access_token"
         private const val KEY_PENDING_FACEBOOK_SIGN_IN_CB_ID = "pending_facebook_sign_in_cb_id"
