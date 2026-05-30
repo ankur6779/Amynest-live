@@ -83,7 +83,11 @@ class AuthBridge(
         signInLauncher = launcher
     }
 
-    /** Forward Facebook SDK activity results from MainActivity. */
+    /**
+     * Forward Facebook SDK activity results from MainActivity.
+     * Required for NATIVE_WITH_FALLBACK when the Facebook app returns via
+     * the legacy startActivityForResult path on older devices.
+     */
     fun onFacebookActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         facebookCallbackManager.onActivityResult(requestCode, resultCode, data)
     }
@@ -299,11 +303,14 @@ class AuthBridge(
         try {
             pendingFacebookSignInReply = replyProxy to cbId
             persistPendingFacebookSignInCbId(activity, cbId)
-            Log.i(TAG, "Launching in-app Facebook login dialog cbId=$cbId")
+            Log.i(TAG, "Launching Facebook login cbId=$cbId")
             LoginManager.getInstance().apply {
-                // DIALOG_ONLY keeps login inside AmyNest (Google picker style).
-                // NATIVE_WITH_FALLBACK opens the Facebook app / Chrome and switches away.
-                setLoginBehavior(LoginBehavior.DIALOG_ONLY)
+                // NATIVE_WITH_FALLBACK: uses the Facebook app's native account picker
+                // (same overlay-dialog UX as Google Sign-In) when the app is installed,
+                // and falls back to a Chrome Custom Tab only when it is not.
+                // DIALOG_ONLY was changed in Facebook SDK v16+ to always open a
+                // Chrome Custom Tab, making login feel like an external browser switch.
+                setLoginBehavior(LoginBehavior.NATIVE_WITH_FALLBACK)
                 logInWithReadPermissions(
                     activity as ActivityResultRegistryOwner,
                     facebookCallbackManager,

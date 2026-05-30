@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { handleFacebookLogin } from "@/lib/facebook-auth";
@@ -6,6 +6,8 @@ import { prettyAuthError, logFirebaseAuthError } from "@/lib/auth-errors";
 import { shouldShowFacebookSignIn } from "@/lib/auth-feature-flags";
 import { navigateAfterAuth } from "@/lib/auth-navigation";
 import { AUTH_OAUTH_BTN_STYLE } from "@/lib/auth-screen-layout";
+import { isNativeAmyNestAndroidWrapper } from "@/lib/device-lite";
+import { bootstrapPendingFacebookSignIn } from "@/lib/facebook-auth";
 
 type Props = {
   onError?: (message: string) => void;
@@ -24,11 +26,35 @@ export function FacebookSignInButton({ onError, className }: Props) {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [busy, setBusy] = useState(false);
+  // On Android, the native Facebook app / Custom Tab runs outside the WebView.
+  // When the user returns, we show "Completing sign-in…" until the token arrives.
+  const [awaitingReturn, setAwaitingReturn] = useState(false);
+
+  // Resume a pending Facebook auth that completed in the native dialog / Custom Tab
+  // and injected a token while the page was re-loading (amynest-facebook-auth-pending).
+  useEffect(() => {
+    if (!isNativeAmyNestAndroidWrapper()) return;
+    const onResume = () => {
+      void bootstrapPendingFacebookSignIn().then((handled) => {
+        if (handled) setAwaitingReturn(false);
+      });
+    };
+    window.addEventListener("amynest-oauth-resume", onResume);
+    window.addEventListener("amynest-facebook-auth-pending", onResume);
+    // Attempt on mount in case the token was injected before this component mounted.
+    void bootstrapPendingFacebookSignIn().then((handled) => {
+      if (handled) setAwaitingReturn(false);
+    });
+    return () => {
+      window.removeEventListener("amynest-oauth-resume", onResume);
+      window.removeEventListener("amynest-facebook-auth-pending", onResume);
+    };
+  }, []);
 
   if (!shouldShowFacebookSignIn()) return null;
 
   const onClick = async () => {
-    if (busy) return;
+    if (busy || awaitingReturn) return;
     setBusy(true);
     try {
       const destination = await handleFacebookLogin();
@@ -39,6 +65,14 @@ export function FacebookSignInButton({ onError, className }: Props) {
     } catch (err: unknown) {
       logFirebaseAuthError("facebook:sign-in", err);
       const code = (err as { code?: string })?.code ?? "";
+      // On Android, NATIVE_WITH_FALLBACK transitions to Facebook app / Custom Tab.
+      // The component will receive amynest-oauth-resume when the user returns.
+      if (isNativeAmyNestAndroidWrapper() && code !== "auth/popup-closed-by-user" &&
+          code !== "app/facebook-bridge-unavailable") {
+        setAwaitingReturn(true);
+        setBusy(false);
+        return;
+      }
       const message = prettyAuthError(err);
       if (message) {
         onError?.(message);
@@ -55,31 +89,35 @@ export function FacebookSignInButton({ onError, className }: Props) {
     }
   };
 
+  const isLoading = busy || awaitingReturn;
   return (
     <button
       type="button"
       onClick={() => void onClick()}
-      disabled={busy}
+      disabled={isLoading}
       className={className ?? "si-facebook-btn"}
       data-testid="button-facebook-sign-in"
+      aria-busy={isLoading}
       style={{
         ...AUTH_OAUTH_BTN_STYLE,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: "8px",
-        background: busy ? "rgba(24,119,242,0.55)" : "#1877F2",
+        background: isLoading ? "rgba(24,119,242,0.55)" : "#1877F2",
         border: "1px solid rgba(255,255,255,0.12)",
         color: "#FFFFFF",
-        cursor: busy ? "not-allowed" : "pointer",
-        boxShadow: busy
+        cursor: isLoading ? "not-allowed" : "pointer",
+        boxShadow: isLoading
           ? "none"
           : "0 2px 12px rgba(24,119,242,0.35), 0 0 0 1px rgba(255,255,255,0.06) inset",
         transition: "transform 0.18s ease, box-shadow 0.18s ease",
       }}
     >
       <FacebookMark />
-      {busy
+      {awaitingReturn
+        ? t("auth.completing_sign_in", { defaultValue: "Completing sign-in…" })
+        : isLoading
         ? t("auth.connecting")
         : t("auth.continue_with_facebook")}
     </button>

@@ -4,6 +4,7 @@ import {
   clearChatViewportCssVars,
   ensureChatPromptVisible,
   getChatPlatformRemoteConfig,
+  isAndroidAdjustResizeBroken,
   isAndroidAdjustResizeChatShell,
   isChatAnswerTarget,
   isForcePromptVisibilityModeActive,
@@ -11,6 +12,7 @@ import {
   metricsForChatLayout,
   readChatViewportMetrics,
   readNativeImeInsetPx,
+  recordAndroidBaselineHeight,
   scheduleSelfHealingVisibility,
   startChatPlatformRemoteConfigPolling,
   subscribeChatPlatformRemoteConfig,
@@ -234,6 +236,12 @@ export function useKeyboardChatLayout(
     applyOpenLayout(metrics);
   }, [applyOpenLayout, resetKeyboardLayout]);
 
+  // Capture the full-screen innerHeight before any keyboard opens.
+  // Must run before any resize/keyboard events to detect Android 15 adjustResize breakage.
+  useLayoutEffect(() => {
+    recordAndroidBaselineHeight();
+  }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -408,6 +416,25 @@ export function useKeyboardChatLayout(
 
   const androidAdjustResize = isAndroidAdjustResizeChatShell();
 
+  // On Android 15, edge-to-edge is enforced and adjustResize no longer shrinks
+  // the WebView. Detect this at runtime and apply a bottom offset so the keyboard
+  // does not overlay the chat input bar. When adjustResize IS working (older Android),
+  // the WebView shrinks naturally and bottom: 0 is correct — no double-offset.
+  const adjustResizeBroken = androidAdjustResize && keyboardOpen && isAndroidAdjustResizeBroken();
+  const androidBottomOffset = adjustResizeBroken ? viewport.keyboardInset : 0;
+  const prevAdjustResizeBrokenRef = useRef(false);
+  if (adjustResizeBroken && !prevAdjustResizeBrokenRef.current) {
+    prevAdjustResizeBrokenRef.current = true;
+    trackChatPlatformEvent("android_keyboard_layout_conflicts", {
+      surface,
+      nativeVvHeight: String(viewport.height),
+      nativeInset: viewport.keyboardInset,
+      detail: "adjustResize_broken_android15_edge_to_edge",
+    });
+  } else if (!adjustResizeBroken) {
+    prevAdjustResizeBrokenRef.current = false;
+  }
+
   const containerStyle =
     layoutMode === "fullscreen"
       ? androidAdjustResize
@@ -416,10 +443,12 @@ export function useKeyboardChatLayout(
             top: 0,
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: androidBottomOffset > 0 ? `${androidBottomOffset}px` : 0,
             width: "100%",
-            height: "100%",
-            maxHeight: "100%",
+            // When adjustResize is broken height must be explicit to exclude the keyboard area.
+            ...(androidBottomOffset > 0
+              ? { height: `calc(100% - ${androidBottomOffset}px)`, maxHeight: `calc(100% - ${androidBottomOffset}px)` }
+              : { height: "100%", maxHeight: "100%" }),
           }
         : {
             position: "fixed" as const,
