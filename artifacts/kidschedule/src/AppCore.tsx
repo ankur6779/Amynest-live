@@ -48,7 +48,10 @@ import { FetchTimeoutError } from "@/lib/fetch-with-timeout";
 import {
   effectiveSetupStatus,
   isSetupComplete,
+  readOnboardingCache,
 } from "@/lib/setup-status";
+import { logOnboardingPipelineSnapshot } from "@/lib/onboarding-pipeline-log";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { installTtsGestureListener } from "@/lib/tts-guard";
 import { OnboardingStatusProvider, useOnboardingStatus } from "@/contexts/onboarding-status-context";
 import { AmyVoiceProvider } from "@/contexts/amy-voice-provider";
@@ -162,8 +165,22 @@ const bootMark = (phase: string) => {
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function HomeRedirect() {
-  const { isSignedIn, isLoaded, authStatus } = useAuth();
+  const { isSignedIn, isLoaded, authStatus, userId } = useAuth();
   const { data, isError, error, refetch } = useOnboardingStatus();
+  const authFetch = useAuthFetch();
+
+  useEffect(() => {
+    if (!isSignedIn || !isLoaded) return;
+    void logOnboardingPipelineSnapshot("route-guard-check", authFetch, {
+      userId,
+      extra: {
+        trigger: "HomeRedirect",
+        cached: readOnboardingCache(),
+        queryData: data ?? null,
+        effective: effectiveSetupStatus(data),
+      },
+    });
+  }, [authFetch, data, isLoaded, isSignedIn, userId]);
 
   devLog("HOME RENDER", { isSignedIn, authStatus, isLoaded });
 

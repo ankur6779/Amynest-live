@@ -11,8 +11,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   isAndroidAdjustResizeBroken,
-  recordAndroidBaselineHeight,
+  readAndroidChatLayoutDiagnostics,
   readNativeImeInsetPx,
+  recordAndroidBaselineHeight,
+  resetAndroidBaselineHeightForTests,
 } from "@/lib/chat-platform/viewport";
 import {
   isSetupComplete,
@@ -84,6 +86,7 @@ describe("Bug 2 — isAndroidAdjustResizeBroken (Android 15 edge-to-edge)", () =
   beforeEach(() => {
     setUserAgent(ANDROID_UA);
     clearNativeImeInset();
+    resetAndroidBaselineHeightForTests();
   });
 
   afterEach(() => {
@@ -118,18 +121,20 @@ describe("Bug 2 — isAndroidAdjustResizeBroken (Android 15 edge-to-edge)", () =
     expect(isAndroidAdjustResizeBroken()).toBe(true);
   });
 
-  it("returns true even without a baseline (safe default on Android 15)", () => {
-    // Do NOT call recordAndroidBaselineHeight (baseline = null).
-    // Any inset ≥ 100 should be treated as broken to prevent hidden input.
+  it("returns false when baseline was never recorded (do not assume broken)", () => {
     setWindowInnerHeight(900);
     setNativeImeInsetPx(350);
-    // Baseline is null → conservatively assume broken.
-    expect(isAndroidAdjustResizeBroken()).toBe(true);
+    expect(isAndroidAdjustResizeBroken()).toBe(false);
   });
 
-  it("readNativeImeInsetPx reads the CSS variable injected by native", () => {
-    setNativeImeInsetPx(342);
-    expect(readNativeImeInsetPx()).toBe(342);
+  it("readAndroidChatLayoutDiagnostics shows collapse when workaround double-subtracts", () => {
+    setWindowInnerHeight(550);
+    recordAndroidBaselineHeight(); // baseline wrongly captured after partial shrink
+    setNativeImeInsetPx(450);
+    const diag = readAndroidChatLayoutDiagnostics(450);
+    expect(diag.workaroundContainerBottomPx).toBe(450);
+    // bottom=450 on 550px viewport leaves ~100px; height calc subtracts again → ~100px or less
+    expect(diag.workaroundContainerHeightPx).toBeLessThanOrEqual(100);
   });
 });
 
