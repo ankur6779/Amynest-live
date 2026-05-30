@@ -12,6 +12,8 @@ on:
       - "artifacts/kidschedule/**"
       - "scripts/check-chat-platform*.ts"
       - "android/**"
+  # Real-device certification is manual before Play release — not every main push.
+  workflow_dispatch:
 
 jobs:
   chat-platform:
@@ -32,7 +34,21 @@ jobs:
       - name: Static ChatPlatform ownership gate
         run: pnpm run check:chat-platform
 
-      - name: Device certification gate (release only)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  device-certification:
+    name: ChatPlatform device certification (manual release gate)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Device certification gate
         run: pnpm run check:chat-platform-certification
-        continue-on-error: false
