@@ -30,7 +30,7 @@ describe("phonics-generation", () => {
 
   it("covers every catalog audioKey with forbidden-word guard", () => {
     assertElevenLabsSpeakTextComplete();
-    assert.equal(Object.keys(ELEVENLABS_SPEAK_TEXT).length, 33);
+    assert.equal(Object.keys(ELEVENLABS_SPEAK_TEXT).length, 35);
     for (const text of Object.values(ELEVENLABS_SPEAK_TEXT)) {
       assert.doesNotMatch(text, /\bsound\b/i);
     }

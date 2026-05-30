@@ -1,3 +1,4 @@
+import { getPhonemeClipIds } from "./audio-catalog.js";
 import {
   DIGRAPHS,
   getPhonemeSequence,
@@ -61,9 +62,11 @@ export function getPhonicsCvcCacheKey(word: string): string {
   return `phonics:${word.trim().toLowerCase()}`;
 }
 
-/** All unique audio keys that must exist under /phonics-audio/. */
+/** All unique letter/digraph audio keys (phoneme clips). */
 export function getAllPhonicsAudioKeys(): string[] {
-  return [...new Set(Object.keys(PHONEME_MAP))].sort();
+  const fromMap = Object.keys(PHONEME_MAP);
+  const fromCatalog = getPhonemeClipIds();
+  return [...new Set([...fromMap, ...fromCatalog])].sort();
 }
 
 export function resolveGraphemeToAudioKey(grapheme: string): string | null {

@@ -50,6 +50,8 @@ export const DIGRAPHS: Record<string, DigraphSoundEntry> = {
   wh: { phoneme: "wh", example: "whale", audioKey: "wh" },
   ph: { phoneme: "f", example: "phone", audioKey: "ph" },
   ng: { phoneme: "ng", example: "ring", audioKey: "ng" },
+  ck: { phoneme: "k", example: "duck", audioKey: "ck" },
+  qu: { phoneme: "kw", example: "queen", audioKey: "qu" },
 };
 
 /** Consonant blends — example words only (sounds are sequential letter phonemes). */

@@ -286,6 +286,40 @@ export async function ensurePhonicsCurriculumTables(): Promise<void> {
       ON phonics_content_cache (level)
   `);
 
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS phonics_audio_assets (
+      id VARCHAR(128) PRIMARY KEY,
+      type VARCHAR(32) NOT NULL,
+      text TEXT NOT NULL,
+      phoneme TEXT,
+      alternate_phoneme TEXT,
+      difficulty INTEGER,
+      curriculum_level INTEGER,
+      gcs_path TEXT NOT NULL,
+      public_url TEXT,
+      duration_ms INTEGER,
+      checksum VARCHAR(64),
+      version INTEGER NOT NULL DEFAULT 1,
+      source VARCHAR(32) NOT NULL DEFAULT 'elevenlabs',
+      quality VARCHAR(16) NOT NULL DEFAULT 'auto',
+      audio_data BYTEA,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS phonics_audio_assets_type_idx
+      ON phonics_audio_assets (type)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS phonics_audio_assets_gcs_path_idx
+      ON phonics_audio_assets (gcs_path)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS phonics_audio_assets_curriculum_idx
+      ON phonics_audio_assets (curriculum_level)
+  `);
+
   logger.info(
     { evt: "db.ensure", table: "phonics_curriculum" },
     "Ensured phonics curriculum tables",
@@ -429,6 +463,37 @@ export async function ensureInfantMilestoneProgressTable(): Promise<void> {
   );
 }
 
+export async function ensureInfantProductAnalyticsEventsTable(): Promise<void> {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS infant_product_analytics_events (
+      id               SERIAL PRIMARY KEY,
+      user_id          TEXT NOT NULL,
+      child_id         INTEGER,
+      event            TEXT NOT NULL,
+      child_age_months INTEGER,
+      infant_age_band  TEXT,
+      properties       JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS infant_pa_events_event_created_idx
+      ON infant_product_analytics_events (event, created_at DESC)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS infant_pa_events_user_created_idx
+      ON infant_product_analytics_events (user_id, created_at DESC)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS infant_pa_events_child_created_idx
+      ON infant_product_analytics_events (child_id, created_at DESC)
+  `);
+  logger.info(
+    { evt: "db.ensure", table: "infant_product_analytics_events" },
+    "Ensured infant product analytics events table",
+  );
+}
+
 export async function ensureStartupTables(): Promise<void> {
   const steps: Array<{ name: string; run: () => Promise<void> }> = [
     { name: "children", run: ensureChildrenTable },
@@ -440,6 +505,7 @@ export async function ensureStartupTables(): Promise<void> {
     { name: "phonics_curriculum", run: ensurePhonicsCurriculumTables },
     { name: "infant_care", run: ensureInfantCareTables },
     { name: "infant_milestone_progress", run: ensureInfantMilestoneProgressTable },
+    { name: "infant_product_analytics_events", run: ensureInfantProductAnalyticsEventsTable },
   ];
 
   const failed: string[] = [];

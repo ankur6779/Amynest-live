@@ -16,6 +16,7 @@ import {
   playPhonicsStaticAudio,
   playPhonicsSequence,
   playBlendPhonemeClip,
+  playPhonicsContentAudio,
   prefetchPhonicsAudioKeys,
   resolvePhonicsAudioKey,
 } from "@/lib/phonics-static-audio";
@@ -123,6 +124,21 @@ export async function speakPhonicsFastClip(
   }
 
   if (opts?.isCancelled?.()) return { success: false, error: "tts_cancelled" };
+
+  const contentTypes = ["cvc", "sight_word", "sentence", "quiz"] as const;
+  for (const contentType of contentTypes) {
+    const library = await playPhonicsContentAudio(trimmed, {
+      contentType,
+      waitUntilEnd: true,
+      playbackRate: opts?.playbackRate,
+      isCancelled: opts?.isCancelled,
+    });
+    if (library.ok) return { success: true, layer: "static" };
+    if (library.error === "phonics_cancelled" || opts?.isCancelled?.()) {
+      return { success: false, error: "tts_cancelled" };
+    }
+  }
+
   if (await playStaticCatalogClip(trimmed, opts)) {
     recordPhonicsFallback("static_catalog");
     return { success: true, layer: "static" };
@@ -166,6 +182,13 @@ async function playCvcWordFinale(
   if (opts?.isCancelled?.()) return { success: false, error: "cancelled" };
 
   recordTtsUserGesture();
+
+  const library = await playPhonicsContentAudio(w, {
+    contentType: "cvc",
+    isCancelled: opts?.isCancelled,
+    waitUntilEnd: true,
+  });
+  if (library.ok) return { success: true, layer: "static" };
 
   for (const mode of ["phonics", "default"] as const) {
     if (opts?.isCancelled?.()) return { success: false, error: "cancelled" };

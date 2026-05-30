@@ -4,7 +4,13 @@
  */
 
 import { getCoachDialogueWarmupPhrases } from "@workspace/speech-coach";
-import { getPhonicsLetterCacheKey } from "@workspace/phonics-sounds";
+import {
+  getPhonicsLetterCacheKey,
+  PHONICS_PREWARM_CVC,
+  PHONICS_PREWARM_TIER_HIGH,
+  PHONICS_PREWARM_TIER_LOW,
+  PHONICS_PREWARM_TIER_MEDIUM,
+} from "@workspace/phonics-sounds";
 import { audioManager } from "@/lib/audio-manager";
 import {
   deleteGlobalAudioCacheEntry,
@@ -28,41 +34,11 @@ const BATCH_GAP_MS = 50;
 const MAX_AUDIO_CACHE = 40;
 const REPRIME_DEBOUNCE_MS = 2_000;
 
-const HIGH_PRIORITY = ["a", "b", "c", "d", "e"] as const;
-const MEDIUM_PRIORITY = ["f", "g", "h", "i", "j", "k", "l", "m"] as const;
-const LOW_PRIORITY = [
-  "n",
-  "o",
-  "p",
-  "q",
-  "r",
-  "s",
-  "t",
-  "u",
-  "v",
-  "w",
-  "x",
-  "y",
-  "z",
-  "sh",
-  "ch",
-  "th1",
-  "th2",
-  "ph",
-  "ng",
-  "wh",
-] as const;
+const HIGH_PRIORITY = [...PHONICS_PREWARM_TIER_HIGH] as const;
+const MEDIUM_PRIORITY = [...PHONICS_PREWARM_TIER_MEDIUM] as const;
+const LOW_PRIORITY = [...PHONICS_PREWARM_TIER_LOW] as const;
 
-const SPELLING_COMMON_WORDS = [
-  "cat",
-  "bat",
-  "rat",
-  "mat",
-  "dog",
-  "pen",
-  "sun",
-  "run",
-] as const;
+const SPELLING_COMMON_WORDS = [...PHONICS_PREWARM_CVC] as const;
 
 const SPEECH_COACH_DEFAULT_PHRASES = getCoachDialogueWarmupPhrases();
 

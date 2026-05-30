@@ -206,4 +206,6 @@ export * from "./phonics-generation.js";
 export * from "./phonics-quality.js";
 export * from "./phonics-audio-master.js";
 export * from "./phonics-audio-demos.js";
+export * from "./gcs-paths.js";
+export * from "./audio-catalog.js";
 export { playCvcBlend, type CvcBlendPhase, type CvcBlendSpeakFn, type PlayCvcBlendOptions } from "./cvc-blend.js";

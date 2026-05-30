@@ -66,6 +66,8 @@ export const ELEVENLABS_SPEAK_TEXT: Record<string, string> = {
   ph: "fff",
   ng: "ng",
   wh: "wh",
+  ck: "k.",
+  qu: "kw",
 };
 
 const FORBIDDEN_SPEAK_PATTERNS = [/\bsound\b/i, /\bletter\b/i, /\bsays\b/i, /\bas in\b/i];
@@ -140,6 +142,8 @@ export const SPEECH_SYNTH_PHONEME_TEXT: Record<string, string> = {
   ph: "ffff",
   ng: "nng",
   wh: "wuh",
+  ck: "kuh",
+  qu: "kwuh",
 };
 
 /** Alphabet-name spellings that must NEVER reach the learner. */
@@ -188,8 +192,16 @@ Duration target: 300–800ms; reject if >900ms or <250ms; stop sounds (b,c,d,p,t
 export const PHONICS_ELEVENLABS_VOICE_ID_DEFAULT = "QbQKfe9vgx5OsbZUvlFv";
 export const PHONICS_ELEVENLABS_MODEL_DEFAULT = "eleven_turbo_v2_5";
 
+/** Isolated phoneme clips — crisp, no expression. */
 export const PHONICS_ELEVENLABS_VOICE_SETTINGS = {
-  stability: 0.65,
+  stability: 0.75,
+  similarity_boost: 0.78,
+  style: 0,
+} as const;
+
+/** Words, sentences, quiz prompts — slow clear kindergarten teacher pacing. */
+export const PHONICS_ELEVENLABS_WORD_VOICE_SETTINGS = {
+  stability: 0.82,
   similarity_boost: 0.75,
   style: 0,
 } as const;
