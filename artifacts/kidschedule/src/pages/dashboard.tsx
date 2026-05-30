@@ -33,7 +33,6 @@ import { LockedBlock } from "@/components/locked-block";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { SevenDayJourneyCard } from "@/components/seven-day-journey-card";
 import { useJourney } from "@/hooks/use-journey";
-import { SCREEN_SPACING } from "@/lib/experience-system";
 
 const HeroAmbientLayer = lazyPage(() =>
   import("@/components/hero-ambient-layer").then((m) => ({
@@ -1371,7 +1370,7 @@ export default function Dashboard() {
   if (loadingSummary) {
     return (
       // audit-block-ignore-start
-      <div data-on-dark className={`dashboard-page w-full min-w-0 max-w-full bg-[#0a1024] ${SCREEN_SPACING.pageBottom}`}>
+      <div data-on-dark className="dashboard-page w-full min-w-0 max-w-full bg-[#0a1024]">
         {/* audit-block-ignore-end */}
         <div className="flex flex-col gap-6 animate-in fade-in duration-400 pb-6 md:pb-8">
           <Skeleton className="h-16 w-full rounded-2xl" />
@@ -1393,7 +1392,7 @@ export default function Dashboard() {
   }
   return (
     // audit-block-ignore-start
-    <div data-on-dark className={`dashboard-page w-full min-w-0 max-w-full bg-[#0a1024] ${SCREEN_SPACING.pageBottom}`}>
+    <div data-on-dark className="dashboard-page w-full min-w-0 max-w-full bg-[#0a1024]">
       {/* audit-block-ignore-end */}
       <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-6 md:pb-8">
 
