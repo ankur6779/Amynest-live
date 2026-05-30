@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: var(--w);
+      height: var(--h);
+      overflow: hidden;
+      font-family: Quicksand, system-ui, sans-serif;
+      background: linear-gradient(165deg, #07050f, #12102a 45%, #1a1538);
+      color: #fff;
+    }
+    .canvas {
+      width: var(--w);
+      height: var(--h);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: var(--pad);
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(0);
+    }
+    .orb-a {
+      width: 55%;
+      height: 40%;
+      top: -8%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.38), transparent 68%);
+    }
+    .orb-b {
+      width: 45%;
+      height: 35%;
+      bottom: -5%;
+      right: -10%;
+      background: radial-gradient(circle, rgba(236, 72, 153, 0.22), transparent 70%);
+    }
+    .top-bar {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--gap-sm);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand img {
+      width: var(--logo);
+      height: var(--logo);
+      border-radius: calc(var(--logo) * 0.22);
+      object-fit: cover;
+    }
+    .brand span {
+      font-size: var(--brand-size);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .pill {
+      font-size: var(--pill-size);
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(216, 180, 254, 0.88);
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .slide-counter {
+      font-size: var(--pill-size);
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.45);
+    }
+    .content {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .eyebrow {
+      font-size: var(--eyebrow);
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(216, 180, 254, 0.85);
+      margin-bottom: 10px;
+    }
+    h1 {
+      font-size: var(--h1);
+      font-weight: 800;
+      line-height: 1.06;
+      letter-spacing: -0.03em;
+    }
+    h1 .accent {
+      background: linear-gradient(90deg, #e9d5ff, #f9a8d4, #7dd3fc);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .sub {
+      margin-top: 14px;
+      font-size: var(--sub);
+      font-weight: 600;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.58);
+      max-width: 92%;
+    }
+    .center-stack {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: var(--gap-md);
+    }
+    .phone-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .phone {
+      width: var(--phone-w);
+      height: var(--phone-h);
+      border-radius: calc(var(--phone-w) * 0.12);
+      border: 3px solid rgba(255, 255, 255, 0.16);
+      box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.55),
+        0 0 40px rgba(168, 85, 247, 0.18);
+      overflow: hidden;
+      background: #0b0b1a;
+      position: relative;
+    }
+    .phone::before {
+      content: "";
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 28%;
+      height: 4%;
+      background: #000;
+      border-radius: 999px;
+      z-index: 3;
+    }
+    .phone img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+    .marketing-shot {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .marketing-shot img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+    .compare-grid {
+      margin-top: var(--gap-md);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      flex: 1;
+      min-height: 0;
+    }
+    .compare-col {
+      border-radius: 22px;
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .compare-col.them { opacity: 0.72; }
+    .compare-col.us {
+      border-color: rgba(168, 85, 247, 0.45);
+      background: rgba(168, 85, 247, 0.12);
+    }
+    .compare-title {
+      font-size: var(--compare-title);
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+    .compare-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: var(--compare-item);
+      font-weight: 600;
+      line-height: 1.35;
+      margin-bottom: 10px;
+      color: rgba(255, 255, 255, 0.82);
+    }
+    .compare-item svg { flex-shrink: 0; margin-top: 2px; }
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: var(--gap-md);
+      padding: 18px 28px;
+      border-radius: 18px;
+      font-size: var(--cta-size);
+      font-weight: 800;
+      color: #fff;
+      background: linear-gradient(120deg, #9333ea, #ec4899);
+      box-shadow: 0 12px 40px rgba(168, 85, 247, 0.35);
+    }
+    .url {
+      margin-top: 12px;
+      font-size: var(--url-size);
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.88);
+    }
+    .footer {
+      position: relative;
+      z-index: 2;
+      margin-top: auto;
+      padding-top: var(--gap-sm);
+      font-size: var(--footer-size);
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.34);
+      text-align: center;
+    }
+    .reel-badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: var(--pill-size);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(168, 85, 247, 0.22);
+      border: 1px solid rgba(168, 85, 247, 0.45);
+      color: #e9d5ff;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="canvas">
+    <div class="orb orb-a"></div>
+    <div class="orb orb-b"></div>
+
+    <div class="top-bar">
+      <div class="brand">
+        <img id="logo" alt="" />
+        <span>AmyNest AI</span>
+      </div>
+      <div id="slide-counter" class="slide-counter hidden"></div>
+      <div id="top-pill" class="pill hidden"></div>
+    </div>
+
+    <div id="variant-hook" class="content hidden">
+      <div class="center-stack">
+        <div>
+          <p id="hook-eyebrow" class="eyebrow"></p>
+          <h1><span id="hook-headline"></span> <span id="hook-accent" class="accent"></span></h1>
+          <p id="hook-sub" class="sub"></p>
+        </div>
+      </div>
+    </div>
+
+    <div id="variant-feature" class="content hidden">
+      <p id="feature-eyebrow" class="eyebrow"></p>
+      <h1><span id="feature-headline"></span> <span id="feature-accent" class="accent"></span></h1>
+      <p id="feature-sub" class="sub"></p>
+      <div class="phone-wrap" style="margin-top: var(--gap-md); align-self: center;">
+        <div class="phone"><img id="feature-shot" alt="" /></div>
+      </div>
+    </div>
+
+    <div id="variant-marketing" class="content hidden">
+      <div class="marketing-shot">
+        <img id="marketing-shot" alt="" />
+      </div>
+    </div>
+
+    <div id="variant-compare" class="content hidden">
+      <h1><span id="compare-headline"></span><br /><span id="compare-accent" class="accent"></span></h1>
+      <div class="compare-grid">
+        <div class="compare-col them">
+          <div id="compare-them-title" class="compare-title"></div>
+          <div id="compare-them-list"></div>
+        </div>
+        <div class="compare-col us">
+          <div id="compare-us-title" class="compare-title"></div>
+          <div id="compare-us-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="variant-cta" class="content hidden">
+      <div class="center-stack">
+        <div>
+          <h1><span id="cta-headline"></span> <span id="cta-accent" class="accent"></span></h1>
+          <p id="cta-sub" class="sub" style="margin-left: auto; margin-right: auto;"></p>
+          <div class="cta-btn">Download Free</div>
+          <p id="cta-url" class="url"></p>
+        </div>
+      </div>
+    </div>
+
+    <div id="variant-reel" class="content hidden">
+      <div class="center-stack">
+        <div>
+          <h1><span id="reel-headline"></span> <span id="reel-accent" class="accent"></span></h1>
+          <p id="reel-sub" class="sub" style="margin-left: auto; margin-right: auto;"></p>
+          <div id="reel-badge" class="reel-badge hidden"></div>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone"><img id="reel-shot" alt="" /></div>
+        </div>
+      </div>
+    </div>
+
+    <p id="footer" class="footer"></p>
+  </div>
+  <script>
+    function iconX() {
+      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+    }
+    function iconCheck() {
+      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>';
+    }
+    function render(cfg) {
+      const root = document.documentElement;
+      const sizes = cfg.sizes;
+      root.style.setProperty("--w", sizes.width + "px");
+      root.style.setProperty("--h", sizes.height + "px");
+      root.style.setProperty("--pad", sizes.pad + "px");
+      root.style.setProperty("--gap-sm", sizes.gapSm + "px");
+      root.style.setProperty("--gap-md", sizes.gapMd + "px");
+      root.style.setProperty("--logo", sizes.logo + "px");
+      root.style.setProperty("--brand-size", sizes.brandSize + "px");
+      root.style.setProperty("--pill-size", sizes.pillSize + "px");
+      root.style.setProperty("--eyebrow", sizes.eyebrow + "px");
+      root.style.setProperty("--h1", sizes.h1 + "px");
+      root.style.setProperty("--sub", sizes.sub + "px");
+      root.style.setProperty("--phone-w", sizes.phoneW + "px");
+      root.style.setProperty("--phone-h", sizes.phoneH + "px");
+      root.style.setProperty("--compare-title", sizes.compareTitle + "px");
+      root.style.setProperty("--compare-item", sizes.compareItem + "px");
+      root.style.setProperty("--cta-size", sizes.ctaSize + "px");
+      root.style.setProperty("--url-size", sizes.urlSize + "px");
+      root.style.setProperty("--footer-size", sizes.footerSize + "px");
+
+      document.getElementById("logo").src = cfg.logoDataUrl;
+      document.getElementById("footer").textContent = cfg.footer;
+
+      document.querySelectorAll("[id^='variant-']").forEach((el) => el.classList.add("hidden"));
+      const variant = document.getElementById("variant-" + cfg.variant);
+      if (variant) variant.classList.remove("hidden");
+
+      const topPill = document.getElementById("top-pill");
+      const slideCounter = document.getElementById("slide-counter");
+      topPill.classList.add("hidden");
+      slideCounter.classList.add("hidden");
+
+      if (cfg.variant === "hook") {
+        document.getElementById("hook-eyebrow").textContent = cfg.eyebrow || "";
+        document.getElementById("hook-headline").textContent = cfg.headline || "";
+        document.getElementById("hook-accent").textContent = cfg.headlineAccent || "";
+        document.getElementById("hook-sub").textContent = cfg.subheadline || "";
+      }
+
+      if (cfg.variant === "feature") {
+        document.getElementById("feature-eyebrow").textContent = cfg.eyebrow || "";
+        document.getElementById("feature-headline").textContent = cfg.headline || "";
+        document.getElementById("feature-accent").textContent = cfg.headlineAccent || "";
+        document.getElementById("feature-sub").textContent = cfg.subheadline || "";
+        document.getElementById("feature-shot").src = cfg.screenshotDataUrl || "";
+        if (cfg.accent) {
+          document.querySelector("#variant-feature .phone").style.boxShadow =
+            "0 24px 60px rgba(0,0,0,0.55), 0 0 40px " + cfg.accent + "55";
+        }
+      }
+
+      if (cfg.variant === "marketing") {
+        document.getElementById("marketing-shot").src = cfg.screenshotDataUrl || "";
+        if (cfg.slideLabel) {
+          slideCounter.textContent = cfg.slideLabel;
+          slideCounter.classList.remove("hidden");
+        }
+      }
+
+      if (cfg.variant === "compare") {
+        document.getElementById("compare-headline").textContent = cfg.headline || "";
+        document.getElementById("compare-accent").textContent = cfg.headlineAccent || "";
+        document.getElementById("compare-them-title").textContent = cfg.themTitle || "Typical Apps";
+        document.getElementById("compare-us-title").textContent = cfg.usTitle || "AmyNest AI";
+        document.getElementById("compare-them-list").innerHTML = (cfg.them || [])
+          .map((t) => '<div class="compare-item">' + iconX() + "<span>" + t + "</span></div>")
+          .join("");
+        document.getElementById("compare-us-list").innerHTML = (cfg.us || [])
+          .map((t) => '<div class="compare-item">' + iconCheck() + "<span>" + t + "</span></div>")
+          .join("");
+      }
+
+      if (cfg.variant === "cta") {
+        document.getElementById("cta-headline").textContent = cfg.headline || "";
+        document.getElementById("cta-accent").textContent = cfg.headlineAccent || "";
+        document.getElementById("cta-sub").textContent = cfg.subheadline || "";
+        document.getElementById("cta-url").textContent = cfg.ctaUrl || "";
+      }
+
+      if (cfg.variant === "reel") {
+        document.getElementById("reel-headline").textContent = cfg.headline || "";
+        document.getElementById("reel-accent").textContent = cfg.headlineAccent || "";
+        document.getElementById("reel-sub").textContent = cfg.subheadline || "";
+        document.getElementById("reel-shot").src = cfg.screenshotDataUrl || "";
+        const badge = document.getElementById("reel-badge");
+        if (cfg.badge) {
+          badge.textContent = cfg.badge;
+          badge.classList.remove("hidden");
+        }
+        if (cfg.badge) {
+          topPill.textContent = cfg.badge;
+          topPill.classList.remove("hidden");
+        }
+      }
+    }
+    if (window.SOCIAL_CONFIG) render(window.SOCIAL_CONFIG);
+  </script>
+</body>
+</html>

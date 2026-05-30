@@ -1,0 +1,211 @@
+{
+  "generatedAt": "2026-05-30T07:50:42.465Z",
+  "assets": [
+    {
+      "type": "carousel",
+      "pack": "parenting-pain",
+      "packName": "Parenting Pain → AmyNest Solution",
+      "slide": 1,
+      "total": 6,
+      "variant": "hook",
+      "path": "public/promo/social/carousels/parenting-pain/01-harder-than-ever.png",
+      "format": "portrait"
+    },
+    {
+      "type": "carousel",
+      "pack": "parenting-pain",
+      "packName": "Parenting Pain → AmyNest Solution",
+      "slide": 2,
+      "total": 6,
+      "variant": "feature",
+      "path": "public/promo/social/carousels/parenting-pain/02-your-child-s-day.png",
+      "format": "portrait"
+    },
+    {
+      "type": "carousel",
+      "pack": "parenting-pain",
+      "packName": "Parenting Pain → AmyNest Solution",
+      "slide": 3,
+      "total": 6,
+      "variant": "feature",
+      "path": "public/promo/social/carousels/parenting-pain/03-in-communication.png",
+      "format": "portrait"
+    },
+    {
+      "type": "carousel",
+      "pack": "parenting-pain",
+      "packName": "Parenting Pain → AmyNest Solution",
+      "slide": 4,
+      "total": 6,
+      "variant": "feature",
+      "path": "public/promo/social/carousels/parenting-pain/04-not-generic-tips.png",
+      "format": "portrait"
+    },
+    {
+      "type": "carousel",
+      "pack": "parenting-pain",
+      "packName": "Parenting Pain → AmyNest Solution",
+      "slide": 5,
+      "total": 6,
+      "variant": "feature",
+      "path": "public/promo/social/carousels/parenting-pain/05-your-child-s-needs.png",
+      "format": "portrait"
+    },
+    {
+      "type": "carousel",
+      "pack": "parenting-pain",
+      "packName": "Parenting Pain → AmyNest Solution",
+      "slide": 6,
+      "total": 6,
+      "variant": "cta",
+      "path": "public/promo/social/carousels/parenting-pain/06-better-family-habits.png",
+      "format": "portrait"
+    },
+    {
+      "type": "carousel",
+      "pack": "six-tools",
+      "packName": "Six Tools · One Platform",
+      "slide": 1,
+      "total": 7,
+      "variant": "hook",
+      "path": "public/promo/social/carousels/six-tools/01-one-platform.png",
+      "format": "portrait"
+    },
+    {
+      "type": "carousel",
+      "pack": "six-tools",
+      "packName": "Six Tools · One Platform",
+      "slide": 2,
+      "total": 7,
+      "variant": "marketing",
+      "path": "public/promo/social/carousels/six-tools/02-1-6-routines.png",
+      "format": "portrait"
+    },
+    {
+      "type": "carousel",
+      "pack": "six-tools",
+      "packName": "Six Tools · One Platform",
+      "slide": 3,
+      "total": 7,
+      "variant": "marketing",
+      "path": "public/promo/social/carousels/six-tools/03-2-6-learning.png",
+      "format": "portrait"
+    },
+    {
+      "type": "carousel",
+      "pack": "six-tools",
+      "packName": "Six Tools · One Platform",
+      "slide": 4,
+      "total": 7,
+      "variant": "marketing",
+      "path": "public/promo/social/carousels/six-tools/04-3-6-amy-coach.png",
+      "format": "portrait"
+    },
+    {
+      "type": "carousel",
+      "pack": "six-tools",
+      "packName": "Six Tools · One Platform",
+      "slide": 5,
+      "total": 7,
+      "variant": "marketing",
+      "path": "public/promo/social/carousels/six-tools/05-4-6-nutrition.png",
+      "format": "portrait"
+    },
+    {
+      "type": "carousel",
+      "pack": "six-tools",
+      "packName": "Six Tools · One Platform",
+      "slide": 6,
+      "total": 7,
+      "variant": "marketing",
+      "path": "public/promo/social/carousels/six-tools/06-5-6-parent-hub.png",
+      "format": "portrait"
+    },
+    {
+      "type": "carousel",
+      "pack": "six-tools",
+      "packName": "Six Tools · One Platform",
+      "slide": 7,
+      "total": 7,
+      "variant": "cta",
+      "path": "public/promo/social/carousels/six-tools/07-whole-childhood.png",
+      "format": "portrait"
+    },
+    {
+      "type": "carousel",
+      "pack": "vs-generic-apps",
+      "packName": "AmyNest vs Generic Apps",
+      "slide": 1,
+      "total": 4,
+      "variant": "hook",
+      "path": "public/promo/social/carousels/vs-generic-apps/01-parenting-app.png",
+      "format": "square"
+    },
+    {
+      "type": "carousel",
+      "pack": "vs-generic-apps",
+      "packName": "AmyNest vs Generic Apps",
+      "slide": 2,
+      "total": 4,
+      "variant": "compare",
+      "path": "public/promo/social/carousels/vs-generic-apps/02-vs-amynest-ai.png",
+      "format": "square"
+    },
+    {
+      "type": "carousel",
+      "pack": "vs-generic-apps",
+      "packName": "AmyNest vs Generic Apps",
+      "slide": 3,
+      "total": 4,
+      "variant": "feature",
+      "path": "public/promo/social/carousels/vs-generic-apps/03-modern-families.png",
+      "format": "square"
+    },
+    {
+      "type": "carousel",
+      "pack": "vs-generic-apps",
+      "packName": "AmyNest vs Generic Apps",
+      "slide": 4,
+      "total": 4,
+      "variant": "cta",
+      "path": "public/promo/social/carousels/vs-generic-apps/04-today.png",
+      "format": "square"
+    },
+    {
+      "type": "reel",
+      "id": "screen-time-guidance",
+      "headline": "Your Child Doesn't Need More Screen Time.",
+      "path": "public/promo/social/reels/screen-time-guidance.png"
+    },
+    {
+      "type": "reel",
+      "id": "daily-routines",
+      "headline": "AI Daily Routines In 60 Seconds.",
+      "path": "public/promo/social/reels/daily-routines.png"
+    },
+    {
+      "type": "reel",
+      "id": "amy-coach",
+      "headline": "Stuck With Tantrums Or Bedtime Battles?",
+      "path": "public/promo/social/reels/amy-coach.png"
+    },
+    {
+      "type": "reel",
+      "id": "speech-coach",
+      "headline": "Help Your Child Speak With Confidence.",
+      "path": "public/promo/social/reels/speech-coach.png"
+    },
+    {
+      "type": "reel",
+      "id": "learning-zone",
+      "headline": "1000+ Activities. One Learning Home.",
+      "path": "public/promo/social/reels/learning-zone.png"
+    },
+    {
+      "type": "reel",
+      "id": "nutrition-hub",
+      "headline": "Stop Stressing About Every Meal.",
+      "path": "public/promo/social/reels/nutrition-hub.png"
+    }
+  ]
+}

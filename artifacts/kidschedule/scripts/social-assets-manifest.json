@@ -1,0 +1,221 @@
+{
+  "outputDir": "public/promo/social",
+  "defaults": {
+    "logo": "public/amynest-logo-new.png",
+    "ctaUrl": "amynest.in/get-app",
+    "footer": "Patent Pending · Privacy First · Free To Start"
+  },
+  "screenshotSources": {
+    "android-01": "../../../artifacts/kidschedule-android/store-assets/screenshots/01.png",
+    "android-02": "../../../artifacts/kidschedule-android/store-assets/screenshots/02.png",
+    "android-03": "../../../artifacts/kidschedule-android/store-assets/screenshots/03.png",
+    "android-04": "../../../artifacts/kidschedule-android/store-assets/screenshots/04.png",
+    "android-05": "../../../artifacts/kidschedule-android/store-assets/screenshots/05.png",
+    "appstore-hero": "../../../screenshots/appstore-01-hero.jpg",
+    "appstore-amy": "../../../screenshots/appstore-02-ask-amy.jpg",
+    "appstore-routines": "../../../screenshots/appstore-03-routines.jpg",
+    "appstore-nutrition": "../../../screenshots/appstore-04-nutrition.jpg",
+    "appstore-behavior": "../../../screenshots/appstore-05-behavior.jpg",
+    "appstore-spelling": "../../../screenshots/appstore-06-spelling.jpg",
+    "appstore-hub": "../../../screenshots/appstore-07-hub.jpg",
+    "appstore-insights": "../../../screenshots/appstore-08-insights.jpg",
+    "appstore-coach": "../../../screenshots/appstore-09-coach.jpg",
+    "review": "../../../screenshots/amynest-review-1242x2688.jpg"
+  },
+  "carouselPacks": [
+    {
+      "id": "parenting-pain",
+      "name": "Parenting Pain → AmyNest Solution",
+      "format": "portrait",
+      "slides": [
+        {
+          "variant": "hook",
+          "eyebrow": "For Modern Parents",
+          "headline": "Parenting Is",
+          "headlineAccent": "Harder Than Ever.",
+          "subheadline": "Routines, meals, learning & communication — without a system that adapts to your child."
+        },
+        {
+          "variant": "feature",
+          "eyebrow": "Daily Routines",
+          "headline": "Stop Guessing",
+          "headlineAccent": "Your Child's Day.",
+          "subheadline": "Age-appropriate routines that fit your family's real schedule.",
+          "screenshot": "appstore-routines",
+          "accent": "#06b6d4"
+        },
+        {
+          "variant": "feature",
+          "eyebrow": "Speech Coach",
+          "headline": "Build Confidence",
+          "headlineAccent": "In Communication.",
+          "subheadline": "Guided speech practice parents can do at home.",
+          "screenshot": "android-03",
+          "accent": "#a855f7"
+        },
+        {
+          "variant": "feature",
+          "eyebrow": "Amy Coach",
+          "headline": "Real Parenting Help",
+          "headlineAccent": "Not Generic Tips.",
+          "subheadline": "Step-by-step plans for tantrums, sleep, screen time & more.",
+          "screenshot": "appstore-coach",
+          "accent": "#ec4899"
+        },
+        {
+          "variant": "feature",
+          "eyebrow": "Smart Nutrition",
+          "headline": "Meals That Match",
+          "headlineAccent": "Your Child's Needs.",
+          "subheadline": "Personalized meal ideas and nutrition guidance.",
+          "screenshot": "appstore-nutrition",
+          "accent": "#22c55e"
+        },
+        {
+          "variant": "cta",
+          "headline": "Start Building",
+          "headlineAccent": "Better Family Habits.",
+          "subheadline": "Download free on iOS & Android — routines, learning, speech & nutrition in one app."
+        }
+      ]
+    },
+    {
+      "id": "six-tools",
+      "name": "Six Tools · One Platform",
+      "format": "portrait",
+      "slides": [
+        {
+          "variant": "hook",
+          "eyebrow": "AmyNest AI",
+          "headline": "Six Tools.",
+          "headlineAccent": "One Platform.",
+          "subheadline": "Everything your child needs ages 0–14 — connected in one place."
+        },
+        {
+          "variant": "marketing",
+          "screenshot": "appstore-routines",
+          "slideLabel": "1 / 6 · Routines"
+        },
+        {
+          "variant": "marketing",
+          "screenshot": "appstore-spelling",
+          "slideLabel": "2 / 6 · Learning"
+        },
+        {
+          "variant": "marketing",
+          "screenshot": "appstore-coach",
+          "slideLabel": "3 / 6 · Amy Coach"
+        },
+        {
+          "variant": "marketing",
+          "screenshot": "appstore-nutrition",
+          "slideLabel": "4 / 6 · Nutrition"
+        },
+        {
+          "variant": "marketing",
+          "screenshot": "appstore-hub",
+          "slideLabel": "5 / 6 · Parent Hub"
+        },
+        {
+          "variant": "cta",
+          "headline": "One App.",
+          "headlineAccent": "Whole Childhood.",
+          "subheadline": "Adaptive AI that grows with your child — free to start."
+        }
+      ]
+    },
+    {
+      "id": "vs-generic-apps",
+      "name": "AmyNest vs Generic Apps",
+      "format": "square",
+      "slides": [
+        {
+          "variant": "hook",
+          "eyebrow": "Why AmyNest?",
+          "headline": "More Than A",
+          "headlineAccent": "Parenting App.",
+          "subheadline": "Typical apps give advice. AmyNest runs routines, learning, speech & coaching together."
+        },
+        {
+          "variant": "compare",
+          "headline": "Typical Apps",
+          "headlineAccent": "vs AmyNest AI",
+          "them": ["One feature", "Generic advice", "Static content"],
+          "us": ["Personalized routines", "Learning support", "Speech development", "Adaptive AI"]
+        },
+        {
+          "variant": "feature",
+          "eyebrow": "Trust & Safety",
+          "headline": "Built For",
+          "headlineAccent": "Modern Families.",
+          "subheadline": "Patent pending · Privacy first · Child safe · No ads for kids.",
+          "screenshot": "review",
+          "accent": "#6366f1"
+        },
+        {
+          "variant": "cta",
+          "headline": "Download Free",
+          "headlineAccent": "Today.",
+          "subheadline": "Join parents using AmyNest AI for smarter, calmer days at home."
+        }
+      ]
+    }
+  ],
+  "reelCovers": [
+    {
+      "id": "screen-time-guidance",
+      "headline": "Your Child Doesn't Need",
+      "headlineAccent": "More Screen Time.",
+      "subheadline": "They need better guidance — routines, learning & speech in one app.",
+      "screenshot": "android-01",
+      "badge": "Free Download"
+    },
+    {
+      "id": "daily-routines",
+      "headline": "AI Daily Routines",
+      "headlineAccent": "In 60 Seconds.",
+      "subheadline": "Personalized for your child's age, school timings & mood.",
+      "screenshot": "appstore-routines",
+      "badge": "Patent Pending"
+    },
+    {
+      "id": "amy-coach",
+      "headline": "Stuck With Tantrums",
+      "headlineAccent": "Or Bedtime Battles?",
+      "subheadline": "Amy Coach gives step-by-step plans — not generic parenting tips.",
+      "screenshot": "appstore-coach",
+      "badge": "Amy Coach"
+    },
+    {
+      "id": "speech-coach",
+      "headline": "Help Your Child",
+      "headlineAccent": "Speak With Confidence.",
+      "subheadline": "Guided speech practice at home — built into AmyNest AI.",
+      "screenshot": "android-03",
+      "badge": "Speech Coach"
+    },
+    {
+      "id": "learning-zone",
+      "headline": "1000+ Activities.",
+      "headlineAccent": "One Learning Home.",
+      "subheadline": "Phonics, math, life skills & more — adaptive to your child.",
+      "screenshot": "appstore-spelling",
+      "badge": "Learning Zone"
+    },
+    {
+      "id": "nutrition-hub",
+      "headline": "Stop Stressing",
+      "headlineAccent": "About Every Meal.",
+      "subheadline": "Smart nutrition & tiffin ideas tailored for Indian families.",
+      "screenshot": "appstore-nutrition",
+      "badge": "Smart Nutrition"
+    }
+  ],
+  "autoFromInputDir": {
+    "enabled": true,
+    "inputDir": "public/promo/social-input",
+    "formats": ["reel", "carousel-portrait"],
+    "defaultEyebrow": "AmyNest AI",
+    "defaultBadge": "Free Download"
+  }
+}
