@@ -1121,6 +1121,7 @@ export default function Dashboard() {
               <InfantDashboardShortcut
                 childId={selectedChild.id}
                 childName={selectedChild.name}
+                ageMonths={selectedChild.age * 12 + (selectedChild.ageMonths ?? 0)}
               />
             )}
 

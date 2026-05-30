@@ -34,9 +34,11 @@ import { playPhonicsBlend, playCvcBlendWithSpeak, resolvePhonicsPlaybackText } f
 import { CvcBlendPanel, CvcBlendingPracticeCard } from "@/components/cvc-blend-panel";
 import { PhonicsStopButton } from "@/components/phonics-stop-button";
 import { stopPhonicsPlayback } from "@/lib/phonics-player";
-import { PhonicsCurriculumDashboard } from "@/components/phonics-curriculum-dashboard";
+import { PhonicsJourneyHub } from "@/components/phonics-journey-hub";
+import { PhonicsLearningPacks } from "@/components/phonics-learning-packs";
 import { getCvcWordEntry } from "@workspace/phonics-sounds";
 import { cn } from "@/lib/utils";
+import { recordPhonicsHabitActivity } from "@/lib/phonics-journey-habit";
 
 const PHONICS_STAGE_ORDER: PhonicsAgeGroup[] = [
   "12_24m",
@@ -161,6 +163,7 @@ interface PhonicsLearningProps {
   initialTestType?: "daily" | "weekly";
   /** Query string suffix for navigation (e.g. `&foo=bar`). */
   childQuery?: string;
+  onPrimaryCtaChange?: (cta: PhonicsPrimaryCta) => void;
 }
 export function PhonicsLearning(props: PhonicsLearningProps) {
   return (
@@ -177,6 +180,7 @@ function PhonicsLearningContent({
   totalAgeMonths,
   initialTestType,
   childQuery = "",
+  onPrimaryCtaChange,
 }: PhonicsLearningProps) {
   const {
     t
@@ -197,11 +201,17 @@ function PhonicsLearningContent({
   );
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [extraCvcWords, setExtraCvcWords] = useState<string[]>([]);
+  const [stageBrowseOpen, setStageBrowseOpen] = useState(false);
+  const [weeklyTestOpen, setWeeklyTestOpen] = useState(false);
   // Reset the override whenever the parent switches to a different child —
   // otherwise stage stickiness leaks across siblings (architect flag).
   useEffect(() => {
     setStageOverride(null);
   }, [childId]);
+
+  useEffect(() => {
+    if (initialTestType === "weekly") setWeeklyTestOpen(true);
+  }, [initialTestType]);
 
   // Leaving the phonics module must stop any lingering phoneme/blend audio.
   useEffect(() => {
@@ -235,6 +245,28 @@ function PhonicsLearningContent({
         section: "phonics",
         correct: true,
       });
+      const item = (items ?? []).find((i) => i.id === id);
+      if (item) {
+        recordPhonicsHabitActivity(numericChildId, {
+          type: "play",
+          itemId: id,
+          symbol: item.symbol,
+        });
+      }
+    }
+  };
+
+  const handleToggleMastered = (id: string, contentId?: number) => {
+    toggleMastered(id, contentId);
+    if (Number.isFinite(numericChildId)) {
+      const item = (items ?? []).find((i) => i.id === id);
+      if (item) {
+        recordPhonicsHabitActivity(numericChildId, {
+          type: "master",
+          itemId: id,
+          symbol: item.symbol,
+        });
+      }
     }
   };
 
@@ -278,9 +310,6 @@ function PhonicsLearningContent({
   const showBlending =
     !!level?.features.blending &&
     (isPremium || !journeyGated || journeyDay >= 2);
-  const showCurriculum =
-    typeof childId === "number" &&
-    (isPremium || !journeyGated || journeyDay >= 3);
   const lockStageSelector = journeyGated && isFreeJourneyPeriod && !isPremium;
 
   const gateProps = {
@@ -353,40 +382,47 @@ function PhonicsLearningContent({
       </Card>;
   }
   return <div id="phonics-learning" className="space-y-4 scroll-mt-24">
-      <PersonalizationBadge level={level} childName={childName} />
+      {typeof childId === "number" && (
+        <PhonicsJourneyHub
+          childId={childId}
+          childName={childName}
+          totalAgeMonths={totalAgeMonths}
+          level={level}
+          progress={safeProgress}
+          practiceItems={practiceItems}
+          insights={safeInsights}
+          onPrimaryCtaChange={onPrimaryCtaChange}
+        />
+      )}
+
+      <div id="phonics-daily-quiz" className="scroll-mt-24">
+        <SubItemGate sectionId="hub_phonics" subItemId="phonics_test" {...gateProps}>
+          <PhonicsTest
+            childId={childId}
+            childName={childName}
+            totalAgeMonths={totalAgeMonths}
+            initialTestType={initialTestType === "weekly" ? undefined : initialTestType ?? "daily"}
+            testFilter="daily"
+            embeddedTitle="Quick Check"
+          />
+        </SubItemGate>
+      </div>
+
       {isPremium && activePremiumMeta && activePremiumMeta.lockedCount > 0 && (
         <PhonicsPremiumBanner meta={activePremiumMeta} childName={childName} />
       )}
       {!isPremium && activeJourneyMeta.isFreePeriod && (
         <PhonicsJourneyBanner meta={activeJourneyMeta} childName={childName} />
       )}
-      <StageSelector
-        active={level.ageGroup}
-        defaultStage={defaultLevel?.ageGroup ?? null}
-        lockOtherStages={lockStageSelector}
-        onSelect={(g) => {
-          if (lockStageSelector && g !== defaultLevel?.ageGroup) return;
-          setStageOverride(g === defaultLevel?.ageGroup ? null : g);
-        }}
-      />
-
-      {showCurriculum && (
-        <PhonicsCurriculumDashboard childId={childId as number} childQuery={childQuery} />
-      )}
-
-      <SubItemGate sectionId="hub_phonics" subItemId="phonics_todays_activity" {...gateProps}>
-        <TodaysActivityCard level={level} dailyItems={safeDailyItems.length > 0 ? safeDailyItems : safeItems} progress={safeProgress} recordPlay={recordPlay} toggleMastered={toggleMastered} />
-      </SubItemGate>
 
       <SubItemGate sectionId="hub_phonics" subItemId="phonics_practice_sounds" {...gateProps}>
-        <PracticeSoundsCard
+        <PhonicsLearningPacks
           level={level}
           items={practiceItems}
           progress={safeProgress}
           recordPlay={recordPlay}
+          toggleMastered={handleToggleMastered}
           lockedCount={isPremium ? 0 : activeJourneyMeta.lockedCount}
-          titleOverride={isPremium ? t("components.phonics_learning.todays_practice_sounds") : undefined}
-          subtitleOverride={isPremium ? t("components.phonics_learning.todays_practice_subtitle") : undefined}
         />
         {showBlending && (
           <>
@@ -445,27 +481,93 @@ function PhonicsLearningContent({
         />
       )}
 
-      <div id="phonics-test" className="scroll-mt-24">
-        <SubItemGate sectionId="hub_phonics" subItemId="phonics_test" {...gateProps}>
-          <PhonicsTest
-            childId={childId}
-            childName={childName}
-            totalAgeMonths={totalAgeMonths}
-            initialTestType={initialTestType}
-          />
-        </SubItemGate>
-      </div>
+      <Card className="rounded-3xl border-border bg-card">
+        <CardContent className="p-0">
+          <button
+            type="button"
+            className="flex w-full items-center gap-3 p-4 text-left"
+            onClick={() => setWeeklyTestOpen((o) => !o)}
+            aria-expanded={weeklyTestOpen}
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted">
+              <Trophy className="h-5 w-5 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-quicksand text-sm font-bold text-foreground">
+                Weekly Assessment
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                Deeper review — unlocks once a week
+              </p>
+            </div>
+            {weeklyTestOpen ? (
+              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+            )}
+          </button>
+          {weeklyTestOpen && (
+            <div id="phonics-test" className="scroll-mt-24 border-t border-border px-4 pb-4 pt-2">
+              <SubItemGate sectionId="hub_phonics" subItemId="phonics_test" {...gateProps}>
+                <PhonicsTest
+                  childId={childId}
+                  childName={childName}
+                  totalAgeMonths={totalAgeMonths}
+                  initialTestType={initialTestType === "weekly" ? "weekly" : undefined}
+                  testFilter="weekly"
+                  embeddedTitle="Weekly Assessment"
+                />
+              </SubItemGate>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <SubItemGate sectionId="hub_phonics" subItemId="phonics_download" {...gateProps}>
         <PhonicsDownloadCard childId={childId} />
       </SubItemGate>
+
       <div id="phonics-progress" className="scroll-mt-24">
         <SubItemGate sectionId="hub_phonics" subItemId="phonics_progress" {...gateProps}>
           <ProgressTrackerCard level={level} items={safeItems} progress={safeProgress} totalCatalog={activeJourneyMeta.totalCatalog} lockedCount={activeJourneyMeta.lockedCount} sourceLabel={phonicsData.source === "api" ? "synced to your account" : "saved on this device"} />
         </SubItemGate>
       </div>
+
       <SubItemGate sectionId="hub_phonics" subItemId="phonics_parent_tips" {...gateProps}>
         <ParentTipsCard level={level} items={safeItems} progress={safeProgress} insights={safeInsights} />
       </SubItemGate>
+
+      <Card className="rounded-3xl border-dashed border-border bg-transparent">
+        <CardContent className="p-0">
+          <button
+            type="button"
+            className="flex w-full items-center gap-3 p-4 text-left text-muted-foreground"
+            onClick={() => setStageBrowseOpen((o) => !o)}
+            aria-expanded={stageBrowseOpen}
+            data-testid="phonics-stage-selector"
+          >
+            <span className="text-sm font-semibold">Browse by age stage</span>
+            {stageBrowseOpen ? (
+              <ChevronUp className="ml-auto h-4 w-4" />
+            ) : (
+              <ChevronDown className="ml-auto h-4 w-4" />
+            )}
+          </button>
+          {stageBrowseOpen && (
+            <div className="px-4 pb-4">
+              <StageSelector
+                active={level.ageGroup}
+                defaultStage={defaultLevel?.ageGroup ?? null}
+                lockOtherStages={lockStageSelector}
+                onSelect={(g) => {
+                  if (lockStageSelector && g !== defaultLevel?.ageGroup) return;
+                  setStageOverride(g === defaultLevel?.ageGroup ? null : g);
+                }}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>;
 }
 

@@ -49,6 +49,7 @@ interface NotifTap {
   tappedAt?: number;
   source?: string;
   usedFallback?: boolean;
+  data?: Record<string, string>;
 }
 
 let _pending: NotifTap | null = null;
@@ -90,6 +91,7 @@ export function dispatchNotifDeepLink(
     notificationId: meta?.notificationId ?? undefined,
     tappedAt: meta?.tappedAt ?? Date.now(),
     source: meta?.source,
+    data: parsed,
   };
 
   _pending = { ...detail };

@@ -703,6 +703,10 @@ export interface PhonicsTestProps {
   initialTestType?: TestType;
   /** When true, render focused play UI (used on /phonics/test/play). */
   playOnly?: boolean;
+  /** Limit which test entry points are shown in idle state. */
+  testFilter?: "all" | "daily" | "weekly";
+  /** Compact heading for embedded daily/weekly sections. */
+  embeddedTitle?: string;
 }
 
 type Phase =
@@ -735,6 +739,8 @@ function PhonicsTestContent({
   totalAgeMonths,
   initialTestType,
   playOnly = false,
+  testFilter = "all",
+  embeddedTitle,
 }: PhonicsTestProps) {
   useAnimationsCss();
   const authFetch = useAuthFetch();
@@ -1187,10 +1193,14 @@ function PhonicsTestContent({
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-base sm:text-lg font-extrabold text-foreground leading-tight">
-              Phonics Test
+              {embeddedTitle ?? "Phonics Test"}
             </h3>
             <p className="text-xs text-muted-foreground">
-              Quick check of {displayName}'s phonics — Daily 5 questions or Weekly 20.
+              {testFilter === "daily"
+                ? `Takes less than 2 minutes — a gentle check of ${displayName}'s learning`
+                : testFilter === "weekly"
+                  ? `Weekly review — proof of ${displayName}'s reading growth`
+                  : `Quick check of ${displayName}'s phonics — daily or weekly.`}
             </p>
           </div>
         </div>
@@ -1228,19 +1238,24 @@ function PhonicsTestContent({
         )}
 
         {phase.kind === "idle" && availability && !availLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {(["daily", "weekly"] as const).map((tt) => {
+          <div className={cn(
+            "grid gap-3",
+            testFilter === "all" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1",
+          )}>
+            {(["daily", "weekly"] as const)
+              .filter((tt) => testFilter === "all" || testFilter === tt)
+              .map((tt) => {
               const info = availability[tt];
               const cd = formatCountdown(info.nextAvailableAt);
               const _now = now; // eslint-disable-line @typescript-eslint/no-unused-vars
-              const label = tt === "daily" ? "Daily Test" : "Weekly Test";
+              const label = tt === "daily" ? "Quick Check" : "Weekly Assessment";
               const dailyCount = testConfig?.daily.questionCount ?? 5;
               const weeklyCount = testConfig?.weekly.questionCount ?? 20;
               const noContent = testConfig?.hasContent === false;
               const sub =
                 tt === "daily"
-                  ? `${dailyCount} questions • once a day`
-                  : `${weeklyCount} questions • once a week`;
+                  ? `${dailyCount} questions · less than 2 minutes`
+                  : `${weeklyCount} questions · once a week`;
               return (
                 <Button
                   key={tt}

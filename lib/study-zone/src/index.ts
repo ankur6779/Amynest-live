@@ -73,7 +73,38 @@ export {
   type JourneyStageId,
   type FutureWorld,
   type CurriculumUnlockSnapshot,
+  type FutureLessonBreakdown,
+  type LearningTimelineMilestone,
+  type StageTopicPreview,
+  WHY_STAY_WITH_AMYNEST,
+  FUTURE_STAGE_PREVIEWS,
+  buildLearningTimeline,
+  futureStagePreviewsForChild,
+  getNextUnlockWorld,
 } from "./curriculum-catalog";
+export {
+  computeNextMilestone,
+  personalizedFutureWorlds,
+  buildAchievementCollection,
+  buildStreakCalendar,
+  streakRewardLabel,
+  buildGrowthDashboard,
+  buildFutureRewards,
+  buildSuccessProjection,
+  buildReEngagementCard,
+  buildUniverseMap,
+  MILESTONE_LESSON_TARGET,
+  type RetentionProgressInput,
+  type NextMilestone,
+  type PersonalizedWorld,
+  type StudyAchievement,
+  type GrowthDashboard,
+  type FutureReward,
+  type SuccessProjection,
+  type ReEngagementCard,
+  type UniverseMapNode,
+  type StreakCalendarDay,
+} from "./retention-engine";
 
 import type { PlayCategory, SubjectPack, StudyTopic, PlayItem, PlayCategoryId } from "./types";
 import { PLAY_CATEGORIES } from "./content/play";

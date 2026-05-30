@@ -148,6 +148,7 @@ function categoryEnabled(
     case "phonics":            return prefs.phonicsEnabled;
     case "learning_activity":  return prefs.learningActivityEnabled;
     case "milestone":          return prefs.milestoneEnabled;
+    case "infant_care":        return prefs.infantCareEnabled;
     default:                   return true;
   }
 }

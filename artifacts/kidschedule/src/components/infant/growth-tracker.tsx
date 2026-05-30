@@ -1,18 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TrendingUp, Plus } from "lucide-react";
 import { fetchGrowthHistory, logGrowth } from "@/lib/infant-care-api";
-import { trackInfantHubEvent } from "@/lib/infant-hub-analytics";
+import type { InfantActivationStatus } from "@/lib/infant-activation-api";
+import { infantActivationQueryKey } from "@/lib/infant-activation-api";
+import { trackGrowthMeasurementAdded, trackGrowthChartViewed } from "@/lib/infant-hub-analytics";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 
 type GrowthTrackerProps = {
   childId: number;
   ageMonths: number;
+  activation?: InfantActivationStatus;
 };
 
-export function GrowthTracker({ childId, ageMonths }: GrowthTrackerProps) {
+export function GrowthTracker({ childId, ageMonths, activation }: GrowthTrackerProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -36,6 +39,12 @@ export function GrowthTracker({ childId, ageMonths }: GrowthTrackerProps) {
 
   const latest = measurements[0];
 
+  useEffect(() => {
+    if (measurements.length > 0) {
+      trackGrowthChartViewed(childId, ageMonths);
+    }
+  }, [childId, ageMonths, measurements.length]);
+
   async function handleSave() {
     setSaving(true);
     try {
@@ -44,8 +53,13 @@ export function GrowthTracker({ childId, ageMonths }: GrowthTrackerProps) {
         heightCm: height ? parseFloat(height) : undefined,
         headCm: head ? parseFloat(head) : undefined,
       });
-      trackInfantHubEvent("growth_log", { childId });
+      const types: Array<"weight" | "height" | "head_circumference"> = [];
+      if (weight) types.push("weight");
+      if (height) types.push("height");
+      if (head) types.push("head_circumference");
+      trackGrowthMeasurementAdded(childId, ageMonths, types);
       await queryClient.invalidateQueries({ queryKey: ["infant-growth", childId] });
+      await queryClient.invalidateQueries({ queryKey: infantActivationQueryKey(childId) });
       setWeight("");
       setHeight("");
       setHead("");
@@ -59,6 +73,21 @@ export function GrowthTracker({ childId, ageMonths }: GrowthTrackerProps) {
 
   return (
     <div className="space-y-4" data-testid="growth-tracker" id="infant-growth">
+      {!latest && (
+        <div className="rounded-xl border border-dashed border-emerald-400/30 bg-emerald-500/5 p-4 text-center space-y-2">
+          <p className="text-sm font-semibold text-foreground/90">
+            {t("components.growth_tracker.preview_title", "Growth Chart Preview")}
+          </p>
+          <p className="text-[12px] text-muted-foreground leading-snug">
+            {t(
+              "components.growth_tracker.preview_body",
+              activation?.steps.weight
+                ? "Add another measurement to see trends."
+                : "Add first weight measurement to unlock growth tracking.",
+            )}
+          </p>
+        </div>
+      )}
       {latest && (
         <div className="rounded-xl border border-border bg-muted/40 p-3 space-y-2">
           <div className="flex items-center gap-2">

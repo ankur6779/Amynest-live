@@ -9,6 +9,7 @@ import { useDebugMode } from "@/contexts/debug-context";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToast } from "@/hooks/use-toast";
+import { InfantAnalyticsDebugPanel } from "@/components/infant/infant-analytics-debug-panel";
 import { SHOW_BOOT_HUD } from "@/lib/is-dev";
 
 const SCREEN_NAMES: Record<string, string> = {
@@ -308,6 +309,10 @@ function DebugPanelDev() {
                   <InfoRow label="Screen" value={screenName} />
                   <InfoRow label="Platform" value="web" />
                   <InfoRow label="Total API calls" value={String(entries.length)} />
+                </Section>
+
+                <Section title="Infant Analytics">
+                  <InfantAnalyticsDebugPanel />
                 </Section>
 
                 <Section title="Quick Links">

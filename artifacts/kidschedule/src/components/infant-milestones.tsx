@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Trophy, Target, Heart, ChevronDown, ChevronUp, PlayCircle, CheckCircle2, RotateCcw, ArrowUp, Clock, TrendingUp, Lightbulb, Smile, Baby, BookOpen, Cloud, CloudOff } from "lucide-react";
 import { getApiUrl } from "@/lib/api";
+import { trackMilestoneViewed, trackMilestoneCompleted } from "@/lib/infant-hub-analytics";
 
 // ─── Milestone Data Model ─────────────────────────────────────────────────────
 type MState = "not_started" | "in_progress" | "achieved";
@@ -655,6 +656,7 @@ export function BuddyMilestonePlanner({
       setSyncState(ok ? "synced" : "offline");
     });
     if (state === "achieved") {
+      trackMilestoneCompleted(childId, ageMonths, { milestoneId: id, category: bandMilestones.find(m => m.id === id)?.category });
       const idx = Math.floor(Math.random() * 3) + 1;
       toast({
         description: t(`toasts.infant_milestones.achieved_${idx}`)
@@ -743,7 +745,11 @@ export function BuddyMilestonePlanner({
         </div>
 
         <div className="space-y-2.5">
-          {weeklyPlan.map(m => <MilestoneCard key={m.id} milestone={m} state={progress[m.id]?.state ?? "not_started"} isOpen={expanded === m.id} onToggle={() => setExpanded(expanded === m.id ? null : m.id)} onSetState={s => setState(m.id, s)} />)}
+          {weeklyPlan.map(m => <MilestoneCard key={m.id} milestone={m} state={progress[m.id]?.state ?? "not_started"} isOpen={expanded === m.id} onToggle={() => {
+            const opening = expanded !== m.id;
+            setExpanded(opening ? m.id : null);
+            if (opening) trackMilestoneViewed(childId, ageMonths, { milestoneId: m.id, category: m.category });
+          }} onSetState={s => setState(m.id, s)} />)}
 
           {weeklyPlan.length === 0 && <div className="rounded-xl border-2 border-dashed border-border/60 px-3 py-6 text-center">
               <Baby className="h-5 w-5 text-muted-foreground mx-auto mb-2" />

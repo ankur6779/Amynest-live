@@ -25,6 +25,7 @@ import {
 import { logNavEvent } from "@/lib/navigation-log";
 import { recordNotificationOpened } from "@/lib/notification-engagement";
 import { trackNotificationClicked, trackDeepLinkEvent } from "@/lib/deep-link-analytics";
+import { recordInfantNotificationOutcomeFireAndForget } from "@/lib/infant-notification-api";
 import { createNotificationIntent } from "@/lib/intent-recovery-client";
 
 interface NotifDeepLinkEvent {
@@ -36,6 +37,7 @@ interface NotifDeepLinkEvent {
   notificationId?: string;
   tappedAt?: number;
   source?: NotificationNavRequest["source"];
+  data?: Record<string, string>;
 }
 
 function handleNotificationTap(
@@ -88,6 +90,13 @@ function handleNotificationTap(
   consumeNotificationNavigation(req);
   if (req.userInteraction === true) {
     recordNotificationOpened();
+    if (payload.category === "infant_care") {
+      recordInfantNotificationOutcomeFireAndForget({
+        action: "opened",
+        kind: payload.data?.infantKind,
+        childId: payload.data?.childId ? Number(payload.data.childId) : undefined,
+      });
+    }
     trackNotificationClicked({
       category: payload.category,
       path: decision.resolvedPath,
@@ -129,6 +138,7 @@ export function useNotificationDeepLink(): void {
           source:
             (pending.source as NotificationNavRequest["source"]) ??
             "pending-buffer",
+          data: pending.data,
         },
         "pending-buffer",
       );

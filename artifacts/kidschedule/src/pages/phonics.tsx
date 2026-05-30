@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useSearch } from "wouter";
-import { ArrowLeft, BookOpen, ClipboardCheck, GraduationCap, Loader2, Play, TrendingUp, UserPlus } from "lucide-react";
+import { ArrowLeft, Loader2, Play, UserPlus } from "lucide-react";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { AppLink, useAppNavigate } from "@/components/app-link";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,10 @@ import { LockedBlock } from "@/components/locked-block";
 import { PhonicsLearning } from "@/components/phonics-learning";
 import { getPhonicsLevel } from "@/lib/phonics-content";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
+import {
+  resolvePrimaryCta,
+  type PhonicsPrimaryCta,
+} from "@/lib/phonics-journey-roadmap";
 
 type Child = {
   id: number;
@@ -19,20 +23,31 @@ type Child = {
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
+const DEFAULT_CTA: PhonicsPrimaryCta = resolvePrimaryCta({
+  missionStarted: false,
+  missionComplete: false,
+  dailyQuizComplete: false,
+});
+
 function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 export default function PhonicsPage() {
   const [location] = useLocation();
-  const { navigate, back } = useAppNavigate();
+  const { back } = useAppNavigate();
   const search = useSearch();
   const { locked, onEngage } = useHubModuleGate("hub_phonics");
+  const [primaryCta, setPrimaryCta] = useState<PhonicsPrimaryCta>(DEFAULT_CTA);
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
     const saved = Number(window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY));
     return Number.isFinite(saved) && saved > 0 ? saved : null;
   });
+
+  const handlePrimaryCtaChange = useCallback((cta: PhonicsPrimaryCta) => {
+    setPrimaryCta(cta);
+  }, []);
 
   const { data: children = [], isLoading } = useListChildren({
     query: {
@@ -55,7 +70,6 @@ export default function PhonicsPage() {
     ? activeChild.age * 12 + (activeChild.ageMonths ?? 0)
     : 0;
   const currentLevel = useMemo(() => getPhonicsLevel(totalAgeMonths), [totalAgeMonths]);
-  const isEligible = !!currentLevel;
 
   useEffect(() => {
     if (!activeChild) return;
@@ -63,16 +77,11 @@ export default function PhonicsPage() {
     window.localStorage.setItem(ACTIVE_CHILD_STORAGE_KEY, String(activeChild.id));
   }, [activeChild]);
 
-  const goToTest = (type?: "daily" | "weekly") => {
-    if (!activeChild) return;
-    const params = new URLSearchParams({ childId: String(activeChild.id) });
-    if (type) params.set("type", type);
-    navigate(`/phonics/test?${params.toString()}`, { source: "phonics-go-to-test" });
-  };
-
   useEffect(() => {
     if (!location.includes("/phonics/test")) return;
-    window.setTimeout(() => scrollToSection("phonics-test"), 150);
+    const type = new URLSearchParams(search).get("type");
+    const target = type === "weekly" ? "phonics-test" : "phonics-daily-quiz";
+    window.setTimeout(() => scrollToSection(target), 150);
   }, [location, search]);
 
   const goBack = () => {
@@ -131,15 +140,18 @@ export default function PhonicsPage() {
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div className="min-w-0">
-            <h1 className="font-quicksand text-xl font-black leading-tight text-foreground">Phonics Learning</h1>
+            <h1 className="font-quicksand text-xl font-black leading-tight text-foreground">
+              Reading Journey
+            </h1>
             <p className="truncate text-xs text-muted-foreground">
-              {activeChild.name} {currentLevel ? `- ${currentLevel.shortLabel}` : "- personalised by age"}
+              {activeChild.name}
+              {currentLevel ? ` · ${currentLevel.shortLabel}` : " · personalised by age"}
             </p>
           </div>
         </div>
       </header>
 
-      <main className="scroll-safe min-h-0 flex-1 px-4 pt-4">
+      <main className="scroll-safe min-h-0 flex-1 px-4 pt-4 pb-24">
         <LockedBlock locked={locked} rounded="rounded-2xl">
           <div
             className="mx-auto max-w-4xl space-y-4"
@@ -148,96 +160,38 @@ export default function PhonicsPage() {
               if (e.key === "Enter" || e.key === " ") onEngage();
             }}
           >
-          <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-                <BookOpen className="h-6 w-6" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Focused screen</p>
-                <h2 className="font-quicksand text-2xl font-black text-foreground">Learn sounds without distractions</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Practice, test, and track phonics progress in a full-screen learning flow.
-                </p>
-              </div>
-            </div>
-          </section>
+            {eligibleChildren.length > 1 && (
+              <section className="flex gap-2 overflow-x-auto pb-1" aria-label="Choose child">
+                {eligibleChildren.map((child) => (
+                  <button
+                    key={child.id}
+                    type="button"
+                    onClick={() => setSelectedChildId(child.id)}
+                    className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold ${
+                      activeChild.id === child.id
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-foreground"
+                    }`}
+                  >
+                    {child.name}
+                  </button>
+                ))}
+              </section>
+            )}
 
-          <section className="grid gap-3 sm:grid-cols-3" aria-label="Phonics overview">
-            <Card className="rounded-2xl border-border bg-card">
-              <CardContent className="p-4">
-                <GraduationCap className="mb-2 h-5 w-5 text-primary" />
-                <p className="text-xs font-bold uppercase text-muted-foreground">Current Level</p>
-                <p className="mt-1 font-quicksand text-lg font-black text-foreground">
-                  {currentLevel?.shortLabel ?? "Not available"}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">{currentLevel?.focus ?? "Phonics supports ages 1-6."}</p>
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-2xl border-border bg-card">
-              <CardContent className="p-4">
-                <TrendingUp className="mb-2 h-5 w-5 text-primary" />
-                <p className="text-xs font-bold uppercase text-muted-foreground">Progress</p>
-                <p className="mt-1 font-quicksand text-lg font-black text-foreground">Tracker</p>
-                <button
-                  type="button"
-                  onClick={() => scrollToSection("phonics-progress")}
-                  className="mt-1 text-xs font-bold text-primary"
-                >
-                  View progress
-                </button>
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-2xl border-border bg-card">
-              <CardContent className="p-4">
-                <ClipboardCheck className="mb-2 h-5 w-5 text-primary" />
-                <p className="text-xs font-bold uppercase text-muted-foreground">Start Test</p>
-                <p className="mt-1 font-quicksand text-lg font-black text-foreground">Daily or Weekly</p>
-                <button
-                  type="button"
-                  onClick={() => goToTest()}
-                  disabled={!isEligible}
-                  className="mt-1 text-xs font-bold text-primary disabled:text-muted-foreground"
-                >
-                  Go to test
-                </button>
-              </CardContent>
-            </Card>
-          </section>
-
-          {eligibleChildren.length > 1 && (
-            <section className="flex gap-2 overflow-x-auto pb-1" aria-label="Choose child">
-              {eligibleChildren.map((child) => (
-                <button
-                  key={child.id}
-                  type="button"
-                  onClick={() => setSelectedChildId(child.id)}
-                  className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold ${
-                    activeChild.id === child.id
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card text-foreground"
-                  }`}
-                >
-                  {child.name}
-                </button>
-              ))}
-            </section>
-          )}
-
-          <PhonicsLearning
-            childQuery={search}
-            childId={activeChild.id}
-            childName={activeChild.name}
-            totalAgeMonths={totalAgeMonths}
-            initialTestType={
-              (() => {
-                const t = new URLSearchParams(search).get("type");
-                return t === "daily" || t === "weekly" ? t : undefined;
-              })()
-            }
-          />
+            <PhonicsLearning
+              childQuery={search}
+              childId={activeChild.id}
+              childName={activeChild.name}
+              totalAgeMonths={totalAgeMonths}
+              onPrimaryCtaChange={handlePrimaryCtaChange}
+              initialTestType={
+                (() => {
+                  const t = new URLSearchParams(search).get("type");
+                  return t === "daily" || t === "weekly" ? t : undefined;
+                })()
+              }
+            />
           </div>
         </LockedBlock>
       </main>
@@ -250,26 +204,17 @@ export default function PhonicsPage() {
             if (e.key === "Enter" || e.key === " ") onEngage();
           }}
         >
-        <div className="mx-auto grid max-w-4xl grid-cols-2 gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => scrollToSection("phonics-learning")}
-            className="h-12 rounded-2xl gap-2 border-white/20 text-white hover:bg-white/10"
-          >
-            <Play className="h-4 w-4" />
-            Continue
-          </Button>
-          <Button
-            type="button"
-            onClick={() => goToTest()}
-            disabled={!isEligible}
-            className="h-12 rounded-2xl gap-2 bg-orange-500 font-semibold text-white hover:bg-orange-600"
-          >
-            <ClipboardCheck className="h-4 w-4" />
-            Start Test
-          </Button>
-        </div>
+          <div className="mx-auto max-w-4xl">
+            <Button
+              type="button"
+              onClick={() => scrollToSection(primaryCta.scrollTarget)}
+              className="h-12 w-full rounded-2xl gap-2 bg-primary font-semibold text-primary-foreground"
+              data-testid="phonics-primary-cta"
+            >
+              <Play className="h-4 w-4" />
+              {primaryCta.label}
+            </Button>
+          </div>
         </div>
       </LockedBlock>
     </div>

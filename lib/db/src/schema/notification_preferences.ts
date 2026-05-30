@@ -52,6 +52,7 @@ export const notificationPreferencesTable = pgTable("notification_preferences", 
   phonicsEnabled: boolean("phonics_enabled").notNull().default(true),
   learningActivityEnabled: boolean("learning_activity_enabled").notNull().default(true),
   milestoneEnabled: boolean("milestone_enabled").notNull().default(true),
+  infantCareEnabled: boolean("infant_care_enabled").notNull().default(true),
 
   // ── Scheduling ───────────────────────────────────────────────────────────
   timezone: text("timezone").notNull().default("Asia/Kolkata"),
@@ -113,6 +114,7 @@ export const NOTIFICATION_CATEGORIES = [
   "phonics",
   "learning_activity",
   "milestone",
+  "infant_care",
 ] as const;
 export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
 

@@ -17,11 +17,19 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { Mic, Square, Activity, Baby, AlertTriangle, ShieldAlert, Loader2, RefreshCw, Sparkles, History, MessageCircleHeart } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { getApiUrl } from "@/lib/api";
+import { infantActivationQueryKey } from "@/lib/infant-activation-api";
 import { microphoneSessionManager } from "@/lib/microphone-session-manager";
+import {
+  trackCryRecordingStarted,
+  trackCryRecordingCompleted,
+  trackCryAnalysisCompleted,
+  trackCryAnalysisFailed,
+} from "@/lib/infant-hub-analytics";
 interface CryInsightProps {
   childId: number;
   childName: string;
@@ -171,6 +179,7 @@ export function CryInsight({
   const {
     toast
   } = useToast();
+  const queryClient = useQueryClient();
 
   // Context form state
   const [feedHrs, setFeedHrs] = useState<number>(2);
@@ -253,6 +262,7 @@ export function CryInsight({
       body: JSON.stringify(body)
     });
     if (!r.ok) {
+      trackCryAnalysisFailed(childId, ageMonths, `http_${r.status}`);
       toast({
         title: t("toasts.cry_insight.analyse_failed_title"),
         description: t("toasts.cry_insight.analyse_failed_body", {
@@ -267,8 +277,13 @@ export function CryInsight({
       session: CrySession;
     };
     setResult(j.session);
+    trackCryAnalysisCompleted(childId, ageMonths, {
+      likelyCause: j.session.primary.cause,
+      confidence: j.session.primary.confidence,
+    });
+    void queryClient.invalidateQueries({ queryKey: infantActivationQueryKey(childId) });
     void fetchHistory();
-  }, [ageMonths, childId, diaperRecent, feedHrs, fever, fetchHistory, sleepHrs, toast]);
+  }, [ageMonths, childId, diaperRecent, feedHrs, fever, fetchHistory, queryClient, sleepHrs, toast]);
 
   // ─── Start recording ────────────────────────────────────────────────────────
   const startRecording = useCallback(async () => {
@@ -277,6 +292,7 @@ export function CryInsight({
     setRecording(true);
     setElapsedMs(0);
     startedAtRef.current = Date.now();
+    trackCryRecordingStarted(childId, ageMonths);
 
     const success = await microphoneSessionManager.startRecording({
       echoCancellation: true,
@@ -310,6 +326,9 @@ export function CryInsight({
         const blob = new Blob(chunks, { type: "audio/webm" });
 
         try {
+          if (elapsed >= RECORD_MIN_MS) {
+            trackCryRecordingCompleted(childId, ageMonths, Math.round(elapsed / 1000));
+          }
           const stats = elapsed >= RECORD_MIN_MS ? await analyseRecording(blob) : {
             durationMs: 0
           };
@@ -333,7 +352,7 @@ export function CryInsight({
         void microphoneSessionManager.stopRecording();
       }
     }, 100);
-  }, [analysing, recording, submit, toast]);
+  }, [analysing, ageMonths, childId, recording, submit, toast]);
 
   const stopRecording = useCallback(() => {
     void microphoneSessionManager.stopRecording();

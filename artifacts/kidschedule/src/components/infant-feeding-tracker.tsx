@@ -1,10 +1,11 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Flame, Clock, Baby } from "lucide-react";
 import { getFeedingGuide, pickLang, type Lang } from "@workspace/infant-hub";
 import { fetchInfantCareSummary, logInfantCare, type InfantCareLogType } from "@/lib/infant-care-api";
-import { trackInfantHubEvent } from "@/lib/infant-hub-analytics";
+import { infantActivationQueryKey } from "@/lib/infant-activation-api";
+import { trackFeedLogged, trackFeedingHistoryViewed } from "@/lib/infant-hub-analytics";
 import { suggestedFeedIntervalMin } from "@workspace/infant-hub";
 
 type FeedKind = "breast" | "bottle" | "solid";
@@ -54,12 +55,18 @@ export function InfantFeedingTracker({
   const logFeed = useCallback(
     async (kind: FeedKind) => {
       await logInfantCare(childId, KIND_TO_LOG[kind]);
-      trackInfantHubEvent("feed_log", { childId, kind });
+      const feedType = kind === "solid" ? "solids" : kind;
+      trackFeedLogged(childId, ageMonths, feedType);
       await queryClient.invalidateQueries({ queryKey: ["infant-care-summary", childId] });
       await queryClient.invalidateQueries({ queryKey: ["infant-today", childId] });
+      await queryClient.invalidateQueries({ queryKey: infantActivationQueryKey(childId) });
     },
-    [childId, queryClient],
+    [childId, ageMonths, queryClient],
   );
+
+  useEffect(() => {
+    trackFeedingHistoryViewed(childId, ageMonths);
+  }, [childId, ageMonths]);
 
   const kindLabel = useMemo(
     () => ({

@@ -8,6 +8,7 @@ export type ClientLogType =
   | "warning"
   | "info"
   | "subscription_funnel"
+  | "infant_parenting"
   | `amy_voice_${string}`
   | `learning_progress_${string}`;
 

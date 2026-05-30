@@ -369,6 +369,31 @@ export async function ensureInfantCareTables(): Promise<void> {
       ON child_caregivers (invite_code)
   `);
 
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS infant_notification_prefs (
+      id                 SERIAL PRIMARY KEY,
+      user_id            TEXT NOT NULL,
+      child_id           INTEGER NOT NULL,
+      nap_reminders      BOOLEAN NOT NULL DEFAULT true,
+      feed_reminders     BOOLEAN NOT NULL DEFAULT true,
+      vaccine_reminders  BOOLEAN NOT NULL DEFAULT true,
+      milestone_tips     BOOLEAN NOT NULL DEFAULT true,
+      sleep_drift        BOOLEAN NOT NULL DEFAULT false,
+      max_per_day        INTEGER NOT NULL DEFAULT 2,
+      snooze_until       JSONB NOT NULL DEFAULT '{}'::jsonb,
+      updated_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS infant_notification_prefs_user_child_uniq
+      ON infant_notification_prefs (user_id, child_id)
+  `);
+
+  await db.execute(sql`
+    ALTER TABLE notification_preferences
+      ADD COLUMN IF NOT EXISTS infant_care_enabled BOOLEAN NOT NULL DEFAULT true
+  `);
+
   logger.info({ evt: "db.ensure", table: "infant_care" }, "Ensured infant care tables");
 }
 

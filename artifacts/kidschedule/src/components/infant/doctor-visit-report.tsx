@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FileDown, Loader2 } from "lucide-react";
 import { fetchDoctorReport } from "@/lib/infant-care-api";
-import { trackInfantHubEvent } from "@/lib/infant-hub-analytics";
+import { trackDoctorReportGenerated, trackDoctorReportExported } from "@/lib/infant-hub-analytics";
 import { Button } from "@/components/ui/button";
 
 type DoctorVisitReportProps = {
   childId: number;
   childName: string;
+  ageMonths: number;
 };
 
 function openPrintableReport(childName: string, data: Record<string, unknown>) {
@@ -37,7 +38,7 @@ h1{font-size:20px}h2{font-size:14px;margin-top:20px;color:#444}ul{padding-left:1
   w.print();
 }
 
-export function DoctorVisitReport({ childId, childName }: DoctorVisitReportProps) {
+export function DoctorVisitReport({ childId, childName, ageMonths }: DoctorVisitReportProps) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
 
@@ -45,8 +46,9 @@ export function DoctorVisitReport({ childId, childName }: DoctorVisitReportProps
     setBusy(true);
     try {
       const data = await fetchDoctorReport(childId);
-      trackInfantHubEvent("doctor_report_export", { childId });
+      trackDoctorReportGenerated(childId, ageMonths);
       openPrintableReport(childName, data);
+      trackDoctorReportExported(childId, ageMonths, "print");
     } finally {
       setBusy(false);
     }

@@ -3,11 +3,14 @@ import { useTranslation } from "react-i18next";
 import { ArrowRight, Baby, Moon, Flame, Activity, Syringe, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useInfantToday } from "@/hooks/use-infant-today";
-import { trackInfantHubEvent } from "@/lib/infant-hub-analytics";
+import { trackBabyTodayViewed, trackBabyTodayCtaClicked } from "@/lib/infant-hub-analytics";
+import type { InfantActivationStatus } from "@/lib/infant-activation-api";
 
 type BabyTodayCardProps = {
   childId: number;
   childName: string;
+  ageMonths?: number;
+  activation?: InfantActivationStatus;
   onViewFullPlan?: () => void;
   compact?: boolean;
 };
@@ -15,6 +18,8 @@ type BabyTodayCardProps = {
 export function BabyTodayCard({
   childId,
   childName,
+  ageMonths: ageMonthsProp,
+  activation,
   onViewFullPlan,
   compact = false,
 }: BabyTodayCardProps) {
@@ -22,7 +27,13 @@ export function BabyTodayCard({
   const { data, isLoading, isError } = useInfantToday(childId);
 
   useEffect(() => {
-    if (data) trackInfantHubEvent("baby_today_view", { childId, surface: compact ? "dashboard" : "hub" });
+    if (!data) return;
+    trackBabyTodayViewed(childId, data.ageMonths, {
+      sleepScore: data.sleepScore,
+      hasUpcomingVaccine: data.vaccineStatus !== "None Due" && data.vaccineStatus !== "—",
+      hasCareLogs: Boolean(data.lastFeed || data.lastSleep),
+      surface: compact ? "dashboard" : "hub",
+    });
   }, [childId, compact, data]);
 
   if (isLoading) {
@@ -41,16 +52,42 @@ export function BabyTodayCard({
     );
   }
 
+  const previewNextNap = !activation?.steps.sleep
+    ? t("components.baby_today.preview_next_nap", "Available after first sleep log")
+    : null;
+  const previewNextFeed = !activation?.steps.feed
+    ? t("components.baby_today.preview_next_feed", "Log your first feed to see predictions")
+    : null;
+  const previewSleepScore = !activation?.steps.sleep
+    ? t("components.baby_today.preview_sleep_score", "Unlocks after sleep logs")
+    : null;
+
   const rows = [
-    { icon: Moon, label: t("components.baby_today.next_nap", "Next Nap"), value: data.nextNap ?? "—" },
-    { icon: Flame, label: t("components.baby_today.next_feed", "Next Feed"), value: data.nextFeed ?? "—" },
+    {
+      icon: Moon,
+      label: t("components.baby_today.next_nap", "Next Nap"),
+      value: previewNextNap ?? data.nextNap ?? "—",
+      muted: Boolean(previewNextNap),
+    },
+    {
+      icon: Flame,
+      label: t("components.baby_today.next_feed", "Next Feed"),
+      value: previewNextFeed ?? data.nextFeed ?? "—",
+      muted: Boolean(previewNextFeed),
+    },
     {
       icon: Activity,
       label: t("components.baby_today.activity", "Activity"),
       value: data.activity ? `${data.activity.emoji} ${data.activity.title}` : "—",
+      muted: false,
     },
-    { icon: Syringe, label: t("components.baby_today.vaccine", "Vaccine"), value: data.vaccineStatus },
-    { icon: Sparkles, label: t("components.baby_today.sleep_score", "Sleep Score"), value: data.sleepScore },
+    { icon: Syringe, label: t("components.baby_today.vaccine", "Vaccine"), value: data.vaccineStatus, muted: false },
+    {
+      icon: Sparkles,
+      label: t("components.baby_today.sleep_score", "Sleep Score"),
+      value: previewSleepScore ?? data.sleepScore,
+      muted: Boolean(previewSleepScore),
+    },
   ];
 
   return (
@@ -79,11 +116,18 @@ export function BabyTodayCard({
       </div>
 
       <ul className="relative space-y-2">
-        {rows.map(({ icon: Icon, label, value }) => (
+        {rows.map(({ icon: Icon, label, value, muted }) => (
           <li key={label} className="flex items-center gap-2.5 text-sm">
             <Icon className="h-3.5 w-3.5 text-violet-400 shrink-0" />
             <span className="text-muted-foreground min-w-[88px]">{label}</span>
-            <span className="font-semibold text-foreground truncate">{value}</span>
+            <span
+              className={[
+                "font-semibold truncate",
+                muted ? "text-muted-foreground italic font-normal text-[12px]" : "text-foreground",
+              ].join(" ")}
+            >
+              {value}
+            </span>
           </li>
         ))}
       </ul>
@@ -92,7 +136,7 @@ export function BabyTodayCard({
         <Button
           type="button"
           onClick={() => {
-            trackInfantHubEvent("baby_today_cta", { childId });
+            trackBabyTodayCtaClicked(childId, data.ageMonths ?? ageMonthsProp ?? 0, "view_plan");
             onViewFullPlan();
           }}
           className="relative mt-4 w-full rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold gap-2"

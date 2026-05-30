@@ -190,19 +190,6 @@ export default function StudyPage() {
               <AmyPresenceStrip surface="study" childId={activeChildId} />
             </div>
           )}
-          {child && mode && (
-            <StudyCurriculumVisibility
-              childAge={child.age}
-              childClass={child.childClass}
-              mode={mode}
-              childName={child.name}
-              nextSessionUnlocks={learningProgress.unlocks?.nextSessionUnlocks}
-              onNextSessionVisible={trackNextSessionOpened}
-            />
-          )}
-          {learningProgress.profile && (
-            <ProgressionStrip profile={learningProgress.profile} className="mb-3" />
-          )}
           {learningProgress.unlocks && (
             <DailyFreshnessCard
               items={learningProgress.unlocks.todaysUnlocks}
@@ -220,6 +207,23 @@ export default function StudyPage() {
             recordActivity={recordActivity}
             onOpen={(catId) => setView({ kind: "play-cat", childId: view.childId, categoryId: catId })}
           />
+          {learningProgress.profile && (
+            <ProgressionStrip profile={learningProgress.profile} className="mb-3" />
+          )}
+          {child && mode && (
+            <StudyCurriculumVisibility
+              childId={view.childId}
+              childAge={child.age}
+              childClass={child.childClass}
+              mode={mode}
+              childName={child.name}
+              progress={progress}
+              todayUnlockTitles={learningProgress.unlocks?.todaysUnlocks.map((u) => u.title)}
+              nextSessionUnlocks={learningProgress.unlocks?.nextSessionUnlocks}
+              onNextSessionVisible={trackNextSessionOpened}
+              onContinuePlay={(categoryId) => setView({ kind: "play-cat", childId: view.childId, categoryId })}
+            />
+          )}
         </>
       ) : view.kind === "play-cat" ? (
         <PlayCategoryView
@@ -235,17 +239,6 @@ export default function StudyPage() {
         />
       ) : view.kind === "study-home" ? (
         <>
-          {child && mode && (
-            <StudyCurriculumVisibility
-              childAge={child.age}
-              childClass={child.childClass}
-              mode={mode}
-              childName={child.name}
-              nextSessionUnlocks={learningProgress.unlocks?.nextSessionUnlocks}
-              onNextSessionVisible={trackNextSessionOpened}
-            />
-          )}
-          {progress && <EngagementStrip engagement={progress.engagement} />}
           <TodaysPlanSection
             childId={view.childId}
             childName={child?.name ?? ""}
@@ -268,6 +261,20 @@ export default function StudyPage() {
             progress={progress}
             onOpen={(subjId) => setView({ kind: "study-subject", childId: view.childId, mode: view.mode, subjectId: subjId })}
           />
+          {progress && <EngagementStrip engagement={progress.engagement} />}
+          {child && mode && (
+            <StudyCurriculumVisibility
+              childId={view.childId}
+              childAge={child.age}
+              childClass={child.childClass}
+              mode={mode}
+              childName={child.name}
+              progress={progress}
+              todayUnlockTitles={learningProgress.unlocks?.todaysUnlocks.map((u) => u.title)}
+              nextSessionUnlocks={learningProgress.unlocks?.nextSessionUnlocks}
+              onNextSessionVisible={trackNextSessionOpened}
+            />
+          )}
         </>
       ) : view.kind === "smart-pick" ? (
         <SmartSubjectPicker

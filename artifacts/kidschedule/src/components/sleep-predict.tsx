@@ -10,9 +10,12 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { Moon, Sun, BedDouble, Sparkles, AlarmClock, ShieldAlert, Loader2, RefreshCw, History, Lightbulb, CloudMoon, Bell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getApiUrl } from "@/lib/api";
+import { infantActivationQueryKey } from "@/lib/infant-activation-api";
+import { trackSleepPredictionViewed, trackSleepLogAdded } from "@/lib/infant-hub-analytics";
 interface SleepPredictProps {
   childId: number;
   childName: string;
@@ -263,6 +266,7 @@ export function SleepPredict({
   const {
     toast
   } = useToast();
+  const queryClient = useQueryClient();
   const [data, setData] = useState<PredictResponse | null>(null);
   const [history, setHistory] = useState<NapSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -294,6 +298,7 @@ export function SleepPredict({
       if (pRes.ok) {
         const json = (await pRes.json()) as PredictResponse;
         setData(json);
+        trackSleepPredictionViewed(childId, ageMonths);
       }
       if (hRes.ok) {
         const json = (await hRes.json()) as {
@@ -314,7 +319,7 @@ export function SleepPredict({
     } finally {
       setLoading(false);
     }
-  }, [childId, toast]);
+  }, [ageMonths, childId, toast]);
   useEffect(() => {
     void refresh();
   }, [refresh]);
@@ -337,9 +342,12 @@ export function SleepPredict({
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       setActiveStartIso(startedAt);
+      trackSleepLogAdded(childId, ageMonths, { sleepType: kind });
       toast({
         title: kind === "night" ? t("toasts.sleep_predict.bedtime_logged") : t("toasts.sleep_predict.nap_started")
       });
+      await queryClient.invalidateQueries({ queryKey: infantActivationQueryKey(childId) });
+      await queryClient.invalidateQueries({ queryKey: ["infant-today", childId] });
       await refresh();
     } catch (e) {
       toast({
@@ -350,7 +358,7 @@ export function SleepPredict({
     } finally {
       setLogging(false);
     }
-  }, [childId, logging, refresh, toast]);
+  }, [ageMonths, childId, logging, queryClient, refresh, toast]);
   const logWake = useCallback(async () => {
     if (logging || !activeStartIso) return;
     setLogging(true);
@@ -370,10 +378,17 @@ export function SleepPredict({
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       setActiveStartIso(null);
+      const durationMinutes = Math.max(
+        1,
+        Math.round((Date.now() - new Date(activeStartIso).getTime()) / 60_000),
+      );
+      trackSleepLogAdded(childId, ageMonths, { sleepType: "nap", durationMinutes });
       toast({
         title: t("toasts.sleep_predict.wake_logged_title"),
         description: t("toasts.sleep_predict.wake_logged_body")
       });
+      await queryClient.invalidateQueries({ queryKey: infantActivationQueryKey(childId) });
+      await queryClient.invalidateQueries({ queryKey: ["infant-today", childId] });
       await refresh();
     } catch (e) {
       toast({
@@ -384,7 +399,7 @@ export function SleepPredict({
     } finally {
       setLogging(false);
     }
-  }, [activeStartIso, childId, logging, refresh, toast]);
+  }, [activeStartIso, ageMonths, childId, logging, queryClient, refresh, toast]);
   const prediction = data?.prediction;
   const band = prediction ? BAND_META[prediction.pressureBand] : null;
   const dimmed = prediction?.shouldWindDown ?? false;

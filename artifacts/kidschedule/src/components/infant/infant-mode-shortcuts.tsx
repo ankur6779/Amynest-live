@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { buildParentingHubDeepLink } from "@/lib/hub-activity-cross-link";
+import { setInfantHubEntrySource, trackInfantHubShortcutTapped } from "@/lib/infant-hub-analytics";
 import { Link } from "wouter";
 
 const SHORTCUTS = [
@@ -24,11 +25,13 @@ const SHORTCUTS = [
 ] as const;
 
 type InfantModeShortcutsProps = {
+  childId: number;
   childName: string;
+  ageMonths: number;
 };
 
 /** Replaces duplicate InfantMode content — deep links into Infant Hub sections. */
-export function InfantModeShortcuts({ childName }: InfantModeShortcutsProps) {
+export function InfantModeShortcuts({ childId, childName, ageMonths }: InfantModeShortcutsProps) {
   const { t } = useTranslation();
 
   return (
@@ -45,6 +48,10 @@ export function InfantModeShortcuts({ childName }: InfantModeShortcutsProps) {
           <Link
             key={id}
             href={`${buildParentingHubDeepLink("infant-hub")}#${hash}`}
+            onClick={() => {
+              setInfantHubEntrySource("deep_link");
+              trackInfantHubShortcutTapped(childId, ageMonths, hash);
+            }}
             className="group rounded-2xl border border-white/10 bg-white/[0.04] hover:border-primary/30 p-3 flex flex-col gap-2 transition-all hover:shadow-[0_0_20px_-6px_rgba(168,85,247,0.4)]"
           >
             <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${tint} flex items-center justify-center shadow-md`}>
@@ -58,6 +65,7 @@ export function InfantModeShortcuts({ childName }: InfantModeShortcutsProps) {
       </div>
       <Link
         href={buildParentingHubDeepLink("infant-hub")}
+        onClick={() => setInfantHubEntrySource("parenting_hub")}
         className="block text-center text-xs font-bold text-primary hover:underline"
       >
         {t("components.infant_shortcuts.open_hub", "Open full Infant Hub →")}

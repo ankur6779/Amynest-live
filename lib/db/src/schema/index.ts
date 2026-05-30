@@ -78,6 +78,7 @@ export * from "./infant_care_logs";
 export * from "./infant_growth_measurements";
 export * from "./infant_wellbeing_checkins";
 export * from "./child_caregivers";
+export * from "./infant_notification_prefs";
 export * from "./parent_task_completions";
 export * from "./daily_puzzle_progress";
 export * from "./life_skills_progress";

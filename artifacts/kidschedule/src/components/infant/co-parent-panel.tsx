@@ -3,16 +3,21 @@ import { useTranslation } from "react-i18next";
 import { Users, Copy, Check } from "lucide-react";
 import { FF_INFANT_COPARENT } from "@/lib/infant-feature-flags";
 import { acceptCoParentInvite, createCoParentInvite } from "@/lib/infant-care-api";
-import { trackInfantHubEvent } from "@/lib/infant-hub-analytics";
+import {
+  trackCoParentInviteStarted,
+  trackCoParentInviteSent,
+  trackCoParentInviteAccepted,
+} from "@/lib/infant-hub-analytics";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 type CoParentPanelProps = {
   childId: number;
+  ageMonths: number;
   isOwner?: boolean;
 };
 
-export function CoParentPanel({ childId, isOwner = true }: CoParentPanelProps) {
+export function CoParentPanel({ childId, ageMonths, isOwner = true }: CoParentPanelProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [inviteCode, setInviteCode] = useState<string | null>(null);
@@ -23,11 +28,12 @@ export function CoParentPanel({ childId, isOwner = true }: CoParentPanelProps) {
   if (!FF_INFANT_COPARENT) return null;
 
   async function handleInvite() {
+    trackCoParentInviteStarted(childId, ageMonths);
     setBusy(true);
     try {
       const res = await createCoParentInvite(childId);
       setInviteCode(res.inviteCode);
-      trackInfantHubEvent("coparent_invite", { childId });
+      trackCoParentInviteSent(childId, ageMonths);
     } catch {
       toast({ description: t("components.coparent.invite_error", "Could not create invite"), variant: "destructive" });
     } finally {
@@ -39,7 +45,7 @@ export function CoParentPanel({ childId, isOwner = true }: CoParentPanelProps) {
     setBusy(true);
     try {
       await acceptCoParentInvite(acceptCode);
-      trackInfantHubEvent("coparent_accept", { childId });
+      trackCoParentInviteAccepted(childId, ageMonths);
       toast({ description: t("components.coparent.accepted", "Linked! You can now see shared logs.") });
       setAcceptCode("");
     } catch {

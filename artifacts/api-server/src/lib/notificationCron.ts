@@ -328,6 +328,15 @@ export function startNotificationCron(): void {
     }
   });
 
+  // ── Infant smart notifications — every minute, user-TZ aware ──
+  schedule("infant_notification_tick", "* * * * *", async () => {
+    const { runInfantNotificationTick } = await import("../lib/infantNotificationScheduler.js");
+    const r = await runInfantNotificationTick();
+    if (r.sent > 0) {
+      logger.info({ ...r, job: "infant_notification_tick" }, "Infant notification summary");
+    }
+  });
+
   // Token health sweep — daily at 03:00 UTC (global maintenance window).
   schedule("token_sweep", "0 3 * * *", async () => {
     const removed = await withSafeDb(

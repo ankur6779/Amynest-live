@@ -627,7 +627,11 @@ function ActivitiesSection({
       {/* ── INFANT ─────────────────────────────────────────────────────── */}
       {isInfant && <>
           <SubSection gateSection="hub_activities" icon={<Baby className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.baby-activities.title")} description={t("parent_hub.subsections.baby-activities.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(244,114,182,0.26)0%,rgba(251,113,133,0.12)100%)">
-            <InfantModeShortcuts childName={effectiveChild.name} />
+            <InfantModeShortcuts
+              childId={effectiveChild.id}
+              childName={effectiveChild.name}
+              ageMonths={totalAgeMonths}
+            />
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.amazing-facts-baby.title")} description={t("parent_hub.subsections.amazing-facts-baby.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(251,191,36,0.26)0%,rgba(234,179,8,0.12)100%)">

@@ -2,14 +2,19 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Heart, Wind } from "lucide-react";
 import { submitWellbeingCheckin } from "@/lib/infant-care-api";
-import { trackInfantHubEvent } from "@/lib/infant-hub-analytics";
+import {
+  trackWellbeingCheckinCompleted,
+  trackBreathingExerciseStarted,
+  trackBreathingExerciseCompleted,
+} from "@/lib/infant-hub-analytics";
 import { Button } from "@/components/ui/button";
 
 type ParentWellbeingProps = {
   childId: number;
+  ageMonths: number;
 };
 
-export function ParentWellbeing({ childId }: ParentWellbeingProps) {
+export function ParentWellbeing({ childId, ageMonths }: ParentWellbeingProps) {
   const { t } = useTranslation();
   const [energy, setEnergy] = useState(3);
   const [stress, setStress] = useState(3);
@@ -21,7 +26,7 @@ export function ParentWellbeing({ childId }: ParentWellbeingProps) {
     setBusy(true);
     try {
       const res = await submitWellbeingCheckin(childId, energy, stress);
-      trackInfantHubEvent("wellbeing_checkin", { childId, energy, stress });
+      trackWellbeingCheckinCompleted(childId, ageMonths, { energyLevel: energy, stressLevel: stress });
       setAmyMessage(res.amyMessage);
     } catch {
       setAmyMessage(t("components.wellbeing.error", "Could not save — try again later."));
@@ -55,7 +60,14 @@ export function ParentWellbeing({ childId }: ParentWellbeingProps) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => setBreathing((b) => !b)}
+          onClick={() => {
+            if (breathing) {
+              trackBreathingExerciseCompleted(childId, ageMonths);
+            } else {
+              trackBreathingExerciseStarted(childId, ageMonths);
+            }
+            setBreathing((b) => !b);
+          }}
           className="rounded-xl gap-2"
         >
           <Wind className="h-4 w-4" />

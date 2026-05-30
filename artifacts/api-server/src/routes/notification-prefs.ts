@@ -50,6 +50,7 @@ router.get("/notifications/categories", async (req, res): Promise<void> => {
     phonicsEnabled: prefs.phonicsEnabled,
     learningActivityEnabled: prefs.learningActivityEnabled,
     milestoneEnabled: prefs.milestoneEnabled,
+    infantCareEnabled: prefs.infantCareEnabled,
     // Schedule / limits
     timezone: prefs.timezone,
     quietHoursStart: prefs.quietHoursStart,

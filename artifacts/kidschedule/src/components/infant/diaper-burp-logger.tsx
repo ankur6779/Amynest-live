@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { Droplets, Wind } from "lucide-react";
 import { logInfantCare, type InfantCareLogType } from "@/lib/infant-care-api";
-import { trackInfantHubEvent } from "@/lib/infant-hub-analytics";
+import { trackDiaperLogged, trackBurpLogged } from "@/lib/infant-hub-analytics";
 import { useToast } from "@/hooks/use-toast";
 
 const DIAPER_TYPES: { type: InfantCareLogType; label: string; emoji: string }[] = [
@@ -14,24 +14,30 @@ const DIAPER_TYPES: { type: InfantCareLogType; label: string; emoji: string }[] 
 
 type DiaperBurpLoggerProps = {
   childId: number;
+  ageMonths: number;
   compact?: boolean;
 };
 
-export function DiaperBurpLogger({ childId, compact = false }: DiaperBurpLoggerProps) {
+export function DiaperBurpLogger({ childId, ageMonths, compact = false }: DiaperBurpLoggerProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
+
+const DIAPER_ANALYTICS: Partial<Record<InfantCareLogType, "wet" | "dirty" | "mixed">> = {
+  diaper_wet: "wet",
+  diaper_dirty: "dirty",
+  diaper_mixed: "mixed",
+};
 
   const log = useCallback(
     async (logType: InfantCareLogType) => {
       setBusy(logType);
       try {
         await logInfantCare(childId, logType);
-        trackInfantHubEvent(logType.startsWith("diaper") ? "diaper_log" : "feed_log", {
-          childId,
-          logType,
-        });
+        const diaperType = DIAPER_ANALYTICS[logType];
+        if (diaperType) trackDiaperLogged(childId, ageMonths, diaperType);
+        else if (logType === "burp") trackBurpLogged(childId, ageMonths);
         await queryClient.invalidateQueries({ queryKey: ["infant-today", childId] });
         toast({ description: t("components.diaper_logger.logged", "Logged ✓") });
       } catch {
@@ -40,7 +46,7 @@ export function DiaperBurpLogger({ childId, compact = false }: DiaperBurpLoggerP
         setBusy(null);
       }
     },
-    [childId, queryClient, t, toast],
+    [childId, ageMonths, queryClient, t, toast],
   );
 
   return (

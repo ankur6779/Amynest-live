@@ -12,6 +12,12 @@ import { WhiteNoiseLullaby } from "@/components/infant-sounds";
 import { InfantFeedingTracker } from "@/components/infant-feeding-tracker";
 import { INFANT_CATEGORIES, type InfantCategory, type Lang, getTipsForAge, getAmyInsight, pickLang, VACCINATIONS, getUpcomingVaccinationsWithLog, getVaccinationSummary, type VaxStatus, type VaxLogMap, getIsoWeekKey, INFANT_ACTIVITIES, getInfantAgeBand } from "@workspace/infant-hub";
 import { BabyTodayCard } from "@/components/infant/baby-today-card";
+import {
+  InfantActivationFlow,
+  InfantActivationFlowSkeleton,
+  shouldShowInfantActivationUi,
+} from "@/components/infant/infant-activation-flow";
+import { useInfantActivation } from "@/hooks/use-infant-activation";
 import { DiaperBurpLogger } from "@/components/infant/diaper-burp-logger";
 import { GrowthTracker } from "@/components/infant/growth-tracker";
 import { ParentWellbeing } from "@/components/infant/parent-wellbeing";
@@ -20,6 +26,7 @@ import { WeeklyProgressReport } from "@/components/infant/weekly-progress-report
 import { CoParentPanel } from "@/components/infant/co-parent-panel";
 import { InfantNotificationPrefs } from "@/components/infant/infant-notification-prefs";
 import { formatAge } from "@/lib/age-groups";
+import { trackInfantHubOpened } from "@/lib/infant-hub-analytics";
 import { useToast } from "@/hooks/use-toast";
 import { HubCollapsibleSubTile } from "@/components/hub-collapsible-sub-tile";
 interface InfantHubProps {
@@ -494,6 +501,8 @@ export function InfantHub({
   const insight = useMemo(() => getAmyInsight(ageMonths, active), [ageMonths, active]);
   const currentTip = tips.length > 0 ? tips[tipIndex % tips.length] : null;
   const ageLabel = formatAge(Math.floor(ageMonths / 12), ageMonths % 12);
+  const { data: activation, isLoading: activationLoading } = useInfantActivation(childId);
+  const showActivationUi = shouldShowInfantActivationUi(activation, childId);
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -501,11 +510,12 @@ export function InfantHub({
 
   useEffect(() => {
     if (ageMonths < 0 || ageMonths >= 24) return;
+    trackInfantHubOpened(childId, ageMonths);
     const hash = typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "";
     if (hash.startsWith("infant-")) {
       requestAnimationFrame(() => scrollTo(hash));
     }
-  }, [ageMonths]);
+  }, [ageMonths, childId]);
 
   if (ageMonths < 0 || ageMonths >= 24) return null;
 
@@ -516,8 +526,30 @@ export function InfantHub({
         <p className="text-xs text-muted-foreground">{t("infant_hub.subtitle", { name: childName, age: ageLabel })}</p>
       </div>
 
-      <BabyTodayCard childId={childId} childName={childName} onViewFullPlan={() => scrollTo("infant-sleep")} />
-      <WeeklyProgressReport childId={childId} childName={childName} ageMonths={ageMonths} />
+      {activationLoading ? (
+        <InfantActivationFlowSkeleton />
+      ) : showActivationUi && activation ? (
+        <InfantActivationFlow
+          childId={childId}
+          childName={childName}
+          ageMonths={ageMonths}
+          activation={activation}
+          onNavigate={scrollTo}
+        />
+      ) : (
+        <BabyTodayCard
+          childId={childId}
+          childName={childName}
+          activation={activation}
+          onViewFullPlan={() => scrollTo("infant-sleep")}
+        />
+      )}
+      <WeeklyProgressReport
+        childId={childId}
+        childName={childName}
+        ageMonths={ageMonths}
+        activation={activation}
+      />
 
       <section id="infant-cry" className="scroll-mt-24">
         <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.cry_insight")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardColor="linear-gradient(135deg,rgba(251,113,133,0.28)0%,rgba(236,72,153,0.13)100%)" badge={t("components.infant_hub.badge_smart")} defaultOpen>
@@ -527,7 +559,7 @@ export function InfantHub({
               {t("components.infant_hub.cry_insight_hero", "Not sure why baby is crying? Record 10 seconds and Amy will help identify likely causes.")}
             </p>
           </div>
-          <DiaperBurpLogger childId={childId} compact />
+          <DiaperBurpLogger childId={childId} ageMonths={ageMonths} compact />
           <div className="mt-3"><CryInsight childId={childId} childName={childName} ageMonths={ageMonths} /></div>
         </IHSection>
       </section>
@@ -553,16 +585,16 @@ export function InfantHub({
       <section id="infant-feeding" className="scroll-mt-24">
         <IHSection icon={<Flame className="h-4 w-4" />} title={t("components.infant_hub.feeding_tracker")} accentClass="bg-gradient-to-br from-red-400 to-orange-500" cardColor="linear-gradient(135deg,rgba(248,113,113,0.28)0%,rgba(249,115,22,0.13)100%)">
           <InfantFeedingTracker childId={childId} ageMonths={ageMonths} lang={lang} />
-          <div className="mt-4 pt-4 border-t border-border/40"><DiaperBurpLogger childId={childId} /></div>
+          <div className="mt-4 pt-4 border-t border-border/40"><DiaperBurpLogger childId={childId} ageMonths={ageMonths} /></div>
         </IHSection>
       </section>
 
       <IHSection icon={<TrendingUp className="h-4 w-4" />} title={t("components.infant_hub.growth", "Growth tracking")} accentClass="bg-gradient-to-br from-emerald-400 to-teal-500">
-        <GrowthTracker childId={childId} ageMonths={ageMonths} />
+        <GrowthTracker childId={childId} ageMonths={ageMonths} activation={activation} />
       </IHSection>
 
       <IHSection icon={<Heart className="h-4 w-4" />} title={t("components.infant_hub.wellbeing", "Parent wellbeing")} accentClass="bg-gradient-to-br from-pink-400 to-rose-500">
-        <ParentWellbeing childId={childId} />
+        <ParentWellbeing childId={childId} ageMonths={ageMonths} />
       </IHSection>
 
       <IHSection icon={<Syringe className="h-4 w-4" />} title={t("components.infant_hub.health_care")} accentClass="bg-gradient-to-br from-teal-400 to-cyan-500">
@@ -570,14 +602,14 @@ export function InfantHub({
       </IHSection>
 
       <IHSection icon={<FileDown className="h-4 w-4" />} title={t("components.infant_hub.doctor_report", "Doctor visit")} accentClass="bg-gradient-to-br from-cyan-400 to-blue-500">
-        <DoctorVisitReport childId={childId} childName={childName} />
+        <DoctorVisitReport childId={childId} childName={childName} ageMonths={ageMonths} />
       </IHSection>
 
       <IHSection icon={<Users className="h-4 w-4" />} title={t("components.infant_hub.coparent", "Co-parent")} accentClass="bg-gradient-to-br from-indigo-400 to-violet-500">
-        <CoParentPanel childId={childId} />
+        <CoParentPanel childId={childId} ageMonths={ageMonths} />
       </IHSection>
 
-      <InfantNotificationPrefs />
+      <InfantNotificationPrefs childId={childId} ageMonths={ageMonths} />
 
       <IHSection icon={<Music2 className="h-4 w-4" />} title={t("components.infant_hub.white_noise_lullabies")} accentClass="bg-gradient-to-br from-cyan-400 to-teal-500">
         <WhiteNoiseLullaby ageMonths={ageMonths} />
