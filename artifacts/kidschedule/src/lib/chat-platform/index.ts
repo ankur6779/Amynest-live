@@ -5,6 +5,7 @@ export type { ChatViewportMetrics } from "./viewport";
 export {
   applyChatViewportCssVars,
   clearChatViewportCssVars,
+  isAndroidAdjustResizeBroken,
   isAndroidAdjustResizeChatShell,
   isChatAnswerTarget,
   isKeyboardOpen,
@@ -13,6 +14,7 @@ export {
   readKeyboardOpenThresholdPx,
   readMeasuredVisibleBottomPx,
   readNativeImeInsetPx,
+  recordAndroidBaselineHeight,
   usesCapacitorBodyKeyboardResize,
 } from "./viewport";
 

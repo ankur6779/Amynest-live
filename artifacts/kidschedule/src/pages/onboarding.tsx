@@ -990,6 +990,27 @@ export default function OnboardingPage() {
       isLoaded: authLoaded,
       isSignedIn,
     });
+
+    // When onboarding just succeeded, the completion status is already persisted.
+    // Skip the long auth-sync wait — Firebase token restore can take > 20 s on
+    // Android WebView, which previously caused a redirect to /sign-in instead of
+    // /dashboard. Auth will self-heal once the dashboard mounts.
+    if (onboardingJustFinishedRef.current) {
+      const completeStatus = { onboardingComplete: true, profileComplete: true };
+      persistOnboardingCache(completeStatus);
+      queryClient.setQueryData(["onboarding-status"], completeStatus);
+      onboardingJustFinishedRef.current = false;
+      const trialPath =
+        FF_POST_ONBOARDING_TRIAL && canStartTrial && !wasOnboardingTrialSeen()
+          ? "/subscription-trial"
+          : "/dashboard";
+      navigateAfterOnboardingComplete(trialPath);
+      // Use Wouter setLocation as a direct fallback in case PopStateEvent is ignored.
+      setLocation(trialPath);
+      setNavigatingToDashboard(false);
+      return;
+    }
+
     if (!authLoaded) {
       console.warn("[onboarding] auth not loaded yet, waiting…");
       await new Promise((r) => setTimeout(r, 400));
@@ -1001,19 +1022,15 @@ export default function OnboardingPage() {
       forceSyncAuthFromCurrentUser();
     });
     const sessionOk = isSignedIn || hasUsableAuthSession();
-    if (!sessionOk) {
+    const cachedComplete = isSetupComplete(readOnboardingCache());
+    // If the cache says onboarding is complete, never send the user to /sign-in.
+    if (!sessionOk && !cachedComplete) {
       console.warn("[onboarding] user missing, redirecting to sign-in");
       setNavigatingToDashboard(false);
       setLocation("/sign-in");
       return;
     }
-    const completeStatus = { onboardingComplete: true, profileComplete: true };
-    if (onboardingJustFinishedRef.current) {
-      persistOnboardingCache(completeStatus);
-      queryClient.setQueryData(["onboarding-status"], completeStatus);
-    }
-    const cachedComplete = isSetupComplete(readOnboardingCache());
-    if (!onboardingJustFinishedRef.current && !cachedComplete) {
+    if (!cachedComplete) {
       await refreshBeforeDashboard();
     }
     const status = applySetupStatusUpdate(
@@ -1023,10 +1040,7 @@ export default function OnboardingPage() {
         profileComplete?: boolean;
       }>(["onboarding-status"]),
     );
-    const canEnterApp =
-      onboardingJustFinishedRef.current ||
-      cachedComplete ||
-      isSetupComplete(status);
+    const canEnterApp = cachedComplete || isSetupComplete(status);
     if (!canEnterApp) {
       console.warn("[onboarding] setup still incomplete after refresh — staying on onboarding");
       setNavigatingToDashboard(false);
@@ -1034,12 +1048,13 @@ export default function OnboardingPage() {
       setStep("parent-allergies");
       return;
     }
-    onboardingJustFinishedRef.current = false;
     const trialPath =
       FF_POST_ONBOARDING_TRIAL && canStartTrial && !wasOnboardingTrialSeen()
         ? "/subscription-trial"
         : "/dashboard";
     navigateAfterOnboardingComplete(trialPath);
+    // Direct Wouter navigation as a belt-and-suspenders fallback.
+    setLocation(trialPath);
     setNavigatingToDashboard(false);
   }
 

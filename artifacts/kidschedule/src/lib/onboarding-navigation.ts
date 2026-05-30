@@ -7,7 +7,16 @@ export function navigateAfterOnboardingComplete(path: string): void {
   if (typeof window === "undefined") return;
   const normalized = path.startsWith("/") ? path : `/${path}`;
 
+  console.info("[onboarding-nav] navigating after complete", {
+    path: normalized,
+    isNative: isNativeAmyNestShell(),
+    ts: Date.now(),
+  });
+
   if (isNativeAmyNestShell()) {
+    // spaNavigateAfterSignIn fires a PopStateEvent (wouter listens to it) and
+    // pushes to history. navigateAfterAuth calls the registered Wouter setLocation.
+    // Both run to ensure at least one succeeds regardless of ordering issues.
     spaNavigateAfterSignIn(normalized);
     navigateAfterAuth(normalized);
     return;

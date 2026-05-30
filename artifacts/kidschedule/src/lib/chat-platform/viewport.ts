@@ -24,6 +24,44 @@ export function isAndroidAdjustResizeChatShell(): boolean {
   return isNativeAmyNestAndroidWrapper() && !isCapacitorNative();
 }
 
+/**
+ * Baseline innerHeight captured before any keyboard activity.
+ * Used to detect whether adjustResize is actually shrinking the WebView.
+ */
+let _androidBaselineInnerHeight: number | null = null;
+
+/**
+ * Call once on component mount (before any keyboard opens) to record the
+ * full-screen innerHeight. This baseline lets us detect Android 15 edge-to-edge
+ * mode where adjustResize no longer shrinks the WebView.
+ */
+export function recordAndroidBaselineHeight(): void {
+  if (!isAndroidAdjustResizeChatShell()) return;
+  if (typeof window === "undefined") return;
+  // Only record when the keyboard is definitely closed.
+  if (readNativeImeInsetPx() > 0) return;
+  _androidBaselineInnerHeight = window.innerHeight;
+}
+
+/**
+ * Returns true when the native IME inset is non-zero but the WebView has NOT
+ * shrunk — meaning adjustResize is broken (Android 15+ edge-to-edge default).
+ * In this case the keyboard overlays content and the container must manually
+ * offset its bottom edge by the inset amount.
+ */
+export function isAndroidAdjustResizeBroken(): boolean {
+  if (!isAndroidAdjustResizeChatShell()) return false;
+  if (typeof window === "undefined") return false;
+  const inset = readNativeImeInsetPx();
+  // Need a meaningful inset to evaluate — at least 100 px (keyboard).
+  if (inset < 100) return false;
+  // If we never recorded a baseline, assume broken (safe default on Android 15).
+  if (_androidBaselineInnerHeight === null) return true;
+  // If innerHeight shrank by at least half the inset, adjustResize is working.
+  const didShrink = window.innerHeight < _androidBaselineInnerHeight - inset * 0.5;
+  return !didShrink;
+}
+
 export function usesCapacitorBodyKeyboardResize(): boolean {
   return isCapacitorNative() && isCapacitorIosShell();
 }
