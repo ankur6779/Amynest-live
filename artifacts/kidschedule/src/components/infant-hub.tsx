@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, ThumbsUp, RotateCcw, CheckCircle2, ShieldAlert, ChevronDown, ChevronUp, Syringe, Zap, BookOpen, Activity, Star, AlertTriangle, Baby, Flame, MessageCircle, BedDouble, ListChecks, Music2, X, Loader2, Sparkles } from "lucide-react";
+import { Brain, CheckCircle2, ShieldAlert, ChevronDown, ChevronUp, Syringe, Zap, Activity, Star, AlertTriangle, Flame, MessageCircle, BedDouble, ListChecks, Music2, X, Loader2, Sparkles, TrendingUp, Heart, FileDown, Users } from "lucide-react";
 import { getApiUrl } from "@/lib/api";
 import { BabyCuesEngine, CommunicationCoaching } from "@/components/infant-baby-cues";
 import { CryInsight } from "@/components/cry-insight";
@@ -10,7 +10,15 @@ import { WakeWindowSystem, SleepIssueDetector, RoutineBuilder, SleepWeeklyInsigh
 import { BuddyMilestonePlanner } from "@/components/infant-milestones";
 import { WhiteNoiseLullaby } from "@/components/infant-sounds";
 import { InfantFeedingTracker } from "@/components/infant-feeding-tracker";
-import { INFANT_CATEGORIES, type InfantCategory, type Lang, getTipsForAge, getAmyInsight, pickLang, VACCINATIONS, getUpcomingVaccinationsWithLog, getVaccinationSummary, type VaxStatus, type VaxLogMap, getIsoWeekKey } from "@workspace/infant-hub";
+import { INFANT_CATEGORIES, type InfantCategory, type Lang, getTipsForAge, getAmyInsight, pickLang, VACCINATIONS, getUpcomingVaccinationsWithLog, getVaccinationSummary, type VaxStatus, type VaxLogMap, getIsoWeekKey, INFANT_ACTIVITIES, getInfantAgeBand } from "@workspace/infant-hub";
+import { BabyTodayCard } from "@/components/infant/baby-today-card";
+import { DiaperBurpLogger } from "@/components/infant/diaper-burp-logger";
+import { GrowthTracker } from "@/components/infant/growth-tracker";
+import { ParentWellbeing } from "@/components/infant/parent-wellbeing";
+import { DoctorVisitReport } from "@/components/infant/doctor-visit-report";
+import { WeeklyProgressReport } from "@/components/infant/weekly-progress-report";
+import { CoParentPanel } from "@/components/infant/co-parent-panel";
+import { InfantNotificationPrefs } from "@/components/infant/infant-notification-prefs";
 import { formatAge } from "@/lib/age-groups";
 import { useToast } from "@/hooks/use-toast";
 import { HubCollapsibleSubTile } from "@/components/hub-collapsible-sub-tile";
@@ -32,82 +40,6 @@ function getBand(months: number): "0-3" | "3-6" | "6-9" | "9-12" | "12-18" | "18
   if (months < 18) return "12-18";
   return "18-24";
 }
-
-// ─── Daily Activities ─────────────────────────────────────────────────────────
-type Activity = {
-  emoji: string;
-  title: string;
-  desc: string;
-  duration: string;
-};
-const ACTIVITIES: Record<string, Activity[]> = {
-  "0-3": [{
-    emoji: "🖤🤍",
-    title: "High-Contrast Visuals",
-    desc: "Show black-and-white patterns or simple faces 20–30 cm from baby's eyes. Newborn vision is still developing — high contrast is what they can actually see.",
-    duration: "5 min"
-  }],
-  "3-6": [{
-    emoji: "🤸",
-    title: "Tummy Time Games",
-    desc: "Place baby on tummy with a rolled towel under chest for support. Hold a high-contrast toy just above eye level and slowly move side to side — builds neck and shoulder strength for rolling.",
-    duration: "3–5 min · 2× daily"
-  }, {
-    emoji: "🪞",
-    title: "Mirror Discovery",
-    desc: "Hold an unbreakable mirror 20 cm from baby's face during tummy time or supported sitting. Babies love faces — mirror play builds self-awareness and social attention.",
-    duration: "2–3 min"
-  }, {
-    emoji: "🎵",
-    title: "Sing & Bounce",
-    desc: "Hold baby on your lap and bounce gently to a simple rhyme (Twinkle Twinkle, Itsy Bitsy). Rhythm + movement wires the vestibular system and language rhythm together.",
-    duration: "3–5 min"
-  }],
-  "6-9": [{
-    emoji: "🛁",
-    title: "Bath Play",
-    desc: "Add cups and soft toys to bath. Pouring, splashing, squeezing — rich sensory experience that supports tactile development in a way land play can't match.",
-    duration: "10–15 min"
-  }],
-  "9-12": [{
-    emoji: "⚽",
-    title: "Roll the Ball",
-    desc: "Sit opposite each other, roll a soft ball back and forth. Teaches turn-taking — the social back-and-forth that is the foundation of conversation.",
-    duration: "5–10 min"
-  }, {
-    emoji: "🏡",
-    title: "Safe Exploration Crawl",
-    desc: "Create a safe floor area with cushions, low boxes, and tunnels. Let baby crawl and explore freely — unprompted self-directed movement builds confidence and spatial awareness.",
-    duration: "15–20 min"
-  }],
-  "12-18": [{
-    emoji: "🎨",
-    title: "Finger Painting",
-    desc: "Use edible or non-toxic paint on paper. Squishing and smearing is pure sensory-motor play — messy is the point. This is distinct from crayon scribbling — the texture feedback is richer.",
-    duration: "15 min"
-  }, {
-    emoji: "🚶",
-    title: "Outdoor Stroll & Name",
-    desc: "Walk outside and name everything — dog, flower, car, puddle, sky. Novel outdoor environments stimulate attention and curiosity that indoor play can't replicate.",
-    duration: "20 min"
-  }],
-  "18-24": [{
-    emoji: "🧩",
-    title: "Simple Shape Puzzle",
-    desc: "Offer a chunky 2–3 piece puzzle or shape sorter. Let them try without correcting — trial-and-error builds problem-solving and fine motor control.",
-    duration: "10 min"
-  }, {
-    emoji: "📚",
-    title: "Picture Book Routine",
-    desc: "Same book, same time each day (before nap works well). Point and name objects; pause and let them point back. Repetition builds vocabulary faster than new books every night.",
-    duration: "10–15 min"
-  }, {
-    emoji: "⚽",
-    title: "Kick & Chase",
-    desc: "Place a soft ball near their feet while they lie on back, or roll it gently during crawling play. Chasing builds coordination and the joy of purposeful movement.",
-    duration: "10 min"
-  }]
-};
 
 // ─── Common Issues ─────────────────────────────────────────────────────────────
 const COMMON_ISSUES = [{
@@ -254,13 +186,9 @@ function IHSection({
 }
 
 // ─── Daily Activities ─────────────────────────────────────────────────────────
-function DailyActivities({
-  ageMonths
-}: {
-  ageMonths: number;
-}) {
-  const band = getBand(ageMonths);
-  const activities = ACTIVITIES[band] ?? [];
+function DailyActivities({ ageMonths }: { ageMonths: number }) {
+  const band = getInfantAgeBand(ageMonths);
+  const activities = INFANT_ACTIVITIES[band] ?? [];
   return <div className="space-y-2.5">
       {activities.map(a => <div key={a.title} className="rounded-xl bg-muted dark:bg-card border border-border dark:border-border p-3 flex gap-3">
           <span className="text-2xl leading-none shrink-0">{a.emoji}</span>
@@ -562,236 +490,132 @@ export function InfantHub({
   } = useToast();
   const [active, setActive] = useState<InfantCategory>("sleep");
   const [tipIndex, setTipIndex] = useState(0);
-  const [isParentingOpen, setIsParentingOpen] = useState(false);
   const tips = useMemo(() => getTipsForAge(ageMonths, active), [ageMonths, active]);
   const insight = useMemo(() => getAmyInsight(ageMonths, active), [ageMonths, active]);
   const currentTip = tips.length > 0 ? tips[tipIndex % tips.length] : null;
   const ageLabel = formatAge(Math.floor(ageMonths / 12), ageMonths % 12);
-  const handleNext = () => {
-    if (tips.length === 0) return;
-    setTipIndex(i => (i + 1) % tips.length);
+
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  return <div className="space-y-3">
-      {/* ── Header card with tips ──────────────────────────────────────────── */}
-      <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-muted via-muted to-muted dark:from-card dark:via-card dark:to-card backdrop-blur-xl overflow-hidden">
-        <CardContent className="p-4 sm:p-5 space-y-4">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-0.5">
-                👶 {t("infant_hub.title")}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {t("infant_hub.subtitle", {
-                name: childName,
-                age: ageLabel
-              })}
-              </p>
-            </div>
-          </div>
 
-          {/* Glass Tabs */}
-          <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
-            {INFANT_CATEGORIES.map(cat => {
-            const isActive = active === cat.key;
-            return <button key={cat.key} onClick={() => {
-              setActive(cat.key);
-              setTipIndex(0);
-            }} className={["shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold transition-all duration-200", "backdrop-blur-md border", isActive ? "bg-white/80 dark:bg-white/10 border-border dark:border-border text-primary dark:text-muted-foreground shadow-[0_0_0_1px_rgba(168,85,247,0.35),0_8px_24px_-8px_rgba(168,85,247,0.45)]" : "bg-white/40 dark:bg-white/5 border-white/60 dark:border-white/10 text-muted-foreground hover:border-border"].join(" ")} aria-pressed={isActive}>
-                  <span className="text-base leading-none">{cat.emoji}</span>
-                  <span>{t(`infant_hub.tabs.${cat.key}`)}</span>
-                </button>;
-          })}
-          </div>
+  useEffect(() => {
+    if (ageMonths < 0 || ageMonths >= 24) return;
+    const hash = typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "";
+    if (hash.startsWith("infant-")) {
+      requestAnimationFrame(() => scrollTo(hash));
+    }
+  }, [ageMonths]);
 
-          {/* Amy AI Insight */}
-          <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border border-border dark:border-border p-3.5">
-            <div className="flex items-center gap-2 mb-1.5">
-              <Brain className="h-4 w-4 text-primary dark:text-foreground" />
-              <p className="text-xs font-bold text-primary dark:text-foreground">
-                {t("infant_hub.amy_suggests")}
-              </p>
-            </div>
-            <p className="text-sm text-primary dark:text-foreground leading-snug">
-              <span className="mr-1">{insight.emoji}</span>
-              {pickLang(insight, lang)}
+  if (ageMonths < 0 || ageMonths >= 24) return null;
+
+  return (
+    <div className="space-y-4" data-section-id="infant-hub">
+      <div className="px-1">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-primary">👶 {t("infant_hub.title")}</p>
+        <p className="text-xs text-muted-foreground">{t("infant_hub.subtitle", { name: childName, age: ageLabel })}</p>
+      </div>
+
+      <BabyTodayCard childId={childId} childName={childName} onViewFullPlan={() => scrollTo("infant-sleep")} />
+      <WeeklyProgressReport childId={childId} childName={childName} ageMonths={ageMonths} />
+
+      <section id="infant-cry" className="scroll-mt-24">
+        <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.cry_insight")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardColor="linear-gradient(135deg,rgba(251,113,133,0.28)0%,rgba(236,72,153,0.13)100%)" badge={t("components.infant_hub.badge_smart")} defaultOpen>
+          <div className="rounded-xl bg-gradient-to-r from-rose-500/10 to-pink-500/10 border border-rose-400/25 px-3 py-2.5 mb-3 flex items-start gap-2">
+            <Sparkles className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
+            <p className="text-[12px] text-foreground/90 leading-snug">
+              {t("components.infant_hub.cry_insight_hero", "Not sure why baby is crying? Record 10 seconds and Amy will help identify likely causes.")}
             </p>
           </div>
+          <DiaperBurpLogger childId={childId} compact />
+          <div className="mt-3"><CryInsight childId={childId} childName={childName} ageMonths={ageMonths} /></div>
+        </IHSection>
+      </section>
 
-          {/* Current Tip */}
-          {currentTip ? <div className="rounded-2xl bg-white/70 dark:bg-white/5 border border-white/60 dark:border-white/10 p-4 backdrop-blur-md">
-              <div className="flex items-start gap-3 mb-2">
-                <div className="text-3xl leading-none shrink-0">{currentTip.emoji}</div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-quicksand font-bold text-foreground text-[15px] leading-tight">
-                    {pickLang(currentTip.title, lang)}
-                  </p>
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5 font-bold">
-                    {t("infant_hub.based_on")}
-                  </p>
-                </div>
-              </div>
-              <p className="text-sm text-foreground/85 leading-relaxed">
-                {pickLang(currentTip.body, lang)}
-              </p>
-              <div className="flex flex-wrap gap-2 mt-3.5">
-                <button onClick={() => {
-              return toast({
-                description: t("infant_hub.thanks")
-              });
-            }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-foreground text-xs font-bold hover:bg-muted dark:hover:bg-white/10 transition-colors">
-                  <ThumbsUp className="h-3.5 w-3.5" />
-                  {t("infant_hub.helpful")}
-                </button>
-                <button onClick={handleNext} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-foreground text-xs font-bold hover:bg-muted dark:hover:bg-white/10 transition-colors">
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  {t("infant_hub.next_tip")}
-                </button>
-                <button onClick={() => {
-              return toast({
-                description: t("infant_hub.tried_logged")
-              });
-            }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-foreground text-xs font-bold hover:bg-muted dark:hover:bg-white/10 transition-colors">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  {t("infant_hub.tried_this")}
-                </button>
-              </div>
-              {tips.length > 1 && <p className="mt-2.5 text-[11px] text-muted-foreground text-center">
-                  {tipIndex + 1} / {tips.length}
-                </p>}
-            </div> : <div className="rounded-2xl bg-muted/40 p-5 text-center text-sm text-muted-foreground">
-              {t("infant_hub.no_tips")}
-            </div>}
-
-          {/* Safety footer */}
-          <div className="flex items-start gap-2 text-[11px] text-muted-foreground pt-1 border-t border-border/40">
-            <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
-            <p className="leading-snug">{t("infant_hub.safe_disclaimer")}</p>
+      <section id="infant-sleep" className="scroll-mt-24">
+        <IHSection icon={<BedDouble className="h-4 w-4" />} title={t("components.infant_hub.sleep_system")} accentClass="bg-gradient-to-br from-blue-400 to-indigo-500" cardColor="linear-gradient(135deg,rgba(96,165,250,0.28)0%,rgba(99,102,241,0.13)100%)" badge="Live" defaultOpen>
+          <div className="space-y-5">
+            <SleepPredict childId={childId} childName={childName} ageMonths={ageMonths} />
+            <WakeWindowSystem childName={childName} ageMonths={ageMonths} />
+            <SleepIssueDetector childName={childName} ageMonths={ageMonths} />
+            <RoutineBuilder childName={childName} ageMonths={ageMonths} />
+            <SleepWeeklyInsights childName={childName} ageMonths={ageMonths} />
           </div>
-        </CardContent>
-      </Card>
+        </IHSection>
+      </section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          MAJOR SECTION — Infant Parenting (0–24 months only)
-          Glass + glow wrapper grouping all 7 infant tools under one umbrella.
-          ══════════════════════════════════════════════════════════════════════ */}
-      {ageMonths >= 0 && ageMonths < 24 && <Card className="relative overflow-hidden rounded-3xl border-2 border-border dark:border-border shadow-[0_8px_40px_-12px_rgba(168,85,247,0.4)] bg-gradient-to-br from-muted via-muted to-muted dark:from-card dark:via-card dark:to-card backdrop-blur-xl">
-          {/* Glow accents */}
-          <div className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-muted dark:bg-primary/15 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-muted dark:bg-primary/15 blur-3xl" />
-          <div className="pointer-events-none absolute top-1/2 left-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-muted dark:bg-primary/15 blur-2xl" />
+      <section id="infant-milestones" className="scroll-mt-24">
+        <IHSection icon={<Activity className="h-4 w-4" />} title={t("components.infant_hub.milestone_buddy")} accentClass="bg-gradient-to-br from-violet-400 to-purple-500" cardColor="linear-gradient(135deg,rgba(167,139,250,0.28)0%,rgba(168,85,247,0.13)100%)" badge={t("components.infant_hub.badge_track")} defaultOpen>
+          <BuddyMilestonePlanner childId={childId} childName={childName} ageMonths={ageMonths} />
+        </IHSection>
+      </section>
 
-          <CardContent className="relative p-4 sm:p-5 space-y-3">
-            {/* Major section header */}
-            <button type="button" onClick={() => setIsParentingOpen(v => !v)} className="w-full flex items-start gap-3 pb-3 border-b border-border dark:border-border text-left" aria-expanded={isParentingOpen}>
-              <div className="shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br from-primary via-primary to-primary flex items-center justify-center shadow-[0_6px_20px_-4px_rgba(217,70,239,0.6)] ring-1 ring-white/40 dark:ring-white/10">
-                <Baby className="h-5 w-5 text-white drop-shadow" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground mb-0.5">
-                  {t("components.infant_hub.major_section")}
-                </p>
-                <h2 className="text-base sm:text-lg font-extrabold bg-gradient-to-r from-primary via-primary to-primary dark:from-foreground dark:via-foreground dark:to-foreground bg-clip-text text-transparent leading-tight">
-                  {t("components.infant_hub.infant_parenting")}
-                </h2>
-                <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-                  {t("components.infant_hub.complete_toolkit_for_babies_0_24_months_sleep_feeding_milest")}
-                </p>
-              </div>
-              <div className="shrink-0 pt-1 text-muted-foreground">
-                {isParentingOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-              </div>
-            </button>
+      <section id="infant-feeding" className="scroll-mt-24">
+        <IHSection icon={<Flame className="h-4 w-4" />} title={t("components.infant_hub.feeding_tracker")} accentClass="bg-gradient-to-br from-red-400 to-orange-500" cardColor="linear-gradient(135deg,rgba(248,113,113,0.28)0%,rgba(249,115,22,0.13)100%)">
+          <InfantFeedingTracker childId={childId} ageMonths={ageMonths} lang={lang} />
+          <div className="mt-4 pt-4 border-t border-border/40"><DiaperBurpLogger childId={childId} /></div>
+        </IHSection>
+      </section>
 
-            {isParentingOpen && <div className="space-y-3">
-                {/* 1. This Week's Focus */}
-                <IHSection icon={<Star className="h-4 w-4" />} title={t("components.infant_hub.weekly_focus")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500" cardColor="linear-gradient(135deg,rgba(251,191,36,0.28)0%,rgba(234,179,8,0.13)100%)" badge={t("components.infant_hub.badge_weekly")}>
-                  <WeeklyFocus childId={childId} childName={childName} ageMonths={ageMonths} />
-                </IHSection>
+      <IHSection icon={<TrendingUp className="h-4 w-4" />} title={t("components.infant_hub.growth", "Growth tracking")} accentClass="bg-gradient-to-br from-emerald-400 to-teal-500">
+        <GrowthTracker childId={childId} ageMonths={ageMonths} />
+      </IHSection>
 
-                {/* 2. Sleep System (+ Amy Sleep Prediction merged in) */}
-                <IHSection icon={<BedDouble className="h-4 w-4" />} title={t("components.infant_hub.sleep_system")} accentClass="bg-gradient-to-br from-blue-400 to-indigo-500" cardColor="linear-gradient(135deg,rgba(96,165,250,0.28)0%,rgba(99,102,241,0.13)100%)" badge="Live">
-                  <div className="space-y-5">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2">{t("components.infant_hub.sleep_prediction")}</p>
-                      <SleepPredict childId={childId} childName={childName} ageMonths={ageMonths} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2">{t("components.infant_hub.wake_window_tracker")}</p>
-                      <WakeWindowSystem childName={childName} ageMonths={ageMonths} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2">{t("components.infant_hub.issue_detection")}</p>
-                      <SleepIssueDetector childName={childName} ageMonths={ageMonths} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2">{t("components.infant_hub.daily_routine_builder")}</p>
-                      <RoutineBuilder childName={childName} ageMonths={ageMonths} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2">{t("components.infant_hub.weekly_insights")}</p>
-                      <SleepWeeklyInsights childName={childName} ageMonths={ageMonths} />
-                    </div>
-                  </div>
-                </IHSection>
+      <IHSection icon={<Heart className="h-4 w-4" />} title={t("components.infant_hub.wellbeing", "Parent wellbeing")} accentClass="bg-gradient-to-br from-pink-400 to-rose-500">
+        <ParentWellbeing childId={childId} />
+      </IHSection>
 
-                {/* 3. Cry Insight — promoted smart tool (right after sleep) */}
-                <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.cry_insight")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardColor="linear-gradient(135deg,rgba(251,113,133,0.28)0%,rgba(236,72,153,0.13)100%)" badge={t("components.infant_hub.badge_smart")}>
-                  <div className="rounded-xl bg-gradient-to-r from-rose-500/10 to-pink-500/10 border border-rose-400/25 px-3 py-2.5 mb-3 flex items-start gap-2">
-                    <Sparkles className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-foreground/90 leading-snug">
-                      {t("components.infant_hub.cry_insight_promo")}
-                    </p>
-                  </div>
-                  <CryInsight childId={childId} childName={childName} ageMonths={ageMonths} />
-                </IHSection>
+      <IHSection icon={<Syringe className="h-4 w-4" />} title={t("components.infant_hub.health_care")} accentClass="bg-gradient-to-br from-teal-400 to-cyan-500">
+        <HealthCare childId={childId} ageMonths={ageMonths} />
+      </IHSection>
 
-                {/* 4. Milestone Buddy */}
-                <IHSection icon={<Activity className="h-4 w-4" />} title={t("components.infant_hub.milestone_buddy")} accentClass="bg-gradient-to-br from-violet-400 to-purple-500" cardColor="linear-gradient(135deg,rgba(167,139,250,0.28)0%,rgba(168,85,247,0.13)100%)" badge={t("components.infant_hub.badge_track")}>
-                  <BuddyMilestonePlanner childId={childId} childName={childName} ageMonths={ageMonths} />
-                </IHSection>
+      <IHSection icon={<FileDown className="h-4 w-4" />} title={t("components.infant_hub.doctor_report", "Doctor visit")} accentClass="bg-gradient-to-br from-cyan-400 to-blue-500">
+        <DoctorVisitReport childId={childId} childName={childName} />
+      </IHSection>
 
-                {/* 5. White Noise & Lullabies */}
-                <IHSection icon={<Music2 className="h-4 w-4" />} title={t("components.infant_hub.white_noise_lullabies")} accentClass="bg-gradient-to-br from-cyan-400 to-teal-500" cardColor="linear-gradient(135deg,rgba(34,211,238,0.28)0%,rgba(20,184,166,0.13)100%)">
-                  <WhiteNoiseLullaby ageMonths={ageMonths} />
-                </IHSection>
+      <IHSection icon={<Users className="h-4 w-4" />} title={t("components.infant_hub.coparent", "Co-parent")} accentClass="bg-gradient-to-br from-indigo-400 to-violet-500">
+        <CoParentPanel childId={childId} />
+      </IHSection>
 
-                {/* 6. Feeding Tracker */}
-                <IHSection icon={<Flame className="h-4 w-4" />} title={t("components.infant_hub.feeding_tracker")} accentClass="bg-gradient-to-br from-red-400 to-orange-500" cardColor="linear-gradient(135deg,rgba(248,113,113,0.28)0%,rgba(249,115,22,0.13)100%)" badge={t("components.infant_hub.badge_tracker")}>
-                  <InfantFeedingTracker childId={childId} ageMonths={ageMonths} lang={lang} />
-                </IHSection>
+      <InfantNotificationPrefs />
 
-                {/* 7. Health & Care */}
-                <IHSection icon={<Syringe className="h-4 w-4" />} title={t("components.infant_hub.health_care")} accentClass="bg-gradient-to-br from-teal-400 to-cyan-500" cardColor="linear-gradient(135deg,rgba(45,212,191,0.28)0%,rgba(34,211,238,0.13)100%)">
-                  <HealthCare childId={childId} ageMonths={ageMonths} />
-                </IHSection>
+      <IHSection icon={<Music2 className="h-4 w-4" />} title={t("components.infant_hub.white_noise_lullabies")} accentClass="bg-gradient-to-br from-cyan-400 to-teal-500">
+        <WhiteNoiseLullaby ageMonths={ageMonths} />
+      </IHSection>
 
-                {/* 8. Parent Coaching */}
-                <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.parent_coaching")} accentClass="bg-gradient-to-br from-purple-400 to-indigo-500" cardColor="linear-gradient(135deg,rgba(192,132,252,0.28)0%,rgba(129,140,248,0.13)100%)" badge="Interactive">
-                  <div className="space-y-5">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2 flex items-center gap-1">
-                        <ListChecks className="h-3 w-3" />
-                        {t("components.infant_hub.baby_cues_engine")}
-                      </p>
-                      <BabyCuesEngine childName={childName} ageMonths={ageMonths} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2 flex items-center gap-1">
-                        <MessageCircle className="h-3 w-3" />
-                        {t("components.infant_hub.communication_coaching")}
-                      </p>
-                      <CommunicationCoaching ageMonths={ageMonths} />
-                    </div>
-                  </div>
-                </IHSection>
+      <IHSection icon={<Star className="h-4 w-4" />} title={t("components.infant_hub.weekly_focus")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500">
+        <WeeklyFocus childId={childId} childName={childName} ageMonths={ageMonths} />
+      </IHSection>
 
-                {/* 9. Today's Activities */}
-                {(ACTIVITIES[getBand(ageMonths)] ?? []).length > 0 && <IHSection icon={<Zap className="h-4 w-4" />} title={t("components.infant_hub.today_s_activities")} accentClass="bg-gradient-to-br from-emerald-400 to-green-500" cardColor="linear-gradient(135deg,rgba(52,211,153,0.28)0%,rgba(34,197,94,0.13)100%)" badge={`${(ACTIVITIES[getBand(ageMonths)] ?? []).length} idea${(ACTIVITIES[getBand(ageMonths)] ?? []).length === 1 ? "" : "s"}`}>
-                    <DailyActivities ageMonths={ageMonths} />
-                  </IHSection>}
-              </div>}
-          </CardContent>
-        </Card>}
-    </div>;
+      <IHSection icon={<Brain className="h-4 w-4" />} title={t("infant_hub.amy_suggests")} accentClass="bg-gradient-to-br from-purple-400 to-indigo-500">
+        <div className="space-y-3">
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            {INFANT_CATEGORIES.map((cat) => (
+              <button key={cat.key} type="button" onClick={() => { setActive(cat.key); setTipIndex(0); }} className={["shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border", active === cat.key ? "bg-primary text-white border-primary" : "border-border text-muted-foreground"].join(" ")}>
+                {cat.emoji} {t(`infant_hub.tabs.${cat.key}`)}
+              </button>
+            ))}
+          </div>
+          <p className="text-sm"><span className="mr-1">{insight.emoji}</span>{pickLang(insight, lang)}</p>
+          {currentTip && <p className="text-sm text-muted-foreground">{pickLang(currentTip.body, lang)}</p>}
+        </div>
+      </IHSection>
+
+      <IHSection icon={<ListChecks className="h-4 w-4" />} title={t("components.infant_hub.parent_coaching")} accentClass="bg-gradient-to-br from-purple-400 to-indigo-500">
+        <BabyCuesEngine childName={childName} ageMonths={ageMonths} />
+        <div className="mt-4"><CommunicationCoaching ageMonths={ageMonths} /></div>
+      </IHSection>
+
+      {(INFANT_ACTIVITIES[getInfantAgeBand(ageMonths)] ?? []).length > 0 && (
+        <IHSection icon={<Zap className="h-4 w-4" />} title={t("components.infant_hub.today_s_activities")} accentClass="bg-gradient-to-br from-emerald-400 to-green-500">
+          <DailyActivities ageMonths={ageMonths} />
+        </IHSection>
+      )}
+
+      <div className="flex items-start gap-2 text-[11px] text-muted-foreground px-1">
+        <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
+        <p>{t("infant_hub.safe_disclaimer")}</p>
+      </div>
+    </div>
+  );
 }

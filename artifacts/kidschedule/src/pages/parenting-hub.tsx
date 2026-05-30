@@ -16,7 +16,7 @@ import { ColoringBooks } from "@/components/coloring-books";
 import { FunSheets } from "@/components/fun-sheets";
 import { StoryHub } from "@/components/story-hub";
 import { getAgeGroup, getAgeGroupInfo } from "@/lib/age-groups";
-import { InfantMode, type InfantShowOnly } from "@/components/infant-mode";
+import { InfantModeShortcuts } from "@/components/infant/infant-mode-shortcuts";
 import { InfantHub } from "@/components/infant-hub";
 import { SkillFocusSection, StorySection, ParentTasksSection } from "@/components/age-based-sections";
 import { DailyStorySection } from "@/components/daily-story-section";
@@ -627,7 +627,7 @@ function ActivitiesSection({
       {/* ── INFANT ─────────────────────────────────────────────────────── */}
       {isInfant && <>
           <SubSection gateSection="hub_activities" icon={<Baby className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.baby-activities.title")} description={t("parent_hub.subsections.baby-activities.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(244,114,182,0.26)0%,rgba(251,113,133,0.12)100%)">
-            <InfantMode childName={effectiveChild.name} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} showOnly={null} />
+            <InfantModeShortcuts childName={effectiveChild.name} />
           </SubSection>
 
           <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.amazing-facts-baby.title")} description={t("parent_hub.subsections.amazing-facts-baby.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(251,191,36,0.26)0%,rgba(234,179,8,0.12)100%)">

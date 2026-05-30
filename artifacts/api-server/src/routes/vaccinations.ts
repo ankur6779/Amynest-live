@@ -21,6 +21,7 @@ import {
   type VaccinationLogRow,
 } from "@workspace/db";
 import { VACCINATIONS, type VaxStatus } from "@workspace/infant-hub";
+import { canAccessChild } from "../lib/child-access";
 
 const router: IRouter = Router();
 
@@ -47,16 +48,12 @@ const VALID_AGE_LABELS = new Set(VACCINATIONS.map((v) => v.ageLabel));
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-async function ensureOwnedChild(
+async function ensureAccessibleChild(
   childId: number,
   userId: string,
 ): Promise<boolean> {
-  const rows = await db
-    .select({ id: childrenTable.id })
-    .from(childrenTable)
-    .where(and(eq(childrenTable.id, childId), eq(childrenTable.userId, userId)))
-    .limit(1);
-  return rows.length > 0;
+  const child = await canAccessChild(childId, userId);
+  return child != null;
 }
 
 function toClientLog(row: VaccinationLogRow) {
@@ -84,7 +81,7 @@ router.get("/vaccinations/:childId", async (req, res): Promise<void> => {
     return;
   }
 
-  if (!(await ensureOwnedChild(params.data.childId, userId))) {
+  if (!(await ensureAccessibleChild(params.data.childId, userId))) {
     res.status(404).json({ error: "child_not_found" });
     return;
   }
@@ -129,7 +126,7 @@ router.put(
       return;
     }
 
-    if (!(await ensureOwnedChild(params.data.childId, userId))) {
+    if (!(await ensureAccessibleChild(params.data.childId, userId))) {
       res.status(404).json({ error: "child_not_found" });
       return;
     }
@@ -184,7 +181,7 @@ router.delete(
       return;
     }
 
-    if (!(await ensureOwnedChild(params.data.childId, userId))) {
+    if (!(await ensureAccessibleChild(params.data.childId, userId))) {
       res.status(404).json({ error: "child_not_found" });
       return;
     }

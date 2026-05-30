@@ -16,6 +16,7 @@ import {
   type InfantMilestoneProgressRow,
 } from "@workspace/db";
 import { MILESTONES } from "@workspace/infant-hub";
+import { canAccessChild } from "../lib/child-access";
 
 const router: IRouter = Router();
 
@@ -46,16 +47,12 @@ const syncBodySchema = z.object({
   ),
 });
 
-async function ensureOwnedChild(
+async function ensureAccessibleChild(
   childId: number,
   userId: string,
 ): Promise<boolean> {
-  const rows = await db
-    .select({ id: childrenTable.id })
-    .from(childrenTable)
-    .where(and(eq(childrenTable.id, childId), eq(childrenTable.userId, userId)))
-    .limit(1);
-  return rows.length > 0;
+  const child = await canAccessChild(childId, userId);
+  return child != null;
 }
 
 function toClientRow(row: InfantMilestoneProgressRow) {
@@ -80,7 +77,7 @@ router.get("/infant-milestones/:childId", async (req, res): Promise<void> => {
   }
 
   const { childId } = parsed.data;
-  if (!(await ensureOwnedChild(childId, userId))) {
+  if (!(await ensureAccessibleChild(childId, userId))) {
     res.status(404).json({ error: "child_not_found" });
     return;
   }
@@ -88,12 +85,7 @@ router.get("/infant-milestones/:childId", async (req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(infantMilestoneProgressTable)
-    .where(
-      and(
-        eq(infantMilestoneProgressTable.childId, childId),
-        eq(infantMilestoneProgressTable.userId, userId),
-      ),
-    );
+    .where(eq(infantMilestoneProgressTable.childId, childId));
 
   const progress: Record<
     string,
@@ -136,7 +128,7 @@ router.put(
       return;
     }
 
-    if (!(await ensureOwnedChild(childId, userId))) {
+    if (!(await ensureAccessibleChild(childId, userId))) {
       res.status(404).json({ error: "child_not_found" });
       return;
     }
@@ -189,7 +181,7 @@ router.post(
     }
 
     const { childId } = parsedParams.data;
-    if (!(await ensureOwnedChild(childId, userId))) {
+    if (!(await ensureAccessibleChild(childId, userId))) {
       res.status(404).json({ error: "child_not_found" });
       return;
     }
@@ -197,12 +189,7 @@ router.post(
     const existing = await db
       .select()
       .from(infantMilestoneProgressTable)
-      .where(
-        and(
-          eq(infantMilestoneProgressTable.childId, childId),
-          eq(infantMilestoneProgressTable.userId, userId),
-        ),
-      );
+      .where(eq(infantMilestoneProgressTable.childId, childId));
 
     const serverMap = new Map(
       existing.map((r) => [r.milestoneId, r.updatedAt.getTime()] as const),
@@ -238,12 +225,7 @@ router.post(
     const rows = await db
       .select()
       .from(infantMilestoneProgressTable)
-      .where(
-        and(
-          eq(infantMilestoneProgressTable.childId, childId),
-          eq(infantMilestoneProgressTable.userId, userId),
-        ),
-      );
+      .where(eq(infantMilestoneProgressTable.childId, childId));
 
     const progress: Record<
       string,

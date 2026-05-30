@@ -27,6 +27,8 @@ import { cacheRoutineStreak } from "@/lib/routine-streak-cache";
 import { pickRoutineForIntelligence, resolveFamilyIntelligenceSurface } from "@/lib/family-intelligence-surface";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { SevenDayJourneyCard } from "@/components/seven-day-journey-card";
+import { InfantDashboardShortcut } from "@/components/infant/infant-dashboard-shortcut";
+import { FF_INFANT_V2 } from "@/lib/infant-feature-flags";
 import { useJourney } from "@/hooks/use-journey";
 import { DashboardGlassCard } from "@/components/dashboard-glass-card";
 import {
@@ -1114,6 +1116,13 @@ export default function Dashboard() {
               selectedChildId={selectedChildId}
               onSelectChild={setSelectedChildId}
             />
+
+            {FF_INFANT_V2 && selectedChild && selectedChild.age * 12 + (selectedChild.ageMonths ?? 0) < 24 && (
+              <InfantDashboardShortcut
+                childId={selectedChild.id}
+                childName={selectedChild.name}
+              />
+            )}
 
             {loadingSummary ? (
               <Skeleton className="h-12 rounded-xl" />

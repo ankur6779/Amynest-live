@@ -292,6 +292,86 @@ export async function ensurePhonicsCurriculumTables(): Promise<void> {
   );
 }
 
+export async function ensureInfantCareTables(): Promise<void> {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS infant_care_logs (
+      id          SERIAL PRIMARY KEY,
+      child_id    INTEGER NOT NULL,
+      user_id     TEXT NOT NULL,
+      log_type    TEXT NOT NULL,
+      logged_at   TIMESTAMPTZ NOT NULL,
+      metadata    JSONB,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS infant_care_logs_child_idx ON infant_care_logs (child_id)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS infant_care_logs_child_logged_idx
+      ON infant_care_logs (child_id, logged_at DESC)
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS infant_growth_measurements (
+      id           SERIAL PRIMARY KEY,
+      child_id     INTEGER NOT NULL,
+      user_id      TEXT NOT NULL,
+      weight_kg    REAL,
+      height_cm    REAL,
+      head_cm      REAL,
+      measured_at  TIMESTAMPTZ NOT NULL,
+      notes        TEXT,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS infant_growth_measurements_child_idx
+      ON infant_growth_measurements (child_id)
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS infant_wellbeing_checkins (
+      id          SERIAL PRIMARY KEY,
+      child_id    INTEGER NOT NULL,
+      user_id     TEXT NOT NULL,
+      energy      INTEGER NOT NULL,
+      stress      INTEGER NOT NULL,
+      logged_at   TIMESTAMPTZ NOT NULL,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS infant_wellbeing_checkins_child_idx
+      ON infant_wellbeing_checkins (child_id)
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS child_caregivers (
+      id                 SERIAL PRIMARY KEY,
+      child_id           INTEGER NOT NULL,
+      user_id            TEXT NOT NULL,
+      role               TEXT NOT NULL DEFAULT 'co_parent',
+      status             TEXT NOT NULL DEFAULT 'pending',
+      invite_code        TEXT,
+      invited_by_user_id TEXT,
+      invited_at         TIMESTAMPTZ,
+      accepted_at        TIMESTAMPTZ,
+      created_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS child_caregivers_child_user_uniq
+      ON child_caregivers (child_id, user_id)
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS child_caregivers_invite_code_idx
+      ON child_caregivers (invite_code)
+  `);
+
+  logger.info({ evt: "db.ensure", table: "infant_care" }, "Ensured infant care tables");
+}
+
 export async function ensureInfantMilestoneProgressTable(): Promise<void> {
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS infant_milestone_progress (
@@ -333,6 +413,7 @@ export async function ensureStartupTables(): Promise<void> {
     { name: "push_tokens", run: ensurePushTokensTable },
     { name: "razorpay_webhook_events", run: ensureRazorpayWebhookEventsTable },
     { name: "phonics_curriculum", run: ensurePhonicsCurriculumTables },
+    { name: "infant_care", run: ensureInfantCareTables },
     { name: "infant_milestone_progress", run: ensureInfantMilestoneProgressTable },
   ];
 

@@ -21,6 +21,7 @@ import {
   CRY_CAUSES,
   type CryCause,
 } from "../lib/cryInsight";
+import { canAccessChild } from "../lib/child-access";
 
 const router: IRouter = Router();
 
@@ -62,16 +63,8 @@ const historyQuerySchema = z.object({
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-async function loadOwnedChild(childId: number, userId: string) {
-  const rows = await db
-    .select({
-      id: childrenTable.id,
-      ageMonths: childrenTable.ageMonths,
-    })
-    .from(childrenTable)
-    .where(and(eq(childrenTable.id, childId), eq(childrenTable.userId, userId)))
-    .limit(1);
-  return rows[0] ?? null;
+async function loadAccessibleChild(childId: number, userId: string) {
+  return canAccessChild(childId, userId);
 }
 
 /** Shape returned to clients (web + mobile share this). */
@@ -115,7 +108,7 @@ router.post("/cry-insight/analyze", async (req, res): Promise<void> => {
   }
   const body = parsed.data;
 
-  const child = await loadOwnedChild(body.childId, userId);
+  const child = await loadAccessibleChild(body.childId, userId);
   if (!child) {
     res.status(404).json({ error: "child_not_found" });
     return;
@@ -200,7 +193,7 @@ router.get("/cry-insight/history/:childId", async (req, res): Promise<void> => {
     return;
   }
 
-  const child = await loadOwnedChild(params.data.childId, userId);
+  const child = await loadAccessibleChild(params.data.childId, userId);
   if (!child) {
     res.status(404).json({ error: "child_not_found" });
     return;
@@ -209,12 +202,7 @@ router.get("/cry-insight/history/:childId", async (req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(crySessionsTable)
-    .where(
-      and(
-        eq(crySessionsTable.childId, params.data.childId),
-        eq(crySessionsTable.userId, userId),
-      ),
-    )
+    .where(eq(crySessionsTable.childId, params.data.childId))
     .orderBy(desc(crySessionsTable.createdAt))
     .limit(query.data.limit);
 

@@ -45,10 +45,10 @@ import {
 import { getPlayCategoriesWithProgress } from "@workspace/learning-progress-engine";
 import {
   DailyFreshnessCard,
-  NextSessionUnlocks,
   ProgressionStrip,
   AmyPresenceStrip,
 } from "@/components/learning-progress";
+import { StudyCurriculumVisibility } from "@/components/study-curriculum-visibility";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import {
   loadProgress, markPlayItem, markTopicResult,
@@ -190,20 +190,25 @@ export default function StudyPage() {
               <AmyPresenceStrip surface="study" childId={activeChildId} />
             </div>
           )}
+          {child && mode && (
+            <StudyCurriculumVisibility
+              childAge={child.age}
+              childClass={child.childClass}
+              mode={mode}
+              childName={child.name}
+              nextSessionUnlocks={learningProgress.unlocks?.nextSessionUnlocks}
+              onNextSessionVisible={trackNextSessionOpened}
+            />
+          )}
           {learningProgress.profile && (
             <ProgressionStrip profile={learningProgress.profile} className="mb-3" />
           )}
           {learningProgress.unlocks && (
-            <div className="grid gap-3 sm:grid-cols-2 mb-3">
-              <DailyFreshnessCard
-                items={learningProgress.unlocks.todaysUnlocks}
-                isRevisionDay={learningProgress.unlocks.isRevisionDay}
-              />
-              <NextSessionUnlocks
-                items={learningProgress.unlocks.nextSessionUnlocks}
-                onVisible={trackNextSessionOpened}
-              />
-            </div>
+            <DailyFreshnessCard
+              items={learningProgress.unlocks.todaysUnlocks}
+              isRevisionDay={learningProgress.unlocks.isRevisionDay}
+              className="mb-3"
+            />
           )}
           {progress && <EngagementStrip engagement={progress.engagement} />}
           <PlayHome
@@ -230,6 +235,16 @@ export default function StudyPage() {
         />
       ) : view.kind === "study-home" ? (
         <>
+          {child && mode && (
+            <StudyCurriculumVisibility
+              childAge={child.age}
+              childClass={child.childClass}
+              mode={mode}
+              childName={child.name}
+              nextSessionUnlocks={learningProgress.unlocks?.nextSessionUnlocks}
+              onNextSessionVisible={trackNextSessionOpened}
+            />
+          )}
           {progress && <EngagementStrip engagement={progress.engagement} />}
           <TodaysPlanSection
             childId={view.childId}

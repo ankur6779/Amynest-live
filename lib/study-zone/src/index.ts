@@ -58,6 +58,22 @@ export {
   BASIC_MATH_EXTRA_PRACTICE_SUBJECTS,
   BASIC_MATH_EXTRA_PRACTICE_TOPICS,
 } from "./basic-math-extra-practice";
+export {
+  JOURNEY_STAGES,
+  FUTURE_WORLDS,
+  CURRICULUM_STATS,
+  CURRICULUM_EXPLORER,
+  CONTENT_BANK_SMART_STUDY_LESSONS,
+  computeCurriculumUnlockSnapshot,
+  futureWorldsForChild,
+  buildWhatComesNextItems,
+  journeyStageMessage,
+  stageStatus,
+  resolveJourneyStage,
+  type JourneyStageId,
+  type FutureWorld,
+  type CurriculumUnlockSnapshot,
+} from "./curriculum-catalog";
 
 import type { PlayCategory, SubjectPack, StudyTopic, PlayItem, PlayCategoryId } from "./types";
 import { PLAY_CATEGORIES } from "./content/play";

@@ -1,11 +1,12 @@
 /** Deep links from routines → Parent Hub activity tiles. */
 
 export type HubDeepLinkTarget = {
-  group: "creativity" | "learning" | "stories";
+  group: "creativity" | "learning" | "stories" | "today";
   tileId: string;
 };
 
 const TILE_NAV: Record<string, HubDeepLinkTarget> = {
+  "infant-hub": { group: "today", tileId: "infant-hub" },
   activities: { group: "creativity", tileId: "activities" },
   "gaming-rewards": { group: "creativity", tileId: "gaming-rewards" },
   worksheets: { group: "creativity", tileId: "worksheets" },
@@ -89,6 +90,7 @@ export function parseParentingHubDeepLink(): HubDeepLinkTarget | null {
   const m = raw.match(/^tile-([a-z0-9-]+)$/);
   if (!m) return null;
   const tileId = m[1]!;
+  if (tileId === "infant-hub") return { group: "today", tileId: "infant-hub" };
   return TILE_NAV[tileId] ?? { group: "creativity", tileId };
 }
 

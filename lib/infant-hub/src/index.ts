@@ -647,3 +647,6 @@ export function getDefaultPoemAgeGroup(months: number): PoemAgeGroup {
 export function getPoemsForGroup(group: PoemAgeGroup): InfantPoem[] {
   return ALL_POEMS.filter((p) => p.ageGroup === group);
 }
+
+export * from "./activities";
+export * from "./growthPercentiles";

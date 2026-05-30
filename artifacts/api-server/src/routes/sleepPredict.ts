@@ -18,6 +18,7 @@ import {
   napSessionsTable,
   type NapSessionRow,
 } from "@workspace/db";
+import { canAccessChild } from "../lib/child-access";
 import {
   predictNextSleep,
   buildPredictInputFromHistory,
@@ -64,16 +65,8 @@ const predictQuerySchema = z.object({
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-async function loadOwnedChild(childId: number, userId: string) {
-  const rows = await db
-    .select({
-      id: childrenTable.id,
-      ageMonths: childrenTable.ageMonths,
-    })
-    .from(childrenTable)
-    .where(and(eq(childrenTable.id, childId), eq(childrenTable.userId, userId)))
-    .limit(1);
-  return rows[0] ?? null;
+async function loadAccessibleChild(childId: number, userId: string) {
+  return canAccessChild(childId, userId);
 }
 
 function toClientSession(row: NapSessionRow) {
@@ -115,7 +108,7 @@ router.post("/sleep-predict/log", async (req, res): Promise<void> => {
   }
   const body = parsed.data;
 
-  const child = await loadOwnedChild(body.childId, userId);
+  const child = await loadAccessibleChild(body.childId, userId);
   if (!child) {
     res.status(404).json({ error: "child_not_found" });
     return;
@@ -136,7 +129,6 @@ router.post("/sleep-predict/log", async (req, res): Promise<void> => {
       .where(
         and(
           eq(napSessionsTable.childId, body.childId),
-          eq(napSessionsTable.userId, userId),
           eq(napSessionsTable.kind, body.kind),
           eq(napSessionsTable.startedAt, startedAt),
           isNull(napSessionsTable.endedAt),
@@ -198,7 +190,7 @@ router.get(
       return;
     }
 
-    const child = await loadOwnedChild(params.data.childId, userId);
+    const child = await loadAccessibleChild(params.data.childId, userId);
     if (!child) {
       res.status(404).json({ error: "child_not_found" });
       return;
@@ -208,12 +200,7 @@ router.get(
     const rows = await db
       .select()
       .from(napSessionsTable)
-      .where(
-        and(
-          eq(napSessionsTable.childId, params.data.childId),
-          eq(napSessionsTable.userId, userId),
-        ),
-      )
+      .where(eq(napSessionsTable.childId, params.data.childId))
       .orderBy(desc(napSessionsTable.startedAt))
       .limit(30);
 
@@ -262,7 +249,7 @@ router.get(
       return;
     }
 
-    const child = await loadOwnedChild(params.data.childId, userId);
+    const child = await loadAccessibleChild(params.data.childId, userId);
     if (!child) {
       res.status(404).json({ error: "child_not_found" });
       return;
@@ -271,12 +258,7 @@ router.get(
     const rows = await db
       .select()
       .from(napSessionsTable)
-      .where(
-        and(
-          eq(napSessionsTable.childId, params.data.childId),
-          eq(napSessionsTable.userId, userId),
-        ),
-      )
+      .where(eq(napSessionsTable.childId, params.data.childId))
       .orderBy(desc(napSessionsTable.startedAt))
       .limit(query.data.limit);
 
