@@ -7,14 +7,11 @@ import {
 } from "@/lib/auto-recovery";
 import { handleRecoveryReload } from "@/lib/clear-cache-reload";
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
-import { safeLogClientError, safeLogOnboardingFinish } from "@/lib/guarded-log";
+import { logOnboardingFinish } from "@/lib/onboarding-completion";
+import { logClientError } from "@/lib/log-client-error";
 import { getOnboardingRunId } from "@/lib/onboarding-telemetry";
 import { showReactCrashOverlay } from "@/lib/production-crash-overlay";
 import { isCrashDebugOverlayEnabled } from "@/lib/runtime-crash-policy";
-import {
-  normalizeBoundaryError,
-  safeInvokeBoundaryHandler,
-} from "@/lib/safe-error-boundary-catch";
 
 type Props = {
   children: ReactNode;
@@ -41,36 +38,33 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    const err = normalizeBoundaryError(error);
-    safeInvokeBoundaryHandler(this.props.label ?? "app", () => {
-      console.error(
-        "APP CRASH:",
-        this.props.label ?? "app",
-        err,
-        info.componentStack,
-      );
-      showReactCrashOverlay(err, this.props.label ?? "app", info.componentStack ?? undefined);
-      const crashMeta = {
-        boundary: this.props.label ?? "app",
-        route: typeof window !== "undefined" ? window.location.pathname : undefined,
-        onboardingStep:
-          typeof window !== "undefined"
-            ? (window as Window & { __amynestOnboardingStep?: string }).__amynestOnboardingStep
-            : undefined,
-        onboardingRunId: getOnboardingRunId(),
-      };
-      safeLogOnboardingFinish("APP_CRASH", {
-        message: err.message,
-        stack: err.stack,
-        componentStack: info.componentStack,
-        ...crashMeta,
-      });
-      safeLogClientError({
-        label: this.props.label ?? "app",
-        message: err.message,
-        stack: [err.stack, info.componentStack].filter(Boolean).join("\n"),
-        meta: crashMeta,
-      });
+    console.error(
+      "APP CRASH:",
+      this.props.label ?? "app",
+      error,
+      info.componentStack,
+    );
+    showReactCrashOverlay(error, this.props.label ?? "app", info.componentStack ?? undefined);
+    const crashMeta = {
+      boundary: this.props.label ?? "app",
+      route: typeof window !== "undefined" ? window.location.pathname : undefined,
+      onboardingStep:
+        typeof window !== "undefined"
+          ? (window as Window & { __amynestOnboardingStep?: string }).__amynestOnboardingStep
+          : undefined,
+      onboardingRunId: getOnboardingRunId(),
+    };
+    logOnboardingFinish("APP_CRASH", {
+      message: error.message,
+      stack: error.stack,
+      componentStack: info.componentStack,
+      ...crashMeta,
+    });
+    void logClientError({
+      label: this.props.label ?? "app",
+      message: error.message,
+      stack: [error.stack, info.componentStack].filter(Boolean).join("\n"),
+      meta: crashMeta,
     });
   }
 

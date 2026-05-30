@@ -4,11 +4,6 @@
 
 :root {
   --sab: 0px;
-  --sat: 0px;
-  --sal: 0px;
-  --sar: 0px;
-  --tabbar-height: 72px;
-  --app-bottom-clearance: 0px;
 }
 
 /* ── Amy Mascot Logo — header animated icon ─────────────────────── */
@@ -623,28 +618,20 @@ html[data-theme="dark"] {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-  padding-bottom: calc(1rem + var(--sab, env(safe-area-inset-bottom, 0px)));
+  padding-bottom: 80px;
 }
 
 .main-content {
-  padding-bottom: calc(1rem + var(--sab, env(safe-area-inset-bottom, 0px)));
-}
-
-body.has-tabbar .app-scroll,
-body.has-tabbar .page-content,
-body.has-tabbar .main-content {
-  padding-bottom: calc(
-    var(--tabbar-height, 72px) + var(--sab, env(safe-area-inset-bottom, 0px))
-  );
+  padding-bottom: 80px;
 }
 
 /* Reserve space above fixed bottom controls (audio player, sticky bars). */
 .scroll-safe {
-  padding-bottom: calc(120px + var(--sab, env(safe-area-inset-bottom, 0px)));
+  padding-bottom: 120px;
 }
 
 .scroll-safe--audio {
-  padding-bottom: calc(120px + var(--sab, env(safe-area-inset-bottom, 0px)));
+  padding-bottom: 120px;
 }
 
 /* Fixed bottom controls — extend to screen bottom; pad content above system nav */
@@ -655,7 +642,7 @@ body.has-tabbar .main-content {
   right: 0;
   bottom: 0;
   z-index: 50;
-  padding-bottom: var(--sab, env(safe-area-inset-bottom, 0px));
+  padding-bottom: 0;
   box-sizing: border-box;
 }
 
@@ -840,9 +827,9 @@ html.amynest-native-shell:not(.amynest-android-shell) .app-header {
 html.amynest-android-shell .app-header {
   position: sticky;
   top: 0;
-  padding-top: var(--sat, env(safe-area-inset-top, 0px));
-  padding-left: var(--sal, env(safe-area-inset-left, 0px));
-  padding-right: var(--sar, env(safe-area-inset-right, 0px));
+  padding-top: 0;
+  padding-left: 0;
+  padding-right: 0;
   background: hsl(var(--background));
 }
 
@@ -875,14 +862,12 @@ html.amynest-android-shell .app-footer.tabbar,
 html.amynest-native-shell .app-footer.tabbar {
   position: fixed;
   bottom: 0;
-  height: auto;
-  min-height: var(--tabbar-height, 72px);
-  padding-bottom: var(--sab, env(safe-area-inset-bottom, 0px));
+  height: 72px;
+  padding-bottom: 0;
   margin: 0 !important;
   transform: none !important;
   display: flex !important;
   visibility: visible !important;
-  box-sizing: border-box;
 }
 
 html.amynest-android-shell .main-container main > .flex.flex-1,
@@ -912,9 +897,8 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
   left: 0;
   right: 0;
   bottom: 0;
-  height: auto;
-  min-height: var(--tabbar-height, 72px);
-  padding-bottom: var(--sab, env(safe-area-inset-bottom, 0px));
+  height: 72px;
+  padding-bottom: 0;
   margin: 0 !important;
   box-sizing: border-box;
   background: rgba(10, 15, 30, 0.98);
@@ -1150,8 +1134,12 @@ html.amynest-native-shell .main-container main > .flex.flex-1 {
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 :root {
+  --sat: 0px;
+  --sar: 0px;
+  --sal: 0px;
   --app-header-height: 3.5rem;
   --app-header-content-gap: 8px;
+  --app-bottom-clearance: 0px;
 }
 
 .amynest-native-shell #app-root,
@@ -1297,10 +1285,6 @@ html.amynest-native-shell:not(.amynest-android-shell) .amynest-auth-scroll {
   padding-bottom: max(18px, env(safe-area-inset-bottom, 0px));
 }
 
-html.amynest-android-shell .amynest-auth-scroll {
-  padding-bottom: max(18px, var(--sab, env(safe-area-inset-bottom, 0px)));
-}
-
 .amynest-auth-shell--keyboard .amynest-auth-scroll {
   min-height: 0;
   flex: 1;
@@ -1314,12 +1298,6 @@ html.amynest-native-shell:not(.amynest-android-shell)
   .amynest-auth-scroll {
   padding-bottom: calc(
     18px + var(--auth-keyboard-inset, 0px) + env(safe-area-inset-bottom, 0px)
-  );
-}
-
-html.amynest-android-shell .amynest-auth-shell--keyboard .amynest-auth-scroll {
-  padding-bottom: calc(
-    18px + var(--auth-keyboard-inset, 0px) + var(--sab, env(safe-area-inset-bottom, 0px))
   );
 }
 
@@ -1401,24 +1379,16 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
 
 /* Fixed headers — clear the notch / Dynamic Island */
 .header-safe {
-  padding-top: var(--sat, env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* Utility classes for manual safe-area spacing */
-.pt-safe  { padding-top:    var(--sat, env(safe-area-inset-top,    0px)); }
-.pr-safe  { padding-right:  var(--sar, env(safe-area-inset-right,  0px)); }
-.pb-safe  { padding-bottom: var(--sab, env(safe-area-inset-bottom, 0px)); }
-.pl-safe  { padding-left:   var(--sal, env(safe-area-inset-left,   0px)); }
-.mt-safe  { margin-top:     var(--sat, env(safe-area-inset-top,    0px)); }
-.mb-safe  { margin-bottom:  var(--sab, env(safe-area-inset-bottom, 0px)); }
-
-/* Sticky/fixed chrome — reuse across sheets, CTAs, marketing footers */
-.safe-area-top {
-  padding-top: max(0.75rem, var(--sat, env(safe-area-inset-top, 0px)));
-}
-.safe-area-bottom {
-  padding-bottom: max(0.75rem, var(--sab, env(safe-area-inset-bottom, 0px)));
-}
+.pt-safe  { padding-top:    env(safe-area-inset-top,    0px); }
+.pr-safe  { padding-right:  env(safe-area-inset-right,  0px); }
+.pb-safe  { padding-bottom: var(--sab); }
+.pl-safe  { padding-left:   env(safe-area-inset-left,   0px); }
+.mt-safe  { margin-top:     env(safe-area-inset-top,    0px); }
+.mb-safe  { margin-bottom: var(--sab); }
 
 /* ─── Light-mode legacy-color safety net ────────────────────────────────
  * The app was originally authored assuming the always-dark theme, so many

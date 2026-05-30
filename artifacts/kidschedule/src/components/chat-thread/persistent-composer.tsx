@@ -55,8 +55,7 @@ export function PersistentComposer({
           onClick={onSend}
           disabled={sendDisabled || !draft.trim() || disabled}
           size="icon"
-          className="shrink-0 rounded-xl"
-          aria-label="Send message"
+          className="h-9 w-9 shrink-0 rounded-xl"
           data-testid="chat-thread-send"
         >
           {disabled && sendDisabled ? (

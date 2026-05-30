@@ -590,7 +590,7 @@ export default function SocialLandingPage() {
         <div className="absolute bottom-[15%] left-[8%] w-[360px] h-[360px] rounded-full opacity-18" style={{ background: "radial-gradient(circle,rgba(236,72,153,0.35),transparent 68%)" }} />
       </div>
 
-      <header className="sticky top-0 z-30 sl-glass border-b border-white/10 safe-area-top">
+      <header className="sticky top-0 z-30 sl-glass border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
             <img src={OFFICIAL_LOGO} alt="AmyNest AI" className="h-10 w-10 rounded-xl object-cover shrink-0" />
@@ -790,11 +790,11 @@ export default function SocialLandingPage() {
         </div>
       </section>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden sl-glass border-t border-white/10 px-4 py-3 safe-area-bottom">
+      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden sl-glass border-t border-white/10 px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="font-quicksand font-black text-sm">AmyNest AI</p>
-            <p className="text-xs text-white/55">Patent Pending · Free To Start</p>
+            <p className="text-[10px] text-white/55">Patent Pending · Free To Start</p>
           </div>
           <StoreButton target={target} location="sticky_mobile" size="compact">
             <span className="text-xs font-bold text-white">Start Plan</span>

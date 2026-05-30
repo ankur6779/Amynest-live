@@ -42,9 +42,9 @@ export function MobileTabBar({ visible }: MobileTabBarProps) {
       <AmyFab embedded />
       <nav
         className="app-footer__nav w-full border-t border-border bg-card/95 shadow-[0_-8px_28px_var(--shadow-color)] backdrop-blur-xl"
-        aria-label={t("nav.main_navigation", { defaultValue: "Main navigation" })}
+        aria-label={t("nav.dashboard")}
       >
-        <div className="relative flex min-h-[var(--tabbar-height,72px)] w-full items-end justify-around px-2 pb-2 safe-area-bottom">
+        <div className="relative flex h-[72px] w-full items-end justify-around px-2 pb-2">
           {BOTTOM_NAV_ITEMS.map((item) => {
             const isActive = safePathStartsWithSegment(location, item.href);
             if (item.center) {
@@ -62,7 +62,7 @@ export function MobileTabBar({ visible }: MobileTabBarProps) {
                   >
                     <item.icon className="h-7 w-7" />
                   </div>
-                  <span className="mt-1 text-xs font-semibold text-muted-foreground">
+                  <span className="mt-1 text-[10px] font-semibold text-muted-foreground">
                     {t(item.labelKey)}
                   </span>
                 </AppLink>
@@ -86,7 +86,7 @@ export function MobileTabBar({ visible }: MobileTabBarProps) {
                 className={`relative flex flex-1 flex-col items-center justify-center gap-1 px-1 py-2 transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}
               >
                 <item.icon className={`h-5 w-5 ${isActive ? "fill-primary" : ""}`} />
-                <span className="text-xs font-medium leading-none">
+                <span className="text-[11px] font-medium leading-none">
                   {t(item.labelKey)}
                 </span>
                 {isActive ? (
