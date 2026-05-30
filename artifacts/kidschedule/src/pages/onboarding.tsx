@@ -39,6 +39,7 @@ import {
   wasOnboardingTrialSeen,
 } from "@/lib/subscription-funnel-storage";
 import { logOnboardingState } from "@/lib/onboarding-debug";
+import { logOnboardingPipelineSnapshot } from "@/lib/onboarding-pipeline-log";
 import { resolveActiveChatPromptId } from "@/lib/chat-platform";
 import {
   OnboardingFinishError,
@@ -752,6 +753,11 @@ export default function OnboardingPage() {
     if (isFinishing) return;
     setIsFinishing(true);
     onboardingRunIdRef.current = createOnboardingRunId();
+    void logOnboardingPipelineSnapshot("finish-button-click", authFetch, {
+      userId: user?.id ?? readFirebaseUserId(),
+      onboardingRunId: onboardingRunIdRef.current,
+      extra: { none, step: "parent-allergies" },
+    });
     const allergiesStr = none ? "" : buildAllergiesString(allergyChips, allergyOtherText);
     setParent((p) => ({ ...p, allergies: allergiesStr }));
     const summary = none
@@ -770,17 +776,22 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (!isSignedIn || isFinishing) return;
     let cancelled = false;
-    void resolveSetupStatus(authFetch).then((status) => {
+    void (async () => {
+      await logOnboardingPipelineSnapshot("bootstrap-after-reload", authFetch, {
+        userId: user?.id ?? readFirebaseUserId(),
+        extra: { trigger: "onboarding-page-mount" },
+      });
+      const status = await resolveSetupStatus(authFetch);
       if (cancelled || !isSetupComplete(status)) return;
       persistOnboardingCache(status);
       queryClient.setQueryData(["onboarding-status"], status);
       clearOnboardingChatSession();
       setLocation("/dashboard");
-    });
+    })();
     return () => {
       cancelled = true;
     };
-  }, [authFetch, isFinishing, isSignedIn, queryClient, setLocation]);
+  }, [authFetch, isFinishing, isSignedIn, queryClient, setLocation, user?.id]);
 
   // Persist chat transcript + step for resume after app restart (debounced).
   useEffect(() => {
@@ -892,6 +903,10 @@ export default function OnboardingPage() {
     });
 
     try {
+      await logOnboardingPipelineSnapshot("save-everything-start", authFetch, {
+        userId: user?.id ?? readFirebaseUserId(),
+        onboardingRunId: onboardingRunIdRef.current ?? undefined,
+      });
       await ensureAuthContextSynced();
       const token = await waitForIdToken(getToken, {
         skipCache: true,
@@ -926,10 +941,21 @@ export default function OnboardingPage() {
         },
       });
 
+      await logOnboardingPipelineSnapshot("save-everything-after-transaction", authFetch, {
+        userId: user?.id ?? readFirebaseUserId(),
+        onboardingRunId: onboardingRunIdRef.current ?? undefined,
+      });
+
       const completeStatus = { onboardingComplete: true, profileComplete: true };
       onboardingJustFinishedRef.current = true;
       persistOnboardingCache(completeStatus);
       queryClient.setQueryData(["onboarding-status"], completeStatus);
+
+      await logOnboardingPipelineSnapshot("save-everything-after-cache", authFetch, {
+        userId: user?.id ?? readFirebaseUserId(),
+        onboardingRunId: onboardingRunIdRef.current ?? undefined,
+        skipApiFetch: false,
+      });
       clearOnboardingChatSession();
       clearOnboardingRunId();
       onboardingRunIdRef.current = null;
@@ -948,6 +974,14 @@ export default function OnboardingPage() {
           : e instanceof Error
             ? e.message
             : t("screens.onboarding.save_failed");
+      void logOnboardingPipelineSnapshot("save-everything-failed", authFetch, {
+        userId: user?.id ?? readFirebaseUserId(),
+        onboardingRunId: onboardingRunIdRef.current ?? undefined,
+        error: message,
+        extra: {
+          code: e instanceof OnboardingFinishError ? e.step : undefined,
+        },
+      });
       console.error("[onboarding] finish transaction failed", e);
       setFinishError(message);
       setStep("parent-allergies");
@@ -985,6 +1019,10 @@ export default function OnboardingPage() {
   async function goDashboard() {
     if (navigatingToDashboard) return;
     setNavigatingToDashboard(true);
+    await logOnboardingPipelineSnapshot("go-dashboard-start", authFetch, {
+      userId: user?.id ?? readFirebaseUserId(),
+      extra: { onboardingJustFinished: onboardingJustFinishedRef.current },
+    });
     logOnboardingState("go-dashboard", user, {
       entitlements,
       isLoaded: authLoaded,
@@ -1007,6 +1045,10 @@ export default function OnboardingPage() {
       navigateAfterOnboardingComplete(trialPath);
       // Use Wouter setLocation as a direct fallback in case PopStateEvent is ignored.
       setLocation(trialPath);
+      await logOnboardingPipelineSnapshot("go-dashboard-end", authFetch, {
+        userId: user?.id ?? readFirebaseUserId(),
+        extra: { trialPath, fastPath: true },
+      });
       setNavigatingToDashboard(false);
       return;
     }
@@ -1055,6 +1097,10 @@ export default function OnboardingPage() {
     navigateAfterOnboardingComplete(trialPath);
     // Direct Wouter navigation as a belt-and-suspenders fallback.
     setLocation(trialPath);
+    await logOnboardingPipelineSnapshot("go-dashboard-end", authFetch, {
+      userId: user?.id ?? readFirebaseUserId(),
+      extra: { trialPath, fastPath: false },
+    });
     setNavigatingToDashboard(false);
   }
 

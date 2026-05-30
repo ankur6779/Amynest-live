@@ -9,7 +9,9 @@ export {
   isAndroidAdjustResizeChatShell,
   isChatAnswerTarget,
   isKeyboardOpen,
+  logAndroidChatLayoutDiagnostics,
   metricsForChatLayout,
+  readAndroidChatLayoutDiagnostics,
   readChatViewportMetrics,
   readKeyboardOpenThresholdPx,
   readMeasuredVisibleBottomPx,
@@ -17,6 +19,7 @@ export {
   recordAndroidBaselineHeight,
   usesCapacitorBodyKeyboardResize,
 } from "./viewport";
+export type { AndroidChatLayoutDiagnostic } from "./viewport";
 
 export type {
   ChatVisibilityContext,

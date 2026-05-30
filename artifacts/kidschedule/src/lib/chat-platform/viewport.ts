@@ -26,40 +26,100 @@ export function isAndroidAdjustResizeChatShell(): boolean {
 
 /**
  * Baseline innerHeight captured before any keyboard activity.
- * Used to detect whether adjustResize is actually shrinking the WebView.
+ * Used only for diagnostic logging — not for layout offsets.
  */
 let _androidBaselineInnerHeight: number | null = null;
 
-/**
- * Call once on component mount (before any keyboard opens) to record the
- * full-screen innerHeight. This baseline lets us detect Android 15 edge-to-edge
- * mode where adjustResize no longer shrinks the WebView.
- */
+/** @internal Vitest-only — reset baseline between tests. */
+export function resetAndroidBaselineHeightForTests(): void {
+  _androidBaselineInnerHeight = null;
+}
+
+/** Record full-screen innerHeight for keyboard diagnostics. */
 export function recordAndroidBaselineHeight(): void {
   if (!isAndroidAdjustResizeChatShell()) return;
   if (typeof window === "undefined") return;
-  // Only record when the keyboard is definitely closed.
   if (readNativeImeInsetPx() > 0) return;
   _androidBaselineInnerHeight = window.innerHeight;
 }
 
-/**
- * Returns true when the native IME inset is non-zero but the WebView has NOT
- * shrunk — meaning adjustResize is broken (Android 15+ edge-to-edge default).
- * In this case the keyboard overlays content and the container must manually
- * offset its bottom edge by the inset amount.
- */
+/** Whether adjustResize appears to have shrunk the WebView (diagnostic only). */
 export function isAndroidAdjustResizeBroken(): boolean {
   if (!isAndroidAdjustResizeChatShell()) return false;
   if (typeof window === "undefined") return false;
   const inset = readNativeImeInsetPx();
-  // Need a meaningful inset to evaluate — at least 100 px (keyboard).
   if (inset < 100) return false;
-  // If we never recorded a baseline, assume broken (safe default on Android 15).
-  if (_androidBaselineInnerHeight === null) return true;
-  // If innerHeight shrank by at least half the inset, adjustResize is working.
+  if (_androidBaselineInnerHeight === null) return false;
   const didShrink = window.innerHeight < _androidBaselineInnerHeight - inset * 0.5;
   return !didShrink;
+}
+
+export interface AndroidChatLayoutDiagnostic {
+  windowInnerHeight: number;
+  visualViewportHeight: number | null;
+  keyboardInset: number;
+  baselineInnerHeight: number | null;
+  adjustResizeBroken: boolean;
+  /** Computed height if the reverted workaround were applied (for audit). */
+  workaroundContainerHeightPx: number | null;
+  workaroundContainerBottomPx: number | null;
+}
+
+/** Production-safe keyboard layout snapshot for Samsung / Android 15 audit. */
+export function readAndroidChatLayoutDiagnostics(
+  keyboardInset: number,
+): AndroidChatLayoutDiagnostic {
+  if (typeof window === "undefined") {
+    return {
+      windowInnerHeight: 0,
+      visualViewportHeight: null,
+      keyboardInset,
+      baselineInnerHeight: null,
+      adjustResizeBroken: false,
+      workaroundContainerHeightPx: null,
+      workaroundContainerBottomPx: null,
+    };
+  }
+  const vv = window.visualViewport;
+  const innerH = window.innerHeight;
+  const broken = isAndroidAdjustResizeBroken();
+  const inset = keyboardInset > 0 ? keyboardInset : readNativeImeInsetPx();
+  // Mirrors the removed workaround: bottom=inset AND height=calc(100%-inset) double-subtracts.
+  const workaroundBottom = broken && inset >= 100 ? inset : 0;
+  const workaroundHeight =
+    workaroundBottom > 0 ? Math.max(0, innerH - workaroundBottom * 2) : innerH;
+
+  return {
+    windowInnerHeight: innerH,
+    visualViewportHeight: vv?.height ?? null,
+    keyboardInset: inset,
+    baselineInnerHeight: _androidBaselineInnerHeight,
+    adjustResizeBroken: broken,
+    workaroundContainerHeightPx: workaroundHeight,
+    workaroundContainerBottomPx: workaroundBottom,
+  };
+}
+
+let _lastLayoutDiagKey = "";
+
+/** Log layout metrics once per keyboard-open / inset change (console + client logs). */
+export function logAndroidChatLayoutDiagnostics(surface: string, keyboardInset: number): void {
+  if (!isAndroidAdjustResizeChatShell()) return;
+  const diag = readAndroidChatLayoutDiagnostics(keyboardInset);
+  const key = `${surface}:${diag.keyboardInset}:${diag.windowInnerHeight}`;
+  if (key === _lastLayoutDiagKey) return;
+  _lastLayoutDiagKey = key;
+
+  console.info("[chat-platform:android-layout]", { surface, ...diag });
+
+  void import("@/lib/client-logs").then(({ queueClientLog }) => {
+    queueClientLog({
+      type: "info",
+      message: "android_chat_layout_diagnostic",
+      context: `chat_platform:${surface}`,
+      meta: { surface, ...diag },
+    });
+  });
 }
 
 export function usesCapacitorBodyKeyboardResize(): boolean {

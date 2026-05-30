@@ -39,9 +39,18 @@ export function resetAutoRecoveryCounters(): void {
  * started (or already in flight). Returns false when the limit is reached
  * so the UI can fall back to a manual Reload button.
  */
-export function tryAutoRecovery(_reason?: string): boolean {
+export function tryAutoRecovery(reason?: string): boolean {
   if (typeof window === "undefined") return false;
   if (reloadInFlight) return true;
+
+  const onboardingStep =
+    (window as Window & { __amynestOnboardingStep?: string }).__amynestOnboardingStep ??
+    null;
+  console.warn("[amynest:auto-recovery] triggering cache reload", {
+    reason: reason ?? "unknown",
+    route: window.location.pathname,
+    onboardingStep,
+  });
 
   const now = Date.now();
   let lastTs = 0;

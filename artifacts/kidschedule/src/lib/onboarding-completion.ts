@@ -371,7 +371,13 @@ export async function runOnboardingFinishTransaction(
 
     logOnboardingFinish(
       "COMPLETION_FLAG_WRITE_SUCCESS",
-      { verified, alreadyCompleted: onboardingBody.alreadyCompleted === true },
+      {
+        verified,
+        alreadyCompleted: onboardingBody.alreadyCompleted === true,
+        savedChildCount,
+        onboardingPostStatus: onboardingRes.status,
+        onboardingPostBody: onboardingBody,
+      },
       telemetryOpts,
     );
     logOnboardingFinish(
