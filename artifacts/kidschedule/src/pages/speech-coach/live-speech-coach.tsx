@@ -40,6 +40,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
+import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
+import { isCoachStaticPackLine, playCoachStaticLine } from "@/lib/coach-local-playback";
 import { openAndroidMicrophoneSettings } from "@/lib/microphone-permission";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import {
@@ -414,6 +416,15 @@ export function LiveSpeechCoach({
         setState(purpose === "prompt" ? "ai_speaking" : purpose === "complete" ? "complete" : "feedback");
       }
       setStatus(purpose === "prompt" ? "Amy is teaching..." : text);
+      if (isLocalAudioRecoveryEnabled() && isCoachStaticPackLine(text)) {
+        const local = await playCoachStaticLine(text);
+        if (local.ok) {
+          if (!inSequenceRef.current && purpose !== "encouragement") {
+            finishSpeakPurpose(purpose);
+          }
+          return;
+        }
+      }
       const result = await voice.speak(text, { mode: purpose === "encouragement" ? "default" : undefined });
       if (!result.success && !inSequenceRef.current) {
         if (purpose === "prompt" || purpose === "encouragement") {
@@ -440,6 +451,11 @@ export function LiveSpeechCoach({
       setState(purpose === "prompt" ? "ai_speaking" : purpose === "complete" ? "complete" : "feedback");
       setStatus("Amy is teaching...");
       for (const line of spoken) {
+        if (isLocalAudioRecoveryEnabled() && isCoachStaticPackLine(line)) {
+          const local = await playCoachStaticLine(line);
+          if (!local.ok) break;
+          continue;
+        }
         const result = await voice.speak(line);
         if (!result.success) break;
       }

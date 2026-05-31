@@ -13,8 +13,8 @@ import { Progress } from "@/components/ui/progress";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { getCvcWordEntry, getPhonicsAudioText } from "@workspace/phonics-sounds";
-import { playCvcBlendWithSpeak } from "@/lib/phonics-audio";
 import { phonicsEnginePlayWord, phonicsEngineStop } from "@/lib/phonics-audio-engine";
+import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
 import { validatePhonicsWordAudio } from "@/lib/phonics-audio-availability";
 import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
 import { cn } from "@/lib/utils";
@@ -479,17 +479,13 @@ function QuestionCard({
 
     await phonicsEngineStop("hear_tap_play");
 
-    if (cvcEntry) {
-      void playCvcBlendWithSpeak(cvcEntry, { skipSlowPass: true });
-      return;
-    }
-
+    // Hear & Tap: one whole-word clip per tap — not a CVC phoneme sequence (that is blending UI).
     const res = await phonicsEnginePlayWord(playbackWordId, { wordId: playbackWordId });
     if (!res.ok && res.error === "phonics_audio_preparing") {
       setAudioPreparing(true);
       return;
     }
-    if (ttsText && !res.ok) {
+    if (ttsText && !res.ok && !isLocalAudioRecoveryEnabled()) {
       void speak(getPhonicsAudioText(ttsText), { mode: "phonics" });
     }
   }, [

@@ -18,6 +18,9 @@ import {
   catalogPlaybackSpeakOptions,
   shouldBypassPhonicsSpellingLibraries,
 } from "@/lib/unified-catalog-playback";
+import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
+import { playLocalSpellingWord } from "@/lib/spelling-local-playback";
+import { stopLocalAudio } from "@/lib/local-audio-playback";
 import {
   setAudioTraceModule,
   traceBrokenModulePreflight,
@@ -161,6 +164,26 @@ export function useSpellingTTS(): UseSpellingTTSState {
       if (!trimmed) return;
       if (speaking) pause();
 
+      if (isLocalAudioRecoveryEnabled()) {
+        setLocalError(null);
+        stopLocalAudio();
+        const local = await playLocalSpellingWord(trimmed, { slow: opts.slow });
+        if (!local.ok) {
+          setLocalError(local.error ?? "local_asset_missing");
+          trackSpellingAudioEvent("audio_error", {
+            reason: local.error ?? "local_asset_missing",
+            catalogId: opts.catalogId,
+            word: trimmed,
+          });
+        } else {
+          trackSpellingAudioEvent("audio_complete", {
+            catalogId: opts.catalogId,
+            word: trimmed,
+          });
+        }
+        return;
+      }
+
       if (shouldBypassPhonicsSpellingLibraries()) {
         setLocalError(null);
         recordTtsUserGesture();
@@ -237,6 +260,11 @@ export function useSpellingTTS(): UseSpellingTTSState {
     }
   }, []);
 
+  const stop = useCallback(() => {
+    stopLocalAudio();
+    pause();
+  }, [pause]);
+
   return useMemo(
     () => ({
       speaking,
@@ -246,9 +274,9 @@ export function useSpellingTTS(): UseSpellingTTSState {
       playUrl,
       prime,
       primeUrl,
-      stop: pause,
+      stop,
     }),
-    [speaking, loading, localError, error, speak, playUrl, prime, primeUrl, pause],
+    [speaking, loading, localError, error, speak, playUrl, prime, primeUrl, stop],
   );
 }
 

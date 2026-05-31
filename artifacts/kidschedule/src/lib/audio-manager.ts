@@ -42,6 +42,12 @@ import {
   snapshotAudibleElement,
 } from "@/lib/audible-start-diagnostic";
 import {
+  recordPlaybackQualityCompleted,
+  recordPlaybackQualityFailed,
+  recordPlaybackQualityRequested,
+  recordPlaybackQualityStarted,
+} from "@/lib/playback-quality-telemetry";
+import {
   isAudioPlaybackRecoveryMode,
   schedulePlaybackProgressCheck,
 } from "@/lib/audio-playback-recovery";
@@ -1107,6 +1113,13 @@ class AudioManagerImpl {
       });
     }
     playbackTraceAttach(playbackTraceId, audio, "AudioManager");
+    const qualitySessionId = recordPlaybackQualityRequested({
+      owner: "AudioManager",
+      assetRequested: meta.phrase ?? proxyUrlEarly ?? "(unknown)",
+      assetResolved: meta.phrase,
+      assetUrl: proxyUrlEarly || audio.src,
+      extra: { source: meta.source, channel: opts.channel ?? meta.channel },
+    });
 
     let traceEndReason = "play_exit";
     try {
@@ -1212,6 +1225,9 @@ class AudioManagerImpl {
             phrase: meta.phrase,
             proxyUrl: proxyUrl?.slice(0, 120),
           });
+          recordPlaybackQualityStarted(qualitySessionId, {
+            durationSec: Number.isFinite(element.duration) ? element.duration : undefined,
+          });
           trackAudioPlayStarted(reliabilityRequestId, sourceLayer);
           finishAudioRequest(reliabilityRequestId);
 
@@ -1225,6 +1241,7 @@ class AudioManagerImpl {
             });
           }
           traceEndReason = "play_success";
+          recordPlaybackQualityCompleted(qualitySessionId, { stopReason: "play_success" });
           return true;
         } catch (err) {
           if ((err as Error).message === "audio_superseded") {
@@ -1301,6 +1318,7 @@ class AudioManagerImpl {
       });
       this.triggerRecovery();
       this.surfaceFallback(meta);
+      recordPlaybackQualityFailed(qualitySessionId, { reason: failReason });
       return false;
     } finally {
       if (token === this.channelState(channel).playToken) {

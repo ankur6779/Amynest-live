@@ -1,0 +1,27 @@
+# Audio recovery local pack (mandatory freeze)
+
+Full doc: `docs/audio-recovery-local.md`
+
+## Frozen (no new work)
+
+- Network static-audio / GCS / API proxy / TTS / retries for **phonics**, **spelling word play**, **Speech Coach static corpus**
+- AudioManager queue, coalesce, fallback, emergency paths for those surfaces
+- New playback-quality / root-cause instrumentation
+
+## Required path (child tap)
+
+`tap → resolveLocalPackUrl → playLocalAudio` in `local-audio-playback.ts`
+
+## Owners
+
+| Surface | Module |
+|---------|--------|
+| Pack manifest | `public/audio-pack/manifest.json` (build: `pnpm run build:audio-pack`, stub: `pnpm run seed:audio-pack`) |
+| Play | `local-audio-playback.ts` |
+| Phonics | `phonics-local-playback.ts` + `phonics-audio-engine.ts` when `isLocalAudioRecoveryEnabled()` |
+| Hear & Tap | `phonicsEnginePlayWord` only — never `playCvcBlendWithSpeak` |
+| Spelling | `spelling-local-playback.ts` + `useSpellingTTS` |
+| Coach static | `coach-local-playback.ts` — no TTS on same line |
+| Coach dynamic | `useAmyVoice().speak()` only |
+
+Disable local path only for debug: `VITE_LOCAL_AUDIO_RECOVERY=0`.

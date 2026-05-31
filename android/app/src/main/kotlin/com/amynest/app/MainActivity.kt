@@ -21,7 +21,9 @@ import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.ServiceWorkerController
 import android.webkit.WebChromeClient
+import android.webkit.MimeTypeMap
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -382,6 +384,14 @@ class MainActivity : AppCompatActivity() {
         wv.isHorizontalScrollBarEnabled = false
 
         wv.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(
+                view: WebView,
+                request: WebResourceRequest,
+            ): WebResourceResponse? {
+                return interceptBundledAudioPack(request.url)
+                    ?: super.shouldInterceptRequest(view, request)
+            }
+
             override fun shouldOverrideUrlLoading(
                 view: WebView,
                 request: WebResourceRequest,
@@ -920,6 +930,32 @@ class MainActivity : AppCompatActivity() {
             }
             Log.d(TAG, "Launching startup permissions: ${needed.joinToString()}")
             startupPermissionLauncher.launch(needed.toTypedArray())
+        }
+    }
+
+    /**
+     * Serve /audio-pack/* from APK assets so phonics/spelling/coach clips work offline in WebView.
+     * Web layer uses same paths on www.amynest.in; we intercept and never hit the network.
+     */
+    private fun interceptBundledAudioPack(uri: Uri): WebResourceResponse? {
+        val host = uri.host?.lowercase() ?: return null
+        if (host != "www.amynest.in" && host != "amynest.in") return null
+        val path = uri.path ?: return null
+        if (!path.startsWith("/audio-pack/")) return null
+        val assetPath = path.removePrefix("/")
+        return try {
+            val stream = assets.open(assetPath)
+            val mime = when {
+                path.endsWith(".mp3", ignoreCase = true) -> "audio/mpeg"
+                path.endsWith(".json", ignoreCase = true) -> "application/json"
+                else -> MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+                    MimeTypeMap.getFileExtensionFromUrl(uri.toString()),
+                ) ?: "application/octet-stream"
+            }
+            WebResourceResponse(mime, null, stream)
+        } catch (e: Exception) {
+            Log.w(TAG, "Bundled audio-pack miss: $assetPath (${e.message})")
+            null
         }
     }
 

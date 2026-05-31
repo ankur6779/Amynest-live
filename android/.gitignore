@@ -18,5 +18,8 @@ app/google-services.json
 keystore.properties
 keystore/
 releases/
+
+# Copied at build from artifacts/kidschedule/public/audio-pack (syncAudioPackAssets)
+app/src/main/assets/audio-pack/
 *.jks
 Amynest

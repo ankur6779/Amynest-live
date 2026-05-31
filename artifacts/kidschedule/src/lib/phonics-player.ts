@@ -64,6 +64,14 @@ import {
   recordQueueInterruption,
   recordStaleAudioPrevented,
 } from "@/lib/audio-playback-queue";
+import {
+  recordPlaybackQualityCompleted,
+  recordPlaybackQualityFailed,
+  recordPlaybackQualityInterrupted,
+  recordPlaybackQualityLoaded,
+  recordPlaybackQualityRequested,
+  recordPlaybackQualityStarted,
+} from "@/lib/playback-quality-telemetry";
 
 export type PhonicsPlayResult =
   | { ok: true }
@@ -146,6 +154,7 @@ export function stopPhonicsPlayback(reason = "manual"): void {
   ownershipToken += 1;
   const el = activeElement;
   const traceId = el ? getPlaybackTraceId(el) : null;
+  recordPlaybackQualityInterrupted(null, { reason, owner: "Phonics" });
   tracePlaybackStop(traceId, "Phonics", reason, el);
   activeElement = null;
   lastUrl = "";
@@ -281,6 +290,13 @@ async function playPhonicsUrlInner(
     phrase: label,
     autoFlush: false,
   });
+  const qualitySessionId = recordPlaybackQualityRequested({
+    owner: "PhonicsPlayer",
+    assetRequested: label,
+    assetResolved: label,
+    assetUrl: trimmed,
+    extra: { coalesceKey: resolveAudioCoalesceKey(trimmed, "phonics") },
+  });
 
   const previous = activeElement;
   activeElement = null;
@@ -312,6 +328,7 @@ async function playPhonicsUrlInner(
     trackAudioPlayFailed(failId, error, "STATIC_GCS");
     recordPhonicsPlayFailed(label, error, { url: trimmed.slice(0, 200) });
     recordPhonicsCircuitOutcome(false, error);
+    recordPlaybackQualityFailed(qualitySessionId, { reason: error });
     return { ok: false, error };
   }
   configureMobileAudioElement(el);
@@ -340,6 +357,15 @@ async function playPhonicsUrlInner(
     settled = true;
     options.cleanup?.();
     const stillOwner = token === ownershipToken;
+    if (result.ok) {
+      recordPlaybackQualityCompleted(qualitySessionId, {
+        stopReason: result.error ?? "phonics_complete",
+      });
+    } else {
+      recordPlaybackQualityFailed(qualitySessionId, {
+        reason: result.error ?? "phonics_failed",
+      });
+    }
     if (playbackTraceId) {
       flushPlaybackTrace(
         playbackTraceId,
@@ -381,9 +407,29 @@ async function playPhonicsUrlInner(
       unlockGesture: () => audioManager.unlockFromUserGesture(),
     });
     playbackTracePlaySettled(playbackTraceId, "Phonics", true, el);
+    const onFirstProgress = () => {
+      recordPlaybackQualityStarted(qualitySessionId, {
+        firstSampleTs: performance.now(),
+        durationSec: Number.isFinite(el.duration) ? el.duration : undefined,
+      });
+      el.removeEventListener("playing", onFirstProgress);
+      el.removeEventListener("timeupdate", onFirstProgress);
+    };
+    el.addEventListener("playing", onFirstProgress);
+    el.addEventListener("timeupdate", onFirstProgress);
+    const onMeta = () => {
+      if (el.readyState >= HTMLMediaElement.HAVE_METADATA) {
+        recordPlaybackQualityLoaded(qualitySessionId, { durationSec: el.duration });
+        el.removeEventListener("loadedmetadata", onMeta);
+      }
+    };
+    el.addEventListener("loadedmetadata", onMeta);
     recordPhonicsStartLatency(Date.now() - now);
   } catch (err) {
     playbackTracePlaySettled(playbackTraceId, "Phonics", false, el, err);
+    recordPlaybackQualityFailed(qualitySessionId, {
+      reason: err instanceof Error ? err.message : String(err),
+    });
     if (token !== ownershipToken) {
       recordStaleAudioPrevented();
       log("phonics_stale_start", { label });

@@ -37,8 +37,8 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 81
-        versionName = "1.4.38"
+        versionCode = 82
+        versionName = "1.4.39"
         resValue(
             "string",
             "facebook_client_token",
@@ -121,6 +121,18 @@ tasks.register<Zip>("packageReleaseNativeDebugSymbols") {
             "intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib",
         ),
     )
+}
+
+/** Bundle local phonics/spelling/coach clips for WebView (no network for /audio-pack/). */
+tasks.register<Copy>("syncAudioPackAssets") {
+    group = "release"
+    description = "Copy kidschedule public/audio-pack into APK/AAB assets"
+    from(rootProject.file("../artifacts/kidschedule/public/audio-pack"))
+    into(layout.projectDirectory.dir("src/main/assets/audio-pack"))
+}
+
+tasks.named("preBuild") {
+    dependsOn("syncAudioPackAssets")
 }
 
 tasks.register<Copy>("copyReleaseArtifacts") {

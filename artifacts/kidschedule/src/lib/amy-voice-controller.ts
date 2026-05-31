@@ -128,6 +128,7 @@ import {
   playbackTraceOwnerFromModule,
   tracePlaybackStopAll,
 } from "@/lib/playback-trace";
+import { recordPlaybackQualityRequested } from "@/lib/playback-quality-telemetry";
 import {
   mapToAudioSourceLayer,
   resolveAudioReliabilityModule,
@@ -528,6 +529,16 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
     const requestId = createSpeakRequest();
     const intentEpoch = bumpAudioIntentEpoch();
+    recordPlaybackQualityRequested({
+      owner: "AmyVoice",
+      assetRequested: text.slice(0, 80),
+      assetResolved: opts?.word ?? text.slice(0, 80),
+      extra: {
+        mode: opts?.mode,
+        requestId,
+        blending: !!opts?.word,
+      },
+    });
     const reliabilityModule = resolveAudioReliabilityModule({
       speakOpts: opts,
       blending: !!opts?.word,

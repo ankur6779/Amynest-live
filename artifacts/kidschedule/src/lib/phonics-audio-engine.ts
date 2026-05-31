@@ -24,6 +24,13 @@ import {
 } from "@/lib/phonics-audio-availability";
 import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
 import { shouldBypassPhonicsSpellingLibraries } from "@/lib/unified-catalog-playback";
+import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
+import {
+  isPhonicsLocalPlaybackAvailable,
+  playLocalPhonicsLetter,
+  playLocalPhonicsWord,
+  stopPhonicsLocalAudio,
+} from "@/lib/phonics-local-playback";
 
 export { subscribePhonicsPlayback, isPhonicsPlaying, stopPhonicsPlayback };
 export { validatePhonicsWordAudio };
@@ -72,6 +79,10 @@ export type PhonicsEnginePlayOptions = {
 /** Stop all phonics audio and invalidate in-flight queues. */
 export async function phonicsEngineStop(reason = "engine_stop"): Promise<void> {
   sessionToken += 1;
+  if (isLocalAudioRecoveryEnabled()) {
+    stopPhonicsLocalAudio();
+    return;
+  }
   stopPhonicsPlayback(reason);
 }
 
@@ -83,6 +94,9 @@ async function playLetterClipDirect(
   audioKey: string,
   options: PhonicsEnginePlayOptions = {},
 ): Promise<{ ok: boolean; error?: string }> {
+  if (isLocalAudioRecoveryEnabled()) {
+    return playLocalPhonicsLetter(audioKey, { isCancelled: options.isCancelled });
+  }
   const result = await playBlendPhonemeClip(audioKey, {
     playbackRate: options.playbackRate,
     isCancelled: options.isCancelled,
@@ -95,6 +109,9 @@ async function playWordClipDirect(
   word: string,
   options: PhonicsEnginePlayOptions = {},
 ): Promise<{ ok: boolean; error?: string }> {
+  if (isLocalAudioRecoveryEnabled()) {
+    return playLocalPhonicsWord(word, { isCancelled: options.isCancelled });
+  }
   const result = await playPhonicsContentAudio(word, {
     contentType: "cvc",
     waitUntilEnd: true,
@@ -129,7 +146,6 @@ export async function phonicsEnginePlayLetter(
     level: options.level,
     clipType: "letter",
   });
-
   const result = await playLetterClipDirect(key, options);
 
   if (result.ok) {
@@ -154,9 +170,15 @@ export async function phonicsEnginePlayWord(
   options: PhonicsEnginePlayOptions = {},
 ): Promise<{ ok: boolean; error?: string }> {
   const w = (word ?? "").trim().toLowerCase();
-  const availability = checkPhonicsWordClip(w);
-  if (!availability.available) {
-    return { ok: false, error: "phonics_audio_preparing" };
+  if (isLocalAudioRecoveryEnabled()) {
+    if (!isPhonicsLocalPlaybackAvailable(w, "word")) {
+      return { ok: false, error: "local_asset_missing" };
+    }
+  } else {
+    const availability = checkPhonicsWordClip(w);
+    if (!availability.available) {
+      return { ok: false, error: "phonics_audio_preparing" };
+    }
   }
 
   await phonicsEngineStop("engine_play_word");
@@ -168,7 +190,6 @@ export async function phonicsEnginePlayWord(
     lessonId: options.lessonId,
     clipType: "cvc",
   });
-
   const result = await playWordClipDirect(w, options);
 
   if (result.ok) {
