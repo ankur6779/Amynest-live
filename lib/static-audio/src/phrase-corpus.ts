@@ -18,6 +18,7 @@ import {
 } from "@workspace/math-tricks";
 import { getSpellingAudioTextsForStaticCatalog } from "@workspace/spelling-catalog";
 import { getParentHubAudioTextsForStaticCatalog } from "@workspace/parent-hub-speak";
+import { getParentingArticlesAudioTextsForStaticCatalog } from "@workspace/parenting-articles";
 import { getContentBankAudioTextsForStaticCatalog } from "@workspace/content-bank";
 import { getStaticTtsEntries } from "./phrases.js";
 import type { StaticAudioMode, StaticTtsEntry } from "./types.js";
@@ -181,7 +182,12 @@ function collectSpellingPhrases(): SpeakablePhraseRecord[] {
 }
 
 function collectParentHubPhrases(): SpeakablePhraseRecord[] {
-  return getParentHubAudioTextsForStaticCatalog()
+  const lines = [
+    ...getParentHubAudioTextsForStaticCatalog(),
+    ...getParentingArticlesAudioTextsForStaticCatalog(),
+    "Correct! Well done!",
+  ];
+  return lines
     .map((t) => toRecord(t, "default", "parent_hub"))
     .filter((r): r is SpeakablePhraseRecord => r !== null);
 }

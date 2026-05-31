@@ -35,7 +35,10 @@ vi.mock("@/hooks/use-amy-voice", () => ({
 }));
 
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ i18n: { language: "en" }, t: (k: string) => k }),
+  useTranslation: () => ({
+    i18n: { language: "en" },
+    t: (k: string, def?: string) => (typeof def === "string" ? def : k),
+  }),
 }));
 
 import { ListenButton, type Win } from "../ai-coach";

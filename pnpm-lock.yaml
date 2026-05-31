@@ -1475,6 +1475,9 @@ importers:
       '@workspace/parent-hub-speak':
         specifier: workspace:*
         version: link:../parent-hub-speak
+      '@workspace/parenting-articles':
+        specifier: workspace:*
+        version: link:../parenting-articles
       '@workspace/phonics-sounds':
         specifier: workspace:*
         version: link:../phonics-sounds

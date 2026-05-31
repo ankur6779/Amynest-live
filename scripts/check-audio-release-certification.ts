@@ -12,7 +12,7 @@ import {
   getParentHubAudioTextsForStaticCatalog,
   ALL_HUB_FACTS,
 } from "../lib/parent-hub-speak/src/index.ts";
-import { ARTICLES, articleToSpeechSections } from "../lib/parenting-articles/src/index.ts";
+import { getParentingArticlesAudioTextsForStaticCatalog } from "../lib/parenting-articles/src/index.ts";
 import { normalizeStaticAudioKey } from "@workspace/static-audio";
 import { loadStaticAudioMap, REPO_ROOT } from "./static-audio-paths.js";
 
@@ -102,17 +102,13 @@ function auditCacheMisses(map: ReturnType<typeof loadStaticAudioMap>): MissingAs
     }
   }
 
-  for (const article of ARTICLES) {
-    for (const section of articleToSpeechSections(article)) {
-      const t = section.trim();
-      if (!t) continue;
-      if (!lookupInMap(t, map)) {
-        missing.push({
-          asset: `${article.id}:${t.slice(0, 80)}`,
-          classification: "dynamic_only_content",
-          module: "parent_hub",
-        });
-      }
+  for (const text of getParentingArticlesAudioTextsForStaticCatalog()) {
+    if (!lookupInMap(text, map)) {
+      missing.push({
+        asset: text.slice(0, 120),
+        classification: "static_corpus_gap",
+        module: "parent_hub_articles",
+      });
     }
   }
 

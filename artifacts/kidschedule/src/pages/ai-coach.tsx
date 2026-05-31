@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback, type SpeakOptions } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode, type SpeakOptions } from "react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useAppNavigate } from "@/components/app-link";
@@ -14,7 +14,7 @@ import {
   trackCoachLockedClick,
   trackCoachPremiumItemViewed,
 } from "@/lib/content-gating-analytics";
-import { Sparkles, ArrowLeft, ArrowRight, Loader2, Search, Check, ChevronLeft, ChevronRight, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart, Printer, Volume2, VolumeX, Lock } from "lucide-react";
+import { Sparkles, ArrowLeft, ArrowRight, Loader2, Search, Check, ChevronLeft, ChevronRight, ChevronDown, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart, Printer, Volume2, VolumeX, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { INFANT_PROBLEMS, isInfantProblemId, getInfantProblem, pickLang as pickInfLang } from "@workspace/infant-problems";
 import { getTopicQuestions } from "@workspace/coach-topic-questions";
@@ -629,6 +629,95 @@ interface Plan {
 type Phase = "goals" | "questions" | "loading" | "result" | "infantProblem" | "resuming";
 type Feedback = "yes" | "somewhat" | "no";
 
+function coachFeedbackPoints(f: Feedback): number {
+  return f === "yes" ? 1 : f === "somewhat" ? 0.5 : 0;
+}
+
+function computeCoachProgressPct(
+  feedbackByWin: Record<number, Feedback>,
+  denom: number,
+): number {
+  if (denom <= 0) return 0;
+  const sum = Object.values(feedbackByWin).reduce(
+    (acc, fb) => acc + coachFeedbackPoints(fb),
+    0,
+  );
+  return Math.min(100, Math.round((sum / denom) * 100));
+}
+
+function summarizeCoachText(text: string, maxSentences = 2): string {
+  const trimmed = text.trim();
+  if (!trimmed) return "";
+  const sentences = trimmed.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [trimmed];
+  const summary = sentences.slice(0, maxSentences).join(" ").trim();
+  if (summary.length > 0) return summary;
+  return trimmed.length > 180 ? `${trimmed.slice(0, 177).trim()}…` : trimmed;
+}
+
+function CoachExpandable({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div
+      style={{
+        borderRadius: 14,
+        border: "1px solid rgba(255,255,255,0.08)",
+        background: "rgba(255,255,255,0.03)",
+        marginBottom: 10,
+        overflow: "hidden",
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          padding: "11px 14px",
+          border: "none",
+          background: "transparent",
+          color: "rgba(255,255,255,0.72)",
+          fontSize: 12.5,
+          fontWeight: 700,
+          cursor: "pointer",
+          textAlign: "left",
+        }}
+      >
+        <span>{label}</span>
+        <ChevronDown
+          size={14}
+          style={{
+            flexShrink: 0,
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.2s",
+            opacity: 0.7,
+          }}
+        />
+      </button>
+      {open && (
+        <div
+          style={{
+            padding: "0 14px 12px",
+            fontSize: 13,
+            lineHeight: 1.55,
+            color: "rgba(255,255,255,0.72)",
+          }}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN
 // ═══════════════════════════════════════════════════════════════════════════
@@ -661,6 +750,9 @@ export default function AICoachPage() {
   const [sessionId, setSessionId] = useState<string>("");
   const [activeIdx, setActiveIdx] = useState(0);
   const [feedbackByWin, setFeedbackByWin] = useState<Record<number, Feedback>>({});
+  const [progressSnapshotByWin, setProgressSnapshotByWin] = useState<
+    Record<number, { from: number; to: number }>
+  >({});
   const [extending, setExtending] = useState(false);
   const [progressWinCount, setProgressWinCount] = useState(0);
   const [loadingNextWin, setLoadingNextWin] = useState(false);
@@ -700,8 +792,7 @@ export default function AICoachPage() {
   const progressPct = useMemo(() => {
     const denom = originalWinCountRef.current;
     if (!plan || denom === 0) return 0;
-    const sum = Object.values(feedbackByWin).reduce((acc, f) => acc + (f === "yes" ? 1 : f === "somewhat" ? 0.5 : 0), 0);
-    return Math.min(100, Math.round(sum / denom * 100));
+    return computeCoachProgressPct(feedbackByWin, denom);
   }, [feedbackByWin, plan]);
   const scrollerRef = useRef<HTMLDivElement>(null);
   // Tracks the in-flight Build Plan request so we can abort it if the user
@@ -929,6 +1020,7 @@ export default function AICoachPage() {
         setSessionId(infantSessionId);
         setActiveIdx(0);
         setFeedbackByWin({});
+        setProgressSnapshotByWin({});
         setPhase("result");
         if (!coachJourney.isPremium) {
           void coachJourney.completePlan(id, infantSessionId);
@@ -1011,6 +1103,7 @@ export default function AICoachPage() {
     setPhase("loading");
     setActiveIdx(0);
     setFeedbackByWin({});
+    setProgressSnapshotByWin({});
     setProgressWinCount(0);
     setLoadingNextWin(false);
     fetchingNextRef.current = false;
@@ -1247,12 +1340,21 @@ export default function AICoachPage() {
   const submitFeedback = async (winNumber: number, feedback: Feedback) => {
     if (!plan || !sessionId) return;
 
+    const denom = originalWinCountRef.current || plan.wins.length;
+    const prevPct = computeCoachProgressPct(feedbackByWin, denom);
+
     // Build updated feedback map synchronously so we can compute progress now
     const newFeedbackByWin = {
       ...feedbackByWin,
       [winNumber]: feedback
     };
     setFeedbackByWin(newFeedbackByWin);
+
+    const newPct = computeCoachProgressPct(newFeedbackByWin, denom);
+    setProgressSnapshotByWin((snap) => ({
+      ...snap,
+      [winNumber]: { from: prevPct, to: newPct },
+    }));
 
     // Save to DB (silent on failure — UI already updated)
     try {
@@ -1272,21 +1374,22 @@ export default function AICoachPage() {
       });
     } catch {/* silent */}
 
-    // Progress: Worked = 1, Partially = 0.5, Not worked = 0 (denominator frozen at 12)
-    const newSum = Object.values(newFeedbackByWin).reduce((acc, f) => acc + (f === "yes" ? 1 : f === "somewhat" ? 0.5 : 0), 0);
-    const denom = originalWinCountRef.current || plan.wins.length;
-    const newPct = Math.min(100, Math.round(newSum / denom * 100));
-
     if (feedback === "yes") {
       toast({
-        title: "Win locked in 🎉",
-        description: "Marked as complete. Moving to next step.",
+        title: t("pages.ai_coach.celebration_worked_title", "✨ Nice work."),
+        description:
+          newPct > prevPct
+            ? t("pages.ai_coach.celebration_progress_delta", "Progress increased from {{from}}% → {{to}}%", {
+                from: prevPct,
+                to: newPct,
+              })
+            : t("pages.ai_coach.celebration_moving_forward", "Every small step helps build lasting change."),
       });
       await advanceAfterFeedback(activeIdx + 1);
       return;
     }
 
-    // Partial or not worked — one adaptive win until progress reaches 100%
+    // Partly or not yet — adaptive coaching continues until progress reaches 100%
     if (newPct < 100 && lastPayloadRef.current) {
       const winsBefore = planRef.current?.wins.length ?? 0;
       const ok = await requestExtension(winNumber, feedback);
@@ -1315,10 +1418,14 @@ export default function AICoachPage() {
     }
 
     toast({
-      title: feedback === "somewhat" ? "Progress noted 💜" : "Noted",
-      description: feedback === "somewhat"
-        ? "Partial progress counted. Keep going."
-        : "Moving to the next step.",
+      title:
+        feedback === "somewhat"
+          ? t("pages.ai_coach.celebration_partly_title", "🎉 You're moving forward.")
+          : t("pages.ai_coach.celebration_not_yet_title", "Amy's adjusting your next step."),
+      description:
+        feedback === "somewhat"
+          ? t("pages.ai_coach.celebration_partly_body", "Every small step helps build lasting change.")
+          : t("pages.ai_coach.celebration_not_yet_body", "Your next win will try a different approach."),
     });
     await advanceAfterFeedback(activeIdx + 1);
   };
@@ -1350,7 +1457,7 @@ export default function AICoachPage() {
           failedWinTitle: failedWin.title,
           failedWinNumber,
           startWinNumber: nextWinNum,
-          feedbackType: feedback === "somewhat" ? "partial" : "failed",
+          feedbackType: feedback === "somewhat" ? "partial" : "not_yet",
           existingWinTitles: plan.wins.map(w => w.title),
           language: i18nInstanceX.language || "en"
         })
@@ -1389,8 +1496,8 @@ export default function AICoachPage() {
           return { ...p, wins };
         });
         toast({
-          title: t("toasts.ai_coach.extras_added_title"),
-          description: t("toasts.ai_coach.extras_added_body")
+          title: t("toasts.ai_coach.extras_added_title", "Amy's preparing your next step"),
+          description: t("toasts.ai_coach.extras_added_body", "A fresh approach is ready when you tap Next Win."),
         });
         setTimeout(() => goToCard(insertAt), 80);
         return true;
@@ -1445,6 +1552,7 @@ export default function AICoachPage() {
     setSessionId("");
     setActiveIdx(0);
     setFeedbackByWin({});
+    setProgressSnapshotByWin({});
     lastPayloadRef.current = null;
     fetchingNextRef.current = false;
     extendingRef.current = false;
@@ -2063,7 +2171,7 @@ export default function AICoachPage() {
           }).map((_, i) => <div key={i} className={`flex-1 h-1.5 rounded-full transition-colors duration-300 ${i < built ? "bg-white" : "bg-white/20"}`} />)}
           </div>
           <p className="text-sm text-white/80 max-w-xs mx-auto">
-            {t("coach.building_subtitle", "Analysing your answers and crafting 12 deep, research-backed wins for {{goal}}.", {
+            {t("coach.building_subtitle", "Analysing your answers and preparing personalized coaching wins for {{goal}}.", {
             goal: selectedGoal?.title.toLowerCase() ?? "your goal"
           })}
             {built > 0 && built < TOTAL_WINS ? ` (${pct}%)` : ""}
@@ -2106,21 +2214,35 @@ export default function AICoachPage() {
             <ArrowLeft size={18} />
           </button>
 
-          {/* Progress % pill (TOP-RIGHT) */}
+          {/* Goal progress pill */}
           <div data-on-dark style={{
           display: "flex",
-          alignItems: "center",
-          gap: 8,
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: 2,
           background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
           color: "#fff",
-          padding: "7px 14px",
-          borderRadius: 999,
-          fontSize: 12,
+          padding: "6px 12px",
+          borderRadius: 14,
+          fontSize: 11,
           fontWeight: 800,
-          letterSpacing: 0.3,
-          boxShadow: "0 4px 12px rgba(139,92,246,0.3)"
+          letterSpacing: 0.2,
+          boxShadow: "0 4px 12px rgba(139,92,246,0.3)",
+          maxWidth: "46vw",
         }}>
-            {t("pages.ai_coach.progress")} {progressPct}%
+            <span style={{ fontSize: 10, opacity: 0.9, fontWeight: 700 }}>
+              {t("pages.ai_coach.progress_toward_goal", "{{pct}}% toward goal", { pct: progressPct })}
+            </span>
+            <span style={{
+              fontSize: 11.5,
+              lineHeight: 1.2,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              maxWidth: "100%",
+            }}>
+              {plan.title}
+            </span>
           </div>
 
           <div style={{
@@ -2175,26 +2297,28 @@ export default function AICoachPage() {
         {/* Hidden print-only render — full plan in a clean A4 layout */}
         <PrintablePlan plan={plan} />
 
-        {/* Progress dots */}
+        {/* Goal progress bar — toward 100%, not a fixed win count */}
         <div style={{
         position: "absolute",
-        top: 60,
+        top: 58,
         left: 16,
         right: 16,
         zIndex: 20,
-        display: "flex",
-        gap: 4
       }}>
-          {plan.wins.map((_, i) => <button key={i} onClick={() => goToCard(i)} style={{
-          flex: 1,
-          height: 3,
-          borderRadius: 2,
-          border: "none",
-          cursor: "pointer",
-          padding: 0,
-          background: i <= activeIdx ? "hsl(var(--brand-violet-500))" : "rgba(139,92,246,0.2)",
-          transition: "background 0.3s"
-        }} />)}
+          <div style={{
+          height: 4,
+          borderRadius: 999,
+          background: "rgba(139,92,246,0.18)",
+          overflow: "hidden",
+        }}>
+            <div style={{
+            height: "100%",
+            width: `${progressPct}%`,
+            borderRadius: 999,
+            background: "linear-gradient(90deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
+            transition: "width 0.45s ease",
+          }} />
+          </div>
         </div>
 
         {/* Scroller */}
@@ -2207,7 +2331,21 @@ export default function AICoachPage() {
         minHeight: 0,
         scrollbarWidth: "none"
       }} className="ws-no-scrollbar">
-          {plan.wins.map((w, i) => <WinCard key={`${w.win}-${i}`} win={w} total={plan.wins.length} isFirst={i === 0} planCacheKey={planCacheKey} planTitle={i === 0 ? plan.title : undefined} planSummary={i === 0 ? plan.summary : undefined} planRootCause={i === 0 ? plan.root_cause : undefined} currentFeedback={feedbackByWin[w.win]} extending={extending} onFeedback={f => submitFeedback(w.win, f)} />)}
+          {plan.wins.map((w, i) => (
+            <WinCard
+              key={`${w.win}-${i}`}
+              win={w}
+              planCacheKey={planCacheKey}
+              goalTitle={plan.title}
+              planRootCause={plan.root_cause}
+              planSummary={plan.summary}
+              progressPct={progressPct}
+              progressSnapshot={progressSnapshotByWin[w.win]}
+              currentFeedback={feedbackByWin[w.win]}
+              extending={extending}
+              onFeedback={(f) => submitFeedback(w.win, f)}
+            />
+          ))}
         </div>
 
         {/* Extending banner */}
@@ -2255,18 +2393,6 @@ export default function AICoachPage() {
           background: "linear-gradient(0deg, rgba(13,10,30,0.98) 0%, rgba(13,10,30,0.85) 100%)",
           backdropFilter: "blur(12px)"
         }}>
-              {!hasFeedback && !atLastLoaded && <div style={{
-            fontSize: 11.5,
-            fontWeight: 700,
-            color: "hsl(var(--brand-amber-300))",
-            background: "rgba(251,191,36,0.12)",
-            border: "1px solid rgba(251,191,36,0.35)",
-            padding: "5px 12px",
-            borderRadius: 999,
-            letterSpacing: 0.2
-          }}>
-                  {t("pages.ai_coach.pick_worked_partially_not_for_me_to_continue")}
-                </div>}
               {waitingForNext && hasFeedback && <div style={{
             display: "flex",
             alignItems: "center",
@@ -2307,22 +2433,24 @@ export default function AICoachPage() {
             }}>
                   <ArrowLeft size={14} /> {t("pages.ai_coach.prev")}
                 </button>
-                <button data-on-dark onClick={() => void advanceAfterFeedback(activeIdx + 1)} disabled={nextDisabled} title={!hasFeedback ? "Mark how this win went before moving on" : waitingForNext ? "Generating next strategy…" : undefined} style={{
+                <button data-on-dark onClick={() => void advanceAfterFeedback(activeIdx + 1)} disabled={nextDisabled} title={!hasFeedback ? t("pages.ai_coach.feedback_required_hint", "Share how this win went to continue") : waitingForNext ? t("pages.ai_coach.generating_next_strategy") : undefined} style={{
               color: "#fff",
-              background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
-              boxShadow: "0 4px 12px rgba(139,92,246,0.3)",
+              background: hasFeedback
+                ? "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))"
+                : "rgba(255,255,255,0.12)",
+              boxShadow: hasFeedback ? "0 4px 12px rgba(139,92,246,0.3)" : "none",
               borderRadius: 999,
-              padding: "10px 16px",
-              border: "none",
+              padding: "10px 18px",
+              border: hasFeedback ? "none" : "1px solid rgba(139,92,246,0.25)",
               cursor: nextDisabled ? "not-allowed" : "pointer",
-              opacity: nextDisabled ? 0.4 : 1,
+              opacity: nextDisabled ? 0.45 : 1,
               display: "flex",
               alignItems: "center",
               gap: 6,
               fontSize: 13,
               fontWeight: 700
             }}>
-                  {t("pages.ai_coach.next")} <ArrowRight size={14} />
+                  {t("pages.ai_coach.next_win", "Next Win")} <ArrowRight size={14} />
                 </button>
               </div>
             </div>;
@@ -2333,510 +2461,489 @@ export default function AICoachPage() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// WIN CARD — light gradient, no images, science reference, adaptive buttons
+// WIN CARD — action-first, adaptive coaching layout
 // ═══════════════════════════════════════════════════════════════════════════
 function WinCard({
   win,
-  total,
-  isFirst,
   planCacheKey,
-  planTitle,
-  planSummary,
+  goalTitle,
   planRootCause,
+  planSummary,
+  progressPct,
+  progressSnapshot,
   currentFeedback,
   extending,
-  onFeedback
+  onFeedback,
 }: {
   win: Win;
-  total: number;
-  isFirst: boolean;
   planCacheKey?: string;
-  planTitle?: string;
-  planSummary?: string;
+  goalTitle: string;
   planRootCause?: string;
+  planSummary?: string;
+  progressPct: number;
+  progressSnapshot?: { from: number; to: number };
   currentFeedback?: Feedback;
   extending: boolean;
   onFeedback: (f: Feedback) => void;
 }) {
-  const {
-    t
-  } = useTranslation();
-  const isExtension = win.win > 12;
-  return <div style={{
-    flex: "0 0 100%",
-    width: "100%",
-    height: "100%",
-    scrollSnapAlign: "start",
-    position: "relative",
-    background: isExtension ? "linear-gradient(135deg, #1a0f2e 0%, #2d1b4e 50%, #1a1040 100%)" : "linear-gradient(160deg, #0f0c29 0%, #1a1040 55%, #0c1220 100%)",
-    overflow: "hidden"
-  }}>
-      {/* Ambient glow orbs */}
-      <div style={{
-      position: "absolute",
-      top: -60,
-      right: -60,
-      width: 200,
-      height: 200,
-      borderRadius: "50%",
-      background: isExtension ? "rgba(245,158,11,0.15)" : "rgba(139,92,246,0.2)",
-      filter: "blur(60px)",
-      pointerEvents: "none"
-    }} />
-      <div style={{
-      position: "absolute",
-      bottom: 80,
-      left: -40,
-      width: 160,
-      height: 160,
-      borderRadius: "50%",
-      background: isExtension ? "rgba(236,72,153,0.12)" : "rgba(236,72,153,0.15)",
-      filter: "blur(50px)",
-      pointerEvents: "none"
-    }} />
+  const { t } = useTranslation();
+  const rootCauseShort = planRootCause ? summarizeCoachText(planRootCause, 2) : "";
+  const rootCauseHasMore = Boolean(
+    planRootCause && planRootCause.trim().length > rootCauseShort.length + 8,
+  );
 
-      {/* Scrollable content — full card */}
-      <div className="app-win-card-body" style={{
-      position: "absolute",
-      inset: 0,
-      padding: "92px 22px 130px",
-      overflowY: "auto",
-      WebkitOverflowScrolling: "touch",
-      color: "#f8f8ff"
-    }}>
-        {/* Win counter chip */}
-        <div style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        background: isExtension ? "linear-gradient(135deg, hsl(var(--brand-amber-500)), hsl(var(--brand-pink-500)))" : "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
-        color: "#fff",
-        padding: "5px 12px",
-        borderRadius: 999,
-        fontSize: 11,
-        fontWeight: 800,
-        letterSpacing: 0.5,
-        marginBottom: 10,
-        boxShadow: "0 2px 8px rgba(139,92,246,0.25)"
-      }}>
-          {isExtension ? "💛 EXTRA STRATEGY" : "WIN"} {win.win} / {total}
-        </div>
+  const feedbackOptions = [
+    {
+      v: "yes" as const,
+      label: t("pages.ai_coach.feedback_worked", "😊 Worked"),
+      color: "hsl(var(--brand-green-600))",
+      bg: "rgba(34,197,94,0.14)",
+      border: "rgba(34,197,94,0.45)",
+    },
+    {
+      v: "somewhat" as const,
+      label: t("pages.ai_coach.feedback_partly", "😐 Partly"),
+      color: "#a16207",
+      bg: "rgba(251,191,36,0.14)",
+      border: "rgba(251,191,36,0.45)",
+    },
+    {
+      v: "no" as const,
+      label: t("pages.ai_coach.feedback_not_yet", "😕 Not Yet"),
+      color: "hsl(var(--brand-violet-400))",
+      bg: "rgba(139,92,246,0.12)",
+      border: "rgba(139,92,246,0.35)",
+    },
+  ];
 
-        {/* Plan header — only on first card */}
-        {isFirst && planTitle && <div style={{
-        marginBottom: 18,
-        paddingBottom: 16,
-        borderBottom: "1px solid rgba(255,255,255,0.1)"
-      }}>
-            <p style={{
-          fontSize: 10,
-          fontWeight: 800,
-          letterSpacing: 1.2,
-          color: "hsl(var(--brand-violet-400))",
-          marginBottom: 4
-        }}>
-              {t("pages.ai_coach.your_plan")}
-            </p>
-            <h2 style={{
-          fontSize: 19,
-          fontWeight: 800,
-          lineHeight: 1.2,
-          marginBottom: 8,
-          fontFamily: "Quicksand, sans-serif",
-          color: "#fff"
-        }}>
-              {planTitle}
-            </h2>
-            {planRootCause && <div style={{
-          background: "rgba(244,114,182,0.1)",
-          border: "1px solid rgba(244,114,182,0.25)",
-          borderRadius: 12,
-          padding: 12,
-          marginTop: 8,
-          marginBottom: 8
-        }}>
-                <p style={{
-            fontSize: 10,
-            fontWeight: 800,
-            letterSpacing: 1,
-            color: "hsl(var(--brand-pink-300))",
-            marginBottom: 4
-          }}>
-                  {t("pages.ai_coach.root_cause")}
-                </p>
-                <p style={{
-            fontSize: 12.5,
-            lineHeight: 1.55,
-            color: "rgba(255,255,255,0.75)"
-          }}>{planRootCause}</p>
-              </div>}
-            <p style={{
-          fontSize: 12.5,
-          color: "rgba(255,255,255,0.6)",
-          lineHeight: 1.5
-        }}>
-              {planSummary}
-            </p>
-          </div>}
+  return (
+    <div
+      style={{
+        flex: "0 0 100%",
+        width: "100%",
+        height: "100%",
+        scrollSnapAlign: "start",
+        position: "relative",
+        background: "linear-gradient(160deg, #0f0c29 0%, #1a1040 55%, #0c1220 100%)",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: -60,
+          right: -60,
+          width: 180,
+          height: 180,
+          borderRadius: "50%",
+          background: "rgba(139,92,246,0.16)",
+          filter: "blur(60px)",
+          pointerEvents: "none",
+        }}
+      />
 
-        {/* Title + objective */}
-        <h3 style={{
-        fontSize: 24,
-        fontWeight: 800,
-        lineHeight: 1.15,
-        marginBottom: 6,
-        fontFamily: "Quicksand, sans-serif",
-        color: "#fff"
-      }}>
-          {win.title}
-        </h3>
-        <p style={{
-        fontSize: 13.5,
-        color: "hsl(var(--brand-violet-300))",
-        marginBottom: 16,
-        lineHeight: 1.4,
-        fontWeight: 600
-      }}>
-          {win.objective}
-        </p>
-
-        {/* DURATION chip — own row */}
-        <div style={{
-        display: "flex",
-        gap: 6,
-        alignItems: "center",
-        marginBottom: 10,
-        flexWrap: "wrap"
-      }}>
-          <span style={{
-          fontSize: 11,
-          padding: "4px 10px",
-          borderRadius: 999,
-          background: "rgba(139,92,246,0.2)",
-          color: "hsl(var(--brand-violet-300))",
-          fontWeight: 700,
-          border: "1px solid rgba(139,92,246,0.3)"
-        }}>
-            ⏱ {win.duration}
-          </span>
-        </div>
-
-        {/* READ ALOUD — own dedicated, prominent row so parents see it on
-            every win. Mirrors mobile CoachCard.tsx but with a label so it
-            isn't mistaken for a chip. */}
-        <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 10,
-        marginBottom: 18,
-        padding: "10px 12px",
-        borderRadius: 12,
-        background: "rgba(139,92,246,0.10)",
-        border: "1px solid rgba(167,139,250,0.30)",
-        flexWrap: "wrap"
-      }}>
-          <span style={{
-          fontSize: 11.5,
-          fontWeight: 800,
-          letterSpacing: 0.6,
-          color: "hsl(var(--brand-violet-200))",
-          textTransform: "uppercase",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6
-        }}>
-            <Volume2 size={13} />
-            {t("pages.ai_coach.read_this_win_aloud")}
-          </span>
-          <ListenButton win={win} planCacheKey={planCacheKey} />
-        </div>
-
-        {/* WHY THIS WORKS */}
-        {win.deep_explanation && <div style={{
-        background: "rgba(255,255,255,0.05)",
-        border: "1px solid rgba(99,102,241,0.25)",
-        borderRadius: 14,
-        padding: 14,
-        marginBottom: 14,
-        boxShadow: "0 0 20px rgba(99,102,241,0.1)"
-      }}>
-            <p style={{
-          fontSize: 10,
-          fontWeight: 800,
-          letterSpacing: 1,
-          color: "hsl(var(--brand-indigo-300))",
-          marginBottom: 6
-        }}>
-              {t("pages.ai_coach.why_this_works")}
-            </p>
-            <p style={{
-          fontSize: 13.5,
-          lineHeight: 1.6,
-          color: "rgba(255,255,255,0.8)"
-        }}>
-              {win.deep_explanation}
-            </p>
-          </div>}
-
-        {/* DO THIS */}
-        <div style={{
-        background: "rgba(139,92,246,0.12)",
-        border: "1px solid rgba(139,92,246,0.25)",
-        borderRadius: 14,
-        padding: 14,
-        marginBottom: 14,
-        boxShadow: "0 0 20px rgba(139,92,246,0.15)"
-      }}>
-          <p style={{
-          fontSize: 10,
-          fontWeight: 800,
-          letterSpacing: 1,
-          color: "hsl(var(--brand-violet-300))",
-          marginBottom: 10
-        }}>
-            {t("pages.ai_coach.do_this")}
-          </p>
-          <ul style={{
-          margin: 0,
-          padding: 0,
-          listStyle: "none",
-          display: "flex",
-          flexDirection: "column",
-          gap: 9
-        }}>
-            {win.actions.map((a, i) => <li key={i} style={{
-            fontSize: 13.5,
-            lineHeight: 1.5,
-            display: "flex",
-            gap: 10,
-            color: "rgba(255,255,255,0.85)"
-          }}>
-                <span style={{
-              flexShrink: 0,
-              width: 22,
-              height: 22,
-              borderRadius: 999,
+      <div
+        className="app-win-card-body"
+        style={{
+          position: "absolute",
+          inset: 0,
+          padding: "78px 18px 118px",
+          overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
+          color: "#f8f8ff",
+        }}
+      >
+        {/* Goal + current win context */}
+        <div style={{ marginBottom: 14 }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
               background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
               color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              padding: "4px 10px",
+              borderRadius: 999,
+              fontSize: 10.5,
+              fontWeight: 800,
+              letterSpacing: 0.4,
+              marginBottom: 8,
+            }}
+          >
+            {t("pages.ai_coach.current_win", "Current Win")} · {t("pages.ai_coach.win", "Win")} {win.win}
+          </div>
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: "hsl(var(--brand-violet-300))",
+              marginBottom: 4,
+              letterSpacing: 0.3,
+            }}
+          >
+            {t("pages.ai_coach.progress_toward_goal", "{{pct}}% toward goal", { pct: progressPct })}
+          </p>
+          <h2
+            style={{
+              fontSize: 17,
+              fontWeight: 800,
+              lineHeight: 1.25,
+              margin: 0,
+              fontFamily: "Quicksand, sans-serif",
+              color: "#fff",
+            }}
+          >
+            {goalTitle}
+          </h2>
+        </div>
+
+        {/* Win title */}
+        <h3
+          style={{
+            fontSize: 22,
+            fontWeight: 800,
+            lineHeight: 1.2,
+            marginBottom: 12,
+            fontFamily: "Quicksand, sans-serif",
+            color: "#fff",
+          }}
+        >
+          {win.title}
+        </h3>
+
+        {/* Why this happens — short */}
+        {rootCauseShort && (
+          <div
+            style={{
+              marginBottom: 14,
+              padding: "10px 12px",
+              borderRadius: 14,
+              background: "rgba(244,114,182,0.08)",
+              border: "1px solid rgba(244,114,182,0.2)",
+            }}
+          >
+            <p
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                color: "hsl(var(--brand-pink-300))",
+                marginBottom: 4,
+              }}
+            >
+              {t("pages.ai_coach.why_this_happens", "🧠 Why this happens")}
+            </p>
+            <p
+              style={{
+                fontSize: 13,
+                lineHeight: 1.45,
+                color: "rgba(255,255,255,0.78)",
+                margin: 0,
+              }}
+            >
+              {rootCauseShort}
+            </p>
+          </div>
+        )}
+
+        {/* Duration + compact listen */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 10,
+            marginBottom: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 11,
+              padding: "4px 10px",
+              borderRadius: 999,
+              background: "rgba(139,92,246,0.16)",
+              color: "hsl(var(--brand-violet-300))",
+              fontWeight: 700,
+              border: "1px solid rgba(139,92,246,0.25)",
+            }}
+          >
+            ⏱ {win.duration}
+          </span>
+          <ListenButton win={win} planCacheKey={planCacheKey} compact />
+        </div>
+
+        {/* DO THIS — primary action */}
+        <div
+          style={{
+            background: "rgba(139,92,246,0.12)",
+            border: "1px solid rgba(139,92,246,0.25)",
+            borderRadius: 14,
+            padding: "12px 14px",
+            marginBottom: 12,
+          }}
+        >
+          <p
+            style={{
               fontSize: 11,
               fontWeight: 800,
-              marginTop: 1
-            }}>{i + 1}</span>
+              color: "hsl(var(--brand-violet-300))",
+              marginBottom: 8,
+            }}
+          >
+            {t("pages.ai_coach.do_this")}
+          </p>
+          <ul
+            style={{
+              margin: 0,
+              padding: 0,
+              listStyle: "none",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            {win.actions.map((a, i) => (
+              <li
+                key={i}
+                style={{
+                  fontSize: 13.5,
+                  lineHeight: 1.45,
+                  display: "flex",
+                  gap: 10,
+                  color: "rgba(255,255,255,0.88)",
+                }}
+              >
+                <span
+                  style={{
+                    flexShrink: 0,
+                    width: 20,
+                    height: 20,
+                    borderRadius: 999,
+                    background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 10,
+                    fontWeight: 800,
+                    marginTop: 1,
+                  }}
+                >
+                  {i + 1}
+                </span>
                 <span>{a}</span>
-              </li>)}
+              </li>
+            ))}
           </ul>
         </div>
 
         {/* REAL EXAMPLE */}
-        {win.example && <div style={{
-        background: "rgba(34,197,94,0.08)",
-        border: "1px solid rgba(34,197,94,0.25)",
-        borderRadius: 14,
-        padding: 12,
-        marginBottom: 12
-      }}>
-            <p style={{
-          fontSize: 10,
-          fontWeight: 800,
-          letterSpacing: 1,
-          color: "hsl(var(--brand-green-300))",
-          marginBottom: 4
-        }}>
+        {win.example && (
+          <div
+            style={{
+              background: "rgba(34,197,94,0.08)",
+              border: "1px solid rgba(34,197,94,0.22)",
+              borderRadius: 14,
+              padding: "10px 12px",
+              marginBottom: 12,
+            }}
+          >
+            <p
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                color: "hsl(var(--brand-green-300))",
+                marginBottom: 4,
+              }}
+            >
               {t("pages.ai_coach.real_example")}
             </p>
-            <p style={{
-          fontSize: 13,
-          lineHeight: 1.55,
-          color: "rgba(255,255,255,0.75)",
-          fontStyle: "italic"
-        }}>
+            <p
+              style={{
+                fontSize: 13,
+                lineHeight: 1.5,
+                color: "rgba(255,255,255,0.78)",
+                margin: 0,
+                whiteSpace: "pre-line",
+              }}
+            >
               {win.example}
             </p>
-          </div>}
+          </div>
+        )}
 
-        {/* MISTAKE TO AVOID */}
-        {win.mistake_to_avoid && <div style={{
-        background: "rgba(248,113,113,0.08)",
-        border: "1px solid rgba(248,113,113,0.25)",
-        borderRadius: 14,
-        padding: 12,
-        marginBottom: 12
-      }}>
-            <p style={{
-          fontSize: 10,
-          fontWeight: 800,
-          letterSpacing: 1,
-          color: "hsl(var(--brand-red-300))",
-          marginBottom: 4
-        }}>
-              {t("pages.ai_coach.mistake_to_avoid")}
+        {/* TRY TODAY */}
+        {win.micro_task && (
+          <div
+            style={{
+              background: "rgba(139,92,246,0.1)",
+              border: "1px solid rgba(167,139,250,0.28)",
+              borderRadius: 14,
+              padding: "10px 12px",
+              marginBottom: 16,
+            }}
+          >
+            <p
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                color: "hsl(var(--brand-violet-300))",
+                marginBottom: 4,
+              }}
+            >
+              {t("pages.ai_coach.try_today", "🎯 Try Today")}
             </p>
-            <p style={{
-          fontSize: 13,
-          lineHeight: 1.55,
-          color: "rgba(255,255,255,0.75)"
-        }}>
-              {win.mistake_to_avoid}
-            </p>
-          </div>}
-
-        {/* MICRO-TASK */}
-        {win.micro_task && <div style={{
-        background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(236,72,153,0.15))",
-        border: "1px solid rgba(167,139,250,0.4)",
-        borderRadius: 14,
-        padding: 14,
-        marginBottom: 12,
-        boxShadow: "0 0 20px rgba(139,92,246,0.2)"
-      }}>
-            <p style={{
-          fontSize: 10,
-          fontWeight: 800,
-          letterSpacing: 1,
-          color: "hsl(var(--brand-violet-300))",
-          marginBottom: 4
-        }}>
-              {t("pages.ai_coach.do_this_today_under_5_min")}
-            </p>
-            <p style={{
-          fontSize: 13.5,
-          lineHeight: 1.5,
-          color: "#fff",
-          fontWeight: 600
-        }}>
+            <p
+              style={{
+                fontSize: 13.5,
+                lineHeight: 1.45,
+                color: "#fff",
+                fontWeight: 600,
+                margin: 0,
+              }}
+            >
               {win.micro_task}
             </p>
-          </div>}
+          </div>
+        )}
 
-        {win.science_reference && <p style={{
-        fontSize: 11,
-        color: "rgba(255,255,255,0.4)",
-        lineHeight: 1.5,
-        marginBottom: 14,
-        fontStyle: "italic",
-        paddingLeft: 10,
-        borderLeft: "2px solid rgba(139,92,246,0.4)"
-      }}>
-            {t("pages.ai_coach.based_on")} {win.science_reference}
-          </p>}
-
-        {/* Mark-as-done feedback */}
-        <div style={{
-        background: "rgba(255,255,255,0.05)",
-        border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: 16,
-        padding: 14,
-        marginBottom: 8,
-        boxShadow: "0 0 20px rgba(139,92,246,0.1)"
-      }}>
-          <p style={{
-          fontSize: 13,
-          fontWeight: 700,
-          color: "#fff",
-          marginBottom: 10
-        }}>
-            {t("pages.ai_coach.how_did_this_win_go")}
-          </p>
-          <div style={{
-          display: "flex",
-          gap: 6
-        }}>
-            {[{
-            v: "yes" as const,
-            label: "Worked",
-            color: "hsl(var(--brand-green-700))",
-            bg: "rgba(34,197,94,0.15)",
-            border: "rgba(34,197,94,0.45)"
-          }, {
-            v: "somewhat" as const,
-            label: "Partially worked",
-            color: "#a16207",
-            bg: "rgba(251,191,36,0.15)",
-            border: "rgba(251,191,36,0.45)"
-          }, {
-            v: "no" as const,
-            label: "Not worked for me",
-            color: "hsl(var(--brand-red-700))",
-            bg: "rgba(248,113,113,0.12)",
-            border: "rgba(248,113,113,0.4)"
-          }].map(b => {
-            const selected = currentFeedback === b.v;
-            return <button key={b.v} onClick={() => onFeedback(b.v)} disabled={extending} style={{
-              flex: 1,
-              padding: "10px 4px",
-              borderRadius: 10,
-              border: `1.5px solid ${selected ? b.color : b.border}`,
-              background: selected ? b.color : b.bg,
-              color: selected ? "#fff" : b.color,
-              fontSize: 11.5,
-              fontWeight: 700,
-              cursor: extending ? "wait" : "pointer",
-              opacity: extending ? 0.7 : 1,
-              transition: "all 0.18s",
-              lineHeight: 1.2
-            }}>
+        {/* Feedback — prominent, supportive */}
+        <div
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 16,
+            padding: 12,
+            marginBottom: 10,
+          }}
+        >
+          <div style={{ display: "flex", gap: 8 }}>
+            {feedbackOptions.map((b) => {
+              const selected = currentFeedback === b.v;
+              return (
+                <button
+                  key={b.v}
+                  type="button"
+                  onClick={() => onFeedback(b.v)}
+                  disabled={extending}
+                  style={{
+                    flex: 1,
+                    padding: "12px 6px",
+                    borderRadius: 12,
+                    border: `1.5px solid ${selected ? b.color : b.border}`,
+                    background: selected ? b.color : b.bg,
+                    color: selected ? "#fff" : "rgba(255,255,255,0.92)",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: extending ? "wait" : "pointer",
+                    opacity: extending ? 0.7 : 1,
+                    transition: "all 0.18s",
+                    lineHeight: 1.25,
+                  }}
+                >
                   {b.label}
-                </button>;
-          })}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* "Not worked for me" / "Partially worked" → 1 new strategy inserted next */}
-        {(currentFeedback === "no" || currentFeedback === "somewhat") && <div style={{
-        background: "rgba(254,243,199,0.7)",
-        border: "1px solid rgba(245,158,11,0.4)",
-        borderRadius: 14,
-        padding: 14,
-        marginTop: 10
-      }}>
-            <p style={{
-          fontSize: 11,
-          fontWeight: 800,
-          letterSpacing: 1,
-          color: "hsl(var(--brand-amber-800))",
-          marginBottom: 6
-        }}>
-              {t("pages.ai_coach.extra_support_added")}
+        {/* Micro celebration / adaptive coaching note */}
+        {currentFeedback === "yes" && (
+          <div
+            style={{
+              background: "rgba(34,197,94,0.1)",
+              border: "1px solid rgba(34,197,94,0.28)",
+              borderRadius: 14,
+              padding: "10px 12px",
+              marginBottom: 10,
+            }}
+          >
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#fff", margin: "0 0 4px" }}>
+              {t("pages.ai_coach.celebration_worked_title", "✨ Nice work.")}
             </p>
-            <p style={{
-          fontSize: 13,
-          lineHeight: 1.55,
-          color: "hsl(var(--brand-amber-900))"
-        }}>
-              {currentFeedback === "no"
-                ? t("pages.ai_coach.added_1_fresh_strategy_not_worked")
-                : t("pages.ai_coach.added_1_fresh_strategy_partial")}
+            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.78)", margin: 0, lineHeight: 1.45 }}>
+              {progressSnapshot && progressSnapshot.to > progressSnapshot.from
+                ? t("pages.ai_coach.celebration_progress_delta", "Progress increased from {{from}}% → {{to}}%", progressSnapshot)
+                : t("pages.ai_coach.celebration_moving_forward", "Every small step helps build lasting change.")}
             </p>
-          </div>}
+          </div>
+        )}
+        {currentFeedback === "somewhat" && (
+          <div
+            style={{
+              background: "rgba(251,191,36,0.1)",
+              border: "1px solid rgba(251,191,36,0.28)",
+              borderRadius: 14,
+              padding: "10px 12px",
+              marginBottom: 10,
+            }}
+          >
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#fff", margin: "0 0 4px" }}>
+              {t("pages.ai_coach.celebration_partly_title", "🎉 You're moving forward.")}
+            </p>
+            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.78)", margin: 0, lineHeight: 1.45 }}>
+              {t(
+                "pages.ai_coach.adaptive_partly_body",
+                "Amy will refine this approach in your next win. Partial progress counts.",
+              )}
+            </p>
+          </div>
+        )}
+        {currentFeedback === "no" && (
+          <div
+            style={{
+              background: "rgba(139,92,246,0.1)",
+              border: "1px solid rgba(139,92,246,0.28)",
+              borderRadius: 14,
+              padding: "10px 12px",
+              marginBottom: 10,
+            }}
+          >
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#fff", margin: "0 0 4px" }}>
+              {t("pages.ai_coach.adaptive_not_yet_title", "Amy noticed this strategy may need adjusting.")}
+            </p>
+            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.78)", margin: 0, lineHeight: 1.45 }}>
+              {t(
+                "pages.ai_coach.adaptive_not_yet_body",
+                "Your next win will try a different approach — same goal, new angle.",
+              )}
+            </p>
+          </div>
+        )}
 
-        {(currentFeedback === "yes" || currentFeedback === "somewhat") && <div style={{
-        background: "rgba(220,252,231,0.6)",
-        border: "1px solid rgba(34,197,94,0.4)",
-        borderRadius: 12,
-        padding: 10,
-        marginTop: 8,
-        display: "flex",
-        alignItems: "center",
-        gap: 8
-      }}>
-            <span style={{
-          fontSize: 18
-        }}>{currentFeedback === "yes" ? "🎉" : "💜"}</span>
-            <p style={{
-          fontSize: 12.5,
-          color: "hsl(var(--brand-green-900))",
-          fontWeight: 600,
-          margin: 0
-        }}>
-              {currentFeedback === "yes" ? "Logged as a full win. Swipe to the next step." : "Partial progress counted. Keep going — small wins compound."}
-            </p>
-          </div>}
+        {/* Collapsed educational content */}
+        {win.deep_explanation && (
+          <CoachExpandable label={t("pages.ai_coach.why_this_works", "▼ Why this works")}>
+            {win.deep_explanation}
+          </CoachExpandable>
+        )}
+        {win.science_reference && (
+          <CoachExpandable label={t("pages.ai_coach.research_behind_this", "▼ Research behind this")}>
+            {win.science_reference}
+          </CoachExpandable>
+        )}
+        {(rootCauseHasMore || planSummary) && (
+          <CoachExpandable label={t("pages.ai_coach.root_cause_details", "▼ Root cause details")}>
+            {rootCauseHasMore && planRootCause && (
+              <p style={{ margin: "0 0 10px" }}>{planRootCause}</p>
+            )}
+            {planSummary && <p style={{ margin: 0 }}>{planSummary}</p>}
+          </CoachExpandable>
+        )}
+        {win.mistake_to_avoid && (
+          <CoachExpandable label={t("pages.ai_coach.mistake_to_avoid", "▼ Mistake to avoid")}>
+            {win.mistake_to_avoid}
+          </CoachExpandable>
+        )}
+        {win.objective && (
+          <CoachExpandable label={t("pages.ai_coach.win_objective", "▼ What this win targets")}>
+            {win.objective}
+          </CoachExpandable>
+        )}
       </div>
-    </div>;
+    </div>
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2844,10 +2951,13 @@ function WinCard({
 export function ListenButton({
   win,
   planCacheKey,
+  compact = false,
 }: {
   win: Win;
   planCacheKey?: string;
+  compact?: boolean;
 }) {
+  const { t } = useTranslation();
   const { speak, pause, loading, primeSpeakGesture } = useAmyVoice();
   const [isListening, setIsListening] = useState(false);
   const audioIdentity = useMemo(() => {
@@ -2889,28 +2999,46 @@ export function ListenButton({
     });
   };
   const isActive = isListening || loading;
-  return <span style={{
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 6
-  }} data-testid="coach-listen-row">
-      <button type="button" onPointerDown={primeListen} onClick={handleClick} data-testid="coach-listen-btn" style={{
-      fontSize: 11,
-      padding: "4px 10px",
-      borderRadius: 999,
-      background: isActive ? "rgba(236,72,153,0.25)" : "rgba(34,197,94,0.18)",
-      color: isActive ? "rgba(251,207,232,1)" : "rgba(134,239,172,1)",
-      fontWeight: 700,
-      border: isActive ? "1px solid rgba(236,72,153,0.4)" : "1px solid rgba(34,197,94,0.35)",
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 5,
-      cursor: "pointer"
-    }} aria-label={isActive ? "Stop listening" : "Listen to this win"} title={isActive ? "Stop" : "Amy reads this aloud"}>
-        {isActive ? <VolumeX size={12} /> : <Volume2 size={12} />}
-        {isActive && !loading ? "Stop" : loading ? "…" : "Listen"}
+  const listenLabel = isActive && !loading
+    ? t("pages.ai_coach.listen_stop", "Stop")
+    : loading
+      ? "…"
+      : compact
+        ? t("pages.ai_coach.listen_compact", "🔊 Listen")
+        : t("pages.ai_coach.listen", "Listen");
+  return (
+    <span
+      style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+      data-testid="coach-listen-row"
+    >
+      <button
+        type="button"
+        onPointerDown={primeListen}
+        onClick={handleClick}
+        data-testid="coach-listen-btn"
+        style={{
+          fontSize: compact ? 11 : 11,
+          padding: compact ? "5px 10px" : "4px 10px",
+          borderRadius: 999,
+          background: isActive ? "rgba(139,92,246,0.22)" : "rgba(255,255,255,0.06)",
+          color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.82)",
+          fontWeight: 700,
+          border: isActive
+            ? "1px solid rgba(167,139,250,0.45)"
+            : "1px solid rgba(255,255,255,0.12)",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: compact ? 0 : 5,
+          cursor: "pointer",
+        }}
+        aria-label={isActive ? t("pages.ai_coach.listen_stop", "Stop listening") : t("pages.ai_coach.listen_aria", "Listen to this win")}
+        title={isActive ? t("pages.ai_coach.listen_stop", "Stop") : t("pages.ai_coach.listen_aria", "Amy reads this aloud")}
+      >
+        {!compact && (isActive ? <VolumeX size={12} /> : <Volume2 size={12} />)}
+        {listenLabel}
       </button>
-    </span>;
+    </span>
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
