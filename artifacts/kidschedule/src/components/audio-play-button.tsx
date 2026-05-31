@@ -22,7 +22,6 @@ import {
 } from "@/lib/static-audio";
 import {
   catalogPlaybackSpeakOptions,
-  hasStaticCatalogAudio,
   resolvePhonicsCatalogPhrase,
   shouldBypassPhonicsSpellingLibraries,
 } from "@/lib/unified-catalog-playback";
@@ -33,7 +32,11 @@ import {
 import { getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
 import { phonicsEnginePlayWord, phonicsEngineStop } from "@/lib/phonics-audio-engine";
-import { playLocalPhonicsLetter, playLocalPhonicsWord } from "@/lib/phonics-local-playback";
+import {
+  isPhonicsLocalPlaybackAvailable,
+  playLocalPhonicsLetter,
+  playLocalPhonicsWord,
+} from "@/lib/phonics-local-playback";
 import { speakPhonicsFastClip } from "@/lib/phonics-audio";
 import { cn } from "@/lib/utils";
 import {
@@ -192,13 +195,10 @@ export function AudioPlayButton({
   const audioAvailable = useMemo(() => {
     if (mode !== "phonics") return true;
     const trimmed = (text ?? "").trim();
-    if (isLocalAudioRecoveryEnabled()) {
-      if (isWordClip) return true;
-      const key = resolvedAudioKey || phonemeKey || trimmed.toLowerCase();
-      return Boolean(key);
-    }
-    if (shouldBypassPhonicsSpellingLibraries()) {
-      return hasStaticCatalogAudio(trimmed);
+    if (!trimmed) return false;
+    // Phonics clips often live in phonics-library / TTS, not static-audio-map — keep buttons tappable.
+    if (shouldBypassPhonicsSpellingLibraries() || isLocalAudioRecoveryEnabled()) {
+      return true;
     }
     if (cvcWordKey || (!phonemeKey && trimmed && !/\s/.test(trimmed))) {
       return checkPhonicsWordClip(cvcWordKey ?? trimmed).available;
@@ -285,21 +285,53 @@ export function AudioPlayButton({
           pause();
           await phonicsEngineStop("audio_play_button");
           if (isWordClip && cvcWordKey) {
-            const local = isLocalAudioRecoveryEnabled();
-            const res = local
-              ? await playLocalPhonicsWord(cvcWordKey)
-              : await phonicsEnginePlayWord(cvcWordKey);
-            if (res.ok) {
+            if (
+              isLocalAudioRecoveryEnabled() &&
+              isPhonicsLocalPlaybackAvailable(cvcWordKey, "word")
+            ) {
+              const localRes = await playLocalPhonicsWord(cvcWordKey);
+              if (localRes.ok) {
+                if (isMounted.current) onPlay?.();
+                return { success: true, layer: "static" as const };
+              }
+            }
+            const engineRes = await phonicsEnginePlayWord(cvcWordKey);
+            if (engineRes.ok) {
               if (isMounted.current) onPlay?.();
               return { success: true, layer: "static" as const };
             }
+            const fastWord = await speakPhonicsFastClip(resolvedText, {
+              phoneme: phonemeKey,
+              playbackRate,
+            });
+            if (fastWord.success) {
+              if (isMounted.current) onPlay?.();
+              return fastWord;
+            }
+            const speakWord = await speak(
+              resolvedText,
+              catalogPlaybackSpeakOptions(resolvedText, {
+                mode: "phonics",
+                phoneme: phonemeKey,
+                word: cvcWordKey,
+                playbackMode: "partial-ok",
+              }),
+            );
+            if (speakWord?.success) {
+              if (isMounted.current) onPlay?.();
+              return speakWord;
+            }
             if (isMounted.current) setVisualFallback(true);
-            return { success: false, error: res.error ?? "phonics_play_failed" };
+            return { success: false, error: speakWord?.error ?? "phonics_play_failed" };
           }
           const letterKey = resolvedAudioKey || phonemeKey || resolvedText;
-          if (isLocalAudioRecoveryEnabled() && letterKey) {
-            const res = await playLocalPhonicsLetter(letterKey);
-            if (res.ok) {
+          if (
+            isLocalAudioRecoveryEnabled() &&
+            letterKey &&
+            isPhonicsLocalPlaybackAvailable(letterKey, "letter")
+          ) {
+            const localRes = await playLocalPhonicsLetter(letterKey);
+            if (localRes.ok) {
               if (isMounted.current) onPlay?.();
               return { success: true, layer: "static" as const };
             }
@@ -312,8 +344,21 @@ export function AudioPlayButton({
             if (isMounted.current) onPlay?.();
             return fast;
           }
+          const speakLetter = await speak(
+            resolvedText,
+            catalogPlaybackSpeakOptions(resolvedText, {
+              mode: "phonics",
+              phoneme: phonemeKey,
+              word: cvcWordKey,
+              playbackMode: "partial-ok",
+            }),
+          );
+          if (speakLetter?.success) {
+            if (isMounted.current) onPlay?.();
+            return speakLetter;
+          }
           if (isMounted.current) setVisualFallback(true);
-          return fast;
+          return speakLetter ?? fast;
         }
 
         const isSentenceRead = mode !== "phonics" && resolvedText.includes(" ");

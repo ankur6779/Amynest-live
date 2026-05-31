@@ -94,8 +94,14 @@ async function playLetterClipDirect(
   audioKey: string,
   options: PhonicsEnginePlayOptions = {},
 ): Promise<{ ok: boolean; error?: string }> {
-  if (isLocalAudioRecoveryEnabled()) {
-    return playLocalPhonicsLetter(audioKey, { isCancelled: options.isCancelled });
+  if (
+    isLocalAudioRecoveryEnabled() &&
+    isPhonicsLocalPlaybackAvailable(audioKey, "letter")
+  ) {
+    const local = await playLocalPhonicsLetter(audioKey, {
+      isCancelled: options.isCancelled,
+    });
+    if (local.ok) return local;
   }
   const result = await playBlendPhonemeClip(audioKey, {
     playbackRate: options.playbackRate,
@@ -109,8 +115,12 @@ async function playWordClipDirect(
   word: string,
   options: PhonicsEnginePlayOptions = {},
 ): Promise<{ ok: boolean; error?: string }> {
-  if (isLocalAudioRecoveryEnabled()) {
-    return playLocalPhonicsWord(word, { isCancelled: options.isCancelled });
+  if (
+    isLocalAudioRecoveryEnabled() &&
+    isPhonicsLocalPlaybackAvailable(word, "word")
+  ) {
+    const local = await playLocalPhonicsWord(word, { isCancelled: options.isCancelled });
+    if (local.ok) return local;
   }
   const result = await playPhonicsContentAudio(word, {
     contentType: "cvc",
@@ -170,11 +180,10 @@ export async function phonicsEnginePlayWord(
   options: PhonicsEnginePlayOptions = {},
 ): Promise<{ ok: boolean; error?: string }> {
   const w = (word ?? "").trim().toLowerCase();
-  if (isLocalAudioRecoveryEnabled()) {
-    if (!isPhonicsLocalPlaybackAvailable(w, "word")) {
-      return { ok: false, error: "local_asset_missing" };
-    }
-  } else {
+  if (
+    !isLocalAudioRecoveryEnabled() &&
+    !shouldBypassPhonicsSpellingLibraries()
+  ) {
     const availability = checkPhonicsWordClip(w);
     if (!availability.available) {
       return { ok: false, error: "phonics_audio_preparing" };
