@@ -335,11 +335,6 @@ function PhonicsLearningContent({
       .join(",");
     if (preloadKeyRef.current === key) return;
     preloadKeyRef.current = key;
-    preloadStaticPhrases(
-      safeItems.slice(0, limit).map((item) => item.sound),
-      "default",
-      limit,
-    );
     const phonicsLines = safeItems
       .slice(0, limit)
       .map((item) => phonicsTilePlaybackText(item))

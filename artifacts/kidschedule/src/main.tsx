@@ -24,10 +24,7 @@ import {
 } from "@/lib/static-audio-telemetry";
 import { preloadSpeechSynthesisVoices } from "@/lib/emergency-audio";
 import { installAmyVoiceAudioDiagnostics } from "@/lib/amy-voice-audio-diag";
-import {
-  injectStaticAudioPreloadHints,
-  installStaticAudioGestureWarmup,
-} from "@/lib/static-audio-edge";
+import { installStaticAudioGestureWarmup } from "@/lib/static-audio-edge";
 import {
   initGlobalAudioWarmup,
   installGlobalAudioWarmupOnGesture,
@@ -87,7 +84,6 @@ installStaticAudioGuards();
 installStaticAudioDevTools();
 installStaticAudioGestureWarmup();
 installGlobalAudioWarmupOnGesture();
-injectStaticAudioPreloadHints();
 initPhonicsManifestValidation();
 initGlobalAudioWarmup();
 preloadSpeechSynthesisVoices();

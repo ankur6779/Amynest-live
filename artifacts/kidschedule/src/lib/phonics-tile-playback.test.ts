@@ -27,4 +27,24 @@ describe("phonicsTilePlaybackText", () => {
       "cat",
     );
   });
+
+  it("single-letter tiles use phonics mode (not Amy default lesson)", () => {
+    expect(
+      phonicsTileUsesPhonicsMode({
+        type: "letter",
+        symbol: "s",
+        sound: "Listen with Amy in this audio lesson about the letter S.",
+      }),
+    ).toBe(true);
+  });
+
+  it("sentence tiles stay on default read-aloud mode", () => {
+    expect(
+      phonicsTileUsesPhonicsMode({
+        type: "sentence",
+        symbol: "The cat sat.",
+        sound: "The cat sat on the mat.",
+      }),
+    ).toBe(false);
+  });
 });

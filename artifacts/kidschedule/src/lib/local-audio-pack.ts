@@ -15,8 +15,14 @@ export type LocalAudioPackCategory =
 
 type PackManifest = {
   version: number;
+  tier?: string;
   entries: Record<string, string>;
 };
+
+/** True when pack was seeded with one placeholder clip per key (not real per-asset audio). */
+export function isLocalAudioPackStub(): boolean {
+  return manifest.tier === "stub";
+}
 
 const manifest = packManifest as PackManifest;
 
@@ -37,7 +43,7 @@ export function resolveLocalPackUrl(
   category: LocalAudioPackCategory,
   id: string,
 ): string | null {
-  if (!isLocalAudioRecoveryEnabled()) return null;
+  if (!isLocalAudioRecoveryEnabled() || isLocalAudioPackStub()) return null;
   const key = packKey(category, id);
   const rel = manifest.entries[key];
   if (!rel) return null;

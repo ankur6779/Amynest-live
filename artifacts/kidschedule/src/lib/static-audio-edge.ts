@@ -40,6 +40,7 @@ export function installStaticAudioGestureWarmup(): void {
   if (typeof window === "undefined") return;
   const once = () => {
     warmStaticAudioOnFirstGesture();
+    injectStaticAudioPreloadHints();
     window.removeEventListener("pointerdown", once, true);
     window.removeEventListener("keydown", once, true);
   };
@@ -53,8 +54,12 @@ export function installStaticAudioGestureWarmup(): void {
  * (Blink only treats it as a hint, not a fetched preload), so we use `fetch`
  * which is universally supported and fills the HTTP cache identically.
  */
+let staticAudioPreloadHintsInjected = false;
+
 export function injectStaticAudioPreloadHints(): void {
   if (typeof document === "undefined") return;
+  if (staticAudioPreloadHintsInjected) return;
+  staticAudioPreloadHintsInjected = true;
 
   for (const url of getStaticAudioPreloadHintUrls()) {
     const id = `static-audio-preload-${url.slice(-40).replace(/\W/g, "")}`;

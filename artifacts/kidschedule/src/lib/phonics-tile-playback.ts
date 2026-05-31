@@ -37,6 +37,8 @@ export function phonicsTileCvcWordKey(item: PhonicsTileLike): string | undefined
   return item.symbol.trim().toLowerCase();
 }
 
+/** Grid/practice tiles always use phonics static catalog — never Amy default lesson mode. */
 export function phonicsTileUsesPhonicsMode(item: PhonicsTileLike): boolean {
-  return !!item.phoneme || isPhonicsCvcOrWordTile(item);
+  if (item.type === "sentence" || item.type === "story") return false;
+  return true;
 }
