@@ -53,6 +53,9 @@ Thumbs.db
 !.env*.example
 Amynest-backend-dykj.env
 
+# Service account / Firebase client JSON — never commit under attached_assets
+attached_assets/*.json
+
 # Replit
 .cache/
 .local/
