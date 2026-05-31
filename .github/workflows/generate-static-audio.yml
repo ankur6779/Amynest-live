@@ -30,6 +30,11 @@ on:
         required: false
         default: false
         type: boolean
+      speech_coach_only:
+        description: "Regenerate only Speech Coach dialogue phrases."
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -80,6 +85,9 @@ jobs:
           elif [ "${{ inputs.parent_hub_only }}" = "true" ]; then
             echo "Regenerate Parent Hub static speak corpus only"
             pnpm run generate:static-audio -- --parent-hub-only
+          elif [ "${{ inputs.speech_coach_only }}" = "true" ]; then
+            echo "Regenerate Speech Coach static speak corpus only"
+            pnpm run generate:static-audio -- --speech-coach-only
           elif [ "${{ inputs.spelling_only }}" = "true" ]; then
             echo "Regenerate Spelling Mastery corpus only"
             pnpm run generate:static-audio -- --spelling-only
