@@ -342,7 +342,7 @@ function PhonicsLearningContent({
     );
     const phonicsLines = safeItems
       .slice(0, limit)
-      .map((item) => resolvePhonicsPlaybackText(item))
+      .map((item) => phonicsTilePlaybackText(item))
       .filter((p) => p.length > 0);
     if (phonicsLines.length > 0) {
       preloadStaticPhrases(phonicsLines, "phonics", limit);
