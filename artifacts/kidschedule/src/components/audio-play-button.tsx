@@ -9,6 +9,11 @@ import {
   resolvePhonicsAudioKey,
 } from "@/lib/phonics-static-audio";
 import {
+  checkPhonicsLetterClip,
+  checkPhonicsWordClip,
+} from "@/lib/phonics-audio-availability";
+import { subscribePhonicsPlayback, isPhonicsPlaying } from "@/lib/phonics-player";
+import {
   onStaticAudioVisualFallback,
   preloadStaticPhrases,
   prefetchStaticAudioUrl,
@@ -54,6 +59,9 @@ interface AudioPlayButtonProps {
   phonemeKey?: string;
   /** CVC word key for GCS cache (word_cat). */
   cvcWordKey?: string;
+  /** Disable while another phonics clip is playing (prevents double-tap races). */
+  lockWhileGlobalPlayback?: boolean;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -90,6 +98,8 @@ export function AudioPlayButton({
   slow = false,
   phonemeKey,
   cvcWordKey,
+  lockWhileGlobalPlayback = false,
+  disabled: disabledProp = false,
   className,
 }: AudioPlayButtonProps) {
   const { toast } = useToast();
@@ -103,6 +113,7 @@ export function AudioPlayButton({
     playbackRate,
   });
   const [visualFallback, setVisualFallback] = useState(false);
+  const [globalPlaying, setGlobalPlaying] = useState(isPhonicsPlaying());
   const isMounted = useMountedRef();
   const { safeAsync } = useSafeAsync();
   const { run: runInFlight } = useInFlightGuard();
@@ -162,6 +173,16 @@ export function AudioPlayButton({
     );
   }, [text, mode, phonemeKey]);
 
+  const audioAvailable = useMemo(() => {
+    if (mode !== "phonics") return true;
+    const trimmed = (text ?? "").trim();
+    if (cvcWordKey || (!phonemeKey && trimmed && !/\s/.test(trimmed))) {
+      return checkPhonicsWordClip(cvcWordKey ?? trimmed).available;
+    }
+    const key = resolvedAudioKey || phonemeKey || trimmed.toLowerCase();
+    return checkPhonicsLetterClip(key).available;
+  }, [mode, text, phonemeKey, cvcWordKey, resolvedAudioKey]);
+
   const resolvedText = useMemo(() => {
     const trimmed = (text ?? "").trim();
     if (!trimmed) return "";
@@ -181,6 +202,16 @@ export function AudioPlayButton({
   const isThisClipActive =
     activePhrase != null && activeKeys.has(activePhrase.toLowerCase());
   const busy = isThisClipActive && (speaking || loading);
+
+  const preparing = mode === "phonics" && !audioAvailable;
+  const lockedByGlobal = lockWhileGlobalPlayback && globalPlaying && !busy;
+  const disabled = disabledProp || preparing || lockedByGlobal;
+
+  useEffect(() => {
+    return subscribePhonicsPlayback(({ playing }) => {
+      if (isMounted.current) setGlobalPlaying(playing);
+    });
+  }, [isMounted]);
 
   const resolvedPrefetch = useMemo(() => {
     const next = (prefetchNextText ?? "").trim();
@@ -212,6 +243,7 @@ export function AudioPlayButton({
   }, [resolvedText, mode]);
 
   const handleClick = useCallback(async () => {
+    if (disabled || preparing) return;
     audioManager.unlockFromUserGesture();
 
     await runInFlight(async () => {
@@ -245,7 +277,11 @@ export function AudioPlayButton({
         // speak() never throws — guard only
       }
     });
-  }, [busy, isMounted, mode, onPlay, runInFlight, safeAsync, speak, pause, resolvedText]);
+  }, [busy, disabled, preparing, isMounted, mode, onPlay, runInFlight, safeAsync, speak, pause, resolvedText]);
+
+  const label = preparing
+    ? "Audio preparing"
+    : ariaLabel ?? `Play ${text}`;
 
   return (
     <Button
@@ -253,8 +289,9 @@ export function AudioPlayButton({
       onClick={handleClick}
       onPointerDown={handlePointerDown}
       onPointerEnter={handlePointerEnter}
-      disabled={false}
-      aria-label={ariaLabel ?? `Play ${text}`}
+      disabled={disabled}
+      aria-label={label}
+      title={preparing ? "Audio preparing" : undefined}
       data-testid={`audio-play-${text.slice(0, 16).replace(/\s+/g, "-").toLowerCase()}`}
       className={cn(
         "rounded-full p-0 border-0 shadow-sm transition-all",

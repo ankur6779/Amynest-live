@@ -26,6 +26,18 @@ function assertLibrary(): void {
   }
 }
 
+function runInteractionGate(): void {
+  console.log("[check:phonics-release-gate] Running interaction gate…\n");
+  const result = spawnSync("pnpm", ["--filter", "@workspace/scripts", "run", "check-phonics-interaction-gate"], {
+    cwd: REPO_ROOT,
+    stdio: "inherit",
+  });
+  if (result.status !== 0) {
+    console.error("\n[check:phonics-release-gate] FAIL — interaction gate failed.\n");
+    process.exit(result.status ?? 1);
+  }
+}
+
 function runSmokeTests(): void {
   console.log("[check:phonics-release-gate] Running phonics smoke tests…\n");
   const result = spawnSync(
@@ -42,6 +54,7 @@ function runSmokeTests(): void {
       "src/lib/phonics-circuit-breaker.test.ts",
       "src/lib/phonics-safe-audio.test.ts",
       "src/lib/phonics-player.test.ts",
+      "src/lib/phonics-audio-engine.test.ts",
     ],
     { cwd: REPO_ROOT, stdio: "inherit", env: { ...process.env, PHONICS_LIBRARY_SKIP_CHECK: "0" } },
   );
@@ -53,4 +66,5 @@ function runSmokeTests(): void {
 }
 
 assertLibrary();
+runInteractionGate();
 runSmokeTests();

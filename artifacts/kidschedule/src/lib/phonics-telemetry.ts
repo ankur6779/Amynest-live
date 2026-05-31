@@ -11,6 +11,15 @@ export type PhonicsTelemetryEvent =
   | "phonics_audio_play_success"
   | "phonics_audio_play_failed"
   | "phonics_audio_url_blocked"
+  | "phonics_audio_started"
+  | "phonics_audio_completed"
+  | "phonics_audio_failed"
+  | "phonics_audio_manifest_missing"
+  | "phonics_word_selected"
+  | "phonics_level_changed"
+  | "phonics_hear_and_tap_started"
+  | "phonics_hear_and_tap_answered"
+  | "phonics_hear_and_tap_audio_mismatch"
   | "phonics_circuit_open"
   | "phonics_render_crash";
 

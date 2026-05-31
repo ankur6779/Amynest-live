@@ -2,7 +2,7 @@
  * Curated phonics library playback — GCS pre-generated assets only.
  * Never calls ElevenLabs or OpenAI at runtime.
  *
- * Fallback order: global cache → IndexedDB → GCS manifest → log + fallback clip.
+ * Fallback order: global cache → IndexedDB → GCS manifest → fail safe (no wrong clip).
  */
 
 import {
@@ -25,7 +25,6 @@ import {
 } from "@/lib/phonics-circuit-breaker";
 import { isPhonicsManifestStrictlyValid } from "@/lib/phonics-manifest-validation";
 import {
-  getPhonicsLibraryFallbackUrl,
   getPhonicsContentCacheKey,
   listPhonicsLibraryPrewarmItems,
   lookupPhonicsContentUrl,
@@ -47,7 +46,7 @@ const PHONICS_PREWARM_BATCH_GAP_MS = 40;
 
 let libraryPrewarmStarted = false;
 
-/** HTTPS URL for a letter/digraph phoneme clip from the GCS library. */
+/** HTTPS URL for a letter/digraph phoneme clip — empty when manifest entry missing (no fallback). */
 export function getPhonicsStaticAudioUrl(audioKey: string): string {
   const fromLibrary = lookupPhonicsLetterUrl(audioKey);
   if (fromLibrary) return fromLibrary;
@@ -55,13 +54,10 @@ export function getPhonicsStaticAudioUrl(audioKey: string): string {
   const catalogKey = resolveLetterClipCatalogKey(audioKey);
   if (catalogKey) reportPhonicsLibraryMissing(catalogKey, `letter:${audioKey}`);
 
-  const fallback = getPhonicsLibraryFallbackUrl();
-  if (fallback) return fallback;
-
   return "";
 }
 
-/** HTTPS URL for CVC word, sight word, sentence, or quiz prompt. */
+/** HTTPS URL for CVC word, sight word, sentence, or quiz — empty when missing (no fallback). */
 export function getPhonicsContentAudioUrl(
   text: string,
   preferredType?: PhonicsAssetType,
@@ -71,7 +67,7 @@ export function getPhonicsContentAudioUrl(
 
   const type = preferredType ?? "cvc";
   reportPhonicsLibraryMissing(`${type}:${text}`, "content");
-  return getPhonicsLibraryFallbackUrl() ?? "";
+  return "";
 }
 
 export function prefetchPhonicsAudioKeys(keys: string[]): void {
@@ -169,7 +165,7 @@ async function resolveBestPlayUrl(
   }
 
   if (!networkUrl) {
-    return { url: getPhonicsLibraryFallbackUrl() ?? "" };
+    return { url: "" };
   }
   return { url: networkUrl };
 }

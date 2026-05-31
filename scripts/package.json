@@ -20,6 +20,8 @@
     "clean-phonics-audio-legacy": "tsx ./clean-phonics-audio-legacy.ts",
     "generate-phonics-library": "tsx ./generate-phonics-library.ts",
     "check-phonics-library": "tsx ./check-phonics-library.ts",
+    "check-phonics-interaction-gate": "tsx ./check-phonics-interaction-gate.ts",
+    "check-phonics-release-gate": "tsx ./check-phonics-release-gate.ts",
     "build-spelling-audio-manifest": "tsx ./build-spelling-audio-manifest.ts",
     "generate-spelling-audio": "tsx ./generate-spelling-audio.ts",
     "check-spelling-audio": "tsx ./check-spelling-audio.ts",

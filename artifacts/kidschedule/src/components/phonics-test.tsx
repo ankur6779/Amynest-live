@@ -14,6 +14,9 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { getCvcWordEntry, getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { playCvcBlendWithSpeak } from "@/lib/phonics-audio";
+import { phonicsEnginePlayWord, phonicsEngineStop } from "@/lib/phonics-audio-engine";
+import { validatePhonicsWordAudio } from "@/lib/phonics-audio-availability";
+import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
 import { cn } from "@/lib/utils";
 
 // ─── API shapes ──────────────────────────────────────────────────────────────
@@ -405,11 +408,20 @@ interface QuestionCardProps {
   secondsLeft: number | null;
 }
 
+function resolveQuestionWordId(question: ClientQuestion): string {
+  const metaWord = question.prompt.meta?.targetWord?.trim().toLowerCase();
+  if (metaWord) return metaWord;
+  const tts = (question.prompt.ttsText ?? question.prompt.text ?? "").trim().toLowerCase();
+  return tts.replace(/^the word\s+/i, "").trim();
+}
+
 function QuestionCard({
   question, index, total, onAnswer, selectedIndex, feedback, secondsLeft,
 }: QuestionCardProps) {
   const { speaking, loading, speak, pause } = useAmyVoice();
+  const [audioPreparing, setAudioPreparing] = useState(false);
 
+  const questionWordId = useMemo(() => resolveQuestionWordId(question), [question]);
   const rawTts = question.prompt.ttsText ?? question.prompt.text ?? "";
   const blendWord =
     question.type === "blending"
@@ -418,26 +430,79 @@ function QuestionCard({
   const cvcEntry = blendWord ? getCvcWordEntry(blendWord) : undefined;
   const ttsText = rawTts && question.type !== "blending" ? getPhonicsAudioText(rawTts) : rawTts;
 
+  const audioValidation = useMemo(() => {
+    if (cvcEntry) return validatePhonicsWordAudio(cvcEntry.word, cvcEntry.phonemes);
+    if (questionWordId) return validatePhonicsWordAudio(questionWordId);
+    return null;
+  }, [cvcEntry, questionWordId]);
+
   // Retry counter — reset on each new question, capped at 1 auto-replay on
   // wrong answer to prevent infinite TTS loops.
   const retryCountRef = useRef(0);
   useEffect(() => {
     retryCountRef.current = 0;
+    setAudioPreparing(false);
   }, [question.id]);
 
-  // REMOVED auto speak on mount — TTS only on user tap (playPrompt).
-
-  const playPrompt = useCallback(() => {
+  const playPrompt = useCallback(async () => {
     if (speaking || loading) {
       pause();
       return;
     }
+
+    const playbackWordId = cvcEntry?.word ?? questionWordId;
+    if (!playbackWordId) return;
+
+    if (audioValidation && !audioValidation.available) {
+      setAudioPreparing(true);
+      recordPhonicsTelemetry("phonics_audio_manifest_missing", {
+        wordId: playbackWordId,
+        questionId: question.id,
+        gameMode: "hear_tap",
+      });
+      return;
+    }
+
+    if (cvcEntry && playbackWordId !== questionWordId && questionWordId) {
+      recordPhonicsTelemetry("phonics_hear_and_tap_audio_mismatch", {
+        questionId: question.id,
+        audioWordId: playbackWordId,
+        questionWordId,
+      });
+      return;
+    }
+
+    recordPhonicsTelemetry("phonics_hear_and_tap_started", {
+      questionId: question.id,
+      wordId: playbackWordId,
+    });
+
+    await phonicsEngineStop("hear_tap_play");
+
     if (cvcEntry) {
       void playCvcBlendWithSpeak(cvcEntry, { skipSlowPass: true });
       return;
     }
-    if (ttsText) void speak(getPhonicsAudioText(ttsText), { mode: "phonics" });
-  }, [speaking, loading, pause, speak, ttsText, cvcEntry]);
+
+    const res = await phonicsEnginePlayWord(playbackWordId, { wordId: playbackWordId });
+    if (!res.ok && res.error === "phonics_audio_preparing") {
+      setAudioPreparing(true);
+      return;
+    }
+    if (ttsText && !res.ok) {
+      void speak(getPhonicsAudioText(ttsText), { mode: "phonics" });
+    }
+  }, [
+    speaking,
+    loading,
+    pause,
+    speak,
+    ttsText,
+    cvcEntry,
+    questionWordId,
+    audioValidation,
+    question.id,
+  ]);
 
   // REMOVED auto speak on feedback — user taps playPrompt to hear audio again.
   useEffect(() => {
@@ -505,26 +570,32 @@ function QuestionCard({
           </div>
         )}
 
-        {ttsText && (
+        {(ttsText || questionWordId) && (
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={playPrompt}
+            onClick={() => void playPrompt()}
+            disabled={audioPreparing || (audioValidation != null && !audioValidation.available)}
             data-testid={`phonics-test-play-${index}`}
             className={cn(
               "gap-1.5 rounded-full border-border text-foreground",
               speaking && "ring-2 ring-violet-400",
             )}
           >
-            {loading ? (
+            {audioPreparing || (audioValidation != null && !audioValidation.available) ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Audio preparing
+              </>
+            ) : loading ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : speaking ? (
               <Soundwave className="text-violet-500" />
             ) : (
               <Volume2 className="h-3.5 w-3.5" />
             )}
-            {speaking ? "Stop" : loading ? "Loading…" : "Play sound"}
+            {!audioPreparing && (speaking ? "Stop" : loading ? "Loading…" : "Play sound")}
           </Button>
         )}
 
@@ -557,6 +628,11 @@ function QuestionCard({
                 disabled={selectedIndex != null}
                 onClick={() => {
                   setBouncedIdx(i);
+                  recordPhonicsTelemetry("phonics_hear_and_tap_answered", {
+                    questionId: question.id,
+                    selectedIndex: i,
+                    wordId: questionWordId,
+                  });
                   // Let the bounce play visually before the answer animations take over.
                   window.setTimeout(() => onAnswer(i), 80);
                 }}

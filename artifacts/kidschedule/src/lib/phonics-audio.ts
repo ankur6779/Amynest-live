@@ -12,6 +12,10 @@ import {
   type CvcBlendPhase,
   type PlayCvcBlendOptions,
 } from "@workspace/phonics-sounds";
+import { phonicsEnginePlayCvcBlend } from "@/lib/phonics-audio-engine";
+import { audioManager } from "@/lib/audio-manager";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
+import { amyVoiceController } from "@/lib/amy-voice-controller";
 import {
   playPhonicsStaticAudio,
   playPhonicsSequence,
@@ -20,16 +24,7 @@ import {
   prefetchPhonicsAudioKeys,
   resolvePhonicsAudioKey,
 } from "@/lib/phonics-static-audio";
-import { audioManager } from "@/lib/audio-manager";
-import { recordTtsUserGesture } from "@/lib/tts-guard";
-import { playPhonemeFallbackVoice } from "@/lib/phonics-playback-fallback";
-import { recordPhonicsFallback } from "@/lib/phonics-telemetry";
-import { amyVoiceController } from "@/lib/amy-voice-controller";
-import {
-  lookupStaticAudioUrl,
-  prepareStaticPlaybackAudio,
-  safePlayAudio,
-} from "@/lib/static-audio";
+import { lookupStaticAudioUrl } from "@/lib/static-audio";
 import type { SpeakOptions, SpeakResult } from "@/hooks/use-amy-voice";
 import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
 
@@ -60,34 +55,8 @@ export function isPhonicsHubFastClip(text: string, opts?: SpeakOptions): boolean
   return !/\s/.test(t);
 }
 
-async function playStaticCatalogClip(
-  text: string,
-  opts?: { playbackRate?: number; isCancelled?: () => boolean },
-): Promise<boolean> {
-  recordTtsUserGesture();
-  for (const mode of ["default", "phonics"] as const) {
-    if (opts?.isCancelled?.()) return false;
-    const proxyUrl = lookupStaticAudioUrl(text, mode);
-    if (!proxyUrl) continue;
-    const audio = await prepareStaticPlaybackAudio(text, mode, { quiet: true });
-    if (!audio) continue;
-    if (opts?.playbackRate && opts.playbackRate !== 1) {
-      audio.playbackRate = opts.playbackRate;
-    }
-    const started = await safePlayAudio(audio, { proxyUrl, phrase: text, mode, quiet: true });
-    if (!started) continue;
-    const ended = await audioManager.waitUntilEnd(
-      audio,
-      () => opts?.isCancelled?.() ?? false,
-    );
-    if (ended.ok) return true;
-  }
-  return false;
-}
-
 /**
- * Fast phonics hub playback — local MP3 → static catalog → speech synthesis.
- * Bypasses the heavy adaptive TTS pipeline for reliable tap-to-hear.
+ * Fast phonics hub playback — library MP3 only (no wrong fallbacks).
  */
 export async function speakPhonicsFastClip(
   text: string,
@@ -117,9 +86,11 @@ export async function speakPhonicsFastClip(
       isCancelled: opts?.isCancelled,
     });
     if (local.ok) return { success: true, layer: "static" };
-    // A superseded/cancelled tap must not trigger stale fallback audio.
     if (local.error === "phonics_cancelled" || opts?.isCancelled?.()) {
       return { success: false, error: "tts_cancelled" };
+    }
+    if (local.error === "phonics_library_missing") {
+      return { success: false, error: "phonics_audio_preparing" };
     }
   }
 
@@ -139,20 +110,7 @@ export async function speakPhonicsFastClip(
     }
   }
 
-  if (await playStaticCatalogClip(trimmed, opts)) {
-    recordPhonicsFallback("static_catalog");
-    return { success: true, layer: "static" };
-  }
-
-  if (opts?.isCancelled?.()) return { success: false, error: "tts_cancelled" };
-  const fallbackKey = audioKey ?? trimmed.toLowerCase();
-  const voice = await playPhonemeFallbackVoice(fallbackKey);
-  if (voice.success) {
-    recordPhonicsFallback(voice.fallback === "tone" ? "tone" : "synthesis");
-    return { success: true, layer: "emergency_local" };
-  }
-
-  return { success: false, error: voice.error ?? "phonics_playback_exhausted" };
+  return { success: false, error: "phonics_audio_preparing" };
 }
 
 async function playStaticKey(
@@ -296,32 +254,23 @@ export async function playCvcBlendWithSpeak(
   options?: PlayCvcBlendOptions & {
     onPhoneme?: (index: number, phase: CvcBlendPhase) => void;
     isCancelled?: () => boolean;
-    /** Playback rate for fast repeat pass (default 1.12). */
     fastPlaybackRate?: number;
   },
 ): Promise<void> {
   const keys = wordObj.phonemes.map((p) => resolveGraphemeToAudioKey(p) ?? p.trim().toLowerCase());
   prefetchPhonicsAudioKeys(keys);
 
-  const skipSlow = options?.skipSlowPass ?? false;
-  const fastRate = options?.fastPlaybackRate ?? 1.12;
-
-  await playCvcBlend(
-    wordObj,
-    async (audioKey, meta) => {
-      const res = await playStaticKey(audioKey, meta, {
-        isCancelled: options?.isCancelled,
-        playbackRate: meta?.phase === "fast" ? fastRate : 1,
-      });
-      return { success: res.success };
+  await phonicsEnginePlayCvcBlend(wordObj, {
+    skipSlowPass: options?.skipSlowPass ?? false,
+    isCancelled: options?.isCancelled,
+    onStep: (index, step) => {
+      if (step.kind === "word") {
+        options?.onPhoneme?.(-1, "word");
+        return;
+      }
+      options?.onPhoneme?.(index, options?.skipSlowPass ? "fast" : "slow");
     },
-    {
-      includeWordFinale: options?.includeWordFinale ?? true,
-      ...options,
-      skipFastPass: options?.skipFastPass ?? !skipSlow,
-      isCancelled: options?.isCancelled,
-    },
-  );
+  });
 }
 
 export {

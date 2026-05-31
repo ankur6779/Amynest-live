@@ -49,6 +49,7 @@
     "generate:phonics-library": "pnpm --filter @workspace/scripts run generate-phonics-library",
     "check:phonics-library": "pnpm --filter @workspace/scripts run check-phonics-library",
     "check:phonics-release-gate": "pnpm --filter @workspace/scripts run check-phonics-release-gate",
+    "check:phonics-interaction-gate": "pnpm --filter @workspace/scripts run check-phonics-interaction-gate",
     "backfill:spelling-static-audio": "pnpm run generate:spelling-audio",
     "check:static-audio": "pnpm --filter @workspace/scripts run check-static-audio",
     "scan:speakable-phrases": "pnpm --filter @workspace/scripts run scan-speakable-phrases",
