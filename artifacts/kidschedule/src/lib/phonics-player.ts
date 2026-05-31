@@ -50,6 +50,17 @@ import {
 } from "@/lib/audio-request-coalescer";
 import { recordHotCachePlay } from "@/lib/audio-hot-cache";
 import {
+  beginPlaybackTrace,
+  flushPlaybackTrace,
+  getPlaybackTraceId,
+  playbackTraceAttach,
+  playbackTracePlayCalled,
+  playbackTracePlaySettled,
+  tracePlaybackDestroy,
+  tracePlaybackStop,
+  tracePlaybackStopAll,
+} from "@/lib/playback-trace";
+import {
   recordQueueInterruption,
   recordStaleAudioPrevented,
 } from "@/lib/audio-playback-queue";
@@ -134,9 +145,12 @@ function teardownElement(el: HTMLAudioElement): void {
 export function stopPhonicsPlayback(reason = "manual"): void {
   ownershipToken += 1;
   const el = activeElement;
+  const traceId = el ? getPlaybackTraceId(el) : null;
+  tracePlaybackStop(traceId, "Phonics", reason, el);
   activeElement = null;
   lastUrl = "";
   if (el) {
+    tracePlaybackDestroy(traceId, "Phonics", reason, el);
     teardownElement(el);
     log("phonics_stop", { reason });
   }
@@ -261,9 +275,18 @@ async function playPhonicsUrlInner(
 ): Promise<PhonicsPlayResult> {
   const now = Date.now();
   const token = ++ownershipToken;
+  const playbackTraceId = beginPlaybackTrace({
+    owner: "Phonics",
+    requestedUrl: trimmed,
+    phrase: label,
+    autoFlush: false,
+  });
+
   const previous = activeElement;
   activeElement = null;
   if (previous) {
+    tracePlaybackStopAll("Phonics", "new_play_interrupt");
+    tracePlaybackDestroy(getPlaybackTraceId(previous), "Phonics", "new_play_interrupt", previous);
     teardownElement(previous);
     log("phonics_interrupt", { label });
     recordPhonicsInterruption(label);
@@ -299,6 +322,7 @@ async function playPhonicsUrlInner(
     el.playbackRate = options.playbackRate;
   }
   activeElement = el;
+  playbackTraceAttach(playbackTraceId, el, "Phonics");
   setPlaying(true, label);
   log("phonics_play", { label, token });
   recordPhonicsPlayStart(label);
@@ -316,8 +340,15 @@ async function playPhonicsUrlInner(
     settled = true;
     options.cleanup?.();
     const stillOwner = token === ownershipToken;
+    if (playbackTraceId) {
+      flushPlaybackTrace(
+        playbackTraceId,
+        result.ok ? "phonics_complete" : result.error ?? "phonics_failed",
+      );
+    }
     // Always force-clean this single-use instance — guarantees a wedged/zombie
     // clip is silenced rather than playing on in the background.
+    tracePlaybackDestroy(getPlaybackTraceId(el), "Phonics", "settle", el);
     teardownElement(el);
     if (stillOwner) {
       if (activeElement === el) activeElement = null;
@@ -340,6 +371,7 @@ async function playPhonicsUrlInner(
 
   try {
     el.currentTime = 0;
+    playbackTracePlayCalled(playbackTraceId, "Phonics", el);
     await playWithAudibleStartGuarantee({
       audio: el,
       layer: `phonics:${label}`,
@@ -348,8 +380,10 @@ async function playPhonicsUrlInner(
       },
       unlockGesture: () => audioManager.unlockFromUserGesture(),
     });
+    playbackTracePlaySettled(playbackTraceId, "Phonics", true, el);
     recordPhonicsStartLatency(Date.now() - now);
   } catch (err) {
+    playbackTracePlaySettled(playbackTraceId, "Phonics", false, el, err);
     if (token !== ownershipToken) {
       recordStaleAudioPrevented();
       log("phonics_stale_start", { label });

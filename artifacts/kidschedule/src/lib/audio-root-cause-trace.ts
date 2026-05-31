@@ -1,9 +1,10 @@
 /**
- * Device-only audio root-cause trace — logs exact runtime values, stops at first gate failure.
- * Enable: localStorage AUDIO_ROOT_CAUSE_TRACE=1 or ?audioTrace=1
- * Do not use for fixes; read WebView / browser console on device.
+ * Device-only audio root-cause trace — preflight gates before async play.
+ * Full playback timeline: see playback-trace.ts ([PLAYBACK_TRACE] grouped output).
+ * Enable: localStorage PLAYBACK_TRACE=1 or AUDIO_ROOT_CAUSE_TRACE=1 or ?playbackTrace=1
  */
 import { lookupStaticAudioUrl, type StaticAudioMode } from "@/lib/static-audio";
+import { isPlaybackTraceEnabled } from "@/lib/playback-trace";
 
 export type AudioTraceModule = "Phonics" | "Spelling" | "Speech Coach" | "Abacus";
 
@@ -11,14 +12,7 @@ let activeModule: AudioTraceModule | null = null;
 let audioManagerPlayCalled = false;
 
 export function isAudioRootCauseTraceEnabled(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    if (localStorage.getItem("AUDIO_ROOT_CAUSE_TRACE") === "1") return true;
-    if (new URLSearchParams(window.location.search).has("audioTrace")) return true;
-  } catch {
-    /* private mode */
-  }
-  return Boolean(import.meta.env.DEV);
+  return isPlaybackTraceEnabled();
 }
 
 export function setAudioTraceModule(module: AudioTraceModule | null): void {

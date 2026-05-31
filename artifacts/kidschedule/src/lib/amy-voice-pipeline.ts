@@ -144,6 +144,11 @@ import {
 } from "@/lib/audio-playback-recovery";
 import { hasStaticCatalogAudio } from "@/lib/unified-catalog-playback";
 import {
+  beginPlaybackTrace,
+  playbackTraceAttach,
+  playbackTraceStep,
+} from "@/lib/playback-trace";
+import {
   buildRlTelemetryPayload,
 } from "@/lib/amy-voice-pipeline-learning";
 import {
@@ -224,6 +229,8 @@ export type AmyVoicePipelineContext = {
   completionFinalized?: boolean;
   /** Pipeline-only: mark streaming layer as attempted for decision logs. */
   trackStreamingAttempt?: () => void;
+  /** Root-cause playback trace — shared across pipeline and AudioManager. */
+  playbackTraceId?: string;
 };
 
 type PlayAttemptResult =
@@ -450,6 +457,29 @@ async function playElementWithNeverSilentWatchdog(
 ): Promise<{ ok: boolean; playedDuration?: number; expectedDuration?: number; error?: string }> {
   if (isStale(ctx)) return { ok: false };
 
+  let traceId = ctx.playbackTraceId ?? "";
+  if (!traceId) {
+    traceId = beginPlaybackTrace({
+      owner: "AmyVoicePipeline",
+      requestedUrl: meta.proxyUrl,
+      phrase: meta.phrase,
+      audio,
+      autoFlush: false,
+    });
+    ctx.playbackTraceId = traceId;
+  } else {
+    beginPlaybackTrace({
+      owner: "AmyVoicePipeline",
+      requestedUrl: meta.proxyUrl,
+      phrase: meta.phrase,
+      audio,
+      existingTraceId: traceId,
+      autoFlush: false,
+    });
+  }
+  playbackTraceAttach(traceId, audio, "AmyVoicePipeline");
+  playbackTraceStep(traceId, `${meta.source}_play_begin`, "AmyVoicePipeline", { audio });
+
   const playStartedAt = performance.now();
   const healthLayer = mapAmyLayerToHealthLayer(
     meta.source === "static"
@@ -480,6 +510,7 @@ async function playElementWithNeverSilentWatchdog(
             channel: "speech",
             interrupt: true,
             srcType: meta.source === "cache" ? "static" : "tts",
+            playbackTraceId: traceId,
           },
           { channel: "speech", interrupt: true, maxRetries: 1 },
         );

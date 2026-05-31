@@ -26,6 +26,17 @@ import {
 } from "@/lib/audio-playback-events";
 import { noteAudioManagerPlayCalled } from "@/lib/audio-root-cause-trace";
 import {
+  beginPlaybackTrace,
+  flushPlaybackTrace,
+  getPlaybackTraceId,
+  playbackTraceAttach,
+  playbackTracePlayCalled,
+  playbackTracePlaySettled,
+  tracePlaybackDestroy,
+  tracePlaybackStop,
+  tracePlaybackStopAll,
+} from "@/lib/playback-trace";
+import {
   isAudioPlaybackRecoveryMode,
   schedulePlaybackProgressCheck,
 } from "@/lib/audio-playback-recovery";
@@ -148,6 +159,8 @@ export type AudioPlayMeta = {
   /** Stop current speech and play immediately (quiz replay, speak cancel-restart). */
   interrupt?: boolean;
   srcType?: AudioSrcType;
+  /** Root-cause playback trace — propagate from controller/pipeline. */
+  playbackTraceId?: string;
 };
 
 export type AudioPlayOptions = {
@@ -435,6 +448,8 @@ class AudioManagerImpl {
     state.playToken += 1;
     const a = state.current;
     if (a) {
+      const traceId = getPlaybackTraceId(a);
+      tracePlaybackDestroy(traceId, "AudioManager", `releaseChannel:${channel}`, a);
       a.onended = null;
       a.onerror = null;
       this.pauseElement(a);
@@ -455,6 +470,18 @@ class AudioManagerImpl {
   /** Stop speech + UI playback; revokes owned blob after speech ends. */
   stop(): void {
     if (!this.assertUsable()) return;
+    tracePlaybackStop(
+      getPlaybackTraceId(this.channels.speech.current),
+      "AudioManager",
+      "stop",
+      this.channels.speech.current,
+    );
+    tracePlaybackStop(
+      getPlaybackTraceId(this.channels.ui.current),
+      "AudioManager",
+      "stop",
+      this.channels.ui.current,
+    );
     this.playInFlight = false;
     this.releaseChannel("speech", true);
     this.releaseChannel("ui", false);
@@ -463,6 +490,7 @@ class AudioManagerImpl {
 
   /** Halt all active playback before starting a fallback TTS layer. */
   stopAll(): void {
+    tracePlaybackStopAll("AudioManager", "stopAll");
     this.stop();
     void import("@/lib/audio-session-coordinator").then(({ notifyPlaybackEnded }) => {
       notifyPlaybackEnded("stopAll");
@@ -866,7 +894,10 @@ class AudioManagerImpl {
 
     validateAudioSrc(audio);
 
+    const traceId = meta?.playbackTraceId ?? getPlaybackTraceId(audio) ?? null;
+
     try {
+      playbackTracePlayCalled(traceId, "AudioManager", audio);
       await playWithAudibleStartGuarantee({
         audio,
         layer: meta?.source,
@@ -875,7 +906,9 @@ class AudioManagerImpl {
         },
         unlockGesture: () => this.unlockFromUserGesture(),
       });
+      playbackTracePlaySettled(traceId, "AudioManager", true, audio);
     } catch (err) {
+      playbackTracePlaySettled(traceId, "AudioManager", false, audio, err);
       logStructured("attemptPlay audible start failed", err, { attempt }, audio);
       if (isNotAllowedError(err)) {
         throw new Error(AUDIO_ERROR.USER_INTERACTION_REQUIRED);
@@ -1017,6 +1050,32 @@ class AudioManagerImpl {
   ): Promise<boolean> {
     noteAudioManagerPlayCalled();
 
+    const proxyUrlEarly = (meta.proxyUrl ?? audio.src)?.trim();
+    let playbackTraceId = meta.playbackTraceId ?? "";
+    const ownsTrace = !playbackTraceId;
+    if (!playbackTraceId) {
+      playbackTraceId = beginPlaybackTrace({
+        owner: "AudioManager",
+        requestedUrl: proxyUrlEarly || audio.src || "(no-url)",
+        phrase: meta.phrase,
+        audio,
+        autoFlush: true,
+      });
+      meta = { ...meta, playbackTraceId };
+    } else {
+      beginPlaybackTrace({
+        owner: "AudioManager",
+        requestedUrl: proxyUrlEarly || audio.src || "(no-url)",
+        phrase: meta.phrase,
+        audio,
+        existingTraceId: playbackTraceId,
+        autoFlush: false,
+      });
+    }
+    playbackTraceAttach(playbackTraceId, audio, "AudioManager");
+
+    let traceEndReason = "play_exit";
+    try {
     const reliabilityModule = resolveAudioReliabilityModule({
       label: meta.source,
       phonics: mapPlaybackSource(meta) === "phonics",
@@ -1028,6 +1087,7 @@ class AudioManagerImpl {
       sourceLayer,
     });
     const failReliability = (error: string): false => {
+      traceEndReason = error;
       trackAudioPlayFailed(reliabilityRequestId, error, sourceLayer);
       return false;
     };
@@ -1125,6 +1185,7 @@ class AudioManagerImpl {
               ...audioElementDebug(element),
             });
           }
+          traceEndReason = "play_success";
           return true;
         } catch (err) {
           if ((err as Error).message === "audio_superseded") {
@@ -1176,10 +1237,12 @@ class AudioManagerImpl {
         const restarted = await this.forceRestartPlayback(proxyUrl, meta, opts, channel);
         if (restarted) {
           this.pendingFocusReplay = null;
+          traceEndReason = "force_restart_success";
           return true;
         }
       }
 
+      traceEndReason = "play_failed";
       this.consecutiveFailures += 1;
       this.setLastError(AUDIO_ERROR.PLAYBACK_FAILED);
       this.clearChannelOnFailure(channel);
@@ -1203,6 +1266,11 @@ class AudioManagerImpl {
     } finally {
       if (token === this.channelState(channel).playToken) {
         this.playInFlight = false;
+      }
+    }
+    } finally {
+      if (ownsTrace && playbackTraceId) {
+        flushPlaybackTrace(playbackTraceId, traceEndReason);
       }
     }
   }

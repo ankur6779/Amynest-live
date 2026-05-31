@@ -123,6 +123,12 @@ import type { AuthFetchFn } from "@/lib/poll-result";
 import { amyVoicePlaybackFsm } from "@/lib/audio-playback-state-machine";
 import { isAudioPlaybackRecoveryMode } from "@/lib/audio-playback-recovery";
 import {
+  beginPlaybackTrace,
+  flushPlaybackTrace,
+  playbackTraceOwnerFromModule,
+  tracePlaybackStopAll,
+} from "@/lib/playback-trace";
+import {
   mapToAudioSourceLayer,
   resolveAudioReliabilityModule,
   recordSpeechCoachCacheOutcome,
@@ -357,6 +363,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
   }
 
   private stopCurrentAudio(): void {
+    tracePlaybackStopAll("AmyVoiceController", "stopCurrentAudio");
     // Phonics player is a separate single owner — stop it too so a new tap can
     // never overlap a still-playing phoneme/blend.
     stopPhonicsPlayback("controller_stop");
@@ -637,12 +644,20 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
     this.transition(requestId, "loading", null, activePhrase);
 
+    const playbackTraceId = beginPlaybackTrace({
+      owner: playbackTraceOwnerFromModule(getAudioTraceModule(), "AmyVoiceController"),
+      requestedUrl: text,
+      phrase: text.slice(0, 120),
+      autoFlush: false,
+    });
+
     const pipelineCtx: AmyVoicePipelineContext = {
       authFetch: runtime.authFetch,
       voiceId: runtime.voiceId,
       modelId: runtime.modelId,
       playbackRate: opts?.playbackRate ?? runtime.playbackRate ?? 1,
       playbackMode: resolvePlaybackMode(opts),
+      playbackTraceId: playbackTraceId || undefined,
       paragraphIdx:
         opts?.audioIdentity && "paragraphIdx" in opts.audioIdentity
           ? opts.audioIdentity.paragraphIdx
@@ -906,6 +921,12 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         runtime,
       });
     } finally {
+      if (playbackTraceId) {
+        flushPlaybackTrace(
+          playbackTraceId,
+          this.snapshot.status === "idle" ? "speak_complete" : "speak_exit",
+        );
+      }
       if (isCurrentSpeakRequest(requestId) && this.snapshot.status !== "idle") {
         this.transition(requestId, "idle", this.snapshot.error, null);
       }
@@ -968,12 +989,20 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
     const proxyUrl = resolveApiMediaUrl(trimmed);
     const source = opts.source ?? "amy_voice";
+    const playbackTraceId = beginPlaybackTrace({
+      owner: playbackTraceOwnerFromModule(traceModule, "AmyVoiceController"),
+      requestedUrl: proxyUrl,
+      phrase: opts.phrase,
+      autoFlush: false,
+    });
+
     emitAudioPlaybackEvent("source_selected", {
       source: source as "spelling" | "poem_player" | "amy_voice",
       proxyUrl: proxyUrl.slice(0, 120),
       phrase: opts.phrase,
     });
 
+    let traceEnd = "playPreparedUrl_exit";
     try {
       const prepared = await prepareRemotePlaybackAudio(proxyUrl);
       const audio = prepared ?? audioManager.create(proxyUrl);
@@ -995,6 +1024,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
           channel: "speech",
           interrupt: true,
           srcType: opts.srcType ?? "tts",
+          playbackTraceId: playbackTraceId || undefined,
         },
         { channel: "speech", interrupt: true },
       );
@@ -1004,6 +1034,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       }
 
       if (!played) {
+        traceEnd = "play_failed";
         emitAudioPlaybackEvent("audio_failed", {
           source: source as "spelling" | "poem_player" | "amy_voice",
           error: "play_failed",
@@ -1018,6 +1049,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
           opts.isCancelled ?? (() => false),
         );
         if (!ended.ok) {
+          traceEnd = ended.error ?? "interrupted";
           emitAudioPlaybackEvent("audio_interrupted", {
             source: source as "spelling" | "poem_player" | "amy_voice",
             error: ended.error ?? "interrupted",
@@ -1030,8 +1062,10 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         source: source as "spelling" | "poem_player" | "amy_voice",
         phrase: opts.phrase,
       });
+      traceEnd = "playPreparedUrl_success";
       return { success: true, layer: "static" };
     } catch (err) {
+      traceEnd = "playPreparedUrl_error";
       const message = err instanceof Error ? err.message : String(err);
       emitAudioPlaybackEvent("audio_failed", {
         source: source as "spelling" | "poem_player" | "amy_voice",
@@ -1039,6 +1073,10 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         phrase: opts.phrase,
       });
       return { success: false, error: message };
+    } finally {
+      if (playbackTraceId) {
+        flushPlaybackTrace(playbackTraceId, traceEnd);
+      }
     }
   }
 }
