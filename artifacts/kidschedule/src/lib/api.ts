@@ -1,9 +1,16 @@
-import { getDefaultApiOrigin, resolveAmynestEnvFromVite } from "@/config";
+import {
+  getDefaultApiOrigin,
+  resolveAmynestEnvFromVite,
+  resolveProductionSameOriginApi,
+} from "@/config";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 
 /**
  * Resolved API origin (no trailing slash).
  * Override with `VITE_APP_API_ORIGIN` in repo-root `.env.development` / `.env.production`.
+ *
+ * Production web on amynest.in uses same-origin `/api/*` (requires Cloudflare
+ * Worker proxy — see infra/cloudflare/amynest-api-proxy/).
  */
 export function getAppApiBaseOrigin(): string {
   const fromEnv =
@@ -17,6 +24,9 @@ export function getAppApiBaseOrigin(): string {
   if (typeof window === "undefined") {
     return fallback;
   }
+
+  const sameOrigin = resolveProductionSameOriginApi();
+  if (sameOrigin) return sameOrigin;
 
   if (isNativeAmyNestShell()) {
     return fallback;
@@ -37,7 +47,8 @@ if (import.meta.env.DEV) {
 
 /**
  * Returns a URL for calling the backend API.
- * Example: `fetch(getApiUrl("/api/healthz"))` → `https://amynest-backend-dykj.onrender.com/api/healthz`
+ * Example: `fetch(getApiUrl("/api/healthz"))` → `https://www.amynest.in/api/healthz` (prod web)
+ * or `https://amynest-backend-dykj.onrender.com/api/healthz` (Capacitor / dev)
  */
 export function getApiUrl(path: string): string {
   const pathPart = path.startsWith("/") ? path : `/${path}`;

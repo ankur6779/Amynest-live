@@ -1,0 +1,26 @@
+# Cloudflare Worker — same-origin /api/* for amynest.in
+# https://developers.cloudflare.com/workers/wrangler/
+#
+# One-time setup:
+#   npm i -g wrangler
+#   wrangler login
+#   wrangler deploy
+#
+# Route (Cloudflare Dashboard → Workers → Triggers):
+#   www.amynest.in/api/*
+#   amynest.in/api/*   (optional apex)
+
+name = "amynest-api-proxy"
+main = "src/worker.js"
+compatibility_date = "2024-06-01"
+
+# Live production routes — wrangler deploy attaches these to the worker.
+routes = [
+  { pattern = "www.amynest.in/api/*", zone_name = "amynest.in" },
+  { pattern = "amynest.in/api/*", zone_name = "amynest.in" },
+]
+
+[vars]
+BACKEND_ORIGIN = "https://amynest-backend-dykj.onrender.com"
+workers_dev = false
+preview_urls = false

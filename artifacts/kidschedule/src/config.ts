@@ -29,5 +29,21 @@ export function getDefaultApiOrigin(): string {
   return env === "production" ? API_ORIGINS.production : API_ORIGINS.development;
 }
 
+const PRODUCTION_SAME_ORIGIN_HOSTS = new Set(["www.amynest.in", "amynest.in"]);
+
+/**
+ * When the app runs on amynest.in / www.amynest.in, route `/api/*` through the
+ * same origin (Cloudflare Worker → Render backend). Applies to browser and
+ * Android WebView shells that load the production site.
+ */
+export function resolveProductionSameOriginApi(): string | null {
+  if (!import.meta.env.PROD) return null;
+  if (resolveAmynestEnvFromVite() !== "production") return null;
+  if (typeof window === "undefined") return null;
+  const host = window.location.hostname.toLowerCase();
+  if (!PRODUCTION_SAME_ORIGIN_HOSTS.has(host)) return null;
+  return window.location.origin.replace(/\/$/, "");
+}
+
 /** @deprecated Use `getDefaultApiOrigin()` — kept for existing imports. */
 export const BASE_URL = getDefaultApiOrigin();

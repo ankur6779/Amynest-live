@@ -187,6 +187,8 @@ services:
         sync: false
 
   # ─── Production static web (amynest.in) ─────────────────────────────────────
+  # Audio/API: deploy infra/cloudflare/amynest-api-proxy/ so /api/* on www.amynest.in
+  # proxies to Amynest-backend. The web app uses same-origin API on amynest.in hosts.
   - type: web
     name: Amynest-live-1
     runtime: static
