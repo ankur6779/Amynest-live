@@ -1,8 +1,8 @@
 /**
  * Server-side spelling audio manifest loader + URL resolution.
  */
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   resolveSpellingLibraryProxyUrl,
@@ -11,11 +11,23 @@ import {
   type SpellingAudioManifestEntry,
 } from "@workspace/spelling-audio";
 
-const manifestPath = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "../data/spelling-audio-manifest.json",
-);
-const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as SpellingAudioManifest;
+function loadManifest(): SpellingAudioManifest {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    resolve(here, "../src/data/spelling-audio-manifest.json"),
+    resolve(process.cwd(), "artifacts/api-server/src/data/spelling-audio-manifest.json"),
+    resolve(here, "../data/spelling-audio-manifest.json"),
+  ];
+  for (const path of candidates) {
+    if (!existsSync(path)) continue;
+    return JSON.parse(readFileSync(path, "utf8")) as SpellingAudioManifest;
+  }
+  throw new Error(
+    `spelling-audio-manifest.json not found (tried: ${candidates.join(", ")})`,
+  );
+}
+
+const manifest = loadManifest();
 
 const bySlug = new Map<string, SpellingAudioManifestEntry>();
 
