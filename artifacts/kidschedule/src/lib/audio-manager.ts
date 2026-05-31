@@ -37,6 +37,11 @@ import {
   tracePlaybackStopAll,
 } from "@/lib/playback-trace";
 import {
+  classifyAudibleStartFailure,
+  logAudibleStartGate,
+  snapshotAudibleElement,
+} from "@/lib/audible-start-diagnostic";
+import {
   isAudioPlaybackRecoveryMode,
   schedulePlaybackProgressCheck,
 } from "@/lib/audio-playback-recovery";
@@ -219,13 +224,10 @@ function audioElementDebug(audio: HTMLAudioElement | null): Record<string, unkno
   if (!audio) return {};
   return {
     src: audio.src?.slice(0, 160),
-    readyState: audio.readyState,
-    networkState: audio.networkState,
-    currentTime: audio.currentTime,
-    duration: audio.duration,
-    paused: audio.paused,
+    ...(snapshotAudibleElement(audio) ?? {}),
     ended: audio.ended,
     mediaError: audio.error?.code,
+    playbackWatchdogMs: playbackWatchdogMs(),
   };
 }
 
@@ -858,6 +860,12 @@ class AudioManagerImpl {
           return;
         }
         if (!audio.ended && audio.paused && audio.currentTime === 0) {
+          logAudibleStartGate("runPlaybackWatchdog", "fail", audio, {
+            errorMessage: AUDIO_ERROR.PLAYBACK_WATCHDOG,
+            watchdogMs: playbackWatchdogMs(),
+            classification: classifyAudibleStartFailure(audio, "runPlaybackWatchdog"),
+            requires: "currentTime>0.02 && !paused (or ended)",
+          });
           reject(new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG));
           return;
         }
@@ -865,6 +873,11 @@ class AudioManagerImpl {
           resolve();
           return;
         }
+        logAudibleStartGate("runPlaybackWatchdog", "fail", audio, {
+          errorMessage: AUDIO_ERROR.PLAYBACK_WATCHDOG,
+          watchdogMs: playbackWatchdogMs(),
+          classification: classifyAudibleStartFailure(audio, "runPlaybackWatchdog"),
+        });
         reject(new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG));
       }, playbackWatchdogMs());
 
@@ -909,6 +922,16 @@ class AudioManagerImpl {
       playbackTracePlaySettled(traceId, "AudioManager", true, audio);
     } catch (err) {
       playbackTracePlaySettled(traceId, "AudioManager", false, audio, err);
+      const msg = err instanceof Error ? err.message : String(err);
+      logAudibleStartGate("attemptPlay", "fail", audio, {
+        attempt,
+        layer: meta?.source,
+        errorMessage: msg,
+        classification:
+          msg === "audio_start_timeout"
+            ? classifyAudibleStartFailure(audio, "attemptPlay→playWithAudibleStartGuarantee")
+            : undefined,
+      });
       logStructured("attemptPlay audible start failed", err, { attempt }, audio);
       if (isNotAllowedError(err)) {
         throw new Error(AUDIO_ERROR.USER_INTERACTION_REQUIRED);
@@ -916,6 +939,11 @@ class AudioManagerImpl {
       throw err;
     }
 
+    logAudibleStartGate("attemptPlay", "exit", audio, {
+      attempt,
+      layer: meta?.source,
+      phase: "post_audible_start_guarantee",
+    });
     await this.runPlaybackWatchdog(audio, token, channel);
 
     if (!this.verifyAudibleOutput(audio)) {
@@ -930,6 +958,12 @@ class AudioManagerImpl {
     }
 
     if (!this.isPlaybackValid(audio)) {
+      logAudibleStartGate("isPlaybackValid", "fail", audio, {
+        layer: meta?.source,
+        errorMessage: AUDIO_ERROR.PLAYBACK_WATCHDOG,
+        requires: "!paused (ended also ok)",
+        classification: classifyAudibleStartFailure(audio, "isPlaybackValid"),
+      });
       throw new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG);
     }
 
@@ -1152,6 +1186,11 @@ class AudioManagerImpl {
           await this.attemptPlay(element, token, channel, attempt + 1, meta);
 
           if (!this.isPlaybackValid(element)) {
+            logAudibleStartGate("attemptPlay_post_watchdog", "fail", element, {
+              attempt: attempt + 1,
+              errorMessage: AUDIO_ERROR.PLAYBACK_WATCHDOG,
+              classification: classifyAudibleStartFailure(element, "isPlaybackValid"),
+            });
             throw new Error(AUDIO_ERROR.PLAYBACK_WATCHDOG);
           }
 

@@ -8,9 +8,15 @@ import {
   isAudioPlaybackRecoveryMode,
   schedulePlaybackProgressCheck,
 } from "@/lib/audio-playback-recovery";
+import {
+  AUDIBLE_START_TIMEOUT_MS,
+  LOADING_STUCK_MS,
+  classifyAudibleStartFailure,
+  logAudibleStartGate,
+  type AudibleStartTimestamps,
+} from "@/lib/audible-start-diagnostic";
 
-export const AUDIBLE_START_TIMEOUT_MS = 800;
-export const LOADING_STUCK_MS = 1000;
+export { AUDIBLE_START_TIMEOUT_MS, LOADING_STUCK_MS };
 export const MIN_AUDIO_SRC_LENGTH = 10;
 export const MIN_AUDIO_BLOB_BYTES = 500;
 
@@ -65,28 +71,66 @@ export function validateAudioBlob(blob: Blob): void {
 export function waitForAudibleStart(
   audio: HTMLAudioElement,
   timeoutMs = AUDIBLE_START_TIMEOUT_MS,
+  timestamps?: AudibleStartTimestamps,
 ): Promise<boolean> {
   if (isAudioPlaybackRecoveryMode()) {
+    logAudibleStartGate("waitForAudibleStart", "skip", audio, {
+      timestamps,
+      reason: "recovery_mode_bypass",
+    });
     return Promise.resolve(true);
   }
 
   if (!audio.paused && audio.currentTime > 0) {
+    logAudibleStartGate("waitForAudibleStart", "exit", audio, {
+      timestamps,
+      fastPath: "already_playing_currentTime_gt_0",
+    });
     return Promise.resolve(true);
   }
+
+  const checkStart = performance.now();
+  if (timestamps) timestamps.audibleCheckStartAt = checkStart;
+  logAudibleStartGate("waitForAudibleStart", "enter", audio, {
+    timestamps,
+    timeoutMs,
+    waitsFor: "playing_event OR (!paused && currentTime>0)",
+    note: "readyState=4 alone is NOT sufficient",
+  });
 
   return new Promise((resolve, reject) => {
     const timeout = window.setTimeout(() => {
       cleanup();
+      const checkEnd = performance.now();
+      if (timestamps) timestamps.audibleCheckEndAt = checkEnd;
+      logAudibleStartGate("waitForAudibleStart", "fail", audio, {
+        timestamps,
+        errorMessage: "audio_start_timeout",
+        waitedMs: timeoutMs,
+        classification: classifyAudibleStartFailure(audio, "waitForAudibleStart"),
+      });
       reject(new Error("audio_start_timeout"));
     }, timeoutMs);
 
     function onPlaying() {
       cleanup();
+      const checkEnd = performance.now();
+      if (timestamps) timestamps.audibleCheckEndAt = checkEnd;
+      logAudibleStartGate("waitForAudibleStart", "exit", audio, {
+        timestamps,
+        via: "playing_event",
+      });
       resolve(true);
     }
 
     function onError() {
       cleanup();
+      const checkEnd = performance.now();
+      if (timestamps) timestamps.audibleCheckEndAt = checkEnd;
+      logAudibleStartGate("waitForAudibleStart", "fail", audio, {
+        timestamps,
+        errorMessage: "audio_error",
+      });
       reject(new Error("audio_error"));
     }
 
@@ -105,21 +149,46 @@ export function waitForAudibleStart(
 export function waitForLoadingProgress(
   audio: HTMLAudioElement,
   timeoutMs = LOADING_STUCK_MS,
+  timestamps?: AudibleStartTimestamps,
 ): Promise<void> {
   if (isAudioPlaybackRecoveryMode()) {
+    logAudibleStartGate("waitForLoadingProgress", "skip", audio, {
+      timestamps,
+      reason: "recovery_mode_bypass",
+    });
     return Promise.resolve();
   }
   if (audio.currentTime > 0 || audio.ended) {
+    logAudibleStartGate("waitForLoadingProgress", "exit", audio, {
+      timestamps,
+      fastPath: "currentTime_gt_0_or_ended",
+    });
     return Promise.resolve();
   }
+
+  const progressStart = performance.now();
+  if (timestamps) timestamps.loadingProgressStartAt = progressStart;
+  logAudibleStartGate("waitForLoadingProgress", "enter", audio, {
+    timestamps,
+    timeoutMs,
+    requires: "currentTime > 0 within timeout",
+  });
 
   return new Promise((resolve, reject) => {
     const timeout = window.setTimeout(() => {
       cleanup();
+      const progressEnd = performance.now();
+      if (timestamps) timestamps.loadingProgressEndAt = progressEnd;
       if (audio.currentTime === 0 && !audio.ended) {
+        logAudibleStartGate("waitForLoadingProgress", "fail", audio, {
+          timestamps,
+          errorMessage: "audio_loading_stuck",
+          classification: classifyAudibleStartFailure(audio, "waitForLoadingProgress"),
+        });
         reject(new Error("audio_loading_stuck"));
         return;
       }
+      logAudibleStartGate("waitForLoadingProgress", "exit", audio, { timestamps });
       resolve();
     }, timeoutMs);
 
@@ -166,19 +235,51 @@ export async function playWithAudibleStartGuarantee(
 
   validateAudioSrc(audio);
 
+  const timestamps: AudibleStartTimestamps = {};
+
   const attempt = async (isRetry: boolean): Promise<void> => {
     try {
+      timestamps.playCalledAt = performance.now();
+      logAudibleStartGate("playWithAudibleStartGuarantee", "enter", audio, {
+        timestamps,
+        layer,
+        isRetry,
+      });
       await play();
+      timestamps.playResolvedAt = performance.now();
+      logAudibleStartGate("playWithAudibleStartGuarantee", "exit", audio, {
+        timestamps,
+        layer,
+        phase: "play_promise_resolved",
+        msPlayDuration: Math.round(
+          timestamps.playResolvedAt - (timestamps.playCalledAt ?? timestamps.playResolvedAt),
+        ),
+      });
       if (isAudioPlaybackRecoveryMode()) {
         schedulePlaybackProgressCheck(audio, layer ?? "play");
         logAudioStart({ event: "audio_start", success: true, src, layer });
         return;
       }
-      await waitForAudibleStart(audio);
-      await waitForLoadingProgress(audio);
+      await waitForAudibleStart(audio, AUDIBLE_START_TIMEOUT_MS, timestamps);
+      await waitForLoadingProgress(audio, LOADING_STUCK_MS, timestamps);
+      logAudibleStartGate("playWithAudibleStartGuarantee", "exit", audio, {
+        timestamps,
+        layer,
+        phase: "all_gates_passed",
+      });
       logAudioStart({ event: "audio_start", success: true, src, layer });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      logAudibleStartGate("playWithAudibleStartGuarantee", "fail", audio, {
+        timestamps,
+        layer,
+        isRetry,
+        errorMessage: msg,
+        classification:
+          msg === "audio_start_timeout"
+            ? classifyAudibleStartFailure(audio, "playWithAudibleStartGuarantee")
+            : undefined,
+      });
       logAudioStart({
         event: "audio_start",
         success: false,
