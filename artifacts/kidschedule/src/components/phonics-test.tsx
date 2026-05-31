@@ -21,8 +21,15 @@ import { cn } from "@/lib/utils";
 
 // ─── API shapes ──────────────────────────────────────────────────────────────
 
-type TestType = "daily" | "weekly";
+type TestType = "daily" | "weekly" | "practice";
 type GameMode = "hear_tap" | "missing_letter" | "build_word" | "speed_challenge" | "mixed";
+
+/** UI flow type vs API type: mini-games are practice; only Surprise Mix counts as daily/weekly check. */
+function resolveApiTestType(uiTestType: TestType, gameMode: GameMode): TestType {
+  if (uiTestType === "daily" && gameMode === "mixed") return "daily";
+  if (uiTestType === "weekly" && gameMode === "mixed") return "weekly";
+  return "practice";
+}
 
 const RESUME_STORAGE_PREFIX = "amynest:phonics-test-resume:";
 
@@ -217,6 +224,9 @@ const GAME_MODES: Array<{
 interface ModePickPanelProps {
   testType: TestType;
   startError: string | null;
+  /** When false, Surprise Mix (official check) is on cooldown. */
+  officialCheckAvailable?: boolean;
+  officialCheckCountdown?: string | null;
   onBack: () => void;
   onSelectMode: (mode: GameMode) => void;
   onSelectMixed: () => void;
@@ -227,6 +237,8 @@ interface ModePickPanelProps {
 function ModePickPanel({
   testType,
   startError,
+  officialCheckAvailable = true,
+  officialCheckCountdown = null,
   onBack,
   onSelectMode,
   onSelectMixed,
@@ -280,21 +292,42 @@ function ModePickPanel({
         </p>
       )}
 
-      {testType === "daily" && (
+      {(testType === "daily" || testType === "weekly") && (
         <button
           type="button"
           onClick={onSelectMixed}
+          disabled={!officialCheckAvailable}
           data-testid="phonics-test-mode-mixed"
           className={cn(
             "mb-2 flex h-[64px] w-full flex-col justify-center rounded-xl p-3 text-left text-white",
             "bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md",
             "active:scale-[0.98] transition-transform",
+            !officialCheckAvailable && "opacity-50 cursor-not-allowed",
           )}
         >
-          <span className="text-sm font-semibold leading-tight">Surprise Mix</span>
-          <span className="text-xs text-white/60 leading-tight">5 questions • random mini-games</span>
+          <span className="text-sm font-semibold leading-tight">
+            {testType === "daily" ? "Quick Check" : "Surprise Mix"}
+          </span>
+          <span className="text-xs text-white/60 leading-tight">
+            {testType === "daily"
+              ? "5 questions • counts for today's check"
+              : "20 questions • weekly assessment"}
+          </span>
+          {!officialCheckAvailable && officialCheckCountdown && (
+            <span className="text-[10px] text-white/70 leading-tight">
+              Available in {officialCheckCountdown}
+            </span>
+          )}
         </button>
       )}
+      <p
+        className={cn(
+          "mb-2 text-[10px] leading-snug",
+          embedded ? "text-muted-foreground" : "text-white/50",
+        )}
+      >
+        Games below are practice — play anytime (phoneme sounds).
+      </p>
 
       <div className="grid grid-cols-2 gap-3">
         {GAME_MODES.map(({ id, label, sub, Icon, bg }) => (
@@ -1011,10 +1044,13 @@ function PhonicsTestContent({
       setStartError(friendlyStartError("no_content_for_age_group"));
       return;
     }
-    const slot = availability?.[testType];
-    if (slot && !slot.available) {
-      setStartError(friendlyStartError("cooldown_active"));
-      return;
+    const apiTestType = resolveApiTestType(testType, gameMode);
+    if (apiTestType !== "practice") {
+      const slot = availability?.[apiTestType];
+      if (slot && !slot.available) {
+        setStartError(friendlyStartError("cooldown_active"));
+        return;
+      }
     }
     startInFlightRef.current = true;
     setStartError(null);
@@ -1023,7 +1059,7 @@ function PhonicsTestContent({
       const res = await authFetch("/api/phonics/tests/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ childId: numericChildId, testType, gameMode }),
+        body: JSON.stringify({ childId: numericChildId, testType: apiTestType, gameMode }),
       });
       if (!isMounted.current) return;
       if (!res.ok) {
@@ -1186,6 +1222,12 @@ function PhonicsTestContent({
   }
 
   // Immersive play route: centered picker, no page scroll (640–800px phones).
+  const officialSlot =
+    phase.kind === "mode-pick" ? availability?.[phase.testType] : null;
+  const officialCheckCountdown = officialSlot
+    ? formatCountdown(officialSlot.nextAvailableAt)
+    : null;
+
   if (playOnly && phase.kind === "mode-pick") {
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -1193,6 +1235,8 @@ function PhonicsTestContent({
           <ModePickPanel
             testType={phase.testType}
             startError={startError}
+            officialCheckAvailable={officialSlot?.available ?? true}
+            officialCheckCountdown={officialCheckCountdown}
             onBack={handleModePickBack}
             onSelectMode={(mode) => void handleStartWithMode(phase.testType, mode)}
             onSelectMixed={() => void handleStartWithMode(phase.testType, "mixed")}
@@ -1332,7 +1376,7 @@ function PhonicsTestContent({
                 <Button
                   key={tt}
                   type="button"
-                  disabled={!info.available || noContent}
+                  disabled={noContent}
                   onClick={() => handlePickTest(tt)}
                   data-testid={`phonics-test-start-${tt}`}
                   className={cn(
@@ -1346,7 +1390,7 @@ function PhonicsTestContent({
                   <span className="text-[11px] opacity-90">{sub}</span>
                   {!info.available && cd && (
                     <span className="text-[10px] flex items-center gap-1 opacity-95">
-                      <Clock className="h-3 w-3" /> Available in {cd}
+                      <Clock className="h-3 w-3" /> Quick Check in {cd} · practice games anytime
                     </span>
                   )}
                   {info.lastScore && (
@@ -1365,6 +1409,8 @@ function PhonicsTestContent({
             embedded
             testType={phase.testType}
             startError={startError}
+            officialCheckAvailable={officialSlot?.available ?? true}
+            officialCheckCountdown={officialCheckCountdown}
             onBack={handleModePickBack}
             onSelectMode={(mode) => void handleStartWithMode(phase.testType, mode)}
             onSelectMixed={() => void handleStartWithMode(phase.testType, "mixed")}

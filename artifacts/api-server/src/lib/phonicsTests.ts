@@ -26,7 +26,7 @@ export const AGE_GROUP_LABEL: Record<AgeGroup, string> = {
   "5_6y": "5–6 years",
 };
 
-export type TestType = "daily" | "weekly";
+export type TestType = "daily" | "weekly" | "practice";
 
 /**
  * Visual flavor of the test session — chosen by the parent on the start
@@ -1184,6 +1184,7 @@ export function isAvailable(
   lastCompletedAt: Date | null,
   now = new Date(),
 ): { available: boolean; nextAvailableAt: Date | null } {
+  if (testType === "practice") return { available: true, nextAvailableAt: null };
   if (!lastCompletedAt) return { available: true, nextAvailableAt: null };
   const cooldownMs = testType === "daily" ? DAY_MS : WEEK_MS;
   const next = new Date(lastCompletedAt.getTime() + cooldownMs);

@@ -507,6 +507,10 @@ describe("isAvailable", () => {
   it("is available when never taken", () => {
     assert.equal(isAvailable("daily", null, now).available, true);
   });
+  it("practice is always available (unlimited mini-games)", () => {
+    const last = new Date(now.getTime() - 1 * 60 * 60 * 1000);
+    assert.equal(isAvailable("practice", last, now).available, true);
+  });
   it("daily blocked within 24h", () => {
     const last = new Date(now.getTime() - 12 * 60 * 60 * 1000);
     const r = isAvailable("daily", last, now);

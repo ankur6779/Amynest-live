@@ -702,7 +702,7 @@ const WEEKLY_COUNT = 20;
  * a missing/short secret causes /tests/start to fail loudly rather than
  * silently producing forgeable tokens.
  */
-const TestTypeSchema = z.enum(["daily", "weekly"]);
+const TestTypeSchema = z.enum(["daily", "weekly", "practice"]);
 const GameModeSchema = z.enum([
   "hear_tap",
   "missing_letter",
@@ -906,14 +906,16 @@ router.post("/phonics/tests/start", async (req, res): Promise<void> => {
       res.status(400).json({ error: "age_not_supported" });
       return;
     }
-    const last = await loadLastResult(childId, userId, testType);
-    const state = isAvailable(testType, last?.completedAt ?? null);
-    if (!state.available) {
-      res.status(429).json({
-        error: "cooldown_active",
-        nextAvailableAt: state.nextAvailableAt,
-      });
-      return;
+    if (testType !== "practice") {
+      const last = await loadLastResult(childId, userId, testType);
+      const state = isAvailable(testType, last?.completedAt ?? null);
+      if (!state.available) {
+        res.status(429).json({
+          error: "cooldown_active",
+          nextAvailableAt: state.nextAvailableAt,
+        });
+        return;
+      }
     }
     const contentRows = await loadActiveContent(ageGroup);
     if (contentRows.length === 0) {
