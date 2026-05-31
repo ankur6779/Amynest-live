@@ -18,6 +18,8 @@ compatibility_date = "2024-06-01"
 routes = [
   { pattern = "www.amynest.in/api/*", zone_name = "amynest.in" },
   { pattern = "amynest.in/api/*", zone_name = "amynest.in" },
+  # Optional CDN hostname — add CNAME cdn.amynest.in → amynest.in (proxied) in Cloudflare DNS.
+  # { pattern = "cdn.amynest.in/api/*", zone_name = "amynest.in" },
 ]
 
 [vars]

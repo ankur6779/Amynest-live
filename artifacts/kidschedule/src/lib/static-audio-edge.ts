@@ -8,6 +8,10 @@ import type { StaticAudioMode } from "@workspace/static-audio/browser";
 const PRELOAD_HINT_PHRASES: Array<{ text: string; mode: StaticAudioMode }> = [
   { text: "good job!", mode: "default" },
   { text: "listen carefully", mode: "default" },
+  { text: "try again", mode: "default" },
+  { text: "well done", mode: "default" },
+  { text: "a as in apple", mode: "phonics" },
+  { text: "b", mode: "phonics" },
 ];
 
 export function isMobileStaticAudioDevice(): boolean {
@@ -16,7 +20,7 @@ export function isMobileStaticAudioDevice(): boolean {
 }
 
 export function getStaticAudioPrefetchLimit(): number {
-  return isMobileStaticAudioDevice() ? 2 : 5;
+  return isMobileStaticAudioDevice() ? 4 : 8;
 }
 
 export function getStaticAudioPreloadHintUrls(): string[] {

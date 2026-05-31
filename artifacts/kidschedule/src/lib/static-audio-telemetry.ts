@@ -67,11 +67,18 @@ let clientCdnMisses = 0;
 export function recordClientCdnCacheStatus(url: string, res: Response): void {
   const cf = (res.headers.get("cf-cache-status") ?? "").toUpperCase();
   const xCache = (res.headers.get("x-cache") ?? "").toUpperCase();
+  const edge = (res.headers.get("x-amynest-edge-cache") ?? "").toUpperCase();
+  const swCache = (res.headers.get("x-amynest-sw-cache") ?? "").toUpperCase();
   const origin = res.headers.get("x-amynest-origin-cache") ?? undefined;
 
-  if (cf.includes("HIT") || xCache.includes("HIT")) {
+  if (
+    cf.includes("HIT") ||
+    xCache.includes("HIT") ||
+    edge === "HIT" ||
+    swCache === "HIT"
+  ) {
     clientCdnHits += 1;
-  } else if (cf.includes("MISS") || xCache.includes("MISS")) {
+  } else if (cf.includes("MISS") || xCache.includes("MISS") || edge === "MISS" || swCache === "MISS") {
     clientCdnMisses += 1;
   }
 
@@ -79,6 +86,8 @@ export function recordClientCdnCacheStatus(url: string, res: Response): void {
     console.log("[STATIC AUDIO CDN]", {
       cf: cf || "—",
       xCache: xCache || "—",
+      edge: edge || "—",
+      swCache: swCache || "—",
       origin,
       status: res.status,
       url: url.slice(-48),

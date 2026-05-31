@@ -1,17 +1,20 @@
-/* Auto-generated on build — do not edit. Cache: amynest-v6 */
+/* Auto-generated on build — do not edit. Cache: amynest-v7 */
 /**
  * AmyNest root service worker (source — built to /sw.js with a deploy-specific cache id).
  *
  * - skipWaiting + clients.claim on every deploy
- * - Versioned cache (amynest-v6); purge all other cache names on activate
+ * - Versioned cache (amynest-v7); purge shell cache on activate
  * - Navigation: always network (never serve cached index.html)
+ * - Immutable audio API clips: cache-first (Layer 3 edge CDN in browser)
  * - Static hashed assets: browser/CDN cache only (SW does not intercept)
  * - FCM block appended at build time via importScripts snippet
  */
 
 /* global self, caches, clients, importScripts, firebase */
 
-const CACHE_NAME = "amynest-v6";
+const CACHE_NAME = "amynest-v7";
+/** Immutable hash-keyed audio — preserved across shell deploys. */
+const AUDIO_CACHE_NAME = "amynest-audio-v1";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -29,12 +32,44 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((names) =>
       Promise.all(
         names.map((name) => {
-          if (name !== CACHE_NAME) return caches.delete(name);
+          if (name === CACHE_NAME || name === AUDIO_CACHE_NAME) return undefined;
+          return caches.delete(name);
         }),
       ).then(() => self.clients.claim()),
     ),
   );
 });
+
+function isImmutableAudioApiPath(pathname) {
+  return (
+    /^\/api\/static-audio\/[a-f0-9]{32}\.mp3$/i.test(pathname) ||
+    /^\/api\/phonics-library\/.+\.mp3$/i.test(pathname) ||
+    /^\/api\/spelling-library\/.+\.mp3$/i.test(pathname)
+  );
+}
+
+async function cacheFirstAudio(request) {
+  const cache = await caches.open(AUDIO_CACHE_NAME);
+  const cached = await cache.match(request);
+  if (cached) {
+    const headers = new Headers(cached.headers);
+    headers.set("X-AmyNest-Sw-Cache", "HIT");
+    return new Response(cached.body, { status: cached.status, headers });
+  }
+
+  const response = await fetch(request);
+  const contentType = response.headers.get("content-type") || "";
+  if (response.ok && contentType.includes("audio")) {
+    await cache.put(request, response.clone());
+  }
+  const headers = new Headers(response.headers);
+  headers.set("X-AmyNest-Sw-Cache", "MISS");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
 
 function isNavigationRequest(request) {
   if (request.mode === "navigate") return true;
@@ -51,6 +86,11 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (url.origin !== self.location.origin) return;
+
+  if (request.method === "GET" && isImmutableAudioApiPath(url.pathname)) {
+    event.respondWith(cacheFirstAudio(request));
+    return;
+  }
 
   // Hashed bundles and static files — browser HTTP cache + CDN only.
   if (isAssetPath(url.pathname)) return;
