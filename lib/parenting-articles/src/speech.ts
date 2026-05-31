@@ -1,3 +1,4 @@
+import { ARTICLES } from "./articles";
 import type { Article, ArticleSection } from "./articles";
 
 /**
@@ -52,4 +53,30 @@ export function articleToSpeechSections(article: Article): string[] {
  */
 export function articleToFullSpeechText(article: Article): string {
   return articleToSpeechSections(article).join("\n\n");
+}
+
+function uniqueNonEmpty(lines: Iterable<string>): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of lines) {
+    const text = raw.trim();
+    if (!text) continue;
+    const key = text.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(text);
+  }
+  return out;
+}
+
+/** All Parent Hub article Amy speak lines for static-audio pre-generation. */
+export function getParentingArticlesAudioTextsForStaticCatalog(): string[] {
+  const lines: string[] = [];
+  for (const article of ARTICLES) {
+    for (const section of articleToSpeechSections(article)) {
+      const text = section.trim();
+      if (text) lines.push(text);
+    }
+  }
+  return uniqueNonEmpty(lines);
 }

@@ -124,6 +124,18 @@ function resolvePhraseScope(): {
     const phrases = ALL_CORPUS_PHRASES.filter((e) => e.source === "parent_hub");
     return { phrases, label: "parent_hub", audioLessonsOnly: false };
   }
+  const speechCoachOnly = process.argv.includes("--speech-coach-only");
+  if (speechCoachOnly) {
+    const phrases = ALL_CORPUS_PHRASES.filter(
+      (e) => e.source.startsWith("speech_coach") || e.source === "coach_dialogue",
+    );
+    return { phrases, label: "speech_coach", audioLessonsOnly: false };
+  }
+  const phonicsStaticOnly = process.argv.includes("--phonics-static-only");
+  if (phonicsStaticOnly) {
+    const phrases = ALL_CORPUS_PHRASES.filter((e) => e.source === "phonics_sounds");
+    return { phrases, label: "phonics_static", audioLessonsOnly: false };
+  }
   const contentBankOnly = process.argv.includes("--content-bank-only");
   if (contentBankOnly) {
     const phrases = ALL_CORPUS_PHRASES.filter((e) => e.source === "content_bank");

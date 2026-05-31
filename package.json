@@ -40,6 +40,8 @@
     "build:spelling-audio-manifest": "pnpm --filter @workspace/scripts run build-spelling-audio-manifest",
     "check:spelling-audio": "pnpm --filter @workspace/scripts run check-spelling-audio",
     "generate:static-audio:parent-hub": "pnpm run scan:speakable-phrases && pnpm --filter @workspace/scripts run generate-static-audio -- --parent-hub-only",
+    "generate:static-audio:speech-coach": "pnpm run scan:speakable-phrases && pnpm --filter @workspace/scripts run generate-static-audio -- --speech-coach-only",
+    "generate:static-audio:phonics-static": "pnpm run scan:speakable-phrases && pnpm --filter @workspace/scripts run generate-static-audio -- --phonics-static-only",
     "generate:phonics-audio": "pnpm --filter @workspace/scripts run generate-phonics-audio",
     "generate:phonics-audio-demos": "pnpm --filter @workspace/scripts run generate-phonics-audio-demos",
     "normalize:phonics-audio": "pnpm --filter @workspace/scripts run normalize-phonics-audio",

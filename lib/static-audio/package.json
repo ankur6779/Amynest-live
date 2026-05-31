@@ -17,6 +17,7 @@
     "@workspace/study-zone": "workspace:*",
     "@workspace/audio-lessons": "workspace:*",
     "@workspace/parent-hub-speak": "workspace:*",
+    "@workspace/parenting-articles": "workspace:*",
     "@workspace/content-bank": "workspace:*"
   }
 }

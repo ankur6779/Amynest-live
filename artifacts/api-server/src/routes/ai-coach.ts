@@ -1190,10 +1190,10 @@ router.post("/ai-coach/extend", aiUsageGate, async (req, res): Promise<void> => 
   const partialAttempt = feedbackType === "partial";
   const outcomeLine = partialAttempt
     ? `The step PARTIALLY worked: "${failedWinTitle}" (win #${Number.isFinite(failedWinNumber) ? failedWinNumber : "?"}) — refine and shrink it further.`
-    : `The step did NOT work: "${failedWinTitle}" (win #${Number.isFinite(failedWinNumber) ? failedWinNumber : "?"}) — try a different angle.`;
+    : `The step is NOT QUITE working yet: "${failedWinTitle}" (win #${Number.isFinite(failedWinNumber) ? failedWinNumber : "?"}) — try a different angle.`;
 
   const systemPrompt = `You are a child psychologist & behaviour-change expert.
-The parent has tried a step in their plan and it ${partialAttempt ? "only partially worked" : "did NOT work"} for their child.
+The parent has tried a step toward their goal and it ${partialAttempt ? "only partially worked" : "is not quite working yet"} for their child.
 You will write 1 ADAPTIVE follow-up win that takes a fresh angle: shrink the bar, check hidden blockers (sleep/hunger/sensory), or flip the approach (more structure or more autonomy).
 Return ONLY valid JSON. No markdown.`;
 

@@ -11,4 +11,5 @@ export {
   sectionToSpeechText,
   articleToSpeechSections,
   articleToFullSpeechText,
+  getParentingArticlesAudioTextsForStaticCatalog,
 } from "./speech";
