@@ -1,5 +1,5 @@
 import audioMap from "@/data/static-audio-map.json";
-import { getApiUrl } from "@/lib/api";
+import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
 import { isAmyVoiceAudioDebugEnabled, logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import { validateAudioBlob } from "@/lib/amy-voice-audio-start";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
@@ -385,10 +385,16 @@ export function prefetchStaticAudioUrl(proxyUrl: string): void {
     const first = prefetchedUrls.values().next().value;
     if (first) prefetchedUrls.delete(first);
   }
-  void fetch(proxyUrl, { method: "GET", credentials: "omit", cache: "force-cache" })
+  const fetchUrl = resolveApiMediaUrl(proxyUrl);
+  void fetch(fetchUrl, {
+    method: "GET",
+    mode: "cors",
+    credentials: "include",
+    cache: "force-cache",
+  })
     .then((res) => {
       void import("@/lib/static-audio-telemetry").then((t) =>
-        t.recordClientCdnCacheStatus(proxyUrl, res),
+        t.recordClientCdnCacheStatus(fetchUrl, res),
       );
     })
     .catch(() => {});

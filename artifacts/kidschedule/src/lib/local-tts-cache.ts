@@ -4,6 +4,7 @@
  */
 
 import { normalizeStaticAudioKey, type StaticAudioMode } from "@workspace/static-audio/browser";
+import { resolveApiMediaUrl } from "@/lib/api";
 import { adaptiveTimeoutMs } from "@/lib/network-adaptive-timeout";
 
 const DB_NAME = "amynest_amy_voice_cache";
@@ -164,23 +165,36 @@ export async function clearAllLocalCachedAudio(): Promise<void> {
 /** Fetch URL and persist for offline replay (timeout + size validation). */
 export async function warmLocalCacheFromUrl(key: string, url: string): Promise<void> {
   if (!url || typeof fetch === "undefined") return;
+  const fetchUrl = resolveApiMediaUrl(url);
   const controller = new AbortController();
   const timer = setTimeout(
     () => controller.abort(),
     adaptiveTimeoutMs(FETCH_TIMEOUT_FAST_MS, FETCH_TIMEOUT_SLOW_MS),
   );
   try {
-    const res = await fetch(url, {
-      credentials: "omit",
+    const res = await fetch(fetchUrl, {
+      mode: "cors",
+      credentials: "include",
       cache: "force-cache",
       signal: controller.signal,
     });
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.warn("[warmLocalCache] HTTP not ok", {
+        status: res.status,
+        url: fetchUrl.slice(0, 160),
+        key,
+      });
+      return;
+    }
     const blob = await res.blob();
     if (isValidBlob(blob)) await putLocalCachedAudio(key, blob);
     else void deleteLocalCachedAudio(key);
-  } catch {
-    /* ignore */
+  } catch (err) {
+    console.warn("[warmLocalCache] fetch failed (playback may still work via <audio>)", {
+      key,
+      url: fetchUrl.slice(0, 160),
+      error: err instanceof Error ? err.message : String(err),
+    });
   } finally {
     clearTimeout(timer);
   }

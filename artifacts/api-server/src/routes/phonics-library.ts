@@ -8,6 +8,23 @@ import { getPlaceholderMp3 } from "../services/staticAudioPlaceholder.js";
 
 export const phonicsLibraryPublicRouter: IRouter = Router();
 
+/** Explicit CORS for cross-origin fetch from www.amynest.in (prefetch / IndexedDB warm). */
+phonicsLibraryPublicRouter.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Vary", "Origin");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Range, Accept, Content-Type");
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+  next();
+});
+
 function etagKeyForObjectPath(objectPath: string): string {
   return createHash("md5").update(objectPath).digest("hex");
 }

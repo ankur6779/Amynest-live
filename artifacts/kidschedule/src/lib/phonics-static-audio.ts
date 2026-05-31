@@ -54,6 +54,15 @@ let libraryPrewarmStarted = false;
 
 /** HTTPS URL for a letter/digraph phoneme clip — empty when manifest entry missing (no fallback). */
 export function getPhonicsStaticAudioUrl(audioKey: string): string {
+  if (shouldBypassPhonicsSpellingLibraries()) {
+    const phrase = resolvePhonicsCatalogPhrase(audioKey);
+    return (
+      lookupStaticAudioUrl(phrase, "phonics") ??
+      lookupStaticAudioUrl(phrase, "default") ??
+      ""
+    );
+  }
+
   const fromLibrary = lookupPhonicsLetterUrl(audioKey);
   if (fromLibrary) return fromLibrary;
 
@@ -68,6 +77,15 @@ export function getPhonicsContentAudioUrl(
   text: string,
   preferredType?: PhonicsAssetType,
 ): string {
+  if (shouldBypassPhonicsSpellingLibraries()) {
+    const phrase = resolvePhonicsCatalogPhrase(text);
+    return (
+      lookupStaticAudioUrl(phrase, "phonics") ??
+      lookupStaticAudioUrl(phrase, "default") ??
+      ""
+    );
+  }
+
   const fromLibrary = lookupPhonicsContentUrl(text, preferredType);
   if (fromLibrary) return fromLibrary;
 
@@ -77,7 +95,8 @@ export function getPhonicsContentAudioUrl(
 }
 
 export function prefetchPhonicsAudioKeys(keys: string[]): void {
-  if (!shouldPhonicsPrefetch() || !isPhonicsManifestStrictlyValid()) return;
+  if (!shouldPhonicsPrefetch()) return;
+  if (!shouldBypassPhonicsSpellingLibraries() && !isPhonicsManifestStrictlyValid()) return;
   const unique = [...new Set(keys.map((k) => k.trim().toLowerCase()).filter(Boolean))];
   for (const key of unique) {
     const url = getPhonicsStaticAudioUrl(key);
@@ -90,7 +109,8 @@ export function prefetchPhonicsContentTexts(
   texts: string[],
   preferredType?: PhonicsAssetType,
 ): void {
-  if (!shouldPhonicsPrefetch() || !isPhonicsManifestStrictlyValid()) return;
+  if (!shouldPhonicsPrefetch()) return;
+  if (!shouldBypassPhonicsSpellingLibraries() && !isPhonicsManifestStrictlyValid()) return;
   for (const text of texts) {
     const url = getPhonicsContentAudioUrl(text, preferredType);
     if (!url) continue;
@@ -114,6 +134,7 @@ async function prewarmPhonicsLibraryBatched(items: ReturnType<typeof listPhonics
 
 /** Prewarm GCS phonics library into IndexedDB — batched to protect low-end devices. */
 export function prefetchEntirePhonicsLibrary(): void {
+  if (shouldBypassPhonicsSpellingLibraries()) return;
   if (!shouldPhonicsPrefetch() || !isPhonicsManifestStrictlyValid()) return;
   if (libraryPrewarmStarted) return;
   libraryPrewarmStarted = true;
