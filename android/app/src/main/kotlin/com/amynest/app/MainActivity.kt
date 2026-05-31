@@ -933,10 +933,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Serve /audio-pack/* from APK assets so phonics/spelling/coach clips work offline in WebView.
-     * Web layer uses same paths on www.amynest.in; we intercept and never hit the network.
-     */
+    /** Serve bundled /audio-pack/ URLs from APK assets (offline phonics, spelling, coach). */
     private fun interceptBundledAudioPack(uri: Uri): WebResourceResponse? {
         val host = uri.host?.lowercase() ?: return null
         if (host != "www.amynest.in" && host != "amynest.in") return null
