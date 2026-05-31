@@ -20,7 +20,7 @@ export function trackDeepLinkEvent(
   meta?: DeepLinkEventMeta,
 ): void {
   queueClientLog({
-    type: event === "deep_link_fallback" ? "warn" : "info",
+    type: event === "deep_link_fallback" ? "warning" : "info",
     message: `deep_link:${event}`,
     context: meta?.category ?? meta?.actionTarget ?? "routing",
     meta: { event, ...meta },

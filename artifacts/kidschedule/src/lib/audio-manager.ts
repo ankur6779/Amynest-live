@@ -24,6 +24,7 @@ import {
   emitAudioPlaybackEvent,
   type AudioPlaybackSource,
 } from "@/lib/audio-playback-events";
+import { noteAudioManagerPlayCalled } from "@/lib/audio-root-cause-trace";
 import {
   mapToAudioSourceLayer,
   resolveAudioReliabilityModule,
@@ -998,7 +999,7 @@ class AudioManagerImpl {
     meta: AudioPlayMeta = {},
     opts: AudioPlayOptions = {},
   ): Promise<boolean> {
-    if (!this.assertUsable()) return failReliability("audio_manager_unusable");
+    noteAudioManagerPlayCalled();
 
     const reliabilityModule = resolveAudioReliabilityModule({
       label: meta.source,
@@ -1014,6 +1015,8 @@ class AudioManagerImpl {
       trackAudioPlayFailed(reliabilityRequestId, error, sourceLayer);
       return false;
     };
+
+    if (!this.assertUsable()) return failReliability("audio_manager_unusable");
 
     const channel = opts.channel ?? meta.channel ?? "speech";
     const interrupt = opts.interrupt ?? meta.interrupt ?? false;

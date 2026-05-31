@@ -34,6 +34,10 @@ import {
   type SpeechMilestoneStatus,
 } from "@workspace/api-client-react";
 import {
+  setAudioTraceModule,
+  traceBrokenModulePreflight,
+} from "@/lib/audio-root-cause-trace";
+import {
   SPEECH_GAMES,
   SPEECH_AFFIRMATIONS,
   PARENT_GUIDANCE_CARDS,
@@ -640,18 +644,25 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
 
   const handleHear = () => {
     if (!currentItem) return;
-    const ctx = makeDialogueCtx(sessionIdx, streak, currentItem.kind);
-    const lines = buildItemPromptLines(ctx, currentItem);
+    const spoken = getPromptSpeakText(currentItem);
     const mode = (currentItem.kind === "phonic" || currentItem.kind === "letter") ? "phonics" : "default";
     void (async () => {
-      for (const line of lines) {
-        await voice.speak(line, { mode: mode as "phonics" | "default" });
-      }
+      const speakOpts = {
+        mode: mode as "phonics" | "default",
+        catalogPlayback: true as const,
+        staticCatalogTexts: [spoken],
+        waitUntilEnd: true,
+      };
+      setAudioTraceModule("Speech Coach");
+      traceBrokenModulePreflight("Speech Coach", {
+        audioIdentity: undefined,
+        resolvedText: spoken,
+        staticCatalogTexts: speakOpts.staticCatalogTexts,
+        catalogPlayback: speakOpts.catalogPlayback,
+      });
+      await voice.speak(spoken, speakOpts);
+      setAudioTraceModule(null);
       if (promptPhase === "idle") setPromptPhase("heard");
-      if (viewMode === "parent") {
-        const cue = getArticulationCue(currentItem.text, currentItem.kind);
-        if (cue) await voice.speak(cue.coachLine, { mode: "default" });
-      }
     })();
   };
 

@@ -37,6 +37,12 @@ import {
   stopPhonicsPlayback,
   isPhonicsPlaying,
 } from "@/lib/phonics-player";
+import {
+  playCatalogPreparedUrl,
+  resolvePhonicsCatalogPhrase,
+  shouldBypassPhonicsSpellingLibraries,
+} from "@/lib/unified-catalog-playback";
+import { lookupStaticAudioUrl } from "@/lib/static-audio";
 
 export { getAllPhonicsAudioKeys, resolvePhonicsAudioKey, resolvePhonicsSequenceKeys };
 export { stopPhonicsPlayback, isPhonicsPlaying };
@@ -187,6 +193,24 @@ async function playUrlClip(
   }
 
   recordTtsUserGesture();
+
+  if (shouldBypassPhonicsSpellingLibraries()) {
+    const phrase = resolvePhonicsCatalogPhrase(label);
+    const catalog = await playCatalogPreparedUrl(phrase, {
+      playbackRate: options?.playbackRate,
+      isCancelled: options?.isCancelled,
+      source,
+    });
+    if (catalog.ok) {
+      logAudioHealthSuccess({ layer: "static", fallbackUsed: false });
+      return { ok: true, audioKey: label, url: lookupStaticAudioUrl(phrase, "phonics") ?? undefined };
+    }
+    if (isCancelledError(catalog.error ?? "")) {
+      return { ok: false, audioKey: label, error: "phonics_cancelled" };
+    }
+    return { ok: false, audioKey: label, error: catalog.error ?? "phonics_library_missing" };
+  }
+
   const resolved = await resolveBestPlayUrl(cacheKey, networkUrl);
   if (!resolved.url) {
     return { ok: false, audioKey: label, error: "phonics_library_missing" };

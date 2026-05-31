@@ -23,6 +23,7 @@ import {
   validatePhonicsWordAudio,
 } from "@/lib/phonics-audio-availability";
 import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
+import { shouldBypassPhonicsSpellingLibraries } from "@/lib/unified-catalog-playback";
 
 export { subscribePhonicsPlayback, isPhonicsPlaying, stopPhonicsPlayback };
 export { validatePhonicsWordAudio };
@@ -110,9 +111,11 @@ export async function phonicsEnginePlayLetter(
   options: PhonicsEnginePlayOptions = {},
 ): Promise<{ ok: boolean; error?: string }> {
   const key = (audioKey ?? "").trim().toLowerCase();
-  const availability = checkPhonicsLetterClip(key);
-  if (!availability.available) {
-    return { ok: false, error: "phonics_audio_preparing" };
+  if (!shouldBypassPhonicsSpellingLibraries()) {
+    const availability = checkPhonicsLetterClip(key);
+    if (!availability.available) {
+      return { ok: false, error: "phonics_audio_preparing" };
+    }
   }
 
   await phonicsEngineStop("engine_play_letter");
@@ -224,13 +227,15 @@ export async function phonicsEnginePlayCvcBlend(
   const token = sessionToken;
   if (options.isCancelled?.()) return { ok: false, error: "phonics_cancelled" };
 
-  const validation = validatePhonicsWordAudio(entry.word, entry.phonemes);
-  if (!validation.available) {
-    recordPhonicsTelemetry("phonics_audio_manifest_missing", {
-      wordId: entry.word,
-      validation,
-    });
-    return { ok: false, error: "phonics_audio_preparing" };
+  if (!shouldBypassPhonicsSpellingLibraries()) {
+    const validation = validatePhonicsWordAudio(entry.word, entry.phonemes);
+    if (!validation.available) {
+      recordPhonicsTelemetry("phonics_audio_manifest_missing", {
+        wordId: entry.word,
+        validation,
+      });
+      return { ok: false, error: "phonics_audio_preparing" };
+    }
   }
 
   recordPhonicsTelemetry("phonics_audio_started", {
@@ -289,9 +294,11 @@ export async function phonicsEnginePlaySequence(
       return { ok: false, error: "phonics_cancelled" };
     }
     const key = audioKeys[i]!;
-    const availability = checkPhonicsLetterClip(key);
-    if (!availability.available) {
-      return { ok: false, error: "phonics_audio_preparing" };
+    if (!shouldBypassPhonicsSpellingLibraries()) {
+      const availability = checkPhonicsLetterClip(key);
+      if (!availability.available) {
+        return { ok: false, error: "phonics_audio_preparing" };
+      }
     }
     const res = await playLetterClipDirect(key, options);
     if (!res.ok) return res;

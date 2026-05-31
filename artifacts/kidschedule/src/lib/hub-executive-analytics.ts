@@ -19,7 +19,7 @@ export function trackHubExecutiveEvent(
   if (event === "hub_executive_view") viewLoggedSession = true;
 
   queueClientLog({
-    type: event === "hub_executive_error" ? "warn" : "info",
+    type: event === "hub_executive_error" ? "warning" : "info",
     message: `hub_executive:${event}`,
     context: "parent_hub",
     meta: { event, ...meta },

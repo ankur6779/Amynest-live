@@ -17,6 +17,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import {
+  setAudioTraceModule,
+  traceBrokenModulePreflight,
+} from "@/lib/audio-root-cause-trace";
 import { handleSubscriptionMutationGateError } from "@/lib/subscription-mutation-gate";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import {
@@ -328,14 +332,25 @@ export function SpeechGameFlow({
       currentItem.kind === "phonic" || currentItem.kind === "letter"
         ? "phonics"
         : "default";
-    void voice.speak(getPromptSpeakText(currentItem), {
-      mode: mode as "phonics" | "default",
-    });
-    if (promptPhase === "idle") setPromptPhase("heard");
-    const cue = getArticulationCue(currentItem.text, currentItem.kind);
-    if (cue && viewMode === "parent") {
-      void voice.speak(cue.coachLine, { mode: "default" });
-    }
+    const spoken = getPromptSpeakText(currentItem);
+    void (async () => {
+      const speakOpts = {
+        mode: mode as "phonics" | "default",
+        catalogPlayback: true as const,
+        staticCatalogTexts: [spoken],
+        waitUntilEnd: true,
+      };
+      setAudioTraceModule("Speech Coach");
+      traceBrokenModulePreflight("Speech Coach", {
+        audioIdentity: undefined,
+        resolvedText: spoken,
+        staticCatalogTexts: speakOpts.staticCatalogTexts,
+        catalogPlayback: speakOpts.catalogPlayback,
+      });
+      await voice.speak(spoken, speakOpts);
+      setAudioTraceModule(null);
+      if (promptPhase === "idle") setPromptPhase("heard");
+    })();
   };
 
   const handleRecord = () => {

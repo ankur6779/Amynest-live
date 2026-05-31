@@ -297,7 +297,7 @@ export default function AdminDashboardPage() {
     queryFn: async () => {
       const res = await authFetch("/api/admin/startup-stats");
       if (!res.ok) throw new Error(`http_${res.status}`);
-      return res.json() as {
+      return (await res.json()) as {
         sampleCount: number;
         timeoutRate: number;
         deadlockRate: number;

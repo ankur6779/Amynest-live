@@ -25,6 +25,11 @@ import {
   resolvePhonicsAudioKey,
 } from "@/lib/phonics-static-audio";
 import { lookupStaticAudioUrl } from "@/lib/static-audio";
+import {
+  playCatalogPreparedUrl,
+  resolvePhonicsCatalogPhrase,
+  shouldBypassPhonicsSpellingLibraries,
+} from "@/lib/unified-catalog-playback";
 import type { SpeakOptions, SpeakResult } from "@/hooks/use-amy-voice";
 import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
 
@@ -46,6 +51,9 @@ export function resolvePhonicsPlaybackText(input: {
 
 /** True for short hub clips (single words / phonemes) — skip heavy TTS pipeline. */
 export function isPhonicsHubFastClip(text: string, opts?: SpeakOptions): boolean {
+  if (shouldBypassPhonicsSpellingLibraries() || opts?.catalogPlayback) {
+    return false;
+  }
   if (opts?.lessonParagraph || opts?.parentHub || opts?.coach || opts?.narration) {
     return false;
   }
@@ -71,6 +79,18 @@ export async function speakPhonicsFastClip(
   if (opts?.isCancelled?.()) return { success: false, error: "tts_cancelled" };
 
   recordTtsUserGesture();
+
+  if (shouldBypassPhonicsSpellingLibraries()) {
+    const phrase = resolvePhonicsCatalogPhrase(trimmed, opts?.phoneme);
+    const catalog = await playCatalogPreparedUrl(phrase, {
+      playbackRate: opts?.playbackRate,
+      isCancelled: opts?.isCancelled,
+      source: "phonics-catalog",
+    });
+    if (catalog.ok) return { success: true, layer: "static" };
+    if (opts?.isCancelled?.()) return { success: false, error: "tts_cancelled" };
+    return { success: false, error: catalog.error ?? "tts_static_missing_url" };
+  }
 
   const audioKey =
     resolvePhonicsAudioKey({
@@ -140,6 +160,14 @@ async function playCvcWordFinale(
   if (opts?.isCancelled?.()) return { success: false, error: "cancelled" };
 
   recordTtsUserGesture();
+
+  if (shouldBypassPhonicsSpellingLibraries()) {
+    const catalog = await playCatalogPreparedUrl(w, {
+      isCancelled: opts?.isCancelled,
+      source: "phonics-cvc-word",
+    });
+    if (catalog.ok) return { success: true, layer: "static" };
+  }
 
   const library = await playPhonicsContentAudio(w, {
     contentType: "cvc",

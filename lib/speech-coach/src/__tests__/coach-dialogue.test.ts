@@ -47,11 +47,10 @@ describe("coach-dialogue session opening", () => {
 });
 
 describe("coach-dialogue item turns", () => {
-  it("includes an invite before the spoken prompt", () => {
+  it("returns a single spoken prompt line per item", () => {
     const lines = buildItemPromptLines(baseCtx, wordPrompt);
-    assert.equal(lines.length, 2);
-    assert.ok(lines[0]!.length > 0);
-    assert.match(lines[1]!, /cat/i);
+    assert.equal(lines.length, 1);
+    assert.match(lines[0]!, /cat/i);
   });
 });
 

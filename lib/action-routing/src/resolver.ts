@@ -5,7 +5,7 @@ import { routedActionFromPayload } from "./categories.js";
 
 export function resolveRoutedAction(action: RoutedAction): ResolvedRoute {
   const def = ACTION_ROUTE_REGISTRY[action.actionTarget];
-  const params = {
+  const params: NonNullable<RoutedAction["params"]> = {
     ...action.params,
     ...(action.entityId != null && !action.params?.routineId && action.actionTarget === "routine_task"
       ? { routineId: action.entityId }
@@ -41,8 +41,11 @@ export function resolveRoutedAction(action: RoutedAction): ResolvedRoute {
     usedFallback = true;
   }
 
-  if (action.actionTarget === "amy_chat" && params?.q) {
-    path = appendQueryToPath(path, { q: params.q });
+  if (action.actionTarget === "amy_chat") {
+    const q = params?.q;
+    if (typeof q === "string" && q.length > 0) {
+      path = appendQueryToPath(path, { q });
+    }
   }
 
   if (action.actionTarget === "goal" && action.entityId) {

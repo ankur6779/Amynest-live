@@ -202,7 +202,7 @@ function handleCapacitorPushTap(action: unknown): void {
     .then(({ dispatchNotifDeepLink, parseNotifTapPayload }) => {
       const { deepLink, category } = parseNotifTapPayload(action);
       const root = action as {
-        notification?: { id?: string };
+        notification?: { id?: string; data?: Record<string, unknown> };
         data?: Record<string, unknown>;
       } | null;
       const data = root?.notification?.data ?? root?.data ?? {};

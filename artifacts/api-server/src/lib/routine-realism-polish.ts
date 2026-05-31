@@ -47,9 +47,27 @@ export type RealismPolishOpts = {
   sleepMins: number;
   isSchoolDay: boolean;
   isWeekendDay: boolean;
+  /** When set with isSchoolDay, gap-fill skips the school window. */
+  schoolStartMins?: number;
+  schoolEndMins?: number;
   ageGroup?: AgeGroup;
   seed?: number;
 };
+
+function overlapsSchoolWindow(
+  startMins: number,
+  endMins: number,
+  opts: RealismPolishOpts,
+): boolean {
+  if (
+    !opts.isSchoolDay ||
+    opts.schoolStartMins == null ||
+    opts.schoolEndMins == null
+  ) {
+    return false;
+  }
+  return startMins < opts.schoolEndMins && endMins > opts.schoolStartMins;
+}
 
 export type RealismPolishResult = {
   items: RoutineScheduleItem[];
@@ -165,6 +183,12 @@ function planGapInserts(
 
   const maxBlocks = gapMins > 180 ? 4 : 3;
   while (remaining > MAX_IDLE_GAP_MINS && inserts.length < maxBlocks) {
+    if (overlapsSchoolWindow(cursor, cursor + 30, opts)) {
+      cursor = (opts.schoolEndMins ?? cursor) + 5;
+      remaining = gapMins - (cursor - startMins);
+      if (remaining <= MAX_IDLE_GAP_MINS) break;
+      continue;
+    }
     const template = pickFrom(pool, s++);
     const slotsLeft = maxBlocks - inserts.length;
     const dur = clampDurationForCategory(
@@ -215,6 +239,7 @@ export function fillIdleGaps(
     const gapEnd = parseTimeToMins(next.time);
     const gap = gapEnd - gapStart;
     if (gap <= MAX_IDLE_GAP_MINS) continue;
+    if (overlapsSchoolWindow(gapStart, gapEnd, opts)) continue;
     if (isMealOrAnchor(curr) && isMealOrAnchor(next) && gap < 180) continue;
 
     const inserts = planGapInserts(gap, gapStart, opts, seed++);

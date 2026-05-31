@@ -66,7 +66,7 @@ type ActiveGame =
 
 export default function GamesPage() {
   const { t } = useTranslation();
-  const { back } = useAppNavigate();
+  const { back, navigate: goTo } = useAppNavigate();
   const { isPremium } = useSubscription();
   const hubUsage = useFeatureUsage();
   const authFetch = useAuthFetch();
@@ -278,12 +278,12 @@ export default function GamesPage() {
             style={{ color: "#fff", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
           ><Gift size={13} /> {t("screens.games.redeem_button")}</button>
           <button
-            onClick={() => setLocation("/rewards")}
+            onClick={() => goTo("/rewards")}
             style={{ color: "rgba(251,191,36,0.95)", background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.35)", padding: "6px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer" }}
           >{t("screens.games.rewards_shop_link")}</button>
           {!isPremium && (
             <button
-              onClick={() => setLocation("/pricing")}
+              onClick={() => goTo("/pricing")}
               style={{ color: "#fff", background: gameTheme.violetGradient, border: "none", padding: "6px 10px", borderRadius: 999, fontSize: 11, fontWeight: 800, cursor: "pointer", boxShadow: gameTheme.violetShadow }}
             >{t("screens.games.upgrade_premium")}</button>
           )}
@@ -497,7 +497,7 @@ export default function GamesPage() {
                     ) : premiumOnly ? (
                       <button
                         type="button"
-                        onClick={() => setLocation("/pricing")}
+                        onClick={() => goTo("/pricing")}
                         style={{
                           marginTop: 6, width: "100%",
                           background: gameTheme.ctaGradient,

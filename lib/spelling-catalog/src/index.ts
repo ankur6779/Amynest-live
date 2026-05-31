@@ -1,9 +1,9 @@
-/** @deprecated Import from ./types.js — re-export for backward compatibility. */
 export type {
   SpellingAgeGroup,
   SpellingDifficulty,
   SpellingWord,
   SpellingCatalogEntry,
+  SessionHistoryState,
 } from "./types.js";
 
 export {

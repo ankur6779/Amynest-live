@@ -89,7 +89,7 @@ describe("FamilyExecutiveDashboard", () => {
       isError: false,
       refetch: vi.fn(),
       isFetching: false,
-    } as ReturnType<typeof useHubDashboard>);
+    } as unknown as ReturnType<typeof useHubDashboard>);
   });
 
   it("renders health score and primary action on tile", () => {

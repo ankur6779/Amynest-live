@@ -334,7 +334,7 @@ async function playPhonicsUrlInner(
       trackAudioPlayFailed(reliabilityId, result.error, "STATIC_GCS");
       phonicsPlaybackFsm.markFailed(reliabilityId, result.error);
     }
-    recordPhonicsCircuitOutcome(result.ok, result.error);
+    recordPhonicsCircuitOutcome(result.ok, result.ok ? undefined : result.error);
     return result;
   };
 

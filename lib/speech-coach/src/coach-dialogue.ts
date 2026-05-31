@@ -609,14 +609,12 @@ export function buildItemInvite(ctx: CoachDialogueContext): string {
   return pickLine(ITEM_INVITES, ctx, `invite:${ctx.sessionIndex}`, 0.15);
 }
 
-/** Invite + spoken prompt text for a practice item. */
+/** Spoken prompt text for a practice item (one clip per Hear tap). */
 export function buildItemPromptLines(
-  ctx: CoachDialogueContext,
+  _ctx: CoachDialogueContext,
   prompt: PronouncePrompt,
 ): string[] {
-  const invite = buildItemInvite(ctx);
-  const spoken = getPromptSpeakText(prompt);
-  return [invite, spoken];
+  return [getPromptSpeakText(prompt)];
 }
 
 /** Occasional encouragement while the child is speaking. Returns null most turns. */

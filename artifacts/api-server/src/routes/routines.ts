@@ -994,9 +994,17 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
     weatherOutdoor,
   );
 
+  const schoolSanitizedItems = enforceSchoolBlockUtil(
+    weatherAdjustedItems as AiRoutineItem[],
+    hasSchool,
+    schoolStartTime,
+    schoolEndTime,
+    params.childClass,
+  );
+
   return {
     title: parsed.title,
-    items: weatherAdjustedItems,
+    items: schoolSanitizedItems,
     specialEvent: piped.specialEvent,
     fixedActivities: piped.fixedActivities,
     adaptations: finalizeParentAdaptations(

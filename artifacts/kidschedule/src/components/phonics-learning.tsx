@@ -17,6 +17,7 @@ import { useRecordLearningActivity } from "@/hooks/use-record-learning-activity"
 import { usePaywall } from "@/contexts/paywall-context";
 import { useMountedRef } from "@/hooks/use-safe-async";
 import { applyPhonicsJourneyCap, premiumPracticeItems, type PhonicsPremiumMeta } from "@/lib/phonics-journey-access";
+import type { PhonicsPrimaryCta } from "@/lib/phonics-journey-roadmap";
 import { Link } from "wouter";
 import {
   usePhonicsData,

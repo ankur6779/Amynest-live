@@ -1,10 +1,12 @@
 /** Client mirror of GET /api/amy/hub-dashboard — keep in sync with @workspace/amy-operating-layer hub-dashboard.ts */
 
+import type { ActionTarget } from "@workspace/action-routing";
+
 export interface HubRoutedAction {
-  actionTarget: string;
+  actionTarget: ActionTarget;
   entityId?: string | number | null;
   href: string;
-  fallbackTarget: string;
+  fallbackTarget: ActionTarget;
   params?: Record<string, string | number | boolean | null | undefined>;
 }
 

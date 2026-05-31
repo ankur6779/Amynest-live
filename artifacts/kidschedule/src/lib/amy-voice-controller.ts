@@ -109,6 +109,12 @@ import {
 } from "@/lib/audio-health";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import {
+  getAudioTraceModule,
+  traceAudioManagerPlayResult,
+  traceBrokenModulePreflight,
+  tracePlayPreparedUrlInput,
+} from "@/lib/audio-root-cause-trace";
+import {
   resolvePlaybackMode,
   type PlaybackMode,
 } from "@/lib/amy-voice-playback-contract";
@@ -497,6 +503,16 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       return { success: false, error: "tts_empty_text" };
     }
 
+    const traceModule = getAudioTraceModule();
+    if (traceModule) {
+      traceBrokenModulePreflight(traceModule, {
+        audioIdentity: opts?.audioIdentity,
+        resolvedText: text,
+        staticCatalogTexts: opts?.staticCatalogTexts,
+        catalogPlayback: opts?.catalogPlayback,
+      });
+    }
+
     const requestId = createSpeakRequest();
     const intentEpoch = bumpAudioIntentEpoch();
     const reliabilityModule = resolveAudioReliabilityModule({
@@ -865,6 +881,9 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       }
 
       this.transition(requestId, "idle", null, null);
+      if (traceModule) {
+        traceAudioManagerPlayResult(traceModule, result.success);
+      }
       return result;
     } catch (err) {
       if (!isCurrentSpeakRequest(requestId)) {
@@ -926,6 +945,10 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
     opts: PlayPreparedUrlOptions = {},
   ): Promise<SpeakResult> {
     const trimmed = (url ?? "").trim();
+    const traceModule = getAudioTraceModule();
+    if (traceModule) {
+      tracePlayPreparedUrlInput(traceModule, trimmed || null);
+    }
     if (!trimmed || trimmed.includes("undefined")) {
       emitAudioPlaybackEvent("audio_failed", {
         source: (opts.source as "spelling" | "poem_player" | "unknown") ?? "unknown",
@@ -969,6 +992,10 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         },
         { channel: "speech", interrupt: true },
       );
+
+      if (traceModule) {
+        traceAudioManagerPlayResult(traceModule, played);
+      }
 
       if (!played) {
         emitAudioPlaybackEvent("audio_failed", {

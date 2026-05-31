@@ -50,7 +50,7 @@ describe("evaluateNotificationNavigation", () => {
       userInteraction: true,
     });
     expect(decision.allow).toBe(true);
-    expect(decision.resolvedPath).toBe("/dashboard");
+    expect(decision.resolvedPath).toBe("/parenting-hub");
   });
 
   it("deduplicates repeated notification ids", () => {
