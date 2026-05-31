@@ -21,6 +21,15 @@ const GCS_REFERENCE_ALLOWLIST = new Set([
   "lib/static-audio-guard.test.ts",
   "lib/static-audio-telemetry.ts",
   "lib/tts-playback.ts",
+  // Phonics / spelling library manifests store GCS URLs; playback uses API proxies.
+  "lib/phonics-audio-map.ts",
+  "lib/phonics-safe-audio.ts",
+  "lib/phonics-safe-audio.test.ts",
+  "lib/phonics-player.ts",
+  "lib/phonics-manifest-validation.ts",
+  "lib/phonics-manifest-validation.test.ts",
+  "lib/spelling-audio-map.ts",
+  "lib/spelling-audio-map.test.ts",
 ]);
 
 function walkSourceFiles(dir: string, out: string[] = []): string[] {
