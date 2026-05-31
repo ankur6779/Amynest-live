@@ -111,6 +111,66 @@ function emptyState(): SpellingRetentionState {
   };
 }
 
+function normalizeWordList(list: unknown): WordCollectionEntry[] {
+  if (!Array.isArray(list)) return [];
+  return list.filter(
+    (entry): entry is WordCollectionEntry =>
+      !!entry &&
+      typeof entry === "object" &&
+      typeof (entry as WordCollectionEntry).id === "string" &&
+      typeof (entry as WordCollectionEntry).word === "string",
+  );
+}
+
+/** Guard against partial/corrupt localStorage that would crash UI (e.g. collection: null). */
+export function normalizeRetentionState(raw: unknown): SpellingRetentionState {
+  const base = emptyState();
+  if (!raw || typeof raw !== "object") return base;
+  const r = raw as Partial<SpellingRetentionState>;
+  const collection = r.collection;
+  return {
+    ...base,
+    dailyDate: typeof r.dailyDate === "string" ? r.dailyDate : base.dailyDate,
+    dailyWords: Number.isFinite(Number(r.dailyWords)) ? Number(r.dailyWords) : 0,
+    dailyGoalDone: !!r.dailyGoalDone,
+    bonusStars: Number.isFinite(Number(r.bonusStars)) ? Number(r.bonusStars) : 0,
+    streak: Number.isFinite(Number(r.streak)) ? Math.max(0, Number(r.streak)) : 0,
+    lastActiveDate: typeof r.lastActiveDate === "string" ? r.lastActiveDate : null,
+    streakMilestones: Array.isArray(r.streakMilestones)
+      ? r.streakMilestones.filter((n): n is number => typeof n === "number")
+      : [],
+    collection: {
+      learning: normalizeWordList(collection?.learning),
+      practicing: normalizeWordList(collection?.practicing),
+      mastered: normalizeWordList(collection?.mastered),
+    },
+    achievements:
+      r.achievements && typeof r.achievements === "object" && !Array.isArray(r.achievements)
+        ? r.achievements
+        : {},
+    phonicsMisses:
+      r.phonicsMisses && typeof r.phonicsMisses === "object" && !Array.isArray(r.phonicsMisses)
+        ? r.phonicsMisses
+        : {},
+    phonicsHits:
+      r.phonicsHits && typeof r.phonicsHits === "object" && !Array.isArray(r.phonicsHits)
+        ? r.phonicsHits
+        : {},
+    weekly: Array.isArray(r.weekly)
+      ? r.weekly.filter(
+          (w): w is SpellingRetentionState["weekly"][number] =>
+            !!w && typeof w === "object" && typeof w.date === "string",
+        )
+      : [],
+    lastLevelSeen: Number.isFinite(Number(r.lastLevelSeen))
+      ? Math.max(1, Number(r.lastLevelSeen))
+      : 1,
+    competitionWins: Number.isFinite(Number(r.competitionWins))
+      ? Math.max(0, Number(r.competitionWins))
+      : 0,
+  };
+}
+
 const memoryRetention = new Map<number, SpellingRetentionState>();
 
 export function loadRetentionState(childId: number): SpellingRetentionState {
@@ -118,7 +178,7 @@ export function loadRetentionState(childId: number): SpellingRetentionState {
     try {
       const raw = localStorage.getItem(storageKey(childId));
       if (raw) {
-        const parsed = { ...emptyState(), ...JSON.parse(raw) } as SpellingRetentionState;
+        const parsed = normalizeRetentionState(JSON.parse(raw));
         memoryRetention.set(childId, parsed);
         return parsed;
       }
@@ -270,7 +330,11 @@ export function getRecommendedWords(
   const key = `${ageGroup}:${difficulty}` as `${SpellingAgeGroup}:${SpellingDifficulty}`;
   const bucket = getSpellingManifest().buckets[key] ?? [];
   return bucket
-    .filter((e) => e.sounds.some((s) => s.toLowerCase() === weakSound.toLowerCase()) || e.word.includes(weakSound))
+    .filter(
+      (e) =>
+        (e.sounds ?? []).some((s) => s.toLowerCase() === weakSound.toLowerCase()) ||
+        e.word.includes(weakSound),
+    )
     .slice(0, limit)
     .map(catalogEntryToWord);
 }
@@ -363,7 +427,7 @@ export function useSpellingRetention(childId: number) {
         const entry = { id: word.id, word: word.word, updatedAt: now };
         let next = { ...s };
 
-        for (const sound of word.chunks.filter((c) => c.length >= 2)) {
+        for (const sound of (word.chunks ?? []).filter((c) => c.length >= 2)) {
           const k = sound.toLowerCase();
           if (correct) {
             next.phonicsHits = { ...next.phonicsHits, [k]: (next.phonicsHits[k] ?? 0) + 1 };

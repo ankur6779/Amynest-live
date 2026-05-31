@@ -29,7 +29,10 @@ function decodeObjectPathParam(raw: string | string[]): string {
  * Public, unauthenticated — input is bounded to phonics/*.mp3 paths only.
  */
 phonicsLibraryPublicRouter.get("/phonics-library/*objectPath", async (req, res): Promise<void> => {
-  const objectPath = decodeObjectPathParam(String(req.params.objectPath ?? ""));
+  const rawParam = req.params.objectPath;
+  const objectPath = decodeObjectPathParam(
+    Array.isArray(rawParam) ? rawParam : (rawParam ?? ""),
+  );
 
   if (!isValidPhonicsGcsObjectPath(objectPath)) {
     res.status(400).json({ error: "invalid_phonics_path" });

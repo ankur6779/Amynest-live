@@ -202,6 +202,26 @@ export function SpellingMastery({
   const playerLevel = levelFromStars(progressState.progress?.totalStars ?? 0);
   const wordsState = useSpellingWords(childId, ageGroup, difficulty, playerLevel);
   const retention = useSpellingRetention(childId);
+  const {
+    syncLevelBaseline,
+    checkLevelUp,
+    dismissCelebration,
+    daily: retentionDaily,
+    streak: retentionStreak,
+    streakAtRisk,
+    bonusStars,
+    collectionCounts,
+    collection,
+    achievements,
+    celebrations,
+    weeklyReport,
+    recordWordLearned,
+    recordWordPracticed,
+    recordSessionComplete,
+    recordCompetitionWin,
+    getWeakestSound,
+    state: retentionState,
+  } = retention;
   const tts = useSpellingTTS();
   const displayWords = wordsState.words;
   const activeSessionWords = displayWords;
@@ -278,17 +298,17 @@ export function SpellingMastery({
 
   useEffect(() => {
     const level = progressState.progress?.currentLevel ?? 1;
-    retention.syncLevelBaseline(level);
-  }, [progressState.progress?.currentLevel, retention]);
+    syncLevelBaseline(level);
+  }, [progressState.progress?.currentLevel, syncLevelBaseline]);
 
   const prevLevelRef = useRef<number | null>(null);
   useEffect(() => {
     const level = progressState.progress?.currentLevel ?? 1;
     if (prevLevelRef.current !== null && level > prevLevelRef.current) {
-      retention.checkLevelUp(level);
+      checkLevelUp(level);
     }
     prevLevelRef.current = level;
-  }, [progressState.progress?.currentLevel, retention]);
+  }, [progressState.progress?.currentLevel, checkLevelUp]);
 
   const goLearn = useCallback(() => setMode("learn"), []);
   const stars = progressState.progress?.totalStars ?? 0;
@@ -297,16 +317,16 @@ export function SpellingMastery({
 
   return <div className="space-y-3">
       <RetentionCelebrationOverlay
-        celebrations={retention.celebrations}
-        onDismiss={retention.dismissCelebration}
+        celebrations={celebrations}
+        onDismiss={dismissCelebration}
       />
 
-      <SpellingHero progress={progressState.progress} childName={childName} bonusStars={retention.bonusStars} dailyStreak={retention.streak} />
+      <SpellingHero progress={progressState.progress} childName={childName} bonusStars={bonusStars} dailyStreak={retentionStreak} />
 
       <NextStepBanner
-        dailyDone={retention.daily.done}
-        dailyCurrent={retention.daily.current}
-        dailyTarget={retention.daily.target}
+        dailyDone={retentionDaily.done}
+        dailyCurrent={retentionDaily.current}
+        dailyTarget={retentionDaily.target}
         level={level}
         starsToNextLevel={starsToNext}
         onGoLearn={goLearn}
@@ -314,28 +334,28 @@ export function SpellingMastery({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <DailyGoalCard
-          {...retention.daily}
-          onStartLearn={retention.daily.done ? undefined : goLearn}
+          {...retentionDaily}
+          onStartLearn={retentionDaily.done ? undefined : goLearn}
         />
         <StreakCard
-          streak={retention.streak}
-          atRisk={retention.streakAtRisk}
-          milestones={retention.state.streakMilestones}
+          streak={retentionStreak}
+          atRisk={streakAtRisk}
+          milestones={retentionState.streakMilestones}
           onStartSession={goLearn}
         />
       </div>
 
       <SmartRecommendationsCard
-        weakSound={retention.getWeakestSound()}
+        weakSound={getWeakestSound()}
         ageGroup={ageGroup}
         difficulty={difficulty}
         tts={tts}
-        onPracticeWord={(w) => retention.recordWordPracticed(w, true)}
+        onPracticeWord={(w) => recordWordPracticed(w, true)}
       />
 
-      <WordCollectionBook collection={retention.collection} counts={retention.collectionCounts} />
+      <WordCollectionBook collection={collection} counts={collectionCounts} />
 
-      <AchievementCabinet unlocked={retention.achievements} />
+      <AchievementCabinet unlocked={achievements} />
 
       {/* Age + Difficulty + Word source */}
       <Card className="border-border dark:border-primary bg-gradient-to-br from-muted to-muted dark:from-primary/[0.06] dark:to-primary/[0.06]">
@@ -390,20 +410,20 @@ export function SpellingMastery({
 
       {/* Active mode panel */}
       <div ref={modePanelRef} key={`${mode}-${contentRevision}`} className="animate-in fade-in duration-200">
-        {mode === "learn" && <LearnView words={activeSessionWords} tts={tts} contentRevision={contentRevision} onWordLearned={w => retention.recordWordLearned(w)} onSessionComplete={words => {
+        {mode === "learn" && <LearnView words={activeSessionWords} tts={tts} contentRevision={contentRevision} onWordLearned={w => recordWordLearned(w)} onSessionComplete={words => {
         wordsState.markSessionCompleted();
-        retention.recordSessionComplete(words);
+        recordSessionComplete(words);
       }} onPracticeAgain={bumpContentRevision} onGenerateNewWords={handleNewWords} onStartCompetition={() => setMode("competition")} />}
-        {mode === "practice" && <PracticeView words={activeSessionWords} tts={tts} onAttempt={(correct, word) => word && retention.recordWordPracticed(word, correct)} />}
+        {mode === "practice" && <PracticeView words={activeSessionWords} tts={tts} onAttempt={(correct, word) => word && recordWordPracticed(word, correct)} />}
         {mode === "dictation" && <DictationView childId={childId} ageGroup={ageGroup} difficulty={difficulty} wordsSource="catalog" tts={tts} onProgressUpdate={progressState.setProgress} />}
         {mode === "competition" && <CompetitionView childId={childId} ageGroup={ageGroup} difficulty={difficulty} wordsSource="catalog" tts={tts} onProgressUpdate={p => {
         progressState.setProgress(p);
-        retention.checkLevelUp(p.currentLevel);
-      }} onCompetitionWin={() => retention.recordCompetitionWin()} />}
+        checkLevelUp(p.currentLevel);
+      }} onCompetitionWin={() => recordCompetitionWin()} />}
         {mode === "tournament" && <TournamentView childId={childId} ageGroup={ageGroup} totalStars={progressState.progress?.totalStars ?? 0} tts={tts} onProgressUpdate={progressState.setProgress} />}
         {mode === "battle" && <BattleView childId={childId} ageGroup={ageGroup} difficulty={difficulty} wordsSource="catalog" tts={tts} onProgressUpdate={progressState.setProgress} />}
-        {mode === "parent" && <ParentView words={displayWords} weeklyReport={retention.weeklyReport} collectionCounts={retention.collectionCounts} childName={childName} tts={tts} onAttempt={(correct, word) => {
-        if (word) retention.recordWordPracticed(word, correct);
+        {mode === "parent" && <ParentView words={displayWords} weeklyReport={weeklyReport} collectionCounts={collectionCounts} childName={childName} tts={tts} onAttempt={(correct, word) => {
+        if (word) recordWordPracticed(word, correct);
         void progressState.recordAttempt(correct, "parent");
       }} />}
       </div>
@@ -502,11 +522,13 @@ function PlayButtons({
     t
   } = useTranslation();
 
+  const stopTts = tts.stop;
+
   useEffect(() => {
     return () => {
-      tts.stop();
+      stopTts();
     };
-  }, [text, tts]);
+  }, [text, stopTts]);
 
   const handlePlay = () => {
     if (tts.speaking) {
@@ -552,11 +574,13 @@ function PlayButtonsForUrl({
     t
   } = useTranslation();
 
+  const stopTts = tts.stop;
+
   useEffect(() => {
     return () => {
-      tts.stop();
+      stopTts();
     };
-  }, [url, tts]);
+  }, [url, stopTts]);
 
   const handlePlay = () => {
     if (tts.speaking) {
@@ -652,16 +676,17 @@ function LearnView({
   const [complete, setComplete] = useState(false);
   const empty = words.length === 0;
   const word = words[idx];
+  const stopTts = tts.stop;
   useEffect(() => {
     setIdx(0);
     setLearnedCount(0);
     setCelebrating(false);
     setComplete(false);
-    tts.stop();
-  }, [words, contentRevision, tts]);
+    stopTts();
+  }, [words, contentRevision, stopTts]);
   useEffect(() => {
-    tts.stop();
-  }, [idx, word?.id, tts]);
+    stopTts();
+  }, [idx, word?.id, stopTts]);
   useEffect(() => {
     if (words.length === 0) return;
     prefetchSpellingAudioUrls(
@@ -743,7 +768,7 @@ function LearnView({
               {t("components.spelling_mastery.syllables")}
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {word.syllables.map((s, i) => <span key={i} className="px-3 py-1.5 rounded-lg bg-white dark:bg-white/[0.08] text-base font-quicksand font-bold text-primary dark:text-muted-foreground">
+              {(word.syllables ?? []).map((s, i) => <span key={i} className="px-3 py-1.5 rounded-lg bg-white dark:bg-white/[0.08] text-base font-quicksand font-bold text-primary dark:text-muted-foreground">
                   {s}
                 </span>)}
             </div>
@@ -753,7 +778,7 @@ function LearnView({
               {t("components.spelling_mastery.sounds")}
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {word.chunks.map((s, i) => <button key={i} onClick={() => {
+              {(word.chunks ?? []).map((s, i) => <button key={i} onClick={() => {
               tts.stop();
               void tts.speak(s, { slow: true });
             }} className="px-2.5 py-1 rounded-md bg-white dark:bg-white/[0.08] text-sm font-bold text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-card">
@@ -1586,15 +1611,16 @@ function BattleView({
     if (ok) setPhase("running");
   };
   const word = session.words[idx];
+  const stopTts = tts.stop;
   useEffect(() => {
     if (phase !== "running" || !word?.audioUrl) return;
-    tts.stop();
+    stopTts();
     const handle = setTimeout(() => void tts.playUrl(word.audioUrl), 250);
     return () => {
       clearTimeout(handle);
-      tts.stop();
+      stopTts();
     };
-  }, [phase, idx, word?.audioUrl, tts]);
+  }, [phase, idx, word?.audioUrl, stopTts, tts.playUrl]);
   const submit = async () => {
     if (phase !== "running" || !word || submitting) return;
     const trimmed = guess.trim();

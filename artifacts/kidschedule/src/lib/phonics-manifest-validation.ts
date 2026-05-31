@@ -102,8 +102,16 @@ export function getPhonicsManifestValidation(): PhonicsManifestValidation {
   return cachedValidation ?? validatePhonicsManifest();
 }
 
-/** When false, Phonics entry points show a friendly fallback — never crash. */
+/**
+ * True when the shipped phonics library manifest is present (≥ min assets).
+ * Does not block on non-fatal validation warnings — audio layer degrades safely.
+ */
 export function isPhonicsModuleAvailable(): boolean {
+  return getPhonicsManifestValidation().assetCount >= PHONICS_MANIFEST_MIN_ASSETS;
+}
+
+/** Strict gate for prefetch/warmup only. */
+export function isPhonicsManifestStrictlyValid(): boolean {
   return getPhonicsManifestValidation().ok;
 }
 

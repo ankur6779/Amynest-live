@@ -70,3 +70,6 @@ artifacts/amynest-capacitor/ota-bundles/
 
 # Playwright reports
 artifacts/kidschedule/playwright-report-stress/
+
+# Script run logs (phonics cleanup, library prewarm, etc.)
+scripts/logs/

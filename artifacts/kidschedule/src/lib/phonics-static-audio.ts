@@ -23,7 +23,7 @@ import {
   shouldPhonicsPrefetch,
   shouldPhonicsUseCache,
 } from "@/lib/phonics-circuit-breaker";
-import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
+import { isPhonicsManifestStrictlyValid } from "@/lib/phonics-manifest-validation";
 import {
   getPhonicsLibraryFallbackUrl,
   getPhonicsContentCacheKey,
@@ -75,7 +75,7 @@ export function getPhonicsContentAudioUrl(
 }
 
 export function prefetchPhonicsAudioKeys(keys: string[]): void {
-  if (!shouldPhonicsPrefetch() || !isPhonicsModuleAvailable()) return;
+  if (!shouldPhonicsPrefetch() || !isPhonicsManifestStrictlyValid()) return;
   const unique = [...new Set(keys.map((k) => k.trim().toLowerCase()).filter(Boolean))];
   for (const key of unique) {
     const url = getPhonicsStaticAudioUrl(key);
@@ -88,7 +88,7 @@ export function prefetchPhonicsContentTexts(
   texts: string[],
   preferredType?: PhonicsAssetType,
 ): void {
-  if (!shouldPhonicsPrefetch() || !isPhonicsModuleAvailable()) return;
+  if (!shouldPhonicsPrefetch() || !isPhonicsManifestStrictlyValid()) return;
   for (const text of texts) {
     const url = getPhonicsContentAudioUrl(text, preferredType);
     if (!url) continue;
@@ -112,7 +112,7 @@ async function prewarmPhonicsLibraryBatched(items: ReturnType<typeof listPhonics
 
 /** Prewarm GCS phonics library into IndexedDB — batched to protect low-end devices. */
 export function prefetchEntirePhonicsLibrary(): void {
-  if (!shouldPhonicsPrefetch() || !isPhonicsModuleAvailable()) return;
+  if (!shouldPhonicsPrefetch() || !isPhonicsManifestStrictlyValid()) return;
   if (libraryPrewarmStarted) return;
   libraryPrewarmStarted = true;
 

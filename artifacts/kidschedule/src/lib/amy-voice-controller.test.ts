@@ -31,6 +31,14 @@ describe("amy-voice-controller ownership", () => {
     expect(amyVoiceController.getSnapshot().error).toBeNull();
   });
 
+  it("pause is a no-op when already idle (avoids subscribe churn)", () => {
+    amyVoiceController.pause();
+    const beforeId = amyVoiceController.getSnapshot().requestId;
+    amyVoiceController.pause();
+    expect(amyVoiceController.getSnapshot().requestId).toBe(beforeId);
+    expect(amyVoiceController.getSnapshot().status).toBe("idle");
+  });
+
   it("stale speak does not mutate controller state", async () => {
     const authFetch = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ success: false }), { status: 500 }),

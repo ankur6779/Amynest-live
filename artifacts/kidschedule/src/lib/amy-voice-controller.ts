@@ -299,6 +299,9 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
   /** User intent: pause / cancel current playback. */
   pause(): void {
+    if (this.snapshot.status === "idle" && !this.abortController) {
+      return;
+    }
     const requestId = invalidateSpeakRequests();
     logTts({ reason: "pause", requestId });
     this.stopCurrentAudio();

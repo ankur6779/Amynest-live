@@ -79,6 +79,7 @@ import {
   buildWeakSoundsProfile,
   buildWeeklyAiSummary,
   computeReadingConfidenceScore,
+  detectEngagementRisk,
   resolveCoachMessage,
   resolveLearningVelocity,
   syncAdaptiveWeeklySnapshot,

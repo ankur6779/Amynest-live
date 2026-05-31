@@ -195,16 +195,19 @@ export function useSpellingTTS(): UseSpellingTTSState {
     }
   }, []);
 
-  return {
-    speaking,
-    loading,
-    error: localError ?? error,
-    speak,
-    playUrl,
-    prime,
-    primeUrl,
-    stop: pause,
-  };
+  return useMemo(
+    () => ({
+      speaking,
+      loading,
+      error: localError ?? error,
+      speak,
+      playUrl,
+      prime,
+      primeUrl,
+      stop: pause,
+    }),
+    [speaking, loading, localError, error, speak, playUrl, prime, primeUrl, pause],
+  );
 }
 
 // ─── useSpellingWords — instant local catalog sessions ───────────────────────
