@@ -23,8 +23,32 @@ self.addEventListener("install", (event) => {
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
+    return;
+  }
+  if (event.data?.type === "PRECACHE_AUDIO_URLS" && Array.isArray(event.data.urls)) {
+    event.waitUntil(precacheAudioUrls(event.data.urls));
   }
 });
+
+async function precacheAudioUrls(urls) {
+  const cache = await caches.open(AUDIO_CACHE_NAME);
+  const batch = urls.slice(0, 200);
+  for (const rawUrl of batch) {
+    if (typeof rawUrl !== "string" || !rawUrl.trim()) continue;
+    try {
+      const request = new Request(rawUrl, { credentials: "include", mode: "cors" });
+      const existing = await cache.match(request);
+      if (existing) continue;
+      const response = await fetch(request);
+      const contentType = response.headers.get("content-type") || "";
+      if (response.ok && contentType.includes("audio")) {
+        await cache.put(request, response.clone());
+      }
+    } catch {
+      /* skip failed clip */
+    }
+  }
+}
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(

@@ -10,6 +10,7 @@ import { PhonicsLearning } from "@/components/phonics-learning";
 import { PhonicsUnavailableFallback } from "@/components/phonics-unavailable-fallback";
 import { getPhonicsLevel } from "@/lib/phonics-content";
 import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
+import { warmPhonicsRouteOnOpen } from "@/lib/app-audio-prefetch";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
 import {
   resolvePrimaryCta,
@@ -85,6 +86,11 @@ export default function PhonicsPage() {
     const target = type === "weekly" ? "phonics-test" : "phonics-daily-quiz";
     window.setTimeout(() => scrollToSection(target), 150);
   }, [location, search]);
+
+  useEffect(() => {
+    if (!isPhonicsModuleAvailable() || locked) return;
+    warmPhonicsRouteOnOpen();
+  }, [locked]);
 
   const goBack = () => {
     back("phonics-back");

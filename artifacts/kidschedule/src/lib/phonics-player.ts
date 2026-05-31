@@ -1,8 +1,8 @@
 /**
- * Phonics player — the STRICT single audio owner for phonics playback.
+ * Phonics player — phonics playback API backed by the shared AudioManager speech channel.
  *
  * GUARANTEES:
- * - Only ONE phonics HTMLAudioElement may be active at any time, app-wide.
+ * - Phonics clips share the app-wide speech channel (no overlap with Amy voice / TTS).
  * - Every play uses a CLEAN instance — primed/cached elements are never replayed
  *   directly (that caused the "ka ka ka" loop). Prewarm only warms the URL/decoder.
  * - Token ownership: a new play (or stop) instantly invalidates the previous one.
@@ -11,15 +11,8 @@
  * - A single force-attempt per clip — no internal retry/force-restart storms.
  */
 
-import {
-  configureMobileAudioElement,
-  recordTtsUserGesture,
-} from "@/lib/tts-guard";
-import {
-  isNotAllowedPlayError,
-  playWithAudibleStartGuarantee,
-} from "@/lib/amy-voice-audio-start";
-import { audioManager } from "@/lib/audio-manager";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
+import { AUDIO_ERROR, audioManager } from "@/lib/audio-manager";
 import {
   recordPhonicsCircuitOutcome,
 } from "@/lib/phonics-circuit-breaker";
@@ -54,8 +47,6 @@ import {
   flushPlaybackTrace,
   getPlaybackTraceId,
   playbackTraceAttach,
-  playbackTracePlayCalled,
-  playbackTracePlaySettled,
   tracePlaybackDestroy,
   tracePlaybackStop,
   tracePlaybackStopAll,
@@ -128,22 +119,30 @@ function setPlaying(next: boolean, label: string | null): void {
   notify();
 }
 
-/** Detach listeners and silence an element so it can be garbage collected. */
-function teardownElement(el: HTMLAudioElement): void {
-  el.onended = null;
-  el.onerror = null;
-  el.onpause = null;
-  try {
-    el.pause();
-  } catch {
-    /* ignore */
+function phonicsWaitTimeoutMs(el: HTMLAudioElement): number {
+  const durationSec =
+    Number.isFinite(el.duration) && el.duration > 0 ? el.duration : 0;
+  return durationSec > 0
+    ? Math.min(Math.ceil((durationSec + 0.4) * 1000), ZOMBIE_WATCHDOG_MS)
+    : ZOMBIE_WATCHDOG_MS;
+}
+
+function mapWaitResult(
+  token: number,
+  ended: { ok: boolean; error?: string },
+): PhonicsPlayResult {
+  if (ended.ok) return { ok: true };
+  if (ended.error === "audio_cancelled") {
+    if (token !== ownershipToken) return { ok: false, error: "phonics_superseded" };
+    return { ok: false, error: "phonics_cancelled" };
   }
-  try {
-    el.removeAttribute("src");
-    el.load();
-  } catch {
-    /* ignore */
+  if (ended.error === "wait_until_end_timeout") {
+    return { ok: false, error: "phonics_zombie_timeout" };
   }
+  if (ended.error?.startsWith("playback_failed_")) {
+    return { ok: false, error: "phonics_playback_error" };
+  }
+  return { ok: false, error: ended.error ?? "phonics_playback_error" };
 }
 
 /**
@@ -160,7 +159,7 @@ export function stopPhonicsPlayback(reason = "manual"): void {
   lastUrl = "";
   if (el) {
     tracePlaybackDestroy(traceId, "Phonics", reason, el);
-    teardownElement(el);
+    audioManager.stopSpeechIfCurrent(el);
     log("phonics_stop", { reason });
   }
   setPlaying(false, null);
@@ -185,65 +184,8 @@ export function subscribePhonicsPlayback(
   };
 }
 
-/** Resolve once the clip ends, errors, is cancelled, or is superseded. */
-function waitForClipEnd(
-  el: HTMLAudioElement,
-  token: number,
-  isCancelled?: () => boolean,
-): Promise<PhonicsPlayResult> {
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = (result: PhonicsPlayResult) => {
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(timer);
-      window.clearInterval(poll);
-      el.removeEventListener("ended", onEnded);
-      el.removeEventListener("error", onError);
-      resolve(result);
-    };
-
-    const onEnded = () => finish({ ok: true });
-    const onError = () => finish({ ok: false, error: "phonics_playback_error" });
-
-    if (el.ended) {
-      finish({ ok: true });
-      return;
-    }
-
-    el.addEventListener("ended", onEnded);
-    el.addEventListener("error", onError);
-
-    const durationSec =
-      Number.isFinite(el.duration) && el.duration > 0 ? el.duration : 0;
-    // Cap by the zombie watchdog: even with metadata a tiny clip never needs >3s.
-    const timeoutMs = durationSec > 0
-      ? Math.min(Math.ceil((durationSec + 0.4) * 1000), ZOMBIE_WATCHDOG_MS)
-      : ZOMBIE_WATCHDOG_MS;
-
-    const poll = window.setInterval(() => {
-      if (token !== ownershipToken) {
-        finish({ ok: false, error: "phonics_superseded" });
-        return;
-      }
-      if (isCancelled?.()) {
-        finish({ ok: false, error: "phonics_cancelled" });
-        return;
-      }
-      if (el.ended) {
-        finish({ ok: true });
-      }
-    }, 60);
-
-    const timer = window.setTimeout(() => {
-      if (el.ended) return finish({ ok: true });
-      finish({ ok: false, error: "phonics_zombie_timeout" });
-    }, timeoutMs);
-  });
-}
-
 /**
- * Play a single phonics clip from a resolved URL as the sole audio owner.
+ * Play a single phonics clip from a resolved URL via the shared speech channel.
  * Stops any prior phonics sound, starts a clean instance, and waits for it to end.
  */
 export async function playPhonicsUrl(
@@ -303,7 +245,6 @@ async function playPhonicsUrlInner(
   if (previous) {
     tracePlaybackStopAll("Phonics", "new_play_interrupt");
     tracePlaybackDestroy(getPlaybackTraceId(previous), "Phonics", "new_play_interrupt", previous);
-    teardownElement(previous);
     log("phonics_interrupt", { label });
     recordPhonicsInterruption(label);
     recordQueueInterruption();
@@ -317,7 +258,6 @@ async function playPhonicsUrlInner(
   lastUrl = trimmed;
   lastStartAt = now;
 
-  // Always a CLEAN instance — never a primed/cached element.
   const el = createSafeAudio(trimmed, { label });
   if (!el) {
     options.cleanup?.();
@@ -331,10 +271,7 @@ async function playPhonicsUrlInner(
     recordPlaybackQualityFailed(qualitySessionId, { reason: error });
     return { ok: false, error };
   }
-  configureMobileAudioElement(el);
   el.preload = "auto";
-  el.muted = false;
-  if (el.volume <= 0) el.volume = 1;
   if (options.playbackRate && options.playbackRate !== 1) {
     el.playbackRate = options.playbackRate;
   }
@@ -343,7 +280,6 @@ async function playPhonicsUrlInner(
   setPlaying(true, label);
   log("phonics_play", { label, token });
   recordPhonicsPlayStart(label);
-  emitAudioPlaybackEvent("audio_started", { source: "phonics", phrase: label, layer: "static" });
   const reliabilityId = trackAudioRequest({
     module: label.includes("blend") || label.includes("cvc") ? "blending" : "phonics",
     audioIdentity: label,
@@ -372,10 +308,6 @@ async function playPhonicsUrlInner(
         result.ok ? "phonics_complete" : result.error ?? "phonics_failed",
       );
     }
-    // Always force-clean this single-use instance — guarantees a wedged/zombie
-    // clip is silenced rather than playing on in the background.
-    tracePlaybackDestroy(getPlaybackTraceId(el), "Phonics", "settle", el);
-    teardownElement(el);
     if (stillOwner) {
       if (activeElement === el) activeElement = null;
       setPlaying(false, null);
@@ -395,50 +327,41 @@ async function playPhonicsUrlInner(
     return result;
   };
 
-  try {
-    el.currentTime = 0;
-    playbackTracePlayCalled(playbackTraceId, "Phonics", el);
-    await playWithAudibleStartGuarantee({
-      audio: el,
-      layer: `phonics:${label}`,
-      play: async () => {
-        await el.play();
-      },
-      unlockGesture: () => audioManager.unlockFromUserGesture(),
-    });
-    playbackTracePlaySettled(playbackTraceId, "Phonics", true, el);
-    const onFirstProgress = () => {
-      recordPlaybackQualityStarted(qualitySessionId, {
-        firstSampleTs: performance.now(),
-        durationSec: Number.isFinite(el.duration) ? el.duration : undefined,
-      });
-      el.removeEventListener("playing", onFirstProgress);
-      el.removeEventListener("timeupdate", onFirstProgress);
-    };
-    el.addEventListener("playing", onFirstProgress);
-    el.addEventListener("timeupdate", onFirstProgress);
-    const onMeta = () => {
-      if (el.readyState >= HTMLMediaElement.HAVE_METADATA) {
-        recordPlaybackQualityLoaded(qualitySessionId, { durationSec: el.duration });
-        el.removeEventListener("loadedmetadata", onMeta);
-      }
-    };
-    el.addEventListener("loadedmetadata", onMeta);
-    recordPhonicsStartLatency(Date.now() - now);
-  } catch (err) {
-    playbackTracePlaySettled(playbackTraceId, "Phonics", false, el, err);
+  const srcType = trimmed.startsWith("blob:") ? "blob" : "static";
+  const played = await audioManager.play(
+    el,
+    {
+      proxyUrl: trimmed,
+      phrase: label,
+      source: "phonics",
+      channel: "speech",
+      interrupt: true,
+      srcType,
+      playbackTraceId,
+    },
+    {
+      channel: "speech",
+      interrupt: true,
+      skipForceRestart: true,
+      maxRetries: 0,
+    },
+  );
+
+  if (!played) {
     recordPlaybackQualityFailed(qualitySessionId, {
-      reason: err instanceof Error ? err.message : String(err),
+      reason: audioManager.getLastPlayError() ?? "phonics_play_failed",
     });
     if (token !== ownershipToken) {
       recordStaleAudioPrevented();
       log("phonics_stale_start", { label });
       return settle({ ok: false, error: "phonics_superseded" });
     }
-    const gesture = isNotAllowedPlayError(err);
+    const gesture =
+      audioManager.getLastPlayError() === AUDIO_ERROR.USER_INTERACTION_REQUIRED ||
+      audioManager.needsUserInteraction();
     log("phonics_start_failed", {
       label,
-      error: err instanceof Error ? err.message : String(err),
+      error: audioManager.getLastPlayError(),
       gesture,
     });
     if (gesture) {
@@ -455,13 +378,39 @@ async function playPhonicsUrlInner(
     });
   }
 
+  const onFirstProgress = () => {
+    recordPlaybackQualityStarted(qualitySessionId, {
+      firstSampleTs: performance.now(),
+      durationSec: Number.isFinite(el.duration) ? el.duration : undefined,
+    });
+    el.removeEventListener("playing", onFirstProgress);
+    el.removeEventListener("timeupdate", onFirstProgress);
+  };
+  el.addEventListener("playing", onFirstProgress);
+  el.addEventListener("timeupdate", onFirstProgress);
+  const onMeta = () => {
+    if (el.readyState >= HTMLMediaElement.HAVE_METADATA) {
+      recordPlaybackQualityLoaded(qualitySessionId, { durationSec: el.duration });
+      el.removeEventListener("loadedmetadata", onMeta);
+    }
+  };
+  el.addEventListener("loadedmetadata", onMeta);
+  recordPhonicsStartLatency(Date.now() - now);
+  emitAudioPlaybackEvent("audio_started", { source: "phonics", phrase: label, layer: "static" });
+
   if (token !== ownershipToken) {
     recordStaleAudioPrevented();
     log("phonics_stale_after_start", { label });
     return settle({ ok: false, error: "phonics_superseded" });
   }
 
-  const ended = await waitForClipEnd(el, token, options.isCancelled);
+  const waitResult = await audioManager.waitUntilEnd(
+    el,
+    () => token !== ownershipToken || (options.isCancelled?.() ?? false),
+    { maxWaitMs: phonicsWaitTimeoutMs(el), pollMs: 60 },
+  );
+  const ended = mapWaitResult(token, waitResult);
+
   if (ended.ok) {
     emitAudioPlaybackEvent("audio_completed", { source: "phonics", phrase: label });
   }
@@ -471,6 +420,8 @@ async function playPhonicsUrlInner(
   log("phonics_clip_failed", { label, error: ended.error });
   if (ended.error === "phonics_zombie_timeout") {
     recordPhonicsZombieCleanup(label);
+    trackAudioTimeout(reliabilityId, ended.error);
+    audioManager.stopSpeechIfCurrent(el);
   }
   return settle(ended);
 }

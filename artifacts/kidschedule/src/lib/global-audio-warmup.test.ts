@@ -39,6 +39,12 @@ vi.mock("@/lib/local-tts-cache", () => ({
 vi.mock("@/lib/static-audio", () => ({
   lookupStaticAudioUrl: vi.fn((text: string) => `/static-audio/${text}.mp3`),
   prefetchStaticAudioUrl: vi.fn(),
+  preloadStaticPhrases: vi.fn(),
+  prefetchStaticAudioUrlsBatch: vi.fn(),
+}));
+
+vi.mock("@/lib/app-audio-prefetch", () => ({
+  warmAppBootStaticPhrases: vi.fn(),
 }));
 
 vi.mock("@/lib/phonics-audio-map", () => ({

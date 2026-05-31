@@ -1,20 +1,94 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("@/lib/tts-guard", () => ({
-  configureMobileAudioElement: vi.fn(),
   recordTtsUserGesture: vi.fn(),
 }));
 
-vi.mock("@/lib/audio-manager", () => ({
-  audioManager: { unlockFromUserGesture: vi.fn() },
-}));
+let currentSpeechEl: { pause: () => void } | null = null;
 
-// Audible-start guarantee just invokes play() once and resolves (no retry storms).
-vi.mock("@/lib/amy-voice-audio-start", () => ({
-  playWithAudibleStartGuarantee: vi.fn(async (opts: { play: () => Promise<void> }) => {
-    await opts.play();
-  }),
-  isNotAllowedPlayError: vi.fn(() => false),
+const mockPlay = vi.fn(
+  async (el: { play: () => Promise<void>; pause: () => void }) => {
+    if (currentSpeechEl && currentSpeechEl !== el) {
+      currentSpeechEl.pause();
+    }
+    currentSpeechEl = el;
+    await el.play();
+    return true;
+  },
+);
+
+const mockWaitUntilEnd = vi.fn(
+  async (
+    el: FakeAudio,
+    isCancelled?: () => boolean,
+    options?: { maxWaitMs?: number; pollMs?: number },
+  ) => {
+    const durationSec = Number.isFinite(el.duration) && el.duration > 0 ? el.duration : 0;
+    const maxWaitMs =
+      options?.maxWaitMs ??
+      (durationSec > 0
+        ? Math.min(Math.ceil((durationSec + 0.4) * 1000), 3_000)
+        : 3_000);
+    const pollMs = options?.pollMs ?? 0;
+
+    return new Promise<{ ok: boolean; error?: string }>((resolve) => {
+      let settled = false;
+      const finish = (result: { ok: boolean; error?: string }) => {
+        if (settled) return;
+        settled = true;
+        if (pollTimer !== undefined) clearInterval(pollTimer);
+        clearTimeout(timer);
+        el.removeEventListener("ended", onEnded);
+        el.removeEventListener("error", onError);
+        resolve(result);
+      };
+
+      const onEnded = () => finish({ ok: true });
+      const onError = () => finish({ ok: false, error: "playback_failed_unknown" });
+
+      if (el.ended) {
+        finish({ ok: true });
+        return;
+      }
+
+      el.addEventListener("ended", onEnded);
+      el.addEventListener("error", onError);
+
+      let pollTimer: ReturnType<typeof setInterval> | undefined;
+      if (pollMs > 0) {
+        pollTimer = setInterval(() => {
+          if (isCancelled?.()) finish({ ok: false, error: "audio_cancelled" });
+          if (el.ended) finish({ ok: true });
+        }, pollMs);
+      }
+
+      const timer = setTimeout(() => {
+        if (el.ended) return finish({ ok: true });
+        finish({ ok: false, error: "wait_until_end_timeout" });
+      }, maxWaitMs);
+    });
+  },
+);
+
+const mockStopSpeechIfCurrent = vi.fn((el: { pause: () => void }) => {
+  if (currentSpeechEl === el) {
+    el.pause();
+    currentSpeechEl = null;
+  }
+});
+
+vi.mock("@/lib/audio-manager", () => ({
+  AUDIO_ERROR: {
+    USER_INTERACTION_REQUIRED: "USER_INTERACTION_REQUIRED",
+  },
+  audioManager: {
+    unlockFromUserGesture: vi.fn(),
+    play: (...args: unknown[]) => mockPlay(...args),
+    waitUntilEnd: (...args: unknown[]) => mockWaitUntilEnd(...args),
+    stopSpeechIfCurrent: (...args: unknown[]) => mockStopSpeechIfCurrent(...args),
+    getLastPlayError: vi.fn(() => null),
+    needsUserInteraction: vi.fn(() => false),
+  },
 }));
 
 class FakeAudio {
@@ -82,6 +156,10 @@ let getPhonicsPlaybackMetrics: typeof import("./phonics-telemetry").getPhonicsPl
 
 beforeEach(async () => {
   FakeAudio.instances = [];
+  currentSpeechEl = null;
+  mockPlay.mockClear();
+  mockWaitUntilEnd.mockClear();
+  mockStopSpeechIfCurrent.mockClear();
   vi.stubGlobal("Audio", FakeAudio as unknown as typeof Audio);
   vi.resetModules();
   const mod = await import("./phonics-player");
@@ -106,7 +184,8 @@ describe("phonics-player — single audio owner", () => {
     await sleep(0);
     expect(FakeAudio.instances).toHaveLength(1);
     const el = FakeAudio.instances[0]!;
-    expect(el.playCount).toBe(1); // no "ka ka ka" — single play call
+    expect(el.playCount).toBe(1);
+    expect(mockPlay).toHaveBeenCalledTimes(1);
     expect(isPhonicsPlaying()).toBe(true);
 
     el.fireEnded();
@@ -123,11 +202,10 @@ describe("phonics-player — single audio owner", () => {
 
     const second = playPhonicsUrl(PROXY("b"), { label: "b" });
     await sleep(0);
-    expect(elA.paused).toBe(true); // previous immediately stopped
+    expect(elA.paused).toBe(true);
     const elB = FakeAudio.instances[1]!;
     expect(elB.paused).toBe(false);
 
-    // Stale (first) playback silently dies.
     const firstResult = await Promise.race([first, sleep(150).then(() => "pending")]);
     expect(firstResult).not.toBe("pending");
     expect((firstResult as { ok: boolean }).ok).toBe(false);
@@ -143,6 +221,7 @@ describe("phonics-player — single audio owner", () => {
     expect(isPhonicsPlaying()).toBe(true);
 
     stopPhonicsPlayback("test");
+    expect(mockStopSpeechIfCurrent).toHaveBeenCalledWith(el);
     expect(el.paused).toBe(true);
     expect(isPhonicsPlaying()).toBe(false);
 
@@ -156,7 +235,6 @@ describe("phonics-player — single audio owner", () => {
     await sleep(0);
     expect(FakeAudio.instances).toHaveLength(1);
 
-    // Immediate duplicate of the same url while playing → no new element, no replay.
     const dup = await playPhonicsUrl(PROXY("s"), { label: "s" });
     expect(dup).toEqual({ ok: true });
     expect(FakeAudio.instances).toHaveLength(1);
@@ -172,7 +250,6 @@ describe("phonics-player — single audio owner", () => {
     const c = playPhonicsUrl(PROXY("c"), { label: "c" });
     await sleep(0);
 
-    // Earlier instances are torn down; the last one is active.
     const last = FakeAudio.instances[FakeAudio.instances.length - 1]!;
     expect(last.src).toContain("c.mp3");
     expect(last.paused).toBe(false);
@@ -204,14 +281,14 @@ describe("phonics-player — single audio owner", () => {
   it("force-cleans a zombie clip that never ends (3s watchdog)", async () => {
     vi.useFakeTimers();
     const p = playPhonicsUrl(PROXY("x"), { label: "x" });
-    await vi.advanceTimersByTimeAsync(0); // resolve play()
+    await vi.advanceTimersByTimeAsync(0);
     expect(isPhonicsPlaying()).toBe(true);
 
-    await vi.advanceTimersByTimeAsync(3_100); // pass the zombie watchdog
+    await vi.advanceTimersByTimeAsync(3_100);
     const res = await p;
     expect(res.ok).toBe(false);
     expect(isPhonicsPlaying()).toBe(false);
-    expect(FakeAudio.instances[0]!.paused).toBe(true); // silenced, not left playing
+    expect(FakeAudio.instances[0]!.paused).toBe(true);
     expect(getPhonicsPlaybackMetrics().zombieCleanups).toBe(1);
   });
 
@@ -226,7 +303,7 @@ describe("phonics-player — single audio owner", () => {
 
     const m = getPhonicsPlaybackMetrics();
     expect(m.playStarts).toBe(2);
-    expect(m.interruptions).toBe(1); // 'a' was interrupted by 'b'
+    expect(m.interruptions).toBe(1);
     expect(m.startLatencySamples).toBeGreaterThanOrEqual(1);
   });
 });

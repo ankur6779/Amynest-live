@@ -30,6 +30,7 @@ import {
   type PhonicsLibraryPrewarmItem,
 } from "@/lib/phonics-audio-map";
 import { lookupStaticAudioUrl, prefetchStaticAudioUrl } from "@/lib/static-audio";
+import { warmAppBootStaticPhrases } from "@/lib/app-audio-prefetch";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import { recordDecodeLatency } from "@/lib/audio-latency-metrics";
 import type { AudioReliabilityModule } from "@/lib/audio-reliability-telemetry";
@@ -370,6 +371,7 @@ export function initGlobalAudioWarmup(): void {
   runIdle(() => {
     void warmSpellingAudio();
     warmSpeechCoach([...SPEECH_COACH_DEFAULT_PHRASES]);
+    warmAppBootStaticPhrases();
   });
 
   logAmyVoiceDiag("global_audio_warmup_init", {
@@ -402,6 +404,7 @@ export function installGlobalAudioWarmupOnGesture(): void {
     markUserGestureUnlocked();
     recordTtsUserGesture();
     initGlobalAudioWarmup();
+    warmAppBootStaticPhrases();
     void primeGlobalAudioCache();
   };
 

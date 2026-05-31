@@ -367,6 +367,8 @@ export function logDynamicTtsViolation(rawText: string, mode: StaticAudioMode = 
 }
 
 const prefetchedUrls = new Set<string>();
+const bootPrefetchedUrls = new Set<string>();
+const BOOT_PREFETCH_CAP = 200;
 
 function getPrefetchLimit(max?: number): number {
   if (max !== undefined) return max;
@@ -377,14 +379,7 @@ function getPrefetchLimit(max?: number): number {
 }
 
 /** Fetch-only warm — fills CDN/browser cache without decoding audio. */
-export function prefetchStaticAudioUrl(proxyUrl: string): void {
-  if (!proxyUrl || prefetchedUrls.has(proxyUrl)) return;
-  prefetchedUrls.add(proxyUrl);
-  const cap = getPrefetchLimit() * 2;
-  if (prefetchedUrls.size > cap) {
-    const first = prefetchedUrls.values().next().value;
-    if (first) prefetchedUrls.delete(first);
-  }
+function fetchStaticAudioPrefetch(proxyUrl: string): void {
   const fetchUrl = resolveApiMediaUrl(proxyUrl);
   void fetch(fetchUrl, {
     method: "GET",
@@ -398,6 +393,34 @@ export function prefetchStaticAudioUrl(proxyUrl: string): void {
       );
     })
     .catch(() => {});
+}
+
+export function prefetchStaticAudioUrl(proxyUrl: string): void {
+  if (!proxyUrl || prefetchedUrls.has(proxyUrl)) return;
+  prefetchedUrls.add(proxyUrl);
+  const cap = getPrefetchLimit() * 2;
+  if (prefetchedUrls.size > cap) {
+    const first = prefetchedUrls.values().next().value;
+    if (first) prefetchedUrls.delete(first);
+  }
+  fetchStaticAudioPrefetch(proxyUrl);
+}
+
+/** Layer 5 boot/route batch — higher cap than per-tap prefetch. */
+export function prefetchStaticAudioUrlsBatch(urls: readonly string[]): void {
+  for (const raw of urls) {
+    const proxyUrl = raw?.trim();
+    if (!proxyUrl || bootPrefetchedUrls.has(proxyUrl)) continue;
+    bootPrefetchedUrls.add(proxyUrl);
+    if (bootPrefetchedUrls.size > BOOT_PREFETCH_CAP) {
+      const first = bootPrefetchedUrls.values().next().value;
+      if (first) bootPrefetchedUrls.delete(first);
+    }
+    if (!prefetchedUrls.has(proxyUrl)) {
+      prefetchedUrls.add(proxyUrl);
+    }
+    fetchStaticAudioPrefetch(proxyUrl);
+  }
 }
 
 export function preloadStaticAudioUrls(urls: string[], max?: number): void {

@@ -5,9 +5,86 @@ vi.mock("@/lib/tts-guard", () => ({
   recordTtsUserGesture: vi.fn(),
 }));
 
-vi.mock("@/lib/audio-manager", () => ({
-  audioManager: { unlockFromUserGesture: vi.fn() },
-}));
+vi.mock("@/lib/audio-manager", () => {
+  let currentSpeechEl: { pause: () => void; play: () => Promise<void>; ended?: boolean; duration?: number; removeEventListener: (t: string, cb: () => void) => void; addEventListener: (t: string, cb: () => void) => void } | null = null;
+
+  const waitUntilEnd = async (
+    el: {
+      ended: boolean;
+      duration: number;
+      removeEventListener: (t: string, cb: () => void) => void;
+      addEventListener: (t: string, cb: () => void) => void;
+    },
+    isCancelled?: () => boolean,
+    options?: { maxWaitMs?: number; pollMs?: number },
+  ) => {
+    const durationSec = Number.isFinite(el.duration) && el.duration > 0 ? el.duration : 0;
+    const maxWaitMs =
+      options?.maxWaitMs ??
+      (durationSec > 0
+        ? Math.min(Math.ceil((durationSec + 0.4) * 1000), 3_000)
+        : 3_000);
+    const pollMs = options?.pollMs ?? 0;
+
+    return new Promise<{ ok: boolean; error?: string }>((resolve) => {
+      let settled = false;
+      const finish = (result: { ok: boolean; error?: string }) => {
+        if (settled) return;
+        settled = true;
+        if (pollTimer !== undefined) clearInterval(pollTimer);
+        clearTimeout(timer);
+        el.removeEventListener("ended", onEnded);
+        resolve(result);
+      };
+
+      const onEnded = () => finish({ ok: true });
+      if (el.ended) {
+        finish({ ok: true });
+        return;
+      }
+      el.addEventListener("ended", onEnded);
+
+      let pollTimer: ReturnType<typeof setInterval> | undefined;
+      if (pollMs > 0) {
+        pollTimer = setInterval(() => {
+          if (isCancelled?.()) finish({ ok: false, error: "audio_cancelled" });
+          if (el.ended) finish({ ok: true });
+        }, pollMs);
+      }
+
+      const timer = setTimeout(() => {
+        if (el.ended) return finish({ ok: true });
+        finish({ ok: false, error: "wait_until_end_timeout" });
+      }, maxWaitMs);
+    });
+  };
+
+  return {
+    AUDIO_ERROR: {
+      USER_INTERACTION_REQUIRED: "USER_INTERACTION_REQUIRED",
+    },
+    audioManager: {
+      unlockFromUserGesture: vi.fn(),
+      play: vi.fn(async (el: { pause: () => void; play: () => Promise<void> }) => {
+        if (currentSpeechEl && currentSpeechEl !== el) {
+          currentSpeechEl.pause();
+        }
+        currentSpeechEl = el;
+        await el.play();
+        return true;
+      }),
+      waitUntilEnd,
+      stopSpeechIfCurrent: vi.fn((el: { pause: () => void }) => {
+        if (currentSpeechEl === el) {
+          el.pause();
+          currentSpeechEl = null;
+        }
+      }),
+      getLastPlayError: vi.fn(() => null),
+      needsUserInteraction: vi.fn(() => false),
+    },
+  };
+});
 
 vi.mock("@/lib/amy-voice-audio-start", () => ({
   playWithAudibleStartGuarantee: vi.fn(async (opts: { play: () => Promise<void> }) => {

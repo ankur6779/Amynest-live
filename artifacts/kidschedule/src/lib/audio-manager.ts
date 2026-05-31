@@ -496,6 +496,15 @@ class AudioManagerImpl {
     this.wasPausedForBackground = false;
   }
 
+  /** Stop speech-channel playback when the given element is still active (phonics stop). */
+  stopSpeechIfCurrent(audio: HTMLAudioElement): void {
+    if (!this.assertUsable()) return;
+    if (this.channels.speech.current !== audio) return;
+    tracePlaybackStop(getPlaybackTraceId(audio), "AudioManager", "stopSpeechIfCurrent", audio);
+    this.playInFlight = false;
+    this.releaseChannel("speech", false);
+  }
+
   /** Halt all active playback before starting a fallback TTS layer. */
   stopAll(): void {
     tracePlaybackStopAll("AudioManager", "stopAll");
@@ -1362,7 +1371,11 @@ class AudioManagerImpl {
     }
   }
 
-  waitUntilEnd(audio: HTMLAudioElement, isCancelled: () => boolean): Promise<AudioPlayResult> {
+  waitUntilEnd(
+    audio: HTMLAudioElement,
+    isCancelled: () => boolean,
+    options?: { maxWaitMs?: number; pollMs?: number },
+  ): Promise<AudioPlayResult> {
     return new Promise((resolve) => {
       let settled = false;
       const channel = this.channelForAudio(audio);
@@ -1371,6 +1384,7 @@ class AudioManagerImpl {
         if (settled) return;
         settled = true;
         window.clearTimeout(fallbackTimer);
+        if (pollTimer !== undefined) window.clearInterval(pollTimer);
         audio.onended = null;
         audio.onerror = null;
         if (result.ok) {
@@ -1384,7 +1398,22 @@ class AudioManagerImpl {
 
       const durationSec =
         Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
-      const fallbackMs = durationSec > 0 ? (durationSec + 1) * 1000 : 30_000;
+      const defaultFallbackMs = durationSec > 0 ? (durationSec + 1) * 1000 : 30_000;
+      const fallbackMs = options?.maxWaitMs ?? defaultFallbackMs;
+
+      let pollTimer: ReturnType<typeof setInterval> | undefined;
+      const pollMs = options?.pollMs ?? 0;
+      if (pollMs > 0) {
+        pollTimer = window.setInterval(() => {
+          if (isCancelled()) {
+            done({ ok: false, error: "audio_cancelled" });
+            return;
+          }
+          if (audio.ended) {
+            done({ ok: true });
+          }
+        }, pollMs);
+      }
 
       const fallbackTimer = window.setTimeout(() => {
         if (isCancelled()) return done({ ok: false, error: "audio_cancelled" });

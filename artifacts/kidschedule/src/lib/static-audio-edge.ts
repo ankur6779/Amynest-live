@@ -10,8 +10,12 @@ const PRELOAD_HINT_PHRASES: Array<{ text: string; mode: StaticAudioMode }> = [
   { text: "listen carefully", mode: "default" },
   { text: "try again", mode: "default" },
   { text: "well done", mode: "default" },
+  { text: "great job!", mode: "default" },
+  { text: "your turn.", mode: "default" },
+  { text: "correct! well done!", mode: "default" },
   { text: "a as in apple", mode: "phonics" },
   { text: "b", mode: "phonics" },
+  { text: "cat", mode: "phonics" },
 ];
 
 export function isMobileStaticAudioDevice(): boolean {

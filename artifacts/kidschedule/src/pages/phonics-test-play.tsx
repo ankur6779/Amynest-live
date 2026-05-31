@@ -6,6 +6,7 @@ import { AppLink, useAppNavigate } from "@/components/app-link";
 import { PhonicsTest } from "@/components/phonics-test";
 import { LockedBlock } from "@/components/locked-block";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
+import { warmPhonicsRouteOnOpen } from "@/lib/app-audio-prefetch";
 import { cn } from "@/lib/utils";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
@@ -53,6 +54,11 @@ export default function PhonicsTestPlayPage() {
     if (!childId) return;
     window.localStorage.setItem(ACTIVE_CHILD_STORAGE_KEY, String(childId));
   }, [childId]);
+
+  useEffect(() => {
+    if (locked) return;
+    warmPhonicsRouteOnOpen();
+  }, [locked]);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
