@@ -24,6 +24,7 @@ import {
   subscribeAuthSnapshot,
 } from "./firebase-auth-listener";
 import { resetOnboardingFetchLock } from "./onboarding-status-fetch";
+import { clearUserScopedClientCaches } from "./setup-status";
 
 const AUTH_TAG = "[amynest:firebase-auth]";
 
@@ -61,6 +62,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
 
     if (authStatus === "unauthenticated" || authStatus === "timeout") {
       resetOnboardingFetchLock();
+      clearUserScopedClientCaches();
     }
 
     patchBootDiagnostics({
@@ -118,6 +120,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       console.error("[firebase-auth] signOut failed:", err);
     }
     resetOnboardingFetchLock();
+    clearUserScopedClientCaches();
     if (opts?.redirectUrl && typeof window !== "undefined") {
       window.location.href = opts.redirectUrl;
     }

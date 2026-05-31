@@ -17,7 +17,9 @@ import { createOnboardingRunId, getOnboardingRunId } from "@/lib/onboarding-tele
 import {
   applySetupStatusUpdate,
   clearOnboardingCompletionCache,
+  clearUserScopedClientCaches,
   isSetupComplete,
+  persistOnboardingCache,
   readOnboardingCache,
   repairLocalFromServerComplete,
   resolveSetupStatus,
@@ -65,6 +67,31 @@ describe("setup status merge", () => {
     const cached = { onboardingComplete: false, profileComplete: false };
     const remote = { onboardingComplete: true, profileComplete: true };
     expect(applySetupStatusUpdate(cached, remote)).toEqual(remote);
+  });
+
+  it("clearUserScopedClientCaches removes stale completion after account switch", () => {
+    persistOnboardingCache({ onboardingComplete: true, profileComplete: true });
+    saveOnboardingChatSession({
+      step: "parent-allergies",
+      messages: [],
+      textInput: "",
+      countryCode: "US",
+      countryName: "United States",
+      curr: {},
+      parent: {},
+      children: [],
+    });
+
+    clearUserScopedClientCaches();
+
+    expect(readOnboardingCache().onboardingComplete).toBe(false);
+    expect(loadOnboardingChatSession()).toBeNull();
+    expect(
+      applySetupStatusUpdate(readOnboardingCache(), {
+        onboardingComplete: false,
+        profileComplete: false,
+      }).onboardingComplete,
+    ).toBe(false);
   });
 
   it("COMPLETE + UNKNOWN stays COMPLETE", () => {
@@ -186,6 +213,52 @@ describe("runOnboardingFinishTransaction", () => {
 
     await runOnboardingFinishTransaction(authFetch, payload);
     expect(onboardingPosts).toBe(1);
+  });
+
+  it("fails when a new child save fails instead of completing with partial data", async () => {
+    const multiChildPayload = {
+      ...payload,
+      children: [
+        { isOnboarding: true, name: "Ava" },
+        { isOnboarding: true, name: "Leo" },
+      ],
+      onboardingMeta: {
+        ...payload.onboardingMeta,
+        children: [
+          { name: "Ava", ageGroup: "5", problems: ["improve_sleep"] },
+          { name: "Leo", ageGroup: "3", problems: ["improve_sleep"] },
+        ],
+      },
+    };
+
+    let childPosts = 0;
+    const authFetch = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === "/api/onboarding" && (!init || init.method === "GET")) {
+        return mockResponse({ onboardingComplete: false, profileComplete: false });
+      }
+      if (url === "/api/parent-profile") {
+        return mockResponse({ name: "Sam" });
+      }
+      if (url === "/api/children" && (!init || init.method === "GET")) {
+        return mockResponse([]);
+      }
+      if (url === "/api/children" && init?.method === "POST") {
+        childPosts += 1;
+        if (childPosts === 1) {
+          return mockResponse({ id: 1, name: "Ava" });
+        }
+        return mockResponse({ fallback: true }, true, 200);
+      }
+      if (url.includes("/goals")) {
+        return mockResponse({ ok: true });
+      }
+      throw new Error(`unexpected ${url}`);
+    });
+
+    await expect(
+      runOnboardingFinishTransaction(authFetch, multiChildPayload),
+    ).rejects.toMatchObject({ step: "child-save" });
+    expect(childPosts).toBe(2);
   });
 });
 
