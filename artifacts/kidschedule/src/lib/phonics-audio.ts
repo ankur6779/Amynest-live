@@ -80,18 +80,6 @@ export async function speakPhonicsFastClip(
 
   recordTtsUserGesture();
 
-  if (shouldBypassPhonicsSpellingLibraries()) {
-    const phrase = resolvePhonicsCatalogPhrase(trimmed, opts?.phoneme);
-    const catalog = await playCatalogPreparedUrl(phrase, {
-      playbackRate: opts?.playbackRate,
-      isCancelled: opts?.isCancelled,
-      source: "phonics-catalog",
-    });
-    if (catalog.ok) return { success: true, layer: "static" };
-    if (opts?.isCancelled?.()) return { success: false, error: "tts_cancelled" };
-    return { success: false, error: catalog.error ?? "tts_static_missing_url" };
-  }
-
   const audioKey =
     resolvePhonicsAudioKey({
       text: trimmed,
@@ -130,6 +118,18 @@ export async function speakPhonicsFastClip(
     }
   }
 
+  if (shouldBypassPhonicsSpellingLibraries()) {
+    const phrase = resolvePhonicsCatalogPhrase(trimmed, opts?.phoneme);
+    const catalog = await playCatalogPreparedUrl(phrase, {
+      playbackRate: opts?.playbackRate,
+      isCancelled: opts?.isCancelled,
+      source: "phonics-catalog-fallback",
+    });
+    if (catalog.ok) return { success: true, layer: "static" };
+    if (opts?.isCancelled?.()) return { success: false, error: "tts_cancelled" };
+    return { success: false, error: catalog.error ?? "tts_static_missing_url" };
+  }
+
   return { success: false, error: "phonics_audio_preparing" };
 }
 
@@ -161,20 +161,20 @@ async function playCvcWordFinale(
 
   recordTtsUserGesture();
 
-  if (shouldBypassPhonicsSpellingLibraries()) {
-    const catalog = await playCatalogPreparedUrl(w, {
-      isCancelled: opts?.isCancelled,
-      source: "phonics-cvc-word",
-    });
-    if (catalog.ok) return { success: true, layer: "static" };
-  }
-
   const library = await playPhonicsContentAudio(w, {
     contentType: "cvc",
     isCancelled: opts?.isCancelled,
     waitUntilEnd: true,
   });
   if (library.ok) return { success: true, layer: "static" };
+
+  if (shouldBypassPhonicsSpellingLibraries()) {
+    const catalog = await playCatalogPreparedUrl(w, {
+      isCancelled: opts?.isCancelled,
+      source: "phonics-cvc-word-fallback",
+    });
+    if (catalog.ok) return { success: true, layer: "static" };
+  }
 
   for (const mode of ["phonics", "default"] as const) {
     if (opts?.isCancelled?.()) return { success: false, error: "cancelled" };

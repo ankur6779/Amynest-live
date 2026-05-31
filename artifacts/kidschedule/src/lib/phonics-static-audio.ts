@@ -54,6 +54,9 @@ let libraryPrewarmStarted = false;
 
 /** HTTPS URL for a letter/digraph phoneme clip — empty when manifest entry missing (no fallback). */
 export function getPhonicsStaticAudioUrl(audioKey: string): string {
+  const fromLibrary = lookupPhonicsLetterUrl(audioKey);
+  if (fromLibrary) return fromLibrary;
+
   if (shouldBypassPhonicsSpellingLibraries()) {
     const phrase = resolvePhonicsCatalogPhrase(audioKey);
     return (
@@ -62,9 +65,6 @@ export function getPhonicsStaticAudioUrl(audioKey: string): string {
       ""
     );
   }
-
-  const fromLibrary = lookupPhonicsLetterUrl(audioKey);
-  if (fromLibrary) return fromLibrary;
 
   const catalogKey = resolveLetterClipCatalogKey(audioKey);
   if (catalogKey) reportPhonicsLibraryMissing(catalogKey, `letter:${audioKey}`);
@@ -77,6 +77,9 @@ export function getPhonicsContentAudioUrl(
   text: string,
   preferredType?: PhonicsAssetType,
 ): string {
+  const fromLibrary = lookupPhonicsContentUrl(text, preferredType);
+  if (fromLibrary) return fromLibrary;
+
   if (shouldBypassPhonicsSpellingLibraries()) {
     const phrase = resolvePhonicsCatalogPhrase(text);
     return (
@@ -86,9 +89,6 @@ export function getPhonicsContentAudioUrl(
     );
   }
 
-  const fromLibrary = lookupPhonicsContentUrl(text, preferredType);
-  if (fromLibrary) return fromLibrary;
-
   const type = preferredType ?? "cvc";
   reportPhonicsLibraryMissing(`${type}:${text}`, "content");
   return "";
@@ -96,7 +96,7 @@ export function getPhonicsContentAudioUrl(
 
 export function prefetchPhonicsAudioKeys(keys: string[]): void {
   if (!shouldPhonicsPrefetch()) return;
-  if (!shouldBypassPhonicsSpellingLibraries() && !isPhonicsManifestStrictlyValid()) return;
+  if (!isPhonicsManifestStrictlyValid()) return;
   const unique = [...new Set(keys.map((k) => k.trim().toLowerCase()).filter(Boolean))];
   for (const key of unique) {
     const url = getPhonicsStaticAudioUrl(key);
@@ -110,7 +110,7 @@ export function prefetchPhonicsContentTexts(
   preferredType?: PhonicsAssetType,
 ): void {
   if (!shouldPhonicsPrefetch()) return;
-  if (!shouldBypassPhonicsSpellingLibraries() && !isPhonicsManifestStrictlyValid()) return;
+  if (!isPhonicsManifestStrictlyValid()) return;
   for (const text of texts) {
     const url = getPhonicsContentAudioUrl(text, preferredType);
     if (!url) continue;
@@ -134,7 +134,6 @@ async function prewarmPhonicsLibraryBatched(items: ReturnType<typeof listPhonics
 
 /** Prewarm GCS phonics library into IndexedDB — batched to protect low-end devices. */
 export function prefetchEntirePhonicsLibrary(): void {
-  if (shouldBypassPhonicsSpellingLibraries()) return;
   if (!shouldPhonicsPrefetch() || !isPhonicsManifestStrictlyValid()) return;
   if (libraryPrewarmStarted) return;
   libraryPrewarmStarted = true;
@@ -201,12 +200,63 @@ function isCancelledError(error: string): boolean {
   return error === "phonics_superseded" || error === "phonics_cancelled";
 }
 
+function lookupPhonicsLibraryUrl(
+  label: string,
+  contentType?: PhonicsAssetType,
+): string | null {
+  const key = label.trim().toLowerCase();
+  if (!key) return null;
+  return (
+    lookupPhonicsLetterUrl(key) ??
+    lookupPhonicsContentUrl(key, contentType) ??
+    null
+  );
+}
+
+async function playPhonicsLibraryUrlClip(
+  label: string,
+  cacheKey: string,
+  source: string,
+  options?: Pick<PlayPhonicsStaticOptions, "isCancelled" | "playbackRate">,
+  contentType?: PhonicsAssetType,
+): Promise<PlayPhonicsStaticResult | null> {
+  const libraryUrl = lookupPhonicsLibraryUrl(label, contentType);
+  if (!libraryUrl) return null;
+
+  const resolved = await resolveBestPlayUrl(cacheKey, libraryUrl);
+  if (!resolved.url) return null;
+
+  logAmyVoiceDiag("phonics_library_play", { label, url: resolved.url, source });
+
+  const result = await playPhonicsUrl(resolved.url, {
+    label,
+    playbackRate: options?.playbackRate,
+    isCancelled: options?.isCancelled,
+    cleanup: resolved.cleanup,
+  });
+
+  if (result.ok) {
+    if (shouldPhonicsUseCache()) {
+      void warmLocalCacheFromUrl(cacheKey, libraryUrl);
+    }
+    logAudioHealthSuccess({ layer: "static", fallbackUsed: false });
+    return { ok: true, audioKey: label, url: resolved.url };
+  }
+
+  if (isCancelledError(result.error ?? "")) {
+    return { ok: false, audioKey: label, error: "phonics_cancelled" };
+  }
+
+  return null;
+}
+
 async function playUrlClip(
   label: string,
   networkUrl: string,
   cacheKey: string,
   source: string,
   options?: Pick<PlayPhonicsStaticOptions, "isCancelled" | "playbackRate">,
+  contentType?: PhonicsAssetType,
 ): Promise<PlayPhonicsStaticResult> {
   if (!label.trim()) return { ok: false, audioKey: label, error: "phonics_empty_key" };
   if (options?.isCancelled?.()) {
@@ -214,6 +264,15 @@ async function playUrlClip(
   }
 
   recordTtsUserGesture();
+
+  const libraryPlay = await playPhonicsLibraryUrlClip(
+    label,
+    cacheKey,
+    source,
+    options,
+    contentType,
+  );
+  if (libraryPlay) return libraryPlay;
 
   if (shouldBypassPhonicsSpellingLibraries()) {
     const phrase = resolvePhonicsCatalogPhrase(label);
@@ -223,7 +282,7 @@ async function playUrlClip(
       source,
     });
     if (catalog.ok) {
-      logAudioHealthSuccess({ layer: "static", fallbackUsed: false });
+      logAudioHealthSuccess({ layer: "static", fallbackUsed: true });
       return { ok: true, audioKey: label, url: lookupStaticAudioUrl(phrase, "phonics") ?? undefined };
     }
     if (isCancelledError(catalog.error ?? "")) {
@@ -280,7 +339,7 @@ export async function playPhonicsContentAudio(
   const trimmed = (text ?? "").trim();
   const url = getPhonicsContentAudioUrl(trimmed, options?.contentType);
   const cacheKey = getPhonicsContentCacheKey(trimmed, options?.contentType);
-  return playUrlClip(trimmed, url, cacheKey, "phonics-content", options);
+  return playUrlClip(trimmed, url, cacheKey, "phonics-content", options, options?.contentType);
 }
 
 export async function playBlendPhonemeClip(
