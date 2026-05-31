@@ -31,6 +31,10 @@ import {
   traceBrokenModulePreflight,
 } from "@/lib/audio-root-cause-trace";
 import { getPhonicsAudioText } from "@workspace/phonics-sounds";
+import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
+import { phonicsEnginePlayWord, phonicsEngineStop } from "@/lib/phonics-audio-engine";
+import { playLocalPhonicsLetter, playLocalPhonicsWord } from "@/lib/phonics-local-playback";
+import { speakPhonicsFastClip } from "@/lib/phonics-audio";
 import { cn } from "@/lib/utils";
 import {
   audioManager,
@@ -183,9 +187,16 @@ export function AudioPlayButton({
     );
   }, [text, mode, phonemeKey]);
 
+  const isWordClip = Boolean(cvcWordKey);
+
   const audioAvailable = useMemo(() => {
     if (mode !== "phonics") return true;
     const trimmed = (text ?? "").trim();
+    if (isLocalAudioRecoveryEnabled()) {
+      if (isWordClip) return true;
+      const key = resolvedAudioKey || phonemeKey || trimmed.toLowerCase();
+      return Boolean(key);
+    }
     if (shouldBypassPhonicsSpellingLibraries()) {
       return hasStaticCatalogAudio(trimmed);
     }
@@ -194,7 +205,7 @@ export function AudioPlayButton({
     }
     const key = resolvedAudioKey || phonemeKey || trimmed.toLowerCase();
     return checkPhonicsLetterClip(key).available;
-  }, [mode, text, phonemeKey, cvcWordKey, resolvedAudioKey]);
+  }, [mode, text, phonemeKey, cvcWordKey, resolvedAudioKey, isWordClip]);
 
   const resolvedText = useMemo(() => {
     const trimmed = (text ?? "").trim();
@@ -269,6 +280,42 @@ export function AudioPlayButton({
           return null;
         }
         if (!resolvedText) return null;
+
+        if (mode === "phonics") {
+          pause();
+          await phonicsEngineStop("audio_play_button");
+          if (isWordClip && cvcWordKey) {
+            const local = isLocalAudioRecoveryEnabled();
+            const res = local
+              ? await playLocalPhonicsWord(cvcWordKey)
+              : await phonicsEnginePlayWord(cvcWordKey);
+            if (res.ok) {
+              if (isMounted.current) onPlay?.();
+              return { success: true, layer: "static" as const };
+            }
+            if (isMounted.current) setVisualFallback(true);
+            return { success: false, error: res.error ?? "phonics_play_failed" };
+          }
+          const letterKey = resolvedAudioKey || phonemeKey || resolvedText;
+          if (isLocalAudioRecoveryEnabled() && letterKey) {
+            const res = await playLocalPhonicsLetter(letterKey);
+            if (res.ok) {
+              if (isMounted.current) onPlay?.();
+              return { success: true, layer: "static" as const };
+            }
+          }
+          const fast = await speakPhonicsFastClip(resolvedText, {
+            phoneme: phonemeKey,
+            playbackRate,
+          });
+          if (fast.success) {
+            if (isMounted.current) onPlay?.();
+            return fast;
+          }
+          if (isMounted.current) setVisualFallback(true);
+          return fast;
+        }
+
         const isSentenceRead = mode !== "phonics" && resolvedText.includes(" ");
         const speakOpts =
           mode === "phonics" && shouldBypassPhonicsSpellingLibraries()
@@ -312,7 +359,24 @@ export function AudioPlayButton({
         // speak() never throws — guard only
       }
     });
-  }, [busy, disabled, preparing, isMounted, mode, onPlay, runInFlight, safeAsync, speak, pause, resolvedText]);
+  }, [
+    busy,
+    disabled,
+    preparing,
+    isMounted,
+    mode,
+    onPlay,
+    runInFlight,
+    safeAsync,
+    speak,
+    pause,
+    resolvedText,
+    cvcWordKey,
+    isWordClip,
+    phonemeKey,
+    resolvedAudioKey,
+    playbackRate,
+  ]);
 
   const label = preparing
     ? "Audio preparing"

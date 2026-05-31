@@ -31,7 +31,12 @@ import {
   type PhonicsLevel,
 } from "@/lib/phonics-content";
 import { getPhonicsAudioText } from "@workspace/phonics-sounds";
-import { playPhonicsBlend, playCvcBlendWithSpeak, resolvePhonicsPlaybackText } from "@/lib/phonics-audio";
+import { playPhonicsBlend, playCvcBlendWithSpeak } from "@/lib/phonics-audio";
+import {
+  phonicsTilePlaybackText,
+  phonicsTileCvcWordKey,
+  phonicsTileUsesPhonicsMode,
+} from "@/lib/phonics-tile-playback";
 import { CvcBlendPanel, CvcBlendingPracticeCard } from "@/components/cvc-blend-panel";
 import { PhonicsStopButton } from "@/components/phonics-stop-button";
 import { stopPhonicsPlayback } from "@/lib/phonics-player";
@@ -897,8 +902,9 @@ function TodaysActivityCard({
           </div>
           <AudioPlayButton
             text={practicePlaybackText(todaysItem)}
-            mode={todaysItem.phoneme ? "phonics" : undefined}
+            mode={phonicsTileUsesPhonicsMode(todaysItem) ? "phonics" : undefined}
             phonemeKey={todaysItem.phoneme}
+            cvcWordKey={phonicsTileCvcWordKey(todaysItem)}
             size="lg"
             variant="violet"
             ariaLabel={`Play sound ${todaysItem.symbol}`}
@@ -920,10 +926,7 @@ function TodaysActivityCard({
 }
 
 function practicePlaybackText(it: DisplayPhonicsItem): string {
-  if (it.type === "sentence" || it.type === "story" || it.type === "word") {
-    return (it.sound || it.symbol).trim();
-  }
-  return resolvePhonicsPlaybackText(it);
+  return phonicsTilePlaybackText(it);
 }
 
 // ─── Card 2: Practice Sounds ─────────────────────────────────────────────────
@@ -1024,8 +1027,9 @@ function PracticeSoundsCard({
                     <div className="flex items-center gap-1">
                       <AudioPlayButton
                         text={playbackText}
-                        mode={it.phoneme ? "phonics" : undefined}
+                        mode={phonicsTileUsesPhonicsMode(it) ? "phonics" : undefined}
                         phonemeKey={it.phoneme}
+                        cvcWordKey={phonicsTileCvcWordKey(it)}
                         prefetchNextText={prefetchNextText}
                         size="sm"
                         variant="violet"
@@ -1041,6 +1045,7 @@ function PracticeSoundsCard({
                           text={playbackText}
                           mode="phonics"
                           phonemeKey={it.phoneme}
+                          cvcWordKey={phonicsTileCvcWordKey(it)}
                           slow
                           size="sm"
                           variant="outline"
@@ -1085,8 +1090,9 @@ function PracticeSoundsCard({
                   {mastered && <CheckCircle2 className="h-4 w-4 text-primary mt-1" />}
                   <AudioPlayButton
                     text={playbackText}
-                    mode={it.phoneme ? "phonics" : undefined}
+                    mode={phonicsTileUsesPhonicsMode(it) ? "phonics" : undefined}
                     phonemeKey={it.phoneme}
+                    cvcWordKey={phonicsTileCvcWordKey(it)}
                     prefetchNextText={prefetchNextText}
                     size="sm"
                     variant="violet"
@@ -1212,6 +1218,8 @@ function BlendPanel({
         </div>
         <AudioPlayButton
           text={word}
+          mode="phonics"
+          cvcWordKey={word}
           size="md"
           variant="violet"
           ariaLabel={`Play whole word ${item.symbol}`}

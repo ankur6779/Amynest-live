@@ -6,7 +6,11 @@ import { AudioPlayButton } from "@/components/audio-play-button";
 import { cn } from "@/lib/utils";
 import type { DisplayPhonicsItem, PhonicsProgressMap } from "@/hooks/use-phonics-data";
 import type { PhonicsLevel } from "@/lib/phonics-content";
-import { resolvePhonicsPlaybackText } from "@/lib/phonics-audio";
+import {
+  phonicsTilePlaybackText,
+  phonicsTileCvcWordKey,
+  phonicsTileUsesPhonicsMode,
+} from "@/lib/phonics-tile-playback";
 import {
   buildWeakSoundsProfile,
   classifyReviewTier,
@@ -82,10 +86,7 @@ function groupIntoPacks(items: DisplayPhonicsItem[]): LearningPack[] {
 }
 
 function practicePlaybackText(it: DisplayPhonicsItem): string {
-  if (it.type === "sentence" || it.type === "story" || it.type === "word") {
-    return (it.sound || it.symbol).trim();
-  }
-  return resolvePhonicsPlaybackText(it);
+  return phonicsTilePlaybackText(it);
 }
 
 export type PhonicsLearningPacksProps = {
@@ -263,8 +264,9 @@ export function PhonicsLearningPacks({
                           <div className="mt-2 flex items-center justify-between gap-1">
                             <AudioPlayButton
                               text={playbackText}
-                              mode={it.phoneme ? "phonics" : undefined}
+                              mode={phonicsTileUsesPhonicsMode(it) ? "phonics" : undefined}
                               phonemeKey={it.phoneme}
+                              cvcWordKey={phonicsTileCvcWordKey(it)}
                               prefetchNextText={prefetchNextText}
                               size="sm"
                               variant="violet"
