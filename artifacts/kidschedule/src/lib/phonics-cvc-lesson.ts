@@ -98,25 +98,24 @@ export function usePhonicsCvcLesson(initialLevel: 1 | 2 | 3) {
 
   const selectWord = useCallback(
     (word: CvcWordEntry | string) => {
-      void phonicsEngineStop("word_select");
-      setIsPlaying(false);
-
       const w = typeof word === "string" ? word.trim().toLowerCase() : word.word;
       const idx = levelWords.findIndex((entry) => entry.word === w);
       const resolved = idx >= 0 ? levelWords[idx]! : null;
 
-      if (resolved) {
-        setSelectedIndex(idx);
-        setPhase("word_selected");
-        phonicsEnginePreloadWord(resolved);
-        recordPhonicsTelemetry("phonics_word_selected", {
-          wordId: resolved.word,
-          level: activeLevel,
-          index: idx,
-        });
-      }
+      if (!resolved || idx === selectedIndex) return;
+
+      void phonicsEngineStop("word_select");
+      setIsPlaying(false);
+      setSelectedIndex(idx);
+      setPhase("word_selected");
+      phonicsEnginePreloadWord(resolved);
+      recordPhonicsTelemetry("phonics_word_selected", {
+        wordId: resolved.word,
+        level: activeLevel,
+        index: idx,
+      });
     },
-    [levelWords, activeLevel],
+    [levelWords, activeLevel, selectedIndex],
   );
 
   const selectWordByIndex = useCallback(
@@ -149,19 +148,35 @@ export function usePhonicsCvcLesson(initialLevel: 1 | 2 | 3) {
     }
   }, [selectedWord]);
 
-  return {
-    activeLevel,
-    levelWords,
-    selectedWord,
-    selectedIndex,
-    phase,
-    isPlaying,
-    selectLevel,
-    selectWord,
-    selectWordByIndex,
-    beginPlayback,
-    endPlayback,
-    resetLesson,
-    setIsPlaying,
-  };
+  return useMemo(
+    () => ({
+      activeLevel,
+      levelWords,
+      selectedWord,
+      selectedIndex,
+      phase,
+      isPlaying,
+      selectLevel,
+      selectWord,
+      selectWordByIndex,
+      beginPlayback,
+      endPlayback,
+      resetLesson,
+      setIsPlaying,
+    }),
+    [
+      activeLevel,
+      levelWords,
+      selectedWord,
+      selectedIndex,
+      phase,
+      isPlaying,
+      selectLevel,
+      selectWord,
+      selectWordByIndex,
+      beginPlayback,
+      endPlayback,
+      resetLesson,
+    ],
+  );
 }

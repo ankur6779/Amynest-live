@@ -46,21 +46,22 @@ export function CvcBlendPanel({
   const [globalPlaying, setGlobalPlaying] = useState(false);
 
   useEffect(() => {
+    if (lessonProp) return;
     if (lesson.activeLevel !== practiceLevel) {
       lesson.selectLevel(practiceLevel);
     }
     const idx = lesson.levelWords.findIndex((w) => w.word === word.toLowerCase());
-    if (idx >= 0) {
+    if (idx >= 0 && lesson.selectedWord?.word !== word.toLowerCase()) {
       lesson.selectWordByIndex(idx);
     }
-  }, [word, practiceLevel, lesson]);
+  }, [word, practiceLevel, lessonProp, lesson.activeLevel, lesson.levelWords, lesson.selectedWord, lesson.selectLevel, lesson.selectWordByIndex]);
 
   useEffect(() => {
     return subscribePhonicsPlayback(({ playing }) => {
       setGlobalPlaying(playing);
       lesson.setIsPlaying(playing);
     });
-  }, [lesson]);
+  }, [lesson.setIsPlaying]);
 
   const current = lesson.selectedWord;
   const displayLetters = current ? getCvcDisplayLetters(current.word) : [];
@@ -164,41 +165,45 @@ export function CvcBlendPanel({
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-1.5 mb-3" role="tablist" aria-label="Practice level">
-        {([1, 2, 3] as const).map((lv) => (
-          <Button
-            key={lv}
-            type="button"
-            size="sm"
-            variant={lesson.activeLevel === lv ? "default" : "outline"}
-            className="rounded-full text-[10px] font-bold h-7 px-3"
-            disabled={controlsLocked}
-            onClick={() => lesson.selectLevel(lv)}
-          >
-            Level {lv}
-          </Button>
-        ))}
-      </div>
+      {!lessonProp && (
+        <>
+          <div className="flex flex-wrap gap-1.5 mb-3" role="tablist" aria-label="Practice level">
+            {([1, 2, 3] as const).map((lv) => (
+              <Button
+                key={lv}
+                type="button"
+                size="sm"
+                variant={lesson.activeLevel === lv ? "default" : "outline"}
+                className="rounded-full text-[10px] font-bold h-7 px-3"
+                disabled={controlsLocked}
+                onClick={() => lesson.selectLevel(lv)}
+              >
+                Level {lv}
+              </Button>
+            ))}
+          </div>
 
-      {lesson.activeLevel === 3 && (
-        <p className="text-[10px] text-muted-foreground mb-2 text-center">Random word order</p>
+          {lesson.activeLevel === 3 && (
+            <p className="text-[10px] text-muted-foreground mb-2 text-center">Random word order</p>
+          )}
+
+          <div className="flex flex-wrap gap-2 mb-3 justify-center">
+            {lesson.levelWords.map((w) => (
+              <Button
+                key={w.word}
+                type="button"
+                size="sm"
+                variant={current.word === w.word ? "default" : "outline"}
+                className="rounded-full font-quicksand font-bold text-xs"
+                disabled={controlsLocked}
+                onClick={() => lesson.selectWord(w)}
+              >
+                {w.word}
+              </Button>
+            ))}
+          </div>
+        </>
       )}
-
-      <div className="flex flex-wrap gap-2 mb-3 justify-center">
-        {lesson.levelWords.map((w) => (
-          <Button
-            key={w.word}
-            type="button"
-            size="sm"
-            variant={current.word === w.word ? "default" : "outline"}
-            className="rounded-full font-quicksand font-bold text-xs"
-            disabled={controlsLocked}
-            onClick={() => lesson.selectWord(w)}
-          >
-            {w.word}
-          </Button>
-        ))}
-      </div>
 
       <div className="flex flex-wrap justify-center gap-2 mb-3">
         <Button
@@ -336,7 +341,8 @@ export function CvcBlendingPracticeCard({
 
   useEffect(() => {
     lesson.selectLevel(practiceLevel);
-  }, [practiceLevel, lesson]);
+    setPanelWord(null);
+  }, [practiceLevel, lesson.selectLevel]);
 
   return (
     <Card data-testid="cvc-blending-practice" className="rounded-3xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10">
