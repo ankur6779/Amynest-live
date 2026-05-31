@@ -14,8 +14,7 @@ import {
   getRecommendedWords,
   buildWeeklyReport,
 } from "@/hooks/use-spelling-retention";
-import type { SpellingAgeGroup, SpellingDifficulty, SpellingWord } from "@/hooks/use-spelling";
-import type { UseSpellingTTS } from "@/hooks/use-spelling";
+import type { SpellingAgeGroup, SpellingDifficulty, SpellingWord, UseSpellingTTSState } from "@/hooks/use-spelling";
 
 const DELIGHT_MS = 400;
 
@@ -307,7 +306,7 @@ export function SmartRecommendationsCard({
   weakSound: string | null;
   ageGroup: SpellingAgeGroup;
   difficulty: SpellingDifficulty;
-  tts: ReturnType<typeof useSpellingTTS>;
+  tts: UseSpellingTTSState;
   onPracticeWord?: (word: SpellingWord) => void;
 }) {
   if (!weakSound) {

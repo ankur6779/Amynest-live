@@ -53,6 +53,7 @@ import {
   enrichRoutineMeals,
   validateMealActivityIntegration,
 } from "./routine-meal-integration.js";
+import { enforceSchoolBlock as enforceSchoolBlockUtil } from "./ai-routine-utils.js";
 import {
   buildPriorityTimeline,
   clampDurationForCategory,
@@ -61,6 +62,7 @@ import {
   parseTimeToMins,
   minsToTime24,
   resolveRoutineSchedule,
+  resolveTimelineOverlaps,
   slotsToRoutineItems,
   type ResolveResult,
   type RoutineScheduleItem,
@@ -633,6 +635,25 @@ export function generateRoutineFromState(
   validationWarnings.push(
     ...validateAqiOutdoorRules(items, interpretedContext.aqi, interpretedContext.country),
   );
+
+  if (
+    scheduleOpts.hasSchool &&
+    scheduleOpts.schoolStartMins != null &&
+    scheduleOpts.schoolEndMins != null
+  ) {
+    items = enforceSchoolBlockUtil(
+      items as RoutineScheduleItem[],
+      true,
+      minsToTime24(scheduleOpts.schoolStartMins),
+      minsToTime24(scheduleOpts.schoolEndMins),
+      scheduleOpts.childClass,
+    ) as RoutineScheduleItemWithDecision[];
+    items = resolveTimelineOverlaps(
+      items,
+      wakeMins,
+      sleepMins,
+    ) as RoutineScheduleItemWithDecision[];
+  }
 
   return { items, state: interpretedContext, validationWarnings, decisionTrace };
 }

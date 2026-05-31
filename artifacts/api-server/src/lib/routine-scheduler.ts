@@ -662,6 +662,7 @@ export function buildPriorityTimeline(
       toExtended(schoolStart, wakeMins),
       schoolEnd - schoolStart,
       PRIORITY_SCHOOL,
+      true,
     );
   }
 

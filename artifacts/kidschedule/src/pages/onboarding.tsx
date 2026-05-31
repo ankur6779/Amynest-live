@@ -58,6 +58,7 @@ import {
   persistOnboardingCache,
   readOnboardingCache,
   resolveSetupStatus,
+  type SetupStatus,
 } from "@/lib/setup-status";
 import {
   getNativePushBridge,
@@ -985,10 +986,7 @@ export default function OnboardingPage() {
     }
     const status = applySetupStatusUpdate(
       readOnboardingCache(),
-      queryClient.getQueryData<{
-        onboardingComplete?: boolean;
-        profileComplete?: boolean;
-      }>(["onboarding-status"]),
+      queryClient.getQueryData<SetupStatus>(["onboarding-status"]),
     );
     const canEnterApp = cachedComplete || isSetupComplete(status);
     if (!canEnterApp) {

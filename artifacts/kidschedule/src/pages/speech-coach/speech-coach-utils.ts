@@ -113,8 +113,6 @@ export function clampClarityScore(score: number): number {
 
 const COACH_SNAPSHOT_KEY = "speech_coach_local_snapshot_v1";
 
-export type { CoachLocalSnapshot };
-
 export function loadCoachLocalSnapshot(childId: number): CoachLocalSnapshot | null {
   if (typeof window === "undefined") return null;
   try {

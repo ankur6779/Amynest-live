@@ -1,9 +1,9 @@
-import type { ChatBubbleTheme } from "@/components/chat-thread/types";
+import type { ThreadTheme } from "@/components/chat-thread/types";
 import { AmyMessageBubble, AmyTypingBubble } from "@/components/chat-thread/bubbles/amy-message-bubble";
 import { UserMessageBubble } from "@/components/chat-thread/bubbles/user-message-bubble";
 
-/** @deprecated Use AmyMessageBubble / UserMessageBubble from @/components/chat-thread */
-export type { ChatBubbleTheme };
+/** @deprecated Use ThreadTheme from @/components/chat-thread/types */
+export type ChatBubbleTheme = ThreadTheme;
 
 /** @deprecated Use AmyTypingBubble from @/components/chat-thread */
 export function ChatTypingBubble({ theme = "app" }: { theme?: ChatBubbleTheme }) {

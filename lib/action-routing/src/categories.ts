@@ -6,6 +6,11 @@ import {
   SURFACE_TO_TARGET,
 } from "./registry.js";
 
+function coerceEntityId(value: unknown): string | number | null {
+  if (typeof value === "string" || typeof value === "number") return value;
+  return null;
+}
+
 /** Default ActionTarget per notification category. */
 export const NOTIFICATION_CATEGORY_TARGETS: Record<NotificationCategoryRoute, ActionTarget> = {
   nutrition: "nutrition",
@@ -161,7 +166,11 @@ export function routedActionFromPayload(payload: {
     const def = ACTION_ROUTE_REGISTRY[actionTarget];
     return {
       actionTarget,
-      entityId: payload.entityId ?? data.routineId ?? data.campaignId ?? null,
+      entityId:
+        payload.entityId ??
+        coerceEntityId(data.routineId) ??
+        coerceEntityId(data.campaignId) ??
+        null,
       params: data as RoutedAction["params"],
       fallbackTarget: def.fallbackTarget,
     };
@@ -179,7 +188,10 @@ export function routedActionFromPayload(payload: {
       }
       return {
         ...fromLegacy,
-        entityId: payload.entityId ?? mergedParams.routineId ?? fromLegacy.entityId,
+        entityId:
+          payload.entityId ??
+          coerceEntityId(mergedParams.routineId) ??
+          fromLegacy.entityId,
         params: mergedParams,
       };
     }

@@ -358,15 +358,15 @@ export function resolveJourneyStage(
   return resolveStudyMode(ageYears, childClass);
 }
 
-export function ageBandKey(ageYears: number): keyof typeof CONTENT_BANK_BY_AGE {
+const BAND_ORDER = ["2-4", "4-6", "6-8", "8-10", "10-12"] as const;
+
+export function ageBandKey(ageYears: number): (typeof BAND_ORDER)[number] {
   if (ageYears <= 4) return "2-4";
   if (ageYears <= 6) return "4-6";
   if (ageYears <= 8) return "6-8";
   if (ageYears <= 10) return "8-10";
   return "10-12";
 }
-
-const BAND_ORDER = ["2-4", "4-6", "6-8", "8-10", "10-12"] as const;
 
 const FUTURE_BAND_LABELS: Record<(typeof BAND_ORDER)[number], string> = {
   "2-4": "Early Play lessons",

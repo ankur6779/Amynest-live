@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode, type SpeakOptions } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from "react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { useAppNavigate } from "@/components/app-link";
@@ -37,6 +37,7 @@ import { getGenericQuestionOptions } from "@/lib/coach-generic-questions";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { formatAge } from "@/lib/age-groups";
 import { pregenerateCoachPlanAudio } from "@/lib/coach-audio-playback";
+import { prefetchCoachWin } from "@/lib/amy-voice-pipeline-optimizer";
 import {
   createCoachAudioIdentity,
   buildCoachWinListenText,

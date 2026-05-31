@@ -292,7 +292,7 @@ export async function playPhonicsUrl(
     } else {
       recordPhonicsPlayFailed(label, result.error, { url: trimmed.slice(0, 200) });
     }
-    recordPhonicsCircuitOutcome(result.ok, result.error);
+    recordPhonicsCircuitOutcome(result.ok, result.ok ? undefined : result.error);
     return result;
   };
 

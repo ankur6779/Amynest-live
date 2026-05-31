@@ -8,6 +8,8 @@ export {
   writeStoredDeployVersion,
 } from "@/lib/deploy-version";
 
+import { getDeployVersion } from "@/lib/deploy-version";
+
 /** Cache-bust service worker URL so browsers fetch the latest sw.js after deploy. */
 export function serviceWorkerScriptUrl(basePath: string): string {
   const base = basePath.replace(/\/$/, "");

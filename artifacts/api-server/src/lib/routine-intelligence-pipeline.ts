@@ -761,6 +761,8 @@ export function runRoutineIntelligencePipeline(
     sleepMins: sleepMinsEarly,
     isSchoolDay: isSchoolDayForMeals,
     isWeekendDay: flowOpts.isWeekendDay ?? false,
+    schoolStartMins: scheduleOpts.schoolStartMins,
+    schoolEndMins: scheduleOpts.schoolEndMins,
     ageGroup: scheduleOpts.ageGroup,
     seed:
       (input.childId?.length ?? 0) +

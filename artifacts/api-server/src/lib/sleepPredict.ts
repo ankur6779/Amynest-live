@@ -159,6 +159,8 @@ export function applyDynamicAdjustments(
     nowMs: number;
     /** Hour-of-day boundary after which we consider "missed-nap" relevant. */
     napCutoffHour?: number;
+    /** Client `Date.getTimezoneOffset()` — same convention as buildPredictInputFromHistory. */
+    timezoneOffsetMinutes?: number;
   },
 ): { adjustedMin: number; reasons: string[] } {
   const reasons: string[] = [];
@@ -178,7 +180,9 @@ export function applyDynamicAdjustments(
   // has had fewer naps than the lower bound for the age band, push next
   // sleep earlier.
   const cutoff = opts.napCutoffHour ?? 14;
-  const hour = new Date(opts.nowMs).getHours();
+  const tz = opts.timezoneOffsetMinutes ?? 0;
+  const parentNowMs = opts.nowMs - tz * 60_000;
+  const hour = new Date(parentNowMs).getUTCHours();
   const naps = getNapsPerDayForAge(opts.ageMonths);
   if (
     typeof opts.napCountToday === "number" &&
