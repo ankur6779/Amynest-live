@@ -8,7 +8,7 @@ import {
   PARENT_HUB_SECTIONS,
 } from "@/lib/parent-hub-audio-identity";
 import type { AgeGroup } from "@/lib/age-groups";
-import { ALL_HUB_FACTS, type HubFact } from "@workspace/parent-hub-speak";
+import { ALL_HUB_FACTS, buildFactSpeakText, type HubFact } from "@workspace/parent-hub-speak";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 import { useTranslation } from "react-i18next";
@@ -163,11 +163,12 @@ export function AmazingFacts({
     pause();
     setQuiz(null);
     setPlayingId(fact.id);
-    const text = factDisplayText(fact, lang);
+    // Audio uses English static corpus; UI may show Hindi (displayText).
+    const speakText = buildFactSpeakText(fact);
     const identity = createParentHubAudioIdentity({
       sectionId: PARENT_HUB_SECTIONS.FACTS,
       itemId: fact.id,
-      text,
+      text: speakText,
     });
     void speak(identity.text, {
       parentHub: true,
@@ -176,7 +177,7 @@ export function AmazingFacts({
     }).then(() => {
       setPlayingId(null);
     });
-  }, [playingId, speak, pause, lang]);
+  }, [playingId, speak, pause]);
   const startQuiz = useCallback((fact: Fact) => {
     pause();
     setPlayingId(null);
@@ -209,6 +210,7 @@ export function AmazingFacts({
         {facts.map(fact => {
         const isLiked = likes.has(fact.id);
         const displayText = factDisplayText(fact, lang);
+        const speakText = buildFactSpeakText(fact);
         const activeQuiz = quiz?.factId === fact.id ? quiz : null;
         return <Card key={fact.id} className="rounded-3xl border-border/50 overflow-hidden hover:shadow-sm transition-shadow">
               <CardContent className="p-4 flex flex-col gap-3">
@@ -226,7 +228,7 @@ export function AmazingFacts({
                 </div>
                 <div className="flex flex-col gap-1.5 flex-shrink-0">
                   <button
-                    onPointerDown={() => primeSpeakGesture(displayText)}
+                    onPointerDown={() => primeSpeakGesture(speakText, { parentHub: true })}
                     onClick={() => handleListen(fact)}
                     className={`flex items-center gap-1 text-xs font-bold rounded-full px-2.5 py-1.5 transition-all ${playingId === fact.id || (speaking && playingId === fact.id) ? "bg-primary/15 text-primary border border-primary/30" : "bg-muted/60 text-muted-foreground hover:bg-muted dark:bg-card hover:text-primary"}`}
                     title={t("components.amazing_facts.listen")}

@@ -35,6 +35,13 @@ import {
 } from "@/lib/coach-audio-playback";
 import type { AuthFetchFn } from "@/lib/poll-result";
 import { audioManager, AUDIO_ERROR } from "@/lib/audio-manager";
+import { isCurrentAudioIntent } from "@/lib/amy-voice-ownership";
+import { recordPlayLatency } from "@/lib/audio-latency-metrics";
+import { recordStaleAudioPrevented } from "@/lib/audio-playback-queue";
+import {
+  trackAudioCacheHit,
+  trackAudioCacheMiss,
+} from "@/lib/audio-reliability-telemetry";
 import { runWithControlledAudioStop } from "@/lib/amy-voice-safety";
 import {
   isTtsPlaybackAllowed,
@@ -202,6 +209,11 @@ export type AmyVoicePipelineContext = {
   depth?: number;
   /** Set for top-level speak only — invalidates losing parallel runners. */
   speakGeneration?: number;
+  /** Latest user intent — stale downloads must not play after a newer tap. */
+  intentEpoch?: number;
+  reliabilityModule?: import("@/lib/audio-reliability-telemetry").AudioReliabilityModule;
+  /** Active P0 reliability trace — for cache hit/miss wiring. */
+  reliabilityRequestId?: string | null;
   /** Guards against duplicate onFinished from finalizeSuccess. */
   completionFinalized?: boolean;
   /** Pipeline-only: mark streaming layer as attempted for decision logs. */
@@ -230,8 +242,25 @@ function delay(ms: number): Promise<void> {
 
 function isStale(ctx: AmyVoicePipelineContext): boolean {
   if (ctx.isCancelled()) return true;
+  if (ctx.intentEpoch != null && !isCurrentAudioIntent(ctx.intentEpoch)) {
+    recordStaleAudioPrevented();
+    return true;
+  }
   if ((ctx.depth ?? 0) > 0) return false;
   return ctx.speakGeneration !== activeSpeakGeneration;
+}
+
+function tracePipelineCacheHit(
+  ctx: AmyVoicePipelineContext,
+  source: "STATIC_GCS" | "LOCAL_CACHE" = "LOCAL_CACHE",
+): void {
+  const id = ctx.reliabilityRequestId;
+  if (id) trackAudioCacheHit(id, source);
+}
+
+function tracePipelineCacheMiss(ctx: AmyVoicePipelineContext): void {
+  const id = ctx.reliabilityRequestId;
+  if (id) trackAudioCacheMiss(id);
 }
 
 function staticModesToTry(primary: StaticAudioMode, phonicsOnly = false): StaticAudioMode[] {
@@ -464,6 +493,9 @@ async function playElementWithNeverSilentWatchdog(
   }
 
   markAudioHealthAudibleStart(healthLayer, { startedAt: playStartedAt });
+  if (ctx.reliabilityModule) {
+    recordPlayLatency(ctx.reliabilityModule, performance.now() - playStartedAt);
+  }
 
   if (meta.waitUntilEnd) {
     const completion = await waitForSafePlaybackCompletion({
@@ -531,6 +563,7 @@ async function attemptPhonicsLocalPlay(
   }
 
   recordAmyVoiceLayerSuccess("static_success", { source: "phonics_local", audioKey });
+  tracePipelineCacheHit(ctx, "STATIC_GCS");
   return { ok: true, layer: "static" };
 }
 
@@ -563,6 +596,7 @@ async function attemptStaticPlay(
       if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
       if (play.ok) {
         void warmLocalCacheFromUrl(localCacheKeyForPhrase(candidate, tryMode), proxyUrl);
+        tracePipelineCacheHit(ctx, "STATIC_GCS");
         recordAmyVoiceLayerSuccess("static_success", { mode: tryMode });
         return {
           ok: true,
@@ -616,6 +650,7 @@ async function attemptCachePlay(
       URL.revokeObjectURL(objectUrl);
       if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
       if (play.ok) {
+        tracePipelineCacheHit(ctx, "LOCAL_CACHE");
         recordAmyVoiceLayerSuccess("cache_success", { mode: tryMode });
         return {
           ok: true,
@@ -658,6 +693,7 @@ async function attemptCachePlay(
       URL.revokeObjectURL(objectUrl);
       if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
       if (play.ok) {
+        tracePipelineCacheHit(ctx, "LOCAL_CACHE");
         recordAmyVoiceLayerSuccess("cache_success", { mode: tryMode });
         return {
           ok: true,
@@ -695,6 +731,7 @@ async function attemptCachePlay(
       URL.revokeObjectURL(objectUrl);
       if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
       if (play.ok) {
+        tracePipelineCacheHit(ctx, "LOCAL_CACHE");
         recordAmyVoiceLayerSuccess("cache_success", { mode: tryMode });
         return {
           ok: true,
@@ -735,6 +772,7 @@ async function attemptCachePlay(
       URL.revokeObjectURL(objectUrl);
       if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
       if (play.ok) {
+        tracePipelineCacheHit(ctx, "LOCAL_CACHE");
         recordAmyVoiceLayerSuccess("cache_success", { mode: tryMode });
         return {
           ok: true,
@@ -750,6 +788,7 @@ async function attemptCachePlay(
     }
   }
   recordAmyVoiceLayerFailed("cache", "cache_miss");
+  tracePipelineCacheMiss(ctx);
   return { ok: false, error: "cache_miss" };
 }
 

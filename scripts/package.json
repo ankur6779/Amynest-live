@@ -16,6 +16,7 @@
     "normalize-phonics-audio": "tsx ./normalize-phonics-audio.ts",
     "approve-phonics-audio": "tsx ./approve-phonics-audio.ts",
     "check-static-audio": "tsx ./check-static-audio.ts",
+    "check-audio-release-certification": "tsx ./check-audio-release-certification.ts",
     "check-phonics-audio": "tsx ./check-phonics-audio.ts",
     "clean-phonics-audio-legacy": "tsx ./clean-phonics-audio-legacy.ts",
     "generate-phonics-library": "tsx ./generate-phonics-library.ts",

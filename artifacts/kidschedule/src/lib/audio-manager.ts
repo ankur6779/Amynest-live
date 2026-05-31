@@ -24,6 +24,16 @@ import {
   emitAudioPlaybackEvent,
   type AudioPlaybackSource,
 } from "@/lib/audio-playback-events";
+import {
+  mapToAudioSourceLayer,
+  resolveAudioReliabilityModule,
+  trackAudioPlayFailed,
+  trackAudioPlayStarted,
+  trackAudioRecovered,
+  trackAudioRequest,
+  trackAudioTimeout,
+  finishAudioRequest,
+} from "@/lib/audio-reliability-telemetry";
 
 const LOG = "[AudioManager]";
 const DEFAULT_MAX_RETRIES = 2;
@@ -40,9 +50,9 @@ function mapPlaybackSource(meta: AudioPlayMeta): AudioPlaybackSource {
   if (raw.includes("emergency")) return "emergency";
   return "unknown";
 }
-/** Allow slow CDN / mobile decode before treating start as failed */
-const PLAYBACK_WATCHDOG_MS = 4500;
-const ANDROID_WEBVIEW_WATCHDOG_MS = 9000;
+/** P0 SLA: audio must start within 3s or fail + fallback */
+const PLAYBACK_WATCHDOG_MS = 3_000;
+const ANDROID_WEBVIEW_WATCHDOG_MS = 3_000;
 
 function playbackWatchdogMs(): number {
   return isAndroidAmyNestAudioClient() ? ANDROID_WEBVIEW_WATCHDOG_MS : PLAYBACK_WATCHDOG_MS;
@@ -988,7 +998,22 @@ class AudioManagerImpl {
     meta: AudioPlayMeta = {},
     opts: AudioPlayOptions = {},
   ): Promise<boolean> {
-    if (!this.assertUsable()) return false;
+    if (!this.assertUsable()) return failReliability("audio_manager_unusable");
+
+    const reliabilityModule = resolveAudioReliabilityModule({
+      label: meta.source,
+      phonics: mapPlaybackSource(meta) === "phonics",
+    });
+    const sourceLayer = mapToAudioSourceLayer(meta.source, { srcType: meta.srcType });
+    const reliabilityRequestId = trackAudioRequest({
+      module: reliabilityModule,
+      audioIdentity: meta.phrase?.slice(0, 80),
+      sourceLayer,
+    });
+    const failReliability = (error: string): false => {
+      trackAudioPlayFailed(reliabilityRequestId, error, sourceLayer);
+      return false;
+    };
 
     const channel = opts.channel ?? meta.channel ?? "speech";
     const interrupt = opts.interrupt ?? meta.interrupt ?? false;
@@ -1003,7 +1028,7 @@ class AudioManagerImpl {
         srcType,
         source: meta.source,
       }, audio);
-      return false;
+      return failReliability(AUDIO_ERROR.PLAYBACK_BUSY);
     }
 
     if (channel === "speech" && this.channels.speech.playing && !interrupt) {
@@ -1013,7 +1038,7 @@ class AudioManagerImpl {
         srcType,
         source: meta.source,
       }, audio);
-      return false;
+      return failReliability(AUDIO_ERROR.PLAYBACK_BUSY);
     }
 
     if (interrupt && channel === "speech") {
@@ -1069,6 +1094,8 @@ class AudioManagerImpl {
             phrase: meta.phrase,
             proxyUrl: proxyUrl?.slice(0, 120),
           });
+          trackAudioPlayStarted(reliabilityRequestId, sourceLayer);
+          finishAudioRequest(reliabilityRequestId);
 
           if (import.meta.env.DEV) {
             console.info(LOG, "play success", {
@@ -1115,6 +1142,7 @@ class AudioManagerImpl {
 
           if (attempt >= maxRetries || !proxyUrl) break;
 
+          trackAudioRecovered(reliabilityRequestId, sourceLayer, sourceLayer);
           await sleep(staticAudioRetryDelayMs());
           element = this.createFreshElement(proxyUrl);
           state.current = element;
@@ -1134,11 +1162,19 @@ class AudioManagerImpl {
       this.consecutiveFailures += 1;
       this.setLastError(AUDIO_ERROR.PLAYBACK_FAILED);
       this.clearChannelOnFailure(channel);
+      const failReason =
+        this.lastPlayError === AUDIO_ERROR.PLAYBACK_WATCHDOG
+          ? AUDIO_ERROR.PLAYBACK_WATCHDOG
+          : AUDIO_ERROR.PLAYBACK_FAILED;
+      if (failReason === AUDIO_ERROR.PLAYBACK_WATCHDOG) {
+        trackAudioTimeout(reliabilityRequestId, failReason);
+      }
+      trackAudioPlayFailed(reliabilityRequestId, failReason, sourceLayer);
       emitAudioPlaybackEvent("audio_failed", {
         source: mapPlaybackSource(meta),
         layer: srcType,
         phrase: meta.phrase,
-        error: AUDIO_ERROR.PLAYBACK_FAILED,
+        error: failReason,
       });
       this.triggerRecovery();
       this.surfaceFallback(meta);

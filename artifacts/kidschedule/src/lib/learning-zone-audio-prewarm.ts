@@ -56,7 +56,7 @@ export type LearningZonePrewarmContext = {
 const BATCH_SIZE = 4;
 const BATCH_GAP_MS = 40;
 const MAX_MEMORY_CLIPS = 48;
-const MAX_PREDICTIVE = 6;
+const MAX_PREDICTIVE = 20;
 
 const activeJobKeys = new Set<string>();
 const invalidatedStateKeys = new Set<string>();

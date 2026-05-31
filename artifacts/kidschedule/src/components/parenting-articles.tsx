@@ -47,13 +47,15 @@ function ArticleHeroBanner({
 function SectionListenBtn({
   state,
   onClick,
+  onPointerDown,
   label
 }: {
   state: "idle" | "loading" | "playing";
   onClick: () => void;
+  onPointerDown?: () => void;
   label: string;
 }) {
-  return <button type="button" onClick={onClick} aria-label={label} data-testid="section-listen-btn" className={`shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-full transition-all ${state === "idle" ? "bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground opacity-70 hover:opacity-100" : "bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/30"}`}>
+  return <button type="button" onClick={onClick} onPointerDown={onPointerDown} aria-label={label} data-testid="section-listen-btn" className={`shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-full transition-all ${state === "idle" ? "bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground opacity-70 hover:opacity-100" : "bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/30"}`}>
       {state === "loading" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : state === "playing" ? <Square className="h-3 w-3 fill-current" /> : <Volume2 className="h-3.5 w-3.5" />}
     </button>;
 }
@@ -117,10 +119,21 @@ function ArticleModal({
     pause,
     speaking,
     loading,
-    error
+    error,
+    primeSpeakGesture,
   } = useAmyVoice({
     onFinished: handleFinished
   });
+
+  const primeSection = useCallback(
+    (idx: number) => {
+      const text = speechSections[idx];
+      if (text?.trim()) {
+        primeSpeakGesture(text, { parentHub: true });
+      }
+    },
+    [speechSections, primeSpeakGesture],
+  );
 
   // Re-speak whenever the active section index changes. Effect-driven so
   // both per-section taps AND onFinished-triggered advances funnel through
@@ -223,7 +236,11 @@ function ArticleModal({
 
           {/* Listen to article — top-level full-read CTA */}
           <div className="flex flex-wrap items-center gap-3 pt-1">
-            <Button type="button" onClick={fullState === "idle" ? playFromStart : stopPlayback} data-testid="listen-article-btn" className="rounded-full gap-2 shadow-sm" style={fullState === "idle" ? {
+            <Button
+              type="button"
+              onPointerDown={() => primeSection(0)}
+              onClick={fullState === "idle" ? playFromStart : stopPlayback}
+              data-testid="listen-article-btn" className="rounded-full gap-2 shadow-sm" style={fullState === "idle" ? {
             background: `linear-gradient(135deg, ${hero.gradient[0]}, ${hero.gradient[1]})`,
             color: "#fff"
           } : undefined} variant={fullState === "idle" ? undefined : "secondary"}>
@@ -252,7 +269,14 @@ function ArticleModal({
           const state = sectionState(speechIdx);
           const isActive = activeIdx === speechIdx;
           const wrapperClass = `relative rounded-xl transition-all ${isActive ? "ring-2 ring-primary/40 bg-primary/5 -mx-2 px-2 py-2" : ""}`;
-          const listenBtn = <SectionListenBtn state={state} onClick={() => state === "idle" ? playSection(speechIdx) : stopPlayback()} label={`Listen to ${section.type} section`} />;
+          const listenBtn = (
+            <SectionListenBtn
+              state={state}
+              onPointerDown={() => primeSection(speechIdx)}
+              onClick={() => (state === "idle" ? playSection(speechIdx) : stopPlayback())}
+              label={`Listen to ${section.type} section`}
+            />
+          );
           if (section.type === "intro") {
             return <div key={i} className={wrapperClass}>
                   <div className="bg-muted/40 rounded-2xl p-4 border-l-4 border-primary/40 flex items-start gap-3">

@@ -73,6 +73,7 @@ export * from "./spelling_competition_scores";
 export * from "./spelling_sessions";
 export * from "./spelling_tournaments";
 export * from "./olympiad_scores";
+export * from "./olympiad_child_stats";
 export * from "./vaccination_logs";
 export * from "./infant_milestone_progress";
 export * from "./infant_care_logs";

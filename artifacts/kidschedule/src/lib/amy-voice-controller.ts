@@ -14,6 +14,8 @@ import {
   createSpeakRequest,
   isCurrentSpeakRequest,
   invalidateSpeakRequests,
+  bumpAudioIntentEpoch,
+  isCurrentAudioIntent,
   isControlledAudioStop,
   runWithControlledAudioStop,
   warnExternalAudioStop,
@@ -29,12 +31,14 @@ import {
   assertVerbatimParentHubText,
   isParentHubAudioIdentity,
   logParentHubAudioIdentity,
+  parentHubPipelineCacheKey,
   type ParentHubAudioIdentity,
 } from "@/lib/parent-hub-audio-identity";
 import {
   assertVerbatimCoachText,
   isCoachAudioIdentity,
   logCoachAudioIdentity,
+  coachPipelineCacheKey,
   type CoachAudioIdentity,
 } from "@/lib/coach-audio-identity";
 import { buildAdaptiveDelivery } from "@/lib/amy-voice-emotion";
@@ -110,6 +114,28 @@ import {
 } from "@/lib/amy-voice-playback-contract";
 import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
 import type { AuthFetchFn } from "@/lib/poll-result";
+import { amyVoicePlaybackFsm } from "@/lib/audio-playback-state-machine";
+import {
+  mapToAudioSourceLayer,
+  resolveAudioReliabilityModule,
+  recordSpeechCoachCacheOutcome,
+  trackAudioCancelled,
+  trackAudioPlayFailed,
+  trackAudioPlayStarted,
+  trackAudioRequest,
+  trackAudioTimeout,
+  finishAudioRequest,
+} from "@/lib/audio-reliability-telemetry";
+import {
+  coalesceAudioRequest,
+  resolveSpeakCoalesceKey,
+} from "@/lib/audio-request-coalescer";
+import {
+  enqueueFifoPlayback,
+  getQueuePolicy,
+  recordQueueInterruption,
+} from "@/lib/audio-playback-queue";
+import { recordHotCachePlay } from "@/lib/audio-hot-cache";
 
 export type AmyVoiceStatus = "idle" | "loading" | "playing";
 
@@ -246,6 +272,40 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
   private snapshot: AmyVoiceControllerSnapshot = snapshotFromStatus("idle", null, 0, null);
   private listeners = new Set<SnapshotListener>();
   private abortController: AbortController | null = null;
+  private loadingWatchdogTimer: ReturnType<typeof setTimeout> | null = null;
+  private activeReliabilityRequestId: string | null = null;
+
+  constructor() {
+    amyVoicePlaybackFsm.setWatchdogHandler((rid) => {
+      const requestId = Number.parseInt(rid, 10);
+      if (!Number.isFinite(requestId)) return;
+      trackAudioTimeout(this.activeReliabilityRequestId ?? rid, "audio_start_timeout");
+      if (this.abortController) this.abortController.abort();
+      amyVoicePlaybackFsm.markFailed(rid, "audio_start_timeout");
+    });
+  }
+
+  private clearLoadingWatchdog(): void {
+    if (this.loadingWatchdogTimer != null) {
+      clearTimeout(this.loadingWatchdogTimer);
+      this.loadingWatchdogTimer = null;
+    }
+  }
+
+  private armLoadingWatchdog(requestId: number, runtime: AmyVoiceRuntime, rawText: string, opts?: SpeakOptions): void {
+    this.clearLoadingWatchdog();
+    this.loadingWatchdogTimer = setTimeout(() => {
+      if (!isCurrentSpeakRequest(requestId)) return;
+      if (this.snapshot.status !== "loading") return;
+      trackAudioTimeout(this.activeReliabilityRequestId ?? String(requestId), "controller_loading_timeout");
+      amyVoicePlaybackFsm.markFailed(String(requestId), "controller_loading_timeout");
+      this.stopCurrentAudio();
+      void this.handleAudioFailure(
+        { success: false, error: "audio_start_timeout" },
+        { requestId, rawText, opts, runtime },
+      );
+    }, 3_000);
+  }
 
   subscribe(listener: SnapshotListener): () => void {
     this.listeners.add(listener);
@@ -288,6 +348,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
     // Phonics player is a separate single owner — stop it too so a new tap can
     // never overlap a still-playing phoneme/blend.
     stopPhonicsPlayback("controller_stop");
+    recordQueueInterruption();
     runWithControlledAudioStop(() => {
       if (this.abortController) {
         this.abortController.abort();
@@ -304,6 +365,13 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
     }
     const requestId = invalidateSpeakRequests();
     logTts({ reason: "pause", requestId });
+    if (this.activeReliabilityRequestId) {
+      trackAudioCancelled(this.activeReliabilityRequestId);
+      finishAudioRequest(this.activeReliabilityRequestId);
+      this.activeReliabilityRequestId = null;
+    }
+    this.clearLoadingWatchdog();
+    amyVoicePlaybackFsm.reset();
     this.stopCurrentAudio();
     this.publish(snapshotFromStatus("idle", null, requestId, null));
   }
@@ -359,32 +427,54 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
     if (!ctx.runtime.isMounted || ctx.runtime.isMounted()) {
       ctx.runtime.onPlaybackFailure?.({
-        message: "Audio failed. Tap to retry.",
+        message: "Audio unavailable. Retrying…",
         error,
         retry,
       });
       this.transition(ctx.requestId, "idle", error, null);
     }
 
+    if (this.activeReliabilityRequestId) {
+      trackAudioPlayFailed(
+        this.activeReliabilityRequestId,
+        error,
+        mapToAudioSourceLayer(layer),
+      );
+      finishAudioRequest(this.activeReliabilityRequestId);
+      this.activeReliabilityRequestId = null;
+    }
+    this.clearLoadingWatchdog();
+    amyVoicePlaybackFsm.markFailed(String(ctx.requestId), error);
+
     logTts({ event: "final_guard", status: "error", error });
     return { success: false, error, layer, handled: true };
   }
 
-  /** User intent: speak text. Latest tap wins. */
+  /** User intent: speak text. Latest tap wins (interrupt modules) or FIFO queue (hub/lessons). */
   speak(
     rawText: string,
     opts: SpeakOptions | undefined,
     runtime: AmyVoiceRuntime,
   ): Promise<SpeakResult> {
-    return speakExecutor
-      .runLatest(() => this.runSpeak(rawText, opts, runtime))
-      .catch((err: unknown) => {
-        if ((err as { code?: string })?.code === "tts_superseded") {
-          logTts({ reason: "superseded" });
-          return { success: false, error: "tts_stale" };
-        }
-        throw err;
-      });
+    const module = resolveAudioReliabilityModule({
+      speakOpts: opts,
+      blending: !!opts?.word,
+    });
+    const coalesceKey = resolveSpeakCoalesceKey(rawText, opts, module);
+    const run = () => this.runSpeak(rawText, opts, runtime);
+    const exec = coalesceKey ? () => coalesceAudioRequest(coalesceKey, run) : run;
+    const onReject = (err: unknown) => {
+      if ((err as { code?: string })?.code === "tts_superseded") {
+        logTts({ reason: "superseded" });
+        return { success: false, error: "tts_stale" };
+      }
+      throw err;
+    };
+
+    if (getQueuePolicy(module) === "fifo") {
+      return exec().catch(onReject);
+    }
+    return speakExecutor.runLatest(exec).catch(onReject);
   }
 
   private async runSpeak(
@@ -408,6 +498,11 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
     }
 
     const requestId = createSpeakRequest();
+    const intentEpoch = bumpAudioIntentEpoch();
+    const reliabilityModule = resolveAudioReliabilityModule({
+      speakOpts: opts,
+      blending: !!opts?.word,
+    });
 
     if (opts?.parentHub) {
       const identity = opts.audioIdentity;
@@ -463,14 +558,24 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
     startAudioHealthSpeak(opts);
     recordTtsUserGesture();
-    this.stopCurrentAudio();
+    if (getQueuePolicy(reliabilityModule) === "interrupt") {
+      this.stopCurrentAudio();
+    }
     this.abortController = new AbortController();
     const activePhrase = text.toLowerCase();
+    this.activeReliabilityRequestId = trackAudioRequest({
+      module: reliabilityModule,
+      audioIdentity: text.slice(0, 120),
+    });
+    amyVoicePlaybackFsm.beginRequest(String(requestId));
     this.transition(requestId, "loading", null, activePhrase);
+    this.armLoadingWatchdog(requestId, runtime, rawText, opts);
 
     if (isPhonicsHubFastClip(text, opts)) {
       try {
         this.transition(requestId, "playing", null, activePhrase);
+        amyVoicePlaybackFsm.markPlaying(String(requestId));
+        this.clearLoadingWatchdog();
         const fast = await speakPhonicsFastClip(text, {
           phoneme: opts?.phoneme,
           playbackRate: opts?.playbackRate ?? runtime.playbackRate ?? 1,
@@ -481,6 +586,15 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         }
         if (fast.success) {
           resetGuardFailures();
+          if (this.activeReliabilityRequestId) {
+            trackAudioPlayStarted(
+              this.activeReliabilityRequestId,
+              mapToAudioSourceLayer(fast.layer),
+            );
+            finishAudioRequest(this.activeReliabilityRequestId);
+            this.activeReliabilityRequestId = null;
+          }
+          amyVoicePlaybackFsm.markCompleted(String(requestId));
           logAudioHealthSuccess({
             layer: mapAmyLayerToHealthLayer(fast.layer),
             fallbackUsed: fast.layer === "emergency_local",
@@ -511,6 +625,9 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
         opts?.audioIdentity && "paragraphIdx" in opts.audioIdentity
           ? opts.audioIdentity.paragraphIdx
           : undefined,
+      intentEpoch,
+      reliabilityModule,
+      reliabilityRequestId: this.activeReliabilityRequestId,
       isCancelled: () => !isCurrentSpeakRequest(requestId),
       onFinished: () => {
         if (!isCurrentSpeakRequest(requestId)) return;
@@ -622,17 +739,33 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       }
 
       this.transition(requestId, "playing", null, activePhrase);
+      amyVoicePlaybackFsm.markPlaying(String(requestId));
+      this.clearLoadingWatchdog();
 
       const pipelineMode = finalizedPolicy!.pipelineMode;
-      const result = await speakAmyVoice(
-        finalizedPolicy!.normalizedText,
-        {
-          ...opts,
-          mode: pipelineMode,
-          speechPolicy: finalizedPolicy,
-        },
-        pipelineCtx,
-      );
+      const invokePipeline = () =>
+        speakAmyVoice(
+          finalizedPolicy!.normalizedText,
+          {
+            ...opts,
+            mode: pipelineMode,
+            speechPolicy: finalizedPolicy,
+          },
+          pipelineCtx,
+        );
+
+      const result =
+        getQueuePolicy(reliabilityModule) === "fifo"
+          ? await new Promise<Awaited<ReturnType<typeof speakAmyVoice>>>((resolve) => {
+              enqueueFifoPlayback(async () => {
+                if (!isCurrentAudioIntent(intentEpoch) || !isCurrentSpeakRequest(requestId)) {
+                  resolve({ success: false, error: "tts_stale" });
+                  return;
+                }
+                resolve(await invokePipeline());
+              });
+            })
+          : await invokePipeline();
 
       if (!isCurrentSpeakRequest(requestId)) {
         logTts({ reason: "stale_request", requestId, phase: "post_pipeline" });
@@ -681,6 +814,29 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
       }
 
       resetGuardFailures();
+      if (this.activeReliabilityRequestId) {
+        trackAudioPlayStarted(
+          this.activeReliabilityRequestId,
+          mapToAudioSourceLayer(result.layer),
+        );
+        finishAudioRequest(this.activeReliabilityRequestId);
+        this.activeReliabilityRequestId = null;
+      }
+      if (opts?.coach) {
+        const hit = result.layer === "static" || result.layer === "cache";
+        recordSpeechCoachCacheOutcome(
+          text,
+          hit,
+          result.layer === "static" ? "static" : result.layer === "cache" ? "cache" : "dynamic",
+        );
+        if (isCoachAudioIdentity(opts.audioIdentity)) {
+          recordHotCachePlay(coachPipelineCacheKey(opts.audioIdentity));
+        }
+      }
+      if (opts?.parentHub && isParentHubAudioIdentity(opts.audioIdentity)) {
+        recordHotCachePlay(parentHubPipelineCacheKey(opts.audioIdentity));
+      }
+      amyVoicePlaybackFsm.markCompleted(String(requestId));
       logTts({ event: "final_guard", status: "success" });
       logAudioHealthSuccess({
         layer: mapAmyLayerToHealthLayer(result.layer),

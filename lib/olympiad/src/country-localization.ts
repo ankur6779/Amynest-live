@@ -156,11 +156,12 @@ const LOCALIZE_REPLACEMENTS: Record<string, Array<[RegExp, string]>> = {
   ],
 };
 
-/** Apply light country swaps to dataset questions (GK + word problems). */
+/** Apply light country swaps — skipped for global-first bank rows. */
 export function localizeOlympiadQuestion(
   q: OlympiadQuestion,
   country: string,
 ): OlympiadQuestion {
+  if (q.countryCode === "GLOBAL") return q;
   const key = normalizeOlympiadCountry(country);
   if (key === "IN") return q;
   const rules = LOCALIZE_REPLACEMENTS[key] ?? [];

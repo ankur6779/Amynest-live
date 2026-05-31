@@ -129,7 +129,7 @@ async function generateBatchForJob(
     case "smart_study": {
       const level = Number(job.params.level ?? 1) as Level;
       const subject = String(job.params.subject ?? "addition") as SmartSubjectId;
-      const country = String(job.params.country ?? "IN");
+      const country = String(job.params.country ?? "US");
       const ageYears = Math.min(3 + level, 12);
       const result = await runSmartStudyNextQuestions({
         level,
@@ -145,7 +145,7 @@ async function generateBatchForJob(
       const ageBand = String(job.params.ageBand ?? "junior") as OlympiadAgeBand;
       const difficulty = String(job.params.difficulty ?? "medium") as OlympiadDifficulty;
       const subject = String(job.params.subject ?? "math") as OlympiadSubject;
-      const country = String(job.params.country ?? "IN");
+      const country = String(job.params.country ?? "US");
       const ageYears = OLYMPIAD_AGE_YEARS[ageBand];
       const aiRaw = await runOlympiadNextQuestions({
         ageBand,

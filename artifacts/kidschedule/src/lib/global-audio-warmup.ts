@@ -11,11 +11,13 @@ import {
 import { audioManager } from "@/lib/audio-manager";
 import {
   deleteGlobalAudioCacheEntry,
+  evictOldestUnpinnedGlobalAudioEntry,
   getGlobalAudioCacheEntry,
   getGlobalCachedAudioForPlayback,
   globalAudioCacheKeys,
   globalAudioCacheSize,
   hasGlobalAudioCacheEntry,
+  pinGlobalAudioCacheKey,
   setGlobalAudioCacheEntry,
 } from "@/lib/global-audio-cache";
 import { logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
@@ -29,13 +31,15 @@ import {
 } from "@/lib/phonics-audio-map";
 import { lookupStaticAudioUrl, prefetchStaticAudioUrl } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
+import { recordDecodeLatency } from "@/lib/audio-latency-metrics";
+import type { AudioReliabilityModule } from "@/lib/audio-reliability-telemetry";
 
 export { getGlobalCachedAudioForPlayback };
 
 const BATCH_SIZE = 5;
 const BATCH_GAP_MS = 50;
-/** Hold decoded clips for all letter/digraph/blend + hot CVC (~65); tier-3 uses IndexedDB only. */
-const MAX_AUDIO_CACHE = 72;
+/** Hold decoded clips for phonemes, blends, digraphs + coach prompts (Phase 10). */
+const MAX_AUDIO_CACHE = 120;
 const REPRIME_DEBOUNCE_MS = 2_000;
 
 const HIGH_PRIORITY = [...PHONICS_PREWARM_TIER_HIGH] as const;
@@ -43,8 +47,8 @@ const SPELLING_COMMON_WORDS = ["cat", "bat", "mat", "dog", "sun", "run"] as cons
 
 const SPEECH_COACH_DEFAULT_PHRASES = getCoachDialogueWarmupPhrases();
 
-const SPEECH_COACH_WARMUP_MERGE_LIMIT = 12;
-const SPEECH_COACH_WARMUP_CACHE_LIMIT = 8;
+const SPEECH_COACH_WARMUP_MERGE_LIMIT = 24;
+const SPEECH_COACH_WARMUP_CACHE_LIMIT = 20;
 
 type AudioWarmItem = { cacheKey: string; url: string; localKey?: string };
 
@@ -91,20 +95,47 @@ function shouldPreload(_key: string): boolean {
 
 function enforceCacheLimit(): void {
   while (globalAudioCacheSize() > MAX_AUDIO_CACHE) {
-    const firstKey = globalAudioCacheKeys().next().value;
-    if (!firstKey) break;
-    const audio = getGlobalAudioCacheEntry(firstKey);
-    if (audio) {
-      if (currentAudio === audio) currentAudio = null;
-      try {
-        audio.pause();
-        audio.removeAttribute("src");
-        audio.load();
-      } catch {
-        /* ignore */
-      }
-    }
-    deleteGlobalAudioCacheEntry(firstKey);
+    if (!evictOldestUnpinnedGlobalAudioEntry()) break;
+  }
+}
+
+function warmupModuleForCacheKey(cacheKey: string): AudioReliabilityModule {
+  if (cacheKey.startsWith("parent:")) return "parent_hub";
+  if (cacheKey.startsWith("coach:")) return "speech_coach";
+  if (cacheKey.startsWith("phonics:") || cacheKey.includes("blend")) return "phonics";
+  return "other";
+}
+
+async function loadAudio(
+  cacheKey: string,
+  url: string,
+  localKey?: string,
+  pin = false,
+): Promise<void> {
+  if (hasGlobalAudioCacheEntry(cacheKey)) {
+    if (pin) pinGlobalAudioCacheKey(cacheKey);
+    return;
+  }
+  if (!url) return;
+
+  void warmLocalCacheFromUrl(localKey ?? cacheKey, url);
+  prefetchStaticAudioUrl(url);
+
+  const audio = getReusableAudio(cacheKey, url);
+  const module = warmupModuleForCacheKey(cacheKey);
+
+  try {
+    const decodeStart = performance.now();
+    audio.load();
+    await loadAudioReady(audio);
+    recordDecodeLatency(module, performance.now() - decodeStart);
+    await safePrimeAudio(audio);
+    setGlobalAudioCacheEntry(cacheKey, audio);
+    if (pin) pinGlobalAudioCacheKey(cacheKey);
+    enforceCacheLimit();
+    audioManager.getCached(url, { forceReload: false });
+  } catch {
+    console.warn("audio preload failed", cacheKey);
   }
 }
 
@@ -195,31 +226,10 @@ async function warmBatchKeys(
 async function warmBatchItems(items: AudioWarmItem[]): Promise<void> {
   for (let i = 0; i < items.length; i += BATCH_SIZE) {
     const batch = items.slice(i, i + BATCH_SIZE);
-    await Promise.all(batch.map((item) => loadAudio(item.cacheKey, item.url, item.localKey)));
+    await Promise.all(batch.map((item) => loadAudio(item.cacheKey, item.url, item.localKey, true)));
     if (i + BATCH_SIZE < items.length) {
       await new Promise((res) => setTimeout(res, BATCH_GAP_MS));
     }
-  }
-}
-
-async function loadAudio(cacheKey: string, url: string, localKey?: string): Promise<void> {
-  if (hasGlobalAudioCacheEntry(cacheKey)) return;
-  if (!url) return;
-
-  void warmLocalCacheFromUrl(localKey ?? cacheKey, url);
-  prefetchStaticAudioUrl(url);
-
-  const audio = getReusableAudio(cacheKey, url);
-
-  try {
-    audio.load();
-    await loadAudioReady(audio);
-    await safePrimeAudio(audio);
-    setGlobalAudioCacheEntry(cacheKey, audio);
-    enforceCacheLimit();
-    audioManager.getCached(url, { forceReload: false });
-  } catch {
-    console.warn("audio preload failed", cacheKey);
   }
 }
 
@@ -238,7 +248,7 @@ async function warmPhonicsPrewarmItems(
     await Promise.all(
       batch.map((item) =>
         includeMemory
-          ? loadAudio(item.memoryCacheKey, item.url, item.localCacheKey)
+          ? loadAudio(item.memoryCacheKey, item.url, item.localCacheKey, item.tier <= 2)
           : loadAudioDiskOnly(item.localCacheKey, item.url),
       ),
     );

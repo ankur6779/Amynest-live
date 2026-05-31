@@ -8,11 +8,13 @@ import {
   db,
   childrenTable,
   olympiadScoresTable,
+  olympiadChildStatsTable,
   parentProfilesTable,
 } from "@workspace/db";
 import {
   computeOlympiadScore,
   pickDailyQuestions,
+  pickDailyQuestionsWeighted,
   pickWeeklyQuestions,
   pickPracticeQuestions,
   pickTrackQuestions,
@@ -29,6 +31,8 @@ import {
   getOrCreateSubscription,
   isPremiumNow,
 } from "../services/subscriptionService";
+import { runOlympiadHint, localOlympiadHint } from "../services/domain-ai/olympiad-hint.js";
+import { runOlympiadInsight } from "../services/domain-ai/olympiad-insight.js";
 
 const router: IRouter = Router();
 
@@ -354,6 +358,7 @@ const NextQuestionsBody = z.object({
   country: z.string().min(2).max(8).optional(),
   dateKey: z.string().optional(),
   excludeIds: z.array(z.string()).max(200).optional(),
+  weakSubjects: z.array(subjectSchema).max(4).optional(),
 });
 
 function staticPick(input: {
@@ -365,11 +370,20 @@ function staticPick(input: {
   trackId?: OlympiadTrackId;
   count: number;
   dateKey?: string;
+  weakSubjects?: OlympiadSubject[];
 }): OlympiadQuestion[] {
   const dateKey = input.dateKey ?? weekStartIso();
   switch (input.kind) {
     case "daily":
-      return pickDailyQuestions(input.ageBand, input.difficulty, dateKey, input.childKey);
+      return input.weakSubjects?.length
+        ? pickDailyQuestionsWeighted(
+            input.ageBand,
+            input.difficulty,
+            dateKey,
+            input.childKey,
+            input.weakSubjects,
+          )
+        : pickDailyQuestions(input.ageBand, input.difficulty, dateKey, input.childKey);
     case "weekly":
       return pickWeeklyQuestions(input.ageBand, dateKey, input.childKey);
     case "practice":
@@ -426,24 +440,43 @@ router.post("/olympiad/next-questions", async (req, res): Promise<void> => {
     const dateKey = body.dateKey ?? (body.kind === "daily" ? todayIsoUtc() : weekStartIso());
 
     let source: "ai" | "dataset" = "dataset";
-    let questions: OlympiadQuestion[] = [];
 
-    const primarySubject: OlympiadSubject | "mixed" =
-      body.kind === "daily"
-        ? "mixed"
-        : body.subject ??
-          (body.trackId === "nso"
-            ? "science"
-            : body.trackId === "gk_olympiad"
-              ? "gk"
-              : body.trackId === "math_olympiad"
-                ? "math"
-                : "math");
+    const staticQs = staticPick({
+      kind: body.kind,
+      ageBand: body.ageBand,
+      difficulty: body.difficulty,
+      childKey: body.childId,
+      subject: body.subject,
+      trackId: body.trackId,
+      count,
+      dateKey,
+      weakSubjects: body.weakSubjects,
+    }) as OlympiadQuestion[];
 
-    if (
-      isPremium &&
-      (body.kind === "daily" || body.kind === "practice" || body.kind === "track")
-    ) {
+    const localized = finalizeLocalizedSet(
+      staticQs,
+      country,
+      body.ageBand,
+      body.difficulty,
+      exclude,
+    );
+
+    let questions = filterExcluded(localized, exclude).slice(0, count);
+
+    // AI top-up only when the local bank cannot fill the request (after exclusions).
+    if (questions.length < count && isPremium) {
+      const primarySubject: OlympiadSubject | "mixed" =
+        body.kind === "daily"
+          ? "mixed"
+          : body.subject ??
+            (body.trackId === "nso"
+              ? "science"
+              : body.trackId === "gk_olympiad"
+                ? "gk"
+                : body.trackId === "math_olympiad"
+                  ? "math"
+                  : "math");
+
       const aiRows = await generateOlympiadWithAi(
         {
           ageBand: body.ageBand,
@@ -451,50 +484,30 @@ router.post("/olympiad/next-questions", async (req, res): Promise<void> => {
           subject: primarySubject,
           country,
           ageYears: child.age ?? 8,
-          count,
-          excludeIds: [...exclude],
+          count: count - questions.length,
+          excludeIds: [...exclude, ...questions.map((q) => q.id)],
         },
         userId,
       );
       if (aiRows?.length) {
-        questions = aiRows.map((row, i) =>
-          aiQuestionsToOlympiad(
-            [row],
-            row.subject,
-            body.ageBand,
-            body.difficulty,
-            country,
-            `${body.kind}-${body.childId}-${i}`,
-          )[0]!,
-        ).filter(Boolean);
-        source = "ai";
+        const aiQs = aiRows
+          .map((row, i) =>
+            aiQuestionsToOlympiad(
+              [row],
+              row.subject,
+              body.ageBand,
+              body.difficulty,
+              country,
+              `${body.kind}-${body.childId}-topup-${i}`,
+            )[0]!,
+          )
+          .filter(Boolean);
+        const need = count - questions.length;
+        questions = [...questions, ...aiQs.slice(0, need)];
+        if (questions.length >= count && aiQs.length >= need) {
+          source = "ai";
+        }
       }
-    }
-
-    if (questions.length < count) {
-      const staticQs = staticPick({
-        kind: body.kind,
-        ageBand: body.ageBand,
-        difficulty: body.difficulty,
-        childKey: body.childId,
-        subject: body.subject,
-        trackId: body.trackId,
-        count,
-        dateKey,
-      }) as OlympiadQuestion[];
-
-      const localized = finalizeLocalizedSet(
-        staticQs,
-        country,
-        body.ageBand,
-        body.difficulty,
-        exclude,
-      );
-
-      const need = count - questions.length;
-      const topUp = filterExcluded(localized, new Set([...exclude, ...questions.map((q) => q.id)]));
-      questions = [...questions, ...topUp.slice(0, need)];
-      if (source !== "ai") source = "dataset";
     }
 
     res.json({
@@ -524,5 +537,236 @@ router.post("/olympiad/next-questions", async (req, res): Promise<void> => {
 function todayIsoUtc(d = new Date()): string {
   return d.toISOString().slice(0, 10);
 }
+
+// ─── GET/POST /api/olympiad/stats ────────────────────────────────────────────
+
+const StatsBody = z.object({
+  childId: z.number().int().positive(),
+  stats: z.record(z.string(), z.unknown()),
+  clientUpdatedAt: z.string().optional(),
+});
+
+router.get("/olympiad/stats", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const parsed = z
+    .object({ childId: z.coerce.number().int().positive() })
+    .safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    return;
+  }
+
+  const child = await loadOwnedChild(parsed.data.childId, userId);
+  if (!child) {
+    res.status(404).json({ error: "child_not_found" });
+    return;
+  }
+
+  const rows = await db
+    .select()
+    .from(olympiadChildStatsTable)
+    .where(eq(olympiadChildStatsTable.childId, parsed.data.childId))
+    .limit(1);
+
+  const row = rows[0];
+  res.json({
+    ok: true,
+    stats: row?.statsJson ?? null,
+    clientUpdatedAt: row?.clientUpdatedAt ?? null,
+    serverUpdatedAt: row?.updatedAt?.toISOString() ?? null,
+  });
+});
+
+router.post("/olympiad/stats", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const parsed = StatsBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return;
+  }
+
+  const child = await loadOwnedChild(parsed.data.childId, userId);
+  if (!child) {
+    res.status(404).json({ error: "child_not_found" });
+    return;
+  }
+
+  const now = new Date();
+  const existing = await db
+    .select()
+    .from(olympiadChildStatsTable)
+    .where(eq(olympiadChildStatsTable.childId, parsed.data.childId))
+    .limit(1);
+
+  const incomingAt = parsed.data.clientUpdatedAt ?? now.toISOString();
+  const existingAt = existing[0]?.clientUpdatedAt;
+
+  if (existingAt && existingAt > incomingAt) {
+    res.json({
+      ok: true,
+      merged: false,
+      stats: existing[0]!.statsJson,
+      clientUpdatedAt: existingAt,
+    });
+    return;
+  }
+
+  const [row] = await db
+    .insert(olympiadChildStatsTable)
+    .values({
+      childId: parsed.data.childId,
+      userId,
+      statsJson: parsed.data.stats,
+      clientUpdatedAt: incomingAt,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: olympiadChildStatsTable.childId,
+      set: {
+        statsJson: parsed.data.stats,
+        clientUpdatedAt: incomingAt,
+        updatedAt: now,
+      },
+    })
+    .returning({
+      statsJson: olympiadChildStatsTable.statsJson,
+      clientUpdatedAt: olympiadChildStatsTable.clientUpdatedAt,
+    });
+
+  res.json({
+    ok: true,
+    merged: true,
+    stats: row!.statsJson,
+    clientUpdatedAt: row!.clientUpdatedAt,
+  });
+});
+
+// ─── POST /api/olympiad/hint ─────────────────────────────────────────────────
+
+const HintBody = z.object({
+  childId: z.number().int().positive(),
+  question: z.string().min(1).max(500),
+  options: z.array(z.string()).min(2).max(4),
+  explanation: z.string().optional(),
+  correctOption: z.string().optional(),
+  difficulty: difficultySchema.default("easy"),
+});
+
+router.post("/olympiad/hint", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const parsed = HintBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return;
+  }
+
+  const child = await loadOwnedChild(parsed.data.childId, userId);
+  if (!child) {
+    res.status(404).json({ error: "child_not_found" });
+    return;
+  }
+
+  const sub = await getOrCreateSubscription(userId);
+  const isPremium = isPremiumNow(sub);
+
+  let hint: string | null = null;
+  let source: "ai" | "local" = "local";
+
+  if (isPremium) {
+    hint = await runOlympiadHint({
+      question: parsed.data.question,
+      options: parsed.data.options,
+      difficulty: parsed.data.difficulty,
+      ageYears: child.age ?? 8,
+    });
+    if (hint) source = "ai";
+  }
+
+  if (!hint) {
+    hint = localOlympiadHint(
+      parsed.data.explanation ?? "",
+      parsed.data.correctOption ?? "",
+    );
+  }
+
+  res.json({ ok: true, hint, source, isPremium });
+});
+
+// ─── POST /api/olympiad/insight ──────────────────────────────────────────────
+
+const InsightBody = z.object({
+  childId: z.number().int().positive(),
+  totalPoints: z.number().int().min(0),
+  streak: z.number().int().min(0),
+  overallAccuracyPct: z.number().int().min(0).max(100),
+  bySubject: z.record(
+    z.string(),
+    z.object({ correct: z.number().int().min(0), total: z.number().int().min(0) }),
+  ),
+});
+
+router.post("/olympiad/insight", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const parsed = InsightBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return;
+  }
+
+  const child = await loadOwnedChild(parsed.data.childId, userId);
+  if (!child) {
+    res.status(404).json({ error: "child_not_found" });
+    return;
+  }
+
+  const sub = await getOrCreateSubscription(userId);
+  const isPremium = isPremiumNow(sub);
+
+  const bySubject = parsed.data.bySubject as Record<
+    OlympiadSubject,
+    { correct: number; total: number }
+  >;
+
+  if (!isPremium) {
+    res.json({ ok: true, source: "template", isPremium: false });
+    return;
+  }
+
+  const ai = await runOlympiadInsight({
+    childName: child.name,
+    ageYears: child.age ?? 8,
+    totalPoints: parsed.data.totalPoints,
+    streak: parsed.data.streak,
+    overallAccuracyPct: parsed.data.overallAccuracyPct,
+    bySubject,
+  });
+
+  if (!ai) {
+    res.json({ ok: true, source: "template", isPremium: true });
+    return;
+  }
+
+  res.json({ ok: true, source: "ai", isPremium: true, ...ai });
+});
 
 export default router;

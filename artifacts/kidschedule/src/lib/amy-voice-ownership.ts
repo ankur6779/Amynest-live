@@ -18,7 +18,24 @@ export function isCurrentSpeakRequest(requestId: number): boolean {
 
 /** Explicit pause / supersede — returns the new active request id. */
 export function invalidateSpeakRequests(): number {
+  bumpAudioIntentEpoch();
   return createSpeakRequest();
+}
+
+/** Monotonic epoch — latest user intent wins; stale downloads must not play. */
+let audioIntentEpoch = 0;
+
+export function bumpAudioIntentEpoch(): number {
+  audioIntentEpoch += 1;
+  return audioIntentEpoch;
+}
+
+export function getAudioIntentEpoch(): number {
+  return audioIntentEpoch;
+}
+
+export function isCurrentAudioIntent(epoch: number): boolean {
+  return epoch === audioIntentEpoch;
 }
 
 export function getActiveSpeakRequestId(): number {

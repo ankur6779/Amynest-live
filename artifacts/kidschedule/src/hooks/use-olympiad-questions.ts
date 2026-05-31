@@ -9,6 +9,7 @@ import type {
 } from "@workspace/olympiad";
 import {
   pickDailyQuestions,
+  pickDailyQuestionsWeighted,
   pickPracticeQuestions,
   pickTrackQuestions,
   pickWeeklyQuestions,
@@ -39,6 +40,7 @@ export interface OlympiadQuestionRequest {
   count?: number;
   dateKey?: string;
   enabled?: boolean;
+  weakSubjects?: OlympiadSubject[];
 }
 
 const SEEN_KEY = (childId: number) => `olympiad:seen:v1:${childId}`;
@@ -88,7 +90,9 @@ function offlineFallback(req: OlympiadQuestionRequest): OlympiadQuestion[] {
   let picks: OlympiadQuestion[] = [];
   switch (req.kind) {
     case "daily":
-      picks = pickDailyQuestions(req.ageBand, req.difficulty, dateKey, childKey);
+      picks = req.weakSubjects?.length
+        ? pickDailyQuestionsWeighted(req.ageBand, req.difficulty, dateKey, childKey, req.weakSubjects)
+        : pickDailyQuestions(req.ageBand, req.difficulty, dateKey, childKey);
       break;
     case "weekly":
       picks = pickWeeklyQuestions(req.ageBand, dateKey, childKey);
@@ -165,6 +169,7 @@ export function useOlympiadQuestionSet(
           country: req.country,
           dateKey,
           excludeIds: [...readSeen(req.childId)],
+          weakSubjects: req.weakSubjects,
         }),
       });
 

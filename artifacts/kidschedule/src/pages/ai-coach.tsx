@@ -2848,7 +2848,7 @@ export function ListenButton({
   win: Win;
   planCacheKey?: string;
 }) {
-  const { speak, pause, loading } = useAmyVoice();
+  const { speak, pause, loading, primeSpeakGesture } = useAmyVoice();
   const [isListening, setIsListening] = useState(false);
   const audioIdentity = useMemo(() => {
     const key = (planCacheKey ?? "").trim();
@@ -2860,6 +2860,10 @@ export function ListenButton({
     }
   }, [planCacheKey, win]);
   const buildText = useCallback(() => buildCoachWinListenText(win), [win]);
+  const primeListen = useCallback(() => {
+    const text = buildText();
+    primeSpeakGesture(text, audioIdentity ? { coach: true, audioIdentity } : undefined);
+  }, [buildText, primeSpeakGesture, audioIdentity]);
   const handleClick = () => {
     if (isListening || loading) {
       pause();
@@ -2890,7 +2894,7 @@ export function ListenButton({
     alignItems: "center",
     gap: 6
   }} data-testid="coach-listen-row">
-      <button type="button" onClick={handleClick} data-testid="coach-listen-btn" style={{
+      <button type="button" onPointerDown={primeListen} onClick={handleClick} data-testid="coach-listen-btn" style={{
       fontSize: 11,
       padding: "4px 10px",
       borderRadius: 999,

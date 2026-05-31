@@ -1160,7 +1160,8 @@ function OrigamiStepsModal({
   const {
     speak,
     pause,
-    speaking
+    speaking,
+    primeSpeakGesture,
   } = useAmyVoice();
   const goTo = useCallback((next: number) => {
     setStep(next);
@@ -1220,6 +1221,13 @@ function OrigamiStepsModal({
     },
     [voiceOn, phase, step, item.steps, item.id, speak],
   );
+
+  const primeCurrentStep = useCallback(() => {
+    const instruction = item.steps[step]?.instruction?.trim();
+    if (instruction) {
+      primeSpeakGesture(instruction, { parentHub: true });
+    }
+  }, [item.steps, step, primeSpeakGesture]);
 
   useEffect(() => {
     if (!voiceOn || phase !== "steps") return;
@@ -1436,7 +1444,9 @@ function OrigamiStepsModal({
                 </button>
 
                 {/* Replay */}
-                <button onClick={() => {
+                <button
+                  onPointerDown={primeCurrentStep}
+                  onClick={() => {
               replay();
               if (voiceOn) speakCurrentStep();
             }} aria-label={t("components.daily_kids_activity.replay_animation")} className="w-10 h-10 flex items-center justify-center rounded-full font-bold text-base transition-all active:scale-90" style={{

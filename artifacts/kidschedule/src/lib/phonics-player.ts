@@ -35,6 +35,24 @@ import {
   recordPhonicsZombieCleanup,
 } from "@/lib/phonics-telemetry";
 import { emitAudioPlaybackEvent } from "@/lib/audio-playback-events";
+import {
+  mapToAudioSourceLayer,
+  trackAudioPlayFailed,
+  trackAudioPlayStarted,
+  trackAudioRequest,
+  trackAudioTimeout,
+  finishAudioRequest,
+} from "@/lib/audio-reliability-telemetry";
+import { phonicsPlaybackFsm } from "@/lib/audio-playback-state-machine";
+import {
+  coalesceAudioRequest,
+  resolveAudioCoalesceKey,
+} from "@/lib/audio-request-coalescer";
+import { recordHotCachePlay } from "@/lib/audio-hot-cache";
+import {
+  recordQueueInterruption,
+  recordStaleAudioPrevented,
+} from "@/lib/audio-playback-queue";
 
 export type PhonicsPlayResult =
   | { ok: true }
@@ -223,8 +241,6 @@ export async function playPhonicsUrl(
   recordTtsUserGesture();
 
   const now = Date.now();
-  // Debounce: a rapid re-tap of the SAME clip while it is already playing is a no-op.
-  // Different clips always interrupt instantly (latest tap wins).
   if (playing && trimmed === lastUrl && now - lastStartAt < TAP_DEBOUNCE_MS) {
     log("phonics_debounce_skip", { label });
     recordPhonicsDebounceSkip(label);
@@ -232,7 +248,18 @@ export async function playPhonicsUrl(
     return { ok: true };
   }
 
-  // Claim ownership — this instantly invalidates any in-flight playback.
+  const module =
+    label.includes("blend") || label.includes("cvc") ? "blending" : "phonics";
+  const key = resolveAudioCoalesceKey(trimmed, module);
+  return coalesceAudioRequest(key, () => playPhonicsUrlInner(trimmed, label, options));
+}
+
+async function playPhonicsUrlInner(
+  trimmed: string,
+  label: string,
+  options: PhonicsPlayUrlOptions,
+): Promise<PhonicsPlayResult> {
+  const now = Date.now();
   const token = ++ownershipToken;
   const previous = activeElement;
   activeElement = null;
@@ -240,6 +267,7 @@ export async function playPhonicsUrl(
     teardownElement(previous);
     log("phonics_interrupt", { label });
     recordPhonicsInterruption(label);
+    recordQueueInterruption();
     emitAudioPlaybackEvent("audio_interrupted", {
       source: "phonics",
       phrase: label,
@@ -257,6 +285,8 @@ export async function playPhonicsUrl(
     const error = trimmed.includes("storage.googleapis.com") || !trimmed
       ? "phonics_url_blocked"
       : "phonics_empty_url";
+    const failId = trackAudioRequest({ module: "phonics", audioIdentity: label });
+    trackAudioPlayFailed(failId, error, "STATIC_GCS");
     recordPhonicsPlayFailed(label, error, { url: trimmed.slice(0, 200) });
     recordPhonicsCircuitOutcome(false, error);
     return { ok: false, error };
@@ -273,6 +303,12 @@ export async function playPhonicsUrl(
   log("phonics_play", { label, token });
   recordPhonicsPlayStart(label);
   emitAudioPlaybackEvent("audio_started", { source: "phonics", phrase: label, layer: "static" });
+  const reliabilityId = trackAudioRequest({
+    module: label.includes("blend") || label.includes("cvc") ? "blending" : "phonics",
+    audioIdentity: label,
+    sourceLayer: trimmed.startsWith("blob:") ? "LOCAL_CACHE" : "STATIC_GCS",
+  });
+  phonicsPlaybackFsm.beginRequest(reliabilityId);
 
   let settled = false;
   const settle = (result: PhonicsPlayResult): PhonicsPlayResult => {
@@ -289,8 +325,14 @@ export async function playPhonicsUrl(
     }
     if (result.ok) {
       recordPhonicsPlaySuccess(label, { url: trimmed.slice(0, 200) });
+      recordHotCachePlay(label);
+      trackAudioPlayStarted(reliabilityId, mapToAudioSourceLayer("static", { srcType: "static" }));
+      finishAudioRequest(reliabilityId);
+      phonicsPlaybackFsm.markCompleted(reliabilityId);
     } else {
       recordPhonicsPlayFailed(label, result.error, { url: trimmed.slice(0, 200) });
+      trackAudioPlayFailed(reliabilityId, result.error, "STATIC_GCS");
+      phonicsPlaybackFsm.markFailed(reliabilityId, result.error);
     }
     recordPhonicsCircuitOutcome(result.ok, result.error);
     return result;
@@ -309,6 +351,7 @@ export async function playPhonicsUrl(
     recordPhonicsStartLatency(Date.now() - now);
   } catch (err) {
     if (token !== ownershipToken) {
+      recordStaleAudioPrevented();
       log("phonics_stale_start", { label });
       return settle({ ok: false, error: "phonics_superseded" });
     }
@@ -333,6 +376,7 @@ export async function playPhonicsUrl(
   }
 
   if (token !== ownershipToken) {
+    recordStaleAudioPrevented();
     log("phonics_stale_after_start", { label });
     return settle({ ok: false, error: "phonics_superseded" });
   }

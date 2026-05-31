@@ -32,6 +32,10 @@ import {
   initGlobalAudioWarmup,
   installGlobalAudioWarmupOnGesture,
 } from "@/lib/global-audio-warmup";
+import { installAudioReliabilityDevTools } from "@/lib/audio-reliability-telemetry";
+import { installAudioAutoFixDevTools } from "@/lib/audio-auto-fix-engine";
+import { installAudioReleaseCertificationDevTools } from "@/lib/audio-release-certification";
+import { installAndroidAudioLifecycleMonitor } from "@/lib/android-audio-lifecycle";
 import { initPhonicsManifestValidation } from "@/lib/phonics-manifest-validation";
 import {
   initStartupOrchestrator,
@@ -88,10 +92,15 @@ initPhonicsManifestValidation();
 initGlobalAudioWarmup();
 preloadSpeechSynthesisVoices();
 installAmyVoiceAudioDiagnostics();
+installAudioReliabilityDevTools();
+installAudioAutoFixDevTools();
+installAudioReleaseCertificationDevTools();
+installAndroidAudioLifecycleMonitor();
 logBootContext();
 
 if (import.meta.env.DEV) {
   void import("@/lib/stress-harness").then((m) => m.installStressHarness());
+  void import("@/lib/audio-stress-harness").then((m) => m.installAudioStressHarness());
   void import("@/lib/amy-voice-field-validation").then((m) =>
     m.installAmyVoiceFieldValidationHarness(),
   );

@@ -29,6 +29,8 @@ import { ArtCraftReels } from "@/components/art-craft-reels";
 import { PrintableWorksheets } from "@/components/printable-worksheets";
 import { DailyTips } from "@/components/daily-tips";
 import { ParentingArticles } from "@/components/parenting-articles";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { warmParentHubVisibleContent } from "@/lib/parent-hub-audio-warmup";
 import { AmyIcon } from "@/components/amy-icon";
 import { FuturePredictor } from "@/components/future-predictor";
 import { LockedBlock } from "@/components/locked-block";
@@ -873,6 +875,16 @@ function ParentingHubPage() {
     }
   };
   const hubUsage = useFeatureUsage();
+  const authFetch = useAuthFetch();
+
+  useEffect(() => {
+    if (!effectiveChild || !ageGroup) return;
+    warmParentHubVisibleContent(authFetch, {
+      ageGroup,
+      ageMonths: totalAgeMonths,
+      childName: effectiveChild.name,
+    });
+  }, [authFetch, effectiveChild?.id, effectiveChild?.name, ageGroup, totalAgeMonths]);
 
   const isHubLocked = useCallback(
     (featureId: string) => {

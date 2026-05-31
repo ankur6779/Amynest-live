@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import { amyVoiceController } from "@/lib/amy-voice-controller";
 import { phonicsEngineStop } from "@/lib/phonics-audio-engine";
 import { playCvcBlendWithSpeak } from "@/lib/phonics-audio";
+import { audioManager } from "@/lib/audio-manager";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
 import {
   getCvcDisplayLetters,
   getPhonemeAudioText,
@@ -63,6 +65,11 @@ export function CvcBlendPanel({
   const current = lesson.selectedWord;
   const displayLetters = current ? getCvcDisplayLetters(current.word) : [];
   const controlsLocked = lesson.isPlaying || globalPlaying;
+
+  const primeBlendGesture = useCallback(() => {
+    recordTtsUserGesture();
+    audioManager.unlockFromUserGesture();
+  }, []);
 
   const runBlend = useCallback(
     async (opts?: { skipSlow?: boolean }) => {
@@ -198,6 +205,7 @@ export function CvcBlendPanel({
           type="button"
           size="sm"
           disabled={controlsLocked}
+          onPointerDown={primeBlendGesture}
           onClick={() => void runBlend()}
           className="rounded-full text-xs font-bold"
         >
@@ -208,6 +216,7 @@ export function CvcBlendPanel({
           size="sm"
           variant="outline"
           disabled={controlsLocked}
+          onPointerDown={primeBlendGesture}
           onClick={() => void runBlend({ skipSlow: true })}
           className="rounded-full text-xs font-bold"
         >

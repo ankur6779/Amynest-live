@@ -403,7 +403,8 @@ function PuzzleEngine({
   const {
     speak,
     pause,
-    speaking
+    speaking,
+    primeSpeakGesture,
   } = useAmyVoice();
   const cur = puzzles[idx];
   const diff = DIFF_CFG[state.difficulty];
@@ -549,9 +550,15 @@ function PuzzleEngine({
   const handleRepeat = useCallback(() => {
     pause();
     if (cur) {
-      void speakParentHub(buildPuzzleQuestionSpeakText(cur), `${cur.id}:question`, "full-required");
+      const text = buildPuzzleQuestionSpeakText(cur);
+      void speakParentHub(text, `${cur.id}:question`, "full-required");
     }
   }, [cur, speakParentHub, pause]);
+
+  const primePuzzleQuestion = useCallback(() => {
+    if (!cur) return;
+    primeSpeakGesture(buildPuzzleQuestionSpeakText(cur), { parentHub: true });
+  }, [cur, primeSpeakGesture]);
   if (puzzles.length === 0) return null;
 
   // ── Session done ─────────────────────────────────────────────────────────
@@ -582,7 +589,11 @@ function PuzzleEngine({
 
         <ProgressDots total={PER_SESSION} current={idx} results={results} />
 
-        <button onClick={handleRepeat} className="text-[11px] font-bold px-2.5 py-1 rounded-full transition-all active:scale-95 border" style={{
+        <button
+          onPointerDown={primePuzzleQuestion}
+          onClick={handleRepeat}
+          className="text-[11px] font-bold px-2.5 py-1 rounded-full transition-all active:scale-95 border"
+          style={{
         borderColor: "rgba(255,255,255,0.2)",
         color: speaking ? "hsl(var(--brand-amber-300))" : "rgba(255,255,255,0.5)",
         background: speaking ? "rgba(251,191,36,0.15)" : "transparent"
