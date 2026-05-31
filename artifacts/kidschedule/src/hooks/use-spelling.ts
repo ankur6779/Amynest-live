@@ -14,6 +14,10 @@ import {
 } from "@/lib/spelling-audio-map";
 import { lookupPhonicsLetterUrl } from "@/lib/phonics-audio-map";
 import { trackSpellingAudioEvent } from "@/lib/spelling-audio-telemetry";
+import {
+  catalogPlaybackSpeakOptions,
+  shouldBypassPhonicsSpellingLibraries,
+} from "@/lib/unified-catalog-playback";
 import { useSpellingCatalogSession, levelFromStars } from "@/hooks/use-spelling-catalog-session";
 
 // ─── Shared types (mirror server shape — no codegen yet for /spelling/*) ─────
@@ -98,7 +102,7 @@ export interface UseSpellingTTSState {
 }
 
 export function useSpellingTTS(): UseSpellingTTSState {
-  const { pause, speaking, loading, error } = useAmyVoice();
+  const { pause, speaking, loading, error, speak: amySpeak } = useAmyVoice();
   const [localError, setLocalError] = useState<string | null>(null);
 
   const playPrepared = useCallback(
@@ -153,6 +157,33 @@ export function useSpellingTTS(): UseSpellingTTSState {
       if (!trimmed) return;
       if (speaking) pause();
 
+      if (shouldBypassPhonicsSpellingLibraries()) {
+        setLocalError(null);
+        recordTtsUserGesture();
+        audioManager.unlockFromUserGesture();
+        const result = await amySpeak(
+          trimmed,
+          catalogPlaybackSpeakOptions(trimmed, {
+            playbackRate: opts.slow ? 0.65 : 1,
+            playbackMode: "partial-ok",
+          }),
+        );
+        if (!result.success) {
+          setLocalError(result.error ?? "audio_playback_failed");
+          trackSpellingAudioEvent("audio_error", {
+            reason: result.error ?? "catalog_playback_failed",
+            catalogId: opts.catalogId,
+            word: trimmed,
+          });
+        } else {
+          trackSpellingAudioEvent("audio_complete", {
+            catalogId: opts.catalogId,
+            word: trimmed,
+          });
+        }
+        return;
+      }
+
       let url = resolveSpellingAudioUrlWithFallback(trimmed, opts.catalogId);
       if (!url && trimmed.length <= 2) {
         url = lookupPhonicsLetterUrl(trimmed.toLowerCase());
@@ -164,7 +195,7 @@ export function useSpellingTTS(): UseSpellingTTSState {
       }
       await playPrepared(url, { ...opts, word: trimmed, catalogId: opts.catalogId });
     },
-    [pause, playPrepared, speaking],
+    [amySpeak, pause, playPrepared, speaking],
   );
 
   const playUrl = useCallback(

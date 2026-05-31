@@ -328,14 +328,16 @@ export function SpeechGameFlow({
       currentItem.kind === "phonic" || currentItem.kind === "letter"
         ? "phonics"
         : "default";
-    void voice.speak(getPromptSpeakText(currentItem), {
-      mode: mode as "phonics" | "default",
-    });
-    if (promptPhase === "idle") setPromptPhase("heard");
-    const cue = getArticulationCue(currentItem.text, currentItem.kind);
-    if (cue && viewMode === "parent") {
-      void voice.speak(cue.coachLine, { mode: "default" });
-    }
+    const spoken = getPromptSpeakText(currentItem);
+    void (async () => {
+      await voice.speak(spoken, {
+        mode: mode as "phonics" | "default",
+        catalogPlayback: true,
+        staticCatalogTexts: [spoken],
+        waitUntilEnd: true,
+      });
+      if (promptPhase === "idle") setPromptPhase("heard");
+    })();
   };
 
   const handleRecord = () => {

@@ -640,18 +640,16 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
 
   const handleHear = () => {
     if (!currentItem) return;
-    const ctx = makeDialogueCtx(sessionIdx, streak, currentItem.kind);
-    const lines = buildItemPromptLines(ctx, currentItem);
+    const spoken = getPromptSpeakText(currentItem);
     const mode = (currentItem.kind === "phonic" || currentItem.kind === "letter") ? "phonics" : "default";
     void (async () => {
-      for (const line of lines) {
-        await voice.speak(line, { mode: mode as "phonics" | "default" });
-      }
+      await voice.speak(spoken, {
+        mode: mode as "phonics" | "default",
+        catalogPlayback: true,
+        staticCatalogTexts: [spoken],
+        waitUntilEnd: true,
+      });
       if (promptPhase === "idle") setPromptPhase("heard");
-      if (viewMode === "parent") {
-        const cue = getArticulationCue(currentItem.text, currentItem.kind);
-        if (cue) await voice.speak(cue.coachLine, { mode: "default" });
-      }
     })();
   };
 

@@ -20,6 +20,12 @@ import {
   lookupStaticAudioUrl,
   primeStaticAudioInUserGesture,
 } from "@/lib/static-audio";
+import {
+  catalogPlaybackSpeakOptions,
+  hasStaticCatalogAudio,
+  resolvePhonicsCatalogPhrase,
+  shouldBypassPhonicsSpellingLibraries,
+} from "@/lib/unified-catalog-playback";
 import { getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { cn } from "@/lib/utils";
 import {
@@ -176,6 +182,9 @@ export function AudioPlayButton({
   const audioAvailable = useMemo(() => {
     if (mode !== "phonics") return true;
     const trimmed = (text ?? "").trim();
+    if (shouldBypassPhonicsSpellingLibraries()) {
+      return hasStaticCatalogAudio(trimmed);
+    }
     if (cvcWordKey || (!phonemeKey && trimmed && !/\s/.test(trimmed))) {
       return checkPhonicsWordClip(cvcWordKey ?? trimmed).available;
     }
@@ -187,8 +196,11 @@ export function AudioPlayButton({
     const trimmed = (text ?? "").trim();
     if (!trimmed) return "";
     if (mode !== "phonics") return trimmed;
+    if (shouldBypassPhonicsSpellingLibraries()) {
+      return resolvePhonicsCatalogPhrase(trimmed, phonemeKey);
+    }
     return resolvedAudioKey || trimmed;
-  }, [text, mode, resolvedAudioKey]);
+  }, [text, mode, resolvedAudioKey, phonemeKey]);
 
   const activeKeys = useMemo(() => {
     const keys = new Set<string>();
@@ -254,13 +266,22 @@ export function AudioPlayButton({
         }
         if (!resolvedText) return null;
         const isSentenceRead = mode !== "phonics" && resolvedText.includes(" ");
-        const res = await speak(resolvedText, {
-          mode,
-          playbackMode: isSentenceRead ? "full-required" : "partial-ok",
-          waitUntilEnd: mode === "phonics" || !isSentenceRead,
-          phoneme: phonemeKey,
-          word: cvcWordKey,
-        });
+        const speakOpts =
+          mode === "phonics" && shouldBypassPhonicsSpellingLibraries()
+            ? catalogPlaybackSpeakOptions(resolvedText, {
+                mode: "phonics",
+                phoneme: phonemeKey,
+                word: cvcWordKey,
+                playbackMode: "partial-ok",
+              })
+            : {
+                mode,
+                playbackMode: isSentenceRead ? ("full-required" as const) : ("partial-ok" as const),
+                waitUntilEnd: mode === "phonics" || !isSentenceRead,
+                phoneme: phonemeKey,
+                word: cvcWordKey,
+              };
+        const res = await speak(resolvedText, speakOpts);
         if (!res?.success) {
           setVisualFallback(true);
           window.setTimeout(() => {

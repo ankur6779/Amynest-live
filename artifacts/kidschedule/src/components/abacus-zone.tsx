@@ -32,6 +32,10 @@ import {
 } from "@/lib/learning-zone-audio-prewarm";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import {
+  ABACUS_STATIC_TTS_PROBE,
+  catalogPlaybackSpeakOptions,
+} from "@/lib/unified-catalog-playback";
+import {
   AbacusHomeDashboard,
   AbacusParentPanel,
   AbacusViewToggle,
@@ -1176,7 +1180,14 @@ function TutorMode({ childId, level, ageYears }: { childId: number; level: Level
           <p className="text-sm leading-relaxed">{reply}</p>
           <button
             type="button"
-            onClick={() => (amy.speaking || amy.loading ? amy.pause() : amy.speak(reply))}
+            onClick={() =>
+              amy.speaking || amy.loading
+                ? amy.pause()
+                : amy.speak(
+                    ABACUS_STATIC_TTS_PROBE,
+                    catalogPlaybackSpeakOptions(ABACUS_STATIC_TTS_PROBE),
+                  )
+            }
             className="inline-flex items-center gap-1 text-xs font-semibold text-foreground"
           >
             {amy.speaking ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
