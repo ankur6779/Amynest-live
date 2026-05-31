@@ -26,6 +26,10 @@ import {
 } from "@/lib/audio-playback-events";
 import { noteAudioManagerPlayCalled } from "@/lib/audio-root-cause-trace";
 import {
+  isAudioPlaybackRecoveryMode,
+  schedulePlaybackProgressCheck,
+} from "@/lib/audio-playback-recovery";
+import {
   mapToAudioSourceLayer,
   resolveAudioReliabilityModule,
   trackAudioPlayFailed,
@@ -750,6 +754,10 @@ class AudioManagerImpl {
     token: number,
     channel: AudioChannel,
   ): Promise<void> {
+    if (isAudioPlaybackRecoveryMode()) {
+      schedulePlaybackProgressCheck(audio, "audioManager");
+      return Promise.resolve();
+    }
     if (!audio.paused && audio.currentTime > 0) return Promise.resolve();
 
     return new Promise((resolve, reject) => {
@@ -974,6 +982,14 @@ class AudioManagerImpl {
     opts: AudioPlayOptions,
     channel: AudioChannel,
   ): Promise<boolean> {
+    if (isAudioPlaybackRecoveryMode()) {
+      console.warn("[AudioPlaybackRecovery] force_restart_skipped", {
+        srcType: meta.srcType ?? inferSrcType(proxyUrl),
+        source: meta.source,
+        phrase: meta.phrase?.slice(0, 80),
+      });
+      return false;
+    }
     logStructured("force restart playback", new Error("force_restart"), {
       attempt: 0,
       srcType: meta.srcType ?? inferSrcType(proxyUrl),
@@ -1154,7 +1170,9 @@ class AudioManagerImpl {
         }
       }
 
-      if (proxyUrl && !opts._internalRestart && !opts.skipForceRestart) {
+      const skipForceRestart =
+        opts.skipForceRestart ?? isAudioPlaybackRecoveryMode();
+      if (proxyUrl && !opts._internalRestart && !skipForceRestart) {
         const restarted = await this.forceRestartPlayback(proxyUrl, meta, opts, channel);
         if (restarted) {
           this.pendingFocusReplay = null;

@@ -138,6 +138,12 @@ import {
 } from "@/lib/amy-voice-pipeline-optimizer";
 import { isApiGloballyDegraded } from "@/lib/amy-voice-pipeline-server-sync";
 import {
+  isAudioPlaybackRecoveryMode,
+  schedulePlaybackProgressCheck,
+  shouldSkipLiveTtsWhenStaticExists,
+} from "@/lib/audio-playback-recovery";
+import { hasStaticCatalogAudio } from "@/lib/unified-catalog-playback";
+import {
   buildRlTelemetryPayload,
 } from "@/lib/amy-voice-pipeline-learning";
 import {
@@ -322,6 +328,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 
 /** Strict audible check — playback must have started with valid duration. */
 function validateAudibleElement(audio: HTMLAudioElement): boolean {
+  if (isAudioPlaybackRecoveryMode()) {
+    return audio.readyState >= 2 || !audio.paused;
+  }
   if (audio.muted) return false;
   if (audio.volume <= 0) return false;
   const dur = audio.duration;
@@ -477,6 +486,30 @@ async function playElementWithNeverSilentWatchdog(
 
   if (!played || isStale(ctx)) return { ok: false, error: "audio_play_failed" };
 
+  if (isAudioPlaybackRecoveryMode()) {
+    schedulePlaybackProgressCheck(audio, `${meta.source}_play`);
+    markAudioHealthAudibleStart(healthLayer, { startedAt: playStartedAt });
+    if (ctx.reliabilityModule) {
+      recordPlayLatency(ctx.reliabilityModule, performance.now() - playStartedAt);
+    }
+    if (meta.waitUntilEnd) {
+      const completion = await waitForSafePlaybackCompletion({
+        audio,
+        mode: ctx.playbackMode,
+        isCancelled: () => isStale(ctx) || ctx.isCancelled(),
+        usedStreaming: false,
+        paragraphIdx: ctx.paragraphIdx,
+        knownDurationSec: getExpectedAudioDurationSec(audio),
+      });
+      return {
+        ok: completion.ok,
+        playedDuration: completion.actualPlayedDuration,
+        expectedDuration: completion.expectedDuration,
+      };
+    }
+    return { ok: true };
+  }
+
   const audible = await waitForAudible(audio, NEVER_SILENT_MS);
   logAmyVoiceDiag(`${meta.source}_play_verify`, {
     phrase: meta.phrase.slice(0, 80),
@@ -487,6 +520,12 @@ async function playElementWithNeverSilentWatchdog(
     srcType: audio.src.startsWith("blob:") ? "blob" : "remote",
   });
   if (!audible) {
+    console.warn("[AudioPlaybackRecovery] never_silent_verify_failed — not restarting", {
+      phrase: meta.phrase.slice(0, 80),
+      currentTime: audio.currentTime,
+      paused: audio.paused,
+      readyState: audio.readyState,
+    });
     audio.pause();
     logAudioHealthFailure("audio_start_timeout", healthLayer);
     return { ok: false, error: "audio_start_timeout" };
@@ -1929,6 +1968,41 @@ export async function speakAmyVoice(
       ? [policy.originalText]
       : []),
   ];
+
+  if (depth === 0 && shouldSkipLiveTtsWhenStaticExists()) {
+    const staticMapped =
+      opts?.catalogPlayback ||
+      hasStaticCatalogAudio(text) ||
+      staticFallbackTexts.some(
+        (candidate) =>
+          Boolean(lookupStaticAudioUrl(candidate, mode)) ||
+          Boolean(lookupStaticAudioUrl(candidate, "phonics")),
+      );
+    if (staticMapped) {
+      const staticOnly = await tryPregeneratedParallelLayer(
+        text,
+        mode,
+        pipelineCtx,
+        waitUntilEnd,
+        policy.forcePhonicsOnly,
+        staticFallbackTexts,
+        cacheKey,
+        "static",
+        opts,
+      );
+      if (staticOnly.ok) {
+        return finishAttempt(staticOnly);
+      }
+      console.warn("[AudioPlaybackRecovery] static_only_failed — TTS skipped", {
+        error: staticOnly.error,
+        text: text.slice(0, 80),
+      });
+      return endPipeline(
+        mapPlayErrorToSpeakResult(staticOnly.error ?? "static_only_failed"),
+        null,
+      );
+    }
+  }
 
   if (depth === 0 && !shallow && scoredLayers.length > 0) {
     const learned = await tryScoredLayersPlay(

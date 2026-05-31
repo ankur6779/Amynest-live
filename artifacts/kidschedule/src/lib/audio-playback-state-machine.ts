@@ -3,6 +3,8 @@
  * Every request must resolve to PLAYING or FAILED (never infinite LOADING).
  */
 
+import { isAudioPlaybackRecoveryMode } from "@/lib/audio-playback-recovery";
+
 export type AudioPlaybackFsmState =
   | "IDLE"
   | "LOADING"
@@ -67,6 +69,7 @@ export class AudioPlaybackStateMachine {
   }
 
   private armWatchdog(): void {
+    if (isAudioPlaybackRecoveryMode()) return;
     this.clearWatchdog();
     const rid = this.requestId;
     if (!rid || this.state !== "LOADING") return;

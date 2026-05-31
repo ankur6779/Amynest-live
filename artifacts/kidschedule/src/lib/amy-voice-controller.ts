@@ -121,6 +121,7 @@ import {
 import type { AmyVoiceLayer } from "@/lib/amy-voice-telemetry";
 import type { AuthFetchFn } from "@/lib/poll-result";
 import { amyVoicePlaybackFsm } from "@/lib/audio-playback-state-machine";
+import { isAudioPlaybackRecoveryMode } from "@/lib/audio-playback-recovery";
 import {
   mapToAudioSourceLayer,
   resolveAudioReliabilityModule,
@@ -283,6 +284,10 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
   constructor() {
     amyVoicePlaybackFsm.setWatchdogHandler((rid) => {
+      if (isAudioPlaybackRecoveryMode()) {
+        console.warn("[AudioPlaybackRecovery] fsm_loading_watchdog_skipped", { rid });
+        return;
+      }
       const requestId = Number.parseInt(rid, 10);
       if (!Number.isFinite(requestId)) return;
       trackAudioTimeout(this.activeReliabilityRequestId ?? rid, "audio_start_timeout");
@@ -299,6 +304,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
   }
 
   private armLoadingWatchdog(requestId: number, runtime: AmyVoiceRuntime, rawText: string, opts?: SpeakOptions): void {
+    if (isAudioPlaybackRecoveryMode()) return;
     this.clearLoadingWatchdog();
     this.loadingWatchdogTimer = setTimeout(() => {
       if (!isCurrentSpeakRequest(requestId)) return;

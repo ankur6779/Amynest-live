@@ -4,6 +4,10 @@
  */
 
 import { recordTtsUserGesture } from "@/lib/tts-guard";
+import {
+  isAudioPlaybackRecoveryMode,
+  schedulePlaybackProgressCheck,
+} from "@/lib/audio-playback-recovery";
 
 export const AUDIBLE_START_TIMEOUT_MS = 800;
 export const LOADING_STUCK_MS = 1000;
@@ -56,12 +60,16 @@ export function validateAudioBlob(blob: Blob): void {
 
 /**
  * Resolve when the browser fires "playing", or reject on error / timeout.
- * Single authoritative "did audio actually start?" gate.
+ * Recovery mode: play() already resolved — do not fail on slow currentTime advance.
  */
 export function waitForAudibleStart(
   audio: HTMLAudioElement,
   timeoutMs = AUDIBLE_START_TIMEOUT_MS,
 ): Promise<boolean> {
+  if (isAudioPlaybackRecoveryMode()) {
+    return Promise.resolve(true);
+  }
+
   if (!audio.paused && audio.currentTime > 0) {
     return Promise.resolve(true);
   }
@@ -98,6 +106,9 @@ export function waitForLoadingProgress(
   audio: HTMLAudioElement,
   timeoutMs = LOADING_STUCK_MS,
 ): Promise<void> {
+  if (isAudioPlaybackRecoveryMode()) {
+    return Promise.resolve();
+  }
   if (audio.currentTime > 0 || audio.ended) {
     return Promise.resolve();
   }
@@ -158,6 +169,11 @@ export async function playWithAudibleStartGuarantee(
   const attempt = async (isRetry: boolean): Promise<void> => {
     try {
       await play();
+      if (isAudioPlaybackRecoveryMode()) {
+        schedulePlaybackProgressCheck(audio, layer ?? "play");
+        logAudioStart({ event: "audio_start", success: true, src, layer });
+        return;
+      }
       await waitForAudibleStart(audio);
       await waitForLoadingProgress(audio);
       logAudioStart({ event: "audio_start", success: true, src, layer });

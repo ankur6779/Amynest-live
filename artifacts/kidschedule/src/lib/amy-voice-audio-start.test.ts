@@ -8,6 +8,15 @@ import {
   waitForLoadingProgress,
 } from "@/lib/amy-voice-audio-start";
 
+vi.mock("@/lib/audio-playback-recovery", () => ({
+  AUDIO_PLAYBACK_RECOVERY_MODE: true,
+  SKIP_LIVE_TTS_WHEN_STATIC_EXISTS: true,
+  isAudioPlaybackRecoveryMode: vi.fn(() => false),
+  shouldSkipLiveTtsWhenStaticExists: vi.fn(() => true),
+  logPlaybackElementState: vi.fn(),
+  schedulePlaybackProgressCheck: vi.fn(),
+}));
+
 describe("amy-voice-audio-start", () => {
   beforeEach(() => {
     vi.useFakeTimers();
