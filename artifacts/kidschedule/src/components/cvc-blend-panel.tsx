@@ -47,14 +47,16 @@ export function CvcBlendPanel({
 
   useEffect(() => {
     if (lessonProp) return;
-    if (lesson.activeLevel !== practiceLevel) {
-      lesson.selectLevel(practiceLevel);
-    }
+    lesson.selectLevel(practiceLevel);
+  }, [practiceLevel, lessonProp]);
+
+  useEffect(() => {
+    if (lessonProp) return;
     const idx = lesson.levelWords.findIndex((w) => w.word === word.toLowerCase());
     if (idx >= 0 && lesson.selectedWord?.word !== word.toLowerCase()) {
       lesson.selectWordByIndex(idx);
     }
-  }, [word, practiceLevel, lessonProp, lesson.activeLevel, lesson.levelWords, lesson.selectedWord, lesson.selectLevel, lesson.selectWordByIndex]);
+  }, [word, lessonProp, lesson.levelWords, lesson.selectedWord?.word, lesson.selectWordByIndex]);
 
   useEffect(() => {
     return subscribePhonicsPlayback(({ playing }) => {
@@ -339,10 +341,11 @@ export function CvcBlendingPracticeCard({
   const lesson = usePhonicsCvcLesson(practiceLevel);
   const [panelWord, setPanelWord] = useState<string | null>(null);
 
+  // Sync only when curriculum age band changes — not when the user picks Level 1/2/3 manually.
   useEffect(() => {
     lesson.selectLevel(practiceLevel);
     setPanelWord(null);
-  }, [practiceLevel, lesson.selectLevel]);
+  }, [practiceLevel]);
 
   return (
     <Card data-testid="cvc-blending-practice" className="rounded-3xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10">
