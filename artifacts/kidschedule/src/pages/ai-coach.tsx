@@ -6,7 +6,8 @@ import { useLocation, Link } from "wouter";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { useCoachJourney } from "@/hooks/use-coach-journey";
-import { coachGoalCategoryId, coachCategoryGoalCount, goalIndexInCoachCategory } from "@workspace/coach-journey";
+import { coachGoalCategoryId, coachCategoryGoalCount, goalIndexInCoachCategory, buildCoachGraduationViewModel, type GraduationPath } from "@workspace/coach-journey";
+import { useAuth } from "@/lib/firebase-auth-hooks";
 import { usePaywall } from "@/contexts/paywall-context";
 import { usePaginatedList } from "@/hooks/use-paginated-list";
 import {
@@ -41,7 +42,21 @@ import {
   buildCoachWinListenText,
   buildInfantCoachPlanCacheKey,
 } from "@/lib/coach-audio-identity";
-import { prefetchCoachWin } from "@/lib/amy-voice-pipeline-optimizer";
+import { buildAmyUnderstandingView } from "@/lib/coach-understanding";
+import { buildCoachWinRationale } from "@/lib/coach-win-rationale";
+import { mirrorWinFeedbackLocally } from "@/lib/coach-intelligence-state";
+import { useCoachIntelligence } from "@/hooks/use-coach-intelligence";
+import { recordCoachActivity } from "@/lib/coach-check-in-state";
+import {
+  CoachUnderstandingScreen,
+  CoachGeneratingScreen,
+  COACH_LOADING_MESSAGES,
+} from "@/pages/coach-understanding-screen";
+import { CoachGraduationScreen } from "@/pages/coach-graduation-screen";
+import {
+  isSessionGraduated,
+  saveCoachGraduation,
+} from "@/lib/coach-graduation-state";
 
 /** Lazy win generation can take ~25s server-side; default fetch timeout is 8s. */
 const COACH_AI_FETCH_TIMEOUT_MS = 90_000;
@@ -467,6 +482,11 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   }]
 }];
 const ALL_GOALS: GoalItem[] = GOAL_CATEGORIES.flatMap(c => c.items);
+const GOAL_CATALOG = ALL_GOALS.map((g) => ({
+  id: g.id,
+  title: g.title,
+  categoryId: coachGoalCategoryId(g.id) ?? "",
+}));
 
 /** Per-category tile gradients — same palette as Amy Audio Lessons age tiles. */
 const COACH_CATEGORY_TILE_GRADIENTS: Record<string, string> = {
@@ -626,7 +646,7 @@ interface Plan {
   summary: string;
   wins: Win[];
 }
-type Phase = "goals" | "questions" | "loading" | "result" | "infantProblem" | "resuming";
+type Phase = "goals" | "questions" | "understanding" | "loading" | "result" | "graduation" | "infantProblem" | "resuming";
 type Feedback = "yes" | "somewhat" | "no";
 
 function coachFeedbackPoints(f: Feedback): number {
@@ -725,6 +745,7 @@ export default function AICoachPage() {
   const [, setLocation] = useLocation();
   const { back: navigateBack } = useAppNavigate();
   const authFetch = useAuthFetch();
+  const { userId } = useAuth();
   const {
     toast
   } = useToast();
@@ -738,11 +759,16 @@ export default function AICoachPage() {
     const params = new URLSearchParams(window.location.search);
     return params.get("resume") ?? "";
   }, []);
+  const forceGraduationReview = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("graduation") === "1";
+  }, []);
   const [phase, setPhase] = useState<Phase>(resumeSessionId ? "resuming" : "goals");
   const [goalSearch, setGoalSearch] = useState("");
   const [coachAgeBand, setCoachAgeBand] = useState<CoachAgeBand | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [goalId, setGoalId] = useState<string>("");
+  const coachIntelligence = useCoachIntelligence(goalId || undefined);
   const [qIndex, setQIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -756,6 +782,8 @@ export default function AICoachPage() {
   const [extending, setExtending] = useState(false);
   const [progressWinCount, setProgressWinCount] = useState(0);
   const [loadingNextWin, setLoadingNextWin] = useState(false);
+  const [loadingMessageIdx, setLoadingMessageIdx] = useState(0);
+  const [isFirstCoachingWin, setIsFirstCoachingWin] = useState(false);
   const fetchingNextRef = useRef(false);
   const extendingRef = useRef(false);
 
@@ -794,6 +822,32 @@ export default function AICoachPage() {
     if (!plan || denom === 0) return 0;
     return computeCoachProgressPct(feedbackByWin, denom);
   }, [feedbackByWin, plan]);
+
+  const coachRationaleAnswers = useMemo((): Record<string, string | string[]> => {
+    if (Object.keys(answers).length > 0) return answers;
+    const payload = lastPayloadRef.current;
+    if (!payload) return {};
+    const sevFromApi: Record<string, string> = {
+      mild: "Mild – occasional",
+      moderate: "Moderate – frequent",
+      severe: "Severe – daily struggle",
+    };
+    const ageFromApi: Record<string, string> = {
+      "0-2": "0–2 years",
+      "2-4": "2–4 years",
+      "5-7": "5–7 years",
+      "8-10": "8–10 years",
+      "10+": "10+ years",
+      adult: "Adult (for me)",
+    };
+    const merged: Record<string, string | string[]> = {};
+    if (payload.ageGroup) merged.ageGroup = ageFromApi[payload.ageGroup] ?? payload.ageGroup;
+    if (payload.severity) merged.severity = sevFromApi[payload.severity] ?? payload.severity;
+    if (payload.triggers?.length) merged.triggers = payload.triggers;
+    if (payload.routine) merged.routine = payload.routine;
+    if (payload.topicAnswers) Object.assign(merged, payload.topicAnswers);
+    return merged;
+  }, [answers, plan, goalId]);
   const scrollerRef = useRef<HTMLDivElement>(null);
   // Tracks the in-flight Build Plan request so we can abort it if the user
   // navigates away or retries — prevents leaks and stale setState calls.
@@ -849,6 +903,108 @@ export default function AICoachPage() {
   const {
     openPaywall
   } = usePaywall();
+
+  const graduationView = useMemo(() => {
+    if (!plan || !goalId) return null;
+    const feedbackRows = Object.entries(feedbackByWin)
+      .map(([win, feedback]) => ({
+        win: Number(win),
+        feedback,
+        at: new Date().toISOString(),
+      }))
+      .sort((a, b) => a.win - b.win);
+    return buildCoachGraduationViewModel({
+      goalId,
+      goalTitle: selectedGoal?.title ?? plan.title,
+      answers: coachRationaleAnswers,
+      plan,
+      feedbacks: feedbackRows,
+      completedGoalIds: coachJourney.completedGoalIds,
+      relatedGoalCatalog: GOAL_CATALOG,
+    });
+  }, [
+    coachJourney.completedGoalIds,
+    coachRationaleAnswers,
+    feedbackByWin,
+    goalId,
+    plan,
+    selectedGoal?.title,
+  ]);
+
+  const persistGraduation = useCallback(
+    (path: GraduationPath) => {
+      if (!sessionId || !goalId || !plan) return;
+      saveCoachGraduation(userId ?? "anon", {
+        sessionId,
+        goalId,
+        goalTitle: selectedGoal?.title ?? plan.title,
+        path,
+        graduatedAt: new Date().toISOString(),
+        maintenanceMode: path === "maintenance",
+      });
+      void authFetch("/api/ai-coach/graduate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          goalId,
+          goalTitle: selectedGoal?.title ?? plan.title,
+          path,
+          progressPct: 100,
+        }),
+      }).catch(() => {});
+    },
+    [authFetch, goalId, plan, selectedGoal?.title, sessionId, userId],
+  );
+
+  const resetForNewCoachingGoal = useCallback((nextGoalId: string) => {
+    setPlan(null);
+    setPlanCacheKey("");
+    setSessionId("");
+    setFeedbackByWin({});
+    setProgressSnapshotByWin({});
+    setActiveIdx(0);
+    setAnswers({});
+    setQIndex(0);
+    setGoalId(nextGoalId);
+    setIsFirstCoachingWin(true);
+    originalWinCountRef.current = 0;
+    lastPayloadRef.current = null;
+  }, []);
+
+  const handleGraduationPath = useCallback(
+    (path: GraduationPath, strengthenGoalId?: string) => {
+      persistGraduation(path);
+      if (path === "maintenance") {
+        setLocation("/amy-coach/progress");
+        return;
+      }
+      if (path === "strengthen") {
+        resetForNewCoachingGoal(strengthenGoalId ?? goalId);
+        setPhase("questions");
+        return;
+      }
+      resetForNewCoachingGoal("");
+      setPhase("goals");
+    },
+    [goalId, persistGraduation, resetForNewCoachingGoal, setLocation],
+  );
+
+  const handleGraduationRecommendedGoal = useCallback(
+    (recommendedGoalId: string) => {
+      persistGraduation("new_goal");
+      resetForNewCoachingGoal(recommendedGoalId);
+      setPhase("questions");
+    },
+    [persistGraduation, resetForNewCoachingGoal],
+  );
+
+  useEffect(() => {
+    if (progressPct < 100 || !sessionId) return;
+    if (phase !== "result" && phase !== "graduation") return;
+    if (!forceGraduationReview && isSessionGraduated(userId ?? "anon", sessionId)) return;
+    setPhase("graduation");
+  }, [forceGraduationReview, phase, progressPct, sessionId, userId]);
 
   const journeyBanner = !coachJourney.isPremium ? <FreemiumCatalogBanner /> : null;
 
@@ -969,6 +1125,7 @@ export default function AICoachPage() {
         // Jump to the first incomplete win (no feedback yet), or last win if all done
         const firstIncomplete = data.plan.wins.findIndex(w => !restoredFeedbacks[w.win]);
         setActiveIdx(firstIncomplete >= 0 ? firstIncomplete : data.plan.wins.length - 1);
+        setIsFirstCoachingWin(false);
         setPhase("result");
       } catch (err) {
         if (cancelled) return;
@@ -1021,6 +1178,7 @@ export default function AICoachPage() {
         setActiveIdx(0);
         setFeedbackByWin({});
         setProgressSnapshotByWin({});
+        setIsFirstCoachingWin(true);
         setPhase("result");
         if (!coachJourney.isPremium) {
           void coachJourney.completePlan(id, infantSessionId);
@@ -1062,6 +1220,34 @@ export default function AICoachPage() {
     if (!topicQs || topicQs.length === 0) return generic;
     return [AGE_QUESTION, SEVERITY_QUESTION, ...topicQs];
   }, [goalId, i18n.language]);
+  const amyUnderstanding = useMemo(() => {
+    if (!goalId || !selectedGoal) {
+      return buildAmyUnderstandingView({
+        goalId: goalId || "unknown",
+        goalTitle: selectedGoal?.title ?? "Your goal",
+        questions: QUESTIONS,
+        answers,
+      });
+    }
+    return buildAmyUnderstandingView({
+      goalId,
+      goalTitle: selectedGoal.title,
+      questions: QUESTIONS,
+      answers,
+    });
+  }, [QUESTIONS, answers, goalId, selectedGoal]);
+
+  useEffect(() => {
+    if (phase !== "loading") {
+      setLoadingMessageIdx(0);
+      return;
+    }
+    const id = window.setInterval(() => {
+      setLoadingMessageIdx((i) => (i + 1) % COACH_LOADING_MESSAGES.length);
+    }, 2200);
+    return () => window.clearInterval(id);
+  }, [phase]);
+
   const currentQ = QUESTIONS[qIndex];
   const currentAnswer = currentQ ? answers[currentQ.id] : undefined;
   const isAnswered = currentQ?.type === "multi" ? Array.isArray(currentAnswer) && currentAnswer.length > 0 : typeof currentAnswer === "string" && currentAnswer.length > 0;
@@ -1085,7 +1271,7 @@ export default function AICoachPage() {
     if (qIndex < QUESTIONS.length - 1) {
       setQIndex(i => i + 1);
     } else {
-      submitPlan();
+      setPhase("understanding");
     }
   };
   const handleBackQ = () => {
@@ -1101,6 +1287,7 @@ export default function AICoachPage() {
     const ctrl = new AbortController();
     buildAbortRef.current = ctrl;
     setPhase("loading");
+    setLoadingMessageIdx(0);
     setActiveIdx(0);
     setFeedbackByWin({});
     setProgressSnapshotByWin({});
@@ -1165,6 +1352,7 @@ export default function AICoachPage() {
       originalWinCountRef.current = data.totalWins ?? 12;
       setSessionId(data.sessionId);
       setProgressWinCount(data.plan.wins.length);
+      setIsFirstCoachingWin(true);
       setPhase("result");
       if (!coachJourney.isPremium && goalId) {
         void coachJourney.completePlan(goalId, data.sessionId);
@@ -1187,7 +1375,7 @@ export default function AICoachPage() {
             reason: errBody.error === "coach_locked" ? "coach_locked" : "ai_quota"
           }
         }));
-        setPhase("questions");
+        setPhase("understanding");
         return;
       }
       if (!res.ok) {
@@ -1229,7 +1417,7 @@ export default function AICoachPage() {
         description: msg.length > 0 ? `Please try again. (${msg})` : "Please try again in a moment.",
         variant: "destructive"
       });
-      setPhase("questions");
+      setPhase("understanding");
     } finally {
       if (buildAbortRef.current === ctrl) buildAbortRef.current = null;
     }
@@ -1350,6 +1538,30 @@ export default function AICoachPage() {
     };
     setFeedbackByWin(newFeedbackByWin);
 
+    recordCoachActivity(userId ?? "anon", {
+      sessionId,
+      goalId,
+      at: new Date().toISOString(),
+      source: "win_feedback",
+    });
+
+    const winMeta = plan.wins.find((w) => w.win === winNumber);
+    if (userId && winMeta) {
+      mirrorWinFeedbackLocally(userId, {
+        type: "win_feedback",
+        sessionId,
+        goalId,
+        goalTitle: plan.title,
+        winNumber,
+        winTitle: winMeta.title,
+        winObjective: winMeta.objective,
+        winActions: winMeta.actions,
+        feedback,
+        childAgeGroup: lastPayloadRef.current?.ageGroup,
+      });
+      void coachIntelligence.refetch();
+    }
+
     const newPct = computeCoachProgressPct(newFeedbackByWin, denom);
     setProgressSnapshotByWin((snap) => ({
       ...snap,
@@ -1385,6 +1597,10 @@ export default function AICoachPage() {
               })
             : t("pages.ai_coach.celebration_moving_forward", "Every small step helps build lasting change."),
       });
+      if (newPct >= 100) {
+        setPhase("graduation");
+        return;
+      }
       await advanceAfterFeedback(activeIdx + 1);
       return;
     }
@@ -1427,6 +1643,10 @@ export default function AICoachPage() {
           ? t("pages.ai_coach.celebration_partly_body", "Every small step helps build lasting change.")
           : t("pages.ai_coach.celebration_not_yet_body", "Your next win will try a different approach."),
     });
+    if (newPct >= 100) {
+      setPhase("graduation");
+      return;
+    }
     await advanceAfterFeedback(activeIdx + 1);
   };
 
@@ -1553,6 +1773,7 @@ export default function AICoachPage() {
     setActiveIdx(0);
     setFeedbackByWin({});
     setProgressSnapshotByWin({});
+    setIsFirstCoachingWin(false);
     lastPayloadRef.current = null;
     fetchingNextRef.current = false;
     extendingRef.current = false;
@@ -1564,11 +1785,15 @@ export default function AICoachPage() {
       handleBackQ();
       return true;
     }
+    if (phase === "understanding") {
+      setPhase("questions");
+      return true;
+    }
     if (phase === "infantProblem") {
       setPhase("goals");
       return true;
     }
-    if (phase === "result" || phase === "loading" || phase === "resuming") {
+    if (phase === "result" || phase === "loading" || phase === "resuming" || phase === "graduation") {
       navigateBack("ai-coach-exit");
       return true;
     }
@@ -2031,11 +2256,23 @@ export default function AICoachPage() {
           background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--brand-violet-500)))",
           boxShadow: isAnswered ? "0 0 24px hsl(var(--primary) / 0.45)" : "none"
         }}>
-            {qIndex < QUESTIONS.length - 1 ? "Next →" : "Build My Plan ✨"}
+            {qIndex < QUESTIONS.length - 1 ? "Next →" : t("pages.ai_coach.continue_to_understanding", "Continue →")}
           </button>
         </div>
         </div>
       </div>;
+  }
+
+  // ── PHASE: AMY'S UNDERSTANDING ───────────────────────────────────────
+  if (phase === "understanding" && selectedGoal) {
+    return (
+      <CoachUnderstandingScreen
+        goalTitle={selectedGoal.title}
+        understanding={amyUnderstanding}
+        onBack={() => setPhase("questions")}
+        onGenerate={() => void submitPlan()}
+      />
+    );
   }
 
   // ── PHASE: INFANT PROBLEM DETAIL ─────────────────────────────────────
@@ -2148,36 +2385,19 @@ export default function AICoachPage() {
       </div>;
   }
   if (phase === "loading") {
-    const TOTAL_WINS = 12;
-    const built = Math.max(0, Math.min(TOTAL_WINS, progressWinCount));
-    const pct = Math.round(built / TOTAL_WINS * 100);
-    return <div className="app-fixed-below-header fixed inset-0 z-50 bg-gradient-to-br from-primary via-primary to-primary flex items-center justify-center">
-        <div className="text-center text-white px-8 space-y-6 w-full max-w-sm">
-          <div className="relative w-20 h-20 mx-auto">
-            <Sparkles className="absolute inset-0 w-20 h-20 animate-spin" style={{
-            animationDuration: "3s"
-          }} />
-          </div>
-          <h2 className="font-quicksand text-2xl font-bold">
-            {built === 0 ? t("coach.building_starting", "Building your plan…") : built >= TOTAL_WINS ? t("coach.building_finalising", "Finalising your plan…") : t("coach.building_progress", "Crafting win {{built}} of {{total}}…", {
-            built,
-            total: TOTAL_WINS
-          })}
-          </h2>
-          {/* Progress bar — 12 segments, lights up as wins arrive */}
-          <div className="flex gap-1 w-full" aria-hidden="true">
-            {Array.from({
-            length: TOTAL_WINS
-          }).map((_, i) => <div key={i} className={`flex-1 h-1.5 rounded-full transition-colors duration-300 ${i < built ? "bg-white" : "bg-white/20"}`} />)}
-          </div>
-          <p className="text-sm text-white/80 max-w-xs mx-auto">
-            {t("coach.building_subtitle", "Analysing your answers and preparing personalized coaching wins for {{goal}}.", {
-            goal: selectedGoal?.title.toLowerCase() ?? "your goal"
-          })}
-            {built > 0 && built < TOTAL_WINS ? ` (${pct}%)` : ""}
-          </p>
-        </div>
-      </div>;
+    return (
+      <CoachGeneratingScreen messageKey={COACH_LOADING_MESSAGES[loadingMessageIdx]!} />
+    );
+  }
+
+  if (phase === "graduation" && graduationView) {
+    return (
+      <CoachGraduationScreen
+        view={graduationView}
+        onChoosePath={handleGraduationPath}
+        onPickRecommendedGoal={handleGraduationRecommendedGoal}
+      />
+    );
   }
 
   // ── PHASE: RESULT ────────────────────────────────────────────────────
@@ -2336,13 +2556,21 @@ export default function AICoachPage() {
               key={`${w.win}-${i}`}
               win={w}
               planCacheKey={planCacheKey}
+              goalId={goalId}
               goalTitle={plan.title}
               planRootCause={plan.root_cause}
               planSummary={plan.summary}
               progressPct={progressPct}
               progressSnapshot={progressSnapshotByWin[w.win]}
               currentFeedback={feedbackByWin[w.win]}
+              feedbackByWin={feedbackByWin}
+              coachAnswers={coachRationaleAnswers}
+              winDeckIndex={i}
               extending={extending}
+              isFirstCoachingWin={isFirstCoachingWin && i === 0}
+              usedPhraseHashes={coachIntelligence.usedPhraseHashes}
+              familyReference={coachIntelligence.familyReference}
+              contentDensity={coachIntelligence.contentDensity}
               onFeedback={(f) => submitFeedback(w.win, f)}
             />
           ))}
@@ -2466,27 +2694,72 @@ export default function AICoachPage() {
 function WinCard({
   win,
   planCacheKey,
+  goalId,
   goalTitle,
   planRootCause,
   planSummary,
   progressPct,
   progressSnapshot,
   currentFeedback,
+  feedbackByWin,
+  coachAnswers,
+  winDeckIndex,
   extending,
+  isFirstCoachingWin = false,
+  usedPhraseHashes = [],
+  familyReference = null,
+  contentDensity = "standard",
   onFeedback,
 }: {
   win: Win;
   planCacheKey?: string;
+  goalId: string;
   goalTitle: string;
   planRootCause?: string;
   planSummary?: string;
   progressPct: number;
   progressSnapshot?: { from: number; to: number };
   currentFeedback?: Feedback;
+  feedbackByWin: Record<number, Feedback>;
+  coachAnswers: Record<string, string | string[]>;
+  winDeckIndex: number;
   extending: boolean;
+  isFirstCoachingWin?: boolean;
+  usedPhraseHashes?: string[];
+  familyReference?: string | null;
+  contentDensity?: "concise" | "standard" | "detailed";
   onFeedback: (f: Feedback) => void;
 }) {
   const { t } = useTranslation();
+  const winRationale = useMemo(
+    () =>
+      buildCoachWinRationale({
+        goalId: goalId || "coach-goal",
+        goalTitle,
+        win,
+        winDeckIndex,
+        answers: coachAnswers,
+        feedbackByWin,
+        progressPct,
+        isFirstCoachingWin,
+        usedPhraseHashes,
+        familyReference,
+        contentDensity,
+      }),
+    [
+      coachAnswers,
+      contentDensity,
+      familyReference,
+      feedbackByWin,
+      goalId,
+      goalTitle,
+      isFirstCoachingWin,
+      progressPct,
+      usedPhraseHashes,
+      win,
+      winDeckIndex,
+    ],
+  );
   const rootCauseShort = planRootCause ? summarizeCoachText(planRootCause, 2) : "";
   const rootCauseHasMore = Boolean(
     planRootCause && planRootCause.trim().length > rootCauseShort.length + 8,
@@ -2570,7 +2843,9 @@ function WinCard({
               marginBottom: 8,
             }}
           >
-            {t("pages.ai_coach.current_win", "Current Win")} · {t("pages.ai_coach.win", "Win")} {win.win}
+            {isFirstCoachingWin
+              ? t("pages.ai_coach.your_first_coaching_win", "Your First Coaching Win")
+              : `${t("pages.ai_coach.current_win", "Current Win")} · ${t("pages.ai_coach.win", "Win")} ${win.win}`}
           </div>
           <p
             style={{
@@ -2644,6 +2919,51 @@ function WinCard({
             </p>
           </div>
         )}
+
+        {/* Why Amy chose this win — recommendation transparency */}
+        <div
+          style={{
+            marginBottom: 14,
+            padding: "10px 12px",
+            borderRadius: 14,
+            background: "linear-gradient(135deg, rgba(167,139,250,0.12), rgba(139,92,246,0.06))",
+            border: "1px solid rgba(167,139,250,0.24)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+            <Sparkles
+              size={14}
+              style={{
+                color: "hsl(var(--brand-violet-300))",
+                flexShrink: 0,
+                marginTop: 2,
+              }}
+              aria-hidden
+            />
+            <div style={{ minWidth: 0 }}>
+              <p
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  color: "hsl(var(--brand-violet-300))",
+                  marginBottom: 4,
+                }}
+              >
+                {t("pages.ai_coach.why_amy_chose_this_win", "Why Amy chose this win")}
+              </p>
+              <p
+                style={{
+                  fontSize: 12.5,
+                  lineHeight: 1.5,
+                  color: "rgba(255,255,255,0.82)",
+                  margin: 0,
+                }}
+              >
+                {winRationale}
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Duration + compact listen */}
         <div

@@ -387,6 +387,7 @@ async function callInitialCoachAi(
   input: CoachInput,
   goalLabel: string,
   renderTopicAnswersBlock: (ta?: Record<string, string | string[]>) => string,
+  intelligenceBlock?: string,
 ): Promise<CoachPlan | null> {
   const { triggers, topicBlock } = buildPromptContext(
     input,
@@ -407,7 +408,8 @@ Triggers: ${triggers}
 Routine: ${input.routine}
 ${topicBlock}
 JSON only:
-{"title":"...","root_cause":"2 sentences","summary":"1 sentence","wins":[{"win":1,"title":"...","objective":"...","deep_explanation":"2-3 lines","actions":["a","b","c"],"example":"1 sentence","mistake_to_avoid":"...","micro_task":"...","duration":"...","science_reference":"..."},{"win":2,...}]}`;
+{"title":"...","root_cause":"2 sentences","summary":"1 sentence","wins":[{"win":1,"title":"...","objective":"...","deep_explanation":"2-3 lines","actions":["a","b","c"],"example":"1 sentence","mistake_to_avoid":"...","micro_task":"...","duration":"...","science_reference":"..."},{"win":2,...}]}
+${intelligenceBlock ? `\n${intelligenceBlock}` : ""}`;
 
   const { chatCompletionWithTimeout } = await import("./openai-chat.js");
   const outcome = await chatCompletionWithTimeout(
@@ -434,11 +436,12 @@ export async function generateInitialCoachWins(
   goalLabel: string,
   _goalBrief: string,
   renderTopicAnswersBlock: (ta?: Record<string, string | string[]>) => string,
+  intelligenceBlock?: string,
 ): Promise<{ plan: CoachPlan; aiOk: boolean }> {
   const aiSpan = startCoachPerfSpan("AI_CALL_INITIAL", { goal: input.goal });
   try {
     const plan = await Promise.race([
-      callInitialCoachAi(input, goalLabel, renderTopicAnswersBlock),
+      callInitialCoachAi(input, goalLabel, renderTopicAnswersBlock, intelligenceBlock),
       aiCallTimeout(INITIAL_AI_TIMEOUT_MS),
     ]);
     if (plan) {
@@ -472,6 +475,7 @@ export async function generateNextCoachWin(
   existingWins: CoachWin[],
   nextWinNumber: number,
   renderTopicAnswersBlock: (ta?: Record<string, string | string[]>) => string,
+  intelligenceBlock?: string,
 ): Promise<{ win: CoachWin; aiOk: boolean }> {
   if (
     nextWinNumber < COACH_INITIAL_WINS + 1 ||
@@ -509,7 +513,7 @@ Write win #${nextWinNumber} of ${COACH_TOTAL_WINS}. Phase: ${phase}.
 Return ONLY:
 {"win":{"win":${nextWinNumber},"title":"3-6 words","objective":"one sentence","deep_explanation":"4-5 lines","actions":["a","b","c"],"example":"2 sentences","mistake_to_avoid":"one sentence","micro_task":"under 5 min today","duration":"e.g. 3-5 days","science_reference":"named researcher/theory"}}
 STRICT: win number must be ${nextWinNumber}; 3-5 actions; no overlap with prior wins.
-${goalBrief}`;
+${goalBrief}${intelligenceBlock ? `\n\n${intelligenceBlock}` : ""}`;
 
   const aiSpan = startCoachPerfSpan("AI_CALL_NEXT_WIN", {
     goal: input.goal,
@@ -566,6 +570,7 @@ export async function generateRemainingWinsWithAi(
   meta: Pick<CoachPlan, "title" | "root_cause" | "summary">,
   existingWins: CoachWin[],
   renderTopicAnswersBlock: (ta?: Record<string, string | string[]>) => string,
+  intelligenceBlock?: string,
 ): Promise<{ wins: CoachWin[]; aiOk: boolean }> {
   const startWin = COACH_INITIAL_WINS + 1;
   const { triggers, topicBlock } = buildPromptContext(
@@ -609,7 +614,7 @@ STRICT:
 - EXACTLY 10 wins, numbered ${startWin} to ${COACH_TOTAL_WINS}
 - No overlap with the first 2 wins above
 - 3-5 actions each; substantive deep_explanation; real science_reference on every win
-${goalBrief}`;
+${goalBrief}${intelligenceBlock ? `\n\n${intelligenceBlock}` : ""}`;
 
   const aiSpan = startCoachPerfSpan("AI_CALL_BACKGROUND", { goal: input.goal });
   try {

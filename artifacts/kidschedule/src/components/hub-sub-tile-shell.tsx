@@ -5,6 +5,8 @@ import {
   hubSubTileShadeGradient,
   hubSubTileShellClasses,
   parseTintRgb,
+  resolveHubTintRgb,
+  type HubAccentTheme,
 } from "@/lib/parent-hub-premium";
 
 type HubSubTileShellProps = {
@@ -13,6 +15,36 @@ type HubSubTileShellProps = {
   className?: string;
   children: ReactNode;
 };
+
+/** Infant Parenting–style left accent + horizontal shade for full Parent Hub cards (2+). */
+export function HubShadedCardBody({
+  theme,
+  cardClass,
+  contentClassName,
+  children,
+}: {
+  theme: HubAccentTheme;
+  cardClass?: string;
+  contentClassName?: string;
+  children: ReactNode;
+}) {
+  const [r, g, b] = parseTintRgb(resolveHubTintRgb(theme, cardClass));
+  return (
+    <div className="flex min-w-0 h-full">
+      <div
+        className="w-[5px] shrink-0 self-stretch my-2 ml-1 rounded-full"
+        style={{ background: hubSubTileAccentBarGradient(r, g, b) }}
+        aria-hidden
+      />
+      <div
+        className={cn("min-w-0 flex-1 flex flex-col backdrop-blur-[12px]", contentClassName)}
+        style={{ background: hubSubTileShadeGradient(r, g, b) }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 /** Glass sub-tile with left accent bar + horizontal color fade (strong → soft). */
 export function HubSubTileShell({
