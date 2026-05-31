@@ -77,6 +77,7 @@ export async function runCoachInitialWins(input: {
     input: import("../coachWinGenerationService.js").CoachInput;
     goalLabel: string;
     topicBlock: string;
+    intelligenceBlock?: string;
   };
   const { generateInitialCoachWins } = await import("../coachWinGenerationService.js");
   const { plan } = await generateInitialCoachWins(
@@ -84,6 +85,7 @@ export async function runCoachInitialWins(input: {
     payload.goalLabel,
     "",
     () => payload.topicBlock,
+    payload.intelligenceBlock,
   );
   return { raw: JSON.stringify(plan) };
 }
@@ -96,6 +98,7 @@ export async function runCoachNextWin(input: {
   existingWins: import("../coachWinGenerationService.js").CoachWin[];
   nextWinNumber: number;
   topicBlock: string;
+  intelligenceBlock?: string;
 }): Promise<{ win: import("../coachWinGenerationService.js").CoachWin; aiOk: boolean }> {
   const svc = await import("../coachWinGenerationService.js");
   return svc.generateNextCoachWin(
@@ -106,6 +109,7 @@ export async function runCoachNextWin(input: {
     input.existingWins,
     input.nextWinNumber,
     () => input.topicBlock,
+    input.intelligenceBlock,
   );
 }
 
@@ -118,6 +122,7 @@ export async function runCoachRemainingWins(job: {
   partialPlan: import("../coachWinGenerationService.js").CoachPlan;
   goalLabel: string;
   goalBrief: string;
+  intelligenceBlock?: string;
 }): Promise<{ ok: true }> {
   const svc = await import("../coachWinGenerationService.js");
   const { wins: remaining, aiOk } = await svc.generateRemainingWinsWithAi(
@@ -127,6 +132,7 @@ export async function runCoachRemainingWins(job: {
     job.partialPlan,
     job.partialPlan.wins,
     () => "",
+    job.intelligenceBlock,
   );
   const fullPlan = svc.mergeCoachPlan(job.partialPlan, job.partialPlan.wins, remaining);
   if (aiOk) await svc.dbSetCoachCache(job.cacheKey, job.input, fullPlan);

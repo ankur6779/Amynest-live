@@ -25,6 +25,7 @@ import {
   type CoachWin as ServiceCoachWin,
 } from "../services/coachWinGenerationService.js";
 import { startCoachPerfSpan } from "../lib/coach-performance.js";
+import { buildCoachProgressViewModel, type CoachPlanRef } from "@workspace/coach-journey";
 import { fallbackExtensionWin } from "../services/coachExtensionFallback.js";
 import { buildCoachPlanCacheKey, COACH_PLAN_NAMESPACE } from "../services/coachPlanCacheKey.js";
 import {
@@ -680,12 +681,19 @@ async function handleCoachGenerate(req: import("express").Request, res: import("
   let aiOk = false;
   if (userId) {
     console.log("Enqueue:", "ai-coach/initial");
+    let intelligenceBlock = "";
+    try {
+      const { getCoachIntelligencePromptBlock } = await import("../services/coachIntelligenceService.js");
+      intelligenceBlock = await getCoachIntelligencePromptBlock(userId, goal);
+    } catch {
+      /* non-fatal */
+    }
     const enqueued = await enqueueAiJob(
       "ai-coach.initial_wins",
       userId,
       wrapJobInput("ai-coach/initial", {
         systemPrompt: "coach-initial",
-        userPrompt: JSON.stringify({ input, goalLabel, topicBlock }),
+        userPrompt: JSON.stringify({ input, goalLabel, topicBlock, intelligenceBlock }),
       }),
     );
     if (enqueued.jobId) {
@@ -809,6 +817,14 @@ async function handleCoachNextWin(req: import("express").Request, res: import("e
     summary: planMeta.summary as string,
   };
 
+  let intelligenceBlock = "";
+  try {
+    const { getCoachIntelligencePromptBlock } = await import("../services/coachIntelligenceService.js");
+    intelligenceBlock = await getCoachIntelligencePromptBlock(userId, input.goal!);
+  } catch {
+    /* non-fatal */
+  }
+
   const { submitRouteAiJob } = await import("../lib/route-ai-queue.js");
   await submitRouteAiJob({
     routeName: "ai-coach/next-win",
@@ -822,6 +838,7 @@ async function handleCoachNextWin(req: import("express").Request, res: import("e
       existingWins,
       nextWinNumber,
       topicBlock,
+      intelligenceBlock,
     },
     waitMs: 25_000,
     buildSyncBody: (result) => {
@@ -1218,12 +1235,21 @@ STRICT:
 - MUST include "science_reference"
 - Output ONLY the JSON object`;
 
+  let intelligenceBlock = "";
+  try {
+    const { getCoachIntelligencePromptBlock } = await import("../services/coachIntelligenceService.js");
+    intelligenceBlock = await getCoachIntelligencePromptBlock(userId, goal);
+  } catch {
+    /* non-fatal */
+  }
+  const userPromptWithIntel = intelligenceBlock ? `${userPrompt}\n\n${intelligenceBlock}` : userPrompt;
+
   const { submitRouteAiJob } = await import("../lib/route-ai-queue.js");
   await submitRouteAiJob({
     routeName: "ai-coach/extend",
     type: "ai-coach.extend",
     userId,
-    input: { systemPrompt, userPrompt, startWinNumber: start, failedWinTitle },
+    input: { systemPrompt, userPrompt: userPromptWithIntel, startWinNumber: start, failedWinTitle },
     waitMs: 30_000,
     buildSyncBody: (result) => {
       const body = result as { wins: Win[]; source: string; usedFallback: boolean };
@@ -1270,6 +1296,38 @@ router.post("/ai-coach/feedback", async (req, res): Promise<void> => {
       target: [userProgressTable.sessionId, userProgressTable.winNumber],
       set: { feedback, planTitle, totalWins: Math.floor(totalWins), createdAt: new Date() },
     });
+
+    try {
+      const { applyCoachIntelligenceEventForUser } = await import("../services/coachIntelligenceService.js");
+      const [sessionRow] = await db
+        .select({
+          planJson: userCoachSessionsTable.planJson,
+          inputs: userCoachSessionsTable.inputs,
+        })
+        .from(userCoachSessionsTable)
+        .where(
+          and(eq(userCoachSessionsTable.sessionId, sessionId), eq(userCoachSessionsTable.userId, userId)),
+        )
+        .limit(1);
+      const plan = sessionRow?.planJson as { wins?: { win: number; title: string; objective?: string; actions?: string[] }[] } | null;
+      const win = plan?.wins?.find((w) => w.win === Math.floor(winNumber));
+      const inputs = (sessionRow?.inputs ?? {}) as CoachInput;
+      await applyCoachIntelligenceEventForUser(userId, {
+        type: "win_feedback",
+        sessionId,
+        goalId,
+        goalTitle: planTitle,
+        winNumber: Math.floor(winNumber),
+        winTitle: win?.title ?? clip(body.winTitle, 200) ?? `Win ${winNumber}`,
+        winObjective: win?.objective,
+        winActions: win?.actions,
+        feedback: feedback as "yes" | "somewhat" | "no",
+        childAgeGroup: inputs.ageGroup,
+      });
+    } catch (intelErr) {
+      logger.warn({ intelErr, userId, sessionId }, "coach intelligence update failed (non-fatal)");
+    }
+
     res.json({ ok: true });
   } catch (err) {
     logger.error({ err }, "ai-coach feedback insert failed");
@@ -1361,13 +1419,15 @@ router.get("/ai-coach/progress", async (req, res): Promise<void> => {
       s.feedbacks.push({ win: r.winNumber, feedback: r.feedback, at: r.createdAt.toISOString() });
     }
 
-    // Check which sessions have a restorable coach-session row
-    // (old sessions created before the sessions table existed won't have one)
     const allSessionIds = Array.from(sessionsMap.keys());
     const resumableSet = new Set<string>();
+    const planBySession = new Map<string, CoachPlanRef>();
     if (allSessionIds.length > 0) {
       const coachRows = await db
-        .select({ sessionId: userCoachSessionsTable.sessionId })
+        .select({
+          sessionId: userCoachSessionsTable.sessionId,
+          planJson: userCoachSessionsTable.planJson,
+        })
         .from(userCoachSessionsTable)
         .where(
           and(
@@ -1375,26 +1435,131 @@ router.get("/ai-coach/progress", async (req, res): Promise<void> => {
             inArray(userCoachSessionsTable.sessionId, allSessionIds),
           ),
         );
-      for (const r of coachRows) resumableSet.add(r.sessionId);
+      for (const r of coachRows) {
+        resumableSet.add(r.sessionId);
+        const plan = r.planJson as CoachPlanRef | null;
+        if (plan?.wins?.length) planBySession.set(r.sessionId, plan);
+      }
     }
 
-    const sessions = Array.from(sessionsMap.values()).map((s) => ({
-      sessionId: s.sessionId,
-      goalId: s.goalId,
-      goalLabel: GOAL_LABELS[s.goalId] ?? s.goalId,
-      planTitle: s.planTitle,
-      totalWins: s.totalWins,
-      completed: s.completedWins.size,
-      lastFeedback: s.lastFeedback,
-      lastUpdated: s.lastUpdated,
-      feedbacks: s.feedbacks.sort((a, b) => a.win - b.win),
-      canResume: resumableSet.has(s.sessionId),
-    }));
+    const sessions = Array.from(sessionsMap.values()).map((s) =>
+      buildCoachProgressViewModel({
+        sessionId: s.sessionId,
+        goalId: s.goalId,
+        goalLabel: GOAL_LABELS[s.goalId] ?? s.goalId,
+        planTitle: s.planTitle,
+        plan: planBySession.get(s.sessionId) ?? null,
+        feedbacks: s.feedbacks.sort((a, b) => a.win - b.win),
+        lastUpdated: s.lastUpdated,
+        canResume: resumableSet.has(s.sessionId),
+      }),
+    );
 
     res.json({ sessions });
   } catch (err) {
     logger.error({ err }, "ai-coach progress query failed");
     res.status(500).json({ error: "failed to load progress" });
+  }
+});
+
+// ─── POST /ai-coach/graduate ─────────────────────────────────────────────
+router.post("/ai-coach/graduate", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  const sessionId = clip(req.body?.sessionId, 64);
+  const goalId = clip(req.body?.goalId, 64);
+  const path = clip(req.body?.path, 32);
+  if (!sessionId || !goalId || !path) {
+    res.status(400).json({ error: "invalid_body" });
+    return;
+  }
+  logger.info(
+    { evt: "coach.graduation", userId, sessionId, goalId, path },
+    "Amy Coach goal graduation recorded",
+  );
+  try {
+    const { applyCoachIntelligenceEventForUser } = await import("../services/coachIntelligenceService.js");
+    await applyCoachIntelligenceEventForUser(userId, {
+      type: "graduation",
+      goalId,
+      goalTitle: clip(req.body?.goalTitle, 200) || goalId,
+      path,
+      maintenanceMode: path === "maintenance",
+    });
+  } catch {
+    /* non-fatal */
+  }
+  res.json({ ok: true });
+});
+
+// ─── POST /ai-coach/check-in ─────────────────────────────────────────────
+router.post("/ai-coach/check-in", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  const sessionId = clip(req.body?.sessionId, 64);
+  const goalId = clip(req.body?.goalId, 64);
+  const kind = clip(req.body?.kind, 32);
+  const optionId = clip(req.body?.optionId, 32);
+  if (!sessionId || !goalId || !kind || !optionId) {
+    res.status(400).json({ error: "invalid_body" });
+    return;
+  }
+  logger.info(
+    {
+      evt: "coach.check_in",
+      userId,
+      sessionId,
+      goalId,
+      kind,
+      optionId,
+      clarification: clip(req.body?.clarificationAnswer, 200) || undefined,
+    },
+    "Amy Coach check-in recorded",
+  );
+  try {
+    const { applyCoachIntelligenceEventForUser } = await import("../services/coachIntelligenceService.js");
+    const positive = ["better", "yes", "still_well", "a_little", "keep_pace", "mixed", "advanced"].includes(
+      optionId,
+    );
+    await applyCoachIntelligenceEventForUser(userId, {
+      type: "check_in",
+      sessionId,
+      goalId,
+      optionLabel: clip(req.body?.optionLabel, 200) || optionId,
+      positive,
+    });
+  } catch {
+    /* non-fatal */
+  }
+  res.json({ ok: true });
+});
+
+// ─── GET /ai-coach/intelligence ──────────────────────────────────────────
+router.get("/ai-coach/intelligence", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  try {
+    const { loadCoachIntelligence, getPublicCoachIntelligenceView } = await import(
+      "../services/coachIntelligenceService.js"
+    );
+    const snapshot = await loadCoachIntelligence(userId);
+    const activeGoalId =
+      clip(String(req.query.goalId ?? ""), 64) ||
+      snapshot.winRecords[snapshot.winRecords.length - 1]?.goalId ||
+      "";
+    res.json(getPublicCoachIntelligenceView(snapshot, activeGoalId));
+  } catch (err) {
+    logger.error({ err }, "ai-coach intelligence load failed");
+    res.status(500).json({ error: "failed to load intelligence" });
   }
 });
 

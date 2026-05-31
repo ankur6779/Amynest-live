@@ -8,6 +8,7 @@ import {
   DashboardCompactStatsRow,
   DashboardMoreInsightsSection,
 } from "@/components/dashboard-light-widgets";
+import { AmyCoachCheckInCard } from "@/components/amy-coach-check-in-card";
 import { formatAge } from "@/lib/age-groups";
 import { AmyIcon } from "@/components/amy-icon";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -1136,6 +1137,8 @@ export default function Dashboard() {
                 todayTotal={todayProgress.total}
               />
             )}
+
+            <AmyCoachCheckInCard />
 
             <DashboardCoachingCard
               routines={filteredRoutines}

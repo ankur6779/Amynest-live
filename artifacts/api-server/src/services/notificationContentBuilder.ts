@@ -224,8 +224,8 @@ export async function buildEngagement(
         deepLink: "/games",
       },
       6: {
-        title: "Day 6: Chat with Amy 💬",
-        body: "Get a personalised parenting tip from your AI coach.",
+        title: "Amy has a quick thought for you",
+        body: "Small progress matters — ready for a quick coaching check-in?",
         deepLink: "/amy-coach",
       },
       7: {

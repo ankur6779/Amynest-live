@@ -22,6 +22,65 @@ export {
   goalIndexInCoachCategory,
 } from "./catalog.js";
 
+export {
+  buildCoachProgressViewModel,
+  computeProgressTrend,
+  type CoachProgressViewModel,
+  type CoachPlanRef,
+  type ProgressTrend,
+  type MilestoneCelebration,
+  type CoachFeedback,
+} from "./progress-view.js";
+
+export {
+  buildCoachGraduationViewModel,
+  shouldSuggestGoalReactivation,
+  type CoachGraduationViewModel,
+  type CoachGraduationInput,
+  type CoachPastSuccess,
+  type GraduationPath,
+} from "./graduation-view.js";
+
+export {
+  resolveCoachCheckIn,
+  buildCoachMemoryLine,
+  coachCheckInNotificationCopy,
+  mapCheckInResponseToTrend,
+  pickPrimaryCoachSession,
+  hoursSince,
+  type CoachCheckInKind,
+  type CoachCheckInViewModel,
+  type CoachCheckInOption,
+  type CoachCheckInHistoryEntry,
+} from "./check-in-view.js";
+
+export {
+  createEmptyCoachIntelligence,
+  applyCoachIntelligenceEvent,
+  classifyWinStrategy,
+  deriveCoachingProfile,
+  rankStrategyConfidence,
+  strategiesToPrefer,
+  strategiesToAvoid,
+  buildFamilyReferenceLine,
+  buildCrossGoalInsight,
+  detectIntelligencePlateau,
+  renderCoachIntelligencePromptBlock,
+  pickVariedPhrase,
+  registerUsedPhrase,
+  hashPhrase,
+  mergeCoachIntelligenceSnapshots,
+  buildPublicCoachIntelligenceView,
+  STRATEGY_LABELS,
+  type CoachIntelligencePublicView,
+  type CoachIntelligenceSnapshot,
+  type CoachIntelligenceEvent,
+  type CoachStrategyTag,
+  type CoachContentDensity,
+  type CoachParentStyle,
+  type StrategyConfidenceTier,
+} from "./coaching-intelligence.js";
+
 /** @deprecated Legacy journey window — kept for migration only. */
 export const COACH_JOURNEY_FREE_DAYS = 3;
 export const COACH_JOURNEY_CALENDAR_CAP_DAYS = 7;

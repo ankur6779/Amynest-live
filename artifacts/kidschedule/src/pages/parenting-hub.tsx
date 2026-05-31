@@ -94,8 +94,7 @@ import {
   HUB_SEE_ALL_CHIP,
   HUB_BOTTOM_CTA,
   getHubFeatureTileAccent,
-  hubSectionCardClasses,
-  hubAccentBarClasses,
+  hubShadedSectionCardClasses,
   HUB_FEATURE_TILE_CHEVRON,
   HUB_FEATURE_TILE_DESC,
   HUB_FEATURE_TILE_HEADER,
@@ -106,6 +105,7 @@ import {
   HUB_FEATURE_TILE_TITLE,
 } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
+import { HubShadedCardBody } from "@/components/hub-sub-tile-shell";
 import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
 
 // ── 5-section grouping for the "For You" content ────────────────────────────
@@ -213,13 +213,12 @@ function HubSection({
       data-section-id={id}
       className={cn(
         "group h-full",
-        hubSectionCardClasses(tileTheme),
+        hubShadedSectionCardClasses(tileTheme),
         cardClass,
         highlighted && !open && "shadow-[0_0_28px_rgba(168,85,247,0.24)]",
       )}
     >
-      <div className="flex h-full min-w-0">
-        <div className={hubAccentBarClasses(tileTheme)} aria-hidden />
+      <HubShadedCardBody theme={tileTheme} cardClass={cardClass}>
         <div className="min-w-0 flex-1 flex flex-col">
           <button
             onClick={toggle}
@@ -229,7 +228,7 @@ function HubSection({
             )}
             aria-expanded={open}
           >
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
               <div
                 className={cn(
                   HUB_FEATURE_TILE_ICON,
@@ -241,8 +240,8 @@ function HubSection({
                 {icon}
               </div>
               <div className={HUB_FEATURE_TILE_TEXT}>
-                <div className="flex items-start gap-1.5 min-w-0">
-                  <p className={HUB_FEATURE_TILE_TITLE}>{title}</p>
+                <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+                  <p className={cn(HUB_FEATURE_TILE_TITLE, "flex-1")}>{title}</p>
                   {tryFree && <TryFreeBadge />}
                 </div>
                 <p className={HUB_FEATURE_TILE_DESC}>{description}</p>
@@ -283,7 +282,7 @@ function HubSection({
             </div>
           )}
         </div>
-      </div>
+      </HubShadedCardBody>
     </div>
   );
 }
@@ -299,12 +298,11 @@ function RoutineLaunchCard({
   return (
     <AppLink
       href="/routines/generate"
-      className={cn("group block h-full overflow-hidden p-0 pl-0", hubSectionCardClasses(theme))}
+      className={cn("group block h-full overflow-hidden p-0 pl-0", hubShadedSectionCardClasses(theme))}
       data-testid="routine-launch-card"
       data-section-id="generate-routine"
     >
-      <div className="flex min-w-0">
-        <div className={hubAccentBarClasses(theme)} aria-hidden />
+      <HubShadedCardBody theme={theme}>
         <div className={HUB_FEATURE_TILE_LAUNCH_ROW}>
           <div className={cn(HUB_FEATURE_TILE_ICON, theme.emojiShell, "bg-gradient-to-br from-emerald-400 to-teal-500")}>
             <Calendar className="h-5 w-5 text-white" />
@@ -317,7 +315,7 @@ function RoutineLaunchCard({
             Open
           </span>
         </div>
-      </div>
+      </HubShadedCardBody>
     </AppLink>
   );
 }
@@ -1622,10 +1620,9 @@ function ParentingHubPage() {
                 <div
                   key={group.key}
                   id={`hub-group-${group.key}`}
-                  className={cn(hubSectionCardClasses(gs), "hub-page-enter")}
+                  className={cn(hubShadedSectionCardClasses(gs), "hub-page-enter")}
                 >
-                  <div className="flex min-w-0">
-                    <div className={hubAccentBarClasses(gs)} aria-hidden />
+                  <HubShadedCardBody theme={gs}>
                     <div className="min-w-0 flex-1">
                   <button
                     onClick={() => toggleGroup(group.key)}
@@ -1636,11 +1633,11 @@ function ParentingHubPage() {
                     )}
                     aria-expanded={isOpen}
                   >
-                    <span className={cn("flex items-center justify-center w-10 h-10 rounded-xl shrink-0 text-lg", gs.emojiShell)}>
+                    <span className={cn("flex items-center justify-center w-8 h-8 rounded-xl shrink-0 text-base", gs.emojiShell)}>
                       {group.emoji}
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className={cn("block font-quicksand font-bold text-sm leading-tight", isOpen ? "text-amber-100/95" : "text-foreground")}>
+                      <span className={cn("block font-quicksand font-bold text-sm leading-tight truncate", isOpen ? "text-amber-100/95" : "text-foreground")}>
                         {t(group.i18n)}
                       </span>
                       {isSupport && !isOpen ? (
@@ -1680,7 +1677,7 @@ function ParentingHubPage() {
                     </div>
                   )}
                     </div>
-                  </div>
+                  </HubShadedCardBody>
                 </div>
               );
             })}

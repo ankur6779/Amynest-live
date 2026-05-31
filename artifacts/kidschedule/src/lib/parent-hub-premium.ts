@@ -21,6 +21,8 @@ export interface HubAccentTheme {
   shadowHover: string;
   accentBar: string;
   emojiShell: string;
+  /** RGB triplet for left→right shade gradients (Infant Parenting parity). */
+  tintRgb: string;
 }
 
 function accentDepth(r: number, g: number, b: number): string {
@@ -50,6 +52,7 @@ function makeTheme(
     shadow: accentDepth(r, g, b),
     shadowHover: accentDepthHover(r, g, b),
     accentBar: cn("rounded-full", bar, barGlow),
+    tintRgb: `${r},${g},${b}`,
     emojiShell: cn(
       "flex items-center justify-center shrink-0 rounded-xl",
       "bg-[rgba(255,255,255,0.08)] backdrop-blur-md",
@@ -137,6 +140,20 @@ export function hubSectionCardClasses(theme: HubAccentTheme): string {
   );
 }
 
+/** Parent Hub cards with Infant-style horizontal shade (transparent shell). */
+export function hubShadedSectionCardClasses(theme: HubAccentTheme): string {
+  return cn(
+    "rounded-[24px] bg-transparent backdrop-blur-[18px]",
+    "transition-all duration-[220ms] ease-[ease]",
+    "hover:-translate-y-0.5",
+    "active:scale-[0.985]",
+    "relative overflow-hidden p-0 pl-0",
+    theme.border,
+    theme.shadow,
+    theme.shadowHover,
+  );
+}
+
 export function hubAccentBarClasses(theme: HubAccentTheme): string {
   return cn("w-[5px] shrink-0 self-stretch my-2 ml-1", theme.accentBar);
 }
@@ -196,18 +213,18 @@ export const HUB_TILE = cn(
 
 /** Collapsed Parent Hub feature tiles — shared header geometry for HubSection + HubLaunchCard. */
 export const HUB_FEATURE_TILE_HEADER = cn(
-  "w-full flex items-center justify-between gap-3 px-3 py-3 text-left",
+  "w-full flex items-center justify-between gap-2.5 px-3 py-2.5 text-left",
   "transition-all duration-[220ms] ease-[ease]",
 );
 
 export const HUB_FEATURE_TILE_ICON = cn(
-  "w-10 h-10 flex items-center justify-center shrink-0",
+  "w-8 h-8 flex items-center justify-center shrink-0 [&_svg]:h-4 [&_svg]:w-4",
 );
 
 export const HUB_FEATURE_TILE_TEXT = "min-w-0 flex-1";
 
 export const HUB_FEATURE_TILE_TITLE = cn(
-  "font-quicksand font-bold text-[15px] leading-[1.25] text-foreground line-clamp-2 min-h-[2.5rem]",
+  "font-quicksand font-bold text-[14px] leading-tight text-foreground truncate min-w-0",
 );
 
 export const HUB_FEATURE_TILE_DESC = cn(
@@ -225,7 +242,7 @@ export const HUB_FEATURE_TILE_CHEVRON = cn(
 
 /** Launch / link tiles — same collapsed height as HubSection header + preview row. */
 export const HUB_FEATURE_TILE_LAUNCH_ROW = cn(
-  "flex min-w-0 flex-1 items-center gap-3 p-3 min-h-[6.75rem]",
+  "flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2.5 min-h-[4.75rem]",
 );
 
 export const HUB_XP_GOLD = "font-semibold text-[#FFD54F] tabular-nums";
@@ -465,6 +482,13 @@ export function extractTintRgbFromCardClass(cardClass?: string): string | undefi
   const match = cardClass.match(/rgba\((\d+),(\d+),(\d+)/);
   if (!match) return undefined;
   return `${match[1]},${match[2]},${match[3]}`;
+}
+
+export function resolveHubTintRgb(theme: HubAccentTheme, cardClass?: string): string {
+  if (cardClass?.includes("linear-gradient")) {
+    return extractTintRgbFromCardClass(cardClass) ?? theme.tintRgb;
+  }
+  return theme.tintRgb;
 }
 
 export const HUB_SUB_TILE_SHELL = cn(

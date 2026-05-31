@@ -1,11 +1,10 @@
 import { AppLink } from "@/components/app-link";
 import { TryFreeBadge } from "@/components/try-free-badge";
+import { HubShadedCardBody } from "@/components/hub-sub-tile-shell";
 import { cn } from "@/lib/utils";
 import {
   getHubFeatureTileAccent,
-  hubAccentBarClasses,
-  hubSectionCardClasses,
-  HUB_FEATURE_TILE_CHEVRON,
+  hubShadedSectionCardClasses,
   HUB_FEATURE_TILE_DESC,
   HUB_FEATURE_TILE_ICON,
   HUB_FEATURE_TILE_LAUNCH_ROW,
@@ -45,31 +44,30 @@ export function HubLaunchCard({
       onClick={() => onNavigate?.()}
       className={cn(
         "group block h-full overflow-hidden p-0 pl-0",
-        hubSectionCardClasses(theme),
+        hubShadedSectionCardClasses(theme),
         cardClass,
       )}
       data-testid={testId}
       data-section-id={sectionId}
       source="hub-launch-card"
     >
-      <div className="flex h-full min-w-0">
-        <div className={hubAccentBarClasses(theme)} aria-hidden />
+      <HubShadedCardBody theme={theme} cardClass={cardClass}>
         <div className={cn(HUB_FEATURE_TILE_LAUNCH_ROW, "flex-1")}>
           <div className={cn(HUB_FEATURE_TILE_ICON, theme.emojiShell, accentClass)}>
             {icon}
           </div>
           <div className={HUB_FEATURE_TILE_TEXT}>
-            <div className="flex items-start gap-1.5 min-w-0">
-              <p className={HUB_FEATURE_TILE_TITLE}>{title}</p>
+            <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+              <p className={cn(HUB_FEATURE_TILE_TITLE, "flex-1")}>{title}</p>
               {tryFree ? <TryFreeBadge /> : null}
             </div>
             <p className={HUB_FEATURE_TILE_DESC}>{description}</p>
           </div>
-          <span className="inline-flex h-8 shrink-0 items-center self-center rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 text-xs font-black text-white shadow-[0_0_14px_rgba(251,146,60,0.35)] transition-transform group-active:scale-95">
+          <span className="inline-flex h-7 shrink-0 items-center self-center rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 text-[11px] font-black text-white shadow-[0_0_14px_rgba(251,146,60,0.35)] transition-transform group-active:scale-95">
             Open
           </span>
         </div>
-      </div>
+      </HubShadedCardBody>
     </AppLink>
   );
 }

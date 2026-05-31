@@ -1,14 +1,14 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { HubShadedCardBody } from "@/components/hub-sub-tile-shell";
 import { cn } from "@/lib/utils";
 import {
   HUB_COLLAPSIBLE,
   HUB_CARD_TITLE,
   HUB_BODY,
   HUB_PANEL_ACCENTS,
-  hubSectionCardClasses,
-  hubAccentBarClasses,
+  hubShadedSectionCardClasses,
   type HubPanelAccentKey,
 } from "@/lib/parent-hub-premium";
 import { ContinueJourneyCard } from "@/components/continue-journey-card";
@@ -99,13 +99,12 @@ export function HubCollapsiblePanel({
   if (panel) {
     return (
       <div
-        className={cn(hubSectionCardClasses(panel), "hub-page-enter")}
+        className={cn(hubShadedSectionCardClasses(panel), "hub-page-enter")}
         data-testid={testId}
       >
-        <div className="flex min-w-0">
-          <div className={hubAccentBarClasses(panel)} aria-hidden />
+        <HubShadedCardBody theme={panel}>
           <div className="min-w-0 flex-1">{shell}</div>
-        </div>
+        </HubShadedCardBody>
       </div>
     );
   }
@@ -166,11 +165,10 @@ export function HubExploreAgesSection({
 
   return (
     <div
-      className={cn(hubSectionCardClasses(panel), "hub-page-enter")}
+      className={cn(hubShadedSectionCardClasses(panel), "hub-page-enter")}
       data-testid={testId}
     >
-      <div className="flex min-w-0">
-        <div className={hubAccentBarClasses(panel)} aria-hidden />
+      <HubShadedCardBody theme={panel}>
         <div className="min-w-0 flex-1">
           <button
             type="button"
@@ -181,7 +179,7 @@ export function HubExploreAgesSection({
             <div className="flex items-center gap-2.5 min-w-0 text-left">
               <span
                 className={cn(
-                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg",
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-base",
                   panel.emojiShell,
                 )}
                 aria-hidden
@@ -189,7 +187,7 @@ export function HubExploreAgesSection({
                 {headerEmoji}
               </span>
               <div className="min-w-0">
-                <p className={HUB_CARD_TITLE}>{title}</p>
+                <p className={cn(HUB_CARD_TITLE, "truncate")}>{title}</p>
                 {!open ? <p className={cn(HUB_BODY, "line-clamp-1")}>{subtitle}</p> : null}
               </div>
             </div>
@@ -204,7 +202,7 @@ export function HubExploreAgesSection({
             </div>
           ) : null}
         </div>
-      </div>
+      </HubShadedCardBody>
     </div>
   );
 }
