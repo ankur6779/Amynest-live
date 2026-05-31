@@ -18,6 +18,10 @@ import {
   catalogPlaybackSpeakOptions,
   shouldBypassPhonicsSpellingLibraries,
 } from "@/lib/unified-catalog-playback";
+import {
+  setAudioTraceModule,
+  traceBrokenModulePreflight,
+} from "@/lib/audio-root-cause-trace";
 import { useSpellingCatalogSession, levelFromStars } from "@/hooks/use-spelling-catalog-session";
 
 // ─── Shared types (mirror server shape — no codegen yet for /spelling/*) ─────
@@ -161,13 +165,20 @@ export function useSpellingTTS(): UseSpellingTTSState {
         setLocalError(null);
         recordTtsUserGesture();
         audioManager.unlockFromUserGesture();
-        const result = await amySpeak(
-          trimmed,
-          catalogPlaybackSpeakOptions(trimmed, {
-            playbackRate: opts.slow ? 0.65 : 1,
-            playbackMode: "partial-ok",
-          }),
-        );
+        const speakOpts = catalogPlaybackSpeakOptions(trimmed, {
+          playbackRate: opts.slow ? 0.65 : 1,
+          playbackMode: "partial-ok",
+        });
+        setAudioTraceModule("Spelling");
+        traceBrokenModulePreflight("Spelling", {
+          audioIdentity: speakOpts.audioIdentity,
+          resolvedText: trimmed,
+          staticCatalogTexts: speakOpts.staticCatalogTexts,
+          catalogId: opts.catalogId,
+          catalogPlayback: speakOpts.catalogPlayback,
+        });
+        const result = await amySpeak(trimmed, speakOpts);
+        setAudioTraceModule(null);
         if (!result.success) {
           setLocalError(result.error ?? "audio_playback_failed");
           trackSpellingAudioEvent("audio_error", {

@@ -26,6 +26,10 @@ import {
   resolvePhonicsCatalogPhrase,
   shouldBypassPhonicsSpellingLibraries,
 } from "@/lib/unified-catalog-playback";
+import {
+  setAudioTraceModule,
+  traceBrokenModulePreflight,
+} from "@/lib/audio-root-cause-trace";
 import { getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { cn } from "@/lib/utils";
 import {
@@ -281,7 +285,17 @@ export function AudioPlayButton({
                 phoneme: phonemeKey,
                 word: cvcWordKey,
               };
+        if (mode === "phonics" && shouldBypassPhonicsSpellingLibraries()) {
+          setAudioTraceModule("Phonics");
+          traceBrokenModulePreflight("Phonics", {
+            audioIdentity: speakOpts.audioIdentity,
+            resolvedText,
+            staticCatalogTexts: speakOpts.staticCatalogTexts,
+            catalogPlayback: speakOpts.catalogPlayback,
+          });
+        }
         const res = await speak(resolvedText, speakOpts);
+        if (mode === "phonics") setAudioTraceModule(null);
         if (!res?.success) {
           setVisualFallback(true);
           window.setTimeout(() => {

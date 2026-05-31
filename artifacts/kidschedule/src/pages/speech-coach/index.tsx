@@ -34,6 +34,10 @@ import {
   type SpeechMilestoneStatus,
 } from "@workspace/api-client-react";
 import {
+  setAudioTraceModule,
+  traceBrokenModulePreflight,
+} from "@/lib/audio-root-cause-trace";
+import {
   SPEECH_GAMES,
   SPEECH_AFFIRMATIONS,
   PARENT_GUIDANCE_CARDS,
@@ -643,12 +647,21 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
     const spoken = getPromptSpeakText(currentItem);
     const mode = (currentItem.kind === "phonic" || currentItem.kind === "letter") ? "phonics" : "default";
     void (async () => {
-      await voice.speak(spoken, {
+      const speakOpts = {
         mode: mode as "phonics" | "default",
-        catalogPlayback: true,
+        catalogPlayback: true as const,
         staticCatalogTexts: [spoken],
         waitUntilEnd: true,
+      };
+      setAudioTraceModule("Speech Coach");
+      traceBrokenModulePreflight("Speech Coach", {
+        audioIdentity: undefined,
+        resolvedText: spoken,
+        staticCatalogTexts: speakOpts.staticCatalogTexts,
+        catalogPlayback: speakOpts.catalogPlayback,
       });
+      await voice.speak(spoken, speakOpts);
+      setAudioTraceModule(null);
       if (promptPhase === "idle") setPromptPhase("heard");
     })();
   };

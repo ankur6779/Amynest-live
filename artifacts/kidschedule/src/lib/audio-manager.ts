@@ -24,6 +24,7 @@ import {
   emitAudioPlaybackEvent,
   type AudioPlaybackSource,
 } from "@/lib/audio-playback-events";
+import { noteAudioManagerPlayCalled } from "@/lib/audio-root-cause-trace";
 
 const LOG = "[AudioManager]";
 const DEFAULT_MAX_RETRIES = 2;
@@ -988,6 +989,7 @@ class AudioManagerImpl {
     meta: AudioPlayMeta = {},
     opts: AudioPlayOptions = {},
   ): Promise<boolean> {
+    noteAudioManagerPlayCalled();
     if (!this.assertUsable()) return false;
 
     const channel = opts.channel ?? meta.channel ?? "speech";

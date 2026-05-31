@@ -17,6 +17,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import {
+  setAudioTraceModule,
+  traceBrokenModulePreflight,
+} from "@/lib/audio-root-cause-trace";
 import { handleSubscriptionMutationGateError } from "@/lib/subscription-mutation-gate";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import {
@@ -330,12 +334,21 @@ export function SpeechGameFlow({
         : "default";
     const spoken = getPromptSpeakText(currentItem);
     void (async () => {
-      await voice.speak(spoken, {
+      const speakOpts = {
         mode: mode as "phonics" | "default",
-        catalogPlayback: true,
+        catalogPlayback: true as const,
         staticCatalogTexts: [spoken],
         waitUntilEnd: true,
+      };
+      setAudioTraceModule("Speech Coach");
+      traceBrokenModulePreflight("Speech Coach", {
+        audioIdentity: undefined,
+        resolvedText: spoken,
+        staticCatalogTexts: speakOpts.staticCatalogTexts,
+        catalogPlayback: speakOpts.catalogPlayback,
       });
+      await voice.speak(spoken, speakOpts);
+      setAudioTraceModule(null);
       if (promptPhase === "idle") setPromptPhase("heard");
     })();
   };
