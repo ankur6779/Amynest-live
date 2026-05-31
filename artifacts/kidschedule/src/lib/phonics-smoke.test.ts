@@ -16,6 +16,22 @@ vi.mock("@/lib/amy-voice-audio-start", () => ({
   isNotAllowedPlayError: vi.fn(() => false),
 }));
 
+/** Catalog bypass uses controller prepared URL — must resolve without real network. */
+vi.mock("@/lib/amy-voice-controller", () => ({
+  amyVoiceController: {
+    playPreparedUrl: vi.fn(async () => ({ success: true, layer: "static" })),
+    pause: vi.fn(),
+    speak: vi.fn(async () => ({ success: true })),
+    getSnapshot: vi.fn(() => ({
+      status: "idle",
+      error: null,
+      requestId: 0,
+      activePhrase: null,
+    })),
+    subscribe: vi.fn(() => () => {}),
+  },
+}));
+
 class FakeAudio {
   static instances: FakeAudio[] = [];
   src: string;
