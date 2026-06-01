@@ -386,13 +386,20 @@ export function AudioPlayButton({
         }
 
         const isSentenceRead = resolvedText.includes(" ");
-        const speakOpts = {
-          mode: mode ?? "default",
-          playbackMode: isSentenceRead ? ("full-required" as const) : ("partial-ok" as const),
-          waitUntilEnd: !isSentenceRead,
-          phoneme: phonemeKey,
-          word: cvcWordKey,
-        };
+        const speakOpts = hasStaticCatalogAudio(resolvedText)
+          ? catalogPlaybackSpeakOptions(resolvedText, {
+              mode: mode ?? "default",
+              phoneme: phonemeKey,
+              word: cvcWordKey,
+              playbackMode: isSentenceRead ? ("full-required" as const) : ("partial-ok" as const),
+            })
+          : {
+              mode: mode ?? "default",
+              playbackMode: isSentenceRead ? ("full-required" as const) : ("partial-ok" as const),
+              waitUntilEnd: !isSentenceRead,
+              phoneme: phonemeKey,
+              word: cvcWordKey,
+            };
         const res = await speak(resolvedText, speakOpts);
         if (!res?.success) {
           setVisualFallback(true);

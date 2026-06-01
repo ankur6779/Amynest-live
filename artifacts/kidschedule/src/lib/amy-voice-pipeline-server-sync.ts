@@ -208,7 +208,11 @@ export async function refreshServerTtsStrategy(
   context?: LayerScoringContext,
 ): Promise<void> {
   if (typeof window === "undefined" || !navigator.onLine) return;
-  if (!(await hasAuthenticatedTtsSession())) return;
+  // Strategy is optional — DEFAULT_STRATEGY applies when logged out; skip 401 noise only.
+  if (!(await hasAuthenticatedTtsSession())) {
+    strategyAvailable = false;
+    return;
+  }
 
   const key = context ? contextQueryKey(context) : "default";
   const stale = Date.now() - strategyFetchedAt > STRATEGY_REFRESH_MS;

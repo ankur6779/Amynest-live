@@ -12,8 +12,9 @@
 /* global self, caches, clients, importScripts, firebase */
 
 const CACHE_NAME = "__AMYNEST_CACHE_NAME__";
-/** Immutable hash-keyed audio — preserved across shell deploys. */
-const AUDIO_CACHE_NAME = "amynest-audio-v1";
+/** Immutable hash-keyed audio — bump to invalidate poisoned partial (206) entries. */
+const AUDIO_CACHE_NAME = "amynest-audio-v2";
+const LEGACY_AUDIO_CACHE_NAMES = ["amynest-audio-v1"];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -47,17 +48,34 @@ async function safeCacheAudioPut(cache, request, response) {
   }
 }
 
+/** URL-only cache key — Range headers must not split cache entries. */
+function cacheRequestForUrl(url) {
+  return new Request(url, { method: "GET", credentials: "include", mode: "cors" });
+}
+
+/** Full-file fetch — HTMLAudioElement + Cache API break on 206 partial bodies. */
+function fetchFullAudio(request) {
+  return fetch(
+    new Request(request.url, {
+      method: "GET",
+      credentials: request.credentials,
+      mode: request.mode,
+      cache: "no-store",
+    }),
+  );
+}
+
 async function precacheAudioUrls(urls) {
   const cache = await caches.open(AUDIO_CACHE_NAME);
   const batch = urls.slice(0, 200);
   for (const rawUrl of batch) {
     if (typeof rawUrl !== "string" || !rawUrl.trim()) continue;
     try {
-      const request = new Request(rawUrl, { credentials: "include", mode: "cors" });
-      const existing = await cache.match(request);
-      if (existing) continue;
-      const response = await fetch(request);
-      await safeCacheAudioPut(cache, request, response);
+      const cacheKey = cacheRequestForUrl(rawUrl);
+      const existing = await cache.match(cacheKey);
+      if (existing?.ok && existing.status === 200) continue;
+      const response = await fetchFullAudio(cacheKey);
+      await safeCacheAudioPut(cache, cacheKey, response);
     } catch {
       /* skip failed clip */
     }
@@ -70,6 +88,7 @@ self.addEventListener("activate", (event) => {
       Promise.all(
         names.map((name) => {
           if (name === CACHE_NAME || name === AUDIO_CACHE_NAME) return undefined;
+          if (LEGACY_AUDIO_CACHE_NAMES.includes(name)) return caches.delete(name);
           return caches.delete(name);
         }),
       ).then(() => self.clients.claim()),
@@ -86,17 +105,25 @@ function isImmutableAudioApiPath(pathname) {
 }
 
 async function cacheFirstAudio(request) {
+  const cacheKey = cacheRequestForUrl(request.url);
   try {
     const cache = await caches.open(AUDIO_CACHE_NAME);
-    const cached = await cache.match(request);
+    const cached = await cache.match(cacheKey);
     if (cached) {
-      const headers = new Headers(cached.headers);
-      headers.set("X-AmyNest-Sw-Cache", "HIT");
-      return new Response(cached.body, { status: cached.status, headers });
+      if (cached.ok && cached.status === 200) {
+        const headers = new Headers(cached.headers);
+        headers.set("X-AmyNest-Sw-Cache", "HIT");
+        return new Response(cached.body, { status: 200, headers });
+      }
+      await cache.delete(cacheKey);
     }
 
-    const response = await fetch(request);
-    await safeCacheAudioPut(cache, request, response);
+    const response = await fetchFullAudio(request);
+    if (!response.ok) return response;
+
+    const forCache = response.clone();
+    await safeCacheAudioPut(cache, cacheKey, forCache);
+
     const headers = new Headers(response.headers);
     headers.set("X-AmyNest-Sw-Cache", "MISS");
     return new Response(response.body, {
@@ -105,7 +132,7 @@ async function cacheFirstAudio(request) {
       headers,
     });
   } catch {
-    return fetch(request);
+    return fetchFullAudio(request);
   }
 }
 
