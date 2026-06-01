@@ -333,9 +333,9 @@ export function SpeechGameFlow({
         ? "phonics"
         : "default";
     const spoken = getPromptSpeakText(currentItem);
+    voice.primeSpeakGesture(spoken, { mode: mode as "phonics" | "default" });
     void (async () => {
       const speakOpts = {
-        coach: true as const,
         mode: mode as "phonics" | "default",
         catalogPlayback: true as const,
         staticCatalogTexts: [spoken],

@@ -791,6 +791,10 @@ export function prepareAmySpeechInput(raw: string, opts?: SpeakOptions): AmySpee
   const draftProsody = getProsodyProfile(speechMode, baseNormalized, 1);
   let phrases = splitSemanticPhrases(baseNormalized, speechMode, draftProsody);
   phrases = collapseSplitWhenStaticAvailable(phrases, baseNormalized, originalText, speechMode);
+  // Long coach-style lines: never split — chunks miss static map and TTS is flaky on mobile.
+  if (speechMode === "speech_coach" && phrases.length > 1) {
+    phrases = [baseNormalized];
+  }
   const prosody = getProsodyProfile(speechMode, baseNormalized, phrases.length);
   const normalizedText = phrases.length === 1 ? phrases[0]! : phrases.join(prosody.pauseMarker);
   const policy = buildPolicy(originalText, normalizedText, speechMode, phrases);

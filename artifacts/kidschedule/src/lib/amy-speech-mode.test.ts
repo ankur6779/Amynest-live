@@ -172,6 +172,15 @@ describe("amy-speech-mode", () => {
     expect(policy.phrases).toHaveLength(1);
     expect(policy.phrases[0]).toContain("sounds and words");
   });
+
+  it("does not split speech_coach mode lines even when absent from static catalog", () => {
+    const line = "This is a long custom coaching sentence that is not in the static audio map at all.";
+    expect(splitSemanticPhrases(normalizeText(line, "speech_coach"), "speech_coach").length).toBeGreaterThan(1);
+    const policy = prepareAmySpeechInput(line);
+    expect(policy.speechMode).toBe("speech_coach");
+    expect(policy.useSemanticSplit).toBe(false);
+    expect(policy.phrases).toHaveLength(1);
+  });
 });
 
 describe("amy-voice-learning", () => {

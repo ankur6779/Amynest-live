@@ -26,7 +26,7 @@ import type {
   PronouncePrompt,
   PronouncePromptDifficulty,
 } from "@workspace/speech-coach";
-import { coachActivityIntroHint, pickCoachDisplayFeedback, createCoachDialogueContext } from "@workspace/speech-coach";
+import { coachActivityIntroHint, pickCoachDisplayFeedback, createCoachDialogueContext, getPromptSpeakText } from "@workspace/speech-coach";
 import type { SpeechPromptKind } from "@workspace/api-client-react";
 import type { SpeechViewMode } from "./speech-coach-utils";
 
@@ -1144,6 +1144,15 @@ export function PronunciationCompanion({
                 <div className="flex flex-wrap gap-2 pt-1">
                   {/* Hear Amy */}
                   <NeonButton
+                    onPointerDown={() => {
+                      if (!currentItem) return;
+                      const spoken = getPromptSpeakText(currentItem);
+                      const mode =
+                        currentItem.kind === "phonic" || currentItem.kind === "letter"
+                          ? "phonics"
+                          : "default";
+                      voice.primeSpeakGesture(spoken, { mode: mode as "phonics" | "default" });
+                    }}
                     onClick={() => {
                       onAction();
                       onHear();
