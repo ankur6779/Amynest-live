@@ -204,21 +204,31 @@ export function useLessonPlayback({
   const speakParagraphAtRef = useRef(speakParagraphAt);
   speakParagraphAtRef.current = speakParagraphAt;
 
+  const pause = useCallback(() => {
+    intentRef.current = "idle";
+    setIntent("idle");
+    setPlaybackError(null);
+    playbackSessionRef.current += 1;
+    pauseVoice();
+  }, [pauseVoice]);
+
   const play = useCallback(() => {
     recordTtsUserGesture();
     setPlaybackError(null);
     intentRef.current = "playing";
     setIntent("playing");
     skipParagraphEffectRef.current = true;
-    speakParagraphAtRef.current(paragraphIdxRef.current);
-  }, []);
-
-  const pause = useCallback(() => {
-    intentRef.current = "idle";
-    setIntent("idle");
-    playbackSessionRef.current += 1;
-    pauseVoice();
-  }, [pauseVoice]);
+    const idx = paragraphIdxRef.current;
+    const identity = identityForParagraph(
+      lessonIdRef.current,
+      paragraphsRef.current,
+      idx,
+    );
+    if (identity) {
+      prefetchLessonParagraph(identity, authFetch, voiceId, modelId);
+    }
+    speakParagraphAtRef.current(idx);
+  }, [authFetch, voiceId, modelId]);
 
   const jumpToParagraph = useCallback(
     (idx: number) => {

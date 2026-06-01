@@ -568,7 +568,7 @@ function buildPolicy(
     case "number":
       return {
         ...base,
-        preferDynamicTts: true,
+        preferDynamicTts: false,
         allowPhonicsFallback: false,
         allowPhonicsSequence: false,
         allowSpeechCoachSplit: false,
@@ -577,7 +577,7 @@ function buildPolicy(
     case "mixed":
       return {
         ...base,
-        preferDynamicTts: true,
+        preferDynamicTts: false,
         allowPhonicsFallback: false,
         allowPhonicsSequence: false,
         allowSpeechCoachSplit: false,
@@ -606,7 +606,7 @@ function buildPolicy(
     case "speech_coach":
       return {
         ...base,
-        preferDynamicTts: true,
+        preferDynamicTts: false,
         allowPhonicsFallback: false,
         allowPhonicsSequence: false,
         allowSpeechCoachSplit: false,
@@ -617,7 +617,7 @@ function buildPolicy(
     case "sentence":
       return {
         ...base,
-        preferDynamicTts: true,
+        preferDynamicTts: false,
         allowPhonicsFallback: false,
         allowPhonicsSequence: false,
         allowSpeechCoachSplit: false,
@@ -628,7 +628,7 @@ function buildPolicy(
     case "word":
       return {
         ...base,
-        preferDynamicTts: true,
+        preferDynamicTts: false,
         allowPhonicsFallback: false,
         allowPhonicsSequence: false,
         allowSpeechCoachSplit: false,

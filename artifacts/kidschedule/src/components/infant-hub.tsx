@@ -159,25 +159,31 @@ function weeklyFocusDoneKey(childId: number): string {
 
 // ─── Collapsible Section ──────────────────────────────────────────────────────
 function IHSection({
+  sectionId,
   icon,
   title,
   badge,
   defaultOpen = false,
+  open,
+  onOpenChange,
   accentClass = "bg-gradient-to-br from-primary to-primary",
   cardColor,
   tintRgb,
   children
 }: {
+  sectionId?: string;
   icon: React.ReactNode;
   title: string;
   badge?: string;
   defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   accentClass?: string;
   cardColor?: string;
   tintRgb?: string;
   children: React.ReactNode;
 }) {
-  return (
+  const tile = (
     <HubCollapsibleSubTile
       icon={icon}
       title={title}
@@ -186,11 +192,25 @@ function IHSection({
       tintRgb={tintRgb}
       cardClass={cardColor}
       defaultOpen={defaultOpen}
+      open={open}
+      onOpenChange={onOpenChange}
     >
       {children}
     </HubCollapsibleSubTile>
   );
+  if (!sectionId) return tile;
+  return (
+    <section id={sectionId} className="scroll-mt-24">
+      {tile}
+    </section>
+  );
 }
+
+const INFANT_HUB_DEFAULT_OPEN = new Set([
+  "infant-cry",
+  "infant-sleep",
+  "infant-milestones",
+]);
 
 // ─── Daily Activities ─────────────────────────────────────────────────────────
 function DailyActivities({ ageMonths }: { ageMonths: number }) {
@@ -503,19 +523,42 @@ export function InfantHub({
   const ageLabel = formatAge(Math.floor(ageMonths / 12), ageMonths % 12);
   const { data: activation, isLoading: activationLoading } = useInfantActivation(childId);
   const showActivationUi = shouldShowInfantActivationUi(activation, childId);
+  const [openSections, setOpenSections] = useState<Set<string>>(
+    () => new Set(INFANT_HUB_DEFAULT_OPEN),
+  );
 
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const setSectionOpen = useCallback((sectionId: string, isOpen: boolean) => {
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      if (isOpen) next.add(sectionId);
+      else next.delete(sectionId);
+      return next;
+    });
+  }, []);
+
+  const scrollToSection = useCallback(
+    (sectionId: string) => {
+      setSectionOpen(sectionId, true);
+      requestAnimationFrame(() => {
+        document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    },
+    [setSectionOpen],
+  );
 
   useEffect(() => {
     if (ageMonths < 0 || ageMonths >= 24) return;
     trackInfantHubOpened(childId, ageMonths);
-    const hash = typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "";
-    if (hash.startsWith("infant-")) {
-      requestAnimationFrame(() => scrollTo(hash));
-    }
-  }, [ageMonths, childId]);
+
+    const handleHash = () => {
+      const hash =
+        typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "";
+      if (hash.startsWith("infant-")) scrollToSection(hash);
+    };
+    handleHash();
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, [ageMonths, childId, scrollToSection]);
 
   if (ageMonths < 0 || ageMonths >= 24) return null;
 
@@ -534,14 +577,14 @@ export function InfantHub({
           childName={childName}
           ageMonths={ageMonths}
           activation={activation}
-          onNavigate={scrollTo}
+          onNavigate={scrollToSection}
         />
       ) : (
         <BabyTodayCard
           childId={childId}
           childName={childName}
           activation={activation}
-          onViewFullPlan={() => scrollTo("infant-sleep")}
+          onViewFullPlan={() => scrollToSection("infant-sleep")}
         />
       )}
       <WeeklyProgressReport
@@ -551,8 +594,16 @@ export function InfantHub({
         activation={activation}
       />
 
-      <section id="infant-cry" className="scroll-mt-24">
-        <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.cry_insight")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardColor="linear-gradient(135deg,rgba(251,113,133,0.28)0%,rgba(236,72,153,0.13)100%)" badge={t("components.infant_hub.badge_smart")} defaultOpen>
+      <IHSection
+        sectionId="infant-cry"
+        icon={<MessageCircle className="h-4 w-4" />}
+        title={t("components.infant_hub.cry_insight")}
+        accentClass="bg-gradient-to-br from-rose-400 to-pink-500"
+        cardColor="linear-gradient(135deg,rgba(251,113,133,0.28)0%,rgba(236,72,153,0.13)100%)"
+        badge={t("components.infant_hub.badge_smart")}
+        open={openSections.has("infant-cry")}
+        onOpenChange={(v) => setSectionOpen("infant-cry", v)}
+      >
           <div className="rounded-xl bg-gradient-to-r from-rose-500/10 to-pink-500/10 border border-rose-400/25 px-3 py-2.5 mb-3 flex items-start gap-2">
             <Sparkles className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-[12px] text-foreground/90 leading-snug">
@@ -561,11 +612,18 @@ export function InfantHub({
           </div>
           <DiaperBurpLogger childId={childId} ageMonths={ageMonths} compact />
           <div className="mt-3"><CryInsight childId={childId} childName={childName} ageMonths={ageMonths} /></div>
-        </IHSection>
-      </section>
+      </IHSection>
 
-      <section id="infant-sleep" className="scroll-mt-24">
-        <IHSection icon={<BedDouble className="h-4 w-4" />} title={t("components.infant_hub.sleep_system")} accentClass="bg-gradient-to-br from-blue-400 to-indigo-500" cardColor="linear-gradient(135deg,rgba(96,165,250,0.28)0%,rgba(99,102,241,0.13)100%)" badge="Live" defaultOpen>
+      <IHSection
+        sectionId="infant-sleep"
+        icon={<BedDouble className="h-4 w-4" />}
+        title={t("components.infant_hub.sleep_system")}
+        accentClass="bg-gradient-to-br from-blue-400 to-indigo-500"
+        cardColor="linear-gradient(135deg,rgba(96,165,250,0.28)0%,rgba(99,102,241,0.13)100%)"
+        badge="Live"
+        open={openSections.has("infant-sleep")}
+        onOpenChange={(v) => setSectionOpen("infant-sleep", v)}
+      >
           <div className="space-y-5">
             <SleepPredict childId={childId} childName={childName} ageMonths={ageMonths} />
             <WakeWindowSystem childName={childName} ageMonths={ageMonths} />
@@ -573,53 +631,118 @@ export function InfantHub({
             <RoutineBuilder childName={childName} ageMonths={ageMonths} />
             <SleepWeeklyInsights childName={childName} ageMonths={ageMonths} />
           </div>
-        </IHSection>
-      </section>
+      </IHSection>
 
-      <section id="infant-milestones" className="scroll-mt-24">
-        <IHSection icon={<Activity className="h-4 w-4" />} title={t("components.infant_hub.milestone_buddy")} accentClass="bg-gradient-to-br from-violet-400 to-purple-500" cardColor="linear-gradient(135deg,rgba(167,139,250,0.28)0%,rgba(168,85,247,0.13)100%)" badge={t("components.infant_hub.badge_track")} defaultOpen>
+      <IHSection
+        sectionId="infant-milestones"
+        icon={<Activity className="h-4 w-4" />}
+        title={t("components.infant_hub.milestone_buddy")}
+        accentClass="bg-gradient-to-br from-violet-400 to-purple-500"
+        cardColor="linear-gradient(135deg,rgba(167,139,250,0.28)0%,rgba(168,85,247,0.13)100%)"
+        badge={t("components.infant_hub.badge_track")}
+        open={openSections.has("infant-milestones")}
+        onOpenChange={(v) => setSectionOpen("infant-milestones", v)}
+      >
           <BuddyMilestonePlanner childId={childId} childName={childName} ageMonths={ageMonths} />
-        </IHSection>
-      </section>
+      </IHSection>
 
-      <section id="infant-feeding" className="scroll-mt-24">
-        <IHSection icon={<Flame className="h-4 w-4" />} title={t("components.infant_hub.feeding_tracker")} accentClass="bg-gradient-to-br from-red-400 to-orange-500" cardColor="linear-gradient(135deg,rgba(248,113,113,0.28)0%,rgba(249,115,22,0.13)100%)">
+      <IHSection
+        sectionId="infant-feeding"
+        icon={<Flame className="h-4 w-4" />}
+        title={t("components.infant_hub.feeding_tracker")}
+        accentClass="bg-gradient-to-br from-red-400 to-orange-500"
+        cardColor="linear-gradient(135deg,rgba(248,113,113,0.28)0%,rgba(249,115,22,0.13)100%)"
+        open={openSections.has("infant-feeding")}
+        onOpenChange={(v) => setSectionOpen("infant-feeding", v)}
+      >
           <InfantFeedingTracker childId={childId} ageMonths={ageMonths} lang={lang} />
           <div className="mt-4 pt-4 border-t border-border/40"><DiaperBurpLogger childId={childId} ageMonths={ageMonths} /></div>
-        </IHSection>
-      </section>
+      </IHSection>
 
-      <IHSection icon={<TrendingUp className="h-4 w-4" />} title={t("components.infant_hub.growth", "Growth tracking")} accentClass="bg-gradient-to-br from-emerald-400 to-teal-500">
+      <IHSection
+        sectionId="infant-growth"
+        icon={<TrendingUp className="h-4 w-4" />}
+        title={t("components.infant_hub.growth", "Growth tracking")}
+        accentClass="bg-gradient-to-br from-emerald-400 to-teal-500"
+        open={openSections.has("infant-growth")}
+        onOpenChange={(v) => setSectionOpen("infant-growth", v)}
+      >
         <GrowthTracker childId={childId} ageMonths={ageMonths} activation={activation} />
       </IHSection>
 
-      <IHSection icon={<Heart className="h-4 w-4" />} title={t("components.infant_hub.wellbeing", "Parent wellbeing")} accentClass="bg-gradient-to-br from-pink-400 to-rose-500">
+      <IHSection
+        sectionId="infant-wellbeing"
+        icon={<Heart className="h-4 w-4" />}
+        title={t("components.infant_hub.wellbeing", "Parent wellbeing")}
+        accentClass="bg-gradient-to-br from-pink-400 to-rose-500"
+        open={openSections.has("infant-wellbeing")}
+        onOpenChange={(v) => setSectionOpen("infant-wellbeing", v)}
+      >
         <ParentWellbeing childId={childId} ageMonths={ageMonths} />
       </IHSection>
 
-      <IHSection icon={<Syringe className="h-4 w-4" />} title={t("components.infant_hub.health_care")} accentClass="bg-gradient-to-br from-teal-400 to-cyan-500">
+      <IHSection
+        sectionId="infant-health"
+        icon={<Syringe className="h-4 w-4" />}
+        title={t("components.infant_hub.health_care")}
+        accentClass="bg-gradient-to-br from-teal-400 to-cyan-500"
+        open={openSections.has("infant-health")}
+        onOpenChange={(v) => setSectionOpen("infant-health", v)}
+      >
         <HealthCare childId={childId} ageMonths={ageMonths} />
       </IHSection>
 
-      <IHSection icon={<FileDown className="h-4 w-4" />} title={t("components.infant_hub.doctor_report", "Doctor visit")} accentClass="bg-gradient-to-br from-cyan-400 to-blue-500">
+      <IHSection
+        sectionId="infant-doctor"
+        icon={<FileDown className="h-4 w-4" />}
+        title={t("components.infant_hub.doctor_report", "Doctor visit")}
+        accentClass="bg-gradient-to-br from-cyan-400 to-blue-500"
+        open={openSections.has("infant-doctor")}
+        onOpenChange={(v) => setSectionOpen("infant-doctor", v)}
+      >
         <DoctorVisitReport childId={childId} childName={childName} ageMonths={ageMonths} />
       </IHSection>
 
-      <IHSection icon={<Users className="h-4 w-4" />} title={t("components.infant_hub.coparent", "Co-parent")} accentClass="bg-gradient-to-br from-indigo-400 to-violet-500">
+      <IHSection
+        sectionId="infant-coparent"
+        icon={<Users className="h-4 w-4" />}
+        title={t("components.infant_hub.coparent", "Co-parent")}
+        accentClass="bg-gradient-to-br from-indigo-400 to-violet-500"
+        open={openSections.has("infant-coparent")}
+        onOpenChange={(v) => setSectionOpen("infant-coparent", v)}
+      >
         <CoParentPanel childId={childId} ageMonths={ageMonths} />
       </IHSection>
 
       <InfantNotificationPrefs childId={childId} ageMonths={ageMonths} />
 
-      <IHSection icon={<Music2 className="h-4 w-4" />} title={t("components.infant_hub.white_noise_lullabies")} accentClass="bg-gradient-to-br from-cyan-400 to-teal-500">
+      <IHSection
+        icon={<Music2 className="h-4 w-4" />}
+        title={t("components.infant_hub.white_noise_lullabies")}
+        accentClass="bg-gradient-to-br from-cyan-400 to-teal-500"
+        open={openSections.has("infant-sounds")}
+        onOpenChange={(v) => setSectionOpen("infant-sounds", v)}
+      >
         <WhiteNoiseLullaby ageMonths={ageMonths} />
       </IHSection>
 
-      <IHSection icon={<Star className="h-4 w-4" />} title={t("components.infant_hub.weekly_focus")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500">
+      <IHSection
+        icon={<Star className="h-4 w-4" />}
+        title={t("components.infant_hub.weekly_focus")}
+        accentClass="bg-gradient-to-br from-amber-400 to-yellow-500"
+        open={openSections.has("infant-weekly-focus")}
+        onOpenChange={(v) => setSectionOpen("infant-weekly-focus", v)}
+      >
         <WeeklyFocus childId={childId} childName={childName} ageMonths={ageMonths} />
       </IHSection>
 
-      <IHSection icon={<Brain className="h-4 w-4" />} title={t("infant_hub.amy_suggests")} accentClass="bg-gradient-to-br from-purple-400 to-indigo-500">
+      <IHSection
+        icon={<Brain className="h-4 w-4" />}
+        title={t("infant_hub.amy_suggests")}
+        accentClass="bg-gradient-to-br from-purple-400 to-indigo-500"
+        open={openSections.has("infant-amy-suggests")}
+        onOpenChange={(v) => setSectionOpen("infant-amy-suggests", v)}
+      >
         <div className="space-y-3">
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             {INFANT_CATEGORIES.map((cat) => (
@@ -633,13 +756,25 @@ export function InfantHub({
         </div>
       </IHSection>
 
-      <IHSection icon={<ListChecks className="h-4 w-4" />} title={t("components.infant_hub.parent_coaching")} accentClass="bg-gradient-to-br from-purple-400 to-indigo-500">
+      <IHSection
+        icon={<ListChecks className="h-4 w-4" />}
+        title={t("components.infant_hub.parent_coaching")}
+        accentClass="bg-gradient-to-br from-purple-400 to-indigo-500"
+        open={openSections.has("infant-coaching")}
+        onOpenChange={(v) => setSectionOpen("infant-coaching", v)}
+      >
         <BabyCuesEngine childName={childName} ageMonths={ageMonths} />
         <div className="mt-4"><CommunicationCoaching ageMonths={ageMonths} /></div>
       </IHSection>
 
       {(INFANT_ACTIVITIES[getInfantAgeBand(ageMonths)] ?? []).length > 0 && (
-        <IHSection icon={<Zap className="h-4 w-4" />} title={t("components.infant_hub.today_s_activities")} accentClass="bg-gradient-to-br from-emerald-400 to-green-500">
+        <IHSection
+          icon={<Zap className="h-4 w-4" />}
+          title={t("components.infant_hub.today_s_activities")}
+          accentClass="bg-gradient-to-br from-emerald-400 to-green-500"
+          open={openSections.has("infant-activities")}
+          onOpenChange={(v) => setSectionOpen("infant-activities", v)}
+        >
           <DailyActivities ageMonths={ageMonths} />
         </IHSection>
       )}

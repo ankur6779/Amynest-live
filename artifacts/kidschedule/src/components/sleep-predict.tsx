@@ -276,6 +276,7 @@ export function SleepPredict({
   // we re-POST a completed session). Keep it simple — server is source of
   // truth; this is just UI state.
   const [activeStartIso, setActiveStartIso] = useState<string | null>(null);
+  const [activeSleepKind, setActiveSleepKind] = useState<"nap" | "night" | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -309,6 +310,7 @@ export function SleepPredict({
         // start state on the toggle button.
         const latestOpen = json.sessions?.find(s => s.endedAt === null);
         setActiveStartIso(latestOpen ? latestOpen.startedAt : null);
+        setActiveSleepKind(latestOpen ? latestOpen.kind : null);
       }
     } catch (e) {
       toast({
@@ -342,6 +344,7 @@ export function SleepPredict({
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       setActiveStartIso(startedAt);
+      setActiveSleepKind(kind);
       trackSleepLogAdded(childId, ageMonths, { sleepType: kind });
       toast({
         title: kind === "night" ? t("toasts.sleep_predict.bedtime_logged") : t("toasts.sleep_predict.nap_started")
@@ -361,6 +364,7 @@ export function SleepPredict({
   }, [ageMonths, childId, logging, queryClient, refresh, toast]);
   const logWake = useCallback(async () => {
     if (logging || !activeStartIso) return;
+    const sleepKind = activeSleepKind ?? "nap";
     setLogging(true);
     try {
       const r = await fetch(getApiUrl("/api/sleep-predict/log"), {
@@ -371,18 +375,19 @@ export function SleepPredict({
         },
         body: JSON.stringify({
           childId,
-          kind: "nap",
+          kind: sleepKind,
           startedAt: activeStartIso,
           endedAt: new Date().toISOString()
         })
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       setActiveStartIso(null);
+      setActiveSleepKind(null);
       const durationMinutes = Math.max(
         1,
         Math.round((Date.now() - new Date(activeStartIso).getTime()) / 60_000),
       );
-      trackSleepLogAdded(childId, ageMonths, { sleepType: "nap", durationMinutes });
+      trackSleepLogAdded(childId, ageMonths, { sleepType: sleepKind, durationMinutes });
       toast({
         title: t("toasts.sleep_predict.wake_logged_title"),
         description: t("toasts.sleep_predict.wake_logged_body")
@@ -399,7 +404,7 @@ export function SleepPredict({
     } finally {
       setLogging(false);
     }
-  }, [activeStartIso, ageMonths, childId, logging, queryClient, refresh, toast]);
+  }, [activeSleepKind, activeStartIso, ageMonths, childId, logging, queryClient, refresh, t, toast]);
   const prediction = data?.prediction;
   const band = prediction ? BAND_META[prediction.pressureBand] : null;
   const dimmed = prediction?.shouldWindDown ?? false;

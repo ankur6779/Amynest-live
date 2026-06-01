@@ -107,4 +107,54 @@ describe("useLessonPlayback lesson switch safety", () => {
       text: "P2",
     });
   });
+
+  it("pause stops voice and clears playing intent", () => {
+    const { result } = renderHook(() =>
+      useLessonPlayback({
+        paragraphs: ["P0", "P1"],
+        lessonId: "lesson-pause",
+        voiceId: "voice",
+        modelId: "model",
+        autoPlay: false,
+        initialParagraphIdx: 0,
+      }),
+    );
+
+    act(() => {
+      result.current.play();
+    });
+    expect(result.current.intent).toBe("playing");
+
+    act(() => {
+      result.current.pause();
+    });
+
+    expect(pauseMock).toHaveBeenCalled();
+    expect(result.current.intent).toBe("idle");
+    expect(result.current.playbackError).toBeNull();
+  });
+
+  it("play prefetches the current paragraph before speak", () => {
+    const { result } = renderHook(() =>
+      useLessonPlayback({
+        paragraphs: ["Warm me up"],
+        lessonId: "lesson-prefetch",
+        voiceId: "voice",
+        modelId: "model",
+        autoPlay: false,
+        initialParagraphIdx: 0,
+      }),
+    );
+
+    act(() => {
+      result.current.play();
+    });
+
+    expect(prefetchMock).toHaveBeenCalled();
+    expect(prefetchMock.mock.calls[0]?.[0]).toMatchObject({
+      lessonId: "lesson-prefetch",
+      paragraphIdx: 0,
+      text: "Warm me up",
+    });
+  });
 });

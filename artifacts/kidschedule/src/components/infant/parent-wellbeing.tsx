@@ -36,7 +36,7 @@ export function ParentWellbeing({ childId, ageMonths }: ParentWellbeingProps) {
   }
 
   return (
-    <div className="space-y-4" data-testid="parent-wellbeing" id="infant-wellbeing">
+    <div className="space-y-4" data-testid="parent-wellbeing">
       <p className="text-sm text-muted-foreground">
         {t("components.wellbeing.lead", "You matter too. This is not medical advice — just gentle support.")}
       </p>

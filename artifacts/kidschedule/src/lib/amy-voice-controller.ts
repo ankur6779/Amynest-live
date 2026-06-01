@@ -145,6 +145,7 @@ import {
   resolveSpeakCoalesceKey,
 } from "@/lib/audio-request-coalescer";
 import {
+  clearPlaybackQueue,
   enqueueFifoPlayback,
   getQueuePolicy,
   recordQueueInterruption,
@@ -383,6 +384,7 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
     if (this.snapshot.status === "idle" && !this.abortController) {
       return;
     }
+    clearPlaybackQueue();
     const requestId = invalidateSpeakRequests();
     logTts({ reason: "pause", requestId });
     if (this.activeReliabilityRequestId) {

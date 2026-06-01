@@ -7,6 +7,7 @@ import { fetchInfantCareSummary, logInfantCare, type InfantCareLogType } from "@
 import { infantActivationQueryKey } from "@/lib/infant-activation-api";
 import { trackFeedLogged, trackFeedingHistoryViewed } from "@/lib/infant-hub-analytics";
 import { suggestedFeedIntervalMin } from "@workspace/infant-hub";
+import { useToast } from "@/hooks/use-toast";
 
 type FeedKind = "breast" | "bottle" | "solid";
 
@@ -36,6 +37,7 @@ export function InfantFeedingTracker({
   lang?: Lang;
 }) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const guide = getFeedingGuide(ageMonths);
   const now = Date.now();
@@ -54,14 +56,22 @@ export function InfantFeedingTracker({
 
   const logFeed = useCallback(
     async (kind: FeedKind) => {
-      await logInfantCare(childId, KIND_TO_LOG[kind]);
-      const feedType = kind === "solid" ? "solids" : kind;
-      trackFeedLogged(childId, ageMonths, feedType);
-      await queryClient.invalidateQueries({ queryKey: ["infant-care-summary", childId] });
-      await queryClient.invalidateQueries({ queryKey: ["infant-today", childId] });
-      await queryClient.invalidateQueries({ queryKey: infantActivationQueryKey(childId) });
+      try {
+        await logInfantCare(childId, KIND_TO_LOG[kind]);
+        const feedType = kind === "solid" ? "solids" : kind;
+        trackFeedLogged(childId, ageMonths, feedType);
+        await queryClient.invalidateQueries({ queryKey: ["infant-care-summary", childId] });
+        await queryClient.invalidateQueries({ queryKey: ["infant-today", childId] });
+        await queryClient.invalidateQueries({ queryKey: infantActivationQueryKey(childId) });
+      } catch {
+        toast({
+          title: t("components.infant_hub.feed_log_failed_title", "Couldn't log feed"),
+          description: t("components.infant_hub.feed_log_failed_body", "Please try again in a moment."),
+          variant: "destructive",
+        });
+      }
     },
-    [childId, ageMonths, queryClient],
+    [childId, ageMonths, queryClient, toast, t],
   );
 
   useEffect(() => {

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Users, Copy, Check } from "lucide-react";
-import { FF_INFANT_COPARENT } from "@/lib/infant-feature-flags";
 import { acceptCoParentInvite, createCoParentInvite } from "@/lib/infant-care-api";
 import {
   trackCoParentInviteStarted,
@@ -24,8 +23,6 @@ export function CoParentPanel({ childId, ageMonths, isOwner = true }: CoParentPa
   const [acceptCode, setAcceptCode] = useState("");
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
-
-  if (!FF_INFANT_COPARENT) return null;
 
   async function handleInvite() {
     trackCoParentInviteStarted(childId, ageMonths);
@@ -56,7 +53,7 @@ export function CoParentPanel({ childId, ageMonths, isOwner = true }: CoParentPa
   }
 
   return (
-    <div className="space-y-4" data-testid="coparent-panel" id="infant-coparent">
+    <div className="space-y-4" data-testid="coparent-panel">
       <div className="flex items-center gap-2">
         <Users className="h-4 w-4 text-primary" />
         <p className="text-sm font-bold">{t("components.coparent.title", "Co-parent sync")}</p>

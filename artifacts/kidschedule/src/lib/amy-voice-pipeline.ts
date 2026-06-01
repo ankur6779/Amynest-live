@@ -1939,11 +1939,7 @@ export async function speakAmyVoice(
   const scoringContext = buildScoringContext(text, policy, opts);
   const scoredLayers = depth === 0 ? getScoredLayerOrder(cacheKey, text, policy, opts) : [];
   const strategy: PipelineStrategy =
-    depth === 0
-      ? resolvePipelineStrategy(text, policy, cacheKey, opts)
-      : policy.preferDynamicTts
-        ? "dynamic_first"
-        : "static_first";
+    depth === 0 ? resolvePipelineStrategy(text, policy, cacheKey, opts) : "static_first";
   const budget =
     depth === 0 ? createAdaptivePipelineBudget(cacheKey, text, policy, opts) : null;
   const telemetry =

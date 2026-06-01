@@ -94,11 +94,11 @@ describe("amy-voice-pipeline-optimizer", () => {
     expect(isLayerRecentlyFailed("static", key)).toBe(false);
   });
 
-  it("resolvePipelineStrategy picks dynamic_first for long text", () => {
+  it("resolvePipelineStrategy uses static_first for long text", () => {
     const longText = "x".repeat(LONG_TEXT_THRESHOLD + 1);
     const key = pipelineCacheKey(longText, "default");
     const strategy = resolvePipelineStrategy(longText, basePolicy(), key);
-    expect(strategy).toBe("dynamic_first");
+    expect(strategy).toBe("static_first");
   });
 
   it("runStagedPregenRace returns static when it resolves quickly", async () => {

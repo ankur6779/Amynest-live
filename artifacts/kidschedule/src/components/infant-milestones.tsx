@@ -5,6 +5,7 @@ import { Sparkles, Trophy, Target, Heart, ChevronDown, ChevronUp, PlayCircle, Ch
 import { getApiUrl } from "@/lib/api";
 import { trackMilestoneViewed, trackMilestoneCompleted } from "@/lib/infant-hub-analytics";
 import { MilestoneCelebrationSheet } from "@/components/infant/milestone-celebration-sheet";
+import { milestoneProgressKey, saveMilestoneProgress } from "@/lib/infant-milestone-progress";
 
 // ─── Milestone Data Model ─────────────────────────────────────────────────────
 type MState = "not_started" | "in_progress" | "achieved";
@@ -483,10 +484,18 @@ const OLD_TO_NEW_ID: Record<string, string> = {
   m18_body_parts: "b1224_body_parts",
   m18_pretend: "b1224_pretend"
 };
-function loadProgress(childName: string): Stored {
-  const key = `amynest:milestones:${childName}`;
+function loadProgress(childId: number, childName: string): Stored {
+  const key = milestoneProgressKey(childId);
+  const legacyKey = `amynest:milestones:${childName}`;
   try {
-    const raw = localStorage.getItem(key);
+    let raw = localStorage.getItem(key);
+    if (!raw) {
+      const legacyRaw = localStorage.getItem(legacyKey);
+      if (legacyRaw) {
+        localStorage.setItem(key, legacyRaw);
+        raw = legacyRaw;
+      }
+    }
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return {};
@@ -514,19 +523,15 @@ function loadProgress(childName: string): Stored {
 
     // Persist migrated shape so we only do this once
     if (migrated) {
-      try {
-        localStorage.setItem(key, JSON.stringify(out));
-      } catch (e) { console.error("REAL ERROR:", e); }
+      saveMilestoneProgress(childId, out);
     }
     return out;
   } catch {
     return {};
   }
 }
-function saveProgress(childName: string, data: Stored) {
-  try {
-    localStorage.setItem(`amynest:milestones:${childName}`, JSON.stringify(data));
-  } catch (e) { console.error("REAL ERROR:", e); }
+function saveProgress(childId: number, data: Stored) {
+  saveMilestoneProgress(childId, data);
 }
 function getAgeBand(months: number): "0-3" | "3-6" | "6-12" | "12-24" {
   if (months < 3) return "0-3";
@@ -592,7 +597,7 @@ export function BuddyMilestonePlanner({
   const {
     toast
   } = useToast();
-  const [progress, setProgress] = useState<Stored>(() => loadProgress(childName));
+  const [progress, setProgress] = useState<Stored>(() => loadProgress(childId, childName));
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "synced" | "offline">("idle");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [tipIdx, setTipIdx] = useState(0);
@@ -605,7 +610,7 @@ export function BuddyMilestonePlanner({
   // Load local + merge cloud on mount / child change
   useEffect(() => {
     let cancelled = false;
-    const local = loadProgress(childName);
+    const local = loadProgress(childId, childName);
     setProgress(local);
     setSyncState("syncing");
 
@@ -631,7 +636,7 @@ export function BuddyMilestonePlanner({
       }
 
       if (cancelled) return;
-      saveProgress(childName, finalProgress);
+      saveProgress(childId, finalProgress);
       setProgress(finalProgress);
       setSyncState("synced");
     })();
@@ -665,7 +670,7 @@ export function BuddyMilestonePlanner({
           updatedAt: Date.now()
         }
       };
-      saveProgress(childName, next);
+      saveProgress(childId, next);
       return next;
     });
     void saveRemoteMilestone(childId, id, state).then(ok => {

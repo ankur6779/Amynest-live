@@ -5,13 +5,16 @@ export type MilestoneProgressEntry = {
   updatedAt?: number;
 };
 
-export function loadMilestoneProgress(
-  childName: string,
-): Record<string, MilestoneProgressEntry> {
-  const key = `amynest:milestones:${childName}`;
+export function milestoneProgressKey(childId: number): string {
+  return `amynest:milestones:child:${childId}`;
+}
+
+function legacyMilestoneProgressKey(childName: string): string {
+  return `amynest:milestones:${childName}`;
+}
+
+function parseMilestoneProgress(raw: string): Record<string, MilestoneProgressEntry> {
   try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return {};
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (!parsed || typeof parsed !== "object") return {};
     const out: Record<string, MilestoneProgressEntry> = {};
@@ -23,6 +26,38 @@ export function loadMilestoneProgress(
     return out;
   } catch {
     return {};
+  }
+}
+
+export function loadMilestoneProgress(
+  childId: number,
+  legacyChildName?: string,
+): Record<string, MilestoneProgressEntry> {
+  const key = milestoneProgressKey(childId);
+  try {
+    let raw = localStorage.getItem(key);
+    if (!raw && legacyChildName) {
+      const legacyRaw = localStorage.getItem(legacyMilestoneProgressKey(legacyChildName));
+      if (legacyRaw) {
+        localStorage.setItem(key, legacyRaw);
+        raw = legacyRaw;
+      }
+    }
+    if (!raw) return {};
+    return parseMilestoneProgress(raw);
+  } catch {
+    return {};
+  }
+}
+
+export function saveMilestoneProgress(
+  childId: number,
+  data: Record<string, MilestoneProgressEntry>,
+): void {
+  try {
+    localStorage.setItem(milestoneProgressKey(childId), JSON.stringify(data));
+  } catch {
+    /* ignore quota errors */
   }
 }
 

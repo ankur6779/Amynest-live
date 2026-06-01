@@ -6,6 +6,7 @@ import { useInfantToday } from "@/hooks/use-infant-today";
 import { trackWeeklyReportViewed } from "@/lib/infant-hub-analytics";
 import type { InfantActivationStatus } from "@/lib/infant-activation-api";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { fetchDoctorReport } from "@/lib/infant-care-api";
 import {
   buildWeeklyShareCardData,
@@ -29,6 +30,7 @@ export function WeeklyProgressReport({
   activation,
 }: WeeklyProgressReportProps) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const { data } = useInfantToday(childId);
   const weekKey = getIsoWeekKey();
   const [shareOpen, setShareOpen] = useState(false);
@@ -60,7 +62,7 @@ export function WeeklyProgressReport({
     setShareBusy(true);
     try {
       const report = await fetchDoctorReport(childId);
-      const progress = loadMilestoneProgress(childName);
+      const progress = loadMilestoneProgress(childId, childName);
       const milestoneTitles = getWeeklyAchievedMilestoneIds(
         progress,
         lookupMilestoneTitle,
@@ -73,6 +75,11 @@ export function WeeklyProgressReport({
       );
       setWeeklyCardData(cardData);
       setShareOpen(true);
+    } catch {
+      toast({
+        description: t("components.weekly_report.share_error", "Could not load this week's summary. Please try again."),
+        variant: "destructive",
+      });
     } finally {
       setShareBusy(false);
     }

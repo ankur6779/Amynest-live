@@ -8,8 +8,11 @@ import {
   type LessonSeries,
 } from "@/lib/audio-lessons";
 import { useLessonPlayback } from "@/hooks/use-lesson-playback";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
+import { createAudioIdentity } from "@/lib/lesson-audio-identity";
+import { prefetchLessonParagraph } from "@/lib/amy-voice-pipeline-optimizer";
 import { loadResume, saveResume } from "@/lib/audio-lessons-storage";
 
 const VOICE_AMY_EN = "QbQKfe9vgx5OsbZUvlFv";
@@ -43,6 +46,7 @@ export function PlayerSheet({
 }: PlayerSheetProps) {
   const lang = "en";
   const { t } = useTranslation();
+  const authFetch = useAuthFetch();
   const [rate, setRate] = useState<number>(1);
 
   const text = useMemo(() => getLessonText(lesson, lang), [lesson, lang]);
@@ -302,6 +306,8 @@ export function PlayerSheet({
               recordTtsUserGesture();
               primeSpeakGesture(txt);
               primeStaticAudioInUserGesture(txt, "default");
+              const identity = createAudioIdentity(lesson.id, paragraphIdx, txt);
+              prefetchLessonParagraph(identity, authFetch, VOICE_AMY_EN, MODEL_EN);
             }}
             onClick={() => {
               if (playing) pause();

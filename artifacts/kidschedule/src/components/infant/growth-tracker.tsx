@@ -72,7 +72,7 @@ export function GrowthTracker({ childId, ageMonths, activation }: GrowthTrackerP
   }
 
   return (
-    <div className="space-y-4" data-testid="growth-tracker" id="infant-growth">
+    <div className="space-y-4" data-testid="growth-tracker">
       {!latest && (
         <div className="rounded-xl border border-dashed border-emerald-400/30 bg-emerald-500/5 p-4 text-center space-y-2">
           <p className="text-sm font-semibold text-foreground/90">

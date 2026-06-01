@@ -178,7 +178,9 @@ export function getScoredLayerOrder(
   opts?: SpeakOptions,
 ): LearnableLayer[] {
   const context = buildScoringContext(text, policy, opts);
-  return getRankedLearnableLayers(cacheKey, context);
+  const ranked = getRankedLearnableLayers(cacheKey, context);
+  // Live TTS layers are fallback-only — never try them before static/cache in learned path.
+  return ranked.filter((layer): layer is LearnableLayer => layer === "static" || layer === "cache");
 }
 
 export function markLayerFailed(layer: string, cacheKey?: string): void {

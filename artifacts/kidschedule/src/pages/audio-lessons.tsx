@@ -176,6 +176,18 @@ export default function AudioLessonsPage() {
     }).catch(() => {});
   }, [selectedAge, isPremium, lang, authFetch]);
 
+  /** Warm TTS cache for the opened lesson so Play hits local cache first. */
+  useEffect(() => {
+    if (!open) return;
+    const texts = getLessonText(open, lang).paragraphs;
+    if (texts.length === 0) return;
+    void authFetch(getApiUrl("/api/audio-lessons/pregenerate"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texts }),
+    }).catch(() => {});
+  }, [open?.id, lang, authFetch]);
+
   const amySignals = useMemo(() => buildAmySignals(), [completedIds, resumeMap]);
   const amyHome = useMemo(() => computeAmyHomeState(amySignals), [amySignals]);
 

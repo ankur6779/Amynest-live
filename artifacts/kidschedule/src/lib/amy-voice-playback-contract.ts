@@ -205,6 +205,12 @@ async function waitForFullRequiredCompletion(
 
   while (true) {
     if (isCancelled()) {
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+      } catch {
+        /* best-effort stop on user pause */
+      }
       return finalize("manual", false, false);
     }
 

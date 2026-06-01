@@ -4,6 +4,7 @@ import { FileDown, Loader2 } from "lucide-react";
 import { fetchDoctorReport } from "@/lib/infant-care-api";
 import { trackDoctorReportGenerated, trackDoctorReportExported } from "@/lib/infant-hub-analytics";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { InfantReferralPrompt } from "@/components/infant/infant-referral-prompt";
 
 type DoctorVisitReportProps = {
@@ -42,6 +43,7 @@ h1{font-size:20px}h2{font-size:14px;margin-top:20px;color:#444}ul{padding-left:1
 
 export function DoctorVisitReport({ childId, childName, ageMonths }: DoctorVisitReportProps) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [busy, setBusy] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
 
@@ -54,7 +56,17 @@ export function DoctorVisitReport({ childId, childName, ageMonths }: DoctorVisit
       if (ok) {
         trackDoctorReportExported(childId, ageMonths, "print");
         setReferralOpen(true);
+      } else {
+        toast({
+          description: t("components.doctor_report.popup_blocked", "Allow pop-ups to open the printable report."),
+          variant: "destructive",
+        });
       }
+    } catch {
+      toast({
+        description: t("components.doctor_report.export_error", "Could not prepare the report. Please try again."),
+        variant: "destructive",
+      });
     } finally {
       setBusy(false);
     }
@@ -62,7 +74,7 @@ export function DoctorVisitReport({ childId, childName, ageMonths }: DoctorVisit
 
   return (
     <>
-      <div className="space-y-3" data-testid="doctor-visit-report" id="infant-doctor">
+      <div className="space-y-3" data-testid="doctor-visit-report">
         <p className="text-sm text-muted-foreground">
           {t(
             "components.doctor_report.lead",

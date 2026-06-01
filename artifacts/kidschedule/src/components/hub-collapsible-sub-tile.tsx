@@ -19,6 +19,9 @@ type HubCollapsibleSubTileProps = {
   /** @deprecated Prefer tintRgb */
   cardClass?: string;
   defaultOpen?: boolean;
+  /** Controlled open state — when set, tile follows parent instead of internal state. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   children?: ReactNode;
 };
 
@@ -42,9 +45,18 @@ export function HubCollapsibleSubTile({
   tintRgb,
   cardClass,
   defaultOpen = false,
+  open: openProp,
+  onOpenChange,
   children,
 }: HubCollapsibleSubTileProps) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : internalOpen;
+  const setOpen = (next: boolean | ((prev: boolean) => boolean)) => {
+    const value = typeof next === "function" ? next(open) : next;
+    if (!isControlled) setInternalOpen(value);
+    onOpenChange?.(value);
+  };
   const resolvedTint =
     tintRgb ?? extractTintRgbFromCardClass(cardClass) ?? "129,140,248";
   const iconAccent = resolveSubTileAccent(accentClass, resolvedTint);

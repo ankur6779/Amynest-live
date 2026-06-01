@@ -435,21 +435,11 @@ export function isExplorationSelection(): boolean {
 }
 
 export function resolveStrategyFromLayers(
-  ranked: LearnableLayer[],
-  context: LayerScoringContext,
+  _ranked: LearnableLayer[],
+  _context: LayerScoringContext,
 ): PipelineStrategy {
-  if (context.catalogPlayback) return "static_first";
-  if (context.textLength > 120) return "dynamic_first";
-
-  const top = ranked[0];
-  const second = ranked[1];
-  if (top === "static" || top === "cache") {
-    if (second === "static" || second === "cache") return "static_first";
-  }
-  if (top === "api" || top === "elevenlabs") return "dynamic_first";
-  if (context.lessonMode) return "dynamic_first";
-  if (context.networkProfile === "slow") return "static_first";
-  return "hybrid";
+  // App-wide playback order: pregenerated static / local cache first, live TTS fallback.
+  return "static_first";
 }
 
 export function resolveAdaptivePipelineBudget(

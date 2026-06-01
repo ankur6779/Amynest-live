@@ -72,9 +72,19 @@ describe("amy-voice-pipeline-learning", () => {
     expect(phonics).toBeGreaterThan(neutral);
   });
 
-  it("resolveStrategyFromLayers picks dynamic_first when api leads", () => {
+  it("resolveStrategyFromLayers always prefers static_first", () => {
     const strategy = resolveStrategyFromLayers(["api", "static", "cache", "elevenlabs"], baseContext());
-    expect(strategy).toBe("dynamic_first");
+    expect(strategy).toBe("static_first");
+  });
+
+  it("resolveStrategyFromLayers uses static_first for long lesson paragraphs", () => {
+    const longLesson = baseContext({
+      lessonMode: true,
+      textLength: 240,
+      module: "lesson",
+    });
+    const strategy = resolveStrategyFromLayers(["api", "static", "cache", "elevenlabs"], longLesson);
+    expect(strategy).toBe("static_first");
   });
 
   it("resolveAdaptivePipelineBudget shrinks when history is fast", () => {

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Bell, Moon } from "lucide-react";
-import { FF_INFANT_NOTIFICATIONS } from "@/lib/infant-feature-flags";
 import { updateInfantUserProperties } from "@/lib/infant-hub-analytics";
 import {
   fetchInfantNotificationPrefs,
@@ -72,8 +71,6 @@ export function InfantNotificationPrefs({
         /* keep local prefs */
       });
   }, [authFetch, childId]);
-
-  if (!FF_INFANT_NOTIFICATIONS) return null;
 
   function persist(next: InfantNotifPrefs) {
     setPrefs(next);
