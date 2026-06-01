@@ -566,9 +566,10 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
   const currentItemRef = useRef<PronouncePrompt | null>(null);
   useEffect(() => { currentItemRef.current = currentItem; }, [currentItem]);
 
-  // ── when STT finishes, evaluate result
+  // ── when STT finishes, evaluate result (phase stays "recording" or moves to "analyzing" on stop)
   useEffect(() => {
-    if (promptPhaseRef.current !== "recording") return;
+    const phase = promptPhaseRef.current;
+    if (phase !== "recording" && phase !== "analyzing") return;
     if (stt.listening || stt.transcribing) return;
     const item = currentItemRef.current;
     const final = stt.transcript.trim();

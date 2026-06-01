@@ -331,8 +331,11 @@ function wireCacheResetOnForeground(): void {
  */
 export async function requestMicrophoneAccess(options?: {
   forFeature?: boolean;
+  /** Caller opens getUserMedia immediately — skip throwaway probe to avoid dead streams. */
+  skipProbeStream?: boolean;
 }): Promise<MicrophoneAccessResult> {
   const forFeature = options?.forFeature ?? false;
+  const skipProbeStream = options?.skipProbeStream ?? false;
   wireCacheResetOnForeground();
 
   if (forFeature) {
@@ -374,6 +377,15 @@ export async function requestMicrophoneAccess(options?: {
         cache = "denied";
         return { granted: false, reason: "denied" };
       }
+    }
+
+    if (skipProbeStream) {
+      const osState = await queryOsMicrophonePermissionState();
+      logMicrophonePermission("skipProbeStream — deferring stream open to caller", { osState });
+      if (isOsMicrophonePermissionDenied(osState)) {
+        return { granted: false, reason: osState === "blocked" ? "blocked" : "denied" };
+      }
+      return { granted: true };
     }
 
     const skipPermissionsQuery = prefersGetUserMediaTruth(forFeature);

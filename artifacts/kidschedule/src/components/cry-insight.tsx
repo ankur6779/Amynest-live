@@ -232,7 +232,11 @@ export function CryInsight({
       window.clearInterval(tickRef.current);
       tickRef.current = null;
     }
-    microphoneSessionManager.cleanup();
+    if (microphoneSessionManager.getState() === "recording") {
+      void microphoneSessionManager.stopRecording();
+    } else {
+      microphoneSessionManager.cleanup();
+    }
   }
 
   // ─── Submit context + (optional) audio stats ────────────────────────────────
@@ -298,6 +302,7 @@ export function CryInsight({
       echoCancellation: true,
       noiseSuppression: true,
       autoGainControl: true,
+      timeslice: 400,
       onError: (err, mappedCode) => {
         const isPermissionIssue =
           mappedCode === "microphone_denied" || mappedCode === "microphone_blocked";
@@ -323,7 +328,10 @@ export function CryInsight({
         }
 
         const elapsed = Date.now() - startedAtRef.current;
-        const blob = new Blob(chunks, { type: "audio/webm" });
+        const mimeType =
+          chunks[0]?.type ||
+          microphoneSessionManager.getRecorderMimeType();
+        const blob = new Blob(chunks, { type: mimeType });
 
         try {
           if (elapsed >= RECORD_MIN_MS) {

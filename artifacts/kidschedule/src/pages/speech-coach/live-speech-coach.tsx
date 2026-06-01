@@ -518,33 +518,6 @@ export function LiveSpeechCoach({
     tasks.length,
   ]);
 
-  const startListening = useCallback(async () => {
-    if (!canRecord || state !== "idle") {
-      if (state === "listening") stt.stop();
-      return;
-    }
-    if (startingMicRef.current) return;
-    startingMicRef.current = true;
-    setStartingMic(true);
-    stt.reset();
-    voice.pause();
-    setLastResult(null);
-    setStatus("Checking microphone...");
-    const started = await stt.start();
-    startingMicRef.current = false;
-    setStartingMic(false);
-    if (!started) {
-      listenStartedRef.current = false;
-      setState("idle");
-      if (!stt.error) setStatus("Could not start the microphone. Please try again.");
-      return;
-    }
-    listenStartedRef.current = true;
-    listeningEncouragedRef.current = false;
-    setState("listening");
-    setStatus("Amy is listening...");
-  }, [canRecord, state, stt, voice]);
-
   const processResponse = useCallback(async () => {
     if (!current) return;
     listenStartedRef.current = false;
@@ -582,6 +555,41 @@ export function LiveSpeechCoach({
     });
     await speakSequence(result.spokenLines, "feedback");
   }, [bestStreak, child.id, current, dialogueContext, idx, logAttempt, speakSequence, streak, stt.transcript]);
+
+  const stopListeningAndProcess = useCallback(() => {
+    if (stateRef.current !== "listening") return;
+    stt.stop();
+    window.setTimeout(() => {
+      if (stateRef.current === "listening") void processResponse();
+    }, 400);
+  }, [processResponse, stt]);
+
+  const startListening = useCallback(async () => {
+    if (!canRecord || state !== "idle") {
+      if (state === "listening") stopListeningAndProcess();
+      return;
+    }
+    if (startingMicRef.current) return;
+    startingMicRef.current = true;
+    setStartingMic(true);
+    stt.reset();
+    voice.pause();
+    setLastResult(null);
+    setStatus("Checking microphone...");
+    const started = await stt.start();
+    startingMicRef.current = false;
+    setStartingMic(false);
+    if (!started) {
+      listenStartedRef.current = false;
+      setState("idle");
+      if (!stt.error) setStatus("Could not start the microphone. Please try again.");
+      return;
+    }
+    listenStartedRef.current = true;
+    listeningEncouragedRef.current = false;
+    setState("listening");
+    setStatus("Amy is listening...");
+  }, [canRecord, state, stt, stopListeningAndProcess, voice]);
 
   useEffect(() => {
     if (state !== "listening") return;

@@ -233,7 +233,8 @@ export function SpeechGameFlow({
   }, [currentItem]);
 
   useEffect(() => {
-    if (promptPhaseRef.current !== "recording") return;
+    const phase = promptPhaseRef.current;
+    if (phase !== "recording" && phase !== "analyzing") return;
     if (stt.listening || stt.transcribing) return;
     const item = currentItemRef.current;
     const final = stt.transcript.trim();

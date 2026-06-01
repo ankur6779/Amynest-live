@@ -236,7 +236,7 @@ export class MicrophoneSessionManager {
   private async attemptStartRecording(config: RecordingSessionConfig, sessionToken: string): Promise<boolean> {
     // A. Perform permission/native check. Since config.forFeature is true on user action,
     // we bypass cache to ensure real permission dialog triggers if needed.
-    const access = await requestMicrophoneAccess({ forFeature: true });
+    const access = await requestMicrophoneAccess({ forFeature: true, skipProbeStream: true });
     const osPermissionState = await queryOsMicrophonePermissionState();
     this.log("Microphone access permission check result", { access, osPermissionState });
     if (!access.granted && isOsMicrophonePermissionDenied(osPermissionState)) {
@@ -557,6 +557,10 @@ export class MicrophoneSessionManager {
         this.log("Error inside onError callback", callbackErr);
       }
     }
+  }
+
+  public getRecorderMimeType(): string {
+    return this.pickRecorderMimeType();
   }
 
   private pickRecorderMimeType(): string {
