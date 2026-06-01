@@ -192,3 +192,16 @@ export function getSpeechCoachMicStatusMessage(options: {
       return fallbackStatus;
   }
 }
+
+/** True when live Speech Coach can score a stopped recording (Whisper or native STT). */
+export function shouldProcessLiveCoachSttResult(opts: {
+  listening: boolean;
+  transcribing: boolean;
+  transcript: string;
+  error: string | null;
+  allowEmptyTranscript: boolean;
+}): boolean {
+  if (opts.listening || opts.transcribing) return false;
+  const final = opts.transcript.trim();
+  return !!(final || opts.error || opts.allowEmptyTranscript);
+}

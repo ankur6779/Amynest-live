@@ -51,6 +51,7 @@ import {
   loadCoachLocalSnapshot,
   playSpeechCue,
   saveCoachJourneySnapshot,
+  shouldProcessLiveCoachSttResult,
   weakSoundsToHistory,
   type SessionAttemptInput,
 } from "./speech-coach-utils";
@@ -308,6 +309,16 @@ export function LiveSpeechCoach({
     }
   }, []);
   const stt = useSpeechRecognition("en-US", { getAuthToken });
+  const sttListeningRef = useRef(stt.listening);
+  const sttTranscribingRef = useRef(stt.transcribing);
+  const sttTranscriptRef = useRef(stt.transcript);
+  const sttErrorRef = useRef(stt.error);
+  useEffect(() => {
+    sttListeningRef.current = stt.listening;
+    sttTranscribingRef.current = stt.transcribing;
+    sttTranscriptRef.current = stt.transcript;
+    sttErrorRef.current = stt.error;
+  }, [stt.listening, stt.transcribing, stt.transcript, stt.error]);
   const voice = useAmyVoice({
     onFinished: () => {
       if (inSequenceRef.current) return;
@@ -520,6 +531,8 @@ export function LiveSpeechCoach({
 
   const processResponse = useCallback(async () => {
     if (!current) return;
+    if (stateRef.current !== "listening") return;
+    stateRef.current = "processing";
     listenStartedRef.current = false;
     setState("processing");
     setStatus("Amy is thinking...");
@@ -556,13 +569,43 @@ export function LiveSpeechCoach({
     await speakSequence(result.spokenLines, "feedback");
   }, [bestStreak, child.id, current, dialogueContext, idx, logAttempt, speakSequence, streak, stt.transcript]);
 
+  /** Wait for Whisper/native STT to finish before scoring — blind timeouts race transcription. */
+  const processWhenSttSettled = useCallback(
+    (opts?: { allowEmptyTranscript?: boolean }) => {
+      const allowEmpty = opts?.allowEmptyTranscript ?? false;
+      const deadline = Date.now() + 20_000;
+      const tick = () => {
+        if (stateRef.current !== "listening") return;
+        if (sttListeningRef.current || sttTranscribingRef.current) {
+          if (Date.now() < deadline) {
+            window.setTimeout(tick, 80);
+          } else {
+            void processResponse();
+          }
+          return;
+        }
+        if (
+          shouldProcessLiveCoachSttResult({
+            listening: sttListeningRef.current,
+            transcribing: sttTranscribingRef.current,
+            transcript: sttTranscriptRef.current,
+            error: sttErrorRef.current,
+            allowEmptyTranscript: allowEmpty,
+          })
+        ) {
+          void processResponse();
+        }
+      };
+      window.setTimeout(tick, 80);
+    },
+    [processResponse],
+  );
+
   const stopListeningAndProcess = useCallback(() => {
     if (stateRef.current !== "listening") return;
     stt.stop();
-    window.setTimeout(() => {
-      if (stateRef.current === "listening") void processResponse();
-    }, 400);
-  }, [processResponse, stt]);
+    processWhenSttSettled({ allowEmptyTranscript: true });
+  }, [processWhenSttSettled, stt]);
 
   const startListening = useCallback(async () => {
     if (!canRecord || state !== "idle") {
@@ -608,12 +651,10 @@ export function LiveSpeechCoach({
     const id = window.setTimeout(() => {
       if (stateRef.current !== "listening") return;
       stt.stop();
-      window.setTimeout(() => {
-        if (stateRef.current === "listening") void processResponse();
-      }, 350);
+      processWhenSttSettled({ allowEmptyTranscript: true });
     }, 8000);
     return () => window.clearTimeout(id);
-  }, [processResponse, state, stt]);
+  }, [processWhenSttSettled, state, stt]);
 
   const nextTask = useCallback(() => {
     stt.reset();
