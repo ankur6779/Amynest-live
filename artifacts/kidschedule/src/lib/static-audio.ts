@@ -607,11 +607,17 @@ async function createStaticPlaybackElementFromBlob(
 async function createStaticPlaybackElementAsync(
   proxyUrl: string,
 ): Promise<HTMLAudioElement | null> {
-  // Blob + decodeAudioData on all clients — catches corrupt/truncated MP3 before play.
+  // Fast path: reuse a warm URL-keyed element and let the browser stream directly
+  // from src. Avoids downloading the whole MP3 to a blob and decodeAudioData()
+  // before playback (a per-tap, duration-scaled main-thread cost). The play-time
+  // watchdog still detects silent/failed output, so the pipeline can fall through.
+  const direct = createStaticPlaybackElement(proxyUrl);
+  if (direct) return direct;
+  // Fallback only: blob + decodeAudioData catches corrupt/truncated MP3.
   const blobEl = await createStaticPlaybackElementFromBlob(proxyUrl);
   if (blobEl) return blobEl;
   logAmyVoiceDiag("blob_fallback_remote", { url: proxyUrl.slice(-72) });
-  return createStaticPlaybackElement(proxyUrl);
+  return direct;
 }
 
 export type PreparePlaybackOptions = {

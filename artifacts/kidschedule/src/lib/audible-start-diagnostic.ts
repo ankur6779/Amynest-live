@@ -8,8 +8,8 @@
 import { isAudioPlaybackRecoveryMode } from "@/lib/audio-playback-recovery";
 import { isPlaybackTraceEnabled } from "@/lib/playback-trace";
 
-export const AUDIBLE_START_TIMEOUT_MS = 800;
-export const LOADING_STUCK_MS = 1000;
+export const AUDIBLE_START_TIMEOUT_MS = 300;
+export const LOADING_STUCK_MS = 400;
 
 const READY_STATE_LABELS: Record<number, string> = {
   0: "HAVE_NOTHING",
