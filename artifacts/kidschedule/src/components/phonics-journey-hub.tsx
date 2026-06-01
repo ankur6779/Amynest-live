@@ -491,7 +491,7 @@ export function PhonicsJourneyHub({
         </Card>
       )}
 
-      {habitState.lastSession && (
+      {habitState.lastSession && (habitState.lastSession.summaryLines?.length ?? 0) > 0 && (
         <Card className={cn(CARD_SURFACE, "border-white/[0.08]")} data-testid="phonics-last-session">
           <CardContent className="space-y-2 p-4">
             <div className="flex items-center gap-2">
@@ -501,7 +501,7 @@ export function PhonicsJourneyHub({
               </p>
             </div>
             <ul className="space-y-1 text-sm text-foreground">
-              {habitState.lastSession.summaryLines.map((line) => (
+              {(habitState.lastSession.summaryLines ?? []).map((line) => (
                 <li key={line} className="flex items-center gap-2">
                   <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
                   {line}

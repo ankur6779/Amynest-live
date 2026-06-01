@@ -86,11 +86,56 @@ describe("amy-voice-playback-contract", () => {
     ).toBe(true);
     expect(
       shouldTriggerCompletion({
+        mode: "full-required",
+        actualPlayedDuration: 9.5,
+        expectedDuration: 10,
+      }),
+    ).toBe(true);
+    expect(
+      shouldTriggerCompletion({
         mode: "partial-ok",
         actualPlayedDuration: 0.5,
         expectedDuration: 10,
       }),
     ).toBe(true);
+  });
+
+  it("full-required accepts natural ended between 95% and 98% of metadata duration", async () => {
+    const state = {
+      currentTime: 19.5,
+      duration: 20,
+      ended: true,
+      paused: true,
+    };
+    const audio = {
+      get currentTime() {
+        return state.currentTime;
+      },
+      get duration() {
+        return state.duration;
+      },
+      get ended() {
+        return state.ended;
+      },
+      get paused() {
+        return state.paused;
+      },
+      play: vi.fn(),
+    } as unknown as HTMLAudioElement;
+
+    const promise = waitForSafePlaybackCompletion({
+      audio,
+      mode: "full-required",
+      isCancelled: () => false,
+      paragraphIdx: 1,
+      knownDurationSec: 20,
+    });
+
+    const result = await promise;
+    expect(result.ok).toBe(true);
+    expect(result.actualPlayedDuration).toBe(19.5);
+    expect(result.earlyCompletion).toBe(false);
+    expect(audio.play).not.toHaveBeenCalled();
   });
 
   it("full-required with invalid duration falls back to waitUntilEnd", async () => {

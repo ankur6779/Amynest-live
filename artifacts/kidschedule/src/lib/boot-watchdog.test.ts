@@ -49,11 +49,41 @@ export const BOOT_WATCHDOG_VECTORS: Array<{
     expected: { action: "extend", extendMs: 16_000 },
   },
   {
+    name: "bundle loading first extend",
+    input: {
+      phases: ["html-parsed", "bundle-loading"],
+      startup: null,
+      bootWatchdogExtendCount: 0,
+      now: 20_000,
+    },
+    expected: { action: "extend", extendMs: 16_000 },
+  },
+  {
+    name: "bundle loading second extend",
+    input: {
+      phases: ["html-parsed", "bundle-loading"],
+      startup: null,
+      bootWatchdogExtendCount: 1,
+      now: 36_000,
+    },
+    expected: { action: "extend", extendMs: 16_000 },
+  },
+  {
+    name: "bundle loading exhausted extends fails",
+    input: {
+      phases: ["html-parsed", "bundle-loading"],
+      startup: null,
+      bootWatchdogExtendCount: 2,
+      now: 52_000,
+    },
+    expected: { action: "fail", reason: "no_react_render" },
+  },
+  {
     name: "already extended fails",
     input: {
       phases: ["bundle-loaded"],
       startup: null,
-      bootWatchdogExtended: true,
+      bootWatchdogExtendCount: 1,
       now: 40_000,
     },
     expected: { action: "fail", reason: "no_react_render" },

@@ -17,7 +17,7 @@ describe("phonics-audio-availability", () => {
   });
 
   it("marks words missing from both library and static catalog unavailable", () => {
-    const chat = checkPhonicsWordClip("chat");
-    expect(chat.available).toBe(false);
+    const missing = checkPhonicsWordClip("zzqxnotaword");
+    expect(missing.available).toBe(false);
   });
 });

@@ -31,14 +31,14 @@ import {
   buildLearningZoneAudioStateKey,
 } from "@/lib/learning-zone-audio-prewarm";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
-import {
-  ABACUS_STATIC_TTS_PROBE,
-  catalogPlaybackSpeakOptions,
-} from "@/lib/unified-catalog-playback";
+import { useToast } from "@/hooks/use-toast";
+import { catalogPlaybackSpeakOptions } from "@/lib/unified-catalog-playback";
 import {
   setAudioTraceModule,
   traceBrokenModulePreflight,
 } from "@/lib/audio-root-cause-trace";
+import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
+import { recordTtsUserGesture } from "@/lib/tts-guard";
 import {
   AbacusHomeDashboard,
   AbacusParentPanel,
@@ -64,6 +64,112 @@ const sfx = {
     setTimeout(() => playTone(784, 180), 180);
   },
 };
+
+function useAbacusAmyVoice() {
+  const amy = useAmyVoice();
+  const { toast } = useToast();
+  const [pending, setPending] = useState(false);
+  const playbackRef = useRef(false);
+
+  useEffect(() => {
+    if (!amy.error) return;
+    toast({
+      title: "Voice unavailable",
+      description:
+        amy.error === "playback_blocked_tap_again"
+          ? "Tap Amy's voice again to start."
+          : amy.error.replace(/_/g, " "),
+      variant: "destructive",
+    });
+  }, [amy.error, toast]);
+
+  const prime = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      audioManager.unlockFromUserGesture();
+      recordTtsUserGesture();
+      primeStaticAudioInUserGesture(trimmed, "default");
+      amy.primeSpeakGesture(trimmed, catalogPlaybackSpeakOptions(trimmed));
+    },
+    [amy],
+  );
+
+  const stop = useCallback(() => {
+    amy.pause();
+    playbackRef.current = false;
+    setPending(false);
+  }, [amy]);
+
+  const speak = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+
+      const activeKey = trimmed.toLowerCase();
+      const isThisClip =
+        playbackRef.current ||
+        pending ||
+        (amy.activePhrase?.toLowerCase() === activeKey && (amy.speaking || amy.loading));
+
+      if (isThisClip || amy.speaking || amy.loading) {
+        stop();
+        return;
+      }
+
+      playbackRef.current = true;
+      setPending(true);
+      audioManager.unlockFromUserGesture();
+      recordTtsUserGesture();
+
+      const speakOpts = catalogPlaybackSpeakOptions(trimmed);
+      setAudioTraceModule("Abacus");
+      traceBrokenModulePreflight("Abacus", {
+        resolvedText: trimmed,
+        staticCatalogTexts: speakOpts.staticCatalogTexts,
+        catalogPlayback: speakOpts.catalogPlayback,
+      });
+
+      try {
+        const res = await amy.speak(trimmed, speakOpts);
+        if (!res?.success) {
+          toast({
+            title: "Voice unavailable",
+            description: res?.error?.replace(/_/g, " ") ?? "Could not play Amy's voice.",
+            variant: "destructive",
+          });
+        }
+      } finally {
+        playbackRef.current = false;
+        setPending(false);
+        setAudioTraceModule(null);
+      }
+    },
+    [amy, pending, stop, toast],
+  );
+
+  const isActiveFor = useCallback(
+    (text: string) => {
+      const key = text.trim().toLowerCase();
+      if (!key) return pending || amy.speaking || amy.loading;
+      return (
+        pending ||
+        (amy.activePhrase?.toLowerCase() === key && (amy.speaking || amy.loading))
+      );
+    },
+    [amy.activePhrase, amy.loading, amy.speaking, pending],
+  );
+
+  return {
+    ...amy,
+    speak,
+    prime,
+    stop,
+    pending,
+    isActiveFor,
+    isActive: pending || amy.speaking || amy.loading,
+  };
+}
 
 // ─── localStorage helpers for offline-first progress hydration ─────────
 const PROGRESS_LS_KEY = (childId: number) => `abacus.progress.v1.${childId}`;
@@ -548,11 +654,13 @@ function LearnMode({
   level,
   onSpeak,
   onStop,
+  onPrime,
   speaking,
 }: {
   level: LevelId;
   onSpeak: (text: string) => void;
   onStop: () => void;
+  onPrime: (text: string) => void;
   speaking: boolean;
 }) {
   const { t } = useAbacusTranslation();
@@ -643,6 +751,7 @@ function LearnMode({
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
+          onPointerDown={() => onPrime(cur.text)}
           onClick={() => (speaking ? onStop() : onSpeak(cur.text))}
           className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 hover:opacity-90 text-white text-xs font-semibold px-3 py-2"
           data-testid="abacus-learn-tts"
@@ -1069,11 +1178,20 @@ function MentalMode({ level }: { level: LevelId }) {
   );
 }
 
-function TutorMode({ childId, level, ageYears }: { childId: number; level: LevelId; ageYears: number }) {
+function TutorMode({
+  childId,
+  level,
+  ageYears,
+  voice,
+}: {
+  childId: number;
+  level: LevelId;
+  ageYears: number;
+  voice: ReturnType<typeof useAbacusAmyVoice>;
+}) {
   const { t, i18n } = useAbacusTranslation();
   void ageYears;
   const authFetch = useAuthFetch();
-  const amy = useAmyVoice();
   const [question, setQuestion] = useState("");
   const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1157,27 +1275,18 @@ function TutorMode({ childId, level, ageYears }: { childId: number; level: Level
           <p className="text-sm leading-relaxed">{reply}</p>
           <button
             type="button"
-            onClick={() => {
-              if (amy.speaking || amy.loading) {
-                amy.pause();
-                return;
-              }
-              const speakOpts = catalogPlaybackSpeakOptions(ABACUS_STATIC_TTS_PROBE);
-              setAudioTraceModule("Abacus");
-              traceBrokenModulePreflight("Abacus", {
-                audioIdentity: undefined,
-                resolvedText: ABACUS_STATIC_TTS_PROBE,
-                staticCatalogTexts: speakOpts.staticCatalogTexts,
-                catalogPlayback: speakOpts.catalogPlayback,
-              });
-              void amy.speak(ABACUS_STATIC_TTS_PROBE, speakOpts).finally(() => {
-                setAudioTraceModule(null);
-              });
-            }}
+            onPointerDown={() => voice.prime(reply)}
+            onClick={() =>
+              voice.isActiveFor(reply) ? voice.stop() : void voice.speak(reply)
+            }
             className="inline-flex items-center gap-1 text-xs font-semibold text-foreground"
           >
-            {amy.speaking ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
-            {amy.speaking ? t("abacus.stop_voice") : t("abacus.amy_voice")}
+            {voice.isActiveFor(reply) ? (
+              <VolumeX className="h-3.5 w-3.5" />
+            ) : (
+              <Volume2 className="h-3.5 w-3.5" />
+            )}
+            {voice.isActiveFor(reply) ? t("abacus.stop_voice") : t("abacus.amy_voice")}
           </button>
         </div>
       )}
@@ -1190,7 +1299,7 @@ function TutorMode({ childId, level, ageYears }: { childId: number; level: Level
 export function AbacusZone({ childId, childName, ageYears }: Props) {
   const { t } = useAbacusTranslation();
   const authFetch = useAuthFetch();
-  const amy = useAmyVoice();
+  const voice = useAbacusAmyVoice();
   const [progress, setProgress] = useState<ProgressShape | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardShape | null>(null);
   const [mode, setMode] = useState<Mode>("learn");
@@ -1575,9 +1684,10 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
             {mode === "learn" && (
               <LearnMode
                 level={level}
-                speaking={amy.speaking || amy.loading}
-                onSpeak={(text) => amy.speak(text)}
-                onStop={() => amy.pause()}
+                speaking={voice.isActive}
+                onSpeak={(text) => void voice.speak(text)}
+                onStop={voice.stop}
+                onPrime={voice.prime}
               />
             )}
             {mode === "practice" && (
@@ -1588,7 +1698,7 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
             )}
             {mode === "mental" && <MentalMode level={level} />}
             {mode === "tutor" && (
-              <TutorMode childId={childId} level={level} ageYears={ageYears} />
+              <TutorMode childId={childId} level={level} ageYears={ageYears} voice={voice} />
             )}
           </div>
         </>

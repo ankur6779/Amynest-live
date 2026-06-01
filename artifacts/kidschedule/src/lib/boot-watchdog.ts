@@ -11,7 +11,9 @@ export type BootWatchdogStartupSnapshot = {
 export type BootWatchdogInput = {
   phases: string[];
   startup: BootWatchdogStartupSnapshot;
-  bootWatchdogExtended: boolean;
+  /** @deprecated use bootWatchdogExtendCount */
+  bootWatchdogExtended?: boolean;
+  bootWatchdogExtendCount?: number;
   now: number;
   /** Ms since lastProgressAt counts as recent activity */
   progressWindowMs?: number;
@@ -37,13 +39,20 @@ export function evaluateBootWatchdog(input: BootWatchdogInput): BootWatchdogDeci
   }
 
   const hasBundle = input.phases.includes("bundle-loaded");
+  const hasBundleLoading = input.phases.includes("bundle-loading");
   const recentProgress =
     Boolean(
       input.startup?.lastProgressAt &&
         input.now - input.startup.lastProgressAt < progressWindowMs,
     );
 
-  if ((hasBundle || recentProgress) && !input.bootWatchdogExtended) {
+  const extendCount =
+    input.bootWatchdogExtendCount ??
+    (input.bootWatchdogExtended ? 1 : 0);
+  /** Slow networks: allow two extensions while the main chunk is still loading. */
+  const maxExtend = hasBundleLoading && !hasBundle ? 2 : 1;
+
+  if ((hasBundle || hasBundleLoading || recentProgress) && extendCount < maxExtend) {
     return { action: "extend", extendMs: EXTEND_MS };
   }
 

@@ -157,4 +157,35 @@ describe("useLessonPlayback lesson switch safety", () => {
       text: "Warm me up",
     });
   });
+
+  it("auto-advances to the next paragraph when onFinished fires", async () => {
+    speakMock.mockImplementation((text: string, opts?: { onFinished?: () => void }) => {
+      if (text === "First paragraph.") {
+        opts?.onFinished?.();
+      }
+      return Promise.resolve({ success: true, layer: "static" });
+    });
+
+    const { result } = renderHook(() =>
+      useLessonPlayback({
+        paragraphs: ["First paragraph.", "Second paragraph."],
+        lessonId: "lesson-chain",
+        voiceId: "voice",
+        modelId: "model",
+        autoPlay: false,
+        initialParagraphIdx: 0,
+      }),
+    );
+
+    act(() => {
+      result.current.play();
+    });
+
+    expect(result.current.paragraphIdx).toBe(1);
+    expect(result.current.intent).toBe("playing");
+    expect(speakMock).toHaveBeenLastCalledWith(
+      "Second paragraph.",
+      expect.objectContaining({ lessonParagraph: true }),
+    );
+  });
 });

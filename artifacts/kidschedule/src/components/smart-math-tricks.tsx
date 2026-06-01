@@ -3,7 +3,6 @@ import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useToast } from "@/hooks/use-toast";
 import { audioManager } from "@/lib/audio-manager";
 import { lookupStaticAudioUrl, primeStaticAudioInUserGesture } from "@/lib/static-audio";
-import { playCatalogPreparedUrl } from "@/lib/unified-catalog-playback";
 import {
   MATH_TRICKS,
   getMathTrickMeta,
@@ -261,7 +260,10 @@ function TrickCard({
   }, [trickSpeakText]);
   const isThisTrickActive =
     activePhrase != null && trickActiveKeys.has(activePhrase.toLowerCase());
-  const hearTrickBusy = isThisTrickActive && (speaking || loading);
+  const [hearTrickPending, setHearTrickPending] = useState(false);
+  const hearTrickPlaybackRef = useRef(false);
+  const hearTrickActive =
+    hearTrickPending || (isThisTrickActive && (speaking || loading));
   const [practiceMode, setPracticeMode] = useState(false);
   const [interactiveMode, setInteractiveMode] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
@@ -275,25 +277,42 @@ function TrickCard({
   }, [meta.visualSequence]);
   const handleSpeak = useCallback(async () => {
     audioManager.unlockFromUserGesture();
-    if (hearTrickBusy) {
+    const isPlaying =
+      hearTrickPlaybackRef.current ||
+      hearTrickPending ||
+      (isThisTrickActive && (speaking || loading));
+    if (isPlaying) {
       pause();
+      hearTrickPlaybackRef.current = false;
+      setHearTrickPending(false);
       return;
     }
-    if (lookupStaticAudioUrl(trickSpeakText, "default")) {
-      const direct = await playCatalogPreparedUrl(trickSpeakText, {
-        source: "math-trick",
-      });
-      if (direct.ok) return;
+    hearTrickPlaybackRef.current = true;
+    setHearTrickPending(true);
+    try {
+      const res = await speak(trickSpeakText, trickSpeakOpts);
+      if (!res?.success) {
+        toast({
+          title: "Voice unavailable",
+          description: res?.error?.replace(/_/g, " ") ?? "Could not play this trick.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      hearTrickPlaybackRef.current = false;
+      setHearTrickPending(false);
     }
-    const res = await speak(trickSpeakText, trickSpeakOpts);
-    if (!res?.success) {
-      toast({
-        title: "Voice unavailable",
-        description: res?.error?.replace(/_/g, " ") ?? "Could not play this trick.",
-        variant: "destructive",
-      });
-    }
-  }, [hearTrickBusy, speak, pause, trickSpeakText, trickSpeakOpts, toast]);
+  }, [
+    hearTrickPending,
+    isThisTrickActive,
+    speaking,
+    loading,
+    speak,
+    pause,
+    trickSpeakText,
+    trickSpeakOpts,
+    toast,
+  ]);
 
   useEffect(() => {
     if (!error) return;
@@ -456,12 +475,12 @@ function TrickCard({
                 onClick={handleSpeak}
                 className="flex-1 min-w-[96px] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
                 style={{
-          background: hearTrickBusy ? `${trick.color}33` : "rgba(255,255,255,0.1)",
-          border: `1.5px solid ${hearTrickBusy ? trick.color : "rgba(255,255,255,0.15)"}`,
-          color: hearTrickBusy ? trick.color : "rgba(255,255,255,0.7)"
+          background: hearTrickActive ? `${trick.color}33` : "rgba(255,255,255,0.1)",
+          border: `1.5px solid ${hearTrickActive ? trick.color : "rgba(255,255,255,0.15)"}`,
+          color: hearTrickActive ? trick.color : "rgba(255,255,255,0.7)"
         }}>
-                {hearTrickBusy && loading ? "⏳" : hearTrickBusy ? "🔊" : "🔈"}{" "}
-                {hearTrickBusy ? t("components.smart_math_tricks.playing") : t("components.smart_math_tricks.hear_trick")}
+                {hearTrickActive && loading ? "⏳" : hearTrickActive ? "⏹" : "🔈"}{" "}
+                {hearTrickActive ? t("components.smart_math_tricks.stop") : t("components.smart_math_tricks.hear_trick")}
               </button>
               {animatedSequence && <button onClick={() => setInteractiveMode(true)} className="flex-1 min-w-[88px] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95" style={{
           background: `${trick.color}22`,

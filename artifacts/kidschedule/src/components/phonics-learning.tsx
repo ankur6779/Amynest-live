@@ -311,7 +311,11 @@ function PhonicsLearningContent({
         : safeItems,
     [isPremium, safeDailyItems, safeItems],
   );
-  const safeProgress = progress ?? { practiced: {}, mastered: {} };
+  const emptyProgress = useMemo<PhonicsProgressMap>(
+    () => ({ practiced: {}, mastered: {} }),
+    [],
+  );
+  const safeProgress = progress ?? emptyProgress;
   const safeInsights = insights ?? [];
   const showBlending =
     !!level?.features.blending &&
@@ -335,12 +339,16 @@ function PhonicsLearningContent({
       .join(",");
     if (preloadKeyRef.current === key) return;
     preloadKeyRef.current = key;
-    const phonicsLines = safeItems
-      .slice(0, limit)
-      .map((item) => phonicsTilePlaybackText(item))
-      .filter((p) => p.length > 0);
-    if (phonicsLines.length > 0) {
-      preloadStaticPhrases(phonicsLines, "phonics", limit);
+    try {
+      const phonicsLines = safeItems
+        .slice(0, limit)
+        .map((item) => phonicsTilePlaybackText(item))
+        .filter((p) => p.length > 0);
+      if (phonicsLines.length > 0) {
+        preloadStaticPhrases(phonicsLines, "phonics", limit);
+      }
+    } catch (err) {
+      console.warn("[phonics] tile audio preload skipped", err);
     }
   }, [safeItems]);
 

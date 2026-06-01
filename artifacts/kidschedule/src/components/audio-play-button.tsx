@@ -198,16 +198,21 @@ export function AudioPlayButton({
     if (mode !== "phonics") return true;
     const trimmed = (text ?? "").trim();
     if (!trimmed) return false;
-    if (hasStaticCatalogAudio(trimmed)) return true;
-    // Phonics clips often live in phonics-library / TTS, not static-audio-map — keep buttons tappable.
-    if (shouldBypassPhonicsSpellingLibraries() || isLocalAudioRecoveryEnabled()) {
+    try {
+      if (hasStaticCatalogAudio(trimmed)) return true;
+      // Phonics clips often live in phonics-library / TTS, not static-audio-map — keep buttons tappable.
+      if (shouldBypassPhonicsSpellingLibraries() || isLocalAudioRecoveryEnabled()) {
+        return true;
+      }
+      if (cvcWordKey || (!phonemeKey && trimmed && !/\s/.test(trimmed))) {
+        return checkPhonicsWordClip(cvcWordKey ?? trimmed).available;
+      }
+      const key = resolvedAudioKey || phonemeKey || trimmed.toLowerCase();
+      return checkPhonicsLetterClip(key).available;
+    } catch (err) {
+      console.warn("[AudioPlayButton] phonics availability check failed", err);
       return true;
     }
-    if (cvcWordKey || (!phonemeKey && trimmed && !/\s/.test(trimmed))) {
-      return checkPhonicsWordClip(cvcWordKey ?? trimmed).available;
-    }
-    const key = resolvedAudioKey || phonemeKey || trimmed.toLowerCase();
-    return checkPhonicsLetterClip(key).available;
   }, [mode, text, phonemeKey, cvcWordKey, resolvedAudioKey, isWordClip]);
 
   const resolvedText = useMemo(() => {

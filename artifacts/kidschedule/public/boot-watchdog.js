@@ -22,12 +22,21 @@
     }
 
     var hasBundle = phases.indexOf("bundle-loaded") !== -1;
+    var hasBundleLoading = phases.indexOf("bundle-loading") !== -1;
     var recentProgress =
       startup &&
       startup.lastProgressAt &&
       now - startup.lastProgressAt < progressWindowMs;
 
-    if ((hasBundle || recentProgress) && !input.bootWatchdogExtended) {
+    var extendCount =
+      typeof input.bootWatchdogExtendCount === "number"
+        ? input.bootWatchdogExtendCount
+        : input.bootWatchdogExtended
+          ? 1
+          : 0;
+    var maxExtend = hasBundleLoading && !hasBundle ? 2 : 1;
+
+    if ((hasBundle || hasBundleLoading || recentProgress) && extendCount < maxExtend) {
       return { action: "extend", extendMs: EXTEND_MS };
     }
 

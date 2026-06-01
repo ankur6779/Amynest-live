@@ -5,6 +5,7 @@ import {
   commitmentLabel,
   isCommitmentAchieved,
   isComeback,
+  loadPhonicsHabitState,
   resolveReadingIdentity,
   resolveStreakChainMessage,
 } from "./phonics-journey-habit";
@@ -71,5 +72,16 @@ describe("phonics-journey-habit", () => {
 
   it("labels commitments", () => {
     expect(commitmentLabel("5min")).toBe("5 Minutes");
+  });
+
+  it("normalizes corrupt lastSession summaryLines from localStorage", () => {
+    localStorage.setItem(
+      "amynest:phonics-habit:99",
+      JSON.stringify({
+        lastSession: { date: "2026-06-01", pointsEarned: 10 },
+      }),
+    );
+    const state = loadPhonicsHabitState(99);
+    expect(state.lastSession?.summaryLines).toEqual([]);
   });
 });

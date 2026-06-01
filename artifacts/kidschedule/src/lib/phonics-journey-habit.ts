@@ -108,6 +108,9 @@ export function loadPhonicsHabitState(childId: number): PhonicsHabitState {
     if (!raw) return defaultHabitState();
     const parsed = JSON.parse(raw) as PhonicsHabitState;
     const state = { ...defaultHabitState(), ...parsed };
+    if (state.lastSession && !Array.isArray(state.lastSession.summaryLines)) {
+      state.lastSession = { ...state.lastSession, summaryLines: [] };
+    }
     if (state.today.date !== todayKey()) {
       state.today = emptyToday();
     }

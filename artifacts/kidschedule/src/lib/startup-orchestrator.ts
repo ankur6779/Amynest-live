@@ -496,7 +496,10 @@ export function inferBootTimeoutRootCause(): {
   }
   if (phases.indexOf("bundle-loaded") === -1) {
     return {
-      rootCause: "main_bundle_not_executed",
+      rootCause:
+        phases.indexOf("bundle-loading") !== -1
+          ? "main_bundle_still_loading"
+          : "main_bundle_not_executed",
       recoveryPath: "cache_clear_reload",
       phases,
     };

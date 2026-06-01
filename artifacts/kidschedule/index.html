@@ -443,17 +443,18 @@
               var evaluate = window.__amynestEvaluateBootWatchdog;
               if (!evaluate) return;
 
+              var extendCount = window.__amynestBootWatchdogExtendCount || 0;
               var decision = evaluate({
                 phases: phases,
                 startup: startup,
-                bootWatchdogExtended: !!window.__amynestBootWatchdogExtended,
+                bootWatchdogExtendCount: extendCount,
                 now: Date.now(),
                 progressWindowMs: 6000,
               });
 
               if (decision.action === "ok") return;
               if (decision.action === "extend") {
-                window.__amynestBootWatchdogExtended = true;
+                window.__amynestBootWatchdogExtendCount = extendCount + 1;
                 setTimeout(__amynestRunBootWatchdog, decision.extendMs || 16000);
                 return;
               }
@@ -1411,7 +1412,29 @@
     <!-- Skip React bundle when ?diag=1 — lightweight crash diagnostics only. -->
     <script type="module" id="amynest-entry">
       if (!/[?&]diag=1/.test(location.search || "")) {
-        import("/src/main.tsx?v=1001");
+        window.__amynestMark && window.__amynestMark("bundle-loading");
+        import("/src/main.tsx?v=1001").catch(function (err) {
+          var msg = String((err && err.message) || err || "Main module failed to load");
+          try {
+            var r = JSON.parse(localStorage.getItem("__amynest_boot_v1") || "null");
+            if (r) {
+              r.lastReject = { msg: msg, t: Date.now() - (r.ts || Date.now()) };
+              localStorage.setItem("__amynest_boot_v1", JSON.stringify(r));
+            }
+          } catch (_e) {}
+          if (
+            window.__amynestTryAutoRecovery &&
+            window.__amynestTryAutoRecovery("boot-import", msg)
+          ) {
+            return;
+          }
+          if (window.__amynestShowCrashOverlay) {
+            window.__amynestShowCrashOverlay({
+              kind: "boot-import",
+              message: msg,
+            });
+          }
+        });
       } else {
         window.__amynestDiagOnly = true;
         window.__amynestMark && window.__amynestMark("diag-only");

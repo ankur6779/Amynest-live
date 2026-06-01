@@ -108,7 +108,10 @@ export function shouldTriggerCompletion(input: SafeCompletionInput): boolean {
     if (expectedDuration <= 0) {
       return actualPlayedDuration >= 0.25;
     }
-    return isPlaybackComplete(actualPlayedDuration, expectedDuration);
+    if (isPlaybackComplete(actualPlayedDuration, expectedDuration)) return true;
+    // Complete static/cache files often end slightly below 98% when metadata
+    // duration exceeds the encoded sample length — still a natural full play.
+    return actualPlayedDuration >= expectedDuration * EARLY_END_IGNORE_RATIO;
   }
   return true;
 }
@@ -221,24 +224,28 @@ async function waitForFullRequiredCompletion(
       return finalize("timer", true, false);
     }
 
-    if (audio.ended && duration > 0 && isEarlyEndedEvent(currentTime, duration)) {
-      logPlaybackCompletion({
-        paragraphIdx: opts?.paragraphIdx,
-        duration,
-        currentTime,
-        trigger: "ended",
-      });
-      if (import.meta.env.DEV) {
-        console.warn("[AmyVoicePlayback] early-ended ignored", {
+    if (audio.ended && duration > 0) {
+      if (isEarlyEndedEvent(currentTime, duration)) {
+        logPlaybackCompletion({
           paragraphIdx: opts?.paragraphIdx,
           duration,
           currentTime,
+          trigger: "ended",
         });
-      }
-      try {
-        void audio.play();
-      } catch {
-        /* resume best-effort */
+        if (import.meta.env.DEV) {
+          console.warn("[AmyVoicePlayback] early-ended ignored", {
+            paragraphIdx: opts?.paragraphIdx,
+            duration,
+            currentTime,
+          });
+        }
+        try {
+          void audio.play();
+        } catch {
+          /* resume best-effort */
+        }
+      } else {
+        return finalize("ended", true, false);
       }
     }
 

@@ -89,6 +89,7 @@ export function useLessonPlayback({
   const paragraphsRef = useRef(paragraphs);
   const playbackSessionRef = useRef(0);
   const skipParagraphEffectRef = useRef(false);
+  const speakParagraphAtRef = useRef<(idx: number) => void>(() => {});
 
   intentRef.current = intent;
   paragraphIdxRef.current = paragraphIdx;
@@ -109,15 +110,21 @@ export function useLessonPlayback({
       if (session !== playbackSessionRef.current) return;
       if (intentRef.current !== "playing") return;
 
-      setParagraphIdxState((i) => {
-        if (i + 1 >= paragraphs.length) {
-          intentRef.current = "idle";
-          setIntent("idle");
-          onLessonComplete?.(lessonId);
-          return i;
-        }
-        return i + 1;
-      });
+      const current = paragraphIdxRef.current;
+      if (current + 1 >= paragraphs.length) {
+        playbackSessionRef.current += 1;
+        intentRef.current = "idle";
+        setIntent("idle");
+        onLessonComplete?.(lessonId);
+        return;
+      }
+
+      const next = current + 1;
+      playbackSessionRef.current += 1;
+      paragraphIdxRef.current = next;
+      setParagraphIdxState(next);
+      skipParagraphEffectRef.current = true;
+      speakParagraphAtRef.current(next);
     },
     [paragraphs.length, lessonId, onLessonComplete],
   );
@@ -201,7 +208,6 @@ export function useLessonPlayback({
     [speak, advanceParagraph, handleSpeakResult, pauseVoice],
   );
 
-  const speakParagraphAtRef = useRef(speakParagraphAt);
   speakParagraphAtRef.current = speakParagraphAt;
 
   const pause = useCallback(() => {
