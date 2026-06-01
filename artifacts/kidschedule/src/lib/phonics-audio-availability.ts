@@ -3,6 +3,7 @@
  */
 import {
   resolveContentCatalogKey,
+  resolveGraphemeToAudioKey,
   resolveLetterClipCatalogKey,
   type PhonicsAssetType,
 } from "@workspace/phonics-sounds";
@@ -95,7 +96,10 @@ export function validatePhonicsWordAudio(
     phonemes ??
     w.split("").map((ch) => ch.trim().toLowerCase());
 
-  const phonemeAudio = phonemeKeys.map((p) => checkPhonicsLetterClip(p).available);
+  const phonemeAudio = phonemeKeys.map((p) => {
+    const audioKey = resolveGraphemeToAudioKey(p) ?? p.trim().toLowerCase();
+    return checkPhonicsLetterClip(audioKey).available;
+  });
   const available = wordAudio && phonemeAudio.every(Boolean);
 
   if (!available) {
