@@ -155,6 +155,23 @@ describe("amy-speech-mode", () => {
     expect(withoutFlag.phrases.length).toBeGreaterThan(1);
     expect(withoutFlag.useSemanticSplit).toBe(true);
   });
+
+  it("does not split coach greetings that exist as one static catalog line", () => {
+    const line = "I am so glad you came to practice with me.";
+    expect(splitSemanticPhrases(normalizeText(line, "speech_coach"), "speech_coach").length).toBeGreaterThan(1);
+    const policy = prepareAmySpeechInput(line);
+    expect(policy.useSemanticSplit).toBe(false);
+    expect(policy.phrases).toHaveLength(1);
+    expect(policy.phrases[0]).toContain("practice with me");
+  });
+
+  it("does not split long hub-style facts when the full sentence is pre-recorded", () => {
+    const line = "We will take our time and have fun with sounds and words.";
+    const policy = prepareAmySpeechInput(line);
+    expect(policy.useSemanticSplit).toBe(false);
+    expect(policy.phrases).toHaveLength(1);
+    expect(policy.phrases[0]).toContain("sounds and words");
+  });
 });
 
 describe("amy-voice-learning", () => {

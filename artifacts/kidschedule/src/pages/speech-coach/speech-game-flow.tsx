@@ -335,6 +335,7 @@ export function SpeechGameFlow({
     const spoken = getPromptSpeakText(currentItem);
     void (async () => {
       const speakOpts = {
+        coach: true as const,
         mode: mode as "phonics" | "default",
         catalogPlayback: true as const,
         staticCatalogTexts: [spoken],

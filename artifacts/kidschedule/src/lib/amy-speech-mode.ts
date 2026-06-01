@@ -15,6 +15,8 @@ import type { AmyDifficultyLevel } from "@/lib/amy-voice-difficulty";
 import type { AmyIntent } from "@/lib/amy-voice-intent";
 import type { SpeakOptions } from "@/hooks/use-amy-voice";
 import { enforceAmySpeechPolicyInvariants } from "@/lib/amy-voice-invariants";
+import { lookupStaticAudioUrl } from "@/lib/static-audio";
+import type { StaticAudioMode } from "@workspace/static-audio/browser";
 
 export type AmySpeechMode =
   | "math"
@@ -220,6 +222,32 @@ export function normalizeSpellingInput(raw: string): string {
 }
 
 /** Context-aware normalization before TTS pipeline. */
+function pipelineModeForSpeechMode(speechMode: AmySpeechMode): StaticAudioMode {
+  return speechMode === "phonics" || speechMode === "spelling" ? "phonics" : "default";
+}
+
+/** When the full line exists in static-audio-map, never split — chunks usually miss the catalog. */
+function hasFullStaticCatalogMatch(text: string, speechMode: AmySpeechMode): boolean {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return false;
+  const mode = pipelineModeForSpeechMode(speechMode);
+  if (lookupStaticAudioUrl(trimmed, mode)) return true;
+  if (mode !== "default" && lookupStaticAudioUrl(trimmed, "default")) return true;
+  return false;
+}
+
+function collapseSplitWhenStaticAvailable(
+  phrases: string[],
+  baseNormalized: string,
+  originalText: string,
+  speechMode: AmySpeechMode,
+): string[] {
+  if (phrases.length <= 1) return phrases;
+  if (hasFullStaticCatalogMatch(baseNormalized, speechMode)) return [baseNormalized];
+  if (hasFullStaticCatalogMatch(originalText, speechMode)) return [originalText.trim()];
+  return phrases;
+}
+
 export function normalizeText(raw: string, speechMode: AmySpeechMode): string {
   switch (speechMode) {
     case "math":
@@ -761,7 +789,8 @@ export function prepareAmySpeechInput(raw: string, opts?: SpeakOptions): AmySpee
   const speechMode = detectSpeechMode(originalText, opts);
   const baseNormalized = normalizeText(originalText, speechMode);
   const draftProsody = getProsodyProfile(speechMode, baseNormalized, 1);
-  const phrases = splitSemanticPhrases(baseNormalized, speechMode, draftProsody);
+  let phrases = splitSemanticPhrases(baseNormalized, speechMode, draftProsody);
+  phrases = collapseSplitWhenStaticAvailable(phrases, baseNormalized, originalText, speechMode);
   const prosody = getProsodyProfile(speechMode, baseNormalized, phrases.length);
   const normalizedText = phrases.length === 1 ? phrases[0]! : phrases.join(prosody.pauseMarker);
   const policy = buildPolicy(originalText, normalizedText, speechMode, phrases);

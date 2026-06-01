@@ -425,7 +425,10 @@ export function LiveSpeechCoach({
           return;
         }
       }
-      const result = await voice.speak(text, { mode: purpose === "encouragement" ? "default" : undefined });
+      const result = await voice.speak(text, {
+        coach: true,
+        mode: purpose === "encouragement" ? "default" : undefined,
+      });
       if (!result.success && !inSequenceRef.current) {
         if (purpose === "prompt" || purpose === "encouragement") {
           setState("idle");
@@ -456,7 +459,7 @@ export function LiveSpeechCoach({
           if (!local.ok) break;
           continue;
         }
-        const result = await voice.speak(line);
+        const result = await voice.speak(line, { coach: true });
         if (!result.success) break;
       }
       inSequenceRef.current = false;

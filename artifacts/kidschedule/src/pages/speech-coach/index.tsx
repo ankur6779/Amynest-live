@@ -590,7 +590,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
     setPromptPhase("result");
     void (async () => {
       for (const line of evaluated.spokenLines) {
-        await voice.speak(line);
+        await voice.speak(line, { coach: true });
       }
     })();
   }, [bestStreak, makeDialogueCtx, sessionIdx, stt.listening, stt.transcribing, stt.transcript, streak, turnIndex, voice]);
@@ -634,7 +634,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
       void (async () => {
         for (const line of opening) {
           const mode = (items[0]!.kind === "phonic" || items[0]!.kind === "letter") ? "phonics" : "default";
-          await voice.speak(line, { mode: mode as "phonics" | "default" });
+          await voice.speak(line, { coach: true, mode: mode as "phonics" | "default" });
         }
         setPromptPhase("heard");
       })();
@@ -648,6 +648,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
     const mode = (currentItem.kind === "phonic" || currentItem.kind === "letter") ? "phonics" : "default";
     void (async () => {
       const speakOpts = {
+        coach: true as const,
         mode: mode as "phonics" | "default",
         catalogPlayback: true as const,
         staticCatalogTexts: [spoken],
@@ -713,7 +714,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
       const ctx = makeDialogueCtx(sessionIdx, streak, currentItem.kind);
       void (async () => {
         for (const line of buildSessionClosing(ctx, sessionScore, bestStreak)) {
-          await voice.speak(line);
+          await voice.speak(line, { coach: true });
         }
       })();
       setSessionPhase("done");
@@ -731,7 +732,7 @@ function PronunciationSection({ child, viewMode }: { child: AnyChild; viewMode: 
         void (async () => {
           for (const line of lines) {
             const mode = (nextItem.kind === "phonic" || nextItem.kind === "letter") ? "phonics" : "default";
-            await voice.speak(line, { mode: mode as "phonics" | "default" });
+            await voice.speak(line, { coach: true, mode: mode as "phonics" | "default" });
           }
           setPromptPhase("heard");
         })();
@@ -833,10 +834,10 @@ function ReadAloudSection({ child, viewMode }: { child: AnyChild; viewMode: Spee
     setLineRecording(null);
   }, [ageMonths, lineRecording, lines, stt.listening, stt.transcribing, stt.transcript]);
 
-  const playAll = () => voice.speak(story);
+  const playAll = () => voice.speak(story, { coach: true });
   const playLine = (line: string, i: number) => {
     setIdx(i);
-    voice.speak(line);
+    voice.speak(line, { coach: true });
   };
   const avgConfidence = useMemo(() => {
     const vals = Object.values(confidence).filter((v) => v > 0);
