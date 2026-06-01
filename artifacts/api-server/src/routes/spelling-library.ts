@@ -8,15 +8,33 @@ import { getPlaceholderMp3 } from "../services/staticAudioPlaceholder.js";
 
 export const spellingLibraryPublicRouter: IRouter = Router();
 
+/** Explicit CORS for cross-origin fetch from www.amynest.in (prefetch / IndexedDB warm). */
+spellingLibraryPublicRouter.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Vary", "Origin");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Range, Accept, Content-Type");
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+  next();
+});
+
 function etagKeyForObjectPath(objectPath: string): string {
   return createHash("md5").update(objectPath).digest("hex");
 }
 
-function decodeObjectPathParam(raw: string): string {
+function decodeObjectPathParam(raw: string | string[]): string {
+  const joined = Array.isArray(raw) ? raw.join("/") : raw;
   try {
-    return decodeURIComponent(raw.trim());
+    return decodeURIComponent(joined.trim());
   } catch {
-    return raw.trim();
+    return joined.trim();
   }
 }
 
@@ -27,7 +45,10 @@ function decodeObjectPathParam(raw: string): string {
  * never fetch storage.googleapis.com directly (CORS + bucket ACL).
  */
 spellingLibraryPublicRouter.get("/spelling-library/*objectPath", async (req, res): Promise<void> => {
-  const objectPath = decodeObjectPathParam(String(req.params.objectPath ?? ""));
+  const rawParam = req.params.objectPath;
+  const objectPath = decodeObjectPathParam(
+    Array.isArray(rawParam) ? rawParam : (rawParam ?? ""),
+  );
 
   if (!isValidSpellingGcsObjectPath(objectPath)) {
     res.status(400).json({ error: "invalid_spelling_path" });

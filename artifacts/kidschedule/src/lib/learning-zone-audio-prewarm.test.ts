@@ -34,8 +34,19 @@ vi.mock("@/lib/local-tts-cache", () => ({
   deleteLocalCachedAudio: vi.fn(),
 }));
 
+vi.mock("@/lib/spelling-audio-map", () => ({
+  lookupSpellingAudioUrl: vi.fn((word: string) =>
+    word.toLowerCase() === "cat" ? "/api/spelling-library/spelling/v2/cat.mp3" : null,
+  ),
+  lookupSpellingAudioFallbackUrl: vi.fn(
+    () => "/api/spelling-library/spelling/v2/cat.mp3",
+  ),
+}));
+
 vi.mock("@/lib/static-audio", () => ({
-  lookupStaticAudioUrl: vi.fn((text: string) => `/static/${text}.mp3`),
+  lookupStaticAudioUrl: vi.fn((text: string) =>
+    text === "try again" ? "/api/static-audio/try-again.mp3" : `/static/${text}.mp3`,
+  ),
   prefetchStaticAudioUrl: vi.fn(),
 }));
 
@@ -87,5 +98,28 @@ describe("learning-zone-audio-prewarm", () => {
 
     await vi.runAllTimersAsync();
     expect(pregenerateTtsTexts).toHaveBeenCalled();
+  });
+
+  it("uses static catalog for spelling feedback phrases instead of spelling fallback", async () => {
+    const { warmLocalCacheFromUrl } = await import("@/lib/local-tts-cache");
+    const mod = await import("@/lib/learning-zone-audio-prewarm");
+    const authFetch = vi.fn().mockResolvedValue({ ok: true });
+
+    mod.scheduleLearningZoneAudioPrewarm(authFetch as never, {
+      module: "spelling",
+      texts: ["cat"],
+      ageGroup: "4-6",
+    });
+
+    await vi.runAllTimersAsync();
+
+    const warmedUrls = vi
+      .mocked(warmLocalCacheFromUrl)
+      .mock.calls.map((call) => call[1]);
+    expect(warmedUrls).toContain("/api/spelling-library/spelling/v2/cat.mp3");
+    expect(warmedUrls).toContain("/api/static-audio/try-again.mp3");
+    expect(
+      warmedUrls.filter((url) => url === "/api/spelling-library/spelling/v2/cat.mp3"),
+    ).toHaveLength(1);
   });
 });

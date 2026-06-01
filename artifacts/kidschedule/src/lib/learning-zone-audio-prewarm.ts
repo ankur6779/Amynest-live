@@ -170,7 +170,11 @@ function resolveAudioUrl(
   module?: LearningZoneAudioModule,
 ): string | null {
   if (module === "spelling") {
-    return lookupSpellingAudioUrl(text) ?? lookupSpellingAudioFallbackUrl();
+    const spellingUrl = lookupSpellingAudioUrl(text);
+    if (spellingUrl) return spellingUrl;
+    const staticUrl = lookupStaticAudioUrl(text, "default");
+    if (staticUrl) return staticUrl;
+    return lookupSpellingAudioFallbackUrl();
   }
   if (mode === "phonics") {
     const trimmed = text.trim();
