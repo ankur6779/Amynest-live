@@ -52,7 +52,7 @@ spellingLibraryPublicRouter.get("/spelling-library/*objectPath", async (req, res
         { evt: "spelling_library.missing", objectPath },
         "spelling library object missing in GCS",
       );
-      res.status(404).json({ error: "spelling_audio_missing" });
+      serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
       return;
     }
 

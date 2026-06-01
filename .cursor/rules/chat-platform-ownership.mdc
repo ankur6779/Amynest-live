@@ -1,6 +1,7 @@
 ---
 description: ChatPlatform owns all Android chat keyboard + scroll visibility — no bypasses
-alwaysApply: true
+globs: artifacts/kidschedule/src/lib/chat-platform/**,artifacts/kidschedule/src/components/chat-platform.tsx,artifacts/kidschedule/src/components/chat-thread/**,artifacts/kidschedule/src/components/onboarding-chat-shell.tsx,artifacts/kidschedule/src/components/chat-thread-shell.tsx,artifacts/kidschedule/src/hooks/use-keyboard-chat-layout.ts,artifacts/kidschedule/src/lib/android-chat-keyboard.ts,android/**/MainActivity.kt,scripts/check-chat-platform*.ts
+alwaysApply: false
 ---
 
 # ChatPlatform ownership (mandatory)

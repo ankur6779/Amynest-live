@@ -65,10 +65,12 @@ export function preloadAmyVoiceAnticipatory(policy: AmySpeechPolicy): void {
   }
 
   if (policy.speechMode === "phonics" || policy.speechMode === "spelling") {
-    void import("@/lib/amy-voice-pipeline").then(({ decomposePhonicsChunks }) => {
-      const chunks = decomposePhonicsChunks(policy.normalizedText);
-      preloadStaticPhrases(chunks, "phonics", 8);
-    });
+    void import("@/lib/amy-voice-pipeline")
+      .then(({ decomposePhonicsChunks }) => {
+        const chunks = decomposePhonicsChunks(policy.normalizedText);
+        preloadStaticPhrases(chunks, "phonics", 8);
+      })
+      .catch(() => {});
   }
 
   if (policy.speechMode === "speech_coach" && policy.phrases.length <= 1) {

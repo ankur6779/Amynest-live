@@ -295,7 +295,7 @@ async function playPhonicsUrlInner(
     const stillOwner = token === ownershipToken;
     if (result.ok) {
       recordPlaybackQualityCompleted(qualitySessionId, {
-        stopReason: result.error ?? "phonics_complete",
+        stopReason: "phonics_complete",
       });
     } else {
       recordPlaybackQualityFailed(qualitySessionId, {

@@ -191,10 +191,24 @@ async function authHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
+/** Skip authenticated TTS API calls before Firebase session is ready (avoids 401 noise). */
+async function hasAuthenticatedTtsSession(): Promise<boolean> {
+  try {
+    const { getFirebaseAuth } = await import("@/lib/firebase");
+    const user = getFirebaseAuth().currentUser;
+    if (!user) return false;
+    const token = await user.getIdToken().catch(() => null);
+    return Boolean(token);
+  } catch {
+    return false;
+  }
+}
+
 export async function refreshServerTtsStrategy(
   context?: LayerScoringContext,
 ): Promise<void> {
   if (typeof window === "undefined" || !navigator.onLine) return;
+  if (!(await hasAuthenticatedTtsSession())) return;
 
   const key = context ? contextQueryKey(context) : "default";
   const stale = Date.now() - strategyFetchedAt > STRATEGY_REFRESH_MS;
@@ -260,6 +274,7 @@ export async function flushServerTelemetry(): Promise<void> {
   if (telemetryQueue.length === 0 || typeof window === "undefined" || !navigator.onLine) {
     return;
   }
+  if (!(await hasAuthenticatedTtsSession())) return;
 
   const batch = telemetryQueue.splice(0, 50);
   try {
@@ -289,6 +304,7 @@ export function initHybridTtsLearning(): void {
 
 export async function refreshServerRlStrategy(): Promise<void> {
   if (typeof window === "undefined" || !navigator.onLine) return;
+  if (!(await hasAuthenticatedTtsSession())) return;
   try {
     const { getApiUrl } = await import("@/lib/api");
     const res = await fetch(getApiUrl("/api/tts/rl-strategy"), {
@@ -313,6 +329,7 @@ export async function flushServerRlTelemetry(): Promise<void> {
   if (rlTelemetryQueue.length === 0 || typeof window === "undefined" || !navigator.onLine) {
     return;
   }
+  if (!(await hasAuthenticatedTtsSession())) return;
   const batch = rlTelemetryQueue.splice(0, 50);
   try {
     const { getApiUrl } = await import("@/lib/api");

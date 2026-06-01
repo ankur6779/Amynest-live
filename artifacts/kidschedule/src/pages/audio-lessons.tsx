@@ -196,6 +196,7 @@ export default function AudioLessonsPage() {
 
   useEffect(() => {
     if (!isPremium || !selectedAge) return;
+    const bucket = dataBucketForNav(selectedAge);
     if (shouldSkipPregenerate(bucket, lang)) return;
     const texts = lessonsForAge(bucket).flatMap((l) => getLessonText(l, lang).paragraphs);
     if (texts.length === 0) return;

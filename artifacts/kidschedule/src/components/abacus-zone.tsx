@@ -37,6 +37,7 @@ import {
   setAudioTraceModule,
   traceBrokenModulePreflight,
 } from "@/lib/audio-root-cause-trace";
+import { audioManager } from "@/lib/audio-manager";
 import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 import {

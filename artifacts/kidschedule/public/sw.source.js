@@ -30,6 +30,23 @@ self.addEventListener("message", (event) => {
   }
 });
 
+/** Cache API rejects partial (206) and opaque responses — never cache.put those. */
+function canCacheAudioResponse(response) {
+  if (!response || !response.ok) return false;
+  if (response.status === 206) return false;
+  const contentType = response.headers.get("content-type") || "";
+  return contentType.includes("audio");
+}
+
+async function safeCacheAudioPut(cache, request, response) {
+  if (!canCacheAudioResponse(response)) return;
+  try {
+    await cache.put(request, response.clone());
+  } catch {
+    /* partial / quota / opaque */
+  }
+}
+
 async function precacheAudioUrls(urls) {
   const cache = await caches.open(AUDIO_CACHE_NAME);
   const batch = urls.slice(0, 200);
@@ -40,10 +57,7 @@ async function precacheAudioUrls(urls) {
       const existing = await cache.match(request);
       if (existing) continue;
       const response = await fetch(request);
-      const contentType = response.headers.get("content-type") || "";
-      if (response.ok && contentType.includes("audio")) {
-        await cache.put(request, response.clone());
-      }
+      await safeCacheAudioPut(cache, request, response);
     } catch {
       /* skip failed clip */
     }
@@ -72,26 +86,27 @@ function isImmutableAudioApiPath(pathname) {
 }
 
 async function cacheFirstAudio(request) {
-  const cache = await caches.open(AUDIO_CACHE_NAME);
-  const cached = await cache.match(request);
-  if (cached) {
-    const headers = new Headers(cached.headers);
-    headers.set("X-AmyNest-Sw-Cache", "HIT");
-    return new Response(cached.body, { status: cached.status, headers });
-  }
+  try {
+    const cache = await caches.open(AUDIO_CACHE_NAME);
+    const cached = await cache.match(request);
+    if (cached) {
+      const headers = new Headers(cached.headers);
+      headers.set("X-AmyNest-Sw-Cache", "HIT");
+      return new Response(cached.body, { status: cached.status, headers });
+    }
 
-  const response = await fetch(request);
-  const contentType = response.headers.get("content-type") || "";
-  if (response.ok && contentType.includes("audio")) {
-    await cache.put(request, response.clone());
+    const response = await fetch(request);
+    await safeCacheAudioPut(cache, request, response);
+    const headers = new Headers(response.headers);
+    headers.set("X-AmyNest-Sw-Cache", "MISS");
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  } catch {
+    return fetch(request);
   }
-  const headers = new Headers(response.headers);
-  headers.set("X-AmyNest-Sw-Cache", "MISS");
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
 }
 
 function isNavigationRequest(request) {

@@ -74,7 +74,7 @@ phonicsLibraryPublicRouter.get("/phonics-library/*objectPath", async (req, res):
         { evt: "phonics_library.missing", objectPath },
         "phonics library object missing in GCS",
       );
-      res.status(404).json({ error: "phonics_audio_missing" });
+      serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
       return;
     }
 

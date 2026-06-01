@@ -50,7 +50,7 @@ export function PlayerSheet({
   const [rate, setRate] = useState<number>(1);
 
   const text = useMemo(() => getLessonText(lesson, lang), [lesson, lang]);
-  const paragraphs = text.paragraphs;
+  const paragraphs = text.paragraphs.length > 0 ? text.paragraphs : [""];
 
   const initialParagraphIdx = useMemo(() => {
     const saved = loadResume()[lesson.id] ?? 0;

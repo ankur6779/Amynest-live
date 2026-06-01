@@ -322,7 +322,9 @@ export function scheduleLearningZoneAudioPrewarm(
   });
 
   runIdle(() => {
-    void warmTextBatch(authFetch, { ...ctx, stateKey }, mergedTexts, jobKey);
+    void warmTextBatch(authFetch, { ...ctx, stateKey }, mergedTexts, jobKey).catch(() => {
+      activeJobKeys.delete(jobKey);
+    });
   });
 }
 

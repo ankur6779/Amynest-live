@@ -27,10 +27,6 @@ import {
   resolvePhonicsCatalogPhrase,
   shouldBypassPhonicsSpellingLibraries,
 } from "@/lib/unified-catalog-playback";
-import {
-  setAudioTraceModule,
-  traceBrokenModulePreflight,
-} from "@/lib/audio-root-cause-trace";
 import { getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
 import { phonicsEnginePlayWord, phonicsEngineStop } from "@/lib/phonics-audio-engine";
@@ -389,33 +385,15 @@ export function AudioPlayButton({
           return speakLetter ?? fast;
         }
 
-        const isSentenceRead = mode !== "phonics" && resolvedText.includes(" ");
-        const speakOpts =
-          mode === "phonics" && shouldBypassPhonicsSpellingLibraries()
-            ? catalogPlaybackSpeakOptions(resolvedText, {
-                mode: "phonics",
-                phoneme: phonemeKey,
-                word: cvcWordKey,
-                playbackMode: "partial-ok",
-              })
-            : {
-                mode,
-                playbackMode: isSentenceRead ? ("full-required" as const) : ("partial-ok" as const),
-                waitUntilEnd: mode === "phonics" || !isSentenceRead,
-                phoneme: phonemeKey,
-                word: cvcWordKey,
-              };
-        if (mode === "phonics" && shouldBypassPhonicsSpellingLibraries()) {
-          setAudioTraceModule("Phonics");
-          traceBrokenModulePreflight("Phonics", {
-            audioIdentity: speakOpts.audioIdentity,
-            resolvedText,
-            staticCatalogTexts: speakOpts.staticCatalogTexts,
-            catalogPlayback: speakOpts.catalogPlayback,
-          });
-        }
+        const isSentenceRead = resolvedText.includes(" ");
+        const speakOpts = {
+          mode: mode ?? "default",
+          playbackMode: isSentenceRead ? ("full-required" as const) : ("partial-ok" as const),
+          waitUntilEnd: !isSentenceRead,
+          phoneme: phonemeKey,
+          word: cvcWordKey,
+        };
         const res = await speak(resolvedText, speakOpts);
-        if (mode === "phonics") setAudioTraceModule(null);
         if (!res?.success) {
           setVisualFallback(true);
           window.setTimeout(() => {

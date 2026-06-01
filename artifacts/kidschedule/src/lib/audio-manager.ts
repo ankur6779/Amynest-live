@@ -1415,7 +1415,7 @@ class AudioManagerImpl {
       const defaultFallbackMs = durationSec > 0 ? (durationSec + 1) * 1000 : 30_000;
       const fallbackMs = options?.maxWaitMs ?? defaultFallbackMs;
 
-      let pollTimer: ReturnType<typeof setInterval> | undefined;
+      let pollTimer: number | undefined;
       const pollMs = options?.pollMs ?? 0;
       if (pollMs > 0) {
         pollTimer = window.setInterval(() => {

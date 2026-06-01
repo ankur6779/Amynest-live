@@ -3,7 +3,8 @@
  * Full playback timeline: see playback-trace.ts ([PLAYBACK_TRACE] grouped output).
  * Enable: localStorage PLAYBACK_TRACE=1 or AUDIO_ROOT_CAUSE_TRACE=1 or ?playbackTrace=1
  */
-import { lookupStaticAudioUrl, type StaticAudioMode } from "@/lib/static-audio";
+import { lookupStaticAudioUrl } from "@/lib/static-audio";
+import type { StaticAudioMode } from "@workspace/static-audio/browser";
 import { isPlaybackTraceEnabled } from "@/lib/playback-trace";
 
 export type AudioTraceModule = "Phonics" | "Spelling" | "Speech Coach" | "Abacus";

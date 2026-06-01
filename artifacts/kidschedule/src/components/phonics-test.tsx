@@ -18,6 +18,7 @@ import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
 import { validatePhonicsWordAudio } from "@/lib/phonics-audio-availability";
 import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
 import { playTapFeedback } from "@/lib/game-feedback";
+import { cn } from "@/lib/utils";
 
 type TestType = "daily" | "weekly" | "practice";
 type GameMode = "hear_tap" | "missing_letter" | "build_word" | "speed_challenge" | "mixed";
@@ -1203,7 +1204,9 @@ function PhonicsTestContent({
 
   // Immersive play route: centered picker, no page scroll (640–800px phones).
   const officialSlot =
-    phase.kind === "mode-pick" ? availability?.[phase.testType] : null;
+    phase.kind === "mode-pick" && phase.testType !== "practice"
+      ? availability?.[phase.testType]
+      : null;
   const officialCheckCountdown = officialSlot
     ? formatCountdown(officialSlot.nextAvailableAt)
     : null;

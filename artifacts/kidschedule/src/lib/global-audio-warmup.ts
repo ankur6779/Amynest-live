@@ -326,7 +326,7 @@ export function warmSpeechCoach(texts: string[]): void {
         localKey: localCacheKeyForPhrase(text, "default"),
       });
     }
-    void warmBatchItems(items);
+    void warmBatchItems(items).catch(() => {});
   });
 }
 
@@ -366,12 +366,16 @@ export function initGlobalAudioWarmup(): void {
   if (initStarted || typeof window === "undefined") return;
   initStarted = true;
 
-  void warmPhonicsLibraryFull();
+  void warmPhonicsLibraryFull().catch(() => {});
 
   runIdle(() => {
-    void warmSpellingAudio();
-    warmSpeechCoach([...SPEECH_COACH_DEFAULT_PHRASES]);
-    warmAppBootStaticPhrases();
+    void warmSpellingAudio().catch(() => {});
+    try {
+      warmSpeechCoach([...SPEECH_COACH_DEFAULT_PHRASES]);
+      warmAppBootStaticPhrases();
+    } catch {
+      /* soft-fail boot warm */
+    }
   });
 
   logAmyVoiceDiag("global_audio_warmup_init", {

@@ -409,6 +409,7 @@ function SessionXPBar({
 // ─────────────────────────────────────────────────────────────────────────────
 function NeonButton({
   onClick,
+  onPointerDown,
   disabled,
   glow,
   testId,
@@ -416,6 +417,7 @@ function NeonButton({
   className,
 }: {
   onClick: () => void;
+  onPointerDown?: () => void;
   disabled?: boolean;
   glow?: boolean;
   testId?: string;
@@ -426,6 +428,7 @@ function NeonButton({
     <button
       type="button"
       onClick={onClick}
+      onPointerDown={onPointerDown}
       disabled={disabled}
       data-testid={testId}
       className={[

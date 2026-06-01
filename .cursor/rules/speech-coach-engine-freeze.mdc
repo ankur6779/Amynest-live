@@ -1,6 +1,7 @@
 ---
 description: Speech Coach engine freeze — frozen infrastructure; extend, do not rewrite
-alwaysApply: true
+globs: lib/speech-coach/**,artifacts/kidschedule/src/pages/speech-coach/**,artifacts/kidschedule/src/lib/amy-voice*,artifacts/kidschedule/src/lib/microphone-session-manager.ts,artifacts/kidschedule/src/lib/global-audio-warmup.ts,artifacts/kidschedule/src/lib/phonics-player.ts,artifacts/kidschedule/src/lib/coach-*,artifacts/kidschedule/src/lib/local-audio-playback.ts,artifacts/kidschedule/src/lib/phonics-*,artifacts/kidschedule/src/lib/*-local-playback.ts,scripts/check-speech-coach*.ts,scripts/check-amy-voice*.ts,scripts/check-static-audio*.ts
+alwaysApply: false
 ---
 
 # Speech Coach engine freeze (mandatory)
