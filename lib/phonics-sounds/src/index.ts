@@ -198,6 +198,7 @@ export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export * from "./curriculum-word-bank.js";
 export * from "./phonics-text.js";
 export * from "./cvc.js";
 export * from "./dataset.js";
@@ -208,4 +209,5 @@ export * from "./phonics-audio-master.js";
 export * from "./phonics-audio-demos.js";
 export * from "./gcs-paths.js";
 export * from "./audio-catalog.js";
+export * from "./phonics-test-audio.js";
 export { playCvcBlend, type CvcBlendPhase, type CvcBlendSpeakFn, type PlayCvcBlendOptions } from "./cvc-blend.js";

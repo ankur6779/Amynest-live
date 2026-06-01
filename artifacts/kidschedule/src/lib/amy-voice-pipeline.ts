@@ -1998,7 +1998,6 @@ export async function speakAmyVoice(
 
   if (depth === 0 && shouldSkipLiveTtsWhenStaticExists()) {
     const staticMapped =
-      opts?.catalogPlayback ||
       hasStaticCatalogAudio(text) ||
       staticFallbackTexts.some(
         (candidate) =>
@@ -2020,14 +2019,12 @@ export async function speakAmyVoice(
       if (staticOnly.ok) {
         return finishAttempt(staticOnly);
       }
-      console.warn("[AudioPlaybackRecovery] static_only_failed — TTS skipped", {
+      console.warn("[AudioPlaybackRecovery] static_only_failed — falling back to live TTS", {
         error: staticOnly.error,
         text: text.slice(0, 80),
       });
-      return endPipeline(
-        mapPlayErrorToSpeakResult(staticOnly.error ?? "static_only_failed"),
-        null,
-      );
+      pushFailure(failureChain, staticOnly, "static", cacheKey);
+      fallbackUsed = true;
     }
   }
 

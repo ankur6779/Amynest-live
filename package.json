@@ -57,6 +57,7 @@
     "check:phonics-interaction-gate": "pnpm --filter @workspace/scripts run check-phonics-interaction-gate",
     "backfill:spelling-static-audio": "pnpm run generate:spelling-audio",
     "check:static-audio": "pnpm --filter @workspace/scripts run check-static-audio",
+    "audit:audio-modules": "pnpm --filter @workspace/scripts run audit-audio-modules",
     "report:static-audio-corpus": "node scripts/static-audio-corpus-report.mjs",
     "verify:audio-edge-cache": "node scripts/verify-audio-edge-cache.mjs",
     "check:audio-release-certification": "pnpm --filter @workspace/scripts run check-audio-release-certification",

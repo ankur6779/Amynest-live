@@ -1,12 +1,12 @@
 {
   "version": 1,
   "libraryVersion": 1,
-  "generatedAt": "2026-05-30T19:20:08.852Z",
+  "generatedAt": "2026-06-01T09:07:50.409Z",
   "bucket": "amynest-audio-storage",
   "baseUrl": "https://storage.googleapis.com/amynest-audio-storage",
   "voiceId": "QbQKfe9vgx5OsbZUvlFv",
   "modelId": "eleven_turbo_v2_5",
-  "assetCount": 121,
+  "assetCount": 151,
   "assets": {
     "letter:a": {
       "id": "a",
@@ -332,10 +332,7 @@
       "gcsPath": "phonics/digraphs/sh.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/sh.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 380,
-      "checksum": "027849a6e54e49244a198808f32c0e7ce86865526ce3cbda96ff7b401edb1d56",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "digraph:ch": {
       "id": "ch",
@@ -347,10 +344,7 @@
       "gcsPath": "phonics/digraphs/ch.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/ch.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 406,
-      "checksum": "2c506ddb35f9ce4b0984c17d1a5b1f60a2fa4e6173404b02d3e2766c2d4dbefb",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "digraph:th1": {
       "id": "th1",
@@ -362,10 +356,7 @@
       "gcsPath": "phonics/digraphs/th1.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/th1.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 367,
-      "checksum": "be5c2e5d22e690223eec0f121fe5c9b43139f4bbb46b3f5b12b35bcbe8e6b8b9",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "digraph:th2": {
       "id": "th2",
@@ -377,10 +368,7 @@
       "gcsPath": "phonics/digraphs/th2.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/th2.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 341,
-      "checksum": "1ef1be0330023defc27f9a9ad2c02a15d147318aa82b946fbfc8fd5d5af0acb7",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "digraph:wh": {
       "id": "wh",
@@ -392,10 +380,7 @@
       "gcsPath": "phonics/digraphs/wh.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/wh.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 367,
-      "checksum": "1db7ff362ae4c962dd2590feff6b588b5706ab3d3645e586d26f00aadd9de1c4",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "digraph:ph": {
       "id": "ph",
@@ -407,10 +392,7 @@
       "gcsPath": "phonics/digraphs/ph.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/ph.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 341,
-      "checksum": "7916d72543cd643e3d3e55e0185931d7e0298508de6312d3a23a4948d37e63aa",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "digraph:ng": {
       "id": "ng",
@@ -422,10 +404,7 @@
       "gcsPath": "phonics/digraphs/ng.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/ng.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 354,
-      "checksum": "960350bd40e3f98ef6145f75af79027d4a56c8ee1346ff0be3a7525227c21902",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "digraph:ck": {
       "id": "ck",
@@ -437,10 +416,7 @@
       "gcsPath": "phonics/digraphs/ck.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/ck.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 367,
-      "checksum": "a738d86096a977f7a0f0695a56d2288c0fa8e4856e22e31a98b5d734fc8e794e",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "digraph:qu": {
       "id": "qu",
@@ -452,10 +428,7 @@
       "gcsPath": "phonics/digraphs/qu.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/digraphs/qu.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 432,
-      "checksum": "3af2c77a91d3aa94d5095cd30ad63c4a986b310b1d7de85bcd0201697b900d35",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:bl": {
       "id": "bl",
@@ -467,10 +440,7 @@
       "gcsPath": "phonics/blends/bl.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/bl.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 380,
-      "checksum": "04077ab289630a91e9561fe9eb8af85f09d171d21c14291df645d8419e0c2c9c",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:cl": {
       "id": "cl",
@@ -482,10 +452,7 @@
       "gcsPath": "phonics/blends/cl.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/cl.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 380,
-      "checksum": "217c75bcebef59301b812b4d46375fbcf90e809054a592f74d36fb43bc64c417",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:fl": {
       "id": "fl",
@@ -497,10 +464,7 @@
       "gcsPath": "phonics/blends/fl.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/fl.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 406,
-      "checksum": "2984bb80912e4f668d4218f64cb2ebdebce53e45d0928c702929e1f1d34fa9bc",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:gl": {
       "id": "gl",
@@ -512,10 +476,7 @@
       "gcsPath": "phonics/blends/gl.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/gl.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 406,
-      "checksum": "7ab9f49b7ba88e136700df071c259e1e754c4ca9f5dffd0ede20e1e42152724a",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:pl": {
       "id": "pl",
@@ -527,10 +488,7 @@
       "gcsPath": "phonics/blends/pl.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/pl.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 354,
-      "checksum": "c265d202e2dbea134a45fde5a0518c17ff80a950159e8d31af25de7c1c9bd415",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:sl": {
       "id": "sl",
@@ -542,10 +500,7 @@
       "gcsPath": "phonics/blends/sl.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/sl.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 367,
-      "checksum": "c6766df0ccf37cb294d42f9040d41ee7e841ebea066573e003a2026e87017f07",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:br": {
       "id": "br",
@@ -557,10 +512,7 @@
       "gcsPath": "phonics/blends/br.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/br.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 393,
-      "checksum": "9b56cea56294bd3f56a983ad19677f65ce55feca1dced892aeb77c7e002b6633",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:cr": {
       "id": "cr",
@@ -572,10 +524,7 @@
       "gcsPath": "phonics/blends/cr.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/cr.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 432,
-      "checksum": "31cd28f2c863b19a4616a7bb19b9478efcda0c434c613fc20de91ab7e7803908",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:dr": {
       "id": "dr",
@@ -587,10 +536,7 @@
       "gcsPath": "phonics/blends/dr.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/dr.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 288,
-      "checksum": "4083d21c2f9d4d14ccaee143bd3c355075bf63db9f9876add391b572a24c1ed8",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:fr": {
       "id": "fr",
@@ -602,10 +548,7 @@
       "gcsPath": "phonics/blends/fr.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/fr.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 354,
-      "checksum": "74e50601eaa8cf19f893b2483aaa968523f48260409929f05583763a4768bb34",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:gr": {
       "id": "gr",
@@ -617,10 +560,7 @@
       "gcsPath": "phonics/blends/gr.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/gr.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 393,
-      "checksum": "0325889ffa61f3775b323ad350b450eac863bd9093c5dbbbed2fc2eccffa3c15",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:pr": {
       "id": "pr",
@@ -632,10 +572,7 @@
       "gcsPath": "phonics/blends/pr.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/pr.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 458,
-      "checksum": "4ea869dcb7ff54b31ea18b1652e8136eb306a179f7e18fdc6e0a4b0a1e893851",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:tr": {
       "id": "tr",
@@ -647,10 +584,7 @@
       "gcsPath": "phonics/blends/tr.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/tr.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 471,
-      "checksum": "b12aac5d5fa7cb3cca5b52ec57d2357c8b8362168ab5f257bb48cd002c1a0036",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:sc": {
       "id": "sc",
@@ -662,10 +596,7 @@
       "gcsPath": "phonics/blends/sc.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/sc.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 393,
-      "checksum": "af3c7f625530be1fb014d0a48449f834d3075c981c2baca2b2d23cbd839d5dae",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:sk": {
       "id": "sk",
@@ -677,10 +608,7 @@
       "gcsPath": "phonics/blends/sk.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/sk.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 315,
-      "checksum": "9e237509c0e7e38789059479f98f5205d6db823e787f5965746ec8b6586a6b8f",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:sm": {
       "id": "sm",
@@ -692,10 +620,7 @@
       "gcsPath": "phonics/blends/sm.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/sm.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 393,
-      "checksum": "07d5b6e67fb86a101d0f9ca7995cbeabf67cd8a00f5752e3978d5660cf7eb2a7",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:sn": {
       "id": "sn",
@@ -707,10 +632,7 @@
       "gcsPath": "phonics/blends/sn.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/sn.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 393,
-      "checksum": "92bc5e7833f42e496130cb0145d1cc7ce79d057c01da56ced936ed49c8cf8c91",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:sp": {
       "id": "sp",
@@ -722,10 +644,7 @@
       "gcsPath": "phonics/blends/sp.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/sp.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 393,
-      "checksum": "eecea7f3f09b915e83defd14cb7bab376512f1c35b903ad3928d3c41d74dbf2b",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:st": {
       "id": "st",
@@ -737,10 +656,7 @@
       "gcsPath": "phonics/blends/st.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/st.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 367,
-      "checksum": "48de1d765da20aaa076f260c24b54959272845a033575e769638e2bdcbbb94f9",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "blend:sw": {
       "id": "sw",
@@ -752,10 +668,7 @@
       "gcsPath": "phonics/blends/sw.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/blends/sw.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 484,
-      "checksum": "83a1c8e42e197e7a97b0a01724281f1214bf07ebd282b524bf170f7099398c0e",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:bat": {
       "id": "bat",
@@ -766,10 +679,7 @@
       "gcsPath": "phonics/cvc/bat.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/bat.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 813,
-      "checksum": "fd463b27cfd1ed538c6e406248e7a5deab8adb84bb5962a0cf6973840843c825",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:bed": {
       "id": "bed",
@@ -780,10 +690,7 @@
       "gcsPath": "phonics/cvc/bed.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/bed.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 813,
-      "checksum": "f211f8321f454cdf5beabd01e8c09105d1081c317ee82e0e4b9b24077ad73ec9",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:bit": {
       "id": "bit",
@@ -794,10 +701,7 @@
       "gcsPath": "phonics/cvc/bit.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/bit.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 760,
-      "checksum": "21111d4d439e4adb799dcf3afcc6c8516a3eeb1978fbcd22710c7f25264d1f7a",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:bus": {
       "id": "bus",
@@ -808,10 +712,7 @@
       "gcsPath": "phonics/cvc/bus.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/bus.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 943,
-      "checksum": "9ce3f9063b22948711f394bbe8c8ec96d8ca6c0e9edb891e48e0eaa365acff79",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:cat": {
       "id": "cat",
@@ -822,10 +723,7 @@
       "gcsPath": "phonics/cvc/cat.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/cat.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 865,
-      "checksum": "97fabc29a3f0fa349dae4e7f3828cda06df9e48c2e246daaada3c16585cebbdf",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:cup": {
       "id": "cup",
@@ -836,10 +734,7 @@
       "gcsPath": "phonics/cvc/cup.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/cup.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 813,
-      "checksum": "3e48de5fef1d92d369b4d5e498edeb11c482c36d1d7f26ad81b25bc87b9c3842",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:dog": {
       "id": "dog",
@@ -850,10 +745,7 @@
       "gcsPath": "phonics/cvc/dog.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/dog.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 865,
-      "checksum": "122a4672e408dcd3e5fe367f34451f7d3cb30b8d75945fdabbe5abef20ec9d8e",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:fog": {
       "id": "fog",
@@ -864,10 +756,7 @@
       "gcsPath": "phonics/cvc/fog.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/fog.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 865,
-      "checksum": "fbdb96e1ca885a61068496122cb9c7bd1ec667ba2a84760f448aca10e9bc01a5",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:hat": {
       "id": "hat",
@@ -878,10 +767,7 @@
       "gcsPath": "phonics/cvc/hat.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/hat.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 865,
-      "checksum": "619bdb8a87ba7ea9619254a70c050946865b3e226cce37aabcd400424ab55dbf",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:hen": {
       "id": "hen",
@@ -892,10 +778,7 @@
       "gcsPath": "phonics/cvc/hen.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/hen.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 891,
-      "checksum": "099bdb33951b96e9a1072d821e84222b09853189f2856aaa843af2f191c39385",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:hit": {
       "id": "hit",
@@ -906,10 +789,7 @@
       "gcsPath": "phonics/cvc/hit.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/hit.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 813,
-      "checksum": "5a2dccd67604d07708ed2d36aa8d93279ec2924f223b5acefaa6f83c869378de",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:log": {
       "id": "log",
@@ -920,10 +800,7 @@
       "gcsPath": "phonics/cvc/log.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/log.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 891,
-      "checksum": "ad3220a9b3f5b5413c71bd687e86924498479f0ad303ec13936998154048c1dd",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:mat": {
       "id": "mat",
@@ -934,10 +811,7 @@
       "gcsPath": "phonics/cvc/mat.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/mat.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 865,
-      "checksum": "aff704a63eeb54a49cac3dbc9354fc4ac493677bed69e38d85ada02ab9f9fbdd",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:pat": {
       "id": "pat",
@@ -948,10 +822,7 @@
       "gcsPath": "phonics/cvc/pat.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/pat.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 865,
-      "checksum": "4eb4a53bae98dded582e21e0964cbbca9ca38e3484b9d677a4a059dc8dd24bb2",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:pen": {
       "id": "pen",
@@ -962,10 +833,7 @@
       "gcsPath": "phonics/cvc/pen.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/pen.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 891,
-      "checksum": "d0fc10fde0905ecdb4ddf57cf6aa4b73eb9443d2a70b103eb2a3d66e23e1c572",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:pig": {
       "id": "pig",
@@ -976,10 +844,7 @@
       "gcsPath": "phonics/cvc/pig.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/pig.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 813,
-      "checksum": "cf1bab6882d4822884f9fb4a0c1ba999908e8329e34d8202f21c082452aff5bf",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:pin": {
       "id": "pin",
@@ -990,10 +855,7 @@
       "gcsPath": "phonics/cvc/pin.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/pin.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 891,
-      "checksum": "aee8d2a020870c0e41479db3caf8567fa8520e0f84533fe67237bc548b27eead",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:pot": {
       "id": "pot",
@@ -1004,10 +866,7 @@
       "gcsPath": "phonics/cvc/pot.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/pot.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 943,
-      "checksum": "53266ad361541306d823bee967c0e6ab4c3ac7960f76cb52d86b6f92f43f6476",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:rat": {
       "id": "rat",
@@ -1018,10 +877,7 @@
       "gcsPath": "phonics/cvc/rat.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/rat.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 708,
-      "checksum": "f93c569f9d65797998a7c1bb46bf9f6cf520a3c9fa74cde83ee7de63b4c02904",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:run": {
       "id": "run",
@@ -1032,10 +888,7 @@
       "gcsPath": "phonics/cvc/run.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/run.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 813,
-      "checksum": "92db73a04b4698749e2d99e5d6742a8e3842e8f58fcd7ad50caad9a73c5ff834",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:sat": {
       "id": "sat",
@@ -1046,10 +899,7 @@
       "gcsPath": "phonics/cvc/sat.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/sat.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 865,
-      "checksum": "b5761ff5425ce9fda7078c3ca55dc12c974176f40e41943de95874ab1a9a3ce2",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:sit": {
       "id": "sit",
@@ -1060,10 +910,7 @@
       "gcsPath": "phonics/cvc/sit.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/sit.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 813,
-      "checksum": "06c918aafb6074f8f1c6367c7d26160bb94b2f4ce61fab46a07dd59ec9753f7d",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:sun": {
       "id": "sun",
@@ -1074,10 +921,7 @@
       "gcsPath": "phonics/cvc/sun.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/sun.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 865,
-      "checksum": "58c4f98d632fc78b6d18c5d082723cf75865c38f4b98a6547010284802a2143f",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "cvc:ten": {
       "id": "ten",
@@ -1088,10 +932,337 @@
       "gcsPath": "phonics/cvc/ten.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/ten.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 813,
-      "checksum": "4b237611a3e5288b569fa8bfb408d42347275b4d2a6e0d6a27764f785a448dfb",
-      "source": "elevenlabs"
+      "quality": "auto"
+    },
+    "cvc:big": {
+      "id": "big",
+      "type": "cvc",
+      "text": "big",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/big.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/big.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:blue": {
+      "id": "blue",
+      "type": "cvc",
+      "text": "blue",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/blue.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/blue.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:brag": {
+      "id": "brag",
+      "type": "cvc",
+      "text": "brag",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/brag.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/brag.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:bun": {
+      "id": "bun",
+      "type": "cvc",
+      "text": "bun",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/bun.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/bun.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:chat": {
+      "id": "chat",
+      "type": "cvc",
+      "text": "chat",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/chat.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/chat.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:chin": {
+      "id": "chin",
+      "type": "cvc",
+      "text": "chin",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/chin.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/chin.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:chip": {
+      "id": "chip",
+      "type": "cvc",
+      "text": "chip",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/chip.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/chip.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:chop": {
+      "id": "chop",
+      "type": "cvc",
+      "text": "chop",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/chop.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/chop.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:clap": {
+      "id": "clap",
+      "type": "cvc",
+      "text": "clap",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/clap.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/clap.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:cog": {
+      "id": "cog",
+      "type": "cvc",
+      "text": "cog",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/cog.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/cog.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:crab": {
+      "id": "crab",
+      "type": "cvc",
+      "text": "crab",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/crab.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/crab.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:den": {
+      "id": "den",
+      "type": "cvc",
+      "text": "den",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/den.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/den.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:dig": {
+      "id": "dig",
+      "type": "cvc",
+      "text": "dig",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/dig.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/dig.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:dish": {
+      "id": "dish",
+      "type": "cvc",
+      "text": "dish",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/dish.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/dish.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:drum": {
+      "id": "drum",
+      "type": "cvc",
+      "text": "drum",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/drum.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/drum.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:fish": {
+      "id": "fish",
+      "type": "cvc",
+      "text": "fish",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/fish.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/fish.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:flag": {
+      "id": "flag",
+      "type": "cvc",
+      "text": "flag",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/flag.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/flag.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:frog": {
+      "id": "frog",
+      "type": "cvc",
+      "text": "frog",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/frog.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/frog.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:fun": {
+      "id": "fun",
+      "type": "cvc",
+      "text": "fun",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/fun.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/fun.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:glad": {
+      "id": "glad",
+      "type": "cvc",
+      "text": "glad",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/glad.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/glad.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:plan": {
+      "id": "plan",
+      "type": "cvc",
+      "text": "plan",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/plan.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/plan.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:ship": {
+      "id": "ship",
+      "type": "cvc",
+      "text": "ship",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/ship.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/ship.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:shop": {
+      "id": "shop",
+      "type": "cvc",
+      "text": "shop",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/shop.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/shop.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:stop": {
+      "id": "stop",
+      "type": "cvc",
+      "text": "stop",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/stop.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/stop.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:that": {
+      "id": "that",
+      "type": "cvc",
+      "text": "that",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/that.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/that.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:thin": {
+      "id": "thin",
+      "type": "cvc",
+      "text": "thin",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/thin.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/thin.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:this": {
+      "id": "this",
+      "type": "cvc",
+      "text": "this",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/this.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/this.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:tree": {
+      "id": "tree",
+      "type": "cvc",
+      "text": "tree",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/tree.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/tree.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:trip": {
+      "id": "trip",
+      "type": "cvc",
+      "text": "trip",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/trip.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/trip.mp3",
+      "version": 1,
+      "quality": "auto"
+    },
+    "cvc:wig": {
+      "id": "wig",
+      "type": "cvc",
+      "text": "wig",
+      "difficulty": 3,
+      "curriculumLevel": 4,
+      "gcsPath": "phonics/cvc/wig.mp3",
+      "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/cvc/wig.mp3",
+      "version": 1,
+      "quality": "auto"
     },
     "sight_word:the": {
       "id": "the",
@@ -1102,10 +1273,7 @@
       "gcsPath": "phonics/sight_words/the.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/the.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 865,
-      "checksum": "2e8941a00ae4763aaac0ed945ae5c6fa067f48568a161bf44837afdf58eeeeba",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sight_word:and": {
       "id": "and",
@@ -1116,10 +1284,7 @@
       "gcsPath": "phonics/sight_words/and.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/and.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 813,
-      "checksum": "9d86f725904352212e9e3525d0c318fbe2aadca2cf2ba6a1ceaf66843e7889b4",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sight_word:is": {
       "id": "is",
@@ -1130,10 +1295,7 @@
       "gcsPath": "phonics/sight_words/is.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/is.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 760,
-      "checksum": "cbeb5b94913da5f74e84d0c6ec77215b2eba5959c4d7e52bcac370acb10e6acc",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sight_word:it": {
       "id": "it",
@@ -1144,10 +1306,7 @@
       "gcsPath": "phonics/sight_words/it.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/it.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 630,
-      "checksum": "61c2897fc61ac24492509b54bdf0db38e588e760ad3deaf7f4ce802c135b8a25",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sight_word:to": {
       "id": "to",
@@ -1158,10 +1317,7 @@
       "gcsPath": "phonics/sight_words/to.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/to.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 865,
-      "checksum": "b2a88a88413bf4f56291ad3d1f60fe92deef2045676cbee2bcde008e85a17d0d",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sight_word:was": {
       "id": "was",
@@ -1172,10 +1328,7 @@
       "gcsPath": "phonics/sight_words/was.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/was.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 891,
-      "checksum": "9a076f8577a9c9b3e55dadfa821ce8e9ec63027bbbefed03703a8a344e7728bb",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sight_word:you": {
       "id": "you",
@@ -1186,10 +1339,7 @@
       "gcsPath": "phonics/sight_words/you.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/you.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 865,
-      "checksum": "1f2477ebb75d62d00448f642ba4a9a11f486a3b23064a4516e98660443a3e636",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sight_word:said": {
       "id": "said",
@@ -1200,10 +1350,7 @@
       "gcsPath": "phonics/sight_words/said.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sight_words/said.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 943,
-      "checksum": "43f5cca48f0b8a58a2c53d491d404c6a924791fc07a7c8bea2f48aa2a8f87fbd",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:the_cat_is_fat": {
       "id": "the_cat_is_fat",
@@ -1214,10 +1361,7 @@
       "gcsPath": "phonics/sentences/the_cat_is_fat.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_cat_is_fat.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1283,
-      "checksum": "d0d9189f0692bcbe15e994d4815a0b734e69a358adb9fa2aea73968ad90adaed",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:i_see_a_red_bus": {
       "id": "i_see_a_red_bus",
@@ -1228,10 +1372,7 @@
       "gcsPath": "phonics/sentences/i_see_a_red_bus.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/i_see_a_red_bus.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1309,
-      "checksum": "7386abe69d7011079e1b9a1a41870ae00ecd7e420a70fd7f8c235ea6b0dce623",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:mum_and_dad_play": {
       "id": "mum_and_dad_play",
@@ -1242,10 +1383,7 @@
       "gcsPath": "phonics/sentences/mum_and_dad_play.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/mum_and_dad_play.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1361,
-      "checksum": "678e003752aeca8b8961d86589e4a6c1176573af07b0ea2f12e2fd2cac9e22c8",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:the_sun_is_up": {
       "id": "the_sun_is_up",
@@ -1256,10 +1394,7 @@
       "gcsPath": "phonics/sentences/the_sun_is_up.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_sun_is_up.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1178,
-      "checksum": "1ebf28f3bb45e2a71c80aad2fbf8a3aff19236b1ce0eef1e27a3021e2b14b294",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:i_like_my_hat": {
       "id": "i_like_my_hat",
@@ -1270,10 +1405,7 @@
       "gcsPath": "phonics/sentences/i_like_my_hat.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/i_like_my_hat.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1126,
-      "checksum": "549a0567854bdea1741126196cda152dcf758b71a3e116d87521dc4313758dc1",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:the_dog_is_in_bed": {
       "id": "the_dog_is_in_bed",
@@ -1284,10 +1416,7 @@
       "gcsPath": "phonics/sentences/the_dog_is_in_bed.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_dog_is_in_bed.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1283,
-      "checksum": "c40a8ff2eb6e85b49cc80e14c61a425ca5c499cb7bdbc1264ad9ae575e1a8541",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:the_cat_sat": {
       "id": "the_cat_sat",
@@ -1298,10 +1427,7 @@
       "gcsPath": "phonics/sentences/the_cat_sat.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_cat_sat.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1283,
-      "checksum": "fd277c4ef24be8aeecf4c62ed45e0640069cc9b157ebe4cf71173a0eb656b1b0",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:i_see_a_dog": {
       "id": "i_see_a_dog",
@@ -1312,10 +1438,7 @@
       "gcsPath": "phonics/sentences/i_see_a_dog.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/i_see_a_dog.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1126,
-      "checksum": "49d8319f6cfb997fdd91ce3991d429ad51e0b2fb7c897f8dcc66e272954985f3",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:the_sun_is_hot": {
       "id": "the_sun_is_hot",
@@ -1326,10 +1449,7 @@
       "gcsPath": "phonics/sentences/the_sun_is_hot.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_sun_is_hot.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1178,
-      "checksum": "968480205a2b861fc5045287a1ad6ffaf03b96c909a6bd0dd75e1708529fa970",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:the_big_brown_dog_ran_fast": {
       "id": "the_big_brown_dog_ran_fast",
@@ -1340,10 +1460,7 @@
       "gcsPath": "phonics/sentences/the_big_brown_dog_ran_fast.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_big_brown_dog_ran_fast.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1884,
-      "checksum": "d436a51013a2e9162a24bef0e6e536b0af87f46aac0f1708484f3da229193ab0",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:i_like_to_play_in_the_park": {
       "id": "i_like_to_play_in_the_park",
@@ -1354,10 +1471,7 @@
       "gcsPath": "phonics/sentences/i_like_to_play_in_the_park.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/i_like_to_play_in_the_park.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1518,
-      "checksum": "2a55f07a670de447f60a66b40dcf30b5c471f8caf2534e9c791f45b295f7509a",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:my_mum_makes_the_best_food": {
       "id": "my_mum_makes_the_best_food",
@@ -1368,10 +1482,7 @@
       "gcsPath": "phonics/sentences/my_mum_makes_the_best_food.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/my_mum_makes_the_best_food.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1701,
-      "checksum": "e4e969cc923992f1d2336df4b2446f340ec15d84eebbe18da3528593efbc7467",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:we_went_to_school_on_the_bus": {
       "id": "we_went_to_school_on_the_bus",
@@ -1382,10 +1493,7 @@
       "gcsPath": "phonics/sentences/we_went_to_school_on_the_bus.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/we_went_to_school_on_the_bus.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1648,
-      "checksum": "4673d6faa7fa3638a375d25d8a55cc5c9bab4c41f9d9bb67bb5ce0bab5e72aed",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:the_little_bird_flew_up_to_the_sky": {
       "id": "the_little_bird_flew_up_to_the_sky",
@@ -1396,10 +1504,7 @@
       "gcsPath": "phonics/sentences/the_little_bird_flew_up_to_the_sky.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_little_bird_flew_up_to_the_sky.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 2066,
-      "checksum": "90d8d7da7ed8f5899424c8ec08fc226a5f5212f11c5e0962d261ff7eb7c5c638",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:can_you_help_me_find_my_book": {
       "id": "can_you_help_me_find_my_book",
@@ -1410,10 +1515,7 @@
       "gcsPath": "phonics/sentences/can_you_help_me_find_my_book.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/can_you_help_me_find_my_book.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1596,
-      "checksum": "720574c9c349edee9cbf179e6a937f502952d6796711ee86ed9928a2debab751",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:i_love_my_baby_sister": {
       "id": "i_love_my_baby_sister",
@@ -1424,10 +1526,7 @@
       "gcsPath": "phonics/sentences/i_love_my_baby_sister.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/i_love_my_baby_sister.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1518,
-      "checksum": "d7dea804bd4adbc5b01cef1e9924c89b19e14c2a7f04198db3f78e4fda6de387",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:wow_look_at_the_rainbow": {
       "id": "wow_look_at_the_rainbow",
@@ -1438,10 +1537,7 @@
       "gcsPath": "phonics/sentences/wow_look_at_the_rainbow.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/wow_look_at_the_rainbow.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1544,
-      "checksum": "5ff1c64a4c310279d5bd01ff2bf0b0a0a0974288a21768c7af18e3911faa5219",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:the_little_duck_sat_by_the_pond": {
       "id": "the_little_duck_sat_by_the_pond",
@@ -1452,10 +1548,7 @@
       "gcsPath": "phonics/sentences/the_little_duck_sat_by_the_pond.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_little_duck_sat_by_the_pond.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1884,
-      "checksum": "6925b5bae5f81a1035e900881854b0ed8ea6ce7c48de9fcb149426b218158ba5",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:she_saw_a_big_ship_sail_past": {
       "id": "she_saw_a_big_ship_sail_past",
@@ -1466,10 +1559,7 @@
       "gcsPath": "phonics/sentences/she_saw_a_big_ship_sail_past.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/she_saw_a_big_ship_sail_past.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1936,
-      "checksum": "b58bef8eedb67ed7b7f499e566e5481d4d38f9b881e61ce234ffd375f61ae5d0",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:a_whale_popped_up_and_waved_hello": {
       "id": "a_whale_popped_up_and_waved_hello",
@@ -1480,10 +1570,7 @@
       "gcsPath": "phonics/sentences/a_whale_popped_up_and_waved_hello.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/a_whale_popped_up_and_waved_hello.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1936,
-      "checksum": "99d8144d86d12f00ff008db703bd0ee3f0436d88a85af86602d5b47cc30e2aa5",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:the_duck_laughed_and_flapped_her_wings": {
       "id": "the_duck_laughed_and_flapped_her_wings",
@@ -1494,10 +1581,7 @@
       "gcsPath": "phonics/sentences/the_duck_laughed_and_flapped_her_wings.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/the_duck_laughed_and_flapped_her_wings.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 2197,
-      "checksum": "6b1ef7a5c3f98398a0d6dcad9492ac3c1cc7a3b6d7ef46673f75cfc8a8b2663b",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "sentence:what_a_fun_day_at_the_pond": {
       "id": "what_a_fun_day_at_the_pond",
@@ -1508,10 +1592,7 @@
       "gcsPath": "phonics/sentences/what_a_fun_day_at_the_pond.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/sentences/what_a_fun_day_at_the_pond.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1596,
-      "checksum": "cbd486f2e0d56cbd343331f5f984e923968ae10610267b22d6b4f711f019b328",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "quiz:tap_the_animal_making_this_sound": {
       "id": "tap_the_animal_making_this_sound",
@@ -1522,10 +1603,7 @@
       "gcsPath": "phonics/quizzes/tap_the_animal_making_this_sound.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/tap_the_animal_making_this_sound.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 2066,
-      "checksum": "77cfcedac5b89203ee851eddd4d0ef62d43eeb50a10836e51297805844de8003",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "quiz:which_sound_does_this_letter_make": {
       "id": "which_sound_does_this_letter_make",
@@ -1536,10 +1614,7 @@
       "gcsPath": "phonics/quizzes/which_sound_does_this_letter_make.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/which_sound_does_this_letter_make.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1831,
-      "checksum": "d765ec21cf6adb1d96b815e7b4ba34f52d1cdc24b8048ef6a356306971ff7626",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "quiz:tap_the_letter_that_makes_this_sound": {
       "id": "tap_the_letter_that_makes_this_sound",
@@ -1550,10 +1625,7 @@
       "gcsPath": "phonics/quizzes/tap_the_letter_that_makes_this_sound.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/tap_the_letter_that_makes_this_sound.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 2354,
-      "checksum": "37d8c51745978171095bb228dd4da7026addb3a25a2ed946b145768194aaa19f",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "quiz:what_is_this": {
       "id": "what_is_this",
@@ -1564,10 +1636,7 @@
       "gcsPath": "phonics/quizzes/what_is_this.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/what_is_this.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1048,
-      "checksum": "8d9e45d6d00241b588426084ca3caa4891a5d96e7f9afac9a0b626d9d8cf3f6b",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "quiz:blend_the_sounds_which_word_is_it": {
       "id": "blend_the_sounds_which_word_is_it",
@@ -1578,10 +1647,7 @@
       "gcsPath": "phonics/quizzes/blend_the_sounds_which_word_is_it.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/blend_the_sounds_which_word_is_it.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 2197,
-      "checksum": "0e4c80a4be88b6280300c7d44323193716f7e5fb9b4f200371c414871fd8bf6a",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "quiz:what_letter_is_missing": {
       "id": "what_letter_is_missing",
@@ -1592,10 +1658,7 @@
       "gcsPath": "phonics/quizzes/what_letter_is_missing.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/what_letter_is_missing.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1518,
-      "checksum": "ab791a310714ab98c0a260a88cc27ab69db1fd4d677b8cc0cd298f552e157b19",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "quiz:which_word_starts_with_this_sound": {
       "id": "which_word_starts_with_this_sound",
@@ -1606,10 +1669,7 @@
       "gcsPath": "phonics/quizzes/which_word_starts_with_this_sound.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/which_word_starts_with_this_sound.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1936,
-      "checksum": "9a85796bcb1b0e0c7601244681c98ff27ed43b4bab849f584111793864afd06b",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "quiz:tap_the_letters_to_spell_the_word": {
       "id": "tap_the_letters_to_spell_the_word",
@@ -1620,10 +1680,7 @@
       "gcsPath": "phonics/quizzes/tap_the_letters_to_spell_the_word.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/tap_the_letters_to_spell_the_word.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 2066,
-      "checksum": "b080e278a7f9018d83f1e68479e5e352cbde9dda643ddfdad1d189ad83d9c9f8",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "quiz:listen_and_pick_the_word": {
       "id": "listen_and_pick_the_word",
@@ -1634,10 +1691,7 @@
       "gcsPath": "phonics/quizzes/listen_and_pick_the_word.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/listen_and_pick_the_word.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1596,
-      "checksum": "ee83974c24e0d0ff905a044a55f3d5d97178452c55c574d3b4412aedca363bed",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "quiz:which_word_says_ship": {
       "id": "which_word_says_ship",
@@ -1648,10 +1702,7 @@
       "gcsPath": "phonics/quizzes/which_word_says_ship.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/which_word_says_ship.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1466,
-      "checksum": "de3dd115349aff59d96888187709c589392b90e27e0d78b04e957ae3bcb1b358",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "quiz:tap_the_word_cat": {
       "id": "tap_the_word_cat",
@@ -1662,10 +1713,7 @@
       "gcsPath": "phonics/quizzes/tap_the_word_cat.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/tap_the_word_cat.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1361,
-      "checksum": "a461a4a784c67a6a9b858db667024aca640dea58142c43bd66efd54a03df5949",
-      "source": "elevenlabs"
+      "quality": "auto"
     },
     "quiz:what_sound_do_you_hear": {
       "id": "what_sound_do_you_hear",
@@ -1676,10 +1724,7 @@
       "gcsPath": "phonics/quizzes/what_sound_do_you_hear.mp3",
       "url": "https://storage.googleapis.com/amynest-audio-storage/phonics/quizzes/what_sound_do_you_hear.mp3",
       "version": 1,
-      "quality": "auto",
-      "durationMs": 1466,
-      "checksum": "9b294239e2b4d79acf0c422776dc4d66c15e1ff7e31ccc10b94000f1054b009d",
-      "source": "elevenlabs"
+      "quality": "auto"
     }
   }
 }

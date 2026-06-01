@@ -4,6 +4,7 @@
  */
 
 import { CVC_WORDS } from "./cvc.js";
+import { PHONICS_CURRICULUM_WORD_BANK } from "./curriculum-word-bank.js";
 import { DIGRAPHS, LETTER_SOUNDS } from "./dataset.js";
 import { ELEVENLABS_SPEAK_TEXT } from "./phonics-generation.js";
 import {
@@ -234,6 +235,33 @@ function buildCvcEntries(): PhonicsCatalogEntry[] {
   return entries.sort((a, b) => a.id.localeCompare(b.id));
 }
 
+function buildCurriculumWordBankEntries(): PhonicsCatalogEntry[] {
+  const seen = new Set<string>();
+  for (const row of CVC_WORDS) {
+    seen.add(row.word.toLowerCase());
+  }
+  for (const word of ["hat", "rat", "mat", "pin", "pot", "bus", "run", "fog", "hen", "bit"]) {
+    seen.add(word);
+  }
+
+  const entries: PhonicsCatalogEntry[] = [];
+  for (const raw of PHONICS_CURRICULUM_WORD_BANK) {
+    const word = raw.trim().toLowerCase();
+    if (!word || seen.has(word)) continue;
+    seen.add(word);
+    entries.push({
+      id: word,
+      type: "cvc",
+      text: word,
+      curriculumLevel: 4,
+      difficulty: 3,
+      speakText: word,
+      isolatedPhoneme: false,
+    });
+  }
+  return entries.sort((a, b) => a.id.localeCompare(b.id));
+}
+
 function buildSightWordEntries(): PhonicsCatalogEntry[] {
   return SIGHT_WORD_IDS.map((word) => ({
     id: word,
@@ -277,6 +305,7 @@ export function buildPhonicsAudioCatalog(): PhonicsCatalogEntry[] {
     ...buildDigraphEntries(),
     ...buildBlendEntries(),
     ...buildCvcEntries(),
+    ...buildCurriculumWordBankEntries(),
     ...buildSightWordEntries(),
     ...buildSentenceEntries(),
     ...buildQuizEntries(),

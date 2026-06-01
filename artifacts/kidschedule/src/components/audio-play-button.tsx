@@ -22,6 +22,8 @@ import {
 } from "@/lib/static-audio";
 import {
   catalogPlaybackSpeakOptions,
+  hasStaticCatalogAudio,
+  playCatalogPreparedUrl,
   resolvePhonicsCatalogPhrase,
   shouldBypassPhonicsSpellingLibraries,
 } from "@/lib/unified-catalog-playback";
@@ -196,6 +198,7 @@ export function AudioPlayButton({
     if (mode !== "phonics") return true;
     const trimmed = (text ?? "").trim();
     if (!trimmed) return false;
+    if (hasStaticCatalogAudio(trimmed)) return true;
     // Phonics clips often live in phonics-library / TTS, not static-audio-map — keep buttons tappable.
     if (shouldBypassPhonicsSpellingLibraries() || isLocalAudioRecoveryEnabled()) {
       return true;
@@ -284,6 +287,18 @@ export function AudioPlayButton({
         if (mode === "phonics") {
           pause();
           await phonicsEngineStop("audio_play_button");
+          const tryStaticCatalogFirst = async (phrase: string) => {
+            if (!hasStaticCatalogAudio(phrase)) return null;
+            const catalog = await playCatalogPreparedUrl(phrase, {
+              playbackRate,
+              source: "audio-play-button",
+            });
+            if (catalog.ok) {
+              if (isMounted.current) onPlay?.();
+              return { success: true, layer: "static" as const };
+            }
+            return null;
+          };
           if (isWordClip && cvcWordKey) {
             if (
               isLocalAudioRecoveryEnabled() &&
@@ -300,6 +315,10 @@ export function AudioPlayButton({
               if (isMounted.current) onPlay?.();
               return { success: true, layer: "static" as const };
             }
+            const staticFirst = await tryStaticCatalogFirst(
+              resolvePhonicsCatalogPhrase(resolvedText, phonemeKey),
+            );
+            if (staticFirst?.success) return staticFirst;
             const fastWord = await speakPhonicsFastClip(resolvedText, {
               phoneme: phonemeKey,
               playbackRate,
@@ -344,6 +363,10 @@ export function AudioPlayButton({
             if (isMounted.current) onPlay?.();
             return fast;
           }
+          const staticLetter = await tryStaticCatalogFirst(
+            resolvePhonicsCatalogPhrase(resolvedText, phonemeKey),
+          );
+          if (staticLetter?.success) return staticLetter;
           const speakLetter = await speak(
             resolvedText,
             catalogPlaybackSpeakOptions(resolvedText, {

@@ -1,5 +1,9 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { useToast } from "@/hooks/use-toast";
+import { audioManager } from "@/lib/audio-manager";
+import { lookupStaticAudioUrl, primeStaticAudioInUserGesture } from "@/lib/static-audio";
+import { playCatalogPreparedUrl } from "@/lib/unified-catalog-playback";
 import {
   MATH_TRICKS,
   getMathTrickMeta,
@@ -36,8 +40,6 @@ import {
   scheduleLearningZoneAudioPrewarm,
   buildLearningZoneAudioStateKey,
 } from "@/lib/learning-zone-audio-prewarm";
-import { audioManager } from "@/lib/audio-manager";
-import { primeStaticAudioInUserGesture } from "@/lib/static-audio";
 
 import { useTranslation } from "react-i18next";
 
@@ -239,9 +241,11 @@ function TrickCard({
     pause,
     speaking,
     loading,
+    error,
     activePhrase,
     primeSpeakGesture,
   } = useAmyVoice();
+  const { toast } = useToast();
   const trickSpeakText = useMemo(() => trick.audioText.trim(), [trick.audioText]);
   const trickSpeakOpts = useMemo(
     () => ({
@@ -269,14 +273,36 @@ function TrickCard({
     if (!spec || !specIsRenderable(spec)) return null;
     return buildVisualSequence(spec);
   }, [meta.visualSequence]);
-  const handleSpeak = useCallback(() => {
+  const handleSpeak = useCallback(async () => {
     audioManager.unlockFromUserGesture();
     if (hearTrickBusy) {
       pause();
       return;
     }
-    void speak(trickSpeakText, trickSpeakOpts);
-  }, [hearTrickBusy, speak, pause, trickSpeakText, trickSpeakOpts]);
+    if (lookupStaticAudioUrl(trickSpeakText, "default")) {
+      const direct = await playCatalogPreparedUrl(trickSpeakText, {
+        source: "math-trick",
+      });
+      if (direct.ok) return;
+    }
+    const res = await speak(trickSpeakText, trickSpeakOpts);
+    if (!res?.success) {
+      toast({
+        title: "Voice unavailable",
+        description: res?.error?.replace(/_/g, " ") ?? "Could not play this trick.",
+        variant: "destructive",
+      });
+    }
+  }, [hearTrickBusy, speak, pause, trickSpeakText, trickSpeakOpts, toast]);
+
+  useEffect(() => {
+    if (!error) return;
+    toast({
+      title: "Voice unavailable",
+      description: error.replace(/_/g, " "),
+      variant: "destructive",
+    });
+  }, [error, toast]);
   const handlePrimeSpeak = useCallback(() => {
     audioManager.unlockFromUserGesture();
     if (trickSpeakText) {

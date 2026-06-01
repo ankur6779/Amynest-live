@@ -8,6 +8,7 @@ import {
 } from "@workspace/phonics-sounds";
 import { lookupPhonicsLibraryAsset } from "@/lib/phonics-audio-map";
 import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
+import { hasStaticCatalogAudio } from "@/lib/unified-catalog-playback";
 
 export type PhonicsClipAvailability = {
   available: boolean;
@@ -19,6 +20,9 @@ export function checkPhonicsLetterClip(audioKey: string): PhonicsClipAvailabilit
   const key = (audioKey ?? "").trim().toLowerCase();
   if (!key) {
     return { available: false, catalogKey: null, reason: "missing_catalog_key" };
+  }
+  if (hasStaticCatalogAudio(key)) {
+    return { available: true, catalogKey: `static:${key}` };
   }
   const catalogKey = resolveLetterClipCatalogKey(key);
   if (!catalogKey) {
@@ -60,9 +64,13 @@ export function checkPhonicsContentClip(
   return { available: true, catalogKey };
 }
 
-/** Word must have CVC library clip for hear-and-tap / blending finale. */
+/** Word must have CVC library clip or static catalog audio for hear-and-tap / blending finale. */
 export function checkPhonicsWordClip(word: string): PhonicsClipAvailability {
-  return checkPhonicsContentClip(word.trim().toLowerCase(), "cvc");
+  const w = word.trim().toLowerCase();
+  if (hasStaticCatalogAudio(w)) {
+    return { available: true, catalogKey: `static:${w}` };
+  }
+  return checkPhonicsContentClip(w, "cvc");
 }
 
 export type PhonicsWordAudioBundle = {

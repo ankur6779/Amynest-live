@@ -130,6 +130,17 @@ export async function speakPhonicsFastClip(
     return { success: false, error: catalog.error ?? "tts_static_missing_url" };
   }
 
+  {
+    const phrase = resolvePhonicsCatalogPhrase(trimmed, opts?.phoneme);
+    const catalog = await playCatalogPreparedUrl(phrase, {
+      playbackRate: opts?.playbackRate,
+      isCancelled: opts?.isCancelled,
+      source: "phonics-static-catalog",
+    });
+    if (catalog.ok) return { success: true, layer: "static" };
+    if (opts?.isCancelled?.()) return { success: false, error: "tts_cancelled" };
+  }
+
   return { success: false, error: "phonics_audio_preparing" };
 }
 

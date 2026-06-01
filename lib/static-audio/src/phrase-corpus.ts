@@ -1,5 +1,10 @@
 import { LESSONS } from "@workspace/audio-lessons";
-import { getPhonicsAudioTextsForStaticCatalog, getCvcPhonemeAudioTextsForStaticCatalog } from "@workspace/phonics-sounds";
+import {
+  getPhonicsAudioTextsForStaticCatalog,
+  getCvcPhonemeAudioTextsForStaticCatalog,
+  getPhonicsCurriculumWordsForStaticCatalog,
+  getPhonicsTestAudioEntriesForStaticCatalog,
+} from "@workspace/phonics-sounds";
 import { getPromptSpeakText, PRONUNCIATION_PROMPTS, getArticulationCue, getCoachDialogueAudioTextsForStaticCatalog } from "@workspace/speech-coach";
 import {
   ADVANCED_SUBJECTS,
@@ -198,6 +203,18 @@ function collectContentBankPhrases(): SpeakablePhraseRecord[] {
     .filter((r): r is SpeakablePhraseRecord => r !== null);
 }
 
+function collectPhonicsCurriculumWordPhrases(): SpeakablePhraseRecord[] {
+  return getPhonicsCurriculumWordsForStaticCatalog()
+    .map((t) => toRecord(t, "default", "phonics_curriculum_words"))
+    .filter((r): r is SpeakablePhraseRecord => r !== null);
+}
+
+function collectPhonicsTestPhrases(): SpeakablePhraseRecord[] {
+  return getPhonicsTestAudioEntriesForStaticCatalog()
+    .map((e) => toRecord(e.text, e.mode, "phonics_test"))
+    .filter((r): r is SpeakablePhraseRecord => r !== null);
+}
+
 function collectPhonicsExtras(): SpeakablePhraseRecord[] {
   const lines = [
     ...getPhonicsAudioTextsForStaticCatalog(),
@@ -220,6 +237,8 @@ export function collectAllSpeakablePhrases(): SpeakablePhraseRecord[] {
     ...collectCoachDialoguePhrases(),
     ...collectAudioLessonPhrases(),
     ...collectPhonicsExtras(),
+    ...collectPhonicsCurriculumWordPhrases(),
+    ...collectPhonicsTestPhrases(),
     ...collectMathTrickPhrases(),
     ...collectSpellingPhrases(),
     ...collectParentHubPhrases(),
