@@ -958,6 +958,16 @@ function ParentingHubPage() {
     warmSpeechCoachOnStoriesTabOpen();
   }, [storiesTabOpen]);
 
+  useEffect(() => {
+    if (!effectiveChild) return;
+    const band = getAgeBand(effectiveChild.age, (effectiveChild as any).ageMonths ?? 0);
+    if (!band) return;
+    const frame = requestAnimationFrame(() => {
+      applyParentingHubDeepLink(navigateHub);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [effectiveChild?.id, effectiveChild?.age, (effectiveChild as any)?.ageMonths]);
+
   const handleChildSelect = (id: number) => {
     setSelectedChildId(id);
     if (typeof window !== "undefined") {
@@ -1016,14 +1026,6 @@ function ParentingHubPage() {
   const articlePreview = featuredArticle
     ? t("parent_hub.support.article_preview", { title: featuredArticle.title })
     : undefined;
-
-  useEffect(() => {
-    if (!effectiveChild || !currentBand) return;
-    const frame = requestAnimationFrame(() => {
-      applyParentingHubDeepLink(navigateHub);
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [effectiveChild?.id, currentBand]);
 
   type SectionEntry = {
     id: string;
