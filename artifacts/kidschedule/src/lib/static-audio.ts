@@ -1,5 +1,6 @@
 import audioMap from "@/data/static-audio-map.json";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
+import { resolveProductionSameOriginApi } from "@/config";
 import { isAmyVoiceAudioDebugEnabled, logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import { validateAudioBlob } from "@/lib/amy-voice-audio-start";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
@@ -590,6 +591,12 @@ async function createStaticPlaybackElementAsync(
   proxyUrl: string,
 ): Promise<HTMLAudioElement | null> {
   if (isAndroidAmyNestAudioClient()) {
+    // Same-origin /api/static-audio/* — direct HTMLAudioElement is faster and more reliable than blob fetch.
+    const sameOriginApi = Boolean(resolveProductionSameOriginApi());
+    if (sameOriginApi) {
+      const direct = createStaticPlaybackElement(proxyUrl);
+      if (direct) return direct;
+    }
     const blobEl = await createStaticPlaybackElementFromBlob(proxyUrl);
     if (blobEl) return blobEl;
     logAmyVoiceDiag("blob_fallback_remote", { url: proxyUrl.slice(-72) });

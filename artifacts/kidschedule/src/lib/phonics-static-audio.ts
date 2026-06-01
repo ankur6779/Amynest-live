@@ -52,27 +52,20 @@ const PHONICS_PREWARM_BATCH_GAP_MS = 40;
 
 let libraryPrewarmStarted = false;
 
-/** HTTPS URL for a letter/digraph phoneme clip — empty when manifest entry missing (no fallback). */
+/** HTTPS URL for a letter/digraph phoneme clip — library first, then static catalog. */
 export function getPhonicsStaticAudioUrl(audioKey: string): string {
   const fromLibrary = lookupPhonicsLetterUrl(audioKey);
   if (fromLibrary) return fromLibrary;
 
-  if (shouldBypassPhonicsSpellingLibraries()) {
-    const phrase = resolvePhonicsCatalogPhrase(audioKey);
-    return (
-      lookupStaticAudioUrl(phrase, "phonics") ??
-      lookupStaticAudioUrl(phrase, "default") ??
-      ""
-    );
-  }
-
-  const catalogKey = resolveLetterClipCatalogKey(audioKey);
-  if (catalogKey) reportPhonicsLibraryMissing(catalogKey, `letter:${audioKey}`);
-
-  return "";
+  const phrase = resolvePhonicsCatalogPhrase(audioKey);
+  return (
+    lookupStaticAudioUrl(phrase, "phonics") ??
+    lookupStaticAudioUrl(phrase, "default") ??
+    ""
+  );
 }
 
-/** HTTPS URL for CVC word, sight word, sentence, or quiz — empty when missing (no fallback). */
+/** HTTPS URL for CVC word, sight word, sentence, or quiz — library first, then static catalog. */
 export function getPhonicsContentAudioUrl(
   text: string,
   preferredType?: PhonicsAssetType,
@@ -80,18 +73,12 @@ export function getPhonicsContentAudioUrl(
   const fromLibrary = lookupPhonicsContentUrl(text, preferredType);
   if (fromLibrary) return fromLibrary;
 
-  if (shouldBypassPhonicsSpellingLibraries()) {
-    const phrase = resolvePhonicsCatalogPhrase(text);
-    return (
-      lookupStaticAudioUrl(phrase, "phonics") ??
-      lookupStaticAudioUrl(phrase, "default") ??
-      ""
-    );
-  }
-
-  const type = preferredType ?? "cvc";
-  reportPhonicsLibraryMissing(`${type}:${text}`, "content");
-  return "";
+  const phrase = resolvePhonicsCatalogPhrase(text);
+  return (
+    lookupStaticAudioUrl(phrase, "phonics") ??
+    lookupStaticAudioUrl(phrase, "default") ??
+    ""
+  );
 }
 
 export function prefetchPhonicsAudioKeys(keys: string[]): void {
@@ -250,6 +237,31 @@ async function playPhonicsLibraryUrlClip(
   return null;
 }
 
+async function tryStaticCatalogClip(
+  label: string,
+  source: string,
+  options?: Pick<PlayPhonicsStaticOptions, "isCancelled" | "playbackRate">,
+): Promise<PlayPhonicsStaticResult | null> {
+  const phrase = resolvePhonicsCatalogPhrase(label);
+  const staticUrl =
+    lookupStaticAudioUrl(phrase, "phonics") ?? lookupStaticAudioUrl(phrase, "default");
+  if (!staticUrl) return null;
+
+  const catalog = await playCatalogPreparedUrl(phrase, {
+    playbackRate: options?.playbackRate,
+    isCancelled: options?.isCancelled,
+    source,
+  });
+  if (catalog.ok) {
+    logAudioHealthSuccess({ layer: "static", fallbackUsed: true });
+    return { ok: true, audioKey: label, url: staticUrl };
+  }
+  if (isCancelledError(catalog.error ?? "")) {
+    return { ok: false, audioKey: label, error: "phonics_cancelled" };
+  }
+  return { ok: false, audioKey: label, error: catalog.error ?? "phonics_library_missing" };
+}
+
 async function playUrlClip(
   label: string,
   networkUrl: string,
@@ -274,21 +286,12 @@ async function playUrlClip(
   );
   if (libraryPlay) return libraryPlay;
 
+  const staticCatalogPlay = await tryStaticCatalogClip(label, `${source}-static-catalog`, options);
+  if (staticCatalogPlay?.ok) return staticCatalogPlay;
+  if (staticCatalogPlay?.error === "phonics_cancelled") return staticCatalogPlay;
+
   if (shouldBypassPhonicsSpellingLibraries()) {
-    const phrase = resolvePhonicsCatalogPhrase(label);
-    const catalog = await playCatalogPreparedUrl(phrase, {
-      playbackRate: options?.playbackRate,
-      isCancelled: options?.isCancelled,
-      source,
-    });
-    if (catalog.ok) {
-      logAudioHealthSuccess({ layer: "static", fallbackUsed: true });
-      return { ok: true, audioKey: label, url: lookupStaticAudioUrl(phrase, "phonics") ?? undefined };
-    }
-    if (isCancelledError(catalog.error ?? "")) {
-      return { ok: false, audioKey: label, error: "phonics_cancelled" };
-    }
-    return { ok: false, audioKey: label, error: catalog.error ?? "phonics_library_missing" };
+    return { ok: false, audioKey: label, error: "phonics_library_missing" };
   }
 
   const resolved = await resolveBestPlayUrl(cacheKey, networkUrl);

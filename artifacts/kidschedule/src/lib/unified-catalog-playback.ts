@@ -14,7 +14,7 @@ import {
   tracePlayPreparedUrlInput,
 } from "@/lib/audio-root-cause-trace";
 
-export const BYPASS_PHONICS_SPELLING_LIBRARIES = true;
+export const BYPASS_PHONICS_SPELLING_LIBRARIES = false;
 
 /** Static phrase for Abacus voice probe — proves TTS vs catalog path. */
 export const ABACUS_STATIC_TTS_PROBE =
