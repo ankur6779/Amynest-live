@@ -17,9 +17,7 @@ import { phonicsEnginePlayWord, phonicsEngineStop } from "@/lib/phonics-audio-en
 import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
 import { validatePhonicsWordAudio } from "@/lib/phonics-audio-availability";
 import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
-import { cn } from "@/lib/utils";
-
-// ─── API shapes ──────────────────────────────────────────────────────────────
+import { playTapFeedback } from "@/lib/game-feedback";
 
 type TestType = "daily" | "weekly" | "practice";
 type GameMode = "hear_tap" | "missing_letter" | "build_word" | "speed_challenge" | "mixed";
@@ -49,24 +47,6 @@ interface SavedTestSession {
   answers: { questionId: string; selectedIndex: number }[];
   savedAt: number;
   expiresAt: string;
-}
-
-/** Short tap feedback — Web Audio, no network. */
-function playTapSound(ok: boolean) {
-  try {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = ok ? 880 : 220;
-    gain.gain.value = 0.08;
-    osc.start();
-    osc.stop(ctx.currentTime + (ok ? 0.12 : 0.18));
-    osc.onended = () => void ctx.close();
-  } catch {
-    /* ignore — optional UX polish */
-  }
 }
 
 const ttsUrlCache = new Map<string, string>();
@@ -1103,7 +1083,7 @@ function PhonicsTestContent({
     const correctish = isCorrectClientSide(q, selectedIndex);
     const newAnswers = [...currentPhase.answers, { questionId: q.id, selectedIndex }];
     setPhase({ ...currentPhase, answers: newAnswers, selectedIndex, feedback: correctish ? "correct" : "wrong" });
-    playTapSound(correctish);
+    playTapFeedback(correctish);
     // Replay prompt audio on wrong so the child hears it again.
     // (No-op if no ttsText.)
     setTimeout(async () => {

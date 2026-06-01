@@ -1,0 +1,79 @@
+{
+  "certifiedBy": "",
+  "certifiedAt": "",
+  "appVersion": "",
+  "webDeploySha": "",
+  "notes": "Fill after REAL device audio testing. 100 playback actions per module × 5 device classes. Export: window.__amynestAudioReliability.deviceMatrixReport()",
+  "devices": [
+    {
+      "id": "android-low-end",
+      "label": "Android low-end (WebView)",
+      "status": "pending",
+      "modulesCompleted": {
+        "speech_coach": "pending",
+        "phonics": "pending",
+        "blending": "pending",
+        "reading": "pending",
+        "parent_hub": "pending"
+      },
+      "actionsPerModule": 100,
+      "reportUrl": ""
+    },
+    {
+      "id": "android-mid",
+      "label": "Android mid-range",
+      "status": "pending",
+      "modulesCompleted": {
+        "speech_coach": "pending",
+        "phonics": "pending",
+        "blending": "pending",
+        "reading": "pending",
+        "parent_hub": "pending"
+      },
+      "actionsPerModule": 100,
+      "reportUrl": ""
+    },
+    {
+      "id": "android-tablet",
+      "label": "Android tablet",
+      "status": "pending",
+      "modulesCompleted": {
+        "speech_coach": "pending",
+        "phonics": "pending",
+        "blending": "pending",
+        "reading": "pending",
+        "parent_hub": "pending"
+      },
+      "actionsPerModule": 100,
+      "reportUrl": ""
+    },
+    {
+      "id": "iphone",
+      "label": "iPhone (Capacitor)",
+      "status": "pending",
+      "modulesCompleted": {
+        "speech_coach": "pending",
+        "phonics": "pending",
+        "blending": "pending",
+        "reading": "pending",
+        "parent_hub": "pending"
+      },
+      "actionsPerModule": 100,
+      "reportUrl": ""
+    },
+    {
+      "id": "ipad",
+      "label": "iPad",
+      "status": "pending",
+      "modulesCompleted": {
+        "speech_coach": "pending",
+        "phonics": "pending",
+        "blending": "pending",
+        "reading": "pending",
+        "parent_hub": "pending"
+      },
+      "actionsPerModule": 100,
+      "reportUrl": ""
+    }
+  ]
+}

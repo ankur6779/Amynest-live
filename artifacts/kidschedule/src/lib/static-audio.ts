@@ -1,9 +1,7 @@
 import audioMap from "@/data/static-audio-map.json";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
-import { resolveProductionSameOriginApi } from "@/config";
 import { isAmyVoiceAudioDebugEnabled, logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
-import { validateAudioBlob } from "@/lib/amy-voice-audio-start";
-import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
+import { validateAudioBlobDecodable } from "@/lib/amy-voice-audio-start";
 import { audioManager } from "@/lib/audio-manager";
 import {
   assertStaticAudioUrl,
@@ -75,9 +73,27 @@ function indexByNormalizedKey(bucket: Record<string, string> | undefined): Recor
   const out: Record<string, string> = {};
   if (!bucket) return out;
   for (const [key, url] of Object.entries(bucket)) {
-    const normalized = normalizeStaticAudioKey(key);
-    if (!normalized) continue;
-    out[normalized] = (url ?? "").trim();
+    const trimmedUrl = (url ?? "").trim();
+    if (!trimmedUrl) continue;
+    const aliases = [
+      normalizeStaticAudioKey(key),
+      normalizeSpeakTextForLookup(key),
+    ].filter(Boolean);
+    const seenAlias = new Set<string>();
+    for (const normalized of aliases) {
+      if (seenAlias.has(normalized)) continue;
+      seenAlias.add(normalized);
+      const existing = out[normalized];
+      if (existing && existing !== trimmedUrl && import.meta.env.DEV) {
+        console.warn("[static-audio] normalized alias collision", {
+          normalized,
+          existing: existing.slice(-48),
+          incoming: trimmedUrl.slice(-48),
+          rawKey: key.slice(0, 80),
+        });
+      }
+      if (!existing) out[normalized] = trimmedUrl;
+    }
   }
   return out;
 }
@@ -570,9 +586,10 @@ async function createStaticPlaybackElementFromBlob(
     if (!res.ok) return null;
     const blob = await res.blob();
     try {
-      validateAudioBlob(blob);
-    } catch {
-      logAmyVoiceDiag("blob_empty", { bytes: blob.size });
+      await validateAudioBlobDecodable(blob);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logAmyVoiceDiag("blob_decode_failed", { bytes: blob.size, error: msg });
       return null;
     }
     const blobUrl = URL.createObjectURL(blob);
@@ -590,17 +607,10 @@ async function createStaticPlaybackElementFromBlob(
 async function createStaticPlaybackElementAsync(
   proxyUrl: string,
 ): Promise<HTMLAudioElement | null> {
-  if (isAndroidAmyNestAudioClient()) {
-    // Same-origin /api/static-audio/* — direct HTMLAudioElement is faster and more reliable than blob fetch.
-    const sameOriginApi = Boolean(resolveProductionSameOriginApi());
-    if (sameOriginApi) {
-      const direct = createStaticPlaybackElement(proxyUrl);
-      if (direct) return direct;
-    }
-    const blobEl = await createStaticPlaybackElementFromBlob(proxyUrl);
-    if (blobEl) return blobEl;
-    logAmyVoiceDiag("blob_fallback_remote", { url: proxyUrl.slice(-72) });
-  }
+  // Blob + decodeAudioData on all clients — catches corrupt/truncated MP3 before play.
+  const blobEl = await createStaticPlaybackElementFromBlob(proxyUrl);
+  if (blobEl) return blobEl;
+  logAmyVoiceDiag("blob_fallback_remote", { url: proxyUrl.slice(-72) });
   return createStaticPlaybackElement(proxyUrl);
 }
 

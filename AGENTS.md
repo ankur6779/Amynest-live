@@ -54,3 +54,14 @@ All conversational text UI must use `ChatPlatform` — no custom keyboard offset
 - **PR gate:** `pnpm run check:chat-platform` (CI: `.github/workflows/chat-platform.yml`)
 - **Release gate:** `pnpm run check:chat-platform-certification` — requires real-device uncut videos in `scripts/chat-platform-device-certification.json` (emulator/dev/unit tests do not satisfy)
 - **Post-release watchdog (7 days):** pipe production logs through `pnpm run check:chat-platform-telemetry` — zero `chat_prompt_hidden_after_keyboard_open` / `keyboard_visibility_failures` / `android_keyboard_layout_conflicts`
+
+### Audio release gates
+
+Before App Store / Play Store audio-related releases:
+
+- **PR gate (CI):** `.github/workflows/audio-gates.yml` — `pnpm run check:amy-voice` + `pnpm run check:speech-coach-engines`
+- **Static corpus:** `pnpm run check:static-audio` (includes speak-normalized duplicate check)
+- **Release certification:** `pnpm run check:audio-release-certification` — warmup phrases, gesture priming, manifest coverage (mandatory before store upload)
+- **Device matrix certification:** `pnpm run check:audio-device-certification` — after real-device testing, update `scripts/audio-device-certification.json` (manual `workflow_dispatch` on audio-gates.yml)
+- **Phonics letters:** `pnpm --filter @workspace/scripts run check-phonics-letter-static-map`
+- **Module asset audit:** `pnpm --filter @workspace/scripts run audit-audio-modules`

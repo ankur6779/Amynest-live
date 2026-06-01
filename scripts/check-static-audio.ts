@@ -5,6 +5,7 @@
  *   pnpm run check:static-audio
  */
 import { config } from "dotenv";
+import { execSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { computeCorpusMissingStaticAudioKeys } from "@workspace/static-audio";
@@ -133,3 +134,12 @@ console.log(
       : "Static audio map: 100% full corpus coverage (core + extended).",
 );
 console.log("Static audio client: no direct GCS playback in source.");
+
+try {
+  execSync("tsx ./check-static-audio-duplicates.ts", {
+    stdio: "inherit",
+    cwd: import.meta.dirname,
+  });
+} catch {
+  process.exit(1);
+}

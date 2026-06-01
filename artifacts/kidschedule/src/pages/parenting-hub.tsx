@@ -31,6 +31,10 @@ import { DailyTips } from "@/components/daily-tips";
 import { ParentingArticles } from "@/components/parenting-articles";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { warmParentHubVisibleContent } from "@/lib/parent-hub-audio-warmup";
+import {
+  warmLearningZoneTabOnOpen,
+  warmSpeechCoachOnStoriesTabOpen,
+} from "@/lib/learning-zone-tab-audio-warmup";
 import { AmyIcon } from "@/components/amy-icon";
 import { FuturePredictor } from "@/components/future-predictor";
 import { LockedBlock } from "@/components/locked-block";
@@ -938,6 +942,21 @@ function ParentingHubPage() {
       }
     });
   };
+
+  const learningTabOpen = expandedGroups.has("learning");
+  const storiesTabOpen = expandedGroups.has("stories");
+  useEffect(() => {
+    if (!learningTabOpen || !effectiveChild) return;
+    warmLearningZoneTabOnOpen(authFetch, {
+      childId: effectiveChild.id,
+      ageMonths: totalAgeMonths,
+    });
+  }, [learningTabOpen, effectiveChild?.id, totalAgeMonths, authFetch]);
+
+  useEffect(() => {
+    if (!storiesTabOpen) return;
+    warmSpeechCoachOnStoriesTabOpen();
+  }, [storiesTabOpen]);
 
   const handleChildSelect = (id: number) => {
     setSelectedChildId(id);

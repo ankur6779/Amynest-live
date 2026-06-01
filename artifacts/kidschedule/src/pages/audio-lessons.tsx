@@ -45,6 +45,7 @@ import {
   computeEmergencyLesson,
 } from "@/lib/amy-signals";
 import type { EmergencyType } from "@workspace/amy-intelligence";
+import { warmAudioLessonsOnPageOpen } from "@/lib/audio-lessons-audio-warmup";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { usePaywall } from "@/contexts/paywall-context";
@@ -162,9 +163,39 @@ export default function AudioLessonsPage() {
     return true;
   }, [handleBack]);
 
+  const amySignals = useMemo(() => buildAmySignals(), [completedIds, resumeMap]);
+  const amyHome = useMemo(() => computeAmyHomeState(amySignals), [amySignals]);
+
+  const ageRecommendations = useMemo(() => {
+    if (!selectedAge) return { lessonIds: [] as string[], reason: "" };
+    const amy = computeAgeRecommendations(amySignals, selectedAge);
+    if (!coachGoalId) return amy;
+    const coachLessons = getRecommendedLessonsForCoachGoal(coachGoalId, 3);
+    const poolIds = new Set(lessonsForNavGroup(selectedAge).map((l) => l.id));
+    const coachIds = coachLessons.filter((l) => poolIds.has(l.id)).map((l) => l.id);
+    if (coachIds.length === 0) return amy;
+    const merged = [...new Set([...coachIds, ...amy.lessonIds])].slice(0, 3);
+    return { lessonIds: merged, reason: "coach_goal" };
+  }, [selectedAge, amySignals, coachGoalId]);
+
+  useEffect(() => {
+    warmAudioLessonsOnPageOpen(authFetch, {
+      lang,
+      amyHome,
+      resumeTarget,
+      ageRecommendationIds: selectedAge ? ageRecommendations.lessonIds : undefined,
+    });
+  }, [
+    authFetch,
+    lang,
+    amyHome,
+    resumeTarget,
+    selectedAge,
+    ageRecommendations.lessonIds,
+  ]);
+
   useEffect(() => {
     if (!isPremium || !selectedAge) return;
-    const bucket = dataBucketForNav(selectedAge);
     if (shouldSkipPregenerate(bucket, lang)) return;
     const texts = lessonsForAge(bucket).flatMap((l) => getLessonText(l, lang).paragraphs);
     if (texts.length === 0) return;
@@ -187,21 +218,6 @@ export default function AudioLessonsPage() {
       body: JSON.stringify({ texts }),
     }).catch(() => {});
   }, [open?.id, lang, authFetch]);
-
-  const amySignals = useMemo(() => buildAmySignals(), [completedIds, resumeMap]);
-  const amyHome = useMemo(() => computeAmyHomeState(amySignals), [amySignals]);
-
-  const ageRecommendations = useMemo(() => {
-    if (!selectedAge) return { lessonIds: [] as string[], reason: "" };
-    const amy = computeAgeRecommendations(amySignals, selectedAge);
-    if (!coachGoalId) return amy;
-    const coachLessons = getRecommendedLessonsForCoachGoal(coachGoalId, 3);
-    const poolIds = new Set(lessonsForNavGroup(selectedAge).map((l) => l.id));
-    const coachIds = coachLessons.filter((l) => poolIds.has(l.id)).map((l) => l.id);
-    if (coachIds.length === 0) return amy;
-    const merged = [...new Set([...coachIds, ...amy.lessonIds])].slice(0, 3);
-    return { lessonIds: merged, reason: "coach_goal" };
-  }, [selectedAge, amySignals, coachGoalId]);
 
   const getLessonAccessForLesson = useCallback(
     (lesson: Lesson): LessonAccess => {

@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 /**
  * Offline asset report for Hear & Tap / CVC phonics clips (static catalog).
+ * Resolves letters via getPhonicsAudioText (e.g. c → "k", q → "kw"), not bare letter keys.
+ *
  * Usage: node scripts/playback-quality-asset-report.mjs [--base https://amynest-backend-dykj.onrender.com]
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -15,35 +17,9 @@ const staticMapPath = join(
 );
 
 const KEYS = [
-  "a",
-  "b",
-  "c",
-  "d",
-  "e",
-  "f",
-  "g",
-  "h",
-  "i",
-  "j",
-  "k",
-  "l",
-  "m",
-  "n",
-  "o",
-  "p",
-  "q",
-  "r",
-  "s",
-  "t",
-  "u",
-  "v",
-  "w",
-  "x",
-  "y",
-  "z",
-  "sat",
-  "cat",
-  "bat",
+  "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+  "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+  "sat", "cat", "bat",
 ];
 
 const DEFAULT_API_BASE = "https://amynest-backend-dykj.onrender.com";
@@ -53,20 +29,29 @@ const base =
     ? process.argv[process.argv.indexOf("--base") + 1]
     : DEFAULT_API_BASE;
 
+const { getPhonicsAudioText } = await import(
+  pathToFileURL(join(repoRoot, "lib/phonics-sounds/src/index.ts")).href
+);
+
+function normalizeKey(text) {
+  return (text ?? "").trim().toLowerCase();
+}
+
 const map = JSON.parse(readFileSync(staticMapPath, "utf8"));
 const phonics = map.phonics ?? {};
-const LETTER_ALIASES = {
-  a: "a as in apple",
-  e: "e as in egg",
-  i: "i as in igloo",
-  o: "o as in octopus",
-  u: "u as in umbrella",
-};
 
-function proxyUrl(key) {
-  const gcs = phonics[key] ?? phonics[LETTER_ALIASES[key] ?? ""] ?? null;
+function resolveMapKey(expected) {
+  if (/^[a-z]$/.test(expected)) {
+    const audioText = getPhonicsAudioText(expected);
+    return { lookupKey: normalizeKey(audioText), audioText };
+  }
+  return { lookupKey: normalizeKey(expected), audioText: expected };
+}
+
+function proxyUrl(lookupKey) {
+  const gcs = phonics[lookupKey] ?? null;
   if (!gcs || typeof gcs !== "string") return null;
-  const hash = gcs.split("/").pop()?.replace(".mp3", "") ?? key;
+  const hash = gcs.split("/").pop()?.replace(".mp3", "") ?? lookupKey;
   return `${base.replace(/\/$/, "")}/api/static-audio/${hash}.mp3`;
 }
 
@@ -91,20 +76,21 @@ async function probe(url) {
   };
 }
 
-/** Rough MP3 duration from file size @ ~64kbps speech (conservative). */
 function estimateMp3DurationSec(bytes) {
   const bitrate = 64_000;
   return Math.round((bytes * 8) / bitrate * 100) / 100;
 }
 
 const rows = [];
-for (const key of KEYS) {
-  const expected = key;
-  const gcsUrl = phonics[key] ?? phonics[LETTER_ALIASES[key] ?? ""] ?? null;
-  const url = proxyUrl(key);
+for (const expected of KEYS) {
+  const { lookupKey, audioText } = resolveMapKey(expected);
+  const gcsUrl = phonics[lookupKey] ?? null;
+  const url = proxyUrl(lookupKey);
   if (!url) {
     rows.push({
       expected,
+      lookupKey,
+      audioText,
       actualAsset: null,
       gcsUrl,
       proxyUrl: null,
@@ -116,6 +102,8 @@ for (const key of KEYS) {
     const probeResult = await probe(url);
     rows.push({
       expected,
+      lookupKey,
+      audioText,
       actualAsset: url.split("/").pop(),
       gcsUrl,
       proxyUrl: url,
@@ -124,6 +112,8 @@ for (const key of KEYS) {
   } catch (err) {
     rows.push({
       expected,
+      lookupKey,
+      audioText,
       actualAsset: url.split("/").pop(),
       gcsUrl,
       proxyUrl: url,

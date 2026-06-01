@@ -172,6 +172,8 @@ export type AudioPlayMeta = {
   srcType?: AudioSrcType;
   /** Root-cause playback trace — propagate from controller/pipeline. */
   playbackTraceId?: string;
+  /** P0 reliability trace — timeout diagnostics. */
+  reliabilityRequestId?: string;
 };
 
 export type AudioPlayOptions = {
@@ -947,6 +949,13 @@ class AudioManagerImpl {
             ? classifyAudibleStartFailure(audio, "attemptPlay→playWithAudibleStartGuarantee")
             : undefined,
       });
+      if (msg === "audio_start_timeout" && meta?.reliabilityRequestId) {
+        trackAudioTimeout(
+          meta.reliabilityRequestId,
+          msg,
+          snapshotAudibleElement(audio) ?? undefined,
+        );
+      }
       logStructured("attemptPlay audible start failed", err, { attempt }, audio);
       if (isNotAllowedError(err)) {
         throw new Error(AUDIO_ERROR.USER_INTERACTION_REQUIRED);
@@ -1142,6 +1151,7 @@ class AudioManagerImpl {
       audioIdentity: meta.phrase?.slice(0, 80),
       sourceLayer,
     });
+    meta = { ...meta, reliabilityRequestId };
     const failReliability = (error: string): false => {
       traceEndReason = error;
       trackAudioPlayFailed(reliabilityRequestId, error, sourceLayer);
@@ -1316,7 +1326,11 @@ class AudioManagerImpl {
           ? AUDIO_ERROR.PLAYBACK_WATCHDOG
           : AUDIO_ERROR.PLAYBACK_FAILED;
       if (failReason === AUDIO_ERROR.PLAYBACK_WATCHDOG) {
-        trackAudioTimeout(reliabilityRequestId, failReason);
+        trackAudioTimeout(
+          reliabilityRequestId,
+          failReason,
+          snapshotAudibleElement(element) ?? undefined,
+        );
       }
       trackAudioPlayFailed(reliabilityRequestId, failReason, sourceLayer);
       emitAudioPlaybackEvent("audio_failed", {

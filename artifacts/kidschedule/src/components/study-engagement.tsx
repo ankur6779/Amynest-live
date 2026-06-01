@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flame, Star, Target, Trophy } from "lucide-react";
+import { playProceduralTone } from "@/lib/procedural-sfx";
 import {
   DAILY_GOAL_TARGET,
   badgeLabel,
@@ -185,88 +186,30 @@ export function ConfettiBurst({ trigger }: { trigger: number }) {
   );
 }
 
-// ─── Tiny Web Audio sound effects (no assets) ────────────────────────────────
-
-let _ctx: AudioContext | null = null;
-function getCtx(): AudioContext | null {
-  if (typeof window === "undefined") return null;
-  if (_ctx) return _ctx;
-  const Ctor =
-    (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext })
-      .AudioContext ??
-    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Ctor) return null;
-  _ctx = new Ctor();
-  return _ctx;
-}
-
-async function resumeFxContext(): Promise<AudioContext | null> {
-  const ctx = getCtx();
-  if (!ctx) return null;
-  if (ctx.state === "suspended") {
-    try {
-      await ctx.resume();
-    } catch {
-      return null;
-    }
-  }
-  return ctx;
-}
-
-function tone(freq: number, dur: number, type: OscillatorType = "sine", startGain = 0.18) {
-  const ctx = getCtx();
-  if (!ctx) return;
-  if (ctx.state === "suspended") {
-    void ctx.resume().then(() => {
-      if (ctx.state === "running") playTone(ctx, freq, dur, type, startGain);
-    });
-    return;
-  }
-  playTone(ctx, freq, dur, type, startGain);
-}
-
-function playTone(
-  ctx: AudioContext,
-  freq: number,
-  dur: number,
-  type: OscillatorType,
-  startGain: number,
-) {
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = type;
-  osc.frequency.value = freq;
-  gain.gain.setValueAtTime(startGain, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
-  osc.connect(gain).connect(ctx.destination);
-  osc.start();
-  osc.stop(ctx.currentTime + dur);
-}
-
 export const playFx = {
   correct() {
-    tone(880, 0.12, "sine");
-    setTimeout(() => tone(1320, 0.18, "sine"), 90);
+    playProceduralTone(880, 120, "sine", 0.18);
+    setTimeout(() => playProceduralTone(1320, 180, "sine", 0.18), 90);
   },
   wrong() {
-    tone(220, 0.18, "sawtooth", 0.12);
+    playProceduralTone(220, 180, "sawtooth", 0.12);
   },
   perfect() {
-    tone(880, 0.12, "triangle");
-    setTimeout(() => tone(1175, 0.12, "triangle"), 110);
-    setTimeout(() => tone(1568, 0.22, "triangle"), 220);
+    playProceduralTone(880, 120, "triangle", 0.18);
+    setTimeout(() => playProceduralTone(1175, 120, "triangle", 0.18), 110);
+    setTimeout(() => playProceduralTone(1568, 220, "triangle", 0.18), 220);
   },
   tap() {
-    tone(660, 0.06, "sine", 0.08);
+    playProceduralTone(660, 60, "sine", 0.08);
   },
   /** Soft reward chime — learning progress celebrations */
   reward() {
-    tone(523, 0.14, "sine", 0.1);
-    setTimeout(() => tone(784, 0.2, "sine", 0.08), 120);
+    playProceduralTone(523, 140, "sine", 0.1);
+    setTimeout(() => playProceduralTone(784, 200, "sine", 0.08), 120);
   },
   complete() {
-    tone(440, 0.1, "triangle", 0.09);
-    setTimeout(() => tone(659, 0.16, "triangle", 0.07), 100);
+    playProceduralTone(440, 100, "triangle", 0.09);
+    setTimeout(() => playProceduralTone(659, 160, "triangle", 0.07), 100);
   },
 };
 
@@ -282,10 +225,11 @@ export function useStudyFx() {
   return {
     play(name: keyof typeof playFx) {
       if (mutedRef.current) return;
-      void resumeFxContext().then((ctx) => {
-        if (!ctx) return;
-        try { playFx[name](); } catch { /* AudioContext blocked */ }
-      });
+      try {
+        playFx[name]();
+      } catch {
+        /* AudioContext blocked */
+      }
     },
     setMuted(m: boolean) {
       mutedRef.current = m;

@@ -1,0 +1,81 @@
+name: Audio gates
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/kidschedule/**"
+      - "lib/speech-coach/**"
+      - "lib/static-audio/**"
+      - "lib/phonics-sounds/**"
+      - "scripts/check-amy-voice-usage.ts"
+      - "scripts/check-speech-coach-engine-freeze.ts"
+      - "scripts/check-static-audio*.ts"
+      - "scripts/check-audio-release-certification.ts"
+  push:
+    branches: [main]
+    paths:
+      - "artifacts/kidschedule/**"
+      - "lib/speech-coach/**"
+      - "lib/static-audio/**"
+      - "lib/phonics-sounds/**"
+      - "scripts/check-amy-voice-usage.ts"
+      - "scripts/check-speech-coach-engine-freeze.ts"
+      - "scripts/check-static-audio*.ts"
+      - "scripts/check-audio-release-certification.ts"
+  workflow_dispatch:
+
+jobs:
+  amy-voice:
+    name: Amy voice usage + contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Amy voice enforcement
+        run: pnpm run check:amy-voice
+
+  speech-coach-engines:
+    name: Speech Coach engine freeze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Speech Coach engine regression gate
+        run: pnpm run check:speech-coach-engines
+
+  audio-device-certification:
+    name: Audio device matrix (manual release)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Audio device certification gate
+        run: pnpm run check:audio-device-certification

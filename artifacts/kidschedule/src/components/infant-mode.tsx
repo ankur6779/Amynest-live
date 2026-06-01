@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { getProceduralAudioContext } from "@/lib/procedural-sfx";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -456,7 +457,6 @@ const LULLABY_TRACKS: LullabyTrack[] = [{
   }, () => 100 + Math.random() * 50)
 }];
 function useLullabyPlayer() {
-  const ctxRef = useRef<AudioContext | null>(null);
   const cancelRef = useRef(false);
   const oscRefs = useRef<OscillatorNode[]>([]);
   const [playing, setPlaying] = useState<string | null>(null);
@@ -474,10 +474,9 @@ function useLullabyPlayer() {
     stopAll();
     setTimeout(() => {
       try {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-        if (!ctxRef.current || ctxRef.current.state === "closed") ctxRef.current = new AudioCtx();
-        const ctx = ctxRef.current;
-        if (ctx.state === "suspended") ctx.resume();
+        const ctx = getProceduralAudioContext();
+        if (!ctx) return;
+        if (ctx.state === "suspended") void ctx.resume();
         cancelRef.current = false;
         const schedule = (startTime: number) => {
           if (cancelRef.current) return;

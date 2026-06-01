@@ -114,6 +114,18 @@ export type AudioReliabilityRecord = {
   latencyToFirstSoundMs?: number;
   error?: string;
   recoveredFrom?: AudioSourceLayer;
+  /** HTMLAudioElement state captured on audio_start_timeout (production diagnostics). */
+  elementSnapshot?: {
+    readyState: number;
+    readyStateLabel: string;
+    paused: boolean;
+    currentTime: number;
+    muted: boolean;
+    volume: number;
+    ended: boolean;
+    mediaErrorCode: number | null;
+    srcTail: string;
+  };
   ts: number;
   sessionId: string;
 };
@@ -917,7 +929,11 @@ export function trackAudioPlayFailed(
   activeRequests.delete(requestId);
 }
 
-export function trackAudioTimeout(requestId: string, error = "audio_start_timeout"): void {
+export function trackAudioTimeout(
+  requestId: string,
+  error = "audio_start_timeout",
+  elementSnapshot?: AudioReliabilityRecord["elementSnapshot"],
+): void {
   const active = activeRequests.get(requestId);
   if (!active) return;
   pushEvent({
@@ -926,6 +942,7 @@ export function trackAudioTimeout(requestId: string, error = "audio_start_timeou
     audioIdentity: active.audioIdentity,
     sourceLayer: active.sourceLayer,
     error,
+    elementSnapshot,
     device: getDeviceLabel(),
     platform: getPlatform(),
     ts: Date.now(),

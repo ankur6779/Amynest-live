@@ -33,6 +33,8 @@ const OWNERSHIP_ALLOWLIST = new Set([
   "lib/amy-voice-ownership.ts",
   "lib/amy-voice-safety.ts",
   "lib/amy-voice-pipeline.ts",
+  "lib/amy-voice-pipeline-types.ts",
+  "lib/amy-voice-pipeline-fallback-layers.ts",
   "lib/amy-voice-controller.test.ts",
 ]);
 

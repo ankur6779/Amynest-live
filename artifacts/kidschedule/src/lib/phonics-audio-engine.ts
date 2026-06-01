@@ -1,7 +1,7 @@
 /**
  * Central phonics audio orchestration — delegates to phonics-player (single owner).
  *
- * Speech-coach freeze: no new Audio() paths here. All playback goes through
+ * Speech-coach freeze: no direct HTMLAudioElement creation here. All playback goes through
  * phonics-static-audio → playPhonicsUrl().
  */
 import type { CvcWordEntry } from "@workspace/phonics-sounds";

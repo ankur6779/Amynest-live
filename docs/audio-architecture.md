@@ -26,9 +26,30 @@ CVC whole-word finale uses static catalog via `amyVoiceController.playPreparedUr
 
 Infant poems use `useInfantPoemPlayer` — resolves URL via controller, manages loop/fade locally after `controller.pause()` clears speech channel.
 
+## Amy Audio Lessons
+
+Page open (`/audio-lessons`) → `warmAudioLessonsOnPageOpen()` prefetches up to **3 lessons × 4 paragraphs** (resume, quick play, daily pick, age recommendations) via `prefetchLessonParagraph` + static preload. Lesson player open still triggers server pregenerate for the full lesson.
+
+Parent Hub **Learning tab** expand → `warmLearningZoneTabOnOpen()` prefetches (limited, idle):
+
+- **Spelling Mastery** — 5 catalog words × 4 lookahead + feedback phrases
+- **Abacus** — level-1 Learn mode first 4 steps + probe line
+- **Smart Study** — up to 6 nursery play tile speak lines for child age
+
+Parent Hub **Stories & Communication tab** expand → `warmSpeechCoachOnStoriesTabOpen()` prefetches top 12 coach warmup phrases (static + memory cache via `warmSpeechCoach`).
+
 ## SFX (not narration)
 
-Web Audio in abacus, study-engagement, game-feedback, speech-coach-utils — procedural UI sounds only.
+Procedural UI sounds use shared `lib/procedural-sfx.ts` (single `AudioContext` via `trackAudioContext`):
+
+- `game-feedback.ts`, `abacus-zone.tsx`, `study-engagement.tsx` — short tones
+- `use-sound-engine.ts`, `infant-mode.tsx` (lullaby) — ambient / scheduled oscillators on same context
+
+Do **not** add `new AudioContext()` in feature code; extend `procedural-sfx` or use `getProceduralAudioContext()`.
+
+## OpenAI Realtime (Speech Coach mic path — separate stack)
+
+Live coaching uses **WebRTC + AudioWorklet** for microphone capture and streaming — not `amy-voice-pipeline` or `audioManager`. Narration playback still goes through `useAmyVoice` → static/TTS pipeline above. Do not route Realtime playback through `HTMLAudioElement` speech channel.
 
 ## Telemetry
 

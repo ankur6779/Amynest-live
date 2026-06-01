@@ -46,37 +46,10 @@ import {
 } from "@/components/abacus-dashboard";
 
 // ─── Tiny WebAudio bleeps for bead taps + correct/wrong/unlock cues ────
-// Uses a single shared AudioContext lazily; no-ops in SSR or browsers
-// without WebAudio so it never breaks rendering or tests.
-let _abacusAudioCtx: AudioContext | null = null;
-function getAudioCtx(): AudioContext | null {
-  if (typeof window === "undefined") return null;
-  const W = window as unknown as {
-    AudioContext?: typeof AudioContext;
-    webkitAudioContext?: typeof AudioContext;
-  };
-  const Ctor = W.AudioContext ?? W.webkitAudioContext;
-  if (!Ctor) return null;
-  if (!_abacusAudioCtx) {
-    try { _abacusAudioCtx = new Ctor(); } catch { return null; }
-  }
-  return _abacusAudioCtx;
-}
+import { playProceduralTone } from "@/lib/procedural-sfx";
+
 function playTone(freq: number, durationMs: number, type: OscillatorType = "sine", gain = 0.06) {
-  const ctx = getAudioCtx();
-  if (!ctx) return;
-  try {
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.type = type;
-    osc.frequency.value = freq;
-    g.gain.setValueAtTime(gain, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationMs / 1000);
-    osc.connect(g);
-    g.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + durationMs / 1000);
-  } catch { /* noop */ }
+  playProceduralTone(freq, durationMs, type, gain);
 }
 const sfx = {
   bead: () => playTone(900, 60, "triangle", 0.04),

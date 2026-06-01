@@ -24,6 +24,7 @@
 // Used by `infant-sounds.tsx` for the immersive sound module.
 // ─────────────────────────────────────────────────────────────────────────────
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getProceduralAudioContext } from "@/lib/procedural-sfx";
 
 export type SoundId = "shush" | "rain" | "fan" | "heartbeat" | "pink" | "white" | "womb";
 
@@ -398,8 +399,8 @@ export function useSoundEngine(): SoundEngine {
   // Lazy-init the audio graph on first play (browser autoplay rules).
   const ensureContext = useCallback(() => {
     if (ctxRef.current) return ctxRef.current;
-    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const ctx = new Ctx();
+    const ctx = getProceduralAudioContext();
+    if (!ctx) throw new Error("AudioContext unavailable");
     const masterGain = ctx.createGain();
     masterGain.gain.value = 1;
     const analyser = ctx.createAnalyser();

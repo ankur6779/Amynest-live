@@ -10,7 +10,6 @@ import { join, relative } from "node:path";
 import { getCoachDialogueWarmupPhrases } from "@workspace/speech-coach";
 import {
   getParentHubAudioTextsForStaticCatalog,
-  ALL_HUB_FACTS,
 } from "../lib/parent-hub-speak/src/index.ts";
 import { getParentingArticlesAudioTextsForStaticCatalog } from "../lib/parenting-articles/src/index.ts";
 import { normalizeStaticAudioKey } from "@workspace/static-audio";
@@ -112,16 +111,8 @@ function auditCacheMisses(map: ReturnType<typeof loadStaticAudioMap>): MissingAs
     }
   }
 
-  for (const fact of ALL_HUB_FACTS) {
-    const hi = (fact.textHi ?? "").trim();
-    if (hi && !lookupInMap(hi, map)) {
-      missing.push({
-        asset: `hindi_fact:${fact.id}`,
-        classification: "dynamic_only_content",
-        module: "parent_hub",
-      });
-    }
-  }
+  // Hindi fact display strings (textHi) are UI-only — playback uses English buildFactSpeakText()
+  // via parent-hub audioIdentity (see amazing-facts.tsx). Do not flag as static gaps.
 
   return missing;
 }
@@ -226,18 +217,7 @@ function main(): void {
   if (failures.length > 0) {
     console.error("\nAudio release certification FAILED:\n");
     for (const f of failures) console.error(`  - ${f}`);
-    if (dynamicOnly.length > 0) {
-      console.error(
-        `\n  Note: ${dynamicOnly.length} dynamic-only asset(s) (articles/Hindi) — expected until static corpus expanded; not CI-blocking.`,
-      );
-    }
     process.exit(1);
-  }
-
-  if (dynamicOnly.length > 0) {
-    console.warn(
-      `\nWarning: ${dynamicOnly.length} dynamic-only playback path(s) remain (articles full corpus, Hindi facts display). Track via latencyReport after device cert.`,
-    );
   }
 
   console.log("\nAudio release certification PASSED (CI gates).");

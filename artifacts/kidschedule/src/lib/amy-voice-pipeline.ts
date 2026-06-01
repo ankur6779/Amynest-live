@@ -80,14 +80,8 @@ import {
   localCacheKeyForTts,
   warmLocalCacheFromUrl,
 } from "@/lib/local-tts-cache";
-import { playEmergencyPhrase, playNaturalSpeechSynthesis, forceEmergencyPlayback, playFallbackTone } from "@/lib/emergency-audio";
+import { playEmergencyPhrase } from "@/lib/emergency-audio";
 import {
-  buildPipelineDecisionLog,
-  logPipelineDecision,
-  logTotalAudioFailure,
-} from "@/lib/amy-voice-pipeline-decision";
-import {
-  getPhonicsTrainingAudioText,
   logAmyModeDiagnosis,
   prepareAmySpeechInput,
   type AmySpeechPolicy,
@@ -101,8 +95,6 @@ import {
 } from "@/lib/amy-voice-difficulty";
 import { preloadAmyVoiceNextPhrase } from "@/lib/amy-voice-preload";
 import {
-  normalizePhonicsLetterKey,
-  PHONICS_DIGRAPH_SOUNDS,
   resolveGraphemeToAudioKey,
 } from "@workspace/phonics-sounds";
 import {
@@ -186,82 +178,39 @@ import {
   type AmyVoiceLayer,
   type FailureChainEntry,
 } from "@/lib/amy-voice-telemetry";
+import {
+  bumpActiveSpeakGeneration,
+  getActiveSpeakGeneration,
+  BLEND_WORD_FINALE_GAP_MS,
+  decomposePhonicsChunks,
+  decomposeSpellingLetters,
+  delay,
+  ELEVENLABS_DYNAMIC_TIMEOUT_MS,
+  isStale,
+  LAYER1_TIMEOUT_MS,
+  LAYER2_TIMEOUT_MS,
+  NEVER_SILENT_MS,
+  OPENAI_DYNAMIC_TIMEOUT_MS,
+  PHONICS_CHUNK_ORDER,
+  QUALITY_PICK_WINDOW_MS,
+  SPEECH_COACH_RETRY_DELAY_MS,
+  splitWords,
+  withTimeout,
+  type AmyVoicePipelineContext,
+  type LayerRunner,
+  type NeverSilentPipelineFlags,
+  type PlayAttemptResult,
+} from "@/lib/amy-voice-pipeline-types";
+import {
+  runNeverSilentFallback,
+  tryEmergencyLayer,
+  trySpeechSynthesisLayer,
+  tryTextVisualLayer,
+} from "@/lib/amy-voice-pipeline-fallback-layers";
 
 export type { PlaybackMode };
-
-const LAYER1_TIMEOUT_MS = 1200;
-const LAYER2_TIMEOUT_MS = 1500;
-const OPENAI_DYNAMIC_TIMEOUT_MS = 1500;
-const ELEVENLABS_DYNAMIC_TIMEOUT_MS = 1800;
-const NEVER_SILENT_MS = 1500;
-const BLEND_WORD_FINALE_GAP_MS = 150;
-const QUALITY_PICK_WINDOW_MS = 150;
-const SPEECH_COACH_RETRY_DELAY_MS = 350;
-
-const PRIORITY_PHONICS_CHUNKS = ["sh", "ch", "th", "ph", "ng", "ck"] as const;
-const OTHER_DIGRAPH_KEYS = Object.keys(PHONICS_DIGRAPH_SOUNDS)
-  .filter((k) => !PRIORITY_PHONICS_CHUNKS.includes(k as (typeof PRIORITY_PHONICS_CHUNKS)[number]))
-  .sort((a, b) => b.length - a.length);
-const PHONICS_CHUNK_ORDER = [...PRIORITY_PHONICS_CHUNKS, ...OTHER_DIGRAPH_KEYS];
-
-/** Bumps on each top-level speak — stale parallel runners abort. */
-let activeSpeakGeneration = 0;
-
-export type AmyVoicePipelineContext = {
-  authFetch: AuthFetchFn;
-  voiceId?: string;
-  modelId?: string;
-  playbackRate: number;
-  playbackMode: PlaybackMode;
-  isCancelled: () => boolean;
-  onFinished?: () => void;
-  /** Lesson paragraph index for completion debug logs. */
-  paragraphIdx?: number;
-  depth?: number;
-  /** Set for top-level speak only — invalidates losing parallel runners. */
-  speakGeneration?: number;
-  /** Latest user intent — stale downloads must not play after a newer tap. */
-  intentEpoch?: number;
-  reliabilityModule?: import("@/lib/audio-reliability-telemetry").AudioReliabilityModule;
-  /** Active P0 reliability trace — for cache hit/miss wiring. */
-  reliabilityRequestId?: string | null;
-  /** Guards against duplicate onFinished from finalizeSuccess. */
-  completionFinalized?: boolean;
-  /** Pipeline-only: mark streaming layer as attempted for decision logs. */
-  trackStreamingAttempt?: () => void;
-  /** Root-cause playback trace — shared across pipeline and AudioManager. */
-  playbackTraceId?: string;
-};
-
-type PlayAttemptResult =
-  | {
-      ok: true;
-      layer: AmyVoiceLayer;
-      stopPlayback?: () => void;
-      playedDuration?: number;
-      expectedDuration?: number;
-      usedStreaming?: boolean;
-    }
-  | { ok: false; error: string };
-
-type LayerRunner = {
-  quality: number;
-  run: () => Promise<PlayAttemptResult>;
-};
-
-function delay(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-function isStale(ctx: AmyVoicePipelineContext): boolean {
-  if (ctx.isCancelled()) return true;
-  if (ctx.intentEpoch != null && !isCurrentAudioIntent(ctx.intentEpoch)) {
-    recordStaleAudioPrevented();
-    return true;
-  }
-  if ((ctx.depth ?? 0) > 0) return false;
-  return ctx.speakGeneration !== activeSpeakGeneration;
-}
+export type { AmyVoicePipelineContext };
+export { decomposePhonicsChunks };
 
 function tracePipelineCacheHit(
   ctx: AmyVoicePipelineContext,
@@ -280,57 +229,6 @@ function staticModesToTry(primary: StaticAudioMode, phonicsOnly = false): Static
   if (phonicsOnly) return [primary];
   const alt: StaticAudioMode = primary === "phonics" ? "default" : "phonics";
   return [primary, alt];
-}
-
-function splitWords(text: string): string[] {
-  return text
-    .split(/\s+/)
-    .map((w) => w.replace(/^[^\w]+|[^\w]+$/g, ""))
-    .filter((w) => w.length > 0);
-}
-
-/** Prefer digraph chunks (sh, ch, th…) then single letters — phoneme training lines. */
-export function decomposePhonicsChunks(text: string): string[] {
-  const trimmed = text.trim();
-  const key = normalizePhonicsLetterKey(trimmed);
-  if (key) return [getPhonicsTrainingAudioText(key)];
-
-  const lower = trimmed.toLowerCase();
-  const parts: string[] = [];
-  let i = 0;
-  while (i < lower.length) {
-    let matched = false;
-    for (const dg of PHONICS_CHUNK_ORDER) {
-      if (lower.startsWith(dg, i)) {
-        parts.push(getPhonicsTrainingAudioText(dg));
-        i += dg.length;
-        matched = true;
-        break;
-      }
-    }
-    if (matched) continue;
-    const c = lower[i];
-    if (c && /[a-z]/.test(c)) parts.push(getPhonicsTrainingAudioText(c));
-    i += 1;
-  }
-  return parts.filter(Boolean);
-}
-
-/** Spelling mode: "c a t" → per-letter phonics training lines. */
-function decomposeSpellingLetters(text: string): string[] {
-  return text
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((l) => /^[a-z]{1,2}$/.test(l))
-    .map((l) => getPhonicsTrainingAudioText(l));
-}
-
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return Promise.race([
-    promise,
-    delay(ms).then(() => Promise.reject(new Error(`${label}_timeout`))),
-  ]);
 }
 
 /** Strict audible check — playback must have started with valid duration. */
@@ -1470,123 +1368,6 @@ async function trySpeechCoachSplitLayer(
   return { ok: true, layer: "speech_coach_split" };
 }
 
-async function trySpeechSynthesisLayer(
-  text: string,
-  ctx: AmyVoicePipelineContext,
-  policy: AmySpeechPolicy,
-): Promise<PlayAttemptResult> {
-  if (!policy.preferSpeechSynthesisFallback) {
-    recordAmyVoiceLayerFailed("emergency_local", "synthesis_blocked");
-    return { ok: false, error: "synthesis_blocked" };
-  }
-  const ok = await withTimeout(
-    playNaturalSpeechSynthesis(text, policy.prosody.synthesisRate),
-    NEVER_SILENT_MS,
-    "synthesis",
-  ).catch(() => false);
-  if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
-  if (ok) {
-    recordAmyVoiceLayerSuccess("emergency_local_success", { source: "speechSynthesis" });
-    recordAmyVoiceFallbackUsed("api", "emergency_local");
-    return { ok: true, layer: "emergency_local" };
-  }
-  recordAmyVoiceLayerFailed("emergency_local", "synthesis_failed");
-  return { ok: false, error: "synthesis_failed" };
-}
-
-async function tryEmergencyLayer(
-  text: string,
-  ctx: AmyVoicePipelineContext,
-): Promise<PlayAttemptResult> {
-  const ok = await withTimeout(
-    playEmergencyPhrase(text),
-    NEVER_SILENT_MS,
-    "emergency",
-  ).catch(() => false);
-  if (isStale(ctx)) return { ok: false, error: "tts_cancelled" };
-  if (ok) {
-    recordAmyVoiceLayerSuccess("emergency_local_success");
-    return { ok: true, layer: "emergency_local" };
-  }
-  recordAmyVoiceLayerFailed("emergency_local", "emergency_failed");
-  return { ok: false, error: "emergency_failed" };
-}
-
-function tryTextVisualLayer(text: string, mode: StaticAudioMode): PlayAttemptResult {
-  emitAmyVoiceTextFallback({
-    phrase: text,
-    mode,
-    highlightWords: splitWords(text),
-    showTapToHear: true,
-    animated: true,
-  });
-  recordAmyVoiceLayerSuccess("text_visual_success");
-  return { ok: true, layer: "text_visual" };
-}
-
-type NeverSilentPipelineFlags = {
-  dynamicAttempted: boolean;
-  streamingAttempted: boolean;
-  emergencyAttempted: boolean;
-  synthesisAttempted: boolean;
-};
-
-/** Absolute last audio guarantee — visual highlight + forced local TTS/tone. */
-async function runNeverSilentFallback(
-  text: string,
-  mode: StaticAudioMode,
-  ctx: AmyVoicePipelineContext,
-  policy: AmySpeechPolicy,
-  depth: number,
-  cacheKey: string,
-  failureChain: FailureChainEntry[],
-  opts: SpeakOptions | undefined,
-  flags: NeverSilentPipelineFlags,
-  finishAttempt: (
-    result: PlayAttemptResult,
-    isFallback?: boolean,
-  ) => SpeakResult & { layer?: AmyVoiceLayer },
-  telemetry: ReturnType<typeof createPipelineTelemetry> | null,
-): Promise<SpeakResult & { layer?: AmyVoiceLayer }> {
-  if (isStale(ctx)) return { success: false, error: "tts_cancelled" };
-
-  const scoringContext = buildScoringContext(text, policy, opts);
-  logPipelineDecision(
-    buildPipelineDecisionLog(cacheKey, failureChain, {
-      module: scoringContext.module,
-      ...flags,
-    }),
-  );
-
-  tryTextVisualLayer(text, mode);
-  if (depth === 0) {
-    logAmyModeDiagnosis(policy, "text_visual");
-    maybeQueueAmyVoiceLearning(policy, "text_visual");
-  }
-
-  telemetry?.recordTry("forced_emergency");
-  const forced = await forceEmergencyPlayback(text);
-  if (forced.success) {
-    recordAmyVoiceLayerSuccess("emergency_local_success", { forced: true });
-    recordAmyVoiceFallbackUsed("text_visual", "emergency_local");
-    return finishAttempt({ ok: true, layer: "emergency_local" }, true);
-  }
-
-  logTotalAudioFailure({
-    cacheKey,
-    module: scoringContext.module,
-    reason: "all_layers_failed",
-  });
-
-  const tone = await playFallbackTone();
-  if (tone) {
-    recordAmyVoiceLayerSuccess("emergency_local_success", { forced: true, tone: true });
-    return finishAttempt({ ok: true, layer: "emergency_local" }, true);
-  }
-
-  return finishAttempt({ ok: true, layer: "emergency_local" }, true);
-}
-
 function pushFailure(
   chain: FailureChainEntry[],
   result: PlayAttemptResult,
@@ -1827,7 +1608,7 @@ export async function speakAmyVoice(
   const depth = ctx.depth ?? 0;
 
   if (depth === 0 && policy.useSemanticSplit && policy.phrases.length > 1) {
-    const speakGeneration = ++activeSpeakGeneration;
+    const speakGeneration = bumpActiveSpeakGeneration();
     const pipelineCtx: AmyVoicePipelineContext = {
       ...ctx,
       speakGeneration,
@@ -1861,7 +1642,7 @@ export async function speakAmyVoice(
     logLessonAudioIdentity(opts.audioIdentity, { phase: "pipeline_entry" });
   }
 
-  const speakGeneration = depth === 0 ? ++activeSpeakGeneration : activeSpeakGeneration;
+  const speakGeneration = depth === 0 ? bumpActiveSpeakGeneration() : getActiveSpeakGeneration();
   const pipelineFlags: NeverSilentPipelineFlags = {
     dynamicAttempted: false,
     streamingAttempted: false,

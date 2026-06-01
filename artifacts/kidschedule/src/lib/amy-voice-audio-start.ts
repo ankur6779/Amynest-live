@@ -57,10 +57,42 @@ export function validateAudioSrc(audio: HTMLAudioElement): void {
   }
 }
 
-/** Reject truncated / corrupt blob payloads before attaching to audio. */
+/** Validate truncated / corrupt blob payloads before attaching to audio. */
 export function validateAudioBlob(blob: Blob): void {
   if (blob.size < MIN_AUDIO_BLOB_BYTES) {
     throw new Error("invalid_audio_blob");
+  }
+}
+
+let decodeCtx: AudioContext | null = null;
+
+/** Decode-check blob MP3 payload — catches silent Android corrupt downloads. */
+export async function validateAudioBlobDecodable(blob: Blob): Promise<void> {
+  validateAudioBlob(blob);
+  if (typeof window === "undefined") return;
+
+  type AudioCtxCtor = typeof AudioContext;
+  const Ctor =
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext?: AudioCtxCtor }).webkitAudioContext;
+  if (!Ctor) return;
+
+  if (!decodeCtx) {
+    try {
+      decodeCtx = new Ctor();
+    } catch {
+      return;
+    }
+  }
+  if (decodeCtx.state === "suspended") {
+    await decodeCtx.resume().catch(() => {});
+  }
+
+  const buffer = await blob.arrayBuffer();
+  try {
+    await decodeCtx.decodeAudioData(buffer.slice(0));
+  } catch {
+    throw new Error("invalid_audio_blob_decode");
   }
 }
 
