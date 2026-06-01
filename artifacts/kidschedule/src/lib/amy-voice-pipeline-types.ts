@@ -3,9 +3,9 @@
  */
 
 import { isCurrentAudioIntent } from "@/lib/amy-voice-ownership";
+import { getPhonicsTrainingAudioText } from "@/lib/amy-speech-mode";
 import { recordStaleAudioPrevented } from "@/lib/audio-playback-queue";
 import {
-  getPhonicsTrainingAudioText,
   normalizePhonicsLetterKey,
   PHONICS_DIGRAPH_SOUNDS,
 } from "@workspace/phonics-sounds";
