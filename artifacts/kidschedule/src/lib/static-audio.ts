@@ -26,6 +26,7 @@ import {
   staticAudioMissingKey,
   type StaticAudioMode,
 } from "@workspace/static-audio/browser";
+import { replaceCoachPersonalNameWithFriend } from "@workspace/speech-coach";
 
 function audioDebugLog(...args: unknown[]): void {
   if (import.meta.env.DEV || isStaticAudioDebug() || isAmyVoiceAudioDebugEnabled()) {
@@ -257,9 +258,12 @@ function resolveMapEntry(
   const text = rawText.trim();
   if (!text) return null;
 
+  const coachCanonical = replaceCoachPersonalNameWithFriend(text);
   const keys = [
     normalizeStaticAudioKey(text),
     normalizeSpeakTextForLookup(text),
+    normalizeStaticAudioKey(coachCanonical),
+    normalizeSpeakTextForLookup(coachCanonical),
   ];
   const seen = new Set<string>();
   for (const normalized of keys) {

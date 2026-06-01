@@ -5,6 +5,7 @@ import {
   getCoachDialogueExtraAudioTexts,
   getCoachDialogueWarmupPhrases,
   substituteCoachNameForStatic,
+  replaceCoachPersonalNameWithFriend,
 } from "../coach-audio-corpus.js";
 import { getCoachDialogueAudioTextsForStaticCatalog } from "../coach-dialogue.js";
 
@@ -12,6 +13,13 @@ describe("coach-audio-corpus", () => {
   it("substitutes child name placeholder for static catalog", () => {
     assert.equal(substituteCoachNameForStatic("Hello {childName}!"), "Hello friend!");
     assert.equal(substituteCoachNameForStatic("Welcome back, {childName}."), "Welcome back, friend.");
+  });
+
+  it("maps runtime personalized coach lines to friend static keys", () => {
+    assert.equal(replaceCoachPersonalNameWithFriend("Hello Maya!"), "Hello friend!");
+    assert.equal(replaceCoachPersonalNameWithFriend("Welcome back, Aarav."), "Welcome back, friend.");
+    assert.equal(replaceCoachPersonalNameWithFriend("Great job, Riya!"), "Great job, friend!");
+    assert.equal(replaceCoachPersonalNameWithFriend("Good job!"), "Good job!");
   });
 
   it("deduplicates template lines case-insensitively", () => {

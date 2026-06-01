@@ -18,6 +18,35 @@ export function substituteCoachNameForStatic(text: string): string {
   return text.replace(/\{childName\}/g, "friend").replace(/,\s*friend!/g, "!");
 }
 
+/** Map runtime personalized coach lines back to the static "friend" corpus key. */
+export function replaceCoachPersonalNameWithFriend(text: string): string {
+  let t = substituteCoachNameForStatic(text).trim();
+  if (!t) return t;
+  const name = String.raw`[\w'-]+`;
+  const rules: Array<[RegExp, string]> = [
+    [new RegExp(`^hello ${name}!$`, "i"), "Hello friend!"],
+    [new RegExp(`^hi ${name}!`, "i"), "Hi friend!"],
+    [new RegExp(`^hey ${name}!$`, "i"), "Hey friend!"],
+    [new RegExp(`^hello there, ${name}!$`, "i"), "Hello there, friend!"],
+    [new RegExp(`^good to see you,? ${name}!$`, "i"), "Good to see you, friend!"],
+    [new RegExp(`^welcome back, ${name}\\.?$`, "i"), "Welcome back, friend."],
+    [new RegExp(`^good to see you again, ${name}\\.?$`, "i"), "Good to see you again, friend."],
+    [
+      new RegExp(`^hello again, ${name} — i am glad you came back\\.?$`, "i"),
+      "Hello again, friend — I am glad you came back.",
+    ],
+    [new RegExp(`^great job, ${name}!$`, "i"), "Great job, friend!"],
+    [new RegExp(`^amazing work today, ${name}\\.?$`, "i"), "Amazing work today, friend."],
+    [new RegExp(`^what a wonderful session, ${name}!$`, "i"), "What a wonderful session, friend!"],
+    [new RegExp(`^great lesson today, ${name}\\.?$`, "i"), "Great lesson today, friend."],
+    [new RegExp(`^you did beautifully today, ${name}\\.?$`, "i"), "You did beautifully today, friend."],
+  ];
+  for (const [re, replacement] of rules) {
+    if (re.test(t)) return replacement;
+  }
+  return t;
+}
+
 function uniqueCoachAudioTexts(texts: readonly string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];

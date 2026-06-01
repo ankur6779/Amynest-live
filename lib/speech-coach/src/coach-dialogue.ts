@@ -896,4 +896,5 @@ export {
   getCoachDialogueWarmupPhrases,
   COACH_DIALOGUE_WARMUP_PHRASES,
   substituteCoachNameForStatic,
+  replaceCoachPersonalNameWithFriend,
 } from "./coach-audio-corpus";

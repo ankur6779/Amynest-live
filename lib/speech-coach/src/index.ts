@@ -94,6 +94,7 @@ export {
   getCoachDialogueWarmupPhrases,
   pickCoachDisplayFeedback,
   substituteCoachNameForStatic,
+  replaceCoachPersonalNameWithFriend,
   COACH_DIALOGUE_WARMUP_PHRASES,
   type CoachActivityKind,
   type CoachDialogueContext,
