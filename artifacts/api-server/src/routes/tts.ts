@@ -7,6 +7,7 @@ import { isValidTtsPublicUrl, MIN_TTS_BYTES } from "../services/ttsAudioStore";
 import { generateOpenAiTts } from "../services/ttsGenerate.js";
 import {
   AMY_MODEL_ID_DEFAULT as ELEVEN_MODEL_DEFAULT,
+  AMY_MODEL_ID_FLASH,
   AMY_VOICE_ID_DEFAULT as ELEVEN_VOICE_DEFAULT,
   synthesizeElevenLabsFallback,
 } from "../services/elevenLabsFallbackService.js";
@@ -553,14 +554,52 @@ router.post("/tts/stream", async (req, res): Promise<void> => {
   }
 
   const mode = parsed.data.mode ?? "default";
+  const startedAt = Date.now();
+
+  // Primary: ElevenLabs Flash v2.5 — generate once (cache-first → GCS) and
+  // serve the bytes through this streaming endpoint. OpenAI stays the safety
+  // net below so audio never disappears if ElevenLabs is unavailable.
+  if (isElevenLabsFallbackEnabled()) {
+    try {
+      const el = await synthesizeElevenLabsFallback(
+        phrase,
+        { voiceId: ELEVEN_VOICE_DEFAULT, modelId: AMY_MODEL_ID_FLASH, mode },
+        { userId, route: "tts/stream" },
+      );
+      if (el && isValidTtsPublicUrl(el.audioUrl)) {
+        const cached = await readCachedAudio(el.cacheKey);
+        if (cached && cached.buffer.byteLength >= MIN_TTS_BYTES) {
+          res.setHeader("X-TTS-Cache-Key", el.cacheKey);
+          res.setHeader("Content-Type", "audio/mpeg");
+          res.setHeader("X-Content-Type-Options", "nosniff");
+          res.setHeader("Content-Length", String(cached.buffer.byteLength));
+          res.status(200).end(cached.buffer);
+          recordApiHealthSample({ route: "stream", success: true, latencyMs: Date.now() - startedAt });
+          return;
+        }
+      }
+    } catch (err) {
+      if (isTtsRateLimitedError(err)) {
+        if (!res.headersSent) res.status(429).json(ttsRateLimitResponseBody(err));
+        return;
+      }
+      logger.warn(
+        {
+          evt: "tts.stream_elevenlabs_fallback_openai",
+          message: err instanceof Error ? err.message : String(err),
+        },
+        "ElevenLabs Flash stream failed — falling back to OpenAI",
+      );
+    }
+  }
+
   const clientVoice = parsed.data.voice?.trim();
   const voiceId = (clientVoice && clientVoice.length > 0 ? clientVoice : getOpenAiTtsVoice()).slice(0, 64);
   const modelId = getOpenAiTtsModel() || AMY_MODEL_ID_DEFAULT;
   const cacheKey = computeTtsCacheKey(phrase, voiceId, modelId, mode);
 
-  res.setHeader("X-TTS-Cache-Key", cacheKey);
+  if (!res.headersSent) res.setHeader("X-TTS-Cache-Key", cacheKey);
 
-  const startedAt = Date.now();
   try {
     const ok = await streamOpenAiTtsWithCache(
       res,

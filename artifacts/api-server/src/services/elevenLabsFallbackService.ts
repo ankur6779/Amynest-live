@@ -39,6 +39,8 @@ export const AMY_VOICE_ID_HI_MALE   = "2cdvnKJ5TZi631y5PN1s";
 // Defaults (English Indian Female)
 export const AMY_VOICE_ID_DEFAULT = AMY_VOICE_ID_EN_FEMALE;
 export const AMY_MODEL_ID_DEFAULT = "eleven_turbo_v2_5";
+/** Lowest-latency model — primary for live/dynamic TTS across the whole app. */
+export const AMY_MODEL_ID_FLASH = "eleven_flash_v2_5";
 
 // Hindi defaults
 export const AMY_VOICE_ID_HINDI = AMY_VOICE_ID_HI_FEMALE;

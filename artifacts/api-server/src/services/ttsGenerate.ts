@@ -16,6 +16,12 @@ import {
   getBlendCacheFileName,
 } from "@workspace/phonics-sounds";
 import { logger } from "../lib/logger.js";
+import { isElevenLabsFallbackEnabled } from "../lib/env.js";
+import {
+  AMY_MODEL_ID_FLASH,
+  AMY_VOICE_ID_DEFAULT as ELEVEN_VOICE_DEFAULT,
+  synthesizeElevenLabsFallback,
+} from "./elevenLabsFallbackService.js";
 import {
   assertTtsCacheMissAllowed,
   refundTtsDailyMiss,
@@ -80,6 +86,33 @@ export async function generateOpenAiTts(
   if (!text) return null;
 
   const mode: SynthesizeMode = input.mode ?? "default";
+
+  // Primary dynamic TTS for the WHOLE app (incl. Speech Coach) is ElevenLabs
+  // Flash v2.5 — cache-first, stored once in GCS and reused by every user.
+  // OpenAI stays as the safety net so audio never disappears if ElevenLabs
+  // is unavailable. Rate-limit errors propagate (don't double-try OpenAI).
+  if (isElevenLabsFallbackEnabled()) {
+    try {
+      const el = await synthesizeElevenLabsFallback(
+        text,
+        { voiceId: ELEVEN_VOICE_DEFAULT, modelId: AMY_MODEL_ID_FLASH, mode },
+        ctx,
+      );
+      if (el && isValidTtsPublicUrl(el.audioUrl)) {
+        return { url: el.audioUrl, cached: el.cached, cacheKey: el.cacheKey };
+      }
+    } catch (err) {
+      if (err instanceof TtsRateLimitedError) throw err;
+      logger.warn(
+        {
+          evt: "tts.elevenlabs_primary_fallback_openai",
+          message: err instanceof Error ? err.message : String(err),
+        },
+        "ElevenLabs Flash failed — falling back to OpenAI TTS",
+      );
+    }
+  }
+
   const voiceId = (input.voice?.trim() || getOpenAiTtsVoice() || AMY_VOICE_ID_DEFAULT).slice(0, 64);
   const modelId = getOpenAiTtsModel() || AMY_MODEL_ID_DEFAULT;
 

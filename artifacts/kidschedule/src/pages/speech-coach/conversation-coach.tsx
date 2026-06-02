@@ -64,6 +64,9 @@ type ConverseResponse = {
   remainingSeconds?: number;
   limitSeconds?: number;
   resetsAt?: string | null;
+  isPremium?: boolean;
+  trialExpired?: boolean;
+  error?: string;
 };
 
 type MemoryPayload = {
@@ -77,7 +80,8 @@ type MemoryPayload = {
   daysSinceLast?: number | null;
 };
 
-const TOTAL_BUDGET_SECONDS = 300;
+/** Default budget before the server reports the user's real allowance (premium 10 min / free 5 min). */
+const DEFAULT_BUDGET_SECONDS = 300;
 const MAX_LISTEN_MS = 9000;
 /** ElevenLabs Flash v2.5 — lowest-latency model for instant live conversation. */
 const AMY_FLASH_MODEL = "eleven_flash_v2_5";
@@ -200,9 +204,12 @@ function ConversationCoach({ child }: { child: AnyChild }) {
   const [serverPhase, setServerPhase] = useState<ServerPhase>("warmup");
   const [status, setStatus] = useState("Tap Start and Amy will say hello!");
   const [messages, setMessages] = useState<{ role: "child" | "amy"; text: string }[]>([]);
-  const [remaining, setRemaining] = useState<number>(TOTAL_BUDGET_SECONDS);
+  const [budgetSeconds, setBudgetSeconds] = useState<number>(DEFAULT_BUDGET_SECONDS);
+  const [remaining, setRemaining] = useState<number>(DEFAULT_BUDGET_SECONDS);
   const [resetsAt, setResetsAt] = useState<string | null>(null);
-  const [endedReason, setEndedReason] = useState<"completed" | "budget" | "user" | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
+  const [trialExpired, setTrialExpired] = useState(false);
+  const [endedReason, setEndedReason] = useState<"completed" | "budget" | "user" | "trial" | null>(null);
   const [report, setReport] = useState<SessionReport | null>(null);
   const [startingMic, setStartingMic] = useState(false);
   const [micSettingsOpen, setMicSettingsOpen] = useState(false);
@@ -210,7 +217,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
   const phaseRef = useRef<UiPhase>("idle");
   const lastTurnTsRef = useRef<number>(Date.now());
   const messagesRef = useRef<{ role: "child" | "amy"; text: string }[]>([]);
-  const remainingRef = useRef<number>(TOTAL_BUDGET_SECONDS);
+  const remainingRef = useRef<number>(DEFAULT_BUDGET_SECONDS);
   const lastServerPhaseRef = useRef<ServerPhase>("warmup");
   const listenStartedRef = useRef(false);
   const startingMicRef = useRef(false);
@@ -225,7 +232,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
     }
   }, []);
 
-  // Live coach listens via ElevenLabs Scribe v1 (Whisper stays the fallback).
+  // Live coach listens via ElevenLabs Scribe v2 (Whisper stays the fallback).
   const stt = useSpeechRecognition("en-US", { getAuthToken, transcribeProvider: "elevenlabs" });
   const voice = useAmyVoice();
 
@@ -262,8 +269,24 @@ function ConversationCoach({ child }: { child: AnyChild }) {
           15_000,
         );
         if (!res.ok) return;
-        const data = (await res.json()) as { memory?: MemoryPayload };
-        if (!cancelled && data.memory) setServerMem(data.memory);
+        const data = (await res.json()) as {
+          memory?: MemoryPayload;
+          limitSeconds?: number;
+          isPremium?: boolean;
+          trialExpired?: boolean;
+        };
+        if (cancelled) return;
+        if (data.memory) setServerMem(data.memory);
+        setIsPremium(!!data.isPremium);
+        setTrialExpired(!!data.trialExpired);
+        if (typeof data.limitSeconds === "number" && data.limitSeconds > 0) {
+          setBudgetSeconds(data.limitSeconds);
+          // Before a session starts, the clock should preview the full allowance.
+          if (!sessionActiveRef.current) {
+            setRemaining(data.limitSeconds);
+            remainingRef.current = data.limitSeconds;
+          }
+        }
       } catch {
         /* welcome-back is best-effort; local memory still works */
       }
@@ -385,7 +408,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
   );
 
   const endConversation = useCallback(
-    (reason: "completed" | "budget" | "user", rep?: SessionReport | null) => {
+    (reason: "completed" | "budget" | "user" | "trial", rep?: SessionReport | null) => {
       sessionActiveRef.current = false;
       listenStartedRef.current = false;
       stt.stop();
@@ -397,15 +420,21 @@ function ConversationCoach({ child }: { child: AnyChild }) {
       setServerPhase("closing");
       setPhase("ended");
       setStatus(
-        reason === "budget"
-          ? "That's all our talking time for today. Great job!"
-          : reason === "completed"
-            ? "Great session! Amy is proud of you."
-            : "Chat ended. Come back soon!",
+        reason === "trial"
+          ? "Your free trial has ended. Upgrade to keep talking with Amy!"
+          : reason === "budget"
+            ? "That's all our talking time for today. Great job!"
+            : reason === "completed"
+              ? "Great session! Amy is proud of you."
+              : "Chat ended. Come back soon!",
       );
     },
     [persistSession, stt],
   );
+
+  const goPremium = useCallback(() => {
+    setLocation("/pricing?source=talk_with_amy_trial");
+  }, [setLocation]);
 
   const startListening = useCallback(async () => {
     if (!sessionActiveRef.current) return;
@@ -500,6 +529,15 @@ function ConversationCoach({ child }: { child: AnyChild }) {
           const body = (await res.json().catch(() => ({}))) as ConverseResponse;
           setRemaining(0);
           setResetsAt(body.resetsAt ?? null);
+          if (typeof body.limitSeconds === "number" && body.limitSeconds > 0) {
+            setBudgetSeconds(body.limitSeconds);
+          }
+          // Free 3-day trial is over — prompt an upgrade rather than "come back tomorrow".
+          if (body.trialExpired || body.error === "trial_expired") {
+            setTrialExpired(true);
+            endConversation("trial");
+            return;
+          }
           // If we already had a real chat, treat as a completed session.
           endConversation(messagesRef.current.length > 1 ? "completed" : "budget");
           return;
@@ -512,6 +550,10 @@ function ConversationCoach({ child }: { child: AnyChild }) {
         const initial = (await res.json()) as ConverseResponse;
         const remainingSeconds = initial.remainingSeconds ?? remainingRef.current;
         if (typeof initial.resetsAt === "string") setResetsAt(initial.resetsAt);
+        if (typeof initial.limitSeconds === "number" && initial.limitSeconds > 0) {
+          setBudgetSeconds(initial.limitSeconds);
+        }
+        if (typeof initial.isPremium === "boolean") setIsPremium(initial.isPremium);
 
         const resolved = await resolveAiApiData<ConverseResponse>(initial, apiFetch, {
           poll: { maxAttempts: 16, intervalMs: 1500, requestTimeoutMs: 15_000 },
@@ -606,6 +648,8 @@ function ConversationCoach({ child }: { child: AnyChild }) {
   // Server memory wins for welcome-back (cross-device); local is the fallback.
   const displayMem = serverMem ?? memoryPayload;
   const welcomeBack = displayMem.isReturning && (displayMem.totalSessions ?? 0) > 0;
+  const minutesLabel = Math.max(1, Math.round(budgetSeconds / 60));
+  const progressPct = Math.min(100, Math.max(0, ((budgetSeconds - remaining) / budgetSeconds) * 100));
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-[#070812] text-white" data-testid="conversation-coach-page">
@@ -631,12 +675,12 @@ function ConversationCoach({ child }: { child: AnyChild }) {
           <div className="mt-3">
             <div className="mb-1 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/55">
               <span>{PHASE_LABEL[serverPhase]}</span>
-              <span>Session {Math.min(100, Math.round(((TOTAL_BUDGET_SECONDS - remaining) / TOTAL_BUDGET_SECONDS) * 100))}%</span>
+              <span>Session {Math.round(progressPct)}%</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-white/10">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-fuchsia-400 to-yellow-300 transition-all duration-500"
-                style={{ width: `${((TOTAL_BUDGET_SECONDS - remaining) / TOTAL_BUDGET_SECONDS) * 100}%` }}
+                style={{ width: `${progressPct}%` }}
               />
             </div>
           </div>
@@ -667,13 +711,29 @@ function ConversationCoach({ child }: { child: AnyChild }) {
           {phase === "idle" && (
             <div className="space-y-2 text-center">
               <p className="font-quicksand text-2xl font-black">
-                {welcomeBack ? `Welcome back, ${child.name}!` : `Hi ${child.name}!`}
+                {trialExpired
+                  ? "Your free trial has ended"
+                  : welcomeBack
+                    ? `Welcome back, ${child.name}!`
+                    : `Hi ${child.name}!`}
               </p>
               <p className="text-sm text-white/70">
-                {welcomeBack && displayMem.lastNextFocus
-                  ? `Last time we said we'd work on ${displayMem.lastNextFocus}. Ready for a 5-minute chat?`
-                  : "Let's have a fun 5-minute talk. Amy will chat and help you say words clearly!"}
+                {trialExpired
+                  ? "Upgrade to Premium to keep talking with Amy — 10 minutes of live practice every day."
+                  : welcomeBack && displayMem.lastNextFocus
+                    ? `Last time we said we'd work on ${displayMem.lastNextFocus}. Ready for a ${minutesLabel}-minute chat?`
+                    : `Let's have a fun ${minutesLabel}-minute talk. Amy will chat and help you say words clearly!`}
               </p>
+              {!trialExpired && isPremium ? (
+                <p className="text-xs font-black uppercase tracking-wider text-amber-200/80">
+                  Premium · {minutesLabel} minutes a day
+                </p>
+              ) : null}
+              {!trialExpired && !isPremium ? (
+                <p className="text-xs font-black uppercase tracking-wider text-cyan-200/70">
+                  Free trial · {minutesLabel} minutes a day
+                </p>
+              ) : null}
             </div>
           )}
 
@@ -688,10 +748,25 @@ function ConversationCoach({ child }: { child: AnyChild }) {
 
           {phase === "ended" && (
             <div className="space-y-3 text-center">
-              {endedReason === "budget" ? <Star className="mx-auto h-10 w-10 fill-yellow-300 text-yellow-300" /> : <Trophy className="mx-auto h-10 w-10 fill-yellow-300 text-yellow-300" />}
+              {endedReason === "trial" ? (
+                <Sparkles className="mx-auto h-10 w-10 text-fuchsia-300" />
+              ) : endedReason === "budget" ? (
+                <Star className="mx-auto h-10 w-10 fill-yellow-300 text-yellow-300" />
+              ) : (
+                <Trophy className="mx-auto h-10 w-10 fill-yellow-300 text-yellow-300" />
+              )}
               <p className="font-quicksand text-2xl font-black">
-                {endedReason === "budget" ? "Time's up for today!" : "Great session!"}
+                {endedReason === "trial"
+                  ? "Free trial ended"
+                  : endedReason === "budget"
+                    ? "Time's up for today!"
+                    : "Great session!"}
               </p>
+              {endedReason === "trial" ? (
+                <p className="text-sm text-white/75">
+                  Upgrade to Premium for 10 minutes of live talk with Amy every day.
+                </p>
+              ) : null}
               {report?.summary && <p className="text-sm text-white/75">{report.summary}</p>}
               {report?.focusWords?.length ? (
                 <div className="flex flex-wrap justify-center gap-2 pt-1">
@@ -724,15 +799,27 @@ function ConversationCoach({ child }: { child: AnyChild }) {
 
           {phase === "idle" && (
             <div className="flex justify-center">
-              <Button
-                type="button"
-                size="lg"
-                className="h-16 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-400 px-10 text-base font-black text-white shadow-[0_0_40px_rgba(34,211,238,0.35)]"
-                onClick={start}
-              >
-                <Sparkles className="h-5 w-5" />
-                Start Talking
-              </Button>
+              {trialExpired ? (
+                <Button
+                  type="button"
+                  size="lg"
+                  className="h-16 rounded-full bg-gradient-to-r from-amber-400 to-fuchsia-500 px-10 text-base font-black text-white shadow-[0_0_40px_rgba(217,70,239,0.4)]"
+                  onClick={goPremium}
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Upgrade to Premium
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  size="lg"
+                  className="h-16 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-400 px-10 text-base font-black text-white shadow-[0_0_40px_rgba(34,211,238,0.35)]"
+                  onClick={start}
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Start Talking
+                </Button>
+              )}
             </div>
           )}
 
@@ -767,7 +854,17 @@ function ConversationCoach({ child }: { child: AnyChild }) {
 
           {phase === "ended" && (
             <div className="flex justify-center gap-3">
-              {endedReason !== "budget" && remaining > CLOSING_AT ? (
+              {endedReason === "trial" ? (
+                <Button
+                  type="button"
+                  className="rounded-full bg-gradient-to-r from-amber-400 to-fuchsia-500 font-black text-white hover:opacity-90"
+                  onClick={goPremium}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Upgrade
+                </Button>
+              ) : null}
+              {endedReason !== "budget" && endedReason !== "trial" && remaining > CLOSING_AT ? (
                 <Button type="button" className="rounded-full bg-white text-slate-950 hover:bg-white/90" onClick={start}>
                   <Volume2 className="h-4 w-4" />
                   Talk Again

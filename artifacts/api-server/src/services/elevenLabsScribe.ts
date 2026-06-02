@@ -1,8 +1,8 @@
 import { getElevenLabsApiKey, isElevenLabsFallbackEnabled } from "../lib/env";
 import { logger } from "../lib/logger";
 
-/** Scribe v1 — ElevenLabs speech-to-text model (per product request). */
-export const ELEVEN_SCRIBE_MODEL_ID = "scribe_v1";
+/** Scribe v2 — ElevenLabs' latest, most accurate batch speech-to-text model. */
+export const ELEVEN_SCRIBE_MODEL_ID = "scribe_v2";
 
 /** Hard cap so transcription never blocks the AI worker indefinitely. */
 const SCRIBE_TIMEOUT_MS = 20_000;
@@ -12,7 +12,7 @@ export function isElevenLabsScribeEnabled(): boolean {
 }
 
 /**
- * Transcribe a short audio clip with ElevenLabs Scribe v1.
+ * Transcribe a short audio clip with ElevenLabs Scribe v2.
  *
  * Used only by the live "Talk with Amy" conversation coach. All other speech
  * features stay on Whisper. Returns the plain transcript, or throws so the

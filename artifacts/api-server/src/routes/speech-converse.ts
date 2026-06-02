@@ -9,7 +9,9 @@ import { submitAiJobAndRespond } from "../lib/ai-queue-http.js";
 import type { OpenAiChatPayload } from "../services/ai-job-handlers.js";
 import {
   getFeatureUsage,
+  getOrCreateSubscription,
   incrementFeatureUsage,
+  isPremiumNow,
   nextResetAtFor,
 } from "../services/subscriptionService.js";
 import {
@@ -48,11 +50,48 @@ const router: IRouter = Router();
 
 const MODEL = "gpt-4o-mini";
 
-/** Per-user per-day live conversation cap (seconds). 5 minutes = one session. */
+/** Free-tier per-day live conversation cap (seconds). 5 minutes = one session. */
 export const LIVE_CONVERSATION_DAILY_SECONDS = 300;
+
+/** Premium per-day live conversation cap (seconds). 10 minutes. */
+export const PREMIUM_CONVERSATION_DAILY_SECONDS = 600;
+
+/** Free users may use Talk with Amy for this many days, then must upgrade. */
+const FREE_TRIAL_DAYS = 3;
 
 /** Max seconds a single turn may charge — defends against inflated client deltas. */
 const MAX_TURN_SECONDS = 90;
+
+/**
+ * Resolve a user's live-talk budget:
+ *   - Premium → 10 min/day.
+ *   - Free → 5 min/day, but only during the first {FREE_TRIAL_DAYS} days; after
+ *     that the trial is expired and they must upgrade.
+ */
+async function resolveConversationBudget(userId: string): Promise<{
+  dailyBudget: number;
+  isPremium: boolean;
+  trialExpired: boolean;
+  trialDaysLeft: number;
+}> {
+  const sub = await getOrCreateSubscription(userId);
+  if (isPremiumNow(sub)) {
+    return {
+      dailyBudget: PREMIUM_CONVERSATION_DAILY_SECONDS,
+      isPremium: true,
+      trialExpired: false,
+      trialDaysLeft: 0,
+    };
+  }
+  const createdMs = sub.createdAt?.getTime() ?? Date.now();
+  const daysUsed = (Date.now() - createdMs) / 86_400_000;
+  return {
+    dailyBudget: LIVE_CONVERSATION_DAILY_SECONDS,
+    isPremium: false,
+    trialExpired: daysUsed > FREE_TRIAL_DAYS,
+    trialDaysLeft: Math.max(0, Math.ceil(FREE_TRIAL_DAYS - daysUsed)),
+  };
+}
 
 const AGE_BANDS = ["2-4", "5-7", "8-10"] as const;
 type AgeBand = (typeof AGE_BANDS)[number];
@@ -307,16 +346,37 @@ router.post("/speech/converse", async (req, res): Promise<void> => {
   }
   const effectiveMemory = mergeMemory(buildPromptMemory(serverMemoryRow), body.memory);
 
-  // ── Cost guard: daily TIME budget (applies to everyone) ─────────────────
+  // ── Cost guard: premium 10 min/day, free 5 min/day during a 3-day trial ──
+  const { dailyBudget, isPremium, trialExpired, trialDaysLeft } =
+    await resolveConversationBudget(userId);
+
+  if (trialExpired) {
+    res.status(402).json({
+      error: "trial_expired",
+      feature: "speech_conversation_seconds",
+      message:
+        "Your 3-day free trial of Talk with Amy has ended. Upgrade to Premium for 10 minutes of live talk every day!",
+      limitSeconds: dailyBudget,
+      usedSeconds: 0,
+      remainingSeconds: 0,
+      isPremium: false,
+      trialExpired: true,
+      resetsAt: null,
+    });
+    return;
+  }
+
   const usedBefore = await getFeatureUsage(userId, "speech_conversation_seconds");
-  if (usedBefore >= LIVE_CONVERSATION_DAILY_SECONDS) {
+  if (usedBefore >= dailyBudget) {
     res.status(402).json({
       error: "conversation_limit_reached",
       feature: "speech_conversation_seconds",
       message: "Today's live talk time is used up. Come back tomorrow for more!",
-      limitSeconds: LIVE_CONVERSATION_DAILY_SECONDS,
+      limitSeconds: dailyBudget,
       usedSeconds: usedBefore,
       remainingSeconds: 0,
+      isPremium,
+      trialDaysLeft,
       resetsAt: nextResetAtFor("speech_conversation_seconds"),
     });
     return;
@@ -330,7 +390,7 @@ router.post("/speech/converse", async (req, res): Promise<void> => {
       () => usedBefore + charge,
     );
   }
-  const remainingSeconds = Math.max(0, LIVE_CONVERSATION_DAILY_SECONDS - usedAfter);
+  const remainingSeconds = Math.max(0, dailyBudget - usedAfter);
   const resetsAt = nextResetAtFor("speech_conversation_seconds");
 
   const historyMessages = (body.history ?? []).slice(-8).map((h) => ({
@@ -380,7 +440,8 @@ router.post("/speech/converse", async (req, res): Promise<void> => {
       reply: guardReply(reply),
       phase,
       ageBand,
-      limitSeconds: LIVE_CONVERSATION_DAILY_SECONDS,
+      limitSeconds: dailyBudget,
+      isPremium,
       usedSeconds: usedAfter,
       remainingSeconds,
       resetsAt,
@@ -402,7 +463,8 @@ router.post("/speech/converse", async (req, res): Promise<void> => {
       legacyPollUrl: `/api/ai/jobs/${jobId}`,
       phase,
       ageBand,
-      limitSeconds: LIVE_CONVERSATION_DAILY_SECONDS,
+      limitSeconds: dailyBudget,
+      isPremium,
       usedSeconds: usedAfter,
       remainingSeconds,
       resetsAt,
@@ -429,10 +491,15 @@ router.get("/speech/converse/memory", async (req, res): Promise<void> => {
     return;
   }
   const row = await loadConversationMemory(userId, childId).catch(() => null);
+  const { dailyBudget, isPremium, trialExpired, trialDaysLeft } =
+    await resolveConversationBudget(userId);
   res.json({
     memory: buildPromptMemory(row),
     childName: child.name ?? null,
-    limitSeconds: LIVE_CONVERSATION_DAILY_SECONDS,
+    limitSeconds: dailyBudget,
+    isPremium,
+    trialExpired,
+    trialDaysLeft,
   });
 });
 
