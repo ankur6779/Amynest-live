@@ -17,7 +17,8 @@ export type AuthFetchFn = (
 
 export function isSetupComplete(data: SetupStatus | undefined): boolean {
   if (!data) return false;
-  return data.onboardingComplete || data.profileComplete;
+  // profileComplete (has child) is informational; only the onboarding flag gates app entry.
+  return data.onboardingComplete === true;
 }
 
 const ONBOARDING_COMPLETE_SESSION_KEY = "amynest_onboarding_complete_v1";

@@ -157,7 +157,7 @@ export function mergeSetupStatusPreferComplete(
 
 function isSetupComplete(data: SetupStatus | undefined): boolean {
   if (!data) return false;
-  return data.onboardingComplete || data.profileComplete;
+  return data.onboardingComplete === true;
 }
 
 async function readJsonBody(res: Response): Promise<Record<string, unknown>> {
@@ -171,10 +171,6 @@ async function readJsonBody(res: Response): Promise<Record<string, unknown>> {
 
 function isFallbackBody(body: Record<string, unknown>): boolean {
   return body.fallback === true;
-}
-
-function isServerComplete(body: Record<string, unknown>): boolean {
-  return body.onboardingComplete === true || body.profileComplete === true;
 }
 
 /** Finish idempotency — only skip writes when the server flag is set, not when a lone child row exists. */
@@ -363,7 +359,7 @@ export async function runOnboardingFinishTransaction(
     const verified =
       verifyRes.ok &&
       !isFallbackBody(verifyBody) &&
-      isServerComplete(verifyBody);
+      isServerOnboardingComplete(verifyBody);
 
     if (!verified) {
       const childrenRes = await authFetch("/api/children");
