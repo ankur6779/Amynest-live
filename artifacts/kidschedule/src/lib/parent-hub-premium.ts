@@ -398,6 +398,16 @@ const HUB_FEATURE_TILE_ACCENTS: Record<string, HubAccentTheme> = {
     189,
     248,
   ),
+  "discovery-worlds": makeTheme(
+    "border-[1.5px] border-[rgba(139,92,246,0.50)]",
+    "bg-gradient-to-b from-indigo-400 via-violet-500 to-fuchsia-500",
+    "shadow-[0_0_14px_rgba(139,92,246,0.45)]",
+    "border-[rgba(139,92,246,0.40)]",
+    "shadow-[0_0_14px_rgba(139,92,246,0.32)]",
+    139,
+    92,
+    246,
+  ),
   "spelling-mastery": makeTheme(
     "border-[1.5px] border-[rgba(52,211,153,0.50)]",
     "bg-gradient-to-b from-emerald-400 via-green-400 to-teal-500",

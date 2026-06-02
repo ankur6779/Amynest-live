@@ -12,6 +12,7 @@ import { discoveryWorldAudioManager } from "@/lib/discovery-world-audio-manager"
 import { trackDiscoveryWorldsEvent } from "@/lib/discovery-worlds-telemetry";
 import type { DiscoveryWorldRuntimeConfig } from "@/lib/discovery-world-config";
 import { applyDiscoverySessionEngagement } from "@/lib/discovery-worlds-engagement";
+import { worldItemVisualPaths } from "@/lib/world-visual-assets";
 import { WorldHeroImage } from "./world-hero-image";
 import { DelightBurst } from "./delight-burst";
 
@@ -90,11 +91,9 @@ export function PlatformDiscoveryMode({ config, childId }: PlatformDiscoveryMode
     return () => window.clearTimeout(timer);
   }, [item, childId, index, phase, speed, advanceSlide, config]);
 
-  const heroSrc = item?.heroRealGcsPath
-    ? config.resolveAssetUrl(item.heroRealGcsPath)
-    : item?.imageGcsPath
-      ? config.resolveAssetUrl(item.imageGcsPath)
-      : undefined;
+  const heroSrc = item
+    ? worldItemVisualPaths(item, config.resolveAssetUrl).hero
+    : undefined;
 
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-6">

@@ -1,6 +1,6 @@
 # Discovery Worlds — Final Premiumization Sprint
 
-**Status:** In progress  
+**Status:** Product completion phase (Tasks 1–5)  
 **Constraints:** No new worlds, no route renames, no `WorldProgressV2` schema changes, Animal World keys untouched.
 
 ## Quality bar
@@ -127,6 +127,18 @@ Fire existing `discovery_worlds:{worldId}:*` events; add:
 - `world_offline_warm_complete`
 
 ---
+
+## Product completion (Tasks 1–5) — shipped
+
+| Task | Deliverable |
+|------|-------------|
+| 1 Parent Hub | `DiscoveryWorldsHubLaunchCard` in Stories — progress %, worlds/stickers/achievements, streak |
+| 2 Content | `scripts/generate-discovery-worlds-catalog.ts` — 27 vehicles, 20×3 other worlds |
+| 3 Unified parent | `UnifiedParentDashboard` on `/discovery-worlds` — all 5 worlds aggregated |
+| 4 Visual assets | `world-visual-assets.ts` — hero/card/thumbnail paths; image cards in explore & stickers |
+| 5 Performance | Fixed image dimensions, hero preload, audio in-flight dedupe, `pnpm run report:discovery-worlds` |
+
+**Ops next:** Upload `hero.webp`, `thumbnail.webp`, `card.webp` per item to GCS; run `pnpm run generate:discovery-worlds-audio`.
 
 ## Definition of done
 

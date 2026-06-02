@@ -2,12 +2,36 @@
   "version": 1,
   "worldId": "vehicle_world",
   "categories": [
-    { "id": "road", "label": "Road", "emoji": "🛣️" },
-    { "id": "construction", "label": "Construction", "emoji": "🚧" },
-    { "id": "emergency", "label": "Emergency", "emoji": "🚨" },
-    { "id": "air", "label": "Air", "emoji": "✈️" },
-    { "id": "water", "label": "Water", "emoji": "⛵" },
-    { "id": "space", "label": "Space", "emoji": "🚀" }
+    {
+      "id": "road",
+      "label": "Road",
+      "emoji": "🛣️"
+    },
+    {
+      "id": "construction",
+      "label": "Construction",
+      "emoji": "🚧"
+    },
+    {
+      "id": "emergency",
+      "label": "Emergency",
+      "emoji": "🚨"
+    },
+    {
+      "id": "air",
+      "label": "Air",
+      "emoji": "✈️"
+    },
+    {
+      "id": "water",
+      "label": "Water",
+      "emoji": "⛵"
+    },
+    {
+      "id": "space",
+      "label": "Space",
+      "emoji": "🚀"
+    }
   ],
   "items": [
     {
@@ -16,36 +40,202 @@
       "category": "road",
       "emoji": "🚗",
       "imageGcsPath": "worlds/vehicles/road/car/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/road/car/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/road/car/card.webp",
       "funFact": "Cars have four wheels and an engine.",
       "quizSoundId": "engine-01",
       "quizPrompt": "Vroom",
       "narration": {
-        "intro": "This is a car.",
+        "intro": "This is car.",
         "introGcsPath": "worlds/vehicles/road/car/narration-intro.mp3",
-        "soundCue": "This car goes vroom.",
+        "soundCue": "Listen to car.",
         "soundCueGcsPath": "worlds/vehicles/road/car/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "engine-01", "label": "Engine", "gcsPath": "worlds/vehicles/road/car/engine-01.mp3", "durationSec": 1.2, "waveform": [0.3, 0.7, 0.8, 0.5] },
-        { "id": "horn-01", "label": "Horn", "gcsPath": "worlds/vehicles/road/car/horn-01.mp3", "durationSec": 0.8, "waveform": [0.5, 0.9, 0.6, 0.3] }
+        {
+          "id": "engine-01",
+          "label": "Engine",
+          "gcsPath": "worlds/vehicles/road/car/engine-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        },
+        {
+          "id": "horn-01",
+          "label": "Horn",
+          "gcsPath": "worlds/vehicles/road/car/horn-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
       ]
     },
     {
-      "id": "fire-truck",
-      "name": "Fire Truck",
-      "category": "emergency",
-      "emoji": "🚒",
-      "imageGcsPath": "worlds/vehicles/emergency/fire-truck/hero.webp",
-      "quizSoundId": "siren-01",
-      "quizPrompt": "Neeno neeno",
+      "id": "bus",
+      "name": "School Bus",
+      "category": "road",
+      "emoji": "🚌",
+      "imageGcsPath": "worlds/vehicles/road/bus/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/road/bus/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/road/bus/card.webp",
+      "funFact": "Buses carry many passengers at once.",
+      "quizSoundId": "bus-01",
+      "quizPrompt": "Beep beep",
       "narration": {
-        "intro": "This is a fire truck.",
-        "introGcsPath": "worlds/vehicles/emergency/fire-truck/narration-intro.mp3",
-        "soundCue": "The fire truck siren wails.",
-        "soundCueGcsPath": "worlds/vehicles/emergency/fire-truck/narration-sound.mp3"
+        "intro": "This is school bus.",
+        "introGcsPath": "worlds/vehicles/road/bus/narration-intro.mp3",
+        "soundCue": "Listen to school bus.",
+        "soundCueGcsPath": "worlds/vehicles/road/bus/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "siren-01", "label": "Siren", "gcsPath": "worlds/vehicles/emergency/fire-truck/siren-01.mp3", "durationSec": 1.5, "waveform": [0.4, 0.8, 0.9, 0.7] }
+        {
+          "id": "bus-01",
+          "label": "Bus horn",
+          "gcsPath": "worlds/vehicles/road/bus/bus-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "truck",
+      "name": "Truck",
+      "category": "road",
+      "emoji": "🚚",
+      "imageGcsPath": "worlds/vehicles/road/truck/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/road/truck/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/road/truck/card.webp",
+      "funFact": "Trucks move heavy loads on big wheels.",
+      "quizSoundId": "truck-01",
+      "quizPrompt": "Rumble",
+      "narration": {
+        "intro": "This is truck.",
+        "introGcsPath": "worlds/vehicles/road/truck/narration-intro.mp3",
+        "soundCue": "Listen to truck.",
+        "soundCueGcsPath": "worlds/vehicles/road/truck/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "truck-01",
+          "label": "Engine",
+          "gcsPath": "worlds/vehicles/road/truck/truck-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "motorcycle",
+      "name": "Motorcycle",
+      "category": "road",
+      "emoji": "🏍️",
+      "imageGcsPath": "worlds/vehicles/road/motorcycle/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/road/motorcycle/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/road/motorcycle/card.webp",
+      "funFact": "Motorcycles have two wheels and go fast.",
+      "quizSoundId": "bike-01",
+      "quizPrompt": "Vroom",
+      "narration": {
+        "intro": "This is motorcycle.",
+        "introGcsPath": "worlds/vehicles/road/motorcycle/narration-intro.mp3",
+        "soundCue": "Listen to motorcycle.",
+        "soundCueGcsPath": "worlds/vehicles/road/motorcycle/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "bike-01",
+          "label": "Rev",
+          "gcsPath": "worlds/vehicles/road/motorcycle/bike-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bicycle",
+      "name": "Bicycle",
+      "category": "road",
+      "emoji": "🚲",
+      "imageGcsPath": "worlds/vehicles/road/bicycle/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/road/bicycle/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/road/bicycle/card.webp",
+      "funFact": "Bicycles are powered by pedaling.",
+      "quizSoundId": "bell-01",
+      "quizPrompt": "Ring",
+      "narration": {
+        "intro": "This is bicycle.",
+        "introGcsPath": "worlds/vehicles/road/bicycle/narration-intro.mp3",
+        "soundCue": "Listen to bicycle.",
+        "soundCueGcsPath": "worlds/vehicles/road/bicycle/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "bell-01",
+          "label": "Bell",
+          "gcsPath": "worlds/vehicles/road/bicycle/bell-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "taxi",
+      "name": "Taxi",
+      "category": "road",
+      "emoji": "🚕",
+      "imageGcsPath": "worlds/vehicles/road/taxi/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/road/taxi/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/road/taxi/card.webp",
+      "funFact": "Taxis take people where they need to go.",
+      "quizSoundId": "taxi-01",
+      "quizPrompt": "Honk",
+      "narration": {
+        "intro": "This is taxi.",
+        "introGcsPath": "worlds/vehicles/road/taxi/narration-intro.mp3",
+        "soundCue": "Listen to taxi.",
+        "soundCueGcsPath": "worlds/vehicles/road/taxi/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "taxi-01",
+          "label": "Horn",
+          "gcsPath": "worlds/vehicles/road/taxi/taxi-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
       ]
     },
     {
@@ -54,16 +244,606 @@
       "category": "road",
       "emoji": "🚂",
       "imageGcsPath": "worlds/vehicles/road/train/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/road/train/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/road/train/card.webp",
+      "funFact": "Trains ride on long metal tracks.",
       "quizSoundId": "whistle-01",
       "quizPrompt": "Choo choo",
       "narration": {
-        "intro": "This is a train.",
+        "intro": "This is train.",
         "introGcsPath": "worlds/vehicles/road/train/narration-intro.mp3",
-        "soundCue": "The train says choo choo.",
+        "soundCue": "Listen to train.",
         "soundCueGcsPath": "worlds/vehicles/road/train/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "whistle-01", "label": "Whistle", "gcsPath": "worlds/vehicles/road/train/whistle-01.mp3", "durationSec": 1.3, "waveform": [0.3, 0.6, 0.9, 0.5] }
+        {
+          "id": "whistle-01",
+          "label": "Whistle",
+          "gcsPath": "worlds/vehicles/road/train/whistle-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tram",
+      "name": "Tram",
+      "category": "road",
+      "emoji": "🚊",
+      "imageGcsPath": "worlds/vehicles/road/tram/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/road/tram/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/road/tram/card.webp",
+      "funFact": "Trams share city streets with cars.",
+      "quizSoundId": "tram-01",
+      "quizPrompt": "Ding",
+      "narration": {
+        "intro": "This is tram.",
+        "introGcsPath": "worlds/vehicles/road/tram/narration-intro.mp3",
+        "soundCue": "Listen to tram.",
+        "soundCueGcsPath": "worlds/vehicles/road/tram/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "tram-01",
+          "label": "Bell",
+          "gcsPath": "worlds/vehicles/road/tram/tram-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "skateboard",
+      "name": "Skateboard",
+      "category": "road",
+      "emoji": "🛹",
+      "imageGcsPath": "worlds/vehicles/road/skateboard/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/road/skateboard/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/road/skateboard/card.webp",
+      "funFact": "Skateboards roll on four small wheels.",
+      "quizSoundId": "roll-01",
+      "quizPrompt": "Roll",
+      "narration": {
+        "intro": "This is skateboard.",
+        "introGcsPath": "worlds/vehicles/road/skateboard/narration-intro.mp3",
+        "soundCue": "Listen to skateboard.",
+        "soundCueGcsPath": "worlds/vehicles/road/skateboard/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "roll-01",
+          "label": "Wheels",
+          "gcsPath": "worlds/vehicles/road/skateboard/roll-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ambulance",
+      "name": "Ambulance",
+      "category": "emergency",
+      "emoji": "🚑",
+      "imageGcsPath": "worlds/vehicles/emergency/ambulance/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/emergency/ambulance/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/emergency/ambulance/card.webp",
+      "funFact": "Ambulances help people quickly.",
+      "quizSoundId": "siren-01",
+      "quizPrompt": "Wee oo",
+      "narration": {
+        "intro": "This is ambulance.",
+        "introGcsPath": "worlds/vehicles/emergency/ambulance/narration-intro.mp3",
+        "soundCue": "Listen to ambulance.",
+        "soundCueGcsPath": "worlds/vehicles/emergency/ambulance/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "siren-01",
+          "label": "Siren",
+          "gcsPath": "worlds/vehicles/emergency/ambulance/siren-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "police-car",
+      "name": "Police Car",
+      "category": "emergency",
+      "emoji": "🚓",
+      "imageGcsPath": "worlds/vehicles/emergency/police-car/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/emergency/police-car/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/emergency/police-car/card.webp",
+      "funFact": "Police cars keep neighborhoods safe.",
+      "quizSoundId": "police-01",
+      "quizPrompt": "Wee oo",
+      "narration": {
+        "intro": "This is police car.",
+        "introGcsPath": "worlds/vehicles/emergency/police-car/narration-intro.mp3",
+        "soundCue": "Listen to police car.",
+        "soundCueGcsPath": "worlds/vehicles/emergency/police-car/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "police-01",
+          "label": "Siren",
+          "gcsPath": "worlds/vehicles/emergency/police-car/police-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fire-truck",
+      "name": "Fire Truck",
+      "category": "emergency",
+      "emoji": "🚒",
+      "imageGcsPath": "worlds/vehicles/emergency/fire-truck/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/emergency/fire-truck/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/emergency/fire-truck/card.webp",
+      "funFact": "Fire trucks carry ladders and hoses.",
+      "quizSoundId": "fire-01",
+      "quizPrompt": "Neeno",
+      "narration": {
+        "intro": "This is fire truck.",
+        "introGcsPath": "worlds/vehicles/emergency/fire-truck/narration-intro.mp3",
+        "soundCue": "Listen to fire truck.",
+        "soundCueGcsPath": "worlds/vehicles/emergency/fire-truck/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "fire-01",
+          "label": "Siren",
+          "gcsPath": "worlds/vehicles/emergency/fire-truck/fire-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bulldozer",
+      "name": "Bulldozer",
+      "category": "construction",
+      "emoji": "🚜",
+      "imageGcsPath": "worlds/vehicles/construction/bulldozer/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/construction/bulldozer/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/construction/bulldozer/card.webp",
+      "funFact": "Bulldozers push dirt and rocks.",
+      "quizSoundId": "dozer-01",
+      "quizPrompt": "Rrr",
+      "narration": {
+        "intro": "This is bulldozer.",
+        "introGcsPath": "worlds/vehicles/construction/bulldozer/narration-intro.mp3",
+        "soundCue": "Listen to bulldozer.",
+        "soundCueGcsPath": "worlds/vehicles/construction/bulldozer/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "dozer-01",
+          "label": "Engine",
+          "gcsPath": "worlds/vehicles/construction/bulldozer/dozer-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "excavator",
+      "name": "Excavator",
+      "category": "construction",
+      "emoji": "🏗️",
+      "imageGcsPath": "worlds/vehicles/construction/excavator/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/construction/excavator/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/construction/excavator/card.webp",
+      "funFact": "Excavators dig with a long arm.",
+      "quizSoundId": "dig-01",
+      "quizPrompt": "Clank",
+      "narration": {
+        "intro": "This is excavator.",
+        "introGcsPath": "worlds/vehicles/construction/excavator/narration-intro.mp3",
+        "soundCue": "Listen to excavator.",
+        "soundCueGcsPath": "worlds/vehicles/construction/excavator/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "dig-01",
+          "label": "Digging",
+          "gcsPath": "worlds/vehicles/construction/excavator/dig-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crane",
+      "name": "Crane",
+      "category": "construction",
+      "emoji": "🏗️",
+      "imageGcsPath": "worlds/vehicles/construction/crane/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/construction/crane/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/construction/crane/card.webp",
+      "funFact": "Cranes lift heavy things high up.",
+      "quizSoundId": "crane-01",
+      "quizPrompt": "Whirr",
+      "narration": {
+        "intro": "This is crane.",
+        "introGcsPath": "worlds/vehicles/construction/crane/narration-intro.mp3",
+        "soundCue": "Listen to crane.",
+        "soundCueGcsPath": "worlds/vehicles/construction/crane/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "crane-01",
+          "label": "Motor",
+          "gcsPath": "worlds/vehicles/construction/crane/crane-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cement-mixer",
+      "name": "Cement Mixer",
+      "category": "construction",
+      "emoji": "🚧",
+      "imageGcsPath": "worlds/vehicles/construction/cement-mixer/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/construction/cement-mixer/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/construction/cement-mixer/card.webp",
+      "funFact": "Mixers spin wet cement in a drum.",
+      "quizSoundId": "mix-01",
+      "quizPrompt": "Spin",
+      "narration": {
+        "intro": "This is cement mixer.",
+        "introGcsPath": "worlds/vehicles/construction/cement-mixer/narration-intro.mp3",
+        "soundCue": "Listen to cement mixer.",
+        "soundCueGcsPath": "worlds/vehicles/construction/cement-mixer/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "mix-01",
+          "label": "Mixer",
+          "gcsPath": "worlds/vehicles/construction/cement-mixer/mix-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dump-truck",
+      "name": "Dump Truck",
+      "category": "construction",
+      "emoji": "🚛",
+      "imageGcsPath": "worlds/vehicles/construction/dump-truck/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/construction/dump-truck/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/construction/dump-truck/card.webp",
+      "funFact": "Dump trucks tip loads out the back.",
+      "quizSoundId": "dump-01",
+      "quizPrompt": "Beep",
+      "narration": {
+        "intro": "This is dump truck.",
+        "introGcsPath": "worlds/vehicles/construction/dump-truck/narration-intro.mp3",
+        "soundCue": "Listen to dump truck.",
+        "soundCueGcsPath": "worlds/vehicles/construction/dump-truck/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "dump-01",
+          "label": "Backup beep",
+          "gcsPath": "worlds/vehicles/construction/dump-truck/dump-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "airplane",
+      "name": "Airplane",
+      "category": "air",
+      "emoji": "✈️",
+      "imageGcsPath": "worlds/vehicles/air/airplane/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/air/airplane/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/air/airplane/card.webp",
+      "funFact": "Airplanes fly high above the clouds.",
+      "quizSoundId": "plane-01",
+      "quizPrompt": "Whoosh",
+      "narration": {
+        "intro": "This is airplane.",
+        "introGcsPath": "worlds/vehicles/air/airplane/narration-intro.mp3",
+        "soundCue": "Listen to airplane.",
+        "soundCueGcsPath": "worlds/vehicles/air/airplane/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "plane-01",
+          "label": "Jet",
+          "gcsPath": "worlds/vehicles/air/airplane/plane-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "helicopter",
+      "name": "Helicopter",
+      "category": "air",
+      "emoji": "🚁",
+      "imageGcsPath": "worlds/vehicles/air/helicopter/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/air/helicopter/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/air/helicopter/card.webp",
+      "funFact": "Helicopters spin blades on top.",
+      "quizSoundId": "chopper-01",
+      "quizPrompt": "Thump",
+      "narration": {
+        "intro": "This is helicopter.",
+        "introGcsPath": "worlds/vehicles/air/helicopter/narration-intro.mp3",
+        "soundCue": "Listen to helicopter.",
+        "soundCueGcsPath": "worlds/vehicles/air/helicopter/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "chopper-01",
+          "label": "Rotors",
+          "gcsPath": "worlds/vehicles/air/helicopter/chopper-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hot-air-balloon",
+      "name": "Hot Air Balloon",
+      "category": "air",
+      "emoji": "🎈",
+      "imageGcsPath": "worlds/vehicles/air/hot-air-balloon/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/air/hot-air-balloon/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/air/hot-air-balloon/card.webp",
+      "funFact": "Balloons float with hot air inside.",
+      "quizSoundId": "burner-01",
+      "quizPrompt": "Whoosh",
+      "narration": {
+        "intro": "This is hot air balloon.",
+        "introGcsPath": "worlds/vehicles/air/hot-air-balloon/narration-intro.mp3",
+        "soundCue": "Listen to hot air balloon.",
+        "soundCueGcsPath": "worlds/vehicles/air/hot-air-balloon/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "burner-01",
+          "label": "Burner",
+          "gcsPath": "worlds/vehicles/air/hot-air-balloon/burner-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jet",
+      "name": "Jet",
+      "category": "air",
+      "emoji": "🛩️",
+      "imageGcsPath": "worlds/vehicles/air/jet/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/air/jet/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/air/jet/card.webp",
+      "funFact": "Jets are very fast airplanes.",
+      "quizSoundId": "jet-01",
+      "quizPrompt": "Zoom",
+      "narration": {
+        "intro": "This is jet.",
+        "introGcsPath": "worlds/vehicles/air/jet/narration-intro.mp3",
+        "soundCue": "Listen to jet.",
+        "soundCueGcsPath": "worlds/vehicles/air/jet/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "jet-01",
+          "label": "Afterburner",
+          "gcsPath": "worlds/vehicles/air/jet/jet-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "boat",
+      "name": "Motorboat",
+      "category": "water",
+      "emoji": "🚤",
+      "imageGcsPath": "worlds/vehicles/water/boat/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/water/boat/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/water/boat/card.webp",
+      "funFact": "Boats glide across lakes and rivers.",
+      "quizSoundId": "boat-01",
+      "quizPrompt": "Splash",
+      "narration": {
+        "intro": "This is motorboat.",
+        "introGcsPath": "worlds/vehicles/water/boat/narration-intro.mp3",
+        "soundCue": "Listen to motorboat.",
+        "soundCueGcsPath": "worlds/vehicles/water/boat/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "boat-01",
+          "label": "Motor",
+          "gcsPath": "worlds/vehicles/water/boat/boat-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ship",
+      "name": "Ship",
+      "category": "water",
+      "emoji": "🚢",
+      "imageGcsPath": "worlds/vehicles/water/ship/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/water/ship/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/water/ship/card.webp",
+      "funFact": "Ships sail across the ocean.",
+      "quizSoundId": "ship-01",
+      "quizPrompt": "Horn",
+      "narration": {
+        "intro": "This is ship.",
+        "introGcsPath": "worlds/vehicles/water/ship/narration-intro.mp3",
+        "soundCue": "Listen to ship.",
+        "soundCueGcsPath": "worlds/vehicles/water/ship/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "ship-01",
+          "label": "Horn",
+          "gcsPath": "worlds/vehicles/water/ship/ship-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "submarine",
+      "name": "Submarine",
+      "category": "water",
+      "emoji": "🔱",
+      "imageGcsPath": "worlds/vehicles/water/submarine/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/water/submarine/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/water/submarine/card.webp",
+      "funFact": "Submarines travel under the water.",
+      "quizSoundId": "sonar-01",
+      "quizPrompt": "Ping",
+      "narration": {
+        "intro": "This is submarine.",
+        "introGcsPath": "worlds/vehicles/water/submarine/narration-intro.mp3",
+        "soundCue": "Listen to submarine.",
+        "soundCueGcsPath": "worlds/vehicles/water/submarine/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "sonar-01",
+          "label": "Sonar",
+          "gcsPath": "worlds/vehicles/water/submarine/sonar-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sailboat",
+      "name": "Sailboat",
+      "category": "water",
+      "emoji": "⛵",
+      "imageGcsPath": "worlds/vehicles/water/sailboat/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/water/sailboat/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/water/sailboat/card.webp",
+      "funFact": "Wind pushes sailboats across water.",
+      "quizSoundId": "wind-01",
+      "quizPrompt": "Flap",
+      "narration": {
+        "intro": "This is sailboat.",
+        "introGcsPath": "worlds/vehicles/water/sailboat/narration-intro.mp3",
+        "soundCue": "Listen to sailboat.",
+        "soundCueGcsPath": "worlds/vehicles/water/sailboat/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "wind-01",
+          "label": "Sails",
+          "gcsPath": "worlds/vehicles/water/sailboat/wind-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.4
+          ]
+        }
       ]
     },
     {
@@ -72,16 +852,62 @@
       "category": "space",
       "emoji": "🚀",
       "imageGcsPath": "worlds/vehicles/space/rocket/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/space/rocket/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/space/rocket/card.webp",
+      "funFact": "Rockets blast off into space.",
       "quizSoundId": "launch-01",
-      "quizPrompt": "Whoosh",
+      "quizPrompt": "Blast",
       "narration": {
-        "intro": "This is a rocket.",
+        "intro": "This is rocket.",
         "introGcsPath": "worlds/vehicles/space/rocket/narration-intro.mp3",
-        "soundCue": "The rocket blasts off.",
+        "soundCue": "Listen to rocket.",
         "soundCueGcsPath": "worlds/vehicles/space/rocket/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "launch-01", "label": "Launch", "gcsPath": "worlds/vehicles/space/rocket/launch-01.mp3", "durationSec": 2.0, "waveform": [0.2, 0.5, 0.9, 0.8] }
+        {
+          "id": "launch-01",
+          "label": "Launch",
+          "gcsPath": "worlds/vehicles/space/rocket/launch-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "satellite",
+      "name": "Satellite",
+      "category": "space",
+      "emoji": "🛰️",
+      "imageGcsPath": "worlds/vehicles/space/satellite/hero.webp",
+      "heroRealGcsPath": "worlds/vehicles/space/satellite/hero.webp",
+      "heroCartoonGcsPath": "worlds/vehicles/space/satellite/card.webp",
+      "funFact": "Satellites orbit Earth far above us.",
+      "quizSoundId": "beep-01",
+      "quizPrompt": "Beep",
+      "narration": {
+        "intro": "This is satellite.",
+        "introGcsPath": "worlds/vehicles/space/satellite/narration-intro.mp3",
+        "soundCue": "Listen to satellite.",
+        "soundCueGcsPath": "worlds/vehicles/space/satellite/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "beep-01",
+          "label": "Signal",
+          "gcsPath": "worlds/vehicles/space/satellite/beep-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
       ]
     }
   ]

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { SKELETON_BASE } from "@/lib/experience-system";
+import { WORLD_CARD_IMAGE_SIZE } from "@/lib/world-visual-assets";
 
 type WorldHeroImageProps = {
   src?: string;
@@ -33,8 +34,11 @@ export function WorldHeroImage({ src, emoji, alt, className }: WorldHeroImagePro
       <img
         src={src}
         alt={alt}
-        loading="lazy"
+        width={WORLD_CARD_IMAGE_SIZE.width}
+        height={WORLD_CARD_IMAGE_SIZE.height}
+        loading="eager"
         decoding="async"
+        fetchPriority="high"
         onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
         className={cn(

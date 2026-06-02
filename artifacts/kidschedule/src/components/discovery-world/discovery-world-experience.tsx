@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { WorldManifestItem } from "@workspace/world-engine";
 import { buildPlatformHearFindQuestion, gradePlatformHearFind } from "@workspace/world-engine";
+import { worldItemVisualPaths } from "@/lib/world-visual-assets";
 import { cn } from "@/lib/utils";
 import { SCREEN_SPACING } from "@/lib/experience-system";
 import type { DiscoveryWorldRuntimeConfig } from "@/lib/discovery-world-config";
@@ -87,13 +88,16 @@ export function DiscoveryWorldExperience({
   useEffect(() => {
     onEngage?.();
     discoveryWorldAudioManager.unlockFromGesture();
-    const urls = config.manifest.items
-      .slice(0, 6)
-      .flatMap((item) => {
-        const s = config.getPrimarySound(item);
-        return s ? [config.resolveAssetUrl(s.gcsPath)] : [];
-      });
-    discoveryWorldAudioManager.preloadSmart({ current: urls });
+    const preloadItems = config.manifest.items.slice(0, 8);
+    const imageUrls = preloadItems.flatMap((item) => {
+      const v = worldItemVisualPaths(item, config.resolveAssetUrl);
+      return [v.card, v.thumbnail, v.hero];
+    });
+    const soundUrls = preloadItems.flatMap((item) => {
+      const s = config.getPrimarySound(item);
+      return s ? [config.resolveAssetUrl(s.gcsPath)] : [];
+    });
+    discoveryWorldAudioManager.preloadSmart({ current: [...imageUrls, ...soundUrls] });
     trackDiscoveryWorldsEvent(config.worldId, "world_opened", { childId });
     if (needsDiscoveryOfflineRefresh(config.worldId, childId)) {
       void warmDiscoveryWorldOfflineCache({
@@ -199,7 +203,11 @@ export function DiscoveryWorldExperience({
                   rowHeight={200}
                   className="h-[min(68vh,720px)]"
                   renderItem={(item) => (
-                    <WorldItemCard item={item} onSelect={setSelected} />
+                    <WorldItemCard
+                      item={item}
+                      resolveAssetUrl={config.resolveAssetUrl}
+                      onSelect={setSelected}
+                    />
                   )}
                 />
               </div>
@@ -290,9 +298,7 @@ function WorldItemDetail({
 }) {
   const primary = config.getPrimarySound(item);
 
-  const heroSrc = item.heroRealGcsPath
-    ? config.resolveAssetUrl(item.heroRealGcsPath)
-    : config.resolveAssetUrl(item.imageGcsPath);
+  const heroSrc = worldItemVisualPaths(item, config.resolveAssetUrl).hero;
 
   const play = async (soundId: string, url: string, label: string) => {
     discoveryWorldAudioManager.unlockFromGesture();

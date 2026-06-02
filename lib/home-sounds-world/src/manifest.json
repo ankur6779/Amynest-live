@@ -2,46 +2,63 @@
   "version": 1,
   "worldId": "home_sounds_world",
   "categories": [
-    { "id": "kitchen", "label": "Kitchen", "emoji": "🍳" },
-    { "id": "living_room", "label": "Living Room", "emoji": "🛋️" },
-    { "id": "bathroom", "label": "Bathroom", "emoji": "🚿" },
-    { "id": "bedroom", "label": "Bedroom", "emoji": "🛏️" }
+    {
+      "id": "kitchen",
+      "label": "Kitchen",
+      "emoji": "🍳"
+    },
+    {
+      "id": "bathroom",
+      "label": "Bathroom",
+      "emoji": "🛁"
+    },
+    {
+      "id": "bedroom",
+      "label": "Bedroom",
+      "emoji": "🛏️"
+    },
+    {
+      "id": "living",
+      "label": "Living Room",
+      "emoji": "🛋️"
+    },
+    {
+      "id": "garage",
+      "label": "Garage & Door",
+      "emoji": "🚪"
+    }
   ],
   "items": [
     {
-      "id": "door-bell",
-      "name": "Door Bell",
-      "category": "living_room",
-      "emoji": "🔔",
-      "imageGcsPath": "worlds/home/living_room/door-bell/hero.webp",
-      "quizSoundId": "ding-01",
-      "quizPrompt": "Ding dong",
+      "id": "blender",
+      "name": "Blender",
+      "category": "kitchen",
+      "emoji": "🥤",
+      "imageGcsPath": "worlds/home/kitchen/blender/hero.webp",
+      "heroRealGcsPath": "worlds/home/kitchen/blender/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/kitchen/blender/card.webp",
+      "funFact": "Blenders mix smoothies fast.",
+      "quizSoundId": "blend-01",
+      "quizPrompt": "Whirr",
       "narration": {
-        "intro": "This is a door bell.",
-        "introGcsPath": "worlds/home/living_room/door-bell/narration-intro.mp3",
-        "soundCue": "The door bell rings.",
-        "soundCueGcsPath": "worlds/home/living_room/door-bell/narration-sound.mp3"
+        "intro": "This is blender.",
+        "introGcsPath": "worlds/home/kitchen/blender/narration-intro.mp3",
+        "soundCue": "Listen to blender.",
+        "soundCueGcsPath": "worlds/home/kitchen/blender/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "ding-01", "label": "Ding", "gcsPath": "worlds/home/living_room/door-bell/ding-01.mp3", "durationSec": 1.0, "waveform": [0.5, 0.9, 0.4, 0.2] }
-      ]
-    },
-    {
-      "id": "vacuum",
-      "name": "Vacuum Cleaner",
-      "category": "living_room",
-      "emoji": "🧹",
-      "imageGcsPath": "worlds/home/living_room/vacuum/hero.webp",
-      "quizSoundId": "vacuum-01",
-      "quizPrompt": "Vvvvv",
-      "narration": {
-        "intro": "This is a vacuum cleaner.",
-        "introGcsPath": "worlds/home/living_room/vacuum/narration-intro.mp3",
-        "soundCue": "The vacuum hums.",
-        "soundCueGcsPath": "worlds/home/living_room/vacuum/narration-sound.mp3"
-      },
-      "sounds": [
-        { "id": "vacuum-01", "label": "Vacuum", "gcsPath": "worlds/home/living_room/vacuum/vacuum-01.mp3", "durationSec": 2.5, "waveform": [0.4, 0.6, 0.7, 0.6] }
+        {
+          "id": "blend-01",
+          "label": "Blend",
+          "gcsPath": "worlds/home/kitchen/blender/blend-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
       ]
     },
     {
@@ -50,16 +67,606 @@
       "category": "kitchen",
       "emoji": "📻",
       "imageGcsPath": "worlds/home/kitchen/microwave/hero.webp",
-      "quizSoundId": "beep-01",
+      "heroRealGcsPath": "worlds/home/kitchen/microwave/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/kitchen/microwave/card.webp",
+      "funFact": "Microwaves heat food quickly.",
+      "quizSoundId": "micro-01",
       "quizPrompt": "Beep",
       "narration": {
-        "intro": "This is a microwave.",
+        "intro": "This is microwave.",
         "introGcsPath": "worlds/home/kitchen/microwave/narration-intro.mp3",
-        "soundCue": "The microwave beeps.",
+        "soundCue": "Listen to microwave.",
         "soundCueGcsPath": "worlds/home/kitchen/microwave/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "beep-01", "label": "Beep", "gcsPath": "worlds/home/kitchen/microwave/beep-01.mp3", "durationSec": 0.6, "waveform": [0.6, 0.8, 0.3, 0.2] }
+        {
+          "id": "micro-01",
+          "label": "Beep",
+          "gcsPath": "worlds/home/kitchen/microwave/micro-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kettle",
+      "name": "Kettle",
+      "category": "kitchen",
+      "emoji": "☕",
+      "imageGcsPath": "worlds/home/kitchen/kettle/hero.webp",
+      "heroRealGcsPath": "worlds/home/kitchen/kettle/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/kitchen/kettle/card.webp",
+      "funFact": "Kettles boil water for tea.",
+      "quizSoundId": "kettle-01",
+      "quizPrompt": "Bubble",
+      "narration": {
+        "intro": "This is kettle.",
+        "introGcsPath": "worlds/home/kitchen/kettle/narration-intro.mp3",
+        "soundCue": "Listen to kettle.",
+        "soundCueGcsPath": "worlds/home/kitchen/kettle/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "kettle-01",
+          "label": "Boil",
+          "gcsPath": "worlds/home/kitchen/kettle/kettle-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dishes",
+      "name": "Dishes",
+      "category": "kitchen",
+      "emoji": "🍽️",
+      "imageGcsPath": "worlds/home/kitchen/dishes/hero.webp",
+      "heroRealGcsPath": "worlds/home/kitchen/dishes/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/kitchen/dishes/card.webp",
+      "funFact": "Dishes clink when we set the table.",
+      "quizSoundId": "clink-01",
+      "quizPrompt": "Clink",
+      "narration": {
+        "intro": "This is dishes.",
+        "introGcsPath": "worlds/home/kitchen/dishes/narration-intro.mp3",
+        "soundCue": "Listen to dishes.",
+        "soundCueGcsPath": "worlds/home/kitchen/dishes/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "clink-01",
+          "label": "Clink",
+          "gcsPath": "worlds/home/kitchen/dishes/clink-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fridge",
+      "name": "Refrigerator",
+      "category": "kitchen",
+      "emoji": "🧊",
+      "imageGcsPath": "worlds/home/kitchen/fridge/hero.webp",
+      "heroRealGcsPath": "worlds/home/kitchen/fridge/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/kitchen/fridge/card.webp",
+      "funFact": "Fridges hum to stay cold.",
+      "quizSoundId": "fridge-01",
+      "quizPrompt": "Hum",
+      "narration": {
+        "intro": "This is refrigerator.",
+        "introGcsPath": "worlds/home/kitchen/fridge/narration-intro.mp3",
+        "soundCue": "Listen to refrigerator.",
+        "soundCueGcsPath": "worlds/home/kitchen/fridge/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "fridge-01",
+          "label": "Hum",
+          "gcsPath": "worlds/home/kitchen/fridge/fridge-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "toaster",
+      "name": "Toaster",
+      "category": "kitchen",
+      "emoji": "🍞",
+      "imageGcsPath": "worlds/home/kitchen/toaster/hero.webp",
+      "heroRealGcsPath": "worlds/home/kitchen/toaster/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/kitchen/toaster/card.webp",
+      "funFact": "Toasters pop toast up.",
+      "quizSoundId": "toast-01",
+      "quizPrompt": "Pop",
+      "narration": {
+        "intro": "This is toaster.",
+        "introGcsPath": "worlds/home/kitchen/toaster/narration-intro.mp3",
+        "soundCue": "Listen to toaster.",
+        "soundCueGcsPath": "worlds/home/kitchen/toaster/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "toast-01",
+          "label": "Pop",
+          "gcsPath": "worlds/home/kitchen/toaster/toast-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flush",
+      "name": "Toilet Flush",
+      "category": "bathroom",
+      "emoji": "🚽",
+      "imageGcsPath": "worlds/home/bathroom/flush/hero.webp",
+      "heroRealGcsPath": "worlds/home/bathroom/flush/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/bathroom/flush/card.webp",
+      "funFact": "Flushing moves water away.",
+      "quizSoundId": "flush-01",
+      "quizPrompt": "Whoosh",
+      "narration": {
+        "intro": "This is toilet flush.",
+        "introGcsPath": "worlds/home/bathroom/flush/narration-intro.mp3",
+        "soundCue": "Listen to toilet flush.",
+        "soundCueGcsPath": "worlds/home/bathroom/flush/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "flush-01",
+          "label": "Flush",
+          "gcsPath": "worlds/home/bathroom/flush/flush-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shower",
+      "name": "Shower",
+      "category": "bathroom",
+      "emoji": "🚿",
+      "imageGcsPath": "worlds/home/bathroom/shower/hero.webp",
+      "heroRealGcsPath": "worlds/home/bathroom/shower/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/bathroom/shower/card.webp",
+      "funFact": "Showers spray warm water.",
+      "quizSoundId": "shower-01",
+      "quizPrompt": "Spray",
+      "narration": {
+        "intro": "This is shower.",
+        "introGcsPath": "worlds/home/bathroom/shower/narration-intro.mp3",
+        "soundCue": "Listen to shower.",
+        "soundCueGcsPath": "worlds/home/bathroom/shower/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "shower-01",
+          "label": "Shower",
+          "gcsPath": "worlds/home/bathroom/shower/shower-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "faucet",
+      "name": "Faucet",
+      "category": "bathroom",
+      "emoji": "🚰",
+      "imageGcsPath": "worlds/home/bathroom/faucet/hero.webp",
+      "heroRealGcsPath": "worlds/home/bathroom/faucet/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/bathroom/faucet/card.webp",
+      "funFact": "Faucets drip and flow.",
+      "quizSoundId": "tap-01",
+      "quizPrompt": "Drip",
+      "narration": {
+        "intro": "This is faucet.",
+        "introGcsPath": "worlds/home/bathroom/faucet/narration-intro.mp3",
+        "soundCue": "Listen to faucet.",
+        "soundCueGcsPath": "worlds/home/bathroom/faucet/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "tap-01",
+          "label": "Water",
+          "gcsPath": "worlds/home/bathroom/faucet/tap-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hair-dryer",
+      "name": "Hair Dryer",
+      "category": "bathroom",
+      "emoji": "💇",
+      "imageGcsPath": "worlds/home/bathroom/hair-dryer/hero.webp",
+      "heroRealGcsPath": "worlds/home/bathroom/hair-dryer/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/bathroom/hair-dryer/card.webp",
+      "funFact": "Dryers blow warm air.",
+      "quizSoundId": "dryer-01",
+      "quizPrompt": "Whirr",
+      "narration": {
+        "intro": "This is hair dryer.",
+        "introGcsPath": "worlds/home/bathroom/hair-dryer/narration-intro.mp3",
+        "soundCue": "Listen to hair dryer.",
+        "soundCueGcsPath": "worlds/home/bathroom/hair-dryer/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "dryer-01",
+          "label": "Blow",
+          "gcsPath": "worlds/home/bathroom/hair-dryer/dryer-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "alarm-clock",
+      "name": "Alarm Clock",
+      "category": "bedroom",
+      "emoji": "⏰",
+      "imageGcsPath": "worlds/home/bedroom/alarm-clock/hero.webp",
+      "heroRealGcsPath": "worlds/home/bedroom/alarm-clock/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/bedroom/alarm-clock/card.webp",
+      "funFact": "Alarms wake us in the morning.",
+      "quizSoundId": "alarm-01",
+      "quizPrompt": "Ring",
+      "narration": {
+        "intro": "This is alarm clock.",
+        "introGcsPath": "worlds/home/bedroom/alarm-clock/narration-intro.mp3",
+        "soundCue": "Listen to alarm clock.",
+        "soundCueGcsPath": "worlds/home/bedroom/alarm-clock/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "alarm-01",
+          "label": "Alarm",
+          "gcsPath": "worlds/home/bedroom/alarm-clock/alarm-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "snoring",
+      "name": "Snoring",
+      "category": "bedroom",
+      "emoji": "😴",
+      "imageGcsPath": "worlds/home/bedroom/snoring/hero.webp",
+      "heroRealGcsPath": "worlds/home/bedroom/snoring/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/bedroom/snoring/card.webp",
+      "funFact": "Some people snore while asleep.",
+      "quizSoundId": "snore-01",
+      "quizPrompt": "Zzz",
+      "narration": {
+        "intro": "This is snoring.",
+        "introGcsPath": "worlds/home/bedroom/snoring/narration-intro.mp3",
+        "soundCue": "Listen to snoring.",
+        "soundCueGcsPath": "worlds/home/bedroom/snoring/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "snore-01",
+          "label": "Snore",
+          "gcsPath": "worlds/home/bedroom/snoring/snore-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lullaby",
+      "name": "Lullaby",
+      "category": "bedroom",
+      "emoji": "🎵",
+      "imageGcsPath": "worlds/home/bedroom/lullaby/hero.webp",
+      "heroRealGcsPath": "worlds/home/bedroom/lullaby/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/bedroom/lullaby/card.webp",
+      "funFact": "Soft songs help babies sleep.",
+      "quizSoundId": "lull-01",
+      "quizPrompt": "Hum",
+      "narration": {
+        "intro": "This is lullaby.",
+        "introGcsPath": "worlds/home/bedroom/lullaby/narration-intro.mp3",
+        "soundCue": "Listen to lullaby.",
+        "soundCueGcsPath": "worlds/home/bedroom/lullaby/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "lull-01",
+          "label": "Hum",
+          "gcsPath": "worlds/home/bedroom/lullaby/lull-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tv",
+      "name": "Television",
+      "category": "living",
+      "emoji": "📺",
+      "imageGcsPath": "worlds/home/living/tv/hero.webp",
+      "heroRealGcsPath": "worlds/home/living/tv/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/living/tv/card.webp",
+      "funFact": "TVs play shows and movies.",
+      "quizSoundId": "tv-01",
+      "quizPrompt": "Static",
+      "narration": {
+        "intro": "This is television.",
+        "introGcsPath": "worlds/home/living/tv/narration-intro.mp3",
+        "soundCue": "Listen to television.",
+        "soundCueGcsPath": "worlds/home/living/tv/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "tv-01",
+          "label": "TV",
+          "gcsPath": "worlds/home/living/tv/tv-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vacuum",
+      "name": "Vacuum",
+      "category": "living",
+      "emoji": "🧹",
+      "imageGcsPath": "worlds/home/living/vacuum/hero.webp",
+      "heroRealGcsPath": "worlds/home/living/vacuum/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/living/vacuum/card.webp",
+      "funFact": "Vacuums suck up dust.",
+      "quizSoundId": "vac-01",
+      "quizPrompt": "Vroom",
+      "narration": {
+        "intro": "This is vacuum.",
+        "introGcsPath": "worlds/home/living/vacuum/narration-intro.mp3",
+        "soundCue": "Listen to vacuum.",
+        "soundCueGcsPath": "worlds/home/living/vacuum/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "vac-01",
+          "label": "Vacuum",
+          "gcsPath": "worlds/home/living/vacuum/vac-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "door-knock",
+      "name": "Door Knock",
+      "category": "living",
+      "emoji": "🚪",
+      "imageGcsPath": "worlds/home/living/door-knock/hero.webp",
+      "heroRealGcsPath": "worlds/home/living/door-knock/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/living/door-knock/card.webp",
+      "funFact": "We knock before entering.",
+      "quizSoundId": "knock-01",
+      "quizPrompt": "Knock",
+      "narration": {
+        "intro": "This is door knock.",
+        "introGcsPath": "worlds/home/living/door-knock/narration-intro.mp3",
+        "soundCue": "Listen to door knock.",
+        "soundCueGcsPath": "worlds/home/living/door-knock/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "knock-01",
+          "label": "Knock",
+          "gcsPath": "worlds/home/living/door-knock/knock-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phone-ring",
+      "name": "Phone Ring",
+      "category": "living",
+      "emoji": "📞",
+      "imageGcsPath": "worlds/home/living/phone-ring/hero.webp",
+      "heroRealGcsPath": "worlds/home/living/phone-ring/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/living/phone-ring/card.webp",
+      "funFact": "Phones ring when someone calls.",
+      "quizSoundId": "ring-01",
+      "quizPrompt": "Ring",
+      "narration": {
+        "intro": "This is phone ring.",
+        "introGcsPath": "worlds/home/living/phone-ring/narration-intro.mp3",
+        "soundCue": "Listen to phone ring.",
+        "soundCueGcsPath": "worlds/home/living/phone-ring/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "ring-01",
+          "label": "Ring",
+          "gcsPath": "worlds/home/living/phone-ring/ring-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "keys",
+      "name": "Keys",
+      "category": "living",
+      "emoji": "🔑",
+      "imageGcsPath": "worlds/home/living/keys/hero.webp",
+      "heroRealGcsPath": "worlds/home/living/keys/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/living/keys/card.webp",
+      "funFact": "Keys jingle in pockets.",
+      "quizSoundId": "keys-01",
+      "quizPrompt": "Jingle",
+      "narration": {
+        "intro": "This is keys.",
+        "introGcsPath": "worlds/home/living/keys/narration-intro.mp3",
+        "soundCue": "Listen to keys.",
+        "soundCueGcsPath": "worlds/home/living/keys/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "keys-01",
+          "label": "Jingle",
+          "gcsPath": "worlds/home/living/keys/keys-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "garage-door",
+      "name": "Garage Door",
+      "category": "garage",
+      "emoji": "🏠",
+      "imageGcsPath": "worlds/home/garage/garage-door/hero.webp",
+      "heroRealGcsPath": "worlds/home/garage/garage-door/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/garage/garage-door/card.webp",
+      "funFact": "Garage doors roll up and down.",
+      "quizSoundId": "garage-01",
+      "quizPrompt": "Rumble",
+      "narration": {
+        "intro": "This is garage door.",
+        "introGcsPath": "worlds/home/garage/garage-door/narration-intro.mp3",
+        "soundCue": "Listen to garage door.",
+        "soundCueGcsPath": "worlds/home/garage/garage-door/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "garage-01",
+          "label": "Motor",
+          "gcsPath": "worlds/home/garage/garage-door/garage-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "doorbell",
+      "name": "Doorbell",
+      "category": "garage",
+      "emoji": "🔔",
+      "imageGcsPath": "worlds/home/garage/doorbell/hero.webp",
+      "heroRealGcsPath": "worlds/home/garage/doorbell/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/garage/doorbell/card.webp",
+      "funFact": "Doorbells tell us someone is here.",
+      "quizSoundId": "bell-01",
+      "quizPrompt": "Ding",
+      "narration": {
+        "intro": "This is doorbell.",
+        "introGcsPath": "worlds/home/garage/doorbell/narration-intro.mp3",
+        "soundCue": "Listen to doorbell.",
+        "soundCueGcsPath": "worlds/home/garage/doorbell/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "bell-01",
+          "label": "Ding",
+          "gcsPath": "worlds/home/garage/doorbell/bell-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.4
+          ]
+        }
       ]
     }
   ]

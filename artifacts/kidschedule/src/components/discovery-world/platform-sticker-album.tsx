@@ -15,6 +15,31 @@ type PlatformStickerAlbumProps = {
   childId: number;
 };
 
+function StickerThumb({
+  emoji,
+  item,
+  resolveAssetUrl,
+}: {
+  emoji: string;
+  item?: { imageGcsPath: string; heroCartoonGcsPath?: string };
+  resolveAssetUrl: (p: string) => string;
+}) {
+  const [failed, setFailed] = useState(false);
+  if (!item || failed) return <span className="text-4xl">{emoji}</span>;
+  const cardPath = item.heroCartoonGcsPath ?? item.imageGcsPath.replace(/hero\.webp$/, "card.webp");
+  return (
+    <img
+      src={resolveAssetUrl(cardPath)}
+      alt=""
+      width={64}
+      height={64}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className="h-14 w-14 rounded-xl object-cover"
+    />
+  );
+}
+
 export function PlatformStickerAlbum({ config, childId }: PlatformStickerAlbumProps) {
   const [celebrate, setCelebrate] = useState(false);
   const progress = loadDiscoveryWorldProgress(config.worldId, childId);
@@ -80,7 +105,13 @@ export function PlatformStickerAlbum({ config, childId }: PlatformStickerAlbumPr
                     rare && unlocked && "ring-1 ring-amber-400/40",
                   )}
                 >
-                  <span className={cn("text-4xl", !unlocked && "grayscale")}>{sticker.emoji}</span>
+                  <div className={cn(!unlocked && "grayscale opacity-60")}>
+                <StickerThumb
+                  emoji={sticker.emoji}
+                  item={config.manifest.items.find((i) => i.id === sticker.itemId)}
+                  resolveAssetUrl={config.resolveAssetUrl}
+                />
+              </div>
                   <p className="mt-1 line-clamp-2 text-[10px] font-semibold">
                     {unlocked ? sticker.title : "???"}
                   </p>

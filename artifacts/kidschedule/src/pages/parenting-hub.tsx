@@ -12,6 +12,7 @@ import { PtmPrepAssistant } from "@/components/ptm-prep";
 import { EventPrepCard } from "@/components/event-prep-card";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
 import { HubLaunchCard } from "@/components/hub-launch-card";
+import { DiscoveryWorldsHubLaunchCard } from "@/components/discovery-world/discovery-worlds-hub-launch-card";
 import { PhonicsUnavailableFallback } from "@/components/phonics-unavailable-fallback";
 import { ColoringBooks } from "@/components/coloring-books";
 import { FunSheets } from "@/components/fun-sheets";
@@ -118,7 +119,7 @@ const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
   today:      ["amy-ai", "daily-tips", "generate-routine", "tomorrow-forecast", "command-center"],
   learning:   ["smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad"],
   creativity: ["activities", "gaming-rewards", "art-craft", "worksheets", "coloring-books", "fun-sheets", "event-prep"],
-  stories:    ["story-hub", "speech-coach", "animal-world"],
+  stories:    ["story-hub", "speech-coach", "discovery-worlds", "animal-world"],
   support:    ["articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
 };
 
@@ -1475,6 +1476,35 @@ function ParentingHubPage() {
           </HubSection>
         </LockedBlock>;
     }
+  }, {
+    id: "discovery-worlds",
+    alwaysCurrent: true,
+    render: () => (
+      <LockedBlock
+        reason="hub_locked"
+        locked={
+          isHubLocked("hub_vehicle_world") &&
+          isHubLocked("hub_nature_world") &&
+          isHubLocked("hub_home_sounds_world") &&
+          isHubLocked("hub_instrument_world") &&
+          isHubLocked("hub_animal_world")
+        }
+        journeySoft={journeySoftLock}
+        childName={effectiveChild.name}
+        isInfant={isInfant}
+      >
+        <DiscoveryWorldsHubLaunchCard
+          childId={effectiveChild.id}
+          title={t("parent_hub.web_tiles.discovery-worlds.title")}
+          description={t("parent_hub.web_tiles.discovery-worlds.description")}
+          tryFree={
+            tryFreeFor("hub_animal_world") ||
+            tryFreeFor("hub_vehicle_world") ||
+            tryFreeFor("hub_nature_world")
+          }
+        />
+      </LockedBlock>
+    ),
   }, {
     // Animal World — toddler animal sounds; all ages (communication & listening).
     id: "animal-world",

@@ -20,6 +20,7 @@ let muted = false;
 let lastPlayAt = 0;
 let lastPlayKey = "";
 const preloadPool = new Map<string, { url: string; warmedAt: number }>();
+const inFlightPlay = new Map<string, Promise<boolean>>();
 
 function proxyUrl(url: string): string {
   return resolveApiMediaUrl(url);
@@ -67,9 +68,15 @@ export class DiscoveryWorldAudioManager {
   async play(url: string, meta: DiscoveryWorldPlayMeta): Promise<boolean> {
     if (muted) return false;
     const resolved = proxyUrl(url);
-    const playKey = `${meta.itemId}:${meta.soundId}`;
+    const playKey = `${meta.worldId}:${meta.itemId}:${meta.soundId}:${resolved}`;
     const now = Date.now();
-    if (playKey === lastPlayKey && now - lastPlayAt < TAP_DEBOUNCE_MS) return true;
+    if (playKey === lastPlayKey && now - lastPlayAt < TAP_DEBOUNCE_MS) {
+      const pending = inFlightPlay.get(playKey);
+      return pending ?? true;
+    }
+
+    const pending = inFlightPlay.get(playKey);
+    if (pending) return pending;
 
     this.unlockFromGesture();
     ownershipToken += 1;
@@ -77,16 +84,24 @@ export class DiscoveryWorldAudioManager {
     lastPlayKey = playKey;
     lastPlayAt = now;
 
-    audioManager.stopAll();
-    preloadPool.set(resolved, { url: resolved, warmedAt: now });
-    audioManager.getCached(resolved, { forceReload: false });
+    const run = (async () => {
+      audioManager.stopAll();
+      preloadPool.set(resolved, { url: resolved, warmedAt: now });
+      audioManager.getCached(resolved, { forceReload: false });
+      const ok = await audioManager.playUrl(resolved, {
+        source: "discovery_world",
+        phrase: meta.label ?? `${meta.itemId}:${meta.soundId}`,
+        interrupt: true,
+      });
+      return token === ownershipToken && ok;
+    })();
 
-    const ok = await audioManager.playUrl(resolved, {
-      source: "discovery_world",
-      phrase: meta.label ?? `${meta.itemId}:${meta.soundId}`,
-      interrupt: true,
-    });
-    return token === ownershipToken && ok;
+    inFlightPlay.set(playKey, run);
+    try {
+      return await run;
+    } finally {
+      inFlightPlay.delete(playKey);
+    }
   }
 
   stop(): void {

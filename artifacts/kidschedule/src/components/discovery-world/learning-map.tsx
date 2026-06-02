@@ -1,6 +1,7 @@
 import { AppLink } from "@/components/app-link";
 import { getDiscoveryWorldDefinition } from "@workspace/discovery-worlds";
 import type { WorldId } from "@workspace/world-engine";
+import { DISCOVERY_CATALOG_SIZES } from "@/lib/discovery-worlds-unified-insights";
 import { loadDiscoveryWorldProgress } from "@/lib/discovery-worlds-progress";
 import { loadAnimalWorldProgress } from "@/lib/animal-world-progress";
 import { animalProgressToPlatform } from "@/lib/discovery-worlds-progress";
@@ -84,7 +85,9 @@ function DestinationNode({
 }
 
 export function LearningMap({ childId, catalogSizes }: LearningMapProps) {
-  const worldIds = Object.keys(catalogSizes) as WorldId[];
+  const worldIds = (Object.keys(catalogSizes).length > 0
+    ? Object.keys(catalogSizes)
+    : Object.keys(DISCOVERY_CATALOG_SIZES)) as WorldId[];
 
   return (
     <section className="space-y-3">

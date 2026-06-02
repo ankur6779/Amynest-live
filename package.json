@@ -55,6 +55,8 @@
     "generate:animal-world-audio": "pnpm --filter @workspace/scripts run generate-animal-world-audio",
     "generate:discovery-worlds-audio": "pnpm --filter @workspace/scripts run generate-discovery-worlds-audio",
     "upload:discovery-worlds-catalog": "pnpm --filter @workspace/scripts run upload-discovery-worlds-catalog",
+    "generate:discovery-worlds-catalog": "cd lib/world-engine && node --import tsx/esm ../../scripts/generate-discovery-worlds-catalog.ts",
+    "report:discovery-worlds": "cd lib/world-engine && node --import tsx/esm ../../scripts/discovery-worlds-performance-report.ts",
     "check:phonics-library": "pnpm --filter @workspace/scripts run check-phonics-library",
     "check:phonics-release-gate": "pnpm --filter @workspace/scripts run check-phonics-release-gate",
     "check:phonics-interaction-gate": "pnpm --filter @workspace/scripts run check-phonics-interaction-gate",
