@@ -94,6 +94,25 @@ let playing = false;
 let lastUrl = "";
 let lastStartAt = 0;
 let activeLabel: string | null = null;
+/**
+ * True while a CVC blend owns the sequence. A blend plays one short clip at a
+ * time with silent gaps between phonemes, so `playing` briefly drops to false
+ * mid-sequence. During those gaps (and the async window before the next clip's
+ * audioManager.play() resolves) an unrelated owner — the Amy-voice controller
+ * teardown or the lifecycle coordinator — must NOT bump the ownership token, or
+ * the very next phoneme settles as `phonics_superseded` and the blend aborts.
+ */
+let blendActive = false;
+
+/** Engine-only: mark/clear that a CVC blend sequence owns playback. */
+export function setPhonicsBlendActive(active: boolean): void {
+  blendActive = active;
+}
+
+/** Current ownership token — exposed for blend diagnostics only. */
+export function getPhonicsOwnershipToken(): number {
+  return ownershipToken;
+}
 
 const listeners = new Set<(state: { playing: boolean; label: string | null }) => void>();
 
@@ -232,8 +251,8 @@ const UNRELATED_PHONICS_STOP_REASONS = new Set<string>([
  * Safe to call from anywhere (tap, stop button, leaving phonics, controller pause).
  */
 export function stopPhonicsPlayback(reason = "manual"): void {
-  if (playing && UNRELATED_PHONICS_STOP_REASONS.has(reason)) {
-    log("phonics_stop_ignored_unrelated", { reason });
+  if ((playing || blendActive) && UNRELATED_PHONICS_STOP_REASONS.has(reason)) {
+    log("phonics_stop_ignored_unrelated", { reason, blendActive });
     return;
   }
   ownershipToken += 1;

@@ -16,6 +16,8 @@ import {
   isPhonicsPlaying,
   stopPhonicsPlayback,
   subscribePhonicsPlayback,
+  setPhonicsBlendActive,
+  getPhonicsOwnershipToken,
 } from "@/lib/phonics-player";
 import {
   checkPhonicsLetterClip,
@@ -66,6 +68,21 @@ export function validateAllCvcWordAudio(): {
 }
 
 let sessionToken = 0;
+
+/** Cancel-type clip errors that can come from ownership-token churn. */
+const CVC_BLEND_CANCEL_ERRORS = new Set(["phonics_superseded", "phonics_cancelled"]);
+
+/**
+ * Diagnostic for the exact CVC blend stop point. Always logs failures; verbose
+ * step trace is gated behind DEV or `localStorage.PHONICS_MEDIA_TRACE === "1"`.
+ */
+function logBlendDiag(event: string, detail: Record<string, unknown>): void {
+  const verbose =
+    (typeof import.meta !== "undefined" && import.meta.env?.DEV) ||
+    (typeof localStorage !== "undefined" &&
+      localStorage.getItem("PHONICS_MEDIA_TRACE") === "1");
+  if (verbose) console.warn(`[CvcBlendTrace] ${event}`, detail);
+}
 
 export type PhonicsEnginePlayOptions = {
   playbackRate?: number;
@@ -290,25 +307,93 @@ export async function phonicsEnginePlayCvcBlend(
     return playLetterClipDirect(step.audioKey, { ...options, playbackRate: rate });
   };
 
-  for (let i = 0; i < phonemeSteps.length; i++) {
-    const step = phonemeSteps[i]!;
-    const res = await runStep(step, i, options.skipSlowPass ? 1.12 : 1);
-    if (!res.ok) return res;
-    if (i < phonemeSteps.length - 1) {
-      await new Promise((r) => setTimeout(r, gapMs));
+  // A failed step whose error is cancel-type while THIS blend's session is still
+  // active (engine session unchanged, panel not cancelled) means the clip lost
+  // ownership to an unrelated owner mid-flight — not a real stop. Retry once
+  // instead of aborting the whole blend.
+  const runStepResilient = async (
+    step: CvcBlendQueueStep,
+    index: number,
+    rate: number,
+  ): Promise<{ ok: boolean; error?: string }> => {
+    let res = await runStep(step, index, rate);
+    const spuriousChurn = (r: { ok: boolean; error?: string }) =>
+      !r.ok &&
+      CVC_BLEND_CANCEL_ERRORS.has(r.error ?? "") &&
+      isSessionActive(token) &&
+      !(options.isCancelled?.() ?? false);
+    if (spuriousChurn(res)) {
+      logBlendDiag("step_churn_retry", {
+        audioKey: step.audioKey,
+        kind: step.kind,
+        index,
+        error: res.error,
+        sessionToken,
+        engineToken: token,
+        ownershipToken: getPhonicsOwnershipToken(),
+      });
+      recordPhonicsTelemetry("phonics_blend_step_retry", {
+        audioId: step.audioKey,
+        wordId: entry.word,
+        error: res.error,
+        index,
+      });
+      res = await runStep(step, index, rate);
     }
-  }
+    if (!res.ok) {
+      const cancelled = CVC_BLEND_CANCEL_ERRORS.has(res.error ?? "");
+      logBlendDiag("step_failed", {
+        audioKey: step.audioKey,
+        kind: step.kind,
+        index,
+        error: res.error,
+        cancelled,
+        sessionActive: isSessionActive(token),
+        sessionToken,
+        engineToken: token,
+        ownershipToken: getPhonicsOwnershipToken(),
+      });
+      recordPhonicsTelemetry("phonics_blend_step_failed", {
+        audioId: step.audioKey,
+        wordId: entry.word,
+        error: res.error,
+        index,
+        cancelled,
+        sessionActive: isSessionActive(token),
+      });
+    }
+    return res;
+  };
 
-  if (wordStep) {
-    await new Promise((r) => setTimeout(r, 150));
-    const res = await runStep(wordStep, phonemeSteps.length, 1);
-    if (!res.ok) return res;
-  }
+  // Hold the blend-active guard for the whole sequence so unrelated owners
+  // (controller teardown / lifecycle coordinator) cannot supersede mid-blend.
+  setPhonicsBlendActive(true);
+  try {
+    for (let i = 0; i < phonemeSteps.length; i++) {
+      const step = phonemeSteps[i]!;
+      const res = await runStepResilient(step, i, options.skipSlowPass ? 1.12 : 1);
+      if (!res.ok) return res;
+      if (i < phonemeSteps.length - 1) {
+        await new Promise((r) => setTimeout(r, gapMs));
+      }
+    }
 
-  if (isSessionActive(token)) {
-    recordPhonicsTelemetry("phonics_audio_completed", { audioId: entry.word, wordId: entry.word });
+    if (wordStep) {
+      await new Promise((r) => setTimeout(r, 150));
+      const res = await runStepResilient(wordStep, phonemeSteps.length, 1);
+      if (!res.ok) return res;
+    }
+
+    if (isSessionActive(token)) {
+      recordPhonicsTelemetry("phonics_audio_completed", {
+        audioId: entry.word,
+        wordId: entry.word,
+      });
+    }
+    return { ok: true };
+  } finally {
+    setPhonicsBlendActive(false);
   }
-  return { ok: true };
 }
 
 export async function phonicsEnginePlaySequence(
