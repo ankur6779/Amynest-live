@@ -267,15 +267,23 @@ function ConversationCoach({ child }: { child: AnyChild }) {
   }, [authFetch, child.id]);
 
   const speakLines = useCallback(
-    async (lines: (string | null)[]) => {
+    async (lines: (string | null)[]): Promise<boolean> => {
+      let spokeAny = false;
       for (const line of lines) {
         const text = (line ?? "").trim();
         if (!text) continue;
         // Freeform conversational text has no coach audioIdentity, so use the
         // default speak path (coach:true would fail with coach_identity_missing).
-        const result = await voice.speak(text, { mode: "default" });
-        if (!result.success) break;
+        let result = await voice.speak(text, { mode: "default" });
+        if (!result.success) {
+          // Live TTS for dynamic text can be flaky on mobile — one quick retry.
+          await new Promise((r) => setTimeout(r, 250));
+          result = await voice.speak(text, { mode: "default" });
+        }
+        // Don't break on a single failure — still try the follow-up question.
+        if (result.success) spokeAny = true;
       }
+      return spokeAny;
     },
     [voice],
   );
@@ -391,6 +399,26 @@ function ConversationCoach({ child }: { child: AnyChild }) {
     setPhase("listening");
   }, [stt, voice]);
 
+  // When the model/network hiccups, Amy should still SAY something friendly
+  // and keep the conversation going instead of going silent.
+  const recoverWithFallback = useCallback(
+    async (statusMsg: string) => {
+      const FALLBACKS = [
+        "Oops, I got a little distracted! Can you tell me that again?",
+        "I love talking with you! What else happened today?",
+        "You're such a good talker! Tell me one more thing.",
+        "Hmm, say that one more time for me?",
+      ];
+      const line = FALLBACKS[Math.floor(Math.random() * FALLBACKS.length)];
+      setMessages((prev) => [...prev, { role: "amy", text: line }]);
+      setPhase("amy_speaking");
+      setStatus(statusMsg);
+      await speakLines([line]);
+      if (sessionActiveRef.current) void startListening();
+    },
+    [speakLines, startListening],
+  );
+
   const pickPhase = useCallback((kickoff: boolean): ServerPhase => {
     if (kickoff) return "warmup";
     const r = remainingRef.current;
@@ -444,8 +472,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
           return;
         }
         if (!res.ok) {
-          setStatus("Amy had trouble hearing. Tap the mic to try again.");
-          setPhase("amy_speaking");
+          await recoverWithFallback("Let's keep going!");
           return;
         }
 
@@ -459,8 +486,7 @@ function ConversationCoach({ child }: { child: AnyChild }) {
         const reply = resolved.reply ?? parseReply(resolved.content);
 
         if (!reply) {
-          setStatus("Amy got shy! Tap the mic and say hello again.");
-          setPhase("amy_speaking");
+          await recoverWithFallback("Let's keep talking!");
           return;
         }
 
@@ -484,11 +510,10 @@ function ConversationCoach({ child }: { child: AnyChild }) {
           void startListening();
         }
       } catch {
-        setStatus("Something went wrong. Tap the mic to try again.");
-        setPhase("amy_speaking");
+        await recoverWithFallback("Let's try again!");
       }
     },
-    [apiFetch, authFetch, child.id, endConversation, pickPhase, speakLines, startListening],
+    [apiFetch, authFetch, child.id, endConversation, pickPhase, speakLines, startListening, recoverWithFallback],
   );
 
   // When the child stops talking, send their transcript as the next turn.
