@@ -32,13 +32,9 @@ export default function AnimalWorldPage() {
   });
 
   const childList = (children ?? []) as Child[];
-  const eligibleChildren = childList.filter((child) => {
-    const totalAgeMonths = child.age * 12 + (child.ageMonths ?? 0);
-    return totalAgeMonths >= 12 && totalAgeMonths <= 72;
-  });
   const activeChild =
-    eligibleChildren.find((child) => child.id === selectedChildId) ??
-    eligibleChildren[0] ??
+    childList.find((child) => child.id === selectedChildId) ??
+    childList[0] ??
     null;
 
   useEffect(() => {
@@ -64,7 +60,6 @@ export default function AnimalWorldPage() {
   }
 
   if (!activeChild) {
-    const noEligibleChild = childList.length > 0 && eligibleChildren.length === 0;
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <header className="sticky top-0 z-50 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
@@ -80,22 +75,16 @@ export default function AnimalWorldPage() {
         <main className="flex flex-1 items-center justify-center p-6 text-center">
           <Card className="max-w-md rounded-3xl border-border bg-card">
             <CardContent className="space-y-4 p-6">
-              <p className="text-lg font-bold text-foreground">
-                {noEligibleChild ? "Animal World is for ages 1–5" : "Add a child to begin"}
-              </p>
+              <p className="text-lg font-bold text-foreground">Add a child to begin</p>
               <p className="text-sm text-muted-foreground">
-                {noEligibleChild
-                  ? "This module is designed for toddlers and preschoolers."
-                  : "Create a child profile to explore animal sounds together."}
+                Create a child profile to explore animal sounds together.
               </p>
-              {!noEligibleChild && (
-                <Button asChild className="rounded-full">
-                  <AppLink href="/children/new">
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Add child
-                  </AppLink>
-                </Button>
-              )}
+              <Button asChild className="rounded-full">
+                <AppLink href="/children/new">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Add child
+                </AppLink>
+              </Button>
             </CardContent>
           </Card>
         </main>
