@@ -20,6 +20,8 @@ export const DISCOVERY_WORLDS_ANALYTICS_EVENTS = [
   "world_session_duration",
   "world_offline_cache_warmed",
   "world_collection_xp",
+  "world_daily_adventure_complete",
+  "world_achievement_viewed",
 ] as const;
 
 export type DiscoveryWorldsAnalyticsEvent =

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Sparkles,
   Compass,
@@ -10,26 +10,33 @@ import {
   Sticker,
 } from "lucide-react";
 import type { WorldManifestItem } from "@workspace/world-engine";
-import {
-  buildPlatformDiscoverySequence,
-  buildPlatformHearFindQuestion,
-  DISCOVERY_PHASE_ORDER,
-  discoveryPhaseDurationMs,
-  gradePlatformHearFind,
-} from "@workspace/world-engine";
+import { buildPlatformHearFindQuestion, gradePlatformHearFind } from "@workspace/world-engine";
 import { cn } from "@/lib/utils";
-import { SCREEN_SPACING, TRANSITION } from "@/lib/experience-system";
+import { SCREEN_SPACING } from "@/lib/experience-system";
 import type { DiscoveryWorldRuntimeConfig } from "@/lib/discovery-world-config";
 import { discoveryWorldAudioManager } from "@/lib/discovery-world-audio-manager";
 import { trackDiscoveryWorldsEvent } from "@/lib/discovery-worlds-telemetry";
+import { recordHearFindAttempt } from "@/lib/discovery-worlds-progress";
 import {
-  grantDiscoveryWorldXp,
-  loadDiscoveryWorldProgress,
-  recordHearFindAttempt,
-} from "@/lib/discovery-worlds-progress";
+  applyDiscoveryWorldEngagement,
+  applyQuizEngagement,
+  appendDiscoveryWorldSessionMs,
+} from "@/lib/discovery-worlds-engagement";
+import {
+  needsDiscoveryOfflineRefresh,
+  warmDiscoveryWorldOfflineCache,
+} from "@/lib/discovery-world-offline-cache";
 import { VirtualizedGrid, useResponsiveGridColumns } from "@/components/animal-world/virtualized-grid";
 import { WorldItemCard } from "./world-item-card";
-import { motion, AnimatePresence } from "framer-motion";
+import { ExperienceProgressStrip } from "./experience-progress-strip";
+import { PersonalizationBanner } from "./personalization-banner";
+import { DiscoveryDailyAdventureCard, useDiscoveryDailyAdventure } from "./discovery-daily-adventure";
+import { PlatformAchievementsPanel } from "./platform-achievements-panel";
+import { PlatformStickerAlbum } from "./platform-sticker-album";
+import { PlatformParentDashboard } from "./platform-parent-dashboard";
+import { PlatformDiscoveryMode } from "./platform-discovery-mode";
+import { WorldHeroImage } from "./world-hero-image";
+import { DelightBurst } from "./delight-burst";
 
 type ModeId =
   | "explore"
@@ -67,6 +74,9 @@ export function DiscoveryWorldExperience({
   const [category, setCategory] = useState<string | "all">("all");
   const [selected, setSelected] = useState<WorldManifestItem | null>(null);
   const [muted, setMuted] = useState(false);
+  const [delight, setDelight] = useState(false);
+  const sessionStart = useRef(Date.now());
+  const daily = useDiscoveryDailyAdventure(config, childId);
   const columns = useResponsiveGridColumns();
 
   const items = useMemo(() => {
@@ -85,7 +95,24 @@ export function DiscoveryWorldExperience({
       });
     discoveryWorldAudioManager.preloadSmart({ current: urls });
     trackDiscoveryWorldsEvent(config.worldId, "world_opened", { childId });
-    return () => discoveryWorldAudioManager.release();
+    if (needsDiscoveryOfflineRefresh(config.worldId, childId)) {
+      void warmDiscoveryWorldOfflineCache({
+        worldId: config.worldId,
+        childId,
+        items: config.manifest.items,
+        resolveSoundUrl: (p) => config.resolveAssetUrl(p),
+        resolveImageUrl: (p) => config.resolveAssetUrl(p),
+      });
+    }
+    sessionStart.current = Date.now();
+    return () => {
+      appendDiscoveryWorldSessionMs(
+        config.worldId,
+        childId,
+        Date.now() - sessionStart.current,
+      );
+      discoveryWorldAudioManager.release();
+    };
   }, [childId, config, onEngage]);
 
   useEffect(() => {
@@ -127,13 +154,26 @@ export function DiscoveryWorldExperience({
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl pt-5">
+      <main className="mx-auto max-w-4xl space-y-4 pt-5">
+        <DelightBurst active={delight} onDone={() => setDelight(false)} />
+        <ExperienceProgressStrip config={config} childId={childId} />
+        {mode === "explore" && (
+          <>
+            <DiscoveryDailyAdventureCard config={config} childId={childId} compact />
+            <PersonalizationBanner
+              config={config}
+              childId={childId}
+              onCategoryHint={(id) => setCategory(id)}
+            />
+          </>
+        )}
         {selected && mode === "explore" ? (
           <WorldItemDetail
             config={config}
             item={selected}
             childId={childId}
             muted={muted}
+            onSoundPlayed={() => daily.record("listen_sounds")}
             onBack={() => setSelected(null)}
             onToggleMute={() => setMuted((m) => !m)}
           />
@@ -165,13 +205,39 @@ export function DiscoveryWorldExperience({
               </div>
             )}
             {mode === "toddler" && (
-              <ToddlerGrid items={config.manifest.items.slice(0, 8)} config={config} childId={childId} />
+              <ToddlerGrid
+                items={config.manifest.items.slice(0, 8)}
+                config={config}
+                childId={childId}
+                onSoundPlayed={() => daily.record("listen_sounds")}
+              />
             )}
-            {mode === "quiz" && <WorldQuiz config={config} childId={childId} />}
-            {mode === "hear_find" && <WorldHearFind config={config} childId={childId} />}
-            {mode === "discovery" && <WorldDiscovery config={config} childId={childId} />}
-            {(mode === "achievements" || mode === "stickers" || mode === "parent") && (
-              <ParentPlaceholder mode={mode} config={config} childId={childId} />
+            {mode === "quiz" && (
+              <WorldQuiz
+                config={config}
+                childId={childId}
+                onCorrect={() => daily.record("quiz_correct")}
+                onDelight={() => setDelight(true)}
+              />
+            )}
+            {mode === "hear_find" && (
+              <WorldHearFind
+                config={config}
+                childId={childId}
+                onCorrect={() => daily.record("hear_find_correct")}
+              />
+            )}
+            {mode === "discovery" && (
+              <PlatformDiscoveryMode config={config} childId={childId} />
+            )}
+            {mode === "achievements" && (
+              <PlatformAchievementsPanel config={config} childId={childId} />
+            )}
+            {mode === "stickers" && (
+              <PlatformStickerAlbum config={config} childId={childId} />
+            )}
+            {mode === "parent" && (
+              <PlatformParentDashboard config={config} childId={childId} />
             )}
           </>
         )}
@@ -212,6 +278,7 @@ function WorldItemDetail({
   muted,
   onBack,
   onToggleMute,
+  onSoundPlayed,
 }: {
   config: DiscoveryWorldRuntimeConfig;
   item: WorldManifestItem;
@@ -219,8 +286,13 @@ function WorldItemDetail({
   muted: boolean;
   onBack: () => void;
   onToggleMute: () => void;
+  onSoundPlayed?: () => void;
 }) {
   const primary = config.getPrimarySound(item);
+
+  const heroSrc = item.heroRealGcsPath
+    ? config.resolveAssetUrl(item.heroRealGcsPath)
+    : config.resolveAssetUrl(item.imageGcsPath);
 
   const play = async (soundId: string, url: string, label: string) => {
     discoveryWorldAudioManager.unlockFromGesture();
@@ -230,8 +302,15 @@ function WorldItemDetail({
       soundId,
       label,
     });
-    grantDiscoveryWorldXp(config.worldId, childId, "soundPlayed");
+    applyDiscoveryWorldEngagement({
+      worldId: config.worldId,
+      childId,
+      itemId: item.id,
+      soundId,
+      items: config.manifest.items,
+    });
     trackDiscoveryWorldsEvent(config.worldId, "world_sound_played", { childId, itemId: item.id, soundId });
+    onSoundPlayed?.();
   };
 
   return (
@@ -244,9 +323,9 @@ function WorldItemDetail({
           {muted ? "Unmute" : "Mute"}
         </button>
       </div>
-      <div className="rounded-[28px] border border-white/10 bg-[rgba(18,28,60,0.78)] p-8 text-center">
-        <span className="text-7xl">{item.emoji}</span>
-        <h2 className="mt-4 text-3xl font-bold">{item.name}</h2>
+      <WorldHeroImage src={heroSrc} emoji={item.emoji} alt={item.name} className="mx-auto max-w-sm" />
+      <div className="rounded-[28px] border border-white/10 bg-[rgba(18,28,60,0.78)] p-6 text-center">
+        <h2 className="text-3xl font-bold">{item.name}</h2>
         {item.funFact && <p className="mt-2 text-sm text-muted-foreground">{item.funFact}</p>}
       </div>
       {primary && (
@@ -276,10 +355,12 @@ function ToddlerGrid({
   items,
   config,
   childId,
+  onSoundPlayed,
 }: {
   items: WorldManifestItem[];
   config: DiscoveryWorldRuntimeConfig;
   childId: number;
+  onSoundPlayed?: () => void;
 }) {
   return (
     <div className="grid grid-cols-2 gap-4 px-2">
@@ -298,7 +379,15 @@ function ToddlerGrid({
                 soundId: sound.id,
                 label: sound.label,
               });
+              applyDiscoveryWorldEngagement({
+                worldId: config.worldId,
+                childId,
+                itemId: item.id,
+                soundId: sound.id,
+                items: config.manifest.items,
+              });
               trackDiscoveryWorldsEvent(config.worldId, "world_sound_played", { childId, itemId: item.id });
+              onSoundPlayed?.();
             }}
           >
             {item.emoji}
@@ -310,7 +399,17 @@ function ToddlerGrid({
   );
 }
 
-function WorldQuiz({ config, childId }: { config: DiscoveryWorldRuntimeConfig; childId: number }) {
+function WorldQuiz({
+  config,
+  childId,
+  onCorrect,
+  onDelight,
+}: {
+  config: DiscoveryWorldRuntimeConfig;
+  childId: number;
+  onCorrect?: () => void;
+  onDelight?: () => void;
+}) {
   const [q, setQ] = useState(() => buildPlatformHearFindQuestion(config.manifest.items, { optionCount: 3 }));
   const correctId = q?.correctItemId;
 
@@ -339,7 +438,11 @@ function WorldQuiz({ config, childId }: { config: DiscoveryWorldRuntimeConfig; c
             className="aspect-square rounded-[24px] border border-white/10 bg-[rgba(18,28,60,0.78)] text-5xl"
             onClick={() => {
               const ok = gradePlatformHearFind(q, opt.itemId).correct;
-              if (ok) grantDiscoveryWorldXp(config.worldId, childId, "quizCorrect");
+              if (ok) {
+                applyQuizEngagement(config.worldId, childId, q.correctItemId, config.manifest.items, true);
+                onCorrect?.();
+                onDelight?.();
+              }
               trackDiscoveryWorldsEvent(config.worldId, "world_quiz_completed", { childId, correct: ok });
               setQ(buildPlatformHearFindQuestion(config.manifest.items));
             }}
@@ -352,7 +455,15 @@ function WorldQuiz({ config, childId }: { config: DiscoveryWorldRuntimeConfig; c
   );
 }
 
-function WorldHearFind({ config, childId }: { config: DiscoveryWorldRuntimeConfig; childId: number }) {
+function WorldHearFind({
+  config,
+  childId,
+  onCorrect,
+}: {
+  config: DiscoveryWorldRuntimeConfig;
+  childId: number;
+  onCorrect?: () => void;
+}) {
   const [q, setQ] = useState(() => buildPlatformHearFindQuestion(config.manifest.items, { optionCount: 4 }));
 
   useEffect(() => {
@@ -382,7 +493,8 @@ function WorldHearFind({ config, childId }: { config: DiscoveryWorldRuntimeConfi
             className="aspect-square rounded-[28px] border border-white/10 bg-[rgba(18,28,60,0.78)] text-6xl"
             onClick={() => {
               const ok = gradePlatformHearFind(q, opt.itemId).correct;
-              recordHearFindAttempt(config.worldId, childId, q.correctItemId, ok);
+              recordHearFindAttempt(config.worldId, childId, q.correctItemId, ok, config.manifest.items);
+              if (ok) onCorrect?.();
               trackDiscoveryWorldsEvent(config.worldId, "world_hear_find_completed", { childId, correct: ok });
               setQ(buildPlatformHearFindQuestion(config.manifest.items, { optionCount: 4 }));
             }}
@@ -395,78 +507,3 @@ function WorldHearFind({ config, childId }: { config: DiscoveryWorldRuntimeConfi
   );
 }
 
-function WorldDiscovery({ config, childId }: { config: DiscoveryWorldRuntimeConfig; childId: number }) {
-  const sequence = useMemo(() => buildPlatformDiscoverySequence(config.manifest.items, 12), [config.manifest.items]);
-  const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState<(typeof DISCOVERY_PHASE_ORDER)[number]>("image");
-  const item = sequence[index % sequence.length];
-
-  useEffect(() => {
-    if (!item) return;
-    const phaseIndex = DISCOVERY_PHASE_ORDER.indexOf(phase);
-    const ms = discoveryPhaseDurationMs(phase, 1);
-    if (phase === "narration") {
-      void discoveryWorldAudioManager.play(config.resolveAssetUrl(item.narration.introGcsPath), {
-        worldId: config.worldId,
-        itemId: item.id,
-        soundId: "intro",
-      });
-    }
-    if (phase === "sound") {
-      const sound = config.getPrimarySound(item);
-      if (sound) {
-        void discoveryWorldAudioManager.play(config.resolveAssetUrl(sound.gcsPath), {
-          worldId: config.worldId,
-          itemId: item.id,
-          soundId: sound.id,
-        });
-      }
-    }
-    const timer = window.setTimeout(() => {
-      const next = DISCOVERY_PHASE_ORDER[phaseIndex + 1];
-      if (next && next !== "advance") setPhase(next);
-      else {
-        setIndex((i) => i + 1);
-        setPhase("image");
-        grantDiscoveryWorldXp(config.worldId, childId, "discoverySession");
-      }
-    }, ms);
-    return () => window.clearTimeout(timer);
-  }, [item, phase, index, config, childId]);
-
-  return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={`${item?.id}-${phase}`}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={TRANSITION.warm}
-        className="mx-4 rounded-[28px] border border-white/10 bg-[rgba(18,28,60,0.78)] p-10 text-center"
-      >
-        <span className="text-7xl">{item?.emoji}</span>
-        {phase !== "image" && <p className="mt-4 text-2xl font-bold">{item?.name}</p>}
-      </motion.div>
-    </AnimatePresence>
-  );
-}
-
-function ParentPlaceholder({
-  mode,
-  config,
-  childId,
-}: {
-  mode: ModeId;
-  config: DiscoveryWorldRuntimeConfig;
-  childId: number;
-}) {
-  const progress = loadDiscoveryWorldProgress(config.worldId, childId);
-  return (
-    <div className="mx-4 rounded-[24px] border border-white/10 bg-white/[0.04] p-6">
-      <h3 className="font-bold capitalize">{mode.replace("_", " ")}</h3>
-      <p className="mt-2 text-sm text-muted-foreground">XP: {progress.xp}</p>
-      <p className="text-sm text-muted-foreground">Stickers: {progress.stickersEarned.length}</p>
-      <p className="text-sm text-muted-foreground">Quiz correct: {progress.quizCorrectTotal}</p>
-    </div>
-  );
-}

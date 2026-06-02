@@ -9,6 +9,22 @@ import {
   type WorldProgressV2,
   type WorldItemMastery,
 } from "@workspace/world-engine";
+import { openedItemIds } from "@/lib/discovery-worlds-stats";
+
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function touchDiscoveryWorldStreak(progress: WorldProgressV2): WorldProgressV2 {
+  const today = todayKey();
+  if (progress.lastPlayedDate === today) return progress;
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = yesterday.toISOString().slice(0, 10);
+  const streakDays =
+    progress.lastPlayedDate === yesterdayKey ? progress.streakDays + 1 : 1;
+  return { ...progress, streakDays, lastPlayedDate: today };
+}
 
 export function loadDiscoveryWorldProgress(
   worldId: WorldId,
@@ -83,8 +99,10 @@ export function recordHearFindAttempt(
   childId: number,
   itemId: string,
   correct: boolean,
+  items: WorldManifestItem[],
 ): WorldProgressV2 {
   let progress = loadDiscoveryWorldProgress(worldId, childId);
+  progress = touchDiscoveryWorldStreak(progress);
   progress = bumpItemMastery(progress, itemId, {
     hearFindAttempts: (progress.itemMastery[itemId]?.hearFindAttempts ?? 0) + 1,
     hearFindCorrect: (progress.itemMastery[itemId]?.hearFindCorrect ?? 0) + (correct ? 1 : 0),
@@ -95,7 +113,13 @@ export function recordHearFindAttempt(
     hearFindCorrectTotal: progress.hearFindCorrectTotal + (correct ? 1 : 0),
   };
   if (correct) progress = addPlatformXp(progress, "hearFindCorrect");
-  saveDiscoveryWorldProgress(worldId, childId, progress);
+  progress = commitDiscoveryWorldProgress(
+    worldId,
+    childId,
+    progress,
+    items,
+    openedItemIds(worldId, childId),
+  );
   return progress;
 }
 

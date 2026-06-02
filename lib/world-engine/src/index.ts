@@ -108,6 +108,44 @@ export {
 export { buildPlatformParentInsights, type PlatformParentInsights } from "./parent-insights.js";
 
 export {
+  buildDailyAdventure,
+  loadDailyAdventureProgress,
+  recordDailyAdventureEvent,
+  dailyAdventureCompletionPct,
+  type DailyAdventureTask,
+  type DailyAdventureProgress,
+  type DailyAdventureTaskKind,
+  type DailyAdventureCompletion,
+} from "./daily-adventures.js";
+
+export {
+  EXPLORER_LEVEL_LADDER,
+  resolveExplorerLevel,
+  nextExplorerLevel,
+  xpProgressToNextLevel,
+  type ExplorerLevelTitle,
+} from "./explorer-levels.js";
+
+export {
+  STREAK_BADGES,
+  unlockedStreakBadges,
+  nextStreakBadge,
+  type StreakBadgeDefinition,
+  type StreakBadgeId,
+} from "./streak-badges.js";
+
+export {
+  buildPersonalizedRecommendation,
+  type PersonalizedRecommendation,
+} from "./personalization.js";
+
+export {
+  diagnoseWorldManifest,
+  manifestDiagnosticsSummary,
+  type ContentDiagnosticIssue,
+} from "./content-diagnostics.js";
+
+export {
   buildWorldSoundEffectPrompt,
   collectWorldAudioJobs,
   type WorldAudioJob,
