@@ -22,6 +22,8 @@ const AUDIO_MANAGER_ALLOWLIST = new Set([
   "lib/phonics-player.ts",
   "lib/phonics-static-audio.ts",
   "lib/phonics-audio.ts",
+  "lib/animal-world-audio-manager.ts",
+  "lib/discovery-world-audio-manager.ts",
   "lib/voice.ts",
   "lib/audio-session-coordinator.ts",
   "hooks/use-poem-player.ts",
