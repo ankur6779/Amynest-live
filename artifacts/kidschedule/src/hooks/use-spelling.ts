@@ -515,12 +515,34 @@ export const AI_OPPONENT_LABELS: Record<SpellingAiOpponent, string> = {
  * client only ever knows: there's a word with this many letters, here's
  * the audio URL to play it.
  */
+/**
+ * How the child is asked to produce the spelling. Dictation scales this
+ * with difficulty so younger learners aren't forced to free-type from
+ * audio alone:
+ *   - "tiles":   all letters provided (shuffled) — tap to order them
+ *   - "missing": most letters shown, blanks to fill from a small tile bank
+ *   - "type":    free-type from the clue + (optional) audio
+ * Competition / Tournament / Battle leave this undefined (always free-type,
+ * answer fully hidden).
+ */
+export type DictationRecallStyle = "tiles" | "missing" | "type";
+
 export interface SafeSessionWord {
   id: string;
   ageGroup: SpellingAgeGroup;
   difficulty: SpellingDifficulty;
   audioUrl: string;
   letterCount: number;
+  /** Dictation only — drives the recall UI. Undefined elsewhere. */
+  recallStyle?: DictationRecallStyle;
+  /** Dictation only — non-audio cue (word meaning). */
+  hint?: string;
+  /** Dictation only — optional picture cue (emoji). */
+  emoji?: string | null;
+  /** Dictation only — letter tiles for "tiles" / "missing" styles. */
+  tiles?: string[];
+  /** Dictation only — revealed letters with `null` at blanked positions. */
+  revealed?: (string | null)[];
 }
 
 export interface SessionAttemptResult {

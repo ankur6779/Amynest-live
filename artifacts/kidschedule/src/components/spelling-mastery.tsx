@@ -595,17 +595,26 @@ function PlayButtonsForUrl({
     void tts.playUrl(url, { slow: true });
   };
 
+  // No exact clip for this word — never play a wrong substitute. Show a
+  // clear, non-revealing affordance so the child knows audio is missing
+  // (rather than tapping a dead Play button).
+  if (!url) {
+    return <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+        <VolumeX className="h-4 w-4" /> Audio couldn't load for this word
+      </div>;
+  }
+
   return <div className="flex flex-col items-center gap-1.5">
       <div className="flex items-center gap-2">
-        <Button size="sm" onPointerDown={() => url && tts.primeUrl(url)} onClick={handlePlay} disabled={tts.loading || !url} className="bg-primary hover:bg-primary text-white">
+        <Button size="sm" onPointerDown={() => url && tts.primeUrl(url)} onClick={handlePlay} disabled={tts.loading} className="bg-primary hover:bg-primary text-white">
           {tts.loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : tts.speaking ? <VolumeX className="h-4 w-4 mr-1" /> : <Volume2 className="h-4 w-4 mr-1" />}
           {tts.speaking ? "Stop" : "Play"}
         </Button>
-        <Button size="sm" variant="outline" onPointerDown={() => url && tts.primeUrl(url)} onClick={handleSlow} disabled={tts.loading || !url}>
+        <Button size="sm" variant="outline" onPointerDown={() => url && tts.primeUrl(url)} onClick={handleSlow} disabled={tts.loading}>
           {t("components.spelling_mastery.slow_2")}
         </Button>
       </div>
-      {tts.error && url && <Button size="sm" variant="ghost" className="h-7 text-xs text-primary" onClick={handlePlay}>
+      {tts.error && <Button size="sm" variant="ghost" className="h-7 text-xs text-primary" onClick={handlePlay}>
           Retry audio
         </Button>}
     </div>;
@@ -1007,12 +1016,127 @@ function JumbledLetterGame({
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Dictation — server-graded session flow
+// Dictation — server-graded recall ladder (tiles → missing → free-type)
 // ────────────────────────────────────────────────────────────────────────────
 //
-// v2: the server picks the words, plays them via session-scoped audio
-// URLs, and grades each typed guess. The client never sees the answer
-// until the server reveals it in the attempt response.
+// Dictation is no longer "listen to hidden audio, type the whole word".
+// The server now sends a difficulty-scaled recall task PLUS a written
+// clue, so the mode works even with audio muted/missing:
+//
+//   easy   → tiles    : all letters provided (shuffled) — tap to order them
+//   medium → missing  : most letters shown, a few blanks to fill from tiles
+//   hard   → type      : free-type from the clue + (optional) audio
+//
+// The child always assembles a full word string which the server grades
+// via the same attempt endpoint — no grading/trust changes needed.
+
+/** Tap-to-order letter tiles (easy). Reports the built string up to parent. */
+function TileBuilder({
+  letters,
+  disabled,
+  onChange
+}: {
+  letters: string[];
+  disabled: boolean;
+  onChange: (s: string) => void;
+}) {
+  const tiles = useMemo(() => letters.map((ch, i) => ({ id: `${ch}-${i}`, ch })), [letters]);
+  const [picked, setPicked] = useState<typeof tiles>([]);
+  const commit = (next: typeof tiles) => {
+    setPicked(next);
+    onChange(next.map(p => p.ch).join(""));
+  };
+  const pick = (tile: typeof tiles[number]) => {
+    if (disabled || picked.find(p => p.id === tile.id)) return;
+    commit([...picked, tile]);
+  };
+  const remove = (i: number) => {
+    if (disabled) return;
+    commit(picked.filter((_, idx) => idx !== i));
+  };
+  return <div className="space-y-3">
+      <div className="min-h-[56px] rounded-xl border-2 border-dashed border-border dark:border-primary bg-muted dark:bg-primary/[0.05] p-2 flex flex-wrap justify-center gap-1.5">
+        {picked.length === 0 && <span className="text-xs text-muted-foreground self-center">Tap the letters in order</span>}
+        {picked.map((p, i) => <button key={p.id} onClick={() => remove(i)} disabled={disabled} className="w-10 h-10 rounded-lg font-quicksand font-extrabold text-lg bg-white dark:bg-white/[0.08] text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-card transition-all">
+            {p.ch}
+          </button>)}
+      </div>
+      <div className="flex flex-wrap justify-center gap-1.5">
+        {tiles.map(tl => {
+        const used = picked.find(p => p.id === tl.id);
+        return <button key={tl.id} onClick={() => pick(tl)} disabled={!!used || disabled} className={["w-10 h-10 rounded-lg font-quicksand font-extrabold text-lg transition-all", used ? "bg-white/30 dark:bg-white/[0.04] text-muted-foreground/50" : "bg-primary text-white hover:bg-primary shadow-sm"].join(" ")}>
+              {tl.ch}
+            </button>;
+      })}
+      </div>
+      {picked.length > 0 && !disabled && <Button variant="outline" onClick={() => commit([])} className="w-full">
+          Clear
+        </Button>}
+    </div>;
+}
+
+/** Fill the blanks (medium). Reports the assembled string once complete. */
+function MissingFiller({
+  revealed,
+  fillers,
+  disabled,
+  onChange
+}: {
+  revealed: (string | null)[];
+  fillers: string[];
+  disabled: boolean;
+  onChange: (s: string) => void;
+}) {
+  const bank = useMemo(() => fillers.map((ch, i) => ({ id: `${ch}-${i}`, ch })), [fillers]);
+  const blanks = revealed.reduce((n, ch) => (ch === null ? n + 1 : n), 0);
+  const [picked, setPicked] = useState<typeof bank>([]);
+  const assemble = (sel: typeof bank): string => {
+    if (sel.length < blanks) return "";
+    let f = 0;
+    return revealed.map(ch => ch ?? sel[f++]!.ch).join("");
+  };
+  const commit = (next: typeof bank) => {
+    setPicked(next);
+    onChange(assemble(next));
+  };
+  const pick = (tile: typeof bank[number]) => {
+    if (disabled || picked.find(p => p.id === tile.id) || picked.length >= blanks) return;
+    commit([...picked, tile]);
+  };
+  const undo = () => {
+    if (disabled) return;
+    commit(picked.slice(0, -1));
+  };
+  let fi = 0;
+  return <div className="space-y-3">
+      <div className="flex flex-wrap justify-center gap-1.5">
+        {revealed.map((ch, i) => {
+        if (ch !== null) {
+          return <span key={i} className="w-10 h-10 rounded-lg flex items-center justify-center font-quicksand font-extrabold text-lg bg-muted dark:bg-card text-primary dark:text-muted-foreground capitalize">
+              {ch}
+            </span>;
+        }
+        const p = picked[fi];
+        fi += 1;
+        return <span key={i} className={["w-10 h-10 rounded-lg flex items-center justify-center font-quicksand font-extrabold text-lg border-2 border-dashed transition-all", p ? "border-primary bg-primary/10 text-primary dark:text-muted-foreground" : "border-border dark:border-primary text-muted-foreground"].join(" ")}>
+            {p ? p.ch : "_"}
+          </span>;
+      })}
+      </div>
+      <div className="flex flex-wrap justify-center gap-1.5">
+        {bank.map(tl => {
+        const used = picked.find(p => p.id === tl.id);
+        return <button key={tl.id} onClick={() => pick(tl)} disabled={!!used || disabled || picked.length >= blanks} className={["w-10 h-10 rounded-lg font-quicksand font-extrabold text-lg transition-all", used ? "bg-white/30 dark:bg-white/[0.04] text-muted-foreground/50" : "bg-primary text-white hover:bg-primary shadow-sm"].join(" ")}>
+              {tl.ch}
+            </button>;
+      })}
+      </div>
+      {picked.length > 0 && !disabled && <Button variant="outline" onClick={undo} className="w-full">
+          Undo
+        </Button>}
+    </div>;
+}
+
 function DictationView({
   childId,
   ageGroup,
@@ -1058,13 +1182,21 @@ function DictationView({
   }, [childId, ageGroup, difficulty, wordsSource]);
   const word = session.words[idx];
 
-  // REMOVED auto-play on word change — user taps play to hear the word.
   if (session.loading && session.words.length === 0) {
     return <EmptyOrLoading loading empty={false} />;
   }
   if (!word) {
     return <EmptyOrLoading loading={false} empty emptyMsg="No words loaded for this run." />;
   }
+  const recallStyle = word.recallStyle ?? "type";
+  // For tile / missing-letter styles the child assembles a full-length
+  // word; only enable Check once every slot is filled. Free-type just
+  // needs a non-empty guess.
+  const ready = recallStyle === "type" ? guess.trim().length > 0 : guess.length === word.letterCount;
+  const styleLabel = recallStyle === "tiles" ? "Build the word" : recallStyle === "missing" ? "Fill the blanks" : "Listen & spell the word";
+  // Stable per-word key so the tile/blank builders reset between words.
+  const builderKey = `${word.id}-${idx}`;
+
   const submit = async () => {
     if (verdict || submitting) return;
     const trimmed = guess.trim();
@@ -1101,19 +1233,35 @@ function DictationView({
             {t("components.spelling_mastery.dictation")} {idx + 1} / {session.words.length}
           </p>
           <p className="mt-2 text-base text-primary dark:text-muted-foreground font-bold">
-            {t("components.spelling_mastery.listen_and_spell_the_word")}
+            {styleLabel}
           </p>
         </div>
 
-        <div className="flex justify-center">
+        {/* Picture cue — a glanceable, audio-free hint for picturable words. */}
+        {word.emoji && <div className="text-center text-5xl leading-none animate-in fade-in zoom-in-95 duration-200" aria-hidden>
+            {word.emoji}
+          </div>}
+
+        {/* Written clue — the non-audio cue, so the game never hard-depends
+            on sound playing. */}
+        {word.hint && <div className="rounded-xl bg-muted dark:bg-primary/[0.06] border border-border dark:border-primary px-3 py-2.5 flex items-start gap-2">
+            <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <p className="text-sm text-foreground italic">
+              <span className="font-bold not-italic">Clue: </span>"{word.hint}"
+            </p>
+          </div>}
+
+        {/* Audio is now a helper, not a requirement. */}
+        <div className="flex flex-col items-center gap-1">
           <PlayButtonsForUrl url={word.audioUrl} tts={tts} />
+          {word.audioUrl && <span className="text-[10px] text-muted-foreground">Tap to hear it (optional)</span>}
         </div>
 
-        <Input value={guess} onChange={e => !verdict && setGuess(e.target.value)} onKeyDown={e => {
+        {recallStyle === "tiles" ? <TileBuilder key={builderKey} letters={word.tiles ?? []} disabled={!!verdict || submitting} onChange={setGuess} /> : recallStyle === "missing" ? <MissingFiller key={builderKey} revealed={word.revealed ?? []} fillers={word.tiles ?? []} disabled={!!verdict || submitting} onChange={setGuess} /> : <Input value={guess} onChange={e => !verdict && setGuess(e.target.value)} onKeyDown={e => {
         if (e.key === "Enter") void submit();
-      }} placeholder={`Type the word… (${word.letterCount} letters)`} autoFocus disabled={!!verdict || submitting} className={["text-center text-xl font-quicksand font-bold tracking-wider h-12", verdict?.correct === true ? "border-primary bg-muted dark:bg-card" : "", verdict?.correct === false ? "border-primary bg-muted dark:bg-card" : ""].join(" ")} />
+      }} placeholder={`Type the word… (${word.letterCount} letters)`} autoFocus disabled={!!verdict || submitting} className={["text-center text-xl font-quicksand font-bold tracking-wider h-12", verdict?.correct === true ? "border-primary bg-muted dark:bg-card" : "", verdict?.correct === false ? "border-primary bg-muted dark:bg-card" : ""].join(" ")} />}
 
-        {!verdict ? <Button onClick={() => void submit()} disabled={!guess.trim() || submitting} className="w-full bg-primary hover:bg-primary text-white">
+        {!verdict ? <Button onClick={() => void submit()} disabled={!ready || submitting} className="w-full bg-primary hover:bg-primary text-white">
             {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
             {t("components.spelling_mastery.check")}
           </Button> : <div className="space-y-2">

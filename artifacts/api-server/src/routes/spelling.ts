@@ -24,7 +24,10 @@ import {
 } from "@workspace/spelling-catalog";
 import { readCachedAudio } from "../services/ttsCacheService.js";
 import { submitRouteAiJob } from "../lib/route-ai-queue.js";
-import { resolveSpellingWordAudioProxyUrlWithFallback } from "../services/spelling-audio-manifest.js";
+import {
+  resolveSpellingWordAudioProxyUrl,
+} from "../services/spelling-audio-manifest.js";
+import { spellingWordEmoji } from "../services/spelling-word-emoji.js";
 
 const router: IRouter = Router();
 
@@ -786,7 +789,13 @@ function safeWordFor(
     id: `w${index}`,
     ageGroup: word.ageGroup,
     difficulty: word.difficulty,
-    audioUrl: resolveSpellingWordAudioProxyUrlWithFallback(word.word, word.id),
+    // STRICT: only the exact word's clip, never a cross-word fallback.
+    // A substituted clip would silently play a DIFFERENT word in these
+    // hidden-answer modes and guarantee a wrong answer. Empty when the
+    // exact clip is missing — the client shows an "audio unavailable"
+    // affordance instead. The session pool is pre-filtered to
+    // audio-confirmed words, so this is rare.
+    audioUrl: resolveSpellingWordAudioProxyUrl(word.word, word.id) ?? "",
     letterCount: word.word.length,
   };
 }
@@ -798,6 +807,137 @@ export function _safeWordForTest(
   word: SpellingWord,
 ) {
   return safeWordFor(sessionToken, index, word);
+}
+
+// ─── Dictation recall ladder ─────────────────────────────────────────────────
+//
+// Dictation deliberately diverges from the strict `safeWordFor` trust
+// projection used by Competition / Tournament / Battle. Dictation has NO
+// leaderboard, so revealing scaffolding (a clue + letter tiles) is safe —
+// and it lets the mode work WITHOUT relying on audio at all. The recall
+// task scales with difficulty so younger / lower-difficulty learners are
+// not forced to type a whole word from audio alone:
+//
+//   easy   → "tiles"   : all letters provided, shuffled — child orders them
+//   medium → "missing" : most letters shown, 1–3 blanks to fill from tiles
+//   hard   → "type"    : free-type from the clue + (optional) audio
+//
+// The answer is still graded server-side by the SAME attempt endpoint —
+// the client assembles a full word string and submits it, so no grading
+// or trust code changes are needed.
+
+export type DictationRecallStyle = "tiles" | "missing" | "type";
+
+export function recallStyleForDifficulty(
+  difficulty: SpellingDifficulty,
+): DictationRecallStyle {
+  if (difficulty === "easy") return "tiles";
+  if (difficulty === "medium") return "missing";
+  return "type";
+}
+
+/** Deterministic Fisher–Yates seeded by the session token + slot. */
+function seededShuffle<T>(arr: readonly T[], seed: string): T[] {
+  const rng = seededRng(strHash(seed));
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/**
+ * Pick which letter positions to blank for "missing" recall. Scales with
+ * word length (~1/3 of letters, clamped 1–3) and is deterministic per
+ * (sessionToken, index) so a refresh shows the same puzzle.
+ */
+function pickMissingIndices(word: string, seed: string): number[] {
+  const len = word.length;
+  if (len <= 1) return [0];
+  const blanks = Math.min(3, Math.max(1, Math.floor(len / 3)));
+  const rng = seededRng(strHash(`${seed}:missing`));
+  const idxs = Array.from({ length: len }, (_, i) => i);
+  for (let i = idxs.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [idxs[i], idxs[j]] = [idxs[j], idxs[i]];
+  }
+  return idxs.slice(0, blanks).sort((a, b) => a - b);
+}
+
+export interface SafeDictationWord {
+  id: string;
+  ageGroup: string;
+  difficulty: string;
+  /** Empty string when no exact-match clip exists — client falls back to clue. */
+  audioUrl: string;
+  letterCount: number;
+  recallStyle: DictationRecallStyle;
+  /** Non-audio cue (word meaning). Lets the child play with audio muted/missing. */
+  hint: string;
+  /** Optional picture cue (emoji) for picturable nouns. Null when unmapped. */
+  emoji: string | null;
+  /** "tiles": full shuffled letters. "missing": shuffled blank-fill letters. */
+  tiles?: string[];
+  /** "missing": revealed letters with `null` at the blanked positions. */
+  revealed?: (string | null)[];
+}
+
+/**
+ * Dictation-only projection. Unlike `safeWordFor`, this intentionally
+ * surfaces scaffolding (clue + tiles) — safe because Dictation never
+ * writes the leaderboard. Audio is resolved STRICTLY (no cross-word
+ * fallback): when the exact clip is missing we return "" so the client
+ * leans on the clue instead of silently playing a different word.
+ */
+function safeDictationWordFor(
+  sessionToken: string,
+  index: number,
+  word: SpellingWord,
+  difficulty: SpellingDifficulty,
+): SafeDictationWord {
+  const letters = word.word.split("");
+  const recallStyle = recallStyleForDifficulty(difficulty);
+  const base: SafeDictationWord = {
+    id: `w${index}`,
+    ageGroup: word.ageGroup,
+    difficulty: word.difficulty,
+    audioUrl: resolveSpellingWordAudioProxyUrl(word.word, word.id) ?? "",
+    letterCount: word.word.length,
+    recallStyle,
+    hint: word.hint,
+    emoji: spellingWordEmoji(word.word),
+  };
+  if (recallStyle === "tiles") {
+    base.tiles = seededShuffle(letters, `${sessionToken}:${index}:tiles`);
+    return base;
+  }
+  if (recallStyle === "missing") {
+    const missing = pickMissingIndices(word.word, `${sessionToken}:${index}`);
+    const missingSet = new Set(missing);
+    base.revealed = letters.map((ch, i) => (missingSet.has(i) ? null : ch));
+    base.tiles = seededShuffle(
+      missing.map((i) => letters[i] ?? ""),
+      `${sessionToken}:${index}:missing`,
+    );
+    return base;
+  }
+  return base;
+}
+
+/** Exported for tests — see safeDictationWordFor above. */
+export function _safeDictationWordForTest(
+  sessionToken: string,
+  index: number,
+  word: SpellingWord,
+  difficulty: SpellingDifficulty,
+) {
+  return safeDictationWordFor(sessionToken, index, word, difficulty);
+}
+
+/** True iff a pre-generated audio clip exists for this exact word. */
+function hasSpellingWordAudio(word: SpellingWord): boolean {
+  return resolveSpellingWordAudioProxyUrl(word.word, word.id) !== null;
 }
 
 /**
@@ -822,7 +962,7 @@ async function createSpellingSession(args: {
       ok: true;
       sessionToken: string;
       startedAt: Date;
-      safeWords: ReturnType<typeof safeWordFor>[];
+      safeWords: Array<ReturnType<typeof safeWordFor> | SafeDictationWord>;
       aiResults: Array<{ correct: boolean; ms: number }> | null;
     }
   | { ok: false; error: "no_words_available" | "audio_unavailable" }
@@ -844,7 +984,22 @@ async function createSpellingSession(args: {
   }
   if (words.length === 0) {
     const pool = getBucketEntries(args.ageGroup, args.difficulty).map(catalogEntryToWord);
-    words = sample(pool, args.count);
+    // Prefer words with a confirmed pre-generated clip so the hidden-answer
+    // modes never trip the cross-word audio fallback (which would play a
+    // DIFFERENT word and guarantee a wrong answer). Top up from the rest
+    // only if we can't reach `count` from audio-confirmed words alone.
+    const audioPool = pool.filter(hasSpellingWordAudio);
+    const chosen = sample(audioPool, args.count);
+    if (chosen.length < args.count) {
+      const chosenIds = new Set(chosen.map((w) => w.id));
+      const filler = sample(
+        pool.filter((w) => !chosenIds.has(w.id)),
+        args.count - chosen.length,
+      );
+      words = [...chosen, ...filler];
+    } else {
+      words = chosen;
+    }
   }
   if (words.length === 0) {
     return { ok: false, error: "no_words_available" };
@@ -884,11 +1039,21 @@ async function createSpellingSession(args: {
     })
     .returning({ startedAt: spellingSessionsTable.startedAt });
 
+  // Dictation gets the scaffolded recall projection (clue + tiles, audio
+  // optional). Competition / Tournament / Battle keep the strict,
+  // answer-hiding projection because they feed the leaderboard / ladder.
+  const safeWords =
+    args.mode === "dictation"
+      ? words.map((w, i) =>
+          safeDictationWordFor(sessionToken, i, w, args.difficulty),
+        )
+      : words.map((w, i) => safeWordFor(sessionToken, i, w));
+
   return {
     ok: true,
     sessionToken,
     startedAt: inserted[0]?.startedAt ?? new Date(),
-    safeWords: words.map((w, i) => safeWordFor(sessionToken, i, w)),
+    safeWords,
     aiResults,
   };
 }
