@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  buildHearFindQuestion,
   buildQuizQuestion,
+  defaultProgressV2,
   getAllAnimals,
   getAnimalsByCategory,
+  gradeHearFindAnswer,
   gradeQuizAnswer,
   resolveAnimalSoundUrl,
 } from "./index.js";
@@ -30,4 +33,18 @@ test("quiz engine builds valid question", () => {
   const correct = gradeQuizAnswer(question!, question!.correctAnimalId);
   assert.equal(correct.correct, true);
   assert.equal(wrong.correct, wrong.selectedAnimalId === question!.correctAnimalId);
+});
+
+test("hear-find engine builds 3-4 options", () => {
+  const question = buildHearFindQuestion(getAllAnimals(), { optionCount: 4 });
+  assert.ok(question);
+  assert.ok(question!.options.length >= 3);
+  const result = gradeHearFindAnswer(question!, question!.correctAnimalId);
+  assert.equal(result.correct, true);
+});
+
+test("default progress v2 is empty", () => {
+  const p = defaultProgressV2();
+  assert.equal(p.xp, 0);
+  assert.equal(p.explorerTier, "none");
 });

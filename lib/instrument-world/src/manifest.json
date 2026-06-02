@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "worldId": "instrument_world",
+  "categories": [
+    { "id": "strings", "label": "Strings", "emoji": "🎻" },
+    { "id": "percussion", "label": "Percussion", "emoji": "🥁" },
+    { "id": "woodwind", "label": "Woodwind", "emoji": "🎵" },
+    { "id": "brass", "label": "Brass", "emoji": "🎺" },
+    { "id": "keyboard", "label": "Keyboard", "emoji": "🎹" }
+  ],
+  "items": [
+    {
+      "id": "piano",
+      "name": "Piano",
+      "category": "keyboard",
+      "emoji": "🎹",
+      "imageGcsPath": "worlds/instruments/keyboard/piano/hero.webp",
+      "quizSoundId": "note-01",
+      "quizPrompt": "Plink",
+      "narration": {
+        "intro": "This is a piano.",
+        "introGcsPath": "worlds/instruments/keyboard/piano/narration-intro.mp3",
+        "soundCue": "The piano plays a note.",
+        "soundCueGcsPath": "worlds/instruments/keyboard/piano/narration-sound.mp3"
+      },
+      "sounds": [
+        { "id": "note-01", "label": "Note", "gcsPath": "worlds/instruments/keyboard/piano/note-01.mp3", "durationSec": 1.0, "waveform": [0.5, 0.7, 0.4, 0.3] }
+      ]
+    },
+    {
+      "id": "drums",
+      "name": "Drums",
+      "category": "percussion",
+      "emoji": "🥁",
+      "imageGcsPath": "worlds/instruments/percussion/drums/hero.webp",
+      "quizSoundId": "beat-01",
+      "quizPrompt": "Boom tap",
+      "narration": {
+        "intro": "These are drums.",
+        "introGcsPath": "worlds/instruments/percussion/drums/narration-intro.mp3",
+        "soundCue": "The drums go boom tap.",
+        "soundCueGcsPath": "worlds/instruments/percussion/drums/narration-sound.mp3"
+      },
+      "sounds": [
+        { "id": "beat-01", "label": "Beat", "gcsPath": "worlds/instruments/percussion/drums/beat-01.mp3", "durationSec": 1.2, "waveform": [0.6, 0.9, 0.5, 0.4] }
+      ]
+    },
+    {
+      "id": "trumpet",
+      "name": "Trumpet",
+      "category": "brass",
+      "emoji": "🎺",
+      "imageGcsPath": "worlds/instruments/brass/trumpet/hero.webp",
+      "quizSoundId": "toot-01",
+      "quizPrompt": "Toot",
+      "narration": {
+        "intro": "This is a trumpet.",
+        "introGcsPath": "worlds/instruments/brass/trumpet/narration-intro.mp3",
+        "soundCue": "The trumpet goes toot.",
+        "soundCueGcsPath": "worlds/instruments/brass/trumpet/narration-sound.mp3"
+      },
+      "sounds": [
+        { "id": "toot-01", "label": "Toot", "gcsPath": "worlds/instruments/brass/trumpet/toot-01.mp3", "durationSec": 1.1, "waveform": [0.4, 0.8, 0.6, 0.3] }
+      ]
+    }
+  ]
+}

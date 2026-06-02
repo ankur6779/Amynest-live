@@ -11,6 +11,9 @@
   "scripts": {
     "test": "node --import tsx/esm --test src/index.test.ts"
   },
+  "dependencies": {
+    "@workspace/world-engine": "workspace:*"
+  },
   "devDependencies": {
     "tsx": "catalog:"
   }

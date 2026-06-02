@@ -111,6 +111,9 @@ const NutritionHubPage = lazyPage(() => import("@/pages/nutrition"));
 const AudioLessonsPage = lazyPage(() => import("@/pages/audio-lessons"));
 const GamesPage = lazyPage(() => import("@/pages/games"));
 const AnimalWorldPage = lazyPage(() => import("@/pages/animal-world"));
+const DiscoveryWorldsHubPage = lazyPage(() => import("@/pages/discovery-worlds-hub"));
+const DiscoveryWorldPreviewPage = lazyPage(() => import("@/pages/discovery-world-preview"));
+const DiscoveryWorldLivePage = lazyPage(() => import("@/pages/discovery-world-live"));
 const OnboardingPage = lazyPage(() => import("@/pages/onboarding"));
 const PricingPage = lazyPage(() => import("@/pages/pricing"));
 const SubscriptionTrialPage = lazyPage(() => import("@/pages/subscription-trial"));
@@ -341,6 +344,9 @@ const NutritionHubRoute = makeProtectedRoute(NutritionHubPage);
 const AudioLessonsRoute = makeProtectedRoute(AudioLessonsPage);
 const GamesRoute = makeProtectedRoute(GamesPage);
 const AnimalWorldRoute = makeProtectedRoute(AnimalWorldPage);
+const DiscoveryWorldsHubRoute = makeProtectedRoute(DiscoveryWorldsHubPage);
+const DiscoveryWorldPreviewRoute = makeProtectedRoute(DiscoveryWorldPreviewPage);
+const DiscoveryWorldLiveRoute = makeProtectedRoute(DiscoveryWorldLivePage);
 const PricingRoute = makeProtectedRoute(PricingPage);
 const ReferralsRoute = makeProtectedRoute(ReferralsPage);
 /** Public — universal link `/referral/:code` captures invite before sign-in. */
@@ -631,6 +637,8 @@ function AppRoutes() {
           <Route path="/audio-lessons" component={AudioLessonsRoute} />
           <Route path="/games" component={GamesRoute} />
           <Route path="/animal-world" component={AnimalWorldRoute} />
+          <Route path="/discovery-worlds" component={DiscoveryWorldsHubRoute} />
+          <Route path="/worlds/:slug" component={DiscoveryWorldLiveRoute} />
           <Route path="/pricing" component={PricingRoute} />
           <Route path="/referral/:code" component={ReferralDeepLinkRoute} />
           <Route path="/referrals" component={ReferralsRoute} />

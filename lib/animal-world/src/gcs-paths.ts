@@ -63,6 +63,20 @@ export function getAnimalHeroImageGcsPath(
   return getAnimalSoundGcsPath(category, animalId, "hero.webp");
 }
 
+export function getAnimalHeroRealGcsPath(
+  category: AnimalCategory,
+  animalId: string,
+): string {
+  return getAnimalSoundGcsPath(category, animalId, "hero-real.webp");
+}
+
+export function getAnimalHeroCartoonGcsPath(
+  category: AnimalCategory,
+  animalId: string,
+): string {
+  return getAnimalSoundGcsPath(category, animalId, "hero-cartoon.webp");
+}
+
 export function getAnimalMetadataGcsPath(): string {
   return "animal-world/animals.json";
 }

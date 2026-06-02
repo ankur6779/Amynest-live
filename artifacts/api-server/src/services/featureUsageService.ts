@@ -50,6 +50,10 @@ export const PARENT_HUB_FEATURES = [
   "hub_speech",
   "hub_speech_session",
   "hub_animal_world",
+  "hub_vehicle_world",
+  "hub_nature_world",
+  "hub_home_sounds_world",
+  "hub_instrument_world",
 ] as const;
 
 export type ParentHubFeatureId = (typeof PARENT_HUB_FEATURES)[number];

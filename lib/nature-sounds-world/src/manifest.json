@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "worldId": "nature_world",
+  "categories": [
+    { "id": "weather", "label": "Weather", "emoji": "⛈️" },
+    { "id": "forest", "label": "Forest", "emoji": "🌲" },
+    { "id": "ocean", "label": "Ocean", "emoji": "🌊" },
+    { "id": "night", "label": "Night", "emoji": "🌙" }
+  ],
+  "items": [
+    {
+      "id": "rain",
+      "name": "Rain",
+      "category": "weather",
+      "emoji": "🌧️",
+      "imageGcsPath": "worlds/nature/weather/rain/hero.webp",
+      "quizSoundId": "rain-01",
+      "quizPrompt": "Pitter patter",
+      "narration": {
+        "intro": "This is rain.",
+        "introGcsPath": "worlds/nature/weather/rain/narration-intro.mp3",
+        "soundCue": "Listen to the rain.",
+        "soundCueGcsPath": "worlds/nature/weather/rain/narration-sound.mp3"
+      },
+      "sounds": [
+        { "id": "rain-01", "label": "Rain", "gcsPath": "worlds/nature/weather/rain/rain-01.mp3", "durationSec": 3.0, "waveform": [0.4, 0.5, 0.6, 0.5] }
+      ]
+    },
+    {
+      "id": "thunder",
+      "name": "Thunder",
+      "category": "weather",
+      "emoji": "⛈️",
+      "imageGcsPath": "worlds/nature/weather/thunder/hero.webp",
+      "quizSoundId": "thunder-01",
+      "quizPrompt": "Boom",
+      "narration": {
+        "intro": "This is thunder.",
+        "introGcsPath": "worlds/nature/weather/thunder/narration-intro.mp3",
+        "soundCue": "Thunder rumbles loud.",
+        "soundCueGcsPath": "worlds/nature/weather/thunder/narration-sound.mp3"
+      },
+      "sounds": [
+        { "id": "thunder-01", "label": "Thunder", "gcsPath": "worlds/nature/weather/thunder/thunder-01.mp3", "durationSec": 2.0, "waveform": [0.2, 0.9, 0.7, 0.3] }
+      ]
+    },
+    {
+      "id": "ocean-waves",
+      "name": "Ocean Waves",
+      "category": "ocean",
+      "emoji": "🌊",
+      "imageGcsPath": "worlds/nature/ocean/ocean-waves/hero.webp",
+      "quizSoundId": "waves-01",
+      "quizPrompt": "Whoosh",
+      "narration": {
+        "intro": "These are ocean waves.",
+        "introGcsPath": "worlds/nature/ocean/ocean-waves/narration-intro.mp3",
+        "soundCue": "Waves crash on the shore.",
+        "soundCueGcsPath": "worlds/nature/ocean/ocean-waves/narration-sound.mp3"
+      },
+      "sounds": [
+        { "id": "waves-01", "label": "Waves", "gcsPath": "worlds/nature/ocean/ocean-waves/waves-01.mp3", "durationSec": 3.5, "waveform": [0.3, 0.5, 0.7, 0.6] }
+      ]
+    }
+  ]
+}

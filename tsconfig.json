@@ -7,6 +7,24 @@
       "path": "./lib/animal-world"
     },
     {
+      "path": "./lib/world-engine"
+    },
+    {
+      "path": "./lib/discovery-worlds"
+    },
+    {
+      "path": "./lib/vehicle-world"
+    },
+    {
+      "path": "./lib/nature-sounds-world"
+    },
+    {
+      "path": "./lib/home-sounds-world"
+    },
+    {
+      "path": "./lib/instrument-world"
+    },
+    {
       "path": "./lib/speech-coach"
     },
     {

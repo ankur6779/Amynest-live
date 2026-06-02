@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "worldId": "vehicle_world",
+  "categories": [
+    { "id": "road", "label": "Road", "emoji": "🛣️" },
+    { "id": "construction", "label": "Construction", "emoji": "🚧" },
+    { "id": "emergency", "label": "Emergency", "emoji": "🚨" },
+    { "id": "air", "label": "Air", "emoji": "✈️" },
+    { "id": "water", "label": "Water", "emoji": "⛵" },
+    { "id": "space", "label": "Space", "emoji": "🚀" }
+  ],
+  "items": [
+    {
+      "id": "car",
+      "name": "Car",
+      "category": "road",
+      "emoji": "🚗",
+      "imageGcsPath": "worlds/vehicles/road/car/hero.webp",
+      "funFact": "Cars have four wheels and an engine.",
+      "quizSoundId": "engine-01",
+      "quizPrompt": "Vroom",
+      "narration": {
+        "intro": "This is a car.",
+        "introGcsPath": "worlds/vehicles/road/car/narration-intro.mp3",
+        "soundCue": "This car goes vroom.",
+        "soundCueGcsPath": "worlds/vehicles/road/car/narration-sound.mp3"
+      },
+      "sounds": [
+        { "id": "engine-01", "label": "Engine", "gcsPath": "worlds/vehicles/road/car/engine-01.mp3", "durationSec": 1.2, "waveform": [0.3, 0.7, 0.8, 0.5] },
+        { "id": "horn-01", "label": "Horn", "gcsPath": "worlds/vehicles/road/car/horn-01.mp3", "durationSec": 0.8, "waveform": [0.5, 0.9, 0.6, 0.3] }
+      ]
+    },
+    {
+      "id": "fire-truck",
+      "name": "Fire Truck",
+      "category": "emergency",
+      "emoji": "🚒",
+      "imageGcsPath": "worlds/vehicles/emergency/fire-truck/hero.webp",
+      "quizSoundId": "siren-01",
+      "quizPrompt": "Neeno neeno",
+      "narration": {
+        "intro": "This is a fire truck.",
+        "introGcsPath": "worlds/vehicles/emergency/fire-truck/narration-intro.mp3",
+        "soundCue": "The fire truck siren wails.",
+        "soundCueGcsPath": "worlds/vehicles/emergency/fire-truck/narration-sound.mp3"
+      },
+      "sounds": [
+        { "id": "siren-01", "label": "Siren", "gcsPath": "worlds/vehicles/emergency/fire-truck/siren-01.mp3", "durationSec": 1.5, "waveform": [0.4, 0.8, 0.9, 0.7] }
+      ]
+    },
+    {
+      "id": "train",
+      "name": "Train",
+      "category": "road",
+      "emoji": "🚂",
+      "imageGcsPath": "worlds/vehicles/road/train/hero.webp",
+      "quizSoundId": "whistle-01",
+      "quizPrompt": "Choo choo",
+      "narration": {
+        "intro": "This is a train.",
+        "introGcsPath": "worlds/vehicles/road/train/narration-intro.mp3",
+        "soundCue": "The train says choo choo.",
+        "soundCueGcsPath": "worlds/vehicles/road/train/narration-sound.mp3"
+      },
+      "sounds": [
+        { "id": "whistle-01", "label": "Whistle", "gcsPath": "worlds/vehicles/road/train/whistle-01.mp3", "durationSec": 1.3, "waveform": [0.3, 0.6, 0.9, 0.5] }
+      ]
+    },
+    {
+      "id": "rocket",
+      "name": "Rocket",
+      "category": "space",
+      "emoji": "🚀",
+      "imageGcsPath": "worlds/vehicles/space/rocket/hero.webp",
+      "quizSoundId": "launch-01",
+      "quizPrompt": "Whoosh",
+      "narration": {
+        "intro": "This is a rocket.",
+        "introGcsPath": "worlds/vehicles/space/rocket/narration-intro.mp3",
+        "soundCue": "The rocket blasts off.",
+        "soundCueGcsPath": "worlds/vehicles/space/rocket/narration-sound.mp3"
+      },
+      "sounds": [
+        { "id": "launch-01", "label": "Launch", "gcsPath": "worlds/vehicles/space/rocket/launch-01.mp3", "durationSec": 2.0, "waveform": [0.2, 0.5, 0.9, 0.8] }
+      ]
+    }
+  ]
+}

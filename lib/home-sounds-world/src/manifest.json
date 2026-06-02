@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "worldId": "home_sounds_world",
+  "categories": [
+    { "id": "kitchen", "label": "Kitchen", "emoji": "🍳" },
+    { "id": "living_room", "label": "Living Room", "emoji": "🛋️" },
+    { "id": "bathroom", "label": "Bathroom", "emoji": "🚿" },
+    { "id": "bedroom", "label": "Bedroom", "emoji": "🛏️" }
+  ],
+  "items": [
+    {
+      "id": "door-bell",
+      "name": "Door Bell",
+      "category": "living_room",
+      "emoji": "🔔",
+      "imageGcsPath": "worlds/home/living_room/door-bell/hero.webp",
+      "quizSoundId": "ding-01",
+      "quizPrompt": "Ding dong",
+      "narration": {
+        "intro": "This is a door bell.",
+        "introGcsPath": "worlds/home/living_room/door-bell/narration-intro.mp3",
+        "soundCue": "The door bell rings.",
+        "soundCueGcsPath": "worlds/home/living_room/door-bell/narration-sound.mp3"
+      },
+      "sounds": [
+        { "id": "ding-01", "label": "Ding", "gcsPath": "worlds/home/living_room/door-bell/ding-01.mp3", "durationSec": 1.0, "waveform": [0.5, 0.9, 0.4, 0.2] }
+      ]
+    },
+    {
+      "id": "vacuum",
+      "name": "Vacuum Cleaner",
+      "category": "living_room",
+      "emoji": "🧹",
+      "imageGcsPath": "worlds/home/living_room/vacuum/hero.webp",
+      "quizSoundId": "vacuum-01",
+      "quizPrompt": "Vvvvv",
+      "narration": {
+        "intro": "This is a vacuum cleaner.",
+        "introGcsPath": "worlds/home/living_room/vacuum/narration-intro.mp3",
+        "soundCue": "The vacuum hums.",
+        "soundCueGcsPath": "worlds/home/living_room/vacuum/narration-sound.mp3"
+      },
+      "sounds": [
+        { "id": "vacuum-01", "label": "Vacuum", "gcsPath": "worlds/home/living_room/vacuum/vacuum-01.mp3", "durationSec": 2.5, "waveform": [0.4, 0.6, 0.7, 0.6] }
+      ]
+    },
+    {
+      "id": "microwave",
+      "name": "Microwave",
+      "category": "kitchen",
+      "emoji": "📻",
+      "imageGcsPath": "worlds/home/kitchen/microwave/hero.webp",
+      "quizSoundId": "beep-01",
+      "quizPrompt": "Beep",
+      "narration": {
+        "intro": "This is a microwave.",
+        "introGcsPath": "worlds/home/kitchen/microwave/narration-intro.mp3",
+        "soundCue": "The microwave beeps.",
+        "soundCueGcsPath": "worlds/home/kitchen/microwave/narration-sound.mp3"
+      },
+      "sounds": [
+        { "id": "beep-01", "label": "Beep", "gcsPath": "worlds/home/kitchen/microwave/beep-01.mp3", "durationSec": 0.6, "waveform": [0.6, 0.8, 0.3, 0.2] }
+      ]
+    }
+  ]
+}

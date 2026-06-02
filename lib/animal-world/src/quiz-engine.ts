@@ -68,11 +68,40 @@ export function gradeQuizAnswer(
 export function buildDiscoverySequence(
   animals: Animal[],
   count = 20,
+  categoryFilter?: Animal["category"],
 ): Animal[] {
-  if (animals.length === 0) return [];
+  const pool =
+    categoryFilter != null
+      ? animals.filter((a) => a.category === categoryFilter)
+      : animals;
+  if (pool.length === 0) return [];
   const sequence: Animal[] = [];
   while (sequence.length < count) {
-    sequence.push(...shuffle(animals));
+    sequence.push(...shuffle(pool));
   }
   return sequence.slice(0, count);
+}
+
+export type DiscoverySlidePhase = "image" | "name" | "narration" | "sound" | "advance";
+
+export const DISCOVERY_PHASE_ORDER: DiscoverySlidePhase[] = [
+  "image",
+  "name",
+  "narration",
+  "sound",
+  "advance",
+];
+
+export function discoveryPhaseDurationMs(
+  phase: DiscoverySlidePhase,
+  speedMultiplier: number,
+): number {
+  const base: Record<DiscoverySlidePhase, number> = {
+    image: 1200,
+    name: 1000,
+    narration: 2200,
+    sound: 1800,
+    advance: 400,
+  };
+  return Math.round(base[phase] / Math.max(0.5, speedMultiplier));
 }

@@ -13,7 +13,7 @@ export type AnimalAudioPlayMeta = {
   label?: string;
 };
 
-const POOL_MAX = 8;
+const POOL_MAX = 24;
 const TAP_DEBOUNCE_MS = 60;
 
 type PoolEntry = {
@@ -51,6 +51,25 @@ export class AnimalAudioManager {
     if (next) {
       this.stop();
     }
+  }
+
+  /**
+   * Smart preload: current + neighbors + game sounds.
+   * Target <50ms playback when URLs are in AudioManager cache.
+   */
+  preloadSmart(bundle: {
+    current?: string[];
+    adjacent?: string[];
+    quiz?: string[];
+    discovery?: string[];
+  }): void {
+    const merged = [
+      ...(bundle.current ?? []),
+      ...(bundle.adjacent ?? []),
+      ...(bundle.quiz ?? []),
+      ...(bundle.discovery ?? []),
+    ];
+    this.preload(merged);
   }
 
   /** Warm URLs into AudioManager cache without audible playback. */

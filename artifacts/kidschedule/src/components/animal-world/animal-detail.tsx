@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Heart, VolumeX, Volume2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   CATEGORY_LABELS,
   getPrimaryQuizSound,
@@ -19,8 +20,12 @@ import {
   toggleFavorite,
 } from "@/lib/animal-world-storage";
 import { trackAnimalWorldEvent } from "@/lib/animal-world-telemetry";
+import { grantXp, loadAnimalWorldProgress, recordMonthlyOpen } from "@/lib/animal-world-progress";
+import { resolveCollectionStatus } from "@workspace/animal-world";
+import { loadAnimalWorldStats } from "@/lib/animal-world-storage";
 import { AnimalHeroImage } from "./animal-hero-image";
 import { SoundRow } from "./sound-row";
+import { CollectionBadge } from "./collection-badge";
 
 type AnimalDetailProps = {
   animal: Animal;
@@ -40,9 +45,19 @@ export function AnimalDetail({
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [favorited, setFavorited] = useState(() => isFavorite(childId, animal.id));
 
+  const progress = loadAnimalWorldProgress(childId);
+  const stats = loadAnimalWorldStats(childId);
+  const opened = Boolean(stats.playCounts[animal.id]);
+  const collectionStatus = resolveCollectionStatus(progress, animal.id, opened);
+
   useEffect(() => {
     warmAnimalDetail(animal);
     recordAnimalOpened(childId, animal.id);
+    recordMonthlyOpen(childId);
+    grantXp(childId, "animalOpened", {
+      animalId: animal.id,
+      patch: {},
+    });
     trackAnimalWorldEvent("animal_opened", { childId, animalId: animal.id, category: animal.category });
   }, [animal, childId]);
 
@@ -51,6 +66,12 @@ export function AnimalDetail({
     setPlayingId(soundId);
     await animalAudioManager.play(url, { animalId: animal.id, soundId, label });
     recordSoundPlayed(childId, animal.id, soundId);
+    grantXp(childId, "soundPlayed", {
+      animalId: animal.id,
+      patch: {
+        soundsPlayed: (progress.animalMastery[animal.id]?.soundsPlayed ?? 0) + 1,
+      },
+    });
     trackAnimalWorldEvent("sound_played", { childId, animalId: animal.id, soundId });
     setPlayingId(null);
   };
@@ -101,13 +122,29 @@ export function AnimalDetail({
       </div>
 
       <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[rgba(18,28,60,0.78)] shadow-[0_16px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl">
-        <div className="flex min-h-[240px] items-center justify-center bg-gradient-to-b from-white/[0.05] to-transparent p-8">
-          <AnimalHeroImage animal={animal} eager className="max-h-[220px]" />
-        </div>
+        <Tabs defaultValue="cartoon" className="w-full">
+          <TabsList className="mx-5 mt-4 grid w-[calc(100%-2.5rem)] grid-cols-2">
+            <TabsTrigger value="cartoon">Cartoon</TabsTrigger>
+            <TabsTrigger value="real">Real Animal</TabsTrigger>
+          </TabsList>
+          <TabsContent value="cartoon" className="mt-0">
+            <div className="flex min-h-[240px] items-center justify-center bg-gradient-to-b from-white/[0.05] to-transparent p-8">
+              <AnimalHeroImage animal={animal} eager variant="cartoon" className="max-h-[220px]" />
+            </div>
+          </TabsContent>
+          <TabsContent value="real" className="mt-0">
+            <div className="flex min-h-[240px] items-center justify-center bg-gradient-to-b from-white/[0.05] to-transparent p-8">
+              <AnimalHeroImage animal={animal} eager variant="real" className="max-h-[220px]" />
+            </div>
+          </TabsContent>
+        </Tabs>
         <div className="space-y-2 px-5 pb-5 pt-2">
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            {CATEGORY_LABELS[animal.category]}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              {CATEGORY_LABELS[animal.category]}
+            </p>
+            <CollectionBadge status={collectionStatus} />
+          </div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">{animal.name}</h1>
           <p className="text-sm leading-relaxed text-muted-foreground">{animal.funFact}</p>
         </div>

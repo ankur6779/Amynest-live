@@ -76,3 +76,7 @@ artifacts/kidschedule/playwright-report-stress/
 
 # Script run logs (phonics cleanup, library prewarm, etc.)
 scripts/logs/
+
+# Discovery worlds — generated audio + expiring GCS signed URLs (regenerate via pnpm run generate:discovery-worlds-audio)
+artifacts/kidschedule/public/discovery-worlds-audio/
+lib/world-engine/src/discovery-worlds-signed-urls.json

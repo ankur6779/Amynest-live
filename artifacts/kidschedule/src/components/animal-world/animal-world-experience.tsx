@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { Sparkles, Compass, Baby, HelpCircle, BarChart3 } from "lucide-react";
+import {
+  Sparkles,
+  Compass,
+  Baby,
+  HelpCircle,
+  BarChart3,
+  Ear,
+  Trophy,
+  Sticker,
+} from "lucide-react";
 import type { Animal, AnimalCategory, AnimalWorldMode } from "@workspace/animal-world";
 import { cn } from "@/lib/utils";
 import { SCREEN_SPACING } from "@/lib/experience-system";
@@ -14,6 +23,10 @@ import { ToddlerMode } from "./toddler-mode";
 import { QuizMode } from "./quiz-mode";
 import { DiscoveryMode } from "./discovery-mode";
 import { ParentDashboardPanel } from "./parent-dashboard-panel";
+import { HearFindMode } from "./hear-find-mode";
+import { AchievementsPanel } from "./achievements-panel";
+import { StickerAlbum } from "./sticker-album";
+import { warmAnimalWorldOfflineCache, needsOfflineCacheRefresh } from "@/lib/animal-world-offline-cache";
 
 type AnimalWorldExperienceProps = {
   childId: number;
@@ -24,7 +37,10 @@ const MODES: Array<{ id: AnimalWorldMode; label: string; icon: typeof Sparkles }
   { id: "explore", label: "Explore", icon: Compass },
   { id: "toddler", label: "Toddler", icon: Baby },
   { id: "quiz", label: "Quiz", icon: HelpCircle },
+  { id: "hear_find", label: "Hear", icon: Ear },
   { id: "discovery", label: "Discovery", icon: Sparkles },
+  { id: "achievements", label: "Stars", icon: Trophy },
+  { id: "stickers", label: "Stickers", icon: Sticker },
   { id: "parent", label: "Parent", icon: BarChart3 },
 ];
 
@@ -38,6 +54,11 @@ export function AnimalWorldExperience({ childId, onEngage }: AnimalWorldExperien
   useEffect(() => {
     onEngage?.();
     warmAnimalWorldOnOpen();
+    if (needsOfflineCacheRefresh()) {
+      void warmAnimalWorldOfflineCache(childId).then(() => {
+        trackAnimalWorldEvent("offline_cache_warmed", { childId });
+      });
+    }
     animalAudioManager.unlockFromGesture();
     trackAnimalWorldEvent("mode_changed", { childId, mode: "explore" });
     return () => {
@@ -116,7 +137,10 @@ export function AnimalWorldExperience({ childId, onEngage }: AnimalWorldExperien
               />
             )}
             {mode === "quiz" && <QuizMode childId={childId} />}
+            {mode === "hear_find" && <HearFindMode childId={childId} />}
             {mode === "discovery" && <DiscoveryMode childId={childId} />}
+            {mode === "achievements" && <AchievementsPanel childId={childId} />}
+            {mode === "stickers" && <StickerAlbum childId={childId} />}
             {mode === "parent" && <ParentDashboardPanel childId={childId} />}
           </>
         )}

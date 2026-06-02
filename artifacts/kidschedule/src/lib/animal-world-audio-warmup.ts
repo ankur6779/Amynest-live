@@ -1,6 +1,9 @@
 import {
+  collectAdjacentAnimalUrls,
   collectAnimalSoundUrls,
   collectCategoryPreloadUrls,
+  collectLikelyDiscoveryUrls,
+  collectLikelyQuizSoundUrls,
   getAllAnimals,
   type Animal,
   type AnimalCategory,
@@ -11,17 +14,25 @@ let warmed = false;
 
 export function warmAnimalWorldOnOpen(category?: AnimalCategory): void {
   if (typeof window === "undefined") return;
-  const urls = category
+  const animals = getAllAnimals();
+  const current = category
     ? collectCategoryPreloadUrls(category, 6)
-    : getAllAnimals()
-        .slice(0, 4)
-        .flatMap((animal) => collectAnimalSoundUrls(animal).slice(0, 1));
-  animalAudioManager.preload(urls);
+    : animals.slice(0, 4).flatMap((animal) => collectAnimalSoundUrls(animal).slice(0, 1));
+  animalAudioManager.preloadSmart({
+    current,
+    quiz: collectLikelyQuizSoundUrls(animals, 8),
+    discovery: collectLikelyDiscoveryUrls(animals, 6),
+  });
   warmed = true;
 }
 
 export function warmAnimalDetail(animal: Animal): void {
-  animalAudioManager.preload(collectAnimalSoundUrls(animal));
+  const animals = getAllAnimals();
+  animalAudioManager.preloadSmart({
+    current: collectAnimalSoundUrls(animal),
+    adjacent: collectAdjacentAnimalUrls(animals, animal.id),
+    quiz: collectLikelyQuizSoundUrls(animals, 4),
+  });
 }
 
 export function isAnimalWorldWarmed(): boolean {

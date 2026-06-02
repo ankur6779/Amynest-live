@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { TRANSITION } from "@/lib/experience-system";
 import { animalAudioManager } from "@/lib/animal-world-audio-manager";
 import { trackAnimalWorldEvent } from "@/lib/animal-world-telemetry";
+import { grantXp, loadAnimalWorldProgress } from "@/lib/animal-world-progress";
 
 type QuizModeProps = {
   childId: number;
@@ -60,6 +61,13 @@ export function QuizMode({ childId }: QuizModeProps) {
     const result = gradeQuizAnswer(question, animalId);
     if (result.correct) {
       setFeedback("correct");
+      const progress = loadAnimalWorldProgress(childId);
+      grantXp(childId, "quizCorrect", {
+        animalId: question.correctAnimalId,
+        patch: {
+          quizzesCorrect: (progress.animalMastery[question.correctAnimalId]?.quizzesCorrect ?? 0) + 1,
+        },
+      });
       trackAnimalWorldEvent("quiz_completed", { childId, correct: true, animalId: question.correctAnimalId });
       window.setTimeout(nextQuestion, 1400);
     } else {

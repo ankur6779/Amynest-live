@@ -2,10 +2,15 @@ import catalogJson from "./animals.json";
 import type {
   Animal,
   AnimalCategory,
+  AnimalHeroVariant,
   AnimalWorldCatalog,
   AnimalSound,
 } from "./types.js";
-import { animalWorldLibraryProxyPath } from "./gcs-paths.js";
+import {
+  animalWorldLibraryProxyPath,
+  getAnimalHeroCartoonGcsPath,
+  getAnimalHeroRealGcsPath,
+} from "./gcs-paths.js";
 
 const catalog = catalogJson as AnimalWorldCatalog;
 
@@ -68,6 +73,51 @@ export function resolveAnimalAssetUrl(gcsPath: string): string {
 
 export function resolveAnimalImageUrl(animal: Animal): string {
   return resolveAnimalAssetUrl(animal.imageGcsPath);
+}
+
+/** Real vs cartoon hero — graceful fallback to imageGcsPath / generated paths. */
+export function resolveAnimalHeroImageUrl(
+  animal: Animal,
+  variant: AnimalHeroVariant = "cartoon",
+): string {
+  if (variant === "real") {
+    const path =
+      animal.heroRealGcsPath ??
+      getAnimalHeroRealGcsPath(animal.category, animal.id);
+    return resolveAnimalAssetUrl(path);
+  }
+  const path =
+    animal.heroCartoonGcsPath ??
+    animal.imageGcsPath ??
+    getAnimalHeroCartoonGcsPath(animal.category, animal.id);
+  return resolveAnimalAssetUrl(path);
+}
+
+export function collectLikelyQuizSoundUrls(animals: Animal[], limit = 12): string[] {
+  return animals
+    .filter((a) => getPrimaryQuizSound(a))
+    .slice(0, limit)
+    .map((a) => resolveAnimalSoundUrl(getPrimaryQuizSound(a)!));
+}
+
+export function collectLikelyDiscoveryUrls(animals: Animal[], limit = 16): string[] {
+  const urls: string[] = [];
+  for (const animal of animals.slice(0, limit)) {
+    const sound = getPrimaryQuizSound(animal);
+    if (sound) urls.push(resolveAnimalSoundUrl(sound));
+    urls.push(resolveAnimalAssetUrl(animal.narration.introGcsPath));
+  }
+  return urls;
+}
+
+export function collectAdjacentAnimalUrls(
+  animals: Animal[],
+  currentId: string,
+): string[] {
+  const index = animals.findIndex((a) => a.id === currentId);
+  if (index < 0) return [];
+  const neighbors = [animals[index - 1], animals[index + 1]].filter(Boolean) as Animal[];
+  return neighbors.flatMap((a) => collectAnimalSoundUrls(a).slice(0, 2));
 }
 
 export function resolveAnimalSoundUrl(sound: AnimalSound): string {
