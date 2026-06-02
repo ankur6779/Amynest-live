@@ -7,11 +7,16 @@ import {
 import { isSpellingLibraryProxyUrl } from "@/lib/static-audio-guard";
 
 describe("spelling audio manifest", () => {
-  it("resolves catalog word to spelling-library proxy URL", () => {
+  it("resolves catalog word to static-audio proxy when available", () => {
     const url = lookupSpellingAudioUrl("cat", "2-4:easy:cat");
     expect(url).toBeTruthy();
-    expect(isSpellingLibraryProxyUrl(url!)).toBe(true);
-    expect(url).toContain("/api/spelling-library/spelling/v2/cat.mp3");
+    expect(url).toContain("/api/static-audio/");
+  });
+
+  it("prefers static catalog for words like cake when spelling GCS clip is missing", () => {
+    const url = lookupSpellingAudioUrl("cake", "2-4:medium:cake");
+    expect(url).toBeTruthy();
+    expect(url).toContain("/api/static-audio/");
   });
 
   it("falls back when primary entry missing", () => {

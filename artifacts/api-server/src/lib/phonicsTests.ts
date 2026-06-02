@@ -526,6 +526,7 @@ function buildBuildWordQ(row: PhonicsContentRow, ctx: BuildContext, idx: number)
 }
 
 function buildListeningQ(row: PhonicsContentRow, ctx: BuildContext, idx: number): Question | null {
+  const spokenWord = row.symbol.trim().toLowerCase();
   const correct = exampleWord(row);
   const distractors = pickDistractorsBy(
     ctx.wordRows,
@@ -551,7 +552,9 @@ function buildListeningQ(row: PhonicsContentRow, ctx: BuildContext, idx: number)
     type: "listening",
     prompt: {
       instruction: "Listen and pick the word",
-      ttsText: correct,
+      /** Play the real word (ship), not the display category label (sh word). */
+      ttsText: spokenWord,
+      meta: { targetWord: spokenWord },
     },
     options,
     correctIndex,
@@ -1192,4 +1195,18 @@ export function isAvailable(
     return { available: true, nextAvailableAt: null };
   }
   return { available: false, nextAvailableAt: next };
+}
+
+/** @internal Unit tests — build one listening question without full generator rotation. */
+export function buildListeningQuestionForTest(
+  row: PhonicsContentRow,
+  wordRows: PhonicsContentRow[],
+): Question | null {
+  return buildListeningQ(row, {
+    rng: () => 0.5,
+    letterRows: [],
+    wordRows,
+    soundRows: [],
+    cvcRows: wordRows.filter((r) => isCvc(exampleWord(r))),
+  }, 0);
 }

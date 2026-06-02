@@ -6,6 +6,7 @@
  */
 import audioManifest from "@/data/spelling-audio-manifest.json";
 import { getApiUrl } from "@/lib/api";
+import { lookupStaticAudioUrl } from "@/lib/static-audio";
 import {
   resolveSpellingLibraryProxyUrl,
   sanitizeSpellingWordSlug,
@@ -58,6 +59,9 @@ export function lookupSpellingAudioUrl(
   word: string,
   catalogId?: string,
 ): string | null {
+  const slug = sanitizeSpellingWordSlug(word);
+  const staticUrl = slug ? lookupStaticAudioUrl(slug, "default") : null;
+  if (staticUrl) return staticUrl;
   const entry = lookupSpellingAudioEntry(catalogId, word);
   return resolveSpellingLibraryPlaybackUrl(entry);
 }
@@ -78,7 +82,10 @@ export function resolveSpellingAudioUrlWithFallback(
   const primary = lookupSpellingAudioUrl(word, catalogId);
   if (primary) return primary;
   reportSpellingAudioMissing(catalogId ?? word, "primary_missing");
-  return lookupSpellingAudioFallbackUrl(sanitizeSpellingWordSlug(word));
+  const slug = sanitizeSpellingWordSlug(word);
+  const staticUrl = slug ? lookupStaticAudioUrl(slug, "default") : null;
+  if (staticUrl) return staticUrl;
+  return lookupSpellingAudioFallbackUrl(slug);
 }
 
 export type SpellingAudioPrewarmItem = {

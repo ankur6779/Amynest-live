@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { isDbIntegrationAvailable } from "../test/db-integration.js";
 import {
   generateQuestions,
+  buildListeningQuestionForTest,
   scoreAnswers,
   buildRuleBasedInsight,
   signSession,
@@ -196,6 +197,67 @@ describe("generateQuestions", () => {
     if (blending) {
       assert.match(blending.prompt.text ?? "", /-/);
     }
+  });
+
+  it("listening questions play the symbol word, not the display category label", () => {
+    const digraphWords: PhonicsContentRow[] = [
+      row({
+        id: 801,
+        ageGroup: "4_5y",
+        level: 20,
+        type: "word",
+        symbol: "ship",
+        sound: "ship",
+        example: "sh word",
+        emoji: "🚢",
+      }),
+      row({
+        id: 802,
+        ageGroup: "4_5y",
+        level: 27,
+        type: "word",
+        symbol: "thin",
+        sound: "thin",
+        example: "th word",
+        emoji: "📏",
+      }),
+      row({
+        id: 803,
+        ageGroup: "4_5y",
+        level: 30,
+        type: "word",
+        symbol: "flag",
+        sound: "flag",
+        example: "fl blend",
+        emoji: "🚩",
+      }),
+      row({
+        id: 804,
+        ageGroup: "4_5y",
+        level: 36,
+        type: "word",
+        symbol: "drum",
+        sound: "drum",
+        example: "dr blend",
+        emoji: "🥁",
+      }),
+    ];
+    const qs = generateQuestions({
+      ageGroup: "4_5y",
+      contentRows: digraphWords,
+      count: 8,
+      seed: 99,
+      gameMode: "mixed",
+    });
+    const listening = buildListeningQuestionForTest(digraphWords[0]!, digraphWords);
+    assert.ok(listening, "expected listening question from digraph word row");
+    assert.equal(listening.prompt.ttsText, "ship");
+    assert.equal(listening.prompt.meta?.targetWord, "ship");
+    assert.ok(
+      listening.options.some((o) => o.label === "sh word"),
+      "option labels stay as display categories",
+    );
+    assert.ok(qs.length > 0, "generator still produces questions from digraph pool");
   });
 
   // ─── Game-mode top-up: the bug behind task #268 ──────────────────────────

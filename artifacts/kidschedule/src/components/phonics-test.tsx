@@ -15,7 +15,7 @@ import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { getCvcWordEntry, getPhonicsAudioText } from "@workspace/phonics-sounds";
 import { phonicsEnginePlayWord, phonicsEngineStop } from "@/lib/phonics-audio-engine";
 import { isLocalAudioRecoveryEnabled } from "@/lib/local-audio-recovery";
-import { validatePhonicsWordAudio } from "@/lib/phonics-audio-availability";
+import { validatePhonicsWordAudio, checkPhonicsWordClip } from "@/lib/phonics-audio-availability";
 import { recordPhonicsTelemetry } from "@/lib/phonics-telemetry";
 import { playTapFeedback } from "@/lib/game-feedback";
 import { cn } from "@/lib/utils";
@@ -422,11 +422,17 @@ interface QuestionCardProps {
   secondsLeft: number | null;
 }
 
+function isPhonicsDisplayCategoryLabel(text: string): boolean {
+  return /^(?:[a-z]{1,3})\s+(?:word|blend)$/i.test(text.trim());
+}
+
 function resolveQuestionWordId(question: ClientQuestion): string {
   const metaWord = question.prompt.meta?.targetWord?.trim().toLowerCase();
-  if (metaWord) return metaWord;
+  if (metaWord && !isPhonicsDisplayCategoryLabel(metaWord)) return metaWord;
   const tts = (question.prompt.ttsText ?? question.prompt.text ?? "").trim().toLowerCase();
-  return tts.replace(/^the word\s+/i, "").trim();
+  const cleaned = tts.replace(/^the word\s+/i, "").trim();
+  if (cleaned && !isPhonicsDisplayCategoryLabel(cleaned)) return cleaned;
+  return "";
 }
 
 function QuestionCard({
@@ -445,10 +451,21 @@ function QuestionCard({
   const ttsText = rawTts && question.type !== "blending" ? getPhonicsAudioText(rawTts) : rawTts;
 
   const audioValidation = useMemo(() => {
+    if (question.type === "listening") {
+      if (!questionWordId) return null;
+      const clip = checkPhonicsWordClip(questionWordId);
+      return {
+        word: questionWordId,
+        wordAudio: clip.available,
+        phonemeAudio: [],
+        blendAudio: clip.available,
+        available: clip.available,
+      };
+    }
     if (cvcEntry) return validatePhonicsWordAudio(cvcEntry.word, cvcEntry.phonemes);
     if (questionWordId) return validatePhonicsWordAudio(questionWordId);
     return null;
-  }, [cvcEntry, questionWordId]);
+  }, [cvcEntry, questionWordId, question.type]);
 
   // Retry counter — reset on each new question, capped at 1 auto-replay on
   // wrong answer to prevent infinite TTS loops.
@@ -527,6 +544,10 @@ function QuestionCard({
   const [bouncedIdx, setBouncedIdx] = useState<number | null>(null);
 
   const isMissingLetter = question.type === "missing_letter";
+  const showPlayButton =
+    question.type === "listening"
+      ? Boolean(questionWordId)
+      : Boolean(ttsText || questionWordId);
 
   return (
     <div className="space-y-4 relative" data-testid={`phonics-test-question-${index}`}>
@@ -580,7 +601,7 @@ function QuestionCard({
           </div>
         )}
 
-        {(ttsText || questionWordId) && (
+        {showPlayButton && (
           <Button
             type="button"
             variant="outline"
@@ -599,13 +620,21 @@ function QuestionCard({
                 Audio preparing
               </>
             ) : loading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Loading…
+              </>
             ) : speaking ? (
-              <Soundwave className="text-violet-500" />
+              <>
+                <Soundwave className="text-violet-500" />
+                Stop
+              </>
             ) : (
-              <Volume2 className="h-3.5 w-3.5" />
+              <>
+                <Volume2 className="h-3.5 w-3.5" />
+                Play sound
+              </>
             )}
-            {!audioPreparing && (speaking ? "Stop" : loading ? "Loading…" : "Play sound")}
           </Button>
         )}
 

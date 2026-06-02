@@ -103,6 +103,74 @@ function log(event: string, detail: Record<string, unknown> = {}): void {
   }
 }
 
+/**
+ * Diagnostic trace for the exact phonics failure point AFTER audioManager.play().
+ * Audit shows phonics resolves a URL and reaches play(), yet stays silent — this
+ * captures the resolved URL, the media-element readiness, and the lifecycle events
+ * (or `error`) the browser emits for that element.
+ *
+ * Verbose events are gated behind DEV or `localStorage.PHONICS_MEDIA_TRACE === "1"`.
+ * Media `error` events are ALWAYS logged — that is the failure we are hunting.
+ */
+function tracePhonicsMedia(el: HTMLAudioElement, url: string, label: string): void {
+  const snapshot = () => ({
+    readyState: el.readyState,
+    networkState: el.networkState,
+    currentTime: Number.isFinite(el.currentTime) ? el.currentTime : null,
+    duration: Number.isFinite(el.duration) ? el.duration : null,
+    paused: el.paused,
+    errorCode: el.error?.code ?? null,
+  });
+
+  const onError = () => {
+    console.warn("[PhonicsMediaTrace] error", {
+      label,
+      url: url.slice(0, 200),
+      ...snapshot(),
+    });
+  };
+  el.addEventListener("error", onError, { once: true });
+
+  const verbose =
+    (typeof import.meta !== "undefined" && import.meta.env?.DEV) ||
+    (typeof localStorage !== "undefined" &&
+      localStorage.getItem("PHONICS_MEDIA_TRACE") === "1");
+  if (!verbose) return;
+
+  console.warn("[PhonicsMediaTrace] play_begin", {
+    label,
+    url: url.slice(0, 200),
+    ...snapshot(),
+  });
+
+  const events = [
+    "loadstart",
+    "loadedmetadata",
+    "canplay",
+    "canplaythrough",
+    "playing",
+    "waiting",
+    "stalled",
+    "suspend",
+    "abort",
+    "emptied",
+    "ended",
+  ] as const;
+  const handlers = events.map((ev) => {
+    const h = () =>
+      console.warn(`[PhonicsMediaTrace] ${ev}`, { label, ...snapshot() });
+    el.addEventListener(ev, h);
+    return [ev, h] as const;
+  });
+  const cleanup = () => {
+    for (const [ev, h] of handlers) el.removeEventListener(ev, h);
+    el.removeEventListener("ended", cleanup);
+    el.removeEventListener("error", cleanup);
+  };
+  el.addEventListener("ended", cleanup, { once: true });
+  el.addEventListener("error", cleanup, { once: true });
+}
+
 function notify(): void {
   const state = { playing, label: activeLabel };
   for (const listener of listeners) listener(state);
@@ -146,10 +214,28 @@ function mapWaitResult(
 }
 
 /**
+ * Owners that must NOT cancel a phonics clip that is already playing. These are
+ * ambient/global stops — the Amy-voice controller tearing down its own audio
+ * (`controller_stop`) and the mic/app-lifecycle coordinator (`coordinator`) —
+ * that are unrelated to the current phonics tap. Phonics clips are short (<3s)
+ * and own the speech channel for their lifetime, so letting them finish prevents
+ * unrelated subsystems from killing playback mid-clip. Legitimate stops (stop
+ * button, leaving phonics, a new phonics tap) use other reasons and still apply.
+ */
+const UNRELATED_PHONICS_STOP_REASONS = new Set<string>([
+  "controller_stop",
+  "coordinator",
+]);
+
+/**
  * Stop all phonics playback immediately and reset ownership.
  * Safe to call from anywhere (tap, stop button, leaving phonics, controller pause).
  */
 export function stopPhonicsPlayback(reason = "manual"): void {
+  if (playing && UNRELATED_PHONICS_STOP_REASONS.has(reason)) {
+    log("phonics_stop_ignored_unrelated", { reason });
+    return;
+  }
   ownershipToken += 1;
   const el = activeElement;
   const traceId = el ? getPlaybackTraceId(el) : null;
@@ -328,6 +414,7 @@ async function playPhonicsUrlInner(
   };
 
   const srcType = trimmed.startsWith("blob:") ? "blob" : "static";
+  tracePhonicsMedia(el, trimmed, label);
   const played = await audioManager.play(
     el,
     {
@@ -348,6 +435,14 @@ async function playPhonicsUrlInner(
   );
 
   if (!played) {
+    console.warn("[PhonicsMediaTrace] play_returned_false", {
+      label,
+      url: trimmed.slice(0, 200),
+      lastPlayError: audioManager.getLastPlayError(),
+      errorCode: el.error?.code ?? null,
+      readyState: el.readyState,
+      networkState: el.networkState,
+    });
     recordPlaybackQualityFailed(qualitySessionId, {
       reason: audioManager.getLastPlayError() ?? "phonics_play_failed",
     });

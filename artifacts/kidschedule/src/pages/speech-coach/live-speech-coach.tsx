@@ -453,8 +453,8 @@ export function LiveSpeechCoach({
       for (const line of spoken) {
         if (isLocalAudioRecoveryEnabled() && isCoachStaticPackLine(line)) {
           const local = await playCoachStaticLine(line);
-          if (!local.ok) break;
-          continue;
+          if (local.ok) continue;
+          // Local pack missing/stub — fall through to TTS instead of going silent.
         }
         const result = await voice.speak(line);
         if (!result.success) break;

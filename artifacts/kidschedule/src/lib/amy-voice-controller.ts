@@ -83,7 +83,7 @@ import {
   isPhonicsHubFastClip,
   speakPhonicsFastClip,
 } from "@/lib/phonics-audio";
-import { stopPhonicsPlayback } from "@/lib/phonics-player";
+import { stopPhonicsPlayback, isPhonicsPlaying } from "@/lib/phonics-player";
 import {
   playControllerEmergencyAudio,
   resetGuardFailures,
@@ -366,6 +366,19 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
   private stopCurrentAudio(): void {
     tracePlaybackStopAll("AmyVoiceController", "stopCurrentAudio");
+    // An actively-playing phonics clip is a separate single owner. When it owns
+    // the speech channel the controller has no audio of its own there, so tearing
+    // the channel down (stopPhonicsPlayback + audioManager.stopAll) would only
+    // silence the phonics clip mid-play. Let it finish naturally — a real
+    // controller playback still supersedes it via audioManager.play({ interrupt })
+    // if/when one actually starts. We still abort our own in-flight TTS fetch.
+    if (isPhonicsPlaying()) {
+      if (this.abortController) {
+        this.abortController.abort();
+        this.abortController = null;
+      }
+      return;
+    }
     // Phonics player is a separate single owner — stop it too so a new tap can
     // never overlap a still-playing phoneme/blend.
     stopPhonicsPlayback("controller_stop");

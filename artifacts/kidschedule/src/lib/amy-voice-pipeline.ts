@@ -1497,8 +1497,14 @@ function finalizeSuccess(
     const played =
       result.playedDuration ?? 0;
     const expected = result.expectedDuration ?? 0;
+    // The early-completion guard exists for STREAMING playback, where the
+    // HTMLAudioElement "ended" event can fire before the full clip is heard.
+    // A fully-downloaded clip that already reached completion must be treated
+    // as done — otherwise auto-advancing flows (audio lessons) stall after the
+    // first paragraph because onFinished is suppressed.
     if (
       expected > 0 &&
+      result.usedStreaming === true &&
       !shouldTriggerCompletion({
         mode: ctx.playbackMode,
         actualPlayedDuration: played,

@@ -168,20 +168,15 @@ export function useSpellingTTS(): UseSpellingTTSState {
         setLocalError(null);
         stopLocalAudio();
         const local = await playLocalSpellingWord(trimmed, { slow: opts.slow });
-        if (!local.ok) {
-          setLocalError(local.error ?? "local_asset_missing");
-          trackSpellingAudioEvent("audio_error", {
-            reason: local.error ?? "local_asset_missing",
-            catalogId: opts.catalogId,
-            word: trimmed,
-          });
-        } else {
+        if (local.ok) {
           trackSpellingAudioEvent("audio_complete", {
             catalogId: opts.catalogId,
             word: trimmed,
           });
+          return;
         }
-        return;
+        // Local asset missing/stub — do NOT return early. Fall through to the
+        // existing catalog/static resolution + playPrepared() path below.
       }
 
       if (shouldBypassPhonicsSpellingLibraries()) {

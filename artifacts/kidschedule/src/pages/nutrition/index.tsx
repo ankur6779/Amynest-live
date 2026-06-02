@@ -174,7 +174,7 @@ function NutrientCard({ nutrient, ageGroupId, onClick }: {
       onClick={onClick}
       className={cn(
         HUB_TILE,
-        "group w-full rounded-2xl p-4 text-left",
+        "group w-full min-w-0 rounded-2xl p-4 text-left flex-col items-stretch gap-0",
         "hover:-translate-y-0.5 hover:border-emerald-400/25 hover:shadow-[0_0_16px_rgba(52,211,153,0.12)]",
       )}
     >
@@ -523,7 +523,7 @@ function MealPlanSection({ ageGroupId, foodStyle }: { ageGroupId: AgeGroupId; fo
         ))}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 min-w-0">
         {mealTimes.filter(Boolean).map((item) => {
           const m = item as { time: string; key: string; color: string };
           return (
@@ -629,8 +629,8 @@ function FamilyModeSection({ suggestedMeal }: { suggestedMeal?: string }) {
       {/* Dish Input */}
       <div className="space-y-2">
         <label className="text-sm font-semibold text-foreground">{t("nutrition_hub.family.enter_dish")}</label>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
+        <div className="flex gap-2 min-w-0">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <input
               value={dishInput}
@@ -904,12 +904,12 @@ export default function NutritionHubPage() {
   ];
 
   return (
-    <div className={cn(PARENT_HUB_PAGE, "max-w-4xl mx-auto space-y-4 pb-24")}>
+    <div className={cn(PARENT_HUB_PAGE, "w-full min-w-0 max-w-4xl mx-auto space-y-4 pb-24 overflow-x-clip")}>
       {/* ── Hero Header ── */}
       <div className={cn(hubSectionCardClasses(NUTRITION_HUB_ACCENT), "hub-page-enter overflow-hidden")}>
         <div className="flex">
           <div className={hubAccentBarClasses(NUTRITION_HUB_ACCENT)} />
-          <div className="relative flex-1 px-4 py-6">
+            <div className="relative flex-1 min-w-0 px-4 py-6">
             <div
               className="pointer-events-none absolute inset-0 opacity-[0.07]"
               style={{
@@ -958,7 +958,7 @@ export default function NutritionHubPage() {
         <div className={cn(hubSectionCardClasses(NUTRITION_HUB_ACCENT), "hub-page-enter overflow-hidden")}>
           <div className="flex">
             <div className={hubAccentBarClasses(NUTRITION_HUB_ACCENT)} />
-            <div className="flex flex-1 items-start gap-3 p-4">
+            <div className="flex flex-1 min-w-0 items-start gap-3 p-4">
               <span className="text-4xl">{activeAgeGroup.emoji}</span>
               <div className="flex-1 min-w-0">
                 <h2 className="font-quicksand font-bold text-xl text-foreground">{activeAgeGroup.label}</h2>
@@ -1000,16 +1000,16 @@ export default function NutritionHubPage() {
         <div className={cn(hubSectionCardClasses(NUTRITION_HUB_ACCENT), "hub-page-enter overflow-hidden")}>
           <div className="flex">
             <div className={hubAccentBarClasses(NUTRITION_HUB_ACCENT)} />
-            <div className="flex-1 p-4 sm:p-6">
+            <div className="min-w-0 flex-1 p-4 sm:p-6">
               {activeTab === "nutrients" && (
-                <div className="space-y-4">
+                <div className="space-y-4 min-w-0">
                   <div>
                     <h2 className={HUB_SECTION_TITLE}>{t("nutrition_hub.nutrients.title")}</h2>
                     <p className={HUB_BODY}>
                       {t("nutrition_hub.nutrients.subtitle", { age: activeAgeGroup.label })}
                     </p>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 min-w-0">
                     {NUTRIENTS.map(n => (
                       <NutrientCard
                         key={n.id}
@@ -1044,7 +1044,7 @@ export default function NutritionHubPage() {
         </div>
 
         {/* ── Medical Disclaimer ── */}
-        <div className={HUB_INFO_BANNER}>
+        <div className={cn(HUB_INFO_BANNER, "flex-col items-stretch gap-0")}>
           <div className="flex items-start gap-2 mb-2">
             <AlertTriangle className="h-4 w-4 text-amber-300/90 mt-0.5 shrink-0" />
             <p className="font-semibold text-foreground text-sm">{t("nutrition_hub.disclaimer.title")}</p>
@@ -1068,7 +1068,7 @@ export default function NutritionHubPage() {
 
         {/* ── Growth Tracking Link ── */}
         <div className={cn(hubSectionCardClasses(NUTRITION_HUB_ACCENT), "overflow-hidden")}>
-          <div className="flex items-center justify-between gap-3 p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 min-w-0">
             <div className="flex items-center gap-3">
               <div className={cn(NUTRITION_HUB_ACCENT.emojiShell, "w-10 h-10 text-xl")}>📈</div>
               <div>

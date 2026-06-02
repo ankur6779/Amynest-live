@@ -1,0 +1,287 @@
+{
+  "generatedAt": "2026-06-01T03:09:06.215Z",
+  "dupes": 86,
+  "corpusMissing": 0,
+  "urlStats": {
+    "ok": 100,
+    "status404": 0,
+    "html": 0,
+    "nonAudioCt": 0,
+    "notMp3Magic": 0,
+    "fetchError": 0
+  },
+  "priority": [
+    {
+      "query": "have fun with sounds and words.",
+      "exactKeyInMap": false,
+      "exactEntry": null,
+      "partialMatches": [
+        {
+          "key": "ou",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/424504427d8c58406bbdbb936e86b3eb.mp3"
+        },
+        {
+          "key": "th",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/fa9b7707b923977beac7089012d05f08.mp3"
+        },
+        {
+          "key": "we will take our time and have fun with sounds and words.",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/dc62b1e16457440e9b07d788369769fb.mp3"
+        },
+        {
+          "key": "fun",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/795a3881bfccf7ce014b63605709d8de.mp3"
+        },
+        {
+          "key": "wit",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/12122a4721f73b79f514453bc952074a.mp3"
+        }
+      ]
+    },
+    {
+      "query": "listen carefully and say the word.",
+      "exactKeyInMap": false,
+      "exactEntry": null,
+      "partialMatches": [
+        {
+          "key": "listen carefully",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/26310270981ddec4788b86bafe91262d.mp3"
+        },
+        {
+          "key": "ten",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/316ab622369fb17cc07d806bbb2f0f08.mp3"
+        },
+        {
+          "key": "ll",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/f9a9cca9e0dbf0fb3c8c3d75a2628278.mp3"
+        },
+        {
+          "key": "th",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/fa9b7707b923977beac7089012d05f08.mp3"
+        },
+        {
+          "key": "ca",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/10f5f1d15e66576f1e7385ec2b09d157.mp3"
+        }
+      ]
+    },
+    {
+      "query": "we will take our time and",
+      "exactKeyInMap": false,
+      "exactEntry": null,
+      "partialMatches": [
+        {
+          "key": "ll",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/f9a9cca9e0dbf0fb3c8c3d75a2628278.mp3"
+        },
+        {
+          "key": "ou",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/424504427d8c58406bbdbb936e86b3eb.mp3"
+        },
+        {
+          "key": "ti",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/9b26a0a2066821381bb93ebbe562ad84.mp3"
+        },
+        {
+          "key": "we will take our time and have fun with sounds and words.",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/dc62b1e16457440e9b07d788369769fb.mp3"
+        },
+        {
+          "key": "nd",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/bf8f43981d2c3a1b8e554a1698c8ecc4.mp3"
+        }
+      ]
+    },
+    {
+      "query": "i am so glad you",
+      "exactKeyInMap": false,
+      "exactEntry": null,
+      "partialMatches": [
+        {
+          "key": "ou",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/424504427d8c58406bbdbb936e86b3eb.mp3"
+        },
+        {
+          "key": "i am so glad you came to practice with me.",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/94dee520576c40b6c28208eedf80a0ed.mp3"
+        },
+        {
+          "key": "lad",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/b976cf4cbde334fde27dbbb6e5240991.mp3"
+        },
+        {
+          "key": "gl",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/55705bada934e5ea2df01aca389426f0.mp3"
+        },
+        {
+          "key": "so",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/cbde656154bbd9966d0ea6114b9e059b.mp3"
+        }
+      ]
+    },
+    {
+      "query": "came to practice with me",
+      "exactKeyInMap": false,
+      "exactEntry": null,
+      "partialMatches": [
+        {
+          "key": "th",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/fa9b7707b923977beac7089012d05f08.mp3"
+        },
+        {
+          "key": "ra",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/cbed5288b34b7ad9559cbf1f41bd1d93.mp3"
+        },
+        {
+          "key": "ca",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/10f5f1d15e66576f1e7385ec2b09d157.mp3"
+        },
+        {
+          "key": "ti",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/9b26a0a2066821381bb93ebbe562ad84.mp3"
+        },
+        {
+          "key": "i am so glad you came to practice with me.",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/94dee520576c40b6c28208eedf80a0ed.mp3"
+        }
+      ]
+    },
+    {
+      "query": "i am so glad you came to practice with me.",
+      "exactKeyInMap": true,
+      "exactEntry": {
+        "bucket": "default",
+        "rawKey": "i am so glad you came to practice with me.",
+        "normalized": "i am so glad you came to practice with me.",
+        "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/94dee520576c40b6c28208eedf80a0ed.mp3"
+      },
+      "partialMatches": [
+        {
+          "key": "ou",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/424504427d8c58406bbdbb936e86b3eb.mp3"
+        },
+        {
+          "key": "th",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/fa9b7707b923977beac7089012d05f08.mp3"
+        },
+        {
+          "key": "ra",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/cbed5288b34b7ad9559cbf1f41bd1d93.mp3"
+        },
+        {
+          "key": "ca",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/10f5f1d15e66576f1e7385ec2b09d157.mp3"
+        },
+        {
+          "key": "ti",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/9b26a0a2066821381bb93ebbe562ad84.mp3"
+        }
+      ]
+    },
+    {
+      "query": "we will take our time and have fun with sounds and words.",
+      "exactKeyInMap": true,
+      "exactEntry": {
+        "bucket": "default",
+        "rawKey": "we will take our time and have fun with sounds and words.",
+        "normalized": "we will take our time and have fun with sounds and words.",
+        "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/dc62b1e16457440e9b07d788369769fb.mp3"
+      },
+      "partialMatches": [
+        {
+          "key": "ll",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/f9a9cca9e0dbf0fb3c8c3d75a2628278.mp3"
+        },
+        {
+          "key": "ou",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/424504427d8c58406bbdbb936e86b3eb.mp3"
+        },
+        {
+          "key": "th",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/fa9b7707b923977beac7089012d05f08.mp3"
+        },
+        {
+          "key": "ti",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/9b26a0a2066821381bb93ebbe562ad84.mp3"
+        },
+        {
+          "key": "we will take our time and have fun with sounds and words.",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/dc62b1e16457440e9b07d788369769fb.mp3"
+        }
+      ]
+    },
+    {
+      "query": "listen carefully and say the word after me.",
+      "exactKeyInMap": true,
+      "exactEntry": {
+        "bucket": "default",
+        "rawKey": "listen carefully and say the word after me.",
+        "normalized": "listen carefully and say the word after me.",
+        "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/36597d52df7bce697efd06949ffbed94.mp3"
+      },
+      "partialMatches": [
+        {
+          "key": "listen carefully",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/26310270981ddec4788b86bafe91262d.mp3"
+        },
+        {
+          "key": "ten",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/316ab622369fb17cc07d806bbb2f0f08.mp3"
+        },
+        {
+          "key": "ll",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/f9a9cca9e0dbf0fb3c8c3d75a2628278.mp3"
+        },
+        {
+          "key": "th",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/fa9b7707b923977beac7089012d05f08.mp3"
+        },
+        {
+          "key": "ter",
+          "bucket": "default",
+          "url": "https://storage.googleapis.com/amynest-audio-storage/static-audio/b2f1a8453250deb372cc515e2211185c.mp3"
+        }
+      ]
+    }
+  ],
+  "failures": []
+}

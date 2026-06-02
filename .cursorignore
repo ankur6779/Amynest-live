@@ -1,0 +1,42 @@
+# Dependencies & build
+node_modules/
+dist/
+out-tsc/
+*.tsbuildinfo
+artifacts/kidschedule/dist/
+artifacts/amynest-capacitor/www/
+artifacts/amynest-capacitor/build/
+artifacts/amynest-capacitor/ota-bundles/
+
+# Legacy / archived
+archive/
+
+# Large media & audio
+attached_assets/
+artifacts/kidschedule/public/audio-pack/
+**/*.mp3
+**/*.wav
+**/*.m4a
+
+# Generated code (OpenAPI)
+lib/api-client-react/src/generated/
+lib/api-zod/src/generated/
+
+# iOS native build artifacts
+artifacts/amynest-capacitor/ios/App/Pods/
+artifacts/amynest-capacitor/ios/**/xcuserdata/
+
+# Script outputs & caches
+scripts/__pycache__/
+scripts/logs/
+scripts/*-audit-report.json
+scripts/*-asset-report.json
+
+# Playwright / test artifacts
+coverage/
+artifacts/kidschedule/playwright-report-stress/
+
+# Env & secrets
+.env
+.env.*
+!.env*.example
