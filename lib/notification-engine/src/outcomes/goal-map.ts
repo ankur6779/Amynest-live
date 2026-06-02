@@ -14,6 +14,7 @@ const CATEGORY_GOALS: Record<NotificationCategory, NotificationGoal> = {
   phonics: "GOAL_LEARNING_COMPLETION",
   learning_activity: "GOAL_LEARNING_COMPLETION",
   milestone: "GOAL_PARENT_ENGAGEMENT",
+  infant_care: "GOAL_PARENT_ENGAGEMENT",
 };
 
 export function goalForCategory(category: NotificationCategory): NotificationGoal {

@@ -97,7 +97,7 @@ router.get("/infant-doctor-report/:childId", async (req, res): Promise<void> => 
       .limit(10),
   ]);
 
-  const logMap: VaxLogMap = {};
+  const logMap: Record<string, "done" | "missed"> = {};
   for (const v of vaxRows) logMap[v.ageLabel] = v.status as "done" | "missed";
   const vaxSummary = getVaccinationSummary(child.ageMonths, logMap);
 

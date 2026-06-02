@@ -725,7 +725,7 @@ function assertMealMetadataIntact(
     activity: string;
     time: string;
     category?: string;
-    meal?: string;
+    meal?: string | null;
     dishes?: string[];
     notes?: string;
     recipe?: Record<string, unknown> | null;

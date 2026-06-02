@@ -9,6 +9,7 @@ import {
   spellingSessionsTable,
   spellingTournamentsTable,
   childrenTable,
+  type SpellingSessionRow,
   type SpellingTournamentRow,
 } from "@workspace/db";
 import { getAuth } from "../lib/auth";
@@ -1637,6 +1638,10 @@ type AdvanceTxResult =
   | { kind: "no_words_available" }
   | { kind: "session_not_found" }
   | {
+      kind: "audio_pending";
+      session: SpellingSessionRow;
+    }
+  | {
       kind: "ok";
       tournament: SpellingTournamentRow;
       currentRound: number;
@@ -1767,6 +1772,11 @@ async function advanceTournamentTxImpl(
       passed: true,
     };
   } else {
+    const audioKeys = activeSession.audioKeys ?? [];
+    if (audioKeys.length === 0) {
+      return { kind: "audio_pending", session: activeSession };
+    }
+
     // Normal flow — finalize the just-played round, apply the result,
     // update tournament state. Audio is served from the pre-generated
     // spelling library manifest (no runtime TTS prewarm).
@@ -1930,6 +1940,14 @@ router.post(
     }
     if (txResult.kind === "session_not_found") {
       res.status(404).json({ error: "session_not_found" });
+      return;
+    }
+    if (txResult.kind === "audio_pending") {
+      res.status(202).json({
+        ok: false,
+        status: "audio_pending",
+        sessionToken: txResult.session.sessionToken,
+      });
       return;
     }
 

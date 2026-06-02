@@ -28,23 +28,32 @@ export function computeRegionalAnalytics(
 
   return {
     windowDays,
-    byCountry: aggregate(recent, (e) => e.countryCode ?? "unknown"),
-    byLocale: aggregate(recent, (e) => (e.locale ?? "en-US") as SupportedLocale),
-    byTimezone: aggregate(recent, (e) => e.timezone ?? "unknown"),
-    byCategory: aggregate(recent, (e) => e.category),
+    byCountry: aggregateBy(recent, "countryCode", (e) => e.countryCode ?? "unknown"),
+    byLocale: aggregateBy(recent, "locale", (e) => (e.locale ?? "en-US") as SupportedLocale),
+    byTimezone: aggregateBy(recent, "timezone", (e) => e.timezone ?? "unknown"),
+    byCategory: aggregateBy(recent, "category", (e) => e.category),
     openRateHeatmap: heatmapByHour(recent),
-    culturalContentPerformance: aggregate(
+    culturalContentPerformance: aggregateBy(
       recent,
+      "region",
       (e) => (e.culturalRegion ?? "south_asia") as CulturalRegion,
     ),
   };
 }
 
-function aggregate<T extends string>(
-  entries: Array<HistoryEntry & Record<string, unknown>>,
-  keyFn: (e: (typeof entries)[0]) => T,
-): Array<{ [k: string]: string | number; sent: number; opened: number; openRate: number }> {
-  const map = new Map<T, { sent: number; opened: number }>();
+type RegionalEntry = HistoryEntry & {
+  countryCode?: string | null;
+  locale?: string | null;
+  timezone?: string | null;
+  culturalRegion?: CulturalRegion | null;
+};
+
+function aggregateBy<K extends string, V extends string>(
+  entries: RegionalEntry[],
+  dimension: K,
+  keyFn: (e: RegionalEntry) => V,
+): Array<Record<K, V> & { sent: number; opened: number; openRate: number }> {
+  const map = new Map<V, { sent: number; opened: number }>();
   for (const e of entries) {
     const k = keyFn(e);
     const cur = map.get(k) ?? { sent: 0, opened: 0 };
@@ -52,12 +61,12 @@ function aggregate<T extends string>(
     if (e.openedAt) cur.opened++;
     map.set(k, cur);
   }
-  return [...map.entries()].map(([key, v]) => ({
-    key,
-    sent: v.sent,
-    opened: v.opened,
-    openRate: v.sent > 0 ? v.opened / v.sent : 0,
-  })) as Array<{ sent: number; opened: number; openRate: number } & Record<string, string | number>>;
+  return [...map.entries()].map(([value, stats]) => ({
+    [dimension]: value,
+    sent: stats.sent,
+    opened: stats.opened,
+    openRate: stats.sent > 0 ? stats.opened / stats.sent : 0,
+  })) as Array<Record<K, V> & { sent: number; opened: number; openRate: number }>;
 }
 
 function heatmapByHour(

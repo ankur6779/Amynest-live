@@ -453,9 +453,9 @@ router.post("/tts/pregenerate", async (req, res): Promise<void> => {
       if ((body.rateLimited ?? 0) > 0 && body.succeeded === 0) {
         res.status(429);
         return {
+          ...body,
           error: "tts_rate_limited",
           ok: false,
-          ...body,
           skipped,
         };
       }

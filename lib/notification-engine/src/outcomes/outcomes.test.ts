@@ -77,7 +77,15 @@ function minimalCtx(category = "learning_activity"): ContentContext {
     locale: "en-US",
     countryCode: "US",
     culturalRegion: "north_america",
-    calendar: { holidays: [], schoolTerm: "in_term", seasonLabel: "summer" },
+    calendar: {
+      holidayId: null,
+      holidayName: null,
+      isRamadanSeason: false,
+      isSummerBreak: true,
+      isExamSeason: false,
+      isBackToSchool: false,
+      schoolTerm: "term",
+    },
     rtl: false,
   };
 }

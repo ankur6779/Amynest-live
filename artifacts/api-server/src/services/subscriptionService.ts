@@ -305,7 +305,7 @@ export async function healStaleSubscriptionRecord(
       .set({ currentPeriodEnd: farFuture, updatedAt: new Date() })
       .where(eq(subscriptionsTable.userId, sub.userId))
       .returning();
-    return fixed[0] ?? sub;
+    return fixed ?? sub;
   }
 
   if (!["revenuecat", "razorpay", "none"].includes(sub.provider ?? "none")) {
@@ -325,7 +325,7 @@ export async function healStaleSubscriptionRecord(
     })
     .where(eq(subscriptionsTable.userId, sub.userId))
     .returning();
-  return updated[0] ?? sub;
+  return updated ?? sub;
 }
 
 export async function getEntitlements(userId: string): Promise<EntitlementSummary> {

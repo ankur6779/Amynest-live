@@ -193,7 +193,7 @@ export async function getContentBankItem(
   if (!item) return { error: "not_found" as const };
   const manifest = await loadContentBankManifest();
   const enriched = enrichWithAudio(category, [
-    { ...(item as Record<string, unknown>), id: itemId } as { id: string; audioText?: string },
+    { ...(item as unknown as Record<string, unknown>), id: itemId } as { id: string; audioText?: string },
   ])[0];
 
   return {

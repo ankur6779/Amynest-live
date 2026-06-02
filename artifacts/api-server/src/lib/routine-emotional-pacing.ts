@@ -454,7 +454,7 @@ function insertConnectionBlock(
   );
   if (exists) return items;
 
-  const label = connectionActivityLabel(ctx.seed + gap.start);
+  const label = connectionActivityLabel((ctx.seed ?? 0) + gap.start);
   const block = itemFromPreset("family_time", {
     time: minsToTime24(gap.start),
     duration: gap.duration,

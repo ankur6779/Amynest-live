@@ -1,4 +1,4 @@
-import type { CulturalRegion } from "../locales.js";
+import type { CulturalRegion } from "./locales.js";
 
 export interface RegionalFoodItem {
   slug: string;

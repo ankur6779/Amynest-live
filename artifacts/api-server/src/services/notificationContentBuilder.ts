@@ -624,6 +624,11 @@ export async function buildMilestoneAlert(
   };
 }
 
+/** Infant pushes are composed by infantNotificationScheduler, not the generic cron builders. */
+async function buildInfantCare(_userId: string, _timezone: string): Promise<BuiltNotification | null> {
+  return null;
+}
+
 /* ─────────────────────────────  Content map  ─────────────────────────── */
 
 /** Map a category to its content builder. */
@@ -643,4 +648,5 @@ export const contentBuilders: Record<
   phonics:           buildPhonicsReminder,
   learning_activity: buildLearningActivity,
   milestone:         buildMilestoneAlert,
+  infant_care:       buildInfantCare,
 };

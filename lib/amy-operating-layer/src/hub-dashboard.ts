@@ -76,7 +76,7 @@ function toHubAction(action: RoutedAction): HubRoutedAction {
   const resolved = resolveRoutedAction(action);
   return {
     actionTarget: resolved.actionTarget,
-    entityId: resolved.entityId,
+    entityId: resolved.entityId != null ? String(resolved.entityId) : null,
     href: resolved.path,
     fallbackTarget: action.fallbackTarget ?? "parent_hub",
     params: action.params,

@@ -4,7 +4,7 @@ import {
   buildAlerts,
   computeRetentionCohorts,
   pctChange,
-} from "./infantParentingDashboardMetrics.ts";
+} from "./infantParentingDashboardMetrics.js";
 
 describe("infantParentingDashboardMetrics", () => {
   it("pctChange handles zero baseline", () => {

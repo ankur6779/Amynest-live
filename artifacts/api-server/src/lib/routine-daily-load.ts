@@ -344,7 +344,7 @@ function countRecoveryGaps(
  */
 export function calculateDailyLoadProfile(
   items: RoutineScheduleItem[],
-  ctx: DailyLoadContext = {},
+  ctx: DailyLoadContext = { wakeMins: 7 * 60, sleepMins: 21 * 60 },
 ): DailyLoadProfile {
   const limits = deriveDailyLoadLimits(ctx);
   const blocks: DailyLoadBlockMetrics[] = [];

@@ -51,6 +51,7 @@ import {
   type AiRoutineItem,
 } from "../lib/ai-routine-utils.js";
 import { buildRoutineContext } from "../lib/routine-context-builder.js";
+import type { RoutineScheduleItem } from "../lib/routine-scheduler.js";
 import {
   resolveRoutineGenerationInputs,
   type ResolvedRoutineInputs,
@@ -1004,7 +1005,7 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
 
   return {
     title: parsed.title,
-    items: schoolSanitizedItems,
+    items: schoolSanitizedItems as RoutineItem[],
     specialEvent: piped.specialEvent,
     fixedActivities: piped.fixedActivities,
     adaptations: finalizeParentAdaptations(
@@ -1091,20 +1092,9 @@ async function resolveEnvironmentalContextSafe(input: {
   }
 }
 
-type RoutineItem = {
-  time: string;
-  activity: string;
-  duration: number;
-  category: string;
-  notes?: string;
-  status?: "pending" | "completed" | "skipped" | "delayed";
-  rewardPoints?: number;
-  // Routine v2 fields propagated through to the response.
-  meal?: string | null;
+type RoutineItem = RoutineScheduleItem & {
   recipe?: import("../lib/meal-recipes.js").MealRecipe | null;
   nutrition?: import("../lib/meal-recipes.js").MealNutrition | null;
-  ageBand?: "2-5" | "6-10" | "10+";
-  parentHubTopic?: string;
   /** Semantic enrichment — optional, backward compatible. */
   description?: string;
   linkedModules?: string[];
@@ -1249,7 +1239,7 @@ function resolveFixedActivitiesForGenerate(
   return fromProfile && fromProfile.length > 0 ? fromProfile : undefined;
 }
 
-function isMealOrTiffinSlot(item: ScheduleItem): boolean {
+function isMealOrTiffinSlot(item: Pick<ScheduleItem, "category">): boolean {
   const cat = (item.category ?? "").toLowerCase();
   return cat === "meal" || cat === "tiffin";
 }
@@ -1261,7 +1251,7 @@ function mergePipelineWithV2Meals(
   childClass?: string,
 ): RoutineItem[] {
   const nonMeals = piped.filter((it) => !isMealOrTiffinSlot(it));
-  let merged = [...nonMeals, ...v2Meals].sort(
+  let merged: RoutineItem[] = [...nonMeals, ...(v2Meals as RoutineItem[])].sort(
     (a, b) => timeToMins(a.time) - timeToMins(b.time),
   );
   let schoolSeen = false;

@@ -964,13 +964,14 @@ describe("spelling sessions — DB integration (trust + concurrency)", { skip: !
         "audio_pending",
         "must return audio_pending — not 'ok' (would have finalized R2 with 0 attempts!)",
       );
-      if (result.kind !== "audio_pending") return;
-      assert.equal(result.session.sessionToken, r2SessionToken);
-      assert.equal(
-        result.session.finalizedAt,
-        null,
-        "session must remain unfinalized so the kid can still play it",
-      );
+      if (result.kind === "audio_pending") {
+        assert.equal(result.session.sessionToken, r2SessionToken);
+        assert.equal(
+          result.session.finalizedAt,
+          null,
+          "session must remain unfinalized so the kid can still play it",
+        );
+      }
 
       // Tournament state untouched: currentRound still 2, rounds
       // still [R1], no R2 result applied. The R2 session is still

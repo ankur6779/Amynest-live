@@ -427,7 +427,7 @@ export function runRoutineIntelligencePipeline(
     };
   }
 
-  let items = enrichItemsWithActivityMetadata(
+  let items: RoutineScheduleItem[] = enrichItemsWithActivityMetadata(
     cloneItems(input.items).map((it) => ({
       ...it,
       time: normalizeTo24h(it.time),
@@ -682,7 +682,7 @@ export function runRoutineIntelligencePipeline(
     items = validated.items;
   }
 
-  let polished = polishRoutineOutput(items, state, decisionTrace);
+  let polished: RoutineScheduleItem[] = polishRoutineOutput(items, state, decisionTrace);
   polished = ensureSpecialEventsPreserved(polished, specialParse.events, {
     wakeMins: wakeMinsEarly,
     sleepMins: sleepMinsEarly,
@@ -1020,7 +1020,7 @@ export function runRoutineIntelligencePipeline(
     region: input.builtContext.region,
     country: input.builtContext.country,
   });
-  polished = finalEnforcement.items;
+  polished = enrichItemsWithActivityMetadata(finalEnforcement.items);
   if (finalEnforcement.adaptations.length) {
     pipelineDebug(debug, debugLog, "decisionEnforcedFinal", finalEnforcement.adaptations);
   }

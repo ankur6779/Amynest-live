@@ -21,7 +21,9 @@ export type PhonicsTelemetryEvent =
   | "phonics_hear_and_tap_answered"
   | "phonics_hear_and_tap_audio_mismatch"
   | "phonics_circuit_open"
-  | "phonics_render_crash";
+  | "phonics_render_crash"
+  | "phonics_blend_step_retry"
+  | "phonics_blend_step_failed";
 
 export type PhonicsPlaybackMetrics = {
   playStarts: number;

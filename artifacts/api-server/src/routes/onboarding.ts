@@ -85,10 +85,23 @@ async function upsertOnboardingCompletion(
   const nextComplete = onboardingComplete !== false;
 
   let profile;
+  const childrenJson = Array.isArray(children) ? children : [];
+  const parentJson =
+    parent != null && typeof parent === "object" && !Array.isArray(parent)
+      ? parent
+      : {};
+  const priorityGoalText = typeof priorityGoal === "string" ? priorityGoal : null;
+
   if (existing) {
     [profile] = await db
       .update(onboardingProfilesTable)
-      .set({ children, parent, priorityGoal, onboardingComplete: nextComplete, updatedAt: now })
+      .set({
+        children: childrenJson,
+        parent: parentJson,
+        priorityGoal: priorityGoalText,
+        onboardingComplete: nextComplete,
+        updatedAt: now,
+      })
       .where(eq(onboardingProfilesTable.userId, userId))
       .returning();
   } else {
@@ -96,9 +109,9 @@ async function upsertOnboardingCompletion(
       .insert(onboardingProfilesTable)
       .values({
         userId,
-        children,
-        parent,
-        priorityGoal,
+        children: childrenJson,
+        parent: parentJson,
+        priorityGoal: priorityGoalText,
         onboardingComplete: nextComplete,
         updatedAt: now,
       })

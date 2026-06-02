@@ -596,16 +596,14 @@ export function deriveBehavioralState(
   context: RoutineRawContext,
   childProfile: ChildProfileForRoutine,
 ): InterpretedBehavioralState {
+  const countryCode =
+    context.country ?? context.countryProfile?.country ?? null;
+  const normalizedCountry = normalizeCountryCode(countryCode);
   const enriched: RoutineRawContext = {
     ...context,
-    country: normalizeCountryCode(
-      context.country ?? context.countryProfile?.country ?? null,
-    ),
+    country: normalizedCountry,
     countryProfile:
-      context.countryProfile ??
-      getCountryRoutineProfile(
-        normalizeCountryCode(context.country ?? context.countryProfile?.country ?? null),
-      ),
+      context.countryProfile ?? getCountryRoutineProfile(normalizedCountry),
   };
   const decisions: ContextDecisionTrace[] = [];
   const resolved = resolveContextPriorities(enriched, childProfile, decisions);

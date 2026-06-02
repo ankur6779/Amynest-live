@@ -463,7 +463,7 @@ router.get("/notifications/analytics", async (req, res): Promise<void> => {
     countryCode: r.countryCode,
     locale: r.locale,
     timezone: r.timezoneAtSend,
-    culturalRegion: r.culturalRegion,
+    culturalRegion: r.culturalRegion as import("@workspace/notification-engine").CulturalRegion | null,
   }));
 
   const regional = computeRegionalAnalytics(regionalEntries, windowDays);

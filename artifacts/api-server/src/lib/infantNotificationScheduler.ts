@@ -177,7 +177,7 @@ async function buildCandidatesForChild(input: {
 
   const history = rowsToHistory(napRows);
   const lastFeed = feedRows.find((r) => r.logType.startsWith("feed_"));
-  const logMap: VaxLogMap = {};
+  const logMap: Record<string, "done" | "missed"> = {};
   for (const v of vaxRows) logMap[v.ageLabel] = v.status as "done" | "missed";
 
   const sleepByDate = dailySleepMinutesFromNaps(napRows, input.tzOffsetMin);
