@@ -49,6 +49,7 @@ export const PARENT_HUB_FEATURES = [
   "hub_spelling_mastery",
   "hub_speech",
   "hub_speech_session",
+  "hub_animal_world",
 ] as const;
 
 export type ParentHubFeatureId = (typeof PARENT_HUB_FEATURES)[number];

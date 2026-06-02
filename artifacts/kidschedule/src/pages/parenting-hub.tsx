@@ -1316,6 +1316,27 @@ function ParentingHubPage() {
       );
     }
   }, {
+    id: "animal-world",
+    bands: ["0-2", "2-4", "4-6"],
+    render: () => {
+      if (!shouldRenderHubTileContent("animal-world", totalAgeMonths, isTwoPlus || earlyAccessBypass)) return null;
+      return (
+        <LockedBlock reason="hub_locked" locked={isHubLocked("hub_animal_world")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
+          <HubLaunchCard
+            href="/animal-world"
+            title={t("parent_hub.web_tiles.animal-world.title")}
+            description={t("parent_hub.web_tiles.animal-world.description")}
+            icon={<Sparkles className="h-5 w-5 text-white" />}
+            accentClass="bg-gradient-to-br from-cyan-400 to-teal-500"
+            cardClass="bg-gradient-to-br from-cyan-400/30 to-teal-500/15 hover:shadow-[0_10px_36px_-10px_rgba(45,212,191,0.45)]"
+            tryFree={tryFreeFor("hub_animal_world")}
+            testId="animal-world-launch-card"
+            sectionId="animal-world"
+          />
+        </LockedBlock>
+      );
+    }
+  }, {
     id: "ptm-prep",
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {

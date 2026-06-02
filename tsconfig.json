@@ -4,6 +4,9 @@
   "files": [],
   "references": [
     {
+      "path": "./lib/animal-world"
+    },
+    {
       "path": "./lib/speech-coach"
     },
     {

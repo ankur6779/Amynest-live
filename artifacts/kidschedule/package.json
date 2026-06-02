@@ -75,6 +75,7 @@
     "@vitejs/plugin-react": "catalog:",
     "@vitest/coverage-v8": "^4.1.5",
     "@workspace/abacus": "workspace:*",
+    "@workspace/animal-world": "workspace:*",
     "@workspace/intent-recovery": "workspace:*",
     "@workspace/action-routing": "workspace:*",
     "@workspace/api-client-react": "workspace:*",

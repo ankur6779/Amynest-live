@@ -12,6 +12,7 @@ export type HubSectionVisibilityInput = {
 /** Per-tile month bounds for infants (<24m). Inclusive min, exclusive max. */
 export const HUB_TILE_MONTH_GATES: Record<string, { min?: number; max?: number }> = {
   phonics: { min: 12, max: 72 },
+  "animal-world": { min: 12, max: 72 },
   "ptm-prep": { min: 36, max: 216 },
   "smart-study": { min: 36, max: 204 },
   "spelling-mastery": { min: 24 },

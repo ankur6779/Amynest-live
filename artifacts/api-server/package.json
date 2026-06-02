@@ -22,6 +22,7 @@
     "@workspace/gaming-rewards": "workspace:*",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
+    "@workspace/animal-world": "workspace:*",
     "@workspace/phonics-sounds": "workspace:*",
     "@workspace/phonics-curriculum": "workspace:*",
     "@workspace/environment": "workspace:*",

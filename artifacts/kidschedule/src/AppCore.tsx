@@ -110,6 +110,7 @@ const RecipesPage = lazyPage(() => import("@/pages/recipes"));
 const NutritionHubPage = lazyPage(() => import("@/pages/nutrition"));
 const AudioLessonsPage = lazyPage(() => import("@/pages/audio-lessons"));
 const GamesPage = lazyPage(() => import("@/pages/games"));
+const AnimalWorldPage = lazyPage(() => import("@/pages/animal-world"));
 const OnboardingPage = lazyPage(() => import("@/pages/onboarding"));
 const PricingPage = lazyPage(() => import("@/pages/pricing"));
 const SubscriptionTrialPage = lazyPage(() => import("@/pages/subscription-trial"));
@@ -339,6 +340,7 @@ const RecipesRoute = makeProtectedRoute(RecipesPage);
 const NutritionHubRoute = makeProtectedRoute(NutritionHubPage);
 const AudioLessonsRoute = makeProtectedRoute(AudioLessonsPage);
 const GamesRoute = makeProtectedRoute(GamesPage);
+const AnimalWorldRoute = makeProtectedRoute(AnimalWorldPage);
 const PricingRoute = makeProtectedRoute(PricingPage);
 const ReferralsRoute = makeProtectedRoute(ReferralsPage);
 /** Public — universal link `/referral/:code` captures invite before sign-in. */
@@ -628,6 +630,7 @@ function AppRoutes() {
           <Route path="/nutrition" component={NutritionHubRoute} />
           <Route path="/audio-lessons" component={AudioLessonsRoute} />
           <Route path="/games" component={GamesRoute} />
+          <Route path="/animal-world" component={AnimalWorldRoute} />
           <Route path="/pricing" component={PricingRoute} />
           <Route path="/referral/:code" component={ReferralDeepLinkRoute} />
           <Route path="/referrals" component={ReferralsRoute} />

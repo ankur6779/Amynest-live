@@ -388,6 +388,16 @@ const HUB_FEATURE_TILE_ACCENTS: Record<string, HubAccentTheme> = {
   "smart-math-tricks": HUB_GROUP_ACCENTS.today,
   abacus: HUB_GROUP_ACCENTS.stories,
   phonics: HUB_GROUP_ACCENTS.learning,
+  "animal-world": makeTheme(
+    "border-[1.5px] border-[rgba(56,189,248,0.50)]",
+    "bg-gradient-to-b from-sky-300 via-cyan-400 to-teal-500",
+    "shadow-[0_0_14px_rgba(56,189,248,0.45)]",
+    "border-[rgba(56,189,248,0.40)]",
+    "shadow-[0_0_14px_rgba(56,189,248,0.32)]",
+    56,
+    189,
+    248,
+  ),
   "spelling-mastery": makeTheme(
     "border-[1.5px] border-[rgba(52,211,153,0.50)]",
     "bg-gradient-to-b from-emerald-400 via-green-400 to-teal-500",

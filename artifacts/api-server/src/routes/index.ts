@@ -47,6 +47,7 @@ import { staticAudioPublicRouter } from "./static-audio";
 import audioLessonsRouter from "./audio-lessons";
 import phonicsRouter, { phonicsPublicRouter } from "./phonics";
 import { phonicsLibraryPublicRouter } from "./phonics-library";
+import { animalWorldLibraryPublicRouter } from "./animal-world-library";
 import { spellingLibraryPublicRouter } from "./spelling-library";
 import abacusRouter from "./abacus";
 import gamingRewardsRouter from "./gaming-rewards";
@@ -130,6 +131,8 @@ router.use(spellingPublicRouter);
 router.use(phonicsPublicRouter);
 // /api/phonics-library/phonics/{category}/{id}.mp3 — GCS phonics library stream.
 router.use(phonicsLibraryPublicRouter);
+// /api/animal-world-library/animal-world/{category}/{animal}/{file} — GCS animal sounds/images.
+router.use(animalWorldLibraryPublicRouter);
 // /api/spelling-library/spelling/v{n}/{slug}.mp3 — GCS spelling library stream.
 router.use(spellingLibraryPublicRouter);
 // /api/static-audio/:hash.mp3 — MD5-addressed catalog MP3 stream from GCS.

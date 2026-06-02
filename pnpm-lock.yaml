@@ -238,6 +238,9 @@ importers:
       '@workspace/amy-operating-layer':
         specifier: workspace:*
         version: link:../../lib/amy-operating-layer
+      '@workspace/animal-world':
+        specifier: workspace:*
+        version: link:../../lib/animal-world
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
@@ -729,6 +732,9 @@ importers:
       '@workspace/action-routing':
         specifier: workspace:*
         version: link:../../lib/action-routing
+      '@workspace/animal-world':
+        specifier: workspace:*
+        version: link:../../lib/animal-world
       '@workspace/api-client-react':
         specifier: workspace:*
         version: link:../../lib/api-client-react
@@ -1213,6 +1219,12 @@ importers:
         specifier: workspace:*
         version: link:../family-intelligence
 
+  lib/animal-world:
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
   lib/api-client-react:
     dependencies:
       '@tanstack/react-query':
@@ -1505,6 +1517,9 @@ importers:
       '@workspace/action-routing':
         specifier: workspace:*
         version: link:../lib/action-routing
+      '@workspace/animal-world':
+        specifier: workspace:*
+        version: link:../lib/animal-world
       '@workspace/audio-lessons':
         specifier: workspace:*
         version: link:../lib/audio-lessons
