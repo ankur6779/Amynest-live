@@ -42,6 +42,18 @@ export function getSpellingAudioManifest(): SpellingAudioManifest {
   return manifest;
 }
 
+/**
+ * Resolve the canonical catalog word for a sanitized audio slug, or null
+ * when the slug is not a known spelling word. Gates lazy audio generation
+ * to the finite catalog so the public proxy can't be coerced into
+ * synthesizing arbitrary text.
+ */
+export function spellingWordForSlug(slug: string): string | null {
+  const s = (slug ?? "").trim().toLowerCase();
+  if (!s) return null;
+  return bySlug.get(s)?.word ?? null;
+}
+
 export function lookupSpellingAudioEntry(
   catalogId?: string | null,
   word?: string | null,

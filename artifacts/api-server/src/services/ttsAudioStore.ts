@@ -158,6 +158,42 @@ export async function readGcsObjectBytes(objectName: string): Promise<Buffer | n
   }
 }
 
+/**
+ * Write arbitrary bytes to a primary-bucket object (e.g. spelling/v2/foo.mp3).
+ * Best-effort: returns false (no throw) when GCS is unconfigured or the write
+ * fails, so callers can persist lazily-generated audio without coupling
+ * request success to the write.
+ */
+export async function writeGcsObjectBytes(
+  objectName: string,
+  buffer: Buffer,
+  contentType = "audio/mpeg",
+  cacheControl = "public, max-age=31536000, immutable",
+): Promise<boolean> {
+  if (!legacyGcsConfigured()) return false;
+  if (!buffer?.byteLength) return false;
+  try {
+    const file = getBucket().file(objectName);
+    await file.save(buffer, {
+      contentType,
+      resumable: false,
+      metadata: { cacheControl },
+    });
+    await file.makePublic().catch(() => {});
+    return true;
+  } catch (err) {
+    logger.warn(
+      {
+        evt: "gcs.object_write_failed",
+        objectName,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "GCS object write failed",
+    );
+    return false;
+  }
+}
+
 async function tryLegacyGcsRead(cacheKey: string, attempt = 0): Promise<Buffer | null> {
   if (!isTtsCacheGcsEnabled() || !legacyGcsConfigured()) return null;
   try {

@@ -2,11 +2,83 @@ import { createHash } from "node:crypto";
 import { Router, type IRouter } from "express";
 import { isValidSpellingGcsObjectPath } from "@workspace/spelling-audio";
 import { logger } from "../lib/logger.js";
-import { legacyGcsConfigured, readGcsObjectBytes } from "../services/ttsAudioStore.js";
+import {
+  legacyGcsConfigured,
+  readGcsObjectBytes,
+  writeGcsObjectBytes,
+} from "../services/ttsAudioStore.js";
 import { serveStaticAudioBuffer } from "../services/staticAudioServe.js";
 import { getPlaceholderMp3 } from "../services/staticAudioPlaceholder.js";
+import { spellingWordForSlug } from "../services/spelling-audio-manifest.js";
+import { synthesizeSafe } from "../services/ttsSafe.js";
+import { readCachedAudio } from "../services/ttsCacheService.js";
 
 export const spellingLibraryPublicRouter: IRouter = Router();
+
+/**
+ * Lazy self-healing: when a pre-generated spelling clip is missing, the
+ * proxy synthesises it on the fly (the slug IS the word), serves it, and
+ * persists it back to GCS so the next request streams it directly. This
+ * removes the "Retry audio" friction for any word that was never batch-
+ * generated, without a giant pre-generation run.
+ *
+ * Bounded + abuse-safe:
+ *  - Only words present in the spelling manifest are generated (the slug
+ *    is gated by `spellingWordForSlug`), so the public endpoint can't be
+ *    coerced into synthesizing arbitrary text.
+ *  - In-flight de-dupe collapses concurrent requests (e.g. prefetch of the
+ *    next few words) onto a single synthesis.
+ *  - After the first generation the audio is cached (TTS cache) and, when
+ *    GCS is configured, persisted to `spelling/v{n}/{slug}.mp3`.
+ */
+const inflightGeneration = new Map<string, Promise<Buffer | null>>();
+
+async function generateSpellingAudioOnMiss(
+  objectPath: string,
+): Promise<Buffer | null> {
+  const match = /^spelling\/v\d+\/([a-z0-9_-]+)\.mp3$/i.exec(objectPath);
+  const slug = match?.[1];
+  if (!slug) return null;
+  const word = spellingWordForSlug(slug);
+  if (!word) return null; // unknown word — never synthesize arbitrary text
+
+  const existing = inflightGeneration.get(objectPath);
+  if (existing) return existing;
+
+  const task = (async (): Promise<Buffer | null> => {
+    try {
+      const synth = await synthesizeSafe(word, { mode: "default" });
+      if (!synth) return null;
+      const cached = await readCachedAudio(synth.cacheKey);
+      const buffer = cached?.buffer ?? null;
+      if (buffer?.byteLength) {
+        // Persist to the canonical spelling path so future reads stream
+        // straight from GCS (no re-synthesis). Best-effort, non-blocking.
+        void writeGcsObjectBytes(objectPath, buffer);
+        logger.info(
+          { evt: "spelling_library.lazy_generated", objectPath, word, bytes: buffer.byteLength },
+          "spelling library audio lazily generated",
+        );
+      }
+      return buffer;
+    } catch (err) {
+      logger.warn(
+        {
+          evt: "spelling_library.lazy_generate_failed",
+          objectPath,
+          message: err instanceof Error ? err.message : String(err),
+        },
+        "spelling library lazy generation failed",
+      );
+      return null;
+    } finally {
+      inflightGeneration.delete(objectPath);
+    }
+  })();
+
+  inflightGeneration.set(objectPath, task);
+  return task;
+}
 
 /** Explicit CORS for cross-origin fetch from www.amynest.in (prefetch / IndexedDB warm). */
 spellingLibraryPublicRouter.use((req, res, next) => {
@@ -62,28 +134,43 @@ spellingLibraryPublicRouter.get("/spelling-library/*objectPath", async (req, res
       { evt: "spelling_library.gcs_unconfigured", objectPath },
       "spelling library proxy — GCS not configured",
     );
+    const generated = await generateSpellingAudioOnMiss(objectPath);
+    if (generated?.byteLength) {
+      serveStaticAudioBuffer(req, res, etagKey, generated, "memory");
+      return;
+    }
     serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
     return;
   }
 
   try {
     const buffer = await readGcsObjectBytes(objectPath);
-    if (!buffer?.byteLength) {
-      logger.warn(
-        { evt: "spelling_library.missing", objectPath },
-        "spelling library object missing in GCS",
-      );
-      serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
+    if (buffer?.byteLength) {
+      serveStaticAudioBuffer(req, res, etagKey, buffer, "gcs");
       return;
     }
 
-    serveStaticAudioBuffer(req, res, etagKey, buffer, "gcs");
+    logger.warn(
+      { evt: "spelling_library.missing", objectPath },
+      "spelling library object missing in GCS — generating on demand",
+    );
+    const generated = await generateSpellingAudioOnMiss(objectPath);
+    if (generated?.byteLength) {
+      serveStaticAudioBuffer(req, res, etagKey, generated, "memory");
+      return;
+    }
+    serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error(
       { evt: "spelling_library.stream_failed", objectPath, message },
       "spelling library stream failed",
     );
+    const generated = await generateSpellingAudioOnMiss(objectPath).catch(() => null);
+    if (generated?.byteLength) {
+      serveStaticAudioBuffer(req, res, etagKey, generated, "memory");
+      return;
+    }
     serveStaticAudioBuffer(req, res, etagKey, getPlaceholderMp3(), "memory");
   }
 });
