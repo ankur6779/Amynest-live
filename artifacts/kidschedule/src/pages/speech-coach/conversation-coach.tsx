@@ -274,11 +274,14 @@ function ConversationCoach({ child }: { child: AnyChild }) {
         if (!text) continue;
         // Freeform conversational text has no coach audioIdentity, so use the
         // default speak path (coach:true would fail with coach_identity_missing).
-        let result = await voice.speak(text, { mode: "default" });
+        // partial-ok unlocks the low-latency streaming pipeline (ElevenLabs flash
+        // via /api/tts/stream) so Amy starts talking in ~300ms — a real chat feel.
+        const speakOpts = { mode: "default", playbackMode: "partial-ok" } as const;
+        let result = await voice.speak(text, speakOpts);
         if (!result.success) {
           // Live TTS for dynamic text can be flaky on mobile — one quick retry.
           await new Promise((r) => setTimeout(r, 250));
-          result = await voice.speak(text, { mode: "default" });
+          result = await voice.speak(text, speakOpts);
         }
         // Don't break on a single failure — still try the follow-up question.
         if (result.success) spokeAny = true;

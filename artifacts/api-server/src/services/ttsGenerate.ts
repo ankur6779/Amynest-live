@@ -8,6 +8,12 @@ import {
 import { fetchOpenAiTtsStream } from "./openaiTtsService.js";
 import { persistOpenAiTtsCache } from "./openaiTtsPersist.js";
 import { getOpenAiTtsModel, getOpenAiTtsVoice } from "../lib/openai-tts-config.js";
+import { isElevenLabsFallbackEnabled } from "../lib/env.js";
+import {
+  synthesizeElevenLabsFallback,
+  AMY_VOICE_ID_DEFAULT as ELEVEN_VOICE_DEFAULT,
+} from "./elevenLabsFallbackService.js";
+import { AMY_MODEL_ID_FLASH } from "./elevenLabsTtsStreamCache.js";
 import { isValidTtsPublicUrl, resolveTtsPlaybackUrl } from "./ttsAudioStore.js";
 import {
   getPhonicsCacheFileName,
@@ -80,6 +86,31 @@ export async function generateOpenAiTts(
   if (!text) return null;
 
   const mode: SynthesizeMode = input.mode ?? "default";
+
+  // ElevenLabs is Amy's primary voice for every module when configured. We use
+  // the SAME voice + flash model as the streaming path so all modules share one
+  // content-addressed cache (each unique phrase is billed to ElevenLabs once;
+  // the static-audio library is matched separately by URL and is unaffected).
+  // Falls back to OpenAI if ElevenLabs is disabled or errors.
+  if (isElevenLabsFallbackEnabled()) {
+    try {
+      const el = await synthesizeElevenLabsFallback(
+        text,
+        { voiceId: ELEVEN_VOICE_DEFAULT, modelId: AMY_MODEL_ID_FLASH, mode },
+        ctx,
+      );
+      if (el && isValidTtsPublicUrl(el.audioUrl)) {
+        return { url: el.audioUrl, cached: el.cached, cacheKey: el.cacheKey };
+      }
+    } catch (err) {
+      if (err instanceof TtsRateLimitedError) throw err;
+      logger.warn(
+        { evt: "tts.elevenlabs_primary_failed", message: err instanceof Error ? err.message : String(err) },
+        "ElevenLabs primary failed — falling back to OpenAI",
+      );
+    }
+  }
+
   const voiceId = (input.voice?.trim() || getOpenAiTtsVoice() || AMY_VOICE_ID_DEFAULT).slice(0, 64);
   const modelId = getOpenAiTtsModel() || AMY_MODEL_ID_DEFAULT;
 

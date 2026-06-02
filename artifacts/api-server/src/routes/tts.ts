@@ -31,6 +31,10 @@ import {
 import { recordApiHealthSample } from "../services/api-health-store.js";
 import { getOpenAiTtsModel } from "../lib/openai-tts-config.js";
 import { streamOpenAiTtsWithCache } from "../services/openaiTtsStreamCache.js";
+import {
+  streamElevenLabsTtsWithCache,
+  AMY_MODEL_ID_FLASH,
+} from "../services/elevenLabsTtsStreamCache.js";
 import { ingestRlTelemetry, resolveRlStrategy } from "../services/ttsRlService.js";
 import {
   isTtsRateLimitedError,
@@ -106,6 +110,9 @@ const generateSchema = z
     word: z.string().min(1).max(32).optional(),
     blend: z.string().min(1).max(32).optional(),
     voice: z.string().min(1).max(64).optional(),
+    /** Client-preferred provider voice/model (e.g. ElevenLabs). Honored by /tts/stream. */
+    voiceId: z.string().min(1).max(64).optional(),
+    modelId: z.string().min(1).max(64).optional(),
     speed: z.number().min(0.5).max(2).optional(),
     mode: z.enum(["default", "phonics"]).optional(),
     category: z.enum(["words", "sentences", "phonics"]).optional(),
@@ -137,7 +144,9 @@ function resolvePhrase(parsed: z.infer<typeof generateSchema>): string {
 }
 
 /**
- * POST /api/tts/generate — single OpenAI TTS pipeline (cache-first).
+ * POST /api/tts/generate — Amy TTS pipeline (cache-first).
+ * Provider (ElevenLabs flash when configured, else OpenAI) is chosen inside
+ * generateOpenAiTts so every module shares one cache.
  */
 router.post("/tts/generate", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
@@ -553,26 +562,33 @@ router.post("/tts/stream", async (req, res): Promise<void> => {
   }
 
   const mode = parsed.data.mode ?? "default";
-  const clientVoice = parsed.data.voice?.trim();
-  const voiceId = (clientVoice && clientVoice.length > 0 ? clientVoice : getOpenAiTtsVoice()).slice(0, 64);
-  const modelId = getOpenAiTtsModel() || AMY_MODEL_ID_DEFAULT;
+
+  // ElevenLabs is the primary live-streaming voice when configured. First
+  // generation streams from ElevenLabs (flash v2.5) and is persisted to
+  // GCS/Postgres, so every later request (any user/device) is a cache hit —
+  // ElevenLabs is billed once per unique phrase. Falls back to OpenAI when
+  // ElevenLabs is disabled so nothing breaks if the key is unset.
+  const useElevenLabs = isElevenLabsFallbackEnabled();
+
+  const clientVoiceId = parsed.data.voiceId?.trim();
+  const voiceId = useElevenLabs
+    ? (clientVoiceId && clientVoiceId.length > 0 ? clientVoiceId : ELEVEN_VOICE_DEFAULT).slice(0, 64)
+    : ((parsed.data.voice?.trim() || getOpenAiTtsVoice())).slice(0, 64);
+  const clientModelId = parsed.data.modelId?.trim();
+  const modelId = useElevenLabs
+    ? (clientModelId && clientModelId.startsWith("eleven_") ? clientModelId : AMY_MODEL_ID_FLASH)
+    : (getOpenAiTtsModel() || AMY_MODEL_ID_DEFAULT);
   const cacheKey = computeTtsCacheKey(phrase, voiceId, modelId, mode);
 
   res.setHeader("X-TTS-Cache-Key", cacheKey);
 
   const startedAt = Date.now();
   try {
-    const ok = await streamOpenAiTtsWithCache(
-      res,
-      {
-        text: phrase,
-        voiceId,
-        modelId,
-        mode,
-        cacheKey,
-      },
-      { userId, route: "tts/stream" },
-    );
+    const streamParams = { text: phrase, voiceId, modelId, mode, cacheKey };
+    const ctx = { userId, route: "tts/stream" } as const;
+    const ok = useElevenLabs
+      ? await streamElevenLabsTtsWithCache(res, streamParams, ctx)
+      : await streamOpenAiTtsWithCache(res, streamParams, ctx);
     recordApiHealthSample({
       route: "stream",
       success: ok,
