@@ -194,6 +194,53 @@ const AGE_TYPES: Record<AgeGroup, QuestionType[]> = {
   "5_6y": ["identify", "blending", "listening", "missing_letter", "build_word"],
 };
 
+/**
+ * Speed Round type priority per age tier.
+ *
+ * Speed Round must not feel like a re-skin of Hear & Tap. It therefore leads
+ * with a *different*, recognition-focused question type (quick to answer under
+ * the countdown) than `AGE_TYPES` does, and the generator also runs it on a
+ * distinct effective seed so the actual questions differ even where the type
+ * pools overlap. The full `AGE_TYPES` set is appended at call-time so Speed
+ * Round can always fill the requested count from the same content.
+ *
+ * 12_24m has a single available type (animal_sound); there it stays distinct
+ * from Hear & Tap purely via the seed offset (different animals, different
+ * order), which matches the product decision to leave that tier's content
+ * untouched.
+ */
+const SPEED_TYPES: Record<AgeGroup, QuestionType[]> = {
+  "12_24m": ["animal_sound"],
+  "2_3y": ["word_pic", "sound_to_letter", "letter_to_sound"],
+  "3_4y": ["letter_to_sound", "word_pic", "blending"],
+  "4_5y": ["listening", "word_pic", "blending"],
+  "5_6y": ["listening", "identify", "blending"],
+};
+
+/** XOR mask applied to the Speed Round seed so its questions diverge from Hear & Tap. */
+const SPEED_SEED_MASK = 0x5eed1234;
+
+function dedupeTypes(types: QuestionType[]): QuestionType[] {
+  return Array.from(new Set(types));
+}
+
+/**
+ * When a locked single-builder mode (Missing Letter / Build Word) cannot fill
+ * the requested count from its own strict filters, we top up from the *same
+ * pedagogical family* — letter/spelling games — before ever reaching for the
+ * full age mix. This keeps a "Missing Letter" or "Build Word" session feeling
+ * like that game (working with letters) instead of silently turning into the
+ * mixed Hear & Tap set.
+ *
+ * The full `AGE_TYPES` mix is still used as an absolute last resort (see
+ * Pass 4) so the session always reaches `count` rather than 409-ing the user
+ * back to the home screen.
+ */
+const LOCKED_FALLBACK_FAMILY: Record<"missing_letter" | "build_word", QuestionType[]> = {
+  missing_letter: ["missing_letter", "build_word", "sound_to_letter", "letter_to_sound"],
+  build_word: ["build_word", "missing_letter", "sound_to_letter", "letter_to_sound"],
+};
+
 // ─── Question builders ───────────────────────────────────────────────────────
 
 interface BuildContext {
@@ -707,7 +754,13 @@ export function generateQuestions(opts: GenerateOptions): Question[] {
   if (gameMode === "mixed") {
     return generateMixedQuestions(opts);
   }
-  const rng = mulberry32(seed || 1);
+  // Speed Round runs on a distinct effective seed so its question set never
+  // duplicates Hear & Tap (which shares much of the same type pool).
+  const effectiveSeed =
+    gameMode === "speed_challenge"
+      ? (((seed || 1) ^ SPEED_SEED_MASK) >>> 0) || 1
+      : seed || 1;
+  const rng = mulberry32(effectiveSeed);
 
   const recent = new Set(recentItemIds);
   const active = contentRows.filter((r) => r.active !== false);
@@ -734,7 +787,12 @@ export function generateQuestions(opts: GenerateOptions): Question[] {
       : gameMode === "build_word"
         ? "build_word"
         : null;
-  const mixedTypes: QuestionType[] = AGE_TYPES[ageGroup];
+  // Speed Round leads with its own recognition-focused type ordering, then
+  // falls back to the full age set so it can always reach `count`.
+  const mixedTypes: QuestionType[] =
+    gameMode === "speed_challenge"
+      ? dedupeTypes([...SPEED_TYPES[ageGroup], ...AGE_TYPES[ageGroup]])
+      : AGE_TYPES[ageGroup];
 
   const out: Question[] = [];
   let typeCursor = 0;
@@ -772,13 +830,31 @@ export function generateQuestions(opts: GenerateOptions): Question[] {
     }
   }
 
-  // Pass 3 (locked modes only) — top up with the mixed AGE_TYPES builders so
-  // the session still has `count` questions even when the strict single-mode
-  // filters can't be satisfied by the available content. Better to ship a
-  // slightly mixed test than to 409 the user back to the home screen.
+  // Pass 3 (locked modes only) — top up from the SAME pedagogical family
+  // (other letter/spelling games) before touching the full age mix, so the
+  // session keeps the look-and-feel of the chosen game (e.g. a "Build Word"
+  // session that runs short falls back to "Missing Letter" rather than to
+  // "Word + Picture" / "Animal Sound").
   if (lockedType && out.length < count) {
+    const familyTypes = LOCKED_FALLBACK_FAMILY[lockedType];
     const ordered3 = shuffle(active, rng);
     for (const row of ordered3) {
+      if (out.length >= count) break;
+      let built: Question | null = null;
+      for (const t of familyTypes) {
+        built = BUILDERS[t](row, ctx, out.length);
+        if (built) break;
+      }
+      if (built) out.push(built);
+    }
+  }
+
+  // Pass 4 (locked modes only) — absolute last resort. If the family still
+  // can't satisfy the count (very sparse content), top up with the full age
+  // mix so we ship a complete test instead of 409-ing the user home.
+  if (lockedType && out.length < count) {
+    const ordered4 = shuffle(active, rng);
+    for (const row of ordered4) {
       if (out.length >= count) break;
       let built: Question | null = null;
       for (let i = 0; i < mixedTypes.length; i++) {

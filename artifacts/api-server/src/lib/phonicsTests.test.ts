@@ -361,6 +361,79 @@ describe("generateQuestions", () => {
     }
   });
 
+  // Regression: Speed Round and Hear & Tap used to be the same game — same
+  // type pool + same seed meant identical questions, just with a timer badge.
+  // Speed Round now runs on a distinct effective seed + its own type ordering.
+  it("speed_challenge is a different game from hear_tap (same seed)", () => {
+    const fingerprint = (qs: ReturnType<typeof generateQuestions>) =>
+      qs.map((q) => `${q.conceptId}:${q.type}:${q.correctIndex}`).join("|");
+    for (const ageGroup of ["2_3y", "3_4y", "4_5y", "5_6y"] as AgeGroup[]) {
+      const rows = ageGroup === "4_5y" ? CVC_4_5Y : LETTERS_2_3Y;
+      const hearTap = generateQuestions({
+        ageGroup,
+        contentRows: rows,
+        count: 5,
+        seed: 123,
+        gameMode: "hear_tap",
+      });
+      const speed = generateQuestions({
+        ageGroup,
+        contentRows: rows,
+        count: 5,
+        seed: 123,
+        gameMode: "speed_challenge",
+      });
+      assert.notEqual(
+        fingerprint(hearTap),
+        fingerprint(speed),
+        `${ageGroup}: speed_challenge should not mirror hear_tap`,
+      );
+    }
+  });
+
+  // Pass-3 family top-up: when a locked mode (build_word here) can't satisfy
+  // the count from its strict builder, it should top up from the SAME
+  // letter/spelling family — never silently fall back to word_pic / blending /
+  // listening, which would make it look like Hear & Tap.
+  it("build_word tops up within the letter family, not the full mix", () => {
+    // 9-letter words fail build_word (>8 cap) but pass missing_letter (no cap),
+    // and being `letter` rows they also enable sound_to_letter/letter_to_sound.
+    const LONG_WORDS: PhonicsContentRow[] = [
+      ["A", "crocodile"], ["B", "butterfly"], ["C", "dangerous"],
+      ["D", "raspberry"], ["E", "wonderful"], ["F", "xylophone"],
+    ].map(([letter, word], i) =>
+      row({
+        id: 700 + i,
+        ageGroup: "2_3y",
+        level: i + 1,
+        type: "letter",
+        symbol: letter as string,
+        sound: `${letter} for ${word}`,
+        example: word as string,
+      }),
+    );
+    const qs = generateQuestions({
+      ageGroup: "2_3y",
+      contentRows: LONG_WORDS,
+      count: 5,
+      seed: 31,
+      gameMode: "build_word",
+    });
+    assert.equal(qs.length, 5, "still fills the count");
+    const family = new Set([
+      "build_word",
+      "missing_letter",
+      "sound_to_letter",
+      "letter_to_sound",
+    ]);
+    for (const q of qs) {
+      assert.ok(
+        family.has(q.type),
+        `top-up type ${q.type} should stay in the letter/spelling family`,
+      );
+    }
+  });
+
   it("mixed mode fills the requested count for every age tier", () => {
     for (const ageGroup of ["12_24m", "2_3y", "3_4y", "4_5y", "5_6y"] as AgeGroup[]) {
       const qs = generateQuestions({
