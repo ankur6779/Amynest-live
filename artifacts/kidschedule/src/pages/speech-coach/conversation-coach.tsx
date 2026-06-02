@@ -271,7 +271,9 @@ function ConversationCoach({ child }: { child: AnyChild }) {
       for (const line of lines) {
         const text = (line ?? "").trim();
         if (!text) continue;
-        const result = await voice.speak(text, { coach: true });
+        // Freeform conversational text has no coach audioIdentity, so use the
+        // default speak path (coach:true would fail with coach_identity_missing).
+        const result = await voice.speak(text, { mode: "default" });
         if (!result.success) break;
       }
     },
