@@ -19,6 +19,7 @@ import {
   HelpCircle,
   Star,
   Lock,
+  MessageCircle,
 } from "lucide-react";
 import {
   useListChildren,
@@ -1442,6 +1443,30 @@ export default function SpeechCoachPage() {
               </div>
             </div>
           </div>
+
+          {/* NEW: Live Talk with Amy — free-flowing AI voice conversation (5 min/day) */}
+          <AppLink href="/speech-coach/talk" source="speech-home-talk-banner" replace>
+            <motion.div
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.985 }}
+              className="group relative overflow-hidden rounded-3xl p-5 text-white shadow-2xl bg-gradient-to-br from-cyan-500 via-sky-500 to-indigo-600 border border-white/20"
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(white_0.8px,transparent_1px)] bg-[length:3px_3px] opacity-10" />
+              <div className="relative flex items-center gap-4">
+                <div className="shrink-0 rounded-2xl bg-white/20 p-3.5 ring-1 ring-white/30">
+                  <MessageCircle className="h-8 w-8" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] font-black uppercase tracking-[2.5px] text-white/80">NEW • LIVE AI CHAT • 5 MIN/DAY</div>
+                  <div className="text-xl font-black leading-none mt-1 tracking-[-0.5px]">Talk with Amy</div>
+                  <div className="text-sm mt-1.5 text-white/85 line-clamp-2 pr-2">
+                    A real back-and-forth voice chat that gently coaches {child.name}'s speaking — just talk!
+                  </div>
+                </div>
+                <div className="text-3xl opacity-70 group-hover:translate-x-0.5 transition">→</div>
+              </div>
+            </motion.div>
+          </AppLink>
 
           {/* HERO CTAs - Primary Live + Secondary Practice with Amy */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

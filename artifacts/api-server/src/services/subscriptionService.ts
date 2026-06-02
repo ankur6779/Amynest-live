@@ -81,6 +81,12 @@ export const FREE_FEATURE_LIMITS = {
   // sections (client + POST /speech/practice/log share hub_speech_session).
   hub_speech_session: HUB_CONTENT_QUOTAS.speechCoachSessions,
   hub_speech_coach: HUB_CONTENT_QUOTAS.speechCoachSessions,
+  // ── Live Speech Coach conversation (cost guard) ────────────────────────
+  // Daily TIME budget (in seconds) for the live ChatGPT-style talk bot.
+  // Applies to ALL users (free + premium) to keep AI voice costs bounded.
+  // Enforced directly in routes/speech-converse.ts — the "count" column here
+  // stores seconds consumed today (resets at UTC midnight).
+  speech_conversation_seconds: 300,
   // ── Nutrition Hub (AI meal plan + family portions) ─────────────────────
   nutrition_week_plan: 1,    // one 7-day AI meal plan per lifetime
   nutrition_family_ai: 1,    // one AI family-portion lookup per lifetime
@@ -108,6 +114,7 @@ export const FEATURE_SCOPE: Record<FeatureKey, "daily" | "lifetime"> = {
   tts_generation: "daily",
   hub_speech_session: "lifetime",
   hub_speech_coach: "lifetime",
+  speech_conversation_seconds: "daily",
   nutrition_week_plan: "lifetime",
   nutrition_family_ai: "lifetime",
   learning_load_more_smart_study: "lifetime",

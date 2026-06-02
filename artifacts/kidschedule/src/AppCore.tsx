@@ -95,6 +95,7 @@ const PhonicsTestPlayPage = lazyPage(() => import("@/pages/phonics-test-play"));
 const LifeSkillsPage = lazyPage(() => import("@/pages/life-skills"));
 const SpeechCoachPage = lazyPage(() => import("@/pages/speech-coach/index"));
 const SpeechCoachLiveSessionPage = lazyPage(() => import("@/pages/speech-coach/live-speech-coach"));
+const SpeechCoachTalkPage = lazyPage(() => import("@/pages/speech-coach/conversation-coach"));
 const KidsControlCenterPage = lazyPage(() => import("@/pages/kids-control-center"));
 const StudyPage = lazyPage(() => import("@/pages/study"));
 const SmartMathTricksPage = lazyPage(() => import("@/pages/smart-math-tricks"));
@@ -323,6 +324,7 @@ const PhonicsTestPlayRoute = makeProtectedRoute(PhonicsTestPlayPage);
 const LifeSkillsRoute = makeProtectedRoute(LifeSkillsPage);
 const SpeechCoachRoute = makeProtectedRoute(SpeechCoachPage);
 const SpeechCoachLiveSessionRoute = makeProtectedRoute(SpeechCoachLiveSessionPage);
+const SpeechCoachTalkRoute = makeProtectedRoute(SpeechCoachTalkPage);
 const KidsControlCenterRoute = makeProtectedRoute(KidsControlCenterPage);
 const StudyRoute = makeProtectedRoute(StudyPage);
 const SmartMathTricksRoute = makeProtectedRoute(SmartMathTricksPage);
@@ -604,6 +606,7 @@ function AppRoutes() {
             <Redirect to="/speech-coach/live-session" replace />
           </Route>
           <Route path="/speech-coach/live-session" component={SpeechCoachLiveSessionRoute} />
+          <Route path="/speech-coach/talk" component={SpeechCoachTalkRoute} />
           <Route path="/speech-coach" component={SpeechCoachRoute} />
           <Route path="/parenting-hub/speech-coach/live">
             <Redirect to="/speech-coach/live-session" replace />
