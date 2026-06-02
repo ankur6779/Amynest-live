@@ -177,6 +177,11 @@ function isServerComplete(body: Record<string, unknown>): boolean {
   return body.onboardingComplete === true || body.profileComplete === true;
 }
 
+/** Finish idempotency — only skip writes when the server flag is set, not when a lone child row exists. */
+function isServerOnboardingComplete(body: Record<string, unknown>): boolean {
+  return body.onboardingComplete === true;
+}
+
 export class OnboardingFinishError extends Error {
   readonly step: string;
 
@@ -234,7 +239,7 @@ export async function runOnboardingFinishTransaction(
     if (
       statusRes.ok &&
       !isFallbackBody(statusBody) &&
-      isServerComplete(statusBody)
+      isServerOnboardingComplete(statusBody)
     ) {
       logOnboardingFinish(
         "ONBOARDING_FINISH_SUCCESS",
@@ -291,7 +296,10 @@ export async function runOnboardingFinishTransaction(
             },
             telemetryOpts,
           );
-          continue;
+          throw new OnboardingFinishError(
+            "child-save",
+            `Child profile save failed for "${childName}" (HTTP ${res.status})`,
+          );
         }
         savedChildCount += 1;
         childId = typeof body.id === "number" ? body.id : null;

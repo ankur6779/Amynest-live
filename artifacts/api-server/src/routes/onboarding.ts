@@ -31,7 +31,10 @@ async function readOnboardingState(userId: string) {
   const hasChild = !!childRow;
   const hasParent = !!parentRow;
   const profileComplete = hasChild;
-  let onboardingComplete = !!profile?.onboardingComplete || hasChild;
+  // Do not treat a lone child row as onboarding complete — that skips finish
+  // writes when a prior attempt partially saved a child. Legacy users with
+  // both child + parent are repaired below.
+  let onboardingComplete = !!profile?.onboardingComplete;
 
   if (!onboardingComplete && hasChild && hasParent) {
     const now = new Date();
@@ -77,12 +80,9 @@ async function upsertOnboardingCompletion(
     .from(onboardingProfilesTable)
     .where(eq(onboardingProfilesTable.userId, userId));
 
-  if (existing?.onboardingComplete) {
-    return { onboardingComplete: true, alreadyCompleted: true };
-  }
-
   const now = new Date();
-  const nextComplete = onboardingComplete !== false;
+  const wasAlreadyComplete = !!existing?.onboardingComplete;
+  const nextComplete = onboardingComplete !== false ? true : wasAlreadyComplete;
 
   let profile;
   const childrenJson = Array.isArray(children) ? children : [];
@@ -120,7 +120,7 @@ async function upsertOnboardingCompletion(
 
   return {
     onboardingComplete: !!profile?.onboardingComplete,
-    alreadyCompleted: false,
+    alreadyCompleted: wasAlreadyComplete,
   };
 }
 

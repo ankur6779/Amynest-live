@@ -167,25 +167,9 @@ export async function resolveSetupStatus(
     return repaired;
   }
 
-  try {
-    const childrenRes = await authFetch("/api/children");
-    if (childrenRes.ok) {
-      const children = (await childrenRes.json()) as unknown;
-      if (Array.isArray(children) && children.length > 0) {
-        const fromChildren = { onboardingComplete: true, profileComplete: true };
-        const repaired = repairLocalFromServerComplete(fromChildren, cached);
-        logOnboardingFinish("BOOTSTRAP_ONBOARDING_DECISION", {
-          action: "infer-from-children",
-          reason: "has-children",
-          childCount: children.length,
-          data: repaired,
-        });
-        return repaired;
-      }
-    }
-  } catch (e) {
-    console.error("[setup-status] children fetch failed", e);
-  }
+  // Do not infer complete from children alone — a partial finish can leave an
+  // orphan child row and skip Amy Setup. Legacy users are healed below via
+  // parent+child profile signals or server auto-repair (hasChild && hasParent).
 
   const healed = await healOnboardingCompletionIfNeeded(authFetch);
   if (healed) {

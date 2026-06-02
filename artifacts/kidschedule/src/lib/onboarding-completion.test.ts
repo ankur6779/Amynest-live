@@ -149,6 +149,58 @@ describe("runOnboardingFinishTransaction", () => {
     expect(authFetch).toHaveBeenCalledTimes(1);
   });
 
+  it("orphan child row does not skip finish when onboardingComplete is false", async () => {
+    let parentSaved = false;
+    const authFetch = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === "/api/onboarding" && (!init || init.method === "GET")) {
+        return mockResponse({ onboardingComplete: false, profileComplete: true });
+      }
+      if (url === "/api/parent-profile") {
+        parentSaved = true;
+        return mockResponse({ name: "Sam" });
+      }
+      if (url === "/api/children" && (!init || init.method === "GET")) {
+        return mockResponse([{ id: 1, name: "Ava" }]);
+      }
+      if (url.includes("/goals")) {
+        return mockResponse({ ok: true });
+      }
+      if (url === "/api/onboarding" && init?.method === "POST") {
+        return mockResponse({ success: true, onboardingComplete: true });
+      }
+      throw new Error(`unexpected ${url}`);
+    });
+
+    await runOnboardingFinishTransaction(authFetch, payload);
+    expect(parentSaved).toBe(true);
+    expect(authFetch).toHaveBeenCalledWith(
+      "/api/parent-profile",
+      expect.objectContaining({ method: "PUT" }),
+    );
+  });
+
+  it("throws when a new child save fails instead of silently continuing", async () => {
+    const authFetch = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === "/api/onboarding" && (!init || init.method === "GET")) {
+        return mockResponse({ onboardingComplete: false, profileComplete: false });
+      }
+      if (url === "/api/parent-profile") {
+        return mockResponse({ name: "Sam" });
+      }
+      if (url === "/api/children" && (!init || init.method === "GET")) {
+        return mockResponse([]);
+      }
+      if (url === "/api/children" && init?.method === "POST") {
+        return mockResponse({ fallback: true }, true, 200);
+      }
+      throw new Error(`unexpected ${url}`);
+    });
+
+    await expect(runOnboardingFinishTransaction(authFetch, payload)).rejects.toMatchObject({
+      step: "child-save",
+    });
+  });
+
   it("Scenario C: performs single write path on fresh account", async () => {
     let onboardingPosts = 0;
     let onboardingGets = 0;
@@ -225,6 +277,25 @@ describe("resolveSetupStatus bootstrap", () => {
     expect(status.onboardingComplete).toBe(true);
     expect(readOnboardingCache().onboardingComplete).toBe(true);
     expect(loadOnboardingChatSession()).toBeNull();
+  });
+
+  it("does not infer complete from children alone when onboarding API is incomplete", async () => {
+    const authFetch = vi.fn(async (url: string) => {
+      if (url === "/api/onboarding") {
+        return mockResponse({ onboardingComplete: false, profileComplete: true });
+      }
+      if (url === "/api/parent-profile") {
+        return mockResponse({ fallback: true });
+      }
+      if (url === "/api/children") {
+        return mockResponse([{ id: 1, name: "Ava" }]);
+      }
+      throw new Error(`unexpected ${url}`);
+    });
+
+    const status = await resolveSetupStatus(authFetch);
+    expect(status.onboardingComplete).toBe(false);
+    expect(readOnboardingCache().onboardingComplete).toBe(false);
   });
 });
 
