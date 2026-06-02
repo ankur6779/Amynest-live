@@ -527,6 +527,8 @@ router.post("/speech/expert-waitlist", async (req, res): Promise<void> => {
 
 const transcribeBodySchema = z.object({
   audioBase64: z.string().min(1),
+  // Live "Talk with Amy" coach opts into ElevenLabs Scribe v1; everything else uses Whisper.
+  provider: z.enum(["whisper", "elevenlabs"]).optional(),
 });
 
 router.post("/speech/transcribe", async (req, res): Promise<void> => {
@@ -567,6 +569,7 @@ router.post("/speech/transcribe", async (req, res): Promise<void> => {
     input: {
       audioBase64: compatBuffer.toString("base64"),
       mimeType: compatFormat === "wav" ? "audio/wav" : "audio/mpeg",
+      provider: parsed.data.provider,
     },
     waitMs: 30_000,
     buildSyncBody: (result) => {

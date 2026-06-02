@@ -146,6 +146,12 @@ function normaliseSpeechError(code: string): string {
 export interface UseSpeechRecognitionOptions {
   /** For Capacitor iOS (and other cookie-less shells): Bearer token for `/api/speech/transcribe`. */
   getAuthToken?: () => Promise<string | null>;
+  /**
+   * Server transcription provider for the MediaRecorder/Whisper fallback path.
+   * Defaults to Whisper. The live "Talk with Amy" coach passes "elevenlabs" to
+   * use Scribe v1; the native Web Speech path (desktop) is unaffected.
+   */
+  transcribeProvider?: "whisper" | "elevenlabs";
 }
 
 function micAccessError(reason: "denied" | "blocked" | "unavailable"): MicrophoneRuntimeErrorCode {
@@ -187,6 +193,8 @@ export function useSpeechRecognition(
   const recRef = useRef<SpeechRecognitionInstance | null>(null);
   const getAuthTokenRef = useRef(options?.getAuthToken);
   getAuthTokenRef.current = options?.getAuthToken;
+  const transcribeProviderRef = useRef(options?.transcribeProvider);
+  transcribeProviderRef.current = options?.transcribeProvider;
 
   const Cls = getNativeSpeechRecognition();
   const mode = resolveRecognitionMode(Cls);
@@ -371,11 +379,14 @@ export function useSpeechRecognition(
           } catch {
             /* ignore — Whisper may still work with cookies on web */
           }
+          const provider = transcribeProviderRef.current;
           const r = await fetch(getApiUrl("/api/speech/transcribe"), {
             method: "POST",
             headers,
             credentials: "include",
-            body: JSON.stringify({ audioBase64: base64 }),
+            body: JSON.stringify(
+              provider ? { audioBase64: base64, provider } : { audioBase64: base64 },
+            ),
           });
           if (!r.ok) {
             if (r.status === 401) setError("transcription_auth_failed");

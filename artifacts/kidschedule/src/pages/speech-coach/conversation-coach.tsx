@@ -31,6 +31,10 @@ import {
 import { getApiUrl } from "@/lib/api";
 import { resolveAiApiData, type AuthFetchFn } from "@/lib/poll-result";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
+import {
+  generateElevenLabsFallbackTts,
+  ELEVENLABS_VOICE_EN_FEMALE,
+} from "@/lib/elevenlabs-fallback-tts";
 import { warmSpeechCoach } from "@/lib/global-audio-warmup";
 import { openAndroidMicrophoneSettings } from "@/lib/microphone-permission";
 import {
@@ -75,6 +79,8 @@ type MemoryPayload = {
 
 const TOTAL_BUDGET_SECONDS = 300;
 const MAX_LISTEN_MS = 9000;
+/** ElevenLabs Flash v2.5 — lowest-latency model for instant live conversation. */
+const AMY_FLASH_MODEL = "eleven_flash_v2_5";
 /** Below this remaining time, Amy starts wrapping up. */
 const WIND_DOWN_AT = 80;
 /** Below this remaining time, Amy gives the closing goodbye + report. */
@@ -219,7 +225,8 @@ function ConversationCoach({ child }: { child: AnyChild }) {
     }
   }, []);
 
-  const stt = useSpeechRecognition("en-US", { getAuthToken });
+  // Live coach listens via ElevenLabs Scribe v1 (Whisper stays the fallback).
+  const stt = useSpeechRecognition("en-US", { getAuthToken, transcribeProvider: "elevenlabs" });
   const voice = useAmyVoice();
 
   useEffect(() => {
@@ -272,20 +279,46 @@ function ConversationCoach({ child }: { child: AnyChild }) {
       for (const line of lines) {
         const text = (line ?? "").trim();
         if (!text) continue;
+
+        // Primary: ElevenLabs Flash v2.5 for an instant, natural Amy voice.
+        // Generated once, then served from the shared cache for everyone.
+        let played = false;
+        try {
+          const el = await generateElevenLabsFallbackTts(apiFetch, text, {
+            voiceId: ELEVENLABS_VOICE_EN_FEMALE,
+            modelId: AMY_FLASH_MODEL,
+          });
+          if (el.success && el.audioUrl) {
+            const res = await voice.playPreparedUrl(el.audioUrl, {
+              source: "amy_voice",
+              phrase: text,
+              srcType: "tts",
+            });
+            played = res.success;
+          }
+        } catch {
+          /* fall through to the OpenAI safety net */
+        }
+
+        // Safety net: never let Amy go silent — fall back to the default voice.
         // Freeform conversational text has no coach audioIdentity, so use the
         // default speak path (coach:true would fail with coach_identity_missing).
-        let result = await voice.speak(text, { mode: "default" });
-        if (!result.success) {
-          // Live TTS for dynamic text can be flaky on mobile — one quick retry.
-          await new Promise((r) => setTimeout(r, 250));
-          result = await voice.speak(text, { mode: "default" });
+        if (!played) {
+          let result = await voice.speak(text, { mode: "default" });
+          if (!result.success) {
+            // Live TTS for dynamic text can be flaky on mobile — one quick retry.
+            await new Promise((r) => setTimeout(r, 250));
+            result = await voice.speak(text, { mode: "default" });
+          }
+          played = result.success;
         }
+
         // Don't break on a single failure — still try the follow-up question.
-        if (result.success) spokeAny = true;
+        if (played) spokeAny = true;
       }
       return spokeAny;
     },
-    [voice],
+    [voice, apiFetch],
   );
 
   const persistSession = useCallback(

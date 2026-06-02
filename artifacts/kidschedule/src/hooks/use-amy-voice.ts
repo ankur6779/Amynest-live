@@ -6,6 +6,7 @@ import { ToastAction } from "@/components/ui/toast";
 import {
   amyVoiceController,
   snapshotToHookState,
+  type PlayPreparedUrlOptions,
   type SpeakOptions,
   type SpeakResult,
 } from "@/lib/amy-voice-controller";
@@ -30,6 +31,8 @@ export interface UseAmyVoiceState {
   /** Phrase currently loading/playing — for per-button UI state. */
   activePhrase: string | null;
   speak: (text: string, opts?: SpeakOptions) => Promise<SpeakResult>;
+  /** Play a pre-generated audio URL through the controller (single playback owner). */
+  playPreparedUrl: (url: string, opts?: PlayPreparedUrlOptions) => Promise<SpeakResult>;
   /** Android PWA/WebView: call from onPointerDown before onClick speak(). */
   primeSpeakGesture: (text: string, opts?: SpeakOptions) => void;
   /** Explicit pause intent — invalidates in-flight playback. */
@@ -74,6 +77,13 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
     amyVoiceController.pause();
   }, []);
 
+  const playPreparedUrl = useCallback(
+    (url: string, opts?: PlayPreparedUrlOptions): Promise<SpeakResult> => {
+      return amyVoiceController.playPreparedUrl(url, opts);
+    },
+    [],
+  );
+
   const speak = useCallback(
     (rawText: string, opts?: SpeakOptions): Promise<SpeakResult> => {
       return amyVoiceController.speak(rawText, opts, {
@@ -108,5 +118,5 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
     primeStaticAudioInUserGesture(text, opts?.mode === "phonics" ? "phonics" : "default");
   }, []);
 
-  return { speaking, loading, error, activePhrase, speak, primeSpeakGesture, pause };
+  return { speaking, loading, error, activePhrase, speak, playPreparedUrl, primeSpeakGesture, pause };
 }
