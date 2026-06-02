@@ -19,7 +19,6 @@ import {
   startChatPlatformRemoteConfigPolling,
   subscribeChatPlatformRemoteConfig,
   trackChatPlatformEvent,
-  usesCapacitorBodyKeyboardResize,
   validateActivePromptVisibility,
   type SelfHealingVisibilityHandle,
 } from "@/lib/chat-platform";
@@ -39,8 +38,15 @@ export interface UseKeyboardChatLayoutOptions {
 
 const KEYBOARD_RESET_DELAY_MS = 320;
 
+/** Distance from the bottom (px) within which we keep the thread pinned to the latest message. */
+const NEAR_BOTTOM_THRESHOLD_PX = 160;
+
 function isTextField(el: EventTarget | null): el is HTMLInputElement | HTMLTextAreaElement {
   return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
+}
+
+function isNearBottom(el: HTMLElement): boolean {
+  return el.scrollHeight - el.scrollTop - el.clientHeight <= NEAR_BOTTOM_THRESHOLD_PX;
 }
 
 function guardAndroidLayoutOwnership() {
@@ -76,6 +82,7 @@ export function useKeyboardChatLayout(
   const routeRef = useRef(route);
   const resetTimerRef = useRef<number | null>(null);
   const healRef = useRef<SelfHealingVisibilityHandle | null>(null);
+  const endScrollTimersRef = useRef<number[]>([]);
   const [inputBarHeight, setInputBarHeight] = useState(0);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [viewport, setViewport] = useState(() =>
@@ -131,15 +138,49 @@ export function useKeyboardChatLayout(
     end.scrollIntoView({ behavior: behavior === "smooth" ? "smooth" : "auto", block: "end" });
   }, []);
 
+  const cancelEndScroll = useCallback(() => {
+    endScrollTimersRef.current.forEach((id) => window.clearTimeout(id));
+    endScrollTimersRef.current = [];
+  }, []);
+
+  /**
+   * Pin the thread to the latest message + composer across the keyboard's open
+   * animation. OEM keyboards report their final height over several frames, so a
+   * single scroll loses the bottom — re-anchor on rAF, 50ms and 150ms.
+   */
+  const scheduleEndScroll = useCallback(
+    (behavior: ScrollBehavior) => {
+      cancelEndScroll();
+      scrollTimelineToEnd(behavior);
+      requestAnimationFrame(() => scrollTimelineToEnd("instant"));
+      endScrollTimersRef.current.push(
+        window.setTimeout(() => scrollTimelineToEnd("instant"), 50),
+      );
+      endScrollTimersRef.current.push(
+        window.setTimeout(() => scrollTimelineToEnd("instant"), 150),
+      );
+    },
+    [cancelEndScroll, scrollTimelineToEnd],
+  );
+
   const runSelfHealingVisibility = useCallback(
     (behavior: ScrollBehavior = "instant") => {
       if (!remoteConfig.chatPlatformVisibilityProtection) return;
 
-      if (!activePromptIdRef.current) {
-        scrollTimelineToEnd(behavior);
+      // ChatGPT-style: when there is no active prompt, or the user is already at
+      // the bottom following the conversation, keep the latest message and the
+      // composer in view. Only fall back to prompt-anchored recovery when the
+      // user has deliberately scrolled up to read history.
+      const messagesEl = messagesRef.current;
+      const stickToBottom =
+        !activePromptIdRef.current || (messagesEl ? isNearBottom(messagesEl) : true);
+      if (stickToBottom) {
+        healRef.current?.cancel();
+        scheduleEndScroll(forcePromptVisibilityMode ? "instant" : behavior);
         return;
       }
 
+      cancelEndScroll();
       healRef.current?.cancel();
       const ctx = buildVisibilityContext();
       if (!ctx) return;
@@ -163,7 +204,13 @@ export function useKeyboardChatLayout(
         { forcePromptVisibilityMode },
       );
     },
-    [buildVisibilityContext, remoteConfig.chatPlatformVisibilityProtection, forcePromptVisibilityMode, scrollTimelineToEnd],
+    [
+      buildVisibilityContext,
+      remoteConfig.chatPlatformVisibilityProtection,
+      forcePromptVisibilityMode,
+      scheduleEndScroll,
+      cancelEndScroll,
+    ],
   );
 
   function measureFallbackSnapshot() {
@@ -332,6 +379,7 @@ export function useKeyboardChatLayout(
       cancelled = true;
       stopRemoteConfigPolling();
       healRef.current?.cancel();
+      cancelEndScroll();
       if (resetTimerRef.current != null) {
         window.clearTimeout(resetTimerRef.current);
         resetTimerRef.current = null;
@@ -350,6 +398,7 @@ export function useKeyboardChatLayout(
     runSelfHealingVisibility,
     scheduleResetAfterKeyboard,
     syncViewport,
+    cancelEndScroll,
   ]);
 
   useLayoutEffect(() => {
@@ -472,7 +521,7 @@ export function useKeyboardChatLayout(
         ? androidChatContainerStyle
         : {
             position: "fixed" as const,
-            top: usesCapacitorBodyKeyboardResize() ? 0 : viewport.offsetTop,
+            top: viewport.offsetTop,
             left: 0,
             right: 0,
             height:
@@ -500,6 +549,7 @@ export function useKeyboardChatLayout(
     endRef,
     viewportHeight: viewport.height,
     viewportOffsetTop: viewport.offsetTop,
+    keyboardInset: viewport.keyboardInset,
     inputBarHeight,
     keyboardOpen,
     scrollToEnd,

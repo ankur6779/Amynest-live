@@ -1,8 +1,28 @@
 import type { CSSProperties, MutableRefObject, ReactNode, UIEvent } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useKeyboardChatLayout, type ChatLayoutMode } from "@/hooks/use-keyboard-chat-layout";
 import { cn } from "@/lib/utils";
+
+/**
+ * TEMPORARY on-device keyboard-layout debug overlay.
+ * Enable with `localStorage.setItem("amynest:chat-debug","1")` or `?chatDebug=1`.
+ * Lives inside chat-platform.tsx (the single layout owner) so it can read the raw
+ * viewport metrics. Remove before final release.
+ */
+function useChatDebugFlag(): boolean {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("amynest:chat-debug") === "1";
+      const query = new URLSearchParams(window.location.search).get("chatDebug") === "1";
+      setOn(stored || query);
+    } catch {
+      /* storage may be unavailable */
+    }
+  }, []);
+  return on;
+}
 
 export type ChatPlatformSurface =
   | "onboarding"
@@ -58,6 +78,8 @@ export function ChatPlatform({
     endRef,
     inputBarHeight,
     keyboardOpen,
+    viewportHeight,
+    keyboardInset,
     containerStyle,
     scrollToEnd,
   } = useKeyboardChatLayout(scrollDeps, {
@@ -66,6 +88,8 @@ export function ChatPlatform({
     surface,
     route: location,
   });
+
+  const debugEnabled = useChatDebugFlag();
 
   useEffect(() => {
     if (!scrollApiRef) return;
@@ -87,6 +111,39 @@ export function ChatPlatform({
       )}
       style={{ ...containerStyle, ...style }}
     >
+      {debugEnabled ? (
+        <div
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            top: 4,
+            left: 4,
+            zIndex: 9999,
+            pointerEvents: "none",
+            background: "rgba(0,0,0,0.78)",
+            color: "#4ade80",
+            font: "10px/1.35 ui-monospace, monospace",
+            padding: "4px 6px",
+            borderRadius: 4,
+            whiteSpace: "pre",
+          }}
+        >
+          {[
+            `surface: ${surface}`,
+            `kbOpen: ${keyboardOpen}`,
+            `inset: ${Math.round(keyboardInset)}`,
+            `vpH: ${Math.round(viewportHeight)}`,
+            `innerH: ${typeof window !== "undefined" ? window.innerHeight : 0}`,
+            `vvH: ${
+              typeof window !== "undefined" && window.visualViewport
+                ? Math.round(window.visualViewport.height)
+                : "n/a"
+            }`,
+            `barH: ${Math.round(inputBarHeight)}`,
+          ].join("\n")}
+        </div>
+      ) : null}
+
       <div className="chat-thread-header shrink-0">{header}</div>
 
       <div ref={messagesWrapperRef} className="chat-thread-messages-wrapper min-h-0 flex-1">

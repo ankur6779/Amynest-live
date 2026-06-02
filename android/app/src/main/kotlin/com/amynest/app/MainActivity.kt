@@ -851,9 +851,20 @@ class MainActivity : AppCompatActivity() {
         if (!::webView.isInitialized) return
         val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
         val imeBottomPx = ime.bottom.coerceAtLeast(0)
+
+        // Edge-to-edge (setDecorFitsSystemWindows=false) neutralises the window's
+        // adjustResize for the IME on modern Android / Samsung, so the keyboard
+        // would otherwise cover the chat composer. Shrink the WebView ourselves by
+        // padding the bottom by the keyboard height — this pins the composer and
+        // the latest message directly above the keyboard (ChatGPT-style) and keeps
+        // the "native owns resize" contract (we never inject --vv-height for chat).
+        if (webView.paddingBottom != imeBottomPx) {
+            webView.setPadding(0, 0, 0, imeBottomPx)
+        }
+
         val webViewHeight = webView.height.coerceAtLeast(0)
-        // adjustResize already shrinks the WebView — do not subtract IME height again.
-        val visibleHeightPx = if (webViewHeight > 0) webViewHeight else 0
+        // After bottom padding the WebView's visible content area is height - inset.
+        val visibleHeightPx = (webViewHeight - imeBottomPx).coerceAtLeast(0)
         val keyboardPackage = if (imeBottomPx > 0) resolveActiveKeyboardPackage() else ""
         val js =
             "(function(){" +

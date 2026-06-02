@@ -248,10 +248,23 @@ export function metricsForChatLayout(
     return { height, offsetTop, keyboardInset: inset };
   }
   if (usesCapacitorBodyKeyboardResize()) {
+    if (!keyboardOpen) {
+      return { height: window.innerHeight, offsetTop: 0, keyboardInset: 0 };
+    }
+    // Capacitor `resize: "body"` keeps window.innerHeight at full-screen and only
+    // shrinks visualViewport when the keyboard opens. Size the fixed chat
+    // container to the visible viewport so the composer is pinned directly above
+    // the keyboard (ChatGPT-style) instead of rendering behind it.
+    const vv = window.visualViewport;
+    const visibleHeight =
+      vv && vv.height > 0
+        ? Math.round(vv.height)
+        : Math.max(0, window.innerHeight - metrics.keyboardInset);
+    const offsetTop = vv ? Math.max(0, Math.round(vv.offsetTop)) : 0;
     return {
-      height: window.innerHeight,
-      offsetTop: 0,
-      keyboardInset: keyboardOpen ? metrics.keyboardInset : 0,
+      height: visibleHeight,
+      offsetTop,
+      keyboardInset: metrics.keyboardInset,
     };
   }
   return metrics;
