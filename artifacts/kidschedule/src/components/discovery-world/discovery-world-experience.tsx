@@ -168,7 +168,7 @@ export function DiscoveryWorldExperience({
         <ExperienceProgressStrip config={config} childId={childId} />
         {mode === "explore" && (
           <>
-            <DiscoveryDailyAdventureCard config={config} childId={childId} compact />
+            <DiscoveryDailyAdventureCard config={config} childId={childId} compact daily={daily} />
             <PersonalizationBanner
               config={config}
               childId={childId}

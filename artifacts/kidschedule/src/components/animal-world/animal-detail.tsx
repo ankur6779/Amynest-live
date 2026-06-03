@@ -20,7 +20,12 @@ import {
   toggleFavorite,
 } from "@/lib/animal-world-storage";
 import { trackAnimalWorldEvent } from "@/lib/animal-world-telemetry";
-import { grantXp, loadAnimalWorldProgress, recordMonthlyOpen } from "@/lib/animal-world-progress";
+import {
+  grantXp,
+  incrementSoundsPlayedMastery,
+  loadAnimalWorldProgress,
+  recordMonthlyOpen,
+} from "@/lib/animal-world-progress";
 import { resolveCollectionStatus } from "@workspace/animal-world";
 import { loadAnimalWorldStats } from "@/lib/animal-world-storage";
 import { AnimalHeroImage } from "./animal-hero-image";
@@ -52,12 +57,15 @@ export function AnimalDetail({
 
   useEffect(() => {
     warmAnimalDetail(animal);
+    const isFirstOpen = !loadAnimalWorldStats(childId).playCounts[animal.id];
     recordAnimalOpened(childId, animal.id);
     recordMonthlyOpen(childId);
-    grantXp(childId, "animalOpened", {
-      animalId: animal.id,
-      patch: {},
-    });
+    if (isFirstOpen) {
+      grantXp(childId, "animalOpened", {
+        animalId: animal.id,
+        patch: {},
+      });
+    }
     trackAnimalWorldEvent("animal_opened", { childId, animalId: animal.id, category: animal.category });
   }, [animal, childId]);
 
@@ -66,12 +74,7 @@ export function AnimalDetail({
     setPlayingId(soundId);
     await animalAudioManager.play(url, { animalId: animal.id, soundId, label });
     recordSoundPlayed(childId, animal.id, soundId);
-    grantXp(childId, "soundPlayed", {
-      animalId: animal.id,
-      patch: {
-        soundsPlayed: (progress.animalMastery[animal.id]?.soundsPlayed ?? 0) + 1,
-      },
-    });
+    incrementSoundsPlayedMastery(childId, animal.id);
     trackAnimalWorldEvent("sound_played", { childId, animalId: animal.id, soundId });
     setPlayingId(null);
   };

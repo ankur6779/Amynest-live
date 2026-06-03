@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "node --import tsx/esm --test src/index.test.ts"
+    "test": "node --import tsx/esm --test src/index.test.ts src/daily-adventures.test.ts"
   },
   "devDependencies": {
     "tsx": "catalog:"

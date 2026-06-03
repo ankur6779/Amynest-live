@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   buildHearFindQuestion,
   buildQuizQuestion,
+  bumpMastery,
   defaultProgressV2,
   getAllAnimals,
   getAnimalsByCategory,
@@ -47,4 +48,13 @@ test("default progress v2 is empty", () => {
   const p = defaultProgressV2();
   assert.equal(p.xp, 0);
   assert.equal(p.explorerTier, "none");
+});
+
+test("bumpMastery accumulates soundsPlayed across sequential patches", () => {
+  let progress = defaultProgressV2();
+  for (let i = 0; i < 3; i++) {
+    const current = progress.animalMastery.lion?.soundsPlayed ?? 0;
+    progress = bumpMastery(progress, "lion", { soundsPlayed: current + 1 });
+  }
+  assert.equal(progress.animalMastery.lion?.soundsPlayed, 3);
 });

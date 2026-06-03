@@ -65,6 +65,19 @@ export function commitProgress(
   return merged;
 }
 
+/** Increment soundsPlayed from fresh storage — avoids stale render snapshots in playSound. */
+export function incrementSoundsPlayedMastery(
+  childId: number,
+  animalId: string,
+): AnimalWorldProgressV2 {
+  const progress = loadAnimalWorldProgress(childId);
+  const soundsPlayed = (progress.animalMastery[animalId]?.soundsPlayed ?? 0) + 1;
+  return grantXp(childId, "soundPlayed", {
+    animalId,
+    patch: { soundsPlayed },
+  });
+}
+
 export function grantXp(
   childId: number,
   kind: keyof typeof XP_REWARDS,

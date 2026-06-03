@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   buildDailyAdventure,
   dailyAdventureCompletionPct,
@@ -33,19 +33,30 @@ function writeDaily(worldId: WorldId, childId: number, progress: DailyAdventureP
   }
 }
 
-export function useDiscoveryDailyAdventure(config: DiscoveryWorldRuntimeConfig, childId: number) {
-  const [progress, setProgress] = useState(() =>
-    loadDailyAdventureProgress(
-      readDaily(config.worldId, childId),
-      config.worldId,
-      childId,
-      config.manifest.items,
-    ),
+function loadDailyProgress(
+  config: DiscoveryWorldRuntimeConfig,
+  childId: number,
+): DailyAdventureProgress {
+  return loadDailyAdventureProgress(
+    readDaily(config.worldId, childId),
+    config.worldId,
+    childId,
+    config.manifest.items,
   );
+}
+
+export function useDiscoveryDailyAdventure(config: DiscoveryWorldRuntimeConfig, childId: number) {
+  const [progress, setProgress] = useState(() => loadDailyProgress(config, childId));
   const [celebrate, setCelebrate] = useState(false);
 
+  useEffect(() => {
+    setProgress(loadDailyProgress(config, childId));
+    setCelebrate(false);
+  }, [config.worldId, childId, config.manifest.items]);
+
   const record = (kind: DailyAdventureTaskKind, amount = 1) => {
-    const result = recordDailyAdventureEvent(progress, kind, amount);
+    const current = loadDailyProgress(config, childId);
+    const result = recordDailyAdventureEvent(current, kind, amount);
     setProgress(result.progress);
     writeDaily(config.worldId, childId, result.progress);
     if (result.allComplete) {
@@ -59,18 +70,22 @@ export function useDiscoveryDailyAdventure(config: DiscoveryWorldRuntimeConfig, 
   return { progress, pct, record, celebrate, clearCelebrate: () => setCelebrate(false) };
 }
 
+export type DiscoveryDailyAdventureState = ReturnType<typeof useDiscoveryDailyAdventure>;
+
 type DiscoveryDailyAdventureCardProps = {
   config: DiscoveryWorldRuntimeConfig;
   childId: number;
   compact?: boolean;
+  daily: DiscoveryDailyAdventureState;
 };
 
 export function DiscoveryDailyAdventureCard({
   config,
   childId,
   compact,
+  daily,
 }: DiscoveryDailyAdventureCardProps) {
-  const { progress, pct, celebrate, clearCelebrate } = useDiscoveryDailyAdventure(config, childId);
+  const { progress, pct, celebrate, clearCelebrate } = daily;
 
   const rows = useMemo(
     () =>
