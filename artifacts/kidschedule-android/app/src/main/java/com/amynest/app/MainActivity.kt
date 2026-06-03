@@ -264,23 +264,28 @@ class MainActivity : AppCompatActivity() {
         webView.post { webView.evaluateJavascript(js, null) }
     }
 
-    /** Last IME inset (CSS px) pushed to the web layer; avoids redundant JS calls. */
-    private var lastImeInsetCssPx: Int = -1
+    /** Last IME inset (physical px) applied to the WebView; avoids redundant work. */
+    private var lastImeInsetPx: Int = -1
 
     /**
-     * Report the soft-keyboard (IME) inset to the web layer.
+     * Make the WebView keyboard-aware on this edge-to-edge shell.
      *
-     * This shell runs edge-to-edge (`setDecorFitsSystemWindows(false)`), so the
-     * WebView is NOT resized when the keyboard opens — the IME draws over the
-     * content. ChatPlatform's keyboard engine already derives the keyboard from
-     * `window.visualViewport`, but emitting the OS-measured inset here makes
-     * detection authoritative and deterministic across OEM keyboards/WebViews.
+     * Because we run `setDecorFitsSystemWindows(false)`, the OS does NOT resize
+     * the window when the keyboard opens and `adjustResize` has no effect — the
+     * IME just draws over the content (which is why the composer was hidden in
+     * the WebView even though it works in Chrome, where the browser resizes for
+     * the keyboard).
      *
-     * Contract (consumed by use-keyboard-chat-layout.ts / viewport.ts):
-     *   - CSS variable `--auth-keyboard-inset-native` = inset in CSS px
-     *   - `amynest-keyboard-inset` CustomEvent with `{ inset, visibleHeight }`
-     * Inset is converted from physical px to CSS px (÷ density) so it is
-     * directly comparable with `window.innerHeight`.
+     * Fix — mirror Chrome by physically shrinking the WebView:
+     *   1. Apply the measured IME height as the WebView's bottom padding. This
+     *      shrinks the web content box, so `window.innerHeight`, `100dvh`/`vh`
+     *      and `visualViewport.height` all shrink and the existing flex layout
+     *      pins the composer directly above the keyboard with NO web keyboard
+     *      math required.
+     *   2. Also emit the OS-measured inset to the web layer
+     *      (`--auth-keyboard-inset-native` + `amynest-keyboard-inset`) as a
+     *      secondary, authoritative signal. ChatPlatform's baseline logic treats
+     *      an already-shrunk innerHeight correctly, so this never double-counts.
      */
     private fun applyWebKeyboardInset(insets: WindowInsetsCompat) {
         if (!::webView.isInitialized) return
@@ -289,22 +294,28 @@ class MainActivity : AppCompatActivity() {
         val imeBottomPx = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
         val navBottomPx = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
         // The IME inset already includes the navigation-bar area; subtract it so
-        // the web side does not double-count the gesture/nav strip.
-        val keyboardPx = (imeBottomPx - navBottomPx).coerceAtLeast(0)
-        val insetCssPx = if (imeVisible && keyboardPx > 0) (keyboardPx / density).toInt() else 0
+        // we shrink the content by the actual on-screen keyboard height only.
+        val keyboardPx = if (imeVisible) (imeBottomPx - navBottomPx).coerceAtLeast(0) else 0
 
-        if (insetCssPx == lastImeInsetCssPx) return
-        lastImeInsetCssPx = insetCssPx
+        if (keyboardPx == lastImeInsetPx) return
+        lastImeInsetPx = keyboardPx
 
-        val webHeightCssPx = (webView.height / density).toInt()
-        val visibleHeightCssPx = (webHeightCssPx - insetCssPx).coerceAtLeast(0)
+        // 1. Physically resize the WebView content box (the robust, Chrome-like fix).
+        webView.setPadding(
+            webView.paddingLeft,
+            webView.paddingTop,
+            webView.paddingRight,
+            keyboardPx,
+        )
 
+        // 2. Secondary signal for the web layer (CSS px so it matches innerHeight).
+        val insetCssPx = (keyboardPx / density).toInt()
         val js = if (insetCssPx > 0) {
             "(function(){" +
                 "var r=document.documentElement;" +
                 "r.style.setProperty('--auth-keyboard-inset-native','${insetCssPx}px');" +
                 "window.dispatchEvent(new CustomEvent('amynest-keyboard-inset',{detail:{" +
-                    "inset:${insetCssPx},visibleHeight:${visibleHeightCssPx},keyboardPackage:'android-ime'" +
+                    "inset:${insetCssPx},keyboardPackage:'android-ime'" +
                 "}}));" +
             "})();"
         } else {
