@@ -927,27 +927,37 @@ class MainActivity : AppCompatActivity() {
         if (imeBottomPx == lastAppliedImePx) return
         lastAppliedImePx = imeBottomPx
 
+        // The View system works in physical pixels, so the bottom padding that
+        // actually shrinks the WebView must stay in physical px.
         if (webView.paddingBottom != imeBottomPx) {
             webView.setPadding(0, 0, 0, imeBottomPx)
         }
 
+        // CRITICAL: the web layer (`--auth-keyboard-inset*`, `amynest-keyboard-inset`)
+        // works in CSS pixels and compares the inset against `window.innerHeight`,
+        // which is also CSS px. Emit CSS px (physical / density), NOT physical px —
+        // otherwise on hi-DPI devices (e.g. Samsung ~2.75x) the web sees a ~900px
+        // keyboard instead of ~327, mis-sizes the chat container, and pushes the
+        // composer below the visible area (behind the keyboard).
+        val density = resources.displayMetrics.density.coerceAtLeast(1f)
         val webViewHeight = webView.height.coerceAtLeast(0)
+        val insetCssPx = Math.round(imeBottomPx / density)
         // After bottom padding the WebView's visible content area is height - inset.
-        val visibleHeightPx = (webViewHeight - imeBottomPx).coerceAtLeast(0)
+        val visibleHeightCssPx = Math.round((webViewHeight - imeBottomPx).coerceAtLeast(0) / density)
         val keyboardPackage = if (imeBottomPx > 0) resolveActiveKeyboardPackage() else ""
         val js =
             "(function(){" +
                 "var r=document.documentElement;" +
-                "r.style.setProperty('--auth-keyboard-inset-native','${imeBottomPx}px');" +
-                (if (imeBottomPx > 0) {
-                    "r.style.setProperty('--auth-keyboard-inset','${imeBottomPx}px');"
+                "r.style.setProperty('--auth-keyboard-inset-native','${insetCssPx}px');" +
+                (if (insetCssPx > 0) {
+                    "r.style.setProperty('--auth-keyboard-inset','${insetCssPx}px');"
                 } else {
                     "r.style.removeProperty('--auth-keyboard-inset');" +
                         "r.style.removeProperty('--auth-keyboard-inset-native');"
                 }) +
                 "r.classList.add('amynest-android-shell','amynest-native-shell');" +
                 "window.dispatchEvent(new CustomEvent('amynest-keyboard-inset'," +
-                "{detail:{inset:${imeBottomPx},visibleHeight:${visibleHeightPx}," +
+                "{detail:{inset:${insetCssPx},visibleHeight:${visibleHeightCssPx}," +
                 "keyboardPackage:${JSONObject.quote(keyboardPackage)}}}));" +
             "})();"
         webView.post { webView.evaluateJavascript(js, null) }
