@@ -197,6 +197,46 @@ export function readNativeImeInsetPx(): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 }
 
+/**
+ * Keyboard inset measured from `window.visualViewport`.
+ *
+ * The visual viewport shrinks under the on-screen keyboard on every modern
+ * engine (Chrome / Android WebView / Samsung Internet / WKWebView), even when
+ * the native shell runs edge-to-edge (`setDecorFitsSystemWindows(false)`) and
+ * never resizes the WebView or reports an IME inset. This is the universal,
+ * measured keyboard signal — no native bridge or guessed ratios required.
+ */
+export function readVisualViewportInsetPx(): number {
+  if (typeof window === "undefined") return 0;
+  const vv = window.visualViewport;
+  if (!vv || vv.height <= 0) return 0;
+  return Math.max(0, Math.round(window.innerHeight - vv.height - (vv.offsetTop ?? 0)));
+}
+
+/**
+ * Android WebView chat metrics.
+ *
+ * Precedence:
+ * 1. A real native IME inset (`--auth-keyboard-inset-native`) when the wrapper
+ *    reports one — authoritative and used for height via measured subtraction.
+ * 2. Otherwise the measured `visualViewport` inset — the height is the visual
+ *    viewport height directly (no magic ratios), so the composer is pinned
+ *    above the keyboard even though the WebView never resized.
+ */
+function readAndroidChatViewportMetrics(nativeInset: number): ChatViewportMetrics {
+  const vv = typeof window !== "undefined" ? window.visualViewport : null;
+  const vvInset = readVisualViewportInsetPx();
+  const keyboardInset = nativeInset > 0 ? nativeInset : vvInset;
+  const height =
+    nativeInset > 0
+      ? resolveAndroidChatLayoutHeight(nativeInset)
+      : vvInset > 0 && vv
+        ? Math.round(vv.height)
+        : window.innerHeight;
+  const offsetTop = vv && keyboardInset > 0 ? Math.max(0, Math.round(vv.offsetTop ?? 0)) : 0;
+  return { height, offsetTop, keyboardInset };
+}
+
 export function readChatViewportMetrics(): ChatViewportMetrics {
   if (typeof window === "undefined") {
     return { height: 0, offsetTop: 0, keyboardInset: 0 };
@@ -204,16 +244,7 @@ export function readChatViewportMetrics(): ChatViewportMetrics {
 
   if (isAndroidAdjustResizeChatShell()) {
     recordAndroidBaselineHeight();
-    const keyboardInset = readNativeImeInsetPx();
-    const height =
-      keyboardInset > 0
-        ? resolveAndroidChatLayoutHeight(keyboardInset)
-        : window.innerHeight;
-    const offsetTop =
-      keyboardInset > 0 && window.visualViewport
-        ? Math.max(0, Math.round(window.visualViewport.offsetTop))
-        : 0;
-    return { height, offsetTop, keyboardInset };
+    return readAndroidChatViewportMetrics(readNativeImeInsetPx());
   }
 
   const vv = window.visualViewport;
@@ -238,14 +269,12 @@ export function metricsForChatLayout(
 ): ChatViewportMetrics {
   if (isAndroidAdjustResizeChatShell()) {
     recordAndroidBaselineHeight();
-    const inset = keyboardOpen ? metrics.keyboardInset : 0;
-    const height =
-      keyboardOpen && inset > 0 ? resolveAndroidChatLayoutHeight(inset) : window.innerHeight;
-    const offsetTop =
-      keyboardOpen && inset > 0 && window.visualViewport
-        ? Math.max(0, Math.round(window.visualViewport.offsetTop))
-        : 0;
-    return { height, offsetTop, keyboardInset: inset };
+    if (!keyboardOpen) {
+      return { height: window.innerHeight, offsetTop: 0, keyboardInset: 0 };
+    }
+    // A real native inset wins; otherwise the helper falls back to the measured
+    // visual viewport so the keyboard is honoured even with no native bridge.
+    return readAndroidChatViewportMetrics(readNativeImeInsetPx());
   }
   if (usesCapacitorBodyKeyboardResize()) {
     if (!keyboardOpen) {

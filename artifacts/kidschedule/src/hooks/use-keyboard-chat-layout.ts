@@ -5,7 +5,6 @@ import {
   ensureChatPromptVisible,
   getChatPlatformRemoteConfig,
   isAndroidAdjustResizeChatShell,
-  isAndroidWebKeyboardOffsetRequired,
   logAndroidChatLayoutDiagnostics,
   isChatAnswerTarget,
   isForcePromptVisibilityModeActive,
@@ -165,12 +164,10 @@ export function useKeyboardChatLayout(
 
   const runSelfHealingVisibility = useCallback(
     (behavior: ScrollBehavior = "instant") => {
-      if (!remoteConfig.chatPlatformVisibilityProtection) return;
-
       // ChatGPT-style: when there is no active prompt, or the user is already at
       // the bottom following the conversation, keep the latest message and the
-      // composer in view. Only fall back to prompt-anchored recovery when the
-      // user has deliberately scrolled up to read history.
+      // composer in view. This stick-to-bottom path is the core auto-scroll
+      // contract and must always run — it is NOT gated behind remote config.
       const messagesEl = messagesRef.current;
       const stickToBottom =
         !activePromptIdRef.current || (messagesEl ? isNearBottom(messagesEl) : true);
@@ -179,6 +176,11 @@ export function useKeyboardChatLayout(
         scheduleEndScroll(forcePromptVisibilityMode ? "instant" : behavior);
         return;
       }
+
+      // Prompt-anchored recovery (keeping a specific Amy bubble visible while the
+      // user has scrolled up to read history) is the advanced protection layer
+      // and stays behind the remote-config kill switch.
+      if (!remoteConfig.chatPlatformVisibilityProtection) return;
 
       cancelEndScroll();
       healRef.current?.cancel();
@@ -477,69 +479,49 @@ export function useKeyboardChatLayout(
   }, [runSelfHealingVisibility, scheduleResetAfterKeyboard, syncViewport]);
 
   const androidAdjustResize = isAndroidAdjustResizeChatShell();
-  const androidWebKeyboardOffset =
-    androidAdjustResize && keyboardOpen && isAndroidWebKeyboardOffsetRequired(viewport.keyboardInset);
 
-  // Diagnostic only — logs when Samsung / Android 15 needs web-side IME lift.
+  // Diagnostic only — logs Samsung / Android 15 keyboard layout metrics.
   useEffect(() => {
     if (!androidAdjustResize || !keyboardOpen) return;
     logAndroidChatLayoutDiagnostics(surface, viewport.keyboardInset);
   }, [androidAdjustResize, keyboardOpen, surface, viewport.keyboardInset]);
 
-  const androidChatContainerStyle = androidWebKeyboardOffset
-    ? {
-        position: "fixed" as const,
-        top: viewport.offsetTop,
-        left: 0,
-        right: 0,
-        bottom: viewport.keyboardInset,
-        width: "100%",
-        height:
-          viewport.height > 0
-            ? `${viewport.height}px`
-            : `calc(100% - ${viewport.keyboardInset}px)`,
-        maxHeight:
-          viewport.height > 0
-            ? `${viewport.height}px`
-            : `calc(100% - ${viewport.keyboardInset}px)`,
-        zIndex: 50,
-      }
-    : {
-        position: "fixed" as const,
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: "100%",
-        height: "100%",
-        maxHeight: "100%",
-      };
+  /**
+   * Universal keyboard layout: when the keyboard is open AND we measured a real
+   * inset (the platform did not already resize the WebView), pin the chat shell
+   * to the visual viewport so the composer sits directly above the keyboard and
+   * the messages region scrolls in the remaining space. This is identical on
+   * Android WebView, Chrome, Samsung Internet and Capacitor iOS — the only
+   * source of truth is `window.visualViewport` (read in viewport.ts).
+   *
+   * When the platform already shrank the viewport (Capacitor Android native
+   * resize, or `interactive-widget`) the inset is ~0, so embedded surfaces stay
+   * in normal document flow and the flex column shrinks naturally.
+   */
+  const keyboardOverlayActive =
+    keyboardOpen && viewport.keyboardInset > 0 && viewport.height > 0;
+
+  const visualViewportOverlayStyle = {
+    position: "fixed" as const,
+    top: viewport.offsetTop,
+    left: 0,
+    right: 0,
+    width: "100%",
+    height:
+      viewport.height > 0 ? `${viewport.height}px` : "var(--vv-height, 100%)",
+    maxHeight:
+      viewport.height > 0 ? `${viewport.height}px` : "var(--vv-height, 100%)",
+    zIndex: 50,
+  };
 
   const containerStyle =
-    layoutMode === "fullscreen"
-      ? androidAdjustResize
-        ? androidChatContainerStyle
-        : {
-            position: "fixed" as const,
-            top: viewport.offsetTop,
-            left: 0,
-            right: 0,
-            height:
-              viewport.height > 0
-                ? `${viewport.height}px`
-                : "var(--vv-height, 100%)",
-            maxHeight:
-              viewport.height > 0
-                ? `${viewport.height}px`
-                : "var(--vv-height, 100%)",
-          }
-      : androidWebKeyboardOffset
-        ? androidChatContainerStyle
-        : {
-            height: "100%",
-            maxHeight: "100%",
-            minHeight: 0,
-          };
+    layoutMode === "fullscreen" || keyboardOverlayActive
+      ? visualViewportOverlayStyle
+      : {
+          height: "100%",
+          maxHeight: "100%",
+          minHeight: 0,
+        };
 
   return {
     containerRef,

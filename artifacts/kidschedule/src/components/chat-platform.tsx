@@ -158,7 +158,6 @@ export function ChatPlatform({
             "chat-thread-messages mx-auto flex w-full flex-col gap-3 overflow-y-auto px-4 py-5",
             messagesClassName,
           )}
-          style={{ paddingBottom: Math.max(inputBarHeight, 16) + 12 }}
         >
           {children}
           <div ref={endRef} aria-hidden="true" />

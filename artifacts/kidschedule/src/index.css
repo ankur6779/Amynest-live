@@ -1507,10 +1507,15 @@ html.amynest-android-shell .main-container > .flex.flex-1 {
 }
 
 /* Embedded chat surfaces (assistant, tutors) flow inside the app shell, so they
-   rely on the shell shrinking when the keyboard opens. On iOS Capacitor
-   `resize: "body"`, `dvh` does NOT shrink for the keyboard, so #root's
-   `min-height: 100dvh` would otherwise keep the shell full-height and push the
-   composer behind the keyboard. Relax it only while a chat keyboard is open. */
+   rely on the shell shrinking when the keyboard opens. The on-screen keyboard
+   does NOT shrink `dvh`/`vh` units (it only shrinks the visual viewport), so the
+   `min-height: 100dvh` baseline on html/body/#root would otherwise keep the
+   document full-height and push the composer behind the keyboard. Relax it on
+   every ancestor while a chat keyboard is open. (When the keyboard is open the
+   shell is pinned to the visual viewport via fixed positioning in
+   use-keyboard-chat-layout.ts, so a relaxed document height is correct.) */
+html:has(.chat-thread-page--keyboard-open),
+body:has(.chat-thread-page--keyboard-open),
 #root:has(.chat-thread-page--keyboard-open) {
   min-height: 0;
 }

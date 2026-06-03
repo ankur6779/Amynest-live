@@ -127,6 +127,7 @@ class MainActivity : AppCompatActivity() {
 
         ViewCompat.setOnApplyWindowInsetsListener(webView) { _, insets ->
             applyWebSafeAreaInsets(insets)
+            applyWebKeyboardInset(insets)
             insets
         }
         ViewCompat.requestApplyInsets(webView)
@@ -260,6 +261,61 @@ class MainActivity : AppCompatActivity() {
                     "window.__amynestApplyShellInsets({bottom:${bottomPx}});" +
                 "}" +
             "})();"
+        webView.post { webView.evaluateJavascript(js, null) }
+    }
+
+    /** Last IME inset (CSS px) pushed to the web layer; avoids redundant JS calls. */
+    private var lastImeInsetCssPx: Int = -1
+
+    /**
+     * Report the soft-keyboard (IME) inset to the web layer.
+     *
+     * This shell runs edge-to-edge (`setDecorFitsSystemWindows(false)`), so the
+     * WebView is NOT resized when the keyboard opens — the IME draws over the
+     * content. ChatPlatform's keyboard engine already derives the keyboard from
+     * `window.visualViewport`, but emitting the OS-measured inset here makes
+     * detection authoritative and deterministic across OEM keyboards/WebViews.
+     *
+     * Contract (consumed by use-keyboard-chat-layout.ts / viewport.ts):
+     *   - CSS variable `--auth-keyboard-inset-native` = inset in CSS px
+     *   - `amynest-keyboard-inset` CustomEvent with `{ inset, visibleHeight }`
+     * Inset is converted from physical px to CSS px (÷ density) so it is
+     * directly comparable with `window.innerHeight`.
+     */
+    private fun applyWebKeyboardInset(insets: WindowInsetsCompat) {
+        if (!::webView.isInitialized) return
+        val density = resources.displayMetrics.density.coerceAtLeast(1f)
+        val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+        val imeBottomPx = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+        val navBottomPx = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+        // The IME inset already includes the navigation-bar area; subtract it so
+        // the web side does not double-count the gesture/nav strip.
+        val keyboardPx = (imeBottomPx - navBottomPx).coerceAtLeast(0)
+        val insetCssPx = if (imeVisible && keyboardPx > 0) (keyboardPx / density).toInt() else 0
+
+        if (insetCssPx == lastImeInsetCssPx) return
+        lastImeInsetCssPx = insetCssPx
+
+        val webHeightCssPx = (webView.height / density).toInt()
+        val visibleHeightCssPx = (webHeightCssPx - insetCssPx).coerceAtLeast(0)
+
+        val js = if (insetCssPx > 0) {
+            "(function(){" +
+                "var r=document.documentElement;" +
+                "r.style.setProperty('--auth-keyboard-inset-native','${insetCssPx}px');" +
+                "window.dispatchEvent(new CustomEvent('amynest-keyboard-inset',{detail:{" +
+                    "inset:${insetCssPx},visibleHeight:${visibleHeightCssPx},keyboardPackage:'android-ime'" +
+                "}}));" +
+            "})();"
+        } else {
+            "(function(){" +
+                "var r=document.documentElement;" +
+                "r.style.removeProperty('--auth-keyboard-inset-native');" +
+                "window.dispatchEvent(new CustomEvent('amynest-keyboard-inset',{detail:{" +
+                    "inset:0,keyboardPackage:'android-ime'" +
+                "}}));" +
+            "})();"
+        }
         webView.post { webView.evaluateJavascript(js, null) }
     }
 
