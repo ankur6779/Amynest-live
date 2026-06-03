@@ -54,8 +54,9 @@ function serveBuffer(
   source: "memory" | "gcs",
   objectPath: string,
 ): void {
-  res.setHeader("Content-Type", contentTypeForPath(objectPath));
-  serveStaticAudioBuffer(req, res, etagKey, buffer, source);
+  serveStaticAudioBuffer(req, res, etagKey, buffer, source, {
+    contentType: contentTypeForPath(objectPath),
+  });
 }
 
 /**

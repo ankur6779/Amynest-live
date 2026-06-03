@@ -10,7 +10,7 @@ type AnimalHeroImageProps = {
   variant?: AnimalHeroVariant;
 };
 
-export function AnimalHeroImage({ animal, className, eager, variant = "cartoon" }: AnimalHeroImageProps) {
+export function AnimalHeroImage({ animal, className, eager, variant = "real" }: AnimalHeroImageProps) {
   const [failed, setFailed] = useState(false);
   const src = resolveAnimalHeroImageUrl(animal, variant);
 

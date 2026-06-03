@@ -55,6 +55,7 @@
     "generate:animal-world-audio": "pnpm --filter @workspace/scripts run generate-animal-world-audio",
     "generate:animal-world-real-heroes": "pnpm --filter @workspace/scripts run generate-animal-world-real-heroes",
     "sprint:animal-world-real-photos": "pnpm --filter @workspace/scripts run animal-world-real-photo-sprint",
+    "upload:animal-world-visuals": "pnpm --filter @workspace/scripts run upload-animal-world-visuals",
     "generate:discovery-worlds-audio": "pnpm --filter @workspace/scripts run generate-discovery-worlds-audio",
     "generate:discovery-worlds-visuals": "pnpm --filter @workspace/scripts run generate-discovery-worlds-visuals",
     "upload:discovery-worlds-visuals": "pnpm --filter @workspace/scripts run upload-discovery-worlds-visuals",

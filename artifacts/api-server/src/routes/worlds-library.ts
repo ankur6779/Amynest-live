@@ -102,8 +102,9 @@ worldsLibraryPublicRouter.get(
         }
         return;
       }
-      res.setHeader("Content-Type", contentTypeForPath(objectPath));
-      serveStaticAudioBuffer(req, res, etagKey, buffer, "gcs");
+      serveStaticAudioBuffer(req, res, etagKey, buffer, "gcs", {
+        contentType: contentTypeForPath(objectPath),
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       logger.error({ evt: "worlds_library.stream_failed", objectPath, worldId, message });
