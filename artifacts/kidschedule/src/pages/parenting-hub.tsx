@@ -119,7 +119,7 @@ const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
   today:      ["amy-ai", "daily-tips", "generate-routine", "tomorrow-forecast", "command-center"],
   learning:   ["smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad"],
   creativity: ["activities", "gaming-rewards", "art-craft", "worksheets", "coloring-books", "fun-sheets", "event-prep"],
-  stories:    ["story-hub", "speech-coach", "discovery-worlds", "animal-world"],
+  stories:    ["story-hub", "speech-coach", "discovery-worlds"],
   support:    ["articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
 };
 
@@ -1502,25 +1502,6 @@ function ParentingHubPage() {
             tryFreeFor("hub_vehicle_world") ||
             tryFreeFor("hub_nature_world")
           }
-        />
-      </LockedBlock>
-    ),
-  }, {
-    // Animal World — toddler animal sounds; all ages (communication & listening).
-    id: "animal-world",
-    alwaysCurrent: true,
-    render: () => (
-      <LockedBlock reason="hub_locked" locked={isHubLocked("hub_animal_world")} journeySoft={journeySoftLock} childName={effectiveChild.name} isInfant={isInfant}>
-        <HubLaunchCard
-          href="/animal-world"
-          title={t("parent_hub.web_tiles.animal-world.title")}
-          description={t("parent_hub.web_tiles.animal-world.description")}
-          icon={<Sparkles className="h-5 w-5 text-white" />}
-          accentClass="bg-gradient-to-br from-cyan-400 to-teal-500"
-          cardClass="bg-gradient-to-br from-cyan-400/30 to-teal-500/15 hover:shadow-[0_10px_36px_-10px_rgba(45,212,191,0.45)]"
-          tryFree={tryFreeFor("hub_animal_world")}
-          testId="animal-world-launch-card"
-          sectionId="animal-world"
         />
       </LockedBlock>
     ),
