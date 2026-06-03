@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -33,6 +34,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.firebase.messaging.FirebaseMessaging
@@ -192,6 +194,8 @@ class MainActivity : AppCompatActivity() {
             applyWebSafeAreaInsets(insets)
             insets
         }
+        installImeAnimationTracking()
+        installVisibleFrameKeyboardFallback()
         ViewCompat.requestApplyInsets(webView)
 
         billingBridge = BillingBridge.installOn(this, webView)
@@ -847,17 +851,82 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Last IME height (physical px) pushed to the WebView; keeps work idempotent. */
+    private var lastAppliedImePx: Int = -1
+
     private fun applyWebSafeAreaInsets(insets: WindowInsetsCompat) {
         if (!::webView.isInitialized) return
-        val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-        val imeBottomPx = ime.bottom.coerceAtLeast(0)
+        val imeBottomPx = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom.coerceAtLeast(0)
+        applyImeBottomInset(imeBottomPx)
+    }
 
-        // Edge-to-edge (setDecorFitsSystemWindows=false) neutralises the window's
-        // adjustResize for the IME on modern Android / Samsung, so the keyboard
-        // would otherwise cover the chat composer. Shrink the WebView ourselves by
-        // padding the bottom by the keyboard height — this pins the composer and
-        // the latest message directly above the keyboard (ChatGPT-style) and keeps
-        // the "native owns resize" contract (we never inject --vv-height for chat).
+    /**
+     * Smoothly track the keyboard via the platform IME animation. This is the
+     * Google-recommended way to react to the keyboard in an edge-to-edge app
+     * (`setDecorFitsSystemWindows(false)`), and—critically—it fires reliably on
+     * Samsung One UI where a lone `setOnApplyWindowInsetsListener` often does
+     * not report the IME inset, leaving the composer hidden behind the keyboard.
+     */
+    private fun installImeAnimationTracking() {
+        ViewCompat.setWindowInsetsAnimationCallback(
+            webView,
+            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+                override fun onProgress(
+                    insets: WindowInsetsCompat,
+                    runningAnimations: MutableList<WindowInsetsAnimationCompat>,
+                ): WindowInsetsCompat {
+                    val ime = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom.coerceAtLeast(0)
+                    applyImeBottomInset(ime)
+                    return insets
+                }
+
+                override fun onEnd(animation: WindowInsetsAnimationCompat) {
+                    val ime = ViewCompat.getRootWindowInsets(webView)
+                        ?.getInsets(WindowInsetsCompat.Type.ime())
+                        ?.bottom
+                        ?.coerceAtLeast(0) ?: 0
+                    applyImeBottomInset(ime)
+                }
+            },
+        )
+    }
+
+    /**
+     * Last-resort keyboard detector for OEM/older devices that never deliver an
+     * IME inset under immersive edge-to-edge. Measures the visible display frame
+     * on every layout pass; the gap at the bottom is the on-screen keyboard. Only
+     * used when the inset/animation paths report nothing (imeFromInsets == 0).
+     */
+    private fun installVisibleFrameKeyboardFallback() {
+        val root = window.decorView
+        root.viewTreeObserver.addOnGlobalLayoutListener {
+            if (!::webView.isInitialized) return@addOnGlobalLayoutListener
+            val imeFromInsets = ViewCompat.getRootWindowInsets(webView)
+                ?.getInsets(WindowInsetsCompat.Type.ime())
+                ?.bottom ?: 0
+            if (imeFromInsets > 0) return@addOnGlobalLayoutListener
+
+            val frame = Rect()
+            root.getWindowVisibleDisplayFrame(frame)
+            val screenHeight = (root.rootView?.height ?: root.height).coerceAtLeast(1)
+            val keypad = (screenHeight - frame.bottom).coerceAtLeast(0)
+            // Ignore nav-bar-sized gaps; a real keyboard is >15% of the screen.
+            val measuredIme = if (keypad > screenHeight * 0.15) keypad else 0
+            applyImeBottomInset(measuredIme)
+        }
+    }
+
+    /**
+     * Single source of truth for keyboard-aware resize. Pads the WebView bottom
+     * by the keyboard height so `window.innerHeight` / `100dvh` / `visualViewport`
+     * all shrink (Chrome-style), pinning the composer + latest message directly
+     * above the keyboard. Also emits the OS-measured inset to the web layer.
+     */
+    private fun applyImeBottomInset(imeBottomPx: Int) {
+        if (!::webView.isInitialized) return
+        if (imeBottomPx == lastAppliedImePx) return
+        lastAppliedImePx = imeBottomPx
+
         if (webView.paddingBottom != imeBottomPx) {
             webView.setPadding(0, 0, 0, imeBottomPx)
         }
