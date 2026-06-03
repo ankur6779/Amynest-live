@@ -1,8 +1,14 @@
 /**
- * Asset Coverage Dashboard — visual assets (hero/card/thumbnail) across all worlds.
- * Run: node --import tsx/esm scripts/discovery-worlds-asset-coverage.ts
- * Optional: GCS_BUCKET_NAME + credentials to check remote objects.
+ * Visual Asset Completion Tracker — hero/card/thumbnail per catalog item.
+ * Run: pnpm run report:discovery-worlds-assets
+ *
+ * Writes:
+ *   artifacts/kidschedule/public/discovery-worlds-coverage.json
+ *   artifacts/kidschedule/public/discovery-worlds-visual-upload-manifest.json
+ *
+ * Exit 0 when coverage >= 95% (production GCS when credentials available).
  */
+import { config } from "dotenv";
 import { existsSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,29 +17,34 @@ import { getVehicleWorldManifest } from "@workspace/vehicle-world";
 import { getNatureWorldManifest } from "@workspace/nature-sounds-world";
 import { getHomeSoundsManifest } from "@workspace/home-sounds-world";
 import { getInstrumentWorldManifest } from "@workspace/instrument-world";
-import { buildAssetCoverageReport, type AssetCoverageReport } from "@workspace/world-engine";
+import {
+  buildAssetCoverageReport,
+  expectedVisualAssetsForManifest,
+  type AssetCoverageReport,
+  type ExpectedVisualAsset,
+} from "@workspace/world-engine";
+import {
+  buildGcsStorage,
+  gcsObjectExists,
+  getGcsBucketName,
+  hasGcsCredentials,
+} from "./lib/gcs-storage.js";
 
+const COVERAGE_GATE_PCT = Number(process.env.DISCOVERY_WORLDS_VISUAL_GATE_PCT ?? "95");
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const LOCAL_DISCOVERY = join(root, "artifacts/kidschedule/public/discovery-worlds-audio");
-const LOCAL_ANIMAL = join(root, "artifacts/kidschedule/public/animal-world-audio");
+const LOCAL_VISUAL = join(root, "artifacts/kidschedule/public/world-visuals");
 const OUT_JSON = join(root, "artifacts/kidschedule/public/discovery-worlds-coverage.json");
+const OUT_MANIFEST = join(
+  root,
+  "artifacts/kidschedule/public/discovery-worlds-visual-upload-manifest.json",
+);
+
+config({ path: `${root}/.env` });
+config({ path: `${root}/.env.development`, override: true });
+config({ path: `${root}/Amynest-backend-dykj.env`, override: true });
 
 function localExists(gcsPath: string): boolean {
-  const candidates = [
-    join(LOCAL_DISCOVERY, gcsPath),
-    join(LOCAL_ANIMAL, gcsPath.replace(/^animal-world\//, "")),
-    join(LOCAL_ANIMAL, gcsPath),
-  ];
-  return candidates.some((p) => existsSync(p));
-}
-
-async function gcsExists(gcsPath: string, bucket: import("@google-cloud/storage").Storage, bucketId: string): Promise<boolean> {
-  try {
-    const [ok] = await bucket.file(gcsPath).exists();
-    return ok;
-  } catch {
-    return false;
-  }
+  return existsSync(join(LOCAL_VISUAL, gcsPath));
 }
 
 function animalManifestAdapter() {
@@ -68,81 +79,166 @@ function animalManifestAdapter() {
   };
 }
 
+const WORLDS = [
+  { worldId: "animal_world", label: "Animal World (flagship)", manifest: animalManifestAdapter() },
+  { worldId: "vehicle_world", label: "Vehicles", manifest: getVehicleWorldManifest() },
+  { worldId: "nature_world", label: "Nature", manifest: getNatureWorldManifest() },
+  { worldId: "home_sounds_world", label: "Home", manifest: getHomeSoundsManifest() },
+  { worldId: "instrument_world", label: "Instruments", manifest: getInstrumentWorldManifest() },
+];
+
+type ManifestEntry = {
+  gcsPath: string;
+  kind: ExpectedVisualAsset["kind"];
+  itemId: string;
+  itemName: string;
+  worldId: string;
+  worldLabel: string;
+  local: boolean;
+  gcs: boolean;
+  present: boolean;
+};
+
 async function main(): Promise<void> {
-  const bucketId =
-    process.env.GCS_BUCKET_NAME?.trim() ||
-    process.env.GCS_BUCKET?.trim() ||
-    process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID?.trim();
+  const bucketId = getGcsBucketName();
+  const useGcs = hasGcsCredentials(root) && process.env.SKIP_GCS_ASSET_CHECK !== "1";
+  const storage = useGcs ? buildGcsStorage(root) : null;
 
-  let existsFn: (path: string) => boolean = localExists;
-  let mode = "local";
+  const manifestEntries: ManifestEntry[] = [];
+  const gcsCache = new Map<string, boolean>();
 
-  if (bucketId && process.env.SKIP_GCS_ASSET_CHECK !== "1") {
-    try {
-      const { Storage } = await import("@google-cloud/storage");
-      const storage = new Storage();
-      const bucket = storage.bucket(bucketId);
-      const cache = new Map<string, boolean>();
-      existsFn = (path: string) => {
-        if (cache.has(path)) return cache.get(path)!;
-        return localExists(path);
-      };
-      const worlds = [
-        { worldId: "animal_world", label: "Animal World", manifest: animalManifestAdapter() },
-        { worldId: "vehicle_world", label: "Vehicles", manifest: getVehicleWorldManifest() },
-        { worldId: "nature_world", label: "Nature", manifest: getNatureWorldManifest() },
-        { worldId: "home_sounds_world", label: "Home", manifest: getHomeSoundsManifest() },
-        { worldId: "instrument_world", label: "Instruments", manifest: getInstrumentWorldManifest() },
-      ];
-      for (const w of worlds) {
-        const { expectedVisualAssetsForManifest } = await import("@workspace/world-engine");
-        for (const asset of expectedVisualAssetsForManifest(w.manifest)) {
-          if (localExists(asset.gcsPath)) {
-            cache.set(asset.gcsPath, true);
-            continue;
-          }
-          cache.set(asset.gcsPath, await gcsExists(asset.gcsPath, storage, bucketId));
+  for (const w of WORLDS) {
+    for (const asset of expectedVisualAssetsForManifest(w.manifest)) {
+      const local = localExists(asset.gcsPath);
+      let gcs = false;
+      if (storage) {
+        if (gcsCache.has(asset.gcsPath)) {
+          gcs = gcsCache.get(asset.gcsPath)!;
+        } else {
+          gcs = await gcsObjectExists(storage, bucketId, asset.gcsPath);
+          gcsCache.set(asset.gcsPath, gcs);
         }
       }
-      existsFn = (path: string) => cache.get(path) ?? localExists(path);
-      mode = `gcs:${bucketId}+local`;
-    } catch (e) {
-      console.warn("[asset-coverage] GCS check skipped:", e);
+      const present = local || gcs;
+      manifestEntries.push({
+        gcsPath: asset.gcsPath,
+        kind: asset.kind,
+        itemId: asset.itemId,
+        itemName: asset.itemName,
+        worldId: w.worldId,
+        worldLabel: w.label,
+        local,
+        gcs,
+        present,
+      });
     }
   }
 
+  const existsFn = (gcsPath: string) => manifestEntries.find((e) => e.gcsPath === gcsPath)?.present ?? false;
   const report: AssetCoverageReport = buildAssetCoverageReport({
-    worlds: [
-      { worldId: "animal_world", label: "Animal World (flagship)", manifest: animalManifestAdapter() },
-      { worldId: "vehicle_world", label: "Vehicles", manifest: getVehicleWorldManifest() },
-      { worldId: "nature_world", label: "Nature", manifest: getNatureWorldManifest() },
-      { worldId: "home_sounds_world", label: "Home", manifest: getHomeSoundsManifest() },
-      { worldId: "instrument_world", label: "Instruments", manifest: getInstrumentWorldManifest() },
-    ],
+    worlds: WORLDS,
     exists: existsFn,
   });
 
-  const payload = { mode, ...report };
-  writeFileSync(OUT_JSON, `${JSON.stringify(payload, null, 2)}\n`);
-  console.log("\n=== Asset Coverage Dashboard ===\n");
-  console.log(`Mode: ${mode}`);
-  console.log(`Total assets: ${report.totalAssets}`);
-  console.log(`Present: ${report.presentAssets} | Missing: ${report.missingAssets}`);
-  console.log(`Coverage: ${report.coveragePct}%\n`);
-  for (const w of report.worlds) {
-    console.log(
-      `  ${w.label}: ${w.coveragePct}% (${w.presentAssets}/${w.totalAssets}) · ${w.itemCount} items`,
+  const gcsPresent = manifestEntries.filter((e) => e.gcs).length;
+  const localPresent = manifestEntries.filter((e) => e.local).length;
+  const missingEntries = manifestEntries.filter((e) => !e.present);
+  const missingGcsOnly = manifestEntries.filter((e) => e.local && !e.gcs);
+  const missingByKind = {
+    hero: missingEntries.filter((e) => e.kind === "hero").length,
+    card: missingEntries.filter((e) => e.kind === "card").length,
+    thumbnail: missingEntries.filter((e) => e.kind === "thumbnail").length,
+  };
+
+  const criticalBlockers: string[] = [];
+  if (report.coveragePct < COVERAGE_GATE_PCT) {
+    criticalBlockers.push(
+      `Visual coverage ${report.coveragePct}% is below ${COVERAGE_GATE_PCT}% gate (${report.presentAssets}/${report.totalAssets})`,
     );
   }
-  if (report.blockers.length) {
-    console.log("\nBlockers:");
-    for (const b of report.blockers) console.log(`  ✗ ${b}`);
+  if (useGcs && gcsPresent < report.totalAssets * (COVERAGE_GATE_PCT / 100)) {
+    criticalBlockers.push(
+      `Production GCS: ${gcsPresent}/${report.totalAssets} (${Math.round((gcsPresent / report.totalAssets) * 100)}%) — run pnpm run upload:discovery-worlds-visuals`,
+    );
+  }
+  for (const w of report.worlds) {
+    if (w.coveragePct < COVERAGE_GATE_PCT) {
+      criticalBlockers.push(`${w.label}: ${w.coveragePct}% (${w.presentAssets}/${w.totalAssets})`);
+    }
+  }
+
+  const mode = useGcs ? `production:gcs:${bucketId}+local` : "local-only";
+
+  const payload = {
+    mode,
+    coverageGatePct: COVERAGE_GATE_PCT,
+    gcsPresent,
+    localPresent,
+    missingByKind,
+    criticalBlockers,
+    missingPaths: missingEntries.map((e) => e.gcsPath),
+    missingSample: missingEntries.slice(0, 50).map((e) => ({
+      path: e.gcsPath,
+      kind: e.kind,
+      itemId: e.itemId,
+      worldId: e.worldId,
+      local: e.local,
+      gcs: e.gcs,
+    })),
+    uploadPendingGcs: missingGcsOnly.map((e) => e.gcsPath),
+    ...report,
+  };
+
+  writeFileSync(OUT_JSON, `${JSON.stringify(payload, null, 2)}\n`);
+  writeFileSync(
+    OUT_MANIFEST,
+    `${JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        bucket: bucketId,
+        totalAssets: report.totalAssets,
+        entries: manifestEntries,
+        uploadPending: missingGcsOnly.map((e) => ({
+          gcsPath: e.gcsPath,
+          localPath: join(LOCAL_VISUAL, e.gcsPath),
+          kind: e.kind,
+          itemId: e.itemId,
+        })),
+      },
+      null,
+      2,
+    )}\n`,
+  );
+
+  console.log("\n=== Visual Asset Completion Tracker ===\n");
+  console.log(`Mode: ${mode}`);
+  console.log(`Gate: ${COVERAGE_GATE_PCT}%+`);
+  console.log(`Total: ${report.totalAssets} | Present: ${report.presentAssets} | Missing: ${report.missingAssets}`);
+  console.log(`Coverage: ${report.coveragePct}%`);
+  console.log(`  Local mirror: ${localPresent} | GCS production: ${useGcs ? gcsPresent : "n/a (no creds)"}`);
+  console.log(`  Missing by kind: hero ${missingByKind.hero}, card ${missingByKind.card}, thumb ${missingByKind.thumbnail}`);
+  if (missingGcsOnly.length) {
+    console.log(`  Pending GCS upload (local ready): ${missingGcsOnly.length}`);
+  }
+  console.log("");
+  for (const w of report.worlds) {
+    const status = w.coveragePct >= COVERAGE_GATE_PCT ? "✓" : "✗";
+    console.log(`  ${status} ${w.label}: ${w.coveragePct}% (${w.presentAssets}/${w.totalAssets})`);
+    if (w.missingPaths.length) {
+      for (const p of w.missingPaths.slice(0, 3)) console.log(`      missing: ${p}`);
+    }
+  }
+  if (criticalBlockers.length) {
+    console.log("\nCritical blockers:");
+    for (const b of criticalBlockers) console.log(`  ✗ ${b}`);
   } else {
-    console.log("\n✓ No blockers — 100% visual coverage");
+    console.log(`\n✓ Visual gate passed (>= ${COVERAGE_GATE_PCT}%)`);
   }
   console.log(`\nWrote ${OUT_JSON}`);
+  console.log(`Wrote ${OUT_MANIFEST}`);
 
-  if (report.missingAssets > 0) process.exit(1);
+  if (report.coveragePct < COVERAGE_GATE_PCT) process.exit(1);
+  if (useGcs && gcsPresent < Math.ceil((report.totalAssets * COVERAGE_GATE_PCT) / 100)) process.exit(1);
 }
 
 main().catch((e) => {

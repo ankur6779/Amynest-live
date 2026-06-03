@@ -27,6 +27,8 @@
     "generate-phonics-library": "tsx ./generate-phonics-library.ts",
     "generate-animal-world-audio": "tsx ./generate-animal-world-audio.ts",
     "generate-discovery-worlds-audio": "tsx ./generate-discovery-worlds-audio.ts",
+    "generate-discovery-worlds-visuals": "tsx ./generate-discovery-worlds-visuals.ts",
+    "upload-discovery-worlds-visuals": "tsx ./upload-discovery-worlds-visuals.ts",
     "upload-discovery-worlds-catalog": "node ./upload-discovery-worlds-catalog.mjs",
     "check-phonics-library": "tsx ./check-phonics-library.ts",
     "check-phonics-interaction-gate": "tsx ./check-phonics-interaction-gate.ts",
@@ -70,7 +72,8 @@
     "@workspace/spelling-catalog": "workspace:*",
     "@workspace/db": "workspace:*",
     "dotenv": "^16.6.1",
-    "pg": "^8.20.0"
+    "pg": "^8.20.0",
+    "sharp": "^0.34.2"
   },
   "devDependencies": {
     "@types/node": "catalog:",

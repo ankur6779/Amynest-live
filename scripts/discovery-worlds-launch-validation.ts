@@ -33,6 +33,7 @@ import {
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT_JSON = join(root, "artifacts/kidschedule/public/discovery-worlds-launch-scorecard.json");
 const OUT_MD = join(root, "docs/discovery-worlds-launch-report.md");
+const LOCAL_VISUAL = join(root, "artifacts/kidschedule/public/world-visuals");
 const LOCAL_DISCOVERY = join(root, "artifacts/kidschedule/public/discovery-worlds-audio");
 const LOCAL_ANIMAL = join(root, "artifacts/kidschedule/public/animal-world-audio");
 
@@ -47,6 +48,7 @@ function add(phase: string, severity: Severity, code: string, message: string): 
 
 function localPath(gcsPath: string): string | null {
   const candidates = [
+    join(LOCAL_VISUAL, gcsPath),
     join(LOCAL_DISCOVERY, gcsPath),
     join(LOCAL_ANIMAL, gcsPath.replace(/^animal-world\//, "")),
     join(LOCAL_ANIMAL, gcsPath),
@@ -259,43 +261,39 @@ function scoreCategory(blockers: number, warns: number, base: number): number {
   return Math.max(0, Math.min(100, base - blockers * 25 - warns * 5));
 }
 
-async function tryGcsAssetCheck(): Promise<ReturnType<typeof buildAssetCoverageReport> | null> {
-  const bucketId =
-    process.env.GCS_BUCKET_NAME?.trim() ||
-    process.env.GCS_BUCKET?.trim() ||
-    process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID?.trim();
-  if (!bucketId) return null;
-  try {
-    const { Storage } = await import("@google-cloud/storage");
-    const storage = new Storage();
-    const bucket = storage.bucket(bucketId);
-    const cache = new Map<string, boolean>();
-    const worlds = [
-      { worldId: "animal_world", label: "Animal World", manifest: animalManifest() },
-      { worldId: "vehicle_world", label: "Vehicles", manifest: getVehicleWorldManifest() },
-      { worldId: "nature_world", label: "Nature", manifest: getNatureWorldManifest() },
-      { worldId: "home_sounds_world", label: "Home", manifest: getHomeSoundsManifest() },
-      { worldId: "instrument_world", label: "Instruments", manifest: getInstrumentWorldManifest() },
-    ];
-    for (const w of worlds) {
-      for (const asset of expectedVisualAssetsForManifest(w.manifest)) {
-        if (cache.has(asset.gcsPath)) continue;
-        const local = localPath(asset.gcsPath);
-        if (local) {
-          cache.set(asset.gcsPath, true);
-          continue;
-        }
-        const [ok] = await bucket.file(asset.gcsPath).exists();
-        cache.set(asset.gcsPath, ok);
+async function buildProductionAssetReport(): Promise<ReturnType<typeof buildAssetCoverageReport>> {
+  const { buildGcsStorage, gcsObjectExists, getGcsBucketName, hasGcsCredentials } = await import(
+    "./lib/gcs-storage.js"
+  );
+  const worlds = [
+    { worldId: "animal_world", label: "Animal World", manifest: animalManifest() },
+    { worldId: "vehicle_world", label: "Vehicles", manifest: getVehicleWorldManifest() },
+    { worldId: "nature_world", label: "Nature", manifest: getNatureWorldManifest() },
+    { worldId: "home_sounds_world", label: "Home", manifest: getHomeSoundsManifest() },
+    { worldId: "instrument_world", label: "Instruments", manifest: getInstrumentWorldManifest() },
+  ];
+  const cache = new Map<string, boolean>();
+  const bucketId = getGcsBucketName();
+  const storage = hasGcsCredentials(root) ? buildGcsStorage(root) : null;
+
+  for (const w of worlds) {
+    for (const asset of expectedVisualAssetsForManifest(w.manifest)) {
+      if (cache.has(asset.gcsPath)) continue;
+      if (localPath(asset.gcsPath)) {
+        cache.set(asset.gcsPath, true);
+        continue;
+      }
+      if (storage) {
+        cache.set(asset.gcsPath, await gcsObjectExists(storage, bucketId, asset.gcsPath));
+      } else {
+        cache.set(asset.gcsPath, false);
       }
     }
-    return buildAssetCoverageReport({
-      worlds,
-      exists: (p) => cache.get(p) ?? false,
-    });
-  } catch {
-    return null;
   }
+  return buildAssetCoverageReport({
+    worlds,
+    exists: (p) => cache.get(p) ?? false,
+  });
 }
 
 async function main(): Promise<void> {
@@ -316,23 +314,28 @@ async function main(): Promise<void> {
     auditContentMetadata(manifest, label);
   }
 
-  const gcsReport = await tryGcsAssetCheck();
-  const localReport = buildAssetCoverageReport({
-    worlds: manifests.map((m) => ({ worldId: m.manifest.worldId, label: m.label, manifest: m.manifest })),
-    exists: (p) => !!localPath(p),
-  });
-  const assetReport = gcsReport ?? localReport;
+  const VISUAL_GATE = 95;
+  const AUDIO_GATE = 95;
+  const assetReport = await buildProductionAssetReport();
 
-  if (assetReport.coveragePct < 100) {
+  if (assetReport.coveragePct < VISUAL_GATE) {
     add(
       "assets",
       "blocker",
       "visual_coverage",
-      `Visual assets ${assetReport.coveragePct}% (${assetReport.presentAssets}/${assetReport.totalAssets}) — ${assetReport.mode ?? "local"} check`,
+      `Visual assets ${assetReport.coveragePct}% (${assetReport.presentAssets}/${assetReport.totalAssets}) — production check (gate ${VISUAL_GATE}%)`,
     );
   }
 
   const audio = auditAudio();
+  if (audio.healthScore < AUDIO_GATE) {
+    add(
+      "assets",
+      "blocker",
+      "audio_health",
+      `Audio health ${audio.healthScore}/100 (${audio.present}/${audio.total} present) — gate ${AUDIO_GATE}`,
+    );
+  }
   scanUnusedLocalAudio();
   staticCodeAudit();
 
@@ -422,7 +425,7 @@ async function main(): Promise<void> {
       9,
   );
 
-  const launchReady = blockers.length === 0 && assetReport.coveragePct >= 95 && audio.healthScore >= 85;
+  const launchReady = blockers.length === 0 && assetReport.coveragePct >= 95 && audio.healthScore >= AUDIO_GATE;
 
   const assetMode = gcsReport ? "gcs" : "local";
 

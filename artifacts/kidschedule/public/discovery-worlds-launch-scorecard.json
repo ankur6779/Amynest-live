@@ -1,0 +1,212 @@
+{
+  "generatedAt": "2026-06-03T03:32:35.658Z",
+  "launchReady": false,
+  "overallLaunchReadiness": 88,
+  "scores": {
+    "architecture": 100,
+    "performance": 88,
+    "accessibility": 90,
+    "content": 95,
+    "audio": 55,
+    "visualQuality": 100,
+    "parentValue": 92,
+    "toddlerUsability": 88,
+    "offlineReliability": 85
+  },
+  "assetCheckMode": "local",
+  "catalog": {
+    "animals": 104,
+    "vehicles": 41,
+    "nature": 40,
+    "home": 40,
+    "instruments": 40
+  },
+  "assets": {
+    "generatedAt": "2026-06-03T03:32:35.549Z",
+    "totalAssets": 795,
+    "presentAssets": 795,
+    "missingAssets": 0,
+    "coveragePct": 100,
+    "worlds": [
+      {
+        "worldId": "animal_world",
+        "label": "Animal World",
+        "itemCount": 104,
+        "totalAssets": 312,
+        "presentAssets": 312,
+        "missingAssets": 0,
+        "coveragePct": 100,
+        "missingPaths": []
+      },
+      {
+        "worldId": "vehicle_world",
+        "label": "Vehicles",
+        "itemCount": 41,
+        "totalAssets": 123,
+        "presentAssets": 123,
+        "missingAssets": 0,
+        "coveragePct": 100,
+        "missingPaths": []
+      },
+      {
+        "worldId": "nature_world",
+        "label": "Nature",
+        "itemCount": 40,
+        "totalAssets": 120,
+        "presentAssets": 120,
+        "missingAssets": 0,
+        "coveragePct": 100,
+        "missingPaths": []
+      },
+      {
+        "worldId": "home_sounds_world",
+        "label": "Home",
+        "itemCount": 40,
+        "totalAssets": 120,
+        "presentAssets": 120,
+        "missingAssets": 0,
+        "coveragePct": 100,
+        "missingPaths": []
+      },
+      {
+        "worldId": "instrument_world",
+        "label": "Instruments",
+        "itemCount": 40,
+        "totalAssets": 120,
+        "presentAssets": 120,
+        "missingAssets": 0,
+        "coveragePct": 100,
+        "missingPaths": []
+      }
+    ],
+    "blockers": []
+  },
+  "audio": {
+    "healthScore": 55,
+    "present": 330,
+    "total": 907
+  },
+  "blockers": [
+    "Missing: animal-world/farm/pig/oink-01.mp3",
+    "Missing: animal-world/farm/pig/oink-02.mp3",
+    "Missing: animal-world/farm/pig/narration-intro.mp3",
+    "Missing: animal-world/farm/pig/narration-sound.mp3",
+    "Missing: animal-world/farm/chicken/cluck-01.mp3",
+    "577 audio files missing locally/GCS mirror"
+  ],
+  "warnings": [
+    "277 local MP3 files not referenced in manifests"
+  ],
+  "remediation": [
+    {
+      "priority": 1,
+      "phase": "audio",
+      "severity": "blocker",
+      "code": "missing_audio",
+      "message": "Missing: animal-world/farm/pig/oink-01.mp3"
+    },
+    {
+      "priority": 2,
+      "phase": "audio",
+      "severity": "blocker",
+      "code": "missing_audio",
+      "message": "Missing: animal-world/farm/pig/oink-02.mp3"
+    },
+    {
+      "priority": 3,
+      "phase": "audio",
+      "severity": "blocker",
+      "code": "missing_audio",
+      "message": "Missing: animal-world/farm/pig/narration-intro.mp3"
+    },
+    {
+      "priority": 4,
+      "phase": "audio",
+      "severity": "blocker",
+      "code": "missing_audio",
+      "message": "Missing: animal-world/farm/pig/narration-sound.mp3"
+    },
+    {
+      "priority": 5,
+      "phase": "audio",
+      "severity": "blocker",
+      "code": "missing_audio",
+      "message": "Missing: animal-world/farm/chicken/cluck-01.mp3"
+    },
+    {
+      "priority": 6,
+      "phase": "audio",
+      "severity": "blocker",
+      "code": "missing_audio_bulk",
+      "message": "577 audio files missing locally/GCS mirror"
+    }
+  ],
+  "findings": [
+    {
+      "phase": "audio",
+      "severity": "blocker",
+      "code": "missing_audio",
+      "message": "Missing: animal-world/farm/pig/oink-01.mp3"
+    },
+    {
+      "phase": "audio",
+      "severity": "blocker",
+      "code": "missing_audio",
+      "message": "Missing: animal-world/farm/pig/oink-02.mp3"
+    },
+    {
+      "phase": "audio",
+      "severity": "blocker",
+      "code": "missing_audio",
+      "message": "Missing: animal-world/farm/pig/narration-intro.mp3"
+    },
+    {
+      "phase": "audio",
+      "severity": "blocker",
+      "code": "missing_audio",
+      "message": "Missing: animal-world/farm/pig/narration-sound.mp3"
+    },
+    {
+      "phase": "audio",
+      "severity": "blocker",
+      "code": "missing_audio",
+      "message": "Missing: animal-world/farm/chicken/cluck-01.mp3"
+    },
+    {
+      "phase": "audio",
+      "severity": "blocker",
+      "code": "missing_audio_bulk",
+      "message": "577 audio files missing locally/GCS mirror"
+    },
+    {
+      "phase": "assets",
+      "severity": "warn",
+      "code": "unused_audio",
+      "message": "277 local MP3 files not referenced in manifests"
+    },
+    {
+      "phase": "toddler",
+      "severity": "info",
+      "code": "reading_quiz",
+      "message": "Quiz uses large prompt text — toddler mode is separate"
+    },
+    {
+      "phase": "errors",
+      "severity": "info",
+      "code": "audio_error_ui",
+      "message": "Audio play failure shows role=alert message"
+    },
+    {
+      "phase": "device",
+      "severity": "info",
+      "code": "manual_device",
+      "message": "Complete docs/discovery-worlds-launch-checklist.md on iPhone, iPad, Android phone/tablet, desktop"
+    },
+    {
+      "phase": "performance",
+      "severity": "info",
+      "code": "lighthouse_manual",
+      "message": "Run Lighthouse on /discovery-worlds and /worlds/vehicles — targets P/A/BP > 95 (auth may affect public URL scores)"
+    }
+  ]
+}

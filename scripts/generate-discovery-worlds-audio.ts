@@ -309,6 +309,11 @@ async function main(): Promise<void> {
         try {
           const [exists] = await storage.bucket(bucket).file(job.gcsPath).exists();
           if (exists) {
+            if (!existsSync(localFile)) {
+              const [buf] = await storage.bucket(bucket).file(job.gcsPath).download();
+              writeFileSync(localFile, buf);
+              console.log(`[mirror-gcs] ${job.gcsPath}`);
+            }
             skipped += 1;
             const signedUrl = await signedUrlFor(storage, bucket, job.gcsPath);
             signedManifest[job.gcsPath] = {
@@ -321,6 +326,20 @@ async function main(): Promise<void> {
           }
         } catch {
           /* regenerate */
+        }
+        if (existsSync(localFile) && !force) {
+          const buffer = readFileSync(localFile);
+          await uploadToGcs(storage, bucket, job.gcsPath, buffer);
+          skipped += 1;
+          const signedUrl = await signedUrlFor(storage, bucket, job.gcsPath);
+          signedManifest[job.gcsPath] = {
+            gcsPath: job.gcsPath,
+            signedUrl,
+            proxyUrl: `/api/worlds-library/${job.gcsPath}`,
+            bytes: buffer.byteLength,
+          };
+          console.log(`[reupload-local] ${job.gcsPath}`);
+          continue;
         }
       }
 

@@ -292,6 +292,11 @@ async function main(): Promise<void> {
       try {
         const [exists] = await storage.bucket(bucket).file(job.gcsPath).exists();
         if (exists) {
+          if (!existsSync(localFile)) {
+            const [buf] = await storage.bucket(bucket).file(job.gcsPath).download();
+            writeFileSync(localFile, buf);
+            console.log(`[mirror-gcs] ${job.gcsPath}`);
+          }
           skipped += 1;
           manifest[key] = { gcsPath: job.gcsPath, kind: job.kind, source: "gcs_existing", bytes: 0 };
           console.log(`[skip] ${job.gcsPath}`);

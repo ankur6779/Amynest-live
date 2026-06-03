@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-03T03:06:28.974Z",
+  "generatedAt": "2026-06-03T03:56:09.069Z",
   "bucket": "amynest-audio-storage",
   "voiceId": "QbQKfe9vgx5OsbZUvlFv",
   "ttsModel": "eleven_turbo_v2_5",
@@ -34,6 +34,2809 @@
       "kind": "narration",
       "source": "gcs_existing",
       "bytes": 0
+    },
+    "horse:neigh-01": {
+      "gcsPath": "animal-world/farm/horse/neigh-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "horse:neigh-02": {
+      "gcsPath": "animal-world/farm/horse/neigh-02.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "horse:narration-intro": {
+      "gcsPath": "animal-world/farm/horse/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "horse:narration-sound": {
+      "gcsPath": "animal-world/farm/horse/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "sheep:baa-01": {
+      "gcsPath": "animal-world/farm/sheep/baa-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "sheep:baa-02": {
+      "gcsPath": "animal-world/farm/sheep/baa-02.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "sheep:narration-intro": {
+      "gcsPath": "animal-world/farm/sheep/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "sheep:narration-sound": {
+      "gcsPath": "animal-world/farm/sheep/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "pig:oink-01": {
+      "gcsPath": "animal-world/farm/pig/oink-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "pig:oink-02": {
+      "gcsPath": "animal-world/farm/pig/oink-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "pig:narration-intro": {
+      "gcsPath": "animal-world/farm/pig/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 17598,
+      "durationMs": 1100
+    },
+    "pig:narration-sound": {
+      "gcsPath": "animal-world/farm/pig/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 19688,
+      "durationMs": 1231
+    },
+    "chicken:cluck-01": {
+      "gcsPath": "animal-world/farm/chicken/cluck-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "chicken:cluck-02": {
+      "gcsPath": "animal-world/farm/chicken/cluck-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "chicken:narration-intro": {
+      "gcsPath": "animal-world/farm/chicken/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "chicken:narration-sound": {
+      "gcsPath": "animal-world/farm/chicken/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "rooster:crow-01": {
+      "gcsPath": "animal-world/farm/rooster/crow-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "rooster:crow-02": {
+      "gcsPath": "animal-world/farm/rooster/crow-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "rooster:narration-intro": {
+      "gcsPath": "animal-world/farm/rooster/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 19688,
+      "durationMs": 1231
+    },
+    "rooster:narration-sound": {
+      "gcsPath": "animal-world/farm/rooster/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "duck:quack-01": {
+      "gcsPath": "animal-world/farm/duck/quack-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "duck:quack-02": {
+      "gcsPath": "animal-world/farm/duck/quack-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "duck:narration-intro": {
+      "gcsPath": "animal-world/farm/duck/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "duck:narration-sound": {
+      "gcsPath": "animal-world/farm/duck/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "goat:bleat-01": {
+      "gcsPath": "animal-world/farm/goat/bleat-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "goat:bleat-02": {
+      "gcsPath": "animal-world/farm/goat/bleat-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "goat:narration-intro": {
+      "gcsPath": "animal-world/farm/goat/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 19688,
+      "durationMs": 1231
+    },
+    "goat:narration-sound": {
+      "gcsPath": "animal-world/farm/goat/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "turkey:gobble-01": {
+      "gcsPath": "animal-world/farm/turkey/gobble-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "turkey:gobble-02": {
+      "gcsPath": "animal-world/farm/turkey/gobble-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "turkey:narration-intro": {
+      "gcsPath": "animal-world/farm/turkey/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18852,
+      "durationMs": 1178
+    },
+    "turkey:narration-sound": {
+      "gcsPath": "animal-world/farm/turkey/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "donkey:bray-01": {
+      "gcsPath": "animal-world/farm/donkey/bray-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "donkey:bray-02": {
+      "gcsPath": "animal-world/farm/donkey/bray-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "donkey:narration-intro": {
+      "gcsPath": "animal-world/farm/donkey/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "donkey:narration-sound": {
+      "gcsPath": "animal-world/farm/donkey/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "rabbit:thump-01": {
+      "gcsPath": "animal-world/farm/rabbit/thump-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "rabbit:squeak-01": {
+      "gcsPath": "animal-world/farm/rabbit/squeak-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "rabbit:narration-intro": {
+      "gcsPath": "animal-world/farm/rabbit/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "rabbit:narration-sound": {
+      "gcsPath": "animal-world/farm/rabbit/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "goose:honk-01": {
+      "gcsPath": "animal-world/farm/goose/honk-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "goose:honk-02": {
+      "gcsPath": "animal-world/farm/goose/honk-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "goose:narration-intro": {
+      "gcsPath": "animal-world/farm/goose/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "goose:narration-sound": {
+      "gcsPath": "animal-world/farm/goose/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "llama:hum-01": {
+      "gcsPath": "animal-world/farm/llama/hum-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "llama:hum-02": {
+      "gcsPath": "animal-world/farm/llama/hum-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "llama:narration-intro": {
+      "gcsPath": "animal-world/farm/llama/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18852,
+      "durationMs": 1178
+    },
+    "llama:narration-sound": {
+      "gcsPath": "animal-world/farm/llama/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 22613,
+      "durationMs": 1413
+    },
+    "lion:roar-01": {
+      "gcsPath": "animal-world/wild/lion/roar-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "lion:roar-02": {
+      "gcsPath": "animal-world/wild/lion/roar-02.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "lion:roar-baby": {
+      "gcsPath": "animal-world/wild/lion/roar-baby.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "lion:narration-intro": {
+      "gcsPath": "animal-world/wild/lion/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "lion:narration-sound": {
+      "gcsPath": "animal-world/wild/lion/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "elephant:trumpet-01": {
+      "gcsPath": "animal-world/wild/elephant/trumpet-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "elephant:trumpet-02": {
+      "gcsPath": "animal-world/wild/elephant/trumpet-02.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "elephant:narration-intro": {
+      "gcsPath": "animal-world/wild/elephant/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "elephant:narration-sound": {
+      "gcsPath": "animal-world/wild/elephant/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "bear:growl-01": {
+      "gcsPath": "animal-world/wild/bear/growl-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "bear:growl-02": {
+      "gcsPath": "animal-world/wild/bear/growl-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "bear:narration-intro": {
+      "gcsPath": "animal-world/wild/bear/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18852,
+      "durationMs": 1178
+    },
+    "bear:narration-sound": {
+      "gcsPath": "animal-world/wild/bear/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 19688,
+      "durationMs": 1231
+    },
+    "wolf:howl-01": {
+      "gcsPath": "animal-world/wild/wolf/howl-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "wolf:howl-02": {
+      "gcsPath": "animal-world/wild/wolf/howl-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "wolf:narration-intro": {
+      "gcsPath": "animal-world/wild/wolf/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "wolf:narration-sound": {
+      "gcsPath": "animal-world/wild/wolf/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "fox:yip-01": {
+      "gcsPath": "animal-world/wild/fox/yip-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "fox:yip-02": {
+      "gcsPath": "animal-world/wild/fox/yip-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "fox:narration-intro": {
+      "gcsPath": "animal-world/wild/fox/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "fox:narration-sound": {
+      "gcsPath": "animal-world/wild/fox/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "zebra:zebra-01": {
+      "gcsPath": "animal-world/wild/zebra/zebra-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "zebra:zebra-02": {
+      "gcsPath": "animal-world/wild/zebra/zebra-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "zebra:narration-intro": {
+      "gcsPath": "animal-world/wild/zebra/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 19688,
+      "durationMs": 1231
+    },
+    "zebra:narration-sound": {
+      "gcsPath": "animal-world/wild/zebra/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 22613,
+      "durationMs": 1413
+    },
+    "giraffe:giraffe-01": {
+      "gcsPath": "animal-world/wild/giraffe/giraffe-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "giraffe:giraffe-02": {
+      "gcsPath": "animal-world/wild/giraffe/giraffe-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "giraffe:narration-intro": {
+      "gcsPath": "animal-world/wild/giraffe/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 19688,
+      "durationMs": 1231
+    },
+    "giraffe:narration-sound": {
+      "gcsPath": "animal-world/wild/giraffe/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "hippo:grunt-01": {
+      "gcsPath": "animal-world/wild/hippo/grunt-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "hippo:grunt-02": {
+      "gcsPath": "animal-world/wild/hippo/grunt-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "hippo:narration-intro": {
+      "gcsPath": "animal-world/wild/hippo/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 17598,
+      "durationMs": 1100
+    },
+    "hippo:narration-sound": {
+      "gcsPath": "animal-world/wild/hippo/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "rhino:snort-01": {
+      "gcsPath": "animal-world/wild/rhino/snort-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "rhino:snort-02": {
+      "gcsPath": "animal-world/wild/rhino/snort-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "rhino:narration-intro": {
+      "gcsPath": "animal-world/wild/rhino/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18852,
+      "durationMs": 1178
+    },
+    "rhino:narration-sound": {
+      "gcsPath": "animal-world/wild/rhino/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "leopard:leopard-01": {
+      "gcsPath": "animal-world/wild/leopard/leopard-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "leopard:leopard-02": {
+      "gcsPath": "animal-world/wild/leopard/leopard-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "leopard:narration-intro": {
+      "gcsPath": "animal-world/wild/leopard/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18852,
+      "durationMs": 1178
+    },
+    "leopard:narration-sound": {
+      "gcsPath": "animal-world/wild/leopard/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "cheetah:chirp-01": {
+      "gcsPath": "animal-world/wild/cheetah/chirp-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "cheetah:chirp-02": {
+      "gcsPath": "animal-world/wild/cheetah/chirp-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "cheetah:narration-intro": {
+      "gcsPath": "animal-world/wild/cheetah/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "cheetah:narration-sound": {
+      "gcsPath": "animal-world/wild/cheetah/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "kangaroo:thump-01": {
+      "gcsPath": "animal-world/wild/kangaroo/thump-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "kangaroo:thump-02": {
+      "gcsPath": "animal-world/wild/kangaroo/thump-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "kangaroo:narration-intro": {
+      "gcsPath": "animal-world/wild/kangaroo/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "kangaroo:narration-sound": {
+      "gcsPath": "animal-world/wild/kangaroo/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 22613,
+      "durationMs": 1413
+    },
+    "panda:panda-01": {
+      "gcsPath": "animal-world/wild/panda/panda-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "panda:panda-02": {
+      "gcsPath": "animal-world/wild/panda/panda-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "panda:narration-intro": {
+      "gcsPath": "animal-world/wild/panda/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "panda:narration-sound": {
+      "gcsPath": "animal-world/wild/panda/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 23449,
+      "durationMs": 1466
+    },
+    "dolphin:click-01": {
+      "gcsPath": "animal-world/sea/dolphin/click-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "dolphin:squeak-01": {
+      "gcsPath": "animal-world/sea/dolphin/squeak-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "dolphin:narration-intro": {
+      "gcsPath": "animal-world/sea/dolphin/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "dolphin:narration-sound": {
+      "gcsPath": "animal-world/sea/dolphin/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "whale:song-01": {
+      "gcsPath": "animal-world/sea/whale/song-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "whale:song-02": {
+      "gcsPath": "animal-world/sea/whale/song-02.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "whale:narration-intro": {
+      "gcsPath": "animal-world/sea/whale/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "whale:narration-sound": {
+      "gcsPath": "animal-world/sea/whale/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "shark:splash-01": {
+      "gcsPath": "animal-world/sea/shark/splash-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "shark:splash-02": {
+      "gcsPath": "animal-world/sea/shark/splash-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "shark:narration-intro": {
+      "gcsPath": "animal-world/sea/shark/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18852,
+      "durationMs": 1178
+    },
+    "shark:narration-sound": {
+      "gcsPath": "animal-world/sea/shark/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "seal:seal-01": {
+      "gcsPath": "animal-world/sea/seal/seal-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "seal:seal-02": {
+      "gcsPath": "animal-world/sea/seal/seal-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "seal:narration-intro": {
+      "gcsPath": "animal-world/sea/seal/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18852,
+      "durationMs": 1178
+    },
+    "seal:narration-sound": {
+      "gcsPath": "animal-world/sea/seal/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "octopus:squirt-01": {
+      "gcsPath": "animal-world/sea/octopus/squirt-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "octopus:squirt-02": {
+      "gcsPath": "animal-world/sea/octopus/squirt-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "octopus:narration-intro": {
+      "gcsPath": "animal-world/sea/octopus/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "octopus:narration-sound": {
+      "gcsPath": "animal-world/sea/octopus/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 24285,
+      "durationMs": 1518
+    },
+    "crab:crab-01": {
+      "gcsPath": "animal-world/sea/crab/crab-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "crab:crab-02": {
+      "gcsPath": "animal-world/sea/crab/crab-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "crab:narration-intro": {
+      "gcsPath": "animal-world/sea/crab/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "crab:narration-sound": {
+      "gcsPath": "animal-world/sea/crab/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "seahorse:bubble-01": {
+      "gcsPath": "animal-world/sea/seahorse/bubble-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "seahorse:bubble-02": {
+      "gcsPath": "animal-world/sea/seahorse/bubble-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "seahorse:narration-intro": {
+      "gcsPath": "animal-world/sea/seahorse/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "seahorse:narration-sound": {
+      "gcsPath": "animal-world/sea/seahorse/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 23449,
+      "durationMs": 1466
+    },
+    "starfish:wave-01": {
+      "gcsPath": "animal-world/sea/starfish/wave-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "starfish:wave-02": {
+      "gcsPath": "animal-world/sea/starfish/wave-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "starfish:narration-intro": {
+      "gcsPath": "animal-world/sea/starfish/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "starfish:narration-sound": {
+      "gcsPath": "animal-world/sea/starfish/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 24285,
+      "durationMs": 1518
+    },
+    "jellyfish:pulse-01": {
+      "gcsPath": "animal-world/sea/jellyfish/pulse-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "jellyfish:pulse-02": {
+      "gcsPath": "animal-world/sea/jellyfish/pulse-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "jellyfish:narration-intro": {
+      "gcsPath": "animal-world/sea/jellyfish/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "jellyfish:narration-sound": {
+      "gcsPath": "animal-world/sea/jellyfish/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 23449,
+      "durationMs": 1466
+    },
+    "sea-turtle:turtle-01": {
+      "gcsPath": "animal-world/sea/sea-turtle/turtle-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "sea-turtle:turtle-02": {
+      "gcsPath": "animal-world/sea/sea-turtle/turtle-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "sea-turtle:narration-intro": {
+      "gcsPath": "animal-world/sea/sea-turtle/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 22613,
+      "durationMs": 1413
+    },
+    "sea-turtle:narration-sound": {
+      "gcsPath": "animal-world/sea/sea-turtle/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 24285,
+      "durationMs": 1518
+    },
+    "clownfish:clown-01": {
+      "gcsPath": "animal-world/sea/clownfish/clown-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "clownfish:clown-02": {
+      "gcsPath": "animal-world/sea/clownfish/clown-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "clownfish:narration-intro": {
+      "gcsPath": "animal-world/sea/clownfish/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "clownfish:narration-sound": {
+      "gcsPath": "animal-world/sea/clownfish/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 24285,
+      "durationMs": 1518
+    },
+    "walrus:walrus-01": {
+      "gcsPath": "animal-world/sea/walrus/walrus-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "walrus:walrus-02": {
+      "gcsPath": "animal-world/sea/walrus/walrus-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "walrus:narration-intro": {
+      "gcsPath": "animal-world/sea/walrus/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "walrus:narration-sound": {
+      "gcsPath": "animal-world/sea/walrus/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 23449,
+      "durationMs": 1466
+    },
+    "orca:orca-01": {
+      "gcsPath": "animal-world/sea/orca/orca-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "orca:orca-02": {
+      "gcsPath": "animal-world/sea/orca/orca-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "orca:narration-intro": {
+      "gcsPath": "animal-world/sea/orca/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18852,
+      "durationMs": 1178
+    },
+    "orca:narration-sound": {
+      "gcsPath": "animal-world/sea/orca/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "owl:hoot-01": {
+      "gcsPath": "animal-world/birds/owl/hoot-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "owl:hoot-02": {
+      "gcsPath": "animal-world/birds/owl/hoot-02.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "owl:narration-intro": {
+      "gcsPath": "animal-world/birds/owl/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "owl:narration-sound": {
+      "gcsPath": "animal-world/birds/owl/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "parrot:squawk-01": {
+      "gcsPath": "animal-world/birds/parrot/squawk-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "parrot:squawk-02": {
+      "gcsPath": "animal-world/birds/parrot/squawk-02.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "parrot:narration-intro": {
+      "gcsPath": "animal-world/birds/parrot/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "parrot:narration-sound": {
+      "gcsPath": "animal-world/birds/parrot/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "eagle:screech-01": {
+      "gcsPath": "animal-world/birds/eagle/screech-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "eagle:screech-02": {
+      "gcsPath": "animal-world/birds/eagle/screech-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "eagle:narration-intro": {
+      "gcsPath": "animal-world/birds/eagle/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "eagle:narration-sound": {
+      "gcsPath": "animal-world/birds/eagle/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "crow:caw-01": {
+      "gcsPath": "animal-world/birds/crow/caw-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "crow:caw-02": {
+      "gcsPath": "animal-world/birds/crow/caw-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "crow:narration-intro": {
+      "gcsPath": "animal-world/birds/crow/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "crow:narration-sound": {
+      "gcsPath": "animal-world/birds/crow/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "peacock:peacock-01": {
+      "gcsPath": "animal-world/birds/peacock/peacock-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "peacock:peacock-02": {
+      "gcsPath": "animal-world/birds/peacock/peacock-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "peacock:narration-intro": {
+      "gcsPath": "animal-world/birds/peacock/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 19688,
+      "durationMs": 1231
+    },
+    "peacock:narration-sound": {
+      "gcsPath": "animal-world/birds/peacock/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 22613,
+      "durationMs": 1413
+    },
+    "flamingo:flamingo-01": {
+      "gcsPath": "animal-world/birds/flamingo/flamingo-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "flamingo:flamingo-02": {
+      "gcsPath": "animal-world/birds/flamingo/flamingo-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "flamingo:narration-intro": {
+      "gcsPath": "animal-world/birds/flamingo/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 20524
+    },
+    "flamingo:narration-sound": {
+      "gcsPath": "animal-world/birds/flamingo/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 22613,
+      "durationMs": 1413
+    },
+    "robin:robin-01": {
+      "gcsPath": "animal-world/birds/robin/robin-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "robin:robin-02": {
+      "gcsPath": "animal-world/birds/robin/robin-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "robin:narration-intro": {
+      "gcsPath": "animal-world/birds/robin/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "robin:narration-sound": {
+      "gcsPath": "animal-world/birds/robin/narration-sound.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 21777
+    },
+    "swan:swan-01": {
+      "gcsPath": "animal-world/birds/swan/swan-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "swan:swan-02": {
+      "gcsPath": "animal-world/birds/swan/swan-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "swan:narration-intro": {
+      "gcsPath": "animal-world/birds/swan/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "swan:narration-sound": {
+      "gcsPath": "animal-world/birds/swan/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "woodpecker:tap-01": {
+      "gcsPath": "animal-world/birds/woodpecker/tap-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "woodpecker:tap-02": {
+      "gcsPath": "animal-world/birds/woodpecker/tap-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "woodpecker:narration-intro": {
+      "gcsPath": "animal-world/birds/woodpecker/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 20524
+    },
+    "woodpecker:narration-sound": {
+      "gcsPath": "animal-world/birds/woodpecker/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 22613,
+      "durationMs": 1413
+    },
+    "pelican:pelican-01": {
+      "gcsPath": "animal-world/birds/pelican/pelican-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "pelican:pelican-02": {
+      "gcsPath": "animal-world/birds/pelican/pelican-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "pelican:narration-intro": {
+      "gcsPath": "animal-world/birds/pelican/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 19688,
+      "durationMs": 1231
+    },
+    "pelican:narration-sound": {
+      "gcsPath": "animal-world/birds/pelican/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "hawk:hawk-01": {
+      "gcsPath": "animal-world/birds/hawk/hawk-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "hawk:hawk-02": {
+      "gcsPath": "animal-world/birds/hawk/hawk-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "hawk:narration-intro": {
+      "gcsPath": "animal-world/birds/hawk/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 17598
+    },
+    "hawk:narration-sound": {
+      "gcsPath": "animal-world/birds/hawk/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 19688,
+      "durationMs": 1231
+    },
+    "canary:canary-01": {
+      "gcsPath": "animal-world/birds/canary/canary-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "canary:canary-02": {
+      "gcsPath": "animal-world/birds/canary/canary-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "canary:narration-intro": {
+      "gcsPath": "animal-world/birds/canary/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 19688,
+      "durationMs": 1231
+    },
+    "canary:narration-sound": {
+      "gcsPath": "animal-world/birds/canary/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 22613,
+      "durationMs": 1413
+    },
+    "pigeon:coo-01": {
+      "gcsPath": "animal-world/birds/pigeon/coo-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "pigeon:coo-02": {
+      "gcsPath": "animal-world/birds/pigeon/coo-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "pigeon:narration-intro": {
+      "gcsPath": "animal-world/birds/pigeon/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 19688
+    },
+    "pigeon:narration-sound": {
+      "gcsPath": "animal-world/birds/pigeon/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "bee:buzz-01": {
+      "gcsPath": "animal-world/insects/bee/buzz-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "bee:buzz-02": {
+      "gcsPath": "animal-world/insects/bee/buzz-02.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "bee:narration-intro": {
+      "gcsPath": "animal-world/insects/bee/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "bee:narration-sound": {
+      "gcsPath": "animal-world/insects/bee/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "butterfly:flutter-01": {
+      "gcsPath": "animal-world/insects/butterfly/flutter-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "butterfly:flutter-02": {
+      "gcsPath": "animal-world/insects/butterfly/flutter-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "butterfly:narration-intro": {
+      "gcsPath": "animal-world/insects/butterfly/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 20942
+    },
+    "butterfly:narration-sound": {
+      "gcsPath": "animal-world/insects/butterfly/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 23449,
+      "durationMs": 1466
+    },
+    "cricket:cricket-01": {
+      "gcsPath": "animal-world/insects/cricket/cricket-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "cricket:cricket-02": {
+      "gcsPath": "animal-world/insects/cricket/cricket-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "cricket:narration-intro": {
+      "gcsPath": "animal-world/insects/cricket/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 17598,
+      "durationMs": 1100
+    },
+    "cricket:narration-sound": {
+      "gcsPath": "animal-world/insects/cricket/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "ant:ant-01": {
+      "gcsPath": "animal-world/insects/ant/ant-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "ant:ant-02": {
+      "gcsPath": "animal-world/insects/ant/ant-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "ant:narration-intro": {
+      "gcsPath": "animal-world/insects/ant/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18852,
+      "durationMs": 1178
+    },
+    "ant:narration-sound": {
+      "gcsPath": "animal-world/insects/ant/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "mosquito:mosquito-01": {
+      "gcsPath": "animal-world/insects/mosquito/mosquito-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "mosquito:mosquito-02": {
+      "gcsPath": "animal-world/insects/mosquito/mosquito-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "mosquito:narration-intro": {
+      "gcsPath": "animal-world/insects/mosquito/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 19688,
+      "durationMs": 1231
+    },
+    "mosquito:narration-sound": {
+      "gcsPath": "animal-world/insects/mosquito/narration-sound.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 23449
+    },
+    "dragonfly:dragon-01": {
+      "gcsPath": "animal-world/insects/dragonfly/dragon-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "dragonfly:dragon-02": {
+      "gcsPath": "animal-world/insects/dragonfly/dragon-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "dragonfly:narration-intro": {
+      "gcsPath": "animal-world/insects/dragonfly/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "dragonfly:narration-sound": {
+      "gcsPath": "animal-world/insects/dragonfly/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "grasshopper:hopper-01": {
+      "gcsPath": "animal-world/insects/grasshopper/hopper-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "grasshopper:hopper-02": {
+      "gcsPath": "animal-world/insects/grasshopper/hopper-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "grasshopper:narration-intro": {
+      "gcsPath": "animal-world/insects/grasshopper/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "grasshopper:narration-sound": {
+      "gcsPath": "animal-world/insects/grasshopper/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 24285,
+      "durationMs": 1518
+    },
+    "ladybug:lady-01": {
+      "gcsPath": "animal-world/insects/ladybug/lady-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "ladybug:lady-02": {
+      "gcsPath": "animal-world/insects/ladybug/lady-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "ladybug:narration-intro": {
+      "gcsPath": "animal-world/insects/ladybug/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "ladybug:narration-sound": {
+      "gcsPath": "animal-world/insects/ladybug/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "cicada:cicada-01": {
+      "gcsPath": "animal-world/insects/cicada/cicada-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "cicada:cicada-02": {
+      "gcsPath": "animal-world/insects/cicada/cicada-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "cicada:narration-intro": {
+      "gcsPath": "animal-world/insects/cicada/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 19688
+    },
+    "cicada:narration-sound": {
+      "gcsPath": "animal-world/insects/cicada/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 23449,
+      "durationMs": 1466
+    },
+    "moth:moth-01": {
+      "gcsPath": "animal-world/insects/moth/moth-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "moth:moth-02": {
+      "gcsPath": "animal-world/insects/moth/moth-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "moth:narration-intro": {
+      "gcsPath": "animal-world/insects/moth/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "moth:narration-sound": {
+      "gcsPath": "animal-world/insects/moth/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "beetle:beetle-01": {
+      "gcsPath": "animal-world/insects/beetle/beetle-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "beetle:beetle-02": {
+      "gcsPath": "animal-world/insects/beetle/beetle-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "beetle:narration-intro": {
+      "gcsPath": "animal-world/insects/beetle/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "beetle:narration-sound": {
+      "gcsPath": "animal-world/insects/beetle/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "firefly:firefly-01": {
+      "gcsPath": "animal-world/insects/firefly/firefly-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "firefly:firefly-02": {
+      "gcsPath": "animal-world/insects/firefly/firefly-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "firefly:narration-intro": {
+      "gcsPath": "animal-world/insects/firefly/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "firefly:narration-sound": {
+      "gcsPath": "animal-world/insects/firefly/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 23449,
+      "durationMs": 1466
+    },
+    "wasp:wasp-01": {
+      "gcsPath": "animal-world/insects/wasp/wasp-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "wasp:wasp-02": {
+      "gcsPath": "animal-world/insects/wasp/wasp-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "wasp:narration-intro": {
+      "gcsPath": "animal-world/insects/wasp/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 19688
+    },
+    "wasp:narration-sound": {
+      "gcsPath": "animal-world/insects/wasp/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "dog:bark-01": {
+      "gcsPath": "animal-world/pets/dog/bark-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "dog:bark-02": {
+      "gcsPath": "animal-world/pets/dog/bark-02.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "dog:bark-happy": {
+      "gcsPath": "animal-world/pets/dog/bark-happy.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "dog:narration-intro": {
+      "gcsPath": "animal-world/pets/dog/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "dog:narration-sound": {
+      "gcsPath": "animal-world/pets/dog/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "cat:meow-01": {
+      "gcsPath": "animal-world/pets/cat/meow-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "cat:meow-02": {
+      "gcsPath": "animal-world/pets/cat/meow-02.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "cat:purr-01": {
+      "gcsPath": "animal-world/pets/cat/purr-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "cat:narration-intro": {
+      "gcsPath": "animal-world/pets/cat/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "cat:narration-sound": {
+      "gcsPath": "animal-world/pets/cat/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "hamster:hamster-01": {
+      "gcsPath": "animal-world/pets/hamster/hamster-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "hamster:hamster-02": {
+      "gcsPath": "animal-world/pets/hamster/hamster-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "hamster:narration-intro": {
+      "gcsPath": "animal-world/pets/hamster/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 19688,
+      "durationMs": 1231
+    },
+    "hamster:narration-sound": {
+      "gcsPath": "animal-world/pets/hamster/narration-sound.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 21777
+    },
+    "guinea-pig:wheek-01": {
+      "gcsPath": "animal-world/pets/guinea-pig/wheek-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "guinea-pig:wheek-02": {
+      "gcsPath": "animal-world/pets/guinea-pig/wheek-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "guinea-pig:narration-intro": {
+      "gcsPath": "animal-world/pets/guinea-pig/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 19688,
+      "durationMs": 1231
+    },
+    "guinea-pig:narration-sound": {
+      "gcsPath": "animal-world/pets/guinea-pig/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "parakeet:keet-01": {
+      "gcsPath": "animal-world/pets/parakeet/keet-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "parakeet:keet-02": {
+      "gcsPath": "animal-world/pets/parakeet/keet-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "parakeet:narration-intro": {
+      "gcsPath": "animal-world/pets/parakeet/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "parakeet:narration-sound": {
+      "gcsPath": "animal-world/pets/parakeet/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 23449,
+      "durationMs": 1466
+    },
+    "goldfish:fish-01": {
+      "gcsPath": "animal-world/pets/goldfish/fish-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "goldfish:fish-02": {
+      "gcsPath": "animal-world/pets/goldfish/fish-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "goldfish:narration-intro": {
+      "gcsPath": "animal-world/pets/goldfish/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "goldfish:narration-sound": {
+      "gcsPath": "animal-world/pets/goldfish/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 23449,
+      "durationMs": 1466
+    },
+    "ferret:dook-01": {
+      "gcsPath": "animal-world/pets/ferret/dook-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "ferret:dook-02": {
+      "gcsPath": "animal-world/pets/ferret/dook-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "ferret:narration-intro": {
+      "gcsPath": "animal-world/pets/ferret/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 18852
+    },
+    "ferret:narration-sound": {
+      "gcsPath": "animal-world/pets/ferret/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "gecko:gecko-01": {
+      "gcsPath": "animal-world/pets/gecko/gecko-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "gecko:gecko-02": {
+      "gcsPath": "animal-world/pets/gecko/gecko-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "gecko:narration-intro": {
+      "gcsPath": "animal-world/pets/gecko/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "gecko:narration-sound": {
+      "gcsPath": "animal-world/pets/gecko/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "puppy:puppy-01": {
+      "gcsPath": "animal-world/pets/puppy/puppy-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "puppy:puppy-02": {
+      "gcsPath": "animal-world/pets/puppy/puppy-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "puppy:narration-intro": {
+      "gcsPath": "animal-world/pets/puppy/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 18016
+    },
+    "puppy:narration-sound": {
+      "gcsPath": "animal-world/pets/puppy/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 19688,
+      "durationMs": 1231
+    },
+    "kitten:kitten-01": {
+      "gcsPath": "animal-world/pets/kitten/kitten-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "kitten:kitten-02": {
+      "gcsPath": "animal-world/pets/kitten/kitten-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "kitten:narration-intro": {
+      "gcsPath": "animal-world/pets/kitten/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 17598,
+      "durationMs": 1100
+    },
+    "kitten:narration-sound": {
+      "gcsPath": "animal-world/pets/kitten/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "bunny:bunny-01": {
+      "gcsPath": "animal-world/pets/bunny/bunny-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "bunny:bunny-02": {
+      "gcsPath": "animal-world/pets/bunny/bunny-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "bunny:narration-intro": {
+      "gcsPath": "animal-world/pets/bunny/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 17598,
+      "durationMs": 1100
+    },
+    "bunny:narration-sound": {
+      "gcsPath": "animal-world/pets/bunny/narration-sound.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 19688
+    },
+    "turtle-pet:turtle-pet-01": {
+      "gcsPath": "animal-world/pets/turtle-pet/turtle-pet-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "turtle-pet:turtle-pet-02": {
+      "gcsPath": "animal-world/pets/turtle-pet/turtle-pet-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "turtle-pet:narration-intro": {
+      "gcsPath": "animal-world/pets/turtle-pet/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "turtle-pet:narration-sound": {
+      "gcsPath": "animal-world/pets/turtle-pet/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 24285,
+      "durationMs": 1518
+    },
+    "parrotlet:plet-01": {
+      "gcsPath": "animal-world/pets/parrotlet/plet-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "parrotlet:plet-02": {
+      "gcsPath": "animal-world/pets/parrotlet/plet-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "parrotlet:narration-intro": {
+      "gcsPath": "animal-world/pets/parrotlet/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "parrotlet:narration-sound": {
+      "gcsPath": "animal-world/pets/parrotlet/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 24285,
+      "durationMs": 1518
+    },
+    "monkey:chatter-01": {
+      "gcsPath": "animal-world/jungle/monkey/chatter-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "monkey:chatter-02": {
+      "gcsPath": "animal-world/jungle/monkey/chatter-02.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "monkey:narration-intro": {
+      "gcsPath": "animal-world/jungle/monkey/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "monkey:narration-sound": {
+      "gcsPath": "animal-world/jungle/monkey/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "tiger:growl-01": {
+      "gcsPath": "animal-world/jungle/tiger/growl-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "tiger:growl-02": {
+      "gcsPath": "animal-world/jungle/tiger/growl-02.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "tiger:narration-intro": {
+      "gcsPath": "animal-world/jungle/tiger/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "tiger:narration-sound": {
+      "gcsPath": "animal-world/jungle/tiger/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "gorilla:gorilla-01": {
+      "gcsPath": "animal-world/jungle/gorilla/gorilla-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "gorilla:gorilla-02": {
+      "gcsPath": "animal-world/jungle/gorilla/gorilla-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "gorilla:narration-intro": {
+      "gcsPath": "animal-world/jungle/gorilla/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18852,
+      "durationMs": 1178
+    },
+    "gorilla:narration-sound": {
+      "gcsPath": "animal-world/jungle/gorilla/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "chameleon:chameleon-01": {
+      "gcsPath": "animal-world/jungle/chameleon/chameleon-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "chameleon:chameleon-02": {
+      "gcsPath": "animal-world/jungle/chameleon/chameleon-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "chameleon:narration-intro": {
+      "gcsPath": "animal-world/jungle/chameleon/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 20524
+    },
+    "chameleon:narration-sound": {
+      "gcsPath": "animal-world/jungle/chameleon/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 23449,
+      "durationMs": 1466
+    },
+    "sloth:sloth-01": {
+      "gcsPath": "animal-world/jungle/sloth/sloth-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "sloth:sloth-02": {
+      "gcsPath": "animal-world/jungle/sloth/sloth-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "sloth:narration-intro": {
+      "gcsPath": "animal-world/jungle/sloth/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "sloth:narration-sound": {
+      "gcsPath": "animal-world/jungle/sloth/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "frog:ribbit-01": {
+      "gcsPath": "animal-world/jungle/frog/ribbit-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "frog:ribbit-02": {
+      "gcsPath": "animal-world/jungle/frog/ribbit-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "frog:narration-intro": {
+      "gcsPath": "animal-world/jungle/frog/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 18852
+    },
+    "frog:narration-sound": {
+      "gcsPath": "animal-world/jungle/frog/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "snake:hiss-01": {
+      "gcsPath": "animal-world/jungle/snake/hiss-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "snake:hiss-02": {
+      "gcsPath": "animal-world/jungle/snake/hiss-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "snake:narration-intro": {
+      "gcsPath": "animal-world/jungle/snake/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 18016
+    },
+    "snake:narration-sound": {
+      "gcsPath": "animal-world/jungle/snake/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "jaguar:jaguar-01": {
+      "gcsPath": "animal-world/jungle/jaguar/jaguar-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "jaguar:jaguar-02": {
+      "gcsPath": "animal-world/jungle/jaguar/jaguar-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "jaguar:narration-intro": {
+      "gcsPath": "animal-world/jungle/jaguar/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "jaguar:narration-sound": {
+      "gcsPath": "animal-world/jungle/jaguar/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "capybara:capy-01": {
+      "gcsPath": "animal-world/jungle/capybara/capy-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "capybara:capy-02": {
+      "gcsPath": "animal-world/jungle/capybara/capy-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "capybara:narration-intro": {
+      "gcsPath": "animal-world/jungle/capybara/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "capybara:narration-sound": {
+      "gcsPath": "animal-world/jungle/capybara/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "iguana:iguana-01": {
+      "gcsPath": "animal-world/jungle/iguana/iguana-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "iguana:iguana-02": {
+      "gcsPath": "animal-world/jungle/iguana/iguana-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "iguana:narration-intro": {
+      "gcsPath": "animal-world/jungle/iguana/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "iguana:narration-sound": {
+      "gcsPath": "animal-world/jungle/iguana/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "tapir:tapir-01": {
+      "gcsPath": "animal-world/jungle/tapir/tapir-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "tapir:tapir-02": {
+      "gcsPath": "animal-world/jungle/tapir/tapir-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "tapir:narration-intro": {
+      "gcsPath": "animal-world/jungle/tapir/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18852,
+      "durationMs": 1178
+    },
+    "tapir:narration-sound": {
+      "gcsPath": "animal-world/jungle/tapir/narration-sound.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 21777
+    },
+    "lemur:lemur-01": {
+      "gcsPath": "animal-world/jungle/lemur/lemur-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "lemur:lemur-02": {
+      "gcsPath": "animal-world/jungle/lemur/lemur-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "lemur:narration-intro": {
+      "gcsPath": "animal-world/jungle/lemur/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "lemur:narration-sound": {
+      "gcsPath": "animal-world/jungle/lemur/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "ocelot:ocelot-01": {
+      "gcsPath": "animal-world/jungle/ocelot/ocelot-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "ocelot:ocelot-02": {
+      "gcsPath": "animal-world/jungle/ocelot/ocelot-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "ocelot:narration-intro": {
+      "gcsPath": "animal-world/jungle/ocelot/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 20524
+    },
+    "ocelot:narration-sound": {
+      "gcsPath": "animal-world/jungle/ocelot/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 22613,
+      "durationMs": 1413
+    },
+    "penguin:honk-01": {
+      "gcsPath": "animal-world/arctic/penguin/honk-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "penguin:honk-02": {
+      "gcsPath": "animal-world/arctic/penguin/honk-02.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "penguin:narration-intro": {
+      "gcsPath": "animal-world/arctic/penguin/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "penguin:narration-sound": {
+      "gcsPath": "animal-world/arctic/penguin/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "polar-bear:growl-01": {
+      "gcsPath": "animal-world/arctic/polar-bear/growl-01.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "polar-bear:growl-02": {
+      "gcsPath": "animal-world/arctic/polar-bear/growl-02.mp3",
+      "kind": "sound_effect",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "polar-bear:narration-intro": {
+      "gcsPath": "animal-world/arctic/polar-bear/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "polar-bear:narration-sound": {
+      "gcsPath": "animal-world/arctic/polar-bear/narration-sound.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "arctic-fox:afox-01": {
+      "gcsPath": "animal-world/arctic/arctic-fox/afox-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "arctic-fox:afox-02": {
+      "gcsPath": "animal-world/arctic/arctic-fox/afox-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "arctic-fox:narration-intro": {
+      "gcsPath": "animal-world/arctic/arctic-fox/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 22613,
+      "durationMs": 1413
+    },
+    "arctic-fox:narration-sound": {
+      "gcsPath": "animal-world/arctic/arctic-fox/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 27211,
+      "durationMs": 1701
+    },
+    "moose:moose-01": {
+      "gcsPath": "animal-world/arctic/moose/moose-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "moose:moose-02": {
+      "gcsPath": "animal-world/arctic/moose/moose-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "moose:narration-intro": {
+      "gcsPath": "animal-world/arctic/moose/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "moose:narration-sound": {
+      "gcsPath": "animal-world/arctic/moose/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20524,
+      "durationMs": 1283
+    },
+    "reindeer:reindeer-01": {
+      "gcsPath": "animal-world/arctic/reindeer/reindeer-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 18434,
+      "durationMs": 1152
+    },
+    "reindeer:reindeer-02": {
+      "gcsPath": "animal-world/arctic/reindeer/reindeer-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 20106,
+      "durationMs": 1257
+    },
+    "reindeer:narration-intro": {
+      "gcsPath": "animal-world/arctic/reindeer/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 19688
+    },
+    "reindeer:narration-sound": {
+      "gcsPath": "animal-world/arctic/reindeer/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "snowy-owl:snowy-01": {
+      "gcsPath": "animal-world/arctic/snowy-owl/snowy-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "snowy-owl:snowy-02": {
+      "gcsPath": "animal-world/arctic/snowy-owl/snowy-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "snowy-owl:narration-intro": {
+      "gcsPath": "animal-world/arctic/snowy-owl/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 22613,
+      "durationMs": 1413
+    },
+    "snowy-owl:narration-sound": {
+      "gcsPath": "animal-world/arctic/snowy-owl/narration-sound.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 25539
+    },
+    "husky:husky-01": {
+      "gcsPath": "animal-world/arctic/husky/husky-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 21359,
+      "durationMs": 1335
+    },
+    "husky:husky-02": {
+      "gcsPath": "animal-world/arctic/husky/husky-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 23031,
+      "durationMs": 1439
+    },
+    "husky:narration-intro": {
+      "gcsPath": "animal-world/arctic/husky/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "husky:narration-sound": {
+      "gcsPath": "animal-world/arctic/husky/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "narwhal:narwhal-01": {
+      "gcsPath": "animal-world/arctic/narwhal/narwhal-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "narwhal:narwhal-02": {
+      "gcsPath": "animal-world/arctic/narwhal/narwhal-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "narwhal:narration-intro": {
+      "gcsPath": "animal-world/arctic/narwhal/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "narwhal:narration-sound": {
+      "gcsPath": "animal-world/arctic/narwhal/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 23449,
+      "durationMs": 1466
+    },
+    "puffin:puffin-01": {
+      "gcsPath": "animal-world/arctic/puffin/puffin-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "puffin:puffin-02": {
+      "gcsPath": "animal-world/arctic/puffin/puffin-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "puffin:narration-intro": {
+      "gcsPath": "animal-world/arctic/puffin/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 18852
+    },
+    "puffin:narration-sound": {
+      "gcsPath": "animal-world/arctic/puffin/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "ermine:ermine-01": {
+      "gcsPath": "animal-world/arctic/ermine/ermine-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "ermine:ermine-02": {
+      "gcsPath": "animal-world/arctic/ermine/ermine-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "ermine:narration-intro": {
+      "gcsPath": "animal-world/arctic/ermine/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 18016,
+      "durationMs": 1126
+    },
+    "ermine:narration-sound": {
+      "gcsPath": "animal-world/arctic/ermine/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 21777,
+      "durationMs": 1361
+    },
+    "beluga:beluga-01": {
+      "gcsPath": "animal-world/arctic/beluga/beluga-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "beluga:beluga-02": {
+      "gcsPath": "animal-world/arctic/beluga/beluga-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "beluga:narration-intro": {
+      "gcsPath": "animal-world/arctic/beluga/narration-intro.mp3",
+      "kind": "narration",
+      "source": "gcs_existing",
+      "bytes": 0
+    },
+    "beluga:narration-sound": {
+      "gcsPath": "animal-world/arctic/beluga/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "muskox:muskox-01": {
+      "gcsPath": "animal-world/arctic/muskox/muskox-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 24703,
+      "durationMs": 1544
+    },
+    "muskox:muskox-02": {
+      "gcsPath": "animal-world/arctic/muskox/muskox-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 26793,
+      "durationMs": 1675
+    },
+    "muskox:narration-intro": {
+      "gcsPath": "animal-world/arctic/muskox/narration-intro.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 20942,
+      "durationMs": 1309
+    },
+    "muskox:narration-sound": {
+      "gcsPath": "animal-world/arctic/muskox/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 23449,
+      "durationMs": 1466
+    },
+    "seal-arctic:aseal-01": {
+      "gcsPath": "animal-world/arctic/seal-arctic/aseal-01.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 28047,
+      "durationMs": 1753
+    },
+    "seal-arctic:aseal-02": {
+      "gcsPath": "animal-world/arctic/seal-arctic/aseal-02.mp3",
+      "kind": "sound_effect",
+      "source": "elevenlabs_sound",
+      "bytes": 29301,
+      "durationMs": 1831
+    },
+    "seal-arctic:narration-intro": {
+      "gcsPath": "animal-world/arctic/seal-arctic/narration-intro.mp3",
+      "kind": "narration",
+      "source": "local_reupload",
+      "bytes": 23449
+    },
+    "seal-arctic:narration-sound": {
+      "gcsPath": "animal-world/arctic/seal-arctic/narration-sound.mp3",
+      "kind": "narration",
+      "source": "elevenlabs_tts",
+      "bytes": 25539,
+      "durationMs": 1596
     }
   }
 }

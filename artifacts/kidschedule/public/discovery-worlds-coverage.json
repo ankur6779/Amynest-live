@@ -1,0 +1,73 @@
+{
+  "mode": "production:gcs:amynest-audio-storage+local",
+  "coverageGatePct": 95,
+  "gcsPresent": 795,
+  "localPresent": 795,
+  "missingByKind": {
+    "hero": 0,
+    "card": 0,
+    "thumbnail": 0
+  },
+  "criticalBlockers": [],
+  "missingPaths": [],
+  "missingSample": [],
+  "uploadPendingGcs": [],
+  "generatedAt": "2026-06-03T03:59:57.744Z",
+  "totalAssets": 795,
+  "presentAssets": 795,
+  "missingAssets": 0,
+  "coveragePct": 100,
+  "worlds": [
+    {
+      "worldId": "animal_world",
+      "label": "Animal World (flagship)",
+      "itemCount": 104,
+      "totalAssets": 312,
+      "presentAssets": 312,
+      "missingAssets": 0,
+      "coveragePct": 100,
+      "missingPaths": []
+    },
+    {
+      "worldId": "vehicle_world",
+      "label": "Vehicles",
+      "itemCount": 41,
+      "totalAssets": 123,
+      "presentAssets": 123,
+      "missingAssets": 0,
+      "coveragePct": 100,
+      "missingPaths": []
+    },
+    {
+      "worldId": "nature_world",
+      "label": "Nature",
+      "itemCount": 40,
+      "totalAssets": 120,
+      "presentAssets": 120,
+      "missingAssets": 0,
+      "coveragePct": 100,
+      "missingPaths": []
+    },
+    {
+      "worldId": "home_sounds_world",
+      "label": "Home",
+      "itemCount": 40,
+      "totalAssets": 120,
+      "presentAssets": 120,
+      "missingAssets": 0,
+      "coveragePct": 100,
+      "missingPaths": []
+    },
+    {
+      "worldId": "instrument_world",
+      "label": "Instruments",
+      "itemCount": 40,
+      "totalAssets": 120,
+      "presentAssets": 120,
+      "missingAssets": 0,
+      "coveragePct": 100,
+      "missingPaths": []
+    }
+  ],
+  "blockers": []
+}
