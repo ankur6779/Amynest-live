@@ -9,6 +9,7 @@ import type { DiscoveryWorldRuntimeConfig } from "@/lib/discovery-world-config";
 import { TRANSITION } from "@/lib/experience-system";
 import { cn } from "@/lib/utils";
 import { DelightBurst } from "./delight-burst";
+import { DiscoveryEmptyState } from "./discovery-world-polish";
 
 type PlatformStickerAlbumProps = {
   config: DiscoveryWorldRuntimeConfig;
@@ -72,14 +73,20 @@ export function PlatformStickerAlbum({ config, childId }: PlatformStickerAlbumPr
   const pct = catalog.length ? Math.round((collected / catalog.length) * 100) : 0;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 px-4 py-4">
+    <div className="mx-auto max-w-2xl space-y-6 px-4 py-4" aria-labelledby="sticker-book-heading">
       <DelightBurst active={celebrate} onDone={() => setCelebrate(false)} />
       <div>
-        <h2 className="text-lg font-bold text-foreground">Sticker book</h2>
+        <h2 id="sticker-book-heading" className="text-lg font-bold text-foreground">
+          Sticker book
+        </h2>
         <p className="text-sm text-muted-foreground">
           {collected} of {catalog.length} collected · {pct}% complete
         </p>
       </div>
+
+      {collected === 0 && (
+        <DiscoveryEmptyState variant="emptyStickers" testId="discovery-stickers-empty" />
+      )}
 
       {pages.map((page) => (
         <section key={page.categoryId}>

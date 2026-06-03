@@ -14,17 +14,20 @@ import { getVehicleWorldManifest } from "@workspace/vehicle-world";
 import { getNatureWorldManifest } from "@workspace/nature-sounds-world";
 import { getHomeSoundsManifest } from "@workspace/home-sounds-world";
 import { getInstrumentWorldManifest } from "@workspace/instrument-world";
+import { getAllAnimals } from "@workspace/animal-world";
 
 const root = join(fileURLToPath(import.meta.url), "..");
 
 const TARGETS: Record<string, number> = {
-  vehicle_world: 25,
-  nature_world: 20,
-  home_sounds_world: 20,
-  instrument_world: 20,
+  animal_world: 100,
+  vehicle_world: 40,
+  nature_world: 40,
+  home_sounds_world: 40,
+  instrument_world: 40,
 };
 
 const manifests = [
+  { label: "animal (flagship)", manifest: { worldId: "animal_world" as const, version: 1 as const, categories: [], items: getAllAnimals().map((a) => ({ ...a, category: a.category, imageGcsPath: a.imageGcsPath, sounds: a.sounds })) } },
   { label: "vehicles", manifest: getVehicleWorldManifest() },
   { label: "nature", manifest: getNatureWorldManifest() },
   { label: "home", manifest: getHomeSoundsManifest() },

@@ -15,6 +15,10 @@ import { applyDiscoverySessionEngagement } from "@/lib/discovery-worlds-engageme
 import { worldItemVisualPaths } from "@/lib/world-visual-assets";
 import { WorldHeroImage } from "./world-hero-image";
 import { DelightBurst } from "./delight-burst";
+import {
+  DiscoveryEmptyState,
+  DiscoveryProgressDots,
+} from "./discovery-world-polish";
 
 type PlatformDiscoveryModeProps = {
   config: DiscoveryWorldRuntimeConfig;
@@ -95,8 +99,20 @@ export function PlatformDiscoveryMode({ config, childId }: PlatformDiscoveryMode
     ? worldItemVisualPaths(item, config.resolveAssetUrl).hero
     : undefined;
 
+  if (sequence.length === 0) {
+    return (
+      <div className="px-4 py-6">
+        <DiscoveryEmptyState variant="emptyDiscovery" />
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-6">
+    <div
+      className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-6"
+      role="region"
+      aria-label="Discovery slideshow"
+    >
       <DelightBurst active={celebrate} variant="confetti" onDone={() => setCelebrate(false)} />
 
       <div className="flex w-full flex-wrap gap-2">
@@ -111,18 +127,23 @@ export function PlatformDiscoveryMode({ config, childId }: PlatformDiscoveryMode
         ))}
       </div>
 
+      <DiscoveryProgressDots activeIndex={index} total={sequence.length} />
+
       <div className="flex w-full flex-wrap items-center justify-center gap-2 text-xs">
         <button
           type="button"
-          className="rounded-full border border-white/10 px-3 py-1.5 font-semibold"
+          aria-label={`Playback speed ${speed} times`}
+          className="min-h-11 rounded-full border border-white/10 px-3 py-1.5 font-semibold"
           onClick={() => setSpeed((s) => (s >= 1.5 ? 0.75 : s + 0.25))}
         >
           Speed {speed}x
         </button>
         <button
           type="button"
+          aria-pressed={autoRepeat}
+          aria-label={autoRepeat ? "Loop slideshow on" : "Loop slideshow off"}
           className={cn(
-            "rounded-full border px-3 py-1.5 font-semibold",
+            "min-h-11 rounded-full border px-3 py-1.5 font-semibold",
             autoRepeat ? "border-primary/50 bg-primary/15" : "border-white/10",
           )}
           onClick={() => setAutoRepeat((v) => !v)}
@@ -131,7 +152,8 @@ export function PlatformDiscoveryMode({ config, childId }: PlatformDiscoveryMode
         </button>
         <button
           type="button"
-          className="rounded-full border border-white/10 px-3 py-1.5 font-semibold"
+          aria-label="Next item"
+          className="min-h-11 rounded-full border border-white/10 px-3 py-1.5 font-semibold"
           onClick={advanceSlide}
         >
           Next
@@ -159,7 +181,9 @@ export function PlatformDiscoveryMode({ config, childId }: PlatformDiscoveryMode
           {phase === "name" && item?.funFact && (
             <p className="mt-2 text-sm text-muted-foreground">{item.funFact}</p>
           )}
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{phase}</p>
+          {phase === "sound" && (
+            <p className="mt-2 text-sm font-semibold text-primary">Listen closely…</p>
+          )}
         </motion.div>
       </AnimatePresence>
     </div>
@@ -178,9 +202,10 @@ function FilterChip({
   return (
     <button
       type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "rounded-full border px-3 py-1.5 text-xs font-semibold",
+        "min-h-11 rounded-full border px-3 py-1.5 text-xs font-semibold",
         active ? "border-primary/50 bg-primary/15" : "border-white/10 text-muted-foreground",
       )}
     >

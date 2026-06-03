@@ -4,6 +4,7 @@ import { loadDiscoveryWorldStats } from "@/lib/discovery-worlds-stats";
 import type { DiscoveryWorldRuntimeConfig } from "@/lib/discovery-world-config";
 import { PlatformParentCharts } from "./platform-parent-charts";
 import { Printer } from "lucide-react";
+import { DISCOVERY_COPY } from "./discovery-world-polish";
 
 type PlatformParentDashboardProps = {
   config: DiscoveryWorldRuntimeConfig;
@@ -32,13 +33,19 @@ export function PlatformParentDashboard({ config, childId }: PlatformParentDashb
   const nameById = new Map(config.manifest.items.map((i) => [i.id, i]));
 
   return (
-    <div className="parent-insights-print mx-auto max-w-2xl space-y-4 px-4 py-4">
+    <section
+      className="parent-insights-print mx-auto max-w-2xl space-y-4 px-4 py-4"
+      aria-labelledby="platform-parent-insights-heading"
+    >
       <div className="flex items-center justify-between gap-2 print:hidden">
-        <h2 className="text-lg font-bold text-foreground">Parent insights</h2>
+        <h2 id="platform-parent-insights-heading" className="text-lg font-bold text-foreground">
+          Parent insights
+        </h2>
         <button
           type="button"
           onClick={() => window.print()}
-          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold"
+          aria-label="Print learning report"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold"
         >
           <Printer className="h-3.5 w-3.5" />
           Print report
@@ -87,7 +94,9 @@ export function PlatformParentDashboard({ config, childId }: PlatformParentDashb
         </h3>
         <ul className="space-y-2">
           {insights.mostRecognized.length === 0 && (
-            <li className="text-sm text-muted-foreground">Play Quiz or Hear & Find to see scores.</li>
+            <li className="text-sm leading-relaxed text-muted-foreground">
+              {DISCOVERY_COPY.emptyParentActivity.message}
+            </li>
           )}
           {insights.mostRecognized.map(({ itemId, accuracy }) => {
             const item = nameById.get(itemId);
@@ -110,7 +119,9 @@ export function PlatformParentDashboard({ config, childId }: PlatformParentDashb
         </h3>
         <ul className="space-y-2">
           {insights.favoriteCategories.length === 0 && (
-            <li className="text-sm text-muted-foreground">Explore sounds to see favorites.</li>
+            <li className="text-sm leading-relaxed text-muted-foreground">
+              {DISCOVERY_COPY.emptyParentFavorites.message}
+            </li>
           )}
           {insights.favoriteCategories.map(({ category, count }) => {
             const cat = config.manifest.categories.find((c) => c.id === category);
@@ -125,6 +136,6 @@ export function PlatformParentDashboard({ config, childId }: PlatformParentDashb
           })}
         </ul>
       </section>
-    </div>
+    </section>
   );
 }

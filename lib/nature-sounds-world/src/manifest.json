@@ -663,6 +663,646 @@
           ]
         }
       ]
+    },
+    {
+      "id": "foghorn",
+      "name": "Fog Horn",
+      "category": "ocean",
+      "emoji": "🌫️",
+      "imageGcsPath": "worlds/nature/ocean/foghorn/hero.webp",
+      "heroRealGcsPath": "worlds/nature/ocean/foghorn/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/ocean/foghorn/card.webp",
+      "funFact": "Fog horns warn ships in mist.",
+      "quizSoundId": "fog-01",
+      "quizPrompt": "Boom",
+      "narration": {
+        "intro": "This is fog horn.",
+        "introGcsPath": "worlds/nature/ocean/foghorn/narration-intro.mp3",
+        "soundCue": "Listen to fog horn.",
+        "soundCueGcsPath": "worlds/nature/ocean/foghorn/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "fog-01",
+          "label": "Horn",
+          "gcsPath": "worlds/nature/ocean/foghorn/fog-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "river",
+      "name": "River",
+      "category": "forest",
+      "emoji": "🏞️",
+      "imageGcsPath": "worlds/nature/forest/river/hero.webp",
+      "heroRealGcsPath": "worlds/nature/forest/river/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/forest/river/card.webp",
+      "funFact": "Rivers flow toward the sea.",
+      "quizSoundId": "river-01",
+      "quizPrompt": "Flow",
+      "narration": {
+        "intro": "This is river.",
+        "introGcsPath": "worlds/nature/forest/river/narration-intro.mp3",
+        "soundCue": "Listen to river.",
+        "soundCueGcsPath": "worlds/nature/forest/river/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "river-01",
+          "label": "Flow",
+          "gcsPath": "worlds/nature/forest/river/river-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "waterfall",
+      "name": "Waterfall",
+      "category": "forest",
+      "emoji": "💧",
+      "imageGcsPath": "worlds/nature/forest/waterfall/hero.webp",
+      "heroRealGcsPath": "worlds/nature/forest/waterfall/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/forest/waterfall/card.webp",
+      "funFact": "Waterfalls crash into pools below.",
+      "quizSoundId": "fall-01",
+      "quizPrompt": "Rush",
+      "narration": {
+        "intro": "This is waterfall.",
+        "introGcsPath": "worlds/nature/forest/waterfall/narration-intro.mp3",
+        "soundCue": "Listen to waterfall.",
+        "soundCueGcsPath": "worlds/nature/forest/waterfall/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "fall-01",
+          "label": "Rush",
+          "gcsPath": "worlds/nature/forest/waterfall/fall-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "volcano",
+      "name": "Volcano",
+      "category": "weather",
+      "emoji": "🌋",
+      "imageGcsPath": "worlds/nature/weather/volcano/hero.webp",
+      "heroRealGcsPath": "worlds/nature/weather/volcano/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/weather/volcano/card.webp",
+      "funFact": "Volcanoes build new land with lava.",
+      "quizSoundId": "volc-01",
+      "quizPrompt": "Rumble",
+      "narration": {
+        "intro": "This is volcano.",
+        "introGcsPath": "worlds/nature/weather/volcano/narration-intro.mp3",
+        "soundCue": "Listen to volcano.",
+        "soundCueGcsPath": "worlds/nature/weather/volcano/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "volc-01",
+          "label": "Rumble",
+          "gcsPath": "worlds/nature/weather/volcano/volc-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "desert-wind",
+      "name": "Desert Wind",
+      "category": "weather",
+      "emoji": "🏜️",
+      "imageGcsPath": "worlds/nature/weather/desert-wind/hero.webp",
+      "heroRealGcsPath": "worlds/nature/weather/desert-wind/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/weather/desert-wind/card.webp",
+      "funFact": "Desert winds shape sand dunes.",
+      "quizSoundId": "desert-01",
+      "quizPrompt": "Whoosh",
+      "narration": {
+        "intro": "This is desert wind.",
+        "introGcsPath": "worlds/nature/weather/desert-wind/narration-intro.mp3",
+        "soundCue": "Listen to desert wind.",
+        "soundCueGcsPath": "worlds/nature/weather/desert-wind/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "desert-01",
+          "label": "Wind",
+          "gcsPath": "worlds/nature/weather/desert-wind/desert-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bamboo",
+      "name": "Bamboo Forest",
+      "category": "forest",
+      "emoji": "🎋",
+      "imageGcsPath": "worlds/nature/forest/bamboo/hero.webp",
+      "heroRealGcsPath": "worlds/nature/forest/bamboo/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/forest/bamboo/card.webp",
+      "funFact": "Bamboo grows very quickly.",
+      "quizSoundId": "bamboo-01",
+      "quizPrompt": "Creak",
+      "narration": {
+        "intro": "This is bamboo forest.",
+        "introGcsPath": "worlds/nature/forest/bamboo/narration-intro.mp3",
+        "soundCue": "Listen to bamboo forest.",
+        "soundCueGcsPath": "worlds/nature/forest/bamboo/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "bamboo-01",
+          "label": "Creak",
+          "gcsPath": "worlds/nature/forest/bamboo/bamboo-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wolf-howling",
+      "name": "Distant Wolf",
+      "category": "forest",
+      "emoji": "🐺",
+      "imageGcsPath": "worlds/nature/forest/wolf-howling/hero.webp",
+      "heroRealGcsPath": "worlds/nature/forest/wolf-howling/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/forest/wolf-howling/card.webp",
+      "funFact": "Wolves howl across valleys.",
+      "quizSoundId": "wolf-01",
+      "quizPrompt": "Howl",
+      "narration": {
+        "intro": "This is distant wolf.",
+        "introGcsPath": "worlds/nature/forest/wolf-howling/narration-intro.mp3",
+        "soundCue": "Listen to distant wolf.",
+        "soundCueGcsPath": "worlds/nature/forest/wolf-howling/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "wolf-01",
+          "label": "Howl",
+          "gcsPath": "worlds/nature/forest/wolf-howling/wolf-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rainbow-after-rain",
+      "name": "After Rain",
+      "category": "weather",
+      "emoji": "🌈",
+      "imageGcsPath": "worlds/nature/weather/rainbow-after-rain/hero.webp",
+      "heroRealGcsPath": "worlds/nature/weather/rainbow-after-rain/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/weather/rainbow-after-rain/card.webp",
+      "funFact": "Rainbows appear when sun meets rain.",
+      "quizSoundId": "after-01",
+      "quizPrompt": "Drip",
+      "narration": {
+        "intro": "This is after rain.",
+        "introGcsPath": "worlds/nature/weather/rainbow-after-rain/narration-intro.mp3",
+        "soundCue": "Listen to after rain.",
+        "soundCueGcsPath": "worlds/nature/weather/rainbow-after-rain/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "after-01",
+          "label": "Drips",
+          "gcsPath": "worlds/nature/weather/rainbow-after-rain/after-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "meadow",
+      "name": "Meadow",
+      "category": "forest",
+      "emoji": "🌾",
+      "imageGcsPath": "worlds/nature/forest/meadow/hero.webp",
+      "heroRealGcsPath": "worlds/nature/forest/meadow/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/forest/meadow/card.webp",
+      "funFact": "Meadows are open grassy fields.",
+      "quizSoundId": "meadow-01",
+      "quizPrompt": "Rustle",
+      "narration": {
+        "intro": "This is meadow.",
+        "introGcsPath": "worlds/nature/forest/meadow/narration-intro.mp3",
+        "soundCue": "Listen to meadow.",
+        "soundCueGcsPath": "worlds/nature/forest/meadow/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "meadow-01",
+          "label": "Grass",
+          "gcsPath": "worlds/nature/forest/meadow/meadow-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aurora",
+      "name": "Northern Lights",
+      "category": "night",
+      "emoji": "🌌",
+      "imageGcsPath": "worlds/nature/night/aurora/hero.webp",
+      "heroRealGcsPath": "worlds/nature/night/aurora/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/night/aurora/card.webp",
+      "funFact": "Auroras glow in polar skies.",
+      "quizSoundId": "aurora-01",
+      "quizPrompt": "Hum",
+      "narration": {
+        "intro": "This is northern lights.",
+        "introGcsPath": "worlds/nature/night/aurora/narration-intro.mp3",
+        "soundCue": "Listen to northern lights.",
+        "soundCueGcsPath": "worlds/nature/night/aurora/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "aurora-01",
+          "label": "Hum",
+          "gcsPath": "worlds/nature/night/aurora/aurora-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tide-pool",
+      "name": "Tide Pool",
+      "category": "ocean",
+      "emoji": "🪸",
+      "imageGcsPath": "worlds/nature/ocean/tide-pool/hero.webp",
+      "heroRealGcsPath": "worlds/nature/ocean/tide-pool/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/ocean/tide-pool/card.webp",
+      "funFact": "Tide pools hold tiny sea creatures.",
+      "quizSoundId": "tide-01",
+      "quizPrompt": "Splash",
+      "narration": {
+        "intro": "This is tide pool.",
+        "introGcsPath": "worlds/nature/ocean/tide-pool/narration-intro.mp3",
+        "soundCue": "Listen to tide pool.",
+        "soundCueGcsPath": "worlds/nature/ocean/tide-pool/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "tide-01",
+          "label": "Splash",
+          "gcsPath": "worlds/nature/ocean/tide-pool/tide-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coral-reef",
+      "name": "Coral Reef",
+      "category": "ocean",
+      "emoji": "🪸",
+      "imageGcsPath": "worlds/nature/ocean/coral-reef/hero.webp",
+      "heroRealGcsPath": "worlds/nature/ocean/coral-reef/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/ocean/coral-reef/card.webp",
+      "funFact": "Reefs are busy underwater cities.",
+      "quizSoundId": "reef-01",
+      "quizPrompt": "Bubble",
+      "narration": {
+        "intro": "This is coral reef.",
+        "introGcsPath": "worlds/nature/ocean/coral-reef/narration-intro.mp3",
+        "soundCue": "Listen to coral reef.",
+        "soundCueGcsPath": "worlds/nature/ocean/coral-reef/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "reef-01",
+          "label": "Bubbles",
+          "gcsPath": "worlds/nature/ocean/coral-reef/reef-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mosquito-night",
+      "name": "Summer Night",
+      "category": "night",
+      "emoji": "🌙",
+      "imageGcsPath": "worlds/nature/night/mosquito-night/hero.webp",
+      "heroRealGcsPath": "worlds/nature/night/mosquito-night/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/night/mosquito-night/card.webp",
+      "funFact": "Warm nights buzz with insects.",
+      "quizSoundId": "summer-01",
+      "quizPrompt": "Buzz",
+      "narration": {
+        "intro": "This is summer night.",
+        "introGcsPath": "worlds/nature/night/mosquito-night/narration-intro.mp3",
+        "soundCue": "Listen to summer night.",
+        "soundCueGcsPath": "worlds/nature/night/mosquito-night/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "summer-01",
+          "label": "Buzz",
+          "gcsPath": "worlds/nature/night/mosquito-night/summer-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "morning-birds",
+      "name": "Morning Chorus",
+      "category": "forest",
+      "emoji": "🌅",
+      "imageGcsPath": "worlds/nature/forest/morning-birds/hero.webp",
+      "heroRealGcsPath": "worlds/nature/forest/morning-birds/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/forest/morning-birds/card.webp",
+      "funFact": "Birds sing loudest at dawn.",
+      "quizSoundId": "dawn-01",
+      "quizPrompt": "Tweet",
+      "narration": {
+        "intro": "This is morning chorus.",
+        "introGcsPath": "worlds/nature/forest/morning-birds/narration-intro.mp3",
+        "soundCue": "Listen to morning chorus.",
+        "soundCueGcsPath": "worlds/nature/forest/morning-birds/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "dawn-01",
+          "label": "Birds",
+          "gcsPath": "worlds/nature/forest/morning-birds/dawn-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "storm-surge",
+      "name": "Storm Surge",
+      "category": "weather",
+      "emoji": "🌊",
+      "imageGcsPath": "worlds/nature/weather/storm-surge/hero.webp",
+      "heroRealGcsPath": "worlds/nature/weather/storm-surge/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/weather/storm-surge/card.webp",
+      "funFact": "Big storms push waves ashore.",
+      "quizSoundId": "surge-01",
+      "quizPrompt": "Crash",
+      "narration": {
+        "intro": "This is storm surge.",
+        "introGcsPath": "worlds/nature/weather/storm-surge/narration-intro.mp3",
+        "soundCue": "Listen to storm surge.",
+        "soundCueGcsPath": "worlds/nature/weather/storm-surge/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "surge-01",
+          "label": "Waves",
+          "gcsPath": "worlds/nature/weather/storm-surge/surge-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ice-rain",
+      "name": "Freezing Rain",
+      "category": "weather",
+      "emoji": "🧊",
+      "imageGcsPath": "worlds/nature/weather/ice-rain/hero.webp",
+      "heroRealGcsPath": "worlds/nature/weather/ice-rain/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/weather/ice-rain/card.webp",
+      "funFact": "Ice rain coats trees in glass.",
+      "quizSoundId": "ice-01",
+      "quizPrompt": "Tap",
+      "narration": {
+        "intro": "This is freezing rain.",
+        "introGcsPath": "worlds/nature/weather/ice-rain/narration-intro.mp3",
+        "soundCue": "Listen to freezing rain.",
+        "soundCueGcsPath": "worlds/nature/weather/ice-rain/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "ice-01",
+          "label": "Ice",
+          "gcsPath": "worlds/nature/weather/ice-rain/ice-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spring-peepers",
+      "name": "Spring Peepers",
+      "category": "forest",
+      "emoji": "🐸",
+      "imageGcsPath": "worlds/nature/forest/spring-peepers/hero.webp",
+      "heroRealGcsPath": "worlds/nature/forest/spring-peepers/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/forest/spring-peepers/card.webp",
+      "funFact": "Tiny frogs peep in spring.",
+      "quizSoundId": "peep-01",
+      "quizPrompt": "Peep",
+      "narration": {
+        "intro": "This is spring peepers.",
+        "introGcsPath": "worlds/nature/forest/spring-peepers/narration-intro.mp3",
+        "soundCue": "Listen to spring peepers.",
+        "soundCueGcsPath": "worlds/nature/forest/spring-peepers/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "peep-01",
+          "label": "Peep",
+          "gcsPath": "worlds/nature/forest/spring-peepers/peep-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "owl-dawn",
+      "name": "Dawn Owl",
+      "category": "night",
+      "emoji": "🦉",
+      "imageGcsPath": "worlds/nature/night/owl-dawn/hero.webp",
+      "heroRealGcsPath": "worlds/nature/night/owl-dawn/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/night/owl-dawn/card.webp",
+      "funFact": "Some owls call at twilight.",
+      "quizSoundId": "dawn-owl-01",
+      "quizPrompt": "Hoot",
+      "narration": {
+        "intro": "This is dawn owl.",
+        "introGcsPath": "worlds/nature/night/owl-dawn/narration-intro.mp3",
+        "soundCue": "Listen to dawn owl.",
+        "soundCueGcsPath": "worlds/nature/night/owl-dawn/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "dawn-owl-01",
+          "label": "Hoot",
+          "gcsPath": "worlds/nature/night/owl-dawn/dawn-owl-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "beach-walk",
+      "name": "Beach Walk",
+      "category": "ocean",
+      "emoji": "🏖️",
+      "imageGcsPath": "worlds/nature/ocean/beach-walk/hero.webp",
+      "heroRealGcsPath": "worlds/nature/ocean/beach-walk/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/ocean/beach-walk/card.webp",
+      "funFact": "Sand crunches under bare feet.",
+      "quizSoundId": "sand-01",
+      "quizPrompt": "Crunch",
+      "narration": {
+        "intro": "This is beach walk.",
+        "introGcsPath": "worlds/nature/ocean/beach-walk/narration-intro.mp3",
+        "soundCue": "Listen to beach walk.",
+        "soundCueGcsPath": "worlds/nature/ocean/beach-walk/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "sand-01",
+          "label": "Sand",
+          "gcsPath": "worlds/nature/ocean/beach-walk/sand-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mountain-echo",
+      "name": "Mountain Echo",
+      "category": "weather",
+      "emoji": "⛰️",
+      "imageGcsPath": "worlds/nature/weather/mountain-echo/hero.webp",
+      "heroRealGcsPath": "worlds/nature/weather/mountain-echo/hero.webp",
+      "heroCartoonGcsPath": "worlds/nature/weather/mountain-echo/card.webp",
+      "funFact": "Sounds bounce off mountain walls.",
+      "quizSoundId": "echo-01",
+      "quizPrompt": "Echo",
+      "narration": {
+        "intro": "This is mountain echo.",
+        "introGcsPath": "worlds/nature/weather/mountain-echo/narration-intro.mp3",
+        "soundCue": "Listen to mountain echo.",
+        "soundCueGcsPath": "worlds/nature/weather/mountain-echo/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "echo-01",
+          "label": "Echo",
+          "gcsPath": "worlds/nature/weather/mountain-echo/echo-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
     }
   ]
 }

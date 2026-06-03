@@ -12,6 +12,44 @@ type WorldItemCardProps = {
   onSelect: (item: WorldManifestItem) => void;
 };
 
+export function WorldVisualThumb({
+  item,
+  resolveAssetUrl,
+  size = 72,
+  className,
+}: {
+  item: WorldManifestItem;
+  resolveAssetUrl: (gcsPath: string) => string;
+  size?: number;
+  className?: string;
+}) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const visuals = worldItemVisualPaths(item, resolveAssetUrl);
+  const src = imgFailed ? null : visuals.thumbnail || visuals.card;
+
+  if (!src) {
+    return (
+      <span className={cn("text-4xl", className)} aria-hidden>
+        {item.emoji}
+      </span>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt=""
+      width={size}
+      height={size}
+      loading="lazy"
+      decoding="async"
+      onError={() => setImgFailed(true)}
+      className={cn("rounded-xl object-cover", className)}
+      style={{ width: size, height: size }}
+    />
+  );
+}
+
 export function WorldItemCard({ item, resolveAssetUrl, onSelect }: WorldItemCardProps) {
   const [imgFailed, setImgFailed] = useState(false);
   const visuals = worldItemVisualPaths(item, resolveAssetUrl);
@@ -29,7 +67,7 @@ export function WorldItemCard({ item, resolveAssetUrl, onSelect }: WorldItemCard
         TOUCH_FEEDBACK,
         "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] border border-white/10 bg-[rgba(18,28,60,0.78)] text-left shadow-[0_12px_40px_rgba(0,0,0,0.28)]",
       )}
-      aria-label={item.name}
+      aria-label={`${item.name}, tap to explore sounds`}
     >
       <div
         className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-br from-white/[0.06] via-transparent to-black/20"

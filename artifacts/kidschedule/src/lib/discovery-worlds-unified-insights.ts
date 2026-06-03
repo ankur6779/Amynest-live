@@ -31,8 +31,12 @@ export type UnifiedWorldRow = {
   mastered: boolean;
 };
 
+export type LearningTrend = "up" | "steady" | "down" | "new";
+
 export type UnifiedParentInsights = {
   weeklyLearningMinutes: number;
+  totalLearningMinutes: number;
+  totalSoundsRecognized: number;
   quizAccuracyPct: number;
   recognitionAccuracyPct: number;
   learningStreakDays: number;
@@ -41,6 +45,10 @@ export type UnifiedParentInsights = {
   worldsCompleted: number;
   worldsTotal: number;
   overallProgressPct: number;
+  strongestWorld: UnifiedWorldRow | null;
+  weakestWorld: UnifiedWorldRow | null;
+  mostImprovedWorld: { worldId: WorldId; title: string; emoji: string; deltaMinutes: number } | null;
+  learningTrend: LearningTrend;
   favoriteWorlds: Array<{ worldId: WorldId; title: string; emoji: string; playCount: number }>;
   mostPlayedSounds: Array<{ label: string; emoji: string; worldTitle: string; count: number }>;
   needsMorePractice: Array<{ label: string; emoji: string; worldTitle: string; accuracy: number }>;
@@ -73,7 +81,10 @@ function masteryPct(progress: WorldProgressV2, catalogSize: number): number {
 export function buildUnifiedParentInsights(childId: number): UnifiedParentInsights {
   const worldRows: UnifiedWorldRow[] = [];
   let weeklyLearningMinutes = 0;
+  let totalLearningMinutes = 0;
+  let totalSoundsRecognized = 0;
   let quizCorrect = 0;
+  const weeklyByWorld: Array<{ worldId: WorldId; title: string; emoji: string; minutes: number }> = [];
   let hearCorrect = 0;
   let hearAttempts = 0;
   let totalStickers = 0;
@@ -92,7 +103,16 @@ export function buildUnifiedParentInsights(childId: number): UnifiedParentInsigh
     const mastered = pct >= 80;
     if (mastered) worldsCompleted += 1;
 
-    weeklyLearningMinutes += Object.values(progress.weeklyMinutes).reduce((a, b) => a + b, 0);
+    const weekMinutes = Object.values(progress.weeklyMinutes).reduce((a, b) => a + b, 0);
+    weeklyLearningMinutes += weekMinutes;
+    totalLearningMinutes += Math.round(progress.totalSessionMs / 60000);
+    totalSoundsRecognized += progress.hearFindCorrectTotal + progress.quizCorrectTotal;
+    weeklyByWorld.push({
+      worldId: world.worldId,
+      title: world.title,
+      emoji: world.emoji,
+      minutes: weekMinutes,
+    });
     quizCorrect += progress.quizCorrectTotal;
     hearCorrect += progress.hearFindCorrectTotal;
     hearAttempts += progress.hearFindAttemptTotal;
@@ -185,11 +205,64 @@ export function buildUnifiedParentInsights(childId: number): UnifiedParentInsigh
     nextStep = "Every world is mastered — explore new sounds for fun!";
   }
 
+  const playedRows = worldRows.filter((r) => r.playCount > 0 || r.masteryPct > 0);
+  const strongestWorld =
+    playedRows.length > 0
+      ? [...playedRows].sort((a, b) => b.masteryPct - a.masteryPct || b.playCount - a.playCount)[0]!
+      : null;
+  const weakestWorld =
+    playedRows.length > 0
+      ? [...playedRows].sort((a, b) => a.masteryPct - b.masteryPct || a.playCount - b.playCount)[0]!
+      : null;
+
+  const sortedWeeks = (keys: string[]) =>
+    [...keys].sort((a, b) => b.localeCompare(a));
+  let mostImprovedWorld: UnifiedParentInsights["mostImprovedWorld"] = null;
+  let bestDelta = 0;
+  for (const world of DISCOVERY_WORLDS_REGISTRY) {
+    const progress = loadProgress(world.worldId, childId);
+    const weeks = sortedWeeks(Object.keys(progress.weeklyMinutes));
+    if (weeks.length < 2) continue;
+    const delta =
+      (progress.weeklyMinutes[weeks[0]!] ?? 0) - (progress.weeklyMinutes[weeks[1]!] ?? 0);
+    if (delta > bestDelta) {
+      bestDelta = delta;
+      mostImprovedWorld = {
+        worldId: world.worldId,
+        title: world.title,
+        emoji: world.emoji,
+        deltaMinutes: delta,
+      };
+    }
+  }
+
+  const topWeek = weeklyByWorld.reduce((best, w) => (w.minutes > best.minutes ? w : best), {
+    worldId: "animal_world" as WorldId,
+    title: "",
+    emoji: "",
+    minutes: 0,
+  });
+  let learningTrend: LearningTrend = "new";
+  if (totalLearningMinutes > 0) {
+    learningTrend =
+      mostImprovedWorld && mostImprovedWorld.deltaMinutes >= 5
+        ? "up"
+        : topWeek.minutes >= 10
+          ? "steady"
+          : "down";
+  }
+
   return {
     weeklyLearningMinutes,
+    totalLearningMinutes,
+    totalSoundsRecognized,
     quizAccuracyPct,
     recognitionAccuracyPct,
     learningStreakDays: streakMax,
+    strongestWorld,
+    weakestWorld,
+    mostImprovedWorld,
+    learningTrend,
     totalStickers,
     totalAchievements,
     worldsCompleted,

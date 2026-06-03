@@ -668,6 +668,646 @@
           ]
         }
       ]
+    },
+    {
+      "id": "washing-machine",
+      "name": "Washing Machine",
+      "category": "living",
+      "emoji": "🧺",
+      "imageGcsPath": "worlds/home/living/washing-machine/hero.webp",
+      "heroRealGcsPath": "worlds/home/living/washing-machine/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/living/washing-machine/card.webp",
+      "funFact": "Washers spin clothes clean.",
+      "quizSoundId": "wash-01",
+      "quizPrompt": "Spin",
+      "narration": {
+        "intro": "This is washing machine.",
+        "introGcsPath": "worlds/home/living/washing-machine/narration-intro.mp3",
+        "soundCue": "Listen to washing machine.",
+        "soundCueGcsPath": "worlds/home/living/washing-machine/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "wash-01",
+          "label": "Spin",
+          "gcsPath": "worlds/home/living/washing-machine/wash-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dryer",
+      "name": "Clothes Dryer",
+      "category": "living",
+      "emoji": "👕",
+      "imageGcsPath": "worlds/home/living/dryer/hero.webp",
+      "heroRealGcsPath": "worlds/home/living/dryer/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/living/dryer/card.webp",
+      "funFact": "Dryers tumble clothes warm and dry.",
+      "quizSoundId": "dry-01",
+      "quizPrompt": "Tumble",
+      "narration": {
+        "intro": "This is clothes dryer.",
+        "introGcsPath": "worlds/home/living/dryer/narration-intro.mp3",
+        "soundCue": "Listen to clothes dryer.",
+        "soundCueGcsPath": "worlds/home/living/dryer/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "dry-01",
+          "label": "Tumble",
+          "gcsPath": "worlds/home/living/dryer/dry-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dishwasher",
+      "name": "Dishwasher",
+      "category": "kitchen",
+      "emoji": "🍽️",
+      "imageGcsPath": "worlds/home/kitchen/dishwasher/hero.webp",
+      "heroRealGcsPath": "worlds/home/kitchen/dishwasher/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/kitchen/dishwasher/card.webp",
+      "funFact": "Dishwashers spray hot soapy water.",
+      "quizSoundId": "dish-01",
+      "quizPrompt": "Spray",
+      "narration": {
+        "intro": "This is dishwasher.",
+        "introGcsPath": "worlds/home/kitchen/dishwasher/narration-intro.mp3",
+        "soundCue": "Listen to dishwasher.",
+        "soundCueGcsPath": "worlds/home/kitchen/dishwasher/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "dish-01",
+          "label": "Spray",
+          "gcsPath": "worlds/home/kitchen/dishwasher/dish-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coffee-maker",
+      "name": "Coffee Maker",
+      "category": "kitchen",
+      "emoji": "☕",
+      "imageGcsPath": "worlds/home/kitchen/coffee-maker/hero.webp",
+      "heroRealGcsPath": "worlds/home/kitchen/coffee-maker/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/kitchen/coffee-maker/card.webp",
+      "funFact": "Coffee makers drip hot drinks.",
+      "quizSoundId": "coffee-01",
+      "quizPrompt": "Drip",
+      "narration": {
+        "intro": "This is coffee maker.",
+        "introGcsPath": "worlds/home/kitchen/coffee-maker/narration-intro.mp3",
+        "soundCue": "Listen to coffee maker.",
+        "soundCueGcsPath": "worlds/home/kitchen/coffee-maker/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "coffee-01",
+          "label": "Drip",
+          "gcsPath": "worlds/home/kitchen/coffee-maker/coffee-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blender-smoothie",
+      "name": "Smoothie Blender",
+      "category": "kitchen",
+      "emoji": "🥤",
+      "imageGcsPath": "worlds/home/kitchen/blender-smoothie/hero.webp",
+      "heroRealGcsPath": "worlds/home/kitchen/blender-smoothie/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/kitchen/blender-smoothie/card.webp",
+      "funFact": "Blenders mix fruit smoothies.",
+      "quizSoundId": "smooth-01",
+      "quizPrompt": "Whirr",
+      "narration": {
+        "intro": "This is smoothie blender.",
+        "introGcsPath": "worlds/home/kitchen/blender-smoothie/narration-intro.mp3",
+        "soundCue": "Listen to smoothie blender.",
+        "soundCueGcsPath": "worlds/home/kitchen/blender-smoothie/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "smooth-01",
+          "label": "Blend",
+          "gcsPath": "worlds/home/kitchen/blender-smoothie/smooth-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "garbage-disposal",
+      "name": "Garbage Disposal",
+      "category": "kitchen",
+      "emoji": "🗑️",
+      "imageGcsPath": "worlds/home/kitchen/garbage-disposal/hero.webp",
+      "heroRealGcsPath": "worlds/home/kitchen/garbage-disposal/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/kitchen/garbage-disposal/card.webp",
+      "funFact": "Disposals grind food scraps.",
+      "quizSoundId": "dispose-01",
+      "quizPrompt": "Grind",
+      "narration": {
+        "intro": "This is garbage disposal.",
+        "introGcsPath": "worlds/home/kitchen/garbage-disposal/narration-intro.mp3",
+        "soundCue": "Listen to garbage disposal.",
+        "soundCueGcsPath": "worlds/home/kitchen/garbage-disposal/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "dispose-01",
+          "label": "Grind",
+          "gcsPath": "worlds/home/kitchen/garbage-disposal/dispose-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "electric-toothbrush",
+      "name": "Electric Toothbrush",
+      "category": "bathroom",
+      "emoji": "🪥",
+      "imageGcsPath": "worlds/home/bathroom/electric-toothbrush/hero.webp",
+      "heroRealGcsPath": "worlds/home/bathroom/electric-toothbrush/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/bathroom/electric-toothbrush/card.webp",
+      "funFact": "Electric brushes buzz while cleaning teeth.",
+      "quizSoundId": "brush-01",
+      "quizPrompt": "Buzz",
+      "narration": {
+        "intro": "This is electric toothbrush.",
+        "introGcsPath": "worlds/home/bathroom/electric-toothbrush/narration-intro.mp3",
+        "soundCue": "Listen to electric toothbrush.",
+        "soundCueGcsPath": "worlds/home/bathroom/electric-toothbrush/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "brush-01",
+          "label": "Buzz",
+          "gcsPath": "worlds/home/bathroom/electric-toothbrush/brush-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bathtub-drain",
+      "name": "Bathtub Drain",
+      "category": "bathroom",
+      "emoji": "🛁",
+      "imageGcsPath": "worlds/home/bathroom/bathtub-drain/hero.webp",
+      "heroRealGcsPath": "worlds/home/bathroom/bathtub-drain/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/bathroom/bathtub-drain/card.webp",
+      "funFact": "Water gurgles as tubs drain.",
+      "quizSoundId": "drain-01",
+      "quizPrompt": "Gurgle",
+      "narration": {
+        "intro": "This is bathtub drain.",
+        "introGcsPath": "worlds/home/bathroom/bathtub-drain/narration-intro.mp3",
+        "soundCue": "Listen to bathtub drain.",
+        "soundCueGcsPath": "worlds/home/bathroom/bathtub-drain/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "drain-01",
+          "label": "Drain",
+          "gcsPath": "worlds/home/bathroom/bathtub-drain/drain-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "baby-monitor",
+      "name": "Baby Monitor",
+      "category": "bedroom",
+      "emoji": "📻",
+      "imageGcsPath": "worlds/home/bedroom/baby-monitor/hero.webp",
+      "heroRealGcsPath": "worlds/home/bedroom/baby-monitor/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/bedroom/baby-monitor/card.webp",
+      "funFact": "Monitors let parents hear babies.",
+      "quizSoundId": "monitor-01",
+      "quizPrompt": "Hum",
+      "narration": {
+        "intro": "This is baby monitor.",
+        "introGcsPath": "worlds/home/bedroom/baby-monitor/narration-intro.mp3",
+        "soundCue": "Listen to baby monitor.",
+        "soundCueGcsPath": "worlds/home/bedroom/baby-monitor/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "monitor-01",
+          "label": "Hum",
+          "gcsPath": "worlds/home/bedroom/baby-monitor/monitor-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "white-noise",
+      "name": "White Noise",
+      "category": "bedroom",
+      "emoji": "😴",
+      "imageGcsPath": "worlds/home/bedroom/white-noise/hero.webp",
+      "heroRealGcsPath": "worlds/home/bedroom/white-noise/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/bedroom/white-noise/card.webp",
+      "funFact": "Soft noise helps some people sleep.",
+      "quizSoundId": "white-01",
+      "quizPrompt": "Hiss",
+      "narration": {
+        "intro": "This is white noise.",
+        "introGcsPath": "worlds/home/bedroom/white-noise/narration-intro.mp3",
+        "soundCue": "Listen to white noise.",
+        "soundCueGcsPath": "worlds/home/bedroom/white-noise/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "white-01",
+          "label": "Hiss",
+          "gcsPath": "worlds/home/bedroom/white-noise/white-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ceiling-fan",
+      "name": "Ceiling Fan",
+      "category": "bedroom",
+      "emoji": "🌀",
+      "imageGcsPath": "worlds/home/bedroom/ceiling-fan/hero.webp",
+      "heroRealGcsPath": "worlds/home/bedroom/ceiling-fan/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/bedroom/ceiling-fan/card.webp",
+      "funFact": "Fans spin air to keep rooms cool.",
+      "quizSoundId": "fan-01",
+      "quizPrompt": "Whirr",
+      "narration": {
+        "intro": "This is ceiling fan.",
+        "introGcsPath": "worlds/home/bedroom/ceiling-fan/narration-intro.mp3",
+        "soundCue": "Listen to ceiling fan.",
+        "soundCueGcsPath": "worlds/home/bedroom/ceiling-fan/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "fan-01",
+          "label": "Fan",
+          "gcsPath": "worlds/home/bedroom/ceiling-fan/fan-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "air-conditioner",
+      "name": "Air Conditioner",
+      "category": "living",
+      "emoji": "❄️",
+      "imageGcsPath": "worlds/home/living/air-conditioner/hero.webp",
+      "heroRealGcsPath": "worlds/home/living/air-conditioner/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/living/air-conditioner/card.webp",
+      "funFact": "AC units hum on hot days.",
+      "quizSoundId": "ac-01",
+      "quizPrompt": "Hum",
+      "narration": {
+        "intro": "This is air conditioner.",
+        "introGcsPath": "worlds/home/living/air-conditioner/narration-intro.mp3",
+        "soundCue": "Listen to air conditioner.",
+        "soundCueGcsPath": "worlds/home/living/air-conditioner/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "ac-01",
+          "label": "AC",
+          "gcsPath": "worlds/home/living/air-conditioner/ac-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "heater",
+      "name": "Heater",
+      "category": "living",
+      "emoji": "🔥",
+      "imageGcsPath": "worlds/home/living/heater/hero.webp",
+      "heroRealGcsPath": "worlds/home/living/heater/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/living/heater/card.webp",
+      "funFact": "Heaters warm cold rooms.",
+      "quizSoundId": "heat-01",
+      "quizPrompt": "Click",
+      "narration": {
+        "intro": "This is heater.",
+        "introGcsPath": "worlds/home/living/heater/narration-intro.mp3",
+        "soundCue": "Listen to heater.",
+        "soundCueGcsPath": "worlds/home/living/heater/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "heat-01",
+          "label": "Click",
+          "gcsPath": "worlds/home/living/heater/heat-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "smoke-alarm",
+      "name": "Smoke Alarm",
+      "category": "living",
+      "emoji": "🚨",
+      "imageGcsPath": "worlds/home/living/smoke-alarm/hero.webp",
+      "heroRealGcsPath": "worlds/home/living/smoke-alarm/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/living/smoke-alarm/card.webp",
+      "funFact": "Alarms beep to keep us safe.",
+      "quizSoundId": "smoke-01",
+      "quizPrompt": "Beep",
+      "narration": {
+        "intro": "This is smoke alarm.",
+        "introGcsPath": "worlds/home/living/smoke-alarm/narration-intro.mp3",
+        "soundCue": "Listen to smoke alarm.",
+        "soundCueGcsPath": "worlds/home/living/smoke-alarm/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "smoke-01",
+          "label": "Beep",
+          "gcsPath": "worlds/home/living/smoke-alarm/smoke-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "washing-hands",
+      "name": "Washing Hands",
+      "category": "bathroom",
+      "emoji": "🧼",
+      "imageGcsPath": "worlds/home/bathroom/washing-hands/hero.webp",
+      "heroRealGcsPath": "worlds/home/bathroom/washing-hands/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/bathroom/washing-hands/card.webp",
+      "funFact": "Soap bubbles pop while scrubbing.",
+      "quizSoundId": "soap-01",
+      "quizPrompt": "Splash",
+      "narration": {
+        "intro": "This is washing hands.",
+        "introGcsPath": "worlds/home/bathroom/washing-hands/narration-intro.mp3",
+        "soundCue": "Listen to washing hands.",
+        "soundCueGcsPath": "worlds/home/bathroom/washing-hands/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "soap-01",
+          "label": "Water",
+          "gcsPath": "worlds/home/bathroom/washing-hands/soap-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stove-sizzle",
+      "name": "Stove Sizzle",
+      "category": "kitchen",
+      "emoji": "🍳",
+      "imageGcsPath": "worlds/home/kitchen/stove-sizzle/hero.webp",
+      "heroRealGcsPath": "worlds/home/kitchen/stove-sizzle/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/kitchen/stove-sizzle/card.webp",
+      "funFact": "Food sizzles on a hot pan.",
+      "quizSoundId": "sizzle-01",
+      "quizPrompt": "Sizzle",
+      "narration": {
+        "intro": "This is stove sizzle.",
+        "introGcsPath": "worlds/home/kitchen/stove-sizzle/narration-intro.mp3",
+        "soundCue": "Listen to stove sizzle.",
+        "soundCueGcsPath": "worlds/home/kitchen/stove-sizzle/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "sizzle-01",
+          "label": "Sizzle",
+          "gcsPath": "worlds/home/kitchen/stove-sizzle/sizzle-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clock-tick",
+      "name": "Wall Clock",
+      "category": "living",
+      "emoji": "🕰️",
+      "imageGcsPath": "worlds/home/living/clock-tick/hero.webp",
+      "heroRealGcsPath": "worlds/home/living/clock-tick/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/living/clock-tick/card.webp",
+      "funFact": "Clocks tick each second.",
+      "quizSoundId": "tick-01",
+      "quizPrompt": "Tick",
+      "narration": {
+        "intro": "This is wall clock.",
+        "introGcsPath": "worlds/home/living/clock-tick/narration-intro.mp3",
+        "soundCue": "Listen to wall clock.",
+        "soundCueGcsPath": "worlds/home/living/clock-tick/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "tick-01",
+          "label": "Tick",
+          "gcsPath": "worlds/home/living/clock-tick/tick-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "garage-tools",
+      "name": "Garage Tools",
+      "category": "garage",
+      "emoji": "🔧",
+      "imageGcsPath": "worlds/home/garage/garage-tools/hero.webp",
+      "heroRealGcsPath": "worlds/home/garage/garage-tools/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/garage/garage-tools/card.webp",
+      "funFact": "Tools clank in busy garages.",
+      "quizSoundId": "tools-01",
+      "quizPrompt": "Clank",
+      "narration": {
+        "intro": "This is garage tools.",
+        "introGcsPath": "worlds/home/garage/garage-tools/narration-intro.mp3",
+        "soundCue": "Listen to garage tools.",
+        "soundCueGcsPath": "worlds/home/garage/garage-tools/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "tools-01",
+          "label": "Clank",
+          "gcsPath": "worlds/home/garage/garage-tools/tools-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sprinkler",
+      "name": "Sprinkler",
+      "category": "garage",
+      "emoji": "💦",
+      "imageGcsPath": "worlds/home/garage/sprinkler/hero.webp",
+      "heroRealGcsPath": "worlds/home/garage/sprinkler/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/garage/sprinkler/card.webp",
+      "funFact": "Sprinklers water the lawn.",
+      "quizSoundId": "sprink-01",
+      "quizPrompt": "Spray",
+      "narration": {
+        "intro": "This is sprinkler.",
+        "introGcsPath": "worlds/home/garage/sprinkler/narration-intro.mp3",
+        "soundCue": "Listen to sprinkler.",
+        "soundCueGcsPath": "worlds/home/garage/sprinkler/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "sprink-01",
+          "label": "Spray",
+          "gcsPath": "worlds/home/garage/sprinkler/sprink-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "window-rain",
+      "name": "Rain on Window",
+      "category": "bedroom",
+      "emoji": "🪟",
+      "imageGcsPath": "worlds/home/bedroom/window-rain/hero.webp",
+      "heroRealGcsPath": "worlds/home/bedroom/window-rain/hero.webp",
+      "heroCartoonGcsPath": "worlds/home/bedroom/window-rain/card.webp",
+      "funFact": "Rain taps on glass panes.",
+      "quizSoundId": "win-rain-01",
+      "quizPrompt": "Tap",
+      "narration": {
+        "intro": "This is rain on window.",
+        "introGcsPath": "worlds/home/bedroom/window-rain/narration-intro.mp3",
+        "soundCue": "Listen to rain on window.",
+        "soundCueGcsPath": "worlds/home/bedroom/window-rain/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "win-rain-01",
+          "label": "Rain",
+          "gcsPath": "worlds/home/bedroom/window-rain/win-rain-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
     }
   ]
 }

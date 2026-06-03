@@ -7,6 +7,7 @@ import type { PlatformParentInsights } from "@workspace/world-engine";
 import { Printer } from "lucide-react";
 import { DISCOVERY_WORLDS_REGISTRY } from "@workspace/discovery-worlds";
 import { AppLink } from "@/components/app-link";
+import { DISCOVERY_COPY, DiscoveryEmptyState } from "./discovery-world-polish";
 
 type UnifiedParentDashboardProps = {
   childId: number;
@@ -53,18 +54,24 @@ export function UnifiedParentDashboard({ childId }: UnifiedParentDashboardProps)
   };
 
   return (
-    <section className="discovery-unified-parent space-y-5 print:space-y-4">
+    <section
+      className="discovery-unified-parent space-y-5 print:space-y-4"
+      aria-labelledby="unified-parent-insights-heading"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
             Parent insights
           </p>
-          <h2 className="text-xl font-bold text-foreground">All Discovery Worlds</h2>
+          <h2 id="unified-parent-insights-heading" className="text-xl font-bold text-foreground">
+            All Discovery Worlds
+          </h2>
         </div>
         <button
           type="button"
           onClick={() => window.print()}
-          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold"
+          aria-label="Print learning report"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold"
         >
           <Printer className="h-3.5 w-3.5" />
           Print report
@@ -103,7 +110,9 @@ export function UnifiedParentDashboard({ childId }: UnifiedParentDashboardProps)
         </h3>
         <ul className="mt-3 space-y-2">
           {insights.favoriteWorlds.length === 0 && (
-            <li className="text-sm text-muted-foreground">Play any world to see favorites.</li>
+            <li>
+              <DiscoveryEmptyState variant="emptyParentFavorites" />
+            </li>
           )}
           {insights.favoriteWorlds.map((w) => (
             <li key={w.worldId} className="flex justify-between text-sm">
@@ -122,7 +131,11 @@ export function UnifiedParentDashboard({ childId }: UnifiedParentDashboardProps)
         </h3>
         <ul className="mt-3 space-y-2">
           {insights.mostPlayedSounds.length === 0 && (
-            <li className="text-sm text-muted-foreground">Listening activity will appear here.</li>
+            <li>
+              <p className="text-sm text-muted-foreground">
+                {DISCOVERY_COPY.emptyParentActivity.message}
+              </p>
+            </li>
           )}
           {insights.mostPlayedSounds.map((s) => (
             <li key={`${s.worldTitle}-${s.label}`} className="flex justify-between text-sm">

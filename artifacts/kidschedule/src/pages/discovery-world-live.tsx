@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Loader2, UserPlus } from "lucide-react";
+import { ArrowLeft, UserPlus } from "lucide-react";
 import { useParams } from "wouter";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { getDiscoveryWorldDefinition } from "@workspace/discovery-worlds";
 import { AppLink, useAppNavigate } from "@/components/app-link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { LockedBlock } from "@/components/locked-block";
 import { DiscoveryWorldExperience } from "@/components/discovery-world/discovery-world-experience";
+import {
+  DiscoveryEmptyState,
+  DiscoveryErrorState,
+  DiscoveryPageLoading,
+} from "@/components/discovery-world/discovery-world-polish";
 import { getDiscoveryWorldConfigBySlug } from "@/lib/discovery-world-config";
 import { useHubModuleGate } from "@/hooks/use-hub-module-gate";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
@@ -59,31 +63,41 @@ export default function DiscoveryWorldLivePage() {
 
   if (!config || !definition) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
-        World not found or not live yet.
+      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <DiscoveryErrorState
+          action={
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-full"
+              onClick={() => back("discovery-world-live-back")}
+            >
+              Back to Discovery Worlds
+            </Button>
+          }
+        />
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-4 w-4 animate-spin" />
+      <div className="min-h-screen bg-background">
+        <DiscoveryPageLoading />
       </div>
     );
   }
 
   if (!activeChild) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-6">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="font-bold">Add a child to begin</p>
-            <Button asChild className="mt-4">
-              <AppLink href="/children/new">Add child</AppLink>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-6">
+        <DiscoveryEmptyState variant="noChild" className="max-w-md w-full" />
+        <Button asChild className="rounded-full px-6">
+          <AppLink href="/children/new">
+            <UserPlus className="mr-2 h-4 w-4" aria-hidden />
+            Add child
+          </AppLink>
+        </Button>
       </div>
     );
   }
@@ -95,9 +109,10 @@ export default function DiscoveryWorldLivePage() {
           <button
             type="button"
             onClick={() => back("discovery-world-live-back")}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground"
+            aria-label="Back to Discovery Worlds"
+            className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" aria-hidden />
             Discovery Worlds
           </button>
         </div>

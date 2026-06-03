@@ -7,19 +7,57 @@
       "category": "farm",
       "emoji": "🐮",
       "imageGcsPath": "animal-world/farm/cow/hero.webp",
+      "heroRealGcsPath": "animal-world/farm/cow/hero.webp",
+      "heroCartoonGcsPath": "animal-world/farm/cow/card.webp",
       "funFact": "Cows can sleep standing up, but they dream lying down.",
       "quizSoundId": "moo-01",
       "quizPrompt": "Moo",
       "narration": {
-        "intro": "This is a cow.",
+        "intro": "This is cow.",
         "introGcsPath": "animal-world/farm/cow/narration-intro.mp3",
-        "soundCue": "This cow says moo.",
+        "soundCue": "Listen to the cow.",
         "soundCueGcsPath": "animal-world/farm/cow/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "moo-01", "label": "Moo 1", "gcsPath": "animal-world/farm/cow/moo-01.mp3", "durationSec": 1.2, "waveform": [0.3, 0.7, 0.9, 0.6, 0.4, 0.2] },
-        { "id": "moo-02", "label": "Moo 2", "gcsPath": "animal-world/farm/cow/moo-02.mp3", "durationSec": 1.4, "waveform": [0.2, 0.5, 0.8, 0.9, 0.5, 0.3] },
-        { "id": "moo-happy", "label": "Happy Moo", "gcsPath": "animal-world/farm/cow/moo-happy.mp3", "durationSec": 1.1, "waveform": [0.4, 0.6, 0.8, 0.7, 0.5, 0.3] }
+        {
+          "id": "moo-01",
+          "label": "Moo",
+          "gcsPath": "animal-world/farm/cow/moo-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "moo-02",
+          "label": "Moo 2",
+          "gcsPath": "animal-world/farm/cow/moo-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "moo-happy",
+          "label": "Happy Moo",
+          "gcsPath": "animal-world/farm/cow/moo-happy.mp3",
+          "durationSec": 1.9000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
       ]
     },
     {
@@ -28,18 +66,44 @@
       "category": "farm",
       "emoji": "🐴",
       "imageGcsPath": "animal-world/farm/horse/hero.webp",
+      "heroRealGcsPath": "animal-world/farm/horse/hero.webp",
+      "heroCartoonGcsPath": "animal-world/farm/horse/card.webp",
       "funFact": "Horses can run shortly after birth.",
       "quizSoundId": "neigh-01",
       "quizPrompt": "Neigh",
       "narration": {
-        "intro": "This is a horse.",
+        "intro": "This is horse.",
         "introGcsPath": "animal-world/farm/horse/narration-intro.mp3",
-        "soundCue": "This horse says neigh.",
+        "soundCue": "Listen to the horse.",
         "soundCueGcsPath": "animal-world/farm/horse/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "neigh-01", "label": "Neigh 1", "gcsPath": "animal-world/farm/horse/neigh-01.mp3", "durationSec": 1.3, "waveform": [0.2, 0.6, 0.9, 0.7, 0.4, 0.2] },
-        { "id": "neigh-02", "label": "Neigh 2", "gcsPath": "animal-world/farm/horse/neigh-02.mp3", "durationSec": 1.5, "waveform": [0.3, 0.5, 0.8, 0.9, 0.6, 0.3] }
+        {
+          "id": "neigh-01",
+          "label": "Neigh",
+          "gcsPath": "animal-world/farm/horse/neigh-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "neigh-02",
+          "label": "Neigh 2",
+          "gcsPath": "animal-world/farm/horse/neigh-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
       ]
     },
     {
@@ -48,18 +112,504 @@
       "category": "farm",
       "emoji": "🐑",
       "imageGcsPath": "animal-world/farm/sheep/hero.webp",
+      "heroRealGcsPath": "animal-world/farm/sheep/hero.webp",
+      "heroCartoonGcsPath": "animal-world/farm/sheep/card.webp",
       "funFact": "Sheep have excellent memories and recognize faces.",
       "quizSoundId": "baa-01",
       "quizPrompt": "Baa",
       "narration": {
-        "intro": "This is a sheep.",
+        "intro": "This is sheep.",
         "introGcsPath": "animal-world/farm/sheep/narration-intro.mp3",
-        "soundCue": "This sheep says baa.",
+        "soundCue": "Listen to the sheep.",
         "soundCueGcsPath": "animal-world/farm/sheep/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "baa-01", "label": "Baa 1", "gcsPath": "animal-world/farm/sheep/baa-01.mp3", "durationSec": 1.0, "waveform": [0.4, 0.7, 0.8, 0.5, 0.3, 0.2] },
-        { "id": "baa-02", "label": "Baa 2", "gcsPath": "animal-world/farm/sheep/baa-02.mp3", "durationSec": 1.1, "waveform": [0.3, 0.6, 0.9, 0.6, 0.4, 0.2] }
+        {
+          "id": "baa-01",
+          "label": "Baa",
+          "gcsPath": "animal-world/farm/sheep/baa-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "baa-02",
+          "label": "Baa 2",
+          "gcsPath": "animal-world/farm/sheep/baa-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pig",
+      "name": "Pig",
+      "category": "farm",
+      "emoji": "🐷",
+      "imageGcsPath": "animal-world/farm/pig/hero.webp",
+      "heroRealGcsPath": "animal-world/farm/pig/hero.webp",
+      "heroCartoonGcsPath": "animal-world/farm/pig/card.webp",
+      "funFact": "Pigs love to roll in cool mud to stay comfortable.",
+      "quizSoundId": "oink-01",
+      "quizPrompt": "Oink",
+      "narration": {
+        "intro": "This is pig.",
+        "introGcsPath": "animal-world/farm/pig/narration-intro.mp3",
+        "soundCue": "Listen to the pig.",
+        "soundCueGcsPath": "animal-world/farm/pig/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "oink-01",
+          "label": "Oink",
+          "gcsPath": "animal-world/farm/pig/oink-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "oink-02",
+          "label": "Oink 2",
+          "gcsPath": "animal-world/farm/pig/oink-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chicken",
+      "name": "Chicken",
+      "category": "farm",
+      "emoji": "🐔",
+      "imageGcsPath": "animal-world/farm/chicken/hero.webp",
+      "heroRealGcsPath": "animal-world/farm/chicken/hero.webp",
+      "heroCartoonGcsPath": "animal-world/farm/chicken/card.webp",
+      "funFact": "Chickens cluck to talk with their flock.",
+      "quizSoundId": "cluck-01",
+      "quizPrompt": "Cluck",
+      "narration": {
+        "intro": "This is chicken.",
+        "introGcsPath": "animal-world/farm/chicken/narration-intro.mp3",
+        "soundCue": "Listen to the chicken.",
+        "soundCueGcsPath": "animal-world/farm/chicken/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "cluck-01",
+          "label": "Cluck",
+          "gcsPath": "animal-world/farm/chicken/cluck-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "cluck-02",
+          "label": "Cluck 2",
+          "gcsPath": "animal-world/farm/chicken/cluck-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rooster",
+      "name": "Rooster",
+      "category": "farm",
+      "emoji": "🐓",
+      "imageGcsPath": "animal-world/farm/rooster/hero.webp",
+      "heroRealGcsPath": "animal-world/farm/rooster/hero.webp",
+      "heroCartoonGcsPath": "animal-world/farm/rooster/card.webp",
+      "funFact": "Roosters crow to greet the morning.",
+      "quizSoundId": "crow-01",
+      "quizPrompt": "Crow",
+      "narration": {
+        "intro": "This is rooster.",
+        "introGcsPath": "animal-world/farm/rooster/narration-intro.mp3",
+        "soundCue": "Listen to the rooster.",
+        "soundCueGcsPath": "animal-world/farm/rooster/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "crow-01",
+          "label": "Crow",
+          "gcsPath": "animal-world/farm/rooster/crow-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "crow-02",
+          "label": "Crow 2",
+          "gcsPath": "animal-world/farm/rooster/crow-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "duck",
+      "name": "Duck",
+      "category": "farm",
+      "emoji": "🦆",
+      "imageGcsPath": "animal-world/farm/duck/hero.webp",
+      "heroRealGcsPath": "animal-world/farm/duck/hero.webp",
+      "heroCartoonGcsPath": "animal-world/farm/duck/card.webp",
+      "funFact": "Ducks have waterproof feathers.",
+      "quizSoundId": "quack-01",
+      "quizPrompt": "Quack",
+      "narration": {
+        "intro": "This is duck.",
+        "introGcsPath": "animal-world/farm/duck/narration-intro.mp3",
+        "soundCue": "Listen to the duck.",
+        "soundCueGcsPath": "animal-world/farm/duck/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "quack-01",
+          "label": "Quack",
+          "gcsPath": "animal-world/farm/duck/quack-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "quack-02",
+          "label": "Quack 2",
+          "gcsPath": "animal-world/farm/duck/quack-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "goat",
+      "name": "Goat",
+      "category": "farm",
+      "emoji": "🐐",
+      "imageGcsPath": "animal-world/farm/goat/hero.webp",
+      "heroRealGcsPath": "animal-world/farm/goat/hero.webp",
+      "heroCartoonGcsPath": "animal-world/farm/goat/card.webp",
+      "funFact": "Goats are curious climbers.",
+      "quizSoundId": "bleat-01",
+      "quizPrompt": "Bleat",
+      "narration": {
+        "intro": "This is goat.",
+        "introGcsPath": "animal-world/farm/goat/narration-intro.mp3",
+        "soundCue": "Listen to the goat.",
+        "soundCueGcsPath": "animal-world/farm/goat/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "bleat-01",
+          "label": "Bleat",
+          "gcsPath": "animal-world/farm/goat/bleat-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "bleat-02",
+          "label": "Bleat 2",
+          "gcsPath": "animal-world/farm/goat/bleat-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "turkey",
+      "name": "Turkey",
+      "category": "farm",
+      "emoji": "🦃",
+      "imageGcsPath": "animal-world/farm/turkey/hero.webp",
+      "heroRealGcsPath": "animal-world/farm/turkey/hero.webp",
+      "heroCartoonGcsPath": "animal-world/farm/turkey/card.webp",
+      "funFact": "Turkeys can change the color of their heads.",
+      "quizSoundId": "gobble-01",
+      "quizPrompt": "Gobble",
+      "narration": {
+        "intro": "This is turkey.",
+        "introGcsPath": "animal-world/farm/turkey/narration-intro.mp3",
+        "soundCue": "Listen to the turkey.",
+        "soundCueGcsPath": "animal-world/farm/turkey/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "gobble-01",
+          "label": "Gobble",
+          "gcsPath": "animal-world/farm/turkey/gobble-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "gobble-02",
+          "label": "Gobble 2",
+          "gcsPath": "animal-world/farm/turkey/gobble-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "donkey",
+      "name": "Donkey",
+      "category": "farm",
+      "emoji": "🫏",
+      "imageGcsPath": "animal-world/farm/donkey/hero.webp",
+      "heroRealGcsPath": "animal-world/farm/donkey/hero.webp",
+      "heroCartoonGcsPath": "animal-world/farm/donkey/card.webp",
+      "funFact": "Donkeys have long ears to hear far away.",
+      "quizSoundId": "bray-01",
+      "quizPrompt": "Bray",
+      "narration": {
+        "intro": "This is donkey.",
+        "introGcsPath": "animal-world/farm/donkey/narration-intro.mp3",
+        "soundCue": "Listen to the donkey.",
+        "soundCueGcsPath": "animal-world/farm/donkey/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "bray-01",
+          "label": "Bray",
+          "gcsPath": "animal-world/farm/donkey/bray-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "bray-02",
+          "label": "Bray 2",
+          "gcsPath": "animal-world/farm/donkey/bray-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rabbit",
+      "name": "Rabbit",
+      "category": "farm",
+      "emoji": "🐰",
+      "imageGcsPath": "animal-world/farm/rabbit/hero.webp",
+      "heroRealGcsPath": "animal-world/farm/rabbit/hero.webp",
+      "heroCartoonGcsPath": "animal-world/farm/rabbit/card.webp",
+      "funFact": "Rabbits hop quickly with strong back legs.",
+      "quizSoundId": "thump-01",
+      "quizPrompt": "Hop",
+      "narration": {
+        "intro": "This is rabbit.",
+        "introGcsPath": "animal-world/farm/rabbit/narration-intro.mp3",
+        "soundCue": "Listen to the rabbit.",
+        "soundCueGcsPath": "animal-world/farm/rabbit/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "thump-01",
+          "label": "Hop",
+          "gcsPath": "animal-world/farm/rabbit/thump-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "squeak-01",
+          "label": "Squeak",
+          "gcsPath": "animal-world/farm/rabbit/squeak-01.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "goose",
+      "name": "Goose",
+      "category": "farm",
+      "emoji": "🪿",
+      "imageGcsPath": "animal-world/farm/goose/hero.webp",
+      "heroRealGcsPath": "animal-world/farm/goose/hero.webp",
+      "heroCartoonGcsPath": "animal-world/farm/goose/card.webp",
+      "funFact": "Geese honk loudly when they fly.",
+      "quizSoundId": "honk-01",
+      "quizPrompt": "Honk",
+      "narration": {
+        "intro": "This is goose.",
+        "introGcsPath": "animal-world/farm/goose/narration-intro.mp3",
+        "soundCue": "Listen to the goose.",
+        "soundCueGcsPath": "animal-world/farm/goose/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "honk-01",
+          "label": "Honk",
+          "gcsPath": "animal-world/farm/goose/honk-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "honk-02",
+          "label": "Honk 2",
+          "gcsPath": "animal-world/farm/goose/honk-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "llama",
+      "name": "Llama",
+      "category": "farm",
+      "emoji": "🦙",
+      "imageGcsPath": "animal-world/farm/llama/hero.webp",
+      "heroRealGcsPath": "animal-world/farm/llama/hero.webp",
+      "heroCartoonGcsPath": "animal-world/farm/llama/card.webp",
+      "funFact": "Llamas live high in the mountains.",
+      "quizSoundId": "hum-01",
+      "quizPrompt": "Hum",
+      "narration": {
+        "intro": "This is llama.",
+        "introGcsPath": "animal-world/farm/llama/narration-intro.mp3",
+        "soundCue": "Listen to the llama.",
+        "soundCueGcsPath": "animal-world/farm/llama/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "hum-01",
+          "label": "Hum",
+          "gcsPath": "animal-world/farm/llama/hum-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "hum-02",
+          "label": "Hum 2",
+          "gcsPath": "animal-world/farm/llama/hum-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
       ]
     },
     {
@@ -68,21 +618,57 @@
       "category": "wild",
       "emoji": "🦁",
       "imageGcsPath": "animal-world/wild/lion/hero.webp",
-      "funFact": "A lion's roar can be heard up to five miles away.",
+      "heroRealGcsPath": "animal-world/wild/lion/hero.webp",
+      "heroCartoonGcsPath": "animal-world/wild/lion/card.webp",
+      "funFact": "A lion's roar can be heard from far away.",
       "quizSoundId": "roar-01",
       "quizPrompt": "Roar",
       "narration": {
-        "intro": "This is a lion.",
+        "intro": "This is lion.",
         "introGcsPath": "animal-world/wild/lion/narration-intro.mp3",
-        "soundCue": "This lion says roar.",
+        "soundCue": "Listen to the lion.",
         "soundCueGcsPath": "animal-world/wild/lion/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "roar-01", "label": "Roar 1", "gcsPath": "animal-world/wild/lion/roar-01.mp3", "durationSec": 2.1, "waveform": [0.2, 0.5, 0.9, 1.0, 0.7, 0.4, 0.2] },
-        { "id": "roar-02", "label": "Roar 2", "gcsPath": "animal-world/wild/lion/roar-02.mp3", "durationSec": 2.3, "waveform": [0.3, 0.6, 0.95, 0.8, 0.5, 0.3] },
-        { "id": "roar-angry", "label": "Angry Roar", "gcsPath": "animal-world/wild/lion/roar-angry.mp3", "durationSec": 2.0, "waveform": [0.4, 0.7, 1.0, 0.9, 0.6, 0.3] },
-        { "id": "roar-baby", "label": "Baby Lion", "gcsPath": "animal-world/wild/lion/roar-baby.mp3", "durationSec": 1.2, "waveform": [0.3, 0.5, 0.7, 0.6, 0.4, 0.2] },
-        { "id": "roar-family", "label": "Lion Family", "gcsPath": "animal-world/wild/lion/roar-family.mp3", "durationSec": 2.8, "waveform": [0.2, 0.4, 0.7, 0.9, 0.8, 0.6, 0.4, 0.2] }
+        {
+          "id": "roar-01",
+          "label": "Roar",
+          "gcsPath": "animal-world/wild/lion/roar-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "roar-02",
+          "label": "Roar 2",
+          "gcsPath": "animal-world/wild/lion/roar-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "roar-baby",
+          "label": "Cub Roar",
+          "gcsPath": "animal-world/wild/lion/roar-baby.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
       ]
     },
     {
@@ -91,18 +677,550 @@
       "category": "wild",
       "emoji": "🐘",
       "imageGcsPath": "animal-world/wild/elephant/hero.webp",
-      "funFact": "Elephants are the only mammals that cannot jump.",
+      "heroRealGcsPath": "animal-world/wild/elephant/hero.webp",
+      "heroCartoonGcsPath": "animal-world/wild/elephant/card.webp",
+      "funFact": "Elephants use their trunks like a hand.",
       "quizSoundId": "trumpet-01",
       "quizPrompt": "Trumpet",
       "narration": {
-        "intro": "This is an elephant.",
+        "intro": "This is elephant.",
         "introGcsPath": "animal-world/wild/elephant/narration-intro.mp3",
-        "soundCue": "This elephant says trumpet.",
+        "soundCue": "Listen to the elephant.",
         "soundCueGcsPath": "animal-world/wild/elephant/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "trumpet-01", "label": "Trumpet 1", "gcsPath": "animal-world/wild/elephant/trumpet-01.mp3", "durationSec": 1.8, "waveform": [0.3, 0.6, 0.9, 0.7, 0.5, 0.3] },
-        { "id": "trumpet-02", "label": "Trumpet 2", "gcsPath": "animal-world/wild/elephant/trumpet-02.mp3", "durationSec": 2.0, "waveform": [0.2, 0.5, 0.8, 0.9, 0.6, 0.3] }
+        {
+          "id": "trumpet-01",
+          "label": "Trumpet",
+          "gcsPath": "animal-world/wild/elephant/trumpet-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "trumpet-02",
+          "label": "Trumpet 2",
+          "gcsPath": "animal-world/wild/elephant/trumpet-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bear",
+      "name": "Bear",
+      "category": "wild",
+      "emoji": "🐻",
+      "imageGcsPath": "animal-world/wild/bear/hero.webp",
+      "heroRealGcsPath": "animal-world/wild/bear/hero.webp",
+      "heroCartoonGcsPath": "animal-world/wild/bear/card.webp",
+      "funFact": "Bears can smell food from miles away.",
+      "quizSoundId": "growl-01",
+      "quizPrompt": "Growl",
+      "narration": {
+        "intro": "This is bear.",
+        "introGcsPath": "animal-world/wild/bear/narration-intro.mp3",
+        "soundCue": "Listen to the bear.",
+        "soundCueGcsPath": "animal-world/wild/bear/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "growl-01",
+          "label": "Growl",
+          "gcsPath": "animal-world/wild/bear/growl-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "growl-02",
+          "label": "Growl 2",
+          "gcsPath": "animal-world/wild/bear/growl-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wolf",
+      "name": "Wolf",
+      "category": "wild",
+      "emoji": "🐺",
+      "imageGcsPath": "animal-world/wild/wolf/hero.webp",
+      "heroRealGcsPath": "animal-world/wild/wolf/hero.webp",
+      "heroCartoonGcsPath": "animal-world/wild/wolf/card.webp",
+      "funFact": "Wolves howl to stay in touch with their pack.",
+      "quizSoundId": "howl-01",
+      "quizPrompt": "Howl",
+      "narration": {
+        "intro": "This is wolf.",
+        "introGcsPath": "animal-world/wild/wolf/narration-intro.mp3",
+        "soundCue": "Listen to the wolf.",
+        "soundCueGcsPath": "animal-world/wild/wolf/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "howl-01",
+          "label": "Howl",
+          "gcsPath": "animal-world/wild/wolf/howl-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "howl-02",
+          "label": "Howl 2",
+          "gcsPath": "animal-world/wild/wolf/howl-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fox",
+      "name": "Fox",
+      "category": "wild",
+      "emoji": "🦊",
+      "imageGcsPath": "animal-world/wild/fox/hero.webp",
+      "heroRealGcsPath": "animal-world/wild/fox/hero.webp",
+      "heroCartoonGcsPath": "animal-world/wild/fox/card.webp",
+      "funFact": "Foxes have bushy tails for balance.",
+      "quizSoundId": "yip-01",
+      "quizPrompt": "Yip",
+      "narration": {
+        "intro": "This is fox.",
+        "introGcsPath": "animal-world/wild/fox/narration-intro.mp3",
+        "soundCue": "Listen to the fox.",
+        "soundCueGcsPath": "animal-world/wild/fox/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "yip-01",
+          "label": "Yip",
+          "gcsPath": "animal-world/wild/fox/yip-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "yip-02",
+          "label": "Yip 2",
+          "gcsPath": "animal-world/wild/fox/yip-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zebra",
+      "name": "Zebra",
+      "category": "wild",
+      "emoji": "🦓",
+      "imageGcsPath": "animal-world/wild/zebra/hero.webp",
+      "heroRealGcsPath": "animal-world/wild/zebra/hero.webp",
+      "heroCartoonGcsPath": "animal-world/wild/zebra/card.webp",
+      "funFact": "Every zebra has unique stripes.",
+      "quizSoundId": "zebra-01",
+      "quizPrompt": "Bray",
+      "narration": {
+        "intro": "This is zebra.",
+        "introGcsPath": "animal-world/wild/zebra/narration-intro.mp3",
+        "soundCue": "Listen to the zebra.",
+        "soundCueGcsPath": "animal-world/wild/zebra/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "zebra-01",
+          "label": "Bray",
+          "gcsPath": "animal-world/wild/zebra/zebra-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "zebra-02",
+          "label": "Neigh 2",
+          "gcsPath": "animal-world/wild/zebra/zebra-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "giraffe",
+      "name": "Giraffe",
+      "category": "wild",
+      "emoji": "🦒",
+      "imageGcsPath": "animal-world/wild/giraffe/hero.webp",
+      "heroRealGcsPath": "animal-world/wild/giraffe/hero.webp",
+      "heroCartoonGcsPath": "animal-world/wild/giraffe/card.webp",
+      "funFact": "Giraffes have very long necks to reach leaves.",
+      "quizSoundId": "giraffe-01",
+      "quizPrompt": "Hum",
+      "narration": {
+        "intro": "This is giraffe.",
+        "introGcsPath": "animal-world/wild/giraffe/narration-intro.mp3",
+        "soundCue": "Listen to the giraffe.",
+        "soundCueGcsPath": "animal-world/wild/giraffe/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "giraffe-01",
+          "label": "Hum",
+          "gcsPath": "animal-world/wild/giraffe/giraffe-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "giraffe-02",
+          "label": "Hum 2",
+          "gcsPath": "animal-world/wild/giraffe/giraffe-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hippo",
+      "name": "Hippo",
+      "category": "wild",
+      "emoji": "🦛",
+      "imageGcsPath": "animal-world/wild/hippo/hero.webp",
+      "heroRealGcsPath": "animal-world/wild/hippo/hero.webp",
+      "heroCartoonGcsPath": "animal-world/wild/hippo/card.webp",
+      "funFact": "Hippos spend lots of time in rivers.",
+      "quizSoundId": "grunt-01",
+      "quizPrompt": "Grunt",
+      "narration": {
+        "intro": "This is hippo.",
+        "introGcsPath": "animal-world/wild/hippo/narration-intro.mp3",
+        "soundCue": "Listen to the hippo.",
+        "soundCueGcsPath": "animal-world/wild/hippo/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "grunt-01",
+          "label": "Grunt",
+          "gcsPath": "animal-world/wild/hippo/grunt-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "grunt-02",
+          "label": "Grunt 2",
+          "gcsPath": "animal-world/wild/hippo/grunt-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rhino",
+      "name": "Rhino",
+      "category": "wild",
+      "emoji": "🦏",
+      "imageGcsPath": "animal-world/wild/rhino/hero.webp",
+      "heroRealGcsPath": "animal-world/wild/rhino/hero.webp",
+      "heroCartoonGcsPath": "animal-world/wild/rhino/card.webp",
+      "funFact": "Rhinos have thick skin and strong horns.",
+      "quizSoundId": "snort-01",
+      "quizPrompt": "Snort",
+      "narration": {
+        "intro": "This is rhino.",
+        "introGcsPath": "animal-world/wild/rhino/narration-intro.mp3",
+        "soundCue": "Listen to the rhino.",
+        "soundCueGcsPath": "animal-world/wild/rhino/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "snort-01",
+          "label": "Snort",
+          "gcsPath": "animal-world/wild/rhino/snort-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "snort-02",
+          "label": "Snort 2",
+          "gcsPath": "animal-world/wild/rhino/snort-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "leopard",
+      "name": "Leopard",
+      "category": "wild",
+      "emoji": "🐆",
+      "imageGcsPath": "animal-world/wild/leopard/hero.webp",
+      "heroRealGcsPath": "animal-world/wild/leopard/hero.webp",
+      "heroCartoonGcsPath": "animal-world/wild/leopard/card.webp",
+      "funFact": "Leopards are excellent climbers.",
+      "quizSoundId": "leopard-01",
+      "quizPrompt": "Growl",
+      "narration": {
+        "intro": "This is leopard.",
+        "introGcsPath": "animal-world/wild/leopard/narration-intro.mp3",
+        "soundCue": "Listen to the leopard.",
+        "soundCueGcsPath": "animal-world/wild/leopard/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "leopard-01",
+          "label": "Growl",
+          "gcsPath": "animal-world/wild/leopard/leopard-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "leopard-02",
+          "label": "Growl 2",
+          "gcsPath": "animal-world/wild/leopard/leopard-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cheetah",
+      "name": "Cheetah",
+      "category": "wild",
+      "emoji": "🐆",
+      "imageGcsPath": "animal-world/wild/cheetah/hero.webp",
+      "heroRealGcsPath": "animal-world/wild/cheetah/hero.webp",
+      "heroCartoonGcsPath": "animal-world/wild/cheetah/card.webp",
+      "funFact": "Cheetahs are the fastest land animals.",
+      "quizSoundId": "chirp-01",
+      "quizPrompt": "Chirp",
+      "narration": {
+        "intro": "This is cheetah.",
+        "introGcsPath": "animal-world/wild/cheetah/narration-intro.mp3",
+        "soundCue": "Listen to the cheetah.",
+        "soundCueGcsPath": "animal-world/wild/cheetah/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "chirp-01",
+          "label": "Chirp",
+          "gcsPath": "animal-world/wild/cheetah/chirp-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "chirp-02",
+          "label": "Chirp 2",
+          "gcsPath": "animal-world/wild/cheetah/chirp-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kangaroo",
+      "name": "Kangaroo",
+      "category": "wild",
+      "emoji": "🦘",
+      "imageGcsPath": "animal-world/wild/kangaroo/hero.webp",
+      "heroRealGcsPath": "animal-world/wild/kangaroo/hero.webp",
+      "heroCartoonGcsPath": "animal-world/wild/kangaroo/card.webp",
+      "funFact": "Kangaroos carry babies in a pouch.",
+      "quizSoundId": "thump-01",
+      "quizPrompt": "Thump",
+      "narration": {
+        "intro": "This is kangaroo.",
+        "introGcsPath": "animal-world/wild/kangaroo/narration-intro.mp3",
+        "soundCue": "Listen to the kangaroo.",
+        "soundCueGcsPath": "animal-world/wild/kangaroo/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "thump-01",
+          "label": "Thump",
+          "gcsPath": "animal-world/wild/kangaroo/thump-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "thump-02",
+          "label": "Thump 2",
+          "gcsPath": "animal-world/wild/kangaroo/thump-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "panda",
+      "name": "Panda",
+      "category": "wild",
+      "emoji": "🐼",
+      "imageGcsPath": "animal-world/wild/panda/hero.webp",
+      "heroRealGcsPath": "animal-world/wild/panda/hero.webp",
+      "heroCartoonGcsPath": "animal-world/wild/panda/card.webp",
+      "funFact": "Pandas love to eat bamboo.",
+      "quizSoundId": "panda-01",
+      "quizPrompt": "Bleat",
+      "narration": {
+        "intro": "This is panda.",
+        "introGcsPath": "animal-world/wild/panda/narration-intro.mp3",
+        "soundCue": "Listen to the panda.",
+        "soundCueGcsPath": "animal-world/wild/panda/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "panda-01",
+          "label": "Bleat",
+          "gcsPath": "animal-world/wild/panda/panda-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "panda-02",
+          "label": "Bleat 2",
+          "gcsPath": "animal-world/wild/panda/panda-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
       ]
     },
     {
@@ -111,18 +1229,44 @@
       "category": "sea",
       "emoji": "🐬",
       "imageGcsPath": "animal-world/sea/dolphin/hero.webp",
+      "heroRealGcsPath": "animal-world/sea/dolphin/hero.webp",
+      "heroCartoonGcsPath": "animal-world/sea/dolphin/card.webp",
       "funFact": "Dolphins sleep with one eye open.",
       "quizSoundId": "click-01",
       "quizPrompt": "Click",
       "narration": {
-        "intro": "This is a dolphin.",
+        "intro": "This is dolphin.",
         "introGcsPath": "animal-world/sea/dolphin/narration-intro.mp3",
-        "soundCue": "This dolphin says click.",
+        "soundCue": "Listen to the dolphin.",
         "soundCueGcsPath": "animal-world/sea/dolphin/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "click-01", "label": "Click 1", "gcsPath": "animal-world/sea/dolphin/click-01.mp3", "durationSec": 0.9, "waveform": [0.5, 0.8, 0.6, 0.4, 0.3, 0.2] },
-        { "id": "squeak-01", "label": "Squeak", "gcsPath": "animal-world/sea/dolphin/squeak-01.mp3", "durationSec": 1.0, "waveform": [0.4, 0.7, 0.9, 0.5, 0.3, 0.2] }
+        {
+          "id": "click-01",
+          "label": "Click",
+          "gcsPath": "animal-world/sea/dolphin/click-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "squeak-01",
+          "label": "Squeak",
+          "gcsPath": "animal-world/sea/dolphin/squeak-01.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
       ]
     },
     {
@@ -131,18 +1275,550 @@
       "category": "sea",
       "emoji": "🐋",
       "imageGcsPath": "animal-world/sea/whale/hero.webp",
-      "funFact": "Blue whales are the largest animals ever known.",
+      "heroRealGcsPath": "animal-world/sea/whale/hero.webp",
+      "heroCartoonGcsPath": "animal-world/sea/whale/card.webp",
+      "funFact": "Whales are the largest animals on Earth.",
       "quizSoundId": "song-01",
-      "quizPrompt": "Whale song",
+      "quizPrompt": "Song",
       "narration": {
-        "intro": "This is a whale.",
+        "intro": "This is whale.",
         "introGcsPath": "animal-world/sea/whale/narration-intro.mp3",
-        "soundCue": "This whale sings.",
+        "soundCue": "Listen to the whale.",
         "soundCueGcsPath": "animal-world/sea/whale/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "song-01", "label": "Whale Song 1", "gcsPath": "animal-world/sea/whale/song-01.mp3", "durationSec": 3.2, "waveform": [0.2, 0.4, 0.6, 0.8, 0.9, 0.7, 0.5, 0.3] },
-        { "id": "song-02", "label": "Whale Song 2", "gcsPath": "animal-world/sea/whale/song-02.mp3", "durationSec": 2.8, "waveform": [0.3, 0.5, 0.7, 0.9, 0.8, 0.5, 0.3] }
+        {
+          "id": "song-01",
+          "label": "Song",
+          "gcsPath": "animal-world/sea/whale/song-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "song-02",
+          "label": "Song 2",
+          "gcsPath": "animal-world/sea/whale/song-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shark",
+      "name": "Shark",
+      "category": "sea",
+      "emoji": "🦈",
+      "imageGcsPath": "animal-world/sea/shark/hero.webp",
+      "heroRealGcsPath": "animal-world/sea/shark/hero.webp",
+      "heroCartoonGcsPath": "animal-world/sea/shark/card.webp",
+      "funFact": "Sharks have been around for millions of years.",
+      "quizSoundId": "splash-01",
+      "quizPrompt": "Splash",
+      "narration": {
+        "intro": "This is shark.",
+        "introGcsPath": "animal-world/sea/shark/narration-intro.mp3",
+        "soundCue": "Listen to the shark.",
+        "soundCueGcsPath": "animal-world/sea/shark/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "splash-01",
+          "label": "Splash",
+          "gcsPath": "animal-world/sea/shark/splash-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "splash-02",
+          "label": "Splash 2",
+          "gcsPath": "animal-world/sea/shark/splash-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seal",
+      "name": "Seal",
+      "category": "sea",
+      "emoji": "🦭",
+      "imageGcsPath": "animal-world/sea/seal/hero.webp",
+      "heroRealGcsPath": "animal-world/sea/seal/hero.webp",
+      "heroCartoonGcsPath": "animal-world/sea/seal/card.webp",
+      "funFact": "Seals clap their flippers on ice.",
+      "quizSoundId": "seal-01",
+      "quizPrompt": "Bark",
+      "narration": {
+        "intro": "This is seal.",
+        "introGcsPath": "animal-world/sea/seal/narration-intro.mp3",
+        "soundCue": "Listen to the seal.",
+        "soundCueGcsPath": "animal-world/sea/seal/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "seal-01",
+          "label": "Bark",
+          "gcsPath": "animal-world/sea/seal/seal-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "seal-02",
+          "label": "Bark 2",
+          "gcsPath": "animal-world/sea/seal/seal-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "octopus",
+      "name": "Octopus",
+      "category": "sea",
+      "emoji": "🐙",
+      "imageGcsPath": "animal-world/sea/octopus/hero.webp",
+      "heroRealGcsPath": "animal-world/sea/octopus/hero.webp",
+      "heroCartoonGcsPath": "animal-world/sea/octopus/card.webp",
+      "funFact": "Octopuses have eight flexible arms.",
+      "quizSoundId": "squirt-01",
+      "quizPrompt": "Squirt",
+      "narration": {
+        "intro": "This is octopus.",
+        "introGcsPath": "animal-world/sea/octopus/narration-intro.mp3",
+        "soundCue": "Listen to the octopus.",
+        "soundCueGcsPath": "animal-world/sea/octopus/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "squirt-01",
+          "label": "Squirt",
+          "gcsPath": "animal-world/sea/octopus/squirt-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "squirt-02",
+          "label": "Squirt 2",
+          "gcsPath": "animal-world/sea/octopus/squirt-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crab",
+      "name": "Crab",
+      "category": "sea",
+      "emoji": "🦀",
+      "imageGcsPath": "animal-world/sea/crab/hero.webp",
+      "heroRealGcsPath": "animal-world/sea/crab/hero.webp",
+      "heroCartoonGcsPath": "animal-world/sea/crab/card.webp",
+      "funFact": "Crabs walk sideways on the beach.",
+      "quizSoundId": "crab-01",
+      "quizPrompt": "Click",
+      "narration": {
+        "intro": "This is crab.",
+        "introGcsPath": "animal-world/sea/crab/narration-intro.mp3",
+        "soundCue": "Listen to the crab.",
+        "soundCueGcsPath": "animal-world/sea/crab/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "crab-01",
+          "label": "Click",
+          "gcsPath": "animal-world/sea/crab/crab-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "crab-02",
+          "label": "Click 2",
+          "gcsPath": "animal-world/sea/crab/crab-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seahorse",
+      "name": "Seahorse",
+      "category": "sea",
+      "emoji": "🪼",
+      "imageGcsPath": "animal-world/sea/seahorse/hero.webp",
+      "heroRealGcsPath": "animal-world/sea/seahorse/hero.webp",
+      "heroCartoonGcsPath": "animal-world/sea/seahorse/card.webp",
+      "funFact": "Seahorses swim upright in the water.",
+      "quizSoundId": "bubble-01",
+      "quizPrompt": "Bubble",
+      "narration": {
+        "intro": "This is seahorse.",
+        "introGcsPath": "animal-world/sea/seahorse/narration-intro.mp3",
+        "soundCue": "Listen to the seahorse.",
+        "soundCueGcsPath": "animal-world/sea/seahorse/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "bubble-01",
+          "label": "Bubble",
+          "gcsPath": "animal-world/sea/seahorse/bubble-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "bubble-02",
+          "label": "Bubble 2",
+          "gcsPath": "animal-world/sea/seahorse/bubble-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "starfish",
+      "name": "Starfish",
+      "category": "sea",
+      "emoji": "⭐",
+      "imageGcsPath": "animal-world/sea/starfish/hero.webp",
+      "heroRealGcsPath": "animal-world/sea/starfish/hero.webp",
+      "heroCartoonGcsPath": "animal-world/sea/starfish/card.webp",
+      "funFact": "Starfish can regrow lost arms.",
+      "quizSoundId": "wave-01",
+      "quizPrompt": "Wave",
+      "narration": {
+        "intro": "This is starfish.",
+        "introGcsPath": "animal-world/sea/starfish/narration-intro.mp3",
+        "soundCue": "Listen to the starfish.",
+        "soundCueGcsPath": "animal-world/sea/starfish/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "wave-01",
+          "label": "Wave",
+          "gcsPath": "animal-world/sea/starfish/wave-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "wave-02",
+          "label": "Wave 2",
+          "gcsPath": "animal-world/sea/starfish/wave-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jellyfish",
+      "name": "Jellyfish",
+      "category": "sea",
+      "emoji": "🪼",
+      "imageGcsPath": "animal-world/sea/jellyfish/hero.webp",
+      "heroRealGcsPath": "animal-world/sea/jellyfish/hero.webp",
+      "heroCartoonGcsPath": "animal-world/sea/jellyfish/card.webp",
+      "funFact": "Jellyfish drift with ocean currents.",
+      "quizSoundId": "pulse-01",
+      "quizPrompt": "Pulse",
+      "narration": {
+        "intro": "This is jellyfish.",
+        "introGcsPath": "animal-world/sea/jellyfish/narration-intro.mp3",
+        "soundCue": "Listen to the jellyfish.",
+        "soundCueGcsPath": "animal-world/sea/jellyfish/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "pulse-01",
+          "label": "Pulse",
+          "gcsPath": "animal-world/sea/jellyfish/pulse-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "pulse-02",
+          "label": "Pulse 2",
+          "gcsPath": "animal-world/sea/jellyfish/pulse-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sea-turtle",
+      "name": "Sea Turtle",
+      "category": "sea",
+      "emoji": "🐢",
+      "imageGcsPath": "animal-world/sea/sea-turtle/hero.webp",
+      "heroRealGcsPath": "animal-world/sea/sea-turtle/hero.webp",
+      "heroCartoonGcsPath": "animal-world/sea/sea-turtle/card.webp",
+      "funFact": "Sea turtles travel very long distances.",
+      "quizSoundId": "turtle-01",
+      "quizPrompt": "Splash",
+      "narration": {
+        "intro": "This is sea turtle.",
+        "introGcsPath": "animal-world/sea/sea-turtle/narration-intro.mp3",
+        "soundCue": "Listen to the sea turtle.",
+        "soundCueGcsPath": "animal-world/sea/sea-turtle/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "turtle-01",
+          "label": "Splash",
+          "gcsPath": "animal-world/sea/sea-turtle/turtle-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "turtle-02",
+          "label": "Splash 2",
+          "gcsPath": "animal-world/sea/sea-turtle/turtle-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clownfish",
+      "name": "Clownfish",
+      "category": "sea",
+      "emoji": "🐠",
+      "imageGcsPath": "animal-world/sea/clownfish/hero.webp",
+      "heroRealGcsPath": "animal-world/sea/clownfish/hero.webp",
+      "heroCartoonGcsPath": "animal-world/sea/clownfish/card.webp",
+      "funFact": "Clownfish live safely among sea anemones.",
+      "quizSoundId": "clown-01",
+      "quizPrompt": "Bubble",
+      "narration": {
+        "intro": "This is clownfish.",
+        "introGcsPath": "animal-world/sea/clownfish/narration-intro.mp3",
+        "soundCue": "Listen to the clownfish.",
+        "soundCueGcsPath": "animal-world/sea/clownfish/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "clown-01",
+          "label": "Bubble",
+          "gcsPath": "animal-world/sea/clownfish/clown-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "clown-02",
+          "label": "Bubble 2",
+          "gcsPath": "animal-world/sea/clownfish/clown-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "walrus",
+      "name": "Walrus",
+      "category": "sea",
+      "emoji": "🦭",
+      "imageGcsPath": "animal-world/sea/walrus/hero.webp",
+      "heroRealGcsPath": "animal-world/sea/walrus/hero.webp",
+      "heroCartoonGcsPath": "animal-world/sea/walrus/card.webp",
+      "funFact": "Walruses use tusks to pull onto ice.",
+      "quizSoundId": "walrus-01",
+      "quizPrompt": "Bellow",
+      "narration": {
+        "intro": "This is walrus.",
+        "introGcsPath": "animal-world/sea/walrus/narration-intro.mp3",
+        "soundCue": "Listen to the walrus.",
+        "soundCueGcsPath": "animal-world/sea/walrus/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "walrus-01",
+          "label": "Bellow",
+          "gcsPath": "animal-world/sea/walrus/walrus-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "walrus-02",
+          "label": "Bellow 2",
+          "gcsPath": "animal-world/sea/walrus/walrus-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "orca",
+      "name": "Orca",
+      "category": "sea",
+      "emoji": "🐋",
+      "imageGcsPath": "animal-world/sea/orca/hero.webp",
+      "heroRealGcsPath": "animal-world/sea/orca/hero.webp",
+      "heroCartoonGcsPath": "animal-world/sea/orca/card.webp",
+      "funFact": "Orcas are also called killer whales.",
+      "quizSoundId": "orca-01",
+      "quizPrompt": "Call",
+      "narration": {
+        "intro": "This is orca.",
+        "introGcsPath": "animal-world/sea/orca/narration-intro.mp3",
+        "soundCue": "Listen to the orca.",
+        "soundCueGcsPath": "animal-world/sea/orca/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "orca-01",
+          "label": "Call",
+          "gcsPath": "animal-world/sea/orca/orca-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "orca-02",
+          "label": "Call 2",
+          "gcsPath": "animal-world/sea/orca/orca-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
       ]
     },
     {
@@ -151,18 +1827,44 @@
       "category": "birds",
       "emoji": "🦉",
       "imageGcsPath": "animal-world/birds/owl/hero.webp",
-      "funFact": "Owls can turn their heads almost all the way around.",
+      "heroRealGcsPath": "animal-world/birds/owl/hero.webp",
+      "heroCartoonGcsPath": "animal-world/birds/owl/card.webp",
+      "funFact": "Owls can turn their heads very far.",
       "quizSoundId": "hoot-01",
       "quizPrompt": "Hoot",
       "narration": {
-        "intro": "This is an owl.",
+        "intro": "This is owl.",
         "introGcsPath": "animal-world/birds/owl/narration-intro.mp3",
-        "soundCue": "This owl says hoot.",
+        "soundCue": "Listen to the owl.",
         "soundCueGcsPath": "animal-world/birds/owl/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "hoot-01", "label": "Hoot 1", "gcsPath": "animal-world/birds/owl/hoot-01.mp3", "durationSec": 1.1, "waveform": [0.3, 0.7, 0.9, 0.5, 0.3, 0.2] },
-        { "id": "hoot-02", "label": "Hoot 2", "gcsPath": "animal-world/birds/owl/hoot-02.mp3", "durationSec": 1.2, "waveform": [0.4, 0.6, 0.8, 0.7, 0.4, 0.2] }
+        {
+          "id": "hoot-01",
+          "label": "Hoot",
+          "gcsPath": "animal-world/birds/owl/hoot-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "hoot-02",
+          "label": "Hoot 2",
+          "gcsPath": "animal-world/birds/owl/hoot-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
       ]
     },
     {
@@ -171,18 +1873,550 @@
       "category": "birds",
       "emoji": "🦜",
       "imageGcsPath": "animal-world/birds/parrot/hero.webp",
-      "funFact": "Some parrots can live over 80 years.",
+      "heroRealGcsPath": "animal-world/birds/parrot/hero.webp",
+      "heroCartoonGcsPath": "animal-world/birds/parrot/card.webp",
+      "funFact": "Parrots can mimic many sounds.",
       "quizSoundId": "squawk-01",
       "quizPrompt": "Squawk",
       "narration": {
-        "intro": "This is a parrot.",
+        "intro": "This is parrot.",
         "introGcsPath": "animal-world/birds/parrot/narration-intro.mp3",
-        "soundCue": "This parrot says squawk.",
+        "soundCue": "Listen to the parrot.",
         "soundCueGcsPath": "animal-world/birds/parrot/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "squawk-01", "label": "Squawk 1", "gcsPath": "animal-world/birds/parrot/squawk-01.mp3", "durationSec": 0.8, "waveform": [0.5, 0.9, 0.7, 0.4, 0.3, 0.2] },
-        { "id": "squawk-02", "label": "Squawk 2", "gcsPath": "animal-world/birds/parrot/squawk-02.mp3", "durationSec": 0.9, "waveform": [0.4, 0.8, 0.9, 0.5, 0.3, 0.2] }
+        {
+          "id": "squawk-01",
+          "label": "Squawk",
+          "gcsPath": "animal-world/birds/parrot/squawk-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "squawk-02",
+          "label": "Squawk 2",
+          "gcsPath": "animal-world/birds/parrot/squawk-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "eagle",
+      "name": "Eagle",
+      "category": "birds",
+      "emoji": "🦅",
+      "imageGcsPath": "animal-world/birds/eagle/hero.webp",
+      "heroRealGcsPath": "animal-world/birds/eagle/hero.webp",
+      "heroCartoonGcsPath": "animal-world/birds/eagle/card.webp",
+      "funFact": "Eagles have incredibly sharp eyesight.",
+      "quizSoundId": "screech-01",
+      "quizPrompt": "Screech",
+      "narration": {
+        "intro": "This is eagle.",
+        "introGcsPath": "animal-world/birds/eagle/narration-intro.mp3",
+        "soundCue": "Listen to the eagle.",
+        "soundCueGcsPath": "animal-world/birds/eagle/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "screech-01",
+          "label": "Screech",
+          "gcsPath": "animal-world/birds/eagle/screech-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "screech-02",
+          "label": "Screech 2",
+          "gcsPath": "animal-world/birds/eagle/screech-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crow",
+      "name": "Crow",
+      "category": "birds",
+      "emoji": "🐦‍⬛",
+      "imageGcsPath": "animal-world/birds/crow/hero.webp",
+      "heroRealGcsPath": "animal-world/birds/crow/hero.webp",
+      "heroCartoonGcsPath": "animal-world/birds/crow/card.webp",
+      "funFact": "Crows are very clever birds.",
+      "quizSoundId": "caw-01",
+      "quizPrompt": "Caw",
+      "narration": {
+        "intro": "This is crow.",
+        "introGcsPath": "animal-world/birds/crow/narration-intro.mp3",
+        "soundCue": "Listen to the crow.",
+        "soundCueGcsPath": "animal-world/birds/crow/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "caw-01",
+          "label": "Caw",
+          "gcsPath": "animal-world/birds/crow/caw-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "caw-02",
+          "label": "Caw 2",
+          "gcsPath": "animal-world/birds/crow/caw-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "peacock",
+      "name": "Peacock",
+      "category": "birds",
+      "emoji": "🦚",
+      "imageGcsPath": "animal-world/birds/peacock/hero.webp",
+      "heroRealGcsPath": "animal-world/birds/peacock/hero.webp",
+      "heroCartoonGcsPath": "animal-world/birds/peacock/card.webp",
+      "funFact": "Peacocks fan out colorful tail feathers.",
+      "quizSoundId": "peacock-01",
+      "quizPrompt": "Call",
+      "narration": {
+        "intro": "This is peacock.",
+        "introGcsPath": "animal-world/birds/peacock/narration-intro.mp3",
+        "soundCue": "Listen to the peacock.",
+        "soundCueGcsPath": "animal-world/birds/peacock/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "peacock-01",
+          "label": "Call",
+          "gcsPath": "animal-world/birds/peacock/peacock-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "peacock-02",
+          "label": "Call 2",
+          "gcsPath": "animal-world/birds/peacock/peacock-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flamingo",
+      "name": "Flamingo",
+      "category": "birds",
+      "emoji": "🦩",
+      "imageGcsPath": "animal-world/birds/flamingo/hero.webp",
+      "heroRealGcsPath": "animal-world/birds/flamingo/hero.webp",
+      "heroCartoonGcsPath": "animal-world/birds/flamingo/card.webp",
+      "funFact": "Flamingos stand on one leg to rest.",
+      "quizSoundId": "flamingo-01",
+      "quizPrompt": "Honk",
+      "narration": {
+        "intro": "This is flamingo.",
+        "introGcsPath": "animal-world/birds/flamingo/narration-intro.mp3",
+        "soundCue": "Listen to the flamingo.",
+        "soundCueGcsPath": "animal-world/birds/flamingo/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "flamingo-01",
+          "label": "Honk",
+          "gcsPath": "animal-world/birds/flamingo/flamingo-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "flamingo-02",
+          "label": "Honk 2",
+          "gcsPath": "animal-world/birds/flamingo/flamingo-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "robin",
+      "name": "Robin",
+      "category": "birds",
+      "emoji": "🐦",
+      "imageGcsPath": "animal-world/birds/robin/hero.webp",
+      "heroRealGcsPath": "animal-world/birds/robin/hero.webp",
+      "heroCartoonGcsPath": "animal-world/birds/robin/card.webp",
+      "funFact": "Robins sing cheerful spring songs.",
+      "quizSoundId": "robin-01",
+      "quizPrompt": "Chirp",
+      "narration": {
+        "intro": "This is robin.",
+        "introGcsPath": "animal-world/birds/robin/narration-intro.mp3",
+        "soundCue": "Listen to the robin.",
+        "soundCueGcsPath": "animal-world/birds/robin/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "robin-01",
+          "label": "Chirp",
+          "gcsPath": "animal-world/birds/robin/robin-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "robin-02",
+          "label": "Chirp 2",
+          "gcsPath": "animal-world/birds/robin/robin-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "swan",
+      "name": "Swan",
+      "category": "birds",
+      "emoji": "🦢",
+      "imageGcsPath": "animal-world/birds/swan/hero.webp",
+      "heroRealGcsPath": "animal-world/birds/swan/hero.webp",
+      "heroCartoonGcsPath": "animal-world/birds/swan/card.webp",
+      "funFact": "Swans glide gracefully on lakes.",
+      "quizSoundId": "swan-01",
+      "quizPrompt": "Trumpet",
+      "narration": {
+        "intro": "This is swan.",
+        "introGcsPath": "animal-world/birds/swan/narration-intro.mp3",
+        "soundCue": "Listen to the swan.",
+        "soundCueGcsPath": "animal-world/birds/swan/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "swan-01",
+          "label": "Trumpet",
+          "gcsPath": "animal-world/birds/swan/swan-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "swan-02",
+          "label": "Trumpet 2",
+          "gcsPath": "animal-world/birds/swan/swan-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "woodpecker",
+      "name": "Woodpecker",
+      "category": "birds",
+      "emoji": "🪶",
+      "imageGcsPath": "animal-world/birds/woodpecker/hero.webp",
+      "heroRealGcsPath": "animal-world/birds/woodpecker/hero.webp",
+      "heroCartoonGcsPath": "animal-world/birds/woodpecker/card.webp",
+      "funFact": "Woodpeckers tap trees to find insects.",
+      "quizSoundId": "tap-01",
+      "quizPrompt": "Tap",
+      "narration": {
+        "intro": "This is woodpecker.",
+        "introGcsPath": "animal-world/birds/woodpecker/narration-intro.mp3",
+        "soundCue": "Listen to the woodpecker.",
+        "soundCueGcsPath": "animal-world/birds/woodpecker/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "tap-01",
+          "label": "Tap",
+          "gcsPath": "animal-world/birds/woodpecker/tap-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "tap-02",
+          "label": "Tap 2",
+          "gcsPath": "animal-world/birds/woodpecker/tap-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pelican",
+      "name": "Pelican",
+      "category": "birds",
+      "emoji": "🐦",
+      "imageGcsPath": "animal-world/birds/pelican/hero.webp",
+      "heroRealGcsPath": "animal-world/birds/pelican/hero.webp",
+      "heroCartoonGcsPath": "animal-world/birds/pelican/card.webp",
+      "funFact": "Pelicans scoop fish in their big beak pouch.",
+      "quizSoundId": "pelican-01",
+      "quizPrompt": "Splash",
+      "narration": {
+        "intro": "This is pelican.",
+        "introGcsPath": "animal-world/birds/pelican/narration-intro.mp3",
+        "soundCue": "Listen to the pelican.",
+        "soundCueGcsPath": "animal-world/birds/pelican/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "pelican-01",
+          "label": "Splash",
+          "gcsPath": "animal-world/birds/pelican/pelican-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "pelican-02",
+          "label": "Splash 2",
+          "gcsPath": "animal-world/birds/pelican/pelican-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hawk",
+      "name": "Hawk",
+      "category": "birds",
+      "emoji": "🦅",
+      "imageGcsPath": "animal-world/birds/hawk/hero.webp",
+      "heroRealGcsPath": "animal-world/birds/hawk/hero.webp",
+      "heroCartoonGcsPath": "animal-world/birds/hawk/card.webp",
+      "funFact": "Hawks soar high while hunting.",
+      "quizSoundId": "hawk-01",
+      "quizPrompt": "Cry",
+      "narration": {
+        "intro": "This is hawk.",
+        "introGcsPath": "animal-world/birds/hawk/narration-intro.mp3",
+        "soundCue": "Listen to the hawk.",
+        "soundCueGcsPath": "animal-world/birds/hawk/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "hawk-01",
+          "label": "Cry",
+          "gcsPath": "animal-world/birds/hawk/hawk-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "hawk-02",
+          "label": "Cry 2",
+          "gcsPath": "animal-world/birds/hawk/hawk-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "canary",
+      "name": "Canary",
+      "category": "birds",
+      "emoji": "🐤",
+      "imageGcsPath": "animal-world/birds/canary/hero.webp",
+      "heroRealGcsPath": "animal-world/birds/canary/hero.webp",
+      "heroCartoonGcsPath": "animal-world/birds/canary/card.webp",
+      "funFact": "Canaries sing bright cheerful notes.",
+      "quizSoundId": "canary-01",
+      "quizPrompt": "Trill",
+      "narration": {
+        "intro": "This is canary.",
+        "introGcsPath": "animal-world/birds/canary/narration-intro.mp3",
+        "soundCue": "Listen to the canary.",
+        "soundCueGcsPath": "animal-world/birds/canary/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "canary-01",
+          "label": "Trill",
+          "gcsPath": "animal-world/birds/canary/canary-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "canary-02",
+          "label": "Trill 2",
+          "gcsPath": "animal-world/birds/canary/canary-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pigeon",
+      "name": "Pigeon",
+      "category": "birds",
+      "emoji": "🕊️",
+      "imageGcsPath": "animal-world/birds/pigeon/hero.webp",
+      "heroRealGcsPath": "animal-world/birds/pigeon/hero.webp",
+      "heroCartoonGcsPath": "animal-world/birds/pigeon/card.webp",
+      "funFact": "Pigeons coo softly in cities.",
+      "quizSoundId": "coo-01",
+      "quizPrompt": "Coo",
+      "narration": {
+        "intro": "This is pigeon.",
+        "introGcsPath": "animal-world/birds/pigeon/narration-intro.mp3",
+        "soundCue": "Listen to the pigeon.",
+        "soundCueGcsPath": "animal-world/birds/pigeon/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "coo-01",
+          "label": "Coo",
+          "gcsPath": "animal-world/birds/pigeon/coo-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "coo-02",
+          "label": "Coo 2",
+          "gcsPath": "animal-world/birds/pigeon/coo-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
       ]
     },
     {
@@ -191,80 +2425,1266 @@
       "category": "insects",
       "emoji": "🐝",
       "imageGcsPath": "animal-world/insects/bee/hero.webp",
-      "funFact": "Bees dance to tell each other where flowers are.",
+      "heroRealGcsPath": "animal-world/insects/bee/hero.webp",
+      "heroCartoonGcsPath": "animal-world/insects/bee/card.webp",
+      "funFact": "Bees help flowers make seeds.",
       "quizSoundId": "buzz-01",
       "quizPrompt": "Buzz",
       "narration": {
-        "intro": "This is a bee.",
+        "intro": "This is bee.",
         "introGcsPath": "animal-world/insects/bee/narration-intro.mp3",
-        "soundCue": "This bee says buzz.",
+        "soundCue": "Listen to the bee.",
         "soundCueGcsPath": "animal-world/insects/bee/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "buzz-01", "label": "Buzz 1", "gcsPath": "animal-world/insects/bee/buzz-01.mp3", "durationSec": 1.5, "waveform": [0.6, 0.8, 0.9, 0.8, 0.7, 0.6, 0.5] },
-        { "id": "buzz-02", "label": "Buzz 2", "gcsPath": "animal-world/insects/bee/buzz-02.mp3", "durationSec": 1.3, "waveform": [0.5, 0.7, 0.9, 0.8, 0.6, 0.4] }
+        {
+          "id": "buzz-01",
+          "label": "Buzz",
+          "gcsPath": "animal-world/insects/bee/buzz-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "buzz-02",
+          "label": "Buzz 2",
+          "gcsPath": "animal-world/insects/bee/buzz-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "butterfly",
+      "name": "Butterfly",
+      "category": "insects",
+      "emoji": "🦋",
+      "imageGcsPath": "animal-world/insects/butterfly/hero.webp",
+      "heroRealGcsPath": "animal-world/insects/butterfly/hero.webp",
+      "heroCartoonGcsPath": "animal-world/insects/butterfly/card.webp",
+      "funFact": "Butterflies taste with their feet.",
+      "quizSoundId": "flutter-01",
+      "quizPrompt": "Flutter",
+      "narration": {
+        "intro": "This is butterfly.",
+        "introGcsPath": "animal-world/insects/butterfly/narration-intro.mp3",
+        "soundCue": "Listen to the butterfly.",
+        "soundCueGcsPath": "animal-world/insects/butterfly/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "flutter-01",
+          "label": "Flutter",
+          "gcsPath": "animal-world/insects/butterfly/flutter-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "flutter-02",
+          "label": "Flutter 2",
+          "gcsPath": "animal-world/insects/butterfly/flutter-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cricket",
+      "name": "Cricket",
+      "category": "insects",
+      "emoji": "🦗",
+      "imageGcsPath": "animal-world/insects/cricket/hero.webp",
+      "heroRealGcsPath": "animal-world/insects/cricket/hero.webp",
+      "heroCartoonGcsPath": "animal-world/insects/cricket/card.webp",
+      "funFact": "Crickets chirp on warm nights.",
+      "quizSoundId": "cricket-01",
+      "quizPrompt": "Chirp",
+      "narration": {
+        "intro": "This is cricket.",
+        "introGcsPath": "animal-world/insects/cricket/narration-intro.mp3",
+        "soundCue": "Listen to the cricket.",
+        "soundCueGcsPath": "animal-world/insects/cricket/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "cricket-01",
+          "label": "Chirp",
+          "gcsPath": "animal-world/insects/cricket/cricket-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "cricket-02",
+          "label": "Chirp 2",
+          "gcsPath": "animal-world/insects/cricket/cricket-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ant",
+      "name": "Ant",
+      "category": "insects",
+      "emoji": "🐜",
+      "imageGcsPath": "animal-world/insects/ant/hero.webp",
+      "heroRealGcsPath": "animal-world/insects/ant/hero.webp",
+      "heroCartoonGcsPath": "animal-world/insects/ant/card.webp",
+      "funFact": "Ants work together in colonies.",
+      "quizSoundId": "ant-01",
+      "quizPrompt": "Rustle",
+      "narration": {
+        "intro": "This is ant.",
+        "introGcsPath": "animal-world/insects/ant/narration-intro.mp3",
+        "soundCue": "Listen to the ant.",
+        "soundCueGcsPath": "animal-world/insects/ant/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "ant-01",
+          "label": "Rustle",
+          "gcsPath": "animal-world/insects/ant/ant-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "ant-02",
+          "label": "Rustle 2",
+          "gcsPath": "animal-world/insects/ant/ant-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mosquito",
+      "name": "Mosquito",
+      "category": "insects",
+      "emoji": "🦟",
+      "imageGcsPath": "animal-world/insects/mosquito/hero.webp",
+      "heroRealGcsPath": "animal-world/insects/mosquito/hero.webp",
+      "heroCartoonGcsPath": "animal-world/insects/mosquito/card.webp",
+      "funFact": "Mosquitoes buzz near still water.",
+      "quizSoundId": "mosquito-01",
+      "quizPrompt": "Buzz",
+      "narration": {
+        "intro": "This is mosquito.",
+        "introGcsPath": "animal-world/insects/mosquito/narration-intro.mp3",
+        "soundCue": "Listen to the mosquito.",
+        "soundCueGcsPath": "animal-world/insects/mosquito/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "mosquito-01",
+          "label": "Buzz",
+          "gcsPath": "animal-world/insects/mosquito/mosquito-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "mosquito-02",
+          "label": "Buzz 2",
+          "gcsPath": "animal-world/insects/mosquito/mosquito-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragonfly",
+      "name": "Dragonfly",
+      "category": "insects",
+      "emoji": "🪰",
+      "imageGcsPath": "animal-world/insects/dragonfly/hero.webp",
+      "heroRealGcsPath": "animal-world/insects/dragonfly/hero.webp",
+      "heroCartoonGcsPath": "animal-world/insects/dragonfly/card.webp",
+      "funFact": "Dragonflies have four shimmering wings.",
+      "quizSoundId": "dragon-01",
+      "quizPrompt": "Whirr",
+      "narration": {
+        "intro": "This is dragonfly.",
+        "introGcsPath": "animal-world/insects/dragonfly/narration-intro.mp3",
+        "soundCue": "Listen to the dragonfly.",
+        "soundCueGcsPath": "animal-world/insects/dragonfly/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "dragon-01",
+          "label": "Whirr",
+          "gcsPath": "animal-world/insects/dragonfly/dragon-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "dragon-02",
+          "label": "Whirr 2",
+          "gcsPath": "animal-world/insects/dragonfly/dragon-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grasshopper",
+      "name": "Grasshopper",
+      "category": "insects",
+      "emoji": "🦗",
+      "imageGcsPath": "animal-world/insects/grasshopper/hero.webp",
+      "heroRealGcsPath": "animal-world/insects/grasshopper/hero.webp",
+      "heroCartoonGcsPath": "animal-world/insects/grasshopper/card.webp",
+      "funFact": "Grasshoppers jump with strong legs.",
+      "quizSoundId": "hopper-01",
+      "quizPrompt": "Chirp",
+      "narration": {
+        "intro": "This is grasshopper.",
+        "introGcsPath": "animal-world/insects/grasshopper/narration-intro.mp3",
+        "soundCue": "Listen to the grasshopper.",
+        "soundCueGcsPath": "animal-world/insects/grasshopper/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "hopper-01",
+          "label": "Chirp",
+          "gcsPath": "animal-world/insects/grasshopper/hopper-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "hopper-02",
+          "label": "Chirp 2",
+          "gcsPath": "animal-world/insects/grasshopper/hopper-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ladybug",
+      "name": "Ladybug",
+      "category": "insects",
+      "emoji": "🐞",
+      "imageGcsPath": "animal-world/insects/ladybug/hero.webp",
+      "heroRealGcsPath": "animal-world/insects/ladybug/hero.webp",
+      "heroCartoonGcsPath": "animal-world/insects/ladybug/card.webp",
+      "funFact": "Ladybugs have spotted red shells.",
+      "quizSoundId": "lady-01",
+      "quizPrompt": "Tick",
+      "narration": {
+        "intro": "This is ladybug.",
+        "introGcsPath": "animal-world/insects/ladybug/narration-intro.mp3",
+        "soundCue": "Listen to the ladybug.",
+        "soundCueGcsPath": "animal-world/insects/ladybug/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "lady-01",
+          "label": "Tick",
+          "gcsPath": "animal-world/insects/ladybug/lady-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "lady-02",
+          "label": "Tick 2",
+          "gcsPath": "animal-world/insects/ladybug/lady-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cicada",
+      "name": "Cicada",
+      "category": "insects",
+      "emoji": "🪲",
+      "imageGcsPath": "animal-world/insects/cicada/hero.webp",
+      "heroRealGcsPath": "animal-world/insects/cicada/hero.webp",
+      "heroCartoonGcsPath": "animal-world/insects/cicada/card.webp",
+      "funFact": "Cicadas sing loudly in summer.",
+      "quizSoundId": "cicada-01",
+      "quizPrompt": "Buzz",
+      "narration": {
+        "intro": "This is cicada.",
+        "introGcsPath": "animal-world/insects/cicada/narration-intro.mp3",
+        "soundCue": "Listen to the cicada.",
+        "soundCueGcsPath": "animal-world/insects/cicada/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "cicada-01",
+          "label": "Buzz",
+          "gcsPath": "animal-world/insects/cicada/cicada-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "cicada-02",
+          "label": "Buzz 2",
+          "gcsPath": "animal-world/insects/cicada/cicada-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "moth",
+      "name": "Moth",
+      "category": "insects",
+      "emoji": "🦋",
+      "imageGcsPath": "animal-world/insects/moth/hero.webp",
+      "heroRealGcsPath": "animal-world/insects/moth/hero.webp",
+      "heroCartoonGcsPath": "animal-world/insects/moth/card.webp",
+      "funFact": "Moths are drawn to gentle lights.",
+      "quizSoundId": "moth-01",
+      "quizPrompt": "Flutter",
+      "narration": {
+        "intro": "This is moth.",
+        "introGcsPath": "animal-world/insects/moth/narration-intro.mp3",
+        "soundCue": "Listen to the moth.",
+        "soundCueGcsPath": "animal-world/insects/moth/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "moth-01",
+          "label": "Flutter",
+          "gcsPath": "animal-world/insects/moth/moth-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "moth-02",
+          "label": "Flutter 2",
+          "gcsPath": "animal-world/insects/moth/moth-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "beetle",
+      "name": "Beetle",
+      "category": "insects",
+      "emoji": "🪲",
+      "imageGcsPath": "animal-world/insects/beetle/hero.webp",
+      "heroRealGcsPath": "animal-world/insects/beetle/hero.webp",
+      "heroCartoonGcsPath": "animal-world/insects/beetle/card.webp",
+      "funFact": "Beetles have hard shiny wing covers.",
+      "quizSoundId": "beetle-01",
+      "quizPrompt": "Click",
+      "narration": {
+        "intro": "This is beetle.",
+        "introGcsPath": "animal-world/insects/beetle/narration-intro.mp3",
+        "soundCue": "Listen to the beetle.",
+        "soundCueGcsPath": "animal-world/insects/beetle/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "beetle-01",
+          "label": "Click",
+          "gcsPath": "animal-world/insects/beetle/beetle-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "beetle-02",
+          "label": "Click 2",
+          "gcsPath": "animal-world/insects/beetle/beetle-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "firefly",
+      "name": "Firefly",
+      "category": "insects",
+      "emoji": "✨",
+      "imageGcsPath": "animal-world/insects/firefly/hero.webp",
+      "heroRealGcsPath": "animal-world/insects/firefly/hero.webp",
+      "heroCartoonGcsPath": "animal-world/insects/firefly/card.webp",
+      "funFact": "Fireflies glow to find each other.",
+      "quizSoundId": "firefly-01",
+      "quizPrompt": "Hum",
+      "narration": {
+        "intro": "This is firefly.",
+        "introGcsPath": "animal-world/insects/firefly/narration-intro.mp3",
+        "soundCue": "Listen to the firefly.",
+        "soundCueGcsPath": "animal-world/insects/firefly/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "firefly-01",
+          "label": "Hum",
+          "gcsPath": "animal-world/insects/firefly/firefly-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "firefly-02",
+          "label": "Hum 2",
+          "gcsPath": "animal-world/insects/firefly/firefly-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wasp",
+      "name": "Wasp",
+      "category": "insects",
+      "emoji": "🐝",
+      "imageGcsPath": "animal-world/insects/wasp/hero.webp",
+      "heroRealGcsPath": "animal-world/insects/wasp/hero.webp",
+      "heroCartoonGcsPath": "animal-world/insects/wasp/card.webp",
+      "funFact": "Wasps build papery nests.",
+      "quizSoundId": "wasp-01",
+      "quizPrompt": "Buzz",
+      "narration": {
+        "intro": "This is wasp.",
+        "introGcsPath": "animal-world/insects/wasp/narration-intro.mp3",
+        "soundCue": "Listen to the wasp.",
+        "soundCueGcsPath": "animal-world/insects/wasp/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "wasp-01",
+          "label": "Buzz",
+          "gcsPath": "animal-world/insects/wasp/wasp-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "wasp-02",
+          "label": "Buzz 2",
+          "gcsPath": "animal-world/insects/wasp/wasp-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
       ]
     },
     {
       "id": "dog",
       "name": "Dog",
       "category": "pets",
-      "emoji": "🐶",
+      "emoji": "🐕",
       "imageGcsPath": "animal-world/pets/dog/hero.webp",
-      "funFact": "Dogs' noses are as unique as human fingerprints.",
+      "heroRealGcsPath": "animal-world/pets/dog/hero.webp",
+      "heroCartoonGcsPath": "animal-world/pets/dog/card.webp",
+      "funFact": "Dogs wag their tails when happy.",
       "quizSoundId": "bark-01",
-      "quizPrompt": "Woof",
+      "quizPrompt": "Bark",
       "narration": {
-        "intro": "This is a dog.",
+        "intro": "This is dog.",
         "introGcsPath": "animal-world/pets/dog/narration-intro.mp3",
-        "soundCue": "This dog says woof.",
+        "soundCue": "Listen to the dog.",
         "soundCueGcsPath": "animal-world/pets/dog/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "bark-01", "label": "Bark 1", "gcsPath": "animal-world/pets/dog/bark-01.mp3", "durationSec": 0.7, "waveform": [0.4, 0.9, 0.6, 0.3, 0.2] },
-        { "id": "bark-02", "label": "Bark 2", "gcsPath": "animal-world/pets/dog/bark-02.mp3", "durationSec": 0.8, "waveform": [0.3, 0.8, 0.9, 0.5, 0.2] },
-        { "id": "bark-happy", "label": "Happy Bark", "gcsPath": "animal-world/pets/dog/bark-happy.mp3", "durationSec": 0.6, "waveform": [0.5, 0.8, 0.7, 0.4, 0.2] }
+        {
+          "id": "bark-01",
+          "label": "Bark",
+          "gcsPath": "animal-world/pets/dog/bark-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "bark-02",
+          "label": "Bark 2",
+          "gcsPath": "animal-world/pets/dog/bark-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "bark-happy",
+          "label": "Happy Bark",
+          "gcsPath": "animal-world/pets/dog/bark-happy.mp3",
+          "durationSec": 1.9000000000000001,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
       ]
     },
     {
       "id": "cat",
       "name": "Cat",
       "category": "pets",
-      "emoji": "🐱",
+      "emoji": "🐈",
       "imageGcsPath": "animal-world/pets/cat/hero.webp",
-      "funFact": "Cats spend about 70% of their lives sleeping.",
+      "heroRealGcsPath": "animal-world/pets/cat/hero.webp",
+      "heroCartoonGcsPath": "animal-world/pets/cat/card.webp",
+      "funFact": "Cats purr when they feel calm.",
       "quizSoundId": "meow-01",
       "quizPrompt": "Meow",
       "narration": {
-        "intro": "This is a cat.",
+        "intro": "This is cat.",
         "introGcsPath": "animal-world/pets/cat/narration-intro.mp3",
-        "soundCue": "This cat says meow.",
+        "soundCue": "Listen to the cat.",
         "soundCueGcsPath": "animal-world/pets/cat/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "meow-01", "label": "Meow 1", "gcsPath": "animal-world/pets/cat/meow-01.mp3", "durationSec": 0.9, "waveform": [0.3, 0.7, 0.9, 0.5, 0.3] },
-        { "id": "meow-02", "label": "Meow 2", "gcsPath": "animal-world/pets/cat/meow-02.mp3", "durationSec": 1.0, "waveform": [0.4, 0.6, 0.8, 0.7, 0.4] },
-        { "id": "purr-01", "label": "Purr", "gcsPath": "animal-world/pets/cat/purr-01.mp3", "durationSec": 2.0, "waveform": [0.5, 0.6, 0.7, 0.8, 0.7, 0.6, 0.5, 0.4] }
+        {
+          "id": "meow-01",
+          "label": "Meow",
+          "gcsPath": "animal-world/pets/cat/meow-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "meow-02",
+          "label": "Meow 2",
+          "gcsPath": "animal-world/pets/cat/meow-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "purr-01",
+          "label": "Purr",
+          "gcsPath": "animal-world/pets/cat/purr-01.mp3",
+          "durationSec": 1.9000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hamster",
+      "name": "Hamster",
+      "category": "pets",
+      "emoji": "🐹",
+      "imageGcsPath": "animal-world/pets/hamster/hero.webp",
+      "heroRealGcsPath": "animal-world/pets/hamster/hero.webp",
+      "heroCartoonGcsPath": "animal-world/pets/hamster/card.webp",
+      "funFact": "Hamsters store food in cheek pouches.",
+      "quizSoundId": "hamster-01",
+      "quizPrompt": "Squeak",
+      "narration": {
+        "intro": "This is hamster.",
+        "introGcsPath": "animal-world/pets/hamster/narration-intro.mp3",
+        "soundCue": "Listen to the hamster.",
+        "soundCueGcsPath": "animal-world/pets/hamster/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "hamster-01",
+          "label": "Squeak",
+          "gcsPath": "animal-world/pets/hamster/hamster-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "hamster-02",
+          "label": "Squeak 2",
+          "gcsPath": "animal-world/pets/hamster/hamster-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guinea-pig",
+      "name": "Guinea Pig",
+      "category": "pets",
+      "emoji": "🐹",
+      "imageGcsPath": "animal-world/pets/guinea-pig/hero.webp",
+      "heroRealGcsPath": "animal-world/pets/guinea-pig/hero.webp",
+      "heroCartoonGcsPath": "animal-world/pets/guinea-pig/card.webp",
+      "funFact": "Guinea pigs whistle when excited.",
+      "quizSoundId": "wheek-01",
+      "quizPrompt": "Wheek",
+      "narration": {
+        "intro": "This is guinea pig.",
+        "introGcsPath": "animal-world/pets/guinea-pig/narration-intro.mp3",
+        "soundCue": "Listen to the guinea pig.",
+        "soundCueGcsPath": "animal-world/pets/guinea-pig/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "wheek-01",
+          "label": "Wheek",
+          "gcsPath": "animal-world/pets/guinea-pig/wheek-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "wheek-02",
+          "label": "Wheek 2",
+          "gcsPath": "animal-world/pets/guinea-pig/wheek-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parakeet",
+      "name": "Parakeet",
+      "category": "pets",
+      "emoji": "🦜",
+      "imageGcsPath": "animal-world/pets/parakeet/hero.webp",
+      "heroRealGcsPath": "animal-world/pets/parakeet/hero.webp",
+      "heroCartoonGcsPath": "animal-world/pets/parakeet/card.webp",
+      "funFact": "Parakeets chirp cheerful songs.",
+      "quizSoundId": "keet-01",
+      "quizPrompt": "Chirp",
+      "narration": {
+        "intro": "This is parakeet.",
+        "introGcsPath": "animal-world/pets/parakeet/narration-intro.mp3",
+        "soundCue": "Listen to the parakeet.",
+        "soundCueGcsPath": "animal-world/pets/parakeet/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "keet-01",
+          "label": "Chirp",
+          "gcsPath": "animal-world/pets/parakeet/keet-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "keet-02",
+          "label": "Chirp 2",
+          "gcsPath": "animal-world/pets/parakeet/keet-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "goldfish",
+      "name": "Goldfish",
+      "category": "pets",
+      "emoji": "🐠",
+      "imageGcsPath": "animal-world/pets/goldfish/hero.webp",
+      "heroRealGcsPath": "animal-world/pets/goldfish/hero.webp",
+      "heroCartoonGcsPath": "animal-world/pets/goldfish/card.webp",
+      "funFact": "Goldfish remember simple tricks.",
+      "quizSoundId": "fish-01",
+      "quizPrompt": "Splash",
+      "narration": {
+        "intro": "This is goldfish.",
+        "introGcsPath": "animal-world/pets/goldfish/narration-intro.mp3",
+        "soundCue": "Listen to the goldfish.",
+        "soundCueGcsPath": "animal-world/pets/goldfish/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "fish-01",
+          "label": "Splash",
+          "gcsPath": "animal-world/pets/goldfish/fish-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "fish-02",
+          "label": "Splash 2",
+          "gcsPath": "animal-world/pets/goldfish/fish-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ferret",
+      "name": "Ferret",
+      "category": "pets",
+      "emoji": "🦡",
+      "imageGcsPath": "animal-world/pets/ferret/hero.webp",
+      "heroRealGcsPath": "animal-world/pets/ferret/hero.webp",
+      "heroCartoonGcsPath": "animal-world/pets/ferret/card.webp",
+      "funFact": "Ferrets love to explore tunnels.",
+      "quizSoundId": "dook-01",
+      "quizPrompt": "Dook",
+      "narration": {
+        "intro": "This is ferret.",
+        "introGcsPath": "animal-world/pets/ferret/narration-intro.mp3",
+        "soundCue": "Listen to the ferret.",
+        "soundCueGcsPath": "animal-world/pets/ferret/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "dook-01",
+          "label": "Dook",
+          "gcsPath": "animal-world/pets/ferret/dook-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "dook-02",
+          "label": "Dook 2",
+          "gcsPath": "animal-world/pets/ferret/dook-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gecko",
+      "name": "Gecko",
+      "category": "pets",
+      "emoji": "🦎",
+      "imageGcsPath": "animal-world/pets/gecko/hero.webp",
+      "heroRealGcsPath": "animal-world/pets/gecko/hero.webp",
+      "heroCartoonGcsPath": "animal-world/pets/gecko/card.webp",
+      "funFact": "Geckos can stick to smooth walls.",
+      "quizSoundId": "gecko-01",
+      "quizPrompt": "Chirp",
+      "narration": {
+        "intro": "This is gecko.",
+        "introGcsPath": "animal-world/pets/gecko/narration-intro.mp3",
+        "soundCue": "Listen to the gecko.",
+        "soundCueGcsPath": "animal-world/pets/gecko/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "gecko-01",
+          "label": "Chirp",
+          "gcsPath": "animal-world/pets/gecko/gecko-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "gecko-02",
+          "label": "Chirp 2",
+          "gcsPath": "animal-world/pets/gecko/gecko-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "puppy",
+      "name": "Puppy",
+      "category": "pets",
+      "emoji": "🐶",
+      "imageGcsPath": "animal-world/pets/puppy/hero.webp",
+      "heroRealGcsPath": "animal-world/pets/puppy/hero.webp",
+      "heroCartoonGcsPath": "animal-world/pets/puppy/card.webp",
+      "funFact": "Puppies learn by playing every day.",
+      "quizSoundId": "puppy-01",
+      "quizPrompt": "Yip",
+      "narration": {
+        "intro": "This is puppy.",
+        "introGcsPath": "animal-world/pets/puppy/narration-intro.mp3",
+        "soundCue": "Listen to the puppy.",
+        "soundCueGcsPath": "animal-world/pets/puppy/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "puppy-01",
+          "label": "Yip",
+          "gcsPath": "animal-world/pets/puppy/puppy-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "puppy-02",
+          "label": "Yip 2",
+          "gcsPath": "animal-world/pets/puppy/puppy-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kitten",
+      "name": "Kitten",
+      "category": "pets",
+      "emoji": "🐱",
+      "imageGcsPath": "animal-world/pets/kitten/hero.webp",
+      "heroRealGcsPath": "animal-world/pets/kitten/hero.webp",
+      "heroCartoonGcsPath": "animal-world/pets/kitten/card.webp",
+      "funFact": "Kittens practice pouncing on toys.",
+      "quizSoundId": "kitten-01",
+      "quizPrompt": "Mew",
+      "narration": {
+        "intro": "This is kitten.",
+        "introGcsPath": "animal-world/pets/kitten/narration-intro.mp3",
+        "soundCue": "Listen to the kitten.",
+        "soundCueGcsPath": "animal-world/pets/kitten/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "kitten-01",
+          "label": "Mew",
+          "gcsPath": "animal-world/pets/kitten/kitten-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "kitten-02",
+          "label": "Mew 2",
+          "gcsPath": "animal-world/pets/kitten/kitten-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bunny",
+      "name": "Bunny",
+      "category": "pets",
+      "emoji": "🐰",
+      "imageGcsPath": "animal-world/pets/bunny/hero.webp",
+      "heroRealGcsPath": "animal-world/pets/bunny/hero.webp",
+      "heroCartoonGcsPath": "animal-world/pets/bunny/card.webp",
+      "funFact": "Bunnies twitch their noses to smell.",
+      "quizSoundId": "bunny-01",
+      "quizPrompt": "Thump",
+      "narration": {
+        "intro": "This is bunny.",
+        "introGcsPath": "animal-world/pets/bunny/narration-intro.mp3",
+        "soundCue": "Listen to the bunny.",
+        "soundCueGcsPath": "animal-world/pets/bunny/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "bunny-01",
+          "label": "Thump",
+          "gcsPath": "animal-world/pets/bunny/bunny-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "bunny-02",
+          "label": "Thump 2",
+          "gcsPath": "animal-world/pets/bunny/bunny-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "turtle-pet",
+      "name": "Pet Turtle",
+      "category": "pets",
+      "emoji": "🐢",
+      "imageGcsPath": "animal-world/pets/turtle-pet/hero.webp",
+      "heroRealGcsPath": "animal-world/pets/turtle-pet/hero.webp",
+      "heroCartoonGcsPath": "animal-world/pets/turtle-pet/card.webp",
+      "funFact": "Turtles carry their home on their back.",
+      "quizSoundId": "turtle-pet-01",
+      "quizPrompt": "Hiss",
+      "narration": {
+        "intro": "This is pet turtle.",
+        "introGcsPath": "animal-world/pets/turtle-pet/narration-intro.mp3",
+        "soundCue": "Listen to the pet turtle.",
+        "soundCueGcsPath": "animal-world/pets/turtle-pet/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "turtle-pet-01",
+          "label": "Hiss",
+          "gcsPath": "animal-world/pets/turtle-pet/turtle-pet-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "turtle-pet-02",
+          "label": "Hiss 2",
+          "gcsPath": "animal-world/pets/turtle-pet/turtle-pet-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parrotlet",
+      "name": "Parrotlet",
+      "category": "pets",
+      "emoji": "🦜",
+      "imageGcsPath": "animal-world/pets/parrotlet/hero.webp",
+      "heroRealGcsPath": "animal-world/pets/parrotlet/hero.webp",
+      "heroCartoonGcsPath": "animal-world/pets/parrotlet/card.webp",
+      "funFact": "Parrotlets are tiny colorful parrots.",
+      "quizSoundId": "plet-01",
+      "quizPrompt": "Peep",
+      "narration": {
+        "intro": "This is parrotlet.",
+        "introGcsPath": "animal-world/pets/parrotlet/narration-intro.mp3",
+        "soundCue": "Listen to the parrotlet.",
+        "soundCueGcsPath": "animal-world/pets/parrotlet/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "plet-01",
+          "label": "Peep",
+          "gcsPath": "animal-world/pets/parrotlet/plet-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "plet-02",
+          "label": "Peep 2",
+          "gcsPath": "animal-world/pets/parrotlet/plet-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
       ]
     },
     {
       "id": "monkey",
       "name": "Monkey",
       "category": "jungle",
-      "emoji": "🐵",
+      "emoji": "🐒",
       "imageGcsPath": "animal-world/jungle/monkey/hero.webp",
-      "funFact": "Monkeys groom each other to make friends.",
+      "heroRealGcsPath": "animal-world/jungle/monkey/hero.webp",
+      "heroCartoonGcsPath": "animal-world/jungle/monkey/card.webp",
+      "funFact": "Monkeys use tails and hands to climb.",
       "quizSoundId": "chatter-01",
-      "quizPrompt": "Ooh ooh",
+      "quizPrompt": "Chatter",
       "narration": {
-        "intro": "This is a monkey.",
+        "intro": "This is monkey.",
         "introGcsPath": "animal-world/jungle/monkey/narration-intro.mp3",
-        "soundCue": "This monkey says ooh ooh.",
+        "soundCue": "Listen to the monkey.",
         "soundCueGcsPath": "animal-world/jungle/monkey/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "chatter-01", "label": "Chatter 1", "gcsPath": "animal-world/jungle/monkey/chatter-01.mp3", "durationSec": 1.2, "waveform": [0.4, 0.7, 0.9, 0.6, 0.5, 0.3] },
-        { "id": "chatter-02", "label": "Chatter 2", "gcsPath": "animal-world/jungle/monkey/chatter-02.mp3", "durationSec": 1.4, "waveform": [0.3, 0.6, 0.8, 0.9, 0.5, 0.3] }
+        {
+          "id": "chatter-01",
+          "label": "Chatter",
+          "gcsPath": "animal-world/jungle/monkey/chatter-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "chatter-02",
+          "label": "Chatter 2",
+          "gcsPath": "animal-world/jungle/monkey/chatter-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
       ]
     },
     {
@@ -273,18 +3693,550 @@
       "category": "jungle",
       "emoji": "🐯",
       "imageGcsPath": "animal-world/jungle/tiger/hero.webp",
-      "funFact": "Every tiger has a unique stripe pattern.",
+      "heroRealGcsPath": "animal-world/jungle/tiger/hero.webp",
+      "heroCartoonGcsPath": "animal-world/jungle/tiger/card.webp",
+      "funFact": "Tigers have bold orange stripes.",
       "quizSoundId": "growl-01",
       "quizPrompt": "Growl",
       "narration": {
-        "intro": "This is a tiger.",
+        "intro": "This is tiger.",
         "introGcsPath": "animal-world/jungle/tiger/narration-intro.mp3",
-        "soundCue": "This tiger says growl.",
+        "soundCue": "Listen to the tiger.",
         "soundCueGcsPath": "animal-world/jungle/tiger/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "growl-01", "label": "Growl 1", "gcsPath": "animal-world/jungle/tiger/growl-01.mp3", "durationSec": 1.6, "waveform": [0.2, 0.5, 0.9, 0.8, 0.5, 0.3] },
-        { "id": "growl-02", "label": "Growl 2", "gcsPath": "animal-world/jungle/tiger/growl-02.mp3", "durationSec": 1.8, "waveform": [0.3, 0.6, 0.95, 0.7, 0.4, 0.2] }
+        {
+          "id": "growl-01",
+          "label": "Growl",
+          "gcsPath": "animal-world/jungle/tiger/growl-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "growl-02",
+          "label": "Growl 2",
+          "gcsPath": "animal-world/jungle/tiger/growl-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gorilla",
+      "name": "Gorilla",
+      "category": "jungle",
+      "emoji": "🦍",
+      "imageGcsPath": "animal-world/jungle/gorilla/hero.webp",
+      "heroRealGcsPath": "animal-world/jungle/gorilla/hero.webp",
+      "heroCartoonGcsPath": "animal-world/jungle/gorilla/card.webp",
+      "funFact": "Gorillas are gentle plant eaters.",
+      "quizSoundId": "gorilla-01",
+      "quizPrompt": "Grunt",
+      "narration": {
+        "intro": "This is gorilla.",
+        "introGcsPath": "animal-world/jungle/gorilla/narration-intro.mp3",
+        "soundCue": "Listen to the gorilla.",
+        "soundCueGcsPath": "animal-world/jungle/gorilla/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "gorilla-01",
+          "label": "Grunt",
+          "gcsPath": "animal-world/jungle/gorilla/gorilla-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "gorilla-02",
+          "label": "Grunt 2",
+          "gcsPath": "animal-world/jungle/gorilla/gorilla-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chameleon",
+      "name": "Chameleon",
+      "category": "jungle",
+      "emoji": "🦎",
+      "imageGcsPath": "animal-world/jungle/chameleon/hero.webp",
+      "heroRealGcsPath": "animal-world/jungle/chameleon/hero.webp",
+      "heroCartoonGcsPath": "animal-world/jungle/chameleon/card.webp",
+      "funFact": "Chameleons can change color.",
+      "quizSoundId": "chameleon-01",
+      "quizPrompt": "Hiss",
+      "narration": {
+        "intro": "This is chameleon.",
+        "introGcsPath": "animal-world/jungle/chameleon/narration-intro.mp3",
+        "soundCue": "Listen to the chameleon.",
+        "soundCueGcsPath": "animal-world/jungle/chameleon/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "chameleon-01",
+          "label": "Hiss",
+          "gcsPath": "animal-world/jungle/chameleon/chameleon-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "chameleon-02",
+          "label": "Hiss 2",
+          "gcsPath": "animal-world/jungle/chameleon/chameleon-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sloth",
+      "name": "Sloth",
+      "category": "jungle",
+      "emoji": "🦥",
+      "imageGcsPath": "animal-world/jungle/sloth/hero.webp",
+      "heroRealGcsPath": "animal-world/jungle/sloth/hero.webp",
+      "heroCartoonGcsPath": "animal-world/jungle/sloth/card.webp",
+      "funFact": "Sloths move slowly to save energy.",
+      "quizSoundId": "sloth-01",
+      "quizPrompt": "Squeak",
+      "narration": {
+        "intro": "This is sloth.",
+        "introGcsPath": "animal-world/jungle/sloth/narration-intro.mp3",
+        "soundCue": "Listen to the sloth.",
+        "soundCueGcsPath": "animal-world/jungle/sloth/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "sloth-01",
+          "label": "Squeak",
+          "gcsPath": "animal-world/jungle/sloth/sloth-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "sloth-02",
+          "label": "Squeak 2",
+          "gcsPath": "animal-world/jungle/sloth/sloth-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "frog",
+      "name": "Frog",
+      "category": "jungle",
+      "emoji": "🐸",
+      "imageGcsPath": "animal-world/jungle/frog/hero.webp",
+      "heroRealGcsPath": "animal-world/jungle/frog/hero.webp",
+      "heroCartoonGcsPath": "animal-world/jungle/frog/card.webp",
+      "funFact": "Frogs begin life as tadpoles.",
+      "quizSoundId": "ribbit-01",
+      "quizPrompt": "Ribbit",
+      "narration": {
+        "intro": "This is frog.",
+        "introGcsPath": "animal-world/jungle/frog/narration-intro.mp3",
+        "soundCue": "Listen to the frog.",
+        "soundCueGcsPath": "animal-world/jungle/frog/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "ribbit-01",
+          "label": "Ribbit",
+          "gcsPath": "animal-world/jungle/frog/ribbit-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "ribbit-02",
+          "label": "Ribbit 2",
+          "gcsPath": "animal-world/jungle/frog/ribbit-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "snake",
+      "name": "Snake",
+      "category": "jungle",
+      "emoji": "🐍",
+      "imageGcsPath": "animal-world/jungle/snake/hero.webp",
+      "heroRealGcsPath": "animal-world/jungle/snake/hero.webp",
+      "heroCartoonGcsPath": "animal-world/jungle/snake/card.webp",
+      "funFact": "Snakes smell with their tongue.",
+      "quizSoundId": "hiss-01",
+      "quizPrompt": "Hiss",
+      "narration": {
+        "intro": "This is snake.",
+        "introGcsPath": "animal-world/jungle/snake/narration-intro.mp3",
+        "soundCue": "Listen to the snake.",
+        "soundCueGcsPath": "animal-world/jungle/snake/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "hiss-01",
+          "label": "Hiss",
+          "gcsPath": "animal-world/jungle/snake/hiss-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "hiss-02",
+          "label": "Hiss 2",
+          "gcsPath": "animal-world/jungle/snake/hiss-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jaguar",
+      "name": "Jaguar",
+      "category": "jungle",
+      "emoji": "🐆",
+      "imageGcsPath": "animal-world/jungle/jaguar/hero.webp",
+      "heroRealGcsPath": "animal-world/jungle/jaguar/hero.webp",
+      "heroCartoonGcsPath": "animal-world/jungle/jaguar/card.webp",
+      "funFact": "Jaguars are strong jungle hunters.",
+      "quizSoundId": "jaguar-01",
+      "quizPrompt": "Roar",
+      "narration": {
+        "intro": "This is jaguar.",
+        "introGcsPath": "animal-world/jungle/jaguar/narration-intro.mp3",
+        "soundCue": "Listen to the jaguar.",
+        "soundCueGcsPath": "animal-world/jungle/jaguar/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "jaguar-01",
+          "label": "Roar",
+          "gcsPath": "animal-world/jungle/jaguar/jaguar-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "jaguar-02",
+          "label": "Roar 2",
+          "gcsPath": "animal-world/jungle/jaguar/jaguar-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "capybara",
+      "name": "Capybara",
+      "category": "jungle",
+      "emoji": "🐹",
+      "imageGcsPath": "animal-world/jungle/capybara/hero.webp",
+      "heroRealGcsPath": "animal-world/jungle/capybara/hero.webp",
+      "heroCartoonGcsPath": "animal-world/jungle/capybara/card.webp",
+      "funFact": "Capybaras are the largest rodents.",
+      "quizSoundId": "capy-01",
+      "quizPrompt": "Whistle",
+      "narration": {
+        "intro": "This is capybara.",
+        "introGcsPath": "animal-world/jungle/capybara/narration-intro.mp3",
+        "soundCue": "Listen to the capybara.",
+        "soundCueGcsPath": "animal-world/jungle/capybara/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "capy-01",
+          "label": "Whistle",
+          "gcsPath": "animal-world/jungle/capybara/capy-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "capy-02",
+          "label": "Whistle 2",
+          "gcsPath": "animal-world/jungle/capybara/capy-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "iguana",
+      "name": "Iguana",
+      "category": "jungle",
+      "emoji": "🦎",
+      "imageGcsPath": "animal-world/jungle/iguana/hero.webp",
+      "heroRealGcsPath": "animal-world/jungle/iguana/hero.webp",
+      "heroCartoonGcsPath": "animal-world/jungle/iguana/card.webp",
+      "funFact": "Iguanas bask in warm sunlight.",
+      "quizSoundId": "iguana-01",
+      "quizPrompt": "Hiss",
+      "narration": {
+        "intro": "This is iguana.",
+        "introGcsPath": "animal-world/jungle/iguana/narration-intro.mp3",
+        "soundCue": "Listen to the iguana.",
+        "soundCueGcsPath": "animal-world/jungle/iguana/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "iguana-01",
+          "label": "Hiss",
+          "gcsPath": "animal-world/jungle/iguana/iguana-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "iguana-02",
+          "label": "Hiss 2",
+          "gcsPath": "animal-world/jungle/iguana/iguana-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tapir",
+      "name": "Tapir",
+      "category": "jungle",
+      "emoji": "🐗",
+      "imageGcsPath": "animal-world/jungle/tapir/hero.webp",
+      "heroRealGcsPath": "animal-world/jungle/tapir/hero.webp",
+      "heroCartoonGcsPath": "animal-world/jungle/tapir/card.webp",
+      "funFact": "Tapirs use their snout like a snorkel.",
+      "quizSoundId": "tapir-01",
+      "quizPrompt": "Snort",
+      "narration": {
+        "intro": "This is tapir.",
+        "introGcsPath": "animal-world/jungle/tapir/narration-intro.mp3",
+        "soundCue": "Listen to the tapir.",
+        "soundCueGcsPath": "animal-world/jungle/tapir/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "tapir-01",
+          "label": "Snort",
+          "gcsPath": "animal-world/jungle/tapir/tapir-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "tapir-02",
+          "label": "Snort 2",
+          "gcsPath": "animal-world/jungle/tapir/tapir-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lemur",
+      "name": "Lemur",
+      "category": "jungle",
+      "emoji": "🐒",
+      "imageGcsPath": "animal-world/jungle/lemur/hero.webp",
+      "heroRealGcsPath": "animal-world/jungle/lemur/hero.webp",
+      "heroCartoonGcsPath": "animal-world/jungle/lemur/card.webp",
+      "funFact": "Lemurs leap between forest trees.",
+      "quizSoundId": "lemur-01",
+      "quizPrompt": "Call",
+      "narration": {
+        "intro": "This is lemur.",
+        "introGcsPath": "animal-world/jungle/lemur/narration-intro.mp3",
+        "soundCue": "Listen to the lemur.",
+        "soundCueGcsPath": "animal-world/jungle/lemur/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "lemur-01",
+          "label": "Call",
+          "gcsPath": "animal-world/jungle/lemur/lemur-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "lemur-02",
+          "label": "Call 2",
+          "gcsPath": "animal-world/jungle/lemur/lemur-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ocelot",
+      "name": "Ocelot",
+      "category": "jungle",
+      "emoji": "🐆",
+      "imageGcsPath": "animal-world/jungle/ocelot/hero.webp",
+      "heroRealGcsPath": "animal-world/jungle/ocelot/hero.webp",
+      "heroCartoonGcsPath": "animal-world/jungle/ocelot/card.webp",
+      "funFact": "Ocelots have beautiful spotted coats.",
+      "quizSoundId": "ocelot-01",
+      "quizPrompt": "Growl",
+      "narration": {
+        "intro": "This is ocelot.",
+        "introGcsPath": "animal-world/jungle/ocelot/narration-intro.mp3",
+        "soundCue": "Listen to the ocelot.",
+        "soundCueGcsPath": "animal-world/jungle/ocelot/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "ocelot-01",
+          "label": "Growl",
+          "gcsPath": "animal-world/jungle/ocelot/ocelot-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "ocelot-02",
+          "label": "Growl 2",
+          "gcsPath": "animal-world/jungle/ocelot/ocelot-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
       ]
     },
     {
@@ -293,18 +4245,44 @@
       "category": "arctic",
       "emoji": "🐧",
       "imageGcsPath": "animal-world/arctic/penguin/hero.webp",
-      "funFact": "Penguins propose to mates with a pebble.",
+      "heroRealGcsPath": "animal-world/arctic/penguin/hero.webp",
+      "heroCartoonGcsPath": "animal-world/arctic/penguin/card.webp",
+      "funFact": "Penguins waddle but swim fast.",
       "quizSoundId": "honk-01",
       "quizPrompt": "Honk",
       "narration": {
-        "intro": "This is a penguin.",
+        "intro": "This is penguin.",
         "introGcsPath": "animal-world/arctic/penguin/narration-intro.mp3",
-        "soundCue": "This penguin says honk.",
+        "soundCue": "Listen to the penguin.",
         "soundCueGcsPath": "animal-world/arctic/penguin/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "honk-01", "label": "Honk 1", "gcsPath": "animal-world/arctic/penguin/honk-01.mp3", "durationSec": 0.9, "waveform": [0.4, 0.8, 0.7, 0.5, 0.3] },
-        { "id": "honk-02", "label": "Honk 2", "gcsPath": "animal-world/arctic/penguin/honk-02.mp3", "durationSec": 1.0, "waveform": [0.3, 0.7, 0.9, 0.6, 0.3] }
+        {
+          "id": "honk-01",
+          "label": "Honk",
+          "gcsPath": "animal-world/arctic/penguin/honk-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "honk-02",
+          "label": "Honk 2",
+          "gcsPath": "animal-world/arctic/penguin/honk-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
       ]
     },
     {
@@ -313,18 +4291,550 @@
       "category": "arctic",
       "emoji": "🐻‍❄️",
       "imageGcsPath": "animal-world/arctic/polar-bear/hero.webp",
-      "funFact": "Polar bear fur is actually transparent, not white.",
+      "heroRealGcsPath": "animal-world/arctic/polar-bear/hero.webp",
+      "heroCartoonGcsPath": "animal-world/arctic/polar-bear/card.webp",
+      "funFact": "Polar bears have thick warm fur.",
       "quizSoundId": "growl-01",
       "quizPrompt": "Growl",
       "narration": {
-        "intro": "This is a polar bear.",
+        "intro": "This is polar bear.",
         "introGcsPath": "animal-world/arctic/polar-bear/narration-intro.mp3",
-        "soundCue": "This polar bear says growl.",
+        "soundCue": "Listen to the polar bear.",
         "soundCueGcsPath": "animal-world/arctic/polar-bear/narration-sound.mp3"
       },
       "sounds": [
-        { "id": "growl-01", "label": "Growl 1", "gcsPath": "animal-world/arctic/polar-bear/growl-01.mp3", "durationSec": 1.5, "waveform": [0.2, 0.5, 0.8, 0.9, 0.6, 0.3] },
-        { "id": "growl-02", "label": "Growl 2", "gcsPath": "animal-world/arctic/polar-bear/growl-02.mp3", "durationSec": 1.7, "waveform": [0.3, 0.6, 0.9, 0.7, 0.4, 0.2] }
+        {
+          "id": "growl-01",
+          "label": "Growl",
+          "gcsPath": "animal-world/arctic/polar-bear/growl-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "growl-02",
+          "label": "Growl 2",
+          "gcsPath": "animal-world/arctic/polar-bear/growl-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arctic-fox",
+      "name": "Arctic Fox",
+      "category": "arctic",
+      "emoji": "🦊",
+      "imageGcsPath": "animal-world/arctic/arctic-fox/hero.webp",
+      "heroRealGcsPath": "animal-world/arctic/arctic-fox/hero.webp",
+      "heroCartoonGcsPath": "animal-world/arctic/arctic-fox/card.webp",
+      "funFact": "Arctic foxes grow white winter fur.",
+      "quizSoundId": "afox-01",
+      "quizPrompt": "Yip",
+      "narration": {
+        "intro": "This is arctic fox.",
+        "introGcsPath": "animal-world/arctic/arctic-fox/narration-intro.mp3",
+        "soundCue": "Listen to the arctic fox.",
+        "soundCueGcsPath": "animal-world/arctic/arctic-fox/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "afox-01",
+          "label": "Yip",
+          "gcsPath": "animal-world/arctic/arctic-fox/afox-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "afox-02",
+          "label": "Yip 2",
+          "gcsPath": "animal-world/arctic/arctic-fox/afox-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "moose",
+      "name": "Moose",
+      "category": "arctic",
+      "emoji": "🫎",
+      "imageGcsPath": "animal-world/arctic/moose/hero.webp",
+      "heroRealGcsPath": "animal-world/arctic/moose/hero.webp",
+      "heroCartoonGcsPath": "animal-world/arctic/moose/card.webp",
+      "funFact": "Moose have wide antlers.",
+      "quizSoundId": "moose-01",
+      "quizPrompt": "Bellow",
+      "narration": {
+        "intro": "This is moose.",
+        "introGcsPath": "animal-world/arctic/moose/narration-intro.mp3",
+        "soundCue": "Listen to the moose.",
+        "soundCueGcsPath": "animal-world/arctic/moose/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "moose-01",
+          "label": "Bellow",
+          "gcsPath": "animal-world/arctic/moose/moose-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "moose-02",
+          "label": "Bellow 2",
+          "gcsPath": "animal-world/arctic/moose/moose-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reindeer",
+      "name": "Reindeer",
+      "category": "arctic",
+      "emoji": "🦌",
+      "imageGcsPath": "animal-world/arctic/reindeer/hero.webp",
+      "heroRealGcsPath": "animal-world/arctic/reindeer/hero.webp",
+      "heroCartoonGcsPath": "animal-world/arctic/reindeer/card.webp",
+      "funFact": "Reindeer pull sleighs in stories.",
+      "quizSoundId": "reindeer-01",
+      "quizPrompt": "Snort",
+      "narration": {
+        "intro": "This is reindeer.",
+        "introGcsPath": "animal-world/arctic/reindeer/narration-intro.mp3",
+        "soundCue": "Listen to the reindeer.",
+        "soundCueGcsPath": "animal-world/arctic/reindeer/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "reindeer-01",
+          "label": "Snort",
+          "gcsPath": "animal-world/arctic/reindeer/reindeer-01.mp3",
+          "durationSec": 1.1,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "reindeer-02",
+          "label": "Snort 2",
+          "gcsPath": "animal-world/arctic/reindeer/reindeer-02.mp3",
+          "durationSec": 1.2000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "snowy-owl",
+      "name": "Snowy Owl",
+      "category": "arctic",
+      "emoji": "🦉",
+      "imageGcsPath": "animal-world/arctic/snowy-owl/hero.webp",
+      "heroRealGcsPath": "animal-world/arctic/snowy-owl/hero.webp",
+      "heroCartoonGcsPath": "animal-world/arctic/snowy-owl/card.webp",
+      "funFact": "Snowy owls hunt in cold places.",
+      "quizSoundId": "snowy-01",
+      "quizPrompt": "Hoot",
+      "narration": {
+        "intro": "This is snowy owl.",
+        "introGcsPath": "animal-world/arctic/snowy-owl/narration-intro.mp3",
+        "soundCue": "Listen to the snowy owl.",
+        "soundCueGcsPath": "animal-world/arctic/snowy-owl/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "snowy-01",
+          "label": "Hoot",
+          "gcsPath": "animal-world/arctic/snowy-owl/snowy-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "snowy-02",
+          "label": "Hoot 2",
+          "gcsPath": "animal-world/arctic/snowy-owl/snowy-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "husky",
+      "name": "Husky",
+      "category": "arctic",
+      "emoji": "🐕‍🦺",
+      "imageGcsPath": "animal-world/arctic/husky/hero.webp",
+      "heroRealGcsPath": "animal-world/arctic/husky/hero.webp",
+      "heroCartoonGcsPath": "animal-world/arctic/husky/card.webp",
+      "funFact": "Huskies love to run in the snow.",
+      "quizSoundId": "husky-01",
+      "quizPrompt": "Howl",
+      "narration": {
+        "intro": "This is husky.",
+        "introGcsPath": "animal-world/arctic/husky/narration-intro.mp3",
+        "soundCue": "Listen to the husky.",
+        "soundCueGcsPath": "animal-world/arctic/husky/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "husky-01",
+          "label": "Howl",
+          "gcsPath": "animal-world/arctic/husky/husky-01.mp3",
+          "durationSec": 1.3,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "husky-02",
+          "label": "Howl 2",
+          "gcsPath": "animal-world/arctic/husky/husky-02.mp3",
+          "durationSec": 1.4000000000000001,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "narwhal",
+      "name": "Narwhal",
+      "category": "arctic",
+      "emoji": "🦄",
+      "imageGcsPath": "animal-world/arctic/narwhal/hero.webp",
+      "heroRealGcsPath": "animal-world/arctic/narwhal/hero.webp",
+      "heroCartoonGcsPath": "animal-world/arctic/narwhal/card.webp",
+      "funFact": "Narwhals have a long spiral tusk.",
+      "quizSoundId": "narwhal-01",
+      "quizPrompt": "Click",
+      "narration": {
+        "intro": "This is narwhal.",
+        "introGcsPath": "animal-world/arctic/narwhal/narration-intro.mp3",
+        "soundCue": "Listen to the narwhal.",
+        "soundCueGcsPath": "animal-world/arctic/narwhal/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "narwhal-01",
+          "label": "Click",
+          "gcsPath": "animal-world/arctic/narwhal/narwhal-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "narwhal-02",
+          "label": "Click 2",
+          "gcsPath": "animal-world/arctic/narwhal/narwhal-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "puffin",
+      "name": "Puffin",
+      "category": "arctic",
+      "emoji": "🐧",
+      "imageGcsPath": "animal-world/arctic/puffin/hero.webp",
+      "heroRealGcsPath": "animal-world/arctic/puffin/hero.webp",
+      "heroCartoonGcsPath": "animal-world/arctic/puffin/card.webp",
+      "funFact": "Puffins dive for fish in cold seas.",
+      "quizSoundId": "puffin-01",
+      "quizPrompt": "Squawk",
+      "narration": {
+        "intro": "This is puffin.",
+        "introGcsPath": "animal-world/arctic/puffin/narration-intro.mp3",
+        "soundCue": "Listen to the puffin.",
+        "soundCueGcsPath": "animal-world/arctic/puffin/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "puffin-01",
+          "label": "Squawk",
+          "gcsPath": "animal-world/arctic/puffin/puffin-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "puffin-02",
+          "label": "Squawk 2",
+          "gcsPath": "animal-world/arctic/puffin/puffin-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ermine",
+      "name": "Ermine",
+      "category": "arctic",
+      "emoji": "🐾",
+      "imageGcsPath": "animal-world/arctic/ermine/hero.webp",
+      "heroRealGcsPath": "animal-world/arctic/ermine/hero.webp",
+      "heroCartoonGcsPath": "animal-world/arctic/ermine/card.webp",
+      "funFact": "Ermines have silky white winter coats.",
+      "quizSoundId": "ermine-01",
+      "quizPrompt": "Squeak",
+      "narration": {
+        "intro": "This is ermine.",
+        "introGcsPath": "animal-world/arctic/ermine/narration-intro.mp3",
+        "soundCue": "Listen to the ermine.",
+        "soundCueGcsPath": "animal-world/arctic/ermine/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "ermine-01",
+          "label": "Squeak",
+          "gcsPath": "animal-world/arctic/ermine/ermine-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "ermine-02",
+          "label": "Squeak 2",
+          "gcsPath": "animal-world/arctic/ermine/ermine-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "beluga",
+      "name": "Beluga",
+      "category": "arctic",
+      "emoji": "🐳",
+      "imageGcsPath": "animal-world/arctic/beluga/hero.webp",
+      "heroRealGcsPath": "animal-world/arctic/beluga/hero.webp",
+      "heroCartoonGcsPath": "animal-world/arctic/beluga/card.webp",
+      "funFact": "Belugas are white whales.",
+      "quizSoundId": "beluga-01",
+      "quizPrompt": "Chirp",
+      "narration": {
+        "intro": "This is beluga.",
+        "introGcsPath": "animal-world/arctic/beluga/narration-intro.mp3",
+        "soundCue": "Listen to the beluga.",
+        "soundCueGcsPath": "animal-world/arctic/beluga/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "beluga-01",
+          "label": "Chirp",
+          "gcsPath": "animal-world/arctic/beluga/beluga-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        },
+        {
+          "id": "beluga-02",
+          "label": "Chirp 2",
+          "gcsPath": "animal-world/arctic/beluga/beluga-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.65,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "muskox",
+      "name": "Muskox",
+      "category": "arctic",
+      "emoji": "🐂",
+      "imageGcsPath": "animal-world/arctic/muskox/hero.webp",
+      "heroRealGcsPath": "animal-world/arctic/muskox/hero.webp",
+      "heroCartoonGcsPath": "animal-world/arctic/muskox/card.webp",
+      "funFact": "Muskoxen huddle to block wind.",
+      "quizSoundId": "muskox-01",
+      "quizPrompt": "Grunt",
+      "narration": {
+        "intro": "This is muskox.",
+        "introGcsPath": "animal-world/arctic/muskox/narration-intro.mp3",
+        "soundCue": "Listen to the muskox.",
+        "soundCueGcsPath": "animal-world/arctic/muskox/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "muskox-01",
+          "label": "Grunt",
+          "gcsPath": "animal-world/arctic/muskox/muskox-01.mp3",
+          "durationSec": 1.5,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "muskox-02",
+          "label": "Grunt 2",
+          "gcsPath": "animal-world/arctic/muskox/muskox-02.mp3",
+          "durationSec": 1.6,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seal-arctic",
+      "name": "Arctic Seal",
+      "category": "arctic",
+      "emoji": "🦭",
+      "imageGcsPath": "animal-world/arctic/seal-arctic/hero.webp",
+      "heroRealGcsPath": "animal-world/arctic/seal-arctic/hero.webp",
+      "heroCartoonGcsPath": "animal-world/arctic/seal-arctic/card.webp",
+      "funFact": "Seals slide on ice into the water.",
+      "quizSoundId": "aseal-01",
+      "quizPrompt": "Bark",
+      "narration": {
+        "intro": "This is arctic seal.",
+        "introGcsPath": "animal-world/arctic/seal-arctic/narration-intro.mp3",
+        "soundCue": "Listen to the arctic seal.",
+        "soundCueGcsPath": "animal-world/arctic/seal-arctic/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "aseal-01",
+          "label": "Bark",
+          "gcsPath": "animal-world/arctic/seal-arctic/aseal-01.mp3",
+          "durationSec": 1.7000000000000002,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.65,
+            0.35
+          ]
+        },
+        {
+          "id": "aseal-02",
+          "label": "Bark 2",
+          "gcsPath": "animal-world/arctic/seal-arctic/aseal-02.mp3",
+          "durationSec": 1.8000000000000003,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.5,
+            0.35
+          ]
+        }
       ]
     }
   ]

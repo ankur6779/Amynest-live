@@ -146,6 +146,18 @@ export {
 } from "./content-diagnostics.js";
 
 export {
+  buildAssetCoverageReport,
+  expectedVisualAssetsForItem,
+  expectedVisualAssetsForManifest,
+  type AssetCoverageReport,
+  type ExpectedVisualAsset,
+  type VisualAssetKind,
+  type WorldAssetCoverageRow,
+} from "./asset-coverage.js";
+
+export { itemAssetFolder } from "./visual-asset-paths.js";
+
+export {
   buildWorldSoundEffectPrompt,
   collectWorldAudioJobs,
   type WorldAudioJob,

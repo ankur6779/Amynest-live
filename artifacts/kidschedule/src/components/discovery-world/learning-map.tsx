@@ -90,10 +90,13 @@ export function LearningMap({ childId, catalogSizes }: LearningMapProps) {
     : Object.keys(DISCOVERY_CATALOG_SIZES)) as WorldId[];
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-3" aria-labelledby="learning-map-heading">
       <div className="flex items-center gap-2">
-        <MapPin className="h-4 w-4 text-primary" />
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        <MapPin className="h-4 w-4 text-primary" aria-hidden />
+        <h2
+          id="learning-map-heading"
+          className="text-sm font-semibold uppercase tracking-wide text-muted-foreground"
+        >
           Learning map
         </h2>
       </div>

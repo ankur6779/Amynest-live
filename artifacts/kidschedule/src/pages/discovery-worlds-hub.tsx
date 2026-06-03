@@ -1,14 +1,20 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
-import { DISCOVERY_WORLDS_REGISTRY } from "@workspace/discovery-worlds";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { AppLink, useAppNavigate } from "@/components/app-link";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
-import { cn } from "@/lib/utils";
 import { LearningMap } from "@/components/discovery-world/learning-map";
 import { HubDailyAdventureTeaser } from "@/components/discovery-world/discovery-daily-adventure";
 import { UnifiedParentDashboard } from "@/components/discovery-world/unified-parent-dashboard";
+import { UnifiedParentSummary } from "@/components/discovery-world/unified-parent-summary";
+import { DiscoveryHubWorldCard } from "@/components/discovery-world/discovery-hub-world-card";
+import { AssetCoverageDashboard } from "@/components/discovery-world/asset-coverage-dashboard";
+import { DiscoveryEmptyState } from "@/components/discovery-world/discovery-world-polish";
 import { aggregateDiscoveryStreak } from "@/lib/discovery-worlds-cross-progress";
-import { DISCOVERY_CATALOG_SIZES } from "@/lib/discovery-worlds-unified-insights";
+import {
+  buildUnifiedParentInsights,
+  DISCOVERY_CATALOG_SIZES,
+} from "@/lib/discovery-worlds-unified-insights";
+import { Progress } from "@/components/ui/progress";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
@@ -32,6 +38,10 @@ export default function DiscoveryWorldsHubPage() {
   }, [childId]);
 
   const streak = childId ? aggregateDiscoveryStreak(childId) : 0;
+  const insights = useMemo(
+    () => (childId ? buildUnifiedParentInsights(childId) : null),
+    [childId],
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -39,14 +49,18 @@ export default function DiscoveryWorldsHubPage() {
         <button
           type="button"
           onClick={() => back("discovery-worlds-hub-back")}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"
+          aria-label="Back to Parent Hub"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" aria-hidden />
           Parent Hub
         </button>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-8 md:max-w-3xl md:px-6">
+      <main
+        id="discovery-worlds-main"
+        className="mx-auto max-w-2xl px-4 py-8 md:max-w-3xl md:px-6"
+      >
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
           Discovery Worlds
         </p>
@@ -61,48 +75,74 @@ export default function DiscoveryWorldsHubPage() {
           </p>
         )}
 
-        {childId ? (
+        {childId && insights ? (
           <>
+            <div className="mt-5 rounded-[24px] border border-primary/25 bg-primary/[0.06] p-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
+                <Sparkles className="h-4 w-4" aria-hidden />
+                Today&apos;s explorer
+              </div>
+              <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="text-3xl font-bold tabular-nums text-foreground">
+                    {insights.overallProgressPct}%
+                  </p>
+                  <p className="text-sm text-muted-foreground">overall progress across all worlds</p>
+                </div>
+                <div className="text-right text-sm">
+                  <p className="font-bold text-foreground">
+                    {insights.totalStickers} stickers · {insights.totalAchievements} stars
+                  </p>
+                  {streak > 0 && (
+                    <p className="text-amber-200">🔥 {streak} day streak</p>
+                  )}
+                </div>
+              </div>
+              <Progress value={insights.overallProgressPct} className="mt-3 h-2" />
+            </div>
+
             <div className="mt-6">
               <HubDailyAdventureTeaser childId={childId} />
             </div>
+
+            <section className="mt-8 space-y-3" aria-labelledby="play-worlds-heading">
+              <h2 id="play-worlds-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Play a world
+              </h2>
+              <ul className="space-y-3">
+                {insights.worldRows.map((row) => (
+                  <li key={row.worldId}>
+                    <DiscoveryHubWorldCard row={row} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+
             <div className="mt-8">
               <LearningMap childId={childId} catalogSizes={DISCOVERY_CATALOG_SIZES} />
             </div>
-            <div className="mt-10 border-t border-border/60 pt-8">
+
+            <div className="mt-8">
+              <AssetCoverageDashboard />
+            </div>
+
+            <div className="mt-10 space-y-5 border-t border-border/60 pt-8">
+              <UnifiedParentSummary insights={insights} />
               <UnifiedParentDashboard childId={childId} />
             </div>
           </>
         ) : (
-          <p className="mt-6 text-sm text-muted-foreground">
-            Select a child in Parent Hub to see learning insights.
-          </p>
+          <div className="mt-6 space-y-4">
+            <DiscoveryEmptyState variant="noChildHub" />
+            <AppLink
+              href="/parenting-hub"
+              className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-semibold hover:bg-white/[0.08]"
+            >
+              Open Parent Hub
+            </AppLink>
+          </div>
         )}
 
-        <ul className="mt-10 space-y-3">
-          <li className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Play a world
-          </li>
-          {DISCOVERY_WORLDS_REGISTRY.map((world) => (
-            <li key={world.worldId}>
-              <AppLink
-                href={world.routePath}
-                className={cn(
-                  "flex items-center gap-4 rounded-[24px] border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.07]",
-                )}
-              >
-                <span className="text-4xl">{world.emoji}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-foreground">{world.title}</p>
-                  <p className="text-sm text-muted-foreground">{world.subtitle}</p>
-                </div>
-                <span className="shrink-0 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold uppercase text-emerald-300">
-                  Play
-                </span>
-              </AppLink>
-            </li>
-          ))}
-        </ul>
       </main>
     </div>
   );

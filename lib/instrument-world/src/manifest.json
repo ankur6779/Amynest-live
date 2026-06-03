@@ -663,6 +663,646 @@
           ]
         }
       ]
+    },
+    {
+      "id": "cello",
+      "name": "Cello",
+      "category": "strings",
+      "emoji": "🎻",
+      "imageGcsPath": "worlds/instruments/strings/cello/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/strings/cello/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/strings/cello/card.webp",
+      "funFact": "Cellos play deep warm notes.",
+      "quizSoundId": "cello-01",
+      "quizPrompt": "Deep",
+      "narration": {
+        "intro": "This is cello.",
+        "introGcsPath": "worlds/instruments/strings/cello/narration-intro.mp3",
+        "soundCue": "Listen to cello.",
+        "soundCueGcsPath": "worlds/instruments/strings/cello/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "cello-01",
+          "label": "Cello",
+          "gcsPath": "worlds/instruments/strings/cello/cello-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "banjo",
+      "name": "Banjo",
+      "category": "strings",
+      "emoji": "🪕",
+      "imageGcsPath": "worlds/instruments/strings/banjo/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/strings/banjo/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/strings/banjo/card.webp",
+      "funFact": "Banjos twang in folk music.",
+      "quizSoundId": "banjo-01",
+      "quizPrompt": "Twang",
+      "narration": {
+        "intro": "This is banjo.",
+        "introGcsPath": "worlds/instruments/strings/banjo/narration-intro.mp3",
+        "soundCue": "Listen to banjo.",
+        "soundCueGcsPath": "worlds/instruments/strings/banjo/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "banjo-01",
+          "label": "Banjo",
+          "gcsPath": "worlds/instruments/strings/banjo/banjo-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bass-guitar",
+      "name": "Bass Guitar",
+      "category": "strings",
+      "emoji": "🎸",
+      "imageGcsPath": "worlds/instruments/strings/bass-guitar/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/strings/bass-guitar/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/strings/bass-guitar/card.webp",
+      "funFact": "Bass guitars keep the low beat.",
+      "quizSoundId": "bass-01",
+      "quizPrompt": "Thump",
+      "narration": {
+        "intro": "This is bass guitar.",
+        "introGcsPath": "worlds/instruments/strings/bass-guitar/narration-intro.mp3",
+        "soundCue": "Listen to bass guitar.",
+        "soundCueGcsPath": "worlds/instruments/strings/bass-guitar/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "bass-01",
+          "label": "Bass",
+          "gcsPath": "worlds/instruments/strings/bass-guitar/bass-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "oboe",
+      "name": "Oboe",
+      "category": "woodwind",
+      "emoji": "🎵",
+      "imageGcsPath": "worlds/instruments/woodwind/oboe/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/woodwind/oboe/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/woodwind/oboe/card.webp",
+      "funFact": "Oboes have a reedy sweet tone.",
+      "quizSoundId": "oboe-01",
+      "quizPrompt": "Sweet",
+      "narration": {
+        "intro": "This is oboe.",
+        "introGcsPath": "worlds/instruments/woodwind/oboe/narration-intro.mp3",
+        "soundCue": "Listen to oboe.",
+        "soundCueGcsPath": "worlds/instruments/woodwind/oboe/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "oboe-01",
+          "label": "Oboe",
+          "gcsPath": "worlds/instruments/woodwind/oboe/oboe-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bassoon",
+      "name": "Bassoon",
+      "category": "woodwind",
+      "emoji": "🎵",
+      "imageGcsPath": "worlds/instruments/woodwind/bassoon/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/woodwind/bassoon/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/woodwind/bassoon/card.webp",
+      "funFact": "Bassoons play low woodwind lines.",
+      "quizSoundId": "bassoon-01",
+      "quizPrompt": "Low",
+      "narration": {
+        "intro": "This is bassoon.",
+        "introGcsPath": "worlds/instruments/woodwind/bassoon/narration-intro.mp3",
+        "soundCue": "Listen to bassoon.",
+        "soundCueGcsPath": "worlds/instruments/woodwind/bassoon/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "bassoon-01",
+          "label": "Bassoon",
+          "gcsPath": "worlds/instruments/woodwind/bassoon/bassoon-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pan-flute",
+      "name": "Pan Flute",
+      "category": "woodwind",
+      "emoji": "🪈",
+      "imageGcsPath": "worlds/instruments/woodwind/pan-flute/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/woodwind/pan-flute/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/woodwind/pan-flute/card.webp",
+      "funFact": "Pan flutes have many tubes.",
+      "quizSoundId": "pan-01",
+      "quizPrompt": "Trill",
+      "narration": {
+        "intro": "This is pan flute.",
+        "introGcsPath": "worlds/instruments/woodwind/pan-flute/narration-intro.mp3",
+        "soundCue": "Listen to pan flute.",
+        "soundCueGcsPath": "worlds/instruments/woodwind/pan-flute/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "pan-01",
+          "label": "Flute",
+          "gcsPath": "worlds/instruments/woodwind/pan-flute/pan-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bagpipes",
+      "name": "Bagpipes",
+      "category": "brass",
+      "emoji": "📯",
+      "imageGcsPath": "worlds/instruments/brass/bagpipes/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/brass/bagpipes/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/brass/bagpipes/card.webp",
+      "funFact": "Bagpipes use air-filled bags.",
+      "quizSoundId": "bag-01",
+      "quizPrompt": "Drone",
+      "narration": {
+        "intro": "This is bagpipes.",
+        "introGcsPath": "worlds/instruments/brass/bagpipes/narration-intro.mp3",
+        "soundCue": "Listen to bagpipes.",
+        "soundCueGcsPath": "worlds/instruments/brass/bagpipes/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "bag-01",
+          "label": "Drone",
+          "gcsPath": "worlds/instruments/brass/bagpipes/bag-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bugle",
+      "name": "Bugle",
+      "category": "brass",
+      "emoji": "🎺",
+      "imageGcsPath": "worlds/instruments/brass/bugle/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/brass/bugle/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/brass/bugle/card.webp",
+      "funFact": "Bugles play simple brass calls.",
+      "quizSoundId": "bugle-01",
+      "quizPrompt": "Call",
+      "narration": {
+        "intro": "This is bugle.",
+        "introGcsPath": "worlds/instruments/brass/bugle/narration-intro.mp3",
+        "soundCue": "Listen to bugle.",
+        "soundCueGcsPath": "worlds/instruments/brass/bugle/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "bugle-01",
+          "label": "Bugle",
+          "gcsPath": "worlds/instruments/brass/bugle/bugle-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "snare-drum",
+      "name": "Snare Drum",
+      "category": "percussion",
+      "emoji": "🥁",
+      "imageGcsPath": "worlds/instruments/percussion/snare-drum/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/percussion/snare-drum/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/percussion/snare-drum/card.webp",
+      "funFact": "Snare drums rattle when struck.",
+      "quizSoundId": "snare-01",
+      "quizPrompt": "Crack",
+      "narration": {
+        "intro": "This is snare drum.",
+        "introGcsPath": "worlds/instruments/percussion/snare-drum/narration-intro.mp3",
+        "soundCue": "Listen to snare drum.",
+        "soundCueGcsPath": "worlds/instruments/percussion/snare-drum/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "snare-01",
+          "label": "Snare",
+          "gcsPath": "worlds/instruments/percussion/snare-drum/snare-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bongo",
+      "name": "Bongos",
+      "category": "percussion",
+      "emoji": "🥁",
+      "imageGcsPath": "worlds/instruments/percussion/bongo/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/percussion/bongo/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/percussion/bongo/card.webp",
+      "funFact": "Bongos are paired hand drums.",
+      "quizSoundId": "bongo-01",
+      "quizPrompt": "Tap",
+      "narration": {
+        "intro": "This is bongos.",
+        "introGcsPath": "worlds/instruments/percussion/bongo/narration-intro.mp3",
+        "soundCue": "Listen to bongos.",
+        "soundCueGcsPath": "worlds/instruments/percussion/bongo/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "bongo-01",
+          "label": "Bongo",
+          "gcsPath": "worlds/instruments/percussion/bongo/bongo-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "castanets",
+      "name": "Castanets",
+      "category": "percussion",
+      "emoji": "🪇",
+      "imageGcsPath": "worlds/instruments/percussion/castanets/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/percussion/castanets/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/percussion/castanets/card.webp",
+      "funFact": "Castanets click in flamenco dance.",
+      "quizSoundId": "cast-01",
+      "quizPrompt": "Click",
+      "narration": {
+        "intro": "This is castanets.",
+        "introGcsPath": "worlds/instruments/percussion/castanets/narration-intro.mp3",
+        "soundCue": "Listen to castanets.",
+        "soundCueGcsPath": "worlds/instruments/percussion/castanets/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "cast-01",
+          "label": "Click",
+          "gcsPath": "worlds/instruments/percussion/castanets/cast-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gong",
+      "name": "Gong",
+      "category": "percussion",
+      "emoji": "🔔",
+      "imageGcsPath": "worlds/instruments/percussion/gong/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/percussion/gong/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/percussion/gong/card.webp",
+      "funFact": "Gongs ring with one big strike.",
+      "quizSoundId": "gong-01",
+      "quizPrompt": "Gong",
+      "narration": {
+        "intro": "This is gong.",
+        "introGcsPath": "worlds/instruments/percussion/gong/narration-intro.mp3",
+        "soundCue": "Listen to gong.",
+        "soundCueGcsPath": "worlds/instruments/percussion/gong/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "gong-01",
+          "label": "Gong",
+          "gcsPath": "worlds/instruments/percussion/gong/gong-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kalimba",
+      "name": "Kalimba",
+      "category": "percussion",
+      "emoji": "🎹",
+      "imageGcsPath": "worlds/instruments/percussion/kalimba/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/percussion/kalimba/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/percussion/kalimba/card.webp",
+      "funFact": "Kalimbas pluck metal tines.",
+      "quizSoundId": "kalimba-01",
+      "quizPrompt": "Plink",
+      "narration": {
+        "intro": "This is kalimba.",
+        "introGcsPath": "worlds/instruments/percussion/kalimba/narration-intro.mp3",
+        "soundCue": "Listen to kalimba.",
+        "soundCueGcsPath": "worlds/instruments/percussion/kalimba/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "kalimba-01",
+          "label": "Plink",
+          "gcsPath": "worlds/instruments/percussion/kalimba/kalimba-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accordion",
+      "name": "Accordion",
+      "category": "woodwind",
+      "emoji": "🪗",
+      "imageGcsPath": "worlds/instruments/woodwind/accordion/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/woodwind/accordion/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/woodwind/accordion/card.webp",
+      "funFact": "Accordions squeeze air through reeds.",
+      "quizSoundId": "acc-01",
+      "quizPrompt": "Squeeze",
+      "narration": {
+        "intro": "This is accordion.",
+        "introGcsPath": "worlds/instruments/woodwind/accordion/narration-intro.mp3",
+        "soundCue": "Listen to accordion.",
+        "soundCueGcsPath": "worlds/instruments/woodwind/accordion/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "acc-01",
+          "label": "Accordion",
+          "gcsPath": "worlds/instruments/woodwind/accordion/acc-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "organ",
+      "name": "Pipe Organ",
+      "category": "strings",
+      "emoji": "🎹",
+      "imageGcsPath": "worlds/instruments/strings/organ/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/strings/organ/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/strings/organ/card.webp",
+      "funFact": "Organs fill big halls with sound.",
+      "quizSoundId": "organ-01",
+      "quizPrompt": "Boom",
+      "narration": {
+        "intro": "This is pipe organ.",
+        "introGcsPath": "worlds/instruments/strings/organ/narration-intro.mp3",
+        "soundCue": "Listen to pipe organ.",
+        "soundCueGcsPath": "worlds/instruments/strings/organ/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "organ-01",
+          "label": "Organ",
+          "gcsPath": "worlds/instruments/strings/organ/organ-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sitar",
+      "name": "Sitar",
+      "category": "strings",
+      "emoji": "🪕",
+      "imageGcsPath": "worlds/instruments/strings/sitar/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/strings/sitar/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/strings/sitar/card.webp",
+      "funFact": "Sitars have many resonant strings.",
+      "quizSoundId": "sitar-01",
+      "quizPrompt": "Twang",
+      "narration": {
+        "intro": "This is sitar.",
+        "introGcsPath": "worlds/instruments/strings/sitar/narration-intro.mp3",
+        "soundCue": "Listen to sitar.",
+        "soundCueGcsPath": "worlds/instruments/strings/sitar/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "sitar-01",
+          "label": "Sitar",
+          "gcsPath": "worlds/instruments/strings/sitar/sitar-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.7,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "steel-drum",
+      "name": "Steel Drum",
+      "category": "percussion",
+      "emoji": "🥁",
+      "imageGcsPath": "worlds/instruments/percussion/steel-drum/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/percussion/steel-drum/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/percussion/steel-drum/card.webp",
+      "funFact": "Steel drums ring like tropical bells.",
+      "quizSoundId": "steel-01",
+      "quizPrompt": "Ring",
+      "narration": {
+        "intro": "This is steel drum.",
+        "introGcsPath": "worlds/instruments/percussion/steel-drum/narration-intro.mp3",
+        "soundCue": "Listen to steel drum.",
+        "soundCueGcsPath": "worlds/instruments/percussion/steel-drum/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "steel-01",
+          "label": "Steel",
+          "gcsPath": "worlds/instruments/percussion/steel-drum/steel-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "timpani",
+      "name": "Timpani",
+      "category": "percussion",
+      "emoji": "🥁",
+      "imageGcsPath": "worlds/instruments/percussion/timpani/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/percussion/timpani/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/percussion/timpani/card.webp",
+      "funFact": "Timpani are big kettle drums.",
+      "quizSoundId": "timp-01",
+      "quizPrompt": "Boom",
+      "narration": {
+        "intro": "This is timpani.",
+        "introGcsPath": "worlds/instruments/percussion/timpani/narration-intro.mp3",
+        "soundCue": "Listen to timpani.",
+        "soundCueGcsPath": "worlds/instruments/percussion/timpani/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "timp-01",
+          "label": "Timpani",
+          "gcsPath": "worlds/instruments/percussion/timpani/timp-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.6000000000000001
+          ]
+        }
+      ]
+    },
+    {
+      "id": "whistle-recorder",
+      "name": "Train Whistle",
+      "category": "brass",
+      "emoji": "🚂",
+      "imageGcsPath": "worlds/instruments/brass/whistle-recorder/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/brass/whistle-recorder/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/brass/whistle-recorder/card.webp",
+      "funFact": "Train whistles blow two tones.",
+      "quizSoundId": "train-01",
+      "quizPrompt": "Toot",
+      "narration": {
+        "intro": "This is train whistle.",
+        "introGcsPath": "worlds/instruments/brass/whistle-recorder/narration-intro.mp3",
+        "soundCue": "Listen to train whistle.",
+        "soundCueGcsPath": "worlds/instruments/brass/whistle-recorder/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "train-01",
+          "label": "Whistle",
+          "gcsPath": "worlds/instruments/brass/whistle-recorder/train-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.6,
+            0.8,
+            0.4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shaker",
+      "name": "Shaker",
+      "category": "percussion",
+      "emoji": "🪇",
+      "imageGcsPath": "worlds/instruments/percussion/shaker/hero.webp",
+      "heroRealGcsPath": "worlds/instruments/percussion/shaker/hero.webp",
+      "heroCartoonGcsPath": "worlds/instruments/percussion/shaker/card.webp",
+      "funFact": "Shakers rattle with beads inside.",
+      "quizSoundId": "shake-01",
+      "quizPrompt": "Shake",
+      "narration": {
+        "intro": "This is shaker.",
+        "introGcsPath": "worlds/instruments/percussion/shaker/narration-intro.mp3",
+        "soundCue": "Listen to shaker.",
+        "soundCueGcsPath": "worlds/instruments/percussion/shaker/narration-sound.mp3"
+      },
+      "sounds": [
+        {
+          "id": "shake-01",
+          "label": "Shake",
+          "gcsPath": "worlds/instruments/percussion/shaker/shake-01.mp3",
+          "durationSec": 1.2,
+          "waveform": [
+            0.3,
+            0.5,
+            0.8,
+            0.4
+          ]
+        }
+      ]
     }
   ]
 }

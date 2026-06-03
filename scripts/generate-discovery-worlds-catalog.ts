@@ -4,6 +4,12 @@
  */
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
+import {
+  VEHICLE_EXTRA,
+  NATURE_EXTRA,
+  HOME_EXTRA,
+  INSTRUMENT_EXTRA,
+} from "./data/discovery-catalog-expansion.ts";
 
 type SoundDef = { id: string; label: string; durationSec?: number };
 type ItemDef = {
@@ -201,9 +207,18 @@ const INSTRUMENT_ITEMS: ItemDef[] = [
   { id: "cymbals", name: "Cymbals", category: "percussion", emoji: "🥁", funFact: "Cymbals crash together.", quizSoundId: "cym-01", quizPrompt: "Crash", sounds: [{ id: "cym-01", label: "Crash" }] },
 ];
 
-writeManifest("vehicle-world", "vehicle_world", VEHICLE_CATEGORIES, VEHICLE_ITEMS, "vehicles");
-writeManifest("nature-sounds-world", "nature_world", NATURE_CATEGORIES, NATURE_ITEMS, "nature");
-writeManifest("home-sounds-world", "home_sounds_world", HOME_CATEGORIES, HOME_ITEMS, "home");
-writeManifest("instrument-world", "instrument_world", INSTRUMENT_CATEGORIES, INSTRUMENT_ITEMS, "instruments");
+const ALL_VEHICLES = [...VEHICLE_ITEMS, ...VEHICLE_EXTRA];
+const ALL_NATURE = [...NATURE_ITEMS, ...NATURE_EXTRA];
+const ALL_HOME = [...HOME_ITEMS, ...HOME_EXTRA];
+const ALL_INSTRUMENTS = [...INSTRUMENT_ITEMS, ...INSTRUMENT_EXTRA];
+
+writeManifest("vehicle-world", "vehicle_world", VEHICLE_CATEGORIES, ALL_VEHICLES, "vehicles");
+writeManifest("nature-sounds-world", "nature_world", NATURE_CATEGORIES, ALL_NATURE, "nature");
+writeManifest("home-sounds-world", "home_sounds_world", HOME_CATEGORIES, ALL_HOME, "home");
+writeManifest("instrument-world", "instrument_world", INSTRUMENT_CATEGORIES, ALL_INSTRUMENTS, "instruments");
+
+console.log(
+  `Counts: vehicles=${ALL_VEHICLES.length} nature=${ALL_NATURE.length} home=${ALL_HOME.length} instruments=${ALL_INSTRUMENTS.length}`,
+);
 
 console.log("\nCatalog generation complete.");
