@@ -14,14 +14,199 @@ function useChatDebugFlag(): boolean {
   const [on, setOn] = useState(false);
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("amynest:chat-debug") === "1";
+      const w = window as unknown as { __amynestChatDebug?: boolean };
       const query = new URLSearchParams(window.location.search).get("chatDebug") === "1";
-      setOn(stored || query);
+      // Hash works inside the WebView SPA where appending a query string is hard:
+      // navigate to e.g. `/assistant#chatDebug` once to latch it on.
+      const hash = window.location.hash.includes("chatDebug");
+      if (query || hash) {
+        localStorage.setItem("amynest:chat-debug", "1");
+      }
+      const stored = localStorage.getItem("amynest:chat-debug") === "1";
+      setOn(stored || query || hash || w.__amynestChatDebug === true);
     } catch {
       /* storage may be unavailable */
     }
   }, []);
   return on;
+}
+
+function rectLine(el: HTMLElement | null): string {
+  if (!el) return "null";
+  const r = el.getBoundingClientRect();
+  return `t${Math.round(r.top)} b${Math.round(r.bottom)} h${Math.round(r.height)} w${Math.round(r.width)}`;
+}
+
+/**
+ * Walk ancestors to find the element that establishes the containing block for
+ * `position: fixed` descendants (transform / filter / perspective / will-change
+ * / contain). If one exists, our fixed chat overlay is positioned & clipped
+ * relative to it — NOT the viewport — which is a classic "fixed off-screen / get
+ * clipped" cause.
+ */
+function findFixedContainingBlock(el: HTMLElement | null): string {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.documentElement) {
+    const cs = getComputedStyle(node);
+    const reasons: string[] = [];
+    if (cs.transform && cs.transform !== "none") reasons.push("transform");
+    if (cs.filter && cs.filter !== "none") reasons.push("filter");
+    if (cs.perspective && cs.perspective !== "none") reasons.push("perspective");
+    if (cs.willChange && /transform|perspective|filter/.test(cs.willChange))
+      reasons.push("will-change");
+    if (cs.contain && /paint|layout|strict|content/.test(cs.contain))
+      reasons.push(`contain:${cs.contain}`);
+    if (reasons.length) {
+      const cls = (node.className?.toString() || "").trim().split(/\s+/)[0] || "";
+      return `${node.tagName.toLowerCase()}${cls ? "." + cls : ""} [${reasons.join(",")}] ovf=${cs.overflow}`;
+    }
+    node = node.parentElement;
+  }
+  return "viewport (none)";
+}
+
+function describeActiveElement(): string {
+  const ae = document.activeElement as HTMLElement | null;
+  if (!ae) return "null";
+  const testid = ae.getAttribute?.("data-testid");
+  return `${ae.tagName.toLowerCase()}${testid ? "#" + testid : ""}`;
+}
+
+/**
+ * TEMPORARY diagnostic HUD + console logger for the keyboard / composer layout.
+ * Enable with `?chatDebug=1` or `localStorage.setItem("amynest:chat-debug","1")`.
+ * Reads the live container / messages / composer rects and computed styles so we
+ * can pinpoint why the composer is off-screen WITHOUT changing any styles.
+ */
+function ChatDebugOverlay({
+  surface,
+  containerRef,
+  messagesRef,
+  inputBarRef,
+  endRef,
+}: {
+  surface: string;
+  containerRef: MutableRefObject<HTMLDivElement | null>;
+  messagesRef: MutableRefObject<HTMLDivElement | null>;
+  inputBarRef: MutableRefObject<HTMLDivElement | null>;
+  endRef: MutableRefObject<HTMLDivElement | null>;
+}) {
+  const [text, setText] = useState("collecting…");
+
+  useEffect(() => {
+    let timer = 0;
+
+    const snapshot = () => {
+      const vv = window.visualViewport;
+      const innerH = window.innerHeight;
+      const vvH = vv ? Math.round(vv.height) : null;
+      const vvTop = vv ? Math.round(vv.offsetTop) : null;
+      const kbInset = vv ? Math.max(0, Math.round(innerH - vv.height - vv.offsetTop)) : null;
+
+      const container = containerRef.current;
+      const messages = messagesRef.current;
+      const composer = inputBarRef.current;
+      const ccs = container ? getComputedStyle(container) : null;
+      const ics = composer ? getComputedStyle(composer) : null;
+      const composerRect = composer?.getBoundingClientRect();
+      const visibleBottom = vv ? vv.offsetTop + vv.height : innerH;
+      const composerOffscreen =
+        composerRect != null && composerRect.bottom > visibleBottom + 1
+          ? `YES (+${Math.round(composerRect.bottom - visibleBottom)}px below keyboard)`
+          : "no";
+
+      return {
+        lines: [
+          `surface ${surface}`,
+          `innerH ${innerH}  vvH ${vvH}  vvTop ${vvTop}`,
+          `>> kbInset ${kbInset}  visBottom ${Math.round(visibleBottom)}`,
+          `container ${rectLine(container)}`,
+          `  pos=${ccs?.position} top=${ccs?.top} h=${ccs?.height}`,
+          `  z=${ccs?.zIndex} tf=${ccs?.transform === "none" ? "none" : "SET"}`,
+          `  fixedCB: ${findFixedContainingBlock(container)}`,
+          `messages ${rectLine(messages)}`,
+          `  sT ${messages ? Math.round(messages.scrollTop) : "-"} sH ${messages?.scrollHeight ?? "-"} cH ${messages?.clientHeight ?? "-"}`,
+          `composer ${rectLine(composer)}`,
+          `  z=${ics?.zIndex} tf=${ics?.transform === "none" ? "none" : ics?.transform}`,
+          `  OFFSCREEN: ${composerOffscreen}`,
+          `endRect ${rectLine(endRef.current)}`,
+          `active ${describeActiveElement()}`,
+        ],
+        log: {
+          surface,
+          keyboardHeight: kbInset,
+          innerHeight: innerH,
+          visualViewportHeight: vvH,
+          visualViewportOffsetTop: vvTop,
+          containerRect: container?.getBoundingClientRect(),
+          containerPosition: ccs?.position,
+          containerTop: ccs?.top,
+          containerHeight: ccs?.height,
+          containerTransform: ccs?.transform,
+          containerZ: ccs?.zIndex,
+          fixedContainingBlock: findFixedContainingBlock(container),
+          messagesRect: messages?.getBoundingClientRect(),
+          messagesScrollTop: messages?.scrollTop,
+          messagesScrollHeight: messages?.scrollHeight,
+          messagesClientHeight: messages?.clientHeight,
+          composerRect,
+          composerZ: ics?.zIndex,
+          composerTransform: ics?.transform,
+          composerOffscreen,
+          activeElement: describeActiveElement(),
+        },
+      };
+    };
+
+    const update = () => setText(snapshot().lines.join("\n"));
+
+    const logNow = (event: string) => {
+      // eslint-disable-next-line no-console
+      console.log(`[chat-debug:${event}]`, snapshot().log);
+      update();
+    };
+
+    timer = window.setInterval(update, 250);
+    const onFocusIn = () => logNow("focusin");
+    const onFocusOut = () => logNow("focusout");
+    const onVvResize = () => logNow("vv-resize");
+    const onVvScroll = () => update();
+    window.addEventListener("focusin", onFocusIn);
+    window.addEventListener("focusout", onFocusOut);
+    window.visualViewport?.addEventListener("resize", onVvResize);
+    window.visualViewport?.addEventListener("scroll", onVvScroll);
+    logNow("mount");
+
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focusin", onFocusIn);
+      window.removeEventListener("focusout", onFocusOut);
+      window.visualViewport?.removeEventListener("resize", onVvResize);
+      window.visualViewport?.removeEventListener("scroll", onVvScroll);
+    };
+  }, [surface, containerRef, messagesRef, inputBarRef, endRef]);
+
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        position: "fixed",
+        top: 2,
+        left: 2,
+        zIndex: 99999,
+        pointerEvents: "none",
+        background: "rgba(0,0,0,0.82)",
+        color: "#4ade80",
+        font: "9px/1.3 ui-monospace, monospace",
+        padding: "3px 5px",
+        borderRadius: 4,
+        whiteSpace: "pre",
+        maxWidth: "62vw",
+      }}
+    >
+      {text}
+    </div>
+  );
 }
 
 export type ChatPlatformSurface =
@@ -76,10 +261,7 @@ export function ChatPlatform({
     messagesRef,
     inputBarRef,
     endRef,
-    inputBarHeight,
     keyboardOpen,
-    viewportHeight,
-    keyboardInset,
     containerStyle,
     scrollToEnd,
   } = useKeyboardChatLayout(scrollDeps, {
@@ -112,36 +294,13 @@ export function ChatPlatform({
       style={{ ...containerStyle, ...style }}
     >
       {debugEnabled ? (
-        <div
-          aria-hidden="true"
-          style={{
-            position: "fixed",
-            top: 4,
-            left: 4,
-            zIndex: 9999,
-            pointerEvents: "none",
-            background: "rgba(0,0,0,0.78)",
-            color: "#4ade80",
-            font: "10px/1.35 ui-monospace, monospace",
-            padding: "4px 6px",
-            borderRadius: 4,
-            whiteSpace: "pre",
-          }}
-        >
-          {[
-            `surface: ${surface}`,
-            `kbOpen: ${keyboardOpen}`,
-            `inset: ${Math.round(keyboardInset)}`,
-            `vpH: ${Math.round(viewportHeight)}`,
-            `innerH: ${typeof window !== "undefined" ? window.innerHeight : 0}`,
-            `vvH: ${
-              typeof window !== "undefined" && window.visualViewport
-                ? Math.round(window.visualViewport.height)
-                : "n/a"
-            }`,
-            `barH: ${Math.round(inputBarHeight)}`,
-          ].join("\n")}
-        </div>
+        <ChatDebugOverlay
+          surface={surface}
+          containerRef={containerRef}
+          messagesRef={messagesRef}
+          inputBarRef={inputBarRef}
+          endRef={endRef}
+        />
       ) : null}
 
       <div className="chat-thread-header shrink-0">{header}</div>
