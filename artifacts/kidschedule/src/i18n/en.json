@@ -3086,6 +3086,14 @@
       "fun-sheets-preview": {
         "title": "📄 Fun Sheets",
         "description": "Printable activity & learning PDFs — 2 downloads/day per child"
+      },
+      "animal-world": {
+        "title": "🦁 Animal World",
+        "description": "Animal sounds, listening games & toddler narration — build early communication"
+      },
+      "discovery-worlds": {
+        "title": "🧭 Discovery Worlds",
+        "description": "Five sound worlds — daily adventures, stickers, parent insights & listening mastery"
       }
     },
     "subsections": {

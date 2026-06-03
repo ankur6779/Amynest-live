@@ -35,6 +35,8 @@ export {
   ANIMAL_WORLD_GCS_OBJECT_PATH_RE,
   animalWorldLibraryProxyPath,
   getAnimalHeroImageGcsPath,
+  getAnimalHeroRealGcsPath,
+  getAnimalHeroCartoonGcsPath,
   getAnimalMetadataGcsPath,
   getAnimalSoundGcsPath,
   getAnimalWorldGcsPublicUrl,

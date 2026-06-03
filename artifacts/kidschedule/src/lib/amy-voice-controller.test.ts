@@ -5,9 +5,39 @@ import {
   invalidateSpeakRequests,
   isCurrentSpeakRequest,
 } from "@/lib/amy-voice-ownership";
+const { isSpeechPlayingMock, stopAllMock, audioManagerMock } = vi.hoisted(() => {
+  const isSpeechPlaying = vi.fn(() => false);
+  const stopAll = vi.fn();
+  const stop = vi.fn();
+  return {
+    isSpeechPlayingMock: isSpeechPlaying,
+    stopAllMock: stopAll,
+    audioManagerMock: {
+      isSpeechPlaying,
+      stopAll,
+      stop,
+      getCurrentElement: vi.fn(() => null),
+      play: vi.fn(),
+      waitUntilEnd: vi.fn(),
+      unlockFromUserGesture: vi.fn(),
+      warmMediaPipeline: vi.fn(),
+    },
+  };
+});
+
+vi.mock("@/lib/phonics-player", () => ({
+  stopPhonicsPlayback: vi.fn(),
+  isPhonicsPlaying: vi.fn(() => false),
+}));
+
+vi.mock("@/lib/audio-manager", () => ({
+  audioManager: audioManagerMock,
+}));
 
 describe("amy-voice-controller ownership", () => {
   beforeEach(() => {
+    isSpeechPlayingMock.mockReturnValue(false);
+    stopAllMock.mockReset();
     amyVoiceController.pause();
   });
 
@@ -31,11 +61,19 @@ describe("amy-voice-controller ownership", () => {
     expect(amyVoiceController.getSnapshot().error).toBeNull();
   });
 
-  it("pause is a no-op when already idle (avoids subscribe churn)", () => {
+  it("pause is a no-op when already idle and speech channel is silent", () => {
     amyVoiceController.pause();
     const beforeId = amyVoiceController.getSnapshot().requestId;
     amyVoiceController.pause();
     expect(amyVoiceController.getSnapshot().requestId).toBe(beforeId);
+    expect(amyVoiceController.getSnapshot().status).toBe("idle");
+    expect(stopAllMock).not.toHaveBeenCalled();
+  });
+
+  it("pause stops speech when controller is idle but audio is still playing (partial-ok)", () => {
+    isSpeechPlayingMock.mockReturnValue(true);
+    amyVoiceController.pause();
+    expect(stopAllMock).toHaveBeenCalled();
     expect(amyVoiceController.getSnapshot().status).toBe("idle");
   });
 

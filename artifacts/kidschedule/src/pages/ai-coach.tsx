@@ -3279,7 +3279,7 @@ export function ListenButton({
   compact?: boolean;
 }) {
   const { t } = useTranslation();
-  const { speak, pause, loading, primeSpeakGesture } = useAmyVoice();
+  const { speak, pause, loading, speaking, primeSpeakGesture } = useAmyVoice();
   const [isListening, setIsListening] = useState(false);
   const audioIdentity = useMemo(() => {
     const key = (planCacheKey ?? "").trim();
@@ -3296,7 +3296,7 @@ export function ListenButton({
     primeSpeakGesture(text, audioIdentity ? { coach: true, audioIdentity } : undefined);
   }, [buildText, primeSpeakGesture, audioIdentity]);
   const handleClick = () => {
-    if (isListening || loading) {
+    if (isListening || loading || speaking) {
       pause();
       setIsListening(false);
       return;
@@ -3319,7 +3319,7 @@ export function ListenButton({
       if (!res?.success) setIsListening(false);
     });
   };
-  const isActive = isListening || loading;
+  const isActive = isListening || loading || speaking;
   const listenLabel = isActive && !loading
     ? t("pages.ai_coach.listen_stop", "Stop")
     : loading

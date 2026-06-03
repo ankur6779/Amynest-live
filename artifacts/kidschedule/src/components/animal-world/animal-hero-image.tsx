@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Animal, AnimalHeroVariant } from "@workspace/animal-world";
-import { resolveAnimalHeroImageUrl, resolveAnimalImageUrl } from "@workspace/animal-world";
+import { resolveAnimalHeroImageUrl } from "@workspace/animal-world";
 import { cn } from "@/lib/utils";
 
 type AnimalHeroImageProps = {
@@ -12,10 +12,7 @@ type AnimalHeroImageProps = {
 
 export function AnimalHeroImage({ animal, className, eager, variant = "cartoon" }: AnimalHeroImageProps) {
   const [failed, setFailed] = useState(false);
-  const [useFallback, setUseFallback] = useState(false);
-  const src = useFallback
-    ? resolveAnimalImageUrl(animal)
-    : resolveAnimalHeroImageUrl(animal, variant);
+  const src = resolveAnimalHeroImageUrl(animal, variant);
 
   if (failed) {
     return (
@@ -37,13 +34,7 @@ export function AnimalHeroImage({ animal, className, eager, variant = "cartoon" 
       alt=""
       loading={eager ? "eager" : "lazy"}
       decoding="async"
-      onError={() => {
-        if (!useFallback && variant === "real") {
-          setUseFallback(true);
-          return;
-        }
-        setFailed(true);
-      }}
+      onError={() => setFailed(true)}
       className={cn(
         "max-h-[min(42vw,180px)] w-auto max-w-[85%] object-contain",
         className,

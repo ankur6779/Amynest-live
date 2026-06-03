@@ -394,7 +394,13 @@ class AmyVoiceController implements AmyVoiceControllerPublic {
 
   /** User intent: pause / cancel current playback. */
   pause(): void {
-    if (this.snapshot.status === "idle" && !this.abortController) {
+    // partial-ok playback transitions the controller to idle while audioManager
+    // may still be playing — always honor pause when speech is active.
+    if (
+      this.snapshot.status === "idle" &&
+      !this.abortController &&
+      !audioManager.isSpeechPlaying()
+    ) {
       return;
     }
     clearPlaybackQueue();
