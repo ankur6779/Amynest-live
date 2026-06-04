@@ -596,6 +596,9 @@ importers:
       react-qr-code:
         specifier: ^2.0.21
         version: 2.0.21(react@19.1.0)
+      smplr:
+        specifier: ^0.26.0
+        version: 0.26.0
     devDependencies:
       '@hookform/resolvers':
         specifier: ^3.10.0
@@ -8340,6 +8343,10 @@ packages:
   slugify@1.6.9:
     resolution: {integrity: sha512-vZ7rfeehZui7wQs438JXBckYLkIIdfHOXsaVEUMyS5fHo1483l1bMdo0EDSWYclY0yZKFOipDy4KHuKs6ssvdg==}
     engines: {node: '>=8.0.0'}
+
+  smplr@0.26.0:
+    resolution: {integrity: sha512-01OLo4+RzHvE52aGx1Gh1uEbarIiLWYOQU+t+nYm3iUT4sADTv+M3SbClo4sjE2Q8Im/eKpxWKZRBD8RR8tAEw==}
+    engines: {node: '>=14.0.0'}
 
   sonic-boom@4.2.1:
     resolution: {integrity: sha512-w6AxtubXa2wTXAUsZMMWERrsIRAdrK0Sc+FUytWvYAhBJLyuI4llrMIC1DtlNSdI99EI86KZum2MMq3EAZlF9Q==}
@@ -17152,6 +17159,8 @@ snapshots:
 
   slugify@1.6.9:
     optional: true
+
+  smplr@0.26.0: {}
 
   sonic-boom@4.2.1:
     dependencies:

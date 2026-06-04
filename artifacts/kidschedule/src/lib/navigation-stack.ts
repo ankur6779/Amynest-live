@@ -56,11 +56,15 @@ const PARENT_ROUTE: Record<string, string> = {
   "/learn-with-amy": "/parenting-hub",
   "/assistant": "/parenting-hub",
   "/amy-coach/progress": "/amy-coach",
+  // Discovery Worlds: a sound world → its hub → Parent Hub.
+  "/discovery-worlds": "/parenting-hub",
 };
 
 const NESTED_PARENT_PREFIXES: Array<{ prefix: string; parent: string }> = [
   { prefix: "/routines/", parent: "/routines" },
   { prefix: "/children/", parent: "/children" },
+  // Individual discovery worlds (e.g. /worlds/instruments) → Discovery Worlds hub.
+  { prefix: "/worlds/", parent: "/discovery-worlds" },
 ];
 
 const MAX_STACK = 8;

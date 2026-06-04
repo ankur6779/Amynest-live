@@ -8,6 +8,7 @@ import {
   Ear,
   Trophy,
   Sticker,
+  Music,
 } from "lucide-react";
 import type { WorldManifestItem } from "@workspace/world-engine";
 import { buildPlatformHearFindQuestion, gradePlatformHearFind } from "@workspace/world-engine";
@@ -27,7 +28,6 @@ import {
   needsDiscoveryOfflineRefresh,
   warmDiscoveryWorldOfflineCache,
 } from "@/lib/discovery-world-offline-cache";
-import { VirtualizedGrid, useResponsiveGridColumns } from "@/components/animal-world/virtualized-grid";
 import { WorldItemCard, WorldVisualThumb } from "./world-item-card";
 import { ExperienceProgressStrip } from "./experience-progress-strip";
 import { PersonalizationBanner } from "./personalization-banner";
@@ -39,9 +39,12 @@ import { PlatformDiscoveryMode } from "./platform-discovery-mode";
 import { WorldHeroImage } from "./world-hero-image";
 import { DelightBurst } from "./delight-burst";
 import { DiscoveryEmptyState } from "./discovery-world-polish";
+import { PlayableInstrument } from "./playable-instrument";
+import { resolveApiMediaUrl } from "@/lib/api";
 
 type ModeId =
   | "explore"
+  | "play"
   | "toddler"
   | "quiz"
   | "hear_find"
@@ -52,6 +55,7 @@ type ModeId =
 
 const MODES: Array<{ id: ModeId; label: string; icon: typeof Sparkles }> = [
   { id: "explore", label: "Explore", icon: Compass },
+  { id: "play", label: "Play", icon: Music },
   { id: "toddler", label: "Toddler", icon: Baby },
   { id: "quiz", label: "Quiz", icon: HelpCircle },
   { id: "hear_find", label: "Hear", icon: Ear },
@@ -79,12 +83,17 @@ export function DiscoveryWorldExperience({
   const [delight, setDelight] = useState(false);
   const sessionStart = useRef(Date.now());
   const daily = useDiscoveryDailyAdventure(config, childId);
-  const columns = useResponsiveGridColumns();
 
   const items = useMemo(() => {
     if (category === "all") return config.manifest.items;
     return config.manifest.items.filter((i) => i.category === category);
   }, [category, config.manifest.items]);
+
+  // The playable "Play" mode is only meaningful for Instrument World.
+  const modes = useMemo(
+    () => MODES.filter((m) => m.id !== "play" || config.worldId === "instrument_world"),
+    [config.worldId],
+  );
 
   useEffect(() => {
     onEngage?.();
@@ -138,7 +147,7 @@ export function DiscoveryWorldExperience({
             className="flex gap-2 overflow-x-auto pb-1"
             aria-label={`${config.title} learning modes`}
           >
-            {MODES.map(({ id, label, icon: Icon }) => (
+            {modes.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 type="button"
@@ -208,21 +217,25 @@ export function DiscoveryWorldExperience({
                     testId="discovery-explore-empty"
                   />
                 ) : (
-                  <VirtualizedGrid
-                    items={items}
-                    columns={columns}
-                    rowHeight={200}
-                    className="h-[min(68vh,720px)]"
-                    renderItem={(item) => (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    {items.map((item) => (
                       <WorldItemCard
+                        key={item.id}
                         item={item}
                         resolveAssetUrl={config.resolveAssetUrl}
                         onSelect={setSelected}
                       />
-                    )}
-                  />
+                    ))}
+                  </div>
                 )}
               </div>
+            )}
+            {mode === "play" && (
+              <PlayMode
+                config={config}
+                childId={childId}
+                onPlay={() => daily.record("listen_sounds")}
+              />
             )}
             {mode === "toddler" && (
               <ToddlerGrid
@@ -435,6 +448,88 @@ function ToddlerGrid({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function PlayMode({
+  config,
+  childId,
+  onPlay,
+}: {
+  config: DiscoveryWorldRuntimeConfig;
+  childId: number;
+  onPlay?: () => void;
+}) {
+  const [selected, setSelected] = useState<WorldManifestItem | null>(null);
+
+  useEffect(() => {
+    discoveryWorldAudioManager.unlockFromGesture();
+  }, []);
+
+  if (selected) {
+    const primary = config.getPrimarySound(selected);
+    const sampleUrl = primary
+      ? resolveApiMediaUrl(config.resolveAssetUrl(primary.gcsPath))
+      : null;
+    return (
+      <div className="space-y-4 px-2">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setSelected(null)}
+            aria-label="Back to instruments"
+            className="min-h-11 rounded-full bg-white/5 px-3 py-2 text-sm font-semibold"
+          >
+            Back
+          </button>
+          <h2 className="text-xl font-bold">
+            {selected.emoji} {selected.name}
+          </h2>
+          <span className="w-12" aria-hidden />
+        </div>
+        <PlayableInstrument
+          item={selected}
+          sampleUrl={sampleUrl}
+          onPlay={() => {
+            applyDiscoveryWorldEngagement({
+              worldId: config.worldId,
+              childId,
+              itemId: selected.id,
+              soundId: primary?.id ?? selected.id,
+              items: config.manifest.items,
+            });
+            onPlay?.();
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 px-2">
+      <p className="text-center text-sm text-muted-foreground">
+        Pick an instrument and play it yourself 🎶
+      </p>
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+        {config.manifest.items.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => {
+              setSelected(item);
+              trackDiscoveryWorldsEvent(config.worldId, "world_mode_changed", {
+                itemId: item.id,
+                mode: "play",
+              });
+            }}
+            className="flex aspect-square flex-col items-center justify-center gap-1 rounded-[20px] border border-white/10 bg-[rgba(18,28,60,0.78)] p-2"
+          >
+            <WorldVisualThumb item={item} resolveAssetUrl={config.resolveAssetUrl} size={56} />
+            <span className="text-xs font-semibold">{item.name}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
