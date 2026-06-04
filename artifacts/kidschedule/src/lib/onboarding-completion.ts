@@ -291,7 +291,10 @@ export async function runOnboardingFinishTransaction(
             },
             telemetryOpts,
           );
-          continue;
+          throw new OnboardingFinishError(
+            "child-save",
+            `Child profile save failed for "${childName}" (HTTP ${res.status})`,
+          );
         }
         savedChildCount += 1;
         childId = typeof body.id === "number" ? body.id : null;

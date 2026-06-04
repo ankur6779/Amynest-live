@@ -17,7 +17,9 @@ import { createOnboardingRunId, getOnboardingRunId } from "@/lib/onboarding-tele
 import {
   applySetupStatusUpdate,
   clearOnboardingCompletionCache,
+  clearUserScopedClientCaches,
   isSetupComplete,
+  persistOnboardingCache,
   readOnboardingCache,
   repairLocalFromServerComplete,
   resolveSetupStatus,
@@ -186,6 +188,64 @@ describe("runOnboardingFinishTransaction", () => {
 
     await runOnboardingFinishTransaction(authFetch, payload);
     expect(onboardingPosts).toBe(1);
+  });
+
+  it("fails when a new child save fails instead of completing onboarding silently", async () => {
+    let onboardingPosts = 0;
+    const multiChildPayload = {
+      ...payload,
+      children: [
+        { isOnboarding: true, name: "Ava" },
+        { isOnboarding: true, name: "Ben" },
+      ],
+    };
+    const authFetch = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === "/api/onboarding" && (!init || init.method === "GET")) {
+        return mockResponse({ onboardingComplete: false, profileComplete: false });
+      }
+      if (url === "/api/parent-profile") {
+        return mockResponse({ name: "Sam" });
+      }
+      if (url === "/api/children" && (!init || init.method === "GET")) {
+        return mockResponse([]);
+      }
+      if (url === "/api/children" && init?.method === "POST") {
+        const body = JSON.parse(String(init.body)) as { name?: string };
+        if (body.name === "Ava") return mockResponse({ id: 1, name: "Ava" });
+        return mockResponse({ fallback: true }, true, 500);
+      }
+      if (url.includes("/goals")) {
+        return mockResponse({ ok: true });
+      }
+      if (url === "/api/onboarding" && init?.method === "POST") {
+        onboardingPosts += 1;
+        return mockResponse({ success: true, onboardingComplete: true });
+      }
+      throw new Error(`unexpected ${url}`);
+    });
+
+    await expect(
+      runOnboardingFinishTransaction(authFetch, multiChildPayload),
+    ).rejects.toMatchObject({ step: "child-save" });
+    expect(onboardingPosts).toBe(0);
+  });
+});
+
+describe("clearUserScopedClientCaches", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("clears stale onboarding completion so the next account is not skipped", () => {
+    persistOnboardingCache({ onboardingComplete: true, profileComplete: true });
+    clearUserScopedClientCaches();
+    expect(readOnboardingCache().onboardingComplete).toBe(false);
+    expect(
+      applySetupStatusUpdate(readOnboardingCache(), {
+        onboardingComplete: false,
+        profileComplete: false,
+      }).onboardingComplete,
+    ).toBe(false);
   });
 });
 

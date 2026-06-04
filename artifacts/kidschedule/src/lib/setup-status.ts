@@ -70,6 +70,15 @@ export function clearOnboardingCompletionCache(): void {
 }
 
 /**
+ * Clear client caches that must not leak across sign-out or account switch.
+ * React Query is cleared separately in QueryClientCacheInvalidator.
+ */
+export function clearUserScopedClientCaches(): void {
+  clearOnboardingCompletionCache();
+  clearOnboardingChatSession();
+}
+
+/**
  * Server COMPLETE + local INCOMPLETE → repair local cache and clear resume session.
  * Server is the single source of truth for completion.
  */
