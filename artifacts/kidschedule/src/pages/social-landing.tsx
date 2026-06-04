@@ -9,13 +9,10 @@ import {
   ShieldCheck,
   Lock,
   EyeOff,
-  HeartHandshake,
   Calendar,
   Utensils,
   Compass,
   MessageCircle,
-  Play,
-  Pause,
   Check,
   X,
   UserPlus,
@@ -29,7 +26,25 @@ import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
 
 const OFFICIAL_LOGO = "/amynest-logo-new.png";
 const OG_IMAGE = "/opengraph.jpg";
-const PROMO_IMAGE = "/promo/amynest-tap-to-download.png";
+const FAMILY_PHOTO = "/promo/social/carousels/vs-generic-apps/03-modern-families.png";
+
+/** Outcome-focused hero headline options (CRO review — active: #1). */
+const HERO_HEADLINE_OPTIONS = [
+  "Turn Parenting Chaos Into Calm Daily Wins",
+  "Know What To Do Next — From Crying Baby to Homework Battles",
+  "Stop Googling at 2 AM. Get Clear Parenting Steps Instantly.",
+  "Calmer Mornings, Better Meals, Confident Kids — One App",
+  "Your Daily Parenting Plan — Ready in Minutes",
+  "From Overwhelmed to On Track — Every Stage, Ages 0–10+",
+  "Finally Know What To Feed, Teach, and Do Today",
+  "Less Guesswork. More Good Days With Your Child.",
+  "Parenting Answers When You Need Them — Not Hours Later",
+  "Build Routines, Skills, and Calm — From Birth Through Age 10+",
+] as const;
+
+const HERO_HEADLINE = HERO_HEADLINE_OPTIONS[0];
+const HERO_HEADLINE_LEAD = "Turn Parenting Chaos Into";
+const HERO_HEADLINE_ACCENT = "Calm Daily Wins";
 
 type StoreTarget = "android" | "ios";
 type LandingEventName =
@@ -38,7 +53,6 @@ type LandingEventName =
   | "install_intent"
   | "scroll_depth"
   | "screenshot_carousel_engagement"
-  | "demo_video_engagement"
   | "scroll_cta_shown"
   | "exit_intent_shown";
 
@@ -219,12 +233,55 @@ const STAGES = [
   },
   {
     range: "8–10+ Years",
-    label: "Advanced Growth",
+    label: "School-Age & Beyond",
     icon: GraduationCap,
     gradient: "linear-gradient(135deg,#06b6d4,#22c55e)",
-    items: ["Advanced Learning", "Abacus", "Olympiad Prep", "AI Learning Support"],
+    items: ["Study & Focus Plans", "Reading & Writing", "Confidence Building", "Age-Right Learning"],
   },
 ] as const;
+
+const PARENT_AMY_QUESTIONS: ChatTurn[] = [
+  {
+    parent: "My baby keeps crying and I don't know why.",
+    amy: "Let's identify the likely cause — hunger, sleep, or comfort — and what to try in the next 10 minutes.",
+  },
+  {
+    parent: "What should my toddler eat today?",
+    amy: "Here's a balanced meal plan with breakfast, lunch, and two healthy snacks matched to their age.",
+  },
+  {
+    parent: "My child refuses to study after school.",
+    amy: "Let's build a simple 15-minute learning routine that feels easy to start today.",
+  },
+  {
+    parent: "How do I create a bedtime routine that actually sticks?",
+    amy: "I'll map a wind-down sequence with timing, cues, and one small win you can repeat tonight.",
+  },
+  {
+    parent: "Is my baby's development on track?",
+    amy: "I'll walk through age-based milestones and what to watch for — plus when to talk with your pediatrician.",
+  },
+  {
+    parent: "My child struggles to pronounce words clearly.",
+    amy: "Speech Coach can start with gentle daily practice — I'll pick sounds and activities for their level.",
+  },
+  {
+    parent: "Our mornings are always chaotic. Where do I start?",
+    amy: "The Routine Generator will build a calm morning plan around wake-up, meals, and getting out the door.",
+  },
+  {
+    parent: "How much screen time is okay for my 5-year-old?",
+    amy: "Here's an age-appropriate limit and guided activities to replace random scrolling with purposeful play.",
+  },
+  {
+    parent: "What should we do with our child today?",
+    amy: "Based on age and progress, here are three activities — learning, movement, and calm time — for today.",
+  },
+  {
+    parent: "My child had a meltdown after school. What now?",
+    amy: "Let's reset with a short calming routine, then one connection activity before any homework.",
+  },
+];
 
 /** `them` = whether a typical learning app usually offers this. AmyNest offers all. */
 const COMPARISON_ROWS = [
@@ -302,17 +359,9 @@ const OUTCOME_FEATURES = [
   {
     icon: GraduationCap,
     title: "Raise A Confident, Capable Learner",
-    desc: "Phonics, spelling, abacus and Smart Study Zone grow real skills, one win at a time.",
+    desc: "Phonics, reading, spelling and Smart Study Zone grow real skills, one win at a time.",
     gradient: "linear-gradient(135deg,#06b6d4,#3b82f6)",
   },
-] as const;
-
-const SUPPORT_PILLARS = [
-  { icon: MessageCircle, title: "Parenting Support", desc: "Real answers to real parenting moments, the second they happen." },
-  { icon: GraduationCap, title: "Learning Support", desc: "Phonics, reading, spelling and study that grow with your child." },
-  { icon: HeartHandshake, title: "Child Development Support", desc: "Speech, milestones and age-based guidance from infancy onward." },
-  { icon: Calendar, title: "Daily Routine Support", desc: "Calm, personalized days that replace chaos with rhythm." },
-  { icon: ShieldCheck, title: "Safe Learning Environment", desc: "No ads, no harmful content — a space built only for children." },
 ] as const;
 
 /** Real app UI captures served from /promo/get-app/screenshots/ */
@@ -352,14 +401,14 @@ const SCREENSHOTS: Screenshot[] = [
   { id: "discovery", title: "Discovery Worlds", benefit: "Spark curiosity with immersive, child-safe worlds of exploration.", accent: "#06b6d4", rows: ["Explore a world", "Guided discovery", "Fun challenges", "Earn rewards"] },
 ];
 
-function PhoneFrame({ children }: { children: React.ReactNode }) {
+function PhoneFrame({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className="relative mx-auto w-full max-w-[250px] rounded-[2.2rem] overflow-hidden"
+      className={`relative mx-auto w-full rounded-[2.2rem] overflow-hidden ${className ?? "max-w-[250px]"}`}
       style={{
         aspectRatio: "9/19",
-        border: "2px solid rgba(255,255,255,0.16)",
-        boxShadow: "0 28px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset, 0 0 50px rgba(168,85,247,0.18)",
+        border: "2px solid rgba(255,255,255,0.22)",
+        boxShadow: "0 28px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.08) inset, 0 0 50px rgba(168,85,247,0.18)",
         background: "#0d0b16",
       }}
     >
@@ -434,10 +483,14 @@ function AppScreenshotStrip() {
         <p className="text-white/60 text-sm sm:text-base max-w-xl mx-auto mt-3 leading-relaxed">
           Swipe through the app, then tap any screen to enlarge.
         </p>
+        <p className="inline-flex items-center justify-center gap-2 mt-4 text-sm font-semibold text-emerald-300/95">
+          <Check className="h-4 w-4 shrink-0" aria-hidden />
+          See real screens from the app. No marketing promises.
+        </p>
       </div>
 
       <div
-        className="flex gap-4 overflow-x-auto pb-3 -mx-1 px-1 snap-x snap-mandatory scroll-smooth"
+        className="flex gap-5 overflow-x-auto pb-4 -mx-1 px-1 snap-x snap-mandatory scroll-smooth"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {HERO_APP_SCREENSHOTS.map((shot) => (
@@ -445,14 +498,14 @@ function AppScreenshotStrip() {
             key={shot.id}
             type="button"
             onClick={() => open(shot)}
-            className="snap-center shrink-0 w-[148px] sm:w-[168px] text-left group"
+            className="snap-center shrink-0 w-[176px] sm:w-[200px] text-left group"
             aria-label={`View ${shot.title} screenshot`}
           >
-            <div className="relative">
-              <PhoneFrame>
+            <div className="relative rounded-[2.35rem] p-1" style={{ background: "linear-gradient(135deg,rgba(168,85,247,0.35),rgba(99,102,241,0.15))" }}>
+              <PhoneFrame className="max-w-none">
                 <img
                   src={shot.image}
-                  alt=""
+                  alt={shot.title}
                   className="absolute inset-0 h-full w-full object-cover object-top"
                   loading="eager"
                   decoding="async"
@@ -608,75 +661,56 @@ function ScreenshotCarousel() {
   );
 }
 
-function DemoVideo({ onPrimaryCta }: { onPrimaryCta: () => void }) {
-  const [playing, setPlaying] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const trackedMilestones = useRef(new Set<string>());
-
-  const togglePlay = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (video.paused) {
-      void video.play();
-      setPlaying(true);
-      trackLandingEvent("demo_video_engagement", { action: "play" });
-    } else {
-      video.pause();
-      setPlaying(false);
-      trackLandingEvent("demo_video_engagement", { action: "pause" });
-    }
-  };
-
+function ParentAmyQuestionsSection() {
   return (
-    <section id="demo" className="relative z-10 max-w-6xl mx-auto px-4 py-10 md:py-14 scroll-mt-24">
-      <div className="sl-glass rounded-3xl p-4 md:p-8 grid grid-cols-1 lg:grid-cols-[0.95fr_1fr] gap-6 items-center">
-        <div className="relative overflow-hidden rounded-[2rem] min-h-[360px] md:min-h-[460px]" style={{ background: "linear-gradient(160deg,#151024,#080711)" }}>
-          <video
-            ref={videoRef}
-            className="absolute inset-0 h-full w-full object-cover opacity-80"
-            autoPlay
-            muted
-            playsInline
-            poster={PROMO_IMAGE}
-            onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
-            onTimeUpdate={(event) => {
-              const video = event.currentTarget;
-              if (!video.duration || Number.isNaN(video.duration)) return;
-              const progress = video.currentTime / video.duration;
-              if (progress >= 0.5 && !trackedMilestones.current.has("50")) {
-                trackedMilestones.current.add("50");
-                trackLandingEvent("demo_video_engagement", { action: "50_percent" });
-              }
-            }}
-            onEnded={() => trackLandingEvent("demo_video_engagement", { action: "complete" })}
-          >
-            <source src="/promo/get-app/demo-15s.mp4" type="video/mp4" />
-          </video>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-          <button
-            type="button"
-            onClick={togglePlay}
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-16 w-16 rounded-full bg-white text-slate-950 flex items-center justify-center shadow-2xl"
-            aria-label={playing ? "Pause demo video" : "Play demo video"}
-          >
-            {playing ? <Pause className="h-7 w-7" /> : <Play className="h-7 w-7 ml-1" />}
-          </button>
-          <div className="absolute left-5 right-5 bottom-5">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-200 mb-2">15 Second Demo</p>
-            <h2 className="font-quicksand font-black text-2xl sm:text-3xl">See it before you install.</h2>
+    <section className="relative z-10 max-w-6xl mx-auto px-4 py-12 md:py-16" aria-labelledby="parent-questions-heading">
+      <div className="text-center mb-9">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">Real questions, real answers</p>
+        <h2 id="parent-questions-heading" className="font-quicksand font-black text-3xl sm:text-4xl">
+          Questions Parents Ask AMY Every Day
+        </h2>
+        <p className="text-white/60 text-sm sm:text-base max-w-2xl mx-auto mt-3 leading-relaxed">
+          The same kinds of moments families bring to AmyNest — answered with clear next steps, not generic articles.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {PARENT_AMY_QUESTIONS.map((turn) => (
+          <div key={turn.parent} className="sl-card rounded-2xl p-5 md:p-6">
+            <AmyConversation turns={[turn]} compact />
           </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BuiltForFamiliesSection() {
+  return (
+    <section className="relative z-10 max-w-6xl mx-auto px-4 py-12 md:py-16" aria-labelledby="built-for-families-heading">
+      <div className="sl-glass rounded-3xl overflow-hidden grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-0 items-stretch">
+        <div className="relative min-h-[240px] lg:min-h-full">
+          <img
+            src={FAMILY_PHOTO}
+            alt="Parent and child using AmyNest at home"
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/70 via-black/25 to-transparent" />
         </div>
-        <div className="px-2 md:px-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300 mb-3">From download to daily calm</p>
-          <h2 className="font-quicksand font-black text-3xl sm:text-4xl mb-4">A personalized parenting plan in minutes.</h2>
-          <p className="text-white/64 text-base leading-relaxed mb-6">
-            AMY turns your child&apos;s age and your daily challenges into routines, infant care, nutrition, speech and learning you can use right away.
+        <div className="p-6 md:p-10 flex flex-col justify-center">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">Built for real families</p>
+          <h2 id="built-for-families-heading" className="font-quicksand font-black text-2xl sm:text-3xl mb-4">
+            Technology should calm your day — not add another chore.
+          </h2>
+          <p className="text-white/65 text-sm sm:text-base leading-relaxed mb-4">
+            AmyNest began with a frustration every parent knows: advice scattered across apps, blogs, and group chats — while mornings, meals, and bedtime still feel chaotic.
           </p>
-          <button type="button" onClick={onPrimaryCta} className="sl-cta inline-flex items-center justify-center gap-2 font-bold px-7 py-4 rounded-2xl text-white">
-            Start Your Child&apos;s Free Plan
-            <ArrowRight className="h-4 w-4" />
-          </button>
+          <p className="text-white/65 text-sm sm:text-base leading-relaxed mb-4">
+            We built AMY so one place handles routines, infant care, nutrition, speech, and learning — guidance that adapts to your child&apos;s age instead of one-size-fits-all tips.
+          </p>
+          <p className="text-white/50 text-xs sm:text-sm leading-relaxed">
+            Privacy first · Child-safe · No ads for kids · Free to start
+          </p>
         </div>
       </div>
     </section>
@@ -790,18 +824,18 @@ export default function SocialLandingPage() {
   const scrollDepths = useRef(new Set<number>());
 
   useEffect(() => {
-    document.title = "AmyNest — One App for Every Stage of Parenting (0–10+)";
+    document.title = "AmyNest — Turn Parenting Chaos Into Calm Daily Wins";
     const description =
-      "AmyNest is your AI parenting operating system. Meet AMY — your co-pilot for routines, infant care, nutrition, speech and learning, from birth through age 10+. Free on Android & iOS.";
+      "AmyNest helps you turn chaotic days into calm wins. Meet AMY for routines, infant care, nutrition, speech and learning from birth through age 10+. Free on Android & iOS.";
     setMetaTag('meta[name="description"]', "content", description);
     setMetaTag('link[rel="canonical"]', "href", "https://www.amynest.in/get-app");
-    setMetaTag('meta[property="og:title"]', "content", "One App for Every Stage of Parenting — AmyNest");
+    setMetaTag('meta[property="og:title"]', "content", "Turn Parenting Chaos Into Calm Daily Wins — AmyNest");
     setMetaTag('meta[property="og:description"]', "content", description);
     setMetaTag('meta[property="og:image"]', "content", `https://www.amynest.in${OG_IMAGE}`);
     setMetaTag('meta[property="og:type"]', "content", "website");
     setMetaTag('meta[property="og:url"]', "content", "https://www.amynest.in/get-app");
     setMetaTag('meta[name="twitter:card"]', "content", "summary_large_image");
-    setMetaTag('meta[name="twitter:title"]', "content", "One App for Every Stage of Parenting — AmyNest");
+    setMetaTag('meta[name="twitter:title"]', "content", "Turn Parenting Chaos Into Calm Daily Wins — AmyNest");
     setMetaTag('meta[name="twitter:description"]', "content", description);
     setMetaTag('meta[name="twitter:image"]', "content", `https://www.amynest.in${OG_IMAGE}`);
     trackLandingEvent("landing_page_view", { store_target: target });
@@ -958,12 +992,12 @@ export default function SocialLandingPage() {
               <Sparkles className="h-3.5 w-3.5 text-purple-300" />
               AI-Powered Parenting Operating System
             </p>
-            <h1 className="sl-fade-1 font-quicksand font-black text-[2.1rem] sm:text-5xl lg:text-[3.25rem] leading-[1.06] tracking-tight mb-4">
-              One App for{" "}
-              <span className="sl-gradient-text">Every Stage of Parenting</span>
+            <h1 className="sl-fade-1 font-quicksand font-black text-[2.1rem] sm:text-5xl lg:text-[3.1rem] leading-[1.08] tracking-tight mb-4">
+              {HERO_HEADLINE_LEAD}{" "}
+              <span className="sl-gradient-text">{HERO_HEADLINE_ACCENT}</span>
             </h1>
             <p className="sl-fade-2 text-white/70 text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0 mb-6">
-              Meet AMY — your AI co-pilot for routines, infant care, nutrition, speech and learning, from your baby&apos;s first words to age 10+.
+              Meet AMY — clear next steps for routines, infant care, meals, speech and learning, from birth through age 10+.
             </p>
 
             <div className="sl-fade-3 max-w-lg mx-auto lg:mx-0 mb-5">
@@ -1142,8 +1176,6 @@ export default function SocialLandingPage() {
         </div>
       </section>
 
-      <DemoVideo onPrimaryCta={openPrimaryStore} />
-
       {/* OUTCOME FEATURES */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 py-12 md:py-16">
         <div className="text-center mb-9">
@@ -1165,26 +1197,9 @@ export default function SocialLandingPage() {
 
       <ScreenshotCarousel />
 
-      {/* WHY PARENTS LOVE AMYNEST */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 py-12 md:py-16">
-        <div className="text-center mb-9">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">Why parents love AmyNest</p>
-          <h2 className="font-quicksand font-black text-3xl sm:text-4xl">Support for every part of parenting</h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {SUPPORT_PILLARS.map((p) => (
-            <div key={p.title} className="sl-card rounded-2xl p-5 flex items-start gap-3.5">
-              <span className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.28)" }}>
-                <p.icon className="h-5 w-5 text-purple-200" />
-              </span>
-              <div>
-                <h3 className="font-quicksand font-bold text-base text-white mb-1">{p.title}</h3>
-                <p className="text-white/58 text-sm leading-relaxed">{p.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <ParentAmyQuestionsSection />
+
+      <BuiltForFamiliesSection />
 
       {/* FINAL CTA */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 pb-28 md:pb-16">
