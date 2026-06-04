@@ -1,9 +1,6 @@
 /** GCS folder: amynest-audio-storage / Answer to How */
 export const KIDS_HOW_GCS_PREFIX = "Answer to How";
 
-export const KIDS_HOW_GCS_BUCKET_URL =
-  "https://storage.googleapis.com/amynest-audio-storage";
-
 export type KidsHowCategory =
   | "Amazing Answers"
   | "Facts & Knowledge"
@@ -176,10 +173,9 @@ export function getKidsHowBook(id: string): LearningBook | undefined {
   return bookById.get(id);
 }
 
-/** Public GCS URL — streams in browser without API proxy. */
-export function resolveKidsHowPdfUrl(gcsPath: string): string {
-  const segments = gcsPath.split("/").map((s) => encodeURIComponent(s));
-  return `${KIDS_HOW_GCS_BUCKET_URL}/${segments.join("/")}`;
+/** API path for signed PDF preview — never expose raw GCS URLs to clients. */
+export function kidsHowPreviewApiPath(bookId: string): string {
+  return `/api/kids-how-library/preview-url?bookId=${encodeURIComponent(bookId)}`;
 }
 
 export function filterKidsHowBooks(

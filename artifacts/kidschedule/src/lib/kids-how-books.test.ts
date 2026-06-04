@@ -3,17 +3,19 @@ import {
   filterKidsHowBooks,
   getKidsHowBook,
   KIDS_HOW_BOOKS,
-  resolveKidsHowPdfUrl,
+  kidsHowPreviewApiPath,
 } from "@/lib/kids-how-books";
 
 describe("kids-how-books", () => {
-  it("has 15 unique books with resolvable GCS paths", () => {
+  it("has 15 unique books with API preview paths", () => {
     expect(KIDS_HOW_BOOKS).toHaveLength(15);
     const ids = new Set(KIDS_HOW_BOOKS.map((b) => b.id));
     expect(ids.size).toBe(15);
     for (const book of KIDS_HOW_BOOKS) {
       expect(book.gcsPath.startsWith("Answer to How/")).toBe(true);
-      expect(resolveKidsHowPdfUrl(book.gcsPath)).toContain("Answer%20to%20How");
+      expect(kidsHowPreviewApiPath(book.id)).toContain(
+        `/api/kids-how-library/preview-url?bookId=${encodeURIComponent(book.id)}`,
+      );
     }
   });
 

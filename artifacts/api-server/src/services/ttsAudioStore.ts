@@ -695,17 +695,6 @@ export async function ttsAudioBackfillPostgres(
   }
 }
 
-/** True when an object exists in the primary GCS bucket. */
-export async function gcsObjectExists(objectName: string): Promise<boolean> {
-  if (!legacyGcsConfigured()) return false;
-  try {
-    const [exists] = await getBucket().file(objectName).exists();
-    return exists;
-  } catch {
-    return false;
-  }
-}
-
 /** Time-limited HTTPS read URL — never expose the bucket without signing. */
 export async function getGcsSignedReadUrl(
   objectName: string,
