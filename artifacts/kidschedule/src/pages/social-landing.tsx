@@ -1001,11 +1001,9 @@ function TryAmyDemoSection() {
                     )}
                   </div>
                 </div>
-              </div>
             </div>
           ))}
         </div>
-
         {/* Suggested question chips — the ONLY way to interact. No text input by design. */}
         <div className="mt-5 pt-4 border-t border-white/10">
           <p className="text-[11px] font-bold uppercase tracking-wide text-white/40 mb-3">Try another question</p>
