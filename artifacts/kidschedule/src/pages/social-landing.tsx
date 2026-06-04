@@ -54,7 +54,8 @@ type LandingEventName =
   | "scroll_depth"
   | "screenshot_carousel_engagement"
   | "scroll_cta_shown"
-  | "exit_intent_shown";
+  | "exit_intent_shown"
+  | "demo_question_click";
 
 function trackLandingEvent(
   event: LandingEventName,
@@ -207,6 +208,63 @@ const AMY_CHAT: ChatTurn[] = [
   { parent: "My child refuses to study.", amy: "Let's build a simple 15-minute learning routine that feels easy to start today." },
   { parent: "What should my toddler eat today?", amy: "Here's a balanced meal plan with breakfast, lunch and two healthy snacks." },
   { parent: "My baby keeps crying.", amy: "Let's identify the likely cause — hunger, sleep or comfort — and what to try next." },
+];
+
+/**
+ * SAFE interactive demo data — 100% local, no network, no AI inference, no token usage.
+ * Every response below is a static preview string. Nothing here calls a backend or LLM.
+ */
+type DemoExchange = { id: string; question: string; answer: string };
+
+const DEMO_EXCHANGES: DemoExchange[] = [
+  {
+    id: "study",
+    question: "My child won't study",
+    answer:
+      "Start with a 10-minute study block and one small win. Consistency matters more than duration.",
+  },
+  {
+    id: "vegetables",
+    question: "My toddler won't eat vegetables",
+    answer:
+      "Try pairing vegetables with familiar foods and offer small portions repeatedly without pressure.",
+  },
+  {
+    id: "crying",
+    question: "My baby keeps crying",
+    answer:
+      "Check hunger, sleep and comfort cues first. Babies often communicate these needs through crying.",
+  },
+  {
+    id: "bedtime",
+    question: "Bedtime is a struggle",
+    answer:
+      "Keep a calm, predictable wind-down: dim lights, one story, same time each night. Routine signals the brain it's time to sleep.",
+  },
+  {
+    id: "screens",
+    question: "My child spends too much time on screens",
+    answer:
+      "Swap some screen time for one guided activity they enjoy. Clear limits work best when there's a fun alternative ready.",
+  },
+  {
+    id: "activity",
+    question: "What activity should we do today?",
+    answer:
+      "Pick one learning, one movement and one calm activity. A simple mix keeps the day balanced and engaging.",
+  },
+  {
+    id: "speech",
+    question: "My child struggles with speech",
+    answer:
+      "Practice a few target sounds daily through play and repetition. Short, gentle sessions build clarity and confidence over time.",
+  },
+  {
+    id: "routine",
+    question: "Help me create a daily routine",
+    answer:
+      "Anchor the day around wake-up, meals and bedtime first. Build everything else around those fixed points for a calm rhythm.",
+  },
 ];
 
 const STAGES = [
@@ -818,6 +876,190 @@ function AmyConversation({ turns, compact = false }: { turns: ChatTurn[]; compac
   );
 }
 
+/**
+ * "Try AMY in 10 Seconds" — a SAFE, frontend-only product preview.
+ *
+ * Hard guarantees (do not change without review):
+ *  - No network requests, no fetch, no backend calls.
+ *  - No OpenAI / GPT / Claude / Gemini / LLM inference. Zero token usage, zero API cost.
+ *  - No free-form text input and no message submission — visitors can only tap predefined chips.
+ *  - All responses come from the static, local DEMO_EXCHANGES array above.
+ * This is a conversion preview, not a real chatbot or support tool.
+ */
+function TryAmyDemoSection() {
+  // Pre-load the first realistic exchange so visitors see AMY's value with zero clicks.
+  const [history, setHistory] = useState<DemoExchange[]>(() => [DEMO_EXCHANGES[0]]);
+  const [typingId, setTypingId] = useState<string | null>(null);
+  const [revealedIds, setRevealedIds] = useState<Set<string>>(() => new Set([DEMO_EXCHANGES[0].id]));
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const typingTimer = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (typingTimer.current !== null) window.clearTimeout(typingTimer.current);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (node) node.scrollTo({ top: node.scrollHeight, behavior: "smooth" });
+  }, [history, typingId]);
+
+  const askDemo = (exchange: DemoExchange) => {
+    if (revealedIds.has(exchange.id) || typingId) return;
+    // Local-only event dispatch (no network) for analytics parity with the rest of the page.
+    trackLandingEvent("demo_question_click", { question_id: exchange.id });
+    setRevealedIds((prev) => new Set(prev).add(exchange.id));
+    setHistory((prev) => [...prev, { ...exchange, answer: "" }]);
+    setTypingId(exchange.id);
+    // Brief on-device "typing" for product realism. No request is in flight.
+    typingTimer.current = window.setTimeout(() => {
+      setHistory((prev) =>
+        prev.map((item) => (item.id === exchange.id ? { ...item, answer: exchange.answer } : item)),
+      );
+      setTypingId(null);
+    }, 550);
+  };
+
+  const hasResponse = history.some((item) => item.answer.length > 0);
+
+  return (
+    <section
+      className="relative z-10 max-w-4xl mx-auto px-4 py-12 md:py-16"
+      aria-labelledby="try-amy-demo-heading"
+    >
+      <div className="text-center mb-7 md:mb-9">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">
+          Interactive preview
+        </p>
+        <h2 id="try-amy-demo-heading" className="font-quicksand font-black text-3xl sm:text-4xl">
+          Try AMY in 10 Seconds
+        </h2>
+        <p className="text-white/60 text-sm sm:text-base max-w-xl mx-auto mt-3 leading-relaxed">
+          See how AMY helps with everyday parenting questions.
+        </p>
+        <p className="inline-flex items-center justify-center gap-2 mt-4 text-xs font-semibold text-emerald-300/90">
+          <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
+          Free preview · No sign-up · Works offline
+        </p>
+      </div>
+
+      <div className="sl-glass rounded-3xl p-4 sm:p-6" style={{ borderColor: "rgba(168,85,247,0.25)" }}>
+        {/* Chat header */}
+        <div className="flex items-center gap-2.5 pb-4 mb-4 border-b border-white/10">
+          <span
+            className="h-9 w-9 rounded-full flex items-center justify-center shrink-0"
+            style={{ background: "linear-gradient(135deg,#a855f7,#ec4899)" }}
+          >
+            <Sparkles className="h-4 w-4 text-white" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-quicksand font-black text-sm text-white leading-tight">Chat with AMY</p>
+            <p className="text-[11px] text-emerald-300">● Online · tap a question to preview</p>
+          </div>
+        </div>
+
+        {/* Conversation area */}
+        <div
+          ref={scrollRef}
+          className="flex flex-col gap-4 min-h-[180px] max-h-[340px] overflow-y-auto pr-1"
+          style={{ scrollbarWidth: "thin" }}
+          aria-live="polite"
+        >
+          {history.map((item) => (
+            <div key={item.id} className="flex flex-col gap-2 sl-fade">
+                <div
+                  className="self-end max-w-[88%] rounded-2xl rounded-br-md px-4 py-2.5"
+                  style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.14)" }}
+                >
+                  <p className="text-[13px] sm:text-sm text-white/90 leading-snug">{item.question}</p>
+                </div>
+                <div className="self-start max-w-[92%] flex items-end gap-2">
+                  <span
+                    className="h-7 w-7 rounded-full shrink-0 flex items-center justify-center"
+                    style={{ background: "linear-gradient(135deg,#a855f7,#ec4899)" }}
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-white" />
+                  </span>
+                  <div
+                    className="rounded-2xl rounded-bl-md px-4 py-2.5"
+                    style={{
+                      background: "linear-gradient(135deg,rgba(168,85,247,0.22),rgba(99,102,241,0.18))",
+                      border: "1px solid rgba(168,85,247,0.4)",
+                    }}
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-purple-200/90 mb-0.5">AMY</p>
+                    {typingId === item.id ? (
+                      <span className="flex items-center gap-1 py-1" aria-label="AMY is typing">
+                        <span className="sl-typing-dot h-1.5 w-1.5 rounded-full bg-purple-200/80" />
+                        <span className="sl-typing-dot h-1.5 w-1.5 rounded-full bg-purple-200/80" />
+                        <span className="sl-typing-dot h-1.5 w-1.5 rounded-full bg-purple-200/80" />
+                      </span>
+                    ) : (
+                      <p className="text-[13px] sm:text-sm text-white leading-snug">{item.answer}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Suggested question chips — the ONLY way to interact. No text input by design. */}
+        <div className="mt-5 pt-4 border-t border-white/10">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-white/40 mb-3">Try another question</p>
+          <div className="flex flex-wrap gap-2">
+            {DEMO_EXCHANGES.map((exchange) => {
+              const used = revealedIds.has(exchange.id);
+              return (
+                <button
+                  key={exchange.id}
+                  type="button"
+                  onClick={() => askDemo(exchange)}
+                  disabled={used || typingId !== null}
+                  className={`text-left text-[13px] font-semibold rounded-full px-3.5 py-2 transition-all ${
+                    used
+                      ? "bg-emerald-500/12 text-emerald-200/80 border border-emerald-400/25"
+                      : "bg-white/6 text-white/85 border border-white/12 hover:bg-white/12 hover:border-purple-400/40 active:scale-[0.97]"
+                  } ${typingId !== null && !used ? "opacity-50" : ""}`}
+                  aria-pressed={used}
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    {used && <Check className="h-3.5 w-3.5 shrink-0" aria-hidden />}
+                    {exchange.question}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* CTA — appears after the first AMY response */}
+      {hasResponse && (
+        <div
+          className="sl-fade mt-6 rounded-3xl px-5 py-6 sm:px-8 sm:py-7 text-center"
+          style={{
+            background: "linear-gradient(135deg, rgba(168,85,247,0.16) 0%, rgba(236,72,153,0.1) 100%)",
+            border: "1px solid rgba(168,85,247,0.28)",
+          }}
+        >
+          <p className="font-quicksand font-black text-xl sm:text-2xl text-white mb-1.5">
+            Get personalized guidance inside AmyNest.
+          </p>
+          <p className="text-white/60 text-sm max-w-md mx-auto mb-5 leading-relaxed">
+            This is a preview. In the app, AMY tailors every answer to your child&apos;s age and stage.
+          </p>
+          <div className="max-w-lg mx-auto">
+            <StoreButtonRow location="try_amy_demo" />
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function SocialLandingPage() {
   const target = useStoreTarget();
   const primaryStore = getStoreMeta(target);
@@ -960,6 +1202,11 @@ export default function SocialLandingPage() {
           transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .sl-cta:hover { transform: scale(1.03); box-shadow: 0 16px 48px rgba(236,72,153,0.5); }
+        @keyframes slTyping { 0%,60%,100% { opacity:0.25; transform:translateY(0); } 30% { opacity:1; transform:translateY(-2px); } }
+        .sl-typing-dot { animation: slTyping 1.1s ease-in-out infinite; }
+        .sl-typing-dot:nth-child(2) { animation-delay: 0.18s; }
+        .sl-typing-dot:nth-child(3) { animation-delay: 0.36s; }
+        @media (prefers-reduced-motion: reduce) { .sl-typing-dot { animation: none !important; } }
       `}</style>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
@@ -1043,6 +1290,8 @@ export default function SocialLandingPage() {
           ))}
         </div>
       </section>
+
+      <TryAmyDemoSection />
 
       <AppScreenshotStrip />
 
