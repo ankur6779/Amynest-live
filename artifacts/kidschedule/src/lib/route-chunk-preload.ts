@@ -14,6 +14,7 @@ const EXACT_ROUTE_LOADERS: Record<string, ChunkLoader> = {
   "/amy-ai-tutor": () => import("@/pages/amy-ai-tutor"),
   "/learn-with-amy": () => import("@/pages/amy-learning-tutor"),
   "/games": () => import("@/pages/games"),
+  "/answer-to-kids-how": () => import("@/pages/answer-to-kids-how"),
   "/progress": () => import("@/pages/progress"),
   "/insights": () => import("@/pages/insights"),
   "/rewards": () => import("@/pages/rewards"),
@@ -40,6 +41,10 @@ const PREFIX_ROUTE_LOADERS: Array<{ prefix: string; load: ChunkLoader }> = [
   { prefix: "/routines", load: () => import("@/pages/routines/index") },
   { prefix: "/speech-coach", load: () => import("@/pages/speech-coach/index") },
   { prefix: "/children", load: () => import("@/pages/children/index") },
+  {
+    prefix: "/answer-to-kids-how/read",
+    load: () => import("@/pages/answer-to-kids-how-reader"),
+  },
 ];
 
 const prefetched = new Set<string>();

@@ -361,6 +361,7 @@ export type PaywallReason =
   | "section_locked"
   | "phonics_workbook"
   | "hub_nutrition"
+  | "nutrition_library"
   | "speech_coach"
   | "learning_locked";
 
@@ -428,6 +429,12 @@ export const PAYWALL_REASON_COPY: Record<
     subtitle:
       "Allergy-aware, routine-friendly nutrition help—less dinner stress, better energy for learning.",
     cta: "Unlock nutrition",
+  },
+  nutrition_library: {
+    title: "Download expert nutrition guides",
+    subtitle:
+      "Nutrition Library downloads are available for Premium Families.",
+    cta: "Upgrade to Premium",
   },
   feature: UPGRADE_MODAL,
 };

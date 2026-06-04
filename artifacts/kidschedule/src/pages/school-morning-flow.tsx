@@ -23,7 +23,7 @@ const STEPS = DEFAULT_MORNING_STEPS;
 
 export default function SchoolMorningFlowPage() {
   const { t } = useTranslation();
-  const { navigate, back } = useAppNavigate();
+  const { back } = useAppNavigate();
   const [state, setState] = useState<MorningFlowDayState>(() => emptyDayState());
   const [tick, setTick] = useState(0);
 
@@ -75,7 +75,7 @@ export default function SchoolMorningFlowPage() {
       {/* Header */}
       <header className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="icon" className="rounded-full shrink-0" onClick={() => navigate("/parenting-hub", { replace: true, source: "school-morning-flow-back" })} aria-label={t("screens.school_morning_flow.back")}>
+          <Button variant="ghost" size="icon" className="rounded-full shrink-0" onClick={() => back("school-morning-flow-back")} aria-label={t("screens.school_morning_flow.back")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="min-w-0">

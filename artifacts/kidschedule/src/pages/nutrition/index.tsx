@@ -24,9 +24,10 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { NutritionLibrarySection } from "@/components/nutrition-library/nutrition-library-section";
 import {
   Apple, Salad, CalendarDays, Users, Trophy, Brain,
-  ChevronRight, AlertTriangle, BookOpen,
+  ChevronRight, AlertTriangle, BookOpen, Library,
   Leaf, Drumstick, CheckCircle2, AlertCircle, Activity,
   RefreshCw, Zap, Flame, Sun, CloudSnow, Wind, Loader2,
   Globe, Search,
@@ -45,7 +46,7 @@ const NUTRITION_WEEK_PLAN_FEATURE = "nutrition_week_plan";
 const NUTRITION_FAMILY_AI_FEATURE = "nutrition_family_ai";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Tab = "nutrients" | "meals" | "family" | "score";
+type Tab = "nutrients" | "meals" | "family" | "library" | "score";
 
 // ─── Score Colors ─────────────────────────────────────────────────────────────
 function scoreColor(_s: number) { return "text-foreground"; }
@@ -900,6 +901,7 @@ export default function NutritionHubPage() {
     { id: "nutrients", label: t("nutrition_hub.tabs.nutrients"), icon: <Apple className="h-4 w-4" /> },
     { id: "meals",     label: t("nutrition_hub.tabs.meals"),    icon: <CalendarDays className="h-4 w-4" /> },
     { id: "family",    label: t("nutrition_hub.tabs.family"),   icon: <Users className="h-4 w-4" /> },
+    { id: "library",   label: t("nutrition_hub.tabs.library"),  icon: <Library className="h-4 w-4" /> },
     { id: "score",     label: t("nutrition_hub.tabs.score"),    icon: <Trophy className="h-4 w-4" /> },
   ];
 
@@ -1035,6 +1037,8 @@ export default function NutritionHubPage() {
                   <FamilyModeSection suggestedMeal={suggestedMeal} />
                 </div>
               )}
+
+              {activeTab === "library" && <NutritionLibrarySection />}
 
               {activeTab === "score" && (
                 <NutritionScoreSection ageGroupId={activeAgeGroupId} />

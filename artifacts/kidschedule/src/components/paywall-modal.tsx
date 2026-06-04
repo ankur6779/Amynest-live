@@ -61,6 +61,7 @@ const REASON_ICONS: Record<AppPaywallReason, LucideIcon> = {
   section_locked: Sparkles,
   phonics_workbook: FileText,
   hub_nutrition: Sparkles,
+  nutrition_library: FileText,
   speech_coach: MessageCircle,
   learning_locked: FileText,
 };

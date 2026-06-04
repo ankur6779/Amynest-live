@@ -3067,6 +3067,16 @@
         "title": "📄 Fun Sheets",
         "description": "Printable activity & learning PDFs — preview, then download (2/day)"
       },
+      "answer-to-kids-how": {
+        "title": "❓ Answer To Kids How",
+        "description": "Explore amazing answers, science, animals, history, inventions, the human body, math, chess and more.",
+        "eyebrow": "Curiosity library",
+        "library_description": "Discover fascinating answers to curious questions through books, facts and visual learning.",
+        "search_placeholder": "Search books, topics, or keywords",
+        "book_count": "{{count}} of {{total}} books",
+        "empty_quote": "Every great discovery starts with a question.",
+        "empty_cta": "Explore Books"
+      },
       "spelling-mastery": {
         "title": "🔡 Spelling Mastery",
         "description": "Learn → Practice → Dictate → Compete with Amy's voice"
@@ -5540,7 +5550,23 @@
       "nutrients": "Nutrient Library",
       "meals": "Meal Planner",
       "family": "Family Mode",
+      "library": "📚 Nutrition Library",
       "score": "Daily Score"
+    },
+    "library": {
+      "title": "Nutrition Library",
+      "subtitle": "Expert nutrition guides, meal plans, healthy recipes and family wellness resources.",
+      "book_count": "{{count}} books available",
+      "banner_premium": "⭐ Premium Families get unlimited access to downloadable nutrition guides, meal plans and recipe books.",
+      "banner_free": "Preview available. Upgrade to download.",
+      "banner_free_hint": "Preview available. Upgrade to download.",
+      "loading": "Loading nutrition guides…",
+      "empty": "📚 No books available yet.",
+      "preview_error_title": "Preview unavailable",
+      "preview_error_desc": "We couldn't open this guide. Please try again.",
+      "download_started_title": "Download started",
+      "download_error_title": "Download failed",
+      "download_error_desc": "Please try again in a moment."
     },
     "days": [
       "Mon",

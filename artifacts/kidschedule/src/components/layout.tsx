@@ -160,6 +160,7 @@ export function Layout({
     safePathStartsWithSegment(location, "/learn-with-amy");
   const isDashboard = location === "/" || location === "/dashboard";
   const showDashboardChrome = location === "/dashboard";
+  const isParentHubRoute = safePathStartsWith(location, "/parenting-hub");
   const canShowBack = !showDashboardChrome && location !== "/";
   const showMobileHeader = !isImmersiveRoute;
   const headerRef = useAppHeaderHeight(showMobileHeader);
@@ -277,7 +278,7 @@ export function Layout({
             className={
               isImmersiveRoute || isAssistantRoute
                 ? `mx-auto w-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-clip p-0 md:p-0${isAssistantRoute ? " assistant-route-content h-full" : ""}`
-                : showDashboardChrome
+                : showDashboardChrome || isParentHubRoute
                   ? "mx-auto w-full max-w-full min-w-0 flex-1 overflow-x-clip p-0 md:max-w-5xl md:p-8"
                   : "mx-auto w-full max-w-5xl min-w-0 flex-1 overflow-x-clip px-3 py-4 sm:px-4 md:p-8"
             }

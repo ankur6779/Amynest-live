@@ -53,7 +53,7 @@ function checklistKey(eventId: string, childId: number) {
 
 export default function EventPrepPage() {
   const { t } = useTranslation();
-  const { navigate } = useAppNavigate();
+  const { navigate, back } = useAppNavigate();
   const authFetch = useAuthFetch();
   const { run: runQuickAction, loading: quickActionLoading, result: quickActionResult, clear: clearQuickAction } =
     useEventPrepQuickAction(authFetch);
@@ -144,8 +144,8 @@ export default function EventPrepPage() {
   };
 
   const exitToParentHub = useCallback(() => {
-    navigate("/parenting-hub", { replace: true, source: "event-prep-back" });
-  }, [navigate]);
+    back("event-prep-back");
+  }, [back]);
 
   const handleStepBack = useCallback((): boolean => {
     if (view.kind === "child-pick") {

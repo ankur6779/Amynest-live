@@ -108,6 +108,8 @@ import {
   HUB_FEATURE_TILE_PREVIEW,
   HUB_FEATURE_TILE_TEXT,
   HUB_FEATURE_TILE_TITLE,
+  HUB_EXPANDED_CONTENT,
+  HUB_EXPANDED_CONTENT_STACK,
 } from "@/lib/parent-hub-premium";
 import { cn } from "@/lib/utils";
 import { HubShadedCardBody } from "@/components/hub-sub-tile-shell";
@@ -118,7 +120,7 @@ import { isPhonicsModuleAvailable } from "@/lib/phonics-manifest-validation";
 const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
   today:      ["amy-ai", "daily-tips", "generate-routine", "tomorrow-forecast", "command-center"],
   learning:   ["smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad"],
-  creativity: ["activities", "gaming-rewards", "art-craft", "worksheets", "coloring-books", "fun-sheets", "event-prep"],
+  creativity: ["activities", "gaming-rewards", "art-craft", "worksheets", "coloring-books", "fun-sheets", "answer-to-kids-how", "event-prep"],
   stories:    ["story-hub", "speech-coach", "discovery-worlds"],
   support:    ["articles", "emotional", "life-skills", "ptm-prep", "new-parent-tips"],
 };
@@ -276,7 +278,12 @@ function HubSection({
             </div>
           ) : null}
           {open && (
-            <div className="px-3 pb-4 pt-2 border-t border-white/[0.08] animate-in fade-in slide-in-from-top-1 duration-200">
+            <div
+              className={cn(
+                HUB_EXPANDED_CONTENT,
+                "animate-in fade-in slide-in-from-top-1 duration-200",
+              )}
+            >
               {previewLocked && childName ? (
                 <JourneyPreviewContent childName={childName} isInfant={isInfant}>
                   {children}
@@ -1442,6 +1449,31 @@ function ParentingHubPage() {
         </LockedBlock>;
     }
   }, {
+    id: "answer-to-kids-how",
+    alwaysCurrent: true,
+    render: () => (
+      <LockedBlock
+        reason="hub_locked"
+        locked={isHubLocked("hub_answer_to_kids_how")}
+        journeySoft={journeySoftLock}
+        childName={effectiveChild.name}
+        isInfant={isInfant}
+      >
+        <HubLaunchCard
+          href="/answer-to-kids-how"
+          title={t("parent_hub.web_tiles.answer-to-kids-how.title")}
+          description={t("parent_hub.web_tiles.answer-to-kids-how.description")}
+          icon={<Lightbulb className="h-5 w-5 text-white" />}
+          accentClass="bg-gradient-to-br from-amber-400 to-orange-500"
+          cardClass="bg-gradient-to-br from-amber-400/30 to-orange-500/15 hover:shadow-[0_10px_36px_-10px_rgba(251,191,36,0.45)]"
+          tryFree={tryFreeFor("hub_answer_to_kids_how")}
+          testId="answer-to-kids-how-launch-card"
+          sectionId="answer-to-kids-how"
+          onNavigate={() => markHubUsed("hub_answer_to_kids_how")}
+        />
+      </LockedBlock>
+    ),
+  }, {
     id: "event-prep",
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
@@ -1528,7 +1560,13 @@ function ParentingHubPage() {
 
   const previousStageTileIds = getPreviousStageTileIds(sections, currentBand, totalAgeMonths);
 
-  return <div className={cn(PARENT_HUB_PAGE, "max-w-6xl mx-auto space-y-4 pb-12")}>
+  return (
+    <div
+      className={cn(
+        PARENT_HUB_PAGE,
+        "mx-auto w-full max-w-full space-y-4 pb-12 md:max-w-6xl",
+      )}
+    >
       <PageHeader />
 
       {/* ── Child Selector Panel ────────────────────────────────────────── */}
@@ -1707,7 +1745,12 @@ function ParentingHubPage() {
                     </span>
                   </button>
                   {isOpen && (
-                    <div className="px-3 pb-4 pt-2 border-t border-white/[0.08] animate-in fade-in slide-in-from-top-1 duration-200 space-y-3">
+                    <div
+                      className={cn(
+                        HUB_EXPANDED_CONTENT_STACK,
+                        "animate-in fade-in slide-in-from-top-1 duration-200",
+                      )}
+                    >
                       {isSupport && ptmSeason ? (
                         <div className="rounded-xl border border-blue-400/25 bg-blue-500/10 px-3 py-2.5 text-xs text-blue-100/90 leading-relaxed">
                           {t("parent_hub.support.ptm_season_banner")}
@@ -1785,7 +1828,8 @@ function ParentingHubPage() {
           </button>
         </AppLink>
       </div>
-    </div>;
+    </div>
+  );
 }
 
 // ─── Section 1 / Section 2 headers ───────────────────────────────────────────

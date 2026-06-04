@@ -60,7 +60,7 @@ import { PlayerSheet, type PlayerSheetPlayback } from "@/components/audio-lesson
 import type { LessonAccess } from "@/components/audio-lessons/lesson-card";
 
 export default function AudioLessonsPage() {
-  const { navigate } = useAppNavigate();
+  const { navigate, back } = useAppNavigate();
   const [selectedAge, setSelectedAge] = useState<AgeNavGroup | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [open, setOpen] = useState<Lesson | null>(null);
@@ -155,8 +155,8 @@ export default function AudioLessonsPage() {
       setSelectedAge(null);
       return;
     }
-    navigate("/parenting-hub", { replace: true, source: "audio-lessons-back" });
-  }, [emergencyOpen, playerExpanded, open, selectedAge, navigate]);
+    back("audio-lessons-back");
+  }, [emergencyOpen, playerExpanded, open, selectedAge, back]);
 
   usePageBackHandler(() => {
     handleBack();

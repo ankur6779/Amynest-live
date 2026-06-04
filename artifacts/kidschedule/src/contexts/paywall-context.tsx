@@ -18,6 +18,7 @@ export type PaywallReason =
   | "child_locked"
   | "phonics_workbook"
   | "hub_nutrition"
+  | "nutrition_library"
   | "speech_coach"
   | "learning_locked";
 

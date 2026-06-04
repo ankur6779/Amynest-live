@@ -7,6 +7,8 @@ import {
   HUB_COLLAPSIBLE,
   HUB_CARD_TITLE,
   HUB_BODY,
+  HUB_EXPANDED_CONTENT,
+  HUB_EXPANDED_CONTENT_STACK,
   HUB_PANEL_ACCENTS,
   hubShadedSectionCardClasses,
   type HubPanelAccentKey,
@@ -86,8 +88,9 @@ export function HubCollapsiblePanel({
       {open ? (
         <div
           className={cn(
-            "px-3 pb-4 pt-1 space-y-3 animate-in fade-in duration-200",
-            parentHub || panel ? "border-t border-white/[0.08] hub-today-stack" : "border-t border-border",
+            parentHub || panel
+              ? cn(HUB_EXPANDED_CONTENT_STACK, "hub-today-stack animate-in fade-in duration-200")
+              : "px-3 pb-4 pt-1 space-y-3 border-t border-border animate-in fade-in duration-200",
           )}
         >
           {children}
@@ -196,7 +199,12 @@ export function HubExploreAgesSection({
             </span>
           </button>
           {open ? (
-            <div className="px-3 pb-4 pt-1 border-t border-white/[0.08] animate-in fade-in duration-200">
+            <div
+              className={cn(
+                HUB_EXPANDED_CONTENT,
+                "animate-in fade-in duration-200",
+              )}
+            >
               <p className={cn(HUB_BODY, "mb-3")}>{subtitle}</p>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">{children}</div>
             </div>

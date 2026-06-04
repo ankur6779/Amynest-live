@@ -4,8 +4,21 @@
 
 import { cn } from "@/lib/utils";
 
-export const PARENT_HUB_PAGE =
-  "parent-hub-premium relative -mx-4 px-4 md:-mx-6 md:px-6";
+/** Full-width hub shell — horizontal inset lives in `.parent-hub-premium` (index.css). */
+export const PARENT_HUB_PAGE = cn(
+  "parent-hub-premium relative w-full min-w-0 max-w-full box-border",
+);
+
+/** Expanded section / sub-tile bodies — one inset layer, not stacked px-3 on every wrapper. */
+export const HUB_EXPANDED_CONTENT = cn(
+  "border-t border-white/[0.08]",
+  "px-2 pb-3 pt-1.5 sm:px-3 sm:pb-4 sm:pt-2",
+);
+
+export const HUB_EXPANDED_CONTENT_STACK = cn(
+  HUB_EXPANDED_CONTENT,
+  "space-y-2.5 sm:space-y-3",
+);
 
 /** Shared glass surface — all section / panel cards. */
 export const HUB_GLASS_SURFACE = cn(
@@ -213,7 +226,7 @@ export const HUB_TILE = cn(
 
 /** Collapsed Parent Hub feature tiles — shared header geometry for HubSection + HubLaunchCard. */
 export const HUB_FEATURE_TILE_HEADER = cn(
-  "w-full flex items-center justify-between gap-2.5 px-3 py-2.5 text-left",
+  "w-full flex items-center justify-between gap-2.5 px-2.5 py-2.5 sm:px-3 text-left",
   "transition-all duration-[220ms] ease-[ease]",
 );
 
@@ -451,6 +464,16 @@ const HUB_FEATURE_TILE_ACCENTS: Record<string, HubAccentTheme> = {
     163,
     230,
     53,
+  ),
+  "answer-to-kids-how": makeTheme(
+    "border-[1.5px] border-[rgba(251,191,36,0.50)]",
+    "bg-gradient-to-b from-amber-300 via-amber-400 to-orange-500",
+    "shadow-[0_0_14px_rgba(251,191,36,0.45)]",
+    "border-[rgba(251,191,36,0.40)]",
+    "shadow-[0_0_14px_rgba(251,191,36,0.32)]",
+    251,
+    191,
+    36,
   ),
   "event-prep": HUB_GROUP_ACCENTS.today,
   "command-center": HUB_GROUP_ACCENTS.creativity,

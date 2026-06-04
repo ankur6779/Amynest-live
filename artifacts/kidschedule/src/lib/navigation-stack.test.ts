@@ -63,6 +63,11 @@ describe("navigation-stack", () => {
     expect(wouldCreateCycle("/parenting-hub", "/speech-coach")).toBe(true);
   });
 
+  it("does not treat stack back as a cycle", () => {
+    recordRouteTransition("/dashboard", "/study", "push");
+    expect(wouldCreateCycle("/study", "/dashboard")).toBe(false);
+  });
+
   it("resets stack when explicitly marking a tab root", () => {
     recordRouteTransition("/dashboard", "/parenting-hub", "push");
     recordRouteTransition("/parenting-hub", "/speech-coach", "push");

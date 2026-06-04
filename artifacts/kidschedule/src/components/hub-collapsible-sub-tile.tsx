@@ -5,6 +5,7 @@ import { HubSubTileShell } from "@/components/hub-sub-tile-shell";
 import {
   extractTintRgbFromCardClass,
   getHubSubTileIconAccent,
+  HUB_EXPANDED_CONTENT,
   HUB_SUB_TILE_ICON_LG,
 } from "@/lib/parent-hub-premium";
 
@@ -67,7 +68,7 @@ export function HubCollapsibleSubTile({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "w-full flex items-center justify-between gap-3 px-4 py-4 text-left",
+          "w-full flex items-center justify-between gap-3 px-3 py-3.5 sm:px-4 sm:py-4 text-left",
           "transition-colors duration-200",
           open ? "bg-white/[0.04]" : "hover:bg-white/[0.03]",
         )}
@@ -99,7 +100,12 @@ export function HubCollapsibleSubTile({
         )}
       </button>
       {open && children ? (
-        <div className="px-4 pb-4 pt-1 border-t border-white/[0.08] animate-in fade-in slide-in-from-top-1 duration-200">
+        <div
+          className={cn(
+            HUB_EXPANDED_CONTENT,
+            "animate-in fade-in slide-in-from-top-1 duration-200",
+          )}
+        >
           {children}
         </div>
       ) : null}

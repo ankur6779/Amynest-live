@@ -58,6 +58,19 @@ const PARENT_ROUTE: Record<string, string> = {
   "/amy-coach/progress": "/amy-coach",
   // Discovery Worlds: a sound world → its hub → Parent Hub.
   "/discovery-worlds": "/parenting-hub",
+  "/animal-world": "/parenting-hub",
+  "/games": "/dashboard",
+  "/feedback": "/dashboard",
+  "/children": "/dashboard",
+  "/behavior": "/dashboard",
+  "/recipes": "/dashboard",
+  "/nutrition": "/dashboard",
+  "/progress": "/dashboard",
+  "/insights": "/dashboard",
+  "/rewards": "/dashboard",
+  "/parent-growth": "/parenting-hub",
+  "/kids-control-center": "/parenting-hub",
+  "/routines/generate": "/routines",
 };
 
 const NESTED_PARENT_PREFIXES: Array<{ prefix: string; parent: string }> = [
@@ -139,6 +152,19 @@ export function wouldCreateCycle(
   const fromNorm = normalizeRoutePath(from);
   const toNorm = normalizeRoutePath(to);
   if (isSameRoute(fromNorm, toNorm)) return true;
+
+  // Walking back one frame along the recorded stack is intentional, not a loop.
+  // Skip when `from` already appears earlier (hub ↔ module re-entry).
+  const stackLen = history.length;
+  const fromCount = history.filter((r) => isSameRoute(r, fromNorm)).length;
+  if (
+    stackLen >= 2 &&
+    fromCount === 1 &&
+    isSameRoute(history[stackLen - 2], toNorm) &&
+    isSameRoute(history[stackLen - 1], fromNorm)
+  ) {
+    return false;
+  }
 
   const tail = history.slice(-3).map(normalizeRoutePath);
   if (tail.length >= 2) {

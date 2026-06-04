@@ -8,6 +8,7 @@ import {
   hubAccentBarClasses,
   hubSectionCardClasses,
   HUB_BODY,
+  HUB_EXPANDED_CONTENT_STACK,
 } from "@/lib/parent-hub-premium";
 import { WeeklyParentReportCard } from "@/components/learning-progress/weekly-parent-report-card";
 import { AppLink } from "@/components/app-link";
@@ -144,7 +145,12 @@ export function HubTodayLearningPanel({
               </span>
             </button>
             {open ? (
-              <div className="px-3 pb-4 pt-1 border-t border-white/[0.08] space-y-3 animate-in fade-in duration-200">
+              <div
+                className={cn(
+                  HUB_EXPANDED_CONTENT_STACK,
+                  "animate-in fade-in duration-200",
+                )}
+              >
                 {children}
                 {weeklyReport ? (
                   <WeeklyDigestCollapsible

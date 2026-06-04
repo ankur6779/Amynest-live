@@ -1590,10 +1590,23 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
 
 /* ── Parent Hub premium surface ─────────────────────────────────── */
 .parent-hub-premium {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
   background:
     radial-gradient(circle at 15% 20%, rgba(168, 85, 247, 0.15), transparent 35%),
     radial-gradient(circle at 85% 10%, rgba(236, 72, 153, 0.12), transparent 35%),
     linear-gradient(180deg, #071126, #0b1730, #091426);
+}
+
+@media (min-width: 768px) {
+  .parent-hub-premium {
+    padding-left: max(24px, env(safe-area-inset-left, 0px));
+    padding-right: max(24px, env(safe-area-inset-right, 0px));
+  }
 }
 
 @keyframes parentHubFadeUp {

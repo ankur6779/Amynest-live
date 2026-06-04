@@ -112,6 +112,8 @@ const AudioLessonsPage = lazyPage(() => import("@/pages/audio-lessons"));
 const GamesPage = lazyPage(() => import("@/pages/games"));
 const AnimalWorldPage = lazyPage(() => import("@/pages/animal-world"));
 const DiscoveryWorldsHubPage = lazyPage(() => import("@/pages/discovery-worlds-hub"));
+const AnswerToKidsHowPage = lazyPage(() => import("@/pages/answer-to-kids-how"));
+const AnswerToKidsHowReaderPage = lazyPage(() => import("@/pages/answer-to-kids-how-reader"));
 const DiscoveryWorldPreviewPage = lazyPage(() => import("@/pages/discovery-world-preview"));
 const DiscoveryWorldLivePage = lazyPage(() => import("@/pages/discovery-world-live"));
 const OnboardingPage = lazyPage(() => import("@/pages/onboarding"));
@@ -345,6 +347,8 @@ const AudioLessonsRoute = makeProtectedRoute(AudioLessonsPage);
 const GamesRoute = makeProtectedRoute(GamesPage);
 const AnimalWorldRoute = makeProtectedRoute(AnimalWorldPage);
 const DiscoveryWorldsHubRoute = makeProtectedRoute(DiscoveryWorldsHubPage);
+const AnswerToKidsHowRoute = makeProtectedRoute(AnswerToKidsHowPage);
+const AnswerToKidsHowReaderRoute = makeProtectedRoute(AnswerToKidsHowReaderPage);
 const DiscoveryWorldPreviewRoute = makeProtectedRoute(DiscoveryWorldPreviewPage);
 const DiscoveryWorldLiveRoute = makeProtectedRoute(DiscoveryWorldLivePage);
 const PricingRoute = makeProtectedRoute(PricingPage);
@@ -638,6 +642,11 @@ function AppRoutes() {
           <Route path="/games" component={GamesRoute} />
           <Route path="/animal-world" component={AnimalWorldRoute} />
           <Route path="/discovery-worlds" component={DiscoveryWorldsHubRoute} />
+          <Route path="/answer-to-kids-how" component={AnswerToKidsHowRoute} />
+          <Route
+            path="/answer-to-kids-how/read/:bookId"
+            component={AnswerToKidsHowReaderRoute}
+          />
           <Route path="/worlds/:slug" component={DiscoveryWorldLiveRoute} />
           <Route path="/pricing" component={PricingRoute} />
           <Route path="/referral/:code" component={ReferralDeepLinkRoute} />

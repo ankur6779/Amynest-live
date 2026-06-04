@@ -4,7 +4,7 @@ import {
   recordRouteTransition,
   resetNavigationStackForTests,
 } from "./navigation-stack";
-import { smartBack } from "./safe-navigation";
+import { resolveSmartBackTarget, smartBack } from "./safe-navigation";
 
 describe("smartBack", () => {
   beforeEach(() => {
@@ -26,12 +26,21 @@ describe("smartBack", () => {
     expect(navigate).toHaveBeenCalledWith("/dashboard", { replace: true });
   });
 
-  it("returns to parent hub module route before dashboard fallback", () => {
+  it("returns to parent hub when stack is empty", () => {
     const navigate = vi.fn();
 
     smartBack(navigate, "/study", "test");
 
     expect(navigate).toHaveBeenCalledWith("/parenting-hub", { replace: true });
+  });
+
+  it("returns to dashboard when opened from dashboard, not forced to parent hub", () => {
+    const navigate = vi.fn();
+    recordRouteTransition("/dashboard", "/study", "push");
+
+    smartBack(navigate, "/study", "test");
+
+    expect(navigate).toHaveBeenCalledWith("/dashboard", { replace: true });
   });
 
   it("uses the in-memory stack when no parent route is defined", () => {
@@ -41,6 +50,19 @@ describe("smartBack", () => {
     smartBack(navigate, "/feedback", "test");
 
     expect(navigate).toHaveBeenCalledWith("/dashboard", { replace: true });
+  });
+});
+
+describe("resolveSmartBackTarget", () => {
+  it("prefers stack over parent route", () => {
+    expect(resolveSmartBackTarget("/study", "/dashboard")).toBe("/dashboard");
+    expect(resolveSmartBackTarget("/study", "/parenting-hub")).toBe(
+      "/parenting-hub",
+    );
+  });
+
+  it("falls back to parent when stack is empty", () => {
+    expect(resolveSmartBackTarget("/study", null)).toBe("/parenting-hub");
   });
 });
 
@@ -56,5 +78,10 @@ describe("getParentRoute nested paths", () => {
 
   it("maps coach progress to amy coach", () => {
     expect(getParentRoute("/amy-coach/progress")).toBe("/amy-coach");
+  });
+
+  it("maps games and feedback to dashboard when stack is empty", () => {
+    expect(getParentRoute("/games")).toBe("/dashboard");
+    expect(getParentRoute("/feedback")).toBe("/dashboard");
   });
 });

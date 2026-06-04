@@ -30,12 +30,10 @@ export default function LifeSkillsPage() {
   return (
     <div className="container mx-auto max-w-2xl p-4 space-y-4">
       <div className="flex items-center gap-2">
-        <AppLink href="/parenting-hub" replace source="life-skills-back">
-          <Button variant="ghost" size="sm">
-            <ChevronLeft className="h-4 w-4" />
-            {t("pages.life_skills_page.back")}
-          </Button>
-        </AppLink>
+        <Button variant="ghost" size="sm" onClick={() => back("life-skills-back")}>
+          <ChevronLeft className="h-4 w-4" />
+          {t("pages.life_skills_page.back")}
+        </Button>
         <Compass className="h-5 w-5 text-emerald-600" />{/* audit-ok: brand emerald for life-skills marker, mirrors hub icon */}
         <h1 className="text-xl font-bold">{t("pages.life_skills_page.title")}</h1>
       </div>

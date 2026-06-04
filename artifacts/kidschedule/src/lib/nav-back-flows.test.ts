@@ -28,6 +28,15 @@ describe("navigation back flows", () => {
     expect(navigate).toHaveBeenCalledWith("/parenting-hub", { replace: true });
   });
 
+  it("Dashboard → Study → Back returns to dashboard, not Parent Hub", () => {
+    const navigate = vi.fn();
+    recordRouteTransition("/dashboard", "/study", "push");
+
+    smartBack(navigate, "/study", "test");
+
+    expect(navigate).toHaveBeenCalledWith("/dashboard", { replace: true });
+  });
+
   it("Parent Hub → Audio Lessons → Back returns to Parent Hub with replace", () => {
     const navigate = vi.fn();
     recordRouteTransition("/parenting-hub", "/audio-lessons", "push");

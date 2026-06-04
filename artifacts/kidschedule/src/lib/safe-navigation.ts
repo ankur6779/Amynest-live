@@ -108,8 +108,37 @@ export function appNavigate(
 }
 
 /**
+ * Resolves where the header / smart back action should land.
+ * Prefers the real in-memory stack (where the user came from), then parent
+ * routes for hub modules when history is empty, then dashboard fallbacks.
+ */
+export function resolveSmartBackTarget(
+  current: string,
+  previous: string | null,
+): string | null {
+  const currentNorm = normalizeRoutePath(current);
+
+  if (
+    previous &&
+    !isSameRoute(previous, currentNorm) &&
+    !wouldCreateCycle(currentNorm, previous)
+  ) {
+    return previous;
+  }
+
+  const parent = getParentRoute(currentNorm);
+  if (parent) return parent;
+
+  if (isTabRootRoute(currentNorm)) {
+    if (!isSameRoute(currentNorm, "/dashboard")) return "/dashboard";
+    return null;
+  }
+
+  return "/dashboard";
+}
+
+/**
  * Stack-based back navigation — does not call browser history APIs.
- * Prefers parent routes (hub modules → Parent Hub), then in-memory stack.
  */
 export function smartBack(
   navigate: NavigateFn,
@@ -118,34 +147,16 @@ export function smartBack(
 ): void {
   const currentNorm = normalizeRoutePath(current);
   const previous = getSanitizedPreviousRoute();
+  const target = resolveSmartBackTarget(currentNorm, previous);
 
-  logNavEvent("nav-back", { from: currentNorm, previous, source });
+  logNavEvent("nav-back", { from: currentNorm, previous, target, source });
 
-  const parent = getParentRoute(currentNorm);
-  if (parent) {
-    appNavigate(navigate, currentNorm, parent, { replace: true, source });
-    return;
-  }
-
-  if (
-    previous &&
-    !isSameRoute(previous, currentNorm) &&
-    !wouldCreateCycle(currentNorm, previous)
-  ) {
-    appNavigate(navigate, currentNorm, previous, { replace: true, source });
-    return;
-  }
-
-  if (isTabRootRoute(currentNorm)) {
-    if (!isSameRoute(currentNorm, "/dashboard")) {
-      appNavigate(navigate, currentNorm, "/dashboard", { replace: true, source });
-      return;
-    }
+  if (!target) {
     logNavEvent("nav-back-at-root", { route: currentNorm, source });
     return;
   }
 
-  appNavigate(navigate, currentNorm, "/dashboard", { replace: true, source });
+  appNavigate(navigate, currentNorm, target, { replace: true, source });
 }
 
 export function useAppNavigate() {

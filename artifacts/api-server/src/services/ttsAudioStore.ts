@@ -695,4 +695,41 @@ export async function ttsAudioBackfillPostgres(
   }
 }
 
+/** True when an object exists in the primary GCS bucket. */
+export async function gcsObjectExists(objectName: string): Promise<boolean> {
+  if (!legacyGcsConfigured()) return false;
+  try {
+    const [exists] = await getBucket().file(objectName).exists();
+    return exists;
+  } catch {
+    return false;
+  }
+}
+
+/** Time-limited HTTPS read URL — never expose the bucket without signing. */
+export async function getGcsSignedReadUrl(
+  objectName: string,
+  ttlMs = 15 * 60 * 1000,
+): Promise<string | null> {
+  if (!legacyGcsConfigured()) return null;
+  try {
+    const [url] = await getBucket().file(objectName).getSignedUrl({
+      version: "v4",
+      action: "read",
+      expires: Date.now() + ttlMs,
+    });
+    return url;
+  } catch (err) {
+    logger.warn(
+      {
+        evt: "gcs.signed_url_failed",
+        objectName,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "GCS signed URL failed",
+    );
+    return null;
+  }
+}
+
 export { resolveTtsPlaybackUrl } from "./ttsPlaybackUrl.js";
