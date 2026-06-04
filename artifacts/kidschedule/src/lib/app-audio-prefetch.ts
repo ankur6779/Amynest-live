@@ -10,9 +10,9 @@ import {
   getCoachDialogueWarmupPhrases,
 } from "@workspace/speech-coach";
 import { resolveApiMediaUrl } from "@/lib/api";
-import { warmLocalCacheFromUrl } from "@/lib/local-tts-cache";
-import { listPhonicsLibraryPrewarmItems } from "@/lib/phonics-audio-map";
+import { warmPhonicsLibraryOnRouteOpen } from "@/lib/global-audio-warmup";
 import {
+  ensureStaticAudioMapLoaded,
   lookupStaticAudioUrl,
   preloadStaticPhrases,
   prefetchStaticAudioUrlsBatch,
@@ -108,31 +108,22 @@ export function warmAppBootStaticPhrases(): void {
   if (bootWarmStarted || typeof window === "undefined") return;
   bootWarmStarted = true;
 
-  const phrases = getAppBootWarmupPhrases();
-  if (phrases.length === 0) return;
+  void ensureStaticAudioMapLoaded().then(() => {
+    const phrases = getAppBootWarmupPhrases();
+    if (phrases.length === 0) return;
 
-  preloadStaticPhrases(phrases, "default", APP_BOOT_PREFETCH_LIMIT);
+    preloadStaticPhrases(phrases, "default", APP_BOOT_PREFETCH_LIMIT);
 
-  const urls = collectStaticAudioUrls(phrases, "default");
-  prefetchStaticAudioUrlsBatch(urls);
-  requestServiceWorkerAudioPrecache(urls);
+    const urls = collectStaticAudioUrls(phrases, "default");
+    prefetchStaticAudioUrlsBatch(urls);
+    requestServiceWorkerAudioPrecache(urls);
+  });
 }
 
-/** Prefetch A–Z letters + tier-1/2 CVC when the phonics module opens. */
+/** Prefetch full phonics library when the /phonics route mounts. */
 export function warmPhonicsRouteOnOpen(): void {
   if (phonicsRouteWarmStarted || typeof window === "undefined") return;
   phonicsRouteWarmStarted = true;
 
-  const items = listPhonicsLibraryPrewarmItems().filter(
-    (item) => item.tier <= 2 && (item.type === "letter" || item.type === "cvc"),
-  );
-  if (items.length === 0) return;
-
-  const urls = [...new Set(items.map((item) => item.url))];
-  prefetchStaticAudioUrlsBatch(urls);
-  requestServiceWorkerAudioPrecache(urls);
-
-  for (const item of items.filter((entry) => entry.tier === 1)) {
-    void warmLocalCacheFromUrl(item.localCacheKey, item.url);
-  }
+  warmPhonicsLibraryOnRouteOpen();
 }

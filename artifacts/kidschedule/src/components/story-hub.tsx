@@ -217,7 +217,7 @@ export function StoryHub({
   if (isPlaying && currentStory) {
     return <>
         {/* Invisible preload element for the next story (stays in the regular tree) */}
-        {nextStory && nextStory.id !== currentStory.id && <video key={`preload-${nextStory.id}`} src={resolveApiMediaUrl(nextStory.streamUrl)} preload="auto" className="hidden" aria-hidden="true" muted />}
+        {nextStory && nextStory.id !== currentStory.id && <video key={`preload-${nextStory.id}`} src={resolveApiMediaUrl(nextStory.streamUrl)} preload="metadata" className="hidden" aria-hidden="true" muted />}
         {createPortal(
           <div
             data-testid="story-hub"

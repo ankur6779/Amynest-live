@@ -1,4 +1,3 @@
-import audioMap from "@/data/static-audio-map.json";
 import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
 import { isAmyVoiceAudioDebugEnabled, logAmyVoiceDiag } from "@/lib/amy-voice-audio-diag";
 import { validateAudioBlobDecodable } from "@/lib/amy-voice-audio-start";
@@ -61,8 +60,6 @@ type StaticAudioMapFile = {
   phonics: Record<string, string>;
 };
 
-const raw = audioMap as StaticAudioMapFile;
-
 const missingKeys = new Set<string>();
 const loggedMissing = new Set<string>();
 const loggedViolations = new Set<string>();
@@ -98,10 +95,41 @@ function indexByNormalizedKey(bucket: Record<string, string> | undefined): Recor
   return out;
 }
 
-const map: { default: Record<string, string>; phonics: Record<string, string> } = {
-  default: indexByNormalizedKey(raw.default),
-  phonics: indexByNormalizedKey(raw.phonics),
-};
+let map: { default: Record<string, string>; phonics: Record<string, string> } | null =
+  null;
+
+let staticAudioMapLoadPromise: Promise<void> | null = null;
+
+function buildMapFromRaw(raw: StaticAudioMapFile): void {
+  map = {
+    default: indexByNormalizedKey(raw.default),
+    phonics: indexByNormalizedKey(raw.phonics),
+  };
+}
+
+/** Lazy-load static-audio-map.json (separate chunk — not in main bundle). */
+export function ensureStaticAudioMapLoaded(): Promise<void> {
+  if (map) return Promise.resolve();
+  if (!staticAudioMapLoadPromise) {
+    staticAudioMapLoadPromise = import("@/data/static-audio-map.json")
+      .then((mod) => {
+        const raw = (mod.default ?? mod) as StaticAudioMapFile;
+        buildMapFromRaw(raw);
+      })
+      .catch((err) => {
+        staticAudioMapLoadPromise = null;
+        console.error("[static-audio] map load failed", err);
+        throw err;
+      });
+  }
+  return staticAudioMapLoadPromise;
+}
+
+void ensureStaticAudioMapLoaded();
+
+export function isStaticAudioMapReady(): boolean {
+  return map !== null;
+}
 
 export function normalize(text: string): string {
   return normalizeStaticAudioKey(text);
@@ -286,7 +314,7 @@ function resolveMapEntry(
   for (const normalized of keys) {
     if (!normalized || seen.has(normalized)) continue;
     seen.add(normalized);
-    const mapEntry = map[mode]?.[normalized];
+    const mapEntry = map?.[mode]?.[normalized];
     if (mapEntry) return { mapEntry, normalized };
   }
   return null;

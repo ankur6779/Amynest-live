@@ -23,18 +23,17 @@ const mockListPhonics = vi.fn(() => [
   },
 ]);
 
+const mockWarmPhonicsRoute = vi.fn();
+
 vi.mock("@/lib/static-audio", () => ({
+  ensureStaticAudioMapLoaded: () => Promise.resolve(),
   lookupStaticAudioUrl: (...args: unknown[]) => mockLookup(...args),
   preloadStaticPhrases: (...args: unknown[]) => mockPreloadPhrases(...args),
   prefetchStaticAudioUrlsBatch: (...args: unknown[]) => mockPrefetchBatch(...args),
 }));
 
-vi.mock("@/lib/local-tts-cache", () => ({
-  warmLocalCacheFromUrl: (...args: unknown[]) => mockWarmLocal(...args),
-}));
-
-vi.mock("@/lib/phonics-audio-map", () => ({
-  listPhonicsLibraryPrewarmItems: () => mockListPhonics(),
+vi.mock("@/lib/global-audio-warmup", () => ({
+  warmPhonicsLibraryOnRouteOpen: () => mockWarmPhonicsRoute(),
 }));
 
 vi.mock("@/lib/api", () => ({
@@ -47,8 +46,7 @@ describe("app-audio-prefetch", () => {
     mockLookup.mockClear();
     mockPreloadPhrases.mockClear();
     mockPrefetchBatch.mockClear();
-    mockWarmLocal.mockClear();
-    mockListPhonics.mockClear();
+    mockWarmPhonicsRoute.mockClear();
   });
 
   it("collects catalog-backed boot phrases up to the limit", async () => {
@@ -69,6 +67,7 @@ describe("app-audio-prefetch", () => {
     const mod = await import("@/lib/app-audio-prefetch");
     mod.warmAppBootStaticPhrases();
     mod.warmAppBootStaticPhrases();
+    await Promise.resolve();
 
     expect(mockPreloadPhrases).toHaveBeenCalledTimes(1);
     expect(mockPrefetchBatch).toHaveBeenCalledTimes(1);
@@ -77,15 +76,11 @@ describe("app-audio-prefetch", () => {
     );
   });
 
-  it("warmPhonicsRouteOnOpen prefetches tier-1/2 letters and CVC", async () => {
+  it("warmPhonicsRouteOnOpen delegates to full library route warm once", async () => {
     const mod = await import("@/lib/app-audio-prefetch");
     mod.warmPhonicsRouteOnOpen();
     mod.warmPhonicsRouteOnOpen();
 
-    expect(mockPrefetchBatch).toHaveBeenCalledWith([
-      "/api/phonics-library/a.mp3",
-      "/api/phonics-library/cat.mp3",
-    ]);
-    expect(mockWarmLocal).toHaveBeenCalledWith("phonics:a", "/api/phonics-library/a.mp3");
+    expect(mockWarmPhonicsRoute).toHaveBeenCalledTimes(1);
   });
 });

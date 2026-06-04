@@ -11,7 +11,9 @@ corepack prepare pnpm@9.15.0 --activate
 export NODE_ENV=development
 export PNPM_CONFIG_PRODUCTION=false
 
-pnpm install --frozen-lockfile
+# pnpm install --frozen-lockfile is the pnpm equivalent of npm ci.
+pnpm fetch --frozen-lockfile
+pnpm install --frozen-lockfile --offline --filter "@workspace/api-server..."
 pnpm --filter @workspace/api-server build
 test -f artifacts/api-server/dist/worker/index.mjs
 test -f artifacts/api-server/dist/index.mjs

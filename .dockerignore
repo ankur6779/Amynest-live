@@ -1,0 +1,56 @@
+# Git / editor
+.git
+.gitignore
+.cursor
+.vscode
+.idea
+**/.DS_Store
+
+# Dependencies and caches (reinstalled inside the image)
+**/node_modules
+**/.pnpm-store
+**/.vite
+**/.turbo
+
+# Local env and secrets
+.env
+.env.*
+!.env.example
+!.env.development.example
+**/*.pem
+**/*.key
+**/credentials.json
+
+# Build outputs (rebuilt inside the image)
+**/dist
+**/build
+**/.next
+**/coverage
+
+# Mobile / archived (not needed for web or API images)
+android/
+archive/
+artifacts/amynest-capacitor/
+artifacts/amynest-capacitor/**/*
+artifacts/kidschedule-android/
+
+# Docs, tests, and CI-only assets
+docs/
+**/*.md
+!README.md
+**/__tests__/**
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/playwright-report/
+**/test-results/
+**/.playwright/
+
+# Python / misc tooling caches
+**/__pycache__
+**/*.pyc
+scripts/__pycache__
+
+# Large or generated media not required at build time
+attached_assets/

@@ -3,8 +3,8 @@
 /** @build 2026-05-17 Firebase email-link verification (revert OTP) */
 /**
  * Render Amynest-backend entrypoint (rootDir=backend).
- * Dashboard: build = npm install, start = node server.js
- * Delegates to the monorepo api-server after install postinstall build.
+ * Legacy native build: npm ci (triggers postinstall → render-build.mjs).
+ * Preferred: docker/backend/Dockerfile with runtime: docker on Render.
  */
 const { spawn } = require("node:child_process");
 const path = require("node:path");

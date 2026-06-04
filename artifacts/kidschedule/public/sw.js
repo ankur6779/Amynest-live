@@ -37,7 +37,7 @@ function canCacheAudioResponse(response) {
   if (!response || !response.ok) return false;
   if (response.status === 206) return false;
   const contentType = response.headers.get("content-type") || "";
-  return contentType.includes("audio");
+  return contentType.includes("audio") || contentType.includes("image");
 }
 
 async function safeCacheAudioPut(cache, request, response) {
@@ -101,7 +101,9 @@ function isImmutableAudioApiPath(pathname) {
   return (
     /^\/api\/static-audio\/[a-f0-9]{32}\.mp3$/i.test(pathname) ||
     /^\/api\/phonics-library\/.+\.mp3$/i.test(pathname) ||
-    /^\/api\/spelling-library\/.+\.mp3$/i.test(pathname)
+    /^\/api\/spelling-library\/.+\.mp3$/i.test(pathname) ||
+    /^\/api\/worlds-library\/.+$/i.test(pathname) ||
+    /^\/api\/animal-world-library\/.+$/i.test(pathname)
   );
 }
 

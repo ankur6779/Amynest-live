@@ -1,0 +1,15 @@
+:{$PORT}
+
+root * /srv
+encode gzip zstd
+
+@spa not file
+handle @spa {
+	rewrite * /index.html
+}
+
+file_server
+
+header /index.html Cache-Control "no-cache, no-store, must-revalidate"
+header /sw.js Cache-Control "no-cache, no-store, must-revalidate"
+header /assets/* Cache-Control "public, max-age=31536000, immutable"

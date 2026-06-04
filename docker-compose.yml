@@ -1,0 +1,56 @@
+# Local Docker builds — frontend and backend are separate images with shared cache keys.
+#
+#   docker compose build
+#   docker compose up api web
+#
+# Render / CI: build images directly (see docker/*/Dockerfile).
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: "5000"
+      NODE_ENV: production
+      AMYNEST_ENV: development
+      DATABASE_URL: ${DATABASE_URL:-postgresql://amynest:amynest@postgres:5432/amynest_dev}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker/Dockerfile
+    environment:
+      NODE_ENV: production
+      AMYNEST_ENV: production
+      DATABASE_URL: ${DATABASE_URL:-postgresql://amynest:amynest@postgres:5432/amynest_dev}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      WORKER_ENABLED: "true"
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+
+  postgres:
+    image: postgres:16-alpine
+    profiles: [local]
+    environment:
+      POSTGRES_USER: amynest
+      POSTGRES_PASSWORD: amynest
+      POSTGRES_DB: amynest_dev
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    profiles: [local]
+    ports:
+      - "6379:6379"

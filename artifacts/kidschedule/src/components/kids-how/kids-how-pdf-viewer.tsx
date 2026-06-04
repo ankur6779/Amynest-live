@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { GlobalWorkerOptions, getDocument, type PDFDocumentProxy } from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { pdfPreviewDocumentInit } from "@/lib/pdf-preview-document";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -82,7 +83,7 @@ export function KidsHowPdfViewer({
 
     void (async () => {
       try {
-        const task = getDocument({ url, disableAutoFetch: false, rangeChunkSize: 65536 });
+        const task = getDocument(pdfPreviewDocumentInit(url));
         const doc = await task.promise;
         if (cancelled) {
           void doc.destroy();

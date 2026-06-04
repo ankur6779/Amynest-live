@@ -46,22 +46,17 @@ services:
     region: singapore
     ipAllowList: []
 
-  # ─── Production API ───────────────────────────────────────────────────────
+  # ─── Production API (Docker — deps layer cached until lockfile changes) ─────
   - type: web
     name: Amynest-backend
-    runtime: node
+    runtime: docker
     region: singapore
     # DO NOT DEFINE PLAN IN BLUEPRINT — dashboard controls RAM/CPU
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
     autoDeployTrigger: commit
-    buildCommand: >-
-      corepack enable &&
-      corepack prepare pnpm@9.15.0 --activate &&
-      NODE_ENV=development pnpm install --frozen-lockfile &&
-      pnpm --filter @workspace/api-server build &&
-      pnpm --filter @workspace/db push
-    startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
+    dockerfilePath: ./docker/backend/Dockerfile
+    dockerContext: .
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
@@ -131,17 +126,17 @@ services:
       - key: EMAIL_FROM
         sync: false
 
-  # ─── Production AI worker (BullMQ) ─────────────────────────────────────────
+  # ─── Production AI worker (Docker — separate image from API / frontend) ──────
   - type: worker
     name: amynest-ai-worker
-    runtime: node
+    runtime: docker
     region: singapore
     # DO NOT DEFINE PLAN IN BLUEPRINT — dashboard controls RAM/CPU
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
     autoDeployTrigger: commit
-    buildCommand: bash scripts/render-ai-worker-build.sh
-    startCommand: bash scripts/render-ai-worker-start.sh
+    dockerfilePath: ./docker/worker/Dockerfile
+    dockerContext: .
     envVars:
       - key: NODE_VERSION
         value: "20"
@@ -189,17 +184,14 @@ services:
   # ─── Production static web (amynest.in) ─────────────────────────────────────
   # Audio/API: deploy infra/cloudflare/amynest-api-proxy/ so /api/* on www.amynest.in
   # proxies to Amynest-backend. The web app uses same-origin API on amynest.in hosts.
+  # Frontend build is split from backend (docker/frontend/Dockerfile for container deploys).
   - type: web
     name: Amynest-live-1
     runtime: static
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
     autoDeployTrigger: commit
-    buildCommand: >-
-      corepack enable &&
-      corepack prepare pnpm@9.15.0 --activate &&
-      pnpm install --frozen-lockfile &&
-      BASE_PATH=/ PORT=3000 pnpm --filter @workspace/kidschedule build
+    buildCommand: bash scripts/render-frontend-build.sh
     staticPublishPath: ./artifacts/kidschedule/dist/public
     routes:
       - type: rewrite

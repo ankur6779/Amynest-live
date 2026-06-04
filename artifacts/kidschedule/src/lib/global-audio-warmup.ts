@@ -362,11 +362,15 @@ export function isGlobalAudioCached(key: string): boolean {
   return hasGlobalAudioCacheEntry(key);
 }
 
+/** Full phonics library warm — call from /phonics route only (not app boot). */
+export function warmPhonicsLibraryOnRouteOpen(): void {
+  if (typeof window === "undefined") return;
+  void warmPhonicsLibraryFull().catch(() => {});
+}
+
 export function initGlobalAudioWarmup(): void {
   if (initStarted || typeof window === "undefined") return;
   initStarted = true;
-
-  void warmPhonicsLibraryFull().catch(() => {});
 
   runIdle(() => {
     void warmSpellingAudio().catch(() => {});
@@ -379,7 +383,7 @@ export function initGlobalAudioWarmup(): void {
   });
 
   logAmyVoiceDiag("global_audio_warmup_init", {
-    phonicsLibraryAssets: countPhonicsLibraryPrewarmItems(),
+    phonicsLibraryDeferredToRoute: true,
     criticalPhonics: HIGH_PRIORITY.length,
     spellingWords: SPELLING_COMMON_WORDS.length,
     batchSize: BATCH_SIZE,

@@ -11,6 +11,7 @@ import {
 import { GlobalWorkerOptions, getDocument, type PDFDocumentProxy } from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { Button } from "@/components/ui/button";
+import { pdfPreviewDocumentInit } from "@/lib/pdf-preview-document";
 import { cn } from "@/lib/utils";
 
 GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -81,7 +82,7 @@ export function NutritionLibraryPdfViewer({
 
     void (async () => {
       try {
-        const task = getDocument({ url, disableAutoFetch: false, rangeChunkSize: 65536 });
+        const task = getDocument(pdfPreviewDocumentInit(url));
         const doc = await task.promise;
         if (cancelled) {
           void doc.destroy();
@@ -157,7 +158,7 @@ export function NutritionLibraryPdfViewer({
         >
           <div className="h-48 w-full max-w-md animate-pulse rounded-xl bg-white/5" />
           <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-          <p className="text-sm text-muted-foreground">Opening bookÖ</p>
+          <p className="text-sm text-muted-foreground">Opening bookù</p>
         </div>
       )}
 
@@ -183,7 +184,7 @@ export function NutritionLibraryPdfViewer({
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="min-w-[5rem] text-center text-xs font-semibold tabular-nums text-foreground">
-            {totalPages > 0 ? `${page} / ${totalPages}` : "ó"}
+            {totalPages > 0 ? `${page} / ${totalPages}` : "ù"}
           </span>
           <Button
             type="button"

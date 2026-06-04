@@ -26,7 +26,8 @@ if (!hasPnpm()) {
   run("corepack", ["prepare", "pnpm@9.15.0", "--activate"], { shell: true });
 }
 
-run("pnpm", ["install", "--frozen-lockfile"], {
+run("pnpm", ["fetch", "--frozen-lockfile"]);
+run("pnpm", ["install", "--frozen-lockfile", "--offline", "--filter", "@workspace/api-server..."], {
   env: { ...process.env, NODE_ENV: "development" },
 });
 run("pnpm", ["--filter", "@workspace/api-server", "build"]);

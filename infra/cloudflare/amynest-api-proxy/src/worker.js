@@ -1,10 +1,13 @@
 /**
- * Cloudflare Worker — proxy /api/* + edge CDN cache for immutable audio.
+ * Cloudflare Worker — proxy /api/* + edge CDN cache for immutable media.
  *
- * Cacheable (365d at edge + Cache API):
+ * Cacheable at edge (Cache API + long TTL from origin):
  *   /api/static-audio/{hash}.mp3
  *   /api/phonics-library/…/*.mp3
  *   /api/spelling-library/…/*.mp3
+ *   /api/worlds-library/*
+ *   /api/animal-world-library/*
+ *   /api/stories/stream/{id}  (full GET only; Range proxied to origin)
  *
  * Deploy: wrangler deploy (see wrangler.toml)
  */
@@ -13,6 +16,12 @@ const DEFAULT_BACKEND = "https://amynest-backend-dykj.onrender.com";
 const STATIC_AUDIO_RE = /^\/api\/static-audio\/[a-f0-9]{32}\.mp3$/i;
 const PHONICS_LIBRARY_RE = /^\/api\/phonics-library\/.+\.mp3$/i;
 const SPELLING_LIBRARY_RE = /^\/api\/spelling-library\/.+\.mp3$/i;
+const WORLDS_LIBRARY_RE = /^\/api\/worlds-library\/.+$/i;
+const ANIMAL_WORLD_LIBRARY_RE = /^\/api\/animal-world-library\/.+$/i;
+const STORIES_STREAM_RE = /^\/api\/stories\/stream\/[a-zA-Z0-9_-]+$/;
+
+const MEDIA_CACHE_TTL_FALLBACK =
+  "public, max-age=31536000, stale-while-revalidate=86400, immutable";
 
 /** @param {string} pathname */
 function isCacheableAudioPath(pathname) {
@@ -21,6 +30,32 @@ function isCacheableAudioPath(pathname) {
     PHONICS_LIBRARY_RE.test(pathname) ||
     SPELLING_LIBRARY_RE.test(pathname)
   );
+}
+
+/** @param {string} pathname */
+function isCacheableMediaPath(pathname) {
+  return (
+    isCacheableAudioPath(pathname) ||
+    WORLDS_LIBRARY_RE.test(pathname) ||
+    ANIMAL_WORLD_LIBRARY_RE.test(pathname) ||
+    STORIES_STREAM_RE.test(pathname)
+  );
+}
+
+/** @param {string} pathname @param {string} contentType */
+function shouldStoreInEdgeCache(pathname, contentType) {
+  if (!contentType) return false;
+  if (isCacheableAudioPath(pathname)) return contentType.includes("audio");
+  if (WORLDS_LIBRARY_RE.test(pathname) || ANIMAL_WORLD_LIBRARY_RE.test(pathname)) {
+    return contentType.includes("audio") || contentType.includes("image");
+  }
+  if (STORIES_STREAM_RE.test(pathname)) return contentType.includes("video");
+  return false;
+}
+
+/** Cache key ignores Range so one object per story/asset URL. */
+function mediaCacheRequest(url) {
+  return new Request(url.toString(), { method: "GET" });
 }
 
 /** @param {Request} request @param {Record<string, string>} env @param {URL} url */
@@ -47,12 +82,11 @@ async function proxyToBackend(request, env, url) {
   out.set("Access-Control-Allow-Origin", url.origin);
   out.set("Access-Control-Allow-Credentials", "true");
 
-  if (isCacheableAudioPath(url.pathname) && response.ok) {
-    out.set(
-      "Cache-Control",
-      out.get("Cache-Control") ??
-        "public, max-age=31536000, stale-while-revalidate=86400, immutable",
-    );
+  if (isCacheableMediaPath(url.pathname) && response.ok) {
+    const existing = out.get("Cache-Control");
+    if (!existing || !existing.includes("max-age")) {
+      out.set("Cache-Control", MEDIA_CACHE_TTL_FALLBACK);
+    }
   }
 
   return new Response(response.body, {
@@ -63,36 +97,55 @@ async function proxyToBackend(request, env, url) {
 }
 
 /**
- * Edge cache — second request for the same clip should not hit Render.
+ * @param {Response} cached
+ * @param {URL} url
+ * @param {"HIT" | "MISS"} edgeLabel
+ */
+function withEdgeCacheHeaders(cached, url, edgeLabel) {
+  const headers = new Headers(cached.headers);
+  headers.set("X-AmyNest-Edge-Cache", edgeLabel);
+  headers.set("Access-Control-Allow-Origin", url.origin);
+  headers.set("Access-Control-Allow-Credentials", "true");
+  return new Response(cached.body, {
+    status: cached.status,
+    statusText: cached.statusText,
+    headers,
+  });
+}
+
+/**
+ * Edge cache — repeat requests for the same clip/video should not hit Render.
+ * Range requests are always proxied (video players); full GET responses are stored.
  * @param {Request} request @param {Record<string, string>} env @param {ExecutionContext} ctx @param {URL} url
  */
 async function fetchWithEdgeCache(request, env, ctx, url) {
   const cache = caches.default;
-  const cacheKey = new Request(url.toString(), request);
+  const cacheKey = mediaCacheRequest(url);
+  const hasRange = Boolean(request.headers.get("Range"));
 
-  const cached = await cache.match(cacheKey);
-  if (cached) {
-    const headers = new Headers(cached.headers);
-    headers.set("X-AmyNest-Edge-Cache", "HIT");
-    headers.set("Access-Control-Allow-Origin", url.origin);
-    headers.set("Access-Control-Allow-Credentials", "true");
-    return new Response(cached.body, {
-      status: cached.status,
-      statusText: cached.statusText,
-      headers,
-    });
+  if (!hasRange) {
+    const cached = await cache.match(cacheKey);
+    if (cached) {
+      return withEdgeCacheHeaders(cached, url, "HIT");
+    }
   }
 
   const response = await proxyToBackend(request, env, url);
   const contentType = response.headers.get("content-type") ?? "";
 
-  if (response.ok && contentType.includes("audio")) {
+  if (
+    !hasRange &&
+    request.method === "GET" &&
+    response.ok &&
+    response.status === 200 &&
+    shouldStoreInEdgeCache(url.pathname, contentType)
+  ) {
     const toStore = response.clone();
     ctx.waitUntil(cache.put(cacheKey, toStore));
   }
 
   const headers = new Headers(response.headers);
-  headers.set("X-AmyNest-Edge-Cache", "MISS");
+  headers.set("X-AmyNest-Edge-Cache", hasRange ? "BYPASS-RANGE" : "MISS");
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -110,7 +163,7 @@ export default {
 
     if (
       (request.method === "GET" || request.method === "HEAD") &&
-      isCacheableAudioPath(url.pathname)
+      isCacheableMediaPath(url.pathname)
     ) {
       return fetchWithEdgeCache(request, env, ctx, url);
     }

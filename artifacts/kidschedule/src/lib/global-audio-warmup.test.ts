@@ -127,9 +127,17 @@ describe("global-audio-warmup", () => {
     }
   }
 
-  it("marks high-priority phonics as cached after init", async () => {
+  it("does not warm phonics library on init (deferred to /phonics route)", async () => {
     const mod = await import("@/lib/global-audio-warmup");
     mod.initGlobalAudioWarmup();
+    await flushAsync();
+    expect(mod.isGlobalAudioCached("phonics:a")).toBe(false);
+    expect(mod.isGlobalAudioCached("phonics:e")).toBe(false);
+  });
+
+  it("marks high-priority phonics as cached after route open warm", async () => {
+    const mod = await import("@/lib/global-audio-warmup");
+    mod.warmPhonicsLibraryOnRouteOpen();
     await flushAsync();
     expect(mod.isGlobalAudioCached("phonics:a")).toBe(true);
     expect(mod.isGlobalAudioCached("phonics:e")).toBe(true);
@@ -137,7 +145,7 @@ describe("global-audio-warmup", () => {
 
   it("playAudioInstant replays cached audio without double-play errors", async () => {
     const mod = await import("@/lib/global-audio-warmup");
-    mod.initGlobalAudioWarmup();
+    mod.warmPhonicsLibraryOnRouteOpen();
     await flushAsync();
     mod.playAudioInstant("phonics:a");
     mod.playAudioInstant("phonics:b");
@@ -152,9 +160,9 @@ describe("global-audio-warmup", () => {
     expect(mod.isGlobalAudioCached("speech:cat")).toBe(true);
   });
 
-  it("preloads all phonics keys including q, x, z in low-priority tier", async () => {
+  it("preloads all phonics keys including q, x, z after route open warm", async () => {
     const mod = await import("@/lib/global-audio-warmup");
-    mod.initGlobalAudioWarmup();
+    mod.warmPhonicsLibraryOnRouteOpen();
     await vi.runAllTimersAsync();
     await flushAsync();
     expect(mod.isGlobalAudioCached("phonics:q")).toBe(true);
@@ -178,7 +186,7 @@ describe("global-audio-warmup", () => {
     mod.installGlobalAudioWarmupOnGesture();
 
     window.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
-    await flushAsync();
+    await vi.runAllTimersAsync();
     await flushAsync();
 
     vi.mocked(audioManager.getCached).mock.results.forEach((result) => {
@@ -190,6 +198,7 @@ describe("global-audio-warmup", () => {
       value: "visible",
     });
     document.dispatchEvent(new Event("visibilitychange"));
+    await vi.runAllTimersAsync();
     await flushAsync();
 
     const played = vi

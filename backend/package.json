@@ -2,7 +2,7 @@
   "name": "amynest-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Render entrypoint — runs full @workspace/api-server from repo root",
+  "description": "Render legacy entrypoint — prefer docker/backend/Dockerfile. Native build: npm ci (not npm install).",
   "main": "server.js",
   "engines": {
     "node": ">=20.0.0"
