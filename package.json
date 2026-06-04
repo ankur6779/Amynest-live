@@ -29,6 +29,7 @@
     "stability:load": "pnpm --filter @workspace/scripts run stability-load",
     "generate:content-bank": "pnpm --filter @workspace/scripts run generate:content-bank",
     "upload:content-bank": "pnpm --filter @workspace/scripts run upload:content-bank",
+    "map:story-hub-gcs": "pnpm --filter @workspace/scripts run map:story-hub-gcs",
     "generate:content-bank-audio": "pnpm run scan:speakable-phrases && pnpm --filter @workspace/scripts run generate-static-audio -- --content-bank-only && pnpm --filter @workspace/scripts run build:content-bank-audio-map",
     "generate:static-audio": "pnpm --filter @workspace/scripts run generate-static-audio",
     "generate:static-audio:force": "pnpm --filter @workspace/scripts run generate-static-audio -- --force-all",

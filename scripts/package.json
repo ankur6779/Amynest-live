@@ -41,6 +41,7 @@
     "check-spelling-audio": "tsx ./check-spelling-audio.ts",
     "generate:content-bank": "tsx ./generate-learning-zone-content-bank.ts",
     "upload:content-bank": "tsx ./upload-content-bank.ts",
+    "map:story-hub-gcs": "tsx ./map-story-hub-gcs.ts",
     "build:content-bank-audio-map": "tsx ./build-content-bank-audio-map.ts",
     "scan-speakable-phrases": "tsx ./scan-speakable-phrases.ts",
     "check-amy-voice-usage": "tsx ./check-amy-voice-usage.ts",
