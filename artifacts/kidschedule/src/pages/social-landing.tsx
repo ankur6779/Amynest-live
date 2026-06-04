@@ -18,6 +18,11 @@ import {
   Pause,
   Check,
   X,
+  UserPlus,
+  Target,
+  ListChecks,
+  TrendingUp,
+  ZoomIn,
 } from "lucide-react";
 import { InfantParentingSection } from "@/components/marketing/infant-parenting-section";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
@@ -310,11 +315,21 @@ const SUPPORT_PILLARS = [
   { icon: ShieldCheck, title: "Safe Learning Environment", desc: "No ads, no harmful content — a space built only for children." },
 ] as const;
 
-const STEPS = [
-  { title: "Tell AMY about your child", desc: "Age, goals and a few daily challenges — that's it." },
-  { title: "Get a personalized plan", desc: "Routines, learning, speech and meals tailored instantly." },
-  { title: "Build better daily habits", desc: "Simple actions your whole family can actually follow." },
-  { title: "Watch confidence grow", desc: "Track progress and your child's next wins, every stage." },
+/** Real app UI captures served from /promo/get-app/screenshots/ */
+const HERO_APP_SCREENSHOTS = [
+  { id: "amy", title: "AMY Assistant", image: "/promo/get-app/screenshots/amy-assistant.jpg" },
+  { id: "routine", title: "Daily Routine Generator", image: "/promo/get-app/screenshots/daily-routine.jpg" },
+  { id: "infant", title: "Infant Hub", image: "/promo/get-app/screenshots/infant-hub.jpg" },
+  { id: "speech", title: "Speech Coach", image: "/promo/get-app/screenshots/speech-coach.png" },
+  { id: "study", title: "Smart Study Zone", image: "/promo/get-app/screenshots/smart-study-zone.jpg" },
+] as const;
+
+const INSTALL_ONBOARDING_STEPS = [
+  { icon: UserPlus, title: "Create your child's profile", desc: "Add age and goals so every recommendation fits your child." },
+  { icon: Target, title: "Tell AMY your biggest challenge", desc: "Sleep, meals, speech, study or infant care — share what matters most today." },
+  { icon: Sparkles, title: "Get a personalized parenting and learning plan", desc: "AMY builds routines, activities and guidance tailored to your family." },
+  { icon: ListChecks, title: "Start age-appropriate activities", desc: "Open the right hub and follow simple daily actions you can actually finish." },
+  { icon: TrendingUp, title: "Track growth and progress", desc: "See milestones, streaks and wins update as your child grows." },
 ] as const;
 
 type Screenshot = {
@@ -351,6 +366,171 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 rounded-b-xl z-10 bg-black/80" />
       {children}
     </div>
+  );
+}
+
+function ScreenshotLightbox({
+  shot,
+  onClose,
+}: {
+  shot: (typeof HERO_APP_SCREENSHOTS)[number];
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[55] flex items-center justify-center bg-black/85 px-4 py-8"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${shot.title} screenshot`}
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 z-10 h-10 w-10 rounded-full sl-glass flex items-center justify-center text-white"
+        aria-label="Close screenshot"
+      >
+        <X className="h-5 w-5" />
+      </button>
+      <div className="w-full max-w-sm" onClick={(event) => event.stopPropagation()}>
+        <PhoneFrame>
+          <img src={shot.image} alt={shot.title} className="absolute inset-0 h-full w-full object-cover object-top" />
+        </PhoneFrame>
+        <p className="mt-4 text-center font-quicksand font-bold text-lg text-white">{shot.title}</p>
+        <p className="mt-1 text-center text-sm text-white/55">Tap outside to close</p>
+      </div>
+    </div>
+  );
+}
+
+function AppScreenshotStrip() {
+  const [expanded, setExpanded] = useState<(typeof HERO_APP_SCREENSHOTS)[number] | null>(null);
+
+  const open = (shot: (typeof HERO_APP_SCREENSHOTS)[number]) => {
+    setExpanded(shot);
+    trackLandingEvent("screenshot_carousel_engagement", { feature: shot.id, action: "expand" });
+  };
+
+  return (
+    <section className="relative z-10 max-w-6xl mx-auto px-4 py-10 md:py-14" aria-labelledby="see-amynest-heading">
+      <div className="text-center mb-6 md:mb-8">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">Real app screens</p>
+        <h2 id="see-amynest-heading" className="font-quicksand font-black text-3xl sm:text-4xl">
+          See AmyNest In Action
+        </h2>
+        <p className="text-white/60 text-sm sm:text-base max-w-xl mx-auto mt-3 leading-relaxed">
+          Swipe through the app, then tap any screen to enlarge.
+        </p>
+      </div>
+
+      <div
+        className="flex gap-4 overflow-x-auto pb-3 -mx-1 px-1 snap-x snap-mandatory scroll-smooth"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {HERO_APP_SCREENSHOTS.map((shot) => (
+          <button
+            key={shot.id}
+            type="button"
+            onClick={() => open(shot)}
+            className="snap-center shrink-0 w-[148px] sm:w-[168px] text-left group"
+            aria-label={`View ${shot.title} screenshot`}
+          >
+            <div className="relative">
+              <PhoneFrame>
+                <img
+                  src={shot.image}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover object-top"
+                  loading="eager"
+                  decoding="async"
+                />
+              </PhoneFrame>
+              <span className="absolute bottom-3 right-3 h-8 w-8 rounded-full bg-black/55 backdrop-blur flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity">
+                <ZoomIn className="h-4 w-4 text-white" aria-hidden />
+              </span>
+            </div>
+            <p className="mt-3 font-quicksand font-bold text-[13px] sm:text-sm text-white text-center leading-tight px-0.5">
+              {shot.title}
+            </p>
+          </button>
+        ))}
+      </div>
+
+      {expanded && <ScreenshotLightbox shot={expanded} onClose={() => setExpanded(null)} />}
+    </section>
+  );
+}
+
+function InstallOnboardingSection({ onStartFree }: { onStartFree: () => void }) {
+  return (
+    <section className="relative z-10 max-w-6xl mx-auto px-4 py-10 md:py-14" aria-labelledby="after-install-heading">
+      <div className="text-center mb-8 md:mb-10">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">Simple setup</p>
+        <h2 id="after-install-heading" className="font-quicksand font-black text-3xl sm:text-4xl">
+          What Happens After You Install?
+        </h2>
+        <p className="text-white/60 text-sm sm:text-base max-w-2xl mx-auto mt-3 leading-relaxed">
+          No complicated onboarding — a clear path from download to your first win.
+        </p>
+      </div>
+
+      <ol className="relative max-w-3xl mx-auto">
+        <div aria-hidden className="absolute left-[1.35rem] top-8 bottom-8 w-px bg-gradient-to-b from-purple-500/50 via-purple-400/25 to-transparent" />
+        {INSTALL_ONBOARDING_STEPS.map((step, index) => (
+          <li key={step.title} className="relative flex gap-4 sm:gap-5 pb-8 last:pb-0">
+            <div
+              className="relative z-10 h-11 w-11 shrink-0 rounded-2xl flex items-center justify-center font-quicksand font-black text-sm text-white"
+              style={{
+                background: "linear-gradient(135deg,rgba(168,85,247,0.35),rgba(236,72,153,0.2))",
+                border: "1px solid rgba(168,85,247,0.35)",
+              }}
+            >
+              {index + 1}
+            </div>
+            <div className="sl-card rounded-2xl p-4 sm:p-5 flex-1 flex gap-3.5 items-start">
+              <span
+                className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.28)" }}
+              >
+                <step.icon className="h-5 w-5 text-purple-200" />
+              </span>
+              <div>
+                <h3 className="font-quicksand font-bold text-base sm:text-lg text-white mb-1">{step.title}</h3>
+                <p className="text-white/58 text-sm leading-relaxed">{step.desc}</p>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-10 text-center">
+        <button
+          type="button"
+          onClick={() => {
+            trackLandingEvent("install_intent", { location: "onboarding_cta" });
+            onStartFree();
+          }}
+          className="sl-cta inline-flex items-center justify-center gap-2 font-bold px-8 py-4 rounded-2xl text-white text-base"
+        >
+          Start Free Today
+          <ArrowRight className="h-4 w-4" />
+        </button>
+        <p className="mt-3 text-white/45 text-xs">Free to start · Android &amp; iOS · No credit card</p>
+      </div>
+    </section>
   );
 }
 
@@ -830,6 +1010,10 @@ export default function SocialLandingPage() {
         </div>
       </section>
 
+      <AppScreenshotStrip />
+
+      <InstallOnboardingSection onStartFree={openPrimaryStore} />
+
       {/* FLAGSHIP — MEET AMY */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 py-14 md:py-20">
         <div className="text-center mb-10">
@@ -997,25 +1181,6 @@ export default function SocialLandingPage() {
                 <h3 className="font-quicksand font-bold text-base text-white mb-1">{p.title}</h3>
                 <p className="text-white/58 text-sm leading-relaxed">{p.desc}</p>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 py-12 md:py-14">
-        <div className="text-center mb-8">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">Set up in minutes</p>
-          <h2 className="font-quicksand font-black text-3xl sm:text-4xl">What happens after you install</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {STEPS.map((step, index) => (
-            <div key={step.title} className="sl-card rounded-2xl p-5">
-              <div className="h-11 w-11 rounded-xl flex items-center justify-center mb-4 font-quicksand font-black text-lg sl-gradient-text" style={{ background: "rgba(168,85,247,0.14)", border: "1px solid rgba(168,85,247,0.28)" }}>
-                {index + 1}
-              </div>
-              <h3 className="font-quicksand font-bold text-lg mb-2">{step.title}</h3>
-              <p className="text-white/56 text-sm leading-relaxed">{step.desc}</p>
             </div>
           ))}
         </div>
