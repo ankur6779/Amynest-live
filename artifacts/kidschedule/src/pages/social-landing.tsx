@@ -4,18 +4,20 @@ import {
   Mic,
   GraduationCap,
   BookOpen,
-  Calculator,
   Baby,
   Sparkles,
   ShieldCheck,
   Lock,
   EyeOff,
   HeartHandshake,
+  Calendar,
+  Utensils,
+  Compass,
+  MessageCircle,
   Play,
   Pause,
   Check,
   X,
-  Quote,
 } from "lucide-react";
 import { InfantParentingSection } from "@/components/marketing/infant-parenting-section";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
@@ -171,123 +173,148 @@ function setMetaTag(selector: string, attr: "content" | "href", value: string) {
   document.head.appendChild(tag);
 }
 
-const TESTIMONIALS = [
+const TRUST_BAR = [
+  { icon: Sparkles, label: "AI Parenting Guidance" },
+  { icon: Calendar, label: "Daily Routines" },
+  { icon: Baby, label: "Infant Support" },
+  { icon: Mic, label: "Speech Development" },
+  { icon: BookOpen, label: "Learning Activities" },
+  { icon: ShieldCheck, label: "Child-Safe Experience" },
+] as const;
+
+type ChatTurn = { parent: string; amy: string };
+
+const AMY_CHAT: ChatTurn[] = [
+  { parent: "My child refuses to study.", amy: "Let's build a simple 15-minute learning routine that feels easy to start today." },
+  { parent: "What should my toddler eat today?", amy: "Here's a balanced meal plan with breakfast, lunch and two healthy snacks." },
+  { parent: "My baby keeps crying.", amy: "Let's identify the likely cause — hunger, sleep or comfort — and what to try next." },
+];
+
+const STAGES = [
   {
-    quote: "My daughter now practices reading daily — without me nagging. AmyNest turned it into something she actually looks forward to.",
-    name: "Priya S.",
-    role: "Mom of a 6-year-old",
+    range: "0–2 Years",
+    label: "The Newborn Years",
+    icon: Baby,
+    gradient: "linear-gradient(135deg,#f472b6,#a855f7)",
+    items: ["Cry Insight", "Feeding Support", "Sleep Guidance", "Milestones"],
   },
   {
-    quote: "Speech Coach improved her pronunciation dramatically in a few weeks. I finally feel like I have real guidance, not random YouTube videos.",
-    name: "Daniel R.",
-    role: "Dad of a 4-year-old",
+    range: "2–5 Years",
+    label: "Early Discovery",
+    icon: Compass,
+    gradient: "linear-gradient(135deg,#a855f7,#6366f1)",
+    items: ["Speech Coach", "Discovery Worlds", "Phonics", "Stories"],
   },
   {
-    quote: "Amy feels like a parenting co-pilot. Routines, learning, meals — it&apos;s all in one place and tailored to my son.",
-    name: "Aisha K.",
-    role: "First-time mom",
+    range: "5–8 Years",
+    label: "Building Skills",
+    icon: BookOpen,
+    gradient: "linear-gradient(135deg,#6366f1,#06b6d4)",
+    items: ["Reading Skills", "Spelling Mastery", "Smart Study Zone"],
   },
   {
-    quote: "Less screen-time guilt. The time he spends in the app actually teaches him something. That peace of mind is worth everything.",
-    name: "Marcus T.",
-    role: "Working dad of two",
+    range: "8–10+ Years",
+    label: "Advanced Growth",
+    icon: GraduationCap,
+    gradient: "linear-gradient(135deg,#06b6d4,#22c55e)",
+    items: ["Advanced Learning", "Abacus", "Olympiad Prep", "AI Learning Support"],
   },
 ] as const;
 
-const TRUST_INDICATORS = [
-  { value: "1,000+", label: "Learning activities" },
-  { value: "AI", label: "Powered guidance" },
-  { value: "0–10+", label: "Built for every age" },
-  { value: "100%", label: "Child-safe content" },
+/** `them` = whether a typical learning app usually offers this. AmyNest offers all. */
+const COMPARISON_ROWS = [
+  { label: "AI Parenting Assistant", them: false },
+  { label: "Infant Parenting Support", them: false },
+  { label: "Daily Routine Generator", them: false },
+  { label: "Nutrition Guidance", them: false },
+  { label: "Speech Development", them: false },
+  { label: "Learning Activities", them: true },
+  { label: "Worksheets & Stories", them: false },
+  { label: "Discovery Worlds", them: false },
+  { label: "Amy Coach", them: false },
+  { label: "Age-Based Recommendations", them: false },
+  { label: "One App For Ages 0–10+", them: false },
 ] as const;
 
 const PAIN_SOLUTIONS = [
   {
-    pain: "Hours lost to random, low-value videos",
-    solution: "Turns screen time into guided, age-appropriate learning your child enjoys.",
+    pain: "My child spends too much time watching random videos.",
+    solution: "AMY turns screen time into guided, age-appropriate activities your child actually enjoys.",
   },
   {
-    pain: "Reading and phonics struggles",
-    solution: "Daily phonics and reading sessions that build confidence one win at a time.",
+    pain: "I don't know if my baby is developing normally.",
+    solution: "The Infant Hub tracks milestones and decodes cries, sleep and feeding with clear guidance.",
   },
   {
-    pain: "Speech and pronunciation worries",
-    solution: "Speech Coach gives gentle, structured practice that grows real confidence.",
+    pain: "My child struggles with speech.",
+    solution: "Speech Coach builds clear pronunciation and confidence through gentle daily practice.",
   },
   {
-    pain: "You never know which activity to pick",
+    pain: "Our mornings are always chaotic.",
+    solution: "The AI Routine Generator builds a calm, personalized day your whole family can follow.",
+  },
+  {
+    pain: "I never know what activities to choose.",
     solution: "AMY recommends the next best activity based on your child's age and progress.",
   },
   {
-    pain: "Overwhelmed by infant care decisions",
-    solution: "Infant Parenting guidance for cries, sleep, feeding, growth and milestones.",
-  },
-  {
-    pain: "Unsure what's healthy to feed your kids",
-    solution: "Nutrition Hub makes balanced meals and snacks simple, with less decision fatigue.",
+    pain: "I'm not sure what to feed my child each day.",
+    solution: "The Nutrition Hub plans balanced meals and snacks, so there's no daily guesswork.",
   },
 ] as const;
 
 const OUTCOME_FEATURES = [
   {
-    icon: Sparkles,
-    title: "Get an Always-On AI Parenting Partner",
-    desc: "AMY answers your parenting questions and suggests the next best step for your child — day or night.",
+    icon: MessageCircle,
+    title: "Get Parenting Guidance Exactly When You Need It",
+    desc: "AMY answers real parenting questions and tells you the next best step — day or night.",
     gradient: "linear-gradient(135deg,#a855f7,#ec4899)",
+  },
+  {
+    icon: Calendar,
+    title: "End Daily Chaos With Personalized Routines",
+    desc: "The AI Routine Generator turns mornings, study and bedtime into a calm, doable plan.",
+    gradient: "linear-gradient(135deg,#7c3aed,#a855f7)",
   },
   {
     icon: Mic,
     title: "Help Your Child Speak Clearly and Confidently",
-    desc: "Speech Coach guides daily pronunciation practice that builds real communication confidence.",
-    gradient: "linear-gradient(135deg,#7c3aed,#a855f7)",
-  },
-  {
-    icon: BookOpen,
-    title: "Build Reading Confidence, One Session at a Time",
-    desc: "Phonics and reading practice designed for your child's stage, so progress feels achievable.",
+    desc: "Speech Coach guides daily practice that builds real pronunciation and confidence.",
     gradient: "linear-gradient(135deg,#f97316,#ec4899)",
   },
   {
-    icon: GraduationCap,
-    title: "Make Study Time Focused and Stress-Free",
-    desc: "Smart Study Zone keeps learning organized with the right activity at the right moment.",
-    gradient: "linear-gradient(135deg,#06b6d4,#3b82f6)",
-  },
-  {
-    icon: Calculator,
-    title: "Turn Math Into a Game They Want to Play",
-    desc: "Abacus and smart math tricks build number confidence through playful, hands-on practice.",
+    icon: Utensils,
+    title: "Know What To Feed Your Child Every Day",
+    desc: "The Nutrition Hub plans balanced meals and snacks, removing the daily what's-for-dinner stress.",
     gradient: "linear-gradient(135deg,#10b981,#22c55e)",
   },
   {
     icon: Baby,
-    title: "Feel Calm and Capable as a New Parent",
-    desc: "Infant Parenting and Nutrition Hub give trusted, practical guidance for those early years.",
+    title: "Feel Calm and Capable In The Newborn Years",
+    desc: "The Infant Hub decodes cries and guides feeding, sleep and milestones with confidence.",
     gradient: "linear-gradient(135deg,#6366f1,#06b6d4)",
+  },
+  {
+    icon: GraduationCap,
+    title: "Raise A Confident, Capable Learner",
+    desc: "Phonics, spelling, abacus and Smart Study Zone grow real skills, one win at a time.",
+    gradient: "linear-gradient(135deg,#06b6d4,#3b82f6)",
   },
 ] as const;
 
-const BENEFITS = [
-  { icon: GraduationCap, title: "Better learning habits", desc: "Consistent, bite-sized sessions that stick." },
-  { icon: HeartHandshake, title: "Less educational stress", desc: "AMY tells you exactly what to do next." },
-  { icon: Sparkles, title: "Guided daily activities", desc: "Never wonder what to do with your child today." },
-  { icon: ShieldCheck, title: "A safe digital space", desc: "No ads, no harmful content, just learning." },
-  { icon: Mic, title: "Personalized support", desc: "Everything adapts to your child's age and pace." },
-  { icon: EyeOff, title: "Screen time you trust", desc: "Time on the app actually teaches something." },
-] as const;
-
-const TRUST_CARDS = [
-  { icon: Lock, title: "Privacy first", desc: "Your family's data is protected and never sold." },
-  { icon: ShieldCheck, title: "Child-safe by design", desc: "Every experience is built for young children." },
-  { icon: EyeOff, title: "No harmful content", desc: "No ads, no autoplay rabbit holes, no surprises." },
-  { icon: HeartHandshake, title: "Parent-focused", desc: "You stay in control, with guidance every step." },
+const SUPPORT_PILLARS = [
+  { icon: MessageCircle, title: "Parenting Support", desc: "Real answers to real parenting moments, the second they happen." },
+  { icon: GraduationCap, title: "Learning Support", desc: "Phonics, reading, spelling and study that grow with your child." },
+  { icon: HeartHandshake, title: "Child Development Support", desc: "Speech, milestones and age-based guidance from infancy onward." },
+  { icon: Calendar, title: "Daily Routine Support", desc: "Calm, personalized days that replace chaos with rhythm." },
+  { icon: ShieldCheck, title: "Safe Learning Environment", desc: "No ads, no harmful content — a space built only for children." },
 ] as const;
 
 const STEPS = [
   { title: "Tell AMY about your child", desc: "Age, goals and a few daily challenges — that's it." },
   { title: "Get a personalized plan", desc: "Routines, learning, speech and meals tailored instantly." },
-  { title: "Build better habits", desc: "Simple daily actions your whole family can follow." },
-  { title: "Watch confidence grow", desc: "Track streaks, progress and your child's next wins." },
+  { title: "Build better daily habits", desc: "Simple actions your whole family can actually follow." },
+  { title: "Watch confidence grow", desc: "Track progress and your child's next wins, every stage." },
 ] as const;
 
 type Screenshot = {
@@ -300,16 +327,14 @@ type Screenshot = {
 };
 
 const SCREENSHOTS: Screenshot[] = [
-  { id: "amy", title: "AMY AI Assistant", benefit: "Your always-on parenting co-pilot for instant, personalized guidance.", accent: "#a855f7", image: "/promo/social/reels/amy-coach.png", rows: ["Ask Amy anything", "Next best activity", "Parenting tips", "Daily check-in"] },
+  { id: "amy", title: "AMY Assistant", benefit: "Your always-on parenting co-pilot for instant, personalized answers.", accent: "#a855f7", image: "/promo/social/reels/amy-coach.png", rows: ["Ask Amy anything", "Next best step", "Parenting guidance", "Daily check-in"] },
+  { id: "coach", title: "Amy Coach", benefit: "Guided coaching and audio lessons your child can learn from anywhere.", accent: "#38bdf8", rows: ["Today's lesson", "Listen and repeat", "Story-led learning", "Hands-free play"] },
+  { id: "routine", title: "Routine Generator", benefit: "End daily chaos with calm, personalized routines for the whole day.", accent: "#7c3aed", image: "/promo/social/reels/daily-routines.png", rows: ["Morning plan", "School prep", "Study block", "Wind-down"] },
+  { id: "infant", title: "Infant Hub", benefit: "Decode cries and guide feeding, sleep and milestones with confidence.", accent: "#f472b6", image: "/promo/infant-parenting/appstore-02-baby-today.jpg", rows: ["Cry insight", "Feeding support", "Sleep guidance", "Milestones"] },
+  { id: "nutrition", title: "Nutrition Hub", benefit: "Know what to feed your child with balanced daily meal plans.", accent: "#22c55e", image: "/promo/social/reels/nutrition-hub.png", rows: ["Breakfast idea", "Balanced lunch", "Healthy snacks", "Hydration"] },
   { id: "speech", title: "Speech Coach", benefit: "Help your child speak clearly and confidently with guided practice.", accent: "#f59e0b", image: "/promo/social/reels/speech-coach.png", rows: ["Warm-up sounds", "Practice words", "Confidence streak", "Parent summary"] },
-  { id: "audio", title: "Amy Coach Audio Lessons", benefit: "Screen-free audio lessons your child can learn from anywhere.", accent: "#38bdf8", rows: ["Today&apos;s audio lesson", "Listen & repeat", "Story-led learning", "Hands-free play"] },
   { id: "study", title: "Smart Study Zone", benefit: "Keep learning focused with the right activity at the right time.", accent: "#3b82f6", image: "/promo/social/reels/learning-zone.png", rows: ["Daily study path", "Focus session", "Skill builder", "Progress saved"] },
-  { id: "phonics", title: "Phonics Learning", benefit: "Build reading confidence one playful phonics session at a time.", accent: "#ec4899", rows: ["Letter sounds", "Blend & read", "Sight words", "Reading streak"] },
-  { id: "abacus", title: "Abacus & Math Tricks", benefit: "Turn numbers into a game with hands-on math practice.", accent: "#22c55e", rows: ["Bead counting", "Quick math tricks", "Mental math", "Level up"] },
-  { id: "pdf", title: "Daily PDF Worksheets", benefit: "Download fresh printable worksheets for offline practice every day.", accent: "#f97316", rows: ["Today&apos;s worksheet", "Tap to download", "Print & practice", "New set daily"] },
-  { id: "spelling", title: "Spelling Mastery", benefit: "Grow a strong vocabulary with adaptive spelling challenges.", accent: "#8b5cf6", rows: ["Word of the day", "Spell & check", "Tricky words", "Mastery badge"] },
-  { id: "videos", title: "Bedtime & Art Videos", benefit: "Calm bedtime stories plus art and craft videos kids love.", accent: "#06b6d4", rows: ["Bedtime story", "Art & craft", "Calm wind-down", "Safe playlist"] },
-  { id: "infant", title: "Infant Parenting", benefit: "Trusted guidance for cries, sleep, feeding and milestones.", accent: "#f472b6", image: "/promo/infant-parenting/appstore-02-baby-today.jpg", rows: ["Cry insight", "Today&apos;s care", "Growth tracking", "Milestones"] },
+  { id: "discovery", title: "Discovery Worlds", benefit: "Spark curiosity with immersive, child-safe worlds of exploration.", accent: "#06b6d4", rows: ["Explore a world", "Guided discovery", "Fun challenges", "Earn rewards"] },
 ];
 
 function PhoneFrame({ children }: { children: React.ReactNode }) {
@@ -367,8 +392,8 @@ function ScreenshotCarousel() {
   return (
     <section className="relative z-10 max-w-6xl mx-auto px-4 py-12 md:py-16">
       <div className="text-center mb-8">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">A peek inside</p>
-        <h2 className="font-quicksand font-black text-3xl sm:text-4xl">Everything your child needs to learn and grow</h2>
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">A peek inside the app</p>
+        <h2 className="font-quicksand font-black text-3xl sm:text-4xl">Everything parenting needs, in one place</h2>
       </div>
       <div className="sl-glass rounded-3xl p-4 md:p-8 grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-6 md:gap-8 items-center">
         <div className="flex justify-center">
@@ -463,10 +488,10 @@ function DemoVideo({ onPrimaryCta }: { onPrimaryCta: () => void }) {
           </div>
         </div>
         <div className="px-2 md:px-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300 mb-3">From download to daily habits</p>
-          <h2 className="font-quicksand font-black text-3xl sm:text-4xl mb-4">A personalized learning plan in minutes.</h2>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300 mb-3">From download to daily calm</p>
+          <h2 className="font-quicksand font-black text-3xl sm:text-4xl mb-4">A personalized parenting plan in minutes.</h2>
           <p className="text-white/64 text-base leading-relaxed mb-6">
-            AmyNest AI turns your child&apos;s age and goals into routines, learning, speech practice, and meal support you can use right away.
+            AMY turns your child&apos;s age and your daily challenges into routines, infant care, nutrition, speech and learning you can use right away.
           </p>
           <button type="button" onClick={onPrimaryCta} className="sl-cta inline-flex items-center justify-center gap-2 font-bold px-7 py-4 rounded-2xl text-white">
             Start Your Child&apos;s Free Plan
@@ -506,9 +531,9 @@ function ExitIntentModal() {
       <div className="sl-glass w-full max-w-md rounded-3xl p-6 text-center shadow-2xl">
         <img src={OFFICIAL_LOGO} alt="" className="h-14 w-14 rounded-2xl object-cover mx-auto mb-3" />
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300 mb-2">Before you go</p>
-        <h2 className="font-quicksand font-black text-2xl mb-2">Give your child an AI learning head start.</h2>
+        <h2 className="font-quicksand font-black text-2xl mb-2">Meet AMY before you go.</h2>
         <p className="text-white/64 text-sm leading-relaxed mb-5">
-          AmyNest is free to start. Set up your child&apos;s personalized plan in under 2 minutes.
+          AmyNest is free to start. Set up your personalized parenting plan in under 2 minutes.
         </p>
         <StoreButtonRow location="exit_intent" />
         <button type="button" onClick={() => setVisible(false)} className="mt-4 text-xs text-white/50 underline">
@@ -556,24 +581,47 @@ function ScrollCta({ target }: { target: StoreTarget }) {
   );
 }
 
+function AmyConversation({ turns, compact = false }: { turns: ChatTurn[]; compact?: boolean }) {
+  return (
+    <div className={`flex flex-col ${compact ? "gap-3" : "gap-4"}`}>
+      {turns.map((turn) => (
+        <div key={turn.parent} className="flex flex-col gap-2">
+          <div className="self-end max-w-[88%] rounded-2xl rounded-br-md px-4 py-2.5" style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.14)" }}>
+            <p className={`${compact ? "text-[13px]" : "text-sm"} text-white/90 leading-snug`}>{turn.parent}</p>
+          </div>
+          <div className="self-start max-w-[92%] flex items-end gap-2">
+            <span className="h-7 w-7 rounded-full shrink-0 flex items-center justify-center" style={{ background: "linear-gradient(135deg,#a855f7,#ec4899)" }}>
+              <Sparkles className="h-3.5 w-3.5 text-white" />
+            </span>
+            <div className="rounded-2xl rounded-bl-md px-4 py-2.5" style={{ background: "linear-gradient(135deg,rgba(168,85,247,0.22),rgba(99,102,241,0.18))", border: "1px solid rgba(168,85,247,0.4)" }}>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-purple-200/90 mb-0.5">AMY</p>
+              <p className={`${compact ? "text-[13px]" : "text-sm"} text-white leading-snug`}>{turn.amy}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function SocialLandingPage() {
   const target = useStoreTarget();
   const primaryStore = getStoreMeta(target);
   const scrollDepths = useRef(new Set<number>());
 
   useEffect(() => {
-    document.title = "Get AmyNest AI — Your AI Parenting & Learning Partner";
+    document.title = "AmyNest — One App for Every Stage of Parenting (0–10+)";
     const description =
-      "AmyNest AI turns everyday screen time into learning time. AMY guides routines, phonics, speech, study, nutrition and infant care for kids 0–10+. Free to start on Android & iOS.";
+      "AmyNest is your AI parenting operating system. Meet AMY — your co-pilot for routines, infant care, nutrition, speech and learning, from birth through age 10+. Free on Android & iOS.";
     setMetaTag('meta[name="description"]', "content", description);
     setMetaTag('link[rel="canonical"]', "href", "https://www.amynest.in/get-app");
-    setMetaTag('meta[property="og:title"]', "content", "Raise Smarter, Happier Kids With Your AI Parenting Partner");
+    setMetaTag('meta[property="og:title"]', "content", "One App for Every Stage of Parenting — AmyNest");
     setMetaTag('meta[property="og:description"]', "content", description);
     setMetaTag('meta[property="og:image"]', "content", `https://www.amynest.in${OG_IMAGE}`);
     setMetaTag('meta[property="og:type"]', "content", "website");
     setMetaTag('meta[property="og:url"]', "content", "https://www.amynest.in/get-app");
     setMetaTag('meta[name="twitter:card"]', "content", "summary_large_image");
-    setMetaTag('meta[name="twitter:title"]', "content", "Raise Smarter, Happier Kids With AmyNest AI");
+    setMetaTag('meta[name="twitter:title"]', "content", "One App for Every Stage of Parenting — AmyNest");
     setMetaTag('meta[name="twitter:description"]', "content", description);
     setMetaTag('meta[name="twitter:image"]', "content", `https://www.amynest.in${OG_IMAGE}`);
     trackLandingEvent("landing_page_view", { store_target: target });
@@ -596,11 +644,6 @@ export default function SocialLandingPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const scrollToDemo = () => {
-    document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" });
-    trackLandingEvent("demo_video_engagement", { action: "scroll_to_demo" });
-  };
-
   const openPrimaryStore = () => {
     trackLandingEvent("install_intent", { store: target, location: "hero_primary" });
     window.open(primaryStore.href, "_blank", "noopener,noreferrer");
@@ -612,27 +655,42 @@ export default function SocialLandingPage() {
       "@graph": [
         {
           "@type": "MobileApplication",
-          name: "AmyNest AI",
+          name: "AmyNest",
           operatingSystem: "ANDROID, IOS",
-          applicationCategory: "EducationApplication",
+          applicationCategory: "LifestyleApplication",
           description:
-            "AI-powered parenting and learning platform with AMY AI assistant, Speech Coach, phonics, smart study, abacus, spelling, infant parenting and nutrition for children 0–10+.",
+            "AmyNest is an AI parenting operating system with AMY AI assistant, AI routine generator, infant parenting hub, nutrition hub, speech coach, phonics, spelling, abacus, discovery worlds, worksheets, stories and audio lessons for children from birth to age 10+.",
           offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
           installUrl: PLAY_STORE_URL,
           downloadUrl: PLAY_STORE_URL,
+          featureList: [
+            "AMY AI Parenting Assistant",
+            "AI Daily Routine Generator",
+            "Infant Parenting Hub",
+            "Nutrition Hub",
+            "Speech Coach",
+            "Smart Study Zone",
+            "Phonics, Spelling and Abacus",
+            "Discovery Worlds, Worksheets and Stories",
+          ],
         },
         {
           "@type": "FAQPage",
           mainEntity: [
             {
               "@type": "Question",
+              name: "What is AmyNest?",
+              acceptedAnswer: { "@type": "Answer", text: "AmyNest is an AI-powered parenting operating system. AMY, your AI co-pilot, helps with routines, infant care, nutrition, speech and learning from birth through age 10 and beyond." },
+            },
+            {
+              "@type": "Question",
               name: "Is AmyNest free to download?",
-              acceptedAnswer: { "@type": "Answer", text: "Yes. AmyNest AI is free to start on both Google Play and the App Store, with a personalized plan set up in minutes." },
+              acceptedAnswer: { "@type": "Answer", text: "Yes. AmyNest is free to start on both Google Play and the App Store, with a personalized plan set up in minutes." },
             },
             {
               "@type": "Question",
               name: "What ages is AmyNest for?",
-              acceptedAnswer: { "@type": "Answer", text: "AmyNest supports children from infancy through age 10 and beyond, with content that adapts to each child's stage." },
+              acceptedAnswer: { "@type": "Answer", text: "AmyNest supports children from infancy through age 10 and beyond, with guidance that adapts to each stage of parenting." },
             },
             {
               "@type": "Question",
@@ -702,8 +760,8 @@ export default function SocialLandingPage() {
           <div className="flex items-center gap-2.5 min-w-0">
             <img src={OFFICIAL_LOGO} alt="AmyNest AI" className="h-10 w-10 rounded-xl object-cover shrink-0" />
             <div className="min-w-0">
-              <span className="font-quicksand font-black text-base sm:text-lg truncate block">AmyNest AI</span>
-              <span className="hidden sm:block text-[10px] uppercase tracking-widest text-purple-200/70 font-bold">AI Parenting &amp; Learning</span>
+              <span className="font-quicksand font-black text-base sm:text-lg truncate block">AmyNest</span>
+              <span className="hidden sm:block text-[10px] uppercase tracking-widest text-purple-200/70 font-bold">AI Parenting Operating System</span>
             </div>
           </div>
           <StoreButton target={target} location="header" size="compact" variant="solid">
@@ -713,32 +771,20 @@ export default function SocialLandingPage() {
       </header>
 
       {/* HERO */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 pt-8 pb-12 md:pt-14 md:pb-16">
+      <section className="relative z-10 max-w-6xl mx-auto px-4 pt-8 pb-10 md:pt-14 md:pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
           <div className="text-center lg:text-left">
             <p className="sl-fade inline-flex items-center gap-2 sl-glass px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.18em] text-purple-200 mb-5">
               <Sparkles className="h-3.5 w-3.5 text-purple-300" />
-              Patent Pending AI Parenting Platform
+              AI-Powered Parenting Operating System
             </p>
             <h1 className="sl-fade-1 font-quicksand font-black text-[2.1rem] sm:text-5xl lg:text-[3.25rem] leading-[1.06] tracking-tight mb-4">
-              Raise Smarter, Happier Kids With Your{" "}
-              <span className="sl-gradient-text">AI Parenting Partner</span>
+              One App for{" "}
+              <span className="sl-gradient-text">Every Stage of Parenting</span>
             </h1>
             <p className="sl-fade-2 text-white/70 text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0 mb-6">
-              AmyNest turns everyday screen time into learning time — guiding routines, reading, speech and study, all personalized to your child.
+              Meet AMY — your AI co-pilot for routines, infant care, nutrition, speech and learning, from your baby&apos;s first words to age 10+.
             </p>
-
-            <div className="sl-fade-2 flex flex-wrap items-center justify-center lg:justify-start gap-x-3 gap-y-2 mb-6">
-              <span className="inline-flex items-center gap-1.5 text-sm text-white/70 font-semibold">
-                <Sparkles className="h-4 w-4 text-purple-300" />
-                Now on Android &amp; iOS
-              </span>
-              <span className="hidden sm:block h-4 w-px bg-white/15" />
-              <span className="inline-flex items-center gap-1.5 text-sm text-white/70 font-semibold">
-                <HeartHandshake className="h-4 w-4 text-pink-300" />
-                Free to start in minutes
-              </span>
-            </div>
 
             <div className="sl-fade-3 max-w-lg mx-auto lg:mx-0 mb-5">
               <StoreButtonRow location="hero" />
@@ -752,56 +798,135 @@ export default function SocialLandingPage() {
             </div>
           </div>
 
-          <div className="sl-fade-2 flex justify-center lg:justify-end sl-float">
-            <div className="relative max-w-[360px]">
-              <img src={PROMO_IMAGE} alt="AmyNest AI app preview" className="rounded-[2rem] shadow-2xl border border-white/10" loading="eager" />
-              <div className="absolute -bottom-4 -left-4 sl-glass rounded-2xl px-4 py-3 shadow-2xl">
-                <p className="text-[10px] text-white/55 uppercase tracking-wide font-bold mb-1">AMY AI</p>
-                <p className="text-[11px] font-bold text-white">Personalized in minutes</p>
-              </div>
-              <div className="absolute -top-4 -right-2 sl-glass rounded-2xl px-4 py-3 shadow-2xl">
-                <p className="text-[10px] text-white/55 uppercase tracking-wide font-bold">Today</p>
-                <p className="text-[11px] font-bold text-white">Reading practice ✓</p>
+          {/* AMY AI showcase */}
+          <div className="sl-fade-2 flex justify-center lg:justify-end">
+            <div className="relative w-full max-w-[400px]">
+              <div className="sl-glass rounded-[2rem] p-5 shadow-2xl sl-float" style={{ boxShadow: "0 28px 70px rgba(0,0,0,0.5), 0 0 50px rgba(168,85,247,0.18)" }}>
+                <div className="flex items-center gap-2.5 mb-4 pb-4 border-b border-white/10">
+                  <span className="h-9 w-9 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg,#a855f7,#ec4899)" }}>
+                    <Sparkles className="h-4 w-4 text-white" />
+                  </span>
+                  <div>
+                    <p className="font-quicksand font-black text-sm text-white">Chat with AMY</p>
+                    <p className="text-[11px] text-emerald-300">● Online · your parenting co-pilot</p>
+                  </div>
+                </div>
+                <AmyConversation turns={AMY_CHAT.slice(0, 2)} compact />
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* SOCIAL PROOF BAR */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 pb-4">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {TRUST_INDICATORS.map((item) => (
-            <div key={item.label} className="sl-card rounded-2xl p-5 text-center">
-              <p className="font-quicksand font-black text-2xl sm:text-3xl sl-gradient-text">{item.value}</p>
-              <p className="text-white/60 text-xs sm:text-sm font-semibold mt-1">{item.label}</p>
-            </div>
+      {/* TRUST BAR */}
+      <section className="relative z-10 max-w-6xl mx-auto px-4 py-2">
+        <div className="sl-glass rounded-2xl px-3 py-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5">
+          {TRUST_BAR.map(({ icon: Icon, label }) => (
+            <span key={label} className="inline-flex items-center gap-2 text-[12px] sm:text-sm font-semibold text-white/75">
+              <Icon className="h-4 w-4 text-purple-300 shrink-0" />
+              {label}
+            </span>
           ))}
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 py-12 md:py-16">
-        <div className="text-center mb-8">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">Loved by real parents</p>
-          <h2 className="font-quicksand font-black text-3xl sm:text-4xl">What parents are saying</h2>
+      {/* FLAGSHIP — MEET AMY */}
+      <section className="relative z-10 max-w-6xl mx-auto px-4 py-14 md:py-20">
+        <div className="text-center mb-10">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">The heart of AmyNest</p>
+          <h2 className="font-quicksand font-black text-3xl sm:text-4xl md:text-5xl mb-3">Meet AMY — Your AI Parenting Co-Pilot</h2>
+          <p className="text-white/65 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+            Ask anything, any time. AMY turns your real parenting moments into clear, personalized next steps.
+          </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {TESTIMONIALS.map((review) => (
-            <figure key={review.name} className="sl-card rounded-2xl p-6 relative">
-              <Quote className="h-7 w-7 text-purple-400/40 mb-3" aria-hidden />
-              <blockquote className="text-white/85 text-base leading-relaxed mb-4" dangerouslySetInnerHTML={{ __html: `&ldquo;${review.quote}&rdquo;` }} />
-              <figcaption className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full flex items-center justify-center font-bold text-sm text-white" style={{ background: "linear-gradient(135deg,#a855f7,#ec4899)" }}>
-                  {review.name.charAt(0)}
-                </div>
-                <div>
-                  <p className="font-quicksand font-bold text-sm text-white">{review.name}</p>
-                  <p className="text-white/50 text-xs">{review.role}</p>
-                </div>
-              </figcaption>
-            </figure>
+        <div className="sl-glass rounded-3xl p-5 md:p-8 grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-8 items-center" style={{ borderColor: "rgba(168,85,247,0.25)" }}>
+          <div className="text-center lg:text-left">
+            <div className="inline-flex h-16 w-16 rounded-2xl items-center justify-center mb-5" style={{ background: "linear-gradient(135deg,#a855f7,#ec4899)", boxShadow: "0 16px 40px rgba(168,85,247,0.4)" }}>
+              <Sparkles className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="font-quicksand font-black text-2xl sm:text-3xl mb-3">Guidance that feels magical.</h3>
+            <p className="text-white/64 text-base leading-relaxed mb-6">
+              From a crying newborn to a child who won&apos;t study, AMY understands the moment and responds with a plan you can use right now — no searching, no guesswork.
+            </p>
+            <div className="max-w-sm mx-auto lg:mx-0">
+              <StoreButtonRow location="flagship_amy" />
+            </div>
+          </div>
+          <div className="rounded-[1.75rem] p-5 md:p-6" style={{ background: "linear-gradient(160deg,#120f20,#1b1733)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <AmyConversation turns={AMY_CHAT} />
+          </div>
+        </div>
+      </section>
+
+      {/* ONE APP FOR EVERY STAGE */}
+      <section className="relative z-10 max-w-6xl mx-auto px-4 py-12 md:py-16">
+        <div className="text-center mb-10">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">Grows with your child</p>
+          <h2 className="font-quicksand font-black text-3xl sm:text-4xl">One App for Every Stage of Parenting</h2>
+        </div>
+        <div className="relative grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div aria-hidden className="hidden md:block absolute top-7 left-[12%] right-[12%] h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(168,85,247,0.5),rgba(34,197,94,0.5),transparent)" }} />
+          {STAGES.map((stage) => (
+            <div key={stage.range} className="sl-card rounded-2xl p-5 relative">
+              <div className="h-14 w-14 rounded-2xl flex items-center justify-center mb-4 relative z-10" style={{ background: stage.gradient, boxShadow: "0 12px 30px rgba(0,0,0,0.3)" }}>
+                <stage.icon className="h-6 w-6 text-white" />
+              </div>
+              <p className="font-quicksand font-black text-xl text-white">{stage.range}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-purple-300/70 mb-3">{stage.label}</p>
+              <ul className="space-y-2">
+                {stage.items.map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-white/75 text-sm">
+                    <Check className="h-4 w-4 text-emerald-400 shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
+        </div>
+        <div className="mt-9 max-w-lg mx-auto">
+          <StoreButtonRow location="every_stage" />
+        </div>
+      </section>
+
+      {/* COMPARISON */}
+      <section className="relative z-10 max-w-3xl mx-auto px-4 py-12 md:py-16">
+        <div className="text-center mb-9">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">Not just a learning app</p>
+          <h2 className="font-quicksand font-black text-3xl sm:text-4xl mb-3">Why Families Choose AmyNest</h2>
+          <p className="text-white/60 text-sm sm:text-base max-w-xl mx-auto">
+            AmyNest is a complete parenting and child-development platform — not just another learning app.
+          </p>
+        </div>
+        <div className="sl-glass rounded-3xl overflow-hidden">
+          <div className="grid grid-cols-[1fr_4.5rem_5rem] sm:grid-cols-[1fr_9rem_9rem] items-stretch border-b border-white/10">
+            <span className="px-4 sm:px-6 py-4 text-white/50 text-xs sm:text-sm font-bold uppercase tracking-wide self-center">Capability</span>
+            <span className="px-1 py-4 text-white/45 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-center leading-tight self-center">Typical Learning Apps</span>
+            <span className="px-1 py-4 text-center text-[11px] sm:text-sm font-black uppercase tracking-wide text-white self-center" style={{ background: "linear-gradient(160deg,rgba(168,85,247,0.32),rgba(99,102,241,0.18))" }}>AmyNest</span>
+          </div>
+          {COMPARISON_ROWS.map((row, i) => (
+            <div key={row.label} className="grid grid-cols-[1fr_4.5rem_5rem] sm:grid-cols-[1fr_9rem_9rem] items-stretch">
+              <span className={`px-4 sm:px-6 py-3.5 text-white/85 text-sm font-medium self-center ${i % 2 ? "bg-white/[0.02]" : ""}`}>{row.label}</span>
+              <span className={`flex items-center justify-center py-3.5 ${i % 2 ? "bg-white/[0.02]" : ""}`}>
+                {row.them ? (
+                  <Check className="h-4 w-4 text-white/35" />
+                ) : (
+                  <X className="h-5 w-5 text-white/25" />
+                )}
+              </span>
+              <span className="flex items-center justify-center py-3.5" style={{ background: "linear-gradient(160deg,rgba(168,85,247,0.12),rgba(99,102,241,0.07))" }}>
+                <span className="h-6 w-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <Check className="h-4 w-4 text-emerald-400" />
+                </span>
+              </span>
+            </div>
+          ))}
+          <div className="px-4 sm:px-6 py-4 text-center border-t border-white/10" style={{ background: "linear-gradient(135deg,rgba(168,85,247,0.1),rgba(236,72,153,0.06))" }}>
+            <p className="font-quicksand font-bold text-sm sm:text-base text-white">One app for parenting, learning and child development — ages 0–10+.</p>
+          </div>
+        </div>
+        <div className="mt-9 max-w-lg mx-auto">
+          <StoreButtonRow location="comparison" />
         </div>
       </section>
 
@@ -838,8 +963,8 @@ export default function SocialLandingPage() {
       {/* OUTCOME FEATURES */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 py-12 md:py-16">
         <div className="text-center mb-9">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">Everything in one app</p>
-          <h2 className="font-quicksand font-black text-3xl sm:text-4xl">Real outcomes for your child</h2>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">Outcomes, not features</p>
+          <h2 className="font-quicksand font-black text-3xl sm:text-4xl">What AmyNest actually does for your family</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {OUTCOME_FEATURES.map((f) => (
@@ -860,37 +985,18 @@ export default function SocialLandingPage() {
       <section className="relative z-10 max-w-6xl mx-auto px-4 py-12 md:py-16">
         <div className="text-center mb-9">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">Why parents love AmyNest</p>
-          <h2 className="font-quicksand font-black text-3xl sm:text-4xl">Less stress. More growth.</h2>
+          <h2 className="font-quicksand font-black text-3xl sm:text-4xl">Support for every part of parenting</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {BENEFITS.map((b) => (
-            <div key={b.title} className="sl-card rounded-2xl p-5 flex items-start gap-3.5">
+          {SUPPORT_PILLARS.map((p) => (
+            <div key={p.title} className="sl-card rounded-2xl p-5 flex items-start gap-3.5">
               <span className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.28)" }}>
-                <b.icon className="h-5 w-5 text-purple-200" />
+                <p.icon className="h-5 w-5 text-purple-200" />
               </span>
               <div>
-                <h3 className="font-quicksand font-bold text-base text-white mb-1">{b.title}</h3>
-                <p className="text-white/58 text-sm leading-relaxed">{b.desc}</p>
+                <h3 className="font-quicksand font-bold text-base text-white mb-1">{p.title}</h3>
+                <p className="text-white/58 text-sm leading-relaxed">{p.desc}</p>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* TRUST */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 py-12 md:py-14">
-        <div className="text-center mb-8">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-300/80 mb-2">Peace of mind</p>
-          <h2 className="font-quicksand font-black text-3xl sm:text-4xl">Safe, private, parent-controlled</h2>
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {TRUST_CARDS.map((c) => (
-            <div key={c.title} className="sl-card rounded-2xl p-5 text-center">
-              <div className="mx-auto h-11 w-11 rounded-xl flex items-center justify-center mb-3" style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.28)" }}>
-                <c.icon className="h-5 w-5 text-purple-200" />
-              </div>
-              <h3 className="font-quicksand font-bold text-sm text-white mb-1">{c.title}</h3>
-              <p className="text-white/55 text-xs leading-snug">{c.desc}</p>
             </div>
           ))}
         </div>
@@ -922,9 +1028,9 @@ export default function SocialLandingPage() {
           style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.16) 0%, rgba(236,72,153,0.1) 100%)", borderColor: "rgba(168,85,247,0.28)" }}
         >
           <img src={OFFICIAL_LOGO} alt="" className="h-16 w-16 rounded-2xl object-cover mx-auto mb-5 shadow-2xl" style={{ boxShadow: "0 20px 60px rgba(124,58,237,0.4)" }} />
-          <h2 className="font-quicksand font-black text-3xl sm:text-4xl md:text-[2.75rem] mb-3 leading-tight">Start Your Child&apos;s Learning Journey Today</h2>
+          <h2 className="font-quicksand font-black text-3xl sm:text-4xl md:text-[2.75rem] mb-3 leading-tight">Start Your Child&apos;s Growth Journey Today</h2>
           <p className="text-white/65 text-base sm:text-lg max-w-xl mx-auto mb-7 leading-relaxed">
-            Download AmyNest and give your child an AI-powered learning companion — free to start.
+            Parenting, Learning and Daily Guidance — all powered by AMY.
           </p>
           <div className="max-w-lg mx-auto mb-4">
             <StoreButtonRow size="large" location="final_cta" />
