@@ -9,6 +9,8 @@ function loadShippedStaticAudioMap(): StaticAudioMap {
   const here = dirname(fileURLToPath(import.meta.url));
   const candidates = [
     resolve(here, "../data/static-audio-map.json"),
+    resolve(here, "../src/data/static-audio-map.json"),
+    resolve(process.cwd(), "src/data/static-audio-map.json"),
     resolve(process.cwd(), "artifacts/kidschedule/src/data/static-audio-map.json"),
     resolve(process.cwd(), "../kidschedule/src/data/static-audio-map.json"),
   ];

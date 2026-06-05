@@ -61,7 +61,11 @@ COPY --from=build --chown=nodejs:nodejs /deploy/dist ./dist
 COPY --from=build --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=build --chown=nodejs:nodejs /deploy/package.json ./package.json
 COPY --from=build --chown=nodejs:nodejs /deploy/ota ./ota
+# Runtime JSON manifests (spelling/static/phonics maps) live under src/data in the package.
+COPY --from=build --chown=nodejs:nodejs /deploy/src/data ./src/data
+# Legacy loaders resolve ../data from dist/index.mjs — keep tts-cache + manifest JSONs together.
 COPY --from=build --chown=nodejs:nodejs /deploy/data ./data
+COPY --from=build --chown=nodejs:nodejs /deploy/src/data/*.json ./data/
 
 USER nodejs
 

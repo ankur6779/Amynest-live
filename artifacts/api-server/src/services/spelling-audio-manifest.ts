@@ -15,6 +15,7 @@ function loadManifest(): SpellingAudioManifest {
   const here = dirname(fileURLToPath(import.meta.url));
   const candidates = [
     resolve(here, "../src/data/spelling-audio-manifest.json"),
+    resolve(process.cwd(), "src/data/spelling-audio-manifest.json"),
     resolve(process.cwd(), "artifacts/api-server/src/data/spelling-audio-manifest.json"),
     resolve(here, "../data/spelling-audio-manifest.json"),
   ];
