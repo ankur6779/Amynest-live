@@ -1,10 +1,9 @@
-import { IS_PROD } from "@/lib/is-dev";
 import { playStaticAudio } from "@/lib/static-audio";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
-/** Emergency control to verify static GCS → API proxy → HTMLAudio playback. */
-export function StaticAudioTestButton() {
-  if (IS_PROD) return null;
+/** Emergency control to verify static GCS → API proxy → HTMLAudio playback (dev only). */
+export function DevStaticAudioTestButton() {
+  if (!import.meta.env.DEV) return null;
 
   return (
     <button

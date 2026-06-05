@@ -4,7 +4,7 @@ import { devLog } from "@/lib/dev-log";
 import { initAudioUnlock } from "@/lib/tts-guard";
 import { AuthBootShell } from "@/components/auth-boot-shell";
 import DebugOverlay from "@/components/DebugOverlay";
-import { StaticAudioTestButton } from "@/components/static-audio-test-button";
+import { DevStaticAudioTestButton } from "@/components/static-audio-test-button";
 import { ReactInstanceRecovery } from "@/components/react-instance-recovery";
 import { safeImportModule } from "@/lib/safe-import";
 import { isLowMemoryIosClient } from "@/lib/device-lite";
@@ -54,7 +54,7 @@ function App() {
     <div id="app-root" className="app-root w-full max-w-full min-w-0">
       <div className="app-scroll page-content">
         <DebugOverlay />
-        <StaticAudioTestButton />
+        {import.meta.env.DEV ? <DevStaticAudioTestButton /> : null}
         <ReactInstanceRecovery>
           <Suspense fallback={<AuthBootShell />}>
             <AppCore />
