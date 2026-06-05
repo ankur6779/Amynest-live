@@ -5546,11 +5546,19 @@
     "veg": "Veg",
     "non_veg": "Non-Veg",
     "portions_label": "Portions:",
+    "hero": {
+      "learn_more": "Learn more",
+      "show_less": "Show less"
+    },
+    "age_info": {
+      "show_more": "Details",
+      "show_less": "Less"
+    },
     "tabs": {
-      "nutrients": "Nutrient Library",
+      "nutrients": "Nutrients",
       "meals": "Meal Planner",
       "family": "Family Mode",
-      "library": "📚 Nutrition Library",
+      "library": "Guides",
       "score": "Daily Score"
     },
     "library": {
@@ -5608,8 +5616,10 @@
       "regenerate": "Regenerate Plan"
     },
     "nutrients": {
-      "title": "Nutrient Library",
-      "subtitle": "Tap any nutrient to see benefits, food sources for your region, and daily needs for {{age}}."
+      "title": "Nutrients",
+      "subtitle": "Tap any nutrient to see benefits, food sources for your region, and daily needs for {{age}}.",
+      "show_more": "Show {{count}} more nutrients",
+      "show_less": "Show fewer nutrients"
     },
     "breastfeeding": {
       "title": "Exclusive breastfeeding recommended (0–6 months)",

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   AGE_GROUPS, NUTRIENTS, getMealPlan,
-  MEDICAL_DISCLAIMER, REFERENCES, AgeGroupId, Nutrient,
+  MEDICAL_DISCLAIMER, REFERENCES, AgeGroupId, Nutrient, DailyNeed, AgeGroup,
 } from "@/lib/nutrition-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ import {
 import { NutritionLibrarySection } from "@/components/nutrition-library/nutrition-library-section";
 import {
   Apple, Salad, CalendarDays, Users, Trophy, Brain,
-  ChevronRight, AlertTriangle, BookOpen, Library,
+  ChevronRight, ChevronDown, AlertTriangle, BookOpen, Library,
   Leaf, Drumstick, CheckCircle2, AlertCircle, Activity,
   RefreshCw, Zap, Flame, Sun, CloudSnow, Wind, Loader2,
   Globe, Search,
@@ -44,6 +44,12 @@ import { usePaywall } from "@/contexts/paywall-context";
 
 const NUTRITION_WEEK_PLAN_FEATURE = "nutrition_week_plan";
 const NUTRITION_FAMILY_AI_FEATURE = "nutrition_family_ai";
+
+const PRIORITY_NUTRIENT_IDS = ["protein", "iron", "calcium", "vitamin_a"] as const;
+
+function formatDailyNeed(need: DailyNeed): string {
+  return `${need.amount} ${need.unit}`;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = "nutrients" | "meals" | "family" | "library" | "score";
@@ -163,33 +169,115 @@ function NutrientDetailDialog({
 }
 
 // ─── Nutrient Card ────────────────────────────────────────────────────────────
-function NutrientCard({ nutrient, ageGroupId, onClick }: {
+function NutrientCard({ nutrient, ageGroupId, onClick, compact = false }: {
   nutrient: Nutrient;
   ageGroupId: AgeGroupId;
   onClick: () => void;
+  compact?: boolean;
 }) {
-  const { t } = useTranslation();
   const need = nutrient.dailyNeeds[ageGroupId];
   return (
     <button
       onClick={onClick}
       className={cn(
-        HUB_TILE,
-        "group w-full min-w-0 rounded-2xl p-4 text-left flex-col items-stretch gap-0",
+        "group w-full min-w-0 rounded-xl sm:rounded-2xl border border-white/[0.08]",
+        "bg-gradient-to-br from-white/[0.04] to-white/[0.02]",
+        "text-left flex flex-col items-stretch transition-all duration-[220ms] ease-[ease]",
         "hover:-translate-y-0.5 hover:border-emerald-400/25 hover:shadow-[0_0_16px_rgba(52,211,153,0.12)]",
+        "active:scale-[0.985]",
+        compact ? "p-3 min-h-[104px] sm:min-h-0 sm:p-4" : "p-4",
       )}
     >
-      <div className="flex items-start justify-between mb-2">
-        <span className="text-3xl">{nutrient.emoji}</span>
-        <ChevronRight className="h-4 w-4 mt-1 opacity-50 group-hover:opacity-100 transition-opacity text-emerald-300/80" />
+      <div className={cn("flex items-start justify-between", compact ? "mb-1.5" : "mb-2")}>
+        <span className={compact ? "text-2xl sm:text-3xl" : "text-3xl"}>{nutrient.emoji}</span>
+        <ChevronRight className="hidden sm:block h-4 w-4 mt-1 opacity-50 group-hover:opacity-100 transition-opacity text-emerald-300/80 shrink-0" />
       </div>
-      <h3 className="font-bold text-base text-foreground">{nutrient.name}</h3>
-      <p className="text-xs text-muted-foreground/70 italic mb-2">{nutrient.tagline}</p>
-      <div className="rounded-lg px-2 py-1 text-xs font-semibold bg-white/[0.06] border border-white/[0.08]">
-        <span className="text-emerald-200/90">{need.amount} {need.unit}</span>
-        <span className="text-muted-foreground"> / {t("nutrition_hub.day")}</span>
+      <h3 className={cn("font-bold text-foreground truncate w-full", compact ? "text-sm sm:text-base" : "text-base")}>
+        {nutrient.name}
+      </h3>
+      <p className={cn(
+        "text-xs text-muted-foreground/70 italic",
+        compact ? "hidden sm:block mb-2" : "mb-2",
+      )}>
+        {nutrient.tagline}
+      </p>
+      <div className={cn(
+        "rounded-lg font-semibold bg-white/[0.06] border border-white/[0.08] mt-auto",
+        compact ? "px-2 py-1 text-[11px] sm:text-xs" : "px-2 py-1 text-xs",
+      )}>
+        <span className="text-emerald-200/90 line-clamp-2 sm:line-clamp-none">{formatDailyNeed(need)}</span>
       </div>
     </button>
+  );
+}
+
+// ─── Nutrients Section (priority grid + show more) ───────────────────────────
+function NutrientsSection({
+  ageGroupId,
+  activeAgeGroup,
+  onSelectNutrient,
+}: {
+  ageGroupId: AgeGroupId;
+  activeAgeGroup: AgeGroup;
+  onSelectNutrient: (nutrient: Nutrient) => void;
+}) {
+  const { t } = useTranslation();
+  const [showAll, setShowAll] = useState(false);
+
+  const priorityNutrients = NUTRIENTS.filter(n =>
+    (PRIORITY_NUTRIENT_IDS as readonly string[]).includes(n.id),
+  );
+  const secondaryNutrients = NUTRIENTS.filter(n =>
+    !(PRIORITY_NUTRIENT_IDS as readonly string[]).includes(n.id),
+  );
+  const visibleNutrients = showAll ? NUTRIENTS : priorityNutrients;
+
+  return (
+    <div className="space-y-3 min-w-0">
+      <div>
+        <h2 className="font-quicksand text-lg sm:text-[22px] font-bold tracking-tight text-foreground">
+          {t("nutrition_hub.nutrients.title")}
+        </h2>
+        <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground mt-1">
+          {t("nutrition_hub.nutrients.subtitle", { age: activeAgeGroup.label })}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 min-w-0">
+        {visibleNutrients.map(n => (
+          <NutrientCard
+            key={n.id}
+            nutrient={n}
+            ageGroupId={ageGroupId}
+            compact
+            onClick={() => onSelectNutrient(n)}
+          />
+        ))}
+      </div>
+
+      {!showAll && secondaryNutrients.length > 0 && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full border-white/15 bg-white/[0.04] hover:bg-white/[0.08]"
+          onClick={() => setShowAll(true)}
+        >
+          {t("nutrition_hub.nutrients.show_more", { count: secondaryNutrients.length })}
+          <ChevronDown className="h-4 w-4 ml-1" />
+        </Button>
+      )}
+
+      {showAll && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full text-muted-foreground hover:text-foreground"
+          onClick={() => setShowAll(false)}
+        >
+          {t("nutrition_hub.nutrients.show_less")}
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -879,6 +967,8 @@ export default function NutritionHubPage() {
   const [selectedNutrient, setSelectedNutrient] = useState<Nutrient | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showRefs, setShowRefs] = useState(false);
+  const [heroExpanded, setHeroExpanded] = useState(false);
+  const [ageInfoExpanded, setAgeInfoExpanded] = useState(false);
   // Shared state: last lunch meal name from AI meal planner → pre-fills Family Mode
   const [suggestedMeal, setSuggestedMeal] = useState("");
 
@@ -905,13 +995,18 @@ export default function NutritionHubPage() {
     { id: "score",     label: t("nutrition_hub.tabs.score"),    icon: <Trophy className="h-4 w-4" /> },
   ];
 
+  const handleSelectNutrient = (nutrient: Nutrient) => {
+    setSelectedNutrient(nutrient);
+    setDialogOpen(true);
+  };
+
   return (
-    <div className={cn(PARENT_HUB_PAGE, "w-full min-w-0 max-w-4xl mx-auto space-y-4 pb-24 overflow-x-clip")}>
-      {/* ── Hero Header ── */}
+    <div className={cn(PARENT_HUB_PAGE, "w-full min-w-0 max-w-4xl mx-auto space-y-3 sm:space-y-4 pb-24 overflow-x-clip")}>
+      {/* ── Hero Header (compact on mobile) ── */}
       <div className={cn(hubSectionCardClasses(NUTRITION_HUB_ACCENT), "hub-page-enter overflow-hidden")}>
         <div className="flex">
           <div className={hubAccentBarClasses(NUTRITION_HUB_ACCENT)} />
-            <div className="relative flex-1 min-w-0 px-4 py-6">
+          <div className="relative flex-1 min-w-0 px-3 py-3 sm:px-4 sm:py-6">
             <div
               className="pointer-events-none absolute inset-0 opacity-[0.07]"
               style={{
@@ -921,30 +1016,51 @@ export default function NutritionHubPage() {
               }}
             />
             <div className="relative">
-              <div className="flex items-center gap-2 mb-1">
-                <div className={cn(NUTRITION_HUB_ACCENT.emojiShell, "w-12 h-12 text-2xl")}>🥗</div>
-                <span className={HUB_AGE_BADGE}>{regionConfig.guidelineBadge}</span>
+              <div className="flex items-center gap-2">
+                <div className={cn(NUTRITION_HUB_ACCENT.emojiShell, "w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl")}>🥗</div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="font-quicksand text-lg sm:text-[22px] font-bold tracking-tight text-foreground">
+                      {t("nutrition_hub.title")}
+                    </h1>
+                    <span className={HUB_AGE_BADGE}>{regionConfig.guidelineBadge}</span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{t("nutrition_hub.subtitle")}</p>
+                </div>
               </div>
-              <h1 className={cn(HUB_SECTION_TITLE, "mt-2")}>{t("nutrition_hub.title")}</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">{t("nutrition_hub.subtitle")}</p>
-              <p className={cn(HUB_BODY, "mt-2 max-w-xl text-foreground/80 opacity-100")}>
+              <p className={cn(
+                HUB_BODY,
+                "mt-2 max-w-xl text-foreground/80 opacity-100",
+                heroExpanded ? "block" : "hidden sm:block",
+              )}>
                 {t("nutrition_hub.description")}
               </p>
+              <button
+                type="button"
+                onClick={() => setHeroExpanded(v => !v)}
+                className="mt-1.5 flex items-center gap-1 text-xs text-emerald-200/80 hover:underline sm:hidden"
+              >
+                {heroExpanded ? t("nutrition_hub.hero.show_less") : t("nutrition_hub.hero.learn_more")}
+                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", heroExpanded && "rotate-180")} />
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Age Group Selector ── */}
-      <div className="sticky top-0 z-20 -mx-1 px-1 py-2 backdrop-blur-md">
+      {/* ── Sticky: Age chips + tabs ── */}
+      <div className="sticky top-0 z-20 -mx-1 px-1 py-2 space-y-2 backdrop-blur-md bg-[#0b1730]/85">
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
           {AGE_GROUPS.map(ag => (
             <button
               key={ag.id}
-              onClick={() => setActiveAgeGroupId(ag.id)}
+              onClick={() => {
+                setActiveAgeGroupId(ag.id);
+                setAgeInfoExpanded(false);
+              }}
               className={cn(
                 activeAgeGroupId === ag.id ? NUTRITION_HUB_CHIP_ACTIVE : NUTRITION_HUB_CHIP_INACTIVE,
-                "flex items-center gap-1.5",
+                "flex shrink-0 items-center gap-1.5",
               )}
             >
               <span>{ag.emoji}</span>
@@ -953,19 +1069,56 @@ export default function NutritionHubPage() {
             </button>
           ))}
         </div>
+
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                activeTab === tab.id ? NUTRITION_HUB_CHIP_ACTIVE : NUTRITION_HUB_CHIP_INACTIVE,
+                "flex shrink-0 items-center gap-1.5 text-xs sm:text-sm",
+              )}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="space-y-4">
-        {/* ── Age Group Info Card ── */}
+      <div className="space-y-3 sm:space-y-4">
+        {/* ── Age Group Info Card (collapsed on mobile by default) ── */}
         <div className={cn(hubSectionCardClasses(NUTRITION_HUB_ACCENT), "hub-page-enter overflow-hidden")}>
           <div className="flex">
             <div className={hubAccentBarClasses(NUTRITION_HUB_ACCENT)} />
-            <div className="flex flex-1 min-w-0 items-start gap-3 p-4">
-              <span className="text-4xl">{activeAgeGroup.emoji}</span>
+            <div className="flex flex-1 min-w-0 items-center sm:items-start gap-2 sm:gap-3 p-2.5 sm:p-4">
+              <span className="text-2xl sm:text-4xl shrink-0">{activeAgeGroup.emoji}</span>
               <div className="flex-1 min-w-0">
-                <h2 className="font-quicksand font-bold text-xl text-foreground">{activeAgeGroup.label}</h2>
-                <p className={cn(HUB_BODY, "mt-2 opacity-100")}>{activeAgeGroup.description}</p>
-                <div className="flex flex-wrap gap-1.5 mt-2">
+                <div className="flex items-center sm:items-start justify-between gap-2">
+                  <h2 className="font-quicksand font-bold text-sm sm:text-xl text-foreground truncate">
+                    {activeAgeGroup.label}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setAgeInfoExpanded(v => !v)}
+                    className="sm:hidden shrink-0 flex items-center gap-0.5 text-xs text-emerald-200/80 hover:underline"
+                  >
+                    {ageInfoExpanded ? t("nutrition_hub.age_info.show_less") : t("nutrition_hub.age_info.show_more")}
+                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", ageInfoExpanded && "rotate-180")} />
+                  </button>
+                </div>
+                <p className={cn(
+                  HUB_BODY,
+                  "mt-1 sm:mt-2 opacity-100 sm:line-clamp-none",
+                  ageInfoExpanded ? "block" : "hidden sm:block",
+                )}>
+                  {activeAgeGroup.description}
+                </p>
+                <div className={cn(
+                  "flex flex-wrap gap-1.5 mt-2",
+                  ageInfoExpanded ? "flex" : "hidden sm:flex",
+                )}>
                   {activeAgeGroup.keyFocus.map((f, i) => (
                     <Badge
                       key={i}
@@ -981,71 +1134,43 @@ export default function NutritionHubPage() {
           </div>
         </div>
 
-        {/* ── Tab Navigation ── */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                activeTab === tab.id ? NUTRITION_HUB_CHIP_ACTIVE : NUTRITION_HUB_CHIP_INACTIVE,
-                "flex items-center gap-2 text-sm",
-              )}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
-
         {/* ── Tab Content ── */}
-        <div className={cn(hubSectionCardClasses(NUTRITION_HUB_ACCENT), "hub-page-enter overflow-hidden")}>
-          <div className="flex">
-            <div className={hubAccentBarClasses(NUTRITION_HUB_ACCENT)} />
-            <div className="min-w-0 flex-1 p-4 sm:p-6">
-              {activeTab === "nutrients" && (
-                <div className="space-y-4 min-w-0">
-                  <div>
-                    <h2 className={HUB_SECTION_TITLE}>{t("nutrition_hub.nutrients.title")}</h2>
-                    <p className={HUB_BODY}>
-                      {t("nutrition_hub.nutrients.subtitle", { age: activeAgeGroup.label })}
-                    </p>
+        {activeTab === "nutrients" ? (
+          <div className="hub-page-enter min-w-0">
+            <NutrientsSection
+              ageGroupId={activeAgeGroupId}
+              activeAgeGroup={activeAgeGroup}
+              onSelectNutrient={handleSelectNutrient}
+            />
+          </div>
+        ) : (
+          <div className={cn(hubSectionCardClasses(NUTRITION_HUB_ACCENT), "hub-page-enter overflow-hidden")}>
+            <div className="flex">
+              <div className={hubAccentBarClasses(NUTRITION_HUB_ACCENT)} />
+              <div className="min-w-0 flex-1 p-4 sm:p-6">
+                {activeTab === "meals" && (
+                  <AIMealPlanSection onMealChange={setSuggestedMeal} />
+                )}
+
+                {activeTab === "family" && (
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className={HUB_SECTION_TITLE}>{t("nutrition_hub.family.page_title")}</h2>
+                      <p className={HUB_BODY}>{t("nutrition_hub.family.page_subtitle")}</p>
+                    </div>
+                    <FamilyModeSection suggestedMeal={suggestedMeal} />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 min-w-0">
-                    {NUTRIENTS.map(n => (
-                      <NutrientCard
-                        key={n.id}
-                        nutrient={n}
-                        ageGroupId={activeAgeGroupId}
-                        onClick={() => { setSelectedNutrient(n); setDialogOpen(true); }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+                )}
 
-              {activeTab === "meals" && (
-                <AIMealPlanSection onMealChange={setSuggestedMeal} />
-              )}
+                {activeTab === "library" && <NutritionLibrarySection />}
 
-              {activeTab === "family" && (
-                <div className="space-y-4">
-                  <div>
-                    <h2 className={HUB_SECTION_TITLE}>{t("nutrition_hub.family.page_title")}</h2>
-                    <p className={HUB_BODY}>{t("nutrition_hub.family.page_subtitle")}</p>
-                  </div>
-                  <FamilyModeSection suggestedMeal={suggestedMeal} />
-                </div>
-              )}
-
-              {activeTab === "library" && <NutritionLibrarySection />}
-
-              {activeTab === "score" && (
-                <NutritionScoreSection ageGroupId={activeAgeGroupId} />
-              )}
+                {activeTab === "score" && (
+                  <NutritionScoreSection ageGroupId={activeAgeGroupId} />
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* ── Medical Disclaimer ── */}
         <div className={cn(HUB_INFO_BANNER, "flex-col items-stretch gap-0")}>
