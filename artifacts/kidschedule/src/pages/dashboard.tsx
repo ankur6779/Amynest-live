@@ -15,8 +15,20 @@ import { DashboardSkeleton } from "@/components/route-skeletons/dashboard-skelet
 import { ContentReveal } from "@/components/premium-ux/content-reveal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
-import { RouteLoadingShell } from "@/components/route-loading-shell";
+import { DashboardAvailabilityBanner } from "@/components/dashboard-availability-banner";
+import { DashboardSyncStatus } from "@/components/dashboard-sync-status";
 import { logDashboardMount } from "@/lib/onboarding-debug";
+import {
+  EMPTY_DASHBOARD_SUMMARY,
+  fetchBehaviorStatsResilient,
+  fetchChildrenListResilient,
+  fetchDashboardSummaryResilient,
+  hasDashboardStaleCache,
+  readCachedBehaviorStats,
+  readCachedChildrenList,
+  readCachedDashboardSummary,
+} from "@/lib/dashboard-data-cache";
+import { useDashboardShellReady } from "@/hooks/use-dashboard-shell-ready";
 import { Suspense, useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { lazyPage } from "@/lib/safe-import";
 import { isAndroidLiteClient } from "@/lib/device-lite";
@@ -851,17 +863,23 @@ export default function Dashboard() {
     user?.firstName ||
     user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] ||
     "";
+  const staleCacheOnBoot = useMemo(() => hasDashboardStaleCache(), []);
   const {
     data: summary,
     isLoading: loadingSummary,
+    isFetching: fetchingSummary,
     isError: isErrorSummary,
-    dataUpdatedAt: summaryUpdatedAt
+    dataUpdatedAt: summaryUpdatedAt,
+    refetch: refetchSummary,
   } = useGetDashboardSummary({
     query: {
       queryKey: getGetDashboardSummaryQueryKey(),
+      queryFn: () => fetchDashboardSummaryResilient(authFetch),
+      placeholderData: () => readCachedDashboardSummary() ?? EMPTY_DASHBOARD_SUMMARY,
       refetchInterval: POLL_INTERVAL_MS,
-      refetchOnWindowFocus: true
-    }
+      refetchOnWindowFocus: true,
+      retry: 1,
+    },
   });
   const {
     data: routines,
@@ -886,28 +904,48 @@ export default function Dashboard() {
   const {
     data: childrenList,
     isLoading: loadingChildren,
-    isError: isErrorChildren
+    isFetching: fetchingChildren,
+    isError: isErrorChildren,
+    refetch: refetchChildren,
   } = useListChildren({
     query: {
       queryKey: getListChildrenQueryKey(),
+      queryFn: () => fetchChildrenListResilient(authFetch),
+      placeholderData: () => readCachedChildrenList() ?? [],
       refetchInterval: POLL_INTERVAL_MS,
-      refetchOnWindowFocus: true
-    }
+      refetchOnWindowFocus: true,
+      retry: 1,
+    },
   });
   const {
     data: stats,
     isLoading: loadingStats,
-    dataUpdatedAt: statsUpdatedAt
+    isFetching: fetchingStats,
+    isError: isErrorStats,
+    dataUpdatedAt: statsUpdatedAt,
+    refetch: refetchStats,
   } = useGetBehaviorStats({
     query: {
       queryKey: getGetBehaviorStatsQueryKey(),
+      queryFn: () => fetchBehaviorStatsResilient(authFetch),
+      placeholderData: () => readCachedBehaviorStats() ?? [],
       refetchInterval: POLL_INTERVAL_MS,
-      refetchOnWindowFocus: true
-    }
+      refetchOnWindowFocus: true,
+      retry: 1,
+    },
   });
   const authReady = userLoaded && authLoaded && authStatus !== "loading";
-  const dataBootLoading =
-    authReady && isSignedIn && (loadingSummary || subLoading);
+  const primaryQueriesSettled =
+    authReady &&
+    isSignedIn &&
+    !fetchingSummary &&
+    !subLoading &&
+    !fetchingChildren &&
+    !fetchingStats;
+  const shellReady = useDashboardShellReady({
+    hasStaleCache: staleCacheOnBoot,
+    queriesSettled: primaryQueriesSettled,
+  });
 
   const childrenSafe = Array.isArray(childrenList) ? childrenList : [];
   const recentRoutinesSafe = asRoutineList<Routine>(routines);
@@ -984,12 +1022,27 @@ export default function Dashboard() {
       });
   }, [authReady, isSignedIn, authFetch]);
 
+  const summaryUsesFallback = summary?.fallback === true;
+  const showAvailabilityBanner =
+    shellReady &&
+    !fetchingSummary &&
+    !fetchingChildren &&
+    !fetchingStats &&
+    (summaryUsesFallback || isErrorSummary || isErrorChildren || isErrorStats);
+
+  const handleDashboardRetry = useCallback(() => {
+    void refetchSummary();
+    void refetchChildren();
+    void refetchStats();
+    void queryClient.invalidateQueries({ queryKey: ["subscription"] });
+  }, [queryClient, refetchSummary, refetchChildren, refetchStats]);
+
   useEffect(() => {
     logDashboardMount({
       user,
       isLoaded: authReady,
       isSignedIn: !!isSignedIn,
-      isLoading: dataBootLoading,
+      isLoading: !shellReady,
       loadingSummary,
       subLoading,
     });
@@ -997,52 +1050,27 @@ export default function Dashboard() {
     user?.id,
     authReady,
     isSignedIn,
-    dataBootLoading,
+    shellReady,
     loadingSummary,
     subLoading,
   ]);
 
-  if (!authReady) {
-    return <RouteLoadingShell />;
-  }
-
   if (!isSignedIn || !user) {
+    if (!authReady) return <DashboardSkeleton />;
     console.warn("[dashboard] user missing, redirecting to sign-in");
     return <Redirect to="/sign-in" />;
   }
 
-  if (dataBootLoading) {
-    return <RouteLoadingShell />;
+  if (!shellReady) {
+    return <DashboardSkeleton />;
   }
 
-  // Both core queries failed — show a recoverable error instead of a blank or
-  // broken dashboard. React Query will retry automatically in the background.
-  if (isErrorSummary && isErrorChildren) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-6">
-        <span className="text-4xl">⚠️</span>
-        <p className="font-semibold text-foreground text-lg">Something went wrong</p>
-        <p className="text-sm text-muted-foreground">
-          We couldn't load your dashboard. Please check your connection and try again.
-        </p>
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          className="mt-2 rounded-full bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold shadow hover:bg-primary/90 transition-colors"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  // Summary loaded but returned undefined (non-fatal error, other data may
-  // still render). Show the skeleton so the page isn't blank.
   if (!summary && !loadingSummary && !isErrorSummary) {
     console.warn("[dashboard] summary resolved to undefined without error flag");
   }
 
   const lastUpdated = Math.max(summaryUpdatedAt ?? 0, routinesUpdatedAt ?? 0, statsUpdatedAt ?? 0);
+  const isDashboardRefreshing = fetchingSummary || fetchingChildren || fetchingStats;
   const generateRoutineLocked =
     !isPremium && (entitlements?.usage?.features?.routine_generate?.locked ?? false);
   function handleGenerateRoutine() {
@@ -1052,24 +1080,31 @@ export default function Dashboard() {
       setLocation("/routines/generate");
     }
   }
-  const summaryFallback = (summary as { fallback?: boolean } | undefined)?.fallback === true;
+  const summaryFallback = summary?.fallback === true;
   const noChildren =
-    !loadingSummary &&
-    !loadingChildren &&
+    !fetchingSummary &&
+    !fetchingChildren &&
     !summaryFallback &&
-    !isErrorSummary &&   // don't redirect to onboarding when API just failed
+    !isErrorSummary &&
     !isErrorChildren &&
     childrenSafe.length === 0 &&
     (summary?.totalChildren ?? 0) === 0;
   if (noChildren) {
     return <OnboardingScreen displayName={displayName} />;
   }
-  if (loadingSummary) {
-    return <DashboardSkeleton />;
-  }
   return (
     <div data-on-dark className="dashboard-page w-full min-w-0 max-w-full bg-[#0a1024]">
       <div className="flex flex-col gap-4 pb-6 md:pb-8">
+          {showAvailabilityBanner && (
+            <DashboardAvailabilityBanner
+              visible
+              onRetry={handleDashboardRetry}
+            />
+          )}
+          <DashboardSyncStatus
+            liveUpdatedAt={lastUpdated}
+            isRefreshing={isDashboardRefreshing}
+          />
           <ContentReveal.Hero>
             <SmartHeroSection
               displayName={displayName}
