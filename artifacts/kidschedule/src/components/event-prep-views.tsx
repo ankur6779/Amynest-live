@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { TFunction } from "i18next";
 import {
   EVENT_CATEGORIES,
@@ -22,12 +22,38 @@ import { PremiumImage } from "@/components/premium-ux/premium-image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
-  ArrowLeft, Volume2, VolumeX, Clock, Sparkles, Zap, ChevronRight, Wand2,
-  Search, MapPin, Calendar, CheckCircle2, Circle, Loader2, ImageIcon,
+  EVENT_PREP_ACCENT,
+  EVENT_PREP_ACTION_ICON,
+  EVENT_PREP_ACTION_TILE,
+  EVENT_PREP_CHIP_ACTIVE,
+  EVENT_PREP_CHIP_INACTIVE,
+  EVENT_PREP_SEARCH,
+  EVENT_PREP_SECTION_LABEL,
+  EVENT_PREP_SECTION_TITLE,
+  eventPrepGlassCard,
+  eventPrepPanelCard,
+} from "@/lib/event-prep-zone-theme";
+import {
+  Volume2, VolumeX, Clock, Sparkles, Zap, ChevronRight, Wand2,
+  Search, MapPin, Calendar, CheckCircle2, Circle, Loader2, ImageIcon, Share2,
 } from "lucide-react";
+import { EventPrepCountdownDisplay } from "@/components/event-prep/event-prep-countdown-display";
+import { EventPrepPrepRing } from "@/components/event-prep/event-prep-prep-ring";
+import {
+  EventPrepSiblingCompare,
+  type EventPrepChildWithPhoto,
+} from "@/components/event-prep/event-prep-sibling-compare";
+import { EventPrepPhotoMoment } from "@/components/event-prep/event-prep-photo-moment";
+import {
+  EventPrepReminderBanner,
+  EventPrepSmartTools,
+} from "@/components/event-prep/event-prep-smart-tools";
+import { ConfettiBurst, playFx } from "@/components/study-engagement";
+import { buildMaterialsList, shareTextList } from "@/lib/event-prep-share";
 
-export type EventPrepChild = { id: number; name: string; age: number; ageMonths?: number };
+export type EventPrepChild = { id: number; name: string; age: number; ageMonths?: number; photoUrl?: string | null };
 
 export function countdownLabel(daysUntil: number, t: TFunction): string {
   if (daysUntil === 0) return t("screens.event_prep.countdown_today");
@@ -36,28 +62,6 @@ export function countdownLabel(daysUntil: number, t: TFunction): string {
   if (daysUntil <= 30) return t("screens.event_prep.countdown_weeks", { count: Math.ceil(daysUntil / 7) });
   const months = Math.max(1, Math.round(daysUntil / 30));
   return t("screens.event_prep.countdown_months", { count: months });
-}
-
-function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div>
-      <h1 className="text-2xl sm:text-3xl font-bold">{title}</h1>
-      <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
-    </div>
-  );
-}
-
-function BackBar({ onBack, canBack, children }: { onBack: () => void; canBack: boolean; children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-3">
-      {canBack && (
-        <Button variant="ghost" size="icon" onClick={onBack} className="mt-1 shrink-0">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-      )}
-      <div className="flex-1">{children}</div>
-    </div>
-  );
 }
 
 interface HomeProps {
@@ -77,8 +81,8 @@ interface HomeProps {
   onEventOpen: (eventId: string) => void;
   onCharacterOpen: (characterId: string) => void;
   onCategoryOpen: (categoryId: EventCategoryId) => void;
-  onBack?: () => void;
-  canBack?: boolean;
+  allChildren?: EventPrepChildWithPhoto[];
+  onSiblingCharacterOpen?: (childId: number, characterId: string) => void;
   t: TFunction;
 }
 
@@ -86,24 +90,22 @@ export function EventPrepHomeView({
   child, country, countryInfo, countryPickerOpen, setCountryPickerOpen,
   setCountry, nextEvent, upcoming, visibleEvents, searchQuery, setSearchQuery,
   onGenerator, onLastMinute, onEventOpen, onCharacterOpen, onCategoryOpen,
-  onBack, canBack = false, t,
+  allChildren, onSiblingCharacterOpen,
+  t,
 }: HomeProps) {
   const countryOptions = Object.keys(COUNTRY_CONFIGS) as EventPrepCountry[];
 
   return (
-    <div className="container mx-auto p-6 max-w-5xl">
-      <BackBar onBack={onBack ?? (() => {})} canBack={canBack}>
-        <PageHeader
-          title={t("screens.event_prep.home_title")}
-          subtitle={t("screens.event_prep.home_subtitle", { name: child.name })}
-        />
-      </BackBar>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => setCountryPickerOpen(!countryPickerOpen)}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card text-sm font-semibold hover:border-primary transition"
+          className={cn(
+            EVENT_PREP_CHIP_INACTIVE,
+            "text-sm font-semibold",
+            countryPickerOpen && "border-amber-400/40",
+          )}
         >
           <MapPin className="h-3.5 w-3.5" />
           {countryInfo.flag} {countryInfo.label}
@@ -112,7 +114,7 @@ export function EventPrepHomeView({
       </div>
 
       {countryPickerOpen && (
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
           {countryOptions.map((code) => {
             const cfg = COUNTRY_CONFIGS[code];
             return (
@@ -120,11 +122,7 @@ export function EventPrepHomeView({
                 key={code}
                 type="button"
                 onClick={() => setCountry(code)}
-                className={`text-xs px-3 py-1.5 rounded-full border transition ${
-                  code === country
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card border-border hover:border-primary"
-                }`}
+                className={code === country ? EVENT_PREP_CHIP_ACTIVE : EVENT_PREP_CHIP_INACTIVE}
               >
                 {cfg.flag} {cfg.label}
               </button>
@@ -133,51 +131,35 @@ export function EventPrepHomeView({
         </div>
       )}
 
-      <div className="relative mt-4">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={t("screens.event_prep.search_placeholder")}
-          className="pl-9 rounded-full"
+          className={EVENT_PREP_SEARCH}
         />
       </div>
 
       {nextEvent && !searchQuery && (
-        <Card
-          onClick={() => onEventOpen(nextEvent.event.id)}
-          className="cursor-pointer mt-4 overflow-hidden border-2 border-primary/30 hover:border-primary transition shadow-md event-prep-card-lift"
-        >
-          <div
-            className="p-5 text-primary-foreground"
-            style={{ background: `linear-gradient(135deg, ${nextEvent.event.accent[0]}, ${nextEvent.event.accent[1]})` }}
-          >
-            <div className="text-xs font-bold uppercase tracking-wide opacity-90 flex items-center gap-1 mb-3">
-              <Calendar className="h-3 w-3" /> {t("screens.event_prep.upcoming_near_you")}
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-4xl">{nextEvent.event.emoji}</span>
-              <div className="flex-1">
-                <div className="font-bold text-xl">{nextEvent.event.name}</div>
-                <div className="text-sm opacity-90">{nextEvent.event.dateLabel}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-black event-prep-countdown-pulse">{countdownLabel(nextEvent.daysUntil, t)}</div>
-                <div className="text-xs opacity-80">{t("screens.event_prep.next_event")}</div>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <NextEventHeroCard
+          nextEvent={nextEvent}
+          onOpen={() => onEventOpen(nextEvent.event.id)}
+          t={t}
+        />
       )}
 
       {!searchQuery && upcoming.length > 0 && (
         <>
-          <h2 className="font-bold mt-6 mb-3">{t("screens.event_prep.all_events")}</h2>
-          <div className="grid sm:grid-cols-2 gap-3">
-            {upcoming.map(({ event, daysUntil }) => (
+          <h2 className={cn(EVENT_PREP_SECTION_TITLE, "mt-2")}>{t("screens.event_prep.all_events")}</h2>
+          <div className="grid sm:grid-cols-2 gap-3 event-prep-stagger">
+            {upcoming.map(({ event, daysUntil, nextDate }) => (
               <SchoolEventCard
                 key={event.id}
                 event={event}
-                badge={countdownLabel(daysUntil, t)}
+                nextDate={nextDate}
+                daysUntil={daysUntil}
+                t={t}
                 onOpen={() => onEventOpen(event.id)}
               />
             ))}
@@ -187,13 +169,13 @@ export function EventPrepHomeView({
 
       {searchQuery && (
         <>
-          <h2 className="font-bold mt-6 mb-3">
+          <h2 className={cn(EVENT_PREP_SECTION_TITLE, "mt-2")}>
             {t("screens.event_prep.country_events_for", { country: countryInfo.label })}
           </h2>
           {visibleEvents.length === 0 ? (
-            <Card className="mt-2"><CardContent className="p-6 text-center text-muted-foreground">
+            <div className={cn(eventPrepPanelCard(), "p-6 text-center text-muted-foreground")}>
               {t("screens.event_prep.no_matches")}
-            </CardContent></Card>
+            </div>
           ) : (
             <div className="grid sm:grid-cols-2 gap-3">
               {visibleEvents.map((event) => (
@@ -204,39 +186,49 @@ export function EventPrepHomeView({
         </>
       )}
 
-      <Card onClick={onGenerator} className="cursor-pointer mt-6 border-border bg-card hover:border-primary transition">
-        <CardContent className="p-5 flex items-center gap-4">
-          <div className="h-14 w-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center">
+      <button type="button" onClick={onGenerator} className={cn(EVENT_PREP_ACTION_TILE, "mt-2 w-full text-left")}>
+        <div className="flex items-center gap-4 p-5">
+          <div className={EVENT_PREP_ACTION_ICON}>
             <Wand2 className="h-7 w-7" />
           </div>
-          <div className="flex-1">
-            <h3 className="font-bold text-lg">{t("screens.event_prep.amy_generator_title")}</h3>
-            <p className="text-sm text-muted-foreground">{t("screens.event_prep.amy_generator_sub")}</p>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-quicksand font-bold text-lg text-foreground">{t("screens.event_prep.amy_generator_title")}</h3>
+            <p className="text-sm text-muted-foreground/85">{t("screens.event_prep.amy_generator_sub")}</p>
           </div>
-          <ChevronRight className="h-6 w-6 text-foreground" />
-        </CardContent>
-      </Card>
+          <ChevronRight className="h-6 w-6 shrink-0 text-muted-foreground" />
+        </div>
+      </button>
 
-      <Card onClick={onLastMinute} className="cursor-pointer mt-4 border-border bg-card hover:border-primary transition">
-        <CardContent className="p-5 flex items-center gap-4">
-          <div className="h-14 w-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center">
+      <button type="button" onClick={onLastMinute} className={cn(EVENT_PREP_ACTION_TILE, "w-full text-left")}>
+        <div className="flex items-center gap-4 p-5">
+          <div className={EVENT_PREP_ACTION_ICON}>
             <Zap className="h-7 w-7" />
           </div>
-          <div className="flex-1">
-            <h3 className="font-bold text-lg">{t("screens.event_prep.last_minute_title")}</h3>
-            <p className="text-sm text-muted-foreground">{t("screens.event_prep.last_minute_sub")}</p>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-quicksand font-bold text-lg text-foreground">{t("screens.event_prep.last_minute_title")}</h3>
+            <p className="text-sm text-muted-foreground/85">{t("screens.event_prep.last_minute_sub")}</p>
           </div>
-          <ChevronRight className="h-6 w-6 text-foreground" />
-        </CardContent>
-      </Card>
+          <ChevronRight className="h-6 w-6 shrink-0 text-muted-foreground" />
+        </div>
+      </button>
 
-      <h2 className="font-bold mt-6 mb-3 flex items-center gap-2">
-        <Sparkles className="h-4 w-4" /> {t("screens.event_prep.amy_picks", { name: child.name })}
+      <h2 className={cn(EVENT_PREP_SECTION_TITLE, "mt-2 flex items-center gap-2")}>
+        <Sparkles className="h-4 w-4 text-amber-300 hub-sparkle-glow" />
+        {t("screens.event_prep.amy_picks", { name: child.name })}
       </h2>
       <AmyRecs child={child} country={country} onOpen={onCharacterOpen} t={t} />
 
-      <h2 className="font-bold mt-8 mb-3">{t("screens.event_prep.browse_by_event")}</h2>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {allChildren && allChildren.length > 1 && onSiblingCharacterOpen && (
+        <EventPrepSiblingCompare
+          children={allChildren}
+          country={country}
+          onOpenCharacter={onSiblingCharacterOpen}
+          t={t}
+        />
+      )}
+
+      <h2 className={cn(EVENT_PREP_SECTION_TITLE, "mt-4")}>{t("screens.event_prep.browse_by_event")}</h2>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 event-prep-stagger">
         {EVENT_CATEGORIES.map((cat) => (
           <CategoryCard
             key={cat.id}
@@ -251,11 +243,85 @@ export function EventPrepHomeView({
   );
 }
 
-function SchoolEventCard({
-  event, badge, onOpen,
-}: { event: SchoolEvent; badge?: string; onOpen: () => void }) {
+function NextEventHeroCard({
+  nextEvent,
+  onOpen,
+  t,
+}: {
+  nextEvent: UpcomingEvent;
+  onOpen: () => void;
+  t: TFunction;
+}) {
+  const images = getEventImages(nextEvent.event.id);
   return (
-    <Card onClick={onOpen} className="cursor-pointer overflow-hidden hover:shadow-md transition border hover:border-primary event-prep-card-lift">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onOpen();
+      }}
+      className={cn(
+        eventPrepGlassCard(EVENT_PREP_ACCENT),
+        "mt-2 overflow-hidden event-prep-card-lift",
+      )}
+    >
+      {images?.banner && (
+        <div className="relative h-28 w-full overflow-hidden">
+          <LazyEventImage src={images.banner} alt="" className="h-full w-full object-cover" />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(135deg, ${nextEvent.event.accent[0]}cc, ${nextEvent.event.accent[1]}99)`,
+            }}
+          />
+        </div>
+      )}
+      <div
+        className="p-5 text-primary-foreground"
+        style={
+          images?.banner
+            ? undefined
+            : { background: `linear-gradient(135deg, ${nextEvent.event.accent[0]}, ${nextEvent.event.accent[1]})` }
+        }
+      >
+        <div className="text-xs font-bold uppercase tracking-wide opacity-90 flex items-center gap-1 mb-3">
+          <Calendar className="h-3 w-3" /> {t("screens.event_prep.upcoming_near_you")}
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-4xl">{nextEvent.event.emoji}</span>
+          <div className="flex-1 min-w-0">
+            <div className="font-quicksand font-bold text-xl">{nextEvent.event.name}</div>
+            <div className="text-sm opacity-90">{nextEvent.event.dateLabel}</div>
+          </div>
+          <EventPrepCountdownDisplay
+            nextDate={nextEvent.nextDate}
+            daysUntil={nextEvent.daysUntil}
+            t={t}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SchoolEventCard({
+  event, nextDate, daysUntil, t, onOpen,
+}: { event: SchoolEvent; nextDate: string; daysUntil: number; t: TFunction; onOpen: () => void }) {
+  const thumb = getEventImages(event.id)?.banner;
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onOpen();
+      }}
+      className={cn(eventPrepGlassCard(EVENT_PREP_ACCENT), "overflow-hidden event-prep-card-lift")}
+    >
+      {thumb && (
+        <LazyEventImage src={thumb} alt="" className="h-16 w-full object-cover opacity-90" />
+      )}
       <div className="flex items-center gap-3 p-4">
         <div
           className="h-12 w-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
@@ -264,17 +330,18 @@ function SchoolEventCard({
           {event.emoji}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-sm">{event.name}</div>
+          <div className="font-quicksand font-bold text-sm text-foreground">{event.name}</div>
           <div className="text-xs text-muted-foreground truncate">{event.dateLabel} · {event.category}</div>
         </div>
-        {badge && (
-          <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-primary/10 text-primary shrink-0">
-            {badge}
-          </span>
-        )}
+        <EventPrepCountdownDisplay
+          nextDate={nextDate}
+          daysUntil={daysUntil}
+          t={t}
+          variant="compact"
+        />
         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -282,19 +349,27 @@ function CategoryCard({
   category, count, onOpen, t,
 }: { category: EventCategory; count: number; onOpen: () => void; t: TFunction }) {
   return (
-    <Card onClick={onOpen} className="cursor-pointer overflow-hidden hover:shadow-lg transition border-2 border-transparent hover:border-border">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onOpen();
+      }}
+      className={cn(eventPrepGlassCard(EVENT_PREP_ACCENT), "overflow-hidden")}
+    >
       <div
         className="p-5 text-primary-foreground"
         style={{ background: `linear-gradient(135deg, ${category.accent[0]}, ${category.accent[1]})` }}
       >
         <div className="text-4xl mb-1">{category.emoji}</div>
-        <div className="font-bold text-lg">{category.title}</div>
+        <div className="font-quicksand font-bold text-lg">{category.title}</div>
       </div>
-      <CardContent className="p-3 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{category.blurb}</span>
-        <span className="text-xs font-semibold">{t("screens.event_prep.ideas_count", { count })}</span>
-      </CardContent>
-    </Card>
+      <div className="flex items-center justify-between p-3">
+        <span className="text-xs text-muted-foreground/85">{category.blurb}</span>
+        <span className="text-xs font-semibold text-amber-200/90">{t("screens.event_prep.ideas_count", { count })}</span>
+      </div>
+    </div>
   );
 }
 
@@ -305,30 +380,32 @@ function AmyRecs({
   const recs = recommendForChild(category, child.age);
   const cat = EVENT_CATEGORIES.find((c) => c.id === category)!;
   return (
-    <Card className="border-border bg-card">
-      <CardContent className="p-4">
-        <div className="text-xs text-muted-foreground mb-3">
-          {t("screens.event_prep.best_matches_prefix")}<strong>{cat.title}</strong>
-          {t("screens.event_prep.best_matches_suffix", { name: child.name, age: child.age })}
-        </div>
-        <div className="grid sm:grid-cols-3 gap-3">
-          {recs.map((ch) => (
-            <button
-              key={ch.id}
-              type="button"
-              onClick={() => onOpen(ch.id)}
-              className="text-left rounded-xl p-3 bg-card border hover:border-primary transition"
-            >
-              <div className="text-3xl">{ch.emoji}</div>
-              <div className="font-bold text-sm mt-1">{ch.character}</div>
-              <div className="text-[11px] text-muted-foreground mt-0.5">
-                {ch.timeMinutes} {t("screens.event_prep.minutes_short")} · {ch.difficulty}
-              </div>
-            </button>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className={cn(eventPrepPanelCard(), "p-4")}>
+      <p className={cn(EVENT_PREP_SECTION_LABEL, "mb-3 normal-case tracking-normal text-muted-foreground/90")}>
+        {t("screens.event_prep.best_matches_prefix")}<strong className="text-foreground">{cat.title}</strong>
+        {t("screens.event_prep.best_matches_suffix", { name: child.name, age: child.age })}
+      </p>
+      <div className="grid sm:grid-cols-3 gap-3">
+        {recs.map((ch) => (
+          <button
+            key={ch.id}
+            type="button"
+            onClick={() => onOpen(ch.id)}
+            className={cn(
+              "text-left rounded-xl border border-white/[0.08] p-3",
+              "bg-gradient-to-br from-white/[0.05] to-white/[0.02]",
+              "transition-all duration-[220ms] hover:border-amber-400/35 hover:-translate-y-0.5 active:scale-[0.985]",
+            )}
+          >
+            <div className="text-3xl">{ch.emoji}</div>
+            <div className="font-quicksand font-bold text-sm mt-1 text-foreground">{ch.character}</div>
+            <div className="text-[11px] text-muted-foreground/85 mt-0.5">
+              {ch.timeMinutes} {t("screens.event_prep.minutes_short")} · {ch.difficulty}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -339,6 +416,7 @@ function checklistStorageKey(eventId: string, childId: number) {
 interface EventDetailProps {
   ev: SchoolEvent;
   child: EventPrepChild;
+  upcoming?: UpcomingEvent | null;
   onBack: () => void;
   onOpenCostumes: (categoryId: EventCategoryId) => void;
   onSpeak: (id: string, text: string) => void;
@@ -354,7 +432,7 @@ interface EventDetailProps {
 }
 
 export function EventDetailView({
-  ev, child, onBack, onOpenCostumes, onSpeak, speaking, t,
+  ev, child, upcoming, onBack, onOpenCostumes, onSpeak, speaking, t,
   country,
   quickActionLoading,
   quickActionResult,
@@ -372,6 +450,8 @@ export function EventDetailView({
       return {};
     }
   });
+  const [confettiTrigger, setConfettiTrigger] = useState(0);
+  const prevDoneRef = useRef(0);
 
   useEffect(() => {
     try {
@@ -380,35 +460,101 @@ export function EventDetailView({
   }, [checked, storageKey]);
 
   const doneCount = ev.checklist.filter((_, i) => checked[i]).length;
+  const totalCount = ev.checklist.length;
   const images = getEventImages(ev.id);
+  const nextDate = upcoming?.nextDate ?? "";
+
+  useEffect(() => {
+    if (totalCount > 0 && doneCount === totalCount && prevDoneRef.current < totalCount) {
+      setConfettiTrigger((n) => n + 1);
+      playFx.perfect();
+    }
+    prevDoneRef.current = doneCount;
+  }, [doneCount, totalCount]);
 
   return (
-    <div className="container mx-auto p-6 max-w-3xl pb-16">
-      <BackBar onBack={onBack} canBack>
-        <PageHeader title={`${ev.emoji} ${ev.name}`} subtitle={ev.dateLabel} />
-      </BackBar>
+    <div className="relative space-y-4 pb-16">
+      <ConfettiBurst trigger={confettiTrigger} />
 
-      {images?.banner && (
-        <div className="mt-4 rounded-2xl overflow-hidden shadow-md">
+      {upcoming && nextDate && (
+        <EventPrepReminderBanner
+          ev={ev}
+          childId={child.id}
+          childName={child.name}
+          nextDate={nextDate}
+          t={t}
+        />
+      )}
+
+      <EventPrepSmartTools
+        ev={ev}
+        upcoming={upcoming}
+        childId={child.id}
+        childName={child.name}
+        t={t}
+      />
+
+      {images?.banner ? (
+        <div className="relative rounded-2xl overflow-hidden shadow-md">
           <LazyEventImage src={images.banner} alt={ev.name} className="w-full h-44 object-cover" />
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-end pb-4 text-primary-foreground"
+            style={{
+              background: `linear-gradient(180deg, transparent 20%, ${ev.accent[1]}dd 100%)`,
+            }}
+          >
+            <span className="text-5xl mb-1">{ev.emoji}</span>
+            <span className="text-sm font-semibold opacity-95">{ev.category}</span>
+            {upcoming && (
+              <div className="mt-2">
+                <EventPrepCountdownDisplay
+                  nextDate={upcoming.nextDate}
+                  daysUntil={upcoming.daysUntil}
+                  t={t}
+                  variant="compact"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div
+          className="rounded-2xl p-6 text-primary-foreground shadow-lg"
+          style={{ background: `linear-gradient(135deg, ${ev.accent[0]}, ${ev.accent[1]})` }}
+        >
+          <div className="flex items-center justify-center gap-4">
+            <div className="text-6xl">{ev.emoji}</div>
+            {upcoming && (
+              <EventPrepCountdownDisplay
+                nextDate={upcoming.nextDate}
+                daysUntil={upcoming.daysUntil}
+                t={t}
+              />
+            )}
+          </div>
+          <div className="text-center text-sm opacity-90 mt-2">{ev.category}</div>
         </div>
       )}
 
-      <div
-        className="rounded-2xl mt-4 p-6 text-primary-foreground shadow-lg"
-        style={{ background: `linear-gradient(135deg, ${ev.accent[0]}, ${ev.accent[1]})` }}
-      >
-        <div className="text-6xl text-center mb-2">{ev.emoji}</div>
-        <div className="text-center text-sm opacity-90">{ev.category}</div>
-      </div>
+      <EventPrepPhotoMoment
+        eventId={ev.id}
+        childId={child.id}
+        childName={child.name}
+        childPhotoUrl={child.photoUrl}
+        characterName={ev.name}
+        costumeEmoji={ev.emoji}
+        accent={ev.accent}
+        costumeImageUrl={images?.costumes[0]}
+        materials={ev.whatToPrepare}
+        t={t}
+      />
 
       <Section title={t("screens.event_prep.event_overview")}>
         <p className="text-sm leading-relaxed">{ev.overview}</p>
       </Section>
 
       {onQuickAction && (
-        <Card className="mt-3 border-primary/20 bg-gradient-to-br from-muted/50 to-card">
-          <CardContent className="p-4 space-y-3">
+        <div className={cn(eventPrepPanelCard(), "p-4 space-y-3")}>
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
               <h3 className="font-bold text-sm">{t("screens.event_prep.quick_actions")}</h3>
@@ -418,7 +564,7 @@ export function EventDetailView({
                 value={customTheme ?? ""}
                 onChange={(e) => onCustomThemeChange(e.target.value)}
                 placeholder={t("screens.event_prep.custom_theme_placeholder")}
-                className="rounded-full text-sm"
+                className={cn(EVENT_PREP_SEARCH, "text-sm")}
               />
             )}
             <div className="flex flex-wrap gap-2">
@@ -463,8 +609,7 @@ export function EventDetailView({
                 </ul>
               </div>
             )}
-          </CardContent>
-        </Card>
+        </div>
       )}
 
       {images && (images.costumes.length > 0 || images.activities.length > 0) && (
@@ -496,7 +641,21 @@ export function EventDetailView({
         </Section>
       )}
 
-      <Section title={t("screens.event_prep.what_to_prepare")}>
+      <Section
+        title={t("screens.event_prep.what_to_prepare")}
+        extra={
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-7 rounded-full text-xs"
+            onClick={() => void shareTextList(buildMaterialsList(ev.name, child.name, ev.whatToPrepare))}
+          >
+            <Share2 className="h-3 w-3 mr-1" />
+            {t("screens.event_prep.share_shopping_list")}
+          </Button>
+        }
+      >
         <BulletList items={ev.whatToPrepare} />
       </Section>
 
@@ -556,9 +715,17 @@ export function EventDetailView({
       <Section
         title={t("screens.event_prep.checklist")}
         extra={
-          <span className="text-xs text-muted-foreground">
-            {t("screens.event_prep.checklist_progress", { done: doneCount, total: ev.checklist.length })}
-          </span>
+          <div className="flex items-center gap-2">
+            <EventPrepPrepRing done={doneCount} total={totalCount} size={48} />
+            <span className="text-xs text-muted-foreground">
+              {t("screens.event_prep.checklist_progress", { done: doneCount, total: totalCount })}
+            </span>
+            {doneCount === totalCount && totalCount > 0 && (
+              <span className="text-xs font-bold text-amber-300">
+                {t("screens.event_prep.checklist_complete")}
+              </span>
+            )}
+          </div>
         }
       >
         <div className="space-y-2">
@@ -590,15 +757,13 @@ function Section({
   title, children, extra,
 }: { title: string; children: React.ReactNode; extra?: React.ReactNode }) {
   return (
-    <Card className="mt-3">
-        <CardContent className="p-5">
-        <div>
-          <h3 className="font-bold">{title}</h3>
-          {extra}
-        </div>
-        {children}
-      </CardContent>
-    </Card>
+    <div className={cn(eventPrepPanelCard(), "p-5 space-y-3")}>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-quicksand font-bold text-foreground">{title}</h3>
+        {extra}
+      </div>
+      {children}
+    </div>
   );
 }
 
@@ -631,7 +796,15 @@ export function CharacterCardView({
   ch, onOpen, t,
 }: { ch: EventCharacter; onOpen: () => void; t: TFunction }) {
   return (
-    <Card onClick={onOpen} className="cursor-pointer overflow-hidden hover:shadow-lg transition border-2 border-transparent hover:border-border">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onOpen();
+      }}
+      className={cn(eventPrepGlassCard(EVENT_PREP_ACCENT), "overflow-hidden")}
+    >
       <div
         data-on-dark
         className="p-6 relative h-32 flex items-center justify-center text-primary-foreground"
@@ -648,10 +821,10 @@ export function CharacterCardView({
           <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-card text-[10px] font-bold">💸</div>
         )}
       </div>
-      <CardContent className="p-3">
-        <div className="font-bold leading-tight">{ch.character}</div>
-        <div className="text-xs text-muted-foreground mt-0.5 truncate">{ch.tagline}</div>
-      </CardContent>
-    </Card>
+      <div className="p-3">
+        <div className="font-quicksand font-bold leading-tight text-foreground">{ch.character}</div>
+        <div className="text-xs text-muted-foreground/85 mt-0.5 truncate">{ch.tagline}</div>
+      </div>
+    </div>
   );
 }

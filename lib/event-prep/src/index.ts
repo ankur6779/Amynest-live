@@ -33,6 +33,12 @@ export {
   ALL_SCHOOL_EVENTS,
   EVENTS_IN,
   EVENTS_US,
+  EVENTS_GB,
+  EVENTS_AU,
+  EVENTS_NZ,
+  EVENTS_CA,
+  EVENTS_AE,
+  EVENTS_EU,
   getEvents,
   findSchoolEvent,
   getUpcomingEvents,
@@ -260,8 +266,15 @@ function pickTimelyOccasion(country?: EventPrepCountry | null): EventOccasionId 
     "in-diwali": "fancy-dress",
     "in-holi": "fancy-dress",
     "us-halloween": "fancy-dress",
+    "us-independence-day": "fancy-dress",
     "us-christmas": "annual-day",
     "us-thanksgiving": "fancy-dress",
+    "ca-canada-day": "fancy-dress",
+    "au-australia-day": "fancy-dress",
+    "nz-waitangi-day": "fancy-dress",
+    "ae-national-day": "fancy-dress",
+    "gb-christmas-nativity": "annual-day",
+    "eu-christmas-market": "annual-day",
   };
   if (next && idMap[next.event.id]) return idMap[next.event.id]!;
 

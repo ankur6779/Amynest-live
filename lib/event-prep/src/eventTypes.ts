@@ -2,7 +2,16 @@
 
 import type { EventCategoryId } from "./types";
 
-export type EventPrepCountry = "IN" | "US" | "GB" | "AU" | "CA" | "NZ" | "global";
+export type EventPrepCountry =
+  | "IN"
+  | "US"
+  | "GB"
+  | "AU"
+  | "CA"
+  | "NZ"
+  | "AE"
+  | "EU"
+  | "global";
 
 export type SchoolEventCategory =
   | "School Event"

@@ -1,10 +1,17 @@
 import { useState, useEffect } from "react";
 import { EVENT_OCCASIONS, generateEventIdea, type AgeBand, type CostBudget, type EventOccasionId, type GeneratorInput, type GeneratorIdea, type GeneratorResult, type TimeBudget } from "@workspace/event-prep";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Volume2, VolumeX, Clock, Heart, RefreshCw, Wand2 } from "lucide-react";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
+import {
+  EVENT_PREP_ACTION_ICON,
+  EVENT_PREP_CHIP_ACTIVE,
+  EVENT_PREP_CHIP_INACTIVE,
+  eventPrepGlassCard,
+  eventPrepPanelCard,
+} from "@/lib/event-prep-zone-theme";
 interface Props {
   onOpenCharacter: (characterId: string) => void;
   defaultEvent?: EventOccasionId;
@@ -91,15 +98,14 @@ export function EventPrepGenerator({
   };
   return <div className="space-y-4">
       {/* Form */}
-      <Card className="border-border bg-gradient-to-br from-muted via-white to-muted dark:from-card dark:via-muted dark:to-card">
-        <CardContent className="p-5 space-y-4">
+      <div className={cn(eventPrepPanelCard(), "p-5 space-y-4")}>
           <div className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-xl bg-primary text-primary flex items-center justify-center">
+            <div className={cn(EVENT_PREP_ACTION_ICON, "h-9 w-9")}>
               <Wand2 className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-base">{t("components.event_prep_generator.amy_ai_event_generator")}</h3>
-              <p className="text-xs text-muted-foreground">{t("components.event_prep_generator.tell_me_a_few_things_i_ll_suggest_the_perfect_idea")}</p>
+              <h3 className="font-quicksand font-bold text-base text-foreground">{t("components.event_prep_generator.amy_ai_event_generator")}</h3>
+              <p className="text-xs text-muted-foreground/85">{t("components.event_prep_generator.tell_me_a_few_things_i_ll_suggest_the_perfect_idea")}</p>
             </div>
           </div>
 
@@ -130,12 +136,11 @@ export function EventPrepGenerator({
             </ChipRow>
           </Field>
 
-          <Button onClick={onGenerate} className="w-full rounded-full bg-gradient-to-r from-primary to-primary hover:opacity-90 text-white font-bold">
+          <Button onClick={onGenerate} className="w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white font-bold shadow-[0_0_20px_rgba(255,184,0,0.25)]">
             <Sparkles className="h-4 w-4 mr-2" />
             {result ? "Generate again" : "Generate idea"}
           </Button>
-        </CardContent>
-      </Card>
+      </div>
 
       {result && result.ideas.length > 0 && <div className="space-y-3">
           {/* Amy intro */}
@@ -188,9 +193,11 @@ function Chip({
   onClick: () => void;
   children: React.ReactNode;
 }) {
-  return <button onClick={onClick} className={`text-xs px-3 py-1.5 rounded-full border transition ${active ? "bg-primary border-primary text-white" : "bg-white dark:bg-card border-border dark:border-border text-foreground/80 hover:border-border"}`}>
+  return (
+    <button type="button" onClick={onClick} className={active ? EVENT_PREP_CHIP_ACTIVE : EVENT_PREP_CHIP_INACTIVE}>
       {children}
-    </button>;
+    </button>
+  );
 }
 function IdeaCard({
   idea,
@@ -209,7 +216,7 @@ function IdeaCard({
     t
   } = useTranslation();
   const c = idea.character;
-  return <Card className={highlight ? "border-2 border-border shadow-lg overflow-hidden" : "border overflow-hidden"}>
+  return <div className={cn(eventPrepGlassCard(), highlight && "ring-1 ring-amber-400/40", "overflow-hidden")}>
       <div className="p-5 text-white relative" style={{
       background: `linear-gradient(135deg, ${c.accent[0]}, ${c.accent[1]})`
     }}>
@@ -229,7 +236,7 @@ function IdeaCard({
           <span className="px-2 py-0.5 rounded-full bg-black/25">{idea.template}</span>
         </div>
       </div>
-      <CardContent className="p-4 space-y-3">
+      <div className="p-4 space-y-3">
         <div className="text-xs text-muted-foreground italic">{idea.reason}</div>
 
         <div>
@@ -259,9 +266,9 @@ function IdeaCard({
           <p className="text-sm italic">"{idea.speech}"</p>
         </div>
 
-        <Button variant="outline" onClick={onOpenFull} className="w-full rounded-full">
+        <Button variant="outline" onClick={onOpenFull} className="w-full rounded-full border-white/15">
           {t("components.event_prep_generator.open_full_guide")}
         </Button>
-      </CardContent>
-    </Card>;
+      </div>
+    </div>;
 }

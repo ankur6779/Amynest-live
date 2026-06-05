@@ -18,6 +18,7 @@ const TIMEZONE_TO_COUNTRY: Partial<Record<string, EventPrepCountry>> = {
   "Pacific/Honolulu": "US",
   "Europe/London": "GB",
   "Europe/Belfast": "GB",
+  "Europe/Dublin": "GB",
   "Australia/Sydney": "AU",
   "Australia/Melbourne": "AU",
   "Australia/Brisbane": "AU",
@@ -36,6 +37,27 @@ const TIMEZONE_TO_COUNTRY: Partial<Record<string, EventPrepCountry>> = {
   "America/Whitehorse": "CA",
   "Pacific/Auckland": "NZ",
   "Pacific/Chatham": "NZ",
+  "Asia/Dubai": "AE",
+  "Asia/Muscat": "AE",
+  // Continental Europe → EU region pack
+  "Europe/Paris": "EU",
+  "Europe/Berlin": "EU",
+  "Europe/Rome": "EU",
+  "Europe/Madrid": "EU",
+  "Europe/Amsterdam": "EU",
+  "Europe/Brussels": "EU",
+  "Europe/Vienna": "EU",
+  "Europe/Warsaw": "EU",
+  "Europe/Prague": "EU",
+  "Europe/Stockholm": "EU",
+  "Europe/Oslo": "EU",
+  "Europe/Copenhagen": "EU",
+  "Europe/Helsinki": "EU",
+  "Europe/Athens": "EU",
+  "Europe/Lisbon": "EU",
+  "Europe/Bucharest": "EU",
+  "Europe/Budapest": "EU",
+  "Europe/Zurich": "EU",
 };
 
 const LOCALE_TO_COUNTRY: Partial<Record<string, EventPrepCountry>> = {
@@ -46,6 +68,14 @@ const LOCALE_TO_COUNTRY: Partial<Record<string, EventPrepCountry>> = {
   "en-AU": "AU",
   "en-CA": "CA",
   "en-NZ": "NZ",
+  "en-AE": "AE",
+  "ar-AE": "AE",
+  "de-DE": "EU",
+  "fr-FR": "EU",
+  "es-ES": "EU",
+  "it-IT": "EU",
+  "nl-NL": "EU",
+  "pl-PL": "EU",
 };
 
 export const COUNTRY_CONFIGS: Record<EventPrepCountry, CountryConfig> = {
@@ -55,6 +85,8 @@ export const COUNTRY_CONFIGS: Record<EventPrepCountry, CountryConfig> = {
   AU: { code: "AU", flag: "🇦🇺", label: "Australia" },
   CA: { code: "CA", flag: "🇨🇦", label: "Canada" },
   NZ: { code: "NZ", flag: "🇳🇿", label: "New Zealand" },
+  AE: { code: "AE", flag: "🇦🇪", label: "UAE" },
+  EU: { code: "EU", flag: "🇪🇺", label: "Europe" },
   global: { code: "global", flag: "🌍", label: "Global" },
 };
 
@@ -70,7 +102,9 @@ export function detectEventPrepCountry(
         ? [navigator.language, ...(navigator.languages ?? [])]
         : [];
     for (const loc of locales) {
-      const hit = LOCALE_TO_COUNTRY[loc] ?? LOCALE_TO_COUNTRY[loc.split("-")[0] + "-" + loc.split("-")[1]?.toUpperCase()];
+      const hit =
+        LOCALE_TO_COUNTRY[loc] ??
+        LOCALE_TO_COUNTRY[`${loc.split("-")[0]}-${loc.split("-")[1]?.toUpperCase()}`];
       if (hit) return hit;
     }
   } catch {

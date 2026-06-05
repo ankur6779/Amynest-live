@@ -1827,6 +1827,42 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
   }
 }
 
+/* ── Event Prep Zone premium surface ──────────────────────────────── */
+.event-prep-zone-premium {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  background:
+    radial-gradient(circle at 12% 14%, rgba(255, 184, 0, 0.14), transparent 34%),
+    radial-gradient(circle at 88% 8%, rgba(255, 72, 212, 0.10), transparent 36%),
+    linear-gradient(180deg, #071126, #0b1730, #091426);
+}
+
+.event-prep-zone-premium .event-prep-page-enter {
+  animation: parentHubFadeUp 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.event-prep-stagger > * {
+  animation: parentHubFadeUp 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.event-prep-stagger > *:nth-child(1) { animation-delay: 0.04s; }
+.event-prep-stagger > *:nth-child(2) { animation-delay: 0.08s; }
+.event-prep-stagger > *:nth-child(3) { animation-delay: 0.12s; }
+.event-prep-stagger > *:nth-child(4) { animation-delay: 0.16s; }
+.event-prep-stagger > *:nth-child(5) { animation-delay: 0.20s; }
+.event-prep-stagger > *:nth-child(6) { animation-delay: 0.24s; }
+.event-prep-stagger > *:nth-child(7) { animation-delay: 0.28s; }
+.event-prep-stagger > *:nth-child(8) { animation-delay: 0.32s; }
+.event-prep-stagger > *:nth-child(9) { animation-delay: 0.36s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .event-prep-zone-premium .event-prep-page-enter,
+  .event-prep-stagger > * {
+    animation: none !important;
+  }
+}
+
 /* ── Routine premium CTA ──────────────────────────────────────────── */
 .routine-premium-cta--gradient {
   background: linear-gradient(135deg, #ff6b35 0%, #ff8a00 48%, #ffc83d 100%);
