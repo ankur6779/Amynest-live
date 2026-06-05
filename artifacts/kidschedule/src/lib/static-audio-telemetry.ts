@@ -1,3 +1,4 @@
+import { logAudioDebug } from "@/lib/audio-debug";
 import { getApiUrl } from "@/lib/api";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { getFirebaseAuth } from "@/lib/firebase";
@@ -279,6 +280,17 @@ export function reportStaticAudioPlayFailed(
     extra?.error === "USER_INTERACTION_REQUIRED";
   const isAndroidWatchdog =
     isAndroidAmyNestAudioClient() && /PLAYBACK_WATCHDOG/i.test(message);
+
+  logAudioDebug("static_audio_play_failed", {
+    fileUrl: typeof extra?.proxyUrl === "string" ? extra.proxyUrl : audio.src,
+    error: message,
+    phrase: extra?.phrase,
+    mode: extra?.mode,
+    mediaError: audio.error?.code,
+    sessionFailureCount,
+    ...extra,
+  }, audio);
+
   reportStaticAudioEvent(
     "static_audio_play_failed",
     message,

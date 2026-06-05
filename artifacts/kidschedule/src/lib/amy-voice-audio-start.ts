@@ -9,14 +9,21 @@ import {
   schedulePlaybackProgressCheck,
 } from "@/lib/audio-playback-recovery";
 import {
-  AUDIBLE_START_TIMEOUT_MS,
-  LOADING_STUCK_MS,
+  getAudibleStartTimeoutMs,
+  getLoadingStuckTimeoutMs,
   classifyAudibleStartFailure,
   logAudibleStartGate,
   type AudibleStartTimestamps,
 } from "@/lib/audible-start-diagnostic";
 
-export { AUDIBLE_START_TIMEOUT_MS, LOADING_STUCK_MS };
+export {
+  getAudibleStartTimeoutMs,
+  getLoadingStuckTimeoutMs,
+  /** @deprecated use getAudibleStartTimeoutMs() */
+  AUDIBLE_START_TIMEOUT_MS,
+  /** @deprecated use getLoadingStuckTimeoutMs() */
+  LOADING_STUCK_MS,
+} from "@/lib/audible-start-diagnostic";
 export const MIN_AUDIO_SRC_LENGTH = 10;
 export const MIN_AUDIO_BLOB_BYTES = 500;
 
@@ -102,7 +109,7 @@ export async function validateAudioBlobDecodable(blob: Blob): Promise<void> {
  */
 export function waitForAudibleStart(
   audio: HTMLAudioElement,
-  timeoutMs = AUDIBLE_START_TIMEOUT_MS,
+  timeoutMs = getAudibleStartTimeoutMs(),
   timestamps?: AudibleStartTimestamps,
 ): Promise<boolean> {
   if (isAudioPlaybackRecoveryMode()) {
@@ -180,7 +187,7 @@ export function waitForAudibleStart(
 /** Loading stuck: currentTime still 0 after 1s while not ended. */
 export function waitForLoadingProgress(
   audio: HTMLAudioElement,
-  timeoutMs = LOADING_STUCK_MS,
+  timeoutMs = getLoadingStuckTimeoutMs(),
   timestamps?: AudibleStartTimestamps,
 ): Promise<void> {
   if (isAudioPlaybackRecoveryMode()) {
@@ -292,8 +299,8 @@ export async function playWithAudibleStartGuarantee(
         logAudioStart({ event: "audio_start", success: true, src, layer });
         return;
       }
-      await waitForAudibleStart(audio, AUDIBLE_START_TIMEOUT_MS, timestamps);
-      await waitForLoadingProgress(audio, LOADING_STUCK_MS, timestamps);
+      await waitForAudibleStart(audio, getAudibleStartTimeoutMs(), timestamps);
+      await waitForLoadingProgress(audio, getLoadingStuckTimeoutMs(), timestamps);
       logAudibleStartGate("playWithAudibleStartGuarantee", "exit", audio, {
         timestamps,
         layer,

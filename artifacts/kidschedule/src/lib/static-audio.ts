@@ -25,6 +25,7 @@ import {
   type StaticAudioMode,
 } from "@workspace/static-audio/browser";
 import { replaceCoachPersonalNameWithFriend } from "@workspace/speech-coach";
+import { isMobileStaticAudioDevice } from "@/lib/static-audio-edge";
 
 function audioDebugLog(...args: unknown[]): void {
   if (import.meta.env.DEV || isStaticAudioDebug() || isAmyVoiceAudioDebugEnabled()) {
@@ -603,7 +604,7 @@ async function createStaticPlaybackElementFromBlob(
     const res = await fetch(absUrl, {
       method: "GET",
       credentials: "omit",
-      cache: "force-cache",
+      cache: "default",
       mode: "cors",
     });
     logAmyVoiceDiag("blob_fetch", {
@@ -632,16 +633,23 @@ async function createStaticPlaybackElementFromBlob(
   }
 }
 
+function shouldPreferBlobStaticPlayback(): boolean {
+  return isMobileStaticAudioDevice();
+}
+
 async function createStaticPlaybackElementAsync(
   proxyUrl: string,
 ): Promise<HTMLAudioElement | null> {
-  // Fast path: reuse a warm URL-keyed element and let the browser stream directly
-  // from src. Avoids downloading the whole MP3 to a blob and decodeAudioData()
-  // before playback (a per-tap, duration-scaled main-thread cost). The play-time
-  // watchdog still detects silent/failed output, so the pipeline can fall through.
+  if (shouldPreferBlobStaticPlayback()) {
+    const blobEl = await createStaticPlaybackElementFromBlob(proxyUrl);
+    if (blobEl) return blobEl;
+    logAmyVoiceDiag("mobile_blob_miss_try_direct", { url: proxyUrl.slice(-72) });
+  }
+
+  // Desktop fast path: reuse a warm URL-keyed element and stream from src.
   const direct = createStaticPlaybackElement(proxyUrl);
   if (direct) return direct;
-  // Fallback only: blob + decodeAudioData catches corrupt/truncated MP3.
+
   const blobEl = await createStaticPlaybackElementFromBlob(proxyUrl);
   if (blobEl) return blobEl;
   logAmyVoiceDiag("blob_fallback_remote", { url: proxyUrl.slice(-72) });

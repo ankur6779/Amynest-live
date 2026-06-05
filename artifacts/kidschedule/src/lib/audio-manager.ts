@@ -36,6 +36,7 @@ import {
   tracePlaybackStop,
   tracePlaybackStopAll,
 } from "@/lib/playback-trace";
+import { logAudioDebug } from "@/lib/audio-debug";
 import {
   classifyAudibleStartFailure,
   logAudibleStartGate,
@@ -428,6 +429,58 @@ class AudioManagerImpl {
     if (audio.error) return false;
     if (audio.ended) return true;
     return !audio.paused;
+  }
+
+  /**
+   * play() can resolve before the clock advances (especially on mobile direct-stream).
+   * Wait briefly for `playing` / currentTime>0 before treating playback as failed.
+   */
+  private waitForPlaybackClockStart(
+    audio: HTMLAudioElement,
+    timeoutMs: number,
+  ): Promise<boolean> {
+    if (audio.ended) return Promise.resolve(true);
+    if (!audio.paused && audio.currentTime > 0) return Promise.resolve(true);
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (ok: boolean) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeoutId);
+        window.clearInterval(pollId);
+        audio.removeEventListener("playing", onProgress);
+        audio.removeEventListener("timeupdate", onProgress);
+        audio.removeEventListener("canplay", onProgress);
+        audio.removeEventListener("ended", onProgress);
+        audio.removeEventListener("error", onError);
+        resolve(ok);
+      };
+
+      const onProgress = () => {
+        if (audio.ended || (!audio.paused && audio.currentTime > 0)) {
+          finish(true);
+        }
+      };
+
+      const onError = () => finish(false);
+
+      audio.addEventListener("playing", onProgress);
+      audio.addEventListener("timeupdate", onProgress);
+      audio.addEventListener("canplay", onProgress);
+      audio.addEventListener("ended", onProgress);
+      audio.addEventListener("error", onError, { once: true });
+
+      const pollId = window.setInterval(onProgress, 50);
+      const timeoutId = window.setTimeout(() => {
+        finish(!audio.paused && (audio.currentTime > 0 || audio.ended));
+      }, timeoutMs);
+      onProgress();
+    });
+  }
+
+  private playbackClockWaitMs(): number {
+    return isAndroidAmyNestAudioClient() ? 2_500 : 1_200;
   }
 
   /** Brand-new element — never reuse cached instance. */
@@ -981,7 +1034,21 @@ class AudioManagerImpl {
       throw new Error(AUDIO_ERROR.SILENT_OUTPUT);
     }
 
-    if (!this.isPlaybackValid(audio)) {
+    const clockStarted = await this.waitForPlaybackClockStart(
+      audio,
+      this.playbackClockWaitMs(),
+    );
+    if (!clockStarted && !this.isPlaybackValid(audio)) {
+      logAudioDebug(
+        "audio_manager_playback_clock_stuck",
+        {
+          fileUrl: audio.src,
+          playbackMethod: meta?.source ?? "audioManager.attemptPlay",
+          error: AUDIO_ERROR.PLAYBACK_WATCHDOG,
+          layer: meta?.source,
+        },
+        audio,
+      );
       logAudibleStartGate("isPlaybackValid", "fail", audio, {
         layer: meta?.source,
         errorMessage: AUDIO_ERROR.PLAYBACK_WATCHDOG,

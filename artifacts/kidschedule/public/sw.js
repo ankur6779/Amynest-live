@@ -1,4 +1,4 @@
-/* Auto-generated on build — do not edit. Cache: amynest-v8 */
+/* Auto-generated on build — do not edit. Cache: amynest-v9 */
 /**
  * AmyNest root service worker (source — built to /sw.js with a deploy-specific cache id).
  *
@@ -12,7 +12,7 @@
 
 /* global self, caches, clients, importScripts, firebase */
 
-const CACHE_NAME = "amynest-v8";
+const CACHE_NAME = "amynest-v9";
 /** Immutable hash-keyed audio — bump to invalidate poisoned partial (206) entries. */
 const AUDIO_CACHE_NAME = "amynest-audio-v2";
 const LEGACY_AUDIO_CACHE_NAMES = ["amynest-audio-v1"];

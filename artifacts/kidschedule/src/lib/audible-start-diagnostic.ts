@@ -6,10 +6,45 @@
  */
 
 import { isAudioPlaybackRecoveryMode } from "@/lib/audio-playback-recovery";
+import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { isPlaybackTraceEnabled } from "@/lib/playback-trace";
 
-export const AUDIBLE_START_TIMEOUT_MS = 300;
-export const LOADING_STUCK_MS = 400;
+/** Dev-only fast gates — production mobile needs longer buffer/decode time. */
+const DEV_AUDIBLE_START_TIMEOUT_MS = 300;
+const DEV_LOADING_STUCK_MS = 400;
+
+/** Desktop production — direct-stream path with warm CDN cache. */
+const PROD_DESKTOP_AUDIBLE_START_TIMEOUT_MS = 800;
+const PROD_DESKTOP_LOADING_STUCK_MS = 1000;
+
+/** Mobile production — cold SW/cache fetch + WebView decode lag. */
+const PROD_MOBILE_AUDIBLE_START_TIMEOUT_MS = 1500;
+const PROD_MOBILE_LOADING_STUCK_MS = 2000;
+
+function isMobileAudibleStartClient(): boolean {
+  if (isAndroidAmyNestAudioClient()) return true;
+  if (typeof navigator === "undefined") return false;
+  return /iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+export function getAudibleStartTimeoutMs(): number {
+  if (import.meta.env.DEV) return DEV_AUDIBLE_START_TIMEOUT_MS;
+  return isMobileAudibleStartClient()
+    ? PROD_MOBILE_AUDIBLE_START_TIMEOUT_MS
+    : PROD_DESKTOP_AUDIBLE_START_TIMEOUT_MS;
+}
+
+export function getLoadingStuckTimeoutMs(): number {
+  if (import.meta.env.DEV) return DEV_LOADING_STUCK_MS;
+  return isMobileAudibleStartClient()
+    ? PROD_MOBILE_LOADING_STUCK_MS
+    : PROD_DESKTOP_LOADING_STUCK_MS;
+}
+
+/** @deprecated Use getAudibleStartTimeoutMs() — kept for tests importing the constant. */
+export const AUDIBLE_START_TIMEOUT_MS = getAudibleStartTimeoutMs();
+/** @deprecated Use getLoadingStuckTimeoutMs() — kept for tests importing the constant. */
+export const LOADING_STUCK_MS = getLoadingStuckTimeoutMs();
 
 const READY_STATE_LABELS: Record<number, string> = {
   0: "HAVE_NOTHING",
@@ -91,7 +126,7 @@ export function classifyAudibleStartFailure(
   if (snap.paused && snap.currentTime === 0 && snap.readyState >= 4) {
     return (
       `${gate}: MEDIA_FULLY_LOADED_BUT_STILL_PAUSED — play() may have resolved but ` +
-      `"playing" never fired within ${AUDIBLE_START_TIMEOUT_MS}ms; readyState=4 does not mean audible`
+      `"playing" never fired within ${getAudibleStartTimeoutMs()}ms; readyState=4 does not mean audible`
     );
   }
   if (snap.paused && snap.currentTime === 0) {

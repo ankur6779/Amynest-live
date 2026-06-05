@@ -12,10 +12,18 @@ import {
 } from "@/lib/device-lite";
 
 /** crossOrigin on remote MP3 often breaks playback in installed PWA / WebView shells. */
-function shouldSetAudioCrossOrigin(): boolean {
+function shouldSetAudioCrossOrigin(audioSrc?: string): boolean {
   if (isNativeAmyNestShell() || isCapacitorIosShell()) return false;
   if (isAndroidAmyNestAudioClient()) return false;
   if (isStandalonePwa() && isIosUa()) return false;
+  if (audioSrc && typeof window !== "undefined") {
+    try {
+      const resolved = new URL(audioSrc, window.location.href);
+      if (resolved.origin === window.location.origin) return false;
+    } catch {
+      /* ignore malformed src */
+    }
+  }
   return true;
 }
 
@@ -116,7 +124,7 @@ export function configureMobileAudioElement(audio: HTMLAudioElement): void {
     (audio as HTMLAudioElement & { playsInline?: boolean }).playsInline = true;
     audio.preload = "auto";
     if (
-      shouldSetAudioCrossOrigin() &&
+      shouldSetAudioCrossOrigin(audio.src) &&
       audio.src &&
       !audio.src.startsWith("blob:") &&
       !audio.src.startsWith("data:")
@@ -147,6 +155,13 @@ export function recordTtsUserGesture(): void {
 
 export function isAudioUnlocked(): boolean {
   return audioUnlocked;
+}
+
+/** For production audio diagnostics — does not create new AudioContext instances. */
+export function getUnlockAudioContextState(): string {
+  if (!shouldUseWebAudioUnlock()) return "skipped_android_html_audio";
+  if (!unlockCtx) return "not_created";
+  return unlockCtx.state;
 }
 
 export function isTtsPlaybackAllowed(): boolean {
