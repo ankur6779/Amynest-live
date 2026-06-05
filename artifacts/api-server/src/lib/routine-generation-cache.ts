@@ -14,6 +14,11 @@ type CacheEntry = {
 
 const cache = new Map<string, CacheEntry>();
 
+export function hashRoutineContextFragment(value: string | null | undefined): string {
+  if (!value?.trim()) return "";
+  return createHash("sha256").update(value.trim().toLowerCase()).digest("hex").slice(0, 12);
+}
+
 export function routineCacheKey(params: {
   userId: string;
   childId: number;
@@ -21,6 +26,12 @@ export function routineCacheKey(params: {
   mood?: string | null;
   hasSchool?: boolean;
   schoolMealMode?: string | null;
+  weatherOutdoor?: string | null;
+  wakeTime?: string | null;
+  sleepTime?: string | null;
+  sleepQuality?: string | null;
+  aqi?: number | null;
+  fridgeItems?: string | null;
 }): string {
   const raw = [
     params.userId,
@@ -29,6 +40,12 @@ export function routineCacheKey(params: {
     params.mood ?? "normal",
     params.hasSchool ? "1" : "0",
     params.schoolMealMode ?? "",
+    params.weatherOutdoor ?? "",
+    params.wakeTime ?? "",
+    params.sleepTime ?? "",
+    params.sleepQuality ?? "",
+    params.aqi != null ? String(Math.round(params.aqi)) : "",
+    hashRoutineContextFragment(params.fridgeItems),
   ].join("|");
   return createHash("sha256").update(raw).digest("hex").slice(0, 32);
 }

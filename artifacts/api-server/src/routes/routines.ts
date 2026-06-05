@@ -74,6 +74,10 @@ import {
   parentFriendlySpecialEventLines,
 } from "../lib/routine-parent-adaptations.js";
 import { buildParentIntelligenceAdaptations } from "../lib/routine-parent-intelligence.js";
+import {
+  buildGenerationTransparencyMessage,
+  type GenerationSource,
+} from "../lib/routine-evidence-strength.js";
 import type { ParentExplanationContext } from "@workspace/explainability";
 import { normalizeTo24h } from "../lib/routine-scheduler.js";
 import { type CaregiverKey, type WeatherOutdoor, applyWeatherAdjustment } from "@workspace/family-routine";
@@ -1153,6 +1157,13 @@ function parentExplanationCtx(
   };
 }
 
+function generationTransparencyPayload(source: GenerationSource) {
+  return {
+    generationSource: source,
+    generationTransparencyMessage: buildGenerationTransparencyMessage(source),
+  };
+}
+
 /** Parent-facing adaptations only — strips debug tokens and caps length. */
 function finalizeParentAdaptations(
   rawLines: readonly string[],
@@ -1659,8 +1670,8 @@ router.post("/routines/generate", routineGenerateGate(), async (req, res): Promi
     isWeekendDay: ruleIsWeekendDay,
   });
 
-  res.json(
-    GenerateRoutineResponse.parse({
+  res.json({
+    ...GenerateRoutineResponse.parse({
       ...generated,
       items: rulePiped.items as typeof ruleCurved.items,
       adaptations: finalizeParentAdaptations(
@@ -1681,7 +1692,8 @@ router.post("/routines/generate", routineGenerateGate(), async (req, res): Promi
         ? toFixedActivitiesResult(rulePiped.fixedActivities, child.name)
         : null,
     }),
-  );
+    ...generationTransparencyPayload("fallback"),
+  });
 });
 
 // AI-powered routine generation — uses OpenAI; rate-limited on frontend
@@ -1713,27 +1725,7 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
     return;
   }
 
-  const cacheKey = routineCacheKey({
-    userId,
-    childId: parsed.data.childId,
-    date: parsed.data.date,
-    mood: parsed.data.mood,
-    hasSchool: parsed.data.hasSchool,
-    schoolMealMode: parsed.data.schoolMealMode ?? null,
-  });
-  const cachedHit = getCachedRoutine(cacheKey);
-  if (cachedHit) {
-    res.json({ ...cachedHit, cached: true });
-    return;
-  }
-
   await enqueueForUser(userId, async () => {
-  const cachedInQueue = getCachedRoutine(cacheKey);
-  if (cachedInQueue) {
-    res.json({ ...cachedInQueue, cached: true });
-    return;
-  }
-
   const childRow = await getChildByIdForUser(parsed.data.childId, userId);
   if (!childRow) {
     res.status(404).json({ error: "Child not found" });
@@ -1876,6 +1868,26 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
     ? mapToWeatherOutdoor(aiEnvContext, weatherOutdoor)
     : weatherOutdoor;
 
+  const cacheKey = routineCacheKey({
+    userId,
+    childId: parsed.data.childId,
+    date: parsed.data.date,
+    mood: mood ?? "normal",
+    hasSchool,
+    schoolMealMode: schoolMealMode ?? null,
+    weatherOutdoor: aiEffectiveWeather,
+    wakeTime: effWakeUp,
+    sleepTime: child.sleepTime,
+    sleepQuality: previousDayContext?.sleepQuality ?? null,
+    aqi: aiEnvContext?.aqi ?? aiEnvContext?.environment?.AQI ?? null,
+    fridgeItems: fridgeItems ?? null,
+  });
+  const cachedInQueue = getCachedRoutine(cacheKey);
+  if (cachedInQueue) {
+    res.json({ ...cachedInQueue, cached: true });
+    return;
+  }
+
   const aiFixedPreCheck = mergeFixedActivityPreCheck(
     fixedActivities,
     parsed.data.date,
@@ -1991,7 +2003,12 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
             ? toFixedActivitiesResult(gen.fixedActivities, child.name)
             : null,
         });
-        const successPayload = { ...body, success: true, fallback: false };
+        const successPayload = {
+          ...body,
+          success: true,
+          fallback: false,
+          ...generationTransparencyPayload("ai"),
+        };
         setCachedRoutine(cacheKey, successPayload);
         return successPayload;
       },
@@ -2121,7 +2138,12 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
       childId: parsed.data.childId,
       itemCount: fallbackBody.items.length,
     });
-    const fallbackPayload = { ...fallbackBody, success: false, fallback: true };
+    const fallbackPayload = {
+      ...fallbackBody,
+      success: false,
+      fallback: true,
+      ...generationTransparencyPayload("fallback"),
+    };
     setCachedRoutine(cacheKey, fallbackPayload);
     res.json(fallbackPayload);
   }

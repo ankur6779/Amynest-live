@@ -105,3 +105,4 @@ export * from "./speech_expert_waitlist";
 export * from "./speech_conversation_memory";
 export * from "./user_feedback";
 export * from "./gaming_wallet";
+export * from "./routine_personalization";

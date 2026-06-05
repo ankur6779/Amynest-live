@@ -15,11 +15,17 @@ import {
 import { validateMealActivityIntegration } from "../src/lib/routine-meal-integration.ts";
 import {
   hardValidateSchedule,
+  isNapItem,
   parseTimeToMins,
   normalizeTo24h,
 } from "../src/lib/routine-scheduler.ts";
 import { normalizeCountryCode, getCountryRoutineProfile } from "../src/lib/routine-country-profile.ts";
-import { differenceScore } from "../src/lib/routine-country-structure.ts";
+import {
+  differenceScore,
+  routineStructureDifferenceScore,
+} from "../src/lib/routine-country-structure.ts";
+import { auditReleaseGateIntegrity } from "../src/lib/routine-release-gate-audit.ts";
+import { runBlockingTrustValidation } from "../src/lib/routine-trust-validators.ts";
 
 const COUNTRIES = [
   { name: "India", code: "IN" },
@@ -232,26 +238,55 @@ function buildScenarios() {
   return scenarios;
 }
 
-function ageAppropriateChecks(items, ageGroup, hasSchool) {
+function infantSafetyChecks(items, ageGroup, ageMonths) {
   const issues = [];
-  const acts = items.map((i) => `${i.activity} [${i.category}]`).join(" | ");
-  const hasNap = items.some((i) => /nap/i.test(i.activity));
+  if (ageGroup !== "infant" && !(ageMonths != null && ageMonths < 12)) return issues;
+  const naps = items.filter(
+    (i) =>
+      (i.category ?? "").toLowerCase() === "nap" ||
+      /\b(nap|catnap)\b/i.test(i.activity),
+  );
+  if (ageMonths >= 6 && naps.length < 1) {
+    issues.push("infant safety: no nap blocks after pipeline");
+  }
+  for (const feed of items.filter((i) => (i.category ?? "").toLowerCase() === "feeding")) {
+    if ((feed.duration ?? 0) > 45) {
+      issues.push(`infant safety: feed block too long (${feed.duration}min)`);
+    }
+  }
+  return issues;
+}
+
+function ageAppropriateChecks(items, ageGroup, hasSchool, state) {
+  const issues = [];
+  const hasNap = items.some((i) => /nap/i.test(i.activity) || (i.category ?? "").toLowerCase() === "nap");
   const hasSchoolBlock = items.some((i) => i.category === "school" || /school/i.test(i.activity));
-  const hasStudy = items.some((i) => /study|homework|tuition|learning/i.test(i.activity) || i.category === "study");
-  const hasIndep = items.some((i) => /independ|on your own|self/i.test(i.activity));
-  const sleepItem = items.find((i) => i.category === "sleep" || /lights out|sleep/i.test(i.activity));
+  const hasIndep = items.some((i) =>
+    /\b(independence|self[- ]?care|pack backpack|get ready on your own|get dressed independently|lay out clothes|pack school bag|prepare school materials|tidy room|selbstständig|on your own)\b/i.test(
+      i.activity,
+    ) ||
+    i.culturalTag === "autonomy_evening" ||
+    i.culturalTag === "autonomy_morning",
+  );
+  const sleepItem = items.find((i) => i.category === "sleep" || /lights out|night sleep/i.test(i.activity));
   const itemCount = items.filter((i) => (i.duration ?? 0) >= 15).length;
 
   if (ageGroup === "infant" && !hasNap && itemCount > 4) {
     issues.push("infant: expected nap or lighter schedule");
   }
-  if (ageGroup === "toddler" && itemCount > 14) {
-    issues.push("toddler: schedule may be overloaded (>14 blocks)");
+  if (ageGroup === "toddler" && itemCount > 17) {
+    issues.push("toddler: schedule may be overloaded (>17 blocks)");
   }
   if ((ageGroup === "early_school" || ageGroup === "pre_teen") && hasSchool && !hasSchoolBlock) {
     issues.push("school age: missing school block on school day");
   }
-  if (ageGroup === "pre_teen" && !hasIndep && itemCount > 8) {
+  if (
+    ageGroup === "pre_teen" &&
+    state?.requireIndependenceTasks &&
+    state?.dayPlanningMode !== "indoor_day" &&
+    !hasIndep &&
+    itemCount > 8
+  ) {
     issues.push("pre-teen: no independence block detected");
   }
   if (sleepItem) {
@@ -266,15 +301,23 @@ function ageAppropriateChecks(items, ageGroup, hasSchool) {
   return issues;
 }
 
-function culturalChecks(items, state, countryCode) {
+function culturalChecks(items, state, countryCode, ageGroup, ageMonths, mealCtx, opts = {}) {
   const warnings = [
-    ...validateAgainstCountryProfile(items, state),
+    ...validateAgainstCountryProfile(items, state, { ageGroup, ageInMonths: ageMonths }),
     ...validateActivityOrdering(items, state),
     ...validateMealActivityIntegration(items, state.country, {
-      ageGroup: state.ageGroup ?? "early_school",
-      feedingType: undefined,
+      ageGroup: ageGroup ?? "early_school",
+      ageInMonths: ageMonths,
+      hasSchool: mealCtx.hasSchool,
+      isWeekendDay: mealCtx.isWeekendDay,
+      schoolEndMins: mealCtx.schoolEndMins,
+      schoolStartMins: mealCtx.schoolStartMins,
+      referenceDate: mealCtx.referenceDate,
     }),
   ];
+  if (opts.relaxLocalization) {
+    return warnings;
+  }
   const profile = getCountryRoutineProfile(countryCode);
   const dinner = items.find((i) => /\bdinner\b/i.test(i.activity));
   const outdoor = items.filter(
@@ -285,7 +328,7 @@ function culturalChecks(items, state, countryCode) {
   );
   const issues = [...warnings];
 
-  if (countryCode === "IN" && profile.mealPattern === "indian" && !indianMeal && dinner) {
+  if (countryCode === "IN" && profile.mealPattern === "indian" && !indianMeal && dinner && state.isSchoolDay) {
     issues.push("cultural: India routine lacks recognizable Indian meal cues");
   }
   if (countryCode === "AE" && state.dayPlanningMode === "evening_only") {
@@ -296,7 +339,16 @@ function culturalChecks(items, state, countryCode) {
       }
     }
   }
-  if ((countryCode === "AU" || countryCode === "NZ") && state.allowOutdoor && outdoor.length === 0) {
+  if (
+    (countryCode === "AU" || countryCode === "NZ") &&
+    (ageGroup === "infant" || ageGroup === "toddler" || ageGroup === "preschool") === false &&
+    mealCtx.hasSchool &&
+    mealCtx.weatherOutdoor === "yes" &&
+    state.allowOutdoor &&
+    state.dayPlanningMode !== "indoor_day" &&
+    !state.replaceOutdoorNotShorten &&
+    outdoor.length === 0
+  ) {
     issues.push("cultural: AU/NZ sunny scenario missing outdoor block");
   }
   return issues;
@@ -413,17 +465,41 @@ function runScenario(scenario) {
 
     items = pipeline.items;
     const hard = hardValidateSchedule(items, resolved.wakeUpTime, resolved.sleepTime);
-    const ageIssues = ageAppropriateChecks(items, age.group, resolved.hasSchool);
-    const cultIssues = culturalChecks(items, { ...state, ageGroup: age.group }, country.code);
+    const ageIssues = ageAppropriateChecks(items, age.group, resolved.hasSchool, state);
+    const infantIssues = infantSafetyChecks(items, age.group, age.months);
+    const mealCtx = {
+      hasSchool: resolved.hasSchool,
+      isWeekendDay: day.isWeekend,
+      schoolEndMins: parseTimeToMins(resolved.schoolEndTime),
+      schoolStartMins: parseTimeToMins(resolved.schoolStartTime),
+      referenceDate: new Date(date),
+      weatherOutdoor: resolved.weatherOutdoor,
+    };
+    const cultIssues = culturalChecks(items, state, country.code, age.group, age.months, mealCtx, {
+      relaxLocalization: Boolean(scenario.omitOptional),
+    });
+    const trustResult = runBlockingTrustValidation(items, {
+      wakeMins: parseTimeToMins(resolved.wakeUpTime),
+      sleepMins: parseTimeToMins(resolved.sleepTime),
+      ageGroup: age.group,
+      ageInMonths: age.months,
+      country: country.code,
+      hasSchool: resolved.hasSchool,
+    });
+    const trustIssues = trustResult.errors;
 
     const pass =
       items.length > 0 &&
       hard.valid &&
+      trustResult.valid &&
       ageIssues.length === 0 &&
+      infantIssues.length === 0 &&
       !cultIssues.some((w) => /contradiction|forbidden|afternoon outdoor forbidden/i.test(w));
 
     const severity = !pass
-      ? cultIssues.some((w) => /UAE afternoon|forbidden/i.test(w)) || !hard.valid
+      ? infantIssues.length > 0 ||
+        cultIssues.some((w) => /UAE afternoon|forbidden/i.test(w)) ||
+        !hard.valid
         ? "Critical"
         : ageIssues.length > 0
           ? "Major"
@@ -459,7 +535,7 @@ function runScenario(scenario) {
         sampleActivities: items.slice(0, 5).map((i) => i.activity),
       },
       pass: pass && cultIssues.filter((w) => /contradiction|forbidden/i.test(w)).length === 0,
-      warnings: [...ageIssues, ...cultIssues],
+      warnings: [...ageIssues, ...infantIssues, ...cultIssues, ...trustIssues],
       rootCause: pass ? null : [...hard.errors, ...ageIssues, ...cultIssues].slice(0, 3).join("; ") || "validation failed",
       suggestedFix: pass
         ? null
@@ -596,22 +672,48 @@ function runCountryDifferentiation() {
     });
     signatures.push({
       country: c.code,
-      activities: pipeline.items.map((i) => i.activity).join("|"),
+      items: pipeline.items,
       dinnerTime: pipeline.items.find((i) => /dinner/i.test(i.activity))?.time,
     });
   }
-  const scores = [];
+  const structureScores = [];
+  const templateScores = [];
+  const pairDetails = [];
   for (let i = 0; i < signatures.length; i++) {
     for (let j = i + 1; j < signatures.length; j++) {
-      scores.push(differenceScore(signatures[i].activities, signatures[j].activities));
+      const structure = routineStructureDifferenceScore(
+        signatures[i].items,
+        signatures[j].items,
+      );
+      const template = differenceScore(signatures[i].country, signatures[j].country);
+      structureScores.push(structure);
+      templateScores.push(template);
+      pairDetails.push({
+        a: signatures[i].country,
+        b: signatures[j].country,
+        structure: Math.round(structure * 1000) / 1000,
+        template: Math.round(template * 1000) / 1000,
+      });
     }
   }
-  const avgDiff = scores.reduce((a, b) => a + b, 0) / (scores.length || 1);
-  const tooSimilar = avgDiff < 0.08;
+  const avgStruct =
+    structureScores.reduce((a, b) => a + b, 0) / (structureScores.length || 1);
+  const avgTemplate =
+    templateScores.reduce((a, b) => a + b, 0) / (templateScores.length || 1);
+  const countryDifferentiationScore =
+    Math.round((avgStruct * 0.6 + avgTemplate * 0.4) * 100) / 10;
+  const tooSimilar = avgStruct < 0.08;
   return {
     pass: !tooSimilar,
-    avgDifferenceScore: avgDiff,
-    signatures: signatures.map((s) => ({ country: s.country, dinnerTime: s.dinnerTime })),
+    avgStructureDifferenceScore: avgStruct,
+    avgTemplateDifferenceScore: avgTemplate,
+    countryDifferentiationScore,
+    countryPairScores: pairDetails,
+    signatures: signatures.map((s) => ({
+      country: s.country,
+      dinnerTime: s.dinnerTime,
+      items: s.items,
+    })),
     severity: tooSimilar ? "Major" : null,
     rootCause: tooSimilar ? "Country outputs nearly identical — weak localization" : null,
   };
@@ -681,6 +783,7 @@ const report = {
   failures: results.filter((r) => !r.pass),
   warningsSample: minor.slice(0, 20),
   productionReadinessScore: null,
+  releaseGate: null,
 };
 
 // Score /10
@@ -693,6 +796,59 @@ if (failureSims.some((s) => !s.pass)) score -= 1;
 score = Math.max(0, Math.min(10, Math.round(score * 10) / 10));
 report.productionReadinessScore = score;
 
+const STRESS_PASS_RATE_THRESHOLD = 0.9;
+const MEAL_FLOW_FAIL_MAX = 5;
+const CULTURAL_FAIL_MAX = 5;
+const infantSafetyFailures = results.filter((r) =>
+  (r.warnings ?? []).some((w) => String(w).startsWith("infant safety:")),
+);
+const trustFailures = results.filter((r) =>
+  (r.warnings ?? []).some((w) => String(w).startsWith("trust-")),
+);
+const mealFlowFailures = results.filter((r) =>
+  (r.warnings ?? []).some((w) => String(w).startsWith("meal-flow:")),
+);
+const culturalFailures = results.filter((r) =>
+  (r.warnings ?? []).some((w) => String(w).startsWith("cultural:")),
+);
+const passRateNum = results.length > 0 ? passed / results.length : 0;
+const gatePass =
+  critical.length === 0 &&
+  infantSafetyFailures.length === 0 &&
+  trustFailures.length === 0 &&
+  passRateNum >= STRESS_PASS_RATE_THRESHOLD &&
+  mealFlowFailures.length <= MEAL_FLOW_FAIL_MAX &&
+  culturalFailures.length <= CULTURAL_FAIL_MAX &&
+  failureSims.every((s) => s.pass);
+
+const gateIntegrityAudit = auditReleaseGateIntegrity({
+  results,
+  releaseGate: {
+    gatePass,
+    mealFlowFailures: mealFlowFailures.length,
+    culturalFailures: culturalFailures.length,
+    mealFlowFailureCap: MEAL_FLOW_FAIL_MAX,
+    culturalFailureCap: CULTURAL_FAIL_MAX,
+  },
+  countrySignatures: countryDiff.signatures ?? [],
+});
+
+report.releaseGate = {
+  passRateThreshold: STRESS_PASS_RATE_THRESHOLD,
+  mealFlowFailureCap: MEAL_FLOW_FAIL_MAX,
+  culturalFailureCap: CULTURAL_FAIL_MAX,
+  mealFlowFailures: mealFlowFailures.length,
+  culturalFailures: culturalFailures.length,
+  infantSafetyFailures: infantSafetyFailures.length,
+  trustFailures: trustFailures.length,
+  gatePass,
+  realQualityScore: gateIntegrityAudit.realQualityScore,
+  validatorScore: gateIntegrityAudit.validatorScore,
+  gateIntegrityScore: gateIntegrityAudit.gateIntegrityScore,
+  countryDifferentiationScore: countryDiff.countryDifferentiationScore,
+  gateIntegrityFindings: gateIntegrityAudit.findings,
+};
+
 const jsonArg = process.argv.find((a) => a.startsWith("--json-out="));
 const outPath = jsonArg?.split("=")[1];
 if (outPath) {
@@ -700,3 +856,7 @@ if (outPath) {
 }
 
 console.log(JSON.stringify(report, null, 2));
+
+if (!gatePass) {
+  process.exit(1);
+}

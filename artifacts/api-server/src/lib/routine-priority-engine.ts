@@ -69,7 +69,7 @@ const INDEPENDENCE_RE =
   /\b(get ready|self study|pack backpack|independently|selbstständig|on your own)\b/i;
 const SNACK_RE = /\b(snack|tiffin|drunch|after-school snack)\b/i;
 const OUTDOOR_RE =
-  /\b(outdoor|park|playground|backyard|beach|cricket|walk|nature|garden)\b/i;
+  /\b(outdoor|park|playground|backyard|beach|cricket|walk|nature|garden|outing)\b/i;
 
 function windowMidpoint(win: readonly [number, number]): number {
   return Math.round((win[0] + win[1]) / 2);

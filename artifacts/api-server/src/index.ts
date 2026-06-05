@@ -191,6 +191,12 @@ async function startBackgroundTasks(): Promise<void> {
       const { seedPhonicsWordBank } = await import("./lib/phonicsWordBankSeed.js");
       return seedPhonicsWordBank();
     });
+    await runBackgroundPhase("routine_persistence_stores", async () => {
+      const { bootstrapRoutinePersistenceStores } = await import(
+        "./lib/routine-persistence-stores.js"
+      );
+      return bootstrapRoutinePersistenceStores();
+    });
   } else {
     logger.warn(
       { evt: "boot.skip", module: "db" },

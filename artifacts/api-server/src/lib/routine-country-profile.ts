@@ -216,9 +216,21 @@ const COUNTRY_ALIASES: Record<string, LaunchCountry> = {
   INDIA: "IN",
 };
 
+export const DEFAULT_LAUNCH_COUNTRY: LaunchCountry = "US";
+
+/** Single source of truth for launch-market country resolution. */
+export function resolveLaunchCountry(
+  country: string | null | undefined,
+): LaunchCountry {
+  if (country?.trim()) {
+    return normalizeCountryCode(country);
+  }
+  return DEFAULT_LAUNCH_COUNTRY;
+}
+
 /** Normalize free-text / ISO country into a launch-market code. */
 export function normalizeCountryCode(country: string | null | undefined): LaunchCountry {
-  if (!country?.trim()) return "US";
+  if (!country?.trim()) return DEFAULT_LAUNCH_COUNTRY;
   const key = country.trim().toUpperCase();
   if (key in PROFILES) return key as LaunchCountry;
   return COUNTRY_ALIASES[key] ?? "US";

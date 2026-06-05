@@ -130,6 +130,8 @@ export function isProtectedScheduleBlock(item: RoutineScheduleItem): boolean {
     item.activitySource === "special" ||
     item.culturalTag === "fixed_recurring" ||
     item.culturalTag === "special_event" ||
+    item.culturalTag === "autonomy_evening" ||
+    item.culturalTag === "autonomy_morning" ||
     getScheduleCategory(item) === "school" ||
     getScheduleCategory(item) === "meal" ||
     getScheduleCategory(item) === "event" ||

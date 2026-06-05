@@ -38,7 +38,12 @@ export type AutonomyAdjustment = {
 };
 
 function hasIndependenceBlock(items: RoutineScheduleItem[]): boolean {
-  return items.some((it) => INDEPENDENCE_RE.test(it.activity));
+  return items.some(
+    (it) =>
+      INDEPENDENCE_RE.test(it.activity) ||
+      it.culturalTag === "autonomy_evening" ||
+      it.culturalTag === "autonomy_morning",
+  );
 }
 
 function tag(item: RoutineScheduleItem, reason: string): RoutineScheduleItem {
@@ -117,40 +122,44 @@ export function applyAutonomyDevelopment(
     }
   }
 
-  if (hasIndependenceBlock(working)) {
-    return { items: working, adjustments };
-  }
+  if (
+    !working.some((it) => it.culturalTag === "autonomy_morning") &&
+    !hasIndependenceBlock(working)
+  ) {
+    const morningStart = findMorningSlot(ctx.wakeMins, working);
+    const morningBlock = attachActivityMetadata(
+      tag(
+        {
+          time: minsToTime24(morningStart),
+          activity: ctx.independenceMorningLabel,
+          duration: ctx.ageGroup === "pre_teen" ? 20 : 15,
+          category: "self_care",
+          status: "pending",
+          notes: "Autonomy: morning self-care routine — builds daily independence.",
+          energyImpact: "low",
+          culturalTag: "autonomy_morning",
+        },
+        "Autonomy: added morning independence block",
+      ),
+      { autonomyFriendly: true, category: "self-care", intensity: "low" },
+    );
 
-  const morningStart = findMorningSlot(ctx.wakeMins, working);
-  const morningBlock = attachActivityMetadata(
-    tag(
-      {
-        time: minsToTime24(morningStart),
-        activity: ctx.independenceMorningLabel,
-        duration: ctx.ageGroup === "pre_teen" ? 20 : 15,
-        category: "self_care",
-        status: "pending",
-        notes: "Autonomy: morning self-care routine — builds daily independence.",
-        energyImpact: "low",
-        culturalTag: "autonomy_morning",
-      },
-      "Autonomy: added morning independence block",
-    ),
-    { autonomyFriendly: true, category: "self-care", intensity: "low" },
-  );
+    if (
+      ctx.ageGroup &&
+      matchesAgeGroup(getActivityMetadata(morningBlock), ctx.ageGroup)
+    ) {
+      working.push(morningBlock);
+      adjustments.push({
+        activity: morningBlock.activity,
+        change: "autonomy: inserted morning independence block",
+      });
+    }
+  }
 
   if (
-    ctx.ageGroup &&
-    matchesAgeGroup(getActivityMetadata(morningBlock), ctx.ageGroup)
+    (ctx.ageGroup === "pre_teen" || ctx.ageGroup === "early_school") &&
+    !working.some((it) => it.culturalTag === "autonomy_evening")
   ) {
-    working.push(morningBlock);
-    adjustments.push({
-      activity: morningBlock.activity,
-      change: "autonomy: inserted morning independence block",
-    });
-  }
-
-  if (ctx.ageGroup === "pre_teen" || ctx.ageGroup === "early_school") {
     const eveningStart = findEveningSlot(ctx.sleepMins, working);
     const eveningBlock = attachActivityMetadata(
       tag(

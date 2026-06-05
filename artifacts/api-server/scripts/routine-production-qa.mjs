@@ -19,6 +19,8 @@ const UNIT_FILES = [
   "src/lib/routine-family-intelligence-moat.test.ts",
   "src/lib/routine-intelligence-pipeline.test.ts",
   "src/lib/routine-final-integrity.test.ts",
+  "src/lib/routine-trust-validators.test.ts",
+  "src/lib/routine-evidence-strength.test.ts",
 ];
 
 function run(cmd, args, cwd) {
@@ -44,6 +46,15 @@ if (stressRun.ok) {
   try {
     const raw = JSON.parse(readFileSync("/tmp/routine-stress-qa-prod.json", "utf8"));
     stress.summary = raw?.report?.summary ?? null;
+    stress.releaseGate = raw?.report?.releaseGate ?? null;
+    const results = raw?.results ?? [];
+    stress.infantSafetyFailures = results.filter((r) =>
+      (r.warnings ?? []).some((w) => String(w).startsWith("infant safety:")),
+    ).length;
+    stress.passRate =
+      stress.summary?.scenarioTests > 0
+        ? Number(stress.summary.passed) / Number(stress.summary.scenarioTests)
+        : 0;
   } catch {
     stress.summary = null;
   }
@@ -60,10 +71,12 @@ const report = {
   stressQa: {
     pass: stress.ok,
     summary: stress.summary,
+    infantSafetyFailures: stress.infantSafetyFailures ?? null,
+    passRate: stress.passRate ?? null,
   },
   productionGate: {
-    pass: unit.ok && stress.ok,
-    tier: unit.ok && stress.ok ? "ready" : "blocked",
+    pass: unit.ok && stress.ok && (stress.releaseGate?.gatePass ?? false),
+    tier: unit.ok && stress.ok && (stress.releaseGate?.gatePass ?? false) ? "ready" : "blocked",
   },
 };
 

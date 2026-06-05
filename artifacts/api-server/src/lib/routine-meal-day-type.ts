@@ -1,6 +1,9 @@
 /**
  * School vs non-school meal structure — day-type detection, dedupe, and time windows.
  */
+import type { LaunchCountry } from "./routine-country-profile.js";
+import { getCountryRoutineProfile } from "./routine-country-profile.js";
+import { repairDinnerAnchor } from "./routine-meal-dinner-integrity.js";
 import type { RoutineScheduleItem } from "./routine-scheduler.js";
 import { minsToTime24, parseTimeToMins } from "./routine-scheduler.js";
 const AFTER_SCHOOL_REFUEL_LABEL = "After-school refuel";
@@ -158,13 +161,24 @@ export function clampMealToWindow(
   return Math.max(lo, Math.min(hi, clockMins));
 }
 
+function dinnerWindowForCountry(country?: LaunchCountry | string): readonly [number, number] {
+  if (!country) return MEAL_TIME_WINDOWS.dinner;
+  return getCountryRoutineProfile(country).dinnerWindow;
+}
+
 export function enforceMealTimeWindows(
   items: RoutineScheduleItem[],
   isSchoolDay: boolean,
-  opts?: { schoolEndMins?: number; wakeMins?: number },
+  opts?: {
+    schoolEndMins?: number;
+    wakeMins?: number;
+    sleepMins?: number;
+    country?: LaunchCountry | string;
+  },
 ): RoutineScheduleItem[] {
   const schoolEnd = opts?.schoolEndMins ?? 15 * 60;
   const wakeMins = opts?.wakeMins ?? 7 * 60;
+  const dinnerWin = dinnerWindowForCountry(opts?.country);
 
   return items.map((item) => {
     const kind = classifyCanonicalMealKind(item);
@@ -186,7 +200,12 @@ export function enforceMealTimeWindows(
     } else if (kind === "snack") {
       start = clampMealToWindow("snack", start);
     } else if (kind === "dinner") {
-      start = clampMealToWindow("dinner", start);
+      start = Math.max(dinnerWin[0], Math.min(dinnerWin[1], start));
+      if (opts?.sleepMins != null) {
+        const dur = item.duration ?? 35;
+        const latest = opts.sleepMins - 15 - dur;
+        if (start > latest) start = Math.max(dinnerWin[0], latest);
+      }
     }
 
     if (start === parseTimeToMins(item.time)) return item;
@@ -197,7 +216,12 @@ export function enforceMealTimeWindows(
 export function ensureCanonicalMealsForDayType(
   items: RoutineScheduleItem[],
   isSchoolDay: boolean,
-  opts: { schoolEndMins?: number; wakeMins?: number; sleepMins?: number },
+  opts: {
+    schoolEndMins?: number;
+    wakeMins?: number;
+    sleepMins?: number;
+    country?: LaunchCountry | string;
+  },
 ): RoutineScheduleItem[] {
   const out = [...items];
   const hasKind = (k: CanonicalMealKind) =>
@@ -247,8 +271,13 @@ export function ensureCanonicalMealsForDayType(
 
   if (!hasKind("dinner")) {
     const sleepMins = opts.sleepMins ?? 21 * 60;
+    const [dLo, dHi] = dinnerWindowForCountry(opts.country);
+    const anchor = Math.max(
+      dLo,
+      Math.min(dHi, Math.min(Math.round((dLo + dHi) / 2), sleepMins - 90)),
+    );
     out.push({
-      time: minsToTime24(Math.min(20 * 60, sleepMins - 90)),
+      time: minsToTime24(anchor),
       activity: "Dinner",
       duration: 35,
       category: "meal",
@@ -262,8 +291,11 @@ export function ensureCanonicalMealsForDayType(
 export function validateMealDayStructure(
   items: RoutineScheduleItem[],
   isSchoolDay: boolean,
-  opts: { schoolEndMins?: number } = {},
+  opts: { schoolEndMins?: number; ageInMonths?: number } = {},
 ): string[] {
+  if (opts.ageInMonths != null && opts.ageInMonths < 36) {
+    return [];
+  }
   const warnings: string[] = [];
   const kinds = items
     .map((i) => classifyCanonicalMealKind(i))
@@ -338,6 +370,8 @@ export function finalizeMealStructure(
     schoolEndMins?: number;
     wakeMins?: number;
     sleepMins?: number;
+    country?: LaunchCountry | string;
+    ageInMonths?: number;
   },
 ): { items: RoutineScheduleItem[]; adjustments: string[] } {
   const adjustments: string[] = [];
@@ -364,6 +398,16 @@ export function finalizeMealStructure(
 
   const reDeduped = dedupeMealsByPriority(out, opts.isSchoolDay);
   out = reDeduped.items;
+
+  const dinnerRepair = repairDinnerAnchor(out, {
+    country: opts.country,
+    sleepMins: opts.sleepMins ?? 21 * 60,
+    ageInMonths: opts.ageInMonths,
+  });
+  if (dinnerRepair.adjustments.length) {
+    adjustments.push(...dinnerRepair.adjustments);
+  }
+  out = dinnerRepair.items;
 
   return { items: out, adjustments };
 }

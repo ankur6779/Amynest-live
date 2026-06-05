@@ -135,6 +135,41 @@ describe("enforceEarlySleepCompression", () => {
   });
 });
 
+describe("enforceSleepBoundary", () => {
+  it("preserves infant naps while anchoring bedtime sleep", () => {
+    const sleepMins = 19 * 60 + 30;
+    const wakeMins = 7 * 60;
+    const { items } = enforceSleepBoundary(
+      [
+        { time: "07:00", activity: "Milk feed", duration: 20, category: "feeding", status: "pending" },
+        { time: "10:00", activity: "Morning nap", duration: 60, category: "nap", status: "pending" },
+        { time: "13:00", activity: "Afternoon nap", duration: 45, category: "nap", status: "pending" },
+        { time: "19:00", activity: "Evening bath", duration: 15, category: "hygiene", status: "pending" },
+        { time: "19:30", activity: "Night sleep", duration: 30, category: "sleep", status: "pending" },
+      ],
+      sleepMins,
+      wakeMins,
+    );
+    assert.equal(items.filter((i) => i.category === "nap").length, 2);
+    assert.ok(/night sleep/i.test(items.at(-1)!.activity));
+    assert.equal(parseTimeToMins(items.at(-1)!.time), sleepMins);
+  });
+
+  it("still removes post-bedtime activities for school-age routines", () => {
+    const sleepMins = 21 * 60;
+    const { items } = enforceSleepBoundary(
+      [
+        { time: "20:30", activity: "Wind-down", duration: 20, category: "rest", status: "pending" },
+        { time: "21:00", activity: "Lights out", duration: 30, category: "sleep", status: "pending" },
+        { time: "21:15", activity: "Late screen", duration: 15, category: "play", status: "pending" },
+      ],
+      sleepMins,
+    );
+    assert.ok(!items.some((i) => /late screen/i.test(i.activity)));
+    assert.equal(parseTimeToMins(items.at(-1)!.time), sleepMins);
+  });
+});
+
 describe("enforceFinalTimelineIntegrity", () => {
   it("repairs overlapping evening blocks and sleep order", () => {
     const { items, assertionsPassed } = enforceFinalTimelineIntegrity(

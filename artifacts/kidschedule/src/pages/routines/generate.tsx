@@ -908,7 +908,7 @@ export default function RoutineGenerate() {
         )
           .then((result) => cacheSafetyForRoutine(savedRoutine.id, result))
           .catch(() => {});
-        setLocation(`/routines/${savedRoutine.id}`);
+        setLocation(`/routines/${savedRoutine.id}?reveal=1`);
       },
       onError: (err: unknown) => {
         const msg = err instanceof Error ? err.message : "";

@@ -348,13 +348,18 @@ function isAuditArtifact(b: RoutineBlock): boolean {
   return AUDIT_ARTIFACT_RE.test(b.activity);
 }
 
+const MAX_INFANT_FEED_BLOCK_MINS = 45;
+
 function mergeKindGroup(
   group: RoutineBlock[],
   label: string,
   kind: RoutineBlockKind,
 ): RoutineBlock {
   const start = Math.min(...group.map(startMins));
-  const end = Math.max(...group.map(endMins));
+  let end = Math.max(...group.map(endMins));
+  if (kind === "feed" && end - start > MAX_INFANT_FEED_BLOCK_MINS) {
+    end = start + MAX_INFANT_FEED_BLOCK_MINS;
+  }
   return {
     start: minsToTime24(start),
     end: minsToTime24(end),
@@ -537,7 +542,9 @@ function addImperfections(
     out[i1] = {
       ...out[i1]!,
       end: minsToTime24(s1 + 34),
-      activity: out[i1]!.activity.replace(/nap/i, "catnap"),
+      activity: /\bcatnap\b/i.test(out[i1]!.activity)
+        ? out[i1]!.activity
+        : out[i1]!.activity.replace(/\bnap\b/i, "catnap"),
       notes: "Short nap — woke cranky (common).",
     };
   }

@@ -74,6 +74,12 @@ describe("generateValidatedInfantRoutine realism layer", () => {
     assert.ok(out.realismScore.total >= 80);
     assert.ok(out.result.blocks.length <= 14);
     assert.ok(countFeeds(out.result.blocks) <= 7);
+    for (const item of out.result.items.filter((i) => i.category === "feeding")) {
+      assert.ok(
+        (item.duration ?? 0) <= 45,
+        `feed "${item.activity}" too long: ${item.duration}min`,
+      );
+    }
 
     const notes = out.result.blocks.map((b) => b.notes ?? "").join(" ");
     assert.ok(

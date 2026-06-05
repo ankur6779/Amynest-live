@@ -56,22 +56,45 @@ function formatTimeWindow(start?: string | null, end?: string | null): string | 
 }
 
 function memorySignal(rawLines: readonly string[]): FamilyTrustSignal {
-  const recent = firstMatching(rawLines, /building on\s+(\d+)\s+recent day/i);
-  const count = recent?.match(/building on\s+(\d+)\s+recent day/i)?.[1];
-
-  if (count) {
+  const remembers = firstMatching(
+    rawLines,
+    /remembers what tends to work|remembers your rhythm/i,
+  );
+  if (remembers) {
     return {
       id: "remembers",
       label: "Amy remembers your rhythm",
-      detail: `Built from ${count} recent family day${count === "1" ? "" : "s"}, while keeping familiar anchors.`,
+      detail: stripAmyPrefix(remembers),
     };
   }
 
-  if (firstMatching(rawLines, /learning your (family's )?rhythm|learning your rhythm/i)) {
+  const patterns = firstMatching(rawLines, /noticing patterns from recent days/i);
+  if (patterns) {
+    return {
+      id: "remembers",
+      label: "Amy is noticing your patterns",
+      detail: stripAmyPrefix(patterns),
+    };
+  }
+
+  const stillLearning = firstMatching(
+    rawLines,
+    /still learning what works best|learning your (family's )?rhythm/i,
+  );
+  if (stillLearning) {
     return {
       id: "remembers",
       label: "Amy is learning your family",
-      detail: "Each saved routine gives Amy more context for tomorrow's plan.",
+      detail: stripAmyPrefix(stillLearning),
+    };
+  }
+
+  const buildingOn = firstMatching(rawLines, /building on\s+(\d+)\s+recent day/i);
+  if (buildingOn) {
+    return {
+      id: "remembers",
+      label: "Amy is noticing your patterns",
+      detail: stripAmyPrefix(buildingOn),
     };
   }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, Link, useParams } from "wouter";
+import { useLocation, Link, useParams, useSearch } from "wouter";
 import { useGetRoutine, getGetRoutineQueryKey, useDeleteRoutine, getListRoutinesQueryKey, useGetChild, getGetChildQueryKey, useUpdateRoutineUiPrefs } from "@workspace/api-client-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { getActivityImage } from "@/lib/activity-images";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Calendar as CalendarIcon, User, Trash2, Sparkles, Check, SkipForward, Clock, Bell, BellOff, Share2, Copy, ChefHat, Timer, Users, Pencil, Plus, RotateCcw, Moon, X, Save, BookOpen, Lock, Crown } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, User, Trash2, Sparkles, Check, SkipForward, Clock, Bell, BellOff, Share2, Copy, ChefHat, Timer, Users, Pencil, Plus, RotateCcw, Moon, X, Save, BookOpen, Lock, Crown, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +28,30 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { RoutineAdaptationsCard } from "@/components/intelligence/routine-adaptations-card";
 import { RoutineDayPanel } from "@/components/routine-day-panel";
 import { RoutineProgressRail } from "@/components/routine-progress-rail";
+import { MealOptionPills } from "@/components/routines/meal-option-pills";
+import { RoutineRevealOverlay } from "@/components/routines/routine-reveal-overlay";
+import { RoutineShareCard } from "@/components/routines/routine-share-card";
+import { RoutineTrustRibbon } from "@/components/routines/routine-trust-ribbon";
+import {
+  buildDayArcSegments,
+  buildRevealHighlightChips,
+  buildRoutineTrustRibbonSignals,
+  buildShareCardMealSummary,
+  buildShareCardTimeline,
+  extractDinnerFoodChips,
+  extractMealOptionPills,
+  isBedtimeAnchorItem,
+  isDinnerAnchorItem,
+  isMealRoutineItem,
+  resolveRoutineCategoryVisual,
+} from "@/lib/routine-detail-premium";
+import { buildTimelineRenderEntries } from "@/lib/routine-timeline-collapse";
+import {
+  HUB_GLASS_SURFACE,
+  PARENT_HUB_PAGE,
+  ROUTINES_HUB_ACCENT,
+} from "@/lib/parent-hub-premium";
+import { cn } from "@/lib/utils";
 import { primaryLinkedModuleHref } from "@/lib/hub-activity-cross-link";
 import {
   formatCategoryLabel,
@@ -71,27 +95,6 @@ type RoutineItem = {
   parentHubTopic?: string;
   description?: string;
   linkedModules?: string[];
-};
-const CATEGORY_STYLES: Record<string, string> = {
-  morning: "bg-muted text-primary border-border",
-  meal: "bg-muted text-primary border-border",
-  school: "bg-muted text-primary border-border",
-  travel: "bg-muted text-primary border-border",
-  homework: "bg-muted text-primary border-border",
-  play: "bg-muted text-primary border-border",
-  exercise: "bg-muted text-primary border-border",
-  screen: "bg-muted text-primary border-border",
-  hygiene: "bg-muted text-primary border-border",
-  sleep: "bg-muted text-foreground border-border",
-  "wind-down": "bg-muted text-primary border-border",
-  bonding: "bg-muted text-primary border-border",
-  tiffin: "bg-muted text-primary border-border",
-  self_care: "bg-muted text-primary border-border",
-  rest: "bg-muted text-primary border-border",
-  study: "bg-muted text-primary border-border",
-  creative: "bg-muted text-primary border-border",
-  outdoor: "bg-muted text-primary border-border",
-  family: "bg-muted text-primary border-border",
 };
 const STATUS_STYLES: Record<ItemStatus, string> = {
   pending: "",
@@ -520,6 +523,12 @@ export default function RoutineDetail() {
 
   // Expanded item modal
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  const search = useSearch();
+  const [revealActive, setRevealActive] = useState(
+    () => new URLSearchParams(search).get("reveal") === "1",
+  );
+  const [timelineExpanded, setTimelineExpanded] = useState(false);
 
   // Age-band filter — synced per routine across web + mobile via the
   // `routines/:id/ui-prefs` endpoint, with localStorage acting as a fast-path
@@ -1136,11 +1145,16 @@ export default function RoutineDetail() {
     }
   };
   useEffect(() => () => notifTimersRef.current.forEach(clearTimeout), []);
-  const getCategoryStyle = (category: string) => {
-    const key = Object.keys(CATEGORY_STYLES).find(k => category.toLowerCase().includes(k));
-    return key ? CATEGORY_STYLES[key] : "bg-muted text-foreground border-border";
-  };
   const items = localItems ?? routine?.items as RoutineItem[] ?? [];
+
+  const trustRibbonSignals = useMemo(
+    () =>
+      buildRoutineTrustRibbonSignals({
+        items,
+        adaptations: (routine as { adaptations?: string[] | null })?.adaptations,
+      }),
+    [items, routine],
+  );
 
   // Unique age bands present in this routine's items (for the filter chips)
   const ageBands = useMemo(() => Array.from(new Set(items.filter(i => i.ageBand).map(i => i.ageBand!))), [items]);
@@ -1363,6 +1377,67 @@ export default function RoutineDetail() {
     };
   }, [items, dateMode, nowTick]);
 
+  const dayArcSegments = useMemo(
+    () =>
+      buildDayArcSegments({
+        items,
+        nowMins: timelineFocus.nowMins,
+        dateMode,
+        currentActivity:
+          timelineFocus.currentIndex >= 0
+            ? items[timelineFocus.currentIndex]?.activity
+            : undefined,
+      }),
+    [items, timelineFocus.nowMins, timelineFocus.currentIndex, dateMode],
+  );
+
+  const timelineRenderEntries = useMemo(
+    () =>
+      buildTimelineRenderEntries({
+        allItems: items,
+        displayItems,
+        currentIndex: timelineFocus.currentIndex,
+        nextUpIndex: timelineFocus.nextUpIndex,
+        fullyExpanded: timelineExpanded,
+      }),
+    [
+      items,
+      displayItems,
+      timelineFocus.currentIndex,
+      timelineFocus.nextUpIndex,
+      timelineExpanded,
+    ],
+  );
+
+  const revealHighlightChips = useMemo(
+    () =>
+      buildRevealHighlightChips(
+        (routine as { adaptations?: string[] | null })?.adaptations,
+      ),
+    [routine],
+  );
+
+  const shareCardTimeline = useMemo(
+    () => buildShareCardTimeline(getRemainingItems()),
+    [items, routine, dateMode],
+  );
+
+  const shareCardMeals = useMemo(
+    () => buildShareCardMealSummary(items),
+    [items],
+  );
+
+  const clearRevealParam = useCallback(() => {
+    setRevealActive(false);
+    if (routineId) {
+      setLocation(`/routines/${routineId}`);
+    }
+  }, [routineId, setLocation]);
+
+  useEffect(() => {
+    setTimelineExpanded(false);
+  }, [routineId]);
+
   // ── Persist auto-adjustments back to backend (today only) ───────────
   const lastPersistedRef = useRef<string>("");
   useEffect(() => {
@@ -1380,7 +1455,7 @@ export default function RoutineDetail() {
     }
   }, [adaptive.changed, dateMode, routineId]);
   if (isLoading) {
-    return <div className="flex flex-col gap-6 max-w-3xl mx-auto">
+    return <div className={cn(PARENT_HUB_PAGE, "flex flex-col gap-6 max-w-3xl mx-auto")}>
         <div className="h-8 w-24 bg-muted animate-pulse rounded-md" />
         <div className="h-12 w-3/4 bg-muted animate-pulse rounded-xl" />
         <div className="space-y-4 mt-8">
@@ -1394,7 +1469,7 @@ export default function RoutineDetail() {
         <Button asChild><Link href="/routines">{t("pages.routines.detail.back_to_routines")}</Link></Button>
       </div>;
   }
-  return <div className="flex flex-col gap-6 animate-in fade-in duration-500 max-w-3xl mx-auto pb-10">
+  return <div className={cn(PARENT_HUB_PAGE, "flex flex-col gap-6 max-w-3xl mx-auto pb-10")}>
       <header className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <Button variant="ghost" size="sm" asChild className="rounded-full -ml-2 text-muted-foreground hover:text-foreground">
@@ -1469,11 +1544,11 @@ export default function RoutineDetail() {
         </div>
 
         <div>
-          <div className="flex items-center gap-2 text-sm text-primary font-medium mb-2">
-            <Sparkles className="h-4 w-4" />
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300/90 mb-2">
+            <Sparkles className="h-4 w-4 text-amber-300/80" />
             {t("pages.routines.detail.amy_ai_generated_schedule")}
           </div>
-          <h1 className="font-quicksand text-3xl sm:text-4xl font-bold text-foreground">{routine.title}</h1>
+          <h1 className="font-quicksand text-3xl sm:text-4xl font-bold text-foreground leading-snug">{routine.title}</h1>
 
           <div className="flex flex-wrap items-center gap-3 mt-4">
             <div className="flex items-center gap-1.5 bg-secondary/30 text-secondary-foreground border border-secondary/50 px-3 py-1 rounded-full text-sm font-medium">
@@ -1503,11 +1578,11 @@ export default function RoutineDetail() {
           </div>
 
           {/* Date mode banners */}
-          {dateMode === "future" && <div className="mt-3 flex items-center gap-2.5 bg-muted border border-border rounded-2xl px-4 py-3 text-sm text-primary">
+          {dateMode === "future" && <div className={cn(HUB_GLASS_SURFACE, ROUTINES_HUB_ACCENT.border, "mt-3 flex items-center gap-2.5 rounded-[20px] px-4 py-3 text-sm text-foreground/90")}>
               <span className="text-lg">📅</span>
               <span><strong>{t("pages.routines.detail.future_routine")}</strong> {t("pages.routines.detail.all_tasks_are_shown_as_scheduled_you_can_start_interacting_o")}</span>
             </div>}
-          {dateMode === "past" && <div className="mt-3 flex items-center gap-2.5 bg-muted/60 border border-border rounded-2xl px-4 py-3 text-sm text-muted-foreground">
+          {dateMode === "past" && <div className={cn(HUB_GLASS_SURFACE, "mt-3 flex items-center gap-2.5 rounded-[20px] border border-white/[0.08] px-4 py-3 text-sm text-muted-foreground")}>
               <span className="text-lg">🗂️</span>
               <span><strong>{t("pages.routines.detail.past_routine")}</strong> {t("pages.routines.detail.this_is_a_read_only_record_generate_a_new_routine_to_plan_up")}</span>
             </div>}
@@ -1529,7 +1604,7 @@ export default function RoutineDetail() {
         />
 
         {/* Progress bar */}
-        {totalCount > 0 && <div className="bg-muted rounded-2xl p-4">
+        {totalCount > 0 && <div className={cn(HUB_GLASS_SURFACE, ROUTINES_HUB_ACCENT.border, "rounded-[20px] p-4")}>
             <div className="flex items-center justify-between mb-2 text-sm font-medium">
               <span className="text-foreground">{completedCount} of {totalCount} {t("pages.routines.detail.tasks_done")}</span>
               <span className="text-primary font-bold">{progress}%</span>
@@ -1561,9 +1636,11 @@ export default function RoutineDetail() {
           total={totalCount}
           nextActivity={timelineFocus.nextItem?.activity}
           nextTime={timelineFocus.nextItem?.time}
+          dayArcSegments={dayArcSegments}
         />
       )}
 
+      <RoutineTrustRibbon signals={trustRibbonSignals} />
 
       {/* Age-band filter chips — only shown when at least one item has an ageBand */}
       {ageBands.length > 0 && <div className="flex items-center gap-2 flex-wrap">
@@ -1592,15 +1669,39 @@ export default function RoutineDetail() {
                 {t("pages.routines.detail.clear_filter")}
               </button>
             </div>}
-          {displayItems.map(({
-          item,
-          origIdx: index
-        }, displayIdx) => {
+          {timelineRenderEntries.map((entry) => {
+          if (entry.kind === "collapse") {
+            return (
+              <div key={entry.group.id} className="flex gap-1.5 sm:gap-3 items-center py-1">
+                <div className="w-[58px] sm:w-[88px] shrink-0" />
+                <div className="w-3 shrink-0" />
+                <button
+                  type="button"
+                  onClick={() => setTimelineExpanded(true)}
+                  className={cn(
+                    HUB_GLASS_SURFACE,
+                    "flex-1 flex items-center justify-center gap-2 rounded-2xl border border-white/[0.10] py-2.5 px-4 text-xs font-bold text-foreground/80 hover:text-amber-200/90 transition-colors",
+                  )}
+                >
+                  <ChevronDown className="h-4 w-4 shrink-0" />
+                  {entry.group.label}
+                </button>
+              </div>
+            );
+          }
+
+          const index = entry.origIdx;
+          const item = items[index]!;
           const status = item.status ?? "pending";
-          const catStyle = getCategoryStyle(item.category);
+          const catVisual = resolveRoutineCategoryVisual(item.category, item.activity);
           const statusStyle = STATUS_STYLES[status];
           const priority = getPriority(item.category, item.activity);
           const isSleepItem = isSleepRoutineItem(item.category, item.activity);
+          const isDinnerAnchor = isDinnerAnchorItem(item.category, item.activity);
+          const isBedtimeAnchor = isBedtimeAnchorItem(item.category, item.activity);
+          const isMealItem = isMealRoutineItem(item.category);
+          const dinnerFoodChips = isDinnerAnchor ? extractDinnerFoodChips(item) : [];
+          const mealOptionPills = isMealItem ? extractMealOptionPills(item) : [];
           const moduleHref = primaryLinkedModuleHref(item.linkedModules);
           const primaryModule = item.linkedModules?.[0];
 
@@ -1628,17 +1729,22 @@ export default function RoutineDetail() {
 
           const isInteractive = dateMode !== "past";
 
-          const cardSurface = isSleepItem && !isCurrentTask
-            ? "border-indigo-500/25 bg-indigo-500/[0.04]"
-            : isCurrentTask
+          const cardSurface = cn(
+            HUB_GLASS_SURFACE,
+            "rounded-2xl border-2 border-l-[3px]",
+            catVisual.accentBorder,
+            isDinnerAnchor && catVisual.surface,
+            isBedtimeAnchor && catVisual.surface,
+            isDinnerAnchor && "ring-1 ring-amber-500/15",
+            isBedtimeAnchor && "ring-1 ring-indigo-500/15",
+            isCurrentTask
               ? "border-primary ring-2 ring-primary/20 shadow-md"
               : isPastTask && status === "pending"
-                ? "border-amber-500/25 bg-amber-500/[0.03]"
+                ? "border-amber-500/20"
                 : isUpcomingTask
-                  ? "border-border/60 bg-card/55"
-                  : item.category === "school"
-                    ? "border-border bg-muted"
-                    : statusStyle || "border-border";
+                  ? "border-white/[0.08]"
+                  : statusStyle || "border-white/[0.08]",
+          );
 
           return <div className="flex gap-1.5 sm:gap-3 group items-start" key={index}>
                 {/* Time column */}
@@ -1681,45 +1787,66 @@ export default function RoutineDetail() {
                 {/* Spine dot */}
                 <div className="flex flex-col items-center pt-[1.125rem] w-3 shrink-0">
                   <div
-                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                      status === "completed"
-                        ? "bg-primary/80"
-                        : isCurrentTask
-                          ? "bg-primary ring-4 ring-primary/25 animate-pulse"
-                          : isUpcomingTask
-                            ? "bg-background border-2 border-border"
-                            : "bg-border"
-                    }`}
+                    className={cn(
+                      "w-2.5 h-2.5 rounded-full shrink-0",
+                      status === "completed" && "bg-amber-400/90",
+                      status !== "completed" && isCurrentTask && "bg-primary ring-4 ring-primary/25 animate-pulse",
+                      status !== "completed" && !isCurrentTask && isUpcomingTask && "bg-background border-2 border-white/20",
+                      status !== "completed" && !isCurrentTask && !isUpcomingTask && "bg-white/20",
+                    )}
                     aria-hidden
                   />
                 </div>
 
                 {/* Activity Card — click to expand */}
                 <Card
-                  className={`flex-1 min-w-0 rounded-2xl shadow-sm border-2 overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer ${cardSurface}`}
+                  className={cn(
+                    "flex-1 min-w-0 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer",
+                    cardSurface,
+                  )}
                   onClick={() => editingIndex === null && setExpandedIndex(index)}
                 >
-                  {item.category === "school" && <div className="bg-muted border-b border-border px-4 py-1.5 flex items-center gap-1.5">
-                      <span className="text-primary text-xs">🏫</span>
-                      <span className="text-primary text-xs font-bold">{t("pages.routines.detail.in_school_protected_time")}</span>
+                  {isDinnerAnchor && <div className="bg-amber-500/10 border-b border-amber-500/25 px-4 py-2.5 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <ChefHat className="h-4 w-4 text-amber-400 shrink-0" />
+                        <div className="min-w-0">
+                          <span className="text-amber-200 text-xs font-bold block">{t("pages.routines.detail.dinner_anchor", { defaultValue: "Dinner anchor" })}</span>
+                          <span className="text-amber-300/75 text-[10px] font-medium">{t("pages.routines.detail.protected_dinner_anchor", { defaultValue: "Protected dinner anchor" })}</span>
+                        </div>
+                      </div>
+                      <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-amber-300 bg-amber-500/15 border border-amber-500/30 rounded-full px-2 py-0.5">
+                        {t("pages.routines.detail.anchor_badge", { defaultValue: "Anchor" })}
+                      </span>
+                    </div>}
+                  {item.category === "school" && <div className="bg-sky-500/8 border-b border-sky-500/20 px-4 py-1.5 flex items-center gap-1.5">
+                      <span className="text-sky-300 text-xs">🏫</span>
+                      <span className="text-sky-200 text-xs font-bold">{t("pages.routines.detail.in_school_protected_time")}</span>
                     </div>}
                   {item.category === "bonding" && <div className="bg-muted border-b border-border px-4 py-1.5 flex items-center gap-1.5">
                       <span className="text-primary text-xs">❤️</span>
                       <span className="text-primary text-xs font-bold">{t("pages.routines.detail.family_bonding_time")}</span>
                     </div>}
-                  {item.category === "tiffin" && <div className="bg-muted border-b border-border px-4 py-1.5 flex items-center gap-1.5">
-                      <span className="text-primary text-xs">🍱</span>
-                      <span className="text-primary text-xs font-bold">{t("pages.routines.detail.tiffin_lunchbox_prep")}</span>
+                  {item.category === "tiffin" && <div className="bg-amber-500/8 border-b border-amber-500/20 px-4 py-1.5 flex items-center gap-1.5">
+                      <span className="text-amber-300 text-xs">🍱</span>
+                      <span className="text-amber-200 text-xs font-bold">{t("pages.routines.detail.tiffin_lunchbox_prep")}</span>
                     </div>}
-                  {isSleepItem && <div className="bg-indigo-500/10 border-b border-indigo-500/20 px-4 py-1.5 flex items-center gap-1.5">
-                      <Moon className="h-3.5 w-3.5 text-indigo-400" />
-                      <span className="text-indigo-300 text-xs font-bold">{t("pages.routines.detail.sleep_anchor", { defaultValue: "Bedtime anchor" })}</span>
+                  {isBedtimeAnchor && <div className="bg-indigo-500/10 border-b border-indigo-500/20 px-4 py-2 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Moon className="h-4 w-4 text-indigo-400 shrink-0" />
+                        <div className="min-w-0">
+                          <span className="text-indigo-200 text-xs font-bold block">{t("pages.routines.detail.sleep_anchor", { defaultValue: "Bedtime anchor" })}</span>
+                          <span className="text-indigo-300/70 text-[10px] font-medium">{t("pages.routines.detail.protected_bedtime_anchor", { defaultValue: "Protected bedtime anchor" })}</span>
+                        </div>
+                      </div>
+                      <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 rounded-full px-2 py-0.5">
+                        {t("pages.routines.detail.anchor_badge", { defaultValue: "Anchor" })}
+                      </span>
                     </div>}
                   {isCurrentTask && <div className="bg-primary/10 border-b border-primary/20 px-4 py-1.5 flex items-center gap-1.5">
                       <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                       <span className="text-primary text-xs font-bold">{t("pages.routines.detail.happening_now")}</span>
                     </div>}
-                  <CardContent className="p-3 sm:p-4">
+                  <CardContent className={cn("p-3 sm:p-4", isDinnerAnchor && "sm:p-5")}>
                     <div className="flex flex-col gap-2.5">
                       <div className="flex items-start gap-2.5">
                         {/* Activity Illustration — static image library */}
@@ -1774,7 +1901,12 @@ export default function RoutineDetail() {
                             </div>) : <>
                           {/* Title row + always-visible Edit pencil (mobile-friendly) */}
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className={`font-bold text-sm sm:text-base text-foreground leading-snug flex-1 min-w-0 ${status === "skipped" ? "line-through text-muted-foreground" : status === "completed" ? "line-through opacity-60" : ""}`} style={{
+                            <h3 className={cn(
+                              "font-bold text-foreground leading-snug flex-1 min-w-0",
+                              isDinnerAnchor ? "text-base sm:text-lg" : "text-sm sm:text-base",
+                              status === "skipped" && "line-through text-muted-foreground",
+                              status === "completed" && "line-through opacity-60",
+                            )} style={{
                             wordBreak: "break-word",
                             overflowWrap: "break-word",
                             whiteSpace: "normal"
@@ -1799,9 +1931,12 @@ export default function RoutineDetail() {
                             {item.adjusted && status !== "completed" && <Badge className="bg-muted text-primary border-border rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5" title={t("pages.routines.detail.auto_adjusted_by_amy_ai")}>
                                 {t("pages.routines.detail.adjusted")}
                               </Badge>}
-                            <Badge className={`rounded-full text-[10px] sm:text-xs font-bold border px-2 py-0.5 ${catStyle}`}>
+                            <Badge className={cn("rounded-full text-[10px] sm:text-xs font-bold border px-2 py-0.5", catVisual.badge)}>
                               {formatCategoryLabel(item.category)}
                             </Badge>
+                            {isDinnerAnchor && <span className="text-[10px] font-medium text-amber-300/80">
+                              {t("pages.routines.detail.main_meal", { defaultValue: "Main meal" })}
+                            </span>}
                             {priority === "high" && status === "pending" && (isSleepItem || (!isUpcomingTask && !isCurrentTask)) && (
                               <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wide rounded-full px-1.5 py-0.5 ${
                                 isSleepItem
@@ -1820,6 +1955,21 @@ export default function RoutineDetail() {
                           {item.skipReason && <p className="text-[11px] text-primary bg-muted border border-border rounded-lg px-2 py-1 mt-1 font-medium">
                               {item.skipReason}
                             </p>}
+                          {isDinnerAnchor && dinnerFoodChips.length > 0 ? (
+                            <MealOptionPills
+                              pills={dinnerFoodChips}
+                              onSelect={fetchRecipe}
+                              compact
+                              className="mt-1.5"
+                            />
+                          ) : isMealItem && !isDinnerAnchor && mealOptionPills.length > 0 ? (
+                            <MealOptionPills
+                              pills={mealOptionPills}
+                              onSelect={fetchRecipe}
+                              compact
+                              className="mt-1.5"
+                            />
+                          ) : null}
                           {item.description && !item.notes?.startsWith("Options:") ? (
                             <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2 break-words">
                               {item.description}
@@ -1835,7 +1985,7 @@ export default function RoutineDetail() {
                               {linkedModuleLabel(primaryModule)}
                             </Link>
                           ) : null}
-                          {item.notes && item.notes.startsWith("Options:") ? <div className="mt-1.5 space-y-1.5">
+                          {item.notes && item.notes.startsWith("Options:") && !isMealItem ? <div className="mt-1.5 space-y-1.5">
                               <p className="text-xs text-muted-foreground font-medium">{t("pages.routines.detail.today_s_options")}</p>
                               <div className="flex flex-wrap gap-1.5">
                                 {item.notes.replace("Options:", "").split("|").map((opt, oi) => {
@@ -1847,7 +1997,7 @@ export default function RoutineDetail() {
                             })}
                               </div>
                               <p className="text-xs text-muted-foreground">{t("pages.routines.detail.tap_a_meal_to_view_its_recipe")}</p>
-                            </div> : item.notes ? <p className="text-muted-foreground text-xs mt-1 leading-relaxed line-clamp-3 break-words" style={{
+                            </div> : item.notes && !item.notes.startsWith("Options:") ? <p className="text-muted-foreground text-xs mt-1 leading-relaxed line-clamp-3 break-words" style={{
                           overflowWrap: "break-word"
                         }}>{item.notes}</p> : null}
                           {editingIndex !== index && <MealRecipeCard meal={item.meal} recipe={item.recipe} nutrition={item.nutrition} defaultOpen={(item.category === "meal" || item.category === "tiffin") && items.slice(0, index).filter(it => it.category === "meal" || it.category === "tiffin").length === 0} />}
@@ -2192,6 +2342,14 @@ export default function RoutineDetail() {
         </DialogContent>
       </Dialog>
 
+      <RoutineRevealOverlay
+        active={revealActive && !!routine}
+        title={routine?.title ?? ""}
+        childName={routine?.childName ?? ""}
+        highlightChips={revealHighlightChips}
+        onComplete={clearRevealParam}
+      />
+
       {/* Share Dialog */}
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
         <DialogContent className="rounded-2xl max-w-lg">
@@ -2212,9 +2370,30 @@ export default function RoutineDetail() {
               </div>
             </div>}
 
-          <div className="bg-muted/50 rounded-xl p-3 text-sm font-mono whitespace-pre-wrap text-foreground/80 max-h-64 overflow-y-auto">
-            {buildShareMessage()}
-          </div>
+          {routine ? (
+            <RoutineShareCard
+              childName={routine.childName}
+              childPhotoUrl={childPhotoUrl}
+              title={routine.title}
+              dateLabel={new Date(routine.date + "T00:00:00").toLocaleDateString(undefined, {
+                weekday: "long",
+                month: "short",
+                day: "numeric",
+              })}
+              timeline={shareCardTimeline}
+              mealSummary={shareCardMeals}
+            />
+          ) : null}
+
+          <details className="group">
+            <summary className="text-xs font-semibold text-muted-foreground cursor-pointer list-none flex items-center gap-1">
+              <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+              {t("pages.routines.detail.copy_plain_text", { defaultValue: "Plain text version" })}
+            </summary>
+            <div className="bg-muted/50 rounded-xl p-3 mt-2 text-sm font-mono whitespace-pre-wrap text-foreground/80 max-h-40 overflow-y-auto">
+              {buildShareMessage()}
+            </div>
+          </details>
 
           <div className="flex flex-col gap-2">
             {/* Direct WhatsApp — always visible */}

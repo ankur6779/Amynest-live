@@ -7,6 +7,11 @@ import {
   isHubPlayActivity,
   suggestHubTileForRoutineItem,
 } from "@/lib/hub-activity-cross-link";
+import {
+  HUB_GLASS_SURFACE,
+  ROUTINES_HUB_ACCENT,
+} from "@/lib/parent-hub-premium";
+import { cn } from "@/lib/utils";
 
 type RoutineItemLike = {
   activity: string;
@@ -58,7 +63,13 @@ export function RoutineDayPanel({
     : null;
 
   return (
-    <div className="rounded-2xl border border-border bg-card/70 backdrop-blur-sm p-4 space-y-3">
+    <div
+      className={cn(
+        HUB_GLASS_SURFACE,
+        ROUTINES_HUB_ACCENT.border,
+        "rounded-[20px] p-4 space-y-3",
+      )}
+    >
       {dateMode === "today" && (
         <div className="space-y-2">
           <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
@@ -103,11 +114,11 @@ export function RoutineDayPanel({
       )}
 
       <div className="flex items-start gap-3">
-        <div className="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm">
+        <div className="bg-amber-500/20 text-amber-200 border border-amber-500/30 w-8 h-8 rounded-full flex items-center justify-center shrink-0">
           <Sparkles className="h-4 w-4" />
         </div>
         <div className="flex-1 min-w-0 space-y-1">
-          <p className="text-xs font-bold text-primary uppercase tracking-wide">
+          <p className="text-[10px] font-bold text-amber-300/90 uppercase tracking-[0.14em]">
             {t("pages.routines.detail.amy_ai_suggests")}
           </p>
           <p className="text-sm text-foreground font-medium leading-snug">{amyTip}</p>
@@ -128,7 +139,7 @@ export function RoutineDayPanel({
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1 border-t border-border/60">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1 border-t border-white/[0.08]">
         {hubHref && hubHighlight ? (
           <Link
             href={hubHref}

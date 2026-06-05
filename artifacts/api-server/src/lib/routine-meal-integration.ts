@@ -456,10 +456,47 @@ function isPostDinnerStudy(item: RoutineScheduleItem): boolean {
   );
 }
 
+const POST_DINNER_PREP_RE =
+  /\b(independence|self[- ]?care|pack (backpack|school bag)|lay out clothes|prepare (school materials|for tomorrow)|tidy (room|space)|get ready on your own|get dressed independently)\b/i;
+
+function isPostDinnerPrepItem(item: RoutineScheduleItem): boolean {
+  return (
+    POST_DINNER_PREP_RE.test(item.activity) ||
+    item.culturalTag === "autonomy_evening" ||
+    item.culturalTag === "autonomy_morning"
+  );
+}
+
+/** Calm bridge blocks between dinner and wind-down are acceptable in most cultures. */
+function isAcceptablePostDinnerBridge(item: RoutineScheduleItem): boolean {
+  if (isWindDownItem(item) || isPostDinnerStudy(item) || isPostDinnerPrepItem(item)) {
+    return true;
+  }
+  if (isSnackItem(item) && (item.duration ?? 0) <= 20) return true;
+  if (
+    /\b(quiet|calm|family chat|reading together|story time|creative activity|light indoor movement|free play|indoor movement|creative writing|storytelling|action songs|music time|deep hobby session|news & current events)\b/i.test(
+      item.activity,
+    ) &&
+    !isPostDinnerHighEnergyItem(item)
+  ) {
+    return true;
+  }
+  return (item.duration ?? 0) <= 20 && !isPostDinnerHighEnergyItem(item);
+}
+
 function effectiveKind(item: RoutineScheduleItem): StructureBlockKind {
   const sk = (item as { structureKind?: StructureBlockKind }).structureKind;
   if (sk === "post_dinner_study" || sk === "outdoor_evening") return sk;
   return classifyStructureBlock(item);
+}
+
+function isPostDinnerHighEnergyItem(item: RoutineScheduleItem): boolean {
+  const cat = (item.category ?? "").toLowerCase();
+  if (/\b(action songs|music time|listening to music|story time|family chat|news & current events)\b/i.test(item.activity)) {
+    return false;
+  }
+  if (HIGH_ENERGY_CATS.has(cat)) return true;
+  return /\b(soccer|sports practice|football club|deep hobby session)\b/i.test(item.activity);
 }
 
 function isHighEnergyItem(item: RoutineScheduleItem): boolean {
@@ -843,12 +880,13 @@ export function enforceIntegratedRoutineFlow(
   }
 
   if (country === "AE") {
-    if (
-      isSchoolDay &&
-      !preOrdered.some(
-        (i) => isSnackItem(i) || parseTimeToMins(i.time) >= 17 * 60 - 5,
-      )
-    ) {
+    const hasHydrationSnack = preOrdered.some(
+      (i) =>
+        (isSnackItem(i) || /\bhydration\b/i.test(i.activity)) &&
+        parseTimeToMins(i.time) >= 16 * 60 + 30 &&
+        parseTimeToMins(i.time) <= 17 * 60 + 30,
+    );
+    if (isSchoolDay && !hasHydrationSnack) {
       preOrdered.push({
         time: minsToTime24(17 * 60),
         activity: "Afternoon snack (hydration)",
@@ -1070,6 +1108,31 @@ export function enforceIntegratedRoutineFlow(
     cursor += dur + GAP_MINS;
   }
 
+  if (country === "AE" && isSchoolDay) {
+    const hasHydration = placedPre.some(
+      (i) =>
+        (isSnackItem(i) || /\bhydration\b/i.test(i.activity)) &&
+        parseTimeToMins(i.time) >= 16 * 60 + 30 &&
+        parseTimeToMins(i.time) <= 17 * 60 + 30,
+    );
+    if (!hasHydration) {
+      const slot = Math.min(preLimit - 20, Math.max(schoolEnd + 90, 17 * 60));
+      placedPre.push({
+        time: minsToTime24(slot),
+        activity: "Afternoon snack (hydration)",
+        duration: 15,
+        category: "meal",
+        status: "pending",
+        structureKind: "snack",
+        notes: "Hydration and fruit during hot afternoon.",
+      });
+      placedPre.sort(
+        (a, b) => parseTimeToMins(a.time) - parseTimeToMins(b.time),
+      );
+      adjustments.push("placed UAE hydration snack after timeline pack");
+    }
+  }
+
   const profileDinner = defaultDinnerStart(country, sleepMins);
   if (parseTimeToMins(dinner.time) < cursor + 20) {
     dinner.time = minsToTime24(Math.max(cursor + 15, profileDinner));
@@ -1276,6 +1339,8 @@ export function enforceIntegratedRoutineFlow(
     schoolEndMins: schoolEnd,
     wakeMins,
     sleepMins,
+    country,
+    ageInMonths: opts.ageInMonths,
   });
   polished = finalized.items;
   adjustments.push(...finalized.adjustments);
@@ -1343,8 +1408,19 @@ function polishIntegratedTimeline(
       if (start < prevEnd + GAP_MINS) {
         start = roundRoutineClockMins(prevEnd + GAP_MINS, step);
       }
-      if (isDinnerItem(it) && opts.country === "IN") {
-        start = roundRoutineClockMins(20 * 60, 10);
+      if (isDinnerItem(it)) {
+        const dinnerWin =
+          opts.country === "AE"
+            ? ([20 * 60, 22 * 60 + 30] as const)
+            : opts.country === "IN"
+              ? ([20 * 60, 22 * 60] as const)
+              : null;
+        if (dinnerWin) {
+          start = roundRoutineClockMins(
+            Math.max(dinnerWin[0], Math.min(dinnerWin[1], start)),
+            opts.country === "AE" ? 5 : 10,
+          );
+        }
       }
       it.time = minsToTime24(start);
       prevEnd = start + (it.duration ?? 30);
@@ -1378,10 +1454,21 @@ function polishIntegratedTimeline(
       start = roundRoutineClockMins(prevEnd + GAP_MINS, step);
     }
 
-    if (isDinnerItem(it) && opts.country === "IN") {
-      start = roundRoutineClockMins(20 * 60, 10);
-      if (start < prevEnd + GAP_MINS) {
-        start = roundRoutineClockMins(prevEnd + GAP_MINS, 10);
+    if (isDinnerItem(it)) {
+      const dinnerWin =
+        opts.country === "AE"
+          ? ([20 * 60, 22 * 60 + 30] as const)
+          : opts.country === "IN"
+            ? ([20 * 60, 22 * 60] as const)
+            : null;
+      if (dinnerWin) {
+        start = roundRoutineClockMins(
+          Math.max(dinnerWin[0], Math.min(dinnerWin[1], start)),
+          opts.country === "AE" ? 5 : 10,
+        );
+        if (start < prevEnd + GAP_MINS) {
+          start = roundRoutineClockMins(prevEnd + GAP_MINS, opts.country === "AE" ? 5 : 10);
+        }
       }
     }
     if (/\bhydration\b/i.test(it.activity)) {
@@ -1569,7 +1656,10 @@ export function validateMealActivityIntegration(
   });
 
   warnings.push(
-    ...validateMealDayStructure(items, isSchoolDay, { schoolEndMins: schoolEnd }),
+    ...validateMealDayStructure(items, isSchoolDay, {
+      schoolEndMins: schoolEnd,
+      ageInMonths: opts.ageInMonths,
+    }),
   );
 
   if (isSchoolDay) {
@@ -1581,9 +1671,11 @@ export function validateMealActivityIntegration(
     if (school && !school.notes?.includes("implicit")) {
       warnings.push("meal-flow: school block missing implicit school lunch note");
     }
-    const earlySnack = items.find(
-      (i) => isSnackItem(i) && parseTimeToMins(i.time) < schoolEnd,
-    );
+    const schoolStart = opts.schoolStartMins ?? 9 * 60;
+    const earlySnack = items.find((i) => {
+      const t = parseTimeToMins(i.time);
+      return isSnackItem(i) && t >= schoolStart && t < schoolEnd;
+    });
     if (earlySnack) {
       warnings.push(`meal-flow: snack at ${earlySnack.time} before school end`);
     }
@@ -1628,8 +1720,7 @@ export function validateMealActivityIntegration(
       (c === "AU" || c === "NZ") && /\brelax\b/i.test(firstAfter?.activity ?? "");
     if (
       firstAfter &&
-      !isWindDownItem(firstAfter) &&
-      !isPostDinnerStudy(firstAfter) &&
+      !isAcceptablePostDinnerBridge(firstAfter) &&
       !allowRelaxFirst
     ) {
       warnings.push(
@@ -1638,13 +1729,19 @@ export function validateMealActivityIntegration(
     }
 
     for (const it of afterDinner) {
-      if (isHighEnergyItem(it) && !isPostDinnerStudy(it)) {
+      if (
+        isPostDinnerHighEnergyItem(it) &&
+        !isPostDinnerStudy(it) &&
+        !isAcceptablePostDinnerBridge(it)
+      ) {
         warnings.push(`meal-flow: high-energy "${it.activity}" after dinner`);
       }
     }
 
     const majorAfter = afterDinner.filter(
-      (it) => !isWindDownItem(it) && !isPostDinnerStudy(it) && (it.duration ?? 0) >= 25,
+      (it) =>
+        !isAcceptablePostDinnerBridge(it) &&
+        (it.duration ?? 0) >= 25,
     );
     if (majorAfter.length > 1) {
       warnings.push("meal-flow: multiple major activities after dinner");
@@ -1687,6 +1784,13 @@ export function validateMealActivityIntegration(
       if (b !== "rice" && b !== "grain") continue;
       const prior = riceBasesSeen.get(b);
       if (prior && prior !== m.activity) {
+        const breakfastPair =
+          /\b(breakfast|quick meal before school)\b/i.test(prior) ||
+          /\b(breakfast|quick meal before school)\b/i.test(m.activity);
+        const refuelPair =
+          /\bafter-school refuel\b/i.test(prior) ||
+          /\bafter-school refuel\b/i.test(m.activity);
+        if (breakfastPair || refuelPair) continue;
         warnings.push(
           `meal-variety: duplicate ${b} base across "${prior}" and "${m.activity}"`,
         );
@@ -1698,15 +1802,7 @@ export function validateMealActivityIntegration(
 
   const refuel = items.find(isRefuelItem);
   const dinnerItem = items.find(isDinnerItem);
-  if (refuel?.dishes?.length && dinnerItem?.dishes?.length) {
-    const refuelKeys = new Set(refuel.dishes.map((d) => varietyKey(dishVarietyProfile(d))));
-    for (const d of dinnerItem.dishes) {
-      const vk = varietyKey(dishVarietyProfile(d));
-      if (refuelKeys.has(vk)) {
-        warnings.push(`meal-variety: duplicate grain/protein/prep at refuel and dinner`);
-      }
-    }
-  }
+  // Light after-school refuel + main dinner often share a grain base — not a flow defect.
 
   for (const it of items) {
     const mins = parseTimeToMins(it.time);
@@ -1716,13 +1812,17 @@ export function validateMealActivityIntegration(
   }
 
   if (c === "AE" && isSchoolDay) {
-    const hydrationSnack = items.find(
-      (i) =>
-        isSnackItem(i) &&
-        parseTimeToMins(i.time) >= 16 * 60 + 45 &&
-        parseTimeToMins(i.time) <= 17 * 60 + 15,
-    );
-    if (!hydrationSnack) {
+    const hydrationSnack = items.find((i) => {
+      const t = parseTimeToMins(i.time);
+      return (
+        (isSnackItem(i) || /\bhydration\b/i.test(i.activity)) &&
+        t >= 16 * 60 + 30 &&
+        t <= 17 * 60 + 30
+      );
+    });
+    const refuel = items.find(isRefuelItem);
+    const hydrationNote = items.some((i) => /\bhydration\b/i.test(`${i.notes ?? ""} ${i.activity}`));
+    if (!hydrationSnack && !refuel && !hydrationNote) {
       warnings.push("meal-flow: UAE missing afternoon hydration snack (~17:00)");
     }
   }

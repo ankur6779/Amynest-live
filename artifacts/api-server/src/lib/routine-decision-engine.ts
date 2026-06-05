@@ -769,10 +769,22 @@ export function validateActivityOrdering(
 export function validateAgainstCountryProfile(
   items: RoutineScheduleItem[],
   state: InterpretedBehavioralState,
+  opts?: { ageGroup?: import("./routine-templates.js").AgeGroup; ageInMonths?: number },
 ): string[] {
   const warnings: string[] = [];
   const profile = state.countryProfile;
   const [, sleepEnd] = profile.sleepWindow;
+  const ageGroup = opts?.ageGroup;
+  const ageInMonths = opts?.ageInMonths;
+  const isInfantBand =
+    ageGroup === "infant" || (ageInMonths != null && ageInMonths < 12);
+  const isToddlerBand =
+    !isInfantBand &&
+    (ageGroup === "toddler" || (ageInMonths != null && ageInMonths < 36));
+  const isPreschoolBand =
+    !isInfantBand &&
+    !isToddlerBand &&
+    (ageGroup === "preschool" || (ageInMonths != null && ageInMonths < 60));
 
   const playAfterSleep = items.filter((it) => {
     if (!PLAY_CATS.has((it.category ?? "").toLowerCase()) && !isOutdoorActivity(it)) {
@@ -782,19 +794,59 @@ export function validateAgainstCountryProfile(
     return start >= sleepEnd - 60;
   });
   if (playAfterSleep.length > 0 && (profile.country === "US" || profile.country === "UK")) {
+    if (
+      state.dayPlanningMode === "indoor_day" ||
+      state.replaceOutdoorNotShorten ||
+      !state.isSchoolDay
+    ) {
+      // Rain/indoor/rest days commonly keep calm evening play before wind-down.
+    } else {
     warnings.push(
       `cultural: late-evening play unusual for ${profile.country} (before ${minsToTime24(sleepEnd)})`,
     );
+    }
   }
 
-  if (state.requireExtracurricularBlock && !hasMatching(items, EXTRACURRICULAR_RE)) {
+  const outdoorAllowed =
+    state.allowOutdoor &&
+    state.dayPlanningMode !== "indoor_day" &&
+    state.dayPlanningMode !== "limited_outdoor" &&
+    !state.replaceOutdoorNotShorten;
+
+  const extracurricularRequired =
+    state.isSchoolDay &&
+    state.dayPlanningMode !== "indoor_day" &&
+    state.dayPlanningMode !== "limited_outdoor" &&
+    !state.reduceStudyBlocks &&
+    profile.extracurricularCulture === "high";
+
+  if (
+    !isInfantBand &&
+    !isToddlerBand &&
+    !isPreschoolBand &&
+    extracurricularRequired &&
+    state.requireExtracurricularBlock &&
+    !hasMatching(items, EXTRACURRICULAR_RE)
+  ) {
     warnings.push(
       `cultural: missing expected extracurricular block for ${profile.country}`,
     );
   }
 
-  if (state.requireOutdoorBlock && state.allowOutdoor) {
-    const outdoor = items.filter((i) => isOutdoorActivity(i) || i.category === "outdoor");
+  if (
+    !isInfantBand &&
+    !isToddlerBand &&
+    !isPreschoolBand &&
+    state.isSchoolDay &&
+    state.requireOutdoorBlock &&
+    outdoorAllowed
+  ) {
+    const outdoor = items.filter(
+      (i) =>
+        isOutdoorActivity(i) ||
+        i.category === "outdoor" ||
+        /outdoor|park|cricket|playground|family walk/i.test(i.activity),
+    );
     if (outdoor.length === 0) {
       warnings.push(
         `cultural: no outdoor block despite ${profile.country} outdoor preference`,
@@ -805,18 +857,40 @@ export function validateAgainstCountryProfile(
   const studyCount = items.filter((i) =>
     STUDY_CATS.has((i.category ?? "").toLowerCase()),
   ).length;
-  if (studyCount < state.minStudyBlocks && profile.academicIntensity === "high") {
+  const minStudyRequired =
+    isInfantBand || isToddlerBand || isPreschoolBand || !state.isSchoolDay
+      ? 0
+      : state.dayPlanningMode === "indoor_day" ||
+          state.reduceStudyBlocks ||
+          profile.country === "IN"
+        ? Math.min(1, state.minStudyBlocks)
+        : state.minStudyBlocks;
+  if (
+    !isInfantBand &&
+    !isToddlerBand &&
+    !isPreschoolBand &&
+    state.isSchoolDay &&
+    !state.reduceStudyBlocks &&
+    studyCount < minStudyRequired &&
+    profile.academicIntensity === "high"
+  ) {
     warnings.push(
-      `cultural: only ${studyCount} study blocks; ${profile.country} expects at least ${state.minStudyBlocks}`,
+      `cultural: only ${studyCount} study blocks; ${profile.country} expects at least ${minStudyRequired}`,
     );
+  }
+
+  if (isInfantBand || isToddlerBand || isPreschoolBand || !state.isSchoolDay) {
+    return warnings;
   }
 
   const hasCulturalBlock = items.some(
     (i) =>
       i.culturalTag != null ||
+      i.culturalReason != null ||
       EXTRACURRICULAR_RE.test(i.activity) ||
-      (state.allowOutdoor && isOutdoorActivity(i)) ||
-      hasMatching([i], INDEPENDENCE_RE),
+      (outdoorAllowed && isOutdoorActivity(i)) ||
+      hasMatching([i], INDEPENDENCE_RE) ||
+      STUDY_CATS.has((i.category ?? "").toLowerCase()),
   );
   if (!hasCulturalBlock) {
     warnings.push(`cultural: no culturally tagged or expected block in routine`);

@@ -2,6 +2,13 @@
  * Parent-facing intelligence visibility — insights and memory without internal jargon.
  */
 import type { AdaptiveCompletionSummary } from "./routine-adaptive-completion.js";
+import {
+  calculateEvidenceStrength,
+  continuityClaimForEvidence,
+  hasContinuityEvidence,
+  memoryClaimForStrength,
+  type EvidenceStrength,
+} from "./routine-evidence-strength.js";
 import type { FamilyIntelligenceMoatResult } from "./routine-family-intelligence-moat.js";
 
 export type IntelligenceTier = "full" | "simplified" | "baseline";
@@ -57,7 +64,15 @@ export function buildParentIntelligenceAdaptations(opts: {
   const lines: string[] = [];
   const tier = opts.intelligenceTier ?? "baseline";
   const memory = opts.familyIntelligence?.profile.memory;
-  const snapshotCount = memory?.snapshotCount ?? 0;
+  const evidenceInput = {
+    childId: opts.childId,
+    memory,
+    continuityAdjustments:
+      opts.adaptiveCompletion?.continuityAdjustments.length ?? 0,
+    freshnessAdjustments:
+      opts.adaptiveCompletion?.freshnessAdjustments.length ?? 0,
+  };
+  const evidenceStrength = calculateEvidenceStrength(evidenceInput);
 
   if (opts.reverted) {
     lines.push(
@@ -66,35 +81,47 @@ export function buildParentIntelligenceAdaptations(opts: {
     return lines;
   }
 
-  if (opts.childId && snapshotCount >= 2) {
-    const days = Math.min(snapshotCount, 14);
-    lines.push(
-      `Amy is building on ${days} recent day${days === 1 ? "" : "s"} with your family — familiar anchors stay, with small refreshes.`,
-    );
-  } else if (opts.childId && tier === "baseline") {
+  if (hasContinuityEvidence(evidenceInput)) {
+    lines.push(continuityClaimForEvidence(evidenceInput));
+  } else if (opts.childId) {
+    lines.push("Amy is still learning what works best for your family.");
+  }
+
+  const memoryLine = memoryClaimForStrength(evidenceStrength);
+  if (memoryLine && evidenceStrength !== "NONE") {
+    lines.push(memoryLine);
+  } else if (opts.childId && tier === "baseline" && evidenceStrength === "NONE") {
     lines.push(
       "Amy is learning your family's rhythm — each saved day makes tomorrow's plan more personal.",
     );
   }
 
   const insights = opts.familyIntelligence?.insights ?? [];
-  const gated =
-    snapshotCount >= 2
-      ? insights.slice(0, 2)
-      : insights.filter((i) => i.id === "rhythm-steady").slice(0, 1);
+  const gated = gateInsightsByEvidence(insights, evidenceStrength);
 
   for (const ins of gated) {
     if (ins.message?.trim()) lines.push(ins.message.trim());
   }
 
   const freshness = opts.adaptiveCompletion?.freshnessAdjustments.length ?? 0;
-  if (freshness > 0 && snapshotCount >= 2) {
+  if (freshness > 0 && hasContinuityEvidence(evidenceInput)) {
     lines.push(
       "A few activities were refreshed so the week does not feel repetitive.",
     );
   }
 
   return lines;
+}
+
+function gateInsightsByEvidence(
+  insights: FamilyIntelligenceMoatResult["insights"],
+  strength: EvidenceStrength,
+): FamilyIntelligenceMoatResult["insights"] {
+  if (strength === "HIGH") return insights.slice(0, 2);
+  if (strength === "MEDIUM") {
+    return insights.filter((i) => i.id !== "rhythm-steady").slice(0, 1);
+  }
+  return insights.filter((i) => i.id === "rhythm-steady").slice(0, 1);
 }
 
 /** Internal engine readiness (not a clinical or parenting score). */

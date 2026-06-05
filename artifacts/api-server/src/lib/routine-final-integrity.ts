@@ -20,6 +20,7 @@ import {
   pickDistantCategoryReplacement,
   type ScheduleCategory,
 } from "./routine-category-taxonomy.js";
+import { repairDinnerAnchor } from "./routine-meal-dinner-integrity.js";
 import { GAP_FILL_BEFORE_EVENT_MINS } from "./routine-special-event.js";
 import {
   MAX_IDLE_GAP_MINS,
@@ -28,10 +29,12 @@ import {
 } from "./routine-realism-polish.js";
 import { enforceSleepIsLast } from "./routine-weather-planning.js";
 import { resolveScheduleConflicts } from "./routine-schedule-conflicts.js";
+import { resolveLaunchCountry } from "./routine-country-profile.js";
 import {
   clampDurationForCategory,
   isLockedScheduleItem,
   isSleepItem,
+  isBedtimeSleepItem,
   minsToTime24,
   normalizeTo24h,
   parseTimeToMins,
@@ -49,6 +52,8 @@ export type FinalIntegrityOpts = {
   hasSchool?: boolean;
   isWeekendDay?: boolean;
   country?: string;
+  ageInMonths?: number;
+  dinnerWindow?: readonly [number, number];
   /** Locked special-event start times (minutes) for gap-fill and adjacency. */
   eventStartMins?: number[];
   /** Rain / indoor-only day — prefer cognitive_light and social fillers. */
@@ -396,7 +401,7 @@ export function enforceSleepBoundary(
   let sleepItem: RoutineScheduleItem | undefined;
 
   for (const it of items) {
-    if (isSleepItem(it)) {
+    if (isBedtimeSleepItem(it)) {
       sleepItem = { ...it, time: minsToTime24(sleepMins) };
       continue;
     }
@@ -499,7 +504,17 @@ export function resolveOverlapsByPriority(
       const currPri = finalItemPriority(curr);
 
       if (currPri < prevPri) {
-        const maxPrevDur = Math.max(MIN_ACTIVITY_MINS, currStart - prevStart);
+        const available = currStart - prevStart;
+        if (available < MIN_ACTIVITY_MINS && isFillerItem(prev)) {
+          sorted.splice(i - 1, 1);
+          adjustments.push(
+            `dropped "${prev.activity}" — no room before higher-priority "${curr.activity}"`,
+          );
+          changed = true;
+          i--;
+          continue;
+        }
+        const maxPrevDur = Math.max(MIN_ACTIVITY_MINS, available);
         if ((prev.duration ?? 30) > maxPrevDur) {
           prev.duration = maxPrevDur;
           adjustments.push(`shortened "${prev.activity}" before higher-priority "${curr.activity}"`);
@@ -756,6 +771,65 @@ export function forceSequentialTimeline(
   if (sleep) sleep.time = minsToTime24(sleepMins);
 
   return { items: sorted, adjustments };
+}
+
+/**
+ * Hard schedule requires the first non-sleep block at wake exactly.
+ * Drops pre-wake filler and anchors the first block to wakeMins.
+ */
+export function enforceWakeAnchor(
+  items: RoutineScheduleItem[],
+  wakeMins: number,
+  sleepMins: number,
+): { items: RoutineScheduleItem[]; adjustments: string[] } {
+  const adjustments: string[] = [];
+  let working = items.map((it) => ({ ...it, time: normalizeTo24h(it.time) }));
+
+  const preWake = working.filter(
+    (it) =>
+      !isSleepItem(it) &&
+      !isSpecialEventItem(it) &&
+      !isFixedRecurringItem(it) &&
+      parseTimeToMins(it.time) < wakeMins,
+  );
+  if (preWake.length) {
+    const drop = new Set(preWake);
+    working = working.filter((it) => !drop.has(it));
+    for (const it of preWake) {
+      adjustments.push(`removed pre-wake "${it.activity}" at ${it.time}`);
+    }
+  }
+
+  const nonSleep = working
+    .filter((it) => !isSleepItem(it))
+    .sort((a, b) => parseTimeToMins(a.time) - parseTimeToMins(b.time));
+  const first = nonSleep[0];
+  if (first && parseTimeToMins(first.time) !== wakeMins) {
+    const idx = working.findIndex(
+      (it) =>
+        it === first ||
+        (parseTimeToMins(it.time) === parseTimeToMins(first.time) &&
+          it.activity === first.activity),
+    );
+    if (idx >= 0) {
+      working[idx] = { ...working[idx]!, time: minsToTime24(wakeMins) };
+      adjustments.push(
+        `anchored first activity "${first.activity}" to wake ${minsToTime24(wakeMins)}`,
+      );
+    }
+  }
+
+  const sequenced = forceSequentialTimeline(working, sleepMins);
+  working = sequenced.items;
+  adjustments.push(...sequenced.adjustments);
+
+  const overlapPass = resolveOverlapsByPriority(working, sleepMins);
+  if (overlapPass.adjustments.length) {
+    working = overlapPass.items;
+    adjustments.push(...overlapPass.adjustments);
+  }
+  working = enforceSleepIsLast(working);
+  return { items: working, adjustments };
 }
 
 const WEEKEND_GAP_FILLERS: Array<{
@@ -1172,6 +1246,50 @@ export function fillWeekendIdleGaps(
   return { items: merged, adjustments };
 }
 
+const EXTREME_AQI_THRESHOLD = 300;
+
+/**
+ * AQI >= 300 — remove outdoor exposure entirely; replace with indoor alternatives.
+ * Runs before tolerant-region outdoor injection so advisory-only outdoor cannot survive.
+ */
+export function enforceExtremeAqiSafety(
+  items: RoutineScheduleItem[],
+  opts: FinalIntegrityOpts,
+): { items: RoutineScheduleItem[]; adjustments: string[] } {
+  const adjustments: string[] = [];
+  const aqi = opts.aqi;
+  if (aqi == null || !Number.isFinite(aqi) || aqi < EXTREME_AQI_THRESHOLD) {
+    return { items, adjustments };
+  }
+
+  const working = items.map((it) => {
+    const isOutdoor =
+      isOutdoorActivityItem(it) ||
+      isOutdoorPhysicalBlock(it) ||
+      (it.category ?? "").toLowerCase() === "outdoor";
+    if (!isOutdoor) return it;
+
+    const alt = createLowEnergyIndoorAlternative(it.activity, {
+      rainMode: true,
+      category: getScheduleCategory(it),
+    });
+    adjustments.push(
+      `extreme AQI ${Math.round(aqi)}: outdoor "${it.activity}" → indoor "${alt.activity}"`,
+    );
+    return {
+      ...it,
+      activity: alt.activity,
+      category: alt.category,
+      duration: Math.max(MIN_ACTIVITY_MINS, Math.min(it.duration ?? 30, 30)),
+      notes: `Indoor alternative — air quality (${Math.round(aqi)}) unsafe for outdoor play.`,
+      advisory: undefined,
+      structureKind: undefined,
+    };
+  });
+
+  return { items: working, adjustments };
+}
+
 /** Tolerant regions at very high AQI need at least one brief limited outdoor block with advisory. */
 export function ensureTolerantHighAqiOutdoor(
   items: RoutineScheduleItem[],
@@ -1179,8 +1297,8 @@ export function ensureTolerantHighAqiOutdoor(
 ): { items: RoutineScheduleItem[]; adjustments: string[] } {
   const adjustments: string[] = [];
   const aqi = opts.aqi;
-  const country = opts.country ?? "IN";
-  if (aqi == null || !Number.isFinite(aqi) || aqi <= 200) {
+  const country = opts.country ?? resolveLaunchCountry(undefined);
+  if (aqi == null || !Number.isFinite(aqi) || aqi <= 200 || aqi >= EXTREME_AQI_THRESHOLD) {
     return { items, adjustments };
   }
   if (aqiCultureProfile(country) !== "tolerant") {
@@ -1375,6 +1493,10 @@ export function enforceFinalTimelineIntegrity(
   working = outdoorClamp.items;
   allAdjustments.push(...outdoorClamp.adjustments);
 
+  const extremeAqi = enforceExtremeAqiSafety(working, opts);
+  working = extremeAqi.items;
+  allAdjustments.push(...extremeAqi.adjustments);
+
   const aqiOutdoor = ensureTolerantHighAqiOutdoor(working, opts);
   working = aqiOutdoor.items;
   allAdjustments.push(...aqiOutdoor.adjustments);
@@ -1482,6 +1604,25 @@ export function enforceFinalTimelineIntegrity(
   working = resolveTimelineOverlaps(working, opts.wakeMins, opts.sleepMins, warnings);
   working = enforceSleepIsLast(working);
   assertions = assertFinalTimelineIntegrity(working, opts);
+
+  const dinnerRepair = repairDinnerAnchor(working, {
+    country: opts.country,
+    sleepMins: opts.sleepMins,
+    ageInMonths: opts.ageInMonths,
+    dinnerWindow: opts.dinnerWindow,
+  });
+  if (dinnerRepair.adjustments.length) {
+    allAdjustments.push(...dinnerRepair.adjustments.map((a) => `dinner-repair: ${a}`));
+    working = dinnerRepair.items;
+    working = resolveOverlapsByPriority(working, opts.sleepMins).items;
+    working = enforceSleepIsLast(working);
+  }
+
+  const wakeAnchor = enforceWakeAnchor(working, opts.wakeMins, opts.sleepMins);
+  if (wakeAnchor.adjustments.length) {
+    allAdjustments.push(...wakeAnchor.adjustments.map((a) => `wake-anchor: ${a}`));
+    working = wakeAnchor.items;
+  }
 
   return {
     items: working,

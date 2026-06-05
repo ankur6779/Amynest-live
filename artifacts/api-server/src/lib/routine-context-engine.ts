@@ -13,6 +13,7 @@ import type {
 import {
   getCountryLabelPack,
   getCountryRoutineProfile,
+  resolveLaunchCountry,
   windowMidpoint,
 } from "./routine-country-profile.js";
 import type { AgeGroup } from "./routine-templates.js";
@@ -227,8 +228,8 @@ export function resolveContextPriorities(
   let environmentConstraintLevel: EnvironmentConstraintLevel = "low";
 
   const aqiValue = resolveAqiFromContext(ctx);
-  const countryForAqi = normalizeCountryCode(
-    ctx.country ?? ctx.countryProfile?.country ?? "IN",
+  const countryForAqi = resolveLaunchCountry(
+    ctx.country ?? ctx.countryProfile?.country,
   );
   const aqiPolicy = deriveAqiOutdoorPolicy(aqiValue, countryForAqi);
 
@@ -470,7 +471,7 @@ function applyCountryToBehavior(
   | "reduceStudyBlocks"
 > {
   const profile =
-    context.countryProfile ?? getCountryRoutineProfile(context.country ?? "IN");
+    context.countryProfile ?? getCountryRoutineProfile(resolveLaunchCountry(context.country));
 
   let activityBias = resolved.activityBias;
   let allowOutdoor = resolved.allowOutdoor;

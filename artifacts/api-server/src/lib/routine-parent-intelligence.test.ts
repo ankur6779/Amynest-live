@@ -66,9 +66,9 @@ describe("routine-parent-intelligence", () => {
           trajectory: {} as never,
           memory: {
             childId: "42",
-            recentDayKeys: [[], []],
+            recentDayKeys: [["a"], ["b"], ["c"]],
             skippedActivityKeys: [],
-            completedActivityKeys: [],
+            completedActivityKeys: Array.from({ length: 8 }, (_, i) => `done-${i}`),
             completionRate: 0.7,
             preferredCategories: ["play"],
             snapshotCount: 3,
@@ -87,7 +87,9 @@ describe("routine-parent-intelligence", () => {
         platformReadiness: "family_intelligence_active",
       },
     });
-    assert.ok(lines.some((l) => /building on 3 recent/i.test(l)));
+    assert.ok(
+      lines.some((l) => /still learning|noticing patterns|remembers/i.test(l)),
+    );
     assert.ok(lines.some((l) => /steadier/i.test(l)));
   });
 });

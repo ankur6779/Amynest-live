@@ -228,8 +228,25 @@ export function getTimePeriod(mins: number): TimePeriod {
 
 // ─── Item classification ──────────────────────────────────────────────────────
 
+/** Daytime nap — not the bedtime anchor. */
+export function isNapItem(item: RoutineScheduleItem): boolean {
+  const cat = (item.category ?? "").toLowerCase();
+  if (cat === "nap") return true;
+  const act = item.activity.toLowerCase();
+  return (
+    /\b(nap|catnap)\b/i.test(act) &&
+    !/\b(night sleep|bedtime|lights out|good night)\b/i.test(act)
+  );
+}
+
+/** Bedtime / night sleep anchor (excludes daytime naps). */
+export function isBedtimeSleepItem(item: RoutineScheduleItem): boolean {
+  return isSleepItem(item) && !isNapItem(item);
+}
+
 export function isSleepItem(item: RoutineScheduleItem): boolean {
   const cat = (item.category ?? "").toLowerCase();
+  if (cat === "nap") return false;
   return cat === "sleep" || /sleep|bedtime|lights out|good night/i.test(item.activity);
 }
 
