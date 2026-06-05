@@ -26,6 +26,7 @@ import { WeeklyProgressReport } from "@/components/infant/weekly-progress-report
 import { CoParentPanel } from "@/components/infant/co-parent-panel";
 import { InfantNotificationPrefs } from "@/components/infant/infant-notification-prefs";
 import { formatAge } from "@/lib/age-groups";
+import { INFANT_HUB_OPEN_SECTION_EVENT } from "@/lib/hub-activity-cross-link";
 import { trackInfantHubOpened } from "@/lib/infant-hub-analytics";
 import { useToast } from "@/hooks/use-toast";
 import { HubCollapsibleSubTile } from "@/components/hub-collapsible-sub-tile";
@@ -550,14 +551,30 @@ export function InfantHub({
     if (ageMonths < 0 || ageMonths >= 24) return;
     trackInfantHubOpened(childId, ageMonths);
 
-    const handleHash = () => {
-      const hash =
+    const resolveSectionFromHash = (): string | null => {
+      const raw =
         typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "";
-      if (hash.startsWith("infant-")) scrollToSection(hash);
+      if (raw.startsWith("infant-")) return raw;
+      return raw.split("#").find((part) => part.startsWith("infant-")) ?? null;
     };
+
+    const handleHash = () => {
+      const section = resolveSectionFromHash();
+      if (section) scrollToSection(section);
+    };
+
+    const handleOpenSection = (event: Event) => {
+      const sectionId = (event as CustomEvent<{ sectionId?: string }>).detail?.sectionId;
+      if (sectionId?.startsWith("infant-")) scrollToSection(sectionId);
+    };
+
     handleHash();
     window.addEventListener("hashchange", handleHash);
-    return () => window.removeEventListener("hashchange", handleHash);
+    window.addEventListener(INFANT_HUB_OPEN_SECTION_EVENT, handleOpenSection);
+    return () => {
+      window.removeEventListener("hashchange", handleHash);
+      window.removeEventListener(INFANT_HUB_OPEN_SECTION_EVENT, handleOpenSection);
+    };
   }, [ageMonths, childId, scrollToSection]);
 
   if (ageMonths < 0 || ageMonths >= 24) return null;

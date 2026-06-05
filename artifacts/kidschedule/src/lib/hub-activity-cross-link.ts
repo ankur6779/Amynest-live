@@ -3,7 +3,12 @@
 export type HubDeepLinkTarget = {
   group: "creativity" | "learning" | "stories" | "today";
   tileId: string;
+  /** Infant Hub subsection id (e.g. infant-cry) when deep-linking into a module. */
+  sectionId?: string;
 };
+
+/** Dispatched after Parent Hub scrolls to Infant Hub so the target module opens. */
+export const INFANT_HUB_OPEN_SECTION_EVENT = "infant-hub:open-section";
 
 const TILE_NAV: Record<string, HubDeepLinkTarget> = {
   "infant-hub": { group: "today", tileId: "infant-hub" },
@@ -64,6 +69,11 @@ export function buildParentingHubDeepLink(tileId = "activities"): string {
   return `/parenting-hub#tile-${tileId}`;
 }
 
+/** Deep link into Infant Hub with a specific module section expanded. */
+export function buildInfantHubSectionDeepLink(sectionId: string): string {
+  return `/parenting-hub#tile-infant-hub#${sectionId}`;
+}
+
 /** Map routine-intelligence module ids → in-app routes (optional enrichment layer). */
 const LINKED_MODULE_ROUTES: Record<string, string> = {
   parent_focus_guide: "/parenting-hub#tile-activities",
@@ -84,21 +94,48 @@ export function primaryLinkedModuleHref(modules?: readonly string[] | null): str
   return resolveLinkedModuleHref(modules[0]!);
 }
 
-export function parseParentingHubDeepLink(): HubDeepLinkTarget | null {
-  if (typeof window === "undefined") return null;
-  const raw = window.location.hash.replace(/^#/, "");
-  const m = raw.match(/^tile-([a-z0-9-]+)$/);
+function resolveInfantSectionId(raw: string): string | undefined {
+  if (raw.startsWith("infant-")) return raw;
+  const nested = raw.split("#").find((part) => part.startsWith("infant-"));
+  return nested;
+}
+
+export function parseParentingHubDeepLink(rawHash?: string): HubDeepLinkTarget | null {
+  const raw = (rawHash ?? (typeof window !== "undefined" ? window.location.hash : "")).replace(
+    /^#/,
+    "",
+  );
+  if (!raw) return null;
+
+  const sectionId = resolveInfantSectionId(raw);
+
+  // Direct section hash while already on Parent Hub (e.g. #infant-cry).
+  if (raw.startsWith("infant-")) {
+    return { group: "today", tileId: "infant-hub", sectionId: raw };
+  }
+
+  const [tilePart] = raw.split("#");
+  const m = tilePart.match(/^tile-([a-z0-9-]+)$/);
   if (!m) return null;
   const tileId = m[1]!;
-  if (tileId === "infant-hub") return { group: "today", tileId: "infant-hub" };
+  if (tileId === "infant-hub") {
+    return { group: "today", tileId: "infant-hub", sectionId };
+  }
   return TILE_NAV[tileId] ?? { group: "creativity", tileId };
 }
 
 export function applyParentingHubDeepLink(
-  navigate: (group: string, tileId?: string) => void,
+  navigate: (group: string, tileId?: string, sectionId?: string) => void,
 ): boolean {
   const target = parseParentingHubDeepLink();
   if (!target) return false;
-  navigate(target.group, target.tileId);
+  navigate(target.group, target.tileId, target.sectionId);
   return true;
+}
+
+export function dispatchInfantHubOpenSection(sectionId: string): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent(INFANT_HUB_OPEN_SECTION_EVENT, { detail: { sectionId } }),
+  );
 }

@@ -56,7 +56,7 @@ import {
 } from "@/lib/hub-visibility";
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
 import { PreviousStageWrapper } from "@/components/previous-stage-wrapper";
-import { applyParentingHubDeepLink } from "@/lib/hub-activity-cross-link";
+import { applyParentingHubDeepLink, dispatchInfantHubOpenSection } from "@/lib/hub-activity-cross-link";
 import {
   getAdaptiveMood,
   getLifeSkillPreviewText,
@@ -935,7 +935,7 @@ function ParentingHubPage() {
       return next;
     });
   };
-  const navigateHub = (group: string, tileId?: string) => {
+  const navigateHub = (group: string, tileId?: string, sectionId?: string) => {
     setExpandedGroups(prev => {
       const next = new Set(prev);
       next.add(group);
@@ -944,9 +944,19 @@ function ParentingHubPage() {
     });
     requestAnimationFrame(() => {
       if (tileId) {
-        document.querySelector(`[data-section-id="${tileId}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        document.querySelector(`[data-section-id="${tileId}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
       } else {
         document.getElementById(`hub-group-${group}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      if (sectionId?.startsWith("infant-")) {
+        // InfantHub may still be mounting after the tile scroll — retry briefly.
+        const openSection = (attempt = 0) => {
+          dispatchInfantHubOpenSection(sectionId);
+          if (attempt < 4 && !document.getElementById(sectionId)) {
+            window.setTimeout(() => openSection(attempt + 1), 120);
+          }
+        };
+        window.setTimeout(() => openSection(), 150);
       }
     });
   };
@@ -970,10 +980,15 @@ function ParentingHubPage() {
     if (!effectiveChild) return;
     const band = getAgeBand(effectiveChild.age, (effectiveChild as any).ageMonths ?? 0);
     if (!band) return;
-    const frame = requestAnimationFrame(() => {
+    const apply = () => {
       applyParentingHubDeepLink(navigateHub);
-    });
-    return () => cancelAnimationFrame(frame);
+    };
+    const frame = requestAnimationFrame(apply);
+    window.addEventListener("hashchange", apply);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("hashchange", apply);
+    };
   }, [effectiveChild?.id, effectiveChild?.age, (effectiveChild as any)?.ageMonths]);
 
   const handleChildSelect = (id: number) => {

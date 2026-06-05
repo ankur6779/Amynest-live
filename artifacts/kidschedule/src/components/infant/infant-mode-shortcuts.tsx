@@ -9,7 +9,7 @@ import {
   FileDown,
   Users,
 } from "lucide-react";
-import { buildParentingHubDeepLink } from "@/lib/hub-activity-cross-link";
+import { buildInfantHubSectionDeepLink, buildParentingHubDeepLink } from "@/lib/hub-activity-cross-link";
 import { setInfantHubEntrySource, trackInfantHubShortcutTapped } from "@/lib/infant-hub-analytics";
 import { Link } from "wouter";
 
@@ -47,7 +47,7 @@ export function InfantModeShortcuts({ childId, childName, ageMonths }: InfantMod
         {SHORTCUTS.map(({ id, icon: Icon, labelKey, hash, tint }) => (
           <Link
             key={id}
-            href={`${buildParentingHubDeepLink("infant-hub")}#${hash}`}
+            href={buildInfantHubSectionDeepLink(hash)}
             onClick={() => {
               setInfantHubEntrySource("deep_link");
               trackInfantHubShortcutTapped(childId, ageMonths, hash);
