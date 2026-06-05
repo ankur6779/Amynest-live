@@ -987,12 +987,12 @@ export default function NutritionHubPage() {
 
   const activeAgeGroup = AGE_GROUPS.find(a => a.id === activeAgeGroupId)!;
 
-  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "nutrients", label: t("nutrition_hub.tabs.nutrients"), icon: <Apple className="h-4 w-4" /> },
-    { id: "meals",     label: t("nutrition_hub.tabs.meals"),    icon: <CalendarDays className="h-4 w-4" /> },
-    { id: "family",    label: t("nutrition_hub.tabs.family"),   icon: <Users className="h-4 w-4" /> },
-    { id: "library",   label: t("nutrition_hub.tabs.library"),  icon: <Library className="h-4 w-4" /> },
-    { id: "score",     label: t("nutrition_hub.tabs.score"),    icon: <Trophy className="h-4 w-4" /> },
+  const tabs: { id: Tab; label: string; shortLabel: string; icon: React.ReactNode }[] = [
+    { id: "nutrients", label: t("nutrition_hub.tabs.nutrients"),       shortLabel: t("nutrition_hub.tabs_short.nutrients"), icon: <Apple className="h-4 w-4" /> },
+    { id: "meals",     label: t("nutrition_hub.tabs.meals"),          shortLabel: t("nutrition_hub.tabs_short.meals"),     icon: <CalendarDays className="h-4 w-4" /> },
+    { id: "family",    label: t("nutrition_hub.tabs.family"),         shortLabel: t("nutrition_hub.tabs_short.family"),    icon: <Users className="h-4 w-4" /> },
+    { id: "library",   label: t("nutrition_hub.tabs.library"),        shortLabel: t("nutrition_hub.tabs_short.library"),   icon: <Library className="h-4 w-4" /> },
+    { id: "score",     label: t("nutrition_hub.tabs.score"),           shortLabel: t("nutrition_hub.tabs_short.score"),     icon: <Trophy className="h-4 w-4" /> },
   ];
 
   const handleSelectNutrient = (nutrient: Nutrient) => {
@@ -1049,8 +1049,8 @@ export default function NutritionHubPage() {
       </div>
 
       {/* ── Sticky: Age chips + tabs ── */}
-      <div className="sticky top-0 z-20 -mx-1 px-1 py-2 space-y-2 backdrop-blur-md bg-[#0b1730]/85">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+      <div className="sticky top-0 z-20 py-2 space-y-2 backdrop-blur-md bg-[#0b1730]/85">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 sm:mx-0 sm:px-0">
           {AGE_GROUPS.map(ag => (
             <button
               key={ag.id}
@@ -1070,14 +1070,35 @@ export default function NutritionHubPage() {
           ))}
         </div>
 
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+        {/* Mobile: equal-width 5-column grid so every tab is fully visible */}
+        <div className="grid grid-cols-5 gap-1 w-full sm:hidden">
           {tabs.map(tab => (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id)}
               className={cn(
                 activeTab === tab.id ? NUTRITION_HUB_CHIP_ACTIVE : NUTRITION_HUB_CHIP_INACTIVE,
-                "flex shrink-0 items-center gap-1.5 text-xs sm:text-sm",
+                "flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-2",
+                "text-[10px] font-bold leading-tight text-center",
+              )}
+            >
+              <span className="[&_svg]:h-3.5 [&_svg]:w-3.5 shrink-0">{tab.icon}</span>
+              <span className="w-full truncate px-0.5">{tab.shortLabel}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Desktop: horizontal chips with full labels */}
+        <div className="hidden sm:flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                activeTab === tab.id ? NUTRITION_HUB_CHIP_ACTIVE : NUTRITION_HUB_CHIP_INACTIVE,
+                "flex shrink-0 items-center gap-1.5 text-sm",
               )}
             >
               {tab.icon}

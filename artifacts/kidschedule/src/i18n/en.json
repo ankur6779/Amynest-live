@@ -5561,6 +5561,13 @@
       "library": "Guides",
       "score": "Daily Score"
     },
+    "tabs_short": {
+      "nutrients": "Nutrients",
+      "meals": "Meals",
+      "family": "Family",
+      "library": "Guides",
+      "score": "Score"
+    },
     "library": {
       "title": "Nutrition Library",
       "subtitle": "Expert nutrition guides, meal plans, healthy recipes and family wellness resources.",
