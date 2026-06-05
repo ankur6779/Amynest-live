@@ -431,7 +431,7 @@ function maybeEmitHealthAlerts(snapshot: AmyVoiceHealthSnapshot): void {
   if (signature === lastAlertSignature) return;
   lastAlertSignature = signature;
 
-  if (import.meta.env.DEV || import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true") {
+  if (import.meta.env.DEV) {
     console.warn("[AMY VOICE]", "health_alerts", snapshot.alerts);
   }
   reportAmyVoiceMonitoring("health_alert", {

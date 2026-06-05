@@ -1,10 +1,10 @@
+import { IS_PROD } from "@/lib/is-dev";
 import { playStaticAudio } from "@/lib/static-audio";
-import { isStaticAudioDebug } from "@/lib/static-audio-telemetry";
 import { recordTtsUserGesture } from "@/lib/tts-guard";
 
 /** Emergency control to verify static GCS → API proxy → HTMLAudio playback. */
 export function StaticAudioTestButton() {
-  if (!import.meta.env.DEV && !isStaticAudioDebug()) return null;
+  if (IS_PROD) return null;
 
   return (
     <button

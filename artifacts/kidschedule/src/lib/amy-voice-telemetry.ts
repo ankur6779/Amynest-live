@@ -117,7 +117,7 @@ export function recordAmyVoiceLayerSuccess(
       m.recordSessionLayerOutcome(layer, true),
     );
   }
-  if (import.meta.env.DEV || import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true") {
+  if (import.meta.env.DEV) {
     console.info(LOG, event, detail ?? "");
   }
   reportAmyVoiceTelemetry(event, detail);
@@ -134,7 +134,7 @@ export function recordAmyVoiceLayerFailed(
       m.recordSessionLayerOutcome(layer, false),
     );
   }
-  if (import.meta.env.DEV || import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true") {
+  if (import.meta.env.DEV) {
     console.warn(LOG, "layer_failed", layer, error, detail ?? "");
   }
   reportAmyVoiceTelemetry("layer_failed", { layer, error, ...detail });
@@ -269,7 +269,7 @@ function reportAmyVoiceTelemetry(
         }),
         keepalive: true,
       });
-      if (!res.ok && (import.meta.env.DEV || import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true")) {
+      if (!res.ok && (import.meta.env.DEV)) {
         console.warn(LOG, "telemetry rejected", res.status, logType);
       }
     } catch {
@@ -283,7 +283,7 @@ export function reportAmyVoiceMonitoring(
   kind: "health_alert" | "health_snapshot" | "analytics" | "runtime_snapshot",
   meta?: Record<string, unknown>,
 ): void {
-  if (import.meta.env.DEV || import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true") {
+  if (import.meta.env.DEV) {
     console.info(LOG, kind, meta ?? "");
   }
   reportAmyVoiceTelemetry("fallback_used", { monitoringKind: kind, ...meta });
@@ -295,7 +295,7 @@ export function reportAmyVoiceRuntimeSnapshot(meta?: Record<string, unknown>): v
     try {
       const { getAmyVoiceRuntimeSnapshot } = await import("@/lib/amy-voice-delivery-profile");
       const runtime = await getAmyVoiceRuntimeSnapshot();
-      if (import.meta.env.DEV || import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true") {
+      if (import.meta.env.DEV) {
         console.info(LOG, "runtime_snapshot", runtime);
       }
       reportAmyVoiceTelemetry("fallback_used", {

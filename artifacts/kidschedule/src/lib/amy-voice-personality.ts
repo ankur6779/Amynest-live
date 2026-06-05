@@ -238,7 +238,7 @@ export function stabilizeAmyVoiceDeliveryModifiers(
   };
   lastValidation = correctedValidation;
 
-  if (import.meta.env.DEV || import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true") {
+  if (import.meta.env.DEV) {
     console.info("[AMY VOICE]", "personality_stabilize", {
       driftScore: validation.driftScore,
       blend,

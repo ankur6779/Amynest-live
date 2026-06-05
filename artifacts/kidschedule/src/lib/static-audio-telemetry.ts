@@ -1,10 +1,15 @@
 import { getApiUrl } from "@/lib/api";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { getFirebaseAuth } from "@/lib/firebase";
+import { IS_PROD, isStaticAudioDebugEnabled } from "@/lib/is-dev";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
 
 const SESSION_ALERT_THRESHOLD = 3;
 const RETRY_DELAY_MS = 300;
+/** Avoid scary toasts while the API / GCS stack is still warming after cold start. */
+const SESSION_ALERT_BOOT_GRACE_MS = 90_000;
+const sessionStartedAt =
+  typeof performance !== "undefined" ? performance.timeOrigin + performance.now() : Date.now();
 
 let sessionFailureCount = 0;
 let sessionAlertShown = false;
@@ -32,7 +37,7 @@ export type StaticAudioClientEventType =
   | "static_audio_proxy_failed";
 
 export function isStaticAudioDebug(): boolean {
-  return import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true";
+  return isStaticAudioDebugEnabled();
 }
 
 export function isClientStaticAudioCircuitOpen(): boolean {
@@ -121,6 +126,7 @@ async function showStaticAudioToast(title: string, description?: string): Promis
 }
 
 function maybeShowSessionAlert(): void {
+  if (IS_PROD && Date.now() - sessionStartedAt < SESSION_ALERT_BOOT_GRACE_MS) return;
   if (sessionFailureCount <= SESSION_ALERT_THRESHOLD || sessionAlertShown) return;
   sessionAlertShown = true;
   void showStaticAudioToast(
@@ -324,24 +330,12 @@ export async function checkStaticAudioHealthOnBoot(): Promise<void> {
 
     if (!res.ok || body.status !== "ok" || !body.gcs) {
       console.warn("STATIC AUDIO DEGRADED AT BOOT", { status: res.status, body });
-      reportStaticAudioEvent(
-        "static_audio_proxy_failed",
-        "Static audio health check degraded at boot",
-        { httpStatus: res.status, ...body },
-        { countTowardCircuit: false },
-      );
       if (!bootOk) markAudioApiUnreachable();
       return;
     }
 
     if (body.gcsProbeOk === false) {
       console.warn("STATIC AUDIO GCS PROBE PENDING", body);
-      reportStaticAudioEvent(
-        "static_audio_proxy_failed",
-        "Static audio GCS probe warming up",
-        { httpStatus: res.status, ...body },
-        { countTowardCircuit: false },
-      );
       return;
     }
 
@@ -349,12 +343,6 @@ export async function checkStaticAudioHealthOnBoot(): Promise<void> {
   } catch (err) {
     console.warn("STATIC AUDIO BOOT HEALTH UNREACHABLE", err);
     markAudioApiUnreachable();
-    reportStaticAudioEvent(
-      "static_audio_proxy_failed",
-      "Static audio health check unreachable at boot",
-      { error: err instanceof Error ? err.message : String(err) },
-      { countTowardCircuit: false },
-    );
   }
 }
 

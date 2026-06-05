@@ -5,12 +5,14 @@
 
 import { getAppApiBaseOrigin, getApiUrl } from "@/lib/api";
 import { isAndroidAmyNestAudioClient, isStandalonePwa } from "@/lib/device-lite";
+import { IS_PROD, isStaticAudioDebugEnabled } from "@/lib/is-dev";
 import { lookupStaticAudioUrl } from "@/lib/static-audio";
 import { isClientStaticAudioCircuitOpen } from "@/lib/static-audio-telemetry";
 import { isAudioUnlocked } from "@/lib/tts-guard";
 
 export function isAmyVoiceAudioDebugEnabled(): boolean {
-  if (import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true") return true;
+  if (IS_PROD) return false;
+  if (isStaticAudioDebugEnabled()) return true;
   if (typeof window === "undefined") return false;
   try {
     if (/[?&]audioDebug=1/.test(window.location.search || "")) return true;

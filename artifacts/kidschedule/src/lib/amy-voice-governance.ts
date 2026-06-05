@@ -112,7 +112,7 @@ function recordAudit(entry: ExperimentAuditEntry): void {
   auditLog.push(entry);
   if (auditLog.length > 40) auditLog.shift();
   persistAuditLog();
-  if (import.meta.env.DEV || import.meta.env.VITE_STATIC_AUDIO_DEBUG === "true") {
+  if (import.meta.env.DEV) {
     console.info("[AMY VOICE]", "experiment_audit", entry);
   }
 }
