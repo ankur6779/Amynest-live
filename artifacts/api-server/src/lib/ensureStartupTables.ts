@@ -494,6 +494,21 @@ export async function ensureInfantProductAnalyticsEventsTable(): Promise<void> {
   );
 }
 
+export async function ensurePtmPrepDataTable(): Promise<void> {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS ptm_prep_data (
+      user_id            TEXT PRIMARY KEY,
+      draft              JSONB,
+      history            JSONB NOT NULL DEFAULT '[]'::jsonb,
+      reminders          JSONB NOT NULL DEFAULT '[]'::jsonb,
+      client_updated_at  BIGINT NOT NULL DEFAULT 0,
+      created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  logger.info({ evt: "db.ensure", table: "ptm_prep_data" }, "Ensured ptm_prep_data table");
+}
+
 export async function ensureStartupTables(): Promise<void> {
   const steps: Array<{ name: string; run: () => Promise<void> }> = [
     { name: "children", run: ensureChildrenTable },
@@ -506,6 +521,7 @@ export async function ensureStartupTables(): Promise<void> {
     { name: "infant_care", run: ensureInfantCareTables },
     { name: "infant_milestone_progress", run: ensureInfantMilestoneProgressTable },
     { name: "infant_product_analytics_events", run: ensureInfantProductAnalyticsEventsTable },
+    { name: "ptm_prep_data", run: ensurePtmPrepDataTable },
   ];
 
   const failed: string[] = [];

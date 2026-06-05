@@ -15,6 +15,8 @@ import {
   badgeLabel,
   type EngagementState,
 } from "@workspace/study-zone";
+import { cn } from "@/lib/utils";
+import { studyPanelCard } from "@/lib/study-zone-theme";
 
 // ─── Strip ────────────────────────────────────────────────────────────────────
 
@@ -22,7 +24,7 @@ export function EngagementStrip({ engagement }: { engagement: EngagementState })
   const goalPct = Math.min(100, Math.round((engagement.goalProgress / DAILY_GOAL_TARGET) * 100));
   const recentBadges = engagement.badges.slice(-6).reverse();
   return (
-    <div className="rounded-2xl border border-border bg-card via-white p-4">
+    <div className={cn(studyPanelCard(), "p-4")}>
       <div className="flex items-center gap-3 flex-wrap">
         <Stat
           icon={<Flame className="h-4 w-4 text-foreground" />}

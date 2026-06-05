@@ -30,6 +30,16 @@ export function ContentBankScenarios({ childId, onCompleted }: Props) {
   const [picked, setPicked] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    const texts = data?.items?.map((i) => i.audioText).filter(Boolean) ?? [];
+    if (texts.length === 0) return;
+    scheduleLearningZoneAudioPrewarm(authFetch, {
+      module: "learn_with_amy",
+      texts,
+      stateKey: `content-bank:life-skills:${childId}`,
+    });
+  }, [authFetch, childId, data?.items]);
+
   if (loading && !data) {
     return (
       <p className="text-sm text-muted-foreground">Loading scenario lessons…</p>
@@ -40,16 +50,6 @@ export function ContentBankScenarios({ childId, onCompleted }: Props) {
   }
 
   const active = data.items.find((x) => x.id === activeId) ?? data.items[0];
-
-  useEffect(() => {
-    const texts = data?.items?.map((i) => i.audioText).filter(Boolean) ?? [];
-    if (texts.length === 0) return;
-    scheduleLearningZoneAudioPrewarm(authFetch, {
-      module: "learn_with_amy",
-      texts,
-      stateKey: `content-bank:life-skills:${childId}`,
-    });
-  }, [authFetch, childId, data?.items]);
 
   const submitChoice = async (lesson: LifeSkillsLessonWithAudio, choice: string) => {
     setPicked(choice);

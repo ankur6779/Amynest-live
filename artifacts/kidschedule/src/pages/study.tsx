@@ -25,7 +25,6 @@ import {
 import { AdaptiveQuestionRunner } from "@/components/adaptive-question-runner";
 import { useStudyCountry } from "@/hooks/use-study-country";
 import { useAuth } from "@/lib/firebase-auth-hooks";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
@@ -58,6 +57,21 @@ import {
   EngagementStrip, XpPopup, ConfettiBurst, useStudyFx,
 } from "@/components/study-engagement";
 import { HubModuleGateWrap } from "@/components/hub-module-gate-wrap";
+import { cn } from "@/lib/utils";
+import {
+  STUDY_ACCENT,
+  STUDY_BACK_BTN,
+  STUDY_HEADER,
+  STUDY_HINT_BANNER,
+  STUDY_ICON_SHELL,
+  STUDY_MAIN,
+  STUDY_PAGE,
+  STUDY_SECTION_TITLE,
+  studyEmojiShell,
+  studyGlassCard,
+  studyPanelCard,
+  studyPlayTile,
+} from "@/lib/study-zone-theme";
 
 type Child = {
   id: number;
@@ -156,30 +170,32 @@ export default function StudyPage() {
   }, [goBack]);
 
   return (
-    <div className="flex flex-col gap-5 animate-in fade-in duration-300">
-      <header className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full shrink-0"
+    <div className={STUDY_PAGE}>
+      <header className={STUDY_HEADER}>
+        <div className="mx-auto flex max-w-4xl items-center gap-3">
+          <button
+            type="button"
+            className={STUDY_BACK_BTN}
             onClick={goBack}
             aria-label={t("screens.study.back")}
           >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div className={STUDY_ICON_SHELL}>
+            <GraduationCap className="h-5 w-5" />
+          </div>
           <div className="min-w-0">
-            <h1 className="font-quicksand text-2xl font-bold text-foreground flex items-center gap-2">
-              <GraduationCap className="h-6 w-6 text-foreground" />
+            <h1 className="font-quicksand text-xl font-black leading-tight text-foreground">
               {t("screens.study.header_title")}
             </h1>
-            <p className="text-sm text-muted-foreground truncate">
+            <p className="truncate text-xs text-muted-foreground">
               {child ? `${child.name} · ${mode ? MODE_LABELS[mode].title : ""}` : t("screens.study.pick_child")}
             </p>
           </div>
         </div>
       </header>
 
+      <main className={cn(STUDY_MAIN, "study-page-enter")}>
       <HubModuleGateWrap
         featureId="hub_smart_study"
         childId={activeChildId}
@@ -339,6 +355,7 @@ export default function StudyPage() {
         />
       )}
       </HubModuleGateWrap>
+      </main>
     </div>
   );
 }
@@ -405,11 +422,11 @@ function TodaysPlanSection({
     return () => { cancelled = true; };
   }, [childId, getToken, planDate]);
 
-  if (loading || !plan) return <div>Loading...</div>;
+  if (loading || !plan) return <Skeleton className="h-32 w-full rounded-[24px]" />;
 
   return (
-    <Card className="rounded-2xl mb-3 border-[hsl(var(--brand-indigo-300))] dark:border-[hsl(var(--brand-indigo-800))]">
-      <CardContent className="p-4">
+    <div className={cn(studyPanelCard(), "mb-3")}>
+      <div className="p-4">
         <div className="flex items-center justify-between mb-1">
           <div className="font-quicksand text-lg font-bold text-foreground flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-[hsl(var(--brand-indigo-500))]" />
@@ -432,7 +449,10 @@ function TodaysPlanSection({
                 <button
                   key={it.id}
                   onClick={() => onOpen(it)}
-                  className="text-left rounded-xl border p-3 flex items-center gap-3 hover-elevate transition"
+                  className={cn(
+                    STUDY_HINT_BANNER,
+                    "w-full text-left rounded-xl p-3 flex items-center gap-3",
+                  )}
                   data-testid={`plan-item-${it.subject}-${it.topicId}`}
                 >
                   <div className="text-2xl">{it.subjectEmoji}</div>
@@ -461,8 +481,8 @@ function TodaysPlanSection({
             })}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -471,40 +491,47 @@ function TodaysPlanSection({
 function EmptyChildren() {
   const { t } = useTranslation();
   return (
-    <Card className="rounded-2xl border-dashed">
-      <CardContent className="p-10 text-center">
+    <div className={cn(studyPanelCard(), "border-dashed")}>
+      <div className="p-10 text-center">
         <h3 className="font-quicksand text-xl font-bold text-foreground mb-2">{t("screens.study.no_children_title")}</h3>
         <p className="text-sm text-muted-foreground mb-4">{t("screens.study.no_children_body")}</p>
-        <Button asChild className="rounded-full">
+        <Button asChild className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 hover:from-fuchsia-400 hover:to-violet-500">
           <AppLink href="/children/new" source="study-add-child">{t("screens.study.add_child")}</AppLink>
         </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 function ChildPicker({ children, onPick }: { children: Child[]; onPick: (c: Child) => void }) {
   const { t } = useTranslation();
   return (
-    <div className="grid sm:grid-cols-2 gap-3">
+    <div className="grid gap-3 sm:grid-cols-2">
       {children.map((c) => {
         const m = resolveStudyMode(c.age, c.childClass);
         const label = MODE_LABELS[m];
         return (
-          <Card key={c.id} className="rounded-2xl hover-elevate cursor-pointer" onClick={() => onPick(c)}>
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-muted text-foreground flex items-center justify-center text-xl">
-                {label.emoji}
-              </div>
-              <div className="flex-1 min-w-0">
+          <div
+            key={c.id}
+            className={studyGlassCard()}
+            onClick={() => onPick(c)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") onPick(c);
+            }}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="flex items-center gap-4 p-5">
+              <div className={studyEmojiShell()}>{label.emoji}</div>
+              <div className="min-w-0 flex-1">
                 <div className="font-quicksand font-bold text-foreground">{c.name}</div>
                 <div className="text-xs text-muted-foreground">
                   {c.age} {t("screens.study.year_short")}{c.childClass ? ` · ${t("screens.study.class_label", { class: c.childClass })}` : ""} · {label.title}
                 </div>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </CardContent>
-          </Card>
+              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+            </div>
+          </div>
         );
       })}
     </div>
@@ -543,7 +570,7 @@ function PlayHome({
   return (
     <>
       {numbersTomorrow > 0 && (
-        <p className="text-xs text-muted-foreground mb-3 rounded-xl border border-dashed px-3 py-2">
+        <p className={cn(STUDY_HINT_BANNER, "mb-3 text-xs text-muted-foreground")}>
           {t("screens.study.journey_unlock_hint", {
             count: numbersTomorrow,
             day: Math.min(journeyDay + 1, 3),
@@ -551,18 +578,18 @@ function PlayHome({
           })}
         </p>
       )}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       {categories.map((cat) => {
         const pct = progress ? categoryPercent(progress, cat.id, cat.items.length) : 0;
         return (
-          <Card key={cat.id} className="rounded-2xl hover-elevate cursor-pointer" onClick={() => onOpen(cat.id)}>
-            <CardContent className="p-4 flex flex-col items-start gap-2 min-h-[124px]">
+          <div key={cat.id} className={studyGlassCard()} onClick={() => onOpen(cat.id)}>
+            <div className="flex min-h-[124px] flex-col items-start gap-2 p-4">
               <div className="text-3xl">{cat.emoji}</div>
               <div className="font-quicksand font-bold text-foreground">{cat.title}</div>
               <div className="text-xs text-muted-foreground">{t("screens.study.items_done", { done: progress?.play[cat.id]?.length ?? 0, total: cat.items.length })}</div>
               <Progress value={pct} className="h-1.5 w-full" />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         );
       })}
       </div>
@@ -627,8 +654,8 @@ function PlayCategoryView({
   return (
     <div className="relative">
       <XpPopup amount={xpAmount} trigger={xpTrigger} />
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-quicksand text-xl font-bold text-foreground flex items-center gap-2">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className={STUDY_SECTION_TITLE}>
           <span className="text-2xl">{cat.emoji}</span> {cat.title}
         </h2>
       </div>
@@ -647,24 +674,23 @@ function PlayCategoryView({
               onClick={() => handleTap(item)}
               animate={popping ? { scale: [1, 1.08, 1], boxShadow: ["0 0 0 0 rgba(99,102,241,0)", "0 0 0 10px rgba(99,102,241,0.18)", "0 0 0 0 rgba(99,102,241,0)"] } : { scale: 1 }}
               transition={{ duration: 0.4 }}
-              className={[
-                "group relative rounded-2xl border-2 p-4 text-left transition-colors",
-                "bg-card",
-                done ? "border-primary" : "border-border",
-                "hover:shadow-md active:shadow-inner",
-              ].join(" ")}
+              className={studyPlayTile(done)}
             >
               <div className="flex items-start justify-between gap-2">
                 <motion.div
                   animate={popping ? { scale: [1, 1.4, 1], rotate: [0, -8, 8, 0] } : { scale: 1, rotate: 0 }}
                   transition={{ duration: 0.45 }}
-                  className="text-4xl leading-none"
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-lg text-lg leading-none",
+                    "bg-gradient-to-br from-violet-500/25 to-fuchsia-500/15",
+                    "border border-white/[0.10] font-bold text-foreground",
+                  )}
                 >
-                  {item.emoji ?? "·"}
+                  {item.emoji ?? item.label.slice(0, 1)}
                 </motion.div>
-                {done && <CheckCircle2 className="h-4 w-4 text-foreground" />}
+                {done && <CheckCircle2 className="h-4 w-4 text-emerald-400" />}
               </div>
-              <div className="mt-2 font-quicksand font-bold text-foreground text-lg">{item.label}</div>
+              <div className="mt-2 font-quicksand text-lg font-bold text-foreground">{item.label}</div>
               {isRhyme && item.body ? (
                 <div className="text-[11px] text-muted-foreground mt-1 line-clamp-3 whitespace-pre-line">
                   {item.body}
@@ -672,7 +698,7 @@ function PlayCategoryView({
               ) : (
                 <div className="text-[11px] text-muted-foreground mt-1">{item.speak}</div>
               )}
-              <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-foreground font-medium">
+              <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-violet-200/80">
                 <Volume2 className="h-3 w-3" /> {t("screens.study.tap_to_hear")}
               </div>
             </motion.button>
@@ -701,25 +727,25 @@ function StudyHome({
     [mode, country, childClass, childAge],
   );
   return (
-    <div className="grid sm:grid-cols-2 gap-3">
+    <div className="grid gap-3 sm:grid-cols-2">
       {subjects.map((s) => {
         const pct = progress ? subjectPercent(progress, mode, s.id, s.topics.length) : 0;
         const completed = progress
           ? Object.values(progress[mode][s.id] ?? {}).filter((t) => t.completed).length
           : 0;
         return (
-          <Card key={s.id} className="rounded-2xl hover-elevate cursor-pointer" onClick={() => onOpen(s.id)}>
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="text-3xl">{s.emoji}</div>
+          <div key={s.id} className={studyGlassCard()} onClick={() => onOpen(s.id)}>
+            <div className="p-5">
+              <div className="mb-2 flex items-center gap-3">
+                <div className={studyEmojiShell(STUDY_ACCENT)}>{s.emoji}</div>
                 <div>
                   <div className="font-quicksand text-lg font-bold text-foreground">{s.title}</div>
                   <div className="text-xs text-muted-foreground">{t("screens.study.topics_count", { done: completed, total: s.topics.length })}</div>
                 </div>
               </div>
               <Progress value={pct} className="h-1.5" />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         );
       })}
     </div>
@@ -748,26 +774,26 @@ function SubjectTopicList({
   if (!subj) return <p className="text-sm text-muted-foreground">{tr("screens.study.subject_not_found")}</p>;
   return (
     <div className="grid gap-3">
-      <h2 className="font-quicksand text-xl font-bold text-foreground flex items-center gap-2">
+      <h2 className={STUDY_SECTION_TITLE}>
         <span className="text-2xl">{subj.emoji}</span> {subj.title}
       </h2>
       {subj.topics.map((t) => {
         const stat = progress?.[mode][subj.id]?.[t.id];
         return (
-          <Card key={t.id} className="rounded-2xl hover-elevate cursor-pointer" onClick={() => onOpen(t.id)}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="flex-1 min-w-0">
+          <div key={t.id} className={studyGlassCard()} onClick={() => onOpen(t.id)}>
+            <div className="flex items-center gap-3 p-4">
+              <div className="min-w-0 flex-1">
                 <div className="font-quicksand font-bold text-foreground">{t.title}</div>
-                <div className="text-xs text-muted-foreground line-clamp-1">{t.notes.split("\n")[0]}</div>
+                <div className="line-clamp-1 text-xs text-muted-foreground">{t.notes.split("\n")[0]}</div>
                 {stat && (
-                  <div className="text-[11px] mt-1 inline-flex items-center gap-1 text-foreground font-medium">
+                  <div className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-amber-200/90">
                     <Trophy className="h-3 w-3" /> {tr("screens.study.best_score", { score: stat.score, total: stat.total })}
                   </div>
                 )}
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </CardContent>
-          </Card>
+              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+            </div>
+          </div>
         );
       })}
     </div>
@@ -913,10 +939,10 @@ function TopicDetail({
         <p className="text-xs text-muted-foreground">{subj.emoji} {subj.title}</p>
       </div>
 
-      <Card className="rounded-2xl">
-        <CardContent className="p-5">
+      <div className={studyPanelCard()}>
+        <div className="p-5">
           {topic.imageExample && (
-            <div className="mb-4 rounded-xl overflow-hidden border border-border/40 bg-card">
+            <div className="mb-4 overflow-hidden rounded-xl border border-white/[0.08] bg-[rgba(18,28,60,0.45)]">
               <img
                 src={`data:image/svg+xml;utf8,${encodeURIComponent(topic.imageExample)}`}
                 alt={`${topic.title} illustration`}
@@ -926,8 +952,8 @@ function TopicDetail({
             </div>
           )}
           <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="font-quicksand font-bold text-foreground inline-flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-foreground" /> {t("screens.study.notes_from_amy")}
+            <div className="inline-flex items-center gap-2 font-quicksand font-bold text-foreground">
+              <Sparkles className="h-4 w-4 text-fuchsia-300" /> {t("screens.study.notes_from_amy")}
             </div>
             <Button
               size="sm"
@@ -960,11 +986,11 @@ function TopicDetail({
               <AppLink href="/assistant" source="study-ask-amy">{t("screens.study.ask_amy_more")}</AppLink>
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card className="rounded-2xl">
-        <CardContent className="p-5">
+      <div className={studyPanelCard()}>
+        <div className="p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="font-quicksand font-bold text-foreground">
               {useAdaptivePractice
@@ -972,7 +998,10 @@ function TopicDetail({
                 : t("screens.study.practice_label", { count: total })}
             </div>
             {!practiceOpen && (
-              <Button className="rounded-full bg-primary hover:bg-primary" onClick={() => setPracticeOpen(true)}>
+              <Button
+                className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 hover:from-fuchsia-400 hover:to-violet-500"
+                onClick={() => setPracticeOpen(true)}
+              >
                 {useAdaptivePractice
                   ? t("screens.study.start_adaptive", "Start adaptive practice")
                   : t("screens.study.try_now")}
@@ -987,7 +1016,7 @@ function TopicDetail({
               className="grid gap-4"
             >
               {topic.questions.map((q, qi) => (
-                <div key={qi} className="rounded-xl border border-border/50 p-3">
+                <div key={qi} className="rounded-xl border border-white/[0.08] bg-[rgba(18,28,60,0.35)] p-3">
                   <div className="font-medium text-foreground mb-2">{qi + 1}. {q.q}</div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {q.options.map((opt, oi) => {
@@ -995,10 +1024,14 @@ function TopicDetail({
                       const correct = q.answer === oi;
                       const showState = submitted;
                       const cls = !showState
-                        ? selected ? "border-primary bg-muted" : "border-border"
-                        : correct ? "border-primary bg-muted"
-                        : selected ? "border-primary bg-muted"
-                        : "border-border opacity-70";
+                        ? selected
+                          ? "border-fuchsia-400/60 bg-fuchsia-500/10"
+                          : "border-white/[0.10] bg-[rgba(18,28,60,0.35)]"
+                        : correct
+                          ? "border-emerald-400/60 bg-emerald-500/10"
+                          : selected
+                            ? "border-rose-400/50 bg-rose-500/10"
+                            : "border-white/[0.08] opacity-70";
                       return (
                         <button
                           key={oi}
@@ -1023,7 +1056,7 @@ function TopicDetail({
               <div className="flex items-center justify-between flex-wrap gap-3">
                 {!submitted ? (
                   <Button
-                    className="rounded-full bg-primary hover:bg-primary"
+                    className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 hover:from-fuchsia-400 hover:to-violet-500"
                     onClick={submit}
                     disabled={picks.some((p) => p === -1)}
                   >
@@ -1048,8 +1081,8 @@ function TopicDetail({
               </div>
             </motion.div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1063,14 +1096,17 @@ function TopicDetail({
 function SmartAdaptiveCta({ onOpen }: { onOpen: () => void }) {
   const { t } = useTranslation();
   return (
-    <Card
+    <div
       onClick={onOpen}
       data-testid="smart-adaptive-cta"
-      className="rounded-2xl border-2 border-[hsl(var(--brand-indigo-300))] dark:border-[hsl(var(--brand-indigo-800))] bg-gradient-to-br from-[hsl(var(--brand-indigo-50))] to-[hsl(var(--brand-violet-50))] dark:from-[hsl(var(--brand-indigo-950))] dark:to-[hsl(var(--brand-violet-950))] cursor-pointer hover-elevate"
+      className={cn(
+        studyGlassCard(),
+        "bg-gradient-to-br from-fuchsia-500/10 via-violet-600/5 to-transparent",
+      )}
     >
-      <CardContent className="p-4 flex items-center gap-3">
+      <div className="flex items-center gap-3 p-4">
         <div className="text-3xl">✨</div>
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="font-quicksand text-base font-bold text-foreground">
             {t("screens.study.smart_adaptive_title", "Smart Adaptive Practice")}
           </div>
@@ -1078,11 +1114,14 @@ function SmartAdaptiveCta({ onOpen }: { onOpen: () => void }) {
             {t("screens.study.smart_adaptive_subtitle", "AI-picked questions that match your level")}
           </div>
         </div>
-        <Button size="sm" className="rounded-full">
+        <Button
+          size="sm"
+          className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 hover:from-fuchsia-400 hover:to-violet-500"
+        >
           {t("screens.study.start", "Start")}
         </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -1099,21 +1138,21 @@ function SmartSubjectPicker({ mode, onPick }: { mode: "basic" | "advanced"; onPi
           {t("screens.study.smart_pick_subtitle", "Difficulty adapts as you go")}
         </p>
       </header>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {topics.map((s) => (
-          <Card
+          <div
             key={s.id}
             onClick={() => onPick(s.id)}
             data-testid={`smart-subject-${s.id}`}
-            className="rounded-2xl cursor-pointer hover-elevate"
+            className={studyGlassCard()}
           >
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl mb-1">{s.emoji}</div>
+            <div className="p-4 text-center">
+              <div className="mb-1 text-3xl">{s.emoji}</div>
               <div className="font-quicksand text-sm font-bold text-foreground">
                 {s.title}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
     </div>

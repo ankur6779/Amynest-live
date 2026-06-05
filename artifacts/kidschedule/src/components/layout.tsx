@@ -30,6 +30,18 @@ import { SpotlightTour } from "@/components/spotlight-tour";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAppHeaderHeight } from "@/hooks/use-app-header-height";
 import { isLearningZoneRoute } from "@/lib/app-layout";
+function FreeUserBadge({
+  className = ""
+}: {
+  className?: string;
+}) {
+  const {
+    t
+  } = useTranslation();
+  return <span className={`inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground ${className}`} data-testid="badge-free-user">
+      {t("components.layout.free_user")}
+    </span>;
+}
 function SmartParentBadge({
   className = ""
 }: {
@@ -254,7 +266,7 @@ export function Layout({
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold truncate flex items-center gap-1.5">
                   <span className="truncate">{displayName}</span>
-                  {isPremium ? <SmartParentBadge /> : null}
+                  {isPremium ? <SmartParentBadge /> : <FreeUserBadge />}
                 </span>
                 {email ? (
                   <span className="text-xs text-muted-foreground truncate">{email}</span>

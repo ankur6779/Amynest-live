@@ -1805,6 +1805,28 @@ html.amynest-android-shell .chat-thread-page--keyboard-open .chat-thread-message
   }
 }
 
+/* ── Smart Study Zone premium surface ─────────────────────────────── */
+.study-zone-premium {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  background:
+    radial-gradient(circle at 14% 16%, rgba(192, 38, 211, 0.16), transparent 34%),
+    radial-gradient(circle at 86% 10%, rgba(122, 92, 255, 0.14), transparent 36%),
+    linear-gradient(180deg, #071126, #0b1730, #091426);
+}
+
+.study-zone-premium .study-page-enter {
+  animation: parentHubFadeUp 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .study-zone-premium .study-page-enter {
+    animation: none !important;
+  }
+}
+
 /* ── Routine premium CTA ──────────────────────────────────────────── */
 .routine-premium-cta--gradient {
   background: linear-gradient(135deg, #ff6b35 0%, #ff8a00 48%, #ffc83d 100%);

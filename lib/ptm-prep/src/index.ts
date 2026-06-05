@@ -81,6 +81,74 @@ export const DEFAULT_QUESTIONS: { category: PtmCategory; text: string }[] = [
   { category: "social", text: "How does my child cope with losing a game or making a mistake?" },
 ];
 
+/** Preschool (roughly ages 3–5) — social readiness and classroom basics. */
+export const PRESCHOOL_QUESTIONS: { category: PtmCategory; text: string }[] = [
+  { category: "social", text: "Is my child settling in well and feeling comfortable at school?" },
+  { category: "social", text: "How do they share, take turns, and play with classmates?" },
+  { category: "behavior", text: "How do they handle transitions (class to lunch, home time)?" },
+  { category: "academic", text: "Are they showing interest in letters, numbers, or early reading?" },
+  { category: "academic", text: "How is their pencil grip and fine-motor work progressing?" },
+  { category: "behavior", text: "Do they follow simple classroom rules without constant reminders?" },
+  { category: "social", text: "Are there any separation-anxiety or crying patterns to note?" },
+  { category: "social", text: "Can they express needs to the teacher (bathroom, hunger, help)?" },
+];
+
+/** Primary (roughly ages 6–8) — homework, reading, peer dynamics. */
+export const PRIMARY_QUESTIONS: { category: PtmCategory; text: string }[] = [
+  { category: "academic", text: "How is reading fluency and comprehension at grade level?" },
+  { category: "academic", text: "Which subject needs the most support at home right now?" },
+  { category: "academic", text: "Is homework quality consistent, or rushed at the last minute?" },
+  { category: "behavior", text: "How is classroom participation and attention during lessons?" },
+  { category: "social", text: "Are there friendship changes or playground conflicts I should know about?" },
+  { category: "behavior", text: "How do they respond when corrected or given constructive feedback?" },
+  { category: "academic", text: "Are there upcoming assessments or projects we should prepare for?" },
+  { category: "social", text: "Is my child confident raising their hand or asking for help?" },
+];
+
+/** Upper primary (ages 9+) — study habits, exams, independence. */
+export const UPPER_QUESTIONS: { category: PtmCategory; text: string }[] = [
+  { category: "academic", text: "How are unit-test / exam scores trending this term?" },
+  { category: "academic", text: "Which topics need revision before the next assessment?" },
+  { category: "behavior", text: "Is my child managing study time and deadlines independently?" },
+  { category: "academic", text: "Are there gaps in Hindi/regional language or second-language subjects?" },
+  { category: "social", text: "How is peer pressure or classroom dynamics affecting them?" },
+  { category: "behavior", text: "Is screen time or distractions affecting school performance?" },
+  { category: "academic", text: "Would extra coaching or Olympiad prep be appropriate now?" },
+  { category: "social", text: "Is my child comfortable discussing problems with teachers?" },
+];
+
+export type PtmAgeBand = "preschool" | "primary" | "upper" | "general";
+
+export function resolveAgeBand(childAge?: number): PtmAgeBand {
+  if (childAge == null || childAge < 3) return "general";
+  if (childAge < 6) return "preschool";
+  if (childAge < 9) return "primary";
+  return "upper";
+}
+
+export function getQuestionsForAge(childAge?: number): { category: PtmCategory; text: string }[] {
+  const band = resolveAgeBand(childAge);
+  switch (band) {
+    case "preschool":
+      return PRESCHOOL_QUESTIONS;
+    case "primary":
+      return PRIMARY_QUESTIONS;
+    case "upper":
+      return UPPER_QUESTIONS;
+    default:
+      return DEFAULT_QUESTIONS;
+  }
+}
+
+/** Categories pre-selected on a fresh session per age band. */
+export function defaultSelectedCategories(childAge?: number): Set<PtmCategory> {
+  const band = resolveAgeBand(childAge);
+  if (band === "preschool") return new Set(["social", "behavior"]);
+  if (band === "primary") return new Set(["academic", "social"]);
+  if (band === "upper") return new Set(["academic", "behavior"]);
+  return new Set(["academic"]);
+}
+
 // ─── Storage keys (callers persist with localStorage / AsyncStorage) ────────
 export const STORAGE_KEY_DRAFT = "amynest.ptm_prep.draft.v1";
 export const STORAGE_KEY_HISTORY = "amynest.ptm_prep.history.v1";
@@ -101,19 +169,22 @@ export function todayKey(date: Date = new Date()): string {
 export function createSession(input: {
   childId?: string;
   childName?: string;
+  childAge?: number;
   date?: string;
 } = {}): PtmSession {
+  const bank = getQuestionsForAge(input.childAge);
+  const preselect = defaultSelectedCategories(input.childAge);
   return {
     id: rid("ptm"),
     childId: input.childId,
     childName: input.childName,
     date: input.date ?? todayKey(),
     stage: "prepare",
-    questions: DEFAULT_QUESTIONS.map((q) => ({
+    questions: bank.map((q) => ({
       id: rid("q"),
       category: q.category,
       text: q.text,
-      selected: q.category === "academic",
+      selected: preselect.has(q.category),
       asked: false,
     })),
     notes: { teacherFeedback: "", weakAreas: "", suggestions: "" },
@@ -331,4 +402,225 @@ export function sessionStats(s: PtmSession): SessionStats {
     totalActions: s.actions.length,
     doneActions: s.actions.filter((a) => a.done).length,
   };
+}
+
+// ─── Amy AI helpers (local fallbacks + parsers) ───────────────────────────
+
+export interface AmyQuestionsResult {
+  questions: string[];
+  source: "ai" | "local";
+}
+
+export interface AmyActionsResult {
+  actions: string[];
+  source: "ai" | "local";
+}
+
+export function generateAmyQuestionsLocal(input: {
+  childAge?: number;
+  childName?: string;
+  teacherName?: string;
+  className?: string;
+  previousWeakAreas?: string;
+}): AmyQuestionsResult {
+  const band = resolveAgeBand(input.childAge);
+  const name = input.childName?.trim() || "my child";
+  const pool: string[] = [];
+  if (band === "preschool") {
+    pool.push(
+      `How is ${name} adjusting to the daily school routine?`,
+      "Are there any toileting or self-care skills we should practise at home?",
+      "Which play-based activities does my child enjoy most in class?",
+    );
+  } else if (band === "primary") {
+    pool.push(
+      `How is ${name}'s reading and writing compared to classmates?`,
+      "Are there spelling or handwriting habits we should reinforce?",
+      "Is my child participating in class discussions?",
+    );
+  } else if (band === "upper") {
+    pool.push(
+      "How should we plan revision before the next unit test?",
+      "Is my child taking ownership of homework without daily reminders?",
+      "Are there co-curricular areas worth encouraging?",
+    );
+  } else {
+    pool.push(
+      `How is ${name} progressing overall this term?`,
+      "What is one strength and one area to work on at home?",
+    );
+  }
+  if (input.previousWeakAreas?.trim()) {
+    pool.push(`Last time we discussed "${input.previousWeakAreas.slice(0, 60)}" — any improvement?`);
+  }
+  if (input.teacherName?.trim()) {
+    pool.push(`From your perspective, ${input.teacherName.trim()}, what should we prioritise this month?`);
+  }
+  return { questions: pool.slice(0, 5), source: "local" };
+}
+
+export function parseAmyQuestionsResponse(
+  json: unknown,
+  fallback: AmyQuestionsResult,
+): AmyQuestionsResult {
+  if (!json || typeof json !== "object") return fallback;
+  const items = (json as { questions?: unknown }).questions;
+  if (!Array.isArray(items)) return fallback;
+  const questions = items
+    .filter((q): q is string => typeof q === "string")
+    .map((q) => q.trim())
+    .filter((q) => q.length >= 8)
+    .slice(0, 6);
+  if (questions.length === 0) return fallback;
+  return { questions, source: "ai" };
+}
+
+export function generateAmyActionsLocal(notes: PtmNotes): AmyActionsResult {
+  const fromNotes = suggestActions(notes).map((a) => a.text);
+  return { actions: fromNotes, source: "local" };
+}
+
+export function parseAmyActionsResponse(
+  json: unknown,
+  fallback: AmyActionsResult,
+): AmyActionsResult {
+  if (!json || typeof json !== "object") return fallback;
+  const items = (json as { actions?: unknown }).actions;
+  if (!Array.isArray(items)) return fallback;
+  const actions = items
+    .filter((a): a is string => typeof a === "string")
+    .map((a) => a.trim())
+    .filter((a) => a.length >= 8)
+    .slice(0, 8);
+  if (actions.length === 0) return fallback;
+  return { actions, source: "ai" };
+}
+
+export function mergeAmyQuestionsIntoSession(
+  session: PtmSession,
+  result: AmyQuestionsResult,
+): PtmSession {
+  const existing = new Set(session.questions.map((q) => q.text.toLowerCase()));
+  const added = result.questions
+    .filter((text) => !existing.has(text.toLowerCase()))
+    .map((text) => ({
+      id: rid("q"),
+      category: "custom" as const,
+      text: text.slice(0, 200),
+      selected: true,
+      asked: false,
+    }));
+  return { ...session, questions: [...session.questions, ...added] };
+}
+
+export function mergeAmyActionsIntoSession(
+  session: PtmSession,
+  result: AmyActionsResult,
+): PtmSession {
+  const existing = new Set(session.actions.map((a) => a.text.toLowerCase()));
+  const added: PtmActionItem[] = result.actions
+    .filter((text) => !existing.has(text.toLowerCase()))
+    .map((text) => ({
+      id: rid("a"),
+      text: text.slice(0, 200),
+      done: false,
+      source: "suggestion" as const,
+    }));
+  return { ...session, actions: [...session.actions, ...added] };
+}
+
+// ─── Share / export ─────────────────────────────────────────────────────────
+
+export function formatPtmSummaryText(session: PtmSession): string {
+  const lines: string[] = [];
+  const child = session.childName?.trim() || "Child";
+  lines.push(`PTM Summary — ${child}`);
+  lines.push(`Date: ${session.date}`);
+  if (session.teacherName) lines.push(`Teacher: ${session.teacherName}`);
+  if (session.className) lines.push(`Class: ${session.className}`);
+  lines.push("");
+
+  const asked = session.questions.filter((q) => q.asked);
+  if (asked.length > 0) {
+    lines.push("Questions discussed:");
+    for (const q of asked) {
+      lines.push(`• ${q.text}`);
+      if (q.response?.trim()) lines.push(`  → ${q.response.trim()}`);
+    }
+    lines.push("");
+  }
+
+  if (session.notes.teacherFeedback.trim()) {
+    lines.push(`Teacher feedback: ${session.notes.teacherFeedback.trim()}`);
+  }
+  if (session.notes.weakAreas.trim()) {
+    lines.push(`Weak areas: ${session.notes.weakAreas.trim()}`);
+  }
+  if (session.notes.suggestions.trim()) {
+    lines.push(`Suggestions: ${session.notes.suggestions.trim()}`);
+  }
+  lines.push("");
+
+  if (session.actions.length > 0) {
+    lines.push("Action plan:");
+    for (const a of session.actions) {
+      lines.push(`${a.done ? "✅" : "▫️"} ${a.text}`);
+    }
+    lines.push("");
+  }
+
+  lines.push("— Prepared with AmyNest PTM Prep Assistant");
+  return lines.join("\n");
+}
+
+// ─── Reminders ──────────────────────────────────────────────────────────────
+
+export const STORAGE_KEY_REMINDERS = "amynest.ptm_prep.reminders.v1";
+export const REMINDER_OFFSETS_DAYS = [7, 14] as const;
+
+export interface PtmReminder {
+  id: string;
+  sessionId: string;
+  childId?: string;
+  childName?: string;
+  actionText: string;
+  dueDate: string;
+  /** YYYY-MM-DD when parent dismissed this reminder. */
+  dismissedAt?: string;
+}
+
+export function buildRemindersFromSession(session: PtmSession): PtmReminder[] {
+  const open = session.actions.filter((a) => !a.done);
+  if (open.length === 0) return [];
+  const base = session.completedAt ?? Date.now();
+  const baseDate = new Date(base);
+  const out: PtmReminder[] = [];
+  for (const action of open.slice(0, 4)) {
+    for (const offset of REMINDER_OFFSETS_DAYS) {
+      const due = new Date(baseDate);
+      due.setDate(due.getDate() + offset);
+      out.push({
+        id: rid("rem"),
+        sessionId: session.id,
+        childId: session.childId,
+        childName: session.childName,
+        actionText: action.text,
+        dueDate: todayKey(due),
+      });
+    }
+  }
+  return out;
+}
+
+export function activeReminders(reminders: PtmReminder[], today = todayKey()): PtmReminder[] {
+  return reminders.filter((r) => !r.dismissedAt && r.dueDate <= today);
+}
+
+// ─── Cloud sync payload ─────────────────────────────────────────────────────
+
+export interface PtmPrepSyncPayload {
+  draft: PtmSession | null;
+  history: PtmSession[];
+  reminders: PtmReminder[];
+  clientUpdatedAt: number;
 }

@@ -97,6 +97,7 @@ import infantAnalyticsAdminRouter from "./infant-analytics-admin";
 import otaRouter from "./ota";
 import contentOrchestrationRouter from "./content-orchestration";
 import eventPrepRouter from "./event-prep";
+import ptmPrepRouter from "./ptm-prep";
 import contentBankRouter from "./content-bank";
 import { requireAuth } from "../middlewares/requireAuth";
 
@@ -227,6 +228,7 @@ router.use(audioHealthRouter);
 router.use(infantAnalyticsAdminRouter);
 router.use(contentOrchestrationRouter);
 router.use(eventPrepRouter);
+router.use(ptmPrepRouter);
 router.use(contentBankRouter);
 
 export default router;

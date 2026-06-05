@@ -55,6 +55,7 @@
     "@workspace/family-intelligence": "workspace:*",
     "@workspace/notification-engine": "workspace:*",
     "@workspace/event-prep": "workspace:*",
+    "@workspace/ptm-prep": "workspace:*",
     "@workspace/spelling-catalog": "workspace:*",
     "@workspace/spelling-audio": "workspace:*",
     "@workspace/static-audio": "workspace:*",

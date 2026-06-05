@@ -28,6 +28,18 @@ import {
 } from "@/lib/safe-user-display";
 import { prefetchRouteChunk } from "@/lib/route-chunk-preload";
 
+function FreeUserBadge({ className = "" }: { className?: string }) {
+  const { t } = useTranslation();
+  return (
+    <span
+      className={`inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground ${className}`}
+      data-testid="badge-free-user"
+    >
+      {t("components.layout.free_user")}
+    </span>
+  );
+}
+
 function SmartParentBadge({ className = "" }: { className?: string }) {
   const { t } = useTranslation();
   return (
@@ -200,7 +212,7 @@ export function LayoutMobileMenuSheet({
             <div className="flex min-w-0 flex-col">
               <span className="flex items-center gap-1.5 truncate text-sm font-semibold">
                 <span className="truncate">{displayName}</span>
-                {isPremium ? <SmartParentBadge /> : null}
+                {isPremium ? <SmartParentBadge /> : <FreeUserBadge />}
               </span>
               {email ? (
                 <span className="truncate text-xs text-muted-foreground">{email}</span>

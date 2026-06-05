@@ -8,7 +8,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +15,12 @@ import { CheckCircle2, XCircle, Sparkles, ArrowLeft, RefreshCw } from "lucide-re
 import { LearningLoadMoreButton } from "@/components/learning-load-more-button";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { getApiUrl } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import {
+  STUDY_BACK_BTN,
+  STUDY_SECTION_TITLE,
+  studyPanelCard,
+} from "@/lib/study-zone-theme";
 
 const BATCH_SIZE = 10;
 const PREFETCH_AT = 3;
@@ -263,12 +268,12 @@ export function AdaptiveQuestionRunner({
   return (
     <div className="grid gap-4 animate-in fade-in duration-200">
       <header className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="icon" className="rounded-full shrink-0" onClick={onExit}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+        <div className="flex min-w-0 items-center gap-3">
+          <button type="button" className={STUDY_BACK_BTN} onClick={onExit} aria-label="Back">
+            <ArrowLeft className="h-4 w-4" />
+          </button>
           <div className="min-w-0">
-            <div className="font-quicksand text-xl font-bold text-foreground flex items-center gap-2">
+            <div className={STUDY_SECTION_TITLE}>
               <span className="text-2xl">{subjectEmoji}</span>
               {subjectTitle}
             </div>
@@ -279,8 +284,8 @@ export function AdaptiveQuestionRunner({
         </div>
       </header>
 
-      <Card className="rounded-2xl border-[hsl(var(--brand-indigo-300))] dark:border-[hsl(var(--brand-indigo-800))]">
-        <CardContent className="p-4">
+      <div className={studyPanelCard()}>
+        <div className="p-4">
           <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
             <div className="font-quicksand text-sm font-bold text-foreground inline-flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-[hsl(var(--brand-indigo-500))]" />
@@ -302,22 +307,22 @@ export function AdaptiveQuestionRunner({
             value={questions.length === 0 ? 0 : ((idx + (reveal ? 1 : 0)) / questions.length) * 100}
             className="h-2"
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {loading ? (
-        <Card className="rounded-2xl">
-          <CardContent className="p-5 grid gap-3">
+        <div className={studyPanelCard()}>
+          <div className="grid gap-3 p-5">
             <Skeleton className="h-6 w-2/3" />
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ) : error || !current ? (
-        <Card className="rounded-2xl border-destructive/40">
-          <CardContent className="p-5 text-center">
+        <div className={cn(studyPanelCard(), "border-rose-400/40")}>
+          <div className="p-5 text-center">
             <p className="text-sm text-foreground mb-3">
               {t("screens.study.adaptive_error", "Couldn't load questions just now.")}
             </p>
@@ -325,8 +330,8 @@ export function AdaptiveQuestionRunner({
               <RefreshCw className="h-4 w-4 mr-1" />
               {t("screens.study.adaptive_retry", "Try again")}
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ) : (
         <AnimatePresence mode="wait">
           <motion.div
@@ -336,23 +341,23 @@ export function AdaptiveQuestionRunner({
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25 }}
           >
-            <Card className="rounded-2xl">
-              <CardContent className="p-5">
-                <div className="font-quicksand text-xl font-bold text-foreground mb-4">
+            <div className={studyPanelCard()}>
+              <div className="p-5">
+                <div className="mb-4 font-quicksand text-xl font-bold text-foreground">
                   {current.q}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {current.options.map((opt, oi) => {
                     const isPicked = pickedIdx === oi;
                     const isAnswer = current.answer === opt;
                     const showState = reveal;
                     const cls = !showState
-                      ? "border-border hover-elevate"
+                      ? "border-white/[0.10] bg-[rgba(18,28,60,0.35)] hover:-translate-y-0.5"
                       : isAnswer
-                        ? "border-[hsl(var(--brand-emerald-500))] bg-[hsl(var(--brand-emerald-50))] dark:bg-[hsl(var(--brand-emerald-950))]"
+                        ? "border-emerald-400/60 bg-emerald-500/10"
                         : isPicked
-                          ? "border-destructive bg-destructive/10"
-                          : "border-border opacity-60";
+                          ? "border-rose-400/50 bg-rose-500/10"
+                          : "border-white/[0.08] opacity-60";
                     return (
                       <button
                         key={`${current.id}-${oi}`}
@@ -379,8 +384,8 @@ export function AdaptiveQuestionRunner({
                     💡 {current.hint}
                   </motion.div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </motion.div>
         </AnimatePresence>
       )}
