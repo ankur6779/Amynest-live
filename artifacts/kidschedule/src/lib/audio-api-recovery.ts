@@ -9,7 +9,8 @@ import { resetClientStaticAudioCircuit } from "@/lib/static-audio-telemetry";
 
 const RECOVERY_POLL_MS = 12_000;
 const BOOT_PROBE_INTERVAL_MS = 2_000;
-const BOOT_PROBE_MAX_ATTEMPTS = 8;
+const BOOT_PROBE_MAX_ATTEMPTS = 10;
+const BOOT_PROBE_TIMEOUT_MS = 10_000;
 
 let watcherStarted = false;
 let lastKnownApiOk = true;
@@ -27,10 +28,14 @@ export function markAudioApiUnreachable(): void {
 
 async function probeAudioHealth(): Promise<boolean> {
   try {
-    const res = await fetch(getApiUrl("/api/healthz/audio"), {
+    const url = getApiUrl("/api/healthz/audio");
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), BOOT_PROBE_TIMEOUT_MS);
+    const res = await fetch(url, {
       cache: "no-store",
       credentials: "omit",
-    });
+      signal: controller.signal,
+    }).finally(() => window.clearTimeout(timer));
     const body = (await res.json().catch(() => ({}))) as { ok?: boolean };
     return res.ok && body.ok === true;
   } catch {

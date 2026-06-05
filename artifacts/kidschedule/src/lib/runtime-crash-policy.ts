@@ -25,6 +25,12 @@ const BENIGN_PATTERNS = [
   "playback_blocked",
   "tts_",
   "NotAllowedError",
+  "FetchTimeoutError",
+  "Request timed out after",
+  "static_audio",
+  "audio_boot",
+  "audio_start_timeout",
+  "audio_load_failed",
 ] as const;
 
 const RECOVERABLE_PATTERNS = [
@@ -56,7 +62,7 @@ function errorName(err: unknown): string {
 
 /** Benign — should be logged, not shown as a full-screen fatal crash. */
 export function isBenignRuntimeError(err: unknown): boolean {
-  if (errorName(err) === "AbortError") return true;
+  if (errorName(err) === "AbortError" || errorName(err) === "FetchTimeoutError") return true;
   const msg = messageFromUnknown(err);
   if (!msg) return false;
   return BENIGN_PATTERNS.some((p) => msg.includes(p));

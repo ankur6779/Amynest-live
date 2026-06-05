@@ -226,3 +226,5 @@ services:
         sync: false
       - key: VITE_FIREBASE_VAPID_KEY
         sync: false
+      - key: VITE_GA4_MEASUREMENT_ID
+        sync: false

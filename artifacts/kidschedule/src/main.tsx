@@ -23,18 +23,13 @@ import { installStaticAudioGuards } from "@/lib/static-audio-guard";
 import {
   installStaticAudioDevTools,
 } from "@/lib/static-audio-telemetry";
-import { preloadSpeechSynthesisVoices } from "@/lib/emergency-audio";
 import { installAmyVoiceAudioDiagnostics } from "@/lib/amy-voice-audio-diag";
 import { installStaticAudioGestureWarmup } from "@/lib/static-audio-edge";
-import {
-  initGlobalAudioWarmup,
-  installGlobalAudioWarmupOnGesture,
-} from "@/lib/global-audio-warmup";
+import { installGlobalAudioWarmupOnGesture } from "@/lib/global-audio-warmup";
 import { installAudioReliabilityDevTools } from "@/lib/audio-reliability-telemetry";
 import { installAudioAutoFixDevTools } from "@/lib/audio-auto-fix-engine";
 import { installAudioReleaseCertificationDevTools } from "@/lib/audio-release-certification";
 import { installAndroidAudioLifecycleMonitor } from "@/lib/android-audio-lifecycle";
-import { initPhonicsManifestValidation } from "@/lib/phonics-manifest-validation";
 import {
   initStartupOrchestrator,
   markReactRendered,
@@ -85,9 +80,6 @@ installStaticAudioGuards();
 installStaticAudioDevTools();
 installStaticAudioGestureWarmup();
 installGlobalAudioWarmupOnGesture();
-initPhonicsManifestValidation();
-initGlobalAudioWarmup();
-preloadSpeechSynthesisVoices();
 installAmyVoiceAudioDiagnostics();
 installAudioReliabilityDevTools();
 installAudioAutoFixDevTools();

@@ -21,7 +21,7 @@ import {
   trackStartupEvent,
   waitWithTimeout,
 } from "@/lib/startup-orchestrator";
-import { checkStaticAudioHealthOnBoot } from "@/lib/static-audio-telemetry";
+import { scheduleAudioBoot } from "@/lib/audio-boot-orchestrator";
 
 const BOOT_CACHE_RECOVERY_TIMEOUT_MS = 8_000;
 const OPTIONAL_SERVICE_TIMEOUT_MS = 6_000;
@@ -91,13 +91,8 @@ export async function runOptionalStartupServices(): Promise<void> {
     fallback: undefined,
   });
 
-  await waitWithTimeout({
-    label: "static_audio_health",
-    waitingFor: "audio_health",
-    timeoutMs: OPTIONAL_SERVICE_TIMEOUT_MS,
-    fn: () => checkStaticAudioHealthOnBoot(),
-    fallback: undefined,
-  });
+  // Audio boot is fully async — never block optional-services phase on health probes.
+  scheduleAudioBoot();
 
   markOptionalServicesComplete();
   trackStartupEvent("startup_phase_completed", { phase: "ready" });

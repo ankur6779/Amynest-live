@@ -24,6 +24,7 @@ import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
 import SocialLandingPage from "@/pages/social-landing";
 import StoreTapPage from "@/pages/store-tap";
+import { Ga4Bootstrap } from "@/components/marketing/ga4-bootstrap";
 import SignInPageEager from "@/pages/sign-in";
 const SignInPageLazy = lazyPage(() => import("@/pages/sign-in"));
 const SignInPage =
@@ -135,6 +136,9 @@ const AdminFeedbackPage = lazyPage(() => import("@/pages/admin-feedback"));
 const AdminAudioHealthPage = lazyPage(() => import("@/pages/admin-audio-health"));
 const AdminDashboardPage = lazyPage(() => import("@/pages/admin-dashboard"));
 const AdminInfantParentingPage = lazyPage(() => import("@/pages/admin-infant-parenting"));
+const FeatureSeoLandingPage = lazyPage(() => import("@/pages/feature-seo-landing"));
+const GuidesIndexPage = lazyPage(() => import("@/pages/guides-index"));
+const GuideArticlePage = lazyPage(() => import("@/pages/guide-article"));
 
 import { NativeStartupPermissionsGateLazy } from "@/components/native-startup-permissions-gate-lazy";
 import { PwaAndroidPermissionsGateLazy } from "@/components/pwa-android-permissions-gate-lazy";
@@ -146,6 +150,7 @@ import { waitForIdToken } from "@/lib/auth-token";
 import { DebugProvider } from "@/contexts/debug-context";
 import { DebugPanel } from "@/components/debug-panel";
 import { AudioHealthOverlay } from "@/components/audio-health-overlay";
+import { AudioVoiceStatusHint } from "@/components/audio-voice-status-hint";
 import { FcmForegroundHandler } from "@/components/fcm-foreground-handler";
 import { useNotificationDeepLink } from "@/hooks/use-notification-deep-link";
 import { useIntentInterruptionTracker } from "@/hooks/use-intent-interruption-tracker";
@@ -543,6 +548,7 @@ function AppRoutes() {
             <NativeApiBaseUrlBootstrap />
             <FirebaseAuthBootstrap />
             <ClientTelemetryBootstrap />
+            <Ga4Bootstrap />
             <OAuthRedirectHandler />
             <CapacitorIosAuthPreload />
             <AuthNavigationBridge />
@@ -570,6 +576,9 @@ function AppRoutes() {
           <Route path="/billing-dispute" component={BillingDisputePage} />
           <Route path="/support" component={SupportPage} />
           <Route path="/get-app" component={SocialLandingPage} />
+          <Route path="/features/:slug" component={FeatureSeoLandingPage} />
+          <Route path="/guides" component={GuidesIndexPage} />
+          <Route path="/guides/:slug" component={GuideArticlePage} />
           <Route path="/app" component={StoreTapPage} />
           <Route path="/download">
             <Redirect to="/get-app" />
@@ -672,6 +681,7 @@ function AppRoutes() {
             <SubscriptionEventBridge />
             <SubscriptionFunnelOrchestrator />
             <Toaster />
+            <AudioVoiceStatusHint />
             <DebugPanel />
             <AudioHealthOverlay />
           </PaywallProvider>

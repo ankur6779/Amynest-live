@@ -1,14 +1,18 @@
 import { logAudioDebug } from "@/lib/audio-debug";
+import { isAudioStartupGraceActive } from "@/lib/audio-boot-orchestrator";
 import { getApiUrl } from "@/lib/api";
 import { isAndroidAmyNestAudioClient } from "@/lib/device-lite";
 import { getFirebaseAuth } from "@/lib/firebase";
-import { IS_PROD, isStaticAudioDebugEnabled } from "@/lib/is-dev";
+import { isStaticAudioDebugEnabled } from "@/lib/is-dev";
 import type { StaticAudioMode } from "@workspace/static-audio/browser";
 
-const SESSION_ALERT_THRESHOLD = 3;
+const SESSION_ALERT_THRESHOLD = 8;
 const RETRY_DELAY_MS = 300;
-/** Avoid scary toasts while the API / GCS stack is still warming after cold start. */
-const SESSION_ALERT_BOOT_GRACE_MS = 90_000;
+/** Never alarm users during background audio boot or its grace window. */
+const SESSION_ALERT_BOOT_GRACE_MS = 120_000;
+
+export const VOICE_UNAVAILABLE_USER_MESSAGE =
+  "Voice features are temporarily unavailable. AmyNest will retry automatically.";
 const sessionStartedAt =
   typeof performance !== "undefined" ? performance.timeOrigin + performance.now() : Date.now();
 
@@ -119,7 +123,9 @@ async function showStaticAudioToast(title: string, description?: string): Promis
     toast({
       title,
       description,
-      variant: "destructive",
+      duration: 6000,
+      className:
+        "border-amber-500/40 bg-amber-950/95 text-amber-50 max-w-sm p-3 text-xs shadow-md",
     });
   } catch {
     /* toast optional */
@@ -127,13 +133,11 @@ async function showStaticAudioToast(title: string, description?: string): Promis
 }
 
 function maybeShowSessionAlert(): void {
-  if (IS_PROD && Date.now() - sessionStartedAt < SESSION_ALERT_BOOT_GRACE_MS) return;
+  if (isAudioStartupGraceActive()) return;
+  if (Date.now() - sessionStartedAt < SESSION_ALERT_BOOT_GRACE_MS) return;
   if (sessionFailureCount <= SESSION_ALERT_THRESHOLD || sessionAlertShown) return;
   sessionAlertShown = true;
-  void showStaticAudioToast(
-    "Audio system issue",
-    "Voice playback is having trouble. Please refresh the page.",
-  );
+  void showStaticAudioToast("Voice unavailable", VOICE_UNAVAILABLE_USER_MESSAGE);
 }
 
 function isTransientDeployFailure(message: string, meta?: Record<string, unknown>): boolean {
@@ -210,7 +214,12 @@ export function reportStaticAudioEvent(
   staticAudioVerbose(type, message, meta);
   console.error(`[STATIC AUDIO EVENT] ${type}`, message, meta ?? {});
 
-  if (opts?.countTowardCircuit !== false && !isTransientDeployFailure(message, meta)) {
+  const countTowardCircuit =
+    opts?.countTowardCircuit !== false &&
+    !isAudioStartupGraceActive() &&
+    !isTransientDeployFailure(message, meta);
+
+  if (countTowardCircuit) {
     recordSessionFailure();
   }
 
@@ -309,60 +318,10 @@ export function reportStaticAudioPlayFailed(
   emitStaticAudioVisualFallback({ phrase, mode });
 }
 
+/** @deprecated Prefer scheduleAudioBoot() — kept for dev console tooling. */
 export async function checkStaticAudioHealthOnBoot(): Promise<void> {
-  if (typeof window === "undefined") return;
-
-  const { waitForAudioApiOnBoot, startAudioApiRecoveryWatcher, markAudioApiUnreachable } =
-    await import("@/lib/audio-api-recovery");
-
-  startAudioApiRecoveryWatcher();
-
-  const bootOk = await waitForAudioApiOnBoot();
-  if (!bootOk) {
-    markAudioApiUnreachable();
-    console.warn("[STATIC AUDIO] API not ready at boot — deploy recovery watcher active");
-  }
-
-  try {
-    const healthUrl = getApiUrl("/api/static-audio/health");
-    const res = await fetch(healthUrl, { cache: "no-store" });
-    recordClientCdnCacheStatus(healthUrl, res);
-    const body = (await res.json().catch(() => ({}))) as {
-      gcs?: boolean;
-      bucket?: string;
-      status?: string;
-      circuitOpen?: boolean;
-      gcsProbeOk?: boolean;
-    };
-
-    // Never mirror server circuit to client — deploy blips must not block playback.
-    if (body.circuitOpen) {
-      console.warn("[STATIC AUDIO] Server circuit open — client playback stays enabled");
-    }
-
-    if (!res.ok || body.status !== "ok" || !body.gcs) {
-      console.warn("[AUDIO HEALTH] degraded at boot", { status: res.status, body });
-      if (!bootOk) markAudioApiUnreachable();
-      return;
-    }
-
-    if (body.gcsProbeOk === false) {
-      console.warn("[AUDIO HEALTH] GCS probe pending", body);
-      return;
-    }
-
-    console.info("[AUDIO HEALTH] ok", {
-      status: res.status,
-      gcs: body.gcs,
-      bucket: body.bucket,
-      circuitOpen: body.circuitOpen,
-      gcsProbeOk: body.gcsProbeOk,
-    });
-    staticAudioVerbose("health ok", body);
-  } catch (err) {
-    console.warn("[AUDIO HEALTH] unreachable at boot", err);
-    markAudioApiUnreachable();
-  }
+  const { scheduleAudioBoot } = await import("@/lib/audio-boot-orchestrator");
+  scheduleAudioBoot();
 }
 
 export function installStaticAudioDevTools(): void {

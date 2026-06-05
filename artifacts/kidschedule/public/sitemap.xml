@@ -3,43 +3,147 @@
   xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
 >
-  <!-- Homepage — primary landing page -->
   <url>
-    <loc>https://amynest.in/</loc>
-    <lastmod>2026-05-12</lastmod>
+    <loc>https://www.amynest.in/</loc>
+    <lastmod>2026-06-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <image:image>
-      <image:loc>https://amynest.in/opengraph.jpg</image:loc>
+      <image:loc>https://www.amynest.in/opengraph.jpg</image:loc>
       <image:title>AmyNest AI — Where Smart Parenting Begins</image:title>
       <image:caption>AI-powered daily routines, meal plans, and parenting intelligence for your child.</image:caption>
     </image:image>
-    <image:image>
-      <image:loc>https://amynest.in/pwa-icon-512.png</image:loc>
-      <image:title>AmyNest AI App Icon</image:title>
-    </image:image>
   </url>
 
-  <!-- Social / influencer download landing -->
   <url>
-    <loc>https://amynest.in/get-app</loc>
-    <lastmod>2026-05-30</lastmod>
+    <loc>https://www.amynest.in/get-app</loc>
+    <lastmod>2026-06-05</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.95</priority>
   </url>
 
-  <!-- Sign-up — primary conversion page -->
   <url>
-    <loc>https://amynest.in/sign-up</loc>
-    <lastmod>2026-05-12</lastmod>
+    <loc>https://www.amynest.in/features/infant-care</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/features/speech-coach</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/features/daily-routines</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/features/study-zone</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/features/nutrition-hub</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/guides</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/guides/baby-sleep-schedule-by-age</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/guides/newborn-feeding-log-basics</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/guides/toddler-daily-routine-template</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/guides/speech-development-at-home</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/guides/picky-eater-strategies</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/guides/school-morning-routine-checklist</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/guides/screen-time-and-learning-balance</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/sign-up</loc>
+    <lastmod>2026-06-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
-  <!-- Sign-in -->
   <url>
-    <loc>https://amynest.in/sign-in</loc>
-    <lastmod>2026-05-12</lastmod>
+    <loc>https://www.amynest.in/sign-in</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/privacy</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/terms</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+  <url>
+    <loc>https://www.amynest.in/support</loc>
+    <lastmod>2026-06-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

@@ -22,6 +22,7 @@ import {
   ZoomIn,
 } from "lucide-react";
 import { InfantParentingSection } from "@/components/marketing/infant-parenting-section";
+import { trackGetAppFunnelEvent } from "@/lib/marketing/ga4-analytics";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/geo";
 
 const OFFICIAL_LOGO = "/amynest-logo-new.png";
@@ -61,15 +62,7 @@ function trackLandingEvent(
   event: LandingEventName,
   meta: Record<string, string | number | boolean | undefined> = {},
 ) {
-  if (typeof window === "undefined") return;
-  const payload = { event, page: "get-app", path: window.location.pathname, ...meta };
-  window.dispatchEvent(new CustomEvent("amynest_landing_event", { detail: payload }));
-  const analyticsWindow = window as Window & {
-    dataLayer?: Array<Record<string, unknown>>;
-    gtag?: (type: string, name: string, params?: Record<string, unknown>) => void;
-  };
-  analyticsWindow.dataLayer?.push(payload);
-  analyticsWindow.gtag?.("event", event, payload);
+  trackGetAppFunnelEvent(event, meta);
 }
 
 /** Detect device. Defaults to Android so desktop visitors see Android first. */
