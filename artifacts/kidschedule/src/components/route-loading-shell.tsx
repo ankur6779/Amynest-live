@@ -1,21 +1,11 @@
-import { Loader2 } from "lucide-react";
-import { AuthBootShell } from "@/components/auth-boot-shell";
+import { SmartRouteFallback } from "@/components/smart-route-fallback";
 
-/** Shown while route data or auth-dependent UI is resolving — never render null. */
+/** Auth / boot — splash only after 150ms if still resolving. */
 export function RouteLoadingShell() {
-  return <AuthBootShell />;
+  return <SmartRouteFallback mode="full" />;
 }
 
-/** In-layout page transition — keeps header/tab bar visible while a lazy chunk loads. */
+/** Lazy chunk inside Layout — page skeleton after 150ms if chunk still loading. */
 export function RouteContentLoadingShell() {
-  return (
-    <div
-      className="flex min-h-[40vh] flex-col items-center justify-center gap-3 py-16"
-      role="status"
-      aria-label="Loading page"
-    >
-      <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
-      <p className="text-sm font-medium text-muted-foreground">Loading…</p>
-    </div>
-  );
+  return <SmartRouteFallback mode="content" />;
 }

@@ -118,6 +118,103 @@
   from { opacity: 0; transform: scale(0.88) translateY(16px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
+
+/* React splash overlay — mirrors index.html #splash for route transitions */
+.amynest-splash-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 44%, rgba(120, 50, 220, 0.22) 0%, transparent 58%),
+    linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%);
+}
+.amynest-splash-overlay--fixed {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  min-height: 100dvh;
+  animation: amynest-splash-overlay-in 0.22s ease-out;
+}
+@keyframes amynest-splash-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+/* Route transitions: skip boot-only delays so the ring shows instantly */
+.amynest-splash-transition .splash-meet,
+.amynest-splash-transition .splash-amy,
+.amynest-splash-transition .splash-tagline,
+.amynest-splash-transition .splash-stage {
+  opacity: 1 !important;
+  animation: none !important;
+  filter: none !important;
+  transform: none !important;
+}
+.amynest-splash-transition .splash-patent {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .amynest-splash-overlay--fixed {
+    animation: none;
+  }
+}
+
+/* Route skeleton shimmer */
+@keyframes route-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.route-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--primary) / 0.06) 0%,
+    hsl(var(--primary) / 0.16) 45%,
+    hsl(var(--primary) / 0.06) 90%
+  );
+  background-size: 200% 100%;
+  animation: route-shimmer 1.35s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-shimmer {
+    animation: none;
+    background: hsl(var(--primary) / 0.1);
+  }
+}
+
+/* View Transitions API — native-feel cross-fade between routes */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
+  animation-timing-function: ease-out;
+}
+::view-transition-old(root) {
+  animation-name: vt-route-fade-out;
+}
+::view-transition-new(root) {
+  animation-name: vt-route-fade-in;
+}
+@keyframes vt-route-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes vt-route-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
+/* CSS fallback when View Transitions API is unavailable */
+@supports not (view-transition-name: none) {
+  .route-transition-root {
+    animation: vt-route-fade-in 180ms ease-out;
+  }
+}
 @keyframes amy-setup-pulse {
   0% { transform: scale(0.95); opacity: 0.7; }
   50% { transform: scale(1.05); opacity: 1; }
@@ -534,7 +631,10 @@
   --shadow-2xl: 0px 12px 0px 0px hsl(var(--border) / 0.5);
 }
 
-html,
+html {
+  background-color: #0b1020;
+}
+
 body,
 #root {
   margin: 0;

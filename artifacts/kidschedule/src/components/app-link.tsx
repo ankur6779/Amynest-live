@@ -22,6 +22,8 @@ type AppLinkProps = {
   source?: string;
   onClick?: MouseEventHandler<HTMLAnchorElement>;
   onPointerDown?: MouseEventHandler<HTMLAnchorElement>;
+  onMouseEnter?: MouseEventHandler<HTMLAnchorElement>;
+  onFocus?: MouseEventHandler<HTMLAnchorElement>;
   "data-testid"?: string;
   "data-tour"?: string;
 };
@@ -36,6 +38,8 @@ export function AppLink({
   source,
   onClick,
   onPointerDown,
+  onMouseEnter,
+  onFocus,
   ...rest
 }: AppLinkProps) {
   const [location, navigate] = useLocation();
@@ -57,6 +61,14 @@ export function AppLink({
       onPointerDown={(event) => {
         prefetchRouteChunk(target);
         onPointerDown?.(event);
+      }}
+      onMouseEnter={(event) => {
+        prefetchRouteChunk(target);
+        onMouseEnter?.(event);
+      }}
+      onFocus={(event) => {
+        prefetchRouteChunk(target);
+        onFocus?.(event);
       }}
       onClick={(event) => {
         onClick?.(event);

@@ -18,6 +18,7 @@ import {
   getSanitizedPreviousRoute,
   recordSanitizedTransition,
 } from "@/lib/route-history-manager";
+import { withViewTransition } from "@/lib/view-transition";
 
 const DEFAULT_DEBOUNCE_MS = 100;
 const navInFlight = new Map<string, number>();
@@ -102,8 +103,10 @@ export function appNavigate(
 
   pauseAmyVoiceOnAmyCoachLeave(current, target);
 
-  recordSanitizedTransition(current, target, replace ? "replace" : "push");
-  navigate(target, { replace });
+  withViewTransition(() => {
+    recordSanitizedTransition(current, target, replace ? "replace" : "push");
+    navigate(target, { replace });
+  });
   return true;
 }
 

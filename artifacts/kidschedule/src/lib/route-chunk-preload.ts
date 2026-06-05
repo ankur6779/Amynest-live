@@ -79,14 +79,20 @@ export function prefetchRouteChunk(pathname: string): void {
   });
 }
 
+/** Warm after dashboard load — highest-traffic parent destinations. */
+export const COMMON_POST_DASHBOARD_ROUTES = [
+  "/parenting-hub",
+  "/nutrition",
+  "/games",
+  "/parent-profile",
+] as const;
+
 const CAPACITOR_HOT_ROUTES = [
   "/dashboard",
-  "/parenting-hub",
+  ...COMMON_POST_DASHBOARD_ROUTES,
   "/amy-coach",
   "/routines",
-  "/nutrition",
   "/assistant",
-  "/games",
 ] as const;
 
 function scheduleIdle(task: () => void, timeoutMs: number): void {
@@ -95,6 +101,23 @@ function scheduleIdle(task: () => void, timeoutMs: number): void {
     return;
   }
   window.setTimeout(task, 120);
+}
+
+/** Idle-time warm-up for the most common post-dashboard destinations (all clients). */
+export function prefetchCommonDestinations(): void {
+  let index = 0;
+
+  const next = () => {
+    const route = COMMON_POST_DASHBOARD_ROUTES[index];
+    if (!route) return;
+    prefetchRouteChunk(route);
+    index += 1;
+    if (index < COMMON_POST_DASHBOARD_ROUTES.length) {
+      scheduleIdle(next, 1800);
+    }
+  };
+
+  scheduleIdle(next, 1200);
 }
 
 /** Stagger hot-route preloads so Android WebView is not blocked by parallel parses. */

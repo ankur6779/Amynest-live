@@ -61,6 +61,8 @@ import { AuthNavigationBridge } from "@/components/auth-navigation-bridge";
 import { CapacitorRoutePreload } from "@/components/capacitor-route-preload";
 import { NavigationHistoryGuard } from "@/components/navigation-history-guard";
 import { NavigationOrchestratorBridge } from "@/components/navigation-orchestrator-bridge";
+import { PostDashboardPrefetch } from "@/components/post-dashboard-prefetch";
+import { RouteTransitionRoot } from "@/components/route-transition-root";
 import { isCapacitorIosShell } from "@/lib/device-lite";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 import { devLog } from "@/lib/dev-log";
@@ -68,8 +70,7 @@ import { markAppCoreReady } from "@/lib/startup-orchestrator";
 import { initCapacitorOta } from "@/lib/capacitor-ota";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
-// when its route is first matched. The Suspense boundary below renders
-// `null` while a chunk is loading so there's no flash of fallback UI.
+// when its route is first matched. Suspense fallbacks use the premium splash.
 const PrivacyPolicyPage = lazyPage(() => import("@/pages/privacy"));
 const TermsOfServicePage = lazyPage(() => import("@/pages/terms"));
 const DeleteAccountPage = lazyPage(() => import("@/pages/delete-account"));
@@ -555,7 +556,9 @@ function AppRoutes() {
             <NotificationDeepLinkBridge />
             <IntentInterruptionBridge />
             <NavigationHistoryGuard />
+            <PostDashboardPrefetch />
             <Suspense fallback={<RouteLoadingShell />}>
+            <RouteTransitionRoot>
             <Switch>
           <Route path="/" component={HomeRedirect} />
           <Route path="/index.html">
@@ -663,6 +666,7 @@ function AppRoutes() {
           <Route path="/admin/audio-health" component={AdminAudioHealthRoute} />
           <Route component={RouteFailedPage} />
             </Switch>
+            </RouteTransitionRoot>
             </Suspense>
             <PaywallModalLazy />
             <SubscriptionEventBridge />

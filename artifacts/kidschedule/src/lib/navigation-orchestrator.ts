@@ -17,6 +17,7 @@ import {
   recordSanitizedTransition,
 } from "@/lib/route-history-manager";
 import { smartBack } from "@/lib/safe-navigation";
+import { withViewTransition } from "@/lib/view-transition";
 
 export type NavTrigger =
   | "notification"
@@ -206,13 +207,14 @@ function executeNavigate(
     stack: getSanitizedPreviousRoute(),
   });
 
-  recordSanitizedTransition(current, target, replace ? "replace" : "push");
-  if (isTabRootRoute(target)) {
-    markTabRootEntry(target);
-  }
-
-  registeredNavigate(target, { replace });
-  currentRoute = target;
+  withViewTransition(() => {
+    recordSanitizedTransition(current, target, replace ? "replace" : "push");
+    if (isTabRootRoute(target)) {
+      markTabRootEntry(target);
+    }
+    registeredNavigate!(target, { replace });
+    currentRoute = target;
+  });
   return true;
 }
 
@@ -224,10 +226,12 @@ function executeReset(to: string, options?: OrchestratorNavigateOptions): boolea
     trigger: options?.trigger,
     source: options?.source,
   });
-  recordSanitizedTransition(currentRoute, target, "redirect");
-  markTabRootEntry(target);
-  registeredNavigate(target, { replace: true });
-  currentRoute = target;
+  withViewTransition(() => {
+    recordSanitizedTransition(currentRoute, target, "redirect");
+    markTabRootEntry(target);
+    registeredNavigate!(target, { replace: true });
+    currentRoute = target;
+  });
   return true;
 }
 

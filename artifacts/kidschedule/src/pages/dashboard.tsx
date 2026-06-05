@@ -11,6 +11,7 @@ import {
 import { AmyCoachCheckInCard } from "@/components/amy-coach-check-in-card";
 import { formatAge } from "@/lib/age-groups";
 import { AmyIcon } from "@/components/amy-icon";
+import { DashboardSkeleton } from "@/components/route-skeletons/dashboard-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
@@ -1063,27 +1064,7 @@ export default function Dashboard() {
     return <OnboardingScreen displayName={displayName} />;
   }
   if (loadingSummary) {
-    return (
-      // audit-block-ignore-start
-      <div data-on-dark className="dashboard-page w-full min-w-0 max-w-full bg-[#0a1024]">
-        {/* audit-block-ignore-end */}
-        <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-6 md:pb-8">
-          <Skeleton className="h-16 w-full rounded-2xl" />
-          <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-5">
-            <div className="flex flex-col gap-4">
-              <Skeleton className="h-28 rounded-2xl" />
-              <Skeleton className="h-48 rounded-2xl" />
-            </div>
-            <div className="flex flex-col gap-3">
-              <Skeleton className="h-16 rounded-2xl" />
-              <Skeleton className="h-36 rounded-2xl" />
-              <Skeleton className="h-24 rounded-2xl" />
-              <Skeleton className="h-32 rounded-2xl" />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
   return (
     <div data-on-dark className="dashboard-page w-full min-w-0 max-w-full bg-[#0a1024]">

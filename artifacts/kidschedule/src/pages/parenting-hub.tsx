@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AppLink } from "@/components/app-link";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
-import { RouteLoadingShell } from "@/components/route-loading-shell";
+import { SmartRouteFallback } from "@/components/smart-route-fallback";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1965,7 +1965,7 @@ function PageHeader() {
 export default function ParentingHub() {
   return (
     <AppErrorBoundary label="ParentingHub">
-      <Suspense fallback={<RouteLoadingShell />}>
+      <Suspense fallback={<SmartRouteFallback mode="content" />}>
         <ParentingHubPage />
       </Suspense>
     </AppErrorBoundary>

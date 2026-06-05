@@ -29,7 +29,6 @@ import { NotificationPromptModal } from "@/components/notification-prompt-modal"
 import { SpotlightTour } from "@/components/spotlight-tour";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAppHeaderHeight } from "@/hooks/use-app-header-height";
-import { prefetchRouteChunk } from "@/lib/route-chunk-preload";
 import { isLearningZoneRoute } from "@/lib/app-layout";
 function SmartParentBadge({
   className = ""
