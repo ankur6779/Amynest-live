@@ -129,7 +129,7 @@ export function NutritionLibrarySection() {
                 "flex h-12 w-12 shrink-0 items-center justify-center text-2xl",
               )}
             >
-              ??
+              📚
             </div>
             <div className="min-w-0 flex-1">
               <h2 className={HUB_SECTION_TITLE}>{t("nutrition_hub.library.title")}</h2>
