@@ -528,6 +528,7 @@ export default function RoutineGenerate() {
         mood:      sp.get("mood"),
         weather:   sp.get("weather"),
         caregiver: sp.get("caregiver"),
+        override:  sp.get("override"),
       };
     } catch { return {}; }
   })();
@@ -643,6 +644,10 @@ export default function RoutineGenerate() {
     routineId?: number;
   } | null>(null);
   const [overrideMode, setOverrideMode] = useState(false);
+  // When the detail page deep-links here with ?override=1 (the "Regenerate
+  // full day" action), auto-enable override mode the first time we detect the
+  // existing routine, so the parent skips the "routine already exists" prompt.
+  const autoOverrideRef = useRef(urlParams.override === "1");
   const checkDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Wake-up confirmation system
@@ -787,7 +792,14 @@ export default function RoutineGenerate() {
     checkDebounceRef.current = setTimeout(() => {
       authFetch(getApiUrl(`/api/routines/check?childId=${selectedChild}&date=${date}`)).then(r => r.ok ? r.json() : null).then((data: any) => {
         setExistingRoutine(data ?? null);
-        if (data?.exists) setOverrideMode(false);
+        if (data?.exists) {
+          if (autoOverrideRef.current) {
+            setOverrideMode(true);
+            autoOverrideRef.current = false;
+          } else {
+            setOverrideMode(false);
+          }
+        }
       }).catch(() => setExistingRoutine(null));
     }, 400);
     return () => {
@@ -1521,7 +1533,7 @@ export default function RoutineGenerate() {
   const isGeneratingFamily = !!familyProgress;
   const familySelectedCount = Object.values(familyChildSettings).filter(s => s.selected).length;
   const familyReadyCount = Object.entries(familyChildSettings).filter(([, s]) => s.selected && s.hasSchool !== null).length;
-  return <div className={cn(PARENT_HUB_PAGE, "flex flex-col gap-6 animate-in fade-in duration-500 max-w-2xl mx-auto pb-12")}>
+  return <div className={cn(PARENT_HUB_PAGE, "flex flex-col gap-6 animate-in fade-in duration-500 max-w-2xl mx-auto pb-28 sm:pb-12")}>
       <header className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild className="rounded-full">
           <Link href="/routines"><ArrowLeft className="h-5 w-5" /></Link>
@@ -1860,8 +1872,8 @@ export default function RoutineGenerate() {
                         className={cn(
                           "flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all",
                           mood === opt.value
-                            ? "border-amber-400/55 bg-[rgba(255,184,0,0.12)] shadow-[0_0_12px_rgba(255,184,0,0.18)] scale-[1.02]"
-                            : "bg-card/50 border-white/10 hover:border-amber-400/30",
+                            ? "border-primary bg-primary/10 shadow-md scale-[1.02]"
+                            : "bg-card border-border hover:border-primary/40",
                         )}
                       >
                         <span className="text-2xl">{opt.emoji}</span>
@@ -1871,7 +1883,7 @@ export default function RoutineGenerate() {
                     ))}
                   </div>
                   {mood !== "normal" && (
-                    <div className="bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2 text-xs text-foreground/70 mt-2">
+                    <div className="bg-muted/40 border border-border/60 rounded-xl px-3 py-2 text-xs text-muted-foreground mt-2">
                       {t("pages.routines.generate.amy_ai_will_adapt_the_routine_for_a")}{" "}
                       <strong>{mood}</strong> {t("pages.routines.generate.mood_day")}{" "}
                       {MOOD_OPTIONS.find(o => o.value === mood)?.hint?.toLowerCase()}.
@@ -1898,6 +1910,16 @@ export default function RoutineGenerate() {
                 />
                 </InputSection>
 
+                <InputSection
+                  title={t("pages.routines.generate.section_important", { defaultValue: "Important" })}
+                  subtitle={t("pages.routines.generate.section_important_hint", {
+                    defaultValue: "One-off plans are scheduled first — Amy works around them",
+                  })}
+                  highlight
+                >
+                  <SpecialPlansField value={specialPlans} onChange={setSpecialPlans} />
+                </InputSection>
+
                 {inlineFixedBlocking && !fixedReviewState && (
                   <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 space-y-2" role="alert">
                     <p className="text-sm font-medium text-destructive">
@@ -1921,9 +1943,9 @@ export default function RoutineGenerate() {
 
                 {fixedReviewState && (
                   <div ref={fixedReviewRef} className="space-y-4">
-                  <div className="rounded-[20px] border border-emerald-400/35 bg-[rgba(16,185,129,0.08)] backdrop-blur-[18px] p-4">
+                  <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
                     <div className="flex items-start gap-3">
-                      <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
                       <div className="space-y-2">
                         <p className="font-bold text-foreground">
                           {t("pages.routines.generate.routine_ready_title", {
@@ -1976,7 +1998,7 @@ export default function RoutineGenerate() {
                 )}
 
                 <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-                  <CollapsibleTrigger className="w-full flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-[18px] px-4 py-3 text-left hover:border-white/15 transition-colors">
+                  <CollapsibleTrigger className="w-full flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-left hover:border-primary/40 transition-colors">
                     <div>
                       <p className="text-sm font-bold text-foreground">
                         {t("pages.routines.generate.advanced_options", {
@@ -1985,7 +2007,7 @@ export default function RoutineGenerate() {
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {t("pages.routines.generate.advanced_options_hint", {
-                          defaultValue: "Special plans, fridge items, auto-detection & more",
+                          defaultValue: "Fridge items, auto-detection & more",
                         })}
                       </p>
                     </div>
@@ -1998,15 +2020,6 @@ export default function RoutineGenerate() {
                   <CollapsibleContent className="pt-3 space-y-4">
                     <GenerationGuidanceBanner />
                     <AutoDetectionToggle enabled={useAutoDetection} onChange={setUseAutoDetection} />
-                    <InputSection
-                      title={t("pages.routines.generate.section_important", { defaultValue: "Important" })}
-                      subtitle={t("pages.routines.generate.section_important_hint", {
-                        defaultValue: "One-off plans are scheduled first — Amy works around them",
-                      })}
-                      highlight
-                    >
-                      <SpecialPlansField value={specialPlans} onChange={setSpecialPlans} />
-                    </InputSection>
                     <InputSection
                       title={t("pages.routines.generate.section_lifestyle", { defaultValue: "Lifestyle inputs" })}
                       subtitle={t("pages.routines.generate.section_lifestyle_hint", {
@@ -2571,5 +2584,28 @@ export default function RoutineGenerate() {
             </div>
           </div>
         </div>}
+
+      {/* Mobile sticky generate bar — single mode only, mirrors inline CTA */}
+      {mode === "single" && !isGenerating && !isAiGenerating && !(existingRoutine?.exists && !overrideMode) && (
+        <div className="sm:hidden fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 backdrop-blur-md px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+          <div className="max-w-2xl mx-auto">
+            <RoutinePremiumCta
+              variant={isAiGenerating ? "loading" : "generate"}
+              onClick={() => handleAiGenerate(overrideMode)}
+              disabled={!isFormValid || isGenerating || !!inlineFixedBlocking || createMutation.isPending}
+              testId="routines-generate-ai-btn-sticky"
+              title={
+                overrideMode
+                  ? t("pages.routines.generate.regenerate_override", {
+                      defaultValue: "Regenerate & replace routine",
+                    })
+                  : t("pages.routines.index.generate_smart_amy", {
+                      defaultValue: "Generate Smart Amy Routine",
+                    })
+              }
+            />
+          </div>
+        </div>
+      )}
     </div>;
 }

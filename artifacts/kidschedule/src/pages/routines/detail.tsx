@@ -25,11 +25,15 @@ import { VoiceSettingsPanel } from "@/components/voice-settings";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { runAdaptiveEngine, type AdaptiveMood, type AdaptiveSleepQuality } from "@workspace/family-routine";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { RoutineAdaptationsCard } from "@/components/intelligence/routine-adaptations-card";
 import { RoutineDayPanel } from "@/components/routine-day-panel";
 import { RoutineProgressRail } from "@/components/routine-progress-rail";
 import { MealOptionPills } from "@/components/routines/meal-option-pills";
 import { RoutineRevealOverlay } from "@/components/routines/routine-reveal-overlay";
+import { RoutineNowHero } from "@/components/routines/routine-now-hero";
+import { RoutineNowBar } from "@/components/routines/routine-now-bar";
+import { RoutineCelebration } from "@/components/routines/routine-celebration";
 import { RoutineShareCard } from "@/components/routines/routine-share-card";
 import { RoutineTrustRibbon } from "@/components/routines/routine-trust-ribbon";
 import {
@@ -520,6 +524,10 @@ export default function RoutineDetail() {
   // Partial regen
   const [partialRegenLoading, setPartialRegenLoading] = useState(false);
   const [addActivityLoading, setAddActivityLoading] = useState(false);
+
+  // Day-complete celebration (fires once per completion, on user action only)
+  const [celebrateOpen, setCelebrateOpen] = useState(false);
+  const [completingNow, setCompletingNow] = useState(false);
 
   // Expanded item modal
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -1081,8 +1089,14 @@ export default function RoutineDetail() {
             title: `🏆 Badge earned: ${newBadges[0].emoji} ${newBadges[0].label}!`
           });
         }
+        // Day fully wrapped up (nothing pending left) → celebrate. Suppress the
+        // next-day prompt in this case so the two overlays don't collide.
+        const noPendingLeft = updated.every(i => (i.status ?? "pending") !== "pending");
+        if (noPendingLeft && completedSoFar > 0) {
+          setTimeout(() => setCelebrateOpen(true), 450);
+        }
         const isSleep = ["sleep", "wind-down"].includes(item.category?.toLowerCase() ?? "") || /sleep|bed\s*time|good night/i.test(item.activity);
-        if (isSleep && routine?.childId) {
+        if (isSleep && routine?.childId && !noPendingLeft) {
           setPendingNextDayChildId(routine.childId);
           setTimeout(() => setNextDayDialogOpen(true), 600);
         }
@@ -1280,6 +1294,10 @@ export default function RoutineDetail() {
   const completedCount = items.filter(i => i.status === "completed").length;
   const totalCount = items.length;
   const progress = totalCount > 0 ? Math.round(completedCount / totalCount * 100) : 0;
+  const todayPoints = items.reduce(
+    (sum, i) => (i.status === "completed" ? sum + ((i as any).rewardPoints ?? 10) : sum),
+    0,
+  );
 
   // Date-awareness: compare routine date vs system date
   const routineDateStr = routine?.date?.slice(0, 10) ?? "";
@@ -1469,7 +1487,7 @@ export default function RoutineDetail() {
         <Button asChild><Link href="/routines">{t("pages.routines.detail.back_to_routines")}</Link></Button>
       </div>;
   }
-  return <div className={cn(PARENT_HUB_PAGE, "flex flex-col gap-6 max-w-3xl mx-auto pb-10")}>
+  return <div className={cn(PARENT_HUB_PAGE, "flex flex-col gap-6 max-w-3xl mx-auto", dateMode === "today" ? "pb-28 sm:pb-10" : "pb-10")}>
       <header className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <Button variant="ghost" size="sm" asChild className="rounded-full -ml-2 text-muted-foreground hover:text-foreground">
@@ -1480,10 +1498,60 @@ export default function RoutineDetail() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 justify-start sm:justify-end">
-            {dateMode !== "past" && <Button variant="outline" size="sm" onClick={handlePartialRegen} disabled={partialRegenLoading} className="rounded-full gap-2 bg-primary/5 border-primary/30 text-primary hover:bg-primary/10">
-                <RotateCcw className={`h-4 w-4 ${partialRegenLoading ? "animate-spin" : ""}`} />
-                {partialRegenLoading ? "Updating…" : "Regen Rest"}
-              </Button>}
+            {dateMode !== "past" && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={partialRegenLoading} className="rounded-full gap-2 bg-primary/5 border-primary/30 text-primary hover:bg-primary/10">
+                    <RotateCcw className={`h-4 w-4 ${partialRegenLoading ? "animate-spin" : ""}`} />
+                    {partialRegenLoading
+                      ? t("pages.routines.detail.regen_updating", { defaultValue: "Updating…" })
+                      : t("pages.routines.detail.regenerate", { defaultValue: "Regenerate" })}
+                    <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-72 rounded-2xl">
+                  <DropdownMenuLabel>
+                    {t("pages.routines.detail.regenerate_menu_label", { defaultValue: "Regenerate routine" })}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handlePartialRegen}
+                    disabled={partialRegenLoading}
+                    className="rounded-xl gap-3 py-2.5 cursor-pointer"
+                  >
+                    <RotateCcw className="h-4 w-4 text-primary shrink-0" />
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-sm">
+                        {t("pages.routines.detail.regen_rest_title", { defaultValue: "Regenerate rest of day" })}
+                      </span>
+                      <span className="text-xs text-muted-foreground leading-snug">
+                        {t("pages.routines.detail.regen_rest_desc", {
+                          defaultValue: "Keeps finished tasks, redoes only the remaining plan",
+                        })}
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      setLocation(`/routines/generate?childId=${childId}&date=${routineDateStr}&override=1`)
+                    }
+                    className="rounded-xl gap-3 py-2.5 cursor-pointer"
+                  >
+                    <Sparkles className="h-4 w-4 text-primary shrink-0" />
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-sm">
+                        {t("pages.routines.detail.regen_full_title", { defaultValue: "Regenerate full day" })}
+                      </span>
+                      <span className="text-xs text-muted-foreground leading-snug">
+                        {t("pages.routines.detail.regen_full_desc", {
+                          defaultValue: "Start fresh with new inputs and replace the whole routine",
+                        })}
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
             {notifSupported && <Button variant="outline" size="sm" onClick={toggleNotifications} className="rounded-full gap-2">
                 {notificationsEnabled ? <><BellOff className="h-4 w-4" /> {t("pages.routines.detail.notifications_on")}</> : <><Bell className="h-4 w-4" /> {t("pages.routines.detail.notify_me")}</>}
@@ -1603,8 +1671,30 @@ export default function RoutineDetail() {
           mood={todayMood}
         />
 
-        {/* Progress bar */}
-        {totalCount > 0 && <div className={cn(HUB_GLASS_SURFACE, ROUTINES_HUB_ACCENT.border, "rounded-[20px] p-4")}>
+        {/* Premium "day at a glance" hero — today only */}
+        {dateMode === "today" && totalCount > 0 && (
+          <RoutineNowHero
+            childName={routine?.childName}
+            childPhotoUrl={childPhotoUrl}
+            completed={completedCount}
+            total={totalCount}
+            currentActivity={
+              timelineFocus.currentIndex >= 0
+                ? items[timelineFocus.currentIndex]?.activity
+                : undefined
+            }
+            currentTime={
+              timelineFocus.currentIndex >= 0
+                ? items[timelineFocus.currentIndex]?.time
+                : undefined
+            }
+            nextActivity={timelineFocus.nextItem?.activity}
+            nextTime={timelineFocus.nextItem?.time}
+          />
+        )}
+
+        {/* Progress bar — past/future (today shows the hero ring instead) */}
+        {totalCount > 0 && dateMode !== "today" && <div className={cn(HUB_GLASS_SURFACE, ROUTINES_HUB_ACCENT.border, "rounded-[20px] p-4")}>
             <div className="flex items-center justify-between mb-2 text-sm font-medium">
               <span className="text-foreground">{completedCount} of {totalCount} {t("pages.routines.detail.tasks_done")}</span>
               <span className="text-primary font-bold">{progress}%</span>
@@ -1634,9 +1724,8 @@ export default function RoutineDetail() {
         <RoutineProgressRail
           completed={completedCount}
           total={totalCount}
-          nextActivity={timelineFocus.nextItem?.activity}
-          nextTime={timelineFocus.nextItem?.time}
           dayArcSegments={dayArcSegments}
+          arcOnly
         />
       )}
 
@@ -1784,18 +1873,24 @@ export default function RoutineDetail() {
                   )}
                 </div>
 
-                {/* Spine dot */}
+                {/* Spine dot — live "now" cursor on the current task */}
                 <div className="flex flex-col items-center pt-[1.125rem] w-3 shrink-0">
-                  <div
-                    className={cn(
-                      "w-2.5 h-2.5 rounded-full shrink-0",
-                      status === "completed" && "bg-amber-400/90",
-                      status !== "completed" && isCurrentTask && "bg-primary ring-4 ring-primary/25 animate-pulse",
-                      status !== "completed" && !isCurrentTask && isUpcomingTask && "bg-background border-2 border-white/20",
-                      status !== "completed" && !isCurrentTask && !isUpcomingTask && "bg-white/20",
-                    )}
-                    aria-hidden
-                  />
+                  {status !== "completed" && isCurrentTask ? (
+                    <span className="relative flex h-3 w-3 shrink-0" aria-hidden>
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-primary/50 animate-ping" />
+                      <span className="relative inline-flex h-3 w-3 rounded-full bg-primary ring-4 ring-primary/25 shadow-[0_0_10px_rgba(255,184,0,0.55)]" />
+                    </span>
+                  ) : (
+                    <div
+                      className={cn(
+                        "w-2.5 h-2.5 rounded-full shrink-0",
+                        status === "completed" && "bg-amber-400/90",
+                        status !== "completed" && isUpcomingTask && "bg-background border-2 border-white/20",
+                        status !== "completed" && !isUpcomingTask && "bg-white/20",
+                      )}
+                      aria-hidden
+                    />
+                  )}
                 </div>
 
                 {/* Activity Card — click to expand */}
@@ -2418,5 +2513,48 @@ export default function RoutineDetail() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Mobile sticky "now" bar — today only, while tasks remain */}
+      {dateMode === "today" &&
+        totalCount > 0 &&
+        completedCount < totalCount &&
+        (timelineFocus.currentIndex >= 0 || timelineFocus.nextUpIndex >= 0) &&
+        (() => {
+          const isNow = timelineFocus.currentIndex >= 0;
+          const idx = isNow ? timelineFocus.currentIndex : timelineFocus.nextUpIndex;
+          const it = items[idx];
+          if (!it) return null;
+          const nextStart = parseRoutineTimeToMinutes(it.time);
+          const minsUntil =
+            !isNow && nextStart >= 0 && timelineFocus.nowMins >= 0
+              ? Math.max(0, nextStart - timelineFocus.nowMins)
+              : undefined;
+          return (
+            <RoutineNowBar
+              kind={isNow ? "now" : "next"}
+              activity={it.activity}
+              time={it.time}
+              minsUntil={minsUntil}
+              completing={completingNow}
+              onComplete={
+                isNow
+                  ? () => {
+                      setCompletingNow(true);
+                      updateItemStatus(idx, "completed");
+                      window.setTimeout(() => setCompletingNow(false), 800);
+                    }
+                  : undefined
+              }
+            />
+          );
+        })()}
+
+      <RoutineCelebration
+        open={celebrateOpen}
+        onClose={() => setCelebrateOpen(false)}
+        childName={routine?.childName}
+        total={totalCount}
+        points={todayPoints}
+      />
     </div>;
 }
