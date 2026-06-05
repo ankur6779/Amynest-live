@@ -22,6 +22,12 @@ import {
   RoutineGenerationPaywallError,
 } from "@/lib/routine-generation-client";
 import { getApiUrl } from "@/lib/api";
+import { track } from "@/lib/analytics";
+import {
+  formatCategoryLabel,
+  formatRoutineDurationShort,
+  formatRoutineTime,
+} from "@/lib/routine-timeline-ui";
 import { format } from "date-fns";
 import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
 import { HANDLER_TYPES, type HandlerKey, simplifyForHandler, buildSyncSuggestions, computeFamilyPoints, pickSharedActivities, appendHandlerToPlans, type FRFamilyResult } from "@workspace/family-routine";
@@ -447,7 +453,7 @@ function CombinedTimeline({
   }))).sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
   return <div className="space-y-2">
       {allItems.map((item, idx) => <div key={idx} className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border/50 hover:border-primary/20 transition-all">
-          <div className="text-xs font-bold text-muted-foreground w-16 shrink-0 text-right">{item.time}</div>
+          <div className="text-xs font-bold text-muted-foreground w-16 shrink-0 text-right">{formatRoutineTime(item.time)}</div>
           <div className={`w-2 h-2 rounded-full shrink-0 ${item.colorClass}`} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -456,7 +462,7 @@ function CombinedTimeline({
                 {item.childName}
               </Badge>
             </div>
-            <div className="text-xs text-muted-foreground">{item.duration}m · {item.category}</div>
+            <div className="text-xs text-muted-foreground">{[formatRoutineDurationShort(item), formatCategoryLabel(item.category)].filter(Boolean).join(" · ")}</div>
           </div>
         </div>)}
     </div>;
@@ -497,12 +503,12 @@ function IndividualRoutineSection({
             />
           ) : null}
           {result.routine.items.map((item, i) => <div key={i} className="flex items-start gap-3 p-2 rounded-xl hover:bg-muted/30">
-              <div className="text-xs font-bold text-muted-foreground w-14 shrink-0 text-right pt-0.5">{item.time}</div>
+              <div className="text-xs font-bold text-muted-foreground w-14 shrink-0 text-right pt-0.5">{formatRoutineTime(item.time)}</div>
               <div className="flex-1">
                 <div className="text-sm font-medium">{item.activity}</div>
-                <div className="text-xs text-muted-foreground">{item.duration}m</div>
+                {formatRoutineDurationShort(item) ? <div className="text-xs text-muted-foreground">{formatRoutineDurationShort(item)}</div> : null}
               </div>
-              <Badge variant="outline" className="text-xs shrink-0">{item.category}</Badge>
+              <Badge variant="outline" className="text-xs shrink-0">{formatCategoryLabel(item.category)}</Badge>
             </div>)}
         </div>}
     </div>;
@@ -899,6 +905,13 @@ export default function RoutineGenerate() {
       }
     }, {
       onSuccess: savedRoutine => {
+        track("routine_generated", {
+          routineId: savedRoutine.id,
+          childId: selectedChild ?? undefined,
+          mode: (data as { fallback?: boolean }).fallback ? "fallback" : "ai",
+          itemCount: Array.isArray(data.items) ? data.items.length : undefined,
+          source: "single",
+        });
         toast({
           title: shouldOverride ? "🔄 Routine replaced!" : "✨ Routine generated!"
         });
@@ -1492,6 +1505,13 @@ export default function RoutineGenerate() {
           }, {
             onSuccess: (savedRoutine) => {
               saved++;
+              track("routine_generated", {
+                routineId: savedRoutine.id,
+                childId: child.id,
+                mode: (routine as { fallback?: boolean }).fallback ? "fallback" : "ai",
+                itemCount: Array.isArray(routine.items) ? routine.items.length : undefined,
+                source: "family",
+              });
               void validateRoutineSafety(
                 authFetch,
                 routine.items as Array<{
@@ -2556,7 +2576,7 @@ export default function RoutineGenerate() {
                     <span className="text-xl">{taskCheckMap[idx] ? "✅" : "❌"}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm truncate">{item.activity}</p>
-                      <p className="text-xs opacity-70">{item.time} · {item.duration}m</p>
+                      <p className="text-xs opacity-70">{[formatRoutineTime(item.time), formatRoutineDurationShort(item)].filter(Boolean).join(" · ")}</p>
                     </div>
                     <span className="text-xs font-bold shrink-0">
                       {taskCheckMap[idx] ? "Done" : "Missed"}

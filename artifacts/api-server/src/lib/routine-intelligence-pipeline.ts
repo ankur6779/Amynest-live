@@ -1171,6 +1171,36 @@ export function runRoutineIntelligencePipeline(
     );
   }
 
+  // P0-3: re-run blocking trust validation AFTER the content-integrity display
+  // pass so `validated` reflects the EXACT items we return (content integrity
+  // can rename/relabel blocks). A routine that passed earlier but no longer
+  // satisfies sleep / dinner / infant-feeding rules must be reported as
+  // validated:false so no caller exposes it.
+  const finalTrust = runBlockingTrustValidation(polished, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+    ageGroup: scheduleOpts.ageGroup,
+    ageInMonths: ageInMonthsEarly,
+    country: state.country,
+    hasSchool: flowOpts.hasSchool,
+  });
+  if (!finalTrust.valid) {
+    pipelineDebug(debug, debugLog, "finalTrustFailed", finalTrust.errors);
+    validated = {
+      valid: false,
+      items: polished,
+      errors: [
+        ...validated.errors.filter((e) => !e.startsWith("trust-")),
+        ...finalTrust.errors,
+      ],
+    };
+    reverted = true;
+    if (!debugLog.includes("reverted:post_integrity_trust_failed")) {
+      debugLog.push("reverted:final_trust_failed");
+    }
+    fixedActivities.validationWarnings.push(...finalTrust.errors);
+  }
+
   if (input.childId) {
     persistRoutinePersonalizationMemory({
       childId: input.childId,

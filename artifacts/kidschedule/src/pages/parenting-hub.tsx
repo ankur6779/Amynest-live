@@ -998,6 +998,14 @@ function ParentingHubPage() {
     }
   };
 
+  useEffect(() => {
+    if (!effectiveChild || typeof window === "undefined") return;
+    window.localStorage.setItem(STORAGE_KEY, String(effectiveChild.id));
+    if (selectedChildId !== effectiveChild.id) {
+      setSelectedChildId(effectiveChild.id);
+    }
+  }, [effectiveChild?.id, selectedChildId]);
+
   // ── Loading ────────────────────────────────────────────────────────────────
   if (isLoading) {
     return <div className="flex items-center justify-center py-24">

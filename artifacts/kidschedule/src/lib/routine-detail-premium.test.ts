@@ -4,6 +4,7 @@ import {
   buildRevealHighlightChips,
   buildRoutineTrustRibbonSignals,
   buildShareCardMealSummary,
+  buildShareCardTimeline,
   extractDinnerFoodChips,
   extractMealOptionPills,
   isDinnerAnchorItem,
@@ -40,6 +41,17 @@ describe("routine-detail-premium", () => {
     expect(signals.some((s) => s.id === "dinner")).toBe(true);
     expect(signals.some((s) => s.id === "bedtime")).toBe(true);
     expect(signals.some((s) => s.id === "weather")).toBe(true);
+  });
+
+  it("share card timeline normalizes mixed time formats to 12h", () => {
+    const rows = buildShareCardTimeline([
+      { time: "16:25", activity: "Outdoor play", duration: 45 },
+      { time: "7:00 AM", activity: "Wake up", duration: 20 },
+      { time: "21:00", activity: "Lights out", duration: 0 },
+    ]);
+    expect(rows.map((r) => r.time)).toEqual(["4:25 PM", "7:00 AM", "9:00 PM"]);
+    // No AM/PM-less 24h strings should remain in the shared output.
+    expect(rows.every((r) => /(AM|PM)$/.test(r.time))).toBe(true);
   });
 
   it("extracts up to 3 meal option pills", () => {

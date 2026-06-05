@@ -1,0 +1,49 @@
+---
+description: Routine generation engine freeze — PRODUCTION FROZEN; default decision is DO NOT CHANGE
+globs: artifacts/api-server/src/lib/routine-scheduler.ts,artifacts/api-server/src/lib/routine-intelligence-pipeline.ts,artifacts/api-server/src/lib/routine-safety-gate.ts,artifacts/api-server/src/lib/routine-content-integrity.ts,artifacts/api-server/src/lib/routine-trust-validators.ts,artifacts/api-server/src/lib/routine-infant-schedule-validation.ts,artifacts/api-server/src/lib/routine-meal-dinner-integrity.ts,artifacts/api-server/src/lib/routine-meal-options-safety.ts,artifacts/api-server/src/lib/routine-aqi.ts,artifacts/api-server/src/lib/sleepPredict.ts
+alwaysApply: false
+---
+
+# Routine engine freeze (mandatory)
+
+The routine generation engine is at Release Candidate status: 261/261 scenarios pass,
+gatePass = true, trustFailures = 0, infant/dinner/AQI/content integrity validated.
+
+**Default decision: DO NOT CHANGE IT.**
+
+## Frozen files (no changes by default)
+
+- **Scheduler** — `routine-scheduler.ts`, schedule generation, time allocation
+- **Pipeline** — `routine-intelligence-pipeline.ts` (pass ordering, emotional pacing, continuity, adaptive completion, daily load balancing, family intelligence)
+- **Validators** — `routine-trust-validators.ts`, `sleepPredict.ts`, `routine-infant-schedule-validation.ts`, `routine-meal-dinner-integrity.ts`, `routine-meal-options-safety.ts`, `routine-aqi.ts`
+- **Safety** — `routine-safety-gate.ts` (trust / bedtime / dinner enforcement)
+- **Content integrity** — `routine-content-integrity.ts`
+
+## Only allowed changes
+
+A change may proceed ONLY if it is: (1) production outage fix, (2) security fix,
+(3) data-loss fix, (4) child-safety fix, (5) critical trust issue, or
+(6) a proven bug with reproducible steps.
+
+## Before modifying any frozen file, document ALL of these
+
+1. Is this a launch-blocking bug?
+2. Is there a reproducible failure?
+3. Does it affect real users?
+4. Can it be solved outside the engine?
+5. What existing behavior could regress?
+
+Plus: root cause · affected files · regression risk · tests added · rollback plan.
+
+If these answers are not documented: **DO NOT MODIFY THE ENGINE.**
+
+## No new engine layers
+
+No new intelligence / personalization / autonomy / emotional / memory /
+explainability layers, validators, or adaptive passes until real-user data proves a need.
+
+## DO instead
+
+Build retention, parent feedback, premium conversion, analytics, and operational
+monitoring **above** the engine. UI/display-layer work (e.g. `artifacts/kidschedule/src/lib/routine-timeline-ui.ts`)
+is not frozen.

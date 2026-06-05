@@ -27,6 +27,13 @@ export function AmyFamilyMemoryCard({
   const href = pickedRoutine ? `/routines/${pickedRoutine.id}` : "/routines";
   const primarySignal = picked.signals[0];
   const supportSignal = picked.signals.find((signal) => signal.id === "supports");
+
+  // P0-4: only claim memory when the gated memory signal is backed by real
+  // completion evidence (its label contains "remembers"). Otherwise stay honest
+  // with "Amy is learning" so we never imply learning that hasn't happened.
+  const memorySignal = picked.signals.find((signal) => signal.id === "remembers");
+  const memoryBacked = /\bremembers\b/i.test(memorySignal?.label ?? "");
+  const cardTitle = memoryBacked ? "Amy remembers" : "Amy is learning";
   const subtitle =
     pickedRoutine?.childName != null
       ? `Latest family intelligence from ${pickedRoutine.childName}`
@@ -39,7 +46,7 @@ export function AmyFamilyMemoryCard({
           <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-muted/20">
             <Brain className="h-3.5 w-3.5 text-primary" />
             <div className="min-w-0">
-              <span className="font-quicksand font-bold text-xs text-foreground block">Amy remembers</span>
+              <span className="font-quicksand font-bold text-xs text-foreground block">{cardTitle}</span>
               <span className="text-[10px] text-muted-foreground truncate block">{subtitle}</span>
             </div>
           </div>
@@ -70,7 +77,7 @@ export function AmyFamilyMemoryCard({
           <div className={DASHBOARD_SECTION_HEADER}>
             <Brain className="h-3.5 w-3.5 text-indigo-300 shrink-0" />
             <div className="min-w-0">
-              <span className="font-quicksand font-bold text-xs text-white block">Amy remembers</span>
+              <span className="font-quicksand font-bold text-xs text-white block">{cardTitle}</span>
               <span className="text-[10px] text-white/55 truncate block">{subtitle}</span>
             </div>
           </div>

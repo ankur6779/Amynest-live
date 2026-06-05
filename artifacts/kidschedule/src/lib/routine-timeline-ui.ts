@@ -22,6 +22,63 @@ export function parseRoutineTimeToMinutes(timeStr: string): number {
   return -1;
 }
 
+/**
+ * Single canonical display format for every routine time across the app:
+ * 12-hour clock with AM/PM (e.g. "4:25 PM"). The API may persist times as
+ * 24-hour ("16:25") or 12-hour ("4:25 PM"); this normalizes both so no surface
+ * ever shows a mix. Unparseable values are returned trimmed and unchanged.
+ */
+export function formatRoutineTime(time: string | null | undefined): string {
+  if (!time) return "";
+  const mins = parseRoutineTimeToMinutes(time);
+  if (mins < 0) return time.trim();
+  const wrapped = ((mins % 1440) + 1440) % 1440;
+  let h = Math.floor(wrapped / 60);
+  const m = wrapped % 60;
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${m.toString().padStart(2, "0")} ${ampm}`;
+}
+
+/** "30m" for display, or "" when there is no real duration (e.g. sleep anchor). */
+export function formatRoutineDurationShort(
+  item: { duration?: number | null } | null | undefined,
+): string {
+  const d = typeof item?.duration === "number" ? item.duration : 0;
+  return d > 0 ? `${d}m` : "";
+}
+
+/** "30 min" for share/notification text, or "" when there is no real duration. */
+export function formatRoutineDurationLong(
+  item: { duration?: number | null } | null | undefined,
+): string {
+  const d = typeof item?.duration === "number" ? item.duration : 0;
+  return d > 0 ? `${d} min` : "";
+}
+
+// Internal engineering markers (e.g. "hydration:", "trust-feeding:", "aqi:")
+// that must never leak into shared/exported text. They always use a colon, and
+// a trust/feeding marker can carry a sub-token ("trust-feeding:").
+const INTERNAL_NOTE_PREFIX =
+  /^(hydration|aqi|trust[\w-]*|display|debug|internal|meta|pipeline)\s*:\s*/i;
+
+/**
+ * Clean an item's notes for sharing/export: drop internal engineering prefixes
+ * and render the meal "Options:" pipe-list as a readable comma list. Returns ""
+ * when nothing parent-facing remains.
+ */
+export function cleanRoutineNotes(notes: string | null | undefined): string {
+  if (!notes) return "";
+  let text = notes.trim();
+  if (!text) return "";
+  if (INTERNAL_NOTE_PREFIX.test(text)) {
+    text = text.replace(INTERNAL_NOTE_PREFIX, "").trim();
+  }
+  text = text.replace(/\bOptions:\s*/i, "Options: ").replace(/\s*\|\s*/g, ", ");
+  return text.replace(/\s+/g, " ").trim();
+}
+
 const CATEGORY_LABELS: Record<string, string> = {
   morning: "Morning",
   meal: "Meal",
@@ -43,6 +100,16 @@ const CATEGORY_LABELS: Record<string, string> = {
   rest: "Rest",
   self_care: "Self care",
   reading: "Reading",
+  wind_down: "Wind-down",
+  outdoor_play: "Outdoor play",
+  free_play: "Free play",
+  quiet_time: "Quiet time",
+  snack: "Snack",
+  nap: "Nap",
+  learning: "Learning",
+  chores: "Chores",
+  bath: "Bath",
+  routine: "Routine",
 };
 
 export function formatCategoryLabel(category: string): string {

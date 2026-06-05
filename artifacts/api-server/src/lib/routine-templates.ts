@@ -130,6 +130,18 @@ export function minsToTime(total: number): string {
   return `${dh}:${m.toString().padStart(2, "0")} ${ampm}`;
 }
 
+/**
+ * 24-hour "HH:MM" formatter — the canonical on-the-wire time format for routine
+ * items. Use this (not minsToTime) anywhere output is merged with AI-generated
+ * routines, which always emit 24-hour times.
+ */
+export function minsToTime24(total: number): string {
+  const wrapped = ((total % 1440) + 1440) % 1440;
+  const h = Math.floor(wrapped / 60);
+  const m = wrapped % 60;
+  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+}
+
 export function timeToMins(t: string): number {
   if (!t) return 0;
   const cleaned = t.replace(/\s+/g, " ").trim();
@@ -1890,6 +1902,34 @@ export function generateRuleBasedInsights(stats: RoutineStat[]): InsightsResult 
 
 type ExistingItem = { time: string; activity: string; duration: number; category: string; notes?: string; status?: string };
 
+/**
+ * Coarse diversity group for partial-regen de-duplication. Prevents stacking
+ * (e.g.) three art blocks or two reading blocks across the kept/new seam.
+ */
+function partialActivityGroup(activity: string, category: string): string {
+  const a = activity.toLowerCase();
+  const c = (category ?? "").toLowerCase();
+  if (c === "meal" || /\b(breakfast|lunch|dinner|snack|tiffin)\b/.test(a)) return "meal";
+  if (c === "sleep" || /\b(sleep|lights out|bedtime)\b/.test(a)) return "sleep";
+  if (c === "wind-down" || /\bwind.?down\b/.test(a)) return "wind-down";
+  if (/\b(read|book|story|journal|literacy)\b/.test(a)) return "reading";
+  if (/\b(art|draw|paint|craft|colou?r|creative writing|storytelling|origami|clay)\b/.test(a)) return "creative";
+  if (/\b(sport|cycling|skipping|outdoor|park|walk|swim|run|football|cricket|badminton)\b/.test(a)) return "physical";
+  if (/\b(science|experiment|coding|logic|stem|quiz|geography|math)\b/.test(a)) return "stem";
+  if (/\b(board game|strategy|chess|scrabble|carrom|blocks|building|puzzle)\b/.test(a)) return "play";
+  if (/\b(chore|responsibility|tidy|laundry|table|plant|helper|help)\b/.test(a)) return "chore";
+  if (c === "bonding" || /\b(family|together)\b/.test(a)) return "bonding";
+  return c || "other";
+}
+
+function isOutdoorActivity(activity: string, category: string): boolean {
+  const a = activity.toLowerCase();
+  return (
+    (category ?? "").toLowerCase() === "outdoor" ||
+    /\b(outdoor|cycling|skipping rope|sport|park|swim)\b/.test(a)
+  );
+}
+
 export function generatePartialRoutine(params: {
   childName: string;
   ageGroup: AgeGroup;
@@ -1903,8 +1943,10 @@ export function generatePartialRoutine(params: {
   date: string;
   region?: Region;
   fridgeItems?: string;
+  /** When "no" (or unset + after ~6 PM), outdoor sport/cycling is skipped. */
+  weatherOutdoor?: WeatherOutdoor;
 }): ScheduleItem[] {
-  const { childName, ageGroup, foodType, region, fridgeItems, keptItems, startMins, sleepMins, newActivity, date } = params;
+  const { childName, ageGroup, foodType, region, fridgeItems, keptItems, startMins, sleepMins, newActivity, date, weatherOutdoor } = params;
   const seed = dateSeed(date, childName);
   const isVeg = foodType !== "non_veg" && foodType !== "nonveg";
   const fridgeList = parseFridgeItems(fridgeItems);
@@ -1916,55 +1958,86 @@ export function generatePartialRoutine(params: {
     return arr[Math.abs(seed + off) % arr.length]!;
   };
 
-  // Categories already present in kept items
+  // Activities + diversity groups already present in kept items — avoid
+  // repeating either the exact label or the broad category across the seam.
   const usedActivities = new Set(keptItems.map((i) => i.activity.toLowerCase()));
+  const usedGroups = new Set(
+    keptItems.map((i) => partialActivityGroup(i.activity, i.category)),
+  );
+
+  // Reserve room for wind-down (+ dinner if missing) so the evening always ends
+  // calmly with lights-out — never a packed block straight into sleep.
+  const wdBlocks = WIND_DOWN[ageGroup];
+  const wdReserve = wdBlocks.reduce((sum, b) => sum + b.duration + 5, 0);
+  const hasDinner = keptItems.some((i) => i.activity.toLowerCase().includes("dinner"));
+  const dinnerReserve = hasDinner ? 0 : 35;
+  const enrichmentLimit = sleepMins - wdReserve - dinnerReserve;
 
   let cursor = startMins;
   const items: ScheduleItem[] = [];
 
-  const add = (block: Block) => {
-    if (cursor + block.duration > sleepMins - 30) return;
-    items.push({ ...block, time: minsToTime(cursor), status: "pending", notes: block.notes ?? "" });
+  // 24-hour times so the result merges cleanly with AI-generated kept items.
+  const add = (block: Block, opts?: { force?: boolean }): boolean => {
+    if (!opts?.force && cursor + block.duration > enrichmentLimit) return false;
+    items.push({ ...block, time: minsToTime24(cursor), status: "pending", notes: block.notes ?? "" });
     cursor += block.duration + 5;
+    return true;
   };
 
   // Insert new activity first if requested
   if (newActivity) {
-    add({
-      activity: newActivity.name,
-      duration: newActivity.duration ?? 30,
-      category: "play",
-      notes: "Added activity — enjoy!",
-    });
+    add(
+      {
+        activity: newActivity.name,
+        duration: newActivity.duration ?? 30,
+        category: "play",
+        notes: "Added activity — enjoy!",
+      },
+      { force: true },
+    );
+    usedGroups.add(partialActivityGroup(newActivity.name, "play"));
   }
 
-  // Pick activities not yet done
+  // Pick activities not yet done — at most one per diversity group, and no
+  // outdoor sport/cycling in the evening (or when weather is poor).
   const pool = seededShuffle([...AFTERNOON_ACTIVITIES[ageGroup], ...getBondingActivities(ageGroup)], seed + cursor);
   let bondAdded = 0;
   for (const act of pool) {
-    if (cursor + 20 >= sleepMins - 60) break;
+    if (cursor + 20 >= enrichmentLimit) break;
     if (usedActivities.has(act.activity.toLowerCase())) continue;
+    const group = partialActivityGroup(act.activity, act.category);
+    if (usedGroups.has(group)) continue;
     if (act.category === "bonding" && bondAdded >= 1) continue;
-    add(act);
+    if (
+      isOutdoorActivity(act.activity, act.category) &&
+      (cursor >= 18 * 60 || weatherOutdoor === "no")
+    ) {
+      continue;
+    }
+    if (!add(act)) continue;
     usedActivities.add(act.activity.toLowerCase());
+    usedGroups.add(group);
     if (act.category === "bonding") bondAdded++;
   }
 
   // Dinner if not already in kept items and not yet added
-  const hasDinner = keptItems.some((i) => i.activity.toLowerCase().includes("dinner"));
-  if (!hasDinner && cursor + 30 < sleepMins - 30) {
+  if (!hasDinner && cursor + 30 <= sleepMins - wdReserve) {
     const dinnerOpts = meal(isVeg ? "VEG_DINNER" : "NONVEG_DINNER", 0);
-    add({ activity: "Dinner", duration: 30, category: "meal", notes: `Options: ${dinnerOpts}` });
+    add(
+      { activity: "Dinner", duration: 30, category: "meal", notes: `Options: ${dinnerOpts}` },
+      { force: true },
+    );
   }
 
-  // Wind-down
-  const wdBlocks = WIND_DOWN[ageGroup];
+  // Wind-down — always placed so the day winds down before lights-out.
   for (const block of wdBlocks) {
-    if (cursor + block.duration < sleepMins) add(block);
+    if (cursor + block.duration <= sleepMins) {
+      add(block, { force: true });
+    }
   }
 
   // Sleep anchor
-  items.push({ ...SLEEP_ANCHOR[ageGroup], time: minsToTime(sleepMins), status: "pending" });
+  items.push({ ...SLEEP_ANCHOR[ageGroup], time: minsToTime24(sleepMins), status: "pending" });
 
   return withRewardPoints(items);
 }

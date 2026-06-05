@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { incrementPaywallVisitCount } from "@/lib/subscription-funnel-storage";
 import { trackSubscriptionEvent } from "@/lib/subscription-analytics";
+import { track } from "@/lib/analytics";
 
 export type PaywallReason =
   | "ai_quota"
@@ -45,6 +46,7 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
       reason,
       source: "open_paywall",
     });
+    track("premium_paywall_viewed", { source: reason });
     setState({ open: true, reason });
   }, []);
   const closePaywall = useCallback(() => {

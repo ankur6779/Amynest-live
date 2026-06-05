@@ -1,4 +1,5 @@
 /** Routine page UX helpers — display only, no generation logic. */
+import { formatRoutineTime } from "./routine-timeline-ui";
 
 export type RoutinePreviewItem = {
   time: string;
@@ -61,7 +62,7 @@ export function pickPreviewTimeline(
   max = 5,
 ): { time: string; label: string }[] {
   return items.slice(0, max).map((i) => ({
-    time: i.time,
+    time: formatRoutineTime(i.time),
     label: i.activity.length > 32 ? `${i.activity.slice(0, 30)}…` : i.activity,
   }));
 }

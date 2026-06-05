@@ -10,6 +10,10 @@ import {
 } from "@/components/dashboard-light-widgets";
 import { AmyCoachCheckInCard } from "@/components/amy-coach-check-in-card";
 import { formatAge } from "@/lib/age-groups";
+import {
+  formatRoutineDurationShort,
+  formatRoutineTime,
+} from "@/lib/routine-timeline-ui";
 import { AmyIcon } from "@/components/amy-icon";
 import { DashboardSkeleton } from "@/components/route-skeletons/dashboard-skeleton";
 import { ContentReveal } from "@/components/premium-ux/content-reveal";
@@ -675,7 +679,7 @@ function NowNextTimeline({
         return <AppLink key={`${item.routineId}-${idx}`} href={`/routines/${item.routineId}`} source="dashboard-routine-timeline">
               <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isCurrent ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-[0_4px_16px_rgba(251,146,60,0.30)]" : "bg-white/[0.06] hover:bg-white/[0.10]"}`}>
                 <div className={`flex flex-col items-center w-14 shrink-0 ${isCurrent ? "text-white" : "text-white/55"}`}>
-                  <div className="text-xs font-bold">{item.time}</div>
+                  <div className="text-xs font-bold">{formatRoutineTime(item.time)}</div>
                   {isCurrent && <span className="mt-1 text-[9px] font-black uppercase bg-white/25 px-1.5 py-0.5 rounded-full">{t("pages.dashboard.now")}</span>}
                   {!isCurrent && isNext && <span className="mt-1 text-[9px] font-black uppercase bg-white/10 text-amber-200 px-1.5 py-0.5 rounded-full">{t("pages.dashboard.next")}</span>}
                 </div>
@@ -687,7 +691,7 @@ function NowNextTimeline({
                     {item.activity}
                   </div>
                   <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 flex-wrap ${isCurrent ? "text-white/75" : "text-white/55"}`}>
-                    <span>{item.childName} · {item.duration}m</span>
+                    <span>{[item.childName, formatRoutineDurationShort(item)].filter(Boolean).join(" · ")}</span>
                     {item.ageBand && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold rounded-full px-1.5 py-0.5 border ${isCurrent ? "bg-white/20 text-white border-white/30" : "text-amber-200/90 bg-white/[0.06] border-white/10"}`}>
                         <Users className="h-2.5 w-2.5" />
                         {t("pages.dashboard.ages")} {item.ageBand.replace("-", "–")}

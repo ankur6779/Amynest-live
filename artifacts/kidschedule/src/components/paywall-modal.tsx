@@ -33,6 +33,7 @@ import {
   trackSubscriptionEvent,
   syncRevenueCatSubscriptionAttributes,
 } from "@/lib/subscription-analytics";
+import { track } from "@/lib/analytics";
 import { useNativeBilling } from "@/hooks/use-native-billing";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -123,6 +124,7 @@ export function PaywallModal() {
   };
 
   const onPayWithRazorpay = async () => {
+    track("premium_cta_clicked", { source: reason });
     trackSubscriptionEvent({
       event: "checkout_started",
       plan: selected,
@@ -162,6 +164,7 @@ export function PaywallModal() {
   };
 
   const onPayWithNative = async () => {
+    track("premium_cta_clicked", { source: reason });
     trackSubscriptionEvent({
       event: "checkout_started",
       plan: selected,

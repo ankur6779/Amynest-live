@@ -7,6 +7,7 @@ import {
   applyRoutineV2,
   anchorMealSlots,
   generateRuleBasedRoutine,
+  generatePartialRoutine,
   timeToMins,
   minsToTime,
   type ScheduleItem,
@@ -951,5 +952,91 @@ describe("anchorMealSlots — infant safety (no Drunch injection)", () => {
       0,
       `Infant routine meal notes must not contain adult food. Violations: ${violations.map((v) => `"${v.activity}": "${v.notes}"`).join("; ")}`,
     );
+  });
+});
+
+describe("generatePartialRoutine — merge integrity", () => {
+  // Simulates a partial-regenerate around 4:45 PM: kept (AI) items in 24-hour
+  // format, tail regenerated from the rule-based pool.
+  const keptItems = [
+    { time: "07:00", activity: "Wake-up Nutrition", duration: 20, category: "meal", notes: "Options: Poha", status: "completed" },
+    { time: "09:10", activity: "Creative project at home", duration: 40, category: "creative", notes: "Drawing fun.", status: "completed" },
+    { time: "15:45", activity: "Reading for Pleasure", duration: 25, category: "play", notes: "Read a book.", status: "completed" },
+    { time: "16:25", activity: "Get ready on your own", duration: 20, category: "self_care", notes: "Independence.", status: "pending" },
+  ];
+
+  const run = () =>
+    generatePartialRoutine({
+      childName: "Kid",
+      ageGroup: "early_school",
+      childAge: 7,
+      foodType: "veg",
+      goals: "",
+      keptItems,
+      startMins: 16 * 60 + 45, // 16:45
+      sleepMins: 21 * 60, // 21:00
+      date: "2026-06-06",
+      region: "pan_indian" as never,
+    });
+
+  it("emits 24-hour times only (never AM/PM)", () => {
+    const newItems = run();
+    for (const it of newItems) {
+      assert.match(
+        it.time,
+        /^\d{2}:\d{2}$/,
+        `Partial-regen item must use 24h time, got "${it.time}" for "${it.activity}"`,
+      );
+    }
+  });
+
+  it("does not repeat a diversity group already present in kept items", () => {
+    const newItems = run();
+    // Kept items already cover a reading block; the tail must not add another.
+    const readingTail = newItems.filter((it) => /\b(read|book|story|journal)\b/i.test(it.activity));
+    assert.equal(
+      readingTail.length,
+      0,
+      `Tail duplicated reading block(s): ${readingTail.map((b) => b.activity).join(", ")}`,
+    );
+  });
+
+  it("ends the day with wind-down before lights-out", () => {
+    const newItems = run();
+    const sleepIdx = newItems.findIndex((it) => it.category === "sleep");
+    assert.ok(sleepIdx >= 0, "Sleep anchor must be present");
+    const beforeSleep = newItems.slice(0, sleepIdx);
+    const hasWindDown = beforeSleep.some(
+      (it) => it.category === "wind-down" || /\b(wind.?down|bath|reading time)\b/i.test(it.activity),
+    );
+    assert.ok(
+      hasWindDown,
+      `Expected a wind-down block before sleep, got: ${beforeSleep.map((b) => b.activity).join(", ")}`,
+    );
+  });
+
+  it("never schedules outdoor sport/cycling in the evening", () => {
+    const newItems = run();
+    const eveningOutdoor = newItems.filter(
+      (it) =>
+        timeToMins(it.time) >= 18 * 60 &&
+        (it.category === "outdoor" || /\b(cycling|skipping rope|outdoor|sport)\b/i.test(it.activity)),
+    );
+    assert.equal(
+      eveningOutdoor.length,
+      0,
+      `Evening outdoor blocks found: ${eveningOutdoor.map((b) => `${b.time} ${b.activity}`).join(", ")}`,
+    );
+  });
+
+  it("keeps every item within the sleep boundary", () => {
+    const newItems = run();
+    for (const it of newItems) {
+      if (it.category === "sleep") continue;
+      assert.ok(
+        timeToMins(it.time) + (it.duration ?? 0) <= 21 * 60,
+        `"${it.activity}" runs past lights-out`,
+      );
+    }
   });
 });

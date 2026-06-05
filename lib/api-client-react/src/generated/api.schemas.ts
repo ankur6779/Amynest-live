@@ -891,6 +891,37 @@ export interface CreateBehaviorLogBody {
   notes?: string | null;
 }
 
+export type CreateRoutineFeedbackBodySignal = typeof CreateRoutineFeedbackBodySignal[keyof typeof CreateRoutineFeedbackBodySignal];
+
+
+export const CreateRoutineFeedbackBodySignal = {
+  worked_well: 'worked_well',
+  loved_this: 'loved_this',
+  too_tiring: 'too_tiring',
+  skipped: 'skipped',
+  bedtime_smooth: 'bedtime_smooth',
+} as const;
+
+export interface CreateRoutineFeedbackBody {
+  childId: number;
+  routineId: number;
+  routineDate: string;
+  /** @nullable */
+  activityKey?: string | null;
+  signal: CreateRoutineFeedbackBodySignal;
+}
+
+export interface RoutineFeedback {
+  id: number;
+  childId: number;
+  routineId: number;
+  routineDate: string;
+  /** @nullable */
+  activityKey?: string | null;
+  signal: string;
+  createdAt: string;
+}
+
 export interface DashboardSummary {
   totalChildren: number;
   totalRoutines: number;

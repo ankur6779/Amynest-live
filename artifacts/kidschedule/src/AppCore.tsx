@@ -454,7 +454,11 @@ function ClientTelemetryBootstrap() {
       void import("@/lib/client-logs").then(({ flushClientLogs }) =>
         flushClientLogs(authFetchRef.current),
       );
+      void import("@/lib/analytics").then(({ flushAnalytics }) =>
+        flushAnalytics(authFetchRef.current),
+      );
     };
+    void import("@/lib/analytics").then(({ trackAppOpen }) => trackAppOpen());
     flush();
     const id = setInterval(flush, 30_000);
 

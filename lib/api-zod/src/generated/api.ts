@@ -1188,6 +1188,18 @@ export const DeleteBehaviorLogParams = zod.object({
 
 
 /**
+ * @summary Log parent feedback on a routine or activity
+ */
+export const CreateRoutineFeedbackBody = zod.object({
+  "childId": zod.number(),
+  "routineId": zod.number(),
+  "routineDate": zod.string(),
+  "activityKey": zod.string().nullish(),
+  "signal": zod.enum(['worked_well', 'loved_this', 'too_tiring', 'skipped', 'bedtime_smooth'])
+})
+
+
+/**
  * @summary Get dashboard summary stats
  */
 export const GetDashboardSummaryResponse = zod.object({

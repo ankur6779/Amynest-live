@@ -4,6 +4,7 @@
  */
 import {
   formatMinutesUntil,
+  formatRoutineTime,
   isSleepRoutineItem,
   parseRoutineTimeToMinutes,
 } from "@/lib/routine-timeline-ui";
@@ -370,7 +371,7 @@ export function buildShareCardTimeline(
   max = 14,
 ): ShareCardTimelineRow[] {
   return items.slice(0, max).map((it) => ({
-    time: it.time,
+    time: formatRoutineTime(it.time),
     activity: it.activity,
     duration: it.duration ?? 30,
   }));

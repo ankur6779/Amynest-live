@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { useTranslation } from "react-i18next";
 import { useLocation, Link, useParams, useSearch } from "wouter";
 import { useGetRoutine, getGetRoutineQueryKey, useDeleteRoutine, getListRoutinesQueryKey, useGetChild, getGetChildQueryKey, useUpdateRoutineUiPrefs } from "@workspace/api-client-react";
+import { RoutineFeedbackBar, feedbackActivityKey, type RoutineFeedbackSignal } from "@/components/routines/routine-feedback-bar";
+import { track } from "@/lib/analytics";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { getActivityImage } from "@/lib/activity-images";
 import { Button } from "@/components/ui/button";
@@ -58,8 +60,12 @@ import {
 import { cn } from "@/lib/utils";
 import { primaryLinkedModuleHref } from "@/lib/hub-activity-cross-link";
 import {
+  cleanRoutineNotes,
   formatCategoryLabel,
   formatMinutesUntil,
+  formatRoutineDurationLong,
+  formatRoutineDurationShort,
+  formatRoutineTime,
   isSleepRoutineItem,
   linkedModuleLabel,
   parseRoutineTimeToMinutes,
@@ -321,7 +327,8 @@ function RoutineItemModal({
   onDelay,
   onSkip,
   routineId,
-  seed
+  seed,
+  feedbackContext = null
 }: {
   item: RoutineItem | null;
   index: number;
@@ -333,6 +340,7 @@ function RoutineItemModal({
   onSkip(): void;
   routineId: number;
   seed: number;
+  feedbackContext?: { childId: number; routineDate: string } | null;
 }) {
   const {
     t
@@ -369,8 +377,8 @@ function RoutineItemModal({
               {item.activity}
             </h2>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className="text-white/80 text-xs font-medium">{item.time} · {item.duration}m</span>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-sm">{item.category}</span>
+              <span className="text-white/80 text-xs font-medium">{formatRoutineTime(item.time)}{formatRoutineDurationShort(item) ? ` · ${formatRoutineDurationShort(item)}` : ""}</span>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-sm">{formatCategoryLabel(item.category)}</span>
               {status === "completed" && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary text-white">{t("pages.routines.detail.done")}</span>}
               {status === "skipped" && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-card text-white">{t("pages.routines.detail.skipped")}</span>}
               {status === "delayed" && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary text-white">{t("pages.routines.detail.delayed")}</span>}
@@ -400,13 +408,13 @@ function RoutineItemModal({
                     {opt.trim()}
                   </span>)}
               </div>
-            </div> : item.notes ? <div className="bg-muted/50 rounded-2xl p-4">
+            </div> : cleanRoutineNotes(item.notes) ? <div className="bg-muted/50 rounded-2xl p-4">
               <p className="text-sm font-bold text-foreground mb-1">{t("pages.routines.detail.instructions")}</p>
               <p className="text-sm text-muted-foreground leading-relaxed" style={{
             wordBreak: "break-word",
             whiteSpace: "normal"
           }}>
-                {item.notes}
+                {cleanRoutineNotes(item.notes)}
               </p>
             </div> : null}
 
@@ -454,6 +462,18 @@ function RoutineItemModal({
         }} className="w-full py-3 rounded-2xl bg-muted border border-border text-muted-foreground text-sm font-bold hover:bg-muted/80 transition-colors">
               {t("pages.routines.detail.mark_as_pending_again")}
             </button>}
+
+          {feedbackContext && (
+            <RoutineFeedbackBar
+              className="rounded-2xl border border-border bg-muted/40 px-4 py-3"
+              childId={feedbackContext.childId}
+              routineId={routineId}
+              routineDate={feedbackContext.routineDate}
+              activityKey={feedbackActivityKey(item.activity)}
+              title={t("components.routine_feedback.activity_title", { defaultValue: "How was this activity?" })}
+              signals={["loved_this", "too_tiring"]}
+            />
+          )}
 
           <button onClick={onClose} className="w-full py-3 rounded-2xl border border-border text-foreground text-sm font-bold hover:bg-muted/50 transition-colors">
             {t("pages.routines.detail.close")}
@@ -591,13 +611,21 @@ export default function RoutineDetail() {
   };
   const {
     data: routine,
-    isLoading
+    isLoading,
+    isError,
+    error,
+    refetch
   } = useGetRoutine(routineId, {
     query: {
       enabled: !!routineId,
       queryKey: getGetRoutineQueryKey(routineId)
     }
   });
+  // A genuine 404 (server responded "not found") is shown differently from a
+  // network/connection failure (fetch rejected → no status, or a 5xx), so a
+  // first-time parent on flaky wifi never sees a misleading "not found".
+  const routineNotFound = (error as { status?: number } | null)?.status === 404;
+  const routineLoadFailed = isError && !routineNotFound;
   const childId = (routine as any)?.childId ?? 0;
   const {
     data: childData
@@ -738,13 +766,9 @@ export default function RoutineDetail() {
     const now = new Date();
     const nowMins = now.getHours() * 60 + now.getMinutes();
     return items.filter(item => {
-      const match = item.time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-      if (!match) return true;
-      let h = parseInt(match[1]!, 10);
-      const m = parseInt(match[2]!, 10);
-      if (match[3]!.toUpperCase() === "PM" && h !== 12) h += 12;
-      if (match[3]!.toUpperCase() === "AM" && h === 12) h = 0;
-      return h * 60 + m >= nowMins;
+      const mins = parseRoutineTimeToMinutes(item.time);
+      if (mins < 0) return true;
+      return mins >= nowMins;
     });
   };
 
@@ -756,7 +780,11 @@ export default function RoutineDetail() {
       weekday: "long",
       month: "short",
       day: "numeric"
-    })}`, "", isFiltered ? "⏰ REMAINING ACTIVITIES:" : "📋 ROUTINE:", ...remaining.map(item => `• ${item.time} — ${item.activity} (${item.duration} min)${item.notes ? `\n  💡 ${item.notes}` : ""}`), "", "— Sent via AmyNest"];
+    })}`, "", isFiltered ? "⏰ REMAINING ACTIVITIES:" : "📋 ROUTINE:", ...remaining.map(item => {
+      const dur = formatRoutineDurationLong(item);
+      const note = cleanRoutineNotes(item.notes);
+      return `• ${formatRoutineTime(item.time)} — ${item.activity}${dur ? ` (${dur})` : ""}${note ? `\n  💡 ${note}` : ""}`;
+    }), "", "— Sent via AmyNest"];
     return lines.join("\n");
   };
   const copyShareMessage = () => {
@@ -1033,6 +1061,15 @@ export default function RoutineDetail() {
       // Save snapshot for undo
       const actionLabel = status === "completed" ? "✅ Marked complete" : status === "skipped" ? "⏭ Marked skipped" : "⏱ Delayed";
       showUndo([...prev], actionLabel);
+      if (status === "completed" || status === "skipped") {
+        const trackedItem = prev[index];
+        track(status === "completed" ? "routine_item_completed" : "routine_item_skipped", {
+          routineId: routine?.id,
+          childId: routine?.childId,
+          activityKey: feedbackActivityKey(trackedItem?.activity) ?? undefined,
+          category: trackedItem?.category ?? undefined,
+        });
+      }
       let updated = prev.map((item, i) => i === index ? {
         ...item,
         status
@@ -1122,7 +1159,11 @@ export default function RoutineDetail() {
       if (msUntilTask <= 0) return;
       const timerId = setTimeout(() => {
         new Notification(`⏰ Time for: ${item.activity}`, {
-          body: item.notes || `${item.duration} min · ${item.category}`,
+          body:
+            cleanRoutineNotes(item.notes) ||
+            [formatRoutineDurationLong(item), formatCategoryLabel(item.category)]
+              .filter(Boolean)
+              .join(" · "),
           icon: "/pwa-icon-192.png",
           tag: `routine-${routineId}-${i}`
         });
@@ -1304,6 +1345,20 @@ export default function RoutineDetail() {
   const todayStr = new Date().toISOString().slice(0, 10);
   const dateMode: "past" | "today" | "future" = !routineDateStr ? "today" : routineDateStr < todayStr ? "past" : routineDateStr > todayStr ? "future" : "today";
 
+  // Analytics: fire routine_viewed once per loaded routine.
+  const viewedTrackedRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (routine?.id == null) return;
+    if (viewedTrackedRef.current === routine.id) return;
+    viewedTrackedRef.current = routine.id;
+    track("routine_viewed", {
+      routineId: routine.id,
+      childId: routine.childId ?? undefined,
+      dateMode,
+      itemCount: totalCount,
+    });
+  }, [routine?.id, routine?.childId, dateMode, totalCount]);
+
   // ── Adaptive Engine: today's mood + sleep stored locally per child/day ──
   const moodKey = `amynest:adaptive:mood:${childId}:${routineDateStr || todayStr}`;
   const sleepKey = `amynest:adaptive:sleep:${childId}:${routineDateStr || todayStr}`;
@@ -1481,6 +1536,16 @@ export default function RoutineDetail() {
         </div>
       </div>;
   }
+  if (routineLoadFailed) {
+    return <div className="flex flex-col items-center justify-center p-12 text-center gap-3">
+        <h2 className="text-2xl font-bold mb-1">{t("pages.routines.detail.load_failed_title", { defaultValue: "Couldn't load this routine" })}</h2>
+        <p className="text-sm text-muted-foreground max-w-sm">{t("pages.routines.detail.load_failed_body", { defaultValue: "Check your connection and try again — your routine is safe." })}</p>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => refetch()}>{t("pages.routines.detail.retry", { defaultValue: "Try again" })}</Button>
+          <Button variant="outline" asChild><Link href="/routines">{t("pages.routines.detail.back_to_routines")}</Link></Button>
+        </div>
+      </div>;
+  }
   if (!routine) {
     return <div className="flex flex-col items-center justify-center p-12 text-center">
         <h2 className="text-2xl font-bold mb-2">{t("pages.routines.detail.routine_not_found")}</h2>
@@ -1640,7 +1705,7 @@ export default function RoutineDetail() {
             if (!firstTime) return null;
             return <div className="flex items-center gap-1.5 bg-muted text-primary border border-border px-3 py-1 rounded-full text-sm font-bold">
                   <Clock className="h-3.5 w-3.5" />
-                  {t("pages.routines.detail.day_starts_at")} {firstTime}
+                  {t("pages.routines.detail.day_starts_at")} {formatRoutineTime(firstTime)}
                 </div>;
           })()}
           </div>
@@ -1685,11 +1750,11 @@ export default function RoutineDetail() {
             }
             currentTime={
               timelineFocus.currentIndex >= 0
-                ? items[timelineFocus.currentIndex]?.time
+                ? formatRoutineTime(items[timelineFocus.currentIndex]?.time)
                 : undefined
             }
             nextActivity={timelineFocus.nextItem?.activity}
-            nextTime={timelineFocus.nextItem?.time}
+            nextTime={formatRoutineTime(timelineFocus.nextItem?.time)}
           />
         )}
 
@@ -1849,11 +1914,13 @@ export default function RoutineDetail() {
                             : "text-foreground"
                     }`}
                   >
-                    {item.time}
+                    {formatRoutineTime(item.time)}
                   </div>
-                  <div className={`text-[11px] font-medium text-right ${isUpcomingTask ? "text-muted-foreground/80" : "text-muted-foreground"}`}>
-                    {item.duration}m
-                  </div>
+                  {formatRoutineDurationShort(item) ? (
+                    <div className={`text-[11px] font-medium text-right ${isUpcomingTask ? "text-muted-foreground/80" : "text-muted-foreground"}`}>
+                      {formatRoutineDurationShort(item)}
+                    </div>
+                  ) : null}
                   {isCurrentTask && (
                     <div className="mt-1 text-[8px] font-black uppercase tracking-wide text-primary bg-primary/10 rounded-full px-1.5 py-0.5">
                       {t("pages.routines.detail.now")}
@@ -2092,9 +2159,9 @@ export default function RoutineDetail() {
                             })}
                               </div>
                               <p className="text-xs text-muted-foreground">{t("pages.routines.detail.tap_a_meal_to_view_its_recipe")}</p>
-                            </div> : item.notes && !item.notes.startsWith("Options:") ? <p className="text-muted-foreground text-xs mt-1 leading-relaxed line-clamp-3 break-words" style={{
+                            </div> : item.notes && !item.notes.startsWith("Options:") && cleanRoutineNotes(item.notes) ? <p className="text-muted-foreground text-xs mt-1 leading-relaxed line-clamp-3 break-words" style={{
                           overflowWrap: "break-word"
-                        }}>{item.notes}</p> : null}
+                        }}>{cleanRoutineNotes(item.notes)}</p> : null}
                           {editingIndex !== index && <MealRecipeCard meal={item.meal} recipe={item.recipe} nutrition={item.nutrition} defaultOpen={(item.category === "meal" || item.category === "tiffin") && items.slice(0, index).filter(it => it.category === "meal" || it.category === "tiffin").length === 0} />}
                           </>}
                         </div>
@@ -2189,7 +2256,7 @@ export default function RoutineDetail() {
       if (expandedIndex !== null) updateItemStatus(expandedIndex, "delayed");
     }} onSkip={() => {
       if (expandedIndex !== null) updateItemStatus(expandedIndex, "skipped");
-    }} routineId={routineId} seed={expandedIndex !== null ? (routineId ?? 0) * 100 + expandedIndex : 0} />
+    }} routineId={routineId} seed={expandedIndex !== null ? (routineId ?? 0) * 100 + expandedIndex : 0} feedbackContext={dateMode !== "future" && routine?.childId != null && routineDateStr ? { childId: routine.childId, routineDate: routineDateStr } : null} />
 
       {/* ── Global floating undo chip ───────────────────────────────── */}
       {undoSnapshot && <div data-on-dark className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-card text-white px-4 py-2.5 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
@@ -2236,6 +2303,20 @@ export default function RoutineDetail() {
               <p className="text-sm text-foreground font-medium leading-snug">{dailySummary.tomorrowTip}</p>
             </div>
           </div>
+          {dateMode === "today" && routine?.childId != null && routineDateStr && (
+            <RoutineFeedbackBar
+              className="rounded-xl bg-card border border-border px-3 py-2.5"
+              childId={routine.childId}
+              routineId={routineId}
+              routineDate={routineDateStr}
+              title={t("components.routine_feedback.routine_title", { defaultValue: "How did today go?" })}
+              signals={[
+                "worked_well",
+                "too_tiring",
+                ...(items.some(i => ["sleep", "wind-down"].includes((i.category ?? "").toLowerCase()) || /sleep|bed\s*time|good night/i.test(i.activity)) ? (["bedtime_smooth"] as RoutineFeedbackSignal[]) : []),
+              ]}
+            />
+          )}
         </div>}
 
       <div className="mt-6 flex items-center justify-center gap-3 pb-8 border-t border-border/50 pt-8">
@@ -2533,7 +2614,7 @@ export default function RoutineDetail() {
             <RoutineNowBar
               kind={isNow ? "now" : "next"}
               activity={it.activity}
-              time={it.time}
+              time={formatRoutineTime(it.time)}
               minsUntil={minsUntil}
               completing={completingNow}
               onComplete={

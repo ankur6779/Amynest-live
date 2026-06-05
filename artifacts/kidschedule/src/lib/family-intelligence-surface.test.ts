@@ -53,6 +53,26 @@ describe("buildFamilyIntelligenceSurface", () => {
   it("hides when there is no visible intelligence", () => {
     expect(buildFamilyIntelligenceSurface([])).toBeNull();
   });
+
+  // P0-4: the memory card title is derived from this signal label. Without a
+  // completion-backed "remembers" line, the label must stay in learning mode so
+  // the card shows "Amy is learning", never "Amy remembers".
+  it("does not claim memory without completion-backed adaptations", () => {
+    const surface = buildFamilyIntelligenceSurface([
+      "Amy is still learning what works best for your family.",
+    ]);
+    const memory = surface?.signals.find((s) => s.id === "remembers");
+    expect(memory?.label).toBeDefined();
+    expect(memory?.label).not.toMatch(/remembers/i);
+  });
+
+  it("only claims memory when a completion-backed line is present", () => {
+    const surface = buildFamilyIntelligenceSurface([
+      "Amy remembers what tends to work for your family — familiar anchors stay, with small refreshes.",
+    ]);
+    const memory = surface?.signals.find((s) => s.id === "remembers");
+    expect(memory?.label).toMatch(/remembers/i);
+  });
 });
 
 describe("pickRoutineForIntelligence", () => {

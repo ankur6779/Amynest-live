@@ -36,6 +36,7 @@ import type {
   CreateBehaviorLogBody,
   CreateChildBody,
   CreateRoutineBody,
+  CreateRoutineFeedbackBody,
   DashboardSummary,
   ExplainMealBody,
   ExplainRoutineBody,
@@ -75,6 +76,7 @@ import type {
   ParentTaskCompletion,
   ProductiveNudgesResponse,
   Routine,
+  RoutineFeedback,
   SafetyValidationBody,
   SafetyValidationResponse,
   SetLifeSkillProgressBody,
@@ -1709,6 +1711,76 @@ export const useDeleteBehaviorLog = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteBehaviorLogMutationOptions(options));
+    }
+
+export const getCreateRoutineFeedbackUrl = () => {
+
+
+
+
+  return `/api/routine-feedback`
+}
+
+/**
+ * @summary Log parent feedback on a routine or activity
+ */
+export const createRoutineFeedback = async (createRoutineFeedbackBody: CreateRoutineFeedbackBody, options?: RequestInit): Promise<RoutineFeedback> => {
+
+  return customFetch<RoutineFeedback>(getCreateRoutineFeedbackUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createRoutineFeedbackBody)
+  }
+);}
+
+
+
+
+export const getCreateRoutineFeedbackMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRoutineFeedback>>, TError,{data: BodyType<CreateRoutineFeedbackBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createRoutineFeedback>>, TError,{data: BodyType<CreateRoutineFeedbackBody>}, TContext> => {
+
+const mutationKey = ['createRoutineFeedback'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createRoutineFeedback>>, {data: BodyType<CreateRoutineFeedbackBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createRoutineFeedback(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateRoutineFeedbackMutationResult = NonNullable<Awaited<ReturnType<typeof createRoutineFeedback>>>
+    export type CreateRoutineFeedbackMutationBody = BodyType<CreateRoutineFeedbackBody>
+    export type CreateRoutineFeedbackMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Log parent feedback on a routine or activity
+ */
+export const useCreateRoutineFeedback = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRoutineFeedback>>, TError,{data: BodyType<CreateRoutineFeedbackBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createRoutineFeedback>>,
+        TError,
+        {data: BodyType<CreateRoutineFeedbackBody>},
+        TContext
+      > => {
+      return useMutation(getCreateRoutineFeedbackMutationOptions(options));
     }
 
 export const getGetDashboardSummaryUrl = () => {

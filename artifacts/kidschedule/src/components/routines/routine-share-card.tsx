@@ -74,7 +74,9 @@ export function RoutineShareCard({
             <span className="text-foreground/90 flex-1 min-w-0 leading-snug">
               {row.activity}
             </span>
-            <span className="text-foreground/45 shrink-0">{row.duration}m</span>
+            {row.duration > 0 ? (
+              <span className="text-foreground/45 shrink-0">{row.duration}m</span>
+            ) : null}
           </div>
         ))}
       </div>

@@ -238,6 +238,9 @@ importers:
       '@workspace/amy-operating-layer':
         specifier: workspace:*
         version: link:../../lib/amy-operating-layer
+      '@workspace/analytics-taxonomy':
+        specifier: workspace:*
+        version: link:../../lib/analytics-taxonomy
       '@workspace/animal-world':
         specifier: workspace:*
         version: link:../../lib/animal-world
@@ -744,6 +747,9 @@ importers:
       '@workspace/action-routing':
         specifier: workspace:*
         version: link:../../lib/action-routing
+      '@workspace/analytics-taxonomy':
+        specifier: workspace:*
+        version: link:../../lib/analytics-taxonomy
       '@workspace/animal-world':
         specifier: workspace:*
         version: link:../../lib/animal-world
@@ -1248,6 +1254,12 @@ importers:
       '@workspace/family-intelligence':
         specifier: workspace:*
         version: link:../family-intelligence
+
+  lib/analytics-taxonomy:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
 
   lib/animal-world:
     dependencies:

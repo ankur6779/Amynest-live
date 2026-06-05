@@ -6,6 +6,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { computeCommandCenter, pickPlayIdeas, type AdaptiveItem, type AdaptiveMood, type AdaptiveSleepQuality, type CommandActionId, type CommandSuggestion, type PlayIdea } from "@workspace/family-routine";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Sparkles, X, Check, ArrowRight, Heart, Moon, Wind, Wand2, PartyPopper, BookOpen, Music, Puzzle, Gamepad2, Dices } from "lucide-react";
+import {
+  formatCategoryLabel,
+  formatRoutineDurationShort,
+  formatRoutineTime,
+} from "@/lib/routine-timeline-ui";
 
 // CSS-in-JS shape that allows custom properties (CSS variables) without the
 // "any" hatch — React's CSSProperties type doesn't include `--*` keys.
@@ -1142,13 +1147,13 @@ function SwipeableTimelineRow({
     transform: dx ? `translateX(${dx}px)` : undefined
   }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd}>
       <div className="w-14 shrink-0">
-        <p className="text-[11px] font-black tracking-wide text-muted-foreground">{t.time}</p>
-        <p className="text-[10px] text-muted-foreground uppercase">{t.duration}m</p>
+        <p className="text-[11px] font-black tracking-wide text-muted-foreground">{formatRoutineTime(t.time)}</p>
+        {formatRoutineDurationShort(t) ? <p className="text-[10px] text-muted-foreground uppercase">{formatRoutineDurationShort(t)}</p> : null}
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold text-white truncate">{t.activity}</p>
         <p className="text-[11px] text-muted-foreground truncate">
-          {t.current ? "Now" : t.next ? "Up next" : t.category || ""}
+          {t.current ? "Now" : t.next ? "Up next" : t.category ? formatCategoryLabel(t.category) : ""}
         </p>
       </div>
       {t.status === "completed" ? <span className="rounded-full px-2 py-0.5 text-[10px] font-black bg-primary text-muted-foreground border border-border">

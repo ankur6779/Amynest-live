@@ -79,7 +79,12 @@ import {
   type GenerationSource,
 } from "../lib/routine-evidence-strength.js";
 import type { ParentExplanationContext } from "@workspace/explainability";
-import { normalizeTo24h } from "../lib/routine-scheduler.js";
+import { normalizeTo24h, resolveTimelineOverlaps, parseTimeToMins } from "../lib/routine-scheduler.js";
+import { applyRoutineContentIntegrity } from "../lib/routine-content-integrity.js";
+import {
+  enforceRoutineSafety,
+  partialRegenAllowedForAge,
+} from "../lib/routine-safety-gate.js";
 import { type CaregiverKey, type WeatherOutdoor, applyWeatherAdjustment } from "@workspace/family-routine";
 import {
   getEnvironmentalContext,
@@ -1320,6 +1325,8 @@ function runIntelligencePipelineOnItems(params: {
   specialEvent: SpecialEventDebug;
   fixedActivities: FixedActivitiesDebug;
   behaviorSignature: ReturnType<typeof runRoutineIntelligencePipeline>["behaviorSignature"];
+  validated: boolean;
+  validationErrors: string[];
 } {
   const {
     wakeUpTime,
@@ -1422,6 +1429,8 @@ function runIntelligencePipelineOnItems(params: {
     specialEvent,
     fixedActivities,
     behaviorSignature: intelligenceResult.behaviorSignature,
+    validated: intelligenceResult.validated,
+    validationErrors: intelligenceResult.validationErrors,
   };
 }
 
@@ -1660,6 +1669,21 @@ router.post("/routines/generate", routineGenerateGate(), async (req, res): Promi
     foodStyle: ruleEffFoodStyle,
     subCuisine: ruleEffSubCuisine,
   });
+
+  // P0-3: never expose a trust-failed routine. The rule-based path is the last
+  // resort, so a failure here is a hard generation failure.
+  if (!rulePiped.validated) {
+    console.error("[generate] rule-based routine failed trust validation", {
+      childId: child.id,
+      errors: rulePiped.validationErrors,
+    });
+    res.status(422).json({
+      error: "routine_validation_failed",
+      message: "We couldn't build a safe routine right now. Please try again.",
+      validationErrors: rulePiped.validationErrors,
+    });
+    return;
+  }
 
   const ruleExplCtx = parentExplanationCtx(ruleInputs, ruleIsWeekendDay);
   const ruleContextAdaptations = buildAdaptations({
@@ -1981,6 +2005,32 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
           aiEnvContext,
           { region: region as string | null | undefined },
         );
+
+        // P0-1 / P0-3: final safety gate on the EXACT items we are about to
+        // return. AQI was already enforced inside the pipeline, so validate
+        // trust only here. A trust failure throws and drops into the
+        // rule-based fallback below (a repaired routine), never exposing the
+        // failing AI output.
+        const aiSafety = enforceRoutineSafety(
+          aiEnriched.items as unknown as RoutineScheduleItem[],
+          {
+            wakeMins: timeToMins(normalizeTo24h(effWakeUp)),
+            sleepMins: timeToMins(normalizeTo24h(child.sleepTime)),
+            ageGroup,
+            ageInMonths: totalAgeMonths,
+            country: (pp as Record<string, unknown> | null)?.country as
+              | string
+              | undefined,
+            skipAqiEnforcement: true,
+          },
+        );
+        if (!aiSafety.valid) {
+          console.error(
+            "[generate-ai] AI routine failed trust validation, using rule-based fallback",
+            aiSafety.errors,
+          );
+          throw new Error("ai_routine_failed_trust_validation");
+        }
         const aiExplCtx: ParentExplanationContext = {
           hasSchool: aiSchoolDay,
           isWeekendDay,
@@ -2112,6 +2162,21 @@ router.post("/routines/generate-ai", routineGenerateGate(), async (req, res): Pr
       foodStyle: effFoodStyle,
       subCuisine: effSubCuisine,
     });
+    // P0-3: the fallback is the last safety net. If it cannot produce a
+    // trust-valid routine, fail closed rather than expose an unsafe one.
+    if (!fallbackPiped.validated) {
+      console.error("[generate-ai] fallback routine failed trust validation", {
+        childId: parsed.data.childId,
+        errors: fallbackPiped.validationErrors,
+      });
+      res.status(422).json({
+        error: "routine_validation_failed",
+        message: "We couldn't build a safe routine right now. Please try again.",
+        validationErrors: fallbackPiped.validationErrors,
+      });
+      return;
+    }
+
     const fallbackExplCtx = parentExplanationCtx(fallbackInputs, isWeekendDay);
     const fallbackBody = GenerateRoutineResponse.parse({
       ...generated,
@@ -2650,6 +2715,19 @@ router.post("/routines/:id/partial-regenerate", async (req, res): Promise<void> 
     : totalAgeMonths < 120 ? "early_school"
     : "pre_teen";
 
+  // P0-2: partial regenerate cannot guarantee infant/toddler feeding + nap
+  // structure or age-safe meals, so block it for children under 3. They must
+  // use full safe generation, which runs the infant validators.
+  if (!partialRegenAllowedForAge(totalAgeMonths)) {
+    res.status(422).json({
+      error: "partial_regenerate_unsupported_for_age",
+      message:
+        "Routines for children under 3 are regenerated in full so feeds, naps, and age-safe meals stay protected.",
+      minAgeMonths: 36,
+    });
+    return;
+  }
+
   // Resolve region + foodType from child → parent profile.
   // Only inherit parent foodType when child has NO explicit preference set.
   const rawChildFoodType4 = (child as any).foodType as string | null | undefined;
@@ -2679,9 +2757,73 @@ router.post("/routines/:id/partial-regenerate", async (req, res): Promise<void> 
     sleepMins,
     newActivity,
     date: routine.date,
+    weatherOutdoor: (child as any).weatherOutdoor ?? undefined,
   });
 
-  const updatedItems = [...keptItems, ...newItems];
+  // Finishing pass on the merged routine. Completed/kept items are never
+  // reordered or relabeled; only the freshly generated tail is polished.
+  // 1) Normalize every time to 24-hour so the routine never mixes "16:25" and
+  //    "4:50 PM". 2) Presentation integrity on the new tail (meal/title labels,
+  //    age-appropriate copy, de-duplicated filler explanations). 3) Resolve any
+  //    overlaps so the timeline stays monotonic.
+  const normalizedKept = keptItems.map((it) => ({ ...it, time: normalizeTo24h(it.time) }));
+  const wakeMinsPR = normalizedKept.length
+    ? parseTimeToMins(normalizedKept[0]!.time)
+    : startMins;
+  const polishedNew = applyRoutineContentIntegrity(
+    newItems as unknown as RoutineScheduleItem[],
+    { sleepMins, wakeMins: wakeMinsPR, ageGroup },
+  ).items;
+  const mergedItems = resolveTimelineOverlaps(
+    [...(normalizedKept as unknown as RoutineScheduleItem[]), ...polishedNew],
+    wakeMinsPR,
+    sleepMins,
+  );
+
+  // P0-1: partial regenerate does NOT run the full intelligence pipeline, so it
+  // must pass the same safety guarantees via the dedicated safety gate before
+  // anything is persisted or returned: AQI outdoor enforcement + blocking trust
+  // validation (sleep anchor, dinner-before-bedtime). Resolve AQI from the same
+  // environmental source as generation so outdoor limits are real.
+  const ppRecord = pp as Record<string, unknown> | null;
+  const partialEnv = await resolveEnvironmentalContextSafe({
+    ageGroup,
+    date: routine.date,
+    parentProfile: {
+      region: (ppRecord?.region ?? null) as string | null,
+      country: (ppRecord?.country ?? null) as string | null,
+    },
+    bodyLat: (req.body as { latitude?: number | null })?.latitude ?? null,
+    bodyLng: (req.body as { longitude?: number | null })?.longitude ?? null,
+  });
+  const partialAqi =
+    partialEnv?.AQI ?? partialEnv?.snapshot?.aqiUs ?? null;
+  const safety = enforceRoutineSafety(mergedItems, {
+    wakeMins: wakeMinsPR,
+    sleepMins,
+    ageGroup,
+    ageInMonths: totalAgeMonths,
+    country: (ppRecord?.country ?? undefined) as string | undefined,
+    aqi: partialAqi,
+    weatherCondition: partialEnv?.weatherCondition ?? null,
+  });
+
+  // P0-3: never expose / persist a trust-failed routine. The existing routine
+  // (already validated at generation) is left untouched on failure.
+  if (!safety.valid) {
+    console.error("[partial-regenerate] routine failed trust validation", {
+      routineId,
+      errors: safety.errors,
+    });
+    res.status(422).json({
+      error: "routine_validation_failed",
+      message: "We couldn't safely update this routine. Please regenerate it.",
+      validationErrors: safety.errors,
+    });
+    return;
+  }
+
+  const updatedItems = safety.items;
   await db.update(routinesTable).set({ items: updatedItems as any }).where(eq(routinesTable.id, routineId));
 
   res.json({ items: updatedItems });

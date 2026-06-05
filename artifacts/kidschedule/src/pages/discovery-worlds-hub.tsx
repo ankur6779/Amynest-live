@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles, UserPlus } from "lucide-react";
+import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { AppLink, useAppNavigate } from "@/components/app-link";
 import { usePageBackHandler } from "@/hooks/use-page-back-handler";
 import { LearningMap } from "@/components/discovery-world/learning-map";
@@ -8,7 +9,11 @@ import { UnifiedParentDashboard } from "@/components/discovery-world/unified-par
 import { UnifiedParentSummary } from "@/components/discovery-world/unified-parent-summary";
 import { DiscoveryHubWorldCard } from "@/components/discovery-world/discovery-hub-world-card";
 import { AssetCoverageDashboard } from "@/components/discovery-world/asset-coverage-dashboard";
-import { DiscoveryEmptyState } from "@/components/discovery-world/discovery-world-polish";
+import {
+  DiscoveryEmptyState,
+  DiscoveryPageLoading,
+} from "@/components/discovery-world/discovery-world-polish";
+import { Button } from "@/components/ui/button";
 import { aggregateDiscoveryStreak } from "@/lib/discovery-worlds-cross-progress";
 import {
   buildUnifiedParentInsights,
@@ -18,13 +23,24 @@ import { Progress } from "@/components/ui/progress";
 
 const ACTIVE_CHILD_STORAGE_KEY = "amynest:hub:activeChildId";
 
+type Child = { id: number; name: string };
+
 export default function DiscoveryWorldsHubPage() {
   const { back } = useAppNavigate();
-  const [childId, setChildId] = useState<number | null>(() => {
+  const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
     const saved = Number(window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY));
     return Number.isFinite(saved) && saved > 0 ? saved : null;
   });
+
+  const { data: children = [], isLoading } = useListChildren({
+    query: { queryKey: getListChildrenQueryKey(), refetchOnWindowFocus: true },
+  });
+
+  const childList = (children ?? []) as Child[];
+  const activeChild =
+    childList.find((child) => child.id === selectedChildId) ?? childList[0] ?? null;
+  const childId = activeChild?.id ?? null;
 
   usePageBackHandler(() => {
     back("discovery-worlds-hub-back");
@@ -32,16 +48,24 @@ export default function DiscoveryWorldsHubPage() {
   }, [back]);
 
   useEffect(() => {
-    if (childId) return;
-    const saved = Number(window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY));
-    if (Number.isFinite(saved) && saved > 0) setChildId(saved);
-  }, [childId]);
+    if (!activeChild) return;
+    setSelectedChildId(activeChild.id);
+    window.localStorage.setItem(ACTIVE_CHILD_STORAGE_KEY, String(activeChild.id));
+  }, [activeChild]);
 
   const streak = childId ? aggregateDiscoveryStreak(childId) : 0;
   const insights = useMemo(
     () => (childId ? buildUnifiedParentInsights(childId) : null),
     [childId],
   );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <DiscoveryPageLoading />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -133,13 +157,13 @@ export default function DiscoveryWorldsHubPage() {
           </>
         ) : (
           <div className="mt-6 space-y-4">
-            <DiscoveryEmptyState variant="noChildHub" />
-            <AppLink
-              href="/parenting-hub"
-              className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-semibold hover:bg-white/[0.08]"
-            >
-              Open Parent Hub
-            </AppLink>
+            <DiscoveryEmptyState variant="noChild" />
+            <Button asChild className="rounded-full px-6">
+              <AppLink href="/children/new">
+                <UserPlus className="mr-2 h-4 w-4" aria-hidden />
+                Add child
+              </AppLink>
+            </Button>
           </div>
         )}
 

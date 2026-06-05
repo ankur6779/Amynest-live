@@ -458,6 +458,25 @@ paths:
         "204":
           description: Deleted
 
+  /routine-feedback:
+    post:
+      operationId: createRoutineFeedback
+      tags: [routines]
+      summary: Log parent feedback on a routine or activity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoutineFeedbackBody"
+      responses:
+        "201":
+          description: Created routine feedback
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutineFeedback"
+
   /dashboard/summary:
     get:
       operationId: getDashboardSummary
@@ -2529,6 +2548,51 @@ components:
         - date
         - behavior
         - type
+
+    CreateRoutineFeedbackBody:
+      type: object
+      properties:
+        childId:
+          type: integer
+        routineId:
+          type: integer
+        routineDate:
+          type: string
+        activityKey:
+          type: ["string", "null"]
+        signal:
+          type: string
+          enum: [worked_well, loved_this, too_tiring, skipped, bedtime_smooth]
+      required:
+        - childId
+        - routineId
+        - routineDate
+        - signal
+
+    RoutineFeedback:
+      type: object
+      properties:
+        id:
+          type: integer
+        childId:
+          type: integer
+        routineId:
+          type: integer
+        routineDate:
+          type: string
+        activityKey:
+          type: ["string", "null"]
+        signal:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - childId
+        - routineId
+        - routineDate
+        - signal
+        - createdAt
 
     DashboardSummary:
       type: object

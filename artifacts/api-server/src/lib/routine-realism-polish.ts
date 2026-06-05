@@ -288,10 +288,14 @@ export function preventConsecutiveRepetition(
         `varied "${item.activity}" → "${alt.activity}" (avoided back-to-back ${group})`,
       );
       prevKey = `${diversityGroup({ ...item, category: alt.category })}:${classifyStructureBlock(item)}`;
+      // The old notes described the original activity; after swapping the title
+      // they would contradict it (e.g. a reading tip on "Drawing or crafts").
+      // Drop them so a downstream pass can attach contextual copy instead.
       return {
         ...item,
         activity: alt.activity,
         category: alt.category,
+        notes: undefined,
       };
     }
     prevKey = key;

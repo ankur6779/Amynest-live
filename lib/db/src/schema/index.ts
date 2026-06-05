@@ -106,3 +106,5 @@ export * from "./speech_conversation_memory";
 export * from "./user_feedback";
 export * from "./gaming_wallet";
 export * from "./routine_personalization";
+export * from "./routine_feedback";
+export * from "./analytics_events";
