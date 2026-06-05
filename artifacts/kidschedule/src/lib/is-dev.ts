@@ -12,7 +12,7 @@ export const IS_DEV = import.meta.env.DEV;
 export const IS_PROD = import.meta.env.PROD;
 
 /**
- * Static-audio engineering UI (TEST AUDIO button, debug toasts).
+ * Static-audio engineering verbose logs / debug toasts (no UI).
  * Ignored in production bundles even if VITE_STATIC_AUDIO_DEBUG is set on Render.
  */
 export function isStaticAudioDebugEnabled(): boolean {

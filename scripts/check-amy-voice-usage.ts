@@ -64,7 +64,6 @@ const ALLOWLIST = new Set([
   "contexts/amy-voice-provider.tsx",
   "hooks/use-amy-voice.ts",
   "hooks/use-poem-player.ts",
-  "components/static-audio-test-button.tsx",
   "lib/phonics-audio-engine.ts",
   "lib/amy-voice-pipeline-types.ts",
   "lib/amy-voice-pipeline-fallback-layers.ts",

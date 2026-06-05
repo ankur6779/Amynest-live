@@ -341,19 +341,26 @@ export async function checkStaticAudioHealthOnBoot(): Promise<void> {
     }
 
     if (!res.ok || body.status !== "ok" || !body.gcs) {
-      console.warn("STATIC AUDIO DEGRADED AT BOOT", { status: res.status, body });
+      console.warn("[AUDIO HEALTH] degraded at boot", { status: res.status, body });
       if (!bootOk) markAudioApiUnreachable();
       return;
     }
 
     if (body.gcsProbeOk === false) {
-      console.warn("STATIC AUDIO GCS PROBE PENDING", body);
+      console.warn("[AUDIO HEALTH] GCS probe pending", body);
       return;
     }
 
+    console.info("[AUDIO HEALTH] ok", {
+      status: res.status,
+      gcs: body.gcs,
+      bucket: body.bucket,
+      circuitOpen: body.circuitOpen,
+      gcsProbeOk: body.gcsProbeOk,
+    });
     staticAudioVerbose("health ok", body);
   } catch (err) {
-    console.warn("STATIC AUDIO BOOT HEALTH UNREACHABLE", err);
+    console.warn("[AUDIO HEALTH] unreachable at boot", err);
     markAudioApiUnreachable();
   }
 }
@@ -361,15 +368,25 @@ export async function checkStaticAudioHealthOnBoot(): Promise<void> {
 export function installStaticAudioDevTools(): void {
   if (!import.meta.env.DEV || typeof window === "undefined") return;
 
+  window.checkStaticAudioHealth = () => checkStaticAudioHealthOnBoot();
+
   window.testStaticAudio = async (hash: string) => {
     const url = getApiUrl(`/api/static-audio/${hash}.mp3`);
     const res = await fetch(url);
-    console.log("[testStaticAudio]", { status: res.status, url });
+    console.info("[AUDIO HEALTH] clip probe", {
+      status: res.status,
+      ok: res.ok,
+      url,
+      contentType: res.headers.get("content-type"),
+    });
   };
 }
 
 declare global {
   interface Window {
+    /** Dev console — `await checkStaticAudioHealth()` */
+    checkStaticAudioHealth?: () => Promise<void>;
+    /** Dev console — `await testStaticAudio("20ccf010450267bfff3fb54c9f09820c")` */
     testStaticAudio?: (hash: string) => Promise<void>;
   }
 }

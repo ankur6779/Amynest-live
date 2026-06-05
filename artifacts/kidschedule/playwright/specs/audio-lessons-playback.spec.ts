@@ -77,23 +77,6 @@ test("audio lessons: play paragraph without tts_background failure", async ({ pa
   expect(crashOverlay).toBe(0);
 });
 
-test("static audio test button plays good job (dev build only)", async ({ page }) => {
-  await signInWithEmail(page);
-  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-
-  const testBtn = page.getByTestId("static-audio-test");
-  if (!(await testBtn.isVisible({ timeout: 3_000 }).catch(() => false))) {
-    test.skip(true, "TEST AUDIO button only ships in Vite dev (import.meta.env.DEV)");
-  }
-
-  let staticStatus: number | null = null;
-  page.on("response", (res) => {
-    if (res.url().includes("/api/static-audio/") && res.url().endsWith(".mp3")) {
-      staticStatus = res.status();
-    }
-  });
-
-  await testBtn.click();
-  await page.waitForTimeout(2_000);
-  expect(staticStatus).toBe(200);
+test.skip("static audio health API returns ok (use dev console checkStaticAudioHealth)", async () => {
+  /* TEST AUDIO UI removed — probe via window.checkStaticAudioHealth() in dev. */
 });
