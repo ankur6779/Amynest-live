@@ -4,7 +4,7 @@
  */
 import { db, routineActivityOutcomesTable, routinePersonalizationSnapshotsTable } from "@workspace/db";
 import { desc } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "./logger.js";
 import {
   InMemoryPersonalizationMemoryStore,
   type PersonalizationMemoryStore,
