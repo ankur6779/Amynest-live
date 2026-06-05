@@ -167,18 +167,62 @@
 }
 .route-shimmer {
   background: linear-gradient(
-    90deg,
-    hsl(var(--primary) / 0.06) 0%,
-    hsl(var(--primary) / 0.16) 45%,
-    hsl(var(--primary) / 0.06) 90%
+    110deg,
+    hsl(var(--primary) / 0.05) 0%,
+    hsl(var(--primary) / 0.08) 20%,
+    hsl(var(--primary) / 0.22) 45%,
+    hsl(var(--primary) / 0.08) 70%,
+    hsl(var(--primary) / 0.05) 100%
   );
-  background-size: 200% 100%;
-  animation: route-shimmer 1.35s ease-in-out infinite;
+  background-size: 220% 100%;
+  animation: route-shimmer 1.6s ease-in-out infinite;
+}
+.premium-skeleton {
+  animation: premium-skeleton-pulse 2.2s ease-in-out infinite;
+}
+@keyframes premium-skeleton-pulse {
+  0%, 100% { opacity: 0.72; }
+  50% { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .route-shimmer {
+  .route-shimmer,
+  .premium-skeleton {
     animation: none;
     background: hsl(var(--primary) / 0.1);
+    opacity: 0.85;
+  }
+}
+
+/* Premium touch feedback */
+.premium-press {
+  -webkit-tap-highlight-color: transparent;
+}
+.premium-card-press {
+  -webkit-tap-highlight-color: transparent;
+}
+.premium-card-press:active {
+  box-shadow: 0 10px 28px -8px rgba(99, 102, 241, 0.28);
+}
+@media (prefers-reduced-motion: reduce) {
+  .premium-press:active,
+  .premium-card-press:active {
+    transform: none !important;
+  }
+}
+
+/* Audio mini waveform */
+@keyframes premium-waveform {
+  0%, 100% { transform: scaleY(0.45); }
+  50% { transform: scaleY(1); }
+}
+.premium-waveform-bar {
+  animation: premium-waveform 0.85s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .premium-waveform-bar {
+    animation: none;
+    transform: scaleY(0.7);
   }
 }
 

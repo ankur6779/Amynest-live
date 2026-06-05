@@ -9,6 +9,7 @@ import {
   recordProgressAnalytics,
   isValidProgressEvent,
 } from "../services/learningProgressService.js";
+import { maybeAutoGrantPremium } from "../services/subscriptionService.js";
 
 const router: IRouter = Router();
 
@@ -41,7 +42,7 @@ const CompleteBody = z.object({
  * Unified progression: profile, unlocks, daily freshness, AI tutor context, weekly report.
  */
 router.get("/learning-progress/status", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
+  const { userId, email, phoneNumber } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
@@ -52,6 +53,11 @@ router.get("/learning-progress/status", async (req, res): Promise<void> => {
     return;
   }
   try {
+    try {
+      await maybeAutoGrantPremium(userId, email, phoneNumber);
+    } catch {
+      /* best-effort — demo/reviewer premium must not block progress reads */
+    }
     const status = await getLearningProgressStatus(userId, parsed.data.childId);
     if (!status) {
       res.status(404).json({ error: "child_not_found" });
@@ -71,7 +77,7 @@ router.get("/learning-progress/status", async (req, res): Promise<void> => {
  * Records activity completion, updates mastery/XP/streaks.
  */
 router.post("/learning-progress/complete-activity", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
+  const { userId, email, phoneNumber } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
@@ -82,6 +88,11 @@ router.post("/learning-progress/complete-activity", async (req, res): Promise<vo
     return;
   }
   try {
+    try {
+      await maybeAutoGrantPremium(userId, email, phoneNumber);
+    } catch {
+      /* best-effort */
+    }
     const status = await completeLearningActivity(
       userId,
       parsed.data.childId,

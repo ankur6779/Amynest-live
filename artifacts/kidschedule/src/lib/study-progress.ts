@@ -123,6 +123,41 @@ export function markTopicResult(
   return { progress: p, engagement: result };
 }
 
+const PLAY_ACTIVITY_RE = /^play_([^_]+)_(.+)$/;
+
+/** Merge server-side completedActivities (play_numbers_3, …) into local play progress. */
+export function hydratePlayFromCompletedActivities(
+  progress: StudyProgress,
+  completedActivities: string[],
+): StudyProgress {
+  if (completedActivities.length === 0) return progress;
+  const play = { ...progress.play };
+  let changed = false;
+  for (const activityId of completedActivities) {
+    const m = PLAY_ACTIVITY_RE.exec(activityId);
+    if (!m) continue;
+    const categoryId = m[1]!;
+    const itemId = m[2]!;
+    const prev = new Set(play[categoryId] ?? []);
+    if (prev.has(itemId)) continue;
+    prev.add(itemId);
+    play[categoryId] = Array.from(prev);
+    changed = true;
+  }
+  return changed ? { ...progress, play } : progress;
+}
+
+/** Union local + server play completions; persists when server adds new items. */
+export function mergePlayProgressWithServer(
+  childId: number | string,
+  local: StudyProgress,
+  completedActivities: string[],
+): StudyProgress {
+  const merged = hydratePlayFromCompletedActivities(local, completedActivities);
+  if (merged !== local) saveProgress(childId, merged);
+  return merged;
+}
+
 export function categoryPercent(p: StudyProgress, categoryId: string, total: number): number {
   if (total === 0) return 0;
   const done = p.play[categoryId]?.length ?? 0;

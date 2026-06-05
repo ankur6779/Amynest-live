@@ -16,11 +16,18 @@ export const EASE_WARM: [number, number, number, number] = [0.22, 1, 0.36, 1];
 /** Subtle ease for hover/touch feedback. */
 export const EASE_SOFT: [number, number, number, number] = [0.4, 0, 0.2, 1];
 
+/** Canonical motion durations (ms) — use everywhere instead of ad-hoc values. */
+export const MOTION_MS = {
+  fast: 120,
+  normal: 180,
+  slow: 250,
+} as const;
+
 export const DURATION = {
-  micro: 0.12,
-  short: 0.22,
+  micro: MOTION_MS.fast / 1000,
+  short: MOTION_MS.normal / 1000,
   base: 0.36,
-  long: 0.52,
+  long: MOTION_MS.slow / 1000,
   reward: 1.4,
   celebration: 1.6,
 } as const;
@@ -35,11 +42,47 @@ export const TRANSITION = {
 
 // ─── Stagger helpers ─────────────────────────────────────────────────────────
 
-export const STAGGER_STEP = 0.06;
+/** 40ms between staggered children — hero first, then cards. */
+export const STAGGER_STEP = 0.04;
 
 export function staggerDelay(index: number, base = 0): number {
   return base + index * STAGGER_STEP;
 }
+
+// ─── Radius tokens ───────────────────────────────────────────────────────────
+
+export const RADIUS = {
+  sm: "rounded-lg",
+  md: "rounded-xl",
+  lg: "rounded-2xl",
+  xl: "rounded-3xl",
+} as const;
+
+// ─── Glassmorphism tokens ────────────────────────────────────────────────────
+
+export const GLASS = {
+  surface: "bg-card/80 backdrop-blur-xl border border-white/10",
+  surfaceStrong: "bg-[rgba(18,28,60,0.72)] backdrop-blur-[18px] border border-white/[0.08]",
+  border: "border-white/10",
+  borderSubtle: "border-white/[0.08]",
+  borderHover: "border-white/15",
+  blur: "backdrop-blur-xl",
+  blurMd: "backdrop-blur-md",
+} as const;
+
+// ─── Touch & press feedback ──────────────────────────────────────────────────
+
+/** Instant tap feedback — scale 0.98, 120–180ms. */
+export const PRESS_FEEDBACK =
+  "premium-press touch-manipulation transition-transform duration-150 ease-out active:scale-[0.98]";
+
+/** Interactive cards — lift + shadow on press. */
+export const CARD_PRESS =
+  "premium-card-press touch-manipulation transition-all duration-180 ease-out active:scale-[0.98] active:-translate-y-0.5";
+
+/** @deprecated use PRESS_FEEDBACK */
+export const TOUCH_FEEDBACK =
+  "active:scale-[0.985] hover:border-primary/25 transition-all duration-200";
 
 export const fadeUp: Variants = {
   initial: { opacity: 0, y: 10 },
@@ -64,6 +107,33 @@ export const pageEnter: Variants = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -4 },
+};
+
+/** Hero block — appears before staggered content. */
+export const heroReveal: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: DURATION.long, ease: EASE_WARM },
+  },
+};
+
+/** Staggered card / list item reveal. */
+export const contentRevealItem: Variants = {
+  hidden: { opacity: 0, y: 10 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: DURATION.short, ease: EASE_WARM },
+  },
+};
+
+export const contentRevealContainer: Variants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: STAGGER_STEP, delayChildren: 0.05 },
+  },
 };
 
 // ─── Spacing rhythm ─────────────────────────────────────────────────────────
@@ -92,7 +162,7 @@ export const SCREEN_SPACING = {
 export type CardTier = "flat" | "premium" | "glow";
 
 export const CARD_BASE =
-  "rounded-2xl border backdrop-blur-sm transition-shadow duration-300";
+  `${RADIUS.lg} border backdrop-blur-sm transition-shadow duration-300`;
 
 export const CARD_VARIANTS: Record<CardTier, string> = {
   flat: "border-border/60 bg-card",
@@ -102,14 +172,9 @@ export const CARD_VARIANTS: Record<CardTier, string> = {
     "border-primary/20 bg-gradient-to-br from-card via-card to-primary/[0.06] shadow-[0_0_40px_-8px_rgba(168,85,247,0.25)] ring-1 ring-primary/15",
 };
 
-/** Touch/press feedback applied to interactive cards or pill buttons. */
-export const TOUCH_FEEDBACK =
-  "active:scale-[0.985] hover:border-primary/25 transition-all duration-200";
-
 // ─── Loading patterns ──────────────────────────────────────────────────────
 
-export const SKELETON_BASE =
-  "rounded-xl bg-gradient-to-r from-muted/60 via-muted/35 to-muted/60 animate-pulse";
+export const SKELETON_BASE = "premium-skeleton route-shimmer rounded-xl";
 
 // ─── Emotional pacing ──────────────────────────────────────────────────────
 //

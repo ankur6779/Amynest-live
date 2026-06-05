@@ -1,15 +1,22 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import { prefetchCommonDestinations } from "@/lib/route-chunk-preload";
+import {
+  prefetchCommonDestinations,
+  prefetchLikelyNextRoutes,
+} from "@/lib/route-chunk-preload";
 import { safePathStartsWith } from "@/lib/safe-route";
 
 /**
- * After the user lands on dashboard, warm the most common hub chunks during
- * idle time so tab / menu navigation feels instant.
+ * Background prefetch: common hubs after dashboard, then likely next screens
+ * on every route change (tab-bar adjacency).
  */
 export function PostDashboardPrefetch() {
   const [location] = useLocation();
   const warmedRef = useRef(false);
+
+  useEffect(() => {
+    prefetchLikelyNextRoutes(location);
+  }, [location]);
 
   useEffect(() => {
     if (warmedRef.current) return;

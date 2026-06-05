@@ -29,13 +29,56 @@ const ALPHABET_WORDS: Record<string, { word: string; emoji: string }> = {
   Z: { word: "Zebra",     emoji: "🦓" },
 };
 
-const NUMBER_WORDS = [
-  "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
-  "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
-  "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty",
+const ONES_WORDS = [
+  "",
+  "One",
+  "Two",
+  "Three",
+  "Four",
+  "Five",
+  "Six",
+  "Seven",
+  "Eight",
+  "Nine",
+  "Ten",
+  "Eleven",
+  "Twelve",
+  "Thirteen",
+  "Fourteen",
+  "Fifteen",
+  "Sixteen",
+  "Seventeen",
+  "Eighteen",
+  "Nineteen",
 ];
 
-const NUMBER_EMOJIS = ["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟"];
+const TENS_WORDS = [
+  "",
+  "",
+  "Twenty",
+  "Thirty",
+  "Forty",
+  "Fifty",
+  "Sixty",
+  "Seventy",
+  "Eighty",
+  "Ninety",
+];
+
+/** Speakable English number words for play tiles (1–100). */
+export function numberWord(n: number): string {
+  if (!Number.isFinite(n) || n < 1) return String(n);
+  if (n <= 19) return ONES_WORDS[n]!;
+  if (n === 100) return "One Hundred";
+  if (n < 100) {
+    const tens = Math.floor(n / 10);
+    const ones = n % 10;
+    return ones === 0 ? TENS_WORDS[tens]! : `${TENS_WORDS[tens]} ${ONES_WORDS[ones]}`;
+  }
+  return String(n);
+}
+
+const NUMBER_EMOJIS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"];
 
 export const PLAY_CATEGORIES: PlayCategory[] = [
   {
@@ -53,12 +96,15 @@ export const PLAY_CATEGORIES: PlayCategory[] = [
     id: "numbers",
     title: "Numbers",
     emoji: "🔢",
-    items: NUMBER_WORDS.map((word, i) => ({
-      id: String(i + 1),
-      label: String(i + 1),
-      speak: word,
-      emoji: i < 10 ? NUMBER_EMOJIS[i] : undefined,
-    })),
+    items: Array.from({ length: 100 }, (_, i) => {
+      const n = i + 1;
+      return {
+        id: String(n),
+        label: String(n),
+        speak: numberWord(n),
+        emoji: n <= 10 ? NUMBER_EMOJIS[n - 1] : undefined,
+      };
+    }),
   },
   {
     id: "colors",

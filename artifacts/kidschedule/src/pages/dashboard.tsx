@@ -12,6 +12,7 @@ import { AmyCoachCheckInCard } from "@/components/amy-coach-check-in-card";
 import { formatAge } from "@/lib/age-groups";
 import { AmyIcon } from "@/components/amy-icon";
 import { DashboardSkeleton } from "@/components/route-skeletons/dashboard-skeleton";
+import { ContentReveal } from "@/components/premium-ux/content-reveal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { RouteLoadingShell } from "@/components/route-loading-shell";
@@ -365,7 +366,7 @@ function SmartHeroSection({
   return (
     <div
       data-on-dark
-      className="relative overflow-hidden rounded-3xl border border-white/10 px-5 sm:px-7 py-5 sm:py-6 shadow-xl animate-in fade-in duration-400"
+      className="relative overflow-hidden rounded-3xl border border-white/10 px-5 sm:px-7 py-5 sm:py-6 shadow-xl"
       style={{ background: grad.bg, transition: "background 0.8s ease" }}
     >
       {/* Glow blobs */}
@@ -1068,82 +1069,98 @@ export default function Dashboard() {
   }
   return (
     <div data-on-dark className="dashboard-page w-full min-w-0 max-w-full bg-[#0a1024]">
-      <div className="flex flex-col gap-4 animate-in fade-in duration-400 pb-6 md:pb-8">
-          <SmartHeroSection
-            displayName={displayName}
-            hasChildren={childrenSafe.length > 0}
-            lastUpdated={lastUpdated}
-            childProfiles={childrenSafe.map((c: any) => ({ id: c.id, name: c.name, age: c.age, ageMonths: c.ageMonths ?? 0 }))}
-          />
+      <div className="flex flex-col gap-4 pb-6 md:pb-8">
+          <ContentReveal.Hero>
+            <SmartHeroSection
+              displayName={displayName}
+              hasChildren={childrenSafe.length > 0}
+              lastUpdated={lastUpdated}
+              childProfiles={childrenSafe.map((c: any) => ({ id: c.id, name: c.name, age: c.age, ageMonths: c.ageMonths ?? 0 }))}
+            />
+          </ContentReveal.Hero>
 
           <div
             className={DASHBOARD_CONTENT_AREA}
             style={{ background: DASHBOARD_CONTENT_GRADIENT }}
           >
             <div className={DASHBOARD_AMBIENT_TOP} aria-hidden />
-            <div className="relative z-10 flex flex-col gap-4">
-            <SevenDayJourneyCard />
+            <ContentReveal.Stagger className="relative z-10 flex flex-col gap-4">
+            <ContentReveal.Item>
+              <SevenDayJourneyCard />
+            </ContentReveal.Item>
 
-            <div className="order-1 md:order-none">
+            <ContentReveal.Item className="order-1 md:order-none">
               <NowNextTimeline
                 routines={filteredRoutines}
                 selectedChildName={selectedChild?.name ?? null}
                 onGenerate={showTimelineGenerate ? handleGenerateRoutine : undefined}
                 journeyHandlesGenerate={journeyHandlesGenerate}
               />
-            </div>
+            </ContentReveal.Item>
 
-            <ChildrenChipBar
-              children={childrenSafe as ChildRow[]}
-              selectedChildId={selectedChildId}
-              onSelectChild={setSelectedChildId}
-            />
+            <ContentReveal.Item>
+              <ChildrenChipBar
+                children={childrenSafe as ChildRow[]}
+                selectedChildId={selectedChildId}
+                onSelectChild={setSelectedChildId}
+              />
+            </ContentReveal.Item>
 
             {FF_INFANT_V2 && selectedChild && selectedChild.age * 12 + (selectedChild.ageMonths ?? 0) < 24 && (
-              <InfantDashboardShortcut
-                childId={selectedChild.id}
-                childName={selectedChild.name}
-                ageMonths={selectedChild.age * 12 + (selectedChild.ageMonths ?? 0)}
-              />
+              <ContentReveal.Item>
+                <InfantDashboardShortcut
+                  childId={selectedChild.id}
+                  childName={selectedChild.name}
+                  ageMonths={selectedChild.age * 12 + (selectedChild.ageMonths ?? 0)}
+                />
+              </ContentReveal.Item>
             )}
 
-            {loadingSummary ? (
-              <Skeleton className="h-12 rounded-xl" />
-            ) : (
-              <DashboardCompactStatsRow
+            <ContentReveal.Item>
+              {loadingSummary ? (
+                <Skeleton className="h-12 rounded-xl" />
+              ) : (
+                <DashboardCompactStatsRow
+                  streak={streak}
+                  routines={allRoutinesSafe}
+                  summary={summary}
+                  todayDone={todayProgress.done}
+                  todayTotal={todayProgress.total}
+                />
+              )}
+            </ContentReveal.Item>
+
+            <ContentReveal.Item>
+              <AmyCoachCheckInCard />
+            </ContentReveal.Item>
+
+            <ContentReveal.Item>
+              <DashboardCoachingCard
+                routines={filteredRoutines}
                 streak={streak}
-                routines={allRoutinesSafe}
-                summary={summary}
-                todayDone={todayProgress.done}
-                todayTotal={todayProgress.total}
+                onGenerate={handleGenerateRoutine}
+                suppressGenerate={suppressAmyGenerate}
+                generatePrimarySource={generatePrimarySource}
               />
-            )}
+            </ContentReveal.Item>
 
-            <AmyCoachCheckInCard />
-
-            <DashboardCoachingCard
-              routines={filteredRoutines}
-              streak={streak}
-              onGenerate={handleGenerateRoutine}
-              suppressGenerate={suppressAmyGenerate}
-              generatePrimarySource={generatePrimarySource}
-            />
-
-            <DashboardMoreInsightsSection
-              allRoutines={allRoutinesSafe}
-              streak={streak}
-              selectedChildId={selectedChildId}
-              filteredBehaviorStats={filteredBehaviorStats}
-              loadingStats={loadingStats}
-              filteredRecentRoutines={filteredRecentRoutines}
-              loadingRoutines={loadingRoutines}
-              selectedChildName={selectedChild?.name ?? null}
-              gamingLocked={hubUsage.isFeatureLocked("hub_gaming_rewards")}
-              onGamingOpen={() => hubUsage.markFeatureUsed("hub_gaming_rewards")}
-              gamingLabel={t("pages.dashboard.gaming_reward")}
-              gamingSub={t("pages.dashboard.earn_points_from_routines_unlock_mini_games_and_redeem_real_")}
-            />
-            </div>
+            <ContentReveal.Item>
+              <DashboardMoreInsightsSection
+                allRoutines={allRoutinesSafe}
+                streak={streak}
+                selectedChildId={selectedChildId}
+                filteredBehaviorStats={filteredBehaviorStats}
+                loadingStats={loadingStats}
+                filteredRecentRoutines={filteredRecentRoutines}
+                loadingRoutines={loadingRoutines}
+                selectedChildName={selectedChild?.name ?? null}
+                gamingLocked={hubUsage.isFeatureLocked("hub_gaming_rewards")}
+                onGamingOpen={() => hubUsage.markFeatureUsed("hub_gaming_rewards")}
+                gamingLabel={t("pages.dashboard.gaming_reward")}
+                gamingSub={t("pages.dashboard.earn_points_from_routines_unlock_mini_games_and_redeem_real_")}
+              />
+            </ContentReveal.Item>
+            </ContentReveal.Stagger>
           </div>
       </div>
     </div>

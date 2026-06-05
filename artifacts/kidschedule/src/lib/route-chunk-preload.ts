@@ -103,6 +103,27 @@ function scheduleIdle(task: () => void, timeoutMs: number): void {
   window.setTimeout(task, 120);
 }
 
+/** Tab-bar adjacency — predict likely next tap from current screen. */
+const LIKELY_NEXT_ROUTES: Record<string, readonly string[]> = {
+  "/dashboard": ["/routines", "/parenting-hub", "/amy-coach"],
+  "/routines": ["/dashboard", "/amy-coach"],
+  "/amy-coach": ["/routines", "/parenting-hub"],
+  "/parenting-hub": ["/dashboard", "/nutrition", "/games"],
+  "/nutrition": ["/parenting-hub", "/recipes"],
+  "/games": ["/parenting-hub", "/rewards"],
+  "/parent-profile": ["/dashboard", "/notification-settings"],
+};
+
+/** Warm routes the user is likely to open next (from tab bar / hub flow). */
+export function prefetchLikelyNextRoutes(pathname: string): void {
+  const path = normalizeRoutePath(pathname);
+  const routes = LIKELY_NEXT_ROUTES[path];
+  if (!routes?.length) return;
+  for (const route of routes) {
+    prefetchRouteChunk(route);
+  }
+}
+
 /** Idle-time warm-up for the most common post-dashboard destinations (all clients). */
 export function prefetchCommonDestinations(): void {
   let index = 0;

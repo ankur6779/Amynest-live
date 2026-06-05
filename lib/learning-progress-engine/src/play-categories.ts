@@ -1,5 +1,7 @@
 import {
   getPlayCategoriesForChild,
+  getPlayCategoriesForCountry,
+  normalizeStudyCountry,
   type PlayCategory,
 } from "@workspace/study-zone";
 import type { UnlockResult } from "./types";
@@ -48,7 +50,13 @@ export function getPlayCategoriesWithProgress(
   ageYears: number | undefined,
   journeyDay: number,
   unlocks: UnlockResult,
+  opts?: { isPremium?: boolean },
 ): PlayCategory[] {
-  const base = getPlayCategoriesForChild(country, ageYears, journeyDay);
+  // Premium / post-journey users need the full static catalog so unlock ceilings
+  // (e.g. numbers 21–100) are not pre-truncated by the 3-day toddler drip.
+  const base =
+    opts?.isPremium || journeyDay > 3
+      ? getPlayCategoriesForCountry(normalizeStudyCountry(country))
+      : getPlayCategoriesForChild(country, ageYears, journeyDay);
   return applyUnlocksToPlayCategories(base, unlocks);
 }

@@ -1,14 +1,15 @@
+import { SKELETON_BASE } from "@/lib/experience-system";
 import { cn } from "@/lib/utils";
 
 type Props = {
   className?: string;
 };
 
-/** Subtle shimmer placeholder — matches premium app skeleton patterns. */
+/** Gradient shimmer + opacity pulse — matches final layout blocks. */
 export function ShimmerBlock({ className }: Props) {
   return (
     <div
-      className={cn("route-shimmer rounded-2xl", className)}
+      className={cn(SKELETON_BASE, className)}
       aria-hidden="true"
     />
   );

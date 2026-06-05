@@ -9,6 +9,8 @@ import {
   useAppNavigate,
   type AppNavigateOptions,
 } from "@/lib/safe-navigation";
+import { PRESS_FEEDBACK } from "@/lib/experience-system";
+import { cn } from "@/lib/utils";
 import { isTabRootRoute, markTabRootEntry } from "@/lib/navigation-stack";
 
 type AppLinkProps = {
@@ -57,7 +59,7 @@ export function AppLink({
   return (
     <a
       href={target}
-      className={className}
+      className={cn(PRESS_FEEDBACK, className)}
       onPointerDown={(event) => {
         prefetchRouteChunk(target);
         onPointerDown?.(event);

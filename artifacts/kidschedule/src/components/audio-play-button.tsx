@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Volume2, Loader2, Square } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Volume2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +37,8 @@ import {
 } from "@/lib/phonics-local-playback";
 import { speakPhonicsFastClip } from "@/lib/phonics-audio";
 import { cn } from "@/lib/utils";
+import { AudioWaveformIndicator } from "@/components/premium-ux/audio-waveform-indicator";
+import { MOTION_MS, PRESS_FEEDBACK } from "@/lib/experience-system";
 import {
   audioManager,
   AUDIO_UI_MESSAGE,
@@ -128,6 +130,8 @@ export function AudioPlayButton({
     playbackRate,
   });
   const [visualFallback, setVisualFallback] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const wasSpeakingRef = useRef(false);
   const [globalPlaying, setGlobalPlaying] = useState(isPhonicsPlaying());
   const isMounted = useMountedRef();
   const { safeAsync } = useSafeAsync();
@@ -243,6 +247,19 @@ export function AudioPlayButton({
       if (isMounted.current) setGlobalPlaying(playing);
     });
   }, [isMounted]);
+
+  useEffect(() => {
+    if (speaking) {
+      wasSpeakingRef.current = true;
+      setCompleting(false);
+      return;
+    }
+    if (!wasSpeakingRef.current) return;
+    wasSpeakingRef.current = false;
+    setCompleting(true);
+    const timer = window.setTimeout(() => setCompleting(false), MOTION_MS.normal);
+    return () => window.clearTimeout(timer);
+  }, [speaking]);
 
   const resolvedPrefetch = useMemo(() => {
     const next = (prefetchNextText ?? "").trim();
@@ -452,17 +469,22 @@ export function AudioPlayButton({
       data-testid={`audio-play-${text.slice(0, 16).replace(/\s+/g, "-").toLowerCase()}`}
       className={cn(
         "rounded-full p-0 border-0 shadow-sm transition-all",
+        PRESS_FEEDBACK,
         SIZE_CLASSES[size],
         VARIANT_CLASSES[variant],
-        busy && "ring-2 ring-offset-2 ring-offset-transparent ring-current/40 animate-pulse",
+        busy && !completing && "ring-2 ring-offset-2 ring-offset-transparent ring-current/40",
         visualFallback && "ring-4 ring-amber-400/80 animate-pulse scale-110",
         className,
       )}
     >
       {loading ? (
         <Loader2 className={cn(ICON_SIZES[size], "animate-spin")} />
-      ) : speaking ? (
-        <Square className={cn(ICON_SIZES[size], "fill-current")} />
+      ) : speaking || completing ? (
+        <AudioWaveformIndicator
+          active={speaking}
+          completing={completing && !speaking}
+          className={ICON_SIZES[size]}
+        />
       ) : (
         <Volume2 className={ICON_SIZES[size]} />
       )}

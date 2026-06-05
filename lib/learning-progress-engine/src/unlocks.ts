@@ -90,6 +90,14 @@ export function getUnlocks(input: GetUnlocksInput): UnlockResult {
     const numStage = NUMBERS_STAGES[numIdx] ?? NUMBERS_STAGES[0];
     numbersMax = numStage.max;
     numbersStage = numStage.id;
+    // Premium never regresses below the free journey day-3 catalog (20).
+    // Demo / reviewer accounts start with the full toddler path unlocked.
+    const freeJourneyMax = playCategoryLimitForJourneyDay("numbers", 3);
+    numbersMax = Math.max(numbersMax, freeJourneyMax);
+    if (isPremium) {
+      // Premium floor: at least 1–50 once subscribed (mastery can push toward 100).
+      numbersMax = Math.max(numbersMax, NUMBERS_STAGES[3]?.max ?? 50);
+    }
 
     const alphaIdx = alphabetsStageIndex(masteryScore, phonicsSec.level);
     alphabetsStage = ALPHABET_STAGES[alphaIdx]?.id ?? "A-E";

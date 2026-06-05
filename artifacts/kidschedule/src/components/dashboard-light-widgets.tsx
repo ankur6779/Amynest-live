@@ -16,6 +16,10 @@ import { AmyIcon } from "@/components/amy-icon";
 import { AmyFamilyMemoryCard } from "@/components/intelligence/amy-family-memory-card";
 import { DashboardGlassCard, DashboardGlassChip } from "@/components/dashboard-glass-card";
 import { DASHBOARD_SECTION_BODY, DASHBOARD_SECTION_HEADER, DASHBOARD_TINTS } from "@/lib/dashboard-premium";
+import { AnimatedCounter } from "@/components/premium-ux/animated-counter";
+import { AnimatedProgressBar } from "@/components/premium-ux/animated-progress-bar";
+import { CARD_PRESS } from "@/lib/experience-system";
+import { cn } from "@/lib/utils";
 import {
   BehaviorHighlightsSection,
   DashboardWeeklyInsightsCard,
@@ -230,19 +234,20 @@ export function DashboardCompactStatsRow({
   const todayPct = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : null;
 
   return (
-    <Link href="/progress" className="block">
+    <Link href="/progress" className={cn("block", CARD_PRESS)}>
       <DashboardGlassChip tintRgb={DASHBOARD_TINTS.stats}>
-        <div className="flex items-center gap-3 px-3 py-2.5">
+        <div className="flex flex-col gap-2 px-3 py-2.5">
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 shrink-0">
             <Flame className={`h-4 w-4 ${streak > 0 ? "text-orange-400" : "text-white/35"}`} />
-            <span className="font-black text-lg text-white leading-none">{streak}</span>
+            <AnimatedCounter value={streak} className="font-black text-lg text-white leading-none" />
             <span className="text-[10px] font-bold text-white/55 uppercase">{t("dashboard.day_streak")}</span>
           </div>
           <div className="flex gap-0.5 shrink-0">
             {last7Keys.map((key) => (
               <span
                 key={key}
-                className={`h-1.5 w-1.5 rounded-full ${dateSet.has(key) ? "bg-orange-400" : "bg-white/20"}`}
+                className={`h-1.5 w-1.5 rounded-full transition-colors duration-180 ${dateSet.has(key) ? "bg-orange-400" : "bg-white/20"}`}
               />
             ))}
           </div>
@@ -250,7 +255,8 @@ export function DashboardCompactStatsRow({
           {todayPct != null ? (
             <div className="text-xs shrink-0">
               <span className="text-white/55">{t("dashboard.snapshot_today")} </span>
-              <span className="font-bold text-amber-300">{todayPct}%</span>
+              <AnimatedCounter value={todayPct} className="font-bold text-amber-300" />
+              <span className="font-bold text-amber-300">%</span>
             </div>
           ) : null}
           {(summary?.positiveBehaviorsToday ?? 0) > 0 ? (
@@ -263,6 +269,10 @@ export function DashboardCompactStatsRow({
             </>
           ) : null}
           <ArrowRight className="h-3.5 w-3.5 text-white/45 ml-auto shrink-0" />
+        </div>
+        {todayPct != null ? (
+          <AnimatedProgressBar value={todayPct} className="max-w-[200px]" />
+        ) : null}
         </div>
       </DashboardGlassChip>
     </Link>

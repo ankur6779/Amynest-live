@@ -18,6 +18,7 @@ import {
   type SchoolEvent,
   type UpcomingEvent,
 } from "@workspace/event-prep";
+import { PremiumImage } from "@/components/premium-ux/premium-image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -602,15 +603,10 @@ function Section({
 }
 
 function LazyEventImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
-  const [failed, setFailed] = useState(false);
-  if (failed) return null;
   return (
-    <img
+    <PremiumImage
       src={src}
       alt={alt}
-      loading="lazy"
-      decoding="async"
-      onError={() => setFailed(true)}
       className={className}
     />
   );

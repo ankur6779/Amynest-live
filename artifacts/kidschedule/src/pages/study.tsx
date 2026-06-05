@@ -52,7 +52,7 @@ import { StudyCurriculumVisibility } from "@/components/study-curriculum-visibil
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import {
   loadProgress, markPlayItem, markTopicResult,
-  categoryPercent, subjectPercent, type StudyProgress,
+  categoryPercent, subjectPercent, mergePlayProgressWithServer, type StudyProgress,
 } from "@/lib/study-progress";
 import {
   EngagementStrip, XpPopup, ConfettiBurst, useStudyFx,
@@ -109,6 +109,19 @@ export default function StudyPage() {
   useEffect(() => {
     if ("childId" in view) setProgress(loadProgress(view.childId));
   }, [("childId" in view) ? view.childId : null]);
+
+  // Merge server-side play completions so progress survives reloads / new devices.
+  useEffect(() => {
+    if (!activeChildId || !learningProgress.profile?.completedActivities) return;
+    setProgress((prev) => {
+      const base = prev ?? loadProgress(activeChildId);
+      return mergePlayProgressWithServer(
+        activeChildId,
+        base,
+        learningProgress.profile!.completedActivities,
+      );
+    });
+  }, [activeChildId, learningProgress.profile?.completedActivities]);
 
   const child = "childId" in view ? list.find((c) => c.id === view.childId) : undefined;
   const mode: StudyMode | undefined = child ? resolveStudyMode(child.age, child.childClass) : undefined;
@@ -203,6 +216,7 @@ export default function StudyPage() {
             childAge={child?.age}
             journeyDay={journeyDay}
             unlocks={learningProgress.unlocks}
+            isPremium={learningProgress.isPremium}
             progress={progress}
             recordActivity={recordActivity}
             onOpen={(catId) => setView({ kind: "play-cat", childId: view.childId, categoryId: catId })}
@@ -233,6 +247,7 @@ export default function StudyPage() {
           childAge={child?.age}
           journeyDay={journeyDay}
           unlocks={learningProgress.unlocks}
+          isPremium={learningProgress.isPremium}
           recordActivity={recordActivity}
           progress={progress}
           onItemDone={(p) => setProgress(p)}
@@ -501,6 +516,7 @@ function PlayHome({
   childAge,
   journeyDay,
   unlocks,
+  isPremium,
   progress,
   recordActivity: _recordActivity,
   onOpen,
@@ -509,6 +525,7 @@ function PlayHome({
   childAge?: number;
   journeyDay: number;
   unlocks?: import("@workspace/learning-progress-engine").UnlockResult;
+  isPremium?: boolean;
   progress: StudyProgress | null;
   recordActivity?: ReturnType<typeof useRecordLearningActivity>["recordActivity"];
   onOpen: (catId: string) => void;
@@ -516,11 +533,13 @@ function PlayHome({
   const { t } = useTranslation();
   const categories = useMemo(() => {
     if (unlocks) {
-      return getPlayCategoriesWithProgress(country, childAge, journeyDay, unlocks);
+      return getPlayCategoriesWithProgress(country, childAge, journeyDay, unlocks, { isPremium });
     }
     return getPlayCategoriesForChild(country, childAge, journeyDay);
-  }, [country, childAge, journeyDay, unlocks]);
-  const numbersTomorrow = playUnlocksTomorrowForCategory("numbers", journeyDay);
+  }, [country, childAge, journeyDay, unlocks, isPremium]);
+  const numbersTomorrow = isPremium
+    ? 0
+    : playUnlocksTomorrowForCategory("numbers", journeyDay);
   return (
     <>
       {numbersTomorrow > 0 && (
@@ -552,7 +571,7 @@ function PlayHome({
 }
 
 function PlayCategoryView({
-  childId, categoryId, country, childAge, journeyDay, unlocks, recordActivity, progress, onItemDone,
+  childId, categoryId, country, childAge, journeyDay, unlocks, isPremium, recordActivity, progress, onItemDone,
 }: {
   childId: number;
   categoryId: string;
@@ -560,6 +579,7 @@ function PlayCategoryView({
   childAge?: number;
   journeyDay: number;
   unlocks?: import("@workspace/learning-progress-engine").UnlockResult;
+  isPremium?: boolean;
   recordActivity?: ReturnType<typeof useRecordLearningActivity>["recordActivity"];
   progress: StudyProgress | null;
   onItemDone: (p: StudyProgress) => void;
@@ -567,10 +587,10 @@ function PlayCategoryView({
   const { t } = useTranslation();
   const categories = useMemo(() => {
     if (unlocks) {
-      return getPlayCategoriesWithProgress(country, childAge, journeyDay, unlocks);
+      return getPlayCategoriesWithProgress(country, childAge, journeyDay, unlocks, { isPremium });
     }
     return getPlayCategoriesForChild(country, childAge, journeyDay);
-  }, [country, childAge, journeyDay, unlocks]);
+  }, [country, childAge, journeyDay, unlocks, isPremium]);
   const cat = categories.find((c) => c.id === (categoryId as PlayCategory["id"]));
   const { speak, primeSpeakGesture } = useAmyVoice();
   const fx = useStudyFx();
