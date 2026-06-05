@@ -52,6 +52,7 @@ import { validateAqiOutdoorRules } from "./routine-aqi.js";
 import { deriveRoutineConfidence, type RoutineConfidence } from "./routine-health-copy.js";
 import { polishRoutineOutput } from "./routine-output-polish.js";
 import { enforceSleepIsLast } from "./routine-weather-planning.js";
+import { applyRoutineContentIntegrity } from "./routine-content-integrity.js";
 import { applyRoutineRealismPolish } from "./routine-realism-polish.js";
 import { applyRoutineOptimizationEngine, applyDecisionEnforcedFinalPass } from "./routine-optimization-engine.js";
 import { adaptRoutineForEmotion } from "./routine-emotional-pacing.js";
@@ -1156,6 +1157,19 @@ export function runRoutineIntelligencePipeline(
     difficultyAdjustments,
     culturalChanges,
   });
+
+  const contentIntegrity = applyRoutineContentIntegrity(polished, {
+    sleepMins: sleepMinsEarly,
+    wakeMins: wakeMinsEarly,
+    ageGroup: scheduleOpts.ageGroup,
+  });
+  polished = contentIntegrity.items;
+  if (contentIntegrity.adjustments.length) {
+    pipelineDebug(debug, debugLog, "contentIntegrity", contentIntegrity.adjustments);
+    fixedActivities.adjustmentsMade.push(
+      ...contentIntegrity.adjustments.slice(0, 10).map((a) => `display: ${a}`),
+    );
+  }
 
   if (input.childId) {
     persistRoutinePersonalizationMemory({
