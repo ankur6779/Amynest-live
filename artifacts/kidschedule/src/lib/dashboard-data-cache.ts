@@ -158,6 +158,20 @@ export function hasDashboardStaleCache(): boolean {
   );
 }
 
+/** Clear all dashboard cache keys — required on sign-out / account switch. */
+export function clearDashboardDataCache(): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(SUMMARY_KEY);
+    localStorage.removeItem(STATS_KEY);
+    localStorage.removeItem(CHILDREN_KEY);
+    localStorage.removeItem(SUBSCRIPTION_KEY);
+    localStorage.removeItem(SYNCED_AT_KEY);
+  } catch {
+    /* private mode */
+  }
+}
+
 async function fetchJson<T>(
   authFetch: AuthFetchFn,
   path: string,

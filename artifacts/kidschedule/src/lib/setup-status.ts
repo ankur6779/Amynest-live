@@ -1,9 +1,11 @@
 import { clearOnboardingChatSession } from "@/lib/onboarding-chat-session";
+import { clearDashboardDataCache } from "@/lib/dashboard-data-cache";
 import {
   healOnboardingCompletionIfNeeded,
   logOnboardingFinish,
   mergeSetupStatusPreferComplete,
 } from "@/lib/onboarding-completion";
+import { clearPtmPrepLocalCache } from "@workspace/ptm-prep";
 
 export type SetupStatus = {
   onboardingComplete: boolean;
@@ -67,6 +69,14 @@ export function clearOnboardingCompletionCache(): void {
       /* ignore */
     }
   }
+}
+
+/** Clear all user-scoped local caches on sign-out or auth identity change. */
+export function clearUserScopedClientCaches(): void {
+  clearOnboardingCompletionCache();
+  clearOnboardingChatSession();
+  clearDashboardDataCache();
+  clearPtmPrepLocalCache();
 }
 
 /**

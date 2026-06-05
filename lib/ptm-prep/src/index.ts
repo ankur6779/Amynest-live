@@ -152,7 +152,22 @@ export function defaultSelectedCategories(childAge?: number): Set<PtmCategory> {
 // ─── Storage keys (callers persist with localStorage / AsyncStorage) ────────
 export const STORAGE_KEY_DRAFT = "amynest.ptm_prep.draft.v1";
 export const STORAGE_KEY_HISTORY = "amynest.ptm_prep.history.v1";
+export const STORAGE_KEY_REMINDERS = "amynest.ptm_prep.reminders.v1";
+export const STORAGE_KEY_CLIENT_UPDATED_AT = "amynest.ptm_prep.client_updated_at.v1";
 export const MAX_HISTORY = 12;
+
+/** Clear all PTM Prep localStorage keys — required on sign-out / account switch. */
+export function clearPtmPrepLocalCache(): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(STORAGE_KEY_DRAFT);
+    localStorage.removeItem(STORAGE_KEY_HISTORY);
+    localStorage.removeItem(STORAGE_KEY_REMINDERS);
+    localStorage.removeItem(STORAGE_KEY_CLIENT_UPDATED_AT);
+  } catch {
+    /* private mode */
+  }
+}
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 function rid(prefix: string): string {
@@ -575,7 +590,6 @@ export function formatPtmSummaryText(session: PtmSession): string {
 
 // ─── Reminders ──────────────────────────────────────────────────────────────
 
-export const STORAGE_KEY_REMINDERS = "amynest.ptm_prep.reminders.v1";
 export const REMINDER_OFFSETS_DAYS = [7, 14] as const;
 
 export interface PtmReminder {

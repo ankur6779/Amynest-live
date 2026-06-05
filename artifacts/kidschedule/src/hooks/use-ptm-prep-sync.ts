@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { useAuth } from "@/lib/firebase-auth-hooks";
+import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { getApiUrl } from "@/lib/api";
 import {
+  STORAGE_KEY_CLIENT_UPDATED_AT,
   STORAGE_KEY_DRAFT,
   STORAGE_KEY_HISTORY,
   STORAGE_KEY_REMINDERS,
@@ -23,7 +24,7 @@ function loadLocal(): PtmPrepSyncPayload {
       draft: draftRaw ? (JSON.parse(draftRaw) as PtmSession) : null,
       history: historyRaw ? (JSON.parse(historyRaw) as PtmSession[]) : [],
       reminders: remindersRaw ? (JSON.parse(remindersRaw) as PtmReminder[]) : [],
-      clientUpdatedAt: Number(window.localStorage.getItem("amynest.ptm_prep.client_updated_at.v1") ?? 0),
+      clientUpdatedAt: Number(window.localStorage.getItem(STORAGE_KEY_CLIENT_UPDATED_AT) ?? 0),
     };
   } catch {
     return { draft: null, history: [], reminders: [], clientUpdatedAt: 0 };
@@ -40,10 +41,7 @@ function writeLocal(payload: PtmPrepSyncPayload): void {
     }
     window.localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(payload.history));
     window.localStorage.setItem(STORAGE_KEY_REMINDERS, JSON.stringify(payload.reminders));
-    window.localStorage.setItem(
-      "amynest.ptm_prep.client_updated_at.v1",
-      String(payload.clientUpdatedAt),
-    );
+    window.localStorage.setItem(STORAGE_KEY_CLIENT_UPDATED_AT, String(payload.clientUpdatedAt));
   } catch {
     /* ignore quota errors */
   }
@@ -52,7 +50,9 @@ function writeLocal(payload: PtmPrepSyncPayload): void {
 export function usePtmPrepSync() {
   const authFetch = useAuthFetch();
   const { isSignedIn } = useAuth();
-  const syncedRef = useRef(false);
+  const { user } = useUser();
+  const userId = user?.id ?? null;
+  const syncedForUserRef = useRef<string | null>(null);
   const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -110,24 +110,29 @@ export function usePtmPrepSync() {
   );
 
   useEffect(() => {
-    if (syncedRef.current) return;
-    syncedRef.current = true;
+    if (!isSignedIn || !userId) {
+      syncedForUserRef.current = null;
+      setReady(true);
+      return;
+    }
+    if (syncedForUserRef.current === userId) return;
+    syncedForUserRef.current = userId;
+    setReady(false);
+
     void (async () => {
-      if (isSignedIn) {
-        const server = await pullFromServer();
-        if (server) {
-          const local = loadLocal();
-          const winner =
-            server.clientUpdatedAt >= local.clientUpdatedAt ? server : local;
-          writeLocal(winner);
-          if (winner.clientUpdatedAt > server.clientUpdatedAt) {
-            await pushToServer(winner);
-          }
+      const server = await pullFromServer();
+      if (server) {
+        const local = loadLocal();
+        const winner =
+          server.clientUpdatedAt >= local.clientUpdatedAt ? server : local;
+        writeLocal(winner);
+        if (winner.clientUpdatedAt > server.clientUpdatedAt) {
+          await pushToServer(winner);
         }
       }
       setReady(true);
     })();
-  }, [isSignedIn, pullFromServer, pushToServer]);
+  }, [isSignedIn, userId, pullFromServer, pushToServer]);
 
   return { persist, pullFromServer, ready };
 }

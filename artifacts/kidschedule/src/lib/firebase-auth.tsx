@@ -24,6 +24,7 @@ import {
   subscribeAuthSnapshot,
 } from "./firebase-auth-listener";
 import { resetOnboardingFetchLock } from "./onboarding-status-fetch";
+import { clearUserScopedClientCaches } from "./setup-status";
 
 const AUTH_TAG = "[amynest:firebase-auth]";
 
@@ -44,9 +45,14 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     toAuthState(null, "loading"),
   );
   const listenersRef = useRef<Set<Listener>>(new Set());
+  const prevUidRef = useRef<string | null | undefined>(undefined);
 
   const publish = useCallback((shim: ShimUser | null, authStatus: AuthResolutionStatus) => {
     const uid = shim?.id ?? null;
+    if (prevUidRef.current !== undefined && prevUidRef.current !== uid) {
+      clearUserScopedClientCaches();
+    }
+    prevUidRef.current = uid;
     const isLoaded = authStatus !== "loading";
     setState((prev) => {
       if (
@@ -117,6 +123,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("[firebase-auth] signOut failed:", err);
     }
+    clearUserScopedClientCaches();
     resetOnboardingFetchLock();
     if (opts?.redirectUrl && typeof window !== "undefined") {
       window.location.href = opts.redirectUrl;

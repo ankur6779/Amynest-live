@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  clearDashboardDataCache,
   EMPTY_DASHBOARD_SUMMARY,
   fetchDashboardSummaryResilient,
   formatDashboardSyncLabel,
@@ -44,6 +45,20 @@ describe("dashboard-data-cache", () => {
   it("touchDashboardSyncTimestamp stores explicit time", () => {
     touchDashboardSyncTimestamp(42);
     expect(readDashboardSyncTimestamp()).toBe(42);
+  });
+
+  it("clearDashboardDataCache removes all persisted dashboard keys", () => {
+    persistDashboardSummary({
+      totalChildren: 1,
+      totalRoutines: 1,
+      positiveBehaviorsToday: 0,
+      negativeBehaviorsToday: 0,
+      routinesGeneratedThisWeek: 0,
+    });
+    expect(hasDashboardStaleCache()).toBe(true);
+    clearDashboardDataCache();
+    expect(hasDashboardStaleCache()).toBe(false);
+    expect(readDashboardSyncTimestamp()).toBeUndefined();
   });
 
   it("fetchDashboardSummaryResilient returns cache then empty fallback", async () => {
