@@ -2,29 +2,40 @@
  * Onboarding thread view-model — maps wizard step state to ChatThread messages.
  */
 import type { TFunction } from "i18next";
+import {
+  getClassOptionsForCountry,
+  getEducationStagesForChild,
+} from "@workspace/education-stages";
 import type { InteractionSpec, ThreadMessage } from "@/components/chat-thread";
 import type { ChatMessage, OnboardingStep } from "@/lib/onboarding-chat-types";
 import { flagEmojiFromCode } from "@/components/onboarding-country-modal";
+import { getSmartWakeSleepDefaults } from "@/lib/onboarding-premium";
+import {
+  getAgeBandOptions,
+  getChildNameSuggestions,
+  getSchoolSchedulePresets,
+  getSleepTimeRanges,
+  getWakeTimeRanges,
+} from "@/lib/onboarding-keyboard-free";
 
-export const ONBOARDING_COMPOSER_STEPS = new Set<OnboardingStep>([
-  "child-name",
-  "parent-name",
-  "parent-mobile",
-]);
+export const ONBOARDING_COMPOSER_STEPS = new Set<OnboardingStep>([]);
 
 export const ONBOARDING_INTERACTIVE_STEPS = new Set<OnboardingStep>([
   "country-confirm",
+  "child-name",
   "child-dob",
+  "child-birthday",
   "infant-feeding",
   "infant-sleep",
-  "child-school",
-  "child-class",
+  "child-education-stage",
+  "child-class-grade",
+  "child-schedule-known",
   "child-school-start",
   "child-school-end",
   "child-school-days",
   "child-wake",
   "child-sleep",
-  "add-more",
+  "parent-name",
   "parent-role",
   "parent-work",
   "parent-region",
@@ -47,6 +58,12 @@ export interface OnboardingThreadContext {
   regionDrillDown: boolean;
   countryCodeForRegion: string;
   finishError: string | null;
+  childAgeYears: number;
+  childAgeMonths: number;
+  suggestedParentName?: string;
+  parentNameEditing?: boolean;
+  schoolScheduleCustom?: boolean;
+  birthdayInitialIso?: string;
   handlers: {
     onAllowLocation: () => void;
     onPickCountryManually: () => void;
@@ -59,8 +76,6 @@ const WAKE_OPTS = ["5:30 AM", "6:00 AM", "6:30 AM", "7:00 AM", "7:30 AM", "8:00 
 const SLEEP_OPTS = ["8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM", "10:00 PM", "10:30 PM", "11:00 PM"];
 const SCHOOL_START_OPTS = ["7:00 AM", "7:30 AM", "8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM"];
 const SCHOOL_END_OPTS = ["12:00 PM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "4:00 PM"];
-const CLASS_KEYS = ["class_nursery", "class_lkg", "class_ukg", "class_1", "class_2", "class_3", "class_4", "class_5", "class_6plus"];
-const CLASS_VALUES = ["Nursery", "LKG / KG", "UKG", "1st", "2nd", "3rd", "4th", "5th", "6th+"];
 
 const GLOBAL_CUISINES = [
   { value: "western", labelKey: "region_western", emoji: "🥗" },
@@ -111,18 +126,6 @@ const PARENT_GOAL_CODES = [
   "increase_independence",
 ] as const;
 
-function getClassLabels(t: TFunction, countryCode: string): { labels: string[]; values: string[] } {
-  const useSouthAsian = ["IN", "PK", "BD", "LK", "NP"].includes(countryCode);
-  if (useSouthAsian) {
-    return {
-      labels: CLASS_KEYS.map((k) => t(`screens.onboarding.${k}`)),
-      values: CLASS_VALUES,
-    };
-  }
-  const v = ["Kindergarten", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8+"];
-  return { labels: v, values: v };
-}
-
 export function buildOnboardingStepInteraction(ctx: OnboardingThreadContext): InteractionSpec | null {
   const { step, t, handlers, countryCode, countryName, locationState, locationRequesting, locationSource } = ctx;
 
@@ -153,16 +156,51 @@ export function buildOnboardingStepInteraction(ctx: OnboardingThreadContext): In
         locationRequesting,
       };
     }
+    case "child-name":
+      return {
+        type: "name-suggestions",
+        suggestions: getChildNameSuggestions(ctx.countryCodeForRegion),
+      };
     case "child-dob":
       return {
-        type: "date",
-        max: new Date().toISOString().split("T")[0],
-        confirmLabel: t("screens.onboarding.confirm_dob"),
+        type: "age-select",
+        options: getAgeBandOptions().map((band) => ({
+          id: band.id,
+          label: t(`screens.onboarding.${band.labelKey}`),
+          years: band.years,
+          months: band.months,
+        })),
       };
+    case "child-birthday":
+      return {
+        type: "birthday-collect",
+        selectLabel: t("screens.onboarding.birthday_select"),
+        skipLabel: t("screens.onboarding.birthday_skip"),
+        confirmLabel: t("screens.onboarding.birthday_confirm"),
+        maxDate: new Date().toISOString().split("T")[0],
+        initialIso: ctx.birthdayInitialIso,
+      };
+    case "parent-name": {
+      const suggested = ctx.suggestedParentName?.trim();
+      if (suggested && !ctx.parentNameEditing) {
+        return {
+          type: "name-confirm",
+          suggestedName: suggested,
+          confirmLabel: t("screens.onboarding.parent_name_confirm_yes"),
+          editLabel: t("screens.onboarding.parent_name_confirm_edit"),
+        };
+      }
+      return {
+        type: "name-input",
+        placeholder: t("screens.onboarding.parent_name_placeholder"),
+        confirmLabel: t("screens.onboarding.parent_name_continue"),
+        initialValue: suggested ?? "",
+      };
+    }
     case "infant-feeding":
       return {
         type: "single-select",
-        layout: "row",
+        layout: "card",
         options: [
           { id: "breast", label: t("screens.onboarding.feeding_breast"), value: "breastfeeding" },
           { id: "formula", label: t("screens.onboarding.feeding_formula"), value: "formula" },
@@ -172,35 +210,64 @@ export function buildOnboardingStepInteraction(ctx: OnboardingThreadContext): In
     case "infant-sleep":
       return {
         type: "single-select",
-        layout: "stack",
+        layout: "card",
         options: [
-          { id: "flex", label: t("screens.onboarding.sleep_flexible"), value: "flexible" },
-          { id: "irreg", label: t("screens.onboarding.sleep_irregular"), value: "irregular" },
-          { id: "short", label: t("screens.onboarding.sleep_short"), value: "short_naps" },
+          { id: "good", label: t("screens.onboarding.sleep_good"), value: "flexible" },
+          { id: "average", label: t("screens.onboarding.sleep_average"), value: "irregular" },
+          { id: "difficult", label: t("screens.onboarding.sleep_difficult"), value: "short_naps" },
         ],
       };
-    case "child-school":
+    case "child-education-stage": {
+      const stages = getEducationStagesForChild(
+        ctx.countryCodeForRegion,
+        ctx.childAgeYears,
+        ctx.childAgeMonths,
+      );
+      return {
+        type: "single-select",
+        layout: "card",
+        options: stages.map((s) => ({
+          id: s.code,
+          label: `${s.emoji} ${t(`screens.onboarding.${s.labelKey}`)}`,
+          value: s.code,
+        })),
+      };
+    }
+    case "child-class-grade": {
+      const grades = getClassOptionsForCountry(ctx.countryCodeForRegion);
+      return {
+        type: "single-select",
+        layout: "grid",
+        options: grades.map((grade) => ({
+          id: grade,
+          label: grade,
+          value: grade,
+        })),
+      };
+    }
+    case "child-schedule-known":
       return {
         type: "single-select",
         layout: "row",
         options: [
-          { id: "yes", label: t("screens.onboarding.yes_school"), value: "yes" },
-          { id: "no", label: t("screens.onboarding.no_school"), value: "no" },
+          { id: "yes", label: t("screens.onboarding.schedule_yes"), value: "yes" },
+          { id: "later", label: t("screens.onboarding.schedule_later"), value: "later" },
         ],
       };
-    case "child-class": {
-      const { labels, values } = getClassLabels(t, ctx.countryCodeForRegion);
-      return {
-        type: "single-select",
-        layout: "grid",
-        options: labels.map((label, i) => ({
-          id: values[i] ?? label,
-          label,
-          value: values[i] ?? label,
-        })),
-      };
-    }
     case "child-school-start":
+      if (!ctx.schoolScheduleCustom) {
+        return {
+          type: "school-schedule",
+          presets: getSchoolSchedulePresets().map((preset) => ({
+            id: preset.id,
+            label: t(`screens.onboarding.${preset.labelKey}`),
+            start: preset.start,
+            end: preset.end,
+            days: preset.days,
+          })),
+          customLabel: t("screens.onboarding.school_preset_custom"),
+        };
+      }
       return { type: "time-quick", options: SCHOOL_START_OPTS, allowCustom: true };
     case "child-school-end":
       return { type: "time-quick", options: SCHOOL_END_OPTS, allowCustom: true };
@@ -226,38 +293,55 @@ export function buildOnboardingStepInteraction(ctx: OnboardingThreadContext): In
         })),
       };
     }
-    case "child-wake":
-      return { type: "time-quick", options: WAKE_OPTS, allowCustom: true };
-    case "child-sleep":
-      return { type: "time-quick", options: SLEEP_OPTS, allowCustom: true };
-    case "add-more":
+    case "child-wake": {
+      const wakeDefaults = getSmartWakeSleepDefaults(ctx.childAgeYears, ctx.childAgeMonths);
+      const wakeOpts = [wakeDefaults.wakeLabel, ...WAKE_OPTS.filter((o) => o !== wakeDefaults.wakeLabel)];
       return {
-        type: "single-select",
-        layout: "row",
-        options: [
-          { id: "yes", label: t("screens.onboarding.yes_add_another"), value: "yes" },
-          { id: "no", label: t("screens.onboarding.no_continue"), value: "no" },
-        ],
+        type: "time-range",
+        ranges: getWakeTimeRanges().map((range) => ({
+          id: range.id,
+          label: t(`screens.onboarding.${range.labelKey}`),
+          displayTime: range.displayTime,
+        })),
+        exactLabel: t("screens.onboarding.time_exact_wake"),
+        exactOptions: wakeOpts,
       };
+    }
+    case "child-sleep": {
+      const sleepDefaults = getSmartWakeSleepDefaults(ctx.childAgeYears, ctx.childAgeMonths);
+      const sleepOpts = [sleepDefaults.sleepLabel, ...SLEEP_OPTS.filter((o) => o !== sleepDefaults.sleepLabel)];
+      return {
+        type: "time-range",
+        ranges: getSleepTimeRanges().map((range) => ({
+          id: range.id,
+          label: t(`screens.onboarding.${range.labelKey}`),
+          displayTime: range.displayTime,
+        })),
+        exactLabel: t("screens.onboarding.time_exact_sleep"),
+        exactOptions: sleepOpts,
+      };
+    }
     case "parent-role":
       return {
         type: "single-select",
-        layout: "grid",
+        layout: "card",
         options: [
           { id: "mother", label: t("screens.onboarding.role_mother"), value: "Mother" },
           { id: "father", label: t("screens.onboarding.role_father"), value: "Father" },
-          { id: "both", label: t("screens.onboarding.role_both"), value: "Both" },
+          { id: "guardian", label: t("screens.onboarding.role_guardian"), value: "Guardian" },
           { id: "grand", label: t("screens.onboarding.role_grandparent"), value: "Grandparent" },
         ],
       };
     case "parent-work":
       return {
         type: "single-select",
-        layout: "stack",
+        layout: "card",
         options: [
-          { id: "wfh", label: t("screens.onboarding.work_home"), value: "work_from_home" },
-          { id: "office", label: t("screens.onboarding.work_office"), value: "office" },
-          { id: "nw", label: t("screens.onboarding.work_not_working"), value: "not_working" },
+          { id: "stay_home", label: t("screens.onboarding.work_stay_home"), value: "not_working" },
+          { id: "full_time", label: t("screens.onboarding.work_full_time"), value: "office" },
+          { id: "part_time", label: t("screens.onboarding.work_part_time"), value: "office" },
+          { id: "shift", label: t("screens.onboarding.work_shift"), value: "office" },
+          { id: "freelance", label: t("screens.onboarding.work_freelance"), value: "work_from_home" },
         ],
       };
     case "parent-region": {
@@ -279,7 +363,7 @@ export function buildOnboardingStepInteraction(ctx: OnboardingThreadContext): In
     case "parent-diet":
       return {
         type: "single-select",
-        layout: "grid",
+        layout: "card",
         options: ONBOARDING_DIET_OPTIONS.map((opt) => ({
           id: opt.value,
           label: `${opt.emoji} ${t(`screens.onboarding.${opt.labelKey}`)}`,
@@ -304,6 +388,9 @@ export function buildOnboardingStepInteraction(ctx: OnboardingThreadContext): In
         min: 0,
         confirmLabel: t("screens.onboarding.continue"),
         skipLabel: t("screens.onboarding.no_allergies_button"),
+        allowOtherInput: true,
+        otherOptionId: "other",
+        otherPlaceholder: t("screens.onboarding.allergies_other_placeholder"),
         options: [
           ...ONBOARDING_ALLERGY_CHIPS.map((chip) => ({
             id: chip.value,
@@ -312,7 +399,7 @@ export function buildOnboardingStepInteraction(ctx: OnboardingThreadContext): In
           })),
           {
             id: "other",
-            label: `✏️ ${t("screens.onboarding.allergy_other")}`,
+            label: `➕ ${t("screens.onboarding.allergy_add_another")}`,
             value: "other",
           },
         ],
@@ -358,15 +445,6 @@ export function buildOnboardingThreadMessages(ctx: OnboardingThreadContext): Thr
   return items;
 }
 
-export function onboardingComposerPlaceholder(step: OnboardingStep, t: TFunction): string {
-  switch (step) {
-    case "child-name":
-      return t("screens.onboarding.child_name_placeholder");
-    case "parent-name":
-      return t("screens.onboarding.parent_name_placeholder");
-    case "parent-mobile":
-      return t("screens.onboarding.mobile_placeholder");
-    default:
-      return t("screens.onboarding.message_amy", { defaultValue: "Message Amy…" });
-  }
+export function onboardingComposerPlaceholder(_step: OnboardingStep, t: TFunction): string {
+  return t("screens.onboarding.message_amy", { defaultValue: "Message Amy…" });
 }

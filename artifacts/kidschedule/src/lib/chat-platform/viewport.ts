@@ -332,11 +332,10 @@ export function readMeasuredVisibleBottomPx(): number {
   return vv ? vv.offsetTop + vv.height : window.innerHeight;
 }
 
+const CHAT_ANSWER_SELECTOR =
+  '.chat-thread-input input, .chat-thread-input textarea, .chat-thread-input select, .chat-thread-input button, .chat-thread-input [role="combobox"], .chat-thread-input [role="listbox"], .chat-thread-input [role="option"], .chat-thread-input [contenteditable="true"], .chat-thread-messages [data-chat-answer="true"] input, .chat-thread-messages [data-chat-answer="true"] textarea, .chat-thread-messages [data-chat-answer="true"] select, .chat-thread-messages [data-chat-answer="true"] button';
+
 export function isChatAnswerTarget(el: EventTarget | null): el is HTMLElement {
   if (!(el instanceof HTMLElement)) return false;
-  return Boolean(
-    el.closest(
-      '.chat-thread-input input, .chat-thread-input textarea, .chat-thread-input select, .chat-thread-input button, .chat-thread-input [role="combobox"], .chat-thread-input [role="listbox"], .chat-thread-input [role="option"], .chat-thread-input [contenteditable="true"]',
-    ),
-  );
+  return Boolean(el.closest(CHAT_ANSWER_SELECTOR));
 }

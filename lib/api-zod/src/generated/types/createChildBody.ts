@@ -10,6 +10,8 @@ import type { FixedActivity } from './fixedActivity';
 export interface CreateChildBody {
   name: string;
   dob?: string | null;
+  selectedAgeBand?: string | null;
+  dobIsEstimated?: boolean | null;
   age: number;
   ageMonths?: number;
   isSchoolGoing?: boolean | null;

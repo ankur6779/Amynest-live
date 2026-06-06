@@ -1,4 +1,5 @@
 import type { OnboardingStep } from "@/lib/onboarding-chat-types";
+import { trackOnboardingError } from "@/lib/onboarding-analytics";
 import {
   buildOnboardingTelemetryPayload,
   getOnboardingRunId,
@@ -61,21 +62,21 @@ const STANDARD_PROGRESS_STEPS: OnboardingStep[] = [
   "country-confirm",
   "child-name",
   "child-dob",
-  "child-school",
-  "child-class",
+  "child-birthday",
+  "child-education-stage",
+  "child-class-grade",
+  "child-schedule-known",
   "child-school-start",
   "child-school-end",
   "child-school-days",
   "child-wake",
   "child-sleep",
-  "add-more",
   "parent-name",
   "parent-role",
   "parent-work",
   "parent-region",
   "parent-diet",
   "parent-goals",
-  "parent-mobile",
   "parent-allergies",
 ];
 
@@ -83,16 +84,18 @@ const INFANT_PROGRESS_STEPS: OnboardingStep[] = [
   "country-confirm",
   "child-name",
   "child-dob",
+  "child-birthday",
   "infant-feeding",
   "infant-sleep",
-  "add-more",
+  "child-education-stage",
+  "child-wake",
+  "child-sleep",
   "parent-name",
   "parent-role",
   "parent-work",
   "parent-region",
   "parent-diet",
   "parent-goals",
-  "parent-mobile",
   "parent-allergies",
 ];
 
@@ -179,11 +182,13 @@ function isServerComplete(body: Record<string, unknown>): boolean {
 
 export class OnboardingFinishError extends Error {
   readonly step: string;
+  readonly kind: "validation" | "save";
 
-  constructor(step: string, message: string) {
+  constructor(step: string, message: string, kind: "validation" | "save" = "save") {
     super(message);
     this.name = "OnboardingFinishError";
     this.step = step;
+    this.kind = kind;
   }
 }
 
@@ -256,9 +261,17 @@ export async function runOnboardingFinishTransaction(
         { status: parentRes.status, fallback: parentBody.fallback === true, body: parentBody },
         telemetryOpts,
       );
+      if (parentRes.status === 400) {
+        trackOnboardingError("onboarding_validation_failed", {
+          step: "parent-profile",
+          status: parentRes.status,
+          message: typeof parentBody.error === "string" ? parentBody.error : "validation_failed",
+        });
+      }
       throw new OnboardingFinishError(
         "parent-profile",
         `Parent profile save failed (HTTP ${parentRes.status})`,
+        parentRes.status === 400 ? "validation" : "save",
       );
     }
     logOnboardingFinish("PROFILE_SAVE_SUCCESS", { status: parentRes.status }, telemetryOpts);
@@ -291,6 +304,21 @@ export async function runOnboardingFinishTransaction(
             },
             telemetryOpts,
           );
+          if (res.status === 400) {
+            trackOnboardingError("onboarding_validation_failed", {
+              step: "child-save",
+              childName,
+              status: res.status,
+              message: typeof body.error === "string" ? body.error : "validation_failed",
+            });
+          } else {
+            trackOnboardingError("onboarding_save_failed", {
+              step: "child-save",
+              childName,
+              status: res.status,
+              fallback: body.fallback === true,
+            });
+          }
           continue;
         }
         savedChildCount += 1;
@@ -392,7 +420,16 @@ export async function runOnboardingFinishTransaction(
       alreadyCompleted: onboardingBody.alreadyCompleted === true,
     };
   } catch (err) {
-    if (!(err instanceof OnboardingFinishError)) {
+    if (err instanceof OnboardingFinishError) {
+      if (err.kind === "validation") {
+        /* onboarding_validation_failed emitted at the HTTP 400 site */
+      } else {
+        trackOnboardingError("onboarding_save_failed", {
+          step: err.step,
+          message: err.message,
+        });
+      }
+    } else {
       logOnboardingFinish(
         "ONBOARDING_FINISH_FAILED",
         {
@@ -401,6 +438,10 @@ export async function runOnboardingFinishTransaction(
         },
         telemetryOpts,
       );
+      trackOnboardingError("onboarding_save_failed", {
+        step: "unexpected",
+        message: err instanceof Error ? err.message : String(err),
+      });
     }
     throw err;
   }

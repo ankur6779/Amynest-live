@@ -7,9 +7,19 @@ export const childrenTable = pgTable("children", {
   userId: text("user_id"),
   name: text("name").notNull(),
   dob: text("dob"),
+  /** Onboarding age-band id (under_1, y1 … y8_plus) when exact DOB was not provided. */
+  selectedAgeBand: text("selected_age_band"),
+  /** True when dob was approximated from age band rather than exact birthday. */
+  dobIsEstimated: boolean("dob_is_estimated"),
   age: integer("age").notNull(),
   ageMonths: integer("age_months").notNull().default(0),
   isSchoolGoing: boolean("is_school_going"),
+  /** First-class developmental / education stage (at_home, daycare, lkg, school, …). */
+  educationStage: text("education_stage"),
+  /** Derived learning context: home, daycare, early_learning, formal_school, homeschool. */
+  learningEnvironment: text("learning_environment"),
+  /** Whether parent provided school schedule during onboarding (false = age-appropriate defaults). */
+  scheduleKnown: boolean("schedule_known"),
   childClass: text("child_class"),
   schoolStartTime: text("school_start_time").notNull(),
   schoolEndTime: text("school_end_time").notNull(),

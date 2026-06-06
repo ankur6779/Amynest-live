@@ -11,6 +11,8 @@ import type { UpdateChildBodyParentGoalsItem } from './updateChildBodyParentGoal
 export interface UpdateChildBody {
   name?: string;
   dob?: string | null;
+  selectedAgeBand?: string | null;
+  dobIsEstimated?: boolean | null;
   age?: number;
   ageMonths?: number;
   isSchoolGoing?: boolean | null;

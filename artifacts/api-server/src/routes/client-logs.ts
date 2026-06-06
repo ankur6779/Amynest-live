@@ -26,6 +26,8 @@ const ClientLogBody = z.object({
     z.string().regex(/^learning_progress_[a-z0-9_]+$/),
     /** Subscription funnel events (`subscription-analytics.ts`). */
     z.literal("subscription_funnel"),
+    /** Onboarding funnel + error observability (`onboarding-analytics.ts`). */
+    z.literal("onboarding_funnel"),
     /** Infant parenting product analytics (`infant-hub-analytics.ts`). */
     z.literal("infant_parenting"),
   ]),
@@ -109,19 +111,25 @@ async function ingestClientLog(req: Request, res: Response): Promise<void> {
     logType.startsWith("amy_voice_") &&
     (logType.includes("failed") || logType.includes("failure"));
   const amyVoiceWarn = logType.startsWith("amy_voice_") && logType.includes("fallback");
+  const onboardingError =
+    logType === "onboarding_funnel" && parsed.data.context === "onboarding_error";
+  const onboardingSaveFailed =
+    onboardingError && meta?.event === "onboarding_save_failed";
 
   const logFn =
     logType === "crash" ||
     logType === "failed_routine" ||
     chatPlatformFailure ||
     staticAudioError ||
-    amyVoiceError
+    amyVoiceError ||
+    onboardingSaveFailed
       ? logger.error.bind(logger)
       : logType === "slow_api" ||
           logType === "warning" ||
           chatPlatformRecovery ||
           staticAudioWarn ||
-          amyVoiceWarn
+          amyVoiceWarn ||
+          onboardingError
         ? logger.warn.bind(logger)
         : logger.info.bind(logger);
 

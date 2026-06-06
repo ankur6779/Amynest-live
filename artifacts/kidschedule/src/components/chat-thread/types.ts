@@ -11,7 +11,7 @@ export interface SelectOption {
 }
 
 export type InteractionSpec =
-  | { type: "single-select"; options: SelectOption[]; layout?: "grid" | "row" | "stack" }
+  | { type: "single-select"; options: SelectOption[]; layout?: "grid" | "row" | "stack" | "card" }
   | {
       type: "multi-select";
       options: SelectOption[];
@@ -19,6 +19,49 @@ export type InteractionSpec =
       max?: number;
       confirmLabel?: string;
       skipLabel?: string;
+      allowOtherInput?: boolean;
+      otherOptionId?: string;
+      otherPlaceholder?: string;
+    }
+  | {
+      type: "name-input";
+      suggestions?: string[];
+      placeholder?: string;
+      confirmLabel?: string;
+      initialValue?: string;
+    }
+  | { type: "name-suggestions"; suggestions: string[] }
+  | {
+      type: "birthday-collect";
+      selectLabel: string;
+      skipLabel: string;
+      confirmLabel: string;
+      maxDate?: string;
+      initialIso?: string;
+    }
+  | {
+      type: "name-confirm";
+      suggestedName: string;
+      confirmLabel?: string;
+      editLabel?: string;
+    }
+  | {
+      type: "age-select";
+      options: Array<{ id: string; label: string; years: number; months: number }>;
+      exactDobLabel?: string;
+      maxDate?: string;
+      confirmDobLabel?: string;
+    }
+  | {
+      type: "time-range";
+      ranges: Array<{ id: string; label: string; displayTime: string }>;
+      exactLabel?: string;
+      exactOptions?: string[];
+    }
+  | {
+      type: "school-schedule";
+      presets: Array<{ id: string; label: string; start: string; end: string; days: number[] }>;
+      customLabel?: string;
     }
   | { type: "date"; max?: string; confirmLabel?: string }
   | {
@@ -92,6 +135,13 @@ export interface InteractionEvent {
   dateValue?: string;
   timeValue?: string;
   actionId?: string;
+  nameValue?: string;
+  ageYears?: number;
+  ageMonths?: number;
+  customText?: string;
+  schoolStart?: string;
+  schoolEnd?: string;
+  schoolDays?: number[];
 }
 
 export interface ChatThreadProps {
@@ -119,6 +169,7 @@ export interface ChatThreadProps {
   showScrollLatest?: boolean;
   onScrollLatest?: () => void;
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
+  composerVariant?: "default" | "onboarding";
   layout?: "fullscreen" | "embedded";
   testId?: string;
 }

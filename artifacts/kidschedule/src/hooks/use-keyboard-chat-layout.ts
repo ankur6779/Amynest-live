@@ -464,6 +464,12 @@ export function useKeyboardChatLayout(
 
       syncViewport();
       runSelfHealingVisibility("instant");
+      if (target instanceof HTMLElement) {
+        requestAnimationFrame(() => {
+          target.scrollIntoView({ block: "nearest", behavior: "instant" });
+          runSelfHealingVisibility("instant");
+        });
+      }
     };
 
     const onFocusOut = () => {

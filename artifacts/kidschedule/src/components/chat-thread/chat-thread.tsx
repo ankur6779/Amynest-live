@@ -30,6 +30,7 @@ export function ChatThread({
   showScrollLatest: showScrollLatestProp,
   onScrollLatest,
   textareaRef: textareaRefProp,
+  composerVariant = theme === "onboarding" ? "onboarding" : "default",
   layout = surface === "onboarding" ? "fullscreen" : "embedded",
   testId,
 }: ChatThreadProps) {
@@ -105,6 +106,7 @@ export function ChatThread({
             textareaRef={textareaRef}
             onKeyDown={handleKeyDown}
             footerExtra={footerExtra}
+            variant={composerVariant}
           />
         }
       >

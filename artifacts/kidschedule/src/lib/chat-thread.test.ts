@@ -38,8 +38,9 @@ describe("ChatThread onboarding builder", () => {
   });
 
   it("exposes composer vs interactive step sets", () => {
-    expect(ONBOARDING_COMPOSER_STEPS.has("child-name")).toBe(true);
+    expect(ONBOARDING_COMPOSER_STEPS.has("child-name")).toBe(false);
     expect(ONBOARDING_INTERACTIVE_STEPS.has("parent-role")).toBe(true);
-    expect(ONBOARDING_INTERACTIVE_STEPS.has("child-name")).toBe(false);
+    expect(ONBOARDING_INTERACTIVE_STEPS.has("child-name")).toBe(true);
+    expect(ONBOARDING_INTERACTIVE_STEPS.has("parent-name")).toBe(true);
   });
 });

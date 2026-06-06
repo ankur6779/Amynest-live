@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useParams } from "wouter";
 import { useForm } from "react-hook-form";
@@ -26,6 +26,18 @@ import { FixedActivitiesEditor } from "@/components/routines/fixed-activities-ed
 import { FixedActivitiesWeeklyInsights } from "@/components/routines/fixed-activities-weekly-insights";
 import { normalizeFixedActivities } from "@/lib/fixed-activities";
 import type { FixedActivityDraft } from "@/lib/fixed-activities";
+import {
+  deriveSchoolFieldsFromStage,
+  getClassOptionsForCountry,
+  getEducationStagesForChild,
+  getTotalMonths,
+  type EducationStageCode,
+} from "@workspace/education-stages";
+import {
+  formatEducationStageLabel,
+  hydrateChildEducationFormValues,
+  profileFormStageFlags,
+} from "@/lib/education-stage-display";
 interface Babysitter {
   id: number;
   name: string;
@@ -35,7 +47,8 @@ const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
 const childSchema = z.object({
   name: z.string().min(1, "Name is required"),
   dob: z.string().min(1, "Date of birth is required"),
-  isSchoolGoing: z.boolean().optional(),
+  educationStage: z.string().optional(),
+  scheduleKnown: z.boolean().optional(),
   childClass: z.string().optional(),
   wakeUpTime: z.string().regex(timeRegex, "Must be in HH:MM format"),
   sleepTime: z.string().regex(timeRegex, "Must be in HH:MM format"),
@@ -215,7 +228,8 @@ export default function ChildForm() {
     defaultValues: {
       name: "",
       dob: "",
-      isSchoolGoing: undefined,
+      educationStage: undefined,
+      scheduleKnown: false,
       childClass: "",
       wakeUpTime: "07:00",
       sleepTime: "21:00",
@@ -229,25 +243,76 @@ export default function ChildForm() {
       babysitterId: undefined
     }
   });
+  const [parentCountry, setParentCountry] = useState("IN");
   const watchDob = form.watch("dob");
-  const watchIsSchoolGoing = form.watch("isSchoolGoing");
+  const watchEducationStage = form.watch("educationStage") as EducationStageCode | undefined;
+  const watchScheduleKnown = form.watch("scheduleKnown");
   const travelMode = form.watch("travelMode");
   const hasDob = Boolean(watchDob);
   const calculatedAge = watchDob ? calculateAge(watchDob) : null;
-  const totalMonths = calculatedAge ? calculatedAge.years * 12 + calculatedAge.months : 0;
+  const totalMonths = calculatedAge ? getTotalMonths(calculatedAge.years, calculatedAge.months) : 0;
   const isInfant = hasDob && totalMonths < 12;
   const ageGroupInfo = calculatedAge ? getAgeGroupInfo(totalMonths) : null;
+  const stageOptions = useMemo(() => {
+    if (!hasDob || isInfant || !calculatedAge) return [];
+    const options = getEducationStagesForChild(
+      parentCountry,
+      calculatedAge.years,
+      calculatedAge.months,
+    );
+    const current = watchEducationStage;
+    if (current && !options.some((o) => o.code === current)) {
+      return [
+        {
+          code: current,
+          labelKey: `stage_${current}`,
+          emoji: "📌",
+        },
+        ...options,
+      ];
+    }
+    return options;
+  }, [hasDob, isInfant, parentCountry, calculatedAge, watchEducationStage]);
+  const stageFlags = profileFormStageFlags(watchEducationStage, totalMonths);
+  const showScheduleFields = stageFlags.showScheduleSection && watchScheduleKnown === true;
+
+  const handleEducationStageSelect = useCallback(
+    (stage: EducationStageCode) => {
+      form.setValue("educationStage", stage, { shouldValidate: true, shouldDirty: true });
+      const derived = deriveSchoolFieldsFromStage({
+        educationStage: stage,
+        childClass: form.getValues("childClass"),
+        scheduleKnown: form.getValues("scheduleKnown"),
+        schoolStartTime: form.getValues("schoolStartTime"),
+        schoolEndTime: form.getValues("schoolEndTime"),
+        schoolDays: form.getValues("schoolDays"),
+        country: parentCountry,
+        years: calculatedAge?.years ?? 0,
+        months: calculatedAge?.months ?? 0,
+      });
+      form.setValue("childClass", derived.childClass ?? "", { shouldDirty: true });
+      if (stage !== "school") {
+        form.setValue("scheduleKnown", false, { shouldDirty: true });
+      }
+    },
+    [calculatedAge, form, parentCountry],
+  );
 
   useEffect(() => {
     if (!isInfant) return;
-    if (form.getValues("isSchoolGoing") !== false) {
-      form.setValue("isSchoolGoing", false, { shouldDirty: false });
-    }
+    form.setValue("educationStage", "at_home", { shouldDirty: false });
+    form.setValue("scheduleKnown", false, { shouldDirty: false });
     setFixedActivities((prev) => (prev.length === 0 ? prev : []));
   }, [form, isInfant, watchDob]);
   useEffect(() => {
     authFetch("/api/babysitters").then(r => r.ok ? r.json() : []).then((data: Babysitter[]) => setBabysitters(data)).catch(() => {});
-  }, []);
+    authFetch("/api/parent-profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((profile: { country?: string | null } | null) => {
+        if (profile?.country) setParentCountry(profile.country);
+      })
+      .catch(() => {});
+  }, [authFetch]);
   useEffect(() => {
     if (child && isEditing) {
       const dobValue = (child as any).dob ?? "";
@@ -255,12 +320,23 @@ export default function ChildForm() {
       if (childHydrationKeyRef.current === hydrationKey) return;
       childHydrationKeyRef.current = hydrationKey;
 
-      const isSchoolGoingValue = (child as any).isSchoolGoing;
+      const edu = hydrateChildEducationFormValues(
+        {
+          educationStage: (child as { educationStage?: string }).educationStage,
+          isSchoolGoing: (child as { isSchoolGoing?: boolean }).isSchoolGoing,
+          childClass: child.childClass,
+          age: child.age,
+          ageMonths: child.ageMonths,
+          scheduleKnown: (child as { scheduleKnown?: boolean }).scheduleKnown,
+        },
+        parentCountry,
+      );
       form.reset({
         name: child.name,
         dob: dobValue,
-        isSchoolGoing: isSchoolGoingValue ?? undefined,
-        childClass: child.childClass ?? "",
+        educationStage: edu.educationStage,
+        scheduleKnown: edu.scheduleKnown,
+        childClass: edu.childClass,
         wakeUpTime: child.wakeUpTime ?? "07:00",
         sleepTime: child.sleepTime ?? "21:00",
         schoolStartTime: child.schoolStartTime ?? "08:00",
@@ -290,7 +366,7 @@ export default function ChildForm() {
       setFeedingType((child as any).feedingType ?? null);
       setSleepPattern((child as any).sleepPattern ?? null);
     }
-  }, [child, form, isEditing]);
+  }, [child, form, isEditing, parentCountry]);
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -324,22 +400,39 @@ export default function ChildForm() {
       years: 0,
       months: 0
     };
-    const schoolGoing = isInfant ? false : data.isSchoolGoing ?? false;
+    const educationStage = (
+      isInfant
+        ? "at_home"
+        : (data.educationStage as EducationStageCode | undefined)
+    ) as EducationStageCode;
+    const derived = deriveSchoolFieldsFromStage({
+      educationStage,
+      childClass: data.childClass,
+      scheduleKnown: data.scheduleKnown,
+      schoolStartTime: data.schoolStartTime,
+      schoolEndTime: data.schoolEndTime,
+      schoolDays: data.schoolDays,
+      country: parentCountry,
+      years: age.years,
+      months: age.months,
+    });
     const payload = {
       name: data.name,
       dob: data.dob,
       age: age.years,
       ageMonths: age.months,
-      isSchoolGoing: schoolGoing,
-      childClass: data.childClass?.trim() || undefined,
+      educationStage: derived.educationStage,
+      learningEnvironment: derived.learningEnvironment,
+      scheduleKnown: derived.scheduleKnown,
+      isSchoolGoing: derived.isSchoolGoing,
+      childClass: derived.childClass || undefined,
       wakeUpTime: data.wakeUpTime,
       sleepTime: data.sleepTime,
-      schoolStartTime: schoolGoing ? data.schoolStartTime ?? "08:00" : "08:00",
-      schoolEndTime: schoolGoing ? data.schoolEndTime ?? "15:00" : "15:00",
-      // schoolDays: only meaningful when school-going. null = "not applicable".
-      schoolDays: schoolGoing ? data.schoolDays && data.schoolDays.length > 0 ? data.schoolDays : [1, 2, 3, 4, 5] : null,
-      travelMode: schoolGoing ? data.travelMode ?? "car" : "car",
-      travelModeOther: schoolGoing && data.travelMode === "other" ? data.travelModeOther : undefined,
+      schoolStartTime: derived.schoolStartTime,
+      schoolEndTime: derived.schoolEndTime,
+      schoolDays: derived.schoolDays,
+      travelMode: derived.isSchoolGoing ? data.travelMode ?? "car" : "car",
+      travelModeOther: derived.isSchoolGoing && data.travelMode === "other" ? data.travelModeOther : undefined,
       foodType: isInfant ? "veg" : deriveFoodType(dietType),
       dietType: isInfant ? null : dietType || null,
       foodStyle: isInfant ? null : foodStyle || null,
@@ -597,140 +690,190 @@ export default function ChildForm() {
                   </div>
                 </div>}
 
-              {/* ── STEP 3: School Question (non-infant only) ── */}
+              {/* ── Education stage (non-infant only) ── */}
               {hasDob && !isInfant && <div>
                   <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide flex items-center gap-2">
                     <School className="h-3.5 w-3.5" />
-                    {t("pages.children.form.step_3_school")}
+                    {t("pages.children.form.step_3_education_stage")}
                   </p>
-                  <p className="font-bold text-foreground mb-3">{t("pages.children.form.does")} {form.watch("name") || "your child"} {t("pages.children.form.go_to_school")}</p>
-                  <div className="flex gap-3">
-                    {[{
-                  value: true,
-                  label: "🏫 Yes, goes to school"
-                }, {
-                  value: false,
-                  label: "🏠 Not yet / Homeschool"
-                }].map(opt => <button key={String(opt.value)} type="button" onClick={() => form.setValue("isSchoolGoing", opt.value, {
-                  shouldValidate: true
-                })} className={`flex-1 py-3 px-4 rounded-2xl font-bold border-2 transition-all text-sm ${watchIsSchoolGoing === opt.value ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-muted/50 text-foreground border-transparent hover:border-primary/40"}`}>
-                        {opt.label}
-                      </button>)}
+                  <p className="font-bold text-foreground mb-3">
+                    {t("pages.children.form.education_stage_question", {
+                      name: form.watch("name") || t("pages.children.form.your_child"),
+                    })}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {stageOptions.map((opt) => (
+                      <button
+                        key={opt.code}
+                        type="button"
+                        onClick={() => handleEducationStageSelect(opt.code)}
+                        className={cn(
+                          "py-3 px-3 rounded-2xl font-bold border-2 transition-all text-sm text-left",
+                          watchEducationStage === opt.code
+                            ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                            : "bg-muted/50 text-foreground border-transparent hover:border-primary/40",
+                        )}
+                      >
+                        {opt.emoji} {formatEducationStageLabel(opt.code, t)}
+                      </button>
+                    ))}
                   </div>
-                  {watchIsSchoolGoing === undefined && <p className="text-xs text-primary mt-2 font-medium">{t("pages.children.form.please_select_an_option_to_continue")}</p>}
+                  {!watchEducationStage && (
+                    <p className="text-xs text-primary mt-2 font-medium">
+                      {t("pages.children.form.please_select_education_stage")}
+                    </p>
+                  )}
                 </div>}
 
-              {/* ── SCHOOL DETAILS (only if school = YES) ── */}
-              {hasDob && !isInfant && watchIsSchoolGoing === true && <>
-                  {/* Class */}
-                  <div>
-                    <FormField control={form.control} name="childClass" render={({
-                  field
-                }) => {
-                  return <FormItem>
-                        <FormLabel className="font-bold flex items-center gap-2">
-                          <GraduationCap className="h-4 w-4 text-primary" />
-                          {t("pages.children.form.class_grade")} <span className="font-normal text-muted-foreground">{t("pages.children.form.optional")}</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder={t("pages.children.form.e_g_grade_5_ukg_class_3")} className={inputClass} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>;
-                }} />
+              {/* ── Class / grade (formal school only) ── */}
+              {hasDob && !isInfant && stageFlags.showClass && (
+                <div>
+                  <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide flex items-center gap-2">
+                    <GraduationCap className="h-3.5 w-3.5" />
+                    {t("pages.children.form.class_grade")}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {getClassOptionsForCountry(parentCountry).map((grade) => (
+                      <button
+                        key={grade}
+                        type="button"
+                        onClick={() => form.setValue("childClass", grade, { shouldDirty: true })}
+                        className={cn(
+                          "py-2.5 px-3 rounded-xl font-bold border-2 text-sm transition-all",
+                          form.watch("childClass") === grade
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-muted/50 border-transparent hover:border-primary/40",
+                        )}
+                      >
+                        {grade}
+                      </button>
+                    ))}
                   </div>
+                </div>
+              )}
 
-                  {/* School Hours */}
+              {/* ── School schedule (formal school, age 6+) ── */}
+              {hasDob && !isInfant && stageFlags.showScheduleSection && (
+                <div className="space-y-4">
+                  <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
+                    {t("pages.children.form.school_schedule_section")}
+                  </p>
+                  <p className="font-bold text-foreground">
+                    {t("pages.children.form.schedule_known_question")}
+                  </p>
+                  <div className="flex gap-3">
+                    {[
+                      { value: true, label: t("screens.onboarding.schedule_yes") },
+                      { value: false, label: t("screens.onboarding.schedule_later") },
+                    ].map((opt) => (
+                      <button
+                        key={String(opt.value)}
+                        type="button"
+                        onClick={() => form.setValue("scheduleKnown", opt.value, { shouldDirty: true })}
+                        className={cn(
+                          "flex-1 py-3 px-4 rounded-2xl font-bold border-2 transition-all text-sm",
+                          watchScheduleKnown === opt.value
+                            ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                            : "bg-muted/50 text-foreground border-transparent hover:border-primary/40",
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {hasDob && !isInfant && showScheduleFields && (
+                <>
                   <div>
-                    <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.school_hours")}</p>
+                    <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">
+                      {t("pages.children.form.school_hours")}
+                    </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField control={form.control} name="schoolStartTime" render={({
-                    field
-                  }) => {
-                    return <FormItem>
+                      <FormField control={form.control} name="schoolStartTime" render={({ field }) => (
+                        <FormItem>
                           <FormLabel className="font-bold">{t("pages.children.form.school_starts")}</FormLabel>
                           <FormControl>
                             <Input type="time" className={inputClass} {...field} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>;
-                  }} />
-                      <FormField control={form.control} name="schoolEndTime" render={({
-                    field
-                  }) => {
-                    return <FormItem>
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="schoolEndTime" render={({ field }) => (
+                        <FormItem>
                           <FormLabel className="font-bold">{t("pages.children.form.school_ends")}</FormLabel>
                           <FormControl>
                             <Input type="time" className={inputClass} {...field} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>;
-                  }} />
+                        </FormItem>
+                      )} />
                     </div>
                   </div>
 
-                  {/* School Days */}
                   <div>
-                    <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.school_days")}</p>
-                    <FormField control={form.control} name="schoolDays" render={({
-                  field
-                }) => {
-                  const selected = (field.value ?? []) as number[];
-                  const days: {
-                    iso: number;
-                    short: string;
-                  }[] = [{
-                    iso: 1,
-                    short: "Mon"
-                  }, {
-                    iso: 2,
-                    short: "Tue"
-                  }, {
-                    iso: 3,
-                    short: "Wed"
-                  }, {
-                    iso: 4,
-                    short: "Thu"
-                  }, {
-                    iso: 5,
-                    short: "Fri"
-                  }, {
-                    iso: 6,
-                    short: "Sat"
-                  }, {
-                    iso: 7,
-                    short: "Sun"
-                  }];
-                  const toggle = (iso: number) => {
-                    const next = selected.includes(iso) ? selected.filter(d => d !== iso) : [...selected, iso].sort();
-                    field.onChange(next);
-                  };
-                  return <FormItem>
-                          <FormLabel className="font-bold">{t("pages.children.form.which_days_does_your_child_go_to_school")}</FormLabel>
+                    <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">
+                      {t("pages.children.form.school_days")}
+                    </p>
+                    <FormField control={form.control} name="schoolDays" render={({ field }) => {
+                      const selected = (field.value ?? []) as number[];
+                      const days = [
+                        { iso: 1, short: "Mon" },
+                        { iso: 2, short: "Tue" },
+                        { iso: 3, short: "Wed" },
+                        { iso: 4, short: "Thu" },
+                        { iso: 5, short: "Fri" },
+                        { iso: 6, short: "Sat" },
+                        { iso: 7, short: "Sun" },
+                      ];
+                      const toggle = (iso: number) => {
+                        const next = selected.includes(iso)
+                          ? selected.filter((d) => d !== iso)
+                          : [...selected, iso].sort();
+                        field.onChange(next);
+                      };
+                      return (
+                        <FormItem>
+                          <FormLabel className="font-bold">
+                            {t("pages.children.form.which_days_does_your_child_go_to_school")}
+                          </FormLabel>
                           <FormDescription>
                             {t("pages.children.form.on_non_school_days_the_ai_will_plan_a_relaxed_weekend_holida")}
                           </FormDescription>
                           <div className="flex flex-wrap gap-2 pt-2">
-                            {days.map(d => {
-                        const on = selected.includes(d.iso);
-                        return <button key={d.iso} type="button" onClick={() => toggle(d.iso)} className={`px-4 py-2 rounded-full font-bold text-sm border-2 transition-all ${on ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-muted/50 text-muted-foreground border-transparent hover:border-primary/30"}`}>
+                            {days.map((d) => {
+                              const on = selected.includes(d.iso);
+                              return (
+                                <button
+                                  key={d.iso}
+                                  type="button"
+                                  onClick={() => toggle(d.iso)}
+                                  className={cn(
+                                    "px-4 py-2 rounded-full font-bold text-sm border-2 transition-all",
+                                    on
+                                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                      : "bg-muted/50 text-muted-foreground border-transparent hover:border-primary/30",
+                                  )}
+                                >
                                   {d.short}
-                                </button>;
-                      })}
+                                </button>
+                              );
+                            })}
                           </div>
                           <FormMessage />
-                        </FormItem>;
-                }} />
+                        </FormItem>
+                      );
+                    }} />
                   </div>
 
-                  {/* Travel Mode */}
                   <div>
-                    <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.school_travel")}</p>
+                    <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">
+                      {t("pages.children.form.school_travel")}
+                    </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField control={form.control} name="travelMode" render={({
-                    field
-                  }) => {
-                    return <FormItem>
+                      <FormField control={form.control} name="travelMode" render={({ field }) => (
+                        <FormItem>
                           <FormLabel className="font-bold">{t("pages.children.form.travel_mode")}</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value ?? "car"}>
                             <FormControl>
@@ -746,22 +889,23 @@ export default function ChildForm() {
                             </SelectContent>
                           </Select>
                           <FormMessage />
-                        </FormItem>;
-                  }} />
-                      {travelMode === "other" && <FormField control={form.control} name="travelModeOther" render={({
-                    field
-                  }) => {
-                    return <FormItem>
+                        </FormItem>
+                      )} />
+                      {travelMode === "other" && (
+                        <FormField control={form.control} name="travelModeOther" render={({ field }) => (
+                          <FormItem>
                             <FormLabel className="font-bold">{t("pages.children.form.specify_travel_mode")}</FormLabel>
                             <FormControl>
                               <Input placeholder={t("pages.children.form.e_g_bicycle_rickshaw")} className={inputClass} {...field} />
                             </FormControl>
                             <FormMessage />
-                          </FormItem>;
-                  }} />}
+                          </FormItem>
+                        )} />
+                      )}
                     </div>
                   </div>
-                </>}
+                </>
+              )}
 
               {/* ── INFANT CARE (infants only) ── */}
               {hasDob && isInfant && <div className="space-y-5">
@@ -1001,7 +1145,7 @@ export default function ChildForm() {
 
               {/* ── ACTION BUTTONS ── */}
               <div className="flex gap-3 pt-2">
-                <Button type="submit" disabled={isSaving || !watchDob || !isInfant && watchIsSchoolGoing === undefined} className="flex-1 rounded-full h-12 font-bold">
+                <Button type="submit" disabled={isSaving || !watchDob || (!isInfant && !watchEducationStage)} className="flex-1 rounded-full h-12 font-bold">
                   {isSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("pages.children.form.saving")}</> : <><Save className="h-4 w-4 mr-2" />{isEditing ? "Update Profile" : "Add Child"}</>}
                 </Button>
 
@@ -1029,7 +1173,11 @@ export default function ChildForm() {
               </div>
 
               {!watchDob && <p className="text-center text-xs text-muted-foreground">{t("pages.children.form.enter_your_child_s_date_of_birth_to_continue")}</p>}
-              {!isInfant && watchDob && watchIsSchoolGoing === undefined && <p className="text-center text-xs text-primary font-medium">{t("pages.children.form.please_answer_the_school_question_above")}</p>}
+              {!isInfant && watchDob && !watchEducationStage && (
+                <p className="text-center text-xs text-primary font-medium">
+                  {t("pages.children.form.please_select_education_stage")}
+                </p>
+              )}
 
             </form>
           </Form>

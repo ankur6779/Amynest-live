@@ -320,6 +320,10 @@ export interface Child {
   id: number;
   name: string;
   dob?: string | null;
+  /** Onboarding age-band id (under_1, y1 … y8_plus) when exact DOB was skipped. */
+  selectedAgeBand?: string | null;
+  /** True when dob was approximated from the selected age band. */
+  dobIsEstimated?: boolean | null;
   age: number;
   ageMonths: number;
   isSchoolGoing?: boolean | null;
@@ -356,6 +360,8 @@ export interface Child {
 export interface CreateChildBody {
   name: string;
   dob?: string | null;
+  selectedAgeBand?: string | null;
+  dobIsEstimated?: boolean | null;
   age: number;
   ageMonths?: number;
   isSchoolGoing?: boolean | null;
@@ -398,6 +404,8 @@ export const UpdateChildBodyParentGoalsItem = {
 export interface UpdateChildBody {
   name?: string;
   dob?: string | null;
+  selectedAgeBand?: string | null;
+  dobIsEstimated?: boolean | null;
   age?: number;
   ageMonths?: number;
   isSchoolGoing?: boolean | null;

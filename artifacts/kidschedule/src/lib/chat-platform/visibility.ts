@@ -42,15 +42,29 @@ function findPromptElement(
   return prompts.length > 0 ? prompts[prompts.length - 1]! : null;
 }
 
-function readAnswerElement(inputBarEl: HTMLElement | null): HTMLElement | null {
-  if (!inputBarEl) return null;
+function readAnswerElement(
+  inputBarEl: HTMLElement | null,
+  messagesEl?: HTMLElement | null,
+): HTMLElement | null {
   const active = document.activeElement;
-  if (active instanceof HTMLElement && inputBarEl.contains(active)) return active;
-  return (
-    inputBarEl.querySelector<HTMLElement>(
-      "input, textarea, select, button, [role='combobox'], [contenteditable='true']",
-    ) ?? inputBarEl
-  );
+  if (active instanceof HTMLElement) {
+    if (inputBarEl?.contains(active)) return active;
+    if (messagesEl?.contains(active)) return active;
+    if (active.closest('[data-chat-answer="true"]')) return active;
+  }
+  if (inputBarEl) {
+    return (
+      inputBarEl.querySelector<HTMLElement>(
+        "input, textarea, select, button, [role='combobox'], [contenteditable='true']",
+      ) ?? inputBarEl
+    );
+  }
+  if (messagesEl) {
+    return messagesEl.querySelector<HTMLElement>(
+      '[data-chat-answer="true"] input, [data-chat-answer="true"] textarea, [data-chat-answer="true"] button',
+    );
+  }
+  return null;
 }
 
 function elementFitsAboveKeyboard(
@@ -69,7 +83,7 @@ export function measureChatVisibility(ctx: ChatVisibilityContext): ChatVisibilit
   const visibleTop = messagesRect.top;
 
   const promptEl = findPromptElement(ctx.messagesEl, ctx.promptId);
-  const answerEl = readAnswerElement(ctx.inputBarEl);
+  const answerEl = readAnswerElement(ctx.inputBarEl, ctx.messagesEl);
 
   let promptVisible = true;
   let promptOverlapsKeyboard = false;

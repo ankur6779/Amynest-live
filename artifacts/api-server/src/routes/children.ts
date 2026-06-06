@@ -27,6 +27,7 @@ import { tryMarkReferralValidForUser } from "../services/referralService";
 import { ONBOARDING_CHILD_SAVE_FALLBACK } from "../lib/api-fallbacks.js";
 import { safeRoute } from "../lib/safe-route-handler.js";
 import { isSchemaMismatchError } from "../lib/db-safe.js";
+import { enrichChildEducationFields } from "../lib/child-education-enrich.js";
 import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
@@ -130,11 +131,25 @@ router.post(
         }
       }
 
+      let enriched;
+      try {
+        enriched = enrichChildEducationFields(
+          {
+            ...parsed.data,
+            foodPrefInherited: parsed.data.foodPrefInherited ?? undefined,
+            foodPrefCustomized: parsed.data.foodPrefCustomized ?? undefined,
+            ...inheritedPrefs,
+          },
+          { strict: !isOnboarding },
+        );
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Invalid education stage";
+        res.status(400).json({ error: message });
+        return;
+      }
+
       const insertData = {
-        ...parsed.data,
-        foodPrefInherited: parsed.data.foodPrefInherited ?? undefined,
-        foodPrefCustomized: parsed.data.foodPrefCustomized ?? undefined,
-        ...inheritedPrefs,
+        ...enriched,
         userId,
       };
       const child = await insertChildRow(insertData);
@@ -193,11 +208,35 @@ router.patch("/children/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const updateData = {
-    ...parsed.data,
-    foodPrefInherited: parsed.data.foodPrefInherited ?? undefined,
-    foodPrefCustomized: parsed.data.foodPrefCustomized ?? undefined,
-  };
+  const existing = await getChildByIdForUser(params.data.id, userId);
+  if (!existing) {
+    res.status(404).json({ error: "Child not found" });
+    return;
+  }
+
+  let updateData;
+  try {
+    updateData = enrichChildEducationFields({
+      age: parsed.data.age ?? existing.age,
+      ageMonths: parsed.data.ageMonths ?? existing.ageMonths,
+      educationStage: parsed.data.educationStage ?? existing.educationStage,
+      learningEnvironment: parsed.data.learningEnvironment ?? existing.learningEnvironment,
+      scheduleKnown: parsed.data.scheduleKnown ?? existing.scheduleKnown,
+      isSchoolGoing: parsed.data.isSchoolGoing ?? existing.isSchoolGoing,
+      childClass: parsed.data.childClass ?? existing.childClass,
+      schoolStartTime: parsed.data.schoolStartTime ?? existing.schoolStartTime,
+      schoolEndTime: parsed.data.schoolEndTime ?? existing.schoolEndTime,
+      schoolDays: parsed.data.schoolDays ?? (existing.schoolDays as number[] | null),
+      ...parsed.data,
+      foodPrefInherited: parsed.data.foodPrefInherited ?? undefined,
+      foodPrefCustomized: parsed.data.foodPrefCustomized ?? undefined,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Invalid education stage";
+    res.status(400).json({ error: message });
+    return;
+  }
+
   const child = await updateChildRow(params.data.id, userId, updateData);
   if (!child) {
     res.status(404).json({ error: "Child not found" });

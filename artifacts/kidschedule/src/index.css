@@ -308,7 +308,47 @@
   animation: chat-pop 0.3s ease-out;
 }
 
+@keyframes onboarding-milestone-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes onboarding-preview-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.onboarding-milestone-enter {
+  animation: onboarding-milestone-in 0.22s ease-out;
+  will-change: transform, opacity;
+}
+.onboarding-preview-enter,
+.onboarding-live-profile-enter {
+  animation: onboarding-preview-in 0.2s ease-out;
+  will-change: transform, opacity;
+}
+.onboarding-summary-item {
+  animation: onboarding-preview-in 0.2s ease-out backwards;
+  will-change: transform, opacity;
+}
+.onboarding-chip-tap {
+  touch-action: manipulation;
+  transition: transform 0.18s ease-out, opacity 0.18s ease-out;
+  will-change: transform;
+}
+.onboarding-chip-tap:active {
+  transform: scale(0.97);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .onboarding-milestone-enter,
+  .onboarding-preview-enter,
+  .onboarding-live-profile-enter,
+  .onboarding-summary-item,
+  .onboarding-chip-tap {
+    animation: none;
+  }
+  .onboarding-chip-tap:active {
+    transform: none;
+  }
   .chat-amy-bubble,
   .chat-user-bubble {
     animation: none;

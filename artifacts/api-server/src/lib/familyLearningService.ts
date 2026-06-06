@@ -21,6 +21,7 @@ import { db, childrenTable, familyLearningGraphsTable } from "@workspace/db";
 import { getOrCreateLearningProfile } from "./learningProfileRepository.js";
 import { getOrCreatePersonalityProfile } from "./personalityProfileRepository.js";
 import { createPostgresPredictionStore } from "./predictionSnapshotRepository.js";
+import { resolveChildDobForApi } from "./resolve-child-dob.js";
 
 function createPostgresFamilyGraphStore() {
   return {
@@ -84,7 +85,9 @@ export async function loadFamilySnapshotsForUser(
       id: childrenTable.id,
       name: childrenTable.name,
       dob: childrenTable.dob,
+      age: childrenTable.age,
       ageMonths: childrenTable.ageMonths,
+      selectedAgeBand: childrenTable.selectedAgeBand,
     })
     .from(childrenTable)
     .where(eq(childrenTable.userId, userId));
@@ -94,10 +97,9 @@ export async function loadFamilySnapshotsForUser(
 
   for (const row of rows) {
     const childId = String(row.id);
-    if (!row.dob) continue;
     const profile = await getOrCreateLearningProfile(childId, userId);
     const personality = await getOrCreatePersonalityProfile(childId, userId);
-    const age = computeAge({ childDOB: row.dob, countryCode });
+    const age = computeAge({ childDOB: resolveChildDobForApi(row), countryCode });
     const latest = await predictionStore.getLatest(childId);
     let prediction = runPrediction({ childId, profile, personality });
     if (latest) {

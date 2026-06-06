@@ -61,7 +61,53 @@ export async function ensureChildrenTable(): Promise<void> {
     ALTER TABLE children ADD COLUMN IF NOT EXISTS food_pref_customized BOOLEAN NOT NULL DEFAULT false
   `);
   await db.execute(sql`
+    ALTER TABLE children ADD COLUMN IF NOT EXISTS education_stage TEXT
+  `);
+  await db.execute(sql`
+    ALTER TABLE children ADD COLUMN IF NOT EXISTS learning_environment TEXT
+  `);
+  await db.execute(sql`
+    ALTER TABLE children ADD COLUMN IF NOT EXISTS schedule_known BOOLEAN
+  `);
+  await db.execute(sql`
+    ALTER TABLE children ADD COLUMN IF NOT EXISTS selected_age_band TEXT
+  `);
+  await db.execute(sql`
+    ALTER TABLE children ADD COLUMN IF NOT EXISTS dob_is_estimated BOOLEAN
+  `);
+  await db.execute(sql`
     UPDATE children SET fixed_activities = '[]'::jsonb WHERE fixed_activities IS NULL
+  `);
+  /* Legacy rows: backfill education_stage from school flags + age when missing. */
+  await db.execute(sql`
+    UPDATE children
+    SET education_stage = 'school'
+    WHERE education_stage IS NULL
+      AND is_school_going = true
+      AND (age >= 6 OR (age = 5 AND age_months >= 60))
+  `);
+  await db.execute(sql`
+    UPDATE children
+    SET education_stage = 'at_home'
+    WHERE education_stage IS NULL
+  `);
+  await db.execute(sql`
+    UPDATE children
+    SET dob_is_estimated = true
+    WHERE dob_is_estimated IS NULL
+      AND (dob IS NULL OR trim(dob) = '')
+  `);
+  await db.execute(sql`
+    UPDATE children
+    SET dob_is_estimated = false
+    WHERE dob_is_estimated IS NULL
+      AND dob IS NOT NULL
+      AND trim(dob) <> ''
+  `);
+  await db.execute(sql`
+    UPDATE children
+    SET schedule_known = false
+    WHERE schedule_known IS NULL
   `);
 
   logger.info({ evt: "db.ensure", table: "children" }, "Ensured children table + columns");

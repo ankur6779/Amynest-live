@@ -4,9 +4,11 @@ import { useLocation } from "wouter";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { ChatThread, type InteractionEvent } from "@/components/chat-thread";
 import { OnboardingCountryModal } from "@/components/onboarding-country-modal";
+import { OnboardingMilestoneProgress } from "@/components/onboarding-milestone-progress";
+import { OnboardingLiveProfile } from "@/components/onboarding-live-profile";
+import { useOnboardingOnline } from "@/hooks/use-onboarding-online";
 import {
   buildOnboardingThreadMessages,
-  ONBOARDING_COMPOSER_STEPS,
   onboardingComposerPlaceholder,
 } from "@/hooks/use-onboarding-thread";
 import {
@@ -53,6 +55,29 @@ import {
   clearOnboardingRunId,
 } from "@/lib/onboarding-telemetry";
 import {
+  buildOnboardingAnalyticsContext,
+  trackOnboardingFunnel,
+} from "@/lib/onboarding-analytics";
+import {
+  getAmyAcknowledgement,
+  prependAcknowledgement,
+} from "@/lib/onboarding-acknowledgements";
+import {
+  buildCompletionSummary,
+  buildWakeAmyMessages,
+  getSkipReassuranceKey,
+  getTrustFooterMessage,
+  getValuePreviewKey,
+  ROUTINE_GENERATING_KEYS,
+  SAVING_PROGRESS_KEYS,
+} from "@/lib/onboarding-premium";
+import {
+  ageBandToApproxDob,
+  formatAgeBandReply,
+  getAgeMilestoneDelightKey,
+  nextStepAfterBirthday,
+} from "@/lib/onboarding-keyboard-free";
+import {
   applySetupStatusUpdate,
   isSetupComplete,
   persistOnboardingCache,
@@ -75,6 +100,17 @@ import {
   type LocationSource,
   type ResolvedLocation,
 } from "@/lib/onboarding-location";
+import {
+  deriveSchoolFieldsFromStage,
+  getTotalMonths,
+  isInfantAge,
+  nextStepAfterClassGrade,
+  nextStepAfterEducationStage,
+  nextStepAfterInfantSleep,
+  nextStepAfterScheduleKnown,
+  type EducationStageCode,
+  ageBandIdFromYearsMonths,
+} from "@workspace/education-stages";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type AgeGroup = "infant" | "toddler" | "kid";
@@ -85,17 +121,23 @@ interface ChildData {
   age: number;
   ageMonths: number;
   ageGroup: AgeGroup;
+  educationStage: EducationStageCode;
+  learningEnvironment: string;
+  scheduleKnown: boolean;
   isSchoolGoing: boolean;
   childClass: string;
   schoolStartTime: string;
   schoolEndTime: string;
   schoolDays: number[] | null; // ISO weekdays (1=Mon..7=Sun); null when not school-going
   wakeUpTime: string;
+  wakeTimeLabel?: string;
   sleepTime: string;
   foodType: string;
   dietNote: string;
   feedingType?: string;   // infants only
   sleepPattern?: string;  // infants only
+  dobIsEstimated?: boolean;
+  selectedAgeBand?: string;
 }
 
 interface ParentData {
@@ -135,34 +177,27 @@ const ONBOARDING_CHAT_STEPS = new Set<Step>([
   "country-confirm",
   "child-name",
   "child-dob",
+  "child-birthday",
   "infant-feeding",
   "infant-sleep",
-  "child-school",
-  "child-class",
+  "child-education-stage",
+  "child-class-grade",
+  "child-schedule-known",
   "child-school-start",
   "child-school-end",
   "child-school-days",
   "child-wake",
   "child-sleep",
-  "add-more",
   "parent-name",
   "parent-role",
   "parent-work",
   "parent-region",
   "parent-diet",
   "parent-goals",
-  "parent-mobile",
   "parent-allergies",
 ]);
 
-const ONBOARDING_TEXT_INPUT_STEPS = new Set<Step>([
-  "country-confirm",
-  "child-name",
-  "child-dob",
-  "parent-name",
-  "parent-mobile",
-  "parent-allergies",
-]);
+const ONBOARDING_TEXT_INPUT_STEPS = new Set<Step>([]);
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 function dobToAge(dob: string): { years: number; months: number } {
@@ -180,6 +215,15 @@ function to24h(display: string): string {
   const [h, m] = time.split(":").map(Number);
   const hour = period === "PM" && h !== 12 ? h + 12 : period === "AM" && h === 12 ? 0 : h;
   return `${String(hour).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function from24hDisplay(stored: string): string {
+  const [hStr, mStr] = stored.split(":");
+  let h = Number.parseInt(hStr, 10);
+  const period = h >= 12 ? "PM" : "AM";
+  if (h > 12) h -= 12;
+  if (h === 0) h = 12;
+  return `${h}:${mStr} ${period}`;
 }
 
 const WAKE_OPTS = ["5:30 AM", "6:00 AM", "6:30 AM", "7:00 AM", "7:30 AM", "8:00 AM", "8:30 AM"];
@@ -443,10 +487,40 @@ const SLEEP_PATTERN_OPTS = [
   "💤 Short naps, frequent waking",
 ];
 
-function getAgeGroup(years: number): AgeGroup {
-  if (years < 2) return "infant";
-  if (years < 4) return "toddler";
+function getAgeGroup(years: number, months = 0): AgeGroup {
+  const total = getTotalMonths(years, months);
+  if (total < 24) return "infant";
+  if (total < 48) return "toddler";
   return "kid";
+}
+
+function applyEducationStageToChild(
+  child: Partial<ChildData>,
+  stage: EducationStageCode,
+  countryCode: string,
+): Partial<ChildData> {
+  const derived = deriveSchoolFieldsFromStage({
+    educationStage: stage,
+    childClass: child.childClass,
+    scheduleKnown: child.scheduleKnown,
+    schoolStartTime: child.schoolStartTime,
+    schoolEndTime: child.schoolEndTime,
+    schoolDays: child.schoolDays,
+    country: countryCode,
+    years: child.age ?? 0,
+    months: child.ageMonths ?? 0,
+  });
+  return {
+    ...child,
+    educationStage: derived.educationStage,
+    learningEnvironment: derived.learningEnvironment,
+    scheduleKnown: derived.scheduleKnown,
+    isSchoolGoing: derived.isSchoolGoing,
+    childClass: derived.childClass ?? "",
+    schoolStartTime: derived.schoolStartTime,
+    schoolEndTime: derived.schoolEndTime,
+    schoolDays: derived.schoolDays,
+  };
 }
 
 const GRAD = "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))";
@@ -458,42 +532,6 @@ const BAR_BG = "rgba(15,10,46,0.92)";
 // ─── Sub-components ──────────────────────────────────────────────────────────
 function AmyAvatar({ size = 8 }: { size?: number }) {
   return <AmyMascotLogo size={size * 4} />;
-}
-
-function ProgressBar({ step }: { step: Step }) {
-  const { t } = useTranslation();
-  // Infant path is short; standard path is longer. Both share the parent section.
-  const infantOrder: Step[] = [
-    "country-confirm",
-    "child-name", "child-dob", "infant-feeding", "infant-sleep",
-    "add-more", "parent-name", "parent-role", "parent-work",
-    "parent-region", "parent-diet", "parent-goals",
-    "parent-mobile", "parent-allergies",
-  ];
-  const standardOrder: Step[] = [
-    "country-confirm",
-    "child-name", "child-dob", "child-school", "child-class",
-    "child-school-start", "child-school-end", "child-school-days",
-    "child-wake", "child-sleep",
-    "add-more", "parent-name", "parent-role", "parent-work",
-    "parent-region", "parent-diet", "parent-goals",
-    "parent-mobile", "parent-allergies",
-  ];
-  const isInfant = (infantOrder as string[]).includes(step) && !(standardOrder.slice(2) as string[]).includes(step);
-  const order = isInfant ? infantOrder : standardOrder;
-  const idx = order.indexOf(step as any);
-  const pct = idx < 0 ? 100 : Math.round(((idx + 1) / order.length) * 100);
-  return (
-    <div className="px-4 pt-4 pb-2">
-      <div className="flex justify-between text-xs mb-1.5">
-        <span className="font-semibold" style={{ color: "#fff" }}>{t("screens.onboarding.amy_setup")}</span>
-        <span style={{ color: "rgba(255,255,255,0.6)" }}>{Math.min(pct, 100)}%</span>
-      </div>
-      <div className="w-full h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.12)" }}>
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(pct, 100)}%`, background: GRAD }} />
-      </div>
-    </div>
-  );
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
@@ -537,7 +575,18 @@ export default function OnboardingPage() {
   const [isFinishing, setIsFinishing] = useState(false);
   const onboardingRunIdRef = useRef<string | null>(null);
   const completionOnceRef = useRef(false);
+  const pendingSaveAllergiesRef = useRef<string | undefined>(undefined);
   const onboardingJustFinishedRef = useRef(false);
+  const prevStepRef = useRef<Step>(restoredSession?.step ?? "intro");
+  const [savingProgressIdx, setSavingProgressIdx] = useState(0);
+  const [donePhase, setDonePhase] = useState<"summary" | "generating">("summary");
+  const [generatingIdx, setGeneratingIdx] = useState(0);
+  const onboardingStartedRef = useRef(false);
+  const childNameGreetedRef = useRef(
+    Boolean((restoredData?.curr as { name?: string } | undefined)?.name?.trim()),
+  );
+  const welcomeBackShownRef = useRef(false);
+  const isOnline = useOnboardingOnline();
 
   const [step, setStep] = useState<Step>(() => restoredSession?.step ?? "intro");
   const [notifLoading, setNotifLoading] = useState(false);
@@ -556,8 +605,9 @@ export default function OnboardingPage() {
   const [selectedDietType, setSelectedDietType] = useState("");
   const [selectedParentGoals, setSelectedParentGoals] = useState<ParentGoalCode[]>([]);
   const [allergyChips, setAllergyChips] = useState<string[]>([]);
-  const [allergyOtherOpen, setAllergyOtherOpen] = useState(false);
   const [allergyOtherText, setAllergyOtherText] = useState("");
+  const [parentNameEditing, setParentNameEditing] = useState(false);
+  const [schoolScheduleCustom, setSchoolScheduleCustom] = useState(false);
   const [countryCode, setCountryCode] = useState(() => restoredData?.countryCode ?? "");
   const [countryName, setCountryName] = useState(() => restoredData?.countryName ?? "");
   const [locationState, setLocationState] = useState<LocationDetectionState>({ status: "idle" });
@@ -577,6 +627,10 @@ export default function OnboardingPage() {
   const [parent, setParent] = useState<Partial<ParentData>>(
     () => (restoredData?.parent as Partial<ParentData> | undefined) ?? {},
   );
+
+  function funnelContext() {
+    return buildOnboardingAnalyticsContext({ country: countryCode, curr, children });
+  }
 
   // Facebook / Google / Apple often supply displayName — seed parent name for profile save.
   useEffect(() => {
@@ -618,16 +672,40 @@ export default function OnboardingPage() {
   }
 
   // User replies, adds to history, then advances
-  function userReplies(text: string, nextStep: Step, nextAmyMsg?: string, delay = 900) {
+  function userReplies(
+    text: string,
+    nextStep: Step,
+    nextAmyMsg?: string | string[],
+    delay = 900,
+  ) {
+    trackOnboardingFunnel({
+      event: "step_completed",
+      step,
+      ...funnelContext(),
+    });
     setMessages((m) => [...m, chatMessage("user", text)]);
     setSelected("");
     setTextInput("");
-    if (nextAmyMsg) {
-      scheduleOnboardingTimeout(() => amySays(nextAmyMsg, delay), 300);
-    }
+    const amyMsgs = nextAmyMsg
+      ? (Array.isArray(nextAmyMsg) ? nextAmyMsg : [nextAmyMsg])
+      : [];
+    amyMsgs.forEach((msg, i) => {
+      scheduleOnboardingTimeout(() => amySays(msg, delay), 300 + i * 450);
+    });
+    const advanceDelay = amyMsgs.length > 0 ? delay + 700 + (amyMsgs.length - 1) * 450 : 400;
     scheduleOnboardingTimeout(() => {
       setStep(nextStep);
-    }, nextAmyMsg ? delay + 700 : 400);
+      persistOnboardingSessionSnapshot(nextStep);
+    }, advanceDelay);
+  }
+
+  function trackStepSkipped(skippedStep: Step, reason: string) {
+    trackOnboardingFunnel({
+      event: "step_skipped",
+      step: skippedStep,
+      ...funnelContext(),
+      extra: { reason },
+    });
   }
 
   function formatAllergySummary(chips: string[], otherText: string): string {
@@ -660,8 +738,14 @@ export default function OnboardingPage() {
 
   function finishAllergies(none: boolean) {
     if (isFinishing) return;
+    if (none) trackStepSkipped("parent-allergies", "no_allergies");
     setIsFinishing(true);
     onboardingRunIdRef.current = createOnboardingRunId();
+    trackOnboardingFunnel({
+      event: "finish_clicked",
+      step: "parent-allergies",
+      ...funnelContext(),
+    });
     void logOnboardingPipelineSnapshot("finish-button-click", authFetch, {
       userId: user?.id ?? readFirebaseUserId(),
       onboardingRunId: onboardingRunIdRef.current,
@@ -680,6 +764,65 @@ export default function OnboardingPage() {
     if (typeof window === "undefined") return;
     (window as Window & { __amynestOnboardingStep?: string }).__amynestOnboardingStep = step;
   }, [step]);
+
+  useEffect(() => {
+    if (step === prevStepRef.current) return;
+    if (step === "intro" && !onboardingStartedRef.current) {
+      onboardingStartedRef.current = true;
+      trackOnboardingFunnel({
+        event: "onboarding_started",
+        step: "intro",
+        ...funnelContext(),
+      });
+    }
+    trackOnboardingFunnel({
+      event: "step_viewed",
+      step,
+      ...funnelContext(),
+      extra: { previousStep: prevStepRef.current },
+    });
+    prevStepRef.current = step;
+  }, [step, countryCode, curr, children]);
+
+  useEffect(() => {
+    if (step !== "saving") {
+      setSavingProgressIdx(0);
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setSavingProgressIdx((i) => (i + 1) % SAVING_PROGRESS_KEYS.length);
+    }, 2200);
+    return () => window.clearInterval(timer);
+  }, [step]);
+
+  useEffect(() => {
+    if (step !== "done" || donePhase !== "generating") {
+      setGeneratingIdx(0);
+      return;
+    }
+    const rotate = window.setInterval(() => {
+      setGeneratingIdx((i) => (i + 1) % ROUTINE_GENERATING_KEYS.length);
+    }, 1200);
+    const finish = window.setTimeout(() => {
+      if (getBrowserNotificationPermission() === "default") {
+        setStep("notifications");
+      } else {
+        void goDashboard();
+      }
+    }, 4800);
+    return () => {
+      window.clearInterval(rotate);
+      window.clearTimeout(finish);
+    };
+  }, [step, donePhase]);
+
+  useEffect(() => {
+    if (!isOnline || pendingSaveAllergiesRef.current === undefined) return;
+    if (step !== "parent-allergies" || isFinishing) return;
+    const allergies = pendingSaveAllergiesRef.current;
+    pendingSaveAllergiesRef.current = undefined;
+    void saveEverything(allergies);
+  }, [isOnline, step, isFinishing]);
 
   // If the server already has a complete profile (e.g. prior partial save), skip onboarding.
   useEffect(() => {
@@ -737,6 +880,31 @@ export default function OnboardingPage() {
     }, 600);
   }, [scheduleOnboardingTimeout, sessionRestored, step, t, user?.firstName]);
 
+  useEffect(() => {
+    if (!sessionRestored || welcomeBackShownRef.current) return;
+    welcomeBackShownRef.current = true;
+    const name =
+      (curr.name as string | undefined)?.trim()
+      || (children[0]?.name as string | undefined)?.trim();
+    scheduleOnboardingTimeout(() => {
+      setMessages((m) => {
+        const welcomeKey = name ? "welcome_back_named" : "welcome_back";
+        if (m.some((msg) => msg.text.includes(welcomeKey) || msg.text.includes("Welcome back"))) {
+          return m;
+        }
+        return [
+          ...m,
+          chatMessage(
+            "amy",
+            name
+              ? t("screens.onboarding.welcome_back_named", { name })
+              : t("screens.onboarding.welcome_back"),
+          ),
+        ];
+      });
+    }, 400);
+  }, [sessionRestored, curr.name, children, scheduleOnboardingTimeout, t]);
+
   // Dismiss a lingering keyboard when moving to chip/button-only steps (Android WebView).
   useEffect(() => {
     if (ONBOARDING_TEXT_INPUT_STEPS.has(step)) return;
@@ -749,6 +917,14 @@ export default function OnboardingPage() {
   // ─── Save & finish ──────────────────────────────────────────────────────────
   async function saveEverything(allergiesOverride?: string) {
     if (completionOnceRef.current) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      pendingSaveAllergiesRef.current = allergiesOverride;
+      setFinishError(null);
+      amySays(t("screens.onboarding.offline_save_hint"), 0);
+      persistOnboardingSessionSnapshot("parent-allergies");
+      return;
+    }
+    pendingSaveAllergiesRef.current = undefined;
     completionOnceRef.current = true;
     setIsFinishing(true);
     if (!onboardingRunIdRef.current) {
@@ -779,23 +955,28 @@ export default function OnboardingPage() {
     if (typeof parent.latitude === "number") parentBody.latitude = parent.latitude;
     if (typeof parent.longitude === "number") parentBody.longitude = parent.longitude;
     if (parent.locationSource) parentBody.locationSource = parent.locationSource;
-    if (parent.mobileNumber) parentBody.mobileNumber = parent.mobileNumber;
     if (allergies) parentBody.allergies = allergies;
 
     const childPayloads = children.map((child) => {
       const goalsParts = ["balanced-routine"];
       if (dietNote) goalsParts.unshift(dietNote);
+      const enriched = applyEducationStageToChild(child, child.educationStage, countryCode);
       return {
         isOnboarding: true,
         name: child.name,
         dob: child.dob || "",
+        selectedAgeBand: child.selectedAgeBand ?? ageBandIdFromYearsMonths(child.age || 0, child.ageMonths || 0),
+        dobIsEstimated: child.dobIsEstimated ?? true,
         age: child.age || 0,
         ageMonths: child.ageMonths || 0,
-        isSchoolGoing: child.isSchoolGoing ?? false,
-        childClass: child.childClass || "",
-        schoolStartTime: child.schoolStartTime || "09:00",
-        schoolEndTime: child.schoolEndTime || "15:00",
-        schoolDays: child.isSchoolGoing ? (child.schoolDays ?? [1, 2, 3, 4, 5]) : null,
+        educationStage: enriched.educationStage,
+        learningEnvironment: enriched.learningEnvironment,
+        scheduleKnown: enriched.scheduleKnown ?? false,
+        isSchoolGoing: enriched.isSchoolGoing ?? false,
+        childClass: enriched.childClass || "",
+        schoolStartTime: enriched.schoolStartTime || "09:00",
+        schoolEndTime: enriched.schoolEndTime || "15:00",
+        schoolDays: enriched.schoolDays,
         wakeUpTime: child.wakeUpTime || "07:00",
         sleepTime: child.sleepTime || "21:00",
         foodType,
@@ -875,8 +1056,25 @@ export default function OnboardingPage() {
         isSignedIn,
       });
 
+      trackOnboardingFunnel({
+        event: "finish_success",
+        step: "saving",
+        ...buildOnboardingAnalyticsContext({ country: countryCode, children }),
+      });
+      trackOnboardingFunnel({
+        event: "onboarding_completed",
+        step: "done",
+        ...buildOnboardingAnalyticsContext({ country: countryCode, children }),
+      });
+      setDonePhase("summary");
       scheduleOnboardingTimeout(() => setStep("done"), 600);
     } catch (e) {
+      trackOnboardingFunnel({
+        event: "finish_failed",
+        step: "saving",
+        ...funnelContext(),
+        extra: { message: e instanceof Error ? e.message : "unknown" },
+      });
       const message =
         e instanceof OnboardingFinishError
           ? e.message
@@ -1116,6 +1314,12 @@ export default function OnboardingPage() {
         regionDrillDown,
         countryCodeForRegion: countryCode,
         finishError,
+        childAgeYears: curr.age ?? 0,
+        childAgeMonths: curr.ageMonths ?? 0,
+        suggestedParentName: parent.name || readOAuthParentNameHint(),
+        parentNameEditing,
+        schoolScheduleCustom,
+        birthdayInitialIso: curr.dob,
         handlers: {
           onAllowLocation: () => void handleAllowLocation(),
           onPickCountryManually: () => {
@@ -1148,81 +1352,225 @@ export default function OnboardingPage() {
       regionDrillDown,
       finishError,
       detectedCoords,
+      curr.age,
+      curr.ageMonths,
+      parent.name,
+      parentNameEditing,
+      schoolScheduleCustom,
+      curr.dob,
     ],
   );
+
+  function advanceAfterChildAge(
+    name: string,
+    years: number,
+    months: number,
+    bandId?: string,
+  ) {
+    const dob = ageBandToApproxDob(years, months);
+    const ageGroup = getAgeGroup(years, months);
+    const selectedAgeBand = bandId ?? ageBandIdFromYearsMonths(years, months);
+    setCurr((c) => ({
+      ...c,
+      dob,
+      age: years,
+      ageMonths: months,
+      ageGroup,
+      dobIsEstimated: true,
+      selectedAgeBand,
+    }));
+    const reply = formatAgeBandReply(years, months, t);
+    const ack = getAmyAcknowledgement("age", { childName: name, t });
+    const delightKey = getAgeMilestoneDelightKey(years);
+    const amyMsgs: string[] = [];
+    if (ack) amyMsgs.push(ack);
+    if (delightKey) amyMsgs.push(t(`screens.onboarding.${delightKey}`));
+    amyMsgs.push(t("screens.onboarding.birthday_prompt", { name }));
+    userReplies(reply, "child-birthday", amyMsgs);
+  }
+
+  function advanceAfterChildName(name: string) {
+    setCurr((c) => ({ ...c, name }));
+    const amyMsgs: string[] = [];
+    if (!childNameGreetedRef.current) {
+      childNameGreetedRef.current = true;
+      amyMsgs.push(t("screens.onboarding.child_name_greeting", { name }));
+    }
+    amyMsgs.push(t("screens.onboarding.child_age_question", { name }));
+    userReplies(name, "child-dob", amyMsgs);
+  }
+
+  function advanceAfterBirthday(name: string, years: number, months: number, exactDob: boolean) {
+    const totalMonths = getTotalMonths(years, months);
+    const next = nextStepAfterBirthday(totalMonths);
+    if (isInfantAge(totalMonths)) {
+      userReplies(
+        exactDob ? t("screens.onboarding.birthday_saved") : t("screens.onboarding.birthday_skipped_reply"),
+        next,
+        t("screens.onboarding.infant_dob_reply", { name }),
+        900,
+      );
+    } else {
+      userReplies(
+        exactDob ? t("screens.onboarding.birthday_saved") : t("screens.onboarding.birthday_skipped_reply"),
+        next,
+        t("screens.onboarding.education_stage_question", { name }),
+        900,
+      );
+    }
+  }
+
+  function advanceToParentAfterFirstChild(userReply: string, ack?: string | null) {
+    const oauthName = parent.name?.trim() || readOAuthParentNameHint();
+    const parentAmy = oauthName
+      ? t("screens.onboarding.parent_name_confirm_question", { name: oauthName })
+      : t("screens.onboarding.parent_intro");
+    userReplies(userReply, "parent-name", prependAcknowledgement(parentAmy, ack));
+    setParentNameEditing(false);
+  }
+
+  function advanceAfterParentName(name: string) {
+    const childName = children[0]?.name || curr.name || t("screens.onboarding.default_child_name");
+    setParentNameEditing(false);
+    userReplies(name, "parent-role", [
+      t("screens.onboarding.parent_name_reply", { name }),
+      t("screens.onboarding.parent_role_question", { childName }),
+    ]);
+  }
 
   function handleOnboardingSend() {
     const text = textInput.trim();
     if (!text || isFinishing) return;
-    switch (step) {
-      case "child-name": {
-        const name = text;
-        setCurr((c) => ({ ...c, name }));
-        userReplies(name, "child-dob", t("screens.onboarding.child_name_reply", { name }));
-        break;
-      }
-      case "parent-name": {
-        const name = text;
-        setParent((p) => ({ ...p, name }));
-        userReplies(name, "parent-role", t("screens.onboarding.parent_name_reply", { name }));
-        break;
-      }
-      case "parent-mobile": {
-        setParent((p) => ({ ...p, mobileNumber: text }));
-        userReplies(text, "parent-allergies", t("screens.onboarding.allergies_question"));
-        break;
-      }
-      case "parent-allergies": {
-        if (allergyOtherOpen) {
-          setAllergyOtherText(text);
-          finishAllergies(false);
-        }
-        break;
-      }
-      default:
-        break;
+    if (step === "child-name") {
+      advanceAfterChildName(text);
+      return;
+    }
+    if (step === "parent-name" && parentNameEditing) {
+      setParent((p) => ({ ...p, name: text }));
+      advanceAfterParentName(text);
     }
   }
 
   function handleOnboardingInteraction(event: InteractionEvent) {
     if (isFinishing) return;
 
-    if (event.type === "date" && event.dateValue && step === "child-dob") {
-      const { years, months } = dobToAge(event.dateValue);
-      const ageGroup = getAgeGroup(years);
-      setCurr((c) => ({ ...c, dob: event.dateValue!, age: years, ageMonths: months, ageGroup }));
-      const name = curr.name || t("screens.onboarding.default_child_name");
-      if (ageGroup === "infant") {
-        userReplies(event.dateValue, "infant-feeding", t("screens.onboarding.infant_dob_reply", { name }), 900);
-      } else {
-        userReplies(event.dateValue, "child-school", t("screens.onboarding.school_question", { name }), 900);
+    if (
+      (event.type === "name-input" || event.type === "name-suggestions") &&
+      event.nameValue?.trim()
+    ) {
+      const name = event.nameValue.trim();
+      if (step === "child-name") {
+        advanceAfterChildName(name);
+      } else if (step === "parent-name") {
+        setParent((p) => ({ ...p, name }));
+        advanceAfterParentName(name);
       }
       return;
     }
 
-    if (event.type === "time-quick" && event.timeValue) {
+    if (event.type === "name-confirm") {
+      if (event.actionId === "edit") {
+        setParentNameEditing(true);
+        return;
+      }
+      if (event.actionId === "confirm" && event.nameValue?.trim()) {
+        const name = event.nameValue.trim();
+        setParent((p) => ({ ...p, name }));
+        advanceAfterParentName(name);
+      }
+      return;
+    }
+
+    if (event.type === "age-select" && step === "child-dob" && event.ageYears != null) {
+      const name = curr.name || t("screens.onboarding.default_child_name");
+      advanceAfterChildAge(name, event.ageYears, event.ageMonths ?? 0, event.optionId);
+      return;
+    }
+
+    if (event.type === "birthday-collect" && step === "child-birthday") {
+      const name = curr.name || t("screens.onboarding.default_child_name");
+      const years = curr.age ?? 0;
+      const months = curr.ageMonths ?? 0;
+      if (event.actionId === "skip") {
+        trackStepSkipped("child-birthday", "birthday_later");
+        setCurr((c) => ({ ...c, dobIsEstimated: true }));
+        advanceAfterBirthday(name, years, months, false);
+        return;
+      }
+      if (event.actionId === "confirm" && event.dateValue) {
+        const { years: y, months: m } = dobToAge(event.dateValue);
+        setCurr((c) => ({
+          ...c,
+          dob: event.dateValue!,
+          age: y,
+          ageMonths: m,
+          ageGroup: getAgeGroup(y, m),
+          dobIsEstimated: false,
+          selectedAgeBand: ageBandIdFromYearsMonths(y, m),
+        }));
+        advanceAfterBirthday(name, y, m, true);
+      }
+      return;
+    }
+
+    if (event.type === "school-schedule" && step === "child-school-start") {
+      const name = curr.name || t("screens.onboarding.default_child_name");
+      if (event.actionId === "custom") {
+        setSchoolScheduleCustom(true);
+        amySays(t("screens.onboarding.school_start_question", { name }), 400);
+        return;
+      }
+      if (event.schoolStart && event.schoolEnd) {
+        setSchoolScheduleCustom(false);
+        setCurr((c) => ({
+          ...c,
+          schoolStartTime: event.schoolStart!,
+          schoolEndTime: event.schoolEnd!,
+          schoolDays: event.schoolDays ?? [1, 2, 3, 4, 5],
+        }));
+        userReplies(
+          event.optionLabel ?? t("screens.onboarding.school_preset_applied"),
+          "child-wake",
+          buildWakeAmyMessages({
+            childName: name,
+            ageYears: curr.age ?? 0,
+            ageMonths: curr.ageMonths ?? 0,
+            educationStage: curr.educationStage,
+            scheduleKnown: curr.scheduleKnown,
+            childCount: 1,
+            t,
+          }),
+        );
+      }
+      return;
+    }
+
+    if ((event.type === "time-quick" || event.type === "time-range") && event.timeValue) {
       const v = event.timeValue;
       const name = curr.name || t("screens.onboarding.default_child_name");
       if (step === "child-school-start") {
         setCurr((c) => ({ ...c, schoolStartTime: to24h(v) }));
-        userReplies(v, "child-school-end", t("screens.onboarding.school_end_question"));
+        userReplies(v, "child-school-end", t("screens.onboarding.school_end_question", { name }));
       } else if (step === "child-school-end") {
         setCurr((c) => ({ ...c, schoolEndTime: to24h(v), schoolDays: c.schoolDays ?? [1, 2, 3, 4, 5] }));
         userReplies(v, "child-school-days", t("screens.onboarding.school_days_question", { name }));
       } else if (step === "child-wake") {
-        setCurr((c) => ({ ...c, wakeUpTime: to24h(v) }));
-        userReplies(v, "child-sleep", t("screens.onboarding.sleep_question", { name }));
+        const wakeLabel = event.optionLabel ?? v;
+        setCurr((c) => ({ ...c, wakeUpTime: to24h(v), wakeTimeLabel: wakeLabel }));
+        userReplies(wakeLabel, "child-sleep", t("screens.onboarding.sleep_question", { name }));
       } else if (step === "child-sleep") {
+        const stage = (curr.educationStage as EducationStageCode) || "at_home";
         const finalChild = {
-          ...curr,
+          ...applyEducationStageToChild(curr, stage, countryCode),
           sleepTime: to24h(v),
-          ageGroup: curr.ageGroup ?? getAgeGroup(curr.age ?? 3),
+          ageGroup: curr.ageGroup ?? getAgeGroup(curr.age ?? 3, curr.ageMonths ?? 0),
+          foodType: "veg",
+          dietNote: "",
         } as ChildData;
         setChildren((prev) => [...prev, finalChild]);
         setCurr({});
-        userReplies(v, "add-more", children.length + 1 === 1
-          ? t("screens.onboarding.child_added_first_school")
-          : t("screens.onboarding.child_added_more"));
+        const ack = getAmyAcknowledgement("sleep", { childName: name, t });
+        advanceToParentAfterFirstChild(v, ack);
       }
       return;
     }
@@ -1238,57 +1586,100 @@ export default function OnboardingPage() {
           break;
         }
         case "infant-sleep": {
+          setCurr((c) => ({ ...c, sleepPattern: value }));
           const name = curr.name || t("screens.onboarding.default_baby_name");
-          const finalChild: ChildData = {
-            name: curr.name || "",
-            dob: curr.dob || "",
-            age: curr.age || 0,
-            ageMonths: curr.ageMonths || 0,
-            ageGroup: curr.ageGroup || "infant",
-            isSchoolGoing: false,
-            childClass: "",
-            schoolStartTime: "09:00",
-            schoolEndTime: "15:00",
-            schoolDays: null,
-            wakeUpTime: "07:00",
-            sleepTime: "19:30",
-            foodType: "veg",
-            dietNote: "",
-            feedingType: curr.feedingType,
-            sleepPattern: value,
-          };
-          setChildren((prev) => [...prev, finalChild]);
-          setCurr({});
-          userReplies(label, "add-more", children.length + 1 === 1
-            ? t("screens.onboarding.child_added_first", { name })
-            : t("screens.onboarding.child_added_more"));
+          userReplies(label, nextStepAfterInfantSleep(), t("screens.onboarding.education_stage_question", { name }));
           break;
         }
-        case "child-school": {
-          const isSchool = value === "yes";
-          setCurr((c) => ({ ...c, isSchoolGoing: isSchool }));
+        case "child-education-stage": {
+          const stage = value as EducationStageCode;
+          const totalMonths = getTotalMonths(curr.age ?? 0, curr.ageMonths ?? 0);
+          setCurr((c) => applyEducationStageToChild(c, stage, countryCode));
           const name = curr.name || t("screens.onboarding.default_child_name");
-          if (isSchool) {
-            userReplies(t("screens.onboarding.yes_school"), "child-class", t("screens.onboarding.class_question", { name }));
+          const next = nextStepAfterEducationStage(stage, totalMonths);
+          const ack = getAmyAcknowledgement("education_stage", {
+            childName: name,
+            educationStage: stage,
+            t,
+          });
+          if (next === "child-class-grade") {
+            userReplies(
+              label,
+              next,
+              prependAcknowledgement(t("screens.onboarding.class_question", { name }), ack),
+            );
+          } else if (next === "child-wake") {
+            userReplies(
+              label,
+              next,
+              prependAcknowledgement(
+                buildWakeAmyMessages({
+                  childName: name,
+                  ageYears: curr.age ?? 0,
+                  ageMonths: curr.ageMonths ?? 0,
+                  educationStage: stage,
+                  scheduleKnown: curr.scheduleKnown,
+                  childCount: 1,
+                  t,
+                }),
+                ack,
+              ),
+            );
           } else {
-            setCurr((c) => ({ ...c, childClass: "", schoolStartTime: "09:00", schoolEndTime: "15:00", schoolDays: null }));
-            userReplies(t("screens.onboarding.no_school"), "child-wake", t("screens.onboarding.wake_question", { name }));
+            userReplies(
+              label,
+              next,
+              prependAcknowledgement(t("screens.onboarding.wake_question", { name }), ack),
+            );
           }
           break;
         }
-        case "child-class": {
-          setCurr((c) => ({ ...c, childClass: value }));
+        case "child-class-grade": {
+          setCurr((c) => {
+            const updated = { ...c, childClass: value };
+            return applyEducationStageToChild(
+              updated,
+              (c.educationStage as EducationStageCode) || "school",
+              countryCode,
+            );
+          });
           const name = curr.name || t("screens.onboarding.default_child_name");
-          userReplies(label, "child-school-start", t("screens.onboarding.school_start_question", { name }));
+          userReplies(label, nextStepAfterClassGrade(), t("screens.onboarding.schedule_known_question", { name }));
           break;
         }
-        case "add-more":
-          if (value === "yes") {
-            userReplies(t("screens.onboarding.yes_add_another"), "child-name", t("screens.onboarding.next_child_name"));
+        case "child-schedule-known": {
+          const known = value === "yes";
+          if (!known) trackStepSkipped("child-schedule-known", "schedule_later");
+          const stage = (curr.educationStage as EducationStageCode) || "school";
+          const totalMonths = getTotalMonths(curr.age ?? 0, curr.ageMonths ?? 0);
+          setCurr((c) => applyEducationStageToChild({ ...c, scheduleKnown: known }, stage, countryCode));
+          const name = curr.name || t("screens.onboarding.default_child_name");
+          const next = nextStepAfterScheduleKnown(known, stage, totalMonths);
+          if (!known) trackStepSkipped("child-schedule-known", "schedule_later");
+          if (next === "child-school-start") {
+            setSchoolScheduleCustom(false);
+            userReplies(
+              known ? t("screens.onboarding.schedule_yes") : t("screens.onboarding.schedule_later"),
+              next,
+              t("screens.onboarding.school_schedule_question", { name }),
+            );
           } else {
-            userReplies(t("screens.onboarding.no_continue"), "parent-name", t("screens.onboarding.parent_intro"));
+            userReplies(
+              known ? t("screens.onboarding.schedule_yes") : t("screens.onboarding.schedule_later"),
+              next,
+              buildWakeAmyMessages({
+                childName: name,
+                ageYears: curr.age ?? 0,
+                ageMonths: curr.ageMonths ?? 0,
+                educationStage: stage,
+                scheduleKnown: known,
+                childCount: 1,
+                t,
+              }),
+            );
           }
           break;
+        }
         case "parent-role": {
           setParent((p) => ({ ...p, role: value }));
           userReplies(label, "parent-work", t("screens.onboarding.work_question"));
@@ -1328,7 +1719,19 @@ export default function OnboardingPage() {
             ? t("screens.onboarding.no_school_days")
             : days.map((d) => labels[d - 1]).join(",");
         const name = curr.name || t("screens.onboarding.default_child_name");
-        userReplies(summary, "child-wake", t("screens.onboarding.wake_morning_question", { name }));
+        userReplies(
+          summary,
+          "child-wake",
+          buildWakeAmyMessages({
+            childName: name,
+            ageYears: curr.age ?? 0,
+            ageMonths: curr.ageMonths ?? 0,
+            educationStage: curr.educationStage,
+            scheduleKnown: curr.scheduleKnown,
+            childCount: 1,
+            t,
+          }),
+        );
       } else if (step === "parent-region") {
         if (ids.includes("indian") && !regionDrillDown && !["IN", "PK", "BD", "LK", "NP"].includes(countryCode)) {
           setRegionDrillDown(true);
@@ -1344,15 +1747,20 @@ export default function OnboardingPage() {
         const summary = ids.length
           ? ids.map((g) => t(`intelligence.goals.options.${g}`)).join(", ")
           : t("screens.onboarding.goals_skip_summary");
-        userReplies(summary, "parent-mobile", t("screens.onboarding.mobile_question"));
+        const goalLabel = ids[0] ? t(`intelligence.goals.options.${ids[0]}`) : undefined;
+        const ack = getAmyAcknowledgement("goals", { goalLabel, t });
+        userReplies(
+          summary,
+          "parent-allergies",
+          prependAcknowledgement(t("screens.onboarding.allergies_question"), ack),
+        );
       } else if (step === "parent-allergies") {
         if (ids.length === 0) {
           finishAllergies(true);
         } else {
           setAllergyChips(ids.filter((id) => id !== "other"));
-          if (ids.includes("other")) {
-            setAllergyOtherOpen(true);
-            return;
+          if (ids.includes("other") && event.customText) {
+            setAllergyOtherText(event.customText);
           }
           finishAllergies(false);
         }
@@ -1441,7 +1849,23 @@ export default function OnboardingPage() {
   }
 
   if (step === "saving" || step === "done") {
-    const childName = children[0]?.name || t("screens.onboarding.default_child_name");
+    const primaryChild = children[0];
+    const childName = primaryChild?.name || t("screens.onboarding.default_child_name");
+    const wakeDisplay =
+      primaryChild?.wakeTimeLabel
+      ?? (primaryChild?.wakeUpTime ? from24hDisplay(primaryChild.wakeUpTime) : undefined);
+    const completionItems = primaryChild
+      ? buildCompletionSummary({
+          childName: primaryChild.name,
+          ageYears: primaryChild.age ?? 0,
+          ageMonths: primaryChild.ageMonths ?? 0,
+          educationStage: primaryChild.educationStage,
+          wakeTime: wakeDisplay,
+          parentGoals: selectedParentGoals,
+          t,
+        })
+      : [];
+    const savingProgressKey = SAVING_PROGRESS_KEYS[savingProgressIdx];
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-5" style={{ background: BG }}>
         {step === "saving" ? (
@@ -1449,17 +1873,15 @@ export default function OnboardingPage() {
             <div className="amy-setup-glow-ring">
               <span className="amy-setup-glow-ring__label">Amy</span>
             </div>
-            <div className="max-w-sm text-center">
+            <div className="max-w-sm text-center" aria-live="polite">
               <p className="text-xl font-bold leading-snug" style={{ color: "#fff" }}>
-                {isFinishing
-                  ? t("screens.onboarding.finalizing_setup")
-                  : t("screens.onboarding.saving_title")}
+                {t("screens.onboarding.saving_title", { name: childName })}
               </p>
               <p className="mt-2 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>
-                {t("screens.onboarding.saving_subtitle")}
+                {t(`screens.onboarding.${savingProgressKey}`, { name: childName })}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2" aria-hidden>
               {[0, 1, 2].map((i) => (
                 <span
                   key={i}
@@ -1472,49 +1894,64 @@ export default function OnboardingPage() {
               ))}
             </div>
           </>
+        ) : donePhase === "generating" ? (
+          <div className="flex w-full max-w-sm flex-col items-center gap-5" aria-live="polite">
+            <div className="amy-setup-glow-ring">
+              <span className="amy-setup-glow-ring__label">Amy</span>
+            </div>
+            <div className="text-center">
+              <h2 className="text-xl font-bold" style={{ color: "#fff" }}>
+                {generatingIdx === ROUTINE_GENERATING_KEYS.length - 1
+                  ? t("screens.onboarding.dashboard_handoff")
+                  : t("screens.onboarding.generating_routine_title", { name: childName })}
+              </h2>
+              {generatingIdx < ROUTINE_GENERATING_KEYS.length - 1 ? (
+                <p className="mt-2 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>
+                  {t(`screens.onboarding.${ROUTINE_GENERATING_KEYS[generatingIdx]}`, { name: childName })}
+                </p>
+              ) : null}
+            </div>
+          </div>
         ) : (
           <div className="flex w-full max-w-sm flex-col items-center gap-5" style={{ animation: "splash-in 0.5s ease-out" }}>
             <div className="text-6xl">🎉</div>
             <div className="text-center">
-              <h2 className="text-2xl font-bold" style={{ color: "#fff" }}>{t("screens.onboarding.done_title")}</h2>
-              <p className="mt-1" style={{ color: "rgba(255,255,255,0.8)" }}>
-                {t("screens.onboarding.done_subtitle", { name: childName })}
-              </p>
+              <h2 className="text-2xl font-bold" style={{ color: "#fff" }}>
+                {t("screens.onboarding.done_learned_heading", { name: childName })}
+              </h2>
             </div>
-            <div
-              className="w-full rounded-3xl p-5 shadow-xl"
-              style={{ background: GLASS_BG, backdropFilter: "blur(12px)", border: GLASS_BORDER }}
-            >
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 text-2xl">✏️</span>
-                <div>
-                  <p className="text-sm font-bold" style={{ color: "#fff" }}>{t("screens.onboarding.edit_anytime_title")}</p>
-                  <p className="mt-1 text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
-                    {t("screens.onboarding.edit_anytime_body_before")}
-                    <strong>{t("screens.onboarding.edit_profile")}</strong>
-                    {t("screens.onboarding.edit_anytime_or")}
-                    <strong>{t("screens.onboarding.edit_children")}</strong>
-                    {t("screens.onboarding.edit_anytime_body_after")}
-                  </p>
-                </div>
+            {completionItems.length > 0 ? (
+              <div
+                className="w-full rounded-3xl p-5 shadow-xl"
+                style={{ background: GLASS_BG, backdropFilter: "blur(12px)", border: GLASS_BORDER }}
+              >
+                <ul className="flex flex-col gap-2.5" role="list">
+                  {completionItems.map((item, idx) => (
+                    <li
+                      key={item.text}
+                      className="onboarding-summary-item flex items-start gap-2.5 text-sm"
+                      style={{ color: "rgba(255,255,255,0.88)", animationDelay: `${idx * 80}ms` }}
+                    >
+                      <span aria-hidden className="font-bold" style={{ color: "rgba(167,139,250,0.95)" }}>✓</span>
+                      <span>{item.text}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
+            ) : null}
+            <p className="w-full text-center text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>
+              {t("screens.onboarding.completion_confidence")}
+            </p>
             <button
               onClick={() => {
                 if (navigatingToDashboard) return;
-                if (getBrowserNotificationPermission() === "default") {
-                  setStep("notifications");
-                } else {
-                  void goDashboard();
-                }
+                setDonePhase("generating");
               }}
               disabled={navigatingToDashboard}
               className="w-full rounded-2xl py-4 text-base font-bold text-primary-foreground active:scale-95 transition-all disabled:opacity-60"
               style={{ background: GRAD, boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
             >
-              {navigatingToDashboard
-                ? t("screens.onboarding.saving_title")
-                : t("screens.onboarding.go_dashboard")}
+              {t("screens.onboarding.create_guidance_cta", { name: childName })}
             </button>
           </div>
         )}
@@ -1522,13 +1959,25 @@ export default function OnboardingPage() {
     );
   }
 
-  const composerEnabled =
-    (ONBOARDING_COMPOSER_STEPS.has(step) || (step === "parent-allergies" && allergyOtherOpen)) &&
-    !isFinishing &&
-    !typing;
+  const composerNeedsKeyboard =
+    step === "child-name" || (step === "parent-name" && parentNameEditing);
+  const composerEnabled = composerNeedsKeyboard && !isFinishing && !typing;
+
+  const liveProfileGoal = selectedParentGoals[0]
+    ? t(`intelligence.goals.options.${selectedParentGoals[0]}`)
+    : undefined;
 
   return (
     <div className="relative h-full w-full">
+      {!isOnline ? (
+        <div
+          className="absolute inset-x-0 top-0 z-30 px-4 py-2 text-center text-xs font-medium"
+          style={{ background: "rgba(0,0,0,0.75)", color: "#fde68a" }}
+          role="status"
+        >
+          {t("screens.onboarding.offline_banner")}
+        </div>
+      ) : null}
       {isFinishing ? (
         <div
           className="absolute inset-0 z-20 flex items-end justify-center pb-8 pointer-events-auto"
@@ -1538,7 +1987,9 @@ export default function OnboardingPage() {
             className="px-4 py-2 rounded-full text-sm font-semibold"
             style={{ background: "rgba(0,0,0,0.55)", color: "#fff" }}
           >
-            {t("screens.onboarding.finalizing_setup")}
+            {t("screens.onboarding.saving_title", {
+              name: children[0]?.name || curr.name || t("screens.onboarding.default_child_name"),
+            })}
           </p>
         </div>
       ) : null}
@@ -1552,6 +2003,7 @@ export default function OnboardingPage() {
         onSend={handleOnboardingSend}
         onInteraction={handleOnboardingInteraction}
         composerDisabled={!composerEnabled}
+        composerHidden={!composerNeedsKeyboard}
         composerPlaceholder={onboardingComposerPlaceholder(step, t)}
         scrollDeps={[messages, typing, step, textInput, locationState.status]}
         style={{ background: BG }}
@@ -1564,26 +2016,25 @@ export default function OnboardingPage() {
                 {finishError}
               </p>
             ) : null}
-            {step === "parent-allergies" && allergyOtherOpen && composerEnabled ? (
-              <p className="mb-2 text-center text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-                {t("screens.onboarding.allergies_other_placeholder")}
+            {step === "child-name" ? (
+              <p className="mb-2 text-center text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
+                {t("screens.onboarding.child_name_composer_hint")}
               </p>
             ) : null}
-            {step === "parent-mobile" && composerEnabled ? (
-              <button
-                type="button"
-                className="mb-2 w-full text-center text-xs"
-                style={{ color: "rgba(255,255,255,0.55)" }}
-                onClick={() =>
-                  userReplies(
-                    t("screens.onboarding.skip_for_now"),
-                    "parent-allergies",
-                    t("screens.onboarding.allergies_skip"),
-                  )
-                }
-              >
-                {t("screens.onboarding.skip_later")}
-              </button>
+            {getSkipReassuranceKey(step) ? (
+              <p className="mb-2 text-center text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
+                {t(`screens.onboarding.${getSkipReassuranceKey(step)}`)}
+              </p>
+            ) : null}
+            {getValuePreviewKey(step) ? (
+              <p className="mb-2 text-center text-[11px] leading-relaxed italic" style={{ color: "rgba(167,139,250,0.55)" }}>
+                {t(`screens.onboarding.${getValuePreviewKey(step)}`)}
+              </p>
+            ) : null}
+            {getTrustFooterMessage(step, curr.name ?? children[0]?.name, t) ? (
+              <p className="mb-2 text-center text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
+                {getTrustFooterMessage(step, curr.name ?? children[0]?.name, t)}
+              </p>
             ) : null}
             <p className="mt-3 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(168,85,247,0.35)" }}>
               {t("patent_pending.powered_by")}
@@ -1592,7 +2043,7 @@ export default function OnboardingPage() {
         )}
         header={(
           <div
-            className="z-10"
+            className="sticky top-0 z-10"
             style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderBottom: "1px solid rgba(168,85,247,0.15)" }}
           >
             <div className="flex items-center justify-between px-4 pt-3 pb-1">
@@ -1607,7 +2058,16 @@ export default function OnboardingPage() {
                 {t("screens.onboarding.setup_required")}
               </span>
             </div>
-            <ProgressBar step={step} />
+            <OnboardingMilestoneProgress step={step} />
+            <OnboardingLiveProfile
+              childName={curr.name ?? children[0]?.name}
+              ageYears={curr.age ?? children[0]?.age}
+              ageMonths={curr.ageMonths ?? children[0]?.ageMonths}
+              dobIsEstimated={curr.dobIsEstimated ?? children[0]?.dobIsEstimated}
+              educationStage={curr.educationStage ?? children[0]?.educationStage}
+              wakeLabel={curr.wakeTimeLabel ?? (children[0]?.wakeTimeLabel || (children[0]?.wakeUpTime ? from24hDisplay(children[0].wakeUpTime) : undefined))}
+              parentGoal={liveProfileGoal}
+            />
           </div>
         )}
       />

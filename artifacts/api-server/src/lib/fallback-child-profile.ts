@@ -1,4 +1,5 @@
 import type { Child } from "@workspace/db";
+import { deriveSchoolFieldsFromStage, resolveEducationStage } from "@workspace/education-stages";
 
 /** Safe defaults when child row is missing optional fields (never throws). */
 export function fallbackChildProfile(userId: string, partial?: Partial<Child>): Child {
@@ -9,6 +10,9 @@ export function fallbackChildProfile(userId: string, partial?: Partial<Child>): 
     dob: partial?.dob ?? null,
     age: partial?.age ?? 5,
     ageMonths: partial?.ageMonths ?? 0,
+    educationStage: partial?.educationStage ?? null,
+    learningEnvironment: partial?.learningEnvironment ?? null,
+    scheduleKnown: partial?.scheduleKnown ?? null,
     isSchoolGoing: partial?.isSchoolGoing ?? true,
     childClass: partial?.childClass ?? null,
     schoolStartTime: partial?.schoolStartTime ?? "08:00",
@@ -39,5 +43,33 @@ export function fallbackChildProfile(userId: string, partial?: Partial<Child>): 
 
 /** Merge DB row with defaults so downstream code never reads undefined times. */
 export function normalizeChildForRoutine(child: Child): Child {
-  return fallbackChildProfile(child.userId ?? "", child);
+  const base = fallbackChildProfile(child.userId ?? "", child);
+  const stage = resolveEducationStage(
+    base.educationStage,
+    base.isSchoolGoing,
+    base.childClass,
+    base.age,
+    base.ageMonths ?? 0,
+  );
+  const derived = deriveSchoolFieldsFromStage({
+    educationStage: stage,
+    childClass: base.childClass,
+    scheduleKnown: base.scheduleKnown,
+    schoolStartTime: base.schoolStartTime,
+    schoolEndTime: base.schoolEndTime,
+    schoolDays: base.schoolDays as number[] | null,
+    years: base.age,
+    months: base.ageMonths ?? 0,
+  });
+  return {
+    ...base,
+    educationStage: derived.educationStage,
+    learningEnvironment: derived.learningEnvironment,
+    scheduleKnown: derived.scheduleKnown,
+    isSchoolGoing: derived.isSchoolGoing,
+    childClass: derived.childClass,
+    schoolStartTime: derived.schoolStartTime,
+    schoolEndTime: derived.schoolEndTime,
+    schoolDays: derived.schoolDays,
+  };
 }

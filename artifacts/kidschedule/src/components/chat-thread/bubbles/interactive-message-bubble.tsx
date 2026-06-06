@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { OnboardingBirthdayPicker } from "@/components/onboarding-birthday-picker";
 import { AmyMessageBubble } from "./amy-message-bubble";
 import { Button } from "@/components/ui/button";
 import { CHAT_PROMPT_ATTR } from "@/lib/chat-platform";
@@ -7,7 +8,7 @@ import { Check, Loader2, X } from "lucide-react";
 import type { InteractionEvent, InteractionSpec, InteractionState, ThreadTheme } from "../types";
 
 const ONBOARDING_CHIP =
-  "px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all";
+  "onboarding-chip-tap px-4 py-2.5 rounded-2xl text-sm font-semibold border";
 const ONBOARDING_CHIP_STYLE = {
   background: "rgba(255,255,255,0.10)",
   color: "#fff",
@@ -36,7 +37,12 @@ function InteractionBody({
 }) {
   const resolved = state.status === "resolved";
   const [multiDraft, setMultiDraft] = useState<string[]>([]);
+  const [otherTextDraft, setOtherTextDraft] = useState("");
   const [dateDraft, setDateDraft] = useState("");
+  const [nameDraft, setNameDraft] = useState(
+    interaction.type === "name-input" ? interaction.initialValue ?? "" : "",
+  );
+  const [showBirthdayPicker, setShowBirthdayPicker] = useState(false);
   const [showCustomTime, setShowCustomTime] = useState(false);
   const [customTime, setCustomTime] = useState(interaction.type === "time-quick" ? interaction.defaultValue ?? "07:00" : "07:00");
 
@@ -55,11 +61,17 @@ function InteractionBody({
   if (interaction.type === "single-select") {
     const layout = interaction.layout ?? "row";
     const containerClass =
-      layout === "grid"
-        ? "grid grid-cols-2 gap-2"
-        : layout === "stack"
-          ? "flex flex-col gap-2"
-          : "flex flex-wrap gap-2";
+      layout === "card"
+        ? "grid grid-cols-2 gap-3"
+        : layout === "grid"
+          ? "grid grid-cols-2 gap-2"
+          : layout === "stack"
+            ? "flex flex-col gap-2"
+            : "flex flex-wrap gap-2";
+    const optionClass =
+      layout === "card"
+        ? cn(chipClass(false), "min-h-[52px] py-4 text-base")
+        : chipClass(false);
     return (
       <div className={containerClass}>
         {interaction.options.map((opt) => (
@@ -67,7 +79,7 @@ function InteractionBody({
             key={opt.id}
             type="button"
             disabled={resolved}
-            className={chipClass(false)}
+            className={optionClass}
             style={chipStyle}
             onClick={() =>
               onInteraction({
@@ -126,18 +138,35 @@ function InteractionBody({
             );
           })}
         </div>
+        {!resolved && interaction.allowOtherInput && selected.includes(interaction.otherOptionId ?? "other") ? (
+          <input
+            type="text"
+            value={otherTextDraft}
+            onChange={(e) => setOtherTextDraft(e.target.value)}
+            placeholder={interaction.otherPlaceholder ?? "Add details…"}
+            autoFocus={false}
+            data-chat-answer="true"
+            className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-base"
+          />
+        ) : null}
         {!resolved ? (
           <div className="flex flex-col gap-2">
             <button
               type="button"
               className={chipClass(false)}
               style={theme === "onboarding" ? { background: "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))", color: "#fff" } : undefined}
-              disabled={selected.length < (interaction.min ?? 0)}
+              disabled={
+                selected.length < (interaction.min ?? 0) ||
+                (interaction.allowOtherInput &&
+                  selected.includes(interaction.otherOptionId ?? "other") &&
+                  !otherTextDraft.trim())
+              }
               onClick={() =>
                 onInteraction({
                   messageId,
                   type: interaction.type,
                   selectedIds: selected,
+                  customText: otherTextDraft.trim() || undefined,
                 })
               }
             >
@@ -156,6 +185,320 @@ function InteractionBody({
             ) : null}
           </div>
         ) : null}
+      </div>
+    );
+  }
+
+  if (interaction.type === "name-suggestions") {
+    return (
+      <div className="flex flex-wrap gap-2" data-chat-answer="true">
+        {interaction.suggestions.map((suggestion) => (
+          <button
+            key={suggestion}
+            type="button"
+            disabled={resolved}
+            className={cn(chipClass(false), "min-h-[44px] px-5 text-base")}
+            style={chipStyle}
+            onClick={() =>
+              onInteraction({
+                messageId,
+                type: interaction.type,
+                nameValue: suggestion,
+              })
+            }
+          >
+            {suggestion}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  if (interaction.type === "birthday-collect") {
+    if (showBirthdayPicker && !resolved) {
+      return (
+        <OnboardingBirthdayPicker
+          max={interaction.maxDate}
+          initialIso={interaction.initialIso}
+          confirmLabel={interaction.confirmLabel}
+          theme={theme}
+          onConfirm={(iso) =>
+            onInteraction({
+              messageId,
+              type: interaction.type,
+              actionId: "confirm",
+              dateValue: iso,
+            })
+          }
+        />
+      );
+    }
+    return (
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          disabled={resolved}
+          className={cn(chipClass(false), "min-h-[52px] py-4 text-base font-semibold")}
+          style={
+            theme === "onboarding"
+              ? { background: "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))", color: "#fff" }
+              : undefined
+          }
+          onClick={() => setShowBirthdayPicker(true)}
+        >
+          {interaction.selectLabel}
+        </button>
+        <button
+          type="button"
+          disabled={resolved}
+          className={cn(chipClass(false), "min-h-[48px] py-3 text-sm")}
+          style={chipStyle}
+          onClick={() =>
+            onInteraction({ messageId, type: interaction.type, actionId: "skip" })
+          }
+        >
+          {interaction.skipLabel}
+        </button>
+      </div>
+    );
+  }
+
+  if (interaction.type === "name-input") {
+    return (
+      <div className="space-y-3" data-chat-answer="true">
+        {interaction.suggestions && interaction.suggestions.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {interaction.suggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                disabled={resolved}
+                className={chipClass(nameDraft === suggestion)}
+                style={
+                  theme === "onboarding"
+                    ? {
+                        background:
+                          nameDraft === suggestion
+                            ? "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))"
+                            : ONBOARDING_CHIP_STYLE.background,
+                        color: "#fff",
+                        border:
+                          nameDraft === suggestion ? "1px solid transparent" : ONBOARDING_CHIP_STYLE.border,
+                      }
+                    : undefined
+                }
+                onClick={() => setNameDraft(suggestion)}
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        <input
+          type="text"
+          value={nameDraft}
+          disabled={resolved}
+          onChange={(e) => setNameDraft(e.target.value)}
+          placeholder={interaction.placeholder ?? "Name…"}
+          autoFocus={false}
+          className="w-full rounded-2xl border border-border bg-background px-4 py-4 text-lg font-medium"
+        />
+        {!resolved ? (
+          <button
+            type="button"
+            disabled={!nameDraft.trim()}
+            className="w-full rounded-2xl py-4 text-base font-bold text-primary-foreground disabled:opacity-40"
+            style={
+              theme === "onboarding"
+                ? { background: "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))" }
+                : undefined
+            }
+            onClick={() =>
+              onInteraction({
+                messageId,
+                type: interaction.type,
+                nameValue: nameDraft.trim(),
+              })
+            }
+          >
+            {interaction.confirmLabel ?? "Continue"}
+          </button>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (interaction.type === "name-confirm") {
+    return (
+      <div className="space-y-3">
+        <div
+          className="rounded-2xl px-4 py-4 text-center text-xl font-bold"
+          style={theme === "onboarding" ? { background: "rgba(255,255,255,0.10)", color: "#fff" } : undefined}
+        >
+          {interaction.suggestedName}
+        </div>
+        {!resolved ? (
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              className="w-full rounded-2xl py-4 text-base font-bold"
+              style={
+                theme === "onboarding"
+                  ? { background: "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))", color: "#fff" }
+                  : undefined
+              }
+              onClick={() =>
+                onInteraction({ messageId, type: interaction.type, actionId: "confirm", nameValue: interaction.suggestedName })
+              }
+            >
+              {interaction.confirmLabel ?? "✓ Yes, that's correct"}
+            </button>
+            <button
+              type="button"
+              className={chipClass(false)}
+              style={chipStyle}
+              onClick={() =>
+                onInteraction({ messageId, type: interaction.type, actionId: "edit" })
+              }
+            >
+              {interaction.editLabel ?? "✎ Edit name"}
+            </button>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (interaction.type === "age-select") {
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          {interaction.options.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              disabled={resolved}
+              className={cn(chipClass(false), "min-h-[52px] py-4 text-base font-semibold")}
+              style={chipStyle}
+              onClick={() =>
+                onInteraction({
+                  messageId,
+                  type: interaction.type,
+                  optionId: opt.id,
+                  ageYears: opt.years,
+                  ageMonths: opt.months,
+                  optionLabel: opt.label,
+                })
+              }
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (interaction.type === "time-range") {
+    if (showCustomTime && !resolved) {
+      return (
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {(interaction.exactOptions ?? []).map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                className={chipClass(false)}
+                style={chipStyle}
+                onClick={() =>
+                  onInteraction({ messageId, type: interaction.type, timeValue: opt })
+                }
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="text-xs text-muted-foreground" onClick={() => setShowCustomTime(false)}>
+            Back to ranges
+          </button>
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-3">
+        <div className="flex flex-col gap-2">
+          {interaction.ranges.map((range) => (
+            <button
+              key={range.id}
+              type="button"
+              disabled={resolved}
+              className={cn(chipClass(false), "min-h-[48px] py-3 text-sm text-left")}
+              style={chipStyle}
+              onClick={() =>
+                onInteraction({
+                  messageId,
+                  type: interaction.type,
+                  optionId: range.id,
+                  timeValue: range.displayTime,
+                  optionLabel: range.label,
+                })
+              }
+            >
+              {range.label}
+            </button>
+          ))}
+        </div>
+        {interaction.exactLabel ? (
+          <button
+            type="button"
+            disabled={resolved}
+            className={chipClass(false)}
+            style={chipStyle}
+            onClick={() => setShowCustomTime(true)}
+          >
+            {interaction.exactLabel}
+          </button>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (interaction.type === "school-schedule") {
+    return (
+      <div className="flex flex-col gap-2">
+        {interaction.presets.map((preset) => (
+          <button
+            key={preset.id}
+            type="button"
+            disabled={resolved}
+            className={cn(chipClass(false), "min-h-[48px] py-3 text-sm")}
+            style={chipStyle}
+            onClick={() =>
+              onInteraction({
+                messageId,
+                type: interaction.type,
+                optionId: preset.id,
+                optionLabel: preset.label,
+                schoolStart: preset.start,
+                schoolEnd: preset.end,
+                schoolDays: preset.days,
+              })
+            }
+          >
+            {preset.label}
+          </button>
+        ))}
+        <button
+          type="button"
+          disabled={resolved}
+          className={chipClass(false)}
+          style={chipStyle}
+          onClick={() =>
+            onInteraction({ messageId, type: interaction.type, actionId: "custom" })
+          }
+        >
+          {interaction.customLabel ?? "My schedule is different"}
+        </button>
       </div>
     );
   }

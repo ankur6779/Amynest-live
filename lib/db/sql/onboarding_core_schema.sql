@@ -41,7 +41,20 @@ ALTER TABLE children ADD COLUMN IF NOT EXISTS parent_goals JSONB DEFAULT '[]'::j
 ALTER TABLE children ADD COLUMN IF NOT EXISTS energy_profile JSONB;
 ALTER TABLE children ADD COLUMN IF NOT EXISTS food_pref_inherited BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE children ADD COLUMN IF NOT EXISTS food_pref_customized BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE children ADD COLUMN IF NOT EXISTS education_stage TEXT;
+ALTER TABLE children ADD COLUMN IF NOT EXISTS learning_environment TEXT;
+ALTER TABLE children ADD COLUMN IF NOT EXISTS schedule_known BOOLEAN;
+ALTER TABLE children ADD COLUMN IF NOT EXISTS selected_age_band TEXT;
+ALTER TABLE children ADD COLUMN IF NOT EXISTS dob_is_estimated BOOLEAN;
 UPDATE children SET fixed_activities = '[]'::jsonb WHERE fixed_activities IS NULL;
+UPDATE children SET education_stage = 'school'
+  WHERE education_stage IS NULL AND is_school_going = true AND (age >= 6 OR (age = 5 AND age_months >= 60));
+UPDATE children SET education_stage = 'at_home' WHERE education_stage IS NULL;
+UPDATE children SET dob_is_estimated = true
+  WHERE dob_is_estimated IS NULL AND (dob IS NULL OR trim(dob) = '');
+UPDATE children SET dob_is_estimated = false
+  WHERE dob_is_estimated IS NULL AND dob IS NOT NULL AND trim(dob) <> '';
+UPDATE children SET schedule_known = false WHERE schedule_known IS NULL;
 
 -- ── parent_profiles ─────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS parent_profiles (

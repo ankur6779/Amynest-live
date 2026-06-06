@@ -4,9 +4,10 @@ import {
   type ChatMessage,
   type OnboardingStep,
 } from "@/lib/onboarding-chat-types";
+import { trackOnboardingError } from "@/lib/onboarding-analytics";
 
 /** Bump when persisted shape changes — mismatched versions are cleared on restore. */
-export const CURRENT_ONBOARDING_SESSION_VERSION = 2 as const;
+export const CURRENT_ONBOARDING_SESSION_VERSION = 5 as const;
 
 const STORAGE_KEY = "amynest_onboarding_session";
 /** Legacy key — migrated once, then removed. */
@@ -20,23 +21,23 @@ const RESUMABLE_STEPS = new Set<OnboardingStep>([
   "country-confirm",
   "child-name",
   "child-dob",
+  "child-birthday",
   "infant-feeding",
   "infant-sleep",
-  "child-school",
-  "child-class",
+  "child-education-stage",
+  "child-class-grade",
+  "child-schedule-known",
   "child-school-start",
   "child-school-end",
   "child-school-days",
   "child-wake",
   "child-sleep",
-  "add-more",
   "parent-name",
   "parent-role",
   "parent-work",
   "parent-region",
   "parent-diet",
   "parent-goals",
-  "parent-mobile",
   "parent-allergies",
 ]);
 
@@ -82,6 +83,7 @@ function sanitizeMessage(raw: unknown): ChatMessage | null {
 }
 
 function sanitizeStep(raw: unknown): OnboardingStep {
+  if (raw === "add-more") return "parent-name";
   if (typeof raw !== "string" || !RESUMABLE_STEPS.has(raw as OnboardingStep)) {
     return "child-name";
   }
@@ -147,6 +149,10 @@ function migrateLegacyV1(parsed: Record<string, unknown>): OnboardingChatSession
   };
 }
 
+function reportRestoreFailure(reason: string, extra?: Record<string, unknown>): void {
+  trackOnboardingError("onboarding_restore_failed", { reason, ...extra });
+}
+
 export function loadOnboardingChatSession(): OnboardingChatSession | null {
   if (typeof window === "undefined") return null;
   try {
@@ -161,9 +167,26 @@ export function loadOnboardingChatSession(): OnboardingChatSession | null {
       if (isRecord(parsed)) {
         const session = parseV2Session(parsed);
         if (session) return session;
+        if (parsed.version !== CURRENT_ONBOARDING_SESSION_VERSION) {
+          reportRestoreFailure("version_mismatch", {
+            storedVersion: parsed.version,
+            expectedVersion: CURRENT_ONBOARDING_SESSION_VERSION,
+          });
+        } else if (
+          typeof parsed.timestamp === "number" &&
+          Number.isFinite(parsed.timestamp) &&
+          Date.now() - parsed.timestamp > MAX_SESSION_AGE_MS
+        ) {
+          reportRestoreFailure("session_expired", { storedAt: parsed.timestamp });
+        } else {
+          reportRestoreFailure("invalid_session");
+        }
         clearOnboardingChatSession();
         return null;
       }
+      reportRestoreFailure("invalid_session_shape");
+      clearOnboardingChatSession();
+      return null;
     }
 
     const rawLegacy = localStorage.getItem(LEGACY_STORAGE_KEY);
@@ -184,7 +207,10 @@ export function loadOnboardingChatSession(): OnboardingChatSession | null {
     }
 
     return null;
-  } catch {
+  } catch (err) {
+    reportRestoreFailure("parse_error", {
+      message: err instanceof Error ? err.message : "unknown",
+    });
     clearOnboardingChatSession();
     return null;
   }

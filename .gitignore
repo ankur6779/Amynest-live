@@ -52,6 +52,8 @@ Thumbs.db
 .env.*.local
 !.env*.example
 Amynest-backend-dykj.env
+.hetzner-worker.env
+hetzner-overrides.env
 
 # Service account / Firebase client JSON — never commit under attached_assets
 attached_assets/*.json

@@ -15,6 +15,7 @@ export function PersistentComposer({
   onKeyDown,
   footerExtra,
   testId = "chat-thread-composer",
+  variant = "default",
 }: {
   draft: string;
   onDraftChange: (value: string) => void;
@@ -27,6 +28,7 @@ export function PersistentComposer({
   onKeyDown?: (event: React.KeyboardEvent) => void;
   footerExtra?: React.ReactNode;
   testId?: string;
+  variant?: "default" | "onboarding";
 }) {
   if (hidden) {
     return (
@@ -39,7 +41,10 @@ export function PersistentComposer({
   return (
     <div className="mx-auto w-full max-w-3xl px-4" data-testid={testId}>
       {footerExtra}
-      <div className="flex items-end gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm transition-colors focus-within:border-primary">
+      <div
+        className="flex items-end gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm transition-colors focus-within:border-primary"
+        data-chat-answer="true"
+      >
         <Textarea
           ref={textareaRef}
           placeholder={placeholder}
@@ -47,7 +52,11 @@ export function PersistentComposer({
           onChange={(e) => onDraftChange(e.target.value)}
           onKeyDown={onKeyDown}
           disabled={disabled}
-          className="max-h-[120px] min-h-[40px] flex-1 resize-none border-none bg-transparent p-0 text-sm shadow-none focus-visible:ring-0 placeholder:text-muted-foreground disabled:opacity-60"
+          className={
+            variant === "onboarding"
+              ? "max-h-[120px] min-h-[52px] flex-1 resize-none border-none bg-transparent p-0 text-lg font-medium shadow-none focus-visible:ring-0 placeholder:text-muted-foreground disabled:opacity-60"
+              : "max-h-[120px] min-h-[40px] flex-1 resize-none border-none bg-transparent p-0 text-sm shadow-none focus-visible:ring-0 placeholder:text-muted-foreground disabled:opacity-60"
+          }
           rows={1}
           data-testid="chat-thread-input"
         />

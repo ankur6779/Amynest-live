@@ -22,6 +22,7 @@ import { useAuth, useUser } from "@/lib/firebase-auth-hooks";
 import { DashboardAvailabilityBanner } from "@/components/dashboard-availability-banner";
 import { DashboardSyncStatus } from "@/components/dashboard-sync-status";
 import { logDashboardMount } from "@/lib/onboarding-debug";
+import { trackAddSecondChildIntent } from "@/lib/onboarding-analytics";
 import {
   EMPTY_DASHBOARD_SUMMARY,
   fetchBehaviorStatsResilient,
@@ -116,7 +117,13 @@ function computeStreak(routines: Routine[]): number {
   return streak;
 }
 
-type ChildRow = { id: number; name: string; age: number; ageMonths?: number };
+type ChildRow = {
+  id: number;
+  name: string;
+  age: number;
+  ageMonths?: number;
+  dobIsEstimated?: boolean;
+};
 
 function filterRoutinesByChild(routines: Routine[], childId: number | null): Routine[] {
   if (childId == null) return routines;
@@ -508,8 +515,12 @@ function ChildrenChipBar({
   const { t } = useTranslation();
   if (!children || children.length === 0) return null;
   const showAll = children.length > 1;
+  const selectedChild =
+    children.find((c) => c.id === selectedChildId)
+    ?? (children.length === 1 ? children[0] : null);
 
   return (
+    <div className="flex flex-col gap-1.5">
     <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-none">
       {showAll ? (
         <button
@@ -537,14 +548,25 @@ function ChildrenChipBar({
       })}
       <AppLink
         href="/children/new"
-        source="dashboard-add-child"
+        source={children.length === 1 ? "dashboard-add-second-child" : "dashboard-add-child"}
         className="shrink-0 rounded-full border border-dashed border-white/20 px-3 py-1.5 text-xs font-bold text-white/60 hover:border-violet-400/40 hover:text-white/80 transition-colors"
+        onClick={() => {
+          if (children.length === 1) {
+            trackAddSecondChildIntent("dashboard-child-chips", 1);
+          }
+        }}
       >
-        + {t("dashboard.add_child")}
+        + {children.length === 1 ? t("dashboard.add_second_child") : t("dashboard.add_child")}
       </AppLink>
       <AppLink href="/children" source="dashboard-manage-children" className="shrink-0 text-[11px] font-bold text-violet-300 hover:underline ml-auto">
         {t("dashboard.manage")}
       </AppLink>
+    </div>
+    {selectedChild?.dobIsEstimated ? (
+      <p className="text-[11px] font-medium text-white/45 px-0.5">
+        {t("dashboard.birthday_not_added")}
+      </p>
+    ) : null}
     </div>
   );
 }

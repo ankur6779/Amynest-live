@@ -5,6 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Users, Plus, ChevronRight, Clock, Target, Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
+import {
+  childShowsFormalSchoolSchedule,
+  formatEducationStageLabel,
+  resolveChildEducationStage,
+} from "@/lib/education-stage-display";
+import { formatChildAgeWithEstimate } from "@/lib/child-age-display";
 const SHORT_DAYS = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 function summariseSchoolDays(days: number[] | null | undefined): string | null {
   if (!Array.isArray(days)) return "Mon-Fri"; // legacy fallback
@@ -58,22 +64,66 @@ export default function ChildrenList() {
                       <h3 className="font-quicksand text-xl font-bold text-foreground group-hover:text-primary transition-colors">{child.name}</h3>
                       <div className="flex flex-wrap items-center gap-2 mt-2 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1 bg-muted px-2 py-0.5 rounded-md">
-                          <span className="font-medium text-foreground">{child.age}</span> {t("pages.children.index.yrs")}
+                          <span className="font-medium text-foreground">
+                            {formatChildAgeWithEstimate(
+                              child.age,
+                              child.ageMonths ?? 0,
+                              (child as { dobIsEstimated?: boolean }).dobIsEstimated,
+                              t,
+                            )}
+                          </span>
                         </span>
-                        {(child as any).childClass && <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-md text-xs font-medium">
-                            {(child as any).childClass}
-                          </span>}
-                        {(child as any).isSchoolGoing && <span className="flex items-center gap-1">
+                        {(() => {
+                          const stage = resolveChildEducationStage({
+                            educationStage: (child as { educationStage?: string }).educationStage,
+                            isSchoolGoing: (child as { isSchoolGoing?: boolean }).isSchoolGoing,
+                            childClass: child.childClass,
+                            age: child.age,
+                            ageMonths: child.ageMonths,
+                          });
+                          const stageLabel = formatEducationStageLabel(stage, t);
+                          const classLabel =
+                            stage === "school" && child.childClass ? child.childClass : null;
+                          return (
+                            <>
+                              {stageLabel && (
+                                <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-md text-xs font-medium">
+                                  {stageLabel}
+                                  {classLabel ? ` · ${classLabel}` : ""}
+                                </span>
+                              )}
+                            </>
+                          );
+                        })()}
+                        {childShowsFormalSchoolSchedule({
+                          educationStage: (child as { educationStage?: string }).educationStage,
+                          isSchoolGoing: (child as { isSchoolGoing?: boolean }).isSchoolGoing,
+                          childClass: child.childClass,
+                          age: child.age,
+                          ageMonths: child.ageMonths,
+                          scheduleKnown: (child as { scheduleKnown?: boolean }).scheduleKnown,
+                        }) && (
+                          <span className="flex items-center gap-1">
                             <Clock className="h-3.5 w-3.5" />
                             {child.schoolStartTime} - {child.schoolEndTime}
-                          </span>}
-                        {(child as any).isSchoolGoing && (() => {
-                      const summary = summariseSchoolDays((child as any).schoolDays);
-                      return summary ? <span className="flex items-center gap-1 bg-muted text-primary px-2 py-0.5 rounded-md text-xs font-medium">
+                          </span>
+                        )}
+                        {childShowsFormalSchoolSchedule({
+                          educationStage: (child as { educationStage?: string }).educationStage,
+                          age: child.age,
+                          ageMonths: child.ageMonths,
+                          scheduleKnown: (child as { scheduleKnown?: boolean }).scheduleKnown,
+                        }) && (() => {
+                          const summary = summariseSchoolDays(
+                            (child as { schoolDays?: number[] | null }).schoolDays,
+                          );
+                          return summary ? (
+                            <span className="flex items-center gap-1 bg-muted text-primary px-2 py-0.5 rounded-md text-xs font-medium">
                               <Calendar className="h-3 w-3" />
                               {summary}
-                            </span> : null;
-                    })()}
+                            </span>
+                          ) : null;
+                        })()}
                         <span className="text-xs">
                           {(child as any).foodType === "non_veg" ? "🍗 Non-veg" : "🥦 Veg"}
                         </span>

@@ -22,6 +22,7 @@ import {
   handleCooperativeTurn,
 } from "../lib/familyLearningService.js";
 import { fetchGlobalInsightsForUser } from "../lib/globalLearningService.js";
+import { resolveChildDobForApi } from "../lib/resolve-child-dob.js";
 import {
   applyHumanOverride,
   fetchSystemHealth,
@@ -99,7 +100,9 @@ router.get("/content/daily-plan", async (req, res): Promise<void> => {
     .select({
       id: childrenTable.id,
       dob: childrenTable.dob,
+      age: childrenTable.age,
       ageMonths: childrenTable.ageMonths,
+      selectedAgeBand: childrenTable.selectedAgeBand,
     })
     .from(childrenTable)
     .where(eq(childrenTable.id, parsed.data.childId))
@@ -113,11 +116,7 @@ router.get("/content/daily-plan", async (req, res): Promise<void> => {
 
   const countryCode = await resolveCountryCode(userId, parsed.data.countryCode);
   const childId = String(child.id);
-  const childDOB =
-    child.dob ??
-    new Date(
-      Date.now() - (child.ageMonths ?? 0) * 30 * 24 * 60 * 60 * 1000,
-    ).toISOString().slice(0, 10);
+  const childDOB = resolveChildDobForApi(child);
 
   const plan = await fetchDailyPlanForChild({
     childId,
@@ -172,7 +171,9 @@ router.get("/content/age", async (req, res): Promise<void> => {
   const childRows = await db
     .select({
       dob: childrenTable.dob,
+      age: childrenTable.age,
       ageMonths: childrenTable.ageMonths,
+      selectedAgeBand: childrenTable.selectedAgeBand,
     })
     .from(childrenTable)
     .where(eq(childrenTable.id, parsed.data.childId))
@@ -185,11 +186,7 @@ router.get("/content/age", async (req, res): Promise<void> => {
   }
 
   const countryCode = await resolveCountryCode(userId, parsed.data.countryCode);
-  const childDOB =
-    child.dob ??
-    new Date(
-      Date.now() - (child.ageMonths ?? 0) * 30 * 24 * 60 * 60 * 1000,
-    ).toISOString().slice(0, 10);
+  const childDOB = resolveChildDobForApi(child);
 
   const age = computeAge({ childDOB, countryCode });
   res.json({ ok: true, age });
@@ -204,7 +201,9 @@ async function loadChildContext(
     .select({
       id: childrenTable.id,
       dob: childrenTable.dob,
+      age: childrenTable.age,
       ageMonths: childrenTable.ageMonths,
+      selectedAgeBand: childrenTable.selectedAgeBand,
     })
     .from(childrenTable)
     .where(eq(childrenTable.id, childIdNum))
@@ -215,11 +214,7 @@ async function loadChildContext(
 
   const countryCode = await resolveCountryCode(userId, countryOverride);
   const childId = String(child.id);
-  const childDOB =
-    child.dob ??
-    new Date(
-      Date.now() - (child.ageMonths ?? 0) * 30 * 24 * 60 * 60 * 1000,
-    ).toISOString().slice(0, 10);
+  const childDOB = resolveChildDobForApi(child);
 
   return { childId, childDOB, countryCode };
 }
@@ -306,12 +301,17 @@ router.post("/content/session-feedback", async (req, res): Promise<void> => {
   }
 
   const childRows = await db
-    .select({ dob: childrenTable.dob })
+    .select({
+      dob: childrenTable.dob,
+      age: childrenTable.age,
+      ageMonths: childrenTable.ageMonths,
+      selectedAgeBand: childrenTable.selectedAgeBand,
+    })
     .from(childrenTable)
     .where(eq(childrenTable.id, parsed.data.childId))
     .limit(1);
   const child = childRows[0];
-  if (!child?.dob) {
+  if (!child) {
     res.status(404).json({ error: "child_not_found" });
     return;
   }
@@ -320,7 +320,7 @@ router.post("/content/session-feedback", async (req, res): Promise<void> => {
 
   const result = await submitSessionFeedback({
     userId,
-    childDOB: child.dob,
+    childDOB: resolveChildDobForApi(child),
     countryCode,
     feedback: {
       childId: String(parsed.data.childId),
@@ -493,12 +493,17 @@ router.post("/content/tutor/turn", async (req, res): Promise<void> => {
   }
 
   const childRows = await db
-    .select({ dob: childrenTable.dob })
+    .select({
+      dob: childrenTable.dob,
+      age: childrenTable.age,
+      ageMonths: childrenTable.ageMonths,
+      selectedAgeBand: childrenTable.selectedAgeBand,
+    })
     .from(childrenTable)
     .where(eq(childrenTable.id, parsed.data.childId))
     .limit(1);
   const child = childRows[0];
-  if (!child?.dob) {
+  if (!child) {
     res.status(404).json({ error: "child_not_found" });
     return;
   }
@@ -512,7 +517,7 @@ router.post("/content/tutor/turn", async (req, res): Promise<void> => {
     childAnswer: parsed.data.childAnswer,
     audioInput: parsed.data.audioInput,
     contentItem: parsed.data.contentItem as import("@workspace/content-orchestration").SessionPlanItem,
-    childDOB: child.dob,
+    childDOB: resolveChildDobForApi(child),
     countryCode,
   });
 
@@ -614,17 +619,22 @@ router.get("/content/global/insights", async (req, res): Promise<void> => {
       return;
     }
     const childRows = await db
-      .select({ dob: childrenTable.dob })
+      .select({
+        dob: childrenTable.dob,
+        age: childrenTable.age,
+        ageMonths: childrenTable.ageMonths,
+        selectedAgeBand: childrenTable.selectedAgeBand,
+      })
       .from(childrenTable)
       .where(eq(childrenTable.id, parsed.data.childId))
       .limit(1);
     const child = childRows[0];
-    if (!child?.dob) {
+    if (!child) {
       res.status(404).json({ error: "child_not_found" });
       return;
     }
     const age = computeAge({
-      childDOB: child.dob,
+      childDOB: resolveChildDobForApi(child),
       countryCode,
       referenceDate: new Date(),
     });

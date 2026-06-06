@@ -10,6 +10,11 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  childShowsFormalSchoolSchedule,
+  formatEducationStageLabel,
+  resolveChildEducationStage,
+} from "@/lib/education-stage-display";
 
 // ── Inline types (no @workspace/environment import) ───────────────────────────
 type AQIBucket =
@@ -65,6 +70,9 @@ interface ParentProfile {
 }
 interface Child {
   id: number; name: string; age: number; ageMonths: number;
+  educationStage?: string | null;
+  childClass?: string | null;
+  scheduleKnown?: boolean | null;
   isSchoolGoing?: boolean;
   schoolStartTime?: string; schoolEndTime?: string;
   wakeUpTime: string; sleepTime: string;
@@ -461,11 +469,19 @@ function ScheduleSection({ children, profile, t }: {
           <div className={S.childRow}>
             <Baby className={`h-4 w-4 ${S.schedChildBaby}`} />
             <p className={S.childName}>{child.name}, {child.age}y</p>
-            {child.isSchoolGoing && (
-              <Badge variant="secondary" className={S.schoolBadge}>
-                <School className="h-3 w-3" />{t("pages.environment.school_going")}
-              </Badge>
-            )}
+            <Badge variant="secondary" className={S.schoolBadge}>
+              <School className="h-3 w-3" />
+              {formatEducationStageLabel(
+                resolveChildEducationStage({
+                  educationStage: child.educationStage,
+                  isSchoolGoing: child.isSchoolGoing,
+                  childClass: child.childClass,
+                  age: child.age,
+                  ageMonths: child.ageMonths,
+                }),
+                t,
+              )}
+            </Badge>
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <InfoRow
@@ -473,25 +489,25 @@ function ScheduleSection({ children, profile, t }: {
               label={t("pages.environment.wake_sleep")}
               value={`${child.wakeUpTime} – ${child.sleepTime}`}
             />
-            {child.isSchoolGoing ? (
+            {childShowsFormalSchoolSchedule(child) ? (
               <InfoRow
                 icon={<School className={`h-4 w-4 ${S.schedSchoolIcon}`} />}
                 label={t("pages.environment.school_hours")}
                 value={`${child.schoolStartTime} – ${child.schoolEndTime}`}
-                sub={t("pages.environment.school_going")}
+                sub={formatEducationStageLabel(resolveChildEducationStage(child), t)}
               />
             ) : (
               <InfoRow
                 icon={<School className={`h-4 w-4 ${S.schedSchoolOff}`} />}
-                label={t("pages.environment.school_status")}
-                value={t("pages.environment.no_school")}
+                label={t("pages.environment.education_stage")}
+                value={formatEducationStageLabel(resolveChildEducationStage(child), t)}
               />
             )}
             <InfoRow
               icon={<span className="text-base leading-none">{TRAVEL_EMOJI[child.travelMode] ?? "🚦"}</span>}
               label={t("pages.environment.travel_mode")}
               value={child.travelMode.charAt(0).toUpperCase() + child.travelMode.slice(1)}
-              sub={child.isSchoolGoing ? t("pages.environment.tiffin_note") : undefined}
+              sub={childShowsFormalSchoolSchedule(child) ? t("pages.environment.tiffin_note") : undefined}
             />
           </div>
         </div>

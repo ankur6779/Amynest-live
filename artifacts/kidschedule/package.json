@@ -159,6 +159,7 @@
     "@workspace/spelling-audio": "workspace:*",
     "@workspace/spelling-catalog": "workspace:*",
     "@workspace/static-audio": "workspace:*",
+    "@workspace/education-stages": "workspace:*",
     "@workspace/study-zone": "workspace:*",
     "@workspace/subscription-marketing": "workspace:*",
     "@workspace/tiffin-feedback": "workspace:*",

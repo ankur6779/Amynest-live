@@ -262,6 +262,9 @@ importers:
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
+      '@workspace/education-stages':
+        specifier: workspace:*
+        version: link:../../lib/education-stages
       '@workspace/environment':
         specifier: workspace:*
         version: link:../../lib/environment
@@ -503,6 +506,9 @@ importers:
       '@workspace/content-bank':
         specifier: workspace:*
         version: link:../../lib/content-bank
+      '@workspace/education-stages':
+        specifier: workspace:*
+        version: link:../../lib/education-stages
       '@workspace/event-prep':
         specifier: workspace:*
         version: link:../../lib/event-prep
@@ -1365,6 +1371,8 @@ importers:
       tsx:
         specifier: 'catalog:'
         version: 4.21.0
+
+  lib/education-stages: {}
 
   lib/environment:
     dependencies:
