@@ -37,13 +37,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy via SSH
+      - name: Setup SSH
         env:
           HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_PRIVATE_KEY }}
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
         run: |
           if [ -z "$HETZNER_SSH_KEY" ] || [ -z "$HETZNER_HOST" ]; then
-            echo "HETZNER_SSH_PRIVATE_KEY or HETZNER_HOST not configured — skipping."
+            echo "HETZNER_SSH_PRIVATE_KEY or HETZNER_HOST not configured."
             exit 1
           fi
-          bash scripts/hetzner/deploy-worker-remote.sh
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$HETZNER_SSH_KEY" > ~/.ssh/hetzner_deploy
+          chmod 600 ~/.ssh/hetzner_deploy
+          host="$(printf '%s' "$HETZNER_HOST" | tr -d '[:space:]')"
+          ssh-keyscan -H "$host" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh -i ~/.ssh/hetzner_deploy -o BatchMode=yes -o ConnectTimeout=15 "root@${host}" echo "SSH preflight OK"
+
+      - name: Deploy via SSH
+        env:
+          HETZNER_SSH_KEY_FILE: /home/runner/.ssh/hetzner_deploy
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+        run: bash scripts/hetzner/deploy-worker-remote.sh

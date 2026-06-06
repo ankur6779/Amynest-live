@@ -3,7 +3,7 @@
 # Used by GitHub Actions after HETZNER_SSH_PRIVATE_KEY + HETZNER_HOST are configured.
 set -euo pipefail
 
-HETZNER_HOST="${HETZNER_HOST:?HETZNER_HOST is required}"
+HETZNER_HOST="$(printf '%s' "${HETZNER_HOST:?HETZNER_HOST is required}" | tr -d '[:space:]')"
 SSH_USER="${HETZNER_SSH_USER:-root}"
 REMOTE_DIR=/opt/amynest
 REPO_BRANCH="${AMYNEST_REPO_BRANCH:-main}"
@@ -25,6 +25,7 @@ echo "[deploy-remote] target ${SSH_USER}@${HETZNER_HOST}"
 
 if ! ssh_cmd "echo ok" >/dev/null 2>&1; then
   echo "SSH failed — check HETZNER_SSH_PRIVATE_KEY and HETZNER_HOST secrets." >&2
+  ssh "${SSH_OPTS[@]}" -o ConnectTimeout=15 "${SSH_USER}@${HETZNER_HOST}" true 2>&1 | tail -5 >&2 || true
   exit 1
 fi
 
