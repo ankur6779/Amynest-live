@@ -882,8 +882,8 @@ async function handleCoachNextWin(req: import("express").Request, res: import("e
 // ─── POST /ai-coach (2 wins now; wins 3–12 lazy on /coach/next-win) ───────
 router.post("/ai-coach", aiUsageGate, handleCoachGenerate);
 router.post("/coach/generate", aiUsageGate, handleCoachGenerate);
-router.post("/ai-coach/next-win", handleCoachNextWin);
-router.post("/coach/next-win", handleCoachNextWin);
+router.post("/ai-coach/next-win", aiUsageGate, handleCoachNextWin);
+router.post("/coach/next-win", aiUsageGate, handleCoachNextWin);
 
 async function handleCoachStatus(req: import("express").Request, res: import("express").Response): Promise<void> {
   const { userId } = getAuth(req);

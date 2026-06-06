@@ -22,7 +22,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { UserCircle, Save, Plus, Trash2, Clock, Utensils, Camera, Loader2, Bell } from "lucide-react";
+import { Save, Plus, Trash2, Clock, Utensils, Camera, Loader2, Bell, Briefcase, MapPin } from "lucide-react";
+import { ProfileSkeleton } from "@/components/route-skeletons/profile-skeleton";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { getApiUrl } from "@/lib/api";
@@ -68,6 +69,8 @@ const ALLERGY_CHIPS = [
   { value: "soy",    label: "🫘 Soy"    },
 ];
 const ALLERGY_CHIP_VALUES = ALLERGY_CHIPS.map(c => c.value);
+const inputClass = "rounded-xl h-12 bg-muted/50 border-transparent focus-visible:bg-background";
+const sectionLabelClass = "text-xs font-bold uppercase tracking-widest text-muted-foreground";
 
 // ─── Derivation helpers ────────────────────────────────────────────────────
 
@@ -98,7 +101,6 @@ interface ParentProfile {
   name: string;
   role: string;
   gender: string;
-  mobileNumber: string;
   country: string;
   workType: string;
   workStartTime: string;
@@ -136,7 +138,6 @@ export default function ParentProfilePage() {
     name: "",
     role: "mother",
     gender: "",
-    mobileNumber: "",
     country: "",
     workType: "work_from_home",
     workStartTime: "",
@@ -179,7 +180,6 @@ export default function ParentProfilePage() {
               name: data.name ?? "",
               role: data.role ?? "mother",
               gender: data.gender ?? "",
-              mobileNumber: data.mobileNumber ?? "",
               country: data.country ?? "",
               workType: data.workType ?? "work_from_home",
               workStartTime: data.workStartTime ?? "",
@@ -259,7 +259,6 @@ export default function ParentProfilePage() {
         region: deriveRegion(profile.foodStyle, profile.subCuisine),
       };
       if (profile.gender) body.gender = profile.gender;
-      if (profile.mobileNumber) body.mobileNumber = profile.mobileNumber;
       if (profile.country) {
         body.country = profile.country;
         body.locationSource = "manual";
@@ -317,71 +316,66 @@ export default function ParentProfilePage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[300px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
+  const displayName = profile.name || user?.firstName || t("profile.title");
+  const roleLabel = profile.role === "father" ? t("profile.father") : t("profile.mother");
+
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-500 max-w-2xl">
-      <header>
-        <h1 className="font-quicksand text-3xl font-bold text-foreground flex items-center gap-2">
-          <UserCircle className="h-8 w-8 text-primary" />
-          {t("profile.title")}
-        </h1>
-        <p className="text-muted-foreground mt-1">{t("profile.subtitle")}</p>
-      </header>
+    <div className="flex flex-col gap-5 animate-in fade-in duration-500 max-w-2xl mx-auto pb-8">
+      {/* Hero */}
+      <div
+        data-on-dark
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/90 p-6 sm:p-8 text-white shadow-xl"
+      >
+        <div className="absolute top-0 right-0 h-40 w-40 translate-x-10 -translate-y-10 rounded-full bg-white/10 blur-sm" />
+        <div className="absolute bottom-0 left-0 h-32 w-32 -translate-x-8 translate-y-8 rounded-full bg-white/10 blur-sm" />
+        <div className="relative z-10 flex flex-col items-center text-center">
+          <div className="relative shrink-0 mb-4">
+            <Avatar className="h-24 w-24 ring-4 ring-white/30 shadow-lg">
+              <AvatarImage src={user?.imageUrl ?? undefined} />
+              <AvatarFallback className="bg-white/20 text-white text-3xl font-bold">
+                {profile.name ? profile.name[0]?.toUpperCase() : (user?.firstName?.[0] ?? "U")}
+              </AvatarFallback>
+            </Avatar>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingPic}
+              className="absolute -bottom-1 -right-1 rounded-full bg-white p-2 text-primary shadow-md transition-colors hover:bg-white/90 disabled:opacity-60"
+              aria-label={t("pages.parent_profile.click_the_camera_icon_to_change_your_profile_picture")}
+            >
+              {uploadingPic ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Camera className="h-4 w-4" />
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleProfilePicUpload}
+            />
+          </div>
+          <h1 className="font-quicksand text-2xl sm:text-3xl font-bold">{displayName}</h1>
+          <p className="mt-1 text-sm text-white/80">{t("profile.subtitle")}</p>
+          <span className="mt-3 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
+            {roleLabel}
+          </span>
+        </div>
+      </div>
 
       {/* ── Personal Info ─────────────────────────────────────────────── */}
-      <Card className="rounded-2xl shadow-sm border-border/50">
-        <CardHeader>
-          <CardTitle className="font-quicksand text-lg">
-            {t("pages.parent_profile.personal_info")}
-          </CardTitle>
-          <CardDescription>
+      <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card">
+        <CardHeader className="pb-3">
+          <p className={sectionLabelClass}>{t("pages.parent_profile.personal_info")}</p>
+          <CardTitle className="font-quicksand text-lg mt-1">
             {t("pages.parent_profile.basic_details_about_you_and_your_role_in_the_family")}
-          </CardDescription>
+          </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-5">
-          <div className="flex items-center gap-5">
-            <div className="relative shrink-0">
-              <Avatar className="h-20 w-20 ring-2 ring-primary/20">
-                <AvatarImage src={user?.imageUrl ?? undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                  {profile.name ? profile.name[0]?.toUpperCase() : (user?.firstName?.[0] ?? "U")}
-                </AvatarFallback>
-              </Avatar>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingPic}
-                className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-1.5 shadow-md hover:bg-primary/90 transition-colors disabled:opacity-60"
-              >
-                {uploadingPic ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Camera className="h-3.5 w-3.5" />
-                )}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleProfilePicUpload}
-              />
-            </div>
-            <div>
-              <p className="font-semibold text-foreground">
-                {profile.name || user?.firstName || "Your Name"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {t("pages.parent_profile.click_the_camera_icon_to_change_your_profile_picture")}
-              </p>
-            </div>
-          </div>
-
+        <CardContent className="flex flex-col gap-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5 sm:col-span-2">
               <Label>{t("pages.parent_profile.your_name")}</Label>
@@ -389,6 +383,7 @@ export default function ParentProfilePage() {
                 placeholder={t("pages.parent_profile.e_g_ayesha_sarah_ahmed")}
                 value={profile.name}
                 onChange={e => setProfile(p => ({ ...p, name: e.target.value }))}
+                className={inputClass}
               />
               <p className="text-xs text-muted-foreground">
                 {t("pages.parent_profile.this_name_will_appear_in_your_dashboard_greeting")}
@@ -401,7 +396,7 @@ export default function ParentProfilePage() {
                 value={profile.role}
                 onValueChange={v => setProfile(p => ({ ...p, role: v }))}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="mother">{t("profile.mother")}</SelectItem>
                   <SelectItem value="father">{t("profile.father")}</SelectItem>
@@ -415,7 +410,7 @@ export default function ParentProfilePage() {
                 value={profile.gender || "prefer_not"}
                 onValueChange={v => setProfile(p => ({ ...p, gender: v === "prefer_not" ? "" : v }))}
               >
-                <SelectTrigger><SelectValue placeholder={t("pages.parent_profile.select_gender")} /></SelectTrigger>
+                <SelectTrigger className={inputClass}><SelectValue placeholder={t("pages.parent_profile.select_gender")} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="female">{t("pages.parent_profile.female")}</SelectItem>
                   <SelectItem value="male">{t("pages.parent_profile.male")}</SelectItem>
@@ -425,21 +420,15 @@ export default function ParentProfilePage() {
             </div>
 
             <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <Label>{t("profile.mobile")}</Label>
-              <Input
-                placeholder="+1 415 555 0123"
-                value={profile.mobileNumber}
-                onChange={e => setProfile(p => ({ ...p, mobileNumber: e.target.value }))}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <Label>{t("pages.parent_profile.country")}</Label>
+              <Label className="flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5 text-primary" />
+                {t("pages.parent_profile.country")}
+              </Label>
               <Select
                 value={profile.country || undefined}
                 onValueChange={v => setProfile(p => ({ ...p, country: v }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className={inputClass}>
                   <SelectValue placeholder={t("pages.parent_profile.select_country")} />
                 </SelectTrigger>
                 <SelectContent className="max-h-72">
@@ -463,12 +452,13 @@ export default function ParentProfilePage() {
       </Card>
 
       {/* ── Work Schedule ──────────────────────────────────────────────── */}
-      <Card className="rounded-2xl shadow-sm border-border/50">
-        <CardHeader>
-          <CardTitle className="font-quicksand text-lg">
+      <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card">
+        <CardHeader className="pb-3">
+          <p className={cn(sectionLabelClass, "flex items-center gap-1.5")}>
+            <Briefcase className="h-3.5 w-3.5" />
             {t("pages.parent_profile.work_schedule")}
-          </CardTitle>
-          <CardDescription>
+          </p>
+          <CardDescription className="mt-1">
             {t("pages.parent_profile.amy_ai_uses_this_to_assign_tasks_when_you_re_busy_or_availab")}
           </CardDescription>
         </CardHeader>
@@ -479,7 +469,7 @@ export default function ParentProfilePage() {
               value={profile.workType}
               onValueChange={v => setProfile(p => ({ ...p, workType: v }))}
             >
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="work_from_home">{t("profile.work_from_home")}</SelectItem>
                 <SelectItem value="work_from_office">{t("profile.work_from_office")}</SelectItem>
@@ -496,6 +486,7 @@ export default function ParentProfilePage() {
                   type="time"
                   value={profile.workStartTime}
                   onChange={e => setProfile(p => ({ ...p, workStartTime: e.target.value }))}
+                  className={inputClass}
                 />
               </div>
               <div className="flex flex-col gap-1.5">
@@ -504,6 +495,7 @@ export default function ParentProfilePage() {
                   type="time"
                   value={profile.workEndTime}
                   onChange={e => setProfile(p => ({ ...p, workEndTime: e.target.value }))}
+                  className={inputClass}
                 />
               </div>
             </div>
@@ -512,48 +504,51 @@ export default function ParentProfilePage() {
       </Card>
 
       {/* ── Free Slots ─────────────────────────────────────────────────── */}
-      <Card className="rounded-2xl shadow-sm border-border/50">
-        <CardHeader className="flex flex-row items-center justify-between">
+      <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card">
+        <CardHeader className="flex flex-row items-start justify-between gap-3 pb-3">
           <div>
-            <CardTitle className="font-quicksand text-lg flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
+            <p className={cn(sectionLabelClass, "flex items-center gap-1.5")}>
+              <Clock className="h-3.5 w-3.5 text-primary" />
               {t("pages.parent_profile.free_available_slots")}
-            </CardTitle>
-            <CardDescription>
+            </p>
+            <CardDescription className="mt-1">
               {t("pages.parent_profile.times_during_the_day_you_re_free_to_spend_with_your_child")}
             </CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={addFreeSlot} className="shrink-0">
+          <Button variant="outline" size="sm" onClick={addFreeSlot} className="shrink-0 rounded-full">
             <Plus className="h-4 w-4 mr-1" /> {t("pages.parent_profile.add_slot")}
           </Button>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {profile.freeSlots.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              {t("pages.parent_profile.no_free_slots_added_click_add_slot_to_specify_when_you_re_av")}
-            </p>
+            <div className="rounded-2xl border border-dashed border-border/60 bg-muted/20 py-8 text-center">
+              <Clock className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground px-4">
+                {t("pages.parent_profile.no_free_slots_added_click_add_slot_to_specify_when_you_re_av")}
+              </p>
+            </div>
           )}
           {profile.freeSlots.map((slot, i) => (
-            <div key={i} className="flex items-center gap-3 bg-muted/40 rounded-xl p-3">
+            <div key={i} className="flex items-center gap-3 rounded-2xl border border-border/40 bg-muted/30 p-3">
               <div className="flex items-center gap-2 flex-1">
                 <Input
                   type="time"
                   value={slot.start}
                   onChange={e => updateFreeSlot(i, "start", e.target.value)}
-                  className="h-8 text-sm"
+                  className="h-10 text-sm rounded-xl bg-background/80 border-transparent"
                 />
-                <span className="text-muted-foreground text-sm">to</span>
+                <span className="text-muted-foreground text-sm">{t("common.to")}</span>
                 <Input
                   type="time"
                   value={slot.end}
                   onChange={e => updateFreeSlot(i, "end", e.target.value)}
-                  className="h-8 text-sm"
+                  className="h-10 text-sm rounded-xl bg-background/80 border-transparent"
                 />
               </div>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-destructive hover:text-destructive shrink-0"
+                className="h-9 w-9 text-destructive hover:text-destructive shrink-0 rounded-full"
                 onClick={() => removeFreeSlot(i)}
               >
                 <Trash2 className="h-4 w-4" />
@@ -563,20 +558,18 @@ export default function ParentProfilePage() {
         </CardContent>
       </Card>
 
-      {/* ── Food Preferences (redesigned) ─────────────────────────────── */}
-      <Card className="rounded-2xl shadow-sm border-border/50">
-        <CardHeader>
-          <CardTitle className="font-quicksand text-lg flex items-center gap-2">
-            <Utensils className="h-5 w-5 text-primary" />
+      {/* ── Food Preferences ─────────────────────────────────────────── */}
+      <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-gradient-to-br from-card to-muted/20">
+        <CardHeader className="pb-3">
+          <p className={cn(sectionLabelClass, "flex items-center gap-1.5")}>
+            <Utensils className="h-3.5 w-3.5 text-primary" />
             {t("pages.parent_profile.food_preferences")}
-          </CardTitle>
-          <CardDescription>
-            We'll personalise meals based on your food style and diet.
+          </p>
+          <CardDescription className="mt-1">
+            {t("pages.parent_profile.food_preferences_description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
-
-          {/* 1. Diet Type ─────────────────────────────────────────────── */}
           <div className="flex flex-col gap-2">
             <Label className="text-sm font-semibold">
               {t("pages.parent_profile.diet_type")}
@@ -588,10 +581,10 @@ export default function ParentProfilePage() {
                   type="button"
                   onClick={() => setProfile(p => ({ ...p, dietType: opt.value }))}
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
+                    "px-3 py-2 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
                     profile.dietType === opt.value
-                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                      : "border-border text-foreground hover:border-primary/50 bg-background",
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm scale-[1.02]"
+                      : "border-border/60 text-foreground hover:border-primary/50 bg-background/80",
                   )}
                 >
                   <span>{opt.emoji}</span>
@@ -601,7 +594,6 @@ export default function ParentProfilePage() {
             </div>
           </div>
 
-          {/* 2. Food Style ────────────────────────────────────────────── */}
           <div className="flex flex-col gap-2">
             <Label className="text-sm font-semibold">{t("pages.parent_profile.food_style")}</Label>
             <div className="flex flex-wrap gap-2">
@@ -617,10 +609,10 @@ export default function ParentProfilePage() {
                     }))
                   }
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
+                    "px-3 py-2 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
                     profile.foodStyle === opt.value
-                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                      : "border-border text-foreground hover:border-primary/50 bg-background",
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm scale-[1.02]"
+                      : "border-border/60 text-foreground hover:border-primary/50 bg-background/80",
                   )}
                 >
                   <span>{opt.emoji}</span>
@@ -630,12 +622,13 @@ export default function ParentProfilePage() {
             </div>
           </div>
 
-          {/* 3. Indian Sub-cuisine (conditional) ─────────────────────── */}
           {profile.foodStyle === "indian" && (
-            <div className="flex flex-col gap-2 pl-4 border-l-2 border-primary/20">
+            <div className="flex flex-col gap-2 rounded-2xl border border-primary/15 bg-primary/5 p-4">
               <Label className="text-sm font-semibold text-foreground/80">
-                Indian Sub-cuisine
-                <span className="text-muted-foreground font-normal ml-1">(optional)</span>
+                {t("pages.parent_profile.indian_sub_cuisine")}
+                <span className="text-muted-foreground font-normal ml-1">
+                  ({t("pages.children.form.optional_label")})
+                </span>
               </Label>
               <div className="flex flex-wrap gap-2">
                 {INDIAN_SUB_OPTIONS.map(opt => (
@@ -649,10 +642,10 @@ export default function ParentProfilePage() {
                       }))
                     }
                     className={cn(
-                      "px-3 py-1.5 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
+                      "px-3 py-2 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
                       profile.subCuisine === opt.value
                         ? "bg-primary/15 text-primary border-primary"
-                        : "border-border text-foreground hover:border-primary/50 bg-background",
+                        : "border-border/60 text-foreground hover:border-primary/50 bg-background/80",
                     )}
                   >
                     <span>{opt.emoji}</span>
@@ -663,7 +656,6 @@ export default function ParentProfilePage() {
             </div>
           )}
 
-          {/* 4. Food Restrictions / Allergies ────────────────────────── */}
           <div className="flex flex-col gap-2">
             <Label className="text-sm font-semibold">{t("pages.parent_profile.food_restrictions_allergies")}</Label>
             <div className="flex flex-wrap gap-2">
@@ -673,10 +665,10 @@ export default function ParentProfilePage() {
                   type="button"
                   onClick={() => toggleAllergyChip(chip.value)}
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-sm border font-medium transition-all",
+                    "px-3 py-2 rounded-full text-sm border font-medium transition-all",
                     allergyChips.includes(chip.value)
                       ? "bg-primary/15 text-primary border-primary"
-                      : "border-border text-foreground hover:border-primary/50 bg-background",
+                      : "border-border/60 text-foreground hover:border-primary/50 bg-background/80",
                   )}
                 >
                   {chip.label}
@@ -687,7 +679,7 @@ export default function ParentProfilePage() {
               placeholder={t("pages.parent_profile.other_restrictions_placeholder")}
               value={allergyText}
               onChange={e => setAllergyText(e.target.value)}
-              className="resize-none mt-1"
+              className="resize-none mt-1 rounded-xl bg-muted/50 border-transparent focus-visible:bg-background"
               rows={2}
             />
             <p className="text-xs text-muted-foreground">
@@ -697,9 +689,8 @@ export default function ParentProfilePage() {
         </CardContent>
       </Card>
 
-      {/* About AmyNest AI — patent-pending technology */}
-      <Card className="rounded-2xl border-primary/20 bg-primary/5">
-        <CardContent className="pt-4 pb-4">
+      <Card className="rounded-3xl border-primary/20 bg-primary/5 shadow-sm">
+        <CardContent className="pt-5 pb-5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60 mb-2">
             {t("patent_pending.settings_note")}
           </p>
@@ -709,17 +700,26 @@ export default function ParentProfilePage() {
         </CardContent>
       </Card>
 
-      <Button variant="outline" onClick={() => navigate("/notification-settings")} className="w-full rounded-xl h-11">
-        <Bell className="h-4 w-4 mr-2" />
-        {t("pages.parent_profile.notification_settings")}
-      </Button>
+      <div className="sticky bottom-3 z-10 flex flex-col gap-2 rounded-3xl border border-border/50 bg-background/95 p-3 shadow-lg backdrop-blur-md">
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full rounded-full h-12 font-bold shadow-md"
+        >
+          <Save className="h-4 w-4 mr-2" />
+          {saving ? t("common.saving") : t("profile.save")}
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => navigate("/notification-settings")}
+          className="w-full rounded-full h-11 border-border/60"
+        >
+          <Bell className="h-4 w-4 mr-2" />
+          {t("pages.parent_profile.notification_settings")}
+        </Button>
+      </div>
 
-      <Button onClick={handleSave} disabled={saving} className="w-full rounded-xl h-11">
-        <Save className="h-4 w-4 mr-2" />
-        {saving ? t("common.saving") : t("profile.save")}
-      </Button>
-
-      <Card className="rounded-2xl border-destructive/30 shadow-sm">
+      <Card className="rounded-3xl border-destructive/20 bg-destructive/[0.03] shadow-sm">
         <CardHeader>
           <CardTitle className="font-quicksand text-lg text-destructive">
             {t("profile.delete_account_section_title")}
@@ -740,7 +740,7 @@ export default function ParentProfilePage() {
                 variant="outline"
                 disabled={deleting}
                 data-testid="delete-account-button"
-                className="w-full rounded-xl h-11 border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                className="w-full rounded-full h-11 border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground"
               >
                 {deleting ? (
                   <>
@@ -755,7 +755,7 @@ export default function ParentProfilePage() {
                 )}
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="rounded-3xl">
               <AlertDialogHeader>
                 <AlertDialogTitle>
                   {deleteStep === 0
@@ -769,7 +769,7 @@ export default function ParentProfilePage() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel disabled={deleting}>
+                <AlertDialogCancel disabled={deleting} className="rounded-full">
                   {t("pages.children.form.cancel")}
                 </AlertDialogCancel>
                 {deleteStep === 0 ? (
@@ -778,7 +778,7 @@ export default function ParentProfilePage() {
                       e.preventDefault();
                       setDeleteStep(1);
                     }}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
                     {t("profile.delete_account")}
                   </AlertDialogAction>
@@ -789,7 +789,7 @@ export default function ParentProfilePage() {
                       void handleDeleteAccount();
                     }}
                     disabled={deleting}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
                     {deleting
                       ? t("profile.delete_account_deleting")

@@ -55,6 +55,11 @@ type InfantDashboardData = {
     byMethod: Record<string, number>;
   };
   coParent: { inviteStarted: number; inviteSent: number; inviteAccepted: number };
+  premiumFunnel?: {
+    infantAiQuotaReached: number;
+    sleepCoachGenerated: number;
+    feedingPlanGenerated: number;
+  };
   funnel: Array<{
     key: string;
     label: string;
@@ -233,6 +238,27 @@ export default function AdminInfantParentingPage() {
                 />
               </div>
             </Section>
+
+            {data.premiumFunnel && (
+              <Section title="Premium Funnel">
+                <div className="flex flex-wrap gap-3">
+                  <StatCard
+                    label="AI Quota Reached"
+                    value={data.premiumFunnel.infantAiQuotaReached}
+                    sub="Free tier hit 3/day limit"
+                  />
+                  <StatCard
+                    label="Sleep Coach Generated"
+                    value={data.premiumFunnel.sleepCoachGenerated}
+                    sub="Plans + weekly reports"
+                  />
+                  <StatCard
+                    label="Feeding Plans Generated"
+                    value={data.premiumFunnel.feedingPlanGenerated}
+                  />
+                </div>
+              </Section>
+            )}
 
             <Section title="Engagement">
               <div className="flex flex-wrap gap-3">

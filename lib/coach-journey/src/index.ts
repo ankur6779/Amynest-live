@@ -208,6 +208,13 @@ export function computeCoachJourneyAccess(opts: {
   };
 }
 
+/** Infant coach topics are static 12-win plans (no OpenAI) — always free per product rules. */
+export const FREE_COACH_CATEGORIES = ["infant-problems"] as const;
+
+export function isFreeCoachCategory(categoryId: string): boolean {
+  return (FREE_COACH_CATEGORIES as readonly string[]).includes(categoryId);
+}
+
 export function getCoachGoalAccess(opts: {
   goalId: string;
   isPremium: boolean;
@@ -218,6 +225,8 @@ export function getCoachGoalAccess(opts: {
 
   const categoryId = coachGoalCategoryId(opts.goalId);
   if (!categoryId) return "locked";
+
+  if (isFreeCoachCategory(categoryId)) return "open";
 
   const freeSampleId = goalsInCoachCategory(categoryId)[0];
   if (!freeSampleId) return "locked";

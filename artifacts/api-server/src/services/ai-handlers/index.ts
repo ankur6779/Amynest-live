@@ -1,6 +1,7 @@
 import type { ScheduleItem } from "../../lib/routine-templates.js";
 import { unwrapJobPayload } from "../../queue/ai-job-payload.js";
 import { handleMealsJob } from "./meals.js";
+import { handleInfantJob } from "./infant.js";
 
 /** Domain AI jobs (worker only — not openai.chat / tts). */
 export async function dispatchAiJob(type: string, payload: unknown): Promise<unknown> {
@@ -14,6 +15,10 @@ export async function dispatchAiJob(type: string, payload: unknown): Promise<unk
     type === "meals.family_portions"
   ) {
     return handleMealsJob(type, { routeName, input });
+  }
+
+  if (type === "infant.sleep_coach" || type === "infant.feeding_plan") {
+    return handleInfantJob(type, { routeName, input });
   }
 
   switch (type) {

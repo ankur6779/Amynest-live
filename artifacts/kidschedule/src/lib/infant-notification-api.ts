@@ -6,6 +6,8 @@ export type InfantNotifPrefs = {
   vaccineReminders: boolean;
   milestoneTips: boolean;
   sleepDrift: boolean;
+  /** Premium weekly AI sleep coaching report (cron stub). */
+  weeklySleepReport: boolean;
 };
 
 export type InfantNotifKind =
@@ -13,7 +15,8 @@ export type InfantNotifKind =
   | "feed_reminder"
   | "vaccine_due"
   | "milestone_tip"
-  | "sleep_drift";
+  | "sleep_drift"
+  | "sleep_weekly_report";
 
 export async function fetchInfantNotificationPrefs(
   childId: number,

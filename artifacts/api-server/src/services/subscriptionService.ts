@@ -15,6 +15,16 @@ import {
 
 export { hasValidPaidPeriodEnd, isPremiumNow } from "./subscription-premium-gate.js";
 
+/** Env-configurable infant Baby Expert daily limit (A/B testing). Default 3. */
+function resolveInfantAiDailyLimit(): number {
+  const raw = process.env["INFANT_AI_DAILY_LIMIT"];
+  if (!raw) return 3;
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) && n > 0 ? n : 3;
+}
+
+export const INFANT_AI_DAILY_LIMIT = resolveInfantAiDailyLimit();
+
 // Drizzle's transaction object exposes the same query API as `db`, so the
 // service helpers below accept either. We type it loosely to avoid leaking
 // drizzle-internal generics through the public API.
@@ -52,6 +62,8 @@ export function formatPlanPrice(
 export const FREE_LIMITS = {
   // Daily cap for free Amy AI messages — resets every UTC day.
   aiQueriesPerDay: 10,
+  /** Infant Baby Expert — separate pool for children under 24 months. */
+  infantAiQueriesPerDay: INFANT_AI_DAILY_LIMIT,
   childrenMax: 1,
   routinesMax: 2,
   hubArticlesMax: 3,
@@ -68,6 +80,7 @@ export const FREE_LIMITS = {
  */
 export const FREE_FEATURE_LIMITS = {
   ai_query: 10,
+  infant_ai_query: INFANT_AI_DAILY_LIMIT,
   routine_generate: 3,
   behavior_log: 1,
   // 1 free TTS audio lesson per day (resets UTC midnight). The web/mobile
@@ -97,6 +110,9 @@ export const FREE_FEATURE_LIMITS = {
   learning_load_more_spelling: 1,
   learning_load_more_phonics: 1,
   learning_load_more_life_skills: 1,
+  // ── Infant Premium MVP ───────────────────────────────────────────────────
+  infant_sleep_coach: 1,
+  infant_feeding_plan: 1,
 } as const;
 
 export type FeatureKey = keyof typeof FREE_FEATURE_LIMITS;
@@ -108,6 +124,7 @@ export type FeatureKey = keyof typeof FREE_FEATURE_LIMITS;
  */
 export const FEATURE_SCOPE: Record<FeatureKey, "daily" | "lifetime"> = {
   ai_query: "daily",
+  infant_ai_query: "daily",
   routine_generate: "lifetime",
   behavior_log: "lifetime",
   audio_lesson: "daily",
@@ -123,6 +140,8 @@ export const FEATURE_SCOPE: Record<FeatureKey, "daily" | "lifetime"> = {
   learning_load_more_spelling: "lifetime",
   learning_load_more_phonics: "lifetime",
   learning_load_more_life_skills: "lifetime",
+  infant_sleep_coach: "lifetime",
+  infant_feeding_plan: "lifetime",
 };
 
 export type FeatureUsage = {
@@ -149,6 +168,9 @@ export type EntitlementSummary = {
     // Today's AI message count (resets every UTC day).
     aiQueriesToday: number;
     aiQueriesRemaining: number | null; // null = unlimited
+    /** Infant Baby Expert pool (child under 24 months). */
+    infantAiQueriesToday: number;
+    infantAiQueriesRemaining: number | null;
     // Global Paywall: per-feature lifetime usage state.
     features: Record<FeatureKey, FeatureUsage>;
   };
@@ -388,6 +410,8 @@ export async function getEntitlements(userId: string): Promise<EntitlementSummar
     usage: {
       aiQueriesToday: features.ai_query.used,
       aiQueriesRemaining: features.ai_query.remaining,
+      infantAiQueriesToday: features.infant_ai_query.used,
+      infantAiQueriesRemaining: features.infant_ai_query.remaining,
       features,
     },
   };

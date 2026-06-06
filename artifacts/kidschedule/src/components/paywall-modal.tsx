@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Sparkles, Check, X, Smartphone, Zap, Gift, ArrowLeft,
   Headphones, CalendarDays, Brain, Users, MessageCircle, BarChart3,
-  LayoutGrid, FileText, type LucideIcon,
+  LayoutGrid, FileText, Moon, Utensils, type LucideIcon,
 } from "lucide-react";
 import { isIndiaRegion } from "@/lib/geo";
 import { useUser } from "@/lib/firebase-auth-hooks";
@@ -48,6 +48,7 @@ const DEFAULT_PAYWALL = UPGRADE_MODAL;
 
 const REASON_ICONS: Record<AppPaywallReason, LucideIcon> = {
   ai_quota: MessageCircle,
+  infant_ai_quota: MessageCircle,
   personalized_coaching: Brain,
   premium_insight: BarChart3,
   child_limit: Users,
@@ -65,6 +66,8 @@ const REASON_ICONS: Record<AppPaywallReason, LucideIcon> = {
   nutrition_library: FileText,
   speech_coach: MessageCircle,
   learning_locked: FileText,
+  infant_sleep_coach: Moon,
+  infant_feeding_plan: Utensils,
 };
 
 export function PaywallModal() {

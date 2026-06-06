@@ -22,6 +22,7 @@ const prefsSchema = z.object({
   vaccineReminders: z.boolean().optional(),
   milestoneTips: z.boolean().optional(),
   sleepDrift: z.boolean().optional(),
+  weeklySleepReport: z.boolean().optional(),
   maxPerDay: z.number().int().min(1).max(3).optional(),
 });
 
@@ -32,6 +33,7 @@ const snoozeSchema = z.object({
     "vaccine_due",
     "milestone_tip",
     "sleep_drift",
+    "sleep_weekly_report",
   ]),
   hours: z.union([z.literal(1), z.literal(4), z.literal(24)]),
 });
@@ -62,6 +64,7 @@ router.get("/infant-notifications/prefs/:childId", async (req, res): Promise<voi
       vaccineReminders: prefs.vaccineReminders,
       milestoneTips: prefs.milestoneTips,
       sleepDrift: prefs.sleepDrift,
+      weeklySleepReport: prefs.weeklySleepReport,
       maxPerDay: prefs.maxPerDay,
       snoozeUntil: prefs.snoozeUntil ?? {},
     },

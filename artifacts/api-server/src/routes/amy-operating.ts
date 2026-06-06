@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "../lib/auth.js";
 import { logger } from "../lib/logger.js";
+import { applyFeatureGate } from "../middlewares/featureGate.js";
+import { userHasInfantChild } from "../lib/infant-child-access.js";
 import {
   getAmyOperatingContext,
   getAmyDailyBriefing,
@@ -79,6 +81,18 @@ router.post("/amy/ask", async (req, res): Promise<void> => {
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
   const question = String(req.body?.question ?? "").trim();
   if (!question) { res.status(400).json({ error: "question_required" }); return; }
+
+  const infantPremiumOn =
+    process.env.INFANT_PREMIUM_ENABLED !== "0" &&
+    process.env.INFANT_PREMIUM_ENABLED !== "false";
+  if (infantPremiumOn && (await userHasInfantChild(userId))) {
+    let allowed = false;
+    await applyFeatureGate(req, res, "infant_ai_query", () => {
+      allowed = true;
+    });
+    if (!allowed) return;
+  }
+
   try {
     res.json(await askAmyOperatingLayer(userId, question));
   } catch (err) {

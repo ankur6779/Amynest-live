@@ -5,6 +5,7 @@ import { track } from "@/lib/analytics";
 
 export type PaywallReason =
   | "ai_quota"
+  | "infant_ai_quota"
   | "personalized_coaching"
   | "premium_insight"
   | "child_limit"
@@ -21,7 +22,9 @@ export type PaywallReason =
   | "hub_nutrition"
   | "nutrition_library"
   | "speech_coach"
-  | "learning_locked";
+  | "learning_locked"
+  | "infant_sleep_coach"
+  | "infant_feeding_plan";
 
 type PaywallState = {
   open: boolean;

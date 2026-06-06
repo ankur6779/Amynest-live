@@ -73,7 +73,15 @@ export type InfantAnalyticsEventName =
   | "infant_notification_dismissed"
   | "infant_activation_started"
   | "infant_activation_step_completed"
-  | "infant_activation_completed";
+  | "infant_activation_completed"
+  | "infant_sleep_coach_cta_viewed"
+  | "infant_sleep_coach_plan_generated"
+  | "infant_sleep_coach_upgrade_prompt_shown"
+  | "infant_feeding_plan_cta_viewed"
+  | "infant_feeding_plan_generated"
+  | "infant_feeding_plan_upgrade_prompt_shown"
+  | "infant_ai_quota_reached"
+  | "infant_sleep_coach_generated";
 
 export type InfantUserProperties = {
   childAgeMonths: number;
@@ -730,4 +738,52 @@ export function trackInfantActivationCompleted(
     completionTime: props.completionTimeMs,
     childAgeDays: props.childAgeDays,
   });
+}
+
+// ─── Infant Premium (Sleep Coach + Feeding Plan) ────────────────────────────────
+
+export function trackInfantSleepCoachCtaViewed(childId: number, ageMonths: number): void {
+  trackViewEvent(
+    "infant_sleep_coach_cta_viewed",
+    childId,
+    ageMonths,
+    `infant_sleep_coach_cta:${childId}`,
+  );
+}
+
+export function trackInfantSleepCoachPlanGenerated(
+  childId: number,
+  ageMonths: number,
+  props?: { cached?: boolean },
+): void {
+  trackEvent("infant_sleep_coach_plan_generated", childId, ageMonths, props);
+}
+
+export function trackInfantSleepCoachUpgradePromptShown(childId: number, ageMonths: number): void {
+  trackEvent("infant_sleep_coach_upgrade_prompt_shown", childId, ageMonths);
+}
+
+export function trackInfantFeedingPlanCtaViewed(childId: number, ageMonths: number): void {
+  trackViewEvent(
+    "infant_feeding_plan_cta_viewed",
+    childId,
+    ageMonths,
+    `infant_feeding_plan_cta:${childId}`,
+  );
+}
+
+export function trackInfantFeedingPlanGenerated(
+  childId: number,
+  ageMonths: number,
+  props?: { cached?: boolean },
+): void {
+  trackEvent("infant_feeding_plan_generated", childId, ageMonths, props);
+}
+
+export function trackInfantFeedingPlanUpgradePromptShown(childId: number, ageMonths: number): void {
+  trackEvent("infant_feeding_plan_upgrade_prompt_shown", childId, ageMonths);
+}
+
+export function trackInfantAiQuotaReached(childId: number, ageMonths: number): void {
+  trackEvent("infant_ai_quota_reached", childId, ageMonths);
 }

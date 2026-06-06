@@ -7,6 +7,7 @@ import { BabyCuesEngine, CommunicationCoaching } from "@/components/infant-baby-
 import { CryInsight } from "@/components/cry-insight";
 import { SleepPredict } from "@/components/sleep-predict";
 import { WakeWindowSystem, SleepIssueDetector, RoutineBuilder, SleepWeeklyInsights } from "@/components/infant-sleep-module";
+import { InfantWeeklySleepReport } from "@/components/infant/infant-weekly-sleep-report";
 import { BuddyMilestonePlanner } from "@/components/infant-milestones";
 import { WhiteNoiseLullaby } from "@/components/infant-sounds";
 import { InfantFeedingTracker } from "@/components/infant-feeding-tracker";
@@ -30,6 +31,9 @@ import { INFANT_HUB_OPEN_SECTION_EVENT } from "@/lib/hub-activity-cross-link";
 import { trackInfantHubOpened } from "@/lib/infant-hub-analytics";
 import { useToast } from "@/hooks/use-toast";
 import { HubCollapsibleSubTile } from "@/components/hub-collapsible-sub-tile";
+import { InfantAskAmyCta } from "@/components/infant/infant-ask-amy-cta";
+import { InfantSleepCoachingPanel } from "@/components/infant/infant-sleep-coaching-panel";
+import { InfantFeedingPlanPanel } from "@/components/infant/infant-feeding-plan-panel";
 interface InfantHubProps {
   childId: number;
   childName: string;
@@ -643,10 +647,19 @@ export function InfantHub({
       >
           <div className="space-y-5">
             <SleepPredict childId={childId} childName={childName} ageMonths={ageMonths} />
-            <WakeWindowSystem childName={childName} ageMonths={ageMonths} />
-            <SleepIssueDetector childName={childName} ageMonths={ageMonths} />
+            <WakeWindowSystem childId={childId} childName={childName} ageMonths={ageMonths} />
+            <SleepIssueDetector childId={childId} childName={childName} ageMonths={ageMonths} />
             <RoutineBuilder childName={childName} ageMonths={ageMonths} />
-            <SleepWeeklyInsights childName={childName} ageMonths={ageMonths} />
+            <SleepWeeklyInsights childId={childId} childName={childName} ageMonths={ageMonths} />
+            <InfantSleepCoachingPanel childId={childId} childName={childName} ageMonths={ageMonths} />
+            <InfantWeeklySleepReport childId={childId} childName={childName} ageMonths={ageMonths} />
+            <InfantAskAmyCta
+              childName={childName}
+              ageMonths={ageMonths}
+              question={`My ${ageMonths}-month-old baby ${childName} is having sleep trouble. Based on typical wake windows at this age, what should I try tonight?`}
+              label={t("components.infant_hub.ask_amy_sleep", "Ask Amy for tailored sleep guidance")}
+              testId="infant-ask-amy-sleep"
+            />
           </div>
       </IHSection>
 
@@ -673,7 +686,25 @@ export function InfantHub({
         onOpenChange={(v) => setSectionOpen("infant-feeding", v)}
       >
           <InfantFeedingTracker childId={childId} ageMonths={ageMonths} lang={lang} />
+          <InfantFeedingPlanPanel childId={childId} childName={childName} ageMonths={ageMonths} />
           <div className="mt-4 pt-4 border-t border-border/40"><DiaperBurpLogger childId={childId} ageMonths={ageMonths} /></div>
+          {ageMonths >= 6 ? (
+            <InfantAskAmyCta
+              childName={childName}
+              ageMonths={ageMonths}
+              question={`My ${ageMonths}-month-old baby ${childName} is starting solids. What foods and schedule should I try this week?`}
+              label={t("components.infant_hub.ask_amy_feeding", "Ask Amy for feeding guidance")}
+              testId="infant-ask-amy-feeding"
+            />
+          ) : (
+            <InfantAskAmyCta
+              childName={childName}
+              ageMonths={ageMonths}
+              question={`My ${ageMonths}-month-old baby ${childName} — how often should I feed and what signs mean they're getting enough milk?`}
+              label={t("components.infant_hub.ask_amy_feeding", "Ask Amy for feeding guidance")}
+              testId="infant-ask-amy-feeding"
+            />
+          )}
       </IHSection>
 
       <IHSection

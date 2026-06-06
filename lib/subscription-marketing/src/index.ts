@@ -199,6 +199,13 @@ export const PAYWALL_AI = {
   cta: "Unlock Amy AI",
 } as const;
 
+export const PAYWALL_INFANT_AI = {
+  title: "Ask Amy for tailored baby guidance",
+  subtitle:
+    "Get personalized answers about sleep, feeding, and development—for your baby's age, not generic advice. Unlimited questions with Premium.",
+  cta: "Unlock Amy Baby Expert",
+} as const;
+
 export const PAYWALL_SPEECH_COACH = {
   title: "Clearer speech builds braver kids",
   subtitle:
@@ -225,6 +232,20 @@ export const PAYWALL_ROUTINES = {
   subtitle:
     "Family routines for mornings, after-school, and bedtime—built for your child so independence replaces daily battles.",
   cta: "Unlock routines",
+} as const;
+
+export const PAYWALL_INFANT_SLEEP = {
+  title: "A sleep plan built from your baby's patterns",
+  subtitle:
+    "AI Sleep Coach reads nap history and wake windows to recommend bedtime tweaks, regression insights, and a weekly focus—not generic sleep tips.",
+  cta: "Unlock Sleep Coach",
+} as const;
+
+export const PAYWALL_INFANT_FEEDING = {
+  title: "A 7-day feeding roadmap for solids",
+  subtitle:
+    "Personalized meals, allergy-safe intro order, and portion guidance from your baby's age and feeding logs—not one-size-fits-all charts.",
+  cta: "Unlock Feeding Plan",
 } as const;
 
 export const CANCELLATION_RETENTION = {
@@ -347,6 +368,7 @@ export const AB_TEST_IDEAS = [
 
 export type PaywallReason =
   | "ai_quota"
+  | "infant_ai_quota"
   | "personalized_coaching"
   | "premium_insight"
   | "child_limit"
@@ -363,19 +385,24 @@ export type PaywallReason =
   | "hub_nutrition"
   | "nutrition_library"
   | "speech_coach"
-  | "learning_locked";
+  | "learning_locked"
+  | "infant_sleep_coach"
+  | "infant_feeding_plan";
 
 export const PAYWALL_REASON_COPY: Record<
   PaywallReason,
   { title: string; subtitle: string; cta?: string }
 > = {
   ai_quota: PAYWALL_AI,
+  infant_ai_quota: PAYWALL_INFANT_AI,
   speech_coach: PAYWALL_SPEECH_COACH,
   learning_locked: PAYWALL_LEARNING,
   hub_locked: PAYWALL_HUB,
   hub_journey: PAYWALL_LEARNING,
   section_locked: PAYWALL_HUB,
   routines_limit: PAYWALL_ROUTINES,
+  infant_sleep_coach: PAYWALL_INFANT_SLEEP,
+  infant_feeding_plan: PAYWALL_INFANT_FEEDING,
   coach_locked: {
     title: "A plan for this exact parenting moment",
     subtitle:

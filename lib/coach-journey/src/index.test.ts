@@ -46,6 +46,25 @@ describe("coach-journey", () => {
     );
   });
 
+  it("opens every infant-problems topic for free users", () => {
+    assert.equal(
+      getCoachGoalAccess({
+        goalId: "excessive-crying",
+        isPremium: false,
+        completedGoalIds: [],
+      }),
+      "open",
+    );
+    assert.equal(
+      getCoachGoalAccess({
+        goalId: "not-eating-solids",
+        isPremium: false,
+        completedGoalIds: [],
+      }),
+      "open",
+    );
+  });
+
   it("reopens completed free samples without premium", () => {
     assert.equal(
       getCoachGoalAccess({
