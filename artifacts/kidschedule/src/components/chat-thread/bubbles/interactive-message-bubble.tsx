@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { OnboardingBirthdayPicker } from "@/components/onboarding-birthday-picker";
 import { AmyMessageBubble } from "./amy-message-bubble";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ function InteractionBody({
   theme: ThreadTheme;
   onInteraction: (event: InteractionEvent) => void;
 }) {
+  const { t } = useTranslation();
   const resolved = state.status === "resolved";
   const [multiDraft, setMultiDraft] = useState<string[]>([]);
   const [otherTextDraft, setOtherTextDraft] = useState("");
@@ -696,17 +698,22 @@ function InteractionBody({
       return (
         <div className="flex flex-col gap-3">
           <p className="text-center text-sm leading-relaxed text-muted-foreground">
-            Allow location to detect your country automatically.
+            {t("screens.onboarding.country_location_permission_body")}
+          </p>
+          <p className="text-center text-sm leading-relaxed text-muted-foreground">
+            {t("screens.onboarding.country_location_manual_hint")}
           </p>
           <Button
             disabled={interaction.locationRequesting}
             className="w-full rounded-2xl py-6"
             onClick={() => interaction.onAllowLocation?.()}
           >
-            {interaction.locationRequesting ? "Detecting…" : "Allow location"}
+            {interaction.locationRequesting
+              ? t("screens.onboarding.country_detecting")
+              : t("screens.onboarding.country_allow_location")}
           </Button>
           <Button variant="ghost" className="w-full" onClick={() => interaction.onPickManually?.()}>
-            Select country manually
+            {t("screens.onboarding.country_select_manually")}
           </Button>
         </div>
       );
