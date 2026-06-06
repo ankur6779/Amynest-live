@@ -147,6 +147,7 @@ async function buildCandidatesForChild(input: {
   timezone: string;
   tzOffsetMin: number;
   now: Date;
+  localMinute: number;
 }): Promise<InfantNotificationCandidate[]> {
   const nowMs = input.now.getTime();
   const { localDate, localHour } = getLocalParts(input.timezone, input.now);
@@ -214,6 +215,7 @@ async function buildCandidatesForChild(input: {
       logMap,
       localDate,
       localHour,
+      localMinute: input.localMinute,
     }),
   );
 
@@ -223,6 +225,7 @@ async function buildCandidatesForChild(input: {
     ageMonths: input.ageMonths,
     localDate,
     localHour,
+    localMinute: input.localMinute,
   });
   if (milestone) candidates.push(milestone);
 
@@ -284,6 +287,7 @@ export async function runInfantNotificationTick(now = new Date()): Promise<{
       }
 
       const tzOffsetMin = timezoneOffsetMinutes(globalPrefs.timezone, now);
+      const { localMinute } = getLocalParts(globalPrefs.timezone, now);
       const rawCandidates = await buildCandidatesForChild({
         childId: child.id,
         childName: child.name,
@@ -294,6 +298,7 @@ export async function runInfantNotificationTick(now = new Date()): Promise<{
         timezone: globalPrefs.timezone,
         tzOffsetMin,
         now,
+        localMinute,
       });
 
       const filtered = rawCandidates.filter((c) => {
@@ -328,16 +333,29 @@ export async function runInfantNotificationTick(now = new Date()): Promise<{
           sent++;
           logger.info(
             {
-              evt: "infant_notification.sent",
+              evt: "NOTIFICATION_CREATED",
               userId,
               childId: child.id,
               kind: candidate.kind,
-              dedupKey: candidate.dedupKey,
+              fingerprint: candidate.dedupKey,
+              notificationType: candidate.kind,
             },
             candidate.title,
           );
         } else if (result.status === "failed") {
           failed++;
+        } else if (result.status === "duplicate") {
+          throttled++;
+          logger.info(
+            {
+              evt: "NOTIFICATION_SKIPPED_DUPLICATE",
+              userId,
+              childId: child.id,
+              kind: candidate.kind,
+              fingerprint: candidate.dedupKey,
+            },
+            "Infant notification deduplicated",
+          );
         } else {
           throttled++;
         }

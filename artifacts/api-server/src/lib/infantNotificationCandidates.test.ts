@@ -12,11 +12,26 @@ import {
 } from "./infantNotificationCandidates.js";
 
 describe("infantNotificationCandidates", () => {
-  it("builds stable dedup keys", () => {
+  it("builds stable daily vaccine fingerprints", () => {
     assert.equal(
-      infantNotificationDedupKey(1, "nap_window", "2026-05-30:900"),
-      "infant:1:nap_window:2026-05-30:900",
+      infantNotificationDedupKey(1, "nap_window", "900", "2026-05-30"),
+      "1_nap_window_900_2026-05-30",
     );
+  });
+
+  it("vaccine candidates only fire at 09:00 local, not every minute in hour 9", () => {
+    const base = {
+      childId: 2,
+      childName: "Emma",
+      ageYears: 0,
+      ageMonthsPart: 8,
+      logMap: {},
+      localDate: "2026-05-30",
+      localHour: 9,
+    };
+    assert.equal(evaluateVaccineCandidates({ ...base, localMinute: 0 }).length, 1);
+    assert.equal(evaluateVaccineCandidates({ ...base, localMinute: 1 }).length, 0);
+    assert.equal(evaluateVaccineCandidates({ ...base, localMinute: 59 }).length, 0);
   });
 
   it("respects kind prefs and snooze", () => {

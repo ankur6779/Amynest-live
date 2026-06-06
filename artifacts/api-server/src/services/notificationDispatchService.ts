@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import {
   db,
   notificationLogTable,
@@ -7,6 +7,13 @@ import {
   intensityToCap,
   type NotificationCategory,
 } from "@workspace/db";
+import {
+  evaluateDeliveryGuard,
+  parseFingerprintChildId,
+  resolveFingerprint,
+  stableNotificationId,
+  type DeliveryHistoryRow,
+} from "@workspace/notification-engine";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
 import { getMessaging } from "firebase-admin/messaging";
 import { adminApp } from "../lib/firebase-admin";
@@ -14,8 +21,6 @@ import { logger } from "../lib/logger.js";
 import { buildNotificationActionPayload } from "@workspace/action-routing";
 
 const expo = new Expo();
-
-const DEDUP_WINDOW_MINUTES = 60;
 
 export interface DispatchInput {
   userId: string;
@@ -243,20 +248,85 @@ async function countSentToday(userId: string, timezone: string): Promise<number>
   return Number(result.rows[0]?.count ?? 0);
 }
 
-async function isDuplicate(userId: string, dedupKey: string): Promise<boolean> {
-  const cutoff = new Date(Date.now() - DEDUP_WINDOW_MINUTES * 60 * 1000);
-  const [row] = await db
-    .select({ id: notificationLogTable.id })
+async function loadDeliveryHistory(userId: string, fingerprint: string): Promise<DeliveryHistoryRow[]> {
+  const rows = await db
+    .select({
+      dedupKey: notificationLogTable.dedupKey,
+      status: notificationLogTable.status,
+      sentAt: notificationLogTable.sentAt,
+    })
     .from(notificationLogTable)
     .where(
       and(
         eq(notificationLogTable.userId, userId),
-        eq(notificationLogTable.dedupKey, dedupKey),
-        gte(notificationLogTable.sentAt, cutoff),
+        eq(notificationLogTable.dedupKey, fingerprint),
       ),
     )
-    .limit(1);
-  return Boolean(row);
+    .orderBy(desc(notificationLogTable.sentAt))
+    .limit(20);
+  return rows
+    .filter((r): r is typeof r & { dedupKey: string } => r.dedupKey != null)
+    .map((r) => ({ dedupKey: r.dedupKey, status: r.status, sentAt: r.sentAt }));
+}
+
+async function countSentTodayForChild(
+  userId: string,
+  childId: string,
+  timezone: string,
+): Promise<number> {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const localDate = fmt.format(new Date());
+  const prefix = `${childId}_%`;
+  const result = await db.execute<{ count: number }>(sql`
+    SELECT COUNT(*)::int AS count FROM notification_log
+    WHERE user_id = ${userId}
+      AND status = 'sent'
+      AND dedup_key LIKE ${prefix}
+      AND (sent_at AT TIME ZONE ${timezone})::date = ${localDate}::date
+  `);
+  return Number(result.rows[0]?.count ?? 0);
+}
+
+async function countSentLastHour(userId: string): Promise<number> {
+  const cutoff = new Date(Date.now() - 60 * 60 * 1000);
+  const result = await db.execute<{ count: number }>(sql`
+    SELECT COUNT(*)::int AS count FROM notification_log
+    WHERE user_id = ${userId}
+      AND status = 'sent'
+      AND sent_at >= ${cutoff}
+  `);
+  return Number(result.rows[0]?.count ?? 0);
+}
+
+async function evaluateDeliveryFingerprint(
+  userId: string,
+  fingerprint: string,
+  timezone: string,
+): Promise<{ skip: boolean; reason?: string; logEvent?: string }> {
+  const childId = parseFingerprintChildId(fingerprint);
+  const [history, accountSentToday, accountSentLastHour, childSentToday] = await Promise.all([
+    loadDeliveryHistory(userId, fingerprint),
+    countSentToday(userId, timezone),
+    countSentLastHour(userId),
+    childId != null ? countSentTodayForChild(userId, childId, timezone) : Promise.resolve(0),
+  ]);
+
+  const decision = evaluateDeliveryGuard({
+    fingerprint,
+    timezone,
+    history,
+    childSentToday,
+    accountSentToday,
+    accountSentLastHour,
+  });
+
+  if (decision.allow) return { skip: false };
+  return { skip: true, reason: decision.reason, logEvent: decision.logEvent };
 }
 
 async function logEvent(
@@ -268,44 +338,64 @@ async function logEvent(
   const meta = input.contentMeta;
   const global = input.globalMeta;
   const outcome = input.outcomeMeta;
-  await db.insert(notificationLogTable).values({
-    userId: input.userId,
-    category: input.category,
-    title: input.title,
-    body: input.body,
-    deepLink: input.deepLink ?? null,
-    dedupKey: input.dedupKey ?? null,
-    status,
-    platform: platform ?? null,
-    errorMessage: errorMessage ?? null,
-    contentHash: meta?.contentHash ?? null,
-    topicKey: meta?.topicKey ?? null,
-    recommendationKey: meta?.recommendationKey ?? null,
-    theme: meta?.theme ?? null,
-    contentType: meta?.contentType ?? null,
-    noveltyScore: meta?.noveltyScore ?? null,
-    relevanceScore: meta?.relevanceScore ?? null,
-    recencyScore: meta?.recencyScore ?? null,
-    engagementPredictionScore: meta?.engagementPredictionScore ?? null,
-    qualityScore: meta?.businessImpactScore ?? meta?.qualityScore ?? null,
-    businessImpactScore: meta?.businessImpactScore ?? meta?.qualityScore ?? null,
-    routineCompletionProb: meta?.routineCompletionProb ?? null,
-    learningCompletionProb: meta?.learningCompletionProb ?? null,
-    retentionProb: meta?.retentionProb ?? null,
-    subscriptionProb: meta?.subscriptionProb ?? null,
-    engagementProb: meta?.engagementProb ?? null,
-    goal: outcome?.goal ?? null,
-    childLifecycleStage: outcome?.childLifecycleStage ?? null,
-    parentMilestone: outcome?.parentMilestone ?? null,
-    campaignId: outcome?.campaignId ?? null,
-    campaignStep: outcome?.campaignStep ?? null,
-    experimentId: outcome?.experimentId ?? null,
-    experimentVariant: outcome?.experimentVariant ?? null,
-    countryCode: global?.countryCode ?? null,
-    locale: global?.locale ?? null,
-    timezoneAtSend: global?.timezoneAtSend ?? null,
-    culturalRegion: global?.culturalRegion ?? null,
-  });
+  try {
+    await db.insert(notificationLogTable).values({
+      userId: input.userId,
+      category: input.category,
+      title: input.title,
+      body: input.body,
+      deepLink: input.deepLink ?? null,
+      dedupKey: input.dedupKey ?? null,
+      status,
+      platform: platform ?? null,
+      errorMessage: errorMessage ?? null,
+      contentHash: meta?.contentHash ?? null,
+      topicKey: meta?.topicKey ?? null,
+      recommendationKey: meta?.recommendationKey ?? null,
+      theme: meta?.theme ?? null,
+      contentType: meta?.contentType ?? null,
+      noveltyScore: meta?.noveltyScore ?? null,
+      relevanceScore: meta?.relevanceScore ?? null,
+      recencyScore: meta?.recencyScore ?? null,
+      engagementPredictionScore: meta?.engagementPredictionScore ?? null,
+      qualityScore: meta?.businessImpactScore ?? meta?.qualityScore ?? null,
+      businessImpactScore: meta?.businessImpactScore ?? meta?.qualityScore ?? null,
+      routineCompletionProb: meta?.routineCompletionProb ?? null,
+      learningCompletionProb: meta?.learningCompletionProb ?? null,
+      retentionProb: meta?.retentionProb ?? null,
+      subscriptionProb: meta?.subscriptionProb ?? null,
+      engagementProb: meta?.engagementProb ?? null,
+      goal: outcome?.goal ?? null,
+      childLifecycleStage: outcome?.childLifecycleStage ?? null,
+      parentMilestone: outcome?.parentMilestone ?? null,
+      campaignId: outcome?.campaignId ?? null,
+      campaignStep: outcome?.campaignStep ?? null,
+      experimentId: outcome?.experimentId ?? null,
+      experimentVariant: outcome?.experimentVariant ?? null,
+      countryCode: global?.countryCode ?? null,
+      locale: global?.locale ?? null,
+      timezoneAtSend: global?.timezoneAtSend ?? null,
+      culturalRegion: global?.culturalRegion ?? null,
+    });
+  } catch (err) {
+    const pgCode =
+      err && typeof err === "object" && "code" in err
+        ? String((err as { code?: string }).code)
+        : "";
+    if (pgCode === "23505" && status === "sent") {
+      logger.warn(
+        {
+          evt: "NOTIFICATION_SKIPPED_DUPLICATE",
+          userId: input.userId,
+          fingerprint: input.dedupKey,
+          category: input.category,
+        },
+        "Notification log unique constraint — treating as duplicate",
+      );
+      return;
+    }
+    throw err;
+  }
 }
 
 /**
@@ -366,7 +456,9 @@ async function sendFcmWebPush(
 async function sendFcmAndroidPush(
   token: string,
   input: DispatchInput,
+  fingerprint: string,
 ): Promise<void> {
+  const notificationId = stableNotificationId(fingerprint);
   // Data-only so KidScheduleFcmService always builds the tray notification with
   // a PendingIntent that carries deepLink + category (system-displayed FCM
   // notification taps often open the app without those extras).
@@ -378,6 +470,8 @@ async function sendFcmAndroidPush(
       category: input.category,
       deepLink: input.deepLink ?? "",
       url: input.deepLink ?? "",
+      fingerprint,
+      notificationId: String(notificationId),
       ...(input.data
         ? Object.fromEntries(
             Object.entries(input.data).map(([k, v]) => [k, String(v)]),
@@ -450,6 +544,24 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
 
   const prefs = await getOrCreatePreferences(input.userId);
 
+  const childIdFromData =
+    input.data?.childId != null ? String(input.data.childId) : undefined;
+  const fingerprint =
+    resolveFingerprint(input.dedupKey, {
+      childId: childIdFromData,
+      notificationType: input.category,
+      entityId: input.contentMeta?.topicKey ?? input.category,
+      scheduledDate: new Intl.DateTimeFormat("en-CA", {
+        timeZone: prefs.timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date()),
+    }) ?? input.dedupKey;
+  if (fingerprint) {
+    input.dedupKey = fingerprint;
+  }
+
   if (!input.bypassCategoryCheck && !categoryEnabled(prefs, input.category)) {
     await logEvent(input, "throttled", "category_disabled");
     return { status: "throttled", reason: "category_disabled" };
@@ -490,9 +602,32 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     return { status: "no_tokens", reason: "no_valid_tokens" };
   }
 
-  if (input.dedupKey && (await isDuplicate(input.userId, input.dedupKey))) {
-    await logEvent(input, "duplicate", "dedup_window");
-    return { status: "duplicate", reason: "dedup_window" };
+  if (input.dedupKey) {
+    const guard = await evaluateDeliveryFingerprint(
+      input.userId,
+      input.dedupKey,
+      prefs.timezone,
+    );
+    if (guard.skip) {
+      const logEventName =
+        guard.logEvent ??
+        (guard.reason === "cooldown"
+          ? "NOTIFICATION_SKIPPED_COOLDOWN"
+          : "NOTIFICATION_SKIPPED_DUPLICATE");
+      logger.info(
+        {
+          evt: logEventName,
+          timestamp: new Date().toISOString(),
+          userId: input.userId,
+          childId: parseFingerprintChildId(input.dedupKey),
+          notificationType: input.category,
+          fingerprint: input.dedupKey,
+          reason: guard.reason,
+        },
+        "Notification delivery skipped by guard",
+      );
+      return { status: "duplicate", reason: guard.reason ?? "dedup" };
+    }
   }
 
   // routine_item (5-min task heads-up) are time-sensitive, user-initiated
@@ -603,7 +738,7 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     const results = await Promise.allSettled(
       androidFcmTokens.map(async (t) => {
         try {
-          await sendFcmAndroidPush(t.token, input);
+          await sendFcmAndroidPush(t.token, input, input.dedupKey ?? input.title);
           return true;
         } catch (err) {
           if (isFcmInvalidTokenError(err)) {
@@ -693,8 +828,13 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   }
   logger.info(
     {
+      evt: "NOTIFICATION_CREATED",
+      timestamp: new Date().toISOString(),
       userId: input.userId,
-      category: input.category,
+      childId: input.dedupKey ? parseFingerprintChildId(input.dedupKey) : null,
+      notificationType: input.category,
+      fingerprint: input.dedupKey,
+      notificationId: input.dedupKey ? stableNotificationId(input.dedupKey) : null,
       intensity: prefs.notificationIntensity,
       engagementScore: prefs.engagementScore,
       expoOk,

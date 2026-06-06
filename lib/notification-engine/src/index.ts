@@ -10,5 +10,6 @@ export * from "./build-adaptive.js";
 export * from "./analytics.js";
 export * from "./global/index.js";
 export * from "./outcomes/index.js";
+export * from "./delivery/index.js";
 
 export { MIN_POOL_SIZES } from "./types.js";

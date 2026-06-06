@@ -58,9 +58,25 @@ class KidScheduleFcmService : FirebaseMessagingService() {
             ?.takeIf { it.isNotBlank() }
             ?: category.fallbackDeepLink
 
-        Log.d(TAG, "Notification: category=$categoryStr deepLink=$deepLink channel=${category.channelId}")
+        val fingerprint = remoteMessage.data["fingerprint"]
+            ?.takeIf { it.isNotBlank() }
+        val stableId = remoteMessage.data["notificationId"]?.toIntOrNull()
+            ?: fingerprint?.hashCode()?.and(0x7fffffff)
+            ?: stableNotificationId(title, body, deepLink)
 
-        showNotification(title, body, deepLink, categoryStr, category)
+        Log.d(TAG, "Notification: category=$categoryStr deepLink=$deepLink channel=${category.channelId} id=$stableId")
+
+        showNotification(title, body, deepLink, categoryStr, category, stableId)
+    }
+
+    private fun stableNotificationId(title: String, body: String, deepLink: String): Int {
+        val key = "$title|$body|$deepLink"
+        var hash = 2166136261.toInt()
+        for (ch in key) {
+            hash = hash xor ch.code
+            hash *= 16777619
+        }
+        return hash and 0x7fffffff
     }
 
     // ── Notification helpers ──────────────────────────────────────────────────
@@ -71,6 +87,7 @@ class KidScheduleFcmService : FirebaseMessagingService() {
         deepLink: String,
         categoryStr: String,
         category: NotifCategory,
+        notificationId: Int,
     ) {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -79,7 +96,7 @@ class KidScheduleFcmService : FirebaseMessagingService() {
         }
         val pendingIntent = PendingIntent.getActivity(
             this,
-            System.currentTimeMillis().toInt(),
+            notificationId,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -96,6 +113,6 @@ class KidScheduleFcmService : FirebaseMessagingService() {
             .build()
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(System.currentTimeMillis().toInt(), notification)
+        manager.notify(notificationId, notification)
     }
 }

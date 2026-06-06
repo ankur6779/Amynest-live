@@ -11,6 +11,10 @@ import {
   type VaxLogMap,
 } from "@workspace/infant-hub";
 import type { InfantNotificationKind } from "@workspace/db";
+import {
+  infantFingerprint,
+  normalizeEntityId,
+} from "@workspace/notification-engine";
 import type { NapHistoryEntry } from "../lib/sleepPredict";
 import { predictNextSleep, buildPredictInputFromHistory } from "../lib/sleepPredict";
 
@@ -27,12 +31,18 @@ export type InfantNotificationCandidate = {
 export const INFANT_NAP_LEAD_MINUTES = 15;
 export const INFANT_MILESTONE_HOUR = 10;
 export const INFANT_VACCINE_MORNING_HOUR = 9;
+/** Daily infant reminders fire once at this local minute — not every minute in the hour. */
+export const INFANT_DAILY_REMINDER_MINUTE = 0;
 
 export function infantNotificationDedupKey(
   childId: number,
   kind: InfantNotificationKind,
   bucket: string,
+  localDate?: string,
 ): string {
+  if (localDate) {
+    return infantFingerprint(childId, kind, bucket, localDate);
+  }
   return `infant:${childId}:${kind}:${bucket}`;
 }
 
@@ -67,14 +77,19 @@ export function evaluateNapWindowCandidate(input: {
   const windowEnd = targetMs + 3 * 60_000;
   if (input.nowMs < targetMs || input.nowMs >= windowEnd) return null;
 
-  const bucket = `${input.localDate}:${Math.floor(prediction.windowStart / 60_000)}`;
+  const bucket = `${Math.floor(prediction.windowStart / 60_000)}`;
   return {
     kind: "nap_window",
     priority: 90,
     title: "Nap window soon",
     body: "Nap window starts in 15 minutes.",
     deepLink: infantHubDeepLink("infant-sleep"),
-    dedupKey: infantNotificationDedupKey(input.childId, "nap_window", bucket),
+    dedupKey: infantNotificationDedupKey(
+      input.childId,
+      "nap_window",
+      bucket,
+      input.localDate,
+    ),
     topicKey: "infant:nap_window",
   };
 }
@@ -94,14 +109,19 @@ export function evaluateFeedReminderCandidate(input: {
   const graceEnd = dueMs + 45 * 60_000;
   if (input.nowMs < graceStart || input.nowMs >= graceEnd) return null;
 
-  const bucket = `${input.localDate}:${Math.floor(dueMs / (30 * 60_000))}`;
+  const bucket = `${Math.floor(dueMs / (30 * 60_000))}`;
   return {
     kind: "feed_reminder",
     priority: 80,
     title: "Feed reminder",
     body: "It may be time for the next feed.",
     deepLink: infantHubDeepLink("infant-feeding"),
-    dedupKey: infantNotificationDedupKey(input.childId, "feed_reminder", bucket),
+    dedupKey: infantNotificationDedupKey(
+      input.childId,
+      "feed_reminder",
+      bucket,
+      input.localDate,
+    ),
     topicKey: "infant:feed_reminder",
   };
 }
@@ -114,8 +134,14 @@ export function evaluateVaccineCandidates(input: {
   logMap: VaxLogMap;
   localDate: string;
   localHour: number;
+  localMinute?: number;
 }): InfantNotificationCandidate[] {
-  if (input.localHour !== INFANT_VACCINE_MORNING_HOUR) return [];
+  if (
+    input.localHour !== INFANT_VACCINE_MORNING_HOUR ||
+    (input.localMinute ?? INFANT_DAILY_REMINDER_MINUTE) !== INFANT_DAILY_REMINDER_MINUTE
+  ) {
+    return [];
+  }
 
   const ageMonths = fractionalAgeMonths(input.ageYears, input.ageMonthsPart);
   const out: InfantNotificationCandidate[] = [];
@@ -132,7 +158,8 @@ export function evaluateVaccineCandidates(input: {
       dedupKey: infantNotificationDedupKey(
         input.childId,
         "vaccine_due",
-        `overdue:${v.ageLabel}:${input.localDate.slice(0, 7)}`,
+        `overdue_${normalizeEntityId(v.ageLabel)}`,
+        input.localDate,
       ),
       topicKey: "infant:vaccine_overdue",
     });
@@ -151,7 +178,8 @@ export function evaluateVaccineCandidates(input: {
         dedupKey: infantNotificationDedupKey(
           input.childId,
           "vaccine_due",
-          `today:${v.ageLabel}:${input.localDate}`,
+          `today_${normalizeEntityId(v.ageLabel)}`,
+          input.localDate,
         ),
         topicKey: "infant:vaccine_today",
       });
@@ -165,7 +193,8 @@ export function evaluateVaccineCandidates(input: {
         dedupKey: infantNotificationDedupKey(
           input.childId,
           "vaccine_due",
-          `tomorrow:${v.ageLabel}:${input.localDate}`,
+          `tomorrow_${normalizeEntityId(v.ageLabel)}`,
+          input.localDate,
         ),
         topicKey: "infant:vaccine_tomorrow",
       });
@@ -181,8 +210,14 @@ export function evaluateMilestoneTipCandidate(input: {
   ageMonths: number;
   localDate: string;
   localHour: number;
+  localMinute?: number;
 }): InfantNotificationCandidate | null {
-  if (input.localHour !== INFANT_MILESTONE_HOUR) return null;
+  if (
+    input.localHour !== INFANT_MILESTONE_HOUR ||
+    (input.localMinute ?? INFANT_DAILY_REMINDER_MINUTE) !== INFANT_DAILY_REMINDER_MINUTE
+  ) {
+    return null;
+  }
 
   const activity = pickDailyActivity(
     input.ageMonths,
@@ -203,6 +238,7 @@ export function evaluateMilestoneTipCandidate(input: {
     dedupKey: infantNotificationDedupKey(
       input.childId,
       "milestone_tip",
+      "daily",
       input.localDate,
     ),
     topicKey: "infant:milestone_tip",
@@ -237,7 +273,8 @@ export function evaluateSleepDriftCandidate(input: {
     dedupKey: infantNotificationDedupKey(
       input.childId,
       "sleep_drift",
-      input.localDate.slice(0, 7),
+      "weekly",
+      input.localDate,
     ),
     topicKey: "infant:sleep_drift",
   };
