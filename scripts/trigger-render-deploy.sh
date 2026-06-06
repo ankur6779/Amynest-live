@@ -11,10 +11,10 @@ fi
 COMMIT_ID="${1:-}"
 
 # Production service IDs (Render Dashboard → service → Settings).
+# AI worker runs on Hetzner (see docs/hetzner-ai-worker.md), not Render.
 SERVICES=(
   "srv-d85k80jtqb8s7382m7i0" # Amynest-live-1 (static web)
   "srv-d85k8jbtqb8s7382mjng" # Amynest-backend (API)
-  "srv-d85k8jbtqb8s7382mjog" # amynest-ai-worker
 )
 
 failed=0
