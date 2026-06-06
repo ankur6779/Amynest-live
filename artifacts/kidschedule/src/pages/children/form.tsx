@@ -167,7 +167,7 @@ const INFANT_SLEEP_PATTERNS = [
 function deriveFoodType(dt: string): "veg" | "non_veg" {
   return ["vegetarian", "vegan", "eggetarian", "jain", "sattvik"].includes(dt) ? "veg" : "non_veg";
 }
-export default function ChildForm() {
+function ChildForm() {
   const {
     t
   } = useTranslation();
@@ -250,15 +250,17 @@ export default function ChildForm() {
   const travelMode = form.watch("travelMode");
   const hasDob = Boolean(watchDob);
   const calculatedAge = watchDob ? calculateAge(watchDob) : null;
-  const totalMonths = calculatedAge ? getTotalMonths(calculatedAge.years, calculatedAge.months) : 0;
+  const ageYears = calculatedAge?.years ?? 0;
+  const ageMonthsPart = calculatedAge?.months ?? 0;
+  const totalMonths = calculatedAge ? getTotalMonths(ageYears, ageMonthsPart) : 0;
   const isInfant = hasDob && totalMonths < 12;
   const ageGroupInfo = calculatedAge ? getAgeGroupInfo(totalMonths) : null;
   const stageOptions = useMemo(() => {
     if (!hasDob || isInfant || !calculatedAge) return [];
     const options = getEducationStagesForChild(
       parentCountry,
-      calculatedAge.years,
-      calculatedAge.months,
+      ageYears,
+      ageMonthsPart,
     );
     const current = watchEducationStage;
     if (current && !options.some((o) => o.code === current)) {
@@ -272,7 +274,7 @@ export default function ChildForm() {
       ];
     }
     return options;
-  }, [hasDob, isInfant, parentCountry, calculatedAge, watchEducationStage]);
+  }, [hasDob, isInfant, parentCountry, ageYears, ageMonthsPart, watchEducationStage]);
   const stageFlags = profileFormStageFlags(watchEducationStage, totalMonths);
   const showScheduleFields = stageFlags.showScheduleSection && watchScheduleKnown === true;
 
@@ -300,8 +302,12 @@ export default function ChildForm() {
 
   useEffect(() => {
     if (!isInfant) return;
-    form.setValue("educationStage", "at_home", { shouldDirty: false });
-    form.setValue("scheduleKnown", false, { shouldDirty: false });
+    if (form.getValues("educationStage") !== "at_home") {
+      form.setValue("educationStage", "at_home", { shouldDirty: false });
+    }
+    if (form.getValues("scheduleKnown") !== false) {
+      form.setValue("scheduleKnown", false, { shouldDirty: false });
+    }
     setFixedActivities((prev) => (prev.length === 0 ? prev : []));
   }, [form, isInfant, watchDob]);
   useEffect(() => {
@@ -309,14 +315,18 @@ export default function ChildForm() {
     authFetch("/api/parent-profile")
       .then((r) => (r.ok ? r.json() : null))
       .then((profile: { country?: string | null } | null) => {
-        if (profile?.country) setParentCountry(profile.country);
+        const country = profile?.country?.trim();
+        if (!country) return;
+        setParentCountry((prev) => (prev === country ? prev : country));
       })
       .catch(() => {});
   }, [authFetch]);
   useEffect(() => {
     if (child && isEditing) {
       const dobValue = (child as any).dob ?? "";
-      const hydrationKey = `${child.id}:${dobValue}:${child.name}:${child.updatedAt ?? ""}`;
+      // Stable key only — avoid re-reset when react-query refetches the same child
+      // (updatedAt/name churn was re-triggering form.reset ↔ picker loops on /children/:id).
+      const hydrationKey = `${child.id}:${dobValue}:${parentCountry}`;
       if (childHydrationKeyRef.current === hydrationKey) return;
       childHydrationKeyRef.current = hydrationKey;
 
@@ -1188,3 +1198,6 @@ export default function ChildForm() {
       {isEditing && childId > 0 && <InsightsCard childId={childId} />}
     </div>;
 }
+
+ChildForm.displayName = "ChildForm";
+export default ChildForm;
