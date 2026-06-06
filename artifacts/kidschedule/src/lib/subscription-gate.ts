@@ -21,6 +21,8 @@ export function isSubscriptionGateResponse(status: number, body?: GateErrorBody)
 
 export function mapFeatureToPaywallReason(feature?: string): PaywallReason {
   switch (feature) {
+    case "infant_ai_query":
+      return "infant_ai_quota";
     case "ai_query":
       return "ai_quota";
     case "routine_generate":
@@ -32,6 +34,10 @@ export function mapFeatureToPaywallReason(feature?: string): PaywallReason {
       return "behavior_locked";
     case "audio_lesson":
       return "audio_lessons";
+    case "infant_sleep_coach":
+      return "infant_sleep_coach";
+    case "infant_feeding_plan":
+      return "infant_feeding_plan";
     default:
       if (feature?.startsWith("learning_load_more")) return "learning_locked";
       if (feature?.startsWith("hub_")) return "hub_locked";

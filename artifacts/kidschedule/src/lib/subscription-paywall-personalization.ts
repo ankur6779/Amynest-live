@@ -17,6 +17,12 @@ const PERSONALIZED_TEMPLATES: Partial<
       "Amy AI gives you calm, specific next steps—for meltdowns, homework, and bedtime—so you respond with clarity, not stress.",
     cta: "Unlock Amy AI",
   }),
+  infant_ai_quota: (name) => ({
+    title: `Get tailored guidance for ${name}`,
+    subtitle:
+      "Ask Amy about sleep, feeding, and development—with answers specific to your baby's age and stage.",
+    cta: "Unlock Amy Baby Expert",
+  }),
   learning_locked: (name) => ({
     title: `Keep ${name}'s learning moving forward`,
     subtitle:
@@ -52,6 +58,18 @@ const PERSONALIZED_TEMPLATES: Partial<
     subtitle:
       "Amy Coach turns real struggles into 10–12 clear steps—for your child's age, not generic advice.",
     cta: "Unlock Amy Coach",
+  }),
+  infant_sleep_coach: (name) => ({
+    title: `Better nights for ${name}`,
+    subtitle:
+      "AI Sleep Coach uses your nap logs and wake windows to recommend bedtime tweaks and a weekly focus—not generic sleep charts.",
+    cta: "Unlock Sleep Coach",
+  }),
+  infant_feeding_plan: (name) => ({
+    title: `A solids roadmap for ${name}`,
+    subtitle:
+      "7-day meals, allergy-safe intro order, and portions tuned to your baby's age and feeding history.",
+    cta: "Unlock Feeding Plan",
   }),
 };
 

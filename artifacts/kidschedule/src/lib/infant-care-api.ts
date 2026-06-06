@@ -113,3 +113,81 @@ export async function acceptCoParentInvite(inviteCode: string) {
     },
   );
 }
+
+export type InfantSleepCoachPlan = {
+  bedtimeRecommendation: string;
+  wakeWindowAdjustments: string[];
+  regressionAnalysis: string;
+  napTransitionGuidance: string;
+  weeklyFocus: string;
+  actionSteps: string[];
+};
+
+export type InfantFeedingDayPlan = {
+  day: string;
+  meals: Record<string, { name: string; texture: string; portion: string }>;
+};
+
+export type InfantFeedingPlan = {
+  roadmapSummary: string;
+  allergyIntroTimeline: string[];
+  allergyIntroductionRoadmap?: Array<{ week: number; food: string; method: string }>;
+  portionGuidance: string;
+  days: InfantFeedingDayPlan[];
+};
+
+export async function fetchInfantSleepCoachPlan(childId: number) {
+  return infantFetch<{
+    ok: true;
+    plan: InfantSleepCoachPlan;
+    generatedAt: string;
+    cached: boolean;
+  }>(`/api/infant-sleep/coach-plan/${childId}`);
+}
+
+export async function generateInfantSleepCoachPlan(
+  childId: number,
+  opts?: { forceRefresh?: boolean },
+) {
+  const tzOffsetMin = new Date().getTimezoneOffset();
+  return infantFetch<{
+    ok: true;
+    plan: InfantSleepCoachPlan;
+    generatedAt: string;
+    cached: boolean;
+  }>("/api/infant-sleep/coach-plan", {
+    method: "POST",
+    body: JSON.stringify({
+      childId,
+      forceRefresh: opts?.forceRefresh ?? false,
+      tzOffsetMin,
+    }),
+  });
+}
+
+export async function fetchInfantFeedingPlan(childId: number) {
+  return infantFetch<{
+    ok: true;
+    plan: InfantFeedingPlan;
+    generatedAt: string;
+    cached: boolean;
+  }>(`/api/infant-feeding/plan/${childId}`);
+}
+
+export async function generateInfantFeedingPlan(
+  childId: number,
+  opts?: { forceRefresh?: boolean },
+) {
+  return infantFetch<{
+    ok: true;
+    plan: InfantFeedingPlan;
+    generatedAt: string;
+    cached: boolean;
+  }>("/api/infant-feeding/plan", {
+    method: "POST",
+    body: JSON.stringify({
+      childId,
+      forceRefresh: opts?.forceRefresh ?? false,
+    }),
+  });
+}

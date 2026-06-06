@@ -470,6 +470,11 @@ export async function ensureInfantCareTables(): Promise<void> {
   `);
 
   await db.execute(sql`
+    ALTER TABLE infant_notification_prefs
+      ADD COLUMN IF NOT EXISTS weekly_sleep_report BOOLEAN NOT NULL DEFAULT false
+  `);
+
+  await db.execute(sql`
     ALTER TABLE notification_preferences
       ADD COLUMN IF NOT EXISTS infant_care_enabled BOOLEAN NOT NULL DEFAULT true
   `);

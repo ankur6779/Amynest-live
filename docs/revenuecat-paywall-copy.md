@@ -79,3 +79,27 @@ Auto-renews via Google Play until cancelled in Subscriptions.
 - Mornings & bedtimes that reduce nagging and stress
 - Patterns that help you respond—not react
 - Proof of growth for you and pride for them
+
+---
+
+## Infant Premium — contextual paywall reasons
+
+Trust-first copy for 0–24 month parents. Never block tracking, logs, or milestones.
+
+### `infant_ai_quota`
+
+**Title:** Ask Amy for tailored baby guidance  
+**Subtitle:** Get personalized answers about sleep, feeding, and development—for your baby's age, not generic advice. Unlimited questions with Premium.  
+**CTA:** Unlock Amy Baby Expert
+
+### `infant_sleep_coach`
+
+**Title:** Get a personalized sleep plan  
+**Subtitle:** Amy analyzes your baby's nap patterns and wake windows to suggest bedtime tweaks, regression insight, and a weekly focus—built from your logs, not a generic chart.  
+**CTA:** Unlock sleep coaching
+
+### `infant_feeding_plan`
+
+**Title:** Unlock your baby's custom feeding roadmap  
+**Subtitle:** A 7-day solids plan with allergy introduction steps matched to your baby's age and what you've already logged—without paywalling feed tracking.  
+**CTA:** Unlock feeding plans

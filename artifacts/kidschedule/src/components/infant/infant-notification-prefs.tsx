@@ -20,6 +20,7 @@ const DEFAULT_PREFS: InfantNotifPrefs = {
   vaccineReminders: true,
   milestoneTips: true,
   sleepDrift: false,
+  weeklySleepReport: false,
 };
 
 function loadLocalPrefs(): InfantNotifPrefs {
@@ -63,6 +64,7 @@ export function InfantNotificationPrefs({
           vaccineReminders: server.vaccineReminders,
           milestoneTips: server.milestoneTips,
           sleepDrift: server.sleepDrift,
+          weeklySleepReport: server.weeklySleepReport ?? false,
         });
         setMaxPerDay(server.maxPerDay);
         localStorage.setItem(PREFS_KEY, JSON.stringify(server));
@@ -107,6 +109,10 @@ export function InfantNotificationPrefs({
     { key: "vaccineReminders", label: t("components.infant_notif.vaccine", "Vaccine due alerts") },
     { key: "milestoneTips", label: t("components.infant_notif.milestone", "Milestone activity tips") },
     { key: "sleepDrift", label: t("components.infant_notif.drift", "Sleep schedule drift") },
+    {
+      key: "weeklySleepReport",
+      label: t("components.infant_notif.weekly_sleep", "Weekly sleep coaching summary (Premium)"),
+    },
   ];
 
   return (

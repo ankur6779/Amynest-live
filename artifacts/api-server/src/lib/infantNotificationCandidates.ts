@@ -298,6 +298,7 @@ export function kindEnabled(
     vaccineReminders: boolean;
     milestoneTips: boolean;
     sleepDrift: boolean;
+    weeklySleepReport?: boolean;
   },
   kind: InfantNotificationKind,
 ): boolean {
@@ -312,6 +313,8 @@ export function kindEnabled(
       return prefs.milestoneTips;
     case "sleep_drift":
       return prefs.sleepDrift;
+    case "sleep_weekly_report":
+      return prefs.weeklySleepReport ?? false;
     default:
       return false;
   }

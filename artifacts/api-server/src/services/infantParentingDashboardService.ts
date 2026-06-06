@@ -76,6 +76,11 @@ export type InfantParentingDashboard = {
     inviteSent: number;
     inviteAccepted: number;
   };
+  premiumFunnel: {
+    infantAiQuotaReached: number;
+    sleepCoachGenerated: number;
+    feedingPlanGenerated: number;
+  };
   funnel: FunnelStep[];
   featureRanking: Array<{
     feature: string;
@@ -467,6 +472,15 @@ export async function computeInfantParentingDashboard(
         coParentFromEvents.inviteAccepted,
         coParentRows.filter((r) => r.status === "active" && r.acceptedAt).length,
       ),
+    },
+    premiumFunnel: {
+      infantAiQuotaReached: countEvents(eventPayload, ["infant_ai_quota_reached"]),
+      sleepCoachGenerated: countEvents(eventPayload, [
+        "infant_sleep_coach_generated",
+        "infant_sleep_coach_plan_generated",
+        "infant_weekly_sleep_report_generated",
+      ]),
+      feedingPlanGenerated: countEvents(eventPayload, ["infant_feeding_plan_generated"]),
     },
     funnel,
     featureRanking,

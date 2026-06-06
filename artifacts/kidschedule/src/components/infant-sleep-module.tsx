@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
+import { getApiUrl } from "@/lib/api";
 import { Moon, Sun, Clock, Play, Pause, Plus, Trash2, Edit3, Check, X, AlertTriangle, TrendingUp, Sparkles, RotateCcw, BedDouble, Activity, ChevronDown, ChevronUp } from "lucide-react";
 
 // ─── Wake Window Logic ────────────────────────────────────────────────────────
@@ -126,6 +127,79 @@ function saveSleepLog(childName: string, log: SleepEvent[]) {
     localStorage.setItem(`amynest:sleep:${childName}`, JSON.stringify(log));
   } catch (e) { console.error("REAL ERROR:", e); }
 }
+
+type NapSessionRow = {
+  id: number;
+  kind: "nap" | "night";
+  startedAt: string;
+  endedAt: string | null;
+};
+
+function napSessionsToSleepEvents(sessions: NapSessionRow[]): SleepEvent[] {
+  const events: SleepEvent[] = [];
+  for (const s of sessions) {
+    events.push({
+      id: `api_down_${s.id}`,
+      type: "down",
+      ts: Date.parse(s.startedAt),
+    });
+    if (s.endedAt) {
+      events.push({
+        id: `api_wake_${s.id}`,
+        type: "wake_up",
+        ts: Date.parse(s.endedAt),
+      });
+    }
+  }
+  return events.sort((a, b) => a.ts - b.ts);
+}
+
+async function loadSleepLogFromApi(childId: number): Promise<SleepEvent[] | null> {
+  try {
+    const res = await fetch(getApiUrl(`/api/sleep-predict/history/${childId}?limit=50`), {
+      credentials: "include",
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { sessions?: NapSessionRow[] };
+    const sessions = json.sessions ?? [];
+    if (sessions.length === 0) return null;
+    return napSessionsToSleepEvents(sessions);
+  } catch {
+    return null;
+  }
+}
+
+function useSleepLog(childId: number | undefined, childName: string) {
+  const [log, setLog] = useState<SleepEvent[]>(() => loadSleepLog(childName));
+
+  useEffect(() => {
+    let cancelled = false;
+    const hydrate = async () => {
+      if (childId != null) {
+        const apiLog = await loadSleepLogFromApi(childId);
+        if (!cancelled && apiLog && apiLog.length > 0) {
+          setLog(apiLog);
+          return;
+        }
+      }
+      if (!cancelled) setLog(loadSleepLog(childName));
+    };
+    void hydrate();
+    return () => {
+      cancelled = true;
+    };
+  }, [childId, childName]);
+
+  const persistLocal = useCallback(
+    (next: SleepEvent[]) => {
+      setLog(next);
+      saveSleepLog(childName, next);
+    },
+    [childName],
+  );
+
+  return { log, setLog, persistLocal };
+}
 function fmtTime(ts: number): string {
   const d = new Date(ts);
   let h = d.getHours();
@@ -144,9 +218,11 @@ function fmtDuration(min: number): string {
 
 // ─── Wake Window System ───────────────────────────────────────────────────────
 export function WakeWindowSystem({
+  childId,
   childName,
   ageMonths
 }: {
+  childId?: number;
   childName: string;
   ageMonths: number;
 }) {
@@ -157,7 +233,7 @@ export function WakeWindowSystem({
     toast
   } = useToast();
   const spec = useMemo(() => getWakeSpec(ageMonths), [ageMonths]);
-  const [log, setLog] = useState<SleepEvent[]>(() => loadSleepLog(childName));
+  const { log, persistLocal } = useSleepLog(childId, childName);
   const [now, setNow] = useState(Date.now());
 
   // Refresh "now" every 30s so countdown stays live
@@ -165,11 +241,6 @@ export function WakeWindowSystem({
     const t = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(t);
   }, []);
-
-  // Reload log when child changes
-  useEffect(() => {
-    setLog(loadSleepLog(childName));
-  }, [childName]);
   const lastEvent = log.length > 0 ? log[log.length - 1] : null;
   const isAwake = lastEvent?.type === "wake_up";
   const elapsedMin = lastEvent ? Math.floor((now - lastEvent.ts) / 60_000) : 0;
@@ -179,12 +250,11 @@ export function WakeWindowSystem({
       type,
       ts: Date.now()
     }];
-    setLog(next);
-    saveSleepLog(childName, next);
+    persistLocal(next);
     toast({
       description: type === "wake_up" ? t("toasts.infant_sleep.wake_logged") : t("toasts.infant_sleep.down_logged")
     });
-  }, [log, childName, toast]);
+  }, [log, persistLocal, toast, t]);
 
   // Compute status
   let status: "idle" | "normal" | "tired" | "overtired" | "asleep" = "idle";
@@ -498,22 +568,15 @@ function detectIssues(log: SleepEvent[], spec: WakeWindowSpec): Issue[] {
   return issues;
 }
 export function SleepIssueDetector({
+  childId,
   childName,
   ageMonths
 }: {
+  childId?: number;
   childName: string;
   ageMonths: number;
 }) {
-  const [log, setLog] = useState<SleepEvent[]>(() => loadSleepLog(childName));
-  useEffect(() => {
-    setLog(loadSleepLog(childName));
-  }, [childName]);
-  // Re-read log when window regains focus (cross-component sync)
-  useEffect(() => {
-    const onFocus = () => setLog(loadSleepLog(childName));
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, [childName]);
+  const { log } = useSleepLog(childId, childName);
   const spec = getWakeSpec(ageMonths);
   const issues = useMemo(() => detectIssues(log, spec), [log, spec]);
   const SEV_META = {
@@ -779,19 +842,18 @@ export function RoutineBuilder({
 
 // ─── Weekly Insights ─────────────────────────────────────────────────────────
 export function SleepWeeklyInsights({
+  childId,
   childName,
   ageMonths
 }: {
+  childId?: number;
   childName: string;
   ageMonths: number;
 }) {
   const {
     t
   } = useTranslation();
-  const [log, setLog] = useState<SleepEvent[]>(() => loadSleepLog(childName));
-  useEffect(() => {
-    setLog(loadSleepLog(childName));
-  }, [childName]);
+  const { log } = useSleepLog(childId, childName);
   const spec = getWakeSpec(ageMonths);
   const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const stats = useMemo(() => {

@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Trash2, Loader2, Baby, Camera, X, GraduationCap, School, Crown, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Loader2, Baby, Camera, GraduationCap, School, Crown, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -130,6 +130,7 @@ function getAgeGroupInfo(totalMonths: number) {
 }
 const todayStr = new Date().toISOString().slice(0, 10);
 const inputClass = "rounded-xl h-12 bg-muted/50 border-transparent focus-visible:bg-background";
+const sectionLabelClass = "text-xs font-bold uppercase tracking-widest text-muted-foreground";
 
 const DIET_OPTIONS = [
   { value: "vegetarian", label: "Vegetarian", emoji: "🥦" },
@@ -614,7 +615,7 @@ function ChildForm() {
   if (isEditing && isLoadingChild) {
     return <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
-  return <div className="flex flex-col gap-6 animate-in fade-in duration-500 max-w-2xl mx-auto">
+  return <div className="flex flex-col gap-5 animate-in fade-in duration-500 max-w-2xl mx-auto pb-8">
 
       {/* Upgrade prompt dialog — shown when 402 is returned */}
       <AlertDialog open={showUpgradePrompt} onOpenChange={setShowUpgradePrompt}>
@@ -642,19 +643,69 @@ function ChildForm() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <header className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild className="rounded-full">
-          <Link href="/children"><ArrowLeft className="h-5 w-5" /></Link>
-        </Button>
-        <div>
-          <h1 className="font-quicksand text-3xl font-bold text-foreground">
-            {isEditing ? "Edit Profile" : "Add Child"}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {isEditing ? "Update your child's details" : "Tell us about your child to get personalized routines"}
-          </p>
+      <div
+        data-on-dark
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/90 p-6 sm:p-8 text-white shadow-xl"
+      >
+        <div className="absolute top-0 right-0 h-36 w-36 translate-x-8 -translate-y-8 rounded-full bg-white/10 blur-sm" />
+        <div className="absolute bottom-0 left-0 h-28 w-28 -translate-x-6 translate-y-6 rounded-full bg-white/10 blur-sm" />
+        <div className="relative z-10">
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            className="mb-4 rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white"
+          >
+            <Link href="/children"><ArrowLeft className="h-5 w-5" /></Link>
+          </Button>
+          <div className="flex items-center gap-4">
+            <div
+              className="relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full border-4 border-white/30 bg-white/10 shadow-lg transition-all hover:border-white/50"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {photoPreview ? (
+                <img src={photoPreview} alt={t("pages.children.form.child_photo")} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-white/80">
+                  <Camera className="h-6 w-6" />
+                  <span className="text-[9px] font-bold uppercase tracking-wide">{t("pages.children.form.add_photo")}</span>
+                </div>
+              )}
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold uppercase tracking-widest text-white/70">
+                {isEditing ? t("pages.children.form.edit_profile_label") : t("pages.children.form.new_profile_label")}
+              </p>
+              <h1 className="font-quicksand text-2xl sm:text-3xl font-bold truncate">
+                {isEditing ? (watchName || child?.name || t("pages.children.form.edit_profile")) : t("pages.children.form.add_child_title")}
+              </h1>
+              <p className="mt-1 text-sm text-white/80 line-clamp-2">
+                {isEditing
+                  ? t("pages.children.form.edit_subtitle")
+                  : t("pages.children.form.add_subtitle")}
+              </p>
+              {calculatedAge && watchDob && ageGroupInfo && (
+                <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold">
+                  {ageGroupInfo.emoji} {ageGroupInfo.label}
+                </span>
+              )}
+              {photoPreview && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPhotoPreview(null);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }}
+                  className="mt-2 text-xs font-semibold text-white/80 underline underline-offset-2 hover:text-white"
+                >
+                  {t("pages.children.form.remove")}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </header>
+      </div>
 
       {/* Upfront banner when user is already at the free limit */}
       {isAtFreeLimit && <div className="rounded-2xl bg-gradient-to-r from-muted to-muted border border-border p-4 flex items-start gap-3">
@@ -677,45 +728,11 @@ function ChildForm() {
       <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card">
         <CardContent className="p-6 sm:p-8">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-
-              {/* Photo Upload */}
-              <div>
-                <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.child_s_photo")}</p>
-                <div className="flex items-center gap-5">
-                  <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-primary/20 bg-muted flex items-center justify-center cursor-pointer hover:border-primary/50 transition-all group" onClick={() => fileInputRef.current?.click()}>
-                    {photoPreview ? <>
-                        <img src={photoPreview} alt={t("pages.children.form.child_photo")} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Camera className="h-6 w-6 text-white" />
-                        </div>
-                      </> : <div className="flex flex-col items-center gap-1 text-muted-foreground">
-                        <Camera className="h-7 w-7" />
-                        <span className="text-[10px] font-bold">{t("pages.children.form.add_photo")}</span>
-                      </div>}
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-foreground text-sm">{t("pages.children.form.upload_a_photo_of_your_child")}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{t("pages.children.form.shown_alongside_daily_routines_max_2mb")}</p>
-                    <div className="flex gap-2 mt-2">
-                      <Button type="button" size="sm" variant="outline" className="rounded-full h-8 text-xs" onClick={() => fileInputRef.current?.click()}>
-                        <Camera className="h-3 w-3 mr-1.5" />{t("pages.children.form.choose_photo")}
-                      </Button>
-                      {photoPreview && <Button type="button" size="sm" variant="ghost" className="rounded-full h-8 text-xs text-muted-foreground" onClick={() => {
-                      setPhotoPreview(null);
-                      if (fileInputRef.current) fileInputRef.current.value = "";
-                    }}>
-                          <X className="h-3 w-3 mr-1" />{t("pages.children.form.remove")}
-                        </Button>}
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 
               {/* ── STEP 1: Name ── */}
               <div>
-                <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.step_1_child_info")}</p>
+                <p className={`${sectionLabelClass} mb-3`}>{t("pages.children.form.step_1_child_info")}</p>
                 <FormField control={form.control} name="name" render={({
                 field
               }) => {
@@ -730,8 +747,8 @@ function ChildForm() {
               </div>
 
               {/* ── STEP 2: DOB ── */}
-              <div>
-                <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.step_2_date_of_birth")}</p>
+              <div className="border-t border-border/40 pt-8">
+                <p className={`${sectionLabelClass} mb-3`}>{t("pages.children.form.step_2_date_of_birth")}</p>
                 <FormField control={form.control} name="dob" render={({
                 field
               }) => {
@@ -779,8 +796,8 @@ function ChildForm() {
                 </div>}
 
               {/* ── Education stage (non-infant only) ── */}
-              {hasDob && !isInfant && <div>
-                  <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide flex items-center gap-2">
+              {hasDob && !isInfant && <div className="border-t border-border/40 pt-8">
+                  <p className={`${sectionLabelClass} mb-3 flex items-center gap-2`}>
                     <School className="h-3.5 w-3.5" />
                     {t("pages.children.form.step_3_education_stage")}
                   </p>
@@ -815,8 +832,8 @@ function ChildForm() {
 
               {/* ── Class / grade (formal school only) ── */}
               {hasDob && !isInfant && stageFlags.showClass && (
-                <div>
-                  <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide flex items-center gap-2">
+                <div className="border-t border-border/40 pt-8">
+                  <p className={`${sectionLabelClass} mb-3 flex items-center gap-2`}>
                     <GraduationCap className="h-3.5 w-3.5" />
                     {t("pages.children.form.class_grade")}
                   </p>
@@ -842,8 +859,8 @@ function ChildForm() {
 
               {/* ── School schedule (formal school, age 6+) ── */}
               {hasDob && !isInfant && stageFlags.showScheduleSection && (
-                <div className="space-y-4">
-                  <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
+                <div className="space-y-4 border-t border-border/40 pt-8">
+                  <p className={sectionLabelClass}>
                     {t("pages.children.form.school_schedule_section")}
                   </p>
                   <p className="font-bold text-foreground">
@@ -996,11 +1013,11 @@ function ChildForm() {
               )}
 
               {/* ── INFANT CARE (infants only) ── */}
-              {hasDob && isInfant && <div className="space-y-5">
+              {hasDob && isInfant && <div className="space-y-5 border-t border-border/40 pt-8">
                   <div>
-                    <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.infant_feeding", { defaultValue: "Infant feeding" })}</p>
+                    <p className={`${sectionLabelClass} mb-3`}>{t("pages.children.form.infant_feeding")}</p>
                     <p className="text-xs text-muted-foreground mb-3">
-                      {t("pages.children.form.infant_feeding_hint", { defaultValue: "Helps AmyNest plan feeding sessions in daily routines." })}
+                      {t("pages.children.form.infant_feeding_hint")}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {FEEDING_TYPES.map((opt) => (
@@ -1021,7 +1038,7 @@ function ChildForm() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.infant_sleep_pattern", { defaultValue: "Sleep pattern" })}</p>
+                    <p className={`${sectionLabelClass} mb-3`}>{t("pages.children.form.infant_sleep_pattern")}</p>
                     <div className="flex flex-wrap gap-2">
                       {INFANT_SLEEP_PATTERNS.map((opt) => (
                         <button
@@ -1043,8 +1060,8 @@ function ChildForm() {
                 </div>}
 
               {/* ── WAKE / SLEEP ── */}
-              {hasDob && <div>
-                <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.daily_schedule")}</p>
+              {hasDob && <div className="border-t border-border/40 pt-8">
+                <p className={`${sectionLabelClass} mb-3`}>{t("pages.children.form.daily_schedule")}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField control={form.control} name="wakeUpTime" render={({
                   field
@@ -1068,8 +1085,8 @@ function ChildForm() {
               </div>}
 
               {/* ── FOOD PREFERENCE (non-infant only) ── */}
-              {hasDob && !isInfant && <div>
-                <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.food_preference")}</p>
+              {hasDob && !isInfant && <div className="border-t border-border/40 pt-8">
+                <p className={`${sectionLabelClass} mb-3`}>{t("pages.children.form.food_preference")}</p>
                 {foodPrefInherited && !customizeOpen ? (
                   <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl p-3 gap-3">
                     <div>
@@ -1163,8 +1180,8 @@ function ChildForm() {
               </div>}
 
               {/* ── BABYSITTER ── */}
-              {hasDob && babysitters.length > 0 && <div>
-                  <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">
+              {hasDob && babysitters.length > 0 && <div className="border-t border-border/40 pt-8">
+                  <p className={`${sectionLabelClass} mb-3`}>
                     <Baby className="h-3.5 w-3.5 inline mr-1" />{t("pages.children.form.babysitter")}
                   </p>
                   <FormField control={form.control} name="babysitterId" render={({
@@ -1192,17 +1209,12 @@ function ChildForm() {
                 </div>}
 
               {/* ── RECURRING ACTIVITIES (non-infant only) ── */}
-              {hasDob && !isInfant && <div className="space-y-3">
-                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
-                  {t("pages.routines.fixed.profile_section", {
-                    defaultValue: "Weekly activities (tuition, sports, classes)",
-                  })}
+              {hasDob && !isInfant && <div className="space-y-3 border-t border-border/40 pt-8">
+                <p className={sectionLabelClass}>
+                  {t("pages.routines.fixed.profile_section")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {t("pages.routines.fixed.profile_hint", {
-                    defaultValue:
-                      "Saved on this child's profile and applied automatically when you generate routines.",
-                  })}
+                  {t("pages.routines.fixed.profile_hint")}
                 </p>
                 {fixedActivities.filter((e) => e.activity && e.days.length).length > 0 && (
                   <FixedActivitiesWeeklyInsights
@@ -1216,7 +1228,8 @@ function ChildForm() {
               </div>}
 
               {/* ── GOALS ── */}
-              {hasDob && <FormField control={form.control} name="goals" render={({
+              {hasDob && <div className="border-t border-border/40 pt-8">
+              <FormField control={form.control} name="goals" render={({
               field
             }) => {
               return <FormItem>
@@ -1229,12 +1242,13 @@ function ChildForm() {
                   </FormControl>
                   <FormMessage />
                 </FormItem>;
-            }} />}
+            }} />
+              </div>}
 
               {/* ── ACTION BUTTONS ── */}
-              <div className="flex gap-3 pt-2">
-                <Button type="submit" disabled={isSaving || !watchDob || (!isInfant && !watchEducationStage)} className="flex-1 rounded-full h-12 font-bold">
-                  {isSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("pages.children.form.saving")}</> : <><Save className="h-4 w-4 mr-2" />{isEditing ? "Update Profile" : "Add Child"}</>}
+              <div className="sticky bottom-3 z-10 flex gap-3 rounded-3xl border border-border/50 bg-background/95 p-3 pt-4 shadow-lg backdrop-blur-md">
+                <Button type="submit" disabled={isSaving || !watchDob || (!isInfant && !watchEducationStage)} className="flex-1 rounded-full h-12 font-bold shadow-md">
+                  {isSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("pages.children.form.saving")}</> : <><Save className="h-4 w-4 mr-2" />{isEditing ? t("pages.children.form.update_profile") : t("pages.children.form.add_child_cta")}</>}
                 </Button>
 
                 {isEditing && <AlertDialog>
