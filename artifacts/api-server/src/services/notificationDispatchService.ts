@@ -567,27 +567,13 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
         tickets.push(...chunkTickets);
       }
     } catch (err) {
+      // Transport-level Expo failure must not short-circuit FCM paths — users often
+      // have legacy Expo tokens alongside web/Android/iOS FCM registrations.
       logger.error(
-        { err, userId: input.userId, category: input.category },
-        "Expo dispatch failed",
+        { err, userId: input.userId, category: input.category, tokenCount: expoTokens.length },
+        "Expo dispatch failed — continuing to other platforms",
       );
-      if (claimId != null) {
-        await finalizeNotificationClaim(claimId, {
-          status: "failed",
-          platform: "expo",
-          errorMessage: err instanceof Error ? err.message : String(err),
-        });
-      } else {
-        await logLegacyDelivery(
-          input,
-          "failed",
-          err instanceof Error ? err.message : String(err),
-          "expo",
-        );
-      }
-      recordNotificationMetric("notification_failed_total");
-      void checkNotificationMetricAlerts();
-      return { status: "failed", reason: "expo_error" };
+      expoFail += expoTokens.length;
     }
 
     for (let i = 0; i < tickets.length; i++) {
