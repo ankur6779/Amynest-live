@@ -92,14 +92,24 @@ export class ReactInstanceRecovery extends Component<
       "\nreact componentStack:\n",
       info.componentStack ?? "(no component stack)",
     );
-    if (err instanceof Error) {
-      showReactCrashOverlay(err, "ReactInstanceRecovery", info.componentStack ?? undefined);
-    } else {
-      showProductionCrashOverlay({
+    void import("@/lib/crash-report").then(({ reportCrash }) =>
+      reportCrash({
         kind: "react.recovery",
         message,
-        stack: info.componentStack ?? undefined,
-      });
+        stack: [stack, info.componentStack].filter(Boolean).join("\n"),
+        component: "ReactInstanceRecovery",
+      }),
+    );
+    if (isCrashDebugOverlayEnabled()) {
+      if (err instanceof Error) {
+        showReactCrashOverlay(err, "ReactInstanceRecovery", info.componentStack ?? undefined);
+      } else {
+        showProductionCrashOverlay({
+          kind: "react.recovery",
+          message,
+          stack: info.componentStack ?? undefined,
+        });
+      }
     }
   }
 

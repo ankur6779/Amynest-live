@@ -278,11 +278,19 @@ function NotifyPromptRouteGuard() {
   );
 }
 
-function ProtectedRoute({ component: Component }: { component: ComponentType; requiresProfile?: boolean }) {
+function ProtectedRoute({
+  component: Component,
+  routeLabel,
+}: {
+  component: ComponentType;
+  routeLabel?: string;
+  requiresProfile?: boolean;
+}) {
   const { isSignedIn, isLoaded, authStatus } = useAuth();
   const { data, isError, error, refetch } = useOnboardingStatus();
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
+  const pageLabel = routeLabel ?? Component.displayName ?? Component.name ?? "ProtectedPage";
 
   // Hard guard: never decide signed-in / signed-out until Firebase has
   // resolved. Without this gate, a signed-in user with a slow auth resolve
@@ -299,30 +307,30 @@ function ProtectedRoute({ component: Component }: { component: ComponentType; re
   return (
     <AppErrorBoundary label="Layout">
       <Layout>
-        <SafeRoutePage component={Component} label="ProtectedPage" suspense />
+        <SafeRoutePage component={Component} label={pageLabel} suspense />
       </Layout>
     </AppErrorBoundary>
   );
 }
 
 /** Stable route component — avoids remounting guards on parent re-renders. */
-function makeProtectedRoute(Component: ComponentType) {
+function makeProtectedRoute(Component: ComponentType, routeLabel?: string) {
   function ProtectedRoutePage() {
-    return <ProtectedRoute component={Component} />;
+    return <ProtectedRoute component={Component} routeLabel={routeLabel} />;
   }
-  ProtectedRoutePage.displayName = `Protected(${Component.displayName ?? Component.name ?? "Page"})`;
+  ProtectedRoutePage.displayName = `Protected(${routeLabel ?? Component.displayName ?? Component.name ?? "Page"})`;
   return ProtectedRoutePage;
 }
 
-const DashboardRoute = makeProtectedRoute(Dashboard);
-const ChildrenListRoute = makeProtectedRoute(ChildrenList);
-const ChildFormRoute = makeProtectedRoute(ChildForm);
-const RoutinesListRoute = makeProtectedRoute(RoutinesList);
-const RoutineGenerateRoute = makeProtectedRoute(RoutineGenerate);
-const RoutineDetailRoute = makeProtectedRoute(RoutineDetail);
+const DashboardRoute = makeProtectedRoute(Dashboard, "Dashboard");
+const ChildrenListRoute = makeProtectedRoute(ChildrenList, "ChildrenList");
+const ChildFormRoute = makeProtectedRoute(ChildForm, "ChildForm");
+const RoutinesListRoute = makeProtectedRoute(RoutinesList, "RoutinesList");
+const RoutineGenerateRoute = makeProtectedRoute(RoutineGenerate, "RoutineGenerate");
+const RoutineDetailRoute = makeProtectedRoute(RoutineDetail, "RoutineDetail");
 const BehaviorTrackerRoute = makeProtectedRoute(BehaviorTracker);
-const ParentProfileRoute = makeProtectedRoute(ParentProfile);
-const NotificationSettingsRoute = makeProtectedRoute(NotificationSettingsPage);
+const ParentProfileRoute = makeProtectedRoute(ParentProfile, "ParentProfile");
+const NotificationSettingsRoute = makeProtectedRoute(NotificationSettingsPage, "NotificationSettings");
 const NotificationDiagnosticsRoute = makeProtectedRoute(NotificationDiagnosticsPage);
 const AssistantRoute = makeProtectedRoute(AssistantPage);
 const AmyAiTutorRoute = makeProtectedRoute(AmyAiTutorPage);
@@ -354,10 +362,10 @@ const GamesRoute = makeProtectedRoute(GamesPage);
 const AnimalWorldRoute = makeProtectedRoute(AnimalWorldPage);
 const DiscoveryWorldsHubRoute = makeProtectedRoute(DiscoveryWorldsHubPage);
 const AnswerToKidsHowRoute = makeProtectedRoute(AnswerToKidsHowPage);
-const AnswerToKidsHowReaderRoute = makeProtectedRoute(AnswerToKidsHowReaderPage);
-const DiscoveryWorldPreviewRoute = makeProtectedRoute(DiscoveryWorldPreviewPage);
-const DiscoveryWorldLiveRoute = makeProtectedRoute(DiscoveryWorldLivePage);
-const PricingRoute = makeProtectedRoute(PricingPage);
+const AnswerToKidsHowReaderRoute = makeProtectedRoute(AnswerToKidsHowReaderPage, "StoryReader");
+const DiscoveryWorldPreviewRoute = makeProtectedRoute(DiscoveryWorldPreviewPage, "StoryPreview");
+const DiscoveryWorldLiveRoute = makeProtectedRoute(DiscoveryWorldLivePage, "StoryLive");
+const PricingRoute = makeProtectedRoute(PricingPage, "Pricing");
 const ReferralsRoute = makeProtectedRoute(ReferralsPage);
 /** Public — universal link `/referral/:code` captures invite before sign-in. */
 const ReferralDeepLinkRoute = ReferralDeepLinkPage;

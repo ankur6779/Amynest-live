@@ -27,6 +27,7 @@ export type ProductionCrashPayload = {
 };
 
 const OVERLAY_ID = "amynest-crash-overlay";
+const SAFE_OVERLAY_ID = "amynest-safe-recovery-overlay";
 const LAST_CRASH_KEY = "__amynest_last_crash_v1";
 
 function escapeHtml(value: string): string {
@@ -46,6 +47,39 @@ function dismissSplash(): void {
   } catch {
     /* best-effort */
   }
+}
+
+/** User-safe full-screen recovery — no stack traces or internal details. */
+export function showUserSafeRecoveryOverlay(message = "Something went wrong. Recovering…"): void {
+  if (typeof document === "undefined") return;
+  dismissSplash();
+
+  let el = document.getElementById(SAFE_OVERLAY_ID);
+  if (!el) {
+    el = document.createElement("div");
+    el.id = SAFE_OVERLAY_ID;
+    el.setAttribute("role", "alert");
+    el.style.cssText = [
+      "position:fixed",
+      "inset:0",
+      "z-index:2147483646",
+      "display:flex",
+      "align-items:center",
+      "justify-content:center",
+      "padding:24px",
+      "background:linear-gradient(175deg,#0a061a 0%,#120a2e 55%,#050010 100%)",
+      "color:#f0e8ff",
+      "font:16px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif",
+      "text-align:center",
+    ].join(";");
+    (document.body ?? document.documentElement).appendChild(el);
+  }
+
+  el.innerHTML =
+    '<div style="max-width:420px">' +
+    `<p style="margin:0 0 8px;font-size:20px;font-weight:700">${escapeHtml(message)}</p>` +
+    '<p style="margin:0;opacity:0.85;font-size:14px">Please wait a moment.</p>' +
+    "</div>";
 }
 
 function messageFromPayload(payload: ProductionCrashPayload | string | unknown): string {
@@ -112,7 +146,7 @@ function errFromPayload(payload: ProductionCrashPayload | string | unknown): unk
   return payload;
 }
 
-/** Show full-screen crash overlay — safe to call before React boots. */
+/** Full-screen crash overlay — safe to call before React boots. */
 export function showProductionCrashOverlay(payload: ProductionCrashPayload | string | unknown): void {
   if (typeof document === "undefined") return;
 
@@ -121,16 +155,17 @@ export function showProductionCrashOverlay(payload: ProductionCrashPayload | str
       ? String((payload as ProductionCrashPayload).kind)
       : "unknown";
   const err = errFromPayload(payload);
-  const showOverlay = shouldShowProductionCrashOverlay(err, kind);
-  if (!showOverlay) {
-    persistLastCrash(payload);
+  const showDebugOverlay = shouldShowProductionCrashOverlay(err, kind);
+
+  persistLastCrash(payload);
+
+  if (!showDebugOverlay) {
     if (shouldAttemptAutoRecovery(err)) {
       tryAutoRecovery(kind);
     }
+    showUserSafeRecoveryOverlay();
     return;
   }
-
-  persistLastCrash(payload);
 
   try {
     const w = window as Window & {

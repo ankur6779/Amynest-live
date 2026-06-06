@@ -50,6 +50,9 @@ export interface ChildDobPickerProps {
 /**
  * Day / month / year selects — reliable in iOS WKWebView where `<input type="date">`
  * often shows an empty field and no picker.
+ *
+ * Sync is one-way from props unless the user changes a select. Prop-driven updates
+ * never call onChange (prevents form.reset ↔ picker feedback loops on /children/:id).
  */
 export function ChildDobPicker({
   value,
@@ -65,15 +68,25 @@ export function ChildDobPicker({
   const [day, setDay] = useState(initial.day);
   const [month, setMonth] = useState(initial.month);
   const [year, setYear] = useState(initial.year);
-  const userInteractedRef = useRef(Boolean(value));
 
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const userInteractedRef = useRef(false);
+  const applyingExternalRef = useRef(false);
+  const lastEmittedRef = useRef(value);
+
+  // Sync controlled value → local selects (never emits to parent).
   useEffect(() => {
     const parsed = parseIsoDate(value);
     if (!parsed) return;
+    applyingExternalRef.current = true;
     setDay(parsed.day);
     setMonth(parsed.month);
     setYear(parsed.year);
-    userInteractedRef.current = true;
+    lastEmittedRef.current = value;
+    queueMicrotask(() => {
+      applyingExternalRef.current = false;
+    });
   }, [value]);
 
   const years = useMemo(() => {
@@ -87,20 +100,29 @@ export function ChildDobPicker({
     if (day > maxDay) setDay(maxDay);
   }, [day, maxDay]);
 
-  useEffect(() => {
-    if (!userInteractedRef.current && !value) return;
+  const emitCandidate = (nextYear: number, nextMonth: number, nextDay: number) => {
+    if (applyingExternalRef.current) return;
 
-    const candidate = toIso(year, month, day);
+    let candidate = toIso(nextYear, nextMonth, nextDay);
     if (candidate > maxIso) {
-      onChange(maxIso);
+      candidate = maxIso;
       const clamped = parseIsoDate(maxIso)!;
       setYear(clamped.year);
       setMonth(clamped.month);
       setDay(clamped.day);
-      return;
     }
-    if (candidate !== value) onChange(candidate);
-  }, [year, month, day, maxIso, onChange, value]);
+
+    if (candidate === lastEmittedRef.current) return;
+    lastEmittedRef.current = candidate;
+    onChangeRef.current(candidate);
+  };
+
+  // User-driven local changes only (stable deps — no onChange/value churn).
+  useEffect(() => {
+    if (!userInteractedRef.current) return;
+    emitCandidate(year, month, day);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- emitCandidate reads latest refs
+  }, [year, month, day, maxIso]);
 
   const selectClass =
     "min-w-0 flex-1 rounded-2xl px-3 py-3.5 text-sm outline-none border border-border focus:border-primary transition-colors appearance-none";
@@ -158,7 +180,7 @@ export function ChildDobPicker({
         </select>
       </div>
       <p className="text-xs text-muted-foreground px-1">
-        {toIso(year, month, day)}
+        {toIso(year, month, Math.min(day, maxDay))}
       </p>
     </div>
   );

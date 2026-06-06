@@ -181,6 +181,7 @@ export default function ChildForm() {
   const [feedingType, setFeedingType] = useState<string | null>(null);
   const [sleepPattern, setSleepPattern] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const childHydrationKeyRef = useRef<string | null>(null);
   const isEditing = !!params.id && params.id !== "new";
   const childId = isEditing ? parseInt(params.id as string) : 0;
   const {
@@ -239,8 +240,10 @@ export default function ChildForm() {
 
   useEffect(() => {
     if (!isInfant) return;
-    form.setValue("isSchoolGoing", false);
-    setFixedActivities([]);
+    if (form.getValues("isSchoolGoing") !== false) {
+      form.setValue("isSchoolGoing", false, { shouldDirty: false });
+    }
+    setFixedActivities((prev) => (prev.length === 0 ? prev : []));
   }, [form, isInfant, watchDob]);
   useEffect(() => {
     authFetch("/api/babysitters").then(r => r.ok ? r.json() : []).then((data: Babysitter[]) => setBabysitters(data)).catch(() => {});
@@ -248,6 +251,10 @@ export default function ChildForm() {
   useEffect(() => {
     if (child && isEditing) {
       const dobValue = (child as any).dob ?? "";
+      const hydrationKey = `${child.id}:${dobValue}:${child.name}:${child.updatedAt ?? ""}`;
+      if (childHydrationKeyRef.current === hydrationKey) return;
+      childHydrationKeyRef.current = hydrationKey;
+
       const isSchoolGoingValue = (child as any).isSchoolGoing;
       form.reset({
         name: child.name,

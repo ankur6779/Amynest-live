@@ -374,6 +374,31 @@
               splash.classList.add("splash-hide");
               setTimeout(function () { splash.remove(); }, 200);
             }
+            var showDebug = /[?&]crashdebug=1/.test(location.search || "") ||
+              /localhost|127\.0\.0\.1/.test(location.hostname || "");
+            if (!showDebug) {
+              var safeEl = document.getElementById("amynest-safe-recovery-overlay");
+              if (!safeEl) {
+                safeEl = document.createElement("div");
+                safeEl.id = "amynest-safe-recovery-overlay";
+                safeEl.setAttribute("role", "alert");
+                safeEl.style.cssText =
+                  "position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;padding:24px;" +
+                  "background:linear-gradient(175deg,#0a061a 0%,#120a2e 55%,#050010 100%);color:#f0e8ff;" +
+                  "font:16px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;text-align:center;";
+                (document.body || document.documentElement).appendChild(safeEl);
+              }
+              safeEl.innerHTML =
+                '<div style="max-width:420px">' +
+                '<p style="margin:0 0 8px;font-size:20px;font-weight:700">Something went wrong. Recovering…</p>' +
+                '<p style="margin:0;opacity:0.85;font-size:14px">Please wait a moment.</p>' +
+                "</div>";
+              if (window.__amynestTryAutoRecovery) {
+                try { window.__amynestTryAutoRecovery("pre-react.safe", "overlay"); } catch (_rec) {}
+              }
+              if (window.__amynestRefreshDiagPanel) window.__amynestRefreshDiagPanel();
+              return;
+            }
             var text = typeof payload === "string"
               ? payload
               : JSON.stringify(Object.assign({ at: new Date().toISOString(), href: location.href, route: location.pathname }, payload), null, 2);

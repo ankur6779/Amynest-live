@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import RouteFailedPage from "@/pages/route-failed";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { RouteContentLoadingShell } from "@/components/route-loading-shell";
+import { trackRender } from "@/lib/render-loop-guard";
 
 type Props = {
   component: ComponentType | undefined | null;
@@ -18,6 +19,9 @@ export function SafeRoutePage({
 }: Props) {
   if (!Component) {
     return <RouteFailedPage />;
+  }
+  if (import.meta.env.DEV) {
+    trackRender(label);
   }
   const body = <Component />;
   return (
