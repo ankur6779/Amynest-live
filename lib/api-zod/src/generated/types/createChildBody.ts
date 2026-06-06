@@ -12,6 +12,9 @@ export interface CreateChildBody {
   dob?: string | null;
   selectedAgeBand?: string | null;
   dobIsEstimated?: boolean | null;
+  educationStage?: string | null;
+  learningEnvironment?: string | null;
+  scheduleKnown?: boolean | null;
   age: number;
   ageMonths?: number;
   isSchoolGoing?: boolean | null;

@@ -324,6 +324,12 @@ export interface Child {
   selectedAgeBand?: string | null;
   /** True when dob was approximated from the selected age band. */
   dobIsEstimated?: boolean | null;
+  /** Education stage code (at_home, nursery, lkg, ukg, playgroup, school, etc.) */
+  educationStage?: string | null;
+  /** Learning environment (home, daycare, early_learning, formal_school, homeschool) */
+  learningEnvironment?: string | null;
+  /** Whether formal school schedule times are confirmed by the parent */
+  scheduleKnown?: boolean | null;
   age: number;
   ageMonths: number;
   isSchoolGoing?: boolean | null;
@@ -362,6 +368,9 @@ export interface CreateChildBody {
   dob?: string | null;
   selectedAgeBand?: string | null;
   dobIsEstimated?: boolean | null;
+  educationStage?: string | null;
+  learningEnvironment?: string | null;
+  scheduleKnown?: boolean | null;
   age: number;
   ageMonths?: number;
   isSchoolGoing?: boolean | null;
@@ -406,6 +415,9 @@ export interface UpdateChildBody {
   dob?: string | null;
   selectedAgeBand?: string | null;
   dobIsEstimated?: boolean | null;
+  educationStage?: string | null;
+  learningEnvironment?: string | null;
+  scheduleKnown?: boolean | null;
   age?: number;
   ageMonths?: number;
   isSchoolGoing?: boolean | null;

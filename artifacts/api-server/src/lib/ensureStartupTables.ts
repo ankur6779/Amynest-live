@@ -78,6 +78,31 @@ export async function ensureChildrenTable(): Promise<void> {
   await db.execute(sql`
     UPDATE children SET fixed_activities = '[]'::jsonb WHERE fixed_activities IS NULL
   `);
+  /* Legacy rows: infer early-learning stages from child_class before coarse fallbacks. */
+  await db.execute(sql`
+    UPDATE children
+    SET education_stage = 'nursery'
+    WHERE education_stage IS NULL
+      AND child_class ~* 'nursery'
+  `);
+  await db.execute(sql`
+    UPDATE children
+    SET education_stage = 'lkg'
+    WHERE education_stage IS NULL
+      AND child_class ~* 'lkg|lower[[:space:]]*kindergarten'
+  `);
+  await db.execute(sql`
+    UPDATE children
+    SET education_stage = 'ukg'
+    WHERE education_stage IS NULL
+      AND child_class ~* 'ukg|upper[[:space:]]*kindergarten'
+  `);
+  await db.execute(sql`
+    UPDATE children
+    SET education_stage = 'playgroup'
+    WHERE education_stage IS NULL
+      AND child_class ~* 'play[[:space:]]*group'
+  `);
   /* Legacy rows: backfill education_stage from school flags + age when missing. */
   await db.execute(sql`
     UPDATE children
@@ -90,6 +115,31 @@ export async function ensureChildrenTable(): Promise<void> {
     UPDATE children
     SET education_stage = 'at_home'
     WHERE education_stage IS NULL
+  `);
+  /* Repair coarse at_home backfill where child_class implies early learning. */
+  await db.execute(sql`
+    UPDATE children
+    SET education_stage = 'nursery'
+    WHERE education_stage = 'at_home'
+      AND child_class ~* 'nursery'
+  `);
+  await db.execute(sql`
+    UPDATE children
+    SET education_stage = 'lkg'
+    WHERE education_stage = 'at_home'
+      AND child_class ~* 'lkg|lower[[:space:]]*kindergarten'
+  `);
+  await db.execute(sql`
+    UPDATE children
+    SET education_stage = 'ukg'
+    WHERE education_stage = 'at_home'
+      AND child_class ~* 'ukg|upper[[:space:]]*kindergarten'
+  `);
+  await db.execute(sql`
+    UPDATE children
+    SET education_stage = 'playgroup'
+    WHERE education_stage = 'at_home'
+      AND child_class ~* 'play[[:space:]]*group'
   `);
   await db.execute(sql`
     UPDATE children

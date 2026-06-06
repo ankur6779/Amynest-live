@@ -1,5 +1,8 @@
 import type { Child } from "@workspace/db";
-import { deriveSchoolFieldsFromStage, resolveEducationStage } from "@workspace/education-stages";
+import {
+  deriveSchoolFieldsFromStage,
+  resolveEducationStageForPersist,
+} from "@workspace/education-stages";
 
 /** Safe defaults when child row is missing optional fields (never throws). */
 export function fallbackChildProfile(userId: string, partial?: Partial<Child>): Child {
@@ -44,7 +47,7 @@ export function fallbackChildProfile(userId: string, partial?: Partial<Child>): 
 /** Merge DB row with defaults so downstream code never reads undefined times. */
 export function normalizeChildForRoutine(child: Child): Child {
   const base = fallbackChildProfile(child.userId ?? "", child);
-  const stage = resolveEducationStage(
+  const stage = resolveEducationStageForPersist(
     base.educationStage,
     base.isSchoolGoing,
     base.childClass,

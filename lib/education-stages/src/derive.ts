@@ -17,6 +17,12 @@ const DEFAULT_SCHOOL_START = "09:00";
 const DEFAULT_SCHOOL_END = "15:00";
 const DEFAULT_SCHOOL_DAYS = [1, 2, 3, 4, 5];
 
+/** Coarse DB backfill values that must yield to legacy childClass inference. */
+const COARSE_EDUCATION_STAGES: ReadonlySet<EducationStageCode> = new Set([
+  "at_home",
+  "daycare",
+]);
+
 const LEGACY_CLASS_TO_STAGE: Array<{ pattern: RegExp; stage: EducationStageCode }> = [
   { pattern: /nursery/i, stage: "nursery" },
   { pattern: /lkg|lower kindergarten/i, stage: "lkg" },
@@ -136,9 +142,13 @@ export function deriveSchoolFieldsFromStage(input: {
         ? input.schoolDays
         : [...DEFAULT_SCHOOL_DAYS];
   } else if (needsSchedule && !scheduleKnown) {
-    schoolStartTime = DEFAULT_SCHOOL_START;
-    schoolEndTime = DEFAULT_SCHOOL_END;
-    schoolDays = [...DEFAULT_SCHOOL_DAYS];
+    // Preserve legacy custom times — only fall back to defaults when none provided.
+    schoolStartTime = input.schoolStartTime?.trim() || DEFAULT_SCHOOL_START;
+    schoolEndTime = input.schoolEndTime?.trim() || DEFAULT_SCHOOL_END;
+    schoolDays =
+      Array.isArray(input.schoolDays) && input.schoolDays.length > 0
+        ? input.schoolDays
+        : [...DEFAULT_SCHOOL_DAYS];
   } else if (!meta.impliesSchoolGoing) {
     schoolStartTime = DEFAULT_SCHOOL_START;
     schoolEndTime = DEFAULT_SCHOOL_END;
@@ -168,6 +178,40 @@ export function resolveEducationStage(
   const parsed = parseStageCode(educationStageRaw);
   if (parsed) return parsed;
   return inferEducationStageFromLegacy(isSchoolGoing, childClass, years, months, countryRaw);
+}
+
+/**
+ * Resolve stage for DB persist — never downgrade a specific stored stage to a coarse
+ * inference, and never let coarse backfill (at_home/daycare) override childClass inference.
+ */
+export function resolveEducationStageForPersist(
+  educationStageRaw?: string | null,
+  isSchoolGoing?: boolean | null,
+  childClass?: string | null,
+  years = 0,
+  months = 0,
+  countryRaw?: string | null,
+): EducationStageCode {
+  const explicit = parseStageCode(educationStageRaw);
+  const inferred = inferEducationStageFromLegacy(
+    isSchoolGoing,
+    childClass,
+    years,
+    months,
+    countryRaw,
+  );
+
+  if (!explicit) return inferred;
+
+  if (COARSE_EDUCATION_STAGES.has(explicit) && !COARSE_EDUCATION_STAGES.has(inferred)) {
+    return inferred;
+  }
+
+  if (!COARSE_EDUCATION_STAGES.has(explicit) && COARSE_EDUCATION_STAGES.has(inferred)) {
+    return explicit;
+  }
+
+  return explicit;
 }
 
 export function getClassOptionsForCountry(countryRaw?: string | null): string[] {

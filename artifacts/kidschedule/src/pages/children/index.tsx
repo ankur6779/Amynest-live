@@ -68,15 +68,15 @@ export default function ChildrenList() {
                             {formatChildAgeWithEstimate(
                               child.age,
                               child.ageMonths ?? 0,
-                              (child as { dobIsEstimated?: boolean }).dobIsEstimated,
+                              child.dobIsEstimated,
                               t,
                             )}
                           </span>
                         </span>
                         {(() => {
                           const stage = resolveChildEducationStage({
-                            educationStage: (child as { educationStage?: string }).educationStage,
-                            isSchoolGoing: (child as { isSchoolGoing?: boolean }).isSchoolGoing,
+                            educationStage: child.educationStage,
+                            isSchoolGoing: child.isSchoolGoing,
                             childClass: child.childClass,
                             age: child.age,
                             ageMonths: child.ageMonths,
@@ -96,12 +96,12 @@ export default function ChildrenList() {
                           );
                         })()}
                         {childShowsFormalSchoolSchedule({
-                          educationStage: (child as { educationStage?: string }).educationStage,
-                          isSchoolGoing: (child as { isSchoolGoing?: boolean }).isSchoolGoing,
+                          educationStage: child.educationStage,
+                          isSchoolGoing: child.isSchoolGoing,
                           childClass: child.childClass,
                           age: child.age,
                           ageMonths: child.ageMonths,
-                          scheduleKnown: (child as { scheduleKnown?: boolean }).scheduleKnown,
+                          scheduleKnown: child.scheduleKnown,
                         }) && (
                           <span className="flex items-center gap-1">
                             <Clock className="h-3.5 w-3.5" />
@@ -109,10 +109,10 @@ export default function ChildrenList() {
                           </span>
                         )}
                         {childShowsFormalSchoolSchedule({
-                          educationStage: (child as { educationStage?: string }).educationStage,
+                          educationStage: child.educationStage,
                           age: child.age,
                           ageMonths: child.ageMonths,
-                          scheduleKnown: (child as { scheduleKnown?: boolean }).scheduleKnown,
+                          scheduleKnown: child.scheduleKnown,
                         }) && (() => {
                           const summary = summariseSchoolDays(
                             (child as { schoolDays?: number[] | null }).schoolDays,

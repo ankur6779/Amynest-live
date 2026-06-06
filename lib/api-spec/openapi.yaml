@@ -1503,6 +1503,18 @@ components:
           type: boolean
           nullable: true
           description: True when dob was approximated from the selected age band.
+        educationStage:
+          type: string
+          nullable: true
+          description: Education stage code (at_home, nursery, lkg, ukg, playgroup, school, etc.)
+        learningEnvironment:
+          type: string
+          nullable: true
+          description: Learning environment (home, daycare, early_learning, formal_school, homeschool)
+        scheduleKnown:
+          type: boolean
+          nullable: true
+          description: Whether formal school schedule times are confirmed by the parent
         age:
           type: integer
         ageMonths:
@@ -1616,6 +1628,15 @@ components:
         dobIsEstimated:
           type: boolean
           nullable: true
+        educationStage:
+          type: string
+          nullable: true
+        learningEnvironment:
+          type: string
+          nullable: true
+        scheduleKnown:
+          type: boolean
+          nullable: true
         age:
           type: integer
         ageMonths:
@@ -1706,6 +1727,15 @@ components:
           type: string
           nullable: true
         dobIsEstimated:
+          type: boolean
+          nullable: true
+        educationStage:
+          type: string
+          nullable: true
+        learningEnvironment:
+          type: string
+          nullable: true
+        scheduleKnown:
           type: boolean
           nullable: true
         age:

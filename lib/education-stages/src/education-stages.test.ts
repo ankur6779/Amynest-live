@@ -6,6 +6,7 @@ import {
   deriveSchoolFieldsFromStage,
   getEducationStagesForChild,
   inferEducationStageFromLegacy,
+  resolveEducationStageForPersist,
   isInfantAge,
   requiresClassSelection,
   requiresScheduleQuestion,
@@ -140,6 +141,50 @@ describe("derive and legacy", () => {
       inferEducationStageFromLegacy(true, "3rd", 8, 0, "IN"),
       "school",
     );
+  });
+
+  it("persist upgrades coarse at_home to lkg when childClass implies LKG", () => {
+    assert.equal(
+      resolveEducationStageForPersist("at_home", false, "LKG / KG", 4, 0, "IN"),
+      "lkg",
+    );
+  });
+
+  it("persist never downgrades stored school to at_home inference", () => {
+    assert.equal(
+      resolveEducationStageForPersist("school", false, null, 8, 0, "IN"),
+      "school",
+    );
+  });
+
+  it("persist upgrades coarse at_home to nursery from childClass", () => {
+    assert.equal(
+      resolveEducationStageForPersist("at_home", false, "Nursery", 4, 0, "IN"),
+      "nursery",
+    );
+  });
+
+  it("persist upgrades coarse at_home to playgroup from childClass", () => {
+    assert.equal(
+      resolveEducationStageForPersist("at_home", false, "Play Group", 3, 0, "IN"),
+      "playgroup",
+    );
+  });
+
+  it("school with scheduleKnown false preserves custom legacy times", () => {
+    const d = deriveSchoolFieldsFromStage({
+      educationStage: "school",
+      childClass: "3rd",
+      scheduleKnown: false,
+      schoolStartTime: "08:00",
+      schoolEndTime: "14:00",
+      schoolDays: [1, 2, 3, 4, 5],
+      years: 8,
+      months: 0,
+    });
+    assert.equal(d.schoolStartTime, "08:00");
+    assert.equal(d.schoolEndTime, "14:00");
+    assert.deepEqual(d.schoolDays, [1, 2, 3, 4, 5]);
   });
 });
 
