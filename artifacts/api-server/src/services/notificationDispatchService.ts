@@ -19,6 +19,11 @@ import { getMessaging } from "firebase-admin/messaging";
 import { adminApp } from "../lib/firebase-admin";
 import { logger } from "../lib/logger.js";
 import { buildNotificationActionPayload } from "@workspace/action-routing";
+import {
+  claimNotificationDelivery,
+  finalizeNotificationClaim,
+  logNonDeliveryEvent,
+} from "./notificationClaimService.js";
 
 const expo = new Expo();
 
@@ -329,73 +334,55 @@ async function evaluateDeliveryFingerprint(
   return { skip: true, reason: decision.reason, logEvent: decision.logEvent };
 }
 
-async function logEvent(
+async function logLegacyDelivery(
   input: DispatchInput,
-  status: DispatchStatus,
+  status: "sent" | "failed",
   errorMessage?: string,
   platform?: string,
+  providerMessageId?: string,
 ): Promise<void> {
   const meta = input.contentMeta;
   const global = input.globalMeta;
   const outcome = input.outcomeMeta;
-  try {
-    await db.insert(notificationLogTable).values({
-      userId: input.userId,
-      category: input.category,
-      title: input.title,
-      body: input.body,
-      deepLink: input.deepLink ?? null,
-      dedupKey: input.dedupKey ?? null,
-      status,
-      platform: platform ?? null,
-      errorMessage: errorMessage ?? null,
-      contentHash: meta?.contentHash ?? null,
-      topicKey: meta?.topicKey ?? null,
-      recommendationKey: meta?.recommendationKey ?? null,
-      theme: meta?.theme ?? null,
-      contentType: meta?.contentType ?? null,
-      noveltyScore: meta?.noveltyScore ?? null,
-      relevanceScore: meta?.relevanceScore ?? null,
-      recencyScore: meta?.recencyScore ?? null,
-      engagementPredictionScore: meta?.engagementPredictionScore ?? null,
-      qualityScore: meta?.businessImpactScore ?? meta?.qualityScore ?? null,
-      businessImpactScore: meta?.businessImpactScore ?? meta?.qualityScore ?? null,
-      routineCompletionProb: meta?.routineCompletionProb ?? null,
-      learningCompletionProb: meta?.learningCompletionProb ?? null,
-      retentionProb: meta?.retentionProb ?? null,
-      subscriptionProb: meta?.subscriptionProb ?? null,
-      engagementProb: meta?.engagementProb ?? null,
-      goal: outcome?.goal ?? null,
-      childLifecycleStage: outcome?.childLifecycleStage ?? null,
-      parentMilestone: outcome?.parentMilestone ?? null,
-      campaignId: outcome?.campaignId ?? null,
-      campaignStep: outcome?.campaignStep ?? null,
-      experimentId: outcome?.experimentId ?? null,
-      experimentVariant: outcome?.experimentVariant ?? null,
-      countryCode: global?.countryCode ?? null,
-      locale: global?.locale ?? null,
-      timezoneAtSend: global?.timezoneAtSend ?? null,
-      culturalRegion: global?.culturalRegion ?? null,
-    });
-  } catch (err) {
-    const pgCode =
-      err && typeof err === "object" && "code" in err
-        ? String((err as { code?: string }).code)
-        : "";
-    if (pgCode === "23505" && status === "sent") {
-      logger.warn(
-        {
-          evt: "NOTIFICATION_SKIPPED_DUPLICATE",
-          userId: input.userId,
-          fingerprint: input.dedupKey,
-          category: input.category,
-        },
-        "Notification log unique constraint — treating as duplicate",
-      );
-      return;
-    }
-    throw err;
-  }
+  await db.insert(notificationLogTable).values({
+    userId: input.userId,
+    category: input.category,
+    title: input.title,
+    body: input.body,
+    deepLink: input.deepLink ?? null,
+    dedupKey: null,
+    status,
+    platform: platform ?? null,
+    providerMessageId: providerMessageId ?? null,
+    errorMessage: errorMessage ?? null,
+    contentHash: meta?.contentHash ?? null,
+    topicKey: meta?.topicKey ?? null,
+    recommendationKey: meta?.recommendationKey ?? null,
+    theme: meta?.theme ?? null,
+    contentType: meta?.contentType ?? null,
+    noveltyScore: meta?.noveltyScore ?? null,
+    relevanceScore: meta?.relevanceScore ?? null,
+    recencyScore: meta?.recencyScore ?? null,
+    engagementPredictionScore: meta?.engagementPredictionScore ?? null,
+    qualityScore: meta?.businessImpactScore ?? meta?.qualityScore ?? null,
+    businessImpactScore: meta?.businessImpactScore ?? meta?.qualityScore ?? null,
+    routineCompletionProb: meta?.routineCompletionProb ?? null,
+    learningCompletionProb: meta?.learningCompletionProb ?? null,
+    retentionProb: meta?.retentionProb ?? null,
+    subscriptionProb: meta?.subscriptionProb ?? null,
+    engagementProb: meta?.engagementProb ?? null,
+    goal: outcome?.goal ?? null,
+    childLifecycleStage: outcome?.childLifecycleStage ?? null,
+    parentMilestone: outcome?.parentMilestone ?? null,
+    campaignId: outcome?.campaignId ?? null,
+    campaignStep: outcome?.campaignStep ?? null,
+    experimentId: outcome?.experimentId ?? null,
+    experimentVariant: outcome?.experimentVariant ?? null,
+    countryCode: global?.countryCode ?? null,
+    locale: global?.locale ?? null,
+    timezoneAtSend: global?.timezoneAtSend ?? null,
+    culturalRegion: global?.culturalRegion ?? null,
+  });
 }
 
 /**
@@ -544,6 +531,13 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
 
   const prefs = await getOrCreatePreferences(input.userId);
 
+  const localScheduledDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: prefs.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
   const childIdFromData =
     input.data?.childId != null ? String(input.data.childId) : undefined;
   const fingerprint =
@@ -551,19 +545,14 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
       childId: childIdFromData,
       notificationType: input.category,
       entityId: input.contentMeta?.topicKey ?? input.category,
-      scheduledDate: new Intl.DateTimeFormat("en-CA", {
-        timeZone: prefs.timezone,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }).format(new Date()),
+      scheduledDate: localScheduledDate,
     }) ?? input.dedupKey;
   if (fingerprint) {
     input.dedupKey = fingerprint;
   }
 
   if (!input.bypassCategoryCheck && !categoryEnabled(prefs, input.category)) {
-    await logEvent(input, "throttled", "category_disabled");
+    await logNonDeliveryEvent(input, "throttled", "category_disabled");
     return { status: "throttled", reason: "category_disabled" };
   }
 
@@ -598,7 +587,7 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     androidFcmTokens.length === 0 &&
     iosFcmTokens.length === 0
   ) {
-    await logEvent(input, "no_tokens", "no_valid_tokens");
+    await logNonDeliveryEvent(input, "no_tokens", "no_valid_tokens");
     return { status: "no_tokens", reason: "no_valid_tokens" };
   }
 
@@ -638,14 +627,22 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     const sentToday = await countSentToday(input.userId, prefs.timezone);
     const cap = effectiveDailyCap(prefs);
     if (sentToday >= cap) {
-      await logEvent(input, "throttled", `daily_cap:${cap}:intensity=${prefs.notificationIntensity}`);
+      await logNonDeliveryEvent(input, "throttled", `daily_cap:${cap}:intensity=${prefs.notificationIntensity}`);
       return { status: "throttled", reason: "daily_cap" };
     }
   }
 
   if (!input.bypassQuietHours && inQuietHours(prefs)) {
-    await logEvent(input, "throttled", "quiet_hours");
+    await logNonDeliveryEvent(input, "throttled", "quiet_hours");
     return { status: "throttled", reason: "quiet_hours" };
+  }
+
+  let claimId: number | null = null;
+  if (input.dedupKey) {
+    claimId = await claimNotificationDelivery(input);
+    if (claimId == null) {
+      return { status: "duplicate", reason: "claim_conflict" };
+    }
   }
 
   const ticketIds: string[] = [];
@@ -684,7 +681,20 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
         { err, userId: input.userId, category: input.category },
         "Expo dispatch failed",
       );
-      await logEvent(input, "failed", err instanceof Error ? err.message : String(err), "expo");
+      if (claimId != null) {
+        await finalizeNotificationClaim(claimId, {
+          status: "failed",
+          platform: "expo",
+          errorMessage: err instanceof Error ? err.message : String(err),
+        });
+      } else {
+        await logLegacyDelivery(
+          input,
+          "failed",
+          err instanceof Error ? err.message : String(err),
+          "expo",
+        );
+      }
       return { status: "failed", reason: "expo_error" };
     }
 
@@ -795,12 +805,16 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   const totalOk = expoOk + webOk + androidOk + iosOk;
   const totalFail = expoFail + webFail + androidFail + iosFail;
   if (totalOk === 0 && totalFail > 0) {
-    await logEvent(
-      input,
-      "failed",
-      `all_tokens_failed:expo=${expoFail},web=${webFail},android=${androidFail},ios=${iosFail}`,
-      platform,
-    );
+    const errMsg = `all_tokens_failed:expo=${expoFail},web=${webFail},android=${androidFail},ios=${iosFail}`;
+    if (claimId != null) {
+      await finalizeNotificationClaim(claimId, {
+        status: "failed",
+        platform,
+        errorMessage: errMsg,
+      });
+    } else {
+      await logLegacyDelivery(input, "failed", errMsg, platform);
+    }
     logger.warn(
       {
         userId: input.userId,
@@ -819,7 +833,16 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     };
   }
 
-  await logEvent(input, "sent", undefined, platform);
+  const providerMessageId = ticketIds[0];
+  if (claimId != null) {
+    await finalizeNotificationClaim(claimId, {
+      status: "sent",
+      platform,
+      providerMessageId,
+    });
+  } else {
+    await logLegacyDelivery(input, "sent", undefined, platform, providerMessageId);
+  }
   try {
     const { touchFatigueLastSent } = await import("./notificationContentHistoryService.js");
     await touchFatigueLastSent(input.userId);

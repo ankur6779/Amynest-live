@@ -104,6 +104,19 @@ export function resolveFingerprint(
   if (dedupKey && dedupKey.includes("_") && /\d{4}-\d{2}-\d{2}$/.test(dedupKey)) {
     return dedupKey;
   }
+
+  if (dedupKey && fallback?.scheduledDate) {
+    const legacy = parseLegacyDedupKey(dedupKey, fallback.scheduledDate);
+    if (legacy) {
+      return buildNotificationFingerprint({
+        childId: fallback.childId ?? legacy.childId,
+        notificationType: legacy.notificationType,
+        entityId: legacy.entityId,
+        scheduledDate: legacy.scheduledDate,
+      });
+    }
+  }
+
   if (fallback?.notificationType && fallback.scheduledDate) {
     return buildNotificationFingerprint({
       childId: fallback.childId,
@@ -113,6 +126,93 @@ export function resolveFingerprint(
     });
   }
   return dedupKey ?? null;
+}
+
+/** Parse `morning:2026-06-06`, `job:snack_time:2026-06-06`, `routine_item:1:2:date`, etc. */
+export function parseLegacyDedupKey(
+  dedupKey: string,
+  defaultDate: string,
+): {
+  notificationType: string;
+  entityId: string;
+  scheduledDate: string;
+  childId?: string;
+} | null {
+  if (dedupKey.startsWith("job:")) {
+    const parts = dedupKey.split(":");
+    const jobId = parts[1];
+    const date = parts[2];
+    if (jobId && date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return { notificationType: jobId, entityId: "daily", scheduledDate: date };
+    }
+  }
+
+  if (dedupKey.startsWith("routine_item:")) {
+    const parts = dedupKey.split(":");
+    const routineId = parts[1];
+    const itemIndex = parts[2];
+    const date = parts[3];
+    if (routineId && itemIndex != null && date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return {
+        notificationType: "routine_item",
+        entityId: `r${routineId}_i${itemIndex}`,
+        scheduledDate: date,
+        childId: undefined,
+      };
+    }
+  }
+
+  if (dedupKey.startsWith("referral_reward_")) {
+    const suffix = dedupKey.slice("referral_reward_".length);
+    return {
+      notificationType: "referral_reward",
+      entityId: sanitizeFingerprintSegment(suffix),
+      scheduledDate: defaultDate,
+    };
+  }
+
+  const colonIdx = dedupKey.indexOf(":");
+  if (colonIdx <= 0) return null;
+
+  const type = dedupKey.slice(0, colonIdx);
+  const rest = dedupKey.slice(colonIdx + 1);
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(rest)) {
+    return { notificationType: type, entityId: "daily", scheduledDate: rest };
+  }
+
+  if (/^\d{4}-\d{2}$/.test(rest)) {
+    return {
+      notificationType: type,
+      entityId: "monthly",
+      scheduledDate: `${rest}-01`,
+    };
+  }
+
+  const composite = rest.match(/^(.+):(\d{4}-\d{2}-\d{2})$/);
+  if (composite) {
+    return {
+      notificationType: type,
+      entityId: sanitizeFingerprintSegment(composite[1]!),
+      scheduledDate: composite[2]!,
+    };
+  }
+
+  return null;
+}
+
+export function contentFingerprint(
+  childId: number | string | null | undefined,
+  notificationType: string,
+  entityId: string,
+  localDate: string,
+): string {
+  return buildNotificationFingerprint({
+    childId,
+    notificationType,
+    entityId,
+    scheduledDate: localDate,
+  });
 }
 
 export function isWithinCooldown(
@@ -165,18 +265,32 @@ export function evaluateDeliveryGuard(input: {
     return { allow: false, reason: "rate_limit_hourly", logEvent: "NOTIFICATION_RATE_LIMITED" };
   }
 
-  const delivered = history.filter(
-    (h) => h.dedupKey === fingerprint && h.status === "sent",
+  const active = history.filter(
+    (h) =>
+      h.dedupKey === fingerprint &&
+      (h.status === "sent" || h.status === "pending"),
   );
+  if (active.length === 0) return { allow: true };
+
+  const latest = active.reduce((a, b) => (a.sentAt > b.sentAt ? a : b));
+
+  if (latest.status === "pending") {
+    const ageMs = now.getTime() - latest.sentAt.getTime();
+    if (ageMs < 10 * 60 * 1000) {
+      return { allow: false, reason: "duplicate", logEvent: "NOTIFICATION_SKIPPED_DUPLICATE" };
+    }
+  }
+
+  const delivered = active.filter((h) => h.status === "sent");
   if (delivered.length === 0) return { allow: true };
 
-  const latest = delivered.reduce((a, b) => (a.sentAt > b.sentAt ? a : b));
+  const latestSent = delivered.reduce((a, b) => (a.sentAt > b.sentAt ? a : b));
 
-  if (matchesFingerprintLocalDay(fingerprint, latest.sentAt, timezone)) {
+  if (matchesFingerprintLocalDay(fingerprint, latestSent.sentAt, timezone)) {
     return { allow: false, reason: "duplicate", logEvent: "NOTIFICATION_SKIPPED_DUPLICATE" };
   }
 
-  if (isWithinCooldown(fingerprint, latest.sentAt, now)) {
+  if (isWithinCooldown(fingerprint, latestSent.sentAt, now)) {
     return { allow: false, reason: "cooldown", logEvent: "NOTIFICATION_SKIPPED_COOLDOWN" };
   }
 

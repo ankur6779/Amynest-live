@@ -5,6 +5,8 @@ import {
   stableNotificationId,
   infantFingerprint,
   evaluateDeliveryGuard,
+  parseLegacyDedupKey,
+  resolveFingerprint,
   MAX_NOTIFICATIONS_PER_CHILD_PER_DAY,
   MAX_NOTIFICATIONS_PER_HOUR,
   cooldownMsForFingerprint,
@@ -126,5 +128,39 @@ describe("notification spam regression", () => {
   it("stable notification id updates existing tray entry", () => {
     const fp = infantFingerprint(1, "vaccine_due", "overdue_hepb", "2026-06-06");
     assert.equal(stableNotificationId(fp), stableNotificationId(fp));
+  });
+});
+
+describe("legacy dedup key migration", () => {
+  it("parses morning:date legacy keys", () => {
+    const parsed = parseLegacyDedupKey("morning:2026-06-06", "2026-06-06");
+    assert.deepEqual(parsed, {
+      notificationType: "morning",
+      entityId: "daily",
+      scheduledDate: "2026-06-06",
+    });
+  });
+
+  it("resolves legacy morning key to canonical fingerprint", () => {
+    assert.equal(
+      resolveFingerprint("morning:2026-06-06", {
+        childId: 5,
+        scheduledDate: "2026-06-06",
+      }),
+      "5_morning_daily_2026-06-06",
+    );
+  });
+
+  it("blocks duplicate when pending claim is in-flight", () => {
+    const fp = infantFingerprint(1, "vaccine_due", "overdue_hepb", "2026-06-06");
+    const decision = evaluateDeliveryGuard({
+      fingerprint: fp,
+      timezone: "Asia/Kolkata",
+      history: [{ dedupKey: fp, status: "pending", sentAt: new Date() }],
+      childSentToday: 0,
+      accountSentToday: 0,
+      accountSentLastHour: 0,
+    });
+    assert.equal(decision.allow, false);
   });
 });

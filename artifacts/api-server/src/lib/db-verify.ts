@@ -48,6 +48,7 @@ export interface DbVerificationResult {
   missingTables: string[];
   columns: Record<string, "present" | "missing" | "error">;
   missingColumns: string[];
+  notificationDedupIndexPresent: boolean;
   durationMs: number;
 }
 
@@ -84,6 +85,7 @@ export async function verifyDatabaseAtStartup(): Promise<DbVerificationResult> {
     missingTables: [],
     columns: {},
     missingColumns: [],
+    notificationDedupIndexPresent: false,
     durationMs: 0,
   };
 
@@ -139,6 +141,21 @@ export async function verifyDatabaseAtStartup(): Promise<DbVerificationResult> {
 
   result.durationMs = Date.now() - startedAt;
 
+  try {
+    const { notificationDedupIndexExists } = await import(
+      "../services/notificationClaimService.js"
+    );
+    result.notificationDedupIndexPresent = await notificationDedupIndexExists();
+    if (!result.notificationDedupIndexPresent) {
+      logger.error(
+        { evt: "db.verify.dedup_index_missing" },
+        "CRITICAL: notification_log_user_dedup_unique index is missing",
+      );
+    }
+  } catch (err) {
+    logger.error({ err, evt: "db.verify.dedup_index_check_failed" }, "Could not verify dedup index");
+  }
+
   const onboardingMissing = ONBOARDING_CRITICAL_TABLES.filter(
     (t) => result.tables[t] === "missing",
   );
@@ -170,4 +187,19 @@ export async function verifyDatabaseAtStartup(): Promise<DbVerificationResult> {
   }
 
   return result;
+}
+
+/** Fail fast when notification dedup index is missing — unsafe to deliver pushes. */
+export async function assertNotificationDedupIndexAtStartup(): Promise<void> {
+  const { assertNotificationDedupIndex, NotificationDedupIndexMissingError } = await import(
+    "../services/notificationClaimService.js"
+  );
+  try {
+    await assertNotificationDedupIndex();
+  } catch (err) {
+    if (err instanceof NotificationDedupIndexMissingError) {
+      throw err;
+    }
+    throw new NotificationDedupIndexMissingError();
+  }
 }

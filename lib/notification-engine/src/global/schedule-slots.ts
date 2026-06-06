@@ -1,4 +1,5 @@
 import type { NotificationCategory } from "@workspace/db";
+import { jobFingerprint } from "../delivery/guard.js";
 
 export interface CategorySlot {
   hour: number;
@@ -56,5 +57,5 @@ export function matchesCategorySlot(
 }
 
 export function jobDedupKey(jobId: string, localDate: string): string {
-  return `job:${jobId}:${localDate}`;
+  return jobFingerprint(jobId, localDate);
 }

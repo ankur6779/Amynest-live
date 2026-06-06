@@ -296,7 +296,10 @@ async function startServer(): Promise<void> {
     if (isModuleEnabled("db")) {
       const { ensureStartupTables } = await import("./lib/ensureStartupTables.js");
       await ensureStartupTables();
-      const { verifyDatabaseAtStartup } = await import("./lib/db-verify.js");
+      const { verifyDatabaseAtStartup, assertNotificationDedupIndexAtStartup } = await import(
+        "./lib/db-verify.js"
+      );
+      await assertNotificationDedupIndexAtStartup();
       await verifyDatabaseAtStartup();
     } else {
       logger.warn(
@@ -307,6 +310,16 @@ async function startServer(): Promise<void> {
     endBootPhase("db_schema_ensure");
   } catch (err) {
     failBootPhase("db_schema_ensure", err);
+    const { NotificationDedupIndexMissingError } = await import(
+      "./services/notificationClaimService.js"
+    ).catch(() => ({ NotificationDedupIndexMissingError: null }));
+    if (NotificationDedupIndexMissingError && err instanceof NotificationDedupIndexMissingError) {
+      logger.error(
+        { evt: "db.dedup_index_fatal", err },
+        "Notification dedup index missing — refusing to start",
+      );
+      process.exit(1);
+    }
     logger.error(
       {
         evt: "db.schema_ensure_failed",

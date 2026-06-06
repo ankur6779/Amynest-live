@@ -165,7 +165,10 @@ function schedule(name: string, expr: string, runner: () => Promise<unknown>): v
           try {
             if (!(await hasPushTokensTable())) return;
             logger.debug({ job: name, expr, tz: TZ }, "Notification cron firing");
-            await runner();
+            const { withCronAdvisoryLock } = await import("./cron-advisory-lock.js");
+            await withCronAdvisoryLock(name, async () => {
+              await runner();
+            });
           } catch (err) {
             if (!loggedCronFailures.has(name)) {
               loggedCronFailures.add(name);

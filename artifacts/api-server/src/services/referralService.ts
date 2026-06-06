@@ -16,6 +16,7 @@ import {
 } from "./subscriptionService";
 import { createGiftToken } from "./giftTokenService";
 import { dispatchNotification } from "./notificationDispatchService";
+import { contentFingerprint } from "@workspace/notification-engine";
 import { logger } from "../lib/logger";
 import {
   REFERRAL_REWARD_DAYS,
@@ -347,7 +348,12 @@ async function notifyReferralRewardUnlocked(
         ? `You earned ${granted} gift token${granted === 1 ? "" : "s"} to share with friends.`
         : `You unlocked ${days} days of premium via referrals.`,
       deepLink: "/referrals",
-      dedupKey: `referral_reward_${referrerUserId}_${milestoneIndex}`,
+      dedupKey: contentFingerprint(
+        referrerUserId,
+        "referral_reward",
+        `m${milestoneIndex}`,
+        new Intl.DateTimeFormat("en-CA", { timeZone: "UTC" }).format(new Date()),
+      ),
       bypassCategoryCheck: false,
     });
   } catch (err) {

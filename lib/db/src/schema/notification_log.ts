@@ -7,10 +7,11 @@ import { sql } from "drizzle-orm";
  * within a short window, (c) the in-app notification history view.
  *
  * status values:
- *   "sent"      → Expo accepted the message
+ *   "pending"   → claim acquired; push not yet confirmed (claim-before-send)
+ *   "sent"      → push provider accepted the message
  *   "throttled" → blocked by daily cap, quiet hours, or category disabled
- *   "failed"    → Expo rejected (invalid token, etc.)
- *   "duplicate" → identical notification sent within dedup window
+ *   "failed"    → push rejected or all tokens failed
+ *   "duplicate" → identical notification sent within dedup window (legacy rows)
  */
 export const notificationLogTable = pgTable(
   "notification_log",
@@ -24,6 +25,8 @@ export const notificationLogTable = pgTable(
     dedupKey: text("dedup_key"),
     status: text("status").notNull().default("sent"),
     platform: text("platform"),
+    /** Expo ticket id or FCM message id when available. */
+    providerMessageId: text("provider_message_id"),
     errorMessage: text("error_message"),
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
     openedAt: timestamp("opened_at", { withTimezone: true }),

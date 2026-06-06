@@ -133,7 +133,7 @@ test("COPPA blocks under-13 without parental consent", () => {
 test("job dedup keys are stable per local date", () => {
   assert.equal(
     jobDedupKey("snack_time", "2026-05-29"),
-    "job:snack_time:2026-05-29",
+    "account_snack_time_daily_2026-05-29",
   );
 });
 

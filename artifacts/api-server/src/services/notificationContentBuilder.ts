@@ -12,6 +12,7 @@ import {
   renderNudgeBodyForPush,
 } from "./productiveNudges.js";
 import { buildAdaptiveCategoryNotification } from "./notificationAdaptiveBridge.js";
+import { contentFingerprint } from "@workspace/notification-engine";
 
 export interface BuiltNotification {
   title: string;
@@ -108,7 +109,7 @@ export async function buildMorningRoutine(
     title: greetings[ageGroup(child.age)],
     body: "Tap to see today's full routine and check off the first task.",
     deepLink: "/routine",
-    dedupKey: `morning:${date}`,
+    dedupKey: contentFingerprint(child.id, "morning_routine", "daily", date),
     data: { childId: child.id },
   };
 }
@@ -126,7 +127,7 @@ export async function buildSnackTime(
     title: "Snack time idea 🍎",
     body: `See fresh meal ideas for ${child.name} in AmyNest.`,
     deepLink: "/meals",
-    dedupKey: `snack:${date}`,
+    dedupKey: contentFingerprint(child.id, "snack_time", "daily", date),
     data: { childId: child.id },
   };
 }
@@ -157,7 +158,7 @@ export async function buildGoodNight(
     title: `Good night, ${child.name} 🌙`,
     body: tips[ageGroup(child.age)],
     deepLink: "/hub",
-    dedupKey: `goodnight:${date}`,
+    dedupKey: contentFingerprint(child.id, "good_night", "daily", date),
     data: { childId: child.id },
   };
 }
@@ -175,7 +176,7 @@ export async function buildWeeklyReport(
     title: "Your weekly report is ready 📊",
     body: `See how ${childName}'s week went and what to focus on next.`,
     deepLink: "/hub",
-    dedupKey: `weekly:${date}`,
+    dedupKey: contentFingerprint(child?.id, "weekly_report", "daily", date),
     data: child ? { childId: child.id } : {},
   };
 }
@@ -240,7 +241,7 @@ export async function buildEngagement(
         title: nudge.title,
         body: nudge.body,
         deepLink: nudge.deepLink,
-        dedupKey: `journey:${day}:${date}`,
+        dedupKey: contentFingerprint(child.id, "engagement", `journey_d${day}`, date),
         data: { childId: child.id, reason: "journey", journeyDay: day },
       };
     }
@@ -272,7 +273,7 @@ export async function buildEngagement(
       title: `${child.name} misses you 💜`,
       body: "Check in with a quick note about today — it only takes a moment.",
       deepLink: "/hub",
-      dedupKey: `inactive:${date}`,
+      dedupKey: contentFingerprint(child.id, "engagement", "inactive", date),
       data: { childId: child.id, reason: "inactive" },
     };
   }
@@ -296,7 +297,7 @@ export async function buildEngagement(
       title: "7-day streak! 🔥",
       body: `You've shown up for ${child.name} every day this week. Amazing.`,
       deepLink: "/hub",
-      dedupKey: `streak7:${date}`,
+      dedupKey: contentFingerprint(child.id, "engagement", "streak7", date),
       data: { childId: child.id, reason: "streak" },
     };
   }
@@ -306,7 +307,7 @@ export async function buildEngagement(
       title: "Small wins add up ✨",
       body: `Log just one thing about ${child.name} today to keep the rhythm going.`,
       deepLink: "/hub",
-      dedupKey: `nudge:${date}`,
+      dedupKey: contentFingerprint(child.id, "engagement", "nudge", date),
       data: { childId: child.id, reason: "low_engagement" },
     };
   }
@@ -319,7 +320,7 @@ export async function buildEngagement(
     title: "You've got this 💪",
     body: motivationPick ?? `Keep going — parenting gets easier with every step forward 🌟`,
     deepLink: "/hub",
-    dedupKey: `motivation:${date}`,
+    dedupKey: contentFingerprint(child.id, "engagement", "motivation", date),
     data: { childId: child.id, reason: "motivation" },
   };
 }
@@ -437,7 +438,7 @@ export async function buildAmyInsight(
     title: "Today's Amy insight 💡",
     body,
     deepLink,
-    dedupKey: `insight:${date}${dedupSuffix}`,
+    dedupKey: contentFingerprint(child.id, "insights", `amy${dedupSuffix.replace(/:/g, "_")}`, date),
     data: topNudgeId
       ? { childId: child.id, nudgeId: topNudgeId }
       : { childId: child.id },
@@ -459,7 +460,12 @@ export function buildRoutineItem(opts: {
     title: `${opts.activity} at ${opts.itemTime}`,
     body: `Time for ${opts.childName} to start: ${opts.activity}.`,
     deepLink: "/routine",
-    dedupKey: `routine_item:${opts.routineId}:${opts.itemIndex}:${opts.date}`,
+    dedupKey: contentFingerprint(
+      opts.childId,
+      "routine_item",
+      `r${opts.routineId}_i${opts.itemIndex}`,
+      opts.date,
+    ),
     data: {
       childId: opts.childId,
       routineId: opts.routineId,
@@ -552,7 +558,7 @@ export async function buildPhonicsReminder(
     title: "Phonics practice time 🔤",
     body: messages[ag] || `Time for a quick phonics session with ${child.name}!`,
     deepLink: "/study-zone",
-    dedupKey: `phonics:${date}`,
+    dedupKey: contentFingerprint(child.id, "phonics", "daily", date),
     data: { childId: child.id },
   };
 }
@@ -582,7 +588,6 @@ export async function buildMilestoneAlert(
   const child = await getPrimaryChild(userId);
   if (!child) return null;
   const date = todayLocalDateString(timezone);
-  const monthKey = date.slice(0, 7); // "YYYY-MM"
 
   const milestonesByGroup: Record<ReturnType<typeof ageGroup>, string[]> = {
     toddler: [
@@ -619,7 +624,7 @@ export async function buildMilestoneAlert(
     title: `Milestone check for ${child.name} 📈`,
     body,
     deepLink: "/hub",
-    dedupKey: `milestone:${monthKey}`, // once per month per user
+    dedupKey: contentFingerprint(child.id, "milestone", "daily_check", date),
     data: { childId: child.id },
   };
 }

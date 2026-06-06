@@ -12,7 +12,7 @@ test("buildRoutineItem produces a deterministic dedup key", () => {
     activity: "Breakfast",
     date: "2025-01-15",
   });
-  assert.equal(out.dedupKey, "routine_item:7:2:2025-01-15");
+  assert.equal(out.dedupKey, "1_routine_item_r7_i2_2025-01-15");
   assert.equal(out.title, "Breakfast at 8:00 AM");
   assert.match(out.body, /Maya/);
   assert.equal(out.deepLink, "/routine");
