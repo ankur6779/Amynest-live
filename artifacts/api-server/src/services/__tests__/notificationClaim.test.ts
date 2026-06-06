@@ -1,12 +1,20 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { db, notificationLogTable, notificationPreferencesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { isDbIntegrationAvailable } from "../../test/db-integration.js";
 import {
   claimNotificationDelivery,
   finalizeNotificationClaim,
+  STALE_PENDING_CLAIM_MS,
 } from "../notificationClaimService.js";
+import {
+  atomicAcquireDeliverySlot,
+  releaseStalePendingClaimsGlobally,
+} from "../notificationRateLimitService.js";
+import {
+  MAX_NOTIFICATIONS_PER_ACCOUNT_PER_DAY,
+} from "@workspace/notification-engine";
 import {
   withCronAdvisoryLock,
   tryAcquireCronAdvisoryLock,
@@ -85,6 +93,21 @@ describe("notification claim-before-send", { skip: !dbOk }, () => {
     await cleanup(userId);
   });
 
+  it("exactly one claim wins when 100 workers race same fingerprint", async () => {
+    const userId = `claim-100-${Date.now()}`;
+    const fp = `5_learning_reading_${new Date().toISOString().slice(0, 10)}`;
+    await cleanup(userId);
+
+    const results = await Promise.all(
+      Array.from({ length: 100 }, () => claimNotificationDelivery(claimInput(userId, fp))),
+    );
+
+    assert.equal(results.filter((id) => id != null).length, 1);
+    assert.equal(results.filter((id) => id == null).length, 99);
+
+    await cleanup(userId);
+  });
+
   it("push failure recovery marks claim failed and blocks re-claim same fingerprint", async () => {
     const userId = `claim-fail-${Date.now()}`;
     const fp = `4_engagement_nudge_${new Date().toISOString().slice(0, 10)}`;
@@ -101,6 +124,68 @@ describe("notification claim-before-send", { skip: !dbOk }, () => {
     assert.equal(retry, null);
 
     await cleanup(userId);
+  });
+});
+
+describe("atomic rate limits", { skip: !dbOk }, () => {
+  it("only allows account daily cap deliveries under concurrent workers", async () => {
+    const userId = `rate-limit-${Date.now()}`;
+    const date = new Date().toISOString().slice(0, 10);
+    await cleanup(userId);
+
+    const fingerprints = Array.from(
+      { length: MAX_NOTIFICATIONS_PER_ACCOUNT_PER_DAY + 5 },
+      (_, i) => `9_engagement_nudge_${i}_${date}`,
+    );
+
+    const results = await Promise.all(
+      fingerprints.map((fp) =>
+        atomicAcquireDeliverySlot({
+          ...claimInput(userId, fp),
+          timezone: "Asia/Kolkata",
+          skipIntensityCap: true,
+        }),
+      ),
+    );
+
+    const allowed = results.filter((r) => r.ok);
+    assert.ok(
+      allowed.length <= MAX_NOTIFICATIONS_PER_ACCOUNT_PER_DAY,
+      `expected at most ${MAX_NOTIFICATIONS_PER_ACCOUNT_PER_DAY} slots, got ${allowed.length}`,
+    );
+    const blocked = results.filter((r) => !r.ok && r.status === "rate_limited");
+    assert.ok(blocked.length >= 5, "overflow attempts must be rate_limited");
+
+    await cleanup(userId);
+  });
+});
+
+describe("stale pending recovery", { skip: !dbOk }, () => {
+  it("releases pending claims older than 15 minutes for retry", async () => {
+    const userId = `stale-pending-${Date.now()}`;
+    const fp = `6_routine_item_r1_i0_${new Date().toISOString().slice(0, 10)}`;
+    await cleanup(userId);
+
+    const claimId = await claimNotificationDelivery(claimInput(userId, fp));
+    assert.ok(claimId != null);
+
+    await db.execute(sql`
+      UPDATE notification_log
+      SET sent_at = NOW() - INTERVAL '16 minutes'
+      WHERE id = ${claimId}
+    `);
+
+    const released = await releaseStalePendingClaimsGlobally(15);
+    assert.ok(released >= 1);
+
+    const retry = await claimNotificationDelivery(claimInput(userId, fp));
+    assert.ok(retry != null, "fingerprint must be reclaimable after stale release");
+
+    await cleanup(userId);
+  });
+
+  it("STALE_PENDING_CLAIM_MS is 15 minutes", () => {
+    assert.equal(STALE_PENDING_CLAIM_MS, 15 * 60 * 1000);
   });
 });
 

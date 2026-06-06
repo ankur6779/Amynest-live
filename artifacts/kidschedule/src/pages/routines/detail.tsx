@@ -500,8 +500,8 @@ export default function RoutineDetail() {
   const { isPremium, entitlements } = useSubscription();
   const isRoutineGenerateLocked = !isPremium && (entitlements?.usage.features?.routine_generate?.locked ?? false);
   const [localItems, setLocalItems] = useState<RoutineItem[] | null>(null);
-  const notifSupported = typeof window !== "undefined" && "Notification" in window;
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const pushRemindersHydratedRef = useRef<number | null>(null);
   const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>(() => getVoiceSettings());
   const [voiceOn, setVoiceOn] = useState(() => isVoiceEnabled());
   const { speak, pause } = useAmyVoice({ voiceId: openAiVoiceForGender(voiceSettings.gender) });
@@ -515,8 +515,6 @@ export default function RoutineDetail() {
   const [selectedMeal, setSelectedMeal] = useState<string | null>(null);
   const [recipeData, setRecipeData] = useState<any>(null);
   const [recipeLoading, setRecipeLoading] = useState(false);
-  const notifTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-
   // Editing state
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<{
@@ -1143,63 +1141,71 @@ export default function RoutineDetail() {
     });
   }, [saveItemsMutation, toast, routine, childData, isSignedIn, authFetch]);
 
-  // Notifications
-  const scheduleNotifications = useCallback((items: RoutineItem[]) => {
-    notifTimersRef.current.forEach(clearTimeout);
-    notifTimersRef.current = [];
-    const now = new Date();
-    const todayBase = new Date(now);
-    todayBase.setSeconds(0, 0);
-    items.forEach((item, i) => {
-      const mins = parse12hToMinutes(item.time);
-      if (mins < 0) return;
-      const taskDate = new Date(todayBase);
-      taskDate.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
-      const msUntilTask = taskDate.getTime() - Date.now();
-      if (msUntilTask <= 0) return;
-      const timerId = setTimeout(() => {
-        new Notification(`⏰ Time for: ${item.activity}`, {
-          body:
-            cleanRoutineNotes(item.notes) ||
-            [formatRoutineDurationLong(item), formatCategoryLabel(item.category)]
-              .filter(Boolean)
-              .join(" · "),
-          icon: "/pwa-icon-192.png",
-          tag: `routine-${routineId}-${i}`
-        });
-      }, msUntilTask);
-      notifTimersRef.current.push(timerId);
-    });
-  }, [routineId]);
-  const toggleNotifications = async () => {
-    if (!notifSupported) return;
+  // Server-pushed routine reminders (claim → guard → rate limit → send).
+  // No client-side Notification() timers — single delivery authority on the API.
+  const hasPushRegistered = useCallback((): boolean => {
+    try {
+      return !!localStorage.getItem("notify_device_registered_at");
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const serverPushReminders = routine?.uiPrefs?.pushReminders === true;
+  useEffect(() => {
+    if (!routineId || !routine) return;
+    if (pushRemindersHydratedRef.current === routineId) return;
+    pushRemindersHydratedRef.current = routineId;
+    setNotificationsEnabled(serverPushReminders);
+  }, [routineId, routine, serverPushReminders]);
+
+  const toggleNotifications = useCallback(() => {
+    if (!routineId) return;
     if (notificationsEnabled) {
-      notifTimersRef.current.forEach(clearTimeout);
-      notifTimersRef.current = [];
-      setNotificationsEnabled(false);
-      toast({
-        title: t("toasts.routines_detail.notifications_disabled")
-      });
+      updateUiPrefsMutation.mutate(
+        { id: routineId, data: { pushReminders: false } },
+        {
+          onSuccess: () => {
+            setNotificationsEnabled(false);
+            pushRemindersHydratedRef.current = routineId;
+            queryClient.invalidateQueries({ queryKey: getGetRoutineQueryKey(routineId) });
+            toast({ title: t("toasts.routines_detail.notifications_disabled") });
+          },
+        },
+      );
       return;
     }
-    const perm = await Notification.requestPermission();
-    if (perm === "granted") {
-      const items = localItems ?? routine?.items as RoutineItem[] ?? [];
-      scheduleNotifications(items);
-      setNotificationsEnabled(true);
-      toast({
-        title: t("toasts.routines_detail.notifications_enabled_title"),
-        description: t("toasts.routines_detail.notifications_enabled_body")
-      });
-    } else {
+    if (!hasPushRegistered()) {
       toast({
         title: t("toasts.routines_detail.permission_denied_title"),
         description: t("toasts.routines_detail.permission_denied_body"),
-        variant: "destructive"
+        variant: "destructive",
       });
+      return;
     }
-  };
-  useEffect(() => () => notifTimersRef.current.forEach(clearTimeout), []);
+    updateUiPrefsMutation.mutate(
+      { id: routineId, data: { pushReminders: true } },
+      {
+        onSuccess: () => {
+          setNotificationsEnabled(true);
+          pushRemindersHydratedRef.current = routineId;
+          queryClient.invalidateQueries({ queryKey: getGetRoutineQueryKey(routineId) });
+          toast({
+            title: t("toasts.routines_detail.notifications_enabled_title"),
+            description: t("toasts.routines_detail.notifications_enabled_body"),
+          });
+        },
+      },
+    );
+  }, [
+    routineId,
+    notificationsEnabled,
+    updateUiPrefsMutation,
+    queryClient,
+    toast,
+    t,
+    hasPushRegistered,
+  ]);
   const items = localItems ?? routine?.items as RoutineItem[] ?? [];
 
   const trustRibbonSignals = useMemo(
@@ -1618,7 +1624,7 @@ export default function RoutineDetail() {
               </DropdownMenu>
             )}
 
-            {notifSupported && <Button variant="outline" size="sm" onClick={toggleNotifications} className="rounded-full gap-2">
+            {isSignedIn && <Button variant="outline" size="sm" onClick={toggleNotifications} className="rounded-full gap-2">
                 {notificationsEnabled ? <><BellOff className="h-4 w-4" /> {t("pages.routines.detail.notifications_on")}</> : <><Bell className="h-4 w-4" /> {t("pages.routines.detail.notify_me")}</>}
               </Button>}
 

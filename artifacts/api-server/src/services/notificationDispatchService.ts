@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import {
   db,
   notificationLogTable,
@@ -8,11 +8,9 @@ import {
   type NotificationCategory,
 } from "@workspace/db";
 import {
-  evaluateDeliveryGuard,
   parseFingerprintChildId,
   resolveFingerprint,
   stableNotificationId,
-  type DeliveryHistoryRow,
 } from "@workspace/notification-engine";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
 import { getMessaging } from "firebase-admin/messaging";
@@ -20,10 +18,14 @@ import { adminApp } from "../lib/firebase-admin";
 import { logger } from "../lib/logger.js";
 import { buildNotificationActionPayload } from "@workspace/action-routing";
 import {
-  claimNotificationDelivery,
   finalizeNotificationClaim,
   logNonDeliveryEvent,
 } from "./notificationClaimService.js";
+import { atomicAcquireDeliverySlot } from "./notificationRateLimitService.js";
+import {
+  checkNotificationMetricAlerts,
+  recordNotificationMetric,
+} from "./notification-metrics-store.js";
 
 const expo = new Expo();
 
@@ -94,7 +96,14 @@ export interface DispatchInput {
   };
 }
 
-export type DispatchStatus = "sent" | "throttled" | "failed" | "duplicate" | "no_tokens";
+export type DispatchStatus =
+  | "sent"
+  | "throttled"
+  | "failed"
+  | "duplicate"
+  | "rate_limited"
+  | "cooldown_blocked"
+  | "no_tokens";
 
 export interface DispatchResult {
   status: DispatchStatus;
@@ -234,104 +243,6 @@ function inQuietHours(
     return localHHMM >= start && localHHMM < end;
   }
   return localHHMM >= start || localHHMM < end;
-}
-
-async function countSentToday(userId: string, timezone: string): Promise<number> {
-  const fmt = new Intl.DateTimeFormat("en-CA", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  const localDate = fmt.format(new Date());
-  const result = await db.execute<{ count: number }>(sql`
-    SELECT COUNT(*)::int AS count FROM notification_log
-    WHERE user_id = ${userId}
-      AND status = 'sent'
-      AND (sent_at AT TIME ZONE ${timezone})::date = ${localDate}::date
-  `);
-  return Number(result.rows[0]?.count ?? 0);
-}
-
-async function loadDeliveryHistory(userId: string, fingerprint: string): Promise<DeliveryHistoryRow[]> {
-  const rows = await db
-    .select({
-      dedupKey: notificationLogTable.dedupKey,
-      status: notificationLogTable.status,
-      sentAt: notificationLogTable.sentAt,
-    })
-    .from(notificationLogTable)
-    .where(
-      and(
-        eq(notificationLogTable.userId, userId),
-        eq(notificationLogTable.dedupKey, fingerprint),
-      ),
-    )
-    .orderBy(desc(notificationLogTable.sentAt))
-    .limit(20);
-  return rows
-    .filter((r): r is typeof r & { dedupKey: string } => r.dedupKey != null)
-    .map((r) => ({ dedupKey: r.dedupKey, status: r.status, sentAt: r.sentAt }));
-}
-
-async function countSentTodayForChild(
-  userId: string,
-  childId: string,
-  timezone: string,
-): Promise<number> {
-  const fmt = new Intl.DateTimeFormat("en-CA", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  const localDate = fmt.format(new Date());
-  const prefix = `${childId}_%`;
-  const result = await db.execute<{ count: number }>(sql`
-    SELECT COUNT(*)::int AS count FROM notification_log
-    WHERE user_id = ${userId}
-      AND status = 'sent'
-      AND dedup_key LIKE ${prefix}
-      AND (sent_at AT TIME ZONE ${timezone})::date = ${localDate}::date
-  `);
-  return Number(result.rows[0]?.count ?? 0);
-}
-
-async function countSentLastHour(userId: string): Promise<number> {
-  const cutoff = new Date(Date.now() - 60 * 60 * 1000);
-  const result = await db.execute<{ count: number }>(sql`
-    SELECT COUNT(*)::int AS count FROM notification_log
-    WHERE user_id = ${userId}
-      AND status = 'sent'
-      AND sent_at >= ${cutoff}
-  `);
-  return Number(result.rows[0]?.count ?? 0);
-}
-
-async function evaluateDeliveryFingerprint(
-  userId: string,
-  fingerprint: string,
-  timezone: string,
-): Promise<{ skip: boolean; reason?: string; logEvent?: string }> {
-  const childId = parseFingerprintChildId(fingerprint);
-  const [history, accountSentToday, accountSentLastHour, childSentToday] = await Promise.all([
-    loadDeliveryHistory(userId, fingerprint),
-    countSentToday(userId, timezone),
-    countSentLastHour(userId),
-    childId != null ? countSentTodayForChild(userId, childId, timezone) : Promise.resolve(0),
-  ]);
-
-  const decision = evaluateDeliveryGuard({
-    fingerprint,
-    timezone,
-    history,
-    childSentToday,
-    accountSentToday,
-    accountSentLastHour,
-  });
-
-  if (decision.allow) return { skip: false };
-  return { skip: true, reason: decision.reason, logEvent: decision.logEvent };
 }
 
 async function logLegacyDelivery(
@@ -591,58 +502,37 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     return { status: "no_tokens", reason: "no_valid_tokens" };
   }
 
-  if (input.dedupKey) {
-    const guard = await evaluateDeliveryFingerprint(
-      input.userId,
-      input.dedupKey,
-      prefs.timezone,
-    );
-    if (guard.skip) {
-      const logEventName =
-        guard.logEvent ??
-        (guard.reason === "cooldown"
-          ? "NOTIFICATION_SKIPPED_COOLDOWN"
-          : "NOTIFICATION_SKIPPED_DUPLICATE");
-      logger.info(
-        {
-          evt: logEventName,
-          timestamp: new Date().toISOString(),
-          userId: input.userId,
-          childId: parseFingerprintChildId(input.dedupKey),
-          notificationType: input.category,
-          fingerprint: input.dedupKey,
-          reason: guard.reason,
-        },
-        "Notification delivery skipped by guard",
-      );
-      return { status: "duplicate", reason: guard.reason ?? "dedup" };
-    }
-  }
-
-  // routine_item (5-min task heads-up) are time-sensitive, user-initiated
-  // reminders that expire immediately. They bypass the daily cap so that
-  // static cron notifications filling the cap don't silence scheduled tasks.
-  const isTimebound = input.category === "routine_item";
-  if (!input.bypassDailyCap && !isTimebound) {
-    const sentToday = await countSentToday(input.userId, prefs.timezone);
-    const cap = effectiveDailyCap(prefs);
-    if (sentToday >= cap) {
-      await logNonDeliveryEvent(input, "throttled", `daily_cap:${cap}:intensity=${prefs.notificationIntensity}`);
-      return { status: "throttled", reason: "daily_cap" };
-    }
-  }
-
   if (!input.bypassQuietHours && inQuietHours(prefs)) {
     await logNonDeliveryEvent(input, "throttled", "quiet_hours");
     return { status: "throttled", reason: "quiet_hours" };
   }
 
+  // routine_item (5-min task heads-up) are time-sensitive, user-initiated
+  // reminders that expire immediately. They bypass the intensity daily cap so
+  // static cron notifications filling the cap don't silence scheduled tasks.
+  const isTimebound = input.category === "routine_item";
+
   let claimId: number | null = null;
   if (input.dedupKey) {
-    claimId = await claimNotificationDelivery(input);
-    if (claimId == null) {
-      return { status: "duplicate", reason: "claim_conflict" };
+    const slot = await atomicAcquireDeliverySlot({
+      ...input,
+      timezone: prefs.timezone,
+      intensityDailyCap: effectiveDailyCap(prefs),
+      skipIntensityCap: input.bypassDailyCap === true || isTimebound,
+    });
+    if (!slot.ok) {
+      if (slot.status === "rate_limited") {
+        return { status: "rate_limited", reason: slot.reason };
+      }
+      if (slot.status === "cooldown_blocked") {
+        return { status: "cooldown_blocked", reason: slot.reason };
+      }
+      if (slot.status === "throttled") {
+        return { status: "throttled", reason: slot.reason };
+      }
+      return { status: "duplicate", reason: slot.reason };
     }
+    claimId = slot.claimId;
   }
 
   const ticketIds: string[] = [];
@@ -695,6 +585,8 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
           "expo",
         );
       }
+      recordNotificationMetric("notification_failed_total");
+      void checkNotificationMetricAlerts();
       return { status: "failed", reason: "expo_error" };
     }
 
@@ -826,6 +718,8 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
       },
       "Notification dispatch: all tokens failed",
     );
+    recordNotificationMetric("notification_failed_total");
+    void checkNotificationMetricAlerts();
     return {
       status: "failed",
       reason: "all_tokens_failed",
@@ -843,6 +737,7 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   } else {
     await logLegacyDelivery(input, "sent", undefined, platform, providerMessageId);
   }
+  recordNotificationMetric("notification_sent_total");
   try {
     const { touchFatigueLastSent } = await import("./notificationContentHistoryService.js");
     await touchFatigueLastSent(input.userId);
@@ -871,6 +766,7 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     },
     "Notification dispatched",
   );
+  void checkNotificationMetricAlerts();
   return { status: "sent", ticketIds };
 }
 

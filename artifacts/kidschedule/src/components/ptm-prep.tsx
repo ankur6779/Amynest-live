@@ -215,7 +215,6 @@ export function PtmPrepAssistant({ child }: Props) {
     setHistory(nextHistory);
     setReminders(newReminders);
     setSession(null);
-    maybeNotifyReminders(newReminders, child?.name);
   };
 
   const shareSession = async (s: PtmSession) => {
@@ -1146,27 +1145,3 @@ function HistoryBlock({
   );
 }
 
-function maybeNotifyReminders(reminders: PtmReminder[], childName?: string) {
-  if (typeof window === "undefined" || !("Notification" in window)) return;
-  const due = activeReminders(reminders);
-  if (due.length === 0) return;
-  const show = () => {
-    const first = due[0];
-    if (!first) return;
-    try {
-      new Notification("PTM follow-up", {
-        body: `${childName ? `${childName}: ` : ""}${first.actionText}`,
-        tag: `ptm-reminder-${first.id}`,
-      });
-    } catch {
-      /* permission denied */
-    }
-  };
-  if (Notification.permission === "granted") {
-    show();
-  } else if (Notification.permission !== "denied") {
-    void Notification.requestPermission().then((p) => {
-      if (p === "granted") show();
-    });
-  }
-}

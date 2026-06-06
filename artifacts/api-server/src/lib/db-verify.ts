@@ -25,6 +25,7 @@ const CRITICAL_TABLES: readonly string[] = [
   "subscriptions",
   "notification_preferences",
   "notification_log",
+  "feature_notification_schedules",
   "push_tokens",
   "onboarding_profiles",
   "razorpay_webhook_events",
@@ -49,6 +50,8 @@ export interface DbVerificationResult {
   columns: Record<string, "present" | "missing" | "error">;
   missingColumns: string[];
   notificationDedupIndexPresent: boolean;
+  notificationProviderMessageIdPresent: boolean;
+  notificationUserSentIdxPresent: boolean;
   durationMs: number;
 }
 
@@ -86,6 +89,8 @@ export async function verifyDatabaseAtStartup(): Promise<DbVerificationResult> {
     columns: {},
     missingColumns: [],
     notificationDedupIndexPresent: false,
+    notificationProviderMessageIdPresent: false,
+    notificationUserSentIdxPresent: false,
     durationMs: 0,
   };
 
@@ -150,6 +155,32 @@ export async function verifyDatabaseAtStartup(): Promise<DbVerificationResult> {
       logger.error(
         { evt: "db.verify.dedup_index_missing" },
         "CRITICAL: notification_log_user_dedup_unique index is missing",
+      );
+    }
+
+    result.notificationProviderMessageIdPresent = await columnExists(
+      "notification_log",
+      "provider_message_id",
+    );
+    if (!result.notificationProviderMessageIdPresent) {
+      logger.error(
+        { evt: "db.verify.provider_message_id_missing" },
+        "CRITICAL: notification_log.provider_message_id column is missing",
+      );
+    }
+
+    const idxRs = await db.execute<{ exists: boolean }>(sql`
+      SELECT EXISTS (
+        SELECT 1 FROM pg_indexes
+        WHERE schemaname = 'public'
+          AND indexname = 'notification_log_user_sent_idx'
+      ) AS exists
+    `);
+    result.notificationUserSentIdxPresent = idxRs.rows[0]?.exists === true;
+    if (!result.notificationUserSentIdxPresent) {
+      logger.warn(
+        { evt: "db.verify.notification_sent_idx_missing" },
+        "notification_log_user_sent_idx missing — rate-limit queries may be slow",
       );
     }
   } catch (err) {

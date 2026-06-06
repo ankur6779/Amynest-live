@@ -7,11 +7,13 @@ import { sql } from "drizzle-orm";
  * within a short window, (c) the in-app notification history view.
  *
  * status values:
- *   "pending"   → claim acquired; push not yet confirmed (claim-before-send)
- *   "sent"      → push provider accepted the message
- *   "throttled" → blocked by daily cap, quiet hours, or category disabled
- *   "failed"    → push rejected or all tokens failed
- *   "duplicate" → identical notification sent within dedup window (legacy rows)
+ *   "pending"          → claim acquired; push not yet confirmed (claim-before-send)
+ *   "sent"             → push provider accepted the message
+ *   "failed"           → push rejected or all tokens failed
+ *   "duplicate"        → fingerprint already claimed or same-day dedup
+ *   "cooldown_blocked" → per-type cooldown not elapsed
+ *   "rate_limited"     → child/account/hourly cap exceeded
+ *   "throttled"        → intensity daily cap, quiet hours, or category disabled
  */
 export const notificationLogTable = pgTable(
   "notification_log",

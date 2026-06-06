@@ -163,13 +163,6 @@ export function OlympiadReminderSettings({
 }) {
   const { t } = useTranslation();
 
-  const requestNotify = async () => {
-    if (typeof Notification === "undefined") return;
-    if (Notification.permission === "default") {
-      await Notification.requestPermission();
-    }
-  };
-
   return (
     <Card>
       <CardContent className="p-4 space-y-3">
@@ -181,10 +174,7 @@ export function OlympiadReminderSettings({
           <span className="text-xs text-muted-foreground">{t("components.olympiad_zone.reminder_toggle")}</span>
           <Switch
             checked={stats.reminderEnabled}
-            onCheckedChange={(v) => {
-              void requestNotify();
-              onChange({ reminderEnabled: v });
-            }}
+            onCheckedChange={(v) => onChange({ reminderEnabled: v })}
           />
         </div>
         {stats.reminderEnabled && (

@@ -87,6 +87,7 @@ export * from "./parent_task_completions";
 export * from "./daily_puzzle_progress";
 export * from "./life_skills_progress";
 export * from "./ptm_prep_data";
+export * from "./feature_notification_schedules";
 export * from "./child_learning_progress";
 export * from "./learning_progress";
 export * from "./skill_graph_progress";

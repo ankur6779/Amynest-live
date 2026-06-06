@@ -29,6 +29,9 @@ export async function withCronAdvisoryLock<T>(
   const acquired = await tryAcquireCronAdvisoryLock(jobName);
   if (!acquired) {
     logger.debug({ job: jobName }, "Cron tick skipped — advisory lock held");
+    void import("../services/notification-metrics-store.js").then(({ recordNotificationMetric }) => {
+      recordNotificationMetric("notification_cron_lock_contention_total");
+    });
     return undefined;
   }
   try {

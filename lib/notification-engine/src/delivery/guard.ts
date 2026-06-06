@@ -276,7 +276,7 @@ export function evaluateDeliveryGuard(input: {
 
   if (latest.status === "pending") {
     const ageMs = now.getTime() - latest.sentAt.getTime();
-    if (ageMs < 10 * 60 * 1000) {
+    if (ageMs < 15 * 60 * 1000) {
       return { allow: false, reason: "duplicate", logEvent: "NOTIFICATION_SKIPPED_DUPLICATE" };
     }
   }

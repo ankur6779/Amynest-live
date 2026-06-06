@@ -494,6 +494,29 @@ export async function ensureInfantProductAnalyticsEventsTable(): Promise<void> {
   );
 }
 
+export async function ensureFeatureNotificationSchedulesTable(): Promise<void> {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS feature_notification_schedules (
+      id            SERIAL PRIMARY KEY,
+      user_id       TEXT NOT NULL,
+      child_id      INTEGER,
+      schedule_type TEXT NOT NULL,
+      entity_id     TEXT NOT NULL,
+      enabled       BOOLEAN NOT NULL DEFAULT true,
+      config        JSONB NOT NULL DEFAULT '{}'::jsonb,
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS feature_notif_sched_user_type_entity
+      ON feature_notification_schedules (user_id, schedule_type, entity_id)
+  `);
+  logger.info(
+    { evt: "db.ensure", table: "feature_notification_schedules" },
+    "Ensured feature_notification_schedules table",
+  );
+}
+
 export async function ensurePtmPrepDataTable(): Promise<void> {
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS ptm_prep_data (
@@ -522,6 +545,7 @@ export async function ensureStartupTables(): Promise<void> {
     { name: "infant_milestone_progress", run: ensureInfantMilestoneProgressTable },
     { name: "infant_product_analytics_events", run: ensureInfantProductAnalyticsEventsTable },
     { name: "ptm_prep_data", run: ensurePtmPrepDataTable },
+    { name: "feature_notification_schedules", run: ensureFeatureNotificationSchedulesTable },
   ];
 
   const failed: string[] = [];

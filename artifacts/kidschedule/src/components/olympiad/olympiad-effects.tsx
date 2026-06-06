@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { OLYMPIAD_BADGES } from "@/lib/olympiad-local-stats";
 
@@ -24,42 +23,14 @@ export function useOlympiadBadgeCelebration(badges: string[]) {
   }, [badges, toast]);
 }
 
+/**
+ * Daily olympiad reminders are delivered server-side (feature_notification_tick).
+ * Stats.reminderEnabled + reminderHour sync via /api/olympiad/stats.
+ */
 export function useOlympiadDailyReminder(
-  enabled: boolean,
-  hour: number,
-  dailyDoneToday: boolean,
-) {
-  const { toast } = useToast();
-  const fired = useRef<string | null>(null);
-  const { t } = useTranslation();
-
-  useEffect(() => {
-    if (!enabled || dailyDoneToday) return;
-
-    const check = () => {
-      const now = new Date();
-      const today = now.toISOString().slice(0, 10);
-      if (fired.current === today) return;
-      if (now.getHours() >= hour) {
-        fired.current = today;
-        toast({
-          title: t("components.olympiad_zone.reminder_title"),
-          description: t("components.olympiad_zone.reminder_body"),
-        });
-        if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-          try {
-            new Notification(t("components.olympiad_zone.reminder_title"), {
-              body: t("components.olympiad_zone.reminder_body"),
-            });
-          } catch {
-            /* ignore */
-          }
-        }
-      }
-    };
-
-    check();
-    const id = setInterval(check, 60_000);
-    return () => clearInterval(id);
-  }, [enabled, hour, dailyDoneToday, toast, t]);
+  _enabled: boolean,
+  _hour: number,
+  _dailyDoneToday: boolean,
+): void {
+  /* no-op — server is the only notification authority */
 }

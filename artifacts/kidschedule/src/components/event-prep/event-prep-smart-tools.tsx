@@ -15,6 +15,12 @@ import {
   markCalendarSynced,
   saveReminderState,
 } from "@/lib/event-prep-local";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useToast } from "@/hooks/use-toast";
+import {
+  hasPushRegistered,
+  upsertFeatureNotificationSchedule,
+} from "@/lib/feature-notification-schedule";
 import { downloadEventCalendarIcs, googleCalendarUrl } from "@/lib/event-prep-calendar";
 import { buildMaterialsList, shareTextList } from "@/lib/event-prep-share";
 import { daysUntilEvent } from "@workspace/event-prep";
@@ -91,6 +97,8 @@ interface SmartToolsProps {
 }
 
 export function EventPrepSmartTools({ ev, upcoming, childId, childName, t }: SmartToolsProps) {
+  const authFetch = useAuthFetch();
+  const { toast } = useToast();
   const [calendarAdded, setCalendarAdded] = useState(() => isCalendarSynced(ev.id, childId));
   const [remindersOn, setRemindersOn] = useState(() => !!loadReminderState(ev.id, childId)?.enabled);
   const [shareStatus, setShareStatus] = useState<"idle" | "shared" | "copied">("idle");
@@ -110,32 +118,62 @@ export function EventPrepSmartTools({ ev, upcoming, childId, childName, t }: Sma
   };
 
   const onToggleReminders = async () => {
-    if (!remindersOn && typeof Notification !== "undefined") {
-      const perm = await Notification.requestPermission();
-      if (perm === "granted" && nextDate) {
-        saveReminderState({
-          enabled: true,
-          eventId: ev.id,
-          childId,
-          scheduledAt: new Date().toISOString(),
-        });
-        setRemindersOn(true);
-        new Notification(t("screens.event_prep.reminder_enabled_title"), {
-          body: t("screens.event_prep.reminder_enabled_body", { event: ev.name }),
-          icon: "/favicon.ico",
+    if (!remindersOn) {
+      if (!hasPushRegistered()) {
+        toast({
+          title: t("screens.event_prep.reminder_enabled_title"),
+          description: t("screens.event_prep.reminder_push_required", {
+            defaultValue: "Enable push notifications in Settings to receive event prep reminders.",
+          }),
+          variant: "destructive",
         });
         return;
       }
-    }
-    if (remindersOn) {
+      if (!nextDate) return;
+      const ok = await upsertFeatureNotificationSchedule(authFetch, {
+        scheduleType: "event_prep",
+        entityId: ev.id,
+        childId,
+        enabled: true,
+        config: {
+          eventName: ev.name,
+          eventDate: nextDate,
+          deepLink: "/event-prep",
+        },
+      });
+      if (!ok) {
+        toast({
+          title: t("screens.event_prep.reminder_enabled_title"),
+          variant: "destructive",
+        });
+        return;
+      }
       saveReminderState({
-        enabled: false,
+        enabled: true,
         eventId: ev.id,
         childId,
         scheduledAt: new Date().toISOString(),
       });
-      setRemindersOn(false);
+      setRemindersOn(true);
+      toast({
+        title: t("screens.event_prep.reminder_enabled_title"),
+        description: t("screens.event_prep.reminder_enabled_body", { event: ev.name }),
+      });
+      return;
     }
+    await upsertFeatureNotificationSchedule(authFetch, {
+      scheduleType: "event_prep",
+      entityId: ev.id,
+      childId,
+      enabled: false,
+    });
+    saveReminderState({
+      enabled: false,
+      eventId: ev.id,
+      childId,
+      scheduledAt: new Date().toISOString(),
+    });
+    setRemindersOn(false);
   };
 
   const onShareList = async () => {

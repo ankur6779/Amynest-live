@@ -11,7 +11,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
-import { Moon, Sun, BedDouble, Sparkles, AlarmClock, ShieldAlert, Loader2, RefreshCw, History, Lightbulb, CloudMoon, Bell } from "lucide-react";
+import { Moon, Sun, BedDouble, Sparkles, AlarmClock, ShieldAlert, Loader2, RefreshCw, History, Lightbulb } from "lucide-react";
+import { SleepNapReminders } from "@/components/sleep-predict-reminders";
 import { useToast } from "@/hooks/use-toast";
 import { getApiUrl } from "@/lib/api";
 import { infantActivationQueryKey } from "@/lib/infant-activation-api";
@@ -114,145 +115,6 @@ function formatRelative(iso: string, now: number): string {
   const rem = min % 60;
   const label = rem === 0 ? `${h}h` : `${h}h ${rem}m`;
   return ms > 0 ? `in ${label}` : `${label} ago`;
-}
-
-const MAX_REMINDER_MS = 4 * 60 * 60 * 1000;
-
-function SleepNapReminders({
-  childName,
-  windowStart,
-  shouldWindDown,
-}: {
-  childName: string;
-  windowStart: string;
-  shouldWindDown: boolean;
-}) {
-  const { t } = useTranslation();
-  const { toast } = useToast();
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const [napScheduled, setNapScheduled] = useState(false);
-  const [windDownScheduled, setWindDownScheduled] = useState(false);
-
-  useEffect(() => {
-    return () => {
-      timersRef.current.forEach(clearTimeout);
-      timersRef.current = [];
-    };
-  }, []);
-
-  const ensurePermission = useCallback(async (): Promise<boolean> => {
-    if (typeof Notification === "undefined") {
-      toast({
-        title: t("components.sleep_predict.notifications_unsupported"),
-        variant: "destructive",
-      });
-      return false;
-    }
-    if (Notification.permission === "granted") return true;
-    if (Notification.permission === "denied") {
-      toast({
-        title: t("components.sleep_predict.notifications_blocked"),
-        variant: "destructive",
-      });
-      return false;
-    }
-    const perm = await Notification.requestPermission();
-    return perm === "granted";
-  }, [t, toast]);
-
-  const scheduleAt = useCallback(
-    async (targetMs: number, title: string, body: string, onSuccess: () => void) => {
-      const delay = targetMs - Date.now();
-      if (delay <= 0) {
-        toast({
-          title: t("components.sleep_predict.reminder_past"),
-          variant: "destructive",
-        });
-        return;
-      }
-      if (delay > MAX_REMINDER_MS) {
-        toast({ title: t("components.sleep_predict.reminder_too_far") });
-        return;
-      }
-      if (!(await ensurePermission())) return;
-      timersRef.current.forEach(clearTimeout);
-      timersRef.current = [];
-      const id = setTimeout(() => {
-        new Notification(title, {
-          body,
-          icon: "/pwa-icon-192.png",
-          tag: "sleep-nap-reminder",
-        });
-      }, delay);
-      timersRef.current.push(id);
-      onSuccess();
-      toast({
-        title: t("components.sleep_predict.reminder_set_title"),
-        description: t("components.sleep_predict.reminder_set_body", {
-          time: formatTime(new Date(targetMs).toISOString()),
-        }),
-      });
-    },
-    [ensurePermission, t, toast],
-  );
-
-  const scheduleNapReminder = useCallback(() => {
-    void scheduleAt(
-      new Date(windowStart).getTime(),
-      t("components.sleep_predict.nap_reminder_title", { name: childName }),
-      t("components.sleep_predict.nap_reminder_body"),
-      () => setNapScheduled(true),
-    );
-  }, [childName, scheduleAt, t, windowStart]);
-
-  const scheduleWindDownReminder = useCallback(() => {
-    void scheduleAt(
-      Date.now() + 15 * 60_000,
-      t("components.sleep_predict.winddown_reminder_title", { name: childName }),
-      t("components.sleep_predict.winddown_reminder_body"),
-      () => setWindDownScheduled(true),
-    );
-  }, [childName, scheduleAt, t]);
-
-  const napDelay = new Date(windowStart).getTime() - Date.now();
-  const canNapRemind = napDelay > 0 && napDelay <= MAX_REMINDER_MS;
-  if (!canNapRemind && !shouldWindDown) return null;
-
-  return (
-    <div
-      className="rounded-2xl bg-white/70 dark:bg-white/5 border border-white/60 dark:border-white/10 p-3 flex flex-wrap gap-2"
-      data-testid="sleep-reminders"
-    >
-      {canNapRemind && (
-        <button
-          type="button"
-          onClick={scheduleNapReminder}
-          disabled={napScheduled}
-          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-bold text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors disabled:opacity-60"
-          data-testid="set-nap-reminder-btn"
-        >
-          <Bell className="h-3 w-3 text-primary" />
-          {napScheduled
-            ? t("components.sleep_predict.nap_reminder_scheduled")
-            : t("components.sleep_predict.set_nap_reminder")}
-        </button>
-      )}
-      {shouldWindDown && (
-        <button
-          type="button"
-          onClick={scheduleWindDownReminder}
-          disabled={windDownScheduled}
-          className="inline-flex items-center gap-1.5 rounded-full border border-violet-400/40 bg-violet-500/10 px-3 py-1.5 text-[11px] font-bold text-violet-800 dark:text-violet-200 hover:bg-violet-500/15 transition-colors disabled:opacity-60"
-          data-testid="set-winddown-reminder-btn"
-        >
-          <CloudMoon className="h-3 w-3" />
-          {windDownScheduled
-            ? t("components.sleep_predict.winddown_reminder_scheduled")
-            : t("components.sleep_predict.set_winddown_reminder")}
-        </button>
-      )}
-    </div>
-  );
 }
 
 export function SleepPredict({
@@ -491,6 +353,7 @@ export function SleepPredict({
             </div>}
 
           <SleepNapReminders
+            childId={childId}
             childName={childName}
             windowStart={prediction.windowStart}
             shouldWindDown={prediction.shouldWindDown}

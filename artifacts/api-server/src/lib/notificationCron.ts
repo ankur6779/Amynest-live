@@ -340,6 +340,28 @@ export function startNotificationCron(): void {
     }
   });
 
+  // Feature reminders (olympiad, PTM, event prep, sleep wind-down).
+  schedule("feature_notification_tick", "* * * * *", async () => {
+    const { runFeatureNotificationTick } = await import(
+      "../services/featureNotificationScheduler.js"
+    );
+    const r = await runFeatureNotificationTick();
+    if (r.sent > 0) {
+      logger.info({ ...r, job: "feature_notification_tick" }, "Feature notification summary");
+    }
+  });
+
+  // Release abandoned pending claims (worker crash recovery).
+  schedule("stale_pending_sweep", "*/5 * * * *", async () => {
+    const { releaseStalePendingClaimsGlobally } = await import(
+      "../services/notificationRateLimitService.js"
+    );
+    const released = await releaseStalePendingClaimsGlobally(15);
+    if (released > 0) {
+      logger.info({ released, job: "stale_pending_sweep" }, "Stale pending claim sweep");
+    }
+  });
+
   // Token health sweep — daily at 03:00 UTC (global maintenance window).
   schedule("token_sweep", "0 3 * * *", async () => {
     const removed = await withSafeDb(

@@ -48,7 +48,7 @@ export type ClaimInput = {
   };
 };
 
-export const STALE_PENDING_CLAIM_MS = 10 * 60 * 1000;
+export const STALE_PENDING_CLAIM_MS = 15 * 60 * 1000;
 
 export class NotificationDedupIndexMissingError extends Error {
   constructor() {
@@ -77,17 +77,20 @@ export async function assertNotificationDedupIndex(): Promise<void> {
   }
 }
 
+type DbExec = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 /** Remove abandoned pending claims so delivery can be retried after worker crash. */
 export async function clearStalePendingClaims(
   userId: string,
   fingerprint: string,
+  exec: DbExec = db,
 ): Promise<void> {
-  await db.execute(sql`
+  await exec.execute(sql`
     DELETE FROM notification_log
     WHERE user_id = ${userId}
       AND dedup_key = ${fingerprint}
       AND status = 'pending'
-      AND sent_at < NOW() - INTERVAL '10 minutes'
+      AND sent_at < NOW() - INTERVAL '15 minutes'
   `);
 }
 
